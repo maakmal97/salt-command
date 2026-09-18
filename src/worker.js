@@ -76,7 +76,7 @@ const DEVICE_RE = /^[A-Za-z0-9._-]{1,80}$/;
 /* THE DAY IS KUALA LUMPUR'S (08 Sep 2026). COUNT_ON is written by the fold in MYT; "today" here
    was the UTC day, so between midnight and 08:00 a morning count read as not taken and
    yesterday's count read as today's. Same expression as src/orders.js. */
-const klDay = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
+const klDay = (at) => new Date(at || Date.now()).toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
 
 // The only shape /vault will store: the desk's AES-GCM envelope. Anything else (a plain
 // name map, say) is refused, so plaintext can never reach the cloud through this door.
@@ -604,7 +604,14 @@ export default {
             if ((d && d.n) > 0) worth = true;
             const c = await env.SALT_LEDGER.prepare("SELECT doc FROM state WHERE key='COUNT_ON'").first();
             if (c && c.doc) {
-              const on = JSON.parse(c.doc), today = klDay();
+              /* THE CRON'S OWN DAY, NOT THE DAY THE PROCESS HAPPENS TO BE RUNNING (19 Sep 2026).
+                 This read the wall clock while everything else in scheduled() honours
+                 event.scheduledTime, so a tick that fired late, was retried, or was replayed
+                 compared the count against the wrong day and woke him over a count that was
+                 taken. It was found by the v708 assertion flipping at midnight: the fixture
+                 pinned a scheduled time and the code ignored it, so the test passed or failed
+                 by the date it was run on rather than by anything it asserted. */
+              const on = JSON.parse(c.doc), today = klDay(event && event.scheduledTime);
               if (Object.keys(on).some((k) => on[k] !== today)) worth = true;
             }
             /* v708, his instruction of 18 Sep 2026: "if paid, I will need to refund immediately".

@@ -8047,6 +8047,31 @@ await (async () => {
       "an issue whose records are all unpublishable turns the deploy RED and says which folder to regenerate");
     rmSync(stale, { recursive: true, force: true });
 
+    /* WHAT IT SAYS AGAINST WHAT IT DOES. The plan carries `issue`, `sheet` and `roster` beside the
+       records, and the line said puts.length - 1, which was true only while `issue` was the only
+       one of them. The guard on nonRecs is the whole assertion: with one non-record key the old
+       arithmetic and the new agree, so a fixture carrying fewer than two cannot tell them apart. */
+    const outDirC = join(REPO, "test", "tmp", "pub-count");
+    rmSync(outDirC, { recursive: true, force: true });
+    let outC = "";
+    try {
+      outC = execFileSync(process.execPath, [join(REPO, "tools", "stmt-publish.mjs"), "--dry", outDirC],
+        { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"],
+          env: { ...process.env, SALT_STATEMENTS_DIR: root, STMT_KEY: "test-secret" } });
+    } catch (e) { outC = String(e.stdout || "") + String(e.stderr || ""); }
+    /* AGAINST ITS OWN PLAN, not one built beside it: --dry writes the very put.json it would send,
+       so the count it printed and the keys it would write come from the same run. A plan built
+       in-process here takes different arguments and can differ by a key, which would let the two
+       agree by luck in the green case and prove nothing. */
+    const saidC = Number((outC.match(/would publish (\d+) records/) || [])[1]);
+    const wroteC = JSON.parse(readFileSync(join(outDirC, "put.json"), "utf8"));
+    const recsC = wroteC.filter((x) => String(x.key || "").startsWith("u:")).length;
+    const nonRecsC = wroteC.length - recsC;
+    ok(nonRecsC >= 2, "the plan carries more than one key that is not a record, or this proves nothing: " + nonRecsC);
+    ok(saidC === recsC,
+      "the publish says how many RECORDS went out, not how many keys the plan holds: said " + saidC + ", records " + recsC + ", other keys " + nonRecsC);
+    rmSync(outDirC, { recursive: true, force: true });
+
     /* A RECORD FROM BEFORE THE SITE has no username, and the first deploy after the site went
        up put thirty-seven of them under the one key "u:undefined", which the store refused and
        which turned the deploy red. They are reported and left; and an issue with nothing
@@ -8832,7 +8857,15 @@ await (async () => {
     const r = await worker.fetch(req("/drafts/x1/approve", { method: "POST", headers: { "content-type": "application/json", "x-salt-key": "k" }, body: "{}" }), envD, { waitUntil() { } });
     ok(r.status === 409, `a decision whose UPDATE changed no row (another tap won) answers 409, not 200 (${r.status})`);
     const wsrc = readFileSync(join(REPO, "src", "worker.js"), "utf8");
-    ok((wsrc.match(/today = klDay\(\)/g) || []).length === 2 && /timeZone: "Asia\/Kuala_Lumpur"/.test(wsrc), "both of the Worker's \"today\" readings against COUNT_ON are Kuala Lumpur's day");
+    /* BOTH READINGS ARE KUALA LUMPUR'S DAY, AND THEY TAKE THEIR DAY FROM DIFFERENT PLACES ON
+       PURPOSE (19 Sep 2026). The cron's reading must use event.scheduledTime, or a tick that fires
+       late compares a count against the wrong day; the request handler's has no scheduled time to
+       use and the wall clock is the right answer there. This counted two bare klDay() calls until
+       the cron's was given the instant, which is why it is stated as the rule rather than the text. */
+    ok((wsrc.match(/today = klDay\(/g) || []).length === 2 && /timeZone: "Asia\/Kuala_Lumpur"/.test(wsrc),
+      "both of the Worker's \"today\" readings against COUNT_ON are Kuala Lumpur's day");
+    ok(/today = klDay\(event && event\.scheduledTime\)/.test(wsrc) && (wsrc.match(/today = klDay\(\)/g) || []).length === 1,
+      "the cron's reading takes the tick's own time and the request handler's takes the clock, which is the one place the clock is right");
     const swA = readFileSync(join(REPO, "public", "sw.js"), "utf8"); const apiA = (swA.match(/const API = (\/.*\/);/) || [])[1];
     const rxA = new RegExp(apiA.slice(1, apiA.lastIndexOf("/")));
     ok(["/orders", "/orders/u/abc", "/stmt-users", "/draft-now"].every((p) => rxA.test(p)) && /salt-shell-v5/.test(swA), "the service worker never caches /orders, /stmt-users or /draft-now, and the shell cache name moved");
@@ -15012,7 +15045,10 @@ await (async () => {
   /* one account that already exists, so the master has something to be proved against */
   const uHave = "aaaa-bbbb", pwHave = "already-here";
   const ckHave = await C7.contentKey(KEY7, uHave);
-  writeFileSync(join(dir7, "_kv", uHave + ".json"), JSON.stringify({ u: uHave, issued: "2026-09",
+  /* THE ISSUE'S DATE, NOT THE FOLDER'S NAME. This fixture said "2026-09" until 18 Sep 2026, which
+     is the one reason the fault below went unseen: a fixture that already agrees with the bug
+     cannot catch it. Every real record carries the date, because makeStatements is handed one. */
+  writeFileSync(join(dir7, "_kv", uHave + ".json"), JSON.stringify({ u: uHave, issued: "2026-09-01",
     verifier: await C7.makeVerifier(pwHave), wrap: await C7.wrapKey(pwHave, ckHave),
     wrapMaster: await C7.wrapKey(MASTER7, ckHave), env: await C7.encryptWith(ckHave, "{}") }), "utf8");
   writeFileSync(join(root7, "_secrets.json"), JSON.stringify({ key: KEY7 }), "utf8");
@@ -15055,6 +15091,78 @@ await (async () => {
     ok(!!viaMaster, "and the master unwraps the content key, so his override opens it as it opens every other account");
     ok(JSON.parse(await C7.decryptWith(ckNew, made.env)).v === 1,
       "the bundle it sealed opens under that key and is the shape every other bundle is");
+
+    /* THE ISSUE IT STAMPS IS THE ISSUE'S DATE, NOT THE FOLDER IT LIVES IN, and this is the one
+       field whose blast radius is the whole site rather than the one account. newestIssue answers
+       the FOLDER ("2026-09"), because that is what names the directory; every record carries the
+       DATE ("2026-09-01"). tools/make_statements.mjs sorts _kv BY FILENAME and
+       tools/stmt-publish.mjs takes the store's `issue` key off records[0].issued, so a minted
+       username that sorts first publishes whatever it stamped as the live issue. That value keys
+       every sent tick (stmt/worker.js SENT_KEY) and decides `newIssue`, which clears the attempt
+       counters. Stamping the folder would therefore have read as a new issue and shown every
+       statement he has already sent as never sent. */
+    ok(made.issued === "2026-09-01" && Array.isArray(made.issues) && made.issues.join() === "2026-09-01",
+      "the record it mints carries the issue's DATE, exactly as every record beside it does: " + JSON.stringify(made.issued));
+    ok(JSON.parse(await C7.decryptWith(ckNew, made.env)).issued === "2026-09-01",
+      "and so does the bundle sealed inside it, or the page would draw a month strip nothing else agrees with");
+    /* THE PROPERTY THAT ACTUALLY MATTERS, driven the way the publish reads it: the first record in
+       FILENAME order is what names the issue, and the mint must not move it. 27a4-gkgw sorts ahead
+       of aaaa-bbbb, so this fixture puts the new record exactly where the live one landed. */
+    const firstNow = readdirSync(join(dir7, "_kv")).filter((f) => f.endsWith(".json")).sort()[0];
+    ok(firstNow === "27a4-gkgw.json",
+      "the minted record sorts FIRST, which is the case that makes this matter at all: " + firstNow);
+    ok(JSON.parse(readFileSync(join(dir7, "_kv", firstNow), "utf8")).issued === "2026-09-01",
+      "so what the publish would read as the live issue is unmoved, and every sent tick under it survives");
+
+    /* AND IT AGREES WITH ITS NEIGHBOURS RATHER THAN ASSUMING THE FIRST OF THE MONTH. Every issue
+       so far has been cut on the 1st, so in the fixture above "read the date off the records
+       already there" and "stick -01 on the folder" give the same answer and neither can be told
+       from the other. Two mutations proved exactly that by staying green. So here is an issue cut
+       on the 15th: the derivation must follow the records, because the whole point is that a
+       minted record agrees with the ones the publish will read it beside, whatever the convention
+       turns out to be. The first of the month is the fallback for an empty issue, not the rule. */
+    const rootB = join(REPO, "test", "tmp", "acct707b");
+    const dirB = join(rootB, "2026-09");
+    rmSync(rootB, { recursive: true, force: true });
+    mkdirSync(join(dirB, "_kv"), { recursive: true });
+    const uB = "aaaa-bbbb", pwB = "already-here-b", ckB = await C7.contentKey(KEY7, uB);
+    writeFileSync(join(dirB, "_kv", uB + ".json"), JSON.stringify({ u: uB, issued: "2026-09-15",
+      verifier: await C7.makeVerifier(pwB), wrap: await C7.wrapKey(pwB, ckB),
+      wrapMaster: await C7.wrapKey(MASTER7, ckB), env: await C7.encryptWith(ckB, "{}") }), "utf8");
+    writeFileSync(join(rootB, "_secrets.json"), JSON.stringify({ key: KEY7 }), "utf8");
+    writeFileSync(join(rootB, "_users.json"), JSON.stringify({ "CS6-BS": uB, "CF5-WM": "27a4-gkgw" }), "utf8");
+    writeFileSync(join(dirB, "_passwords.json"), JSON.stringify({ "CS6-BS": pwB }), "utf8");
+    try {
+      const didB = await mintAccounts(rootB, { roster: ["CF5-WM", "CS6-BS"] });
+      ok(didB.wrote === 1, "the off-convention fixture mints its one account: " + didB.wrote);
+      const madeB = JSON.parse(readFileSync(join(dirB, "_kv", "27a4-gkgw.json"), "utf8"));
+      ok(madeB.issued === "2026-09-15" && madeB.issues.join() === "2026-09-15",
+        "an issue cut on the 15th mints records dated the 15th, read off its own records rather than assumed: " + JSON.stringify(madeB.issued));
+      ok(JSON.parse(await C7.decryptWith(await C7.contentKey(KEY7, "27a4-gkgw"), madeB.env)).issued === "2026-09-15",
+        "and the bundle inside it says the same, so nothing downstream sees two answers");
+    } finally { rmSync(rootB, { recursive: true, force: true }); }
+
+    /* AND THE FALLBACK IS STILL A DATE. It is reachable: the master is proved against any record
+       carrying a wrapMaster, and a record can carry one while carrying no `issued` at all, so
+       there is a real path on which nothing is there to agree with. An untested fallback in the
+       one field whose blast radius is the whole site is worth eight lines. */
+    const rootC = join(REPO, "test", "tmp", "acct707c");
+    const dirC = join(rootC, "2026-09");
+    rmSync(rootC, { recursive: true, force: true });
+    mkdirSync(join(dirC, "_kv"), { recursive: true });
+    const uC = "aaaa-bbbb", pwC = "already-here-c", ckC = await C7.contentKey(KEY7, uC);
+    writeFileSync(join(dirC, "_kv", uC + ".json"), JSON.stringify({ u: uC,
+      verifier: await C7.makeVerifier(pwC), wrap: await C7.wrapKey(pwC, ckC),
+      wrapMaster: await C7.wrapKey(MASTER7, ckC), env: await C7.encryptWith(ckC, "{}") }), "utf8");
+    writeFileSync(join(rootC, "_secrets.json"), JSON.stringify({ key: KEY7 }), "utf8");
+    writeFileSync(join(rootC, "_users.json"), JSON.stringify({ "CS6-BS": uC, "CF5-WM": "27a4-gkgw" }), "utf8");
+    writeFileSync(join(dirC, "_passwords.json"), JSON.stringify({ "CS6-BS": pwC }), "utf8");
+    try {
+      await mintAccounts(rootC, { roster: ["CF5-WM", "CS6-BS"] });
+      const madeC = JSON.parse(readFileSync(join(dirC, "_kv", "27a4-gkgw.json"), "utf8"));
+      ok(madeC.issued === "2026-09-01",
+        "with no neighbour carrying a date it falls back to the first of the month, which is still a DATE and not the folder: " + JSON.stringify(madeC.issued));
+    } finally { rmSync(rootC, { recursive: true, force: true }); }
 
     /* IT NEVER TOUCHES AN ACCOUNT THAT EXISTS. */
     const untouched = JSON.parse(readFileSync(join(dir7, "_kv", uHave + ".json"), "utf8"));
@@ -15115,11 +15223,11 @@ await (async () => {
   /* ---- THE MORNING NUDGE, DRIVEN. It tested two things and a refund was neither. ---- */
   const deskW8 = (await import("../src/worker.js")).default;
   const realFetch8 = globalThis.fetch, realLog8 = console.log;
-  const mkD1 = (refundDocs) => ({
+  const mkD1 = (refundDocs, countOn) => ({
     prepare(q) {
       const run = async () => ({});
       const first = async () => {
-        if (/COUNT_ON/.test(q)) return { doc: JSON.stringify({ salt: "2026-09-18" }) };
+        if (/COUNT_ON/.test(q)) return { doc: JSON.stringify({ salt: countOn || "2026-09-18" }) };
         if (/COUNT\(\*\)/.test(q)) return { n: 0 };
         return null;
       };
@@ -15127,7 +15235,7 @@ await (async () => {
       return { bind: () => ({ all, first, run }), all, first, run };
     }
   });
-  const tick8 = async (refundDocs) => {
+  const tick8 = async (refundDocs, countOn, at) => {
     const sent = [];
     globalThis.fetch = async (u) => { sent.push(String(u)); return new Response("", { status: 201 }); };
     const logs = []; console.log = (...a) => logs.push(a.join(" "));
@@ -15135,16 +15243,29 @@ await (async () => {
       const kv8 = new KV();
       await kv8.put("push:aa11", JSON.stringify({ endpoint: "https://push.example/his-phone", at: "2026-09-18T00:00:00Z" }));
       const kp8 = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
-      const env8 = { SALT_QUEUE: kv8, SALT_LEDGER: mkD1(refundDocs), VAPID_PUBLIC_KEY: "pub",
+      const env8 = { SALT_QUEUE: kv8, SALT_LEDGER: mkD1(refundDocs, countOn), VAPID_PUBLIC_KEY: "pub",
         VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kp8.privateKey)),
         VAPID_SUBJECT: "mailto:a@b.test" };
       const waits = [];
-      await deskW8.scheduled({ cron: "0 1 * * *", scheduledTime: Date.parse("2026-09-18T01:00:00Z") }, env8, { waitUntil: (p) => waits.push(p) });
+      await deskW8.scheduled({ cron: "0 1 * * *", scheduledTime: Date.parse(at || "2026-09-18T01:00:00Z") }, env8, { waitUntil: (p) => waits.push(p) });
       await Promise.all(waits);
     } finally { globalThis.fetch = realFetch8; console.log = realLog8; }
     return { sent, logs };
   };
-  const quiet = await tick8([{ doc: JSON.stringify({ party: "CZ4-MK", amount: 20, since: "2026-08-26", paidOn: "2026-09-01" }) }]);
+  /* THE DAY IS THE CRON'S OWN, NOT THE DAY THE SUITE IS RUN ON. Until 19 Sep 2026 the stale-count
+     leg read the wall clock, so this whole block asserted nothing after midnight: it pinned a
+     scheduled time, the code ignored it, and the two assertions below flipped from green to red
+     with no commit in between. Both ticks here carry the SAME count and differ only in when the
+     cron fired, so neither can pass by being run on the right day. */
+  const paidOnly = [{ doc: JSON.stringify({ party: "CZ4-MK", amount: 20, since: "2026-08-26", paidOn: "2026-09-01" }) }];
+  const onTheDay = await tick8(paidOnly, "2026-09-18", "2026-09-18T01:00:00Z");
+  const dayAfter = await tick8(paidOnly, "2026-09-18", "2026-09-19T01:00:00Z");
+  ok(onTheDay.logs.some((l) => /nothing worth saying/.test(l)),
+    "a count taken on the morning the cron fires is not stale, whatever day the suite is run on");
+  ok(dayAfter.sent.length === 1,
+    "and the same count a day later IS stale, so the day being read is the cron's own and not the clock's");
+
+  const quiet = await tick8(paidOnly);
   ok(quiet.sent.length === 0 && quiet.logs.some((l) => /nothing worth saying/.test(l)),
     "a refund already paid wakes nobody: the nudge still says nothing on a quiet morning");
   const loud = await tick8([{ doc: JSON.stringify({ party: "CZ4-MK", amount: 20, since: "2026-08-26" }) }]);

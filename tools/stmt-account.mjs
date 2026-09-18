@@ -78,6 +78,30 @@ export async function mintAccounts(root, opts = {}) {
   }
   if (!proved) throw new Error("the master given does not unwrap any record in " + issue + ": nothing was written");
 
+  /* THE ISSUE'S DATE IS NOT THE FOLDER'S NAME, and a record carries the DATE. newestIssue answers
+     "2026-09", because that is what names the directory; every record make_statements writes
+     carries "2026-09-01", because makeStatements is handed the issue DATE and stamps that.
+     Stamping the folder here would be invisible on the record itself and loud everywhere else:
+     tools/make_statements.mjs sorts _kv BY FILENAME, tools/stmt-publish.mjs takes the store's
+     `issue` key off records[0].issued, and a username that sorts first would therefore publish
+     "2026-09" as the live issue. `storedIssue !== issued` then reads as a NEW ISSUE and clears
+     every attempt counter, and stmt/worker.js keys each sent tick as `sent:<issue>:<username>`,
+     so every statement he has already sent would read as never sent.
+     IT IS TAKEN FROM THE RECORDS ALREADY THERE rather than computed, so a minted record agrees
+     with its neighbours by construction, whatever the convention turns out to be; the first of
+     the month is only the fallback for an issue that has no records yet to agree with. */
+  const issueDate = (() => {
+    const seen = {};
+    for (const u of kvNames) {
+      try {
+        const d = JSON.parse(readFileSync(join(kvDir, u + ".json"), "utf8")).issued;
+        if (d) seen[d] = (seen[d] || 0) + 1;
+      } catch (e) { /* an unreadable record decides nothing */ }
+    }
+    const best = Object.keys(seen).sort((a, b) => seen[b] - seen[a])[0];
+    return best || issue + "-01";
+  })();
+
   const usersFile = join(here, "_users.json");
   const users = existsSync(usersFile) ? JSON.parse(readFileSync(usersFile, "utf8")) : {};
   /* the roster may be handed in, so the checks can pin a small one rather than mint against the
@@ -112,14 +136,14 @@ export async function mintAccounts(root, opts = {}) {
       /* THE BUNDLE IS THEIR POSITION AS IT STANDS, one statement dated today. A brand-new account
          has no issued history, and an empty bundle would open on a page with nothing on it. */
       const doc = liveStatement(code, now);
-      const bundle = { v: 1, issued: issue, statements: doc ? [{ issued: issue, label: issued, body: doc.body || "" }] : [] };
-      const rec = { u, issued: issue, issues: [issue],
+      const bundle = { v: 1, issued: issueDate, statements: doc ? [{ issued: issueDate, label: issued, body: doc.body || "" }] : [] };
+      const rec = { u, issued: issueDate, issues: [issueDate],
         verifier: await makeVerifier(pw), wrap: await wrapKey(pw, ck),
         wrapMaster: await wrapKey(master, ck), pwMaster: await encryptText(master, pw),
         env: await encryptWith(ck, JSON.stringify(bundle)) };
       out.minted.push(code + " (" + u + ")" + (doc ? "" : ", with no rows on the book yet"));
       if (!check) {
-        writeFileSync(join(kvDir, u + ".json"), JSON.stringify(rec), "utf8");
+        writeFileSync(join(kvDir, u + ".json"), JSON.stringify(rec) + "\n", "utf8");
         passwords[code] = pw;
         out.wrote++;
       }

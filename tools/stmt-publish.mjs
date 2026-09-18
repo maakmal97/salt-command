@@ -339,7 +339,13 @@ async function main() {
   writeFileSync(delFile, JSON.stringify(plan.deletes));
   const usersFile = join(outDir, "users.json");
   writeFileSync(usersFile, JSON.stringify(plan.users));
-  console.log((dry ? "would publish " : "publishing ") + (plan.puts.length - 1) + " records from " + plan.latest
+  /* COUNT THE RECORDS, NOT THE KEYS. This said puts.length - 1, which was right when `issue` was
+     the only key in the plan that is not a record; `sheet` and `roster` joined it and the line has
+     over-reported by two ever since, saying 39 where it publishes 37. It is the line he reads to
+     confirm that an account he minted actually went out, so it is the one number here that has to
+     be the real one. */
+  const recordCount = plan.puts.filter((x) => String(x.key || "").startsWith("u:")).length;
+  console.log((dry ? "would publish " : "publishing ") + recordCount + " records from " + plan.latest
     + (key ? ", " + plan.live + " with a live statement, " + plan.priced + " with a price list" : ", NO live statements: STMT_KEY is not set")
     + (plan.newIssue ? ", a new issue (" + plan.issued + "), attempt counters cleared" : ""));
   if (plan.unmatched.length) console.log("::warning::no code in _users.json for: " + plan.unmatched.join(", "));
