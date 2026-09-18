@@ -264,7 +264,12 @@ untouched.
 
 Codes by default; names only after a password. `tools/seed-vault.mjs` encrypts `salt_bio.json`
 with `$env:SALT_VAULT_PASS` (never a file) into the envelope `vaultDecrypt` expects and pushes
-the ciphertext to KV; the desk auto-locks on `visibilitychange`. **A name and ID is committed
+the ciphertext to KV; the desk auto-locks on `visibilitychange`. **AN ID THAT HAS A USERNAME BUT NO ACCOUNT CANNOT SIGN IN** (v707, his instruction of 18 Sep 2026):
+the fold mints a USERNAME at registration and stops, and the record behind it is made on the laptop
+at an issue, so anybody added between issues had an address and nothing behind it. `node
+tools/stmt-account.mjs --mint` mints the record; it refuses without a master that unwraps an
+existing record, never touches an account that exists, and the publish names who is stuck on every
+run. **A name and ID is committed
 every time, like an approved row** (05 Sep 2026): Add ID on the phone files the name and the
 place into the vault, encrypted on the device, before the ID is queued; the laptop pulls them
 down with `node tools/pull-vault.mjs` before any seed, and the vault's spelling wins where it
@@ -452,7 +457,8 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
 | `stmt/qr.js` | GENERATED from `engine/qr.mjs` by `tools/qrsync.mjs --sync`; gate and CI fail on drift. Never edit it; `stmt/` may import only a sibling |
 | `stmt/owner.js` | The master account's script, spliced into the page on `/all` alone; never in a customer's |
 | `stmt/send.js` | The one copy of the words a customer is sent; `tools/stmt-send.mjs` imports them |
-| `tools/stmt-seal.mjs` | Laptop only: seals an issue's passwords under the master, proving each against its own verifier |
+| `tools/stmt-seal.mjs` | Laptop only: seals an issue's passwords under the master, proving each against its own verifier; where a code was re-keyed after the issue it pairs by PROOF, trying only passwords whose code has left the roster (v705) |
+| `tools/stmt-account.mjs` | Laptop only: mints a full account for a roster code that has a username and no record, which the fold never did (v707). Refuses without a master that unwraps an existing record, never touches an account that exists, and skips a bucket and a supplier. The publish names who is stuck on every run |
 | `tools/rid.mjs` | Stable `rid` per ledger row; `nextRid` is the one minting place |
 | `tools/changelog.mjs` | Prepends `evolution[0]` to `master/changelog.json`; never rewrites |
 | `test/verify.mjs` | ~2,130 assertions over 138 sections, no network or browser; add one per behavioural change, and **prove it red by mutation before trusting its green** |

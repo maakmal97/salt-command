@@ -252,6 +252,23 @@ async function main() {
 
   /* v691: the report card is in the plan (planPublish puts it); this only says so out loud */
   if (Object.keys(cards).length) console.log("and " + Object.keys(cards).length + " associate(s) carry their own card, sealed on their own record");
+  /* v707: A ROSTER CODE WITH NO ACCOUNT CANNOT SIGN IN, and nothing said so. The fold mints a
+     USERNAME when an ID is registered and stops; the record behind it is made on the laptop at an
+     issue, so anybody added between issues had an address and nothing behind it. Two were in that
+     state when this was written, silently. This run cannot mint one (the content key and the master
+     are laptop-only, deliberately), so it says who, on every run, and names the one command. */
+  try {
+    const { accountGaps } = await import("./stmt-account.mjs");
+    const bookNow2 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const rosterNow = (bookNow2.state && bookNow2.state.roster) || bookNow2.roster || [];
+    const usersNow = JSON.parse(readFileSync(join(root, "_users.json"), "utf8"));
+    const gaps = accountGaps(rosterNow, usersNow, plan.puts.filter((x) => x.key.startsWith("u:")).map((x) => x.key.slice(2)));
+    const stuck = gaps.noAccount.map((x) => x.code).concat(gaps.noUsername);
+    if (stuck.length) {
+      console.log("::warning::" + stuck.length + " roster code(s) have no account and cannot sign in: " + stuck.join(", ")
+        + ". On the laptop: node tools/stmt-account.mjs --mint");
+    }
+  } catch (e) { console.log("::warning::the account gap could not be read: " + e.message); }
   if (assoc) {
     console.log("and the associates' report card: " + (assoc.products[0] ? assoc.products[0].rows.length : 0)
       + " associates over " + assoc.products.length + " book(s)");

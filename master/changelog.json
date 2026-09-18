@@ -1,5 +1,17 @@
 [
  {
+  "v": "v707",
+  "d": "18 Sep 2026",
+  "t": "AN ID WITH A USERNAME AND NO ACCOUNT CANNOT SIGN IN, AND NOW SOMETHING MINTS ONE AND SOMETHING SAYS SO",
+  "n": [
+   "<b>HIS INSTRUCTION OF 18 SEP 2026:</b> an Add ID or an Amend ID is applicable to the accounts available for sign in, and their password is minted properly. The fold mints a USERNAME when an ID is registered and stops there. A username is an address; an account is a record with a verifier, a wrap of the content key and a sealed bundle, and those were made only on the laptop at a monthly issue, because that is where the content key lives. So anybody added between issues had an address and nothing behind it and could not sign in at all. TWO WERE IN THAT STATE ON THE LIVE BOOK, silently, and one more had no username at all.",
+   "<b>THE TOOL MINTS THE WHOLE ACCOUNT</b>, and only for a code that has none: a password, the verifier it answers, the content key wrapped under it, the same key wrapped under the master, the password sealed under the master so Send can hand it over from his phone, and a bundle holding their position as it stands. A code with no username gets one first, exactly as the fold mints one. It runs on the laptop and nowhere else, for the same reason the seal tool does, and everything it writes is a committed file, so the next publish hands them out with no further step.",
+   "<b>WHAT IT WILL NOT DO.</b> It never touches an account that exists: re-issuing somebody's password is the seal tool's business and would lock out a customer who already has one. It never mints for a bucket, which is not its own person, nor for a supplier, which has no statement. And it refuses to start unless the master it is given unwraps a record that already exists, because a wrapMaster written under the wrong passphrase opens nothing and looks perfectly well formed.",
+   "<b>AND THE PUBLISH SAYS WHO IS STUCK, ON EVERY RUN.</b> It cannot mint one itself, deliberately: the content key and the master are laptop-only. So it names them and names the one command, which is the half of this that can never be silent again.",
+   "<b>THE CHECKS.</b> A new section of 16 assertions: who is stuck read off records alone, a bucket and a supplier never counted, an existing account left alone, the refusal with no master and the refusal with a master that unwraps nothing, and the minted account driven end to end: the password answers the verifier, unwraps the content key, opens the bundle, and is readable back under the master. Twelve mutations each turned it red, two of them by breaking the account so quietly that only opening it would tell."
+  ]
+ },
+ {
   "v": "v706",
   "d": "18 Sep 2026",
   "t": "AN ASSOCIATE SEES THEIR OWN CARD, BY MONTH, FROM THE START, AND NO SHARE OF HIS BOOK",

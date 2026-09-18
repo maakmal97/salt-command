@@ -14971,6 +14971,97 @@ await (async () => {
   ok(/min-height:var\(--salt-tap\);display:inline-flex/.test(page6) && !/cursor:pointer;min-height:auto/.test(page6),
     "and every month pill is a real tap target now, swept across the class rather than fixed on the one new strip");
 })();
+section("v707: an ID with no account cannot sign in, and now something mints one and something says so");
+await (async () => {
+  /* HIS INSTRUCTION OF 18 SEP 2026: "an add ID, or amend ID, is applicable to the accounts available
+     for sign in. Their password will be minted properly."
+     WHAT WAS MISSING. The fold mints a USERNAME when an ID is registered and stops there. A username
+     is an address; an account is a record with a verifier, a wrap of the content key and a sealed
+     bundle, and those are made on the laptop at an issue, because that is where the content key
+     lives. So anybody added between issues had an address and nothing behind it and could not sign
+     in at all. Two were in that state on the live book when this was written, silently. */
+  const { accountGaps, mintAccounts } = await import("../tools/stmt-account.mjs");
+  const C7 = await import("../tools/stmt-crypto.mjs");
+
+  /* ---- who is stuck, on records alone ---- */
+  const users7 = { "CF5-WM": "27a4-gkgw", "CE5-SA": "yjeb-7zey", "CS6-BS": "aaaa-bbbb", "CS6-BS-R": "cccc-dddd" };
+  const g7 = accountGaps(["CF5-WM", "CE5-SA", "CS6-BS", "CS6-BS-R", "SA5-BTR", "CB7-BJ"], users7, ["aaaa-bbbb"]);
+  ok(g7.noAccount.length === 2 && g7.noAccount.map((x) => x.code).join(",") === "CF5-WM,CE5-SA",
+    "a code with a username and no record is one that cannot sign in: " + JSON.stringify(g7.noAccount.map((x) => x.code)));
+  ok(g7.noUsername.join(",") === "CB7-BJ", "and one with no username at all is stuck a step earlier");
+  ok(g7.skipped.some((x) => /CS6-BS-R.*bucket/.test(x)) && g7.skipped.some((x) => /SA5-BTR.*supplier/.test(x)),
+    "a bucket is not its own person and a supplier has no statement, so neither is ever counted as stuck: " + JSON.stringify(g7.skipped));
+  ok(!g7.noAccount.some((x) => x.code === "CS6-BS"), "and an account that exists is left entirely alone");
+
+  /* ---- the mint, driven on a fixture issue ---- */
+  const root7 = join(REPO, "test", "tmp", "acct707");
+  const dir7 = join(root7, "2026-09");
+  rmSync(root7, { recursive: true, force: true });
+  mkdirSync(join(dir7, "_kv"), { recursive: true });
+  const MASTER7 = "the-master-707", KEY7 = "the-content-key-707";
+  /* one account that already exists, so the master has something to be proved against */
+  const uHave = "aaaa-bbbb", pwHave = "already-here";
+  const ckHave = await C7.contentKey(KEY7, uHave);
+  writeFileSync(join(dir7, "_kv", uHave + ".json"), JSON.stringify({ u: uHave, issued: "2026-09",
+    verifier: await C7.makeVerifier(pwHave), wrap: await C7.wrapKey(pwHave, ckHave),
+    wrapMaster: await C7.wrapKey(MASTER7, ckHave), env: await C7.encryptWith(ckHave, "{}") }), "utf8");
+  writeFileSync(join(root7, "_secrets.json"), JSON.stringify({ key: KEY7 }), "utf8");
+  writeFileSync(join(root7, "_users.json"), JSON.stringify({ "CS6-BS": uHave, "CF5-WM": "27a4-gkgw" }), "utf8");
+  writeFileSync(join(dir7, "_passwords.json"), JSON.stringify({ "CS6-BS": pwHave }), "utf8");
+
+  const before7 = process.env.STMT_MASTER;
+  try {
+    /* NO MASTER, NO WRITE: a password nobody can hand over is not an account. */
+    delete process.env.STMT_MASTER;
+    let refused = false;
+    try { await mintAccounts(root7, { check: true, roster: ["CF5-WM"] }); } catch (e) { refused = /STMT_MASTER/.test(String(e.message)); }
+    ok(refused, "with no master it refuses outright, because a password nobody can hand over is not an account");
+    /* A MASTER THAT OPENS NOTHING IS REFUSED TOO. */
+    process.env.STMT_MASTER = "not-the-master";
+    let wrong = false;
+    try { await mintAccounts(root7, { check: true, roster: ["CF5-WM"] }); } catch (e) { wrong = /does not unwrap/.test(String(e.message)); }
+    ok(wrong, "and a master that unwraps no existing record is refused, so a wrapMaster it wrote could never open anything");
+
+    process.env.STMT_MASTER = MASTER7;
+    const ROSTER7 = ["CS6-BS", "CF5-WM", "CS6-BS-R", "SA5-BTR"];
+    const dry7 = await mintAccounts(root7, { check: true, roster: ROSTER7 });
+    ok(dry7.minted.length === 1 && /CF5-WM/.test(dry7.minted[0]) && dry7.wrote === 0,
+      "a check says who it would mint and writes nothing: " + JSON.stringify(dry7.minted));
+    const kvBefore = readdirSync(join(dir7, "_kv")).length;
+    const did7 = await mintAccounts(root7, { roster: ROSTER7 });
+    ok(did7.wrote === 1 && readdirSync(join(dir7, "_kv")).length === kvBefore + 1,
+      "and the mint writes one record per account, into the newest issue: " + did7.wrote);
+
+    /* THE ACCOUNT IT MADE ACTUALLY OPENS. */
+    const made = JSON.parse(readFileSync(join(dir7, "_kv", "27a4-gkgw.json"), "utf8"));
+    const pwNew = JSON.parse(readFileSync(join(dir7, "_passwords.json"), "utf8"))["CF5-WM"];
+    ok(!!pwNew && await C7.checkVerifier(pwNew, made.verifier),
+      "the password it recorded answers the verifier it wrote, which is what signing in tests");
+    const ckNew = await C7.unwrapKey(pwNew, made.wrap);
+    ok(!!ckNew, "and the password unwraps the content key, which is what opens the statement");
+    ok((await C7.decryptText(MASTER7, made.pwMaster)) === pwNew,
+      "the password is sealed under the master too, so Send can hand it over from his phone without the laptop");
+    const viaMaster = await C7.unwrapKey(MASTER7, made.wrapMaster);
+    ok(!!viaMaster, "and the master unwraps the content key, so his override opens it as it opens every other account");
+    ok(JSON.parse(await C7.decryptWith(ckNew, made.env)).v === 1,
+      "the bundle it sealed opens under that key and is the shape every other bundle is");
+
+    /* IT NEVER TOUCHES AN ACCOUNT THAT EXISTS. */
+    const untouched = JSON.parse(readFileSync(join(dir7, "_kv", uHave + ".json"), "utf8"));
+    ok(await C7.checkVerifier(pwHave, untouched.verifier) && !untouched.pwMaster,
+      "an account that already exists is left exactly as it was: re-issuing a password is not this tool's business");
+    const again7 = await mintAccounts(root7, { check: true, roster: ROSTER7 });
+    ok(again7.minted.length === 0, "and a second run finds nothing to do, because the gap is closed");
+  } finally {
+    if (before7 === undefined) delete process.env.STMT_MASTER; else process.env.STMT_MASTER = before7;
+    rmSync(root7, { recursive: true, force: true });
+  }
+
+  /* ---- and the publish says so on every run, because it cannot mint one itself ---- */
+  const PUB7 = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");
+  ok(/no account and cannot sign in/.test(PUB7) && /node tools\/stmt-account\.mjs --mint/.test(PUB7),
+    "the publish names who is stuck and the one command that fixes it, on every run, so this can never be silent again");
+})();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */
