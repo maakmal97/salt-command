@@ -725,7 +725,10 @@ export default {
     if (p === "/manifest.webmanifest") {
       if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
       const mf = {
-        name: "Statement of account", short_name: "Statement", start_url: "./", scope: "./",
+        /* v695, HIS INSTRUCTION OF 18 SEP 2026: the icon on his customers' home screens says
+           Order Salt. It is the one place a name is needed and it is not the desk's: the desk is
+           Salt Command, which never appears here, and nothing else on this site names anything. */
+        name: "Order Salt", short_name: "Order Salt", start_url: "./", scope: "./",
         display: "standalone", orientation: "portrait", background_color: "#05080a", theme_color: "#05080a",
         icons: [{ src: "icon.png", sizes: ICON_SIZE + "x" + ICON_SIZE, type: "image/png", purpose: "any maskable" }]
       };

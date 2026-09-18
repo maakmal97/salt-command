@@ -74,6 +74,14 @@ select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none;color-scheme
   background-image:linear-gradient(45deg,transparent 50%,var(--salt-brass) 50%),linear-gradient(135deg,var(--salt-brass) 50%,transparent 50%);
   background-position:calc(100% - 22px) calc(50% - 2px),calc(100% - 17px) calc(50% - 2px)}
 select.fld option{background:var(--salt-well);color:var(--salt-text)}
+/* v695: a product is a mark. Brass, hairline, and it sits on the baseline of whatever it is beside. */
+.psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}
+h3.pmark{margin:0 0 4px;line-height:1}
+/* on a brass button the mark takes the button's own ink: a brass cube on brass is no cube at all */
+.seg button .psym{vertical-align:-0.28em;color:inherit}
+.pwith{display:inline-flex;align-items:center;gap:7px}
+/* read aloud, never drawn: the shape's word, so a mark in a sentence is not a hole */
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 /* v694: the order's own figures, typed in the same well as everything else */
 .amt{display:flex;gap:8px;align-items:center;margin-top:10px}
 .amt .fld{flex:1 1 0;min-width:0;text-align:right}
@@ -273,6 +281,32 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&am
 
    A ONE-TIER PRODUCT SAYS SO. Oil has no Tier 1, so a Tier 1 link shows oil at its only price; the
    line says that rather than leaving him to wonder whether the guest was quoted a discount. */
+/* ---- THE PRODUCT IS A MARK, NOT A WORD (v695, his instruction of 18 Sep 2026) ---------------
+ * "The products are only written as a symbol, the golden cube outline as salt and another one,
+ * golden water droplet outline as well for oil." So nothing customer-facing names a product: a
+ * cube outline for the one and a droplet outline for the other, both in brass, both drawn here
+ * and nothing loaded. It is the same rule as the tier's mark (v659): the customer holds the
+ * thing, and the page shows the thing rather than saying what it is called.
+ *
+ * A PRODUCT WITH NO MARK GETS THE RING, not a blank: a third product added to the book without a
+ * symbol would otherwise draw nothing at all, which reads as a fault rather than as an omission. */
+export const PSYM = {
+  salt: 'M12 2.6 L20.6 7.3 L20.6 16.7 L12 21.4 L3.4 16.7 L3.4 7.3 Z M12 12 L20.6 7.3 M12 12 L3.4 7.3 M12 12 L12 21.4',
+  oil: 'M12 2.4 C12 2.4 19.2 10.6 19.2 15 A7.2 7.2 0 0 1 4.8 15 C4.8 10.6 12 2.4 12 2.4 Z'
+};
+const RING = 'M12 4.2 A7.8 7.8 0 1 1 11.99 4.2 Z';
+/* A CONTROL STILL NEEDS A NAME, and the name is the SHAPE, never the product. A button holding
+   only a decorative mark is unusable with a screen reader; an aria-label naming the product would
+   put the word back for exactly the readers who cannot see that it was taken away. The shape is
+   what is on the screen, so saying it aloud gives away no more than looking does. */
+export const PSHAPE = { salt: "Cube", oil: "Droplet", _: "Ring" };
+/** The mark for a product, as SVG source. `px` is the drawn size; the stroke stays hairline. */
+export function psymSvg(product, px) {
+  const d = PSYM[String(product || "").toLowerCase()] || RING;
+  return '<svg class="psym" viewBox="0 0 24 24" width="' + px + '" height="' + px + '" aria-hidden="true" focusable="false">'
+    + '<path d="' + d + '" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+}
+
 export function boardPage(guest, nonce) {
   const b = (guest && guest.prices) || {};
   const products = Array.isArray(b.products) ? b.products : [];
@@ -280,7 +314,7 @@ export function boardPage(guest, nonce) {
   const rm = (n) => "RM " + Number(n || 0).toLocaleString("en-MY", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   const body = products.length
     ? products.map((p) => '<div class="pane">'
-        + "<h3>" + esc(p.name) + "</h3>"
+        + '<h3 class="pmark" aria-label="' + esc(PSHAPE[p.product] || PSHAPE._) + '">' + psymSvg(p.product, 30) + "</h3>"
         + '<p class="sub2">' + esc(p.tierName || "")
           + (p.fellBack ? ", the only price for this product" : "")
           + "</p>"
@@ -327,8 +361,8 @@ export function landingPage(user, nonce, owner) {
     + '<meta name="apple-mobile-web-app-capable" content="yes">'
     + '<meta name="mobile-web-app-capable" content="yes">'
     + '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'
-    + '<meta name="apple-mobile-web-app-title" content="Statement">'
-    + "<title>Statement of account</title>"
+    + '<meta name="apple-mobile-web-app-title" content="Order Salt">'
+    + "<title>Order Salt</title>"
     + '<style nonce="' + nonce + '">' + STATEMENT_CSS + PAGE_CSS + "</style></head><body>"
     + (owner
       ? '<div id="roster" class="gate">'
@@ -411,6 +445,7 @@ export function landingPage(user, nonce, owner) {
        the page is running as one. Three steps, the two phones, and nothing to tap. */
     + '<div class="inst" id="inst" hidden>'
     + "<h2>Keep it on your phone</h2>"
+    + '<p class="sub2">It is saved as <b>Order Salt</b>, and opens straight here.</p>'
     + '<ol><li><b>iPhone:</b> tap Share, then Add to Home Screen, then Add.</li>'
     + "<li><b>Android:</b> tap the three dots, then Install app or Add to Home screen.</li>"
     + "<li>Open it from that icon after this. It signs you in and tells you when an order moves.</li></ol>"
@@ -433,6 +468,9 @@ export function landingPage(user, nonce, owner) {
     + '<script nonce="' + nonce + '">'
     + CLIENT_JS.replace(/__POLL__/g, String(POLL_MS))
       .replace("__PAY_SITE__", JSON.stringify(PAY_SITE)).replace("__PAY_ACCOUNTS__", JSON.stringify(PAY_ACCOUNTS))
+      /* v695: the product marks, so the page can draw one wherever it would have written a name */
+      .replace("__PSYM__", JSON.stringify(Object.assign({ _: RING }, PSYM)))
+      .replace("__PSHAPE__", JSON.stringify(PSHAPE))
       /* "<" is escaped because this one carries the master passphrase, and a "</script>" inside a
          string literal ends the block wherever it appears: the browser closes the tag first and
          reads the rest of the passphrase as page text. */
@@ -508,6 +546,28 @@ const CLIENT_JS = `
   function boxesOf(id){ return SEG.filter(function(x){ return idOf(x)===id; }); }
   function group(b){ return boxesOf(idOf(b)); }
   function clean(t){ return String(t||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+  /* v695: A PRODUCT IS A MARK, NOT A WORD (his instruction, 18 Sep 2026). Drawn, never written,
+     and never labelled either: naming it in aria would put the word back for half the readers. */
+  var PSYM=__PSYM__, PSHAPE=__PSHAPE__;
+  function pshape(product){ return PSHAPE[String(product||'').toLowerCase()]||PSHAPE._; }
+  function psym(product,px){
+    var NS='http://www.w3.org/2000/svg';
+    var svg=document.createElementNS(NS,'svg');
+    svg.setAttribute('viewBox','0 0 24 24'); svg.setAttribute('width',px); svg.setAttribute('height',px);
+    svg.setAttribute('class','psym'); svg.setAttribute('aria-hidden','true'); svg.setAttribute('focusable','false');
+    var d=document.createElementNS(NS,'path');
+    d.setAttribute('d',PSYM[String(product||'').toLowerCase()]||PSYM._);
+    d.setAttribute('fill','none'); d.setAttribute('stroke','currentColor'); d.setAttribute('stroke-width','1.4');
+    d.setAttribute('stroke-linejoin','round'); d.setAttribute('stroke-linecap','round');
+    svg.appendChild(d); return svg;
+  }
+  /* a size and its mark, as one phrase: "2.5 unit" then the cube */
+  function withMark(product,text,px){
+    var w=el('span','pwith'); w.appendChild(document.createTextNode(text));
+    w.appendChild(psym(product,px||18));
+    var sr=el('span','sr',pshape(product)); w.appendChild(sr);
+    return w;
+  }
   function sync(b){
     var parts=group(b).map(function(x){ return x.value; });
     document.getElementById(idOf(b)).value=parts.join('')?parts.join('-'):'';
@@ -774,7 +834,7 @@ const CLIENT_JS = `
     if(prices.since) pPrices.appendChild(el('p','sub2','Buying with us since '+monthOf(prices.since)+'.'));
     prices.products.forEach(function(p){
       var pane=el('div','pane');
-      var h3=el('h3',null,p.name);
+      var h3=el('h3','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
       /* ============ HIS INSTRUCTION, 16 SEP 2026: THE LABEL IS A VERY SUBTLE MARK ============
          A symbol and a colour for each level, beside the product it belongs to, because a customer
          holds a level per product. THE LEVEL IS NEVER NAMED HERE, which is the whole of "subtle":
@@ -809,7 +869,7 @@ const CLIENT_JS = `
     /* his instruction of 15 Sep 2026: a product with no tier set is not priced, and says so */
     soon.forEach(function(p){
       var pane=el('div','pane');
-      pane.appendChild(el('h3',null,p.name));
+      var sh=el('h3','pmark'); sh.setAttribute('aria-label',pshape(p.product)); sh.appendChild(psym(p.product,28)); pane.appendChild(sh);
       pane.appendChild(el('p','sub2','Price coming soon.'));
       pPrices.appendChild(pane);
     });
@@ -844,14 +904,24 @@ const CLIENT_JS = `
       var P=prices.products.filter(function(x){return x.product===draft.product;})[0]||prices.products[0];
       if(!draft.q||!P.sizes.some(function(x){return String(x.q)===String(draft.q);})) draft.q=P.sizes[0].q;
       if(!draft.mode) draft.mode='collect';
-      var row=el('div','row2');
-      var sp=el('select','fld'); sp.setAttribute('aria-label','Product');
-      prices.products.forEach(function(x){ var o=el('option',null,x.name); o.value=x.product; if(x.product===draft.product)o.selected=true; sp.appendChild(o); });
-      sp.addEventListener('change',function(){ draft.product=sp.value; draft.q=null; drawOrder(); });
+      /* v695: the product was a dropdown, and an option carries text and nothing else, so a mark
+         could not go in one. Two products are a segment anyway, which is one tap rather than two. */
+      if(prices.products.length>1){
+        var pseg=el('div','seg');
+        prices.products.forEach(function(x){
+          var b=el('button',x.product===draft.product?'on':''); b.type='button';
+          b.setAttribute('aria-label',pshape(x.product));
+          b.setAttribute('aria-pressed',x.product===draft.product?'true':'false');
+          b.appendChild(psym(x.product,22));
+          b.addEventListener('click',function(){ draft.product=x.product; draft.q=null; draft.confirm=false; drawOrder(); });
+          pseg.appendChild(b);
+        });
+        form.appendChild(pseg);
+      }
       var sq=el('select','fld'); sq.setAttribute('aria-label','Size');
       P.sizes.forEach(function(x){ var o=el('option',null,unitsOf(x.q,P.unit)); o.value=String(x.q); if(String(x.q)===String(draft.q))o.selected=true; sq.appendChild(o); });
       sq.addEventListener('change',function(){ draft.q=sq.value; drawOrder(); });
-      row.appendChild(sp); row.appendChild(sq); form.appendChild(row);
+      form.appendChild(sq);
       var seg=el('div','seg');
       [['collect','I will collect'],['deliver','Deliver to me']].forEach(function(m){
         var b=el('button',draft.mode===m[0]?'on':'',m[1]); b.type='button';
@@ -870,7 +940,13 @@ const CLIENT_JS = `
       }
       var qt=quoteFor();
       form.appendChild(el('div','quote',qt?rm(qt.total):''));
-      form.appendChild(el('div','sub2',qt?(unitsOf(qt.q,P.unit)+' of '+P.name.toLowerCase()+' at '+rm(qt.unit)+' per '+(P.unit||'unit')+(draft.mode==='deliver'?'; delivery is added when the order is acknowledged':', to collect')):''));
+      if(qt){
+        var sub=el('div','sub2');
+        sub.appendChild(withMark(P.product,unitsOf(qt.q,P.unit)+' ',18));
+        sub.appendChild(document.createTextNode(' at '+rm(qt.unit)+' per '+(P.unit||'unit')
+          +(draft.mode==='deliver'?'; delivery is added when the order is acknowledged':', to collect')));
+        form.appendChild(sub);
+      } else form.appendChild(el('div','sub2',''));
       var ready=!!qt&&!draft.busy&&(draft.mode!=='deliver'||String(draft.place||'').trim().length>=2);
       /* v694: NOTHING IS PLACED ON ONE TAP (his instruction, 18 Sep 2026). The first tap shows what
          is about to be ordered, in words, and the second places it. Going back keeps the choices. */
@@ -878,12 +954,14 @@ const CLIENT_JS = `
         var cf=el('div','pane'); cf.style.marginTop='14px';
         cf.appendChild(el('h3',null,'Check this over'));
         var ul=el('ul','conf');
-        var rows=[['What',unitsOf(qt.q,P.unit)+' of '+P.name.toLowerCase()],
+        var rows=[['What',withMark(P.product,unitsOf(qt.q,P.unit)+' ',18)],
                   ['How',draft.mode==='deliver'?'Delivered to you':'You collect it'],
                   ['Rate',rm(qt.unit)+' per '+(P.unit||'unit')],
                   ['Goods',rm(qt.total)]];
         if(draft.mode==='deliver'){ rows.splice(2,0,['Where',draft.place.trim()]); rows.push(['Delivery','set when it is acknowledged']); }
-        rows.forEach(function(r){ var li=el('li'); li.appendChild(el('span','k',r[0])); li.appendChild(el('span','v',r[1])); ul.appendChild(li); });
+        rows.forEach(function(r){ var li=el('li'); li.appendChild(el('span','k',r[0]));
+          var v=el('span','v'); if(typeof r[1]==='string') v.textContent=r[1]; else v.appendChild(r[1]);
+          li.appendChild(v); ul.appendChild(li); });
         cf.appendChild(ul);
         var ok2=el('button','btn','Place this order'); ok2.type='button'; ok2.disabled=!!draft.busy;
         ok2.addEventListener('click', async function(){
@@ -940,12 +1018,16 @@ const CLIENT_JS = `
   function orderPane(o){
     var pane=el('div','pane');
     var P=prices&&prices.products&&prices.products.filter(function(x){return x.product===o.product;})[0];
-    var unit=P?P.unit:'unit', name=P?P.name:o.product;
+    var unit=P?P.unit:'unit';
     var due=dueOf(o), moved=+o.moved||0, paid=+o.paid||0, payable=['acknowledged','ready'].indexOf(o.status)>=0;
     pane.appendChild(el('div','state '+o.status, STATE_WORDS[o.status]||o.status));
     pane.appendChild(el('div','quote', rm(o.total+(o.delivery||0))));
     if(o.delivery>0) pane.appendChild(el('div','sub2', rm(o.total)+' for the goods and '+rm(o.delivery)+' delivery'));
-    pane.appendChild(el('div','sub2', unitsOf(o.qty,unit)+' of '+String(name).toLowerCase()+', '+(o.mode==='deliver'?'to be delivered':'to collect')+(o.place?' to '+o.place:'')+', placed '+stamp(o.at)));
+    var line2=el('div','sub2');
+    line2.appendChild(withMark(o.product,unitsOf(o.qty,unit)+' ',18));
+    line2.appendChild(document.createTextNode(', '+(o.mode==='deliver'?'to be delivered':'to collect')
+      +(o.place?' to '+o.place:'')+', placed '+stamp(o.at)));
+    pane.appendChild(line2);
     var line='';
     if(o.status==='placed') line='Waiting to be acknowledged. You will see it change here.';
     else if(payable) line=(o.status==='ready'?(o.mode==='deliver'?'Ready to be delivered. ':'Ready to collect. '):'Acknowledged, and being prepared. ')

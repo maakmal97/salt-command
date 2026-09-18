@@ -1,5 +1,18 @@
 [
  {
+  "v": "v695",
+  "d": "18 Sep 2026",
+  "t": "A PRODUCT IS A MARK AND NEVER A WORD, AND THE APP ON A CUSTOMER'S PHONE IS ORDER SALT",
+  "n": [
+   "<b>HIS INSTRUCTION OF 18 SEP 2026:</b> the name Salt Command appears nowhere a customer can see, and neither does the name of a product if it can be helped. The products are written only as a symbol, a golden cube outline for the one and a golden water droplet outline for the other. So the statements site draws its products now and writes none of them: the price list's headings, the order form's picker, the summary line, the confirmation, every order card and the guest board a stranger opens.",
+   "<b>THE MARKS ARE DRAWN HERE, NOT LOADED.</b> Two paths in one table, stroked in the ink they sit in, so the cube on the chosen brass button is dark and the one beside it is brass. A product with no mark of its own draws a ring rather than nothing, because a blank reads as a fault and an omission should not. The order form's product dropdown became a segment of marks, because an option carries text and no drawing, and two products were a segment anyway.",
+   "<b>A CONTROL THAT HOLDS ONLY A MARK IS NAMED BY ITS SHAPE.</b> Cube, Droplet, Ring, never the product: a button holding a decorative drawing and nothing else cannot be used with a screen reader, and naming the product in its label would put the word back for exactly the readers who cannot see that it was taken away. The shape is what is on the screen, so saying it aloud gives away no more than looking does.",
+   "<b>THE ONE NAME ON THE SITE IS THE APP'S.</b> The icon a customer keeps on a home screen says Order Salt, his own word, and the manifest, the title, the iPhone app title and the install tutorial all say the same one thing. The desk is Salt Command and that name is on none of it.",
+   "<b>AND THE LETTERHEAD IS GONE.</b> The statement documents carried Salt Command as an eyebrow, kept deliberately until now because changing it rewrites every archive; his instruction outranks that. The live statement and every new issue carry no eyebrow at all rather than an empty one. The issues already sealed keep the letterhead they were issued with, because a dated record is not corrected in place.",
+   "<b>THE CHECKS.</b> A new section of 16 assertions: the two paths and the ring, the shape names against the product names, the guest board's words with its stylesheet taken out (every design token is named --salt-something, which is a variable nobody reads), the app's four names, the letterhead, and the page driven in jsdom through the price list, the segment, a product still waiting for its price and a live order's own card, with no product word anywhere on any of it. Sixteen mutations each turned it red. The v651 and v693 sections are restated on the mark and the new name."
+  ]
+ },
+ {
   "v": "v694",
   "d": "18 Sep 2026",
   "t": "AN ORDER REACHES THE LEDGER IN STAGES, AND MONEY AND GOODS MOVE APART",

@@ -306,10 +306,19 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   the page**. They are greeted for the hour off their own device and told the month of their first
   priced order. **No name is used because none exists here** (rule 2); sealing one into a customer's
   own ciphertext is his decision, not a drift.
-- **NO BRAND ON THE CUSTOMER'S PAGE** (his instruction, 10 Sep 2026). Nothing under `stmt/`
-  names Salt Command: not the door, not an order line, not the push banner. The landing lead is
-  two sentences and stays two. The statement DOCUMENTS keep it as a letterhead (`brand:` in
-  `tools/make_statements.mjs`), deliberately: changing that rewrites every archive.
+- **NO BRAND ON THE CUSTOMER'S PAGE, AND NO PRODUCT WORD EITHER** (his instructions of 10 and
+  18 Sep 2026). Nothing under `stmt/` names Salt Command: not the door, not an order line, not the
+  push banner, and since v695 **not the statement's letterhead** (`brand` is null in
+  `tools/make_statements.mjs`; issues already sealed keep the letterhead they were issued with,
+  because a dated record is not corrected in place). The landing lead is two sentences and stays
+  two. **A PRODUCT IS A MARK, NOT A WORD** (v695): a golden cube outline for salt, a golden droplet
+  outline for oil, `PSYM` in `stmt/page.js`, drawn and never loaded; anything else gets the ring, so
+  an omission does not read as a fault. The product select became a segment of marks, because an
+  option carries text and no drawing. A control holding only a mark is named by its **shape**
+  (`PSHAPE`: Cube, Droplet, Ring), never by its product: an aria-label naming it would put the word
+  back for exactly the readers who cannot see it was taken away. **The one name on the site is the
+  app's**: `Order Salt`, his word, in the manifest, the title, the iPhone app title and the
+  tutorial.
 - **A BUCKET IS NOT ITS OWN PERSON** (his ruling of 13 Sep 2026). An associate's `<CODE>-R`
   account is theirs: their statement (live and issued), price list, printed board and the order
   card's usual rate read the code and the bucket together, bucket lines marked *on behalf of a

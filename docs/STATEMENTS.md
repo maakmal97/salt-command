@@ -193,6 +193,23 @@ thing a curious customer could still notice. A custom domain on the statements W
 fix: a `routes` block in `wrangler.stmt.jsonc`, and `SALT_BASE_URL` (or the default at the top
 of `tools/make_statements.mjs`) changed to match before the next issue, since the QR carries it.
 
+**A PRODUCT IS A MARK, NOT A WORD** (v695, his instruction of 18 Sep 2026). "The products are only
+written as a symbol, the golden cube outline as salt and another one, golden water droplet outline"
+for oil. `PSYM` in `stmt/page.js` holds both paths and `psymSvg` draws one; the client script gets
+the table through `__PSYM__` and draws its own with `createElementNS`, so nothing is loaded and the
+mark takes the ink it sits in (on a brass button it is the button's own, or a brass cube on brass is
+no cube at all). A product with no mark of its own draws the **ring** rather than nothing. The order
+form's product dropdown became a **segment of marks**, because an `<option>` carries text and no
+drawing. A control holding only a mark is named by its **shape** (`PSHAPE`: Cube, Droplet, Ring) and
+never by its product, so a screen reader is told what is drawn rather than what it is.
+
+**The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title and the
+install tutorial all say **Order Salt**, his word of 18 Sep 2026: the icon on a customer's home
+screen has to say something, and it is not the desk's name. The statement's letterhead, the last
+place Salt Command appeared on a customer's page, is gone: `brand` is null for the live statement
+and every new issue, and a statement with no brand carries no eyebrow rather than an empty one.
+Issues already sealed keep the letterhead they were issued with until they are re-issued.
+
 ## The price list and the order book (06 Sep 2026, his instruction)
 
 Three things sit behind the one password since v499: the statements, a **price list** for

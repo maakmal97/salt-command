@@ -399,7 +399,12 @@ function stmtDoc(party,rows,o){
       read from the customer side here and not the desk s. */
    statementCss(),
    '</style></head><body><div class="w">',
-   '<p class="eyebrow">'+e(o.brand||'Salt Command')+'</p>',
+   /* v695, HIS INSTRUCTION OF 18 SEP 2026: the name Salt Command appears nowhere a customer can
+      see, and this letterhead was the last place it did. It was kept deliberately until now
+      because changing it rewrites every archive; his instruction outranks that. A statement with
+      no brand carries no eyebrow at all rather than an empty line. The issues already sealed keep
+      the letterhead they were issued with, because a dated record is not corrected in place. */
+   o.brand ? '<p class="eyebrow">'+e(o.brand)+'</p>' : '',
    '<h1>Statement of account</h1>',
    /* the period line has to survive the reader checking it against the rows. Once a
       pending order can sit outside the window, a statement headed "to 02 Aug" can carry
@@ -663,7 +668,7 @@ export function liveStatement(party, now) {
   const kl = at.toLocaleString('en-GB', { timeZone: 'Asia/Kuala_Lumpur', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
   const today = at.toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
   const o = { from: null, to: today, completed: true, open: true, pending: true,
-              dates: true, brand: 'Salt Command', issued: kl.replace(',', ''), live: true };
+              dates: true, brand: null, issued: kl.replace(',', ''), live: true };
   const rows = stmtRows(party, o);
   o.refunds = stmtRefunds(party, o);
   o.recon = stmtRecon(party, rows).filter(R => rows.some(x => x.date === R.order.date));
@@ -786,7 +791,7 @@ export async function makeStatements(outDir, issue, opts) {
        complete position than as a slice, and it removes the brought-forward problem
        entirely. The month is what the folder records, not what the statement covers. */
     const o = { from: null, to: issue, completed: true, open: true, pending: true,
-                dates: true, brand: 'Salt Command', issued: issued, archive: archive };
+                dates: true, brand: null, issued: issued, archive: archive };
     const rows = stmtRows(p, o);
     o.refunds = stmtRefunds(p, o);
     /* only reconcile orders that are actually IN this statement, so the date window

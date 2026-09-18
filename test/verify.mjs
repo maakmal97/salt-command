@@ -12323,16 +12323,25 @@ await (async () => {
       d.getElementById("un").value = u; d.getElementById("pw").value = pass;
       d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
       for (let i = 0; i < 150 && !d.getElementById("pPrices").textContent; i++) await new Promise((r) => setTimeout(r, 100));
-      const sel = d.querySelector("#pOrder select");
-      return { prices: d.getElementById("pPrices").textContent, order: d.getElementById("pOrder").textContent, products: sel ? [...sel.options].map((o) => o.value) : [] };
+      /* v695: the product is a mark, not a word, so it is read off the marks and the segment that
+         holds them rather than off a dropdown of names, which is what this read until then. */
+      return { prices: d.getElementById("pPrices").textContent, order: d.getElementById("pOrder").textContent,
+        marks: [...d.querySelectorAll("#pPrices h3.pmark")].map((h) => h.getAttribute("aria-label")),
+        priced: [...d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector("table")).length,
+        products: [...d.querySelectorAll("#pOrder .seg button[aria-pressed]")].map((b) => b.getAttribute("aria-label")),
+        orderable: !!d.querySelector("#pOrder .quote") };
     } finally { dom.window.close(); }
   };
   const one47 = page47 ? await openPage47(page47) : null;
-  ok(one47 && /Salt/.test(one47.prices) && /Oil\s*Price coming soon\./.test(one47.prices) && JSON.stringify(one47.products) === '["salt"]',
-    "the customer's own page draws oil as price coming soon and offers only salt to order: " + JSON.stringify(one47 && { products: one47.products, prices: one47.prices.slice(-60) }));
+  ok(one47 && JSON.stringify(one47.marks) === '["Cube","Droplet"]' && one47.priced === 1 && /Price coming soon\./.test(one47.prices)
+    && one47.orderable && one47.products.length === 0 && !/\b(salt|oil)\b/i.test(one47.prices + one47.order),
+    "the customer's own page draws each product as its mark, prices one of them, says the other is coming soon, and offers the priced one alone to order with no segment to pick from: "
+      + JSON.stringify(one47 && { marks: one47.marks, priced: one47.priced, products: one47.products }));
   const both47 = page47 ? await openPage47({ ...page47, products: [], soon: [{ product: "salt", name: "Salt" }, { product: "oil", name: "Oil" }] }) : null;
-  ok(both47 && /Salt\s*Price coming soon\./.test(both47.prices) && /Oil\s*Price coming soon\./.test(both47.prices) && /Ordering opens once your prices are set\./.test(both47.order) && both47.products.length === 0,
-    "and with no tier on either product, both read coming soon and ordering waits for the prices to be set: " + JSON.stringify(both47 && both47.order.slice(0, 80)));
+  ok(both47 && JSON.stringify(both47.marks) === '["Cube","Droplet"]' && both47.priced === 0
+    && (both47.prices.match(/Price coming soon\./g) || []).length === 2
+    && /Ordering opens once your prices are set\./.test(both47.order) && !both47.orderable,
+    "and with no tier on either product, both marks read coming soon and ordering waits for the prices to be set: " + JSON.stringify(both47 && both47.order.slice(0, 80)));
 })();
 
 section("v652: a named customer is quoted their own card price everywhere the desk quotes them, the reward cover's gap included");
@@ -13974,8 +13983,10 @@ await (async () => {
   ok(mres.status === 200 && /application\/manifest\+json/.test(mres.headers.get("content-type"))
     && mf.display === "standalone" && mf.start_url === "./" && mf.icons.length === 1 && mf.icons[0].src === "icon.png",
     "the manifest is served, standalone, with one icon");
-  ok(!/salt/i.test(JSON.stringify(mf)) && mf.name === "Statement of account" && mf.short_name === "Statement",
-    "and it names the page, never the business: " + mf.name + " / " + mf.short_name);
+  /* v695, his instruction of 18 Sep 2026: the icon on a customer's home screen says Order Salt.
+     It is the one place on this site a name is needed; the DESK's name never appears. */
+  ok(mf.name === "Order Salt" && mf.short_name === "Order Salt" && !/salt command/i.test(JSON.stringify(mf)),
+    "and it is called Order Salt, never the desk's own name: " + mf.name + " / " + mf.short_name);
   const ires = await stmtWorker.fetch(new Request("https://k7m3p2.example/icon.png"), env93);
   const bytes = Buffer.from(await ires.arrayBuffer());
   ok(ires.status === 200 && ires.headers.get("content-type") === "image/png"
@@ -14232,6 +14243,117 @@ await (async () => {
     && page94.includes("Your order is now complete. Thank you for your loyalty."),
     "the page reviews before it places, asks roughly where it is going, takes the amount paid, and says his closing words");
   ok(!/url\(/.test(page94), "and nothing on the page loads anything, the chevron included");
+})();
+section("v695: a product is a mark and never a word, and the app on his customers' phones is Order Salt");
+await (async () => {
+  /* HIS INSTRUCTION OF 18 SEP 2026: "The name Salt Command should never appear anywhere, and if
+     possible the name Salt, or Oil also does not appear anywhere. The products are only written as
+     a symbol, the golden cube outline as salt and another one, golden water droplet outline" for
+     oil. So the ONE place a name is needed is the icon on a home screen, which he named Order Salt;
+     everywhere else a product is drawn rather than written, and the letterhead that was the last
+     Salt Command on a customer's page is gone. */
+  const P95 = await import("../stmt/page.js");
+  const stmtW95 = (await import("../stmt/worker.js")).default;
+  const { JSDOM: JD95 } = await import("jsdom");
+  const C95 = await import("../tools/stmt-crypto.mjs");
+
+  /* ---- the marks themselves ---- */
+  ok(Object.keys(P95.PSYM).join(",") === "salt,oil" && /^M12 2\.6 L20\.6/.test(P95.PSYM.salt) && /C4\.8 10\.6 12 2\.4/.test(P95.PSYM.oil),
+    "one table holds both marks: a cube for the one and a droplet for the other");
+  const cube = P95.psymSvg("salt", 28), drop = P95.psymSvg("oil", 28), odd = P95.psymSvg("tin", 28);
+  ok(/stroke="currentColor"/.test(cube) && /fill="none"/.test(cube) && !/<text|Salt|salt/.test(cube)
+    && cube !== drop && /aria-hidden="true"/.test(cube),
+    "each is drawn as an outline in the ink it sits in, with no word in it and no fill");
+  ok(odd.includes("A7.8 7.8") && odd !== cube && odd !== drop,
+    "and a product with no mark of its own gets the ring, never a blank, so an omission does not read as a fault");
+  ok(P95.PSHAPE.salt === "Cube" && P95.PSHAPE.oil === "Droplet" && !/salt|oil/i.test(Object.values(P95.PSHAPE).join(" ")),
+    "a control holding only a mark is named by its SHAPE, so a screen reader is told what is drawn and not what it is");
+
+  /* ---- the guest board, which is the one page a stranger sees ---- */
+  const board95 = P95.boardPage({ prices: { week: { label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 130 }] },
+               { product: "oil", name: "Oil", unit: "unit", tierName: "", sizes: [{ q: 1, price: 44 }] }] } }, "n95");
+  /* the WORDS on it, not its source: every design token is named --salt-something, which is a
+     variable a reader never sees and not a name the page writes */
+  const boardText = board95.replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]*>/g, " ");
+  ok(!/\b(salt|oil)\b/i.test(boardText) && (board95.match(/class="psym"/g) || []).length === 2,
+    "the guest board draws two marks and writes neither name: " + JSON.stringify((boardText.match(/\b(salt|oil)\b/gi) || []).slice(0, 4)));
+  ok(/aria-label="Cube"/.test(board95) && /aria-label="Droplet"/.test(board95), "and each heading is named by its shape");
+
+  /* ---- the app's name, the one name on the site ---- */
+  const env95 = { STMT: new KV() };
+  const mf95 = await (await stmtW95.fetch(new Request("https://k7m3p2.example/manifest.webmanifest"), env95)).json();
+  ok(mf95.name === "Order Salt" && mf95.short_name === "Order Salt", "the app saved to a home screen is called Order Salt, his own words");
+  const door95 = await (await stmtW95.fetch(new Request("https://k7m3p2.example/"), env95)).text();
+  ok(/<title>Order Salt<\/title>/.test(door95) && /content="Order Salt"/.test(door95) && /saved as <b>Order Salt<\/b>/.test(door95),
+    "the door's title, its iPhone app title and its tutorial all say the same one name");
+  ok(!/Salt Command/i.test(door95) && !/Salt Command/i.test(board95) && !/Salt Command/i.test(JSON.stringify(mf95)),
+    "and the desk's own name is on none of them");
+
+  /* ---- no letterhead on a customer's statement ---- */
+  const MS95 = readFileSync(join(REPO, "tools", "make_statements.mjs"), "utf8");
+  ok(!/brand: 'Salt Command'/.test(MS95) && /o\.brand \? '<p class="eyebrow">'/.test(MS95),
+    "the live statement and every new issue carry no letterhead at all, rather than an empty one");
+
+  /* ---- the page, driven: the marks are drawn and no product word is on it ---- */
+  const wc95 = crypto;
+  const u95 = "abcd-efgh", pass95 = "fixture-pass-95", ck95 = await C95.contentKey("test-secret", u95);
+  const list95 = { at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }, { q: 2.5, price: 300 }] },
+               { product: "oil", name: "Oil", unit: "unit", rate: 40, orders: 2, basis: "yours", sizes: [{ q: 1, price: 44 }] }],
+    soon: [{ product: "tin", name: "Tin" }] };
+  /* one live order, so the card that reports an order is drawn and read too */
+  const ord95 = { id: "20260918000000-aa11", u: u95, product: "oil", qty: 2.5, mode: "collect", unit: 40, total: 100,
+    at: "2026-09-18T01:00:00Z", status: "acknowledged", paid: 0, moved: 0, payments: [], delivery: 0,
+    history: [{ at: "2026-09-18T01:00:00Z", status: "placed", by: "customer" }] };
+  const body95 = { ok: true, wrap: await C95.wrapKey(pass95, ck95), session: "fixture-session-token-95-abcdefgh",
+    env: await C95.encryptWith(ck95, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await C95.encryptWith(ck95, JSON.stringify(list95)) };
+  const dom95 = new JD95(await (await stmtW95.fetch(new Request("https://k7m3p2.example/?u=" + u95), env95)).text(),
+    { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc95, configurable: true }); } catch (e) { win.crypto = wc95; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.fetch = async (path) => {
+        const p = String(path);
+        if (p === "/open") return { ok: true, status: 200, json: async () => body95 };
+        if (p === "/orders") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [ord95] }) };
+        return { ok: false, status: 404, json: async () => ({ ok: false }) };
+      };
+    } });
+  try {
+    const d95 = dom95.window.document;
+    d95.getElementById("un").value = u95; d95.getElementById("pw").value = pass95;
+    d95.getElementById("f").dispatchEvent(new dom95.window.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 150 && !d95.getElementById("pPrices").textContent; i++) await new Promise((r) => setTimeout(r, 100));
+    const marks95 = [...d95.querySelectorAll("#pPrices h3.pmark")].map((h) => h.getAttribute("aria-label"));
+    ok(JSON.stringify(marks95) === '["Cube","Droplet","Ring"]' && d95.querySelectorAll("#pPrices svg.psym").length === 3,
+      "the price list heads each block with its mark, the one still waiting for a price included: " + JSON.stringify(marks95));
+    d95.querySelector('button[data-t="order"]').click();
+    const seg95 = [...d95.querySelectorAll("#pOrder .seg button[aria-pressed]")];
+    ok(seg95.length === 2 && seg95.map((b) => b.getAttribute("aria-label")).join(",") === "Cube,Droplet"
+      && seg95[0].getAttribute("aria-pressed") === "true" && seg95.every((b) => b.querySelector("svg.psym")),
+      "the product is picked from a segment of marks, one tap, and the chosen one says so: it was a dropdown, and an option carries no drawing");
+    seg95[1].click();
+    ok(d95.querySelectorAll("#pOrder .seg button[aria-pressed=true]").length === 1
+      && d95.querySelector("#pOrder .seg button[aria-pressed=true]").getAttribute("aria-label") === "Droplet",
+      "and a tap moves it");
+    /* a product waiting for its price is a mark too, not a name */
+    const soon95 = [...d95.querySelectorAll("#pPrices .pane")].filter((x) => !x.querySelector("table"));
+    ok(soon95.length === 1 && soon95[0].querySelector("h3.pmark svg.psym")
+      && soon95[0].querySelector("h3.pmark").getAttribute("aria-label") === "Ring"
+      && /Price coming soon\./.test(soon95[0].textContent),
+      "a product with no price yet is a mark as well, and one with no mark of its own falls back to the ring");
+    /* and the card that reports an order, where the product used to be written twice */
+    for (let i = 0; i < 60 && !d95.querySelector("#pOrder .pane .state"); i++) await new Promise((r) => setTimeout(r, 50));
+    const card95 = d95.querySelector("#pOrder .pane .state") && d95.querySelector("#pOrder .pane .state").closest(".pane");
+    ok(card95 && card95.querySelector(".pwith svg.psym") && /Droplet/.test(card95.textContent)
+      && !/\b(salt|oil)\b/i.test(card95.textContent),
+      "an order's own card carries the mark of what was ordered and never its name: " + JSON.stringify(card95 && card95.textContent.slice(0, 60)));
+    const words95 = (d95.getElementById("pPrices").textContent + " " + d95.getElementById("pOrder").textContent);
+    ok(!/\b(salt|oil)\b/i.test(words95) && !/Salt Command/i.test(words95),
+      "and no product is written as a word anywhere on the prices or the order: " + JSON.stringify((words95.match(/\b(salt|oil)\b/gi) || []).slice(0, 4)));
+  } finally { try { dom95.window.close(); } catch (e) { /* best effort */ } }
 })();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
