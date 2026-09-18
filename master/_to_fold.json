@@ -1,0 +1,62 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-18T13:48:01.997Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CH4-MAL",
+    "qty": 10,
+    "total": 130,
+    "cost": 75.25,
+    "cash": 130,
+    "product": "oil",
+    "date": "2026-09-18",
+    "deliveredQty": 10,
+    "deliveredOn": "2026-09-18",
+    "paidOn": "2026-09-18"
+   },
+   "reasoning": "Sold 10 unit of oil to CH4-MAL for RM 130, RM 13/unit. Costed at RM 7.53/unit from the desk's own inventory cost, so RM 54.75 on the goods at 42.1%. Paid in full and delivered in full on 2026-09-18. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-18T13:48:01.997Z",
+    "type": "SELL",
+    "party": "CH4-MAL",
+    "qty": 10,
+    "total": 130,
+    "status": "paid",
+    "raw": "Sell 10 unit to CH4-MAL for RM 130 on 2026-09-18, RM 130 cash, 10 unit moved → Completed",
+    "payload": {
+     "mode": "new",
+     "product": "oil",
+     "direction": "SELL",
+     "party": "CH4-MAL",
+     "newId": null,
+     "date": "2026-09-18",
+     "qty": 10,
+     "total": 130,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 130,
+     "kg": 10,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": null,
+     "second": null,
+     "more": null,
+     "coverFree": null
+    }
+   },
+   "decidedAt": "2026-09-18T13:49:12.743Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
