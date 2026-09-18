@@ -388,6 +388,22 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   Access session now also signs in as a customer. **The plain password is still laptop-only**, in
   `_passwords.json`, and no message ever carries it; a tick lives at `sent:<issue>:<username>`, so
   both his devices agree on what has gone out.
+- **THE SHARED LINK SIGNS THEM IN, ONCE** (v710, his instruction of 18 Sep 2026: when sharing the
+  link, QR to the user, the site pre-fills their username and password). The username it fills in;
+  the password it never can, two channels being a standing rule and a password in a message being a
+  password in a chat log for good. **So the password is not put in the link, the LINK is made to
+  sign them in.** His page has the content key open already, wraps it under a token it mints, and
+  hands the Worker the wrap and the token's SHA-256: `ot:<hash>` names the record, so a dump of the
+  store opens nothing, and the token is written nowhere. Opening posts it back, the record is read
+  and deleted in that order, and from there it is an ordinary session, `assoc` and `card` included.
+  **Two limits, stated rather than promised away**: a link inside its window IS a bearer credential,
+  as a guest link's id is, and what it buys is that it expires and it burns, not that it cannot be
+  forwarded; and **single use is best effort**, KV being eventually consistent, so the copy says
+  once and `stmt/signin.js` is where the mechanism admits it cannot swear to it. **The `/s/` route
+  is gated on the token's SHAPE, not the token**: a spent link and an invented one serve the same
+  door to the character, so the door is not a probe, while anything that could never have been a
+  link is still the site's 404, the old `/s/<CODE>` address included. The page rewrites its own
+  address the moment the link is spent, and a link is tried before a remembered device.
 - **KEPT AS AN APP** (v693, his instruction of 18 Sep 2026): the Worker serves
   `/manifest.webmanifest` and `/icon.png` (bytes from `stmt/icons.js`, written by
   `tools/stmt-icon.mjs --sync`, checked by `--check`), the CSP admits `manifest-src 'self'`, and the
@@ -485,11 +501,12 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
 | `stmt/qr.js` | GENERATED from `engine/qr.mjs` by `tools/qrsync.mjs --sync`; gate and CI fail on drift. Never edit it; `stmt/` may import only a sibling |
 | `stmt/owner.js` | The master account's script, spliced into the page on `/all` alone; never in a customer's |
 | `stmt/send.js` | The one copy of the words a customer is sent; `tools/stmt-send.mjs` imports them |
+| `stmt/signin.js` | The one-time link: the token is hashed at rest and the wrap is opened only by the token; the two limits it cannot promise away are stated in its header |
 | `tools/stmt-seal.mjs` | Laptop only: seals an issue's passwords under the master, proving each against its own verifier; where a code was re-keyed after the issue it pairs by PROOF, trying only passwords whose code has left the roster (v705) |
 | `tools/stmt-account.mjs` | Laptop only: mints a full account for a roster code that has a username and no record, which the fold never did (v707). Refuses without a master that unwraps an existing record, never touches an account that exists, and skips a bucket and a supplier. The publish names who is stuck on every run |
 | `tools/rid.mjs` | Stable `rid` per ledger row; `nextRid` is the one minting place |
 | `tools/changelog.mjs` | Prepends `evolution[0]` to `master/changelog.json`; never rewrites |
-| `test/verify.mjs` | ~2,130 assertions over 138 sections, no network or browser; add one per behavioural change, and **prove it red by mutation before trusting its green** |
+| `test/verify.mjs` | ~2,880 assertions over 209 sections, no network or browser; add one per behavioural change, and **prove it red by mutation before trusting its green** |
 
 The rest: `docs/DESK.md`.
 

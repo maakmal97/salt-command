@@ -93,7 +93,7 @@ export const OWNER_JS = `
     card.appendChild(el('p','tot',a.tot||'No statement in this issue.'));
     card.appendChild(el('p','op',openedLine(a)+(a.sent?' \\u00b7 sent '+stampDay(a.sent):'')));
     var qw=el('div','qrw'); qw.appendChild(qrCanvas(a.qr||[]));
-    qw.appendChild(el('p','qrn','The code opens their page with the username filled in.'));
+    qw.appendChild(el('p','qrn','The code opens their page with the username filled in. Sign-in link sends one that opens it outright, once.'));
     card.appendChild(qw);
     var row=el('div','grow');
     var share=el('button',null,'Share'); share.type='button';
@@ -121,9 +121,36 @@ export const OWNER_JS = `
       }catch(e){ pwb.textContent='Could not open it'; }
       setTimeout(function(){ pwb.textContent='Copy password'; pwb.disabled=false; }, 2200);
     });
+    /* v710: A LINK THAT SIGNS THEM IN, so no message carries a password at all (his instruction of
+       18 Sep 2026). The content key is opened HERE, under the master, wrapped under a token minted
+       here, and only the token's hash and that wrap reach the Worker; the finished words come back
+       from the one copy of them. MINTED ON A TAP, never on a draw: drawing the panel would write a
+       record per account on every page load and burn links nobody sent. */
+    var slb=el('button','pw','Sign-in link'); slb.type='button';
+    slb.addEventListener('click', async function(){
+      if(!a.pwMaster && !a.username) return;
+      slb.disabled=true; slb.textContent='Making it...';
+      try{
+        var o=await (await fetch('/open', {method:'POST', headers:{'content-type':'application/json'},
+          body:JSON.stringify({u:a.username, password:OWNER.master, master:OWNER.master})})).json();
+        if(!o.ok||!o.wrapMaster) throw new Error('that account did not open under the master');
+        var ck=await unwrap(OWNER.master, o.wrapMaster);
+        var raw=crypto.getRandomValues(new Uint8Array(24));
+        /* CHARACTER CLASSES, NOT ESCAPES: this file is spliced into a template literal, where a
+           backslash before + or / is eaten and /+/ is not a regular expression at all. */
+        var tok=btoa(String.fromCharCode.apply(null, raw)).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/[=]+$/,'');
+        var wrap=await wrapUnder(new TextEncoder().encode(tok), ck);
+        var j=await refs('/all/signin/'+encodeURIComponent(a.username), {token:tok, wrap:wrap});
+        tok=null; ck=null;
+        if(navigator.share) await navigator.share({text:j.msg});
+        else await navigator.clipboard.writeText(j.msg);
+        slb.textContent='Link sent';
+      }catch(e){ slb.textContent='Could not make one'; }
+      setTimeout(function(){ slb.textContent='Sign-in link'; slb.disabled=false; }, 2200);
+    });
     var open=el('button',null,'Open account'); open.type='button';
     open.addEventListener('click', function(){ openAcct(a); });
-    row.appendChild(share); row.appendChild(copy); row.appendChild(pwb); row.appendChild(open);
+    row.appendChild(share); row.appendChild(copy); row.appendChild(slb); row.appendChild(pwb); row.appendChild(open);
     card.appendChild(row);
     var tick=el('label','tick');
     var box=document.createElement('input'); box.type='checkbox'; box.checked=!!a.sent;

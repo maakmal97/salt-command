@@ -189,7 +189,8 @@ has lost his asks for it again, and it is read back from `_passwords.json`.
 |---|---|---|---|
 | `STMT_KEY` | `statements\_secrets.json`, `"key"` | GitHub Actions secret `STMT_KEY` | Derives every customer's content key. The same string in both places. **Lose it and every account is re-issued.** |
 | `STMT_MASTER` | `statements\_secrets.json`, `"master"` | Cloudflare secret on the site | His override. The Worker compares it; the laptop wraps the key under it at issue time. |
-| the passwords | `statements\<YYYY-MM>\_passwords.json` | sealed under `STMT_MASTER` as `pwMaster`, served only behind Access | One per customer, one live month. In the clear on the laptop alone (v688). |
+| the passwords | `statements\<YYYY-MM>\_passwords.json` | sealed under `STMT_MASTER` as `pwMaster`, served only behind Access | One per customer, one live month. In the clear on the laptop alone (v688), and since v710 no message carries one at all. |
+| a sign-in link | nowhere | KV `ot:<sha256(token)>`, 7 days, one use | The content key wrapped under a token his page mints (v710). The token is stored nowhere, so the record opens only for whoever holds the link. |
 
 `_secrets.json` is gitignored and looks like
 `{"key": "<64 hex characters>", "master": "<the passphrase>"}`. An environment variable of
@@ -552,6 +553,13 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   Access application is "Salt statements owner" (`67280e0b-…`, one-time PIN, his address,
   24h). `stmt/access.js` reads the header or the `CF_Authorization` cookie. `roster` (codes
   beside usernames, never names) is written by the publish.
+- **SIGN-IN LINK, ON EACH ACCOUNT'S CARD** (v710). It is minted ON A TAP and never on a draw: drawing
+  the Send panel would file a record per account on every page load and burn links nobody sent. His
+  page opens the account under the master, wraps the content key under a fresh token, and posts the
+  token and the wrap to `POST /all/signin/<username>`, which refuses a username the roster does not
+  carry and refuses to hand back a link it could not file. What comes back is the finished message
+  from `stmt/send.js`, the one copy of those words, plus the QR; it goes to the share sheet, or to
+  the clipboard where there is none. **The token is dropped from the page as soon as it is sent.**
 - **Guest links `/g/<id>`** (v566) are minted inside `/all` and labelled: a board is what he prints
   and hands to strangers, and the link exists to say WHICH stranger. `stmt/refs.js` mints, lists,
   revokes and counts opens; it prices nothing, and neither does `tools/pricelist.mjs`, which reads

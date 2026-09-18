@@ -43,8 +43,9 @@ import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, MAX_PER_ASSOC } from "./refs.js";
+import { SIGNIN_RE, mintSignin, burnSignin } from "./signin.js";
 import { endpointId, wakeCustomer } from "./push.js";
-import { linkMessage, totalsLine, monthNameOf } from "./send.js";
+import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
 import { mintSession, dropSession, sessionUser, ordersOf, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED, toChase, CHASE_KEY, hourOf } from "./orders.js";
 
@@ -387,6 +388,31 @@ async function handleRemember(request, env) {
   if (!rec || !rec.u) return json({ ok: false, error: REFUSED }, 401);
   const acct = await env.STMT.get("u:" + rec.u, "json");
   if (!acct) { await env.STMT.delete("rem:" + tok); return json({ ok: false, error: REFUSED }, 401); }
+  const session = await mintSession(env, rec.u);
+  return json({
+    ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
+    issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
+    env: acct.env, live: acct.live || null, prices: acct.prices || null, session
+  });
+}
+
+/* ---- THE ONE-TIME LINK IS OPENED (v710, his instruction of 18 Sep 2026) ----------------------
+ * The token names a record holding the content key wrapped UNDER THAT TOKEN, so this Worker holds
+ * ciphertext and a username and the opener holds the only thing that unwraps it. It is burnt on
+ * the way through, and from there it is an ordinary session: nothing downstream knows the
+ * difference, exactly as a remembered device does not.
+ *
+ * A USED, AN EXPIRED AND AN INVENTED TOKEN GET THE DOOR'S ONE REFUSAL, so a link that has been
+ * opened reads exactly as a link that never existed, and the space cannot be walked.
+ */
+async function handleSignin(request, env) {
+  if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
+  const b = await readJson(request);
+  const tok = b && typeof b.token === "string" && SIGNIN_RE.test(b.token) ? b.token : null;
+  const rec = tok ? await burnSignin(env, tok) : null;
+  if (!rec) return json({ ok: false, error: REFUSED }, 401);
+  const acct = await env.STMT.get("u:" + rec.u, "json");
+  if (!acct) return json({ ok: false, error: REFUSED }, 401);
   const session = await mintSession(env, rec.u);
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
@@ -783,6 +809,27 @@ export default {
         if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
         return json(await ownerSheet(env, url.origin));
       }
+      /* v710: MINT A ONE-TIME SIGN-IN LINK for one account. His page holds the content key already,
+         having opened the account under the master, so it wraps that key under a token it minted
+         and hands over the token and the wrap. This Worker never sees the key and never stores the
+         token, only its hash; the finished words and the code are built HERE so the one copy of the
+         message holds. Minted on a tap and never on a draw, or every page load would write a record
+         per account and burn links nobody sent. */
+      const sim = /^\/all\/signin\/([^/]+)$/.exec(p);
+      if (sim) {
+        if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+        const u = normUser(sim[1]);
+        if (!u) return notFound();
+        const known = (await roster(env)).some((x) => x.username === u);
+        if (!known) return json({ ok: false, error: "no account on the roster has that username" }, 400);
+        const b = await readJson(request);
+        const tok = b && typeof b.token === "string" ? b.token : "";
+        if (!(await mintSignin(env, u, tok, b && b.wrap))) return json({ ok: false, error: "send the token and the wrap" }, 400);
+        const link = url.origin + "/s/" + tok;
+        const issue = await env.STMT.get("issue");
+        return json({ ok: true, url: link, msg: signInMessage({ url: link, user: u }, monthNameOf(issue)),
+          qr: QR.qrMatrix(link) });
+      }
       /* the associates' report card, written by the publish and read only here (v691) */
       if (p === "/all/assoc") {
         if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
@@ -860,10 +907,27 @@ export default {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       return handleRemember(request, env);
     }
+    /* v710: the one-time link, opened */
+    if (p === "/open-link") {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      return handleSignin(request, env);
+    }
     if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout") return handleCustomer(request, env, p, m);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
     if (p === "/desk/orders" || p.startsWith("/desk/orders/")) return handleDesk(request, env, p, m);
+    /* v710: THE LINK SERVES THE ORDINARY DOOR, whatever the token is. The page reads the token off
+       its own address and posts it; an expired or invented one lands the reader on the door rather
+       than a 404, so nobody is stranded and the page is not a probe for which tokens exist. The
+       difference is kept to the JSON route's one refusal.
+       IT IS THE SHAPE THAT OPENS THE ROUTE, NOT THE TOKEN: `SIGNIN_RE` and nothing else, so the
+       site's rule that an unknown path is a 404 still holds for every path that could never have
+       been a link. The shape is no secret, being minted by the page this route serves. */
+    const sLink = p.startsWith("/s/") && SIGNIN_RE.test(p.slice(3));
+    if (sLink) {
+      if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
+      return pageResponse("", null);
+    }
     if (p !== "/") return notFound();
     if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
 

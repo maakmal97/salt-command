@@ -1502,6 +1502,61 @@ const CLIENT_JS = `
     askPush();
     return true;
   }
+  /* ---- THE ONE-TIME LINK, OPENED (v710, his instruction of 18 Sep 2026) -----------------------
+     "When sharing the link, QR to the user, the site pre-fills their username and password." The
+     password never goes in a message, so the LINK signs them in instead. The token is in this
+     page's own address; it is posted once, the Worker burns it and hands back the content key
+     wrapped UNDER that token, and from there this is openRemembered's body exactly: nothing
+     downstream knows the difference.
+     THE ADDRESS IS REWRITTEN THE MOMENT IT IS POSTED. A reload of a burnt link would otherwise show
+     a refusal on a page the reader has just opened successfully, which is the worst of both. */
+  function signinToken(){
+    /* [/] rather than an escaped slash: this script lives in a template literal, where a
+       backslash before a slash is eaten and the regex would end at the first one. */
+    var m=/^[/]s[/]([A-Za-z0-9_-]{20,64})$/.exec(location.pathname||'');
+    return m?m[1]:null;
+  }
+  async function openSignin(){
+    var tok=signinToken();
+    if(!tok||OWNER) return false;
+    var mine=++ticket, stale=function(){ return mine!==ticket; };
+    say('Opening...','wait');
+    var r, body;
+    try{
+      r=await fetch('/open-link', {method:'POST', headers:{'content-type':'application/json'},
+        body:JSON.stringify({token:tok})});
+      body=await r.json();
+    }catch(e){ say(''); return false; }
+    /* burnt or not, this address is spent: never present it again */
+    try{ history.replaceState(null,'','/'); }catch(e){}
+    if(stale()) return false;
+    if(!r.ok||!body.ok){ say('That link has been used already, or it has expired. Sign in with your username and password.','bad'); return false; }
+    var ck, b;
+    try{
+      ck=await unwrapUnder(new TextEncoder().encode(tok), body.wrap);
+      b=JSON.parse(await open(ck, body.env));
+    }catch(e){ say(''); return false; }
+    if(stale()) return false;
+    if(body.live){
+      try{ var l=JSON.parse(await open(ck, body.live));
+        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body}); }
+      catch(e){ /* the issued statements still open */ }
+    }
+    prices=null;
+    assoc=body.assoc===true;
+    card=null;
+    if(body.card){ try{ card=JSON.parse(await open(ck, body.card)); }catch(e){ card=null; } }
+    if(body.prices){ try{ prices=JSON.parse(await open(ck, body.prices)); }catch(e){ prices=null; } }
+    if(stale()) return false;
+    say('');
+    user=body.u; session=body.session||''; orders=[]; draft={}; pick={};
+    show(b);
+    drawPrices();
+    if(session){ await loadOrders(); if(stale()) return true; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
+    drawOrder();
+    askPush();
+    return true;
+  }
   /* THE OWNER'S OWN SCRIPT IS SPLICED IN HERE, and only on his route (v687). Everything it
      needs -- say(), el(), stamp(), un, pw, whoacct, busy, OWNER -- is in scope at this point,
      and a customer's page carries none of it: stmt/owner.js. */
@@ -1516,7 +1571,9 @@ const CLIENT_JS = `
     /* the cursor lands at once, and a remembered device opens over the top of it: a reader with no
        memory on this phone must never wait on a request to be able to type */
     try{ (un.value?firstEmpty('pw'):firstEmpty('un')).focus(); }catch(e){}
-    openRemembered();
+    /* v710: a one-time link first, a remembered device second. A reader arriving on a link came to
+       use it, and if it is spent the remembered device is still there behind it. */
+    (async function(){ if(!(await openSignin())) await openRemembered(); })();
   }
 })();
 `;

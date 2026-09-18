@@ -6935,10 +6935,13 @@ await (async () => {
     && (r.headers.get("cache-control") || "").includes("no-store"), "it is not indexed and not cached");
   ok((await (await stmtWorker.fetch(sreq("/?u=nobody"), senv)).text()).includes('value=""'),
     "a username that does not parse is simply not filled in");
+  /* v710 GAVE /s/ BACK A MEANING, and this check is why it was gated on the token's SHAPE rather
+     than on anything one segment deep: a code is not a token, so the old /s/<CODE> address is
+     still a 404, and so is every other path that could never have been a link. */
   ok((await stmtWorker.fetch(sreq("/s/CX0-AA"), senv)).status === 404
     && (await stmtWorker.fetch(sreq("/desk"), senv)).status === 404
     && (await stmtWorker.fetch(sreq("/u:" + un), senv)).status === 404,
-    "nothing else on the site answers: the old /s/ route, the desk's paths and a key name are all 404");
+    "nothing else on the site answers: the old /s/<CODE> address, the desk's paths and a key name are all 404");
   ok((await stmtWorker.fetch(sreq("/open"), senv)).status === 405, "and /open is POST only");
 
   r = await stmtWorker.fetch(open({ u: un, password: pw }), senv);
@@ -14747,8 +14750,11 @@ await (async () => {
     "the words are on the page and the tick is behind the mark, so nobody else is offered it");
   ok(/forFriend:!!\(assoc&&draft\.forFriend\)/.test(page2),
     "and the placement cannot send the tick unless the account carries the mark");
-  ok(/assoc=body\.assoc===true;/.test(page2) && (page2.match(/assoc=body\.assoc===true;/g) || []).length === 2,
-    "both doors read it: a password open and a remembered one");
+  /* EVERY DOOR READS IT, and the count is the check: a door added later that forgot the mark would
+     take an associate's tick away from them on the way in, silently, and only on that one road.
+     v710 added the third, which is how this assertion earned its keep. */
+  ok(/assoc=body\.assoc===true;/.test(page2) && (page2.match(/assoc=body\.assoc===true;/g) || []).length === 3,
+    "all three doors read it: a password open, a remembered device and a one-time link");
   ok(!/for resale/i.test(page2), "and nothing on it says 'for resale', which is what he changed it from");
 })();
 section("v705: a password filed under a name that has since moved is paired by its own verifier");
@@ -15350,6 +15356,195 @@ await (async () => {
     "it tells them it is waiting and names no tier, which a customer's page never does");
   ok(!/drawLinks\(/.test(page9) && !/getElementById\('glist'\)/.test(page9) && !/\/all\/refs/.test(page9),
     "and nothing of his links panel is in it: not the drawing, not its element, not his route");
+})();
+section("v710: the shared link signs them in once, so no message carries a password");
+await (async () => {
+  /* HIS INSTRUCTION OF 18 SEP 2026: "when sharing the link, QR to the user, the site pre-fills their
+     username and password." The password never goes in a message, and the suite fails the build if
+     one ever does, so the LINK is made to sign them in instead.
+     HIS PAGE HOLDS THE CONTENT KEY ALREADY, having opened the account under the master. It wraps
+     that key under a token it mints and hands the Worker the token and the wrap; the Worker files
+     it under the token's HASH, so a dump of the store opens nothing. Opening posts the token back,
+     the record is burnt, and from there it is an ordinary session. */
+  const stmtW10 = (await import("../stmt/worker.js")).default;
+  const S10 = await import("../stmt/signin.js");
+  const SEND10 = await import("../stmt/send.js");
+  const C10 = await import("../tools/stmt-crypto.mjs");
+
+  /* ---- the token is never stored, only its hash ---- */
+  const tok10 = S10.newSignin();
+  ok(S10.SIGNIN_RE.test(tok10) && tok10.length >= 20, "a token is the shape a remembered device's is: " + tok10.length + " characters");
+  const hash10 = await S10.idOf(tok10);
+  ok(/^[0-9a-f]{64}$/.test(hash10) && hash10 !== tok10, "and what names the record is its SHA-256, never the token itself");
+
+  const kv10 = new KV();
+  const env10 = { STMT: kv10 };
+  const u10 = C10.newUsername(), pw10 = C10.newPassword(), ck10 = await C10.contentKey("s10", u10);
+  await kv10.put("u:" + u10, JSON.stringify({ u: u10, issued: "2026-09-01", issues: ["2026-09-01"],
+    verifier: await C10.makeVerifier(pw10), wrap: await C10.wrapKey(pw10, ck10),
+    env: await C10.encryptWith(ck10, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })) }));
+  /* the wrap his page would make: the content key under the token */
+  const wrap10 = await C10.wrapKey(tok10, ck10);
+  ok(await S10.mintSignin(env10, u10, tok10, wrap10), "the wrap is filed under the hash");
+  ok(!!(await kv10.get("ot:" + hash10)) && !(await kv10.get("ot:" + tok10)),
+    "the store holds a key named by the hash and none named by the token");
+  ok((kv10.opts.get("ot:" + hash10) || {}).expirationTtl === S10.SIGNIN_TTL,
+    "and it expires on its own, so a link nobody opened does not sit there for ever");
+  ok(!(await S10.mintSignin(env10, u10, "not a token", wrap10)) && !(await S10.mintSignin(env10, u10, tok10, null)),
+    "a token of the wrong shape and a missing wrap are both refused rather than filed");
+
+  /* ---- opened once ---- */
+  const openLink = async (t) => (await stmtW10.fetch(new Request("https://k7m3p2.example/open-link", { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify({ token: t }) }), env10)).json();
+  const first = await openLink(tok10);
+  ok(first.ok && first.u === u10 && !!first.session && !!first.wrap && !!first.env,
+    "opening it hands back the account and a session, exactly as a remembered device does");
+  const back = await C10.unwrapKey(tok10, first.wrap);
+  ok(!!back && JSON.parse(await C10.decryptWith(back, first.env)).statements.length === 1,
+    "and the token unwraps the content key, which opens the statement: the key never touched the Worker");
+
+  /* ---- A THIRD DOOR LOSES NOTHING THE OTHER TWO HAND OVER. The associate mark draws the tick and
+     the card draws the fourth tab, and both are decided before a password has opened anything. A
+     door that forgot them would take an associate's own controls away on this one road alone. ---- */
+  const a10 = C10.newUsername(), atok = S10.newSignin();
+  await kv10.put("u:" + a10, JSON.stringify({ u: a10, issued: "2026-09-01", assoc: true, card: { months: [] },
+    env: await C10.encryptWith(ck10, JSON.stringify({ statements: [] })) }));
+  await S10.mintSignin(env10, a10, atok, await C10.wrapKey(atok, ck10));
+  const aOpen = await openLink(atok);
+  ok(aOpen.ok && aOpen.assoc === true && !!aOpen.card,
+    "an associate opening by link keeps their mark and their own card, exactly as the other two doors hand them over");
+
+  /* ---- and never again ---- */
+  const second = await openLink(tok10);
+  ok(second.ok === false, "the second open is refused: the record is burnt on the way through");
+  ok(!(await kv10.get("ot:" + hash10)), "and nothing of it is left in the store");
+  /* the refusal is the door's one refusal, byte for byte, so a used link reads as an invented one */
+  const invented = await openLink(S10.newSignin());
+  const badPass = await (await stmtW10.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify({ u: u10, password: C10.newPassword() }) }), env10)).json();
+  ok(second.error === invented.error && second.error === badPass.error,
+    "a used token, an invented one and a wrong password all say the same thing: " + JSON.stringify(second.error));
+  const status2 = (await stmtW10.fetch(new Request("https://k7m3p2.example/open-link", { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify({ token: tok10 }) }), env10)).status;
+  ok(status2 === 401, "and all of them answer 401");
+
+  /* ---- a record that is not a whole one is not an open ---- */
+  const halfTok = S10.newSignin();
+  await kv10.put("ot:" + (await S10.idOf(halfTok)), JSON.stringify({ u: u10 }));
+  ok((await S10.burnSignin(env10, halfTok)) === null,
+    "a record carrying no wrap is not an open, whatever else is in it");
+
+  /* ---- HIS MINT ROUTE, DRIVEN BEHIND A REAL TOKEN. Calling mintSignin directly proves the store;
+     it proves nothing about the route that his page actually taps. ---- */
+  const realFetch10 = globalThis.fetch;
+  const TEAM10 = "maakmal", AUD10 = "aud-10", KID10 = "kid-10";
+  const kp10 = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub10 = await crypto.subtle.exportKey("jwk", kp10.publicKey);
+  globalThis.fetch = async (u) => {
+    if (String(u) === "https://" + TEAM10 + ".cloudflareaccess.com/cdn-cgi/access/certs")
+      return new Response(JSON.stringify({ keys: [{ ...pub10, kid: KID10, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + u);
+  };
+  const b64u10 = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  let minted10 = null;
+  try {
+    await kv10.put("roster", JSON.stringify([{ code: "CX0-AA", username: u10 }]));
+    await kv10.put("issue", "2026-09-01");
+    const claims = { iss: "https://" + TEAM10 + ".cloudflareaccess.com", aud: [AUD10], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u10(JSON.stringify({ alg: "RS256", kid: KID10, typ: "JWT" })), c = b64u10(JSON.stringify(claims));
+    const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp10.privateKey, new TextEncoder().encode(h + "." + c));
+    const jwt10 = h + "." + c + "." + b64u10(new Uint8Array(sig));
+    const envA = { STMT: kv10, ACCESS_TEAM: TEAM10, ACCESS_AUD: AUD10 };
+    const mintAt = async (user, body) => (await stmtW10.fetch(new Request("https://k7m3p2.example/all/signin/" + user, {
+      method: "POST", headers: { "cf-access-jwt-assertion": jwt10, "content-type": "application/json" },
+      body: JSON.stringify(body) }), envA)).json();
+
+    const tokA = S10.newSignin();
+    const wrapA = await C10.wrapKey(tokA, ck10);
+    const okMint = await mintAt(u10, { token: tokA, wrap: wrapA });
+    ok(okMint.ok && okMint.url.endsWith("/s/" + tokA) && /signs you in, once/.test(okMint.msg) && Array.isArray(okMint.qr),
+      "his route builds the finished link, the words and the code, so the one copy of the message holds");
+    ok(!okMint.msg.includes(pw10) && !("token" in okMint && okMint.token !== tokA),
+      "and the message it hands back carries no password");
+    minted10 = tokA;
+    /* a username no account has is refused rather than filed */
+    const strange = await mintAt("zzzz-zzzz", { token: S10.newSignin(), wrap: wrapA });
+    ok(strange.ok === false && /roster/.test(strange.error || ""),
+      "a username no account on the roster has is refused: " + JSON.stringify(strange.error));
+    /* and a mint that could store nothing must not hand back a link that opens nothing */
+    const noWrap = await mintAt(u10, { token: S10.newSignin() });
+    ok(noWrap.ok === false, "a mint with no wrap to file hands back no link at all");
+    ok((await stmtW10.fetch(new Request("https://k7m3p2.example/all/signin/" + u10, { method: "POST",
+      headers: { "content-type": "application/json" }, body: JSON.stringify({ token: S10.newSignin(), wrap: wrapA }) }), envA)).status === 401,
+      "and minting is behind Access, like every other thing of his");
+  } finally { globalThis.fetch = realFetch10; }
+  /* the one his route minted opens, once, exactly as the one filed by hand did */
+  const viaRoute = await openLink(minted10);
+  ok(viaRoute.ok && (await openLink(minted10)).ok === false,
+    "a link minted through his own route opens once and never again");
+
+  /* ---- the link serves the ordinary door, whatever the token ---- */
+  const doorOf = async (path) => stmtW10.fetch(new Request("https://k7m3p2.example" + path), env10);
+  const spent = await doorOf("/s/" + tok10), never = await doorOf("/s/" + S10.newSignin());
+  const t1 = await spent.text(), t2 = await never.text();
+  /* the CSP nonce is minted per request and is meant to differ; everything else must not */
+  const noNonce = (t) => t.replace(/nonce="[^"]*"/g, 'nonce="N"');
+  ok(spent.status === 200 && never.status === 200 && noNonce(t1) === noNonce(t2),
+    "a spent link and one that never existed serve the same page, to the character bar the nonce, so the door is not a probe for which tokens are live");
+  ok(/<title>Salt Counter<\/title>/.test(t1) && !t1.includes(tok10),
+    "and it is the ordinary door, carrying no token of its own");
+  ok((await doorOf("/s/")).status === 404 && (await doorOf("/s/a/b")).status === 404
+    && (await doorOf("/s/CX0-AA")).status === 404 && (await doorOf("/s/favicon.ico")).status === 404,
+    "anything not SHAPED like a token is the site's usual 404, the old /s/<CODE> address included");
+
+  /* ---- the words: one copy, and no password in them ---- */
+  const msg10 = SEND10.signInMessage({ url: "https://k7m3p2.example/s/" + tok10, user: u10 }, "September 2026");
+  ok(!/password/i.test(msg10.replace(/username and password/i, "")) && !msg10.includes(pw10),
+    "the message carries no password at all, which is the whole of why the link exists");
+  ok(/signs you in, once/.test(msg10) && /do not pass it on/.test(msg10) && /stops working after a week/.test(msg10),
+    "and it says plainly what the link is: theirs, once, and not for passing on");
+  const sendSrc = readFileSync(join(REPO, "stmt", "send.js"), "utf8");
+  ok((sendSrc.match(/export function signInMessage/g) || []).length === 1
+    && !/a one-time link \(v688\), which signs the customer in once and dies/.test(sendSrc),
+    "one copy of the words, and the header no longer claims a link that did not exist until now");
+
+  /* ---- the page reads the token off its own address ---- */
+  const page10 = await (await doorOf("/")).text();
+  ok(/function openSignin\(\)/.test(page10) && /\/open-link/.test(page10) && /history\.replaceState/.test(page10),
+    "the page posts the token once and rewrites its own address, so a reload never presents a spent link");
+  ok(/if\(!\(await openSignin\(\)\)\) await openRemembered\(\);/.test(page10),
+    "a link is tried first and a remembered device is still there behind it");
+
+  /* ---- AND THE PAGE, DRIVEN ON THE LINK ITSELF. Reading its source proves the code is there; it
+     proves nothing about a reader landing on a link and being signed in. ---- */
+  const { JSDOM: JD10 } = await import("jsdom");
+  const liveTok = S10.newSignin();
+  await S10.mintSignin(env10, u10, liveTok, await C10.wrapKey(liveTok, ck10));
+  const opened10 = await (await stmtW10.fetch(new Request("https://k7m3p2.example/s/" + liveTok), env10)).text();
+  const posts10 = [];
+  const dom10 = new JD10(opened10, { url: "https://site.test/s/" + liveTok, runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.fetch = async (path, init) => {
+      posts10.push(String(path));
+      const body = init && init.body ? JSON.parse(init.body) : {};
+      const r = await stmtW10.fetch(new Request("https://k7m3p2.example" + String(path), { method: "POST",
+        headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env10);
+      return { ok: r.ok, status: r.status, json: async () => r.json() };
+    };
+  } });
+  try {
+    const d10 = dom10.window.document;
+    for (let i = 0; i < 150 && d10.getElementById("tabs").hidden; i++) await new Promise((r) => setTimeout(r, 100));
+    ok(!d10.getElementById("tabs").hidden && d10.getElementById("gate").hidden,
+      "a reader landing on the link is signed in without typing anything: the tabs are up and the door is gone");
+    ok(posts10.includes("/open-link"), "and it got there by posting the token off its own address");
+    ok(dom10.window.location.pathname === "/",
+      "which the page has already forgotten: the address is rewritten, so a reload never presents a spent link");
+    ok((await S10.burnSignin(env10, liveTok)) === null, "and the link itself is spent");
+  } finally { try { dom10.window.close(); } catch (e) { /* best effort */ } }
 })();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {

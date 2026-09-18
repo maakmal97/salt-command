@@ -9,9 +9,13 @@
  * IN, which is allowed and is the direction that keeps the Worker clean.
  *
  * THE PASSWORD IS NEVER IN A MESSAGE. It went by its own channel while it lived only on the
- * laptop, and it still does: the card copies it on its own, to the clipboard. What travels here is
- * a one-time link (v688), which signs the customer in once and dies, so a forwarded message opens
- * nothing later. */
+ * laptop, and it still does: the card copies it on its own, to the clipboard.
+ *
+ * SINCE v710 THERE IS A SECOND WAY TO SEND ONE, and it is the one he asked for: a link that signs
+ * them in, so no message carries a password at all. signInMessage below is its words. This header
+ * claimed that link already existed from v688 until v710, three lines above a function that sent a
+ * password by a second channel; it did not exist, and the claim is corrected here rather than
+ * quietly dropped. */
 
 /** The month a date string belongs to, as a customer reads it. */
 export function monthNameOf(issue) {
@@ -30,6 +34,18 @@ export function linkMessage(row, monthName) {
     + "Open it here:\n" + row.url + "\n\n"
     + "Username: " + row.user + "\n"
     + "Your password is in a separate message.\n\n"
+    + "The page shows every order from the start to today, and each monthly statement as it was "
+    + "issued. Tick Remember me and that device stays signed in; Log out ends it.";
+}
+
+/** THE ONE-TIME LINK (v710, his instruction of 18 Sep 2026: the shared link signs them in). One
+ *  message, no password in it, and it says plainly what the link is: theirs, once, and not for
+ *  passing on. It does not promise it cannot be forwarded, because it can. */
+export function signInMessage(row, monthName) {
+  return "Your statement of account" + (monthName ? " for " + monthName : "") + " is ready.\n\n"
+    + "This link signs you in, once:\n" + row.url + "\n\n"
+    + "Open it yourself and do not pass it on: anybody holding it can open your statement until you "
+    + "have used it. It stops working after a week.\n\n"
     + "The page shows every order from the start to today, and each monthly statement as it was "
     + "issued. Tick Remember me and that device stays signed in; Log out ends it.";
 }
