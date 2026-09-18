@@ -1,5 +1,18 @@
 [
  {
+  "v": "v708",
+  "d": "18 Sep 2026",
+  "t": "MONEY HE IS HOLDING THAT IS SOMEBODY ELSE'S IS NOW, COUNTS ON THE RAIL, AND WAKES HIM",
+  "n": [
+   "<b>HIS INSTRUCTION OF 18 SEP 2026: \"IF PAID, I WILL NEED TO REFUND IMMEDIATELY.\"</b> Everything about an open refund was already computed in six places and not one of them was urgent. The action row sat at This week with NO age rule, so it could never reach Now however old it got; the rail's Today badge counts only the Now rows, so an open refund badged nothing anywhere; navCounts added one for a default HE is owed and nothing at all for money he owes BACK; and the morning nudge tested pending drafts and a stale stock count, neither of which is this. The one open today is twenty-three days old.",
+   "<b>THE RULE IS HIS INSTRUCTION.</b> The desk's own note says severity is decided by a rule and never by feel, and immediately is the rule he gave. So an open refund is Now from the day it is raised, rather than ageing into it: he did not ask for an ageing. The row says whose money it is and how long he has had it.",
+   "<b>THE MIRROR TERM ON THE RAIL.</b> A supplier default he is owed counted one on the Order book; money he owes back counted nothing, so the destination that holds both under-counted by exactly the side he has to act on. And the refunds table carries an AGE now, like every table beside it: it was the one open figure on the page with no age against it, on the one thing he said to do immediately.",
+   "<b>AND THE MORNING NUDGE WAKES HIM ON IT.</b> customerRefunds is a COLLECTION, so it is read out of entry and never out of state, and it is keyed on the row's own paidOn rather than a date, because a refund carries `since` and the seed leaves entry.date null. A row that will not parse is not read as an open refund.",
+   "<b>WHAT STILL CLOSES IT IS THE LAPTOP.</b> Nothing anywhere writes paidOn onto a refund row: not the drafter, not the fold, not a Correction, whose findRow searches sales and purchases alone. It is closed by adding paidOn in ledger/book.json, then booksync and a build, and the six readers drop it of their own accord. A tap on the phone would need a migration rebuilding the draft table's CHECK, and that is its own fold.",
+   "<b>THE CHECKS.</b> A new section of 9 assertions: every open refund Now and saying whose money it is, the Today badge reached, the rail's mirror term, the table's age column and its total spanning the words beside it, and the daily nudge DRIVEN against a stubbed push service three ways: quiet on a refund already paid, waking him on an open one, and quiet again on a row that will not parse. Eleven mutations each turned it red."
+  ]
+ },
+ {
   "v": "v707",
   "d": "18 Sep 2026",
   "t": "AN ID WITH A USERNAME AND NO ACCOUNT CANNOT SIGN IN, AND NOW SOMETHING MINTS ONE AND SOMETHING SAYS SO",

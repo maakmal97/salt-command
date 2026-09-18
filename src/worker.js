@@ -607,6 +607,13 @@ export default {
               const on = JSON.parse(c.doc), today = klDay();
               if (Object.keys(on).some((k) => on[k] !== today)) worth = true;
             }
+            /* v708, his instruction of 18 Sep 2026: "if paid, I will need to refund immediately".
+               Money he is HOLDING that is somebody else's was the one open figure nothing chased
+               him about. customerRefunds is a COLLECTION, so it is in `entry` and not in `state`,
+               and a refund carries `since` rather than a date, so the seed leaves entry.date null:
+               neither can be keyed on. The row itself says whether it is paid. */
+            const rf = await env.SALT_LEDGER.prepare("SELECT doc FROM entry WHERE collection='customerRefunds'").all();
+            if ((rf.results || []).some((r) => { try { return !JSON.parse(r.doc).paidOn; } catch (e) { return false; } })) worth = true;
           } catch (e) { console.log("nudge check failed: " + String(e)); }
           console.log("morning nudge: " + (worth ? "sending" : "nothing worth saying"));
           if (worth) await sendPush(env, { tag: "salt", urgency: "normal" });

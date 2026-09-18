@@ -161,6 +161,19 @@ KL map's neighbourhoods and Selangor sub-districts (`geo/placelist.json`, placed
 `tools/placelist.mjs --from`, the file never committed), every filed locality and every constituency, each as `whereOf`
 reads a party; a choice carries its own point, and typing a place not listed still looks it up.
 
+**MONEY HE IS HOLDING THAT IS SOMEBODY ELSE'S IS NOW** (v708, his instruction of 18 Sep 2026: "if
+paid, I will need to refund immediately"). An open `customerRefunds` row is severity `now` in
+`actions()` from the day it is raised, not an ageing, because he did not ask for one: it sat at
+`soon` with no age rule, so it could never reach Now however old it got, and the Today badge counts
+only the Now rows. `navCounts` counts it beside the supplier default it already counted, which is
+its mirror; the Order book's table carries an AGE, which was the one open figure on the page without
+one; and the daily nudge wakes him on it (`src/worker.js`, reading `entry` where the COLLECTION
+lives, never `state`, and keying on the row's own `paidOn` because a refund carries `since` and the
+seed leaves `entry.date` null). **NOTHING CLOSES A REFUND FROM THE PHONE**: no drafter branch, no
+fold branch and no Correction reaches a `customerRefunds` row (`findRow` searches sales and
+purchases alone), so it is closed by adding `paidOn` in `ledger/book.json`, then `booksync --sync`
+and a build. A phone tap would need a migration for the `draft` CHECK.
+
 **A defaulted sale is written off** (his instruction, 14 Sep 2026): `txAdvance` reads nothing
 owed on it, as `poOwed` reads nothing on a defaulted lot, so it leaves every reading of what is
 owed, the credit rules and the chase; `txWrittenOff` carries the figure to every reading of what

@@ -15062,6 +15062,87 @@ await (async () => {
   ok(/no account and cannot sign in/.test(PUB7) && /node tools\/stmt-account\.mjs --mint/.test(PUB7),
     "the publish names who is stuck and the one command that fixes it, on every run, so this can never be silent again");
 })();
+section("v708: money he is holding that is somebody else's is Now, counts on the rail, and wakes him");
+await (async () => {
+  /* HIS INSTRUCTION OF 18 SEP 2026: "if paid, I will need to refund immediately." Everything about a
+     refund was already computed in six places, and not one of them was urgent. The action row sat at
+     'soon' with NO age rule, so it could never reach Now however old it got; the rail's Today badge
+     counts only the Now rows, so an open refund badged nothing anywhere; navCounts added one for a
+     default HE is owed and nothing for money he owes BACK; and the morning nudge tested pending
+     drafts and a stale stock count and not this. The open one is 23 days old.
+     THE RULE IS HIS INSTRUCTION, which is what a rule is here (the desk's own note says severity is
+     decided by a rule and never by feel). It is not an ageing, because he did not ask for one. */
+  const { openMaster: om8 } = await import("../tools/payload.mjs");
+  const { w: w8 } = await om8();
+  try {
+    const rd8 = (expr) => JSON.parse(w8.eval("JSON.stringify(" + expr + ")"));
+    const open8 = rd8("customerRefunds.filter(r=>!r.paidOn).map(r=>({party:r.party,amount:r.amount,since:r.since}))");
+    if (!open8.length) skipData("no open refund on the book, so the live rows were not read");
+    else {
+      const acts = rd8("actions().filter(a=>a.kind==='pay')");
+      ok(acts.length === open8.length && acts.every((a) => a.sev === "now"),
+        "every open refund is Now, from the day it is raised: " + JSON.stringify(acts.map((a) => [a.title, a.sev])));
+      ok(acts.every((a) => /Money of theirs you are holding/.test(a.why) && /days/.test(a.why)),
+        "and it says whose money it is and how long he has had it");
+      /* the rail's Today badge counts the Now rows, so this is what makes a refund badge at all */
+      const nowN = rd8("actions().filter(a=>a.sev==='now').length");
+      ok(nowN >= open8.length, "so it reaches the Today badge, which counts the Now rows and nothing else");
+    }
+    /* THE MIRROR TERM. A default he is owed counted one; money he owes back counted nothing. */
+    const src8 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    const navBlock = src8.slice(src8.indexOf("function navCounts()"), src8.indexOf("function navCounts()") + 900);
+    ok(/customerRefunds\.filter\(r=>!r\.paidOn\)\.length/.test(navBlock) && /supplierReceivable\.status==='recoverable'/.test(navBlock),
+      "the rail counts an open refund beside the default it already counted, which is its mirror");
+    /* AND THE TABLE CARRIES AN AGE, which was the one open figure on the page without one. */
+    /* the table, not the KPI tile above it: both carry the same words, and the tile came first */
+    const refAt = src8.indexOf("sec('Refunds you owe'");
+    const refTable = src8.slice(refAt, refAt + 420);
+    ok(/<th>Age<\/th>/.test(refTable) && /colspan="3"/.test(refTable),
+      "and the table carries an age, like every table beside it, with the total spanning the three words");
+    ok(/dAge\(r\.since\)\+'d'/.test(src8), "computed from the date it was raised, not typed");
+  } finally { try { w8.close(); } catch (e) { /* best effort */ } }
+
+  /* ---- THE MORNING NUDGE, DRIVEN. It tested two things and a refund was neither. ---- */
+  const deskW8 = (await import("../src/worker.js")).default;
+  const realFetch8 = globalThis.fetch, realLog8 = console.log;
+  const mkD1 = (refundDocs) => ({
+    prepare(q) {
+      const run = async () => ({});
+      const first = async () => {
+        if (/COUNT_ON/.test(q)) return { doc: JSON.stringify({ salt: "2026-09-18" }) };
+        if (/COUNT\(\*\)/.test(q)) return { n: 0 };
+        return null;
+      };
+      const all = async () => (/collection='customerRefunds'/.test(q) ? { results: refundDocs } : { results: [] });
+      return { bind: () => ({ all, first, run }), all, first, run };
+    }
+  });
+  const tick8 = async (refundDocs) => {
+    const sent = [];
+    globalThis.fetch = async (u) => { sent.push(String(u)); return new Response("", { status: 201 }); };
+    const logs = []; console.log = (...a) => logs.push(a.join(" "));
+    try {
+      const kv8 = new KV();
+      await kv8.put("push:aa11", JSON.stringify({ endpoint: "https://push.example/his-phone", at: "2026-09-18T00:00:00Z" }));
+      const kp8 = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+      const env8 = { SALT_QUEUE: kv8, SALT_LEDGER: mkD1(refundDocs), VAPID_PUBLIC_KEY: "pub",
+        VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kp8.privateKey)),
+        VAPID_SUBJECT: "mailto:a@b.test" };
+      const waits = [];
+      await deskW8.scheduled({ cron: "0 1 * * *", scheduledTime: Date.parse("2026-09-18T01:00:00Z") }, env8, { waitUntil: (p) => waits.push(p) });
+      await Promise.all(waits);
+    } finally { globalThis.fetch = realFetch8; console.log = realLog8; }
+    return { sent, logs };
+  };
+  const quiet = await tick8([{ doc: JSON.stringify({ party: "CZ4-MK", amount: 20, since: "2026-08-26", paidOn: "2026-09-01" }) }]);
+  ok(quiet.sent.length === 0 && quiet.logs.some((l) => /nothing worth saying/.test(l)),
+    "a refund already paid wakes nobody: the nudge still says nothing on a quiet morning");
+  const loud = await tick8([{ doc: JSON.stringify({ party: "CZ4-MK", amount: 20, since: "2026-08-26" }) }]);
+  ok(loud.sent.length === 1 && loud.sent[0] === "https://push.example/his-phone" && loud.logs.some((l) => /sending/.test(l)),
+    "and an OPEN one wakes him in the morning, which nothing did before: " + JSON.stringify(loud.sent));
+  const broken = await tick8([{ doc: "not json at all" }]);
+  ok(broken.sent.length === 0, "a row that will not parse is not read as an open refund, and does not throw");
+})();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */
