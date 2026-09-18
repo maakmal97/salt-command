@@ -1,5 +1,29 @@
 [
  {
+  "v": "v693",
+  "d": "18 Sep 2026",
+  "t": "THE SITE CAN BE KEPT AS AN APP, AND EVERY LOGIN ASKS ABOUT NOTIFICATIONS",
+  "n": [
+   "<b>HIS INSTRUCTION OF 18 SEP 2026:</b> a short tutorial for saving the page as an app, and an ask for notifications on every login. Adding it to a home screen gave a screenshot with no name before this, because the site had no manifest and no icon at all.",
+   "<b>THE ICON IS DRAWN, NOT BORROWED.</b> The desk's plate is the brand, and nothing a customer keeps on a home screen may name the business, so this is a neutral tile: obsidian with a brass ring. The site serves no assets, so it lives as bytes in <code>stmt/icons.js</code>, written by <code>tools/stmt-icon.mjs --sync</code> (a PNG encoded by hand, no image library), and the gate checks the module against the generator. The app is called Statement of account.",
+   "<b>THE DOOR TEACHES IT ONCE:</b> three steps, the iPhone's Share and the Android menu, hidden the moment the page is running as an app.",
+   "<b>THE ASK COMES ON THE WAY IN, AND ONLY WHERE THE ANSWER IS OPEN.</b> A browser that has already granted or refused is never asked again; the button in the order tab stays for a reader who changes their mind. <b>One fault it caught:</b> the page registered a service worker before asking, so a browser that refused the registration never reached the question at all.",
+   "<b>THE CHECKS:</b> the module against its generator, the manifest and the icon as served (a real 512px PNG), the policy admitting the manifest, the tutorial shown in a browser and hidden in the app, and the ask fired once on a login and not at all after a refusal. Seven reverts each turned it red."
+  ]
+ },
+ {
+  "v": "v692",
+  "d": "18 Sep 2026",
+  "t": "THE DOOR SAYS LOG IN, REMEMBERS A DEVICE WITHOUT KEEPING A PASSWORD, AND LOG OUT ENDS IT",
+  "n": [
+   "<b>HIS INSTRUCTION OF 18 SEP 2026:</b> no three-minute lock, a Remember me, and a Log out. The lock was a privacy lock for a phone left on a table; what replaces it says what it does. The button reads Log in, the bar reads Log out, and nothing counts down.",
+   "<b>REMEMBER ME IS SPLIT IN TWO, AND NEITHER HALF OPENS ANYTHING ALONE.</b> The browser makes a random device key, wraps the content key under it, and keeps the key; the site keeps the wrap at <code>rem:&lt;token&gt;</code> for thirty days. A copy of the store opens nothing, a stolen device with no token opens nothing, and <b>the password is kept nowhere</b>. Remembering is minted on a session, which only a correct password mints.",
+   "<b>LOGGING OUT IS A DEPARTURE.</b> It drops the session and the remembered wrap on the site as well as everything the page holds, so a phone handed on is a phone signed out. A token only ever forgets its own account, and an unknown token is refused in the door's one refusal, which says nothing about what exists.",
+   "<b>THE COPY FOLLOWED IT:</b> the door, the QR caption on every statement, the message a customer is sent and the docs no longer promise three minutes.",
+   "<b>THE CHECKS:</b> the Worker's half (a session mints the token, the wrap expires in thirty days, no password in it, one device cannot sign another out, log out drops both) and the page's half end to end: signing in with the box ticked sends a wrap and keeps a key, a second page with only that key and token opens the statement with no password typed, and Log out forgets it. Eleven reverts each turned it red. <b>One real fault it caught:</b> the content key was imported unextractable, so Remember me could not wrap it at all."
+  ]
+ },
+ {
   "v": "v691",
   "d": "18 Sep 2026",
   "t": "THE ASSOCIATES REPORT CARD, IN UNITS AND SHARES, WITH NO MARGIN ANYWHERE NEAR IT",

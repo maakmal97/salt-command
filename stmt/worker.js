@@ -45,6 +45,7 @@ import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen } from "./refs.js";
 import { endpointId } from "./push.js";
 import { linkMessage, totalsLine, monthNameOf } from "./send.js";
+import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
 import { mintSession, dropSession, sessionUser, ordersOf, allOrders, placeOrder, customerMove, deskMove, LAST_PLACED } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
@@ -631,7 +632,7 @@ export default {
           "content-type": "text/html; charset=utf-8",
           "content-security-policy":
             "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
-            + "img-src 'self' data:; connect-src 'self'; worker-src 'self'; "
+            + "img-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; "
             + "style-src 'nonce-" + nonce + "'; script-src 'nonce-" + nonce + "'"
         }, HEADERS)
       });
@@ -705,6 +706,26 @@ export default {
     if (p === "/sw.js") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
       return new Response(SW_JS, { headers: Object.assign({ "content-type": "application/javascript; charset=utf-8" }, HEADERS) });
+    }
+    /* ---- SAVED AS AN APP (v693, his instruction of 18 Sep 2026) -------------------------------
+       The site had no manifest and no icon, so adding it to a home screen gave a screenshot with
+       no name. These two are the whole of it, served from the Worker because there are no assets:
+       a neutral tile and a name that says what the page is and not whose it is. */
+    if (p === "/icon.png") {
+      if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
+      const bytes = Uint8Array.from(atob(ICON_PNG_B64), (c) => c.charCodeAt(0));
+      return new Response(bytes, { headers: Object.assign({}, HEADERS, {
+        "content-type": "image/png", "cache-control": "public, max-age=86400" }) });
+    }
+    if (p === "/manifest.webmanifest") {
+      if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
+      const mf = {
+        name: "Statement of account", short_name: "Statement", start_url: "./", scope: "./",
+        display: "standalone", orientation: "portrait", background_color: "#05080a", theme_color: "#05080a",
+        icons: [{ src: "icon.png", sizes: ICON_SIZE + "x" + ICON_SIZE, type: "image/png", purpose: "any maskable" }]
+      };
+      return new Response(JSON.stringify(mf), { headers: Object.assign({}, HEADERS, {
+        "content-type": "application/manifest+json; charset=utf-8", "cache-control": "public, max-age=86400" }) });
     }
     if (p === "/push/key") return json({ ok: true, key: env.STMT_VAPID_PUBLIC_KEY || null, configured: !!(env.STMT_VAPID_PUBLIC_KEY && env.STMT_VAPID_PRIVATE_JWK) });
     if (p === "/remember/open") {

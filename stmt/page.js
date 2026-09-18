@@ -72,6 +72,13 @@ select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none}
 .btn[disabled]{opacity:.5;cursor:default}
 .btn.quiet{background:none;color:var(--salt-text);border:1px solid var(--salt-line);font-weight:400}
 .btn.lnk{display:block;text-align:center;text-decoration:none;line-height:1.4}
+/* KEEP IT ON YOUR PHONE (v693): the quietest block on the door, under everything, and gone the
+   moment the page is running as an app. */
+.inst{margin-top:26px;padding-top:16px;border-top:1px solid var(--salt-line)}
+.inst h2{margin:0 0 8px;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--salt-copper);font-family:var(--salt-font-mono);font-weight:700}
+.inst ol{margin:0;padding-left:20px;color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.8}
+.inst b{color:var(--salt-text);font-weight:600}
 /* REMEMBER ME (v692): a checkbox on the door, at the tap size everything else here is */
 .rem{display:flex;align-items:center;gap:10px;margin-top:16px;min-height:var(--salt-tap);
   font-size:var(--salt-text-sm);color:var(--salt-text-muted);cursor:pointer}
@@ -294,6 +301,14 @@ export function landingPage(user, nonce, owner) {
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'
+    /* v693: saved as an app. The name and the icon say what the page is and never whose it is. */
+    + '<link rel="manifest" href="/manifest.webmanifest">'
+    + '<link rel="apple-touch-icon" href="/icon.png">'
+    + '<meta name="theme-color" content="#05080a">'
+    + '<meta name="apple-mobile-web-app-capable" content="yes">'
+    + '<meta name="mobile-web-app-capable" content="yes">'
+    + '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'
+    + '<meta name="apple-mobile-web-app-title" content="Statement">'
     + "<title>Statement of account</title>"
     + '<style nonce="' + nonce + '">' + STATEMENT_CSS + PAGE_CSS + "</style></head><body>"
     + (owner
@@ -373,6 +388,14 @@ export function landingPage(user, nonce, owner) {
     + '<button class="btn" id="go" type="submit">Log in</button>'
     + "</form>"
     + '<p class="msg" id="msg" role="status" aria-live="polite"></p>'
+    /* v693: how to keep it as an app, on the door where a first-time reader is, and hidden once
+       the page is running as one. Three steps, the two phones, and nothing to tap. */
+    + '<div class="inst" id="inst" hidden>'
+    + "<h2>Keep it on your phone</h2>"
+    + '<ol><li><b>iPhone:</b> tap Share, then Add to Home Screen, then Add.</li>'
+    + "<li><b>Android:</b> tap the three dots, then Install app or Add to Home screen.</li>"
+    + "<li>Open it from that icon after this. It signs you in and tells you when an order moves.</li></ol>"
+    + "</div>"
     + "</div>"
     + '<div id="barw" hidden><div class="bar">'
     + '<span><b id="whoacct"></b><span id="cd"></span></span>'
@@ -528,7 +551,9 @@ const CLIENT_JS = `
     var kek=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(w.salt),iterations:150000,hash:'SHA-256'},
       base, {name:'AES-GCM',length:256}, false, ['decrypt']);
     var raw=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(w.iv)}, kek, b64d(w.ct));
-    return crypto.subtle.importKey('raw', raw, {name:'AES-GCM'}, false, ['decrypt']);
+    /* v692: extractable, because Remember me wraps this key under the device's own key. It is no
+       weaker: a script that can reach this key can already decrypt everything it opens. */
+    return crypto.subtle.importKey('raw', raw, {name:'AES-GCM'}, true, ['decrypt']);
   }
   async function open(ck, blob){
     var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(blob.iv)}, ck, b64d(blob.ct));
@@ -968,9 +993,13 @@ const CLIENT_JS = `
     try{
       var k=await (await fetch('/push/key',{cache:'no-store'})).json();
       if(!k.key||!k.configured){ draft.pushNote='Notifications are not switched on for this site yet.'; drawOrder(); return; }
-      var reg=await navigator.serviceWorker.register('/sw.js?u='+encodeURIComponent(user));
+      /* v693: THE ASK COMES FIRST. Registering a service worker before it meant a browser that
+         refuses the registration never got as far as the question, and since every login now asks,
+         that silence would be the ordinary case rather than the odd one. Nothing is installed on a
+         phone whose reader says no. */
       var perm=await Notification.requestPermission();
       if(perm!=='granted'){ draft.pushNote='Permission was not given, so nothing will be sent.'; drawOrder(); return; }
+      var reg=await navigator.serviceWorker.register('/sw.js?u='+encodeURIComponent(user));
       var raw=atob(k.key.replace(/-/g,'+').replace(/_/g,'/')), key=new Uint8Array(raw.length);
       for(var i=0;i<raw.length;i++) key[i]=raw.charCodeAt(i);
       var sub=await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:key});
@@ -1043,7 +1072,22 @@ const CLIENT_JS = `
        opens accounts with the master and must leave nothing behind on his phone. */
     var rem=document.getElementById('rem');
     if(!OWNER && rem && rem.checked) await remember(u, ck);
+    askPush();
   });
+
+  /* ---- ASKED ON EVERY LOGIN (v693, his instruction of 18 Sep 2026) ----------------------------
+     The button in the order tab stays, for a reader who said no and changed their mind; this asks
+     on the way in, which is when the answer is worth having. A browser that has already been
+     answered is not asked again: permission is 'granted' or 'denied' by then, and only 'default'
+     can raise the dialog at all. The owner's route never asks: those are not his phones. */
+  function askPush(){
+    if(OWNER||!session) return;
+    try{
+      var can=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
+      if(!can||Notification.permission!=='default') return;
+      subscribePush();
+    }catch(e){ /* a browser that refuses to be asked is not a fault */ }
+  }
 
   /* ---- OPENING A REMEMBERED DEVICE (v692) -----------------------------------------------------
      The token names the record and brings back the wrap; the key beside it in this browser opens
@@ -1081,6 +1125,7 @@ const CLIENT_JS = `
     drawPrices();
     if(session){ await loadOrders(); if(stale()) return true; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
     drawOrder();
+    askPush();
     return true;
   }
   /* THE OWNER'S OWN SCRIPT IS SPLICED IN HERE, and only on his route (v687). Everything it
@@ -1089,10 +1134,15 @@ const CLIENT_JS = `
   /*__OWNER_JS__*/
 
   if(!OWNER){
-    /* a remembered device opens itself; anything else waits at the door */
-    openRemembered().then(function(opened){
-      if(!opened){ try{ (un.value?firstEmpty('pw'):firstEmpty('un')).focus(); }catch(e){} }
-    });
+    /* v693: the tutorial is for a page opened in a browser, not one already kept as an app */
+    var installed=false;
+    try{ installed=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){}
+    var inst=document.getElementById('inst');
+    if(inst&&!installed) inst.hidden=false;
+    /* the cursor lands at once, and a remembered device opens over the top of it: a reader with no
+       memory on this phone must never wait on a request to be able to type */
+    try{ (un.value?firstEmpty('pw'):firstEmpty('un')).focus(); }catch(e){}
+    openRemembered();
   }
 })();
 `;

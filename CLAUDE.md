@@ -323,6 +323,19 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   Access session now also signs in as a customer. **The plain password is still laptop-only**, in
   `_passwords.json`, and no message ever carries it; a tick lives at `sent:<issue>:<username>`, so
   both his devices agree on what has gone out.
+- **KEPT AS AN APP** (v693, his instruction of 18 Sep 2026): the Worker serves
+  `/manifest.webmanifest` and `/icon.png` (bytes from `stmt/icons.js`, written by
+  `tools/stmt-icon.mjs --sync`, checked by `--check`), the CSP admits `manifest-src 'self'`, and the
+  door carries a three-step tutorial that hides once the page runs standalone. **The icon and the
+  name carry no brand**: a neutral ring, "Statement of account". **Every login asks about
+  notifications** once, and only where the answer is still open; the ask now comes before the
+  service worker is registered.
+- **THE DOOR: LOG IN, REMEMBER ME, LOG OUT** (v692, his instruction of 18 Sep 2026). The
+  three-minute lock is gone. **Remember me is split in two and neither half opens anything alone**:
+  the browser keeps a random device key, the site keeps the content key wrapped under it at
+  `rem:<token>` for 30 days, and the password is kept nowhere. The token is minted on a session,
+  which only a correct password mints; **Log out drops the session and that wrap**, and a token
+  only ever forgets its own account. An unknown token is refused in the door's one refusal.
 - **THE ASSOCIATES REPORT CARD** (v691, his decisions of 18 Sep 2026): one card an associate a
   book on the master page, from `associateSnapshot` in `tools/book.mjs`, published as KV `assoc`
   and served only at `/all/assoc`. **What they did** (bought, sold for him, brought in, onward

@@ -13865,7 +13865,7 @@ await (async () => {
   const ck92 = await C92.contentKey("7".repeat(64), u92);
   const openBody = {
     ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01"],
-    wrap: await C92.wrapKey(pass92, ck92), wrapMaster: null, session: "sess-92",
+    wrap: await C92.wrapKey(pass92, ck92), wrapMaster: null, session: "sess92aaaaaaaaaaaaaaaaaaaaaa",
     env: await C92.encryptWith(ck92, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [{ issued: "2026-09-01", label: "1 September 2026", body: "<div class=\"w\"><h1>Statement</h1></div>" }] })),
     live: null, prices: null
   };
@@ -13873,27 +13873,27 @@ await (async () => {
   /* the Worker's own half: a session mints a token, the token brings the wrap back, logging out ends both */
   const kv92 = new KV();
   await kv92.put("u:" + u92, JSON.stringify({ u: u92, issued: "2026-09-01", issues: ["2026-09-01"], env: openBody.env }));
-  await kv92.put("sess:sess-92", JSON.stringify({ u: u92, at: new Date().toISOString() }));
+  await kv92.put("sess:sess92aaaaaaaaaaaaaaaaaaaaaa", JSON.stringify({ u: u92, at: new Date().toISOString() }));
   const env92 = { STMT: kv92 };
   const post92 = (path, body, headers) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path,
     { method: "POST", headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }), env92);
   const fakeWrap = { v: 2, salt: "c2FsdA==", iv: "aXZpdml2aXZpdg==", ct: "Y3Q=" };
   ok((await post92("/remember", { wrap: fakeWrap })).status === 401, "remembering needs a session, which only a password mints");
-  const remOut = await (await post92("/remember", { wrap: fakeWrap }, { "X-Stmt-Session": "sess-92" })).json();
+  const remOut = await (await post92("/remember", { wrap: fakeWrap }, { "X-Stmt-Session": "sess92aaaaaaaaaaaaaaaaaaaaaa" })).json();
   const remKey = "rem:" + remOut.token;
   ok(remOut.ok && /^[A-Za-z0-9_-]{20,64}$/.test(remOut.token) && remOut.days === 30
     && (kv92.opts.get(remKey) || {}).expirationTtl === 30 * 24 * 3600
     && JSON.parse(await kv92.get(remKey)).u === u92 && !JSON.stringify(await kv92.get(remKey)).includes(pass92),
     "a session mints a token, the wrap is kept for thirty days, and no password is in it");
   const back = await (await post92("/remember/open", { token: remOut.token })).json();
-  ok(back.ok && back.u === u92 && JSON.stringify(back.wrap) === JSON.stringify(fakeWrap) && back.env && back.session && back.session !== "sess-92",
+  ok(back.ok && back.u === u92 && JSON.stringify(back.wrap) === JSON.stringify(fakeWrap) && back.env && back.session && back.session !== "sess92aaaaaaaaaaaaaaaaaaaaaa",
     "the token brings the wrap and the record back, with a session of its own");
   const bad92 = await post92("/remember/open", { token: "z".repeat(24) });
   ok(bad92.status === 401 && (await bad92.json()).error === "That username and password were not accepted.",
     "and an unknown token is refused in the door's own words, saying nothing about what exists");
-  await kv92.put("sess:other", JSON.stringify({ u: "cccc-dddd", at: new Date().toISOString() }));
-  await post92("/logout", { token: remOut.token }, { "X-Stmt-Session": "other" });
-  ok(!!(await kv92.get(remKey)) && !(await kv92.get("sess:other")),
+  await kv92.put("sess:other0000000000000000000000", JSON.stringify({ u: "cccc-dddd", at: new Date().toISOString() }));
+  await post92("/logout", { token: remOut.token }, { "X-Stmt-Session": "other0000000000000000000000" });
+  ok(!!(await kv92.get(remKey)) && !(await kv92.get("sess:other0000000000000000000000")),
     "another account's log out drops its own session and leaves this one's memory alone");
   await post92("/logout", { token: remOut.token }, { "X-Stmt-Session": back.session });
   ok(!(await kv92.get(remKey)) && !(await kv92.get("sess:" + back.session)),
@@ -13936,7 +13936,7 @@ await (async () => {
     const second = make92(stored92, () => async (path) => {
       if (String(path) === "/remember/open") {
         return { ok: true, status: 200, json: async () => ({ ok: true, u: u92, remembered: true, wrap: posted.wrap,
-          issued: "2026-09-01", issues: ["2026-09-01"], env: openBody.env, live: null, prices: null, session: "sess-92b" }) };
+          issued: "2026-09-01", issues: ["2026-09-01"], env: openBody.env, live: null, prices: null, session: "sess92bbbbbbbbbbbbbbbbbbbbbb" }) };
       }
       return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
     });
@@ -13952,6 +13952,86 @@ await (async () => {
         "and Log out forgets the device and puts the door back");
     } finally { try { second.W.close(); } catch (e) { /* best effort */ } }
   } finally { try { first.W.close(); } catch (e) { /* best effort */ } }
+})();
+section("v693: the site can be kept as an app, and every login asks about notifications");
+await (async () => {
+  /* HIS INSTRUCTION OF 18 SEP 2026: a short tutorial for saving the page as an app, and an ask for
+     notifications on every login. The site serves no assets, so the icon is bytes in a module and the
+     manifest is built in the Worker. NOTHING ON A HOME SCREEN NAMES THE BUSINESS: the tile is a ring. */
+  const { moduleText } = await import("../tools/stmt-icon.mjs");
+  ok(readFileSync(join(REPO, "stmt", "icons.js"), "utf8") === moduleText(),
+    "stmt/icons.js is the generator's own bytes, so the icon cannot drift from the tool that draws it");
+
+  const env93 = { STMT: new KV() };
+  const mres = await stmtWorker.fetch(new Request("https://k7m3p2.example/manifest.webmanifest"), env93);
+  const mf = await mres.json();
+  ok(mres.status === 200 && /application\/manifest\+json/.test(mres.headers.get("content-type"))
+    && mf.display === "standalone" && mf.start_url === "./" && mf.icons.length === 1 && mf.icons[0].src === "icon.png",
+    "the manifest is served, standalone, with one icon");
+  ok(!/salt/i.test(JSON.stringify(mf)) && mf.name === "Statement of account" && mf.short_name === "Statement",
+    "and it names the page, never the business: " + mf.name + " / " + mf.short_name);
+  const ires = await stmtWorker.fetch(new Request("https://k7m3p2.example/icon.png"), env93);
+  const bytes = Buffer.from(await ires.arrayBuffer());
+  ok(ires.status === 200 && ires.headers.get("content-type") === "image/png"
+    && bytes.slice(0, 8).toString("hex") === "89504e470d0a1a0a" && bytes.readUInt32BE(16) === 512 && bytes.readUInt32BE(20) === 512,
+    "the icon is a real 512px PNG, decoded from the module: " + bytes.length + " bytes");
+  const page93 = await stmtWorker.fetch(new Request("https://k7m3p2.example/"), env93);
+  const html93 = await page93.text();
+  ok(html93.includes('rel="manifest"') && html93.includes('rel="apple-touch-icon"') && html93.includes('name="theme-color"')
+    && /manifest-src 'self'/.test(page93.headers.get("content-security-policy")),
+    "the page links both and the policy admits its own manifest");
+  ok(/Add to Home Screen/.test(html93) && /Install app/.test(html93),
+    "and the door says how, on an iPhone and on an Android");
+
+  /* the tutorial is for a browser, and the ask is for a login */
+  const { landingPage: lp93 } = await import("../stmt/page.js");
+  const C93 = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JD93 } = await import("jsdom");
+  const { webcrypto: wc93 } = await import("node:crypto");
+  const u93 = "aaaa-bbbb", pass93 = "2345-6789-abcd-efgh";
+  const ck93 = await C93.contentKey("5".repeat(64), u93);
+  const body93 = {
+    ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01"], session: "sess93aaaaaaaaaaaaaaaaaaaaaa",
+    wrap: await C93.wrapKey(pass93, ck93), wrapMaster: null, live: null, prices: null,
+    env: await C93.encryptWith(ck93, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [{ issued: "2026-09-01", label: "1 September 2026", body: "<div class=\"w\"><h1>Statement</h1></div>" }] }))
+  };
+  const drive93 = (standalone, permission) => {
+    const asked = { times: 0 };
+    const dom = new JD93(lp93(u93, "n93", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: wc93, configurable: true }); } catch (e) { win.crypto = wc93; }
+        const store = new Map();
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.matchMedia = (q) => ({ matches: standalone && /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+        win.PushManager = function () {};
+        win.Notification = { permission, requestPermission: async () => { asked.times++; return "denied"; } };
+        Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: { register: async () => { throw new Error("no sw in jsdom"); } } });
+        win.fetch = async (path) => (String(path) === "/open" ? { ok: true, status: 200, json: async () => body93 }
+          : String(path) === "/push/key" ? { ok: true, status: 200, json: async () => ({ ok: true, key: "k", configured: true }) }
+          : { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) });
+      } });
+    return { W: dom.window, D: dom.window.document, asked };
+  };
+  const browser93 = drive93(false, "default");
+  try {
+    ok(browser93.D.getElementById("inst").hidden === false, "a page opened in a browser shows the tutorial");
+    browser93.D.getElementById("un").value = u93;
+    browser93.D.getElementById("pw").value = pass93;
+    browser93.D.getElementById("f").dispatchEvent(new browser93.W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 80 && browser93.asked.times === 0; i++) await new Promise((r) => setTimeout(r, 50));
+    ok(browser93.asked.times === 1, "and signing in asks about notifications once: " + browser93.asked.times);
+  } finally { try { browser93.W.close(); } catch (e) { /* best effort */ } }
+  const app93 = drive93(true, "denied");
+  try {
+    ok(app93.D.getElementById("inst").hidden === true, "a page already kept as an app does not teach how to keep it");
+    app93.D.getElementById("un").value = u93;
+    app93.D.getElementById("pw").value = pass93;
+    app93.D.getElementById("f").dispatchEvent(new app93.W.Event("submit", { bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 400));
+    ok(app93.asked.times === 0, "and a browser that has already refused is not asked again");
+  } finally { try { app93.W.close(); } catch (e) { /* best effort */ } }
 })();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
