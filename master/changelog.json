@@ -1,5 +1,14 @@
 [
  {
+  "v": "v713",
+  "d": "18 Sep 2026",
+  "t": "A FIFTY UNIT OIL LOT LANDS AND IS PAID IN FULL, RM12 FREIGHT INSIDE THE TOTAL",
+  "n": [
+   "<b>ONE ROW FOLDED, A PAID AND RECEIVED OIL PURCHASE.</b> Appended to purchases: BUY from SP7-PUD, 50 unit of oil for RM392, RM7.84 a unit, RM392 cash paid on 18 Sep and 50 unit received the same day, so nothing sits outstanding. The drafter raised no flags, and the figures come from the queued entry as drafted. On his word the row is approved to the book at v713.",
+   "<b>WHAT IS UNUSUAL IS THE RATE AGAINST HIS OWN QUOTE.</b> The 07 Sep sheet holds 50 unit at RM380, RM7.60 a unit, and the row carries RM12 freight inside the RM392, which puts the unit rate above his median of RM7.53 and above the top of his range of RM7 to RM7.67. The salt position is untouched at 10.5 unit against a reorder mark of 15, cost basis held at RM48 a unit."
+  ]
+ },
+ {
   "v": "v712",
   "d": "18 Sep 2026",
   "t": "AN OIL SALE TO CH4-MAL, PAID AND MOVED THE SAME DAY, WELL UNDER THE ASK",

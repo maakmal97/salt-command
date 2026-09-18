@@ -1,6 +1,6 @@
 {
- "v": "v712",
- "stamped": "18 Sep 2026, 21:49 KL",
+ "v": "v713",
+ "stamped": "18 Sep 2026, 21:56 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -38,7 +38,7 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 10
+    "stated": 60
    }
   },
   "STATED_STOCK": 10.5,
@@ -447,6 +447,21 @@
     "paidOn": "2026-09-15",
     "note": "<b>SALT BUY DATED 15 SEP, PAID IN FULL AND RECEIVED IN FULL ON THE DAY.</b> Booked to SA5-BTR, 25 unit for RM1,200, RM48 a unit, RM1,200 cash out and 25 unit received on 15 Sep, with RM40 freight, so nothing on this row stays open. The total is exactly the 25 unit tier of the 20 Aug quote, RM1,200 on his word of 07 Sep, down from the RM1,250 that tier held before. <b>No flag was raised.</b> He stood at RM3,100 outstanding before this row across 15 orders, nothing defaulted, at a RM56 median rate in a RM44 to RM64 range. Nothing is left outstanding.",
     "rid": "p024"
+   },
+   {
+    "qty": 50,
+    "total": 392,
+    "cash": 392,
+    "supplier": "SP7-PUD",
+    "freight": 12,
+    "status": "paid",
+    "product": "oil",
+    "date": "2026-09-18",
+    "receivedOn": "2026-09-18",
+    "receivedQty": 50,
+    "paidOn": "2026-09-18",
+    "note": "<b>OIL PURCHASE DATED 18 SEP, PAID AND RECEIVED IN FULL THE SAME DAY.</b> BUY from SP7-PUD, 50 unit for RM392, RM7.84 a unit, RM392 cash paid on 18 Sep with 50 unit received on 18 Sep, leaving nothing outstanding. The 07 Sep quote puts 50 unit at RM380, RM7.60 a unit, still his sharpest tier, and RM12 freight sits inside the total. Above his median of RM7.53 and above the range of RM7 to RM7.67. SP7-PUD shows 4 orders, nothing outstanding before, nothing on credit, nothing defaulted, not an associate, and on the roster. The drafter flagged nothing.",
+    "rid": "p025"
    }
   ],
   "sales": [
@@ -4783,9 +4798,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-18T13:48:01.997Z",
+  "QUEUE_COMMITTED": "2026-09-18T13:49:14.146Z",
   "PRICING": {
-   "takenAt": "2026-09-18T13:49:55.926Z",
+   "takenAt": "2026-09-18T13:56:36.520Z",
    "sizes": [
     0.5,
     1,
@@ -6095,28 +6110,28 @@
     },
     "oil": {
      "stockCost": 7.525,
-     "replCost": 7.59,
+     "replCost": 7.65,
      "floors": {
       "10": {
-       "floor": 87.28
+       "floor": 87.97
       },
       "20": {
-       "floor": 174.57
+       "floor": 175.95
       },
       "30": {
-       "floor": 261.86
+       "floor": 263.92
       },
       "40": {
-       "floor": 349.14
+       "floor": 351.9
       },
       "50": {
-       "floor": 436.43
+       "floor": 439.88
       },
       "80": {
-       "floor": 698.28
+       "floor": 703.8
       },
       "100": {
-       "floor": 872.85
+       "floor": 879.75
       }
      },
      "inputs": {
@@ -6146,10 +6161,10 @@
          "why": "Locked on the first oil lot, the day it landed."
         },
         "cur": {
-         "qty": 80,
-         "total": 602,
-         "rate": 7.525,
-         "date": "2026-09-08",
+         "qty": 50,
+         "total": 392,
+         "rate": 7.84,
+         "date": "2026-09-18",
          "sup": "SP7-PUD"
         },
         "days": 43,
@@ -6180,16 +6195,16 @@
         "shrink": null
        },
        "lot": {
-        "qty": 80,
-        "total": 602,
-        "rate": 7.525,
-        "date": "2026-09-08",
+        "qty": 50,
+        "total": 392,
+        "rate": 7.84,
+        "date": "2026-09-18",
         "sup": "SP7-PUD"
        },
-       "meanLot": 48,
+       "meanLot": 48.333333333333336,
        "quoteRate": 10,
-       "repl": 7.59,
-       "freightRate": 0.2455,
+       "repl": 7.65,
+       "freightRate": 0.2437,
        "leak": {
         "ratio": 0.2308,
         "leak": 15,
@@ -6216,7 +6231,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.12979591836734694,
+       "shrinkRate": 0.10779661016949153,
        "avgDel": {
         "n": 12,
         "kg": 176,
@@ -6337,7 +6352,7 @@
         270,
         330,
         390,
-        440
+        450
        ]
       },
       {
@@ -6346,20 +6361,20 @@
         270,
         300,
         390,
-        470,
-        560,
-        650
+        480,
+        570,
+        660
        ]
       },
       {
        "q": 40,
        "prices": [
-        350,
+        360,
         380,
         500,
         620,
-        730,
-        850
+        740,
+        860
        ]
       },
       {
@@ -6367,21 +6382,21 @@
        "prices": [
         440,
         460,
-        600,
-        750,
+        610,
+        760,
         900,
-        1040
+        1050
        ]
       },
       {
        "q": 80,
        "prices": [
-        700,
         710,
-        930,
-        1160,
-        1400,
-        1640
+        720,
+        940,
+        1170,
+        1410,
+        1650
        ]
       },
       {
@@ -6389,19 +6404,19 @@
        "prices": [
         880,
         890,
-        1120,
-        1420,
-        1710,
-        2000
+        1130,
+        1430,
+        1720,
+        2020
        ]
       }
      ]
     }
    },
-   "v": "v712"
+   "v": "v713"
   },
   "OPEN": {
-   "at": "2026-09-18T13:49:56.063Z",
+   "at": "2026-09-18T13:56:36.713Z",
    "count": 8,
    "byKey": {
     "CS6-BS|2026-09-18|420": {
@@ -6548,10 +6563,10 @@
     },
     "oil": {
      "name": "Oil",
-     "onHand": 10,
-     "free": 10,
+     "onHand": 60,
+     "free": 60,
      "owedOut": 0,
-     "coverDays": 1.6,
+     "coverDays": 9.3,
      "rate": 6.43,
      "owedToYou": 0,
      "promised": 0,
@@ -6562,7 +6577,7 @@
     "salt": "2026-09-16",
     "oil": "2026-09-09"
    },
-   "v": "v712"
+   "v": "v713"
   }
  }
 }
