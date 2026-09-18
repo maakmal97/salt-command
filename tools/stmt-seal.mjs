@@ -49,7 +49,7 @@ export async function sealPasswords(dir, opts = {}) {
   const here = resolve(dir);
   const root = dirname(here);
   const check = !!opts.check;
-  const out = { dir: here, sealed: [], already: [], failed: [], skipped: [], wrote: 0 };
+  const out = { dir: here, sealed: [], already: [], failed: [], skipped: [], rekeyed: [], wrote: 0 };
 
   const kvDir = join(here, "_kv");
   if (!existsSync(kvDir)) throw new Error("no _kv in " + here + ": nothing was ever issued from it");
@@ -90,14 +90,42 @@ export async function sealPasswords(dir, opts = {}) {
   const codeOf = {};
   for (const code of Object.keys(users)) codeOf[users[code]] = code;
 
+  /* ---- WHERE THE NAME HAS MOVED, PAIR BY PROOF (v705, 18 Sep 2026) ---------------------------
+   * _passwords.json is keyed by the CODE AS IT WAS AT THE ISSUE, and Amend ID re-keys a code
+   * wherever the book holds it. So a customer re-keyed after an issue has a password filed under a
+   * name that no longer exists, sheetParty finds nothing, and the account can never be sealed. Four
+   * were in exactly that state, and all four looked like a lost password: CA11-SEN to CA2-SEN,
+   * CA5-KER to CA5-BAN, CA7-JTR to CA7-AMP, CH5-OUG to CM3-OUG.
+   *
+   * A VERIFIER IS PROOF, NOT A GUESS. It answers one password and no other, so a record with no
+   * password under its own name is matched against the passwords whose code is no longer on the
+   * roster, and the one that answers its verifier IS its password. Nothing is re-issued and no
+   * customer is moved off a password they already hold. Only ORPHANED passwords are tried, so a
+   * password still filed under a live code can never be claimed by somebody else's record.
+   */
+  const orphaned = Object.keys(passwords).filter((c) => !users[c]);
+  const takenBy = {};
+  const pairByProof = async (rec) => {
+    for (const c of orphaned) {
+      if (takenBy[c]) continue;
+      if (await checkVerifier(passwords[c], rec.verifier)) { takenBy[c] = rec.u; return { pw: passwords[c], was: c }; }
+    }
+    return null;
+  };
+
   for (const r of records) {
     const u = r.rec.u;
     const code = codeOf[u] || Object.keys(passwords).find((c) => users[c] === u) || null;
     if (code && POSITION_ENGINE.isBucket(code)) { out.skipped.push(code + " (a bucket is not its own account)"); continue; }
     const pair = code ? sheetParty(code, users, passwords, htmlFor(code)) : null;
-    const pw = pair ? pair.pw : null;
+    let pw = pair ? pair.pw : null, was = null;
+    if (!pw) {
+      const proof = await pairByProof(r.rec);
+      if (proof) { pw = proof.pw; was = proof.was; }
+    }
     if (!pw) { out.failed.push((code || u) + ": no password on this laptop"); continue; }
     if (!(await checkVerifier(pw, r.rec.verifier))) { out.failed.push((code || u) + ": the password does not answer this record's verifier"); continue; }
+    if (was) out.rekeyed = (out.rekeyed || []).concat([(code || u) + " (its password was filed under " + was + ", before it was re-keyed)"]);
     if (r.rec.pwMaster) {
       let same = false;
       try { same = (await decryptText(master, r.rec.pwMaster)) === pw; } catch (e) { same = false; }
@@ -136,6 +164,12 @@ async function main() {
   console.log((check ? "would seal " : "sealed ") + out.sealed.length + " of " + (out.sealed.length + out.already.length + out.failed.length)
     + " record(s) in " + basename(out.dir) + (out.already.length ? ", " + out.already.length + " already sealed" : ""));
   if (out.sealed.length) console.log("  " + out.sealed.join(", "));
+  /* v705: say when a password was found under a name that has since moved, because that is the
+     thing a reader would otherwise have to work out from a code they do not recognise. */
+  if (out.rekeyed && out.rekeyed.length) {
+    console.log("  paired by their own verifier, the name having moved since the issue:");
+    for (const r of out.rekeyed) console.log("    " + r);
+  }
   if (out.skipped.length) console.log("  skipped: " + out.skipped.join(", "));
   if (out.failed.length) {
     console.log("::warning::" + out.failed.length + " record(s) were not sealed:");

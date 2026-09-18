@@ -14747,6 +14747,124 @@ await (async () => {
     "both doors read it: a password open and a remembered one");
   ok(!/for resale/i.test(page2), "and nothing on it says 'for resale', which is what he changed it from");
 })();
+section("v705: a password filed under a name that has since moved is paired by its own verifier");
+await (async () => {
+  /* THE FAULT, FOUND BY ASKING WHY FOUR ACCOUNTS COULD NOT BE SENT. _passwords.json is keyed by the
+     CODE AS IT WAS AT THE ISSUE, and Amend ID re-keys a code wherever the book holds it. So a
+     customer re-keyed after an issue has a password filed under a name that no longer exists,
+     sheetParty finds nothing, and the account can never be sealed: Send cannot hand the password
+     over, and it reads exactly like a password that was lost. Four were in that state on the live
+     book, and not one of them was lost.
+     A VERIFIER IS PROOF, NOT A GUESS: it answers one password and no other. Driven on fixtures. */
+  const C5 = await import("../tools/stmt-crypto.mjs");
+  const { sealPasswords } = await import("../tools/stmt-seal.mjs");
+  const root5 = join(REPO, "test", "tmp", "seal705");
+  const dir5 = join(root5, "2026-09");
+  rmSync(root5, { recursive: true, force: true });
+  mkdirSync(join(dir5, "_kv"), { recursive: true });
+
+  const MASTER = "the-master-passphrase-705";
+  const SECRET = "the-content-secret-705";
+  /* three accounts: one whose code never moved, one re-keyed since the issue, one already sealed */
+  const mk = async (u, pw, seal) => {
+    const ck = await C5.contentKey(SECRET, u);
+    const rec = { u, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C5.makeVerifier(pw),
+      wrap: await C5.wrapKey(pw, ck), wrapMaster: await C5.wrapKey(MASTER, ck),
+      env: await C5.encryptWith(ck, JSON.stringify({ statements: [] })) };
+    if (seal) rec.pwMaster = await C5.encryptText(MASTER, pw);
+    writeFileSync(join(dir5, "_kv", u + ".json"), JSON.stringify(rec), "utf8");
+    return rec;
+  };
+  const U_STILL = "aaaa-bbbb", U_MOVED = "cccc-dddd", U_DONE = "eeee-ffff", U_TWO = "kkkk-mmmm";
+  const P_STILL = "pass-still-here", P_MOVED = "pass-name-moved", P_DONE = "pass-already-done", P_TWO = "pass-also-moved";
+  await mk(U_STILL, P_STILL, false);
+  await mk(U_MOVED, P_MOVED, false);
+  await mk(U_TWO, P_TWO, false);
+  await mk(U_DONE, P_DONE, true);
+  /* the users map is TODAY's: CX9-NEW is what CX1-OLD was re-keyed to, CX8-NEW what CX3-GONE was */
+  writeFileSync(join(root5, "_users.json"), JSON.stringify({ "CX0-AA": U_STILL, "CX9-NEW": U_MOVED, "CX8-NEW": U_TWO, "CX2-CC": U_DONE }), "utf8");
+  /* the password file is the ISSUE's: it still says CX1-OLD and CX3-GONE, the names before the
+     re-keys. TWO orphans, deliberately, and CX3-GONE is listed FIRST: taking the first orphan
+     without proving it would hand CX9-NEW the wrong customer's password. */
+  writeFileSync(join(dir5, "_passwords.json"), JSON.stringify({ "CX3-GONE": P_TWO, "CX0-AA": P_STILL, "CX1-OLD": P_MOVED, "CX2-CC": P_DONE }), "utf8");
+
+  const before = process.env.STMT_MASTER;
+  process.env.STMT_MASTER = MASTER;
+  try {
+    const dry = await sealPasswords(dir5, { check: true });
+    ok(dry.sealed.length === 3 && dry.sealed.includes("CX0-AA") && dry.sealed.includes("CX9-NEW") && dry.sealed.includes("CX8-NEW") && dry.already.length === 1,
+      "all three unsealed accounts are found, the two re-keyed ones included: " + JSON.stringify(dry.sealed));
+    ok(dry.rekeyed.length === 2 && dry.rekeyed.some((x) => /CX9-NEW/.test(x) && /CX1-OLD/.test(x))
+      && dry.rekeyed.some((x) => /CX8-NEW/.test(x) && /CX3-GONE/.test(x)),
+      "and each says which name its password was filed under, so a code nobody recognises is explained: " + JSON.stringify(dry.rekeyed));
+    ok(dry.failed.length === 0, "nothing is reported as a password this laptop does not have: " + JSON.stringify(dry.failed));
+
+    const did = await sealPasswords(dir5, {});
+    ok(did.sealed.length === 3 && did.wrote === 3, "and the write seals all three");
+    const back = JSON.parse(readFileSync(join(dir5, "_kv", U_MOVED + ".json"), "utf8"));
+    ok(!!back.pwMaster && (await C5.decryptText(MASTER, back.pwMaster)) === P_MOVED,
+      "the re-keyed account's sealed password is ITS OWN, opened back under the master");
+    ok(await C5.checkVerifier(await C5.decryptText(MASTER, back.pwMaster), back.verifier),
+      "and it answers that record's own verifier, which is what makes the pairing proof rather than a guess");
+    const two = JSON.parse(readFileSync(join(dir5, "_kv", U_TWO + ".json"), "utf8"));
+    ok((await C5.decryptText(MASTER, two.pwMaster)) === P_TWO,
+      "and the SECOND re-keyed account gets its own, not the one the first left: two orphans, each to the record its verifier answers");
+    const still = JSON.parse(readFileSync(join(dir5, "_kv", U_STILL + ".json"), "utf8"));
+    ok((await C5.decryptText(MASTER, still.pwMaster)) === P_STILL,
+      "an account whose name never moved is still paired by name, and gets its own password");
+
+    /* A PASSWORD STILL FILED UNDER A LIVE CODE IS NEVER CLAIMED BY SOMEBODY ELSE'S RECORD. */
+    const root6 = join(REPO, "test", "tmp", "seal705b"), dir6 = join(root6, "2026-09");
+    rmSync(root6, { recursive: true, force: true });
+    mkdirSync(join(dir6, "_kv"), { recursive: true });
+    /* THE SHARED-PASSWORD CASE, which is what the orphan filter is actually for. CY0-AA's own
+       password is not on this laptop, and its verifier is answered by a password filed under
+       CY1-BB, a code STILL ON THE ROSTER. Trying every password rather than only the orphaned ones
+       would seal another customer's password onto this record, and Send would hand it to the wrong
+       person. A password with a home is never anybody else's to claim. */
+    const SHARED = "a-live-customers-password";
+    const ck6 = await C5.contentKey(SECRET, "gggg-hhhh");
+    writeFileSync(join(dir6, "_kv", "gggg-hhhh.json"), JSON.stringify({ u: "gggg-hhhh", issued: "2026-09-01",
+      verifier: await C5.makeVerifier(SHARED), wrap: await C5.wrapKey(SHARED, ck6),
+      wrapMaster: await C5.wrapKey(MASTER, ck6), env: await C5.encryptWith(ck6, "{}") }), "utf8");
+    writeFileSync(join(root6, "_users.json"), JSON.stringify({ "CY0-AA": "gggg-hhhh", "CY1-BB": "iiii-jjjj" }), "utf8");
+    writeFileSync(join(dir6, "_passwords.json"), JSON.stringify({ "CY1-BB": SHARED }), "utf8");
+    const none = await sealPasswords(dir6, { check: true });
+    ok(none.sealed.length === 0 && none.failed.length === 1 && /no password on this laptop/.test(none.failed[0]),
+      "a password filed under a code still on the roster is never claimed by another record, even when it answers that record's verifier: " + JSON.stringify(none.failed));
+
+    /* AND ONE PASSWORD IS ONE RECORD. Two accounts issued the same password, both re-keyed, one
+       orphan between them: the first takes it and the second is reported rather than given a
+       password that has already been handed to somebody else. */
+    const root7 = join(REPO, "test", "tmp", "seal705c"), dir7 = join(root7, "2026-09");
+    rmSync(root7, { recursive: true, force: true });
+    mkdirSync(join(dir7, "_kv"), { recursive: true });
+    const SAME = "two-accounts-one-password";
+    for (const u of ["mmmm-nnnn", "pppp-qqqq"]) {
+      const ck7 = await C5.contentKey(SECRET, u);
+      writeFileSync(join(dir7, "_kv", u + ".json"), JSON.stringify({ u, issued: "2026-09-01",
+        verifier: await C5.makeVerifier(SAME), wrap: await C5.wrapKey(SAME, ck7),
+        wrapMaster: await C5.wrapKey(MASTER, ck7), env: await C5.encryptWith(ck7, "{}") }), "utf8");
+    }
+    writeFileSync(join(root7, "_users.json"), JSON.stringify({ "CZ0-AA": "mmmm-nnnn", "CZ1-BB": "pppp-qqqq" }), "utf8");
+    writeFileSync(join(dir7, "_passwords.json"), JSON.stringify({ "CZ9-GONE": SAME }), "utf8");
+    const one = await sealPasswords(dir7, { check: true });
+    ok(one.sealed.length === 1 && one.failed.length === 1,
+      "one password is one record: the second is reported rather than handed a password already claimed: "
+        + JSON.stringify({ sealed: one.sealed, failed: one.failed.length }));
+
+    /* AND A WRONG MASTER WRITES NOTHING AT ALL. */
+    process.env.STMT_MASTER = "not-the-master";
+    let threw = false;
+    try { await sealPasswords(dir5, {}); } catch (e) { threw = true; }
+    ok(threw, "a master that does not unwrap the records refuses to start, so a pwMaster under the wrong passphrase can never be written");
+  } finally {
+    if (before === undefined) delete process.env.STMT_MASTER; else process.env.STMT_MASTER = before;
+    rmSync(root5, { recursive: true, force: true });
+    rmSync(join(REPO, "test", "tmp", "seal705b"), { recursive: true, force: true });
+    rmSync(join(REPO, "test", "tmp", "seal705c"), { recursive: true, force: true });
+  }
+})();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

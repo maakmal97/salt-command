@@ -69,6 +69,23 @@ the record a customer fetches, and his page decrypts it in the browser straight 
 v688; it runs on the laptop, proves each password against the record's own verifier, and writes
 nothing else.
 
+**A PASSWORD FILED UNDER A NAME THAT HAS SINCE MOVED IS PAIRED BY ITS OWN VERIFIER** (v705, 18 Sep
+2026). `_passwords.json` is keyed by the CODE AS IT WAS AT THE ISSUE, and Amend ID re-keys a code
+wherever the book holds it. So a customer re-keyed after an issue has a password filed under a name
+that no longer exists, `sheetParty` finds nothing, the account can never be sealed, and it reads
+exactly like a password that was lost. Four accounts were in that state and not one was lost:
+CA11-SEN to CA2-SEN, CA5-KER to CA5-BAN, CA7-JTR to CA7-AMP, CH5-OUG to CM3-OUG.
+
+`tools/stmt-seal.mjs` now falls back to pairing by PROOF: a record with no password under its own
+name is tested against the passwords whose code is **no longer on the roster**, and the one that
+answers its own verifier IS its password. A verifier answers one password and no other, so this is
+certainty rather than a guess. **Only orphaned passwords are tried**, so a password still filed under
+a live code is never claimed by somebody else's record even when it would answer their verifier, and
+**one password is one record**, so the second of two accounts issued the same password is reported
+rather than handed one already claimed. Nothing is re-issued and no customer is moved off a password
+they already hold. The run says which name each was filed under, because a code nobody recognises is
+otherwise a puzzle.
+
 **Check the folder before writing into it.** The generator overwrites silently and has no
 re-run guard. If `statements/<YYYY-MM>` already holds a set: same issue date is a clean retry
 and may be regenerated in place; a *different* issue date means a second issue in one month, so

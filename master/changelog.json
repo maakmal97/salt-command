@@ -1,5 +1,17 @@
 [
  {
+  "v": "v705",
+  "d": "18 Sep 2026",
+  "t": "A PASSWORD FILED UNDER A NAME THAT HAS SINCE MOVED IS PAIRED BY ITS OWN VERIFIER",
+  "n": [
+   "<b>FOUR ACCOUNTS COULD NOT BE SENT, AND EVERY ONE OF THEM LOOKED LIKE A LOST PASSWORD.</b> _passwords.json is keyed by the code as it was at the issue, and Amend ID re-keys a code wherever the book holds it. So a customer re-keyed after an issue has a password filed under a name that no longer exists: the pairing by name finds nothing, the account is never sealed, and Send has nothing to hand over. CA11-SEN had become CA2-SEN, CA5-KER CA5-BAN, CA7-JTR CA7-AMP and CH5-OUG CM3-OUG. Not one password was lost; all four were filed under the name the customer used to have.",
+   "<b>A VERIFIER IS PROOF, NOT A GUESS.</b> It answers one password and no other. So a record with no password under its own name is now tested against the passwords whose code is no longer on the roster, and the one that answers its own verifier is its password. Nothing is re-issued, and no customer is moved off a password they already hold, which matters: two of the four have opened their statements, so they have their password and only he did not.",
+   "<b>ONLY AN ORPHANED PASSWORD IS EVER TRIED.</b> One still filed under a live code is never claimed by another record, even in the case where it would answer that record's verifier, because it is somebody's and Send would hand it to the wrong person. And one password is one record: where two accounts were issued the same password and only one orphan sits between them, the second is reported rather than given one already claimed.",
+   "<b>IT SAYS WHICH NAME IT FOUND IT UNDER.</b> A code nobody recognises is otherwise a puzzle, and the answer is the whole explanation of why the account was stuck.",
+   "<b>THE CHECKS.</b> A new section of 11 assertions on fixtures: two re-keyed accounts each paired to their own password from two orphans listed in the wrong order, an account whose name never moved still paired by name, the sealed password opened back under the master and proved against its own verifier, a live customer's password refused to a record whose verifier it answers, one password claimed by one record only, and a wrong master refusing to start. Six mutations each turned it red, including the one that removes the pairing and restores the fault."
+  ]
+ },
+ {
   "v": "v704",
   "d": "18 Sep 2026",
   "t": "THE USER-FACING NAME IS SALT COUNTER",
