@@ -190,8 +190,16 @@ export function checkPlacement(body, open) {
      never a figure of its own: it tells him which way to drive and nothing else. */
   const place = String(body.place || "").replace(/\s+/g, " ").trim().slice(0, 60);
   if (mode === "deliver" && place.length < 2) return { error: "say roughly where it is going, so the delivery can be quoted" };
+  /* v702, his instruction of 18 Sep 2026: an associate's own order and one placed on behalf of a
+     friend are no longer told apart by what they buy, so they tick it. IT IS TAKEN FROM ANYONE AND
+     CHECKED BY NOBODY HERE: this site holds no roster and knows no codes, so it records the claim
+     and the DESK decides where the row books, exactly as it does with the quoted total. An account
+     that is not an associate has no tick to send, and a tick it sent anyway would reach a desk that
+     has no bucket to book it to and would refuse it. */
+  const forFriend = body.forFriend === true;
   if (open.length >= MAX_OPEN) return { error: "you already have " + open.length + " orders open; wait for one to be completed" };
-  return { order: { product, qty, mode, unit: +unit.toFixed(2), total: +total.toFixed(2), week, place: mode === "deliver" ? place : "" } };
+  return { order: { product, qty, mode, unit: +unit.toFixed(2), total: +total.toFixed(2), week,
+    place: mode === "deliver" ? place : "", forFriend } };
 }
 
 /* WHAT IS STILL OWED ON AN ORDER, and what is still to be handed over. Both read the record alone:

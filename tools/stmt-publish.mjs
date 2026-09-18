@@ -50,8 +50,21 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
      master, so a customer could not open it, but /open hands the whole record's fields to whoever
      answers the door and there is no reason for it to be there at all. It travels in `sheet`,
      which only the Access-gated route serves. */
+  /* v702, HIS INSTRUCTION OF 18 SEP 2026: an associate's own orders and the ones they place on
+     behalf of a friend can no longer be told apart by what they buy, so they get a tick. The page
+     has to know whether to draw it, and WHO IS AN ASSOCIATE IS THE DESK'S ANSWER, not a second one
+     invented here: it is the report card's own list, read off the same snapshot that writes `assoc`
+     below, so the two can never disagree about who one is.
+     THE MARK IS IN THE CLEAR, deliberately, beside `issued` and `issues` which already are. The
+     tick has to be drawn before a password has opened anything sealed, and what it says is that
+     this account MAY order for somebody else: not a figure, not a name, not a fact about the book.
+     Nothing downstream trusts it either; the desk decides where a row books. */
+  const byUser0 = usersMap(root);
+  const assocCodes = new Set();
+  for (const prod of (assoc && assoc.products) || []) for (const row of prod.rows || []) if (row && row.id) assocCodes.add(row.id);
   const puts = r.records.map(rec => {
     const { pwMaster, ...forCustomer } = rec;
+    if (assocCodes.has(byUser0[rec.u])) forCustomer.assoc = true;
     return { key: "u:" + rec.u, value: JSON.stringify(forCustomer) };
   });
   const keep = new Set(r.records.map(rec => "u:" + rec.u));

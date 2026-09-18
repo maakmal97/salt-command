@@ -319,6 +319,28 @@ dropped on a collection. It is shown on his card and **never rides into the ledg
 note reaches the committed book, and free text a customer typed is the one thing here that could
 carry a street. **Nothing is placed on one tap**: the page reviews the order in words first.
 
+**AN ASSOCIATE TICKS AN ORDER AS ON BEHALF OF A FRIEND** (v703, his instruction of 18 Sep 2026).
+Their own orders and the ones they place for somebody else can no longer be told apart by what they
+buy, so they tick it; the words are his, and they replaced an earlier phrasing he rejected. The tick
+is drawn only for an associate, rides the placement as `forFriend`, and is stored on the order.
+
+*Who is an associate* is the desk's own answer, never a second one: `planPublish` reads the report
+card snapshot's `products[].rows[].id` and marks that account's record `assoc: true`. The mark is
+**in the clear**, beside `issued` and `issues` which already are, because the page must know whether
+to draw the tick before a password has opened anything sealed, and what it says is that this account
+MAY order for somebody else: not a figure, not a name, not a fact about the book. Both doors hand it
+over, `/open` and `/remember/open`, or the tick would vanish the moment they stopped typing a
+password.
+
+*Where it books.* A ticked order goes to the associate's `<CODE>-R` bucket exactly as a
+phone-entered downsell does. `pendingEntry` carries `stream: "R2"` and `assoc`, which is the shape
+the drafter already takes, and **the engine's own `bookR2` does the booking**: a second copy of that
+rule would put two kinds of downsell in the book. **The `orderKey` is built on the BUCKET**, because
+that is the party the fold writes, so every later stage, a payment, a handover and a withdrawal,
+finds the row; built on the associate's own code they would all miss it. The site checks nothing
+here, holding no roster and knowing no codes: it records the claim and the desk decides, exactly as
+it does with the quoted total. An associate with no bucket on the roster is refused by the drafter.
+
 **MONEY AND GOODS ARE TWO TRACKS** (v694). `paid` and `payments[]` are what the customer says they
 have paid, `moved` and `movedOn` what he says he handed over, and either may lead. Payment is offered
 **from the acknowledgement**. Five rails: cash on collection or delivery, DuitNow

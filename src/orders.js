@@ -20,6 +20,7 @@
  */
 import { sendPush } from "./push.js";
 import { readBook } from "./drafter.js";
+import POSITION_ENGINE from "../engine/position.mjs";
 
 const DEVICE = "orders";
 const MARK = "orders:nudged";
@@ -81,25 +82,42 @@ export const orderKeyFor = (code, date, total) => code + "|" + date + "|" + (+to
 const klDate = (now) => (now instanceof Date ? now : new Date(now || Date.now()))
   .toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
 
+/* ---- ON BEHALF OF A FRIEND (v702, his instruction of 18 Sep 2026) ----------------------------
+ * An associate's own order and one placed for somebody else are no longer told apart by what they
+ * buy; they tick it, and a ticked order books to their `<CODE>-R` bucket exactly as a phone-entered
+ * downsell does. NOTHING HERE DOES THE BOOKING: the entry carries `stream: "R2"` and `assoc`, which
+ * is the shape the drafter already takes, and the drafter calls the engine's own bookR2. A second
+ * copy of that rule would be a second kind of downsell in the book.
+ *
+ * THE KEY NAMES THE ROW AS IT WILL STAND, so it is built on the BUCKET, because that is the party
+ * the fold will write. Built on the associate's own code, every later amendment would miss its row.
+ */
+const bucketFor = (code) => POSITION_ENGINE.bookR2({}, "customer", code, null).customer;
+export const partyOnBook = (order, code) => (order && order.forFriend ? bucketFor(code) : code);
+
 /** The pending row an acknowledged order becomes: agreed, nothing paid, nothing moved. */
 export function pendingEntry(order, code, now) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
   const date = klDate(at);
   const delivery = +(order.delivery || 0);
   const total = +(order.total + delivery).toFixed(2);
+  const friend = !!order.forFriend;
+  const books = partyOnBook(order, code);
   /* the general location the customer typed stays on the site, on his card: a note reaches the
      committed book, and free text a customer typed is the one thing here that could carry a street */
   const note = "Ordered on the statements site, order " + order.id + ", acknowledged"
+    + (friend ? ", on behalf of a friend" : "")
     + (order.mode === "deliver" ? ", to be delivered" : ", to collect")
     + (delivery > 0 ? ", delivery RM " + delivery : "") + ". Nothing paid and nothing handed over yet.";
-  const raw = "SELL " + code + " " + order.qty + " " + (order.product || "salt") + " RM " + total
+  const raw = "SELL " + books + " " + order.qty + " " + (order.product || "salt") + " RM " + total
     + ", nothing paid, nothing moved (order " + order.id + ")";
   return {
-    at: at.toISOString(), type: "SELL", party: code, qty: order.qty, total, status: "Pending", raw,
-    orderKey: orderKeyFor(code, date, total),
+    at: at.toISOString(), type: "SELL", party: books, qty: order.qty, total, status: "Pending", raw,
+    orderKey: orderKeyFor(books, date, total),
     payload: { mode: "new", product: order.product || "salt", direction: "SELL", party: code, newId: null,
       date, qty: order.qty, total, delivery, cash: 0, kg: 0,
-      assoc: null, stream: null, downstream: null, kind: null, orderCode: null, linkTo: null, note,
+      assoc: friend ? code : null, stream: friend ? "R2" : null, downstream: null,
+      kind: null, orderCode: null, linkTo: null, note,
       handover: null, second: null }
   };
 }
@@ -109,11 +127,12 @@ export function payEntry(order, code, amount, now) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
   const date = klDate(at);
   const cash = +(+amount).toFixed(2);
+  const books = partyOnBook(order, code);
   const method = order.method ? (order.method + (order.account ? " via " + order.account : "")) : "not stated";
   return {
-    at: at.toISOString(), type: "SELL", party: code, qty: 0, total: cash, status: "Payment",
-    raw: "Payment of RM " + cash + " on " + code + ", order " + order.id + ", by " + method,
-    payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: code, rid: null,
+    at: at.toISOString(), type: "SELL", party: books, qty: 0, total: cash, status: "Payment",
+    raw: "Payment of RM " + cash + " on " + books + ", order " + order.id + ", by " + method,
+    payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: books, rid: null,
       orderKey: order.ledgerKey || null, orderCode: null, linkTo: null, assoc: null, downstream: null,
       date, qty: 0, total: 0, cash, kg: 0,
       note: "Paid on the statements site, order " + order.id + ", by " + method + "." }
@@ -125,11 +144,12 @@ export function handoverEntry(order, code, units, now) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
   const date = klDate(at);
   const moved = +(+units).toFixed(2);
+  const books = partyOnBook(order, code);
   const how = order.mode === "deliver" ? "delivered" : "collected";
   return {
-    at: at.toISOString(), type: "SELL", party: code, qty: moved, total: 0, status: "Handover",
-    raw: moved + " unit " + how + " to " + code + ", order " + order.id + ", on " + date,
-    payload: { mode: "amend", kind: "Correction", direction: "SELL", party: code, rid: null,
+    at: at.toISOString(), type: "SELL", party: books, qty: moved, total: 0, status: "Handover",
+    raw: moved + " unit " + how + " to " + books + ", order " + order.id + ", on " + date,
+    payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: null,
       orderKey: order.ledgerKey || null, orderCode: null, linkTo: null, assoc: null, downstream: null,
       date, qty: 0, total: 0, cash: 0, kg: 0,
       fields: { deliveredQty: moved, deliveredOn: date, handover: how },
@@ -141,10 +161,11 @@ export function handoverEntry(order, code, units, now) {
 export function cancelEntry(order, code, why, now) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
   const date = klDate(at);
+  const books = partyOnBook(order, code);
   return {
-    at: at.toISOString(), type: "SELL", party: code, qty: 0, total: 0, status: "Cancellation",
-    raw: "Cancellation on " + code + ", order " + order.id + ", recorded " + date,
-    payload: { mode: "amend", kind: "Cancellation", direction: "SELL", party: code, rid: null,
+    at: at.toISOString(), type: "SELL", party: books, qty: 0, total: 0, status: "Cancellation",
+    raw: "Cancellation on " + books + ", order " + order.id + ", recorded " + date,
+    payload: { mode: "amend", kind: "Cancellation", direction: "SELL", party: books, rid: null,
       orderKey: order.ledgerKey || null, orderCode: null, linkTo: null, assoc: null, downstream: null,
       date, qty: 0, total: 0, cash: 0, kg: 0,
       note: "Withdrawn on the statements site by " + (why === "desk" ? "the desk" : "the customer") + ", order " + order.id + "." }

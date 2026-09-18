@@ -14641,6 +14641,110 @@ await (async () => {
     "and the file says how it reaches production, because rev.json's id does not cover it and update.mjs would report the phone current");
   ok(typeof stmtW7.scheduled === "function", "and the Worker exports the handler the cron calls");
 })();
+section("v703: an associate ticks an order as on behalf of a friend, and it books to their bucket");
+await (async () => {
+  /* HIS INSTRUCTION OF 18 SEP 2026: "their order, or their resale orders can no longer be
+     differentiated, but this is solely for associate, so they have a check button for resale", and
+     then "not for resale, but put as 'on behalf of a friend'". A ticked order books to their
+     <CODE>-R bucket exactly as a phone-entered downsell does, through the engine's own bookR2:
+     nothing here re-implements it, or the book would hold two kinds of downsell. */
+  const stmtW2 = (await import("../stmt/worker.js")).default;
+  const O2 = await import("../stmt/orders.js");
+  const { pendingEntry: pe2, payEntry: pay2, handoverEntry: hand2, cancelEntry: can2, partyOnBook, orderKeyFor: okf2 }
+    = await import("../src/orders.js");
+  const PE2 = (await import("../engine/position.mjs")).default;
+  const { draftRow: dr2 } = await import("../src/drafter.js");
+
+  /* ---- the tick is taken from anyone and checked by nobody on the site ---- */
+  const base = { product: "salt", qty: 2, mode: "collect", unit: 100, total: 200, week: "" };
+  ok(O2.checkPlacement({ ...base, forFriend: true }, []).order.forFriend === true
+    && O2.checkPlacement(base, []).order.forFriend === false
+    && O2.checkPlacement({ ...base, forFriend: "yes" }, []).order.forFriend === false,
+    "the tick rides the placement as a boolean and only a real true is one: the site holds no roster to check it against");
+
+  /* ---- the desk books it to the bucket, through the engine ---- */
+  const ord2 = { id: "20260918000000-f1", qty: 2, total: 200, delivery: 0, mode: "collect", product: "salt", forFriend: true };
+  const own2 = { ...ord2, forFriend: false };
+  const now2 = new Date("2026-09-18T04:00:00Z");
+  const ack2 = pe2(ord2, "CS6-BS", now2), ackOwn = pe2(own2, "CS6-BS", now2);
+  ok(ack2.party === "CS6-BS-R" && ack2.payload.stream === "R2" && ack2.payload.assoc === "CS6-BS"
+    && ack2.payload.party === "CS6-BS" && ack2.payload.downstream === null,
+    "a ticked order carries the shape the drafter already takes: stream R2 and the associate, so the ENGINE does the booking");
+  /* THE DISCRIMINATING CASE IS A CODE THAT IS ALREADY A BUCKET. bookR2 takes ownerCode first, so
+     it answers CS6-BS-R; a string with -R stuck on the end answers CS6-BS-R-R, which is nobody. */
+  ok(partyOnBook(ord2, "CS6-BS") === PE2.bookR2({}, "customer", "CS6-BS", null).customer
+    && partyOnBook(ord2, "CS6-BS-R") === "CS6-BS-R",
+    "the bucket is the engine's own answer, never a string with -R stuck on it: " + partyOnBook(ord2, "CS6-BS-R"));
+  ok(ackOwn.party === "CS6-BS" && ackOwn.payload.stream === null && ackOwn.payload.assoc === null,
+    "an associate's own order is untouched: no tick, no stream, no bucket");
+  ok(/on behalf of a friend/.test(ack2.payload.note) && !/on behalf of a friend/.test(ackOwn.payload.note),
+    "the row's note says which it was, in his words");
+
+  /* ---- and the KEY names the row as it will stand, or every later stage misses it ---- */
+  ok(ack2.orderKey === okf2("CS6-BS-R", ack2.payload.date, 200) && ack2.orderKey !== okf2("CS6-BS", ack2.payload.date, 200),
+    "the key is built on the BUCKET, because that is the party the fold writes: " + ack2.orderKey);
+  const withKey = { ...ord2, ledgerKey: ack2.orderKey };
+  const stages = [pay2(withKey, "CS6-BS", 50, now2), hand2(withKey, "CS6-BS", 2, now2), can2(withKey, "CS6-BS", "customer", now2)];
+  ok(stages.every((e) => e.party === "CS6-BS-R" && e.payload.party === "CS6-BS-R" && e.payload.orderKey === ack2.orderKey),
+    "every later stage names the bucket and the same key, so a payment, a handover and a withdrawal all find the row");
+  const ownStages = [pay2({ ...own2, ledgerKey: ackOwn.orderKey }, "CS6-BS", 50, now2)];
+  ok(ownStages.every((e) => e.party === "CS6-BS" && e.payload.orderKey === ackOwn.orderKey),
+    "and an untouched order's stages still name the associate");
+
+  /* ---- the drafter takes it and lands the row on the bucket ---- */
+  const book2 = { version: "v702", pricing: { v: "v702", byProduct: { salt: { stockCost: 48, replCost: 48, floors: { 2: { floor: 120 } } } } },
+    purchases: [{ date: "2026-08-13", qty: 12.5, total: 650, receivedOn: "2026-08-13" }], sales: [],
+    state: { roster: ["CS6-BS", "CS6-BS-R"], associates: ["CS6-BS"], QUEUE_COMMITTED: "2026-09-01T00:00:00.000Z" } };
+  const d2 = dr2(ack2, book2);
+  ok(!d2.skip && d2.row.customer === "CS6-BS-R" && d2.row.rev === "R2" && !d2.row.downstream,
+    "the drafter drafts it onto the bucket with rev R2 and no end buyer named: " + JSON.stringify(d2.skip || { c: d2.row.customer, rev: d2.row.rev }));
+  const noBucket = dr2(ack2, { ...book2, state: { ...book2.state, roster: ["CS6-BS"] } });
+  ok(!!noBucket.skip || (noBucket.flags || []).length > 0,
+    "and an associate with no bucket on the roster does not quietly land a row on one that is not there");
+
+  /* ---- the mark: the desk's own answer to who is an associate, and it reaches the page ---- */
+  const PUB2 = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");
+  ok(/for \(const prod of \(assoc && assoc\.products\) \|\| \[\]\) for \(const row of prod\.rows \|\| \[\]\) if \(row && row\.id\) assocCodes\.add\(row\.id\);/.test(PUB2)
+    && /if \(assocCodes\.has\(byUser0\[rec\.u\]\)\) forCustomer\.assoc = true;/.test(PUB2),
+    "who is an associate is the report card's own list, so the two readings cannot disagree");
+  /* BOTH DOORS, DRIVEN. Reading the page's source proves the page would use the mark; it proves
+     nothing about the Worker handing it over, which is the half that makes the tick appear. */
+  const C2 = await import("../tools/stmt-crypto.mjs");
+  const kv2 = new KV();
+  const acct2 = async (u, isAssoc) => {
+    const pw = C2.newPassword(), ck = await C2.contentKey("test-secret", u);
+    const rec = { u, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C2.makeVerifier(pw),
+      wrap: await C2.wrapKey(pw, ck), env: await C2.encryptWith(ck, JSON.stringify({ statements: [] })) };
+    if (isAssoc) rec.assoc = true;
+    await kv2.put("u:" + u, JSON.stringify(rec));
+    return { u, pw, ck };
+  };
+  const A = await acct2(C2.newUsername(), true), B = await acct2(C2.newUsername(), false);
+  const openAs = async (u, pass) => (await stmtW2.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify({ u, password: pass }) }), { STMT: kv2 })).json();
+  const oa = await openAs(A.u, A.pw), ob = await openAs(B.u, B.pw);
+  ok(oa.ok && oa.assoc === true && ob.ok && ob.assoc === false,
+    "the password door hands the mark over, and hands a plain false to everyone else: " + JSON.stringify([oa.assoc, ob.assoc]));
+  ok((await openAs(A.u, C2.newPassword())).ok === false, "a wrong password still opens nothing, mark or no mark");
+  /* and the remembered door, which is a second road to the same page */
+  const remd = await (await stmtW2.fetch(new Request("https://k7m3p2.example/remember", { method: "POST",
+    headers: { "content-type": "application/json", "X-Stmt-Session": oa.session },
+    body: JSON.stringify({ wrap: { salt: "s", iv: "i", ct: "c" } }) }), { STMT: kv2 })).json();
+  const back = await (await stmtW2.fetch(new Request("https://k7m3p2.example/remember/open", { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify({ token: remd.token }) }), { STMT: kv2 })).json();
+  ok(remd.ok && back.ok && back.assoc === true,
+    "and so does a remembered device, or the tick would vanish the moment they stopped typing a password");
+
+  /* ---- the page draws the tick only for an associate ---- */
+  const page2 = await (await stmtW2.fetch(new Request("https://k7m3p2.example/"), { STMT: kv2 })).text();
+  ok(page2.includes("On behalf of a friend") && page2.includes("if(assoc){"),
+    "the words are on the page and the tick is behind the mark, so nobody else is offered it");
+  ok(/forFriend:!!\(assoc&&draft\.forFriend\)/.test(page2),
+    "and the placement cannot send the tick unless the account carries the mark");
+  ok(/assoc=body\.assoc===true;/.test(page2) && (page2.match(/assoc=body\.assoc===true;/g) || []).length === 2,
+    "both doors read it: a password open and a remembered one");
+  ok(!/for resale/i.test(page2), "and nothing on it says 'for resale', which is what he changed it from");
+})();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

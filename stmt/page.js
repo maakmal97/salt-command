@@ -510,6 +510,9 @@ const CLIENT_JS = `
   var POLL_MS=__POLL__, bundle=null, at=0, ticket=0, busy=false;
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
   var session='', user='', prices=null, orders=[], poll=null, tab='stmt', draft={}, pick={};
+  /* v702: whether this account may order on behalf of a friend. It draws one tick and nothing
+     else; where a row books is the desk's decision, and it checks it against its own roster. */
+  var assoc=false;
   /* null for a customer; {master,accounts} for the owner, on the Access-gated route only */
   var OWNER=__OWNER__;
   var roster=document.getElementById('roster'), rq=document.getElementById('rq'),
@@ -687,7 +690,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; prices=null; orders=[]; draft={}; pick={};
+    bundle=null; session=''; prices=null; orders=[]; draft={}; pick={}; assoc=false;
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
     var mfn=document.getElementById('mfnote'); if(mfn) mfn.textContent='';
@@ -942,6 +945,15 @@ const CLIENT_JS = `
         form.appendChild(pl);
         form.appendChild(el('div','sub2','A neighbourhood is enough. The delivery charge is set when the order is acknowledged, and you see it here before you pay.'));
       }
+      /* v702, HIS INSTRUCTION OF 18 SEP 2026: an associate's own order and one placed for somebody
+         else are no longer told apart by what they buy, so they tick it. "On behalf of a friend",
+         his words, and the words he replaced an earlier phrasing with. Nobody else sees the tick. */
+      if(assoc){
+        var fl=el('label','rem'); var fb=el('input'); fb.type='checkbox'; fb.id='ofriend'; fb.checked=!!draft.forFriend;
+        fb.addEventListener('change',function(){ draft.forFriend=fb.checked; draft.confirm=false; drawOrder(); });
+        fl.appendChild(fb); fl.appendChild(el('span',null,'On behalf of a friend'));
+        form.appendChild(fl);
+      }
       var qt=quoteFor();
       form.appendChild(el('div','quote',qt?rm(qt.total):''));
       if(qt){
@@ -963,6 +975,7 @@ const CLIENT_JS = `
                   ['Rate',rm(qt.unit)+' per '+(P.unit||'unit')],
                   ['Goods',rm(qt.total)]];
         if(draft.mode==='deliver'){ rows.splice(2,0,['Where',draft.place.trim()]); rows.push(['Delivery','set when it is acknowledged']); }
+        if(assoc) rows.splice(1,0,['For',draft.forFriend?'A friend':'Yourself']);
         rows.forEach(function(r){ var li=el('li'); li.appendChild(el('span','k',r[0]));
           var v=el('span','v'); if(typeof r[1]==='string') v.textContent=r[1]; else v.appendChild(r[1]);
           li.appendChild(v); ul.appendChild(li); });
@@ -972,7 +985,8 @@ const CLIENT_JS = `
           if(draft.busy) return; draft.busy=true; drawOrder();
           var mine=ticket;
           var r=await api('/orders',{product:P.product,qty:qt.q,mode:draft.mode,unit:qt.unit,total:qt.total,
-            place:draft.mode==='deliver'?draft.place.trim():'',week:(prices.week&&prices.week.monday)||''});
+            place:draft.mode==='deliver'?draft.place.trim():'',forFriend:!!(assoc&&draft.forFriend),
+            week:(prices.week&&prices.week.monday)||''});
           if(mine!==ticket) return;
           draft.busy=false;
           if(r.status===401){ draft.note='Your session has ended. Sign in again to order.'; }
@@ -1030,7 +1044,7 @@ const CLIENT_JS = `
     var line2=el('div','sub2');
     line2.appendChild(withMark(o.product,unitsOf(o.qty,unit)+' ',18));
     line2.appendChild(document.createTextNode(', '+(o.mode==='deliver'?'to be delivered':'to collect')
-      +(o.place?' to '+o.place:'')+', placed '+stamp(o.at)));
+      +(o.place?' to '+o.place:'')+(o.forFriend?', on behalf of a friend':'')+', placed '+stamp(o.at)));
     pane.appendChild(line2);
     var line='';
     if(o.status==='placed') line='Waiting to be acknowledged. You will see it change here.';
@@ -1240,6 +1254,7 @@ const CLIENT_JS = `
       catch(e){ /* the issued statements still open; the live one is simply absent */ }
     }
     prices=null;
+    assoc=body.assoc===true;
     if(body.prices){
       try{ prices=JSON.parse(await open(ck, body.prices)); if(stale()) return; }
       catch(e){ prices=null; /* the statements still open; the list is simply absent */ }
@@ -1301,6 +1316,7 @@ const CLIENT_JS = `
       catch(e){ /* the issued statements still open */ }
     }
     prices=null;
+    assoc=body.assoc===true;
     if(body.prices){ try{ prices=JSON.parse(await open(ck, body.prices)); }catch(e){ prices=null; } }
     if(stale()) return false;
     say('');

@@ -331,6 +331,18 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   version and carried the product word), in the manifest, the title, the iPhone app title and the
   tutorial. It is the shop counter, it says what the app is FOR, it names no product and no
   business, and it fits the twelve characters iOS gives a home screen.
+- **AN ASSOCIATE TICKS AN ORDER AS ON BEHALF OF A FRIEND** (v703, his instruction of 18 Sep 2026:
+  their own orders and the ones they place for someone else can no longer be told apart by what they
+  buy). A ticked order books to their `<CODE>-R` bucket exactly as a phone-entered downsell does:
+  the entry carries `stream: "R2"` and `assoc`, the shape the drafter already takes, and the
+  **engine's own `bookR2` does the booking** so the book never holds two kinds of downsell. **The
+  `orderKey` is built on the BUCKET**, because that is the party the fold writes; built on the
+  associate's own code, every later amendment would miss its row. Who is an associate is the report
+  card's own list (`assoc.products[].rows[].id`), so the two readings cannot disagree; the publish
+  marks that account's record `assoc: true`, **in the clear beside `issued`**, because the tick must
+  be drawn before a password has opened anything and what it says is that this account MAY order for
+  somebody else. The site checks nothing: it holds no roster, so it records the claim and the desk
+  decides, exactly as with the quoted total.
 - **A BUCKET IS NOT ITS OWN PERSON** (his ruling of 13 Sep 2026). An associate's `<CODE>-R`
   account is theirs: their statement (live and issued), price list, printed board and the order
   card's usual rate read the code and the bucket together, bucket lines marked *on behalf of a
