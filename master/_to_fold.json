@@ -1,0 +1,63 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-18T13:49:14.146Z",
+   "collection": "purchases",
+   "row": {
+    "qty": 50,
+    "total": 392,
+    "cash": 392,
+    "supplier": "SP7-PUD",
+    "freight": 12,
+    "status": "paid",
+    "product": "oil",
+    "date": "2026-09-18",
+    "receivedOn": "2026-09-18",
+    "receivedQty": 50,
+    "paidOn": "2026-09-18"
+   },
+   "reasoning": "Bought 50 unit of oil from SP7-PUD for RM 392, RM 7.84/unit. Paid in full and delivered in full on 2026-09-18. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-18T13:49:14.146Z",
+    "type": "BUY",
+    "party": "SP7-PUD",
+    "qty": 50,
+    "total": 392,
+    "status": "paid",
+    "raw": "Buy 50 unit from SP7-PUD for RM 392 on 2026-09-18, RM 392 cash, 50 unit moved → Completed",
+    "payload": {
+     "mode": "new",
+     "product": "oil",
+     "direction": "BUY",
+     "party": "SP7-PUD",
+     "newId": null,
+     "date": "2026-09-18",
+     "qty": 50,
+     "total": 392,
+     "delivery": 0,
+     "freight": 12,
+     "cash": 392,
+     "kg": 50,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": null,
+     "second": null,
+     "more": null,
+     "coverFree": null
+    }
+   },
+   "decidedAt": "2026-09-18T13:50:20.929Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
