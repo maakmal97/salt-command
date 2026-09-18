@@ -64,7 +64,26 @@ const PAGE_CSS = `
 .seg{display:flex;gap:8px}
 .seg .fld{flex:1 1 0;min-width:0;padding:13px 4px;text-align:center;letter-spacing:.12em}
 .fld:focus{border-color:var(--salt-brass);box-shadow:0 0 0 3px rgba(197,160,89,.16)}
-select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none}
+/* v694: THE OPEN LIST IS DRAWN BY THE SYSTEM, NOT BY THIS PAGE. With no colour scheme declared it
+   draws a white list of black words under a dark field, which is the colour he called bizarre.
+   color-scheme tells the system the page is dark and the list follows it; option is named too, for
+   the platforms that take the colour rather than the scheme. The chevron is drawn out of two
+   gradients because appearance:none took the system's away and left nothing to say it opens. */
+select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none;color-scheme:dark;cursor:pointer;
+  padding-right:42px;background-repeat:no-repeat;background-size:6px 6px,6px 6px;
+  background-image:linear-gradient(45deg,transparent 50%,var(--salt-brass) 50%),linear-gradient(135deg,var(--salt-brass) 50%,transparent 50%);
+  background-position:calc(100% - 22px) calc(50% - 2px),calc(100% - 17px) calc(50% - 2px)}
+select.fld option{background:var(--salt-well);color:var(--salt-text)}
+/* v694: the order's own figures, typed in the same well as everything else */
+.amt{display:flex;gap:8px;align-items:center;margin-top:10px}
+.amt .fld{flex:1 1 0;min-width:0;text-align:right}
+.amt .cur{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist)}
+/* the confirmation, one plain list of what is about to be ordered */
+.conf{margin:10px 0 0;padding:0;list-style:none;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
+.conf li{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--salt-line)}
+.conf li:last-child{border-bottom:0}
+.conf .k{color:var(--salt-mist)}
+.conf .v{color:var(--salt-text);text-align:right}
 .btn{margin-top:18px;width:100%;min-height:var(--salt-tap);padding:13px 16px;
   font-family:var(--salt-font-mono);font-size:var(--salt-text-md);font-weight:700;cursor:pointer;
   letter-spacing:.04em;color:var(--salt-obsidian);background:var(--salt-gradient);border:0;
@@ -819,7 +838,7 @@ const CLIENT_JS = `
     if(!prices||!prices.products||!prices.products.length){
       pOrder.appendChild(el('p','lead',prices&&prices.soon&&prices.soon.length?'Ordering opens once your prices are set.':'Ordering opens once your price list is written, with the next update.'));
     } else {
-      pOrder.appendChild(el('p','lead','Pick a size off your list. You will see the order acknowledged here, then ready, and payment is offered at that point.'));
+      pOrder.appendChild(el('p','lead','Pick a size off your list and check it over before you place it. Once it is acknowledged you can pay, and you are told when the goods are on their way.'));
       var form=el('div','pane');
       if(!draft.product) draft.product=prices.products[0].product;
       var P=prices.products.filter(function(x){return x.product===draft.product;})[0]||prices.products[0];
@@ -839,22 +858,56 @@ const CLIENT_JS = `
         b.addEventListener('click',function(){ draft.mode=m[0]; drawOrder(); }); seg.appendChild(b);
       });
       form.appendChild(seg);
+      /* v694: a delivery says roughly where it is going, in his words a general location. It tells
+         him which way to drive and what to charge; it is not an address and is not asked for one. */
+      if(draft.mode==='deliver'){
+        form.appendChild(el('span','lbl','Where to'));
+        var pl=el('input','fld'); pl.type='text'; pl.maxLength=60; pl.value=draft.place||'';
+        pl.placeholder='a neighbourhood or a landmark'; pl.setAttribute('aria-label','Roughly where it is going');
+        pl.addEventListener('input',function(){ draft.place=pl.value; var b=document.getElementById('oGo'); if(b)b.disabled=!quoteFor()||!!draft.busy||pl.value.trim().length<2; });
+        form.appendChild(pl);
+        form.appendChild(el('div','sub2','A neighbourhood is enough. The delivery charge is set when the order is acknowledged, and you see it here before you pay.'));
+      }
       var qt=quoteFor();
       form.appendChild(el('div','quote',qt?rm(qt.total):''));
-      form.appendChild(el('div','sub2',qt?(unitsOf(qt.q,P.unit)+' of '+P.name.toLowerCase()+' at '+rm(qt.unit)+' per '+(P.unit||'unit')+(draft.mode==='deliver'?'; delivery is added when the order is marked ready':', to collect')):''));
-      var go2=el('button','btn','Place this order'); go2.type='button'; go2.disabled=!qt||!!draft.busy;
-      go2.addEventListener('click', async function(){
-        if(!qt||draft.busy) return; draft.busy=true; drawOrder();
-        var mine=ticket;
-        var r=await api('/orders',{product:P.product,qty:qt.q,mode:draft.mode,unit:qt.unit,total:qt.total,week:(prices.week&&prices.week.monday)||''});
-        if(mine!==ticket) return;
-        draft.busy=false;
-        if(r.status===401){ draft.note='Your session has ended. Lock and sign in again to order.'; }
-        else if(!r.body.ok){ draft.note=r.body.error||'The order was not placed.'; }
-        else { draft.note='Placed. You will see it acknowledged below.'; await loadOrders(); if(mine!==ticket) return; }
-        drawOrder();
-      });
-      form.appendChild(go2);
+      form.appendChild(el('div','sub2',qt?(unitsOf(qt.q,P.unit)+' of '+P.name.toLowerCase()+' at '+rm(qt.unit)+' per '+(P.unit||'unit')+(draft.mode==='deliver'?'; delivery is added when the order is acknowledged':', to collect')):''));
+      var ready=!!qt&&!draft.busy&&(draft.mode!=='deliver'||String(draft.place||'').trim().length>=2);
+      /* v694: NOTHING IS PLACED ON ONE TAP (his instruction, 18 Sep 2026). The first tap shows what
+         is about to be ordered, in words, and the second places it. Going back keeps the choices. */
+      if(draft.confirm&&ready){
+        var cf=el('div','pane'); cf.style.marginTop='14px';
+        cf.appendChild(el('h3',null,'Check this over'));
+        var ul=el('ul','conf');
+        var rows=[['What',unitsOf(qt.q,P.unit)+' of '+P.name.toLowerCase()],
+                  ['How',draft.mode==='deliver'?'Delivered to you':'You collect it'],
+                  ['Rate',rm(qt.unit)+' per '+(P.unit||'unit')],
+                  ['Goods',rm(qt.total)]];
+        if(draft.mode==='deliver'){ rows.splice(2,0,['Where',draft.place.trim()]); rows.push(['Delivery','set when it is acknowledged']); }
+        rows.forEach(function(r){ var li=el('li'); li.appendChild(el('span','k',r[0])); li.appendChild(el('span','v',r[1])); ul.appendChild(li); });
+        cf.appendChild(ul);
+        var ok2=el('button','btn','Place this order'); ok2.type='button'; ok2.disabled=!!draft.busy;
+        ok2.addEventListener('click', async function(){
+          if(draft.busy) return; draft.busy=true; drawOrder();
+          var mine=ticket;
+          var r=await api('/orders',{product:P.product,qty:qt.q,mode:draft.mode,unit:qt.unit,total:qt.total,
+            place:draft.mode==='deliver'?draft.place.trim():'',week:(prices.week&&prices.week.monday)||''});
+          if(mine!==ticket) return;
+          draft.busy=false;
+          if(r.status===401){ draft.note='Your session has ended. Sign in again to order.'; }
+          else if(!r.body.ok){ draft.note=r.body.error||'The order was not placed.'; }
+          else { draft.note='Placed. You will see it acknowledged below.'; draft.confirm=false; draft.place=''; await loadOrders(); if(mine!==ticket) return; }
+          drawOrder();
+        });
+        cf.appendChild(ok2);
+        var back=el('button','btn quiet','Change it'); back.type='button'; back.disabled=!!draft.busy;
+        back.addEventListener('click',function(){ draft.confirm=false; drawOrder(); });
+        cf.appendChild(back);
+        form.appendChild(cf);
+      } else {
+        var go2=el('button','btn','Review this order'); go2.type='button'; go2.id='oGo'; go2.disabled=!ready;
+        go2.addEventListener('click',function(){ draft.confirm=true; draft.note=''; drawOrder(); });
+        form.appendChild(go2);
+      }
       if(draft.note) form.appendChild(el('p','msg',draft.note));
       pOrder.appendChild(form);
     }
@@ -880,33 +933,43 @@ const CLIENT_JS = `
   }
 
   var STATE_WORDS={placed:'Placed', acknowledged:'Acknowledged', ready:'Ready', done:'Completed', declined:'Declined', cancelled:'Withdrawn'};
+  /* v694: money and goods are two tracks, so what is still owed and what is still to come are read
+     off the order, never off a single word of state. Both figures are the ones the desk holds. */
+  function dueOf(o){ return +((o.total+(+o.delivery||0))-(+o.paid||0)).toFixed(2); }
+  function heldUnpaid(exceptId){ return orders.some(function(o){ return o.id!==exceptId&&['cancelled','declined'].indexOf(o.status)<0&&(+o.moved||0)>0&&dueOf(o)>0.004; }); }
   function orderPane(o){
     var pane=el('div','pane');
     var P=prices&&prices.products&&prices.products.filter(function(x){return x.product===o.product;})[0];
     var unit=P?P.unit:'unit', name=P?P.name:o.product;
+    var due=dueOf(o), moved=+o.moved||0, paid=+o.paid||0, payable=['acknowledged','ready'].indexOf(o.status)>=0;
     pane.appendChild(el('div','state '+o.status, STATE_WORDS[o.status]||o.status));
     pane.appendChild(el('div','quote', rm(o.total+(o.delivery||0))));
     if(o.delivery>0) pane.appendChild(el('div','sub2', rm(o.total)+' for the goods and '+rm(o.delivery)+' delivery'));
-    pane.appendChild(el('div','sub2', unitsOf(o.qty,unit)+' of '+String(name).toLowerCase()+', '+(o.mode==='deliver'?'to be delivered':'to collect')+', placed '+stamp(o.at)));
+    pane.appendChild(el('div','sub2', unitsOf(o.qty,unit)+' of '+String(name).toLowerCase()+', '+(o.mode==='deliver'?'to be delivered':'to collect')+(o.place?' to '+o.place:'')+', placed '+stamp(o.at)));
     var line='';
     if(o.status==='placed') line='Waiting to be acknowledged. You will see it change here.';
-    else if(o.status==='acknowledged') line='Seen, and being prepared. You will be told when it is ready.';
-    else if(o.status==='ready') line=(o.mode==='deliver'?'Ready to be delivered.':'Ready to collect.')+(o.method?'':' Choose how you will pay.');
-    else if(o.status==='done') line='Handed over and paid. Your statement updates with the next fold.';
+    else if(payable) line=(o.status==='ready'?(o.mode==='deliver'?'Ready to be delivered. ':'Ready to collect. '):'Acknowledged, and being prepared. ')
+      +(paid>0?(due>0.004?rm(paid)+' of '+rm(o.total+(o.delivery||0))+' paid, '+rm(due)+' to go.':'Paid in full.'):'Nothing paid yet.')
+      +(moved>0?(moved<o.qty-0.004?' '+unitsOf(moved,unit)+' of '+unitsOf(o.qty,unit)+' handed over.':' Handed over in full.'):'');
+    else if(o.status==='done') line='Your order is now complete. Thank you for your loyalty.';
     else if(o.status==='declined') line='This order could not be taken. Nothing is owed.';
-    else if(o.status==='cancelled') line='Withdrawn before anything moved. Nothing is owed.';
+    else if(o.status==='cancelled') line=paid>0?'Withdrawn. The '+rm(paid)+' you paid is refunded.':'Withdrawn before anything moved. Nothing is owed.';
     pane.appendChild(el('p','sub2',line));
-    if(o.status==='ready') pane.appendChild(o.method?payLink(o):payChooser(o));
-    if(o.status==='placed'||o.status==='acknowledged'){
-      var wb=el('button','btn quiet','Withdraw this order'); wb.type='button';
-      wb.addEventListener('click', async function(){
-        if(!confirm('Withdraw this order?')) return;
-        var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{});
-        if(mine!==ticket) return;
-        if(!r.body.ok) draft.note=r.body.error||'It could not be withdrawn.';
-        await loadOrders(); if(mine!==ticket) return; drawOrder();
-      });
-      pane.appendChild(wb);
+    if(payable&&due>0.004) pane.appendChild((o.method&&!(pick[o.id]||{}).again)?payBox(o):payChooser(o));
+    /* v694: either side may withdraw at any stage until the goods move (his rule, 18 Sep 2026) */
+    if(payable||o.status==='placed'){
+      if(moved>0) pane.appendChild(el('p','sub2','The goods are with you, so this can no longer be withdrawn here.'));
+      else {
+        var wb=el('button','btn quiet','Withdraw this order'); wb.type='button';
+        wb.addEventListener('click', async function(){
+          if(!confirm(paid>0?'Withdraw this order? The '+rm(paid)+' you paid is refunded.':'Withdraw this order?')) return;
+          var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{});
+          if(mine!==ticket) return;
+          if(!r.body.ok) draft.note=r.body.error||'It could not be withdrawn.';
+          await loadOrders(); if(mine!==ticket) return; drawOrder();
+        });
+        pane.appendChild(wb);
+      }
     }
     var hist=el('ul','hist');
     (o.history||[]).forEach(function(h){ var li=el('li',null,stamp(h.at)+'  '+(STATE_WORDS[h.status]||h.status)+(h.method?', paying by '+methodWord(h.method,h.account):'')+(h.note?': '+h.note:'')); hist.appendChild(li); });
@@ -918,22 +981,25 @@ const CLIENT_JS = `
   function methodWord(m,a){ var x=acct(a); return (METHOD_WORDS[m]||m)+(x&&m!=='tngbiz'?' to '+x.name:''); }
   function accountsFor(m){ return PAY.filter(function(a){ return !a.maintenance&&a[m]; }); }
 
-  /* THE CHOICE, OFFERED ONLY AT READY. Five rails; three of them name an account off the list
-     QR Command carries, and the page shows only those that run that rail. */
+  /* THE CHOICE, OFFERED FROM THE ACKNOWLEDGEMENT (v694; it was at ready). Five rails; three of them
+     name an account off the list QR Command carries, and the page shows only those that run that
+     rail. CASH ON HANDOVER IS WITHHELD from anyone already holding goods they have not paid for
+     (his instruction, 18 Sep 2026): settling that at the door is how one advance becomes two. */
   function payChooser(o){
     var box=el('div','pay');
-    box.appendChild(el('p','sub2','How will you pay '+rm(o.total+(o.delivery||0))+'?'));
-    var cur=pick[o.id]||{};
+    box.appendChild(el('p','sub2','How will you pay '+rm(dueOf(o))+'?'));
+    var cur=pick[o.id]||{}, noCod=heldUnpaid(o.id);
     var opts=[['cod', o.mode==='deliver'?'Cash on delivery':'Cash when I collect'],
               ['transfer','DuitNow Transfer, to an account number'],
               ['qr','DuitNow QR, a code I save and scan'],
               ['jompay','JomPAY'],
               ['tngbiz',"DuitNow purchase, the Touch 'n Go Business code"]];
     opts.forEach(function(m){
+      if(m[0]==='cod'&&noCod) return;
       if(m[0]!=='cod'&&m[0]!=='tngbiz'&&!accountsFor(m[0]).length) return;
       if(m[0]==='tngbiz'&&!(acct('tngbiz')&&acct('tngbiz').qr&&!acct('tngbiz').maintenance)) return;
       var lab=el('label'); var r=el('input'); r.type='radio'; r.name='pm-'+o.id; r.value=m[0]; r.checked=(cur.method===m[0]);
-      r.addEventListener('change',function(){ pick[o.id]={method:m[0],account:''}; drawOrder(); });
+      r.addEventListener('change',function(){ pick[o.id]={method:m[0],account:'',again:cur.again}; drawOrder(); });
       lab.appendChild(r); lab.appendChild(el('span',null,m[1])); box.appendChild(lab);
     });
     if(cur.method==='transfer'||cur.method==='qr'||cur.method==='jompay'){
@@ -943,23 +1009,55 @@ const CLIENT_JS = `
       sel.addEventListener('change',function(){ pick[o.id].account=sel.value; drawOrder(); });
       box.appendChild(sel);
     }
+    if(noCod) box.appendChild(el('p','sub2','Cash on handover is not offered while goods you already hold are unpaid. Settle those first and it comes back.'));
     var ok=cur.method&&(cur.method==='cod'||cur.method==='tngbiz'||cur.account);
     var cb=el('button','btn','Confirm'); cb.type='button'; cb.disabled=!ok;
     cb.addEventListener('click', async function(){
       if(!ok) return; var mine=ticket;
       var r=await api('/orders/'+encodeURIComponent(o.id)+'/method',{method:cur.method,account:cur.account||undefined});
       if(mine!==ticket) return;
-      if(!r.body.ok) draft.note=r.body.error||'The choice was not recorded.';
+      if(!r.body.ok) draft.note=r.body.error||'The choice was not recorded.'; else delete pick[o.id];
       await loadOrders(); if(mine!==ticket) return; drawOrder();
     });
     box.appendChild(cb);
     return box;
   }
-  /* ONE LINK, FOR THE RAIL CHOSEN. Everything that pays lives on that page: the account number
-     behind its Copy button, the code to save, the biller and reference. Nothing here repeats it. */
+  /* ONE LINK, FOR THE RAIL CHOSEN, AND THEN WHAT WAS PAID. Everything that pays lives on that page:
+     the account number behind its Copy button, the code to save, the biller and reference. Nothing
+     here repeats it. THE FIGURE IS THEIRS (his instruction, 18 Sep 2026): the site takes no money
+     and no rail tells it anything, so the customer types what they paid and the desk reads it
+     against the fold. It accumulates, so a part payment is a part payment. */
+  function payBox(o){
+    var box=payLink(o), due=dueOf(o), cur=pick[o.id]||{};
+    var row=el('div','amt');
+    row.appendChild(el('span','cur','RM'));
+    var inp=el('input','fld'); inp.type='number'; inp.min='0'; inp.step='0.01'; inp.inputMode='decimal';
+    inp.value=(cur.amount!==undefined&&cur.amount!==null)?cur.amount:due.toFixed(2);
+    inp.setAttribute('aria-label','What you paid, in ringgit');
+    inp.addEventListener('input',function(){ pick[o.id]=Object.assign({},pick[o.id],{amount:inp.value}); var b=document.getElementById('pd-'+o.id); if(b)b.disabled=!(parseFloat(inp.value)>0); });
+    row.appendChild(inp); box.appendChild(row);
+    var pb=el('button','btn',"I have paid"); pb.type='button'; pb.id='pd-'+o.id;
+    pb.disabled=!(parseFloat(inp.value)>0);
+    pb.addEventListener('click', async function(){
+      var amt=parseFloat(inp.value);
+      if(!(amt>0)) return;
+      pb.disabled=true; var mine=ticket;
+      var r=await api('/orders/'+encodeURIComponent(o.id)+'/pay',{amount:+amt.toFixed(2)});
+      if(mine!==ticket) return;
+      draft.note=r.body&&r.body.ok?'Recorded. It shows on your statement once it is folded into the book.':((r.body&&r.body.error)||'That payment was not recorded.');
+      delete pick[o.id];
+      await loadOrders(); if(mine!==ticket) return; drawOrder();
+    });
+    box.appendChild(pb);
+    box.appendChild(el('p','sub2','Tell us once it has left your side. '+rm(due)+' is outstanding; a part payment is fine and the rest stays here.'));
+    var ch=el('button','btn quiet','Pay another way'); ch.type='button';
+    ch.addEventListener('click',function(){ pick[o.id]={again:true}; drawOrder(); });
+    box.appendChild(ch);
+    return box;
+  }
   function payLink(o){
     var box=el('div','pay');
-    var a=acct(o.account), due=o.total+(o.delivery||0);
+    var a=acct(o.account), due=dueOf(o);
     var word={cod:(o.mode==='deliver'?'Pay '+rm(due)+' in cash on delivery.':'Pay '+rm(due)+' in cash when you collect.'),
       transfer:'Transfer '+rm(due)+' by DuitNow Transfer to '+(a?a.name:'the account')+'. The page that opens has the account number behind Copy account number; paste it into your banking app.',
       qr:'Pay '+rm(due)+' by scanning the '+(a?a.name:'')+' code. On the page that opens, tap the code to save it as an image, then scan it from your banking app.',

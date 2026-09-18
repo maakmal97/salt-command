@@ -289,6 +289,18 @@ re-issued. **Behind the password: statements, the price list and the order.** Ev
 including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
 
 - **The site address is never in the public desk.** No address, no QR drawn.
+- **AN ORDER REACHES THE BOOK IN STAGES, AND SITE ORDERS WRITES NOTHING** (v694, his instruction of
+  18 Sep 2026). Site orders moves the ORDER, Approve lands the ROW. The desk's every-minute
+  `reconcileOrders` is the ONE road that queues: the acknowledgement makes a **Pending** row with the
+  delivery charge inside its total, a payment a **Fulfilment** of the increment, a handover a
+  **Correction** stating the running total, a withdrawal a **Cancellation**. The row is named by
+  `ledgerKey`, **the engine's `ovKey` to the character**, written onto the order at the
+  acknowledgement, because a `rid` is minted at fold time and there is no route back from desk to
+  site. An amendment WAITS until `OPEN.byKey` carries that key. Money and goods are two tracks, the
+  customer types what they paid, he types what he handed over, and `done` is neither side's tap.
+  **Cash on handover is withheld while that customer holds an unpaid advance**, and either side may
+  cancel until the goods move. A delivery's general location stays on the site and never reaches a
+  ledger note.
 - **THE CUSTOMER'S LABEL IS A MARK, NOT A NAME** (v659, his instruction of 16 Sep 2026): a symbol and
   a colour for each level beside each product on their price list, and **the level is never named in
   the page**. They are greeted for the hour off their own device and told the month of their first

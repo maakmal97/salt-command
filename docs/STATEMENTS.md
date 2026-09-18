@@ -230,8 +230,9 @@ rounded DOWN to the ten and never up (v660), and lifted only to clear the floor:
 with it. **A product with no tier, held or proposed, is not priced**: the list carries it in `soon`,
 the page says its price is coming soon, and the order form does not offer it. One
 price per size, for the goods (v502): delivery is not on the list. It is a figure
-he types when he marks an order ready to deliver, the customer sees goods plus delivery as the
-sum to pay, and the sale carries it as its own field, `delivery`, inside the total. A customer
+he types **when he acknowledges the order** (v694; it was at ready until then, and the order becomes
+a row at the acknowledgement, so the charge has to be settled there), the customer sees goods plus
+delivery as the sum to pay, and the sale carries it as its own field, `delivery`, inside the total. A customer
 with a tier and no history on a product sees the tier's price. Nothing outside the
 engine prices: the publish opens the master in jsdom for the desk's PRICING inputs (the same the
 drafter reads), which carry each customer's tier and the ladder, and calls `floorTotal` and
@@ -243,24 +244,62 @@ the reason is stated in `stmt/orders.js`: it is written at runtime by the custom
 holds no key to seal it with. It carries a size, a quoted total and a state; no name, no code.
 `/open` mints a **session** on a correct password (fifteen minutes; the page forgets it when it
 locks), and the order routes take that and nothing else. The states: placed (the customer),
-acknowledged and ready to collect or deliver (the owner), done (the owner: handed over and
-paid), declined (the owner), withdrawn (the customer, while nothing is on the road).
-**Payment is offered at ready only.** Five rails: cash on collection or delivery, DuitNow
+acknowledged (the owner: agreed, the delivery charge set, and the row queued), ready to collect or
+deliver (the owner), done (**neither side's tap**: what the record reads once both tracks are
+complete), declined (the owner), cancelled (either side, at any stage until the goods move).
+
+**A DELIVERY SAYS ROUGHLY WHERE IT IS GOING** (v694, his instruction of 18 Sep 2026): `place`, one
+line of at most sixty characters, a neighbourhood and not an address, refused empty on a delivery and
+dropped on a collection. It is shown on his card and **never rides into the ledger row's note**: a
+note reaches the committed book, and free text a customer typed is the one thing here that could
+carry a street. **Nothing is placed on one tap**: the page reviews the order in words first.
+
+**MONEY AND GOODS ARE TWO TRACKS** (v694). `paid` and `payments[]` are what the customer says they
+have paid, `moved` and `movedOn` what he says he handed over, and either may lead. Payment is offered
+**from the acknowledgement**. Five rails: cash on collection or delivery, DuitNow
 Transfer to a named account, a DuitNow QR to save, JomPAY, and the Touch 'n Go Business code;
 the page hands over one link into QR Command for the rail chosen, and the accounts it may name
 are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
-number, payload or reference shipped. The quote is the customer's claim off his own list: the
-owner reads the rate against the party's usual on the phone before acknowledging, and the
-drafter flags it again when the sale is queued.
+number, payload or reference shipped. **The customer types what they paid** (the site takes no money
+and no rail tells it anything), part payments accumulate, and more than what is outstanding is
+refused. **Cash on handover is withheld** from anyone holding an unpaid advance on another live
+order: settling that at the door is how one advance becomes two. The quote is the customer's claim
+off his own list: the owner reads the rate against the party's usual on the phone before
+acknowledging, and the drafter flags it again when the row is queued.
 
 **The desk reads and moves orders through a service binding**, `STMT_SITE` in
 `wrangler.jsonc`, sending `STMT_DESK_KEY`, a secret the same on both Workers. The direction is
 desk to site only; the site has no binding, no key of the desk's and no route back. The
-Orders card in Enter (cloud desk) is the taps. **Completed queues the sale** under the
-`q:orders` device, shaped as the Workbench shapes an entry, cash and units in full, and the
-drafter drafts it on arrival; it is approved under Approve like every row, and the live
-statement follows the fold. The username-to-code map the relay needs is written to the DESK's
-KV as `stmt-users` by every publish; the site never holds it.
+Site orders card in Enter (cloud desk) is the taps.
+
+**AN ORDER REACHES THE BOOK IN STAGES, AND NO TAP WRITES** (v694, his instruction of 18 Sep 2026;
+it reached it once, at the end, as a sale paid and delivered in full on the day). **Site orders moves
+the ORDER; Approve lands the ROW.** The desk's every-minute cron runs `reconcileOrders`, and it is
+the ONE road that queues anything, so a stage cannot be queued twice by two roads racing:
+
+| Stage | What is queued | Why that kind |
+|---|---|---|
+| Acknowledged | a `new` SELL, delivery inside the total, `cash` 0 and `kg` 0 | the row appears as **Pending**, which is the truth |
+| A payment | an `amend` **Fulfilment**, the INCREMENT since the last one | a Fulfilment accumulates cash and units |
+| A handover | an `amend` **Correction** stating the running total, `deliveredOn` and `handover` | only a Correction may set when and by whom, and it states rather than adds |
+| Cancelled or declined | an `amend` **Cancellation** | the fold raises any refund itself |
+
+**Which row a later stage amends.** A `rid` is minted at fold time and there is no route from the
+desk back to the site, so the site can never learn it. The desk writes the other identifier the
+drafter takes onto the order at the acknowledgement: `ledgerKey`, which is **the engine's own
+`ovKey`**, `party|date|total`, the total as the row carries it (written with `toFixed(2)` it misses
+every row by two noughts, which is what driving the chain end to end caught). The site records what
+has been told in `queued` (`ack`, `paid`, `moved`, `cancel`) and `orderWork` reads the difference;
+that is the one place a stage is decided owed.
+
+**An amendment waits for its row.** The pending row reaches the book by the long road: queued,
+drafted, approved, folded, mirror re-seeded. Until `OPEN.byKey` carries the key, the reconcile holds
+the amendment rather than queueing one the drafter would refuse, so a customer paying early puts no
+refusal on his phone. A mirror that cannot be read holds everything.
+
+The username-to-code map the relay needs is written to the DESK's
+KV as `stmt-users` by every publish; the site never holds it, and an order whose username the map
+does not carry is reported as `unmapped` and waits rather than being guessed at.
 
 **HIS ALERT ON A NEW ORDER** (v675, 16 Sep 2026; silent before it, because the switch left with the
 phone app at v387 and nothing had subscribed since). A placement writes `last-placed` in the site's

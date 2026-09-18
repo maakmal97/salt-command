@@ -46,7 +46,7 @@ import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen } from "./refs
 import { endpointId } from "./push.js";
 import { linkMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
-import { mintSession, dropSession, sessionUser, ordersOf, allOrders, placeOrder, customerMove, deskMove, LAST_PLACED } from "./orders.js";
+import { mintSession, dropSession, sessionUser, ordersOf, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -312,7 +312,7 @@ async function handleCustomer(request, env, p, m) {
     }
     return json({ ok: true });
   }
-  const mm = /^\/orders\/([^/]+)\/(method|cancel)$/.exec(p);
+  const mm = /^\/orders\/([^/]+)\/(method|cancel|pay)$/.exec(p);
   if (!mm || !OID_RE.test(mm[1])) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   const r = await customerMove(env, u, mm[1], mm[2], await readJson(request));
@@ -352,13 +352,18 @@ async function handleDesk(request, env, p, m) {
   if (!deskOk(request, env)) return json({ ok: false, error: "desk key required" }, 401);
   if (p === "/desk/orders") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-    const all = new URL(request.url).searchParams.get("all") === "1";
-    return json({ ok: true, orders: await allOrders(env, all) });
+    const q = new URL(request.url).searchParams;
+    /* v694: the orders with a stage the ledger has not been told about, whatever state they are
+       in. A completed order still owes its last entries, so this is not the open list. */
+    if (q.get("work") === "1") return json({ ok: true, orders: await ordersOwing(env) });
+    return json({ ok: true, orders: await allOrders(env, q.get("all") === "1") });
   }
-  /* the moment of the newest placement, one read: the desk asks this every minute (16 Sep 2026) */
+  /* the moment of the newest placement, one read: the desk asks this every minute (16 Sep 2026),
+     and since v694 the moment of the newest change of any kind beside it, so the reconcile lists
+     nothing on a quiet minute */
   if (p === "/desk/orders/last") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-    return json({ ok: true, last: await env.STMT.get(LAST_PLACED) });
+    return json({ ok: true, last: await env.STMT.get(LAST_PLACED), touched: await env.STMT.get(LAST_TOUCHED) });
   }
   const mm =/^\/desk\/orders\/([^/]+)\/([^/]+)$/.exec(p);
   if (!mm) return notFound();

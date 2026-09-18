@@ -7451,7 +7451,7 @@ await (async () => {
   const PL = await import("../tools/pricelist.mjs");
   const { shipAccounts, renderPayJs, mastersPresent, payJs } = await import("../tools/paysync.mjs");
   const { PAY_SITE, PAY_ACCOUNTS } = await import("../stmt/pay.js");
-  const { saleEntry, nudgeOrders, ordersWaiting } = await import("../src/orders.js");
+  const { pendingEntry, reconcileOrders, nudgeOrders, ordersWaiting } = await import("../src/orders.js");
   const deskWorker = (await import("../src/worker.js")).default;
   const PE = (await import("../engine/pricing.mjs")).default;
 
@@ -7599,8 +7599,9 @@ await (async () => {
     { product: "salt", qty: 1, mode: "post", unit: 1, total: 1 }, { product: "salt", qty: 1, mode: "collect", unit: 1, total: "9" }]) {
     ok((await stmtWorker.fetch(sj("/orders", bad, S), senv)).status === 400, "refused: " + JSON.stringify(bad));
   }
-  ok((await stmtWorker.fetch(sj("/orders/" + id + "/method", { method: "cod" }, S), senv)).status === 409,
-    "payment cannot be chosen before the order is ready");
+  ok((await stmtWorker.fetch(sj("/orders/" + id + "/method", { method: "cod" }, S), senv)).status === 409
+    && (await stmtWorker.fetch(sj("/orders/" + id + "/pay", { amount: 10 }, S), senv)).status === 409,
+    "neither the rail nor a payment is taken before the order is acknowledged (v694; it was ready)");
   ok((await stmtWorker.fetch(sreq("/desk/orders"), senv)).status === 401
     && (await stmtWorker.fetch(sreq("/desk/orders", { headers: { "X-Stmt-Desk": "wrong" } }), senv)).status === 401
     && (await stmtWorker.fetch(sreq("/desk/orders", { headers: { "X-Stmt-Desk": "desk-key" } }), { STMT: kv })).status === 401,
@@ -7612,12 +7613,12 @@ await (async () => {
   ok((await stmtWorker.fetch(sj("/desk/orders/" + un + "/" + id, { status: "done" }, D), senv)).status === 409
     && (await stmtWorker.fetch(sj("/desk/orders/" + un + "/" + id, { status: "placed" }, D), senv)).status === 400,
     "an order cannot be completed from placed, and the desk cannot set a state that is not its to set");
-  b = await (await stmtWorker.fetch(sj("/desk/orders/" + un + "/" + id, { status: "acknowledged" }, D), senv)).json();
-  ok(b.ok && b.order.status === "acknowledged" && b.push && b.push.sent === 0 && /not configured/.test(b.push.error || ""),
-    "acknowledged from the desk; with no push key on the site the wake is reported as not configured, not thrown");
-  b = await (await stmtWorker.fetch(sj("/desk/orders/" + un + "/" + id, { status: "ready", mode: "deliver", delivery: 12 }, D), senv)).json();
-  ok(b.ok && b.order.status === "ready" && b.order.mode === "deliver" && b.order.delivery === 12, "ready to deliver, the desk's word on the mode and the delivery charge (v502)");
-  ok((await stmtWorker.fetch(sj("/orders/" + id + "/cancel", {}, S), senv)).status === 409, "a customer cannot withdraw an order that is ready");
+  b = await (await stmtWorker.fetch(sj("/desk/orders/" + un + "/" + id, { status: "acknowledged", mode: "deliver", delivery: 12 }, D), senv)).json();
+  ok(b.ok && b.order.status === "acknowledged" && b.order.mode === "deliver" && b.order.delivery === 12
+    && b.push && b.push.sent === 0 && /not configured/.test(b.push.error || ""),
+    "acknowledged from the desk, with the delivery charge typed there (v502, moved to the acknowledgement at v694); with no push key on the site the wake is reported as not configured, not thrown");
+  b = await (await stmtWorker.fetch(sj("/desk/orders/" + un + "/" + id, { status: "ready" }, D), senv)).json();
+  ok(b.ok && b.order.status === "ready" && b.order.delivery === 12, "ready to deliver, and the charge set at the acknowledgement stands");
   ok((await stmtWorker.fetch(sj("/orders/" + id + "/method", { method: "qr", account: "wise" }, S), senv)).status === 400
     && (await stmtWorker.fetch(sj("/orders/" + id + "/method", { method: "paypal" }, S), senv)).status === 400
     && (await stmtWorker.fetch(sj("/orders/" + id + "/method", { method: "transfer", account: "nope" }, S), senv)).status === 400,
@@ -7706,24 +7707,27 @@ await (async () => {
   }
   const sum = await (await deskWorker.fetch(req("/push/summary"), denv)).json();
   ok(sum.ok && sum.orders === 0, "the phone's summary counts orders waiting on a tap: none, this one is ready");
-  b = await (await deskWorker.fetch(req("/orders/" + un + "/" + id, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: "done" }) }), denv)).json();
+  /* v694: NO MOVE HERE WRITES ANY MORE. The acknowledgement is what makes the row and the
+     every-minute reconcile is the one road that queues it, so Site orders moves the ORDER and
+     Approve lands the ROW. Driven through the desk's Worker, with the site behind the binding. */
+  ok(!(await dkv.get("q:orders")), "the desk's moves have queued nothing at all: a tap on this card moves the order and writes no entry");
+  const rc0 = await reconcileOrders(denv);
   const q = JSON.parse(await dkv.get("q:orders"));
-  ok(b.ok && b.order.status === "done" && b.queued && q.queue.length === 1 && q.queue[0].at === b.queued,
-    "Completed moves the order and queues one entry under q:orders");
+  ok(rc0.ok && rc0.queued === 1 && q.queue.length === 1, "the reconcile queues the one stage the ledger has not been told about");
   const e = q.queue[0];
   ok(e.type === "SELL" && e.party === "CX0-AA" && e.payload.mode === "new" && e.payload.direction === "SELL" && e.payload.party === "CX0-AA"
-    && e.payload.product === "salt" && e.payload.qty === 2.5 && e.payload.total === 300 && e.payload.delivery === 12 && e.payload.cash === 300 && e.payload.kg === 2.5
-    && e.payload.handover === "delivered" && /order [0-9]{14}-/.test(e.payload.note) && /tngbiz/.test(e.payload.note) && !JSON.stringify(e).includes(un),
-    "the entry is the Workbench's shape: a sale to the code, paid and handed over in full, dated, noting the order and the rail, and naming no username");
-  ok(saleEntry({ id: "x", qty: 1, total: 10, mode: "collect", product: "oil" }, "CX0-AA", new Date("2026-09-06T17:00:00Z")).payload.date === "2026-09-07",
-    "the sale is dated in Kuala Lumpur, so a completion after midnight there is tomorrow's row");
+    && e.payload.product === "salt" && e.payload.qty === 2.5 && e.payload.total === 300 && e.payload.delivery === 12 && e.payload.cash === 0 && e.payload.kg === 0
+    && /order [0-9]{14}-/.test(e.payload.note) && !JSON.stringify(e).includes(un),
+    "the entry is the Workbench's shape: a PENDING sale to the code, delivery inside the total, nothing paid, nothing moved, naming no username");
+  ok(pendingEntry({ id: "x", qty: 1, total: 10, mode: "collect", product: "oil" }, "CX0-AA", new Date("2026-09-06T17:00:00Z")).payload.date === "2026-09-07",
+    "the row is dated in Kuala Lumpur, so an acknowledgement after midnight there is tomorrow's row");
   const { draftRow } = await import("../src/drafter.js");
   const bookD = { version: "v499", pricing: { v: "v499", byProduct: { salt: { stockCost: 48, replCost: 48, floors: { "2.5": { floor: 157.3 } } } } },
     purchases: [{ date: "2026-08-13", qty: 12.5, total: 650, receivedOn: "2026-08-13" }], sales, state: { roster: ["CX0-AA"], QUEUE_COMMITTED: "2026-09-01T00:00:00.000Z" } };
   const d = draftRow(e, bookD);
-  ok(!d.skip && d.collection === "sales" && d.row.customer === "CX0-AA" && d.row.qty === 2.5 && d.row.total === 300 && d.row.delivery === 12 && d.row.cash === 300
-    && d.row.deliveredQty === 2.5 && d.row.paidOn === d.row.date && d.row.handover === "delivered",
-    "and the drafter drafts it as a completed sale, which the phone then approves like any other row");
+  ok(!d.skip && d.collection === "sales" && d.row.customer === "CX0-AA" && d.row.qty === 2.5 && d.row.total === 300 && d.row.delivery === 12 && d.row.cash === 0
+    && !d.row.deliveredQty && !d.row.handover,
+    "and the drafter drafts it as a pending sale, which the phone then approves like any other row");
   const unmapped = C.newUsername();
   await kv.put("u:" + unmapped, JSON.stringify({ ...rec, u: unmapped }));
   const s2 = (await (await stmtWorker.fetch(sj("/open", { u: unmapped, password: pw }), senv)).json()).session;
@@ -7732,10 +7736,12 @@ await (async () => {
   const n1 = await nudgeOrders(denv), n2 = await nudgeOrders(denv);
   ok(n1.ok && n1.newest === o3.at && (await dkv.get("orders:nudged")) === o3.at && n2.ok && n2.sent === 0 && !n2.newest,
     "the nudge marks the newest placement and does not nudge twice for it");
-  for (const st of ["acknowledged", "ready"]) await deskWorker.fetch(req("/orders/" + unmapped + "/" + o3.id, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: st }) }), denv);
-  b = await (await deskWorker.fetch(req("/orders/" + unmapped + "/" + o3.id, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: "done" }) }), denv)).json();
-  ok(b.ok && b.order.status === "done" && !b.queued && /no desk code/.test(b.warn || "") && JSON.parse(await dkv.get("q:orders")).queue.length === 1,
-    "a completion for a username the map does not carry queues nothing and says so");
+  for (const st of ["acknowledged", "ready"])
+    b = await (await deskWorker.fetch(req("/orders/" + unmapped + "/" + o3.id, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: st }) }), denv)).json();
+  const rc1 = await reconcileOrders(denv);
+  ok(b.ok && /no desk code/.test(b.warn || "") && rc1.ok && rc1.queued === 0 && JSON.stringify(rc1.unmapped) === JSON.stringify([o3.id])
+    && JSON.parse(await dkv.get("q:orders")).queue.length === 1,
+    "an order for a username the map does not carry queues nothing, is named as unmapped, and is said so on the tap");
   ok((await ordersWaiting(denv)) === 0, "and nothing is left waiting");
 
   /* THE DEPLOY SEALS THE LIST INTO THE RECORD, beside the live statement, under the same key. */
@@ -14032,6 +14038,200 @@ await (async () => {
     await new Promise((r) => setTimeout(r, 400));
     ok(app93.asked.times === 0, "and a browser that has already refused is not asked again");
   } finally { try { app93.W.close(); } catch (e) { /* best effort */ } }
+})();
+section("v694: an order reaches the ledger in stages, and money and goods move apart");
+await (async () => {
+  /* HIS INSTRUCTIONS OF 18 SEP 2026. An order used to reach the book once, at the end, as a sale paid
+     and delivered in full on the day. It now reaches it as it happens: the row appears when he
+     acknowledges, with the delivery charge inside its total, and every later step amends it. The
+     customer types what they paid; he types what he handed over; either side may withdraw until the
+     goods move; and the order completes itself when both sides are complete.
+     DRIVEN, NOT READ: both Workers, the reconcile, the drafter and the fold, on fixtures. */
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const O = await import("../stmt/orders.js");
+  const { pendingEntry, payEntry, handoverEntry, cancelEntry, cancelEntry: _c, orderKeyFor, reconcileOrders } = await import("../src/orders.js");
+  const { draftRow } = await import("../src/drafter.js");
+  const { applyAmend } = await import("../tools/fold.mjs");
+  const PE94 = (await import("../engine/position.mjs")).default;
+
+  const skv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const un94 = "a2c4-e6g8";
+  await skv.put("u:" + un94, JSON.stringify({ v: 1, issued: "2026-09-01", env: { v: 1, salt: "s", iv: "i", ct: "c" } }));
+  const tok94 = await O.mintSession(senv, un94);
+  const S94 = { "X-Stmt-Session": tok94 }, D94 = { "X-Stmt-Desk": "desk-key" };
+  const post = (p, b, h) => stmtW.fetch(new Request("https://site.test" + p, { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(b) }), senv);
+  const J = async (r) => ({ status: r.status, b: await r.json().catch(() => ({})) });
+
+  /* ---- 1. WHERE IT IS GOING, and nothing is placed on one tap ---- */
+  ok((await J(await post("/orders", { product: "salt", qty: 2.5, mode: "deliver", unit: 120, total: 300, week: "" }, S94))).status === 400,
+    "a delivery with no general location is refused");
+  let r94 = await J(await post("/orders", { product: "salt", qty: 2.5, mode: "deliver", unit: 120, total: 300, place: "  Bangsar   South ", week: "" }, S94));
+  const ord = r94.b.order, id94 = ord.id;
+  ok(r94.b.ok && ord.place === "Bangsar South" && ord.paid === 0 && ord.moved === 0 && Array.isArray(ord.payments),
+    "a delivery carries the location, tidied to one line, and both tracks start at nothing");
+  ok((await J(await post("/orders", { product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, place: "Bangsar", week: "" }, S94))).b.order.place === "",
+    "a collection carries no location at all, whatever was typed");
+
+  /* ---- 2. NOTHING IS PAID BEFORE IT IS AGREED ---- */
+  ok((await J(await post("/orders/" + id94 + "/pay", { amount: 10 }, S94))).status === 409
+    && (await J(await post("/orders/" + id94 + "/method", { method: "cod" }, S94))).status === 409,
+    "neither a rail nor a payment is taken while the order is only placed");
+
+  /* ---- 3. THE DESK. A mirror with the state alone is all readBook needs for the OPEN snapshot. ---- */
+  const dkv = new KV(); await dkv.put("stmt-users", JSON.stringify({ [un94]: "CX0-AA" }));
+  const STATE94 = {}, D1 = {
+    prepare(q) {
+      const run = async () => ({});
+      return { bind: (...a) => ({ all: async () => D1._all(q, a), first: async () => D1._first(q), run }),
+        all: async () => D1._all(q, []), first: async () => D1._first(q), run };
+    },
+    async _all(q) {
+      if (/FROM state/.test(q)) return { results: Object.keys(STATE94).map((k) => ({ key: k, doc: JSON.stringify(STATE94[k]) })) };
+      return { results: [] };
+    },
+    async _first(q) { return /FROM snapshot/.test(q) ? { v: "v694" } : null; }
+  };
+  const denv94 = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key",
+    STMT_SITE: { fetch: (u, i) => stmtW.fetch(new Request(u, i), senv) } };
+  const Q = async () => JSON.parse((await dkv.get("q:orders")) || '{"queue":[]}').queue;
+
+  ok((await reconcileOrders(denv94)).queued === 0, "a placed order owes the ledger nothing: there is no row to make until he agrees it");
+
+  /* ---- 4. THE ACKNOWLEDGEMENT MAKES THE ROW, with the delivery charge typed on the card ---- */
+  r94 = await J(await post("/desk/orders/" + un94 + "/" + id94, { status: "acknowledged", delivery: 12 }, D94));
+  ok(r94.b.ok && r94.b.order.delivery === 12 && r94.b.order.status === "acknowledged",
+    "the delivery charge is set where the order is agreed (it was at ready until v694)");
+  const rcA = await reconcileOrders(denv94);
+  let q94 = await Q();
+  const ack = q94[0];
+  ok(rcA.queued === 1 && q94.length === 1 && ack.payload.mode === "new" && ack.payload.total === 312
+    && ack.payload.cash === 0 && ack.payload.kg === 0 && ack.status === "Pending",
+    "the reconcile queues one pending row: the delivery inside the total, nothing paid, nothing moved");
+  ok(!JSON.stringify(ack).includes("Bangsar"),
+    "and the location the customer typed stays on the site: a note reaches the committed book, so no free text rides in");
+  ok((await reconcileOrders(denv94)).queued === 0 && (await Q()).length === 1,
+    "a second pass queues nothing: what has been told is marked on the order, so no stage is told twice");
+
+  /* THE KEY IS THE ENGINE'S ovKey. Written here with toFixed(2) it missed every row by two noughts. */
+  const folded = { date: ack.payload.date, customer: "CX0-AA", product: "salt", qty: 2.5, total: 312,
+    delivery: 12, cash: 0, deliveredQty: 0, rid: "s694" };
+  ok(orderKeyFor("CX0-AA", ack.payload.date, 312) === PE94.ovKey(folded) && ack.orderKey === PE94.ovKey(folded),
+    "the key the desk remembers for every later stage is the engine's own ovKey, to the character: " + ack.orderKey);
+
+  /* ---- 5. AN AMENDMENT WAITS FOR ITS ROW ---- */
+  await post("/orders/" + id94 + "/method", { method: "tngbiz" }, S94);
+  ok((await J(await post("/orders/" + id94 + "/pay", { amount: 400 }, S94))).status === 400,
+    "a payment above what is outstanding is refused");
+  r94 = await J(await post("/orders/" + id94 + "/pay", { amount: 100 }, S94));
+  ok(r94.b.ok && r94.b.order.paid === 100 && r94.b.order.payments.length === 1 && r94.b.order.status === "acknowledged",
+    "the customer types what they paid, and it accumulates on the order");
+  const rcW = await reconcileOrders(denv94);
+  ok(rcW.queued === 0 && JSON.stringify(rcW.waiting) === JSON.stringify([id94]) && (await Q()).length === 1,
+    "the payment waits while the row is not on the book yet, rather than queueing an entry the drafter would refuse");
+
+  /* the pending row folds and the mirror is re-seeded: now the key names an OPEN order */
+  STATE94.OPEN = { byKey: { [PE94.ovKey(folded)]: Object.assign(PE94.ledgerRow(folded, "S", "salt"), { key: PE94.ovKey(folded) }) } };
+  await reconcileOrders(denv94); q94 = await Q();
+  ok(q94.length === 2 && q94[1].payload.kind === "Fulfilment" && q94[1].payload.cash === 100
+    && q94[1].payload.orderKey === ack.orderKey && q94[1].payload.qty === 0,
+    "with the row on the book the payment queues as a Fulfilment against that key, money only");
+  await post("/orders/" + id94 + "/pay", { amount: 50 }, S94);
+  await reconcileOrders(denv94); q94 = await Q();
+  ok(q94.length === 3 && q94[2].payload.cash === 50,
+    "a second payment queues the INCREMENT, because a Fulfilment accumulates: " + q94[2].payload.cash);
+
+  /* ---- 6. THE HANDOVER IS HIS, AND IT IS A CORRECTION ---- */
+  ok((await J(await post("/desk/orders/" + un94 + "/" + id94, { handover: { units: 9 } }, D94))).status === 400,
+    "more units than were ordered cannot be handed over");
+  r94 = await J(await post("/desk/orders/" + un94 + "/" + id94, { handover: { units: 1 } }, D94));
+  ok(r94.b.ok && r94.b.order.moved === 1 && /^\d{4}-\d\d-\d\d$/.test(r94.b.order.movedOn) && r94.b.order.status === "acknowledged",
+    "he types what he handed over, and the order stays open because the rest is still to come");
+  await reconcileOrders(denv94); q94 = await Q();
+  ok(q94.length === 4 && q94[3].payload.kind === "Correction" && q94[3].payload.fields.deliveredQty === 1
+    && q94[3].payload.fields.deliveredOn === r94.b.order.movedOn && q94[3].payload.fields.handover === "delivered",
+    "the handover queues a Correction stating the running total, the day and who moved it");
+  ok((await J(await post("/orders/" + id94 + "/cancel", {}, S94))).status === 409,
+    "and once the goods are out the customer can no longer withdraw it");
+
+  /* ---- 7. BOTH SIDES COMPLETE, AND NOBODY TAPS IT ---- */
+  r94 = await J(await post("/orders/" + id94 + "/pay", { amount: 162 }, S94));
+  ok(r94.b.order.paid === 312 && r94.b.order.status === "acknowledged",
+    "paid in full is not complete while units are still owed");
+  r94 = await J(await post("/desk/orders/" + un94 + "/" + id94, { handover: { units: 2.5 } }, D94));
+  ok(r94.b.order.status === "done" && r94.b.order.history.some((h) => h.status === "done" && h.by === "site"),
+    "the order completes itself the moment both tracks are complete, on neither side's tap");
+  await reconcileOrders(denv94); q94 = await Q();
+  ok(q94.length === 6 && q94[5].payload.fields.deliveredQty === 2.5 && (await reconcileOrders(denv94)).queued === 0,
+    "six stages, six entries, and a quiet pass queues nothing: " + q94.length);
+
+  /* ---- 8. EVERY ENTRY DRAFTS, AND THE FOLD READS THE BOOK'S OWN WORDS ---- */
+  const bookD94 = { version: "v694", pricing: { v: "v694", byProduct: { salt: { stockCost: 48, replCost: 48, floors: { "2.5": { floor: 157.3 } } } } },
+    purchases: [{ date: "2026-08-13", qty: 12.5, total: 650, receivedOn: "2026-08-13" }],
+    sales: [folded], state: Object.assign({ roster: ["CX0-AA"], QUEUE_COMMITTED: "2026-09-01T00:00:00.000Z" }, STATE94) };
+  const skips = q94.map((x) => draftRow(x, bookD94)).map((d) => d.skip).filter(Boolean);
+  ok(skips.length === 0, "the drafter drafts all six without a single refusal: " + JSON.stringify(skips));
+
+  const row94 = Object.assign({}, folded);
+  const stat = () => PE94.txStat(row94).order;
+  ok(stat() === "Pending", "the acknowledged row reads Pending");
+  applyAmend(row94, payEntry(ord, "CX0-AA", 100, new Date()).payload, "SELL", "");
+  ok(stat() === "Open · Deferred" && row94.cash === 100, "money in ahead of the goods reads Open · Deferred, his words and the book's");
+  applyAmend(row94, handoverEntry(ord, "CX0-AA", 1, new Date()).payload, "SELL", "");
+  applyAmend(row94, payEntry(ord, "CX0-AA", 212, new Date()).payload, "SELL", "");
+  applyAmend(row94, handoverEntry(ord, "CX0-AA", 2.5, new Date()).payload, "SELL", "");
+  ok(stat() === "Completed" && row94.cash === 312 && row94.deliveredQty === 2.5 && row94.handover === "delivered" && !!row94.deliveredOn,
+    "and folded in order the row completes, carrying what was paid, what moved, when and how");
+  const goodsFirst = Object.assign({}, folded);
+  applyAmend(goodsFirst, handoverEntry(ord, "CX0-AA", 2.5, new Date()).payload, "SELL", "");
+  ok(PE94.txStat(goodsFirst).order === "Open · Advance", "goods out ahead of the money reads Open · Advance");
+
+  /* ---- 9. CASH ON HANDOVER IS WITHHELD FROM ANYONE HOLDING AN UNPAID ADVANCE ---- */
+  const held = [{ id: "a", status: "acknowledged", qty: 2, total: 200, delivery: 0, paid: 0, moved: 2 }];
+  ok(O.hasUnpaidAdvance(held) && !O.hasUnpaidAdvance(held, "a")
+    && !O.hasUnpaidAdvance([{ id: "b", status: "acknowledged", qty: 2, total: 200, delivery: 0, paid: 200, moved: 2 }])
+    && !O.hasUnpaidAdvance([{ id: "c", status: "cancelled", qty: 2, total: 200, delivery: 0, paid: 0, moved: 2 }]),
+    "an unpaid advance is goods out with money owed, on another live order, and neither a settled one nor a withdrawn one");
+  const o5 = (await J(await post("/orders", { product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, week: "" }, S94))).b.order;
+  await post("/desk/orders/" + un94 + "/" + o5.id, { status: "acknowledged" }, D94);
+  await post("/desk/orders/" + un94 + "/" + o5.id, { handover: { units: 1 } }, D94);
+  const o6 = (await J(await post("/orders", { product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, week: "" }, S94))).b.order;
+  await post("/desk/orders/" + un94 + "/" + o6.id, { status: "acknowledged" }, D94);
+  ok((await J(await post("/orders/" + o6.id + "/method", { method: "cod" }, S94))).status === 409
+    && (await J(await post("/orders/" + o6.id + "/method", { method: "tngbiz" }, S94))).b.ok,
+    "so cash on handover is refused on the next order while it stands, and every other rail is not");
+
+  /* ---- 9b. THE OTHER ENDING: withdrawn, and the ledger told only where it was told of a row ---- */
+  await reconcileOrders(denv94);   /* the two orders the rule above left acknowledged owe their rows; settle them first */
+  const o7 = (await J(await post("/orders", { product: "salt", qty: 1, mode: "collect", unit: 120, total: 130, week: "" }, S94))).b.order;
+  await J(await post("/orders/" + o7.id + "/cancel", {}, S94));
+  const before7 = (await Q()).length;
+  ok((await reconcileOrders(denv94)).queued === 0 && (await Q()).length === before7,
+    "an order withdrawn before it was agreed tells the ledger nothing: there is no row to cancel");
+  const o8 = (await J(await post("/orders", { product: "salt", qty: 1, mode: "collect", unit: 140, total: 140, week: "" }, S94))).b.order;
+  await post("/desk/orders/" + un94 + "/" + o8.id, { status: "acknowledged" }, D94);
+  await reconcileOrders(denv94);
+  const ack8 = (await Q()).slice(-1)[0];
+  const row8 = { date: ack8.payload.date, customer: "CX0-AA", product: "salt", qty: 1, total: 140, delivery: 0, cash: 0, deliveredQty: 0, rid: "s695" };
+  STATE94.OPEN.byKey[PE94.ovKey(row8)] = Object.assign(PE94.ledgerRow(row8, "S", "salt"), { key: PE94.ovKey(row8) });
+  r94 = await J(await post("/orders/" + o8.id + "/cancel", {}, S94));
+  ok(r94.b.ok && r94.b.order.status === "cancelled", "and one agreed but untouched is withdrawn by the customer");
+  await reconcileOrders(denv94);
+  const can8 = (await Q()).slice(-1)[0];
+  ok(can8.payload.kind === "Cancellation" && can8.payload.orderKey === ack8.orderKey && can8.status === "Cancellation",
+    "which queues a Cancellation against the row it made, so no pending row is left standing on the book");
+  ok((await reconcileOrders(denv94)).queued === 0, "and it is cancelled once, not on every pass after");
+
+  /* ---- 10. THE PAGE: the confirm step, the location, the amount, and the dropdown he called bizarre ---- */
+  const page94 = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
+  ok(/select\.fld\{[^}]*color-scheme:dark/.test(page94) && /select\.fld option\{background:var\(--salt-well\)/.test(page94)
+    && /select\.fld\{[^}]*linear-gradient\(45deg/.test(page94),
+    "the open list is told the page is dark and the chevron is drawn on the page, which is the bizarre colour fixed");
+  ok(page94.includes("Review this order") && page94.includes("Check this over") && page94.includes("Place this order")
+    && page94.includes("a neighbourhood or a landmark") && page94.includes("I have paid")
+    && page94.includes("Your order is now complete. Thank you for your loyalty."),
+    "the page reviews before it places, asks roughly where it is going, takes the amount paid, and says his closing words");
+  ok(!/url\(/.test(page94), "and nothing on the page loads anything, the chevron included");
 })();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {

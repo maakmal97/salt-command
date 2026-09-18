@@ -1,5 +1,19 @@
 [
  {
+  "v": "v694",
+  "d": "18 Sep 2026",
+  "t": "AN ORDER REACHES THE LEDGER IN STAGES, AND MONEY AND GOODS MOVE APART",
+  "n": [
+   "<b>HIS INSTRUCTIONS OF 18 SEP 2026.</b> An order used to reach the book once, at the end, as a sale paid and delivered in full on the day. It now reaches it as it happens. He acknowledges the order, with the delivery charge typed on the card rather than in a browser prompt, and that is the moment the row is made: a PENDING sale, the delivery inside its total, nothing paid and nothing moved. Every later step amends that row.",
+   "<b>SITE ORDERS MOVES THE ORDER; APPROVE LANDS THE ROW.</b> No tap on the card writes anything now. The Worker's every-minute reconcile is the ONE road that queues, so a stage cannot be queued twice by two roads racing: a payment queues a Fulfilment of the INCREMENT, because a Fulfilment accumulates; a handover queues a Correction stating the RUNNING TOTAL, the day and who moved it, because only a Correction may set those and it states rather than adds; a withdrawal queues a Cancellation, and the fold raises the refund itself. Each waits under Approve like every other row.",
+   "<b>WHICH ROW A LATER STAGE AMENDS.</b> A rid is minted at fold time and there is no route from the desk back to the site, so the site can never learn it. The desk writes the other identifier the drafter takes onto the order at the acknowledgement, and it is the engine's own ovKey to the character. Written here with toFixed(2) it missed every row by two noughts, which nothing but driving the chain end to end would have shown. An amendment WAITS while the row is not yet on the book, rather than queueing one the drafter would refuse and putting a refusal on his phone every time a customer paid early.",
+   "<b>MONEY AND GOODS ARE TWO TRACKS, HIS RULE.</b> He may deliver first or be paid first. The customer types what they paid, part payments accumulate and more than what is outstanding is refused; he types what he handed over. Paid ahead reads Open · Deferred, goods out ahead reads Open · Advance, and Completed is neither side's tap: it is what the record reads when both are complete, and the page then says his own closing words.",
+   "<b>CASH ON HANDOVER IS WITHHELD</b> from anyone holding an unpaid advance on another live order, because settling that at the door is how one advance becomes two. Either side may withdraw at any stage until the goods move, and the customer is told what a withdrawal refunds.",
+   "<b>ON THE CUSTOMER'S PAGE.</b> Nothing is placed on one tap: the order is reviewed in words first. A delivery says roughly where it is going, one line, a neighbourhood and not an address, which stays on the site and never rides into a ledger note, because a note reaches the committed book. And the dropdown he called bizarre is fixed: the open list is drawn by the system, and with no colour scheme declared it drew a white list under a dark field. It is told the page is dark, and the chevron appearance:none took away is drawn back out of two gradients, nothing loaded.",
+   "<b>THE CHECKS.</b> A new section of 36 assertions driving both Workers, the reconcile, the drafter and the fold end to end: the location, the review, the pending row, the key against the engine's own ovKey, the increment against the running total, both endings, the withheld rail, and the six entries folded in order onto one row through Pending, Open · Deferred and Completed. Twenty mutations each turned it red. The v499 section is restated on the new road."
+  ]
+ },
+ {
   "v": "v693",
   "d": "18 Sep 2026",
   "t": "THE SITE CAN BE KEPT AS AN APP, AND EVERY LOGIN ASKS ABOUT NOTIFICATIONS",

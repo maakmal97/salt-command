@@ -19,6 +19,7 @@
  * which is what "an updated statement after completion" means on this book.
  */
 import { sendPush } from "./push.js";
+import { readBook } from "./drafter.js";
 
 const DEVICE = "orders";
 const MARK = "orders:nudged";
@@ -55,24 +56,98 @@ export async function moveOrder(env, u, id, body) {
   return { ok: true, order: Object.assign({ code: users[b.order.u] || null }, b.order), push: b.push };
 }
 
-/** The queue entry a completed order becomes: the Workbench's own shape, cash and units in full. */
-export function saleEntry(order, code, now) {
+/* ---- AN ORDER REACHES THE BOOK IN STAGES (v694, his instruction of 18 Sep 2026) ---------------
+ * It used to reach it once, at the end, as a sale paid and delivered in full on the day. He asked
+ * for the truth as it happens: the row appears when he acknowledges the order, with nothing paid
+ * and nothing moved, and every later step amends it. Each stage is its own queue entry and each
+ * one waits under Approve, so nothing enters the book unapproved: Site orders moves the order,
+ * Approve lands the row.
+ *
+ * WHICH ROW A LATER STAGE AMENDS. A rid is minted at fold time and there is no route back from the
+ * desk to the site, so the site can never learn it. The desk remembers the other identifier the
+ * drafter takes, the open-order key `<code>|<date>|<total>`, at the moment it queues the pending
+ * row, and writes it onto the order record. Every later amendment names that key. It is exactly
+ * what the Whiteboard's own Amend tab sends.
+ *
+ * WHY A FULFILMENT FOR MONEY AND A CORRECTION FOR THE HANDOVER. A Fulfilment accumulates cash and
+ * units, which is what a payment is: the customer types what they paid and it adds to what is in.
+ * A handover also has to say WHEN and BY WHOM (deliveredOn, handover), which only a Correction may
+ * set, and a Correction states figures rather than adding them, so it carries the running total of
+ * what has been handed over. Both kinds are among the four the drafter accepts. */
+/* IT IS THE ENGINE'S ovKey AND NOTHING ELSE: `${party}|${date}|${total}`, the total as the row
+   carries it. It was written here with toFixed(2) and every amendment missed its row by the two
+   noughts, which is the sort of thing that only shows when the chain is driven end to end. */
+export const orderKeyFor = (code, date, total) => code + "|" + date + "|" + (+total);
+const klDate = (now) => (now instanceof Date ? now : new Date(now || Date.now()))
+  .toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
+
+/** The pending row an acknowledged order becomes: agreed, nothing paid, nothing moved. */
+export function pendingEntry(order, code, now) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
-  const date = at.toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
-  const method = order.method ? (order.method + (order.account ? " via " + order.account : "")) : "not stated";
-  /* v502: the total to pay is the goods plus the delivery typed at ready; delivery rides as its own field */
+  const date = klDate(at);
   const delivery = +(order.delivery || 0);
   const total = +(order.total + delivery).toFixed(2);
-  const note = "Ordered on the statements site, order " + order.id + ", " + (order.mode === "deliver" ? "delivered" : "collected")
-    + (delivery > 0 ? ", delivery RM " + delivery : "") + ", paid by " + method + ".";
+  /* the general location the customer typed stays on the site, on his card: a note reaches the
+     committed book, and free text a customer typed is the one thing here that could carry a street */
+  const note = "Ordered on the statements site, order " + order.id + ", acknowledged"
+    + (order.mode === "deliver" ? ", to be delivered" : ", to collect")
+    + (delivery > 0 ? ", delivery RM " + delivery : "") + ". Nothing paid and nothing handed over yet.";
   const raw = "SELL " + code + " " + order.qty + " " + (order.product || "salt") + " RM " + total
-    + ", RM " + total + " cash, " + order.qty + " moved (order " + order.id + ")";
+    + ", nothing paid, nothing moved (order " + order.id + ")";
   return {
-    at: at.toISOString(), type: "SELL", party: code, qty: order.qty, total, status: "Completed", raw,
+    at: at.toISOString(), type: "SELL", party: code, qty: order.qty, total, status: "Pending", raw,
+    orderKey: orderKeyFor(code, date, total),
     payload: { mode: "new", product: order.product || "salt", direction: "SELL", party: code, newId: null,
-      date, qty: order.qty, total, delivery, cash: total, kg: order.qty,
+      date, qty: order.qty, total, delivery, cash: 0, kg: 0,
       assoc: null, stream: null, downstream: null, kind: null, orderCode: null, linkTo: null, note,
-      handover: order.mode === "deliver" ? "delivered" : "collected" }
+      handover: null, second: null }
+  };
+}
+
+/** What a customer paid, as a Fulfilment against the row the acknowledgement made. */
+export function payEntry(order, code, amount, now) {
+  const at = now instanceof Date ? now : new Date(now || Date.now());
+  const date = klDate(at);
+  const cash = +(+amount).toFixed(2);
+  const method = order.method ? (order.method + (order.account ? " via " + order.account : "")) : "not stated";
+  return {
+    at: at.toISOString(), type: "SELL", party: code, qty: 0, total: cash, status: "Payment",
+    raw: "Payment of RM " + cash + " on " + code + ", order " + order.id + ", by " + method,
+    payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: code, rid: null,
+      orderKey: order.ledgerKey || null, orderCode: null, linkTo: null, assoc: null, downstream: null,
+      date, qty: 0, total: 0, cash, kg: 0,
+      note: "Paid on the statements site, order " + order.id + ", by " + method + "." }
+  };
+}
+
+/** What was handed over, as a Correction: the running total, the day, and who moved it. */
+export function handoverEntry(order, code, units, now) {
+  const at = now instanceof Date ? now : new Date(now || Date.now());
+  const date = klDate(at);
+  const moved = +(+units).toFixed(2);
+  const how = order.mode === "deliver" ? "delivered" : "collected";
+  return {
+    at: at.toISOString(), type: "SELL", party: code, qty: moved, total: 0, status: "Handover",
+    raw: moved + " unit " + how + " to " + code + ", order " + order.id + ", on " + date,
+    payload: { mode: "amend", kind: "Correction", direction: "SELL", party: code, rid: null,
+      orderKey: order.ledgerKey || null, orderCode: null, linkTo: null, assoc: null, downstream: null,
+      date, qty: 0, total: 0, cash: 0, kg: 0,
+      fields: { deliveredQty: moved, deliveredOn: date, handover: how },
+      note: moved + " unit " + how + " for order " + order.id + "." }
+  };
+}
+
+/** Either side withdrew it: the row is cancelled, and the fold raises any refund itself. */
+export function cancelEntry(order, code, why, now) {
+  const at = now instanceof Date ? now : new Date(now || Date.now());
+  const date = klDate(at);
+  return {
+    at: at.toISOString(), type: "SELL", party: code, qty: 0, total: 0, status: "Cancellation",
+    raw: "Cancellation on " + code + ", order " + order.id + ", recorded " + date,
+    payload: { mode: "amend", kind: "Cancellation", direction: "SELL", party: code, rid: null,
+      orderKey: order.ledgerKey || null, orderCode: null, linkTo: null, assoc: null, downstream: null,
+      date, qty: 0, total: 0, cash: 0, kg: 0,
+      note: "Withdrawn on the statements site by " + (why === "desk" ? "the desk" : "the customer") + ", order " + order.id + "." }
   };
 }
 
@@ -83,6 +158,61 @@ export async function queueSale(env, entry) {
   cur.updated = entry.at;
   await env.SALT_QUEUE.put("q:" + DEVICE, JSON.stringify(cur));
   return cur.queue.length;
+}
+
+/* ---- THE RECONCILE (v694): THE ONE ROAD FROM A STAGE TO THE QUEUE -----------------------------
+ * It runs on the every-minute cron and nowhere else, so there is exactly one writer and a stage
+ * cannot be queued twice by two roads racing. The site decides what is owed (orderWork there, on
+ * the record that holds the marks); this queues it and writes back what it queued, per order, the
+ * moment it is queued, so a failure halfway leaves the rest owed rather than lost.
+ *
+ * A MINUTE IS NOT A DELAY THAT MATTERS: the entry still has to be drafted and then approved under
+ * Approve, and the customer's card says so while it waits.
+ */
+export async function reconcileOrders(env) {
+  const r = await site(env, "/desk/orders?work=1");
+  if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.ok) return { ok: false, error: b.error || ("the statements site answered http " + r.status) };
+  const owing = b.orders || [];
+  if (!owing.length) return { ok: true, queued: 0 };
+  const users = await usersMap(env);
+  /* AN AMENDMENT WAITS FOR ITS ROW. The pending row reaches the book by the long road: queued,
+     drafted, approved, folded, and the mirror re-seeded. Until it is there, nothing can be amended,
+     and queueing the amendment anyway would put a refusal on his phone every time a customer paid
+     early. So the same question the drafter would ask is asked one step earlier, and a stage that
+     cannot land yet simply stays owed. A mirror that cannot be read holds everything, rather than
+     queueing what would be refused. */
+  const book = await readBook(env.SALT_LEDGER).catch(() => null);
+  const onBook = (book && book.state && book.state.OPEN && book.state.OPEN.byKey) || null;
+  const now = new Date();
+  let queued = 0; const unmapped = [], failed = [], waiting = [];
+  for (const o of owing) {
+    const code = users[o.u] || null;
+    /* no code, no row: the test account and any account published since the last map land here,
+       and they wait rather than being guessed at */
+    if (!code) { unmapped.push(o.id); continue; }
+    const q = o.queued || {}, mark = {}; const order = Object.assign({}, o);
+    try {
+      for (const job of o.work || []) {
+        let e = null;
+        if (job !== "ack" && !(onBook && onBook[order.ledgerKey])) { waiting.push(o.id); break; }
+        if (job === "ack") { e = pendingEntry(order, code, now); mark.ledgerKey = e.orderKey; order.ledgerKey = e.orderKey; mark.ack = e.at; }
+        else if (job === "pay") { e = payEntry(order, code, +((+order.paid || 0) - (+q.paid || 0)).toFixed(2), now); mark.paid = +(+order.paid || 0).toFixed(2); }
+        else if (job === "move") { e = handoverEntry(order, code, +order.moved || 0, now); mark.moved = +(+order.moved || 0).toFixed(3); }
+        else if (job === "cancel") { e = cancelEntry(order, code, order.status === "declined" ? "desk" : "customer", now); mark.cancel = e.at; }
+        if (e) { await queueSale(env, e); queued++; }
+      }
+      if (Object.keys(mark).length) {
+        const m = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
+          method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mark })
+        });
+        if (!m || !m.ok) failed.push(o.id);
+      }
+    } catch (e) { failed.push(o.id); }
+  }
+  return Object.assign({ ok: true, queued }, unmapped.length ? { unmapped } : {},
+    waiting.length ? { waiting } : {}, failed.length ? { failed } : {});
 }
 
 /** How many customer orders are waiting on him: placed, and acknowledged but not yet ready. */

@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, moveOrder, saleEntry, queueSale, ordersWaiting, nudgeOrders } from "./orders.js";
+import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -619,6 +619,14 @@ export default {
           const n = await nudgeOrders(env);
           if (!n.ok || n.newest) console.log("orders nudge: " + JSON.stringify(n));
         } catch (e) { console.log("orders nudge FAILED: " + String((e && e.stack) || e)); }
+        /* v694: and the stages the ledger has not been told about. THE ONE PLACE THAT QUEUES them,
+           so no two roads can queue the same stage; it drafts what it queued rather than waiting
+           for the quarter-hour, because he is looking at Approve. */
+        try {
+          const rc = await reconcileOrders(env);
+          if (!rc.ok || rc.queued || rc.unmapped || rc.failed) console.log("orders reconcile: " + JSON.stringify(rc));
+          if (rc.queued) { const d = await runDrafter(env); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); }
+        } catch (e) { console.log("orders reconcile FAILED: " + String((e && e.stack) || e)); }
         /* the drafter's net still runs on the quarter-hour, as it did when this schedule ran every fifteen minutes */
         if (new Date(event.scheduledTime || Date.now()).getUTCMinutes() % 15 === 0) {
           const r = await runDrafter(env);
@@ -726,8 +734,9 @@ export default {
     /* The approval step. Reads open, decisions write-gated, same posture as everything else. */
     if (p === "/drafts" || p.startsWith("/drafts/")) return handleDrafts(request, env, ctx, url, p, m);
     /* THE CUSTOMER ORDERS (06 Sep 2026), relayed from the statements site: see src/orders.js.
-       Keyed like the drafts, because an order names a party and a figure. A move to "done" is
-       the one that writes: a queue entry under q:orders, drafted on arrival like any other. */
+       Keyed like the drafts, because an order names a party and a figure. NO MOVE HERE WRITES a
+       queue entry since v694: the every-minute reconcile is the one road, so a stage cannot be
+       queued twice by two roads at once, and the order's card says a row is on its way. */
     /* v507: the username-to-code map the publish writes here, for the printed board. Keyed: a
        username is the address of an account. Inverted on the desk. */
     if (p === "/stmt-users") {
@@ -751,14 +760,7 @@ export default {
       try { b = await request.json(); } catch { b = {}; }
       const r = await moveOrder(env, om[1], om[2], b);
       if (!r.ok) return json({ ok: false, error: r.error }, r.status || 502);
-      if (b && b.status === "done") {
-        if (r.order.code) {
-          const e = saleEntry(r.order, r.order.code, new Date());
-          await queueSale(env, e);
-          draftOnArrival(env, ctx);
-          r.queued = e.at;
-        } else r.warn = "no desk code is mapped to " + r.order.u + ", so no sale was queued: publish the statements again, then enter the sale by hand";
-      }
+      if (!r.order.code) r.warn = "no desk code is mapped to " + r.order.u + ", so nothing can be queued for the ledger: publish the statements again";
       return json(r);
     }
     /* Run the drafter on demand rather than waiting for the cron: needed to prove it from
