@@ -1,5 +1,14 @@
 [
  {
+  "v": "v712",
+  "d": "18 Sep 2026",
+  "t": "AN OIL SALE TO CH4-MAL, PAID AND MOVED THE SAME DAY, WELL UNDER THE ASK",
+  "n": [
+   "<b>FOLDED:</b> one new oil sale to CH4-MAL, 10 unit for RM130 on 18 Sep, RM130 cash taken and 10 unit moved the same day, so the row closes as it opens and nothing is left pending. Costed at RM7.53 a unit from the desk's own inventory rate, RM75.25 on the order and RM54.75 on the goods at 42.1%. The drafter raised no flag and the figures in the dossier carry the row as drafted.",
+   "<b>UNUSUAL:</b> the total clears the RM87.28 floor for 10 unit but sits far under the RM230 ask and the RM240 ceiling, and RM13 a unit runs well below CH4-MAL's median of RM110 across 2 orders, in a range of RM11.50 to RM110. The dossier gives no reason for the level and none is supplied here. CH4-MAL holds nothing outstanding, nothing on credit against a cap of 10 and nothing defaulted."
+  ]
+ },
+ {
   "v": "v711",
   "d": "18 Sep 2026",
   "t": "A VERSION NOTE HANDED TO -m AS A FILE IS READ, NOT COMMITTED AS A PATH",

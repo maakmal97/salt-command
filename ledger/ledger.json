@@ -1,6 +1,6 @@
 {
- "v": "v711",
- "stamped": "18 Sep 2026, 17:25 KL",
+ "v": "v712",
+ "stamped": "18 Sep 2026, 21:49 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -38,7 +38,7 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 20
+    "stated": 10
    }
   },
   "STATED_STOCK": 10.5,
@@ -4223,6 +4223,20 @@
     "deliveredQty": 0,
     "note": "<b>SALT SELL DATED 18 SEP, ACKNOWLEDGED AND PENDING.</b> Booked to CS6-BS, 5 unit for RM420, RM84 a unit, ordered on the statements site as order 20260916085105-rkoi5a, to collect. Nothing paid and nothing handed over, so the whole row stays open and no stock is drawn. The total clears the RM254.98 floor for 5 unit and runs under the RM560 ask and RM710 ceiling. Costed at RM48 a unit, the inventory's own rate, RM180 on the goods at 42.9%. <b>Flagged:</b> CS6-BS pays about RM107.50 a unit across 18 orders, this is 21.9% below, and the figures confirm the gap without accounting for it. CS6-BS shows 12 orders, median RM100, range RM11 to RM126.67, nothing outstanding before, 1 unit on credit against a cap of 2, nothing defaulted.",
     "rid": "s173"
+   },
+   {
+    "customer": "CH4-MAL",
+    "qty": 10,
+    "total": 130,
+    "cost": 75.25,
+    "cash": 130,
+    "product": "oil",
+    "date": "2026-09-18",
+    "deliveredQty": 10,
+    "deliveredOn": "2026-09-18",
+    "paidOn": "2026-09-18",
+    "note": "<b>OIL SELL DATED 18 SEP, PAID AND DELIVERED IN FULL.</b> Booked to CH4-MAL, 10 unit for RM130, RM13 a unit, RM130 cash received and 10 unit handed over on 18 Sep, leaving nothing outstanding on the row. The total clears the RM87.28 floor for 10 unit and runs under the RM230 ask and RM240 ceiling. Costed at RM7.53 a unit, the inventory's own rate, RM75.25 on the order and RM54.75 on the goods at 42.1%. The drafter flagged nothing. CH4-MAL shows 2 orders, median RM110, range RM11.50 to RM110, nothing outstanding before, nothing on credit against a cap of 10, nothing defaulted, and on the roster.",
+    "rid": "s174"
    }
   ],
   "contacts": [
@@ -4769,9 +4783,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-18T06:03:39.208Z",
+  "QUEUE_COMMITTED": "2026-09-18T13:48:01.997Z",
   "PRICING": {
-   "takenAt": "2026-09-18T09:33:06.567Z",
+   "takenAt": "2026-09-18T13:49:55.926Z",
    "sizes": [
     0.5,
     1,
@@ -4903,6 +4917,10 @@
     "CA5-SEN": {
      "salt": "Platinum"
     },
+    "CH4-MAL": {
+     "salt": "Platinum",
+     "oil": "Titanium"
+    },
     "CF5-WM": {
      "salt": "Gold"
     },
@@ -4917,10 +4935,6 @@
     },
     "CD4-CS": {
      "salt": "Silver"
-    },
-    "CH4-MAL": {
-     "salt": "Platinum",
-     "oil": "Titanium"
     },
     "CR3-PUD": {
      "salt": "Platinum"
@@ -5484,6 +5498,40 @@
       "lateTwice": false
      }
     },
+    "CH4-MAL": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 35,
+      "sinceLastDays": 35,
+      "perMonth": 0.87,
+      "smallShare": 1,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": true,
+      "lateTwice": false
+     },
+     "oil": {
+      "name": "rare and large",
+      "orders": 2,
+      "tenureDays": 35,
+      "sinceLastDays": 0,
+      "perMonth": 1.74,
+      "smallShare": 0.5,
+      "bigShare": 0.5,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
     "CF5-WM": {
      "salt": {
       "name": "one-off",
@@ -5566,40 +5614,6 @@
       "smallShare": 1,
       "bigShare": 0,
       "late": 1,
-      "frequent": false,
-      "small": true,
-      "bigger": false,
-      "loyal": false,
-      "rare": true,
-      "lateTwice": false
-     }
-    },
-    "CH4-MAL": {
-     "salt": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 35,
-      "sinceLastDays": 35,
-      "perMonth": 0.87,
-      "smallShare": 1,
-      "bigShare": 0,
-      "late": 0,
-      "frequent": false,
-      "small": true,
-      "bigger": false,
-      "loyal": false,
-      "rare": true,
-      "lateTwice": false
-     },
-     "oil": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 35,
-      "sinceLastDays": 35,
-      "perMonth": 0.87,
-      "smallShare": 1,
-      "bigShare": 0,
-      "late": 0,
       "frequent": false,
       "small": true,
       "bigger": false,
@@ -6204,9 +6218,9 @@
        "attrib": 1,
        "shrinkRate": 0.12979591836734694,
        "avgDel": {
-        "n": 11,
-        "kg": 166,
-        "mean": 15.0909
+        "n": 12,
+        "kg": 176,
+        "mean": 14.6667
        }
       },
       "policy": {
@@ -6384,10 +6398,10 @@
      ]
     }
    },
-   "v": "v711"
+   "v": "v712"
   },
   "OPEN": {
-   "at": "2026-09-18T09:33:06.656Z",
+   "at": "2026-09-18T13:49:56.063Z",
    "count": 8,
    "byKey": {
     "CS6-BS|2026-09-18|420": {
@@ -6534,11 +6548,11 @@
     },
     "oil": {
      "name": "Oil",
-     "onHand": 20,
-     "free": 20,
+     "onHand": 10,
+     "free": 10,
      "owedOut": 0,
-     "coverDays": 3.5,
-     "rate": 5.71,
+     "coverDays": 1.6,
+     "rate": 6.43,
      "owedToYou": 0,
      "promised": 0,
      "short": 0
@@ -6548,7 +6562,7 @@
     "salt": "2026-09-16",
     "oil": "2026-09-09"
    },
-   "v": "v711"
+   "v": "v712"
   }
  }
 }

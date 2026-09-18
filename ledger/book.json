@@ -34,7 +34,7 @@
     "oil": {
       "qty": 5,
       "costPerKg": 7.666666666666667,
-      "stated": 20
+      "stated": 10
     }
   },
   "STATED_STOCK": 10.5,
@@ -253,7 +253,8 @@
     {"customer":"CN6-WM","qty":1,"total":110,"cost":48,"cash":0,"handover":"collected","delivery":0,"deliveredOn":"2026-09-17","date":"2026-09-17","deliveredQty":1,"note":"<b>SALT SOLD TO CN6-WM, 1 UNIT AT RM110, COLLECTED 17 SEP WITH NOTHING PAID.</b> Ordered on the statements site, order 20260916154451-pmorvg, collected, paid by not stated, no delivery or freight, RM0 of RM110 in. The total clears the RM51 floor for this size and falls short of the RM160 ask and the RM150 ceiling. Costed at RM48 a unit, the inventory's own rate, RM62 on the goods at 56.4%. <b>Flagged:</b> an advance of 1 unit against the credit cap. CN6-WM shows 7 orders, median RM100, range RM75 to RM110, RM100 outstanding before and 1 unit on credit, nothing defaulted; this row takes him to 2 unit on credit against a cap of 2. RM110 stays outstanding.","rid":"s170"},
     {"customer":"CS6-BS","qty":1,"total":48,"cost":48,"cash":0,"settledRM":48,"rebate":true,"rebateKg":1,"goodwill":true,"deliveredQty":1,"deliveredOn":"2026-09-17","date":"2026-09-17","note":"<b>SALT REDEEMED FREE BY CS6-BS, 1 UNIT, RM48 SETTLED BY THE REWARD ON 17 SEP.</b> Delivered in full 17 Sep, RM0 cash, RM48 settled by the reward, so the row closes on arrival. It carries rebate and goodwill, so on his ruling of 11 Sep 2026 it is booked as cost and not as revenue. The RM48 falls under the RM51 floor for this size and well under the RM160 ask and RM150 ceiling. Costed at RM48 a unit, the inventory's own rate, RM48 on the goods. <b>Flagged:</b> the 1 unit earned and unredeemed, 5 earned against 4 applied, is the desk's word and unchecked here. CS6-BS shows 11 orders, median RM100, range RM11 to RM126.67, nothing outstanding before, 1 unit on credit against a cap of 2, nothing defaulted. Nothing outstanding.","rid":"s171"},
     {"customer":"CC5-OKR","qty":2,"total":105,"cost":96,"cash":105,"handover":"collected","date":"2026-09-17","deliveredQty":2,"deliveredOn":"2026-09-17","paidOn":"2026-09-17","note":"<b>SALT SELL DATED 17 SEP, PAID AND COLLECTED IN FULL ON THE DAY.</b> Booked to CC5-OKR, 2 unit for RM105, RM52.50 a unit, no delivery or freight, RM105 cash in and 2 unit moved 17 Sep, so nothing on this row stays open. The total clears the RM101.99 floor for 2 unit narrowly and runs well under the RM300 ask and RM290 ceiling. Costed at RM48 a unit, the inventory's own rate, RM96 on the goods, RM9 margin at 8.6%. <b>Flagged:</b> CC5-OKR pays about RM90 a unit across 5 orders, this is 41.7% below, and the figures confirm the gap without accounting for it. CC5-OKR shows 8 orders, median RM90, range RM80 to RM90, RM90 outstanding before, 1 unit on credit against a cap of 1, nothing defaulted. Nothing outstanding on this row.","rid":"s172"},
-    {"customer":"CS6-BS","qty":5,"total":420,"cash":0,"date":"2026-09-18","deliveredQty":0,"note":"<b>SALT SELL DATED 18 SEP, ACKNOWLEDGED AND PENDING.</b> Booked to CS6-BS, 5 unit for RM420, RM84 a unit, ordered on the statements site as order 20260916085105-rkoi5a, to collect. Nothing paid and nothing handed over, so the whole row stays open and no stock is drawn. The total clears the RM254.98 floor for 5 unit and runs under the RM560 ask and RM710 ceiling. Costed at RM48 a unit, the inventory's own rate, RM180 on the goods at 42.9%. <b>Flagged:</b> CS6-BS pays about RM107.50 a unit across 18 orders, this is 21.9% below, and the figures confirm the gap without accounting for it. CS6-BS shows 12 orders, median RM100, range RM11 to RM126.67, nothing outstanding before, 1 unit on credit against a cap of 2, nothing defaulted.","rid":"s173"}
+    {"customer":"CS6-BS","qty":5,"total":420,"cash":0,"date":"2026-09-18","deliveredQty":0,"note":"<b>SALT SELL DATED 18 SEP, ACKNOWLEDGED AND PENDING.</b> Booked to CS6-BS, 5 unit for RM420, RM84 a unit, ordered on the statements site as order 20260916085105-rkoi5a, to collect. Nothing paid and nothing handed over, so the whole row stays open and no stock is drawn. The total clears the RM254.98 floor for 5 unit and runs under the RM560 ask and RM710 ceiling. Costed at RM48 a unit, the inventory's own rate, RM180 on the goods at 42.9%. <b>Flagged:</b> CS6-BS pays about RM107.50 a unit across 18 orders, this is 21.9% below, and the figures confirm the gap without accounting for it. CS6-BS shows 12 orders, median RM100, range RM11 to RM126.67, nothing outstanding before, 1 unit on credit against a cap of 2, nothing defaulted.","rid":"s173"},
+    {"customer":"CH4-MAL","qty":10,"total":130,"cost":75.25,"cash":130,"product":"oil","date":"2026-09-18","deliveredQty":10,"deliveredOn":"2026-09-18","paidOn":"2026-09-18","note":"<b>OIL SELL DATED 18 SEP, PAID AND DELIVERED IN FULL.</b> Booked to CH4-MAL, 10 unit for RM130, RM13 a unit, RM130 cash received and 10 unit handed over on 18 Sep, leaving nothing outstanding on the row. The total clears the RM87.28 floor for 10 unit and runs under the RM230 ask and RM240 ceiling. Costed at RM7.53 a unit, the inventory's own rate, RM75.25 on the order and RM54.75 on the goods at 42.1%. The drafter flagged nothing. CH4-MAL shows 2 orders, median RM110, range RM11.50 to RM110, nothing outstanding before, nothing on credit against a cap of 10, nothing defaulted, and on the roster.","rid":"s174"}
   ],
   "contacts": [
     {"date":"2026-08-06","party":"CM4-SK","how":"message","outcome":"noreply","next":null,"note":"said hello"},
@@ -666,7 +667,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-18T06:03:39.208Z",
+  "QUEUE_COMMITTED": "2026-09-18T13:48:01.997Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -749,6 +750,7 @@
       "paidSplit: cash landed either side of the 28 Jul count; RM200 inside it, the rest after. Without the split the walk double-counted the RM200."
     ],
     "PROD_OPENING": [
+      "ROLLED AT v712 (oil): 10 unit to CH4-MAL on 2026-09-18, so 20 less 10 is 10. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v664 (oil): 10 unit to CS6-BS-R on 2026-09-16, so 30 less 10 is 20. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v662 (oil): 10 unit to CS6-BS-R on 2026-09-16, so 40 less 10 is 30. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v619 (oil): 10 unit to CS6-PER on 2026-09-13, so 50 less 10 is 40. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
