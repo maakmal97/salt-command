@@ -323,6 +323,16 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   Access session now also signs in as a customer. **The plain password is still laptop-only**, in
   `_passwords.json`, and no message ever carries it; a tick lives at `sent:<issue>:<username>`, so
   both his devices agree on what has gone out.
+- **THE ASSOCIATES REPORT CARD** (v691, his decisions of 18 Sep 2026): one card an associate a
+  book on the master page, from `associateSnapshot` in `tools/book.mjs`, published as KV `assoc`
+  and served only at `/all/assoc`. **What they did** (bought, sold for him, brought in, onward
+  sales, introductions, share, stars) **and the reward in UNITS**, with the part-unit as a bar.
+  **NO MARGIN CROSSES**: `ASSOC_FIELDS` is the whitelist, the distance to the next unit is a
+  margin figure and travels only as a share of one, and a departure is a yes or no, never his note.
+- **NOTHING A CUSTOMER SEES IS BOUND TO A MONTH** (v690, his instruction of 18 Sep 2026): the
+  statement carries every order from the start and the page filters it. Each dated row carries its
+  month, the strip is built from the months that account has, the newest opens, and All is one tap.
+  The account's position does not move with the filter, and the line under the strip says so.
 - **THE TEST ACCOUNT** (v689, his instruction of 18 Sep 2026): username `0000-0000`, password
   `0000-0000-0000-0000`, made and unmade from the master page with one tap. Zeros are not in the
   username alphabet, so it can collide with nothing; the Worker mints it with its own key, so no

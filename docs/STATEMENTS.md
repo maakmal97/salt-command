@@ -118,6 +118,12 @@ month and the tool refuses. Do not talk it out of that.
 
 ## How a customer reads it (03 Sep 2026, his instruction)
 
+**Not bound to a month** (v690, his instruction of 18 Sep 2026). The live statement has always
+carried every order from the start; the page now filters it. Each dated row is tagged with its
+month in `stmtDoc`, the strip above the table is built from the months that account has, the
+newest opens, and All is one tap. Undated rows show whatever is chosen, and the account's own
+position under the table does not move with the filter.
+
 **The statements live on their own site, away from the desk.** Until 03 Sep they were a route
 on `salt-command` itself, which put the one address a customer ever holds one path segment from
 an open ledger. They are a second Worker now, `stmt/worker.js` under `wrangler.stmt.jsonc`, with

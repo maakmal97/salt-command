@@ -44,7 +44,7 @@ export function usersMap(root) {
 }
 
 /** Everything the publish would do, as data: the puts, the deletes and what it found. */
-export async function planPublish(root, key, now, existingKeys, storedIssue, pricing) {
+export async function planPublish(root, key, now, existingKeys, storedIssue, pricing, assoc) {
   const r = await liveRecords(root, key, now, pricing);
   /* v688: THE SEALED PASSWORD IS NOT IN THE RECORD A CUSTOMER FETCHES. It is sealed under the
      master, so a customer could not open it, but /open hands the whole record's fields to whoever
@@ -91,6 +91,9 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
   if (r.records.length) {
     puts.push({ key: "sheet", value: JSON.stringify({ at: new Date(now || Date.now()).toISOString(), issue: issued, accounts: sheet }) });
   }
+  /* v691: the associates' report card rides the same bulk put, so it lands or fails with the
+     records rather than in a write of its own. Given only when the desk was opened for prices. */
+  if (assoc) puts.push({ key: "assoc", value: JSON.stringify(assoc) });
   return { latest: r.latest, issued, newIssue, live: r.live, priced: r.priced || 0, unmatched: r.unmatched, stale: r.stale, wrongKey: r.wrongKey || [], puts, deletes, sheet, users: usersMap(root) };
 }
 
@@ -169,12 +172,16 @@ async function main() {
      pxPolicy are the desk's contribution to the engine, so the master is opened in jsdom here, the
      way tools/d1.mjs --seed already does in the step before this one. About ten seconds. A dry run
      skips it, and so does --no-prices, and the records then go up without a list. */
-  let pricing = null;
+  let pricing = null, assoc = null;
   if (!dry && !process.argv.includes("--no-prices") && key) {
-    const { readBook } = await import("./book.mjs");
-    pricing = (await readBook()).ledger.PRICING;
+    const { readBook, associateSnapshot } = await import("./book.mjs");
+    /* v691: one window, two readings. The associates' report card comes off the same desk the
+       prices do, so a card and a price can never be from different states of the book. */
+    const rb = await readBook();
+    pricing = rb.ledger.PRICING;
+    try { assoc = associateSnapshot(rb.w); } catch (e) { console.log("::warning::no associates snapshot: " + e.message); }
   }
-  const plan = await planPublish(root, key, new Date(), existing, storedIssue, pricing);
+  const plan = await planPublish(root, key, new Date(), existing, storedIssue, pricing, assoc);
   if (!plan.latest) { console.log("no statement set to publish; normal for a build with no issue in it"); return; }
 
   /* THE STEP ASSERTS ITS OWN EFFECT, and does not merely report one (04 Sep 2026 audit). Every
@@ -207,6 +214,12 @@ async function main() {
     .map(([username, code]) => ({ code, username }))
     .sort((a, b) => String(a.code).localeCompare(String(b.code)));
   plan.puts.push({ key: "roster", value: JSON.stringify(rosterList) });
+
+  /* v691: the report card is in the plan (planPublish puts it); this only says so out loud */
+  if (assoc) {
+    console.log("and the associates' report card: " + (assoc.products[0] ? assoc.products[0].rows.length : 0)
+      + " associates over " + assoc.products.length + " book(s)");
+  }
 
   /* THE TWO GUEST BOARDS (10 Sep 2026). A referral link opens one tier's board and nothing else, so
      both are written on every publish, beside the sealed per-customer lists and from the same

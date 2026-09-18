@@ -1,5 +1,28 @@
 [
  {
+  "v": "v691",
+  "d": "18 Sep 2026",
+  "t": "THE ASSOCIATES REPORT CARD, IN UNITS AND SHARES, WITH NO MARGIN ANYWHERE NEAR IT",
+  "n": [
+   "<b>HIS DECISION OF 18 SEP 2026:</b> the third item on the master account. One card an associate a book: what they bought from him, what they sold for him, what they brought in, how many onward sales and introductions, their share of all revenue and their stars, and the reward.",
+   "<b>THE REWARD IS IN UNITS, AND THE PART-UNIT IS A BAR.</b> Earned, taken and left are units, which a customer already sees; how far they are through the next one is a proportion drawn as a rule and a fill. <b>What does not travel is margin:</b> the distance to the next unit is a margin figure, which is why the phone payload dropped it at v616, so the snapshot turns it into a share of one and carries nothing else. A book with no reward, which is oil, says so rather than showing a zero.",
+   "<b>READ OFF THE DESK, ONCE.</b> <code>associateSnapshot</code> opens the same window the prices come from, sets each book, reads <code>networkStats</code>, <code>rebateApplied</code>, <code>isDeparted</code> and <code>canRedeem</code>, and puts the desk back on the book it found it on. It goes up as <code>assoc</code> in the same bulk put as the records, and is served only at <code>/all/assoc</code>, behind Access with the rest.",
+   "<b>CODES ONLY, AND NOTHING OF THE PERSON.</b> A departure is a yes or a no; his reason, the memorial and the note stay on the desk.",
+   "<b>THE CHECKS:</b> the snapshot against the real desk for its whitelist, its words, its codes, the book it leaves behind and oil's null reward; the publish carrying it and not inventing one; the route behind Access; and the panel drawn in jsdom, one card an associate, never the word margin, with the bar. Eight reverts each turned it red."
+  ]
+ },
+ {
+  "v": "v690",
+  "d": "18 Sep 2026",
+  "t": "A CUSTOMER'S STATEMENT IS NOT BOUND TO A MONTH: EVERYTHING, FILTERED TO THE NEWEST",
+  "n": [
+   "<b>HIS INSTRUCTION OF 18 SEP 2026:</b> nothing customer-facing is time bound. It shows all, and the view opens filtered by month. The live statement already carried every order from the start; what was missing was a way to read one month of it without losing the rest.",
+   "<b>THE ROW CARRIES ITS MONTH.</b> Each dated row is tagged in the document itself, so the page builds the strip from the months that account actually has, newest first, with All at the end; an undated row belongs to no month and shows whatever is chosen. The newest month opens, because that is what a reader has come for.",
+   "<b>WHAT IT DOES NOT DO.</b> The filter hides rows and changes nothing else: what the account stands at is the account's, whatever is on screen, and the line under the strip says so in as many words.",
+   "<b>THE CHECKS:</b> the document's tags against the rows the statement was built from, then the page driven as a customer drives it, sealed bundle and stubbed door: the strip is the months plus All, it opens on the newest, All brings everything back, a month shows only its own, and filtering moves no text. Five reverts each turned it red."
+  ]
+ },
+ {
   "v": "v689",
   "d": "18 Sep 2026",
   "t": "A TEST ACCOUNT HE MAKES AND UNMAKES WITH ONE TAP, THAT COUNTS NOWHERE",

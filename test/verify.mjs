@@ -13693,6 +13693,162 @@ await (async () => {
     ok(after.status === 401, "and the zeros open nothing once it is gone");
   } finally { globalThis.fetch = realFetch89; }
 })();
+section("v690: a customer's statement is not bound to a month; it shows everything, filtered to the newest");
+await (async () => {
+  /* HIS INSTRUCTION OF 18 SEP 2026: nothing customer-facing is time bound. The document already carried
+     every order from the start; what was missing was a way to read one month of it. Each row says which
+     month it belongs to, the page builds the strip from the rows it has, and the newest month opens. */
+  const { stmtRows: sr90, stmtDoc: sd90 } = await import("../tools/make_statements.mjs");
+  const book90 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const party90 = [...new Set(book90.sales.filter((s) => s.date).map((s) => s.customer))]
+    .find((c) => new Set(book90.sales.filter((s) => s.customer === c && s.date).map((s) => s.date.slice(0, 7))).size > 1);
+  if (!party90) { skipData("no party on the book has orders in two different months, so the filter went unchecked"); return; }
+  const o90 = { from: null, to: "2026-12-31", completed: true, open: true, pending: true, dates: true, brand: "Salt Command", issued: "test" };
+  const rows90 = sr90(party90, o90);
+  o90.refunds = []; o90.recon = [];
+  const doc90 = sd90(party90, rows90, o90);
+  const tagged = [...doc90.matchAll(/<tr data-m="(\d{4}-\d{2})"/g)].map((m) => m[1]);
+  const dated = rows90.filter((r) => r.date).length;
+  ok(tagged.length === dated && new Set(tagged).size > 1 && tagged.every((m) => /^\d{4}-\d{2}$/.test(m)),
+    "every dated row carries its month and the months differ: " + new Set(tagged).size + " months over " + dated + " rows");
+
+  /* the page is driven as a customer drives it: a sealed bundle, a stubbed door, and the form */
+  const C90 = await import("../tools/stmt-crypto.mjs");
+  const { landingPage: lp90 } = await import("../stmt/page.js");
+  const { JSDOM: JD90 } = await import("jsdom");
+  const { webcrypto: wc90 } = await import("node:crypto");
+  const u90 = "aaaa-bbbb", pass90 = "2345-6789-abcd-efgh";
+  const ck90 = await C90.contentKey("9".repeat(64), u90);
+  const body90 = doc90.slice(doc90.indexOf("<body>") + 6, doc90.indexOf("</body>"));
+  const open90 = {
+    ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01"],
+    wrap: await C90.wrapKey(pass90, ck90), wrapMaster: null, session: "",
+    env: await C90.encryptWith(ck90, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [{ issued: "2026-09-01", label: "1 September 2026", body: body90 }] })),
+    live: null, prices: null
+  };
+  const dom90 = new JD90(lp90(u90, "n90", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) { try { Object.defineProperty(win, "crypto", { value: wc90, configurable: true }); } catch (e) { win.crypto = wc90; } } });
+  const W90 = dom90.window, D90 = W90.document;
+  try {
+    W90.fetch = async (path) => (String(path) === "/open"
+      ? { ok: true, status: 200, json: async () => open90 }
+      : { ok: false, status: 404, json: async () => ({ ok: false }) });
+    D90.getElementById("un").value = u90;
+    D90.getElementById("pw").value = pass90;
+    D90.getElementById("f").dispatchEvent(new W90.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 60 && !D90.querySelector("#out tbody tr[data-m]"); i++) await new Promise((r) => setTimeout(r, 50));
+    const strip = D90.getElementById("mfil"), note = D90.getElementById("mfnote");
+    const pills = [...strip.querySelectorAll("button")].map((b) => b.textContent);
+    const newest = [...new Set(tagged)].sort().reverse()[0];
+    const shown = () => [...D90.querySelectorAll("#out tbody tr[data-m]")].filter((r) => r.style.display !== "none").map((r) => r.getAttribute("data-m"));
+    ok(!strip.hidden && pills.length === new Set(tagged).size + 1 && pills[pills.length - 1] === "All"
+      && new Set(shown()).size === 1 && shown()[0] === newest && /Showing /.test(note.textContent),
+      "the strip is the months the account has plus All, and it opens on the newest: " + pills.join(", "));
+    strip.querySelector('button[data-mf=""]').dispatchEvent(new W90.Event("click", { bubbles: true }));
+    ok(shown().length === tagged.length && /every order from the start/.test(note.textContent),
+      "All shows every dated row again");
+    const older = [...new Set(tagged)].sort()[0];
+    strip.querySelector('button[data-mf="' + older + '"]').dispatchEvent(new W90.Event("click", { bubbles: true }));
+    ok(new Set(shown()).size === 1 && shown()[0] === older && shown().length === tagged.filter((m) => m === older).length,
+      "and a month shows that month's rows and no others");
+    /* the filter hides rows and nothing else: what the account stands at is the account's */
+    const footBefore = (D90.querySelector("#out") || {}).textContent || "";
+    strip.querySelector('button[data-mf=""]').dispatchEvent(new W90.Event("click", { bubbles: true }));
+    ok(((D90.querySelector("#out") || {}).textContent || "").length === footBefore.length,
+      "and filtering changes no text in the document, only which rows are on screen");
+  } finally { try { W90.close(); } catch (e) { /* best effort */ } }
+})();
+section("v691: the associates report card, in units and shares, with no margin anywhere near it");
+await (async () => {
+  /* HIS DECISION OF 18 SEP 2026: what each associate did for him and what they have earned, on the master
+     account. It is read off the desk's own networkStats and rebateApplied, per book, and the one thing it
+     must not carry is margin: the reward's distance to the next unit IS a margin figure, so what travels
+     is how far through the unit they are, as a share of one. */
+  const { readBook: rb91, associateSnapshot: as91, ASSOC_FIELDS, REWARD_FIELDS } = await import("../tools/book.mjs");
+  const book91 = await rb91();
+  let snap91 = null;
+  try {
+    const before91 = book91.w.eval("PROD");
+    snap91 = as91(book91.w);
+    const after91 = book91.w.eval("PROD");
+    ok(after91 === before91, "the snapshot puts the desk back on the book it found it on: " + before91 + " -> " + after91);
+    const rows91 = snap91.products.flatMap((p) => p.rows);
+    const fields = [...new Set(rows91.flatMap((r) => Object.keys(r)))];
+    const rfields = [...new Set(rows91.filter((r) => r.reward).flatMap((r) => Object.keys(r.reward)))];
+    ok(snap91.products.length >= 1 && rows91.length >= 6 && fields.every((f) => ASSOC_FIELDS.includes(f)) && rfields.every((f) => REWARD_FIELDS.includes(f)),
+      "one row per associate per book, on the whitelist and nothing else: " + JSON.stringify(fields));
+    ok(!/margin|profit|floor|cogs/i.test(JSON.stringify(snap91)), "and not one of the seller's words is in it");
+    const roster91 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8")).roster;
+    ok(rows91.every((r) => roster91.includes(r.id)) && rows91.every((r) => typeof r.departed === "boolean")
+      && !/reason|memorial|note/i.test(JSON.stringify(snap91)),
+      "codes only, and a departure is a yes or no, never his note about a person");
+    const oil91 = snap91.products.find((p) => p.product === "oil");
+    if (oil91) ok(oil91.rows.every((r) => r.reward === null), "oil has no reward, so its cards say so rather than showing a zero");
+    else skipData("no oil book on this desk, so the no-reward case went unchecked");
+    const withReward = rows91.filter((r) => r.reward && r.reward.next != null);
+    ok(withReward.length > 0 && withReward.every((r) => r.reward.next >= 0 && r.reward.next <= 1
+      && r.reward.left === +(r.reward.earned - r.reward.taken).toFixed(2)),
+      "the reward reads in units, with the part-unit as a share of one: " + JSON.stringify(withReward[0].reward));
+  } finally { try { book91.w.close(); } catch (e) { /* best effort */ } }
+
+  /* the publish carries it in the same bulk put as the records */
+  const { planPublish: pp91 } = await import("../tools/stmt-publish.mjs");
+  const plan91 = await pp91(join(REPO, "statements"), "", new Date("2026-09-18T02:00:00Z"), [], null, null, snap91);
+  const put91 = plan91.puts.find((p) => p.key === "assoc");
+  const planNo = await pp91(join(REPO, "statements"), "", new Date("2026-09-18T02:00:00Z"), [], null, null, null);
+  ok(!!put91 && JSON.parse(put91.value).products.length === snap91.products.length && !planNo.puts.some((p) => p.key === "assoc"),
+    "the publish writes the card with the records, and writes none when the desk was not opened");
+
+  /* the route is his, and the page draws it */
+  const realFetch91 = globalThis.fetch;
+  try {
+    const TEAM91 = "maakmal", AUD91 = "aud-91", KID91 = "kid-91";
+    const kp91 = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    const pub91 = await crypto.subtle.exportKey("jwk", kp91.publicKey);
+    globalThis.fetch = async (u) => {
+      if (String(u) === "https://" + TEAM91 + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub91, kid: KID91, kty: "RSA" }] }));
+      throw new Error("the Access gate reached for " + u);
+    };
+    const b64u91 = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const tok91 = await (async () => {
+      const claims = { iss: "https://" + TEAM91 + ".cloudflareaccess.com", aud: [AUD91], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+      const h = b64u91(JSON.stringify({ alg: "RS256", kid: KID91, typ: "JWT" })), c = b64u91(JSON.stringify(claims));
+      const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp91.privateKey, new TextEncoder().encode(h + "." + c));
+      return h + "." + c + "." + b64u91(new Uint8Array(sig));
+    })();
+    const kv91 = new KV();
+    await kv91.put("assoc", put91.value);
+    const env91 = { STMT: kv91, STMT_MASTER: "mp91", ACCESS_TEAM: TEAM91, ACCESS_AUD: AUD91 };
+    const shut91 = await stmtWorker.fetch(new Request("https://k7m3p2.example/all/assoc"), env91);
+    const open91 = await stmtWorker.fetch(new Request("https://k7m3p2.example/all/assoc", { headers: { "cf-access-jwt-assertion": tok91 } }), env91);
+    const cards91 = await open91.json();
+    ok(shut91.status === 401 && open91.status === 200 && cards91.products.length === snap91.products.length,
+      "the card is behind Access with the rest of /all, and answers there");
+
+    const { landingPage: lp91 } = await import("../stmt/page.js");
+    const { JSDOM: JD91 } = await import("jsdom");
+    const dom91 = new JD91(lp91("", "n91", { master: "mp91", accounts: [{ code: "CX0-AA", username: "aaaa-bbbb" }] }),
+      { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true });
+    const W91 = dom91.window, D91 = W91.document;
+    try {
+      W91.fetch = async (path) => (String(path) === "/all/assoc"
+        ? { ok: true, status: 200, json: async () => cards91 }
+        : { ok: true, status: 200, json: async () => ({ ok: true, accounts: [], at: null, issue: null }) });
+      D91.querySelector('button[data-m="cards"]').dispatchEvent(new W91.Event("click", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 80));
+      const list91 = D91.getElementById("clist");
+      const drawn = list91.querySelectorAll(".acard").length;
+      const rowsAll = snap91.products.reduce((a, p) => a + p.rows.length, 0);
+      ok(drawn === rowsAll && list91.querySelectorAll("h2").length === snap91.products.length
+        && /Bought from you/.test(list91.textContent) && /Sold for you/.test(list91.textContent) && /Brought you/.test(list91.textContent),
+        "the panel draws a card an associate under each book: " + drawn + " cards");
+      ok(!/margin/i.test(list91.textContent) && (!snap91.products.some((p) => p.product === "oil") || /No reward on this book/.test(list91.textContent)),
+        "it never says margin, and a book with no reward says that instead");
+      ok(list91.querySelectorAll(".pbar").length > 0, "and the part-unit is a bar rather than a figure");
+    } finally { try { W91.close(); } catch (e) { /* best effort */ } }
+  } finally { globalThis.fetch = realFetch91; }
+})();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

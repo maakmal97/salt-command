@@ -19,16 +19,19 @@
 export const OWNER_JS = `
   var mHome=document.getElementById('mHome'),
       oReview=document.getElementById('oReview'), oLinks=document.getElementById('oLinks'),
-      oSend=document.getElementById('oSend'), sheet=null, sheetAt=null, sheetRows=[], sheetIssue=null;
+      oSend=document.getElementById('oSend'), oCards=document.getElementById('oCards'),
+      sheet=null, sheetAt=null, sheetRows=[], sheetIssue=null, cards=null;
   function panel(which){
     mHome.hidden=!!which;
     oReview.hidden=(which!=='review');
     oLinks.hidden=(which!=='links');
     oSend.hidden=(which!=='send');
+    oCards.hidden=(which!=='cards');
     say('');
     if(which==='links'&&!links.length) loadLinks();
     if(which==='review'){ drawRoster(); if(!sheet) loadSheet(); try{ rq.focus(); }catch(e){} }
     if(which==='send'){ if(!sheet) loadSheet(); else drawSend(); }
+    if(which==='cards'){ if(!cards) loadCards(); else drawCards(); }
     try{ window.scrollTo(0,0); }catch(e){}
   }
   /* ---- REVIEW STATEMENT --------------------------------------------------------------------
@@ -256,6 +259,64 @@ export const OWNER_JS = `
     }catch(e){ say(e.message,'bad'); }
     b.disabled=false;
   });
+  /* ---- THE ASSOCIATES REPORT CARD (v691) ------------------------------------------------------
+     One card an associate, per book: what they bought, what they sold for him, what they brought
+     in, their share and their stars, and the reward in UNITS with a bar for how far through the
+     next one they are. No margin is in the snapshot, so none can be drawn here. */
+  async function loadCards(){
+    try{ cards=await refs('/all/assoc'); drawCards(); }
+    catch(e){ say(e.message,'bad'); }
+  }
+  function bar(frac){
+    var w=el('div','pbar'), f=document.createElement('i');
+    f.style.width=Math.round((frac||0)*100)+'%';
+    w.appendChild(f); return w;
+  }
+  function cardOf(r){
+    var c=el('div','acard'+(r.departed?' off':''));
+    var head=el('div','srow');
+    head.appendChild(el('b',null,r.id));
+    var marks=[];
+    if(r.founder) marks.push('founder');
+    if(r.rank) marks.push('#'+r.rank);
+    if(r.departed) marks.push('departed');
+    if(r.stars) marks.push(new Array(r.stars+1).join('\\u2605'));
+    head.appendChild(el('span','un',marks.join(' \\u00b7 ')));
+    c.appendChild(head);
+    var g=el('div','agrid');
+    [['Bought from you',rm(r.bought)],['Sold for you',rm(r.soldFor)],['Brought you',rm(r.introduced)]].forEach(function(p){
+      var cell=el('div','acell'); cell.appendChild(el('span','l',p[0])); cell.appendChild(el('b',null,p[1])); g.appendChild(cell);
+    });
+    c.appendChild(g);
+    var line=[];
+    if(r.onward) line.push(r.onward+' onward sale'+(r.onward===1?'':'s'));
+    if(r.referred) line.push(r.referred+' introduced');
+    if(r.share) line.push(r.share+'% of all revenue');
+    if(line.length) c.appendChild(el('p','op',line.join(' \\u00b7 ')));
+    if(r.reward){
+      var w=r.reward;
+      c.appendChild(el('p','tot','Reward: '+w.earned+' earned, '+w.taken+' taken, '+(Math.round(w.left*100)/100)+' left'
+        +(w.held?', held while departed':'')));
+      if(w.next!=null){ c.appendChild(bar(w.next)); c.appendChild(el('p','op',Math.round(w.next*100)+'% of the way to the next unit')); }
+    } else c.appendChild(el('p','tot','No reward on this book.'));
+    return c;
+  }
+  function drawCards(){
+    var wrap=document.getElementById('clist'); if(!wrap) return;
+    wrap.textContent='';
+    var head=document.getElementById('ccount');
+    if(!cards||!cards.products||!cards.products.length){
+      if(head) head.textContent='';
+      wrap.appendChild(el('p','rnone','No report card has been published yet. The next deploy writes one.'));
+      return;
+    }
+    if(head) head.textContent='As at '+(cards.at?stampDay(cards.at):'the last publish')+'.';
+    cards.products.forEach(function(p){
+      wrap.appendChild(el('h2',null,p.name||p.product));
+      if(!p.rows.length){ wrap.appendChild(el('p','rnone','Nobody on this book yet.')); return; }
+      p.rows.forEach(function(r){ wrap.appendChild(cardOf(r)); });
+    });
+  }
   /* ---- THE TEST ACCOUNT (v689) --------------------------------------------------------------
      One tap makes it, one tap takes it away with everything it wrote. It is his own, so the item
      says what it is for and names the two things he types. */

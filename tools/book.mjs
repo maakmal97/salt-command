@@ -262,6 +262,68 @@ export function pricingSnapshot(w) {
   };
 }
 
+/* ---- THE ASSOCIATES' REPORT CARD (v691, his decisions of 18 Sep 2026) -------------------------
+ * What each associate did for him and what they have earned, per product, taken from the desk's
+ * own readers so nothing is worked out twice: networkStats for the three streams and the stars,
+ * rebateApplied for what they have drawn, isDeparted and canRedeem for whether it is theirs to
+ * take. It runs the way pricingSnapshot runs, because networkStats reads PROD: set it, read it,
+ * put it back.
+ *
+ * NO MARGIN CROSSES. `marginMine`, `marginIntro`, `marginTotal`, `nMine`, `nIntro`, `r3x` and the
+ * reward's own unit are every one of them a margin figure or a divisor of one, and the phone
+ * payload dropped `toNext` for exactly that reason at v616. What travels is UNITS and the RM a
+ * customer paid, which he already sees on a statement, plus a percentage: `next` is how far
+ * through the current unit they are, which is a ratio and not an amount. ASSOC_FIELDS is the
+ * whitelist, and the suite reads it against what comes out.
+ * CODES ONLY, and nothing from PEOPLE.departed but the fact of it: a reason or a memorial is his
+ * note about a person, and this is read on a page a person opens. */
+export const ASSOC_FIELDS = ["id", "founder", "rank", "bought", "soldFor", "onward", "introduced",
+  "referred", "share", "stars", "departed", "reward"];
+export const REWARD_FIELDS = ["earned", "taken", "left", "next", "held"];
+export function associateSnapshot(w) {
+  const read = reader(w);
+  const call = (expr) => { const r = read(expr); return r.ok && typeof r.value !== "undefined" ? r.value : null; };
+  const products = call("PROD_ORDER") || ["salt"];
+  const before = call("PROD");
+  const out = [];
+  try {
+    for (const p of products) {
+      w.eval("PROD=" + JSON.stringify(p) + ";if(typeof recompute==='function')recompute();");
+      const rows = JSON.parse(w.eval(`JSON.stringify((function(){
+        if(typeof networkStats!=='function') return [];
+        return networkStats().map(function(r){
+          var taken = typeof rebateApplied==='function' ? +(+rebateApplied(r.id)).toFixed(2) : 0;
+          var earned = +(+r.earned).toFixed(2);
+          /* how far through the next unit, as a share of one: the unit itself is a margin figure
+             and does not travel, so the ratio is worked out here and only the ratio leaves */
+          var next = (r.unit && r.toNext != null) ? Math.max(0, Math.min(1, +(1 - r.toNext / r.unit).toFixed(3))) : null;
+          return {
+            id: r.id,
+            founder: r.kind === 'R0',
+            rank: r.rNum || null,
+            bought: +(+r.direct).toFixed(2),
+            soldFor: +(+r.indirect).toFixed(2),
+            onward: r.dsResell || 0,
+            introduced: +(+r.r3).toFixed(2),
+            referred: (r.referrals || []).length,
+            share: +(+r.share).toFixed(1),
+            stars: r.starN || 0,
+            departed: typeof isDeparted==='function' ? !!isDeparted(r.id) : false,
+            reward: r.unit == null ? null : {
+              earned: earned, taken: taken, left: +(earned - taken).toFixed(2), next: next,
+              held: typeof canRedeem==='function' ? !canRedeem(r.id) : false
+            }
+          };
+        });
+      })())`));
+      out.push({ product: p, name: call("PRODUCTS && PRODUCTS[" + JSON.stringify(p) + "] && PRODUCTS[" + JSON.stringify(p) + "].name") || p, rows });
+    }
+  } finally {
+    if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { /* the extract goes on */ } }
+  }
+  return { at: new Date().toISOString(), products: out };
+}
+
 /* One default, shared with payload.mjs by matching it, and overridable the same way. */
 export const MASTER = process.env.SALT_MASTER ||
   resolve(REPO, "master", "salt_command.html");

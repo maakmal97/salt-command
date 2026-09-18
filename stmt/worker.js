@@ -604,6 +604,12 @@ export default {
         if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
         return json(await ownerSheet(env, url.origin));
       }
+      /* the associates' report card, written by the publish and read only here (v691) */
+      if (p === "/all/assoc") {
+        if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+        const a = await env.STMT.get("assoc", "json");
+        return json({ ok: true, at: a ? a.at || null : null, products: a ? a.products || [] : [] });
+      }
       /* the test account: made and unmade with one tap, and counted nowhere (v689) */
       if (p === "/all/test") {
         if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);

@@ -102,6 +102,13 @@ select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none}
 .mos button.on{color:var(--salt-obsidian);background:var(--salt-brass);border-color:var(--salt-brass);
   font-weight:700}
 .mos button small{margin-left:6px;font-weight:400;letter-spacing:.02em;text-transform:uppercase}
+/* THE MONTH FILTER (v690): the same pill vocabulary as the issue strip, a step quieter, because it
+   sits inside a statement rather than choosing between statements. The note under it says what the
+   filter does and does not do, so a reader never takes a month's rows for the whole account. */
+.mfil{margin-bottom:10px}
+.mfnote{max-width:620px;margin:0 auto 18px;font-size:var(--salt-text-xs);color:var(--salt-text-muted);
+  font-family:var(--salt-font-mono);letter-spacing:.04em;line-height:1.6}
+.mfnote:empty{display:none}
 /* THE DOCUMENT KEEPS THE GEOMETRY IT WAS PROOFED IN. What is injected is the INSIDE of the
    statement's own .w wrapper, so without this the page rendered the tables full-bleed to the
    window while the lock bar and the issue strip stayed pinned at 620px above them: on a laptop
@@ -157,6 +164,22 @@ select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none}
 #rlist button .f-pend{color:var(--salt-copper)}
 #rlist button .f-clear,#rlist button .f-none{color:var(--salt-mist)}
 #mHome h1,#oReview h1,#oLinks h1{margin-top:0}
+/* THE ASSOCIATES REPORT CARD (v691): three figures across, then what they have earned in units
+   with a bar for the part-unit. The bar is the only chart on this site and it is a rule and a
+   fill, because a percentage of a unit is a proportion and nothing more. */
+.acard{border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-glass);
+  padding:14px 16px;margin:12px 0 0}
+.acard.off{opacity:.55}
+.acard .agrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.acard .acell{min-width:0}
+.acard .acell .l{display:block;font-size:var(--salt-text-xs);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--salt-copper);font-family:var(--salt-font-mono)}
+.acard .acell b{display:block;margin-top:3px;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
+  color:var(--salt-text);font-variant-numeric:tabular-nums}
+.pbar{height:6px;margin:10px 0 6px;border:1px solid var(--salt-line);border-radius:999px;overflow:hidden;
+  background:var(--salt-well)}
+.pbar i{display:block;height:100%;background:var(--salt-gradient)}
+#oCards h2{margin:22px 0 0;font-size:var(--salt-text-md)}
 /* THE TEST ACCOUNT (v689): its own small block under the items, quiet, because it is a thing he
    makes and unmakes rather than a place he goes. */
 .mtest{margin-top:18px;padding-top:14px;border-top:1px solid var(--salt-line)}
@@ -279,6 +302,8 @@ export function landingPage(user, nonce, owner) {
         + "<span>one card an account: the message, the code and the password</span></button>"
         + '<button type="button" data-m="review">Review statement'
         + "<span>where every account stands, and when it was last opened</span></button>"
+        + '<button type="button" data-m="cards">Associates report card'
+        + "<span>what each has brought you, and what they have earned</span></button>"
         + '<button type="button" data-m="links">Links'
         + "<span>guest price lists, made and withdrawn</span></button>"
         + "</div>"
@@ -299,6 +324,12 @@ export function landingPage(user, nonce, owner) {
         + '<input class="fld" id="sq" type="text" autocapitalize="none" autocorrect="off" '
         + 'spellcheck="false" placeholder="filter" aria-label="Filter accounts">'
         + '<div id="slist"></div>'
+        + "</div>"
+        + '<div id="oCards" hidden>'
+        + '<button type="button" data-back>' + "← Back" + "</button>"
+        + "<h1>Associates report card</h1>"
+        + '<p class="lead" id="ccount"></p>'
+        + '<div id="clist"></div>'
         + "</div>"
         + '<div id="oLinks" hidden>'
         + '<button type="button" data-back>' + "← Back" + "</button>"
@@ -343,7 +374,9 @@ export function landingPage(user, nonce, owner) {
     + '<button type="button" data-t="prices">Prices</button>'
     + '<button type="button" data-t="order">Order</button>'
     + "</div>"
-    + '<div id="pStmt"><div id="mos" class="mos" hidden></div><div id="out"></div></div>'
+    + '<div id="pStmt"><div id="mos" class="mos" hidden></div>'
+    + '<div id="mfil" class="mos mfil" hidden></div><p class="mfnote" id="mfnote"></p>'
+    + '<div id="out"></div></div>'
     + '<div id="pPrices" class="panel" hidden></div>'
     + '<div id="pOrder" class="panel" hidden></div>'
     + '<script nonce="' + nonce + '">'
@@ -393,7 +426,8 @@ const CLIENT_JS = `
       msg=document.getElementById('msg'), pw=document.getElementById('pw'),
       un=document.getElementById('un'), go=document.getElementById('go'),
       barw=document.getElementById('barw'), cd=document.getElementById('cd'),
-      mos=document.getElementById('mos'), tabs=document.getElementById('tabs'),
+      mos=document.getElementById('mos'), mfil=document.getElementById('mfil'),
+      tabs=document.getElementById('tabs'),
       pStmt=document.getElementById('pStmt'), pPrices=document.getElementById('pPrices'),
       pOrder=document.getElementById('pOrder');
   /* THE MESSAGE GOES WHERE THE READER IS LOOKING. #msg lives inside the gate, so on the owner's
@@ -502,6 +536,8 @@ const CLIENT_JS = `
     if(poll){ clearInterval(poll); poll=null; }
     bundle=null; session=''; prices=null; orders=[]; draft={}; pick={};
     out.textContent=''; mos.textContent=''; mos.hidden=true;
+    mfil.textContent=''; mfil.hidden=true; mfPick=null;
+    var mfn=document.getElementById('mfnote'); if(mfn) mfn.textContent='';
     pPrices.textContent=''; pOrder.textContent='';
     tabs.hidden=true; barw.hidden=true;
     /* the owner goes back to his list, never to a password field he has no password for */
@@ -538,7 +574,56 @@ const CLIENT_JS = `
     at=i; out.innerHTML=bundle.statements[i].body;
     var bs=mos.querySelectorAll('button');
     for(var k=0;k<bs.length;k++) bs[k].className=(k===i?'on':'');
+    drawMonths();
     window.scrollTo(0,0);
+  }
+
+  /* ---- THE MONTH FILTER (v690, his instruction of 18 Sep 2026) -------------------------------
+     THE STATEMENT IS NOT BOUND TO A MONTH ANY MORE: it carries every order from the start, and
+     this filters it. The newest month opens, because that is what a reader has come for, and All
+     is one tap away. Each row says which month it belongs to; an undated row belongs to none and
+     shows whatever is chosen. What the account stands at is the account's, so the totals under the
+     table do not move with the filter, and the line above says so. */
+  var mfPick=null;
+  function monthLabel(m){
+    var y=m.slice(0,4), mm=+m.slice(5,7);
+    return ['January','February','March','April','May','June','July','August','September','October','November','December'][mm-1]+' '+y;
+  }
+  function applyMonths(){
+    var rows=out.querySelectorAll('tbody tr[data-m]');
+    for(var i=0;i<rows.length;i++){
+      var m=rows[i].getAttribute('data-m');
+      rows[i].style.display=(!mfPick||m===mfPick)?'':'none';
+    }
+    var bs=mfil.querySelectorAll('button');
+    for(var k=0;k<bs.length;k++) bs[k].className=(bs[k].getAttribute('data-mf')===(mfPick||'')?'on':'');
+    var note=document.getElementById('mfnote');
+    if(note) note.textContent=mfPick
+      ? 'Showing '+monthLabel(mfPick)+'. What the account stands at, below, is the whole account.'
+      : 'Showing every order from the start.';
+  }
+  function drawMonths(){
+    mfil.textContent='';
+    var rows=out.querySelectorAll('tbody tr[data-m]'), seen={}, months=[];
+    for(var i=0;i<rows.length;i++){
+      var m=rows[i].getAttribute('data-m');
+      if(m&&!seen[m]){ seen[m]=1; months.push(m); }
+    }
+    months.sort().reverse();
+    if(months.length<2){ mfil.hidden=true; mfPick=null; applyMonths(); return; }
+    mfPick=months[0];
+    months.forEach(function(m){
+      var b=document.createElement('button'); b.type='button'; b.setAttribute('data-mf',m);
+      b.textContent=monthLabel(m);
+      b.addEventListener('click', function(){ mfPick=m; applyMonths(); });
+      mfil.appendChild(b);
+    });
+    var all=document.createElement('button'); all.type='button'; all.setAttribute('data-mf','');
+    all.textContent='All';
+    all.addEventListener('click', function(){ mfPick=null; applyMonths(); });
+    mfil.appendChild(all);
+    mfil.hidden=false;
+    applyMonths();
   }
 
   /* THE STRIP: the live document first, as "Now" with the minute it was written, then every
