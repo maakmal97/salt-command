@@ -8396,9 +8396,19 @@ await (async () => {
      something else, and the run was green each time. The publish now runs on the deploy alone. */
   const stmtDeploy = wf.slice(wf.indexOf("- name: Deploy the statements site"), wf.indexOf("- name: Publish the statements, live"));
   const stmtPub = wf.slice(wf.indexOf("- name: Publish the statements, live"));
+  /* v698: AND ON EVERY HOUR. The content publish was gated on deploy alone, and a bare scheduled
+     tick never sets deploy, so on a quiet day the sealed lists were never refreshed at all while
+     the doc and his instruction both said a price always follows the desk. The hourly run passes
+     --no-retire: writing is hourly, retiring an account is a judgement about a deploy he made. */
   ok(/if: steps\.plan\.outputs\.deploy == '1' && steps\.already\.outputs\.stmt == '1'/.test(stmtDeploy)
-     && /^- name: Publish the statements, live\n\s+if: steps\.plan\.outputs\.deploy == '1'\n\s+env:/.test(stmtPub),
-     "the site's code deploys on the statements paths, and its content publishes on every deploy");
+     && /^- name: Publish the statements, live\n\s+if: steps\.plan\.outputs\.publish == '1'\n\s+env:/.test(stmtPub),
+     "the site's code deploys on the statements paths, and its content publishes on every run that publishes");
+  ok(/publish=0\n\s+if \[ "\$deploy" = "1" \] \|\| \[ "\$\{\{ github\.event_name \}\}" = "schedule" \]; then publish=1; fi/.test(wf)
+     && /echo "publish=\$publish" >> "\$GITHUB_OUTPUT"/.test(wf),
+     "and a publish is any run that deploys OR the hourly scheduled tick, which is what makes a price follow the desk within the hour");
+  ok(/node tools\/stmt-publish\.mjs --no-retire/.test(stmtPub)
+     && stmtPub.includes('if [ "${{ steps.plan.outputs.deploy }}" = "1" ]; then'),
+     "the hourly run refreshes every list but retires no account: writing is hourly, retiring is a deploy's judgement");
   /* and every desk write in the publish goes through the one function that reads the key back, so a
      write that reports success and stores nothing is red rather than a line in a log nobody reads */
   const pubSrc = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");
@@ -14462,6 +14472,75 @@ await (async () => {
       { headers: { "cf-access-jwt-assertion": tok96 } }), { STMT: kv3, ACCESS_TEAM: TEAM96, ACCESS_AUD: AUD96 })).json();
     ok(j3.ok && j3.refs.length === 0, "with no tiers written yet it makes none and says so by being empty, rather than inventing five");
   } finally { globalThis.fetch = realFetch96; }
+})();
+section("v699: a standing link reads its level's board, so minting one between publishes can never be wrong");
+await (async () => {
+  /* THE HOLE v696 LEFT, ITS OWN SHAPE. The five standing links are minted the first time he opens
+     the Links panel, and their boards were written per link by the publish. So a link minted since
+     the last publish had no board of its own and fell back to board:2, which is the LAST level:
+     four of the five would have quoted Bronze until the next deploy, silently.
+     A STANDING LINK IS A LEVEL, and a level's board does not depend on which link points at it. The
+     five boards are written by the publish under tboard:<level>, and a standing link reads its own
+     level's. Nothing is published per link, so minting one can never be wrong.
+     tboard:, not board:, deliberately: board:2 already means the LAST level, not the second. */
+  const stmtW98 = (await import("../stmt/worker.js")).default;
+  const R98 = await import("../stmt/refs.js");
+  const NAMES98 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
+  const kv98 = new KV(), env98 = { STMT: kv98 };
+  await kv98.put("tiers", JSON.stringify(NAMES98));
+  /* five level boards and the old fallback, each saying plainly which one it is */
+  for (let k = 1; k <= 5; k++) await kv98.put("tboard:" + k, JSON.stringify({ level: k, tierName: NAMES98[k], standing: true,
+    week: { label: "14 Sep 2026" }, products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 100 + k }] }] }));
+  await kv98.put("board:2", JSON.stringify({ level: 5, tierName: "Bronze",
+    week: { label: "14 Sep 2026" }, products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 999 }] }] }));
+
+  const five = await R98.ensureStanding(env98, NAMES98);
+  ok(five.length === 5, "the five are minted, exactly as a first open of the Links panel mints them");
+  const open98 = async (id) => (await stmtW98.fetch(new Request("https://k7m3p2.example/g/" + id), env98)).text();
+  const priceOf = (html) => { const m = /RM\s*([0-9,]+)/.exec(html.replace(/<[^>]*>/g, " ")); return m ? +m[1].replace(/,/g, "") : null; };
+
+  const served = [];
+  for (const r of five) served.push(priceOf(await open98(r.id)));
+  ok(JSON.stringify(served) === JSON.stringify([101, 102, 103, 104, 105]),
+    "each of the five serves ITS OWN level's board with nothing published under its id: " + JSON.stringify(served));
+  ok(!served.includes(999), "and not one of them falls back to the board a stranger sees, which is what v696 would have done");
+  ok((await kv98.list({ prefix: "gboard:" })).keys.length === 0,
+    "nothing at all is written per standing link: there is no gboard: key in the store");
+
+  /* the introducer links of v658 are untouched: theirs DOES depend on who handed it out */
+  const intro98 = await R98.mintRef(env98, { introducer: "abcd-efgh", label: "a shop" });
+  await kv98.put("gboard:" + intro98.id, JSON.stringify({ introducer: "CX0-AA",
+    week: { label: "14 Sep 2026" }, products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 777 }] }] }));
+  ok(priceOf(await open98(intro98.id)) === 777, "a link that names an introducer still reads its own board, because that one does follow them");
+  const fresh98 = await R98.mintRef(env98, { introducer: "abcd-efgh", label: "minted since the publish" });
+  ok(priceOf(await open98(fresh98.id)) === 999,
+    "and one minted since the last publish still falls back to the board every stranger sees, which is the cap a guest board cannot pass");
+
+  /* a level whose board has not been written yet, and a store with no tier names at all */
+  await kv98.delete("tboard:3");
+  const gold = five.find((r) => r.level === "Gold");
+  ok(priceOf(await open98(gold.id)) === 999, "a level whose board is missing falls back to the stranger's board rather than serving nothing");
+  const kvNo = new KV();
+  for (const r of five) await kvNo.put("g:" + r.id, JSON.stringify(r));
+  await kvNo.put("board:2", await kv98.get("board:2"));
+  /* every level board IS here; what is missing is the names that turn a level into one of them, so
+     serving anything but the stranger's board would mean a level had been guessed at */
+  for (let k = 1; k <= 5; k++) if (await kv98.get("tboard:" + k)) await kvNo.put("tboard:" + k, await kv98.get("tboard:" + k));
+  ok(priceOf(await (await stmtW98.fetch(new Request("https://k7m3p2.example/g/" + five[0].id), { STMT: kvNo })).text()) === 999,
+    "and with no tier names written at all it falls back rather than throwing");
+  ok((await stmtW98.fetch(new Request("https://k7m3p2.example/g/" + five[0].id), { STMT: kvNo })).status === 200,
+    "which is a board, not a refusal");
+
+  /* THE PUBLISH WRITES THE FIVE, AND THE HOURLY RUN RETIRES NOBODY */
+  const PUBSRC = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");
+  ok(/for \(let k = 1; k <= 5; k\+\+\) \{\n\s+plan\.puts\.push\(\{ key: "tboard:" \+ k, value: JSON\.stringify\(tierBoard\(k, bookNow, pricing, madeAt\)\) \}\);/.test(PUBSRC),
+    "the publish writes one board per level, from the same snapshot the sealed lists are struck from");
+  ok(/if \(rec && rec\.standing && rec\.level\) \{ standing\+\+; continue; \}/.test(PUBSRC),
+    "and writes nothing under a standing link's own id");
+  const { planPublish } = await import("../tools/stmt-publish.mjs");
+  ok(/const retire = !\(opts && opts\.noRetire\);/.test(PUBSRC) && /if \(r\.records\.length && retire\)/.test(PUBSRC),
+    "the retirement is behind a flag the hourly run clears");
+  ok(planPublish.length === 8, "planPublish takes the options object that carries it");
 })();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {

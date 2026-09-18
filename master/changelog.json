@@ -1,5 +1,18 @@
 [
  {
+  "v": "v699",
+  "d": "18 Sep 2026",
+  "t": "A STANDING LINK READS ITS LEVEL'S BOARD, AND THE STATEMENTS PUBLISH RUNS EVERY HOUR",
+  "n": [
+   "<b>THE HOLE v696 LEFT, ITS OWN SHAPE.</b> The five standing links are minted the first time he opens the Links panel, and their boards were written by the publish under each link's own id. So any link minted since the last publish had no board and fell back to board:2, which is the LAST level: four of the five would have quoted Bronze until the next deploy, and nothing would have said so. A standing link IS a level, and a level's board does not depend on which link points at it, so the five boards are now written under tboard:1 to tboard:5 and a standing link reads its own level's. Nothing is published per standing link, so minting one can never be wrong. tboard: and not board:, because board:2 already means the last level and not the second, and reusing it would make 2 mean two things.",
+   "<b>HIS INSTRUCTION THAT A CUSTOMER'S PRICES ALWAYS FOLLOW THE DESK, ACTUALLY KEPT.</b> The publish was gated on the deploy alone, and a bare scheduled tick sets deploy only when rows were folded, so on a quiet day the sealed price lists were never refreshed at all. The job's plan step now carries a third output: a publish is any run that deploys, or the hourly tick. A price is at most an hour behind the desk, which is what the doc has claimed since the day it was written.",
+   "<b>WRITING IS HOURLY; RETIRING IS NOT.</b> The publish retires an account whose record the newest issue does not carry, and that is a judgement about a deploy he made rather than about a clock: a partial or botched issue read would otherwise take accounts down twenty-four times a day instead of once. The hourly run passes --no-retire, which leaves every list, board, roster and report card rewritten and nothing deleted.",
+   "<b>A LINK THAT NAMES AN INTRODUCER IS UNTOUCHED.</b> Its board does depend on who handed it out, so it still reads its own, and one minted since the last publish still falls back to the board every stranger sees, which is the cap a guest board cannot pass.",
+   "<b>AND THE UPDATE CHAIN STOPPED MANGLING ITS OWN COMMIT MESSAGES.</b> tools/update.mjs passed the message as JSON.stringify(message), which turns every real newline into the two characters backslash-n, so v694 through v698 each landed as one line with the breaks written out. Nobody saw it because git log --oneline prints the subject alone and the subject still read properly. The message goes through a file and git commit -F now, which is also the only route that survives PowerShell here: a heredoc breaks on an apostrophe and a pipe adds a BOM. The five messages already pushed are left as they are, because history is not rewritten with three writers on this branch; master/changelog.json carries the real record of each.",
+   "<b>THE CHECKS.</b> A new section of 13 assertions driving the guest door: each of the five serves its own level's prices with nothing written under its id, none of them falls back to the stranger's board, no gboard key exists for a standing link, an introducer's link still reads its own, a missing level board and a store with no tier names both fall back rather than guess or throw, and the publish writes the five and can be told not to retire. Twelve mutations each turned it red, three of them against the workflow's own section."
+  ]
+ },
+ {
   "v": "v698",
   "d": "18 Sep 2026",
   "t": "A FIVE UNIT SALT ORDER IS BOOKED PENDING: ACKNOWLEDGED, NOTHING PAID, NOTHING MOVED",

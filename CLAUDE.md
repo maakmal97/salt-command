@@ -108,7 +108,13 @@ decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; s
    ```
 8. **Three deployers, and only the Actions job does the whole job.** `cloud-commit.yml` gates,
    deploys, proves the phone is serving the build, marks the folded rows committed, re-seeds the
-   D1 mirror, publishes the statements, then runs the suite. `tools/update.mjs` does the laptop
+   D1 mirror, publishes the statements, then runs the suite. **THE STATEMENTS PUBLISH RUNS ON EVERY
+   DEPLOY AND ON EVERY HOUR** (v699, his instruction of 18 Sep 2026 that a customer's prices always
+   follow the desk): the `plan` step's third output `publish` is 1 when `deploy` is 1 OR the event is
+   `schedule`. It was gated on `deploy` alone, and a bare scheduled tick never sets `deploy`, so on a
+   quiet day the sealed lists were never refreshed at all. **The hourly run passes `--no-retire`**:
+   writing is hourly, retiring an account whose record the newest issue does not carry is a judgement
+   about a deploy he made, not about a clock. `tools/update.mjs` does the laptop
    half and never touches the statements. **Cloudflare Workers Builds deploys the tip of master
    and stops** (reconnected on his instruction, 10 Sep 2026): it never folds, never marks a
    draft committed and never writes D1 or KV, and its failure is SILENT. **Its build command is
@@ -385,8 +391,13 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   on the first open of the Links panel, not made on a tap, so the answer is always exactly five;
   minted once and kept for good, because an id handed to a stranger must never change what it opens.
   The level names reach the Worker through the KV key `tiers`, written by the publish, and with no
-  names it makes none rather than inventing five. Each board is `tierBoard(level, ...)`, which is
-  `boardList` with the level pinned.
+  names it makes none rather than inventing five. **A STANDING LINK READS ITS LEVEL'S BOARD**
+  (v699), `tboard:<1..5>`, written by every publish from `tierBoard(level, ...)`, which is
+  `boardList` with the level pinned. Nothing is written per standing link: v696 wrote one under each
+  link's id, and since the five are minted the first time he opens the panel, any minted since the
+  last publish had no board and fell back to `board:2`, the LAST level, so four of the five would
+  have quoted Bronze until the next deploy. `tboard:` and not `board:`, because `board:2` already
+  means the last level and not the second.
 - **A LINK MAY INSTEAD NAME ITS INTRODUCER AND FOLLOW THEM** (v658, his rule): minting takes a
   customer's username, and the guest is quoted **two levels above theirs where there is room, else
   one, capped at the last**, per product. The level is never stored on the link; every publish

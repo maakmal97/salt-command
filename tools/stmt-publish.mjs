@@ -44,7 +44,7 @@ export function usersMap(root) {
 }
 
 /** Everything the publish would do, as data: the puts, the deletes and what it found. */
-export async function planPublish(root, key, now, existingKeys, storedIssue, pricing, assoc) {
+export async function planPublish(root, key, now, existingKeys, storedIssue, pricing, assoc, opts) {
   const r = await liveRecords(root, key, now, pricing);
   /* v688: THE SEALED PASSWORD IS NOT IN THE RECORD A CUSTOMER FETCHES. It is sealed under the
      master, so a customer could not open it, but /open hands the whole record's fields to whoever
@@ -64,13 +64,20 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
      unmakes it; the publish neither writes it nor retires it, or every deploy would take away the
      one account he keeps for trying the page out. stmt/worker.js states the name. */
   const TEST_REC = "u:0000-0000";
-  if (r.records.length) {
+  /* v698: WRITING IS HOURLY, RETIRING IS NOT (his instruction of 18 Sep 2026 that prices always
+     follow the desk). The hourly refresh runs with --no-retire, because retiring an account whose
+     record the newest issue does not carry is a judgement about a deploy he made, not about a
+     clock: a partial or botched issue read would otherwise take accounts down twenty-four times a
+     day rather than once. The puts are unchanged either way, so an hourly run still refreshes
+     every sealed list, board and roster. */
+  const retire = !(opts && opts.noRetire);
+  if (r.records.length && retire) {
     for (const k of existingKeys || []) {
       if (k.startsWith("u:") && !keep.has(k) && k !== TEST_REC) deletes.push(k);
       if (newIssue && k.startsWith("fail:")) deletes.push(k);
     }
-    puts.push({ key: "issue", value: issued });
   }
+  if (r.records.length) puts.push({ key: "issue", value: issued });
   /* ---- THE ACCOUNT LIST THE MASTER PAGE READS (v687) --------------------------------------
      His master account reviews every account from his phone, so each one needs the two things
      the review sheet has always shown: where it stands and one word for it. Both come from the
@@ -181,7 +188,9 @@ async function main() {
     pricing = rb.ledger.PRICING;
     try { assoc = associateSnapshot(rb.w); } catch (e) { console.log("::warning::no associates snapshot: " + e.message); }
   }
-  const plan = await planPublish(root, key, new Date(), existing, storedIssue, pricing, assoc);
+  const noRetire = process.argv.includes("--no-retire");
+  const plan = await planPublish(root, key, new Date(), existing, storedIssue, pricing, assoc, { noRetire });
+  if (noRetire) console.log("--no-retire: every list, board and roster is refreshed; no account is retired");
   if (!plan.latest) { console.log("no statement set to publish; normal for a build with no issue in it"); return; }
 
   /* THE STEP ASSERTS ITS OWN EFFECT, and does not merely report one (04 Sep 2026 audit). Every
@@ -238,6 +247,19 @@ async function main() {
        what the tiers are called. The book decides that, and this is the one road it travels. */
     if (Array.isArray(pricing.tierNames) && pricing.tierNames.length)
       plan.puts.push({ key: "tiers", value: JSON.stringify(pricing.tierNames) });
+    /* ============ v698: A BOARD PER LEVEL, NOT PER STANDING LINK ============
+       v696 wrote a board under each standing link's own id, which left a hole its own shape: the
+       five are minted the first time he opens the Links panel, so any minted since the last publish
+       had no board and fell back to board:2, the board a stranger sees. Four of the five would have
+       quoted Bronze until the next deploy.
+       A standing link IS a level, and a level's board does not depend on which link points at it.
+       So the five boards are written here, keyed by level, and a standing link reads its own level's
+       board. Nothing has to be published for a link to be right, so minting one can never be wrong.
+       tboard:, not board:, deliberately: board:1 and board:2 are the OLD two-board names and board:2
+       already means the LAST level, not the second. Reusing them would make 2 mean two things. */
+    for (let k = 1; k <= 5; k++) {
+      plan.puts.push({ key: "tboard:" + k, value: JSON.stringify(tierBoard(k, bookNow, pricing, madeAt)) });
+    }
     /* ============ v658: AND ONE BOARD PER LINK, FROM ITS INTRODUCER'S LEVEL ============
        A guest link is quoted two levels above the customer who handed it out, capped at the last,
        per product. That level is never stored on the link: it is computed HERE, on every publish,
@@ -248,26 +270,19 @@ async function main() {
        follows nobody. The Worker mints the five on the first open of the Links panel; this writes
        their boards on every publish, exactly as it does for the links that name an introducer. */
     const byUser = plan.users || {};
-    const names = Array.isArray(pricing.tierNames) ? pricing.tierNames : [];
     let boards = 0, orphans = 0, standing = 0;
     for (const id of refIds()) {
       const rec = readRef(id);
-      if (rec && rec.standing && rec.level) {
-        const k = names.indexOf(rec.level);
-        if (k >= 1) {
-          plan.puts.push({ key: "gboard:" + id, value: JSON.stringify(tierBoard(k, bookNow, pricing, madeAt)) });
-          standing++;
-          continue;
-        }
-      }
+      /* v698: a standing link needs nothing written under its own id; it reads its level's board */
+      if (rec && rec.standing && rec.level) { standing++; continue; }
       const user = rec && String(rec.introducer || "").toLowerCase();
       const code = user ? byUser[user] : null;
       if (!code) { orphans++; continue; }
       plan.puts.push({ key: "gboard:" + id, value: JSON.stringify(guestBoard(code, bookNow, pricing, madeAt)) });
       boards++;
     }
-    console.log("and both guest boards, tier 1 and tier 2"
-      + (standing ? ", plus " + standing + " standing tier link" + (standing === 1 ? "" : "s") : "")
+    console.log("and both guest boards, tier 1 and tier 2, and the five level boards"
+      + (standing ? " the " + standing + " standing link" + (standing === 1 ? "" : "s") + " read" : "")
       + (boards ? ", plus " + boards + " link board" + (boards === 1 ? "" : "s") + " from their introducers" : "")
       + (orphans ? " (" + orphans + " link" + (orphans === 1 ? "" : "s") + " names no customer on this roster and falls back to the board)" : ""));
   }

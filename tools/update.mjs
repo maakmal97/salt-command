@@ -31,11 +31,11 @@
  */
 
 import "./cloudflare.mjs";
-import { readFileSync, existsSync, writeFileSync, readdirSync } from "node:fs";
+import { readFileSync, existsSync, writeFileSync, readdirSync, rmSync } from "node:fs";
 import { DATA_DIR } from "./book.mjs";
 import { readSnapshot } from "./d1.mjs";
 import { spawnSync } from "node:child_process";
-import { resolve, dirname } from "node:path";
+import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -344,7 +344,16 @@ if (DRY) {
   if (dirty) {
     sh("git", ["add", "-A"], { quiet: true });
     const message = MSG || `${rev.v || VER}: build, deploy and version the desk`;
-    const c = sh("git", ["commit", "-m", JSON.stringify(message)], { quiet: true });
+    /* THE MESSAGE GOES THROUGH A FILE, NOT THROUGH -m (18 Sep 2026). It was passed as
+       JSON.stringify(message), which turns every real newline into the two characters backslash-n,
+       so v694 through v698 each landed as ONE LINE with \n written out in the subject. Nobody saw
+       it because git log --oneline shows the subject alone and the subject was still readable.
+       A file is also the only route that survives PowerShell here: a heredoc into `git commit -F -`
+       breaks on an apostrophe, and a pipe adds a BOM that git keeps. */
+    const mfile = join(REPO, ".git", "COMMIT_MSG_UPDATE");
+    writeFileSync(mfile, message.endsWith("\n") ? message : message + "\n", "utf8");
+    const c = sh("git", ["commit", "-F", mfile], { quiet: true });
+    try { rmSync(mfile, { force: true }); } catch (e) { /* the next run overwrites it anyway */ }
     if (c.code !== 0) fail("commit did not take:\n        " + c.out);
     else ok("committed " + git("rev-parse", "--short", "HEAD"));
   } else {

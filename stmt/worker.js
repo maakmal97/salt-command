@@ -616,11 +616,26 @@ async function handleGuest(request, env, id) {
   const rec = await readRef(env, id);
   if (!rec || rec.revoked) return notFound();
   await markOpen(env, rec);
-  /* v658: the link's OWN board, written by the publish from its introducer's level. A link minted
-     since the last publish has none yet, and a stranger is never left looking at an empty page, so
-     it falls back to the board every stranger sees, which is the cap a guest board can never pass. */
+  /* v698: A STANDING LINK READS ITS LEVEL'S BOARD, not one written under its own id. The five are
+     minted the first time he opens the Links panel, so one minted since the last publish would have
+     had no board of its own and fallen back to board:2, which is the LAST level: four of the five
+     would have quoted Bronze until the next deploy. A level's board does not depend on which link
+     points at it, so there is nothing to publish per link and minting one can never be wrong.
+     v658: a link that names an INTRODUCER still reads its own board, because that one does depend
+     on who handed it out. A link minted since the last publish has none yet, and a stranger is
+     never left looking at an empty page, so it falls back to the board every stranger sees, which
+     is the cap a guest board can never pass. */
+  const levelKey = async () => {
+    if (!rec.standing || !rec.level) return null;
+    try {
+      const names = await env.STMT.get("tiers", "json");
+      const k = Array.isArray(names) ? names.indexOf(rec.level) : -1;
+      return k >= 1 ? "tboard:" + k : null;
+    } catch (e) { return null; }
+  };
   let prices = null;
-  try { prices = await env.STMT.get("gboard:" + rec.id, "json"); } catch (e) { prices = null; }
+  const own = (await levelKey()) || ("gboard:" + rec.id);
+  try { prices = await env.STMT.get(own, "json"); } catch (e) { prices = null; }
   if (!prices) { try { prices = await env.STMT.get("board:2", "json"); } catch (e) { prices = null; } }
   const nonce = b64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
   return new Response(boardPage({ tier: rec.tier, prices }, nonce), {

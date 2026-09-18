@@ -203,7 +203,28 @@ idempotent, and a level that already has one keeps the id it was given, because 
 stranger must never change what it opens. The level names travel from the book to the Worker as the
 KV key `tiers`, written by every publish; with no names to hand it makes none rather than inventing
 five. Each standing board is `tierBoard(level, ...)` in `tools/pricelist.mjs`, which is `boardList`
-with the level pinned, so there is one definition of what a board is. `GET /all/refs` returns the
+with the level pinned, so there is one definition of what a board is.
+
+**A STANDING LINK READS ITS LEVEL'S BOARD, NOT ONE WRITTEN UNDER ITS OWN ID** (v699). The publish
+writes `tboard:1` to `tboard:5` on every run, and `handleGuest` resolves a standing link's level
+against the `tiers` names and reads that key. v699 closed a hole v696 left in its own shape: the
+five are minted the first time he opens the Links panel, so any minted since the last publish had no
+board of its own and fell back to `board:2`, which is the LAST level; four of the five would have
+quoted Bronze until the next deploy. A level's board does not depend on which link points at it, so
+nothing is published per standing link and minting one can never be wrong. `tboard:` and not
+`board:`, because `board:2` already means the last level and not the second. A link that names an
+INTRODUCER still reads its own `gboard:<id>`, because that one does depend on who handed it out, and
+still falls back to `board:2` when it was minted since the last publish.
+
+**THE PUBLISH RUNS ON EVERY DEPLOY AND ON EVERY HOUR** (v699, his instruction that a customer's
+prices always follow the desk). `cloud-commit.yml`'s `plan` step gained a third output, `publish`,
+which is 1 when `deploy` is 1 OR the event is `schedule`; the publish step reads it instead of
+`deploy`. It was gated on `deploy` alone, and a bare scheduled tick sets `deploy` only when rows were
+actually folded, so on a quiet day the sealed lists were never refreshed at all while both the doc
+and his instruction said otherwise. **The hourly run passes `--no-retire`** (`planPublish`'s `opts`):
+every sealed list, board, roster and report card is rewritten, and no account is retired, because
+retiring one whose record the newest issue does not carry is a judgement about a deploy he made, not
+about a clock, and a partial issue read would otherwise take accounts down twenty-four times a day. `GET /all/refs` returns the
 five in the LADDER's order, then everything else newest first. Links minted against a customer
 (v658) still work, still follow their introducer, and sit below the five on the panel under their
 own heading.
