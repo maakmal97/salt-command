@@ -1,6 +1,6 @@
 {
- "v": "v713",
- "stamped": "18 Sep 2026, 21:56 KL",
+ "v": "v714",
+ "stamped": "18 Sep 2026, 22:55 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 60
    }
   },
-  "STATED_STOCK": 10.5,
+  "STATED_STOCK": 3.25,
   "COUNT_ON": {
    "salt": "2026-09-16",
    "oil": "2026-09-09"
@@ -3329,14 +3329,31 @@
     "qty": 12.5,
     "total": 850,
     "cost": 600,
-    "cash": 0,
+    "cash": 650,
     "delivery": 15,
     "handover": "delivered",
     "date": "2026-09-07",
-    "deliveredQty": 4,
+    "deliveredQty": 6.25,
     "deliveredOn": "2026-09-07",
     "note": "<b>12.5 UNIT TO CJ4-BJ AT RM 850, NOTHING PAID, 4 UNIT HANDED OVER ON 07 SEP.</b> RM 15 of the total is the delivery charge typed on the order, so the goods are RM 835 at RM 66.80 a unit; the drafter's own line reads RM 68 a unit and RM 250 gross at 29.4% because it struck those on the full RM 850, and on the goods it is RM 235 at 28.1%. Costed at the inventory's own RM 48 a unit, the 03 Sep lot of 25 unit from SA5-BTR, the same figure the desk's pricing snapshot carries, so RM 600 on the order and no cost override. The floor for 12.5 unit reads RM 685.82 and the board's ask RM 1,150, so the goods stand RM 149.18 above the floor and RM 300 under the ask; the wholesale anchor for this size is RM 875. His seventh order: RM 66.80 a unit falls between his 20 Aug tranche at RM 64 and his 26 Aug tranche at RM 72, and just under the RM 68.00 of the audited 15 Jul row. Those two August tranches were a split 12.5 unit order totalling RM 850 between them, the same size and total as this row, but on separate dates and as separate rows, and both were paid before delivery. The one flag the drafter raised is the advance and it stands: nothing is paid, 4 unit are already out, which is 4 unit of credit against a retail cap of 1 unit of salt for a party who is not an associate. CJ4-BJ carried nothing outstanding before this row, so RM 850 is his whole exposure and 8.5 unit remain to be delivered against a shelf of 1.",
-    "rid": "s137"
+    "rid": "s137",
+    "amend": [
+     {
+      "date": "2026-09-07",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 4,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-18",
+      "kind": "Fulfilment",
+      "cash": 650,
+      "kg": 2.25,
+      "cost": 108,
+      "note": "<b>FULFILMENT ON s137, CJ4-BJ, RM650 AND 2.25 UNIT MOVED ON 18 SEP.</b> Against the 07 Sep order of 12.5 unit for RM850, of which RM15 is the delivery charge typed on the order, leaving goods of RM835 at RM66.80 a unit where the drafter's own line reads RM68 a unit, with 4 unit handed over on 07 Sep and nothing paid. RM650 and 2.25 unit move against RM850 and 8.5 unit outstanding, leaving RM200 and 6.25 unit open. The drafter flagged nothing. CJ4-BJ shows 7 orders, median RM72, range RM64 to RM100, RM850 outstanding before, 4 unit on credit, nothing defaulted, not an associate, on the roster."
+     }
+    ]
    },
    {
     "customer": "CS6-BS-R",
@@ -4050,13 +4067,31 @@
     "qty": 1,
     "total": 90,
     "cost": 48,
-    "cash": 0,
+    "cash": 80,
     "handover": "collected",
     "date": "2026-09-15",
     "deliveredQty": 1,
     "deliveredOn": "2026-09-15",
-    "note": "<b>SALT SELL DATED 15 SEP, COLLECTED IN FULL AS AN ADVANCE, NOT A SEN IN.</b> Booked to CR3-DAM, 1 unit for RM90, no delivery or freight, RM0 cash and 1 unit handed over on 15 Sep, so RM90 stays outstanding. The total clears the RM61.26 floor for 1 unit and sits under the RM130 ask and RM150 ceiling. Cost is the desk's own RM48 a unit, RM48 on the order. <b>Two flags.</b> The rate is 12.5% above his RM80 median across 13 orders in a RM80 to RM92.50 range, and the advance was to be checked: he held RM25 outstanding and 0.27 unit on credit against a cap of 2 unit, nothing defaulted. The RM90 is left outstanding.",
-    "rid": "s165"
+    "note": "<b>CORRECTION ON s165 DATED 18 SEP: RM80 IN, THE ADVANCE NARROWS TO RM10.</b> Against CR3-DAM's 1 unit salt order of 15 Sep for RM90, collected in full on 15 Sep with not a sen in, cash moves from RM0 to RM80 and paidOn from unset to 18 Sep. No stock moves: it changes what the row says about itself. The total clears the RM61.26 floor for 1 unit. The drafter flagged RM90 against a usual RM80 a unit across 15 orders, 12.5% above, and an advance of 1 unit with RM10 unpaid to check against the cap. CR3-DAM shows 14 orders, median RM80, range RM80 to RM92.50, RM115 outstanding before, 1.27 unit on credit, nothing defaulted, an associate and on the roster. RM10 stays outstanding. <b>SALT SELL DATED 15 SEP, COLLECTED IN FULL AS AN ADVANCE, NOT A SEN IN.</b> Booked to CR3-DAM, 1 unit for RM90, no delivery or freight, RM0 cash and 1 unit handed over on 15 Sep, so RM90 stays outstanding. The total clears the RM61.26 floor for 1 unit and sits under the RM130 ask and RM150 ceiling. Cost is the desk's own RM48 a unit, RM48 on the order. <b>Two flags.</b> The rate is 12.5% above his RM80 median across 13 orders in a RM80 to RM92.50 range, and the advance was to be checked: he held RM25 outstanding and 0.27 unit on credit against a cap of 2 unit, nothing defaulted. The RM90 is left outstanding.",
+    "rid": "s165",
+    "paidOn": "2026-09-18",
+    "mod": "corrected on 2026-09-18: cash 0 to 80; paidOn (unset) to 2026-09-18",
+    "amend": [
+     {
+      "date": "2026-09-15",
+      "kind": "Fulfilment",
+      "cash": 80,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-18",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s165 DATED 18 SEP: RM80 IN, THE ADVANCE NARROWS TO RM10.</b> Against CR3-DAM's 1 unit salt order of 15 Sep for RM90, collected in full on 15 Sep with not a sen in, cash moves from RM0 to RM80 and paidOn from unset to 18 Sep. No stock moves: it changes what the row says about itself. The total clears the RM61.26 floor for 1 unit. The drafter flagged RM90 against a usual RM80 a unit across 15 orders, 12.5% above, and an advance of 1 unit with RM10 unpaid to check against the cap. CR3-DAM shows 14 orders, median RM80, range RM80 to RM92.50, RM115 outstanding before, 1.27 unit on credit, nothing defaulted, an associate and on the roster. RM10 stays outstanding."
+     }
+    ]
    },
    {
     "customer": "CE4-CHE",
@@ -4233,11 +4268,31 @@
     "customer": "CS6-BS",
     "qty": 5,
     "total": 420,
-    "cash": 0,
+    "cash": 420,
     "date": "2026-09-18",
-    "deliveredQty": 0,
+    "deliveredQty": 5,
     "note": "<b>SALT SELL DATED 18 SEP, ACKNOWLEDGED AND PENDING.</b> Booked to CS6-BS, 5 unit for RM420, RM84 a unit, ordered on the statements site as order 20260916085105-rkoi5a, to collect. Nothing paid and nothing handed over, so the whole row stays open and no stock is drawn. The total clears the RM254.98 floor for 5 unit and runs under the RM560 ask and RM710 ceiling. Costed at RM48 a unit, the inventory's own rate, RM180 on the goods at 42.9%. <b>Flagged:</b> CS6-BS pays about RM107.50 a unit across 18 orders, this is 21.9% below, and the figures confirm the gap without accounting for it. CS6-BS shows 12 orders, median RM100, range RM11 to RM126.67, nothing outstanding before, 1 unit on credit against a cap of 2, nothing defaulted.",
-    "rid": "s173"
+    "rid": "s173",
+    "amend": [
+     {
+      "date": "2026-09-18",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-18",
+      "kind": "Fulfilment",
+      "cash": 420,
+      "kg": 5,
+      "note": "<b>FULFILMENT ON s173, CS6-BS, RM420 AND 5 UNIT MOVED ON 18 SEP.</b> Against the 18 Sep order of 5 unit for RM420, RM84 a unit, taken on the statements site as order 20260916085105-rkoi5a and marked to collect, where nothing had been paid and nothing handed over. RM420 and 5 unit move against RM420 and 5 unit outstanding, leaving RM0 and 0 unit. The drafter flagged that this settles the order in full, and the figures answer it. CS6-BS shows 13 orders, median RM95, range RM11 to RM126.67, RM420 outstanding before, 1 unit on credit, nothing defaulted, an associate and on the roster. The row is applied by the master, not recomputed here.",
+      "cost": 240
+     }
+    ],
+    "deliveredOn": "2026-09-18",
+    "paidOn": "2026-09-18",
+    "cost": 240
    },
    {
     "customer": "CH4-MAL",
@@ -4798,9 +4853,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-18T13:49:14.146Z",
+  "QUEUE_COMMITTED": "2026-09-18T14:52:25.260Z",
   "PRICING": {
-   "takenAt": "2026-09-18T13:56:36.520Z",
+   "takenAt": "2026-09-18T14:55:02.477Z",
    "sizes": [
     0.5,
     1,
@@ -4968,12 +5023,12 @@
     "CS6-BS": {
      "salt": {
       "name": "consistent mid",
-      "orders": 15,
+      "orders": 16,
       "tenureDays": 68,
-      "sinceLastDays": 2,
-      "perMonth": 6.71,
-      "smallShare": 0.53,
-      "bigShare": 0.27,
+      "sinceLastDays": 0,
+      "perMonth": 7.16,
+      "smallShare": 0.5,
+      "bigShare": 0.31,
       "late": 0,
       "frequent": true,
       "small": false,
@@ -5008,13 +5063,13 @@
       "perMonth": 2.23,
       "smallShare": 0.17,
       "bigShare": 0.83,
-      "late": 2,
+      "late": 1,
       "frequent": true,
       "small": false,
       "bigger": true,
       "loyal": true,
       "rare": false,
-      "lateTwice": true
+      "lateTwice": false
      }
     },
     "CS6-PER": {
@@ -5859,9 +5914,9 @@
        "attrib": 1,
        "shrinkRate": 0.08090642957822836,
        "avgDel": {
-        "n": 150,
-        "kg": 374.7,
-        "mean": 2.498
+        "n": 151,
+        "kg": 381.95,
+        "mean": 2.5295
        }
       },
       "policy": {
@@ -6413,26 +6468,12 @@
      ]
     }
    },
-   "v": "v713"
+   "v": "v714"
   },
   "OPEN": {
-   "at": "2026-09-18T13:56:36.713Z",
-   "count": 8,
+   "at": "2026-09-18T14:55:02.664Z",
+   "count": 7,
    "byKey": {
-    "CS6-BS|2026-09-18|420": {
-     "d": "2026-09-18",
-     "p": "CS6-BS",
-     "dir": "S",
-     "q": 5,
-     "t": 420,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 420,
-     "oweUnits": 5,
-     "rid": "s173",
-     "key": "CS6-BS|2026-09-18|420"
-    },
     "CN6-WM|2026-09-17|110": {
      "d": "2026-09-17",
      "p": "CN6-WM",
@@ -6456,16 +6497,17 @@
      "dir": "S",
      "q": 1,
      "t": 90,
-     "cash": 0,
+     "cash": 80,
      "mv": 1,
      "st": "dueMoney",
-     "oweRM": 90,
+     "oweRM": 10,
      "rid": "s165",
+     "paidOn": "2026-09-18",
      "deliveredOn": "2026-09-15",
      "handover": "collected",
      "key": "CR3-DAM|2026-09-15|90",
      "age": 3,
-     "exp": 90
+     "exp": 10
     },
     "CM4-MK|2026-09-13|330": {
      "d": "2026-09-13",
@@ -6490,17 +6532,15 @@
      "dir": "S",
      "q": 12.5,
      "t": 850,
-     "cash": 0,
-     "mv": 4,
+     "cash": 650,
+     "mv": 6.25,
      "st": "part",
-     "oweRM": 850,
-     "oweUnits": 8.5,
+     "oweRM": 200,
+     "oweUnits": 6.25,
      "rid": "s137",
      "deliveredOn": "2026-09-07",
      "handover": "delivered",
-     "key": "CJ4-BJ|2026-09-07|850",
-     "age": 11,
-     "exp": 136
+     "key": "CJ4-BJ|2026-09-07|850"
     },
     "CA4-DAM|2026-09-02|160": {
      "d": "2026-09-02",
@@ -6552,13 +6592,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 10.5,
-     "free": 10.5,
-     "owedOut": 0,
-     "coverDays": 2,
-     "rate": 5.32,
-     "owedToYou": 582,
-     "promised": 13.5,
+     "onHand": 3.25,
+     "free": -0.06,
+     "owedOut": 3.31,
+     "coverDays": 0,
+     "rate": 5.84,
+     "owedToYou": 230,
+     "promised": 6.25,
      "short": 3
     },
     "oil": {
@@ -6577,7 +6617,7 @@
     "salt": "2026-09-16",
     "oil": "2026-09-09"
    },
-   "v": "v713"
+   "v": "v714"
   }
  }
 }
