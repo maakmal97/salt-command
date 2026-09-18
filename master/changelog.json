@@ -1,5 +1,14 @@
 [
  {
+  "v": "v698",
+  "d": "18 Sep 2026",
+  "t": "A FIVE UNIT SALT ORDER IS BOOKED PENDING: ACKNOWLEDGED, NOTHING PAID, NOTHING MOVED",
+  "n": [
+   "<b>FOLDED:</b> one row, a salt sell to CS6-BS dated 18 Sep, 5 unit for RM420, taken off the statements site under order 20260916085105-rkoi5a and acknowledged for collection. No cash came in and no goods went out, so the row sits pending: it draws no stock and books no revenue until something moves. The total clears the RM254.98 floor for 5 unit and sits under the RM560 ask and the RM710 ceiling.",
+   "<b>UNUSUAL:</b> the drafter flagged CS6-BS at about RM107.50 a unit across 18 orders against RM84 here, 21.9% below, and the party record shows 12 orders at a median of RM100 with a range of RM11 to RM126.67. The figures show the gap but do not explain it. <b>THE INVENTORY:</b> untouched at 10.5 unit on the salt count of 16 Sep, costed at its own RM48 a unit, with nothing owed out."
+  ]
+ },
+ {
   "v": "v697",
   "d": "18 Sep 2026",
   "t": "THE APP ON A CUSTOMER'S PHONE IS THE COUNTER, AND THE THREE OLDER GUEST LINKS ARE WITHDRAWN",
