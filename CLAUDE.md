@@ -108,11 +108,15 @@ decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; s
    ```
 8. **Three deployers, and only the Actions job does the whole job.** `cloud-commit.yml` gates,
    deploys, proves the phone is serving the build, marks the folded rows committed, re-seeds the
-   D1 mirror, publishes the statements, then runs the suite. **THE STATEMENTS PUBLISH RUNS ON EVERY
-   DEPLOY AND ON EVERY HOUR** (v699, his instruction of 18 Sep 2026 that a customer's prices always
-   follow the desk): the `plan` step's third output `publish` is 1 when `deploy` is 1 OR the event is
-   `schedule`. It was gated on `deploy` alone, and a bare scheduled tick never sets `deploy`, so on a
-   quiet day the sealed lists were never refreshed at all. **The hourly run passes `--no-retire`**:
+   D1 mirror, publishes the statements, then runs the suite. **THE STATEMENTS PUBLISH RUNS ON EVERY RUN
+   BUT THE KEY PROBE** (v701, his question of 18 Sep 2026: can the publish be on any trigger?). It
+   can: it needs nothing this job produces, reading `ledger/book.json` and the master out of the
+   checkout and never `public/`, and the checkout, setup-node and `npm ci` are unconditional. So the
+   `plan` step's third output `publish` is 1 unless the run is a `probe_key` dispatch, whose whole
+   purpose is one cheap call and then stop. **The rule states what is EXCLUDED**, because a list of
+   events it is ON for goes stale the moment a trigger is added: it was `deploy` alone until v699,
+   so a quiet day never refreshed a price at all, and naming `schedule` beside it would have left
+   the same shape of bug for the next trigger nobody thought of. **The hourly run passes `--no-retire`**:
    writing is hourly, retiring an account whose record the newest issue does not carry is a judgement
    about a deploy he made, not about a clock. `tools/update.mjs` does the laptop
    half and never touches the statements. **Cloudflare Workers Builds deploys the tip of master

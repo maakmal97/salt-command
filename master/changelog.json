@@ -1,5 +1,17 @@
 [
  {
+  "v": "v701",
+  "d": "18 Sep 2026",
+  "t": "THE STATEMENTS PUBLISH RUNS ON EVERY RUN BUT THE KEY PROBE, STATED AS WHAT IS EXCLUDED",
+  "n": [
+   "<b>HIS QUESTION OF 18 SEP 2026: CAN THE PUBLISH BE ON ANY TRIGGER?</b> It can, and now it is. It needs nothing the job produces: it reads ledger/book.json and the master out of the checkout and never touches public/, so it depends on neither the fold, the build nor the deploy, and the checkout, the node setup and the install above it are themselves unconditional. Every credential it wants is already proved unconditionally in the same job.",
+   "<b>THE RULE STATES WHAT IS EXCLUDED, NOT WHAT IT IS ON.</b> That is the whole point of the change. A list of events goes stale the moment a trigger is added, and that is exactly how this broke: the publish was gated on the deploy alone, a scheduled tick sets deploy only when rows were actually folded, and so on a quiet day the sealed price lists were never refreshed at all while both the doc and his instruction said a price always follows the desk. v699 added the schedule beside the deploy, which fixed that day and left the same shape of bug standing for whatever trigger came next. One exclusion cannot go stale.",
+   "<b>THE ONE EXCLUSION IS THE KEY PROBE</b>, a dispatch whose whole purpose is one cheap call to prove the fold's credential and then stop. Publishing on it would contradict the only thing that step promises.",
+   "<b>THE RETIRE SPLIT IS UNCHANGED AND NOW MATTERS MORE.</b> A run that did not deploy passes --no-retire, so every sealed list, board, roster and report card is rewritten and no account is retired: retiring one whose record the newest issue does not carry is a judgement about a deploy he made, not about a clock or an approval, and a partial issue read would otherwise take accounts down on every tick rather than once.",
+   "<b>THE CHECKS.</b> The workflow section now asserts the shape of the rule rather than its cases: the publish is on unless the probe turns it off, and NOTHING anywhere turns it on for a named event, which is the list that went stale before. Seven mutations each turned it red, including the one that restores the v699 wording."
+  ]
+ },
+ {
   "v": "v700",
   "d": "18 Sep 2026",
   "t": "A CUSTOMER HOLDING AN UNPAID ADVANCE IS CHASED EVERY HOUR, DAY AND NIGHT, UNTIL IT IS PAID",

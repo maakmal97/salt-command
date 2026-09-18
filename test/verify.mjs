@@ -8396,16 +8396,23 @@ await (async () => {
      something else, and the run was green each time. The publish now runs on the deploy alone. */
   const stmtDeploy = wf.slice(wf.indexOf("- name: Deploy the statements site"), wf.indexOf("- name: Publish the statements, live"));
   const stmtPub = wf.slice(wf.indexOf("- name: Publish the statements, live"));
-  /* v698: AND ON EVERY HOUR. The content publish was gated on deploy alone, and a bare scheduled
-     tick never sets deploy, so on a quiet day the sealed lists were never refreshed at all while
-     the doc and his instruction both said a price always follows the desk. The hourly run passes
-     --no-retire: writing is hourly, retiring an account is a judgement about a deploy he made. */
+  /* v701, HIS QUESTION: CAN THE PUBLISH BE ON ANY TRIGGER? It can, because it needs nothing this
+     job produces: it reads ledger/book.json and the master out of the checkout, never public/, and
+     the checkout, setup-node and npm ci are unconditional. So it runs on every run but the key
+     probe, whose whole purpose is one cheap call and then stop. A rule that says what is EXCLUDED
+     cannot go stale when a trigger is added, which is the shape of bug v698 fixed for the schedule
+     and left standing for whatever came next. The retire split is unchanged: writing is every run,
+     retiring an account is a judgement about a deploy he made. */
   ok(/if: steps\.plan\.outputs\.deploy == '1' && steps\.already\.outputs\.stmt == '1'/.test(stmtDeploy)
      && /^- name: Publish the statements, live\n\s+if: steps\.plan\.outputs\.publish == '1'\n\s+env:/.test(stmtPub),
      "the site's code deploys on the statements paths, and its content publishes on every run that publishes");
-  ok(/publish=0\n\s+if \[ "\$deploy" = "1" \] \|\| \[ "\$\{\{ github\.event_name \}\}" = "schedule" \]; then publish=1; fi/.test(wf)
+  ok(/\n\s+publish=1\n/.test(wf) && wf.includes('inputs.probe_key }}" = "true" ]; then publish=0; fi')
      && /echo "publish=\$publish" >> "\$GITHUB_OUTPUT"/.test(wf),
-     "and a publish is any run that deploys OR the hourly scheduled tick, which is what makes a price follow the desk within the hour");
+     "a publish is EVERY run but the key probe, stated as what is excluded so a trigger added later cannot be forgotten");
+  /* the shape of the rule is the point, so it is asserted as a shape: nothing names an event it
+     must be ON for, because that is the list that goes stale */
+  ok(!/publish=1; fi/.test(wf) && (wf.match(/publish=0/g) || []).length === 1,
+     "and nothing anywhere turns the publish ON for a named event, which is the list that went stale before");
   ok(/node tools\/stmt-publish\.mjs --no-retire/.test(stmtPub)
      && stmtPub.includes('if [ "${{ steps.plan.outputs.deploy }}" = "1" ]; then'),
      "the hourly run refreshes every list but retires no account: writing is hourly, retiring is a deploy's judgement");

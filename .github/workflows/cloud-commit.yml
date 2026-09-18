@@ -178,11 +178,16 @@ jobs:
       # ---- THE PLAN FOR THE REST OF THE JOB ---------------------------------------------
       # fold:    something is staged, by this tick or a previous one.
       # deploy:  a push; a dispatch that did not ask to stage only; or any run that folded.
-      # publish: any run that deploys, AND every hourly tick (v698, his instruction of 18 Sep 2026
-      #          that a customer's prices always follow the desk). The publish step was gated on
-      #          deploy alone, and a bare scheduled tick never sets deploy, so on a quiet day the
-      #          sealed price lists were never refreshed at all. A price moves when the desk's own
-      #          reading of the book moves, which needs no push to happen.
+      # publish: EVERY RUN BUT THE PROBE (v701, his question of 18 Sep 2026: can the publish be on
+      #          any trigger?). It can, because it needs nothing this job produces: it reads
+      #          ledger/book.json and the master out of the checkout, never public/, and the
+      #          checkout, setup-node and npm ci above are themselves unconditional. It was gated
+      #          on deploy alone and a scheduled tick never set deploy, so on a quiet day the
+      #          sealed price lists were never refreshed at all; v698 added the schedule, which
+      #          fixed that day and left the same shape of bug in place for the next trigger
+      #          nobody thought of. A rule that says WHAT IS EXCLUDED cannot go stale when a
+      #          trigger is added. The one exclusion is the key probe, whose whole purpose is one
+      #          cheap call and then stop.
       - name: What this run does
         id: plan
         run: |
@@ -192,8 +197,8 @@ jobs:
           if [ "${{ github.event_name }}" = "push" ]; then deploy=1; fi
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.stage_only }}" != "true" ] && [ "${{ inputs.probe_key }}" != "true" ]; then deploy=1; fi
           if [ "$fold" = "1" ]; then deploy=1; fi
-          publish=0
-          if [ "$deploy" = "1" ] || [ "${{ github.event_name }}" = "schedule" ]; then publish=1; fi
+          publish=1
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.probe_key }}" = "true" ]; then publish=0; fi
           echo "fold=$fold" >> "$GITHUB_OUTPUT"
           echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
           echo "publish=$publish" >> "$GITHUB_OUTPUT"

@@ -216,15 +216,24 @@ nothing is published per standing link and minting one can never be wrong. `tboa
 INTRODUCER still reads its own `gboard:<id>`, because that one does depend on who handed it out, and
 still falls back to `board:2` when it was minted since the last publish.
 
-**THE PUBLISH RUNS ON EVERY DEPLOY AND ON EVERY HOUR** (v699, his instruction that a customer's
-prices always follow the desk). `cloud-commit.yml`'s `plan` step gained a third output, `publish`,
-which is 1 when `deploy` is 1 OR the event is `schedule`; the publish step reads it instead of
-`deploy`. It was gated on `deploy` alone, and a bare scheduled tick sets `deploy` only when rows were
-actually folded, so on a quiet day the sealed lists were never refreshed at all while both the doc
-and his instruction said otherwise. **The hourly run passes `--no-retire`** (`planPublish`'s `opts`):
-every sealed list, board, roster and report card is rewritten, and no account is retired, because
-retiring one whose record the newest issue does not carry is a judgement about a deploy he made, not
-about a clock, and a partial issue read would otherwise take accounts down twenty-four times a day. `GET /all/refs` returns the
+**THE PUBLISH RUNS ON EVERY RUN BUT THE KEY PROBE** (v701, his question of 18 Sep 2026: can the
+publish be on any trigger?). It can. It needs nothing the job produces: it reads `ledger/book.json`
+and `master/salt_command.html` out of the checkout, never `public/`, so it depends on neither the
+fold, the build nor the deploy, and the checkout, `setup-node` and `npm ci` above it are themselves
+unconditional. `cloud-commit.yml`'s `plan` step carries a third output, `publish`, which is 1 unless
+the run is a `probe_key` dispatch; the publish step reads it instead of `deploy`.
+
+**The rule states what is EXCLUDED, not what it is on.** A list of events goes stale the moment a
+trigger is added, and that is exactly how this broke: it was gated on `deploy` alone, a bare
+scheduled tick sets `deploy` only when rows were actually folded, and so on a quiet day the sealed
+lists were never refreshed at all while both this doc and his instruction said a price always
+follows the desk. v699 added `schedule` beside `deploy`, which fixed that day and left the same
+shape of bug standing for the next trigger. One exclusion cannot go stale. It is placed after the
+fold and the deploy in the step list deliberately, so a run that folds publishes the NEW book. **A run that did not deploy passes `--no-retire`** (`planPublish`'s
+`opts`): every sealed list, board, roster and report card is rewritten, and no account is retired,
+because retiring one whose record the newest issue does not carry is a judgement about a deploy he
+made, not about a clock or an approval, and a partial issue read would otherwise take accounts down
+on every tick rather than once. `GET /all/refs` returns the
 five in the LADDER's order, then everything else newest first. Links minted against a customer
 (v658) still work, still follow their introducer, and sit below the five on the panel under their
 own heading.
