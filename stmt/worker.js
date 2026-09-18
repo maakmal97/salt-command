@@ -43,10 +43,10 @@ import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding } from "./refs.js";
-import { endpointId } from "./push.js";
+import { endpointId, wakeCustomer } from "./push.js";
 import { linkMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
-import { mintSession, dropSession, sessionUser, ordersOf, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED } from "./orders.js";
+import { mintSession, dropSession, sessionUser, ordersOf, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED, toChase, CHASE_KEY, hourOf } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -779,5 +779,46 @@ export default {
     /* The QR carries ?u=<username>; anything else in the query is ignored, and a username that
        does not parse is simply not filled in. */
     return pageResponse(normUser(url.searchParams.get("u")), null);
+  },
+
+  /* ---- THE HOURLY CHASE (v700, his instruction of 18 Sep 2026) --------------------------------
+   * "The customer will be notified every hour to pay if it is an advanced order." An advance is
+   * the book's own word for goods out with money owed, and this is the first clock this Worker has
+   * ever had: until now it woke a phone only as a side effect of the desk touching an order.
+   *
+   * DAY AND NIGHT, HIS WORD, and until it is paid. One wake an hour per CUSTOMER, not per order:
+   * two unpaid advances are one person's problem and one banner, and the banner names no amount
+   * and no order anyway (stmt/sw.js holds the only words, and a push here carries no payload at
+   * all, so it could not name one if it wanted to).
+   *
+   * THE MARK IS THE HOUR ITSELF, not a timestamp to subtract from: `chased:<username>` holds the
+   * hour bucket it was last woken in, so a tick that fires twice inside one hour, or fires late,
+   * cannot wake the same person twice. It expires on its own after two hours, so a customer who
+   * settles up leaves nothing behind.
+   *
+   * IT IS SILENT ON FAILURE BY DESIGN, like every other push path here, so the counts are LOGGED:
+   * a wake that reaches nobody and a wake that was not needed look identical from outside.
+   */
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil((async () => {
+      try {
+        if (!env.STMT) return;
+        const now = new Date(event && event.scheduledTime ? event.scheduledTime : Date.now());
+        const hour = hourOf(now);
+        let woke = 0, held = 0, quiet = 0;
+        for (const { u } of await toChase(env)) {
+          /* his own test account is counted nowhere, and that includes being chased */
+          if (u === TEST_USER) continue;
+          const mark = await env.STMT.get(CHASE_KEY(u));
+          if (mark && Number(mark) === hour) { held++; continue; }
+          const r = await wakeCustomer(env, u);
+          await env.STMT.put(CHASE_KEY(u), String(hour), { expirationTtl: 2 * 3600 });
+          if (r.sent) woke++; else quiet++;
+        }
+        if (woke || held || quiet) console.log("chase: " + JSON.stringify({ hour, woke, held, quiet }));
+      } catch (e) {
+        console.log("chase FAILED: " + String((e && e.stack) || e));
+      }
+    })());
   }
 };

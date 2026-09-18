@@ -141,6 +141,32 @@ export function orderWork(o) {
   return jobs;
 }
 
+/* ---- WHO IS CHASED, AND HOW OFTEN (v700, his instruction of 18 Sep 2026) ---------------------
+ * "The customer will be notified every hour to pay if it is an advanced order." An advance is the
+ * book's own word for goods out with money owed, so that is the test: something has been handed
+ * over and something is still outstanding. A customer who has paid nothing on an order he has not
+ * touched yet is not chased, because nothing of his is in their hands.
+ *
+ * DAY AND NIGHT, HIS WORD, and until it is paid. The cap is one wake an hour per CUSTOMER, not per
+ * order: two unpaid advances are one person's problem and one banner, and the banner names no
+ * amount and no order anyway.
+ */
+export const isAdvance = (o) => !!o && ROWED.includes(o.status) && (+o.moved || 0) > 0.004 && dueOf(o) > 0.004;
+export const CHASE_KEY = (u) => "chased:" + u;
+/** An hour in whole hours since the epoch: the same hour twice is the same bucket, and no clock is read twice. */
+export const hourOf = (at) => Math.floor(new Date(at).getTime() / 3600000);
+
+/** Every customer holding an unpaid advance, with the orders that make it, newest order first. */
+export async function toChase(env) {
+  const by = new Map();
+  for (const o of await listOrders(env, "order:")) {
+    if (!isAdvance(o)) continue;
+    if (!by.has(o.u)) by.set(o.u, []);
+    by.get(o.u).push(o);
+  }
+  return [...by.entries()].map(([u, orders]) => ({ u, orders }));
+}
+
 /** Every order with a stage the ledger has not been told about, each carrying what it owes. */
 export async function ordersOwing(env) {
   return (await listOrders(env, "order:")).map((o) => Object.assign({ work: orderWork(o) }, o))
@@ -199,6 +225,7 @@ export async function customerMove(env, u, id, action, body) {
   const order = await env.STMT.get(OKEY(u, id), "json");
   if (!order) return { error: "no such order", status: 404 };
   const at = new Date().toISOString();
+  let done = false;
   if (action === "cancel") {
     /* v694: either side may withdraw at any stage UNTIL THE GOODS MOVE (his rule, 18 Sep 2026).
        What was paid is refunded, which the ledger raises when the cancellation folds. */
@@ -233,10 +260,14 @@ export async function customerMove(env, u, id, action, body) {
     order.paid = paid; order.method = method; order.account = account;
     order.payments = (order.payments || []).concat([{ at, amount: +amount.toFixed(2), method, account }]);
     order.history.push({ at, status: order.status, by: "customer", method, account, note: "paid " + amount.toFixed(2) });
-    settle(order, at);
+    done = settle(order, at);
   } else return { error: "not found", status: 404 };
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
   await env.STMT.put(LAST_TOUCHED, at);
+  /* v700: a payment that completes the order is the one customer move worth waking the phone for,
+     because it is the only one whose answer arrives after they have put the phone down. Every
+     other move of theirs happens with the page in front of them. */
+  if (done) await wakeCustomer(env, u);
   return { order };
 }
 

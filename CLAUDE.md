@@ -365,6 +365,16 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   `rem:<token>` for 30 days, and the password is kept nowhere. The token is minted on a session,
   which only a correct password mints; **Log out drops the session and that wrap**, and a token
   only ever forgets its own account. An unknown token is refused in the door's one refusal.
+- **THE HOURLY CHASE** (v700, his instruction of 18 Sep 2026: "the customer will be notified every
+  hour to pay if it is an advanced order"). **This site's FIRST clock**: `wrangler.stmt.jsonc`
+  carries `"triggers": {"crons": ["0 * * * *"]}` and `stmt/worker.js` exports `scheduled()`. An
+  advance is the book's own word, goods out with money owed (`isAdvance`), so an order he has not
+  touched is never chased. **One wake an hour per CUSTOMER, not per order**, capped by
+  `chased:<username>` holding the HOUR BUCKET it was last woken in, expiring after two hours so a
+  customer who settles up leaves nothing behind; his test account is skipped. Day and night, until
+  it is paid, and it stops of its own accord. **A CRON HERE NEEDS A HAND DEPLOY**: `rev.json`'s id
+  does not cover `wrangler.stmt.jsonc`, so `update.mjs` reports the phone current and ships nothing
+  (`npx wrangler deploy -c wrangler.stmt.jsonc`).
 - **THE ASSOCIATES REPORT CARD** (v691, his decisions of 18 Sep 2026): one card an associate a
   book on the master page, from `associateSnapshot` in `tools/book.mjs`, published as KV `assoc`
   and served only at `/all/assoc`. **What they did** (bought, sold for him, brought in, onward

@@ -14542,6 +14542,98 @@ await (async () => {
     "the retirement is behind a flag the hourly run clears");
   ok(planPublish.length === 8, "planPublish takes the options object that carries it");
 })();
+section("v700: a customer holding an unpaid advance is chased every hour, day and night, until it is paid");
+await (async () => {
+  /* HIS INSTRUCTION OF 18 SEP 2026: "the customer will be notified every hour to pay if it is an
+     advanced order." An advance is the book's own word for goods out with money owed, so that is
+     the test. This is the first clock the statements Worker has ever had: until now it woke a phone
+     only as a side effect of the desk touching an order. Driven through scheduled() against a
+     stubbed push service, so what is proved is the wake, not the source that would send it. */
+  const stmtW7 = (await import("../stmt/worker.js")).default;
+  const O7 = await import("../stmt/orders.js");
+
+  /* ---- the predicate, on records alone ---- */
+  const ord = (over) => Object.assign({ id: "o", u: "aaaa-bbbb", status: "acknowledged", qty: 2, total: 200,
+    delivery: 0, paid: 0, moved: 0 }, over);
+  ok(O7.isAdvance(ord({ moved: 2, paid: 0 })) && O7.isAdvance(ord({ moved: 1, paid: 100 })),
+    "goods out and money owed is an advance, in part as well as in whole");
+  ok(!O7.isAdvance(ord({ moved: 0, paid: 0 })) && !O7.isAdvance(ord({ moved: 2, paid: 200 }))
+    && !O7.isAdvance(ord({ moved: 2, paid: 0, status: "placed" }))
+    && !O7.isAdvance(ord({ moved: 2, paid: 0, status: "cancelled" })),
+    "and nothing else is: not an order he has not touched, not one paid in full, not one not yet agreed, not a withdrawn one");
+  ok(O7.isAdvance(ord({ moved: 2, paid: 200, delivery: 12, total: 200 })) && !O7.isAdvance(ord({ moved: 2, paid: 212, delivery: 12, total: 200 })),
+    "the delivery charge counts towards what is owed, so paying for the goods alone is still an advance: it is what the customer is asked for");
+  ok(O7.hourOf("2026-09-18T05:59:59.999Z") === O7.hourOf("2026-09-18T05:00:00.000Z")
+    && O7.hourOf("2026-09-18T06:00:00.000Z") === O7.hourOf("2026-09-18T05:00:00.000Z") + 1,
+    "the mark is the hour itself, so a tick that fires twice inside one hour is the same bucket");
+
+  /* ---- the tick, driven ---- */
+  const kv7 = new KV();
+  const kp7 = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const env7 = { STMT: kv7, STMT_VAPID_PUBLIC_KEY: "pub7",
+    STMT_VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kp7.privateKey)),
+    STMT_VAPID_SUBJECT: "mailto:a@b.test" };
+  const put = (k, v) => kv7.put(k, JSON.stringify(v));
+  /* one holding an advance, one who owes nothing, one who has not been handed anything, and his test account */
+  await put("order:aaaa-bbbb:20260918000000-a1", ord({ id: "20260918000000-a1", u: "aaaa-bbbb", moved: 2, paid: 50 }));
+  await put("order:cccc-dddd:20260918000000-c1", ord({ id: "20260918000000-c1", u: "cccc-dddd", moved: 2, paid: 200 }));
+  await put("order:eeee-ffff:20260918000000-e1", ord({ id: "20260918000000-e1", u: "eeee-ffff", moved: 0, paid: 0 }));
+  await put("order:0000-0000:20260918000000-t1", ord({ id: "20260918000000-t1", u: "0000-0000", moved: 2, paid: 0 }));
+  for (const u of ["aaaa-bbbb", "cccc-dddd", "eeee-ffff", "0000-0000"])
+    await put("push:" + u + ":aa11", { endpoint: "https://push.example/" + u, at: "2026-09-18T00:00:00Z" });
+
+  const owed = (await O7.toChase(env7)).map((x) => x.u).sort();
+  ok(JSON.stringify(owed) === '["0000-0000","aaaa-bbbb"]',
+    "only those holding an unpaid advance are owed a chase, one entry per CUSTOMER: " + JSON.stringify(owed));
+
+  const realFetch7 = globalThis.fetch;
+  const hit = [], logs = [];
+  globalThis.fetch = async (url, init) => { hit.push({ url: String(url), topic: init && init.headers && init.headers.Topic,
+    body: init && init.body, urgency: init && init.headers && init.headers.Urgency }); return new Response("", { status: 201 }); };
+  /* THE LOG IS CAPTURED AROUND THE TICK AND NOWHERE ELSE. Stubbing console.log across the whole
+     block would swallow ok()'s own FAIL line, and a check whose failure cannot be printed is an
+     instrument that lies about itself. */
+  const tick = async (iso, e) => {
+    const w = [], realLog = console.log;
+    console.log = (...a) => { logs.push(a.join(" ")); };
+    try { await stmtW7.scheduled({ cron: "0 * * * *", scheduledTime: Date.parse(iso) }, e || env7, { waitUntil: (p) => w.push(p) }); await Promise.all(w); }
+    finally { console.log = realLog; }
+  };
+  try {
+    await tick("2026-09-18T05:00:00Z");
+    ok(hit.length === 1 && hit[0].url === "https://push.example/aaaa-bbbb",
+      "the tick wakes the one customer holding an unpaid advance and nobody else: " + JSON.stringify(hit.map((h) => h.url)));
+    ok(!hit.some((h) => h.url.includes("0000-0000")),
+      "his test account is counted nowhere, and that includes being chased");
+    ok(hit[0].body === undefined && hit[0].topic === "salt-order" && hit[0].urgency === "high",
+      "the wake carries no payload at all, so it could not name an amount or an order if it wanted to");
+    await tick("2026-09-18T05:40:00Z");
+    ok(hit.length === 1, "a second tick in the same hour chases nobody: one wake an hour per customer, not per tick");
+    await tick("2026-09-18T06:00:00Z");
+    ok(hit.length === 2 && hit[1].url === "https://push.example/aaaa-bbbb",
+      "and the next hour chases again, because it is still unpaid: day and night, until it is paid");
+    ok(Number(await kv7.get(O7.CHASE_KEY("aaaa-bbbb"))) === O7.hourOf("2026-09-18T06:00:00Z")
+      && (kv7.opts.get(O7.CHASE_KEY("aaaa-bbbb")) || {}).expirationTtl === 7200,
+      "the mark is the hour, and it expires on its own so a customer who settles up leaves nothing behind");
+    /* paid in full: the chase stops of its own accord */
+    await put("order:aaaa-bbbb:20260918000000-a1", ord({ id: "20260918000000-a1", u: "aaaa-bbbb", moved: 2, paid: 200 }));
+    await tick("2026-09-18T07:00:00Z");
+    ok(hit.length === 2, "and once it is paid the chase stops, with nothing to turn off");
+    ok(logs.some((l) => /^chase: /.test(l)), "every tick that did anything says so in the log, because a silent push path is a silent failure");
+    /* a Worker with no push key wakes nobody and does not throw */
+    await put("order:aaaa-bbbb:20260918000000-a2", ord({ id: "20260918000000-a2", u: "aaaa-bbbb", moved: 2, paid: 0 }));
+    await tick("2026-09-18T08:00:00Z", { STMT: kv7 });
+    ok(hit.length === 2, "a Worker with no push key configured wakes nobody, and the tick does not throw");
+  } finally { globalThis.fetch = realFetch7; }
+
+  /* ---- the cron that drives it, and the hand deploy it needs ---- */
+  const cfg7 = readFileSync(join(REPO, "wrangler.stmt.jsonc"), "utf8");
+  ok(/"triggers":\s*\{\s*"crons":\s*\["0 \* \* \* \*"\]\s*\}/.test(cfg7.replace(/\r/g, "")),
+    "the statements Worker has an hourly cron, which it had never had before");
+  ok(/npx wrangler deploy -c wrangler\.stmt\.jsonc/.test(cfg7),
+    "and the file says how it reaches production, because rev.json's id does not cover it and update.mjs would report the phone current");
+  ok(typeof stmtW7.scheduled === "function", "and the Worker exports the handler the cron calls");
+})();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

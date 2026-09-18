@@ -357,6 +357,39 @@ The username-to-code map the relay needs is written to the DESK's
 KV as `stmt-users` by every publish; the site never holds it, and an order whose username the map
 does not carry is reported as `unmapped` and waits rather than being guessed at.
 
+**THE HOURLY CHASE** (v700, his instruction of 18 Sep 2026: "the customer will be notified every
+hour to pay if it is an advanced order"). This is the **first clock the statements Worker has ever
+had**: until v700 it woke a phone only as a side effect of the desk touching an order.
+`wrangler.stmt.jsonc` carries `"triggers": {"crons": ["0 * * * *"]}` and `stmt/worker.js` exports a
+`scheduled()` handler beside `fetch`.
+
+**Who is chased.** `isAdvance(o)` in `stmt/orders.js`: the order is agreed (`ROWED`), something has
+been handed over, and something is still owed, the delivery charge included because that is what the
+customer is asked for. A customer who has paid nothing on an order he has not touched yet is not
+chased, because nothing of his is in their hands. `toChase(env)` groups them by CUSTOMER.
+
+**How often.** One wake an hour per customer, not per order: two unpaid advances are one person's
+problem and one banner. The cap is `chased:<username>`, holding the **hour bucket** (`hourOf`, whole
+hours since the epoch) it was last woken in, so a tick that fires twice inside one hour, or fires
+late, cannot chase twice. It carries a two-hour TTL, so a customer who settles up leaves nothing
+behind and there is nothing to turn off. The test account `0000-0000` is skipped, because it is
+counted nowhere. Day and night, his word, until it is paid.
+
+**What it sends.** `wakeCustomer`, the same payload-free VAPID wake the desk's moves trigger, so the
+banner is `stmt/sw.js`'s one fixed string and names no amount and no order. It cannot name one: a
+push here carries no body at all. The handler logs its counts (`chase: {hour, woke, held, quiet}`)
+because every push path on this site swallows its own failures, and a wake that reached nobody and a
+wake that was not needed look identical from outside.
+
+**A CRON REACHES PRODUCTION ONLY THROUGH A DEPLOY OF THAT CONFIG.** `public/rev.json`'s id does not
+cover `wrangler.stmt.jsonc`, so `tools/update.mjs` reports the phone current and ships nothing:
+`npx wrangler deploy -c wrangler.stmt.jsonc`.
+
+**AND A PAYMENT THAT COMPLETES AN ORDER WAKES THE PHONE** (v700). It is the one customer move worth
+waking for, because it is the only one whose answer arrives after they have put the phone down;
+every other move of theirs happens with the page in front of them. The page's own words are his:
+"Your order is now complete. Thank you for your loyalty."
+
 **HIS ALERT ON A NEW ORDER** (v675, 16 Sep 2026; silent before it, because the switch left with the
 phone app at v387 and nothing had subscribed since). A placement writes `last-placed` in the site's
 store; the desk's every-minute cron reads it through `/desk/orders/last`, one read, and a moment newer

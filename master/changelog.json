@@ -1,5 +1,18 @@
 [
  {
+  "v": "v700",
+  "d": "18 Sep 2026",
+  "t": "A CUSTOMER HOLDING AN UNPAID ADVANCE IS CHASED EVERY HOUR, DAY AND NIGHT, UNTIL IT IS PAID",
+  "n": [
+   "<b>HIS INSTRUCTION OF 18 SEP 2026:</b> the customer is notified every hour to pay if it is an advanced order. An advance is the book's own word, goods out with money owed, so that is the test: the order is agreed, something has been handed over, and something is still owed, the delivery charge included because that is what the customer is asked for. Somebody who has paid nothing on an order he has not touched yet is never chased, because nothing of his is in their hands.",
+   "<b>THE FIRST CLOCK THE STATEMENTS SITE HAS EVER HAD.</b> Until now that Worker woke a phone only as a side effect of the desk touching an order; it had no cron and no scheduled handler at all. It has both now, on the hour, every hour. A cron in that config reaches production only through a deploy of it: rev.json's id does not cover the file, so the update chain reports the phone current and ships nothing, and the file says so beside the cron.",
+   "<b>ONE WAKE AN HOUR PER CUSTOMER, NOT PER ORDER.</b> Two unpaid advances are one person's problem and one banner. The cap is the hour ITSELF rather than a timestamp to subtract from: the mark holds the hour bucket the customer was last woken in, so a tick that fires twice inside an hour, or fires late, cannot chase twice. It expires after two hours, so a customer who settles up leaves nothing behind and there is nothing to turn off. His test account is skipped, because it is counted nowhere and that includes being chased.",
+   "<b>THE BANNER NAMES NOTHING, AND COULD NOT.</b> It is the same payload-free wake the desk's own moves send, so the words are the service worker's one fixed string and no amount and no order can reach it. Every push path on this site swallows its own failures by design, so the tick logs its counts: a wake that reached nobody and a wake that was not needed look identical from outside.",
+   "<b>AND A PAYMENT THAT COMPLETES AN ORDER WAKES THE PHONE.</b> It is the one move of the customer's own worth waking for, because it is the only one whose answer arrives after they have put the phone down; every other one happens with the page in front of them.",
+   "<b>THE CHECKS.</b> A new section of 17 assertions: the predicate against goods out, money owed, a part payment, the delivery charge, and four things that are not an advance; the tick driven against a stubbed push service through four hours, proving the one customer woken, the test account skipped, the payload absent, a second tick in the same hour chasing nobody, the next hour chasing again, the mark and its expiry, the chase stopping of its own accord once paid, and a Worker with no push key waking nobody without throwing. Fourteen mutations each turned it red. The log is captured around the tick alone, because stubbing it across the block would have swallowed the suite's own failure line."
+  ]
+ },
+ {
   "v": "v699",
   "d": "18 Sep 2026",
   "t": "A STANDING LINK READS ITS LEVEL'S BOARD, AND THE STATEMENTS PUBLISH RUNS EVERY HOUR",
