@@ -456,6 +456,21 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   last publish had no board and fell back to `board:2`, the LAST level, so four of the five would
   have quoted Bronze until the next deploy. `tboard:` and not `board:`, because `board:2` already
   means the last level and not the second.
+- **AN ASSOCIATE MAY MINT THEIR OWN, AND HE APPROVES IT** (v709, his instruction of 18 Sep 2026).
+  `POST /my/refs` on a SESSION, never under `/all`, and refused with the site's 404 for anybody whose
+  own record does not carry the associate mark. **PENDING MEANS SHUT FROM THE MOMENT IT EXISTS**,
+  because the id IS the credential: `approved: false` is written at mint and the guest door refuses
+  it exactly as it refuses a withdrawn one. **The test is `approved === false`, NEVER `!approved`**:
+  no link already in the store carries the field, so the loose test would shut every link he has
+  handed out, and shut it silently. He approves, declines or pins a tier from the Links panel; a tier
+  he does not pin leaves it on the v658 rule, which is what "if need be" means. **Ambassador is
+  refused** as a tier, being the floor. `standing` stays FALSE on an associate's link, or
+  `ensureStanding` would adopt it as one of the five; `levelKey` keys on the LEVEL alone. An
+  associate is handed where their link points and nothing of his: no label, no introducer, no level,
+  no minter, and **no label is ever taken from them**, because a note here would be the first
+  plaintext anybody but him has put in this store. Capped at `MAX_PER_ASSOC`, the shape of the
+  open-order cap. Their panel lives in `CLIENT_JS` gated on `assoc`, because `stmt/owner.js` is his
+  alone and the door is served before anybody signs in.
 - **A LINK MAY INSTEAD NAME ITS INTRODUCER AND FOLLOW THEM** (v658, his rule): minting takes a
   customer's username, and the guest is quoted **two levels above theirs where there is room, else
   one, capped at the last**, per product. The level is never stored on the link; every publish

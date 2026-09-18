@@ -701,7 +701,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; prices=null; orders=[]; draft={}; pick={}; assoc=false; card=null; cardMonth='';
+    bundle=null; session=''; prices=null; orders=[]; draft={}; pick={}; assoc=false; card=null; cardMonth=''; myLinks=null; myMax=0;
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
     var mfn=document.getElementById('mfnote'); if(mfn) mfn.textContent='';
@@ -902,6 +902,79 @@ const CLIENT_JS = `
       }
       pCard.appendChild(pane);
     });
+    drawMyLinks();
+  }
+
+  /* ---- THEIR OWN REFERRAL LINKS (v709, his instruction of 18 Sep 2026) -------------------------
+     "If they want to refer to a customer, they will be able to mint their own link, just like how
+     I'd choose a customer and generate the link. It will need to be approved by me."
+     IT LIVES HERE, in the script every page carries, gated at runtime on the associate mark: the
+     owner's script is spliced only on his route and must never travel to a customer, and the
+     landing page is served before anybody signs in, so there is nothing to splice per viewer.
+     A LEVEL IS NEVER NAMED. What the link quotes is his to set; they are told it is open and no
+     more, because the level is never named on a customer's page. */
+  var myLinks=null, myMax=0;
+  function drawMyLinks(){
+    var box=el('div','pane');
+    box.appendChild(el('h3',null,'Your links'));
+    box.appendChild(el('p','sub2','Make a link for somebody you want to bring in. It opens a price list and nothing else, and it stays shut until it is approved.'));
+    if(myLinks===null){ box.appendChild(el('p','sub2','Reading your links.')); pCard.appendChild(box); loadMyLinks(); return; }
+    if(!myLinks.length) box.appendChild(el('p','sub2','None yet.'));
+    myLinks.forEach(function(r){
+      var row=el('div','glink'+(r.state==='withdrawn'?' off':''));
+      row.appendChild(el('p','gt', r.state==='waiting'?'Waiting to be approved':(r.state==='withdrawn'?'Withdrawn':'Open')));
+      row.appendChild(el('code','gu', r.state==='open'?r.url:'\u2014'));
+      row.appendChild(el('p','gs', r.opens
+        ? 'opened '+r.opens+' time'+(r.opens===1?'':'s')
+        : (r.state==='open'?'never opened yet':'nothing can open it')));
+      if(r.state==='open'){
+        var img=document.createElement('img');
+        img.src=r.qr; img.alt='A code that opens the price list you are sharing'; img.width=160; img.height=160;
+        row.appendChild(img);
+      }
+      var acts=el('div','grow');
+      if(r.state==='open'){
+        var cp=el('button',null,'Copy link'); cp.type='button';
+        cp.addEventListener('click', function(){
+          try{ navigator.clipboard.writeText(r.url); cp.textContent='Copied'; }catch(e){ cp.textContent='Copy failed'; }
+          setTimeout(function(){ cp.textContent='Copy link'; },1500);
+        });
+        acts.appendChild(cp);
+      }
+      if(r.state!=='withdrawn'){
+        var wd=el('button',null,'Withdraw'); wd.type='button';
+        wd.addEventListener('click', async function(){
+          if(!confirm('Withdraw this link? Whoever holds it will not be able to open it.')) return;
+          var mine=ticket; await api('/my/refs/'+encodeURIComponent(r.id)+'/revoke',{});
+          if(mine!==ticket) return; await loadMyLinks();
+        });
+        acts.appendChild(wd);
+      }
+      row.appendChild(acts);
+      box.appendChild(row);
+    });
+    var live=myLinks.filter(function(r){ return r.state!=='withdrawn'; }).length;
+    if(live>=myMax) box.appendChild(el('p','sub2','You have '+live+' links. Withdraw one to make another.'));
+    else {
+      var mk=el('button','btn','Make a link'); mk.type='button';
+      mk.addEventListener('click', async function(){
+        mk.disabled=true; var mine=ticket;
+        var r=await api('/my/refs',{});
+        if(mine!==ticket) return;
+        if(!r.body.ok) draft.note=r.body.error||'That link was not made.';
+        await loadMyLinks();
+      });
+      box.appendChild(mk);
+    }
+    if(draft.note) box.appendChild(el('p','msg',draft.note));
+    pCard.appendChild(box);
+  }
+  async function loadMyLinks(){
+    var mine=ticket;
+    var r=await api('/my/refs');
+    if(mine!==ticket) return;
+    myLinks=(r.body&&r.body.refs)||[]; myMax=(r.body&&r.body.max)||0;
+    drawCard();
   }
 
   /* ---- PRICES: the week's list, one block per product ---- */

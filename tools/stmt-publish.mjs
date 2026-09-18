@@ -317,8 +317,12 @@ async function main() {
     let boards = 0, orphans = 0, standing = 0;
     for (const id of refIds()) {
       const rec = readRef(id);
-      /* v698: a standing link needs nothing written under its own id; it reads its level's board */
-      if (rec && rec.standing && rec.level) { standing++; continue; }
+      /* v698: a standing link needs nothing written under its own id; it reads its level's board.
+         v709: and so does ANY link carrying a level, including one he pinned when approving an
+         associate's, because the Worker keys on the level alone now. */
+      if (rec && rec.level) { standing++; continue; }
+      /* a link waiting on him serves nothing, so nothing is written for it either */
+      if (rec && rec.approved === false) { orphans++; continue; }
       const user = rec && String(rec.introducer || "").toLowerCase();
       const code = user ? byUser[user] : null;
       if (!code) { orphans++; continue; }

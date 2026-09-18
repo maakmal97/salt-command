@@ -14544,8 +14544,12 @@ await (async () => {
   const PUBSRC = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");
   ok(/for \(let k = 1; k <= 5; k\+\+\) \{\n\s+plan\.puts\.push\(\{ key: "tboard:" \+ k, value: JSON\.stringify\(tierBoard\(k, bookNow, pricing, madeAt\)\) \}\);/.test(PUBSRC),
     "the publish writes one board per level, from the same snapshot the sealed lists are struck from");
-  ok(/if \(rec && rec\.standing && rec\.level\) \{ standing\+\+; continue; \}/.test(PUBSRC),
-    "and writes nothing under a standing link's own id");
+  /* v709: ANY link carrying a level is left to its level's board, not only one of the five, because
+     he may pin a tier on an associate's; and one waiting on him serves nothing, so nothing is
+     written for it either. */
+  ok(/if \(rec && rec\.level\) \{ standing\+\+; continue; \}/.test(PUBSRC)
+    && /if \(rec && rec\.approved === false\) \{ orphans\+\+; continue; \}/.test(PUBSRC),
+    "and writes nothing under the id of a link that carries a level, nor of one still waiting on him");
   const { planPublish } = await import("../tools/stmt-publish.mjs");
   ok(/const retire = !\(opts && opts\.noRetire\);/.test(PUBSRC) && /if \(r\.records\.length && retire\)/.test(PUBSRC),
     "the retirement is behind a flag the hourly run clears");
@@ -15142,6 +15146,210 @@ await (async () => {
     "and an OPEN one wakes him in the morning, which nothing did before: " + JSON.stringify(loud.sent));
   const broken = await tick8([{ doc: "not json at all" }]);
   ok(broken.sent.length === 0, "a row that will not parse is not read as an open refund, and does not throw");
+})();
+section("v709: an associate mints their own link, it is shut until he approves it, and he may set its tier");
+await (async () => {
+  /* HIS INSTRUCTION OF 18 SEP 2026: "if they want to refer to a customer, they will be able to mint
+     their own link, just like how I'd choose a customer and generate the link. It will need to be
+     approved by me, and I can choose to change price tier if need be."
+     PENDING MEANS SHUT FROM THE MOMENT IT EXISTS, because the id IS the credential and they could
+     hand it out the second they made it. And the test is `approved === false`, never `!approved`:
+     no link already in the store carries the field, and a pending, a withdrawn and an unknown id
+     all answer the same 404, so the loose test would shut every link he has handed out, silently. */
+  const stmtW9 = (await import("../stmt/worker.js")).default;
+  const R9 = await import("../stmt/refs.js");
+  const C9 = await import("../tools/stmt-crypto.mjs");
+  const NAMES9 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
+
+  const kv9 = new KV();
+  await kv9.put("tiers", JSON.stringify(NAMES9));
+  await kv9.put("board:2", JSON.stringify({ products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 999 }] }] }));
+  for (let k = 1; k <= 5; k++) await kv9.put("tboard:" + k, JSON.stringify({ level: k, tierName: NAMES9[k],
+    products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 100 + k }] }] }));
+  const mk9 = async (isAssoc) => {
+    const u = C9.newUsername(), pw = C9.newPassword(), ck = await C9.contentKey("s9", u);
+    const rec = { u, issued: "2026-09-01", verifier: await C9.makeVerifier(pw), wrap: await C9.wrapKey(pw, ck),
+      env: await C9.encryptWith(ck, JSON.stringify({ statements: [] })) };
+    if (isAssoc) rec.assoc = true;
+    await kv9.put("u:" + u, JSON.stringify(rec));
+    const o = await (await stmtW9.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
+      headers: { "content-type": "application/json" }, body: JSON.stringify({ u, password: pw }) }), { STMT: kv9 })).json();
+    return { u, pw, session: o.session };
+  };
+  const A9 = await mk9(true), B9 = await mk9(false);
+  const env9 = { STMT: kv9 };
+  const my = (p, s9, body) => stmtW9.fetch(new Request("https://k7m3p2.example" + p, Object.assign(
+    { headers: Object.assign({ "X-Stmt-Session": s9 }, body ? { "content-type": "application/json" } : {}) },
+    body ? { method: "POST", body: JSON.stringify(body) } : {})), env9);
+  const guest = (id) => stmtW9.fetch(new Request("https://k7m3p2.example/g/" + id), env9);
+
+  /* ---- only an associate, and only on a session ---- */
+  ok((await my("/my/refs", "")).status === 401 && (await my("/my/refs", B9.session)).status === 404,
+    "no session is refused and a customer who is not an associate is not told the route exists");
+  const made = await (await my("/my/refs", A9.session, {})).json();
+  ok(made.ok && made.ref.state === "waiting" && R9.REF_RE.test(made.ref.id),
+    "an associate mints one and it is waiting, not open: " + JSON.stringify(made.ref && made.ref.state));
+  ok(made.ref.url && !("label" in made.ref) && !("introducer" in made.ref) && !("level" in made.ref) && !("by" in made.ref),
+    "and they are handed where it points and nothing of his: no label, no introducer, no level, no minter");
+  /* AND NOTHING A CUSTOMER TYPED REACHES THE STORE. A label is his note, and one written here would
+     be the first plaintext anybody but him has put into this site's store. */
+  const stored9 = JSON.parse(await kv9.get("g:" + made.ref.id));
+  ok(stored9.label === "" && stored9.by === A9.u && stored9.introducer === A9.u && stored9.standing === false,
+    "the record keeps who minted it and no label at all: " + JSON.stringify({ label: stored9.label, standing: stored9.standing }));
+
+  /* ---- SHUT, FROM THE MOMENT IT EXISTS ---- */
+  ok((await guest(made.ref.id)).status === 404,
+    "the guest door refuses it while it waits, with the same 404 an id that never existed gets");
+  /* an old record with no `approved` field at all must keep working */
+  const old9 = await R9.mintRef(env9, { introducer: "abcd-efgh", label: "an old one" });
+  const raw9 = JSON.parse(await kv9.get("g:" + old9.id)); delete raw9.approved;
+  await kv9.put("g:" + old9.id, JSON.stringify(raw9));
+  ok((await guest(old9.id)).status === 200,
+    "and a link minted before this version, carrying no such field at all, still opens: the test is === false and never !approved");
+
+  /* ---- his word ---- */
+  const allOf = async (path, body) => (await stmtW9.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify(body || {}) }), { STMT: kv9, ACCESS_TEAM: "", ACCESS_AUD: "" })).status;
+  ok(await allOf("/all/refs/" + made.ref.id + "/approve") === 401,
+    "approving is behind Access, like every other thing of his");
+
+  /* HIS OWN ROUTES, DRIVEN BEHIND A REAL TOKEN, because approve, decline and the tier he sets are
+     the whole of his half and none of them is tested by calling the store directly. */
+  const realFetch9 = globalThis.fetch;
+  const TEAM9 = "maakmal", AUD9 = "aud-9", KID9 = "kid-9";
+  const kp9 = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub9 = await crypto.subtle.exportKey("jwk", kp9.publicKey);
+  globalThis.fetch = async (u) => {
+    if (String(u) === "https://" + TEAM9 + ".cloudflareaccess.com/cdn-cgi/access/certs")
+      return new Response(JSON.stringify({ keys: [{ ...pub9, kid: KID9, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + u);
+  };
+  const b64u9 = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const envAll = { STMT: kv9, ACCESS_TEAM: TEAM9, ACCESS_AUD: AUD9 };
+  let his = async () => 0;
+  try {
+    const claims = { iss: "https://" + TEAM9 + ".cloudflareaccess.com", aud: [AUD9], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u9(JSON.stringify({ alg: "RS256", kid: KID9, typ: "JWT" })), c = b64u9(JSON.stringify(claims));
+    const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp9.privateKey, new TextEncoder().encode(h + "." + c));
+    const tok9 = h + "." + c + "." + b64u9(new Uint8Array(sig));
+    his = async (path, body) => stmtW9.fetch(new Request("https://k7m3p2.example" + path, Object.assign(
+      { headers: Object.assign({ "cf-access-jwt-assertion": tok9 }, body ? { "content-type": "application/json" } : {}) },
+      body ? { method: "POST", body: JSON.stringify(body) } : { method: body === undefined ? "GET" : "POST" })), envAll);
+
+    const listed = await (await his("/all/refs")).json();
+    ok(listed.ok && JSON.stringify(listed.tiers) === JSON.stringify(NAMES9),
+      "his listing carries the tier names, so his picker never states what the tiers are called");
+    const dec = await (await his("/all/refs/" + made.ref.id + "/decline", {})).json();
+    ok(dec.ok && dec.ref.approved === false && (await guest(made.ref.id)).status === 404,
+      "he may decline one, and a declined link stays shut");
+    const app = await (await his("/all/refs/" + made.ref.id + "/approve", {})).json();
+    ok(app.ok && app.ref.approved === true && (await guest(made.ref.id)).status === 200,
+      "and approving it opens it, quoting the board it would have quoted all along");
+    /* THE FLOOR IS NOT A TIER A GUEST MAY BE QUOTED. Ambassador is index 0; pinning it would
+       silently serve the board instead of what he picked. */
+    const floor9 = await (await his("/all/refs/" + made.ref.id + "/level", { level: "Ambassador" })).json();
+    ok(floor9.ok === false && /not a tier a guest may be quoted/.test(floor9.error || ""),
+      "the floor is refused outright rather than quietly serving the board: " + JSON.stringify(floor9.error));
+    const junk9 = await (await his("/all/refs/" + made.ref.id + "/level", { level: "Diamond" })).json();
+    ok(junk9.ok === false, "and a tier that is not on this book is refused too");
+    const set9 = await (await his("/all/refs/" + made.ref.id + "/level", { level: "Gold" })).json();
+    ok(set9.ok && set9.ref.level === "Gold", "a tier he picks is set through his own route");
+  } finally { globalThis.fetch = realFetch9; }
+
+  /* ---- the tier he may change, and the floor he may not pick ---- */
+  const priceOf = async (id) => { const h = (await (await guest(id)).text()).replace(/<[^>]*>/g, " ");
+    const m = /RM\s*([0-9,]+)/.exec(h); return m ? +m[1].replace(/,/g, "") : null; };
+  ok((await priceOf(made.ref.id)) === 103,
+    "and a tier he pins is read off that level's own board, with nothing published for the link itself");
+  const pinned = JSON.parse(await kv9.get("g:" + made.ref.id));
+  ok(pinned.standing !== true,
+    "a link he pinned a tier on is NOT one of the five: standing stays false, or ensureStanding would adopt it as one he hands to strangers");
+  ok((await R9.ensureStanding(env9, NAMES9)).length === 5
+    && (await R9.listRefs(env9)).filter((r) => r.standing).length === 5,
+    "and the five are still exactly five after an associate has minted and he has pinned a tier");
+
+  /* ---- their own, and nobody else's ---- */
+  const theirs = await (await my("/my/refs", A9.session)).json();
+  ok(theirs.refs.length === 1 && theirs.refs[0].id === made.ref.id && theirs.max === R9.MAX_PER_ASSOC,
+    "an associate sees the links they minted and not the ones he did: " + theirs.refs.length);
+  const C9b = await mk9(true);
+  ok((await (await my("/my/refs/" + made.ref.id + "/revoke", C9b.session, {})).json().catch(() => ({}))) &&
+    (await my("/my/refs/" + made.ref.id + "/revoke", C9b.session, {})).status === 404,
+    "and one associate cannot withdraw another's, which is not told apart from an id that does not exist");
+
+  /* ---- the cap, shaped like the open-order cap ---- */
+  for (let i = 0; i < R9.MAX_PER_ASSOC; i++) await my("/my/refs", C9b.session, {});
+  const over = await (await my("/my/refs", C9b.session, {})).json();
+  ok(over.ok === false && /withdraw one/.test(over.error || ""),
+    "a cap refuses the one past it, in plain words: " + JSON.stringify(over.error));
+  ok((await refsBy9(env9, C9b.u)).length === R9.MAX_PER_ASSOC, "and the store holds exactly the cap, not one more");
+  async function refsBy9(e, u) { return R9.refsBy(e, u); }
+
+  const page9 = await (await stmtW9.fetch(new Request("https://k7m3p2.example/"), env9)).text();
+  /* ---- THE PANEL, DRIVEN. Reading the page's source proves the code is there; it proves nothing
+     about the panel loading, drawing or minting, which is the half a reader actually uses. ---- */
+  const { JSDOM: JD9 } = await import("jsdom");
+  const wc9 = crypto;
+  const u9 = "abcd-efgh", pass9 = "fixture-pass-709", ck9 = await C9.contentKey("s9", u9);
+  const cardDoc = { at: "2026-09-18T00:00:00Z", products: [{ product: "salt", name: "Salt", unit: "unit",
+    summary: { bought: 100, soldFor: 0, onward: 0, introduced: 0, referred: 0 },
+    reward: null, lines: [{ date: "2026-09-01", kind: "own", qty: 1, rm: 100 }] }] };
+  const body9 = { ok: true, assoc: true, wrap: await C9.wrapKey(pass9, ck9), session: "sess-709-abcdefghij",
+    env: await C9.encryptWith(ck9, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })),
+    card: Object.assign({ at: cardDoc.at }, await C9.encryptWith(ck9, JSON.stringify(cardDoc))) };
+  let served = [{ id: "aaaa-bbbb", url: "https://site.test/g/aaaa-bbbb", qr: "data:image/svg+xml,x",
+    made: "2026-09-18T00:00:00Z", opens: 0, last: null, state: "waiting" }];
+  const posted = [];
+  const dom9 = new JD9(page9, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wc9, configurable: true }); } catch (e) { win.crypto = wc9; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.fetch = async (path, init) => {
+      const q = String(path);
+      if (q === "/open") return { ok: true, status: 200, json: async () => body9 };
+      if (q === "/my/refs" && init && init.method === "POST") {
+        posted.push(q);
+        served = served.concat([{ id: "cccc-dddd", url: "https://site.test/g/cccc-dddd", qr: "data:image/svg+xml,y",
+          made: "2026-09-18T01:00:00Z", opens: 0, last: null, state: "waiting" }]);
+        return { ok: true, status: 200, json: async () => ({ ok: true, ref: served[served.length - 1] }) };
+      }
+      if (q === "/my/refs") return { ok: true, status: 200, json: async () => ({ ok: true, refs: served, max: 10 }) };
+      return { ok: false, status: 404, json: async () => ({ ok: false }) };
+    };
+  } });
+  try {
+    const d9 = dom9.window.document;
+    d9.getElementById("un").value = u9; d9.getElementById("pw").value = pass9;
+    d9.getElementById("f").dispatchEvent(new dom9.window.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 150 && d9.getElementById("tCard").hidden; i++) await new Promise((r) => setTimeout(r, 100));
+    d9.querySelector('button[data-t="card"]').click();
+    for (let i = 0; i < 60 && !/Your links/.test(d9.getElementById("pCard").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+    const txt9 = () => d9.getElementById("pCard").textContent;
+    ok(/Your links/.test(txt9()) && /Waiting to be approved/.test(txt9()),
+      "the panel loads their links and says the one waiting is waiting: " + JSON.stringify(txt9().slice(0, 60)));
+    ok(!/https:\/\/site\.test\/g\/aaaa-bbbb/.test(txt9()),
+      "and a link that is still waiting shows no address at all, because nothing can open it yet");
+    const mkBtn = [...d9.querySelectorAll("#pCard button")].find((b) => b.textContent === "Make a link");
+    ok(!!mkBtn, "there is a button to make one while they are under the cap");
+    mkBtn.click();
+    for (let i = 0; i < 60 && served.length < 2; i++) await new Promise((r) => setTimeout(r, 50));
+    for (let i = 0; i < 60 && (d9.querySelectorAll("#pCard .glink").length < 2); i++) await new Promise((r) => setTimeout(r, 50));
+    ok(posted.length === 1 && d9.querySelectorAll("#pCard .glink").length === 2,
+      "a tap mints one through their own route and the panel redraws with it: " + d9.querySelectorAll("#pCard .glink").length);
+  } finally { try { dom9.window.close(); } catch (e) { /* best effort */ } }
+
+  /* ---- the page carries the panel, gated, and names no tier ---- */
+  ok(/function drawMyLinks\(\)/.test(page9) && /'\/my\/refs'/.test(page9),
+    "the panel travels in the page every customer gets, because the owner's script is his alone and the door is served before anybody signs in");
+  /* SCOPED TO THE PANEL ITSELF. The page has named the five levels in a lookup since v659 so the
+     MARK can be drawn, and a comment names the owner's file while saying a customer never gets it;
+     neither is rendered. What matters is that THIS panel names no tier and draws none of his. */
+  const panel9 = page9.slice(page9.indexOf("function drawMyLinks()"), page9.indexOf("async function loadMyLinks()"));
+  ok(/Waiting to be approved/.test(panel9) && !/Titanium|Platinum|Gold|Silver|Bronze|Ambassador/.test(panel9),
+    "it tells them it is waiting and names no tier, which a customer's page never does");
+  ok(!/drawLinks\(/.test(page9) && !/getElementById\('glist'\)/.test(page9) && !/\/all\/refs/.test(page9),
+    "and nothing of his links panel is in it: not the drawing, not its element, not his route");
 })();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {

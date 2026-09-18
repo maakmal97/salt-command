@@ -35,6 +35,31 @@
  * NO IMPORT but a sibling; the suite holds every file under stmt/ to that rule.
  */
 
+/* ---- AN ASSOCIATE MAY MINT ONE, AND HE APPROVES IT (v709, his instruction of 18 Sep 2026) ------
+ * "If they want to refer to a customer, they will be able to mint their own link, just like how I'd
+ * choose a customer and generate the link. It will need to be approved by me, and I can choose to
+ * change price tier if need be."
+ *
+ * PENDING MEANS THE DOOR IS SHUT, from the moment the record exists. The id IS the credential, so an
+ * associate could hand it out the second they made it; a link that is created openable and gated
+ * later is a link that was open. `approved: false` is written at mint and the guest door refuses it
+ * exactly as it refuses a withdrawn one, with the same 404 an id that never existed gets.
+ *
+ * THE TEST IS `approved === false`, NEVER `!approved`. readRef hands back the stored JSON untouched
+ * and not one link already in the store carries the field, so the loose test would shut every link
+ * he has ever handed out, and shut it SILENTLY: an unknown, a withdrawn and a pending one all answer
+ * the same 404 by design, so nobody would report it.
+ *
+ * "IF NEED BE" MEANS IT WORKS WITHOUT HIM. An approved link with no level follows the v658 rule, the
+ * associate being the introducer, so the guest is quoted two levels above theirs. He may pin a level
+ * instead, and then it reads that level's board and needs nothing published for it (v699).
+ *
+ * NO LABEL FROM AN ASSOCIATE. A label is HIS note (below), and a note typed by a customer would be
+ * the first plaintext anybody but him has ever put into this store. He can label one when he
+ * approves it.
+ */
+export const MAX_PER_ASSOC = 10;
+
 /* the username alphabet: no 0/1/i/l/o/u, because these are read off a screen and typed on a phone */
 const ALPHA = "23456789abcdefghjkmnpqrstvwxyz";
 export const REF_RE = /^[23456789abcdefghjkmnpqrstvwxyz]{4}-[23456789abcdefghjkmnpqrstvwxyz]{4}$/;
@@ -81,10 +106,16 @@ export async function mintRef(env, { introducer, tier, label, by, level }) {
   for (let i = 0; i < 5; i++) {
     const id = newRef();
     if (await env.STMT.get(RKEY(id))) continue;
+    /* v709: `by` is who minted it. Empty or "standing" is him, and his links are open at once; an
+       associate's username means it waits. `standing` stays FALSE for an associate's link, or
+       ensureStanding would adopt it as one of the five he hands to strangers. */
+    const mintedBy = String(by || "");
+    const mine = !mintedBy || mintedBy === "standing";
     const rec = { id, tier: t, introducer: String(introducer || "").toLowerCase() || null,
-      level: level || null, standing: !!level,
+      level: level || null, standing: mine && !!level,
+      approved: mine,
       label: cleanLabel(label), made: new Date().toISOString(),
-      by: String(by || ""), opens: 0, first: null, last: null, revoked: false };
+      by: mintedBy, opens: 0, first: null, last: null, revoked: false };
     await env.STMT.put(RKEY(id), JSON.stringify(rec));
     return rec;
   }
@@ -132,6 +163,24 @@ export async function listRefs(env) {
     cursor = page.list_complete ? null : page.cursor;
   } while (cursor);
   return out.sort((a, b) => String(b.made).localeCompare(String(a.made)));
+}
+
+/** Every link one username minted, newest first. Their own and nobody else's. */
+export async function refsBy(env, username) {
+  const u = String(username || "").toLowerCase();
+  if (!u) return [];
+  return (await listRefs(env)).filter((r) => String(r.by || "").toLowerCase() === u);
+}
+
+/** One field at a time, read-modify-put, so nothing else in the record is lost. */
+export async function setRef(env, id, patch) {
+  const rec = await readRef(env, id);
+  if (!rec) return null;
+  for (const k of ["approved", "revoked"]) if (k in (patch || {})) rec[k] = !!patch[k];
+  if (patch && "level" in patch) rec.level = patch.level || null;
+  if (patch && typeof patch.label === "string") rec.label = cleanLabel(patch.label);
+  await env.STMT.put(RKEY(rec.id), JSON.stringify(rec));
+  return rec;
 }
 
 /** Mark a link revoked. It is kept rather than deleted, so the count of what it did survives it

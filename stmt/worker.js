@@ -42,7 +42,7 @@ import { landingPage, boardPage } from "./page.js";
 import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
-import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding } from "./refs.js";
+import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, MAX_PER_ASSOC } from "./refs.js";
 import { endpointId, wakeCustomer } from "./push.js";
 import { linkMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
@@ -324,6 +324,57 @@ async function handleCustomer(request, env, p, m) {
   return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, order: r.order });
 }
 
+/* ---- AN ASSOCIATE'S OWN LINKS (v709, his instruction of 18 Sep 2026) --------------------------
+ * "If they want to refer to a customer, they will be able to mint their own link, just like how I'd
+ * choose a customer and generate the link. It will need to be approved by me."
+ *
+ * ON A SESSION, NEVER UNDER /all. An associate is a customer, not him: this reads the session the
+ * order routes read and refuses anybody whose own record does not carry the associate mark. The
+ * mark is the publish's, off the report card's own list, so nobody can make themselves one.
+ *
+ * THE FIELDS ARE PROJECTED, ONE BY ONE. refOut hands back the WHOLE record: his label, the
+ * introducer, and who minted it. Reusing it here would show one associate another's notes, and
+ * their own link's level would name a tier on a customer's page, which the page never does.
+ */
+async function handleMyRefs(request, env, p, m, origin) {
+  if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
+  const u = await sessionUser(request, env);
+  if (!u) return json({ ok: false, error: "Sign in again to see your links.", session: false }, 401);
+  let acct = null;
+  try { acct = await env.STMT.get("u:" + u, "json"); } catch (e) { acct = null; }
+  if (!acct || acct.assoc !== true) return notFound();
+
+  /* what an associate may see of their own link: where it points, whether it is open yet, and how
+     often it has been used. Not his label, not the level, not who else holds one. */
+  const mineOut = (r) => ({ id: r.id, url: refUrl(origin, r.id), qr: refQr(origin, r.id),
+    made: r.made || null, opens: r.opens || 0, last: r.last || null,
+    state: r.revoked ? "withdrawn" : (r.approved === false ? "waiting" : "open") });
+
+  if (p === "/my/refs") {
+    if (m === "GET") return json({ ok: true, refs: (await refsBy(env, u)).map(mineOut), max: MAX_PER_ASSOC });
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const mine = await refsBy(env, u);
+    /* the same shape as the open-order cap: a count, a plain refusal, and a reason */
+    if (mine.filter((r) => !r.revoked).length >= MAX_PER_ASSOC)
+      return json({ ok: false, error: "you already have " + MAX_PER_ASSOC + " links; withdraw one to make another" }, 409);
+    /* NO LABEL FROM A CUSTOMER: a note typed here would be the first plaintext anybody but him has
+       put into this store, and a label is his note. He can write one when he approves it. */
+    const rec = await mintRef(env, { introducer: u, by: u, label: "" });
+    if (!rec) return json({ ok: false, error: "could not mint an unused id; try again" }, 500);
+    return json({ ok: true, ref: mineOut(rec) });
+  }
+  const mm = /^\/my\/refs\/([^/]+)\/(revoke)$/.exec(p);
+  if (!mm) return notFound();
+  const id = normRef(mm[1]);
+  if (!id) return notFound();
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  const rec = await readRef(env, id);
+  /* a link only ever forgets its own minter's, so one associate cannot withdraw another's */
+  if (!rec || String(rec.by || "").toLowerCase() !== u) return notFound();
+  const out = await revokeRef(env, id, true);
+  return json({ ok: true, ref: mineOut(out) });
+}
+
 /* The remembered opening: the token names the record and carries the wrap back, and the device key
    that opens it never left the browser. It mints a session exactly as a password does, so nothing
    downstream knows the difference; the refusal is the door's one refusal, so a stale token on an
@@ -579,7 +630,9 @@ async function handleRefs(request, env, p, m, origin) {
          he reads them as a ladder, so they are listed as one. Everything else keeps newest first. */
       const rank = (r) => (r.standing && Array.isArray(names)) ? names.indexOf(r.level) : 99;
       const all = (await listRefs(env)).sort((a, b) => rank(a) - rank(b));
-      return json({ ok: true, refs: all.map((r) => refOut(origin, r)) });
+      /* v709: the level names ride with the list, so his picker never states what the tiers are
+         called: the book decides that and this is the one road it travels. */
+      return json({ ok: true, refs: all.map((r) => refOut(origin, r)), tiers: Array.isArray(names) ? names : [] });
     }
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const b = await readJson(request);
@@ -603,11 +656,31 @@ async function handleRefs(request, env, p, m, origin) {
     if (!rec) return json({ ok: false, error: "could not mint an unused id; try again" }, 500);
     return json({ ok: true, ref: refOut(origin, rec) });
   }
-  const mm = /^\/all\/refs\/([^/]+)\/(revoke|restore)$/.exec(p);
+  const mm = /^\/all\/refs\/([^/]+)\/(revoke|restore|approve|decline|level)$/.exec(p);
   if (!mm) return notFound();
   const id = normRef(mm[1]);
   if (!id) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  /* v709: his word on a link an associate minted, and the tier he may change on it. A level he
+     does not set leaves it on the v658 rule, where the associate is the introducer: "if need be"
+     means it works without him. */
+  if (mm[2] === "approve" || mm[2] === "decline") {
+    const rec0 = await setRef(env, id, { approved: mm[2] === "approve" });
+    if (!rec0) return json({ ok: false, error: "no such link" }, 404);
+    return json({ ok: true, ref: refOut(origin, rec0) });
+  }
+  if (mm[2] === "level") {
+    const b = await readJson(request);
+    const want = b && b.level === null ? null : String((b && b.level) || "");
+    let names = null;
+    try { names = await env.STMT.get("tiers", "json"); } catch (e) { names = null; }
+    /* Ambassador is index 0 and is the floor, never a guest's: a level off the five is refused
+       rather than quietly serving the board. */
+    if (want !== null && !(Array.isArray(names) && names.indexOf(want) >= 1)) return json({ ok: false, error: "that is not a tier a guest may be quoted" }, 400);
+    const rec1 = await setRef(env, id, { level: want });
+    if (!rec1) return json({ ok: false, error: "no such link" }, 404);
+    return json({ ok: true, ref: refOut(origin, rec1) });
+  }
   const rec = await revokeRef(env, id, mm[2] === "revoke");
   if (!rec) return json({ ok: false, error: "no such link" }, 404);
   return json({ ok: true, ref: refOut(origin, rec) });
@@ -619,7 +692,13 @@ async function handleRefs(request, env, p, m, origin) {
 async function handleGuest(request, env, id) {
   if (!env.STMT) return notFound();
   const rec = await readRef(env, id);
-  if (!rec || rec.revoked) return notFound();
+  /* v709: a link an associate minted is shut until he approves it, from the moment it exists,
+     because the id IS the credential and they could hand it out the second they made it. The test
+     is `=== false` and never `!approved`: readRef hands back the stored JSON untouched and not one
+     link already in the store carries the field, so the loose test would shut every link he has
+     ever handed out, and shut it silently, because a pending, a withdrawn and an unknown id all
+     answer the same 404 by design. */
+  if (!rec || rec.revoked || rec.approved === false) return notFound();
   await markOpen(env, rec);
   /* v698: A STANDING LINK READS ITS LEVEL'S BOARD, not one written under its own id. The five are
      minted the first time he opens the Links panel, so one minted since the last publish would have
@@ -631,7 +710,10 @@ async function handleGuest(request, env, id) {
      never left looking at an empty page, so it falls back to the board every stranger sees, which
      is the cap a guest board can never pass. */
   const levelKey = async () => {
-    if (!rec.standing || !rec.level) return null;
+    /* v709: keyed on the LEVEL alone. It wanted `standing` too, and setting that on an associate's
+       link to make this work would have had ensureStanding adopt it as one of the five he hands to
+       strangers. A level is a level whoever minted the link. */
+    if (!rec.level) return null;
     try {
       const names = await env.STMT.get("tiers", "json");
       const k = Array.isArray(names) ? names.indexOf(rec.level) : -1;
@@ -779,6 +861,8 @@ export default {
       return handleRemember(request, env);
     }
     if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout") return handleCustomer(request, env, p, m);
+    /* v709: an associate's own links, on a session like the orders, and never under /all */
+    if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
     if (p === "/desk/orders" || p.startsWith("/desk/orders/")) return handleDesk(request, env, p, m);
     if (p !== "/") return notFound();
     if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
