@@ -45,7 +45,7 @@ import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen } from "./refs.js";
 import { endpointId } from "./push.js";
 import { linkMessage, totalsLine, monthNameOf } from "./send.js";
-import { mintSession, sessionUser, ordersOf, allOrders, placeOrder, customerMove, deskMove, LAST_PLACED } from "./orders.js";
+import { mintSession, dropSession, sessionUser, ordersOf, allOrders, placeOrder, customerMove, deskMove, LAST_PLACED } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -289,11 +289,53 @@ async function handleCustomer(request, env, p, m) {
     await env.STMT.put("push:" + u + ":" + id, JSON.stringify({ endpoint: ep, at: new Date().toISOString() }));
     return json({ ok: true, id });
   }
+  /* v692: remember this device, and log out of it */
+  if (p === "/remember") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const b = await readJson(request);
+    const wrap = b && b.wrap;
+    if (!wrap || typeof wrap !== "object" || !wrap.salt || !wrap.iv || !wrap.ct) return json({ ok: false, error: "send the wrap" }, 400);
+    const tok = b64e(crypto.getRandomValues(new Uint8Array(24))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    await env.STMT.put("rem:" + tok, JSON.stringify({ u, wrap, at: new Date().toISOString() }), { expirationTtl: REM_TTL });
+    return json({ ok: true, token: tok, days: REM_TTL / 86400 });
+  }
+  if (p === "/logout") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const b = await readJson(request);
+    await dropSession(env, String(request.headers.get("X-Stmt-Session") || ""));
+    const tok = b && typeof b.token === "string" && REM_RE.test(b.token) ? b.token : null;
+    if (tok) {
+      const rec = await env.STMT.get("rem:" + tok, "json");
+      /* a token only forgets its own account, so one device cannot sign another out */
+      if (rec && rec.u === u) await env.STMT.delete("rem:" + tok);
+    }
+    return json({ ok: true });
+  }
   const mm = /^\/orders\/([^/]+)\/(method|cancel)$/.exec(p);
   if (!mm || !OID_RE.test(mm[1])) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   const r = await customerMove(env, u, mm[1], mm[2], await readJson(request));
   return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, order: r.order });
+}
+
+/* The remembered opening: the token names the record and carries the wrap back, and the device key
+   that opens it never left the browser. It mints a session exactly as a password does, so nothing
+   downstream knows the difference; the refusal is the door's one refusal, so a stale token on an
+   old phone says what a wrong password says and no more. */
+async function handleRemember(request, env) {
+  if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
+  const b = await readJson(request);
+  const tok = b && typeof b.token === "string" && REM_RE.test(b.token) ? b.token : null;
+  const rec = tok ? await env.STMT.get("rem:" + tok, "json") : null;
+  if (!rec || !rec.u) return json({ ok: false, error: REFUSED }, 401);
+  const acct = await env.STMT.get("u:" + rec.u, "json");
+  if (!acct) { await env.STMT.delete("rem:" + tok); return json({ ok: false, error: REFUSED }, 401); }
+  const session = await mintSession(env, rec.u);
+  return json({
+    ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
+    issued: acct.issued || null, issues: acct.issues || null,
+    env: acct.env, live: acct.live || null, prices: acct.prices || null, session
+  });
 }
 
 /* Desk side, on the shared key STMT_DESK_KEY, which the ledger's Worker holds as a secret and sends
@@ -375,6 +417,22 @@ function refQr(origin, id) {
   return "data:image/svg+xml," + encodeURIComponent(svg);
 }
 const refOut = (origin, r) => Object.assign({}, r, { url: refUrl(origin, r.id), qr: refQr(origin, r.id) });
+
+/* ---- REMEMBER ME, AND LOGGING OUT (v692, his instruction of 18 Sep 2026) ----------------------
+ * The page locked itself after three minutes and asked for the password again. He asked for the
+ * opposite: stay signed in on his customers' own phones, and leave by a button.
+ *
+ * NEITHER HALF OPENS ANYTHING ON ITS OWN, which is the whole design. When a reader ticks Remember
+ * me, the page makes a random device key, wraps the content key under it, keeps the device key in
+ * that browser and sends the WRAP here. This Worker holds ciphertext and a username; the browser
+ * holds a key and a token. A copy of the store opens nothing, and the device alone opens nothing.
+ * The password itself is never kept anywhere.
+ *
+ * REMEMBERING IS A CUSTOMER'S OWN: it is minted on a session, which only a correct password mints.
+ * Logging out drops the session and the remembered wrap, so a phone handed on is a phone signed
+ * out. Thirty days, his figure, and the record expires on its own after that. */
+const REM_TTL = 30 * 24 * 3600;
+const REM_RE = /^[A-Za-z0-9_-]{20,64}$/;
 
 /* ---- THE MASTER ACCOUNT (v687, his instruction of 18 Sep 2026) --------------------------------
  * /all is his account, and it opens on its own page: Review statement, and the links below it.
@@ -649,7 +707,11 @@ export default {
       return new Response(SW_JS, { headers: Object.assign({ "content-type": "application/javascript; charset=utf-8" }, HEADERS) });
     }
     if (p === "/push/key") return json({ ok: true, key: env.STMT_VAPID_PUBLIC_KEY || null, configured: !!(env.STMT_VAPID_PUBLIC_KEY && env.STMT_VAPID_PRIVATE_JWK) });
-    if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe") return handleCustomer(request, env, p, m);
+    if (p === "/remember/open") {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      return handleRemember(request, env);
+    }
+    if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout") return handleCustomer(request, env, p, m);
     if (p === "/desk/orders" || p.startsWith("/desk/orders/")) return handleDesk(request, env, p, m);
     if (p !== "/") return notFound();
     if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);

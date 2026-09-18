@@ -55,6 +55,14 @@ const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
   .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
 /** A fresh session for `u`: the token is the only thing the page holds after the password. */
+/* v692: the session is dropped when a reader logs out, rather than left to expire. The page used
+   to forget its token and the record sat in the store for the rest of its fifteen minutes. */
+export async function dropSession(env, token) {
+  if (!token || !env.STMT) return false;
+  await env.STMT.delete("sess:" + token);
+  return true;
+}
+
 export async function mintSession(env, u) {
   const tok = b64url(crypto.getRandomValues(new Uint8Array(24)));
   await env.STMT.put("sess:" + tok, JSON.stringify({ u, at: new Date().toISOString() }), { expirationTtl: SESSION_TTL });

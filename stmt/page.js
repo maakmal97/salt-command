@@ -36,7 +36,9 @@ import { STATEMENT_CSS } from "./statement-css.js";
 import { PAY_SITE, PAY_ACCOUNTS } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 
-export const WINDOW_MS = 180000;
+/* v692: THE THREE-MINUTE LOCK IS GONE (his instruction, 18 Sep 2026). It was a privacy lock for a
+   phone left on a table; he asked for a page that stays signed in and a button that leaves. What
+   replaced it is Remember me and Log out, which say what they do. */
 export const POLL_MS = 10000;
 
 const PAGE_CSS = `
@@ -70,6 +72,10 @@ select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none}
 .btn[disabled]{opacity:.5;cursor:default}
 .btn.quiet{background:none;color:var(--salt-text);border:1px solid var(--salt-line);font-weight:400}
 .btn.lnk{display:block;text-align:center;text-decoration:none;line-height:1.4}
+/* REMEMBER ME (v692): a checkbox on the door, at the tap size everything else here is */
+.rem{display:flex;align-items:center;gap:10px;margin-top:16px;min-height:var(--salt-tap);
+  font-size:var(--salt-text-sm);color:var(--salt-text-muted);cursor:pointer}
+.rem input{width:18px;height:18px;accent-color:var(--salt-brass);cursor:pointer}
 .msg{margin:16px 0 0;font-size:var(--salt-text-sm);line-height:1.6;min-height:1.4em;
   color:var(--salt-text-muted)}
 .msg.bad{color:var(--salt-ember)}
@@ -353,7 +359,7 @@ export function landingPage(user, nonce, owner) {
     + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
     + "<h1>Statement of account</h1>"
     + '<p class="lead">Sign in with the username and password sent to you. '
-    + "The page locks after three minutes; the same password opens it again.</p>"
+    + "Tick Remember me and this device stays signed in; Log out ends it.</p>"
     + '<form id="f" autocomplete="off">'
     + '<span class="lbl" id="unl">Username</span>'
     + boxes("un", 2, "text", "Username")
@@ -361,13 +367,16 @@ export function landingPage(user, nonce, owner) {
     + '<span class="lbl" id="pwl">Password</span>'
     + boxes("pw", 4, "password", "Password")
     + '<input type="hidden" id="pw">'
-    + '<button class="btn" id="go" type="submit">Open my statements</button>'
+    /* v692: Remember me, and the button says what it does */
+    + '<label class="rem" for="rem"><input type="checkbox" id="rem" checked>'
+    + "<span>Remember me on this device</span></label>"
+    + '<button class="btn" id="go" type="submit">Log in</button>'
     + "</form>"
     + '<p class="msg" id="msg" role="status" aria-live="polite"></p>'
     + "</div>"
     + '<div id="barw" hidden><div class="bar">'
-    + "<span><b id=\"whoacct\"></b>Locks in <b id=\"cd\">3:00</b></span>"
-    + '<button type="button" id="lock">Lock now</button>'
+    + '<span><b id="whoacct"></b><span id="cd"></span></span>'
+    + '<button type="button" id="lock">Log out</button>'
     + "</div></div>"
     + '<div id="tabs" class="tabs" role="tablist" hidden>'
     + '<button type="button" data-t="stmt" class="on">Statements</button>'
@@ -380,7 +389,7 @@ export function landingPage(user, nonce, owner) {
     + '<div id="pPrices" class="panel" hidden></div>'
     + '<div id="pOrder" class="panel" hidden></div>'
     + '<script nonce="' + nonce + '">'
-    + CLIENT_JS.replace(/__WINDOW__/g, String(WINDOW_MS)).replace(/__POLL__/g, String(POLL_MS))
+    + CLIENT_JS.replace(/__POLL__/g, String(POLL_MS))
       .replace("__PAY_SITE__", JSON.stringify(PAY_SITE)).replace("__PAY_ACCOUNTS__", JSON.stringify(PAY_ACCOUNTS))
       /* "<" is escaped because this one carries the master passphrase, and a "</script>" inside a
          string literal ends the block wherever it appears: the browser closes the tag first and
@@ -414,7 +423,7 @@ const CLIENT_JS = `
      back on screen with the countdown restarted, on a phone he has put down. The same thing
      happened through the natural three-minute expiry. Every await below is followed by a ticket
      check, and lock() bumps the ticket, so anything still in flight lands on nothing. */
-  var WINDOW_MS=__WINDOW__, POLL_MS=__POLL__, timer=null, ends=0, bundle=null, at=0, ticket=0, busy=false;
+  var POLL_MS=__POLL__, bundle=null, at=0, ticket=0, busy=false;
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
   var session='', user='', prices=null, orders=[], poll=null, tab='stmt', draft={}, pick={};
   /* null for a customer; {master,accounts} for the owner, on the Access-gated route only */
@@ -530,9 +539,45 @@ const CLIENT_JS = `
       hour:'2-digit',minute:'2-digit',hour12:false}); }catch(e){ return ''; }
   }
 
+  /* ---- REMEMBER ME (v692) --------------------------------------------------------------------
+     The device key lives in this browser and the wrap of the content key lives on the site: one
+     without the other opens nothing, and the password is kept nowhere. Every read and write is
+     guarded, because a private window throws on the first touch of localStorage. */
+  var REM='salt-stmt-remember';
+  function remGet(){ try{ var s=localStorage.getItem(REM); return s?JSON.parse(s):null; }catch(e){ return null; } }
+  function remSet(v){ try{ localStorage.setItem(REM, JSON.stringify(v)); }catch(e){ /* nothing is remembered, and the page still works */ } }
+  function remClear(){ try{ localStorage.removeItem(REM); }catch(e){} }
+  function b64e(buf){ var a=new Uint8Array(buf), s=''; for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]); return btoa(s); }
+  async function wrapUnder(keyBytes, ck){
+    var raw=await crypto.subtle.exportKey('raw', ck);
+    var salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
+    var base=await crypto.subtle.importKey('raw', keyBytes, 'PBKDF2', false, ['deriveKey']);
+    var kek=await crypto.subtle.deriveKey({name:'PBKDF2',salt:salt,iterations:150000,hash:'SHA-256'},
+      base, {name:'AES-GCM',length:256}, false, ['encrypt']);
+    var ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv}, kek, raw);
+    return {v:2, salt:b64e(salt), iv:b64e(iv), ct:b64e(ct)};
+  }
+  async function unwrapUnder(keyBytes, w){
+    var base=await crypto.subtle.importKey('raw', keyBytes, 'PBKDF2', false, ['deriveKey']);
+    var kek=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(w.salt),iterations:150000,hash:'SHA-256'},
+      base, {name:'AES-GCM',length:256}, false, ['decrypt']);
+    var raw=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(w.iv)}, kek, b64d(w.ct));
+    return crypto.subtle.importKey('raw', raw, {name:'AES-GCM'}, false, ['decrypt']);
+  }
+  async function remember(u, ck){
+    if(!session) return;
+    try{
+      var key=crypto.getRandomValues(new Uint8Array(32));
+      var wrap=await wrapUnder(key, ck);
+      var r=await fetch('/remember', {method:'POST',
+        headers:{'content-type':'application/json','X-Stmt-Session':session}, body:JSON.stringify({wrap:wrap})});
+      var j=await r.json();
+      if(r.ok&&j.ok&&j.token) remSet({t:j.token, k:b64e(key), u:u});
+    }catch(e){ /* not remembered; the password still opens it */ }
+  }
+
   function lock(){
     ticket++; busy=false; go.disabled=false;
-    if(timer){ clearInterval(timer); timer=null; }
     if(poll){ clearInterval(poll); poll=null; }
     bundle=null; session=''; prices=null; orders=[]; draft={}; pick={};
     out.textContent=''; mos.textContent=''; mos.hidden=true;
@@ -545,17 +590,22 @@ const CLIENT_JS = `
     else gate.hidden=false;
     showTab('stmt');
     pw.value=''; boxesOf('pw').forEach(function(x){ x.value=''; });
-    say(OWNER?'Locked. Tap an account to open it again.':'Locked. Enter the password to open it again.');
+    if(cd) cd.textContent='';
+    say(OWNER?'Signed out. Tap an account to open it again.':'Signed out. Sign in again when you want it.');
     try{ (OWNER?rq:firstEmpty('pw')).focus(); }catch(e){}
   }
-  document.getElementById('lock').addEventListener('click', lock);
-
-  function tick(){
-    var left=Math.max(0, ends-Date.now());
-    var m=Math.floor(left/60000), s=Math.floor(left%60000/1000);
-    cd.textContent=m+':'+(s<10?'0':'')+s;
-    if(left<=0) lock();
+  /* v692: LOGGING OUT IS A DEPARTURE, NOT A TIMER. It drops the session and the remembered wrap on
+     the site as well as everything this page holds, so a phone handed on is a phone signed out. */
+  async function logOut(){
+    var tok=(remGet()||{}).t||null, s=session;
+    remClear();
+    lock();
+    if(s){
+      try{ await fetch('/logout', {method:'POST', headers:{'content-type':'application/json','X-Stmt-Session':s},
+        body:JSON.stringify({token:tok})}); }catch(e){ /* the page has forgotten it either way */ }
+    }
   }
+  document.getElementById('lock').addEventListener('click', logOut);
 
   /* ---- the three tabs ---- */
   function showTab(t){
@@ -647,9 +697,6 @@ const CLIENT_JS = `
     gate.hidden=true; if(roster) roster.hidden=true;
     barw.hidden=false; tabs.hidden=false;
     pickStmt(0);
-    ends=Date.now()+WINDOW_MS; tick();
-    if(timer)clearInterval(timer);
-    timer=setInterval(tick,1000);
   }
 
   /* ---- PRICES: the week's list, one block per product ---- */
@@ -992,12 +1039,60 @@ const CLIENT_JS = `
     drawPrices();
     if(session){ await loadOrders(); if(stale()) return; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
     drawOrder();
+    /* v692: remembered only on a customer's own sign-in, and only when asked. The owner's route
+       opens accounts with the master and must leave nothing behind on his phone. */
+    var rem=document.getElementById('rem');
+    if(!OWNER && rem && rem.checked) await remember(u, ck);
   });
+
+  /* ---- OPENING A REMEMBERED DEVICE (v692) -----------------------------------------------------
+     The token names the record and brings back the wrap; the key beside it in this browser opens
+     it. A refusal, a stale token or a record that has gone simply falls through to the door. */
+  async function openRemembered(){
+    var rec=remGet();
+    if(!rec||!rec.t||!rec.k||OWNER) return false;
+    var mine=++ticket, stale=function(){ return mine!==ticket; };
+    say('Opening...','wait');
+    var r, body;
+    try{
+      r=await fetch('/remember/open', {method:'POST', headers:{'content-type':'application/json'},
+        body:JSON.stringify({token:rec.t})});
+      body=await r.json();
+    }catch(e){ say(''); return false; }
+    if(stale()) return false;
+    if(!r.ok||!body.ok){ remClear(); say(''); return false; }
+    var ck, b;
+    try{
+      ck=await unwrapUnder(b64d(rec.k), body.wrap);
+      b=JSON.parse(await open(ck, body.env));
+    }catch(e){ remClear(); say(''); return false; }
+    if(stale()) return false;
+    if(body.live){
+      try{ var l=JSON.parse(await open(ck, body.live));
+        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body}); }
+      catch(e){ /* the issued statements still open */ }
+    }
+    prices=null;
+    if(body.prices){ try{ prices=JSON.parse(await open(ck, body.prices)); }catch(e){ prices=null; } }
+    if(stale()) return false;
+    say('');
+    user=body.u; session=body.session||''; orders=[]; draft={}; pick={};
+    show(b);
+    drawPrices();
+    if(session){ await loadOrders(); if(stale()) return true; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
+    drawOrder();
+    return true;
+  }
   /* THE OWNER'S OWN SCRIPT IS SPLICED IN HERE, and only on his route (v687). Everything it
      needs -- say(), el(), stamp(), un, pw, whoacct, busy, OWNER -- is in scope at this point,
      and a customer's page carries none of it: stmt/owner.js. */
   /*__OWNER_JS__*/
 
-  if(!OWNER){ try{ (un.value?firstEmpty('pw'):firstEmpty('un')).focus(); }catch(e){} }
+  if(!OWNER){
+    /* a remembered device opens itself; anything else waits at the door */
+    openRemembered().then(function(opened){
+      if(!opened){ try{ (un.value?firstEmpty('pw'):firstEmpty('un')).focus(); }catch(e){} }
+    });
+  }
 })();
 `;

@@ -31,7 +31,7 @@ export function linkMessage(row, monthName) {
     + "Username: " + row.user + "\n"
     + "Your password is in a separate message.\n\n"
     + "The page shows every order from the start to today, and each monthly statement as it was "
-    + "issued. It locks itself after three minutes; the same password opens it again.";
+    + "issued. Tick Remember me and that device stays signed in; Log out ends it.";
 }
 
 /** The second message: the password, and nothing that says which account it opens. */

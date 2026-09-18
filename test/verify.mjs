@@ -6927,8 +6927,8 @@ await (async () => {
   ok(html.includes('value="' + un + '"'), "and fills in the username the QR carried, normalised");
   ok(!html.includes(pw) && !html.includes(envB.ct) && !html.includes("CX0-AA"),
     "the page carries no password, no ciphertext and no account code");
-  ok(html.includes("three minutes") && html.includes('id="un"') && html.includes('id="pw"'),
-    "it asks for a username and a password, and says three minutes");
+  ok(html.includes("Remember me") && html.includes("Log in") && html.includes('id="un"') && html.includes('id="pw"'),
+    "it asks for a username and a password, offers Remember me, and the button says Log in (v692)");
   ok(/nonce-/.test(csp) && !/unsafe-inline/.test(csp) && /connect-src 'self'/.test(csp),
     "and declares a nonce CSP rather than allowing inline script wholesale");
   ok((r.headers.get("x-robots-tag") || "").includes("noindex")
@@ -8056,8 +8056,8 @@ await (async () => {
       "an issue with nothing publishable puts nothing and retires nothing");
     rmSync(old, { recursive: true, force: true });
 
-    ok(both.html.includes("?u=" + u) && both.html.includes("<code>" + u + "</code>") && both.html.includes("three minutes"),
-      "the QR opens the site with the username filled in, the username is printed beside it, and the copy says three minutes");
+    ok(both.html.includes("?u=" + u) && both.html.includes("<code>" + u + "</code>") && both.html.includes("Remember me"),
+      "the QR opens the site with the username filled in, the username is printed beside it, and the copy says how it stays signed in (v692)");
     ok(!/salt-command\./.test(both.html) && !/\/s\//.test(both.html),
       "and nothing on a statement points at the desk's address or the old route");
     /* THE SEND SHEET (04 Sep 2026, his instruction): the monthly send as one page, one card per
@@ -13848,6 +13848,110 @@ await (async () => {
       ok(list91.querySelectorAll(".pbar").length > 0, "and the part-unit is a bar rather than a figure");
     } finally { try { W91.close(); } catch (e) { /* best effort */ } }
   } finally { globalThis.fetch = realFetch91; }
+})();
+section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
+await (async () => {
+  /* HIS INSTRUCTION OF 18 SEP 2026: no three-minute lock, Remember me, and a Log out. The two halves of
+     remembering are split on purpose: the device holds a key, the site holds the wrap, and neither opens
+     anything alone. The password is kept nowhere. */
+  const { landingPage: lp92 } = await import("../stmt/page.js");
+  const C92 = await import("../tools/stmt-crypto.mjs");
+  const door92 = lp92("", "n92", null);
+  ok(door92.includes("Remember me") && door92.includes(">Log in<") && door92.includes(">Log out<")
+    && !door92.includes("three minutes") && !door92.includes("Locks in") && !/WINDOW_MS/.test(door92),
+    "the door offers Remember me, logs in and logs out, and nothing counts down");
+
+  const u92 = "aaaa-bbbb", pass92 = "2345-6789-abcd-efgh";
+  const ck92 = await C92.contentKey("7".repeat(64), u92);
+  const openBody = {
+    ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01"],
+    wrap: await C92.wrapKey(pass92, ck92), wrapMaster: null, session: "sess-92",
+    env: await C92.encryptWith(ck92, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [{ issued: "2026-09-01", label: "1 September 2026", body: "<div class=\"w\"><h1>Statement</h1></div>" }] })),
+    live: null, prices: null
+  };
+
+  /* the Worker's own half: a session mints a token, the token brings the wrap back, logging out ends both */
+  const kv92 = new KV();
+  await kv92.put("u:" + u92, JSON.stringify({ u: u92, issued: "2026-09-01", issues: ["2026-09-01"], env: openBody.env }));
+  await kv92.put("sess:sess-92", JSON.stringify({ u: u92, at: new Date().toISOString() }));
+  const env92 = { STMT: kv92 };
+  const post92 = (path, body, headers) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path,
+    { method: "POST", headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }), env92);
+  const fakeWrap = { v: 2, salt: "c2FsdA==", iv: "aXZpdml2aXZpdg==", ct: "Y3Q=" };
+  ok((await post92("/remember", { wrap: fakeWrap })).status === 401, "remembering needs a session, which only a password mints");
+  const remOut = await (await post92("/remember", { wrap: fakeWrap }, { "X-Stmt-Session": "sess-92" })).json();
+  const remKey = "rem:" + remOut.token;
+  ok(remOut.ok && /^[A-Za-z0-9_-]{20,64}$/.test(remOut.token) && remOut.days === 30
+    && (kv92.opts.get(remKey) || {}).expirationTtl === 30 * 24 * 3600
+    && JSON.parse(await kv92.get(remKey)).u === u92 && !JSON.stringify(await kv92.get(remKey)).includes(pass92),
+    "a session mints a token, the wrap is kept for thirty days, and no password is in it");
+  const back = await (await post92("/remember/open", { token: remOut.token })).json();
+  ok(back.ok && back.u === u92 && JSON.stringify(back.wrap) === JSON.stringify(fakeWrap) && back.env && back.session && back.session !== "sess-92",
+    "the token brings the wrap and the record back, with a session of its own");
+  const bad92 = await post92("/remember/open", { token: "z".repeat(24) });
+  ok(bad92.status === 401 && (await bad92.json()).error === "That username and password were not accepted.",
+    "and an unknown token is refused in the door's own words, saying nothing about what exists");
+  await kv92.put("sess:other", JSON.stringify({ u: "cccc-dddd", at: new Date().toISOString() }));
+  await post92("/logout", { token: remOut.token }, { "X-Stmt-Session": "other" });
+  ok(!!(await kv92.get(remKey)) && !(await kv92.get("sess:other")),
+    "another account's log out drops its own session and leaves this one's memory alone");
+  await post92("/logout", { token: remOut.token }, { "X-Stmt-Session": back.session });
+  ok(!(await kv92.get(remKey)) && !(await kv92.get("sess:" + back.session)),
+    "its own log out drops the session and the remembered wrap together");
+
+  /* the page's half, end to end: sign in once with the box ticked, then open a second page with no password */
+  const { JSDOM: JD92 } = await import("jsdom");
+  const { webcrypto: wc92 } = await import("node:crypto");
+  const make92 = (stored, fetchOf) => {
+    const dom = new JD92(lp92(u92, "n92", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: wc92, configurable: true }); } catch (e) { win.crypto = wc92; }
+        const store = new Map(stored ? [["salt-stmt-remember", stored]] : []);
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: (i) => [...store.keys()][i] ?? null,
+          get length() { return store.size; }, __store: store } });
+        win.fetch = fetchOf(win);
+      } });
+    return { W: dom.window, D: dom.window.document };
+  };
+  let posted = null;
+  const first = make92(null, () => async (path, init) => {
+    if (String(path) === "/open") return { ok: true, status: 200, json: async () => openBody };
+    if (String(path) === "/remember") { posted = JSON.parse(init.body); return { ok: true, status: 200, json: async () => ({ ok: true, token: "tok-92-aaaaaaaaaaaaaaaaaaaa", days: 30 }) }; }
+    return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+  });
+  try {
+    first.D.getElementById("un").value = u92;
+    first.D.getElementById("pw").value = pass92;
+    first.D.getElementById("f").dispatchEvent(new first.W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 80 && !posted; i++) await new Promise((r) => setTimeout(r, 50));
+    const kept = JSON.parse(first.W.localStorage.getItem("salt-stmt-remember") || "{}");
+    ok(!!posted && posted.wrap && posted.wrap.salt && posted.wrap.iv && posted.wrap.ct
+      && kept.t === "tok-92-aaaaaaaaaaaaaaaaaaaa" && typeof kept.k === "string" && kept.k.length > 20
+      && !JSON.stringify(posted).includes(pass92) && !first.W.localStorage.getItem("salt-stmt-remember").includes(pass92),
+      "signing in with the box ticked sends a wrap and keeps a key on the device, and neither is the password");
+    /* what the site would then hold, and what the device kept */
+    const stored92 = first.W.localStorage.getItem("salt-stmt-remember");
+    const second = make92(stored92, () => async (path) => {
+      if (String(path) === "/remember/open") {
+        return { ok: true, status: 200, json: async () => ({ ok: true, u: u92, remembered: true, wrap: posted.wrap,
+          issued: "2026-09-01", issues: ["2026-09-01"], env: openBody.env, live: null, prices: null, session: "sess-92b" }) };
+      }
+      return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+    });
+    try {
+      for (let i = 0; i < 80 && second.D.getElementById("barw").hidden; i++) await new Promise((r) => setTimeout(r, 50));
+      ok(!second.D.getElementById("barw").hidden && second.D.getElementById("gate").hidden
+        && /Statement/.test(second.D.getElementById("out").textContent),
+        "a remembered device opens the statement with no password typed");
+      second.D.getElementById("lock").dispatchEvent(new second.W.Event("click", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 60));
+      ok(second.W.localStorage.getItem("salt-stmt-remember") === null && !second.D.getElementById("gate").hidden
+        && second.D.getElementById("out").textContent === "",
+        "and Log out forgets the device and puts the door back");
+    } finally { try { second.W.close(); } catch (e) { /* best effort */ } }
+  } finally { try { first.W.close(); } catch (e) { /* best effort */ } }
 })();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {

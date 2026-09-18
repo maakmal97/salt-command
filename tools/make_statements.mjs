@@ -816,7 +816,7 @@ export async function makeStatements(outDir, issue, opts) {
       const qrBlock = '<div class="qrb">' + qr
         + '<p class="qrt">Scan to open your statements on your phone at any time, this one and every earlier one.<br>'
         + 'Your username is <code>' + esc(u) + '</code>. The password is sent to you separately. '
-        + 'The page stays open for three minutes, then locks; the same password opens it again.<br>'
+        + 'Tick Remember me and that device stays signed in; Log out ends it.<br>'
         + '<code>' + esc(url) + '</code></p></div>';
       html = baseDoc.replace('</div></body></html>', qrBlock + '\n</div></body></html>');
       pw = priorPw[p] || newPassword();

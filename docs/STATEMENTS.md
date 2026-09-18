@@ -135,7 +135,7 @@ Each statement carries a QR code and prints the customer's **username**. The QR 
 `https://k7m3p2.qyts8mh72kyg.workers.dev/?u=<username>`, one landing page for every account,
 with the username filled in; the password goes by a different channel. The page checks the
 pair, decrypts in his own browser, and shows a strip: **"Now"**, then every issue by its date,
-newest first. It locks after **three minutes**; the same password opens it again as often as
+newest first. It stays signed in on that device while Remember me is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
 he likes.
 
 **"Now" is live (his instruction, 03 Sep 2026): every entry from the start to the minute it was
@@ -185,7 +185,7 @@ mints: a September run in a cloud container on 02 Sep produced thirty-seven pass
 died with the container. The routine's job on the 1st is to say the issue is due.
 
 **What none of it does is stop a statement being forwarded.** A password shared is a password
-shared, and an open page can be photographed. The three minutes stop a phone being left on a
+shared, and an open page can be photographed. Log out is what ends a session on a phone left on a
 table with an account on it. Nothing in the copy should promise more than that.
 
 **The address shares the account's `workers.dev` subdomain with the desk**, which is the one
