@@ -1,5 +1,16 @@
 [
  {
+  "v": "v688",
+  "d": "18 Sep 2026",
+  "t": "SEND STATEMENT, WITH THE PASSWORD SEALED UNDER THE MASTER AND A TICK BOTH HIS DEVICES SHARE",
+  "n": [
+   "<b>HIS DECISION OF 18 SEP 2026:</b> sending is done from the master account, password and all. A card an account carries the address, the message, the code and the password: Share, Copy message, Copy password, Open account, and a Sent tick. The laptop's send sheet stays as the fallback for a day the site or Access is down.",
+   "<b>THE PASSWORD IS SEALED, NOT STORED.</b> An issue now seals each password under <code>STMT_MASTER</code> beside its record, and <code>tools/stmt-seal.mjs</code> sealed the issue that had already gone out, on the laptop, from <code>_passwords.json</code>: it proves the master against every record first, pairs each password through the send sheet's own rule so a re-keyed code still finds its own, proves it against that record's verifier, and writes nothing else into the file. Thirty of thirty-four September records sealed; three are buckets, and four have no password on this laptop. <b>The publish strips it from the record a customer fetches</b> and carries it only in the account list behind Access. His page opens it in the browser and writes it to the clipboard; it is never written into the page, and no message ever carries it. The trade he took: an Access session now also signs in as a customer.",
+   "<b>A TICK IS THE SITE'S.</b> The laptop sheet kept its ticks in one browser, so sending half an issue on the phone left two half-finished lists. A tick is <code>sent:&lt;issue&gt;:&lt;username&gt;</code>, expiring with its issue, and both devices show the same. The words a customer is sent live in <code>stmt/send.js</code>, which the laptop sheet imports, so the two cannot drift.",
+   "<b>THE CHECKS:</b> a new section builds a fixture issue and seals it: idempotent, refusing a master the records do not answer to, refusing a password their verifier refuses, refusing a past issue, and changing nothing else in a record. Then the publish's split, the card's own data, the tick's four refusals and its expiry, and the page driven in jsdom: Copy password opens the sealed password and copies it, and the page never holds it. Fourteen reverts each turned it red. Checked in Chromium at 375 and 1280."
+  ]
+ },
+ {
   "v": "v687",
   "d": "18 Sep 2026",
   "t": "THE MASTER ACCOUNT OPENS ON ITS OWN PAGE, AND THE OWNER'S SCRIPT TRAVELS ONLY THERE",

@@ -63,8 +63,11 @@ const section = (s) => {
 
 /* ---- KV + env mocks ------------------------------------------------------------- */
 class KV {
-  constructor() { this.m = new Map(); }
-  async put(k, v) { this.m.set(k, v); }
+  constructor() { this.m = new Map(); this.opts = new Map(); }
+  /* v688: the options are kept as well as the value. Real KV expires a key by them, and a route
+     that means to write something short-lived (a sent tick, a one-time link) is only doing that
+     if the expiry is really passed; ignoring them here would pass either way. */
+  async put(k, v, o) { this.m.set(k, v); this.opts.set(k, o || null); }
   /* Real KV takes a type argument and "json" parses for you. The statement route uses it, so
      the stand-in has to as well, or a call that works here fails in production. */
   async get(k, type) {
@@ -13445,6 +13448,159 @@ await (async () => {
         "and Back returns to the items");
     } finally { try { W87.close(); } catch (e) { /* best effort */ } }
   } finally { globalThis.fetch = realFetch87; }
+})();
+section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
+await (async () => {
+  /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password
+     is sealed at issue under the master passphrase, which already unwraps every account, and only his own
+     page opens it, in the browser. The Worker never hands it to a customer, and no message carries it. */
+  const C88 = await import("../tools/stmt-crypto.mjs");
+  const { sealPasswords } = await import("../tools/stmt-seal.mjs");
+  const { linkMessage: lm88, totalsLine: tl88 } = await import("../stmt/send.js");
+  const sendTool = await import("../tools/stmt-send.mjs");
+  ok(sendTool.linkMessage === lm88 && sendTool.totalsLine === tl88,
+    "the laptop's send sheet and the master account read the same words, from one module");
+
+  /* ---- THE SEAL, on a fixture issue built here ---------------------------------------------- */
+  const root88 = join(REPO, "test", "tmp", "seal88"), dir88 = join(root88, "2026-09");
+  rmSync(root88, { recursive: true, force: true });
+  mkdirSync(join(dir88, "_kv"), { recursive: true });
+  const MASTER88 = "the-master-passphrase", KEY88 = "a".repeat(64);
+  const made88 = [];
+  for (const [code, user, pw] of [["CX0-AA", "aaaa-bbbb", "2345-6789-abcd-efgh"], ["CX1-BB", "cccc-dddd", "j2k3-m4n5-p6q7-r8s9"]]) {
+    const ck = await C88.contentKey(KEY88, user);
+    const rec = { u: user, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C88.makeVerifier(pw),
+      wrap: await C88.wrapKey(pw, ck), wrapMaster: await C88.wrapKey(MASTER88, ck), env: await C88.encryptWith(ck, "{}") };
+    writeFileSync(join(dir88, "_kv", user + ".json"), JSON.stringify(rec) + "\n");
+    writeFileSync(join(dir88, "statement_" + code + "_2026-09-01.html"), "<p>Your username is <code>" + user + "</code></p>");
+    made88.push({ code, user, pw, rec });
+  }
+  writeFileSync(join(dir88, "_passwords.json"), JSON.stringify(Object.fromEntries(made88.map((x) => [x.code, x.pw]))));
+  writeFileSync(join(root88, "_users.json"), JSON.stringify(Object.fromEntries(made88.map((x) => [x.code, x.user]))));
+  const before88 = readFileSync(join(dir88, "_kv", made88[0].user + ".json"), "utf8");
+
+  const dry88 = await sealPasswords(dir88, { master: MASTER88, check: true });
+  ok(dry88.sealed.length === 2 && dry88.wrote === 0 && readFileSync(join(dir88, "_kv", made88[0].user + ".json"), "utf8") === before88,
+    "a check says what it would seal and writes nothing");
+  const run88 = await sealPasswords(dir88, { master: MASTER88 });
+  const rec88 = JSON.parse(readFileSync(join(dir88, "_kv", made88[0].user + ".json"), "utf8"));
+  const kept88 = Object.assign({}, rec88); delete kept88.pwMaster;
+  ok(run88.sealed.length === 2 && run88.wrote === 2 && (await C88.decryptText(MASTER88, rec88.pwMaster)) === made88[0].pw
+    && JSON.stringify(kept88) === JSON.stringify(made88[0].rec)
+    && Object.keys(rec88).join(",") === "u,issued,issues,verifier,wrap,wrapMaster,pwMaster,env",
+    "sealing writes each password under the master, in its place, and changes nothing else in the record");
+  const again88 = await sealPasswords(dir88, { master: MASTER88 });
+  ok(again88.wrote === 0 && again88.already.length === 2, "a second run has nothing to do");
+  let refused88 = "";
+  try { await sealPasswords(dir88, { master: "not-the-master" }); } catch (e) { refused88 = String(e.message); }
+  ok(/does not unwrap/.test(refused88), "a master the records do not answer to is refused before anything is written: " + refused88);
+  writeFileSync(join(dir88, "_passwords.json"), JSON.stringify({ "CX0-AA": made88[0].pw, "CX1-BB": "zzzz-zzzz-zzzz-zzzz" }));
+  const kv88b = join(dir88, "_kv", made88[1].user + ".json");
+  const rec88b = JSON.parse(readFileSync(kv88b, "utf8")); delete rec88b.pwMaster;
+  writeFileSync(kv88b, JSON.stringify(rec88b) + "\n");
+  const bad88 = await sealPasswords(dir88, { master: MASTER88 });
+  ok(bad88.wrote === 0 && bad88.failed.length === 1 && /CX1-BB/.test(bad88.failed[0]) && !JSON.parse(readFileSync(kv88b, "utf8")).pwMaster,
+    "a password the record's own verifier refuses is reported and not sealed: " + bad88.failed.join("; "));
+  let past88 = "";
+  mkdirSync(join(root88, "2026-10", "_kv"), { recursive: true });
+  try { await sealPasswords(dir88, { master: MASTER88 }); } catch (e) { past88 = String(e.message); }
+  ok(/never rewritten/.test(past88), "and a past issue is refused once a newer one exists: " + past88);
+  rmSync(root88, { recursive: true, force: true });
+
+  /* ---- WHAT THE PUBLISH DOES WITH IT --------------------------------------------------------- */
+  const { planPublish: pp88 } = await import("../tools/stmt-publish.mjs");
+  const plan88 = await pp88(join(REPO, "statements"), "", new Date("2026-09-18T02:00:00Z"), [], null);
+  const uPuts = plan88.puts.filter((p) => p.key.startsWith("u:"));
+  const sealedRows = plan88.sheet.filter((a) => a.pwMaster);
+  ok(uPuts.length > 10 && uPuts.every((p) => !p.value.includes("pwMaster")) && sealedRows.length > 10,
+    "the record a customer fetches carries no sealed password, and the account list carries them: "
+    + uPuts.length + " records, " + sealedRows.length + " sealed");
+
+  /* ---- THE CARD'S DATA, AND THE TICK --------------------------------------------------------- */
+  const realFetch88 = globalThis.fetch;
+  try {
+    const TEAM88 = "maakmal", AUD88 = "aud-88", KID88 = "kid-88";
+    const kp88 = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    const pub88 = await crypto.subtle.exportKey("jwk", kp88.publicKey);
+    globalThis.fetch = async (u) => {
+      if (String(u) === "https://" + TEAM88 + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub88, kid: KID88, kty: "RSA" }] }));
+      throw new Error("the Access gate reached for " + u);
+    };
+    const b64u88 = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const tok88 = await (async () => {
+      const claims = { iss: "https://" + TEAM88 + ".cloudflareaccess.com", aud: [AUD88], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+      const h = b64u88(JSON.stringify({ alg: "RS256", kid: KID88, typ: "JWT" })), c = b64u88(JSON.stringify(claims));
+      const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp88.privateKey, new TextEncoder().encode(h + "." + c));
+      return h + "." + c + "." + b64u88(new Uint8Array(sig));
+    })();
+    const PW88 = "3456-789a-bcde-fghj";
+    const sealedPw = await C88.encryptText(MASTER88, PW88);
+    const kv88 = new KV();
+    await kv88.put("u:aaaa-bbbb", "{}");
+    await kv88.put("roster", JSON.stringify([{ code: "CX0-AA", username: "aaaa-bbbb" }]));
+    await kv88.put("issue", "2026-09-01");
+    await kv88.put("sheet", JSON.stringify({ at: "2026-09-18T02:00:00Z", issue: "2026-09-01",
+      accounts: [{ code: "CX0-AA", username: "aaaa-bbbb", issued: "2026-09-01", t: { n: 3, total: 420, owed: 110, toGet: 0, refund: 0, pend: 0 }, flag: "owes", pwMaster: sealedPw }] }));
+    const env88 = { STMT: kv88, STMT_MASTER: MASTER88, ACCESS_TEAM: TEAM88, ACCESS_AUD: AUD88 };
+    const call88 = (path, init) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path, Object.assign({ headers: { "cf-access-jwt-assertion": tok88 } }, init || {})), env88);
+    const sheet88 = await (await call88("/all/sheet")).json();
+    const card = sheet88.accounts[0];
+    ok(card.url === "https://k7m3p2.example/?u=aaaa-bbbb" && card.msg === lm88({ url: card.url, user: "aaaa-bbbb" }, "September 2026")
+      && card.tot === tl88(card.t) && Array.isArray(card.qr) && card.qr.length > 20 && JSON.stringify(card.pwMaster) === JSON.stringify(sealedPw),
+      "a card carries the address, the message, the code and the sealed password");
+    ok(!card.msg.includes(PW88) && !JSON.stringify(sheet88).includes(PW88),
+      "and the password is in none of it in the clear, message included");
+
+    const ticked = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-09-01", sent: true }) });
+    const tick88 = await ticked.json();
+    ok(ticked.status === 200 && tick88.sent && kv88.m.has("sent:2026-09-01:aaaa-bbbb")
+      && (kv88.opts.get("sent:2026-09-01:aaaa-bbbb") || {}).expirationTtl === 61 * 24 * 3600,
+      "a tick is the site's, not one browser's, and expires with its issue");
+    ok((await (await call88("/all/sheet")).json()).accounts[0].sent === tick88.sent, "and the next read shows it");
+    const untick = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-09-01", sent: false }) });
+    ok(untick.status === 200 && !kv88.m.has("sent:2026-09-01:aaaa-bbbb"), "and it can be taken back");
+    const stale = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-08-01", sent: true }) });
+    const unknown = await call88("/all/sent/zzzz-zzzz", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-09-01", sent: true }) });
+    const notJson = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "text/plain" }, body: "sent" });
+    const noAccess = await stmtWorker.fetch(new Request("https://k7m3p2.example/all/sent/aaaa-bbbb", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" }), env88);
+    ok(stale.status === 409 && unknown.status === 404 && notJson.status === 400 && noAccess.status === 401,
+      "a stale issue, an unknown account, a body that is not JSON and no Access are each refused: "
+      + [stale.status, unknown.status, notJson.status, noAccess.status].join(" "));
+
+    /* ---- THE PAGE: the password goes to the clipboard and never into the page ----------------- */
+    const { landingPage: lp88 } = await import("../stmt/page.js");
+    const { JSDOM: JD88 } = await import("jsdom");
+    const { webcrypto: wc88 } = await import("node:crypto");
+    const dom88 = new JD88(lp88("", "n88", { master: MASTER88, accounts: [{ code: "CX0-AA", username: "aaaa-bbbb" }] }),
+      { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+        /* the page decrypts the sealed password itself, so the window needs a real WebCrypto
+           before its script runs, as every other page-driving section here does */
+        beforeParse(win) { try { Object.defineProperty(win, "crypto", { value: wc88, configurable: true }); } catch (e) { win.crypto = wc88; } } });
+    const W88 = dom88.window, D88 = W88.document;
+    try {
+      const sheetBody = JSON.parse(JSON.stringify(sheet88));
+      sheetBody.accounts[0].sent = null;
+      W88.fetch = async (path) => (String(path) === "/all/sheet" ? { ok: true, status: 200, json: async () => sheetBody }
+        : { ok: true, status: 200, json: async () => ({ ok: true, sent: "2026-09-18T03:00:00Z" }) });
+      let copied = null;
+      W88.navigator.clipboard = { writeText: async (t) => { copied = t; } };
+      D88.querySelector('button[data-m="send"]').dispatchEvent(new W88.Event("click", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 80));
+      const cardEl = D88.querySelector("#slist .scard");
+      ok(!!cardEl && /CX0-AA/.test(cardEl.textContent) && /3 orders, RM 420.00/.test(cardEl.textContent) && !!cardEl.querySelector("canvas"),
+        "the Send panel draws a card an account, with its totals and its code");
+      const buttons = [...cardEl.querySelectorAll("button")];
+      const msgBtn = buttons.find((b) => b.textContent === "Copy message"), pwBtn = buttons.find((b) => b.textContent === "Copy password");
+      msgBtn.dispatchEvent(new W88.Event("click", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 20));
+      ok(copied === card.msg && !copied.includes(PW88), "Copy message copies the message, which carries no password");
+      pwBtn.dispatchEvent(new W88.Event("click", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 900));
+      ok(copied === PW88, "Copy password opens the sealed password with the master and copies it: " + (copied === PW88));
+      ok(!D88.body.innerHTML.includes(PW88), "and the password is never written into the page");
+    } finally { try { W88.close(); } catch (e) { /* best effort */ } }
+  } finally { globalThis.fetch = realFetch88; }
 })();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {

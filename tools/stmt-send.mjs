@@ -30,21 +30,11 @@ import { saltTokens } from "./stmt-style.mjs";
 const esc = (s) => String(s == null ? "" : s)
   .replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-/** The message a customer gets: the link and the username, and no secret. */
-export function linkMessage(row, monthName) {
-  return "Your statement of account" + (monthName ? " for " + monthName : "") + " is ready.\n\n"
-    + "Open it here:\n" + row.url + "\n\n"
-    + "Username: " + row.user + "\n"
-    + "Your password is in a separate message.\n\n"
-    + "The page shows every order from the start to today, and each monthly statement as it was "
-    + "issued. It locks itself after three minutes; the same password opens it again.";
-}
-
-/** The second message: the password, and nothing that says which account it opens. */
-export function passwordMessage(row) {
-  return "Statement password: " + row.pw + "\n\n"
-    + "Please keep it to yourself. It opens the statement at the link in the previous message.";
-}
+/* v688: THE WORDS LIVE IN stmt/send.js, so this sheet and Send statement on his master account
+   cannot drift. They are imported for this sheet's own use and re-exported because the suite and
+   make_statements.mjs take them from here. */
+import { linkMessage, passwordMessage, totalsLine, monthNameOf } from "../stmt/send.js";
+export { linkMessage, passwordMessage, totalsLine, monthNameOf };
 
 const LAYER = `
 *{box-sizing:border-box}
@@ -279,9 +269,7 @@ export function sendSheet(rows, opts) {
     url: r.url,
     /* the same totals the statement itself foots to, formatted here because the generator's own
        formatter is not in scope at the point the rows are built */
-    tot: r.t ? (r.t.n + " order" + (r.t.n === 1 ? "" : "s") + ", RM "
-      + Number(r.t.total).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-      + (r.t.owed > 0 ? ", RM " + Number(r.t.owed).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " outstanding" : "")) : "",
+    tot: totalsLine(r.t),
     msg: linkMessage(r, monthName),
     qr: qrMatrix(r.url).map((line) => line.join(""))
   }));
@@ -380,7 +368,7 @@ async function main() {
   const file = join(here, "_send_" + issue + ".html");
   writeFileSync(file, sendSheet(rows, {
     issue,
-    monthName: new Date(issue + "T00:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" })
+    monthName: monthNameOf(issue)
   }));
   console.log("wrote " + file + "  (" + rows.length + " cards)");
   console.log("It holds every password in the issue, so it is gitignored and is never the thing you send.");

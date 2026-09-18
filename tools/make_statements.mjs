@@ -29,7 +29,7 @@ import POSITION_ENGINE from "../engine/position.mjs";
 import { statementCss, REVIEW_CSS } from "./stmt-style.mjs";
 import { qrSvg } from "./qr.mjs";
 import { sendSheet } from "./stmt-send.mjs";
-import { newPassword, USERNAME_RE, makeVerifier, contentKey, wrapKey, encryptWith, decryptWith, userFor, usersJson } from "./stmt-crypto.mjs";
+import { newPassword, USERNAME_RE, makeVerifier, contentKey, wrapKey, encryptWith, decryptWith, encryptText, userFor, usersJson } from "./stmt-crypto.mjs";
 import { priceList } from "./pricelist.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -600,7 +600,7 @@ function priorIssues(outDir, code, issue) {
    cloud it is the STMT_KEY secret of the deploy job. An environment variable of either name
    overrides the file, and a test passes both in `opts`. A run that would mint a record and has
    no key stops before writing anything, because a record wrapped under nothing opens nothing. */
-function loadSecrets(outDir, opts) {
+export function loadSecrets(outDir, opts) {
   /* TRIMMED AT EVERY DOOR. A secret pasted into a web form, echoed from a file, or piped from a
      shell picks up whitespace that is invisible in every log, and an untrimmed byte here is a key
      that derives a different content key from the laptop's. */
@@ -830,7 +830,16 @@ export async function makeStatements(outDir, issue, opts) {
       const ck = await contentKey(secrets.key, u);
       const rec = { u: u, issued: issue, issues: bundle.statements.map(s => s.issued),
                     verifier: await makeVerifier(pw), wrap: await wrapKey(pw, ck) };
-      if (secrets.master) rec.wrapMaster = await wrapKey(secrets.master, ck);
+      /* v688, HIS DECISION OF 18 SEP 2026: THE PASSWORD ITSELF, SEALED UNDER THE MASTER, so that
+         Send statement on his master account can hand it over from his phone. It is sealed with
+         the same passphrase that already unwraps every account here, so it opens nothing that was
+         not already open to whoever holds the master; what it adds is that an Access session can
+         then sign in AS a customer, which he weighed and took. The Worker never returns it to a
+         customer's own open, and the publish keeps it out of the record a customer fetches. */
+      if (secrets.master) {
+        rec.wrapMaster = await wrapKey(secrets.master, ck);
+        rec.pwMaster = await encryptText(secrets.master, pw);
+      }
       rec.env = await encryptWith(ck, JSON.stringify(bundle));
       kv.push(rec);
     }

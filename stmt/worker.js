@@ -44,6 +44,7 @@ import { identity } from "./access.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen } from "./refs.js";
 import { endpointId } from "./push.js";
+import { linkMessage, totalsLine, monthNameOf } from "./send.js";
 import { mintSession, sessionUser, ordersOf, allOrders, placeOrder, customerMove, deskMove, LAST_PLACED } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
@@ -368,22 +369,41 @@ const refOut = (origin, r) => Object.assign({}, r, { url: refUrl(origin, r.id), 
  * WHAT REVIEW READS is `sheet`, written by tools/stmt-publish.mjs from each statement's own rows,
  * merged here with `seen:<username>`, which this Worker has written on every customer open since
  * v499 and nothing has ever read. Codes, never names. */
-async function ownerSheet(env) {
+async function ownerSheet(env, origin) {
   const sheet = await env.STMT.get("sheet", "json");
   const rows = sheet && Array.isArray(sheet.accounts) ? sheet.accounts : [];
   const byUser = new Map(rows.map((a) => [a.username, a]));
+  const issue = sheet ? sheet.issue || null : null;
+  const month = monthNameOf(issue);
   const out = [];
   for (const a of await roster(env)) {
     const s = byUser.get(a.username) || null;
     const seen = await env.STMT.get("seen:" + a.username, "json");
+    const sent = issue ? await env.STMT.get(SENT_KEY(issue, a.username), "json") : null;
+    /* v688: everything one card needs. The address is this request's own origin, so nothing has
+       to be configured twice, and the message is built from stmt/send.js, the one copy of the
+       words the laptop's send sheet uses. The QR is a matrix of 0s and 1s, drawn on the card's
+       own canvas, because Share carries a PNG and a PNG needs a canvas. */
+    const url = origin + "/?u=" + encodeURIComponent(a.username);
     out.push({
       code: a.code, username: a.username,
       issued: s ? s.issued : null, t: s ? s.t : null, flag: s ? s.flag : null,
-      seen: seen ? { first: seen.first || null, last: seen.last || null, opens: +seen.opens || 0 } : null
+      url, msg: linkMessage({ url, user: a.username }, month), tot: s ? totalsLine(s.t) : "",
+      qr: QR.qrMatrix(url).map((line) => line.join("")),
+      pwMaster: s ? s.pwMaster || null : null,
+      seen: seen ? { first: seen.first || null, last: seen.last || null, opens: +seen.opens || 0 } : null,
+      sent: sent ? sent.at || null : null
     });
   }
-  return { ok: true, at: sheet ? sheet.at || null : null, issue: sheet ? sheet.issue || null : null, accounts: out };
+  return { ok: true, at: sheet ? sheet.at || null : null, issue, month, accounts: out };
 }
+
+/* A TICK IS THE SITE'S, NOT ONE BROWSER'S (v688). The laptop sheet keeps its ticks in that
+   browser's storage, so sending half the issue on the phone and half on the laptop meant two
+   half-finished lists. This one is a key per account per issue, so both of his devices show the
+   same. It expires two months on: a tick belongs to an issue, and the next one starts clean. */
+const SENT_KEY = (issue, u) => "sent:" + issue + ":" + u;
+const SENT_TTL = 61 * 24 * 3600;
 
 async function handleRefs(request, env, p, m, origin) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
@@ -494,7 +514,23 @@ export default {
       if (p === "/all/refs" || p.startsWith("/all/refs/")) return handleRefs(request, env, p, m, url.origin);
       if (p === "/all/sheet") {
         if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-        return json(await ownerSheet(env));
+        return json(await ownerSheet(env, url.origin));
+      }
+      /* the tick, so both his devices agree on what has gone out */
+      const sm = /^\/all\/sent\/([^/]+)$/.exec(p);
+      if (sm) {
+        if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+        const u = normUser(sm[1]);
+        const b = await readJson(request);
+        if (!b) return json({ ok: false, error: "send JSON" }, 400);
+        const known = (await roster(env)).some((a) => a.username === u);
+        if (!u || !known) return notFound();
+        const issue = await env.STMT.get("issue");
+        if (!issue || String(b.issue || "") !== issue) return json({ ok: false, error: "that is not this issue; reload" }, 409);
+        if (b.sent === false) { await env.STMT.delete(SENT_KEY(issue, u)); return json({ ok: true, sent: null }); }
+        const at = new Date().toISOString();
+        await env.STMT.put(SENT_KEY(issue, u), JSON.stringify({ at }), { expirationTtl: SENT_TTL });
+        return json({ ok: true, sent: at });
       }
       return notFound();
     }

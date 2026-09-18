@@ -17,16 +17,18 @@
  * was last opened. A tap still opens the account the customer's own way, through the form. */
 
 export const OWNER_JS = `
-  var MPANELS=['review','links'], mHome=document.getElementById('mHome'),
+  var mHome=document.getElementById('mHome'),
       oReview=document.getElementById('oReview'), oLinks=document.getElementById('oLinks'),
-      mBack=null, sheet=null, sheetAt=null;
+      oSend=document.getElementById('oSend'), sheet=null, sheetAt=null, sheetRows=[], sheetIssue=null;
   function panel(which){
     mHome.hidden=!!which;
     oReview.hidden=(which!=='review');
     oLinks.hidden=(which!=='links');
+    oSend.hidden=(which!=='send');
     say('');
     if(which==='links'&&!links.length) loadLinks();
     if(which==='review'){ drawRoster(); if(!sheet) loadSheet(); try{ rq.focus(); }catch(e){} }
+    if(which==='send'){ if(!sheet) loadSheet(); else drawSend(); }
     try{ window.scrollTo(0,0); }catch(e){}
   }
   /* ---- REVIEW STATEMENT --------------------------------------------------------------------
@@ -49,10 +51,100 @@ export const OWNER_JS = `
   async function loadSheet(){
     try{
       var j=await refs('/all/sheet');
-      sheet={}; sheetAt=j.at||null;
-      (j.accounts||[]).forEach(function(a){ sheet[a.username]=a; });
-      drawRoster();
+      sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null;
+      sheetRows.forEach(function(a){ sheet[a.username]=a; });
+      drawRoster(); drawSend();
     }catch(e){ say(e.message,'bad'); }
+  }
+  /* ---- SEND STATEMENT (v688) ---------------------------------------------------------------
+     One card per account, the same three things the laptop's send sheet puts together: the link
+     and username as one message, the QR, and the password on its own. THE PASSWORD IS DECRYPTED
+     HERE AND NOWHERE ELSE: it is sealed under the master, which this page holds and the Worker
+     never sees opened, and it goes straight from the decryption to the clipboard without being
+     written into the page. */
+  async function unseal(pass, e){
+    var base=await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+    var key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(e.salt),iterations:150000,hash:'SHA-256'},
+      base, {name:'AES-GCM',length:256}, false, ['decrypt']);
+    var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(e.iv)}, key, b64d(e.ct));
+    return new TextDecoder().decode(pt);
+  }
+  function qrCanvas(rows){
+    var n=rows.length, box=4, pad=4, size=(n+pad*2)*box;
+    var c=document.createElement('canvas'); c.width=size; c.height=size;
+    c.style.width='104px'; c.style.height='104px';
+    var x=c.getContext('2d');
+    if(x){ x.fillStyle='#f2f4f5'; x.fillRect(0,0,size,size); x.fillStyle='#05080a';
+      for(var r=0;r<n;r++) for(var k=0;k<n;k++) if(rows[r][k]==='1') x.fillRect((k+pad)*box,(r+pad)*box,box,box); }
+    return c;
+  }
+  function sendCard(a){
+    var card=el('div','scard'+(a.sent?' done':''));
+    var head=el('div','srow');
+    head.appendChild(el('b',null,a.code||a.username));
+    head.appendChild(el('span','un',a.username));
+    card.appendChild(head);
+    card.appendChild(el('p','tot',a.tot||'No statement in this issue.'));
+    card.appendChild(el('p','op',openedLine(a)+(a.sent?' \\u00b7 sent '+stampDay(a.sent):'')));
+    var qw=el('div','qrw'); qw.appendChild(qrCanvas(a.qr||[]));
+    qw.appendChild(el('p','qrn','The code opens their page with the username filled in.'));
+    card.appendChild(qw);
+    var row=el('div','grow');
+    var share=el('button',null,'Share'); share.type='button';
+    share.addEventListener('click', async function(){
+      try{
+        if(navigator.share) await navigator.share({text:a.msg});
+        else { await navigator.clipboard.writeText(a.msg); share.textContent='Message copied'; }
+      }catch(e){ /* a share the reader dismissed is not a fault */ }
+      setTimeout(function(){ share.textContent='Share'; }, 1600);
+    });
+    var copy=el('button',null,'Copy message'); copy.type='button';
+    copy.addEventListener('click', function(){
+      try{ navigator.clipboard.writeText(a.msg); copy.textContent='Copied'; }catch(e){ copy.textContent='Copy failed'; }
+      setTimeout(function(){ copy.textContent='Copy message'; }, 1600);
+    });
+    var pwb=el('button','pw','Copy password'); pwb.type='button';
+    if(!a.pwMaster){ pwb.disabled=true; pwb.title='Not sealed yet: run tools/stmt-seal.mjs on the laptop'; }
+    else pwb.addEventListener('click', async function(){
+      pwb.disabled=true; pwb.textContent='Opening...';
+      try{
+        var pw=await unseal(OWNER.master, a.pwMaster);
+        await navigator.clipboard.writeText(pw);
+        pw=null;
+        pwb.textContent='Password copied';
+      }catch(e){ pwb.textContent='Could not open it'; }
+      setTimeout(function(){ pwb.textContent='Copy password'; pwb.disabled=false; }, 2200);
+    });
+    var open=el('button',null,'Open account'); open.type='button';
+    open.addEventListener('click', function(){ openAcct(a); });
+    row.appendChild(share); row.appendChild(copy); row.appendChild(pwb); row.appendChild(open);
+    card.appendChild(row);
+    var tick=el('label','tick');
+    var box=document.createElement('input'); box.type='checkbox'; box.checked=!!a.sent;
+    box.addEventListener('change', async function(){
+      var want=box.checked;
+      try{
+        var j=await refs('/all/sent/'+a.username, {issue:sheetIssue, sent:want});
+        a.sent=j.sent; card.className='scard'+(a.sent?' done':''); say('');
+      }catch(e){ box.checked=!want; say(e.message,'bad'); }
+    });
+    tick.appendChild(box); tick.appendChild(el('span',null,'Sent'));
+    card.appendChild(tick);
+    return card;
+  }
+  function drawSend(){
+    var wrap=document.getElementById('slist'); if(!wrap) return;
+    wrap.textContent='';
+    var q=((document.getElementById('sq')||{}).value||'').toLowerCase().replace(/\\s+/g,'');
+    var hits=sheetRows.filter(function(a){
+      if(!q) return true;
+      return ((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0;
+    });
+    var done=sheetRows.filter(function(a){ return a.sent; }).length;
+    var head=document.getElementById('scount');
+    if(head) head.textContent=done+' of '+sheetRows.length+' sent'+(sheetIssue?' this issue':'');
+    if(!hits.length){ wrap.appendChild(el('p','rnone','Nothing matches that.')); return; }
+    hits.forEach(function(a){ wrap.appendChild(sendCard(a)); });
   }
   /* ---- THE ROSTER (10 Sep 2026) ------------------------------------------------------------
      A tap fills the customer's own form with his username and the master, and submits it. Nothing
@@ -166,5 +258,6 @@ export const OWNER_JS = `
     b.addEventListener('click', function(){ panel(null); });
   });
   rq.addEventListener('input', drawRoster);
+  var sq=document.getElementById('sq'); if(sq) sq.addEventListener('input', drawSend);
   panel(null);
 `;

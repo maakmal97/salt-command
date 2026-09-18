@@ -315,6 +315,14 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   past it the site's usual 404. It opens on its items, never on a list. **THE OWNER'S SCRIPT IS
   `stmt/owner.js` AND TRAVELS ONLY THERE**: it lived in the page every customer opened until v687.
   Review reads `sheet`, the publish's account list, merged with the `seen:` opens.
+- **SEND STATEMENT HANDS OVER THE PASSWORD FROM HIS PHONE** (v688, his decision of 18 Sep 2026).
+  The issue seals each password under `STMT_MASTER` as `pwMaster` beside the record, and
+  `tools/stmt-seal.mjs` did September's from `_passwords.json` on the laptop; the publish strips it
+  from the customer's own record and carries it in `sheet`, behind Access. His page decrypts it in
+  the browser and writes it straight to the clipboard, never into the page. The trade he took: an
+  Access session now also signs in as a customer. **The plain password is still laptop-only**, in
+  `_passwords.json`, and no message ever carries it; a tick lives at `sent:<issue>:<username>`, so
+  both his devices agree on what has gone out.
 - **Guest links `/g/<id>`**: one board and nothing else, `script-src 'none'`. **The id
   IS the credential** (rejection sampling, never `byte % 30`) and the boards are NOT sealed,
   both deliberate. Unknown, malformed and withdrawn ids answer the same 404. **A row named
@@ -333,6 +341,8 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
 | `engine/qr.mjs` | The ONE QR encoder and the only place its facts are stated: byte mode, level M, versions 1 to 10; inlined into the master like the pricing engine; `tools/qr.mjs` re-exports it and never copies it; `qrRectSvg` draws RECTANGLES, a stroked symbol does not scan |
 | `stmt/qr.js` | GENERATED from `engine/qr.mjs` by `tools/qrsync.mjs --sync`; gate and CI fail on drift. Never edit it; `stmt/` may import only a sibling |
 | `stmt/owner.js` | The master account's script, spliced into the page on `/all` alone; never in a customer's |
+| `stmt/send.js` | The one copy of the words a customer is sent; `tools/stmt-send.mjs` imports them |
+| `tools/stmt-seal.mjs` | Laptop only: seals an issue's passwords under the master, proving each against its own verifier |
 | `tools/rid.mjs` | Stable `rid` per ledger row; `nextRid` is the one minting place |
 | `tools/changelog.mjs` | Prepends `evolution[0]` to `master/changelog.json`; never rewrites |
 | `test/verify.mjs` | ~2,130 assertions over 138 sections, no network or browser; add one per behavioural change, and **prove it red by mutation before trusting its green** |

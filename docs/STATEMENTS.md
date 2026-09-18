@@ -56,10 +56,18 @@ a review sheet stitching every account together. **The review sheet is not for s
 every account beside every other, which is exactly what a statement must never do, and it exists
 so a whole run can be checked in one pass.
 
-**The passwords are in `_passwords.json` and nowhere else.** They were briefly in a column on the
-review sheet as well, which made the gitignore rule pointless: the review sheet is committed, so
-the same passwords went into git anyway. One place, and that place is not the repository. The
-suite asserts that no generated page contains one.
+**The passwords in the clear are in `_passwords.json` and nowhere else.** They were briefly in a
+column on the review sheet as well, which made the gitignore rule pointless: the review sheet is
+committed, so the same passwords went into git anyway. One place, and that place is not the
+repository. The suite asserts that no generated page contains one.
+
+**Sealed under the master, they also ride with the record** (v688, his decision of 18 Sep 2026),
+as `pwMaster`, so Send statement on his master account can hand one over from his phone. That is
+ciphertext under the passphrase that already unwraps every account, the publish keeps it out of
+the record a customer fetches, and his page decrypts it in the browser straight to the clipboard.
+`node tools/stmt-seal.mjs statements/<YYYY-MM> [--check]` sealed the issue that went out before
+v688; it runs on the laptop, proves each password against the record's own verifier, and writes
+nothing else.
 
 **Check the folder before writing into it.** The generator overwrites silently and has no
 re-run guard. If `statements/<YYYY-MM>` already holds a set: same issue date is a clean retry
@@ -158,7 +166,7 @@ has lost his asks for it again, and it is read back from `_passwords.json`.
 |---|---|---|---|
 | `STMT_KEY` | `statements\_secrets.json`, `"key"` | GitHub Actions secret `STMT_KEY` | Derives every customer's content key. The same string in both places. **Lose it and every account is re-issued.** |
 | `STMT_MASTER` | `statements\_secrets.json`, `"master"` | Cloudflare secret on the site | His override. The Worker compares it; the laptop wraps the key under it at issue time. |
-| the passwords | `statements\<YYYY-MM>\_passwords.json` | nowhere | One per customer, one live month. |
+| the passwords | `statements\<YYYY-MM>\_passwords.json` | sealed under `STMT_MASTER` as `pwMaster`, served only behind Access | One per customer, one live month. In the clear on the laptop alone (v688). |
 
 `_secrets.json` is gitignored and looks like
 `{"key": "<64 hex characters>", "master": "<the passphrase>"}`. An environment variable of

@@ -157,6 +157,27 @@ select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none}
 #rlist button .f-pend{color:var(--salt-copper)}
 #rlist button .f-clear,#rlist button .f-none{color:var(--salt-mist)}
 #mHome h1,#oReview h1,#oLinks h1{margin-top:0}
+/* SEND STATEMENT (v688): a card an account, in the same material as a guest link's card. The
+   password's button is the ember one, because it is the one thing on the page that must not be
+   tapped by accident, and a card that has gone out fades rather than leaving the list. */
+.scard{border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-glass);
+  padding:14px 16px;margin:12px 0 0}
+.scard.done{opacity:.55}
+.scard .srow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text)}
+.scard .srow .un{color:var(--salt-brass);letter-spacing:.08em;font-size:var(--salt-text-xs)}
+.scard .tot,.scard .op{margin:6px 0 0;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);
+  color:var(--salt-text-muted);letter-spacing:.04em}
+.scard .qrw{display:flex;gap:12px;align-items:center;margin:12px 0 0}
+.scard .qrw canvas{border-radius:var(--salt-radius-sm);flex:0 0 auto;image-rendering:pixelated}
+.scard .qrn{margin:0;font-size:var(--salt-text-xs);color:var(--salt-text-muted);line-height:1.6}
+.scard .grow{flex-wrap:wrap}
+.scard .grow button{flex:1 0 46%}
+.scard .grow button.pw{border-color:rgba(212,105,76,.45);color:var(--salt-ember)}
+.scard .grow button[disabled]{opacity:.45;cursor:default}
+.scard .tick{display:flex;align-items:center;gap:8px;margin-top:12px;min-height:var(--salt-tap);
+  font-size:var(--salt-text-sm);color:var(--salt-text-muted);cursor:pointer}
+.scard .tick input{width:18px;height:18px;accent-color:var(--salt-verdigris)}
 /* the way back is a quiet line, not a second filled control: the page has one of those and it is
    the one that opens an account */
 button[data-back]{display:inline-flex;align-items:center;min-height:var(--salt-tap);margin:0;padding:0;
@@ -249,6 +270,8 @@ export function landingPage(user, nonce, owner) {
         + "<h1>Master account</h1>"
         + '<p class="lead">' + owner.accounts.length + " accounts on the site.</p>"
         + '<div class="rlist" id="mItems">'
+        + '<button type="button" data-m="send">Send statement'
+        + "<span>one card an account: the message, the code and the password</span></button>"
         + '<button type="button" data-m="review">Review statement'
         + "<span>where every account stands, and when it was last opened</span></button>"
         + '<button type="button" data-m="links">Links'
@@ -261,6 +284,14 @@ export function landingPage(user, nonce, owner) {
         + '<input class="fld" id="rq" type="text" autocapitalize="none" autocorrect="off" '
         + 'spellcheck="false" placeholder="filter" aria-label="Filter accounts">'
         + '<div id="rlist" class="rlist"></div>'
+        + "</div>"
+        + '<div id="oSend" hidden>'
+        + '<button type="button" data-back>' + "← Back" + "</button>"
+        + "<h1>Send statement</h1>"
+        + '<p class="lead" id="scount"></p>'
+        + '<input class="fld" id="sq" type="text" autocapitalize="none" autocorrect="off" '
+        + 'spellcheck="false" placeholder="filter" aria-label="Filter accounts">'
+        + '<div id="slist"></div>'
         + "</div>"
         + '<div id="oLinks" hidden>'
         + '<button type="button" data-back>' + "← Back" + "</button>"

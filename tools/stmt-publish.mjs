@@ -46,7 +46,14 @@ export function usersMap(root) {
 /** Everything the publish would do, as data: the puts, the deletes and what it found. */
 export async function planPublish(root, key, now, existingKeys, storedIssue, pricing) {
   const r = await liveRecords(root, key, now, pricing);
-  const puts = r.records.map(rec => ({ key: "u:" + rec.u, value: JSON.stringify(rec) }));
+  /* v688: THE SEALED PASSWORD IS NOT IN THE RECORD A CUSTOMER FETCHES. It is sealed under the
+     master, so a customer could not open it, but /open hands the whole record's fields to whoever
+     answers the door and there is no reason for it to be there at all. It travels in `sheet`,
+     which only the Access-gated route serves. */
+  const puts = r.records.map(rec => {
+    const { pwMaster, ...forCustomer } = rec;
+    return { key: "u:" + rec.u, value: JSON.stringify(forCustomer) };
+  });
   const keep = new Set(r.records.map(rec => "u:" + rec.u));
   const issued = r.records.length ? r.records[0].issued : null;
   const newIssue = !!issued && storedIssue !== issued;
@@ -75,7 +82,7 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
     const code = byUser[rec.u] || null;
     if (!code) return null;
     const t = partyTotals(code, day);
-    return { code, username: rec.u, issued: rec.issued || null, t, flag: reviewFlag(t) };
+    return { code, username: rec.u, issued: rec.issued || null, t, flag: reviewFlag(t), pwMaster: rec.pwMaster || null };
   }).filter(Boolean).sort((a, b) => a.code.localeCompare(b.code));
   if (r.records.length) {
     puts.push({ key: "sheet", value: JSON.stringify({ at: new Date(now || Date.now()).toISOString(), issue: issued, accounts: sheet }) });
