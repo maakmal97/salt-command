@@ -370,7 +370,10 @@ function stmtDoc(party,rows,o){
     else if(due)stat='<span class="due">'+money(r.owed)+' due</span>';
     else if(owedUnits)stat='<span class="ok">paid in full</span><div class="owedunits">'+n2(r.toGet)+' unit still to collect</div>';
     else stat='<span class="ok">settled</span>';
-    return '<tr>'
+    /* v690, HIS INSTRUCTION OF 18 SEP 2026: NOTHING A CUSTOMER SEES IS BOUND TO A MONTH. The
+       document carries every order from the start, and the page filters it, so the month each row
+       belongs to travels with the row. An undated row belongs to no month and is always shown. */
+    return '<tr'+(r.date?' data-m="'+e(r.date.slice(0,7))+'"':'')+'>'
       +'<td class="l dt">'+(r.date?e(dLong(r.date)):(moved?'<span class="nodt">'+moved+'</span>':''))+when+'</td>'
       +'<td class="q'+(r.cancelled?' cxr':'')+'">'+n2(r.qty)+'<span class="u">unit</span>'
         /* v687, HIS INSTRUCTION OF 18 SEP 2026: the line reads on behalf of a friend, not for
