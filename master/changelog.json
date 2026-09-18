@@ -1,5 +1,17 @@
 [
  {
+  "v": "v715",
+  "d": "18 Sep 2026",
+  "t": "OIL'S SHELF COST IS ROLLED TO THE LOT THAT LANDED, AND MASTER IS GREEN AGAIN",
+  "n": [
+   "<b>HIS DECISION OF 18 SEP 2026, ASKED AND ANSWERED:</b> roll it to the newest lot. PROD_STOCK_COST.oil goes RM7.5250 to RM7.8400, the rate of the fifty unit that landed from SP7-PUD on 18 Sep. The v713 fold booked that lot and did not roll the cost, which is the shape v384 named and the reason the check exists: a lot lands, the cost stays on the one before it, and nothing on the desk looks wrong.",
+   "<b>THE SUITE HAD BEEN RED ON MASTER SINCE THAT FOLD, AND THE PHONE WAS ALREADY LIVE ON IT.</b> The suite step runs after the deploy and is never rolled back, by design, so the failure sat on master turning every later push red for reasons that had nothing to do with it. Two other pieces of work were parked behind it. That is the cost of a red master rather than the cost of this row.",
+   "<b>WHY IT IS A DECISION AND NOT A DEFAULT,</b> which is what the assertion's own message says: the last four oil lots ran RM7.6667, RM7.6667, RM7.5250 and RM7.8400, so they are not monotonic and rolling to the newest is a different answer from blending across what is on the shelf. The check reads the newest RECEIVED lot out of the book rather than pinning a number, so it survives the next lot instead of breaking on it, and a genuine blend still fails it on purpose.",
+   "<b>WHAT MOVES WITH IT.</b> The shelf cost feeds the closing stock in Financials, the Stock value card, and the PRICING snapshot the cloud drafter approves rows against. COST_RULE.oil is buyPlusPct 15, so the pricing basis goes RM8.6538 to RM9.0160 a unit, RM0.3622 more. Nothing else on the book moves and no row is rewritten.",
+   "<b>AND A SEPARATE INSTRUCTION OF HIS IS NOT IN THIS ENTRY.</b> He also said oil's floor should be purchase plus freight alone, with the markup running nought to one and a half. The second half describes the ladder that already exists: TIER_RULE.oil.multiples is [1, 1.375, 1.75, 2.125, 2.5], which as markup on the floor is nought, 0.375, 0.75, 1.125 and 1.5, four equal steps. The first half is a change to the floor BASIS and moves every oil price, so it is being scoped and put back to him rather than ridden in on a cost roll."
+  ]
+ },
+ {
   "v": "v714",
   "d": "18 Sep 2026",
   "t": "TWO ORDERS DRAW DOWN, ONE ADVANCE TAKES RM80 IN: RM7.25 OFF THE SHELF, RM210 STILL OPEN",
