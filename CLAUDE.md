@@ -317,8 +317,10 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   option carries text and no drawing. A control holding only a mark is named by its **shape**
   (`PSHAPE`: Cube, Droplet, Ring), never by its product: an aria-label naming it would put the word
   back for exactly the readers who cannot see it was taken away. **The one name on the site is the
-  app's**: `Order Salt`, his word, in the manifest, the title, the iPhone app title and the
-  tutorial.
+  app's**: **`The Counter`** (v697, his instruction of 18 Sep 2026; it was `Order Salt` for one
+  version and carried the product word), in the manifest, the title, the iPhone app title and the
+  tutorial. It is the shop counter, it says what the app is FOR, it names no product and no
+  business, and it fits the twelve characters iOS gives a home screen.
 - **A BUCKET IS NOT ITS OWN PERSON** (his ruling of 13 Sep 2026). An associate's `<CODE>-R`
   account is theirs: their statement (live and issued), price list, printed board and the order
   card's usual rate read the code and the bucket together, bucket lines marked *on behalf of a

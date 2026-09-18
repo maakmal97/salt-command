@@ -13983,10 +13983,12 @@ await (async () => {
   ok(mres.status === 200 && /application\/manifest\+json/.test(mres.headers.get("content-type"))
     && mf.display === "standalone" && mf.start_url === "./" && mf.icons.length === 1 && mf.icons[0].src === "icon.png",
     "the manifest is served, standalone, with one icon");
-  /* v695, his instruction of 18 Sep 2026: the icon on a customer's home screen says Order Salt.
-     It is the one place on this site a name is needed; the DESK's name never appears. */
-  ok(mf.name === "Order Salt" && mf.short_name === "Order Salt" && !/salt command/i.test(JSON.stringify(mf)),
-    "and it is called Order Salt, never the desk's own name: " + mf.name + " / " + mf.short_name);
+  /* v697, his instruction of 18 Sep 2026: app-worthy, and naming nothing. The Counter is the shop
+     counter, which is what the app is FOR; it carries no product word and no business name, and it
+     fits the twelve characters iOS gives a home screen. */
+  ok(mf.name === "The Counter" && mf.short_name === "The Counter" && mf.short_name.length <= 12
+    && !/salt|oil/i.test(JSON.stringify(mf)),
+    "and it is called The Counter, naming neither the business nor a product: " + mf.name + " / " + mf.short_name);
   const ires = await stmtWorker.fetch(new Request("https://k7m3p2.example/icon.png"), env93);
   const bytes = Buffer.from(await ires.arrayBuffer());
   ok(ires.status === 200 && ires.headers.get("content-type") === "image/png"
@@ -14244,12 +14246,13 @@ await (async () => {
     "the page reviews before it places, asks roughly where it is going, takes the amount paid, and says his closing words");
   ok(!/url\(/.test(page94), "and nothing on the page loads anything, the chevron included");
 })();
-section("v695: a product is a mark and never a word, and the app on his customers' phones is Order Salt");
+section("v695 and v697: a product is a mark and never a word, and the app on his customers' phones is The Counter");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "The name Salt Command should never appear anywhere, and if
      possible the name Salt, or Oil also does not appear anywhere. The products are only written as
      a symbol, the golden cube outline as salt and another one, golden water droplet outline" for
-     oil. So the ONE place a name is needed is the icon on a home screen, which he named Order Salt;
+     oil. So the ONE place a name is needed is the icon on a home screen, which he named The Counter
+     at v697 (it was Order Salt for one version and carried the product word straight back in);
      everywhere else a product is drawn rather than written, and the letterhead that was the last
      Salt Command on a customer's page is gone. */
   const P95 = await import("../stmt/page.js");
@@ -14283,9 +14286,10 @@ await (async () => {
   /* ---- the app's name, the one name on the site ---- */
   const env95 = { STMT: new KV() };
   const mf95 = await (await stmtW95.fetch(new Request("https://k7m3p2.example/manifest.webmanifest"), env95)).json();
-  ok(mf95.name === "Order Salt" && mf95.short_name === "Order Salt", "the app saved to a home screen is called Order Salt, his own words");
+  ok(mf95.name === "The Counter" && mf95.short_name === "The Counter" && !/salt|oil/i.test(mf95.name + mf95.short_name),
+    "the app saved to a home screen is called The Counter (v697), and names neither a product nor the business");
   const door95 = await (await stmtW95.fetch(new Request("https://k7m3p2.example/"), env95)).text();
-  ok(/<title>Order Salt<\/title>/.test(door95) && /content="Order Salt"/.test(door95) && /saved as <b>Order Salt<\/b>/.test(door95),
+  ok(/<title>The Counter<\/title>/.test(door95) && /content="The Counter"/.test(door95) && /saved as <b>The Counter<\/b>/.test(door95),
     "the door's title, its iPhone app title and its tutorial all say the same one name");
   ok(!/Salt Command/i.test(door95) && !/Salt Command/i.test(board95) && !/Salt Command/i.test(JSON.stringify(mf95)),
     "and the desk's own name is on none of them");

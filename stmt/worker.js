@@ -738,10 +738,13 @@ export default {
     if (p === "/manifest.webmanifest") {
       if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
       const mf = {
-        /* v695, HIS INSTRUCTION OF 18 SEP 2026: the icon on his customers' home screens says
-           Order Salt. It is the one place a name is needed and it is not the desk's: the desk is
-           Salt Command, which never appears here, and nothing else on this site names anything. */
-        name: "Order Salt", short_name: "Order Salt", start_url: "./", scope: "./",
+        /* v697, HIS INSTRUCTION OF 18 SEP 2026: name the app something else, app-worthy. It was
+           Order Salt for one version and carried the product word he had just taken off every other
+           surface. THE COUNTER is the shop counter: where you are served, see what you owe, order
+           and collect. It names no product and no business, it is what the app is FOR, and it fits
+           the twelve characters iOS gives a home screen. It is the one place on this site a name is
+           needed; the desk is Salt Command and that never appears here. */
+        name: "The Counter", short_name: "The Counter", start_url: "./", scope: "./",
         display: "standalone", orientation: "portrait", background_color: "#05080a", theme_color: "#05080a",
         icons: [{ src: "icon.png", sizes: ICON_SIZE + "x" + ICON_SIZE, type: "image/png", purpose: "any maskable" }]
       };
