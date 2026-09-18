@@ -228,21 +228,38 @@ async function main() {
      link's own id is what decides who gets to read one. tools/pricelist.mjs states that argument.
      No snapshot, no boards, exactly as no snapshot means no price lists. */
   if (pricing) {
-    const { boardList, guestBoard } = await import("./pricelist.mjs");
+    const { boardList, guestBoard, tierBoard } = await import("./pricelist.mjs");
     const bookNow = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
     const madeAt = new Date();
     for (const tier of [1, 2]) {
       plan.puts.push({ key: "board:" + tier, value: JSON.stringify(boardList(tier, bookNow, pricing, madeAt)) });
     }
+    /* v696: the level NAMES, so the Worker can ensure one standing link per tier without stating
+       what the tiers are called. The book decides that, and this is the one road it travels. */
+    if (Array.isArray(pricing.tierNames) && pricing.tierNames.length)
+      plan.puts.push({ key: "tiers", value: JSON.stringify(pricing.tierNames) });
     /* ============ v658: AND ONE BOARD PER LINK, FROM ITS INTRODUCER'S LEVEL ============
        A guest link is quoted two levels above the customer who handed it out, capped at the last,
        per product. That level is never stored on the link: it is computed HERE, on every publish,
        so a link follows its introducer the moment he moves them. A link whose introducer is not on
        this issue's roster gets none, and the Worker falls back to the board every stranger sees. */
+    /* ============ v696, HIS INSTRUCTION: FIVE LINKS, ONE PER TIER ============
+       A STANDING link is a level and nothing else, so its board is written from that level alone and
+       follows nobody. The Worker mints the five on the first open of the Links panel; this writes
+       their boards on every publish, exactly as it does for the links that name an introducer. */
     const byUser = plan.users || {};
-    let boards = 0, orphans = 0;
+    const names = Array.isArray(pricing.tierNames) ? pricing.tierNames : [];
+    let boards = 0, orphans = 0, standing = 0;
     for (const id of refIds()) {
       const rec = readRef(id);
+      if (rec && rec.standing && rec.level) {
+        const k = names.indexOf(rec.level);
+        if (k >= 1) {
+          plan.puts.push({ key: "gboard:" + id, value: JSON.stringify(tierBoard(k, bookNow, pricing, madeAt)) });
+          standing++;
+          continue;
+        }
+      }
       const user = rec && String(rec.introducer || "").toLowerCase();
       const code = user ? byUser[user] : null;
       if (!code) { orphans++; continue; }
@@ -250,6 +267,7 @@ async function main() {
       boards++;
     }
     console.log("and both guest boards, tier 1 and tier 2"
+      + (standing ? ", plus " + standing + " standing tier link" + (standing === 1 ? "" : "s") : "")
       + (boards ? ", plus " + boards + " link board" + (boards === 1 ? "" : "s") + " from their introducers" : "")
       + (orphans ? " (" + orphans + " link" + (orphans === 1 ? "" : "s") + " names no customer on this roster and falls back to the board)" : ""));
   }

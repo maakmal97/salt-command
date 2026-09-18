@@ -193,6 +193,21 @@ thing a curious customer could still notice. A custom domain on the statements W
 fix: a `routes` block in `wrangler.stmt.jsonc`, and `SALT_BASE_URL` (or the default at the top
 of `tools/make_statements.mjs`) changed to match before the next issue, since the QR carries it.
 
+**THE GUEST LINKS ARE FIVE, ONE FOR EACH TIER** (v696, his instruction of 18 Sep 2026: "for the
+guest links, produce exactly 5 links, for the five tier pricing"). The five levels a guest may be
+quoted are Titanium, Platinum, Gold, Silver and Bronze; Ambassador is the floor and never a guest's.
+A standing link carries its `level` and `standing: true`, and `ensureStanding` in `stmt/refs.js`
+makes the missing ones on the first open of the Links panel: **ensured, not minted on a tap**, so
+the answer to "what are my links" is always exactly five and there is nothing to remember. It is
+idempotent, and a level that already has one keeps the id it was given, because an id handed to a
+stranger must never change what it opens. The level names travel from the book to the Worker as the
+KV key `tiers`, written by every publish; with no names to hand it makes none rather than inventing
+five. Each standing board is `tierBoard(level, ...)` in `tools/pricelist.mjs`, which is `boardList`
+with the level pinned, so there is one definition of what a board is. `GET /all/refs` returns the
+five in the LADDER's order, then everything else newest first. Links minted against a customer
+(v658) still work, still follow their introducer, and sit below the five on the panel under their
+own heading.
+
 **A PRODUCT IS A MARK, NOT A WORD** (v695, his instruction of 18 Sep 2026). "The products are only
 written as a symbol, the golden cube outline as salt and another one, golden water droplet outline"
 for oil. `PSYM` in `stmt/page.js` holds both paths and `psymSvg` draws one; the client script gets

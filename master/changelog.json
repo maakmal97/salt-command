@@ -1,5 +1,17 @@
 [
  {
+  "v": "v696",
+  "d": "18 Sep 2026",
+  "t": "THE GUEST LINKS ARE FIVE, ONE FOR EACH TIER, AND EACH ONE IS A LEVEL AND NOTHING ELSE",
+  "n": [
+   "<b>HIS INSTRUCTION OF 18 SEP 2026:</b> for the guest links, produce exactly five, for the five tier pricing. A link used to name the customer who handed it out and be quoted two levels above them; the five stand for the ladder itself. Titanium, Platinum, Gold, Silver and Bronze, and Ambassador is not among them, because it is the floor and never a guest's.",
+   "<b>ENSURED, NOT MADE ON A TAP.</b> Opening the Links panel makes whichever of the five are missing and hands all five back in the ladder's order. It is idempotent, and a level that already has a link keeps the id it was given, because an id handed to a stranger must never change what it opens. The level names come from the book, through the key the publish writes, so nothing under stmt/ states what the tiers are called; with no names to hand it makes none rather than inventing five.",
+   "<b>A STANDING BOARD IS A LEVEL WITH THE LADDER PINNED.</b> tierBoard is boardList with the level fixed, rather than a second way of reading the ladder, so a guest and a customer can never be quoted off different inputs. The publish writes one for each on every deploy, exactly as it does for the links that name an introducer, which still work and still follow the customer who handed them out. On today's book the five ask RM 860, 960, 1,060, 1,160 and 1,250 for the largest size of salt, the last of them what a stranger is quoted anyway.",
+   "<b>ONE FAULT THE CHECKS CAUGHT.</b> The clamp on the level read `+level || 5`, and zero is falsy, so a link asking for the floor would have been served the ask. Read the number, then decide.",
+   "<b>THE CHECKS.</b> A new section of 17 assertions: the five and their order, that ensuring them twice mints nothing, that a link named against a customer neither becomes one nor disturbs them, that the five boards are five climbing prices and each says which level it is, that a level off either end is held to the five, and the listing driven through the Worker behind a real Access token, made deliberately out of order so the order it comes back in can only be the ladder's. Twelve mutations each turned it red."
+  ]
+ },
+ {
   "v": "v695",
   "d": "18 Sep 2026",
   "t": "A PRODUCT IS A MARK AND NEVER A WORD, AND THE APP ON A CUSTOMER'S PHONE IS ORDER SALT",

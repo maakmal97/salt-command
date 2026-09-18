@@ -220,6 +220,10 @@ h3.pmark{margin:0 0 4px;line-height:1}
   background:var(--salt-well)}
 .pbar i{display:block;height:100%;background:var(--salt-gradient)}
 #oCards h2{margin:22px 0 0;font-size:var(--salt-text-md)}
+/* v696: the five stand above anything minted against a customer, each under its own line */
+.ghead{margin:18px 0 6px;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);
+  letter-spacing:.18em;text-transform:uppercase;color:var(--salt-copper);font-weight:700}
+.ghead:first-child{margin-top:4px}
 /* THE TEST ACCOUNT (v689): its own small block under the items, quiet, because it is a thing he
    makes and unmakes rather than a place he goes. */
 .mtest{margin-top:18px;padding-top:14px;border-top:1px solid var(--salt-line)}

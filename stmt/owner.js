@@ -198,14 +198,25 @@ export const OWNER_JS = `
     try{ return new Date(iso).toLocaleDateString('en-GB',{timeZone:'Asia/Kuala_Lumpur',
       day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return ''; }
   }
+  /* v696, his instruction of 18 Sep 2026: FIVE LINKS, ONE PER TIER. The five stand at the top, in
+     the ladder's own order, each named by its level; anything minted against a customer sits below
+     them under its own heading, so "exactly five" is what the panel reads at a glance. */
   function drawLinks(){
     var glist=document.getElementById('glist');
     glist.textContent='';
     if(!links.length){ glist.appendChild(el('p','rnone','No links yet.')); return; }
-    links.forEach(function(r){
+    var order=(links.filter(function(r){return r.standing;}).map(function(r){return r.level;}));
+    var standing=links.filter(function(r){return r.standing;}),
+        older=links.filter(function(r){return !r.standing;});
+    if(standing.length){
+      var h=el('p','ghead','The five, one for each tier');
+      glist.appendChild(h);
+    }
+    standing.concat(older.length?[null]:[]).concat(older).forEach(function(r){
+      if(r===null){ glist.appendChild(el('p','ghead','Older links, made against a customer')); return; }
       var card=el('div','glink'+(r.revoked?' off':''));
-      card.appendChild(el('p','gt','Tier '+r.tier+(r.revoked?' \\u00b7 withdrawn':'')));
-      card.appendChild(el('h4',null,r.label||'(no label)'));
+      card.appendChild(el('p','gt',(r.standing?r.level:'Tier '+r.tier)+(r.revoked?' \\u00b7 withdrawn':'')));
+      card.appendChild(el('h4',null,r.standing?'Hand this one to a stranger you would quote '+r.level:(r.label||'(no label)')));
       card.appendChild(el('code','gu',r.url));
       card.appendChild(el('p','gs', r.opens
         ? 'opened '+r.opens+' time'+(r.opens===1?'':'s')+', last '+stampDay(r.last)
@@ -225,6 +236,7 @@ export const OWNER_JS = `
       row.appendChild(copy); row.appendChild(rev); card.appendChild(row);
       glist.appendChild(card);
     });
+    if(order.length&&order.length<5) glist.appendChild(el('p','rnone','Only '+order.length+' of the five are made. Publish the statements and open this again.'));
   }
   async function refs(path, body){
     var o = body ? {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)}

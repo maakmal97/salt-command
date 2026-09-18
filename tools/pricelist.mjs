@@ -219,6 +219,30 @@ export function boardList(tier, book, pricing, now, pick) {
   return out;
 }
 
+/* ============ v696, HIS RULE: FIVE LINKS, ONE PER TIER ============
+ *
+ * "For the guest links, produce exactly 5 links, for the five tier pricing." A standing link is a
+ * LEVEL of the ladder and nothing else: no introducer, nothing to follow, the same board every time
+ * it is opened until the board itself moves. The level is the index into the book's own tier names,
+ * so 1 is the first of the five and 5 the last, the one a stranger is quoted anyway.
+ *
+ * It is boardList with the level pinned, rather than a second way of reading the ladder: one
+ * definition of what a board is, which is the same reason guestBoard below is a pick and not a
+ * copy. A product with fewer levels than asked for falls back exactly as it does there.
+ */
+export function tierBoard(level, book, pricing, now) {
+  /* `+level || 5` sent level 0 to the last rather than the first, because 0 is falsy: the floor
+     would have been served as the ask. Read the number, then decide. */
+  const n = Number(level);
+  const k = Number.isFinite(n) ? Math.max(1, Math.min(5, Math.round(n))) : 5;
+  const names = (pricing && pricing.tierNames) || [];
+  const out = boardList(2, book, pricing, now, (p, last) => Math.min(k, last));
+  out.standing = true;
+  out.level = k;
+  out.tierName = names[k] || null;
+  return out;
+}
+
 /* ============ v658, HIS RULE: A GUEST BOARD FOLLOWS THE INTRODUCER ============
  *
  * A link is handed out BY somebody: the introducer is a customer of his, named by their username,

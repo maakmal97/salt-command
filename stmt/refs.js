@@ -4,7 +4,13 @@
  * tell apart, and each opening a landing page that shows ONE BOARD'S PRICES AND NOTHING ELSE. No
  * statement, no order, no account.
  *
- * SINCE v658 A LINK NAMES ITS INTRODUCER rather than a tier. The board is the ladder, so a guest's
+ * SINCE v696 THERE ARE FIVE STANDING LINKS, ONE PER TIER (his instruction, 18 Sep 2026: "for the
+ * guest links, produce exactly 5 links, for the five tier pricing"). The five levels a guest may be
+ * quoted are Titanium, Platinum, Gold, Silver and Bronze; Ambassador is the floor and never a
+ * guest's. Each standing link carries its LEVEL, is minted once and kept for good, so an id already
+ * handed out never changes what it opens, and he picks which of the five to give a stranger.
+ *
+ * SINCE v658 A LINK MAY INSTEAD NAME ITS INTRODUCER. The board is the ladder, so a guest's
  * level is derived: two above the introducer's where there is room, else one, capped at the last.
  * The level is NOT stored here. It is computed by the publish from the introducer's tier at that
  * moment and written as the link's own board, so a link follows its introducer up when he moves
@@ -67,20 +73,42 @@ export function cleanLabel(s) {
 
 /** Mint one. Collides at about one in 10^11 for forty links, and is checked anyway because the
  *  cost is one read and the failure would silently re-point a link already handed out. */
-export async function mintRef(env, { introducer, tier, label, by }) {
+export async function mintRef(env, { introducer, tier, label, by, level }) {
   /* v658: `tier` is kept on the record for the links minted before the introducer rule, so an old
-     one still opens; nothing reads it to price any more. A new link carries its introducer instead. */
+     one still opens; nothing reads it to price any more. A new link carries its introducer instead.
+     v696: or its LEVEL, which is what the five standing links carry. */
   const t = Number(tier) === 1 ? 1 : 2;
   for (let i = 0; i < 5; i++) {
     const id = newRef();
     if (await env.STMT.get(RKEY(id))) continue;
     const rec = { id, tier: t, introducer: String(introducer || "").toLowerCase() || null,
+      level: level || null, standing: !!level,
       label: cleanLabel(label), made: new Date().toISOString(),
       by: String(by || ""), opens: 0, first: null, last: null, revoked: false };
     await env.STMT.put(RKEY(id), JSON.stringify(rec));
     return rec;
   }
   return null;
+}
+
+/* THE FIVE THAT ALWAYS EXIST (v696). Ensured rather than minted on a tap, so the answer to "what
+ * are my links" is always exactly five and he never has to remember to make them. It is idempotent:
+ * a level that already has a standing link keeps the id it was given, because an id handed to a
+ * stranger must never change what it opens. Ambassador is not among them; it is the floor.
+ *
+ * The names come from the book, through the roster the publish writes, so the desk decides what the
+ * levels are called and this file never states them. With no names to hand it makes none, rather
+ * than inventing five. */
+export async function ensureStanding(env, names) {
+  const want = Array.isArray(names) ? names.slice(1, 6).filter((x) => typeof x === "string" && x) : [];
+  if (want.length !== 5) return [];
+  const have = await listRefs(env);
+  const out = [];
+  for (const level of want) {
+    const found = have.find((r) => r.standing && r.level === level);
+    out.push(found || await mintRef(env, { level, label: level, by: "standing" }));
+  }
+  return out.filter(Boolean);
 }
 
 /** The record, or null when there is none. Never throws on a malformed value. */

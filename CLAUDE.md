@@ -378,11 +378,18 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   both deliberate. Unknown, malformed and withdrawn ids answer the same 404. **A row named
   "Tier 1" may carry no prices** (the engine gates it on bare `if(P.tier1)`), so take the first
   row with finite prices; oil is a genuine one-tier book and says so.
-- **A LINK NAMES ITS INTRODUCER AND FOLLOWS THEM** (v658, his rule): minting takes a customer's
-  username, and the guest is quoted **two levels above theirs where there is room, else one, capped
-  at the last**, per product. The level is never stored on the link; every publish recomputes it and
-  writes `gboard:<id>`, so moving a customer up moves every link they gave out. A link minted since
-  the last publish falls back to `board:2`. Detail: `docs/STATEMENTS.md`.
+- **THE GUEST LINKS ARE FIVE, ONE FOR EACH TIER** (v696, his instruction of 18 Sep 2026). Titanium,
+  Platinum, Gold, Silver, Bronze; **Ambassador is the floor and never a guest's**. They are ENSURED
+  on the first open of the Links panel, not made on a tap, so the answer is always exactly five;
+  minted once and kept for good, because an id handed to a stranger must never change what it opens.
+  The level names reach the Worker through the KV key `tiers`, written by the publish, and with no
+  names it makes none rather than inventing five. Each board is `tierBoard(level, ...)`, which is
+  `boardList` with the level pinned.
+- **A LINK MAY INSTEAD NAME ITS INTRODUCER AND FOLLOW THEM** (v658, his rule): minting takes a
+  customer's username, and the guest is quoted **two levels above theirs where there is room, else
+  one, capped at the last**, per product. The level is never stored on the link; every publish
+  recomputes it and writes `gboard:<id>`, so moving a customer up moves every link they gave out. A
+  link minted since the last publish falls back to `board:2`. Detail: `docs/STATEMENTS.md`.
 
 ## Files that carry a rule
 

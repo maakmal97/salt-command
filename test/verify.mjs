@@ -14355,6 +14355,110 @@ await (async () => {
       "and no product is written as a word anywhere on the prices or the order: " + JSON.stringify((words95.match(/\b(salt|oil)\b/gi) || []).slice(0, 4)));
   } finally { try { dom95.window.close(); } catch (e) { /* best effort */ } }
 })();
+section("v696: the guest links are five, one for each tier, and each one is a level and nothing else");
+await (async () => {
+  /* HIS INSTRUCTION OF 18 SEP 2026: "for the guest links, produce exactly 5 links, for the five
+     tier pricing." A link used to name the customer who handed it out and follow them (v658); the
+     five stand for the ladder instead. They are ENSURED on the listing rather than made on a tap,
+     minted once and kept for good, because an id already handed to a stranger must never change
+     what it opens. Ambassador is the floor and is never one of them. */
+  const R96 = await import("../stmt/refs.js");
+  const PL96 = await import("../tools/pricelist.mjs");
+  const NAMES = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
+
+  const kv96 = new KV();
+  const env96 = { STMT: kv96 };
+  await kv96.put("tiers", JSON.stringify(NAMES));
+
+  /* ---- the five are ensured, in the ladder's order, once ---- */
+  const first = await R96.ensureStanding(env96, NAMES);
+  ok(first.length === 5 && first.map((r) => r.level).join(",") === "Titanium,Platinum,Gold,Silver,Bronze",
+    "five standing links, one for each tier, and the floor is not among them: " + first.map((r) => r.level).join(","));
+  ok(first.every((r) => r.standing === true && R96.REF_RE.test(r.id) && !r.introducer && r.revoked === false),
+    "each is its own credential, stands for a level and names no customer");
+  ok(new Set(first.map((r) => r.id)).size === 5, "and no two of them share an id");
+  const again = await R96.ensureStanding(env96, NAMES);
+  ok(JSON.stringify(again.map((r) => r.id)) === JSON.stringify(first.map((r) => r.id)),
+    "ensuring them twice mints nothing: an id handed to a stranger never changes what it opens");
+  ok((await R96.listRefs(env96)).length === 5, "and there are exactly five, not ten");
+  ok((await R96.ensureStanding({ STMT: new KV() }, null)).length === 0
+    && (await R96.ensureStanding({ STMT: new KV() }, ["Ambassador", "Titanium"])).length === 0,
+    "with no names to hand it makes none, rather than inventing five");
+
+  /* ---- a standing link beside one that names a customer ---- */
+  const intro = await R96.mintRef(env96, { introducer: "abcd-efgh", label: "a shop" });
+  ok(intro && intro.standing === false && intro.level === null && intro.introducer === "abcd-efgh",
+    "a link minted against a customer is not a standing one and carries no level");
+  ok((await R96.ensureStanding(env96, NAMES)).length === 5 && (await R96.listRefs(env96)).length === 6,
+    "and it does not become one, nor stop the five being the five");
+
+  /* ---- the board a standing link serves is that level and nothing else ---- */
+  const bookN = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const { pricingSnapshot: ps96 } = await import("../tools/book.mjs");
+  const { openMaster: om96 } = await import("../tools/payload.mjs");
+  const { w: w96 } = await om96();
+  const snap96 = ps96(w96);
+  if (snap96 && snap96.byProduct) {
+    const at96 = new Date("2026-09-15T02:00:00Z");
+    const boards = [1, 2, 3, 4, 5].map((k) => PL96.tierBoard(k, bookN, snap96, at96));
+    ok(boards.every((b, i) => b.standing === true && b.level === i + 1 && b.tierName === NAMES[i + 1]),
+      "each board says which level it is and names it: " + boards.map((b) => b.tierName).join(","));
+    const salt = boards.map((b) => (b.products.find((x) => x.product === "salt") || {}).sizes)
+      .map((z) => (z && z.length ? z[z.length - 1].price : null));
+    ok(salt.every((x) => x != null) && new Set(salt).size === 5 && salt.every((x, i) => i === 0 || x > salt[i - 1]),
+      "and the five prices are five, climbing with the ladder, the last of them the one a stranger is quoted: " + JSON.stringify(salt));
+    ok(PL96.tierBoard(9, bookN, snap96, at96).level === 5 && PL96.tierBoard(0, bookN, snap96, at96).level === 1,
+      "a level off either end is held to the five, so nothing can serve the floor by mistake");
+    ok(!("introducer" in boards[0]) && !("levels" in boards[0]),
+      "a standing board follows nobody: it carries no introducer and no per-product level to track");
+  } else skipData("no pricing snapshot on this machine, so the five boards were not priced");
+  try { w96.close(); } catch (e) { /* best effort */ }
+
+  /* ---- the listing route, driven behind a real Access token ---- */
+  const stmtW96 = (await import("../stmt/worker.js")).default;
+  const realFetch96 = globalThis.fetch;
+  const TEAM96 = "maakmal", AUD96 = "aud-96", KID96 = "kid-96";
+  const kp96 = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub96 = await crypto.subtle.exportKey("jwk", kp96.publicKey);
+  globalThis.fetch = async (u) => {
+    if (String(u) === "https://" + TEAM96 + ".cloudflareaccess.com/cdn-cgi/access/certs")
+      return new Response(JSON.stringify({ keys: [{ ...pub96, kid: KID96, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + u);
+  };
+  const b64u96 = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const token96 = async () => {
+    const claims = { iss: "https://" + TEAM96 + ".cloudflareaccess.com", aud: [AUD96], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u96(JSON.stringify({ alg: "RS256", kid: KID96, typ: "JWT" })), c = b64u96(JSON.stringify(claims));
+    const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp96.privateKey, new TextEncoder().encode(h + "." + c));
+    return h + "." + c + "." + b64u96(new Uint8Array(sig));
+  };
+  try {
+    const kv2 = new KV();
+    await kv2.put("tiers", JSON.stringify(NAMES));
+    const env2 = { STMT: kv2, ACCESS_TEAM: TEAM96, ACCESS_AUD: AUD96 };
+    /* the FIRST level is made first, and listRefs hands back the newest first, so minting order
+       and ladder order disagree end to end: the order this comes back in can only be the ladder's */
+    await R96.mintRef(env2, { level: "Titanium", label: "Titanium", by: "standing" });
+    const get96 = async (tok) => stmtW96.fetch(new Request("https://k7m3p2.example/all/refs",
+      tok ? { headers: { "cf-access-jwt-assertion": tok } } : {}), env2);
+    ok((await get96(null)).status === 401 && (await kv2.list({ prefix: "g:" })).keys.length === 1,
+      "the route refuses without Access, and mints nothing on the way out: the one link made by hand above is still the only one");
+    const tok96 = await token96();
+    const j1 = await (await get96(tok96)).json();
+    ok(j1.ok && j1.refs.length === 5 && j1.refs.map((r) => r.level).join(",") === "Titanium,Platinum,Gold,Silver,Bronze",
+      "opening the panel makes the five and hands them back in the ladder's order: " + j1.refs.map((r) => r.level).join(","));
+    ok(j1.refs.every((r) => /\/g\/[a-z0-9-]{9}$/.test(r.url) && r.qr.startsWith("data:image/svg+xml,")),
+      "each carries its own address and a QR drawn in the Worker");
+    const j2 = await (await get96(tok96)).json();
+    ok(JSON.stringify(j2.refs.map((r) => r.id)) === JSON.stringify(j1.refs.map((r) => r.id)) && j2.refs.length === 5,
+      "and opening it again is still the same five, with the same ids");
+    const kv3 = new KV();   /* no tiers written yet: the publish has not run */
+    const j3 = await (await stmtW96.fetch(new Request("https://k7m3p2.example/all/refs",
+      { headers: { "cf-access-jwt-assertion": tok96 } }), { STMT: kv3, ACCESS_TEAM: TEAM96, ACCESS_AUD: AUD96 })).json();
+    ok(j3.ok && j3.refs.length === 0, "with no tiers written yet it makes none and says so by being empty, rather than inventing five");
+  } finally { globalThis.fetch = realFetch96; }
+})();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

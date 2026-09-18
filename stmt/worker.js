@@ -42,7 +42,7 @@ import { landingPage, boardPage } from "./page.js";
 import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
-import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen } from "./refs.js";
+import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding } from "./refs.js";
 import { endpointId } from "./push.js";
 import { linkMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
@@ -562,7 +562,20 @@ async function handleRefs(request, env, p, m, origin) {
   if (!(await identity(request, env))) return json({ ok: false, error: "Access required" }, 401);
 
   if (p === "/all/refs") {
-    if (m === "GET") return json({ ok: true, refs: (await listRefs(env)).map((r) => refOut(origin, r)) });
+    /* v696, his instruction of 18 Sep 2026: five links, one per tier. They are ENSURED on the
+       listing rather than made on a tap, so the answer to "what are my links" is always exactly
+       five and there is nothing to remember. Idempotent: a level that already has one keeps the id
+       it was given, because an id handed to a stranger must never change what it opens. */
+    if (m === "GET") {
+      let names = null;
+      try { names = await env.STMT.get("tiers", "json"); } catch (e) { names = null; }
+      await ensureStanding(env, names);
+      /* the five come back in the LADDER's order, not the order they happened to be minted in:
+         he reads them as a ladder, so they are listed as one. Everything else keeps newest first. */
+      const rank = (r) => (r.standing && Array.isArray(names)) ? names.indexOf(r.level) : 99;
+      const all = (await listRefs(env)).sort((a, b) => rank(a) - rank(b));
+      return json({ ok: true, refs: all.map((r) => refOut(origin, r)) });
+    }
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const b = await readJson(request);
     if (!b) return json({ ok: false, error: "send it as application/json" }, 400);
