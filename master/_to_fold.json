@@ -1,0 +1,40 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-18T06:03:39.208Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CK4-SEN": {
+      "salt": "Platinum"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CK4-SEN Salt Platinum. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-18T06:03:39.208Z",
+    "type": "TIER",
+    "party": "CK4-SEN",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CK4-SEN: Salt Platinum",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CK4-SEN": {
+       "salt": "Platinum"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-18T06:04:39.548Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
