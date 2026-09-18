@@ -336,6 +336,35 @@ dropped on a collection. It is shown on his card and **never rides into the ledg
 note reaches the committed book, and free text a customer typed is the one thing here that could
 carry a street. **Nothing is placed on one tap**: the page reviews the order in words first.
 
+**AN ASSOCIATE SEES THEIR OWN CARD, BY MONTH, FROM THE START** (v706, his instruction of 18 Sep
+2026). `associateCard(w, code)` in `tools/book.mjs` builds one associate's own document off the same
+jsdom window the prices come from, so a card and a price can never be struck from different states of
+the book. `liveRecords` seals it as `rec.card` under the same content key as the statement, and only
+for an account the report card names; both doors hand it over, `/open` and `/remember/open`; the page
+carries a fourth tab that appears only where the record that opened actually has one.
+
+*It is a different document from his.* `associateSnapshot` is his view of EVERY associate and is
+served only at `/all/assoc`, behind Access. Two functions rather than one, deliberately: the two
+audiences differ, and the whitelist that guards his card would have had to widen to carry dated lines.
+
+*What is left off, and why.* `share` is a ratio against the WHOLE book's revenue, so an associate
+holding their own RM and their own share can solve for his total; `stars` are bands of that same
+share and give a range of it; `rank` is a position among other people. None of the three is theirs
+to know and none is needed to tell them what they did. The reward is in UNITS, with the distance to
+the next as a **share of one unit** drawn as a bar, because the unit itself is a margin figure. No
+margin, no cost, no floor, no other party's name.
+
+*Every figure adds up to the list under it.* The lines are struck off `pricedSales`, the same basis
+as the summary, and `onward` counts the onward LINES rather than `dsResell`, which counts every R2
+row including the pending and the cancelled and read 14 above a list of 10. That is the v385 lesson:
+a figure a reader can disprove by looking six lines down is worse than no figure.
+
+*By month, from the start.* The lines are dated and the page filters them with a strip in the same
+shape the statement's uses (v690): newest open, All one tap away, and the position above does not
+move with the filter. The month pills are a real tap target now; `min-height` was `auto`, so every
+month pill and every issue pill had been 29px tall since v690, on strips whose whole purpose is to
+be tapped.
+
 **AN ASSOCIATE TICKS AN ORDER AS ON BEHALF OF A FRIEND** (v703, his instruction of 18 Sep 2026).
 Their own orders and the ones they place for somebody else can no longer be told apart by what they
 buy, so they tick it; the words are his, and they replaced an earlier phrasing he rejected. The tick

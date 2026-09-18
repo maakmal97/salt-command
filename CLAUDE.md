@@ -393,6 +393,18 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   it is paid, and it stops of its own accord. **A CRON HERE NEEDS A HAND DEPLOY**: `rev.json`'s id
   does not cover `wrangler.stmt.jsonc`, so `update.mjs` reports the phone current and ships nothing
   (`npx wrangler deploy -c wrangler.stmt.jsonc`).
+- **AN ASSOCIATE SEES THEIR OWN CARD, BY MONTH, FROM THE START** (v706, his instruction of 18 Sep
+  2026). A FOURTH SEALED DOCUMENT on their own record, `rec.card`, beside the statement and the price
+  list and under the same content key, built by `associateCard` in `tools/book.mjs` off the SAME
+  jsdom window as the prices. It is a different document from `/all/assoc`, which is his view of
+  every associate and stays behind Access. **WHAT IS LEFT OFF IS THE POINT**: `share` is a ratio
+  against the whole book's revenue, so an associate holding their own RM and their own share can
+  solve for his total; `stars` are bands of that same share; `rank` is a position among other
+  people. None travels. The reward is UNITS with the distance to the next as a SHARE of one, drawn
+  as a bar, because the unit is a margin figure. **EVERY FIGURE ADDS UP TO THE LIST UNDER IT**: the
+  lines are struck off `pricedSales`, the same basis as the summary, and `onward` counts the lines
+  rather than `dsResell`, which read 14 above a list of 10. The fourth tab appears only where the
+  record that opened actually carries a card.
 - **THE ASSOCIATES REPORT CARD** (v691, his decisions of 18 Sep 2026): one card an associate a
   book on the master page, from `associateSnapshot` in `tools/book.mjs`, published as KV `assoc`
   and served only at `/all/assoc`. **What they did** (bought, sold for him, brought in, onward

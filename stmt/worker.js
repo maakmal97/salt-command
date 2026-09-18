@@ -255,6 +255,8 @@ async function handleOpen(request, env) {
     /* v702: whether this account may order on behalf of a friend. It decides one tick on the
        order form and nothing else; where a row books is the desk's decision, never this. */
     assoc: !!rec.assoc,
+    /* v706: an associate's own report card, sealed under the same content key as the statement */
+    card: rec.card || null,
     env: rec.env, live: rec.live || null, prices: rec.prices || null, session
   }), {
     status: 200,
@@ -337,7 +339,7 @@ async function handleRemember(request, env) {
   const session = await mintSession(env, rec.u);
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
-    issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc,
+    issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
     env: acct.env, live: acct.live || null, prices: acct.prices || null, session
   });
 }

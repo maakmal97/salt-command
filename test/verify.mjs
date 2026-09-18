@@ -14865,6 +14865,112 @@ await (async () => {
     rmSync(join(REPO, "test", "tmp", "seal705c"), { recursive: true, force: true });
   }
 })();
+section("v706: an associate sees their own card, by month, from the start, and no share of his book");
+await (async () => {
+  /* HIS INSTRUCTION OF 18 SEP 2026: "in customer's page, associates see their own live report card,
+     by month, from the start", and "for rewards, they don't see the margin, but more of a progress
+     bar / percentage to the next unit".
+     IT IS A DIFFERENT DOCUMENT FROM HIS. associateSnapshot is his view of EVERY associate and is
+     served only behind Access; this one is sealed onto one associate's own record and opens with
+     their password. WHAT IS LEFT OFF IS THE POINT: `share` is a ratio against the whole book's
+     revenue, so an associate holding their own RM and their own share can solve for his total;
+     `stars` are bands of that same share; `rank` is a position among other people. */
+  const { associateCard, CARD_LINE_FIELDS, CARD_SUM_FIELDS } = await import("../tools/book.mjs");
+  const { openMaster: om6 } = await import("../tools/payload.mjs");
+  const stmtW6 = (await import("../stmt/worker.js")).default;
+  const C6 = await import("../tools/stmt-crypto.mjs");
+
+  const { w: w6 } = await om6();
+  let card6 = null, who6 = null;
+  try {
+    const ids = JSON.parse(w6.eval("JSON.stringify(typeof associateIds==='function'?associateIds():[])"));
+    who6 = ids[0] || null;
+    if (who6) card6 = associateCard(w6, who6);
+  } finally { try { w6.close(); } catch (e) { /* best effort */ } }
+
+  if (!card6) skipData("this book carries no associate, so the card was not built");
+  else {
+    const flat = JSON.stringify(card6);
+    ok(!/share|star|rank|margin|profit|floor|cogs|toNext|marginMine|marginIntro/i.test(flat),
+      "the card carries no share of his revenue, no stars, no rank and no margin: " + (flat.match(/share|star|rank|margin/ig) || []).join(","));
+    const p6 = card6.products[0];
+    ok(Object.keys(p6.summary).every((k) => CARD_SUM_FIELDS.includes(k)) && CARD_SUM_FIELDS.every((k) => k in p6.summary),
+      "the summary is exactly the whitelist and nothing else: " + Object.keys(p6.summary).join(","));
+    ok(p6.lines.length > 0 && p6.lines.every((l) => Object.keys(l).every((k) => CARD_LINE_FIELDS.includes(k))),
+      "and every line carries only a date, what it was, a size and a figure: " + JSON.stringify(p6.lines[0]));
+    ok(p6.lines.every((l) => l.kind === "own" || l.kind === "onward"),
+      "a line is either their own purchase or one that went out through them, and nothing else");
+    /* EVERY FIGURE ADDS UP TO THE LIST UNDER IT. This is the v385 lesson applied here: a figure a
+       reader can disprove by looking six lines down is worse than no figure, and it also proves the
+       lines are THEIRS, because a foreign row would break the sum. Both books, not just the first. */
+    for (const pr of card6.products) {
+      const own = pr.lines.filter((l) => l.kind === "own"), on = pr.lines.filter((l) => l.kind === "onward");
+      ok(Math.abs(own.reduce((a, l) => a + l.rm, 0) - pr.summary.bought) < 0.01
+        && Math.abs(on.reduce((a, l) => a + l.rm, 0) - pr.summary.soldFor) < 0.01
+        && on.length === pr.summary.onward,
+        pr.product + ": what they bought and what went out through them each add up to the lines under them, and the onward count IS the lines: "
+          + JSON.stringify({ bought: pr.summary.bought, own: +own.reduce((a, l) => a + l.rm, 0).toFixed(2),
+            soldFor: pr.summary.soldFor, on: +on.reduce((a, l) => a + l.rm, 0).toFixed(2), onward: pr.summary.onward, lines: on.length }));
+    }
+    const months6 = [...new Set(p6.lines.map((l) => (l.date || "").slice(0, 7)).filter(Boolean))];
+    ok(months6.length >= 1 && p6.lines.every((l) => !l.date || /^\d{4}-\d\d-\d\d$/.test(l.date)),
+      "the lines are dated, so the page can filter them by month: " + months6.sort().join(" "));
+    ok(p6.lines.slice(1).every((l, i) => (p6.lines[i].date || "") >= (l.date || "")),
+      "newest first, which is the order every other dated list on this site uses");
+    if (p6.reward) {
+      ok(p6.reward.next === null || (p6.reward.next >= 0 && p6.reward.next <= 1),
+        "the distance to the next unit is a SHARE of one unit, never a figure of margin: " + p6.reward.next);
+      ok(["earned", "taken", "left", "next", "held"].every((k) => k in p6.reward) && Object.keys(p6.reward).length === 5,
+        "and the reward is units, what is taken, what is left, the share and whether it is held");
+    } else skipData("this associate has no reward on this book");
+  }
+
+  /* ---- the seal: an associate's record carries it, nobody else's does ---- */
+  const MS6 = readFileSync(join(REPO, "tools", "make_statements.mjs"), "utf8");
+  ok(/if \(cards && cards\[code\]\) \{\n\s+rec\.card = Object\.assign\(\{ at: cards\[code\]\.at \}, await encryptWith\(ck, JSON\.stringify\(cards\[code\]\)\)\);/.test(MS6),
+    "it is sealed under the same content key as the statement and the price list, and only where there is one");
+  const PUB6 = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");
+  ok(/const c = associateCard\(rb\.w, row\.id\);/.test(PUB6) && /liveRecords\(root, key, now, pricing, \(opts && opts\.cards\) \|\| null\)/.test(PUB6),
+    "and the cards come off the SAME window as the prices, so a card and a price cannot be struck from different states of the book");
+
+  /* ---- both doors hand it over, driven ---- */
+  const kv6 = new KV();
+  const mkAcct = async (isAssoc, withCard) => {
+    const u = C6.newUsername(), pw = C6.newPassword(), ck = await C6.contentKey("test-secret", u);
+    const rec = { u, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C6.makeVerifier(pw),
+      wrap: await C6.wrapKey(pw, ck), env: await C6.encryptWith(ck, JSON.stringify({ statements: [] })) };
+    if (isAssoc) rec.assoc = true;
+    if (withCard) rec.card = Object.assign({ at: "2026-09-18T00:00:00Z" },
+      await C6.encryptWith(ck, JSON.stringify({ at: "2026-09-18T00:00:00Z", products: [{ product: "salt", name: "Salt", unit: "unit",
+        summary: { bought: 100, soldFor: 200, onward: 2, introduced: 0, referred: 0 },
+        reward: { earned: 1, taken: 0, left: 1, next: 0.4, held: false },
+        lines: [{ date: "2026-09-01", kind: "own", qty: 1, rm: 100 }] }] })));
+    await kv6.put("u:" + u, JSON.stringify(rec));
+    return { u, pw };
+  };
+  const A6 = await mkAcct(true, true), B6 = await mkAcct(false, false);
+  const open6 = async (a) => (await stmtW6.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify({ u: a.u, password: a.pw }) }), { STMT: kv6 })).json();
+  const oa6 = await open6(A6), ob6 = await open6(B6);
+  ok(oa6.ok && oa6.assoc === true && !!oa6.card && ob6.ok && ob6.assoc === false && ob6.card === null,
+    "the password door hands the card over to an associate and a plain null to everybody else");
+  const rem6 = await (await stmtW6.fetch(new Request("https://k7m3p2.example/remember", { method: "POST",
+    headers: { "content-type": "application/json", "X-Stmt-Session": oa6.session },
+    body: JSON.stringify({ wrap: { salt: "s", iv: "i", ct: "c" } }) }), { STMT: kv6 })).json();
+  const back6 = await (await stmtW6.fetch(new Request("https://k7m3p2.example/remember/open", { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify({ token: rem6.token }) }), { STMT: kv6 })).json();
+  ok(back6.ok && !!back6.card, "and so does a remembered device, or the card would vanish the moment they stopped typing a password");
+
+  /* ---- the page: a fourth tab, behind the mark AND behind having one ---- */
+  const page6 = await (await stmtW6.fetch(new Request("https://k7m3p2.example/"), { STMT: kv6 })).text();
+  ok(/data-t="card" id="tCard" hidden/.test(page6) && /tCard\.hidden=!\(assoc&&card&&card\.products&&card\.products\.length\)/.test(page6),
+    "the tab starts hidden and is shown only where the record that opened actually carries a card, so it can never lead to an empty panel");
+  ok(/pCard\.hidden=\(t!=='card'\)/.test(page6), "and the panel is switched with the other three");
+  ok(/card=null; cardMonth='';/.test(page6), "logging out forgets it, as it forgets the price list");
+  /* the month pill was 29px tall since v690, on a strip whose whole purpose is to be tapped */
+  ok(/min-height:var\(--salt-tap\);display:inline-flex/.test(page6) && !/cursor:pointer;min-height:auto/.test(page6),
+    "and every month pill is a real tap target now, swept across the class rather than fixed on the one new strip");
+})();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

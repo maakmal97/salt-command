@@ -681,7 +681,7 @@ export function liveStatement(party, now) {
    the records go up as issued and no live document is written, and the caller says so.
    `pricing` (06 Sep 2026) is the desk's PRICING snapshot; given, each record also carries the
    customer's price list for the week, sealed under the same key (tools/pricelist.mjs). */
-export async function liveRecords(root, key, now, pricing) {
+export async function liveRecords(root, key, now, pricing, cards) {
   let latest = null;
   for (const d of readdirSync(root).filter(x => /^\d{4}-\d{2}$/.test(x)).sort()) {
     if (existsSync(join(root, d, "_kv"))) latest = d;
@@ -691,7 +691,7 @@ export async function liveRecords(root, key, now, pricing) {
   const byUser = {};
   for (const c of Object.keys(users)) byUser[users[c]] = c;
   const records = [], unmatched = [], stale = [], wrongKey = [];
-  let live = 0, priced = 0;
+  let live = 0, priced = 0, carded = 0;
   for (const f of readdirSync(join(root, latest, "_kv")).filter(x => x.endsWith(".json")).sort()) {
     const rec = JSON.parse(readFileSync(join(root, latest, "_kv", f), "utf8"));
     /* A RECORD WITH NO USERNAME IS FROM BEFORE 03 SEP 2026 and cannot be published: the first
@@ -730,10 +730,18 @@ export async function liveRecords(root, key, now, pricing) {
         rec.prices = Object.assign({ at: list.at, week: list.week.monday }, await encryptWith(ck, JSON.stringify(list)));
         priced++;
       }
+      /* v706, his instruction of 18 Sep 2026: an associate sees their own report card, by month,
+         from the start. A fourth sealed document beside the statement and the price list, under the
+         same content key, and only for an account that has one. It carries no share, no stars, no
+         rank and no margin: tools/book.mjs states why each is left off. */
+      if (cards && cards[code]) {
+        rec.card = Object.assign({ at: cards[code].at }, await encryptWith(ck, JSON.stringify(cards[code])));
+        carded++;
+      }
     } else if (key) unmatched.push(rec.u);
     records.push(rec);
   }
-  return { latest, records, live, priced, unmatched, stale, wrongKey };
+  return { latest, records, live, priced, carded, unmatched, stale, wrongKey };
 }
 
 /* `archive` produces a HISTORICAL issue: the documents and the review sheet, and nothing else.

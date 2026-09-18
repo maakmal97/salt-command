@@ -138,7 +138,11 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .mos{max-width:620px;margin:0 auto 22px;display:flex;flex-wrap:wrap;gap:8px}
 .mos button{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.06em;
   color:var(--salt-text-muted);background:none;border:1px solid var(--salt-line);
-  border-radius:var(--salt-radius-pill);padding:7px 12px;cursor:pointer;min-height:auto}
+  border-radius:var(--salt-radius-pill);padding:7px 14px;cursor:pointer;
+  /* v706: min-height was auto, so every month pill and every issue pill has been 29px tall since
+     v690, on a strip whose whole purpose is to be tapped on a phone. His bar is 44px in BOTH
+     dimensions, measured; swept across the class rather than fixed on the one new strip. */
+  min-height:var(--salt-tap);display:inline-flex;align-items:center}
 .mos button.on{color:var(--salt-obsidian);background:var(--salt-brass);border-color:var(--salt-brass);
   font-weight:700}
 .mos button small{margin-left:6px;font-weight:400;letter-spacing:.02em;text-transform:uppercase}
@@ -463,12 +467,16 @@ export function landingPage(user, nonce, owner) {
     + '<button type="button" data-t="stmt" class="on">Statements</button>'
     + '<button type="button" data-t="prices">Prices</button>'
     + '<button type="button" data-t="order">Order</button>'
+    /* v706: the associate's own card. Hidden for everybody else, and shown only once the record
+       that opened actually carries one, so the tab can never lead to an empty panel. */
+    + '<button type="button" data-t="card" id="tCard" hidden>Card</button>'
     + "</div>"
     + '<div id="pStmt"><div id="mos" class="mos" hidden></div>'
     + '<div id="mfil" class="mos mfil" hidden></div><p class="mfnote" id="mfnote"></p>'
     + '<div id="out"></div></div>'
     + '<div id="pPrices" class="panel" hidden></div>'
     + '<div id="pOrder" class="panel" hidden></div>'
+    + '<div id="pCard" class="panel" hidden></div>'
     + '<script nonce="' + nonce + '">'
     + CLIENT_JS.replace(/__POLL__/g, String(POLL_MS))
       .replace("__PAY_SITE__", JSON.stringify(PAY_SITE)).replace("__PAY_ACCOUNTS__", JSON.stringify(PAY_ACCOUNTS))
@@ -510,6 +518,8 @@ const CLIENT_JS = `
   var POLL_MS=__POLL__, bundle=null, at=0, ticket=0, busy=false;
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
   var session='', user='', prices=null, orders=[], poll=null, tab='stmt', draft={}, pick={};
+  /* v706: the associate's own card, opened from their record like the price list */
+  var card=null, cardMonth='';
   /* v702: whether this account may order on behalf of a friend. It draws one tick and nothing
      else; where a row books is the desk's decision, and it checks it against its own roster. */
   var assoc=false;
@@ -525,7 +535,8 @@ const CLIENT_JS = `
       mos=document.getElementById('mos'), mfil=document.getElementById('mfil'),
       tabs=document.getElementById('tabs'),
       pStmt=document.getElementById('pStmt'), pPrices=document.getElementById('pPrices'),
-      pOrder=document.getElementById('pOrder');
+      pOrder=document.getElementById('pOrder'), pCard=document.getElementById('pCard'),
+      tCard=document.getElementById('tCard');
   /* THE MESSAGE GOES WHERE THE READER IS LOOKING. #msg lives inside the gate, so on the owner's
      route, where the gate is hidden behind the roster, every "Checking..." and every refusal was
      written into a hidden element. Both are written; only one is on screen. */
@@ -690,7 +701,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; prices=null; orders=[]; draft={}; pick={}; assoc=false;
+    bundle=null; session=''; prices=null; orders=[]; draft={}; pick={}; assoc=false; card=null; cardMonth='';
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
     var mfn=document.getElementById('mfnote'); if(mfn) mfn.textContent='';
@@ -718,12 +729,13 @@ const CLIENT_JS = `
   }
   document.getElementById('lock').addEventListener('click', logOut);
 
-  /* ---- the three tabs ---- */
+  /* ---- the tabs: three for everyone, a fourth for an associate ---- */
   function showTab(t){
     tab=t;
     var bs=tabs.querySelectorAll('button');
     for(var i=0;i<bs.length;i++) bs[i].className=(bs[i].getAttribute('data-t')===t?'on':'');
     pStmt.hidden=(t!=='stmt'); pPrices.hidden=(t!=='prices'); pOrder.hidden=(t!=='order');
+    pCard.hidden=(t!=='card');
     window.scrollTo(0,0);
   }
   tabs.addEventListener('click', function(ev){
@@ -807,7 +819,89 @@ const CLIENT_JS = `
     }
     gate.hidden=true; if(roster) roster.hidden=true;
     barw.hidden=false; tabs.hidden=false;
+    /* v706: the fourth tab appears only where the record that opened actually carries a card, so
+       it can never lead to an empty panel and nobody else is shown one at all */
+    tCard.hidden=!(assoc&&card&&card.products&&card.products.length);
+    if(!tCard.hidden) drawCard();
     pickStmt(0);
+  }
+
+  /* ---- THEIR OWN CARD (v706, his instruction of 18 Sep 2026) ----------------------------------
+     "Associates see their own live report card, by month, from the start." It is sealed onto their
+     own record beside the statement and the price list, so it opens with their password and nobody
+     else's. What it does NOT carry is stated in tools/book.mjs: no share of his revenue, no stars,
+     no rank, no margin. The reward's distance to the next unit is a SHARE of one unit and is drawn
+     as a bar, his instruction, because the unit itself is a margin figure.
+     THE MONTHS WORK AS THE STATEMENT'S DO (v690): every line from the start, the newest month
+     open, All one tap away, and the position below does not move with the filter. */
+  function cardMonths(p){
+    var seen={}, ms=[];
+    (p.lines||[]).forEach(function(l){ var m=(l.date||'').slice(0,7); if(m&&!seen[m]){ seen[m]=1; ms.push(m); } });
+    return ms.sort().reverse();
+  }
+  function drawCard(){
+    pCard.textContent='';
+    if(!card||!card.products||!card.products.length){ pCard.appendChild(el('p','lead','Your card is written with the next update.')); return; }
+    pCard.appendChild(el('h2',null,'Your card'));
+    pCard.appendChild(el('p','lead','What you have bought, what has gone out through you, and where your reward stands. Every month from the start; the newest opens.'));
+    card.products.forEach(function(p){
+      var pane=el('div','pane');
+      var h3=el('h3','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
+      pane.appendChild(h3);
+      var sm=p.summary||{};
+      var ul=el('ul','conf');
+      [['You bought',rm(sm.bought||0)],
+       ['Sold through you',rm(sm.soldFor||0)],
+       ['Onward sales',String(sm.onward||0)],
+       ['Brought in',rm(sm.introduced||0)],
+       ['People you introduced',String(sm.referred||0)]].forEach(function(r){
+        var li=el('li'); li.appendChild(el('span','k',r[0])); li.appendChild(el('span','v',r[1])); ul.appendChild(li);
+      });
+      pane.appendChild(ul);
+      /* THE REWARD IN UNITS, AND A BAR TO THE NEXT. No ringgit of margin anywhere near it. */
+      if(p.reward){
+        var rw=p.reward;
+        pane.appendChild(el('p','sub2','Reward: '+unitsOf(rw.left,p.unit)+' to take'
+          +(rw.earned!==rw.left?' ('+unitsOf(rw.earned,p.unit)+' earned, '+unitsOf(rw.taken,p.unit)+' taken)':'')
+          +(rw.held?'. Held for now.':'.')));
+        if(rw.next!=null){
+          /* the fill is an <i>, which is what .pbar's own rule paints; a <span> drew an empty rule */
+          var bar=el('div','pbar'); var fill=el('i'); fill.style.width=Math.round(rw.next*100)+'%';
+          bar.appendChild(fill); pane.appendChild(bar);
+          pane.appendChild(el('p','sub2',Math.round(rw.next*100)+'% of the way to your next unit.'));
+        }
+      }
+      /* the lines, with their own month strip */
+      var months=cardMonths(p), pick=cardMonth||months[0]||'';
+      if(months.length>1){
+        var strip=el('div','mos mfil');
+        months.concat(['']).forEach(function(m){
+          var b=el('button',(m===pick?'on':'')); b.type='button';
+          b.textContent=m?monthLabel(m):'All';
+          b.addEventListener('click',function(){ cardMonth=m; drawCard(); });
+          strip.appendChild(b);
+        });
+        pane.appendChild(strip);
+      }
+      var shown=(p.lines||[]).filter(function(l){ return !pick||(l.date||'').slice(0,7)===pick; });
+      if(!shown.length) pane.appendChild(el('p','sub2','Nothing in that month.'));
+      else {
+        var t=el('table'), th=el('thead'), tr=el('tr');
+        [['Date','l'],['What','l'],['Size',''],['RM','']].forEach(function(c){ tr.appendChild(el('th',c[1]||null,c[0])); });
+        th.appendChild(tr); t.appendChild(th);
+        var tb=el('tbody');
+        shown.forEach(function(l){
+          var row=el('tr');
+          row.appendChild(el('td','l',l.date||''));
+          row.appendChild(el('td','l',l.kind==='own'?'You bought':'Through you'));
+          row.appendChild(el('td',null,unitsOf(l.qty,p.unit)));
+          row.appendChild(el('td',null,rm(l.rm)));
+          tb.appendChild(row);
+        });
+        t.appendChild(tb); pane.appendChild(t);
+      }
+      pCard.appendChild(pane);
+    });
   }
 
   /* ---- PRICES: the week's list, one block per product ---- */
@@ -1255,6 +1349,11 @@ const CLIENT_JS = `
     }
     prices=null;
     assoc=body.assoc===true;
+    card=null;
+    if(body.card){
+      try{ card=JSON.parse(await open(ck, body.card)); if(stale()) return; }
+      catch(e){ card=null; /* the statement still opens; the card is simply absent */ }
+    }
     if(body.prices){
       try{ prices=JSON.parse(await open(ck, body.prices)); if(stale()) return; }
       catch(e){ prices=null; /* the statements still open; the list is simply absent */ }
@@ -1317,6 +1416,8 @@ const CLIENT_JS = `
     }
     prices=null;
     assoc=body.assoc===true;
+    card=null;
+    if(body.card){ try{ card=JSON.parse(await open(ck, body.card)); }catch(e){ card=null; } }
     if(body.prices){ try{ prices=JSON.parse(await open(ck, body.prices)); }catch(e){ prices=null; } }
     if(stale()) return false;
     say('');

@@ -1,5 +1,18 @@
 [
  {
+  "v": "v706",
+  "d": "18 Sep 2026",
+  "t": "AN ASSOCIATE SEES THEIR OWN CARD, BY MONTH, FROM THE START, AND NO SHARE OF HIS BOOK",
+  "n": [
+   "<b>HIS INSTRUCTION OF 18 SEP 2026:</b> in the customer's page, associates see their own live report card, by month, from the start, and for rewards they do not see the margin but a progress bar and a percentage to the next unit. It is a fourth sealed document on their own record, beside the statement and the price list and under the same content key, and a fourth tab that appears only where the record that opened actually carries one.",
+   "<b>IT IS A DIFFERENT DOCUMENT FROM HIS.</b> The report card of v691 is his view of EVERY associate and stays behind Access. This one is one associate's own, built by its own function off the same window the prices come from, so a card and a price can never be struck from different states of the book. Two functions rather than one, because the two audiences differ and the whitelist guarding his card would have had to widen to carry dated lines.",
+   "<b>WHAT IS LEFT OFF IS THE POINT.</b> Share is a ratio against the whole book's revenue, so an associate holding their own ringgit and their own share can solve for his total; stars are bands of that same share and give a range of it; rank is a position among other people. None of the three is theirs to know and none is needed to tell them what they did. The reward is in units, and the distance to the next travels as a share of ONE unit and is drawn as a bar, because the unit itself is a margin figure.",
+   "<b>EVERY FIGURE ADDS UP TO THE LIST UNDER IT.</b> The lines were struck off a different basis from the summary above them, so a pending order sat in the list and not in the total; they share pricedSales now. And the onward count was dsResell, which counts every R2 row including the pending and the cancelled: it read 14 above a list of 10. It counts the lines themselves now. Both are the lesson of v385, which is that a figure a reader can disprove by looking six lines down is worse than no figure.",
+   "<b>AND EVERY MONTH PILL IS A REAL TAP TARGET.</b> min-height was auto, so every pill on the month strip and the issue strip has been 29px tall since v690, on strips whose whole purpose is to be tapped on a phone. Swept across the class rather than fixed on the one new strip.",
+   "<b>THE CHECKS.</b> A new section of 18 assertions: no share, no stars, no rank and no margin anywhere in the card; the summary exactly its whitelist; every line a date, a kind, a size and a figure and nothing else; both books' figures adding up to their own lines; the reward's distance a share between nought and one; the seal only where there is a card; both doors driven with real sealed accounts; the tab hidden for everybody else and for an associate with no card; and the pills measured. Seventeen mutations each turned it red. Driven in Chromium at 375 touch and 1280 mouse: the bar drew empty until it was found that the fill is an i and not a span."
+  ]
+ },
+ {
   "v": "v705",
   "d": "18 Sep 2026",
   "t": "A PASSWORD FILED UNDER A NAME THAT HAS SINCE MOVED IS PAIRED BY ITS OWN VERIFIER",

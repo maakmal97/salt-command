@@ -45,7 +45,7 @@ export function usersMap(root) {
 
 /** Everything the publish would do, as data: the puts, the deletes and what it found. */
 export async function planPublish(root, key, now, existingKeys, storedIssue, pricing, assoc, opts) {
-  const r = await liveRecords(root, key, now, pricing);
+  const r = await liveRecords(root, key, now, pricing, (opts && opts.cards) || null);
   /* v688: THE SEALED PASSWORD IS NOT IN THE RECORD A CUSTOMER FETCHES. It is sealed under the
      master, so a customer could not open it, but /open hands the whole record's fields to whoever
      answers the door and there is no reason for it to be there at all. It travels in `sheet`,
@@ -192,7 +192,7 @@ async function main() {
      pxPolicy are the desk's contribution to the engine, so the master is opened in jsdom here, the
      way tools/d1.mjs --seed already does in the step before this one. About ten seconds. A dry run
      skips it, and so does --no-prices, and the records then go up without a list. */
-  let pricing = null, assoc = null;
+  let pricing = null, assoc = null; const cards = {};
   if (!dry && !process.argv.includes("--no-prices") && key) {
     const { readBook, associateSnapshot } = await import("./book.mjs");
     /* v691: one window, two readings. The associates' report card comes off the same desk the
@@ -200,9 +200,22 @@ async function main() {
     const rb = await readBook();
     pricing = rb.ledger.PRICING;
     try { assoc = associateSnapshot(rb.w); } catch (e) { console.log("::warning::no associates snapshot: " + e.message); }
+    /* v706: and one card per associate, off the SAME window, so a card and a price can never be
+       struck from different states of the book. One per associate, not one per account: only an
+       account the report card names gets one. */
+    try {
+      const { associateCard } = await import("./book.mjs");
+      for (const prod of (assoc && assoc.products) || []) {
+        for (const row of prod.rows || []) {
+          if (!row || !row.id || cards[row.id]) continue;
+          const c = associateCard(rb.w, row.id);
+          if (c) cards[row.id] = c;
+        }
+      }
+    } catch (e) { console.log("::warning::no associate cards: " + e.message); }
   }
   const noRetire = process.argv.includes("--no-retire");
-  const plan = await planPublish(root, key, new Date(), existing, storedIssue, pricing, assoc, { noRetire });
+  const plan = await planPublish(root, key, new Date(), existing, storedIssue, pricing, assoc, { noRetire, cards });
   if (noRetire) console.log("--no-retire: every list, board and roster is refreshed; no account is retired");
   if (!plan.latest) { console.log("no statement set to publish; normal for a build with no issue in it"); return; }
 
@@ -238,6 +251,7 @@ async function main() {
   plan.puts.push({ key: "roster", value: JSON.stringify(rosterList) });
 
   /* v691: the report card is in the plan (planPublish puts it); this only says so out loud */
+  if (Object.keys(cards).length) console.log("and " + Object.keys(cards).length + " associate(s) carry their own card, sealed on their own record");
   if (assoc) {
     console.log("and the associates' report card: " + (assoc.products[0] ? assoc.products[0].rows.length : 0)
       + " associates over " + assoc.products.length + " book(s)");

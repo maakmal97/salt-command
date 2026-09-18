@@ -324,6 +324,87 @@ export function associateSnapshot(w) {
   return { at: new Date().toISOString(), products: out };
 }
 
+/* ---- AN ASSOCIATE'S OWN CARD (v706, his instruction of 18 Sep 2026) ---------------------------
+ * "Associates see their own live report card, by month, from the start." That is a DIFFERENT
+ * document from associateSnapshot above, which is HIS view of every associate and is served only
+ * behind Access: this one is sealed onto one associate's own record and opens with their password.
+ * Two functions rather than one, deliberately, because the two audiences are different and the
+ * whitelist that guards his card would have to be widened to carry dated lines.
+ *
+ * WHAT IS LEFT OFF, AND WHY. `share` is a ratio against the WHOLE book's revenue, so an associate
+ * holding their own RM and their own share can solve for his total revenue; `stars` are bands of
+ * that same share and give a range of it; `rank` is a position among other people. None of the
+ * three is theirs to know, and none is needed to tell them what they did. The reward's distance to
+ * the next unit travels as a SHARE of one unit, exactly as it does on his card, because the unit
+ * is a margin figure. No margin, no cost, no floor, no other party.
+ *
+ * BY MONTH, FROM THE START, so the lines are DATED and the page filters them with the same month
+ * strip a statement uses (v690). Nothing here windows anything: the whole history travels and the
+ * reader chooses, which is the rule for everything a customer sees.
+ */
+export const CARD_LINE_FIELDS = ["date", "kind", "qty", "rm"];
+export const CARD_SUM_FIELDS = ["bought", "soldFor", "onward", "introduced", "referred"];
+
+export function associateCard(w, code) {
+  const read = reader(w);
+  const call = (expr) => { const r = read(expr); return r.ok && typeof r.value !== "undefined" ? r.value : null; };
+  const products = call("PROD_ORDER") || ["salt"];
+  const before = call("PROD");
+  const out = [];
+  try {
+    for (const p of products) {
+      w.eval("PROD=" + JSON.stringify(p) + ";if(typeof recompute==='function')recompute();");
+      const one = JSON.parse(w.eval(`JSON.stringify((function(){
+        var id = ${JSON.stringify(code)};
+        if(typeof networkStats!=='function') return null;
+        var r = networkStats().filter(function(x){ return x.id === id; })[0];
+        if(!r) return null;
+        /* THE LINES ARE THE ROWS THEMSELVES, dated, so the month strip has something to filter.
+           Their own purchases and the sales that went through their bucket, and nothing of anybody
+           else's: ownerOf maps a bucket back to its owner, which is the one rule for whose a row is. */
+        var lines = [];
+        /* THE SAME BASIS AS THE SUMMARY ABOVE IT, which is pricedSales: a line a reader can add up
+           to something the summary contradicts is worse than no line at all (the lesson of v385).
+           A pending order is on their statement, which is where a pending order belongs. */
+        (typeof pricedSales !== 'undefined' ? pricedSales : []).forEach(function(s){
+          if(s.total == null || s.cancelled) return;
+          var mine = (s.customer === id && s.rev !== 'R2');
+          var through = (typeof ownerOf === 'function' && ownerOf(s.customer) === id && s.rev === 'R2');
+          if(!mine && !through) return;
+          lines.push({ date: s.date || null, kind: mine ? 'own' : 'onward',
+            qty: +(+(s.qty || 0)).toFixed(3), rm: +(+s.total).toFixed(2) });
+        });
+        lines.sort(function(a,b){ var x=a.date||'', y=b.date||''; return x<y?1:x>y?-1:0; });
+        var taken = typeof rebateApplied === 'function' ? +(+rebateApplied(id)).toFixed(2) : 0;
+        var earned = +(+r.earned).toFixed(2);
+        var next = (r.unit && r.toNext != null) ? Math.max(0, Math.min(1, +(1 - r.toNext / r.unit).toFixed(3))) : null;
+        return {
+          summary: {
+            bought: +(+r.direct).toFixed(2), soldFor: +(+r.indirect).toFixed(2),
+            /* THE COUNT IS THE LINES' OWN, not dsResell, which counts every R2 row including the
+               pending and the cancelled: it read 14 above a list of 10. The lesson of v385 is that
+               a figure a reader can disprove by looking six lines down is worse than no figure, and
+               here the list is right there under it. */
+            onward: lines.filter(function(l){ return l.kind === 'onward'; }).length,
+            introduced: +(+r.r3).toFixed(2), referred: (r.referrals || []).length
+          },
+          reward: r.unit == null ? null : {
+            earned: earned, taken: taken, left: +(earned - taken).toFixed(2), next: next,
+            held: typeof canRedeem === 'function' ? !canRedeem(id) : false
+          },
+          lines: lines
+        };
+      })())`));
+      if (one) out.push(Object.assign({ product: p,
+        name: call("PRODUCTS && PRODUCTS[" + JSON.stringify(p) + "] && PRODUCTS[" + JSON.stringify(p) + "].name") || p,
+        unit: call("PRODUCTS && PRODUCTS[" + JSON.stringify(p) + "] && PRODUCTS[" + JSON.stringify(p) + "].unit") || "unit" }, one));
+    }
+  } finally {
+    if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { /* the extract goes on */ } }
+  }
+  return out.length ? { at: new Date().toISOString(), products: out } : null;
+}
+
 /* One default, shared with payload.mjs by matching it, and overridable the same way. */
 export const MASTER = process.env.SALT_MASTER ||
   resolve(REPO, "master", "salt_command.html");
