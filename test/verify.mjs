@@ -2893,8 +2893,12 @@ await (async () => {
   ok(saltB.b != null && Math.abs(oilB.b - saltB.b) > 1e-6,
     "the two books fit different exponents, so the taper is genuinely per book");
   /* his call 4: the board sizes are what he sells, and the ladder anchor is the book's own */
-  ok(JSON.stringify(read("sizesFor('oil')")) === JSON.stringify([10, 20, 30, 40, 50, 80, 100]),
-    "oil's grid is his: 10 to 50 in tens, no fives, and 80 and 100 as his workbook carries them (his decision of 15 Sep 2026)");
+  /* HIS DECISION OF 19 SEP 2026 SUPERSEDES HIS OF 15 SEP: oil has no pricing tier and five sizes.
+     He typed five prices, 10 to 50 in tens, and the engine does not extrapolate his ringgit-a-ten
+     taper, so 80 and 100 would have held flat at RM9 a unit and quoted RM720 and RM900. Asked, he
+     dropped them. The older decision is not corrected away: it stands in the Journal at v641. */
+  ok(JSON.stringify(read("sizesFor('oil')")) === JSON.stringify([10, 20, 30, 40, 50]),
+    "oil's grid is his: 10 to 50 in tens, and 80 and 100 went with the tiers (his decision of 19 Sep 2026)");
   ok(JSON.stringify(read("sizesFor('salt')")) === JSON.stringify([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6.25, 12.5]),
     "salt's grid is untouched");
   const oilL = read("ladderFor('oil')"), saltL = read("ladderFor('salt')");
@@ -3023,8 +3027,8 @@ await (async () => {
   /* HIS DECISION OF 15 SEP 2026: 80 AND 100 UNIT JOIN, as his workbook's oil board carries them. They are derived beside the
      five he stated, so what is checked is the law they keep, never a figure the cost basis moves. */
   const tail = rows.slice(5);
-  ok(JSON.stringify(tail.map((r) => r.q)) === "[80,100]" && tail.every((r, i) => r.ask >= r.fl - 0.009 && r.ask / r.q <= rows[4 + i].ask / rows[4 + i].q + 1e-9),
-    "and 80 and 100 unit are derived beside them, each clearing its own floor and asking no more a unit than the size before it: " + JSON.stringify(tail.map((r) => [r.q, r.ask, r.fl])));
+  ok(tail.length === 0 && rows.length === 5,
+    "and there is nothing derived beside them: the board is the five he typed and stops (his decision of 19 Sep 2026, superseding 15 Sep) " + JSON.stringify(rows.map((r) => r.q)));
   /* v552, 09 Sep 2026: HE DECIDED, AND THE LINE MOVES TO WHAT HE DECIDED. The v551 oil count read a
      23.08% leak from his own figures and lifted the 50 unit floor to RM482.20, so this section went
      red exactly as it was built to: "his stated price needs his decision, not a board that quietly
@@ -3330,16 +3334,24 @@ await (async () => {
     "while the true margin on price stays under the ask, where it belongs");
   w.eval("setProd('oil');recompute();");
   const cOil = read("pxCost()");
-  ok(cOil.rule === "buyPlusPct" && cOil.rulePct === 15, `oil prices on the stated rule (${cOil.rule} ${cOil.rulePct})`);
-  ok(Math.abs(cOil.eff - +(cOil.repl * 1.15).toFixed(6)) < 0.005, `and its effective cost is the buy rate plus 15% (${cOil.eff} against ${cOil.repl})`);
+  /* 19 SEP 2026: OIL IS PRICED ON LANDED COST, purchase plus freight and nothing else (his
+     instruction). It ran on a buyPlusPct 15 PLACEHOLDER from 09 Sep, whose own note said the fifteen
+     per cent stood in for freight and leak together; with the freight now in the floor directly that
+     percentage would have counted it twice. He uses most of the oil himself, so its leak is high by
+     design and is never costed into a sale. It is still measured, which the line below proves. */
+  ok(cOil.rule === "landed", `oil prices on the stated rule (${cOil.rule})`);
+  ok(Math.abs(cOil.eff - +(cOil.repl + cOil.freight).toFixed(6)) < 0.005, `and its effective cost is purchase plus freight (${cOil.eff} against ${cOil.repl} + ${cOil.freight})`);
   ok(Math.abs(cOil.effEx - cOil.eff) < 0.005, "the floor's basis moves with it, so the board is not priced one way and refused another");
   ok(Math.abs(cOil.landed - +(cOil.repl + cOil.freight).toFixed(4)) < 0.005 && cOil.shrink > 0,
     `while landed stays the true cost and the leak is still measured and reported (${cOil.landed}, ${(cOil.shrink * 100).toFixed(2)}%)`);
   ok(read("priceLadder(50).ask.under") === 0, "so his RM450 clears its floor on this basis and the desk stops calling it under");
   w.eval("setProd('salt');recompute();");
   const cSalt = read("pxCost()");
-  ok(cSalt.rule === null && Math.abs(cSalt.eff - cSalt.effEx) < 0.001 && cSalt.eff > cSalt.landed,
-    `and salt carries no rule, so it still prices off the measured leak (${cSalt.eff} on ${cSalt.landed})`);
+  /* 19 SEP 2026: SALT'S RULE IS NOW STATED TOO, so the two products differ deliberately rather than
+     by one of them merely lacking an entry (his instruction). `stack` changes not one salt figure:
+     what it changes is that the difference is written down. */
+  ok(cSalt.rule === "stack" && Math.abs(cSalt.eff - cSalt.effEx) < 0.001 && cSalt.eff > cSalt.landed,
+    `and salt states the measured stack, so it still prices off the leak (${cSalt.eff} on ${cSalt.landed})`);
   w.eval("setProd('oil');recompute();");
   let strict = true, totalRises = true;
   for (let i = 1; i < rows.length; i++) {
@@ -7338,12 +7350,16 @@ await (async () => {
     const gOne = guestBoard(cheapCode, gbook, gpricing, new Date());
     const gTwo = guestBoard(dearCode, gbook, gpricing, new Date());
     const heldAt = (code, p) => gnames.indexOf(((gpricing.tierOf || {})[code] || {})[p]);
-    ok(Object.keys(gOne.levels).length > 0
-      && Object.keys(gOne.levels).every((p) => {
+    /* 19 Sep 2026: A PRODUCT WITH ONE STATED PRICE HAS NO LEVEL TO BE TWO ABOVE, so the rule is read
+       where a level exists and oil is asserted to carry none. Every guest sees oil's one board. */
+    const levelled = Object.keys(gOne.levels).filter((p) => gOne.levels[p] != null);
+    ok(levelled.length > 0
+      && levelled.every((p) => {
         const t = heldAt(cheapCode, p);
         return gnames.indexOf(gOne.levels[p]) === (t < 0 ? gnames.length - 1 : Math.min(t + 2, gnames.length - 1));
-      }),
-      "a link is quoted two levels above its introducer where there is room, and the board where they hold none: "
+      })
+      && gOne.levels.oil == null,
+      "a link is quoted two levels above its introducer where there is room, and oil carries no level at all because it has one price: "
       + JSON.stringify([gpricing.tierOf[cheapCode], gOne.levels]));
     ok(gnames.indexOf(gTwo.levels.salt) === gnames.length - 1 && heldAt(dearCode, "salt") >= gnames.length - 3,
       "and an introducer near the top hands out the board itself, capped rather than running off the end: "
@@ -7460,8 +7476,10 @@ await (async () => {
     const oneEnd = bl(1, bk, noLadder({ 0.5: 60 }), new Date());
     const sameSize = bl(1, bk, noLadder({ 0.5: 60, "0.50": 875 }), new Date());
     const healthy = bl(1, bk, px, new Date());
-    ok(healthy.products.length > 0 && healthy.products.every((p) => p.sizes.length > 0 && !p.fellBack),
-      "with a ladder, the cheaper guest link prices every size off it and falls back to nothing");
+    ok(healthy.products.length > 0 && healthy.products.every((p) => p.sizes.length > 0)
+      && healthy.products.filter((p) => p.product !== "oil").every((p) => !p.fellBack),
+      "with a ladder, the cheaper guest link prices every size off it and falls back to nothing: "
+      + JSON.stringify(healthy.products.map((p) => [p.product, p.sizes.length, !!p.fellBack])));
     ok(oneEnd.products.length > 0 && oneEnd.products.every((p) => p.sizes.length > 0 && p.fellBack),
       "and on a book with NO ladder, ONE stated end falls back to the tier that has prices rather than an empty table");
     ok(sameSize.products.length > 0 && sameSize.products.every((p) => p.sizes.length > 0
@@ -7581,16 +7599,20 @@ await (async () => {
   ok(saltL.tier === "Bronze" && wrong.length === 0 && saltL.sizes.length === snap.sizes.length && !("delivery" in saltL),
     "a customer holding Bronze is quoted Bronze, never above his own rate, at every board size; one price, no delivery on the list");
   const goldL = PL.priceList("CX0-AA", bookP, tiered({ "CX0-AA": { salt: "Gold" } }), nowP), goldS = goldL.products.find(p => p.product === "salt");
+  /* 19 Sep 2026: OIL IS PRICED FOR EVERYBODY, held tier or none, because he has typed one board for
+     all. The "no tier, no price" rule is right where a level decides the price and would otherwise
+     have told thirty of thirty-six customers their oil price was still coming. */
   ok(goldS && goldS.tier === "Gold" && goldS.sizes.every(x => x.price === PE.cardPrice(130 * x.q, floorC(x.q), tierAt(x.q, gold)) && x.price <= tierAt(x.q, gold))
-    && goldL.products.length === 1 && goldL.soon.length === 1 && goldL.soon[0].product === "oil",
-    "a customer holding Gold on salt is quoted Gold's price at each size, or his own rate where it is lower, and oil, holding no tier, is not priced");
+    && goldL.soon.length === 0 && goldL.products.some((x) => x.product === "oil"),
+    "a customer holding Gold on salt is quoted Gold's price at each size, or his own rate where it is lower, and oil is priced too because its board needs no tier");
   const cheap = PL.priceList("CX0-CH", { ...bookP, sales: [{ date: "2026-07-01", customer: "CX0-CH", qty: 1, total: 1, cash: 1, deliveredQty: 1 }] }, tiered({ "CX0-CH": { salt: "Bronze" } }), nowP).products[0];
   ok(cheap.rate === 1 && cheap.sizes.every(x => x.price === PE.cardPrice(1 * x.q, floorC(x.q), tierAt(x.q, bronze)) && x.price >= floorC(x.q) - 0.009),
     "a customer whose old rate is under the floor is lifted to the first five above it, never under the floor");
   const fresh = PL.priceList("CX0-ZZ", bookP, tiered({ "CX0-ZZ": { salt: "Bronze" } }), nowP), none = PL.priceList("CX0-ZZ", bookP, snap, nowP);
   ok(fresh.products[0].basis === "tier" && fresh.products[0].sizes.every(x => x.price === tierAt(x.q, bronze))
-    && none.products.length === 0 && JSON.stringify(none.soon.map((s) => s.product)) === '["salt","oil"]',
-    "a customer with no history is quoted the tier set for them, Bronze for a new one, and with no tier at all nothing is priced: both products are coming soon");
+    && JSON.stringify(none.soon.map((s) => s.product)) === '["salt"]' && none.products.some((x) => x.product === "oil"),
+    "a customer with no history is quoted the tier set for them, and with no tier SALT is coming soon while oil is priced anyway: "
+      + JSON.stringify([none.soon.map((x) => x.product), none.products.map((x) => x.product)]));
 
   /* THE RAILS SHIP WITHOUT A NUMBER. */
   const ship = shipAccounts({ accounts: [
@@ -12037,19 +12059,26 @@ await (async () => {
     /* v644: the rule's multiples run evenly from 1.0 to 2.5 and no longer carry the workbook's 1.5 and 2.0, so the workbook's
        own four multiples are handed to the engine, with the master's start, step and rungs, to prove the formula itself */
     const bad1 = [];
-    for (const p of ["salt", "oil"]) {
+    /* THE FIVE-TIER FORMULA IS SALT'S ALONE SINCE 19 SEP 2026. Oil has no pricing tier on his
+       instruction of that date: one board, typed, the same for every customer. What is proved below is
+       the FORMULA, so it is proved where the formula runs; oil's stated board has its own section.
+       His decision of 15 Sep, which put oil on the same five levels, stands in the Journal at v641. */
+    for (const p of ["salt"]) {
       const got = walk40(p, SHEET[p].landed, 1, null, [1, 1.5, 2, 2.5]);
       SHEET[p].rows.forEach((r, i) => { const g = got[i]; if (!g || g.q !== r[0] || g.cogs !== r[1] || JSON.stringify(g.cols) !== JSON.stringify(r.slice(2))) bad1.push({ p, q: r[0], got: g && [g.cogs, ...g.cols] }); });
     }
     ok(bad1.length === 0, "the master's rule, at the workbook's own four multiples, reproduces the workbook: every COGS to the ringgit and all 76 column prices, salt and oil " + JSON.stringify(bad1));
     const bad2 = [];
-    for (const p of ["salt", "oil"]) walk40(p, SHEET[p].landed, 1).forEach((g) => { if (g.prices[0] !== ten40(g.q) || JSON.stringify(g.prices.slice(1)) !== JSON.stringify(g.cols)) bad2.push(g); });
+    for (const p of ["salt"]) walk40(p, SHEET[p].landed, 1).forEach((g) => { if (g.prices[0] !== ten40(g.q) || JSON.stringify(g.prices.slice(1)) !== JSON.stringify(g.cols)) bad2.push(g); });
     ok(bad2.length === 0, "where nothing binds, the lowest level is the floor up to the ten and every tier is its column exactly " + JSON.stringify(bad2.slice(0, 2)));
     /* v642: the board he approved moved with his restructure of 15 Sep and is asserted in that section */
     /* THE GUARDS ON A GRID: landed from a fifth of the sheet's rate to double it, the floor from that rate to 1.8 times it,
        both books. Each law is restated from the outputs alone, and the grid is shown to exercise each guard. */
     const grid = [];
-    for (const p of ["salt", "oil"]) for (const k of [0.2, 0.45, 0.7, 1, 1.3, 1.65, 2]) for (const f of [1, 1.15, 1.31, 1.5, 1.8]) {
+    /* SALT ALONE SINCE 19 SEP 2026: these are the laws of the five-tier ladder, and oil no longer has
+       one. Thirty-five forced costs rather than seventy, and the laws are unchanged; oil's stated
+       board keeps its own, different laws, which its own section proves. */
+    for (const p of ["salt"]) for (const k of [0.2, 0.45, 0.7, 1, 1.3, 1.65, 2]) for (const f of [1, 1.15, 1.31, 1.5, 1.8]) {
       const landed = +(SHEET[p].landed * k).toFixed(4), per = +(landed * f).toFixed(4);
       grid.push({ p, landed, per, rows: walk40(p, landed, per) });
     }
@@ -12072,14 +12101,15 @@ await (async () => {
         });
       });
     });
-    ok(grid.length === 70 && under.length === 0, `no price on any tier sits under its floor, across ${grid.length} forced costs on both books ` + JSON.stringify(under.slice(0, 2)));
+    ok(grid.length === 35 && under.length === 0, `no price on any tier sits under its floor, across ${grid.length} forced costs ` + JSON.stringify(under.slice(0, 2)));
     ok(order.length === 0, "and a better tier always pays less: every tier at least RM10 over the one below, at every size " + JSON.stringify(order.slice(0, 2)));
     ok(rate.length === 0, "and a tier's rate rises with size only where the step down would meet the tier below or cross the floor " + JSON.stringify(rate.slice(0, 2)));
     ok(lifted > 0 && stepped > 0, `and the grid exercises both guards rather than assuming them: ${lifted} prices lifted over their column, ${stepped} stepped under it`);
     const dust = walk40("salt", 20, 1, [2.5])[0];
     ok(dust.cogs === 50 && dust.cols[1] === 110, "a column landing exactly on a ten stays on it: RM50 of COGS at 2.5 unit times 2.2 asks RM110 as the workbook's CEILING does, not the RM120 floating point rounds to " + JSON.stringify(dust.cols));
+    /* oil's rungs are five since 19 Sep, so 150 unit falls on the last of them rather than the seventh */
     const off = walk40("salt", 46.72, 1, [0.25, 7, 20]).map((g) => g.rung).concat(walk40("oil", 7.8355, 1, [5, 60, 150]).map((g) => g.rung));
-    ok(JSON.stringify(off) === JSON.stringify([0, 10, 11, 0, 4, 6]), "a size off the board takes the rung at or below it: salt's 0.25, 7 and 20 unit on rungs 0, 10 and 11, oil's 5, 60 and 150 on 0, 4 and 6 " + JSON.stringify(off));
+    ok(JSON.stringify(off) === JSON.stringify([0, 10, 11, 0, 4, 4]), "a size off the board takes the rung at or below it: salt's 0.25, 7 and 20 unit on rungs 0, 10 and 11, oil's 5, 60 and 150 on 0, 4 and 6 " + JSON.stringify(off));
     /* THE CARD, read cell by cell against the engine, on each book in turn */
     const cards = ["salt", "oil"].map((p) => rd40("(function(){setProdView('" + p + "');switchTab('pricing');var t=document.querySelector('.sec.on table.fivetier');if(!t)return null;"
       + "var num=function(c){var m=c.textContent.replace(/,/g,'').match(/[0-9]+/);return m?+m[0]:null;};"
@@ -12124,7 +12154,7 @@ await (async () => {
     ok(start.cogs === 23 && JSON.stringify(start.prices.slice(1)) === JSON.stringify([50, 60, 70, 80, 90]),
       "0.5 unit of salt starts the tiers at RM50, 60, 70, 80 and 90 on the workbook's COGS of RM23 " + JSON.stringify(start));
     const between = [];
-    for (const [p, landed] of [["salt", 46.72], ["oil", 7.8355]]) walk42(p, landed, 1).forEach((g) => { if (!(g.cols[2] < g.cols[3] && g.cols[3] < g.cols[4])) between.push({ p, q: g.q, cols: g.cols }); });
+    for (const [p, landed] of [["salt", 46.72]]) walk42(p, landed, 1).forEach((g) => { if (!(g.cols[2] < g.cols[3] && g.cols[3] < g.cols[4])) between.push({ p, q: g.q, cols: g.cols }); });
     ok(between.length === 0, "and Silver, the new column, sits strictly between Gold and Bronze at every size on both books, before any guard " + JSON.stringify(between.slice(0, 2)));
     /* THE BOARD HE APPROVED ON 15 SEP 2026, on the costs it was read at: salt landed at RM46.72 with a floor of RM61.147136 a
        unit, oil at RM7.8355 with RM8.7285. Oil's Titanium lifts a ten over Ambassador at 80 and 100 unit.
@@ -12133,8 +12163,11 @@ await (async () => {
       salt: [[40,50,60,70,80,90],[70,100,110,130,150,160],[100,140,160,190,210,230],[130,180,210,240,270,300],[160,220,250,290,320,360],[190,250,290,330,370,410],[220,280,330,370,410,460],[250,310,360,400,450,500],[280,340,390,440,480,530],[310,370,420,460,510,560],[390,440,500,550,610,660],[770,850,950,1050,1150,1250]],
       oil: [[90,110,140,170,200,230],[180,210,270,330,390,440],[270,300,390,470,560,650],[350,380,500,620,730,850],[440,460,600,750,900,1040],[700,710,930,1160,1400,1640],[880,890,1120,1420,1710,2000]],
     };
-    const got = { salt: walk42("salt", 46.72, 61.147136).map((g) => g.prices), oil: walk42("oil", 7.8355, 8.7285).map((g) => g.prices) };
-    ok(JSON.stringify(got) === JSON.stringify(DECIDED), "on the costs of 14 Sep 2026 the board is the one he approved on 15 Sep, oil's Titanium at 80 and 100 unit included " + JSON.stringify(got.oil.slice(5)));
+    /* SALT'S HALF OF THAT BOARD STANDS; OIL'S WAS SUPERSEDED ON 19 SEP, when he retired oil's tiers
+       for one typed board. The oil rows he approved on 15 Sep are left in DECIDED above as the dated
+       record they are, and are no longer asserted against a rule that no longer prices oil. */
+    const got = { salt: walk42("salt", 46.72, 61.147136).map((g) => g.prices) };
+    ok(JSON.stringify(got) === JSON.stringify({ salt: DECIDED.salt }), "on the costs of 14 Sep 2026 salt's board is the one he approved on 15 Sep " + JSON.stringify(got.salt.slice(0, 2)));
     /* BREAKEVEN IS THE FLOOR ITSELF, his answer of 15 Sep. On oil's costs COGS plus 20% (RM93.60 at 10 unit) sits over the floor
        (RM87.28), which is exactly where "the higher of the two" would have lifted Ambassador; it does not. */
     const amb = walk42("oil", 7.8355, 8.7285, [10])[0];
@@ -12233,7 +12266,10 @@ await (async () => {
   try {
     const R44 = rd44("TIER_RULE");
     const even = (m) => m.length === 5 && m[0] === 1 && m[4] === 2.5 && m.every((x, i) => !i || Math.abs(x - m[i - 1] - 0.375) < 1e-9);
-    ok(even(R44.salt.multiples) && even(R44.oil.multiples), "both books' tiers run evenly from 1.0 to 2.5, a step of 0.375: " + JSON.stringify([R44.salt.multiples, R44.oil.multiples]));
+    /* 19 Sep 2026: oil has no multiples at all now, so what is asserted of it is that it has a stated
+       board instead, which is the whole of the change */
+    ok(even(R44.salt.multiples) && R44.oil.multiples === undefined && R44.oil.fixed && Object.keys(R44.oil.fixed).length === 5,
+      "salt's tiers run evenly from 1.0 to 2.5, a step of 0.375, and oil has a typed board of five instead: " + JSON.stringify([R44.salt.multiples, R44.oil.fixedes]));
     const one = rd44("(function(){setProd('salt');var P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),C=Object.assign({},pxCost(),{landed:46.72,eff:1,effEx:1});return PRICING_ENGINE.fiveTiers([0.5,1],C,P);})()");
     ok(one[0].cogs === 23 && JSON.stringify(one[0].cols) === "[50,60,70,80,90]" && one[1].cogs === 47 && JSON.stringify(one[1].cols) === "[100,110,130,150,160]",
       "on the workbook's COGS, 0.5 unit of salt reads RM50 to RM90 and 1 unit reads his RM100, 110, 130, 150 and 160: " + JSON.stringify(one.map((g) => g.cols)));
@@ -12380,8 +12416,9 @@ await (async () => {
     /* v671: a proposal may now be a band set, so every value is checked for a shape that prices rather than for a bare name */
     const PE47 = (await import("../engine/pricing.mjs")).default;
     ok(snap47.tierOf && JSON.stringify(snap47.tierOf["CZ9-CD"]) === '{"salt":"Gold"}' && Object.values(snap47.tierOf).every((t) => Object.values(t).every((n) => PE47.levelShapeOk(n, snap47.tierNames)))
-      && snap47.byProduct.salt.ladder.length === 12 && snap47.byProduct.oil.ladder.length === 7,
-      "the pricing snapshot carries each customer's tier for each product, held or proposed, leaving out a product with neither, and the ladder at each book's rungs: " + JSON.stringify(snap47.tierOf && snap47.tierOf["CZ9-CD"]));
+      && snap47.byProduct.salt.ladder.length === 12 && snap47.byProduct.oil.ladder.length === 5
+      && snap47.byProduct.oil.ladder.every((r) => r.fixed),
+      "the pricing snapshot carries each customer's tier for each product, held or proposed, and each book's ladder at its own rungs: salt's twelve, and oil's five marked as the typed board they are: " + JSON.stringify(snap47.tierOf && snap47.tierOf["CZ9-CD"]));
     ok(JSON.stringify(snap47.byProduct.salt.ladder.map((r) => r.prices)) === JSON.stringify(rd47("(function(){setProd('salt');recompute();return fiveTiersNow().map(function(r){return r.prices;});})()")),
       "and the ladder it carries is the desk's own");
     const book47 = { PRODUCTS: { salt: { name: "Salt", unit: "unit" }, oil: { name: "Oil", unit: "unit" } }, PROD_ORDER: ["salt", "oil"], sales: rd47("sales") };
@@ -12393,15 +12430,27 @@ await (async () => {
     ok(tool47.sizes.every((r) => r.price <= T47(r.q)) && tool47.sizes.some((r) => r.price < T47(r.q)) && tool47.sizes.some((r) => r.price === T47(r.q)),
       "and never above Gold's price at any size: lower where his own rate is, Gold's where it is not");
     const oilDesk47 = deskOn47("oil");
-    ok(list47.products.length === 1 && list47.soon.length === 1 && list47.soon[0].product === "oil" && oilDesk47.length === 0,
-      "a product with no tier, held or proposed, is not priced: oil is on their list as coming soon, and the printed board has nothing to print for it");
+    /* 19 SEP 2026: OIL IS PRICED WITH NO TIER AT ALL, because he has typed one board for everybody.
+       The "no tier, no price" rule stands for salt, where a level decides the price; it is the reason
+       this customer's oil was coming soon and would have been for thirty of the thirty-six. */
+    ok(list47.soon.length === 0 && list47.products.some((x) => x.product === "oil") && oilDesk47.length > 0,
+      "a product with a typed board is priced for a customer holding no tier in it at all, and the printed board has it to print: "
+        + JSON.stringify([list47.soon.map((x) => x.product), list47.products.map((x) => x.product), oilDesk47.length]));
     page47 = list47;
     w47.eval("TIER_OF['CZ9-CD']={salt:'Gold',oil:'Silver'};");
     const snapO47 = ps47(w47), listO47 = PL47.priceList("CZ9-CD", book47, snapO47, new Date()), oilT47 = listO47.products.find((p) => p.product === "oil");
     const silver47 = snapO47.tierNames.indexOf("Silver"), oilD47 = deskOn47("oil");
-    ok(oilT47 && oilT47.basis === "tier" && listO47.soon.length === 0 && oilT47.sizes.every((r) => r.price === snapO47.byProduct.oil.ladder.find((x) => Math.abs(x.q - r.q) < 0.009).prices[silver47])
-      && JSON.stringify(oilT47.sizes.map((r) => r.price)) === JSON.stringify(oilD47.map((r) => r.price)),
-      "and once a tier is set for it, a product never bought is quoted that tier's price, on their page and the printed board alike: " + JSON.stringify(oilD47.map((r) => r.price)));
+    /* 19 SEP 2026: SETTING A TIER ON A TYPED BOARD CHANGES NOTHING, which is what "fixed for all"
+       means. CS6-BS still holds Platinum on oil from before the change and is quoted the board like
+       everybody else; the held value is neither honoured nor an error, it simply has nothing to say. */
+    /* the board price is the LAST column, and on a typed board it is the only one; comparing against
+       Silver's index would read undefined, which is the shape of the crash this whole change had to
+       be walked through twice */
+    const oilBoardAt = (q) => { const row = snapO47.byProduct.oil.ladder.find((x) => Math.abs(x.q - q) < 0.009); return row.prices[row.prices.length - 1]; };
+    ok(oilT47 && listO47.soon.length === 0 && oilT47.sizes.every((r) => r.price === oilBoardAt(r.q))
+      && JSON.stringify(oilT47.sizes.map((r) => r.price)) === JSON.stringify(oilD47.map((r) => r.price))
+      && JSON.stringify(oilD47.map((r) => r.price)) === JSON.stringify([130, 240, 330, 400, 450]),
+      "and setting a tier on a typed board changes not one price, on their page and the printed board alike: " + JSON.stringify(oilD47.map((r) => r.price)));
     w47.eval("TIER_OF['CZ9-CD']={oil:'Silver'};");
     const snapP47 = ps47(w47), prop47 = rd47("tierProposal('CZ9-CD','salt',tierBoards())");
     const listP47 = PL47.priceList("CZ9-CD", book47, snapP47, new Date()).products.find((p) => p.product === "salt");
@@ -12439,11 +12488,20 @@ await (async () => {
         orderable: !!d.querySelector("#pOrder .quote") };
     } finally { dom.window.close(); }
   };
-  const one47 = page47 ? await openPage47(page47) : null;
+  /* 19 SEP 2026: OIL IS PRICED FOR EVERYBODY NOW, so a page with one product priced and one coming
+     soon has to be MADE rather than taken from the live list, which prices both. The behaviour under
+     test is the page's, not the book's, so the fixture states the case plainly. */
+  const onlySalt47 = page47 ? { ...page47, products: page47.products.filter((x) => x.product === "salt"), soon: [{ product: "oil", name: "Oil" }] } : null;
+  const one47 = onlySalt47 ? await openPage47(onlySalt47) : null;
   ok(one47 && JSON.stringify(one47.marks) === '["Cube","Droplet"]' && one47.priced === 1 && /Price coming soon\./.test(one47.prices)
     && one47.orderable && one47.products.length === 0 && !/\b(salt|oil)\b/i.test(one47.prices + one47.order),
     "the customer's own page draws each product as its mark, prices one of them, says the other is coming soon, and offers the priced one alone to order with no segment to pick from: "
       + JSON.stringify(one47 && { marks: one47.marks, priced: one47.priced, products: one47.products }));
+  /* AND WITH BOTH PRICED, which is the live shape since oil's board, both are offered */
+  const live47 = page47 ? await openPage47(page47) : null;
+  ok(live47 && live47.priced === 2 && live47.products.length === 2 && !/\b(salt|oil)\b/i.test(live47.prices + live47.order),
+    "and with both priced it draws two marks, two prices and a segment to pick between them, naming neither product: "
+      + JSON.stringify(live47 && { priced: live47.priced, products: live47.products }));
   const both47 = page47 ? await openPage47({ ...page47, products: [], soon: [{ product: "salt", name: "Salt" }, { product: "oil", name: "Oil" }] }) : null;
   ok(both47 && JSON.stringify(both47.marks) === '["Cube","Droplet"]' && both47.priced === 0
     && (both47.prices.match(/Price coming soon\./g) || []).length === 2
@@ -12729,10 +12787,18 @@ await (async () => {
       "and none above the level they hold: " + JSON.stringify(Object.keys(cells).map((p) => p + " " + cells[p].overTier)));
     /* 3. THE CLAIM ITSELF: nothing above what they pay, except where the FLOOR lifted it, which is the floor talking and
        not the rounding. The two are counted apart, so a rounding fault cannot hide inside the floor's allowance. */
-    ok(Object.keys(cells).every((p) => cells[p].over === cells[p].overByFloor),
-      "no card is above the customer's own rate unless the floor lifted it there: "
+    /* 19 SEP 2026: THE CAP IS SALT'S RULE NOW. He was asked which wins where his typed oil board sits
+       above what a customer has paid, and chose the board: "this is the only price for oil, fixed for
+       all". So oil cards ARE above two customers' own rates by design, and the rule is asserted where
+       it still holds. The oil count is asserted separately and deliberately, below, so the change
+       cannot quietly grow. */
+    ok(cells.salt.over === cells.salt.overByFloor,
+      "no salt card is above the customer's own rate unless the floor lifted it there: "
       + JSON.stringify(Object.keys(cells).map((p) => p + " " + cells[p].over + " over, " + cells[p].overByFloor + " by the floor"))
       + " " + JSON.stringify(cells.salt.sample));
+    ok(cells.oil && cells.oil.over > 0 && cells.oil.overByFloor === 0,
+      "and oil's typed board DOES sit above what some have paid, which is the decision he took on 19 Sep and not the floor talking: "
+        + JSON.stringify([cells.oil.over + " over", cells.oil.overByFloor + " by the floor"]));
     /* 4. AND THE TOOL THAT WRITES THE CUSTOMER'S PAGE AGREES, because two copies of one rule are two rules. */
     const PL60 = await import("../tools/pricelist.mjs");
     const { pricingSnapshot: ps60 } = await import("../tools/book.mjs");

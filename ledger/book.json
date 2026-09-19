@@ -691,10 +691,12 @@
   },
   "COST_RULE": {
     "oil": {
-      "kind": "buyPlusPct",
-      "pct": 15,
-      "placeholder": true,
-      "note": "His instruction of 09 Sep 2026, a PLACEHOLDER. Oil prices off the buy rate plus 15 per cent instead of the measured leak: the v551 count read 23.08 per cent from one cycle on a seventeen-day-old anchor, which put RM1.81 of a RM9.64 effective cost on a single drift figure. The 15 per cent stands in for freight and leak together. It moves the PRICING basis only; landed cost stays the true figure the accounts use."
+      "kind": "landed",
+      "note": "His instruction of 19 Sep 2026: oil is mostly for his own use, so the leak is high by design and is NEVER costed into a sale. The floor is the landed cost, purchase plus freight, and nothing else. This replaces the buyPlusPct 15 placeholder of 09 Sep, whose own note said the 15 per cent stood in for freight and leak together; with the freight now in the floor directly, that percentage would have double counted it. The leak is still MEASURED and reported, because not pricing it in is a pricing decision and not a reason to stop counting."
+    },
+    "salt": {
+      "kind": "stack",
+      "note": "His instruction of 19 Sep 2026, stated so the two products differ deliberately rather than by one of them being absent. Salt takes the measured stack: replacement, freight, the leak and the delivery share. Nothing changes for salt; what changes is that the difference is now written down."
     }
   },
   "NOTES": {

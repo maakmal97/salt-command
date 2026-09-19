@@ -122,10 +122,23 @@ function costStack(I){
      read, so the desk can still show what it is measuring while pricing off something else. The
      rule is DATA, in COST_RULE on the book, so the percentage moves without touching this file,
      and `rule`/`rulePct` travel with the stack so every surface can say which basis it is on. */
+  /* 19 SEP 2026: TWO PRODUCTS, TWO STATED BASES (his instruction). Three kinds now, and a product
+     with no rule still takes the stack, so nothing changes by omission:
+       stack        the measured stack: replacement, freight, the leak, the delivery share. Salt's,
+                    stated explicitly so the difference between the two books is written down rather
+                    than being one of them merely lacking an entry.
+       landed       purchase plus freight and NOTHING else. Oil's. He uses most of the oil himself,
+                    so its leak is high by design and is never costed into a sale; it is still
+                    measured and still reported, because that is a pricing decision and not a reason
+                    to stop counting.
+       buyPlusPct   a flat markup on the buy rate, which is what oil had as a PLACEHOLDER from
+                    09 Sep. Kept because the mechanism is sound and a book may want it again. */
   const CR=I.costRule||null;
   const ruled=!!(CR&&CR.kind==='buyPlusPct'&&+CR.pct>=0);
+  const landedRule=!!(CR&&CR.kind==='landed');
   if(ruled)eff=+(lot*(1+ +CR.pct/100)).toFixed(6);
-  return {rule:ruled?CR.kind:null,rulePct:ruled?+CR.pct:null,rulePlaceholder:!!(ruled&&CR.placeholder),
+  else if(landedRule)eff=+landed.toFixed(6);
+  return {rule:(CR&&CR.kind)?CR.kind:null,rulePct:ruled?+CR.pct:null,rulePlaceholder:!!(ruled&&CR.placeholder),
           repl:+lot.toFixed(2),lot:+lot.toFixed(4),freight:+freight.toFixed(4),
           landed:+landed.toFixed(4),inventoriable:+landed.toFixed(4),
           shrink:sh,shrinkRaw:raw,attrib:SHRINK_ATTRIB,
@@ -140,7 +153,7 @@ function costStack(I){
           /* v553: and the RULED basis lands here too, because the FLOOR reads effEx, not eff. A rule
              that moved the headline and left the floor on the leak would have been the worst of
              both: a board priced one way and refused another. */
-          effEx:ruled?+(lot*(1+ +CR.pct/100)).toFixed(6):+yielded.toFixed(6),delPerOrder:COST_BASIS.txnPerDelivery.rm,
+          effEx:ruled?+(lot*(1+ +CR.pct/100)).toFixed(6):(landedRule?+landed.toFixed(6):+yielded.toFixed(6)),delPerOrder:COST_BASIS.txnPerDelivery.rm,
           locked:false,lockedOn:null,lockAge:null,
           /* v403: gated on lockOn. With the lock off there is nothing to be stale AGAINST,
              and the ungated read was a constant true on this desk since PRICE_LOCK_ON went
@@ -504,8 +517,40 @@ function ladderRow(sizes,C,P){
    Ambassador is the floor. And the rate may not rise with size (v328): a price steps down to the ten
    that holds it flat only where that keeps the first.
    QUOTED NOWHERE YET: priceLadder, ladderRow and board do not read it. */
+/* ============ 19 SEP 2026, HIS INSTRUCTION: A PRODUCT MAY HAVE ONE STATED PRICE AND NO TIERS ============
+   "For oil, there will no longer be pricing tier since it is not the main product, just a single pricing
+   tier. Start at 130 for 10 to 450 at 50. This is the only price for oil, fixed for all."
+   A TIER_RULE carrying `fixed` is a board he has typed, one price a rung and the same for every customer.
+   IT IS READ HERE AND NOWHERE ELSE, because fiveTiers is the one choke point every oil price passes: the
+   guest boards call it directly, the desk's ask and cardQuote reach it through fiveTierAt, and the
+   customer's page reads the snapshot's precomputed ladder. Stating the board anywhere else would have
+   meant teaching five readers the same thing and watching them drift.
+   THE FLOOR STILL BINDS. A stated price under its own floor is lifted clear of it exactly as a derived one
+   is, because a price under break-even is not a price he can defend, and the lift says so.
+   THERE IS NO RATE-MAY-NOT-RISE WALK on a stated board: he typed the rates and they fall by a ringgit a
+   unit every ten, so a walk could only disagree with what he wrote. */
 function fiveTiers(sizes,C,P){
   const R=P.tierRule;
+  if(R&&R.fixed&&typeof R.fixed==='object'&&Array.isArray(R.rungs)&&R.rungs.length){
+    const to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to;
+    const rungs=R.rungs.map(Number).sort((a,b)=>a-b);
+    return sizes.map(q=>{
+      let rung=0; rungs.forEach((r,i)=>{if(r<=q+0.009)rung=i;});
+      const fl=floorTotal(q,C,P), cogs=Math.round(ladderCogs(q,C));
+      /* the size's own stated price where it is a rung; between rungs the rung it falls in, pro rata on
+         that rung's own rate, so a size he has not typed is still quoted at the rate he typed for it.
+         ROUNDED DOWN, NEVER UP: the rate per unit may not rise as the order grows, which is one of the
+         engine's four laws and the one a customer can check by hand. Rounded up, 15 unit came out at
+         RM200, which is RM13.33 a unit against the RM13 he typed at 10. */
+      const down=v=>Math.floor(v/to+1e-9)*to;
+      const exact=R.fixed[String(q)];
+      const base=R.fixed[String(rungs[rung])];
+      let p=(exact!=null&&+exact>0)?+exact:((base!=null&&+base>0&&rungs[rung]>0)?down(+base*q/rungs[rung]):null);
+      if(p==null)return {q:q,rung:rung,cogs:cogs,floor:+fl.toFixed(2),cols:[],prices:[up(fl)],fixed:true};
+      if(p<fl-0.009)p=up(fl);
+      return {q:q,rung:rung,cogs:cogs,floor:+fl.toFixed(2),cols:[p],prices:[up(fl),p],fixed:true};
+    });
+  }
   if(!R||!Array.isArray(R.multiples)||!R.multiples.length||!Array.isArray(R.rungs)||!R.rungs.length)return null;
   /* up to the ten as the workbook's CEILING does: a column landing exactly on a ten stays there, where
      floating point would read RM50 x 2.2 as 110.00000000000001 and round it to RM120 */
@@ -569,7 +614,14 @@ function levelShapeOk(v,names){
   const ks=Object.keys(v);
   return ks.length>0&&ks.every(k=>(k==='small'||k==='mid'||k==='big')&&names.indexOf(v[k])>=0);
 }
-function cardPrice(R,F,T){
+/* 19 SEP 2026: A STATED BOARD IS THE PRICE, AND THE CAP DOES NOT APPLY TO IT (his decision). The
+   never-above-what-they-pay rule of 15 Sep exists to stop a customer being carded above their own rate
+   by a TIER that sits above it. With one price for everybody there is no tier to be above them, so the
+   cap has nothing to protect against and would only hold two customers below the board he has typed.
+   He was asked and chose the board: "this is the only price for oil, fixed for all". The floor still
+   lifts, because that is break-even and not a preference. */
+function cardPrice(R,F,T,fixed){
+  if(fixed)return (T!=null&&T<F-0.009)?Math.ceil((F-0.009)/10)*10:T;
   if(R==null)return T;
   let p=Math.min(T,Math.floor(R/10)*10);
   if(p<F-0.009)p=Math.ceil((F-0.009)/10)*10;

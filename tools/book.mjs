@@ -234,7 +234,11 @@ export function pricingSnapshot(w) {
          PRICE_TIERS for this product; read it now, and carry it so the price list can too. */
       sizesHere = call("PRICE_TIERS && PRICE_TIERS.sizes") || sizes;
       /* v651: Ambassador and the tiers at this book's rungs, the prices the customer's page quotes from */
-      ladder = (call("typeof fiveTiersNow==='function'?fiveTiersNow():null") || []).map((r) => ({ q: r.q, prices: r.prices }));
+      /* 19 Sep 2026: `fixed` TRAVELS WITH THE ROW. A product priced by a stated board says so on its
+         own ladder rows, and this map dropped the flag, so the customer's price list could not tell a
+         one-price board from a tier index that had gone out of range and returned every oil size as
+         unpriced. A signal that has to be looked up a second time is a signal that will disagree. */
+      ladder = (call("typeof fiveTiersNow==='function'?fiveTiersNow():null") || []).map((r) => ({ q: r.q, prices: r.prices, fixed: !!r.fixed }));
       floors = {};
       for (const q of sizesHere) {
         floors[q] = { floor: numOrNull(call("floorTotal(" + q + ")")) };   // v502: one floor per size

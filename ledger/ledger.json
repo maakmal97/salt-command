@@ -1,6 +1,6 @@
 {
- "v": "v718",
- "stamped": "19 Sep 2026, 11:57 KL",
+ "v": "v720",
+ "stamped": "19 Sep 2026, 20:15 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -4917,10 +4917,12 @@
   },
   "COST_RULE": {
    "oil": {
-    "kind": "buyPlusPct",
-    "pct": 15,
-    "placeholder": true,
-    "note": "His instruction of 09 Sep 2026, a PLACEHOLDER. Oil prices off the buy rate plus 15 per cent instead of the measured leak: the v551 count read 23.08 per cent from one cycle on a seventeen-day-old anchor, which put RM1.81 of a RM9.64 effective cost on a single drift figure. The 15 per cent stands in for freight and leak together. It moves the PRICING basis only; landed cost stays the true figure the accounts use."
+    "kind": "landed",
+    "note": "His instruction of 19 Sep 2026: oil is mostly for his own use, so the leak is high by design and is NEVER costed into a sale. The floor is the landed cost, purchase plus freight, and nothing else. This replaces the buyPlusPct 15 placeholder of 09 Sep, whose own note said the 15 per cent stood in for freight and leak together; with the freight now in the floor directly, that percentage would have double counted it. The leak is still MEASURED and reported, because not pricing it in is a pricing decision and not a reason to stop counting."
+   },
+   "salt": {
+    "kind": "stack",
+    "note": "His instruction of 19 Sep 2026, stated so the two products differ deliberately rather than by one of them being absent. Salt takes the measured stack: replacement, freight, the leak and the delivery share. Nothing changes for salt; what changes is that the difference is now written down."
    }
   },
   "PRICE_SET": {
@@ -4947,7 +4949,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-18T16:22:22.229Z",
   "PRICING": {
-   "takenAt": "2026-09-19T10:16:32.450Z",
+   "takenAt": "2026-09-19T13:36:53.594Z",
    "sizes": [
     0.5,
     1,
@@ -4993,7 +4995,7 @@
     },
     "CE4-CHE": {
      "salt": "Platinum",
-     "oil": "Platinum"
+     "oil": "Titanium"
     },
     "CM4-MK": {
      "salt": {
@@ -5030,7 +5032,7 @@
     },
     "CZ4-MK": {
      "salt": "Platinum",
-     "oil": "Platinum"
+     "oil": "Titanium"
     },
     "CE4-AD": {
      "salt": "Platinum"
@@ -5052,7 +5054,7 @@
     },
     "CA7-AMP": {
      "salt": "Gold",
-     "oil": "Platinum"
+     "oil": "Titanium"
     },
     "CC5-OKR": {
      "salt": {
@@ -6009,7 +6011,10 @@
         "from": "2026-09-14",
         "to": "2026-09-19"
        },
-       "costRule": null,
+       "costRule": {
+        "kind": "stack",
+        "note": "His instruction of 19 Sep 2026, stated so the two products differ deliberately rather than by one of them being absent. Salt takes the measured stack: replacement, freight, the leak and the delivery share. Nothing changes for salt; what changes is that the difference is now written down."
+       },
        "costBasis": {
         "freightPerTrip": {
          "rm": 0
@@ -6148,7 +6153,8 @@
         70,
         80,
         90
-       ]
+       ],
+       "fixed": false
       },
       {
        "q": 1,
@@ -6159,7 +6165,8 @@
         130,
         150,
         160
-       ]
+       ],
+       "fixed": false
       },
       {
        "q": 1.5,
@@ -6170,7 +6177,8 @@
         190,
         210,
         240
-       ]
+       ],
+       "fixed": false
       },
       {
        "q": 2,
@@ -6181,7 +6189,8 @@
         240,
         270,
         300
-       ]
+       ],
+       "fixed": false
       },
       {
        "q": 2.5,
@@ -6192,7 +6201,8 @@
         290,
         320,
         360
-       ]
+       ],
+       "fixed": false
       },
       {
        "q": 3,
@@ -6203,7 +6213,8 @@
         330,
         370,
         410
-       ]
+       ],
+       "fixed": false
       },
       {
        "q": 3.5,
@@ -6214,7 +6225,8 @@
         370,
         420,
         460
-       ]
+       ],
+       "fixed": false
       },
       {
        "q": 4,
@@ -6225,7 +6237,8 @@
         410,
         450,
         500
-       ]
+       ],
+       "fixed": false
       },
       {
        "q": 4.5,
@@ -6236,7 +6249,8 @@
         440,
         490,
         530
-       ]
+       ],
+       "fixed": false
       },
       {
        "q": 5,
@@ -6247,7 +6261,8 @@
         470,
         510,
         560
-       ]
+       ],
+       "fixed": false
       },
       {
        "q": 6.25,
@@ -6258,7 +6273,8 @@
         560,
         610,
         670
-       ]
+       ],
+       "fixed": false
       },
       {
        "q": 12.5,
@@ -6269,7 +6285,8 @@
         1060,
         1160,
         1250
-       ]
+       ],
+       "fixed": false
       }
      ]
     },
@@ -6278,25 +6295,19 @@
      "replCost": 7.58,
      "floors": {
       "10": {
-       "floor": 87.17
+       "floor": 78.24
       },
       "20": {
-       "floor": 174.34
+       "floor": 156.47
       },
       "30": {
-       "floor": 261.51
+       "floor": 234.71
       },
       "40": {
-       "floor": 348.68
+       "floor": 312.95
       },
       "50": {
-       "floor": 435.85
-      },
-      "80": {
-       "floor": 697.36
-      },
-      "100": {
-       "floor": 871.7
+       "floor": 391.19
       }
      },
      "inputs": {
@@ -6379,10 +6390,8 @@
         "to": "2026-09-19"
        },
        "costRule": {
-        "kind": "buyPlusPct",
-        "pct": 15,
-        "placeholder": true,
-        "note": "His instruction of 09 Sep 2026, a PLACEHOLDER. Oil prices off the buy rate plus 15 per cent instead of the measured leak: the v551 count read 23.08 per cent from one cycle on a seventeen-day-old anchor, which put RM1.81 of a RM9.64 effective cost on a single drift figure. The 15 per cent stands in for freight and leak together. It moves the PRICING basis only; landed cost stays the true figure the accounts use."
+        "kind": "landed",
+        "note": "His instruction of 19 Sep 2026: oil is mostly for his own use, so the leak is high by design and is NEVER costed into a sale. The floor is the landed cost, purchase plus freight, and nothing else. This replaces the buyPlusPct 15 placeholder of 09 Sep, whose own note said the 15 per cent stood in for freight and leak together; with the freight now in the floor directly, that percentage would have double counted it. The leak is still MEASURED and reported, because not pricing it in is a pricing decision and not a reason to stop counting."
        },
        "costBasis": {
         "freightPerTrip": {
@@ -6430,24 +6439,19 @@
        "stated": {},
        "tier1": null,
        "tierRule": {
-        "multiples": [
-         1,
-         1.375,
-         1.75,
-         2.125,
-         2.5
-        ],
-        "start": 0.35,
-        "step": 0.05,
-        "scaled": false,
+        "fixed": {
+         "10": 130,
+         "20": 240,
+         "30": 330,
+         "40": 400,
+         "50": 450
+        },
         "rungs": [
          10,
          20,
          30,
          40,
-         50,
-         80,
-         100
+         50
         ]
        },
        "tiers": [
@@ -6482,9 +6486,7 @@
         20,
         30,
         40,
-        50,
-        80,
-        100
+        50
        ]
       }
      },
@@ -6493,95 +6495,56 @@
       20,
       30,
       40,
-      50,
-      80,
-      100
+      50
      ],
      "ladder": [
       {
        "q": 10,
        "prices": [
-        90,
-        110,
-        140,
-        170,
-        200,
-        230
-       ]
+        80,
+        130
+       ],
+       "fixed": true
       },
       {
        "q": 20,
        "prices": [
-        180,
-        210,
-        270,
-        320,
-        380,
-        440
-       ]
+        160,
+        240
+       ],
+       "fixed": true
       },
       {
        "q": 30,
        "prices": [
-        270,
-        300,
-        390,
-        470,
-        560,
-        650
-       ]
+        240,
+        330
+       ],
+       "fixed": true
       },
       {
        "q": 40,
        "prices": [
-        350,
-        380,
-        500,
-        620,
-        730,
-        850
-       ]
+        320,
+        400
+       ],
+       "fixed": true
       },
       {
        "q": 50,
        "prices": [
-        440,
-        450,
-        600,
-        750,
-        890,
-        1040
-       ]
-      },
-      {
-       "q": 80,
-       "prices": [
-        700,
-        710,
-        930,
-        1160,
-        1400,
-        1630
-       ]
-      },
-      {
-       "q": 100,
-       "prices": [
-        880,
-        890,
-        1120,
-        1410,
-        1710,
-        2000
-       ]
+        400,
+        450
+       ],
+       "fixed": true
       }
      ]
     }
    },
-   "v": "v718"
+   "v": "v720"
   },
   "OPEN": {
-   "at": "2026-09-19T10:16:32.540Z",
+   "at": "2026-09-19T13:36:53.718Z",
    "count": 12,
    "byKey": {
     "CF5-WM|2026-09-19|110": {
@@ -6806,7 +6769,7 @@
     "salt": "2026-09-19",
     "oil": "2026-09-19"
    },
-   "v": "v718"
+   "v": "v720"
   }
  }
 }

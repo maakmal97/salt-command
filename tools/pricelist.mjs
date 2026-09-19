@@ -123,14 +123,30 @@ export function priceList(code, book, pricing, now) {
     /* their NORMAL level is the one a mid-sized order takes, halfway between the two cuts; it answers "is this priced at all"
        and it is the mark the page draws, a band set's small and big levels being departures from it */
     const midQ = (bandCuts.smallUpTo + bandCuts.bigFrom) / 2;
-    const t = names.indexOf(PRICING_ENGINE.levelAt(held, midQ, bandCuts));
+    /* 19 SEP 2026: A STATED BOARD HAS NO TIER AND IS PRICED FOR EVERYBODY. The gate below is the
+       "no tier, no price" rule, which is right where a level decides the price and wrong where he has
+       typed one price for all: it would have told thirty of thirty-six customers their oil price was
+       still coming. A fixed ladder says so on its own rows, so the signal travels with the data
+       rather than being looked up a second time here. */
+    const fixedBoard = (snap.ladder || []).some((r) => r && r.fixed);
+    const t = fixedBoard ? 0 : names.indexOf(PRICING_ENGINE.levelAt(held, midQ, bandCuts));
     if (t < 0) { out.soon.push({ product: p, name }); continue; }
     const rows = sizesHere.slice().sort((a, b) => a - b).map((q) => {
       const rung = snap.ladder.find((r) => Math.abs(r.q - q) < 0.009);
+      /* a size the ladder does not carry is not priced rather than crashing: it happened the day oil
+         lost its 80 and 100 rungs while the printed size list still named them */
+      if (!rung || !rung.prices || !rung.prices.length) return null;
+      if (fixedBoard) {
+        const board = rung.prices[rung.prices.length - 1];
+        return { q, price: +PRICING_ENGINE.cardPrice(null, PRICING_ENGINE.floorTotal(q, C, P), board, true).toFixed(2) };
+      }
       const tq = names.indexOf(PRICING_ENGINE.levelAt(held, q, bandCuts));
       const price = PRICING_ENGINE.cardPrice(own.rate != null ? own.rate * q : null, PRICING_ENGINE.floorTotal(q, C, P), rung.prices[tq]);
+      /* a level the board has no column for is a size NOT PRICED, which is what the caller already
+         knows how to show; it was a TypeError until 19 Sep, and the crash was the only way to find out */
+      if (price == null || !isFinite(price)) return null;
       return { q, price: +price.toFixed(2) };
-    });
+    }).filter(Boolean);
     out.products.push({
       product: p,
       name,
