@@ -1,5 +1,14 @@
 [
  {
+  "v": "v736",
+  "d": "20 Sep 2026",
+  "t": "TWO FULFILMENTS CLOSE OUT 19 SEP: ONE ORDER PAID IN FULL, ONE MOVED IN FULL",
+  "n": [
+   "<b>FOLDED: TWO FULFILMENTS AGAINST STANDING ORDERS, BOTH DATED 19 SEP.</b> CS6-BS-R's s183 takes RM420 in cash with no units moving, the goods having gone out on the correction of the same day, and the drafter flags it as settling the order in full. CJ4-BJ's s137 takes the remaining 6.25 unit of the 12.5 unit order of 7 Sep with no cash, leaving RM35 outstanding on that row. Neither row is recomputed here: the master applies the amendment.",
+   "<b>UNUSUAL: ONE ORDER CLEARS ITS CASH, THE OTHER CLEARS ITS GOODS.</b> The two rows run in opposite directions, so the book loses RM420 of receivable on one side and 6.25 unit of salt on the other. CJ4-BJ's RM35 is the delivery charge left on s137 and stays outstanding. Cost is unchanged at the inventory's own RM48 a unit, a blend of lots, with replacement at RM45.56. No loans are open and no party sits over a cap."
+  ]
+ },
+ {
   "v": "v735",
   "d": "20 Sep 2026",
   "t": "A PENDING SALT SALE IS BOOKED OUT: THE GOODS MOVE, THE RM435 DOES NOT",
