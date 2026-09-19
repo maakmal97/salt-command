@@ -1,0 +1,74 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-19T20:06:07.424Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s181",
+    "qty": 1,
+    "total": 48,
+    "cash": 0,
+    "date": "2026-09-18",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "settledRM",
+      "from": 48,
+      "to": 0
+     },
+     {
+      "field": "settledKg",
+      "from": null,
+      "to": 0
+     }
+    ],
+    "customer": "CE4-CHE"
+   },
+   "reasoning": "Correction against CE4-CHE's order of 1 unit for RM 48 dated 2026-09-18 (s181). Sets settledRM from 48 to 0, settledKg from unset to 0. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CE4-CHE typically pays about RM 92/unit for salt across 9 orders; this one is RM 48, 47.8% below that.",
+    "RM 48 for the goods is RM 4.83 under the floor of RM 52.83, which is what the order costs to take out: the goods after the leak, with nothing above them.",
+    "The inventory spans more than one lot rate, so RM 48/unit is the inventory average rather than the lot this row draws. Check the blend before approving."
+   ],
+   "amends": "s181",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-19T20:06:07.424Z",
+    "type": "AMEND",
+    "party": "CE4-CHE",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CE4-CHE s181: cash to 0, deliveredQty to 0, settledRM to 0, settledKg to 0, recorded 2026-09-20",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CE4-CHE",
+     "rid": "s181",
+     "orderKey": "CE4-CHE|2026-09-18|48",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "kind": "Correction",
+     "date": "2026-09-20",
+     "fields": {
+      "cash": 0,
+      "deliveredQty": 0,
+      "settledRM": 0,
+      "settledKg": 0
+     },
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-19T20:06:50.305Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
