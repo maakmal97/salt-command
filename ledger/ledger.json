@@ -1,6 +1,6 @@
 {
- "v": "v720",
- "stamped": "19 Sep 2026, 20:15 KL",
+ "v": "v723",
+ "stamped": "19 Sep 2026, 21:58 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -4085,7 +4085,7 @@
     "qty": 1,
     "total": 80,
     "cost": 48,
-    "cash": 0,
+    "cash": 80,
     "handover": "collected",
     "date": "2026-09-15",
     "deliveredQty": 1,
@@ -4107,8 +4107,16 @@
       "cash": 0,
       "kg": 0,
       "note": "<b>CORRECTION ON s165 DATED 18 SEP: RM80 IN, THE ADVANCE NARROWS TO RM10.</b> Against CR3-DAM's 1 unit salt order of 15 Sep for RM90, collected in full on 15 Sep with not a sen in, cash moves from RM0 to RM80 and paidOn from unset to 18 Sep. No stock moves: it changes what the row says about itself. The total clears the RM61.26 floor for 1 unit. The drafter flagged RM90 against a usual RM80 a unit across 15 orders, 12.5% above, and an advance of 1 unit with RM10 unpaid to check against the cap. CR3-DAM shows 14 orders, median RM80, range RM80 to RM92.50, RM115 outstanding before, 1.27 unit on credit, nothing defaulted, an associate and on the roster. RM10 stays outstanding."
+     },
+     {
+      "date": "2026-09-19",
+      "kind": "Fulfilment",
+      "cash": 80,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S165 RECORDED 19 SEP, RM80 CASH IN.</b> Against CR3-DAM's SELL of 1 unit for RM80 agreed 15 Sep, collected in full with not a sen in, so RM80 had stood as an advance. RM80 and 0 unit move against RM80 and 0 unit outstanding, leaving RM0 and 0 unit; the drafter flags it as settling the order in full and the figures answer the flag. The row was itself restated on 19 Sep on his word, and carries a fulfilment of 15 Sep and a correction of 18 Sep in its trail. RM80 is CR3-DAM's median, at the foot of his range of RM80 to RM92.50. Associate on the roster, 15 orders, RM265 outstanding before and 3.27 unit on credit, nothing defaulted. Cost is the inventory's own RM48 a unit."
      }
-    ]
+    ],
+    "paidOn": "2026-09-19"
    },
    {
     "customer": "CE4-CHE",
@@ -4214,14 +4222,31 @@
     "qty": 1,
     "total": 110,
     "cost": 48,
-    "cash": 0,
+    "cash": 110,
     "handover": "collected",
     "delivery": 0,
     "deliveredOn": "2026-09-17",
     "date": "2026-09-17",
     "deliveredQty": 1,
     "note": "<b>SALT SOLD TO CN6-WM, 1 UNIT AT RM110, COLLECTED 17 SEP WITH NOTHING PAID.</b> Ordered on the statements site, order 20260916154451-pmorvg, collected, paid by not stated, no delivery or freight, RM0 of RM110 in. The total clears the RM51 floor for this size and falls short of the RM160 ask and the RM150 ceiling. Costed at RM48 a unit, the inventory's own rate, RM62 on the goods at 56.4%. <b>Flagged:</b> an advance of 1 unit against the credit cap. CN6-WM shows 7 orders, median RM100, range RM75 to RM110, RM100 outstanding before and 1 unit on credit, nothing defaulted; this row takes him to 2 unit on credit against a cap of 2. RM110 stays outstanding.",
-    "rid": "s170"
+    "rid": "s170",
+    "amend": [
+     {
+      "date": "2026-09-17",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-19",
+      "kind": "Fulfilment",
+      "cash": 110,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S170 RECORDED 19 SEP, RM110 CASH IN.</b> Against CN6-WM's SELL of 1 unit for RM110 agreed 17 Sep, collected on the day with nothing paid, order 20260916154451-pmorvg. RM110 and 0 unit move against RM110 and 0 unit outstanding, leaving RM0 and 0 unit: the drafter flags this as settling the order in full, and the figures answer that. The total clears the RM51 floor stated on the row and sits at the top of CN6-WM's range of RM75 to RM110, above his median of RM100. He is an associate on the roster, 8 orders, RM210 outstanding before this and 2 unit on credit, nothing defaulted. Cost is the inventory's own RM48 a unit. Nothing left outstanding."
+     }
+    ],
+    "paidOn": "2026-09-19"
    },
    {
     "customer": "CS6-BS",
@@ -4348,13 +4373,29 @@
     "qty": 2,
     "total": 160,
     "cost": 96,
-    "cash": 0,
+    "cash": 80,
     "delivery": 0,
     "handover": "collected",
     "date": "2026-09-18",
     "deliveredQty": 2,
     "deliveredOn": "2026-09-18",
-    "note": "<b>SALT SELL DATED 18 SEP, COLLECTED IN FULL, NOTHING PAID.</b> Booked to CR3-DAM, 2 unit for RM160 at RM80 a unit, collected on 18 Sep with not a sen in, so RM160 stands open as an advance. With s165 unpaid as well, CR3-DAM now holds RM240 of advances. Entered on his word of 19 Sep."
+    "note": "<b>SALT SELL DATED 18 SEP, COLLECTED IN FULL, NOTHING PAID.</b> Booked to CR3-DAM, 2 unit for RM160 at RM80 a unit, collected on 18 Sep with not a sen in, so RM160 stands open as an advance. With s165 unpaid as well, CR3-DAM now holds RM240 of advances. Entered on his word of 19 Sep.",
+    "amend": [
+     {
+      "date": "2026-09-18",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 2,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-19",
+      "kind": "Fulfilment",
+      "cash": 80,
+      "kg": 0,
+      "note": "<b>PART FULFILMENT ON S179 RECORDED 19 SEP, RM80 CASH IN.</b> Against CR3-DAM's SELL of 2 unit for RM160 at RM80 a unit agreed 18 Sep, collected in full on the day with nothing paid. RM80 and 0 unit move against RM160 and 0 unit outstanding, leaving RM80 and 0 unit open: the drafter raised no flag, and this is the one row in the batch that does not close. RM80 a unit is CR3-DAM's median and the foot of his range of RM80 to RM92.50. Associate on the roster, 15 orders, RM265 outstanding before this fold and 3.27 unit on credit, nothing defaulted. Cost is the inventory's own RM48 a unit."
+     }
+    ]
    },
    {
     "rid": "s180",
@@ -4385,14 +4426,31 @@
    {
     "customer": "CF5-WM",
     "qty": 1,
-    "total": 110,
+    "total": 100,
     "cash": 0,
     "delivery": 0,
     "handover": "collected",
     "date": "2026-09-19",
     "deliveredQty": 0,
-    "note": "<b>PENDING SALT SELL DATED 19 SEP, THE DAY IT WAS AGREED.</b> SELL to CF5-WM, 1 unit for RM110, collected, nothing paid and nothing moved, so the row draws no stock and books no revenue until something does. <b>CARRIAGE DROPPED 19 SEP:</b> the row carried RM10 of delivery on an order marked COLLECTED, which read the goods as RM100, RM10 under their own card. His rule of 19 Sep is that a collected order cannot carry a delivery charge at all, and this is the row that rule exists to stop. Nothing was paid or moved, so it is set right rather than corrected.",
-    "rid": "s175"
+    "note": "<b>TOTAL RESTATED TO RM100, 19 SEP.</b> <b>CORRECTION ON S175 RECORDED 19 SEP: TOTAL FROM RM110 TO RM100.</b> The target is CF5-WM's SELL of 1 unit dated 19 Sep, collected, RM0 in and 0 unit moved, so the row is still pending and the change moves no cash and no stock. It follows the RM10 of carriage dropped from that row on 19 Sep, which had read the goods as RM100. At RM100 the row sits below CF5-WM's range of RM110 to RM115 and below the median of RM115. Three orders, not an associate but on the roster, RM110 outstanding before and 0 unit on credit, nothing defaulted. Cost is the inventory's own RM48 a unit. The full RM100 stays outstanding. <b>PENDING SALT SELL DATED 19 SEP, THE DAY IT WAS AGREED.</b> SELL to CF5-WM, 1 unit for RM110, collected, nothing paid and nothing moved, so the row draws no stock and books no revenue until something does. <b>CARRIAGE DROPPED 19 SEP:</b> the row carried RM10 of delivery on an order marked COLLECTED, which read the goods as RM100, RM10 under their own card. His rule of 19 Sep is that a collected order cannot carry a delivery charge at all, and this is the row that rule exists to stop. Nothing was paid or moved, so it is set right rather than corrected.",
+    "rid": "s175",
+    "mod": "corrected on 2026-09-19: total 110 to 100",
+    "amend": [
+     {
+      "date": "2026-09-19",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-19",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S175 RECORDED 19 SEP: TOTAL FROM RM110 TO RM100.</b> The target is CF5-WM's SELL of 1 unit dated 19 Sep, collected, RM0 in and 0 unit moved, so the row is still pending and the change moves no cash and no stock. It follows the RM10 of carriage dropped from that row on 19 Sep, which had read the goods as RM100. At RM100 the row sits below CF5-WM's range of RM110 to RM115 and below the median of RM115. Three orders, not an associate but on the roster, RM110 outstanding before and 0 unit on credit, nothing defaulted. Cost is the inventory's own RM48 a unit. The full RM100 stays outstanding."
+     }
+    ]
    }
   ],
   "contacts": [
@@ -4947,9 +5005,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-18T16:22:22.229Z",
+  "QUEUE_COMMITTED": "2026-09-19T13:21:41.449Z",
   "PRICING": {
-   "takenAt": "2026-09-19T13:36:53.594Z",
+   "takenAt": "2026-09-19T13:58:23.409Z",
    "sizes": [
     0.5,
     1,
@@ -6541,26 +6599,26 @@
      ]
     }
    },
-   "v": "v720"
+   "v": "v723"
   },
   "OPEN": {
-   "at": "2026-09-19T13:36:53.718Z",
-   "count": 12,
+   "at": "2026-09-19T13:58:23.558Z",
+   "count": 10,
    "byKey": {
-    "CF5-WM|2026-09-19|110": {
+    "CF5-WM|2026-09-19|100": {
      "d": "2026-09-19",
      "p": "CF5-WM",
      "dir": "S",
      "q": 1,
-     "t": 110,
+     "t": 100,
      "cash": 0,
      "mv": 0,
      "st": "part",
-     "oweRM": 110,
+     "oweRM": 100,
      "oweUnits": 1,
      "rid": "s175",
      "handover": "collected",
-     "key": "CF5-WM|2026-09-19|110"
+     "key": "CF5-WM|2026-09-19|100"
     },
     "CK4-SEN|2026-09-18|500": {
      "d": "2026-09-18",
@@ -6584,16 +6642,16 @@
      "dir": "S",
      "q": 2,
      "t": 160,
-     "cash": 0,
+     "cash": 80,
      "mv": 2,
      "st": "dueMoney",
-     "oweRM": 160,
+     "oweRM": 80,
      "rid": "s179",
      "deliveredOn": "2026-09-18",
      "handover": "collected",
      "key": "CR3-DAM|2026-09-18|160",
      "age": 1,
-     "exp": 160
+     "exp": 80
     },
     "CE4-CHE|2026-09-18|230": {
      "d": "2026-09-18",
@@ -6626,40 +6684,6 @@
      "goodwill": true,
      "settledRM": 48,
      "key": "CE4-CHE|2026-09-18|48"
-    },
-    "CN6-WM|2026-09-17|110": {
-     "d": "2026-09-17",
-     "p": "CN6-WM",
-     "dir": "S",
-     "q": 1,
-     "t": 110,
-     "cash": 0,
-     "mv": 1,
-     "st": "dueMoney",
-     "oweRM": 110,
-     "rid": "s170",
-     "deliveredOn": "2026-09-17",
-     "handover": "collected",
-     "key": "CN6-WM|2026-09-17|110",
-     "age": 2,
-     "exp": 110
-    },
-    "CR3-DAM|2026-09-15|80": {
-     "d": "2026-09-15",
-     "p": "CR3-DAM",
-     "dir": "S",
-     "q": 1,
-     "t": 80,
-     "cash": 0,
-     "mv": 1,
-     "st": "dueMoney",
-     "oweRM": 80,
-     "rid": "s165",
-     "deliveredOn": "2026-09-15",
-     "handover": "collected",
-     "key": "CR3-DAM|2026-09-15|80",
-     "age": 4,
-     "exp": 60
     },
     "CM4-MK|2026-09-13|330": {
      "d": "2026-09-13",
@@ -6749,7 +6773,7 @@
      "owedOut": 7.14,
      "coverDays": 0,
      "rate": 4.86,
-     "owedToYou": 460,
+     "owedToYou": 190,
      "promised": 15.26,
      "short": 14.36
     },
@@ -6769,7 +6793,7 @@
     "salt": "2026-09-19",
     "oil": "2026-09-19"
    },
-   "v": "v720"
+   "v": "v723"
   }
  }
 }
