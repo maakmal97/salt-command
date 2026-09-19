@@ -1292,20 +1292,39 @@ export function draftRow(entry, book) {
     ? `the book has no cost for ${product} yet, so this first lot has nothing to be checked against: fold it by hand to establish the cost, then later lots go through this gate`
     : `nothing on the book says what ${product} costs, so the row cannot be priced` };
 
-  const paidInFull = cash >= total - 0.005;
+  /* v728: WHAT THEY OWE IS THE GOODS AND THE CARRIAGE. v727 made `total` the goods alone, so this
+     read a delivered order paid in full the moment the goods were covered, while the carriage stood
+     beside it unpaid. The engine's txOwed is the same sum; this is the drafter's own copy of it and
+     the only one, because the row is not on the book yet for the engine to read. */
+  const carriage = dir === "SELL" && isNum(pay.delivery) ? +pay.delivery : 0;
+  const owed = total + carriage;
+  const paidInFull = cash >= owed - 0.005;
   const deliveredInFull = moved >= qty - 0.005;
   const nothingMoved = cash < 0.005 && moved < 0.005;
 
   /* v496: the inventory prices per unit; the row's cost is the order's, absolute. */
   const row = { customer: party, qty, total, cost: round(priced.cost * qty), cash: round(cash) };
-  /* v502: the delivery charge inside the total, typed per order; absent or zero means none */
-  if (isNum(pay.delivery) && pay.delivery > 0.005) {
-    if (pay.delivery > total + 0.005) return { skip: `the delivery charge (RM ${round(pay.delivery)}) is more than the order's total (RM ${round(total)})` };
-    row.delivery = round(pay.delivery);
-  }
-  /* v373: who moved the goods, when the entry says. A sale that does not say carries no key,
-     because the measured delivered share counts the rows that answered and not the silent ones. */
-  if (dir === "SELL" && HANDOVER.includes(pay.handover)) row.handover = pay.handover;
+  /* v502, restated at v728: the carriage stands BESIDE the goods since v727. The old refusal here
+     was a delivery above the total, which was a real rule while the charge sat inside it and is a
+     meaningless one now: a half-unit order with a long drive can genuinely cost more to carry than
+     the salt is worth. What replaces it is the contradiction, below. */
+  if (isNum(pay.delivery) && pay.delivery > 0.005) row.delivery = round(pay.delivery);
+  /* v373: who moved the goods, when the entry says. A row that does not say carries no key,
+     because the measured delivered share counts the rows that answered and not the silent ones.
+     v728: AND A PURCHASE ANSWERS THE SAME QUESTION. It was read on a sale alone, so the word the
+     Workbench collected on a lot was thrown away here. On a lot the buyer is him: collected means he
+     fetched it and the freight beside it is what the trip cost, delivered means the supplier drove
+     and the carriage is theirs. delShare still measures over sales alone, reading pSales. */
+  if (HANDOVER.includes(pay.handover)) row.handover = pay.handover;
+  /* v728, HIS INSTRUCTION OF 19 SEP 2026: the word and the figure have to agree, and the drafter
+     refuses rather than drafts, as it does for every other contradiction it can measure. The phone's
+     entryFault masks all three; the laptop's queue road does not, which is why they are stated here. */
+  if (dir === "SELL" && pay.handover === "collected" && isNum(pay.delivery) && pay.delivery > 0.005)
+    return { skip: `this says the customer collected it and charges RM ${round(pay.delivery)} to deliver it: either they collected it, or it was delivered` };
+  if (dir === "BUY" && pay.handover === "delivered" && isNum(pay.freight) && pay.freight > 0.005)
+    return { skip: `this says the supplier delivered the lot and charges RM ${round(pay.freight)} of freight: their delivery is their cost, so clear the freight or say it was collected` };
+  if (dir === "BUY" && pay.handover === "collected" && isNum(pay.freight) && !(pay.freight > 0.005))
+    return { skip: "this says the lot was collected, so it cost a trip: enter the freight, or leave the handover unstated" };
   /* v377: THE REST OF THE ROW, when the sheet stated it. The Workbench names eleven fields in
      the queue contract; the order sheet renders the whole correctable table, so anything past
      those eleven arrives in `more` and is checked HERE, field by field, against the same
@@ -1322,6 +1341,10 @@ export function draftRow(entry, book) {
       else if (CORRECT_NUM_NN.includes(k) && !(isNum(v) && v >= 0)) bad.push(`${k} has to be a number, and not negative`);
       else if (CORRECT_BOOL.includes(k) && typeof v !== "boolean") bad.push(`${k} is true or false, not ${v}`);
       else if (CORRECT_TEXT.includes(k) && typeof v !== "string") bad.push(`${k} has to be text`);
+      /* v728: handover is the one CORRECT_TEXT field with a CLOSED list, and this road never checked
+         it. A correction's own gate does (line 174); an entry's `more` bag reached the row on shape
+         alone, so the list was enforced on one road and not the other. */
+      else if (k === "handover" && !HANDOVER.includes(v)) bad.push(`handover is delivered or collected, not ${v}`);
       else if (CORRECT_BOOL.includes(k)) { if (v === true) row[k] = true; }
       else row[k] = v;
     }
@@ -1425,18 +1448,23 @@ export function draftRow(entry, book) {
      numbers exist to catch UNDERPRICING and this made every delivered order look better priced
      than it was. The rate had already been put on the goods at v502 for the Approve card and at
      v602 for the laptop's list; this line and the margin beside it were what was left. */
+  /* v728: the goods ARE the total since v727, so the derivation is gone and with it the branch that
+     named the carriage, which could no longer fire. The carriage is named from its own field now. */
   const goodsTotal = total;
+  const carryRM = dir === "BUY" ? (isNum(pay.freight) ? +pay.freight : 0) : carriage;
   const rate = qty > 0 ? goodsTotal / qty : null;
   const margin = (dir === "SELL" && rate != null && goodsTotal > 0)
     ? ((goodsTotal - priced.cost * qty) / goodsTotal) * 100 : null;
   const bits = [
     `${dir === "BUY" ? "Bought" : "Sold"} ${qty} unit of ${product} ${dir === "BUY" ? "from" : "to"} ${dir === "BUY" ? party : row.customer} for RM ${round(total)}`
-      + (goodsTotal !== total ? `, of which RM ${round(goodsTotal)} is the goods and RM ${round(total - goodsTotal)} the delivery` : "")
+      + (carryRM > 0.005
+        ? `, with RM ${round(carryRM)} of ${dir === "BUY" ? "freight beside it" : `delivery beside it, RM ${round(owed)} owed`}`
+        : "")
       + `, RM ${round(rate)}/unit.`,
     dir === "SELL" ? `Costed at RM ${round(priced.cost)}/unit from ${priced.source}, so ${margin == null ? "no margin could be computed" : `RM ${round(goodsTotal - priced.cost * qty)} on the goods at ${round(margin, 1)}%`}.` : "",
     nothingMoved
       ? `Nothing was paid and nothing moved, so the row is PENDING, dated ${row.date} as the day it was agreed: it draws no stock and books no revenue until something moves.`
-      : `${paidInFull ? "Paid in full" : `RM ${round(cash)} of RM ${round(total)} paid`} and ${deliveredInFull ? "delivered in full" : `${moved} of ${qty} unit moved`} on ${row.date}.`,
+      : `${paidInFull ? "Paid in full" : `RM ${round(cash)} of RM ${round(owed)} paid`} and ${deliveredInFull ? "delivered in full" : `${moved} of ${qty} unit moved`} on ${row.date}.`,
     "Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved."
   ].filter(Boolean);
 

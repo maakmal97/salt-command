@@ -1,6 +1,6 @@
 {
- "v": "v726",
- "stamped": "19 Sep 2026, 22:22 KL",
+ "v": "v728",
+ "stamped": "20 Sep 2026, 03:56 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5045,7 +5045,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-19T14:21:54.120Z",
   "PRICING": {
-   "takenAt": "2026-09-19T14:51:04.089Z",
+   "takenAt": "2026-09-19T20:03:57.697Z",
    "sizes": [
     0.5,
     1,
@@ -5214,9 +5214,9 @@
      "salt": {
       "name": "consistent mid",
       "orders": 16,
-      "tenureDays": 69,
-      "sinceLastDays": 1,
-      "perMonth": 7.06,
+      "tenureDays": 70,
+      "sinceLastDays": 2,
+      "perMonth": 6.96,
       "smallShare": 0.5,
       "bigShare": 0.31,
       "late": 0,
@@ -5230,9 +5230,9 @@
      "oil": {
       "name": "large and regular",
       "orders": 4,
-      "tenureDays": 44,
-      "sinceLastDays": 3,
-      "perMonth": 2.77,
+      "tenureDays": 45,
+      "sinceLastDays": 4,
+      "perMonth": 2.71,
       "smallShare": 0,
       "bigShare": 1,
       "late": 0,
@@ -5248,9 +5248,9 @@
      "salt": {
       "name": "large and regular",
       "orders": 6,
-      "tenureDays": 83,
-      "sinceLastDays": 12,
-      "perMonth": 2.2,
+      "tenureDays": 84,
+      "sinceLastDays": 13,
+      "perMonth": 2.17,
       "smallShare": 0.17,
       "bigShare": 0.83,
       "late": 1,
@@ -5266,9 +5266,9 @@
      "salt": {
       "name": "large and regular",
       "orders": 7,
-      "tenureDays": 73,
-      "sinceLastDays": 6,
-      "perMonth": 2.92,
+      "tenureDays": 74,
+      "sinceLastDays": 7,
+      "perMonth": 2.88,
       "smallShare": 0.14,
       "bigShare": 0.71,
       "late": 1,
@@ -5282,9 +5282,9 @@
      "oil": {
       "name": "rare and large",
       "orders": 2,
-      "tenureDays": 43,
-      "sinceLastDays": 6,
-      "perMonth": 1.42,
+      "tenureDays": 44,
+      "sinceLastDays": 7,
+      "perMonth": 1.38,
       "smallShare": 0,
       "bigShare": 1,
       "late": 0,
@@ -5300,9 +5300,9 @@
      "salt": {
       "name": "consistent mid",
       "orders": 9,
-      "tenureDays": 61,
-      "sinceLastDays": 4,
-      "perMonth": 4.49,
+      "tenureDays": 62,
+      "sinceLastDays": 5,
+      "perMonth": 4.42,
       "smallShare": 0,
       "bigShare": 0.22,
       "late": 0,
@@ -5316,8 +5316,8 @@
      "oil": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 7,
-      "sinceLastDays": 7,
+      "tenureDays": 8,
+      "sinceLastDays": 8,
       "perMonth": 1.01,
       "smallShare": 0,
       "bigShare": 1,
@@ -5334,9 +5334,9 @@
      "salt": {
       "name": "large and regular",
       "orders": 10,
-      "tenureDays": 58,
-      "sinceLastDays": 6,
-      "perMonth": 5.25,
+      "tenureDays": 59,
+      "sinceLastDays": 7,
+      "perMonth": 5.16,
       "smallShare": 0,
       "bigShare": 0.4,
       "late": 0,
@@ -5352,9 +5352,9 @@
      "salt": {
       "name": "consistent mid",
       "orders": 11,
-      "tenureDays": 47,
-      "sinceLastDays": 0,
-      "perMonth": 7.12,
+      "tenureDays": 48,
+      "sinceLastDays": 1,
+      "perMonth": 6.98,
       "smallShare": 0.55,
       "bigShare": 0.09,
       "late": 0,
@@ -5370,9 +5370,9 @@
      "salt": {
       "name": "small and often",
       "orders": 15,
-      "tenureDays": 82,
-      "sinceLastDays": 1,
-      "perMonth": 5.57,
+      "tenureDays": 83,
+      "sinceLastDays": 2,
+      "perMonth": 5.5,
       "smallShare": 0.8,
       "bigShare": 0.07,
       "late": 0,
@@ -5388,9 +5388,9 @@
      "salt": {
       "name": "large and regular",
       "orders": 3,
-      "tenureDays": 35,
-      "sinceLastDays": 15,
-      "perMonth": 2.61,
+      "tenureDays": 36,
+      "sinceLastDays": 16,
+      "perMonth": 2.54,
       "smallShare": 0,
       "bigShare": 1,
       "late": 0,
@@ -5406,8 +5406,8 @@
      "salt": {
       "name": "large and regular",
       "orders": 3,
-      "tenureDays": 19,
-      "sinceLastDays": 1,
+      "tenureDays": 20,
+      "sinceLastDays": 2,
       "perMonth": 3.04,
       "smallShare": 0,
       "bigShare": 1,
@@ -5424,8 +5424,8 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 67,
-      "sinceLastDays": 67,
+      "tenureDays": 68,
+      "sinceLastDays": 68,
       "perMonth": 0.45,
       "smallShare": 0,
       "bigShare": 1,
@@ -5442,9 +5442,9 @@
      "salt": {
       "name": "small and often",
       "orders": 12,
-      "tenureDays": 69,
-      "sinceLastDays": 26,
-      "perMonth": 5.29,
+      "tenureDays": 70,
+      "sinceLastDays": 27,
+      "perMonth": 5.22,
       "smallShare": 0.92,
       "bigShare": 0,
       "late": 0,
@@ -5460,9 +5460,9 @@
      "salt": {
       "name": "rare and large",
       "orders": 2,
-      "tenureDays": 51,
-      "sinceLastDays": 24,
-      "perMonth": 1.19,
+      "tenureDays": 52,
+      "sinceLastDays": 25,
+      "perMonth": 1.17,
       "smallShare": 0,
       "bigShare": 1,
       "late": 0,
@@ -5476,8 +5476,8 @@
      "oil": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 24,
-      "sinceLastDays": 24,
+      "tenureDays": 25,
+      "sinceLastDays": 25,
       "perMonth": 1.01,
       "smallShare": 0,
       "bigShare": 1,
@@ -5494,9 +5494,9 @@
      "salt": {
       "name": "rare and large",
       "orders": 2,
-      "tenureDays": 53,
-      "sinceLastDays": 30,
-      "perMonth": 1.15,
+      "tenureDays": 54,
+      "sinceLastDays": 31,
+      "perMonth": 1.13,
       "smallShare": 0,
       "bigShare": 1,
       "late": 0,
@@ -5512,9 +5512,9 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 59,
-      "sinceLastDays": 59,
-      "perMonth": 0.52,
+      "tenureDays": 60,
+      "sinceLastDays": 60,
+      "perMonth": 0.51,
       "smallShare": 0,
       "bigShare": 1,
       "late": 0,
@@ -5530,8 +5530,8 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 67,
-      "sinceLastDays": 67,
+      "tenureDays": 68,
+      "sinceLastDays": 68,
       "perMonth": 0.45,
       "smallShare": 0,
       "bigShare": 1,
@@ -5548,9 +5548,9 @@
      "salt": {
       "name": "rare and large",
       "orders": 3,
-      "tenureDays": 85,
-      "sinceLastDays": 80,
-      "perMonth": 1.07,
+      "tenureDays": 86,
+      "sinceLastDays": 81,
+      "perMonth": 1.06,
       "smallShare": 0.33,
       "bigShare": 0.67,
       "late": 0,
@@ -5566,9 +5566,9 @@
      "salt": {
       "name": "consistent mid",
       "orders": 3,
-      "tenureDays": 39,
-      "sinceLastDays": 24,
-      "perMonth": 2.34,
+      "tenureDays": 40,
+      "sinceLastDays": 25,
+      "perMonth": 2.28,
       "smallShare": 0,
       "bigShare": 0,
       "late": 0,
@@ -5584,9 +5584,9 @@
      "salt": {
       "name": "occasional mid",
       "orders": 3,
-      "tenureDays": 60,
-      "sinceLastDays": 17,
-      "perMonth": 1.52,
+      "tenureDays": 61,
+      "sinceLastDays": 18,
+      "perMonth": 1.5,
       "smallShare": 0,
       "bigShare": 0.33,
       "late": 0,
@@ -5602,8 +5602,8 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 19,
-      "sinceLastDays": 19,
+      "tenureDays": 20,
+      "sinceLastDays": 20,
       "perMonth": 1.01,
       "smallShare": 1,
       "bigShare": 0,
@@ -5618,8 +5618,8 @@
      "oil": {
       "name": "large and regular",
       "orders": 2,
-      "tenureDays": 19,
-      "sinceLastDays": 11,
+      "tenureDays": 20,
+      "sinceLastDays": 12,
       "perMonth": 2.03,
       "smallShare": 0,
       "bigShare": 1,
@@ -5636,9 +5636,9 @@
      "salt": {
       "name": "small and often",
       "orders": 6,
-      "tenureDays": 72,
-      "sinceLastDays": 2,
-      "perMonth": 2.54,
+      "tenureDays": 73,
+      "sinceLastDays": 3,
+      "perMonth": 2.5,
       "smallShare": 1,
       "bigShare": 0,
       "late": 0,
@@ -5654,9 +5654,9 @@
      "salt": {
       "name": "rare and large",
       "orders": 2,
-      "tenureDays": 43,
-      "sinceLastDays": 22,
-      "perMonth": 1.42,
+      "tenureDays": 44,
+      "sinceLastDays": 23,
+      "perMonth": 1.38,
       "smallShare": 0,
       "bigShare": 1,
       "late": 0,
@@ -5672,9 +5672,9 @@
      "salt": {
       "name": "small and rare",
       "orders": 3,
-      "tenureDays": 60,
-      "sinceLastDays": 8,
-      "perMonth": 1.52,
+      "tenureDays": 61,
+      "sinceLastDays": 9,
+      "perMonth": 1.5,
       "smallShare": 0.67,
       "bigShare": 0,
       "late": 0,
@@ -5690,9 +5690,9 @@
      "salt": {
       "name": "small and rare",
       "orders": 3,
-      "tenureDays": 53,
-      "sinceLastDays": 7,
-      "perMonth": 1.72,
+      "tenureDays": 54,
+      "sinceLastDays": 8,
+      "perMonth": 1.69,
       "smallShare": 0.67,
       "bigShare": 0,
       "late": 0,
@@ -5708,8 +5708,8 @@
      "salt": {
       "name": "large and regular",
       "orders": 2,
-      "tenureDays": 29,
-      "sinceLastDays": 16,
+      "tenureDays": 30,
+      "sinceLastDays": 17,
       "perMonth": 2.03,
       "smallShare": 0.5,
       "bigShare": 0.5,
@@ -5726,8 +5726,8 @@
      "salt": {
       "name": "consistent mid",
       "orders": 2,
-      "tenureDays": 17,
-      "sinceLastDays": 0,
+      "tenureDays": 18,
+      "sinceLastDays": 1,
       "perMonth": 2.03,
       "smallShare": 0.5,
       "bigShare": 0,
@@ -5744,9 +5744,9 @@
      "salt": {
       "name": "small and rare",
       "orders": 3,
-      "tenureDays": 60,
-      "sinceLastDays": 4,
-      "perMonth": 1.52,
+      "tenureDays": 61,
+      "sinceLastDays": 5,
+      "perMonth": 1.5,
       "smallShare": 1,
       "bigShare": 0,
       "late": 0,
@@ -5762,9 +5762,9 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 50,
-      "sinceLastDays": 50,
-      "perMonth": 0.61,
+      "tenureDays": 51,
+      "sinceLastDays": 51,
+      "perMonth": 0.6,
       "smallShare": 0,
       "bigShare": 0,
       "late": 0,
@@ -5780,9 +5780,9 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 36,
-      "sinceLastDays": 36,
-      "perMonth": 0.85,
+      "tenureDays": 37,
+      "sinceLastDays": 37,
+      "perMonth": 0.82,
       "smallShare": 1,
       "bigShare": 0,
       "late": 0,
@@ -5796,9 +5796,9 @@
      "oil": {
       "name": "rare and large",
       "orders": 2,
-      "tenureDays": 36,
-      "sinceLastDays": 1,
-      "perMonth": 1.69,
+      "tenureDays": 37,
+      "sinceLastDays": 2,
+      "perMonth": 1.65,
       "smallShare": 0.5,
       "bigShare": 0.5,
       "late": 0,
@@ -5814,9 +5814,9 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 79,
-      "sinceLastDays": 79,
-      "perMonth": 0.39,
+      "tenureDays": 80,
+      "sinceLastDays": 80,
+      "perMonth": 0.38,
       "smallShare": 0,
       "bigShare": 0,
       "late": 0,
@@ -5832,9 +5832,9 @@
      "salt": {
       "name": "small and rare",
       "orders": 2,
-      "tenureDays": 64,
-      "sinceLastDays": 14,
-      "perMonth": 0.95,
+      "tenureDays": 65,
+      "sinceLastDays": 15,
+      "perMonth": 0.94,
       "smallShare": 1,
       "bigShare": 0,
       "late": 0,
@@ -5850,9 +5850,9 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 33,
-      "sinceLastDays": 33,
-      "perMonth": 0.92,
+      "tenureDays": 34,
+      "sinceLastDays": 34,
+      "perMonth": 0.9,
       "smallShare": 0,
       "bigShare": 1,
       "late": 0,
@@ -5868,9 +5868,9 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 56,
-      "sinceLastDays": 56,
-      "perMonth": 0.54,
+      "tenureDays": 57,
+      "sinceLastDays": 57,
+      "perMonth": 0.53,
       "smallShare": 1,
       "bigShare": 0,
       "late": 1,
@@ -5886,9 +5886,9 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 38,
-      "sinceLastDays": 38,
-      "perMonth": 0.8,
+      "tenureDays": 39,
+      "sinceLastDays": 39,
+      "perMonth": 0.78,
       "smallShare": 1,
       "bigShare": 0,
       "late": 0,
@@ -5904,8 +5904,8 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 13,
-      "sinceLastDays": 13,
+      "tenureDays": 14,
+      "sinceLastDays": 14,
       "perMonth": 1.01,
       "smallShare": 1,
       "bigShare": 0,
@@ -5922,8 +5922,8 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 23,
-      "sinceLastDays": 23,
+      "tenureDays": 24,
+      "sinceLastDays": 24,
       "perMonth": 1.01,
       "smallShare": 1,
       "bigShare": 0,
@@ -5940,8 +5940,8 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 9,
-      "sinceLastDays": 9,
+      "tenureDays": 10,
+      "sinceLastDays": 10,
       "perMonth": 1.01,
       "smallShare": 1,
       "bigShare": 0,
@@ -5958,8 +5958,8 @@
      "salt": {
       "name": "one-off",
       "orders": 1,
-      "tenureDays": 1,
-      "sinceLastDays": 1,
+      "tenureDays": 2,
+      "sinceLastDays": 2,
       "perMonth": 1.01,
       "smallShare": 1,
       "bigShare": 0,
@@ -6061,8 +6061,8 @@
          "date": "2026-09-19",
          "sup": "SA5-BTR"
         },
-        "days": 44,
-        "sinceLot": 53
+        "days": 45,
+        "sinceLot": 54
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -6439,8 +6439,8 @@
          "date": "2026-09-18",
          "sup": "SP7-PUD"
         },
-        "days": 44,
-        "sinceLot": 44
+        "days": 45,
+        "sinceLot": 45
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -6637,10 +6637,10 @@
      ]
     }
    },
-   "v": "v726"
+   "v": "v728"
   },
   "OPEN": {
-   "at": "2026-09-19T14:51:04.182Z",
+   "at": "2026-09-19T20:03:57.798Z",
    "count": 11,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
@@ -6657,7 +6657,7 @@
      "deliveredOn": "2026-09-19",
      "handover": "collected",
      "key": "CN6-WM|2026-09-19|250",
-     "age": 0,
+     "age": 1,
      "exp": 210
     },
     "SA5-BTR|2026-09-19|1725": {
@@ -6706,7 +6706,7 @@
      "deliveredOn": "2026-09-18",
      "handover": "collected",
      "key": "CR3-DAM|2026-09-18|160",
-     "age": 1,
+     "age": 2,
      "exp": 80
     },
     "CE4-CHE|2026-09-18|230": {
@@ -6755,7 +6755,7 @@
      "deliveredOn": "2026-09-13",
      "handover": "delivered",
      "key": "CM4-MK|2026-09-13|330",
-     "age": 6,
+     "age": 7,
      "exp": 82.5
     },
     "CJ4-BJ|2026-09-07|850": {
@@ -6828,7 +6828,7 @@
      "free": 9.01,
      "owedOut": 7.14,
      "coverDays": 1.8,
-     "rate": 5.11,
+     "rate": 5.07,
      "owedToYou": 400,
      "promised": 14.26,
      "short": 0
@@ -6849,7 +6849,7 @@
     "salt": "2026-09-19",
     "oil": "2026-09-19"
    },
-   "v": "v726"
+   "v": "v728"
   }
  }
 }

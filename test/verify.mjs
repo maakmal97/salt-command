@@ -1279,8 +1279,18 @@ await (async () => {
   const withDel = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 75, delivery: 20, cash: 95, kg: 1, date: "2026-08-16" }), book);
   ok(!withDel.skip && withDel.row.delivery === 20 && withDel.row.total === 75 && withDel.flags.some(f => /RM 75 for the goods is RM 4.5 under the floor of RM 79.5/.test(f)),
     "RM75 of goods with RM20 of carriage beside it is RM95 owed, and the floor is read against the goods");
-  ok(!!draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 50, delivery: 60, cash: 50, kg: 1, date: "2026-08-16" }), book).skip,
-    "a delivery charge larger than its total is refused");
+  /* v728: A CARRIAGE ABOVE THE GOODS IS NO LONGER A FAULT, and stating that is the point of this
+     assertion now. It was a real rule while the charge sat INSIDE the total, where it could not
+     exceed the figure containing it; since v727 it stands beside the goods, and half a unit driven
+     a long way genuinely can cost more to carry than the salt is worth. What is refused instead is
+     the CONTRADICTION: a word saying nobody carried it beside a figure saying somebody did. */
+  const bigCarry = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 0.5, total: 50, delivery: 60, cash: 110, kg: 0.5, date: "2026-08-16" }), book);
+  ok(!bigCarry.skip && bigCarry.row.total === 50 && bigCarry.row.delivery === 60,
+    "a carriage above the goods is drafted, not refused: the drive is what it cost, and it is beside the goods rather than inside them");
+  ok(/collected it and charges RM 20 to deliver it/.test(String(draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, delivery: 20, cash: 110, kg: 1, date: "2026-08-16", handover: "collected" }), book).skip || "")),
+    "what IS refused is the contradiction: collected by the customer, with a delivery charged");
+  ok(!draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, delivery: 20, cash: 110, kg: 1, date: "2026-08-16", handover: "delivered" }), book).skip,
+    "and the same figures with the word the other way round are a perfectly ordinary delivered order");
 
   /* THE TIME CHARGE IS READ OFF THE POLICY AND NEVER TYPED INTO THE FLAG. An older snapshot
      carries no policy, and the clause then comes out rather than asserting a figure the
@@ -9062,7 +9072,12 @@ await (async () => {
     }
     const cust = String(w.eval("sales.find(function(s){return s.customer&&s.date;}).customer"));
     const ef = (p) => String(w.eval("entryFault(" + JSON.stringify(p) + ")"));
-    ok(/more than the order/.test(ef({ direction: "SELL", product: "salt", party: cust, qty: 1, total: 100, delivery: 120, cash: 0, kg: 0, date: "2026-09-08" })), "the entry form refuses a delivery charge above the total, as the drafter does");
+    /* v728: the carriage stands beside the goods now, so a charge above them is a long drive and not
+       a mistyping. The form refuses the contradiction instead, as the drafter does. */
+    ok(ef({ direction: "SELL", product: "salt", party: cust, qty: 1, total: 100, delivery: 120, cash: 0, kg: 0, date: "2026-09-08" }) === "",
+      "the entry form no longer refuses a carriage above the goods: it is beside them, not inside them");
+    ok(/collected it and charges/.test(ef({ direction: "SELL", product: "salt", party: cust, qty: 1, total: 100, delivery: 20, cash: 0, kg: 0, date: "2026-09-08", handover: "collected" })),
+      "the entry form refuses a collected order that charges a delivery, as the drafter does");
     ok(/dated/.test(ef({ direction: "SELL", product: "salt", party: cust, qty: 1, total: 100, cash: 0, kg: 0, date: null, fresh: true }))
       && ef({ direction: "SELL", product: "salt", party: cust, qty: 1, total: 100, cash: 0, kg: 0, date: "2026-09-08", fresh: true }) === "", "and an undated new row, while a dated pending one passes");
     ok(/above zero/.test(ef({ direction: "SELL", product: "salt", party: cust, qty: 0, total: 100, cash: 0, kg: 0, date: "2026-09-08" })), "and a zero quantity");
@@ -11084,10 +11099,12 @@ await (async () => {
     ok(plan("CZ9-CV", 1) === null, "and nothing on the oil book, which has no reward");
     w19.eval("setProd('salt');applyOverlay();recompute();");
 
-    /* THE FORM. Delivery rides inside the total, so the gap is struck on the goods. */
+    /* THE FORM. v728: the two boxes are the two figures the ledger stores, so Goods is the goods and
+       Delivery stands beside it; the gap is struck on the goods, which is now what was typed rather
+       than what had to be derived. The cash is the two together, which is what they owe. */
     const drive19 = (tick, day) => "(function(){try{queue=[];window.confirm=function(){return true;};switchTab('add');wbMode='new';wbDir='SELL';wbApply();"
       + "var set=function(id,v){var e=document.getElementById(id);if(e)e.value=v;};"
-      + "set('wbParty','CZ9-CV');set('wbQty','1');set('wbTotal','" + (ask1 - 30 + 20) + "');set('wbDelivery','20');set('wbCash','" + (ask1 - 30 + 20) + "');set('wbUnits','1');set('wbDate','" + day + "');"
+      + "set('wbParty','CZ9-CV');set('wbQty','1');set('wbTotal','" + (ask1 - 30) + "');set('wbDelivery','20');set('wbCash','" + (ask1 - 30 + 20) + "');set('wbUnits','1');set('wbDate','" + day + "');"
       + "wbPreview();var cw=document.getElementById('wbCoverWrap'),cb=document.getElementById('wbCover');"
       + "var shown=!!cw&&cw.style.display!=='none';if(cb)cb.checked=" + tick + ";wbPreview();wbRecord();"
       + "var q=queue[queue.length-1]||null;return JSON.stringify({shown:shown,more:q&&q.payload?q.payload.more:null,free:q&&q.payload?q.payload.coverFree:null,raw:q?q.raw:'',after:cb?cb.checked:null});"
@@ -16002,14 +16019,171 @@ await (async () => {
   ok(pe.orderKey === E.ovKey({ customer: "CX0-AA", date: pe.payload.date, total: pe.payload.total, delivery: pe.payload.delivery }),
     "the desk's key and the engine's ovKey are the same string on the same row, which v694 requires to the character");
 
-  /* ---- the derivation is written in NO place now, which is what made s172 possible ---- */
+  /* ---- the derivation is written in NO place now, which is what made s172 possible ----
+     v728: THE SCAN READS CODE, AND THE CHANGELOG IS NOT CODE. This pinned the master's raw bytes,
+     and the master carries `evolution`, so v727's OWN note -- which says in as many words that
+     `total - delivery` was written by hand in twelve places -- matched its own assertion and turned
+     the run red after the phone was live. A dated record is not corrected in place (hard rule 1),
+     so the note stays and the scan stops reading it. This is the same shape of fault as the regex
+     missing `total-wbNum('wbDelivery')`: a text pin only catches the text it was written against. */
+  const codeOnly = (f, src) => {
+    if (!/master\/salt_command\.html$/.test(f)) return src;
+    const open = src.indexOf("const evolution=["), end = src.indexOf("}];", open);
+    return (open < 0 || end < 0) ? src : src.slice(0, open) + src.slice(end + 3);
+  };
   for (const f of ["master/salt_command.html", "src/drafter.js", "tools/drafts.mjs", "tools/foldcall.mjs",
     "tools/make_statements.mjs", "tools/pricelist.mjs", "src/orders.js"]) {
-    const src = readFileSync(join(REPO, f), "utf8");
+    const src = codeOnly(f, readFileSync(join(REPO, f), "utf8"));
     ok(!/total\s*-\s*\(?\s*(\+|isNum\()?\w*\.?delivery/.test(src),
       "the goods are not derived by hand in " + f + " any more: the total is the goods and the file says so once");
   }
+  /* and the one the regex above cannot see, because the field name rides inside a string argument:
+     the two coverPlan calls read `total-wbNum('wbDelivery')` right through v727 and were the last
+     two derivations left standing. Pinned by name so the next one cannot hide the same way. */
+  ok(!/total\s*-\s*wbNum\(/.test(codeOnly("master/salt_command.html", readFileSync(join(REPO, "master/salt_command.html"), "utf8"))),
+    "nor by reading the field off the form and subtracting it, which is how two of the twelve survived v727");
 })();
+section("v728: the handover is one word, it decides whether there is a carriage, and the form types the two figures the ledger stores");
+await (async () => {
+  /* HIS INSTRUCTIONS OF 19 SEP 2026, three of them, all on one field:
+     "shorten the prose as collected or delivered (by them or by us not needed?)";
+     "if collected by customer, the delivery input should be inactive and not editable";
+     "if collected by myself, freight must have a value and vice versa";
+     and the buy side of "completely separate sell price and delivery price, from the ledger, ENTER,
+     statement, order", which v727 did everywhere but the entry form. The form still said "Of which
+     delivery" while nothing downstream subtracted it any more, so the next delivered sale typed on
+     the phone would have been booked owing its carriage twice. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const $ = (id) => w.document.getElementById(id);
+  const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+
+  /* ---- ONE WORD, IN BOTH EDITORS ---- */
+  /* the COPY, not any mention of it: the phrase is still the clearest way to describe the rule in a
+     comment, and a pin that cannot tell an option from a sentence about one fails on its own note. */
+  ok(!/>Collected by the customer<|>Delivered by us<|'Collected by the customer'|'Delivered by us'/.test(msrc),
+    "neither editor OFFERS by them or by us any more: the two words carry the whole of it");
+  ok(/\['collected','Collected'\],\['delivered','Delivered'\]/.test(msrc)
+    && /<option value="collected">Collected<\/option><option value="delivered">Delivered<\/option>/.test(msrc),
+    "the row editor and the Workbench both offer the one-word pair, and Not stated above them");
+  ok(/\{k:'handover',\s+l:'Handover',\s+kind:'handover', hint:/.test(msrc),
+    "and the row editor's handover row has lost only:'S', so the same control answers a purchase");
+
+  /* ---- THE GATE, DRIVEN ---- */
+  w.eval("switchTab('add');wbMode='new';wbDir='SELL';wbApply();");
+  const hand = $("wbHand"), del = $("wbDelivery"), fr = $("wbFreight");
+  ok(!!hand && !!del && !!fr, "the form carries the handover and both carriage boxes");
+
+  hand.value = "delivered"; w.eval("wbApply();wbPreview();");
+  del.value = "15"; w.eval("wbPreview();");
+  ok(del.disabled === false && w.eval("wbNum('wbDelivery')") === 15,
+    "a delivered sale takes a delivery charge and the form reads it");
+
+  hand.value = "collected"; hand.onchange();
+  ok(del.disabled === true && del.value === "0" && w.eval("wbNum('wbDelivery')") === 0,
+    "COLLECTED SHUTS THE BOX AND ZEROES IT. Disabling alone would not do: wbNum reads .value with no "
+    + "test of the element's state, and five sites read this field, so a hidden figure is a read figure");
+  ok($("wbDeliveryLbl").textContent === "Delivery (RM) — they collected",
+    "and the label says why it is shut rather than leaving a dead box: " + $("wbDeliveryLbl").textContent);
+
+  hand.value = "delivered"; hand.onchange();
+  ok(del.disabled === false, "and it re-opens: disabled is assigned on every pass, the value zeroed only when it closes (v457's idiom)");
+
+  /* the wiring that makes the gate fire at all. It lived in an auto-wire list that gives a field
+     wbPreview and nothing else, so a gate in wbApply would have been correct and never run. */
+  ok(/const hd=wbEl\('wbHand'\);if\(hd\)hd\.onchange=\(\)=>\{wbApply\(\);wbPreview\(\);\};/.test(msrc)
+    && !/'wbDelivery','wbFreight','wbHand'/.test(msrc),
+    "wbHand has its own handler calling wbApply, and has left the list that only ever gave it wbPreview");
+
+  /* and it survives a re-render, which restores values and never `disabled` */
+  hand.value = "collected"; hand.onchange();
+  w.eval("render();");
+  const del2 = $("wbDelivery");
+  ok(del2.disabled === true && del2.value === "0",
+    "the gate survives a re-render, because it lives in wbApply and renderPart restores values alone");
+
+  /* ---- THE BUY SIDE: the same word, the other figure ---- */
+  w.eval("wbDir='BUY';wbApply();");
+  const fr2 = $("wbFreight");
+  fr2.value = "60"; $("wbHand").value = "delivered"; $("wbHand").onchange();
+  ok(fr2.disabled === true && fr2.value === "0",
+    "the supplier delivered it, so the freight box is shut and zeroed: their delivery is their cost");
+  $("wbHand").value = "collected"; $("wbHand").onchange();
+  ok(fr2.disabled === false && /required/.test($("wbFreightLbl").textContent),
+    "he collected it, so the freight is the figure that says what the trip cost, and the label asks for it");
+
+  /* ---- THE REFUSALS, on the form and in the drafter, which must agree ---- */
+  const roster = JSON.parse(String(w.eval("JSON.stringify(roster)")));
+  const buyer = roster.find((c) => c[0] === "C" && !/-R$/.test(c));
+  const supp = roster.find((c) => c[0] === "S");
+  const ef = (p) => String(w.eval("entryFault(" + JSON.stringify(p) + ")"));
+  const S = (o) => Object.assign({ direction: "SELL", product: "salt", party: buyer, qty: 1, total: 90, cash: 0, kg: 0, date: "2026-09-20" }, o);
+  const B = (o) => Object.assign({ direction: "BUY", product: "salt", party: supp, qty: 10, total: 460, cash: 0, kg: 0, date: "2026-09-20" }, o);
+
+  ok(/collected it and charges RM 15 to deliver it/.test(ef(S({ delivery: 15, handover: "collected" }))),
+    "a collected order that charges a delivery is refused, which is the contradiction he named");
+  ok(ef(S({ delivery: 15, handover: "delivered" })) === "" && ef(S({ delivery: 0, handover: "collected" })) === "",
+    "and the two ways of saying it consistently are not");
+  ok(ef(S({ qty: 0.5, total: 45, delivery: 60, handover: "delivered" })) === "",
+    "A CARRIAGE ABOVE THE GOODS IS NOT A FAULT ANY MORE. It was a real rule while the charge sat "
+    + "inside the total; beside it, half a unit driven a long way genuinely costs more to carry than the salt is worth");
+  ok(/their delivery is their cost/i.test(ef(B({ freight: 60, handover: "delivered" }))),
+    "on a lot, the supplier delivering it and a freight charged is the mirror refusal");
+  ok(/it cost a trip/.test(ef(B({ freight: 0, handover: "collected" }))),
+    "and collecting it with no freight is refused the other way, on his instruction that the two go together");
+  ok(ef(B({ freight: 60, handover: "collected" })) === "" && ef(B({ freight: 0, handover: null })) === "",
+    "a collected lot with its freight passes, and Not stated is the way past all three: an unasked row is not an answered one");
+
+  /* the drafter gives the same answers, because the laptop's queue road does not pass the form.
+     Its own fixture book, in the shape the drafter reads: the desk's cost, a roster, and a lot. */
+  const { draftRow } = await import("../src/drafter.js");
+  const bk = {
+    version: "v728",
+    pricing: { v: "v728", byProduct: { salt: { stockCost: 48, replCost: 48, floors: { "1": { floor: 54 }, "10": { floor: 540 } } } } },
+    purchases: [{ date: "2026-08-13", qty: 50, total: 2400, receivedOn: "2026-08-13" }],
+    sales: [{ date: "2026-08-08", customer: "CZ9-HV", qty: 1, total: 90, cash: 90, deliveredQty: 1 }],
+    state: { roster: ["CZ9-HV", "SZ9-HV"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" },
+  };
+  const buy2 = "CZ9-HV", sup2 = "SZ9-HV";
+  const ent = (pay) => ({ at: "2026-09-20T01:00:00.000Z", type: pay.direction, party: pay.party, payload: Object.assign({ mode: "new", product: "salt" }, pay) });
+  ok(/collected it and charges/.test(String(draftRow(ent({ direction: "SELL", party: buy2, qty: 1, total: 90, delivery: 15, cash: 105, kg: 1, date: "2026-09-20", handover: "collected" }), bk).skip || "")),
+    "the drafter refuses the same sale, so the phone and the laptop cannot disagree about it");
+  ok(/their delivery is their cost/.test(String(draftRow(ent({ direction: "BUY", party: sup2, qty: 10, total: 460, freight: 60, cash: 460, kg: 10, date: "2026-09-20", handover: "delivered" }), bk).skip || "")),
+    "and the same lot");
+
+  /* ---- A PURCHASE CARRIES ITS HANDOVER, which is the whole of the buy side ---- */
+  const lot = draftRow(ent({ direction: "BUY", party: sup2, qty: 10, total: 460, freight: 60, cash: 520, kg: 10, date: "2026-09-20", handover: "collected" }), bk);
+  ok(!lot.skip && lot.collection === "purchases" && lot.row.handover === "collected" && lot.row.freight === 60,
+    "a lot he fetched carries the word and the freight beside it: " + JSON.stringify(lot.row && { h: lot.row.handover, f: lot.row.freight }));
+  ok(/handover:hand,second:/.test(msrc) && !/handover:\(wbDir==='SELL'/.test(msrc),
+    "and the Workbench sends it rather than discarding it, which it did on every purchase until now");
+
+  /* the closed list, on the other road into the row */
+  const banana = draftRow(ent({ direction: "BUY", party: sup2, qty: 10, total: 460, cash: 460, kg: 10, date: "2026-09-20", more: { handover: "banana" } }), bk);
+  ok(/handover is delivered or collected/.test(String(banana.skip || "")),
+    "and the `more` bag is held to the same closed list a correction is: it took any string at all");
+
+  /* ---- THE TWO FIGURES, AT ENTRY ---- */
+  /* THE THIRD TIME IN THIS FOLD A SOURCE-TEXT PIN HAS TRIPPED ON PROSE DESCRIBING WHAT IT FORBIDS:
+     v727's own note matched its own derivation scan and turned the run red after the phone was live.
+     A pin on copy reads the MARKUP, never the file, or every comment explaining the change is a
+     failure and the only way to keep the suite green is to stop writing down why. */
+  ok(/<label>Goods \(RM\)<\/label>/.test(msrc) && /<label id="wbDeliveryLbl">Delivery \(RM\)<\/label>/.test(msrc)
+    && !/<label[^>]*>Of which delivery|l:'Of which delivery/.test(msrc),
+    "the form asks for the goods and the delivery, not a total with the delivery buried in it");
+  const owedRow = draftRow(ent({ direction: "SELL", party: buy2, qty: 1, total: 90, delivery: 15, cash: 90, kg: 1, date: "2026-09-20", handover: "delivered" }), bk);
+  ok(!owedRow.skip && owedRow.row.total === 90 && owedRow.row.delivery === 15
+    && /RM 90 of RM 105 paid/.test(owedRow.reasoning),
+    "AND WHAT THEY OWE IS THE TWO TOGETHER: RM90 against RM105 is not paid in full, which the card "
+    + "read as settled while the carriage stood beside it unpaid: " + owedRow.reasoning);
+
+  /* ---- THE HANDOVER IS STATED FOR EACH ENTRY, NEVER INHERITED ---- */
+  ok(/\['wbQty','wbTotal','wbNote','wbHand'\]/.test(msrc),
+    "a recorded handover is cleared with the figures beside it, the rule the cover line above it states: "
+    + "left behind, a collected sale opens the next one with the delivery box shut and a carriage never typed");
+  w.close();
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

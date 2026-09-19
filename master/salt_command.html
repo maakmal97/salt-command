@@ -6918,7 +6918,8 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    v324 onward, which tabJournal maps in full; master/changelog.json carries every entry
    ever written and is the record. So a bump PREPENDS its entry. Replacing the array,
    which both comments invited, silently drops the whole window. */
-const evolution=[{"v": "v727", "d": "19 Sep 2026", "t": "THE SELL PRICE AND THE CARRIAGE ARE TWO FIGURES, AND THE ORDER KEY IS STILL WHAT THEY AGREED TO PAY", "n": ["<b>HIS INSTRUCTION OF 19 SEP 2026:</b> completely separate the sell price from the delivery price, through the ledger, Enter, the statement and the order, and do the same for the buy price and the freight. A SALE'S TOTAL IS THE GOODS ALONE NOW and the carriage stands beside it, which is the convention a purchase has always had.", "<b>THE TWO SIDES CARRIED OPPOSITE CONVENTIONS AND BOTH FAILURE MODES HAD JUST BEEN SEEN, A DAY APART, ON THE LIVE BOOK.</b> A purchase's freight sits BESIDE its total, and p025 double-counted it because a person added it into the total as well: the landed rate read RM8.08 against RM7.84 and v715 was built on the wrong figure. A sale's delivery sat INSIDE its total, and s172 absorbed its carriage into the rate because there was nowhere else to put it: RM52.50 a unit against the RM90 he had actually charged. One shape double-counts, the other absorbs, and the field list stated both contradictions one line apart.", "<b>TWELVE ROWS RESTATED AND RM198 OF CARRIAGE MOVED, WITH NOT ONE FIGURE RE-PRICED.</b> Every one says on its own row that it was restated rather than re-priced, because a ledger that changes a number without saying why is worse than one that is wrong.", "<b>THE KEY IS WHAT THEY AGREED TO PAY, AND THAT IS WHAT AVOIDED A COLLISION.</b> v694 names a row by the engine's ovKey to the character, and it is written onto a LIVE order at acknowledgement, so a key that moved would orphan every order in flight. On the GOODS alone, s155 and s157 both become CN6-WM-R|2026-09-12|110, and four of the twelve carriage-bearing rows are still open. ovKey therefore stays on the goods and the carriage TOGETHER, which is also what the customer agreed to pay, and not one order key moved.", "<b>THE DERIVATION IS NOW WRITTEN IN NO PLACE AT ALL.</b> `total - delivery` was restated by hand in twelve places across seven files, so nothing forced them to agree and nothing said what the total MEANT. They read the total, which is the goods. txGoods stays as a named function rather than being inlined, because a reader that means \"the goods\" should say so: on the day the convention changed, a bare `total` was right by luck in twelve places and wrong in the twelve that meant what is owed.", "<b>AND THE SITE WAS ALREADY RIGHT.</b> stmt/orders.js and stmt/page.js have always kept the two apart, the page even printing \"RM x for the goods and RM y delivery\". It was src/orders.js, the desk's own relay, that folded them back into one figure on the way to the book. It passes them through now and keys on the two together.", "<b>THE CHECKS.</b> A new section of 17 assertions: the goods are the total, what is owed is the two together, the two answers coincide where there is no carriage (which is why twelve wrong derivations looked right), the key on what they agreed to pay, s155 and s157 sharing goods and not a key, every restated row saying so, the relay carrying the site's two figures, the desk's key and the engine's ovKey the same string, and the derivation absent from all seven files. Six mutations each turned it red, including the one that puts the key back on the goods and collides the two rows. Nineteen existing fixtures and source pins were restated to the new shape. 2,941 passing."]},{"v":"v726","d":"19 Sep 2026","t":"A 37.5 UNIT BUY AT RM46 PAID IN FULL, HALF THE LOT ON THE SHELF","n":["<b>FOLDED: ONE PURCHASE ROW TO SA5-BTR.</b> The desk booked 37.5 unit of salt for RM1,725, RM46 a unit, RM1,725 cash paid on 19 Sep with RM45 freight, and 18.75 of the 37.5 unit moved the same day. The size falls between the quoted steps of the 20 Aug sheet, so it is priced between the RM48 of the 25 unit tier and the RM44 of the 50 unit tier. The drafter raised no flags.","<b>UNUSUAL: A SIZE WITH NO TIER OF ITS OWN, AND HALF THE GOODS STILL TO COME.</b> Payment is complete while receipt is not, so 18.75 unit stay to be delivered on a row already settled in cash. RM46 sits under the party's median of RM56 and at the low end of his range of RM44 to RM64. Sixteen orders, on the roster, nothing defaulted, RM3,100 outstanding before this row."]},
+const evolution=[{"v": "v728", "d": "20 Sep 2026", "t": "THE HANDOVER IS ONE WORD, IT DECIDES WHETHER THERE IS A CARRIAGE AT ALL, AND THE FORM TYPES THE TWO FIGURES THE LEDGER STORES", "n": ["<b>HIS INSTRUCTIONS OF 19 SEP 2026, three of them, and all on one field.</b> Shorten the prose to <i>collected</i> or <i>delivered</i>; a sale the customer collected leaves the delivery box inactive and not editable; a lot he collected himself must carry its freight, and one the supplier delivered must not. By them and by us was the register of a longer sentence and the two words carry the whole of it, which is also what lets the SAME control answer a purchase: collected is the buyer came and delivered is the seller drove, and on a lot the buyer is him. No new field, so the thirty-five correctable attributes are still thirty-five.", "<b>AND THE QUARTER OF v727 THAT NEVER LANDED.</b> His instruction was to separate the sell price and the delivery price from the ledger, the ENTER, the statement and the order. v727 did the ledger, the statement and the order. The entry form still said <i>Of which delivery</i> while nothing downstream subtracted it any more, so the next delivered sale typed on the phone would have been booked owing its carriage twice: goods 105, carriage 15, owed 120 on an order of 105. Six more places on that path still assumed the charge was inside the total, the two cover plans among them, which subtracted a carriage from a figure it is no longer in. The form asks for <b>Goods</b> and <b>Delivery</b> now, the two columns the row actually has, and what they owe is the two together everywhere it is read: the state pill, the cash refusal, the queue line and the Approve card, which called an order paid in full while its carriage stood beside it unpaid.", "<b>WHAT THE GATE HAD TO BE, AND WHY THE OBVIOUS VERSION DOES NOT WORK.</b> Hiding or disabling a box does not stop it being read: <code>wbNum</code> reads <code>.value</code> with no test of the element's state and FIVE sites read the delivery, two of them inside arithmetic where the field name is a string argument and no scan for the derivation could see it. So the gate zeroes on closing, v457's idiom, and assigns <code>disabled</code> on every pass so it re-opens. It lives in <code>wbApply</code>, because <code>renderPart</code> restores values and never <code>disabled</code>, and the thirty-five callers of render would each have quietly re-opened it. And <code>wbHand</code> is lifted out of the list that only ever gave a field <code>wbPreview</code> and given its own handler: without that one line the gate is correct and never fires, which is how this change would have shipped looking right.", "<b>THE REFUSAL REPLACES ONE THAT HAD LOST ITS PREMISE.</b> A delivery above the total was a real rule while the charge sat inside it and is a meaningless one beside it: half a unit driven a long way genuinely costs more to carry than the salt is worth. What is refused now is the contradiction, on the form and in the drafter alike so the phone and the laptop cannot disagree: collected with a delivery charged, a supplier delivery with freight charged, a collected lot with no freight. <i>Not stated</i> is the way past all three and stays a real answer, because an unasked row is not an answered one and the delivered share is measured over the rows that answered. The <code>more</code> bag is held to the closed list a correction is held to, which it never was.", "<b>ONE FAULT IN THE SUITE'S OWN INSTRUMENTS, FOUND THREE TIMES.</b> v727's derivation scan read the master's raw bytes, and the master carries <code>evolution</code>, so v727's own note, which says in as many words that <code>total - delivery</code> was written by hand in twelve places, matched its own assertion. <b>The v727 run went red after the phone was live and was reported here as green.</b> A dated record is not corrected in place, so the note stands and the scan stops reading the changelog; the copy pins read the markup rather than the file, or every comment explaining a change is a failure and the only way to stay green is to stop writing down why. A second assertion pins the shape the first cannot see, <code>total-wbNum(</code>, which is how two of the twelve survived.", "<b>THE CHECKS.</b> A new section of 26 assertions, the gate driven in a real window: the word typed, the box shut and ZEROED with <code>wbNum</code> reading nought, re-opened on the word changing back, surviving a re-render, the freight the mirror of it on a lot, the three refusals and the three legitimate answers, a purchase carrying its handover to the drafter, and an order of RM90 with RM15 of carriage reading RM90 of RM105 paid. <b>Eighteen mutations, every one red</b>, one of them by throwing rather than failing, which is why the harness reads exit status and never counts FAIL lines. 2,971 assertions over 214 sections."]},
+{"v": "v727", "d": "19 Sep 2026", "t": "THE SELL PRICE AND THE CARRIAGE ARE TWO FIGURES, AND THE ORDER KEY IS STILL WHAT THEY AGREED TO PAY", "n": ["<b>HIS INSTRUCTION OF 19 SEP 2026:</b> completely separate the sell price from the delivery price, through the ledger, Enter, the statement and the order, and do the same for the buy price and the freight. A SALE'S TOTAL IS THE GOODS ALONE NOW and the carriage stands beside it, which is the convention a purchase has always had.", "<b>THE TWO SIDES CARRIED OPPOSITE CONVENTIONS AND BOTH FAILURE MODES HAD JUST BEEN SEEN, A DAY APART, ON THE LIVE BOOK.</b> A purchase's freight sits BESIDE its total, and p025 double-counted it because a person added it into the total as well: the landed rate read RM8.08 against RM7.84 and v715 was built on the wrong figure. A sale's delivery sat INSIDE its total, and s172 absorbed its carriage into the rate because there was nowhere else to put it: RM52.50 a unit against the RM90 he had actually charged. One shape double-counts, the other absorbs, and the field list stated both contradictions one line apart.", "<b>TWELVE ROWS RESTATED AND RM198 OF CARRIAGE MOVED, WITH NOT ONE FIGURE RE-PRICED.</b> Every one says on its own row that it was restated rather than re-priced, because a ledger that changes a number without saying why is worse than one that is wrong.", "<b>THE KEY IS WHAT THEY AGREED TO PAY, AND THAT IS WHAT AVOIDED A COLLISION.</b> v694 names a row by the engine's ovKey to the character, and it is written onto a LIVE order at acknowledgement, so a key that moved would orphan every order in flight. On the GOODS alone, s155 and s157 both become CN6-WM-R|2026-09-12|110, and four of the twelve carriage-bearing rows are still open. ovKey therefore stays on the goods and the carriage TOGETHER, which is also what the customer agreed to pay, and not one order key moved.", "<b>THE DERIVATION IS NOW WRITTEN IN NO PLACE AT ALL.</b> `total - delivery` was restated by hand in twelve places across seven files, so nothing forced them to agree and nothing said what the total MEANT. They read the total, which is the goods. txGoods stays as a named function rather than being inlined, because a reader that means \"the goods\" should say so: on the day the convention changed, a bare `total` was right by luck in twelve places and wrong in the twelve that meant what is owed.", "<b>AND THE SITE WAS ALREADY RIGHT.</b> stmt/orders.js and stmt/page.js have always kept the two apart, the page even printing \"RM x for the goods and RM y delivery\". It was src/orders.js, the desk's own relay, that folded them back into one figure on the way to the book. It passes them through now and keys on the two together.", "<b>THE CHECKS.</b> A new section of 17 assertions: the goods are the total, what is owed is the two together, the two answers coincide where there is no carriage (which is why twelve wrong derivations looked right), the key on what they agreed to pay, s155 and s157 sharing goods and not a key, every restated row saying so, the relay carrying the site's two figures, the desk's key and the engine's ovKey the same string, and the derivation absent from all seven files. Six mutations each turned it red, including the one that puts the key back on the goods and collides the two rows. Nineteen existing fixtures and source pins were restated to the new shape. 2,941 passing."]},{"v":"v726","d":"19 Sep 2026","t":"A 37.5 UNIT BUY AT RM46 PAID IN FULL, HALF THE LOT ON THE SHELF","n":["<b>FOLDED: ONE PURCHASE ROW TO SA5-BTR.</b> The desk booked 37.5 unit of salt for RM1,725, RM46 a unit, RM1,725 cash paid on 19 Sep with RM45 freight, and 18.75 of the 37.5 unit moved the same day. The size falls between the quoted steps of the 20 Aug sheet, so it is priced between the RM48 of the 25 unit tier and the RM44 of the 50 unit tier. The drafter raised no flags.","<b>UNUSUAL: A SIZE WITH NO TIER OF ITS OWN, AND HALF THE GOODS STILL TO COME.</b> Payment is complete while receipt is not, so 18.75 unit stay to be delivered on a row already settled in cash. RM46 sits under the party's median of RM56 and at the low end of his range of RM44 to RM64. Sixteen orders, on the roster, nothing defaulted, RM3,100 outstanding before this row."]},
 
 {"v":"v725","d":"19 Sep 2026","t":"AN ADVANCE OF 2.5 UNIT GOES OUT TO CN6-WM: RM40 IN, RM210 AND THE CAP LEFT OPEN","n":["<b>ONE ROW FOLDED, A SALT SELL AT THE MEDIAN.</b> CN6-WM is booked for 2.5 unit at RM250, RM100 a unit, collected and moved in full on 19 Sep with RM40 paid. The total clears the RM134.61 floor for this size and stops well short of the RM360 ask, and the rate sits on his own median inside a range of RM75 to RM110. Cost is the inventory's own RM48 a unit, RM120 on the goods.","<b>THE FLAG IS THE CREDIT CAP, AND IT IS NOT ANSWERED.</b> The drafter marked this an advance with RM210 unpaid: against RM100 outstanding before, 1 unit already on credit and a cap of 2 unit, the 2.5 unit released goes past what the cap covers. Eight orders, an associate and on the roster, nothing defaulted. The inventory took no lot in, so the RM48 basis is untouched and RM210 stays outstanding."]},
 
@@ -7516,7 +7517,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='19 Sep 2026, 22:58 KL';
+const LAST_UPDATED='20 Sep 2026, 03:56 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -11544,9 +11545,9 @@ const EDFORM=[
   {k:'party',   l:'Buyer',              kind:'code', only:'S', hint:'Who the row books to. Moving it moves what each of them owes.'},
   {k:'party',   l:'Supplier',           kind:'code', only:'B'},
   {k:'qty',     l:'Quantity, unit',     kind:'num'},
-  {k:'total',   l:'Total, RM',          kind:'num'},
-  {k:'freight', l:'Freight, RM',         kind:'num', only:'B', hint:'The trip this lot cost, typed per purchase (v503). Beside the total, so the lot rate stays the goods; it feeds collection per unit.'},
-  {k:'delivery',l:'Of which delivery, RM', kind:'num', only:'S', hint:'The delivery charge inside the total, typed per order (v502). The rate per unit is struck on the total less this; nothing owed or paid changes.'},
+  {k:'total',   l:'Goods, RM',          kind:'num'},
+  {k:'freight', l:'Freight, RM',         kind:'num', only:'B', hint:'The trip this lot cost, typed per purchase (v503). Beside the goods, so the lot rate stays the goods; it feeds collection per unit.'},
+  {k:'delivery',l:'Delivery, RM',        kind:'num', only:'S', hint:'The carriage, typed per order, standing BESIDE the goods since v727 rather than inside them. The rate per unit is the goods over the units; what they owe is the two together.'},
   {k:'unpriced',l:'Price not agreed yet', kind:'bool', hint:'A zero total on an unpriced row is not the same as paid in full. This is what tells them apart.'},
   {g:'Attribution', only:'S'},
   {k:'assoc',     l:'Associate',  kind:'code', only:'S', hint:'Leave it empty to take an attribution off the row.'},
@@ -11557,7 +11558,12 @@ const EDFORM=[
   {k:'cash',        l:'Cash in, RM',        kind:'num', only:'S'},
   {k:'cash',        l:'Cash paid, RM',      kind:'num', only:'B'},
   {k:'deliveredQty',l:'Handed over, unit',  kind:'num', only:'S'},
-  {k:'handover',    l:'Handover',            kind:'handover', only:'S', hint:'Who moved the goods. This is what the delivered share is measured from, so leaving it unanswered is not the same as saying collected.'},
+  /* v728: THE SAME FIELD ANSWERS A PURCHASE, because the question is the same one from the other
+     side of the trade: collected is the buyer came, delivered is the seller drove, and on a lot the
+     buyer is him. only:'S' is gone, which the row editor needs in BOTH directions since edFields
+     filters the render and the collector alike; on a sale it decides the delivery charge and on a
+     lot the freight. The delivered share is still measured off sales alone (delShare reads pSales). */
+  {k:'handover',    l:'Handover',            kind:'handover', hint:'Who moved the goods. On a sale, delivered means he drove and it carries a delivery charge; on a lot, collected means he fetched it and it carries freight. Leaving it unanswered is not the same as saying collected: the delivered share is measured over the sales that answered.'},
   {k:'receivedQty', l:'Received, unit',     kind:'num', only:'B', hint:'Empty on a settled lot means received in full; the book stores it that way. Type a figure only to state a partial receipt.'},
   {k:'cost',        l:'Cost, RM',           kind:'num', only:'S', hint:'The cost of the whole order in RM, not per unit (v496). Typed here it overrides the inventory, and every margin on this row is measured against it.'},
   {g:'Dates'},
@@ -11719,7 +11725,12 @@ function renderEditor(){
     const id='ed_'+f.k, val=v[f.k];
     if(f.kind==='product')return '<select id="'+id+'" style="'+box+'">'+Object.keys(PRODUCTS).map(k=>'<option value="'+edEsc(k)+'"'+((val||'salt')===k?' selected':'')+'>'+edEsc(PRODUCTS[k].name)+'</option>').join('')+'</select>';
     if(f.kind==='stream')return '<select id="'+id+'" style="'+box+'">'+[['','none'],['R2','R2, books to the associate'],['R3','R3, credits the introduction']].map(o=>'<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
-    if(f.kind==='handover')return '<select id="'+id+'" style="'+box+'">'+[['','not stated'],['collected','Collected by the customer'],['delivered','Delivered by us']].map(o=>'<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
+    /* v728, HIS INSTRUCTION OF 19 SEP 2026: shorten the prose to collected or delivered. The two
+       words carry the whole of it; by them and by us was the register of a longer sentence. It also
+       lets the SAME control answer a purchase, where the parties are the other way round: collected
+       is he fetched it and delivered is the supplier drove, which is exactly what the one word says
+       from each side of the trade. Dated records on rows already written keep their own prose. */
+    if(f.kind==='handover')return '<select id="'+id+'" style="'+box+'">'+[['','not stated'],['collected','Collected'],['delivered','Delivered']].map(o=>'<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
     if(f.kind==='code')return '<input id="'+id+'" list="edCodes" value="'+edEsc(val)+'" placeholder="none" style="'+box+'">';
     if(f.kind==='num')return '<input id="'+id+'" type="number" step="0.01" value="'+edEsc(val)+'" style="'+box+'">';
     if(f.kind==='date')return dateIn(id,val,' style="'+box+';padding-right:74px"');
@@ -11818,7 +11829,10 @@ function edSubmitNew(){
   /* v524: an R2 row books to its associate; a blank date takes today when something moved */
   if(all.stream==='R2'&&all.assoc&&!all.party)all.party=all.assoc;
   if(!all.date&&((+all.cash||0)>0||(+all.deliveredQty||0)>0))all.date=TODAY.toISOString().slice(0,10);
-  const fault=entryFault({direction:'SELL',product:all.product||'salt',party:all.party,assoc:all.assoc,downstream:all.downstream,date:all.date,cash:all.cash,kg:all.deliveredQty,qty:all.qty,total:all.total,delivery:all.delivery,fresh:true});
+  /* v728: the handover travels into the refusal here too. This sheet is the OTHER road to a new row,
+     and it already put handover on the queue payload while never passing it to the gate, so it was the
+     one live way to queue a collected order carrying a delivery charge. */
+  const fault=entryFault({direction:'SELL',product:all.product||'salt',party:all.party,assoc:all.assoc,downstream:all.downstream,date:all.date,cash:all.cash,kg:all.deliveredQty,qty:all.qty,total:all.total,delivery:all.delivery,handover:all.handover||null,fresh:true});
   if(fault)return say(fault);
   if(!(all.qty>0))return say('An order needs a quantity above zero.');
   /* v611: a resale books to the associate's bucket, so the bucket has to exist and a twin is a row in it */
@@ -17518,7 +17532,26 @@ function entryFault(p){
   if(p.qty!=null&&!(+p.qty>0))return 'The quantity has to be above zero.';
   if(p.total!=null&&+p.total<0)return 'The total cannot be negative.';
   if((+p.cash||0)<0||(+p.kg||0)<0)return 'Cash and units moved cannot be negative.';
-  if(p.delivery!=null&&p.total!=null&&+p.delivery>+p.total+0.005)return 'The delivery charge ('+fmt(+p.delivery)+') is more than the order\'s total ('+fmt(+p.total)+').';
+  if(p.delivery!=null&&+p.delivery<0)return 'The delivery charge cannot be negative.';
+  if(p.freight!=null&&+p.freight<0)return 'The freight cannot be negative.';
+  /* v728, HIS INSTRUCTION OF 19 SEP 2026: THE HANDOVER AND THE CARRIAGE HAVE TO AGREE.
+     The old check here refused a delivery above the total, which was a real rule while the carriage
+     sat INSIDE the total and is a meaningless one now that it stands beside it: a half-unit order
+     with a long drive can cost more to carry than the salt is worth, and that is a fact about the
+     trip, not a mistyping. What replaces it is the contradiction he actually named: a word saying
+     nobody carried it, beside a figure saying somebody did.
+     SELL: they collected it, so there is no delivery to charge.
+     BUY: he collected it, so the trip is his and the freight is the figure that says what it cost;
+     the supplier delivered it, so the carriage is THEIR cost and never appears on his lot (his
+     decision of 19 Sep 2026: "Nil, their delivery is their cost").
+     'Not stated' is the way past all three, and stays a real answer: an unasked row is not the
+     same as one that answered, which is what the delivered share is measured over. */
+  if(dir==='SELL'&&p.handover==='collected'&&(+p.delivery||0)>0.005)
+    return 'This says the customer collected it and charges '+fmt(+p.delivery)+' to deliver it. Either they collected it, or you delivered it.';
+  if(dir==='BUY'&&p.handover==='delivered'&&(+p.freight||0)>0.005)
+    return 'This says the supplier delivered it and charges '+fmt(+p.freight)+' of freight. Their delivery is their cost: clear the freight, or say you collected it.';
+  if(dir==='BUY'&&p.handover==='collected'&&p.freight!=null&&!((+p.freight||0)>0.005))
+    return 'This says you collected the lot, so it cost a trip. Enter the freight, or leave the handover not stated.';
   if(p.fresh&&!p.date)return 'Every row is dated (v487): a pending order takes the day it was agreed.';
   return '';
 }
@@ -18131,9 +18164,14 @@ function tabWorkbench(){
       </div>
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield qunits"><label>Quantity (unit)</label><input id="wbQty" type="number" step="0.5" min="0" inputmode="decimal"></div>
-        <div class="qfield qunits"><label>Total (RM)</label><input id="wbTotal" type="number" step="1" min="0" inputmode="decimal"></div>
-        <div class="qfield qunits" id="wbDeliveryCell"><label>Of which delivery (RM)</label><input id="wbDelivery" type="number" step="1" min="0" value="0" inputmode="decimal"></div>
-        <div class="qfield qunits" id="wbFreightCell"><label>Freight (RM)</label><input id="wbFreight" type="number" step="1" min="0" value="0" inputmode="decimal"></div>
+        <!-- v728: THE FORM TYPES THE TWO FIGURES THE LEDGER STORES. v727 made a sale's total the GOODS
+             and put the carriage beside it, which is the shape a purchase has always had, but it never
+             reached this form: the box still said "Of which delivery" while nothing downstream subtracted
+             it any more, so the next delivered sale typed here would have been booked as owing its
+             carriage twice. Goods and carriage are two boxes now, as they are two columns on the row. -->
+        <div class="qfield qunits"><label>Goods (RM)</label><input id="wbTotal" type="number" step="1" min="0" inputmode="decimal"></div>
+        <div class="qfield qunits" id="wbDeliveryCell"><label id="wbDeliveryLbl">Delivery (RM)</label><input id="wbDelivery" type="number" step="1" min="0" value="0" inputmode="decimal"></div>
+        <div class="qfield qunits" id="wbFreightCell"><label id="wbFreightLbl">Freight (RM)</label><input id="wbFreight" type="number" step="1" min="0" value="0" inputmode="decimal"></div>
         <div class="qfield"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbNote" placeholder="optional"></div>
       </div>
       <div class="qrow" style="margin-bottom:10px">
@@ -18149,7 +18187,7 @@ function tabWorkbench(){
         <div class="qfield qunits"><label>Cash received now (RM)</label><input id="wbCash" type="number" step="1" min="0" value="0" inputmode="decimal">
           <span class="viewsw mini" id="wbCashQ" style="margin-top:6px"><button type="button" tabindex="-1" data-c="none">None</button><button type="button" tabindex="-1" data-c="half">Half</button><button type="button" tabindex="-1" data-c="full">Full</button></span></div>
         <div class="qfield" id="wbHandCell"><label>Handover</label><select id="wbHand">
-          <option value="">Not stated</option><option value="collected">Collected by the customer</option><option value="delivered">Delivered by us</option></select></div>
+          <option value="">Not stated</option><option value="collected">Collected</option><option value="delivered">Delivered</option></select></div>
       </div>
       <!-- v620: shown only when the buyer holds reward and the sale is under the board's ask; wbPreview fills the words -->
       <div id="wbCoverWrap" style="display:none;margin-bottom:8px">
@@ -19720,7 +19758,14 @@ function wbPreview(){
   const errs=[],warns=[],goods=[];let body='';
   if(wbMode==='new'){
     const qty=wbNum('wbQty'),total=wbNum('wbTotal'),cash=wbNum('wbCash'),unitsD=wbNum('wbUnits');
-    const st=wbState(total,qty,cash,unitsD),price=qty>0?total/qty:0;
+    /* v728: THE CARRIAGE IS READ ONLY ON THE BOOK IT BELONGS TO, and what is owed is the two figures
+       together. The total is the GOODS since v727, so a state struck on it alone reads a delivered
+       order paid in full the moment the goods are covered. wbState takes the row through the engine's
+       own txStat, so handing it `delivery` is the whole of the fix and no second rule is written here.
+       The direction guard matters: wbNum reads .value whatever the field's state, so a figure typed on
+       the sale pane and left behind by a flip to Buy would otherwise reach a purchase's checks. */
+    const deliv=wbDir==='SELL'?wbNum('wbDelivery'):0, freight=wbDir==='BUY'?wbNum('wbFreight'):0, owed=total+deliv;
+    const st=wbState(total,qty,cash,unitsD,{delivery:deliv}),price=qty>0?total/qty:0;
     const mar=(wbDir==='SELL'&&price>0)?` &middot; margin <b>${((price-replCost())/price*100).toFixed(0)}%</b> on ${fmt(replCost())}/unit replacement <span style="color:var(--dim)">(${((price-costBasis())/price*100).toFixed(0)}% on the ${fmt(costBasis())}/unit book average)</span>`:'';
     body=`<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">`
       +wbPill(st.pay,wbPayCls(st.pay))+wbPill(st.deliv,wbPayCls(st.deliv))+wbPill(st.state,st.cls)
@@ -19730,8 +19775,8 @@ function wbPreview(){
     if(!(qty>0))errs.push('Quantity must be more than zero.');
     /* a blank total silences the whole pricing pane, because every coach test needs a
        price. Left unguarded it booked a zero-revenue order that still drew real units. */
-    if(!(total>0))errs.push('Total must be more than zero. Enter the ringgit before recording.');
-    if(cash>total+0.009)errs.push('Cash received cannot exceed the total.');
+    if(!(total>0))errs.push('The goods must be more than zero. Enter the ringgit before recording.');
+    if(cash>owed+0.009)errs.push(deliv>0.009?'Cash received cannot exceed the '+fmt(owed)+' owed, being '+fmt(total)+' of goods and '+fmt(deliv)+' of delivery.':'Cash received cannot exceed the goods.');
     if(unitsD>qty+0.009)errs.push('Delivered units cannot exceed the order quantity.');
     const free=+(currentStock-defUnits).toFixed(2);
     if(wbDir==='SELL'&&unitsD>free+0.009)warns.push(`Only ${units(free)} is free to sell &mdash; short by ${units(+(unitsD-free).toFixed(2))}.`);
@@ -19750,7 +19795,7 @@ function wbPreview(){
       const pParty=r2books?pA:(pv||null), pDown=r2books?(wbVal('wbDown')||null):null;   /* v611: the bucket is booked, never named as the buyer */
       const pBucket=r2books&&pA?POSITION_ENGINE.ownerCode(codeOf(pA))+POSITION_ENGINE.BUCKET_SFX:null;
       if(pBucket&&(roster||[]).indexOf(pBucket)<0)errs.push(esc(pBucket)+' is not on the roster. Register the resale account under Add ID first, then pick the code.');
-      if(pParty){ const ef=entryFault({direction:wbDir,product:wbProdVal(),party:pParty,assoc:pA,downstream:pDown,date:wbVal('wbDate'),cash,kg:unitsD,qty:wbNum('wbQty'),total:wbNum('wbTotal'),delivery:wbNum('wbDelivery')});
+      if(pParty){ const ef=entryFault({direction:wbDir,product:wbProdVal(),party:pParty,assoc:pA,downstream:pDown,date:wbVal('wbDate'),cash,kg:unitsD,qty:wbNum('wbQty'),total:wbNum('wbTotal'),delivery:deliv,freight:freight,handover:wbVal('wbHand')||null});
         if(ef&&!/needs a date/.test(ef))errs.push(ef); } }
     /* the date is blank by default so it cannot silently carry a stale day */
     if(!wbVal('wbDate'))errs.push('Enter the date. It is deliberately blank.');
@@ -19773,7 +19818,9 @@ function wbPreview(){
         else goods.push(c.msg);});
     }
     /* v620: the cover is offered only where there is something to cover and something to cover it with */
-    { const cp=(wbDir==='SELL'&&!r2books&&wbProdVal()==='salt')?coverPlan(pv,qty,total-wbNum('wbDelivery')):null;
+    /* v728: the gap is struck on the goods, and the goods ARE the total since v727. This read the
+       carriage out of a figure it is no longer in, which understated every gap a reward could cover. */
+    { const cp=(wbDir==='SELL'&&!r2books&&wbProdVal()==='salt')?coverPlan(pv,qty,total):null;
       const cw=wbEl('wbCoverWrap'),cb=wbEl('wbCover'),ct=wbEl('wbCoverTxt');
       if(cw)cw.style.display=cp?'':'none';
       if(!cp&&cb)cb.checked=false;
@@ -20163,6 +20210,10 @@ function wbRecord(){
   const note=(wbVal('wbNote')||'').trim();
   if(wbMode==='new'){
     const date=wbVal('wbDate'),qty=wbNum('wbQty'),total=wbNum('wbTotal'),cash=wbNum('wbCash'),unitsD=wbNum('wbUnits');
+    /* v728: read once, on the book the figure belongs to, and pass the same three to the refusal
+       and to the payload. v524's rule is that the preview disables the button on the same answer
+       this step gives, so the two argument lists must not diverge. */
+    const deliv=wbDir==='SELL'?wbNum('wbDelivery'):0, freight=wbDir==='BUY'?wbNum('wbFreight'):0, hand=wbVal('wbHand')||null;
     const useA=!!(wbEl('wbAssoc')&&wbEl('wbAssoc').checked&&wbDir==='SELL');
     let assoc=useA?wbVal('wbAssocSel'):null;
     /* v313: THE TWO LINES THAT PUT A NAME IN THE QUEUE ARE GONE.
@@ -20192,7 +20243,7 @@ function wbRecord(){
     const bucket=isR2&&assoc?POSITION_ENGINE.ownerCode(codeOf(assoc))+POSITION_ENGINE.BUCKET_SFX:null;
     if(bucket&&(roster||[]).indexOf(bucket)<0){ok.innerHTML=esc(bucket)+' is not on the roster. Register the resale account under Add ID first, then pick the code.';ok.style.color='var(--crim)';return;}
     const party=isR2?(assoc||null):wbVal('wbParty');
-    { const ef=entryFault({direction:wbDir,product:wbProdVal(),party,assoc,downstream:down,date,cash,kg:unitsD,qty,total,delivery:wbNum('wbDelivery'),fresh:true});
+    { const ef=entryFault({direction:wbDir,product:wbProdVal(),party,assoc,downstream:down,date,cash,kg:unitsD,qty,total,delivery:deliv,freight:freight,handover:hand,fresh:true});
       if(ef){ok.innerHTML=ef;ok.style.color='var(--crim)';return;} }
     const ra=replayAnswer(wbDir,wbProdVal(),party,date,qty,total,bucket);   /* v526; v611: a resale's twin is a row in the bucket */
     if(ra.fault){ok.innerHTML=ra.fault;ok.style.color='var(--crim)';return;}
@@ -20205,11 +20256,15 @@ function wbRecord(){
     /* a brand-new party gets a provisional CODE, never a name. Naming happens once, in
        Names & IDs, and the re-key to the proper code is queued from there. */
     else label=codeOf(party);   // the queue file is plaintext: codes only, never names
-    const st=wbState(total,qty,cash,unitsD);
+    const st=wbState(total,qty,cash,unitsD,{delivery:deliv});   // v728: what they owe is the goods and the carriage
     const status=st.pay==='Paid'?'paid':st.pay==='Unpaid'?'unpaid':'partial';
     /* v620: planned again at the tap from the book as it stands, never carried over from the preview */
-    const cp=(wbDir==='SELL'&&!isR2&&wbProdVal()==='salt'&&wbEl('wbCover')&&wbEl('wbCover').checked)?coverPlan(party,qty,total-wbNum('wbDelivery')):null;
+    const cp=(wbDir==='SELL'&&!isR2&&wbProdVal()==='salt'&&wbEl('wbCover')&&wbEl('wbCover').checked)?coverPlan(party,qty,total):null;   // v728: the goods ARE the total
     const raw=(wbDir==='SELL'?'Sell ':'Buy ')+units(qty)+(wbDir==='SELL'?' to ':' from ')+label+' for '+fmt0(total)+' on '+date
+      /* v728: the carriage is named in the line, because the figure beside it is the GOODS now and a
+         reader of the queue file cannot tell a RM90 order from a RM90 order with RM15 of carriage. */
+      +(deliv>0.009?' plus '+fmt0(deliv)+' delivery':'')+(freight>0.009?' plus '+fmt0(freight)+' freight':'')
+      +(hand?', '+hand:'')
       +(cp?', '+fmt(cp.rm)+' of the gap to their price covered by '+units(cp.kg)+' of reward':'')
       +', '+fmt0(cash)+' cash, '+units(unitsD)+' moved → '+st.state
       /* v313: codeOf, NOT ID. ID() resolves a code to the real name whenever the directory is
@@ -20221,11 +20276,20 @@ function wbRecord(){
       +(useA?(isR2?' (R2 via '+codeOf(assoc)+')':' (R3 referred by '+codeOf(assoc)+')'):'')+(note?', '+note:'');
     queue.push({at:new Date().toISOString(),type:wbDir,party:label,qty:qty,total:total,status:status,raw:raw,
       payload:{mode:'new',product:wbProdVal(),direction:wbDir,party:party,newId:null,
-        date:date,qty:qty,total:total,delivery:(wbDir==='SELL'?wbNum('wbDelivery'):0),freight:(wbDir==='BUY'?wbNum('wbFreight'):0),cash:cash,kg:unitsD,assoc:assoc,stream:useA?wbStream:null,downstream:down,kind:null,orderCode:null,linkTo:null,note:note||null,
-        handover:(wbDir==='SELL'&&wbEl('wbHand')?wbEl('wbHand').value||null:null),second:ra.second||null,
+        date:date,qty:qty,total:total,delivery:deliv,freight:freight,cash:cash,kg:unitsD,assoc:assoc,stream:useA?wbStream:null,downstream:down,kind:null,orderCode:null,linkTo:null,note:note||null,
+        /* v728: A PURCHASE CARRIES ITS HANDOVER TOO. It was read only on a sale, so the select on the
+           BUY pane was answered and thrown away; on a lot the word says whether HE fetched it, which
+           is the same question and the thing the freight beside it answers to. */
+        handover:hand,second:ra.second||null,
         more:cp?{coverUnits:cp.kg,coverRM:cp.rm}:null,coverFree:cp?cp.free:null}});
     {const cb=wbEl('wbCover');if(cb)cb.checked=false;}   // v620: a cover is chosen for each sale, never inherited
-    ['wbQty','wbTotal','wbNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
+    /* v728: AND THE HANDOVER IS STATED FOR EACH ENTRY, NEVER INHERITED, which is the rule the line
+       above states for the cover and the same fault. Left behind, a recorded 'collected' opens the
+       next sale with the delivery box shut at zero, so a carriage he then charges is never typed and
+       books as goods; on a lot an inherited 'delivered' would shut the freight box the same way. The
+       empty string is the select's own first option, and renderPart's restore skips an empty value,
+       so the blank survives the render() this function ends with. */
+    ['wbQty','wbTotal','wbNote','wbHand'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
     ['wbCash','wbUnits','wbDelivery','wbFreight'].forEach(id=>{const e=wbEl(id);if(e)e.value='0';});
     const nb=wbEl('wbNewBox');if(nb)nb.style.display='none';
     /* clear the party after every record: the next entry must be chosen deliberately,
@@ -20458,6 +20522,26 @@ function wbApply(){
   for(const k in p){const e=wbEl(p[k]);if(e)e.style.display=(k===wbMode)?'':'none';}
   /* v502, v503: delivery is a sale's field and freight a purchase's */
   {const dc=wbEl('wbDeliveryCell'),fc=wbEl('wbFreightCell');if(dc)dc.style.display=wbDir==='SELL'?'':'none';if(fc)fc.style.display=wbDir==='BUY'?'':'none';}
+  /* v728, HIS INSTRUCTION OF 19 SEP 2026: THE HANDOVER DECIDES WHETHER THERE IS A CARRIAGE AT ALL.
+     Collected by the customer, and the delivery box is shut; he collected the lot himself, and the
+     freight box is the one that must carry a figure. One word answers both books, from each side.
+
+     IT LIVES HERE, IN wbApply, AND NOT IN THE HANDLER, for one reason that cost a version to find:
+     renderPart rebuilds this pane from the static markup and restores only VALUES, never `disabled`
+     (the snapshot at the foot of render() is {v,c} and nothing else). The very next line it runs is
+     wbApply();wbPreview();, so a gate written here survives a re-render, a direction flip, a mode
+     switch and an associate tick alike, and a gate written into the change handler alone does not.
+     wbHand is given its own onchange below so a change of the word re-runs this pass.
+
+     DISABLED IS ASSIGNED UNCONDITIONALLY AND THE VALUE ZEROED ONLY WHEN THE GATE CLOSES: v457's
+     idiom, two lines down from here in wbAmendLabels. Disabling alone is not enough, because wbNum
+     reads .value with no test of the element's state and five sites read #wbDelivery. */
+  {const hv=wbVal('wbHand'),di=wbEl('wbDelivery'),fi=wbEl('wbFreight'),dl=wbEl('wbDeliveryLbl'),fl=wbEl('wbFreightLbl');
+    const dShut=wbDir==='SELL'&&hv==='collected', fShut=wbDir==='BUY'&&hv==='delivered';
+    if(di){di.disabled=dShut;if(dShut)di.value='0';}
+    if(fi){fi.disabled=fShut;if(fShut)fi.value='0';}
+    if(dl)dl.textContent=dShut?'Delivery (RM) — they collected':'Delivery (RM)';
+    if(fl)fl.textContent=fShut?'Freight (RM) — they delivered':(wbDir==='BUY'&&hv==='collected'?'Freight (RM) — required':'Freight (RM)');}
   /* v275: the product control. Options are built from PROD_IDS every time rather than typed,
      so declaring a third product in PRODUCTS is the whole of the work. */
   const pr=wbEl('wbProd');
@@ -20564,8 +20648,13 @@ function wireWorkbench(){
      so Record stayed disabled on what was typed until another switch was tapped, and the delivery
      changed the payload without moving the coach. Wired where nothing is wired already. */
   ['wbLoanUnits','wbLoanRM','wbLoanDate','wbLoanDir','wbLoanParty','wbLoanNote',
-   'wbDelivery','wbFreight','wbHand','wbAssocSel','wbDown','wbApName','wbApPlace'].forEach(id=>{const e=wbEl(id);if(!e)return;
+   'wbDelivery','wbFreight','wbAssocSel','wbDown','wbApName','wbApPlace'].forEach(id=>{const e=wbEl(id);if(!e)return;
     if(!e.oninput)e.oninput=wbPreview;if(e.tagName==='SELECT'&&!e.onchange)e.onchange=wbPreview;});
+  /* v728: wbHand LEAVES THAT LIST AND GETS ITS OWN HANDLER, because the list gives a field wbPreview
+     and nothing else, and the carriage gate lives in wbApply (see the note there on renderPart). This
+     one line is what makes a change of the word shut or open the box beside it; without it the gate is
+     correct and never fires, which is the way this change would have shipped looking right. */
+  const hd=wbEl('wbHand');if(hd)hd.onchange=()=>{wbApply();wbPreview();};
   const cq=wbEl('wbCashQ');if(cq)cq.onclick=e=>{const c=e.target.dataset.c;if(!c)return;const t=wbNum('wbTotal');
     wbEl('wbCash').value=c==='none'?0:c==='half'?+(t/2).toFixed(2):t;wbPreview();};
   const kq=wbEl('wbUnitsQ');if(kq)kq.onclick=e=>{const k=e.target.dataset.k;if(!k)return;
