@@ -31,6 +31,35 @@ function site(env, path, init) {
   return env.STMT_SITE.fetch("https://stmt" + path, Object.assign({}, init || {}, { headers: h }));
 }
 
+/* ---- WORDS THAT MAY NOT REACH A CUSTOMER'S PAGE (20 Sep 2026) ----------------------------------
+ * The desk's name, a roster code and a level's name are never on Salt Counter. Nothing under stmt/ may
+ * hold these literals, so the check lives here, on the one road his own words take to the site: the
+ * bulletin. A product's name is his to spend there; the phone warns and lets him. */
+const LEVEL_WORDS = ["ambassador", "titanium", "platinum", "gold", "silver", "bronze"];
+export function siteWords(text) {
+  const t = String(text || "");
+  if (/salt\s*command/i.test(t)) return "that names the desk, which a customer's page never does";
+  if (/\b[A-Z]{2}\d{1,2}-[A-Z]{2,4}(-R)?\b/.test(t)) return "that carries a roster code, which a customer's page never shows";
+  if (LEVEL_WORDS.some((w) => new RegExp("\\b" + w + "\\b", "i").test(t))) return "that names a level, which a customer's page never does";
+  return "";
+}
+
+/** The bulletin, read or set on the site through the binding; a POST is checked line by line first. */
+export async function bulletinRelay(env, method, body) {
+  if (method === "POST") {
+    for (const line of (body && Array.isArray(body.lines)) ? body.lines : []) {
+      const why = siteWords(line);
+      if (why) return { ok: false, status: 400, error: "the bulletin has a line " + why };
+    }
+  }
+  const r = await site(env, "/desk/bulletin", method === "POST"
+    ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body || {}) } : undefined);
+  if (!r) return { ok: false, status: 503, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.ok) return { ok: false, status: r.status, error: b.error || ("the statements site answered http " + r.status) };
+  return b;
+}
+
 export async function usersMap(env) {
   try { return (await env.SALT_QUEUE.get("stmt-users", "json")) || {}; } catch { return {}; }
 }

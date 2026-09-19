@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders } from "./orders.js";
+import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, bulletinRelay } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -688,7 +688,7 @@ export default {
      * cannot quietly miss it. */
     if ((p === "/queue" || p === "/ledger" || p.startsWith("/ledger/")
       || p === "/drafts" || p.startsWith("/drafts/")
-      || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users"
+      || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users" || p === "/bulletin"
       /* /push/key is the ONE push route left open, and only because the VAPID public
          key is public by definition: a browser cannot create a subscription without
          it, and it authorises nothing on its own. Everything else under /push either
@@ -762,6 +762,17 @@ export default {
          both keys on every deploy; a desk that gets no site draws no QR and says so. */
       return json({ ok: true, users: (await env.SALT_QUEUE.get("stmt-users", "json")) || {},
                     site: (await env.SALT_QUEUE.get("stmt-site")) || null });
+    }
+    /* THE BULLETIN (20 Sep 2026): his notice board across the top of Salt Counter, set from Enter and
+       relayed to the site's own store over the binding. The words are checked in the relay, this Worker
+       being the one place that may hold the desk's own name. */
+    if (p === "/bulletin") {
+      if (m === "GET") { const r = await bulletinRelay(env, "GET"); return json(r, r.ok ? 200 : (r.status || 502)); }
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b = {};
+      try { b = await request.json(); } catch { b = {}; }
+      const r = await bulletinRelay(env, "POST", b);
+      return json(r, r.ok ? 200 : (r.status || 502));
     }
     if (p === "/orders") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);

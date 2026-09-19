@@ -44,6 +44,13 @@ export const POLL_MS = 10000;
 const PAGE_CSS = `
 /* hidden wins over every display rule below: the tab strip and the issue strip are flex */
 [hidden]{display:none!important}
+/* the bulletin, his notice board across the top (20 Sep 2026): a marquee when running, a line at a time when changing */
+.bull{max-width:620px;margin:12px auto 0;padding:9px 14px;border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);
+  background:var(--salt-well);font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text);overflow:hidden;white-space:nowrap}
+.bull[data-mode=run] .track{display:inline-block;padding-left:100%;animation:bullrun 24s linear infinite}
+@keyframes bullrun{to{transform:translateX(-100%)}}
+.bull[data-mode=change] .track{white-space:normal}
+@media (prefers-reduced-motion:reduce){.bull[data-mode=run] .track{animation:none;padding-left:0;white-space:normal}}
 /* The gate, in the same material as the document behind it. One filled control, the
    brass-to-copper pill, because this is the one thing on the page that produces something;
    decision 5 of the identity. Everything else is a hairline or a word. */
@@ -356,7 +363,15 @@ export function boardPage(guest, nonce) {
     statement, the prices, the lock -- is then the customer's own code, opened the customer's own
     way. Only the door changes. The route that serves this is behind Cloudflare Access and verifies
     the token itself; see stmt/access.js. */
-export function landingPage(user, nonce, owner) {
+/* the bulletin band (20 Sep 2026): the first thing in the body, above the door and the bar alike, and
+   hidden until there is a line to show; running joins the lines as one track, changing starts on the first */
+function bulletinBand(b) {
+  const lines = (b && Array.isArray(b.lines)) ? b.lines : [];
+  const mode = (b && b.mode === "change") ? "change" : "run";
+  return '<div id="bull" class="bull" data-mode="' + mode + '"' + (lines.length ? "" : " hidden") + ' role="status" aria-live="polite">'
+    + '<div class="track" id="bullTrack">' + esc(mode === "run" ? lines.join("  ·  ") : (lines[0] || "")) + "</div></div>";
+}
+export function landingPage(user, nonce, owner, bulletin) {
   const u = esc(user || "");
   return '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8">'
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
@@ -378,6 +393,7 @@ export function landingPage(user, nonce, owner) {
     + '<meta name="apple-mobile-web-app-title" content="Salt Counter">'
     + "<title>Salt Counter</title>"
     + '<style nonce="' + nonce + '">' + STATEMENT_CSS + PAGE_CSS + "</style></head><body>"
+    + bulletinBand(bulletin)
     + (owner
       ? '<div id="roster" class="gate">'
         /* v687: the master account opens on what it can do, not on a list. An item is added here
@@ -485,6 +501,8 @@ export function landingPage(user, nonce, owner) {
     + '<div id="pCard" class="panel" hidden></div>'
     + '<script nonce="' + nonce + '">'
     + CLIENT_JS.replace(/__POLL__/g, String(POLL_MS))
+      /* the bulletin as the page was served, so the band is drawn with no request; the poll reads it again */
+      .replace("__BULL__", JSON.stringify(bulletin || { lines: [], mode: "run" }).replace(/</g, "\\u003c"))
       .replace("__PAY_SITE__", JSON.stringify(PAY_SITE)).replace("__PAY_ACCOUNTS__", JSON.stringify(PAY_ACCOUNTS))
       /* v695: the product marks, so the page can draw one wherever it would have written a name */
       .replace("__PSYM__", JSON.stringify(Object.assign({ _: RING }, PSYM)))
@@ -522,6 +540,32 @@ const CLIENT_JS = `
      happened through the natural three-minute expiry. Every await below is followed by a ticket
      check, and lock() bumps the ticket, so anything still in flight lands on nothing. */
   var POLL_MS=__POLL__, bundle=null, at=0, ticket=0, busy=false;
+  /* the bulletin (20 Sep 2026): drawn from what the page was served with, read again every sixth poll */
+  var BULL=__BULL__, bullI=0, bullTimer=null, bullN=0;
+  function bullDraw(b){
+    BULL=b||{lines:[],mode:'run'};
+    var box=document.getElementById('bull'), tr=document.getElementById('bullTrack'); if(!box||!tr) return;
+    var lines=BULL.lines||[]; box.hidden=!lines.length; box.setAttribute('data-mode',BULL.mode==='change'?'change':'run');
+    if(bullTimer){ clearInterval(bullTimer); bullTimer=null; }
+    if(!lines.length){ tr.textContent=''; return; }
+    if(BULL.mode==='change'){
+      bullI=0; tr.textContent=lines[0];
+      if(lines.length>1) bullTimer=setInterval(function(){ bullI=(bullI+1)%lines.length; tr.textContent=lines[bullI]; }, 4000);
+    } else {
+      var t=lines.join('  ·  '); tr.textContent=t;
+      tr.style.animationDuration=Math.max(12, Math.round(t.length/6))+'s';
+    }
+  }
+  async function bullRead(){
+    try{
+      var r=await fetch('/bulletin',{cache:'no-store'}); var j=await r.json();
+      if(!j||!j.ok) return;
+      var same=JSON.stringify(j.lines||[])===JSON.stringify(BULL.lines||[]) && (j.mode||'run')===(BULL.mode||'run');
+      if(!same) bullDraw({lines:j.lines||[], mode:j.mode||'run'});
+    }catch(e){}
+  }
+  window.bullDraw=bullDraw; window.bullRead=bullRead;   /* reachable from outside the closure, which is how the suite drives them */
+  bullDraw(BULL);
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
   var session='', user='', prices=null, orders=[], poll=null, tab='stmt', draft={}, pick={};
   /* v706: the associate's own card, opened from their record like the price list */
@@ -1357,6 +1401,7 @@ const CLIENT_JS = `
     var before=JSON.stringify(orders);
     await loadOrders();
     if(JSON.stringify(orders)!==before) drawOrder();
+    if(++bullN%6===0) await bullRead();   /* the bulletin, once a minute on an open page */
   }
 
   async function subscribePush(){

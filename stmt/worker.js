@@ -429,9 +429,40 @@ function deskOk(request, env) {
   const want = String(env.STMT_DESK_KEY || "");
   return !!want && ctEq(String(request.headers.get("X-Stmt-Desk") || ""), want);
 }
+/* ---- THE BULLETIN (20 Sep 2026, his instruction): a notice board across the top of Salt Counter ----
+ * One clear key in this store, no prefix, so no listing under u:, order:, push: or fail: ever sees it and
+ * the publish, which deletes only u: and fail: keys, never touches it. It is set from Enter on the desk,
+ * which reaches it over the binding on the desk key; the desk is where the words are checked, this
+ * Worker holding none of the words it refuses. It cannot be sealed: the desk has no content key, and a
+ * notice for everyone is not a document for one. The door carries it at first paint; an open page reads
+ * it back on its poll. Running scrolls the lines as one; changing shows them one at a time. */
+const BULL_KEY = "bulletin";
+async function readBulletin(env) {
+  try {
+    const b = env.STMT ? await env.STMT.get(BULL_KEY, "json") : null;
+    if (b && Array.isArray(b.lines)) return { lines: b.lines.filter((s) => typeof s === "string"), mode: b.mode === "change" ? "change" : "run", at: b.at || null };
+  } catch (e) { /* an unreadable notice is no notice */ }
+  return { lines: [], mode: "run", at: null };
+}
+function checkBulletin(body) {
+  const lines = (Array.isArray(body.lines) ? body.lines : []).filter((s) => typeof s === "string")
+    .map((s) => s.replace(/\s+/g, " ").trim().slice(0, 120)).filter(Boolean).slice(0, 8);
+  return { lines, mode: body.mode === "change" ? "change" : "run" };
+}
 async function handleDesk(request, env, p, m) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   if (!deskOk(request, env)) return json({ ok: false, error: "desk key required" }, 401);
+  if (p === "/desk/bulletin") {
+    if (m === "GET") return json(Object.assign({ ok: true }, await readBulletin(env)));
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const body = await readJson(request);
+    if (!body) return json({ ok: false, error: "send JSON" }, 400);
+    const b = checkBulletin(body);
+    if (!b.lines.length) { await env.STMT.delete(BULL_KEY); return json({ ok: true, lines: [], mode: b.mode, at: null, cleared: true }); }
+    const rec = { lines: b.lines, mode: b.mode, at: new Date().toISOString() };
+    await env.STMT.put(BULL_KEY, JSON.stringify(rec));
+    return json(Object.assign({ ok: true }, rec));
+  }
   if (p === "/desk/orders") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     const q = new URL(request.url).searchParams;
@@ -771,9 +802,9 @@ export default {
 
     /* Generated per request so the inline style and script carry a nonce rather than needing
        'unsafe-inline'. One builder for the customer's door and the owner's. */
-    const pageResponse = (user, owner) => {
+    const pageResponse = async (user, owner) => {
       const nonce = b64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
-      return new Response(landingPage(user, nonce, owner), {
+      return new Response(landingPage(user, nonce, owner, await readBulletin(env)), {
         headers: Object.assign({
           "content-type": "text/html; charset=utf-8",
           "content-security-policy":
@@ -929,7 +960,12 @@ export default {
     if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout") return handleCustomer(request, env, p, m);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
-    if (p === "/desk/orders" || p.startsWith("/desk/orders/")) return handleDesk(request, env, p, m);
+    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin") return handleDesk(request, env, p, m);
+    /* the notice, in the clear, for the page's poll; anything past it is still the site's 404 */
+    if (p === "/bulletin") {
+      if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      return json(Object.assign({ ok: true }, await readBulletin(env)));
+    }
     /* v710: THE LINK SERVES THE ORDINARY DOOR, whatever the token is. The page reads the token off
        its own address and posts it; an expired or invented one lands the reader on the door rather
        than a 404, so nobody is stranded and the page is not a probe for which tokens exist. The

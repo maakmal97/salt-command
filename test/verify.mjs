@@ -2528,7 +2528,8 @@ await (async () => {
   ok(/const VIEW_PART=\{\}/.test(m) && /function railSubs\(\)/.test(m), "the master keeps the part each view shows and lists the parts under the rail");
   ok(/class="vnav"/.test(m) && !/details\.vfold/.test(m), "a view names its parts on a strip; the buried folds are gone");
   ok(/parts:\['approve','orders','plans'\]/.test(m) && /function tabApprove\(\)/.test(m) && /async function apDecide\(/.test(m), "Enter carries Approve, reading and deciding the same drafts the phone does");
-  ok(/function tabOrders\(\)/.test(m) && /async function ordAct\(/.test(m) && /orders:\(\)=>ordLoad\(\)/.test(m) && /orders:'Site orders'/.test(m),
+  /* v732: opening Site orders reads the bulletin and wires its card beside the orders, so the hook is a block */
+  ok(/function tabOrders\(\)/.test(m) && /async function ordAct\(/.test(m) && /orders:\(\)=>\{ordLoad\(\);/.test(m) && /orders:'Site orders'/.test(m),
     "and Orders (v499), reading and moving the customer orders the statements site holds");
   ok(/data-m="addid">Add ID/.test(m) && /id="wbPaneAddid"/.test(m) && /wbMode==='addid'/.test(m), "the cloud desk's Workbench can register a party by code");
   ok(/mode:'addid',code:code,kind:kind,parent:parent/.test(m), "and queues it as the addid entry the drafter knows");
@@ -15165,6 +15166,166 @@ await (async () => {
   const src = readFileSync(join(REPO, "tools", "drain.mjs"), "utf8");
   ok(/wr\(\["kv", "key", "put", name, "--path", file\]\)/.test(src) && !/"put", name, JSON\.stringify/.test(src),
     "the only KV put in drain.mjs goes through --path, never a JSON argument the shell can strip");
+})();
+section("v732: a bulletin runs or changes across the top of Salt Counter, set from Enter, and never names the desk, a code or a level");
+await (async () => {
+  /* 20 Sep 2026, his instruction: at the top of Salt Counter, space for a running bulletin he sets from Enter on
+     the desk, running or changing. One clear key on the site, set over the binding on the desk key, spliced into
+     the door at first paint and read again by an open page's poll; the words are checked on the desk, the one
+     place that may hold the desk's own name. */
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const deskW = (await import("../src/worker.js")).default;
+  const { siteWords, bulletinRelay } = await import("../src/orders.js");
+  const skv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const D = { "X-Stmt-Desk": "desk-key" };
+  const req = (p, m, b, h) => stmtW.fetch(new Request("https://site.test" + p, { method: m || "GET",
+    headers: Object.assign(b ? { "content-type": "application/json" } : {}, h || {}), body: b ? JSON.stringify(b) : undefined }), senv);
+  const J = async (r) => ({ status: r.status, b: await r.json().catch(() => ({})) });
+
+  /* ---- 1. THE SITE: set on the desk key, tidied and capped; read by anyone; cleared by an empty set ---- */
+  ok((await req("/desk/bulletin", "POST", { lines: ["x"] })).status === 401 && (await req("/desk/bulletin", "GET")).status === 401,
+    "the desk route refuses a caller without the desk key, to set and to read");
+  let r = await J(await req("/desk/bulletin", "POST", { lines: ["  Closed  Friday ", "", "x".repeat(300), 7], mode: "change" }, D));
+  const stored = JSON.parse(await skv.get("bulletin"));
+  ok(r.b.ok && JSON.stringify(stored.lines) === JSON.stringify(["Closed Friday", "x".repeat(120)]) && stored.mode === "change" && /^\d{4}-\d\d-\d\dT/.test(stored.at),
+    "a set is tidied to one line each, capped at 120 characters, empties and non-text dropped, with the mode and the moment: " + JSON.stringify(r.b));
+  r = await J(await req("/desk/bulletin", "POST", { lines: Array.from({ length: 9 }, (_, i) => "line " + (i + 1)), mode: "sideways" }, D));
+  ok(r.b.lines.length === 8 && r.b.mode === "run", "nine lines are eight, and a mode that is not changing is running");
+  const pub = await J(await req("/bulletin", "GET"));
+  ok(pub.status === 200 && pub.b.ok && JSON.stringify(pub.b.lines) === JSON.stringify(r.b.lines) && pub.b.mode === "run",
+    "the public read answers the same lines with no key, for the page's poll");
+  ok((await req("/bulletin", "POST", { lines: ["x"] })).status === 405 && (await req("/bulletin/x", "GET")).status === 404
+    && (await req("/desk/other", "GET")).status === 404 && (await req("/desk/orders/last", "GET")).status === 401
+    && (await req("/desk/bulletin", "POST", null, D)).status === 400,
+    "the public read is read only, anything past it is the site's 404, an unknown desk path is still a 404, the desk key still gates the orders, and a set with no JSON is refused");
+  await req("/desk/bulletin", "POST", { lines: ["Closed Friday", "Back Monday"], mode: "change" }, D);
+
+  /* ---- 2. THE DOOR CARRIES IT AT FIRST PAINT, in the nonce'd style, with the script's copy spliced ---- */
+  const door = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
+  const bodyAt = door.indexOf("<body>");
+  ok(bodyAt > 0 && door.slice(bodyAt, bodyAt + 120).includes('<div id="bull" class="bull" data-mode="change" role="status"')
+    && /id="bullTrack">Closed Friday<\/div>/.test(door) && !/id="bull"[^>]*hidden/.test(door),
+    "the band is the first thing in the body, in change mode, showing the first line and not hidden");
+  ok(/@keyframes bullrun/.test(door) && /prefers-reduced-motion/.test(door) && !/<div id="bull"[^>]*style=/.test(door)
+    && /var BULL=\{"lines":\["Closed Friday","Back Monday"\],"mode":"change"/.test(door),
+    "the marquee and its reduced-motion stop are in the nonce'd style with no style attribute on the band, and the script is served its own copy");
+  await req("/desk/bulletin", "POST", { lines: ["Tuesday <b>3</b>"], mode: "run" }, D);
+  const door2 = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
+  ok(/id="bullTrack">Tuesday &lt;b&gt;3&lt;\/b&gt;<\/div>/.test(door2) && /var BULL=\{"lines":\["Tuesday \\u003cb>3\\u003c\/b>"\]/.test(door2),
+    "a line is escaped on the band and in the script's copy");
+  r = await J(await req("/desk/bulletin", "POST", { lines: [] }, D));
+  const door3 = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
+  ok(r.b.ok && r.b.cleared === true && (await skv.get("bulletin")) === null && /<div id="bull" class="bull" data-mode="run" hidden/.test(door3) && !/Tuesday/.test(door3),
+    "an empty set clears the key, and the door then carries the band hidden with nothing in it");
+
+  /* ---- 3. THE PAGE, DRIVEN: the band draws from the served copy, changes line by line, and follows the poll ---- */
+  await req("/desk/bulletin", "POST", { lines: ["First line", "Second line"], mode: "change" }, D);
+  const { JSDOM } = await import("jsdom");
+  const html = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
+  const served = [];
+  const dom = new JSDOM(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    win.fetch = async (path) => { const p = String(path); served.push(p);
+      if (p === "/bulletin") return { ok: true, status: 200, json: async () => ({ ok: true, lines: ["Only line"], mode: "run", at: "x" }) };
+      return { ok: false, status: 404, json: async () => ({ ok: false }) }; };
+  } });
+  try {
+    const d = dom.window.document, tr = () => d.getElementById("bullTrack").textContent;
+    ok(tr() === "First line" && d.getElementById("bull").getAttribute("data-mode") === "change" && !d.getElementById("bull").hidden,
+      "the page draws the served bulletin on the first line");
+    await new Promise((res) => setTimeout(res, 4300));
+    ok(tr() === "Second line", "and four seconds later the second: " + JSON.stringify(tr()));
+    await dom.window.eval("bullRead()");
+    ok(tr() === "Only line" && d.getElementById("bull").getAttribute("data-mode") === "run" && served.includes("/bulletin")
+      && /^\d+s$/.test(d.getElementById("bullTrack").style.animationDuration),
+      "a read that finds a different bulletin redraws it, running, with a duration set from its length: " + JSON.stringify([tr(), d.getElementById("bullTrack").style.animationDuration]));
+    await dom.window.eval("bullDraw({lines:[],mode:'run'})");
+    ok(d.getElementById("bull").hidden && tr() === "", "and an empty bulletin hides the band");
+    ok(/if\(\+\+bullN%6===0\) await bullRead\(\);/.test(html), "the open page reads the bulletin again every sixth poll, once a minute");
+  } finally { dom.window.close(); }
+
+  /* ---- 4. THE DESK WORKER: keyed, checked, relayed ---- */
+  const dkv = new KV();
+  const denv = { SALT_QUEUE: dkv, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture",
+    STMT_SITE: { fetch: (u, i) => stmtW.fetch(new Request(u, i), senv) } };
+  const desk = (m, b, key) => deskW.fetch(new Request("https://salt-command.example/bulletin", { method: m,
+    headers: Object.assign({ "content-type": "application/json" }, key ? { "X-Salt-Key": key } : {}), body: b ? JSON.stringify(b) : undefined }), denv);
+  ok((await desk("POST", { lines: ["x"] })).status === 401 && (await desk("GET")).status === 401,
+    "the desk's route sits behind the write key, to set and to read");
+  r = await J(await desk("POST", { lines: ["Closed Friday"], mode: "run" }, "k-fixture"));
+  ok(r.b.ok && JSON.stringify(JSON.parse(await skv.get("bulletin")).lines) === JSON.stringify(["Closed Friday"]),
+    "keyed, a set reaches the site's own store through the binding");
+  r = await J(await desk("GET", null, "k-fixture"));
+  ok(r.b.ok && JSON.stringify(r.b.lines) === JSON.stringify(["Closed Friday"]) && r.b.mode === "run", "and a keyed read comes back through the relay");
+  for (const [line, word] of [["Salt Command is shut", "the desk"], ["ask CS6-BS about it", "a roster code"], ["Gold members welcome", "a level"], ["see CN6-WM-R", "a roster code"]]) {
+    const bad = await J(await desk("POST", { lines: ["fine", line] }, "k-fixture"));
+    ok(bad.status === 400 && bad.b.error.includes(word) && JSON.stringify(JSON.parse(await skv.get("bulletin")).lines) === JSON.stringify(["Closed Friday"]),
+      "a line that names " + word + " is refused on the desk and the site is unchanged: " + JSON.stringify(bad.b));
+  }
+  r = await J(await desk("POST", { lines: ["the salt is in, golden and fine"] }, "k-fixture"));
+  ok(r.b.ok && siteWords("ready Tuesday") === "" && siteWords("golden") === "", "a product's name is his to spend, and a word that merely contains a level's is not a level");
+  ok((await J(await deskW.fetch(new Request("https://salt-command.example/bulletin", { method: "POST", headers: { "X-Salt-Key": "k-fixture", "content-type": "application/json" }, body: "{}" }), { SALT_QUEUE: dkv, SALT_WRITE_KEY: "k-fixture" }))).status === 503,
+    "with no binding the desk says the relay is not configured");
+  ok((await bulletinRelay(denv, "POST", { lines: ["x"] })).ok === true && (await bulletinRelay(denv, "PUT")).ok === true,
+    "the relay reads on anything but a POST");
+
+  /* ---- 5. THE PUBLISH NEVER TOUCHES IT: its deletes are u: and fail: keys alone ---- */
+  const pubSrc = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");
+  const pushes = pubSrc.match(/deletes\.push\([^)]*\)/g) || [];
+  ok(pushes.length === 2 && /k\.startsWith\("u:"\) && !keep\.has\(k\)[^\n]*deletes\.push\(k\)/.test(pubSrc) && /k\.startsWith\("fail:"\)[^\n]*deletes\.push\(k\)/.test(pubSrc),
+    "the publish retires only u: and fail: keys, so a bulletin set from the desk survives every fold and every hourly tick");
+
+  /* ---- 6. THE ENTER CARD, in the master ---- */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    const cloud = String(w.eval("tabOrders()"));
+    w.SALT_CLOUD = false;
+    const laptop = String(w.eval("tabOrders()"));
+    ok(/id="bullText"/.test(cloud) && /data-bmode="run"/.test(cloud) && /data-bmode="change"/.test(cloud) && /id="bullSet"/.test(cloud) && /id="bullClear"/.test(cloud)
+      && cloud.indexOf('id="bullCard"') < cloud.indexOf('id="ordAlert"') && !/bullText/.test(laptop),
+      "the cloud desk's Site orders page opens with the Bulletin card, and the laptop copy has none");
+    const g = (t) => w.eval("siteSafe(" + JSON.stringify(t) + ")");
+    ok(g("Salt Command says hi").refuse && g("ask CS6-BS").refuse && g("see CN6-WM-R").refuse && g("Gold members").refuse
+      && g("the salt is in").warn && !g("the salt is in").refuse && !g("Closed Friday").refuse && !g("Closed Friday").warn,
+      "the phone refuses the desk's name, a code and a level, warns on a product's name, and lets plain words through");
+    const box = w.document.createElement("div"); box.innerHTML = cloud; w.document.body.appendChild(box);
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    const sent = [];
+    w.fetch = async (path, init) => { sent.push({ path: String(path), method: init && init.method, key: init && init.headers && init.headers["X-Salt-Key"], body: init && init.body ? JSON.parse(init.body) : null });
+      return { ok: true, status: 200, json: async () => ({ ok: true, lines: ["Closed Friday", "Back Monday"], mode: "change" }) }; };
+    await w.eval("bullLoad()");
+    ok(sent[0] && sent[0].path === "bulletin" && sent[0].key === "k-fixture" && /Showing now, changing: Closed Friday · Back Monday/.test(w.document.getElementById("bullNow").textContent)
+      && w.document.getElementById("bullText").value === "Closed Friday\nBack Monday" && w.eval("BULL_MODE") === "change",
+      "the card reads the bulletin keyed and shows what is running: " + JSON.stringify(sent[0]));
+    w.eval("bullWire()");
+    w.document.getElementById("bullText").value = "Closed Friday\n\n  Back Monday ";
+    w.document.querySelector('button[data-bmode="run"]').click();
+    sent.length = 0;
+    await w.eval("bullPost(false)");
+    const post = sent.find((x) => x.method === "POST");
+    ok(post && post.key === "k-fixture" && JSON.stringify(post.body) === '{"lines":["Closed Friday","Back Monday"],"mode":"run"}' && /Posted\./.test(w.document.getElementById("bullMsg").textContent),
+      "Set posts the lines tidied, in the mode pressed, keyed, and says so: " + JSON.stringify(post));
+    sent.length = 0;
+    await w.eval("bullPost(true)");
+    ok(sent.some((x) => x.method === "POST" && Array.isArray(x.body.lines) && x.body.lines.length === 0) && /Cleared\./.test(w.document.getElementById("bullMsg").textContent),
+      "Clear posts an empty set");
+    sent.length = 0;
+    w.document.getElementById("bullText").value = "Salt Command is shut";
+    await w.eval("bullPost(false)");
+    ok(!sent.some((x) => x.method === "POST") && /names the desk/.test(w.document.getElementById("bullMsg").textContent),
+      "the desk's name is refused on the phone before anything is sent");
+    w.document.getElementById("bullText").value = "the salt is in";
+    w.confirm = () => false; sent.length = 0;
+    await w.eval("bullPost(false)");
+    const held = !sent.some((x) => x.method === "POST");
+    w.confirm = () => true; sent.length = 0;
+    await w.eval("bullPost(false)");
+    ok(held && sent.some((x) => x.method === "POST") && /Not posted|Posted/.test(w.document.getElementById("bullMsg").textContent),
+      "a product's name asks first, and goes when he says so");
+    ok(/orders:\(\)=>\{ordLoad\(\);bullLoad\(\);bullWire\(\);\}/.test(readFileSync(join(REPO, "master", "salt_command.html"), "utf8")),
+      "opening Site orders reads the bulletin and wires the card");
+  } finally { w.close(); }
 })();
 section("v703: an associate ticks an order as on behalf of a friend, and it books to their bucket");
 await (async () => {
