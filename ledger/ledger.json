@@ -3358,7 +3358,7 @@
    {
     "customer": "CJ4-BJ",
     "qty": 12.5,
-    "total": 850,
+    "total": 835,
     "cost": 600,
     "cash": 800,
     "delivery": 15,
@@ -3366,7 +3366,7 @@
     "date": "2026-09-07",
     "deliveredQty": 6.25,
     "deliveredOn": "2026-09-07",
-    "note": "<b>12.5 UNIT TO CJ4-BJ AT RM 850, NOTHING PAID, 4 UNIT HANDED OVER ON 07 SEP.</b> RM 15 of the total is the delivery charge typed on the order, so the goods are RM 835 at RM 66.80 a unit; the drafter's own line reads RM 68 a unit and RM 250 gross at 29.4% because it struck those on the full RM 850, and on the goods it is RM 235 at 28.1%. Costed at the inventory's own RM 48 a unit, the 03 Sep lot of 25 unit from SA5-BTR, the same figure the desk's pricing snapshot carries, so RM 600 on the order and no cost override. The floor for 12.5 unit reads RM 685.82 and the board's ask RM 1,150, so the goods stand RM 149.18 above the floor and RM 300 under the ask; the wholesale anchor for this size is RM 875. His seventh order: RM 66.80 a unit falls between his 20 Aug tranche at RM 64 and his 26 Aug tranche at RM 72, and just under the RM 68.00 of the audited 15 Jul row. Those two August tranches were a split 12.5 unit order totalling RM 850 between them, the same size and total as this row, but on separate dates and as separate rows, and both were paid before delivery. The one flag the drafter raised is the advance and it stands: nothing is paid, 4 unit are already out, which is 4 unit of credit against a retail cap of 1 unit of salt for a party who is not an associate. CJ4-BJ carried nothing outstanding before this row, so RM 850 is his whole exposure and 8.5 unit remain to be delivered against a shelf of 1. <b>RM800 IN AS AT 19 SEP:</b> cash moves from RM650 to RM800 on his word, so RM50 and 6.25 unit stay open against this order.",
+    "note": "<b>12.5 UNIT TO CJ4-BJ AT RM 850, NOTHING PAID, 4 UNIT HANDED OVER ON 07 SEP.</b> RM 15 of the total is the delivery charge typed on the order, so the goods are RM 835 at RM 66.80 a unit; the drafter's own line reads RM 68 a unit and RM 250 gross at 29.4% because it struck those on the full RM 850, and on the goods it is RM 235 at 28.1%. Costed at the inventory's own RM 48 a unit, the 03 Sep lot of 25 unit from SA5-BTR, the same figure the desk's pricing snapshot carries, so RM 600 on the order and no cost override. The floor for 12.5 unit reads RM 685.82 and the board's ask RM 1,150, so the goods stand RM 149.18 above the floor and RM 300 under the ask; the wholesale anchor for this size is RM 875. His seventh order: RM 66.80 a unit falls between his 20 Aug tranche at RM 64 and his 26 Aug tranche at RM 72, and just under the RM 68.00 of the audited 15 Jul row. Those two August tranches were a split 12.5 unit order totalling RM 850 between them, the same size and total as this row, but on separate dates and as separate rows, and both were paid before delivery. The one flag the drafter raised is the advance and it stands: nothing is paid, 4 unit are already out, which is 4 unit of credit against a retail cap of 1 unit of salt for a party who is not an associate. CJ4-BJ carried nothing outstanding before this row, so RM 850 is his whole exposure and 8.5 unit remain to be delivered against a shelf of 1. <b>RM800 IN AS AT 19 SEP:</b> cash moves from RM650 to RM800 on his word, so RM50 and 6.25 unit stay open against this order. <b>THE CARRIAGE MOVED OUT OF THE TOTAL ON 19 SEP 2026</b> (his instruction to separate the sell price from the delivery price). The figures are unchanged: RM15 of carriage that was inside this row's total now stands beside it, so the total reads the goods alone and what the customer owes is the two together. Nothing was re-priced and no order key moved.",
     "rid": "s137",
     "amend": [
      {
@@ -3389,7 +3389,7 @@
    {
     "customer": "CS6-BS-R",
     "qty": 1,
-    "total": 117.5,
+    "total": 110,
     "cost": 48,
     "cash": 117.5,
     "delivery": 7.5,
@@ -3397,7 +3397,7 @@
     "date": "2026-09-07",
     "deliveredQty": 1,
     "deliveredOn": "2026-09-07",
-    "note": "<b>CORRECTED 09 SEP: THE RESOLD UNIT, BOOKED TO CS6-BS-R.</b> <b>CORRECTED 09 SEP on his word: the unit was RESOLD and books to the CS6-BS-R account</b>, as every R2 row before it (s034, s077, s102), with no separate end buyer named. It moves no cash and no stock: RM 110 on the goods with RM 7.50 delivery inside stands. Its twin s139 is the unit CS6-BS took for themselves. The 08 Sep correction that read the row to the associate with CS6-BS-R as the end buyer is superseded by this one. <b>CORRECTED 08 SEP: PARTY TO CS6-BS-R, TOTAL TO RM 117.50, ASSOC CS6-BS, STREAM R2.</b> <b>CORRECTION ON s138: THE ROW MOVES TO CS6-BS-R AND THE TOTAL GOES TO RM 117.50.</b> The target is the order of 1 unit dated 07 Sep, delivered, RM 110 with RM 7.50 delivery inside and nothing paid. Four fields move on 08 Sep: party from CS6-BS to CS6-BS-R, total from RM 110 to RM 117.50, assoc from unset to CS6-BS, stream from unset to R2. No cash and no stock move with it, it changes what the row says about itself. At RM 117.50 for 1 unit the row sits above the RM 54.87 floor for 1 unit and under the RM 120 ask named on its twin, and it is costed at the inventory's own RM 48 a unit from the salt count of 08 Sep, so no separate cost attaches. CS6-BS stood at 10 orders, a median rate of RM 102.50, a range of RM 11 to RM 126.67, RM 220 outstanding, 3 unit on credit and nothing defaulted. The drafter flagged three things: that R2 books the row to the associate so that without a downstream the end buyer is recorded nowhere, that moving the row from CS6-BS to CS6-BS-R changes what each of them owes and every figure drawn per party, and that this is an advance of 1 unit with RM 117.50 unpaid to be checked against CS6-BS-R's credit cap. The dossier names no downstream, no history for CS6-BS-R and no cap for it, so none of the three is answered on the figures given. Outstanding: the end buyer, the CS6-BS-R cap, and RM 117.50 unpaid on 1 unit delivered. <b>1 UNIT DELIVERED ON CREDIT, THE FIRST OF TWO THE SAME EVENING.</b> RM 110 with RM 7.50 delivery inside, so RM 102.50 on the goods. Tapped on 07 Sep at 13:32 as RM 125 via CS6-BS to a downstream party that does not exist and refused by the drafter; re-read on his word of 08 Sep as a plain sale to CS6-BS at RM 110, the RM 15 delivery of the original tap divided equally with the second order. The ladder for 1 unit puts the floor at RM 54.87 and the ask at RM 120, so the goods stand RM 47.63 clear of the floor and RM 17.50 under the ask. Costed at the inventory's own RM 48 a unit from p020, the 03 Sep SA5-BTR lot, which the pricing snapshot carries: RM 62 on the order at 56.4%. RM 110 a unit is what CS6-BS paid on 29 Jul, inside their RM 95 to RM 126.67 range on small orders. Nothing paid, 1 unit out. With its twin this takes CS6-BS to 2 unit of credit, the associate cap exactly; nothing was outstanding before. Entered on his word in a Code session on 08 Sep 2026.",
+    "note": "<b>CORRECTED 09 SEP: THE RESOLD UNIT, BOOKED TO CS6-BS-R.</b> <b>CORRECTED 09 SEP on his word: the unit was RESOLD and books to the CS6-BS-R account</b>, as every R2 row before it (s034, s077, s102), with no separate end buyer named. It moves no cash and no stock: RM 110 on the goods with RM 7.50 delivery inside stands. Its twin s139 is the unit CS6-BS took for themselves. The 08 Sep correction that read the row to the associate with CS6-BS-R as the end buyer is superseded by this one. <b>CORRECTED 08 SEP: PARTY TO CS6-BS-R, TOTAL TO RM 117.50, ASSOC CS6-BS, STREAM R2.</b> <b>CORRECTION ON s138: THE ROW MOVES TO CS6-BS-R AND THE TOTAL GOES TO RM 117.50.</b> The target is the order of 1 unit dated 07 Sep, delivered, RM 110 with RM 7.50 delivery inside and nothing paid. Four fields move on 08 Sep: party from CS6-BS to CS6-BS-R, total from RM 110 to RM 117.50, assoc from unset to CS6-BS, stream from unset to R2. No cash and no stock move with it, it changes what the row says about itself. At RM 117.50 for 1 unit the row sits above the RM 54.87 floor for 1 unit and under the RM 120 ask named on its twin, and it is costed at the inventory's own RM 48 a unit from the salt count of 08 Sep, so no separate cost attaches. CS6-BS stood at 10 orders, a median rate of RM 102.50, a range of RM 11 to RM 126.67, RM 220 outstanding, 3 unit on credit and nothing defaulted. The drafter flagged three things: that R2 books the row to the associate so that without a downstream the end buyer is recorded nowhere, that moving the row from CS6-BS to CS6-BS-R changes what each of them owes and every figure drawn per party, and that this is an advance of 1 unit with RM 117.50 unpaid to be checked against CS6-BS-R's credit cap. The dossier names no downstream, no history for CS6-BS-R and no cap for it, so none of the three is answered on the figures given. Outstanding: the end buyer, the CS6-BS-R cap, and RM 117.50 unpaid on 1 unit delivered. <b>1 UNIT DELIVERED ON CREDIT, THE FIRST OF TWO THE SAME EVENING.</b> RM 110 with RM 7.50 delivery inside, so RM 102.50 on the goods. Tapped on 07 Sep at 13:32 as RM 125 via CS6-BS to a downstream party that does not exist and refused by the drafter; re-read on his word of 08 Sep as a plain sale to CS6-BS at RM 110, the RM 15 delivery of the original tap divided equally with the second order. The ladder for 1 unit puts the floor at RM 54.87 and the ask at RM 120, so the goods stand RM 47.63 clear of the floor and RM 17.50 under the ask. Costed at the inventory's own RM 48 a unit from p020, the 03 Sep SA5-BTR lot, which the pricing snapshot carries: RM 62 on the order at 56.4%. RM 110 a unit is what CS6-BS paid on 29 Jul, inside their RM 95 to RM 126.67 range on small orders. Nothing paid, 1 unit out. With its twin this takes CS6-BS to 2 unit of credit, the associate cap exactly; nothing was outstanding before. Entered on his word in a Code session on 08 Sep 2026. <b>THE CARRIAGE MOVED OUT OF THE TOTAL ON 19 SEP 2026</b> (his instruction to separate the sell price from the delivery price). The figures are unchanged: RM7.5 of carriage that was inside this row's total now stands beside it, so the total reads the goods alone and what the customer owes is the two together. Nothing was re-priced and no order key moved.",
     "rid": "s138",
     "mod": "corrected on 2026-09-08: stream (unset) to R2; total 110 to 117.5; party CS6-BS to CS6-BS-R; assoc (unset) to CS6-BS; downstream (unset) to CS6-BS-R, then corrected on 2026-09-09: party CS6-BS-R to (cleared); assoc CS6-BS to CS6-BS-R; downstream CS6-BS-R to (cleared)",
     "amend": [
@@ -3436,7 +3436,7 @@
    {
     "customer": "CS6-BS",
     "qty": 1,
-    "total": 117.5,
+    "total": 110,
     "cost": 48,
     "cash": 7.5,
     "delivery": 7.5,
@@ -3444,7 +3444,7 @@
     "date": "2026-09-07",
     "deliveredQty": 1,
     "deliveredOn": "2026-09-07",
-    "note": "<b>CORRECTION ON s139 DATED 12 SEP: THE REWARD TAKES THE WHOLE UNIT.</b> Against CS6-BS's 1 unit order of 07 Sep for RM117.50, with RM7.50 delivery inside and RM7.50 cash, settledRM moves from RM110.45 to RM110 and rebateKg from 0.94 to 1, on his word of 12 Sep, where v591 folded the earlier pair. No cash and no stock move: the row states itself differently. CS6-BS has 11 orders, a median rate of RM100, a range of RM11 to RM126.67, RM0 outstanding before, 1 unit on credit and nothing defaulted. The drafter flagged this as an advance of 1 unit with RM110 unpaid, to be checked against the credit cap, and that the RM117.50 total is under the RM117.95 already paid against the row. The figures here do not answer either flag, and both stay outstanding. <b>CORRECTION ON s139 DATED 12 SEP: SETTLED IN KIND, NO CASH, NO STOCK.</b> Against CS6-BS's 1 unit order of 07 Sep for RM117.50, with RM7.50 delivery inside and RM7.50 cash, settledRM moves from unset to RM110.45, rebate from false to true and rebateKg from unset to 0.94, the automatic offset of the CS6-BS reward. CS6-BS has 10 orders, a median rate of RM100, a range of RM11 to RM126.67, RM110 outstanding before this and 1.94 units on credit, nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the RM110 advance against the credit cap; no cap figure is given, so the flag is unanswered. <b>CORRECTED 08 SEP: TOTAL TO RM 117.50.</b> <b>CORRECTION ON s139: TOTAL ONLY, RM 110 TO RM 117.50.</b> The target is the second of the two 1 unit rows of 07 Sep, delivered, RM 7.50 delivery inside, nothing paid, and the party stays CS6-BS. One field moves on 08 Sep and no cash or stock goes with it. At RM 117.50 for 1 unit the row sits above the RM 54.87 floor for 1 unit and under the RM 120 ask named on the row itself, and it is costed at the inventory's own RM 48 a unit, so no separate cost attaches. CS6-BS stood at 10 orders, a median rate of RM 102.50, a range of RM 11 to RM 126.67, RM 220 outstanding, 3 unit on credit and nothing defaulted. The drafter flagged that CS6-BS typically pays about RM 104.75 a unit for salt across 8 orders and that RM 117.50 is 12.2% above that, and that this is an advance of 1 unit with RM 117.50 unpaid to be checked against the credit cap. The first flag is answered by the figures, the total is above the party's own run and stands as corrected; the second is not, the twin row names an associate cap of 2 unit of salt while CS6-BS carried 3 unit on credit before this fold. Outstanding: RM 117.50 unpaid on 1 unit delivered, and the cap question with it. <b>1 UNIT DELIVERED ON CREDIT, THE SECOND OF TWO THE SAME EVENING.</b> RM 110 with RM 7.50 delivery inside, so RM 102.50 on the goods. Tapped on 07 Sep at 13:34 and rejected on the phone; on his word of 08 Sep it is real and separate from the first, two orders of 1 unit each rather than one. Same terms as its twin: RM 47.63 clear of the RM 54.87 floor for 1 unit, RM 17.50 under the RM 120 ask, costed at the inventory's own RM 48 from p020 for RM 62 on the order at 56.4%. Nothing paid, 1 unit out, which brings CS6-BS to RM 220 and 2 unit of credit, the associate cap of 2 unit of salt. The two rows share party, date, size and total by design; an amendment to either must name its rid. Entered on his word in a Code session on 08 Sep 2026.",
+    "note": "<b>CORRECTION ON s139 DATED 12 SEP: THE REWARD TAKES THE WHOLE UNIT.</b> Against CS6-BS's 1 unit order of 07 Sep for RM117.50, with RM7.50 delivery inside and RM7.50 cash, settledRM moves from RM110.45 to RM110 and rebateKg from 0.94 to 1, on his word of 12 Sep, where v591 folded the earlier pair. No cash and no stock move: the row states itself differently. CS6-BS has 11 orders, a median rate of RM100, a range of RM11 to RM126.67, RM0 outstanding before, 1 unit on credit and nothing defaulted. The drafter flagged this as an advance of 1 unit with RM110 unpaid, to be checked against the credit cap, and that the RM117.50 total is under the RM117.95 already paid against the row. The figures here do not answer either flag, and both stay outstanding. <b>CORRECTION ON s139 DATED 12 SEP: SETTLED IN KIND, NO CASH, NO STOCK.</b> Against CS6-BS's 1 unit order of 07 Sep for RM117.50, with RM7.50 delivery inside and RM7.50 cash, settledRM moves from unset to RM110.45, rebate from false to true and rebateKg from unset to 0.94, the automatic offset of the CS6-BS reward. CS6-BS has 10 orders, a median rate of RM100, a range of RM11 to RM126.67, RM110 outstanding before this and 1.94 units on credit, nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the RM110 advance against the credit cap; no cap figure is given, so the flag is unanswered. <b>CORRECTED 08 SEP: TOTAL TO RM 117.50.</b> <b>CORRECTION ON s139: TOTAL ONLY, RM 110 TO RM 117.50.</b> The target is the second of the two 1 unit rows of 07 Sep, delivered, RM 7.50 delivery inside, nothing paid, and the party stays CS6-BS. One field moves on 08 Sep and no cash or stock goes with it. At RM 117.50 for 1 unit the row sits above the RM 54.87 floor for 1 unit and under the RM 120 ask named on the row itself, and it is costed at the inventory's own RM 48 a unit, so no separate cost attaches. CS6-BS stood at 10 orders, a median rate of RM 102.50, a range of RM 11 to RM 126.67, RM 220 outstanding, 3 unit on credit and nothing defaulted. The drafter flagged that CS6-BS typically pays about RM 104.75 a unit for salt across 8 orders and that RM 117.50 is 12.2% above that, and that this is an advance of 1 unit with RM 117.50 unpaid to be checked against the credit cap. The first flag is answered by the figures, the total is above the party's own run and stands as corrected; the second is not, the twin row names an associate cap of 2 unit of salt while CS6-BS carried 3 unit on credit before this fold. Outstanding: RM 117.50 unpaid on 1 unit delivered, and the cap question with it. <b>1 UNIT DELIVERED ON CREDIT, THE SECOND OF TWO THE SAME EVENING.</b> RM 110 with RM 7.50 delivery inside, so RM 102.50 on the goods. Tapped on 07 Sep at 13:34 and rejected on the phone; on his word of 08 Sep it is real and separate from the first, two orders of 1 unit each rather than one. Same terms as its twin: RM 47.63 clear of the RM 54.87 floor for 1 unit, RM 17.50 under the RM 120 ask, costed at the inventory's own RM 48 from p020 for RM 62 on the order at 56.4%. Nothing paid, 1 unit out, which brings CS6-BS to RM 220 and 2 unit of credit, the associate cap of 2 unit of salt. The two rows share party, date, size and total by design; an amendment to either must name its rid. Entered on his word in a Code session on 08 Sep 2026. <b>THE CARRIAGE MOVED OUT OF THE TOTAL ON 19 SEP 2026</b> (his instruction to separate the sell price from the delivery price). The figures are unchanged: RM7.5 of carriage that was inside this row's total now stands beside it, so the total reads the goods alone and what the customer owes is the two together. Nothing was re-priced and no order key moved.",
     "rid": "s139",
     "mod": "corrected on 2026-09-08: total 110 to 117.5, then corrected on 2026-09-12: settledRM (unset) to 110.45; rebateKg (unset) to 0.94; rebate (unset) to true, then corrected on 2026-09-12: settledRM 110.45 to 110; rebateKg 0.94 to 1",
     "amend": [
@@ -3491,13 +3491,13 @@
    {
     "customer": "CA7-AMP",
     "qty": 50,
-    "total": 430,
+    "total": 415,
     "cash": 430,
     "handover": "delivered",
     "product": "oil",
     "deliveredQty": 50,
     "date": "2026-09-08",
-    "note": "<b>AMENDED 10 SEP: TOTAL, DELIVERY, CASH, HANDOVER AND COST RESTATED.</b> <b>CORRECTION RECORDED 10 SEP AGAINST THE OIL ROW OF 08 SEP.</b> SELL to CA7-JTR, 50 unit of oil, total from RM450 to RM430, delivery from unset to RM15, cash from RM450 to RM430, handover from collected to delivered, cost from unset to RM350. RM430 is RM6.43 under the floor of RM436.43, which is a stated price under break-even and is quoted as such. At RM8.60 a unit the rate is 21.8% below CA7-JTR's usual RM11 a unit for oil, against a median of RM13 over 3 orders on a range of RM9 to RM135, nothing outstanding before, no units on credit and nothing defaulted. Cost is the typed RM350, not the inventory's own rate. The 09 Sep fulfilment step is restated to RM430 with it, on his ruling of 10 Sep that RM430 is what was agreed, paid and delivered, so the trail adds to the total and nothing is outstanding. <b>PENDING OIL ROW DATED 08 SEP, THE DAY IT WAS AGREED.</b> SELL to CA7-JTR, 50 unit of oil for RM 450, collected, RM 0 cash and 0 unit moved, so the row is pending and draws no stock and books no revenue until it does. At RM 9 a unit the total sits above the RM 376.46 floor for 50 unit and exactly on the RM 450 ask, under the RM 1,080 ceiling. It is costed at the desk's own RM 7.67 a unit, RM 66.67 on the order at 14.8%, so no separate cost attaches. CA7-JTR stood at 2 orders, a median rate of RM 135, a range of RM 13 to RM 135, nothing outstanding, nothing on credit and nothing defaulted, against a credit cap of 10 unit. The drafter flagged nothing. RM 450 and 50 unit stay outstanding.",
+    "note": "<b>AMENDED 10 SEP: TOTAL, DELIVERY, CASH, HANDOVER AND COST RESTATED.</b> <b>CORRECTION RECORDED 10 SEP AGAINST THE OIL ROW OF 08 SEP.</b> SELL to CA7-JTR, 50 unit of oil, total from RM450 to RM430, delivery from unset to RM15, cash from RM450 to RM430, handover from collected to delivered, cost from unset to RM350. RM430 is RM6.43 under the floor of RM436.43, which is a stated price under break-even and is quoted as such. At RM8.60 a unit the rate is 21.8% below CA7-JTR's usual RM11 a unit for oil, against a median of RM13 over 3 orders on a range of RM9 to RM135, nothing outstanding before, no units on credit and nothing defaulted. Cost is the typed RM350, not the inventory's own rate. The 09 Sep fulfilment step is restated to RM430 with it, on his ruling of 10 Sep that RM430 is what was agreed, paid and delivered, so the trail adds to the total and nothing is outstanding. <b>PENDING OIL ROW DATED 08 SEP, THE DAY IT WAS AGREED.</b> SELL to CA7-JTR, 50 unit of oil for RM 450, collected, RM 0 cash and 0 unit moved, so the row is pending and draws no stock and books no revenue until it does. At RM 9 a unit the total sits above the RM 376.46 floor for 50 unit and exactly on the RM 450 ask, under the RM 1,080 ceiling. It is costed at the desk's own RM 7.67 a unit, RM 66.67 on the order at 14.8%, so no separate cost attaches. CA7-JTR stood at 2 orders, a median rate of RM 135, a range of RM 13 to RM 135, nothing outstanding, nothing on credit and nothing defaulted, against a credit cap of 10 unit. The drafter flagged nothing. RM 450 and 50 unit stay outstanding. <b>THE CARRIAGE MOVED OUT OF THE TOTAL ON 19 SEP 2026</b> (his instruction to separate the sell price from the delivery price). The figures are unchanged: RM15 of carriage that was inside this row's total now stands beside it, so the total reads the goods alone and what the customer owes is the two together. Nothing was re-priced and no order key moved.",
     "rid": "s140",
     "amend": [
      {
@@ -3573,7 +3573,7 @@
    {
     "customer": "CM4-MK",
     "qty": 2,
-    "total": 220,
+    "total": 202,
     "cost": 88,
     "cash": 220,
     "delivery": 18,
@@ -3581,7 +3581,7 @@
     "date": "2026-09-09",
     "deliveredQty": 2,
     "deliveredOn": "2026-09-09",
-    "note": "<b>SALT SELL DATED 09 SEP, DELIVERED IN FULL WITH HALF THE MONEY OUTSTANDING.</b> SELL to CM4-MK, 2 unit for RM220, RM202 goods and RM18 delivery, RM110 cash in and 2 unit delivered on 09 Sep, so RM110 stays open. The total meets the RM220 ask for 2 unit and stands above the RM112.43 floor, under the RM290 ceiling. RM110 a unit is CM4-MK's median across 8 orders on a range of RM90 to RM110, with nothing outstanding before, no units on credit and nothing defaulted. Cost is the inventory's own RM44 a unit, RM88 on the order. The drafter flagged the advance against a credit cap of 1: the figures show 2 unit gone out on credit, so the cap question is not settled here.",
+    "note": "<b>SALT SELL DATED 09 SEP, DELIVERED IN FULL WITH HALF THE MONEY OUTSTANDING.</b> SELL to CM4-MK, 2 unit for RM220, RM202 goods and RM18 delivery, RM110 cash in and 2 unit delivered on 09 Sep, so RM110 stays open. The total meets the RM220 ask for 2 unit and stands above the RM112.43 floor, under the RM290 ceiling. RM110 a unit is CM4-MK's median across 8 orders on a range of RM90 to RM110, with nothing outstanding before, no units on credit and nothing defaulted. Cost is the inventory's own RM44 a unit, RM88 on the order. The drafter flagged the advance against a credit cap of 1: the figures show 2 unit gone out on credit, so the cap question is not settled here. <b>THE CARRIAGE MOVED OUT OF THE TOTAL ON 19 SEP 2026</b> (his instruction to separate the sell price from the delivery price). The figures are unchanged: RM18 of carriage that was inside this row's total now stands beside it, so the total reads the goods alone and what the customer owes is the two together. Nothing was re-priced and no order key moved.",
     "rid": "s143",
     "amend": [
      {
@@ -3759,13 +3759,13 @@
    {
     "customer": "CF5-WM",
     "qty": 1,
-    "total": 110,
+    "total": 100,
     "cash": 0,
     "delivery": 10,
     "handover": "delivered",
     "date": "2026-09-11",
     "deliveredQty": 0,
-    "note": "<b>PENDING SALT SELL DATED 11 SEP, THE DAY IT WAS AGREED.</b> SELL to CF5-WM, 1 unit for RM110 with RM10 carriage in that total and RM100 of goods, marked delivered but RM0 cash in and 0 unit moved, so the row draws no stock and books no revenue until something moves. The total clears the RM56.21 floor for 1 unit, sits RM10 under the RM120 ask and well under the RM150 ceiling. CF5-WM has 1 prior order, a median rate of RM115 and a range of RM115 to RM115, nothing outstanding before this, no units on credit against a cap of 1 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged nothing. The RM110 stays outstanding.",
+    "note": "<b>PENDING SALT SELL DATED 11 SEP, THE DAY IT WAS AGREED.</b> SELL to CF5-WM, 1 unit for RM110 with RM10 carriage in that total and RM100 of goods, marked delivered but RM0 cash in and 0 unit moved, so the row draws no stock and books no revenue until something moves. The total clears the RM56.21 floor for 1 unit, sits RM10 under the RM120 ask and well under the RM150 ceiling. CF5-WM has 1 prior order, a median rate of RM115 and a range of RM115 to RM115, nothing outstanding before this, no units on credit against a cap of 1 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged nothing. The RM110 stays outstanding. <b>THE CARRIAGE MOVED OUT OF THE TOTAL ON 19 SEP 2026</b> (his instruction to separate the sell price from the delivery price). The figures are unchanged: RM10 of carriage that was inside this row's total now stands beside it, so the total reads the goods alone and what the customer owes is the two together. Nothing was re-priced and no order key moved.",
     "rid": "s150",
     "amend": [
      {
@@ -3789,7 +3789,7 @@
    {
     "customer": "CS6-BS-R",
     "qty": 1,
-    "total": 130,
+    "total": 100,
     "cost": 44,
     "cash": 130,
     "delivery": 30,
@@ -3798,7 +3798,7 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-09-12",
     "paidOn": "2026-09-12",
-    "note": "<b>CORRECTION ON s151 DATED 13 SEP: THE RESALE MOVES TO CS6-BS-R.</b> CS6-BS's order of 12 Sep, 1 unit of salt for RM130, RM100 of goods and RM30 carriage, was booked to CS6-BS with CS6-BS-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CS6-BS-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit delivered on 12 Sep, so nothing is left open. The drafter raised no flag, and the correction changes no figure on the row. <b>SALT SELL DATED 12 SEP, PAID AND DELIVERED THE SAME DAY.</b> SELL to CS6-BS, 1 unit for RM130 with RM30 carriage in that total and RM100 of goods, RM130 cash in, 1 unit moved, delivered and paid on 12 Sep, so nothing is left outstanding on the row. The total clears the RM56.21 floor for 1 unit, sits RM10 above the RM120 ask and RM20 under the RM150 ceiling. CS6-BS has 9 prior orders, a median rate of RM100, a range of RM11 to RM126.67, RM110 outstanding before this, 1.94 units on credit against a cap of 2 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the booking to CS6-BS as an R2 downsell, so that code is not the counterparty and gets no statement from this row; the figures do not speak to that flag.",
+    "note": "<b>CORRECTION ON s151 DATED 13 SEP: THE RESALE MOVES TO CS6-BS-R.</b> CS6-BS's order of 12 Sep, 1 unit of salt for RM130, RM100 of goods and RM30 carriage, was booked to CS6-BS with CS6-BS-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CS6-BS-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit delivered on 12 Sep, so nothing is left open. The drafter raised no flag, and the correction changes no figure on the row. <b>SALT SELL DATED 12 SEP, PAID AND DELIVERED THE SAME DAY.</b> SELL to CS6-BS, 1 unit for RM130 with RM30 carriage in that total and RM100 of goods, RM130 cash in, 1 unit moved, delivered and paid on 12 Sep, so nothing is left outstanding on the row. The total clears the RM56.21 floor for 1 unit, sits RM10 above the RM120 ask and RM20 under the RM150 ceiling. CS6-BS has 9 prior orders, a median rate of RM100, a range of RM11 to RM126.67, RM110 outstanding before this, 1.94 units on credit against a cap of 2 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the booking to CS6-BS as an R2 downsell, so that code is not the counterparty and gets no statement from this row; the figures do not speak to that flag. <b>THE CARRIAGE MOVED OUT OF THE TOTAL ON 19 SEP 2026</b> (his instruction to separate the sell price from the delivery price). The figures are unchanged: RM30 of carriage that was inside this row's total now stands beside it, so the total reads the goods alone and what the customer owes is the two together. Nothing was re-priced and no order key moved.",
     "rid": "s151",
     "rev": "R2",
     "mod": "corrected on 2026-09-13: party CS6-BS-R to (cleared); downstream CS6-BS-R to (cleared)",
@@ -3868,7 +3868,7 @@
    {
     "customer": "CE4-CHE",
     "qty": 10,
-    "total": 150,
+    "total": 130,
     "cost": 75.25,
     "cash": 150,
     "delivery": 20,
@@ -3877,7 +3877,7 @@
     "date": "2026-09-12",
     "deliveredQty": 10,
     "deliveredOn": "2026-09-12",
-    "note": "<b>OIL SELL DATED 12 SEP, DELIVERED IN FULL, NOT A SEN PAID.</b> SELL to CE4-CHE, 10 unit for RM150, RM20 of that delivery and RM130 goods, RM0 cash in and 10 unit handed over on 12 Sep, so RM150 stays outstanding. The RM130 of goods matches the RM130 ask for 10 unit, clears the RM87.28 floor and sits under the RM240 ceiling. CE4-CHE has 8 orders, a median rate of RM92, a range of RM76.67 to RM107.50, RM0 outstanding before and nothing on credit, none defaulted. Cost on the row is RM75.25, not the inventory's own RM44 a unit. The drafter flagged the advance against the credit cap: 10 unit on credit against a cap of 10 answers it, at the limit. The flag that CE4-CHE has no committed oil order to compare against is not answered here.",
+    "note": "<b>OIL SELL DATED 12 SEP, DELIVERED IN FULL, NOT A SEN PAID.</b> SELL to CE4-CHE, 10 unit for RM150, RM20 of that delivery and RM130 goods, RM0 cash in and 10 unit handed over on 12 Sep, so RM150 stays outstanding. The RM130 of goods matches the RM130 ask for 10 unit, clears the RM87.28 floor and sits under the RM240 ceiling. CE4-CHE has 8 orders, a median rate of RM92, a range of RM76.67 to RM107.50, RM0 outstanding before and nothing on credit, none defaulted. Cost on the row is RM75.25, not the inventory's own RM44 a unit. The drafter flagged the advance against the credit cap: 10 unit on credit against a cap of 10 answers it, at the limit. The flag that CE4-CHE has no committed oil order to compare against is not answered here. <b>THE CARRIAGE MOVED OUT OF THE TOTAL ON 19 SEP 2026</b> (his instruction to separate the sell price from the delivery price). The figures are unchanged: RM20 of carriage that was inside this row's total now stands beside it, so the total reads the goods alone and what the customer owes is the two together. Nothing was re-priced and no order key moved.",
     "rid": "s154",
     "amend": [
      {
@@ -3946,7 +3946,7 @@
    {
     "customer": "CN6-WM-R",
     "qty": 1,
-    "total": 130,
+    "total": 110,
     "cost": 44,
     "cash": 130,
     "delivery": 20,
@@ -3955,7 +3955,7 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-09-12",
     "paidOn": "2026-09-12",
-    "note": "<b>CORRECTION ON s157 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 12 Sep, 1 unit of salt for RM130, RM110 of goods and RM20 delivery, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit delivered on 12 Sep, so nothing is left open. The drafter raised no flag, and the correction changes no figure on the row. <b>SALT SELL DATED 12 SEP, PAID IN FULL AND DELIVERED IN FULL, AS AN R2 DOWNSELL.</b> Booked to CN6-WM with downstream CN6-WM-R, 1 unit for RM130 of which <b>RM110 is the goods and RM20 the delivery</b>, RM130 cash in and 1 unit handed over on 12 Sep, so nothing stays outstanding. The goods rate is RM110 a unit and clears the RM56.21 floor for 1 unit. Cost is RM44, so RM44 against RM110 of goods at 60.0%; the drafter's own line reads the rate and the margin on the full RM130, delivery included, which is the figure the Approve card shows. <b>Two flags.</b> The row books to CN6-WM as an R2, so CN6-WM-R is not the counterparty and gets no statement from it: that is what a downsell is and it is not answered. And CN6-WM's usual rate is about RM100 a unit across 7 orders, so RM110 sits 10% above it, which is in his favour.",
+    "note": "<b>CORRECTION ON s157 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 12 Sep, 1 unit of salt for RM130, RM110 of goods and RM20 delivery, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit delivered on 12 Sep, so nothing is left open. The drafter raised no flag, and the correction changes no figure on the row. <b>SALT SELL DATED 12 SEP, PAID IN FULL AND DELIVERED IN FULL, AS AN R2 DOWNSELL.</b> Booked to CN6-WM with downstream CN6-WM-R, 1 unit for RM130 of which <b>RM110 is the goods and RM20 the delivery</b>, RM130 cash in and 1 unit handed over on 12 Sep, so nothing stays outstanding. The goods rate is RM110 a unit and clears the RM56.21 floor for 1 unit. Cost is RM44, so RM44 against RM110 of goods at 60.0%; the drafter's own line reads the rate and the margin on the full RM130, delivery included, which is the figure the Approve card shows. <b>Two flags.</b> The row books to CN6-WM as an R2, so CN6-WM-R is not the counterparty and gets no statement from it: that is what a downsell is and it is not answered. And CN6-WM's usual rate is about RM100 a unit across 7 orders, so RM110 sits 10% above it, which is in his favour. <b>THE CARRIAGE MOVED OUT OF THE TOTAL ON 19 SEP 2026</b> (his instruction to separate the sell price from the delivery price). The figures are unchanged: RM20 of carriage that was inside this row's total now stands beside it, so the total reads the goods alone and what the customer owes is the two together. Nothing was re-priced and no order key moved.",
     "rid": "s157",
     "rev": "R2",
     "mod": "corrected on 2026-09-13: party CN6-WM-R to (cleared); downstream CN6-WM-R to (cleared)",
@@ -4011,7 +4011,7 @@
    {
     "customer": "CM4-MK",
     "qty": 3,
-    "total": 330,
+    "total": 310,
     "cost": 132,
     "cash": 220,
     "delivery": 20,
@@ -4019,13 +4019,13 @@
     "date": "2026-09-13",
     "deliveredQty": 3,
     "deliveredOn": "2026-09-13",
-    "note": "<b>SALT SELL DATED 13 SEP, DELIVERED IN FULL WITH A THIRD OF THE TOTAL OUTSTANDING.</b> Booked to CM4-MK, 3 unit for RM330, RM310 goods and RM20 delivery, RM220 cash in and 3 unit delivered on 13 Sep, so RM110 stays open. The total clears the RM320 ask for 3 unit and the RM168.64 floor, and sits under the RM430 ceiling. Cost is the inventory's own RM44 a unit, RM132 on the order. <b>One flag.</b> It is an advance: 3 unit out with RM110 unpaid against a credit cap of 1 unit. He held no outstanding and no units on credit before this row, across 9 orders at a RM101 median in a RM90 to RM110 range, but the cap is 1, so the flag is not answered.",
+    "note": "<b>SALT SELL DATED 13 SEP, DELIVERED IN FULL WITH A THIRD OF THE TOTAL OUTSTANDING.</b> Booked to CM4-MK, 3 unit for RM330, RM310 goods and RM20 delivery, RM220 cash in and 3 unit delivered on 13 Sep, so RM110 stays open. The total clears the RM320 ask for 3 unit and the RM168.64 floor, and sits under the RM430 ceiling. Cost is the inventory's own RM44 a unit, RM132 on the order. <b>One flag.</b> It is an advance: 3 unit out with RM110 unpaid against a credit cap of 1 unit. He held no outstanding and no units on credit before this row, across 9 orders at a RM101 median in a RM90 to RM110 range, but the cap is 1, so the flag is not answered. <b>THE CARRIAGE MOVED OUT OF THE TOTAL ON 19 SEP 2026</b> (his instruction to separate the sell price from the delivery price). The figures are unchanged: RM20 of carriage that was inside this row's total now stands beside it, so the total reads the goods alone and what the customer owes is the two together. Nothing was re-priced and no order key moved.",
     "rid": "s159"
    },
    {
     "customer": "CS6-PER",
     "qty": 6.25,
-    "total": 460,
+    "total": 440,
     "cost": 275,
     "cash": 460,
     "delivery": 20,
@@ -4034,7 +4034,7 @@
     "deliveredQty": 6.25,
     "deliveredOn": "2026-09-13",
     "paidOn": "2026-09-13",
-    "note": "<b>SALT SELL DATED 13 SEP, PAID AND DELIVERED IN FULL ON THE DAY.</b> Booked to CS6-PER, 6.25 unit for RM460, RM440 goods and RM20 delivery, RM460 cash in and 6.25 unit delivered on 13 Sep, so nothing stays open. The total clears the RM351.33 floor for 6.25 unit but sits under the RM610 ask and the RM880 ceiling. Cost is the inventory's own RM44 a unit, RM275 on the order. <b>One flag.</b> The rate of RM70.4 a unit is 12% under his usual RM80 across 6 orders. It falls inside his RM60 to RM100 range but under his RM85.52 median and under the ask, so the flag is not answered on price. He held no outstanding and no units on credit against a cap of 2 unit.",
+    "note": "<b>SALT SELL DATED 13 SEP, PAID AND DELIVERED IN FULL ON THE DAY.</b> Booked to CS6-PER, 6.25 unit for RM460, RM440 goods and RM20 delivery, RM460 cash in and 6.25 unit delivered on 13 Sep, so nothing stays open. The total clears the RM351.33 floor for 6.25 unit but sits under the RM610 ask and the RM880 ceiling. Cost is the inventory's own RM44 a unit, RM275 on the order. <b>One flag.</b> The rate of RM70.4 a unit is 12% under his usual RM80 across 6 orders. It falls inside his RM60 to RM100 range but under his RM85.52 median and under the ask, so the flag is not answered on price. He held no outstanding and no units on credit against a cap of 2 unit. <b>THE CARRIAGE MOVED OUT OF THE TOTAL ON 19 SEP 2026</b> (his instruction to separate the sell price from the delivery price). The figures are unchanged: RM20 of carriage that was inside this row's total now stands beside it, so the total reads the goods alone and what the customer owes is the two together. Nothing was re-priced and no order key moved.",
     "rid": "s160"
    },
    {
@@ -4281,7 +4281,7 @@
    {
     "customer": "CC5-OKR",
     "qty": 1,
-    "total": 105,
+    "total": 90,
     "cost": 48,
     "cash": 105,
     "handover": "delivered",
@@ -4289,7 +4289,7 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-09-17",
     "paidOn": "2026-09-17",
-    "note": "<b>SALT SELL DATED 17 SEP, PAID AND DELIVERED IN FULL.</b> Booked to CC5-OKR, 1 unit at RM90 with RM15 of carriage beside it, RM105 in and 1 unit out on 17 Sep. <b>RESTATED 19 SEP on his word:</b> the row read 2 unit for RM105 with no delivery, so it showed RM52.50 a unit, RM75 under CC5-OKR's own card, and it cleared the floor by RM3. What happened was one unit sold at their usual RM90, one unit given free, and RM15 of carriage. The free unit is its own row and is booked as cost.",
+    "note": "<b>SALT SELL DATED 17 SEP, PAID AND DELIVERED IN FULL.</b> Booked to CC5-OKR, 1 unit at RM90 with RM15 of carriage beside it, RM105 in and 1 unit out on 17 Sep. <b>RESTATED 19 SEP on his word:</b> the row read 2 unit for RM105 with no delivery, so it showed RM52.50 a unit, RM75 under CC5-OKR's own card, and it cleared the floor by RM3. What happened was one unit sold at their usual RM90, one unit given free, and RM15 of carriage. The free unit is its own row and is booked as cost. <b>THE CARRIAGE MOVED OUT OF THE TOTAL ON 19 SEP 2026</b> (his instruction to separate the sell price from the delivery price). The figures are unchanged: RM15 of carriage that was inside this row's total now stands beside it, so the total reads the goods alone and what the customer owes is the two together. Nothing was re-priced and no order key moved.",
     "rid": "s172",
     "delivery": 15
    },
@@ -5045,7 +5045,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-19T14:21:54.120Z",
   "PRICING": {
-   "takenAt": "2026-09-19T14:22:45.252Z",
+   "takenAt": "2026-09-19T14:51:04.089Z",
    "sizes": [
     0.5,
     1,
@@ -6640,7 +6640,7 @@
    "v": "v726"
   },
   "OPEN": {
-   "at": "2026-09-19T14:22:45.394Z",
+   "at": "2026-09-19T14:51:04.182Z",
    "count": 11,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
@@ -6746,11 +6746,11 @@
      "p": "CM4-MK",
      "dir": "S",
      "q": 3,
-     "t": 330,
+     "t": 310,
      "cash": 220,
      "mv": 3,
      "st": "dueMoney",
-     "oweRM": 110,
+     "oweRM": 90,
      "rid": "s159",
      "deliveredOn": "2026-09-13",
      "handover": "delivered",
@@ -6763,11 +6763,11 @@
      "p": "CJ4-BJ",
      "dir": "S",
      "q": 12.5,
-     "t": 850,
+     "t": 835,
      "cash": 800,
      "mv": 6.25,
      "st": "part",
-     "oweRM": 50,
+     "oweRM": 35,
      "oweUnits": 6.25,
      "rid": "s137",
      "deliveredOn": "2026-09-07",

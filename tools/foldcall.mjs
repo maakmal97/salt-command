@@ -54,7 +54,7 @@ const pick = (r) => ({ rid: r.rid, date: r.date || null, qty: r.qty, total: r.to
 function partyDossier(book, key, party) {
   const rows = (book[key === "customer" ? "sales" : "purchases"] || []).filter((r) => r[key] === party);
   const live = rows.filter((r) => !r.cancelled && !r.defaulted && !r.rebate && r.date);
-  const rates = live.filter((r) => +r.qty > 0 && +r.total > 0).map((r) => (r.total - (r.delivery || 0)) / r.qty).sort((a, b) => a - b);
+  const rates = live.filter((r) => +r.qty > 0 && +r.total > 0).map((r) => (r.total) / r.qty).sort((a, b) => a - b);
   return {
     orders: rows.length,
     lastRows: rows.slice(-8).map(pick),

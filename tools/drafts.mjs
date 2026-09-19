@@ -111,7 +111,8 @@ function goodsOf(r) {
   let delivery = 0;
   try { const proposed = JSON.parse(r.row || "{}"); if (typeof proposed.delivery === "number") delivery = proposed.delivery; }
   catch (e) { /* a bad row blob reads as no delivery rather than hiding the figures */ }
-  return (r.total == null) ? 0 : r.total - delivery;
+  /* 19 Sep 2026: the total IS the goods now, the carriage having moved out beside it */
+  return (r.total == null) ? 0 : r.total;
 }
 
 /* v602: THE SELLING RATE IS STRUCK ON THE GOODS, as every rate on the desk has been since v502

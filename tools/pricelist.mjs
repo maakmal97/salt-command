@@ -78,7 +78,7 @@ export function ownRate(sales, code, product, before) {
     /* v502: the rate a customer paid is on the goods, the delivery charge inside the total taken out */
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
     .slice(-HISTORY_ORDERS)
-    .map((s) => (s.total - (isNum(s.delivery) ? s.delivery : 0)) / s.qty);
+    .map((s) => (s.total) / s.qty);
   if (!rows.length) return { rate: null, orders: 0 };
   return { rate: +Math.max.apply(null, rows).toFixed(2), orders: rows.length };
 }

@@ -1275,9 +1275,10 @@ await (async () => {
   ok(under.flags.some(f => /RM 9.5 under the floor of RM 79.5/.test(f)) && under.flags.some(f => /what the order costs to take out/.test(f)),
     "RM70 is flagged as RM9.5 under the RM79.5 floor, by how much, and the flag says what the floor IS");
   /* v502: a delivery charge inside the total is taken out before the floor is read */
-  const withDel = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 95, delivery: 20, cash: 95, kg: 1, date: "2026-08-16" }), book);
-  ok(!withDel.skip && withDel.row.delivery === 20 && withDel.row.total === 95 && withDel.flags.some(f => /RM 75 for the goods is RM 4.5 under the floor of RM 79.5/.test(f)),
-    "RM95 with RM20 of delivery inside it is RM75 for the goods, and that is what the floor is read against");
+  /* 19 Sep 2026: the carriage sits BESIDE the total now, so the fixture states the goods and the carriage rather than an all-in figure with the carriage buried in it. */
+  const withDel = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 75, delivery: 20, cash: 95, kg: 1, date: "2026-08-16" }), book);
+  ok(!withDel.skip && withDel.row.delivery === 20 && withDel.row.total === 75 && withDel.flags.some(f => /RM 75 for the goods is RM 4.5 under the floor of RM 79.5/.test(f)),
+    "RM75 of goods with RM20 of carriage beside it is RM95 owed, and the floor is read against the goods");
   ok(!!draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 50, delivery: 60, cash: 50, kg: 1, date: "2026-08-16" }), book).skip,
     "a delivery charge larger than its total is refused");
 
@@ -7794,17 +7795,24 @@ await (async () => {
   const q = JSON.parse(await dkv.get("q:orders"));
   ok(rc0.ok && rc0.queued === 1 && q.queue.length === 1, "the reconcile queues the one stage the ledger has not been told about");
   const e = q.queue[0];
+  /* 19 Sep 2026: THE ROW TAKES THEM APART AND THE KEY KEEPS THEM TOGETHER. The site has always
+     sent the goods and the carriage separately; the relay used to fold them into one total on the
+     way to the book and now passes them through. The order KEY is still what the customer agreed
+     to pay, the two together, because it is written onto a LIVE order and a key that moved would
+     orphan every order in flight. */
   ok(e.type === "SELL" && e.party === "CX0-AA" && e.payload.mode === "new" && e.payload.direction === "SELL" && e.payload.party === "CX0-AA"
-    && e.payload.product === "salt" && e.payload.qty === 2.5 && e.payload.total === 300 && e.payload.delivery === 12 && e.payload.cash === 0 && e.payload.kg === 0
+    && e.payload.product === "salt" && e.payload.qty === 2.5 && e.payload.delivery === 12 && e.payload.cash === 0 && e.payload.kg === 0
+    && e.payload.total + e.payload.delivery === 300 && e.payload.total === 288
     && /order [0-9]{14}-/.test(e.payload.note) && !JSON.stringify(e).includes(un),
-    "the entry is the Workbench's shape: a PENDING sale to the code, delivery inside the total, nothing paid, nothing moved, naming no username");
+    "the entry is the Workbench's shape: a PENDING sale to the code, the goods and the carriage apart, nothing paid, nothing moved, naming no username: "
+      + JSON.stringify([e.payload.total, e.payload.delivery]));
   ok(pendingEntry({ id: "x", qty: 1, total: 10, mode: "collect", product: "oil" }, "CX0-AA", new Date("2026-09-06T17:00:00Z")).payload.date === "2026-09-07",
     "the row is dated in Kuala Lumpur, so an acknowledgement after midnight there is tomorrow's row");
   const { draftRow } = await import("../src/drafter.js");
   const bookD = { version: "v499", pricing: { v: "v499", byProduct: { salt: { stockCost: 48, replCost: 48, floors: { "2.5": { floor: 157.3 } } } } },
     purchases: [{ date: "2026-08-13", qty: 12.5, total: 650, receivedOn: "2026-08-13" }], sales, state: { roster: ["CX0-AA"], QUEUE_COMMITTED: "2026-09-01T00:00:00.000Z" } };
   const d = draftRow(e, bookD);
-  ok(!d.skip && d.collection === "sales" && d.row.customer === "CX0-AA" && d.row.qty === 2.5 && d.row.total === 300 && d.row.delivery === 12 && d.row.cash === 0
+  ok(!d.skip && d.collection === "sales" && d.row.customer === "CX0-AA" && d.row.qty === 2.5 && d.row.total === 288 && d.row.delivery === 12 && d.row.cash === 0
     && !d.row.deliveredQty && !d.row.handover,
     "and the drafter drafts it as a pending sale, which the phone then approves like any other row");
   const unmapped = C.newUsername();
@@ -8856,8 +8864,9 @@ await (async () => {
   ok(cut.flags.some((f) => /has paid RM 90/.test(f)), "two DATED pending RM 80 rows are not history: the standing rate still reads RM 90 (v540 dated every pending row)");
   const twin = draftRow(ent({ direction: "SELL", party: "CH4-MAL", qty: 1, total: 110, delivery: 10, cash: 110, kg: 1, date: "2026-08-12" }), bookA);
   ok(twin.flags.some((f) => /matches s-del/.test(f)), "a twin with delivery inside its total is matched on the FULL total, as the fold matches it");
-  const adv = draftRow(ent({ direction: "SELL", party: "CH4-MAL", qty: 1, total: 100, delivery: 10, cash: 95, kg: 1, date: "2026-08-16" }), bookA);
-  ok(adv.flags.some((f) => /ADVANCE/.test(f) && /RM 5 unpaid/.test(f)), "RM 95 on a RM 100 order with RM 10 delivery inside is an advance of RM 5, not none");
+  /* 19 Sep 2026: the carriage sits BESIDE the total now, so the fixture states the goods and the carriage rather than an all-in figure with the carriage buried in it. RM90 of goods and RM10 of carriage is RM100 owed, of which RM95 came in. */
+  const adv = draftRow(ent({ direction: "SELL", party: "CH4-MAL", qty: 1, total: 90, delivery: 10, cash: 95, kg: 1, date: "2026-08-16" }), bookA);
+  ok(adv.flags.some((f) => /ADVANCE/.test(f) && /RM 5 unpaid/.test(f)), "RM 95 against RM 90 of goods and RM 10 of carriage is an advance of RM 5, not none");
   const over = draftRow(ent({ direction: "SELL", party: "CH4-MAL", qty: 5, total: 100, cash: 900, kg: 50, date: "2026-08-16" }), bookA);
   ok(over.flags.some((f) => /RM 800 more/.test(f)) && over.flags.some((f) => /50 unit goes out on an order of 5/.test(f)), "cash above the total and units above the order are flagged on a new row");
   for (const [p, why] of [[{ qty: 0, total: 100 }, /above zero/], [{ qty: -2, total: -200 }, /above zero/], [{ qty: 1, total: 100, date: "8/9/2026" }, /YYYY-MM-DD/]]) {
@@ -9072,8 +9081,9 @@ await (async () => {
       /* v602: and its SELLING rate is struck on the goods, as the phone's is. It divided the whole
          total, delivery inside, by the units: RM 15/unit here against RM 13/unit on the phone. */
       const { rateLine } = await import("../tools/drafts.mjs");
-      const withDel = rateLine({ qty: 10, total: 150, row: JSON.stringify({ delivery: 20 }) });
-      ok(withDel === "RM 13/unit", `the list strikes the rate on the goods: RM 150 less RM 20 of delivery over 10 unit is RM 13/unit (${withDel})`);
+      /* 19 Sep 2026: the carriage sits BESIDE the total now, so the fixture states the goods and the carriage rather than an all-in figure with the carriage buried in it. */
+      const withDel = rateLine({ qty: 10, total: 130, row: JSON.stringify({ delivery: 20 }) });
+      ok(withDel === "RM 13/unit", `the list strikes the rate on the goods: RM 130 of goods over 10 unit is RM 13/unit, the RM 20 of carriage standing beside it (${withDel})`);
       const noDel = rateLine({ qty: 10, total: 150, row: "{}" });
       ok(noDel === "RM 15/unit", `and a row carrying no delivery is unchanged (${noDel})`);
       ok(rateLine({ qty: 10, total: 150, row: "not json" }) === "RM 15/unit", "and a bad row blob reads as no delivery rather than hiding the rate");
@@ -10320,7 +10330,8 @@ await (async () => {
   const { w: wO } = await omO();
   const rdO = (e) => JSON.parse(String(wO.eval("JSON.stringify(" + e + ")")));
   try {
-    const row = (cash) => "{customer:'CZ9-OFF',qty:1,total:117.5,cash:" + cash + ",delivery:7.5,deliveredQty:1,deliveredOn:'2026-09-07',date:'2026-09-07'}";
+    /* 19 Sep 2026: the carriage sits BESIDE the total now, so the fixture states the goods and the carriage rather than an all-in figure with the carriage buried in it. s139 was one unit at RM110 with RM7.50 of carriage, which read as a RM117.50 unit until v594 priced the reward on the goods; it is two fields now and cannot be read as one. */
+  const row = (cash) => "{customer:'CZ9-OFF',qty:1,total:110,cash:" + cash + ",delivery:7.5,deliveredQty:1,deliveredOn:'2026-09-07',date:'2026-09-07'}";
     const s139 = row(7.5);
     ok(rdO("txAdvance(" + s139 + ")") === 110 && rdO("txGoods(" + s139 + ")") === 110 && rdO("txPrice(" + s139 + ")") === 117.5,
       "the fixture is s139 as it stood: RM 110.00 owed for a RM 110.00 unit, on a line of RM 117.50 with the delivery inside it");
@@ -10334,7 +10345,7 @@ await (async () => {
     ok(up.offUnits === 0.94 && up.offRM === 103, `rounding the units up never settles more than is owed: RM 103.00 owed, 0.94 unit, RM 103.00 settled (${JSON.stringify(up)})`);
     /* both roads read the rule, driven on the same fixture */
     const drive = (call) => JSON.parse(String(wO.eval("(function(){queue=[];AP_DRAFTS=[];AP_REFUSED=[];setProd('salt');saveQueue=function(){return Promise.resolve(true);};qPost=function(){return Promise.resolve(true);};"
-      + "sales.push({rid:'off-1',customer:'CZ9-OFF',qty:1,total:117.5,cash:7.5,delivery:7.5,deliveredQty:1,deliveredOn:'2026-09-07',date:'2026-09-07',product:'salt'});"
+      + "sales.push({rid:'off-1',customer:'CZ9-OFF',qty:1,total:110,cash:7.5,delivery:7.5,deliveredQty:1,deliveredOn:'2026-09-07',date:'2026-09-07',product:'salt'});"
       + "networkStats=function(){return [{id:'CZ9-OFF',earned:5}];};" + call
       + "var q=queue.filter(function(x){return x.payload&&x.payload.rid==='off-1';})[0];var i=sales.findIndex(function(x){return x.rid==='off-1';});if(i>=0)sales.splice(i,1);"
       + "return JSON.stringify(q?q.payload.fields:null);})()")));
@@ -10618,7 +10629,8 @@ await (async () => {
      delivered order, in the one direction these figures exist to catch. s157 is the case: 1
      unit at RM110 with RM20 of delivery read 66.2% where the goods are 60.0%. */
   const { costAndMargin: cam, rateLine: rl } = await import("../tools/drafts.mjs");
-  const withDel = { qty: 1, total: 130, cost: 44, row: JSON.stringify({ delivery: 20 }) };
+  /* 19 Sep 2026: the carriage sits BESIDE the total now, so the fixture states the goods and the carriage rather than an all-in figure with the carriage buried in it. */
+  const withDel = { qty: 1, total: 110, cost: 44, row: JSON.stringify({ delivery: 20 }) };
   ok(rl(withDel) === "RM 110/unit", `the laptop's rate is the goods rate (${rl(withDel)})`);
   ok(/margin 60\.0%/.test(cam(withDel)), `and its margin is struck on the goods: ${cam(withDel)}`);
   const noDel = { qty: 1, total: 130, cost: 44, row: "{}" };
@@ -10632,15 +10644,16 @@ await (async () => {
      with no helper to call, so until there is one the honest instrument is the source pin
      below, which DID go red on that same mutation. */
   const msrc2 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-  ok(/const goods=total-\(\+r\.delivery\|\|0\);const mar=\(!buy&&goods>0&&cost!=null&&qty\)\?\(\(goods-cost\)\/goods\*100\)/.test(msrc2),
-    "the Approve card's own line strikes the margin on the goods, not on the total");
-  ok(/var per=qty\?\(total-\(\+r\.delivery\|\|0\)\)\/qty:null|const per=qty\?\(total-\(\+r\.delivery\|\|0\)\)\/qty:null/.test(msrc2)
-    || /per=qty\?\(total-\(\+r\.delivery\|\|0\)\)\/qty:null/.test(msrc2),
-    "and its rate beside it is on the goods too, as it has been since v502");
+  /* 19 Sep 2026: the derivation is gone from all twelve places it was written out; the goods ARE the
+     total. What is pinned is that the margin is struck on the goods and not on what they owe. */
+  ok(/const goods=total;const mar=\(!buy&&goods>0&&cost!=null&&qty\)\?\(\(goods-cost\)\/goods\*100\)/.test(msrc2),
+    "the Approve card's own line strikes the margin on the goods, not on what they owe");
+  ok(/per=qty\?\(total\)\/qty:null/.test(msrc2) && !/per=qty\?\(total-\(\+r\.delivery/.test(msrc2),
+    "and its rate beside it is on the goods too, as it has been since v502, and the derivation is gone");
 
   /* and the drafter's prose, which is what a person reads when deciding */
   const dsrc2 = readFileSync(join(REPO, "src", "drafter.js"), "utf8");
-  ok(/const goodsTotal = total - \(isNum\(row\.delivery\) \? row\.delivery : 0\);/.test(dsrc2)
+  ok(/const goodsTotal = total;/.test(dsrc2)
     && /const rate = qty > 0 \? goodsTotal \/ qty : null;/.test(dsrc2),
     "the drafter's own rate is the goods rate");
   ok(/\(\(goodsTotal - priced\.cost \* qty\) \/ goodsTotal\) \* 100/.test(dsrc2),
@@ -10787,7 +10800,7 @@ await (async () => {
   const bkD11 = JSON.parse(JSON.stringify(bk11));
   bkD11.sales = [{ rid: "sd01", date: "2026-09-01", customer: "CX9-AS", qty: 1, total: 110, cash: 110, deliveredQty: 1, cost: 44 },
     { rid: "sd02", date: "2026-09-02", customer: "CX9-AS", qty: 1, total: 110, cash: 110, deliveredQty: 1, cost: 44 },
-    { rid: "sd03", date: "2026-09-03", customer: "CX9-AS", rev: "R2", downstream: "CX9-AS-R", qty: 1, total: 130, delivery: 20, cash: 130, deliveredQty: 1, cost: 44 }];
+    { rid: "sd03", date: "2026-09-03", customer: "CX9-AS", rev: "R2", downstream: "CX9-AS-R", qty: 1, total: 110, delivery: 20, cash: 130, deliveredQty: 1, cost: 44 }];
   const dD11 = drC11({ at: "2026-09-13T10:00:01.000Z", payload: { mode: "amend", direction: "SELL", rid: "sd03", kind: "Correction", date: "2026-09-13", fields: { downstream: null } } }, bkD11);
   ok(!dD11.skip && !dD11.flags.some((f) => /this one is RM 130/.test(f)),
     "and its rate flags read the goods, not the total with the delivery inside: RM 110 of goods against a RM 110 history raises nothing: " + JSON.stringify(dD11.skip || dD11.flags));
@@ -11302,7 +11315,7 @@ await (async () => {
     return d.skip ? ["SKIP " + d.skip] : d.flags;
   };
 
-  ok(adv26({ qty: 1, total: 117.5, delivery: 7.5, cash: 7.5, settledRM: 110, deliveredQty: 1 }).length === 0,
+  ok(adv26({ qty: 1, total: 110, delivery: 7.5, cash: 7.5, settledRM: 110, deliveredQty: 1 }).length === 0,
     "a delivered row paid RM 7.5 in cash and RM 110 in kind is no advance");
   ok(/RM 110 unpaid/.test(adv26({ qty: 1, total: 110, cash: 0, deliveredQty: 1 }).join(" ")), "one delivered with nothing paid still is, for RM 110");
   ok(/4 unit goes out with RM 272 unpaid/.test(adv26({ qty: 12.5, total: 850, cash: 0, deliveredQty: 4 }).join(" ")),
@@ -11312,14 +11325,14 @@ await (async () => {
   const noAdv = (flags) => flags.every((f) => !/ADVANCE|SKIP/.test(f));
   const f31 = fix26({ rid: "z626a", qty: 0.5, total: 50, cash: 0, settledRM: 50, rebate: true, deliveredQty: 0.5 }, { rebate: false, goodwill: true });
   ok(noAdv(f31), "CN6-WM's case: re-marking a half unit settled in kind raises no advance: " + JSON.stringify(f31));
-  const f139 = fix26({ rid: "z626b", qty: 1, total: 117.5, delivery: 7.5, cash: 7.5, deliveredQty: 1 }, { settledRM: 110, rebate: true, rebateKg: 1 });
+  const f139 = fix26({ rid: "z626b", qty: 1, total: 110, delivery: 7.5, cash: 7.5, deliveredQty: 1 }, { settledRM: 110, rebate: true, rebateKg: 1 });
   ok(noAdv(f139), "CS6-BS's case: the correction that settles an advance in kind is not flagged as that advance: " + JSON.stringify(f139));
   const f152 = fix26({ rid: "z626c", date: "2026-09-12", deliveredOn: "2026-09-12", qty: 0.06, total: 2.64, cost: 2.64, cash: 0, settledRM: 2.64, rebate: true, rebateKg: 0.06, goodwill: true, deliveredQty: 0.06 },
     { cancelled: true, cancelledOn: "2026-09-12", deliveredQty: 0, deliveredOn: null, settledRM: null, rebate: false, rebateKg: null, goodwill: false });
   ok(noAdv(f152), "nor is cancelling a redemption, which hands nothing over once it stands: " + JSON.stringify(f152));
 
   const paidLine = (flags) => flags.filter((f) => /already paid against|already handed over|already received/.test(f));
-  const f45 = fix26({ rid: "z626d", qty: 1, total: 117.5, delivery: 7.5, cash: 7.5, settledRM: 110.45, rebate: true, rebateKg: 0.94, deliveredQty: 1 }, { settledRM: 110, rebateKg: 1 });
+  const f45 = fix26({ rid: "z626d", qty: 1, total: 110, delivery: 7.5, cash: 7.5, settledRM: 110.45, rebate: true, rebateKg: 0.94, deliveredQty: 1 }, { settledRM: 110, rebateKg: 1 });
   ok(!f45.some((f) => /SKIP/.test(f)) && paidLine(f45).length === 0, "bringing a 45 sen overpayment in kind back to the total says nothing is overpaid: " + JSON.stringify(f45));
   const fCash = fix26({ rid: "z626e", qty: 2, total: 200, cash: 200, deliveredQty: 2 }, { cash: 400 });
   ok(fCash.filter((f) => /RM 400/.test(f)).length === 1 && fCash.some((f) => /overpaid/.test(f)),
@@ -14293,19 +14306,29 @@ await (async () => {
   const rcA = await reconcileOrders(denv94);
   let q94 = await Q();
   const ack = q94[0];
-  ok(rcA.queued === 1 && q94.length === 1 && ack.payload.mode === "new" && ack.payload.total === 312
+  /* 19 Sep 2026: THE ROW TAKES THEM APART AND THE KEY KEEPS THEM TOGETHER. The site has always
+     sent the goods and the carriage separately; the relay used to fold them into one total on the
+     way to the book and now passes them through. The order KEY is still what the customer agreed
+     to pay, the two together, because it is written onto a LIVE order and a key that moved would
+     orphan every order in flight. */
+  ok(rcA.queued === 1 && q94.length === 1 && ack.payload.mode === "new"
+    && ack.payload.total === 300 && ack.payload.delivery === 12 && ack.payload.total + ack.payload.delivery === 312
     && ack.payload.cash === 0 && ack.payload.kg === 0 && ack.status === "Pending",
-    "the reconcile queues one pending row: the delivery inside the total, nothing paid, nothing moved");
+    "the reconcile queues one pending row: the goods and the carriage apart, nothing paid, nothing moved: "
+      + JSON.stringify([ack.payload.total, ack.payload.delivery]));
   ok(!JSON.stringify(ack).includes("Bangsar"),
     "and the location the customer typed stays on the site: a note reaches the committed book, so no free text rides in");
   ok((await reconcileOrders(denv94)).queued === 0 && (await Q()).length === 1,
     "a second pass queues nothing: what has been told is marked on the order, so no stage is told twice");
 
   /* THE KEY IS THE ENGINE'S ovKey. Written here with toFixed(2) it missed every row by two noughts. */
-  const folded = { date: ack.payload.date, customer: "CX0-AA", product: "salt", qty: 2.5, total: 312,
+  /* the row as the fold writes it: the goods on the total, the carriage beside. The key is still the
+     two together, and that is the whole reason it did not move on 19 Sep. */
+  const folded = { date: ack.payload.date, customer: "CX0-AA", product: "salt", qty: 2.5, total: 300,
     delivery: 12, cash: 0, deliveredQty: 0, rid: "s694" };
-  ok(orderKeyFor("CX0-AA", ack.payload.date, 312) === PE94.ovKey(folded) && ack.orderKey === PE94.ovKey(folded),
-    "the key the desk remembers for every later stage is the engine's own ovKey, to the character: " + ack.orderKey);
+  ok(orderKeyFor("CX0-AA", ack.payload.date, 312) === PE94.ovKey(folded) && ack.orderKey === PE94.ovKey(folded)
+    && /\|312$/.test(ack.orderKey),
+    "the key the desk remembers for every later stage is the engine's own ovKey, to the character, and it is what they agreed to PAY: " + ack.orderKey);
 
   /* ---- 5. AN AMENDMENT WAITS FOR ITS ROW ---- */
   await post("/orders/" + id94 + "/method", { method: "tngbiz" }, S94);
@@ -15932,6 +15955,60 @@ await (async () => {
     ok(/<link rel="manifest" href="\/manifest\.webmanifest">/.test(custPage) && !/\/all\//.test(custPage),
       "and a customer's page links the customer's and says nothing of the prefix at all");
   } finally { globalThis.fetch = realFetch; }
+})();
+section("the sell price and the carriage are two figures, and so are the buy price and the freight");
+await (async () => {
+  /* HIS INSTRUCTION OF 19 SEP 2026: "please completely separate sell price and delivery price, from
+     the ledger, enter, statement, order. Do the same for buy price and freight."
+     THE TWO SIDES CARRIED OPPOSITE CONVENTIONS and both failure modes had been seen on the live book
+     within a day. A purchase's freight sat BESIDE its total, and p025 double-counted it because a
+     person added it in as well, so the landed rate read RM8.08 against RM7.84 and a shipped version
+     was built on it. A sale's delivery sat INSIDE its total, and s172 absorbed its carriage into the
+     rate because there was nowhere else for it to go, reading RM52.50 a unit against RM90. */
+  const E = (await import("../engine/position.mjs")).default;
+
+  /* ---- the goods are the total, and what they owe is the two together ---- */
+  const row = { customer: "CX0-AA", date: "2026-09-19", qty: 2, total: 200, delivery: 20 };
+  ok(E.txGoods(row) === 200, "the total IS the goods now: " + E.txGoods(row));
+  ok(Math.abs(E.txPrice(row) - 110) < 1e-9,
+    "and what they owe a unit is the goods and the carriage together, RM110 on RM200 of goods with RM20 of carriage: " + E.txPrice(row));
+  ok(E.txGoods({ ...row, delivery: 0 }) === 200 && Math.abs(E.txPrice({ ...row, delivery: 0 }) - 100) < 1e-9,
+    "with no carriage the two answers are the same, which is why twelve inline derivations could be wrong for a year and look right");
+
+  /* ---- THE KEY IS WHAT THEY AGREED TO PAY, and that is what stops a collision ---- */
+  ok(E.ovKey(row) === "CX0-AA|2026-09-19|220",
+    "the order key is the goods and the carriage together, because it is written onto a LIVE order: " + E.ovKey(row));
+  const a = { customer: "CN6-WM-R", date: "2026-09-12", qty: 1, total: 110, delivery: 0 };
+  const b = { customer: "CN6-WM-R", date: "2026-09-12", qty: 1, total: 110, delivery: 20 };
+  ok(E.txGoods(a) === E.txGoods(b) && E.ovKey(a) !== E.ovKey(b),
+    "s155 and s157 have the same GOODS and must not have the same key: " + JSON.stringify([E.ovKey(a), E.ovKey(b)]));
+
+  /* ---- the live book: every row restated and not one figure lost ---- */
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const carried = (bk.sales || []).filter((r) => +r.delivery > 0);
+  ok(carried.length > 0 && carried.every((r) => /THE CARRIAGE MOVED OUT OF THE TOTAL/.test(r.note || "")),
+    carried.length + " sale(s) carry a carriage and every one says on its own row that it was restated rather than re-priced");
+  ok(carried.every((r) => E.txGoods(r) === r.total && E.txPrice(r) * r.qty > r.total),
+    "on each of them the goods are the total and what is owed is more than the goods, which is the whole of the change");
+
+  /* ---- and the RELAY, which is where the site's two figures used to be folded back into one ---- */
+  const { pendingEntry, orderKeyFor } = await import("../src/orders.js");
+  const pe = pendingEntry({ id: "20260919000000-aaaaaa", qty: 2, total: 200, delivery: 20, mode: "deliver", product: "salt" },
+    "CX0-AA", new Date("2026-09-19T04:00:00Z"));
+  ok(pe.payload.total === 200 && pe.payload.delivery === 20,
+    "the acknowledgement's row carries the site's own two figures rather than one: " + JSON.stringify([pe.payload.total, pe.payload.delivery]));
+  ok(pe.orderKey === orderKeyFor("CX0-AA", pe.payload.date, 220) && /\|220$/.test(pe.orderKey),
+    "and its key is what they agreed to pay, so an order acknowledged before this change still matches its row: " + pe.orderKey);
+  ok(pe.orderKey === E.ovKey({ customer: "CX0-AA", date: pe.payload.date, total: pe.payload.total, delivery: pe.payload.delivery }),
+    "the desk's key and the engine's ovKey are the same string on the same row, which v694 requires to the character");
+
+  /* ---- the derivation is written in NO place now, which is what made s172 possible ---- */
+  for (const f of ["master/salt_command.html", "src/drafter.js", "tools/drafts.mjs", "tools/foldcall.mjs",
+    "tools/make_statements.mjs", "tools/pricelist.mjs", "src/orders.js"]) {
+    const src = readFileSync(join(REPO, f), "utf8");
+    ok(!/total\s*-\s*\(?\s*(\+|isNum\()?\w*\.?delivery/.test(src),
+      "the goods are not derived by hand in " + f + " any more: the total is the goods and the file says so once");
+  }
 })();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {

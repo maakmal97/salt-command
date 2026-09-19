@@ -11,11 +11,27 @@
  * this file. See engine/pricing.mjs for the rules of the shape, which are the same here. */
 const POSITION_ENGINE=(function(){
 /* ---- the row helpers, verbatim from the desk ---- */
-function txPrice(s){return s.qty>0?s.total/s.qty:0;}
+/* ============ 19 SEP 2026, HIS INSTRUCTION: THE PRICE AND THE CARRIAGE ARE SEPARATE ============
+   "Please completely separate sell price and delivery price, from the ledger, enter, statement,
+   order. Do the same for buy price and freight."
+   A SALE'S `total` IS THE GOODS ALONE NOW, and `delivery` sits BESIDE it, which is the convention a
+   purchase has always had. Until today the two sides carried opposite conventions and both failure
+   modes had just been seen on the live book within a day: p025 double-counted its freight because a
+   purchase's sits beside the total and a person added it in as well, and s172 absorbed its carriage
+   into the rate because a sale's had nowhere else to go, reading RM52.50 a unit against RM90.
+   WHAT THEY OWE IS THE GOODS PLUS THE CARRIAGE, which is what txPrice answers and what every
+   reading of what is owed, paid, advanced or deferred is struck on. The rate is txGoods over the
+   quantity and is now the total itself, so the derivation that used to be written out in twelve
+   places is written in none. */
+function txOwed(s){return (+s.total||0)+(+s.delivery||0);}
+function txPrice(s){return s.qty>0?txOwed(s)/s.qty:0;}
 function txPaid(s){return (s.cash||0)+(s.settledRM||0);}
-/* v502: the goods half of a sale's total, its delivery charge taken out; the rate a unit was
-   sold at is this over the quantity, never the total over it. */
-function txGoods(s){return +(s.total||0)-(+s.delivery||0);}
+/* v502: the goods half of an order; the rate a unit was sold at is this over the quantity.
+   19 Sep 2026: and it IS the total now, the carriage having moved out beside it. Kept as a named
+   function rather than inlined, because every reader that means "the goods" should say so: the day
+   the convention changed, a bare `total` would have been right by luck in twelve places and wrong
+   in the twelve that meant what they owe. */
+function txGoods(s){return +(s.total||0);}
 function txDeliv(s){return (s.deliveredQty||0)+(s.settledKg||0);}
 /* ====== COST IS ABSOLUTE (v496, his instruction of 05 Sep 2026) ================
    A sale's `cost` is the cost of the order in RM, stored as a person states it, and the cost
@@ -578,7 +594,12 @@ function refundOnCancel(list,row,date){
   return rec;
 }
 /* the key an amendment names a row by, shared with the phone and the drafter */
-function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
+/* THE ORDER KEY IS WHAT THE CUSTOMER AGREED TO PAY, goods and carriage together, and it stays that
+   way through the split of 19 Sep 2026 (v694 names a row by this to the character, and it is
+   written onto a LIVE order at acknowledgement, so a key that moved would orphan every order in
+   flight). It is also what stops a collision: on the goods alone, s155 and s157 both become
+   CN6-WM-R|2026-09-12|110, and four of the thirteen carriage-bearing rows are still open. */
+function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+((+t.total||0)+(+t.delivery||0));}
 /* ====== WHICH Add ID KIND APPOINTS AN ASSOCIATE, AND WHICH STREAM IT IS FOR (v570) ========
    THREE READERS AND THEY HAVE TO AGREE, which is the same reason CORRECTABLE sits in this file:
    the drafter decides whether to accept the entry, the fold applies it, and the Add ID pane

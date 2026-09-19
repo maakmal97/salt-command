@@ -100,7 +100,14 @@ export function pendingEntry(order, code, now) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
   const date = klDate(at);
   const delivery = +(order.delivery || 0);
-  const total = +(order.total + delivery).toFixed(2);
+  /* 19 SEP 2026: THE ROW TAKES THE GOODS AND THE CARRIAGE APART, and the KEY keeps them together.
+     The site has always kept them apart (stmt/page.js prints "RM x for the goods and RM y delivery")
+     and this is where they were folded back into one figure on the way to the book. The row now
+     carries what the site sent; the order key is still what the customer agreed to pay, which is the
+     two together, because that key is written onto a LIVE order and a key that moved would orphan
+     every order in flight. */
+  const goods = +(+order.total).toFixed(2);
+  const owed = +(order.total + delivery).toFixed(2);
   const friend = !!order.forFriend;
   const books = partyOnBook(order, code);
   /* the general location the customer typed stays on the site, on his card: a note reaches the
@@ -109,13 +116,13 @@ export function pendingEntry(order, code, now) {
     + (friend ? ", on behalf of a friend" : "")
     + (order.mode === "deliver" ? ", to be delivered" : ", to collect")
     + (delivery > 0 ? ", delivery RM " + delivery : "") + ". Nothing paid and nothing handed over yet.";
-  const raw = "SELL " + books + " " + order.qty + " " + (order.product || "salt") + " RM " + total
+  const raw = "SELL " + books + " " + order.qty + " " + (order.product || "salt") + " RM " + owed
     + ", nothing paid, nothing moved (order " + order.id + ")";
   return {
-    at: at.toISOString(), type: "SELL", party: books, qty: order.qty, total, status: "Pending", raw,
-    orderKey: orderKeyFor(books, date, total),
+    at: at.toISOString(), type: "SELL", party: books, qty: order.qty, total: goods, status: "Pending", raw,
+    orderKey: orderKeyFor(books, date, owed),
     payload: { mode: "new", product: order.product || "salt", direction: "SELL", party: code, newId: null,
-      date, qty: order.qty, total, delivery, cash: 0, kg: 0,
+      date, qty: order.qty, total: goods, delivery, cash: 0, kg: 0,
       assoc: friend ? code : null, stream: friend ? "R2" : null, downstream: null,
       kind: null, orderCode: null, linkTo: null, note,
       handover: null, second: null }

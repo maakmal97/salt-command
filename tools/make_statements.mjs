@@ -166,7 +166,7 @@ function stmtRows(party,o){
        unit each, RM 110 and RM 11.50, so that match is ambiguous on this very book and the first
        assertion written over it reported a correct statement as wrong. */
     return {rid:s.rid||null,gift:gift,resale:s.customer!==party,date:s.date,qty:s.qty,total:gift?0:s.total,
-      unit:s.qty>0?+((s.total-(+s.delivery||0))/s.qty).toFixed(2):0,delivery:+(s.delivery||0),   /* v502: the rate is on the goods */
+      unit:s.qty>0?+((s.total)/s.qty).toFixed(2):0,delivery:+(s.delivery||0),   /* v502: the rate is on the goods */
       paidCash:paidCash,inKind:inKind,got:got,inKindUnits:inKindUnits,
       /* PENDING COUNTS NOWHERE, on a statement as everywhere else (v189). An order
          agreed with nothing paid and nothing collected is an intention, not a debt, and

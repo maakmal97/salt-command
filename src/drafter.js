@@ -341,7 +341,7 @@ export function flagsFor(entry, row, book, priced) {
   const qty = row.qty;
   /* v502: the rate and the floor are read on the GOODS: the delivery charge inside the total is
      not a price paid for salt, so it comes out before anything is compared. */
-  const total = isNum(row.total) ? row.total - (isNum(row.delivery) ? row.delivery : 0) : row.total;
+  const total = isNum(row.total) ? row.total : row.total;
   const rate = (isNum(total) && isNum(qty) && qty > 0) ? total / qty : null;
   /* A PURCHASE IS NOT A SALE and most of what follows is meaningless on one. The floor is a
      SELLING floor, "below cost" is circular when the row IS the cost, and a supplier has no
@@ -373,7 +373,7 @@ export function flagsFor(entry, row, book, priced) {
      leaves the fault live on the other side. */
   const aPriceSomeonePaid = (s) => !s.goodwill && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0;
   const seen = committed.filter((s) => prodOf(s) === p && aPriceSomeonePaid(s))
-    .map((s) => (s.total - (isNum(s.delivery) ? s.delivery : 0)) / s.qty);
+    .map((s) => (s.total) / s.qty);
   /* 08 Sep 2026: gated on isSale like every check after it. `seen` holds SALE rates, and this
      one comparison ran on a lot too, so a RM 40 lot read "less than half the lowest rate". */
   if (isSale && rate != null && seen.length >= 3) {
@@ -399,7 +399,7 @@ export function flagsFor(entry, row, book, priced) {
        dragged a party's median down: CS6-BS read RM 108.50 against a real RM 110, which misfires
        at a rate they have actually paid and stays silent 10.9% adrift. Same rule, both sets. */
     ? committed.filter((s) => POSITION_ENGINE.ownsCode(who, s.customer) && prodOf(s) === p && aPriceSomeonePaid(s))
-      .map((s) => (s.total - (isNum(s.delivery) ? s.delivery : 0)) / s.qty).sort((a, b) => a - b)
+      .map((s) => (s.total) / s.qty).sort((a, b) => a - b)
     : [];
   if (rate != null && theirs.length >= 2) {
     const mid = theirs.length % 2 ? theirs[(theirs.length - 1) / 2] : (theirs[theirs.length / 2 - 1] + theirs[theirs.length / 2]) / 2;
@@ -1425,7 +1425,7 @@ export function draftRow(entry, book) {
      numbers exist to catch UNDERPRICING and this made every delivered order look better priced
      than it was. The rate had already been put on the goods at v502 for the Approve card and at
      v602 for the laptop's list; this line and the margin beside it were what was left. */
-  const goodsTotal = total - (isNum(row.delivery) ? row.delivery : 0);
+  const goodsTotal = total;
   const rate = qty > 0 ? goodsTotal / qty : null;
   const margin = (dir === "SELL" && rate != null && goodsTotal > 0)
     ? ((goodsTotal - priced.cost * qty) / goodsTotal) * 100 : null;

@@ -1,5 +1,19 @@
 [
  {
+  "v": "v727",
+  "d": "19 Sep 2026",
+  "t": "THE SELL PRICE AND THE CARRIAGE ARE TWO FIGURES, AND THE ORDER KEY IS STILL WHAT THEY AGREED TO PAY",
+  "n": [
+   "<b>HIS INSTRUCTION OF 19 SEP 2026:</b> completely separate the sell price from the delivery price, through the ledger, Enter, the statement and the order, and do the same for the buy price and the freight. A SALE'S TOTAL IS THE GOODS ALONE NOW and the carriage stands beside it, which is the convention a purchase has always had.",
+   "<b>THE TWO SIDES CARRIED OPPOSITE CONVENTIONS AND BOTH FAILURE MODES HAD JUST BEEN SEEN, A DAY APART, ON THE LIVE BOOK.</b> A purchase's freight sits BESIDE its total, and p025 double-counted it because a person added it into the total as well: the landed rate read RM8.08 against RM7.84 and v715 was built on the wrong figure. A sale's delivery sat INSIDE its total, and s172 absorbed its carriage into the rate because there was nowhere else to put it: RM52.50 a unit against the RM90 he had actually charged. One shape double-counts, the other absorbs, and the field list stated both contradictions one line apart.",
+   "<b>TWELVE ROWS RESTATED AND RM198 OF CARRIAGE MOVED, WITH NOT ONE FIGURE RE-PRICED.</b> Every one says on its own row that it was restated rather than re-priced, because a ledger that changes a number without saying why is worse than one that is wrong.",
+   "<b>THE KEY IS WHAT THEY AGREED TO PAY, AND THAT IS WHAT AVOIDED A COLLISION.</b> v694 names a row by the engine's ovKey to the character, and it is written onto a LIVE order at acknowledgement, so a key that moved would orphan every order in flight. On the GOODS alone, s155 and s157 both become CN6-WM-R|2026-09-12|110, and four of the twelve carriage-bearing rows are still open. ovKey therefore stays on the goods and the carriage TOGETHER, which is also what the customer agreed to pay, and not one order key moved.",
+   "<b>THE DERIVATION IS NOW WRITTEN IN NO PLACE AT ALL.</b> `total - delivery` was restated by hand in twelve places across seven files, so nothing forced them to agree and nothing said what the total MEANT. They read the total, which is the goods. txGoods stays as a named function rather than being inlined, because a reader that means \"the goods\" should say so: on the day the convention changed, a bare `total` was right by luck in twelve places and wrong in the twelve that meant what is owed.",
+   "<b>AND THE SITE WAS ALREADY RIGHT.</b> stmt/orders.js and stmt/page.js have always kept the two apart, the page even printing \"RM x for the goods and RM y delivery\". It was src/orders.js, the desk's own relay, that folded them back into one figure on the way to the book. It passes them through now and keys on the two together.",
+   "<b>THE CHECKS.</b> A new section of 17 assertions: the goods are the total, what is owed is the two together, the two answers coincide where there is no carriage (which is why twelve wrong derivations looked right), the key on what they agreed to pay, s155 and s157 sharing goods and not a key, every restated row saying so, the relay carrying the site's two figures, the desk's key and the engine's ovKey the same string, and the derivation absent from all seven files. Six mutations each turned it red, including the one that puts the key back on the goods and collides the two rows. Nineteen existing fixtures and source pins were restated to the new shape. 2,941 passing."
+  ]
+ },
+ {
   "v": "v726",
   "d": "19 Sep 2026",
   "t": "A 37.5 UNIT BUY AT RM46 PAID IN FULL, HALF THE LOT ON THE SHELF",
