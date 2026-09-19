@@ -1,0 +1,53 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-19T14:05:37.204Z",
+   "collection": "sales",
+   "row": {
+    "qty": 1,
+    "total": 100,
+    "cash": 0,
+    "date": "2026-09-19",
+    "customer": "CF5-WM"
+   },
+   "reasoning": "Fulfilment against CF5-WM's order of 1 unit for RM 100 agreed 2026-09-19. RM 100 and 1 unit move on 2026-09-19, against RM 100 and 1 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s175",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-19T14:05:37.204Z",
+    "type": "AMEND",
+    "party": "CF5-WM",
+    "qty": 1,
+    "total": 100,
+    "status": "paid",
+    "raw": "Fulfilment on CF5-WM s175: RM 100 cash, 1 unit moved, recorded 2026-09-19",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CF5-WM",
+     "rid": "s175",
+     "orderKey": "CF5-WM|2026-09-19|100",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "kind": "Fulfilment",
+     "date": "2026-09-19",
+     "qty": 1,
+     "total": 100,
+     "cash": 100,
+     "kg": 1
+    }
+   },
+   "decidedAt": "2026-09-19T14:05:43.065Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
