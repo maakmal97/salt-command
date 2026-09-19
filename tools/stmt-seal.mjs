@@ -125,7 +125,15 @@ export async function sealPasswords(dir, opts = {}) {
     }
     if (!pw) { out.failed.push((code || u) + ": no password on this laptop"); continue; }
     if (!(await checkVerifier(pw, r.rec.verifier))) { out.failed.push((code || u) + ": the password does not answer this record's verifier"); continue; }
-    if (was) out.rekeyed = (out.rekeyed || []).concat([(code || u) + " (its password was filed under " + was + ", before it was re-keyed)"]);
+    if (was) {
+      out.rekeyed = (out.rekeyed || []).concat([(code || u) + " (its password was filed under " + was + ", before it was re-keyed)"]);
+      /* AND THE PAIRING IS WRITTEN BACK, so it is solved once rather than re-proved on every run
+         (19 Sep 2026). The proof has just held: this password answered this record's own verifier,
+         which answers one password and no other. Leaving the file alone meant Send read a code the
+         customer had left for as long as the account existed, and four were in that state. Only a
+         code the roster no longer carries is ever moved, and never onto one already taken. */
+      if (code && passwords[code] === undefined) { passwords[code] = passwords[was]; delete passwords[was]; out.moved = (out.moved || []).concat([was + " -> " + code]); }
+    }
     if (r.rec.pwMaster) {
       let same = false;
       try { same = (await decryptText(master, r.rec.pwMaster)) === pw; } catch (e) { same = false; }
@@ -150,6 +158,8 @@ export async function sealPasswords(dir, opts = {}) {
     out.sealed.push(code || u);
     out.wrote++;
   }
+  /* the re-keyed password file, written only on a real run and only when a pairing moved */
+  if (!check && (out.moved || []).length) writeFileSync(pwFile, JSON.stringify(passwords, null, 2) + "\n");
   return out;
 }
 

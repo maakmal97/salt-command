@@ -47,7 +47,7 @@
  * matches no row or more than one; a new row that would replay one already on the book (same
  * party, date and total); a new row with no note; a version entry with no title or notes. A
  * refusal folds nothing: the batch is applied whole or not at all. */
-import { readFileSync, writeFileSync, existsSync, unlinkSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, unlinkSync, readdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
@@ -73,6 +73,7 @@ const FOLDED = opt("--folded", resolve(dirname(MASTER), "_folded.json"));
 const USERS = opt("--users", resolve(REPO, "statements", "_users.json"));   // v588
 const PLACES = opt("--places", resolve(REPO, "geo", "places.json"));       // v628
 const SUITE = opt("--suite", resolve(REPO, "test", "verify.mjs"));         // v628
+const STMTS = opt("--statements", resolve(REPO, "statements"));             // 19 Sep 2026: the password files, laptop only
 const TODAY = opt("--today", new Date(Date.now() + 8 * 36e5).toISOString().slice(0, 10));   // Kuala Lumpur
 
 const E = POSITION_ENGINE;
@@ -421,11 +422,23 @@ function pinnedInMaster(code) {
   });
 }
 
-/* v628: the three files a rename reaches beyond the book. Pure, so the suite folds them on fixtures. */
+/* v628: the files a rename reaches beyond the book. Pure, so the suite folds them on fixtures.
+   19 Sep 2026: A FOURTH, because three was never all of them. _passwords.json is filed by CODE and
+   nothing moved it, so every Amend ID left that customer's password under the name they had left.
+   Four were in that state on the live book and the seal tool had to pair them back by verifier
+   proof on every run. Proof is the right SAFETY NET and the wrong mechanism. */
 /* the statement account moves to the new code and keeps its username, his rule: the username never changes */
 export function renameUsers(users, pairs) {
   for (const [f, t] of pairs) if (users[f] && !users[t]) { users[t] = users[f]; delete users[f]; }
   return users;
+}
+/* the password goes with the code, so Send can still hand it over after a re-key. LAPTOP ONLY, and
+   silently a no-op where the file is absent: _passwords.json is gitignored, so the cloud fold has
+   nothing to move and must not pretend otherwise. */
+export function renamePasswords(passwords, pairs) {
+  let moved = 0;
+  for (const [f, t] of pairs) if (passwords[f] !== undefined && passwords[t] === undefined) { passwords[t] = passwords[f]; delete passwords[f]; moved++; }
+  return moved;
 }
 /* a place override follows its code while the code ends in the same place, and goes when the place changed */
 export function renameLocs(places, pairs) {
@@ -963,6 +976,14 @@ if (isMain) {
     if (pairs.length) {
       writeFileSync(USERS, usersJson(renameUsers(users, pairs)));
       if (existsSync(SUITE)) writeFileSync(SUITE, renameSuiteText(readFileSync(SUITE, "utf8"), pairs));
+      /* the password file, where this laptop has one. The cloud fold has none and skips in silence. */
+      for (const dir of readdirSync(STMTS, { withFileTypes: true }).filter((d) => d.isDirectory() && /^\d{4}-\d{2}$/.test(d.name))) {
+        const pwFile = resolve(STMTS, dir.name, "_passwords.json");
+        if (!existsSync(pwFile)) continue;
+        const pw = JSON.parse(readFileSync(pwFile, "utf8").replace(/^\ufeff/, ""));
+        const n = renamePasswords(pw, pairs);
+        if (n) { writeFileSync(pwFile, JSON.stringify(pw, null, 2) + "\n"); console.log(`  ok    ${n} password(s) moved with the code in ${dir.name}, so Send still finds them`); }
+      }
       const places = JSON.parse(readFileSync(PLACES, "utf8"));
       if (renameLocs(places, pairs)) {
         writeFileSync(PLACES, JSON.stringify(places, null, 1) + "\n");

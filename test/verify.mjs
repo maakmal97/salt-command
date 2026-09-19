@@ -15758,6 +15758,53 @@ await (async () => {
       "and update.mjs reads this seam rather than holding a second copy of the rule");
   } finally { try { rmSync(f, { force: true }); } catch (e) { /* best effort */ } }
 })();
+section("a re-key carries the password with the code, and a seed cannot run over what it has not pulled");
+await (async () => {
+  /* HIS INSTRUCTION OF 19 SEP 2026: keep Salt Counter and the desk in sync. An Amend ID already
+     reaches the vault from the phone (v628) and the statement username through the fold (v628), and
+     it has never reached _passwords.json, which is filed by CODE. Four customers were in that state
+     on the live book and tools/stmt-seal.mjs had to re-prove the pairing by verifier on EVERY run.
+     Proof is the right safety net and the wrong mechanism, so the pairing is written back. */
+  const F = await import("../tools/fold.mjs");
+
+  /* ---- the fold moves it, and only where it is safe to ---- */
+  const pw = { "CA5-KER": "old-one", "CS6-BS": "untouched" };
+  const moved = F.renamePasswords(pw, [["CA5-KER", "CA5-BAN"]]);
+  ok(moved === 1 && pw["CA5-BAN"] === "old-one" && pw["CA5-KER"] === undefined && pw["CS6-BS"] === "untouched",
+    "the password goes with the code and nothing else is touched: " + JSON.stringify(pw));
+
+  const taken = { "CA5-KER": "old-one", "CA5-BAN": "already-here" };
+  ok(F.renamePasswords(taken, [["CA5-KER", "CA5-BAN"]]) === 0 && taken["CA5-BAN"] === "already-here" && taken["CA5-KER"] === "old-one",
+    "it never writes over a password the new code already holds, because that one is somebody's");
+
+  const absent = { "CS6-BS": "x" };
+  ok(F.renamePasswords(absent, [["CA5-KER", "CA5-BAN"]]) === 0 && Object.keys(absent).length === 1,
+    "and a pair with nothing to move is a no-op, which is the cloud fold's case: the file is not there at all");
+
+  /* A PASSWORD IS NEVER LOST. The one property that matters more than the move itself. */
+  const many = { "A-1": "p1", "B-2": "p2", "C-3": "p3" };
+  const before = Object.values(many).sort().join();
+  F.renamePasswords(many, [["A-1", "A-9"], ["B-2", "B-8"], ["ZZ-0", "ZZ-1"]]);
+  ok(Object.values(many).sort().join() === before && Object.keys(many).sort().join() === "A-9,B-8,C-3",
+    "every password that existed still exists after a re-key, under the code its customer now has: " + Object.keys(many).sort().join());
+
+  /* ---- the seal writes its proof back rather than re-proving it for ever ---- */
+  const sealSrc = readFileSync(join(REPO, "tools", "stmt-seal.mjs"), "utf8");
+  ok(/if \(code && passwords\[code\] === undefined\) \{ passwords\[code\] = passwords\[was\]; delete passwords\[was\];/.test(sealSrc),
+    "the seal moves the password it has just proved, and only onto a code holding none");
+  ok(/if \(!check && \(out\.moved \|\| \[\]\)\.length\) writeFileSync\(pwFile/.test(sealSrc),
+    "and writes the file only on a real run, so --check still reports without changing anything");
+
+  /* ---- and a seed refuses to replace a vault it has not read ---- */
+  const seedSrc = readFileSync(join(REPO, "tools", "seed-vault.mjs"), "utf8");
+  /* SCOPED TO THE REFUSAL. `pull-vault.mjs` is named in this file's own header too, so a bare grep
+     passes on a refusal that tells him nothing about what to do next. */
+  const refusal = seedSrc.slice(seedSrc.indexOf("REFUSED: the vault holds"), seedSrc.indexOf("REFUSED: the vault holds") + 700);
+  ok(/REFUSED: the vault holds/.test(seedSrc) && /pull-vault\.mjs/.test(refusal),
+    "a seed that would drop names the vault holds and the directory lacks refuses, and the refusal itself names the tool that fixes it");
+  ok(/--force/.test(seedSrc) && /this passphrase did not open it/.test(seedSrc),
+    "it refuses just as hard when it cannot READ the vault, because a seed replaces the whole of it, and --force is the way past");
+})();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

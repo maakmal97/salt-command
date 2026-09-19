@@ -126,6 +126,34 @@ async function main() {
   const named = Object.keys(map).length;
   if (!named) { console.error("No names found in salt_bio.json; nothing to seed."); process.exit(1); }
 
+  /* A SEED REPLACES THE WHOLE VAULT, so it must not run over names it has never seen (19 Sep 2026).
+     Add ID and Amend ID both file names into the vault FROM THE PHONE, and the laptop's directory is
+     behind it until pull-vault.mjs runs. The Names rule has said to pull first since v528 and nothing
+     enforced it, so a seed could silently drop every name the phone had filed since the last pull.
+     It happened twice on 19 Sep. This reads the live vault and refuses while it holds a code the
+     directory lacks; --force is for the case where the vault is the thing that is wrong. */
+  if (!process.argv.includes("--force")) {
+    let cloud = null;
+    try { cloud = JSON.parse(execFileSync("npx", ["wrangler", "kv", "key", "get", VKEY, "--binding", BINDING, "--remote"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] })); } catch (e) { cloud = null; }
+    if (cloud && cloud.vault) {
+      let there = {};
+      try { there = await vaultDecrypt(pass, cloud.vault); } catch (e) { there = null; }
+      if (there === null) {
+        console.error("The vault is there but this passphrase did not open it. Nothing was pushed.");
+        console.error("  A seed replaces the whole vault, so it will not run blind over names it cannot read.");
+        process.exit(2);
+      }
+      const missing = Object.keys(there).filter((c) => !(c in map));
+      if (missing.length) {
+        console.error(`REFUSED: the vault holds ${missing.length} name(s) this directory does not: ${missing.join(", ")}`);
+        console.error("  A seed replaces the whole vault, so pushing now would drop them.");
+        console.error("  Pull them down first:  node tools/pull-vault.mjs");
+        console.error("  Or, if the vault is the thing that is wrong:  node tools/seed-vault.mjs --force");
+        process.exit(2);
+      }
+    }
+  }
+
   const envelope = { updated: new Date().toISOString(), vault: await vaultEncrypt(pass, map), ids };
 
   // prove it round-trips before we push, so a bad passphrase or a crypto slip is caught here
