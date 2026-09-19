@@ -1,0 +1,52 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-19T20:06:26.796Z",
+   "collection": "sales",
+   "row": {
+    "qty": 1,
+    "total": 48,
+    "cash": 48,
+    "date": "2026-09-18",
+    "customer": "CE4-CHE"
+   },
+   "reasoning": "Cancellation against CE4-CHE's order of 1 unit for RM 48 agreed 2026-09-18. The order is withdrawn and counts nowhere. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This order has already had RM 48 and 0 unit against it. Cancelling a row that has moved is not the same as cancelling one that has not."
+   ],
+   "amends": "s181",
+   "amendKind": "Cancellation",
+   "entry": {
+    "at": "2026-09-19T20:06:26.796Z",
+    "type": "AMEND",
+    "party": "CE4-CHE",
+    "qty": 0,
+    "total": 0,
+    "raw": "Cancellation on CE4-CHE s181, recorded 2026-09-20",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CE4-CHE",
+     "rid": "s181",
+     "orderKey": "CE4-CHE|2026-09-18|48",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "kind": "Cancellation",
+     "date": "2026-09-20",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-19T20:21:03.480Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
