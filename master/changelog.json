@@ -1,5 +1,17 @@
 [
  {
+  "v": "v719",
+  "d": "19 Sep 2026",
+  "t": "A GIFT IS NOT A PRICE ANYONE PAID, AND ONE NOT YET COLLECTED WOULD HAVE BECOME A DEBT",
+  "n": [
+   "<b>A GIFT HAD BEEN COUNTING AS A PRICE THE CUSTOMER PAID, AND THE COMMENT BESIDE IT HAD PROMISED OTHERWISE SINCE v406.</b> The drafter reads a party's own history and the product's observed range to decide whether a rate is odd, and both sets filtered on `s.total > 0` alone. That was right while a free unit was written at total NOUGHT, and inert from the day the book's convention became total = COST settled by settledRM with goodwill true, which is s031 on 21 July. Every giveaway since has entered both sets at the inventory rate as though it had been paid for. Measured on the live book: CJ4-BJ's own median read RM68 against a real RM70, and CS6-BS RM107 against RM107.50.",
+   "<b>IT IS THE MARK THAT SAYS SO, NOT THE TOTAL,</b> so both sets now read one predicate that excludes a giveaway by its goodwill mark and a nought by its total. Both, together, because v407's own lesson was that v406 fixed one of the pair and left the twin live, and the note beside it says so in those words. The zero test stays beside the mark: it guards a different casualty, which is that a row at nought pulls the observed LOW to nought, at which point `rate < lo/2` is `rate < 0` and the low-side check can never fire again.",
+   "<b>AND A GIFT THAT HAD NOT BEEN COLLECTED YET WOULD HAVE BECOME A DEBT THE MOMENT IT WAS.</b> s181, the unit promised free to CE4-CHE, was entered at v718 with no settledRM because nothing had moved, while the other six giveaways on the book all carry it. Driven forward: the row reads RM0 owed today and <b>RM48 owed the instant the unit is handed over</b>, at which point CE4-CHE enters the debtor list, counts against their own credit cap and joins the hourly chase, for a gift. A gift is settled when it is given.",
+   "<b>AND THE ONE ROW HIS NEW RULE EXISTS TO STOP WAS SITTING OPEN ON THE BOOK.</b> s175 carried RM10 of carriage on an order marked COLLECTED, which read the goods as RM100 against CF5-WM's own card of RM110. His instruction of 19 Sep is that a collected order cannot carry a delivery charge at all. Nothing was paid and nothing had moved, so it is set right rather than corrected, and the goods are now exactly their card.",
+   "<b>THE CHECKS.</b> Three assertions driven through the drafter with EIGHT giveaways in the fixture, five at cost with the mark and three at nought, because the check is a MEDIAN and one of either is invisible to it over the two real salt rates this book holds. A fourth proves the subtler half, that a gift must not switch a check ON by padding a sample below its own threshold; a fifth proves the zero guard on OIL, which is the only product here with the three rates the range check needs. Four mutations each turned it red. The wiring assertion that pinned the old text is restated on the property rather than the string, because the two sets now share the predicate instead of agreeing by copy."
+  ]
+ },
+ {
   "v": "v718",
   "d": "19 Sep 2026",
   "t": "HIS BOOK MADE TRUE: AN ERROR ROW HAD BEEN HOLDING EVERY SALT FLOOR A TENTH TOO LOW, AND A LOT'S FREIGHT WAS COUNTED TWICE",

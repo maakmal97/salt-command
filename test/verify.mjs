@@ -1326,6 +1326,51 @@ await (async () => {
   const inBand = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 88, cash: 88, kg: 1, date: "2026-08-16" }), book);
   ok(!inBand.flags.some(f => /RM 90/.test(f) || /typically pays/.test(f)), "a rate within tolerance of the median does not nag");
 
+  /* ---- A GIFT IS NOT A PRICE ANYONE PAID ---- */
+  /* The comment on that filter has promised this since v406 and the test was `s.total > 0` alone,
+     which was right while a free unit was written at total nought and inert from the day the book's
+     convention became total = COST with goodwill true. Measured on the live book before the fix:
+     CJ4-BJ's own median read RM68 against a real RM70 and CS6-BS RM107 against RM107.50.
+     FIVE GIFTS, not one: the check is a MEDIAN, so one outlier among seven real orders does not
+     move it and a one-gift fixture would pass whether the filter worked or not. */
+  /* BOTH SHAPES A GIVEAWAY HAS EVER HAD. Five at total = COST with the goodwill mark, which is the
+     convention since s031 in July and what the mark now catches; and three at total NOUGHT, which
+     is the older shape (s103 still carries it) and what the zero test has always caught. Three of
+     each, because one of either is invisible to a median over the two real rates this book holds. */
+  const gifts = { ...book, sales: [...book.sales,
+    ...Array.from({ length: 5 }, (_, i) => ({
+      date: "2026-08-0" + (i + 1), customer: "CC5-OKR", qty: 1, total: 48, cost: 48,
+      cash: 0, settledRM: 48, goodwill: true, deliveredQty: 1, deliveredOn: "2026-08-0" + (i + 1) })),
+    ...Array.from({ length: 3 }, (_, i) => ({
+      date: "2026-08-1" + (i + 1), customer: "CC5-OKR", qty: 1, total: 0,
+      cash: 0, deliveredQty: 1, deliveredOn: "2026-08-1" + (i + 1) })) ] };
+  const atTheirRate = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16" }), gifts);
+  ok(!atTheirRate.flags.some((f) => /typically pays/.test(f)),
+    "eight units given free, in both shapes a giveaway has had, do not become eight prices CC5-OKR paid: "
+      + JSON.stringify(atTheirRate.flags.filter((f) => /typically pays/.test(f))));
+  /* AND A GIFT MUST NOT SWITCH A CHECK ON, which is the twin filter and the subtler half. This book
+     holds TWO real salt rates, under the three the observed-range check needs, so that check does
+     not run on salt at all and must not start. Counting five gifts pads the sample to seven and
+     hands it a low of RM48, at which point it fires on rates the real data cannot speak to. */
+  const wayUnder = draftRow(entry({ direction: "SELL", party: "CH4-MAL", qty: 1, total: 20, cash: 20, kg: 1, date: "2026-08-16" }), gifts);
+  ok(!wayUnder.flags.some((f) => /less than half the lowest/.test(f)),
+    "five gifts do not pad the observed range into a check this book has too few real salt rates to support: "
+      + JSON.stringify(wayUnder.flags.filter((f) => /less than half/.test(f))));
+  ok(wayUnder.flags.some((f) => /under the floor/.test(f)) && wayUnder.flags.some((f) => /loses money/.test(f)),
+    "and the RM20 row is still caught, by the floor and by its own cost, which are the checks that do not need a sample");
+
+  /* AND WHAT THE ZERO TEST IS ACTUALLY FOR, which is not the median. A median of nought switches
+     the party check OFF rather than misfiring, so that guard cannot be proved there. Its own comment
+     names the real casualty: a row at nought pulls the observed LOW to nought, at which point
+     `rate < lo/2` is `rate < 0` and the low-side check can never fire again. Oil is where this book
+     has the three rates that check needs (RM11, RM6, RM13), so oil is where it is provable. */
+  const zeroOil = { ...book, sales: [...book.sales,
+    { date: "2026-08-12", product: "oil", customer: "CS6-BS", qty: 1, total: 0, cash: 0, deliveredQty: 1, deliveredOn: "2026-08-12" }] };
+  const cheapOil = draftRow(entry({ direction: "SELL", product: "oil", party: "CH4-MAL", qty: 1, total: 2, cash: 2, kg: 1, date: "2026-08-16" }), zeroOil);
+  ok(cheapOil.flags.some((f) => /less than half the lowest/.test(f)),
+    "a row at nought does not pull oil's observed low to nought and disarm the low-side check: "
+      + JSON.stringify(cheapOil.flags.filter((f) => /less than half|more than double/.test(f))));
+
   /* ---- a stale pricing snapshot ---- */
   const stale = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16" }),
     { ...book, version: "v305", pricing: { ...book.pricing, v: "v302" } });
@@ -6630,8 +6675,17 @@ await (async () => {
   /* 6. the two gates round seven found open. */
   {
     const d = rf(join(REPO, "src", "drafter.js"), "utf8");
-    const theirs = d.slice(d.indexOf("const theirs"), d.indexOf("const theirs") + 900);
-    ok(/s\.total > 0/.test(theirs), "the party-median set excludes zero-value rows, as the observed range does");
+    /* ONE PREDICATE, BOTH SETS. This sliced 900 characters after `const theirs` and grepped for
+       `s.total > 0`, which held while each filter wrote the test out in full. They share
+       `aPriceSomeonePaid` now, so "as the observed range does" is true by construction rather than
+       by two copies agreeing, which is what v407's own lesson asked for: it exists because v406
+       fixed one of the pair and not its twin. What that predicate DOES is driven behaviourally in
+       the drafter's own section; this is the wiring, which nothing else can see. */
+    ok(/const aPriceSomeonePaid = \(s\) => !s\.goodwill && isNum\(s\.total\) && s\.total > 0/.test(d),
+      "a price someone paid is one predicate: not a giveaway, not nought, and a real quantity");
+    ok((d.match(/aPriceSomeonePaid\(s\)/g) || []).length === 2
+      && (d.match(/isNum\(s\.total\) && s\.total > 0/g) || []).length === 1,
+      "and both the party-median set and the observed range read that one predicate, which is written once");
     /* v413: this used to slice the source around the Cancellation branch and grep it. There are TWO
        branches now, one per direction, so the slice found the wrong one and the assertion broke on
        a fix rather than on a fault. Asserting on source text is how a check ends up measuring its

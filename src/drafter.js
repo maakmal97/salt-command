@@ -361,10 +361,18 @@ export function flagsFor(entry, row, book, priced) {
         it is first because it is the one that would have caught it: RM115 against a book whose
         oil had never left the RM6 to RM13 band. A factor rather than a fixed band, so it
         scales with whatever the product actually trades at. */
-  /* s.total > 0: a committed zero-value row (a free unit, a goodwill settlement) is not a
-     price anyone paid, and one of them pulled salt's observed low to RM0, which made the
-     low-side check `rate < lo/2` unfireable (round six). */
-  const seen = committed.filter((s) => prodOf(s) === p && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0)
+  /* A GIFT IS NOT A PRICE ANYONE PAID, and it is the GOODWILL MARK that says so, not the total.
+     This tested `s.total > 0` alone, which was right when a free unit was written at total nought
+     (s103 still is) and has been inert since s031 in July, because the book's convention became
+     total = COST, settled by settledRM with goodwill true. So every giveaway has been entering
+     these two sets at the inventory rate as though the customer had paid it: measured on the live
+     book, CJ4-BJ's median read RM68 against a real RM70 and CS6-BS RM107 against RM107.50.
+     The zero test stays beside it, because a row at nought is still not a price and one of them
+     pulled salt's observed low to RM0, which made the low-side check unfireable (round six).
+     Both filters are fixed together: v407's own lesson was that fixing one and not its twin
+     leaves the fault live on the other side. */
+  const aPriceSomeonePaid = (s) => !s.goodwill && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0;
+  const seen = committed.filter((s) => prodOf(s) === p && aPriceSomeonePaid(s))
     .map((s) => (s.total - (isNum(s.delivery) ? s.delivery : 0)) / s.qty);
   /* 08 Sep 2026: gated on isSale like every check after it. `seen` holds SALE rates, and this
      one comparison ran on a lot too, so a RM 40 lot read "less than half the lowest rate". */
@@ -390,7 +398,7 @@ export function flagsFor(entry, row, book, priced) {
        filter to the observed range and not to the party's own history, so one free unit still
        dragged a party's median down: CS6-BS read RM 108.50 against a real RM 110, which misfires
        at a rate they have actually paid and stays silent 10.9% adrift. Same rule, both sets. */
-    ? committed.filter((s) => POSITION_ENGINE.ownsCode(who, s.customer) && prodOf(s) === p && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0)
+    ? committed.filter((s) => POSITION_ENGINE.ownsCode(who, s.customer) && prodOf(s) === p && aPriceSomeonePaid(s))
       .map((s) => (s.total - (isNum(s.delivery) ? s.delivery : 0)) / s.qty).sort((a, b) => a - b)
     : [];
   if (rate != null && theirs.length >= 2) {
