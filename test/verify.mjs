@@ -16567,7 +16567,7 @@ await (async () => {
   ok(del.disabled === true && del.value === "0" && w.eval("wbNum('wbDelivery')") === 0,
     "COLLECTED SHUTS THE BOX AND ZEROES IT. Disabling alone would not do: wbNum reads .value with no "
     + "test of the element's state, and five sites read this field, so a hidden figure is a read figure");
-  ok($("wbDeliveryLbl").textContent === "Delivery (RM) — they collected",
+  ok($("wbDeliveryLbl").textContent === "Delivery (RM), they collected",
     "and the label says why it is shut rather than leaving a dead box: " + $("wbDeliveryLbl").textContent);
 
   hand.value = "delivered"; hand.onchange();
@@ -16652,7 +16652,7 @@ await (async () => {
      v727's own note matched its own derivation scan and turned the run red after the phone was live.
      A pin on copy reads the MARKUP, never the file, or every comment explaining the change is a
      failure and the only way to keep the suite green is to stop writing down why. */
-  ok(/<label>Goods \(RM\)<\/label>/.test(msrc) && /<label id="wbDeliveryLbl">Delivery \(RM\)<\/label>/.test(msrc)
+  ok(/<label id="wbTotalLbl">Goods \(RM\)<\/label>/.test(msrc) && /<label id="wbDeliveryLbl">Delivery \(RM\)<\/label>/.test(msrc)
     && !/<label[^>]*>Of which delivery|l:'Of which delivery/.test(msrc),
     "the form asks for the goods and the delivery, not a total with the delivery buried in it");
   const owedRow = draftRow(ent({ direction: "SELL", party: buy2, qty: 1, total: 90, delivery: 15, cash: 90, kg: 1, date: "2026-09-20", handover: "delivered" }), bk);
@@ -16666,6 +16666,171 @@ await (async () => {
     "a recorded handover is cleared with the figures beside it, the rule the cover line above it states: "
     + "left behind, a collected sale opens the next one with the delivery box shut and a carriage never typed");
   w.close();
+})();
+
+section("v733: a free unit is a tap, and the reward shrinks with the gift");
+await (async () => {
+  /* HIS DECISION OF 19 SEP 2026, asked as a question and answered "Yes -- the reward shrinks with
+     the gift": a free unit handed over alongside an order cost the shelf real salt and was charged
+     against the reward nowhere, so a customer earned on the full margin of what they paid for and
+     kept what they were given as well. And his instruction that a gift should be a TAP: four are on
+     the book and every one was typed at the laptop, because the only route that minted a goodwill
+     row was Redeem, which settles against a balance the customer earned. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const rd = (x) => JSON.parse(String(w.eval("JSON.stringify(" + x + ")")));
+  const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+
+  /* ---- WHY IT IS A SECOND WALK AND NOT A WIDER FILTER ----
+     The tempting one-line fix is to stop dropping goodwill rows from pricedSales. It shrinks
+     nothing, and this is the assertion that says so before somebody tries it. */
+  const s176 = rd("sales.find(function(s){return s.rid==='s176';})");
+  ok(!!s176 && s176.goodwill === true && !s176.rebate && s176.total === s176.cost,
+    "a gift's total IS its cost, by the convention every gift row has carried since s031");
+  ok(Math.abs((s176.total || 0) - (s176.qty || 0) * (s176.cost / s176.qty)) < 0.005,
+    "so its MARGIN is exactly zero: letting gifts back into pricedSales would take nothing off the "
+    + "reward at all, and s056, whose total is the price it was first written at, would ADD to it. "
+    + "The rule needs the gift's COST subtracted, which membership can never produce");
+
+  /* ---- THE SPLIT IS ONE FLAG, AND IT IS ALREADY ON EVERY ROW ---- */
+  const gifts = rd("pSales(PROD).filter(function(s){return s.goodwill&&!s.rebate;}).map(function(s){return s.rid;})");
+  const redeems = rd("pSales(PROD).filter(function(s){return s.goodwill&&s.rebate;}).map(function(s){return s.rid;})");
+  ok(gifts.length === 4 && redeems.length === 3 && gifts.join() === "s031,s056,s176,s181",
+    "four gifts and three redemptions on the live book, told apart by rebate alone: " + JSON.stringify({ gifts, redeems }));
+
+  /* ---- THE CHARGE, ON A FIXTURE WHERE EVERY FIGURE IS KNOWN ---- */
+  const before = rd("rewardMargin('CZ9-GIFT',[])");
+  w.eval("sales.push({rid:'zg1',customer:'CZ9-GIFT',qty:2,total:200,cost:96,cash:200,deliveredQty:2,deliveredOn:'2026-09-01',date:'2026-09-01',product:'salt'});"
+    + "recompute();"   /* recompute ALONE: applyOverlay rebuilds sales from the committed base and would wipe the pushed row */);
+  const paid = rd("rewardMargin('CZ9-GIFT',[])");
+  ok(before.mine.margin === 0 && Math.abs(paid.mine.margin - 104) < 0.005 && paid.mine.n === 1,
+    "a paid order of RM200 costing RM96 earns on RM104 of margin: " + JSON.stringify(paid.mine));
+
+  w.eval("sales.push({rid:'zg2',customer:'CZ9-GIFT',qty:1,total:48,cost:48,cash:0,settledRM:48,goodwill:true,deliveredQty:1,deliveredOn:'2026-09-02',date:'2026-09-02',product:'salt'});"
+    + "recompute();"   /* recompute ALONE: applyOverlay rebuilds sales from the committed base and would wipe the pushed row */);
+  const gifted = rd("rewardMargin('CZ9-GIFT',[])");
+  ok(Math.abs(gifted.mine.margin - 56) < 0.005 && gifted.mine.n === 1,
+    "THE GIFT TAKES ITS COST OFF: RM104 less the RM48 the free unit cost is RM56, and the count of "
+    + "PRICED orders does not move, because a gift is not one: " + JSON.stringify(gifted.mine));
+
+  w.eval("sales.push({rid:'zg3',customer:'CZ9-GIFT',qty:1,total:48,cost:48,cash:0,settledRM:48,goodwill:true,rebate:true,rebateKg:1,deliveredQty:1,deliveredOn:'2026-09-03',date:'2026-09-03',product:'salt'});"
+    + "recompute();"   /* recompute ALONE: applyOverlay rebuilds sales from the committed base and would wipe the pushed row */);
+  const redeemed = rd("rewardMargin('CZ9-GIFT',[])");
+  ok(Math.abs(redeemed.mine.margin - 56) < 0.005,
+    "A REDEMPTION DOES NOT: it is a unit they EARNED, netted at the reader through rebateApplied, so "
+    + "charging it here would take the same unit twice: " + JSON.stringify(redeemed.mine));
+
+  w.eval("sales.push({rid:'zg4',customer:'CZ9-GIFT',qty:1,total:48,cost:48,cash:0,settledRM:48,goodwill:true,cancelled:true,cancelledOn:'2026-09-04',deliveredQty:0,date:'2026-09-04',product:'salt'});"
+    + "recompute();"   /* recompute ALONE: applyOverlay rebuilds sales from the committed base and would wipe the pushed row */);
+  ok(Math.abs(rd("rewardMargin('CZ9-GIFT',[])").mine.margin - 56) < 0.005,
+    "and a cancelled gift does not, because the guards pricedSales carried are restated on the new walk");
+
+  /* ---- WHAT IT DOES TO THE LIVE BOOK, STATED RATHER THAN DISCOVERED ----
+     THE GUARD IS PROVED HERE AND NOT ONLY ON A FIXTURE. This version was written against a book on
+     which CE4-CHE held a gift, s181, and the charge took them from two free units to one. v730
+     WITHDREW that gift while this was being built: the unit never left the shelf, so the row is
+     cancelled, and the customer keeps both units. Nothing in the rule changed; the guard did its
+     work on a row that moved under it, which is the case a fixture can only imitate. */
+  const che = rd("customerRewards().find(function(r){return r.id==='CE4-CHE';})");
+  const s181 = rd("sales.find(function(s){return s.rid==='s181';})");
+  ok(!!s181 && s181.goodwill === true && !s181.rebate && s181.cancelled === true,
+    "s181 is a gift that was withdrawn: goodwill, no rebate, cancelled");
+  ok(!!che && che.earned === 2 && Math.abs(che.margin - 1017) < 0.01,
+    "so CE4-CHE keeps BOTH free units and is charged nothing for a unit that never left the shelf: "
+    + JSON.stringify(che));
+  ok(!!s181 && s181.cost == null,
+    "and it carries no cost of its own, so were it live it would be charged at the book's weighted "
+    + "average, which is what costOf does for every uncosted row: the fallback is stated, not hidden");
+  /* the two that DO bite, named so the figures are his and not a surprise */
+  const okr = rd("customerRewards().find(function(r){return r.id==='CC5-OKR';})");
+  ok(!!okr && Math.abs(okr.margin - 163) < 0.01 && okr.earned === 0,
+    "CC5-OKR is charged the RM48 of s176, taking their pool to RM163: " + JSON.stringify(okr));
+  const wm = rd("networkStats().find(function(r){return r.id==='CN6-WM';})");
+  ok(!!wm && Math.abs(wm.marginTotal - 1009.2) < 0.01 && wm.earned === 2,
+    "and CN6-WM, an associate, is charged the RM51.50 of s031 and s056 on their pooled figure, "
+    + "which is how the charge reaches a card and not only a customer table: " + JSON.stringify({ m: wm.marginTotal, earned: wm.earned }));
+  /* real codes only: the CZ9 fixtures above include a redemption against nothing earned, which is a
+     negative holding by design (the engine carries one and the next unit absorbs it). */
+  const negHold = rd("customerRewards().filter(function(r){return r.free<-0.005&&!/^CZ9/.test(r.id);}).map(function(r){return {id:r.id,margin:r.margin,earned:r.earned,taken:r.taken,free:r.free};})");
+  ok(negHold.length === 0,
+    "and no holding anywhere on the book goes negative: nobody has taken more than the new figure earns: " + JSON.stringify(negHold));
+
+  /* ---- THE TAP, IN A WINDOW OF ITS OWN ----
+     The fixture rows above are pushed straight onto `sales` with a party that is on no roster, which
+     is fine for the reward arithmetic and is not a book the entry form can be driven against. */
+  w.close();
+  const { w: w2 } = await openMaster();
+  const $ = (id) => w2.document.getElementById(id);
+  w2.eval("switchTab('add');wbMode='new';wbDir='SELL';wbApply();");
+  ok(!!$("wbGift") && $("wbGiftWrap").style.display !== "none", "a sale offers the gift tick");
+  $("wbTotal").value = "90"; $("wbCash").value = "90"; $("wbDelivery").value = "15";
+  $("wbGift").checked = true; $("wbGift").onchange();
+  ok($("wbTotal").disabled && $("wbTotal").value === "" && $("wbCash").disabled && $("wbCash").value === "0"
+    && $("wbDelivery").disabled && $("wbDelivery").value === "0",
+    "the tick shuts the three money boxes AND clears them: a gift has no price, takes no cash and "
+    + "carries no carriage, and none of the three may be left behind for the payload to read");
+  ok($("wbTotalLbl").textContent === "Goods (RM), booked at cost",
+    "and the label says where the figure comes from instead: " + $("wbTotalLbl").textContent);
+  $("wbGift").checked = false; $("wbGift").onchange();
+  ok($("wbTotal").disabled === false && $("wbCash").disabled === false, "unticking re-opens all three");
+  w2.eval("wbDir='BUY';wbApply();");
+  ok($("wbGiftWrap").style.display === "none" && $("wbGift").checked === false,
+    "a lot is not given away, so the tick is neither offered nor left ticked on the buy pane");
+
+  /* the entry it queues */
+  const party = String(w2.eval("roster.find(function(c){return c[0]==='C'&&!/-R$/.test(c);})"));
+  const q = JSON.parse(String(w2.eval("(function(){try{queue=[];saveQueue=function(){return Promise.resolve(true);};qPost=function(){return Promise.resolve(true);};"
+    + "switchTab('add');wbMode='new';wbDir='SELL';wbFillParty();wbApply();"
+    + "var set=function(id,v){var e=document.getElementById(id);if(e)e.value=v;};"
+    + "set('wbParty','" + party + "');set('wbQty','1');set('wbDate','2026-09-20');set('wbNote','a thank you');"
+    + "var g=document.getElementById('wbGift');g.checked=true;g.onchange();wbRecord();"
+    + "var e=queue[queue.length-1]||null;return JSON.stringify({e:e,tick:g.checked,qty:document.getElementById('wbQty').value});"
+    + "}catch(e){return JSON.stringify({no:String(e&&e.message)});}})()")));
+  ok(!q.no && !!q.e && q.e.type === "GIFT" && q.e.payload.mode === "gift" && q.e.payload.qty === 1
+    && q.e.payload.total === undefined && q.e.payload.cash === undefined && /^Give 1 unit/.test(q.e.raw),
+    "the tap queues a GIFT carrying the party, the units and the day and NO money figure, because the "
+    + "cost is the shelf's and is the one number this desk never lets a person type over: " + JSON.stringify(q.e && q.e.payload));
+  ok(q.tick === false && q.qty === "",
+    "and the tick is cleared after, as the cover tick is: a gift is decided for each entry, never inherited");
+
+  /* ---- THE DRAFTER MINTS THE CONVENTION, AND NOT THE OTHER ONE ---- */
+  const { draftRow } = await import("../src/drafter.js");
+  const bk = {
+    version: "v729",
+    pricing: { v: "v729", byProduct: { salt: { stockCost: 48, replCost: 48, floors: { "1": { floor: 54 } } } } },
+    purchases: [{ date: "2026-08-13", qty: 50, total: 2400, receivedOn: "2026-08-13" }],
+    sales: [], state: { roster: ["CZ9-GF"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" },
+  };
+  const gift = (pay) => draftRow({ at: "2026-09-20T01:00:00.000Z", payload: Object.assign({ mode: "gift", product: "salt", party: "CZ9-GF", qty: 1, date: "2026-09-20" }, pay) }, bk);
+  const g1 = gift({ kg: 1, handover: "collected", note: "a thank you" });
+  ok(!g1.skip && g1.collection === "sales" && g1.row.total === 48 && g1.row.cost === 48 && g1.row.cash === 0
+    && g1.row.settledRM === 48 && g1.row.goodwill === true && g1.row.deliveredQty === 1 && g1.row.deliveredOn === "2026-09-20",
+    "the drafted row is the convention s176 carries, priced at the shelf's own figure: " + JSON.stringify(g1.row));
+  ok(!g1.skip && g1.row.rebate === undefined,
+    "AND IT CARRIES NO rebate, which is the whole distinction: a gift with that flag would be read as "
+    + "a redemption and escape the very charge this version adds");
+  ok(/charged against their reward/.test(g1.reasoning) && /not a redemption/.test(g1.flags.join(" ")),
+    "and the card says both what it costs and what it is not");
+  ok(!!gift({ party: null }).skip && !!gift({ qty: 0 }).skip && !!gift({ date: null }).skip
+    && /handover is delivered or collected/.test(String(gift({ handover: "banana" }).skip || "")),
+    "a gift with no party, no units, no date or a handover outside the closed list is refused");
+
+  /* A GIFT IS BOOKED AT COST WHATEVER THE ENTRY SAYS, which is the one figure this desk never lets
+     a person type over: the cost of the shelf decides what leaving it costs, not the tap. */
+  const g2 = gift({ total: 999, cash: 500 });
+  ok(!g2.skip && g2.row.total === 48 && g2.row.settledRM === 48 && g2.row.cash === 0,
+    "a gift entry carrying a price and a payment is still booked at the shelf's RM48 with nothing paid: " + JSON.stringify(g2.row));
+
+  /* the Approve card tells the two apart, DRIVEN, because approving them is the same tap and a pin
+     on the source text would stay green through a branch that never runs */
+  const card = (row) => String(w2.eval("apCard(" + JSON.stringify({ collection: "sales", row }) + ")"));
+  const giftCard = card({ customer: "CZ9-GF", qty: 1, total: 48, cost: 48, cash: 0, settledRM: 48, goodwill: true, date: "2026-09-20" });
+  const redCard = card({ customer: "CZ9-GF", qty: 1, total: 48, cost: 48, cash: 0, settledRM: 48, goodwill: true, rebate: true, rebateKg: 1, date: "2026-09-20" });
+  ok(/a gift and not a sale/.test(giftCard) && /Off their reward/.test(giftCard) && !/settled by the reward/.test(giftCard),
+    "the card for a gift says it is one, and names what it costs their reward");
+  ok(/settled by the reward/.test(redCard) && !/a gift and not a sale/.test(redCard),
+    "and the card for a redemption still says the opposite thing, which is what it is");
+  w2.close();
 })();
 
 section("The suite frees its windows: every section's body is its own async function");

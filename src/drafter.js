@@ -1239,6 +1239,51 @@ export function draftRow(entry, book) {
         + " The salt leaves the inventory and the fold rolls the stated shelf by it.",
     };
   }
+  /* v733, HIS INSTRUCTION OF 19 SEP 2026: A FREE UNIT IS A TAP, NOT A HAND FOLD. Four gifts are on
+     the book and every one was typed at the laptop, because the only route that minted a goodwill
+     row was Redeem, which settles against a balance the customer EARNED. A gift is not that: it is
+     salt given away. The two are told apart on the row by one flag and always have been -- a
+     redemption carries `rebate` as well as `goodwill`, a gift carries `goodwill` alone -- and since
+     v729 that distinction also decides whether the giving comes off the reward, so minting the
+     wrong one would charge a customer twice for a unit they had earned.
+     THE PRICE IS THE SHELF'S AND NOT HIS. total, settledRM and cost are all the inventory's own
+     figure, read where every other row's cost is read, so a gift cannot be booked at a number
+     somebody typed. Nothing is owed and nothing is paid: it is settled in kind, in full, on the day. */
+  if (pay.mode === "gift") {
+    const prod = pay.product || "salt";
+    const party = pay.party || null;
+    if (!party) return { skip: "a gift names the party it is for" };
+    const q = isNum(pay.qty) ? +pay.qty : null;
+    if (q == null || !(q > 0)) return { skip: "a gift needs the units handed over" };
+    const when = pay.date || null;
+    if (!when) return { skip: "a gift needs the date the salt went out" };
+    if (!DATE_RE.test(String(when))) return { skip: `the date is not a date in YYYY-MM-DD: ${when}` };
+    if (pay.handover != null && pay.handover !== "" && !HANDOVER.includes(pay.handover))
+      return { skip: `handover is delivered or collected, not ${pay.handover}` };
+    const priced = costFor(book, prod);
+    if (priced.cost == null) return { skip: "the inventory has no cost on the book, so the salt given away cannot be costed" };
+    const cost = round(priced.cost * q);
+    const moved = isNum(pay.kg) ? +pay.kg : q;
+    const roster = (book.state && book.state.roster) || [];
+    const pos = ((book.state && book.state.OPEN && book.state.OPEN.position) || {})[prod] || null;
+    const flags = [];
+    if (!roster.includes(party)) flags.push(`${party} is not on the roster. A new party needs a code and a directory entry before this is committed.`);
+    if (pos && isNum(pos.onHand) && q > pos.onHand + 0.005) flags.push(`This hands over ${round(q)} unit against an inventory the book puts at ${round(pos.onHand)}.`);
+    flags.push(`A gift, not a redemption: it carries goodwill without rebate, so it is booked out of revenue AND comes off ${party}'s reward by its RM ${round(cost)} of cost. A unit they earned is redeemed through Redeem instead, which nets at the reader.`);
+    const row = { customer: party, qty: q, total: cost, cost, cash: 0, settledRM: cost, goodwill: true,
+      deliveredQty: moved, deliveredOn: when, date: when };
+    if (HANDOVER.includes(pay.handover)) row.handover = pay.handover;
+    if (pay.note) row.note = String(pay.note);
+    if (prod !== "salt") row.product = prod;
+    return {
+      collection: "sales",
+      row,
+      flags,
+      reasoning: `Gives ${round(q)} unit of ${prod} free to ${party} on ${when}, at the inventory's own RM ${round(priced.cost)}/unit from ${priced.source}.`
+        + ` Booked as a cost and not as revenue, on his ruling of 11 Sep 2026, and charged against their reward on his decision of 19 Sep 2026: RM ${round(cost)} of margin they would otherwise have earned on.`
+        + " Nothing is owed and nothing is paid; the salt leaves the inventory and the fold rolls the stated shelf by it.",
+    };
+  }
   if (pay.mode && pay.mode !== "new") {
     return { skip: `this entry carries mode "${pay.mode}", which the drafter has no row shape for, so it is left for a person` };
   }
