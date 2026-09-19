@@ -1,6 +1,6 @@
 {
- "v": "v728",
- "stamped": "20 Sep 2026, 03:56 KL",
+ "v": "v729",
+ "stamped": "20 Sep 2026, 04:10 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -4434,8 +4434,26 @@
     "handover": "collected",
     "date": "2026-09-18",
     "deliveredQty": 0,
-    "note": "<b>ONE UNIT OF SALT PROMISED FREE TO CE4-CHE ON 18 SEP, WITH THE SALE ON the row above.</b> Nothing has moved, so it draws no stock and carries no cost yet; it settles as goodwill when the order is collected. Entered on his word of 19 Sep. <b>SETTLED BY GOODWILL FROM THE START, CORRECTED 19 SEP:</b> the row was entered with no settledRM because nothing had moved, and the other six giveaways on the book all carry it. Without it the row would have read RM48 OWED the moment the unit was handed over, so CE4-CHE would have entered the debtor list, counted against their own credit cap and joined the hourly chase, for a gift. A gift is settled when it is given, not when it is paid for.",
-    "settledRM": 48
+    "note": "<b>AMENDED 20 SEP: SETTLED RM AND SETTLED UNITS BOTH BACK TO 0.</b> <b>CORRECTION ON S181 RECORDED 20 SEP: THE SETTLEMENT IS TAKEN BACK OFF.</b> CE4-CHE's row of 1 unit for RM48 dated 18 Sep, the unit promised free with the sale above it, has cash set to 0, delivered quantity to 0, settled RM from RM48 to 0 and settled units from unset to 0. No cash and no stock move. RM48 a unit is 47.8% under his median of RM92, inside his range of RM13 to RM115, and RM4.83 under the RM52.83 floor for this size. Twelve orders, on the roster, not an associate, RM278 outstanding before, no units on credit, nothing defaulted. Nothing has moved, so the row carries no cost yet. The drafter flagged the lot blend: the figures do not answer it. <b>ONE UNIT OF SALT PROMISED FREE TO CE4-CHE ON 18 SEP, WITH THE SALE ON the row above.</b> Nothing has moved, so it draws no stock and carries no cost yet; it settles as goodwill when the order is collected. Entered on his word of 19 Sep. <b>SETTLED BY GOODWILL FROM THE START, CORRECTED 19 SEP:</b> the row was entered with no settledRM because nothing had moved, and the other six giveaways on the book all carry it. Without it the row would have read RM48 OWED the moment the unit was handed over, so CE4-CHE would have entered the debtor list, counted against their own credit cap and joined the hourly chase, for a gift. A gift is settled when it is given, not when it is paid for.",
+    "settledRM": 0,
+    "settledKg": 0,
+    "mod": "corrected on 2026-09-20: settledRM 48 to 0; settledKg (unset) to 0",
+    "amend": [
+     {
+      "date": "2026-09-18",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-20",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S181 RECORDED 20 SEP: THE SETTLEMENT IS TAKEN BACK OFF.</b> CE4-CHE's row of 1 unit for RM48 dated 18 Sep, the unit promised free with the sale above it, has cash set to 0, delivered quantity to 0, settled RM from RM48 to 0 and settled units from unset to 0. No cash and no stock move. RM48 a unit is 47.8% under his median of RM92, inside his range of RM13 to RM115, and RM4.83 under the RM52.83 floor for this size. Twelve orders, on the roster, not an associate, RM278 outstanding before, no units on credit, nothing defaulted. Nothing has moved, so the row carries no cost yet. The drafter flagged the lot blend: the figures do not answer it."
+     }
+    ]
    },
    {
     "customer": "CF5-WM",
@@ -5043,9 +5061,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-19T14:21:54.120Z",
+  "QUEUE_COMMITTED": "2026-09-19T20:06:07.424Z",
   "PRICING": {
-   "takenAt": "2026-09-19T20:03:57.697Z",
+   "takenAt": "2026-09-19T20:10:51.116Z",
    "sizes": [
     0.5,
     1,
@@ -6637,10 +6655,10 @@
      ]
     }
    },
-   "v": "v728"
+   "v": "v729"
   },
   "OPEN": {
-   "at": "2026-09-19T20:03:57.798Z",
+   "at": "2026-09-19T20:10:51.321Z",
    "count": 11,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
@@ -6730,15 +6748,16 @@
      "dir": "S",
      "q": 1,
      "t": 48,
-     "cash": 48,
+     "cash": 0,
      "mv": 0,
-     "st": "oweStock",
+     "st": "part",
+     "oweRM": 48,
      "oweUnits": 1,
      "rid": "s181",
-     "cashRaw": 0,
      "handover": "collected",
      "goodwill": true,
-     "settledRM": 48,
+     "settledRM": 0,
+     "settledKg": 0,
      "key": "CE4-CHE|2026-09-18|48"
     },
     "CM4-MK|2026-09-13|330": {
@@ -6825,9 +6844,9 @@
     "salt": {
      "name": "Salt",
      "onHand": 16.15,
-     "free": 9.01,
-     "owedOut": 7.14,
-     "coverDays": 1.8,
+     "free": 10.01,
+     "owedOut": 6.14,
+     "coverDays": 2,
      "rate": 5.07,
      "owedToYou": 400,
      "promised": 14.26,
@@ -6849,7 +6868,7 @@
     "salt": "2026-09-19",
     "oil": "2026-09-19"
    },
-   "v": "v728"
+   "v": "v729"
   }
  }
 }

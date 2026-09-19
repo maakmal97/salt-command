@@ -1,5 +1,14 @@
 [
  {
+  "v": "v729",
+  "d": "20 Sep 2026",
+  "t": "A FREE UNIT UNSETTLED: THE ROW SAYS NOTHING WAS SETTLED",
+  "n": [
+   "<b>ONE CORRECTION FOLDED, NO CASH AND NO STOCK.</b> The fold applies a patch to s181, the free unit promised to CE4-CHE on 18 Sep against the sale on the row above it: cash to 0, delivered quantity to 0, settled RM from 48 to 0 and settled units from unset to 0. It moves nothing on the shelf and nothing through the till, it only changes what the row says about itself. The row itself is not rewritten here.",
+   "<b>THE DRAFTER'S FLAGS STAND UNANSWERED ON THE FACE OF IT.</b> RM48 a unit is 47.8% under CE4-CHE's usual RM92, and RM48 of goods is RM4.83 below the RM52.83 floor for this size. The inventory spans more than one lot rate, so RM48 a unit is the average rather than the lot this row draws, and the blend wants checking. Stock stands at 16.15 unit on the 19 Sep count, unchanged by this fold."
+  ]
+ },
+ {
   "v": "v728",
   "d": "20 Sep 2026",
   "t": "THE HANDOVER IS ONE WORD, IT DECIDES WHETHER THERE IS A CARRIAGE AT ALL, AND THE FORM TYPES THE TWO FIGURES THE LEDGER STORES",
