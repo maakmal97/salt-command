@@ -1,0 +1,98 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-09-19T23:55:00.483Z",
+   "collection": "sales",
+   "row": {
+    "qty": 5,
+    "total": 420,
+    "cash": 0,
+    "date": "2026-09-19",
+    "customer": "CS6-BS-R"
+   },
+   "reasoning": "Fulfilment against CS6-BS-R's order of 5 unit for RM 420 agreed 2026-09-19. RM 420 and 0 unit move on 2026-09-19, against RM 420 and 0 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s183",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-19T23:55:00.483Z",
+    "type": "AMEND",
+    "party": "CS6-BS-R",
+    "qty": 0,
+    "total": 420,
+    "status": "paid",
+    "raw": "Fulfilment on CS6-BS-R s183: RM 420 cash, recorded 2026-09-19",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CS6-BS-R",
+     "rid": "s183",
+     "orderKey": "CS6-BS-R|2026-09-19|435",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "kind": "Fulfilment",
+     "date": "2026-09-19",
+     "qty": 0,
+     "total": 420,
+     "cash": 420,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-19T23:55:53.796Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-19T23:55:48.820Z",
+   "collection": "sales",
+   "row": {
+    "qty": 12.5,
+    "total": 835,
+    "cash": 800,
+    "date": "2026-09-07",
+    "customer": "CJ4-BJ"
+   },
+   "reasoning": "Fulfilment against CJ4-BJ's order of 12.5 unit for RM 835 agreed 2026-09-07. RM 0 and 6.25 unit move on 2026-09-19, against RM 35 and 6.25 unit outstanding. Leaves RM 35 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s137",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-19T23:55:48.820Z",
+    "type": "AMEND",
+    "party": "CJ4-BJ",
+    "qty": 6.25,
+    "total": 0,
+    "status": "unpaid",
+    "raw": "Fulfilment on CJ4-BJ s137: 6.25 unit moved, recorded 2026-09-19",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CJ4-BJ",
+     "rid": "s137",
+     "orderKey": "CJ4-BJ|2026-09-07|850",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "kind": "Fulfilment",
+     "date": "2026-09-19",
+     "qty": 6.25,
+     "total": 0,
+     "cash": 0,
+     "kg": 6.25
+    }
+   },
+   "decidedAt": "2026-09-19T23:55:55.121Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
