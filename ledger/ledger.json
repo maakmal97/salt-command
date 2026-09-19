@@ -1,6 +1,6 @@
 {
- "v": "v734",
- "stamped": "20 Sep 2026, 07:42 KL",
+ "v": "v735",
+ "stamped": "20 Sep 2026, 07:49 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -4524,10 +4524,29 @@
     "cash": 0,
     "delivery": 15,
     "date": "2026-09-19",
-    "deliveredQty": 0,
+    "deliveredQty": 5,
+    "note": "<b>DELIVERY BOOKED 19 SEP: 5 UNIT HANDED OVER, STILL UNPAID.</b> <b>CORRECTION ON s183 DATED 19 SEP: THE SALT GOES OUT, THE MONEY STAYS OWED.</b> CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, booked as 20260919121050-zhim2a, has delivered quantity moved from 0 to 5, delivered on from unset to 19 Sep and handover from unset to delivered. No cash moves. The total still clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fifteen orders, on the roster, RM420 outstanding before, nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, a blend of lots. RM435 stays outstanding. <b>SALT SELL DATED 19 SEP, PENDING, NOTHING PAID AND NOTHING MOVED.</b> CS6-BS-R takes 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, ordered on the statements site as 20260919121050-zhim2a, acknowledged, on behalf of a friend, to be delivered. The total clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fourteen orders, on the roster, nothing outstanding before and nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, RM405 of goods. The drafter flagged the R2 booking, the 21.9% gap to CS6-BS's usual RM107.5, and that RM48 is a blend of lots. RM435 stays outstanding.",
+    "rid": "s183",
+    "deliveredOn": "2026-09-19",
+    "handover": "delivered",
     "rev": "R2",
-    "note": "<b>SALT SELL DATED 19 SEP, PENDING, NOTHING PAID AND NOTHING MOVED.</b> CS6-BS-R takes 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, ordered on the statements site as 20260919121050-zhim2a, acknowledged, on behalf of a friend, to be delivered. The total clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fourteen orders, on the roster, nothing outstanding before and nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, RM405 of goods. The drafter flagged the R2 booking, the 21.9% gap to CS6-BS's usual RM107.5, and that RM48 is a blend of lots. RM435 stays outstanding.",
-    "rid": "s183"
+    "mod": "corrected on 2026-09-19: deliveredQty 0 to 5; deliveredOn (unset) to 2026-09-19; handover (unset) to delivered",
+    "amend": [
+     {
+      "date": "2026-09-19",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 5,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-19",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s183 DATED 19 SEP: THE SALT GOES OUT, THE MONEY STAYS OWED.</b> CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, booked as 20260919121050-zhim2a, has delivered quantity moved from 0 to 5, delivered on from unset to 19 Sep and handover from unset to delivered. No cash moves. The total still clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fifteen orders, on the roster, RM420 outstanding before, nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, a blend of lots. RM435 stays outstanding."
+     }
+    ]
    }
   ],
   "contacts": [
@@ -5084,7 +5103,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-19T20:06:26.796Z",
   "PRICING": {
-   "takenAt": "2026-09-19T23:42:08.549Z",
+   "takenAt": "2026-09-19T23:49:33.295Z",
    "sizes": [
     0.5,
     1,
@@ -5252,12 +5271,12 @@
     "CS6-BS": {
      "salt": {
       "name": "consistent mid",
-      "orders": 16,
+      "orders": 17,
       "tenureDays": 70,
-      "sinceLastDays": 2,
-      "perMonth": 6.96,
-      "smallShare": 0.5,
-      "bigShare": 0.31,
+      "sinceLastDays": 1,
+      "perMonth": 7.39,
+      "smallShare": 0.47,
+      "bigShare": 0.35,
       "late": 0,
       "frequent": true,
       "small": false,
@@ -6031,40 +6050,40 @@
      "replCost": 45.56,
      "floors": {
       "1": {
-       "floor": 52.83
+       "floor": 51.91
       },
       "2": {
-       "floor": 105.66
+       "floor": 103.83
       },
       "3": {
-       "floor": 158.49
+       "floor": 155.74
       },
       "4": {
-       "floor": 211.32
+       "floor": 207.66
       },
       "5": {
-       "floor": 264.14
+       "floor": 259.57
       },
       "0.5": {
-       "floor": 26.41
+       "floor": 25.96
       },
       "1.5": {
-       "floor": 79.24
+       "floor": 77.87
       },
       "2.5": {
-       "floor": 132.07
+       "floor": 129.79
       },
       "3.5": {
-       "floor": 184.9
+       "floor": 181.7
       },
       "4.5": {
-       "floor": 237.73
+       "floor": 233.62
       },
       "6.25": {
-       "floor": 330.18
+       "floor": 324.47
       },
       "12.5": {
-       "floor": 660.36
+       "floor": 648.93
       }
      },
      "inputs": {
@@ -6139,9 +6158,9 @@
        "repl": 45.56,
        "freightRate": 1.0756,
        "leak": {
-        "ratio": 0.1328,
+        "ratio": 0.1132,
         "leak": 3.85,
-        "sold": 29,
+        "sold": 34,
         "cycles": 3,
         "from": "2026-09-14",
         "to": "2026-09-19"
@@ -6158,15 +6177,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3333333333333333
+         "v": 0.3469387755102041
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.07482808918524693,
+       "shrinkRate": 0.0644092519274849,
        "avgDel": {
-        "n": 157,
-        "kg": 389.2,
-        "mean": 2.479
+        "n": 158,
+        "kg": 394.2,
+        "mean": 2.4949
        }
       },
       "policy": {
@@ -6330,7 +6349,7 @@
       {
        "q": 2.5,
        "prices": [
-        140,
+        130,
         220,
         250,
         290,
@@ -6366,7 +6385,7 @@
       {
        "q": 4,
        "prices": [
-        220,
+        210,
         310,
         360,
         400,
@@ -6390,7 +6409,7 @@
       {
        "q": 5,
        "prices": [
-        270,
+        260,
         370,
         410,
         460,
@@ -6402,7 +6421,7 @@
       {
        "q": 6.25,
        "prices": [
-        340,
+        330,
         440,
         500,
         550,
@@ -6414,7 +6433,7 @@
       {
        "q": 12.5,
        "prices": [
-        670,
+        650,
         850,
         950,
         1050,
@@ -6676,10 +6695,10 @@
      ]
     }
    },
-   "v": "v734"
+   "v": "v735"
   },
   "OPEN": {
-   "at": "2026-09-19T23:42:08.757Z",
+   "at": "2026-09-19T23:49:33.502Z",
    "count": 11,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
@@ -6706,14 +6725,17 @@
      "q": 5,
      "t": 420,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 5,
+     "st": "dueMoney",
      "oweRM": 420,
-     "oweUnits": 5,
      "rid": "s183",
      "as": "CS6-BS",
      "st2": "R2",
-     "key": "CS6-BS-R|2026-09-19|435"
+     "deliveredOn": "2026-09-19",
+     "handover": "delivered",
+     "key": "CS6-BS-R|2026-09-19|435",
+     "age": 1,
+     "exp": 435
     },
     "SA5-BTR|2026-09-19|1725": {
      "d": "2026-09-19",
@@ -6865,11 +6887,11 @@
      "onHand": 16.15,
      "free": 10.01,
      "owedOut": 6.14,
-     "coverDays": 2,
-     "rate": 5.07,
-     "owedToYou": 400,
-     "promised": 18.26,
-     "short": 2.11
+     "coverDays": 1.8,
+     "rate": 5.43,
+     "owedToYou": 835,
+     "promised": 13.26,
+     "short": 0
     },
     "oil": {
      "name": "Oil",
@@ -6887,7 +6909,7 @@
     "salt": "2026-09-19",
     "oil": "2026-09-19"
    },
-   "v": "v734"
+   "v": "v735"
   }
  }
 }
