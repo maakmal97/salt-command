@@ -14843,6 +14843,329 @@ await (async () => {
     "and the file says how it reaches production, because rev.json's id does not cover it and update.mjs would report the phone current");
   ok(typeof stmtW7.scheduled === "function", "and the Worker exports the handler the cron calls");
 })();
+section("v731: an entry carries its stage's own moment, a queue key the desk cannot read is started afresh, and a wait is named");
+await (async () => {
+  /* 20 Sep 2026, measured on the live stores: q:orders held a hand-written value with its quotes stripped
+     since 19 Sep 03:49 UTC, so queueSale threw and every site order failed in silence; and on 18 Sep three
+     acknowledgements queued in one tick shared one `at`, so the drafter's byAt map kept one and the pending
+     row for 4l1kkq was never made. Both Workers are driven here as v694 drives them. */
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, stageAt, queueSale, handoverEntry } = await import("../src/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const deskW = (await import("../src/worker.js")).default;
+  const PE = (await import("../engine/position.mjs")).default;
+
+  const skv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const un = "b3d5-f7h9", un2 = "c4d6-f8h2";   /* two accounts: five open orders is the cap on one */
+  for (const u of [un, un2]) await skv.put("u:" + u, JSON.stringify({ v: 1, issued: "2026-09-01", env: { v: 1, salt: "s", iv: "i", ct: "c" } }));
+  const S = { "X-Stmt-Session": await O.mintSession(senv, un) }, S2 = { "X-Stmt-Session": await O.mintSession(senv, un2) }, D = { "X-Stmt-Desk": "desk-key" };
+  const post = (p, b, h) => stmtW.fetch(new Request("https://site.test" + p, { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(b) }), senv);
+  const J = async (r) => ({ status: r.status, b: await r.json().catch(() => ({})) });
+  const dkv = new KV(); await dkv.put("stmt-users", JSON.stringify({ [un]: "CX1-AB", [un2]: "CX1-AC" }));
+  const STATE = {}, D1 = {
+    prepare(q) {
+      const run = async () => ({});
+      return { bind: (...a) => ({ all: async () => D1._all(q, a), first: async () => D1._first(q), run }),
+        all: async () => D1._all(q, []), first: async () => D1._first(q), run };
+    },
+    async _all(q) {
+      if (/FROM state/.test(q)) return { results: Object.keys(STATE).map((k) => ({ key: k, doc: JSON.stringify(STATE[k]) })) };
+      return { results: [] };
+    },
+    async _first(q) { return /FROM snapshot/.test(q) ? { v: "v731" } : null; }
+  };
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key",
+    STMT_SITE: { fetch: (u, i) => stmtW.fetch(new Request(u, i), senv) } };
+  const Q = async () => JSON.parse((await dkv.get("q:orders")) || '{"queue":[]}').queue;
+  const rec = async (id) => JSON.parse(await skv.get("order:" + un + ":" + id));
+  const put = async (o) => skv.put("order:" + un + ":" + o.id, JSON.stringify(o));
+  const place = async (qty, total) => (await J(await post("/orders", { product: "salt", qty, mode: "collect", unit: total / qty, total, week: "" }, S))).b.order;
+  const ack = (id) => post("/desk/orders/" + un + "/" + id, { status: "acknowledged" }, D);
+  const restamp = async (id, test, at) => { const o = await rec(id); for (const h of o.history) if (test(h)) h.at = at; await put(o); };
+  const ackAt = async (id) => (await rec(id)).history.find((h) => h.status === "acknowledged").at;
+
+  /* ---- 1. TWO ACKNOWLEDGEMENTS IN ONE TICK ARE TWO ENTRIES, each dated the day HE agreed it ---- */
+  const oA = await place(2, 240), oB = await place(1, 120);
+  await ack(oA.id); await ack(oB.id);
+  await restamp(oA.id, (h) => h.status === "acknowledged", "2026-09-18T15:59:30.000Z");   /* 23:59:30 KL on the 18th */
+  await restamp(oB.id, (h) => h.status === "acknowledged", "2026-09-18T16:00:30.000Z");   /* 00:00:30 KL on the 19th */
+  const rc1 = await reconcileOrders(denv);
+  let q = await Q();
+  const eA = q.find((x) => x.raw.includes(oA.id)), eB = q.find((x) => x.raw.includes(oB.id));
+  ok(rc1.queued === 2 && q.length === 2 && new Set(q.map((x) => x.at)).size === 2,
+    "two orders acknowledged in one tick queue two entries under two ids, where one pass's clock gave both the same: " + JSON.stringify(q.map((x) => x.at)));
+  ok(!!eA && eA.at === "2026-09-18T15:59:30.000Z" && !!eB && eB.at === "2026-09-18T16:00:30.000Z",
+    "each entry's at is its own acknowledgement's moment, read off the order's history");
+  ok(eA.payload.date === "2026-09-18" && /\|2026-09-18\|240$/.test(eA.orderKey)
+    && eB.payload.date === "2026-09-19" && /\|2026-09-19\|120$/.test(eB.orderKey),
+    "and the pending row is dated the Kuala Lumpur day he agreed it, inside its key, not the day the cron noticed: " + JSON.stringify([eA.orderKey, eB.orderKey]));
+  ok((await rec(oA.id)).queued.ack === eA.at && (await rec(oA.id)).ledgerKey === eA.orderKey,
+    "the mark written back carries that same moment and key");
+
+  /* ---- 2. A FAILED MARK COMES ROUND AGAIN ONTO THE SAME ID, and the queue holds one copy ---- */
+  const oC = await place(1, 130);
+  await ack(oC.id);
+  const realSite = denv.STMT_SITE.fetch; let refuse = 1;
+  denv.STMT_SITE.fetch = (u, i) => (refuse && i && i.body && String(i.body).includes('"mark"') && String(u).includes(oC.id)
+    ? (refuse--, Promise.resolve(new Response('{"ok":false}', { status: 500 }))) : realSite(u, i));
+  const rc2 = await reconcileOrders(denv);
+  const cAt = await ackAt(oC.id);
+  ok(rc2.queued === 1 && !!rc2.failed && rc2.failed.length === 1 && rc2.failed[0].id === oC.id && typeof rc2.failed[0].why === "string"
+    && !((await rec(oC.id)).queued || {}).ack,
+    "when the mark cannot be written the stage stays owed, and the failure names the order and a reason: " + JSON.stringify(rc2.failed));
+  const rc3 = await reconcileOrders(denv);
+  q = await Q();
+  ok(rc3.queued === 0 && !rc3.failed && q.filter((x) => x.raw.includes(oC.id)).length === 1 && q.find((x) => x.raw.includes(oC.id)).at === cAt
+    && (await rec(oC.id)).queued.ack === cAt,
+    "next minute the same stage comes round under the same id, the queue keeps ONE copy, and the mark lands: " + JSON.stringify(rc3));
+  ok((await reconcileOrders(denv)).queued === 0 && (await Q()).length === q.length, "and a third pass is quiet");
+  denv.STMT_SITE.fetch = realSite;
+
+  /* ---- 3. THE HANDOVER IS STAMPED WITH THE MOMENT HE TYPED IT, AND DATED THE SITE'S OWN DAY ---- */
+  const rowC = { date: (await rec(oC.id)).ledgerKey.split("|")[1], customer: "CX1-AB", product: "salt", qty: 1, total: 130, delivery: 0, cash: 0, deliveredQty: 0, rid: "s729" };
+  STATE.OPEN = { byKey: { [PE.ovKey(rowC)]: Object.assign(PE.ledgerRow(rowC, "S", "salt"), { key: PE.ovKey(rowC) }) } };
+  const rH = await J(await post("/desk/orders/" + un + "/" + oC.id, { handover: { units: 1 } }, D));
+  const oC2 = await rec(oC.id);
+  ok(rH.b.ok && oC2.movedAt === oC2.history[oC2.history.length - 1].at
+    && oC2.movedOn === new Date(oC2.movedAt).toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" }),
+    "the site records the moment of the handover beside its day");
+  oC2.movedAt = "2026-09-18T15:59:40.000Z"; oC2.movedOn = "2026-09-18"; await put(oC2);   /* typed at 23:59:40 KL, reconciled after midnight */
+  await reconcileOrders(denv);
+  const eH = (await Q()).find((x) => x.status === "Handover" && x.raw.includes(oC.id));
+  ok(!!eH && eH.at === "2026-09-18T15:59:40.000Z" && eH.payload.date === "2026-09-18" && eH.payload.fields.deliveredOn === "2026-09-18",
+    "the Correction carries that moment and that day, so the row and the order cannot straddle midnight: " + JSON.stringify([eH && eH.at, eH && eH.payload.date]));
+  const older = { id: "20260901000000-old", qty: 1, total: 100, mode: "collect", moved: 1, movedOn: "2026-09-01",
+    history: [{ at: "2026-09-01T02:00:00.000Z", status: "acknowledged", by: "desk" }, { at: "2026-09-01T03:00:00.000Z", status: "ready", by: "desk", note: "1 unit collected" }] };
+  ok(stageAt(older, "move", new Date("2026-09-20T00:00:00Z")).toISOString() === "2026-09-01T03:00:00.000Z"
+    && stageAt(older, "ack", new Date()).toISOString() === "2026-09-01T02:00:00.000Z"
+    && stageAt({ history: [] }, "pay", new Date("2026-09-20T00:00:00Z")).toISOString() === "2026-09-20T00:00:00.000Z"
+    && handoverEntry(older, "CX1-AB", 1, stageAt(older, "move", new Date())).payload.fields.deliveredOn === "2026-09-01",
+    "an order from before movedAt existed is stamped off its handover note, and a stage with no moment of its own takes the pass's clock");
+  ok(handoverEntry({ id: "20260901000000-bare", qty: 1, mode: "collect", movedOn: "2026-09-01", history: [] }, "CX1-AB", 1, new Date("2026-09-20T00:00:00Z")).payload.fields.deliveredOn === "2026-09-01",
+    "and a record with a day but no moment still dates the Correction the day the site holds");
+  /* the payment and the withdrawal carry their own moments too */
+  await post("/orders/" + oC.id + "/method", { method: "tngbiz" }, S);
+  const rP = await J(await post("/orders/" + oC.id + "/pay", { amount: 30 }, S));
+  { const o = await rec(oC.id); o.payments[0].at = "2026-09-18T16:30:00.000Z"; await put(o); }   /* paid at 00:30 KL, reconciled later */
+  await reconcileOrders(denv);
+  const eP = (await Q()).find((x) => x.status === "Payment" && x.raw.includes(oC.id));
+  ok(rP.b.ok && !!eP && eP.at === "2026-09-18T16:30:00.000Z" && eP.payload.date === "2026-09-19" && eP.payload.cash === 30,
+    "a Fulfilment is stamped with the payment's own moment and dated its Kuala Lumpur day: " + JSON.stringify([eP && eP.at, eP && eP.payload.date]));
+  const oF = await place(1, 150); await ack(oF.id); await reconcileOrders(denv);
+  const rowF = { date: (await rec(oF.id)).ledgerKey.split("|")[1], customer: "CX1-AB", product: "salt", qty: 1, total: 150, delivery: 0, cash: 0, deliveredQty: 0, rid: "s730" };
+  STATE.OPEN.byKey[PE.ovKey(rowF)] = Object.assign(PE.ledgerRow(rowF, "S", "salt"), { key: PE.ovKey(rowF) });
+  await post("/orders/" + oF.id + "/cancel", {}, S);
+  await restamp(oF.id, (h) => h.status === "cancelled", new Date(Date.parse(await ackAt(oF.id)) + 5000).toISOString());
+  await reconcileOrders(denv);
+  const eX = (await Q()).find((x) => x.status === "Cancellation" && x.raw.includes(oF.id));
+  ok(!!eX && eX.at === (await rec(oF.id)).history.find((h) => h.status === "cancelled").at && (await rec(oF.id)).queued.cancel === eX.at,
+    "and a Cancellation with the withdrawal's: " + JSON.stringify([eX && eX.at]));
+  /* two stages of one order in the same millisecond would share a draft id: the later takes the next */
+  const oG = await place(1, 170); await ack(oG.id); await reconcileOrders(denv);
+  await dkv.delete("q:orders");   /* the laptop drained the queue in between: the queue itself can no longer see the acknowledgement */
+  const rowG = { date: (await rec(oG.id)).ledgerKey.split("|")[1], customer: "CX1-AB", product: "salt", qty: 1, total: 170, delivery: 0, cash: 0, deliveredQty: 0, rid: "s731" };
+  STATE.OPEN.byKey[PE.ovKey(rowG)] = Object.assign(PE.ledgerRow(rowG, "S", "salt"), { key: PE.ovKey(rowG) });
+  await post("/orders/" + oG.id + "/cancel", {}, S);
+  const gAck = await ackAt(oG.id);
+  await restamp(oG.id, (h) => h.status === "cancelled", gAck);
+  const nG = (await Q()).length;
+  await reconcileOrders(denv);
+  const eG = (await Q()).find((x) => x.status === "Cancellation" && x.raw.includes(oG.id));
+  ok((await Q()).length === nG + 1 && !!eG && eG.at === new Date(Date.parse(gAck) + 1).toISOString() && (await rec(oG.id)).queued.cancel === eG.at,
+    "a withdrawal stamped in the acknowledgement's own millisecond takes the next one rather than vanishing into its id: " + JSON.stringify([gAck, eG && eG.at]));
+  /* and two stages in one pass in the same millisecond: the queue keeps them apart even with no pass-level memory of either */
+  const oH = await place(2, 260); await ack(oH.id); await reconcileOrders(denv);
+  const rowH = { date: (await rec(oH.id)).ledgerKey.split("|")[1], customer: "CX1-AB", product: "salt", qty: 2, total: 260, delivery: 0, cash: 0, deliveredQty: 0, rid: "s732" };
+  STATE.OPEN.byKey[PE.ovKey(rowH)] = Object.assign(PE.ledgerRow(rowH, "S", "salt"), { key: PE.ovKey(rowH) });
+  await post("/orders/" + oH.id + "/method", { method: "tngbiz" }, S);
+  await post("/orders/" + oH.id + "/pay", { amount: 10 }, S);
+  await post("/desk/orders/" + un + "/" + oH.id, { handover: { units: 1 } }, D);
+  { const o = await rec(oH.id); o.payments[0].at = "2026-09-18T17:00:00.000Z"; o.movedAt = "2026-09-18T17:00:00.000Z"; o.movedOn = "2026-09-19"; await put(o); }
+  await reconcileOrders(denv);
+  const hP = (await Q()).find((x) => x.status === "Payment" && x.raw.includes(oH.id)), hM = (await Q()).find((x) => x.status === "Handover" && x.raw.includes(oH.id));
+  ok(!!hP && !!hM && hP.at === "2026-09-18T17:00:00.000Z" && hM.at === "2026-09-18T17:00:00.001Z" && (await rec(oH.id)).queued.moved === 1,
+    "a payment and a handover typed in the same millisecond queue as two entries a millisecond apart, and both are told: " + JSON.stringify([hP && hP.at, hM && hM.at]));
+  await post("/desk/orders/" + un + "/" + oH.id, { handover: { units: 2 } }, D);
+  { const o = await rec(oH.id); o.movedAt = "2026-09-18T17:00:00.000Z"; await put(o); }   /* the rest, stamped in that same millisecond, queued a pass later */
+  await reconcileOrders(denv);
+  const hM2 = (await Q()).filter((x) => x.status === "Handover" && x.raw.includes(oH.id));
+  ok(hM2.length === 2 && hM2[1].at === "2026-09-18T17:00:00.002Z" && hM2[1].payload.fields.deliveredQty === 2 && (await rec(oH.id)).queued.moved === 2,
+    "and a stage from a later pass that lands on an id the queue already holds takes the next free millisecond rather than vanishing: " + JSON.stringify(hM2.map((x) => x.at)));
+
+  /* ---- 4. A QUEUE KEY THE DESK CANNOT READ IS STARTED AFRESH, LOUDLY, and the stage lands ---- */
+  dkv.m.set("q:orders", "{updated:2026-09-19T03:49:18.402Z,desk:cloud,queue:[{at:2026-09-16T09:39:17.951Z,type:SELL}]}");   /* the live value of 19 Sep, quotes stripped by a shell */
+  const oD = await place(1, 140); await ack(oD.id);
+  const realLog = console.log, logs = [];
+  console.log = (...x) => logs.push(x.join(" "));
+  let rc4; try { rc4 = await reconcileOrders(denv); } finally { console.log = realLog; }
+  const qD = JSON.parse(await dkv.get("q:orders"));
+  ok(rc4.queued === 1 && !rc4.failed && qD.device === "orders" && qD.queue.length === 1 && qD.queue[0].raw.includes(oD.id) && !!(await rec(oD.id)).queued.ack,
+    "the corrupt key is replaced by a queue holding the one entry, and the stage is told: " + JSON.stringify(rc4));
+  ok(logs.some((l) => /^orders queue: q:orders could not be read and is started afresh \(.+\); it held: \{updated:2026-09-19/.test(l)),
+    "and the log names the key, the reason and the head of what it held: " + JSON.stringify(logs));
+  ok((await queueSale(denv, qD.queue[0])) === false && JSON.parse(await dkv.get("q:orders")).queue.length === 1,
+    "an entry queued again under an at already in the queue is not queued twice");
+  /* and the catch: a queue write that throws names its reason */
+  const oE = (await J(await post("/orders", { product: "salt", qty: 1, mode: "collect", unit: 160, total: 160, week: "" }, S2))).b.order;
+  await post("/desk/orders/" + un2 + "/" + oE.id, { status: "acknowledged" }, D);
+  const recE = async () => JSON.parse(await skv.get("order:" + un2 + ":" + oE.id));
+  const realPut = dkv.put.bind(dkv); let boom = 1;
+  dkv.put = async (k, v, o) => { if (boom && k === "q:orders") { boom--; throw new Error("kv put refused"); } return realPut(k, v, o); };
+  const rc4b = await reconcileOrders(denv);
+  dkv.put = realPut;
+  ok(rc4b.queued === 0 && !!rc4b.failed && rc4b.failed[0].id === oE.id && rc4b.failed[0].why === "kv put refused" && !((await recE()).queued || {}).ack,
+    "a queue write that throws is reported with the order and the thrown reason, and the stage stays owed: " + JSON.stringify(rc4b.failed));
+  ok((await reconcileOrders(denv)).queued === 1 && !!(await recE()).queued.ack, "and it lands on the next pass");
+
+  /* ---- 5. A WAIT IS NAMED IN THE LOG ---- */
+  await post("/orders/" + oD.id + "/method", { method: "tngbiz" }, S);
+  await post("/orders/" + oD.id + "/pay", { amount: 40 }, S);
+  await dkv.put("orders:nudged", "2999-01-01T00:00:00.000Z");   /* no wake in this tick: the wait is what is being read */
+  const waits = [], logs5 = [];
+  console.log = (...x) => logs5.push(x.join(" "));
+  try { await deskW.scheduled({ cron: "* * * * *", scheduledTime: Date.parse("2026-09-20T01:07:00Z") }, denv, { waitUntil: (p) => waits.push(p) }); await Promise.all(waits); }
+  finally { console.log = realLog; }
+  ok(logs5.some((l) => /^orders reconcile: .*"waiting":\["/.test(l) && l.includes(oD.id)),
+    "a payment held for its row is named on the cron's log line, where it was silent: " + JSON.stringify(logs5));
+})();
+section("v731: the desk says what it made of each order's stage, on the record, on the card and in the drain");
+await (async () => {
+  /* 20 Sep 2026: a stage that waited for its row, or failed, was invisible on every surface, and the Site
+     orders card said "queued within the minute" whatever had happened. The reconcile now writes a sync
+     state onto the order through the mark road, only when it changes; the card reads it; and the drain
+     tool, which corrupted q:orders on 19 Sep by handing JSON to a shell, writes through a file and names a
+     key it cannot read. */
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders } = await import("../src/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const PE = (await import("../engine/position.mjs")).default;
+  const DR = await import("../tools/drain.mjs");
+
+  const skv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const un = "c4e6-g8j2", un2 = "d5f7-h9k3";
+  for (const u of [un, un2]) await skv.put("u:" + u, JSON.stringify({ v: 1, issued: "2026-09-01", env: { v: 1, salt: "s", iv: "i", ct: "c" } }));
+  const S = { "X-Stmt-Session": await O.mintSession(senv, un) }, S2 = { "X-Stmt-Session": await O.mintSession(senv, un2) }, D = { "X-Stmt-Desk": "desk-key" };
+  const post = (p, b, h) => stmtW.fetch(new Request("https://site.test" + p, { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(b) }), senv);
+  const J = async (r) => ({ status: r.status, b: await r.json().catch(() => ({})) });
+  const dkv = new KV(); await dkv.put("stmt-users", JSON.stringify({ [un]: "CX2-AC" }));   /* un2 is unmapped */
+  const STATE = {}, D1 = {
+    prepare(q) {
+      const run = async () => ({});
+      return { bind: (...a) => ({ all: async () => D1._all(q, a), first: async () => D1._first(q), run }),
+        all: async () => D1._all(q, []), first: async () => D1._first(q), run };
+    },
+    async _all(q) {
+      if (/FROM state/.test(q)) return { results: Object.keys(STATE).map((k) => ({ key: k, doc: JSON.stringify(STATE[k]) })) };
+      return { results: [] };
+    },
+    async _first(q) { return /FROM snapshot/.test(q) ? { v: "v731" } : null; }
+  };
+  const syncs = [];   /* every sync write that crosses the binding */
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key",
+    STMT_SITE: { fetch: (u, i) => { if (i && i.body && String(i.body).includes('"sync"')) syncs.push(String(u)); return stmtW.fetch(new Request(u, i), senv); } } };
+  const rec = async (u, id) => JSON.parse(await skv.get("order:" + u + ":" + id));
+  const place = async (h, qty, total) => (await J(await post("/orders", { product: "salt", qty, mode: "collect", unit: total / qty, total, week: "" }, h))).b.order;
+  const ack = (u, id) => post("/desk/orders/" + u + "/" + id, { status: "acknowledged" }, D);
+
+  /* ---- 1. QUEUED, THEN WAITING, WRITTEN ONCE EACH ---- */
+  const oA = await place(S, 1, 130); await ack(un, oA.id);
+  await reconcileOrders(denv);
+  let a = await rec(un, oA.id);
+  ok(a.sync && a.sync.state === "queued" && a.sync.why === "" && /^\d{4}-\d\d-\d\dT/.test(a.sync.at) && syncs.length === 1,
+    "the acknowledgement's pass writes queued onto the order, once: " + JSON.stringify(a.sync));
+  await post("/orders/" + oA.id + "/method", { method: "tngbiz" }, S);
+  await post("/orders/" + oA.id + "/pay", { amount: 30 }, S);
+  const rcW = await reconcileOrders(denv);
+  a = await rec(un, oA.id);
+  ok(JSON.stringify(rcW.waiting) === JSON.stringify([oA.id]) && a.sync.state === "waiting" && /^the payment waits for the pending row/.test(a.sync.why) && syncs.length === 2,
+    "a payment held for its row writes waiting, naming the stage and what he can do: " + JSON.stringify(a.sync));
+  const since = a.sync.at;
+  await reconcileOrders(denv); await reconcileOrders(denv);
+  ok(syncs.length === 2 && (await rec(un, oA.id)).sync.at === since,
+    "two more passes with nothing changed write nothing, so a wait costs one write and keeps the moment it began");
+  const rowA = { date: a.ledgerKey.split("|")[1], customer: "CX2-AC", product: "salt", qty: 1, total: 130, delivery: 0, cash: 0, deliveredQty: 0, rid: "s730" };
+  STATE.OPEN = { byKey: { [PE.ovKey(rowA)]: Object.assign(PE.ledgerRow(rowA, "S", "salt"), { key: PE.ovKey(rowA) }) } };
+  await reconcileOrders(denv);
+  a = await rec(un, oA.id);
+  ok(a.sync.state === "queued" && a.queued.paid === 30 && syncs.length === 3,
+    "with the row on the book the payment queues and the record reads queued again");
+
+  /* ---- 2. FAILED, WITH THE REASON ---- */
+  await post("/desk/orders/" + un + "/" + oA.id, { handover: { units: 1 } }, D);
+  const realPut = dkv.put.bind(dkv); let boom = 1;
+  dkv.put = async (k, v, o) => { if (boom && k === "q:orders") { boom--; throw new Error("kv put refused"); } return realPut(k, v, o); };
+  const rcF = await reconcileOrders(denv);
+  dkv.put = realPut;
+  a = await rec(un, oA.id);
+  ok(rcF.failed && rcF.failed[0].why === "kv put refused" && a.sync.state === "failed" && a.sync.why === "kv put refused" && syncs.length === 4,
+    "a queue write that throws is written onto the order as failed with the thrown reason: " + JSON.stringify(a.sync));
+  await reconcileOrders(denv);
+  a = await rec(un, oA.id);
+  ok(a.sync.state === "queued" && a.queued.moved === 1 && syncs.length === 5, "and the next pass lands the handover and says so");
+
+  /* ---- 3. UNMAPPED IS A WAIT TOO, AND THE MARK BRANCH KEEPS THE FIELD HONEST ---- */
+  const oU = await place(S2, 1, 100); await ack(un2, oU.id);
+  const rcU = await reconcileOrders(denv);
+  const u = await rec(un2, oU.id);
+  ok(JSON.stringify(rcU.unmapped) === JSON.stringify([oU.id]) && u.sync && u.sync.state === "waiting" && /publish the statements again/.test(u.sync.why),
+    "an account the desk cannot map is told it waits for a publish, rather than left with no word: " + JSON.stringify(u.sync));
+  await post("/desk/orders/" + un + "/" + oA.id, { mark: { sync: { state: "nonsense", why: "x" } } }, D);
+  ok((await rec(un, oA.id)).sync.state === "queued", "a state the desk does not use is not stored");
+  await post("/desk/orders/" + un + "/" + oA.id, { mark: { sync: { state: "failed", why: "y".repeat(300), at: "z".repeat(60) } } }, D);
+  const m = (await rec(un, oA.id)).sync;
+  ok(m.state === "failed" && m.why.length === 200 && m.at.length === 40, "and the reason and the moment are capped");
+
+  /* ---- 4. THE CARD READS THE RECORD ---- */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const base = { id: "20260920010000-card01", u: un, code: "CX2-AC", status: "acknowledged", product: "salt", qty: 1, mode: "collect", unit: 130, total: 130, delivery: 0,
+    paid: 100, moved: 0, at: "2026-09-20T01:00:00.000Z", history: [{ at: "2026-09-20T01:00:00.000Z", status: "acknowledged", by: "desk" }] };
+  w.ORD_OPEN = [];
+  const card = (extra) => String(w.ordCard(Object.assign({}, base, extra)));
+  const waiting = card({ queued: { ack: "2026-09-20T01:00:00.000Z" }, sync: { state: "waiting", why: "the payment waits for the pending row to reach the book: approve it under Approve, and the fold lands it", at: "2026-09-20T01:02:00.000Z" } });
+  ok(/the payment waits for the pending row to reach the book/.test(waiting) && /waiting since 20 Sept?, 09:02/.test(waiting) && !/queued within the minute/.test(waiting),
+    "an order whose payment waits says so, and since when, where it promised the entry was queued");
+  const failed = card({ queued: { ack: "2026-09-20T01:00:00.000Z" }, sync: { state: "failed", why: "kv put refused", at: "2026-09-20T01:03:00.000Z" } });
+  ok(/could not tell it: kv put refused/.test(failed) && /tries again every minute/.test(failed) && !/queued within the minute/.test(failed),
+    "an order the desk could not tell the ledger about says why, and that it retries");
+  ok(/queued within the minute/.test(card({ queued: { ack: "2026-09-20T01:00:00.000Z" } })),
+    "with nothing written yet the card still says the entry is queued within the minute");
+  ok(/on the row this order made/.test(card({ queued: { ack: "2026-09-20T01:00:00.000Z", paid: 100 }, sync: { state: "queued", why: "", at: "2026-09-20T01:04:00.000Z" } })),
+    "and once every stage is told it says so, whatever the last pass wrote");
+  ok(!/<script/.test(card({ queued: { ack: "x" }, sync: { state: "waiting", why: "<script>alert(1)</script>", at: "2026-09-20T01:02:00.000Z" } })) ,
+    "a reason is escaped on the way onto the card");
+  w.close();
+
+  /* ---- 5. THE DRAIN: a key it cannot read is named and left alone, and a rewrite goes through a file ---- */
+  const corrupt = "{updated:2026-09-19T03:49:18.402Z,desk:cloud,queue:[{at:2026-09-16T09:39:17.951Z,type:SELL}]}";
+  ok(DR.deviceQueue(corrupt) === null && JSON.stringify(DR.deviceQueue('{"device":"orders","queue":[{"at":"a1"}]}')) === '[{"at":"a1"}]',
+    "deviceQueue reads a device key or says it cannot");
+  const store = { "q:bad": corrupt, "q:good": JSON.stringify({ device: "good", queue: [{ at: "a1", raw: "one" }, { at: "a2", raw: "two" }] }) };
+  const io = { list: () => Object.keys(store), get: (k) => store[k] ?? null, del: (k) => { delete store[k]; return true; },
+    put: (k, obj) => { puts.push([k, obj]); store[k] = JSON.stringify(obj); }, read: () => ({ updated: null, desk: "cloud", queue: [] }), write: () => {} };
+  const puts = [], realLog = console.log, lines = [];
+  console.log = (...x) => lines.push(x.join(" "));
+  try { DR.runStatus({ io }); } finally { console.log = realLog; }
+  ok(lines.some((l) => /^KV: 2 device key\(s\), 1 unreadable, 2 entries\./.test(l)) && lines.some((l) => /^  q:bad could not be parsed \(\d+ bytes\): \{updated:2026-09-19/.test(l)),
+    "--status counts the unreadable key and prints its head, where it counted 0 entries: " + JSON.stringify(lines.slice(0, 3)));
+  const lines2 = []; console.log = (...x) => lines2.push(x.join(" "));
+  try { DR.runForget({ at: "a1", io }); } finally { console.log = realLog; }
+  ok(puts.length === 1 && puts[0][0] === "q:good" && typeof puts[0][1] === "object" && JSON.stringify(puts[0][1].queue) === '[{"at":"a2","raw":"two"}]' && puts[0][1].device === "good"
+    && store["q:bad"] === corrupt && lines2.some((l) => /q:bad could not be parsed and is left alone/.test(l)),
+    "--forget rewrites the device key as an OBJECT through the put road, in the Worker's own shape, and leaves the key it cannot read: " + JSON.stringify(puts));
+  const lines3 = []; console.log = (...x) => lines3.push(x.join(" "));
+  try { DR.runForget({ at: "a2", io }); } finally { console.log = realLog; }
+  ok(puts.length === 1 && !("q:good" in store), "and the last entry out deletes the key rather than writing an empty queue");
+  const lines4 = []; console.log = (...x) => lines4.push(x.join(" "));
+  let r4; try { r4 = DR.runDrain({ io }); } finally { console.log = realLog; }
+  ok(r4.kept === 1 && r4.cleared === 0 && store["q:bad"] === corrupt && lines4.some((l) => /q:bad could not be parsed and is left alone/.test(l)),
+    "the destructive drain never deletes a key it could not read");
+  const src = readFileSync(join(REPO, "tools", "drain.mjs"), "utf8");
+  ok(/wr\(\["kv", "key", "put", name, "--path", file\]\)/.test(src) && !/"put", name, JSON\.stringify/.test(src),
+    "the only KV put in drain.mjs goes through --path, never a JSON argument the shell can strip");
+})();
 section("v703: an associate ticks an order as on behalf of a friend, and it books to their bucket");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "their order, or their resale orders can no longer be

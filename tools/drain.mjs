@@ -32,6 +32,9 @@
  *   node tools/drain.mjs --forget <at> withdraw ONE entry, from the file and from KV, by
  *                                      its own `at`. For testing the phone leg without
  *                                      leaving a fake sale for the daily run to commit.
+ *                                      It rewrites a KV key through --path, never as a
+ *                                      JSON argument: the win32 shell strips the quotes.
+ *   A device key that cannot be parsed is NAMED by every mode and deleted by none.
  *
  * Env:  SALT_DATA overrides the 10_Data folder. Uses the machine's existing wrangler auth;
  *       an unattended run may need CLOUDFLARE_API_TOKEN set.
@@ -80,6 +83,25 @@ function kvGet(name) {
 function kvDelete(name) {
   try { wr(["kv", "key", "delete", name]); return true; } catch (e) { return false; }
 }
+/* WRITE THROUGH A FILE, NEVER AN ARGUMENT (20 Sep 2026). wr() runs wrangler through the shell on
+   win32 (shell: true above), and the shell strips the double quotes from a JSON argument: on 19 Sep
+   --forget wrote q:orders as {updated:...,desk:cloud,queue:[...]}, the Worker's json read threw on
+   it every minute, and every site order failed in silence for a day. --path hands wrangler the bytes. */
+function kvPut(name, obj) {
+  const dir = _mkdtemp(_join(_tmpdir(), "drain-")), file = _join(dir, "value.json");
+  _write(file, JSON.stringify(obj));
+  try { wr(["kv", "key", "put", name, "--path", file]); }
+  finally { try { _rm(dir, { recursive: true, force: true }); } catch (e) { /* a temp dir */ } }
+}
+/* ONE READER for a device key: its queue, or null when the value cannot be read, so every mode says
+   so rather than counting it as empty, which is how the corrupt key hid behind "0 entries". */
+export function deviceQueue(raw) {
+  const j = jsonSlice(raw, "{", "}");
+  return (j && Array.isArray(j.queue)) ? j.queue : null;
+}
+import { mkdtempSync as _mkdtemp, rmSync as _rm, writeFileSync as _write } from "node:fs";
+import { tmpdir as _tmpdir } from "node:os";
+import { join as _join } from "node:path";
 
 /* ---- file helpers --------------------------------------------------------------- */
 function readFile() {
@@ -135,13 +157,15 @@ function runCommitted() {
   console.log(`PRUNED ${gone} committed entr${gone === 1 ? "y" : "ies"} (<= ${iso}); ${f.queue.length} remain in ${FILE}.`);
 }
 
-function runStatus() {
+export function runStatus({ io = {} } = {}) {
+  const IO = Object.assign({ list: kvList, get: kvGet, read: readFile }, io);
   let keys = [];
-  try { keys = kvList(); } catch (e) { console.error("KV unreachable: " + e.message); process.exit(1); }
-  const kv = [];
-  for (const k of keys) { const v = kvGet(k); if (v) { const j = jsonSlice(v, "{", "}"); if (j && Array.isArray(j.queue)) kv.push(...j.queue); } }
-  const file = readFile();
-  console.log(`KV: ${keys.length} device key(s), ${kv.length} entr${kv.length === 1 ? "y" : "ies"}.`);
+  try { keys = IO.list(); } catch (e) { console.error("KV unreachable: " + e.message); process.exit(1); }
+  const kv = [], bad = [];
+  for (const k of keys) { const v = IO.get(k); if (v) { const qq = deviceQueue(v); if (qq) kv.push(...qq); else bad.push([k, v]); } }
+  const file = IO.read();
+  console.log(`KV: ${keys.length} device key(s), ${bad.length} unreadable, ${kv.length} entr${kv.length === 1 ? "y" : "ies"}.`);
+  for (const [k, v] of bad) console.log(`  ${k} could not be parsed (${Buffer.byteLength(v, "utf8")} bytes): ${v.slice(0, 80)}`);
   console.log(`File ${FILE}: ${file.queue.length} entr${file.queue.length === 1 ? "y" : "ies"}.`);
   const all = unionByAt(file.queue, kv);
   console.log(`Union (dedup by at): ${all.length}.`);
@@ -179,8 +203,8 @@ export function runDrain({ keep = false, io = {} } = {}) {
   for (const name of keys) {
     const raw = IO.get(name);
     if (!raw) continue;
-    const j = jsonSlice(raw, "{", "}");
-    captured.push({ name, raw, entries: (j && Array.isArray(j.queue)) ? j.queue : [] });
+    const qq = deviceQueue(raw);
+    captured.push({ name, raw, entries: qq || [], unreadable: !qq });
   }
   const fresh = captured.flatMap(c => c.entries);
   const file = IO.read();
@@ -190,6 +214,7 @@ export function runDrain({ keep = false, io = {} } = {}) {
   let cleared = 0, kept = 0;
   if (!keep) {
     for (const c of captured) {
+      if (c.unreadable) { kept++; console.log("  " + c.name + " could not be parsed and is left alone"); continue; }
       const now = IO.get(c.name);           // re-read: only delete if this device has not pushed since
       if (now !== null && now === c.raw) { if (IO.del(c.name)) cleared++; }
       else kept++;                          // changed mid-drain; its new entries land next drain (dedup by at)
@@ -204,30 +229,32 @@ export function runDrain({ keep = false, io = {} } = {}) {
 }
 
 /* --forget <at>: take one entry back out of BOTH the file and KV. */
-function runForget() {
-  const at = process.argv[3];
+export function runForget({ at = process.argv[3], io = {} } = {}) {
+  const IO = Object.assign({ list: kvList, get: kvGet, del: kvDelete, put: kvPut, read: readFile, write: writeAtomic }, io);
   if (!at) { console.error("usage: drain.mjs --forget <the entry's own at, e.g. 2026-08-09T04:12:33.123Z>"); process.exit(2); }
 
-  const f = readFile();
+  const f = IO.read();
   const before = f.queue.length;
   f.queue = forgetOne(f.queue, at);
   const fromFile = before - f.queue.length;
-  if (fromFile) { f.updated = nowISO(); writeAtomic(f); }
+  if (fromFile) { f.updated = nowISO(); IO.write(f); }
 
   /* and out of KV, or the next drain would simply bring it back */
   let fromKv = 0, keys = [];
-  try { keys = kvList(); }
+  try { keys = IO.list(); }
   catch (e) { console.error("KV unreachable, so only the file was cleaned: " + wranglerSaid(e)); }
   for (const name of keys) {
-    const raw = kvGet(name); if (!raw) continue;
-    const j = jsonSlice(raw, "{", "}"); if (!j || !Array.isArray(j.queue)) continue;
-    if (!j.queue.some(e => e && e.at === at)) continue;
-    const kept = forgetOne(j.queue, at);
-    fromKv += j.queue.length - kept.length;
+    const raw = IO.get(name); if (!raw) continue;
+    const qq = deviceQueue(raw);
+    if (!qq) { console.log("  " + name + " could not be parsed and is left alone"); continue; }
+    if (!qq.some(e => e && e.at === at)) continue;
+    const kept = forgetOne(qq, at);
+    fromKv += qq.length - kept.length;
     if (kept.length) {
-      try { wr(["kv", "key", "put", name, JSON.stringify({ updated: nowISO(), desk: j.desk || "cloud", queue: kept })]); }
+      /* the DEVICE shape the Worker writes, and through --path: a JSON argument loses its quotes to the shell */
+      try { IO.put(name, { device: name.slice(2), updated: nowISO(), queue: kept }); }
       catch (e) { console.error("  could not rewrite " + name + ": " + wranglerSaid(e)); }
-    } else { kvDelete(name); }
+    } else { IO.del(name); }
   }
   console.log(`FORGOT ${at}`);
   console.log(`  removed from the file: ${fromFile}   removed from KV: ${fromKv}`);

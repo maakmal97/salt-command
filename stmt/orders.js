@@ -5,7 +5,8 @@
  * after the statements and the price list, and this file is the whole of its state machine.
  *
  * WHAT AN ORDER IS. One record, order:<username>:<id>, in this site's own store:
- *   { id, u, product, qty, mode, unit, total, week, at, status, history[], method?, account? }
+ *   { id, u, product, qty, mode, unit, total, week, at, status, history[], method?, account?,
+ *     paid, payments[], moved, movedOn, movedAt?, queued?, ledgerKey? }
  * Plaintext, unlike everything else here, and the reason is stated rather than hidden: the
  * record is written at runtime by the customer, and this Worker holds no key to seal it with.
  * It carries a size, a quoted total and a state; no name, no code, no address. The desk code
@@ -325,6 +326,12 @@ export async function deskMove(env, u, id, body) {
     if (typeof m.ledgerKey === "string" && m.ledgerKey) order.ledgerKey = m.ledgerKey;
     for (const k of ["ack", "cancel"]) if (m[k]) q[k] = String(m[k]).slice(0, 40);
     for (const k of ["paid", "moved"]) if (typeof m[k] === "number" && Number.isFinite(m[k])) q[k] = +m[k].toFixed(3);
+    /* 20 Sep 2026: and what the desk made of its last pass over this order, so his card can say the
+       truth: queued, waiting for its row, or failed, with the reason and when it was last written. The
+       desk writes it only when it changes. It never reaches the customer's page, which reads history
+       and figures alone. */
+    if (m.sync && typeof m.sync === "object" && ["queued", "waiting", "failed"].includes(m.sync.state))
+      order.sync = { state: m.sync.state, why: String(m.sync.why || "").slice(0, 200), at: String(m.sync.at || at).slice(0, 40) };
     order.queued = q;
     await env.STMT.put(OKEY(u, id), JSON.stringify(order));
     return { order };
@@ -338,6 +345,7 @@ export async function deskMove(env, u, id, body) {
       return { error: "the units handed over have to be a figure from zero to the " + order.qty + " ordered", status: 400 };
     order.moved = +n.toFixed(3);
     order.movedOn = klDay(at);
+    order.movedAt = at;   /* the moment, for the desk to stamp the Correction with (20 Sep 2026) */
     if (MODES.includes(body.handover.mode)) order.mode = body.handover.mode;
     order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
     settle(order, at);

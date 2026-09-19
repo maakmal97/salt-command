@@ -149,7 +149,9 @@ export function payEntry(order, code, amount, now) {
 /** What was handed over, as a Correction: the running total, the day, and who moved it. */
 export function handoverEntry(order, code, units, now) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
-  const date = klDate(at);
+  /* the day HE typed it on the site: movedOn is that moment's Kuala Lumpur day, so the Correction
+     and the order agree even when this runs after midnight; a record from before movedOn falls back */
+  const date = order.movedOn || klDate(at);
   const moved = +(+units).toFixed(2);
   const books = partyOnBook(order, code);
   const how = order.mode === "deliver" ? "delivered" : "collected";
@@ -179,13 +181,58 @@ export function cancelEntry(order, code, why, now) {
   };
 }
 
-/** Append one entry to the orders device's queue. Per-device replace, as the phone does. */
+/* ---- THE STAGE'S OWN MOMENT (20 Sep 2026) -----------------------------------------------------
+ * Every entry queued in one pass carried the pass's clock, and a draft's id IS the entry's `at`: on
+ * 18 Sep three acknowledgements queued in one tick collapsed to ONE draft in the drafter's byAt map,
+ * and the pending row for order 4l1kkq was never made. An entry is stamped with the moment its stage
+ * happened on the site instead: the acknowledgement's history event, the last payment, the handover
+ * (movedAt), the withdrawal. Two stages are two moments, so two ids; a stage queued again after a
+ * failed mark lands on the same id, which the drafter's INSERT OR IGNORE collapses; and the pending
+ * row is dated the day he agreed it rather than the day the cron noticed (acknowledged at 23:59 and
+ * reconciled at 00:00 it was dated tomorrow, inside its own key). A record from before this carries
+ * no movedAt: the handover's own history note stands in, and the pass's clock is the last resort. */
+export function stageAt(order, job, now) {
+  const h = (order && order.history) || [];
+  const last = (test) => { for (let i = h.length - 1; i >= 0; i--) if (h[i] && test(h[i])) return h[i].at; return null; };
+  let at = null;
+  if (job === "ack") at = last((x) => x.status === "acknowledged" && x.by === "desk");
+  else if (job === "pay") { const p = (order && order.payments) || []; at = p.length ? p[p.length - 1].at : null; }
+  else if (job === "move") at = (order && order.movedAt) || last((x) => x.by === "desk" && / unit (delivered|collected)$/.test(String(x.note || "")));
+  else if (job === "cancel") at = last((x) => x.status === "cancelled" || x.status === "declined");
+  const d = at ? new Date(at) : null;
+  return d && !isNaN(d.getTime()) ? d : (now instanceof Date ? now : new Date(now || Date.now()));
+}
+
+/** Append one entry to the orders device's queue. Per-device replace, as the phone does.
+ * A KEY THIS CANNOT READ IS STARTED AFRESH, AND SAID SO (20 Sep 2026). q:orders held a hand-written
+ * value with its quotes stripped from 19 Sep 03:49 UTC: the json read threw, the catch in
+ * reconcileOrders swallowed it, and every site order failed in silence for a day. What such a key
+ * holds is nothing the book needs: an entry reaches it only from here, is drafted on arrival, and its
+ * stage is marked told on the order only after this write, so anything lost is still owed and comes
+ * round next minute. The drafter and the drain already read such a key as empty; the writer agrees
+ * now, and the head of what it held goes to the log. THE SAME STAGE already queued under its `at` is
+ * not queued twice, which is what lets a stage come round again after a failed mark; A DIFFERENT
+ * stage that happens to carry the same millisecond (a payment and a handover typed together) takes
+ * the next free one, because a draft's id is the `at` and two ids cannot be one. */
 export async function queueSale(env, entry) {
-  const cur = (await env.SALT_QUEUE.get("q:" + DEVICE, "json")) || { device: DEVICE, queue: [] };
-  cur.queue = (cur.queue || []).concat([entry]);
-  cur.updated = entry.at;
-  await env.SALT_QUEUE.put("q:" + DEVICE, JSON.stringify(cur));
-  return cur.queue.length;
+  const key = "q:" + DEVICE;
+  const raw = await env.SALT_QUEUE.get(key);
+  let cur = null;
+  if (raw) {
+    try { cur = JSON.parse(raw); }
+    catch (e) { console.log("orders queue: " + key + " could not be read and is started afresh (" + String((e && e.message) || e) + "); it held: " + String(raw).slice(0, 200)); }
+  }
+  if (!cur || !Array.isArray(cur.queue)) cur = { device: DEVICE, queue: [] };
+  for (;;) {
+    const hit = cur.queue.find((x) => x && x.at === entry.at);
+    if (!hit) break;
+    if (hit.raw === entry.raw) return false;
+    entry.at = new Date(Date.parse(entry.at) + 1).toISOString();
+  }
+  cur.queue = cur.queue.concat([entry]);
+  cur.updated = new Date().toISOString();
+  await env.SALT_QUEUE.put(key, JSON.stringify(cur));
+  return true;
 }
 
 /* ---- THE RECONCILE (v694): THE ONE ROAD FROM A STAGE TO THE QUEUE -----------------------------
@@ -215,29 +262,62 @@ export async function reconcileOrders(env) {
   const onBook = (book && book.state && book.state.OPEN && book.state.OPEN.byKey) || null;
   const now = new Date();
   let queued = 0; const unmapped = [], failed = [], waiting = [];
+  const STAGE_WORD = { pay: "payment", move: "handover", cancel: "withdrawal" };
   for (const o of owing) {
     const code = users[o.u] || null;
+    const q = o.queued || {}, mark = {}; const order = Object.assign({}, o);
+    /* WHAT THIS PASS MADE OF THE ORDER (20 Sep 2026), written onto the record as `sync` when it changes,
+       so the Site orders card says queued, waiting or failed and why, where it promised "queued within
+       the minute" whatever had happened. A wait was invisible on every surface for as long as it lasted. */
+    let state = null;
     /* no code, no row: the test account and any account published since the last map land here,
        and they wait rather than being guessed at */
-    if (!code) { unmapped.push(o.id); continue; }
-    const q = o.queued || {}, mark = {}; const order = Object.assign({}, o);
+    if (!code) { unmapped.push(o.id); state = { state: "waiting", why: "no desk code is mapped to this account yet: publish the statements again" }; }
+    else {
+    /* the ids already spent on this order: two stages stamped in the same millisecond would share a
+       draft id, so the later one takes the next millisecond, and takes it again on a re-queue */
+    const used = new Set([q.ack, q.cancel].filter(Boolean));
     try {
       for (const job of o.work || []) {
         let e = null;
-        if (job !== "ack" && !(onBook && onBook[order.ledgerKey])) { waiting.push(o.id); break; }
-        if (job === "ack") { e = pendingEntry(order, code, now); mark.ledgerKey = e.orderKey; order.ledgerKey = e.orderKey; mark.ack = e.at; }
-        else if (job === "pay") { e = payEntry(order, code, +((+order.paid || 0) - (+q.paid || 0)).toFixed(2), now); mark.paid = +(+order.paid || 0).toFixed(2); }
-        else if (job === "move") { e = handoverEntry(order, code, +order.moved || 0, now); mark.moved = +(+order.moved || 0).toFixed(3); }
-        else if (job === "cancel") { e = cancelEntry(order, code, order.status === "declined" ? "desk" : "customer", now); mark.cancel = e.at; }
-        if (e) { await queueSale(env, e); queued++; }
+        if (job !== "ack" && !(onBook && onBook[order.ledgerKey])) {
+          waiting.push(o.id);
+          state = { state: "waiting", why: "the " + (STAGE_WORD[job] || job) + " waits for the pending row to reach the book: approve it under Approve, and the fold lands it" };
+          break;
+        }
+        /* each entry is stamped with its stage's own moment (stageAt), never the pass's clock */
+        if (job === "ack") e = pendingEntry(order, code, stageAt(order, job, now));
+        else if (job === "pay") e = payEntry(order, code, +((+order.paid || 0) - (+q.paid || 0)).toFixed(2), stageAt(order, job, now));
+        else if (job === "move") e = handoverEntry(order, code, +order.moved || 0, stageAt(order, job, now));
+        else if (job === "cancel") e = cancelEntry(order, code, order.status === "declined" ? "desk" : "customer", stageAt(order, job, now));
+        if (!e) continue;
+        while (used.has(e.at)) e.at = new Date(Date.parse(e.at) + 1).toISOString();
+        /* counted only when it was actually appended; queueSale may move e.at to a free millisecond, so
+           the marks are read off the entry AFTER it */
+        if (await queueSale(env, e)) queued++;
+        used.add(e.at);
+        if (job === "ack") { mark.ledgerKey = e.orderKey; order.ledgerKey = e.orderKey; mark.ack = e.at; }
+        else if (job === "pay") mark.paid = +(+order.paid || 0).toFixed(2);
+        else if (job === "move") mark.moved = +(+order.moved || 0).toFixed(3);
+        else if (job === "cancel") mark.cancel = e.at;
+        if (!state) state = { state: "queued", why: "" };
       }
       if (Object.keys(mark).length) {
         const m = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
           method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mark })
         });
-        if (!m || !m.ok) failed.push(o.id);
+        if (!m || !m.ok) { const why = "the mark could not be written back to the site" + (m ? " (http " + m.status + ")" : ""); failed.push({ id: o.id, why }); state = { state: "failed", why }; }
       }
-    } catch (e) { failed.push(o.id); }
+    } catch (e) { const why = String((e && e.message) || e); failed.push({ id: o.id, why }); state = { state: "failed", why }; }   /* the reason travels, or a day is lost reading a log that says only "failed" */
+    }
+    /* written back only when it changed, so an order that waits costs one write and not one a minute */
+    if (state && !(o.sync && o.sync.state === state.state && o.sync.why === state.why)) {
+      try {
+        await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
+          method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mark: { sync: Object.assign({ at: now.toISOString() }, state) } })
+        });
+      } catch (e) { /* best effort: the next pass says it again */ }
+    }
   }
   return Object.assign({ ok: true, queued }, unmapped.length ? { unmapped } : {},
     waiting.length ? { waiting } : {}, failed.length ? { failed } : {});

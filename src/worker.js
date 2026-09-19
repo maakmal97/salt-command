@@ -638,7 +638,8 @@ export default {
            for the quarter-hour, because he is looking at Approve. */
         try {
           const rc = await reconcileOrders(env);
-          if (!rc.ok || rc.queued || rc.unmapped || rc.failed) console.log("orders reconcile: " + JSON.stringify(rc));
+          /* waiting is logged too (20 Sep 2026): a stage held for its row was invisible for as long as it waited */
+          if (!rc.ok || rc.queued || rc.unmapped || rc.waiting || rc.failed) console.log("orders reconcile: " + JSON.stringify(rc));
           if (rc.queued) { const d = await runDrafter(env); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); }
         } catch (e) { console.log("orders reconcile FAILED: " + String((e && e.stack) || e)); }
         /* the drafter's net still runs on the quarter-hour, as it did when this schedule ran every fifteen minutes */
