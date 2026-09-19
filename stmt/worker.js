@@ -804,6 +804,20 @@ export default {
       }
       if (!who) return json({ ok: false, error: "Access required" }, 401);
       /* the referral links, minted and revoked from inside the Access area only */
+      /* 19 SEP 2026: HIS OWN APP. The same manifest the customer's gets, pointed at /all and named
+         differently, so his home screen carries the admin page rather than a second copy of the
+         customer door. It sits INSIDE the prefix, so it is gated like everything else here and an
+         expired Access session refuses it exactly as it refuses the page itself.
+         THE DESK'S NAME IS STILL NOWHERE (rule 5): this is the statements site's admin surface and
+         is named for that, not for the ledger it reports on. */
+      if (p === "/all/manifest.webmanifest") {
+        if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
+        const own = { name: "Salt Admin", short_name: "Salt Admin", start_url: "/all", scope: "/all",
+          display: "standalone", orientation: "portrait", background_color: "#05080a", theme_color: "#05080a",
+          icons: [{ src: "/icon.png", sizes: ICON_SIZE + "x" + ICON_SIZE, type: "image/png", purpose: "any maskable" }] };
+        return new Response(JSON.stringify(own), { headers: Object.assign({}, HEADERS, {
+          "content-type": "application/manifest+json; charset=utf-8", "cache-control": "no-store" }) });
+      }
       if (p === "/all/refs" || p.startsWith("/all/refs/")) return handleRefs(request, env, p, m, url.origin);
       if (p === "/all/sheet") {
         if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);

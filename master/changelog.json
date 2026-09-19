@@ -1,5 +1,17 @@
 [
  {
+  "v": "v722",
+  "d": "19 Sep 2026",
+  "t": "THE ADMIN PAGE SAVES TO HIS HOME SCREEN AS ITS OWN APP, AND OPENS WHERE HE SAVED IT FROM",
+  "n": [
+   "<b>HIS INSTRUCTION OF 19 SEP 2026:</b> can Salt Counter include a button to the admin page, so he can reach it from the app too. The need is real and the reason is simple: a standalone app has NO ADDRESS BAR, so from inside Salt Counter there is no way to reach /all at all.",
+   "<b>IT IS AN APP OF HIS OWN, NOT A BUTTON ON EVERY CUSTOMER'S PAGE.</b> A link on the door would be served to everyone who finds the site, and the door is drawn before anybody has signed in; v687 took the owner's script off that page deliberately. `start_url` resolves against the MANIFEST'S own url, so the customer manifest served at the root opens at the root however he saved it, and saving from /all would have given him a second copy of the customer door under another name. His page therefore links its own manifest, scoped to /all and opening there, so the page he saves is the page he gets back.",
+   "<b>IT SITS INSIDE THE PREFIX AND IS GATED LIKE EVERYTHING ELSE THERE.</b> An expired Access session refuses the manifest exactly as it refuses the page, which is the right failure: an admin app that kept working after the session died would be the wrong kind of convenience. He bootstraps it once from Safari with Access, as he said he would, and saves it from there.",
+   "<b>AND IT DOES NOT CARRY THE DESK'S NAME.</b> Salt Admin. The rule that the DESK is never named on this site is the one this change could most easily have broken, because an admin app is exactly the thing somebody would name after the ledger it reports on. It is asserted rather than remembered.",
+   "<b>THE CHECKS.</b> A new section of 8 assertions driven behind a REAL Access token, RS256 against a generated key: gated without one, served as a manifest with one, opening at /all and scoped to it, installing standalone rather than as a bookmark, the customer's manifest untouched and a different app, the desk's name absent, and each page linking its own, with a customer's page naming the prefix nowhere. Six mutations each turned it red. <b>ONE OF THEM CAUGHT THE HARNESS LYING:</b> the first proof counted FAIL lines, and a mutation that makes a section THROW prints no FAIL line at all, so a crash read as a pass. It reads the exit status now, and the mutation that removes the route is recorded as having thrown rather than failed."
+  ]
+ },
+ {
   "v": "v721",
   "d": "19 Sep 2026",
   "t": "OIL HAS NO PRICING TIER: ONE TYPED BOARD OF FIVE SIZES, FIXED FOR ALL, AND EACH PRODUCT STATES ITS OWN COST BASIS",

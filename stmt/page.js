@@ -363,7 +363,13 @@ export function landingPage(user, nonce, owner) {
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'
     /* v693: saved as an app. The name and the icon say what the page is and never whose it is. */
-    + '<link rel="manifest" href="/manifest.webmanifest">'
+    /* 19 SEP 2026, HIS INSTRUCTION: he wants the admin page reachable from the phone's home screen.
+       A standalone app has NO ADDRESS BAR, so from inside Salt Counter there is no way to reach /all
+       at all. `start_url` resolves against the MANIFEST'S own url, so the customer manifest served at
+       the root opens at the root however he saved it: saving from /all would have given him the
+       customer door under another name. His own page therefore links its own manifest, which lives
+       behind Access with the rest of the prefix and opens where he saved it from. */
+    + '<link rel="manifest" href="' + (owner ? "/all/manifest.webmanifest" : "/manifest.webmanifest") + '">'
     + '<link rel="apple-touch-icon" href="/icon.png">'
     + '<meta name="theme-color" content="#05080a">'
     + '<meta name="apple-mobile-web-app-capable" content="yes">'

@@ -15871,6 +15871,68 @@ await (async () => {
   ok(/--force/.test(seedSrc) && /this passphrase did not open it/.test(seedSrc),
     "it refuses just as hard when it cannot READ the vault, because a seed replaces the whole of it, and --force is the way past");
 })();
+section("his own app: the admin page saves to the home screen and opens where he saved it");
+await (async () => {
+  /* HIS INSTRUCTION OF 19 SEP 2026: he wants /all reachable from the app. A standalone app has NO
+     ADDRESS BAR, so from inside Salt Counter there is no way to reach the admin page at all, and
+     `start_url` resolves against the MANIFEST'S own url, so the customer manifest served at the root
+     opens at the root however he saved it. Saving from /all would have given him a second copy of
+     the customer door under another name. */
+  const W = (await import("../stmt/worker.js")).default;
+  const kv = new KV();
+  const realFetch = globalThis.fetch;
+  const TEAM = "maakmal", AUD = "aud-app", KID = "kid-app";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  globalThis.fetch = async (u) => {
+    if (String(u) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs")
+      return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + u);
+  };
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  try {
+    await kv.put("roster", JSON.stringify([]));
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD],
+      email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c));
+    const jwt = h + "." + c + "." + b64u(new Uint8Array(sig));
+    const env = { STMT: kv, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+    const get = (path, withToken) => W.fetch(new Request("https://k7m3p2.example" + path,
+      withToken ? { headers: { "cf-access-jwt-assertion": jwt } } : undefined), env);
+
+    /* ---- it is behind the same door as the rest of the prefix ---- */
+    ok((await get("/all/manifest.webmanifest")).status === 401,
+      "his manifest is inside the prefix, so it is gated exactly as everything else under /all is");
+
+    const r = await get("/all/manifest.webmanifest", true);
+    const mf = await r.json();
+    ok(r.status === 200 && /application\/manifest\+json/.test(r.headers.get("content-type") || ""),
+      "and behind a real Access token it is served as a manifest");
+    ok(mf.start_url === "/all" && mf.scope === "/all",
+      "it opens at /all and is scoped to it, which is the whole point: saved from there, it comes back there");
+    ok(mf.display === "standalone", "it installs as an app rather than a bookmark, or there would still be no way in");
+
+    /* ---- and the customer's own is untouched, still opening on the customer's door ---- */
+    const cust = await (await get("/manifest.webmanifest")).json();
+    ok(cust.start_url === "./" && cust.name === "Salt Counter" && mf.name !== cust.name,
+      "the customer's manifest is untouched and the two are different apps: " + JSON.stringify([cust.name, mf.name]));
+
+    /* ---- THE DESK'S NAME IS NOWHERE ON THIS SITE, which is the rule this change could most easily
+       have broken: an admin app is exactly the thing somebody would name after the ledger. ---- */
+    ok(!/salt\s*command/i.test(JSON.stringify(mf)),
+      "and his own app does not carry the desk's name, which never appears on this site: " + JSON.stringify(mf.name));
+
+    /* ---- the page links the right one on each road ---- */
+    const ownerPage = await (await get("/all", true)).text();
+    const custPage = await (await get("/")).text();
+    ok(/<link rel="manifest" href="\/all\/manifest\.webmanifest">/.test(ownerPage),
+      "his page links his manifest");
+    ok(/<link rel="manifest" href="\/manifest\.webmanifest">/.test(custPage) && !/\/all\//.test(custPage),
+      "and a customer's page links the customer's and says nothing of the prefix at all");
+  } finally { globalThis.fetch = realFetch; }
+})();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */
