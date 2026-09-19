@@ -1,6 +1,6 @@
 {
- "v": "v733",
- "stamped": "20 Sep 2026, 07:12 KL",
+ "v": "v734",
+ "stamped": "20 Sep 2026, 07:42 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -4516,6 +4516,18 @@
     "deliveredOn": "2026-09-19",
     "note": "<b>SALT SELL DATED 19 SEP, DELIVERED IN FULL, RM40 IN.</b> CN6-WM takes 2.5 unit for RM250, RM100 a unit, collected, 2.5 unit moved on 19 Sep, RM40 paid and RM210 left. The total clears the RM134.61 floor for this size and sits under the RM360 ask. The rate is his median of RM100, inside his range of RM75 to RM110. Eight orders, an associate and on the roster, RM100 outstanding before and 1 unit on credit against a cap of 2 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, RM120 on the goods. The drafter flagged the advance against the cap: 1 unit already on credit plus 2.5 unit released goes beyond the 2 unit cap. RM210 stays outstanding.",
     "rid": "s182"
+   },
+   {
+    "customer": "CS6-BS-R",
+    "qty": 5,
+    "total": 420,
+    "cash": 0,
+    "delivery": 15,
+    "date": "2026-09-19",
+    "deliveredQty": 0,
+    "rev": "R2",
+    "note": "<b>SALT SELL DATED 19 SEP, PENDING, NOTHING PAID AND NOTHING MOVED.</b> CS6-BS-R takes 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, ordered on the statements site as 20260919121050-zhim2a, acknowledged, on behalf of a friend, to be delivered. The total clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fourteen orders, on the roster, nothing outstanding before and nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, RM405 of goods. The drafter flagged the R2 booking, the 21.9% gap to CS6-BS's usual RM107.5, and that RM48 is a blend of lots. RM435 stays outstanding.",
+    "rid": "s183"
    }
   ],
   "contacts": [
@@ -5072,7 +5084,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-19T20:06:26.796Z",
   "PRICING": {
-   "takenAt": "2026-09-19T23:22:37.118Z",
+   "takenAt": "2026-09-19T23:42:08.549Z",
    "sizes": [
     0.5,
     1,
@@ -6664,11 +6676,11 @@
      ]
     }
    },
-   "v": "v733"
+   "v": "v734"
   },
   "OPEN": {
-   "at": "2026-09-19T23:22:37.234Z",
-   "count": 10,
+   "at": "2026-09-19T23:42:08.757Z",
+   "count": 11,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
      "d": "2026-09-19",
@@ -6686,6 +6698,22 @@
      "key": "CN6-WM|2026-09-19|250",
      "age": 1,
      "exp": 210
+    },
+    "CS6-BS-R|2026-09-19|435": {
+     "d": "2026-09-19",
+     "p": "CS6-BS-R",
+     "dir": "S",
+     "q": 5,
+     "t": 420,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 420,
+     "oweUnits": 5,
+     "rid": "s183",
+     "as": "CS6-BS",
+     "st2": "R2",
+     "key": "CS6-BS-R|2026-09-19|435"
     },
     "SA5-BTR|2026-09-19|1725": {
      "d": "2026-09-19",
@@ -6840,8 +6868,8 @@
      "coverDays": 2,
      "rate": 5.07,
      "owedToYou": 400,
-     "promised": 13.26,
-     "short": 0
+     "promised": 18.26,
+     "short": 2.11
     },
     "oil": {
      "name": "Oil",
@@ -6859,7 +6887,7 @@
     "salt": "2026-09-19",
     "oil": "2026-09-19"
    },
-   "v": "v733"
+   "v": "v734"
   }
  }
 }
