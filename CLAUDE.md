@@ -328,7 +328,22 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   customer types what they paid, he types what he handed over, and `done` is neither side's tap.
   **Cash on handover is withheld while that customer holds an unpaid advance**, and either side may
   cancel until the goods move. A delivery's general location stays on the site and never reaches a
-  ledger note.
+  ledger note. **AN ENTRY IS STAMPED WITH ITS STAGE'S OWN MOMENT** (v731, 20 Sep 2026): `stageAt` in
+  `src/orders.js` reads the acknowledgement event, the last payment, `movedAt` or the withdrawal, so
+  two stages are two draft ids (one pass's clock collapsed three acks to one draft on 18 Sep), a
+  re-queue after a failed mark lands on the same id, and the pending row is dated the day he agreed
+  it. `queueSale` starts a `q:orders` it cannot parse afresh and logs the head of what it held (a
+  hand-written key with its quotes stripped stalled every site order for a day); `tools/drain.mjs`
+  writes KV through `--path` and names a key it cannot read. **The reconcile writes `sync`
+  `{state, why, at}` onto the order** through the mark road, on change only, and the Site orders
+  card reads it: queued, waiting for its row, or failed and why.
+- **THE BULLETIN** (v732, his instruction of 20 Sep 2026): one clear key `bulletin` `{lines, mode, at}`
+  in the site's store, no prefix, so the publish never touches it. Set from the Bulletin card at the
+  top of Site orders through the desk's keyed `/bulletin`, relayed to the site's `/desk/bulletin` on
+  the desk key; public `GET /bulletin` feeds the page's every-sixth poll. The band is the first thing in
+  the body, door and inside; `run` scrolls, `change` rotates every four seconds. **The words are
+  checked on the desk** (`siteWords` in `src/orders.js`, `siteSafe` on the phone): the desk's name, a
+  roster code's shape and a level's name are refused, a product's name warns. An empty set clears it.
 - **THE CUSTOMER'S LABEL IS A MARK, NOT A NAME** (v659, his instruction of 16 Sep 2026): a symbol and
   a colour for each level beside each product on their price list, and **the level is never named in
   the page**. They are greeted for the hour off their own device and told the month of their first
