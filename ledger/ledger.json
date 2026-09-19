@@ -1,6 +1,6 @@
 {
- "v": "v723",
- "stamped": "19 Sep 2026, 21:58 KL",
+ "v": "v724",
+ "stamped": "19 Sep 2026, 22:06 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 40
    }
   },
-  "STATED_STOCK": 0.9,
+  "STATED_STOCK": -0.1,
   "COUNT_ON": {
    "salt": "2026-09-19",
    "oil": "2026-09-19"
@@ -4427,11 +4427,11 @@
     "customer": "CF5-WM",
     "qty": 1,
     "total": 100,
-    "cash": 0,
+    "cash": 100,
     "delivery": 0,
     "handover": "collected",
     "date": "2026-09-19",
-    "deliveredQty": 0,
+    "deliveredQty": 1,
     "note": "<b>TOTAL RESTATED TO RM100, 19 SEP.</b> <b>CORRECTION ON S175 RECORDED 19 SEP: TOTAL FROM RM110 TO RM100.</b> The target is CF5-WM's SELL of 1 unit dated 19 Sep, collected, RM0 in and 0 unit moved, so the row is still pending and the change moves no cash and no stock. It follows the RM10 of carriage dropped from that row on 19 Sep, which had read the goods as RM100. At RM100 the row sits below CF5-WM's range of RM110 to RM115 and below the median of RM115. Three orders, not an associate but on the roster, RM110 outstanding before and 0 unit on credit, nothing defaulted. Cost is the inventory's own RM48 a unit. The full RM100 stays outstanding. <b>PENDING SALT SELL DATED 19 SEP, THE DAY IT WAS AGREED.</b> SELL to CF5-WM, 1 unit for RM110, collected, nothing paid and nothing moved, so the row draws no stock and books no revenue until something does. <b>CARRIAGE DROPPED 19 SEP:</b> the row carried RM10 of delivery on an order marked COLLECTED, which read the goods as RM100, RM10 under their own card. His rule of 19 Sep is that a collected order cannot carry a delivery charge at all, and this is the row that rule exists to stop. Nothing was paid or moved, so it is set right rather than corrected.",
     "rid": "s175",
     "mod": "corrected on 2026-09-19: total 110 to 100",
@@ -4449,8 +4449,19 @@
       "cash": 0,
       "kg": 0,
       "note": "<b>CORRECTION ON S175 RECORDED 19 SEP: TOTAL FROM RM110 TO RM100.</b> The target is CF5-WM's SELL of 1 unit dated 19 Sep, collected, RM0 in and 0 unit moved, so the row is still pending and the change moves no cash and no stock. It follows the RM10 of carriage dropped from that row on 19 Sep, which had read the goods as RM100. At RM100 the row sits below CF5-WM's range of RM110 to RM115 and below the median of RM115. Three orders, not an associate but on the roster, RM110 outstanding before and 0 unit on credit, nothing defaulted. Cost is the inventory's own RM48 a unit. The full RM100 stays outstanding."
+     },
+     {
+      "date": "2026-09-19",
+      "kind": "Fulfilment",
+      "cash": 100,
+      "kg": 1,
+      "note": "<b>FULFILMENT ON S175 RECORDED 19 SEP: RM100 IN, 1 UNIT MOVED.</b> The target is CF5-WM's SELL of 1 unit for RM100 dated 19 Sep, collected, previously RM0 in and 0 unit moved after the correction that took the total from RM110 to RM100. RM100 and 1 unit go against RM100 and 1 unit outstanding, leaving RM0 and 0 unit. At RM100 the row sits at the foot of CF5-WM's range of RM100 to RM115 and below the median of RM115, and matches the board's two-unit ask of RM100 cited on s127. Three orders, not an associate but on the roster, RM100 outstanding before and 0 unit on credit, nothing defaulted. Cost is the inventory's own RM48 a unit. The drafter flagged that this settles the order in full, and the figures answer it: nothing is left outstanding.",
+      "cost": 48
      }
-    ]
+    ],
+    "deliveredOn": "2026-09-19",
+    "paidOn": "2026-09-19",
+    "cost": 48
    }
   ],
   "contacts": [
@@ -5005,9 +5016,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-19T13:21:41.449Z",
+  "QUEUE_COMMITTED": "2026-09-19T14:05:37.204Z",
   "PRICING": {
-   "takenAt": "2026-09-19T13:58:23.409Z",
+   "takenAt": "2026-09-19T14:06:22.379Z",
    "sizes": [
     0.5,
     1,
@@ -5686,15 +5697,15 @@
     },
     "CF5-WM": {
      "salt": {
-      "name": "one-off",
-      "orders": 1,
+      "name": "consistent mid",
+      "orders": 2,
       "tenureDays": 17,
-      "sinceLastDays": 17,
-      "perMonth": 1.01,
-      "smallShare": 0,
+      "sinceLastDays": 0,
+      "perMonth": 2.03,
+      "smallShare": 0.5,
       "bigShare": 0,
       "late": 0,
-      "frequent": false,
+      "frequent": true,
       "small": false,
       "bigger": false,
       "loyal": false,
@@ -5954,40 +5965,40 @@
      "replCost": 46,
      "floors": {
       "1": {
-       "floor": 54.11
+       "floor": 53.84
       },
       "2": {
-       "floor": 108.22
+       "floor": 107.69
       },
       "3": {
-       "floor": 162.34
+       "floor": 161.53
       },
       "4": {
-       "floor": 216.45
+       "floor": 215.38
       },
       "5": {
-       "floor": 270.56
+       "floor": 269.22
       },
       "0.5": {
-       "floor": 27.06
+       "floor": 26.92
       },
       "1.5": {
-       "floor": 81.17
+       "floor": 80.77
       },
       "2.5": {
-       "floor": 135.28
+       "floor": 134.61
       },
       "3.5": {
-       "floor": 189.39
+       "floor": 188.46
       },
       "4.5": {
-       "floor": 243.51
+       "floor": 242.3
       },
       "6.25": {
-       "floor": 338.2
+       "floor": 336.53
       },
       "12.5": {
-       "floor": 676.4
+       "floor": 673.05
       }
      },
      "inputs": {
@@ -6062,9 +6073,9 @@
        "repl": 46,
        "freightRate": 1.0133,
        "leak": {
-        "ratio": 0.151,
+        "ratio": 0.1453,
         "leak": 3.85,
-        "sold": 25.5,
+        "sold": 26.5,
         "cycles": 3,
         "from": "2026-09-14",
         "to": "2026-09-19"
@@ -6081,15 +6092,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.34782608695652173
+         "v": 0.3404255319148936
         }
        },
        "attrib": 1,
        "shrinkRate": 0.07787054103870758,
        "avgDel": {
-        "n": 155,
-        "kg": 385.7,
-        "mean": 2.4884
+        "n": 156,
+        "kg": 386.7,
+        "mean": 2.4788
        }
       },
       "policy": {
@@ -6313,7 +6324,7 @@
       {
        "q": 5,
        "prices": [
-        280,
+        270,
         370,
         420,
         470,
@@ -6599,27 +6610,12 @@
      ]
     }
    },
-   "v": "v723"
+   "v": "v724"
   },
   "OPEN": {
-   "at": "2026-09-19T13:58:23.558Z",
-   "count": 10,
+   "at": "2026-09-19T14:06:22.541Z",
+   "count": 9,
    "byKey": {
-    "CF5-WM|2026-09-19|100": {
-     "d": "2026-09-19",
-     "p": "CF5-WM",
-     "dir": "S",
-     "q": 1,
-     "t": 100,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 100,
-     "oweUnits": 1,
-     "rid": "s175",
-     "handover": "collected",
-     "key": "CF5-WM|2026-09-19|100"
-    },
     "CK4-SEN|2026-09-18|500": {
      "d": "2026-09-18",
      "p": "CK4-SEN",
@@ -6768,13 +6764,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 0.9,
-     "free": -6.24,
+     "onHand": -0.1,
+     "free": -7.24,
      "owedOut": 7.14,
      "coverDays": 0,
-     "rate": 4.86,
+     "rate": 4.93,
      "owedToYou": 190,
-     "promised": 15.26,
+     "promised": 14.26,
      "short": 14.36
     },
     "oil": {
@@ -6793,7 +6789,7 @@
     "salt": "2026-09-19",
     "oil": "2026-09-19"
    },
-   "v": "v723"
+   "v": "v724"
   }
  }
 }

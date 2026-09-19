@@ -1,5 +1,14 @@
 [
  {
+  "v": "v724",
+  "d": "19 Sep 2026",
+  "t": "S175 SETTLED IN FULL: RM100 IN, ONE UNIT OUT, NOTHING LEFT OUTSTANDING",
+  "n": [
+   "<b>ONE ROW FOLDED, 19 SEP.</b> The fold carries a single fulfilment against CF5-WM's s175, the SELL of 1 unit for RM100 agreed the same day and corrected down from RM110 earlier on 19 Sep. RM100 and 1 unit move against RM100 and 1 unit outstanding, which clears the order. The row itself is not recomputed here: the master's amend path applies it, so there is one definition of what a fulfilment does.",
+   "<b>WHAT THE INVENTORY DID.</b> Salt was counted on 19 Sep and stock stands at 0.9 unit, below the reorder mark of 15, with RM7.14 owed out and 8.12 promised. Cost stays the inventory's own RM48 a unit against a replacement rate of RM46, so no basis moves on this fold. The settling price of RM100 sits at the bottom of CF5-WM's own range and below the median of RM115."
+  ]
+ },
+ {
   "v": "v723",
   "d": "19 Sep 2026",
   "t": "THREE ADVANCES PAID DOWN IN CASH, AND A PENDING SELL RESTATED TO RM100",
