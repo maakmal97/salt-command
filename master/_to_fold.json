@@ -1,0 +1,201 @@
+{
+ "ok": true,
+ "count": 4,
+ "approved": [
+  {
+   "id": "2026-09-19T13:20:45.468Z",
+   "collection": "sales",
+   "row": {
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-09-17",
+    "customer": "CN6-WM"
+   },
+   "reasoning": "Fulfilment against CN6-WM's order of 1 unit for RM 110 agreed 2026-09-17. RM 110 and 0 unit move on 2026-09-19, against RM 110 and 0 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s170",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-19T13:20:45.468Z",
+    "type": "AMEND",
+    "party": "CN6-WM",
+    "qty": 0,
+    "total": 110,
+    "status": "paid",
+    "raw": "Fulfilment on CN6-WM s170: RM 110 cash, recorded 2026-09-19",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CN6-WM",
+     "rid": "s170",
+     "orderKey": "CN6-WM|2026-09-17|110",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "kind": "Fulfilment",
+     "date": "2026-09-19",
+     "qty": 0,
+     "total": 110,
+     "cash": 110,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-19T13:53:40.891Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-19T13:20:51.652Z",
+   "collection": "sales",
+   "row": {
+    "qty": 1,
+    "total": 80,
+    "cash": 0,
+    "date": "2026-09-15",
+    "customer": "CR3-DAM"
+   },
+   "reasoning": "Fulfilment against CR3-DAM's order of 1 unit for RM 80 agreed 2026-09-15. RM 80 and 0 unit move on 2026-09-19, against RM 80 and 0 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s165",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-19T13:20:51.652Z",
+    "type": "AMEND",
+    "party": "CR3-DAM",
+    "qty": 0,
+    "total": 80,
+    "status": "paid",
+    "raw": "Fulfilment on CR3-DAM s165: RM 80 cash, recorded 2026-09-19",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CR3-DAM",
+     "rid": "s165",
+     "orderKey": "CR3-DAM|2026-09-15|80",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "kind": "Fulfilment",
+     "date": "2026-09-19",
+     "qty": 0,
+     "total": 80,
+     "cash": 80,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-19T13:53:37.385Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-19T13:21:14.359Z",
+   "collection": "sales",
+   "row": {
+    "qty": 2,
+    "total": 160,
+    "cash": 0,
+    "date": "2026-09-18",
+    "customer": "CR3-DAM"
+   },
+   "reasoning": "Fulfilment against CR3-DAM's order of 2 unit for RM 160 agreed 2026-09-18. RM 80 and 0 unit move on 2026-09-19, against RM 160 and 0 unit outstanding. Leaves RM 80 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s179",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-19T13:21:14.359Z",
+    "type": "AMEND",
+    "party": "CR3-DAM",
+    "qty": 0,
+    "total": 80,
+    "status": "paid",
+    "raw": "Fulfilment on CR3-DAM s179: RM 80 cash, recorded 2026-09-19",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CR3-DAM",
+     "rid": "s179",
+     "orderKey": "CR3-DAM|2026-09-18|160",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "kind": "Fulfilment",
+     "date": "2026-09-19",
+     "qty": 0,
+     "total": 80,
+     "cash": 80,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-19T13:53:34.097Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-19T13:21:41.449Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s175",
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-09-19",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "total",
+      "from": 110,
+      "to": 100
+     }
+    ],
+    "customer": "CF5-WM"
+   },
+   "reasoning": "Correction against CF5-WM's order of 1 unit for RM 110 dated 2026-09-19 (s175). Sets total from 110 to 100. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [],
+   "amends": "s175",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-19T13:21:41.449Z",
+    "type": "AMEND",
+    "party": "CF5-WM",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CF5-WM s175: total to 100, recorded 2026-09-19",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CF5-WM",
+     "rid": "s175",
+     "orderKey": "CF5-WM|2026-09-19|110",
+     "kind": "Correction",
+     "date": "2026-09-19",
+     "fields": {
+      "total": 100
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-19T13:53:21.318Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
