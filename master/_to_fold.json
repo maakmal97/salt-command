@@ -1,0 +1,63 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-19T12:12:59.716Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CS6-BS-R",
+    "qty": 5,
+    "total": 420,
+    "cash": 0,
+    "delivery": 15,
+    "date": "2026-09-19",
+    "deliveredQty": 0,
+    "rev": "R2",
+    "note": "Ordered on the statements site, order 20260919121050-zhim2a, acknowledged, on behalf of a friend, to be delivered, delivery RM 15. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 5 unit of salt to CS6-BS-R for RM 420, with RM 15 of delivery beside it, RM 435 owed, RM 84/unit. Costed at RM 48/unit from the desk's own inventory cost, so RM 180 on the goods at 42.9%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-09-19 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "Booked to CS6-BS-R as R2: CS6-BS buys it to sell on.",
+    "CS6-BS typically pays about RM 107.5/unit for salt across 18 orders; this one is RM 84, 21.9% below that.",
+    "The inventory spans more than one lot rate, so RM 48/unit is the inventory average rather than the lot this row draws. Check the blend before approving."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-19T12:12:59.716Z",
+    "type": "SELL",
+    "party": "CS6-BS-R",
+    "qty": 5,
+    "total": 420,
+    "status": "Pending",
+    "raw": "SELL CS6-BS-R 5 salt RM 435, nothing paid, nothing moved (order 20260919121050-zhim2a)",
+    "orderKey": "CS6-BS-R|2026-09-19|435",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CS6-BS",
+     "newId": null,
+     "date": "2026-09-19",
+     "qty": 5,
+     "total": 420,
+     "delivery": 15,
+     "cash": 0,
+     "kg": 0,
+     "assoc": "CS6-BS",
+     "stream": "R2",
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20260919121050-zhim2a, acknowledged, on behalf of a friend, to be delivered, delivery RM 15. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    }
+   },
+   "decidedAt": "2026-09-19T23:41:22.091Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
