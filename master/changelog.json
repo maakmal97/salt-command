@@ -1,5 +1,16 @@
 [
  {
+  "v": "v739",
+  "d": "20 Sep 2026",
+  "t": "A CORRECTION THAT RESTATES WHAT MOVED ROLLS THE SHELF BY THE DIFFERENCE, AND THE 5 UNIT OF 19 SEP COME OFF",
+  "n": [
+   "<b>THE SHELF SAT 5 UNIT HIGH.</b> v735 folded zhim2a's handover as the Correction v694 routes a handover through, and the fold's rule since v358 was that a correction moves nothing: it adds nothing to the moves the roll is struck from. That rule was written when a correction could not touch deliveredQty. It has been able to since 25 Aug 2026, when what has actually moved became a thing a person states, seven rows on the book carry one, and a site handover is one. So the goods left the shelf on the row and never left the stated figure, while v736's fulfilment to CJ4-BJ the same day did roll: the stated inventory read 9.9 with 4.9 on the shelf.",
+   "<b>THE ROW IS THE RECORD OF WHAT MOVED, AND THE ROLL FOLLOWS THE RECORD.</b> A correction naming deliveredQty on a sale, or receivedQty on a lot, now pushes a move for the difference against the row as it stands, in either direction, so a reversal puts the goods back; a lot's is marked landed. It is dated the moved-on date the correction states, else the correction's day. A correction that restates the same quantity, or names none, still moves nothing. The applier is unchanged: it writes the row, and the shelf follows through the plan, which is where every other roll is struck.",
+   "<b>THE 5 UNIT ARE ROLLED OFF ON THE BOOK,</b> 9.9 less 5 is 4.9, in the fold's own sentence, a roll and not a count: they came off the 37.5-unit lot landed on 19 Sep, after that day's count, so the count did not already hold them. A count would confirm the figure; nothing else on the book moves.",
+   "<b>THE CHECKS.</b> A section of eleven assertions: the plan rolling 5 unit off for a handover, dated the row's own day; a reversal rolling them back on the correction's day; a lot corrected as received rolling on, landed; the same quantity and no quantity moving nothing; the apply taking the stated figure down by 5 and writing the roll in the fold's sentence while the row says what was stated; and the live book carrying v739's roll. Six mutations each turned it red: the roll not pushed, its sign turned, the difference read against nought, the date read off the correction alone, the lot's roll not marked landed, and the book's own roll misfigured."
+  ]
+ },
+ {
   "v": "v738",
   "d": "20 Sep 2026",
   "t": "WHAT A CUSTOMER OWES IS THE GOODS AND THE DELIVERY TOGETHER, WHEREVER IT IS READ",

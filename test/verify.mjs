@@ -16931,6 +16931,66 @@ await (async () => {
     "s173, the delivery of 18 Sep, carries its RM15 of carriage and says on its own row that it was corrected to: " + JSON.stringify(s173 && { delivery: s173.delivery, cash: s173.cash, mod: s173.mod }));
 })();
 
+section("v739: a correction that restates what moved rolls the shelf by the difference");
+await (async () => {
+  /* the shelf sat 5 unit high on 20 Sep 2026: v735 folded zhim2a's handover as the Correction v694 routes a
+     handover through, and the fold's rule since v358 was that a correction moves nothing, written when a
+     correction could not touch deliveredQty. It has been able to since 25 Aug 2026, seven rows on the book
+     carry one, and a site handover is one, so goods left the shelf on the row and never left the stated
+     figure, while v736's fulfilment the same day did roll. The row is the record of what moved; the roll
+     follows the record, in either direction. */
+  const { plan, apply } = await import("../tools/fold.mjs");
+  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const fresh = () => {
+    const B = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    B.QUEUE_COMMITTED = "2026-01-01T00:00:00.000Z";
+    B.roster.push("CZ9-RL", "SZ9-RL");
+    B.sales.push({ rid: "sR1", customer: "CZ9-RL", date: "2026-09-10", qty: 5, total: 420, delivery: 15, cash: 0, deliveredQty: 0, product: "salt", note: "fixture" });
+    B.sales.push({ rid: "sR2", customer: "CZ9-RL", date: "2026-09-10", qty: 5, total: 420, cash: 420, deliveredQty: 5, deliveredOn: "2026-09-10", product: "salt", note: "fixture" });
+    B.purchases.push({ rid: "pR1", supplier: "SZ9-RL", date: "2026-09-10", qty: 10, total: 500, cash: 500, receivedQty: 0, inTransit: true, product: "salt", note: "fixture" });
+    return B;
+  };
+  const item = (id, coll, rid, dirn, fields) => ({ id, collection: coll, amends: rid, amendKind: "Correction", row: {},
+    entry: { at: id, payload: { mode: "amend", direction: dirn, rid, kind: "Correction", date: "2026-09-19", fields } } });
+  const staged = (...items) => ({ ok: true, count: items.length, approved: items });
+
+  const p1 = plan(fresh(), staged(item("2026-09-19T13:00:00.000Z", "sales", "sR1", "SELL", { deliveredQty: 5, deliveredOn: "2026-09-18", handover: "delivered" })), null);
+  ok(p1.refused.length === 0 && p1.moves.length === 1 && p1.moves[0].kg === -5 && p1.moves[0].who === "CZ9-RL" && p1.moves[0].product === "salt",
+    "a correction handing over 5 unit rolls 5 unit off the shelf, to the customer: " + JSON.stringify(p1.moves) + JSON.stringify(p1.refused));
+  ok(p1.moves.length === 1 && p1.moves[0].when === "2026-09-18", "dated the day the row says the goods moved, not the correction's day: " + JSON.stringify(p1.moves[0] && p1.moves[0].when));
+  ok(p1.items.length === 1 && p1.items[0].does.some((d) => /^roll the shelf by 5 unit, out to CZ9-RL/.test(d)),
+    "and the plan says so, so the note written over it can: " + JSON.stringify(p1.items[0] && p1.items[0].does));
+  const p2 = plan(fresh(), staged(item("2026-09-19T13:00:01.000Z", "sales", "sR2", "SELL", { deliveredQty: 0, deliveredOn: null, handover: null })), null);
+  ok(p2.refused.length === 0 && p2.moves.length === 1 && p2.moves[0].kg === 5 && p2.moves[0].when === "2026-09-19",
+    "a reversal puts the 5 unit back, on the correction's day since the row no longer says one: " + JSON.stringify(p2.moves) + JSON.stringify(p2.refused));
+  const p3 = plan(fresh(), staged(item("2026-09-19T13:00:02.000Z", "purchases", "pR1", "BUY", { receivedQty: 10 })), null);
+  ok(p3.refused.length === 0 && p3.moves.length === 1 && p3.moves[0].kg === 10 && p3.moves[0].who === "SZ9-RL" && p3.moves[0].landed === true,
+    "a lot corrected as received rolls 10 unit onto the shelf, landed: " + JSON.stringify(p3.moves) + JSON.stringify(p3.refused));
+  const p4 = plan(fresh(), staged(item("2026-09-19T13:00:03.000Z", "sales", "sR2", "SELL", { deliveredQty: 5, note: "restated" })), null);
+  ok(p4.refused.length === 0 && p4.moves.length === 0, "a correction restating the same quantity moves nothing: " + JSON.stringify(p4.moves) + JSON.stringify(p4.refused));
+  const p5 = plan(fresh(), staged(item("2026-09-19T13:00:04.000Z", "sales", "sR2", "SELL", { note: "words only" })), null);
+  ok(p5.refused.length === 0 && p5.moves.length === 0, "and one that names no quantity moves nothing: " + JSON.stringify(p5.moves) + JSON.stringify(p5.refused));
+
+  /* ---- applied: the stated figure falls and the roll is written on the book in the fold's own sentence ---- */
+  const B = fresh();
+  const before = B.STATED_STOCK;
+  const it = item("2026-09-19T13:00:05.000Z", "sales", "sR1", "SELL", { deliveredQty: 5, deliveredOn: "2026-09-18", handover: "delivered" });
+  const notes = { version: "v9997", date: "19 Sep 2026", title: "FIXTURE", notes: ["fixture"], rows: { [it.id]: { note: "fixture correction" } }, stockNote: "fixture roll." };
+  const res = apply(B, staged(it), notes, master);
+  const rolled = (B.NOTES && B.NOTES.STATED_STOCK) || [];
+  ok(!(res && res.problems && res.problems.length) && Math.abs(B.STATED_STOCK - (before - 5)) < 1e-9,
+    "applied, the stated inventory falls by the 5 unit: " + JSON.stringify({ before, after: B.STATED_STOCK, problems: res && res.problems }));
+  ok(/^ROLLED AT v9997: 5 unit to CZ9-RL on 2026-09-18, so /.test(rolled[0] || ""), "and the roll is written on the book in the fold's own sentence: " + String(rolled[0]).slice(0, 90));
+  const sR1 = B.sales.find((r) => r.rid === "sR1");
+  ok(sR1 && sR1.deliveredQty === 5 && sR1.deliveredOn === "2026-09-18" && sR1.handover === "delivered", "while the row itself says exactly what the correction stated: " + JSON.stringify({ deliveredQty: sR1.deliveredQty, deliveredOn: sR1.deliveredOn, handover: sR1.handover }));
+
+  /* ---- the live book: the 5 unit of 19 Sep came off, in the record ---- */
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const live = ((bk.NOTES && bk.NOTES.STATED_STOCK) || []).find((n) => /^ROLLED AT v739: /.test(n)) || "";
+  ok(/^ROLLED AT v739: 5 unit to CS6-BS-R on 2026-09-19, so 9\.9 less 5 is 4\.9\. A ROLL AND NOT A COUNT; COUNT_ON is untouched\./.test(live),
+    "the book carries the roll of zhim2a's 5 unit, 9.9 less 5 is 4.9: " + live.slice(0, 100));
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

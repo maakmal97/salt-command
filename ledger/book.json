@@ -37,7 +37,7 @@
       "stated": 40
     }
   },
-  "STATED_STOCK": 9.9,
+  "STATED_STOCK": 4.9,
   "COUNT_ON": {
     "salt": "2026-09-19",
     "oil": "2026-09-19"
@@ -711,6 +711,7 @@
       "RETIRED AT v549 on 2026-09-09, his instruction. The key held one hand-typed lot: 50 unit by 2026-08-28, stated on the 24th. He read it on 9 September with the date twelve days gone and four lots landed since (25 unit on 26 Aug, 25 on 31 Aug, 25 on 03 Sep and 50 on 08 Sep), and said he generally has no information on when he purchases. The Sourcing section is now about the CURRENT lot, and the cadence is measured off the book rather than typed. One standing fact from the retired basis is kept here because it is not a plan: the purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. The rest was the 24 Aug reasoning, that the 100 unit tier was the recommendation and he took the 50, at a landed RM45.20 a unit against RM43.60."
     ],
     "STATED_STOCK": [
+      "ROLLED AT v739: 5 unit to CS6-BS-R on 2026-09-19, so 9.9 less 5 is 4.9. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The handover of order 20260919121050-zhim2a was folded at v735 as the Correction v694 routes it through, which moved the goods on s183 and nothing off the stated figure, while v736's fulfilment to CJ4-BJ the same day did roll. From v739 a correction that restates what moved rolls the shelf by the difference. The 5 unit came off the 37.5-unit lot landed on 19 Sep, after that day's count, so the count does not already hold them.",
       "ROLLED AT v736: 6.25 unit to CJ4-BJ on 2026-09-19, so 16.15 less 6.25 is 9.9. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 6.25 unit of salt handed to CJ4-BJ on 19 Sep is the only movement, taking the count of 19 Sep to 16.15 unit. That still sits above the reorder mark of 15 unit, with 6.14 owed out and 7.12 promised.",
       "ROLLED AT v726: 18.75 unit from SA5-BTR on 2026-09-19, so -2.6 plus 18.75 is 16.15. A ROLL AND NOT A COUNT; COUNT_ON is untouched. 18.75 unit of the 37.5 landed on 19 Sep against a stated position of -2.6 unit, with 18.75 unit still to come on a row already paid. The shelf rate stays at RM48 a unit while the replacement rate stands at RM46.",
       "ROLLED AT v725: 2.5 unit to CN6-WM on 2026-09-19, so -0.1 less 2.5 is -2.6. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The count of 19 Sep leaves the stated position at -0.1 unit, and the 2.5 unit on this row is marked as not yet landed against the roll. Replacement stands at RM46 a unit against the RM48 carried, with reorder at 15 unit.",

@@ -201,8 +201,8 @@ export function plan(book, staged, notes) {
          nothing to out.moves, and it is described by what it restates the order TO rather than
          by what moved. */
       if (it.amendKind === "Correction") {
-        /* A CORRECTION MOVES NOTHING, so it adds nothing to out.moves and needs no date to be
-           valid: what it changes is what the row SAYS about itself. The patch is read from the
+        /* A CORRECTION MOVES NOTHING (v739: except what it restates as moved, which rolls the shelf by the
+           difference, below), so it needs no date to be valid: what it changes is what the row SAYS about itself. The patch is read from the
            ENTRY rather than from the drafted row, because the drafted row is a before-and-after
            card built for the Approve screen and the entry is what was actually asked for. */
         const fields = pay.fields && typeof pay.fields === "object" ? pay.fields : null;
@@ -226,6 +226,23 @@ export function plan(book, staged, notes) {
         const cf = E.correctionFaults(hits[0], fields, !((hits[0].supplier !== undefined) || it.collection === "purchases"));
         if (cf.length) { out.refused.push({ id: it.id, why: `the correction on ${it.amends} was refused: ${cf[0]}` }); continue; }
         entry.pay = { date: pay.date || null, kind: "Correction", cash: 0, kg: 0, fields };
+        /* v739: A CORRECTION THAT RESTATES WHAT MOVED ROLLS THE SHELF BY THE DIFFERENCE. "A correction moves
+           nothing" was written at v358, when a correction could not touch deliveredQty. It has been able to
+           since 25 Aug 2026 (what has actually moved is a thing a person states), seven rows on the book carry
+           one, and a site handover arrives as one (v694). So goods left the shelf on the row and never left the
+           stated figure: s183's 5 unit of 19 Sep. The row is the record of what moved, and the roll follows the
+           record in either direction, so a reversal puts the goods back. The date is the row's own moved-on date
+           where the correction states one, else the correction's day. */
+        const qk = dir === "BUY" ? "receivedQty" : "deliveredQty";
+        if (fields[qk] != null && Number.isFinite(+fields[qk])) {
+          const delta = +((+fields[qk]) - (+hits[0][qk] || 0)).toFixed(3);
+          if (Math.abs(delta) > 0.009) {
+            const who = hits[0][dir === "BUY" ? "supplier" : "customer"];
+            const when = fields[dir === "BUY" ? "receivedOn" : "deliveredOn"] || pay.date || hits[0].date || TODAY;
+            out.moves.push({ product: prodOf(hits[0]), kg: dir === "BUY" ? delta : -delta, who, when, landed: dir === "BUY" });
+            entry.does.push(`roll the shelf by ${Math.abs(delta)} unit, ${delta > 0 ? (dir === "BUY" ? "in from" : "out to") : (dir === "BUY" ? "back to" : "back from")} ${who}: the difference the correction states`);
+          }
+        }
         const words = Object.keys(fields).map((k) => `${k} to ${fields[k] === null ? "(cleared)" : fields[k]}`);
         entry.does.push(`correct ${dir === "BUY" ? "lot" : "order"} ${it.amends}: ${words.join(", ")}`);
         /* v611: SAY WHEN THE ROW CHANGES ACCOUNT. An R2 books to the associate's bucket, so a correction can move a
@@ -502,6 +519,8 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
      is the record: a row whose price or party changed without saying so is worse than no row,
      so every correction leaves its old values readable in `mod`. */
   if (pay.kind === "Correction") {
+    /* v739: the SHELF follows a corrected deliveredQty or receivedQty through plan()'s moves; this applier
+       still writes only the row. */
     /* v416: CAPTURE THE PAYMENT BEFORE ANY FIELD IS WRITTEN. poCash reads status:"paid" as
        meaning the row's TOTAL, so calling it after a total correction returns the NEW total as
        the amount paid, and a RM 10 price fix would read as RM 10 already paid. Read once, at
