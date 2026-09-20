@@ -1,6 +1,6 @@
 {
- "v": "v748",
- "stamped": "20 Sep 2026, 20:25 KL",
+ "v": "v750",
+ "stamped": "20 Sep 2026, 21:53 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -4225,17 +4225,17 @@
     "qty": 5,
     "total": 420,
     "cost": 240,
-    "cash": 420,
-    "handover": "collected",
+    "cash": 435,
+    "handover": "delivered",
     "date": "2026-09-16",
     "deliveredQty": 5,
     "deliveredOn": "2026-09-16",
     "paidOn": "2026-09-16",
-    "note": "<b>CORRECTION ON s168 DATED 16 SEP: PRICE CUT, CARRIAGE ZEROED, CASH AND HANDOVER BOOKED.</b> CS6-BS-R's order of 16 Sep, 5 unit of salt, had total moved from RM440 to RM420, delivery from unset to 0, cash from RM0 to RM420 and delivered quantity from 0 to 5 unit. It moves no cash and no stock: it changes what the row says about itself. <b>Flagged:</b> the row carries a trail of two steps, which is not rewritten, so the trail will no longer add up; and RM84 a unit against about RM109 CS6-BS typically pays across 16 orders, 22.9% below. The figures answer the rate only. CS6-BS-R: 14 orders, median RM96.67, range RM6 to RM120, RM570 outstanding before, no unit on credit, nothing defaulted. Cost is the desk's own RM48 a unit. Nothing is left outstanding on the row. <b>UNSETTLED 16 SEP: CASH AND HANDOVER BACK TO ZERO.</b> <b>CORRECTION ON s168 DATED 16 SEP: THE SALT SALE IS TAKEN BACK TO UNSETTLED.</b> CS6-BS-R's order of 16 Sep, 5 unit of salt for RM440, all goods with no delivery or freight, had cash moved from RM440 to 0, delivered quantity from 5 unit to 0, and settled RM and settled unit from unset to 0. It moves no cash and no stock: it changes what the row says about itself. <b>Flagged:</b> RM88 a unit against about RM108 CS6-BS typically pays across 17 orders, 18.5% below; the figures answer the rate only, not the unsettling. CS6-BS-R stands at 14 orders, median RM96.67, range RM6 to RM120, nothing outstanding before, no unit on credit, nothing defaulted. Cost is the desk's own RM48 a unit. The RM440 and the 5 unit are now outstanding on the row. <b>SALT SELL DATED 16 SEP, SETTLED AND COLLECTED THE SAME DAY.</b> Booked to CS6-BS-R as R2, CS6-BS buying to sell on, 5 unit for RM440, all goods with no delivery or freight, RM440 cash in and 5 unit handed over on 16 Sep. The total clears the RM301.26 floor for 5 unit and stays under the RM560 ask and RM710 ceiling. Cost is the desk's own RM48 a unit, RM240 on the order. <b>Flagged:</b> the R2 booking, and RM88 a unit against the RM109 CS6-BS typically pays for salt across 16 orders, 19.3% below; the floor is still cleared. He held nothing outstanding and no unit on credit against a cap of 1, nothing defaulted. Nothing remains outstanding.",
+    "note": "<b>CORRECTION ON s168 DATED 20 SEP: THE RM15 OF CARRIAGE IS BACK ON THE 16 SEP ORDER, AND THE RM435 IT TOOK.</b> His word of 20 Sep 2026: the three orders of 16, 18 and 19 September were each 5 unit for RM420 with RM15 of delivery, completed. A correction of 16 Sep had zeroed the carriage and booked RM420 in, so this row alone of the three carried no delivery charge and RM15 less cash. The goods are still RM420, what was owed is RM435, and RM435 is what came in; the row says the goods were delivered rather than collected, which is what a delivery charge means. Nothing moves on the shelf: the salt left it on 16 Sep, three days before the count of 19 Sep, so the counted figure already holds it. <b>CORRECTION ON s168 DATED 16 SEP: PRICE CUT, CARRIAGE ZEROED, CASH AND HANDOVER BOOKED.</b> CS6-BS-R's order of 16 Sep, 5 unit of salt, had total moved from RM440 to RM420, delivery from unset to 0, cash from RM0 to RM420 and delivered quantity from 0 to 5 unit. It moves no cash and no stock: it changes what the row says about itself. <b>Flagged:</b> the row carries a trail of two steps, which is not rewritten, so the trail will no longer add up; and RM84 a unit against about RM109 CS6-BS typically pays across 16 orders, 22.9% below. The figures answer the rate only. CS6-BS-R: 14 orders, median RM96.67, range RM6 to RM120, RM570 outstanding before, no unit on credit, nothing defaulted. Cost is the desk's own RM48 a unit. Nothing is left outstanding on the row. <b>UNSETTLED 16 SEP: CASH AND HANDOVER BACK TO ZERO.</b> <b>CORRECTION ON s168 DATED 16 SEP: THE SALT SALE IS TAKEN BACK TO UNSETTLED.</b> CS6-BS-R's order of 16 Sep, 5 unit of salt for RM440, all goods with no delivery or freight, had cash moved from RM440 to 0, delivered quantity from 5 unit to 0, and settled RM and settled unit from unset to 0. It moves no cash and no stock: it changes what the row says about itself. <b>Flagged:</b> RM88 a unit against about RM108 CS6-BS typically pays across 17 orders, 18.5% below; the figures answer the rate only, not the unsettling. CS6-BS-R stands at 14 orders, median RM96.67, range RM6 to RM120, nothing outstanding before, no unit on credit, nothing defaulted. Cost is the desk's own RM48 a unit. The RM440 and the 5 unit are now outstanding on the row. <b>SALT SELL DATED 16 SEP, SETTLED AND COLLECTED THE SAME DAY.</b> Booked to CS6-BS-R as R2, CS6-BS buying to sell on, 5 unit for RM440, all goods with no delivery or freight, RM440 cash in and 5 unit handed over on 16 Sep. The total clears the RM301.26 floor for 5 unit and stays under the RM560 ask and RM710 ceiling. Cost is the desk's own RM48 a unit, RM240 on the order. <b>Flagged:</b> the R2 booking, and RM88 a unit against the RM109 CS6-BS typically pays for salt across 16 orders, 19.3% below; the floor is still cleared. He held nothing outstanding and no unit on credit against a cap of 1, nothing defaulted. Nothing remains outstanding.",
     "rid": "s168",
     "settledRM": 0,
     "settledKg": 0,
-    "mod": "corrected on 2026-09-16: cash 440 to 0; deliveredQty 5 to 0; settledRM (unset) to 0; settledKg (unset) to 0, then corrected on 2026-09-16: total 440 to 420; cash 0 to 420; deliveredQty 0 to 5; delivery (unset) to 0",
+    "mod": "corrected on 2026-09-16: cash 440 to 0; deliveredQty 5 to 0; settledRM (unset) to 0; settledKg (unset) to 0, then corrected on 2026-09-16: total 440 to 420; cash 0 to 420; deliveredQty 0 to 5; delivery (unset) to 0, then corrected on 2026-09-20: cash 420 to 435; delivery 0 to 15; handover collected to delivered",
     "amend": [
      {
       "date": "2026-09-16",
@@ -4257,9 +4257,16 @@
       "cash": 0,
       "kg": 0,
       "note": "<b>CORRECTION ON s168 DATED 16 SEP: PRICE CUT, CARRIAGE ZEROED, CASH AND HANDOVER BOOKED.</b> CS6-BS-R's order of 16 Sep, 5 unit of salt, had total moved from RM440 to RM420, delivery from unset to 0, cash from RM0 to RM420 and delivered quantity from 0 to 5 unit. It moves no cash and no stock: it changes what the row says about itself. <b>Flagged:</b> the row carries a trail of two steps, which is not rewritten, so the trail will no longer add up; and RM84 a unit against about RM109 CS6-BS typically pays across 16 orders, 22.9% below. The figures answer the rate only. CS6-BS-R: 14 orders, median RM96.67, range RM6 to RM120, RM570 outstanding before, no unit on credit, nothing defaulted. Cost is the desk's own RM48 a unit. Nothing is left outstanding on the row."
+     },
+     {
+      "date": "2026-09-20",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s168 DATED 20 SEP: THE RM15 OF CARRIAGE IS BACK ON THE 16 SEP ORDER, AND THE RM435 IT TOOK.</b> His word of 20 Sep 2026: the three orders of 16, 18 and 19 September were each 5 unit for RM420 with RM15 of delivery, completed. A correction of 16 Sep had zeroed the carriage and booked RM420 in, so this row alone of the three carried no delivery charge and RM15 less cash. The goods are still RM420, what was owed is RM435, and RM435 is what came in; the row says the goods were delivered rather than collected, which is what a delivery charge means. Nothing moves on the shelf: the salt left it on 16 Sep, three days before the count of 19 Sep, so the counted figure already holds it."
      }
     ],
-    "delivery": 0,
+    "delivery": 15,
     "rev": "R2"
    },
    {
@@ -4346,7 +4353,7 @@
     "cash": 435,
     "date": "2026-09-18",
     "deliveredQty": 5,
-    "note": "<b>CORRECTION ON s173 DATED 20 SEP: RM15 OF DELIVERY BESIDE THE RM420 OF GOODS, AND THE RM435 THE CUSTOMER PAID.</b> The row was drafted from site order 20260916085105-rkoi5a and filled in by hand at RM420 for the delivery of 18 Sep; the site holds the customer's payment of RM435 that day against order 20260917222749-4l1kkq, 5 unit delivered with RM15 of carriage. The row's key becomes CS6-BS|2026-09-18|435, which is what that order has waited on since. Nothing else on the row moves. <b>SALT SELL DATED 18 SEP, ACKNOWLEDGED AND PENDING.</b> Booked to CS6-BS, 5 unit for RM420, RM84 a unit, ordered on the statements site as order 20260916085105-rkoi5a, to collect. Nothing paid and nothing handed over, so the whole row stays open and no stock is drawn. The total clears the RM254.98 floor for 5 unit and runs under the RM560 ask and RM710 ceiling. Costed at RM48 a unit, the inventory's own rate, RM180 on the goods at 42.9%. <b>Flagged:</b> CS6-BS pays about RM107.50 a unit across 18 orders, this is 21.9% below, and the figures confirm the gap without accounting for it. CS6-BS shows 12 orders, median RM100, range RM11 to RM126.67, nothing outstanding before, 1 unit on credit against a cap of 2, nothing defaulted.",
+    "note": "<b>CORRECTION ON s173 DATED 20 SEP: THE 18 SEP ORDER SAYS THE GOODS WERE DELIVERED.</b> It carries RM15 of carriage and said nothing about who moved the salt, which on this book is not a third answer but no answer. Delivered, as the order was placed and as the other two of the three now read. No figure moves. <b>CORRECTION ON s173 DATED 20 SEP: RM15 OF DELIVERY BESIDE THE RM420 OF GOODS, AND THE RM435 THE CUSTOMER PAID.</b> The row was drafted from site order 20260916085105-rkoi5a and filled in by hand at RM420 for the delivery of 18 Sep; the site holds the customer's payment of RM435 that day against order 20260917222749-4l1kkq, 5 unit delivered with RM15 of carriage. The row's key becomes CS6-BS|2026-09-18|435, which is what that order has waited on since. Nothing else on the row moves. <b>SALT SELL DATED 18 SEP, ACKNOWLEDGED AND PENDING.</b> Booked to CS6-BS, 5 unit for RM420, RM84 a unit, ordered on the statements site as order 20260916085105-rkoi5a, to collect. Nothing paid and nothing handed over, so the whole row stays open and no stock is drawn. The total clears the RM254.98 floor for 5 unit and runs under the RM560 ask and RM710 ceiling. Costed at RM48 a unit, the inventory's own rate, RM180 on the goods at 42.9%. <b>Flagged:</b> CS6-BS pays about RM107.50 a unit across 18 orders, this is 21.9% below, and the figures confirm the gap without accounting for it. CS6-BS shows 12 orders, median RM100, range RM11 to RM126.67, nothing outstanding before, 1 unit on credit against a cap of 2, nothing defaulted.",
     "rid": "s173",
     "amend": [
      {
@@ -4370,13 +4377,21 @@
       "cash": 0,
       "kg": 0,
       "note": "<b>CORRECTION ON s173 DATED 20 SEP: RM15 OF DELIVERY BESIDE THE RM420 OF GOODS, AND THE RM435 THE CUSTOMER PAID.</b> The row was drafted from site order 20260916085105-rkoi5a and filled in by hand at RM420 for the delivery of 18 Sep; the site holds the customer's payment of RM435 that day against order 20260917222749-4l1kkq, 5 unit delivered with RM15 of carriage. The row's key becomes CS6-BS|2026-09-18|435, which is what that order has waited on since. Nothing else on the row moves."
+     },
+     {
+      "date": "2026-09-20",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s173 DATED 20 SEP: THE 18 SEP ORDER SAYS THE GOODS WERE DELIVERED.</b> It carries RM15 of carriage and said nothing about who moved the salt, which on this book is not a third answer but no answer. Delivered, as the order was placed and as the other two of the three now read. No figure moves."
      }
     ],
     "deliveredOn": "2026-09-18",
     "paidOn": "2026-09-18",
     "cost": 240,
     "delivery": 15,
-    "mod": "corrected on 2026-09-20: cash 420 to 435; delivery (unset) to 15"
+    "mod": "corrected on 2026-09-20: cash 420 to 435; delivery (unset) to 15, then corrected on 2026-09-20: handover (unset) to delivered",
+    "handover": "delivered"
    },
    {
     "customer": "CH4-MAL",
@@ -5212,7 +5227,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-20T10:13:40.989Z",
   "PRICING": {
-   "takenAt": "2026-09-20T12:26:30.036Z",
+   "takenAt": "2026-09-20T13:53:37.023Z",
    "sizes": [
     0.5,
     1,
@@ -6308,7 +6323,7 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.34
+         "v": 0.37254901960784315
         }
        },
        "attrib": 1,
@@ -6826,10 +6841,10 @@
      ]
     }
    },
-   "v": "v748"
+   "v": "v750"
   },
   "OPEN": {
-   "at": "2026-09-20T12:26:30.134Z",
+   "at": "2026-09-20T13:53:37.123Z",
    "count": 8,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
@@ -6992,7 +7007,7 @@
     "salt": "2026-09-19",
     "oil": "2026-09-19"
    },
-   "v": "v748"
+   "v": "v750"
   }
  }
 }

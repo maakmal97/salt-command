@@ -17275,6 +17275,35 @@ await (async () => {
     "a size taken off the board keeps its row and says it is off: " + JSON.stringify(off.marked));
 })();
 
+section("v750: the three orders of 16, 18 and 19 September each read 5 unit, RM420 and RM15 of carriage, completed");
+await (async () => {
+  /* his word of 20 Sep 2026. The 16th's row had its carriage zeroed by a correction that day and took RM420
+     where RM435 was owed; the 18th's said nothing about who moved the goods. The 19th already read right. */
+  const E = (await import("../engine/position.mjs")).default;
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const three = ["s168", "s173", "s183"].map((id) => bk.sales.find((r) => r.rid === id));
+  ok(three.every(Boolean), "the three rows are on the book: " + JSON.stringify(three.map((r) => r && r.rid)));
+  const shape = three.map((r) => ({ rid: r.rid, date: r.date, qty: r.qty, goods: E.txGoods(r), carriage: +r.delivery || 0,
+    owed: E.txOwed(r), paid: E.txPaid(r), moved: E.txEffDeliv(r), handover: r.handover || null, state: E.txStat(r).order }));
+  ok(JSON.stringify(shape.map((s) => s.date)) === JSON.stringify(["2026-09-16", "2026-09-18", "2026-09-19"]),
+    "one on each of the three days: " + JSON.stringify(shape.map((s) => s.date)));
+  const wrong = shape.filter((s) => !(s.qty === 5 && s.goods === 420 && s.carriage === 15 && s.owed === 435 && s.paid === 435 && s.moved === 5));
+  ok(!wrong.length, "each is 5 unit, RM420 of goods with RM15 of carriage, RM435 owed and RM435 in: " + JSON.stringify(wrong.length ? wrong : shape.map((s) => s.rid + " ok")));
+  ok(shape.every((s) => s.state === "Completed"), "and each reads Completed: " + JSON.stringify(shape.map((s) => s.rid + " " + s.state)));
+  /* A CARRIAGE MEANS HE DROVE, and the book has a word for that which is not the absence of one */
+  ok(shape.every((s) => s.handover === "delivered"), "each says the goods were delivered, which is what a carriage means: " + JSON.stringify(shape.map((s) => s.rid + " " + s.handover)));
+
+  /* ---- AND THE SHELF DOES NOT MOVE. The salt left it before the count, so the count already holds it ---- */
+  const cnt = (bk.COUNTS || []).filter((c) => c.product === "salt").slice(-1)[0];
+  ok(cnt && cnt.date === "2026-09-19" && bk.COUNT_ON.salt === "2026-09-19",
+    "salt was last counted on 19 September: " + JSON.stringify(cnt && { date: cnt.date, qty: cnt.qty }));
+  ok(three.every((r) => r.date <= cnt.date),
+    "and all three days fall on or before that count, so nothing here may roll the stated figure");
+  const rolls = (bk.NOTES && bk.NOTES.STATED_STOCK) || [];
+  ok(!/^ROLLED AT v750/.test(rolls[0] || ""), "no roll was written for this version: " + String(rolls[0] || "").slice(0, 40));
+  ok(bk.STATED_STOCK === 22.65, "the stated inventory stands where v744 left it: " + bk.STATED_STOCK);
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */
