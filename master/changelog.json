@@ -1,5 +1,15 @@
 [
  {
+  "v": "v744",
+  "d": "20 Sep 2026",
+  "t": "TWO ORDERS CLOSED, ONE WITHDRAWN, A CARRIAGE LINE FOLDED INTO THE PRICE",
+  "n": [
+   "<b>WHAT WAS FOLDED:</b> five rows. SA5-BTR's lot p026 of 19 Sep takes its second half, 18.75 unit on 20 Sep with no cash, and closes; CS6-BS-R pays the RM15 of delivery left on s183 and that order closes too. CE4-CHE's pending s180, 2 unit for RM230, is withdrawn on 20 Sep with nothing paid and nothing moved, so it counts nowhere.",
+   "<b>WHAT WAS UNUSUAL:</b> s137 to CJ4-BJ has the RM15 carriage cleared and the total set to RM850, so the whole figure is now goods on a row already delivered in full with RM50 unpaid and 0.52 unit against the cap. The drafter flagged that RM48 a unit is the inventory average across more than one lot rate, not the lot drawn, and that flag stands open on two rows.",
+   "<b>WHAT THE INVENTORY DID:</b> a new name, CZ5-TM, buys 1 unit for RM110, collected and paid on 19 Sep, well clear of the RM51.10 floor for that size and under the RM160 ask, with no history of theirs to test it against. The 18.75 unit of p026 land on 20 Sep against a book of 4.9 unit counted 19 Sep, with the reorder mark at 15."
+  ]
+ },
+ {
   "v": "v743",
   "d": "20 Sep 2026",
   "t": "TWO CODES FILED: ONE REGISTERED, ONE PLACED, NO FIGURE MOVED",
