@@ -320,7 +320,7 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
 - **AN ORDER REACHES THE BOOK IN STAGES, AND SITE ORDERS WRITES NOTHING** (v694, his instruction of
   18 Sep 2026). Site orders moves the ORDER, Approve lands the ROW. The desk's every-minute
   `reconcileOrders` is the ONE road that queues: the acknowledgement makes a **Pending** row with the
-  delivery charge inside its total, a payment a **Fulfilment** of the increment, a handover a
+  delivery charge beside its total (v727: the goods are the total and what is owed is the two together), a payment a **Fulfilment** of the increment, a handover a
   **Correction** stating the running total, a withdrawal a **Cancellation**. The row is named by
   `ledgerKey`, **the engine's `ovKey` to the character**, written onto the order at the
   acknowledgement, because a `rid` is minted at fold time and there is no route back from desk to
