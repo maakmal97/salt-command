@@ -1,5 +1,16 @@
 [
  {
+  "v": "v737",
+  "d": "20 Sep 2026",
+  "t": "THE SUITE'S CARRIAGE CHECK IS SCOPED TO THE ROWS v727 RESTATED, SO A SITE ORDER FOLDED WITH A DELIVERY NO LONGER TURNS IT RED",
+  "n": [
+   "<b>THE SUITE HAS BEEN RED ON MASTER SINCE THE v734 FOLD AT 07:48 KL,</b> one assertion of 3,067, on each of the three fold runs since. s183, the pending row folded from site order zhim2a with RM15 of delivery beside RM420 of goods, carries no note saying THE CARRIAGE MOVED OUT OF THE TOTAL. It cannot: v727 wrote that sentence onto the twelve rows it restated, and s183 was born under the new convention with nothing to restate. The check read every carriage row on the live book, so the first row folded with a delivery after the restatement was bound to trip it, and the road v731 repaired delivered exactly that row.",
+   "<b>THE CUT IS THE RID.</b> s182 was the last row on the book when v727 ran, and a rid is minted at fold time above every rid on the book, so a carriage row at s182 or below was restated and must say so, while one above it was born with the two figures and is held to the other half of the same check, that the goods are the total and what is owed is more than the goods, which s183 passes. The cut is not the date: a row entered late and dated before 19 Sep carries a low date and a high rid, and it is the rid that says which convention wrote it.",
+   "<b>NOTHING ON THE BOOK MOVES.</b> Writing the sentence onto s183 would have gone green in one line and lied on a dated record. The fold runs of v734, v735 and v736 each shipped, proved the phone, marked the rows committed, re-seeded the mirror and published, and turned red only at the suite that runs after; the hourly runs since publish alone and run no suite, so nothing had gone green on master since. The second failure reported beside this one, a desk window still carrying its document after the section that opened it closed, does not reproduce on the jsdom the lock file pins, on this machine or in Actions.",
+   "<b>THE CHECKS.</b> The section was run red against the book as v736 left it before the cut was written, and green after. Five mutations each turned it red again: the cut moved one rid up so s183 is asked for a sentence it cannot have, the count moved to thirteen, the sentence misspelt, the cut read on the date instead of the rid (which also pulls s183 in), and the sentence struck off one restated row of the book."
+  ]
+ },
+ {
   "v": "v736",
   "d": "20 Sep 2026",
   "t": "TWO FULFILMENTS CLOSE OUT 19 SEP: ONE ORDER PAID IN FULL, ONE MOVED IN FULL",

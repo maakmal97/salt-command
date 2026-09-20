@@ -16484,11 +16484,19 @@ await (async () => {
   ok(E.txGoods(a) === E.txGoods(b) && E.ovKey(a) !== E.ovKey(b),
     "s155 and s157 have the same GOODS and must not have the same key: " + JSON.stringify([E.ovKey(a), E.ovKey(b)]));
 
-  /* ---- the live book: every row restated and not one figure lost ---- */
+  /* ---- the live book: every row v727 restated still says so, and not one figure lost ---- */
   const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const carried = (bk.sales || []).filter((r) => +r.delivery > 0);
-  ok(carried.length > 0 && carried.every((r) => /THE CARRIAGE MOVED OUT OF THE TOTAL/.test(r.note || "")),
-    carried.length + " sale(s) carry a carriage and every one says on its own row that it was restated rather than re-priced");
+  /* s182 was the last rid on the book when v727 restated it. A rid is minted at fold time above every
+     rid on the book, so a carriage row at or below it was restated and must say so; one above it was born with
+     the two figures (s183, folded from a site order on 20 Sep, was the first) and has nothing to
+     restate, so it is held to the next test alone. The cut is the rid and not the date: a row entered
+     late carries a low date and a high rid, and it is the rid that says which convention wrote it. */
+  const RESTATED_UP_TO = 182;
+  const ridN = (r) => +String(r.rid || "").slice(1);
+  const restated = carried.filter((r) => ridN(r) <= RESTATED_UP_TO);
+  ok(restated.length === 12 && restated.every((r) => /THE CARRIAGE MOVED OUT OF THE TOTAL/.test(r.note || "")),
+    restated.length + " sale(s) carried a carriage when v727 restated the book, and every one says on its own row that it was restated rather than re-priced");
   ok(carried.every((r) => E.txGoods(r) === r.total && E.txPrice(r) * r.qty > r.total),
     "on each of them the goods are the total and what is owed is more than the goods, which is the whole of the change");
 
