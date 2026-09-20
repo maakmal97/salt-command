@@ -17073,23 +17073,23 @@ await (async () => {
   const ful = (id, rid, kg) => ({ id, collection: "sales", amends: rid, amendKind: "Fulfilment", row: {},
     entry: { at: id, payload: { mode: "amend", direction: "SELL", rid, kind: "Fulfilment", date: "2026-09-19", cash: 0, kg } } });
   const staged = (...items) => ({ ok: true, count: items.length, approved: items });
-  const kgs = (p) => p.moves.map((m) => m.kg);
+  const unitsOf = (p) => p.moves.map((m) => m.kg);
 
   const p1 = plan(fresh(), staged(corr("2026-09-19T13:00:00.000Z", "sales", "sR1", "SELL", { deliveredQty: 2 }), corr("2026-09-19T13:00:01.000Z", "sales", "sR1", "SELL", { deliveredQty: 5 })), null);
-  ok(p1.refused.length === 0 && kgs(p1).length === 2 && kgs(p1)[0] === -2 && kgs(p1)[1] === -3,
-    "a handover in two stages, 2 then 5, rolls 2 and then 3, five in all: " + JSON.stringify(kgs(p1)) + JSON.stringify(p1.refused));
+  ok(p1.refused.length === 0 && unitsOf(p1).length === 2 && unitsOf(p1)[0] === -2 && unitsOf(p1)[1] === -3,
+    "a handover in two stages, 2 then 5, rolls 2 and then 3, five in all: " + JSON.stringify(unitsOf(p1)) + JSON.stringify(p1.refused));
   const p2 = plan(fresh(), staged(ful("2026-09-19T13:00:02.000Z", "sR1", 2), corr("2026-09-19T13:00:03.000Z", "sales", "sR1", "SELL", { deliveredQty: 2 })), null);
-  ok(p2.refused.length === 0 && kgs(p2).length === 1 && kgs(p2)[0] === -2,
-    "a fulfilment of 2 followed by a correction restating 2 rolls once: " + JSON.stringify(kgs(p2)) + JSON.stringify(p2.refused));
+  ok(p2.refused.length === 0 && unitsOf(p2).length === 1 && unitsOf(p2)[0] === -2,
+    "a fulfilment of 2 followed by a correction restating 2 rolls once: " + JSON.stringify(unitsOf(p2)) + JSON.stringify(p2.refused));
   const p3 = plan(fresh(), staged(ful("2026-09-19T13:00:04.000Z", "sR1", 2), corr("2026-09-19T13:00:05.000Z", "sales", "sR1", "SELL", { deliveredQty: 5 })), null);
-  ok(p3.refused.length === 0 && kgs(p3).length === 2 && kgs(p3)[0] === -2 && kgs(p3)[1] === -3,
-    "and one restating 5 after it rolls the other 3: " + JSON.stringify(kgs(p3)) + JSON.stringify(p3.refused));
+  ok(p3.refused.length === 0 && unitsOf(p3).length === 2 && unitsOf(p3)[0] === -2 && unitsOf(p3)[1] === -3,
+    "and one restating 5 after it rolls the other 3: " + JSON.stringify(unitsOf(p3)) + JSON.stringify(p3.refused));
   const p4 = plan(fresh(), staged(corr("2026-09-19T13:00:06.000Z", "purchases", "pR2", "BUY", { receivedQty: 10 })), null);
-  ok(p4.refused.length === 0 && kgs(p4).length === 0,
-    "stating the receipt of a lot the engine already reads as received in full moves nothing: " + JSON.stringify(kgs(p4)) + JSON.stringify(p4.refused));
+  ok(p4.refused.length === 0 && unitsOf(p4).length === 0,
+    "stating the receipt of a lot the engine already reads as received in full moves nothing: " + JSON.stringify(unitsOf(p4)) + JSON.stringify(p4.refused));
   const p5 = plan(fresh(), staged(corr("2026-09-19T13:00:07.000Z", "purchases", "pR2", "BUY", { receivedQty: 0 })), null);
-  ok(p5.refused.length === 0 && kgs(p5).length === 1 && kgs(p5)[0] === -10,
-    "and stating that nothing of it has arrived rolls the 10 unit back off the shelf: " + JSON.stringify(kgs(p5)) + JSON.stringify(p5.refused));
+  ok(p5.refused.length === 0 && unitsOf(p5).length === 1 && unitsOf(p5)[0] === -10,
+    "and stating that nothing of it has arrived rolls the 10 unit back off the shelf: " + JSON.stringify(unitsOf(p5)) + JSON.stringify(p5.refused));
 })();
 
 section("The suite frees its windows: every section's body is its own async function");
