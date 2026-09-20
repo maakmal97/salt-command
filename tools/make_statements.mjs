@@ -56,7 +56,7 @@ const book = JSON.parse(readFileSync(BOOK, "utf8"));
    them to: the book's own declarations, and the position engine's own functions */
 const sales = book.sales;
 const customerRefunds = book.customerRefunds || [];
-const { txStat, txDates } = POSITION_ENGINE;
+const { txStat, txDates, txOwed } = POSITION_ENGINE;   /* v741: what they owe is the goods and the delivery together */
 const esc = x => ('' + (x == null ? '' : x)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const codeOf = n => n; /* the desk's codeOf is newIds[n]||n and newIds is {} post-rekey: identity */
 
@@ -127,7 +127,7 @@ function stmtRows(party,o){
     const st=txStat(s), d=txDates(s);
     const paidCash=+(s.cash||0), inKind=+(s.settledRM||0);
     const got=+(s.deliveredQty||0), inKindUnits=+(s.settledKg||0);
-    const owed=+(s.total-paidCash-inKind).toFixed(2);
+    const owed=+(txOwed(s)-paidCash-inKind).toFixed(2);   /* v741: the delivery is owed too */
     /* a cross-reference is included ONLY when it points at another of HIS OWN orders;
        anything pointing elsewhere is another party's business and is dropped */
     const links=[];
@@ -235,7 +235,7 @@ function stmtRecon(party,rows){
     const legs=[...new Set(keys)].map(k=>{
       const t=sales.find(x=>x.customer+'|'+x.date+'|'+x.total===k);
       if(!t)return null;
-      const billed=+t.total, paidCash=+(t.cash||0);
+      const billed=+txOwed(t), paidCash=+(t.cash||0);   /* v741 */
       /* v455: THE SHORTFALL IS READ FROM A FIELD THE SETTLEMENT HAS ALREADY FILLED. The fold
          credits an in-kind settlement INTO the leg's cash, as a Fulfilment step carrying `ref` to
          the order that settled it: s003 holds cash 600 with a step of RM 50 ref 15 Jul order. So by
@@ -384,7 +384,7 @@ function stmtDoc(party,rows,o){
           +(noLegDates.has(r.date)?'by agreement':'to an earlier balance')+'</div>':'')
         +'</td>'
       +'<td class="amt'+(r.cancelled?' cxr':'')+'">'+(r.gift?'<span class="nilamt">nil</span>':money(r.total))
-        +(r.delivery>0.009?'<div class="sub2">incl. delivery '+money(r.delivery)+'</div>':'')+'</td>'
+        +(r.delivery>0.009?'<div class="sub2">plus delivery '+money(r.delivery)+'</div>':'')+'</td>'
       +'<td class="r">'+stat+'</td></tr>';
   }).join('');
   return ['<!DOCTYPE html>','<html lang="en"><head><meta charset="utf-8">',

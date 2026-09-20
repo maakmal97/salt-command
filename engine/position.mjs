@@ -92,12 +92,13 @@ function txStat(t){
      so payFull is false and the label says so. Everything downstream then behaves: undated
      with nothing moved it is Pending and counts nowhere, and if goods go out before a price
      is agreed it becomes Open - Advance, which is exactly what that would be. */
-  const payFull=t.unpriced?false:(t.total<=0.009?true:(paid>=t.total-0.009)), payNone=paid<=0.009, delFull=t.qty>0&&del>=t.qty-0.009, delNone=del<=0.009;
+  const owedT=txOwed(t);   /* v741: the goods and the delivery together, as ledgerRow has read since v738 */
+  const payFull=t.unpriced?false:(owedT<=0.009?true:(paid>=owedT-0.009)), payNone=paid<=0.009, delFull=t.qty>0&&del>=t.qty-0.009, delNone=del<=0.009;
   const pay=t.unpriced?'Unpriced':payFull?'Paid':payNone?'Unpaid':'Partial';
   const deliv=delFull?'Delivered':delNone?'Undelivered':'Partial';
   let order=(payFull&&delFull)?'Completed':(payNone&&delNone)?'Pending':'Open';
   if(order==='Open'){                                                  // split Open the same way the replay does
-    const paidFrac=t.total>0?paid/t.total:0,delivFrac=t.qty>0?del/t.qty:0;
+    const paidFrac=owedT>0?paid/owedT:0,delivFrac=t.qty>0?del/t.qty:0;
     if(delivFrac>paidFrac+1e-9)order='Open · Advance';                 // delivered ahead, they owe cash
     else if(paidFrac>delivFrac+1e-9)order='Open · Deferred';           // paid ahead, you owe salt
   }
@@ -118,7 +119,8 @@ function txDates(s){
   const unitSteps=am.filter(a=>a.kind==='Fulfilment'&&+a.kg>0.0001);
   const cashSteps=am.filter(a=>+a.cash>0.0001);
   const phys=txPhys(s), eff=txEffDeliv(s), paid=txPaid(s);
-  const full=s.qty>0&&eff>=s.qty-0.01, fullPaid=s.total>0&&paid>=s.total-0.01;
+  const owedS=txOwed(s);   /* v741: paid in full is the goods and the delivery */
+  const full=s.qty>0&&eff>=s.qty-0.01, fullPaid=owedS>0&&paid>=owedS-0.01;
   let dOn=null,dSrc=null,pOn=null,pSrc=null;
   if(s.cancelled){return {dOn:null,dSrc:'cancelled',pOn:null,pSrc:'cancelled',full:false,fullPaid:false};}
   if(eff>0.0001){

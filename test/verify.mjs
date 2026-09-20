@@ -16990,6 +16990,68 @@ await (async () => {
     "the book carries the roll of zhim2a's 5 unit, 9.9 less 5 is 4.9: " + live.slice(0, 100));
 })();
 
+section("v741: the engine's status and dates, the customer's statement and the row editor read what is owed as the goods and the delivery");
+await (async () => {
+  /* v738 named six readers and missed four, found by an adversarial read of its own diff the same afternoon: txStat
+     (so s183 read Paid and Completed on the Ledger, the Order book and the Workbench while the desk chased its RM15),
+     txDates (which put the cleared paid-on date straight back from the cash trail, so v738's correction of s183
+     changed no reading), the statement's own owed and billed figures (so the customer's page said Settled and the
+     send sheet said the account was clear), and the row editor's outstanding figure (so Paid in full was not offered
+     on the row that owed it). The same one reader, txOwed. */
+  const E = (await import("../engine/position.mjs")).default;
+  const row = { rid: "sV1", customer: "CZ9-DV", date: "2026-09-19", qty: 5, total: 420, delivery: 15, cash: 420, deliveredQty: 5, deliveredOn: "2026-09-19",
+    amend: [{ date: "2026-09-19", kind: "Fulfilment", cash: 420, kg: 5 }] };
+  const st1 = E.txStat(row);
+  ok(st1.pay === "Partial" && st1.order === "Open · Advance", "RM420 of RM435, delivered, reads Partial and Open · Advance: " + JSON.stringify(st1));
+  const st2 = E.txStat({ ...row, cash: 435 });
+  ok(st2.pay === "Paid" && st2.order === "Completed", "RM435 reads Paid and Completed: " + JSON.stringify(st2));
+  const st3 = E.txStat({ ...row, delivery: 0 });
+  ok(st3.pay === "Paid" && st3.order === "Completed", "and with no delivery RM420 still completes it: " + JSON.stringify(st3));
+  const d1 = E.txDates(row);
+  ok(d1.fullPaid === false && d1.pOn === null && d1.pSrc === "partial", "no paid-on date is derived while the delivery is owed: " + JSON.stringify(d1));
+  const d2 = E.txDates({ ...row, cash: 435, amend: row.amend.concat([{ date: "2026-09-20", kind: "Fulfilment", cash: 15, kg: 0 }]) });
+  ok(d2.fullPaid === true && d2.pOn === "2026-09-20" && d2.pSrc === "trail", "and the day the RM15 arrives is the day it was paid: " + JSON.stringify(d2));
+
+  /* ---- the row editor: Paid in full is offered for the RM15, and a lot's branch is untouched ---- */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const uo = (r, dir) => JSON.parse(w.eval("JSON.stringify(updOut(" + JSON.stringify(r) + "," + JSON.stringify(dir) + "))"));
+  const e1 = uo({ qty: 5, total: 420, delivery: 15, cash: 420, deliveredQty: 5 }, "SELL");
+  ok(e1.cashLeft === 15 && e1.unitLeft === 0, "the row editor reads RM15 outstanding on RM420 paid of RM435: " + JSON.stringify(e1));
+  const e2 = uo({ qty: 5, total: 420, cash: 420, deliveredQty: 5 }, "SELL");
+  ok(e2.cashLeft === 0, "and nothing on a row with no delivery: " + JSON.stringify(e2));
+  const e3 = uo({ qty: 10, total: 500, cash: 450, receivedQty: 10, freight: 20 }, "BUY");
+  ok(e3.cashLeft === 50, "a lot's outstanding cash is still its total less what was paid: " + JSON.stringify(e3));
+
+  /* ---- the statement: the row owes RM15 and says so, on a copy of the book carrying the row ---- */
+  const { writeFileSync: wf, readFileSync: rf } = await import("node:fs");
+  const bkS = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+  bkS.sales.push({ ...row, note: "fixture" });
+  bkS.sales.push({ ...row, rid: "sV2", date: "2026-09-18", cash: 435, amend: row.amend.concat([{ date: "2026-09-18", kind: "Fulfilment", cash: 15, kg: 0 }]), note: "fixture" });
+  const BS = join(REPO, "test", ".v741.json");
+  wf(BS, JSON.stringify(bkS));
+  const had = process.env.SALT_BOOK;
+  process.env.SALT_BOOK = BS;
+  const { stmtRows } = await import("../tools/make_statements.mjs?v741");
+  if (had === undefined) delete process.env.SALT_BOOK; else process.env.SALT_BOOK = had;
+  try { (await import("node:fs")).unlinkSync(BS); } catch (e) { /* the copy is read at import; nothing else needs it */ }
+  const rows = stmtRows("CZ9-DV", { dates: true, pending: true, completed: true, open: true });
+  const r1 = rows.find((x) => x.rid === "sV1"), r2 = rows.find((x) => x.rid === "sV2");
+  ok(r1 && r1.owed === 15 && r1.state === "Balance outstanding" && !r1.paidOn,
+    "the statement row owes RM15, reads Balance outstanding and carries no paid-on date: " + JSON.stringify(r1 && { owed: r1.owed, state: r1.state, paidOn: r1.paidOn }));
+  ok(r2 && r2.owed === 0 && r2.state === "Settled" && r2.paidOn === "2026-09-18",
+    "and the one paid RM435 is settled on the day: " + JSON.stringify(r2 && { owed: r2.owed, state: r2.state, paidOn: r2.paidOn }));
+  const msrc = rf(join(REPO, "tools", "make_statements.mjs"), "utf8");
+  ok(/plus delivery '\+money\(r\.delivery\)/.test(msrc) && !/incl\. delivery/.test(msrc),
+    "the amount cell says the delivery is beside the goods, not inside them, since v727 (a source pin: the cell is a template string)");
+
+  /* ---- the live book: nothing that owes reads Completed ---- */
+  const bk = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+  const done = bk.sales.filter((r) => !r.cancelled && E.txStat(r).order === "Completed");
+  const owing = done.filter((r) => E.txOwed(r) - E.txPaid(r) > 0.009).map((r) => r.rid + " owes " + (E.txOwed(r) - E.txPaid(r)).toFixed(2));
+  ok(done.length > 0 && !owing.length, "no row on the book reads Completed while it still owes: " + (owing.join("; ") || "none of " + done.length));
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

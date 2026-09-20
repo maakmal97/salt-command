@@ -1,5 +1,15 @@
 [
  {
+  "v": "v741",
+  "d": "20 Sep 2026",
+  "t": "THE ENGINE'S STATUS AND DATES, THE CUSTOMER'S STATEMENT AND THE ROW EDITOR READ WHAT IS OWED AS THE GOODS AND THE DELIVERY",
+  "n": [
+   "<b>v738 NAMED SIX READERS AND MISSED FOUR,</b> found the same afternoon by three independent reads of its own diff, each finding then put to a refuter. txStat measured paid in full and the paid fraction against the goods, so s183 read Paid and Completed on the Ledger, the Order book, the Workbench's pills and the desk's open count while the Order book's cash table chased its RM15 on the same page. txDates measured paid in full the same way and put the paid-on date v738 had cleared straight back from the cash trail, so v738's correction of s183 changed no reading. The statement's own owed and billed figures read total less cash, so the customer's page said Settled, the footer said Balance nil and the send sheet said the account was clear, with an amount cell whose sub-line still said the delivery was inside the total, which v727 ended. The row editor's outstanding figure read the goods, so Paid in full was not offered on the row that owed it and the panel said nothing was outstanding.",
+   "<b>THE SAME ONE READER, txOwed,</b> in all four: txStat's paid in full and paid fraction, txDates' paid in full, the statement's owed and billed, and a sale's total in the row editor, the lot's branch beside it unchanged. The amount cell now says <i>plus delivery</i>. On RM420 paid of RM435 a row reads Partial and Open, Advance, derives no paid-on date, owes RM15 on the statement with Balance outstanding, and offers Paid in full for the RM15; RM435 completes it on the day the RM15 arrived.",
+   "<b>THE CHECKS.</b> A section of twelve assertions: the status on RM420, RM435 and with no delivery; the dates with the RM15 owed and the day it arrives; the row editor on a sale with and without a delivery and on a lot; the statement's rows on a copy of the book carrying the case, owed RM15 and Balance outstanding, and settled at RM435; the amount cell's wording; and the live book, no row reading Completed while it owes, which read s183 red before the change. Six mutations each turned it red: each of the three engine reads, the statement's owed and its wording, and the row editor's total, put back to the goods."
+  ]
+ },
+ {
   "v": "v740",
   "d": "20 Sep 2026",
   "t": "THE SUITE'S CARRIAGE CHECK NAMES THE TWELVE ROWS v727 RESTATED, BECAUSE A ROW MAY BE GIVEN A CARRIAGE AFTER THE FACT",
