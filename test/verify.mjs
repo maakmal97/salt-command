@@ -17097,6 +17097,29 @@ await (async () => {
     "and stating that nothing of it has arrived rolls the 10 unit back off the shelf: " + JSON.stringify(unitsOf(p5)) + JSON.stringify(p5.refused));
 })();
 
+section("v746: no row's note says the same thing twice");
+await (async () => {
+  /* v738 corrected s173 and s183 by hand through the fold's own applier and then prepended the note a second
+     time: applyAmend already writes `note + " " + (row.note || "")`, so both rows opened with the same
+     sentence twice, on the desk's card and in the fold's next dossier. The arithmetic and the trail were
+     right and the prose was doubled, which nothing on the book could see. */
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const rows = (bk.sales || []).concat(bk.purchases || []).filter((r) => r && r.note);
+  /* the sentence may close inside a tag, because a note opens in bold: <b>WHAT HAPPENED.</b> is one sentence
+     and the doubling repeats it whole, so the closing tag is part of the unit and not the end of it */
+  const DOUBLED = /^(.{40,}?\.(?:<\/[a-z]+>)?)\s+\1(?:\s|$)/;
+  const doubled = rows.filter((r) => DOUBLED.test(String(r.note))).map((r) => r.rid);
+  ok(rows.length > 100 && !doubled.length,
+    "no row on the book opens with the same sentence twice: " + (doubled.join(" ") || "none of " + rows.length));
+
+  /* and the applier is the one writer of that prefix, so a caller that prepends as well doubles it */
+  const { applyAmend } = await import("../tools/fold.mjs");
+  const row = { customer: "CZ9-NT", date: "2026-09-19", qty: 1, total: 100, cash: 0, deliveredQty: 0, note: "THE ROW AS IT WAS." };
+  applyAmend(row, { kind: "Correction", date: "2026-09-20", fields: { cash: 100 } }, "SELL", "THE CORRECTION SAYS THIS.");
+  ok(row.note === "THE CORRECTION SAYS THIS. THE ROW AS IT WAS.",
+    "the applier prepends the correction's note itself, once, ahead of what the row said: " + JSON.stringify(row.note));
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */
