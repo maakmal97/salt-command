@@ -3112,12 +3112,19 @@ await (async () => {
      derived ask, so the shape that was salt's two-tier board no longer exists on either, and the
      single column is headed by the LEVEL a stranger is quoted rather than the word Ask. The count of
      each shape is still asserted, so a second column reappearing fails here rather than on the phone. */
-  const twoTier = heads.filter((h) => h.length === 5), oneTier = heads.filter((h) => h.length === 4);
-  ok(twoTier.length === 0 && oneTier.length === 2 && oneTier.length === heads.length,
-    `both books carry one tier column (${heads.map((h) => h.length + " cols").join(", ")})`);
+  /* RESTATED AT v749: A COLUMN A LEVEL, AND AS MANY AS THAT BOOK HAS. The one column was the board's last level;
+     every level carries its own now, so the count is three (size, COGS, break-even) plus the book's own levels,
+     which is six for salt and two for oil, whose rule is a fixed price a size. The count is still asserted per
+     book rather than as a range, so a column appearing or going missing fails here rather than on the phone. */
+  const lvlOf = JSON.parse(w.eval("JSON.stringify(PROD_IDS.slice().reverse().map(function(p){setProdView(p);"
+    + "var g=fiveTiersNow();return g?Math.max.apply(null,g.map(function(x){return x.prices.length;})):1;}))"));
+  const wantCols = lvlOf.map((n) => 3 + n);
+  ok(heads.length === wantCols.length && heads.every((h, i) => h.length === wantCols[i]),
+    `each board carries a column a level (${heads.map((h) => h.length + " cols").join(", ")} against ${wantCols.join(", ")})`);
+  ok(heads.every((h) => !h.some((c) => /^Tier 1/.test(c))), "and no board carries the retired Tier 1 column");
   const lastLevel = String(w.eval("TIER_NAMES[TIER_NAMES.length-1]"));
-  ok(oneTier.every((h) => h[3].indexOf(lastLevel) === 0),
-    `and each board's one column is headed ${lastLevel}, the level a stranger is quoted (${oneTier.map((h) => h[3]).join(" / ")})`);
+  ok(heads.every((h) => h[h.length - 1].indexOf(lastLevel) === 0),
+    `and each board's LAST column is headed ${lastLevel}, the level a stranger is quoted (${heads.map((h) => h[h.length - 1]).join(" / ")})`);
   ok(heads.every((h) => !h.some((c) => /^Margin/.test(c))), "and no column on the board is headed Margin any more");
   ok(heads.every((h) => !h.some((c) => /^Markup/.test(c))), "and the Markup column is gone from the head, because it moved into the cells");
   {
@@ -3130,8 +3137,10 @@ await (async () => {
     const boardTx = String(w.eval(bd + ".textContent"));
     const nRows = Number(w.eval(bd + ".rows.length")) - 1;
     const mult = boardTx.match(/[0-9]+\.[0-9]{2}x eff\./g) || [];
-    ok(nRows > 1 && mult.length === nRows,
-      `every cell of the one tier carries the multiple and says it is of effective cost (${mult.length} over ${nRows} sizes)`);
+    /* v749: one a LEVEL CELL rather than one a row, since every level carries the four lines now */
+    const nLvl = Number(w.eval(bd + ".rows[0].cells.length")) - 3;
+    ok(nRows > 1 && nLvl > 0 && mult.length === nRows * nLvl,
+      `every cell of every level carries the multiple and says it is of effective cost (${mult.length} over ${nRows} sizes and ${nLvl} levels)`);
     ok(!/[0-9]x markup/i.test(boardTx), "and nowhere on the board is the multiple called a markup without its basis");
   }
   /* ============ v564: TIER 1 IS HIS TWO PRICES, PROVED ON THE BOARD AND IN THE ENGINE ============
@@ -3193,13 +3202,16 @@ await (async () => {
       + "var head=[].map.call(t.rows[0].cells,function(c){return c.textContent.replace(/\\s+/g,' ').trim();});"
       + "var num=function(c){var m=c.textContent.replace(/,/g,'').match(/-?[0-9]+(\\.[0-9]+)?/);return m?+m[0]:null;};"
       + "var rows=[].slice.call(t.tBodies[0].rows).map(function(r){"
-      + "  return {size:r.cells[0].textContent.replace(/\\s+/g,' ').trim(), ask:num(r.cells[3])};});"
+      /* v749: the ask is the LAST cell of the row, the board's own level; the fourth is now the first level */
+      + "  return {size:r.cells[0].textContent.replace(/\\s+/g,' ').trim(), ask:num(r.cells[r.cells.length-1]), first:num(r.cells[3])};});"
       + "return {head:head, rows:rows};})())"));
     const engineByRow = JSON.parse(w.eval("JSON.stringify(shownSizes('salt').map(function(q){"
       + "var L=priceLadder(q);return {q:q,ask:L.ask.total};}))"));
     const lastName = String(w.eval("TIER_NAMES[TIER_NAMES.length-1]"));
-    ok(cellsBySize && cellsBySize.head.length === 4 && cellsBySize.head[3].indexOf(lastName) === 0,
-      `the fourth column is the one tier, headed ${lastName} (${cellsBySize ? cellsBySize.head.slice(3).join(" | ") : "no board"})`);
+    const firstName = String(w.eval("TIER_NAMES[0]"));
+    ok(cellsBySize && cellsBySize.head.length > 4 && cellsBySize.head[3].indexOf(firstName) === 0
+      && cellsBySize.head[cellsBySize.head.length - 1].indexOf(lastName) === 0,
+      `the fourth column is ${firstName}, at the floor, and the last is ${lastName}, the board (${cellsBySize ? cellsBySize.head.slice(3).join(" | ") : "no board"})`);
     {
       const n = Math.min(cellsBySize ? cellsBySize.rows.length : 0, engineByRow.length);
       let placed = n > 0;
@@ -12142,15 +12154,23 @@ await (async () => {
     const off = walk40("salt", 46.72, 1, [0.25, 7, 20]).map((g) => g.rung).concat(walk40("oil", 7.8355, 1, [5, 60, 150]).map((g) => g.rung));
     ok(JSON.stringify(off) === JSON.stringify([0, 10, 11, 0, 4, 4]), "a size off the board takes the rung at or below it: salt's 0.25, 7 and 20 unit on rungs 0, 10 and 11, oil's 5, 60 and 150 on 0, 4 and 6 " + JSON.stringify(off));
     /* THE CARD, read cell by cell against the engine, on each book in turn */
-    const cards = ["salt", "oil"].map((p) => rd40("(function(){setProdView('" + p + "');switchTab('pricing');var t=document.querySelector('.sec.on table.fivetier');if(!t)return null;"
-      + "var num=function(c){var m=c.textContent.replace(/,/g,'').match(/[0-9]+/);return m?+m[0]:null;};"
-      + "return {head:[].map.call(t.rows[0].cells,function(c){return c.textContent.trim();}),names:TIER_NAMES,cells:[].map.call(t.tBodies[0].rows,function(r){return [].slice.call(r.cells,2,2+TIER_NAMES.length).map(num);}),"
+    const cards = ["salt", "oil"].map((p) => rd40("(function(){setProdView('" + p + "');switchTab('pricing');var t=document.querySelector('.sec.on table.pxboard.fivetier');if(!t)return null;"
+      + "var num=function(c){var m=c.textContent.replace(/,/g,'').match(/[0-9]+/);return m?+m[0]:null;};"   /* the first figure in a level's cell is its total, the three under it are its rate, margin and multiple */
+      /* v749: THREE COLUMNS ALONG, AND THE NAMES ARE THE BOOK'S OWN. The levels moved into the price stack, which
+         opens Size, COGS and Eff. cost; and a book shorter than the six takes the first name and the last of the rest,
+         which is what oil is: its rule is a fixed price a size, so it has two levels and had six heads over two cells
+         from v641 until v749, ragged, because the head was asserted against TIER_NAMES and the body against the engine
+         and the two were never asked to agree with each other. */
+      + "var lvlN=Math.max.apply(null,fiveTiersNow().map(function(g){return g.prices.length;}));"
+      + "var names=[TIER_NAMES[0]].concat(TIER_NAMES.slice(TIER_NAMES.length-(lvlN-1)));"
+      + "return {head:[].map.call(t.rows[0].cells,function(c){return (c.firstChild?(c.firstChild.textContent||''):c.textContent).trim();}),names:names,cells:[].map.call(t.tBodies[0].rows,function(r){return [].slice.call(r.cells,3,3+names.length).map(num);}),"
       + "want:fiveTiersNow().map(function(g){return g.prices;})};})()"));
     /* v657: AND THE HEAD ENDS THERE. It carried an "Ask today" column while the ladder was staged, so the two could be
        read against each other; the board IS the last level since v656, so that column printed the Bronze column twice
        under two names. The length is asserted, not just the slice, or the duplicate could come back unseen. */
-    ok(cards.every((c) => c && JSON.stringify(c.head.slice(2, 2 + c.names.length)) === JSON.stringify(c.names) && c.cells.length > 4 && JSON.stringify(c.cells) === JSON.stringify(c.want)
-      && c.head.length === 2 + c.names.length),
+    ok(cards.every((c) => c && JSON.stringify(c.head.slice(3, 3 + c.names.length)) === JSON.stringify(c.names)
+      && c.cells.length > 4 && JSON.stringify(c.cells) === JSON.stringify(c.want)
+      && c.head.length === 3 + c.names.length),
       "the Pricing page draws every level for each book, headed by its name and nothing after it, every cell the engine's price " + JSON.stringify(cards.map((c) => c && c.head)));
     /* RESTATED AT v656, AND INVERTED. It held the staging: the policy carried no tier rule and adding one moved no cell of
        the board, which was the whole of "quoted nowhere yet". The board IS the ladder now, so the same two facts are asserted
@@ -17187,6 +17207,72 @@ await (async () => {
   /* and each is a line on the page, measured rather than read off the stylesheet */
   const disp = String(w.eval('(function(){var e=document.querySelector(".lmove .ltext .chg");return e?getComputedStyle(e).display:"nothing drawn";})()'));
   ok(disp === "block", "each change occupies its own line on the built desk: " + disp);
+})();
+
+section("v749: the price stack carries every level, and the five-tier card is folded into it");
+await (async () => {
+  /* his instruction of 20 Sep 2026, on the two cards side by side: show it for all tiers, probably combinable.
+     The stack gave COGS, the floor and ONE level's rate, margin and multiple, the board's last; the other five
+     were bare totals in a card further down. One table now. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (p) => JSON.parse(String(w.eval("(function(){setProdView(" + JSON.stringify(p) + ");switchTab('pricing');"
+    + "var sec=document.querySelector('.sec.on');"
+    + "var t=sec.querySelector('table.pxboard');if(!t)return JSON.stringify({err:'no stack table'});"
+    + "var lbl=function(c){return (c.firstChild?(c.firstChild.textContent||''):c.textContent).trim();};"
+    + "var lvlN=Math.max.apply(null,fiveTiersNow().map(function(g){return g.prices.length;}));"
+    + "var names=[TIER_NAMES[0]].concat(TIER_NAMES.slice(TIER_NAMES.length-(lvlN-1)));"
+    + "var body=[].map.call(t.tBodies[0].rows,function(r){return {cells:r.cells.length,"
+    + "lvl:[].slice.call(r.cells,3).map(function(c){return c.textContent.trim();}),size:lbl(r.cells[0])};});"
+    + "return JSON.stringify({names:names,head:[].map.call(t.rows[0].cells,lbl),body:body,"
+    + "tables:sec.querySelectorAll('table.fivetier').length,cards:sec.querySelectorAll('.card').length,"
+    + "want:fiveTiersNow().map(function(g){return g.prices;}),"
+    + "floors:fiveTiersNow().map(function(g){return priceLadder(g.q).floor.total;}),"
+    + "insight:[].map.call(sec.querySelectorAll('.insight'),function(d){return d.textContent;}).join(' ')});})()")));
+
+  for (const p of ["salt", "oil"]) {
+    const t = read(p);
+    ok(!t.err, p + ": the stack table is on the page: " + (t.err || "yes"));
+    /* THE HEAD IS THE BOOK'S OWN LEVELS. oil's rule is a fixed price a size, so it has two levels where salt
+       has six, and the card folded in here printed six heads over its two cells from v641 until now. */
+    ok(JSON.stringify(t.head) === JSON.stringify(["Size", "COGS", "Eff. cost"].concat(t.names)),
+      p + ": the head is size, COGS, the floor and then a column a level: " + JSON.stringify(t.head));
+    ok(t.body.every((r) => r.cells === 3 + t.names.length),
+      p + ": every row has as many cells as the head has columns: " + JSON.stringify(t.body.map((r) => r.cells)));
+    /* EVERY LEVEL CARRIES THE FOUR LINES THE ASK HAS CARRIED SINCE v564, not a bare total */
+    ok(t.body.every((r) => r.lvl.every((c) => /RM/.test(c) && /% margin/.test(c) && /x eff\./.test(c))),
+      p + ": every level's cell carries its total, rate, margin and multiple of break-even: " + JSON.stringify(t.body[0] && t.body[0].lvl[0]));
+    /* and the prices are the engine's, in the ladder's own order, every rung of it */
+    const drawn = t.body.map((r) => r.lvl.map((c) => +(c.replace(/,/g, "").match(/[0-9]+/) || [0])[0]));
+    ok(JSON.stringify(drawn) === JSON.stringify(t.want),
+      p + ": every cell is the engine's price for that level, every rung drawn: " + JSON.stringify(drawn.slice(0, 2)) + " against " + JSON.stringify(t.want.slice(0, 2)));
+    /* AND THE TWO DERIVED FIGURES ARE THE ARITHMETIC, not a label. Margin is what is left over break-even and the
+       multiple is the price over it, which is what the ask has meant since v552; a cell carrying the words and the
+       wrong figures reads exactly like one carrying the right ones. */
+    const sums = [];
+    t.want.forEach((ps, i) => ps.forEach((px, j) => {
+      const m = Math.round((px - t.floors[i]) / px * 100) + "% margin";
+      const x = (px / t.floors[i]).toFixed(2) + "x eff.";
+      const cell = t.body[i] && t.body[i].lvl[j];
+      if (!cell || cell.indexOf(m) < 0 || cell.indexOf(x) < 0) sums.push({ size: t.body[i] && t.body[i].size, level: t.names[j], want: m + " " + x, got: cell });
+    }));
+    ok(!sums.length, p + ": every level's margin is struck on break-even and its multiple is the price over it: " + (sums.length ? JSON.stringify(sums.slice(0, 2)) : t.want.length + " rows checked"));
+    ok(t.tables === 1, p + ": one table on the page carries the levels, not two: " + t.tables);
+    ok(/pays the floor/.test(t.insight) && new RegExp(t.names[t.names.length - 1] + " is the board").test(t.insight),
+      p + ": and the sentence about the levels moved with them: " + (/pays the floor/.test(t.insight) ? "present" : "gone"));
+  }
+
+  /* A SIZE OFF THE BOARD IS STILL PRICED, which is what the folded-in card said at v657. Forced, because
+     every size is on the board today and an assertion that cannot reach the state it describes proves nothing. */
+  const off = JSON.parse(String(w.eval("(function(){setProdView('salt');"
+    + "var was=PRICE_SET&&PRICE_SET.salt?JSON.parse(JSON.stringify(PRICE_SET.salt)):null;"
+    + "PRICE_SET.salt=Object.assign({},PRICE_SET.salt||{},{hide:[1]});recompute();switchTab('pricing');"
+    + "var t=document.querySelector('.sec.on table.pxboard');"
+    + "var rows=[].map.call(t.tBodies[0].rows,function(r){return r.cells[0].textContent.trim();});"
+    + "if(was)PRICE_SET.salt=was; else delete PRICE_SET.salt; recompute();"
+    + "return JSON.stringify({rows:rows,marked:rows.filter(function(x){return /off the board/.test(x);})});})()")));
+  ok(off.rows.length === 12 && off.marked.length === 1 && /^1 unit/.test(off.marked[0]),
+    "a size taken off the board keeps its row and says it is off: " + JSON.stringify(off.marked));
 })();
 
 section("The suite frees its windows: every section's body is its own async function");
