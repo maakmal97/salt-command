@@ -17052,6 +17052,46 @@ await (async () => {
   ok(done.length > 0 && !owing.length, "no row on the book reads Completed while it still owes: " + (owing.join("; ") || "none of " + done.length));
 })();
 
+section("v742: the roll's baseline is the engine's reading and follows the batch, so two amendments on one row roll once");
+await (async () => {
+  /* found by an adversarial read of v739 the same afternoon: the correction's difference was struck against the
+     book as it stood BEFORE the batch, so a handover in two stages inside one hour (the site queues a correction on
+     every change of its running total) rolled 2 and then 5 for 5 moved, and a fulfilment followed by a restating
+     correction rolled twice; and a lot stored without receivedQty, which the engine reads as received in full, would
+     have landed a second time when the figure was stated. */
+  const { plan } = await import("../tools/fold.mjs");
+  const fresh = () => {
+    const B = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    B.QUEUE_COMMITTED = "2026-01-01T00:00:00.000Z";
+    B.roster.push("CZ9-RL", "SZ9-RL");
+    B.sales.push({ rid: "sR1", customer: "CZ9-RL", date: "2026-09-10", qty: 5, total: 420, delivery: 15, cash: 0, deliveredQty: 0, product: "salt", note: "fixture" });
+    B.purchases.push({ rid: "pR2", supplier: "SZ9-RL", date: "2026-09-10", qty: 10, total: 500, cash: 500, status: "paid", product: "salt", note: "fixture" });
+    return B;
+  };
+  const corr = (id, coll, rid, dirn, fields) => ({ id, collection: coll, amends: rid, amendKind: "Correction", row: {},
+    entry: { at: id, payload: { mode: "amend", direction: dirn, rid, kind: "Correction", date: "2026-09-19", fields } } });
+  const ful = (id, rid, kg) => ({ id, collection: "sales", amends: rid, amendKind: "Fulfilment", row: {},
+    entry: { at: id, payload: { mode: "amend", direction: "SELL", rid, kind: "Fulfilment", date: "2026-09-19", cash: 0, kg } } });
+  const staged = (...items) => ({ ok: true, count: items.length, approved: items });
+  const kgs = (p) => p.moves.map((m) => m.kg);
+
+  const p1 = plan(fresh(), staged(corr("2026-09-19T13:00:00.000Z", "sales", "sR1", "SELL", { deliveredQty: 2 }), corr("2026-09-19T13:00:01.000Z", "sales", "sR1", "SELL", { deliveredQty: 5 })), null);
+  ok(p1.refused.length === 0 && kgs(p1).length === 2 && kgs(p1)[0] === -2 && kgs(p1)[1] === -3,
+    "a handover in two stages, 2 then 5, rolls 2 and then 3, five in all: " + JSON.stringify(kgs(p1)) + JSON.stringify(p1.refused));
+  const p2 = plan(fresh(), staged(ful("2026-09-19T13:00:02.000Z", "sR1", 2), corr("2026-09-19T13:00:03.000Z", "sales", "sR1", "SELL", { deliveredQty: 2 })), null);
+  ok(p2.refused.length === 0 && kgs(p2).length === 1 && kgs(p2)[0] === -2,
+    "a fulfilment of 2 followed by a correction restating 2 rolls once: " + JSON.stringify(kgs(p2)) + JSON.stringify(p2.refused));
+  const p3 = plan(fresh(), staged(ful("2026-09-19T13:00:04.000Z", "sR1", 2), corr("2026-09-19T13:00:05.000Z", "sales", "sR1", "SELL", { deliveredQty: 5 })), null);
+  ok(p3.refused.length === 0 && kgs(p3).length === 2 && kgs(p3)[0] === -2 && kgs(p3)[1] === -3,
+    "and one restating 5 after it rolls the other 3: " + JSON.stringify(kgs(p3)) + JSON.stringify(p3.refused));
+  const p4 = plan(fresh(), staged(corr("2026-09-19T13:00:06.000Z", "purchases", "pR2", "BUY", { receivedQty: 10 })), null);
+  ok(p4.refused.length === 0 && kgs(p4).length === 0,
+    "stating the receipt of a lot the engine already reads as received in full moves nothing: " + JSON.stringify(kgs(p4)) + JSON.stringify(p4.refused));
+  const p5 = plan(fresh(), staged(corr("2026-09-19T13:00:07.000Z", "purchases", "pR2", "BUY", { receivedQty: 0 })), null);
+  ok(p5.refused.length === 0 && kgs(p5).length === 1 && kgs(p5)[0] === -10,
+    "and stating that nothing of it has arrived rolls the 10 unit back off the shelf: " + JSON.stringify(kgs(p5)) + JSON.stringify(p5.refused));
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

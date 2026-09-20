@@ -1,5 +1,15 @@
 [
  {
+  "v": "v742",
+  "d": "20 Sep 2026",
+  "t": "THE ROLL'S BASELINE IS THE ENGINE'S READING AND FOLLOWS THE BATCH, SO TWO AMENDMENTS ON ONE ROW ROLL ONCE",
+  "n": [
+   "<b>v739 STRUCK A CORRECTION'S DIFFERENCE AGAINST THE BOOK AS IT STOOD BEFORE THE BATCH,</b> found the same afternoon by two of three independent reads of its diff. The site queues a correction on every change of an order's running total, so a handover in two stages inside one hour staged corrections of 2 and then 5 and would have rolled 7 for 5 moved; a fulfilment followed by a correction restating the same figure would have rolled twice. And a lot stored without receivedQty, which the engine reads as received in full, read as nought against the raw field, so stating the figure would have landed the lot a second time.",
+   "<b>THE PLAN KEEPS WHAT EACH ROW HAS MOVED SO FAR IN THE BATCH,</b> keyed on the book row: a correction is struck from that figure and then sets it, and a fulfilment's units advance it, so the second amendment on a row is measured from where the first left it. The first figure is the engine's own reading, poRecvUnits for a lot and the delivered quantity for a sale, never the raw field, so stating the receipt of a lot the engine already holds moves nothing, and stating that nothing of it arrived rolls it back off the shelf.",
+   "<b>THE CHECKS.</b> A section of five assertions on the fold's plan: a handover of 2 then 5 rolling 2 and then 3; a fulfilment of 2 and a correction restating 2 rolling once; a correction restating 5 after it rolling the other 3; a lot held without a received figure moving nothing when the receipt is stated and rolling back 10 when nought is. Three mutations each turned it red: the difference struck against the book before the batch, a fulfilment not carried into the running figure, and a lot's first figure read off the raw field."
+  ]
+ },
+ {
   "v": "v741",
   "d": "20 Sep 2026",
   "t": "THE ENGINE'S STATUS AND DATES, THE CUSTOMER'S STATEMENT AND THE ROW EDITOR READ WHAT IS OWED AS THE GOODS AND THE DELIVERY",

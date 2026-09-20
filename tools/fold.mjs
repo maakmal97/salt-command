@@ -141,6 +141,13 @@ function describe(item) {
 export function plan(book, staged, notes) {
   const out = { items: [], refused: [], moves: [] };
   const rows = (staged && staged.approved) || [];
+  /* v742: WHAT EACH ROW HAS MOVED SO FAR IN THIS BATCH, keyed on the book row, so a second amendment on one row in
+     one batch is struck from where the first left it and not from the book as it stood before the batch: a handover
+     in two stages inside one hour stages two corrections, and the site's running total would have rolled twice. The
+     baseline is the ENGINE's reading, not the raw field: a lot stored without receivedQty is read by poRecvUnits as
+     received in full, and stating that figure must move nothing. */
+  const movedSoFar = new Map();
+  const movedOf = (row, d) => movedSoFar.has(row) ? movedSoFar.get(row) : (d === "BUY" ? E.poRecvUnits(row) : (+row.deliveredQty || 0));
   for (const it of rows) {
     const entry = { id: it.id, what: describe(it), does: [] };
     const r = it.row || {};
@@ -235,7 +242,8 @@ export function plan(book, staged, notes) {
            where the correction states one, else the correction's day. */
         const qk = dir === "BUY" ? "receivedQty" : "deliveredQty";
         if (fields[qk] != null && Number.isFinite(+fields[qk])) {
-          const delta = +((+fields[qk]) - (+hits[0][qk] || 0)).toFixed(3);
+          const delta = +((+fields[qk]) - movedOf(hits[0], dir)).toFixed(3);   /* v742: against the batch's running figure */
+          movedSoFar.set(hits[0], +fields[qk]);
           if (Math.abs(delta) > 0.009) {
             const who = hits[0][dir === "BUY" ? "supplier" : "customer"];
             const when = fields[dir === "BUY" ? "receivedOn" : "deliveredOn"] || pay.date || hits[0].date || TODAY;
@@ -269,6 +277,7 @@ export function plan(book, staged, notes) {
       }
       if (dir !== "BUY" && entry.pay.kg > 0.009) out.moves.push({ product: prodOf(hits[0]), kg: -entry.pay.kg, who: hits[0].customer, when: entry.pay.date });
       if (dir === "BUY" && entry.pay.kg > 0.009) out.moves.push({ product: prodOf(hits[0]), kg: +entry.pay.kg, who: hits[0].supplier, when: entry.pay.date, landed: true });
+      if (entry.pay.kg > 0.009) movedSoFar.set(hits[0], +(movedOf(hits[0], dir) + entry.pay.kg).toFixed(3));   /* v742: the batch's running figure follows a fulfilment too */
     } else if (it.collection === "sales" || it.collection === "purchases") {
       const key = it.collection === "sales" ? "customer" : "supplier";
       /* v540: EVERY ROW IS DATED (v487), and a pending row is dated to the day it was agreed. A draft
