@@ -1,5 +1,16 @@
 [
  {
+  "v": "v738",
+  "d": "20 Sep 2026",
+  "t": "WHAT A CUSTOMER OWES IS THE GOODS AND THE DELIVERY TOGETHER, WHEREVER IT IS READ",
+  "n": [
+   "<b>HIS INSTRUCTION OF 20 SEP 2026:</b> the amount owing from the customer for the delivery is not to be excluded from the ledger entry. v727 moved the carriage out of a sale's total and gave the engine txPrice on the two together, and six readers went on measuring what was owed as the total less the cash. The open-order shape the drafter reads off the mirror owed the goods alone, so it said RM420 SETTLED a RM435 order; the fold's paid-in-full stamp and the desk's own applier read the same way, so s183 carried paidOn with RM15 still owed; the dossier the fold's note is written over read RM35 left on s137 where the row says RM50, and RM420 outstanding on s183 where it was RM435; the drafter's overpayment flag on a new row would have called RM435 on RM420 of goods an overpayment; and the Workbench's outstanding line on a sale read the goods.",
+   "<b>ONE READER NOW, THE ENGINE'S txOwed,</b> exported beside txPrice and txPaid: the goods and the delivery together. The open-order shape owes it and carries the delivery beside the goods as dv, so the Approve card reads <i>5 unit for RM 420 with RM 15 delivery, RM 435 owed</i>; the fold and the desk stamp paidOn only when the cash reaches it; the dossier's outstanding and defaulted figures read it; the drafter measures a new row's cash against it; the Workbench's sale branch reads it, the lot branch beside it unchanged. Nothing prices on it: the rate and the floor are still struck on the goods, as v727 left them.",
+   "<b>TWO ROWS ARE RESTATED ON THE BOOK, THROUGH THE FOLD'S OWN APPLIER.</b> s183, CS6-BS-R's delivery of 19 Sep, has its paid-in-full stamp cleared: RM420 was taken against RM435 and RM15 stays outstanding. s173, CS6-BS's row of 18 Sep, was drafted from site order rkoi5a and filled in by hand at RM420 for the delivery of order 4l1kkq, whose RM15 of carriage was off the book and whose payment of RM435 the site has held since 18 Sep; it now carries delivery 15 and cash 435, so its key becomes CS6-BS|2026-09-18|435, the key that order has waited on since the 18th. Both corrections are on their rows in the mod line and the trail.",
+   "<b>THE CHECKS.</b> A section of nineteen assertions: the engine's reader, the fold's stamp on RM420 and then RM15, the open-order shape at RM420 and RM435 and with no delivery, the desk's applier through ovAmend in the built desk, the Workbench line as a source pin, the drafter against a snapshot carrying the delivery and on a new row paid RM435 and RM450, the dossier's figure, and the live book: no row stamped paid while its delivery is owed, and s173 carrying its carriage. Nine mutations each turned it red: the engine dropping the delivery, each stamp and each figure put back to the goods, the delivery taken off the shape and off the card."
+  ]
+ },
+ {
   "v": "v737",
   "d": "20 Sep 2026",
   "t": "THE SUITE'S CARRIAGE CHECK IS SCOPED TO THE ROWS v727 RESTATED, SO A SITE ORDER FOLDED WITH A DELIVERY NO LONGER TURNS IT RED",

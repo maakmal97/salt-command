@@ -1,6 +1,6 @@
 {
- "v": "v736",
- "stamped": "20 Sep 2026, 07:56 KL",
+ "v": "v738",
+ "stamped": "20 Sep 2026, 16:46 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -4320,10 +4320,10 @@
     "customer": "CS6-BS",
     "qty": 5,
     "total": 420,
-    "cash": 420,
+    "cash": 435,
     "date": "2026-09-18",
     "deliveredQty": 5,
-    "note": "<b>SALT SELL DATED 18 SEP, ACKNOWLEDGED AND PENDING.</b> Booked to CS6-BS, 5 unit for RM420, RM84 a unit, ordered on the statements site as order 20260916085105-rkoi5a, to collect. Nothing paid and nothing handed over, so the whole row stays open and no stock is drawn. The total clears the RM254.98 floor for 5 unit and runs under the RM560 ask and RM710 ceiling. Costed at RM48 a unit, the inventory's own rate, RM180 on the goods at 42.9%. <b>Flagged:</b> CS6-BS pays about RM107.50 a unit across 18 orders, this is 21.9% below, and the figures confirm the gap without accounting for it. CS6-BS shows 12 orders, median RM100, range RM11 to RM126.67, nothing outstanding before, 1 unit on credit against a cap of 2, nothing defaulted.",
+    "note": "<b>CORRECTION ON s173 DATED 20 SEP: RM15 OF DELIVERY BESIDE THE RM420 OF GOODS, AND THE RM435 THE CUSTOMER PAID.</b> The row was drafted from site order 20260916085105-rkoi5a and filled in by hand at RM420 for the delivery of 18 Sep; the site holds the customer's payment of RM435 that day against order 20260917222749-4l1kkq, 5 unit delivered with RM15 of carriage. The row's key becomes CS6-BS|2026-09-18|435, which is what that order has waited on since. Nothing else on the row moves. <b>CORRECTION ON s173 DATED 20 SEP: RM15 OF DELIVERY BESIDE THE RM420 OF GOODS, AND THE RM435 THE CUSTOMER PAID.</b> The row was drafted from site order 20260916085105-rkoi5a and filled in by hand at RM420 for the delivery of 18 Sep; the site holds the customer's payment of RM435 that day against order 20260917222749-4l1kkq, 5 unit delivered with RM15 of carriage. The row's key becomes CS6-BS|2026-09-18|435, which is what that order has waited on since. Nothing else on the row moves. <b>SALT SELL DATED 18 SEP, ACKNOWLEDGED AND PENDING.</b> Booked to CS6-BS, 5 unit for RM420, RM84 a unit, ordered on the statements site as order 20260916085105-rkoi5a, to collect. Nothing paid and nothing handed over, so the whole row stays open and no stock is drawn. The total clears the RM254.98 floor for 5 unit and runs under the RM560 ask and RM710 ceiling. Costed at RM48 a unit, the inventory's own rate, RM180 on the goods at 42.9%. <b>Flagged:</b> CS6-BS pays about RM107.50 a unit across 18 orders, this is 21.9% below, and the figures confirm the gap without accounting for it. CS6-BS shows 12 orders, median RM100, range RM11 to RM126.67, nothing outstanding before, 1 unit on credit against a cap of 2, nothing defaulted.",
     "rid": "s173",
     "amend": [
      {
@@ -4340,11 +4340,20 @@
       "kg": 5,
       "note": "<b>FULFILMENT ON s173, CS6-BS, RM420 AND 5 UNIT MOVED ON 18 SEP.</b> Against the 18 Sep order of 5 unit for RM420, RM84 a unit, taken on the statements site as order 20260916085105-rkoi5a and marked to collect, where nothing had been paid and nothing handed over. RM420 and 5 unit move against RM420 and 5 unit outstanding, leaving RM0 and 0 unit. The drafter flagged that this settles the order in full, and the figures answer it. CS6-BS shows 13 orders, median RM95, range RM11 to RM126.67, RM420 outstanding before, 1 unit on credit, nothing defaulted, an associate and on the roster. The row is applied by the master, not recomputed here.",
       "cost": 240
+     },
+     {
+      "date": "2026-09-20",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s173 DATED 20 SEP: RM15 OF DELIVERY BESIDE THE RM420 OF GOODS, AND THE RM435 THE CUSTOMER PAID.</b> The row was drafted from site order 20260916085105-rkoi5a and filled in by hand at RM420 for the delivery of 18 Sep; the site holds the customer's payment of RM435 that day against order 20260917222749-4l1kkq, 5 unit delivered with RM15 of carriage. The row's key becomes CS6-BS|2026-09-18|435, which is what that order has waited on since. Nothing else on the row moves."
      }
     ],
     "deliveredOn": "2026-09-18",
     "paidOn": "2026-09-18",
-    "cost": 240
+    "cost": 240,
+    "delivery": 15,
+    "mod": "corrected on 2026-09-20: cash 420 to 435; delivery (unset) to 15"
    },
    {
     "customer": "CH4-MAL",
@@ -4533,12 +4542,11 @@
     "delivery": 15,
     "date": "2026-09-19",
     "deliveredQty": 5,
-    "note": "<b>DELIVERY BOOKED 19 SEP: 5 UNIT HANDED OVER, STILL UNPAID.</b> <b>CORRECTION ON s183 DATED 19 SEP: THE SALT GOES OUT, THE MONEY STAYS OWED.</b> CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, booked as 20260919121050-zhim2a, has delivered quantity moved from 0 to 5, delivered on from unset to 19 Sep and handover from unset to delivered. No cash moves. The total still clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fifteen orders, on the roster, RM420 outstanding before, nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, a blend of lots. RM435 stays outstanding. <b>SALT SELL DATED 19 SEP, PENDING, NOTHING PAID AND NOTHING MOVED.</b> CS6-BS-R takes 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, ordered on the statements site as 20260919121050-zhim2a, acknowledged, on behalf of a friend, to be delivered. The total clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fourteen orders, on the roster, nothing outstanding before and nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, RM405 of goods. The drafter flagged the R2 booking, the 21.9% gap to CS6-BS's usual RM107.5, and that RM48 is a blend of lots. RM435 stays outstanding.",
+    "note": "<b>CORRECTION ON s183 DATED 20 SEP: THE RM15 OF DELIVERY IS STILL OWED.</b> The fulfilment of 19 Sep took RM420 against RM435 owed, the goods and the delivery together, and the fold read the goods alone as paid in full; from v738 every reader takes both. RM15 stays outstanding, and nothing else on the row moves. <b>CORRECTION ON s183 DATED 20 SEP: THE RM15 OF DELIVERY IS STILL OWED.</b> The fulfilment of 19 Sep took RM420 against RM435 owed, the goods and the delivery together, and the fold read the goods alone as paid in full; from v738 every reader takes both. RM15 stays outstanding, and nothing else on the row moves. <b>DELIVERY BOOKED 19 SEP: 5 UNIT HANDED OVER, STILL UNPAID.</b> <b>CORRECTION ON s183 DATED 19 SEP: THE SALT GOES OUT, THE MONEY STAYS OWED.</b> CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, booked as 20260919121050-zhim2a, has delivered quantity moved from 0 to 5, delivered on from unset to 19 Sep and handover from unset to delivered. No cash moves. The total still clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fifteen orders, on the roster, RM420 outstanding before, nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, a blend of lots. RM435 stays outstanding. <b>SALT SELL DATED 19 SEP, PENDING, NOTHING PAID AND NOTHING MOVED.</b> CS6-BS-R takes 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, ordered on the statements site as 20260919121050-zhim2a, acknowledged, on behalf of a friend, to be delivered. The total clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fourteen orders, on the roster, nothing outstanding before and nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, RM405 of goods. The drafter flagged the R2 booking, the 21.9% gap to CS6-BS's usual RM107.5, and that RM48 is a blend of lots. RM435 stays outstanding.",
     "rid": "s183",
     "deliveredOn": "2026-09-19",
     "handover": "delivered",
-    "rev": "R2",
-    "mod": "corrected on 2026-09-19: deliveredQty 0 to 5; deliveredOn (unset) to 2026-09-19; handover (unset) to delivered",
+    "mod": "corrected on 2026-09-19: deliveredQty 0 to 5; deliveredOn (unset) to 2026-09-19; handover (unset) to delivered, then corrected on 2026-09-20: paidOn 2026-09-19 to (cleared)",
     "amend": [
      {
       "date": "2026-09-19",
@@ -4560,9 +4568,16 @@
       "cash": 420,
       "kg": 0,
       "note": "<b>PAID IN FULL 19 SEP: RM420 IN, NOTHING LEFT ON s183.</b> Fulfilment against CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM84 a unit. RM420 and 0 unit move on 19 Sep against RM420 and 0 unit outstanding, the goods having been handed over on the correction of the same day. The rate sits below his median of RM96.67 and inside his range of RM6 to RM120. Fifteen orders, on the roster, 5 unit on credit before, nothing defaulted. Cost is the inventory's own RM48 a unit, a blend of lots. The drafter flags this as settling the order in full, and the figures answer it: nothing is left outstanding."
+     },
+     {
+      "date": "2026-09-20",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s183 DATED 20 SEP: THE RM15 OF DELIVERY IS STILL OWED.</b> The fulfilment of 19 Sep took RM420 against RM435 owed, the goods and the delivery together, and the fold read the goods alone as paid in full; from v738 every reader takes both. RM15 stays outstanding, and nothing else on the row moves."
      }
     ],
-    "paidOn": "2026-09-19"
+    "rev": "R2"
    }
   ],
   "contacts": [
@@ -5119,7 +5134,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-19T23:55:48.820Z",
   "PRICING": {
-   "takenAt": "2026-09-19T23:56:43.106Z",
+   "takenAt": "2026-09-20T08:46:06.407Z",
    "sizes": [
     0.5,
     1,
@@ -6711,11 +6726,11 @@
      ]
     }
    },
-   "v": "v736"
+   "v": "v738"
   },
   "OPEN": {
-   "at": "2026-09-19T23:56:43.257Z",
-   "count": 10,
+   "at": "2026-09-20T08:46:06.517Z",
+   "count": 11,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
      "d": "2026-09-19",
@@ -6733,6 +6748,26 @@
      "key": "CN6-WM|2026-09-19|250",
      "age": 1,
      "exp": 210
+    },
+    "CS6-BS-R|2026-09-19|435": {
+     "d": "2026-09-19",
+     "p": "CS6-BS-R",
+     "dir": "S",
+     "q": 5,
+     "t": 420,
+     "cash": 420,
+     "mv": 5,
+     "st": "dueMoney",
+     "oweRM": 15,
+     "dv": 15,
+     "rid": "s183",
+     "as": "CS6-BS",
+     "st2": "R2",
+     "deliveredOn": "2026-09-19",
+     "handover": "delivered",
+     "key": "CS6-BS-R|2026-09-19|435",
+     "age": 1,
+     "exp": 15
     },
     "SA5-BTR|2026-09-19|1725": {
      "d": "2026-09-19",
@@ -6807,7 +6842,8 @@
      "cash": 220,
      "mv": 3,
      "st": "dueMoney",
-     "oweRM": 90,
+     "oweRM": 110,
+     "dv": 20,
      "rid": "s159",
      "deliveredOn": "2026-09-13",
      "handover": "delivered",
@@ -6824,7 +6860,8 @@
      "cash": 800,
      "mv": 12.5,
      "st": "dueMoney",
-     "oweRM": 35,
+     "oweRM": 50,
+     "dv": 15,
      "rid": "s137",
      "deliveredOn": "2026-09-19",
      "handover": "delivered",
@@ -6907,7 +6944,7 @@
     "salt": "2026-09-19",
     "oil": "2026-09-19"
    },
-   "v": "v736"
+   "v": "v738"
   }
  }
 }

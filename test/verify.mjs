@@ -16841,6 +16841,96 @@ await (async () => {
   w2.close();
 })();
 
+section("v738: what a customer owes is the goods and the delivery together, wherever it is read");
+await (async () => {
+  /* HIS INSTRUCTION OF 20 SEP 2026: the amount owing from the customer for the delivery is not to be
+     excluded from the ledger entry. v727 moved the carriage out of a sale's total and gave the engine
+     txPrice on the two together, and six readers went on measuring what was owed as total less cash:
+     the desk's open-order shape (so the drafter said RM420 SETTLED a RM435 order), the fold's and the
+     desk's paid-in-full stamps (s183 carried paidOn with RM15 owed), the dossier's outstanding figures
+     (v736's note read RM35 left on s137 where the row says RM50), the drafter's overpayment flag on a
+     new row, and the Workbench's outstanding line. One reader now, the engine's txOwed. */
+  const E = (await import("../engine/position.mjs")).default;
+  const owedOf = (r) => E.txPrice(r) * (+r.qty || 0);
+  const row = { customer: "CZ9-DV", date: "2026-09-19", qty: 5, total: 420, delivery: 15, cash: 420, deliveredQty: 5 };
+  ok(typeof E.txOwed === "function" && E.txOwed(row) === 435 && E.txOwed({ ...row, delivery: 0 }) === 420,
+    "the engine exports txOwed, the goods and the delivery together: " + (typeof E.txOwed === "function" ? E.txOwed(row) : "not exported"));
+
+  /* ---- the fold's stamp: RM420 on a RM435 order is not paid in full; the RM15 that follows is ---- */
+  const { applyAmend } = await import("../tools/fold.mjs");
+  const a = { ...row, cash: 0 };
+  applyAmend(a, { kind: "Fulfilment", date: "2026-09-19", cash: 420, kg: 0 }, "SELL", null);
+  ok(a.cash === 420 && a.paidOn === undefined, "the fold takes RM420 against RM435 and stamps no paidOn: " + JSON.stringify({ cash: a.cash, paidOn: a.paidOn }));
+  applyAmend(a, { kind: "Fulfilment", date: "2026-09-20", cash: 15, kg: 0 }, "SELL", null);
+  ok(a.cash === 435 && a.paidOn === "2026-09-20", "and the RM15 that follows settles it, on its own day: " + JSON.stringify({ cash: a.cash, paidOn: a.paidOn }));
+  const b = { ...row, delivery: 0, cash: 0 };
+  applyAmend(b, { kind: "Fulfilment", date: "2026-09-19", cash: 420, kg: 0 }, "SELL", null);
+  ok(b.paidOn === "2026-09-19", "with no delivery RM420 is still paid in full: " + b.paidOn);
+
+  /* ---- the engine's open-order shape, which the drafter reads off the mirror; and the desk's own applier ---- */
+  const lr = (r) => JSON.parse(JSON.stringify(E.ledgerRow(r, "S", "salt")));
+  const open = lr({ rid: "sZ1", customer: "CZ9-DV", date: "2026-09-19", qty: 5, total: 420, delivery: 15, cash: 420, deliveredQty: 5 });
+  ok(open.oweRM === 15 && open.st !== "done" && open.t === 420,
+    "the open-order shape owes RM15 on RM420 paid of RM435, and is not done: " + JSON.stringify(open));
+  ok(open.dv === 15, "and carries the delivery beside the goods, so the phone can say what is owed: " + JSON.stringify(open));
+  const openPaid = lr({ rid: "sZ2", customer: "CZ9-DV", date: "2026-09-19", qty: 5, total: 420, delivery: 15, cash: 435, deliveredQty: 5 });
+  ok(openPaid.oweRM === undefined && openPaid.st === "done", "RM435 on it is done: " + JSON.stringify(openPaid));
+  const plain = lr({ rid: "sZ3", customer: "CZ9-DV", date: "2026-09-19", qty: 5, total: 420, cash: 420, deliveredQty: 5 });
+  ok(plain.st === "done" && plain.dv === undefined, "and a row with no delivery is as it was: " + JSON.stringify(plain));
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  w.eval("sales.push({rid:'sZ9',customer:'CZ9-DV',date:'2026-09-19',qty:5,total:420,delivery:15,cash:0,deliveredQty:5});");
+  w.eval("ovAmend({direction:'SELL',rid:'sZ9',kind:'Fulfilment',cash:420,kg:0,date:'2026-09-19'},{at:'2026-09-19T12:00:00.000Z'});");
+  const d1 = JSON.parse(w.eval("JSON.stringify(sales.filter(function(r){return r.rid==='sZ9';})[0])"));
+  ok(d1.cash === 420 && d1.paidOn === undefined, "the desk's own applier stamps no paidOn on RM420 of RM435: " + JSON.stringify({ cash: d1.cash, paidOn: d1.paidOn }));
+  w.eval("ovAmend({direction:'SELL',rid:'sZ9',kind:'Fulfilment',cash:15,kg:0,date:'2026-09-20'},{at:'2026-09-20T12:00:00.000Z'});");
+  const d2 = JSON.parse(w.eval("JSON.stringify(sales.filter(function(r){return r.rid==='sZ9';})[0])"));
+  ok(d2.cash === 435 && d2.paidOn === "2026-09-20", "and stamps it when the delivery is paid too: " + JSON.stringify({ cash: d2.cash, paidOn: d2.paidOn }));
+  /* the Workbench's outstanding line reads the form's own inputs, so this one is a source pin: the sale branch
+     reads txOwed and no longer the goods alone, while the lot branch beside it still reads a lot's total */
+  const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  ok(/const outRM=\+\(txOwed\(t\)-sf\.cash\)\.toFixed\(2\),outUnits=\+\(t\.qty-sf\.kg\)\.toFixed\(2\);[^\n]*\n\s*if\(ac>outRM\+0\.009\)warns\.push\(/.test(m)
+    && !/const outRM=\+\(t\.total-sf\.cash\)\.toFixed\(2\),outUnits=\+\(t\.qty-sf\.kg\)\.toFixed\(2\);[^\n]*\n\s*if\(ac>outRM\+0\.009\)warns\.push\(/.test(m),
+    "the Workbench's outstanding line on a sale is the goods and the delivery (a source pin)");
+
+  /* ---- the drafter: the snapshot's figure is what it measures against, and it says the delivery ---- */
+  const { draftRow } = await import("../src/drafter.js");
+  const mir = { version: "v302", pricing: { v: "v302", byProduct: { salt: { stockCost: 48, replCost: 46, floors: { "1": { floor: 79.5 }, "5": { floor: 264.14 } } } } },
+    purchases: [{ date: "2026-09-19", qty: 37.5, total: 1725, cash: 1725, receivedQty: 37.5, receivedOn: "2026-09-19" }],
+    sales: [{ date: "2026-09-07", customer: "CZ9-DV", qty: 5, total: 420, cash: 420, deliveredQty: 5 }],
+    state: { roster: ["CZ9-DV"], QUEUE_COMMITTED: "2026-01-01T00:00:00.000Z" } };
+  const key = "CZ9-DV|2026-09-18|435";
+  const mirO = { ...mir, state: { ...mir.state, OPEN: { v: "v302", byKey: { [key]: { p: "CZ9-DV", dir: "S", q: 5, t: 420, dv: 15, cash: 0, mv: 5, d: "2026-09-18", st: "dueMoney", oweRM: 435 } } } } };
+  const am1 = draftRow({ at: "2026-09-20T01:00:00.000Z", payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: "CZ9-DV", orderKey: key, date: "2026-09-19", cash: 420, kg: 0 } }, mirO);
+  ok(!am1.skip && !/SETTLES the order in full/.test(am1.flags.join(" ")) && /Leaves RM 15 and 0 unit outstanding/.test(am1.reasoning),
+    "RM420 against an order of RM420 with RM15 of delivery does not settle it, and RM15 is left: " + (am1.skip || am1.flags.join(" | ") + " || " + am1.reasoning));
+  ok(!am1.skip && /order of 5 unit for RM 420 with RM 15 delivery, RM 435 owed/.test(am1.reasoning),
+    "and the card names the delivery and what is owed: " + (am1.skip || am1.reasoning));
+  const am2 = draftRow({ at: "2026-09-20T01:00:01.000Z", payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: "CZ9-DV", orderKey: key, date: "2026-09-19", cash: 435, kg: 0 } }, mirO);
+  ok(!am2.skip && /SETTLES the order in full/.test(am2.flags.join(" ")), "RM435 settles it: " + (am2.skip || am2.flags.join(" | ")));
+  const newRow = (cash) => draftRow({ at: "2026-09-20T01:00:02.000Z", payload: { mode: "new", direction: "SELL", party: "CZ9-DV", qty: 5, total: 420, delivery: 15, cash, kg: 5, date: "2026-09-18", handover: "delivered" } }, mir);
+  const n1 = newRow(435), n2 = newRow(450);
+  ok(!n1.skip && !n1.flags.some((f) => /more than it is worth/.test(f)),
+    "a new row paid RM435 on RM420 of goods with RM15 of delivery is not an overpayment: " + (n1.skip || n1.flags.join(" | ")));
+  ok(!n2.skip && n2.flags.some((f) => /RM 450 is paid on an order of RM 435: RM 15 more than it is worth/.test(f)),
+    "RM450 is, by RM15 against RM435: " + (n2.skip || n2.flags.join(" | ")));
+
+  /* ---- the dossier the fold's note is written over ---- */
+  const { dossier } = await import("../tools/foldcall.mjs");
+  const bkD = { __version: "v1", sales: [{ rid: "sD1", customer: "CZ9-DV", date: "2026-09-01", qty: 5, total: 420, delivery: 15, cash: 420, deliveredQty: 5, note: "x" }], purchases: [], roster: ["CZ9-DV"], associates: [] };
+  const dd = dossier(bkD, { approved: [{ id: "e1", collection: "sales", row: { customer: "CZ9-DV", qty: 1, total: 100, date: "2026-09-20" } }] }, { items: [{ id: "e1", what: "sale", does: [] }], moves: [] }, { eval() { throw new Error("no window in this test"); } });
+  ok(dd.items[0].party.outstandingBefore === 15, "the dossier's outstanding figure carries the delivery, RM15 on RM420 paid of RM435: " + JSON.stringify(dd.items[0].party.outstandingBefore));
+
+  /* ---- the live book: no row is stamped paid while its delivery is owed, and 18 Sep's delivery is on the row ---- */
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const stamped = bk.sales.filter((r) => r.paidOn && !r.cancelled);
+  const wrong = stamped.filter((r) => E.txPaid(r) < owedOf(r) - 0.009).map((r) => r.rid + " paid " + E.txPaid(r) + " of " + owedOf(r));
+  ok(stamped.length > 0 && !wrong.length, "no row on the book is stamped paid in full while its delivery is still owed: " + (wrong.join("; ") || "none of " + stamped.length));
+  const s173 = bk.sales.find((r) => r.rid === "s173");
+  ok(s173 && +s173.delivery === 15 && owedOf(s173) === 435 && /delivery \(unset\) to 15/.test(s173.mod || ""),
+    "s173, the delivery of 18 Sep, carries its RM15 of carriage and says on its own row that it was corrected to: " + JSON.stringify(s173 && { delivery: s173.delivery, cash: s173.cash, mod: s173.mod }));
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

@@ -500,8 +500,10 @@ export function flagsFor(entry, row, book, priced) {
   /* v626: A NEW ROW ONLY. An amendment says it already (checkCorrection, and a Modification's own two lines), and once a
      correction's figures became the row as it will stand, this said every overpayment on it twice. */
   const amending = !!(entry && entry.payload && entry.payload.mode === "amend");
-  if (!amending && isNum(row.cash) && isNum(row.total) && row.cash > row.total + 0.005)
-    flags.push(`RM ${round(row.cash)} is paid on an order of RM ${round(row.total)}: RM ${round(row.cash - row.total)} more than it is worth. Check the figures.`);
+  /* v738: what an order is worth to the customer is the goods and the delivery together, the engine's txOwed */
+  const owedNew = isNum(row.total) ? POSITION_ENGINE.txOwed(row) : NaN;
+  if (!amending && isNum(row.cash) && isNum(owedNew) && row.cash > owedNew + 0.005)
+    flags.push(`RM ${round(row.cash)} is paid on an order of RM ${round(owedNew)}: RM ${round(row.cash - owedNew)} more than it is worth. Check the figures.`);
   if (!amending) { const movedU = isSale ? row.deliveredQty : row.receivedQty;
     if (isNum(qty) && isNum(movedU) && movedU > qty + 0.005)
       flags.push(`${movedU} unit ${isSale ? "goes out" : "arrives"} on an order of ${qty} unit. Check the figures.`); }
@@ -786,7 +788,7 @@ export function draftRow(entry, book) {
       ? `Leaves RM ${round(Math.max(0, oweRM - cash))} and ${round(Math.max(0, oweUnits - moved))} unit outstanding.`
       : "The order is withdrawn and counts nowhere.";
     const reasoning = [
-      `${kind} against ${t.p}'s ${dir2 === "BUY" ? "lot" : "order"} of ${round(t.q)} unit for RM ${round(t.t)}`,
+      `${kind} against ${t.p}'s ${dir2 === "BUY" ? "lot" : "order"} of ${round(t.q)} unit for RM ${round(t.t)}${+t.dv > 0 ? " with RM " + round(t.dv) + " delivery, RM " + round(+t.t + +t.dv) + " owed" : ""}`,
       t.d ? `agreed ${t.d}.` : "which is pending and undated.",
       kind === "Fulfilment"
         ? `RM ${round(cash)} and ${round(moved)} unit move on ${when}, against RM ${round(oweRM)} and ${round(oweUnits)} unit outstanding. ${left}`

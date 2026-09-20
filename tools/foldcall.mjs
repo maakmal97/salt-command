@@ -30,6 +30,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { plan } from "./fold.mjs";
 import { readBookFile } from "./booksync.mjs";
 import { readBook } from "./book.mjs";
+import E from "../engine/position.mjs";   /* v738: what a customer owes is read off the engine, never as total less cash */
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const argv = process.argv.slice(2);
@@ -60,9 +61,9 @@ function partyDossier(book, key, party) {
     lastRows: rows.slice(-8).map(pick),
     medianRate: rates.length ? r2(rates[Math.floor(rates.length / 2)]) : null,
     rateRange: rates.length ? [r2(rates[0]), r2(rates[rates.length - 1])] : null,
-    outstandingBefore: r2(live.reduce((a, r) => a + Math.max(0, (+r.total || 0) - (+r.cash || 0)), 0)),
+    outstandingBefore: r2(live.reduce((a, r) => a + Math.max(0, E.txOwed(r) - (+r.cash || 0)), 0)),   /* v738: the goods and the delivery together */
     unitsOnCreditBefore: key === "customer" ? r2(live.reduce((a, r) => { const p = +r.qty > 0 ? r.total / r.qty : 0; return a + Math.max(0, (+r.deliveredQty || 0) - (p > 0 ? (+r.cash || 0) / p : 0)); }, 0)) : null,
-    defaultedRM: r2(rows.filter((r) => r.defaulted).reduce((a, r) => a + ((+r.total || 0) - (+r.cash || 0)), 0)),
+    defaultedRM: r2(rows.filter((r) => r.defaulted).reduce((a, r) => a + (E.txOwed(r) - (+r.cash || 0)), 0)),
     associate: (book.associates || []).includes(party),
     onRoster: (book.roster || []).includes(party),
   };

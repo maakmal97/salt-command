@@ -770,7 +770,7 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
      step that completes delivery or payment stamps the day it did */
   if (!row.date) row.date = pay.date;
   if ((+pay.kg || 0) > 0.009 && row.qty > 0 && row.deliveredQty >= row.qty - 0.0001) row.deliveredOn = pay.date;
-  if ((+pay.cash || 0) > 0.009 && row.total > 0 && row.cash >= row.total - 0.009) row.paidOn = pay.date;
+  if ((+pay.cash || 0) > 0.009 && row.total > 0 && row.cash >= E.txOwed(row) - 0.009) row.paidOn = pay.date;   /* v738: paid in full is the goods and the delivery */
 }
 
 export function apply(book, staged, notes, masterText) {

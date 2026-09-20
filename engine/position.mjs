@@ -364,7 +364,7 @@ function ledgerRow(t,dir,defaultProd){
      its whole total and its whole quantity, on all five cancelled sales on the book, beside a
      state that says canc. Money the customer had paid on a cancelled order is a refund, which is
      customerRefunds' shape (v444), not a negative here. */
-  const oweRM=t.cancelled?0:+Math.max(0,tot-paidRM).toFixed(2);      // money still to be handed over
+  const oweRM=t.cancelled?0:+Math.max(0,(buy?tot:txOwed(t))-paidRM).toFixed(2);      // money still to be handed over: on a sale the goods and the delivery together (v738)
   const oweUnits=t.cancelled?0:+Math.max(0,q-mv).toFixed(2);          // goods still to be handed over
   let st;
   if(t.cancelled) st='canc';
@@ -377,6 +377,7 @@ function ledgerRow(t,dir,defaultProd){
     q:q, t:tot, cash:+paidRM.toFixed(2), mv:+mv.toFixed(2), st:st };
   if(oweRM>=0.005) r.oweRM=oweRM;
   if(oweUnits>=0.005) r.oweUnits=oweUnits;
+  if(!buy&&+t.delivery>0) r.dv=+(+t.delivery).toFixed(2);   // v738: the delivery beside the goods, so the phone can say what is owed
   const pr=t.product||defaultProd;
   if(pr!==defaultProd) r.pr=pr;
   /* v362: THE ID AND THE ATTRIBUTION, so the phone can name a row and prefill an edit of it.
@@ -677,7 +678,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,
+return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,coverStats:coverStats,commitments:commitments,
