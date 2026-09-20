@@ -17376,6 +17376,91 @@ await (async () => {
   ok(!leaked.length, "and not one of them carries a word the customer typed: " + (leaked.length ? JSON.stringify(leaked[0]).slice(0, 200) : "clean"));
 })();
 
+section("v752: the desk reads the thread on its card, keeps an order waiting for an answer, and is woken by a line");
+await (async () => {
+  /* v751 let a customer write on any order at any stage. His card lists the OPEN orders, so a
+     question asked about one he had closed reached a record nothing on his desk drew, and nothing
+     woke him for it either: the nudge compared the newest PLACEMENT against its one mark. */
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const { nudgeOrders } = await import("../src/orders.js");
+
+  /* ---- an order waiting for an answer is still his to look at ---- */
+  const said = (by) => [{ at: "2026-09-20T00:00:00.000Z", by, text: "a line" }];
+  ok(O.awaitingAnswer({ msgs: said("customer") }) === true, "a thread whose last line is theirs is waiting for an answer");
+  ok(O.awaitingAnswer({ msgs: said("customer").concat(said("desk")) }) === false, "and one he has answered is not");
+  ok(O.awaitingAnswer({ msgs: [] }) === false && O.awaitingAnswer({}) === false && O.awaitingAnswer(null) === false,
+    "an order nobody wrote on is not waiting for anything");
+
+  const kv = new KV();
+  const mk = async (id, status, msgs) => kv.put("order:aaaa-bbbb:" + id, JSON.stringify({ id, u: "aaaa-bbbb", status, qty: 1, total: 110, at: "2026-09-16T00:00:00.000Z", msgs: msgs || [] }));
+  await mk("20260916000000-open", "placed");
+  await mk("20260916000001-shut", "done");
+  await mk("20260916000002-asks", "done", said("customer"));
+  await mk("20260916000003-told", "done", said("customer").concat(said("desk")));
+  const listed = (await O.allOrders({ STMT: kv }, false)).map((o) => o.id.split("-")[1]).sort();
+  ok(JSON.stringify(listed) === JSON.stringify(["asks", "open"]),
+    "his card gets the open order and the closed one waiting for an answer, and neither of the other two: " + JSON.stringify(listed));
+  const every = (await O.allOrders({ STMT: kv }, true)).length;
+  ok(every === 4, "and the read that asks for all of them still gets all of them: " + every);
+
+  /* ---- the site says when a customer last wrote, beside when one was last placed ---- */
+  await kv.put(O.LAST_PLACED, "2026-09-16T00:00:00.000Z");
+  await kv.put(O.LAST_TOUCHED, "2026-09-17T00:00:00.000Z");
+  await kv.put(O.LAST_SAID, "2026-09-18T00:00:00.000Z");
+  const senv = { STMT: kv, STMT_DESK_KEY: "desk-key" };
+  const lastR = await stmtW.fetch(new Request("https://k7m3p2.example/desk/orders/last", { headers: { "X-Stmt-Desk": "desk-key" } }), senv);
+  const last = await lastR.json();
+  ok(lastR.status === 200 && last.last === "2026-09-16T00:00:00.000Z" && last.touched === "2026-09-17T00:00:00.000Z" && last.said === "2026-09-18T00:00:00.000Z",
+    "the one read the desk makes every minute carries all three moments: " + JSON.stringify(last));
+
+  /* ---- and either of two moments wakes him, on its own mark ---- */
+  const woke = [];
+  const deskEnv = (site) => ({ SALT_QUEUE: new KV(), STMT_SITE: { fetch: () => Promise.resolve(new Response(JSON.stringify(site), { headers: { "content-type": "application/json" } })) },
+    STMT_DESK_KEY: "desk-key", VAPID_PUBLIC_KEY: "", VAPID_PRIVATE_JWK: "" });
+  const run = async (env, site) => {
+    env.STMT_SITE = { fetch: () => Promise.resolve(new Response(JSON.stringify(Object.assign({ ok: true }, site)), { headers: { "content-type": "application/json" } })) };
+    const r = await nudgeOrders(env);
+    woke.push(r);
+    return r;
+  };
+  const env1 = deskEnv({ ok: true });
+  let r1 = await run(env1, { last: "2026-09-16T00:00:00.000Z", said: null });
+  ok(r1.ok && r1.newest === "2026-09-16T00:00:00.000Z", "a first placement wakes him: " + JSON.stringify(r1));
+  r1 = await run(env1, { last: "2026-09-16T00:00:00.000Z", said: null });
+  ok(r1.ok && r1.sent === 0 && !r1.newest && !r1.said, "the same placement does not wake him twice: " + JSON.stringify(r1));
+  r1 = await run(env1, { last: "2026-09-16T00:00:00.000Z", said: "2026-09-18T00:00:00.000Z" });
+  ok(r1.ok && r1.said === "2026-09-18T00:00:00.000Z" && !r1.newest, "a line written on an order wakes him on its own: " + JSON.stringify(r1));
+  r1 = await run(env1, { last: "2026-09-16T00:00:00.000Z", said: "2026-09-18T00:00:00.000Z" });
+  ok(r1.ok && r1.sent === 0 && !r1.said, "and the same line does not wake him twice: " + JSON.stringify(r1));
+  /* THE TWO MARKS DO NOT MASK EACH OTHER, which is the whole reason there are two */
+  r1 = await run(env1, { last: "2026-09-19T00:00:00.000Z", said: "2026-09-18T00:00:00.000Z" });
+  ok(r1.ok && r1.newest === "2026-09-19T00:00:00.000Z" && !r1.said, "a later placement wakes him without re-reading the old line");
+  r1 = await run(env1, { last: "2026-09-19T00:00:00.000Z", said: "2026-09-20T00:00:00.000Z" });
+  ok(r1.ok && r1.said === "2026-09-20T00:00:00.000Z" && !r1.newest, "and a line after it wakes him without re-reading the placement");
+  const env2 = deskEnv({ ok: true });
+  const only = await run(env2, { last: null, said: "2026-09-18T00:00:00.000Z" });
+  ok(only.ok && only.said === "2026-09-18T00:00:00.000Z", "a line wakes him on a site where nothing has ever been placed: " + JSON.stringify(only));
+
+  /* ---- and the card draws the thread, the customer's words escaped ---- */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const card = String(w.eval("ordCard(" + JSON.stringify({ id: "20260920000000-aaaa", u: "aaaa-bbbb", code: "CX0-AA", product: "salt", qty: 1, total: 110,
+    delivery: 0, mode: "collect", status: "done", paid: 110, moved: 1, at: "2026-09-20T00:00:00.000Z", history: [],
+    msgs: [{ at: "2026-09-20T01:00:00.000Z", by: "customer", text: "is <b>this</b> ready?" }] }) + ")"));
+  ok(/On this order/.test(card) && /waiting for an answer/.test(card), "the card names the thread and says it is waiting: " + /On this order[^<]*/.exec(card));
+  ok(card.includes("is &lt;b&gt;this&lt;/b&gt; ready?") && !card.includes("is <b>this</b> ready?"),
+    "and the customer's own words are escaped, being the one free text on this desk a stranger typed");
+  const answered = String(w.eval("ordCard(" + JSON.stringify({ id: "20260920000000-bbbb", u: "aaaa-bbbb", code: "CX0-AA", product: "salt", qty: 1, total: 110,
+    delivery: 0, mode: "collect", status: "done", paid: 110, moved: 1, at: "2026-09-20T00:00:00.000Z", history: [],
+    msgs: [{ at: "2026-09-20T01:00:00.000Z", by: "customer", text: "ready?" }, { at: "2026-09-20T02:00:00.000Z", by: "desk", text: "yes" }] }) + ")"));
+  ok(/On this order/.test(answered) && !/waiting for an answer/.test(answered) && /<b>You<\/b>/.test(answered),
+    "an answered thread is drawn without the waiting mark, and his own line is marked You");
+  const quiet = String(w.eval("ordCard(" + JSON.stringify({ id: "20260920000000-cccc", u: "aaaa-bbbb", code: "CX0-AA", product: "salt", qty: 1, total: 110,
+    delivery: 0, mode: "collect", status: "placed", at: "2026-09-20T00:00:00.000Z", history: [] }) + ")"));
+  ok(!/On this order/.test(quiet), "and an order nobody wrote on draws no thread at all");
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

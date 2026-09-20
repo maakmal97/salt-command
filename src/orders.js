@@ -24,6 +24,10 @@ import POSITION_ENGINE from "../engine/position.mjs";
 
 const DEVICE = "orders";
 const MARK = "orders:nudged";
+/* v752: a line a customer wrote has its OWN mark. On one mark a message arriving in a quiet hour
+   would be compared against the newest PLACEMENT and read as old news, and a placement would clear
+   the memory of an unanswered line. Two marks, either of which wakes him. */
+const SAID_MARK = "orders:said";
 
 function site(env, path, init) {
   if (!env.STMT_SITE || !env.STMT_DESK_KEY) return null;
@@ -368,10 +372,14 @@ export async function nudgeOrders(env) {
   if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
   const b = await r.json().catch(() => ({}));
   if (!r.ok || !b.ok) return { ok: false, error: b.error || ("the statements site answered http " + r.status) };
-  const newest = b.last || null;
-  const mark = (await env.SALT_QUEUE.get(MARK)) || "";
-  if (!newest || newest <= mark) return { ok: true, sent: 0 };
-  await env.SALT_QUEUE.put(MARK, newest);
+  const newest = b.last || null, said = b.said || null;
+  const mark = (await env.SALT_QUEUE.get(MARK)) || "", saidMark = (await env.SALT_QUEUE.get(SAID_MARK)) || "";
+  const placed = !!(newest && newest > mark), spoke = !!(said && said > saidMark);
+  if (!placed && !spoke) return { ok: true, sent: 0 };
+  /* the marks move whether or not the push reaches anybody: a wake that failed is not a reason to
+     wake for the same line every minute until it does */
+  if (placed) await env.SALT_QUEUE.put(MARK, newest);
+  if (spoke) await env.SALT_QUEUE.put(SAID_MARK, said);
   const p = await sendPush(env, { tag: "orders", urgency: "high" });
-  return { ok: true, sent: p.sent || 0, newest };
+  return { ok: true, sent: p.sent || 0, newest: placed ? newest : null, said: spoke ? said : null };
 }

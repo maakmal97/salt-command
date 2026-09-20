@@ -140,9 +140,17 @@ async function listOrders(env, prefix) {
 export const ordersOf = (env, u) => listOrders(env, "order:" + u + ":");
 
 /** Every order still open, or all of them with `all`, across every customer: the desk's read. */
+/* v752: AN ORDER WAITING FOR AN ANSWER IS STILL HIS TO LOOK AT. His card lists the OPEN orders, and
+   v751 lets a customer write on any order at any stage, so a question asked about one he has closed
+   would have reached a record nothing on his desk draws. The test is the thread's LAST line: theirs,
+   and it is waiting; his, and it is not. Answering is what takes a closed order off the card again. */
+export const awaitingAnswer = (o) => {
+  const m = (o && o.msgs) || [];
+  return m.length > 0 && m[m.length - 1] && m[m.length - 1].by === "customer";
+};
 export async function allOrders(env, all) {
   const list = await listOrders(env, "order:");
-  return all ? list : list.filter((o) => OPEN_STATES.includes(o.status));
+  return all ? list : list.filter((o) => OPEN_STATES.includes(o.status) || awaitingAnswer(o));
 }
 
 /* ---- WHAT THE LEDGER HAS NOT BEEN TOLD (v694) -----------------------------------------------

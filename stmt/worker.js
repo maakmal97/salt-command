@@ -47,7 +47,7 @@ import { SIGNIN_RE, mintSignin, burnSignin } from "./signin.js";
 import { endpointId, wakeCustomer } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
-import { mintSession, dropSession, sessionUser, ordersOf, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED, toChase, CHASE_KEY, hourOf } from "./orders.js";
+import { mintSession, dropSession, sessionUser, ordersOf, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED, LAST_SAID, toChase, CHASE_KEY, hourOf } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -476,7 +476,8 @@ async function handleDesk(request, env, p, m) {
      nothing on a quiet minute */
   if (p === "/desk/orders/last") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-    return json({ ok: true, last: await env.STMT.get(LAST_PLACED), touched: await env.STMT.get(LAST_TOUCHED) });
+    return json({ ok: true, last: await env.STMT.get(LAST_PLACED), touched: await env.STMT.get(LAST_TOUCHED),
+      said: await env.STMT.get(LAST_SAID) });   /* v752: and when a customer last wrote on one */
   }
   const mm =/^\/desk\/orders\/([^/]+)\/([^/]+)$/.exec(p);
   if (!mm) return notFound();

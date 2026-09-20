@@ -1,5 +1,17 @@
 [
  {
+  "v": "v752",
+  "d": "20 Sep 2026",
+  "t": "THE DESK READS THE THREAD ON ITS CARD, KEEPS AN ORDER WAITING FOR AN ANSWER, AND IS WOKEN BY A LINE",
+  "n": [
+   "<b>v751 LET A CUSTOMER WRITE ON ANY ORDER AT ANY STAGE, AND TWO THINGS ON THIS SIDE HAD NOT CAUGHT UP.</b> The Site orders card lists the OPEN orders, so a question asked about one he had closed reached a record nothing on his desk drew; and nothing woke him for a line either, because the nudge compared the newest PLACEMENT against its one mark and a message is not a placement.",
+   "<b>AN ORDER WAITING FOR AN ANSWER IS STILL HIS TO LOOK AT.</b> The test is the thread's last line: theirs, and it is waiting; his, and it is not. So a closed order a customer has written on comes back onto the card and leaves it again when he answers, which means the card carries exactly what is owed a reply and nothing else. The read that asks for every order still gets every order.",
+   "<b>A LINE WAKES HIM, ON ITS OWN MARK.</b> The site's one-read-a-minute answer carries when a customer last wrote beside when one was last placed, and the nudge holds two marks. On one mark a message arriving in a quiet hour would be measured against the newest placement and read as old news, and a placement would bury an unanswered line; each is asserted the other way round. A mark moves whether or not the push reached anybody, because a wake that failed is not a reason to wake for the same line every minute until it does.",
+   "<b>THE THREAD IS DRAWN ON THE CARD,</b> oldest first, his lines marked You and theirs marked by their code, under a heading that says when the order is waiting for an answer. <b>Every line goes through <code>esc</code></b>: a customer's own words are the one free text on this desk that a stranger typed, and an order card is built by interpolation.",
+   "<b>THE CHECKS.</b> Seventeen assertions: the waiting test on four shapes of thread, the card's list holding the open order and the closed one that asked a question and neither of the other two, the site's one read carrying all three moments, then a placement waking him, the same placement not waking him twice, a line waking him on its own, the same line not twice, a later placement not re-reading the old line and a later line not re-reading the placement, a line waking him on a site where nothing was ever placed, and the card itself drawn three ways: waiting, answered, and an order nobody wrote on. Nine mutations each turned it red, including the customer's words written onto the card raw."
+  ]
+ },
+ {
   "v": "v751",
   "d": "20 Sep 2026",
   "t": "A CUSTOMER MAY WRITE A LINE ON AN ORDER, AT PLACEMENT AND AFTER, AND IT NEVER REACHES A LEDGER NOTE",
