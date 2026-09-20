@@ -1,5 +1,15 @@
 [
  {
+  "v": "v747",
+  "d": "20 Sep 2026",
+  "t": "THE LEDGER DESTINATION IS NAMED RECORD, AND ITS OLD ADDRESS STILL LANDS",
+  "n": [
+   "<b>HIS INSTRUCTION OF 20 SEP 2026:</b> the destination called The book becomes Record or Database. Record, because this desk already calls a row's own account of itself the record, and Database names the file rather than what he opens it for. It also ends a collision the rail has carried since v341: two of the seven destinations were called book, and the other one, Order book, is about money owed rather than the ledger.",
+   "<b>THE ID IS UNTOUCHED.</b> An id is an address here, <code>/desk#book</code> since v341, and the rule that old tab ids remain addresses is older than the label. So <code>VIEWS</code> carries <code>{id:'book', name:'Record'}</code> and the rail's own button says Record, which is the pair the suite has checked against each other since v571.",
+   "<b>THE CHECKS.</b> Four assertions, run red on the desk as v746 left it: the destination's name and its id together, that one destination is left with book in its name, the rail's button read off the built desk, and the old address still opening the section. Three mutations each turned it red: the old name back in the list, the old name left on the button, and the id renamed with the label, which is the one that stops the address landing."
+  ]
+ },
+ {
   "v": "v746",
   "d": "20 Sep 2026",
   "t": "THE CORRECTION SENTENCE ON s173 AND s183 STANDS ONCE, AND NO ROW MAY SAY THE SAME THING TWICE",

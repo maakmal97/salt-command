@@ -17120,6 +17120,23 @@ await (async () => {
     "the applier prepends the correction's note itself, once, ahead of what the row said: " + JSON.stringify(row.note));
 })();
 
+section("v747: the ledger destination is named Record, and its old address still lands");
+await (async () => {
+  /* his instruction of 20 Sep 2026. Two destinations were called book, Order book and The book, and the second
+     is the ledger, the journal and the month read twelve ways: what it holds is the record. The ID is untouched,
+     because an id is an address here and /desk#book has been one since v341. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const views = JSON.parse(String(w.eval("JSON.stringify(VIEWS.map(function(v){return v.id+':'+v.name;}))")));
+  ok(views.includes("book:Record"), "the ledger destination is named Record and keeps the id book: " + views.join(" "));
+  ok(!views.some((v) => /book:The book/.test(v)) && views.filter((v) => /book/i.test(v.split(":")[1] || "")).length === 1,
+    "and one destination is left with book in its name, the Order book: " + views.join(" "));
+  const tab = String(w.eval("(function(){var t=document.querySelector('.rail .tab[data-s=\"book\"]');return t?t.textContent:'';})()"));
+  ok(tab === "Record", "the rail's own button says Record: " + JSON.stringify(tab));
+  const landed = String(w.eval("(function(){switchTab('book');var s=document.getElementById('sec-book');return s&&s.classList.contains('on')?'open':'shut';})()"));
+  ok(landed === "open", "and the old address still opens it: " + landed);
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

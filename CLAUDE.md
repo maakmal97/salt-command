@@ -135,7 +135,8 @@ decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; s
 
 **Retired at v387:** the phone app `public/index.html`, `public/data.json` and the
 claude.ai mirror. The built desk is seven destinations over eighteen pages (`VIEWS` in the
-master): Today, Order book, Stock, Pricing, Network, The book, Enter. **The rail is two
+master): Today, Order book, Stock, Pricing, Network, Record, Enter (the ledger destination was The book
+until v747, his instruction of 20 Sep 2026; its id is still `book`, so `/desk#book` lands). **The rail is two
 levels at most** (his instruction, 14 Sep 2026). **One product in view for the whole desk**
 (his rule, 14 Sep 2026): `PROD`, set only through `setProdView`. Old tab ids remain addresses
 (`/desk#network`). In cloud mode the Enter view carries **Add ID**, **Amend ID** and
