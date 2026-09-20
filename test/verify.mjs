@@ -16493,9 +16493,14 @@ await (async () => {
      the record. A carriage row outside it, whenever it was minted and however it came by its carriage, is
      held to the next test alone. */
   const RESTATED = ["s137", "s138", "s139", "s140", "s143", "s150", "s151", "s154", "s157", "s159", "s160", "s172"];
-  const restated = carried.filter((r) => RESTATED.includes(r.rid));
-  ok(RESTATED.every((id) => restated.some((r) => r.rid === id)) && restated.every((r) => /THE CARRIAGE MOVED OUT OF THE TOTAL/.test(r.note || "")),
-    "the twelve rows v727 restated all carry a carriage and say on their own row that they were restated rather than re-priced: " + restated.length + " on the book");
+  /* AND IT IS THE NOTE THAT IS ASSERTED, NEVER THE CARRIAGE THE ROW HOLDS TODAY. v740 read the set out of
+     `carried`, so a row of the twelve that later loses its carriage left the set and the check went red on a
+     row it had nothing to say about: v744 folded s137's RM15 back into its total on his own instruction, and
+     the suite failed on master within the hour. What v727 did is done and the sentence is its record, so the
+     sentence is what is read; whether the row still carries a carriage is that row's own business. */
+  const restated = RESTATED.map((id) => (bk.sales || []).find((r) => r.rid === id)).filter(Boolean);
+  ok(restated.length === RESTATED.length && restated.every((r) => /THE CARRIAGE MOVED OUT OF THE TOTAL/.test(r.note || "")),
+    "the twelve rows v727 restated are all on the book and each says on its own row that it was restated rather than re-priced: " + restated.length + " of " + RESTATED.length);
   ok(carried.every((r) => E.txGoods(r) === r.total && E.txPrice(r) * r.qty > r.total),
     "on each of them the goods are the total and what is owed is more than the goods, which is the whole of the change");
 
