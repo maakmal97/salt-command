@@ -1,6 +1,6 @@
 {
- "v": "v739",
- "stamped": "20 Sep 2026, 16:46 KL",
+ "v": "v743",
+ "stamped": "20 Sep 2026, 18:11 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -4750,7 +4750,8 @@
    "CJ4-OKR-R",
    "CI4-OKR-R",
    "CE4-AD-R",
-   "CS6-DAM"
+   "CS6-DAM",
+   "CZ5-TM"
   ],
   "associates": [
    "CS6-BS",
@@ -5014,6 +5015,16 @@
     3.14,
     101.71,
     "Pudu"
+   ],
+   "CZ5-TM": [
+    3.22,
+    101.72,
+    "Taman Melati"
+   ],
+   "CA2-SEN": [
+    3.18,
+    101.68,
+    "Sentul"
    ]
   },
   "TIER_OF": {
@@ -5026,6 +5037,10 @@
    },
    "CK4-SEN": {
     "salt": "Platinum"
+   },
+   "CZ5-TM": {
+    "salt": "Titanium",
+    "oil": "Titanium"
    }
   },
   "AWARDS": {
@@ -5132,9 +5147,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-19T23:55:48.820Z",
+  "QUEUE_COMMITTED": "2026-09-20T08:22:11.476Z",
   "PRICING": {
-   "takenAt": "2026-09-20T08:46:36.840Z",
+   "takenAt": "2026-09-20T10:11:05.366Z",
    "sizes": [
     0.5,
     1,
@@ -5296,6 +5311,10 @@
     },
     "CB7-BJ": {
      "salt": "Titanium"
+    },
+    "CZ5-TM": {
+     "salt": "Titanium",
+     "oil": "Titanium"
     }
    },
    "profileOf": {
@@ -6726,10 +6745,10 @@
      ]
     }
    },
-   "v": "v739"
+   "v": "v743"
   },
   "OPEN": {
-   "at": "2026-09-20T08:46:36.961Z",
+   "at": "2026-09-20T10:11:05.607Z",
    "count": 11,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
@@ -6944,7 +6963,7 @@
     "salt": "2026-09-19",
     "oil": "2026-09-19"
    },
-   "v": "v739"
+   "v": "v743"
   }
  }
 }
