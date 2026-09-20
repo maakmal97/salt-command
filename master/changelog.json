@@ -1,5 +1,15 @@
 [
  {
+  "v": "v754",
+  "d": "20 Sep 2026",
+  "t": "THE COLLISION TEST SPENDS THE MILLISECOND THE QUEUE HOLDS, NOT THE ONE THE HISTORY SHOWS",
+  "n": [
+   "<b>THE SUITE WENT RED ON A SECTION NOTHING HAD TOUCHED.</b> v731 proves that a withdrawal stamped in the acknowledgement’s own millisecond takes the next one rather than vanishing into its draft id. To force that, the test restamped the withdrawal onto the acknowledgement EVENT’S moment. The millisecond that is actually spent is the acknowledgement ENTRY’S, the mark <code>queued.ack</code>, and the two differ the moment two orders are acknowledged inside one millisecond: <code>queueSale</code> gives the second the next free stamp, so the mark moves and the event does not. On a full run of 230 sections that happened; alone it never did.",
+   "<b>IT PASSED ALONE AND FAILED IN A FULL RUN, WHICH IS THE SIGNATURE OF AN ASSERTION THAT CANNOT FORCE THE STATE IT PROVES.</b> The test now reads the mark and restamps the withdrawal onto that, so the collision is guaranteed whatever else the queue holds, and the bump is proved rather than hoped for. No code moved: the behaviour was right on every run, and the instrument was the thing that could not see it.",
+   "<b>THE CHECKS.</b> Two mutations each turned the section red: the line that gives a collided stage the next millisecond removed, and the marks not read as spent at all. A third, aiming the collision back at the event, is NOT listed as a proof: alone it stays green, which is the whole fault being fixed here and cannot be shown in one section."
+  ]
+ },
+ {
   "v": "v753",
   "d": "20 Sep 2026",
   "t": "HE ANSWERS ON THE ORDER, AND THE WORDS ARE CHECKED ON THE DESK BEFORE THEY LEAVE IT",

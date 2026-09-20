@@ -14988,7 +14988,14 @@ await (async () => {
   const rowG = { date: (await rec(oG.id)).ledgerKey.split("|")[1], customer: "CX1-AB", product: "salt", qty: 1, total: 170, delivery: 0, cash: 0, deliveredQty: 0, rid: "s731" };
   STATE.OPEN.byKey[PE.ovKey(rowG)] = Object.assign(PE.ledgerRow(rowG, "S", "salt"), { key: PE.ovKey(rowG) });
   await post("/orders/" + oG.id + "/cancel", {}, S);
-  const gAck = await ackAt(oG.id);
+  /* v754: THE MILLISECOND TO COLLIDE WITH IS THE ONE THE QUEUE HOLDS, which is the acknowledgement
+     ENTRY'S stamp and not the acknowledgement EVENT'S. They are the same on a quiet queue and differ
+     the moment two orders are acknowledged inside one millisecond: queueSale gives the second the next
+     free one, so the mark moves and the event does not. Reading the event, this test restamped the
+     withdrawal onto a millisecond nothing had spent, and then asserted a bump that had no reason to
+     happen. It passed alone and failed in a full run, which is the signature of an assertion that
+     cannot force the state it proves. */
+  const gAck = (await rec(oG.id)).queued.ack;
   await restamp(oG.id, (h) => h.status === "cancelled", gAck);
   const nG = (await Q()).length;
   await reconcileOrders(denv);
