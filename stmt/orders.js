@@ -6,7 +6,7 @@
  *
  * WHAT AN ORDER IS. One record, order:<username>:<id>, in this site's own store:
  *   { id, u, product, qty, mode, unit, total, week, at, status, history[], method?, account?,
- *     paid, payments[], moved, movedOn, movedAt?, queued?, ledgerKey? }
+ *     paid, payments[], moved, movedOn, movedAt?, queued?, ledgerKey?, msgs[] }
  * Plaintext, unlike everything else here, and the reason is stated rather than hidden: the
  * record is written at runtime by the customer, and this Worker holds no key to seal it with.
  * It carries a size, a quoted total and a state; no name, no code, no address. The desk code
@@ -67,6 +67,31 @@ export const LAST_PLACED = "last-placed";
 /* v694: and the moment of the newest CHANGE of any kind, so the desk's every-minute reconcile asks
    one question before it lists anything. A payment the customer made moves this and not that. */
 export const LAST_TOUCHED = "last-touched";
+/* ---- WHAT A CUSTOMER WRITES ON AN ORDER (v751, his instruction of 20 Sep 2026) ----------------
+ * He asked at the start of this work whether a customer could chat about an order, or leave a
+ * comment. Both, and they are one thing: a THREAD on the order, `msgs[]`, each { at, by, text }.
+ * A line typed at placement is simply its first message, so there is one list to read and not a
+ * comment field beside a conversation.
+ *
+ * IT NEVER RIDES INTO A LEDGER NOTE. This is the second piece of free text a customer types, after
+ * `place`, and it is held to exactly the rule v694 gave that one: a note reaches the committed book
+ * and what a customer typed could carry a street, a name or anything else. The entries the desk
+ * queues are built from fixed words and figures, and the suite asserts that nothing a customer
+ * wrote reaches one.
+ *
+ * TWENTY AN ORDER, TWO HUNDRED CHARACTERS EACH, and the count is of THEIR OWN lines, so an answer
+ * never uses up their allowance. Enough for a conversation about one order; not enough to be a
+ * channel. The line at placement is shorter, 140, because it is an aside on a form and not a reply.
+ */
+export const MSG_MAX = 200;
+export const MSG_CAP = 20;
+export const NOTE_MAX = 140;
+export const LAST_SAID = "last-said";
+/* one reader for both: collapsed to single spaces, trimmed, cut to length. Whitespace is where a
+   long silent block hides, and a line drawn on the page has to be one line. */
+export const cleanMsg = (s, max) => String(s == null ? "" : s).replace(/\s+/g, " ").trim().slice(0, max);
+/* their own lines, which is what the cap counts */
+export const saidBy = (o, who) => ((o && o.msgs) || []).filter((m) => m && m.by === who).length;
 
 const isNum = (v) => typeof v === "number" && Number.isFinite(v);
 const OKEY = (u, id) => "order:" + u + ":" + id;
@@ -198,9 +223,11 @@ export function checkPlacement(body, open) {
      that is not an associate has no tick to send, and a tick it sent anyway would reach a desk that
      has no bucket to book it to and would refuse it. */
   const forFriend = body.forFriend === true;
+  /* v751: and anything they want to say with it, optional on every order, collect or deliver */
+  const note = cleanMsg(body.note, NOTE_MAX);
   if (open.length >= MAX_OPEN) return { error: "you already have " + open.length + " orders open; wait for one to be completed" };
   return { order: { product, qty, mode, unit: +unit.toFixed(2), total: +total.toFixed(2), week,
-    place: mode === "deliver" ? place : "", forFriend } };
+    place: mode === "deliver" ? place : "", forFriend }, note };
 }
 
 /* WHAT IS STILL OWED ON AN ORDER, and what is still to be handed over. Both read the record alone:
@@ -222,10 +249,12 @@ export async function placeOrder(env, u, body) {
   const at = new Date().toISOString();
   const id = at.replace(/[-:.TZ]/g, "").slice(0, 14) + "-" + b64url(crypto.getRandomValues(new Uint8Array(4))).toLowerCase().replace(/[^a-z0-9]/g, "x");
   const order = Object.assign({ id, u, at, status: "placed", paid: 0, payments: [], moved: 0, movedOn: null,
+    msgs: c.note ? [{ at, by: "customer", text: c.note }] : [],   /* v751: the line they typed with the order is its first message */
     history: [{ at, status: "placed", by: "customer" }] }, c.order);
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
   await env.STMT.put(LAST_PLACED, at);
   await env.STMT.put(LAST_TOUCHED, at);
+  if (c.note) await env.STMT.put(LAST_SAID, at);
   return { order };
 }
 
@@ -234,7 +263,7 @@ export async function customerMove(env, u, id, action, body) {
   const order = await env.STMT.get(OKEY(u, id), "json");
   if (!order) return { error: "no such order", status: 404 };
   const at = new Date().toISOString();
-  let done = false;
+  let done = false, said = false;
   if (action === "cancel") {
     /* v694: either side may withdraw at any stage UNTIL THE GOODS MOVE (his rule, 18 Sep 2026).
        What was paid is refunded, which the ledger raises when the cancellation folds. */
@@ -270,9 +299,20 @@ export async function customerMove(env, u, id, action, body) {
     order.payments = (order.payments || []).concat([{ at, amount: +amount.toFixed(2), method, account }]);
     order.history.push({ at, status: order.status, by: "customer", method, account, note: "paid " + amount.toFixed(2) });
     done = settle(order, at);
+  } else if (action === "say") {
+    /* v751: ON ANY ORDER, at any stage. A question about an order that has been withdrawn or
+       completed is still a question about that order, and sending them somewhere else to ask it
+       is how a conversation leaves the record it belongs to. */
+    const text = cleanMsg(body && body.text, MSG_MAX);
+    if (!text) return { error: "write something first", status: 400 };
+    if (saidBy(order, "customer") >= MSG_CAP) return { error: "there are already " + MSG_CAP + " of your messages on this order", status: 409 };
+    order.msgs = ((order.msgs) || []).concat([{ at, by: "customer", text }]);
+    said = true;
   } else return { error: "not found", status: 404 };
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
   await env.STMT.put(LAST_TOUCHED, at);
+  /* v751: and a mark the desk's own nudge can read, so a line waits for him rather than for a poll */
+  if (said) await env.STMT.put(LAST_SAID, at);
   /* v700: a payment that completes the order is the one customer move worth waking the phone for,
      because it is the only one whose answer arrives after they have put the phone down. Every
      other move of theirs happens with the page in front of them. */

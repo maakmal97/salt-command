@@ -318,7 +318,7 @@ async function handleCustomer(request, env, p, m) {
     }
     return json({ ok: true });
   }
-  const mm = /^\/orders\/([^/]+)\/(method|cancel|pay)$/.exec(p);
+  const mm = /^\/orders\/([^/]+)\/(method|cancel|pay|say)$/.exec(p);   /* v751: say, a line on the order */
   if (!mm || !OID_RE.test(mm[1])) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   const r = await customerMove(env, u, mm[1], mm[2], await readJson(request));

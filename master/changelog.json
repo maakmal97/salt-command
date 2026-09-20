@@ -1,5 +1,17 @@
 [
  {
+  "v": "v751",
+  "d": "20 Sep 2026",
+  "t": "A CUSTOMER MAY WRITE A LINE ON AN ORDER, AT PLACEMENT AND AFTER, AND IT NEVER REACHES A LEDGER NOTE",
+  "n": [
+   "<b>HIS INSTRUCTION OF 20 SEP 2026,</b> and the last part of what he asked when this work began: can a customer chat about an order, or leave a comment. Both, and they are one thing. An order carries a THREAD, <code>msgs[]</code>, each line <code>{at, by, text}</code>, and the line typed on the order form is simply its first message rather than a comment field sitting beside a conversation. One list to read, on their page and on his.",
+   "<b>ON ANY ORDER, AT ANY STAGE.</b> A question about an order that has been withdrawn or completed is still a question about that order, and sending them elsewhere to ask it is how a conversation leaves the record it belongs to. Twenty lines of THEIR OWN an order, two hundred characters each, and the cap counts only theirs, so an answer never uses up their allowance; the line on the form is shorter at 140, being an aside rather than a reply. Every line is collapsed to single spaces and trimmed, because whitespace is where a long silent block hides and a line drawn on a page has to be one line.",
+   "<b>IT NEVER RIDES INTO A LEDGER NOTE.</b> This is the second piece of free text a customer types, after the general location v694 takes for a delivery, and it is held to exactly that rule: a note reaches the committed book, and what a customer typed could carry a street or a name. The four entries an order can queue are built from fixed words and figures, and the suite now forces a customer's own words and a street into an order and asserts that not one of them reaches an entry.",
+   "<b>THE SITE MARKS WHEN SOMETHING WAS LAST SAID,</b> <code>last-said</code>, beside the marks that already say when an order was last placed and last touched. Nothing reads it yet; it is what will wake him rather than making him poll.",
+   "<b>THE CHECKS.</b> Fifteen assertions driving the site's own Worker: the line on the form opening the thread with its spacing collapsed, an order placed with nothing to say carrying an empty thread rather than a missing one, a later line appended to the same thread, the mark moving to it, an empty line refused, the route taking a session like every other, a long line cut, the twenty-first of their own refused, an answer counted as his, a line still reaching a withdrawn order, and the four entries built from an order carrying a street and a name and clean of both. Ten mutations each turned it red, including the one that matters most: the customer's words put into the ledger's own note."
+  ]
+ },
+ {
   "v": "v750",
   "d": "20 Sep 2026",
   "t": "THE THREE ORDERS OF 16, 18 AND 19 SEPTEMBER EACH READ 5 UNIT, RM420 AND RM15 OF CARRIAGE, COMPLETED",

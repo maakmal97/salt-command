@@ -188,6 +188,17 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .pay label{display:flex;gap:10px;align-items:center;min-height:var(--salt-tap);padding:0 6px;font-size:var(--salt-text-sm);cursor:pointer}
 .pay input{width:18px;height:18px;accent-color:var(--salt-brass)}
 .hist{margin:10px 0 0;padding:0;list-style:none;font-size:var(--salt-text-xs);color:var(--salt-text-muted);font-family:var(--salt-font-mono);line-height:1.8}
+/* v751: the thread on an order. Theirs sits left and his right, which is the one convention every
+   reader of a phone already knows, so no label has to say whose line it is. */
+.thread{margin:12px 0 0;padding:0;list-style:none}
+.thread li{margin:0 0 7px;max-width:82%;padding:7px 10px;border-radius:10px;font-size:var(--salt-text-sm);line-height:1.5}
+.thread li.me{margin-left:auto;background:var(--salt-well);border:1px solid var(--salt-line)}
+.thread li.them{margin-right:auto;background:var(--salt-glass);border:1px solid var(--salt-brass)}
+.thread .when{display:block;font-size:var(--salt-text-xs);color:var(--salt-text-muted);font-family:var(--salt-font-mono);margin-bottom:2px}
+.thread .said{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.sayw{display:flex;gap:7px;align-items:center;margin-top:10px}
+.sayw .fld{flex:1 1 auto;margin:0}
+
 @media print{.bar,.mos,.tabs{display:none}}
 /* THE OWNER'S ROSTER, in the gate's own geometry so the door looks like the door. One row per
    account: the code leads because that is what he knows an account by, and the username follows
@@ -1162,6 +1173,13 @@ const CLIENT_JS = `
         form.appendChild(pl);
         form.appendChild(el('div','sub2','A neighbourhood is enough. The delivery charge is set when the order is acknowledged, and you see it here before you pay.'));
       }
+      /* v751: ANYTHING THEY WANT TO SAY WITH IT, on any order and never required. It opens the
+         order's thread rather than sitting in a field of its own, so there is one place to read. */
+      form.appendChild(el('span','lbl','Anything to add'));
+      var sy=el('input','fld'); sy.type='text'; sy.maxLength=140; sy.value=draft.say||'';
+      sy.placeholder='optional, a line about this order'; sy.setAttribute('aria-label','Anything to add about this order');
+      sy.addEventListener('input',function(){ draft.say=sy.value; });
+      form.appendChild(sy);
       /* v702, HIS INSTRUCTION OF 18 SEP 2026: an associate's own order and one placed for somebody
          else are no longer told apart by what they buy, so they tick it. "On behalf of a friend",
          his words, and the words he replaced an earlier phrasing with. Nobody else sees the tick. */
@@ -1193,6 +1211,7 @@ const CLIENT_JS = `
                   ['Goods',rm(qt.total)]];
         if(draft.mode==='deliver'){ rows.splice(2,0,['Where',draft.place.trim()]); rows.push(['Delivery','set when it is acknowledged']); }
         if(assoc) rows.splice(1,0,['For',draft.forFriend?'A friend':'Yourself']);
+        if(String(draft.say||'').trim()) rows.push(['You said',String(draft.say).trim()]);
         rows.forEach(function(r){ var li=el('li'); li.appendChild(el('span','k',r[0]));
           var v=el('span','v'); if(typeof r[1]==='string') v.textContent=r[1]; else v.appendChild(r[1]);
           li.appendChild(v); ul.appendChild(li); });
@@ -1203,12 +1222,13 @@ const CLIENT_JS = `
           var mine=ticket;
           var r=await api('/orders',{product:P.product,qty:qt.q,mode:draft.mode,unit:qt.unit,total:qt.total,
             place:draft.mode==='deliver'?draft.place.trim():'',forFriend:!!(assoc&&draft.forFriend),
+            note:String(draft.say||'').trim(),
             week:(prices.week&&prices.week.monday)||''});
           if(mine!==ticket) return;
           draft.busy=false;
           if(r.status===401){ draft.note='Your session has ended. Sign in again to order.'; }
           else if(!r.body.ok){ draft.note=r.body.error||'The order was not placed.'; }
-          else { draft.note='Placed. You will see it acknowledged below.'; draft.confirm=false; draft.place=''; await loadOrders(); if(mine!==ticket) return; }
+          else { draft.note='Placed. You will see it acknowledged below.'; draft.confirm=false; draft.place=''; draft.say=''; await loadOrders(); if(mine!==ticket) return; }
           drawOrder();
         });
         cf.appendChild(ok2);
@@ -1288,6 +1308,38 @@ const CLIENT_JS = `
         pane.appendChild(wb);
       }
     }
+    /* v751: THE THREAD, oldest first, theirs and his. It sits above the history because it is the
+       part a reader came back for; the history is the record underneath it. */
+    var msgs=(o.msgs||[]);
+    if(msgs.length){
+      var th=el('ul','thread');
+      msgs.forEach(function(m){
+        var li=el('li',m.by==='desk'?'them':'me');
+        li.appendChild(el('span','when',(m.by==='desk'?'Reply, ':'You, ')+stamp(m.at)));
+        li.appendChild(el('p','said',m.text||''));
+        th.appendChild(li); });
+      pane.appendChild(th);
+    }
+    /* ON ANY ORDER, AT ANY STAGE: a question about a withdrawn order is still about that order. */
+    var sayw=el('div','sayw');
+    var si=el('input','fld'); si.type='text'; si.maxLength=200;
+    si.placeholder=msgs.length?'Add to this':'Ask about this order';
+    si.setAttribute('aria-label','Write about this order');
+    var sg=el('button','btn quiet','Send'); sg.type='button';
+    sg.addEventListener('click', async function(){
+      var t=String(si.value||'').trim();
+      if(!t||sg.disabled) return;
+      sg.disabled=true; var mine=ticket;
+      var r=await api('/orders/'+o.id+'/say',{text:t});
+      if(mine!==ticket) return;
+      sg.disabled=false;
+      if(r.status===401) draft.note='Your session has ended. Sign in again.';
+      else if(!r.body.ok) draft.note=r.body.error||'It was not sent.';
+      else { draft.note=''; await loadOrders(); if(mine!==ticket) return; }
+      drawOrder();
+    });
+    sayw.appendChild(si); sayw.appendChild(sg);
+    pane.appendChild(sayw);
     var hist=el('ul','hist');
     (o.history||[]).forEach(function(h){ var li=el('li',null,stamp(h.at)+'  '+(STATE_WORDS[h.status]||h.status)+(h.method?', paying by '+methodWord(h.method,h.account):'')+(h.note?': '+h.note:'')); hist.appendChild(li); });
     pane.appendChild(hist);

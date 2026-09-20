@@ -17304,6 +17304,78 @@ await (async () => {
   ok(bk.STATED_STOCK === 22.65, "the stated inventory stands where v744 left it: " + bk.STATED_STOCK);
 })();
 
+section("v751: a customer may write a line on an order, at placement and after, and it never reaches a ledger note");
+await (async () => {
+  /* his instruction of 20 Sep 2026, and the last part of what he asked at the start of this work:
+     can a customer chat about an order, or leave a comment. Both, and they are one thing: a thread
+     on the order. A line typed with the order is simply its first message. */
+  const O = await import("../stmt/orders.js");
+  const stmtWorker = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const un = C.newUsername(), pw = C.newPassword();
+  const ck = await C.contentKey("test-secret", un);
+  const rec = { u: un, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) };
+  const kv = new KV(); await kv.put("u:" + un, JSON.stringify(rec));
+  const senv = { STMT: kv, STMT_MASTER: "master-pass", STMT_DESK_KEY: "desk-key" };
+  const sreq = (path, opts = {}) => new Request("https://k7m3p2.example" + path, opts);
+  const sj = (path, body, headers = {}) => sreq(path, { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) });
+  const S = { "X-Stmt-Session": (await (await stmtWorker.fetch(sj("/open", { u: un, password: pw }), senv)).json()).session };
+  const place = (extra) => stmtWorker.fetch(sj("/orders", Object.assign({ product: "salt", qty: 1, mode: "collect", unit: 110, total: 110, week: "2026-09-14" }, extra), S), senv);
+
+  /* ---- the line typed with the order opens its thread ---- */
+  let b = await (await place({ note: "  leave   it with the   guard  " })).json();
+  const id = b.order.id;
+  const first = ((b.order || {}).msgs || [])[0] || {};
+  ok(b.ok && ((b.order || {}).msgs || []).length === 1 && first.by === "customer" && first.text === "leave it with the guard",
+    "the line typed with the order is its first message, its spacing collapsed: " + JSON.stringify((b.order || {}).msgs));
+  ok(b.order.note === undefined, "and it is not kept as a field beside the thread, so there is one list to read");
+  ok(String(await kv.get(O.LAST_SAID)) === first.at, "the site marks when the line with the order was said: " + await kv.get(O.LAST_SAID));
+  const bare = await (await place({})).json();
+  ok(bare.ok && Array.isArray(bare.order.msgs) && bare.order.msgs.length === 0, "an order placed with nothing to say carries an empty thread, never a missing one");
+
+  /* ---- and a line at any time after it ---- */
+  let r = await stmtWorker.fetch(sj("/orders/" + id + "/say", { text: "when can I collect?" }, S), senv);
+  b = await r.json();
+  const said2 = (((b.order || {}).msgs) || [])[1] || {};
+  ok(r.status === 200 && b.ok && (((b.order || {}).msgs) || []).length === 2 && said2.text === "when can I collect?" && said2.by === "customer",
+    "a later line is appended to the same thread: " + JSON.stringify((((b.order || {}).msgs) || []).map((m) => m.by + ": " + m.text)));
+  ok(String(await kv.get(O.LAST_SAID)) === said2.at, "and the mark moves to the line just said, which is what wakes him: " + await kv.get(O.LAST_SAID));
+  ok((await stmtWorker.fetch(sj("/orders/" + id + "/say", { text: "   " }, S), senv)).status === 400, "an empty line is refused");
+  ok((await stmtWorker.fetch(sreq("/orders/" + id + "/say", { method: "POST", body: JSON.stringify({ text: "hi" }) }), senv)).status === 401,
+    "and the route takes a session like every other order route");
+  const long = await (await stmtWorker.fetch(sj("/orders/" + id + "/say", { text: "x".repeat(400) }, S), senv)).json();
+  ok(((((long.order || {}).msgs) || [])[2] || {text:""}).text.length === O.MSG_MAX, "a long line is cut to " + O.MSG_MAX + ": " + JSON.stringify((((long.order || {}).msgs) || [])[2]));
+
+  /* ---- twenty of THEIR OWN, so an answer never uses up their allowance ---- */
+  for (let i = (((long.order || {}).msgs) || []).length; i < O.MSG_CAP; i++) await stmtWorker.fetch(sj("/orders/" + id + "/say", { text: "line " + i }, S), senv);
+  const full = await stmtWorker.fetch(sj("/orders/" + id + "/say", { text: "one too many" }, S), senv);
+  ok(full.status === 409, "the " + (O.MSG_CAP + 1) + "th line of their own is refused: " + full.status);
+  const held = await (await stmtWorker.fetch(sreq("/orders", { headers: S }), senv)).json();
+  const mine = held.orders.find((o) => o.id === id);
+  ok(O.saidBy(mine, "customer") === O.MSG_CAP, "and the thread holds exactly " + O.MSG_CAP + " of theirs: " + O.saidBy(mine, "customer"));
+  const withDesk = Object.assign({}, mine, { msgs: (mine.msgs || []).concat([{ at: "2026-09-20T00:00:00.000Z", by: "desk", text: "an answer" }]) });
+  ok(O.saidBy(withDesk, "customer") === O.MSG_CAP && O.saidBy(withDesk, "desk") === 1,
+    "an answer is counted as his and not against their cap: " + JSON.stringify([O.saidBy(withDesk, "customer"), O.saidBy(withDesk, "desk")]));
+
+  /* ---- ON ANY ORDER: a question about a withdrawn order is still about that order ---- */
+  await stmtWorker.fetch(sj("/orders/" + bare.order.id + "/cancel", {}, S), senv);
+  const onDead = await stmtWorker.fetch(sj("/orders/" + bare.order.id + "/say", { text: "why was this withdrawn?" }, S), senv);
+  ok(onDead.status === 200 && (await onDead.json()).order.msgs.length === 1, "a line still reaches an order that has been withdrawn: " + onDead.status);
+
+  /* ---- AND NOTHING A CUSTOMER TYPED REACHES A LEDGER ENTRY, which is v694's rule for `place` ---- */
+  const { pendingEntry, payEntry, handoverEntry, cancelEntry } = await import("../src/orders.js");
+  const dirty = { id: "20260920000000-zzzz", u: un, product: "salt", qty: 1, unit: 110, total: 110, delivery: 0, mode: "deliver",
+    place: "42 Jalan Something", moved: 1, movedOn: "2026-09-20", paid: 110, status: "ready",
+    msgs: [{ at: "2026-09-20T00:00:00.000Z", by: "customer", text: "SECRETSTREETNAME and my name is REALNAME" }],
+    history: [{ at: "2026-09-20T00:00:00.000Z", status: "acknowledged", by: "desk" }] };
+  const entries = [pendingEntry(dirty, "CX0-AA", "2026-09-20T01:00:00.000Z"), payEntry(dirty, "CX0-AA", 110, "2026-09-20T01:00:01.000Z"),
+    handoverEntry(dirty, "CX0-AA", 1, "2026-09-20T01:00:02.000Z"), cancelEntry(dirty, "CX0-AA", "customer", "2026-09-20T01:00:03.000Z")].filter(Boolean);
+  ok(entries.length === 4, "the four entries an order can queue are built: " + entries.length);
+  const leaked = entries.filter((e) => /SECRETSTREETNAME|REALNAME|Jalan/.test(JSON.stringify(e)));
+  ok(!leaked.length, "and not one of them carries a word the customer typed: " + (leaked.length ? JSON.stringify(leaked[0]).slice(0, 200) : "clean"));
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */
