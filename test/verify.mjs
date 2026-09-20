@@ -16487,16 +16487,15 @@ await (async () => {
   /* ---- the live book: every row v727 restated still says so, and not one figure lost ---- */
   const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const carried = (bk.sales || []).filter((r) => +r.delivery > 0);
-  /* s182 was the last rid on the book when v727 restated it. A rid is minted at fold time above every
-     rid on the book, so a carriage row at or below it was restated and must say so; one above it was born with
-     the two figures (s183, folded from a site order on 20 Sep, was the first) and has nothing to
-     restate, so it is held to the next test alone. The cut is the rid and not the date: a row entered
-     late carries a low date and a high rid, and it is the rid that says which convention wrote it. */
-  const RESTATED_UP_TO = 182;
-  const ridN = (r) => +String(r.rid || "").slice(1);
-  const restated = carried.filter((r) => ridN(r) <= RESTATED_UP_TO);
-  ok(restated.length === 12 && restated.every((r) => /THE CARRIAGE MOVED OUT OF THE TOTAL/.test(r.note || "")),
-    restated.length + " sale(s) carried a carriage when v727 restated the book, and every one says on its own row that it was restated rather than re-priced");
+  /* THE TWELVE ROWS v727 RESTATED, BY RID. v737 cut them at s182, the last rid on the book that day, and the
+     cut held for a morning: v738 gave s173, a row older than the cut, a carriage it never had at v727, so a
+     threshold on the rid says which rows EXISTED then and not which rows the restatement touched. The set is
+     the record. A carriage row outside it, whenever it was minted and however it came by its carriage, is
+     held to the next test alone. */
+  const RESTATED = ["s137", "s138", "s139", "s140", "s143", "s150", "s151", "s154", "s157", "s159", "s160", "s172"];
+  const restated = carried.filter((r) => RESTATED.includes(r.rid));
+  ok(RESTATED.every((id) => restated.some((r) => r.rid === id)) && restated.every((r) => /THE CARRIAGE MOVED OUT OF THE TOTAL/.test(r.note || "")),
+    "the twelve rows v727 restated all carry a carriage and say on their own row that they were restated rather than re-priced: " + restated.length + " on the book");
   ok(carried.every((r) => E.txGoods(r) === r.total && E.txPrice(r) * r.qty > r.total),
     "on each of them the goods are the total and what is owed is more than the goods, which is the whole of the change");
 

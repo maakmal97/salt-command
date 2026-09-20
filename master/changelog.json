@@ -1,5 +1,15 @@
 [
  {
+  "v": "v740",
+  "d": "20 Sep 2026",
+  "t": "THE SUITE'S CARRIAGE CHECK NAMES THE TWELVE ROWS v727 RESTATED, BECAUSE A ROW MAY BE GIVEN A CARRIAGE AFTER THE FACT",
+  "n": [
+   "<b>v737's CUT HELD FOR A MORNING.</b> It scoped the check to rows at rid s182 or below, the last rid on the book when v727 restated it, on the reasoning that a rid says which convention wrote a row. v738 then gave s173, a row older than the cut, the RM15 of carriage it never had at v727, and the full suite went red on the same line again: a threshold on the rid says which rows EXISTED that day and not which rows the restatement touched.",
+   "<b>THE SET IS THE RECORD.</b> The twelve rows v727 restated are named by rid, s137 to s172, and the check asks two things of them: that each is still on the book with a carriage, and that each says on its own row that it was restated rather than re-priced. Every other carriage row, whenever it was minted and however it came by its carriage, is held to the test beside it alone: the goods are the total and what is owed is more than the goods.",
+   "<b>THE CHECKS.</b> The section was run red on the book as v739 left it, thirteen rows against a count of twelve, and green with the set named. Four mutations each turned it red: s173 added to the set, s183 added to the set, the sentence misspelt, and the sentence struck off one restated row of the book."
+  ]
+ },
+ {
   "v": "v739",
   "d": "20 Sep 2026",
   "t": "A CORRECTION THAT RESTATES WHAT MOVED ROLLS THE SHELF BY THE DIFFERENCE, AND THE 5 UNIT OF 19 SEP COME OFF",
