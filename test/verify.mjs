@@ -17137,6 +17137,58 @@ await (async () => {
   ok(landed === "open", "and the old address still opens it: " + landed);
 })();
 
+section("v748: a correction itemises what it changed, one line a field, in the desk's own money and units");
+await (async () => {
+  /* his instruction of 20 Sep 2026, on seeing s137's correction render as one right-aligned run:
+     "total 835 → 850; delivery 15 → (cleared)". The line was the fold's own sentence with every
+     " to " in it rewritten as an arrow and the parts joined with semicolons. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const rd = (e) => JSON.parse(String(w.eval("JSON.stringify(" + e + ")")));
+
+  /* ---- the reader, at module scope so the trail and this test ask the same one ---- */
+  const bits = rd("modBits('corrected on 2026-09-20: total 835 to 850; delivery 15 to (cleared)','2026-09-20')");
+  ok(bits.length === 2 && bits[0].f === "total" && bits[0].was === "835" && bits[0].now === "850" && bits[1].f === "delivery" && bits[1].now === "(cleared)",
+    "two fields corrected read as two claims: " + JSON.stringify(bits));
+  const one = rd("modBits('corrected on 2026-09-20: total 835 to 850','2026-09-19')");
+  ok(one.length === 0, "and a claim from another day is not drawn on this line: " + JSON.stringify(one));
+
+  /* THE SENTENCE IS CUT ONCE AND NOT REWRITTEN. Where the old value itself carries the word to, the cut is
+     genuinely ambiguous and the fold's line cannot say which one it meant; what a reader is owed is that the
+     rest of the words reach the page as they were written. The line this replaces turned EVERY " to " in the
+     sentence into an arrow, so a corrected note came out as a row of arrows. */
+  const noteBit = rd("modBits('corrected on 2026-09-20: note the run from KL to Ipoh to the run to Ipoh','2026-09-20')");
+  ok(noteBit.length === 1 && noteBit[0].f === "note" && (noteBit[0].was + " to " + noteBit[0].now) === "the run from KL to Ipoh to the run to Ipoh" && / to /.test(noteBit[0].now),
+    "a corrected note is cut once and every other to in it reaches the page whole: " + JSON.stringify(noteBit));
+  const odd = rd("modBits('restated on 2026-09-20 from 2 unit / RM100 to 3 unit / RM150','2026-09-20')");
+  ok(odd.length === 1 && odd[0].raw === "2 unit / RM100 to 3 unit / RM150",
+    "a restatement names no field and is drawn in the fold's own words rather than dropped: " + JSON.stringify(odd));
+  const rawHtml = String(w.eval("modHtml('restated on 2026-09-20 from 2 unit / RM100 to 3 unit / RM150','2026-09-20')"));
+  ok(/chgraw/.test(rawHtml) && /2 unit \/ RM100 to 3 unit \/ RM150/.test(rawHtml),
+    "and it reaches the page rather than being dropped, which is the one thing a record of a correction must not do: " + JSON.stringify(rawHtml));
+
+  /* ---- drawn: one line a change, the label ahead of it, money and units in the desk's own hand ---- */
+  const html = String(w.eval("modHtml('corrected on 2026-09-20: total 835 to 850; delivery 15 to (cleared); deliveredQty 0 to 5; rebate true to false; paidOn (unset) to 2026-09-19','2026-09-20')"));
+  const lines = (html.match(/<span class="chg[ "]/g)||[]).length;   /* the label, the arrow and a nil each carry their own chg- class */
+  ok(lines === 5, "five changes are five lines: " + lines);
+  ok(/<i>Total<\/i>RM 835/.test(html) && /<i>Delivery<\/i>RM 15/.test(html), "a money field carries RM: " + html.slice(0, 120));
+  ok(/<i>Delivered<\/i>0 unit/.test(html) && /5 unit</.test(html), "a quantity field carries the unit");
+  ok(/<i>Redemption<\/i>yes/.test(html) && />no</.test(html), "a flag reads yes and no, never true and false");
+  ok(/cleared</.test(html) && /not set</.test(html) && !/\(cleared\)|\(unset\)/.test(html),
+    "the fold's own markers are said in words: " + (/\(cleared\)|\(unset\)/.test(html) ? "brackets left in" : "cleared and not set"));
+  ok(!/;\s/.test(html.replace(/<[^>]+>/g, "")), "and nothing is joined by a semicolon any more: " + JSON.stringify(html.replace(/<[^>]+>/g, "")));
+
+  /* ---- and the live row he was looking at ---- */
+  w.eval('setProd("salt");recompute();switchTab("ledger");');
+  const seen = rd('(function(){var c=document.querySelectorAll(".lcard");for(var i=0;i<c.length;i++){if(c[i].dataset.rid==="s137"){var t=c[i].querySelector(".ltext");'
+    + 'return t?[].map.call(t.querySelectorAll(".chg"),function(x){return x.textContent;}):null;}}return null;})()');
+  ok(seen && seen.length === 2 && /^TotalRM 835/.test(seen[0]) && /^DeliveryRM 15/.test(seen[1]),
+    "s137's correction of 20 Sep draws its two changes as two lines: " + JSON.stringify(seen));
+  /* and each is a line on the page, measured rather than read off the stylesheet */
+  const disp = String(w.eval('(function(){var e=document.querySelector(".lmove .ltext .chg");return e?getComputedStyle(e).display:"nothing drawn";})()'));
+  ok(disp === "block", "each change occupies its own line on the built desk: " + disp);
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

@@ -66,6 +66,8 @@ const NOT_LEDGER = new Set([
      constant tables; a QR is drawn from an address, and the address is not held here. */,
   "PB_A4" /* v564: the page size the board sheet's PDF is written onto, in points. A measurement of
      paper, not of anything that happened. */,
+  "MOD_LABEL", "MOD_RM", "MOD_UNITS" /* v748: what a corrected field is called on the page, and which
+     fields are drawn as money and as units. Presentation of a correction, never a fact about one. */,
   "VIEWS", "VIEW_OF", "PART_Q", "PART_DRAW", "VIEW_PART" /* v341: the seven views over the tabs; navigation, not the book */,
   "EDFORM" /* v363: the row editor's form spec. Labels, control kinds and hints for the thirty
      editable attributes: presentation of the book, never the book. It is data-shaped because a

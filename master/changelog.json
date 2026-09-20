@@ -1,5 +1,16 @@
 [
  {
+  "v": "v748",
+  "d": "20 Sep 2026",
+  "t": "A CORRECTION ITEMISES WHAT IT CHANGED, ONE LINE A FIELD, IN THE DESK'S OWN MONEY AND UNITS",
+  "n": [
+   "<b>HIS INSTRUCTION OF 20 SEP 2026,</b> on seeing s137's correction render as <code>total 835 &rarr; 850; delivery 15 &rarr; (cleared)</code> in one right-aligned run: simplify it, or itemise it. It was the fold's own sentence with every <i>to</i> in it rewritten as an arrow and the parts joined by semicolons, so a two-field correction read as prose, the figures carried no RM and no unit, the fold's own <code>(cleared)</code> and <code>(unset)</code> markers were shown to a reader in their brackets, and a flag read <code>true</code>.",
+   "<b>ONE CHANGE, ONE LINE.</b> Each claim takes its own line with the field named in words ahead of it, money as RM, quantities in units, a flag as yes or no, and cleared or not set said rather than bracketed. The correctable fields are a closed list, so a claim is cut ONCE, at the first <i>to</i> after its own field name, and the rest of the sentence reaches the page as it was written: where an old value carries the word itself the cut is genuinely ambiguous and the line cannot say which was meant, which is a reason to leave the words alone rather than to rewrite all of them. A claim this desk cannot parse at all is still drawn, in the fold's own words, because going quiet about a correction is the one thing this trail must not do.",
+   "<b>THE READER MOVED OUT OF THE TRAIL.</b> It was defined inside <code>tabLedger</code>, so nothing could ask it anything. <code>modBits</code> and <code>modHtml</code> stand at module scope beside the strip that reads the same <code>mod</code> string, and the suite drives them directly.",
+   "<b>THE CHECKS.</b> Thirteen assertions: two fields read as two claims, a claim from another day left off the line, a corrected note cut once with its other words whole, a restatement naming no field drawn in the fold's words and reaching the page, five changes as five lines, RM on a money field, the unit on a quantity, yes and no on a flag, the markers in words, no semicolon left, s137's own two lines off the built desk, and the computed display of a change line measured rather than read off the stylesheet. Eight mutations each turned it red, including the two faults being fixed: the claims joined into one run again, and the split made on every <i>to</i> in the sentence."
+  ]
+ },
+ {
   "v": "v747",
   "d": "20 Sep 2026",
   "t": "THE LEDGER DESTINATION IS NAMED RECORD, AND ITS OLD ADDRESS STILL LANDS",

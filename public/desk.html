@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="8c114543550a2296";
+var SALT_BUILD_ID="f7c85c28f560a96f";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -376,6 +376,12 @@ tr.tot td{font-weight:800;background:#0b1215;}
 .ledwrap .tag.ltype{font-size:9.5px;letter-spacing:.14em;}
 .lnil{color:var(--dim);}
 .lmove .ltext{white-space:normal;text-align:right;font-size:11px;color:var(--mut);}
+.lmove .ltext .chg{display:block;white-space:nowrap;}
+.lmove .ltext .chg+.chg{margin-top:3px;}
+.lmove .ltext .chg i{font-style:normal;color:var(--dim);margin-right:9px;}
+.lmove .ltext .chgto{color:var(--dim);padding:0 5px;}
+.lmove .ltext .chgnil{color:var(--dim);font-style:italic;}
+.lmove .ltext .chgraw{white-space:normal;}
 .lmove .cqty:empty,.lmove .cprc:empty{min-height:1px;}
 .lpen{all:unset;position:absolute;top:5px;right:8px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:var(--gold);opacity:0;cursor:pointer;transition:opacity .12s;}
 .ledwrap .lcard:hover .lpen,.ledwrap .lcard:focus-within .lpen,.lpen:focus-visible{opacity:1;}
@@ -7026,7 +7032,7 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    v324 onward, which tabJournal maps in full; master/changelog.json carries every entry
    ever written and is the record. So a bump PREPENDS its entry. Replacing the array,
    which both comments invited, silently drops the whole window. */
-const evolution=[{"v":"v747","d":"20 Sep 2026","t":"THE LEDGER DESTINATION IS NAMED RECORD, AND ITS OLD ADDRESS STILL LANDS","n":["<b>HIS INSTRUCTION OF 20 SEP 2026:</b> the destination called The book becomes Record or Database. Record, because this desk already calls a row's own account of itself the record, and Database names the file rather than what he opens it for. It also ends a collision the rail has carried since v341: two of the seven destinations were called book, and the other one, Order book, is about money owed rather than the ledger.","<b>THE ID IS UNTOUCHED.</b> An id is an address here, <code>/desk#book</code> since v341, and the rule that old tab ids remain addresses is older than the label. So <code>VIEWS</code> carries <code>{id:'book', name:'Record'}</code> and the rail's own button says Record, which is the pair the suite has checked against each other since v571.","<b>THE CHECKS.</b> Four assertions, run red on the desk as v746 left it: the destination's name and its id together, that one destination is left with book in its name, the rail's button read off the built desk, and the old address still opening the section. Three mutations each turned it red: the old name back in the list, the old name left on the button, and the id renamed with the label, which is the one that stops the address landing."]},{"v":"v746","d":"20 Sep 2026","t":"THE CORRECTION SENTENCE ON s173 AND s183 STANDS ONCE, AND NO ROW MAY SAY THE SAME THING TWICE","n":["<b>v738 WROTE ITS CORRECTION NOTE ONTO BOTH ROWS TWICE.</b> The fold's own applier prepends the note it is handed ahead of what the row said, which is where a row's history comes from; the hand fold that carried v738's two corrections prepended it as well. So s173 and s183 each opened with the same sentence twice, on the desk's card, in the row's own record and in the dossier the next fold is written over. The figures, the trail and the mod line were right throughout: the fault was prose, and nothing on the book could see it.","<b>ONE COPY STANDS, AND THE CENSUS IS THE INSTRUMENT.</b> Every note on the book is read for a row that opens with the same sentence twice over, which is the shape a second prepend leaves. The sentence may close inside a tag, a note opening in bold, so the closing tag is part of the unit and not the end of it: the first cut of this check missed exactly that and passed a doubled note whole.","<b>THE CHECKS.</b> Run red on the book as v745 left it, naming s173 and s183, and green after the repair. Four mutations each turned it red: a note doubled again on the book, the census reading no rows, the applier prepending nothing, and the applier prepending twice, which is the fault itself."]},{"v":"v745","d":"20 Sep 2026","t":"THE CARRIAGE CHECK READS THE RESTATED ROW'S NOTE, NEVER THE CARRIAGE IT HOLDS TODAY","n":["<b>THE SUITE WENT RED ON MASTER WITHIN THE HOUR OF v744.</b> v740 named the twelve rows v727 restated and then looked them up among the rows that carry a carriage TODAY. v744 folded s137's RM15 of carriage back into its total on his own instruction, so s137 left that set, the check counted eleven of twelve and failed, on a row it had nothing to say about and a fold that was entirely correct.","<b>WHAT v727 DID IS DONE, AND THE SENTENCE IS ITS RECORD.</b> The twelve are looked up by rid on the book itself: each must still be there, and each must still say on its own row that its carriage was moved out of the total rather than re-priced. Whether a row still carries a carriage is that row's own business and is tested beside it, on every carriage row there is. This is the third shape of this check in a day: every row with a carriage (v727, red the moment a site order folded with one), a threshold on the rid (v737, red the moment a row older than the cut was given a carriage), and now the set and its sentence, which nothing later can move.","<b>THE CHECKS.</b> Run red against master as v744 left it, eleven of twelve, and green after. Four mutations each turned it red: a row of the set taken off the book by re-keying its rid, the sentence misspelt, the set read off today's carriage again, and the sentence struck off one restated row of the book."]},{"v":"v744","d":"20 Sep 2026","t":"TWO ORDERS CLOSED, ONE WITHDRAWN, A CARRIAGE LINE FOLDED INTO THE PRICE","n":["<b>WHAT WAS FOLDED:</b> five rows. SA5-BTR's lot p026 of 19 Sep takes its second half, 18.75 unit on 20 Sep with no cash, and closes; CS6-BS-R pays the RM15 of delivery left on s183 and that order closes too. CE4-CHE's pending s180, 2 unit for RM230, is withdrawn on 20 Sep with nothing paid and nothing moved, so it counts nowhere.","<b>WHAT WAS UNUSUAL:</b> s137 to CJ4-BJ has the RM15 carriage cleared and the total set to RM850, so the whole figure is now goods on a row already delivered in full with RM50 unpaid and 0.52 unit against the cap. The drafter flagged that RM48 a unit is the inventory average across more than one lot rate, not the lot drawn, and that flag stands open on two rows.","<b>WHAT THE INVENTORY DID:</b> a new name, CZ5-TM, buys 1 unit for RM110, collected and paid on 19 Sep, well clear of the RM51.10 floor for that size and under the RM160 ask, with no history of theirs to test it against. The 18.75 unit of p026 land on 20 Sep against a book of 4.9 unit counted 19 Sep, with the reorder mark at 15."]},
+const evolution=[{"v":"v748","d":"20 Sep 2026","t":"A CORRECTION ITEMISES WHAT IT CHANGED, ONE LINE A FIELD, IN THE DESK'S OWN MONEY AND UNITS","n":["<b>HIS INSTRUCTION OF 20 SEP 2026,</b> on seeing s137's correction render as <code>total 835 &rarr; 850; delivery 15 &rarr; (cleared)</code> in one right-aligned run: simplify it, or itemise it. It was the fold's own sentence with every <i>to</i> in it rewritten as an arrow and the parts joined by semicolons, so a two-field correction read as prose, the figures carried no RM and no unit, the fold's own <code>(cleared)</code> and <code>(unset)</code> markers were shown to a reader in their brackets, and a flag read <code>true</code>.","<b>ONE CHANGE, ONE LINE.</b> Each claim takes its own line with the field named in words ahead of it, money as RM, quantities in units, a flag as yes or no, and cleared or not set said rather than bracketed. The correctable fields are a closed list, so a claim is cut ONCE, at the first <i>to</i> after its own field name, and the rest of the sentence reaches the page as it was written: where an old value carries the word itself the cut is genuinely ambiguous and the line cannot say which was meant, which is a reason to leave the words alone rather than to rewrite all of them. A claim this desk cannot parse at all is still drawn, in the fold's own words, because going quiet about a correction is the one thing this trail must not do.","<b>THE READER MOVED OUT OF THE TRAIL.</b> It was defined inside <code>tabLedger</code>, so nothing could ask it anything. <code>modBits</code> and <code>modHtml</code> stand at module scope beside the strip that reads the same <code>mod</code> string, and the suite drives them directly.","<b>THE CHECKS.</b> Thirteen assertions: two fields read as two claims, a claim from another day left off the line, a corrected note cut once with its other words whole, a restatement naming no field drawn in the fold's words and reaching the page, five changes as five lines, RM on a money field, the unit on a quantity, yes and no on a flag, the markers in words, no semicolon left, s137's own two lines off the built desk, and the computed display of a change line measured rather than read off the stylesheet. Eight mutations each turned it red, including the two faults being fixed: the claims joined into one run again, and the split made on every <i>to</i> in the sentence."]},{"v":"v747","d":"20 Sep 2026","t":"THE LEDGER DESTINATION IS NAMED RECORD, AND ITS OLD ADDRESS STILL LANDS","n":["<b>HIS INSTRUCTION OF 20 SEP 2026:</b> the destination called The book becomes Record or Database. Record, because this desk already calls a row's own account of itself the record, and Database names the file rather than what he opens it for. It also ends a collision the rail has carried since v341: two of the seven destinations were called book, and the other one, Order book, is about money owed rather than the ledger.","<b>THE ID IS UNTOUCHED.</b> An id is an address here, <code>/desk#book</code> since v341, and the rule that old tab ids remain addresses is older than the label. So <code>VIEWS</code> carries <code>{id:'book', name:'Record'}</code> and the rail's own button says Record, which is the pair the suite has checked against each other since v571.","<b>THE CHECKS.</b> Four assertions, run red on the desk as v746 left it: the destination's name and its id together, that one destination is left with book in its name, the rail's button read off the built desk, and the old address still opening the section. Three mutations each turned it red: the old name back in the list, the old name left on the button, and the id renamed with the label, which is the one that stops the address landing."]},{"v":"v746","d":"20 Sep 2026","t":"THE CORRECTION SENTENCE ON s173 AND s183 STANDS ONCE, AND NO ROW MAY SAY THE SAME THING TWICE","n":["<b>v738 WROTE ITS CORRECTION NOTE ONTO BOTH ROWS TWICE.</b> The fold's own applier prepends the note it is handed ahead of what the row said, which is where a row's history comes from; the hand fold that carried v738's two corrections prepended it as well. So s173 and s183 each opened with the same sentence twice, on the desk's card, in the row's own record and in the dossier the next fold is written over. The figures, the trail and the mod line were right throughout: the fault was prose, and nothing on the book could see it.","<b>ONE COPY STANDS, AND THE CENSUS IS THE INSTRUMENT.</b> Every note on the book is read for a row that opens with the same sentence twice over, which is the shape a second prepend leaves. The sentence may close inside a tag, a note opening in bold, so the closing tag is part of the unit and not the end of it: the first cut of this check missed exactly that and passed a doubled note whole.","<b>THE CHECKS.</b> Run red on the book as v745 left it, naming s173 and s183, and green after the repair. Four mutations each turned it red: a note doubled again on the book, the census reading no rows, the applier prepending nothing, and the applier prepending twice, which is the fault itself."]},{"v":"v745","d":"20 Sep 2026","t":"THE CARRIAGE CHECK READS THE RESTATED ROW'S NOTE, NEVER THE CARRIAGE IT HOLDS TODAY","n":["<b>THE SUITE WENT RED ON MASTER WITHIN THE HOUR OF v744.</b> v740 named the twelve rows v727 restated and then looked them up among the rows that carry a carriage TODAY. v744 folded s137's RM15 of carriage back into its total on his own instruction, so s137 left that set, the check counted eleven of twelve and failed, on a row it had nothing to say about and a fold that was entirely correct.","<b>WHAT v727 DID IS DONE, AND THE SENTENCE IS ITS RECORD.</b> The twelve are looked up by rid on the book itself: each must still be there, and each must still say on its own row that its carriage was moved out of the total rather than re-priced. Whether a row still carries a carriage is that row's own business and is tested beside it, on every carriage row there is. This is the third shape of this check in a day: every row with a carriage (v727, red the moment a site order folded with one), a threshold on the rid (v737, red the moment a row older than the cut was given a carriage), and now the set and its sentence, which nothing later can move.","<b>THE CHECKS.</b> Run red against master as v744 left it, eleven of twelve, and green after. Four mutations each turned it red: a row of the set taken off the book by re-keying its rid, the sentence misspelt, the set read off today's carriage again, and the sentence struck off one restated row of the book."]},{"v":"v744","d":"20 Sep 2026","t":"TWO ORDERS CLOSED, ONE WITHDRAWN, A CARRIAGE LINE FOLDED INTO THE PRICE","n":["<b>WHAT WAS FOLDED:</b> five rows. SA5-BTR's lot p026 of 19 Sep takes its second half, 18.75 unit on 20 Sep with no cash, and closes; CS6-BS-R pays the RM15 of delivery left on s183 and that order closes too. CE4-CHE's pending s180, 2 unit for RM230, is withdrawn on 20 Sep with nothing paid and nothing moved, so it counts nowhere.","<b>WHAT WAS UNUSUAL:</b> s137 to CJ4-BJ has the RM15 carriage cleared and the total set to RM850, so the whole figure is now goods on a row already delivered in full with RM50 unpaid and 0.52 unit against the cap. The drafter flagged that RM48 a unit is the inventory average across more than one lot rate, not the lot drawn, and that flag stands open on two rows.","<b>WHAT THE INVENTORY DID:</b> a new name, CZ5-TM, buys 1 unit for RM110, collected and paid on 19 Sep, well clear of the RM51.10 floor for that size and under the RM160 ask, with no history of theirs to test it against. The 18.75 unit of p026 land on 20 Sep against a book of 4.9 unit counted 19 Sep, with the reorder mark at 15."]},
 
 {"v":"v743","d":"20 Sep 2026","t":"TWO CODES FILED: ONE REGISTERED, ONE PLACED, NO FIGURE MOVED","n":["<b>FOLDED: A REGISTRATION AND A PLACING.</b> CZ5-TM is appended to the roster as a customer buying direct, opening at Titanium on salt and Titanium on oil, with a point on the map to about a kilometre and a statement username issued if the party has none, kept for life. CA2-SEN is filed as a point on the map at its recorded place, to about a kilometre, and nothing more.","<b>UNUSUAL: NOTHING TO RECONCILE.</b> Neither row touches cash, stock or credit, so no floor, ask, rate or outstanding shifts, and the drafter raised no flag against either. The directory is not touched by the fold: codes and points travel, the names do not. The inventory did nothing: it stands as counted on 19 Sep at 4.9 unit, cost basis unchanged, and no lot landed on this fold."]},
 
@@ -7639,7 +7645,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='20 Sep 2026, 20:17 KL';
+const LAST_UPDATED='20 Sep 2026, 20:25 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -12576,6 +12582,44 @@ function modClaims(t,dir){
       out.push(c);});});
   return out;
 }
+/* ============ v748: ONE CHANGE, ONE LINE ============ his instruction of 20 Sep 2026, on seeing
+   s137's correction render as "total 835 → 850; delivery 15 → (cleared)" in one right-aligned
+   run. That line was the fold's own sentence with EVERY " to " in it turned into an arrow and the
+   parts joined by semicolons, so a two-field correction read as prose, the figures carried no RM
+   and no unit, and a corrected note (CORRECT_TEXT holds one) had every " to " inside its own words
+   rewritten as well. The fields are a closed list, so each claim is split on the FIRST " to " after
+   its own field name and nothing else in the sentence is touched. A claim this desk cannot read is
+   still drawn, in the fold's own words: going quiet about a correction is the one thing it must not do. */
+const MOD_LABEL={total:'Total',cash:'Cash',delivery:'Delivery',freight:'Freight',cost:'Cost',qty:'Quantity',
+  deliveredQty:'Delivered',receivedQty:'Received',settledRM:'Settled in kind',settledKg:'Settled, units',
+  rebateKg:'Redeemed, units',coverUnits:'Reward units',coverRM:'Reward cover',date:'Date',agreedOn:'Agreed on',
+  paidOn:'Paid on',deliveredOn:'Delivered on',receivedOn:'Received on',cancelledOn:'Cancelled on',
+  unpriced:'Unpriced',cancelled:'Cancelled',pending:'Pending',inTransit:'In transit',defaulted:'Defaulted',
+  rebate:'Redemption',goodwill:'Gift',party:'Party',assoc:'Associate',downstream:'End buyer',
+  orderCode:'Order code',settle:'Settled by',note:'Note',handover:'Handover',product:'Product',stream:'Stream'};
+const MOD_RM=['total','cash','delivery','freight','cost','settledRM','coverRM'];
+const MOD_UNITS=['qty','deliveredQty','receivedQty','settledKg','rebateKg','coverUnits'];
+/* (cleared) and (unset) are the fold's own markers for a key removed and a key that was never there;
+   they are read by a person, so they are said in words rather than in the fold's brackets. */
+function modVal(f,v){const s=String(v==null?'':v).trim();
+  if(s===''||s==='(unset)')return '<span class="chgnil">not set</span>';
+  if(s==='(cleared)')return '<span class="chgnil">cleared</span>';
+  if(s==='true')return 'yes'; if(s==='false')return 'no';   /* a flag is a yes or a no to a reader, never a keyword */
+  if(MOD_RM.indexOf(f)>=0&&isFinite(+s))return fmt0(+s);
+  if(MOD_UNITS.indexOf(f)>=0&&isFinite(+s))return units(+s);
+  return esc(s.length>44?s.slice(0,44)+'…':s);}
+/* every claim the row's `mod` carries for one date, in the order the fold wrote them */
+function modBits(mod,date){
+  return String(mod||'').split(', then ').map(s=>s.trim()).filter(s=>s.indexOf(' on '+date)>=0)
+    .map(s=>s.replace(/^(?:corrected|restated) on \d{4}-\d{2}-\d{2}:?\s*/,'').replace(/^from /,''))
+    .join('; ').split('; ').map(s=>s.trim()).filter(Boolean)
+    .map(s=>{const m=/^([A-Za-z]+) ([\s\S]*?) to ([\s\S]*)$/.exec(s);
+      return (m&&MOD_LABEL[m[1]])?{f:m[1],was:m[2],now:m[3]}:{raw:s};});}
+function modHtml(mod,date){const bits=modBits(mod,date);
+  return bits.map(b=>b.raw
+    ?'<span class="chg chgraw">'+esc(b.raw)+'</span>'
+    :'<span class="chg"><i>'+MOD_LABEL[b.f]+'</i>'+modVal(b.f,b.was)+'<span class="chgto">&rarr;</span>'+modVal(b.f,b.now)+'</span>').join('');}
+
 /* The strip sits at CARD level rather than in the trail, because the trail collapses: four of
    the six corrected rows on this book render as a single line and drop their correction
    whole. The claims are the open part, being short and checkable; the prose behind them is
@@ -12799,8 +12843,7 @@ function tabLedger(){
        the Opened role, the closing line as a separate builder and the Update button (the pen at the
        corner replaces it) go with this. A Correction is a line of its own, saying what it moved. */
     const dOf=x=>String(x||'').slice(0,10);
-    const modAt=date=>String(rowT.mod||'').split(', then ').map(s=>s.trim()).filter(s=>s.indexOf(' on '+date)>=0)
-      .map(s=>s.replace(/^(?:corrected|restated) on \d{4}-\d{2}-\d{2}:?\s*/,'').replace(/^from /,'').replace(/ to /g,' → ')).join('; ');
+    const modAt=date=>modHtml(rowT.mod,date);   /* v748: itemised, one line a field */
     /* Open or Closed on each line is the entry's state AFTER that line: the replay's reading of the
        step, the last movement of a completed entry (v491: the replay alone can miss it), a
        Cancellation or a Default; a Correction inherits the line before it. Lines keep the trail's
@@ -12819,7 +12862,7 @@ function tabLedger(){
       let lastMove=-1;rest.forEach((L,i)=>{if(L.kind!=='Correction')lastMove=i;});
       if(completed){if(lastMove>=0)rest[lastMove].closed=true;else out[0].closed=true;}
       rest.forEach(L=>{
-        if(L.kind==='Correction'||L.kind==='Modification')L.text=modAt(L.date)||(L.kind==='Modification'?'restated':'corrected');
+        if(L.kind==='Correction'||L.kind==='Modification')L.rich=modAt(L.date)||('<span class="chg chgraw">'+(L.kind==='Modification'?'restated':'corrected')+'</span>');
         const prev=out[out.length-1];
         if(L.closed==null)L.closed=prev.closed;
         if(prev.kind==='Agreed'&&L.date===dOf(t.date)&&(L.units>0.0001||L.cash>0.0001))out[out.length-1]=L;
@@ -12850,8 +12893,8 @@ function tabLedger(){
       return `<div class="lmove${last?' llast':''}${role==='close'?' lclose':''}">`
         +cells({step:`<span class="lclabel ${role==='close'?'roleclose':'roleopen'}">${role==='close'?'Closed':'Open'}</span><span class="etype ${kc}">${lab}</span>`,
           date:showDate?`<span class="lmdate">${ledDate(L.date)}</span>`:''})
-        +(L.text
-          ?`<span class="lcol cqty"></span><span class="lcol cprc"></span><span class="lcol ctot ltext">${esc(L.text)}</span>`
+        +(L.rich
+          ?`<span class="lcol cqty"></span><span class="lcol cprc"></span><span class="lcol ctot ltext">${L.rich}</span>`
           :`<span class="lcol cqty">${L.units>0.0001?units(L.units):nil}</span><span class="lcol cprc"></span><span class="lcol ctot"><b class="tval">${L.cash>0.0001?fmt0(L.cash):nil}</b></span>`)
         +`<span class="lstate"></span><span class="lc lc-act"></span></div>`;};
     const openLine=`<div class="lrow lopen">`
