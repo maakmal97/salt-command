@@ -52,8 +52,11 @@ decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; s
      dated record is not corrected in place.
    - **COGS, purchase plus freight, is the line no price goes under; the floor is COGS plus
      leakage**, one floor per size, the goods after the leak, with no delivery and no time in
-     it. A sale carries `delivery` (inside its total) and a lot `freight` (beside it), typed
-     per row; `txGoods` strikes every rate on the goods.
+     it. A sale carries `delivery` (beside its total since v727) and a lot `freight` (beside it), typed
+     per row; `txGoods` strikes every rate on the goods. **What the customer owes is the goods and the
+     delivery together, the engine's `txOwed`** (v738, his instruction of 20 Sep 2026): the open-order shape,
+     both paid-in-full stamps, the dossier, the drafter's overpayment flag and the Workbench read it, and
+     nothing reads the total less the cash.
    - **THE BOARD IS THE LADDER** (v656, his decision of 15 Sep 2026). A stranger is quoted the LAST
      level, Bronze, the one a new customer starts at: `pxPolicy` carries `tierRule`, `priceLadder`
      takes the ask from it and keeps the old derived figure beside it as `derived`, and every reader
@@ -321,7 +324,9 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   18 Sep 2026). Site orders moves the ORDER, Approve lands the ROW. The desk's every-minute
   `reconcileOrders` is the ONE road that queues: the acknowledgement makes a **Pending** row with the
   delivery charge beside its total (v727: the goods are the total and what is owed is the two together), a payment a **Fulfilment** of the increment, a handover a
-  **Correction** stating the running total, a withdrawal a **Cancellation**. The row is named by
+  **Correction** stating the running total (and **a correction that restates what moved rolls the shelf by
+  the difference**, v739: the fold's rule that a correction moves nothing predates its writing `deliveredQty`,
+  and s183's 5 unit of 19 Sep left the row and never the stated figure), a withdrawal a **Cancellation**. The row is named by
   `ledgerKey`, **the engine's `ovKey` to the character**, written onto the order at the
   acknowledgement, because a `rid` is minted at fold time and there is no route back from desk to
   site. An amendment WAITS until `OPEN.byKey` carries that key. Money and goods are two tracks, the
