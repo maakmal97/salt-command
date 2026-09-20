@@ -344,6 +344,18 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   writes KV through `--path` and names a key it cannot read. **The reconcile writes `sync`
   `{state, why, at}` onto the order** through the mark road, on change only, and the Site orders
   card reads it: queued, waiting for its row, or failed and why.
+- **A CUSTOMER WRITES ON AN ORDER, AND HE ANSWERS** (v751 to v753, his instruction of 20 Sep 2026, asked
+  at the start of that day's work: a chat, or a comment). One THREAD on the order, `msgs[]` of
+  `{at, by, text}`; the line typed on the order form is its first message, so there is no comment field
+  beside a conversation. **On any order at any stage**, because a question about a closed order is still
+  about that order. Twenty lines of THEIRS an order at 200 characters, 140 on the form; **his own are
+  uncapped**, the cap counting theirs alone. **IT NEVER RIDES INTO A LEDGER NOTE**, the rule v694 gave the
+  delivery's `place`, and the suite forces a street and a name into an order and proves no entry carries
+  them. The site marks `last-said`, the desk's nudge holds a second mark so a placement and a line cannot
+  bury each other, and **an order whose last line is theirs stays on his card whatever its state** until he
+  answers. His answer goes through `siteWords`, the bulletin's own lock, **on the desk**: the site holds no
+  roster and would not know a code. A refused line never reaches the site. Every line is escaped on both
+  surfaces, being the only free text a stranger typed that either draws.
 - **THE BULLETIN** (v732, his instruction of 20 Sep 2026): one clear key `bulletin` `{lines, mode, at}`
   in the site's store, no prefix, so the publish never touches it. Set from the Bulletin card at the
   top of Site orders through the desk's keyed `/bulletin`, relayed to the site's `/desk/bulletin` on

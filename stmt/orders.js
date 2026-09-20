@@ -384,6 +384,18 @@ export async function deskMove(env, u, id, body) {
     await env.STMT.put(OKEY(u, id), JSON.stringify(order));
     return { order };
   }
+  /* v753: HIS ANSWER ON THE ORDER. It is a move of his like any other, so it wakes them; it is not
+     a state, so nothing about the order changes but the thread. There is no cap on his own lines: the
+     cap v751 set counts theirs, and a man answering his own customers is not a thing to ration. */
+  if (body && typeof body.message === "string") {
+    const text = cleanMsg(body.message, MSG_MAX);
+    if (!text) return { error: "write something first", status: 400 };
+    order.msgs = ((order.msgs) || []).concat([{ at, by: "desk", text }]);
+    await env.STMT.put(OKEY(u, id), JSON.stringify(order));
+    await env.STMT.put(LAST_TOUCHED, at);
+    const push = await wakeCustomer(env, u);
+    return { order, push };
+  }
   /* v694: what he handed over, in units, whichever way it went. It is its own step and its own
      entry, because goods and money move apart: he may deliver before a ringgit arrives. */
   if (body && body.handover) {

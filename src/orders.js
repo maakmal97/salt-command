@@ -80,6 +80,14 @@ export async function listOrders(env, all) {
 
 /** Forward the owner's move. Returns the site's answer with the code joined. */
 export async function moveOrder(env, u, id, body) {
+  /* v753: HIS ANSWER GOES THROUGH THE SAME LOCK AS THE BULLETIN. What he types here lands on a page
+     that never names this desk, a roster code or a level, and a slip of the thumb is how one gets
+     there. Checked HERE and not on the site, because the site holds no roster and would not know a
+     code if it saw one; a product's name is his to spend, as it is in the bulletin. */
+  if (body && typeof body.message === "string") {
+    const why = siteWords(body.message);
+    if (why) return { ok: false, status: 400, error: "that message says something " + why };
+  }
   const r = await site(env, "/desk/orders/" + encodeURIComponent(u) + "/" + encodeURIComponent(id), {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body || {})
   });

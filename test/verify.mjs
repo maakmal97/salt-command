@@ -17461,6 +17461,70 @@ await (async () => {
   ok(!/On this order/.test(quiet), "and an order nobody wrote on draws no thread at all");
 })();
 
+section("v753: he answers on the order, and the words are checked on the desk before they leave it");
+await (async () => {
+  /* the other half of v751. His answer is a move of his like any other, so it wakes them and changes
+     nothing about the order but the thread; and it goes through the lock the bulletin uses, because
+     what he types here lands on a page that never names this desk, a roster code or a level. */
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const { moveOrder, siteWords } = await import("../src/orders.js");
+
+  const kv = new KV();
+  const ord = { id: "20260920000000-aaaa", u: "aaaa-bbbb", status: "ready", qty: 1, total: 110, at: "2026-09-20T00:00:00.000Z",
+    msgs: [{ at: "2026-09-20T01:00:00.000Z", by: "customer", text: "is it ready?" }], history: [], paid: 0, moved: 0 };
+  await kv.put("order:aaaa-bbbb:" + ord.id, JSON.stringify(ord));
+  const senv = { STMT: kv, STMT_DESK_KEY: "desk-key" };
+  const dj = (body) => new Request("https://k7m3p2.example/desk/orders/aaaa-bbbb/" + ord.id,
+    { method: "POST", headers: { "content-type": "application/json", "X-Stmt-Desk": "desk-key" }, body: JSON.stringify(body) });
+
+  /* ---- the answer lands on the thread and nothing else about the order moves ---- */
+  const r = await stmtW.fetch(dj({ message: "  yes,  ready   now  " }), senv);
+  const b = await r.json();
+  const after = b.order || {};
+  ok(r.status === 200 && b.ok && (after.msgs || []).length === 2 && after.msgs[1].by === "desk" && after.msgs[1].text === "yes, ready now",
+    "his answer is appended to the thread, its spacing collapsed: " + JSON.stringify((after.msgs || []).map((m) => m.by + ": " + m.text)));
+  ok(after.status === "ready" && (+after.paid || 0) === 0 && (+after.moved || 0) === 0 && (after.history || []).length === 0,
+    "and nothing else about the order moves: it is not a state, a payment or a handover: " + JSON.stringify({ status: after.status, paid: after.paid, moved: after.moved, history: (after.history || []).length }));
+  ok(O.awaitingAnswer(after) === false, "so the order stops waiting for an answer, which is what takes a closed one off his card");
+  ok((await stmtW.fetch(dj({ message: "   " }), senv)).status === 400, "an empty answer is refused");
+  const longR = await (await stmtW.fetch(dj({ message: "y".repeat(400) }), senv)).json();
+  ok(longR.order.msgs[2].text.length === O.MSG_MAX, "a long answer is cut to " + O.MSG_MAX + ": " + longR.order.msgs[2].text.length);
+
+  /* ---- THERE IS NO CAP ON HIS OWN LINES, because the cap counts theirs ---- */
+  for (let i = 0; i < O.MSG_CAP + 2; i++) await stmtW.fetch(dj({ message: "answer " + i }), senv);
+  const many = JSON.parse(await kv.get("order:aaaa-bbbb:" + ord.id));
+  ok(O.saidBy(many, "desk") > O.MSG_CAP && O.saidBy(many, "customer") === 1,
+    "he may answer as often as he likes, and their one line is still their one line: " + JSON.stringify([O.saidBy(many, "desk"), O.saidBy(many, "customer")]));
+
+  /* ---- and the desk refuses the words a customer's page never carries, before they leave it ---- */
+  const relayEnv = (spy) => ({ STMT_DESK_KEY: "desk-key", SALT_QUEUE: new KV(),
+    STMT_SITE: { fetch: (u, i) => { spy.push({ u: String(u && u.url ? u.url : u), body: (i && i.body) || (u && u.body) || null }); return stmtW.fetch(new Request(u, i), senv); } } });
+  for (const [bad, why] of [["ask Salt Command about it", /names the desk/], ["this is for CX0-AA", /roster code/], ["you are on Gold now", /names a level/]]) {
+    const spy = [];
+    const out = await moveOrder(relayEnv(spy), "aaaa-bbbb", ord.id, { message: bad });
+    ok(out.ok === false && out.status === 400 && why.test(out.error || ""),
+      "the desk refuses " + JSON.stringify(bad) + ": " + (out.error || "it went through"));
+    ok(spy.length === 0, "and it never reaches the site at all: " + spy.length + " calls");
+  }
+  const spy2 = [];
+  const fine = await moveOrder(relayEnv(spy2), "aaaa-bbbb", ord.id, { message: "your salt is ready to collect" });
+  ok(fine.ok === true && spy2.length === 1, "a product's name is his to spend, as it is in the bulletin: " + JSON.stringify(fine.error || "sent"));
+  ok(siteWords("your salt is ready") === "" && siteWords("ask Salt Command") !== "", "and the lock is the bulletin's own, not a second copy of it");
+
+  /* ---- the card carries the box that sends it ---- */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const card = String(w.eval("ordCard(" + JSON.stringify({ id: ord.id, u: ord.u, code: "CX0-AA", product: "salt", qty: 1, total: 110, delivery: 0,
+    mode: "collect", status: "ready", paid: 0, moved: 0, at: ord.at, history: [], msgs: ord.msgs }) + ")"));
+  ok(/data-say="20260920000000-aaaa"/.test(card) && /data-ord="say"/.test(card), "the card carries a box and a button to answer with");
+  ok(/maxlength="200"/.test(card), "the box holds a line of the same length the site takes");
+  /* and the phone refuses the same words before they leave it, which is the kinder place to be told */
+  const said = JSON.parse(String(w.eval("JSON.stringify(['ask Salt Command','this is CX0-AA','you are Gold','your salt is ready'].map(function(t){return siteSafe(t);}))")));
+  ok(said.slice(0, 3).every((x) => x.refuse) && !said[3].refuse && said[3].warn,
+    "the phone refuses the three and warns on the product word: " + JSON.stringify(said.map((x) => x.refuse ? "refused" : x.warn ? "warned" : "sent")));
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */
