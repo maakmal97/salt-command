@@ -18440,6 +18440,54 @@ await (async () => {
     "and a month handed in by a caller that has not caught up changes nothing, so no road can put one back");
 })();
 
+section("v770: a tree behind origin does not ship, because the check that says so now stops the run");
+await (async () => {
+  /* WHAT HAPPENED, 21 SEP 2026, 14:36 KL. A checkout sitting on the previous morning's v733 was put
+     through tools/update.mjs. Its preflight fetched, found origin four versions ahead, and called
+     fail(), which on that tool records a problem, prints FAIL and RETURNS. The run then built,
+     DEPLOYED v733 over v768 on his phone, committed a version master already carried, and only
+     stopped at the push. He noticed because the desk read yesterday.
+     THE CHECK WAS RIGHT AND DID NOT BITE, which is the same shape as a gate behind a pipe: the
+     exit code was reported and nothing read it. */
+  const { aheadVerdict } = await import("../tools/preflight.mjs");
+
+  const level = aheadVerdict("0");
+  ok(level.level === "ok" && level.stop === false && /level with this tree/.test(level.text),
+    "a tree level with origin carries on: " + JSON.stringify(level));
+
+  const behind = aheadVerdict("4");
+  ok(behind.level === "fail" && behind.stop === true,
+    "a tree four commits behind STOPS, where it used to print and carry on: " + JSON.stringify(behind.level + "/" + behind.stop));
+  ok(/origin is 4 commit\(s\) AHEAD/.test(behind.text) && /git pull --ff-only origin master/.test(behind.text)
+    && /may deploy or take a version/.test(behind.text),
+    "and says how far behind, what to run, and what it is refusing to do: " + JSON.stringify(behind.text));
+
+  /* THE LINE IS "TOUCHES NOTHING", NOT "DOES NOT PUSH". --no-push still deploys, and the deploy is
+     the half that reached his phone; only --dry writes nowhere at all. */
+  const dry = aheadVerdict("4", { dry: true });
+  ok(dry.level === "warn" && dry.stop === false && dry.text === behind.text,
+    "a dry run is told the same thing and is not stopped, because it was never going to touch anything: "
+    + JSON.stringify(dry.level + "/" + dry.stop));
+
+  ok(aheadVerdict("0", { dry: true }).level === "ok" && aheadVerdict(0).stop === false
+    && aheadVerdict("").stop === false && aheadVerdict(null).stop === false,
+    "and nothing a git count can answer is read as behind by accident: " + JSON.stringify([
+      aheadVerdict("").level, aheadVerdict(null).level]));
+  ok(aheadVerdict("2").stop === true && aheadVerdict(2).stop === true,
+    "the count arrives as the string git prints, and a number answers the same: both stop");
+
+  /* AND THE CHAIN USES IT. update.mjs runs its whole chain on import, so this is the one claim in
+     the section that reads source text, and it is here because the fault was that the call site
+     did not act on the answer. */
+  const up70 = readFileSync(join(REPO, "tools", "update.mjs"), "utf8");
+  ok(/import \{ aheadVerdict \} from "\.\/preflight\.mjs";/.test(up70)
+    && /const v = aheadVerdict\(git\("rev-list", "--count", "HEAD\.\.origin\/master"\), \{ dry: DRY \}\);/.test(up70)
+    && /else \{ fail\(v\.text\); process\.exit\(1\); \}/.test(up70),
+    "the chain reads the verdict and exits on it, rather than printing it and building anyway");
+  ok(!/if \(NO_PUSH\) warn\(m\); else fail\(m\);/.test(up70),
+    "and the old line, which excused a run that was still going to deploy, is gone");
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

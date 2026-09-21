@@ -37,6 +37,7 @@ import { readSnapshot } from "./d1.mjs";
 import { spawnSync } from "node:child_process";
 import { resolve, dirname, join } from "node:path";
 import { messageFrom } from "./commitmsg.mjs";
+import { aheadVerdict } from "./preflight.mjs";
 import { fileURLToPath } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -113,20 +114,25 @@ ok(`master ${VER}, watermark ${MARK}`);
    job that folds, commits and pushes. So this asks first, and stops before any work is done.
    A failed fetch is a warning and not a stop: the network is often what is wrong, and refusing
    to build offline would be worse than building against a ref that is merely old.
-   IT ASKS ON EVERY RUN, INCLUDING A DRY ONE, and only declines to STOP a run that was not going
-   to push anyway. The first cut gated the whole check on !NO_PUSH, and --dry sets NO_PUSH, so
-   the one run you would make to find out where you stand was the one that never looked. */
+   IT ASKS ON EVERY RUN, INCLUDING A DRY ONE, and only declines to STOP a run that touches nothing.
+   The first cut gated the whole check on !NO_PUSH, and --dry sets NO_PUSH, so the one run you
+   would make to find out where you stand was the one that never looked.
+   v770, 21 SEP 2026: AND NOW IT STOPS. fail() on this tool records a problem, prints it and
+   RETURNS, so this check printed FAIL and the run carried straight on to build, DEPLOY, commit
+   and only then fail at the push. A checkout sitting on the previous morning's v733 did exactly
+   that at 14:36 KL: it put yesterday's desk over v768 on his phone, and the FAIL was at the top
+   of a log nobody was reading. The verdict is a value now (tools/preflight.mjs, where the suite
+   can drive it) and this does what it says.
+   THE LINE ALSO MOVED, from "not going to push" to "not going to touch anything": --no-push
+   still DEPLOYS, and the deploy is the half that reached him. Only --dry carries on. */
 {
   const f = sh("git", ["fetch", "--quiet", "origin", "master"], { quiet: true });
   if (f.code !== 0) warn("could not reach origin; the ahead and behind counts below read a stale ref");
   else {
-    const behind = git("rev-list", "--count", "HEAD..origin/master");
-    if (behind === "0") ok("origin is level with this tree");
-    else {
-      const m = `origin is ${behind} commit(s) AHEAD of this tree. The chain has folded since you started.\n` +
-                `        Pull first: git pull --ff-only origin master, then rebuild. Do not take a version this run.`;
-      if (NO_PUSH) warn(m); else fail(m);
-    }
+    const v = aheadVerdict(git("rev-list", "--count", "HEAD..origin/master"), { dry: DRY });
+    if (v.level === "ok") ok(v.text);
+    else if (v.level === "warn") warn(v.text);
+    else { fail(v.text); process.exit(1); }
   }
 }
 

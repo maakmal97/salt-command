@@ -1,5 +1,17 @@
 [
  {
+  "v": "v770",
+  "d": "21 Sep 2026",
+  "t": "A TREE BEHIND ORIGIN DOES NOT SHIP, BECAUSE THE CHECK THAT SAYS SO NOW STOPS THE RUN",
+  "n": [
+   "<b>HIS PHONE READ YESTERDAY, AND HE ASKED WHY.</b> At 14:36 KL a checkout sitting on the previous morning's v733 was put through <code>tools/update.mjs</code>. The preflight fetched, found origin four versions ahead, and printed FAIL. Then the run built, <b>DEPLOYED v733 over v768</b>, committed a version master already carried, and stopped at the push. The desk served yesterday's build for eight minutes until it was put back by hand.",
+   "<b>THE CHECK WAS RIGHT AND DID NOT BITE.</b> It has been in the preflight since 10 Sep 2026, written for exactly this, and it called <code>fail()</code>, which on this tool records a problem, prints it and RETURNS. Every other step that matters exits; this one did not. It is the same shape as a gate behind a pipe: the answer was correct, it was reported, and nothing acted on it.",
+   "<b>THE VERDICT IS A VALUE NOW</b>, in <code>tools/preflight.mjs</code>, because update.mjs runs its whole chain on import and nothing inside it can be put under an assertion; <code>commitmsg.mjs</code> was carved out for the same reason and says so. The chain reads the verdict and exits on it.",
+   "<b>AND THE LINE MOVED, from \"not going to push\" to \"not going to touch anything\".</b> The old gate excused a run with <code>--no-push</code>, which still DEPLOYS, and the deploy is the half that reached his phone. Only <code>--dry</code>, which writes nowhere, is told and allowed to carry on.",
+   "<b>THE CHECKS.</b> Eight assertions: level carries on; four behind stops, and says how far, what to run and what it is refusing; a dry run is told the same and not stopped; the count arrives as the string git prints and as a number and both stop; nothing empty is read as behind. Six mutations, each red, including the one that restores the old behaviour exactly."
+  ]
+ },
+ {
   "v": "v769",
   "d": "21 Sep 2026",
   "t": "THE ACCOUNT IS ONE LIVE DOCUMENT, AND THE MESSAGE THAT HANDS IT OVER SAYS SO",
