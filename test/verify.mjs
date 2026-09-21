@@ -2031,7 +2031,7 @@ await (async () => {
   ok(/ok\s+the master's BOOK block is ledger\/book\.json/.test(chk), "tools/booksync.mjs --check: the master's book block is the file");
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const keys = Object.keys(book).filter((k) => k !== "NOTES");
-  ok(keys.length === 29, "the book holds the twenty-nine ledger keys");   // v643 added TIER_OF; v633 added PLACED; v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE; v615 added INTRODUCTIONS; v616 retired REWARD_OPENING; v618 retired CUSTOMER_REWARD_OPENING
+  ok(keys.length === 28, "the book holds the twenty-eight ledger keys");   // v643 added TIER_OF; v633 added PLACED; v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE; v615 added INTRODUCTIONS; v616 retired REWARD_OPENING; v618 retired CUSTOMER_REWARD_OPENING; v776 collapsed supplierQuote and oilQuote into QUOTES
   ok(Array.isArray(book.sales) && book.sales.length > 100 && Array.isArray(book.purchases), "with the rows as records");
   ok(typeof book.QUEUE_COMMITTED === "string" && typeof book.STATED_STOCK === "number", "and the singletons as values");
   ok(book.NOTES && Array.isArray(book.NOTES.STATED_STOCK) && book.NOTES.STATED_STOCK.length > 0, "the stated stock's roll history survived as NOTES");
@@ -2893,12 +2893,12 @@ await (async () => {
   const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
   w.eval("setProd('salt');recompute();");
   ok(read("pxInputs().quoteRate") === 56, "salt's quoteRate is its own most expensive tier, RM56");
-  ok(JSON.stringify(read("pxPolicy().tiers")) === JSON.stringify(read("supplierQuote.tiers")),
+  ok(JSON.stringify(read("pxPolicy().tiers")) === JSON.stringify(read("QUOTES.salt.tiers")),
     "salt's policy tiers are the salt quote's");
   const saltB = read("buyTaper()");
   w.eval("setProd('oil');recompute();");
   ok(read("pxInputs().quoteRate") === 10, "oil's quoteRate is its OWN most expensive tier, RM10, not salt's 56");
-  ok(JSON.stringify(read("pxPolicy().tiers")) === JSON.stringify(read("oilQuote.tiers")),
+  ok(JSON.stringify(read("pxPolicy().tiers")) === JSON.stringify(read("QUOTES.oil.tiers")),
     "oil's policy tiers are the oil quote's");
   const oilB = read("buyTaper()");
   ok(oilB.b != null && oilB.b < 0, "oil's taper is fitted and falls with size");
@@ -9142,9 +9142,9 @@ await (async () => {
       const bkQ = JSON.parse(JSON.stringify(bkR)), pQ = planA(bkQ, stagedQ, null);
       const dQ = pQ.items.length === 2 ? dossier(bkQ, stagedQ, pQ, w) : null;
       const [salt, oil] = dQ ? dQ.items : [];
-      ok(dQ && salt && salt.quote && salt.quote.supplier === bkR.supplierQuote.supplier && salt.quote.date === bkR.supplierQuote.quotedOn && Array.isArray(salt.quote.tiers),
+      ok(dQ && salt && salt.quote && salt.quote.supplier === bkR.QUOTES.salt.supplier && salt.quote.date === bkR.QUOTES.salt.quotedOn && Array.isArray(salt.quote.tiers),
         `a staged salt lot's dossier carries the salt quote, dated the day it was quoted (${pQ.refused.map((x) => x.why).join("; ") || (salt && JSON.stringify(salt.quote).slice(0, 80))})`);
-      ok(dQ && oil && oil.quote && oil.quote.supplier === bkR.oilQuote.supplier, "and an oil lot's carries the oil quote");
+      ok(dQ && oil && oil.quote && oil.quote.supplier === bkR.QUOTES.oil.supplier, "and an oil lot's carries the oil quote");
     }
     try { w.close(); } catch (e) { }
   }
@@ -10569,7 +10569,7 @@ await (async () => {
   const led = readFileSync(join(REPO, "tools", "ledger.mjs"), "utf8");
   /* Three real entries were live on the PUBLIC desk: a supplier's name in a script comment
      and two places in Journal version notes. Pinned by what they say now. */
-  ok(/\/\* THE OIL SUPPLIER'S QUOTE\. Same shape as supplierQuote/.test(msrc),
+  ok(/\/\* THE OIL SUPPLIER'S QUOTE\. Same shape as QUOTES\.salt/.test(msrc),
     "the oil quote comment names the supplier by its role, not by name");
   ok(/<b>SET IS ON THE MAP\.<\/b> CH6-SET came off/.test(msrc),
     "the v384 note names the code's suffix, not the place behind it");

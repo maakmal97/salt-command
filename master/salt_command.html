@@ -5981,73 +5981,75 @@ const AWARDS={
     "why": "Oil turnover counted at his direction: RM400 of salt plus RM100 of oil is exactly the RM500 step."
   }
 };
+/* v776, 22 Sep 2026: QUOTES IS THE BOOK'S OWN MAP, AND supplierQuote AND oilQuote ARE GONE. The two live quotes sat under two top-level keys NAMED AFTER THEIR PRODUCTS, the one per-product thing in this book that was not a map, and the desk's QUOTES was an accessor over them, {salt:()=>supplierQuote, oil:()=>oilQuote}. A third product therefore needed a third key, a third global and an edit in three files, and tools/foldcall.mjs read the pair as a literal two-entry object, so an unregistered product yielded null and its purchase folded with no quote in the dossier while nothing errored. v228's own comment beside the supply panel already stated the shape it wanted, one panel driven by QUOTES so a third product needs an entry there and nothing here, and the panel has told him to add one to QUOTES ever since; this is that, finished. quoteFor reads the map directly, the accessor is retired, and QUOTES leaves NOT_LEDGER for LEDGER because it is a record now and not a lookup. oilQuote's own product field goes with it: the key is the product, and nothing ever read the field. */
 /* v505, 07 Sep 2026: the 25 unit tier is RM 1,200 on his word; the other four tiers stand as quoted on 20 Aug. */
 /* v517, 08 Sep 2026: the 100 unit tier is RM 4,000 on his word, down RM 300 from the RM 4,300 quoted on 20 Aug; the other four tiers stand. The salt taper refits from -0.100 to -0.121 and five asks come down RM 10 (RM 30 at 12.5 unit); no floor moves. */
-const supplierQuote={
-  "supplier": "SA5-BTR",
-  "quotedOn": "2026-08-20",
-  "kind": "live quote",
-  "tiers": [
-    {
-      "qty": 6.25,
-      "total": 350,
-      "note": "RM56/unit. The smallest lot has never been quoted as its own tier before, and it comes in at the rate the 12.5 unit step used to cost."
-    },
-    {
-      "qty": 12.5,
-      "total": 650,
-      "note": "RM52/unit, RM50 off the RM700 this size has cost on every lot since 08 Jul."
-    },
-    {
-      "qty": 25,
-      "total": 1200,
-      "note": "RM48/unit, his word 07 Sep 2026, down from the RM1,250 quoted on 20 Aug; the two 25 unit lots of 02 and 03 Sep already landed at this rate."
-    },
-    {
-      "qty": 50,
-      "total": 2200,
-      "note": "RM44/unit, back to exactly the RM2,200 quoted on 10 Jul after this tier moved up."
-    },
-    {
-      "qty": 100,
-      "total": 4000,
-      "note": "RM40/unit on his word of 08 Sep 2026, down RM300 from the RM4,300 quoted on 20 Aug; cheaper than any rate this desk has ever been quoted or has ever paid."
-    }
-  ]
-};
 /* v514, 07 Sep 2026: SP7-PUD's quote as he relayed it: 10@100, 15@150, 20@180, 30@250, 50@380. The 15 unit tier is new; 30 and 50 moved up RM 20 and RM 30; 10 and 20 stand. The 06 Aug ladder was 10@100, 20@180, 30@230, 50@350. */
-const oilQuote={
-  "supplier": "SP7-PUD",
-  "quotedOn": "2026-09-07",
-  "kind": "live quote",
-  "product": "oil",
-  "tiers": [
-    {
-      "qty": 10,
-      "total": 100,
-      "note": "RM10/unit, unchanged from 06 Aug; the smallest lot and the highest rate"
-    },
-    {
-      "qty": 15,
-      "total": 150,
-      "note": "RM10/unit, a new tier on 07 Sep; the same rate as 10 unit, so it buys nothing but size"
-    },
-    {
-      "qty": 20,
-      "total": 180,
-      "note": "RM9/unit, unchanged from 06 Aug"
-    },
-    {
-      "qty": 30,
-      "total": 250,
-      "note": "RM8.33/unit, up from the RM230 (RM7.67) quoted on 06 Aug, the tier the 26 Aug lot was bought on"
-    },
-    {
-      "qty": 50,
-      "total": 380,
-      "note": "RM7.60/unit, up from the RM350 (RM7) quoted on 06 Aug and paid on the 11 Aug lot; still the sharpest"
-    }
-  ]
+const QUOTES={
+  "salt": {
+    "supplier": "SA5-BTR",
+    "quotedOn": "2026-08-20",
+    "kind": "live quote",
+    "tiers": [
+      {
+        "qty": 6.25,
+        "total": 350,
+        "note": "RM56/unit. The smallest lot has never been quoted as its own tier before, and it comes in at the rate the 12.5 unit step used to cost."
+      },
+      {
+        "qty": 12.5,
+        "total": 650,
+        "note": "RM52/unit, RM50 off the RM700 this size has cost on every lot since 08 Jul."
+      },
+      {
+        "qty": 25,
+        "total": 1200,
+        "note": "RM48/unit, his word 07 Sep 2026, down from the RM1,250 quoted on 20 Aug; the two 25 unit lots of 02 and 03 Sep already landed at this rate."
+      },
+      {
+        "qty": 50,
+        "total": 2200,
+        "note": "RM44/unit, back to exactly the RM2,200 quoted on 10 Jul after this tier moved up."
+      },
+      {
+        "qty": 100,
+        "total": 4000,
+        "note": "RM40/unit on his word of 08 Sep 2026, down RM300 from the RM4,300 quoted on 20 Aug; cheaper than any rate this desk has ever been quoted or has ever paid."
+      }
+    ]
+  },
+  "oil": {
+    "supplier": "SP7-PUD",
+    "quotedOn": "2026-09-07",
+    "kind": "live quote",
+    "tiers": [
+      {
+        "qty": 10,
+        "total": 100,
+        "note": "RM10/unit, unchanged from 06 Aug; the smallest lot and the highest rate"
+      },
+      {
+        "qty": 15,
+        "total": 150,
+        "note": "RM10/unit, a new tier on 07 Sep; the same rate as 10 unit, so it buys nothing but size"
+      },
+      {
+        "qty": 20,
+        "total": 180,
+        "note": "RM9/unit, unchanged from 06 Aug"
+      },
+      {
+        "qty": 30,
+        "total": 250,
+        "note": "RM8.33/unit, up from the RM230 (RM7.67) quoted on 06 Aug, the tier the 26 Aug lot was bought on"
+      },
+      {
+        "qty": 50,
+        "total": 380,
+        "note": "RM7.60/unit, up from the RM350 (RM7) quoted on 06 Aug and paid on the 11 Aug lot; still the sharpest"
+      }
+    ]
+  }
 };
 const CASH_COUNT_RETIRED={
   "on": "2026-07-28",
@@ -6803,7 +6805,7 @@ let NAME_VAULT=null;
    either ladder, so this is not a fault repaired. What changed is where the discount sits. The
    old ladder gave RM4 a unit at the 25 step and RM4 again at the 50; this one gives RM2 at the
    25 and RM6 at the 50, so 50 unit is where it pays and 25 has stopped paying much. */
-/* supplierQuote: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
+/* Salt's quote is QUOTES.salt, declared in the BOOK block near the top of this script, generated from ledger/book.json (v339; one map since v776). */
 /* ============ THE CURRENT LOT (v549, 09 Sep 2026, his instruction) ============
    This was THE NEXT LOT, AS STATED (v220): a target quantity, a target date and the reasoning
    typed into the book, with every figure beside them derived. The v220 note promised that "a
@@ -6953,13 +6955,18 @@ function prodSummary(p){
     pct:(margin!=null&&rev>0)?+(margin/rev*100).toFixed(1):null,
     n:live.length,costKnown:known,owed:+(rev-cash).toFixed(2)};
 }
-/* THE OIL SUPPLIER'S QUOTE. Same shape as supplierQuote for salt, because it is the same kind
+/* THE OIL SUPPLIER'S QUOTE. Same shape as QUOTES.salt, because it is the same kind
    of thing: what a supplier charges, by lot size, on a stated date. It is NOT a selling
    card and must never be rendered as one, v226/v227 made exactly that mistake and priced
    the whole product backwards for two versions. */
-/* oilQuote: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
-const QUOTES={salt:()=>supplierQuote, oil:()=>oilQuote};
-const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
+/* QUOTES: declared in the BOOK block near the top of this script, generated from ledger/book.json.
+   v776: IT IS THE BOOK'S OWN MAP, product to its live quote, and no longer an accessor. It read
+   {salt:()=>supplierQuote, oil:()=>oilQuote} over two top-level book keys named after their
+   products, so a third product needed a third key, a third global and an edit in three files.
+   v228's comment beside the supply panel already asked for this shape, and the panel has told him
+   to add one to QUOTES ever since. quoteFor reads the map, so a product with no quote answers
+   null exactly as an unregistered one used to. */
+const quoteFor=p=>QUOTES[p||PROD]||null;
 
 /* ============ THE CHANGELOG LIVES OUTSIDE THE DESK NOW (v177) ============
    176 entries, 191 KB, 27% of this file, and not one of them was ever read on screen:
@@ -6980,7 +6987,7 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    v324 onward, which tabJournal maps in full; master/changelog.json carries every entry
    ever written and is the record. So a bump PREPENDS its entry. Replacing the array,
    which both comments invited, silently drops the whole window. */
-const evolution=[{"v":"v775","d":"21 Sep 2026","t":"A SECOND FREE UNIT ON THE REWARD: NO CASH, NO REVENUE, RM48 OF COST","n":["<b>FOLDED: ONE REDEMPTION ROW FOR CS6-BS, 1 UNIT OF SALT ON 21 SEP.</b> Settled by the reward at RM48 rather than in cash, delivered in full the same day, so nothing is left outstanding. On his ruling of 11 Sep 2026 the row carries both rebate and goodwill, so it stays out of revenue and its RM48 sits as cost at the shelf's own rate. This is the second such redemption for this code since 17 Sep.","<b>UNUSUAL: THE REWARD BALANCE IS THE DESK'S WORD AND CANNOT BE CHECKED HERE.</b> The drafter flagged that 6 earned against 5 applied leaves 1 unit standing, worked out on the desk and not in the book, and the dossier carries no figure that answers it. No price test bites, since no price was charged: the RM51.95 floor and RM160 ask for 1 unit are recorded for the file only. The salt left the shelf and the inventory rolled by it."]},
+const evolution=[{"v":"v776","d":"22 Sep 2026","t":"THE TWO QUOTE KEYS BECOME ONE MAP, SO A THIRD BOOK NEEDS NO CODE","n":["<b>HIS INSTRUCTION OF 22 SEP 2026, to state what is product-specific and then to open three more books.</b> The live quotes sat under two top-level keys NAMED AFTER THEIR PRODUCTS, <code>supplierQuote</code> for salt and <code>oilQuote</code> for oil, and they were the one per-product thing in this book that was not a map. Everything else, PRODUCTS, PROD_OPENING, COUNT_ON, PRICE_SET, COST_RULE, TIER_OF, is keyed by product and takes a new book as a data entry. The quotes took a new key, a new global and an edit in three files.","<b>THE DESK'S OWN QUOTES WAS AN ACCESSOR OVER THE PAIR</b>, <code>{salt:()=&gt;supplierQuote, oil:()=&gt;oilQuote}</code>, which is why it sat in NOT_LEDGER: stored, it would have arrived as <code>{\"salt\":null,\"oil\":null}</code> with nothing to say a lookup had been lost. QUOTES is the book's own map now, generated into the BOOK block like every other declaration, so it has moved out of NOT_LEDGER and into LEDGER. <code>quoteFor</code> reads the map instead of calling a function, and a product with no quote answers null exactly as an unregistered one used to.","<b>THE LOOKUP THAT COULD NOT FAIL IS THE REASON THIS WENT FIRST.</b> <code>tools/foldcall.mjs</code> read the pair as a literal two-entry object, so a product registered in PRODUCTS but absent from that object yielded <code>undefined</code>, fell to <code>null</code>, and its lot folded with no quote in the dossier while nothing errored and the note was merely worse. That is the shape of bug a third book would have shipped with.","<b>v228 ASKED FOR THIS AND THE PANEL HAS SAID SO EVER SINCE.</b> The supply panel's own comment reads <i>one panel, driven by QUOTES, so a third product needs an entry there and nothing here</i>, and with no quote recorded it tells him to add one to QUOTES. This is that, finished. Two deliberate whole-book reads of the bare salt quote are now <code>QUOTES[DEFAULT_PROD]</code>, which is what they meant; oil's redundant <code>product</code> field goes with the collapse, the key being the product, and nothing ever read it."]},{"v":"v775","d":"21 Sep 2026","t":"A SECOND FREE UNIT ON THE REWARD: NO CASH, NO REVENUE, RM48 OF COST","n":["<b>FOLDED: ONE REDEMPTION ROW FOR CS6-BS, 1 UNIT OF SALT ON 21 SEP.</b> Settled by the reward at RM48 rather than in cash, delivered in full the same day, so nothing is left outstanding. On his ruling of 11 Sep 2026 the row carries both rebate and goodwill, so it stays out of revenue and its RM48 sits as cost at the shelf's own rate. This is the second such redemption for this code since 17 Sep.","<b>UNUSUAL: THE REWARD BALANCE IS THE DESK'S WORD AND CANNOT BE CHECKED HERE.</b> The drafter flagged that 6 earned against 5 applied leaves 1 unit standing, worked out on the desk and not in the book, and the dossier carries no figure that answers it. No price test bites, since no price was charged: the RM51.95 floor and RM160 ask for 1 unit are recorded for the file only. The salt left the shelf and the inventory rolled by it."]},
 
 {"v":"v774","d":"21 Sep 2026","t":"ONE UNIT OUT AT RM90: UNDER THE PARTY'S OWN RUN, CLEAR OF THE FLOOR","n":["<b>FOLDED: ONE SALT SALE, CLOSED ON THE DAY.</b> A single unit went to CS6-BS on 21 Sep for RM90, collected, RM90 cash in and 1 unit moved, so the row opens and closes on the same date with nothing outstanding. At RM90 a unit it sits above the RM52.06 floor for 1 unit and well under the RM160 ask. Costed at RM48 a unit, the inventory's own rate, RM42 on the goods at 46.7%.","<b>UNUSUAL: THE RATE READS LOW AGAINST THE PARTY, AND THE BLEND IS STILL OPEN.</b> The drafter flagged RM90 as 15.9% under the RM107 a unit CS6-BS typically pays across 19 orders, and flagged that RM48 is the inventory average rather than the lot this row draws. The first is a pricing call on his word at the desk; the second is unanswered in the figures given. The inventory released one unit and holds 8, above the reorder mark of 15 only in stated terms."]},
 
@@ -7603,7 +7610,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='21 Sep 2026, 19:27 KL';
+const LAST_UPDATED='22 Sep 2026, 06:26 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -21407,9 +21414,10 @@ function consoCashBlock(){
     ? (()=>{/* read the top tier off the live quote rather than hardcoding it: this line
               sat at RM4,800 for two days after the quote was corrected to RM4,700.
               Round 5 note: this block is a WHOLE-BOOK head, proven identical across books
-              by the suite, so it deliberately reads salt's quote as the reference lot
-              rather than quoteFor(PROD), which would make it flap with the selector. */
-       const bt=((supplierQuote&&supplierQuote.tiers)||[]).slice().sort((a,b)=>b.qty-a.qty)[0];
+              by the suite, so it deliberately reads the DEFAULT book's quote as the reference
+              lot rather than quoteFor(PROD), which would make it flap with the selector.
+              v776: QUOTES[DEFAULT_PROD], which is what the bare supplierQuote meant. */
+       const bt=(((QUOTES[DEFAULT_PROD]||{}).tiers)||[]).slice().sort((a,b)=>b.qty-a.qty)[0];
        const lead=`After the <b>${fmt0(cf.dueOut)}</b> already promised away, <b>${fmt0(cf.free)}</b> is yours to commit.`;
        if(!bt) return lead;
        const cost=bt.total, rate=+(bt.total/bt.qty).toFixed(2);
@@ -21420,7 +21428,7 @@ function consoCashBlock(){
        the affordability question cannot be answered. That is the line, and it reads the lot
        off the live quote for the same reason the branch above it does, rather than carrying
        the 100 unit buy in P1 as a hardcode that outlives the quote. */
-    : (()=>{const bt=((supplierQuote&&supplierQuote.tiers)||[]).slice().sort((a,b)=>b.qty-a.qty)[0];
+    : (()=>{const bt=(((QUOTES[DEFAULT_PROD]||{}).tiers)||[]).slice().sort((a,b)=>b.qty-a.qty)[0];
        return `With no opening balance set, the desk cannot say whether ${bt?`the ${units(bt.qty)} lot at <b>${fmt0(bt.total)}</b>`:'the next lot'} is affordable.`;})()}</div></div>`;
 }
 /* v275: SAY WHICH BOOK YOU ARE LOOKING AT. Today, Forward and Overview are drawn ONCE, at

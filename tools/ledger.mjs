@@ -104,12 +104,13 @@ const NOT_LEDGER = new Set([
      demand, never stored, never read back; the next load starts it empty again. */
   "_wavgMemo",
 
-  /* QUOTES IS AN ACCESSOR, NOT DATA, and the JSON check is what proved it: both its keys
-     hold FUNCTIONS over supplierQuote and oilQuote, which are extracted in their own right.
-     Stored, it would have arrived as `{"salt":null,"oil":null}` with nothing to say a
-     lookup had been lost. This is the single best argument for checking fidelity by walking
-     the values rather than trusting that a book of records is made of records. */
-  "QUOTES",
+  /* QUOTES WAS AN ACCESSOR AND IS NOW DATA (v776), so it has left this set for LEDGER in
+     tools/book.mjs. It used to hold FUNCTIONS over supplierQuote and oilQuote, which were
+     extracted in their own right, and the JSON check is what proved it: stored, it would have
+     arrived as `{"salt":null,"oil":null}` with nothing to say a lookup had been lost. That
+     remains the single best argument for checking fidelity by walking the values rather than
+     trusting that a book of records is made of records, which is why the finding is kept here
+     after the shape it described has gone. */
 ]);
 
 const isObj = (v) => v !== null && typeof v === "object";

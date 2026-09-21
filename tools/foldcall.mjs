@@ -100,11 +100,15 @@ export function dossier(book, staged, p, w) {
         } catch (e) { d.ladder = null; }
       }
       if (src.collection === "purchases") {
-        /* 09 Sep 2026: THE BOOK HOLDS ONE LIVE QUOTE PER PRODUCT UNDER ITS OWN KEY, supplierQuote for
-           salt and oilQuote for oil, as the desk's QUOTES map reads them. This filtered the salt quote
+        /* 09 Sep 2026: THE BOOK HOLDS ONE LIVE QUOTE PER PRODUCT. This filtered the salt quote
            as an array and threw on the first lot staged since v521, and the hourly net threw again
-           every hour with the lot left unfolded. The quote's date is quotedOn. */
-        const q = ({ salt: book.supplierQuote, oil: book.oilQuote })[prod] || null;
+           every hour with the lot left unfolded. The quote's date is quotedOn.
+           v776: the book's own QUOTES map, read by key. It was a literal two-entry object over
+           supplierQuote and oilQuote, so a product registered in PRODUCTS but absent from that
+           object yielded undefined, fell to null, and its lot folded with no quote in the dossier
+           while nothing errored. A product with no quote still reads null; the difference is that
+           the map now answers for every product the book carries rather than for two by name. */
+        const q = (book.QUOTES || {})[prod] || null;
         d.quote = q ? { date: q.quotedOn || q.date || null, supplier: q.supplier, tiers: q.tiers } : null;
       }
     } else if (src.collection === "loan" && row.party) {

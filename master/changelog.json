@@ -1,5 +1,16 @@
 [
  {
+  "v": "v776",
+  "d": "22 Sep 2026",
+  "t": "THE TWO QUOTE KEYS BECOME ONE MAP, SO A THIRD BOOK NEEDS NO CODE",
+  "n": [
+   "<b>HIS INSTRUCTION OF 22 SEP 2026, to state what is product-specific and then to open three more books.</b> The live quotes sat under two top-level keys NAMED AFTER THEIR PRODUCTS, <code>supplierQuote</code> for salt and <code>oilQuote</code> for oil, and they were the one per-product thing in this book that was not a map. Everything else, PRODUCTS, PROD_OPENING, COUNT_ON, PRICE_SET, COST_RULE, TIER_OF, is keyed by product and takes a new book as a data entry. The quotes took a new key, a new global and an edit in three files.",
+   "<b>THE DESK'S OWN QUOTES WAS AN ACCESSOR OVER THE PAIR</b>, <code>{salt:()=&gt;supplierQuote, oil:()=&gt;oilQuote}</code>, which is why it sat in NOT_LEDGER: stored, it would have arrived as <code>{\"salt\":null,\"oil\":null}</code> with nothing to say a lookup had been lost. QUOTES is the book's own map now, generated into the BOOK block like every other declaration, so it has moved out of NOT_LEDGER and into LEDGER. <code>quoteFor</code> reads the map instead of calling a function, and a product with no quote answers null exactly as an unregistered one used to.",
+   "<b>THE LOOKUP THAT COULD NOT FAIL IS THE REASON THIS WENT FIRST.</b> <code>tools/foldcall.mjs</code> read the pair as a literal two-entry object, so a product registered in PRODUCTS but absent from that object yielded <code>undefined</code>, fell to <code>null</code>, and its lot folded with no quote in the dossier while nothing errored and the note was merely worse. That is the shape of bug a third book would have shipped with.",
+   "<b>v228 ASKED FOR THIS AND THE PANEL HAS SAID SO EVER SINCE.</b> The supply panel's own comment reads <i>one panel, driven by QUOTES, so a third product needs an entry there and nothing here</i>, and with no quote recorded it tells him to add one to QUOTES. This is that, finished. Two deliberate whole-book reads of the bare salt quote are now <code>QUOTES[DEFAULT_PROD]</code>, which is what they meant; oil's redundant <code>product</code> field goes with the collapse, the key being the product, and nothing ever read it."
+  ]
+ },
+ {
   "v": "v775",
   "d": "21 Sep 2026",
   "t": "A SECOND FREE UNIT ON THE REWARD: NO CASH, NO REVENUE, RM48 OF COST",

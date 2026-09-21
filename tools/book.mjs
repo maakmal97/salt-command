@@ -49,7 +49,11 @@ export const LEDGER = {
   TIER_OF: "TIER_OF",
   /* v616 and v618: REWARD_OPENING and CUSTOMER_REWARD_OPENING retired; the whole-ledger recounts replaced them. */
   AWARDS: "AWARDS",
-  supplierQuote: "supplierQuote", oilQuote: "oilQuote",
+  /* v776: ONE MAP, product to its live quote. It was supplierQuote (salt, implicitly) and
+     oilQuote, two top-level keys named after their products and the one per-product thing in
+     this book that was not a map, with the desk's QUOTES an accessor over the pair. QUOTES is
+     a record now, so it moved here out of NOT_LEDGER in tools/ledger.mjs. */
+  QUOTES: "QUOTES",
   COST_RULE: "COST_RULE",
   /* v354: read the COMMITTED copy, like sales and selfUseLog. PRICE_SET carries the overlay once a
      price edit is queued, and the extract must never see a change nobody has approved. */
