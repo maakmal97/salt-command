@@ -447,7 +447,14 @@ export async function nudgeOrders(env) {
      since v694 and the desk asked for it every minute and read only the placement, so somebody
      settling RM435 at midnight was invisible until he next opened the desk. The mark carries the
      moment and the word, so the banner can say which rather than guess. */
-  const did = !!(theirs && theirs > theirsMark);
+  /* v768: THE MOMENT ORDERS IT; THE WORD RIDES ALONG. `<iso>|<what>` compares as one string, and on
+     a tie in the millisecond the WORD decided: a withdrawal landing in the same millisecond as a
+     payment read as older, because "cancel" sorts under "pay", and woke nobody. Found by the full
+     suite, where the two land in one millisecond often enough to matter, on a section that passed
+     alone every time. The prefix is the order; anything else on the mark means something happened. */
+  const momentOf = (m) => String(m || "").split("|")[0];
+  const did = !!(theirs && (momentOf(theirs) > momentOf(theirsMark)
+    || (momentOf(theirs) === momentOf(theirsMark) && theirs !== theirsMark)));
   if (!placed && !spoke && !did) return { ok: true, sent: 0 };
   /* the marks move whether or not the push reaches anybody: a wake that failed is not a reason to
      wake for the same line every minute until it does */

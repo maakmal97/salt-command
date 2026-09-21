@@ -17836,6 +17836,21 @@ await (async () => {
   ok((await dkv6.get("orders:theirs")) && (await dkv6.get("orders:nudged")),
     "each keeps its own mark, so the newer of them cannot make the other look old");
 
+  /* ---- AND A TIE IN THE MILLISECOND IS DECIDED BY THE MOMENT, NOT BY THE WORD (v768) ----
+     `<iso>|<what>` compares as one string. On a tie the WORD decided, and "cancel" sorts under
+     "pay": a withdrawal in the same millisecond as a payment read as OLDER and woke nobody. The
+     full suite found it, on a section that passed alone every time, because two in-memory moves
+     land in one millisecond often enough to matter. It is forced here rather than waited for. */
+  const tie = (await skv6.get(LAST_THEIRS)).split("|")[0];
+  await dkv6.put("orders:theirs", tie + "|pay");
+  await skv6.put(LAST_THEIRS, tie + "|cancel");
+  const tied = await nudge();
+  ok(tied.r.did === "A customer has withdrawn an order" && tied.hit.length === 1,
+    "a withdrawal in the same millisecond as a payment is still seen, whichever word sorts lower: "
+    + JSON.stringify({ did: tied.r.did, hit: tied.hit.length }));
+  const same = await nudge();
+  ok(same.hit.length === 0, "and the same mark twice is still nothing new: " + JSON.stringify(same.hit));
+
   /* ---- THE BANNER IS WRITTEN FROM THE SUMMARY, so the summary carries it while it is fresh ---- */
   const news = await dkv6.get("orders:news", "json");
   ok(news && news.what === "A customer has withdrawn an order", "the desk remembers what to say: " + JSON.stringify(news));
