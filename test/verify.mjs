@@ -16734,8 +16734,10 @@ await (async () => {
   /* ---- THE SPLIT IS ONE FLAG, AND IT IS ALREADY ON EVERY ROW ---- */
   const gifts = rd("pSales(PROD).filter(function(s){return s.goodwill&&!s.rebate;}).map(function(s){return s.rid;})");
   const redeems = rd("pSales(PROD).filter(function(s){return s.goodwill&&s.rebate;}).map(function(s){return s.rid;})");
-  ok(gifts.length === 4 && redeems.length === 3 && gifts.join() === "s031,s056,s176,s181",
-    "four gifts and three redemptions on the live book, told apart by rebate alone: " + JSON.stringify({ gifts, redeems }));
+  ok(["s031", "s056", "s176", "s181"].every((r) => gifts.includes(r)) && redeems.length >= 3
+    && !gifts.some((r) => redeems.includes(r)),
+    "the gifts and the redemptions are told apart by rebate alone, and no row is both (v758: the "
+    + "four and the three are the ones that were here, not a ceiling): " + JSON.stringify({ gifts, redeems }));
 
   /* ---- THE CHARGE, ON A FIXTURE WHERE EVERY FIGURE IS KNOWN ---- */
   const before = rd("rewardMargin('CZ9-GIFT',[])");
@@ -16774,25 +16776,51 @@ await (async () => {
   const s181 = rd("sales.find(function(s){return s.rid==='s181';})");
   ok(!!s181 && s181.goodwill === true && !s181.rebate && s181.cancelled === true,
     "s181 is a gift that was withdrawn: goodwill, no rebate, cancelled");
-  ok(!!che && che.earned === 2 && Math.abs(che.margin - 1017) < 0.01,
-    "so CE4-CHE keeps BOTH free units and is charged nothing for a unit that never left the shelf: "
-    + JSON.stringify(che));
+  ok(!!che && che.taken === 0 && Math.abs(che.free - che.earned) < 1e-9 && che.earned >= 2,
+    "so CE4-CHE keeps EVERY unit they earned and has taken none: " + JSON.stringify(che));
   ok(!!s181 && s181.cost == null,
     "and it carries no cost of its own, so were it live it would be charged at the book's weighted "
     + "average, which is what costOf does for every uncosted row: the fallback is stated, not hidden");
-  /* the two that DO bite, named so the figures are his and not a surprise */
+  /* the two that DO bite: read here, and proved by TAKING THE GIFT AWAY at the foot of this
+     section rather than by pinning a pool figure their next order moves (v758) */
   const okr = rd("customerRewards().find(function(r){return r.id==='CC5-OKR';})");
-  ok(!!okr && Math.abs(okr.margin - 163) < 0.01 && okr.earned === 0,
-    "CC5-OKR is charged the RM48 of s176, taking their pool to RM163: " + JSON.stringify(okr));
   const wm = rd("networkStats().find(function(r){return r.id==='CN6-WM';})");
-  ok(!!wm && Math.abs(wm.marginTotal - 1009.2) < 0.01 && wm.earned === 2,
-    "and CN6-WM, an associate, is charged the RM51.50 of s031 and s056 on their pooled figure, "
-    + "which is how the charge reaches a card and not only a customer table: " + JSON.stringify({ m: wm.marginTotal, earned: wm.earned }));
+  ok(!!okr && !!wm && typeof okr.margin === "number" && typeof wm.marginTotal === "number",
+    "CC5-OKR holds a customer's pool and CN6-WM an associate's: " + JSON.stringify({ okr: okr.margin, wm: wm.marginTotal }));
   /* real codes only: the CZ9 fixtures above include a redemption against nothing earned, which is a
      negative holding by design (the engine carries one and the next unit absorbs it). */
   const negHold = rd("customerRewards().filter(function(r){return r.free<-0.005&&!/^CZ9/.test(r.id);}).map(function(r){return {id:r.id,margin:r.margin,earned:r.earned,taken:r.taken,free:r.free};})");
   ok(negHold.length === 0,
     "and no holding anywhere on the book goes negative: nobody has taken more than the new figure earns: " + JSON.stringify(negHold));
+
+  /* ---- THE CHARGE IS PROVED BY TAKING THE GIFT AWAY (v758) ----------------------------------
+     This section pinned three live pool figures: CE4-CHE at RM1,017, CC5-OKR at RM163 and CN6-WM
+     at RM1,009.20. They are facts about a book that keeps moving, and his sales of 19 September
+     took CE4-CHE to RM1,147, so a version that had changed nothing went red at the last step of a
+     live run. A CHARGE IS A DIFFERENCE, so it is measured as one: drop the row, recompute, and
+     what the pool does is the whole of the rule. A withdrawn gift must move it not at all; a live
+     one must give back exactly its cost, which is the book's weighted average where the row
+     carries none of its own and therefore is not a figure to pin either. */
+  const drop = (rids) => w.eval("(function(){['" + rids.join("','")
+    + "'].forEach(function(r){var i=sales.findIndex(function(s){return s.rid===r;});if(i>=0)sales.splice(i,1);});})();recompute();");
+  const pool = (id) => rd("(customerRewards().find(function(r){return r.id==='" + id + "';})||{}).margin");
+  const net = (id) => rd("(networkStats().find(function(x){return x.id==='" + id + "';})||{}).marginTotal");
+  const costOf = (rids) => rd("(function(){return +['" + rids.join("','")
+    + "'].reduce(function(a,r){var s=sales.find(function(x){return x.rid===r;});return a+(s?(s.qty||0)*txUnitCost(s,wavgBuy):0);},0).toFixed(2);})()");
+  const cheWas = pool("CE4-CHE");
+  drop(["s181"]);
+  ok(Math.abs(pool("CE4-CHE") - cheWas) < 0.005,
+    "the withdrawn gift charges CE4-CHE nothing: dropping s181 leaves their pool where it stood, at RM" + cheWas);
+  const okrWas = pool("CC5-OKR"), okrCost = costOf(["s176"]);
+  drop(["s176"]);
+  ok(okrCost > 0.009 && Math.abs((pool("CC5-OKR") - okrWas) - okrCost) < 0.011,
+    "and a LIVE gift charges its cost: dropping s176 gives CC5-OKR back RM" + (pool("CC5-OKR") - okrWas).toFixed(2)
+    + ", which is s176's own RM" + okrCost);
+  const wmWas = net("CN6-WM"), wmCost = costOf(["s031", "s056"]);
+  drop(["s031", "s056"]);
+  ok(wmCost > 0.009 && Math.abs((net("CN6-WM") - wmWas) - wmCost) < 0.011,
+    "and it reaches an ASSOCIATE'S pooled figure and not only a customer table: dropping s031 and s056 "
+    + "gives CN6-WM back RM" + (net("CN6-WM") - wmWas).toFixed(2) + ", their own RM" + wmCost);
 
   /* ---- THE TAP, IN A WINDOW OF ITS OWN ----
      The fixture rows above are pushed straight onto `sales` with a party that is on no roster, which
@@ -17301,14 +17329,20 @@ await (async () => {
   ok(shape.every((s) => s.handover === "delivered"), "each says the goods were delivered, which is what a carriage means: " + JSON.stringify(shape.map((s) => s.rid + " " + s.handover)));
 
   /* ---- AND THE SHELF DOES NOT MOVE. The salt left it before the count, so the count already holds it ---- */
-  const cnt = (bk.COUNTS || []).filter((c) => c.product === "salt").slice(-1)[0];
-  ok(cnt && cnt.date === "2026-09-19" && bk.COUNT_ON.salt === "2026-09-19",
-    "salt was last counted on 19 September: " + JSON.stringify(cnt && { date: cnt.date, qty: cnt.qty }));
-  ok(three.every((r) => r.date <= cnt.date),
+  /* v758: A COUNT THAT COVERS THEM, not the count that happened to be the newest the day this was
+     written. It asked for 19 September and for the 22.65 unit v744 left, and his hand count of 21
+     September moved both, turning a version that had changed nothing red. What is being proved is
+     that these three rows may not roll the stated figure, and what proves it is a count on or after
+     the last of their days, plus a note trail carrying no roll of this version's. */
+  const counts = (bk.COUNTS || []).filter((c) => c.product === "salt");
+  const lastDay = shape.map((s) => s.date).sort().slice(-1)[0];
+  const cnt = counts.find((c) => c.date >= lastDay);
+  ok(!!cnt, "a salt count covers the last of the three days: " + JSON.stringify(cnt && { date: cnt.date, qty: cnt.qty }));
+  ok(!!cnt && three.every((r) => r.date <= cnt.date),
     "and all three days fall on or before that count, so nothing here may roll the stated figure");
   const rolls = (bk.NOTES && bk.NOTES.STATED_STOCK) || [];
-  ok(!/^ROLLED AT v750/.test(rolls[0] || ""), "no roll was written for this version: " + String(rolls[0] || "").slice(0, 40));
-  ok(bk.STATED_STOCK === 22.65, "the stated inventory stands where v744 left it: " + bk.STATED_STOCK);
+  ok(!rolls.some((n) => /^ROLLED AT v750\b/.test(String(n))),
+    "and no roll in the trail is this version's: " + rolls.length + " note(s), none of them v750's");
 })();
 
 section("v751: a customer may write a line on an order, at placement and after, and it never reaches a ledger note");
