@@ -21,9 +21,16 @@
   --salt-steel: #8ea2b6;      /* pending, neutral, the cool second series */
   --salt-brass-soft: #d8c79c; /* pale brass for a second tier */
 
-  /* The two books: salt is the pale one, oil the golden one */
-  --salt-product-salt: #e4e9ec;
-  --salt-product-oil: #c5a059;
+  /* The books. Each is its own hue, and none of them is a SEMANTIC one: ember, verdigris,
+     steel and copper each mean something on the desk, so a product dot drawn in one would
+     read as a status rather than as a book. The violet and cyan families were retired at
+     v472 and are not used. Salt is the pale one and oil the golden one; oil is the same
+     value as --salt-brass, which is why its dot is hard to tell from ordinary chrome. */
+  --salt-product-salt: #e4e9ec;   /* near-white */
+  --salt-product-oil: #c5a059;    /* brass */
+  --salt-product-candy: #cf8fb4;  /* rose, hue 330 */
+  --salt-product-rice: #7b86cc;   /* indigo, hue 235 */
+  --salt-product-spare: #a8b06a;  /* olive, hue 68 */
 
   /* Materials */
   --salt-glass: rgba(255, 255, 255, 0.03);
@@ -956,6 +963,9 @@
 }
 .salt-product--salt { --salt-hue: var(--salt-product-salt); }
 .salt-product--oil { --salt-hue: var(--salt-product-oil); }
+.salt-product--candy { --salt-hue: var(--salt-product-candy); }
+.salt-product--rice { --salt-hue: var(--salt-product-rice); }
+.salt-product--spare { --salt-hue: var(--salt-product-spare); }
 .salt-product__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--salt-hue); box-shadow: 0 0 8px -1px var(--salt-hue); flex: 0 0 auto; }
 .salt-product__sub { font-family: var(--salt-font-display); font-size: 12.5px; letter-spacing: 0; text-transform: none; color: var(--salt-mist); }
 .salt-product__rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--salt-line), transparent); }
@@ -981,6 +991,9 @@
 }
 .salt-producttag--salt { --salt-hue: var(--salt-product-salt); }
 .salt-producttag--oil { --salt-hue: var(--salt-product-oil); }
+.salt-producttag--candy { --salt-hue: var(--salt-product-candy); }
+.salt-producttag--rice { --salt-hue: var(--salt-product-rice); }
+.salt-producttag--spare { --salt-hue: var(--salt-product-spare); }
 .salt-producttag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--salt-hue); }
 
 /* ---- Meter: a bar is a figure. A well-inset track, a lit fill, an optional marker

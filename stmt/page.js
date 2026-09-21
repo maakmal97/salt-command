@@ -318,14 +318,20 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&am
  * symbol would otherwise draw nothing at all, which reads as a fault rather than as an omission. */
 export const PSYM = {
   salt: 'M12 2.6 L20.6 7.3 L20.6 16.7 L12 21.4 L3.4 16.7 L3.4 7.3 Z M12 12 L20.6 7.3 M12 12 L3.4 7.3 M12 12 L12 21.4',
-  oil: 'M12 2.4 C12 2.4 19.2 10.6 19.2 15 A7.2 7.2 0 0 1 4.8 15 C4.8 10.6 12 2.4 12 2.4 Z'
+  oil: 'M12 2.4 C12 2.4 19.2 10.6 19.2 15 A7.2 7.2 0 0 1 4.8 15 C4.8 10.6 12 2.4 12 2.4 Z',
+  /* v779, his choice of 22 Sep 2026. A rhombus for the one and a seamed stadium for the other,
+     drawn in the same hairline stroke as the cube and the droplet. The capsule carries its seam
+     for the reason the cube carries its three inner edges: without it a stadium is a shape and
+     with it it is a thing. Neither is literal, and neither is a word. */
+  candy: 'M12 2.8 L20.4 12 L12 21.2 L3.6 12 Z',
+  rice: 'M8.2 8.2 L15.8 8.2 A3.8 3.8 0 0 1 15.8 15.8 L8.2 15.8 A3.8 3.8 0 0 1 8.2 8.2 Z M12 8.2 L12 15.8'
 };
 const RING = 'M12 4.2 A7.8 7.8 0 1 1 11.99 4.2 Z';
 /* A CONTROL STILL NEEDS A NAME, and the name is the SHAPE, never the product. A button holding
    only a decorative mark is unusable with a screen reader; an aria-label naming the product would
    put the word back for exactly the readers who cannot see that it was taken away. The shape is
    what is on the screen, so saying it aloud gives away no more than looking does. */
-export const PSHAPE = { salt: "Cube", oil: "Droplet", _: "Ring" };
+export const PSHAPE = { salt: "Cube", oil: "Droplet", candy: "Lozenge", rice: "Capsule", _: "Ring" };
 /** The mark for a product, as SVG source. `px` is the drawn size; the stroke stays hairline. */
 export function psymSvg(product, px) {
   const d = PSYM[String(product || "").toLowerCase()] || RING;
@@ -340,7 +346,7 @@ export function boardPage(guest, nonce) {
   const rm = (n) => "RM " + Number(n || 0).toLocaleString("en-MY", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   const body = products.length
     ? products.map((p) => '<div class="pane">'
-        + '<h3 class="pmark" aria-label="' + esc(PSHAPE[p.product] || PSHAPE._) + '">' + psymSvg(p.product, 30) + "</h3>"
+        + '<h3 class="pmark" aria-label="' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + '">' + psymSvg(p.product, 30) + "</h3>"
         + '<p class="sub2">' + esc(p.tierName || "")
           + (p.fellBack ? ", the only price for this product" : "")
           + "</p>"

@@ -14523,8 +14523,10 @@ await (async () => {
   const C95 = await import("../tools/stmt-crypto.mjs");
 
   /* ---- the marks themselves ---- */
-  ok(Object.keys(P95.PSYM).join(",") === "salt,oil" && /^M12 2\.6 L20\.6/.test(P95.PSYM.salt) && /C4\.8 10\.6 12 2\.4/.test(P95.PSYM.oil),
-    "one table holds both marks: a cube for the one and a droplet for the other");
+  /* v779: the table holds EVERY mark, not exactly two. This pinned the key list as "salt,oil",
+     so the third book that the fallback was written for could not be added without it going red. */
+  ok(/^M12 2\.6 L20\.6/.test(P95.PSYM.salt) && /C4\.8 10\.6 12 2\.4/.test(P95.PSYM.oil),
+    "one table holds the marks: a cube for the one and a droplet for the other");
   const cube = P95.psymSvg("salt", 28), drop = P95.psymSvg("oil", 28), odd = P95.psymSvg("tin", 28);
   ok(/stroke="currentColor"/.test(cube) && /fill="none"/.test(cube) && !/<text|Salt|salt/.test(cube)
     && cube !== drop && /aria-hidden="true"/.test(cube),
@@ -18712,6 +18714,39 @@ await (async () => {
     "and carrying the id and the accent with it");
 
   rmSync(dir, { recursive: true, force: true });
+})();
+
+section("v779: every book has a hue, and a book with no mark draws the Ring");
+await (async () => {
+  /* AN UNDEFINED var() WITH NO FALLBACK RESOLVES TO NOTHING. A book whose hue was never added
+     to the design system therefore loses its accent in SILENCE, on the desk's switch and dots
+     and on the customer's statement alike, with nothing anywhere to say a colour was missed.
+     The hue lives upstream because tools/stmt-style.mjs generates the statement's stylesheet
+     from the :root of design/salt-ds.css, so a hue put only in the desk layer never reaches a
+     customer and one put only in the vendored copy is reverted by the next --pull. These
+     assertions are what make all three of those loud instead of quiet. */
+  const ds = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
+  const css = readFileSync(join(REPO, "stmt", "statement-css.js"), "utf8");
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const ids = Object.keys(book.PRODUCTS || {});
+
+  const noHue = ids.filter((id) => !ds.includes("--salt-product-" + id + ":"));
+  ok(!noHue.length, `every book has a hue in the design system (${ids.length} books, missing: ${noHue.join(", ") || "none"})`);
+  const noStmt = ids.filter((id) => !css.includes("--salt-product-" + id));
+  ok(!noStmt.length, `and every one reaches the customer's statement stylesheet (missing: ${noStmt.join(", ") || "none"})`);
+  const wrongAccent = ids.filter((id) => (book.PRODUCTS[id] || {}).accent !== "var(--salt-product-" + id + ")");
+  ok(!wrongAccent.length, `and each book's accent names its own token (wrong: ${wrongAccent.join(", ") || "none"})`);
+
+  const { PSYM, PSHAPE, psymSvg } = await import("../stmt/page.js");
+  ok(Object.keys(PSYM).every((k) => PSHAPE[k]),
+    "every mark has a shape word, or a control holding only that mark says nothing to a screen reader");
+  ok(PSHAPE.candy === "Lozenge" && PSHAPE.rice === "Capsule", "candy is a Lozenge and rice a Capsule");
+  ok(psymSvg("spare", 24).includes("A7.8 7.8") && psymSvg("spare", 24).includes("<path"),
+    "a book with no mark draws the Ring rather than a blank, which would read as a fault");
+  ok(psymSvg("SALT", 24) === psymSvg("salt", 24), "a mark is found whatever the case of the id");
+  const words = Object.values(PSHAPE).join(" ").toLowerCase();
+  ok(!ids.some((id) => words.includes(id)) && !/\b(salt|oil|candy|rice|spare)\b/.test(words),
+    "and no shape word is a product's name: the mark is the thing, never the word for it");
 })();
 
 section("The suite frees its windows: every section's body is its own async function");

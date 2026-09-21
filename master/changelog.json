@@ -1,5 +1,16 @@
 [
  {
+  "v": "v779",
+  "d": "22 Sep 2026",
+  "t": "THREE MORE HUES, TWO MORE MARKS, AND FIVE BOOKS FIT ON A PHONE",
+  "n": [
+   "<b>HIS CHOICE OF 22 SEP 2026, ahead of opening three books.</b> The identity had two product hues and needed five. Each new one avoids the SEMANTIC four: ember, verdigris, steel and copper each mean something on this desk, so a product dot drawn in one would read as a status rather than as a book. The violet and cyan families were retired at v472 and are not used. candy is rose at hue 330, rice indigo at 235, spare olive at 68.",
+   "<b>THEY GO IN THE DESIGN SYSTEM AND NOT IN THE DESK, because the Counter reads them too.</b> <code>tools/stmt-style.mjs</code> generates the statement stylesheet from the <code>:root</code> of <code>design/salt-ds.css</code>, which is vendored from <code>Code/salt-ds</code>, so a hue added to the desk layer alone would never reach a customer and one added to the vendored copy alone would be reverted by the next <code>--pull</code> without a word. The edit is upstream, then pull, then sync, then the statement stylesheet: a hue that is missing there does not error, it resolves to nothing, and the product loses its accent in silence.",
+   "<b>A LOZENGE AND A CAPSULE, AND SPARE KEEPS THE RING ON PURPOSE.</b> A rhombus for candy and a seamed stadium for rice, drawn in the same hairline stroke as the cube and the droplet; the capsule carries its seam for the reason the cube carries its three inner edges, that without it a stadium is a shape and with it it is a thing. Neither is literal and neither is a word, which is the rule this site has kept since v659. <b>spare is given no mark deliberately</b>, so the Ring fallback is exercised by a real book rather than asserted about a hypothetical one.",
+   "<b>AND THE SWITCH STOPS GROWING DOWN THE PAGE.</b> Each button carries a dot, a name and that book at a 150px minimum and the strip wraps, so two books sat on one row and five would have stood THREE rows deep above every per-product page. Below 760px the figure goes and the button shrinks to its content; the figure is on the page underneath either way, so nothing is lost, only moved. It stays wrapped rather than becoming a sideways scroll box, which v466 forbids above the ledger, and the minimum holds at the tap floor because a control must measure 44px in BOTH directions."
+  ]
+ },
+ {
   "v": "v778",
   "d": "22 Sep 2026",
   "t": "A BOOK IS OPENED AND PUT AWAY BY A COMMAND, AND RETIRING ONE THAT TRADED IS REFUSED",

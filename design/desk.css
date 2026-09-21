@@ -212,6 +212,18 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .prodsw button.live{box-shadow:none;border-color:var(--pacc);color:var(--salt-salt);}
 .prodsw button.live .pdot{box-shadow:0 0 7px 0 var(--pacc);}
 .prodsw button .pv{font-weight:400;letter-spacing:0;text-transform:none;}
+/* v779: FIVE BOOKS FIT ON A PHONE. Each button carries a dot, the book's name and that book's
+   headline figure at a 150px minimum, and the strip wraps, so two books sat on one row and five
+   would have stood THREE rows deep above every per-product page. Below 760px the figure goes and
+   the button shrinks to its content: the figure is on the page underneath either way, so nothing
+   is lost, only moved. It stays flex-wrap and is deliberately NOT a sideways scroll box, which
+   v466 forbids above the ledger. min-width holds at the tap floor, because a control must measure
+   44px in BOTH directions and not merely in height. */
+@media(max-width:760px){
+  .prodsw button{min-width:var(--salt-tap);padding-left:10px;padding-right:10px;justify-content:flex-start;}
+  .prodsw button .pnm{flex:0 1 auto;}
+  .prodsw button .pv{display:none;}
+}
 
 .chip{font-size:11px;letter-spacing:.05em;background:var(--salt-glass);border-color:var(--salt-line-faint);color:var(--salt-mist);}
 .chip b{color:var(--salt-salt);font-weight:500;}
