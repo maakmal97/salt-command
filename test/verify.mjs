@@ -18573,6 +18573,85 @@ await (async () => {
     "and the routine's own document says it is retired, when, and what to run if he wants one");
 })();
 
+section("v773: a column's meaning is a hint on its heading, not a second line under it");
+await (async () => {
+  /* HIS INSTRUCTION OF 21 SEP 2026, over a picture of the board with BRONZE half off the screen. Three
+     headings carried a 9px line saying what the column was, and a nine-word line holds a column open at
+     the width of its longest word run however narrow the figures under it are. The line is kept, in
+     full, and shown on the heading itself. */
+  const { openMaster: om73 } = await import("../tools/payload.mjs");
+  const { w: w73 } = await om73();
+  try {
+    const read73 = (p) => JSON.parse(String(w73.eval("(function(){setProdView(" + JSON.stringify(p) + ");switchTab('pricing');"
+      + "var t=document.querySelector('.sec.on table.pxboard');if(!t)return JSON.stringify({err:'no stack table'});"
+      + "var hs=[].map.call(t.rows[0].cells,function(c){var b=c.querySelector('.hb');return {"
+      + "label:(c.firstChild?(c.firstChild.textContent||''):'').trim(),"
+      + "hint:b?b.textContent.trim():null, tab:c.getAttribute('tabindex'), cls:c.className,"
+      + "divs:c.querySelectorAll('div').length, all:c.textContent.trim()};});"
+      + "return JSON.stringify({hs:hs});})()")));
+    /* THE RULES AS THE BROWSER PARSED THEM, not as the file spells them: a declaration a parser
+       drops is the fault this is guarding against, and a regex over the source cannot see it.
+       jsdom resolves no pseudo-class, so the open state is read here too rather than computed. */
+    const rules73 = JSON.parse(String(w73.eval("(function(){var out={};"
+      + "for(var i=0;i<document.styleSheets.length;i++){var ss=document.styleSheets[i];var rs;"
+      + "try{rs=ss.cssRules;}catch(e){continue;}"
+      + "for(var j=0;j<rs.length;j++){var r=rs[j];if(!r.selectorText||r.selectorText.indexOf('.hb')<0)continue;"
+      + "out[r.selectorText]=(out[r.selectorText]||'')+r.style.cssText;}}"
+      + "return JSON.stringify(out);})()")));
+
+    for (const p of ["salt", "oil"]) {
+      const t = read73(p);
+      ok(!t.err, p + ": the stack table is on the page");
+      const hinted = t.hs.filter((c) => c.hint);
+      ok(hinted.length >= 2 && hinted.every((c) => /hs/.test(c.cls) && c.tab === "0"),
+        p + ": the headings that carry a meaning are focusable, so a tap opens what a hover would: "
+        + JSON.stringify(hinted.map((c) => c.label)));
+      ok(t.hs.every((c) => c.divs === 0),
+        p + ": and not one heading carries a second line any more, which is what held the columns open: "
+        + JSON.stringify(t.hs.map((c) => c.divs)));
+      /* THE WORDS ARE KEPT, IN FULL, and they are still IN the cell, so the one reader who cannot hover
+         is read the column's meaning with its name rather than losing it. */
+      ok(hinted.some((c) => c.hint === "break-even, the floor")
+        && hinted.some((c) => /what a stranger pays/.test(c.hint)),
+        p + ": the lines that were under the headings are the hints, word for word: " + JSON.stringify(hinted.map((c) => c.hint)));
+      ok(hinted.every((c) => c.all.startsWith(c.label) && c.all.includes(c.hint)),
+        p + ": and each stays inside its own heading, name first: " + JSON.stringify(hinted[0] && hinted[0].all));
+      /* THE LAST COLUMN'S DROPS LEFT, because the table lives in a scroll box and a bubble reaching past
+         the right edge is clipped or widens the scroll. It is the only column where that can bite. */
+      const last = t.hs[t.hs.length - 1];
+      ok(last.hint && / r\b|\br\b/.test(last.cls),
+        p + ": the last column's hint is anchored to its own right edge: " + JSON.stringify(last.cls));
+      ok(t.hs.slice(0, -1).every((c) => !/\br\b/.test(c.cls)),
+        p + ": and no other column is, because no other column can reach past the table");
+    }
+
+    /* AND IT OPENS ON HOVER, ON FOCUS, AND ON A FOCUS INSIDE IT. jsdom resolves no pseudo-class, so the
+       three doors are read off the rule that opens them; the closed state above is computed. */
+    const closed = rules73[".pxboard th .hb"] || "";
+    ok(/display:\s*none/.test(closed),
+      "the hint is not drawn until it is asked for, in a rule the parser actually took: " + JSON.stringify(closed.slice(0, 60)));
+    ok(/position:\s*absolute/.test(closed) && /z-index:\s*6/.test(closed) && /max-width:\s*190px/.test(closed),
+      "it drops over the figures rather than moving them, above them, and capped so it wraps rather "
+      + "than runs: " + JSON.stringify(closed.slice(0, 120)));
+    const opens = Object.keys(rules73).filter((s) => /display:\s*block/.test(rules73[s]));
+    const doors = opens.join(" ");
+    ok(/:hover/.test(doors) && /:focus\b/.test(doors) && /:focus-within/.test(doors),
+      "and it opens on hover, on FOCUS and on a focus within, which is the whole of what makes a tap "
+      + "work on a phone: " + JSON.stringify(opens));
+    const right = rules73[".pxboard th.hs.r .hb"] || "";
+    ok(/right:\s*0/.test(right) && /left:\s*auto/.test(right),
+      "and the last column's is anchored to its right edge: " + JSON.stringify(right));
+    const css73 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    ok(/\.pxboard th\.hs\{position:relative;cursor:help;text-decoration:underline dotted/.test(css73),
+      "and the heading says it has something to say, with the cursor and a dotted underline");
+    ok(css73.indexOf(".pxboard th.hs") < css73.indexOf("</style>"),
+      "and the rules ship inside the master's own stylesheet, with nothing loaded from anywhere");
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w73.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

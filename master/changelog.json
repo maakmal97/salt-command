@@ -1,5 +1,17 @@
 [
  {
+  "v": "v773",
+  "d": "21 Sep 2026",
+  "t": "A COLUMN'S MEANING IS A HINT ON ITS HEADING, NOT A SECOND LINE UNDER IT",
+  "n": [
+   "<b>HIS INSTRUCTION OF 21 SEP 2026, over a picture of the board with BRONZE half off the screen.</b> Three headings carried a 9px line saying what the column was: <i>break-even, the floor</i>, <i>the floor he may go to</i>, <i>the board, and what a stranger pays</i>. A table lays its columns out by what is in them, and a nine-word line is in the heading whatever the figures under it are worth, so the three widest columns on the board were the three carrying prose.",
+   "<b>THE WORDS ARE KEPT, IN FULL, AND MOVED ONTO THE HEADING.</b> The heading is its name; the meaning opens under it on hover, as a small bubble. It drops OVER the figures rather than moving them, so nothing reflows when it opens.",
+   "<b>HOVER IS NOT ENOUGH ON A PHONE.</b> It opens on FOCUS as well, and the heading is focusable, so a tap opens it and a tap elsewhere closes it; a keyboard reaches it in reading order. The text stays inside the cell rather than in a title attribute, so a screen reader announces the column's meaning with its name and the one reader who cannot hover loses nothing. The heading says it has something to say, with a dotted underline and the help cursor.",
+   "<b>AND THE LAST COLUMN'S DROPS LEFT.</b> The board lives in a sideways scroll box, so a bubble reaching past the right edge would be clipped or would widen the scroll. The last column's is anchored to its own right edge; no other column can reach past the table, so no other one is.",
+   "<b>THE CHECK THAT EARNED ITS KEEP.</b> The rules first landed inside the 560px block, beside the two rules this table already had there, where a laptop would never have read them and the line would have come back as visible text at full width. The section reads them off the stylesheet the PARSER built, not off the file, which is the only reading that can tell a rule that applies from a rule that was written. Twenty assertions over both books: every heading free of a second line, the hinted ones focusable, the words kept verbatim and still inside their cell, the closed state, the three doors that open it, and the last column's anchor."
+  ]
+ },
+ {
   "v": "v772",
   "d": "21 Sep 2026",
   "t": "THE MONTHLY ISSUE IS RETIRED, AND A SEALED ONE IS MADE ONLY WHEN IT IS ASKED FOR",
