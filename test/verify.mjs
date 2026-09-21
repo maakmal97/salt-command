@@ -18659,6 +18659,61 @@ await (async () => {
   }
 })();
 
+section("v778: a book is opened and put away by a command, and retiring one that traded is refused");
+await (async () => {
+  /* Registering a product meant hand-editing the book in six places, so this drives the
+     command end to end on a COPY of the real book and master: add, read the built desk,
+     retire, read it again. The two refusals are the point of the flag rather than trimmings:
+     prodLive() feeds PROD_IDS, which every consolidated total reads, so a retired book that
+     had a past would drop out of those totals with nothing on screen to say so. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const dir = join(REPO, "test", "tmp", "v778-" + Date.now());
+  mkdirSync(dir, { recursive: true });
+  const bk = join(dir, "book.json"), ms = join(dir, "master.html");
+  writeFileSync(bk, readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  writeFileSync(ms, readFileSync(join(REPO, "master", "salt_command.html"), "utf8"));
+  const env = Object.assign({}, process.env, { SALT_BOOK: bk, SALT_MASTER: ms });
+  const run = (args) => spawnSync(process.execPath, [join(REPO, "tools", "product.mjs"), ...args], { env, encoding: "utf8" });
+  const MAPS6 = ["PRODUCTS", "PROD_OPENING", "COUNT_ON", "PRICE_SET", "COST_RULE", "QUOTES"];
+
+  ok(run(["--add", "zz", "--name", "Zed"]).status === 0, "tools/product.mjs --add opens a book");
+  const b1 = JSON.parse(readFileSync(bk, "utf8"));
+  ok(MAPS6.every((k) => b1[k] && "zz" in b1[k]) && b1.PROD_ORDER.includes("zz"),
+    "and writes every per-product map and the order, so none of the six is left to be remembered");
+  ok(b1.PRODUCTS.zz.retired === false && b1.QUOTES.zz === null && b1.PROD_OPENING.zz.stated === null,
+    "opened empty: no quote, no stated count, nothing invented");
+
+  const w1 = (await openMaster(ms)).w;
+  ok(JSON.parse(w1.eval("JSON.stringify(PROD_IDS)")).includes("zz"),
+    "a live book is on PROD_IDS, which is what the eighteen readers show");
+  try { w1.close(); } catch (e) { }
+
+  ok(run(["--retire", "zz"]).status === 0, "--retire puts an empty book away");
+  const w2 = (await openMaster(ms)).w;
+  ok(!JSON.parse(w2.eval("JSON.stringify(PROD_IDS)")).includes("zz"), "a retired book leaves PROD_IDS");
+  ok(JSON.parse(w2.eval("JSON.stringify(Object.keys(PRODUCTS))")).includes("zz"),
+    "and stays in PRODUCTS, so its rows, its opening and its tiers are not lost");
+  ok(w2.eval("setProd('zz'); PROD") !== "zz",
+    "and cannot be scoped to, so no page opens on a book the switch does not offer");
+  try { w2.close(); } catch (e) { }
+
+  const rs = run(["--retire", "salt"]);
+  ok(rs.status !== 0 && /row\(s\) on the book/.test(String(rs.stderr)),
+    "retiring a book that traded is REFUSED: hiding it would drop its revenue from every consolidated total in silence");
+  const rn = run(["--rename", "salt", "sodium"]);
+  ok(rn.status !== 0 && /default/.test(String(rn.stderr)),
+    "and re-keying salt is refused, a row that names no product being salt");
+
+  ok(run(["--rename", "zz", "yy"]).status === 0, "--rename re-keys a book");
+  const b2 = JSON.parse(readFileSync(bk, "utf8"));
+  ok(!MAPS6.some((k) => "zz" in b2[k]) && !b2.PROD_ORDER.includes("zz"),
+    "leaving the old id nowhere in the book");
+  ok(b2.PRODUCTS.yy.id === "yy" && b2.PRODUCTS.yy.accent === "var(--salt-product-yy)",
+    "and carrying the id and the accent with it");
+
+  rmSync(dir, { recursive: true, force: true });
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

@@ -1,5 +1,16 @@
 [
  {
+  "v": "v778",
+  "d": "22 Sep 2026",
+  "t": "A BOOK IS OPENED AND PUT AWAY BY A COMMAND, AND RETIRING ONE THAT TRADED IS REFUSED",
+  "n": [
+   "<b>HIS DECISION OF 22 SEP 2026, asked before the three new books are opened: add a retired flag and a re-key.</b> Registering a product meant hand-editing <code>ledger/book.json</code> in six places, PRODUCTS, PROD_OPENING, COUNT_ON, PRICE_SET, COST_RULE and QUOTES, plus the order, and then remembering to sync. <code>tools/product.mjs</code> does all of it: <code>--add</code>, <code>--rename</code>, <code>--retire</code>, <code>--unretire</code>, <code>--list</code>. A book opens EMPTY, with no quote and no stated count, because nothing has happened on it yet and inventing a figure would be the one thing a ledger must never do.",
+   "<b>RETIRED IS REGISTERED AND NOT SHOWN.</b> <code>prodLive()</code> feeds <code>PROD_IDS</code>, so one flag takes a book off the switch, the Enter form, the tier grid, the ledger's filter and the parity scan, which is every one of the eighteen readers, while its rows, its opening and its tiers stay exactly where they are and the extract still carries it. A device that REMEMBERED a book before it was retired now falls back rather than opening on a book the switch no longer offers.",
+   "<b>AND THAT IS WHY RETIRING A BOOK WITH ROWS IS REFUSED.</b> PROD_IDS is read by the consolidated totals as well, so hiding a book that had a past would quietly take its revenue out of the whole-book figures with nothing on screen to say so. The flag is therefore only ever allowed on a book with nothing on it, which makes the filter safe by construction rather than by care. Retiring a book that traded is a different question, and the tool says so instead of guessing.",
+   "<b>SALT CANNOT BE RE-KEYED, and the reason is the oldest rule in the book.</b> A row that names no product IS salt, on 175 of 188 sales, so re-keying salt would silently re-attribute every row that names nothing. The tool refuses and points at the section of <code>docs/PRODUCTS.md</code> that states the convention. A rename of anything else moves the six map keys, the order, the id, the accent, every row's product field and every customer's tier for that book: proved on a copy of the real book, where renaming oil moved 24 rows and 2 tiers and left the old id nowhere."
+  ]
+ },
+ {
   "v": "v777",
   "d": "22 Sep 2026",
   "t": "THE TOOLS STOP TYPING THE PRODUCT ORDER AND READ IT OFF THE BOOK",
