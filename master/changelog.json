@@ -1,5 +1,14 @@
 [
  {
+  "v": "v757",
+  "d": "21 Sep 2026",
+  "t": "A HAND COUNT OF SALT CUTS THE BOOK BY 3.15 UNIT",
+  "n": [
+   "<b>FOLDED: A SALT COUNT DATED 21 SEP.</b> Eight unit counted by hand against 11.15 on the book, a drift of minus 3.15 unit. The last count was 19 Sep, two days back, so the gap sits in a short window with no moves recorded between. A count wins over the ledger, so the stated inventory is set to 8 and COUNT_ON for salt moves to 21 Sep. No cash and no party attach to this row.",
+   "<b>WHAT IT DID TO THE DESK.</b> The shrinkage books across every unit sold, and the floors lift accordingly: one unit from RM50.39 to RM52.06, two unit from RM100.79 to RM104.13, and 12.5 unit from RM629.93 to RM650.80. The ask holds at RM160 for one unit. Self use cost rises from RM74.55 to RM77.70. At 8 unit the stock sits under the reorder mark of 15, with nothing owed out and nothing promised."
+  ]
+ },
+ {
   "v": "v756",
   "d": "21 Sep 2026",
   "t": "A CORRECTION ON S187: THE 19 SEP SALT SALE MOVES TO R3 AND TO CM4-MK",

@@ -37,9 +37,9 @@
       "stated": 35
     }
   },
-  "STATED_STOCK": 11.15,
+  "STATED_STOCK": 8,
   "COUNT_ON": {
-    "salt": "2026-09-19",
+    "salt": "2026-09-21",
     "oil": "2026-09-19"
   },
   "COUNTS": [
@@ -54,7 +54,8 @@
     {"product":"salt","date":"2026-09-15","qty":0,"was":1.5,"drift":-1.5},
     {"product":"salt","date":"2026-09-16","qty":14.5,"was":14.5,"drift":0,"note":"The +5 drift recorded here was s169's own five unit. v665 drew them for that sale, v669 cancelled the row and left the stated position at 9.5, and this count then found them and booked them as a surplus with no cause. They were never off the shelf, so the stated position was 14.5 and the drift is nought. Corrected 19 Sep 2026; it lifts every salt floor by about a tenth, because the phantom surplus had been netting off real shrinkage."},
     {"product":"salt","date":"2026-09-19","qty":0.9,"was":3.25,"drift":-2.35,"note":"Counted on his word of 19 Sep 2026. The stated position it is measured against is the one standing before this fold's corrections; the drift is what it is and is not explained away."},
-    {"product":"oil","date":"2026-09-19","qty":40,"was":60,"drift":-20,"note":"Counted on his word of 19 Sep 2026: 40 unit of the 18 Sep lot remain. Oil is mostly for his own use, so the leak is high by design and is never costed into a sale."}
+    {"product":"oil","date":"2026-09-19","qty":40,"was":60,"drift":-20,"note":"Counted on his word of 19 Sep 2026: 40 unit of the 18 Sep lot remain. Oil is mostly for his own use, so the leak is high by design and is never costed into a sale."},
+    {"product":"salt","date":"2026-09-21","qty":8,"was":11.15,"drift":-3.15}
   ],
   "purchases": [
     {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -700,7 +701,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-21T01:46:31.619Z",
+  "QUEUE_COMMITTED": "2026-09-21T01:49:41.389Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -730,6 +731,7 @@
       "RETIRED AT v549 on 2026-09-09, his instruction. The key held one hand-typed lot: 50 unit by 2026-08-28, stated on the 24th. He read it on 9 September with the date twelve days gone and four lots landed since (25 unit on 26 Aug, 25 on 31 Aug, 25 on 03 Sep and 50 on 08 Sep), and said he generally has no information on when he purchases. The Sourcing section is now about the CURRENT lot, and the cadence is measured off the book rather than typed. One standing fact from the retired basis is kept here because it is not a plan: the purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. The rest was the 24 Aug reasoning, that the 100 unit tier was the recommendation and he took the 50, at a landed RM45.20 a unit against RM43.60."
     ],
     "STATED_STOCK": [
+      "COUNTED AT v757 on 2026-09-21: the salt inventory held 8 against 11.15 on the roll, a drift of -3.15. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-09-21. <b>SALT COUNT DATED 21 SEP: 8 UNIT ON HAND AGAINST 11.15 ON THE BOOK.</b> Counted by hand on his word, a drift of minus 3.15 unit against a book last counted on 19 Sep. The count wins, so the stated inventory becomes 8 and COUNT_ON for salt moves to 21 Sep. No party, no cash, no delivery. Carried at RM48 a unit, the inventory's own rate, with replacement at RM45.56. Floors move up: RM50.39 to RM52.06 for one unit, RM100.79 to RM104.13 for two, RM629.93 to RM650.80 for 12.5; the ask holds at RM160 and self use goes RM74.55 to RM77.70. Flagged: 3.15 unit unaccounted for, booking as shrinkage across every unit sold. The dossier gives no reason for the gap, so it stays outstanding. Stock of 8 is under the reorder mark of 15.",
       "ROLLED AT v755: 5 unit to CK4-SEN on 2026-09-20, 2.5 unit to CE4-CHE on 2026-09-19, 4 unit to CS6-BS-R on 2026-09-19, so 22.65 less 11.5 is 11.15. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Salt and oil were both last counted on 19 Sep, and the three 19 Sep sales draw against that count. No lot landed in this fold.",
       "ROLLED AT v744: 18.75 unit from SA5-BTR on 2026-09-20, 1 unit to CZ5-TM on 2026-09-19, so 4.9 less 1 plus 18.75 is 22.65. A ROLL AND NOT A COUNT; COUNT_ON is untouched. SA5-BTR's remaining 18.75 unit of p026 landed on 20 Sep, after the salt and oil counts of 19 Sep. The book carries 0.63 unit owed out and 6.38 promised, with the reorder mark at 15.",
       "ROLLED AT v739: 5 unit to CS6-BS-R on 2026-09-19, so 9.9 less 5 is 4.9. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The handover of order 20260919121050-zhim2a was folded at v735 as the Correction v694 routes it through, which moved the goods on s183 and nothing off the stated figure, while v736's fulfilment to CJ4-BJ the same day did roll. From v739 a correction that restates what moved rolls the shelf by the difference. The 5 unit came off the 37.5-unit lot landed on 19 Sep, after that day's count, so the count does not already hold them.",

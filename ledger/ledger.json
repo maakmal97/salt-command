@@ -1,6 +1,6 @@
 {
- "v": "v756",
- "stamped": "21 Sep 2026, 09:50 KL",
+ "v": "v757",
+ "stamped": "21 Sep 2026, 09:51 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,9 +41,9 @@
     "stated": 35
    }
   },
-  "STATED_STOCK": 11.15,
+  "STATED_STOCK": 8,
   "COUNT_ON": {
-   "salt": "2026-09-19",
+   "salt": "2026-09-21",
    "oil": "2026-09-19"
   },
   "COUNTS": [
@@ -134,6 +134,13 @@
     "was": 60,
     "drift": -20,
     "note": "Counted on his word of 19 Sep 2026: 40 unit of the 18 Sep lot remain. Oil is mostly for his own use, so the leak is high by design and is never costed into a sale."
+   },
+   {
+    "product": "salt",
+    "date": "2026-09-21",
+    "qty": 8,
+    "was": 11.15,
+    "drift": -3.15
    }
   ],
   "purchases": [
@@ -5323,9 +5330,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-21T01:46:31.619Z",
+  "QUEUE_COMMITTED": "2026-09-21T01:49:41.389Z",
   "PRICING": {
-   "takenAt": "2026-09-21T01:50:12.753Z",
+   "takenAt": "2026-09-21T01:51:41.630Z",
    "sizes": [
     0.5,
     1,
@@ -6297,40 +6304,40 @@
      "replCost": 45.56,
      "floors": {
       "1": {
-       "floor": 50.39
+       "floor": 52.06
       },
       "2": {
-       "floor": 100.79
+       "floor": 104.13
       },
       "3": {
-       "floor": 151.18
+       "floor": 156.19
       },
       "4": {
-       "floor": 201.58
+       "floor": 208.26
       },
       "5": {
-       "floor": 251.97
+       "floor": 260.32
       },
       "0.5": {
-       "floor": 25.2
+       "floor": 26.03
       },
       "1.5": {
-       "floor": 75.59
+       "floor": 78.1
       },
       "2.5": {
-       "floor": 125.99
+       "floor": 130.16
       },
       "3.5": {
-       "floor": 176.38
+       "floor": 182.22
       },
       "4.5": {
-       "floor": 226.77
+       "floor": 234.29
       },
       "6.25": {
-       "floor": 314.97
+       "floor": 325.4
       },
       "12.5": {
-       "floor": 629.93
+       "floor": 650.8
       }
      },
      "inputs": {
@@ -6405,12 +6412,12 @@
        "repl": 45.56,
        "freightRate": 1.0756,
        "leak": {
-        "ratio": 0.0806,
-        "leak": 3.85,
-        "sold": 47.75,
+        "ratio": 0.1164,
+        "leak": 5.5,
+        "sold": 47.25,
         "cycles": 3,
-        "from": "2026-09-14",
-        "to": "2026-09-19"
+        "from": "2026-09-15",
+        "to": "2026-09-21"
        },
        "costRule": {
         "kind": "stack",
@@ -6428,7 +6435,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.07201443898526019,
+       "shrinkRate": 0.07833149503659882,
        "avgDel": {
         "n": 161,
         "kg": 412.95,
@@ -6596,7 +6603,7 @@
       {
        "q": 2.5,
        "prices": [
-        130,
+        140,
         220,
         250,
         290,
@@ -6620,7 +6627,7 @@
       {
        "q": 3.5,
        "prices": [
-        180,
+        190,
         280,
         320,
         370,
@@ -6644,7 +6651,7 @@
       {
        "q": 4.5,
        "prices": [
-        230,
+        240,
         340,
         390,
         440,
@@ -6656,7 +6663,7 @@
       {
        "q": 5,
        "prices": [
-        260,
+        270,
         370,
         410,
         460,
@@ -6668,7 +6675,7 @@
       {
        "q": 6.25,
        "prices": [
-        320,
+        330,
         440,
         500,
         550,
@@ -6680,7 +6687,7 @@
       {
        "q": 12.5,
        "prices": [
-        630,
+        660,
         850,
         950,
         1050,
@@ -6942,10 +6949,10 @@
      ]
     }
    },
-   "v": "v756"
+   "v": "v757"
   },
   "OPEN": {
-   "at": "2026-09-21T01:50:12.894Z",
+   "at": "2026-09-21T01:51:41.790Z",
    "count": 6,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
@@ -7049,10 +7056,10 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 11.15,
-     "free": 11.15,
+     "onHand": 8,
+     "free": 8,
      "owedOut": 0,
-     "coverDays": 1.7,
+     "coverDays": 1.2,
      "rate": 6.7,
      "owedToYou": 340,
      "promised": 0,
@@ -7071,10 +7078,10 @@
     }
    },
    "countedOn": {
-    "salt": "2026-09-19",
+    "salt": "2026-09-21",
     "oil": "2026-09-19"
    },
-   "v": "v756"
+   "v": "v757"
   }
  }
 }
