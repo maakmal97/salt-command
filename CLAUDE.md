@@ -284,9 +284,15 @@ untouched.
 - `ci.yml` on push: book in date order, master version in the changelog, tests pass, `public/`
   matches the master by id. `ship-check.yml` daily: repo id against live `/rev`.
 - **`node tools/update.mjs`** drains (a pull only, `drain.mjs --keep`, so a laptop update never
-  races the cloud drafter), reports both queues, builds, tests, deploys only on an id change,
+  races the cloud drafter), reports both queues, sweeps for an ID with no account (v767), builds,
+  tests, deploys only on an id change,
   commits, pushes, then proves master, `rev.json`, live `/rev` and origin agree; non-zero on any
-  failure. `--dry`, `--no-push`, `--no-deploy`, `--no-drain`, `-m`. It never folds. Its mirror
+  failure. **A TREE BEHIND ORIGIN STOPS THE RUN DEAD** (v770, 21 Sep 2026): the preflight has asked
+  since 10 Sep and called `fail()`, which records a problem, prints it and RETURNS, so a checkout on
+  the previous morning's v733 built, DEPLOYED over v768 on his phone and committed a version master
+  already carried before stopping at the push. The verdict is `aheadVerdict` in `tools/preflight.mjs`,
+  where the suite can drive it, and the chain exits on it; the line is **touches nothing**, not
+  **does not push**, because `--no-push` still deploys and the deploy is the half that reaches him. `--dry`, `--no-push`, `--no-deploy`, `--no-drain`, `-m`. It never folds. Its mirror
   check reads the D1 snapshot through wrangler's own login, so no key is needed. The replay
   check refuses to ship while an entry above `QUEUE_COMMITTED` matches a ledger row by date and
   total; `--force-ship` after reading the rows.
@@ -516,8 +522,19 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   margin figure and travels only as a share of one, and a departure is a yes or no, never his note.
 - **NOTHING A CUSTOMER SEES IS BOUND TO A MONTH** (v690, his instruction of 18 Sep 2026): the
   statement carries every order from the start and the page filters it. Each dated row carries its
-  month, the strip is built from the months that account has, the newest opens, and All is one tap.
+  month, the strip is built from the months that account has, and All is one tap.
   The account's position does not move with the filter, and the line under the strip says so.
+  **THERE IS NO MONTHLY STATEMENT, JUST ONE LIVE DOCUMENT** (v769, his instruction of 21 Sep 2026,
+  reading the message he was about to send), so **the page OPENS on the whole account**: v690 opened
+  on the newest month, which hid the rest of somebody's own account behind a tap they had no reason
+  to take. A month is still one tap. **The words that hand the account over say the same**
+  (`stmt/send.js`): "Your account is ready to use", the three things it is for (the statement, which
+  keeps up with the orders; the latest prices; a form to place an order), and **a question goes ON AN
+  ORDER**, because that is where the thread lives (v751) and there is no other channel to promise;
+  then the home screen steps for both phones and the door's two switches, in the door's own words.
+  Neither message takes a month any more, so no caller can put one back. **Issues already sealed and
+  sent are untouched** and still open on the page: a dated record is not corrected in place. The
+  monthly ROUTINE still exists (`docs/STATEMENTS.md`); retiring it is his word and has not been given.
 - **THE TEST ACCOUNT** (v689, his instruction of 18 Sep 2026): username `0000-0000`, password
   `0000-0000-0000-0000`, made and unmade from the master page with one tap. Zeros are not in the
   username alphabet, so it can collide with nothing; the Worker mints it with its own key, so no
@@ -573,6 +590,7 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
 | `stmt/signin.js` | The one-time link: the token is hashed at rest and the wrap is opened only by the token; the two limits it cannot promise away are stated in its header |
 | `tools/stmt-seal.mjs` | Laptop only: seals an issue's passwords under the master, proving each against its own verifier; where a code was re-keyed after the issue it pairs by PROOF, trying only passwords whose code has left the roster (v705) |
 | `tools/stmt-account.mjs` | Laptop only: mints a full account for a roster code that has a username and no record, which the fold never did (v707). Refuses without a master that unwraps an existing record, never touches an account that exists, and skips a bucket and a supplier. The publish names who is stuck on every run |
+| `tools/preflight.mjs` | Whether a run may ship at all: `aheadVerdict` says level, warn or STOP, and update.mjs exits on it. It lives outside update.mjs for the reason commitmsg.mjs does, that a file running its chain on import cannot be driven by the suite (v770) |
 | `tools/rid.mjs` | Stable `rid` per ledger row; `nextRid` is the one minting place |
 | `tools/changelog.mjs` | Prepends `evolution[0]` to `master/changelog.json`; never rewrites |
 | `test/verify.mjs` | ~2,880 assertions over 209 sections, no network or browser; add one per behavioural change, and **prove it red by mutation before trusting its green** |
