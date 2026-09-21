@@ -1,6 +1,6 @@
 {
- "v": "v774",
- "stamped": "21 Sep 2026, 17:04 KL",
+ "v": "v775",
+ "stamped": "21 Sep 2026, 19:27 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 35
    }
   },
-  "STATED_STOCK": 7,
+  "STATED_STOCK": 6,
   "COUNT_ON": {
    "salt": "2026-09-21",
    "oil": "2026-09-19"
@@ -4775,6 +4775,22 @@
     "paidOn": "2026-09-21",
     "note": "<b>SALT SELL DATED 21 SEP: 1 UNIT TO CS6-BS FOR RM90, COLLECTED, PAID AND DELIVERED.</b> RM90 of goods, no delivery or freight, RM90 cash in on 21 Sep and 1 unit handed over the same day, so the row closes on collection and leaves nothing outstanding. At RM90 a unit it clears the RM52.06 floor for 1 unit and sits under the RM160 ask. Costed at RM48 a unit, the inventory's own rate, RM42 on the goods at 46.7%. Flagged: RM90 is 15.9% under the RM107 a unit CS6-BS typically pays across 19 orders; and RM48 is a blend of lot rates, unanswered here. CS6-BS: 12 orders, median RM95, range RM11 to RM126.67, nothing outstanding, 1 unit on credit against a cap of 2.",
     "rid": "s188"
+   },
+   {
+    "customer": "CS6-BS",
+    "qty": 1,
+    "total": 48,
+    "cost": 48,
+    "cash": 0,
+    "settledRM": 48,
+    "rebate": true,
+    "rebateKg": 1,
+    "goodwill": true,
+    "deliveredQty": 1,
+    "deliveredOn": "2026-09-21",
+    "date": "2026-09-21",
+    "note": "<b>SALT REDEEMED FREE BY CS6-BS, 1 UNIT, RM48 SETTLED BY THE REWARD ON 21 SEP.</b> No cash in, RM48 settled by the reward and 1 unit delivered on 21 Sep, so the row closes on arrival and leaves nothing outstanding. Rebate and goodwill both stand, so on his ruling of 11 Sep 2026 it is booked out of revenue and its RM48 is an expense, at RM48 a unit, the inventory's own rate. No rate is set against the RM51.95 floor or RM160 ask for 1 unit. Flagged: 6 earned against 5 applied leaves 1 unit, the desk's word, unanswered here. CS6-BS: 13 orders, median RM95, range RM11 to RM126.67, nothing outstanding, 1 unit on credit against a cap of 2.",
+    "rid": "s189"
    }
   ],
   "contacts": [
@@ -5344,9 +5360,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-21T07:49:25.775Z",
+  "QUEUE_COMMITTED": "2026-09-21T11:26:12.174Z",
   "PRICING": {
-   "takenAt": "2026-09-21T09:04:46.067Z",
+   "takenAt": "2026-09-21T11:27:10.903Z",
    "sizes": [
     0.5,
     1,
@@ -6318,40 +6334,40 @@
      "replCost": 45.56,
      "floors": {
       "1": {
-       "floor": 51.95
+       "floor": 51.84
       },
       "2": {
-       "floor": 103.9
+       "floor": 103.69
       },
       "3": {
-       "floor": 155.86
+       "floor": 155.53
       },
       "4": {
-       "floor": 207.81
+       "floor": 207.38
       },
       "5": {
-       "floor": 259.76
+       "floor": 259.22
       },
       "0.5": {
-       "floor": 25.98
+       "floor": 25.92
       },
       "1.5": {
-       "floor": 77.93
+       "floor": 77.77
       },
       "2.5": {
-       "floor": 129.88
+       "floor": 129.61
       },
       "3.5": {
-       "floor": 181.83
+       "floor": 181.46
       },
       "4.5": {
-       "floor": 233.78
+       "floor": 233.3
       },
       "6.25": {
-       "floor": 324.7
+       "floor": 324.03
       },
       "12.5": {
-       "floor": 649.4
+       "floor": 648.06
       }
      },
      "inputs": {
@@ -6426,9 +6442,9 @@
        "repl": 45.56,
        "freightRate": 1.0756,
        "leak": {
-        "ratio": 0.114,
+        "ratio": 0.1117,
         "leak": 5.5,
-        "sold": 48.25,
+        "sold": 49.25,
         "cycles": 3,
         "from": "2026-09-15",
         "to": "2026-09-21"
@@ -6451,9 +6467,9 @@
        "attrib": 1,
        "shrinkRate": 0.07833149503659882,
        "avgDel": {
-        "n": 162,
-        "kg": 413.95,
-        "mean": 2.5552
+        "n": 163,
+        "kg": 414.95,
+        "mean": 2.5457
        }
       },
       "policy": {
@@ -6963,10 +6979,10 @@
      ]
     }
    },
-   "v": "v774"
+   "v": "v775"
   },
   "OPEN": {
-   "at": "2026-09-21T09:04:46.285Z",
+   "at": "2026-09-21T11:27:11.123Z",
    "count": 6,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
@@ -7070,10 +7086,10 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 7,
-     "free": 7,
+     "onHand": 6,
+     "free": 6,
      "owedOut": 0,
-     "coverDays": 1,
+     "coverDays": 0.9,
      "rate": 6.77,
      "owedToYou": 340,
      "promised": 0,
@@ -7095,7 +7111,7 @@
     "salt": "2026-09-21",
     "oil": "2026-09-19"
    },
-   "v": "v774"
+   "v": "v775"
   }
  }
 }
