@@ -1,5 +1,16 @@
 [
  {
+  "v": "v761",
+  "d": "21 Sep 2026",
+  "t": "A NOTICE REACHES EVERY PHONE THAT ASKED, AND THE BANNER IT DRAWS IS THE NOTICE'S OWN WORDS",
+  "n": [
+   "<b>HIS INSTRUCTION OF 21 SEP 2026, beside the three wakes on his own phone: the notice for the customer side as well.</b> Since v732 it was written to the store, drawn on the door at first paint and picked up by an open page's poll, so anybody who had shut the page found out whenever they next opened one. A notice that says the shop is closed on Friday is worth nothing on Saturday.",
+   "<b>EVERY PHONE ON THE SITE, WHICH IS WHO A NOTICE IS FOR.</b> The reader that lists one customer's subscriptions now takes no customer and lists them all, and both roads share one send, so a notice and an order update cannot drift apart in how they are signed or in how a dead subscription is cleared. <b>Its own collapsing topic</b>, so a notice does not replace an order's banner on the lock screen and neither replaces the other. <b>Clearing a notice wakes nobody</b>: there is nothing to read.",
+   "<b>AND THE BANNER SAYS WHAT THE NOTICE SAYS.</b> A push carries no payload, so the wake itself cannot say which kind it is. The notice is the one thing this service worker may read, because the notice is PUBLIC: the door draws it before anybody signs in and the page polls it unsigned-in. It carries its own moment, and one set inside the last two minutes is what this wake is about. Being wrong costs a customer the notice's first line instead of a line about an order that is on their page anyway; being right means the notice actually arrives. Nothing about a statement is read, held or cached, which was the whole of this script's posture and still is.",
+   "<b>THE CHECKS.</b> Eleven assertions: one customer's own wake still reaching their phones and nobody else's, a notice reaching all three and clearing the one the service has given up on, the two topics, setting waking them and saying how many, clearing waking nobody, and the banner over a fresh notice, a one-line notice, an old one, no notice and a site that will not answer. Seven mutations, each red. The script still carries no lone backslash and no backtick, being shipped inside a template literal."
+  ]
+ },
+ {
   "v": "v760",
   "d": "21 Sep 2026",
   "t": "A CUSTOMER PAYING OR TAKING AN ORDER BACK WAKES HIM, AND THE BANNER SAYS WHICH",

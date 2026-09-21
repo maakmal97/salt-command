@@ -50,11 +50,13 @@ export async function endpointId(endpoint) {
   return [...new Uint8Array(h)].slice(0, 12).map((x) => x.toString(16).padStart(2, "0")).join("");
 }
 
+/* v761: `u` is optional. With one, this customer's phones; without, EVERY phone on the site, which
+   is what a notice to everybody needs. The prefix is the whole of the difference. */
 export async function listSubs(env, u) {
   const out = [];
   let cursor;
   do {
-    const page = await env.STMT.list({ prefix: "push:" + u + ":", cursor });
+    const page = await env.STMT.list({ prefix: u ? "push:" + u + ":" : "push:", cursor });
     for (const k of page.keys) {
       const v = await env.STMT.get(k.name);
       if (!v) continue;
@@ -66,7 +68,12 @@ export async function listSubs(env, u) {
 }
 
 /** Wake every phone one customer has subscribed. Never throws: a banner is not worth an error path. */
-export async function wakeCustomer(env, u) {
+export async function wakeCustomer(env, u) { return wake(env, u, "salt-order"); }
+/* v761: AND EVERY PHONE ON THE SITE, for a notice that is for everybody. Same send, same clearing
+   of a subscription the service has given up on, a different collapsing topic so a notice does not
+   replace an order's banner on the lock screen and neither replaces the other. */
+export async function wakeEveryone(env) { return wake(env, null, "salt-notice"); }
+async function wake(env, u, topic) {
   try {
     const key = await signingKey(env);
     const pub = env.STMT_VAPID_PUBLIC_KEY;
@@ -86,7 +93,7 @@ export async function wakeCustomer(env, u) {
           headers: {
             TTL: "3600",
             Urgency: "high",
-            Topic: "salt-order",
+            Topic: topic,
             Authorization: `vapid t=${tokens.get(origin)}, k=${pub}`,
             "Content-Length": "0",
           },

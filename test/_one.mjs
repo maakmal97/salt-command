@@ -99,106 +99,92 @@ const postQ = (body, extraHeaders = {}) => req("/queue", {
 });
 
 /* ---- 1. Worker: the queue contract --------------------------------------------- */
-section("v760: a customer paying or taking an order back wakes him, and the banner says which");
+section("v761: a notice reaches every phone that asked, and the banner it draws is the notice's own words");
 await (async () => {
-  /* MEASURED 21 SEP 2026: the site has written the moment of every change since v694, the desk asked
-     the site for it every minute, and the nudge read the placement and the message and threw the rest
-     away. So somebody settling RM435 at midnight, or taking an order back, woke nobody at all and sat
-     there until he next opened the desk. HIS OWN MOVES WRITE `last-touched` TOO, which is why waking
-     on that mark was never the answer: the reconcile has to list after a handover, so his tap moves it. */
-  const { placeOrder, customerMove, deskMove, LAST_THEIRS, LAST_TOUCHED } = await import("../stmt/orders.js");
-  const { nudgeOrders } = await import("../src/orders.js");
-  const stmtW6 = (await import("../stmt/worker.js")).default;
-  const deskW6 = (await import("../src/worker.js")).default;
-  const kp6 = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
-  const skv6 = new KV(), dkv6 = new KV();
-  const senv6 = { STMT: skv6, STMT_DESK_KEY: "desk-key" };
-  const denv6 = { SALT_QUEUE: dkv6, STMT_DESK_KEY: "desk-key", VAPID_PUBLIC_KEY: "pub", VAPID_SUBJECT: "mailto:a@b.test",
-    VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kp6.privateKey)),
-    STMT_SITE: { fetch: (url, init) => stmtW6.fetch(new Request(url, init), senv6) } };
-  await dkv6.put("push:his", JSON.stringify({ endpoint: "https://push.example/his-phone", topics: ["orders", "approve", "salt"] }));
+  /* HIS INSTRUCTION OF 21 SEP 2026, beside the three wakes on his own phone: the bulletin for the
+     customer side as well. It was written to the store and drawn on the door and by an open page's
+     poll, so somebody who had shut the page learned of it whenever they next opened one. */
+  const stmtW1 = (await import("../stmt/worker.js")).default;
+  const { wakeCustomer, wakeEveryone } = await import("../stmt/push.js");
+  const { SW_JS } = await import("../stmt/sw.js");
+  const kpS = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const skv1 = new KV();
+  const senv1 = { STMT: skv1, STMT_DESK_KEY: "desk-key", STMT_VAPID_PUBLIC_KEY: "pub", STMT_VAPID_SUBJECT: "mailto:a@b.test",
+    STMT_VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kpS.privateKey)) };
+  await skv1.put("push:abcd-efgh:one", JSON.stringify({ endpoint: "https://push.example/her-phone" }));
+  await skv1.put("push:abcd-efgh:two", JSON.stringify({ endpoint: "https://push.example/her-tablet" }));
+  await skv1.put("push:wxyz-1234:one", JSON.stringify({ endpoint: "https://push.example/his-friend" }));
+  await skv1.put("push:wxyz-1234:gone", JSON.stringify({ endpoint: "https://push.example/a-dead-one" }));
 
-  const u6 = "abcd-efgh";
-  const place6 = async () => (await placeOrder(senv6, u6, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
-  const nudge = async () => {
+  const fired = async (fn) => {
     const realF = globalThis.fetch, hit = [];
-    globalThis.fetch = async (uu) => { hit.push(String(uu)); return new Response("", { status: 201 }); };
-    let r; try { r = await nudgeOrders(denv6); } finally { globalThis.fetch = realF; }
+    globalThis.fetch = async (u, init) => { hit.push({ u: String(u), topic: init && init.headers && init.headers.Topic });
+      return new Response("", { status: String(u).endsWith("a-dead-one") ? 410 : 201 }); };
+    let r; try { r = await fn(); } finally { globalThis.fetch = realF; }
     return { r, hit };
   };
+  const one = await fired(() => wakeCustomer(senv1, "abcd-efgh"));
+  ok(one.r.sent === 2 && one.hit.every((h) => h.topic === "salt-order")
+    && one.hit.map((h) => h.u.split("/").pop()).sort().join() === "her-phone,her-tablet",
+    "one customer's own wake still reaches their phones and nobody else's: " + JSON.stringify(one.hit.map((h) => h.u)));
 
-  const o6 = await place6();
-  await nudge();   /* the placement's own wake, taken out of the way */
-  await deskMove(senv6, u6, o6.id, { status: "acknowledged", mode: "collect" });
-  const afterHis = await skv6.get(LAST_THEIRS);
-  ok(afterHis === null || afterHis === undefined,
-    "his own acknowledgement writes nothing on the customers' mark, though it moves the shared one: "
-    + JSON.stringify({ theirs: afterHis, touched: !!(await skv6.get(LAST_TOUCHED)) }));
-  const quiet = await nudge();
-  ok(quiet.hit.length === 0, "and it wakes him for his own tap not at all: " + JSON.stringify(quiet.hit));
+  const all = await fired(() => wakeEveryone(senv1));
+  ok(all.r.sent === 3 && all.r.gone === 1,
+    "a notice reaches every phone on the site, and one the service has given up on is cleared: " + JSON.stringify(all.r));
+  ok(all.hit.every((h) => h.topic === "salt-notice"),
+    "under its own collapsing topic, so a notice does not replace an order's banner or the other way about: "
+    + JSON.stringify(all.hit.map((h) => h.topic)));
+  ok((await skv1.get("push:wxyz-1234:gone")) === null && (await skv1.get("push:wxyz-1234:one")) !== null,
+    "and the dead subscription is the only one dropped");
 
-  await customerMove(senv6, u6, o6.id, "method", { method: "cod" });
-  const afterRail = await skv6.get(LAST_THEIRS);
-  ok(afterRail === null || afterRail === undefined,
-    "choosing how to pay is not news either: " + JSON.stringify(afterRail));
+  /* ---- SETTING ONE WAKES THEM; CLEARING ONE DOES NOT ---- */
+  const D1 = { "X-Stmt-Desk": "desk-key" };
+  const post1 = (body) => stmtW1.fetch(new Request("https://site.test/desk/bulletin", { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, D1), body: JSON.stringify(body) }), senv1);
+  const set1 = await fired(() => post1({ lines: ["Closed Friday", "Back Monday"], mode: "change" }));
+  const setJ = await set1.r.json();
+  ok(setJ.ok && setJ.push && setJ.push.sent === 3 && set1.hit.length === 3,
+    "setting a notice wakes every phone, and says how many it reached: " + JSON.stringify(setJ.push));
+  const clear1 = await fired(() => post1({ lines: [] }));
+  const clrJ = await clear1.r.json();
+  ok(clrJ.cleared && clear1.hit.length === 0,
+    "and clearing one wakes nobody, because there is nothing to read: " + JSON.stringify(clear1.hit));
 
-  await customerMove(senv6, u6, o6.id, "pay", { amount: 100, method: "cod" });
-  const mark6 = await skv6.get(LAST_THEIRS);
-  ok(/^\d{4}-\d\d-\d\dT.+\|pay$/.test(String(mark6)),
-    "a payment writes the moment AND the word, the moment first so it still compares as a string: " + mark6);
-  const lastR = await stmtW6.fetch(new Request("https://k7m3p2.example/desk/orders/last", { headers: { "X-Stmt-Desk": "desk-key" } }), senv6);
-  const lastJ = await lastR.json();
-  ok(lastJ.theirs === mark6 && (await stmtW6.fetch(new Request("https://k7m3p2.example/desk/orders/last"), senv6)).status === 401,
-    "the desk reads it in the same one call it already made, and only on the desk key: " + JSON.stringify(lastJ.theirs));
-
-  const paid6 = await nudge();
-  ok(paid6.hit.length === 1 && paid6.hit[0] === "https://push.example/his-phone" && paid6.r.did === "A customer has paid",
-    "and that wakes him, which nothing did before: " + JSON.stringify({ hit: paid6.hit, did: paid6.r.did }));
-  const again6 = await nudge();
-  ok(again6.hit.length === 0, "the same payment does not wake him every minute after: " + JSON.stringify(again6.hit));
-
-  /* ---- THE THREE MARKS DO NOT BURY EACH OTHER ---- */
-  const o7 = await place6();
-  await customerMove(senv6, u6, o7.id, "cancel", {});
-  const both = await nudge();
-  ok(both.r.newest && both.r.did === "A customer has withdrawn an order" && both.hit.length === 1,
-    "a placement and a withdrawal inside one minute are both seen, and are one wake: " + JSON.stringify({ newest: !!both.r.newest, did: both.r.did }));
-  ok((await dkv6.get("orders:theirs")) && (await dkv6.get("orders:nudged")),
-    "each keeps its own mark, so the newer of them cannot make the other look old");
-
-  /* ---- THE BANNER IS WRITTEN FROM THE SUMMARY, so the summary carries it while it is fresh ---- */
-  const news = await dkv6.get("orders:news", "json");
-  ok(news && news.what === "A customer has withdrawn an order", "the desk remembers what to say: " + JSON.stringify(news));
-  const d1S6 = { prepare: (q) => { const first = async () => (/COUNT_ON/.test(q) ? { doc: JSON.stringify({ salt: "2026-09-21", oil: "2026-09-21" }) } : (/COUNT\(\*\)/.test(q) ? { n: 0 } : null));
-    const all = async () => ({ results: [] }); return { bind: () => ({ all, first, run: async () => ({}) }), all, first, run: async () => ({}) }; } };
-  const summ6 = async () => (await (await deskW6.fetch(new Request("https://salt-command.example/push/summary"),
-    Object.assign({ SALT_LEDGER: d1S6, REQUIRE_ACCESS: "0" }, denv6))).json());
-  const fresh = await summ6();
-  ok(fresh.news === "A customer has withdrawn an order", "the summary carries it: " + JSON.stringify(fresh.news));
-  await dkv6.put("orders:news", JSON.stringify({ what: "A customer has paid", at: "2026-09-21T00:00:00.000Z" }));
-  ok((await summ6()).news === undefined,
-    "and drops it once it is stale, because a banner about a payment made this morning is a lie by lunchtime");
-
-  const vm6 = await import("node:vm");
-  const swSrc6 = readFileSync(join(REPO, "public", "sw.js"), "utf8");
-  const wake6 = async (s) => {
-    const L = {}, shown = [];
-    const ctx = { URL, console, caches: {},
-      self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" },
-        registration: { scope: "https://salt-command.example/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
-      clients: { matchAll: async () => [], openWindow: async () => {} },
-      fetch: async () => ({ ok: true, json: async () => s }) };
-    vm6.createContext(ctx); vm6.runInContext(swSrc6, ctx);
-    const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits);
-    return shown[0];
+  /* ---- THE BANNER THE CUSTOMER'S SERVICE WORKER DRAWS, from the script as it ships ---- */
+  const vm1 = await import("node:vm");
+  const runSw1 = (bulletin, status) => {
+    const L = {}, shown = [], asked = [];
+    const ctx = { URL, Date, console,
+      fetch: async (u) => { asked.push(String(u)); return { ok: status !== 404, json: async () => bulletin }; },
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { href: "https://site.test/sw.js?u=abcd-efgh" },
+        registration: { scope: "https://site.test/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
+      clients: { matchAll: async () => [], openWindow: async () => {} } };
+    vm1.createContext(ctx); vm1.runInContext(SW_JS, ctx);
+    return { L, shown, asked };
   };
-  const bNews = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, news: "A customer has paid" });
-  const bPlain = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2 });
-  ok(bNews && bNews.t === "A customer has paid" && /2 orders waiting on you/.test(bNews.opt.body)
-    && /1 row waiting for approval/.test(bNews.opt.body) && bNews.opt.data.url === "./desk#orders",
-    "the banner leads with what they just did, and still carries what is waiting: " + JSON.stringify(bNews && bNews.opt.body));
-  ok(bPlain && bPlain.t === "2 customer orders waiting",
-    "and with no news it is the count, as it was: " + (bPlain && bPlain.t));
+  const wake1 = async (bulletin, status) => {
+    const sw = runSw1(bulletin, status), waits = [];
+    sw.L.push({ waitUntil: (pr) => waits.push(pr) });
+    await Promise.all(waits);
+    return { shown: sw.shown[0], asked: sw.asked };
+  };
+  const fresh1 = await wake1({ ok: true, lines: ["Closed Friday", "Back Monday"], mode: "change", at: new Date().toISOString() });
+  ok(fresh1.shown && fresh1.shown.t === "Closed Friday" && fresh1.shown.opt.body === "Back Monday"
+    && fresh1.shown.opt.data.url === "./?u=abcd-efgh",
+    "a notice set a moment ago is what the wake says, in its own words, and a tap still opens their page: " + JSON.stringify(fresh1.shown));
+  const oneLine = await wake1({ ok: true, lines: ["Closed Friday"], mode: "run", at: new Date().toISOString() });
+  ok(oneLine.shown && oneLine.shown.t === "Closed Friday" && /Open the page/.test(oneLine.shown.opt.body),
+    "a notice of one line says so and stops: " + JSON.stringify(oneLine.shown));
+  const stale1 = await wake1({ ok: true, lines: ["Closed Friday"], mode: "run", at: "2026-09-01T00:00:00.000Z" });
+  const none1 = await wake1({ ok: true, lines: [], mode: "run", at: null });
+  const down1 = await wake1(null, 404);
+  ok(stale1.shown.t === "Your order" && none1.shown.t === "Your order" && down1.shown.t === "Your order",
+    "an old notice, no notice and a site that will not answer all leave the order's own banner as it was: "
+    + JSON.stringify([stale1.shown.t, none1.shown.t, down1.shown.t]));
+  ok(fresh1.asked.length === 1 && /bulletin/.test(fresh1.asked[0]),
+    "and the one thing the service worker reads is the notice, which is public: " + JSON.stringify(fresh1.asked));
+  ok(!/\\\\/.test(SW_JS) && SW_JS.indexOf("`") < 0,
+    "the script still carries no lone backslash and no backtick, being shipped inside a template literal");
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

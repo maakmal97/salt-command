@@ -44,7 +44,7 @@ import { identity } from "./access.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, MAX_PER_ASSOC } from "./refs.js";
 import { SIGNIN_RE, mintSignin, burnSignin } from "./signin.js";
-import { endpointId, wakeCustomer } from "./push.js";
+import { endpointId, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
 import { mintSession, dropSession, sessionUser, ordersOf, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, toChase, CHASE_KEY, hourOf } from "./orders.js";
@@ -461,7 +461,11 @@ async function handleDesk(request, env, p, m) {
     if (!b.lines.length) { await env.STMT.delete(BULL_KEY); return json({ ok: true, lines: [], mode: b.mode, at: null, cleared: true }); }
     const rec = { lines: b.lines, mode: b.mode, at: new Date().toISOString() };
     await env.STMT.put(BULL_KEY, JSON.stringify(rec));
-    return json(Object.assign({ ok: true }, rec));
+    /* v761, his instruction of 21 Sep 2026: the notice reaches them as well, and not only on the
+       next time they happen to open the page. Every phone on the site, because that is who a notice
+       is for. Clearing one wakes nobody: there is nothing to read. */
+    const push = await wakeEveryone(env);
+    return json(Object.assign({ ok: true }, rec, { push }));
   }
   if (p === "/desk/orders") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
