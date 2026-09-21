@@ -6,7 +6,7 @@
  * No network, no browser: `npm test` runs it in a couple of seconds.
  */
 import { execFileSync, spawnSync } from "node:child_process";
-import { DATA_DIR, PROJECT_DIR } from "../tools/book.mjs";
+import { DATA_DIR, PROJECT_DIR, prodOrder } from "../tools/book.mjs";
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
@@ -314,8 +314,15 @@ await (async () => {
      "and d1.mjs reads the same one");
 
   /* SALT LEADS, wherever the two products appear apart. Standing instruction of 11 Aug,
-     restated 13 Aug. It holds today; this is what stops it quietly ceasing to. */
-  ok(/PROD_ORDER = \["salt", "oil"\]/.test(book), "the tools agree salt leads oil");
+     restated 13 Aug. It holds today; this is what stops it quietly ceasing to.
+     v777: THE TOOLS NO LONGER TYPE THE ORDER, so what is checked is that they keep no copy of
+     it and that what they read is the book's, salt first. A typed list was a second statement
+     of a thing the book already makes, and d1.mjs failed when the two disagreed, so a product
+     could not be registered in one place. Same fault the LEDGER map above is guarded against. */
+  ok(!/PROD_ORDER = \[/.test(book), "the tools keep no typed copy of the product order");
+  const bookOrder = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8")).PROD_ORDER;
+  ok(JSON.stringify(prodOrder()) === JSON.stringify(bookOrder), "and read it from the book itself");
+  ok(prodOrder()[0] === "salt", "the tools agree salt leads");
   /* v387: read off the master, since the payload that used to prove this is retired. */
   const md = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
   ok(md.indexOf("salt:") < md.indexOf("oil:"), "and the desk declares salt before oil");

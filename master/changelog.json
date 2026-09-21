@@ -1,5 +1,16 @@
 [
  {
+  "v": "v777",
+  "d": "22 Sep 2026",
+  "t": "THE TOOLS STOP TYPING THE PRODUCT ORDER AND READ IT OFF THE BOOK",
+  "n": [
+   "<b>TWO DEFINITIONS ARE TWO THINGS TO KEEP TRUE, AND THE ONE THAT DRIFTS DOES IT SILENTLY.</b> <code>tools/book.mjs</code> carried <code>PROD_ORDER = [\"salt\", \"oil\"]</code>, typed out beside the book that already states it, and <code>tools/d1.mjs</code> FAILED when the two disagreed. So a product could not be registered in one place: the book and that line had to move in step or the mirror check went red. The suite already guards the LEDGER map against exactly this and says why; the order was the one thing it did not cover.",
+   "<b>THE ORDER IS THE BOOK'S NOW</b>, read through <code>prodOrder()</code> and cached on first use, the book being a megabyte and <code>bySalt</code> being called once per comparison. Salt still leads, which is his standing instruction of 11 Aug restated on the 13th, and nothing about the order itself has changed.",
+   "<b>THE MIRROR CHECK GOT SHARPER RATHER THAN WEAKER.</b> It compared the STORE's copy of the order against a line in a tool, which is a comparison between two things that were both supposed to follow the book. It now compares the store against the book, which is what a staleness check on a mirror was always for.",
+   "<b>WHAT THE SUITE CHECKS INSTEAD.</b> That the tools keep NO typed copy, that what they read equals the book's own list, and that it leads with salt. Proved red by mutation: typing the list back in turns the first red, and handing <code>prodOrder</code> a reversed list turns the other two."
+  ]
+ },
+ {
   "v": "v776",
   "d": "22 Sep 2026",
   "t": "THE TWO QUOTE KEYS BECOME ONE MAP, SO A THIRD BOOK NEEDS NO CODE",

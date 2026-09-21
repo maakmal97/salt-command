@@ -7,6 +7,7 @@
  */
 import { readFileSync } from "node:fs";
 import { openMaster } from "./payload.mjs";
+import { readBookFile } from "./booksync.mjs";   /* v777: the order is the book's, not this file's */
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -88,10 +89,28 @@ export const META_KEYS = ["LAST_UPDATED", "evolution"];
 /* SALT LEADS. Standing instruction of 11 Aug, restated 13 Aug: every list, table and payload
  * shows salt before oil wherever the two appear separately. PROD_ORDER in the master states
  * it and everything there derives from that one line; this is the same answer for anything
- * built out here, so no tool has to decide the order for itself. */
-export const PROD_ORDER = ["salt", "oil"];
+ * built out here, so no tool has to decide the order for itself.
+ *
+ * v777: IT IS READ FROM THE BOOK AND NO LONGER TYPED HERE. It was `["salt", "oil"]`, a second
+ * statement of a thing the book already states, and tools/d1.mjs failed when the two
+ * disagreed, so a product could not be added without editing both in step. That is the same
+ * fault the LEDGER map above is guarded against by its own check: two definitions are two
+ * things to keep true, and the one that drifts does it silently. The d1 check is kept and is
+ * sharper for it, because it now compares the STORE's copy against the book rather than
+ * against a line in this file. Cached on first use: the book is a megabyte and bySalt is
+ * called once per comparison. */
+let _prodOrder = null;
+export function prodOrder() {
+  if (!_prodOrder) {
+    const b = readBookFile();
+    if (!Array.isArray(b.PROD_ORDER) || !b.PROD_ORDER.length) throw new Error("the book states no PROD_ORDER");
+    _prodOrder = b.PROD_ORDER.slice();
+  }
+  return _prodOrder;
+}
 export const bySalt = (a, b) => {
-  const i = PROD_ORDER.indexOf(a), j = PROD_ORDER.indexOf(b);
+  const o = prodOrder();
+  const i = o.indexOf(a), j = o.indexOf(b);
   return (i < 0 ? 99 : i) - (j < 0 ? 99 : j);
 };
 

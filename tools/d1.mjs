@@ -29,7 +29,7 @@ const DB = "salt_ledger";
 const LEDGER = resolve(REPO, "ledger", "ledger.json");
 const WHERE = process.argv.includes("--local") ? "--local" : "--remote";
 
-import { COLLECTIONS, readBook, bySalt, PROD_ORDER } from "./book.mjs";
+import { COLLECTIONS, readBook, bySalt, prodOrder } from "./book.mjs";
 
 const problems = [];
 const fail = (m) => { problems.push(m); console.log("  FAIL  " + m); };
@@ -265,8 +265,11 @@ async function prove() {
       const k = Object.keys(ledger[key] || {});
       if (k.length > 1 && k.slice().sort(bySalt).join() !== k.join()) fail(`${key} is not in salt-first order: ${k.join(", ")}`);
     }
-    if (body && body.ledger && JSON.stringify(body.ledger.PROD_ORDER) !== JSON.stringify(PROD_ORDER)) {
-      fail("the desk's PROD_ORDER and the tools' own no longer agree");
+    /* v777: the STORE's copy against the book itself. It compared the store to a list typed
+       into tools/book.mjs, so the two had to be edited in step and a new product could not be
+       registered in one place. Now it catches what it was always for, a stale mirror. */
+    if (body && body.ledger && JSON.stringify(body.ledger.PROD_ORDER) !== JSON.stringify(prodOrder())) {
+      fail("the store's PROD_ORDER and the book's no longer agree");
     }
     return !problems.length;
   } finally { dom.window.close(); }
