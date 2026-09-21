@@ -1,5 +1,15 @@
 [
  {
+  "v": "v756",
+  "d": "21 Sep 2026",
+  "t": "A CORRECTION ON S187: THE 19 SEP SALT SALE MOVES TO R3 AND TO CM4-MK",
+  "n": [
+   "<b>FOLDED:</b> one correction, recorded 21 Sep against s187, the 19 Sep salt sale of 4 unit for RM340 with RM20 of delivery, RM360 cash in and 4 unit delivered. The patch sets the stream from R2 to R3 and moves the row from CS6-BS-R to CM4-MK. No cash and no stock move: it changes only what the row says about itself, and the row is not rewritten here.",
+   "<b>UNUSUAL:</b> the drafter flagged three things. RM360 stands against goods of RM340, so RM20 reads as overpaid; CM4-MK usually pays about RM102.17 a unit over 10 orders, against RM85 here, 16.8% below; and RM48 a unit is the inventory average across more than one lot rate, not the lot this row draws. The figures carried here do not settle the blend, which stays open for checking.",
+   "<b>INVENTORY:</b> nothing moved. Stock stays at 11.15 unit on the counts of 19 Sep, costed at RM48 a unit against a replacement of RM45.56, with nothing owed out, nothing promised and no loans open. Reorder still sits at 15 unit, so the book remains under that mark. CS6-BS-R carries nothing outstanding and nothing on credit after the move."
+  ]
+ },
+ {
   "v": "v755",
   "d": "21 Sep 2026",
   "t": "TWO ORDERS SETTLED IN FULL AND THREE 19 SEP SALES LANDED",

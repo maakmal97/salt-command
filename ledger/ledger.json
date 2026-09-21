@@ -1,6 +1,6 @@
 {
- "v": "v755",
- "stamped": "21 Sep 2026, 09:44 KL",
+ "v": "v756",
+ "stamped": "21 Sep 2026, 09:50 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -4722,7 +4722,7 @@
     "rid": "s186"
    },
    {
-    "customer": "CS6-BS-R",
+    "customer": "CM4-MK",
     "qty": 4,
     "total": 340,
     "cost": 192,
@@ -4733,10 +4733,27 @@
     "deliveredQty": 4,
     "deliveredOn": "2026-09-19",
     "paidOn": "2026-09-19",
-    "rev": "R2",
-    "downstream": "CM4-MK",
-    "note": "<b>SALT SELL DATED 19 SEP: 4 UNIT FOR RM340 PLUS RM20 DELIVERY, PAID AND DELIVERED.</b> Booked to CS6-BS-R at RM85 a unit, RM320 of goods, RM360 owed and RM360 cash in with 4 unit delivered on 19 Sep, so nothing stays open. It clears the RM203.95 floor for 4 unit and sits under the RM500 ask and RM560 ceiling. Costed at RM48 a unit, the inventory's own rate, RM148 on the goods at 43.5%. Three flags: the R2 booking through CS6-BS with CM4-MK as end buyer, credited nothing and sent no statement; the rate 20.6% under CS6-BS's usual RM107 a unit over 19 orders; and RM48 being a blend of lot rates, which is not answered here. Median RM96.67, range RM6 to RM120, credit cap 1, nothing on credit.",
-    "rid": "s187"
+    "note": "<b>AMENDED 21 SEP: STREAM R3, PARTY CM4-MK.</b> <b>CORRECTION ON S187 DATED 21 SEP: THE STREAM GOES TO R3 AND THE ROW TO CM4-MK.</b> The 19 Sep sale, 4 unit for RM340 with RM20 delivery, RM360 owed and RM360 cash in, delivered on 19 Sep, was booked to CS6-BS-R at RM85 a unit. The patch moves stream R2 to R3 and the party to CM4-MK; no cash and no stock move. At RM85 a unit it clears the RM203.95 floor for 4 unit and sits under the RM500 ask. Costed at RM48 a unit, the inventory's own rate. Flagged: RM360 against RM340 of goods, RM20 over; RM85 is 16.8% under CM4-MK's RM102.17 across 10 orders; and RM48 is a blend of lot rates, unanswered here. CS6-BS-R: 16 orders, median RM95, range RM6 to RM120, nothing outstanding, nothing on credit. <b>SALT SELL DATED 19 SEP: 4 UNIT FOR RM340 PLUS RM20 DELIVERY, PAID AND DELIVERED.</b> Booked to CS6-BS-R at RM85 a unit, RM320 of goods, RM360 owed and RM360 cash in with 4 unit delivered on 19 Sep, so nothing stays open. It clears the RM203.95 floor for 4 unit and sits under the RM500 ask and RM560 ceiling. Costed at RM48 a unit, the inventory's own rate, RM148 on the goods at 43.5%. Three flags: the R2 booking through CS6-BS with CM4-MK as end buyer, credited nothing and sent no statement; the rate 20.6% under CS6-BS's usual RM107 a unit over 19 orders; and RM48 being a blend of lot rates, which is not answered here. Median RM96.67, range RM6 to RM120, credit cap 1, nothing on credit.",
+    "rid": "s187",
+    "ref": "CS6-BS",
+    "refKg": 4,
+    "mod": "corrected on 2026-09-21: stream R2 to R3; downstream CM4-MK to (cleared)",
+    "amend": [
+     {
+      "date": "2026-09-19",
+      "kind": "Fulfilment",
+      "cash": 360,
+      "kg": 4,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-21",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S187 DATED 21 SEP: THE STREAM GOES TO R3 AND THE ROW TO CM4-MK.</b> The 19 Sep sale, 4 unit for RM340 with RM20 delivery, RM360 owed and RM360 cash in, delivered on 19 Sep, was booked to CS6-BS-R at RM85 a unit. The patch moves stream R2 to R3 and the party to CM4-MK; no cash and no stock move. At RM85 a unit it clears the RM203.95 floor for 4 unit and sits under the RM500 ask. Costed at RM48 a unit, the inventory's own rate. Flagged: RM360 against RM340 of goods, RM20 over; RM85 is 16.8% under CM4-MK's RM102.17 across 10 orders; and RM48 is a blend of lot rates, unanswered here. CS6-BS-R: 16 orders, median RM95, range RM6 to RM120, nothing outstanding, nothing on credit."
+     }
+    ]
    }
   ],
   "contacts": [
@@ -5306,9 +5323,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-21T01:43:14.551Z",
+  "QUEUE_COMMITTED": "2026-09-21T01:46:31.619Z",
   "PRICING": {
-   "takenAt": "2026-09-21T01:44:36.876Z",
+   "takenAt": "2026-09-21T01:50:12.753Z",
    "sizes": [
     0.5,
     1,
@@ -5348,6 +5365,13 @@
     "CJ4-BJ": {
      "salt": "Titanium"
     },
+    "CM4-MK": {
+     "salt": {
+      "small": "Gold",
+      "mid": "Gold",
+      "big": "Platinum"
+     }
+    },
     "CE4-CHE": {
      "salt": "Platinum",
      "oil": "Titanium"
@@ -5355,13 +5379,6 @@
     "CS6-PER": {
      "salt": "Platinum",
      "oil": "Titanium"
-    },
-    "CM4-MK": {
-     "salt": {
-      "small": "Gold",
-      "mid": "Gold",
-      "big": "Platinum"
-     }
     },
     "CN6-WM": {
      "salt": "Platinum"
@@ -5483,12 +5500,12 @@
     "CS6-BS": {
      "salt": {
       "name": "consistent mid",
-      "orders": 18,
+      "orders": 17,
       "tenureDays": 71,
       "sinceLastDays": 2,
-      "perMonth": 7.72,
-      "smallShare": 0.44,
-      "bigShare": 0.39,
+      "perMonth": 7.29,
+      "smallShare": 0.47,
+      "bigShare": 0.35,
       "late": 0,
       "frequent": true,
       "small": false,
@@ -5530,6 +5547,24 @@
       "loyal": true,
       "rare": false,
       "lateTwice": true
+     }
+    },
+    "CM4-MK": {
+     "salt": {
+      "name": "large and regular",
+      "orders": 11,
+      "tenureDays": 60,
+      "sinceLastDays": 2,
+      "perMonth": 5.58,
+      "smallShare": 0,
+      "bigShare": 0.45,
+      "late": 0,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": true,
+      "rare": false,
+      "lateTwice": false
      }
     },
     "CE4-CHE": {
@@ -5596,24 +5631,6 @@
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
-     }
-    },
-    "CM4-MK": {
-     "salt": {
-      "name": "large and regular",
-      "orders": 10,
-      "tenureDays": 60,
-      "sinceLastDays": 8,
-      "perMonth": 5.07,
-      "smallShare": 0,
-      "bigShare": 0.4,
-      "late": 0,
-      "frequent": true,
-      "small": false,
-      "bigger": true,
-      "loyal": true,
       "rare": false,
       "lateTwice": false
      }
@@ -6925,10 +6942,10 @@
      ]
     }
    },
-   "v": "v755"
+   "v": "v756"
   },
   "OPEN": {
-   "at": "2026-09-21T01:44:36.993Z",
+   "at": "2026-09-21T01:50:12.894Z",
    "count": 6,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
@@ -7057,7 +7074,7 @@
     "salt": "2026-09-19",
     "oil": "2026-09-19"
    },
-   "v": "v755"
+   "v": "v756"
   }
  }
 }
