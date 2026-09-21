@@ -1,6 +1,6 @@
 {
- "v": "v757",
- "stamped": "21 Sep 2026, 09:51 KL",
+ "v": "v774",
+ "stamped": "21 Sep 2026, 17:04 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 35
    }
   },
-  "STATED_STOCK": 8,
+  "STATED_STOCK": 7,
   "COUNT_ON": {
    "salt": "2026-09-21",
    "oil": "2026-09-19"
@@ -4761,6 +4761,20 @@
       "note": "<b>CORRECTION ON S187 DATED 21 SEP: THE STREAM GOES TO R3 AND THE ROW TO CM4-MK.</b> The 19 Sep sale, 4 unit for RM340 with RM20 delivery, RM360 owed and RM360 cash in, delivered on 19 Sep, was booked to CS6-BS-R at RM85 a unit. The patch moves stream R2 to R3 and the party to CM4-MK; no cash and no stock move. At RM85 a unit it clears the RM203.95 floor for 4 unit and sits under the RM500 ask. Costed at RM48 a unit, the inventory's own rate. Flagged: RM360 against RM340 of goods, RM20 over; RM85 is 16.8% under CM4-MK's RM102.17 across 10 orders; and RM48 is a blend of lot rates, unanswered here. CS6-BS-R: 16 orders, median RM95, range RM6 to RM120, nothing outstanding, nothing on credit."
      }
     ]
+   },
+   {
+    "customer": "CS6-BS",
+    "qty": 1,
+    "total": 90,
+    "cost": 48,
+    "cash": 90,
+    "handover": "collected",
+    "date": "2026-09-21",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-09-21",
+    "paidOn": "2026-09-21",
+    "note": "<b>SALT SELL DATED 21 SEP: 1 UNIT TO CS6-BS FOR RM90, COLLECTED, PAID AND DELIVERED.</b> RM90 of goods, no delivery or freight, RM90 cash in on 21 Sep and 1 unit handed over the same day, so the row closes on collection and leaves nothing outstanding. At RM90 a unit it clears the RM52.06 floor for 1 unit and sits under the RM160 ask. Costed at RM48 a unit, the inventory's own rate, RM42 on the goods at 46.7%. Flagged: RM90 is 15.9% under the RM107 a unit CS6-BS typically pays across 19 orders; and RM48 is a blend of lot rates, unanswered here. CS6-BS: 12 orders, median RM95, range RM11 to RM126.67, nothing outstanding, 1 unit on credit against a cap of 2.",
+    "rid": "s188"
    }
   ],
   "contacts": [
@@ -5330,9 +5344,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-21T01:49:41.389Z",
+  "QUEUE_COMMITTED": "2026-09-21T07:49:25.775Z",
   "PRICING": {
-   "takenAt": "2026-09-21T01:51:41.630Z",
+   "takenAt": "2026-09-21T09:04:46.067Z",
    "sizes": [
     0.5,
     1,
@@ -5507,12 +5521,12 @@
     "CS6-BS": {
      "salt": {
       "name": "consistent mid",
-      "orders": 17,
+      "orders": 18,
       "tenureDays": 71,
-      "sinceLastDays": 2,
-      "perMonth": 7.29,
-      "smallShare": 0.47,
-      "bigShare": 0.35,
+      "sinceLastDays": 0,
+      "perMonth": 7.72,
+      "smallShare": 0.5,
+      "bigShare": 0.33,
       "late": 0,
       "frequent": true,
       "small": false,
@@ -6304,40 +6318,40 @@
      "replCost": 45.56,
      "floors": {
       "1": {
-       "floor": 52.06
+       "floor": 51.95
       },
       "2": {
-       "floor": 104.13
+       "floor": 103.9
       },
       "3": {
-       "floor": 156.19
+       "floor": 155.86
       },
       "4": {
-       "floor": 208.26
+       "floor": 207.81
       },
       "5": {
-       "floor": 260.32
+       "floor": 259.76
       },
       "0.5": {
-       "floor": 26.03
+       "floor": 25.98
       },
       "1.5": {
-       "floor": 78.1
+       "floor": 77.93
       },
       "2.5": {
-       "floor": 130.16
+       "floor": 129.88
       },
       "3.5": {
-       "floor": 182.22
+       "floor": 181.83
       },
       "4.5": {
-       "floor": 234.29
+       "floor": 233.78
       },
       "6.25": {
-       "floor": 325.4
+       "floor": 324.7
       },
       "12.5": {
-       "floor": 650.8
+       "floor": 649.4
       }
      },
      "inputs": {
@@ -6412,9 +6426,9 @@
        "repl": 45.56,
        "freightRate": 1.0756,
        "leak": {
-        "ratio": 0.1164,
+        "ratio": 0.114,
         "leak": 5.5,
-        "sold": 47.25,
+        "sold": 48.25,
         "cycles": 3,
         "from": "2026-09-15",
         "to": "2026-09-21"
@@ -6431,15 +6445,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.37735849056603776
+         "v": 0.37037037037037035
         }
        },
        "attrib": 1,
        "shrinkRate": 0.07833149503659882,
        "avgDel": {
-        "n": 161,
-        "kg": 412.95,
-        "mean": 2.5649
+        "n": 162,
+        "kg": 413.95,
+        "mean": 2.5552
        }
       },
       "policy": {
@@ -6603,7 +6617,7 @@
       {
        "q": 2.5,
        "prices": [
-        140,
+        130,
         220,
         250,
         290,
@@ -6663,7 +6677,7 @@
       {
        "q": 5,
        "prices": [
-        270,
+        260,
         370,
         410,
         460,
@@ -6687,7 +6701,7 @@
       {
        "q": 12.5,
        "prices": [
-        660,
+        650,
         850,
         950,
         1050,
@@ -6949,10 +6963,10 @@
      ]
     }
    },
-   "v": "v757"
+   "v": "v774"
   },
   "OPEN": {
-   "at": "2026-09-21T01:51:41.790Z",
+   "at": "2026-09-21T09:04:46.285Z",
    "count": 6,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
@@ -7056,11 +7070,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 8,
-     "free": 8,
+     "onHand": 7,
+     "free": 7,
      "owedOut": 0,
-     "coverDays": 1.2,
-     "rate": 6.7,
+     "coverDays": 1,
+     "rate": 6.77,
      "owedToYou": 340,
      "promised": 0,
      "short": 0
@@ -7081,7 +7095,7 @@
     "salt": "2026-09-21",
     "oil": "2026-09-19"
    },
-   "v": "v757"
+   "v": "v774"
   }
  }
 }
