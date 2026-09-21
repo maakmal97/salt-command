@@ -18661,10 +18661,26 @@ await (async () => {
   ok(heads.length >= 186 && bare.length === 0 && !lines.some((l) => l === "{"),
     "every section runs in its own async function, so a closed window can be freed: " + heads.length + " sections, bare: " + JSON.stringify(bare));
   const { openMaster: omW } = await import("../tools/payload.mjs");
-  const { w: wW } = await omW();
-  const open = !!wW.document;
+  /* WHAT THE CLOSE IS FOR, MEASURED, NOT A SIDE EFFECT OF IT (22 Sep 2026). This read
+     `wW.document === undefined` until jsdom 30.1.0, which keeps a closed window's document
+     reachable: the close still happened and still did its job, so the old reading called a
+     working suite broken on a dependency bump. What the close is FOR is the line at section()
+     above, that a window left open is held by its own PENDING TIMERS, so that is what is read
+     here. The window nothing closes is the control, which the single old reading never had: it
+     proves the rig can see a timer fire at all, so a zero on the closed one means stopped and
+     not merely unobservable. */
+  const { w: wA } = await omW();
+  let firedA = 0, firedB = 0;
+  wA.setInterval(() => { firedA++; }, 20);
+  const armed = !!wA.document;
   section("The suite closes a section's windows when the next section starts");
-  ok(open && wW.document === undefined, "a desk window the section before left open is closed: " + JSON.stringify({ open, closed: wW.document === undefined }));
+  const { w: wB } = await omW();                       /* opened AFTER the close, so nothing closes it */
+  wB.setInterval(() => { firedB++; }, 20);
+  await new Promise((r) => setTimeout(r, 300));
+  ok(armed && firedA === 0 && firedB > 0,
+    "a desk window the section before left open is closed, so its own timers stop: "
+    + JSON.stringify({ armed, closedWindowFired: firedA, openWindowFired: firedB }));
+  try { wB.close(); } catch (e) { /* best effort */ }
 })();
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
