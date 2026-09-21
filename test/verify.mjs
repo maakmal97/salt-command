@@ -18343,8 +18343,36 @@ await (async () => {
     /* ---- THE LAPTOP WITH NO MASTER: it names who, and does not pretend to have done anything ---- */
     const told = await accountSweep(root67, { roster: R67 });
     ok(told.ran === false && told.why === "no master" && JSON.stringify(told.stuck) === '["CZ5-TM"]',
-      "with no master it names exactly who cannot sign in, which is what the chain then says out loud: " + JSON.stringify(told));
+      "with the master in NEITHER place it names exactly who cannot sign in, which is what the chain "
+      + "then says out loud: " + JSON.stringify(told));
     ok(readdirSync(join(dir67, "_kv")).length === 1, "and writes nothing at all");
+
+    /* ---- v771: AND THE FILE IS A PLACE TO PUT IT, which is where every other tool looks. v707 read
+       the environment alone, so a laptop whose _secrets.json already carried the master, which his
+       does, was refused and reported stuck on every run of the chain. ---- */
+    writeFileSync(join(root67, "_secrets.json"), "\uFEFF" + JSON.stringify({ key: K67, master: "  " + M67 + "  " }), "utf8");
+    const onFile = await accountSweep(root67, { roster: R67 });
+    ok(onFile.ran === true && onFile.wrote === 1 && /CZ5-TM/.test(onFile.minted.join(",")),
+      "with the master in the file and nothing in the environment, the chain mints it: " + JSON.stringify(onFile.minted));
+    ok(JSON.parse(readFileSync(join(dir67, "_passwords.json"), "utf8"))["CZ5-TM"],
+      "and the byte order mark Notepad writes and the spaces a paste leaves are stripped, or the "
+      + "passphrase would derive nothing and say nothing about why");
+    rmSync(join(dir67, "_kv", "27a4-gkgw.json"), { force: true });
+    writeFileSync(join(dir67, "_passwords.json"), JSON.stringify({ "CS6-BS": pwHave }), "utf8");
+
+    /* AND WHEN THE TWO DISAGREE, THE ENVIRONMENT WINS, which is the rule loadSecrets states for the
+       key and the only one that lets a shell correct a file that has gone stale. Proved by making
+       them disagree: the file holds a passphrase that unwraps nothing. */
+    writeFileSync(join(root67, "_secrets.json"), JSON.stringify({ key: K67, master: "not-the-master" }), "utf8");
+    process.env.STMT_MASTER = M67;
+    const bothSet = await accountSweep(root67, { roster: R67 });
+    ok(bothSet.ran === true && bothSet.wrote === 1,
+      "with a stale passphrase in the file and the right one in the environment, the environment is "
+      + "what is used: " + JSON.stringify({ ran: bothSet.ran, wrote: bothSet.wrote, why: bothSet.why }));
+    delete process.env.STMT_MASTER;
+    rmSync(join(dir67, "_kv", "27a4-gkgw.json"), { force: true });
+    writeFileSync(join(dir67, "_passwords.json"), JSON.stringify({ "CS6-BS": pwHave }), "utf8");
+    writeFileSync(join(root67, "_secrets.json"), JSON.stringify({ key: K67 }), "utf8");
 
     /* ---- THE LAPTOP WITH THE MASTER: the gap closes, and the account it made really opens ---- */
     process.env.STMT_MASTER = M67;
@@ -18374,7 +18402,8 @@ await (async () => {
   ok(/^ok: skipped: the content key lives on the laptop/.test(say({ ran: false, why: "not the laptop", minted: [], stuck: [] })[0]),
     "off the laptop it is not a fault, and says why");
   const stuckSaid = say({ ran: false, why: "no master", minted: [], stuck: ["CZ5-TM"] })[0];
-  ok(/^warn: CZ5-TM cannot sign in/.test(stuckSaid) && /stmt-account\.mjs --mint/.test(stuckSaid),
+  ok(/^warn: CZ5-TM cannot sign in/.test(stuckSaid) && /stmt-account\.mjs --mint/.test(stuckSaid)
+    && /statements\/_secrets\.json beside the key/.test(stuckSaid) && /STMT_MASTER/.test(stuckSaid),
     "somebody stuck is a WARNING that names them and the one command that fixes it, which is the "
     + "difference between this and a line in a CI log: " + stuckSaid);
   ok(/^ok: every ID/.test(say({ ran: false, why: "no master", minted: [], stuck: [] })[0]),

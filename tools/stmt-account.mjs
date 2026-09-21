@@ -11,9 +11,11 @@
  * that state when this was written.
  *
  * WHERE IT MAY RUN. The laptop, and nowhere else, for the same reason stmt-seal.mjs does:
- * statements/_secrets.json holds the content key, and STMT_MASTER is his. CI holds STMT_KEY but not
- * the master, and a password nobody can hand over is not an account. Everything it writes is a
- * committed file, so the next publish picks it up with no further step.
+ * statements/_secrets.json holds the content key and, beside it, the master; CI holds STMT_KEY and
+ * not the master, and a password nobody can hand over is not an account. Everything it writes is a
+ * committed file, so the next publish picks it up with no further step. v771: the master is read
+ * from that file, with an environment variable of either name overriding it, which is the rule every
+ * other tool here follows; v707 read the environment alone and refused a laptop that already had it.
  *
  * WHAT IT WILL NOT DO:
  *   - touch an account that already exists. It mints for a code with NO record, and nothing else;
@@ -88,7 +90,7 @@ export async function accountSweep(root, opts = {}) {
   try { look = await mintAccounts(here, Object.assign({}, opts, { check: true })); }
   catch (e) {
     const why = String((e && e.message) || e);
-    return { ran: false, why: /STMT_MASTER/.test(why) ? "no master" : why, minted: [], stuck: whoIsStuck(here, opts) };
+    return { ran: false, why: /master passphrase/.test(why) ? "no master" : why, minted: [], stuck: whoIsStuck(here, opts) };
   }
   if (!look.minted.length) return { ran: true, why: "", minted: [], named: [], wrote: 0, stuck: [] };
   const did = await mintAccounts(here, opts);
@@ -108,7 +110,8 @@ export function sweepLines(sweep, opts = {}) {
   if (!sweep.ran && sweep.why === "no master") {
     return sweep.stuck.length
       ? [L("warn", sweep.stuck.join(", ") + " cannot sign in: an ID with a username and no account behind it. "
-        + "Set $env:STMT_MASTER and run this again, or: node tools/stmt-account.mjs --mint")]
+        + "The master passphrase goes in statements/_secrets.json beside the key, or in $env:STMT_MASTER; "
+        + "then: node tools/stmt-account.mjs --mint")]
       : [L("ok", "every ID that should have an account has one, so no master was needed on this run")];
   }
   if (!sweep.ran) return [L("warn", "the account sweep stopped: " + sweep.why)];
@@ -127,12 +130,24 @@ export async function mintAccounts(root, opts = {}) {
   const check = !!opts.check;
   const out = { minted: [], named: [], skipped: [], failed: [], wrote: 0 };
 
+  /* v771, his instruction of 21 Sep 2026 ("help me set the environment so the accounts can be
+     minted"): THERE WAS NOTHING TO SET. statements/_secrets.json carries the master beside the key
+     and every other tool reads it from there, an environment variable of either name overriding the
+     file; v707 read the environment ALONE, so a laptop that already held the master was refused, and
+     the sweep of v767 then reported him stuck on every run of the chain.
+     IT IS NOT loadSecrets ITSELF, which returns as soon as a KEY is in the environment: in the cloud
+     there is no file to fall back to and that is right, but here there is, and a shell holding
+     STMT_KEY would lose the master sitting beside it in the file. Same rule, read out in full.
+     TRIMMED, AND THE BOM STRIPPED, for the reason loadSecrets states: a passphrase with an invisible
+     byte on it derives nothing and says nothing about why. */
   const secretsFile = join(here, "_secrets.json");
   if (!existsSync(secretsFile)) throw new Error("no statements/_secrets.json: this tool runs on the laptop");
-  const secrets = JSON.parse(readFileSync(secretsFile, "utf8"));
+  const tr = (v) => String(v == null ? "" : v).trim();
+  const onFile = JSON.parse(readFileSync(secretsFile, "utf8").replace(/^\uFEFF/, ""));
+  const secrets = { key: tr(process.env.STMT_KEY) || tr(onFile.key) };
   if (!secrets.key) throw new Error("statements/_secrets.json carries no key");
-  const master = String(process.env.STMT_MASTER || "").trim();
-  if (!master) throw new Error("STMT_MASTER is not set: a password nobody can hand over is not an account");
+  const master = tr(process.env.STMT_MASTER) || tr(onFile.master);
+  if (!master) throw new Error("no master passphrase: put it in statements/_secrets.json beside the key, or set STMT_MASTER");
 
   const issue = newestIssue(here);
   if (!issue) throw new Error("no issue folder with a _kv in " + here);

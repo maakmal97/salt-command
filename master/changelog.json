@@ -1,5 +1,17 @@
 [
  {
+  "v": "v771",
+  "d": "21 Sep 2026",
+  "t": "THE MINT READS THE MASTER WHERE EVERY OTHER TOOL READS IT, SO THERE WAS NOTHING TO SET",
+  "n": [
+   "<b>HIS INSTRUCTION OF 21 SEP 2026: \"help me set the environment so the accounts can be minted\".</b> There was nothing to set. <code>statements/_secrets.json</code> carries the master beside the key on his laptop, and has since the first issue; every other tool reads it from there, with an environment variable of either name overriding the file. <b>v707 read the environment ALONE</b>, so a laptop that already held the master was refused, and the sweep v767 added then reported him stuck on every run of the chain.",
+   "<b>THE SAME RULE, READ OUT IN FULL.</b> It is not <code>loadSecrets</code> itself, which returns as soon as a KEY is in the environment: in the cloud there is no file to fall back to and that is right, but here there is, and a shell holding STMT_KEY would lose the master sitting beside it. The file is read BOM-stripped and every value trimmed, for the reason loadSecrets states: a passphrase with an invisible byte on it derives nothing and says nothing about why.",
+   "<b>AND WHEN THE TWO DISAGREE, THE ENVIRONMENT WINS,</b> which is the only order that lets a shell correct a file that has gone stale. It is proved by making them disagree rather than by reading the line: the file is given a passphrase that unwraps nothing, and the mint still goes through.",
+   "<b>THE CHAIN'S LINE NAMES BOTH PLACES</b> now, where it named a variable; and the refusal it is keyed on says what is missing, a master passphrase, rather than the name of one way of supplying it.",
+   "<b>THE CHECKS.</b> Twenty assertions in v767's own section: the master in neither place still refuses and still names who; the master in the FILE alone mints, with a byte order mark and pasted spaces on it; the two disagreeing takes the environment's. Five mutations, each red, including the one that restores v707's reading exactly."
+  ]
+ },
+ {
   "v": "v770",
   "d": "21 Sep 2026",
   "t": "A TREE BEHIND ORIGIN DOES NOT SHIP, BECAUSE THE CHECK THAT SAYS SO NOW STOPS THE RUN",
