@@ -28,26 +28,40 @@ export function monthNameOf(issue) {
   return MONTHS[d.getUTCMonth()] + " " + d.getUTCFullYear();
 }
 
+/* v769, HIS INSTRUCTION OF 21 SEP 2026: THE ACCOUNT IS READY, AND IT IS NOT A MONTH. Both messages
+ * said "your statement of account for September 2026 is ready" and promised "each monthly statement
+ * as it was issued", which was true of a monthly issue and is not true of what this is: ONE LIVE
+ * DOCUMENT that keeps up with the orders, beside the prices and the order form. So the message hands
+ * over an ACCOUNT rather than a document, says the three things it is for, and says where a question
+ * goes. The sealed issues already sent are untouched and still open on the page.
+ *
+ * WHAT IT IS CAREFUL ABOUT: a question goes ON AN ORDER, because that is where the thread lives
+ * (v751), and saying "ask us anything" would promise a channel that is not there. */
+const INSIDE = "Inside you will find your statement of account, which keeps up with your orders, the "
+  + "latest prices, and a form to place an order. If you have a question, write it on the order and I "
+  + "will answer you there.";
+const KEEPIT = "Keep it on your phone: on an iPhone tap Share, then Add to Home Screen; on Android tap "
+  + "the three dots, then Install app. Tick Remember me and that device stays signed in; Log out ends it.";
+
 /** The message a customer gets: the link and the username, and no secret. */
-export function linkMessage(row, monthName) {
-  return "Your statement of account" + (monthName ? " for " + monthName : "") + " is ready.\n\n"
+export function linkMessage(row) {
+  return "Your account is ready to use.\n\n"
     + "Open it here:\n" + row.url + "\n\n"
     + "Username: " + row.user + "\n"
     + "Your password is in a separate message.\n\n"
-    + "The page shows every order from the start to today, and each monthly statement as it was "
-    + "issued. Tick Remember me and that device stays signed in; Log out ends it.";
+    + INSIDE + "\n\n" + KEEPIT;
 }
 
 /** THE ONE-TIME LINK (v710, his instruction of 18 Sep 2026: the shared link signs them in). One
  *  message, no password in it, and it says plainly what the link is: theirs, once, and not for
  *  passing on. It does not promise it cannot be forwarded, because it can. */
-export function signInMessage(row, monthName) {
-  return "Your statement of account" + (monthName ? " for " + monthName : "") + " is ready.\n\n"
+export function signInMessage(row) {
+  return "Your account is ready to use.\n\n"
     + "This link signs you in, once:\n" + row.url + "\n\n"
-    + "Open it yourself and do not pass it on: anybody holding it can open your statement until you "
+    + INSIDE + "\n\n"
+    + "Open it yourself and do not pass it on: anybody holding it can open your account until you "
     + "have used it. It stops working after a week.\n\n"
-    + "The page shows every order from the start to today, and each monthly statement as it was "
-    + "issued. Tick Remember me and that device stays signed in; Log out ends it.";
+    + KEEPIT;
 }
 
 /** The second message: the password, and nothing that says which account it opens. */

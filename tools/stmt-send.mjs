@@ -270,7 +270,7 @@ export function sendSheet(rows, opts) {
     /* the same totals the statement itself foots to, formatted here because the generator's own
        formatter is not in scope at the point the rows are built */
     tot: totalsLine(r.t),
-    msg: linkMessage(r, monthName),
+    msg: linkMessage(r),
     qr: qrMatrix(r.url).map((line) => line.join(""))
   }));
   return '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8">'

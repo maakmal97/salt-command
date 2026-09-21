@@ -13944,7 +13944,7 @@ await (async () => {
     ok(after.status === 401, "and the zeros open nothing once it is gone");
   } finally { globalThis.fetch = realFetch89; }
 })();
-section("v690: a customer's statement is not bound to a month; it shows everything, filtered to the newest");
+section("v690: a customer's statement is not bound to a month; it shows everything, and a month is one tap (v769)");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: nothing customer-facing is time bound. The document already carried
      every order from the start; what was missing was a way to read one month of it. Each row says which
@@ -13992,16 +13992,23 @@ await (async () => {
     const pills = [...strip.querySelectorAll("button")].map((b) => b.textContent);
     const newest = [...new Set(tagged)].sort().reverse()[0];
     const shown = () => [...D90.querySelectorAll("#out tbody tr[data-m]")].filter((r) => r.style.display !== "none").map((r) => r.getAttribute("data-m"));
+    /* v769, his instruction of 21 Sep 2026: IT OPENS ON THE WHOLE ACCOUNT. v690 opened on the
+       newest month because a monthly statement was what a reader had come for; there are no monthly
+       statements any more, just one live document, so a month is a filter a reader chooses and never
+       where they land. `newest` is still read, to prove the opening view is NOT it. */
     ok(!strip.hidden && pills.length === new Set(tagged).size + 1 && pills[pills.length - 1] === "All"
-      && new Set(shown()).size === 1 && shown()[0] === newest && /Showing /.test(note.textContent),
-      "the strip is the months the account has plus All, and it opens on the newest: " + pills.join(", "));
+      && shown().length === tagged.length && new Set(shown()).size > 1
+      && /every order from the start/.test(note.textContent),
+      "the strip is the months the account has plus All, and it opens on the whole account: " + pills.join(", "));
+    const older = [...new Set(tagged)].sort()[0];
+    ok(older !== newest, "the fixture has two months, so opening on everything is not opening on one");
+    strip.querySelector('button[data-mf="' + older + '"]').dispatchEvent(new W90.Event("click", { bubbles: true }));
+    ok(new Set(shown()).size === 1 && shown()[0] === older && shown().length === tagged.filter((m) => m === older).length
+      && /Showing /.test(note.textContent),
+      "and a month is still one tap, showing that month's rows and no others");
     strip.querySelector('button[data-mf=""]').dispatchEvent(new W90.Event("click", { bubbles: true }));
     ok(shown().length === tagged.length && /every order from the start/.test(note.textContent),
-      "All shows every dated row again");
-    const older = [...new Set(tagged)].sort()[0];
-    strip.querySelector('button[data-mf="' + older + '"]').dispatchEvent(new W90.Event("click", { bubbles: true }));
-    ok(new Set(shown()).size === 1 && shown()[0] === older && shown().length === tagged.filter((m) => m === older).length,
-      "and a month shows that month's rows and no others");
+      "and All brings the whole account back");
     /* the filter hides rows and nothing else: what the account stands at is the account's */
     const footBefore = (D90.querySelector("#out") || {}).textContent || "";
     strip.querySelector('button[data-mf=""]').dispatchEvent(new W90.Event("click", { bubbles: true }));
@@ -18387,6 +18394,50 @@ await (async () => {
   const atSweep = up.indexOf("accountSweep("), atBuild = up.indexOf('step(4, "build")'), atCommit = up.indexOf('step(7, "version")');
   ok(atSweep > 0 && atSweep < atBuild && atBuild < atCommit,
     "and the chain calls it before the build and long before the commit: " + JSON.stringify({ atSweep, atBuild, atCommit }));
+})();
+
+section("v769: the account is one live document, and the message that hands it over says so");
+await (async () => {
+  /* HIS INSTRUCTION OF 21 SEP 2026, reading the message he was about to send: "there will be no
+     monthly statement, just a single live version". Both messages opened "Your statement of account
+     for September 2026 is ready" and closed by promising "each monthly statement as it was issued".
+     That was true of a monthly issue and is not true of this: one live document that keeps up with
+     the orders, beside the prices and the order form. */
+  const S69 = await import("../stmt/send.js");
+  const { siteWords } = await import("../src/orders.js");
+  const row69 = { url: "https://site.test/s/" + "t".repeat(32), user: "27a4-gkgw", pw: "never-in-here" };
+  const sign = S69.signInMessage(row69), link = S69.linkMessage(row69);
+
+  /* ---- WHAT IT NO LONGER SAYS ---- */
+  for (const [what, msg] of [["the link", sign], ["the username", link]]) {
+    ok(!/statement of account for /.test(msg) && !/\bmonthly\b/.test(msg)
+      && !/January|February|March|April|May|June|July|August|September|October|November|December/.test(msg),
+      what + "'s message names no month and promises no monthly statement: " + JSON.stringify(msg.slice(0, 60)));
+    ok(/^Your account is ready to use\./.test(msg), what + "'s message opens on the account, not on a document");
+    ok(/statement of account, which keeps up with your orders/.test(msg) && /latest prices/.test(msg)
+      && /a form to place an order/.test(msg),
+      what + "'s message says the three things it is for: " + what);
+    ok(/write it on the order and I will answer you there/.test(msg),
+      what + "'s message says where a question goes, which is ON AN ORDER, because that is where the "
+      + "thread lives and there is no other channel to promise");
+    ok(/Add to Home Screen/.test(msg) && /Install app/.test(msg) && /Remember me/.test(msg) && /Log out/.test(msg),
+      what + "'s message carries the home screen steps for both phones, and the two switches on the door");
+    ok(siteWords(msg) === "", what + "'s message passes the lock every word sent to a customer passes: " + siteWords(msg));
+    ok(!msg.includes(row69.pw), what + "'s message carries no password, which is the rule that made the link");
+  }
+
+  /* ---- AND WHAT EACH ONE STILL HAS TO SAY ---- */
+  ok(/This link signs you in, once/.test(sign) && /stops working after a week/.test(sign)
+    && /anybody holding it can open your account until you have used it/.test(sign),
+    "the link's own message still says it is theirs, once, and not for passing on: it can be forwarded "
+    + "and the message does not pretend otherwise");
+  ok(/Username: 27a4-gkgw/.test(link) && /password is in a separate message/.test(link) && !/signs you in/.test(link),
+    "and the username road still names the username and sends the password by its own channel");
+  ok(S69.signInMessage.length === 1 && S69.linkMessage.length === 1,
+    "neither takes a month any more, so no caller can put one back by passing one: "
+    + JSON.stringify([S69.signInMessage.length, S69.linkMessage.length]));
+  ok(S69.signInMessage(row69, "September 2026") === sign && S69.linkMessage(row69, "September 2026") === link,
+    "and a month handed in by a caller that has not caught up changes nothing, so no road can put one back");
 })();
 
 section("The suite frees its windows: every section's body is its own async function");

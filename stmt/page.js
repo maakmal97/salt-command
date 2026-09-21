@@ -814,10 +814,14 @@ const CLIENT_JS = `
 
   /* ---- THE MONTH FILTER (v690, his instruction of 18 Sep 2026) -------------------------------
      THE STATEMENT IS NOT BOUND TO A MONTH ANY MORE: it carries every order from the start, and
-     this filters it. The newest month opens, because that is what a reader has come for, and All
-     is one tap away. Each row says which month it belongs to; an undated row belongs to none and
+     this filters it. Each row says which month it belongs to; an undated row belongs to none and
      shows whatever is chosen. What the account stands at is the account's, so the totals under the
-     table do not move with the filter, and the line above says so. */
+     table do not move with the filter, and the line above says so.
+     v769, HIS INSTRUCTION OF 21 SEP 2026: IT OPENS ON THE WHOLE ACCOUNT. v690 opened on the newest
+     month, because a monthly statement was what a reader had come for. There are no monthly
+     statements any more, just one live document that keeps up with the orders, so opening on a month
+     hid the rest of somebody's own account behind a tap they had no reason to take. A month is still
+     one tap, for a reader who wants to look at one. */
   var mfPick=null;
   function monthLabel(m){
     var y=m.slice(0,4), mm=+m.slice(5,7);
@@ -845,7 +849,7 @@ const CLIENT_JS = `
     }
     months.sort().reverse();
     if(months.length<2){ mfil.hidden=true; mfPick=null; applyMonths(); return; }
-    mfPick=months[0];
+    mfPick=null;   /* v769: the whole account, and a month is one tap */
     months.forEach(function(m){
       var b=document.createElement('button'); b.type='button'; b.setAttribute('data-mf',m);
       b.textContent=monthLabel(m);

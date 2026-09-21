@@ -590,7 +590,7 @@ async function ownerSheet(env, origin) {
     out.push({
       code: a.code, username: a.username, test: !!a.test,
       issued: s ? s.issued : null, t: s ? s.t : null, flag: s ? s.flag : null,
-      url, msg: linkMessage({ url, user: a.username }, month), tot: s ? totalsLine(s.t) : "",
+      url, msg: linkMessage({ url, user: a.username }), tot: s ? totalsLine(s.t) : "",
       qr: QR.qrMatrix(url).map((line) => line.join("")),
       pwMaster: s ? s.pwMaster || null : null,
       seen: seen ? { first: seen.first || null, last: seen.last || null, opens: +seen.opens || 0 } : null,
@@ -878,7 +878,7 @@ export default {
         if (!(await mintSignin(env, u, tok, b && b.wrap))) return json({ ok: false, error: "send the token and the wrap" }, 400);
         const link = url.origin + "/s/" + tok;
         const issue = await env.STMT.get("issue");
-        return json({ ok: true, url: link, msg: signInMessage({ url: link, user: u }, monthNameOf(issue)),
+        return json({ ok: true, url: link, msg: signInMessage({ url: link, user: u }),
           qr: QR.qrMatrix(link) });
       }
       /* the associates' report card, written by the publish and read only here (v691) */
