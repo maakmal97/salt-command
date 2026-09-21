@@ -11,7 +11,13 @@
 	// the stronger version of the same idea, and goes in a "routes" block here when there is one.
 	"name": "k7m3p2",
 	"main": "stmt/worker.js",
-	"compatibility_date": "2026-08-08",
+	// COMPATIBILITY DATE, raised from 2026-08-08 on his instruction of 22 Sep 2026. Checked
+	// before moving it: not one JavaScript flag defaults on between those two dates, the only
+	// entry in the window being python_workers_314 on 2026-09-08, so this changes no
+	// behaviour today. It is the newest date this workerd (1.20260921.1) supports, so local
+	// dev and the edge agree. rev.json's id does not cover this file, so a change here is
+	// deployed BY HAND.
+	"compatibility_date": "2026-09-21",
 	// ITS OWN STORE. One key per username (u:<username>) holding that customer's envelope and
 	// verifier, plus the attempt counters (fail:) and the opened marks (seen:). Nothing from the
 	// desk's namespace is bound here, so this Worker cannot read the queue or the vault even by

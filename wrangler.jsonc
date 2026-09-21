@@ -2,7 +2,13 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "salt-command",
 	"main": "src/worker.js",
-	"compatibility_date": "2026-08-08",
+	// COMPATIBILITY DATE, raised from 2026-08-08 on his instruction of 22 Sep 2026. Checked
+	// before moving it: not one JavaScript flag defaults on between those two dates, the only
+	// entry in the window being python_workers_314 on 2026-09-08, so this changes no
+	// behaviour today. It is the newest date this workerd (1.20260921.1) supports, so local
+	// dev and the edge agree. rev.json's id does not cover this file, so a change here is
+	// deployed BY HAND.
+	"compatibility_date": "2026-09-21",
 	// A Worker WITH static assets. The desk and its shell live in public/; the
 	// Worker code is the cloud stand-in for serve_desk.py, backed by KV. The Worker
 	// runs first on every request (run_worker_first), handles the /queue, /vault and
