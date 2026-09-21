@@ -28,6 +28,13 @@ const MARK = "orders:nudged";
    would be compared against the newest PLACEMENT and read as old news, and a placement would clear
    the memory of an unanswered line. Two marks, either of which wakes him. */
 const SAID_MARK = "orders:said";
+/* v760: the third mark. A placement, a line and a payment each need their own, or the newest of
+   them buries the other two: one mark means the second thing to happen in a minute looks old. */
+const THEIRS_MARK = "orders:theirs";
+/* what the last of them was, for the banner to read. It expires, because a wake is delivered in
+   seconds and a line about a payment made this morning would be a lie at lunchtime. */
+const NEWS_KEY = "orders:news";
+const NEWS_WORD = { pay: "A customer has paid", cancel: "A customer has withdrawn an order" };
 
 function site(env, path, init) {
   if (!env.STMT_SITE || !env.STMT_DESK_KEY) return null;
@@ -380,14 +387,28 @@ export async function nudgeOrders(env) {
   if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
   const b = await r.json().catch(() => ({}));
   if (!r.ok || !b.ok) return { ok: false, error: b.error || ("the statements site answered http " + r.status) };
-  const newest = b.last || null, said = b.said || null;
+  const newest = b.last || null, said = b.said || null, theirs = b.theirs || null;
   const mark = (await env.SALT_QUEUE.get(MARK)) || "", saidMark = (await env.SALT_QUEUE.get(SAID_MARK)) || "";
+  const theirsMark = (await env.SALT_QUEUE.get(THEIRS_MARK)) || "";
   const placed = !!(newest && newest > mark), spoke = !!(said && said > saidMark);
-  if (!placed && !spoke) return { ok: true, sent: 0 };
+  /* v760: A PAYMENT AND A WITHDRAWAL WOKE NOBODY. The site has written the moment of every change
+     since v694 and the desk asked for it every minute and read only the placement, so somebody
+     settling RM435 at midnight was invisible until he next opened the desk. The mark carries the
+     moment and the word, so the banner can say which rather than guess. */
+  const did = !!(theirs && theirs > theirsMark);
+  if (!placed && !spoke && !did) return { ok: true, sent: 0 };
   /* the marks move whether or not the push reaches anybody: a wake that failed is not a reason to
      wake for the same line every minute until it does */
   if (placed) await env.SALT_QUEUE.put(MARK, newest);
   if (spoke) await env.SALT_QUEUE.put(SAID_MARK, said);
+  let news = null;
+  if (did) {
+    await env.SALT_QUEUE.put(THEIRS_MARK, theirs);
+    news = NEWS_WORD[String(theirs).split("|")[1]] || null;
+    /* an hour on the key and ten minutes on the reading: two limits because KV's own expiry is not
+       prompt enough to be the freshness rule, and a banner is written from what is true now. */
+    if (news) await env.SALT_QUEUE.put(NEWS_KEY, JSON.stringify({ what: news, at: String(theirs).split("|")[0] }), { expirationTtl: 3600 });
+  }
   const p = await sendPush(env, { tag: "orders", urgency: "high" });
-  return { ok: true, sent: p.sent || 0, newest: placed ? newest : null, said: spoke ? said : null };
+  return { ok: true, sent: p.sent || 0, newest: placed ? newest : null, said: spoke ? said : null, did: did ? news : null };
 }

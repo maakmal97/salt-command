@@ -67,6 +67,13 @@ export const LAST_PLACED = "last-placed";
 /* v694: and the moment of the newest CHANGE of any kind, so the desk's every-minute reconcile asks
    one question before it lists anything. A payment the customer made moves this and not that. */
 export const LAST_TOUCHED = "last-touched";
+/* v760: AND A MARK ONLY THEIR OWN MOVES WRITE. `last-touched` is written by his moves as well,
+ * because the reconcile has to list after a handover too, so waking him on it would have woken him
+ * for his own taps. This one is written by a PAYMENT and a WITHDRAWAL and by nothing else: choosing
+ * how to pay is not news, and a line they wrote already has `last-said`.
+ * IT CARRIES WHAT HAPPENED, not only when: the moment first, so it still compares as a string, then
+ * the word. The desk cannot ask afterwards, because by then the order reads the same either way. */
+export const LAST_THEIRS = "last-theirs";
 /* ---- WHAT A CUSTOMER WRITES ON AN ORDER (v751, his instruction of 20 Sep 2026) ----------------
  * He asked at the start of this work whether a customer could chat about an order, or leave a
  * comment. Both, and they are one thing: a THREAD on the order, `msgs[]`, each { at, by, text }.
@@ -321,6 +328,9 @@ export async function customerMove(env, u, id, action, body) {
   await env.STMT.put(LAST_TOUCHED, at);
   /* v751: and a mark the desk's own nudge can read, so a line waits for him rather than for a poll */
   if (said) await env.STMT.put(LAST_SAID, at);
+  /* v760: money in, or the order taken back. Both are things he has to act on and neither happens
+     in front of him, so both wake him; choosing a rail does not. */
+  if (action === "pay" || action === "cancel") await env.STMT.put(LAST_THEIRS, at + "|" + action);
   /* v700: a payment that completes the order is the one customer move worth waking the phone for,
      because it is the only one whose answer arrives after they have put the phone down. Every
      other move of theirs happens with the page in front of them. */

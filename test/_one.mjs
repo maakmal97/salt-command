@@ -99,197 +99,107 @@ const postQ = (body, extraHeaders = {}) => req("/queue", {
 });
 
 /* ---- 1. Worker: the queue contract --------------------------------------------- */
-section("v759: every wake the desk mints reaches the phone, and the banner names what is waiting");
+section("v760: a customer paying or taking an order back wakes him, and the banner says which");
 await (async () => {
-  /* MEASURED ON THE LIVE STORE, 21 SEP 2026. All three of his subscriptions carried topics ["orders"]
-     and nothing else, so sendPush dropped two of the three kinds of wake the desk mints: the row
-     drafted from a CUSTOMER'S order, which waits under Approve, and the morning round, which is the
-     only thing that chases money he is holding that is somebody else's. v708 says the round wakes him
-     on an open refund; it could not, and had not since 16 September. THE FIXTURES IN THE SUITE WERE
-     WIDER THAN HIS PHONE: v675's "everything" record and v708's push:aa11 both carry no topics at all,
-     so both proved a send that his own device would have filtered. This section pins the shape his
-     phone actually carries. */
-  const { sendPush } = await import("../src/push.js");
-  const { runDrafter } = await import("../src/drafter.js");
-  const deskW9 = (await import("../src/worker.js")).default;
-  const kp9 = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
-  const vapid9 = { VAPID_PUBLIC_KEY: "pub", VAPID_SUBJECT: "mailto:a@b.test",
-    VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kp9.privateKey)) };
+  /* MEASURED 21 SEP 2026: the site has written the moment of every change since v694, the desk asked
+     the site for it every minute, and the nudge read the placement and the message and threw the rest
+     away. So somebody settling RM435 at midnight, or taking an order back, woke nobody at all and sat
+     there until he next opened the desk. HIS OWN MOVES WRITE `last-touched` TOO, which is why waking
+     on that mark was never the answer: the reconcile has to list after a handover, so his tap moves it. */
+  const { placeOrder, customerMove, deskMove, LAST_THEIRS, LAST_TOUCHED } = await import("../stmt/orders.js");
+  const { nudgeOrders } = await import("../src/orders.js");
+  const stmtW6 = (await import("../stmt/worker.js")).default;
+  const deskW6 = (await import("../src/worker.js")).default;
+  const kp6 = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const skv6 = new KV(), dkv6 = new KV();
+  const senv6 = { STMT: skv6, STMT_DESK_KEY: "desk-key" };
+  const denv6 = { SALT_QUEUE: dkv6, STMT_DESK_KEY: "desk-key", VAPID_PUBLIC_KEY: "pub", VAPID_SUBJECT: "mailto:a@b.test",
+    VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kp6.privateKey)),
+    STMT_SITE: { fetch: (url, init) => stmtW6.fetch(new Request(url, init), senv6) } };
+  await dkv6.put("push:his", JSON.stringify({ endpoint: "https://push.example/his-phone", topics: ["orders", "approve", "salt"] }));
 
-  /* ---- 1. THE THREE KINDS OF WAKE, against the shape his phone carries ---- */
-  const kv9 = new KV();
-  await kv9.put("push:was", JSON.stringify({ endpoint: "https://push.example/as-it-was", topics: ["orders"] }));
-  await kv9.put("push:now", JSON.stringify({ endpoint: "https://push.example/as-it-is", topics: ["orders", "approve", "salt"] }));
-  const env9 = Object.assign({ SALT_QUEUE: kv9 }, vapid9);
-  const fire = async (tag) => {
+  const u6 = "abcd-efgh";
+  const place6 = async () => (await placeOrder(senv6, u6, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  const nudge = async () => {
     const realF = globalThis.fetch, hit = [];
-    globalThis.fetch = async (u) => { hit.push(String(u)); return new Response("", { status: 201 }); };
-    try { await sendPush(env9, { tag }); } finally { globalThis.fetch = realF; }
-    return hit.map((u) => u.split("/").pop()).sort();
+    globalThis.fetch = async (uu) => { hit.push(String(uu)); return new Response("", { status: 201 }); };
+    let r; try { r = await nudgeOrders(denv6); } finally { globalThis.fetch = realF; }
+    return { r, hit };
   };
-  const wOrders = await fire("orders"), wApprove = await fire("approve"), wSalt = await fire("salt");
-  ok(JSON.stringify(wOrders) === '["as-it-is","as-it-was"]',
-    "an order wakes both the old shape and the new: " + JSON.stringify(wOrders));
-  ok(JSON.stringify(wApprove) === '["as-it-is"]' && JSON.stringify(wSalt) === '["as-it-is"]',
-    "and a row waiting for approval and the morning round reach the device that asks for all three, "
-    + "and reached nobody at all while every device asked for orders alone: " + JSON.stringify({ wApprove, wSalt }));
 
-  /* ---- 2. THE SWITCH ASKS FOR ALL THREE, AND AN OLD SUBSCRIPTION IS UPGRADED WITHOUT A TAP ----
-     The record is keyed by the endpoint's hash, so posting it again widens the same record. It is done
-     once a load and only where a subscription is already on file, because a switch he turned on in
-     September must not have to be turned off and on again to hear what it was always meant to hear. */
-  const { openMaster: om59 } = await import("../tools/payload.mjs");
-  const { w: w59 } = await om59();
-  try {
-    ok(JSON.stringify(w59.eval("ALERT_TOPICS")) === '["orders","approve","salt"]',
-      "the desk names the three wakes it asks for in one place: " + JSON.stringify(w59.eval("ALERT_TOPICS")));
-    const sent9 = [];
-    const sub9 = { endpoint: "https://push.example/his-phone" };
-    w59.localStorage.setItem("saltWriteKey", "k-fixture");
-    const box9 = w59.document.createElement("div"); box9.id = "ordAlert"; w59.document.body.appendChild(box9);
-    Object.defineProperty(w59.navigator, "serviceWorker", { configurable: true, value: { ready: Promise.resolve({
-      pushManager: { getSubscription: async () => sub9 } }) } });
-    w59.PushManager = function () {};
-    w59.Notification = { permission: "granted", requestPermission: async () => "granted" };
-    w59.indexedDB = { open: () => { const rq = {}; setTimeout(() => { rq.result = { createObjectStore() {},
-      transaction: () => { const tx = { objectStore: () => ({ put() {} }) }; setTimeout(() => tx.oncomplete && tx.oncomplete(), 0); return tx; } };
-      if (rq.onsuccess) rq.onsuccess(); }, 0); return rq; } };
-    w59.fetch = async (path, init) => { sent9.push({ path: String(path), key: init && init.headers && init.headers["X-Salt-Key"],
-      body: init && init.body ? JSON.parse(init.body) : null }); return { ok: true, status: 200, json: async () => ({ ok: true }) }; };
-    await w59.eval("ordAlertDraw()");
-    await new Promise((r) => setTimeout(r, 20));
-    const ups = sent9.filter((x) => x.path === "push/subscribe");
-    ok(ups.length === 1 && ups[0].key === "k-fixture"
-      && JSON.stringify(ups[0].body) === '{"endpoint":"https://push.example/his-phone","topics":["orders","approve","salt"]}',
-      "drawing the card over a subscription already on file widens it to all three, keyed and without a tap: " + JSON.stringify(ups));
-    ok(/Alerts on/.test(box9.textContent) && /morning round/.test(box9.textContent),
-      "and the switch says what now wakes the device: " + box9.textContent);
-    await w59.eval("ordAlertDraw()");
-    await new Promise((r) => setTimeout(r, 20));
-    ok(sent9.filter((x) => x.path === "push/subscribe").length === 1,
-      "it is done once a load and not once a draw: " + sent9.filter((x) => x.path === "push/subscribe").length);
-  } finally { await new Promise((r) => setTimeout(r, 200)); try { w59.close(); } catch (e) { /* best effort */ } }
+  const o6 = await place6();
+  await nudge();   /* the placement's own wake, taken out of the way */
+  await deskMove(senv6, u6, o6.id, { status: "acknowledged", mode: "collect" });
+  const afterHis = await skv6.get(LAST_THEIRS);
+  ok(afterHis === null || afterHis === undefined,
+    "his own acknowledgement writes nothing on the customers' mark, though it moves the shared one: "
+    + JSON.stringify({ theirs: afterHis, touched: !!(await skv6.get(LAST_TOUCHED)) }));
+  const quiet = await nudge();
+  ok(quiet.hit.length === 0, "and it wakes him for his own tap not at all: " + JSON.stringify(quiet.hit));
 
-  /* ---- 3. A ROW HE JUST TYPED DOES NOT BUZZ THE PHONE HE TYPED IT ON ----
-     The narrowing v675 wrote into the subscription is kept, at the source where it belongs. Both roads
-     draft the same entry from the same store here, so neither can pass by drafting nothing. */
-  const bookN = {
-    version: "vN", pricing: { v: "vN", byProduct: { salt: { stockCost: 56, replCost: 56, floors: { "1": { floor: 60 } } } } },
-    purchases: [{ date: "2026-08-13", supplier: "SA5-BTR", qty: 12.5, total: 700, receivedOn: "2026-08-13", receivedQty: 12.5 }],
-    sales: [{ date: "2026-08-01", customer: "CC5-OKR", qty: 1, total: 90, cash: 90, deliveredQty: 1 }],
-    state: { roster: ["CC5-OKR", "SA5-BTR"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
-  };
-  const mirrorN = (b) => {
-    const self = { drafts: new Map(), refused: new Map() };
-    self.prepare = (sql) => {
-      const s = sql.replace(/\s+/g, " ").trim(); let binds = [];
-      const api = {
-        bind(...a) { binds = a; return api; },
-        async all() {
-          if (/^SELECT doc FROM entry/.test(s)) return { results: (b[binds[0]] || []).map((r) => ({ doc: JSON.stringify(r) })) };
-          if (/^SELECT key,doc FROM state/.test(s)) return { results: Object.keys(b.state).map((k) => ({ key: k, doc: JSON.stringify(b.state[k]) })).concat([{ key: "PRICING", doc: JSON.stringify(b.pricing) }]) };
-          if (/^SELECT id FROM draft/.test(s)) return { results: [...self.drafts.keys()].map((id) => ({ id })) };
-          if (/^SELECT id,source FROM refused/.test(s)) return { results: [...self.refused.keys()].map((id) => ({ id })) };
-          return { results: [] };
-        },
-        async first() {
-          if (/^SELECT v,stamped FROM snapshot/.test(s)) return { v: b.version, stamped: null };
-          if (/^SELECT MAX\(committed_at\)/.test(s)) return { t: null };
-          if (/COUNT\(\*\)/.test(s)) return { n: 0 };
-          return null;
-        },
-        async run() {
-          if (/^INSERT OR IGNORE INTO draft/.test(s)) { self.drafts.set(binds[0], binds[3]); return { meta: { changes: 1 } }; }
-          if (/^INSERT OR REPLACE INTO refused/.test(s)) { self.refused.set(binds[0], binds[2]); return { meta: { changes: 1 } }; }
-          return { meta: { changes: 0 } };
-        }
-      };
-      return api;
-    };
-    return self;
-  };
-  const queued = (at) => JSON.stringify({ queue: [{ at, payload: { mode: "new", direction: "SELL", party: "CC5-OKR",
-    qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16", product: "salt" } }] });
-  const road = async (how) => {
-    const kvR = new KV(), db = mirrorN(bookN);
-    await kvR.put("push:now", JSON.stringify({ endpoint: "https://push.example/as-it-is", topics: ["orders", "approve", "salt"] }));
-    /* the arrival road POSTS the entry, which is what that road is; the net finds it already in the
-       store. A queue POST REPLACES that device's key with the body it carries, so posting an empty
-       queue beside a stored entry would have wiped the very row the drafter was meant to find. */
-    if (how !== "arrival") await kvR.put("q:phone", queued("2026-08-16T01:00:00.000Z"));
-    const envR = Object.assign({ SALT_QUEUE: kvR, SALT_LEDGER: db, REQUIRE_ACCESS: "0" }, vapid9);
-    const realF = globalThis.fetch, realL = console.log, hit = [], logs = [];
-    globalThis.fetch = async (u) => { hit.push(String(u)); return new Response("", { status: 201 }); };
-    console.log = (...a) => logs.push(a.join(" "));
-    try {
-      if (how === "arrival") {
-        const waits = [];
-        await deskW9.fetch(new Request("https://salt-command.example/queue", { method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(Object.assign({ device: "phone", updated: "2026-08-16T01:00:01.000Z" }, JSON.parse(queued("2026-08-16T01:00:00.000Z")))) }),
-          envR, { waitUntil: (p) => waits.push(p) });
-        await Promise.all(waits);
-      } else {
-        const waits = [];
-        await deskW9.scheduled({ cron: "* * * * *", scheduledTime: Date.parse("2026-09-21T02:15:00Z") },
-          envR, { waitUntil: (p) => waits.push(p) });
-        await Promise.all(waits);
-      }
-    } finally { globalThis.fetch = realF; console.log = realL; }
-    return { hit, logs, drafts: db.drafts.size };
-  };
-  const arrival = await road("arrival"), net = await road("net");
-  ok(arrival.drafts === 1 && net.drafts === 1,
-    "both roads draft the same waiting entry, so neither passes here by drafting nothing: "
-    + JSON.stringify({ arrival: arrival.drafts, net: net.drafts }));
-  ok(arrival.hit.length === 0,
-    "a row drafted ON ARRIVAL sends no banner: it is the tap in his hand, and the desk draws it under "
-    + "Approve while he is looking: " + JSON.stringify(arrival.hit));
-  ok(net.hit.some((u) => u.endsWith("as-it-is")),
-    "and the same row found by the net, which is a row he was not watching for, does wake him: " + JSON.stringify(net.hit));
+  await customerMove(senv6, u6, o6.id, "method", { method: "cod" });
+  const afterRail = await skv6.get(LAST_THEIRS);
+  ok(afterRail === null || afterRail === undefined,
+    "choosing how to pay is not news either: " + JSON.stringify(afterRail));
 
-  /* ---- 4. THE SUMMARY CARRIES THE REFUND, so the round he now receives cannot say square over it ---- */
-  const d1S = (refunds) => ({ prepare(q) {
-    const first = async () => (/COUNT_ON/.test(q) ? { doc: JSON.stringify({ salt: "2026-09-21", oil: "2026-09-21" }) } : (/COUNT\(\*\)/.test(q) ? { n: 0 } : null));
-    const all = async () => (/collection='customerRefunds'/.test(q) ? { results: refunds } : { results: [] });
-    return { bind: () => ({ all, first, run: async () => ({}) }), all, first, run: async () => ({}) };
-  } });
-  const summary = async (refunds) => {
-    const envS = { SALT_LEDGER: d1S(refunds), SALT_QUEUE: new KV(), REQUIRE_ACCESS: "0" };
-    return (await (await deskW9.fetch(new Request("https://salt-command.example/push/summary"), envS)).json());
-  };
-  const open1 = await summary([{ doc: JSON.stringify({ party: "CZ4-MK", amount: 20, since: "2026-08-26" }) },
-    { doc: JSON.stringify({ party: "CZ6-WM", amount: 80, since: "2026-07-24", paidOn: "2026-07-31" }) }]);
-  const none1 = await summary([{ doc: JSON.stringify({ party: "CZ6-WM", amount: 80, paidOn: "2026-07-31" }) }, { doc: "not json" }]);
-  ok(open1.refunds === 1, "the summary counts a refund still owed: " + JSON.stringify(open1.refunds));
-  ok(none1.refunds === 0, "and counts neither one already paid back nor a row that will not parse: " + JSON.stringify(none1.refunds));
+  await customerMove(senv6, u6, o6.id, "pay", { amount: 100, method: "cod" });
+  const mark6 = await skv6.get(LAST_THEIRS);
+  ok(/^\d{4}-\d\d-\d\dT.+\|pay$/.test(String(mark6)),
+    "a payment writes the moment AND the word, the moment first so it still compares as a string: " + mark6);
+  const lastR = await stmtW6.fetch(new Request("https://k7m3p2.example/desk/orders/last", { headers: { "X-Stmt-Desk": "desk-key" } }), senv6);
+  const lastJ = await lastR.json();
+  ok(lastJ.theirs === mark6 && (await stmtW6.fetch(new Request("https://k7m3p2.example/desk/orders/last"), senv6)).status === 401,
+    "the desk reads it in the same one call it already made, and only on the desk key: " + JSON.stringify(lastJ.theirs));
 
-  /* ---- 5. THE BANNER NAMES IT, AND AN ORDER NO LONGER HIDES THE REST ---- */
-  const vm9 = await import("node:vm");
-  const swSrc9 = readFileSync(join(REPO, "public", "sw.js"), "utf8");
-  const wake9 = async (s) => {
+  const paid6 = await nudge();
+  ok(paid6.hit.length === 1 && paid6.hit[0] === "https://push.example/his-phone" && paid6.r.did === "A customer has paid",
+    "and that wakes him, which nothing did before: " + JSON.stringify({ hit: paid6.hit, did: paid6.r.did }));
+  const again6 = await nudge();
+  ok(again6.hit.length === 0, "the same payment does not wake him every minute after: " + JSON.stringify(again6.hit));
+
+  /* ---- THE THREE MARKS DO NOT BURY EACH OTHER ---- */
+  const o7 = await place6();
+  await customerMove(senv6, u6, o7.id, "cancel", {});
+  const both = await nudge();
+  ok(both.r.newest && both.r.did === "A customer has withdrawn an order" && both.hit.length === 1,
+    "a placement and a withdrawal inside one minute are both seen, and are one wake: " + JSON.stringify({ newest: !!both.r.newest, did: both.r.did }));
+  ok((await dkv6.get("orders:theirs")) && (await dkv6.get("orders:nudged")),
+    "each keeps its own mark, so the newer of them cannot make the other look old");
+
+  /* ---- THE BANNER IS WRITTEN FROM THE SUMMARY, so the summary carries it while it is fresh ---- */
+  const news = await dkv6.get("orders:news", "json");
+  ok(news && news.what === "A customer has withdrawn an order", "the desk remembers what to say: " + JSON.stringify(news));
+  const d1S6 = { prepare: (q) => { const first = async () => (/COUNT_ON/.test(q) ? { doc: JSON.stringify({ salt: "2026-09-21", oil: "2026-09-21" }) } : (/COUNT\(\*\)/.test(q) ? { n: 0 } : null));
+    const all = async () => ({ results: [] }); return { bind: () => ({ all, first, run: async () => ({}) }), all, first, run: async () => ({}) }; } };
+  const summ6 = async () => (await (await deskW6.fetch(new Request("https://salt-command.example/push/summary"),
+    Object.assign({ SALT_LEDGER: d1S6, REQUIRE_ACCESS: "0" }, denv6))).json());
+  const fresh = await summ6();
+  ok(fresh.news === "A customer has withdrawn an order", "the summary carries it: " + JSON.stringify(fresh.news));
+  await dkv6.put("orders:news", JSON.stringify({ what: "A customer has paid", at: "2026-09-21T00:00:00.000Z" }));
+  ok((await summ6()).news === undefined,
+    "and drops it once it is stale, because a banner about a payment made this morning is a lie by lunchtime");
+
+  const vm6 = await import("node:vm");
+  const swSrc6 = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const wake6 = async (s) => {
     const L = {}, shown = [];
     const ctx = { URL, console, caches: {},
       self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" },
         registration: { scope: "https://salt-command.example/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
       clients: { matchAll: async () => [], openWindow: async () => {} },
       fetch: async () => ({ ok: true, json: async () => s }) };
-    vm9.createContext(ctx); vm9.runInContext(swSrc9, ctx);
+    vm6.createContext(ctx); vm6.runInContext(swSrc6, ctx);
     const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits);
     return shown[0];
   };
-  const bRefund = await wake9({ ok: true, pending: 0, refused: 0, refunds: 1, countDue: [], orders: 0 });
-  const bBoth = await wake9({ ok: true, pending: 2, refused: 0, refunds: 1, countDue: ["salt"], orders: 1 });
-  const bQuiet = await wake9({ ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 0 });
-  ok(bRefund && /1 refund to pay back/.test(bRefund.opt.body),
-    "the morning round names a refund still owed, which it never did: " + (bRefund && bRefund.opt.body));
-  ok(bBoth && bBoth.t === "New customer order" && /acknowledge/.test(bBoth.opt.body)
-    && /1 refund to pay back/.test(bBoth.opt.body) && /2 rows waiting/.test(bBoth.opt.body) && /salt not counted/.test(bBoth.opt.body),
-    "an order still leads and no longer hides a refund, a row owed a decision or a shelf not counted: " + (bBoth && bBoth.opt.body));
-  ok(bQuiet && /Nothing waiting/.test(bQuiet.opt.body) && bQuiet.t === "Salt Command is square",
-    "and with nothing owed it still says so: " + (bQuiet && bQuiet.opt.body));
+  const bNews = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, news: "A customer has paid" });
+  const bPlain = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2 });
+  ok(bNews && bNews.t === "A customer has paid" && /2 orders waiting on you/.test(bNews.opt.body)
+    && /1 row waiting for approval/.test(bNews.opt.body) && bNews.opt.data.url === "./desk#orders",
+    "the banner leads with what they just did, and still carries what is waiting: " + JSON.stringify(bNews && bNews.opt.body));
+  ok(bPlain && bPlain.t === "2 customer orders waiting",
+    "and with no news it is the count, as it was: " + (bPlain && bPlain.t));
 })();
-
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

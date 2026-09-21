@@ -1,5 +1,17 @@
 [
  {
+  "v": "v760",
+  "d": "21 Sep 2026",
+  "t": "A CUSTOMER PAYING OR TAKING AN ORDER BACK WAKES HIM, AND THE BANNER SAYS WHICH",
+  "n": [
+   "<b>THE SITE HAS WRITTEN THE MOMENT OF EVERY CHANGE SINCE v694, AND NOBODY READ IT.</b> The desk asked the site for it every minute, took the placement and the line written on an order, and threw the rest away. So a customer settling RM435 at midnight, or taking an order back before the goods moved, woke nobody: it sat there until he next opened the desk. Measured 21 Sep 2026, beside the two wakes v759 found.",
+   "<b>A MARK ONLY THEIR OWN MOVES WRITE.</b> Waking on <code>last-touched</code> was never the answer, because HIS moves write it too: the reconcile has to list after a handover, so his own tap would have buzzed his own phone. <code>last-theirs</code> is written by a payment and a withdrawal and by nothing else. Choosing a rail is not news, and a line they wrote already has its own mark.",
+   "<b>IT CARRIES WHAT HAPPENED, NOT ONLY WHEN.</b> The moment first, so it still compares as a string and the mark still works; then the word. The desk cannot ask afterwards, because by then the order reads the same whichever it was. The banner is built from the summary and from nothing else, so the desk remembers the line for ten minutes and the wake reads <b>A customer has paid</b> over what is waiting, rather than reporting a count that was as true an hour ago.",
+   "<b>THREE MARKS, AND THAT IS THE POINT.</b> A placement, a line and a payment each keep their own: with one between them, the second thing to happen in a minute looks older than the mark and is never seen at all. One wake still goes out, because four banners is a chore and a chore is swiped away unread.",
+   "<b>THE CHECKS.</b> Fourteen assertions: his acknowledgement writing the shared mark and not theirs, and waking him not at all; a rail chosen writing nothing; a payment writing the moment and the word; the site handing it over on the desk key alone; the wake, and the same payment not waking him every minute after; a placement and a withdrawal inside one minute both seen and one banner sent; the summary carrying the line and dropping it once stale; and the banner in both states. Nine mutations, each red."
+  ]
+ },
+ {
   "v": "v759",
   "d": "21 Sep 2026",
   "t": "EVERY WAKE THE DESK MINTS REACHES THE PHONE, AND THE BANNER NAMES WHAT IS WAITING",

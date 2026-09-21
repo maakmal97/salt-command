@@ -147,6 +147,18 @@ async function banner() {
   }
   if (s.refused) bits.push(s.refused === 1 ? "1 entry the drafter refused" : s.refused + " entries the drafter refused");
 
+  /* v760: WHAT A CUSTOMER JUST DID LEADS OVER WHAT IS MERELY WAITING. A payment or a withdrawal is
+     minutes old and is why this wake was sent; the count of orders waiting was as true an hour ago.
+     It still opens Orders, because that is where the answer to it is. */
+  if (s.news) {
+    return {
+      title: s.news,
+      body: (s.orders ? (s.orders === 1 ? "1 order waiting on you" : s.orders + " orders waiting on you") : "Open the desk to look")
+        + (bits.length ? " \u00b7 " + bits.join(" \u00b7 ") : "") + ".",
+      tag: "salt",
+      url: "./desk#orders",
+    };
+  }
   /* A CUSTOMER ORDER LEADS (16 Sep 2026): it is the one thing here a customer is waiting on, so it
      is the title, and a tap opens the Orders card where it is acknowledged. IT NO LONGER HIDES THE
      REST (v759): this returned before the list was built, so while any order was waiting the wake

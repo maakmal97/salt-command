@@ -861,6 +861,13 @@ export default {
           }
         }
         out.orders = await ordersWaiting(env);
+        /* v760: and the last thing a customer DID, while it is fresh. The banner is built from this
+           summary and from nothing else, so without it a wake sent because somebody paid reads as
+           "an order waiting", which is the wrong sentence about the right order. */
+        try {
+          const nw = await env.SALT_QUEUE.get("orders:news", "json");
+          if (nw && nw.what && Date.now() - Date.parse(nw.at) < 10 * 60 * 1000) out.news = nw.what;
+        } catch (e) { /* a banner is not worth an error path */ }
       } catch (e) { out.warn = String((e && e.message) || e); }
       return json(out);
     }

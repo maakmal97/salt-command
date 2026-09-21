@@ -17761,6 +17761,108 @@ await (async () => {
     "and with nothing owed it still says so: " + (bQuiet && bQuiet.opt.body));
 })();
 
+section("v760: a customer paying or taking an order back wakes him, and the banner says which");
+await (async () => {
+  /* MEASURED 21 SEP 2026: the site has written the moment of every change since v694, the desk asked
+     the site for it every minute, and the nudge read the placement and the message and threw the rest
+     away. So somebody settling RM435 at midnight, or taking an order back, woke nobody at all and sat
+     there until he next opened the desk. HIS OWN MOVES WRITE `last-touched` TOO, which is why waking
+     on that mark was never the answer: the reconcile has to list after a handover, so his tap moves it. */
+  const { placeOrder, customerMove, deskMove, LAST_THEIRS, LAST_TOUCHED } = await import("../stmt/orders.js");
+  const { nudgeOrders } = await import("../src/orders.js");
+  const stmtW6 = (await import("../stmt/worker.js")).default;
+  const deskW6 = (await import("../src/worker.js")).default;
+  const kp6 = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const skv6 = new KV(), dkv6 = new KV();
+  const senv6 = { STMT: skv6, STMT_DESK_KEY: "desk-key" };
+  const denv6 = { SALT_QUEUE: dkv6, STMT_DESK_KEY: "desk-key", VAPID_PUBLIC_KEY: "pub", VAPID_SUBJECT: "mailto:a@b.test",
+    VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kp6.privateKey)),
+    STMT_SITE: { fetch: (url, init) => stmtW6.fetch(new Request(url, init), senv6) } };
+  await dkv6.put("push:his", JSON.stringify({ endpoint: "https://push.example/his-phone", topics: ["orders", "approve", "salt"] }));
+
+  const u6 = "abcd-efgh";
+  const place6 = async () => (await placeOrder(senv6, u6, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  const nudge = async () => {
+    const realF = globalThis.fetch, hit = [];
+    globalThis.fetch = async (uu) => { hit.push(String(uu)); return new Response("", { status: 201 }); };
+    let r; try { r = await nudgeOrders(denv6); } finally { globalThis.fetch = realF; }
+    return { r, hit };
+  };
+
+  const o6 = await place6();
+  await nudge();   /* the placement's own wake, taken out of the way */
+  await deskMove(senv6, u6, o6.id, { status: "acknowledged", mode: "collect" });
+  const afterHis = await skv6.get(LAST_THEIRS);
+  ok(afterHis === null || afterHis === undefined,
+    "his own acknowledgement writes nothing on the customers' mark, though it moves the shared one: "
+    + JSON.stringify({ theirs: afterHis, touched: !!(await skv6.get(LAST_TOUCHED)) }));
+  const quiet = await nudge();
+  ok(quiet.hit.length === 0, "and it wakes him for his own tap not at all: " + JSON.stringify(quiet.hit));
+
+  await customerMove(senv6, u6, o6.id, "method", { method: "cod" });
+  const afterRail = await skv6.get(LAST_THEIRS);
+  ok(afterRail === null || afterRail === undefined,
+    "choosing how to pay is not news either: " + JSON.stringify(afterRail));
+
+  await customerMove(senv6, u6, o6.id, "pay", { amount: 100, method: "cod" });
+  const mark6 = await skv6.get(LAST_THEIRS);
+  ok(/^\d{4}-\d\d-\d\dT.+\|pay$/.test(String(mark6)),
+    "a payment writes the moment AND the word, the moment first so it still compares as a string: " + mark6);
+  const lastR = await stmtW6.fetch(new Request("https://k7m3p2.example/desk/orders/last", { headers: { "X-Stmt-Desk": "desk-key" } }), senv6);
+  const lastJ = await lastR.json();
+  ok(lastJ.theirs === mark6 && (await stmtW6.fetch(new Request("https://k7m3p2.example/desk/orders/last"), senv6)).status === 401,
+    "the desk reads it in the same one call it already made, and only on the desk key: " + JSON.stringify(lastJ.theirs));
+
+  const paid6 = await nudge();
+  ok(paid6.hit.length === 1 && paid6.hit[0] === "https://push.example/his-phone" && paid6.r.did === "A customer has paid",
+    "and that wakes him, which nothing did before: " + JSON.stringify({ hit: paid6.hit, did: paid6.r.did }));
+  const again6 = await nudge();
+  ok(again6.hit.length === 0, "the same payment does not wake him every minute after: " + JSON.stringify(again6.hit));
+
+  /* ---- THE THREE MARKS DO NOT BURY EACH OTHER ---- */
+  const o7 = await place6();
+  await customerMove(senv6, u6, o7.id, "cancel", {});
+  const both = await nudge();
+  ok(both.r.newest && both.r.did === "A customer has withdrawn an order" && both.hit.length === 1,
+    "a placement and a withdrawal inside one minute are both seen, and are one wake: " + JSON.stringify({ newest: !!both.r.newest, did: both.r.did }));
+  ok((await dkv6.get("orders:theirs")) && (await dkv6.get("orders:nudged")),
+    "each keeps its own mark, so the newer of them cannot make the other look old");
+
+  /* ---- THE BANNER IS WRITTEN FROM THE SUMMARY, so the summary carries it while it is fresh ---- */
+  const news = await dkv6.get("orders:news", "json");
+  ok(news && news.what === "A customer has withdrawn an order", "the desk remembers what to say: " + JSON.stringify(news));
+  const d1S6 = { prepare: (q) => { const first = async () => (/COUNT_ON/.test(q) ? { doc: JSON.stringify({ salt: "2026-09-21", oil: "2026-09-21" }) } : (/COUNT\(\*\)/.test(q) ? { n: 0 } : null));
+    const all = async () => ({ results: [] }); return { bind: () => ({ all, first, run: async () => ({}) }), all, first, run: async () => ({}) }; } };
+  const summ6 = async () => (await (await deskW6.fetch(new Request("https://salt-command.example/push/summary"),
+    Object.assign({ SALT_LEDGER: d1S6, REQUIRE_ACCESS: "0" }, denv6))).json());
+  const fresh = await summ6();
+  ok(fresh.news === "A customer has withdrawn an order", "the summary carries it: " + JSON.stringify(fresh.news));
+  await dkv6.put("orders:news", JSON.stringify({ what: "A customer has paid", at: "2026-09-21T00:00:00.000Z" }));
+  ok((await summ6()).news === undefined,
+    "and drops it once it is stale, because a banner about a payment made this morning is a lie by lunchtime");
+
+  const vm6 = await import("node:vm");
+  const swSrc6 = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const wake6 = async (s) => {
+    const L = {}, shown = [];
+    const ctx = { URL, console, caches: {},
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" },
+        registration: { scope: "https://salt-command.example/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
+      clients: { matchAll: async () => [], openWindow: async () => {} },
+      fetch: async () => ({ ok: true, json: async () => s }) };
+    vm6.createContext(ctx); vm6.runInContext(swSrc6, ctx);
+    const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits);
+    return shown[0];
+  };
+  const bNews = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, news: "A customer has paid" });
+  const bPlain = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2 });
+  ok(bNews && bNews.t === "A customer has paid" && /2 orders waiting on you/.test(bNews.opt.body)
+    && /1 row waiting for approval/.test(bNews.opt.body) && bNews.opt.data.url === "./desk#orders",
+    "the banner leads with what they just did, and still carries what is waiting: " + JSON.stringify(bNews && bNews.opt.body));
+  ok(bPlain && bPlain.t === "2 customer orders waiting",
+    "and with no news it is the count, as it was: " + (bPlain && bPlain.t));
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */
