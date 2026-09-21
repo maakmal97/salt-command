@@ -1,5 +1,15 @@
 [
  {
+  "v": "v755",
+  "d": "21 Sep 2026",
+  "t": "TWO ORDERS SETTLED IN FULL AND THREE 19 SEP SALES LANDED",
+  "n": [
+   "<b>FOLDED: TWO FULFILMENTS AND THREE NEW SALES.</b> The 20 Sep fulfilments close s177 for CK4-SEN, RM350 and 5 unit, and s159 for CM4-MK, RM110 of money only. Both drafts flag that they settle the order in full, and on the figures given nothing is left outstanding on either. Neither row is recomputed in the note: ovAmend in the master applies the fulfilment, so there is one definition of what a fulfilment does rather than two.",
+   "<b>UNUSUAL: THE R2 ROW AND THE LOT BLEND.</b> CS6-BS-R's 4 unit at RM85 a unit is booked as R2 through CS6-BS with CM4-MK named as end buyer, credited nothing and sent no statement, and the rate sits 20.6% under the RM107 a unit CS6-BS usually pays across 19 orders. Against the desk's own ladder it still clears the RM203.95 floor for 4 unit and stays under the RM500 ask.",
+   "<b>WHAT THE INVENTORY DID.</b> Three sales of 19 Sep land against stock: 2.5 unit and 4 unit of salt and 5 unit of oil, all paid and moved on the day. Salt and oil were last counted on 19 Sep. The salt rows carry RM48 a unit, the inventory's own rate, and the blend flag on that average is left open on both. No lot landed, so the cost basis is unchanged at RM48 a unit."
+  ]
+ },
+ {
   "v": "v754",
   "d": "20 Sep 2026",
   "t": "THE COLLISION TEST SPENDS THE MILLISECOND THE QUEUE HOLDS, NOT THE ONE THE HISTORY SHOWS",
