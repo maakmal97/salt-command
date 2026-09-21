@@ -1,5 +1,17 @@
 [
  {
+  "v": "v767",
+  "d": "21 Sep 2026",
+  "t": "AN ID ADDED IS AN ACCOUNT, MINTED BY THE LAPTOP'S OWN CHAIN WITHOUT BEING ASKED",
+  "n": [
+   "<b>HIS INSTRUCTION OF 21 SEP 2026:</b> Add ID and Amend ID must carry the username, the account and its password. v707 built the mint and left it a command somebody had to think of running, so CZ5-TM, registered on 19 September, held an address and nothing behind it for two days: named on every publish, in a log nobody reads.",
+   "<b>AMEND ID WAS ALREADY WHOLE, and it is worth saying why</b> rather than leaving it to be rediscovered: an account is keyed by the USERNAME. A re-key moves the username to the new code and the password with it, so the record behind it never moves at all, and the customer signs in on the same address the next morning.",
+   "<b>WHERE IT CAN RUN, STATED RATHER THAN WISHED.</b> An account is a record sealed under the CONTENT KEY, with a password sealed under his master. Neither may reach the cloud, which is rule 2 and is the whole reason a stranger with the runner's secrets cannot open every statement on the site. So the fold that mints the username in CI cannot mint the account behind it, and this is not a limitation to engineer around. <b>THE LAPTOP'S OWN CHAIN DOES IT</b>, before the build, so what it writes is committed by the same run and uploaded by the next publish: the gap closes at the next update rather than at the next monthly issue.",
+   "<b>AND WHERE IT CANNOT, IT SAYS SO IN HIS TERMINAL.</b> Without the master it names exactly who cannot sign in and the one command that fixes it, as a WARNING, which is the difference between this and a line in a CI log. It does not stop the run: an update held over an account is a worse trade than an account minted a run later. Asking who is stuck no longer needs somebody already able to fix it, which is why it can be asked at all.",
+   "<b>THE CHECKS.</b> Seventeen assertions: who is stuck read off the records with no master and with a bucket and a supplier on the roster, the sweep declining off the laptop, naming them with no master and writing nothing, minting with it, the password it minted answering the verifier it wrote and sealed under the master so Send can hand it over, nobody stuck afterwards, a second run doing nothing, and what the chain SAYS in each of its seven states, driven as a function because everything in that file happens on import. Nine mutations, each red."
+  ]
+ },
+ {
   "v": "v766",
   "d": "21 Sep 2026",
   "t": "WHAT IS WAITING ON THE SITE IS ON TODAY, RANKED AGAINST EVERYTHING ELSE",

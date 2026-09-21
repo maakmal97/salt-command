@@ -50,6 +50,77 @@ export function accountGaps(roster, users, kvNames) {
   return out;
 }
 
+/* v767: WHO IS STUCK, ANSWERABLE WITHOUT THE MASTER. The mint refuses outright where the master is
+   not in the environment, which is right, but it means the question "is anybody stuck?" could only
+   be asked by somebody already able to fix it. This reads the records and the map and nothing else. */
+export function whoIsStuck(root, opts = {}) {
+  const here = resolve(root);
+  const issue = newestIssue(here);
+  if (!issue) return [];
+  const kvDir = join(here, issue, "_kv");
+  const kvNames = existsSync(kvDir) ? readdirSync(kvDir).filter((f) => f.endsWith(".json")).map((f) => basename(f, ".json")) : [];
+  const usersFile = join(here, "_users.json");
+  const users = existsSync(usersFile) ? JSON.parse(readFileSync(usersFile, "utf8")) : {};
+  const roster = opts.roster || (() => {
+    const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    return (book.state && book.state.roster) || book.roster || [];
+  })();
+  const g = accountGaps(roster, users, kvNames);
+  return g.noAccount.map((x) => x.code).concat(g.noUsername);
+}
+
+/* v767, his instruction of 21 Sep 2026: AN ID ADDED IS AN ACCOUNT, WITHOUT BEING ASKED.
+ *
+ * WHERE IT CAN RUN, stated rather than wished. An account is a record sealed under the CONTENT KEY,
+ * which lives in statements/_secrets.json, with a password sealed under HIS master; neither may
+ * reach the cloud (rule 2). So the fold that mints the USERNAME in CI cannot mint the ACCOUNT behind
+ * it, and this is not a limitation to engineer around: it is the posture that keeps a stranger with
+ * the runner's secrets from opening every statement on the site.
+ * SO THE LAPTOP'S OWN CHAIN DOES IT, on every run, and the gap closes at the next update rather than
+ * at the next monthly issue. Where the master is not in the environment it names exactly who is
+ * stuck and the one command; it does not stop the run, because an update held over an account is a
+ * worse trade than an account minted a run later.
+ */
+export async function accountSweep(root, opts = {}) {
+  const here = resolve(root);
+  if (!existsSync(join(here, "_secrets.json"))) return { ran: false, why: "not the laptop", minted: [], stuck: [] };
+  let look = null;
+  try { look = await mintAccounts(here, Object.assign({}, opts, { check: true })); }
+  catch (e) {
+    const why = String((e && e.message) || e);
+    return { ran: false, why: /STMT_MASTER/.test(why) ? "no master" : why, minted: [], stuck: whoIsStuck(here, opts) };
+  }
+  if (!look.minted.length) return { ran: true, why: "", minted: [], named: [], wrote: 0, stuck: [] };
+  const did = await mintAccounts(here, opts);
+  return { ran: true, why: "", minted: did.minted, named: did.named, failed: did.failed, wrote: did.wrote,
+    stuck: did.failed.length ? whoIsStuck(here, opts) : [] };
+}
+
+/* What the chain says about a sweep, as lines rather than as printing, because a branch that can
+   only be reached by running the whole update tool is a branch nothing can put a mutation through. */
+export function sweepLines(sweep, opts = {}) {
+  const L = (level, text) => ({ level, text });
+  if (opts.dry) return [L("ok", "skipped (dry run)")];
+  if (opts.error) return [L("warn", "the account sweep could not run: " + opts.error)];
+  if (!sweep) return [L("warn", "the account sweep answered nothing at all")];
+  if (!sweep.ran && sweep.why === "not the laptop")
+    return [L("ok", "skipped: the content key lives on the laptop, and an account cannot be sealed anywhere else")];
+  if (!sweep.ran && sweep.why === "no master") {
+    return sweep.stuck.length
+      ? [L("warn", sweep.stuck.join(", ") + " cannot sign in: an ID with a username and no account behind it. "
+        + "Set $env:STMT_MASTER and run this again, or: node tools/stmt-account.mjs --mint")]
+      : [L("ok", "every ID that should have an account has one, so no master was needed on this run")];
+  }
+  if (!sweep.ran) return [L("warn", "the account sweep stopped: " + sweep.why)];
+  const out = [];
+  if (sweep.minted.length) {
+    out.push(L("ok", "minted an account for " + sweep.minted.join(", ") + "; it goes live at the next publish"));
+    if (sweep.named && sweep.named.length) out.push(L("ok", "and a username first for " + sweep.named.join(", ")));
+  } else out.push(L("ok", "every ID that should have an account has one"));
+  if (sweep.failed && sweep.failed.length) out.push(L("warn", "and could not mint: " + sweep.failed.join("; ")));
+  return out;
+}
+
 /** Mint what is missing. Returns what it did, or would do. */
 export async function mintAccounts(root, opts = {}) {
   const here = resolve(root);

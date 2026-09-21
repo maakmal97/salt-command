@@ -243,6 +243,20 @@ if (suspect) {
   }
 }
 
+/* ---- 3b. accounts. v767: AN ID ADDED IS AN ACCOUNT ------------------------------
+   The fold mints the username in the cloud and cannot mint the account behind it, because the
+   content key is on this laptop and stays here. This is the step that closes that gap, and it runs
+   before the build so whatever it writes goes into this run's own commit and the next publish
+   uploads it. CZ5-TM sat with an address and nothing behind it from 19 to 21 Sep 2026, named on
+   every publish and read by nobody. */
+step("3b", "accounts");
+{
+  const { accountSweep, sweepLines } = await import("./stmt-account.mjs");
+  let sweep = null, why = null;
+  if (!DRY) { try { sweep = await accountSweep(resolve(REPO, "statements")); } catch (e) { why = String((e && e.message) || e); } }
+  for (const l of sweepLines(sweep, { dry: DRY, error: why })) (l.level === "warn" ? warn : ok)(l.text);
+}
+
 /* ---- 4 and 5. build and test ------------------------------------------------------ */
 step(4, "build");
 if (DRY) ok("skipped (dry run)");
