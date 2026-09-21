@@ -137,22 +137,28 @@ async function banner() {
   if (!s) {
     return { title: "Salt Command", body: "Something needs a look. Open the desk.", tag: "salt" };
   }
-  /* A CUSTOMER ORDER LEADS (16 Sep 2026): it is the one thing here a customer is waiting on, so it
-     is the title, and a tap opens the Orders card where it is acknowledged. */
-  if (s.orders) {
-    return {
-      title: s.orders === 1 ? "New customer order" : s.orders + " customer orders waiting",
-      body: "Open the desk to acknowledge it.",
-      tag: "salt",
-      url: "./desk#orders",
-    };
-  }
   const bits = [];
+  /* v759: THE REFUND FIRST. It is money he is holding that is somebody else's, which is the one
+     thing on this list the desk calls Now from the day it is raised (v708). */
+  if (s.refunds) bits.push(s.refunds === 1 ? "1 refund to pay back" : s.refunds + " refunds to pay back");
   if (s.pending) bits.push(s.pending === 1 ? "1 row waiting for approval" : s.pending + " rows waiting for approval");
   if (s.countDue && s.countDue.length) {
     bits.push(s.countDue.length === 1 ? s.countDue[0] + " not counted today" : "neither shelf counted today");
   }
   if (s.refused) bits.push(s.refused === 1 ? "1 entry the drafter refused" : s.refused + " entries the drafter refused");
+
+  /* A CUSTOMER ORDER LEADS (16 Sep 2026): it is the one thing here a customer is waiting on, so it
+     is the title, and a tap opens the Orders card where it is acknowledged. IT NO LONGER HIDES THE
+     REST (v759): this returned before the list was built, so while any order was waiting the wake
+     said nothing about a row owed a decision, a refund, or a shelf not counted. */
+  if (s.orders) {
+    return {
+      title: s.orders === 1 ? "New customer order" : s.orders + " customer orders waiting",
+      body: "Open the desk to acknowledge it." + (bits.length ? " Also " + bits.join(" \u00b7 ") + "." : ""),
+      tag: "salt",
+      url: "./desk#orders",
+    };
+  }
 
   return {
     title: bits.length ? "Salt Command" : "Salt Command is square",

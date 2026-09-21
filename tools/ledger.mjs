@@ -68,6 +68,7 @@ const NOT_LEDGER = new Set([
      paper, not of anything that happened. */,
   "MOD_LABEL", "MOD_RM", "MOD_UNITS" /* v748: what a corrected field is called on the page, and which
      fields are drawn as money and as units. Presentation of a correction, never a fact about one. */,
+  "ALERT_TOPICS" /* v759: which of the desk's wakes this device asks for. A setting on a phone, not a fact. */,
   "VIEWS", "VIEW_OF", "PART_Q", "PART_DRAW", "VIEW_PART" /* v341: the seven views over the tabs; navigation, not the book */,
   "EDFORM" /* v363: the row editor's form spec. Labels, control kinds and hints for the thirty
      editable attributes: presentation of the book, never the book. It is data-shaped because a

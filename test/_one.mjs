@@ -99,232 +99,195 @@ const postQ = (body, extraHeaders = {}) => req("/queue", {
 });
 
 /* ---- 1. Worker: the queue contract --------------------------------------------- */
-section("v733: a free unit is a tap, and the reward shrinks with the gift");
+section("v759: every wake the desk mints reaches the phone, and the banner names what is waiting");
 await (async () => {
-  /* HIS DECISION OF 19 SEP 2026, asked as a question and answered "Yes -- the reward shrinks with
-     the gift": a free unit handed over alongside an order cost the shelf real salt and was charged
-     against the reward nowhere, so a customer earned on the full margin of what they paid for and
-     kept what they were given as well. And his instruction that a gift should be a TAP: four are on
-     the book and every one was typed at the laptop, because the only route that minted a goodwill
-     row was Redeem, which settles against a balance the customer earned. */
-  const { openMaster } = await import("../tools/payload.mjs");
-  const { w } = await openMaster();
-  const rd = (x) => JSON.parse(String(w.eval("JSON.stringify(" + x + ")")));
-  const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  /* MEASURED ON THE LIVE STORE, 21 SEP 2026. All three of his subscriptions carried topics ["orders"]
+     and nothing else, so sendPush dropped two of the three kinds of wake the desk mints: the row
+     drafted from a CUSTOMER'S order, which waits under Approve, and the morning round, which is the
+     only thing that chases money he is holding that is somebody else's. v708 says the round wakes him
+     on an open refund; it could not, and had not since 16 September. THE FIXTURES IN THE SUITE WERE
+     WIDER THAN HIS PHONE: v675's "everything" record and v708's push:aa11 both carry no topics at all,
+     so both proved a send that his own device would have filtered. This section pins the shape his
+     phone actually carries. */
+  const { sendPush } = await import("../src/push.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const deskW9 = (await import("../src/worker.js")).default;
+  const kp9 = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const vapid9 = { VAPID_PUBLIC_KEY: "pub", VAPID_SUBJECT: "mailto:a@b.test",
+    VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kp9.privateKey)) };
 
-  /* ---- WHY IT IS A SECOND WALK AND NOT A WIDER FILTER ----
-     The tempting one-line fix is to stop dropping goodwill rows from pricedSales. It shrinks
-     nothing, and this is the assertion that says so before somebody tries it. */
-  const s176 = rd("sales.find(function(s){return s.rid==='s176';})");
-  ok(!!s176 && s176.goodwill === true && !s176.rebate && s176.total === s176.cost,
-    "a gift's total IS its cost, by the convention every gift row has carried since s031");
-  ok(Math.abs((s176.total || 0) - (s176.qty || 0) * (s176.cost / s176.qty)) < 0.005,
-    "so its MARGIN is exactly zero: letting gifts back into pricedSales would take nothing off the "
-    + "reward at all, and s056, whose total is the price it was first written at, would ADD to it. "
-    + "The rule needs the gift's COST subtracted, which membership can never produce");
-
-  /* ---- THE SPLIT IS ONE FLAG, AND IT IS ALREADY ON EVERY ROW ---- */
-  const gifts = rd("pSales(PROD).filter(function(s){return s.goodwill&&!s.rebate;}).map(function(s){return s.rid;})");
-  const redeems = rd("pSales(PROD).filter(function(s){return s.goodwill&&s.rebate;}).map(function(s){return s.rid;})");
-  ok(["s031", "s056", "s176", "s181"].every((r) => gifts.includes(r)) && redeems.length >= 3
-    && !gifts.some((r) => redeems.includes(r)),
-    "the gifts and the redemptions are told apart by rebate alone, and no row is both (v758: the "
-    + "four and the three are the ones that were here, not a ceiling): " + JSON.stringify({ gifts, redeems }));
-
-  /* ---- THE CHARGE, ON A FIXTURE WHERE EVERY FIGURE IS KNOWN ---- */
-  const before = rd("rewardMargin('CZ9-GIFT',[])");
-  w.eval("sales.push({rid:'zg1',customer:'CZ9-GIFT',qty:2,total:200,cost:96,cash:200,deliveredQty:2,deliveredOn:'2026-09-01',date:'2026-09-01',product:'salt'});"
-    + "recompute();"   /* recompute ALONE: applyOverlay rebuilds sales from the committed base and would wipe the pushed row */);
-  const paid = rd("rewardMargin('CZ9-GIFT',[])");
-  ok(before.mine.margin === 0 && Math.abs(paid.mine.margin - 104) < 0.005 && paid.mine.n === 1,
-    "a paid order of RM200 costing RM96 earns on RM104 of margin: " + JSON.stringify(paid.mine));
-
-  w.eval("sales.push({rid:'zg2',customer:'CZ9-GIFT',qty:1,total:48,cost:48,cash:0,settledRM:48,goodwill:true,deliveredQty:1,deliveredOn:'2026-09-02',date:'2026-09-02',product:'salt'});"
-    + "recompute();"   /* recompute ALONE: applyOverlay rebuilds sales from the committed base and would wipe the pushed row */);
-  const gifted = rd("rewardMargin('CZ9-GIFT',[])");
-  ok(Math.abs(gifted.mine.margin - 56) < 0.005 && gifted.mine.n === 1,
-    "THE GIFT TAKES ITS COST OFF: RM104 less the RM48 the free unit cost is RM56, and the count of "
-    + "PRICED orders does not move, because a gift is not one: " + JSON.stringify(gifted.mine));
-
-  w.eval("sales.push({rid:'zg3',customer:'CZ9-GIFT',qty:1,total:48,cost:48,cash:0,settledRM:48,goodwill:true,rebate:true,rebateKg:1,deliveredQty:1,deliveredOn:'2026-09-03',date:'2026-09-03',product:'salt'});"
-    + "recompute();"   /* recompute ALONE: applyOverlay rebuilds sales from the committed base and would wipe the pushed row */);
-  const redeemed = rd("rewardMargin('CZ9-GIFT',[])");
-  ok(Math.abs(redeemed.mine.margin - 56) < 0.005,
-    "A REDEMPTION DOES NOT: it is a unit they EARNED, netted at the reader through rebateApplied, so "
-    + "charging it here would take the same unit twice: " + JSON.stringify(redeemed.mine));
-
-  w.eval("sales.push({rid:'zg4',customer:'CZ9-GIFT',qty:1,total:48,cost:48,cash:0,settledRM:48,goodwill:true,cancelled:true,cancelledOn:'2026-09-04',deliveredQty:0,date:'2026-09-04',product:'salt'});"
-    + "recompute();"   /* recompute ALONE: applyOverlay rebuilds sales from the committed base and would wipe the pushed row */);
-  ok(Math.abs(rd("rewardMargin('CZ9-GIFT',[])").mine.margin - 56) < 0.005,
-    "and a cancelled gift does not, because the guards pricedSales carried are restated on the new walk");
-
-  /* ---- WHAT IT DOES TO THE LIVE BOOK, STATED RATHER THAN DISCOVERED ----
-     THE GUARD IS PROVED HERE AND NOT ONLY ON A FIXTURE. This version was written against a book on
-     which CE4-CHE held a gift, s181, and the charge took them from two free units to one. v730
-     WITHDREW that gift while this was being built: the unit never left the shelf, so the row is
-     cancelled, and the customer keeps both units. Nothing in the rule changed; the guard did its
-     work on a row that moved under it, which is the case a fixture can only imitate. */
-  const che = rd("customerRewards().find(function(r){return r.id==='CE4-CHE';})");
-  const s181 = rd("sales.find(function(s){return s.rid==='s181';})");
-  ok(!!s181 && s181.goodwill === true && !s181.rebate && s181.cancelled === true,
-    "s181 is a gift that was withdrawn: goodwill, no rebate, cancelled");
-  ok(!!che && che.taken === 0 && Math.abs(che.free - che.earned) < 1e-9 && che.earned >= 2,
-    "so CE4-CHE keeps EVERY unit they earned and has taken none: " + JSON.stringify(che));
-  ok(!!s181 && s181.cost == null,
-    "and it carries no cost of its own, so were it live it would be charged at the book's weighted "
-    + "average, which is what costOf does for every uncosted row: the fallback is stated, not hidden");
-  /* the two that DO bite: read here, and proved by TAKING THE GIFT AWAY at the foot of this
-     section rather than by pinning a pool figure their next order moves (v758) */
-  const okr = rd("customerRewards().find(function(r){return r.id==='CC5-OKR';})");
-  const wm = rd("networkStats().find(function(r){return r.id==='CN6-WM';})");
-  ok(!!okr && !!wm && typeof okr.margin === "number" && typeof wm.marginTotal === "number",
-    "CC5-OKR holds a customer's pool and CN6-WM an associate's: " + JSON.stringify({ okr: okr.margin, wm: wm.marginTotal }));
-  /* real codes only: the CZ9 fixtures above include a redemption against nothing earned, which is a
-     negative holding by design (the engine carries one and the next unit absorbs it). */
-  const negHold = rd("customerRewards().filter(function(r){return r.free<-0.005&&!/^CZ9/.test(r.id);}).map(function(r){return {id:r.id,margin:r.margin,earned:r.earned,taken:r.taken,free:r.free};})");
-  ok(negHold.length === 0,
-    "and no holding anywhere on the book goes negative: nobody has taken more than the new figure earns: " + JSON.stringify(negHold));
-
-  /* ---- THE CHARGE IS PROVED BY TAKING THE GIFT AWAY (v758) ----------------------------------
-     This section pinned three live pool figures: CE4-CHE at RM1,017, CC5-OKR at RM163 and CN6-WM
-     at RM1,009.20. They are facts about a book that keeps moving, and his sales of 19 September
-     took CE4-CHE to RM1,147, so a version that had changed nothing went red at the last step of a
-     live run. A CHARGE IS A DIFFERENCE, so it is measured as one: drop the row, recompute, and
-     what the pool does is the whole of the rule. A withdrawn gift must move it not at all; a live
-     one must give back exactly its cost, which is the book's weighted average where the row
-     carries none of its own and therefore is not a figure to pin either. */
-  const drop = (rids) => w.eval("(function(){['" + rids.join("','")
-    + "'].forEach(function(r){var i=sales.findIndex(function(s){return s.rid===r;});if(i>=0)sales.splice(i,1);});})();recompute();");
-  const pool = (id) => rd("(customerRewards().find(function(r){return r.id==='" + id + "';})||{}).margin");
-  const net = (id) => rd("(networkStats().find(function(x){return x.id==='" + id + "';})||{}).marginTotal");
-  const costOf = (rids) => rd("(function(){return +['" + rids.join("','")
-    + "'].reduce(function(a,r){var s=sales.find(function(x){return x.rid===r;});return a+(s?(s.qty||0)*txUnitCost(s,wavgBuy):0);},0).toFixed(2);})()");
-  const cheWas = pool("CE4-CHE");
-  drop(["s181"]);
-  ok(Math.abs(pool("CE4-CHE") - cheWas) < 0.005,
-    "the withdrawn gift charges CE4-CHE nothing: dropping s181 leaves their pool where it stood, at RM" + cheWas);
-  const okrWas = pool("CC5-OKR"), okrCost = costOf(["s176"]);
-  drop(["s176"]);
-  ok(okrCost > 0.009 && Math.abs((pool("CC5-OKR") - okrWas) - okrCost) < 0.011,
-    "and a LIVE gift charges its cost: dropping s176 gives CC5-OKR back RM" + (pool("CC5-OKR") - okrWas).toFixed(2)
-    + ", which is s176's own RM" + okrCost);
-  const wmWas = net("CN6-WM"), wmCost = costOf(["s031", "s056"]);
-  drop(["s031", "s056"]);
-  ok(wmCost > 0.009 && Math.abs((net("CN6-WM") - wmWas) - wmCost) < 0.011,
-    "and it reaches an ASSOCIATE'S pooled figure and not only a customer table: dropping s031 and s056 "
-    + "gives CN6-WM back RM" + (net("CN6-WM") - wmWas).toFixed(2) + ", their own RM" + wmCost);
-
-  /* ---- THE TAP, IN A WINDOW OF ITS OWN ----
-     The fixture rows above are pushed straight onto `sales` with a party that is on no roster, which
-     is fine for the reward arithmetic and is not a book the entry form can be driven against. */
-  w.close();
-  const { w: w2 } = await openMaster();
-  const $ = (id) => w2.document.getElementById(id);
-  w2.eval("switchTab('add');wbMode='new';wbDir='SELL';wbApply();");
-  ok(!!$("wbGift") && $("wbGiftWrap").style.display !== "none", "a sale offers the gift tick");
-  $("wbTotal").value = "90"; $("wbCash").value = "90"; $("wbDelivery").value = "15";
-  $("wbGift").checked = true; $("wbGift").onchange();
-  ok($("wbTotal").disabled && $("wbTotal").value === "" && $("wbCash").disabled && $("wbCash").value === "0"
-    && $("wbDelivery").disabled && $("wbDelivery").value === "0",
-    "the tick shuts the three money boxes AND clears them: a gift has no price, takes no cash and "
-    + "carries no carriage, and none of the three may be left behind for the payload to read");
-  ok($("wbTotalLbl").textContent === "Goods (RM), booked at cost",
-    "and the label says where the figure comes from instead: " + $("wbTotalLbl").textContent);
-  $("wbGift").checked = false; $("wbGift").onchange();
-  ok($("wbTotal").disabled === false && $("wbCash").disabled === false, "unticking re-opens all three");
-  w2.eval("wbDir='BUY';wbApply();");
-  ok($("wbGiftWrap").style.display === "none" && $("wbGift").checked === false,
-    "a lot is not given away, so the tick is neither offered nor left ticked on the buy pane");
-
-  /* the entry it queues */
-  const party = String(w2.eval("roster.find(function(c){return c[0]==='C'&&!/-R$/.test(c);})"));
-  const q = JSON.parse(String(w2.eval("(function(){try{queue=[];saveQueue=function(){return Promise.resolve(true);};qPost=function(){return Promise.resolve(true);};"
-    + "switchTab('add');wbMode='new';wbDir='SELL';wbFillParty();wbApply();"
-    + "var set=function(id,v){var e=document.getElementById(id);if(e)e.value=v;};"
-    + "set('wbParty','" + party + "');set('wbQty','1');set('wbDate','2026-09-20');set('wbNote','a thank you');"
-    + "var g=document.getElementById('wbGift');g.checked=true;g.onchange();wbRecord();"
-    + "var e=queue[queue.length-1]||null;return JSON.stringify({e:e,tick:g.checked,qty:document.getElementById('wbQty').value});"
-    + "}catch(e){return JSON.stringify({no:String(e&&e.message)});}})()")));
-  ok(!q.no && !!q.e && q.e.type === "GIFT" && q.e.payload.mode === "gift" && q.e.payload.qty === 1
-    && q.e.payload.total === undefined && q.e.payload.cash === undefined && /^Give 1 unit/.test(q.e.raw),
-    "the tap queues a GIFT carrying the party, the units and the day and NO money figure, because the "
-    + "cost is the shelf's and is the one number this desk never lets a person type over: " + JSON.stringify(q.e && q.e.payload));
-  ok(q.tick === false && q.qty === "",
-    "and the tick is cleared after, as the cover tick is: a gift is decided for each entry, never inherited");
-
-  /* ---- THE DRAFTER MINTS THE CONVENTION, AND NOT THE OTHER ONE ---- */
-  const { draftRow } = await import("../src/drafter.js");
-  const bk = {
-    version: "v729",
-    pricing: { v: "v729", byProduct: { salt: { stockCost: 48, replCost: 48, floors: { "1": { floor: 54 } } } } },
-    purchases: [{ date: "2026-08-13", qty: 50, total: 2400, receivedOn: "2026-08-13" }],
-    sales: [], state: { roster: ["CZ9-GF"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" },
+  /* ---- 1. THE THREE KINDS OF WAKE, against the shape his phone carries ---- */
+  const kv9 = new KV();
+  await kv9.put("push:was", JSON.stringify({ endpoint: "https://push.example/as-it-was", topics: ["orders"] }));
+  await kv9.put("push:now", JSON.stringify({ endpoint: "https://push.example/as-it-is", topics: ["orders", "approve", "salt"] }));
+  const env9 = Object.assign({ SALT_QUEUE: kv9 }, vapid9);
+  const fire = async (tag) => {
+    const realF = globalThis.fetch, hit = [];
+    globalThis.fetch = async (u) => { hit.push(String(u)); return new Response("", { status: 201 }); };
+    try { await sendPush(env9, { tag }); } finally { globalThis.fetch = realF; }
+    return hit.map((u) => u.split("/").pop()).sort();
   };
-  const gift = (pay) => draftRow({ at: "2026-09-20T01:00:00.000Z", payload: Object.assign({ mode: "gift", product: "salt", party: "CZ9-GF", qty: 1, date: "2026-09-20" }, pay) }, bk);
-  const g1 = gift({ kg: 1, handover: "collected", note: "a thank you" });
-  ok(!g1.skip && g1.collection === "sales" && g1.row.total === 48 && g1.row.cost === 48 && g1.row.cash === 0
-    && g1.row.settledRM === 48 && g1.row.goodwill === true && g1.row.deliveredQty === 1 && g1.row.deliveredOn === "2026-09-20",
-    "the drafted row is the convention s176 carries, priced at the shelf's own figure: " + JSON.stringify(g1.row));
-  ok(!g1.skip && g1.row.rebate === undefined,
-    "AND IT CARRIES NO rebate, which is the whole distinction: a gift with that flag would be read as "
-    + "a redemption and escape the very charge this version adds");
-  ok(/charged against their reward/.test(g1.reasoning) && /not a redemption/.test(g1.flags.join(" ")),
-    "and the card says both what it costs and what it is not");
-  ok(!!gift({ party: null }).skip && !!gift({ qty: 0 }).skip && !!gift({ date: null }).skip
-    && /handover is delivered or collected/.test(String(gift({ handover: "banana" }).skip || "")),
-    "a gift with no party, no units, no date or a handover outside the closed list is refused");
+  const wOrders = await fire("orders"), wApprove = await fire("approve"), wSalt = await fire("salt");
+  ok(JSON.stringify(wOrders) === '["as-it-is","as-it-was"]',
+    "an order wakes both the old shape and the new: " + JSON.stringify(wOrders));
+  ok(JSON.stringify(wApprove) === '["as-it-is"]' && JSON.stringify(wSalt) === '["as-it-is"]',
+    "and a row waiting for approval and the morning round reach the device that asks for all three, "
+    + "and reached nobody at all while every device asked for orders alone: " + JSON.stringify({ wApprove, wSalt }));
 
-  /* A GIFT IS BOOKED AT COST WHATEVER THE ENTRY SAYS, which is the one figure this desk never lets
-     a person type over: the cost of the shelf decides what leaving it costs, not the tap. */
-  const g2 = gift({ total: 999, cash: 500 });
-  ok(!g2.skip && g2.row.total === 48 && g2.row.settledRM === 48 && g2.row.cash === 0,
-    "a gift entry carrying a price and a payment is still booked at the shelf's RM48 with nothing paid: " + JSON.stringify(g2.row));
+  /* ---- 2. THE SWITCH ASKS FOR ALL THREE, AND AN OLD SUBSCRIPTION IS UPGRADED WITHOUT A TAP ----
+     The record is keyed by the endpoint's hash, so posting it again widens the same record. It is done
+     once a load and only where a subscription is already on file, because a switch he turned on in
+     September must not have to be turned off and on again to hear what it was always meant to hear. */
+  const { openMaster: om59 } = await import("../tools/payload.mjs");
+  const { w: w59 } = await om59();
+  try {
+    ok(JSON.stringify(w59.eval("ALERT_TOPICS")) === '["orders","approve","salt"]',
+      "the desk names the three wakes it asks for in one place: " + JSON.stringify(w59.eval("ALERT_TOPICS")));
+    const sent9 = [];
+    const sub9 = { endpoint: "https://push.example/his-phone" };
+    w59.localStorage.setItem("saltWriteKey", "k-fixture");
+    const box9 = w59.document.createElement("div"); box9.id = "ordAlert"; w59.document.body.appendChild(box9);
+    Object.defineProperty(w59.navigator, "serviceWorker", { configurable: true, value: { ready: Promise.resolve({
+      pushManager: { getSubscription: async () => sub9 } }) } });
+    w59.PushManager = function () {};
+    w59.Notification = { permission: "granted", requestPermission: async () => "granted" };
+    w59.indexedDB = { open: () => { const rq = {}; setTimeout(() => { rq.result = { createObjectStore() {},
+      transaction: () => { const tx = { objectStore: () => ({ put() {} }) }; setTimeout(() => tx.oncomplete && tx.oncomplete(), 0); return tx; } };
+      if (rq.onsuccess) rq.onsuccess(); }, 0); return rq; } };
+    w59.fetch = async (path, init) => { sent9.push({ path: String(path), key: init && init.headers && init.headers["X-Salt-Key"],
+      body: init && init.body ? JSON.parse(init.body) : null }); return { ok: true, status: 200, json: async () => ({ ok: true }) }; };
+    await w59.eval("ordAlertDraw()");
+    await new Promise((r) => setTimeout(r, 20));
+    const ups = sent9.filter((x) => x.path === "push/subscribe");
+    ok(ups.length === 1 && ups[0].key === "k-fixture"
+      && JSON.stringify(ups[0].body) === '{"endpoint":"https://push.example/his-phone","topics":["orders","approve","salt"]}',
+      "drawing the card over a subscription already on file widens it to all three, keyed and without a tap: " + JSON.stringify(ups));
+    ok(/Alerts on/.test(box9.textContent) && /morning round/.test(box9.textContent),
+      "and the switch says what now wakes the device: " + box9.textContent);
+    await w59.eval("ordAlertDraw()");
+    await new Promise((r) => setTimeout(r, 20));
+    ok(sent9.filter((x) => x.path === "push/subscribe").length === 1,
+      "it is done once a load and not once a draw: " + sent9.filter((x) => x.path === "push/subscribe").length);
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w59.close(); } catch (e) { /* best effort */ } }
 
-  /* the Approve card tells the two apart, DRIVEN, because approving them is the same tap and a pin
-     on the source text would stay green through a branch that never runs */
-  const card = (row) => String(w2.eval("apCard(" + JSON.stringify({ collection: "sales", row }) + ")"));
-  const giftCard = card({ customer: "CZ9-GF", qty: 1, total: 48, cost: 48, cash: 0, settledRM: 48, goodwill: true, date: "2026-09-20" });
-  const redCard = card({ customer: "CZ9-GF", qty: 1, total: 48, cost: 48, cash: 0, settledRM: 48, goodwill: true, rebate: true, rebateKg: 1, date: "2026-09-20" });
-  ok(/a gift and not a sale/.test(giftCard) && /Off their reward/.test(giftCard) && !/settled by the reward/.test(giftCard),
-    "the card for a gift says it is one, and names what it costs their reward");
-  ok(/settled by the reward/.test(redCard) && !/a gift and not a sale/.test(redCard),
-    "and the card for a redemption still says the opposite thing, which is what it is");
-  w2.close();
-})();
+  /* ---- 3. A ROW HE JUST TYPED DOES NOT BUZZ THE PHONE HE TYPED IT ON ----
+     The narrowing v675 wrote into the subscription is kept, at the source where it belongs. Both roads
+     draft the same entry from the same store here, so neither can pass by drafting nothing. */
+  const bookN = {
+    version: "vN", pricing: { v: "vN", byProduct: { salt: { stockCost: 56, replCost: 56, floors: { "1": { floor: 60 } } } } },
+    purchases: [{ date: "2026-08-13", supplier: "SA5-BTR", qty: 12.5, total: 700, receivedOn: "2026-08-13", receivedQty: 12.5 }],
+    sales: [{ date: "2026-08-01", customer: "CC5-OKR", qty: 1, total: 90, cash: 90, deliveredQty: 1 }],
+    state: { roster: ["CC5-OKR", "SA5-BTR"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
+  };
+  const mirrorN = (b) => {
+    const self = { drafts: new Map(), refused: new Map() };
+    self.prepare = (sql) => {
+      const s = sql.replace(/\s+/g, " ").trim(); let binds = [];
+      const api = {
+        bind(...a) { binds = a; return api; },
+        async all() {
+          if (/^SELECT doc FROM entry/.test(s)) return { results: (b[binds[0]] || []).map((r) => ({ doc: JSON.stringify(r) })) };
+          if (/^SELECT key,doc FROM state/.test(s)) return { results: Object.keys(b.state).map((k) => ({ key: k, doc: JSON.stringify(b.state[k]) })).concat([{ key: "PRICING", doc: JSON.stringify(b.pricing) }]) };
+          if (/^SELECT id FROM draft/.test(s)) return { results: [...self.drafts.keys()].map((id) => ({ id })) };
+          if (/^SELECT id,source FROM refused/.test(s)) return { results: [...self.refused.keys()].map((id) => ({ id })) };
+          return { results: [] };
+        },
+        async first() {
+          if (/^SELECT v,stamped FROM snapshot/.test(s)) return { v: b.version, stamped: null };
+          if (/^SELECT MAX\(committed_at\)/.test(s)) return { t: null };
+          if (/COUNT\(\*\)/.test(s)) return { n: 0 };
+          return null;
+        },
+        async run() {
+          if (/^INSERT OR IGNORE INTO draft/.test(s)) { self.drafts.set(binds[0], binds[3]); return { meta: { changes: 1 } }; }
+          if (/^INSERT OR REPLACE INTO refused/.test(s)) { self.refused.set(binds[0], binds[2]); return { meta: { changes: 1 } }; }
+          return { meta: { changes: 0 } };
+        }
+      };
+      return api;
+    };
+    return self;
+  };
+  const queued = (at) => JSON.stringify({ queue: [{ at, payload: { mode: "new", direction: "SELL", party: "CC5-OKR",
+    qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16", product: "salt" } }] });
+  const road = async (how) => {
+    const kvR = new KV(), db = mirrorN(bookN);
+    await kvR.put("push:now", JSON.stringify({ endpoint: "https://push.example/as-it-is", topics: ["orders", "approve", "salt"] }));
+    /* the arrival road POSTS the entry, which is what that road is; the net finds it already in the
+       store. A queue POST REPLACES that device's key with the body it carries, so posting an empty
+       queue beside a stored entry would have wiped the very row the drafter was meant to find. */
+    if (how !== "arrival") await kvR.put("q:phone", queued("2026-08-16T01:00:00.000Z"));
+    const envR = Object.assign({ SALT_QUEUE: kvR, SALT_LEDGER: db, REQUIRE_ACCESS: "0" }, vapid9);
+    const realF = globalThis.fetch, realL = console.log, hit = [], logs = [];
+    globalThis.fetch = async (u) => { hit.push(String(u)); return new Response("", { status: 201 }); };
+    console.log = (...a) => logs.push(a.join(" "));
+    try {
+      if (how === "arrival") {
+        const waits = [];
+        await deskW9.fetch(new Request("https://salt-command.example/queue", { method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(Object.assign({ device: "phone", updated: "2026-08-16T01:00:01.000Z" }, JSON.parse(queued("2026-08-16T01:00:00.000Z")))) }),
+          envR, { waitUntil: (p) => waits.push(p) });
+        await Promise.all(waits);
+      } else {
+        const waits = [];
+        await deskW9.scheduled({ cron: "* * * * *", scheduledTime: Date.parse("2026-09-21T02:15:00Z") },
+          envR, { waitUntil: (p) => waits.push(p) });
+        await Promise.all(waits);
+      }
+    } finally { globalThis.fetch = realF; console.log = realL; }
+    return { hit, logs, drafts: db.drafts.size };
+  };
+  const arrival = await road("arrival"), net = await road("net");
+  ok(arrival.drafts === 1 && net.drafts === 1,
+    "both roads draft the same waiting entry, so neither passes here by drafting nothing: "
+    + JSON.stringify({ arrival: arrival.drafts, net: net.drafts }));
+  ok(arrival.hit.length === 0,
+    "a row drafted ON ARRIVAL sends no banner: it is the tap in his hand, and the desk draws it under "
+    + "Approve while he is looking: " + JSON.stringify(arrival.hit));
+  ok(net.hit.some((u) => u.endsWith("as-it-is")),
+    "and the same row found by the net, which is a row he was not watching for, does wake him: " + JSON.stringify(net.hit));
 
-section("v750: the three orders of 16, 18 and 19 September each read 5 unit, RM420 and RM15 of carriage, completed");
-await (async () => {
-  /* his word of 20 Sep 2026. The 16th's row had its carriage zeroed by a correction that day and took RM420
-     where RM435 was owed; the 18th's said nothing about who moved the goods. The 19th already read right. */
-  const E = (await import("../engine/position.mjs")).default;
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
-  const three = ["s168", "s173", "s183"].map((id) => bk.sales.find((r) => r.rid === id));
-  ok(three.every(Boolean), "the three rows are on the book: " + JSON.stringify(three.map((r) => r && r.rid)));
-  const shape = three.map((r) => ({ rid: r.rid, date: r.date, qty: r.qty, goods: E.txGoods(r), carriage: +r.delivery || 0,
-    owed: E.txOwed(r), paid: E.txPaid(r), moved: E.txEffDeliv(r), handover: r.handover || null, state: E.txStat(r).order }));
-  ok(JSON.stringify(shape.map((s) => s.date)) === JSON.stringify(["2026-09-16", "2026-09-18", "2026-09-19"]),
-    "one on each of the three days: " + JSON.stringify(shape.map((s) => s.date)));
-  const wrong = shape.filter((s) => !(s.qty === 5 && s.goods === 420 && s.carriage === 15 && s.owed === 435 && s.paid === 435 && s.moved === 5));
-  ok(!wrong.length, "each is 5 unit, RM420 of goods with RM15 of carriage, RM435 owed and RM435 in: " + JSON.stringify(wrong.length ? wrong : shape.map((s) => s.rid + " ok")));
-  ok(shape.every((s) => s.state === "Completed"), "and each reads Completed: " + JSON.stringify(shape.map((s) => s.rid + " " + s.state)));
-  /* A CARRIAGE MEANS HE DROVE, and the book has a word for that which is not the absence of one */
-  ok(shape.every((s) => s.handover === "delivered"), "each says the goods were delivered, which is what a carriage means: " + JSON.stringify(shape.map((s) => s.rid + " " + s.handover)));
+  /* ---- 4. THE SUMMARY CARRIES THE REFUND, so the round he now receives cannot say square over it ---- */
+  const d1S = (refunds) => ({ prepare(q) {
+    const first = async () => (/COUNT_ON/.test(q) ? { doc: JSON.stringify({ salt: "2026-09-21", oil: "2026-09-21" }) } : (/COUNT\(\*\)/.test(q) ? { n: 0 } : null));
+    const all = async () => (/collection='customerRefunds'/.test(q) ? { results: refunds } : { results: [] });
+    return { bind: () => ({ all, first, run: async () => ({}) }), all, first, run: async () => ({}) };
+  } });
+  const summary = async (refunds) => {
+    const envS = { SALT_LEDGER: d1S(refunds), SALT_QUEUE: new KV(), REQUIRE_ACCESS: "0" };
+    return (await (await deskW9.fetch(new Request("https://salt-command.example/push/summary"), envS)).json());
+  };
+  const open1 = await summary([{ doc: JSON.stringify({ party: "CZ4-MK", amount: 20, since: "2026-08-26" }) },
+    { doc: JSON.stringify({ party: "CZ6-WM", amount: 80, since: "2026-07-24", paidOn: "2026-07-31" }) }]);
+  const none1 = await summary([{ doc: JSON.stringify({ party: "CZ6-WM", amount: 80, paidOn: "2026-07-31" }) }, { doc: "not json" }]);
+  ok(open1.refunds === 1, "the summary counts a refund still owed: " + JSON.stringify(open1.refunds));
+  ok(none1.refunds === 0, "and counts neither one already paid back nor a row that will not parse: " + JSON.stringify(none1.refunds));
 
-  /* ---- AND THE SHELF DOES NOT MOVE. The salt left it before the count, so the count already holds it ---- */
-  /* v758: A COUNT THAT COVERS THEM, not the count that happened to be the newest the day this was
-     written. It asked for 19 September and for the 22.65 unit v744 left, and his hand count of 21
-     September moved both, turning a version that had changed nothing red. What is being proved is
-     that these three rows may not roll the stated figure, and what proves it is a count on or after
-     the last of their days, plus a note trail carrying no roll of this version's. */
-  const counts = (bk.COUNTS || []).filter((c) => c.product === "salt");
-  const lastDay = shape.map((s) => s.date).sort().slice(-1)[0];
-  const cnt = counts.find((c) => c.date >= lastDay);
-  ok(!!cnt, "a salt count covers the last of the three days: " + JSON.stringify(cnt && { date: cnt.date, qty: cnt.qty }));
-  ok(!!cnt && three.every((r) => r.date <= cnt.date),
-    "and all three days fall on or before that count, so nothing here may roll the stated figure");
-  const rolls = (bk.NOTES && bk.NOTES.STATED_STOCK) || [];
-  ok(!rolls.some((n) => /^ROLLED AT v750\b/.test(String(n))),
-    "and no roll in the trail is this version's: " + rolls.length + " note(s), none of them v750's");
+  /* ---- 5. THE BANNER NAMES IT, AND AN ORDER NO LONGER HIDES THE REST ---- */
+  const vm9 = await import("node:vm");
+  const swSrc9 = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const wake9 = async (s) => {
+    const L = {}, shown = [];
+    const ctx = { URL, console, caches: {},
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" },
+        registration: { scope: "https://salt-command.example/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
+      clients: { matchAll: async () => [], openWindow: async () => {} },
+      fetch: async () => ({ ok: true, json: async () => s }) };
+    vm9.createContext(ctx); vm9.runInContext(swSrc9, ctx);
+    const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits);
+    return shown[0];
+  };
+  const bRefund = await wake9({ ok: true, pending: 0, refused: 0, refunds: 1, countDue: [], orders: 0 });
+  const bBoth = await wake9({ ok: true, pending: 2, refused: 0, refunds: 1, countDue: ["salt"], orders: 1 });
+  const bQuiet = await wake9({ ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 0 });
+  ok(bRefund && /1 refund to pay back/.test(bRefund.opt.body),
+    "the morning round names a refund still owed, which it never did: " + (bRefund && bRefund.opt.body));
+  ok(bBoth && bBoth.t === "New customer order" && /acknowledge/.test(bBoth.opt.body)
+    && /1 refund to pay back/.test(bBoth.opt.body) && /2 rows waiting/.test(bBoth.opt.body) && /salt not counted/.test(bBoth.opt.body),
+    "an order still leads and no longer hides a refund, a row owed a decision or a shelf not counted: " + (bBoth && bBoth.opt.body));
+  ok(bQuiet && /Nothing waiting/.test(bQuiet.opt.body) && bQuiet.t === "Salt Command is square",
+    "and with nothing owed it still says so: " + (bQuiet && bQuiet.opt.body));
 })();
 
 

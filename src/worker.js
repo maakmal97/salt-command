@@ -187,7 +187,11 @@ function draftOnArrival(env, ctx) {
     try {
       const r = await runDrafter(env);
       console.log("drafter (on arrival): " + JSON.stringify(r));
-      await pushIfDrafted(env, r);
+      /* v759: AND NO BANNER. This road is a tap on the phone in his hand, and the desk draws the
+         row under Approve while he is looking at it. The other two roads to the drafter, the
+         orders reconcile and the quarter-hour net, are the ones that write a row he was not
+         watching for, and they still push. The narrowing lived in the subscription until v759,
+         where it silenced the morning round and every customer's row as well. */
     } catch (e) {
       console.log("drafter (on arrival) FAILED, the cron will retry: " + String((e && e.stack) || e));
     }
@@ -835,13 +839,21 @@ export default {
        date. It is still keyed, because the rule set on 20 Aug is that a read carrying the book
        needs the key, and a rule with a convenient exception stops being a rule. */
     if (p === "/push/summary") {
-      const out = { ok: true, pending: 0, refused: 0, countDue: [], now: 0 };
+      const out = { ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], now: 0 };
       try {
         if (env.SALT_LEDGER) {
           const d = await env.SALT_LEDGER.prepare("SELECT COUNT(*) AS n FROM draft WHERE status='pending'").first();
           out.pending = (d && d.n) || 0;
           const r = await env.SALT_LEDGER.prepare("SELECT COUNT(*) AS n FROM refused").first();
           out.refused = (r && r.n) || 0;
+          /* v759: THE REFUND THE MORNING ROUND WAKES HIM FOR. It fires on an open customerRefunds row
+             (v708) and the banner never named one, so the round he now actually receives could read
+             "square" over money he is holding that is somebody else's. Read exactly as the nudge
+             reads it: the collection lives in `entry`, and the row itself says whether it is paid. */
+          try {
+            const rf = await env.SALT_LEDGER.prepare("SELECT doc FROM entry WHERE collection='customerRefunds'").all();
+            out.refunds = (rf.results || []).filter((x) => { try { return !JSON.parse(x.doc).paidOn; } catch (e) { return false; } }).length;
+          } catch (e) { out.refunds = 0; }
           const c = await env.SALT_LEDGER.prepare("SELECT doc FROM state WHERE key='COUNT_ON'").first();
           if (c && c.doc) {
             const on = JSON.parse(c.doc), today = klDay();
