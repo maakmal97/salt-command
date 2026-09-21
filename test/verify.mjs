@@ -18225,6 +18225,50 @@ await (async () => {
   }
 })();
 
+section("v766: what is waiting on the site is on Today, ranked against everything else");
+await (async () => {
+  /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one
+     card under Enter, so Today, which exists to rank everything that needs him by the money at stake,
+     ranked everything EXCEPT the one item with a customer standing at the other end of it. */
+  const { openMaster: om66 } = await import("../tools/payload.mjs");
+  const { w: w66 } = await om66();
+  try {
+    const rd66 = (x) => JSON.parse(String(w66.eval("JSON.stringify(" + x + ")")));
+    const quiet = rd66("actions().filter(function(a){return a.kind==='orders';})");
+    ok(quiet.length === 0,
+      "with nothing read off the site, Today says nothing about it: the laptop desk and a cold boot "
+      + "both land here: " + JSON.stringify(quiet));
+    const nowWas = rd66("actions().filter(function(a){return a.sev==='now';}).length");
+
+    w66.eval("ORD_OPEN=[{id:'a1',u:'abcd-efgh',code:'CC5-OKR',product:'salt',qty:2,total:200,delivery:15,status:'placed',mode:'deliver',at:'2026-09-21T02:00:00.000Z',history:[],msgs:[]},"
+      + "{id:'a2',u:'wxyz-1234',code:'CE4-CHE',product:'salt',qty:1,total:110,delivery:0,status:'placed',mode:'collect',at:'2026-09-21T02:05:00.000Z',history:[],msgs:[]},"
+      + "{id:'a3',u:'wxyz-1234',code:'CE4-CHE',product:'salt',qty:1,total:110,delivery:0,status:'acknowledged',mode:'collect',at:'2026-09-20T02:00:00.000Z',history:[],msgs:[{at:'2026-09-21T03:00:00.000Z',by:'customer',text:'when can I collect'}]}];");
+    const row = rd66("actions().filter(function(a){return a.kind==='orders';})")[0];
+    ok(row && row.sev === "now" && /2 waiting to be acknowledged/.test(row.title) && row.tab === "orders",
+      "two placed orders are ONE row, at Now, opening the card that answers it: " + JSON.stringify(row && { t: row.title, sev: row.sev, tab: row.tab }));
+    ok(row && Math.abs(row.rm - 325) < 0.005,
+      "ranked by what was ordered, goods and carriage together, which is what the pending row will carry: " + JSON.stringify(row && row.rm));
+    ok(row && /waiting on an answer/.test(row.why),
+      "and the order waiting on an answer is named in the same row rather than ranked twice: " + (row && row.why));
+    ok(rd66("actions().filter(function(a){return a.sev==='now';}).length") === nowWas + 1,
+      "the rail's Now count, which is this same list, picks it up: nothing counts it twice");
+
+    /* AN ACKNOWLEDGED ORDER IS A ROW, and the book's own readings carry it from there */
+    w66.eval("ORD_OPEN=[{id:'b1',u:'abcd-efgh',code:'CC5-OKR',product:'salt',qty:2,total:200,delivery:0,status:'acknowledged',mode:'collect',at:'2026-09-21T02:00:00.000Z',history:[],msgs:[]}];");
+    ok(rd66("actions().filter(function(a){return a.kind==='orders';})").length === 0,
+      "an order already agreed says nothing here: it is a row, and saying it again would be the same money twice");
+
+    /* ONE READING for the card and for Today */
+    w66.eval("ORD_OPEN=[{id:'c1',u:'a',status:'placed',total:100,delivery:0,msgs:[]},{id:'c2',u:'b',status:'done',total:50,delivery:0,msgs:[{at:'x',by:'desk',text:'sent'}]}];");
+    const w = rd66("ordWaiting()");
+    ok(w.placed.length === 1 && w.asked.length === 0 && w.rm === 100,
+      "the one reading counts a placement and not an order he has already answered: " + JSON.stringify({ p: w.placed.length, a: w.asked.length, rm: w.rm }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w66.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

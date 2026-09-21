@@ -99,64 +99,47 @@ const postQ = (body, extraHeaders = {}) => req("/queue", {
 });
 
 /* ---- 1. Worker: the queue contract --------------------------------------------- */
-section("v765: Approve keeps itself current while it is on screen, and neither card polls a pocket");
+section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
-  /* HIS INSTRUCTION OF 21 SEP 2026. Site orders has followed the site at the phone's own pace since
-     v499; Approve never did, so a row that landed while he was looking at it did not appear until he
-     left the part and came back. v762 makes that the likeliest minute of all to be sitting here: a
-     tap on Site orders now queues and drafts in about a second. */
-  const { openMaster: om65 } = await import("../tools/payload.mjs");
-  const { w: w65 } = await om65();
+  /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one
+     card under Enter, so Today, which exists to rank everything that needs him by the money at stake,
+     ranked everything EXCEPT the one item with a customer standing at the other end of it. */
+  const { openMaster: om66 } = await import("../tools/payload.mjs");
+  const { w: w66 } = await om66();
   try {
-    w65.SALT_CLOUD = true;
-    w65.localStorage.setItem("saltWriteKey", "k-fixture");
-    const asked = [];
-    w65.fetch = async (path) => { asked.push(String(path));
-      return { ok: true, status: 200, json: async () => ({ ok: true, drafts: [], refused: [], clock: null }) }; };
-    /* the interval is captured rather than waited for: a test that sleeps thirty seconds proves the
-       clock, not the code */
-    let tick = null, ms = null, cleared = 0;
-    w65.setInterval = (fn, every) => { tick = fn; ms = every; return 77; };
-    w65.clearInterval = () => { cleared++; tick = null; };
-    const box = w65.document.createElement("div"); box.id = "apBox"; w65.document.body.appendChild(box);
+    const rd66 = (x) => JSON.parse(String(w66.eval("JSON.stringify(" + x + ")")));
+    const quiet = rd66("actions().filter(function(a){return a.kind==='orders';})");
+    ok(quiet.length === 0,
+      "with nothing read off the site, Today says nothing about it: the laptop desk and a cold boot "
+      + "both land here: " + JSON.stringify(quiet));
+    const nowWas = rd66("actions().filter(function(a){return a.sev==='now';}).length");
 
-    await w65.eval("apLoad(true)");
-    ok(asked.length === 1 && ms === 30000,
-      "Approve reads the drafts and then follows them, at the same pace as Site orders: " + JSON.stringify({ asked, ms }));
-    ok(typeof tick === "function", "there is a timer at all, which is what was missing");
+    w66.eval("ORD_OPEN=[{id:'a1',u:'abcd-efgh',code:'CC5-OKR',product:'salt',qty:2,total:200,delivery:15,status:'placed',mode:'deliver',at:'2026-09-21T02:00:00.000Z',history:[],msgs:[]},"
+      + "{id:'a2',u:'wxyz-1234',code:'CE4-CHE',product:'salt',qty:1,total:110,delivery:0,status:'placed',mode:'collect',at:'2026-09-21T02:05:00.000Z',history:[],msgs:[]},"
+      + "{id:'a3',u:'wxyz-1234',code:'CE4-CHE',product:'salt',qty:1,total:110,delivery:0,status:'acknowledged',mode:'collect',at:'2026-09-20T02:00:00.000Z',history:[],msgs:[{at:'2026-09-21T03:00:00.000Z',by:'customer',text:'when can I collect'}]}];");
+    const row = rd66("actions().filter(function(a){return a.kind==='orders';})")[0];
+    ok(row && row.sev === "now" && /2 waiting to be acknowledged/.test(row.title) && row.tab === "orders",
+      "two placed orders are ONE row, at Now, opening the card that answers it: " + JSON.stringify(row && { t: row.title, sev: row.sev, tab: row.tab }));
+    ok(row && Math.abs(row.rm - 325) < 0.005,
+      "ranked by what was ordered, goods and carriage together, which is what the pending row will carry: " + JSON.stringify(row && row.rm));
+    ok(row && /waiting on an answer/.test(row.why),
+      "and the order waiting on an answer is named in the same row rather than ranked twice: " + (row && row.why));
+    ok(rd66("actions().filter(function(a){return a.sev==='now';}).length") === nowWas + 1,
+      "the rail's Now count, which is this same list, picks it up: nothing counts it twice");
 
-    await tick();
-    ok(asked.length === 2, "a tick reads them again, so a row that lands while he is looking appears: " + asked.length);
+    /* AN ACKNOWLEDGED ORDER IS A ROW, and the book's own readings carry it from there */
+    w66.eval("ORD_OPEN=[{id:'b1',u:'abcd-efgh',code:'CC5-OKR',product:'salt',qty:2,total:200,delivery:0,status:'acknowledged',mode:'collect',at:'2026-09-21T02:00:00.000Z',history:[],msgs:[]}];");
+    ok(rd66("actions().filter(function(a){return a.kind==='orders';})").length === 0,
+      "an order already agreed says nothing here: it is a row, and saying it again would be the same money twice");
 
-    /* NOT OVER A DECISION IN FLIGHT: a redraw would put the buttons back under a thumb mid-tap */
-    w65.eval("apBusy['x1']=1;");
-    await tick();
-    ok(asked.length === 2, "a tick while a decision is in flight reads nothing: " + asked.length);
-    w65.eval("delete apBusy['x1'];");
-
-    /* NOT INTO A POCKET */
-    Object.defineProperty(w65.document, "hidden", { configurable: true, get: () => true });
-    await tick();
-    ok(asked.length === 2, "and neither does one while the page is hidden: " + asked.length);
-    Object.defineProperty(w65.document, "hidden", { configurable: true, get: () => false });
-    await tick();
-    ok(asked.length === 3, "with the page back in front of him it reads again: " + asked.length);
-
-    /* AND IT STANDS DOWN WHEN THE PART IS GONE */
-    box.remove();
-    await tick();
-    ok(cleared === 1 && asked.length === 3,
-      "when the part leaves the screen the timer clears itself rather than reading a keyed endpoint "
-      + "for a card nobody is looking at: " + JSON.stringify({ cleared, asked: asked.length }));
-
-    /* THE ORDERS CARD TAKES THE SAME TWO GUARDS */
-    const src65 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-    const both = src65.match(/if\(document\.hidden\|\|Object\.keys\((ap|ord)Busy\)\.length\)return;/g) || [];
-    ok(both.length === 2 && (src65.match(/},CARD_POLL\);/g) || []).length === 2,
-      "both cards that follow something outside the phone read one pace and the same two guards: " + JSON.stringify(both));
+    /* ONE READING for the card and for Today */
+    w66.eval("ORD_OPEN=[{id:'c1',u:'a',status:'placed',total:100,delivery:0,msgs:[]},{id:'c2',u:'b',status:'done',total:50,delivery:0,msgs:[{at:'x',by:'desk',text:'sent'}]}];");
+    const w = rd66("ordWaiting()");
+    ok(w.placed.length === 1 && w.asked.length === 0 && w.rm === 100,
+      "the one reading counts a placement and not an order he has already answered: " + JSON.stringify({ p: w.placed.length, a: w.asked.length, rm: w.rm }));
   } finally {
     await new Promise((r) => setTimeout(r, 200));
-    try { w65.close(); } catch (e) { /* best effort */ }
+    try { w66.close(); } catch (e) { /* best effort */ }
   }
 })();
 
