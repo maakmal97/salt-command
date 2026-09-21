@@ -6,7 +6,8 @@ never repeats a root rule. British English, no em-dashes, in files, code and cop
 Correct stale facts in place; the dated record is `master/changelog.json`, never here.
 Set 6 Sep 2026. **No size ceiling** (his standing order, 10 Sep 2026); held to the root token
 test instead: every fact once, in the section that owns it. Mechanism detail is
-`docs/DESK.md`; reasoning and superseded passages `docs/NOTES.md`.
+`docs/DESK.md`; reasoning and superseded passages `docs/NOTES.md`; what a product touches, and
+what it does not, `docs/PRODUCTS.md`.
 **THE HARD RULE NUMBERS ARE LOAD BEARING AND MAY NOT BE RENUMBERED.** Rules 1 to 6 are cited by
 number from code, the suite and the `update-names-id` skill. Reorganise WITHIN a rule freely;
 grep `rule [0-9]` before touching the list.
