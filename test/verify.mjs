@@ -3695,7 +3695,7 @@ await (async () => {
   rmSync(dir, { recursive: true, force: true });
   const quiet = console.log; console.log = () => { };
   let run;
-  try { run = await makeStatements(dir, "2026-08-29", { key: "test-secret" }); } finally { console.log = quiet; }
+  try { run = await makeStatements(dir, "2026-08-29", { key: "test-secret", newIssue: true }); } finally { console.log = quiet; }
   rmSync(dir, { recursive: true, force: true });
   ok(run.made > 0 && run.made === run.sheets.length, `the tool builds (${run.made} statements)`);
 
@@ -5927,7 +5927,7 @@ await (async () => {
   try {
     const m4 = await import(pu4(j4(REPO, "tools", "make_statements.mjs")).href + "?v454");
     const log4 = console.log; console.log = () => {};
-    try { await m4.makeStatements(O4, "2026-09-01", { key: "test-secret" }); } finally { console.log = log4; }
+    try { await m4.makeStatements(O4, "2026-09-01", { key: "test-secret", newIssue: true }); } finally { console.log = log4; }
     html4 = rf4(j4(O4, fname4(who4)), "utf8");
     rev4 = rf4(j4(O4, "_review_2026-09-01.html"), "utf8");
     const oth4 = bk4.sales.find((x) => x.customer && x.customer !== who4 && x.date && !bk4.customerRefunds.some((r) => r.party === x.customer && !r.paidOn)).customer;
@@ -8037,9 +8037,9 @@ await (async () => {
     let aug, sep, sep2, noKey = null;
     try {
       aug = await makeStatements(join(root, "2026-08"), "2026-08-01", { archive: true });
-      try { await makeStatements(join(root, "2026-07"), "2026-07-01"); } catch (e) { noKey = e; }
-      sep = await makeStatements(join(root, "2026-09"), "2026-09-01", { key: "test-secret", master: "mp" });
-      sep2 = await makeStatements(join(root, "2026-09"), "2026-09-01", { key: "test-secret", master: "mp" });
+      try { await makeStatements(join(root, "2026-07"), "2026-07-01", { newIssue: true }); } catch (e) { noKey = e; }
+      sep = await makeStatements(join(root, "2026-09"), "2026-09-01", { key: "test-secret", master: "mp", newIssue: true });
+      sep2 = await makeStatements(join(root, "2026-09"), "2026-09-01", { key: "test-secret", master: "mp", newIssue: true });
     } finally { console.log = q; }
     ok(noKey && /STMT_KEY/.test(noKey.message) && !existsSync(join(root, "2026-07")),
       "a run with no key refuses before writing anything: a record wrapped under nothing opens nothing");
@@ -8291,7 +8291,7 @@ await (async () => {
       "a back-issue states that it shows the account as it stands, not a position as at a date");
     const q2 = console.log; console.log = () => { };
     let live;
-    try { live = await makeStatements(join(REPO, "test", "tmp", "stmt-live"), "2026-08-01", { key: "test-secret" }); }
+    try { live = await makeStatements(join(REPO, "test", "tmp", "stmt-live"), "2026-08-01", { key: "test-secret", newIssue: true }); }
     finally { console.log = q2; }
     ok(/from the beginning to/.test(live.sheets[0].html),
       "and a current issue still reads as a period, which is what it is");
@@ -8310,7 +8310,7 @@ await (async () => {
     rmSync(dirP, { recursive: true, force: true });
     const q3 = console.log; console.log = () => { };
     let runP;
-    try { runP = await makeStatements(dirP, "2026-08-01", { key: "test-secret" }); } finally { console.log = q3; }
+    try { runP = await makeStatements(dirP, "2026-08-01", { key: "test-secret", newIssue: true }); } finally { console.log = q3; }
     const secrets = Object.values(runP.passwords);
     ok(secrets.length > 0, `the run minted passwords to check (${secrets.length})`);
     /* THE SEND SHEET IS THE ONE PAGE THAT MAY CARRY THEM, and it is named here rather than
@@ -18515,6 +18515,62 @@ await (async () => {
     "the chain reads the verdict and exits on it, rather than printing it and building anyway");
   ok(!/if \(NO_PUSH\) warn\(m\); else fail\(m\);/.test(up70),
     "and the old line, which excused a run that was still going to deploy, is gone");
+})();
+
+section("v772: the monthly issue is retired, and a sealed one is made only when it is asked for");
+await (async () => {
+  /* HIS INSTRUCTION OF 21 SEP 2026, after v769: "retire the monthly routine". The account is one live
+     document, written into every record by every publish, so a monthly issue adds nothing and a strip
+     of them says there is something to catch up on. A sealed issue is still a real thing, for a dispute
+     or a position on a day, so this REFUSES rather than forbids. */
+  const { makeStatements: mk72 } = await import("../tools/make_statements.mjs");
+  const root72 = join(REPO, "test", "tmp", "issue772");
+  rmSync(root72, { recursive: true, force: true });
+  mkdirSync(root72, { recursive: true });
+  const quiet72 = console.log;
+
+  let refused = null;
+  try { await mk72(join(root72, "2026-10"), "2026-10-01", { key: "test-secret" }); }
+  catch (e) { refused = String((e && e.message) || e); }
+  ok(refused && /refusing to seal a NEW issue/.test(refused) && /retired on 21 Sep 2026/.test(refused)
+    && /one live document/.test(refused) && /--new-issue/.test(refused),
+    "a new month is refused, and the refusal says why and what to do if he means it: " + JSON.stringify(refused));
+  ok(!existsSync(join(root72, "2026-10", "_kv")) && !existsSync(join(root72, "2026-10", "_passwords.json")),
+    "and nothing was written: no records, no passwords");
+
+  /* ASKED FOR IN SO MANY WORDS, it still works, because a sealed issue is a real thing */
+  let made = null;
+  console.log = () => {};
+  try { made = await mk72(join(root72, "2026-10"), "2026-10-01", { key: "test-secret", newIssue: true }); }
+  finally { console.log = quiet72; }
+  ok(made && existsSync(join(root72, "2026-10", "_kv")),
+    "with --new-issue it is sealed as it always was, for a dispute or a position on a day");
+
+  /* A RETRY IS NOT A NEW ISSUE: the folder already holds this issue, so it regenerates in place */
+  let retried = null;
+  console.log = () => {};
+  try { retried = await mk72(join(root72, "2026-10"), "2026-10-01", { key: "test-secret" }); }
+  finally { console.log = quiet72; }
+  ok(retried && existsSync(join(root72, "2026-10", "_kv")),
+    "a re-run of the issue already in the folder goes through without the flag, which is what a retry "
+    + "after a failure is");
+
+  /* AND AN ARCHIVE OF A PAST MONTH IS NOT AN ISSUE AT ALL: no record, no password, no QR */
+  let arch = null;
+  console.log = () => {};
+  try { arch = await mk72(join(root72, "2026-07"), "2026-07-01", { archive: true }); }
+  finally { console.log = quiet72; }
+  ok(arch && !existsSync(join(root72, "2026-07", "_kv")),
+    "an archive still writes its documents and no records, so history is not shut out by this");
+
+  /* THE COMMAND LINE SPELLS IT, and the doc says the routine is retired */
+  const src72 = readFileSync(join(REPO, "tools", "make_statements.mjs"), "utf8");
+  ok(/const newIssue = process\.argv\.includes\('--new-issue'\)/.test(src72)
+    && /makeStatements\(outDir, issue, \{ archive, newIssue \}\)/.test(src72),
+    "the command line carries the flag through to the guard");
+  const doc72 = readFileSync(join(REPO, "docs", "STATEMENTS.md"), "utf8");
+  ok(/RETIRED/.test(doc72) && /21 Sep 2026/.test(doc72) && /--new-issue/.test(doc72),
+    "and the routine's own document says it is retired, when, and what to run if he wants one");
 })();
 
 section("The suite frees its windows: every section's body is its own async function");

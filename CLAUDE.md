@@ -198,7 +198,7 @@ untouched.
 | Gate (`tools/gate.mjs`), deploy, prove, mark committed (with the clock), re-seed the D1 mirror, publish statements, then the full suite | the steps that follow in the same job; a push runs them alone, and skips the deploy when the phone already has the build; a suite failure after the phone is live turns the run red and is written where the phone shows refusals, never rolled back | same job; or on push |
 | Prove repo and live agree | `ship-check.yml` | 11:00 MYT |
 | Deploy the statements site | the same job, on its own paths. **The checkout is depth 1, so the base commit must be FETCHED before it is diffed**, or a statements-only push deploys nothing while the run goes green. Fails safe: no base, deploy anyway | on push |
-| Monthly statements | `docs/STATEMENTS.md` routine | the 1st, gated in Kuala Lumpur time |
+| Monthly statements | **RETIRED 21 Sep 2026** (v772, his instruction): the account is ONE LIVE DOCUMENT the publish writes on every run, so `make_statements` refuses to seal a new issue without `--new-issue` and says so. Issues already sent still publish and still open; an `--archive` of a past month is not an issue. The Cowork task `salt-monthly-statements` fires from a registry Code cannot see: removing it is his | never |
 
 - **EVERY WAKE THE DESK MINTS REACHES THE PHONE** (v759 to v761, his instruction of 21 Sep 2026: all
   three, and the bulletin for the customer side as well). The desk mints three kinds and his three

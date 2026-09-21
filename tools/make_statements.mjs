@@ -769,6 +769,20 @@ export async function makeStatements(outDir, issue, opts) {
     throw new Error("refusing to write a second issue into " + outDir + ": it already holds a set "
       + "issued " + prior.join(", ") + ", and those files may have been sent. Nothing was written.");
   }
+  /* v772, HIS INSTRUCTION OF 21 SEP 2026: THE MONTHLY ISSUE IS RETIRED. The account is one live
+     document now (v769), kept up to date by every publish, so there is nothing for a monthly issue to
+     add and a strip of them on the page would say there is. A SEALED ISSUE IS STILL A REAL THING, for
+     a dispute or a record of a position on a day, so this refuses rather than forbids: `newIssue`
+     asks for one in so many words, and the command line spells it --new-issue.
+     IT IS A NEW ISSUE THAT IS REFUSED, NOT A RETRY: a folder that already holds this issue's files
+     regenerates in place as it always did, which is what a re-run after a failure is. An --archive of
+     a past month is not an issue at all: no record, no password, no QR, and it goes through.
+     The issues already sealed and sent are untouched and still open on the page. */
+  if (!archive && !prior.length && !(opts && opts.newIssue)) {
+    throw new Error("refusing to seal a NEW issue into " + outDir + ": the monthly statement was "
+      + "retired on 21 Sep 2026 and the account is one live document, written by every publish. "
+      + "Nothing was written. If a sealed issue is what you want, ask for one: --new-issue.");
+  }
 
   /* A RETRY KEEPS THE PASSWORDS IT ALREADY ISSUED. Minting fresh ones would invalidate every
      password already sent, which is the one thing a retry must not do. */
@@ -995,15 +1009,16 @@ export async function makeStatements(outDir, issue, opts) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const args = process.argv.slice(2).filter(a => a !== '--archive');
+  const args = process.argv.slice(2).filter(a => a !== '--archive' && a !== '--new-issue');
   const archive = process.argv.includes('--archive');
+  const newIssue = process.argv.includes('--new-issue');   /* v772: the monthly routine is retired */
   const outDir = args[0], issue = args[1] || new Date().toISOString().slice(0, 10);
   if (!outDir || /\.html?$/i.test(outDir)) {
     console.error('usage: node tools/make_statements.mjs <outDir> [YYYY-MM-DD issue date]');
     if (outDir) console.error('the desk is no longer an input: statements build from ledger/book.json and engine/position.mjs (v388 removed the statement functions from the desk).');
     process.exit(2);
   }
-  makeStatements(outDir, issue, { archive }).catch(e => { console.error(String(e && e.message || e)); process.exit(1); });
+  makeStatements(outDir, issue, { archive, newIssue }).catch(e => { console.error(String(e && e.message || e)); process.exit(1); });
 }
 
 /** The body of an issued document, without its QR: what the publish tool and the suite read. */

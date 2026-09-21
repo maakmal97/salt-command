@@ -1,5 +1,17 @@
 [
  {
+  "v": "v772",
+  "d": "21 Sep 2026",
+  "t": "THE MONTHLY ISSUE IS RETIRED, AND A SEALED ONE IS MADE ONLY WHEN IT IS ASKED FOR",
+  "n": [
+   "<b>HIS INSTRUCTION OF 21 SEP 2026, straight after v769: retire the monthly routine.</b> The account is one live document, written into every record by every publish, so it is never more than an hour behind the book. A monthly issue adds nothing to that, and a strip of them on the page says there is something to catch up on when there is not.",
+   "<b>IT REFUSES RATHER THAN FORBIDS.</b> A sealed issue is still a real thing, for a dispute or for a position on a day, so <code>make_statements</code> stops before a byte is written and names the way to ask for one in so many words: <code>--new-issue</code>. A rule a tool enforces beats a rule a document asks a reader to remember, which is the same reasoning as the re-issue guard it sits beside.",
+   "<b>WHAT IS NOT REFUSED.</b> A RETRY is not a new issue: a folder already holding this issue's files regenerates in place, which is what a re-run after a failure is. An <code>--archive</code> of a past month is not an issue at all, carrying no record, no password and no QR, and goes through. The issues already sealed and sent still publish and still open on the page, because a dated record is not corrected in place.",
+   "<b>ONE THING IS HIS AND IS NOT IN THIS REPO:</b> the Cowork task <code>salt-monthly-statements</code> fires from a registry Code cannot see or write. Until he removes it, it will keep waking to say an issue is due that this repo will now refuse to make. The document says so where a reader starts, beside what to run if he ever does want one.",
+   "<b>THE CHECKS.</b> Seven assertions: a new month refused with the reason and the flag, and nothing written; the flag sealing it as before; a retry going through without it; an archive going through; the command line carrying the flag to the guard; and the routine's own document saying it is retired, when, and what to run. Six mutations, each red."
+  ]
+ },
+ {
   "v": "v771",
   "d": "21 Sep 2026",
   "t": "THE MINT READS THE MASTER WHERE EVERY OTHER TOOL READS IT, SO THERE WAS NOTHING TO SET",
