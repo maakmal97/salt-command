@@ -90,3 +90,8 @@ master/_fold_notes.json
 # and never versioned; this one was the exception and should not have been.
 _Open.html
 test/_render/
+
+# The one-section runner: the suite prelude plus one section, written by a scratch tool while a
+# version is being built and rewritten on every run. It reached the repo by a git add -A on 21 Sep
+# 2026 and rode ten commits before anybody looked; it is scratch and belongs on disk alone.
+test/_one.mjs

@@ -7677,8 +7677,16 @@ await (async () => {
   ok(/worker-src 'self'/.test(page.headers.get("content-security-policy") || ""), "the CSP admits the site's own service worker and nothing else new");
   const sw = await stmtWorker.fetch(sreq("/sw.js"), senv);
   const swTxt = await sw.text();
-  ok(sw.status === 200 && /javascript/.test(sw.headers.get("content-type")) && /showNotification/.test(swTxt) && !/fetch\(/.test(swTxt) && !/caches/.test(swTxt),
-    "/sw.js is served as script, shows a banner on a push, and neither fetches nor caches anything");
+  /* v761: IT FETCHES ONE THING NOW, AND THE CLAIM SAYS WHICH. The script reads the public notice so a
+     wake sent because a notice was set can say what the notice says; a push carries no payload, so
+     there is no other way for it to know. What has not changed is the posture this assertion exists
+     for: it installs no fetch handler, so every page a customer opens is still fetched from the
+     Worker, and it caches nothing, so nothing about a statement is ever held on the phone. */
+  const swFetches = (swTxt.match(/fetch\(/g) || []).length;
+  ok(sw.status === 200 && /javascript/.test(sw.headers.get("content-type")) && /showNotification/.test(swTxt)
+    && swFetches === 1 && /fetch\('bulletin'/.test(swTxt) && !/addEventListener\('fetch'/.test(swTxt) && !/caches/.test(swTxt),
+    "/sw.js is served as script, shows a banner on a push, reads the public notice and nothing else, "
+    + "handles no fetch event and caches nothing: " + JSON.stringify({ swFetches }));
   let r = await stmtWorker.fetch(sj("/open", { u: un, password: pw }), senv);
   let b = await r.json();
   ok(r.status === 200 && b.ok && typeof b.session === "string" && b.session.length >= 20 && b.prices && b.prices.week === "2026-08-31",

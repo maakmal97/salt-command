@@ -200,6 +200,20 @@ untouched.
 | Deploy the statements site | the same job, on its own paths. **The checkout is depth 1, so the base commit must be FETCHED before it is diffed**, or a statements-only push deploys nothing while the run goes green. Fails safe: no base, deploy anyway | on push |
 | Monthly statements | `docs/STATEMENTS.md` routine | the 1st, gated in Kuala Lumpur time |
 
+- **EVERY WAKE THE DESK MINTS REACHES THE PHONE** (v759 to v761, his instruction of 21 Sep 2026: all
+  three, and the bulletin for the customer side as well). The desk mints three kinds and his three
+  subscriptions named ONE, `orders`, so `sendPush` dropped the row drafted from a customer's order and
+  the morning round for five days: v708's rule that the round chases money he is holding that is
+  somebody else's could not reach a phone at all. The switch asks for all three (`ALERT_TOPICS`) and
+  widens a subscription already on file once a load, the record being keyed by the endpoint's hash.
+  **What orders-only was protecting is kept at the SOURCE**: a row drafted on arrival, which is the tap
+  in his hand, pushes nothing; the reconcile and the quarter-hour net still do. The banner names the
+  refund first and no longer returns on an order before the list is built. **A customer paying or
+  withdrawing wakes him** on `last-theirs`, a mark only THEIR moves write, carrying the moment and then
+  the word, because his own moves write `last-touched` and waking on that would wake him for his own
+  taps; the desk keeps the line for ten minutes so the banner says which. **A bulletin wakes every phone
+  on the site**, under its own collapsing topic, and the customer's service worker reads the notice
+  itself, which is public, showing its words when it was set inside the last two minutes.
 - **A CHANGE TO `cloud-commit.yml` NEVER TESTS ITSELF ON THE WAY IN** (10 Sep 2026): it is not
   in its own `push.paths`. Dispatch a run by hand, or push it with a file on one of those paths,
   and then READ THE STEP LIST: most steps are conditional, so a skipped step is green too.
@@ -286,7 +300,12 @@ the fold mints a USERNAME at registration and stops, and the record behind it is
 at an issue, so anybody added between issues had an address and nothing behind it. `node
 tools/stmt-account.mjs --mint` mints the record; it refuses without a master that unwraps an
 existing record, never touches an account that exists, and the publish names who is stuck on every
-run. **A name and ID is committed
+run. **AND THE LAPTOP'S OWN CHAIN NOW MINTS IT WITHOUT BEING ASKED** (v767, his instruction of 21 Sep
+2026): `tools/update.mjs` sweeps for the gap before the build, so what it writes is committed by that
+run and uploaded by the next publish, and where `STMT_MASTER` is not in the environment it names who
+cannot sign in and the one command, as a warning, without stopping the run. It cannot run in CI and
+that is the posture, not a gap: the content key and the master would both have to be on the runner.
+**Amend ID needs nothing**, an account being keyed by the username, which follows the code. **A name and ID is committed
 every time, like an approved row** (05 Sep 2026): Add ID on the phone files the name and the
 place into the vault, encrypted on the device, before the ID is queued; the laptop pulls them
 down with `node tools/pull-vault.mjs` before any seed, and the vault's spelling wins where it
@@ -356,6 +375,22 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   answers. His answer goes through `siteWords`, the bulletin's own lock, **on the desk**: the site holds no
   roster and would not know a code. A refused line never reaches the site. Every line is escaped on both
   surfaces, being the only free text a stranger typed that either draws.
+- **THE TAP, THE RETURN LEG AND THE WHOLE DESK** (v762 to v766, his instruction of 21 Sep 2026: build
+  queue on tap, site orders to reach the desk comprehensively and vice versa, open a closed order, the
+  return leg, a timer on Approve). **A move of his runs the reconcile in the request's own tail**, so a
+  row is queued and drafted in about a second; only a move, never a mark or a message, and it does not
+  wake him. The cron stays as the net and the marks on the order are what stop a stage being queued
+  twice. **THE RETURN LEG**: what he records on the desk reaches the order. The row is found by the key
+  the acknowledgement wrote, among EVERY sale and not the open ones, because a row settled in full is
+  exactly the one that has left the open list; it only ever RAISES, and it moves `queued.paid`/`moved`
+  with it or the next pass would queue a payment already on the row. It runs once a BOOK, gated on the
+  snapshot's version, and the mark moves only on a clean pass. Without it the site chased a customer
+  hourly for money he had taken in cash, which happened on 20 Sep. **A closed order can be opened** on
+  the card (`?all=1`, which the relay has taken since v694), read and answered; it offers no move.
+  **What is waiting on the site is on Today**, ranked by what was ordered, goods and carriage together,
+  Now for a placement and naming an order waiting on an answer in the same row; an order already agreed
+  says nothing there, being a row. **Approve keeps itself current** at the same pace as Site orders, and
+  neither card polls over a decision in flight or into a pocket.
 - **THE BULLETIN** (v732, his instruction of 20 Sep 2026): one clear key `bulletin` `{lines, mode, at}`
   in the site's store, no prefix, so the publish never touches it. Set from the Bulletin card at the
   top of Site orders through the desk's keyed `/bulletin`, relayed to the site's `/desk/bulletin` on
