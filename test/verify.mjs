@@ -18012,6 +18012,59 @@ await (async () => {
     + "first, which is v694 rule and not something a tap changes: " + JSON.stringify(moved.logs));
 })();
 
+section("v763: a closed order can be opened on the card, read and answered");
+await (async () => {
+  /* HIS INSTRUCTION OF 21 SEP 2026. The card has shown the OPEN orders since v499 and, since v752,
+     any whose last line is the customer's. So a question about an order he finished last week was
+     answerable only for as long as they happened to be the last to speak, and an order that went
+     through without a word could never be looked at again. The relay has taken ?all=1 since v694
+     and nothing on the phone ever asked for it. */
+  const { openMaster: om63 } = await import("../tools/payload.mjs");
+  const { w: w63 } = await om63();
+  try {
+    w63.SALT_CLOUD = true;
+    const card = String(w63.eval("tabOrders()"));
+    ok(card.includes('id="ordAllBtn"') && /Show the closed ones/.test(card) && /Open orders, and any waiting on an answer/.test(card),
+      "the card offers the switch, and says what it is showing: " + /(<button[^>]*ordAllBtn[^>]*>[^<]*<\/button>)/.exec(card)[1]);
+
+    const asked = [];
+    w63.fetch = async (path) => { asked.push(String(path));
+      return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) }; };
+    w63.document.body.innerHTML = card;
+    await w63.eval("ordLoad(true)");
+    ok(asked.length === 1 && asked[0] === "orders", "it opens on the open ones, as it always has: " + JSON.stringify(asked));
+    const empty1 = w63.document.getElementById("ordBox").textContent;
+    ok(/No open orders/.test(empty1), "and with none, it says so: " + empty1);
+
+    const btn = w63.document.getElementById("ordAllBtn");
+    btn.click();
+    await new Promise((r) => setTimeout(r, 30));
+    ok(asked.length === 2 && asked[1] === "orders?all=1",
+      "one tap asks the relay for every order it has ever taken: " + JSON.stringify(asked));
+    ok(/Hide the closed ones/.test(btn.textContent) && /This site has taken no orders at all yet/.test(w63.document.getElementById("ordBox").textContent),
+      "the switch and the empty line both say which list is on screen: " + btn.textContent);
+    btn.click();
+    await new Promise((r) => setTimeout(r, 30));
+    ok(asked.length === 3 && asked[2] === "orders" && /Show the closed ones/.test(btn.textContent),
+      "and a second tap puts it back: " + JSON.stringify(asked));
+
+    /* ---- A CLOSED ORDER'S CARD: everything but a move ---- */
+    w63.eval("ORD_OPEN=[{id:'zz1',u:'abcd-efgh',code:'CC5-OKR',product:'salt',qty:2,total:200,delivery:0,paid:200,moved:2,"
+      + "status:'done',mode:'collect',at:'2026-09-10T02:00:00.000Z',history:[{at:'2026-09-10T02:00:00.000Z',status:'done',by:'desk'}],"
+      + "msgs:[{at:'2026-09-12T02:00:00.000Z',by:'customer',text:'was that the same batch as last time'}],queued:{ack:'x',paid:200,moved:2}}];ordDraw();");
+    const shut = w63.document.getElementById("ordBox").innerHTML;
+    ok(/was that the same batch as last time/.test(shut) && /data-say="zz1"/.test(shut) && /data-ord="say"/.test(shut),
+      "a finished order carries its thread and a box to answer in");
+    ok(!/data-ord="acknowledged"/.test(shut) && !/data-ord="cancelled"/.test(shut) && !/data-ord="handover"/.test(shut),
+      "and offers no move, because there is none left to make");
+    ok(/Completed/.test(shut), "the ledger's own word for it is on the card: it reads Completed");
+  } finally {
+    try { w63.eval("if(typeof ordTimer!=='undefined'&&ordTimer){clearInterval(ordTimer);ordTimer=null;}"); } catch (e) { /* best effort */ }
+    await new Promise((r) => setTimeout(r, 200));
+    try { w63.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

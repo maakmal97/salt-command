@@ -99,65 +99,57 @@ const postQ = (body, extraHeaders = {}) => req("/queue", {
 });
 
 /* ---- 1. Worker: the queue contract --------------------------------------------- */
-section("v762: an acknowledgement, a handover or a withdrawal reaches the ledger on the tap");
+section("v763: a closed order can be opened on the card, read and answered");
 await (async () => {
-  /* v694 made the every-minute reconcile the ONE road that queues a site order's stages, and it ran
-     on the cron alone: he acknowledged an order and then waited up to a minute, with nothing under
-     Approve, for the row to exist. It is the same call on the same road, run beside the answer. The
-     cron stays as the net, and the marks the reconcile writes onto the order are what stop a stage
-     being queued twice, so it does not matter which of the two gets there first. */
-  const { placeOrder } = await import("../stmt/orders.js");
-  const stmtW2 = (await import("../stmt/worker.js")).default;
-  const deskW2 = (await import("../src/worker.js")).default;
-  const skv2 = new KV(), dkv2 = new KV();
-  const senv2 = { STMT: skv2, STMT_DESK_KEY: "desk-key" };
-  const kp2 = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
-  const denv2 = { SALT_QUEUE: dkv2, STMT_DESK_KEY: "desk-key", REQUIRE_ACCESS: "0",
-    VAPID_PUBLIC_KEY: "pub", VAPID_SUBJECT: "mailto:a@b.test",
-    VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kp2.privateKey)),
-    STMT_SITE: { fetch: (url, init) => stmtW2.fetch(new Request(url, init), senv2) } };
-  await dkv2.put("stmt-users", JSON.stringify({ "abcd-efgh": "CC5-OKR" }));
-  await dkv2.put("push:his", JSON.stringify({ endpoint: "https://push.example/his-phone", topics: ["orders", "approve", "salt"] }));
-  const o2 = (await placeOrder(senv2, "abcd-efgh", { product: "salt", qty: 2, mode: "deliver", unit: 100, total: 200, week: "", place: "Bangsar" })).order;
+  /* HIS INSTRUCTION OF 21 SEP 2026. The card has shown the OPEN orders since v499 and, since v752,
+     any whose last line is the customer's. So a question about an order he finished last week was
+     answerable only for as long as they happened to be the last to speak, and an order that went
+     through without a word could never be looked at again. The relay has taken ?all=1 since v694
+     and nothing on the phone ever asked for it. */
+  const { openMaster: om63 } = await import("../tools/payload.mjs");
+  const { w: w63 } = await om63();
+  try {
+    w63.SALT_CLOUD = true;
+    const card = String(w63.eval("tabOrders()"));
+    ok(card.includes('id="ordAllBtn"') && /Show the closed ones/.test(card) && /Open orders, and any waiting on an answer/.test(card),
+      "the card offers the switch, and says what it is showing: " + /(<button[^>]*ordAllBtn[^>]*>[^<]*<\/button>)/.exec(card)[1]);
 
-  const tap = async (body) => {
-    const realF = globalThis.fetch, realL = console.log, hit = [], logs = [], waits = [];
-    globalThis.fetch = async (u) => { hit.push(String(u)); return new Response("", { status: 201 }); };
-    console.log = (...a) => logs.push(a.join(" "));
-    let r;
-    try {
-      r = await deskW2.fetch(new Request("https://salt-command.example/orders/abcd-efgh/" + o2.id, { method: "POST",
-        headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), denv2, { waitUntil: (p) => waits.push(p) });
-      await Promise.all(waits);
-    } finally { globalThis.fetch = realF; console.log = realL; }
-    const q = await dkv2.get("q:orders", "json");
-    return { ok: (await r.json()).ok, hit, logs, queue: (q && q.queue) || [] };
-  };
+    const asked = [];
+    w63.fetch = async (path) => { asked.push(String(path));
+      return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) }; };
+    w63.document.body.innerHTML = card;
+    await w63.eval("ordLoad(true)");
+    ok(asked.length === 1 && asked[0] === "orders", "it opens on the open ones, as it always has: " + JSON.stringify(asked));
+    const empty1 = w63.document.getElementById("ordBox").textContent;
+    ok(/No open orders/.test(empty1), "and with none, it says so: " + empty1);
 
-  const ack = await tap({ status: "acknowledged", mode: "deliver", delivery: 15 });
-  ok(ack.ok && ack.queue.length === 1,
-    "his acknowledgement queues the pending row inside the same request, with no minute to wait: " + JSON.stringify(ack.queue.map((e) => e.at)));
-  const ent2 = ack.queue[0];
-  ok(ent2 && ent2.payload && ent2.payload.party === "CC5-OKR" && ent2.payload.total === 200 && ent2.payload.delivery === 15,
-    "and it is the row the reconcile has always written, goods and carriage apart: " + JSON.stringify(ent2 && ent2.payload));
-  ok(ack.logs.some((l) => /^orders reconcile \(on the tap\)/.test(l)),
-    "the road it took is named in the log, so a failure on it is not silent: " + JSON.stringify(ack.logs));
-  ok(ack.hit.length === 0,
-    "and it does not wake him: this is his own tap, and the desk draws the row while he is looking: " + JSON.stringify(ack.hit));
+    const btn = w63.document.getElementById("ordAllBtn");
+    btn.click();
+    await new Promise((r) => setTimeout(r, 30));
+    ok(asked.length === 2 && asked[1] === "orders?all=1",
+      "one tap asks the relay for every order it has ever taken: " + JSON.stringify(asked));
+    ok(/Hide the closed ones/.test(btn.textContent) && /This site has taken no orders at all yet/.test(w63.document.getElementById("ordBox").textContent),
+      "the switch and the empty line both say which list is on screen: " + btn.textContent);
+    btn.click();
+    await new Promise((r) => setTimeout(r, 30));
+    ok(asked.length === 3 && asked[2] === "orders" && /Show the closed ones/.test(btn.textContent),
+      "and a second tap puts it back: " + JSON.stringify(asked));
 
-  const before = ((await dkv2.get("q:orders", "json")) || { queue: [] }).queue.length;
-  const mark = await tap({ mark: { paid: 0 } });
-  ok(mark.ok && mark.queue.length === before && !mark.logs.some((l) => /on the tap/.test(l)),
-    "a mark is the reconcile's own bookkeeping written back, and answering it with another reconcile "
-    + "would be the desk talking to itself: " + JSON.stringify({ before, after: mark.queue.length }));
-  const said = await tap({ message: "on its way" });
-  ok(said.ok && said.queue.length === before && !said.logs.some((l) => /on the tap/.test(l)),
-    "and a line on the thread moves no goods and no money, so it queues nothing: " + JSON.stringify(said.queue.length));
-
-  const moved = await tap({ handover: { units: 2, mode: "deliver" } });
-  ok(moved.ok && moved.logs.some((l) => /on the tap/.test(l) && /waiting/.test(l)),
-    "a handover runs it on the tap as well, and its Correction WAITS for the pending row to be folded "
-    + "first, which is v694 rule and not something a tap changes: " + JSON.stringify(moved.logs));
+    /* ---- A CLOSED ORDER'S CARD: everything but a move ---- */
+    w63.eval("ORD_OPEN=[{id:'zz1',u:'abcd-efgh',code:'CC5-OKR',product:'salt',qty:2,total:200,delivery:0,paid:200,moved:2,"
+      + "status:'done',mode:'collect',at:'2026-09-10T02:00:00.000Z',history:[{at:'2026-09-10T02:00:00.000Z',status:'done',by:'desk'}],"
+      + "msgs:[{at:'2026-09-12T02:00:00.000Z',by:'customer',text:'was that the same batch as last time'}],queued:{ack:'x',paid:200,moved:2}}];ordDraw();");
+    const shut = w63.document.getElementById("ordBox").innerHTML;
+    ok(/was that the same batch as last time/.test(shut) && /data-say="zz1"/.test(shut) && /data-ord="say"/.test(shut),
+      "a finished order carries its thread and a box to answer in");
+    ok(!/data-ord="acknowledged"/.test(shut) && !/data-ord="cancelled"/.test(shut) && !/data-ord="handover"/.test(shut),
+      "and offers no move, because there is none left to make");
+    ok(/Completed/.test(shut), "the ledger's own word for it is on the card: it reads Completed");
+  } finally {
+    try { w63.eval("if(typeof ordTimer!=='undefined'&&ordTimer){clearInterval(ordTimer);ordTimer=null;}"); } catch (e) { /* best effort */ }
+    await new Promise((r) => setTimeout(r, 200));
+    try { w63.close(); } catch (e) { /* best effort */ }
+  }
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

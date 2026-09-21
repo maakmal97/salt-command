@@ -1,5 +1,16 @@
 [
  {
+  "v": "v763",
+  "d": "21 Sep 2026",
+  "t": "A CLOSED ORDER CAN BE OPENED ON THE CARD, READ AND ANSWERED",
+  "n": [
+   "<b>HIS INSTRUCTION OF 21 SEP 2026.</b> The card has shown the OPEN orders since v499 and, since v752, any whose last line is the customer's. So a question about an order he finished last week was answerable for exactly as long as they happened to be the last to speak, and an order that went through without a word could never be looked at again at all. The relay has taken every order since v694 and nothing on the phone ever asked it for them.",
+   "<b>ONE SWITCH, AND THE SAME CARD.</b> <b>Show the closed ones</b> asks the relay for all of them, newest first; the line beside it says which list is on screen, and so does the line where a list is empty. A closed order draws its figures, the ledger's own word for it and its thread, with the box to answer in; what it does not draw is a move, because there is none left to make.",
+   "<b>THE SWITCH SURVIVES BEING USED,</b> which is not free: it sits outside the box the card redraws, so it is disabled on the tap and re-enabled on the draw. Left as it was, one tap would have been all it ever took, and the second would have done nothing at all. The check that caught it is the one that taps it twice.",
+   "<b>THE CHECKS.</b> Nine assertions: the switch and its line, the first read asking for the open ones, a tap asking for all of them, the label and the empty line both following, a second tap putting it back, and a finished order carrying its thread, its answer box, no move and the word Completed. Five mutations, each red."
+  ]
+ },
+ {
   "v": "v762",
   "d": "21 Sep 2026",
   "t": "AN ACKNOWLEDGEMENT, A HANDOVER OR A WITHDRAWAL REACHES THE LEDGER ON THE TAP",
