@@ -394,6 +394,35 @@ export async function deskMove(env, u, id, body) {
     await env.STMT.put(OKEY(u, id), JSON.stringify(order));
     return { order };
   }
+  /* v764: WHAT THE BOOK ALREADY HOLDS, COMING BACK THE OTHER WAY (his instruction of 21 Sep 2026).
+   * Money and goods are two tracks and the site has only ever heard one end of each: the customer
+   * types what they paid, he types what he handed over HERE. When he takes the payment in cash and
+   * enters it on the desk instead, this order kept saying nothing was paid, the page told them so,
+   * and the hourly chase asked them again every hour for money he already had. It happened.
+   * IT ONLY EVER RAISES. A customer's own word is never erased by a row that has not caught up, and
+   * the figure comes with the MARK moved to match, or the desk's next pass would queue an entry for
+   * a payment that is already on the row and count it twice. */
+  if (body && body.ledger) {
+    const L = body.ledger, q = Object.assign({}, order.queued || {});
+    let told = false;
+    if (typeof L.paid === "number" && Number.isFinite(L.paid) && L.paid > (+order.paid || 0) + 0.004) {
+      const was = +order.paid || 0;
+      order.paid = +L.paid.toFixed(2); q.paid = order.paid; told = true;
+      order.history.push({ at, status: order.status, by: "desk", note: "payment of " + (order.paid - was).toFixed(2) + " recorded" });
+    }
+    if (typeof L.moved === "number" && Number.isFinite(L.moved) && L.moved > (+order.moved || 0) + 0.0004) {
+      order.moved = +L.moved.toFixed(3); q.moved = order.moved; told = true;
+      if (!order.movedOn) order.movedOn = klDay(at);
+      order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
+    }
+    if (!told) return { order };
+    order.queued = q;
+    settle(order, at);
+    await env.STMT.put(OKEY(u, id), JSON.stringify(order));
+    await env.STMT.put(LAST_TOUCHED, at);
+    const push = await wakeCustomer(env, u);
+    return { order, push };
+  }
   /* v753: HIS ANSWER ON THE ORDER. It is a move of his like any other, so it wakes them; it is not
      a state, so nothing about the order changes but the thread. There is no cap on his own lines: the
      cap v751 set counts theirs, and a man answering his own customers is not a thing to ration. */

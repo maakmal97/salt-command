@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, bulletinRelay } from "./orders.js";
+import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -660,6 +660,12 @@ export default {
            so no two roads can queue the same stage; it drafts what it queued rather than waiting
            for the quarter-hour, because he is looking at Approve. */
         try {
+          /* v764: what the book already holds, back the other way, before the pass that reads the
+             order: an order brought level here owes nothing for the reconcile to queue. */
+          try {
+            const ts = await tellSite(env);
+            if (!ts.ok || ts.told || ts.failed) console.log("orders return leg: " + JSON.stringify(ts));
+          } catch (e) { console.log("orders return leg FAILED: " + String((e && e.stack) || e)); }
           const rc = await reconcileOrders(env);
           /* waiting is logged too (20 Sep 2026): a stage held for its row was invisible for as long as it waited */
           if (!rc.ok || rc.queued || rc.unmapped || rc.waiting || rc.failed) console.log("orders reconcile: " + JSON.stringify(rc));

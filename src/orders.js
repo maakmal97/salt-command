@@ -35,6 +35,10 @@ const THEIRS_MARK = "orders:theirs";
    seconds and a line about a payment made this morning would be a lie at lunchtime. */
 const NEWS_KEY = "orders:news";
 const NEWS_WORD = { pay: "A customer has paid", cancel: "A customer has withdrawn an order" };
+/* v764: the book the return leg last told the site about. A fold mints a new version and re-seeds
+   the mirror, so comparing the version is one cheap read a minute and a full pass only when there
+   is something new to say. It moves only when the whole pass got through. */
+const TOLD_MARK = "orders:told";
 
 function site(env, path, init) {
   if (!env.STMT_SITE || !env.STMT_DESK_KEY) return null;
@@ -369,6 +373,54 @@ export async function reconcileOrders(env) {
   }
   return Object.assign({ ok: true, queued }, unmapped.length ? { unmapped } : {},
     waiting.length ? { waiting } : {}, failed.length ? { failed } : {});
+}
+
+/* ---- THE RETURN LEG (v764, his instruction of 21 Sep 2026) ------------------------------------
+ * Every road built since v694 runs from the site to the book: the customer says what they paid, he
+ * says what he handed over on the card, and the reconcile queues the entries. NOTHING RAN THE OTHER
+ * WAY. So a payment he took in cash and entered on the desk reached the row and never the order: the
+ * customer's page said nothing had been paid, and the site's hourly chase asked them for it again
+ * every hour, day and night, until he noticed. That happened on 20 September and was patched by hand.
+ *
+ * THE ROW IS FOUND BY THE KEY THE ACKNOWLEDGEMENT WROTE, and among EVERY sale rather than the open
+ * ones: the case this exists for is a row he has settled in full, which is precisely the row that has
+ * left the open list. The figures are the engine's own readings, so the desk and the row cannot
+ * disagree about what has been paid.
+ */
+export async function tellSite(env) {
+  if (!env.SALT_LEDGER || !env.SALT_QUEUE) return { ok: true, told: 0 };
+  let snap = null;
+  try { snap = await env.SALT_LEDGER.prepare("SELECT v,stamped FROM snapshot WHERE one=1").first(); } catch (e) { return { ok: false, error: String((e && e.message) || e) }; }
+  const v = (snap && snap.v) || null;
+  if (!v) return { ok: true, told: 0 };
+  if ((await env.SALT_QUEUE.get(TOLD_MARK)) === v) return { ok: true, told: 0, v };
+  const r = await listOrders(env, false);
+  if (!r.ok) return { ok: false, error: r.error };
+  const book = await readBook(env.SALT_LEDGER).catch(() => null);
+  const sales = (book && book.sales) || [];
+  if (!sales.length) return { ok: true, told: 0, v };
+  const byKey = new Map();
+  for (const s of sales) byKey.set(POSITION_ENGINE.ovKey(s), s);
+  let told = 0; const failed = [];
+  for (const o of r.orders) {
+    if (!o.ledgerKey || ["done", "cancelled", "declined"].includes(o.status)) continue;
+    const row = byKey.get(o.ledgerKey);
+    if (!row || row.cancelled) continue;
+    const ledger = {};
+    const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = +(+POSITION_ENGINE.txEffDeliv(row)).toFixed(3);
+    if (paid > (+o.paid || 0) + 0.004) ledger.paid = paid;
+    if (moved > (+o.moved || 0) + 0.0004) ledger.moved = moved;
+    if (!Object.keys(ledger).length) continue;
+    const m = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ledger })
+    });
+    if (!m || !m.ok) failed.push({ id: o.id, why: "the site would not take it" + (m ? " (http " + m.status + ")" : "") });
+    else told++;
+  }
+  /* the mark moves only on a clean pass, so an order the site refused is tried again next minute
+     rather than waiting for the next fold */
+  if (!failed.length) await env.SALT_QUEUE.put(TOLD_MARK, v);
+  return Object.assign({ ok: true, told, v }, failed.length ? { failed } : {});
 }
 
 /** How many customer orders are waiting on him: placed, and acknowledged but not yet ready. */

@@ -1,5 +1,17 @@
 [
  {
+  "v": "v764",
+  "d": "21 Sep 2026",
+  "t": "WHAT HE RECORDS ON THE DESK REACHES THE CUSTOMER'S ORDER, AND THE CHASE STOPS",
+  "n": [
+   "<b>EVERY ROAD BUILT SINCE v694 RUNS ONE WAY.</b> The customer says what they paid, he says what he handed over on the card, and the reconcile queues the entries. Nothing ran the other way. So a payment he took in cash and typed on the desk reached the ROW and never the ORDER: the customer's page said nothing had been paid, and the site's hourly chase asked them for it again every hour, day and night. That happened on 20 September and was patched by hand, which is not a fix.",
+   "<b>THE ROW IS FOUND BY THE KEY THE ACKNOWLEDGEMENT WROTE, among EVERY sale and not the open ones.</b> The case this exists for is a row he has settled in full, and a settled row is exactly the one that has left the open list. The figures are the engine's own readings of that row, so the desk and the row cannot disagree about what has been paid.",
+   "<b>IT ONLY EVER RAISES, AND IT MOVES THE MARK WITH IT.</b> A customer's own word is never erased by a row that has not caught up, and the figure travels with the mark moved to match, or the next pass would queue an entry for a payment already on the row and count it twice. Both guards are real and they are in different places: the desk decides what is worth saying, the site decides what it will take, and each is proved on its own.",
+   "<b>ONCE A BOOK, NOT ONCE A MINUTE.</b> A fold mints a version and re-seeds the mirror, so the pass compares that version against what it last told the site: one cheap read a minute, a full pass only when something has actually landed, and not one call to the site in between. <b>The mark moves only on a clean pass</b>, so an order the site refused is tried again the next minute rather than waiting for the next fold. The order settles itself on what it was told, exactly as it does when the customer pays, and they are woken: their payment has been recognised.",
+   "<b>THE CHECKS.</b> Eleven assertions: an order reading nothing paid over a row settled in full, the telling, the mark moving with it, the order completing and saying where the figure came from, the chase having nothing left to ask for, the forward pass queueing nothing afterwards, a second pass asking the site nothing at all, a row behind the customer not being sent and being refused if it were, and a refusal leaving the mark where it was. Eight mutations, each red."
+  ]
+ },
+ {
   "v": "v763",
   "d": "21 Sep 2026",
   "t": "A CLOSED ORDER CAN BE OPENED ON THE CARD, READ AND ANSWERED",
