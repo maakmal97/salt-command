@@ -1,5 +1,16 @@
 [
  {
+  "v": "v765",
+  "d": "21 Sep 2026",
+  "t": "APPROVE KEEPS ITSELF CURRENT WHILE IT IS ON SCREEN, AND NEITHER CARD POLLS A POCKET",
+  "n": [
+   "<b>HIS INSTRUCTION OF 21 SEP 2026.</b> Site orders has followed the site at the phone's own pace since v499. Approve never did: a row that landed while he was looking at it did not appear until he left the part and came back. v762 makes that the likeliest minute of all to be sitting here, because a tap on Site orders now queues and drafts in about a second.",
+   "<b>THE SAME PACE, STATED ONCE,</b> and it lives only while the part is on screen: the moment the card is gone, the timer clears itself rather than reading a keyed endpoint for something nobody is looking at.",
+   "<b>TWO GUARDS, AND BOTH CARDS TAKE THEM.</b> Not while a decision is in flight, because a redraw would put the buttons back under a thumb mid-tap. Not while the page is hidden, because a phone in a pocket reading a keyed endpoint every half minute is a battery and a bill and answers nobody. Site orders had neither and now has both.",
+   "<b>THE CHECKS.</b> Eight assertions, driven through a captured interval rather than a slept thirty seconds: the read and the pace, the timer existing at all, a tick reading again, a tick over a decision reading nothing, a tick while hidden reading nothing, the page coming back, the timer standing down when the part leaves, and both cards carrying one pace and the same two guards. Six mutations, each red."
+  ]
+ },
+ {
   "v": "v764",
   "d": "21 Sep 2026",
   "t": "WHAT HE RECORDS ON THE DESK REACHES THE CUSTOMER'S ORDER, AND THE CHASE STOPS",
