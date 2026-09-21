@@ -1,5 +1,17 @@
 [
  {
+  "v": "v762",
+  "d": "21 Sep 2026",
+  "t": "AN ACKNOWLEDGEMENT, A HANDOVER OR A WITHDRAWAL REACHES THE LEDGER ON THE TAP",
+  "n": [
+   "<b>THE ROW USED TO WAIT FOR THE NEXT MINUTE.</b> v694 made the every-minute reconcile the ONE road that queues a site order's stages, so nothing could queue a stage twice, and it ran on the cron alone. He acknowledged an order and then waited up to a minute, looking at an Approve card with nothing on it, before the row existed at all.",
+   "<b>THE SAME CALL ON THE SAME ROAD, BESIDE THE ANSWER.</b> A move of his runs the reconcile in the request's own tail, so the row is queued and drafted in about a second. The cron still runs every minute as the net, and the marks the reconcile writes onto the order are what stop a stage being queued twice, so it does not matter which of the two gets there first: that was the point of writing them on the order rather than counting on one clock.",
+   "<b>ONLY A MOVE.</b> A mark is the reconcile's own bookkeeping written back onto the order, and answering it with another reconcile would be the desk talking to itself; a line on the thread moves no goods and no money. <b>And it does not wake him</b>, for the same reason a row he typed does not (v759): this is his own tap, and the desk draws the row under Approve while he is looking at it.",
+   "<b>WHAT IT DOES NOT CHANGE.</b> A handover's Correction still WAITS for the pending row to be folded, because it amends a row that has to exist first. The tap makes the desk ask sooner; it does not let a stage jump the order they happen in.",
+   "<b>THE CHECKS.</b> Seven assertions: the acknowledgement queueing inside the same request, the entry being the row the reconcile has always written with goods and carriage apart, the road named in the log, no banner, a mark and a message queueing nothing and not even asking, and a handover asking and being told to wait. Four mutations, each red."
+  ]
+ },
+ {
   "v": "v761",
   "d": "21 Sep 2026",
   "t": "A NOTICE REACHES EVERY PHONE THAT ASKED, AND THE BANNER IT DRAWS IS THE NOTICE'S OWN WORDS",

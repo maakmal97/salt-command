@@ -181,6 +181,25 @@ async function pushIfDrafted(env, result) {
   } catch { /* a banner is not worth an error path */ }
 }
 
+/* v762: THE LEDGER IS TOLD ON THE TAP. The reconcile is the one road that queues a site order's
+   stages (v694) and it ran on the every-minute cron alone, so his acknowledgement sat for up to a
+   minute before the row existed and he had to come back to Approve for it. It is the same call on
+   the same road, run beside the answer rather than instead of it: the cron still runs every minute
+   as the net, and the reconcile's own marks are what stop a stage being queued twice, so the two
+   cannot double up whichever gets there first.
+   IT DOES NOT WAKE HIM. This is his own tap, exactly as a row he typed is (v759): the desk draws
+   the row under Approve while he is looking at it. The drafter still runs, so the row is there. */
+function reconcileOnTap(env, ctx) {
+  if (!ctx || typeof ctx.waitUntil !== "function" || !env.STMT_SITE) return;
+  ctx.waitUntil((async () => {
+    try {
+      const rc = await reconcileOrders(env);
+      console.log("orders reconcile (on the tap): " + JSON.stringify(rc));
+      if (rc.queued && env.SALT_LEDGER) console.log("drafter (on the tap): " + JSON.stringify(await runDrafter(env)));
+    } catch (e) { console.log("orders reconcile (on the tap) FAILED: " + String((e && e.stack) || e)); }
+  })());
+}
+
 function draftOnArrival(env, ctx) {
   if (!ctx || typeof ctx.waitUntil !== "function" || !env.SALT_LEDGER) return;
   ctx.waitUntil((async () => {
@@ -791,6 +810,10 @@ export default {
       const r = await moveOrder(env, om[1], om[2], b);
       if (!r.ok) return json({ ok: false, error: r.error }, r.status || 502);
       if (!r.order.code) r.warn = "no desk code is mapped to " + r.order.u + ", so nothing can be queued for the ledger: publish the statements again";
+      /* v762: and the ledger hears about it now. ONLY A MOVE: a mark is the reconcile's own
+         bookkeeping written back, and answering it with another reconcile would be the desk
+         talking to itself; a line on the thread moves no goods and no money. */
+      if (b && (b.status || b.handover)) reconcileOnTap(env, ctx);
       return json(r);
     }
     /* Run the drafter on demand rather than waiting for the cron: needed to prove it from

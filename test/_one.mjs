@@ -99,92 +99,65 @@ const postQ = (body, extraHeaders = {}) => req("/queue", {
 });
 
 /* ---- 1. Worker: the queue contract --------------------------------------------- */
-section("v761: a notice reaches every phone that asked, and the banner it draws is the notice's own words");
+section("v762: an acknowledgement, a handover or a withdrawal reaches the ledger on the tap");
 await (async () => {
-  /* HIS INSTRUCTION OF 21 SEP 2026, beside the three wakes on his own phone: the bulletin for the
-     customer side as well. It was written to the store and drawn on the door and by an open page's
-     poll, so somebody who had shut the page learned of it whenever they next opened one. */
-  const stmtW1 = (await import("../stmt/worker.js")).default;
-  const { wakeCustomer, wakeEveryone } = await import("../stmt/push.js");
-  const { SW_JS } = await import("../stmt/sw.js");
-  const kpS = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
-  const skv1 = new KV();
-  const senv1 = { STMT: skv1, STMT_DESK_KEY: "desk-key", STMT_VAPID_PUBLIC_KEY: "pub", STMT_VAPID_SUBJECT: "mailto:a@b.test",
-    STMT_VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kpS.privateKey)) };
-  await skv1.put("push:abcd-efgh:one", JSON.stringify({ endpoint: "https://push.example/her-phone" }));
-  await skv1.put("push:abcd-efgh:two", JSON.stringify({ endpoint: "https://push.example/her-tablet" }));
-  await skv1.put("push:wxyz-1234:one", JSON.stringify({ endpoint: "https://push.example/his-friend" }));
-  await skv1.put("push:wxyz-1234:gone", JSON.stringify({ endpoint: "https://push.example/a-dead-one" }));
+  /* v694 made the every-minute reconcile the ONE road that queues a site order's stages, and it ran
+     on the cron alone: he acknowledged an order and then waited up to a minute, with nothing under
+     Approve, for the row to exist. It is the same call on the same road, run beside the answer. The
+     cron stays as the net, and the marks the reconcile writes onto the order are what stop a stage
+     being queued twice, so it does not matter which of the two gets there first. */
+  const { placeOrder } = await import("../stmt/orders.js");
+  const stmtW2 = (await import("../stmt/worker.js")).default;
+  const deskW2 = (await import("../src/worker.js")).default;
+  const skv2 = new KV(), dkv2 = new KV();
+  const senv2 = { STMT: skv2, STMT_DESK_KEY: "desk-key" };
+  const kp2 = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const denv2 = { SALT_QUEUE: dkv2, STMT_DESK_KEY: "desk-key", REQUIRE_ACCESS: "0",
+    VAPID_PUBLIC_KEY: "pub", VAPID_SUBJECT: "mailto:a@b.test",
+    VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kp2.privateKey)),
+    STMT_SITE: { fetch: (url, init) => stmtW2.fetch(new Request(url, init), senv2) } };
+  await dkv2.put("stmt-users", JSON.stringify({ "abcd-efgh": "CC5-OKR" }));
+  await dkv2.put("push:his", JSON.stringify({ endpoint: "https://push.example/his-phone", topics: ["orders", "approve", "salt"] }));
+  const o2 = (await placeOrder(senv2, "abcd-efgh", { product: "salt", qty: 2, mode: "deliver", unit: 100, total: 200, week: "", place: "Bangsar" })).order;
 
-  const fired = async (fn) => {
-    const realF = globalThis.fetch, hit = [];
-    globalThis.fetch = async (u, init) => { hit.push({ u: String(u), topic: init && init.headers && init.headers.Topic });
-      return new Response("", { status: String(u).endsWith("a-dead-one") ? 410 : 201 }); };
-    let r; try { r = await fn(); } finally { globalThis.fetch = realF; }
-    return { r, hit };
+  const tap = async (body) => {
+    const realF = globalThis.fetch, realL = console.log, hit = [], logs = [], waits = [];
+    globalThis.fetch = async (u) => { hit.push(String(u)); return new Response("", { status: 201 }); };
+    console.log = (...a) => logs.push(a.join(" "));
+    let r;
+    try {
+      r = await deskW2.fetch(new Request("https://salt-command.example/orders/abcd-efgh/" + o2.id, { method: "POST",
+        headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), denv2, { waitUntil: (p) => waits.push(p) });
+      await Promise.all(waits);
+    } finally { globalThis.fetch = realF; console.log = realL; }
+    const q = await dkv2.get("q:orders", "json");
+    return { ok: (await r.json()).ok, hit, logs, queue: (q && q.queue) || [] };
   };
-  const one = await fired(() => wakeCustomer(senv1, "abcd-efgh"));
-  ok(one.r.sent === 2 && one.hit.every((h) => h.topic === "salt-order")
-    && one.hit.map((h) => h.u.split("/").pop()).sort().join() === "her-phone,her-tablet",
-    "one customer's own wake still reaches their phones and nobody else's: " + JSON.stringify(one.hit.map((h) => h.u)));
 
-  const all = await fired(() => wakeEveryone(senv1));
-  ok(all.r.sent === 3 && all.r.gone === 1,
-    "a notice reaches every phone on the site, and one the service has given up on is cleared: " + JSON.stringify(all.r));
-  ok(all.hit.every((h) => h.topic === "salt-notice"),
-    "under its own collapsing topic, so a notice does not replace an order's banner or the other way about: "
-    + JSON.stringify(all.hit.map((h) => h.topic)));
-  ok((await skv1.get("push:wxyz-1234:gone")) === null && (await skv1.get("push:wxyz-1234:one")) !== null,
-    "and the dead subscription is the only one dropped");
+  const ack = await tap({ status: "acknowledged", mode: "deliver", delivery: 15 });
+  ok(ack.ok && ack.queue.length === 1,
+    "his acknowledgement queues the pending row inside the same request, with no minute to wait: " + JSON.stringify(ack.queue.map((e) => e.at)));
+  const ent2 = ack.queue[0];
+  ok(ent2 && ent2.payload && ent2.payload.party === "CC5-OKR" && ent2.payload.total === 200 && ent2.payload.delivery === 15,
+    "and it is the row the reconcile has always written, goods and carriage apart: " + JSON.stringify(ent2 && ent2.payload));
+  ok(ack.logs.some((l) => /^orders reconcile \(on the tap\)/.test(l)),
+    "the road it took is named in the log, so a failure on it is not silent: " + JSON.stringify(ack.logs));
+  ok(ack.hit.length === 0,
+    "and it does not wake him: this is his own tap, and the desk draws the row while he is looking: " + JSON.stringify(ack.hit));
 
-  /* ---- SETTING ONE WAKES THEM; CLEARING ONE DOES NOT ---- */
-  const D1 = { "X-Stmt-Desk": "desk-key" };
-  const post1 = (body) => stmtW1.fetch(new Request("https://site.test/desk/bulletin", { method: "POST",
-    headers: Object.assign({ "content-type": "application/json" }, D1), body: JSON.stringify(body) }), senv1);
-  const set1 = await fired(() => post1({ lines: ["Closed Friday", "Back Monday"], mode: "change" }));
-  const setJ = await set1.r.json();
-  ok(setJ.ok && setJ.push && setJ.push.sent === 3 && set1.hit.length === 3,
-    "setting a notice wakes every phone, and says how many it reached: " + JSON.stringify(setJ.push));
-  const clear1 = await fired(() => post1({ lines: [] }));
-  const clrJ = await clear1.r.json();
-  ok(clrJ.cleared && clear1.hit.length === 0,
-    "and clearing one wakes nobody, because there is nothing to read: " + JSON.stringify(clear1.hit));
+  const before = ((await dkv2.get("q:orders", "json")) || { queue: [] }).queue.length;
+  const mark = await tap({ mark: { paid: 0 } });
+  ok(mark.ok && mark.queue.length === before && !mark.logs.some((l) => /on the tap/.test(l)),
+    "a mark is the reconcile's own bookkeeping written back, and answering it with another reconcile "
+    + "would be the desk talking to itself: " + JSON.stringify({ before, after: mark.queue.length }));
+  const said = await tap({ message: "on its way" });
+  ok(said.ok && said.queue.length === before && !said.logs.some((l) => /on the tap/.test(l)),
+    "and a line on the thread moves no goods and no money, so it queues nothing: " + JSON.stringify(said.queue.length));
 
-  /* ---- THE BANNER THE CUSTOMER'S SERVICE WORKER DRAWS, from the script as it ships ---- */
-  const vm1 = await import("node:vm");
-  const runSw1 = (bulletin, status) => {
-    const L = {}, shown = [], asked = [];
-    const ctx = { URL, Date, console,
-      fetch: async (u) => { asked.push(String(u)); return { ok: status !== 404, json: async () => bulletin }; },
-      self: { addEventListener: (t, f) => { L[t] = f; }, location: { href: "https://site.test/sw.js?u=abcd-efgh" },
-        registration: { scope: "https://site.test/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
-      clients: { matchAll: async () => [], openWindow: async () => {} } };
-    vm1.createContext(ctx); vm1.runInContext(SW_JS, ctx);
-    return { L, shown, asked };
-  };
-  const wake1 = async (bulletin, status) => {
-    const sw = runSw1(bulletin, status), waits = [];
-    sw.L.push({ waitUntil: (pr) => waits.push(pr) });
-    await Promise.all(waits);
-    return { shown: sw.shown[0], asked: sw.asked };
-  };
-  const fresh1 = await wake1({ ok: true, lines: ["Closed Friday", "Back Monday"], mode: "change", at: new Date().toISOString() });
-  ok(fresh1.shown && fresh1.shown.t === "Closed Friday" && fresh1.shown.opt.body === "Back Monday"
-    && fresh1.shown.opt.data.url === "./?u=abcd-efgh",
-    "a notice set a moment ago is what the wake says, in its own words, and a tap still opens their page: " + JSON.stringify(fresh1.shown));
-  const oneLine = await wake1({ ok: true, lines: ["Closed Friday"], mode: "run", at: new Date().toISOString() });
-  ok(oneLine.shown && oneLine.shown.t === "Closed Friday" && /Open the page/.test(oneLine.shown.opt.body),
-    "a notice of one line says so and stops: " + JSON.stringify(oneLine.shown));
-  const stale1 = await wake1({ ok: true, lines: ["Closed Friday"], mode: "run", at: "2026-09-01T00:00:00.000Z" });
-  const none1 = await wake1({ ok: true, lines: [], mode: "run", at: null });
-  const down1 = await wake1(null, 404);
-  ok(stale1.shown.t === "Your order" && none1.shown.t === "Your order" && down1.shown.t === "Your order",
-    "an old notice, no notice and a site that will not answer all leave the order's own banner as it was: "
-    + JSON.stringify([stale1.shown.t, none1.shown.t, down1.shown.t]));
-  ok(fresh1.asked.length === 1 && /bulletin/.test(fresh1.asked[0]),
-    "and the one thing the service worker reads is the notice, which is public: " + JSON.stringify(fresh1.asked));
-  ok(!/\\\\/.test(SW_JS) && SW_JS.indexOf("`") < 0,
-    "the script still carries no lone backslash and no backtick, being shipped inside a template literal");
+  const moved = await tap({ handover: { units: 2, mode: "deliver" } });
+  ok(moved.ok && moved.logs.some((l) => /on the tap/.test(l) && /waiting/.test(l)),
+    "a handover runs it on the tap as well, and its Correction WAITS for the pending row to be folded "
+    + "first, which is v694 rule and not something a tap changes: " + JSON.stringify(moved.logs));
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
