@@ -336,9 +336,9 @@ export function boardPage(guest, nonce) {
   const body = products.length
     ? products.map((p) => '<div class="pane">'
         + '<h3 class="pmark" aria-label="' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + '">' + psymSvg(p.product, 30) + "</h3>"
-        + '<p class="sub2">' + esc(p.tierName || "")
-          + (p.fellBack ? ", the only price for this product" : "")
-          + "</p>"
+        /* v787: a level is never named on a pane, on any book (his instruction, 22 Sep 2026). The board
+           carries no name since v787, and this line draws none, so a name that reaches it is not drawn either. */
+        + (p.fellBack ? '<p class="sub2">The only price for this product</p>' : "")
         + '<div class="tblw"><table><thead><tr><th class="l">Size</th><th>Price</th></tr></thead><tbody>'
         + p.sizes.map((r) => "<tr><td class=\"l\">" + esc(r.q) + " " + esc(p.unit || "unit")
             + "</td><td>" + esc(rm(r.price)) + "</td></tr>").join("")

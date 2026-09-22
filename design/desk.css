@@ -307,12 +307,12 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
    field's full height, so the tap contract holds; a click anywhere else on the field opens the
    calendar on a pointer device. The field keeps its well; the button is a ghost behind a hairline,
    brass like every other quiet control. */
-/* v787: THE BOOK AS A TILE. The dot is the book's own accent and the name sits under it; the
+/* v788: THE BOOK AS A TILE. The dot is the book's own accent and the name sits under it; the
    chosen tile takes that hue for its border, its name and the dot's glow, which is what makes the
    label read "as per the selected hue". Unchosen tiles stay mist so the lit one is unmistakable.
    Every tile holds the tap floor in BOTH directions. They wrap rather than scroll sideways, which
    v466 forbids above the ledger. */
-/* v787: the full sheet opens from the card's own corner, above the fields rather than among
+/* v788: the full sheet opens from the card's own corner, above the fields rather than among
    them. It is taken out of the flow entirely, so nothing below it shifts when Buy hides it. On a
    phone it returns to the flow: a control pinned over a narrow form would sit on top of the mode
    switch it shares the corner with. */
@@ -330,7 +330,7 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
 .ptile:hover{background:var(--salt-glass);color:var(--salt-salt);}
 .ptile:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px;}
 .ptile.on{border-color:var(--pacc);color:var(--pacc);background:var(--salt-glass);}
-/* v787: a book that is IN the entry but is not the active one. Its hue shows, so it is plainly
+/* v788: a book that is IN the entry but is not the active one. Its hue shows, so it is plainly
    included, but it is not lit: only one book drives the margin and the coach. */
 .ptile.also{border-color:var(--pacc);color:var(--salt-mist-light);}
 .ptile.also .ptdot{opacity:.9;}
@@ -346,7 +346,7 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
 .xrow .xf>input{min-height:var(--tap);width:100%;}
 .ptile.on .ptdot{opacity:1;box-shadow:0 0 8px -1px var(--pacc);}
 .dtin{position:relative;display:block;min-width:0;}
-/* v787: the field makes room for two steppers and Today. Each stepper holds the tap floor in
+/* v788: the field makes room for two steppers and Today. Each stepper holds the tap floor in
    BOTH directions, 44 by 44, because a control that is only 44 tall is not a control you can hit. */
 .dtin>input[type="date"]{width:100%;padding-right:162px;}
 .dtstep{position:absolute;top:0;bottom:0;right:74px;display:flex;align-items:stretch;}
