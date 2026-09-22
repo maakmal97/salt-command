@@ -342,6 +342,31 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
    field's full height, so the tap contract holds; a click anywhere else on the field opens the
    calendar on a pointer device. The field keeps its well; the button is a ghost behind a hairline,
    brass like every other quiet control. */
+/* v784: THE BOOK AS A TILE. The dot is the book's own accent and the name sits under it; the
+   chosen tile takes that hue for its border, its name and the dot's glow, which is what makes the
+   label read "as per the selected hue". Unchosen tiles stay mist so the lit one is unmistakable.
+   Every tile holds the tap floor in BOTH directions. They wrap rather than scroll sideways, which
+   v466 forbids above the ledger. */
+/* v784: the full sheet opens from the card's own corner, above the fields rather than among
+   them. It is taken out of the flow entirely, so nothing below it shifts when Buy hides it. On a
+   phone it returns to the flow: a control pinned over a narrow form would sit on top of the mode
+   switch it shares the corner with. */
+#wbCard{position:relative;}   /* the corner positions against THIS card, not against .card everywhere */
+.wbcorner{position:absolute;top:15px;right:16px;z-index:2;}
+.wbcorner .vbtn{font-size:12px;}
+@media(max-width:700px){.wbcorner{position:static;margin-bottom:12px;}}
+.prodtiles{display:flex;flex-wrap:wrap;gap:8px;}
+.ptile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  min-width:78px;min-height:var(--tap);padding:9px 12px;margin:0;cursor:pointer;
+  border:1px solid var(--salt-line-faint);border-radius:var(--salt-radius-sm);
+  background:transparent;color:var(--salt-mist);}
+.ptile .ptdot{width:11px;height:11px;border-radius:50%;background:var(--pacc);flex:0 0 11px;opacity:.55;}
+.ptile .ptname{font-family:var(--salt-font-mono);font-size:10.5px;font-weight:500;
+  letter-spacing:.1em;text-transform:uppercase;line-height:1;}
+.ptile:hover{background:var(--salt-glass);color:var(--salt-salt);}
+.ptile:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px;}
+.ptile.on{border-color:var(--pacc);color:var(--pacc);background:var(--salt-glass);}
+.ptile.on .ptdot{opacity:1;box-shadow:0 0 8px -1px var(--pacc);}
 .dtin{position:relative;display:block;min-width:0;}
 /* v784: the field makes room for two steppers and Today. Each stepper holds the tap floor in
    BOTH directions, 44 by 44, because a control that is only 44 tall is not a control you can hit. */

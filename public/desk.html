@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="1db29ef5034dd0b0";
+var SALT_BUILD_ID="32284a80f2bca587";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -3251,6 +3251,31 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
    field's full height, so the tap contract holds; a click anywhere else on the field opens the
    calendar on a pointer device. The field keeps its well; the button is a ghost behind a hairline,
    brass like every other quiet control. */
+/* v784: THE BOOK AS A TILE. The dot is the book's own accent and the name sits under it; the
+   chosen tile takes that hue for its border, its name and the dot's glow, which is what makes the
+   label read "as per the selected hue". Unchosen tiles stay mist so the lit one is unmistakable.
+   Every tile holds the tap floor in BOTH directions. They wrap rather than scroll sideways, which
+   v466 forbids above the ledger. */
+/* v784: the full sheet opens from the card's own corner, above the fields rather than among
+   them. It is taken out of the flow entirely, so nothing below it shifts when Buy hides it. On a
+   phone it returns to the flow: a control pinned over a narrow form would sit on top of the mode
+   switch it shares the corner with. */
+#wbCard{position:relative;}   /* the corner positions against THIS card, not against .card everywhere */
+.wbcorner{position:absolute;top:15px;right:16px;z-index:2;}
+.wbcorner .vbtn{font-size:12px;}
+@media(max-width:700px){.wbcorner{position:static;margin-bottom:12px;}}
+.prodtiles{display:flex;flex-wrap:wrap;gap:8px;}
+.ptile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  min-width:78px;min-height:var(--tap);padding:9px 12px;margin:0;cursor:pointer;
+  border:1px solid var(--salt-line-faint);border-radius:var(--salt-radius-sm);
+  background:transparent;color:var(--salt-mist);}
+.ptile .ptdot{width:11px;height:11px;border-radius:50%;background:var(--pacc);flex:0 0 11px;opacity:.55;}
+.ptile .ptname{font-family:var(--salt-font-mono);font-size:10.5px;font-weight:500;
+  letter-spacing:.1em;text-transform:uppercase;line-height:1;}
+.ptile:hover{background:var(--salt-glass);color:var(--salt-salt);}
+.ptile:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px;}
+.ptile.on{border-color:var(--pacc);color:var(--pacc);background:var(--salt-glass);}
+.ptile.on .ptdot{opacity:1;box-shadow:0 0 8px -1px var(--pacc);}
 .dtin{position:relative;display:block;min-width:0;}
 /* v784: the field makes room for two steppers and Today. Each stepper holds the tap floor in
    BOTH directions, 44 by 44, because a control that is only 44 tall is not a control you can hit. */
@@ -18671,7 +18696,7 @@ function tabWorkbench(){
   const lbl='font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim)';
   return `<h1>Transaction</h1>
   <div class="dsc dsclead">Queued for approval, never booked here.</div>
-  <div class="card">
+  <div class="card" id="wbCard">
     <span class="viewsw" id="wbModeSw"><button data-m="new" class="on">New order</button><button data-m="amend">Amend an order</button><button data-m="count">Inventory count</button><button data-m="loan">Borrow or lend</button>${cloudMode()?'<button data-m="addid">Add ID</button><button data-m="amendid">Amend ID</button>':''}</span>
     <!-- v275: WHICH BOOK THE ENTRY LANDS ON. Until now there was no such control and no
          product on any payload, so prodOf() defaulted EVERY entry ever made here to salt:
@@ -18681,9 +18706,19 @@ function tabWorkbench(){
          It is hidden for the modes that have no product: an amendment inherits the product
          of the order it attaches to, and an ID names a party, not goods. Showing it there
          would invite a contradiction the desk would then have to resolve. -->
+    <!-- v784, HIS INSTRUCTION OF 22 SEP 2026: THE BOOK IS PICKED BY ITS MARK, not from a dropdown.
+         A tile a book, its dot in the book's own hue and its name beneath, lit when chosen. The
+         SELECT SURVIVES, hidden, as the value every reader already asks for: wbProdVal, wbApply,
+         the drafter's payload and the record path all go on reading #wbProd, so the control changed
+         and nothing downstream had to. The tiles set it and fire its own change event, which is the
+         same road setProdView was always reached by. -->
     <div class="qrow" id="wbProdRow" style="margin-top:13px">
-      <div class="qfield"><label>Product</label><select id="wbProd"></select></div>
-      <div class="qfield" style="flex:2"><div class="dsc" id="wbProdNote" style="padding-top:7px"></div></div>
+      <div class="qfield" style="flex:1 1 100%">
+        <label>Product</label>
+        <div class="prodtiles" id="wbProdTiles" role="group" aria-label="Product"></div>
+        <select id="wbProd" style="display:none" tabindex="-1" aria-hidden="true"></select>
+      </div>
+      <div class="qfield" style="flex:1 1 100%"><div class="dsc" id="wbProdNote"></div></div>
     </div>
 
     <div id="wbPaneNew" style="margin-top:13px">
@@ -18695,12 +18730,25 @@ function tabWorkbench(){
            SELL ONLY, and that is why wbApply hides it on Buy: edSubmitNew reads
            edFields('SELL') and queues direction SELL, so offering it beside Buy would turn
            a lot into an order without saying so. -->
-      <div class="dsc" id="wbFullRow" style="display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-bottom:12px">
+      <!-- v784, his instruction: THE FULL SHEET OPENS FROM THE CORNER. The panel it opens was
+           already a side drawer, fixed to the right at 100dvh; what sat in the flow was the button,
+           taking a line of the form to offer something most entries never need. It moves to the top
+           right corner of the card, out of the reading order of the fields and still one tap. -->
+      <div id="wbFullRow" class="wbcorner">
         <button class="vbtn" type="button" onclick="ledNew()">Open the full sheet</button>
       </div>
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield"><label>Direction</label><span class="viewsw" id="wbDirSw" style="display:flex"><button data-d="SELL" class="on">Sell</button><button data-d="BUY">Buy</button></span></div>
-        <div class="qfield" id="wbPartyCell"><label id="wbPartyLbl">Party</label><select id="wbParty"></select></div>
+        <!-- v784, HIS INSTRUCTION OF 22 SEP 2026: THE PARTY IS TYPED OR CHOSEN. A roster of fifty in a
+             dropdown is a scroll; typing three letters is not. The SELECT SURVIVES, hidden, and is
+             still the value: wbVal('wbParty') answers a CODE to every reader behind it, and the box
+             above it only ever writes a code into it. Typing something that is not a party leaves the
+             select EMPTY rather than guessing, so the form refuses it exactly as an unchosen party is
+             refused today, and says so in the preview. -->
+        <div class="qfield" id="wbPartyCell"><label id="wbPartyLbl">Party</label>
+          <input id="wbPartyTxt" list="wbPartyList" placeholder="type or choose" autocomplete="off" spellcheck="false">
+          <datalist id="wbPartyList"></datalist>
+          <select id="wbParty" style="display:none" tabindex="-1" aria-hidden="true"></select></div>
         <div class="qfield" id="wbPartyNote" style="display:none"><label>Party</label><div class="dsc" style="padding-top:7px">Books to the <b>associate</b> below. Name the buyer under <b>End customer</b>.</div></div>
         <div class="qfield"><label>Date</label>${dateIn('wbDate')}</div>
       </div>
@@ -20359,6 +20407,24 @@ function wbFormEmpty(){
   }
   return true;
 }
+/* v784: THE BOOK IS A TILE. Its dot takes the book's own accent, the name sits beneath it, and
+   the chosen one is lit in that same hue, which is the answer to "label below, as per the selected
+   hue". The tiles are DRAWN FROM PROD_IDS, so a book registered in PRODUCTS appears here and a
+   retired one does not, exactly as the select did; and they write to the hidden select rather than
+   to a state of their own, so wbProdVal and every reader behind it are untouched. */
+function wbDrawProdTiles(){
+  const box=wbEl('wbProdTiles'),pr=wbEl('wbProd');
+  if(!box||!pr)return;
+  const want=PROD_IDS.join(',')+'|'+pr.value;
+  if(box.dataset.drawn===want)return;
+  box.dataset.drawn=want;
+  box.innerHTML=PROD_IDS.map(id=>{
+    const on=pr.value===id;
+    return '<button type="button" class="ptile'+(on?' on':'')+'" data-p="'+id+'" aria-pressed="'+(on?'true':'false')+'"'
+      +' style="--pacc:'+PRODUCTS[id].accent+'">'
+      +'<span class="ptdot"></span><span class="ptname">'+esc(PRODUCTS[id].name)+'</span></button>';
+  }).join('');
+}
 /* v783: has the cash field been answered? It is born holding 0, so emptiness cannot say. */
 let wbCashTouched=false;
 function wbPreview(){
@@ -21084,6 +21150,11 @@ function wbRecord(){
 function wbFillParty(){
   const sel=wbEl('wbParty');if(!sel)return;const cur=sel.value;
   const list=byName(roster.filter(id=>wbDir==='BUY'?id.startsWith('S'):!id.startsWith('S')));
+  /* v784: the datalist carries the CODE as the value, because the code is what is recorded, and the
+     drawn name as the option's text, because the name is what he is looking for. Where the vault is
+     shut ID() answers the code and the two agree. */
+  {const dl=wbEl('wbPartyList');
+   if(dl)dl.innerHTML=list.map(id=>'<option value="'+esc(codeOf(id))+'">'+ID(id)+'</option>').join('');}
   /* deliberately blank first: a party must be chosen, never inherited from whoever
      happens to sort first in the roster */
   sel.innerHTML=`<option value="">Choose a ${wbDir==='BUY'?'supplier':'customer'}…</option>`
@@ -21091,7 +21162,22 @@ function wbFillParty(){
   /* NO "+ Add new" (v174). A party is created by naming it in Names & IDs, which mints the
      final code at once; minting a placeholder here only ever created a re-key to undo. */
   sel.value=(cur&&list.indexOf(cur)>=0)?cur:'';
+  {const tx=wbEl('wbPartyTxt');
+   if(tx){tx.placeholder=wbDir==='BUY'?'type or choose a supplier':'type or choose a customer';
+     if(document.activeElement!==tx)tx.value=sel.value?codeOf(sel.value):'';}}
   const nb=wbEl('wbNewBox');if(nb)nb.style.display='none';
+}
+/* v784: THE BOX WRITES A CODE OR NOTHING. A party is matched on its code and on its drawn name, both
+   case-insensitively and both trimmed, so typing either finds it; anything else clears the select and
+   the form refuses the entry as it refuses an unchosen party. It never guesses at a partial match: a
+   near miss that silently booked to the wrong party is the costliest slip this form could make. */
+function wbPartyFromText(){
+  const tx=wbEl('wbPartyTxt'),sel=wbEl('wbParty');
+  if(!tx||!sel)return;
+  const t=(tx.value||'').trim().toLowerCase();
+  const ids=[...sel.options].map(o=>o.value).filter(Boolean);
+  const hit=ids.find(id=>codeOf(id).toLowerCase()===t)||ids.find(id=>String(ID(id)).toLowerCase()===t)||'';
+  if(sel.value!==hit){sel.value=hit;sel.dispatchEvent(new Event('change',{bubbles:true}));}
 }
 /* the amend pane's Kind list depends on the side: a supplier lot cannot be
    fulfilled, rewarded or linked, it is paid down, received, or defaulted on. */
@@ -21214,6 +21300,7 @@ function wbApply(){
        changing the book mid-entry keeps what has been typed. */
     pr.value=PROD;
     pr.onchange=function(){if(PRODUCTS[pr.value]&&pr.value!==PROD)setProdView(pr.value);};
+    wbDrawProdTiles();
   }
   const prow=wbEl('wbProdRow');
   if(prow)prow.style.display=WB_NO_PROD[wbMode]?'none':'';
@@ -21256,6 +21343,18 @@ function wireWorkbench(){
   const ms=wbEl('wbModeSw');if(!ms)return;
   wbFillParty();wbFillKind();wbFillOrders();wbApply();
   ms.onclick=e=>{const m=e.target.dataset.m;if(!m)return;wbMode=m;wbApply();wbEl('wbOk').textContent='';wbPreview();};
+  /* v784: a tile sets the hidden select and fires its own change, which is the road setProdView was
+     always reached by, so picking a book here moves the whole desk exactly as the dropdown did. */
+  /* v784: the typed box resolves to a code on every keystroke, so the preview and Record read a
+     settled value and never a half-typed one. */
+  {const tx=wbEl('wbPartyTxt');
+   if(tx){tx.oninput=()=>{wbPartyFromText();wbPreview();};
+     tx.onchange=()=>{wbPartyFromText();wbPreview();};}}
+  {const tb=wbEl('wbProdTiles');
+   if(tb)tb.onclick=e=>{const t=e.target&&e.target.closest?e.target.closest('.ptile'):null;
+     if(!t)return;const p=t.dataset.p,pr=wbEl('wbProd');
+     if(!p||!pr||pr.value===p)return;
+     pr.value=p;pr.dispatchEvent(new Event('change',{bubbles:true}));};}
   const apk=wbEl('wbApKind');if(apk)apk.onchange=()=>{wbApply();wbPreview();};
   const lfm=wbEl('wbLoanForm');if(lfm)lfm.onchange=()=>{wbApply();wbPreview();};   // v589: the switch changes which box shows
   ['wbLoanDir','wbLoanWhich'].forEach(id=>{const e=wbEl(id);if(e)e.onchange=()=>{wbApply();wbPreview();};});   // v595: what happened, and which loan, change the boxes
