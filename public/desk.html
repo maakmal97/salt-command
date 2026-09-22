@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="53879a89a21d6d6f";
+var SALT_BUILD_ID="ddbefb2031e26b8b";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -3533,7 +3533,8 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
    pill is the status chip's shape with a dotted line and nothing behind it; Update is a button in
    the same shape rather than an underlined word. Both sit at the end of the entry's second row. */
 .ledwrap{font-variant-numeric:tabular-nums;}
-.ledwrap .tag.prov{padding:3px 10px;}
+/* the corner pill sits where the pen sits, and the pen's rule strips a border; the chip's dotted hairline is put back here, in the chip's own colour */
+.ledwrap .tag.prov{border:1px dotted currentColor;border-radius:var(--salt-radius-pill);padding:3px 10px;background:transparent;}
 .ledwrap .lqb{border:1px solid var(--salt-line-strong);border-radius:var(--salt-radius-pill);padding:3px 12px;text-decoration:none;color:var(--salt-brass);}
 .ledwrap .lqb:hover{background:rgba(197,160,89,.10);border-color:var(--salt-brass);}
 .ledwrap .tag.def{--salt-status-tone:var(--salt-ember);}

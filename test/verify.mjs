@@ -9886,7 +9886,7 @@ await (async () => {
   /* THE DIRECTORY (his instruction, 11 Sep 2026): Position and Trading were one group, Current. v622 took the
      groups out of the rail altogether, on his instruction of 14 Sep 2026, and its own section asserts the rail now. */
   const masterRail = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-  const nav = masterRail.slice(masterRail.indexOf('<nav class="rail"'), masterRail.indexOf("</nav>"));
+  const nav = masterRail.slice(masterRail.indexOf('<nav class="rail salt-rail"'), masterRail.indexOf("</nav>"));
 
   /* AND NOTHING ELSE MOVED: the ids are the addresses, so every /desk#tab link still lands.
      A rename that took an id with it would pass every assertion above. */
@@ -11451,7 +11451,7 @@ await (async () => {
      read in the master's markup, the pages on the running desk, the block in design/desk.css. Each assertion was
      proved red by mutation. */
   const m22 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-  const nav22 = m22.slice(m22.indexOf('<nav class="rail"'), m22.indexOf("</nav>"));
+  const nav22 = m22.slice(m22.indexOf('<nav class="rail salt-rail"'), m22.indexOf("</nav>"));
   ok(!/class="grouplbl"/.test(nav22), "no heading stands over the destinations in the rail");
   const css22 = (readFileSync(join(REPO, "design", "desk.css"), "utf8") + readFileSync(join(REPO, "design", "salt-ds.css"), "utf8")).replace(/\/\*[\s\S]*?\*\//g, "");
   ok(!/\.grouplbl/.test(css22) && /\.salt-rail__tab--solo\.salt-rail__tab--on, \.salt-rail__tab--solo\[aria-current="page"\] \{[^}]*border-radius: var\(--salt-radius-sm\);[^}]*border-bottom-color: var\(--salt-line\)/.test(css22),
