@@ -1,5 +1,15 @@
 [
  {
+  "v": "v787",
+  "d": "22 Sep 2026",
+  "t": "A GUEST BOARD NAMES NO LEVEL ON ANY BOOK",
+  "n": [
+   "<b>HIS INSTRUCTION OF 22 SEP 2026, reading the Bronze board after v786: drop the Bronze heading on the oil pane, and make sure it holds for every book, not both books.</b> The oil pane was headed <i>Bronze</i> on every level's board, Titanium's included, while the salt pane had no heading. A book that falls back to <code>ladderRow</code> took that row's name onto the board as <code>tierName</code>, and the guest page printed whatever it was handed; a row pinned to the link's level has no name, which is why salt never showed one. Oil's fixed board is one price for everybody, so the name was not even true of it.",
+   "<b>TWO RULES, ONE FOR THE DATA AND ONE FOR THE PAGE, BECAUSE EITHER ALONE CAN BE UNDONE WITHOUT THE OTHER NOTICING.</b> The board carries no level's name on any book: the field is gone from <code>boardList</code>'s product record, and the standing link's own level stays on the board itself, for his listing. And the page draws none: the pane's sub-line is the fallback note alone, <i>The only price for this product</i>, standing on its own now that nothing precedes it, and a name that reaches the page from anywhere is still not drawn.",
+   "<b>FOR EVERY BOOK, WHICH IS WHAT HE ASKED FOR.</b> The check nulls every ladder so every book on the board would take a named row, and walks all five standing boards and the two live ones asserting that no book carries a name; then it hands the page a product that does carry one and reads the visible text for every level's name and for Tier 1 and Tier 2. Each of the two went red under its own mutation and stayed green under the other's. What a level is called is the desk's; a stranger is handed prices."
+  ]
+ },
+ {
   "v": "v786",
   "d": "22 Sep 2026",
   "t": "A BOOK WITH NO COST HAS NO GUEST BOARD",

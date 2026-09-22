@@ -230,7 +230,11 @@ export function boardList(tier, book, pricing, now, pick) {
       unit: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].unit) || "unit",
       basis: "board",
       tier: row.code === "T1" ? 1 : 2,
-      tierName: row.name,
+      /* v787: A LEVEL'S NAME NEVER TRAVELS ON A BOOK OF A GUEST BOARD (his instruction, 22 Sep 2026).
+         `tierName: row.name` sat here, null on a row pinned to the link's level and the fallback row's
+         own name otherwise, so oil's pane read "Bronze" on every level's board, Titanium's included.
+         The rule is for every book, not oil's: a stranger is handed prices, and what a level is called
+         is the desk's. The standing link's own level stays on the BOARD as `tierName`, for his listing. */
       /* true when this product could not be shown at the tier asked for, because it has only one */
       fellBack: row.code !== want,
       /* v658: which level of the ladder this product was priced at, for the desk's own listing */

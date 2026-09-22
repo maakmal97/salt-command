@@ -7562,6 +7562,28 @@ await (async () => {
     ok(whole.products.length > 0 && whole.products.every((p) => p.sizes.length > 0 && p.sizes.every((r) => r.price > 0)),
       "and no board a stranger opens carries RM 0 at any size, empty books included: "
       + JSON.stringify(whole.products.map((p) => [p.product, Math.min(...p.sizes.map((r) => r.price))])));
+    /* v787: A GUEST BOARD NAMES NO LEVEL ON ANY BOOK (his instruction of 22 Sep 2026). Oil's pane was
+       headed "Bronze" on every level's board, Titanium's included: a book that falls back to ladderRow
+       took that row's name onto the board and the page printed it, while salt's pinned row had none.
+       Two rules, each forced on its own. The DATA: every ladder is nulled so every book would take a
+       named row, and no product on any of the five standing boards, nor on the two live ones, carries
+       a name. The PAGE: handed a product that does carry one, it draws the fallback note and never the
+       name, so a name that reaches it from anywhere is still not drawn. */
+    const { tierBoard: tb } = await import("../tools/pricelist.mjs");
+    const { boardPage: bp } = await import("../stmt/page.js");
+    const namedRows = noLadder(null);
+    const everyBoard = [1, 2, 3, 4, 5].map((k) => tb(k, bk, namedRows, new Date()))
+      .concat([bl(1, bk, px, new Date()), bl(2, bk, px, new Date())]);
+    ok(everyBoard.every((b) => b.products.length > 0 && b.products.every((p) => !("tierName" in p))),
+      "no book on any board carries a level's name, every ladder nulled or not: "
+      + JSON.stringify(everyBoard.map((b) => b.products.map((p) => p.product))));
+    const levelWords = (px.tierNames || []).filter(Boolean).concat(["Tier 1", "Tier 2"]);
+    const visible = (h) => h.replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]+>/g, " ");
+    const handedName = visible(bp({ prices: { week: { label: "x" }, products: [{ product: "oil", name: "Oil", unit: "unit",
+      tierName: "Bronze", fellBack: true, sizes: [{ q: 10, price: 130 }] }] } }, "n"));
+    ok(everyBoard.every((b) => levelWords.every((w) => !visible(bp({ prices: b }, "n")).includes(w)))
+      && !handedName.includes("Bronze") && handedName.includes("The only price for this product"),
+      "and the page names no level on any pane, even when handed one: " + levelWords.join(", "));
   }
 
   /* the vendored encoder is the one encoder, or the site draws a QR from code nobody is testing */
