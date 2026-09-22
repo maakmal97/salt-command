@@ -48,6 +48,25 @@ export function saltTokens() {
   return m[0];
 }
 
+/* THE SYSTEM'S RECIPES THE SITE USES, VERBATIM (22 Sep 2026, his instruction that the Counter use
+   the design system rather than restate it): the one filled button, the quiet one, the field, the
+   tab strip and the state chip, sliced by their headers out of the same vendored stylesheet as the
+   tokens. The page carries them beside the tokens, so a recipe changed upstream reaches the
+   customer at the next sync, and the page's own layer decides only geometry. */
+const RECIPE_HEADS = [
+  "/* ---- Pill button ---- */", "/* ---- Fields ---- */", "/* ---- Tab strip ---- */",
+  "/* ---- Status chip ---- */", "/* ---- Ghost button:", "/* ---- Status chip, the added tones ---- */",
+];
+export function siteRecipes() {
+  const css = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
+  return RECIPE_HEADS.map((h) => {
+    const i = css.indexOf(h);
+    if (i < 0) throw new Error("stmt-style: no recipe headed " + h + " in design/salt-ds.css");
+    const j = css.indexOf("\n/* ---- ", i + h.length);
+    return css.slice(i, j < 0 ? css.length : j);
+  }).join("\n");
+}
+
 /* The statement's own layer. Class names are the ones stmtDoc already emits: this is a
    change of material, not a rewrite of the markup, for the same reason v472 was a layer. */
 const LAYER = `
@@ -251,7 +270,8 @@ function moduleText() {
     + " * design/salt-ds.css for its tokens. Edit that module or the design system, then sync.\n"
     + " * CI runs `--check` and fails if this file is not what the module produces.\n"
     + " */\n"
-    + "export const STATEMENT_CSS = " + JSON.stringify(statementCss()) + ";\n";
+    + "export const STATEMENT_CSS = " + JSON.stringify(statementCss()) + ";\n"
+    + "export const SITE_RECIPES = " + JSON.stringify(siteRecipes()) + ";\n";
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

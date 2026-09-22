@@ -399,7 +399,7 @@ export const OWNER_JS = `
     box.appendChild(el('p','lead', on
       ? 'A test account is live: username 0000-0000, password 0000-0000-0000-0000. It is on no list that counts and orders nothing onto the book.'
       : 'No test account. One tap makes an account you can open anywhere, that counts nowhere.'));
-    var b=el('button','btn quiet', on?'Delete the test account':'Make a test account'); b.type='button';
+    var b=el('button','btn quiet salt-ghost', on?'Delete the test account':'Make a test account'); b.type='button';
     b.addEventListener('click', async function(){
       b.disabled=true; say(on?'Deleting...':'Making...','wait');
       try{

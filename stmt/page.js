@@ -32,7 +32,7 @@
 /* The GENERATED stylesheet, not tools/stmt-style.mjs. That module reads design/salt-ds.css
    with node:fs, and a Worker has no filesystem. `node tools/stmt-style.mjs --sync` writes
    this file and CI runs --check, so there is still one source. */
-import { STATEMENT_CSS } from "./statement-css.js";
+import { STATEMENT_CSS, SITE_RECIPES } from "./statement-css.js";
 import { PAY_SITE, PAY_ACCOUNTS } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 
@@ -62,15 +62,12 @@ const PAGE_CSS = `
 .lbl{display:block;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
   color:var(--salt-copper);font-weight:700;margin:14px 0 6px;font-family:var(--salt-font-mono)}
 /* a well is black 28%, decision 4 */
-.fld{display:block;width:100%;min-height:var(--salt-tap);padding:13px 16px;
-  font-size:16px;letter-spacing:.08em;font-family:var(--salt-font-mono);
-  color:var(--salt-text);background:var(--salt-well);border:1px solid var(--salt-line);
-  border-radius:var(--salt-radius-sm);outline:none}
-.fld::placeholder{color:var(--salt-mist)}
+/* the field is the system's .salt-field__input (22 Sep 2026): a well, 16px so a phone never zooms,
+   44px tall; a code or a figure takes --mono and a sentence stays in the display face */
+.fld{display:block}
 /* the username in two boxes and the password in four, one group of four symbols each (16 Sep 2026) */
 .seg{display:flex;gap:8px}
 .seg .fld{flex:1 1 0;min-width:0;padding:13px 4px;text-align:center;letter-spacing:.12em}
-.fld:focus{border-color:var(--salt-brass);box-shadow:0 0 0 3px rgba(197,160,89,.16)}
 /* v694: THE OPEN LIST IS DRAWN BY THE SYSTEM, NOT BY THIS PAGE. With no colour scheme declared it
    draws a white list of black words under a dark field, which is the colour he called bizarre.
    color-scheme tells the system the page is dark and the list follows it; option is named too, for
@@ -99,12 +96,9 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .conf li:last-child{border-bottom:0}
 .conf .k{color:var(--salt-mist)}
 .conf .v{color:var(--salt-text);text-align:right}
-.btn{margin-top:18px;width:100%;min-height:var(--salt-tap);padding:13px 16px;
-  font-family:var(--salt-font-mono);font-size:var(--salt-text-md);font-weight:700;cursor:pointer;
-  letter-spacing:.04em;color:var(--salt-obsidian);background:var(--salt-gradient);border:0;
-  border-radius:var(--salt-radius-pill)}
-.btn[disabled]{opacity:.5;cursor:default}
-.btn.quiet{background:none;color:var(--salt-text);border:1px solid var(--salt-line);font-weight:400}
+/* the one filled control is the system's .salt-pill and the quiet ones its .salt-ghost (22 Sep 2026);
+   this page decides only that they run the width of the form */
+.btn{margin-top:18px;width:100%}
 .btn.lnk{display:block;text-align:center;text-decoration:none;line-height:1.4}
 /* KEEP IT ON YOUR PHONE (v693): the quietest block on the door, under everything, and gone the
    moment the page is running as an app. */
@@ -133,10 +127,9 @@ h3.pmark{margin:0 0 4px;line-height:1}
 /* THE THREE TABS: statements, prices, order. The same pill vocabulary as the issue strip, one
    step larger because these are destinations rather than dates. */
 .tabs{max-width:620px;margin:0 auto 18px;display:flex;gap:8px}
-.tabs button{flex:1;min-height:var(--salt-tap);font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
-  letter-spacing:.06em;color:var(--salt-text-muted);background:none;border:1px solid var(--salt-line);
-  border-radius:var(--salt-radius-pill);padding:9px 10px;cursor:pointer}
-.tabs button.on{color:var(--salt-obsidian);background:var(--salt-brass);border-color:var(--salt-brass);font-weight:700}
+/* the tabs are the system's .salt-tabs__pill (22 Sep 2026): the open one is read off aria-selected and
+   set in glass with a hairline, not a filled badge, which decision 5 reserves for the one button */
+.tabs button{flex:1;min-height:var(--salt-tap)}
 .panel{max-width:620px;margin:0 auto}
 .panel h2{font-size:var(--salt-text-lg);margin:0 0 4px}
 .panel p.lead{color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.7;margin:0 0 18px}
@@ -172,11 +165,7 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .pane .sub2{margin:0 0 10px}
 .pane table{min-width:0}
 .pane td,.pane th{padding:9px 0}
-.state{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.14em;text-transform:uppercase;font-weight:700}
-.state.placed,.state.acknowledged{color:var(--salt-steel)}
-.state.ready{color:var(--salt-brass)}
-.state.done{color:var(--salt-verdigris)}
-.state.declined,.state.cancelled{color:var(--salt-mist)}
+/* an order's state is the system's .salt-status (22 Sep 2026): a mono word in its colour with a hairline */
 .quote{font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);color:var(--salt-text);margin:8px 0 2px;font-variant-numeric:tabular-nums}
 .row2{display:flex;gap:8px}
 .row2 .fld{flex:1}
@@ -360,7 +349,7 @@ export function boardPage(guest, nonce) {
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'
     + "<title>Price list</title>"
-    + '<style nonce="' + nonce + '">' + STATEMENT_CSS + PAGE_CSS + "</style></head><body>"
+    + '<style nonce="' + nonce + '">' + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
     + '<div class="panel">'
     + "<h2>Price list</h2>"
     + '<p class="lead">' + (week ? "For the week of " + esc(week) + ". " : "")
@@ -409,7 +398,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'
     + '<meta name="apple-mobile-web-app-title" content="Salt Counter">'
     + "<title>Salt Counter</title>"
-    + '<style nonce="' + nonce + '">' + STATEMENT_CSS + PAGE_CSS + "</style></head><body>"
+    + '<style nonce="' + nonce + '">' + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
     + bulletinBand(bulletin)
     + (owner
       ? '<div id="roster" class="gate">'
@@ -434,7 +423,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<button type="button" data-back>' + "← Back" + "</button>"
         + "<h1>Review statement</h1>"
         + '<p class="lead">Tap an account to open it exactly as its own page.</p>'
-        + '<input class="fld" id="rq" type="text" autocapitalize="none" autocorrect="off" '
+        + '<input class="fld salt-field__input salt-field__input--mono" id="rq" type="text" autocapitalize="none" autocorrect="off" '
         + 'spellcheck="false" placeholder="filter" aria-label="Filter accounts">'
         + '<div id="rlist" class="rlist"></div>'
         + "</div>"
@@ -442,7 +431,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<button type="button" data-back>' + "← Back" + "</button>"
         + "<h1>Send statement</h1>"
         + '<p class="lead" id="scount"></p>'
-        + '<input class="fld" id="sq" type="text" autocapitalize="none" autocorrect="off" '
+        + '<input class="fld salt-field__input salt-field__input--mono" id="sq" type="text" autocapitalize="none" autocorrect="off" '
         + 'spellcheck="false" placeholder="filter" aria-label="Filter accounts">'
         + '<div id="slist"></div>'
         + "</div>"
@@ -461,12 +450,12 @@ export function landingPage(user, nonce, owner, bulletin) {
         + "two levels above theirs where there is room, and never past the board every stranger sees. "
         + "Move that customer up and every link they gave out moves with them.</p>"
         + '<label class="lbl" for="gintro">Who is introducing them</label>'
-        + '<input class="fld" id="gintro" type="text" maxlength="20" autocapitalize="off" '
+        + '<input class="fld salt-field__input" id="gintro" type="text" maxlength="20" autocapitalize="off" '
         + 'spellcheck="false" placeholder="their username" aria-label="The username of the customer introducing them">'
         + '<label class="lbl" for="glabel">Who it is for</label>'
-        + '<input class="fld" id="glabel" type="text" maxlength="60" '
+        + '<input class="fld salt-field__input" id="glabel" type="text" maxlength="60" '
         + 'placeholder="a shop, a name, a note" aria-label="Who the link is for">'
-        + '<button class="btn" type="button" id="gmake">Make a link</button>'
+        + '<button class="btn salt-pill salt-pill--md" type="button" id="gmake">Make a link</button>'
         + '<div id="glist"></div>'
         + "</div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
@@ -485,7 +474,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     /* v692: Remember me, and the button says what it does */
     + '<label class="rem" for="rem"><input type="checkbox" id="rem" checked>'
     + "<span>Remember me on this device</span></label>"
-    + '<button class="btn" id="go" type="submit">Log in</button>'
+    + '<button class="btn salt-pill salt-pill--md" id="go" type="submit">Log in</button>'
     + "</form>"
     + '<p class="msg" id="msg" role="status" aria-live="polite"></p>'
     /* v693: how to keep it as an app, on the door where a first-time reader is, and hidden once
@@ -503,12 +492,12 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<button type="button" id="lock">Log out</button>'
     + "</div></div>"
     + '<div id="tabs" class="tabs" role="tablist" hidden>'
-    + '<button type="button" data-t="stmt" class="on">Statements</button>'
-    + '<button type="button" data-t="prices">Prices</button>'
-    + '<button type="button" data-t="order">Order</button>'
+    + '<button type="button" class="salt-tabs__pill on" role="tab" aria-selected="true" data-t="stmt">Statements</button>'
+    + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="prices">Prices</button>'
+    + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="order">Order</button>'
     /* v706: the associate's own card. Hidden for everybody else, and shown only once the record
        that opened actually carries one, so the tab can never lead to an empty panel. */
-    + '<button type="button" data-t="card" id="tCard" hidden>Card</button>'
+    + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="card" id="tCard" hidden>Card</button>'
     + "</div>"
     + '<div id="pStmt"><div id="mos" class="mos" hidden></div>'
     + '<div id="mfil" class="mos mfil" hidden></div><p class="mfnote" id="mfnote"></p>'
@@ -539,7 +528,7 @@ export function landingPage(user, nonce, owner, bulletin) {
 function boxes(id, n, type, label) {
   let out = '<div class="seg" data-for="' + id + '" role="group" aria-labelledby="' + id + 'l">';
   for (let i = 1; i <= n; i++) {
-    out += '<input class="fld" type="' + type + '" inputmode="text" autocapitalize="none" autocorrect="off" '
+    out += '<input class="fld salt-field__input salt-field__input--mono" type="' + type + '" inputmode="text" autocapitalize="none" autocorrect="off" '
       + 'spellcheck="false" autocomplete="off" placeholder="xxxx" aria-label="' + label + ', part ' + i + ' of ' + n + '">';
   }
   return out + "</div>";
@@ -800,7 +789,7 @@ const CLIENT_JS = `
   function showTab(t){
     tab=t;
     var bs=tabs.querySelectorAll('button');
-    for(var i=0;i<bs.length;i++) bs[i].className=(bs[i].getAttribute('data-t')===t?'on':'');
+    for(var i=0;i<bs.length;i++){ var on=bs[i].getAttribute('data-t')===t; bs[i].className='salt-tabs__pill'+(on?' on':''); bs[i].setAttribute('aria-selected',on?'true':'false'); }
     pStmt.hidden=(t!=='stmt'); pPrices.hidden=(t!=='prices'); pOrder.hidden=(t!=='order');
     pCard.hidden=(t!=='card');
     window.scrollTo(0,0);
@@ -1027,7 +1016,7 @@ const CLIENT_JS = `
     var live=myLinks.filter(function(r){ return r.state!=='withdrawn'; }).length;
     if(live>=myMax) box.appendChild(el('p','sub2','You have '+live+' links. Withdraw one to make another.'));
     else {
-      var mk=el('button','btn','Make a link'); mk.type='button';
+      var mk=el('button','btn salt-pill salt-pill--md','Make a link'); mk.type='button';
       mk.addEventListener('click', async function(){
         mk.disabled=true; var mine=ticket;
         var r=await api('/my/refs',{});
@@ -1163,7 +1152,7 @@ const CLIENT_JS = `
         });
         form.appendChild(pseg);
       }
-      var sq=el('select','fld'); sq.setAttribute('aria-label','Size');
+      var sq=el('select','fld salt-field__input salt-field__input--mono'); sq.setAttribute('aria-label','Size');
       P.sizes.forEach(function(x){ var o=el('option',null,unitsOf(x.q,P.unit)); o.value=String(x.q); if(String(x.q)===String(draft.q))o.selected=true; sq.appendChild(o); });
       sq.addEventListener('change',function(){ draft.q=sq.value; drawOrder(); });
       form.appendChild(sq);
@@ -1177,7 +1166,7 @@ const CLIENT_JS = `
          him which way to drive and what to charge; it is not an address and is not asked for one. */
       if(draft.mode==='deliver'){
         form.appendChild(el('span','lbl','Where to'));
-        var pl=el('input','fld'); pl.type='text'; pl.maxLength=60; pl.value=draft.place||'';
+        var pl=el('input','fld salt-field__input'); pl.type='text'; pl.maxLength=60; pl.value=draft.place||'';
         pl.placeholder='a neighbourhood or a landmark'; pl.setAttribute('aria-label','Roughly where it is going');
         pl.addEventListener('input',function(){ draft.place=pl.value; var b=document.getElementById('oGo'); if(b)b.disabled=!quoteFor()||!!draft.busy||pl.value.trim().length<2; });
         form.appendChild(pl);
@@ -1186,7 +1175,7 @@ const CLIENT_JS = `
       /* v751: ANYTHING THEY WANT TO SAY WITH IT, on any order and never required. It opens the
          order's thread rather than sitting in a field of its own, so there is one place to read. */
       form.appendChild(el('span','lbl','Anything to add'));
-      var sy=el('input','fld'); sy.type='text'; sy.maxLength=140; sy.value=draft.say||'';
+      var sy=el('input','fld salt-field__input'); sy.type='text'; sy.maxLength=140; sy.value=draft.say||'';
       sy.placeholder='optional, a line about this order'; sy.setAttribute('aria-label','Anything to add about this order');
       sy.addEventListener('input',function(){ draft.say=sy.value; });
       form.appendChild(sy);
@@ -1226,7 +1215,7 @@ const CLIENT_JS = `
           var v=el('span','v'); if(typeof r[1]==='string') v.textContent=r[1]; else v.appendChild(r[1]);
           li.appendChild(v); ul.appendChild(li); });
         cf.appendChild(ul);
-        var ok2=el('button','btn','Place this order'); ok2.type='button'; ok2.disabled=!!draft.busy;
+        var ok2=el('button','btn salt-pill salt-pill--md','Place this order'); ok2.type='button'; ok2.disabled=!!draft.busy;
         ok2.addEventListener('click', async function(){
           if(draft.busy) return; draft.busy=true; drawOrder();
           var mine=ticket;
@@ -1242,12 +1231,12 @@ const CLIENT_JS = `
           drawOrder();
         });
         cf.appendChild(ok2);
-        var back=el('button','btn quiet','Change it'); back.type='button'; back.disabled=!!draft.busy;
+        var back=el('button','btn quiet salt-ghost','Change it'); back.type='button'; back.disabled=!!draft.busy;
         back.addEventListener('click',function(){ draft.confirm=false; drawOrder(); });
         cf.appendChild(back);
         form.appendChild(cf);
       } else {
-        var go2=el('button','btn','Review this order'); go2.type='button'; go2.id='oGo'; go2.disabled=!ready;
+        var go2=el('button','btn salt-pill salt-pill--md','Review this order'); go2.type='button'; go2.id='oGo'; go2.disabled=!ready;
         go2.addEventListener('click',function(){ draft.confirm=true; draft.note=''; drawOrder(); });
         form.appendChild(go2);
       }
@@ -1264,7 +1253,7 @@ const CLIENT_JS = `
       np.appendChild(el('p','sub2','On. You will be told when your order is acknowledged, ready, or completed.'));
     } else {
       np.appendChild(el('p','sub2','Be told on this phone when your order is acknowledged, ready for collection or delivery, and completed. The banner names no amount and no order; the page does.'));
-      var nb=el('button','btn quiet','Notify me on this phone'); nb.type='button';
+      var nb=el('button','btn quiet salt-ghost','Notify me on this phone'); nb.type='button';
       nb.addEventListener('click', subscribePush); np.appendChild(nb);
       if(draft.pushNote) np.appendChild(el('p','msg',draft.pushNote));
     }
@@ -1275,6 +1264,8 @@ const CLIENT_JS = `
     window.scrollTo(0,sc);
   }
 
+  /* the chip's tone by state: pending is steel, ready is brass, done is verdigris, anything closed is mist */
+  var STATE_TONE={placed:'steel',acknowledged:'steel',ready:'brass',done:'verdigris'};
   var STATE_WORDS={placed:'Placed', acknowledged:'Acknowledged', ready:'Ready', done:'Completed', declined:'Declined', cancelled:'Withdrawn'};
   /* v694: money and goods are two tracks, so what is still owed and what is still to come are read
      off the order, never off a single word of state. Both figures are the ones the desk holds. */
@@ -1285,7 +1276,7 @@ const CLIENT_JS = `
     var P=prices&&prices.products&&prices.products.filter(function(x){return x.product===o.product;})[0];
     var unit=P?P.unit:'unit';
     var due=dueOf(o), moved=+o.moved||0, paid=+o.paid||0, payable=['acknowledged','ready'].indexOf(o.status)>=0;
-    pane.appendChild(el('div','state '+o.status, STATE_WORDS[o.status]||o.status));
+    pane.appendChild(el('div','state salt-status salt-status--'+(STATE_TONE[o.status]||'mist'), STATE_WORDS[o.status]||o.status));
     pane.appendChild(el('div','quote', rm(o.total+(o.delivery||0))));
     if(o.delivery>0) pane.appendChild(el('div','sub2', rm(o.total)+' for the goods and '+rm(o.delivery)+' delivery'));
     var line2=el('div','sub2');
@@ -1307,7 +1298,7 @@ const CLIENT_JS = `
     if(payable||o.status==='placed'){
       if(moved>0) pane.appendChild(el('p','sub2','The goods are with you, so this can no longer be withdrawn here.'));
       else {
-        var wb=el('button','btn quiet','Withdraw this order'); wb.type='button';
+        var wb=el('button','btn quiet salt-ghost','Withdraw this order'); wb.type='button';
         wb.addEventListener('click', async function(){
           if(!confirm(paid>0?'Withdraw this order? The '+rm(paid)+' you paid is refunded.':'Withdraw this order?')) return;
           var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{});
@@ -1332,10 +1323,10 @@ const CLIENT_JS = `
     }
     /* ON ANY ORDER, AT ANY STAGE: a question about a withdrawn order is still about that order. */
     var sayw=el('div','sayw');
-    var si=el('input','fld'); si.type='text'; si.maxLength=200;
+    var si=el('input','fld salt-field__input'); si.type='text'; si.maxLength=200;
     si.placeholder=msgs.length?'Add to this':'Ask about this order';
     si.setAttribute('aria-label','Write about this order');
-    var sg=el('button','btn quiet','Send'); sg.type='button';
+    var sg=el('button','btn quiet salt-ghost','Send'); sg.type='button';
     sg.addEventListener('click', async function(){
       var t=String(si.value||'').trim();
       if(!t||sg.disabled) return;
@@ -1382,7 +1373,7 @@ const CLIENT_JS = `
       lab.appendChild(r); lab.appendChild(el('span',null,m[1])); box.appendChild(lab);
     });
     if(cur.method==='transfer'||cur.method==='qr'||cur.method==='jompay'){
-      var sel=el('select','fld'); sel.setAttribute('aria-label','Account');
+      var sel=el('select','fld salt-field__input salt-field__input--mono'); sel.setAttribute('aria-label','Account');
       var o0=el('option',null,cur.method==='jompay'?'Choose the biller':'Choose the bank or e-wallet'); o0.value=''; sel.appendChild(o0);
       accountsFor(cur.method).forEach(function(a){ var op=el('option',null,a.name+(a.bank&&a.bank!==a.name?' ('+a.bank+')':'')); op.value=a.key; if(cur.account===a.key)op.selected=true; sel.appendChild(op); });
       sel.addEventListener('change',function(){ pick[o.id].account=sel.value; drawOrder(); });
@@ -1390,7 +1381,7 @@ const CLIENT_JS = `
     }
     if(noCod) box.appendChild(el('p','sub2','Cash on handover is not offered while goods you already hold are unpaid. Settle those first and it comes back.'));
     var ok=cur.method&&(cur.method==='cod'||cur.method==='tngbiz'||cur.account);
-    var cb=el('button','btn','Confirm'); cb.type='button'; cb.disabled=!ok;
+    var cb=el('button','btn salt-pill salt-pill--md','Confirm'); cb.type='button'; cb.disabled=!ok;
     cb.addEventListener('click', async function(){
       if(!ok) return; var mine=ticket;
       var r=await api('/orders/'+encodeURIComponent(o.id)+'/method',{method:cur.method,account:cur.account||undefined});
