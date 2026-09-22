@@ -5112,70 +5112,95 @@ await (async () => {
   const { readFileSync: rfA, writeFileSync: wfA, unlinkSync: rmA } = await import("node:fs");
   const { execSync: exA } = await import("node:child_process");
   const { join: jA } = await import("node:path");
-  const bkA = JSON.parse(rfA(jA(REPO, "ledger", "book.json"), "utf8"));
-  bkA.purchases = bkA.purchases.concat([
+  const bookA = JSON.parse(rfA(jA(REPO, "ledger", "book.json"), "utf8"));
+  const LOTS = [
     { date: "2026-08-20", supplier: "SF6-KLC", qty: 25, total: 1250, cash: 0, cancelled: true, rid: "z1" },
     { date: "2026-08-20", supplier: "SF6-KLC", qty: 25, total: 1300, cash: 0, defaulted: true, rid: "z2" },
     { date: "2026-08-20", supplier: "SF6-KLC", qty: 25, total: 1400, cash: 200, rid: "z3" },
-  ]);
-  const BA = jA(REPO, "test", ".v438.json"), MA = jA(REPO, "test", ".v438.html");
-  wfA(BA, JSON.stringify(bkA, null, 1));
-  wfA(MA, rfA(jA(REPO, "master", "salt_command.html"), "utf8"));
-  exA("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: BA, SALT_MASTER: MA }, stdio: "pipe" });
-  const { w: wA } = await omA(MA);
-  wA.eval("setProd('salt');recompute();");
-
-  /* RM 1,200 is the ONLY honest answer: z3 alone owes anything. z1 is cancelled and z2 defaulted,
-     and each was billed by some readers and not others before this fold. */
+  ];
+  /* RM 1,200 IS WHAT z3 OWES, AND IT IS NOW MEASURED AS A DIFFERENCE (22 Sep 2026). Every reader
+     below used to be asked for exactly 1200, which was true only while the live book owed its
+     suppliers nothing. v788 brought three lots in, the book began owing RM 160, and two of the four
+     readers went red on a book that was right: the same fault v758 took out of the live-book checks,
+     still armed here. Two of the four survived only because they read the product in view and the
+     RM 160 is not salt, which is luck and not correctness, so all four are rebuilt together.
+     THE LOTS STAY ON THE REAL BOOK on purpose, a reader proved only against a book of three rows
+     having proved little, so the book is rendered TWICE and each reader is asked what the three lots
+     CHANGED. The cancelled one must add nothing, the defaulted one nothing, and the one real bill its
+     own 1400 less the 200 paid. That is this section's whole claim, and it now holds whatever the
+     book owes on the day it runs. */
   const WANT = 1200;
-  ok(+wA.eval("poOwed(purchases.find(function(p){return p.rid==='z1';}))") === 0, "the desk says a cancelled lot owes nothing");
-  ok(+wA.eval("poOwed(purchases.find(function(p){return p.rid==='z2';}))") === 0, "and a defaulted one owes nothing");
-  ok(+wA.eval("poOwed(purchases.find(function(p){return p.rid==='z3';}))") === WANT, "and the one real bill owes RM " + WANT);
-
-  wA.eval("switchTab('financials');");
-  /* v789: MEASURED AS A DIFFERENCE, NOT AS A DAY'S TOTAL. This summed poOwed over EVERY purchase
-     and demanded 1200, which held only while the real book owed its suppliers nothing. The v788
-     fold brought three lots in and one of them is unpaid, so the total moved to 1360 and a test
-     about cancelled and defaulted lots failed for a reason that had nothing to do with either.
-     What the fixture is actually about is the three rows it adds, so that is what is measured:
-     the whole-book total with them, less the same total without them, is exactly z3's bill. It
-     cannot go stale on the next fold. */
-  const sumOwed = (skip) => +wA.eval("+purchases.filter(function(p){return " + (skip ? "['z1','z2','z3'].indexOf(p.rid)<0" : "true") + ";})"
-    + ".reduce(function(a,p){return a+poOwed(p);},0).toFixed(2)");
-  const billsAll = sumOwed(false), billsReal = sumOwed(true);
-  ok(+(billsAll - billsReal).toFixed(2) === WANT,
-    `the three lots add exactly RM ${WANT} to the bills outstanding (RM ${billsAll} with them, RM ${billsReal} without)`);
-
-  /* the two cards, read off the rendered pane rather than recomputed here */
-  /* TWO CARDS, TWO DIFFERENT READERS, READ OFF THE RENDERED PANE. The first version of this
-     scraped `.kpi` matching /Suppliers/ on the part `inventory` and got an empty string, so it
-     failed loudly rather than passing on nothing; the Suppliers card is on the Overview and the
-     Order book's own line is worded `You owe, in cash`. Both are named here so a rename fails
-     rather than silently matching zero elements. */
-  const card = (part, needle) => {
-    wA.eval("switchTab('" + part + "');");
-    const t = wA.eval("(function(){var k=[].slice.call(document.querySelectorAll('.sec.on .kpi')).filter(function(x){return " + needle + ".test(x.textContent);})[0];return k?k.textContent.replace(/[ \\t\\n\\r]+/g,' ').trim():'';})()");
-    return t;
+  const read438 = async (lots, tag) => {
+    const bk = JSON.parse(JSON.stringify(bookA));
+    bk.purchases = bk.purchases.concat(lots);
+    const B = jA(REPO, "test", ".v438" + tag + ".json"), M = jA(REPO, "test", ".v438" + tag + ".html");
+    wfA(B, JSON.stringify(bk, null, 1));
+    wfA(M, rfA(jA(REPO, "master", "salt_command.html"), "utf8"));
+    exA("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B, SALT_MASTER: M }, stdio: "pipe" });
+    const { w } = await omA(M);
+    w.eval("setProd('salt');recompute();");
+    w.eval("switchTab('financials');");
+    const billsOut = +w.eval("+purchases.reduce(function(a,p){return a+poOwed(p);},0).toFixed(2)");
+    /* THE TWO CARDS ARE READ OFF THE RENDERED PANE rather than recomputed here. The first version of
+       this scraped `.kpi` matching /Suppliers/ on the part `inventory` and got an empty string, so it
+       failed loudly rather than passing on nothing; the Suppliers card is on the Overview and the
+       Order book's own line is worded `You owe, in cash`. Both are named here so a rename fails
+       rather than silently matching zero elements. */
+    const card = (part, needle) => {
+      w.eval("switchTab('" + part + "');");
+      return w.eval("(function(){var k=[].slice.call(document.querySelectorAll('.sec.on .kpi')).filter(function(x){return " + needle + ".test(x.textContent);})[0];return k?k.textContent.replace(/[ \\t\\n\\r]+/g,' ').trim():'';})()");
+    };
+    const owe = card("receivables", "/You owe, in cash/");
+    const sup = card("overview", "/Suppliers/");
+    const cout = JSON.parse(w.eval("JSON.stringify((forecast({days:30})||{}).cout||[])"));
+    const billRM = +cout.filter((c) => /supplier bill/.test(c.label || "")).reduce((a, c) => a + (+c.rm || 0), 0).toFixed(2);
+    const owedBy = {};
+    for (const r of lots) owedBy[r.rid] = +w.eval("poOwed(purchases.find(function(p){return p.rid==='" + r.rid + "';})||{})");
+    /* CLOSED BEFORE THE NEXT RENDER, so the two books are never both held: this section opens two
+       windows where every other opens one, and the run has died of heap before. */
+    try { w.close(); } catch (e) { /* best effort */ }
+    for (const x of [B, M]) { try { rmA(x); } catch (e) { /* best effort */ } }
+    return { billsOut, owe, sup, billRM, owedBy };
   };
-  const owe = card("receivables", "/You owe, in cash/");
-  ok(owe !== "", "the Order book carries a `You owe, in cash` card at all, so the check below is not reading an empty string");
-  /* v789: the card must agree with the ENGINE, which is what this was always for; the literal
-     1,200 was the engine's answer on the day it was written. */
-  const cardRM = (t) => { const m = /RMs*([d,]+(?:.d+)?)s*of supplier bills/.exec(String(t)); return m ? +m[1].replace(/,/g, "") : null; };
-  ok(cardRM(owe) === billsAll, `and it says the engine's own RM ${billsAll} of supplier bills (${owe.slice(0, 96)})`);
+  /* A CARD STATES A TOTAL, so the figure is taken out of its words. "all lots paid" is a nil said in
+     English and reads as 0; without that the baseline could not be subtracted from anything, and a
+     card whose wording changes reads null and fails loudly rather than as a silent zero. */
+  const BILLS_RE = /RM\s*([\d,]+(?:\.\d+)?)\s*(?:of supplier bills|bills unpaid)/;
+  const onCard = (t) => {
+    if (/all lots paid/.test(t || "")) return 0;
+    const m = BILLS_RE.exec(t || "");
+    return m ? +m[1].replace(/,/g, "") : null;
+  };
 
-  const sup = card("overview", "/Suppliers/");
-  ok(sup !== "", "the Overview carries a Suppliers card at all");
-  ok(String(sup).replace(/,/g, "").indexOf(String(billsAll)) >= 0,
-    `and the Suppliers card says the same RM ${billsAll} of bills unpaid (${sup.slice(0, 96)})`);
+  const base = await read438([], "-base");
+  const fix = await read438(LOTS, "");
 
-  /* THE FORECAST IS THE READER THAT MATTERED MOST: the other two put a wrong number on a card,
+  ok(fix.owedBy.z1 === 0, "the desk says a cancelled lot owes nothing");
+  ok(fix.owedBy.z2 === 0, "and a defaulted one owes nothing");
+  ok(fix.owedBy.z3 === WANT, "and the one real bill owes RM " + WANT);
+
+  ok(+(fix.billsOut - base.billsOut).toFixed(2) === WANT,
+    `the bills outstanding line moves by RM ${+(fix.billsOut - base.billsOut).toFixed(2)}, which must be RM ${WANT}: `
+    + `RM ${base.billsOut} without the three lots and RM ${fix.billsOut} with them`);
+
+  ok(base.owe !== "" && fix.owe !== "",
+    "the Order book carries a `You owe, in cash` card at all, so the checks below are not reading an empty string");
+  ok(onCard(base.owe) !== null && onCard(fix.owe) !== null,
+    "and its supplier-bills figure can be read out of its words: " + JSON.stringify([base.owe.slice(0, 72), fix.owe.slice(0, 72)]));
+  ok(onCard(fix.owe) - onCard(base.owe) === WANT,
+    `and that figure moves by RM ${onCard(fix.owe) - onCard(base.owe)}, which must be RM ${WANT} (${fix.owe.slice(0, 96)})`);
+
+  ok(base.sup !== "" && fix.sup !== "", "the Overview carries a Suppliers card at all");
+  ok(onCard(base.sup) !== null && onCard(fix.sup) !== null,
+    "and its figure can be read out of its words too: " + JSON.stringify([base.sup.slice(0, 72), fix.sup.slice(0, 72)]));
+  ok(onCard(fix.sup) - onCard(base.sup) === WANT,
+    `and it moves by RM ${onCard(fix.sup) - onCard(base.sup)}, which must be RM ${WANT} (${fix.sup.slice(0, 96)})`);
+
+  /* THE FORECAST IS THE READER THAT MATTERED MOST: the other three put a wrong number on a card,
      this one moved the day the cash runs out. */
-  const cout = JSON.parse(wA.eval("JSON.stringify((forecast({days:30})||{}).cout||[])"));
-  const bills = cout.filter((c) => /supplier bill/.test(c.label || ""));
-  const billRM = +bills.reduce((a, c) => a + (+c.rm || 0), 0).toFixed(2);
-  ok(billRM === WANT, `the forecast drains RM ${billRM} of supplier bills, which must be RM ${WANT}: it used to drain the cancelled and defaulted lots too`);
-  for (const x of [BA, MA]) { try { rmA(x); } catch (e) { /* best effort */ } }
+  ok(+(fix.billRM - base.billRM).toFixed(2) === WANT,
+    `the forecast drains RM ${+(fix.billRM - base.billRM).toFixed(2)} more of supplier bills, which must be RM ${WANT}: `
+    + "it used to drain the cancelled and defaulted lots too");
 })();
 
 
@@ -9376,8 +9401,17 @@ await (async () => {
       if (cell) sites.push(["the table cell", cell[1] === "var(--ink)" ? null : cell[1]]);
       const sent = new RegExp('<b style="color:(var\\(--\\w+\\))">[A-Z0-9-]+ is ' + pct).exec(html);
       if (sent) sites.push(["the sentence", sent[1]]);
-      ok(sites.length === (concentrated ? 3 : 2) || sites.length >= 2,
-        `${p}: the concentration figure is drawn in ${sites.length} place(s)`);
+      /* v789: A BOOK WITH LOTS BUT NO SALES DRAWS THE FIGURE ONCE, and that is not a fourth reader
+         going quiet. Two of the three sites live under "Who you buy from", a table and a sentence
+         that are built from the book's TRADE; on a book that has been bought for and not yet sold
+         they have nothing to say, so only the KPI draws. That state did not exist when this was
+         written and does now: the v788 fold put two lots on rice and none of its salt has moved.
+         The count is a proxy for the real rule, which is the assertion below: every reader that
+         DOES draw the figure must agree on its colour. So the count is required of a book that
+         trades, and a book that does not must still draw it at least once. */
+      const sold = +w.eval("pSales(" + JSON.stringify(p) + ").length") > 0;
+      ok(sold ? (sites.length === (concentrated ? 3 : 2) || sites.length >= 2) : sites.length >= 1,
+        `${p}: the concentration figure is drawn in ${sites.length} place(s)${sold ? "" : ", on a book with lots and no sales"}`);
       const disagree = sites.filter(([, c]) => c !== want);
       ok(disagree.length === 0, disagree.length
         ? `${p}: ${disagree.map(([n, c]) => n + " says " + c).join(", ")} where the rule says ${want} (share ${pct}, defaults ${st.defaults})`
@@ -18860,11 +18894,11 @@ await (async () => {
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const MAPS6 = ["PRODUCTS", "PROD_OPENING", "COUNT_ON", "PRICE_SET", "COST_RULE", "QUOTES"];
   const opened = ["candy", "rice", "spare"];
-  /* v789: WHICH BOOKS ARE EMPTY IS ASKED OF THE BOOK, NOT TYPED HERE. All three were empty the
-     day they were opened; the v788 fold then put a sale and a lot on candy and two lots on rice,
-     so a list typed into this test said "empty" about books that trade. What the parity scan's
-     rule 2 is about is a book with NOTHING on it, whichever that is today, and tomorrow it may be
-     none at all. Registration is still asserted for all three, because that does not change. */
+  /* v789: WHICH BOOKS ARE EMPTY IS ASKED OF THE BOOK, NOT TYPED HERE. All three were empty the day
+     they were opened; the v788 fold then put a sale and a lot on candy and two lots on rice, so a
+     list typed into this test said "empty" about books that trade. Rule 2 of the parity scan is
+     about a book with NOTHING on it, whichever that is today, and tomorrow it may be none at all.
+     Registration is still asserted for all three, because that does not change. */
   const rowsOf = (id) => book.sales.filter((r) => (r.product || "salt") === id).length
     + book.purchases.filter((r) => (r.product || "salt") === id).length;
   const empties = opened.filter((id) => rowsOf(id) === 0);
@@ -18872,7 +18906,7 @@ await (async () => {
   ok(opened.every((id) => MAPS6.every((k) => book[k] && id in book[k]) && book.PROD_ORDER.includes(id)),
     "candy, rice and spare are registered in all six per-product maps and the order");
   ok(opened.every((id) => book.QUOTES[id] === null && book.PROD_OPENING[id].stated === null && !book.PROD_OPENING[id].qty),
-    "and each was opened empty: no quote, no stated count, no opening figure invented");
+    "and opened empty: no quote, no stated count, no opening figure invented");
 
   const { w } = await openMaster();
   const ids = JSON.parse(w.eval("JSON.stringify(PROD_IDS)"));
