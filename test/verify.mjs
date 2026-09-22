@@ -18980,6 +18980,89 @@ await (async () => {
   }
 })();
 
+section("v784: a second book on the Enter form is a second transaction for the same party");
+await (async () => {
+  /* v409 called two products in one form a FAULT, and it was right: the margin, the free inventory
+     and the price coach all read the ACTIVE book, so a form holding two read one and recorded the
+     other. The resolution here is that the active book still drives every reading, and the books
+     after it are plain orders sharing the party, the date and the direction. What they deliberately
+     do not carry is a gift, a reward cover or a resale, each of which is a property of ONE order and
+     is judged against the active book's cost, ladder and reward. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const rd = (e) => JSON.parse(String(w.eval("JSON.stringify(" + e + ")")));
+  /* nothing may reach the network or the disk from a test rig */
+  w.eval("qPost=function(){return Promise.resolve(true)};qDownload=function(){return true};qFlush=function(){return Promise.resolve(true)};");
+  w.eval("switchTab('add');wbMode='new';wbApply();");
+
+  const tile = (p) => "(function(){var t=document.querySelector('.ptile[data-p=\"" + p + "\"]');if(t)t.click();return 1;})()";
+  const state = "(function(){return {active:document.getElementById('wbProd').value,picked:wbPickedNow().slice(),rows:document.querySelectorAll('.xrow').length};})()";
+
+  w.eval(tile("salt"));
+  const one = rd(state);
+  ok(one.active === "salt" && one.picked.length === 1 && one.rows === 0,
+    "one book is one book, and it draws no extra row: " + JSON.stringify(one));
+
+  /* THE THREE RULES. A book not in the entry joins AND becomes active; a book in but not active
+     becomes active, which is the move the first draft had no way to make at all; the active book
+     tapped leaves, unless it is the last. */
+  w.eval(tile("oil"));
+  const two = rd(state);
+  ok(two.active === "oil" && two.picked.length === 2 && two.rows === 1,
+    "a second book joins and becomes the active one, drawing its own row: " + JSON.stringify(two));
+  w.eval(tile("salt"));
+  const back = rd(state);
+  ok(back.active === "salt" && back.picked.length === 2 && back.rows === 1,
+    "and a book already in, tapped, becomes active without leaving: " + JSON.stringify(back));
+  w.eval(tile("salt"));
+  const dropped = rd(state);
+  ok(dropped.picked.length === 1 && dropped.rows === 0, "the active book tapped leaves: " + JSON.stringify(dropped));
+  /* the tile to tap is whichever is ACTIVE, not "salt": the drop above left the OTHER book active,
+     so tapping salt again re-joins it, which is the rule working and the test reading it wrongly. */
+  w.eval(tile(dropped.active));
+  const last = rd(state);
+  ok(last.picked.length === 1 && last.active === dropped.active,
+    "and the last book cannot leave, an order with no book being no order: " + JSON.stringify(last));
+
+  /* TWO BOOKS, ONE PARTY, ONE DATE, TWO ENTRIES. */
+  const fill = (extra) => "(function(){queue.length=0;"
+    + "var s=function(id,v){var e=document.getElementById(id);if(!e)return;e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));};"
+    + "s('wbPartyTxt','CA2-SEN');s('wbDate','2026-09-22');"
+    + "s('wbQty','3.5');s('wbTotal','377');s('wbCash','377');s('wbUnits','3.5');"
+    + (extra ? "s('wbQty_oil','13');s('wbTotal_oil','171');s('wbCash_oil','171');s('wbUnits_oil','13');" : "")
+    + "return 1;})()";
+  const rec = "(function(){document.getElementById('wbRec').click();"
+    + "return queue.map(function(q){return {p:q.payload.product,party:q.payload.party,date:q.payload.date,qty:q.payload.qty,total:q.payload.total,cash:q.payload.cash};});})()";
+
+  w.eval("(function(){var t=document.querySelector('.ptile[data-p=\"oil\"]');t.click();var s=document.querySelector('.ptile[data-p=\"salt\"]');s.click();})()");
+  w.eval(fill(true));
+  const both = rd(rec);
+  ok(both.length === 2, "two books record two entries: " + JSON.stringify(both.map((x) => x.p)));
+  ok(both[0].p === "salt" && both[1].p === "oil", "the active book leads and the extra follows");
+  ok(both.every((x) => x.party === both[0].party && x.date === both[0].date),
+    "both carry the same party and the same date, which is what one form for one party means");
+  /* READ DEFENSIVELY. Written as both[1].qty this THREW when a mutation left only one entry,
+     and a section that throws stops reporting: the guard below it never ran and the mutation that
+     was meant to prove it came back green. An assertion must FAIL, not explode. */
+  const act = both[0] || {}, ext = both[1] || {};
+  ok(act.qty === 3.5 && act.total === 377 && ext.qty === 13 && ext.total === 171,
+    "and each carries its OWN figures, never the other's: " + JSON.stringify(both));
+
+  /* A GIFT WITH A SECOND BOOK IS REFUSED, AND NOTHING IS QUEUED. The first version of this guard
+     sat after the gift branch, which queues its row and RETURNS, so a gift ticked with a second
+     book queued the gift and dropped the other book in silence. Found by driving it. */
+  w.eval("queue.length=0;");
+  w.eval(fill(true));
+  const giftBoth = rd("(function(){var g=document.getElementById('wbGift');g.checked=true;g.dispatchEvent(new Event('change',{bubbles:true}));"
+    + "document.getElementById('wbRec').click();"
+    + "var out={n:queue.length,msg:document.getElementById('wbOk').textContent};"
+    + "g.checked=false;g.dispatchEvent(new Event('change',{bubbles:true}));queue.length=0;return out;})()");
+  ok(giftBoth.n === 0, "a gift ticked with a second book queues NOTHING, not the gift alone: " + giftBoth.n);
+  ok(/belong to one order/.test(String(giftBoth.msg)), "and says why: " + String(giftBoth.msg).slice(0, 90));
+
+  try { w.close(); } catch (e) { }
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

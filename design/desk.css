@@ -366,6 +366,20 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
 .ptile:hover{background:var(--salt-glass);color:var(--salt-salt);}
 .ptile:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px;}
 .ptile.on{border-color:var(--pacc);color:var(--pacc);background:var(--salt-glass);}
+/* v784: a book that is IN the entry but is not the active one. Its hue shows, so it is plainly
+   included, but it is not lit: only one book drives the margin and the coach. */
+.ptile.also{border-color:var(--pacc);color:var(--salt-mist-light);}
+.ptile.also .ptdot{opacity:.9;}
+/* one compact row a book after the first: the figures and nothing else */
+.xrow{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin-bottom:10px;padding:10px 12px;
+  border:1px solid var(--salt-line-faint);border-left:3px solid var(--pacc);border-radius:var(--salt-radius-sm);}
+.xrow .xname{display:flex;align-items:center;gap:7px;flex:1 1 100%;
+  font-family:var(--salt-font-mono);font-size:10.5px;font-weight:500;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--pacc);}
+.xrow .xname .ptdot{width:9px;height:9px;border-radius:50%;background:var(--pacc);flex:0 0 9px;}
+.xrow .xf{display:flex;flex-direction:column;gap:5px;flex:1 1 130px;min-width:0;}
+.xrow .xf>span{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--salt-text-muted);}
+.xrow .xf>input{min-height:var(--tap);width:100%;}
 .ptile.on .ptdot{opacity:1;box-shadow:0 0 8px -1px var(--pacc);}
 .dtin{position:relative;display:block;min-width:0;}
 /* v784: the field makes room for two steppers and Today. Each stepper holds the tap floor in

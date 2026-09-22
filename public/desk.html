@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="32284a80f2bca587";
+var SALT_BUILD_ID="ab721e300ceb0cd2";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -3275,6 +3275,20 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
 .ptile:hover{background:var(--salt-glass);color:var(--salt-salt);}
 .ptile:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px;}
 .ptile.on{border-color:var(--pacc);color:var(--pacc);background:var(--salt-glass);}
+/* v784: a book that is IN the entry but is not the active one. Its hue shows, so it is plainly
+   included, but it is not lit: only one book drives the margin and the coach. */
+.ptile.also{border-color:var(--pacc);color:var(--salt-mist-light);}
+.ptile.also .ptdot{opacity:.9;}
+/* one compact row a book after the first: the figures and nothing else */
+.xrow{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin-bottom:10px;padding:10px 12px;
+  border:1px solid var(--salt-line-faint);border-left:3px solid var(--pacc);border-radius:var(--salt-radius-sm);}
+.xrow .xname{display:flex;align-items:center;gap:7px;flex:1 1 100%;
+  font-family:var(--salt-font-mono);font-size:10.5px;font-weight:500;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--pacc);}
+.xrow .xname .ptdot{width:9px;height:9px;border-radius:50%;background:var(--pacc);flex:0 0 9px;}
+.xrow .xf{display:flex;flex-direction:column;gap:5px;flex:1 1 130px;min-width:0;}
+.xrow .xf>span{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--salt-text-muted);}
+.xrow .xf>input{min-height:var(--tap);width:100%;}
 .ptile.on .ptdot{opacity:1;box-shadow:0 0 8px -1px var(--pacc);}
 .dtin{position:relative;display:block;min-width:0;}
 /* v784: the field makes room for two steppers and Today. Each stepper holds the tap floor in
@@ -18900,6 +18914,7 @@ function tabWorkbench(){
     <!-- v783, his instruction: THE NOTE IS AT THE END. It sat in the middle of the figures row,
          between the carriage and the freight, so the eye crossed a free-text box on the way from one
          number to the next. It belongs after the entry is described, not inside the describing. -->
+    <div id="wbExtraRows"></div>
     <div class="qrow" id="wbNoteRow" style="margin-bottom:10px">
       <div class="qfield" style="flex:1 1 100%"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbNote" placeholder="anything the row should say"></div>
     </div>
@@ -20412,18 +20427,57 @@ function wbFormEmpty(){
    hue". The tiles are DRAWN FROM PROD_IDS, so a book registered in PRODUCTS appears here and a
    retired one does not, exactly as the select did; and they write to the hidden select rather than
    to a state of their own, so wbProdVal and every reader behind it are untouched. */
+/* v784, HIS INSTRUCTION OF 22 SEP 2026: MORE THAN ONE BOOK, WHICH IS MORE THAN ONE TRANSACTION
+   FOR THE SAME PARTY. wbPicked holds the books chosen, and THE FIRST IS THE ACTIVE ONE: it is what
+   #wbProd carries, so the margin, the free inventory and the price coach all read one book, which
+   is v409's ruling and the reason two products in one form was called a fault. The books after it
+   are plain orders sharing the party, the date and the direction; see wbRecord for exactly what
+   they deliberately do not carry. Clicking a picked book unpicks it, and the last one cannot be
+   unpicked, because an order with no book is not an order. */
+let wbPicked=[];
+function wbPickedNow(){
+  const pr=wbEl('wbProd'),act=pr?pr.value:'';
+  wbPicked=wbPicked.filter(p=>PROD_IDS.indexOf(p)>=0);
+  if(act&&wbPicked.indexOf(act)<0)wbPicked.unshift(act);
+  if(!wbPicked.length&&act)wbPicked=[act];
+  /* the active book always leads, so the extras are exactly the tail */
+  if(act)wbPicked=[act].concat(wbPicked.filter(p=>p!==act));
+  return wbPicked;
+}
+function wbExtras(){return wbPickedNow().slice(1);}
 function wbDrawProdTiles(){
   const box=wbEl('wbProdTiles'),pr=wbEl('wbProd');
   if(!box||!pr)return;
-  const want=PROD_IDS.join(',')+'|'+pr.value;
+  const picked=wbPickedNow();
+  const want=PROD_IDS.join(',')+'|'+pr.value+'|'+picked.join(',')+'|'+(WB_NO_PROD[wbMode]?'1':'0');
   if(box.dataset.drawn===want)return;
   box.dataset.drawn=want;
+  const many=!WB_NO_PROD[wbMode]&&wbMode==='new';
   box.innerHTML=PROD_IDS.map(id=>{
-    const on=pr.value===id;
-    return '<button type="button" class="ptile'+(on?' on':'')+'" data-p="'+id+'" aria-pressed="'+(on?'true':'false')+'"'
-      +' style="--pacc:'+PRODUCTS[id].accent+'">'
+    const on=pr.value===id, inc=many&&picked.indexOf(id)>=0;
+    return '<button type="button" class="ptile'+(on?' on':'')+(inc&&!on?' also':'')+'" data-p="'+id+'"'
+      +' aria-pressed="'+(inc||on?'true':'false')+'" style="--pacc:'+PRODUCTS[id].accent+'">'
       +'<span class="ptdot"></span><span class="ptname">'+esc(PRODUCTS[id].name)+'</span></button>';
   }).join('');
+  wbDrawExtraRows();
+}
+/* one compact row a book after the first: quantity, goods and cash, and nothing else. The heavy
+   fields belong to the order the form is really about, which is the active book's. */
+function wbDrawExtraRows(){
+  const box=wbEl('wbExtraRows');if(!box)return;
+  const ex=wbMode==='new'?wbExtras():[];
+  const want=ex.join(',')+'|'+wbDir;
+  if(box.dataset.drawn===want)return;
+  box.dataset.drawn=want;
+  box.innerHTML=ex.map(p=>'<div class="xrow" style="--pacc:'+PRODUCTS[p].accent+'">'
+    +'<span class="xname"><span class="ptdot"></span>'+esc(PRODUCTS[p].name)+'</span>'
+    +'<label class="xf"><span>Quantity (unit)</span><input id="wbQty_'+p+'" type="number" step="0.5" min="0" inputmode="decimal"></label>'
+    +'<label class="xf"><span>Goods (RM)</span><input id="wbTotal_'+p+'" type="number" step="1" min="0" inputmode="decimal"></label>'
+    +'<label class="xf"><span>Cash now (RM)</span><input id="wbCash_'+p+'" type="number" step="1" min="0" value="0" inputmode="decimal"></label>'
+    +'<label class="xf"><span>Moved now (unit)</span><input id="wbUnits_'+p+'" type="number" step="0.5" min="0" value="0" inputmode="decimal"></label>'
+    +'</div>').join('');
+  ex.forEach(p=>['wbQty_','wbTotal_','wbCash_','wbUnits_'].forEach(k=>{
+    const e=wbEl(k+p);if(e&&!e.oninput)e.oninput=wbPreview;}));
 }
 /* v783: has the cash field been answered? It is born holding 0, so emptiness cannot say. */
 let wbCashTouched=false;
@@ -20952,6 +21006,17 @@ function wbRecord(){
     const status=st.pay==='Paid'?'paid':st.pay==='Unpaid'?'unpaid':'partial';
     /* v620: planned again at the tap from the book as it stands, never carried over from the preview */
     const cp=(wbDir==='SELL'&&!isR2&&rewards(wbProdVal())&&wbEl('wbCover')&&wbEl('wbCover').checked)?coverPlan(party,qty,total):null;   // v728: the goods ARE the total
+    /* v784: THE REFUSAL COMES BEFORE ANYTHING IS PUSHED, and it sits HERE for a reason found by
+       testing it: the gift branch below queues its row and RETURNS, so a refusal placed after it was
+       never reached and a gift ticked with a second book queued the gift and dropped the other book
+       in silence. That is the exact failure this guard exists to prevent, so it now stands ahead of
+       every push on this path. A gift, a reward cover and a resale are properties of ONE order and
+       each is judged against the active book's cost, ladder and reward; rather than apply them to a
+       book they were never judged against, the whole entry is refused and the message says so. */
+    if(wbExtras().length&&(isGift||cp||isR2)){
+      ok.innerHTML='A gift, a reward cover and a resale belong to one order. Record <b>'+esc(PRODUCTS[wbProdVal()].name)+'</b> on its own, then the other book.';
+      ok.style.color='var(--crim)';return;
+    }
     const raw=(wbDir==='SELL'?'Sell ':'Buy ')+units(qty)+(wbDir==='SELL'?' to ':' from ')+label+' for '+fmt0(total)+' on '+date
       /* v728: the carriage is named in the line, because the figure beside it is the GOODS now and a
          reader of the queue file cannot tell a RM90 order from a RM90 order with RM15 of carriage. */
@@ -20988,6 +21053,36 @@ function wbRecord(){
            is the same question and the thing the freight beside it answers to. */
         handover:hand,second:ra.second||null,
         more:cp?{coverUnits:cp.kg,coverRM:cp.rm}:null,coverFree:cp?cp.free:null}});
+    /* v784, HIS INSTRUCTION OF 22 SEP 2026: A SECOND BOOK IS A SECOND TRANSACTION, SAME PARTY.
+       Each extra book queued here shares the party, the date, the direction and the handover, and
+       carries its OWN quantity, goods, cash and units moved. It goes through the SAME two guards the
+       order above it went through, entryFault and replayAnswer, because a second entry is not a
+       lesser one and the twin check in particular has to see it.
+       WHAT AN EXTRA DELIBERATELY DOES NOT CARRY, and why: a gift, a reward cover and an R2 resale
+       are properties of ONE order, not of two, and each reads the active book's cost, ladder and
+       reward. Rather than quietly apply them to a book they were not judged against, an extra is
+       refused while any of the three is on, and the message says which. That is also why the coach
+       and the margin still read one book: v409 called two products in one form a fault precisely
+       because the readings and the entry disagreed. */
+    for(const xp of wbExtras()){
+      const xq=wbNum('wbQty_'+xp),xt=wbNum('wbTotal_'+xp),xc=wbNum('wbCash_'+xp),xu=wbNum('wbUnits_'+xp);
+      const xf=entryFault({direction:wbDir,product:xp,party,assoc:null,downstream:null,date,cash:xc,kg:xu,qty:xq,total:xt,delivery:0,freight:0,handover:hand,fresh:true});
+      if(xf){ok.innerHTML=esc(PRODUCTS[xp].name)+': '+xf;ok.style.color='var(--crim)';return;}
+      const xr=replayAnswer(wbDir,xp,party,date,xq,xt,null);
+      if(xr.fault){ok.innerHTML=esc(PRODUCTS[xp].name)+': '+xr.fault;ok.style.color='var(--crim)';return;}
+      const xs=wbState(xt,xq,xc,xu,{});
+      queue.push({at:new Date().toISOString(),type:wbDir,party:label,qty:xq,total:xt,
+        status:xs.pay==='Paid'?'paid':xs.pay==='Unpaid'?'unpaid':'partial',
+        raw:(wbDir==='SELL'?'Sell ':'Buy ')+units(xq)+' of '+PRODUCTS[xp].name.toLowerCase()
+          +(wbDir==='SELL'?' to ':' from ')+label+' for '+fmt0(xt)+' on '+date+(hand?', '+hand:'')
+          +', '+fmt0(xc)+' cash, '+units(xu)+' moved → '+xs.state+(note?', '+note:''),
+        payload:{mode:'new',product:xp,direction:wbDir,party:party,newId:null,
+          date:date,qty:xq,total:xt,delivery:0,freight:0,cash:xc,kg:xu,assoc:null,stream:null,downstream:null,
+          kind:null,orderCode:null,linkTo:null,note:note||null,handover:hand,second:xr.second||null,
+          more:null,coverFree:null}});
+      ['wbQty_','wbTotal_'].forEach(k=>{const e=wbEl(k+xp);if(e)e.value='';});
+      ['wbCash_','wbUnits_'].forEach(k=>{const e=wbEl(k+xp);if(e)e.value='0';});
+    }
     {const cb=wbEl('wbCover');if(cb)cb.checked=false;}   // v620: a cover is chosen for each sale, never inherited
     /* v728: AND THE HANDOVER IS STATED FOR EACH ENTRY, NEVER INHERITED, which is the rule the line
        above states for the cover and the same fault. Left behind, a recorded 'collected' opens the
@@ -21353,8 +21448,26 @@ function wireWorkbench(){
   {const tb=wbEl('wbProdTiles');
    if(tb)tb.onclick=e=>{const t=e.target&&e.target.closest?e.target.closest('.ptile'):null;
      if(!t)return;const p=t.dataset.p,pr=wbEl('wbProd');
-     if(!p||!pr||pr.value===p)return;
-     pr.value=p;pr.dispatchEvent(new Event('change',{bubbles:true}));};}
+     if(!p||!pr)return;
+     const picked=wbPickedNow(), many=wbMode==='new'&&!WB_NO_PROD[wbMode];
+     const redraw=()=>{const b2=wbEl('wbProdTiles');if(b2)b2.dataset.drawn='';};
+     /* v784: THREE RULES, and they are the whole of it.
+        A book not yet in the entry JOINS and becomes the active one, so the ordinary single-book
+        tap still just picks a book. A book that is in but not active BECOMES active, which is how
+        the coach is pointed at the other one; the first draft had no such move at all, so once a
+        second book was added the active one could never be changed again. The active book, tapped,
+        LEAVES, unless it is the last, because an order with no book is not an order. */
+     if(!many){ if(pr.value!==p){pr.value=p;pr.dispatchEvent(new Event('change',{bubbles:true}));} return; }
+     if(pr.value===p){
+       if(picked.length<2)return;
+       const rest=picked.filter(x=>x!==p);           /* KEEP the others */
+       wbPicked=rest;pr.value=rest[0];redraw();
+       pr.dispatchEvent(new Event('change',{bubbles:true}));
+       return;
+     }
+     wbPicked=picked.indexOf(p)>=0?picked.slice():picked.concat([p]);
+     pr.value=p;redraw();
+     pr.dispatchEvent(new Event('change',{bubbles:true}));};}
   const apk=wbEl('wbApKind');if(apk)apk.onchange=()=>{wbApply();wbPreview();};
   const lfm=wbEl('wbLoanForm');if(lfm)lfm.onchange=()=>{wbApply();wbPreview();};   // v589: the switch changes which box shows
   ['wbLoanDir','wbLoanWhich'].forEach(id=>{const e=wbEl(id);if(e)e.onchange=()=>{wbApply();wbPreview();};});   // v595: what happened, and which loan, change the boxes
