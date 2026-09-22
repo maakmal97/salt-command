@@ -36,18 +36,6 @@
         "public"
       ],
       "port": 8790
-    },
-    {
-      "name": "salt-wt-static",
-      "runtimeExecutable": "python",
-      "runtimeArgs": [
-        "-m",
-        "http.server",
-        "8791",
-        "--directory",
-        "C:/Users/maakm/Claude/Code/salt-command/.claude/worktrees/design/public"
-      ],
-      "port": 8791
     }
   ]
 }

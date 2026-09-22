@@ -1,6 +1,6 @@
 {
- "v": "v782",
- "stamped": "22 Sep 2026, 10:54 KL",
+ "v": "v783",
+ "stamped": "22 Sep 2026, 11:43 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5443,7 +5443,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-21T11:26:12.174Z",
   "PRICING": {
-   "takenAt": "2026-09-22T03:31:57.119Z",
+   "takenAt": "2026-09-22T03:53:32.071Z",
    "sizes": [
     0.5,
     1,
@@ -7492,10 +7492,10 @@
      "ladder": []
     }
    },
-   "v": "v782"
+   "v": "v783"
   },
   "OPEN": {
-   "at": "2026-09-22T03:31:57.233Z",
+   "at": "2026-09-22T03:53:32.275Z",
    "count": 6,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
@@ -7660,7 +7660,7 @@
     "rice": null,
     "spare": null
    },
-   "v": "v782"
+   "v": "v783"
   }
  }
 }
