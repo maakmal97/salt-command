@@ -6,6 +6,7 @@
   /* The six colours of the identity */
   --salt-obsidian: #05080a;   /* the ground; every surface sits on it */
   --salt-slate: #0b1215;      /* deep panels, and the QR ink */
+  --salt-slate-light: #16211f; /* the lit slate: a chosen option, a menu row under the pointer */
   --salt-brass: #c5a059;      /* the leading accent */
   --salt-copper: #b87333;     /* the closing accent; gradients end on it */
   --salt-salt: #f2f4f5;       /* text, and the field behind the QR */
@@ -46,10 +47,13 @@
   --salt-line-strong: rgba(197, 160, 89, 0.45); /* the hairline lifted: a chip's edge, a held or hovered control */
   --salt-glass-hover: rgba(255, 255, 255, 0.06); /* a ghost, a row or a tab under the pointer */
   --salt-highlight: rgba(255, 255, 255, 0.08);
+  --salt-focus-ring: 0 0 0 3px rgba(197, 160, 89, 0.18); /* the ring a focused control wears beside its brass hairline */
   --salt-shadow: 0 32px 64px rgba(0, 0, 0, 0.55);
   --salt-shadow-desk: 0 18px 40px rgba(0, 0, 0, 0.42); /* lighter, for a page of many panes */
   --salt-well: rgba(0, 0, 0, 0.28);      /* inset: fields and meter tracks */
+  --salt-well-hover: rgba(0, 0, 0, 0.36); /* a well under the pointer */
   --salt-veil: rgba(5, 8, 10, 0.86);     /* sticky and floating surfaces over content */
+  --salt-scrim: rgba(5, 8, 10, 0.55);    /* the page behind an open drawer */
   --salt-pane: rgba(11, 18, 21, 0.66);   /* the glass fill when there is no backdrop to blur */
   --salt-panel: rgb(28, 20, 13);         /* OPAQUE and warm: a sticky table head or label column inside a card.
                                              A veil at .86 passes 14% of whatever scrolls under it, and the
@@ -457,23 +461,29 @@
   opacity: 0.8;
 }
 
-/* ---- Status chip ---- */
+/* ---- Status chip: a mono word in its colour with a hairline, never a fill. The tone is ONE
+   variable, --salt-status-tone, which the modifiers set and a consumer's own state class may set
+   too (the desk binds .tag.paid to it), and the hairline is the word's own colour. Sized to the
+   desk's ledger row (22 Sep 2026): 11px, .12em, 2px 9px. ---- */
 
 .salt-status {
+  --salt-status-tone: var(--salt-brass);
   display: inline-block;
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  border: 1px solid;
+  color: var(--salt-status-tone);
+  background: transparent;
+  border: 1px solid currentColor;
   border-radius: var(--salt-radius-pill);
-  padding: 4px 12px;
+  padding: 2px 9px;
 }
-.salt-status--brass { color: var(--salt-brass); border-color: var(--salt-line-strong); }
-.salt-status--copper { color: var(--salt-copper); border-color: rgba(184, 115, 51, 0.55); }
-.salt-status--mist { color: var(--salt-mist); border-color: var(--salt-line-faint); }
-.salt-status--salt { color: var(--salt-salt); border-color: rgba(242, 244, 245, 0.35); }
+.salt-status--brass { --salt-status-tone: var(--salt-brass); }
+.salt-status--copper { --salt-status-tone: var(--salt-copper); }
+.salt-status--mist { --salt-status-tone: var(--salt-mist); }
+.salt-status--salt { --salt-status-tone: var(--salt-salt); }
 
 /* ---- Rule ---- */
 
@@ -491,11 +501,13 @@
 /* ---- Fields ---- */
 
 .salt-field { display: flex; flex-direction: column; gap: var(--salt-space-2); }
-.salt-field__label {
+/* stated twice, so a page's own ".x label" rule cannot outrank it */
+.salt-field__label,
+label.salt-field__label {
   font-family: var(--salt-font-mono);
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--salt-copper);
 }
@@ -515,7 +527,7 @@
   width: 100%;
 }
 .salt-field__input::placeholder { color: var(--salt-mist); opacity: 0.7; }
-.salt-field__input:focus-visible { outline: none; border-color: var(--salt-brass); }
+.salt-field__input:focus-visible { outline: none; border-color: var(--salt-brass); box-shadow: var(--salt-focus-ring); }
 .salt-field__input--mono { font-family: var(--salt-font-mono); font-variant-numeric: tabular-nums; }
 .salt-field__input--error { border-color: rgba(184, 115, 51, 0.7); }
 .salt-field__input.salt-field__select {
@@ -531,7 +543,27 @@
 .salt-field__hint { font-family: var(--salt-font-mono); font-size: 11px; color: var(--salt-mist); }
 .salt-field__error { font-family: var(--salt-font-mono); font-size: 11px; color: var(--salt-copper); }
 
-/* ---- Statement table ---- */
+/* ---- The material of a native control inside a scope (22 Sep 2026). A page that draws its own
+   forms, with its own geometry and its figures in mono (the desk), puts .salt-fields on its body,
+   and every input, select and textarea takes the well, the hairline, the ink, the focus ring and
+   the option colours, and nothing else: size, face and padding stay the page's. ---- */
+.salt-fields :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
+  background-color: var(--salt-well);
+  border: 1px solid var(--salt-line-faint);
+  border-radius: var(--salt-radius-sm);
+  color: var(--salt-salt);
+  font-weight: 400;
+}
+.salt-fields :is(input, select, textarea):focus { border-color: var(--salt-brass); box-shadow: var(--salt-focus-ring); }
+.salt-fields input::placeholder { color: var(--salt-mist); opacity: 0.7; }
+.salt-fields select:hover { background-color: var(--salt-well-hover); }
+.salt-fields option, .salt-fields optgroup { background-color: var(--salt-slate); color: var(--salt-salt); }
+.salt-fields option:checked { background-color: var(--salt-slate-light); }
+
+/* ---- Table (synced to the desk 22 Sep 2026): figures right and tabular, the label column left; the
+   head and the label column are sticky in the page's own layer and are painted here on the OPAQUE
+   warm panel, because a veil at .86 passes 14 per cent of whatever scrolls under it (v567), and the
+   total row's wash is layered over the panel rather than standing in for it. ---- */
 
 .salt-table-wrap { overflow-x: auto; }
 .salt-table {
@@ -541,20 +573,23 @@
   font-size: var(--salt-text-sm);
   font-variant-numeric: tabular-nums;
 }
-.salt-table th {
+.salt-table th, .salt-table td { padding: 8px 10px; text-align: right; white-space: nowrap; }
+.salt-table thead th {
   font-size: var(--salt-text-xs);
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--salt-mist);
-  text-align: left;
-  padding: 8px 12px;
+  background: var(--salt-panel);
   border-bottom: 1px solid var(--salt-line);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
-.salt-table td { color: var(--salt-salt); padding: 10px 12px; border-bottom: 1px solid var(--salt-line-faint); }
-.salt-table .salt-table__cell--right { text-align: right; }
-.salt-table td:first-child, .salt-table th:first-child { padding-left: 0; }
-.salt-table td:last-child, .salt-table th:last-child { padding-right: 0; }
+.salt-table .salt-table__label { text-align: left; background: var(--salt-panel); color: var(--salt-mist-light); font-weight: 500; }
+.salt-table tbody td { color: var(--salt-salt); font-weight: 400; border-bottom: 1px solid var(--salt-line-faint); }
+.salt-table tr.tot td { font-weight: 500; background: rgba(197, 160, 89, 0.07); }
+.salt-table tr.tot .salt-table__label { background: linear-gradient(rgba(197, 160, 89, 0.07), rgba(197, 160, 89, 0.07)), var(--salt-panel); }
+.salt-table tbody tr:hover td:not(.salt-table__label) { background: var(--salt-glass); }
 
 /* ---- Logo ---- */
 
@@ -805,10 +840,13 @@
    by one hairline or one word, never by a filled box. Copper marks the exception, once.
    ====================================================================================== */
 
-/* ---- Ghost button: the quiet control. The pill books or produces; this navigates,
-   filters and dismisses. ---- */
+/* ---- Ghost button: the quiet control. The pill books or produces; this navigates, filters
+   and dismisses. Its colour is one variable a consumer may bind; lit, it is brass on a lifted
+   hairline (the desk's Update); tight, it keeps its 44px height and drops the width and padding
+   for a table cell; on, it is read from aria-pressed as well as its own class. ---- */
 
 .salt-ghost {
+  --salt-ghost-tone: var(--salt-mist);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -819,19 +857,22 @@
   background: transparent;
   border: 1px solid var(--salt-line-faint);
   border-radius: var(--salt-radius-pill);
-  color: var(--salt-mist);
+  color: var(--salt-ghost-tone);
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
   text-decoration: none;
   transition: color 0.16s, border-color 0.16s, background 0.16s;
 }
-.salt-ghost:hover { color: var(--salt-brass); border-color: var(--salt-line); }
-.salt-ghost--on { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-line); }
+.salt-ghost:hover { color: var(--salt-brass); border-color: var(--salt-line); background: transparent; transform: none; }
+.salt-ghost--on, .salt-ghost[aria-pressed="true"] { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-line); }
+.salt-ghost--lit { --salt-ghost-tone: var(--salt-brass); border-color: var(--salt-line-strong); }
+.salt-ghost--tight { min-width: 0; padding: 3px 9px; }
 .salt-ghost--sm { min-height: 32px; padding: 4px 12px; font-size: var(--salt-text-xs); }
+.salt-ghost--danger:hover { color: var(--salt-ember); border-color: rgba(212, 105, 76, 0.55); background: rgba(212, 105, 76, 0.08); }
 .salt-ghost:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
 .salt-ghost:disabled { opacity: 0.45; cursor: not-allowed; }
 
@@ -897,14 +938,15 @@
   color: var(--salt-mist-bright);
 }
 
-/* ---- Action: something to do, with the money at stake. Kind, title, why, money, the
-   rules it breaks as chips, and its share of the money as a bar. ---- */
+/* ---- Action: something to do, with the money at stake. Kind, title, why, money, the way there,
+   and its share of the money as a bar. Severity is one variable, --salt-sev, which the modifiers set
+   and a consumer may bind (the desk sets --sev on the row). Synced to the desk 22 Sep 2026. ---- */
 
 .salt-action {
   --salt-sev: var(--salt-brass);
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr) auto;
-  gap: 6px 16px;
+  grid-template-columns: 66px minmax(0, 1fr) auto auto;
+  gap: 16px;
   align-items: start;
   background: var(--salt-glass);
   border: 1px solid var(--salt-line);
@@ -922,27 +964,17 @@
   font-family: var(--salt-font-mono);
   font-size: var(--salt-text-xs);
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--salt-sev);
   padding-top: 3px;
 }
-.salt-action__title {
-  font-family: var(--salt-font-display);
-  font-size: 15px;
-  line-height: 1.4;
-  color: var(--salt-salt);
-}
-.salt-action__why {
-  font-family: var(--salt-font-display);
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: var(--salt-mist-light);
-  margin-top: 4px;
-}
+.salt-action__title { font-family: var(--salt-font-display); font-size: 16px; font-weight: 400; line-height: 1.4; color: var(--salt-salt); }
+.salt-action__why { font-family: var(--salt-font-display); font-size: 13.5px; line-height: 1.55; color: var(--salt-mist-bright); margin-top: 4px; }
+.salt-action__why b { color: var(--salt-salt); font-weight: 500; }
 .salt-action__money {
   font-family: var(--salt-font-mono);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--salt-salt);
   white-space: nowrap;
@@ -961,7 +993,7 @@
   overflow: hidden;
   margin-top: 6px;
 }
-.salt-action__bar i { display: block; height: 100%; border-radius: 99px; background: var(--salt-sev); opacity: 0.6; }
+.salt-action__bar i { display: block; height: 100%; border-radius: 99px; background: var(--salt-sev); opacity: 0.6; box-shadow: none; }
 @media (max-width: 720px) {
   .salt-action { grid-template-columns: minmax(0, 1fr) auto; }
   .salt-action__kind { grid-column: 1 / -1; padding-top: 0; }
@@ -970,25 +1002,26 @@
 
 /* ---- Status chip, the added tones ---- */
 
-.salt-status--verdigris { color: var(--salt-verdigris); border-color: rgba(111, 174, 151, 0.5); }
-.salt-status--ember { color: var(--salt-ember); border-color: rgba(212, 105, 76, 0.55); }
-.salt-status--steel { color: var(--salt-steel); border-color: rgba(142, 162, 182, 0.5); }
+.salt-status--verdigris { --salt-status-tone: var(--salt-verdigris); }
+.salt-status--ember { --salt-status-tone: var(--salt-ember); }
+.salt-status--steel { --salt-status-tone: var(--salt-steel); }
+.salt-status--alarm { --salt-status-tone: var(--salt-alarm); }
 .salt-status--dashed { border-style: dashed; }
-.salt-status--alarm { color: var(--salt-alarm); border-color: rgba(250, 60, 90, 0.55); }
+.salt-status--dotted { border-style: dotted; }
 
-/* ---- Product band: the heading that says which book a block draws. A dot in the
-   product's hue, the name in mono caps, a quiet sub, a rule running out. ---- */
+/* ---- Product band: the heading that says which book a block draws. A dot in the product's hue,
+   the name in mono caps, a quiet sub, a rule running out. ---- */
 
 .salt-product {
   --salt-hue: var(--salt-product-salt);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   margin: 0 0 10px;
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--salt-salt);
 }
@@ -998,34 +1031,37 @@
 .salt-product--rice { --salt-hue: var(--salt-product-rice); }
 .salt-product--spare { --salt-hue: var(--salt-product-spare); }
 .salt-product__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--salt-hue); box-shadow: 0 0 8px -1px var(--salt-hue); flex: 0 0 auto; }
-.salt-product__sub { font-family: var(--salt-font-display); font-size: 12.5px; letter-spacing: 0; text-transform: none; color: var(--salt-mist); }
+.salt-product__sub { font-family: var(--salt-font-display); font-size: 11.5px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--salt-mist); }
 .salt-product__rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--salt-line), transparent); }
 
-/* ---- Product tag: the stamp on a row ---- */
+/* ---- Product tag: the stamp on a row. The dot is an element and not a pseudo, because the desk
+   already draws one; its hue is the modifier's, or the tag's own colour where none is set. ---- */
 
 .salt-producttag {
-  --salt-hue: var(--salt-product-salt);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   font-family: var(--salt-font-mono);
   font-size: var(--salt-text-xs);
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--salt-salt);
+  background: transparent;
   border: 1px solid var(--salt-line-faint);
   border-radius: 6px;
   padding: 2px 8px;
   white-space: nowrap;
   vertical-align: middle;
+  box-shadow: none;
+  text-shadow: none;
 }
 .salt-producttag--salt { --salt-hue: var(--salt-product-salt); }
 .salt-producttag--oil { --salt-hue: var(--salt-product-oil); }
 .salt-producttag--candy { --salt-hue: var(--salt-product-candy); }
 .salt-producttag--rice { --salt-hue: var(--salt-product-rice); }
 .salt-producttag--spare { --salt-hue: var(--salt-product-spare); }
-.salt-producttag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--salt-hue); }
+.salt-producttag__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--salt-hue, currentColor); box-shadow: 0 0 6px -1px currentColor; flex: 0 0 auto; }
 
 /* ---- Meter: a bar is a figure. A well-inset track, a lit fill, an optional marker
    for a threshold. The fill is set as --salt-fill on the element, 0 to 100. ---- */
@@ -1141,7 +1177,8 @@
 .salt-queue--syncing::before { background: var(--salt-brass); }
 .salt-queue--offline::before { background: var(--salt-ember); }
 
-/* ---- Tier pill: I, II, III, brightest first because that is the order they earn ---- */
+/* ---- Tier pill: a word with a dot in its colour and a hairline, never a fill, the brightest first
+   because that is the order they earn (synced to the desk 22 Sep 2026) ---- */
 
 .salt-tier {
   display: inline-flex;
@@ -1150,18 +1187,20 @@
   font-family: var(--salt-font-mono);
   font-size: var(--salt-text-xs);
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   padding: 2px 9px;
   border-radius: var(--salt-radius-pill);
   border: 1px solid currentColor;
+  background: transparent;
   line-height: 1.5;
   white-space: nowrap;
   vertical-align: middle;
 }
+.salt-tier__dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
 .salt-tier--1 { color: var(--salt-salt); box-shadow: 0 0 10px -2px rgba(242, 244, 245, 0.55); }
-.salt-tier--2 { color: var(--salt-brass-soft); }
-.salt-tier--3 { color: var(--salt-brass); opacity: 0.85; }
+.salt-tier--2 { color: var(--salt-brass-soft); box-shadow: none; }
+.salt-tier--3 { color: var(--salt-brass); opacity: 0.85; box-shadow: none; }
 
 /* ---- Plan: a headline with the reasoning behind it, folded ---- */
 
@@ -1194,25 +1233,25 @@
 .salt-plan__body { padding: 10px 14px 12px; font-family: var(--salt-font-display); font-size: 13px; line-height: 1.55; color: var(--salt-mist-light); }
 @media (max-width: 720px) { .salt-plan > summary { grid-template-columns: 40px minmax(0, 1fr); row-gap: 3px; } }
 
-/* ---- Journal entry: a dated note, linked to its row ---- */
+/* ---- Journal entry: a dated note, linked to its row (synced to the desk 22 Sep 2026) ---- */
 
-.salt-journal { padding: 10px 0; border-bottom: 1px solid var(--salt-line-faint); }
-.salt-journal__meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-family: var(--salt-font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--salt-mist); margin-bottom: 4px; }
-.salt-journal__date { font-variant-numeric: tabular-nums; min-width: 82px; }
+.salt-journal { padding: 9px 2px; border-bottom: 1px solid var(--salt-line-faint); }
+.salt-journal__meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-family: var(--salt-font-mono); font-size: 11.5px; letter-spacing: 0.06em; color: var(--salt-mist); margin-bottom: 3px; }
+.salt-journal__date { font-variant-numeric: tabular-nums; min-width: 78px; }
 .salt-journal__ref { color: var(--salt-brass); text-decoration: none; }
 a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2px; }
-.salt-journal__kind { margin-left: auto; text-transform: uppercase; letter-spacing: 0.16em; font-size: var(--salt-text-xs); }
-.salt-journal__text { font-family: var(--salt-font-display); font-size: 13.5px; line-height: 1.55; color: var(--salt-mist-light); overflow-wrap: anywhere; }
+.salt-journal__kind { margin-left: auto; text-transform: uppercase; letter-spacing: 0.14em; font-size: var(--salt-text-xs); font-weight: 500; }
+.salt-journal__text { font-family: var(--salt-font-display); font-size: 14.5px; line-height: 1.6; color: var(--salt-mist-bright); overflow-wrap: anywhere; }
 .salt-journal__text b { color: var(--salt-salt); font-weight: 500; }
 
-/* ---- Desk rail: the way between views. The mark and the wordmark, then groups of
-   destinations in mono caps, the active one in glass with a brass hairline. ---- */
+/* ---- Desk rail (synced to the desk 22 Sep 2026): the way between views. It stands beside the page
+   at 861px and up or on any fine pointer, and on a touch screen below that it is the page's own
+   drawer, floated out of a button, so the width and the stickiness are scoped to where it stands
+   and the drawer's geometry is the page's. A destination is NAMED, in sentence case, never shouted
+   (v622); the open one is the head of a block whose body lists its pages, one border, one glass
+   (v529), read from aria-current as well as its own class. ---- */
 
 .salt-rail {
-  width: 196px;
-  flex: 0 0 196px;
-  position: sticky;
-  top: 22px;
   align-self: flex-start; /* a flex row would stretch it to the page and leave it nowhere to stick */
   background: var(--salt-glass);
   backdrop-filter: blur(28px);
@@ -1225,10 +1264,16 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   flex-direction: column;
   gap: 14px;
 }
-.salt-rail__brand { display: flex; align-items: center; gap: 11px; padding: 0 4px 14px; border-bottom: 1px solid var(--salt-line-faint); }
-.salt-rail__brand .salt-title { font-size: 22px; letter-spacing: 0.04em; }
-.salt-rail__brand .salt-wordmark__subtitle { font-size: var(--salt-text-xs); letter-spacing: 0.26em; }
-.salt-rail__group { display: flex; flex-direction: column; gap: 2px; }
+@media (min-width: 861px), not all and (pointer: coarse) {
+  .salt-rail { width: 212px; flex: 0 0 212px; position: sticky; top: 22px; }
+}
+@media (max-width: 860px) and (pointer: coarse) {
+  .salt-rail { background: var(--salt-pane); }
+}
+.salt-rail__brand { display: flex; align-items: center; gap: 11px; margin: 0; padding: 0 4px 14px; border-bottom: 1px solid var(--salt-line-faint); }
+.salt-rail__brand .salt-title { font-size: 22px; letter-spacing: 0.04em; line-height: 1; }
+.salt-rail__brand .salt-wordmark__subtitle { font-size: var(--salt-text-xs); letter-spacing: 0.24em; margin-top: 4px; }
+.salt-rail__group { display: flex; flex-direction: column; gap: 2px; margin: 0; }
 .salt-rail__label {
   font-family: var(--salt-font-mono);
   font-size: var(--salt-text-xs);
@@ -1246,63 +1291,130 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   width: 100%;
   min-height: var(--salt-tap);
   text-align: left;
-  padding: 8px 11px;
+  padding: 8px 10px 8px 12px;
   border-radius: var(--salt-radius-sm);
   border: 1px solid transparent;
   background: none;
-  color: var(--salt-mist);
+  color: var(--salt-mist-light);
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-transform: none;
   cursor: pointer;
   transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
-.salt-rail__tab:hover { background: var(--salt-glass); color: var(--salt-salt); }
-.salt-rail__tab--on { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-line); }
+.salt-rail__tab:hover { background: var(--salt-glass-hover); color: var(--salt-salt); }
+.salt-rail__tab--on, .salt-rail__tab[aria-current="page"] {
+  color: var(--salt-salt);
+  background: var(--salt-glass);
+  border-color: var(--salt-line);
+  border-radius: var(--salt-radius-sm) var(--salt-radius-sm) 0 0;
+  border-bottom-color: transparent;
+  margin-bottom: 0;
+  font-weight: 500;
+  box-shadow: none;
+}
+/* a destination with one page has no body, so its open tab is the whole block */
+.salt-rail__tab--solo.salt-rail__tab--on, .salt-rail__tab--solo[aria-current="page"] {
+  border-radius: var(--salt-radius-sm);
+  border-bottom-color: var(--salt-line);
+  margin-bottom: 2px;
+}
 .salt-rail__tab:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
-.salt-rail__count { font-size: var(--salt-text-xs); color: var(--salt-copper); font-variant-numeric: tabular-nums; }
-.salt-rail__parts { margin: 0 0 6px 12px; padding-left: 9px; border-left: 1px solid var(--salt-line-faint); display: flex; flex-direction: column; }
+.salt-rail__count { font-size: var(--salt-text-xs); font-weight: 500; color: var(--salt-copper); background: none; padding: 0; font-variant-numeric: tabular-nums; }
+.salt-rail__parts {
+  margin: 0 0 8px;
+  padding: 2px 6px 6px;
+  border: 1px solid var(--salt-line);
+  border-top: 0;
+  border-radius: 0 0 var(--salt-radius-sm) var(--salt-radius-sm);
+  background: var(--salt-glass);
+}
 .salt-rail__part {
-  display: block;
+  position: relative;
+  display: flex;
+  align-items: center;
   width: 100%;
   text-align: left;
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 6px 8px;
   min-height: 32px;
+  padding: 6px 10px 6px 18px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: var(--salt-mist);
   font-family: var(--salt-font-mono);
-  font-size: var(--salt-text-xs);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-transform: none;
   cursor: pointer;
 }
-.salt-rail__part:hover { color: var(--salt-salt); }
-.salt-rail__part--on { color: var(--salt-salt); background: var(--salt-glass); }
+.salt-rail__part::before { content: ''; position: absolute; left: 8px; top: 9px; bottom: 9px; width: 2px; border-radius: 2px; background: transparent; }
+.salt-rail__part:hover { color: var(--salt-salt); background: transparent; }
+.salt-rail__part--on, .salt-rail__part[aria-current="page"] { color: var(--salt-salt); background: rgba(255, 255, 255, 0.035); }
+.salt-rail__part--on::before, .salt-rail__part[aria-current="page"]::before { background: var(--salt-brass); }
 .salt-rail__foot { border-top: 1px solid var(--salt-line-faint); padding-top: 10px; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--salt-mist); }
+@media (max-width: 560px) { .salt-rail__tab { font-size: 13.5px; } }
 
-/* ---- Desk bar: sticky, one row, holds the version and the controls. It draws only a
-   veil beneath itself so the aurora shows through. ---- */
+/* ---- Desk bar (synced to the desk 22 Sep 2026): one frame across the top in the rail's own
+   material, glass with the hairline at the rail's offset, so the two read as one; the wordmark in
+   the display face, one quiet mono line under it, the version and the controls at the right. Where
+   it sits is the page's: --salt-bar-top, which the desk binds to its safe area. ---- */
 
 .salt-deskbar {
   position: sticky;
-  top: 0;
+  top: var(--salt-bar-top, 0px);
   z-index: 60;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 10px 6px 8px;
-  background: linear-gradient(180deg, var(--salt-veil) 70%, transparent);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  gap: 10px 12px;
+  margin: 0 0 18px;
+  padding: 9px 8px 9px 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)), rgba(13, 11, 9, 0.9);
+  border: 1px solid var(--salt-line);
+  border-radius: var(--salt-radius-md);
+  box-shadow: var(--salt-shadow-desk), inset 0 1px 0 var(--salt-highlight);
+  -webkit-backdrop-filter: blur(24px) saturate(1.25);
+  backdrop-filter: blur(24px) saturate(1.25);
 }
-.salt-deskbar__brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.salt-deskbar__name { font-family: var(--salt-font-mono); font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--salt-brass); }
-.salt-deskbar__tools { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.salt-deskbar__brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.salt-deskbar__name {
+  align-self: flex-start;
+  font-family: var(--salt-font-display);
+  font-weight: 300;
+  font-size: 21px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: none;
+  background: var(--salt-gradient-title);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+.salt-deskbar__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--salt-mist);
+}
+.salt-deskbar__tools { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+@media (max-width: 560px) { .salt-deskbar__meta { letter-spacing: 0.1em; } }
+.salt-deskbar .salt-orb { box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .salt-deskbar { background: rgb(18, 15, 12); } }
+@media (prefers-reduced-transparency: reduce) { .salt-deskbar { background: rgb(18, 15, 12); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 .salt-version {
   font-family: var(--salt-font-mono);
   font-size: 11px;
@@ -1318,34 +1430,53 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   white-space: nowrap;
   flex: 0 0 auto;
 }
+/* the orb: a 44px disc holding one glyph. Bare, as in the bar, it is a hairline on nothing; raised,
+   it floats over the page on the pane fill; lit, it is glass with a brass glow (back to top); on,
+   its ring is brass. */
 .salt-orb {
   width: var(--salt-tap);
   height: var(--salt-tap);
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--salt-glass);
-  border: 1px solid var(--salt-line);
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--salt-line-faint);
   color: var(--salt-brass);
   cursor: pointer;
+}
+.salt-orb:hover { background: var(--salt-glass-hover); border-color: var(--salt-line); }
+.salt-orb:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 3px; }
+.salt-orb--on { border-color: var(--salt-brass); box-shadow: 0 0 12px -4px var(--salt-brass); }
+.salt-orb--raised {
+  background: var(--salt-pane);
+  border-color: var(--salt-line);
+  box-shadow: inset 0 1px 0 var(--salt-highlight), 0 10px 30px -12px rgba(0, 0, 0, 0.8);
+}
+.salt-orb--raised:hover { border-color: rgba(197, 160, 89, 0.55); background: var(--salt-pane); }
+.salt-orb--lit {
+  background: var(--salt-glass);
+  border-color: var(--salt-line);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: inset 0 1px 0 var(--salt-highlight), 0 10px 30px -12px rgba(0, 0, 0, 0.8);
-  padding: 0;
+  box-shadow: 0 0 18px -4px rgba(197, 160, 89, 0.4), 0 10px 30px -12px rgba(0, 0, 0, 0.8), inset 0 1px 0 var(--salt-highlight);
 }
-.salt-orb:hover { border-color: rgba(197, 160, 89, 0.55); }
-.salt-orb:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 3px; }
+.salt-orb--lit:hover {
+  background: var(--salt-glass-hover);
+  border-color: rgba(197, 160, 89, 0.6);
+  box-shadow: 0 0 26px -2px rgba(197, 160, 89, 0.5), 0 12px 34px -12px rgba(0, 0, 0, 0.85), inset 0 1px 0 var(--salt-highlight);
+}
 
 /* ---- Where the frost cannot be drawn ----
    A backdrop blur needs a renderer that has one and a reader who accepts transparency; where either
    is missing the pane fill stands in, and under reduced transparency the aurora is not drawn at all.
    Last in the file so it wins over every recipe above. ---- */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .salt-glass-card, .salt-rail, .salt-kpi, .salt-action, .salt-approve, .salt-orb, .salt-deskbar { background: var(--salt-pane); }
+  .salt-glass-card, .salt-rail, .salt-kpi, .salt-action, .salt-approve { background: var(--salt-pane); }
 }
 @media (prefers-reduced-transparency: reduce) {
   .salt-aurora { display: none; }
-  .salt-glass-card, .salt-rail, .salt-kpi, .salt-action, .salt-approve, .salt-orb, .salt-deskbar {
+  .salt-glass-card, .salt-rail, .salt-kpi, .salt-action, .salt-approve, .salt-orb--lit {
     -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--salt-pane);
   }
 }

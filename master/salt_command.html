@@ -119,7 +119,6 @@ body.navopen .deskbar .navbtn .nb3{transform:translateY(-5px) rotate(-45deg);}
 .dhname{font-size:15px;font-weight:800;letter-spacing:-.2px;color:var(--ink);}
 /* v537: the brand rides the bar at every width (his instruction, 08 Sep 2026); the rail's own
    brand shows only where the rail is a floating menu, which since v684 is a touch screen at 860px or below */
-@media(min-width:861px),not all and (pointer:coarse){.railbrand{display:none;}}
 /* v333: ON A PHONE THE STRIP WRAPS BETWEEN CHIPS, NEVER INSIDE ONE. Four chips in a 353px row
    were each breaking mid-phrase into three lines, so the date read as a column and the cloud
    badge as a stack. Two lines on a phone, one on a desk. */
@@ -1516,12 +1515,13 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   .rail{background:rgba(11,18,21,.97);-webkit-backdrop-filter:none;backdrop-filter:none;}
 }
 /* ==== DESIGN fonts: generated from design/fonts.css, vendored from Code/salt-ds src/fonts-local.css, by tools/designsync.mjs. Edit the design system, --pull, --sync; never this block. ==== */
-/* The brand faces, SELF-HOSTED. Google Fonts' own latin subsets, fetched once on 22 Sep 2026 and
-   kept in fonts/ with their OFL licences, for a consumer whose CSP is self-only (the desk, the
-   Counter, QR Command): it serves fonts/ beside its page and carries this file. fonts.css is the
-   remote alternative for a page that may load off another origin. Both are variable fonts, and the
-   weight ranges below are the files' own, so a 700 resolves to the face and is never synthesised.
-   Symbols outside the latin range (a tick, a triangle) fall to the system face, as they always did. */
+/* THE BRAND FACES, SELF-HOSTED, AND THE ONLY WAY THEY LOAD (his instruction of 22 Sep 2026: no Google
+   Fonts). The files are Google's own latin subsets, fetched once and kept in src/fonts/ beside this
+   file with their OFL licences; nothing here loads off another origin. A page that LINKS this file
+   resolves fonts/ against it; a page that INLINES these rules (the desk, the Counter, QR Command)
+   serves fonts/ beside itself. Both are variable fonts and the weight ranges below are the files'
+   own, so a 700 resolves to the face and is never synthesised. Symbols outside the latin range (a
+   tick, a triangle) fall to the system face, as they always did. */
 @font-face {
   font-family: 'Fraunces';
   font-style: normal;
@@ -1548,6 +1548,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   /* The six colours of the identity */
   --salt-obsidian: #05080a;   /* the ground; every surface sits on it */
   --salt-slate: #0b1215;      /* deep panels, and the QR ink */
+  --salt-slate-light: #16211f; /* the lit slate: a chosen option, a menu row under the pointer */
   --salt-brass: #c5a059;      /* the leading accent */
   --salt-copper: #b87333;     /* the closing accent; gradients end on it */
   --salt-salt: #f2f4f5;       /* text, and the field behind the QR */
@@ -1588,10 +1589,13 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   --salt-line-strong: rgba(197, 160, 89, 0.45); /* the hairline lifted: a chip's edge, a held or hovered control */
   --salt-glass-hover: rgba(255, 255, 255, 0.06); /* a ghost, a row or a tab under the pointer */
   --salt-highlight: rgba(255, 255, 255, 0.08);
+  --salt-focus-ring: 0 0 0 3px rgba(197, 160, 89, 0.18); /* the ring a focused control wears beside its brass hairline */
   --salt-shadow: 0 32px 64px rgba(0, 0, 0, 0.55);
   --salt-shadow-desk: 0 18px 40px rgba(0, 0, 0, 0.42); /* lighter, for a page of many panes */
   --salt-well: rgba(0, 0, 0, 0.28);      /* inset: fields and meter tracks */
+  --salt-well-hover: rgba(0, 0, 0, 0.36); /* a well under the pointer */
   --salt-veil: rgba(5, 8, 10, 0.86);     /* sticky and floating surfaces over content */
+  --salt-scrim: rgba(5, 8, 10, 0.55);    /* the page behind an open drawer */
   --salt-pane: rgba(11, 18, 21, 0.66);   /* the glass fill when there is no backdrop to blur */
   --salt-panel: rgb(28, 20, 13);         /* OPAQUE and warm: a sticky table head or label column inside a card.
                                              A veil at .86 passes 14% of whatever scrolls under it, and the
@@ -1999,23 +2003,29 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   opacity: 0.8;
 }
 
-/* ---- Status chip ---- */
+/* ---- Status chip: a mono word in its colour with a hairline, never a fill. The tone is ONE
+   variable, --salt-status-tone, which the modifiers set and a consumer's own state class may set
+   too (the desk binds .tag.paid to it), and the hairline is the word's own colour. Sized to the
+   desk's ledger row (22 Sep 2026): 11px, .12em, 2px 9px. ---- */
 
 .salt-status {
+  --salt-status-tone: var(--salt-brass);
   display: inline-block;
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  border: 1px solid;
+  color: var(--salt-status-tone);
+  background: transparent;
+  border: 1px solid currentColor;
   border-radius: var(--salt-radius-pill);
-  padding: 4px 12px;
+  padding: 2px 9px;
 }
-.salt-status--brass { color: var(--salt-brass); border-color: var(--salt-line-strong); }
-.salt-status--copper { color: var(--salt-copper); border-color: rgba(184, 115, 51, 0.55); }
-.salt-status--mist { color: var(--salt-mist); border-color: var(--salt-line-faint); }
-.salt-status--salt { color: var(--salt-salt); border-color: rgba(242, 244, 245, 0.35); }
+.salt-status--brass { --salt-status-tone: var(--salt-brass); }
+.salt-status--copper { --salt-status-tone: var(--salt-copper); }
+.salt-status--mist { --salt-status-tone: var(--salt-mist); }
+.salt-status--salt { --salt-status-tone: var(--salt-salt); }
 
 /* ---- Rule ---- */
 
@@ -2033,11 +2043,13 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 /* ---- Fields ---- */
 
 .salt-field { display: flex; flex-direction: column; gap: var(--salt-space-2); }
-.salt-field__label {
+/* stated twice, so a page's own ".x label" rule cannot outrank it */
+.salt-field__label,
+label.salt-field__label {
   font-family: var(--salt-font-mono);
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--salt-copper);
 }
@@ -2057,7 +2069,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   width: 100%;
 }
 .salt-field__input::placeholder { color: var(--salt-mist); opacity: 0.7; }
-.salt-field__input:focus-visible { outline: none; border-color: var(--salt-brass); }
+.salt-field__input:focus-visible { outline: none; border-color: var(--salt-brass); box-shadow: var(--salt-focus-ring); }
 .salt-field__input--mono { font-family: var(--salt-font-mono); font-variant-numeric: tabular-nums; }
 .salt-field__input--error { border-color: rgba(184, 115, 51, 0.7); }
 .salt-field__input.salt-field__select {
@@ -2073,7 +2085,27 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 .salt-field__hint { font-family: var(--salt-font-mono); font-size: 11px; color: var(--salt-mist); }
 .salt-field__error { font-family: var(--salt-font-mono); font-size: 11px; color: var(--salt-copper); }
 
-/* ---- Statement table ---- */
+/* ---- The material of a native control inside a scope (22 Sep 2026). A page that draws its own
+   forms, with its own geometry and its figures in mono (the desk), puts .salt-fields on its body,
+   and every input, select and textarea takes the well, the hairline, the ink, the focus ring and
+   the option colours, and nothing else: size, face and padding stay the page's. ---- */
+.salt-fields :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
+  background-color: var(--salt-well);
+  border: 1px solid var(--salt-line-faint);
+  border-radius: var(--salt-radius-sm);
+  color: var(--salt-salt);
+  font-weight: 400;
+}
+.salt-fields :is(input, select, textarea):focus { border-color: var(--salt-brass); box-shadow: var(--salt-focus-ring); }
+.salt-fields input::placeholder { color: var(--salt-mist); opacity: 0.7; }
+.salt-fields select:hover { background-color: var(--salt-well-hover); }
+.salt-fields option, .salt-fields optgroup { background-color: var(--salt-slate); color: var(--salt-salt); }
+.salt-fields option:checked { background-color: var(--salt-slate-light); }
+
+/* ---- Table (synced to the desk 22 Sep 2026): figures right and tabular, the label column left; the
+   head and the label column are sticky in the page's own layer and are painted here on the OPAQUE
+   warm panel, because a veil at .86 passes 14 per cent of whatever scrolls under it (v567), and the
+   total row's wash is layered over the panel rather than standing in for it. ---- */
 
 .salt-table-wrap { overflow-x: auto; }
 .salt-table {
@@ -2083,20 +2115,23 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   font-size: var(--salt-text-sm);
   font-variant-numeric: tabular-nums;
 }
-.salt-table th {
+.salt-table th, .salt-table td { padding: 8px 10px; text-align: right; white-space: nowrap; }
+.salt-table thead th {
   font-size: var(--salt-text-xs);
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--salt-mist);
-  text-align: left;
-  padding: 8px 12px;
+  background: var(--salt-panel);
   border-bottom: 1px solid var(--salt-line);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
-.salt-table td { color: var(--salt-salt); padding: 10px 12px; border-bottom: 1px solid var(--salt-line-faint); }
-.salt-table .salt-table__cell--right { text-align: right; }
-.salt-table td:first-child, .salt-table th:first-child { padding-left: 0; }
-.salt-table td:last-child, .salt-table th:last-child { padding-right: 0; }
+.salt-table .salt-table__label { text-align: left; background: var(--salt-panel); color: var(--salt-mist-light); font-weight: 500; }
+.salt-table tbody td { color: var(--salt-salt); font-weight: 400; border-bottom: 1px solid var(--salt-line-faint); }
+.salt-table tr.tot td { font-weight: 500; background: rgba(197, 160, 89, 0.07); }
+.salt-table tr.tot .salt-table__label { background: linear-gradient(rgba(197, 160, 89, 0.07), rgba(197, 160, 89, 0.07)), var(--salt-panel); }
+.salt-table tbody tr:hover td:not(.salt-table__label) { background: var(--salt-glass); }
 
 /* ---- Logo ---- */
 
@@ -2347,10 +2382,13 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
    by one hairline or one word, never by a filled box. Copper marks the exception, once.
    ====================================================================================== */
 
-/* ---- Ghost button: the quiet control. The pill books or produces; this navigates,
-   filters and dismisses. ---- */
+/* ---- Ghost button: the quiet control. The pill books or produces; this navigates, filters
+   and dismisses. Its colour is one variable a consumer may bind; lit, it is brass on a lifted
+   hairline (the desk's Update); tight, it keeps its 44px height and drops the width and padding
+   for a table cell; on, it is read from aria-pressed as well as its own class. ---- */
 
 .salt-ghost {
+  --salt-ghost-tone: var(--salt-mist);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2361,19 +2399,22 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   background: transparent;
   border: 1px solid var(--salt-line-faint);
   border-radius: var(--salt-radius-pill);
-  color: var(--salt-mist);
+  color: var(--salt-ghost-tone);
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
   text-decoration: none;
   transition: color 0.16s, border-color 0.16s, background 0.16s;
 }
-.salt-ghost:hover { color: var(--salt-brass); border-color: var(--salt-line); }
-.salt-ghost--on { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-line); }
+.salt-ghost:hover { color: var(--salt-brass); border-color: var(--salt-line); background: transparent; transform: none; }
+.salt-ghost--on, .salt-ghost[aria-pressed="true"] { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-line); }
+.salt-ghost--lit { --salt-ghost-tone: var(--salt-brass); border-color: var(--salt-line-strong); }
+.salt-ghost--tight { min-width: 0; padding: 3px 9px; }
 .salt-ghost--sm { min-height: 32px; padding: 4px 12px; font-size: var(--salt-text-xs); }
+.salt-ghost--danger:hover { color: var(--salt-ember); border-color: rgba(212, 105, 76, 0.55); background: rgba(212, 105, 76, 0.08); }
 .salt-ghost:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
 .salt-ghost:disabled { opacity: 0.45; cursor: not-allowed; }
 
@@ -2439,14 +2480,15 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   color: var(--salt-mist-bright);
 }
 
-/* ---- Action: something to do, with the money at stake. Kind, title, why, money, the
-   rules it breaks as chips, and its share of the money as a bar. ---- */
+/* ---- Action: something to do, with the money at stake. Kind, title, why, money, the way there,
+   and its share of the money as a bar. Severity is one variable, --salt-sev, which the modifiers set
+   and a consumer may bind (the desk sets --sev on the row). Synced to the desk 22 Sep 2026. ---- */
 
 .salt-action {
   --salt-sev: var(--salt-brass);
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr) auto;
-  gap: 6px 16px;
+  grid-template-columns: 66px minmax(0, 1fr) auto auto;
+  gap: 16px;
   align-items: start;
   background: var(--salt-glass);
   border: 1px solid var(--salt-line);
@@ -2464,27 +2506,17 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   font-family: var(--salt-font-mono);
   font-size: var(--salt-text-xs);
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--salt-sev);
   padding-top: 3px;
 }
-.salt-action__title {
-  font-family: var(--salt-font-display);
-  font-size: 15px;
-  line-height: 1.4;
-  color: var(--salt-salt);
-}
-.salt-action__why {
-  font-family: var(--salt-font-display);
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: var(--salt-mist-light);
-  margin-top: 4px;
-}
+.salt-action__title { font-family: var(--salt-font-display); font-size: 16px; font-weight: 400; line-height: 1.4; color: var(--salt-salt); }
+.salt-action__why { font-family: var(--salt-font-display); font-size: 13.5px; line-height: 1.55; color: var(--salt-mist-bright); margin-top: 4px; }
+.salt-action__why b { color: var(--salt-salt); font-weight: 500; }
 .salt-action__money {
   font-family: var(--salt-font-mono);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--salt-salt);
   white-space: nowrap;
@@ -2503,7 +2535,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   overflow: hidden;
   margin-top: 6px;
 }
-.salt-action__bar i { display: block; height: 100%; border-radius: 99px; background: var(--salt-sev); opacity: 0.6; }
+.salt-action__bar i { display: block; height: 100%; border-radius: 99px; background: var(--salt-sev); opacity: 0.6; box-shadow: none; }
 @media (max-width: 720px) {
   .salt-action { grid-template-columns: minmax(0, 1fr) auto; }
   .salt-action__kind { grid-column: 1 / -1; padding-top: 0; }
@@ -2512,25 +2544,26 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 
 /* ---- Status chip, the added tones ---- */
 
-.salt-status--verdigris { color: var(--salt-verdigris); border-color: rgba(111, 174, 151, 0.5); }
-.salt-status--ember { color: var(--salt-ember); border-color: rgba(212, 105, 76, 0.55); }
-.salt-status--steel { color: var(--salt-steel); border-color: rgba(142, 162, 182, 0.5); }
+.salt-status--verdigris { --salt-status-tone: var(--salt-verdigris); }
+.salt-status--ember { --salt-status-tone: var(--salt-ember); }
+.salt-status--steel { --salt-status-tone: var(--salt-steel); }
+.salt-status--alarm { --salt-status-tone: var(--salt-alarm); }
 .salt-status--dashed { border-style: dashed; }
-.salt-status--alarm { color: var(--salt-alarm); border-color: rgba(250, 60, 90, 0.55); }
+.salt-status--dotted { border-style: dotted; }
 
-/* ---- Product band: the heading that says which book a block draws. A dot in the
-   product's hue, the name in mono caps, a quiet sub, a rule running out. ---- */
+/* ---- Product band: the heading that says which book a block draws. A dot in the product's hue,
+   the name in mono caps, a quiet sub, a rule running out. ---- */
 
 .salt-product {
   --salt-hue: var(--salt-product-salt);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   margin: 0 0 10px;
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--salt-salt);
 }
@@ -2540,34 +2573,37 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 .salt-product--rice { --salt-hue: var(--salt-product-rice); }
 .salt-product--spare { --salt-hue: var(--salt-product-spare); }
 .salt-product__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--salt-hue); box-shadow: 0 0 8px -1px var(--salt-hue); flex: 0 0 auto; }
-.salt-product__sub { font-family: var(--salt-font-display); font-size: 12.5px; letter-spacing: 0; text-transform: none; color: var(--salt-mist); }
+.salt-product__sub { font-family: var(--salt-font-display); font-size: 11.5px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--salt-mist); }
 .salt-product__rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--salt-line), transparent); }
 
-/* ---- Product tag: the stamp on a row ---- */
+/* ---- Product tag: the stamp on a row. The dot is an element and not a pseudo, because the desk
+   already draws one; its hue is the modifier's, or the tag's own colour where none is set. ---- */
 
 .salt-producttag {
-  --salt-hue: var(--salt-product-salt);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   font-family: var(--salt-font-mono);
   font-size: var(--salt-text-xs);
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--salt-salt);
+  background: transparent;
   border: 1px solid var(--salt-line-faint);
   border-radius: 6px;
   padding: 2px 8px;
   white-space: nowrap;
   vertical-align: middle;
+  box-shadow: none;
+  text-shadow: none;
 }
 .salt-producttag--salt { --salt-hue: var(--salt-product-salt); }
 .salt-producttag--oil { --salt-hue: var(--salt-product-oil); }
 .salt-producttag--candy { --salt-hue: var(--salt-product-candy); }
 .salt-producttag--rice { --salt-hue: var(--salt-product-rice); }
 .salt-producttag--spare { --salt-hue: var(--salt-product-spare); }
-.salt-producttag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--salt-hue); }
+.salt-producttag__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--salt-hue, currentColor); box-shadow: 0 0 6px -1px currentColor; flex: 0 0 auto; }
 
 /* ---- Meter: a bar is a figure. A well-inset track, a lit fill, an optional marker
    for a threshold. The fill is set as --salt-fill on the element, 0 to 100. ---- */
@@ -2683,7 +2719,8 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 .salt-queue--syncing::before { background: var(--salt-brass); }
 .salt-queue--offline::before { background: var(--salt-ember); }
 
-/* ---- Tier pill: I, II, III, brightest first because that is the order they earn ---- */
+/* ---- Tier pill: a word with a dot in its colour and a hairline, never a fill, the brightest first
+   because that is the order they earn (synced to the desk 22 Sep 2026) ---- */
 
 .salt-tier {
   display: inline-flex;
@@ -2692,18 +2729,20 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   font-family: var(--salt-font-mono);
   font-size: var(--salt-text-xs);
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   padding: 2px 9px;
   border-radius: var(--salt-radius-pill);
   border: 1px solid currentColor;
+  background: transparent;
   line-height: 1.5;
   white-space: nowrap;
   vertical-align: middle;
 }
+.salt-tier__dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
 .salt-tier--1 { color: var(--salt-salt); box-shadow: 0 0 10px -2px rgba(242, 244, 245, 0.55); }
-.salt-tier--2 { color: var(--salt-brass-soft); }
-.salt-tier--3 { color: var(--salt-brass); opacity: 0.85; }
+.salt-tier--2 { color: var(--salt-brass-soft); box-shadow: none; }
+.salt-tier--3 { color: var(--salt-brass); opacity: 0.85; box-shadow: none; }
 
 /* ---- Plan: a headline with the reasoning behind it, folded ---- */
 
@@ -2736,25 +2775,25 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 .salt-plan__body { padding: 10px 14px 12px; font-family: var(--salt-font-display); font-size: 13px; line-height: 1.55; color: var(--salt-mist-light); }
 @media (max-width: 720px) { .salt-plan > summary { grid-template-columns: 40px minmax(0, 1fr); row-gap: 3px; } }
 
-/* ---- Journal entry: a dated note, linked to its row ---- */
+/* ---- Journal entry: a dated note, linked to its row (synced to the desk 22 Sep 2026) ---- */
 
-.salt-journal { padding: 10px 0; border-bottom: 1px solid var(--salt-line-faint); }
-.salt-journal__meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-family: var(--salt-font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--salt-mist); margin-bottom: 4px; }
-.salt-journal__date { font-variant-numeric: tabular-nums; min-width: 82px; }
+.salt-journal { padding: 9px 2px; border-bottom: 1px solid var(--salt-line-faint); }
+.salt-journal__meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-family: var(--salt-font-mono); font-size: 11.5px; letter-spacing: 0.06em; color: var(--salt-mist); margin-bottom: 3px; }
+.salt-journal__date { font-variant-numeric: tabular-nums; min-width: 78px; }
 .salt-journal__ref { color: var(--salt-brass); text-decoration: none; }
 a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2px; }
-.salt-journal__kind { margin-left: auto; text-transform: uppercase; letter-spacing: 0.16em; font-size: var(--salt-text-xs); }
-.salt-journal__text { font-family: var(--salt-font-display); font-size: 13.5px; line-height: 1.55; color: var(--salt-mist-light); overflow-wrap: anywhere; }
+.salt-journal__kind { margin-left: auto; text-transform: uppercase; letter-spacing: 0.14em; font-size: var(--salt-text-xs); font-weight: 500; }
+.salt-journal__text { font-family: var(--salt-font-display); font-size: 14.5px; line-height: 1.6; color: var(--salt-mist-bright); overflow-wrap: anywhere; }
 .salt-journal__text b { color: var(--salt-salt); font-weight: 500; }
 
-/* ---- Desk rail: the way between views. The mark and the wordmark, then groups of
-   destinations in mono caps, the active one in glass with a brass hairline. ---- */
+/* ---- Desk rail (synced to the desk 22 Sep 2026): the way between views. It stands beside the page
+   at 861px and up or on any fine pointer, and on a touch screen below that it is the page's own
+   drawer, floated out of a button, so the width and the stickiness are scoped to where it stands
+   and the drawer's geometry is the page's. A destination is NAMED, in sentence case, never shouted
+   (v622); the open one is the head of a block whose body lists its pages, one border, one glass
+   (v529), read from aria-current as well as its own class. ---- */
 
 .salt-rail {
-  width: 196px;
-  flex: 0 0 196px;
-  position: sticky;
-  top: 22px;
   align-self: flex-start; /* a flex row would stretch it to the page and leave it nowhere to stick */
   background: var(--salt-glass);
   backdrop-filter: blur(28px);
@@ -2767,10 +2806,16 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   flex-direction: column;
   gap: 14px;
 }
-.salt-rail__brand { display: flex; align-items: center; gap: 11px; padding: 0 4px 14px; border-bottom: 1px solid var(--salt-line-faint); }
-.salt-rail__brand .salt-title { font-size: 22px; letter-spacing: 0.04em; }
-.salt-rail__brand .salt-wordmark__subtitle { font-size: var(--salt-text-xs); letter-spacing: 0.26em; }
-.salt-rail__group { display: flex; flex-direction: column; gap: 2px; }
+@media (min-width: 861px), not all and (pointer: coarse) {
+  .salt-rail { width: 212px; flex: 0 0 212px; position: sticky; top: 22px; }
+}
+@media (max-width: 860px) and (pointer: coarse) {
+  .salt-rail { background: var(--salt-pane); }
+}
+.salt-rail__brand { display: flex; align-items: center; gap: 11px; margin: 0; padding: 0 4px 14px; border-bottom: 1px solid var(--salt-line-faint); }
+.salt-rail__brand .salt-title { font-size: 22px; letter-spacing: 0.04em; line-height: 1; }
+.salt-rail__brand .salt-wordmark__subtitle { font-size: var(--salt-text-xs); letter-spacing: 0.24em; margin-top: 4px; }
+.salt-rail__group { display: flex; flex-direction: column; gap: 2px; margin: 0; }
 .salt-rail__label {
   font-family: var(--salt-font-mono);
   font-size: var(--salt-text-xs);
@@ -2788,63 +2833,130 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   width: 100%;
   min-height: var(--salt-tap);
   text-align: left;
-  padding: 8px 11px;
+  padding: 8px 10px 8px 12px;
   border-radius: var(--salt-radius-sm);
   border: 1px solid transparent;
   background: none;
-  color: var(--salt-mist);
+  color: var(--salt-mist-light);
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-transform: none;
   cursor: pointer;
   transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
-.salt-rail__tab:hover { background: var(--salt-glass); color: var(--salt-salt); }
-.salt-rail__tab--on { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-line); }
+.salt-rail__tab:hover { background: var(--salt-glass-hover); color: var(--salt-salt); }
+.salt-rail__tab--on, .salt-rail__tab[aria-current="page"] {
+  color: var(--salt-salt);
+  background: var(--salt-glass);
+  border-color: var(--salt-line);
+  border-radius: var(--salt-radius-sm) var(--salt-radius-sm) 0 0;
+  border-bottom-color: transparent;
+  margin-bottom: 0;
+  font-weight: 500;
+  box-shadow: none;
+}
+/* a destination with one page has no body, so its open tab is the whole block */
+.salt-rail__tab--solo.salt-rail__tab--on, .salt-rail__tab--solo[aria-current="page"] {
+  border-radius: var(--salt-radius-sm);
+  border-bottom-color: var(--salt-line);
+  margin-bottom: 2px;
+}
 .salt-rail__tab:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
-.salt-rail__count { font-size: var(--salt-text-xs); color: var(--salt-copper); font-variant-numeric: tabular-nums; }
-.salt-rail__parts { margin: 0 0 6px 12px; padding-left: 9px; border-left: 1px solid var(--salt-line-faint); display: flex; flex-direction: column; }
+.salt-rail__count { font-size: var(--salt-text-xs); font-weight: 500; color: var(--salt-copper); background: none; padding: 0; font-variant-numeric: tabular-nums; }
+.salt-rail__parts {
+  margin: 0 0 8px;
+  padding: 2px 6px 6px;
+  border: 1px solid var(--salt-line);
+  border-top: 0;
+  border-radius: 0 0 var(--salt-radius-sm) var(--salt-radius-sm);
+  background: var(--salt-glass);
+}
 .salt-rail__part {
-  display: block;
+  position: relative;
+  display: flex;
+  align-items: center;
   width: 100%;
   text-align: left;
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 6px 8px;
   min-height: 32px;
+  padding: 6px 10px 6px 18px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: var(--salt-mist);
   font-family: var(--salt-font-mono);
-  font-size: var(--salt-text-xs);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-transform: none;
   cursor: pointer;
 }
-.salt-rail__part:hover { color: var(--salt-salt); }
-.salt-rail__part--on { color: var(--salt-salt); background: var(--salt-glass); }
+.salt-rail__part::before { content: ''; position: absolute; left: 8px; top: 9px; bottom: 9px; width: 2px; border-radius: 2px; background: transparent; }
+.salt-rail__part:hover { color: var(--salt-salt); background: transparent; }
+.salt-rail__part--on, .salt-rail__part[aria-current="page"] { color: var(--salt-salt); background: rgba(255, 255, 255, 0.035); }
+.salt-rail__part--on::before, .salt-rail__part[aria-current="page"]::before { background: var(--salt-brass); }
 .salt-rail__foot { border-top: 1px solid var(--salt-line-faint); padding-top: 10px; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--salt-mist); }
+@media (max-width: 560px) { .salt-rail__tab { font-size: 13.5px; } }
 
-/* ---- Desk bar: sticky, one row, holds the version and the controls. It draws only a
-   veil beneath itself so the aurora shows through. ---- */
+/* ---- Desk bar (synced to the desk 22 Sep 2026): one frame across the top in the rail's own
+   material, glass with the hairline at the rail's offset, so the two read as one; the wordmark in
+   the display face, one quiet mono line under it, the version and the controls at the right. Where
+   it sits is the page's: --salt-bar-top, which the desk binds to its safe area. ---- */
 
 .salt-deskbar {
   position: sticky;
-  top: 0;
+  top: var(--salt-bar-top, 0px);
   z-index: 60;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 10px 6px 8px;
-  background: linear-gradient(180deg, var(--salt-veil) 70%, transparent);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  gap: 10px 12px;
+  margin: 0 0 18px;
+  padding: 9px 8px 9px 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)), rgba(13, 11, 9, 0.9);
+  border: 1px solid var(--salt-line);
+  border-radius: var(--salt-radius-md);
+  box-shadow: var(--salt-shadow-desk), inset 0 1px 0 var(--salt-highlight);
+  -webkit-backdrop-filter: blur(24px) saturate(1.25);
+  backdrop-filter: blur(24px) saturate(1.25);
 }
-.salt-deskbar__brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.salt-deskbar__name { font-family: var(--salt-font-mono); font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--salt-brass); }
-.salt-deskbar__tools { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.salt-deskbar__brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.salt-deskbar__name {
+  align-self: flex-start;
+  font-family: var(--salt-font-display);
+  font-weight: 300;
+  font-size: 21px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: none;
+  background: var(--salt-gradient-title);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+.salt-deskbar__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--salt-mist);
+}
+.salt-deskbar__tools { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+@media (max-width: 560px) { .salt-deskbar__meta { letter-spacing: 0.1em; } }
+.salt-deskbar .salt-orb { box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .salt-deskbar { background: rgb(18, 15, 12); } }
+@media (prefers-reduced-transparency: reduce) { .salt-deskbar { background: rgb(18, 15, 12); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 .salt-version {
   font-family: var(--salt-font-mono);
   font-size: 11px;
@@ -2860,34 +2972,53 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   white-space: nowrap;
   flex: 0 0 auto;
 }
+/* the orb: a 44px disc holding one glyph. Bare, as in the bar, it is a hairline on nothing; raised,
+   it floats over the page on the pane fill; lit, it is glass with a brass glow (back to top); on,
+   its ring is brass. */
 .salt-orb {
   width: var(--salt-tap);
   height: var(--salt-tap);
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--salt-glass);
-  border: 1px solid var(--salt-line);
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--salt-line-faint);
   color: var(--salt-brass);
   cursor: pointer;
+}
+.salt-orb:hover { background: var(--salt-glass-hover); border-color: var(--salt-line); }
+.salt-orb:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 3px; }
+.salt-orb--on { border-color: var(--salt-brass); box-shadow: 0 0 12px -4px var(--salt-brass); }
+.salt-orb--raised {
+  background: var(--salt-pane);
+  border-color: var(--salt-line);
+  box-shadow: inset 0 1px 0 var(--salt-highlight), 0 10px 30px -12px rgba(0, 0, 0, 0.8);
+}
+.salt-orb--raised:hover { border-color: rgba(197, 160, 89, 0.55); background: var(--salt-pane); }
+.salt-orb--lit {
+  background: var(--salt-glass);
+  border-color: var(--salt-line);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: inset 0 1px 0 var(--salt-highlight), 0 10px 30px -12px rgba(0, 0, 0, 0.8);
-  padding: 0;
+  box-shadow: 0 0 18px -4px rgba(197, 160, 89, 0.4), 0 10px 30px -12px rgba(0, 0, 0, 0.8), inset 0 1px 0 var(--salt-highlight);
 }
-.salt-orb:hover { border-color: rgba(197, 160, 89, 0.55); }
-.salt-orb:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 3px; }
+.salt-orb--lit:hover {
+  background: var(--salt-glass-hover);
+  border-color: rgba(197, 160, 89, 0.6);
+  box-shadow: 0 0 26px -2px rgba(197, 160, 89, 0.5), 0 12px 34px -12px rgba(0, 0, 0, 0.85), inset 0 1px 0 var(--salt-highlight);
+}
 
 /* ---- Where the frost cannot be drawn ----
    A backdrop blur needs a renderer that has one and a reader who accepts transparency; where either
    is missing the pane fill stands in, and under reduced transparency the aurora is not drawn at all.
    Last in the file so it wins over every recipe above. ---- */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .salt-glass-card, .salt-rail, .salt-kpi, .salt-action, .salt-approve, .salt-orb, .salt-deskbar { background: var(--salt-pane); }
+  .salt-glass-card, .salt-rail, .salt-kpi, .salt-action, .salt-approve { background: var(--salt-pane); }
 }
 @media (prefers-reduced-transparency: reduce) {
   .salt-aurora { display: none; }
-  .salt-glass-card, .salt-rail, .salt-kpi, .salt-action, .salt-approve, .salt-orb, .salt-deskbar {
+  .salt-glass-card, .salt-rail, .salt-kpi, .salt-action, .salt-approve, .salt-orb--lit {
     -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--salt-pane);
   }
 }
@@ -2927,7 +3058,7 @@ html[data-tod="register"],:root{
   --acc:var(--salt-brass);--accB:var(--salt-copper);
   --glass:var(--salt-glass);--glass-2:var(--salt-glass-hover);
   --brd:var(--salt-line);--brd-2:var(--salt-line-strong);
-  --wellbg:var(--salt-well);--veil:var(--salt-veil);--menu:var(--salt-slate);--menu-2:#16211f;
+  --wellbg:var(--salt-well);--veil:var(--salt-veil);--menu:var(--salt-slate);--menu-2:var(--salt-slate-light);
   --chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.4 1.6 6 6.2l4.6-4.6' fill='none' stroke='%23c5a059' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --ink-2:rgba(242,244,245,.66);--ink-3:rgba(242,244,245,.40);
   --r:var(--salt-radius-lg);--r-sm:var(--salt-radius-md);--pill:999px;--tap:var(--salt-tap);
@@ -3029,15 +3160,9 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .rtag{font-weight:500;letter-spacing:.14em;border-color:var(--salt-line-faint);}
 
 /* ---- 5. THE RAIL AND THE BAR ---- */
-.rail{background:var(--salt-glass);border:1px solid var(--salt-line);
-  border-radius:var(--salt-radius-lg);padding:18px 12px 14px;
-  box-shadow:var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);
-  -webkit-backdrop-filter:blur(28px);backdrop-filter:blur(28px);}
-.railbrand{gap:11px;padding:0 4px 14px;border-bottom:1px solid var(--salt-line-faint);margin-bottom:14px;}
+/* the rail is the system's .salt-rail (22 Sep 2026): its glass, its tabs, their parts, the wordmark; the
+   base layer's drawer geometry for a phone stands beneath it */
 .railbrand .mark{width:34px;height:34px;flex:0 0 auto;display:block;}
-.railtitle{font-family:var(--salt-font-display);font-weight:300;font-size:22px;letter-spacing:.04em;line-height:1;
-  background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;margin:0;}
-.kick{font-size:10px;font-weight:500;letter-spacing:.24em;color:var(--salt-brass);margin-top:4px;}
 /* ---- A DIVIDER IS NOT A DESTINATION (his instruction, 11 Sep 2026) ----
    v622, HIS INSTRUCTION OF 14 SEP 2026: THE RAIL IS TWO LEVELS, so the four group headings are gone, and v625
    moved the salt and oil switch onto the page with its PRODUCT label, so the rail carries no heading at all.
@@ -3061,22 +3186,9 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
              The brighter of the two is the one you can reach, which is the way round it was
              not. The heading is NOT dimmed to make the gap: mist on obsidian is 5.0:1 and
              anything under it fails small text, so the gap is made from above. ---- */
-.railgroup{margin-bottom:15px;}
-.tab{font-size:13px;font-weight:500;letter-spacing:.01em;text-transform:none;color:var(--salt-mist-light);
-  border-radius:var(--salt-radius-sm);padding:8px 10px 8px 12px;}
-/* the resting glass is white 3%, which is also .tab.on's ground, so hover read as selected and
-   selected read as nothing. Hover is its own step now, and the open tab keeps the 5b block. */
-.tab:hover{background:var(--salt-glass-hover);color:var(--salt-salt);}
-.tab.on{background:var(--salt-glass);border-color:var(--salt-line);color:var(--salt-salt);font-weight:500;box-shadow:none;}
-.navct{font-size:11px;font-weight:500;background:none;color:var(--salt-copper);padding:0;}
-.tab.on .navct{background:none;color:var(--salt-copper);}
-.subs{border-left-color:var(--salt-line-faint);}
-.sub{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--salt-mist);min-height:32px;}
-/* the rail's parts follow the tabs into sentence case; bare .sub above is ALSO the card
-   subtitle in every h2 and .cardh on the desk, so this is scoped and that one is untouched. */
-.subs .sub{font-size:11.5px;letter-spacing:.01em;text-transform:none;}
-.sub.on{color:var(--salt-salt);background:var(--salt-glass);}
-.railfoot{border-top-color:var(--salt-line-faint);}
+/* the tabs, their counts and the card subtitle: the subtitle's rule steps around the rail's parts,
+   which are the system's */
+.sub:not(.salt-rail__part){font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--salt-mist);min-height:32px;}
 .prodsw button{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding-left:12px;
   border-radius:var(--salt-radius-sm);border-color:var(--salt-line-faint);background:transparent;color:var(--salt-mist);}
 .prodsw button:hover{background:var(--salt-glass);}
@@ -3098,20 +3210,12 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 
 .chip{font-size:11px;letter-spacing:.05em;background:var(--salt-glass);border-color:var(--salt-line-faint);color:var(--salt-mist);}
 .chip b{color:var(--salt-salt);font-weight:500;}
-.fabtn{background:var(--salt-pane);border:1px solid var(--salt-line);color:var(--salt-brass);
-  box-shadow:inset 0 1px 0 var(--salt-highlight),0 10px 30px -12px rgba(0,0,0,.8);}
-.fabtn:hover{border-color:rgba(197,160,89,.55);}
-.fabtn:focus-visible{outline-color:var(--salt-brass);}
-.totop{color:var(--salt-brass);border-color:var(--salt-line);background:var(--salt-glass);
-  box-shadow:0 0 18px -4px rgba(197,160,89,.4),0 10px 30px -12px rgba(0,0,0,.8),inset 0 1px 0 var(--salt-highlight);}
+/* the orbs are the system's .salt-orb, raised over the page or lit as the way back to the top */
 .totop.on{animation:none;}
-.totop:hover{background:var(--salt-glass-hover);border-color:rgba(197,160,89,.6);
-  box-shadow:0 0 26px -2px rgba(197,160,89,.5),0 12px 34px -12px rgba(0,0,0,.85),inset 0 1px 0 var(--salt-highlight);}
-.totop:focus-visible{outline-color:var(--salt-brass);}
-.navveil{background:rgba(5,8,10,.55);}
-/* v684: the rail stands beside the page everywhere but a touch screen at 860px or below */
-@media(min-width:861px),not all and (pointer:coarse){.rail{width:212px;flex:0 0 212px;}}
-@media(max-width:860px) and (pointer:coarse){.rail{background:var(--salt-pane);}}
+.navveil{background:var(--salt-scrim);}
+/* v684: the rail stands beside the page everywhere but a touch screen at 860px or below; its width and
+   its stickiness are the recipe's, scoped the same way, and the bar carries the brand there */
+@media(min-width:861px),not all and (pointer:coarse){.railbrand{display:none;}}
 .exitbtn{font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;border-color:var(--salt-line-faint);color:var(--salt-mist);}
 .exitbtn:hover{color:var(--salt-ember);border-color:rgba(212,105,76,.55);background:rgba(212,105,76,.08);}
 .exitfix{background:var(--salt-pane);}
@@ -3333,20 +3437,20 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .ledwrap .lcard.s-cancelled{border-left-color:var(--salt-mist);opacity:.5;filter:saturate(.4);transition:opacity .13s,filter .13s;}
 .ledwrap .lcard.s-cancelled:hover,.ledwrap .lcard.s-cancelled:focus-within{opacity:.94;filter:none;}
 .ledwrap .lcard.s-cancelled .lparty{text-decoration:line-through;text-decoration-color:rgba(122,134,144,.8);}
-.ledwrap .tag.buy{color:var(--salt-steel);}
-.ledwrap .tag.sell{color:var(--salt-product-salt);}
-.ledwrap .tag.paid{color:var(--salt-verdigris);}
-.ledwrap .tag.open{color:var(--salt-copper);}
-.ledwrap .tag.pendingt{color:var(--salt-steel);}
-.ledwrap .tag.inkind,.ledwrap .tag.prov{color:var(--salt-brass);}
+.ledwrap .tag.buy{--salt-status-tone:var(--salt-steel);}
+.ledwrap .tag.sell{--salt-status-tone:var(--salt-product-salt);}
+.ledwrap .tag.paid{--salt-status-tone:var(--salt-verdigris);}
+.ledwrap .tag.open{--salt-status-tone:var(--salt-copper);}
+.ledwrap .tag.pendingt{--salt-status-tone:var(--salt-steel);}
+.ledwrap .tag.inkind,.ledwrap .tag.prov{--salt-status-tone:var(--salt-brass);}
 /* v495, his instruction: the sheet in the system's ledger recipe. Figures tabular; the Provisional
    pill is the status chip's shape with a dotted line and nothing behind it; Update is a button in
    the same shape rather than an underlined word. Both sit at the end of the entry's second row. */
 .ledwrap{font-variant-numeric:tabular-nums;}
-.ledwrap .tag.prov{border:1px dotted rgba(197,160,89,.6);border-radius:var(--salt-radius-pill);padding:3px 10px;background:transparent;}
+.ledwrap .tag.prov{padding:3px 10px;}
 .ledwrap .lqb{border:1px solid var(--salt-line-strong);border-radius:var(--salt-radius-pill);padding:3px 12px;text-decoration:none;color:var(--salt-brass);}
 .ledwrap .lqb:hover{background:rgba(197,160,89,.10);border-color:var(--salt-brass);}
-.ledwrap .tag.def{color:var(--salt-ember);}
+.ledwrap .tag.def{--salt-status-tone:var(--salt-ember);}
 .entflash{outline-color:var(--salt-brass);}
 .lcard.lpressing::after{background:var(--salt-gradient);}
 .lcard.lpressed{border-color:var(--salt-brass);box-shadow:0 0 0 1px var(--salt-brass),0 6px 22px rgba(197,160,89,.22);}
@@ -3376,16 +3480,23 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .evo .txt b{color:var(--salt-salt);font-weight:500;}
 
 /* ---- 10. STATES: a word in its colour with a hairline, never a fill ---- */
-.tag{font-size:10.5px;font-weight:500;letter-spacing:.12em;background:transparent;border:1px solid currentColor;padding:2px 9px;}
+/* the tag is the system's .salt-status (22 Sep 2026): the desk's state words bind to its one tone variable,
+   and the bare words below still colour the few things that are not tags */
+.tag.paid{--salt-status-tone:var(--salt-verdigris);}
+.tag.unpaid,.tag.open{--salt-status-tone:var(--salt-copper);}
+.tag.buy{--salt-status-tone:var(--salt-steel);}
+.tag.sell{--salt-status-tone:var(--salt-product-salt);}
+.tag.inkind,.tag.prov,.tag.buychip{--salt-status-tone:var(--salt-brass);}
+.tag.def{--salt-status-tone:var(--salt-ember);}
+.tag.mod,.tag.pendingt{--salt-status-tone:var(--salt-steel);}
 .paid{color:var(--salt-verdigris);}
 .unpaid,.open{color:var(--salt-copper);}
 .buy{color:var(--salt-steel);}
 .sell{color:var(--salt-product-salt);}
 .inkind{color:var(--salt-brass);}
 .def{color:var(--salt-ember);}
-.prov{color:var(--salt-brass);border:1px dashed rgba(197,160,89,.55);}
-.mod,.pendingt{color:var(--salt-steel);border-color:rgba(142,162,182,.5);}
-.tag.buychip{background:transparent;color:var(--salt-brass);border-color:rgba(197,160,89,.4);}
+.prov{color:var(--salt-brass);}
+.mod,.pendingt{color:var(--salt-steel);}
 .provbar{font-size:11px;letter-spacing:.06em;background:rgba(197,160,89,.08);border:1px dashed var(--salt-line-strong);color:var(--salt-brass);}
 .provbar b{color:var(--salt-salt);}
 .ubtn{border-color:rgba(197,160,89,.5);color:var(--salt-brass);}
@@ -3476,12 +3587,6 @@ details.obs>summary:hover{background:var(--salt-glass);}
 
 /* ---- 13. THE PHONE: the same vocabulary; only the floors the old layer sets stand ---- */
 @media(max-width:560px){
-  .kick{font-size:11px !important;letter-spacing:.18em;}
-  /* the 11px floor is the phone's, not the hierarchy's: at 11px against a 11.5px tab the
-     heading and the destination were level again, which is the fault this rail just lost.
-     The heading keeps the floor and the tab clears it. */
-
-  .tab{font-size:13.5px;}
   /* THE BOARD FITS ITS CARD WITHOUT A SCROLL, measured at v477: 337px of table in a 325px card since
      the mono face arrived at v472, and the width is the figures', not the type's (12.5, 12, 11.5 and
      11px all measure 337). Three-pixel gutters bring it to 325, exactly the card. */
@@ -3515,18 +3620,8 @@ details.obs>summary:hover{background:var(--salt-glass);}
    two things where there is one. The open tab is now the head of a block and its parts the body
    of the same block: one border, one glass, the head with square bottom corners, the body with
    square top corners, no gap. A part is marked by a brass bar at its left, not a pill. */
-.tab.on{border-radius:var(--salt-radius-sm) var(--salt-radius-sm) 0 0;border-bottom-color:transparent;margin-bottom:0;}
-/* v622: a destination with one page has no body, so its open tab is the whole block */
-.tab.on.solo{border-radius:var(--salt-radius-sm);border-bottom-color:var(--salt-line);margin-bottom:2px;}
 .tab.on+.subs{display:block;}
-.subs{margin:0 0 8px;padding:2px 6px 6px;border:1px solid var(--salt-line);border-top:0;
-  border-radius:0 0 var(--salt-radius-sm) var(--salt-radius-sm);background:var(--salt-glass);}
-.sub{position:relative;display:flex;align-items:center;min-height:32px;padding:6px 10px 6px 18px;border:0;border-radius:8px;
-  color:var(--salt-mist);background:transparent;}
-.sub::before{content:'';position:absolute;left:8px;top:9px;bottom:9px;width:2px;border-radius:2px;background:transparent;}
-.sub:hover{color:var(--salt-salt);background:transparent;}
-.sub.on{color:var(--salt-salt);background:rgba(255,255,255,.035);}
-.sub.on::before{background:var(--salt-brass);}
+
 
 /* ---- 7b. THE LEDGER ROW'S SECOND LINE (v529, his instruction of 08 Sep 2026) ----
    The role and the type sat at the far left under the E code, and Update was a pill button at the
@@ -3557,38 +3652,25 @@ details.obs>summary:hover{background:var(--salt-glass);}
    key and the menu keep their 44px and lose the disc. One row at every width, the phone included.
    Once the desk has moved, the bar casts an obsidian cap above itself (body.dbstuck, set by the
    back-to-top control's own scroll read), so nothing slides through the gap over it. */
-:root{--dbtop:22px;}
+:root{--dbtop:22px;--salt-bar-top:calc(var(--safetop) + var(--dbtop));}
 @media(max-width:560px){:root{--dbtop:14px;}}
-.deskbar{top:calc(var(--safetop) + var(--dbtop));margin:0 0 18px;padding:9px 8px 9px 16px;gap:10px 12px;flex-wrap:wrap;
-  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02)),rgba(13,11,9,.9);
-  border:1px solid var(--salt-line);border-radius:var(--salt-radius-md);
-  box-shadow:var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);
-  -webkit-backdrop-filter:blur(24px) saturate(1.25);backdrop-filter:blur(24px) saturate(1.25);}
+/* the bar is the system's .salt-deskbar, sitting where the desk binds --salt-bar-top; the cap below is the
+   desk's own */
 /* THE CAP IS FOUR OBSIDIAN COPIES OF THE BAR'S OWN SHAPE, stacked above it 24px apart, so the gap over the
    bar and the slivers outside its top corners are covered, up to a 96px inset. A shadow is not layout: the
    first cut was a pseudo-element reaching into the gutter, and it made the phone's page 2px wide. */
 body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 var(--salt-obsidian),0 -72px 0 0 var(--salt-obsidian),
   0 -96px 0 0 var(--salt-obsidian),var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);}
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.deskbar{background:rgb(18,15,12);}}
-@media (prefers-reduced-transparency:reduce){.deskbar{background:rgb(18,15,12);-webkit-backdrop-filter:none;backdrop-filter:none;}}
-.dhbrand{gap:12px;min-width:0;}
 .dhbrand .mark{width:30px;height:30px;flex:0 0 auto;display:block;}
 .dhtext{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden;}
-.dhname{align-self:flex-start;font-family:var(--salt-font-display);font-weight:300;font-size:21px;letter-spacing:.04em;line-height:1;text-transform:none;
-  background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
 .deskbar .meta{display:block;margin:0;min-width:0;}
-.deskbar .metarow{display:flex;align-items:center;flex-wrap:nowrap;gap:0;overflow:hidden;white-space:nowrap;
-  font-family:var(--salt-font-mono);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;line-height:1.2;color:var(--salt-mist);}
 .dhrole{display:inline-flex;align-items:center;gap:6px;margin-right:12px;}
 .dhrole i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto;}
 .dhrole.live{color:var(--salt-verdigris);}
 .dhrole.ro{color:var(--salt-brass);}
 .dhupd::before{content:"\00b7";margin:0 8px;}
-.deskbar .dbtools{order:2;gap:4px;}
+.deskbar .dbtools{order:2;}
 /* the version is the system's .salt-version, bare (22 Sep 2026) */
-.deskbar .fabtn{background:transparent;border-color:var(--salt-line-faint);box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;}
-.deskbar .fabtn:hover{background:var(--salt-glass-hover);border-color:var(--salt-line);}
-.deskbar .idfix.on{border-color:var(--salt-brass);box-shadow:0 0 12px -4px var(--salt-brass);}
 .deskbar>#provBar{order:3;flex:1 0 100%;}
 .deskbar>#provBar:empty{display:none;}
 .deskbar .provbar{margin-top:0;}
@@ -3601,15 +3683,14 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   .dhname{font-size:18px;}
   /* the phone's 11px floor for a label (v401); the line keeps one row by dropping the as-at date
      and, while the desk is live, the status word, which the dot already says */
-  .deskbar .metarow{font-size:11px;letter-spacing:.1em;}
   .dhasat,.dhrole.live .dhword{display:none;}
   .dhupd::before{content:none;}
   .dhrole{margin-right:8px;}
 }
 /* ---- AN ENTRY IS TWO ROWS (09 Sep 2026): the corner tag, the pen and its menu, in the identity. ---- */
 .ledwrap .tag.ltype{font-weight:500;letter-spacing:.14em;}
-.ledwrap .tag.ltype.buy{color:var(--salt-steel);}
-.ledwrap .tag.ltype.sell{color:var(--salt-product-salt);}
+.ledwrap .tag.ltype.buy{--salt-status-tone:var(--salt-steel);}
+.ledwrap .tag.ltype.sell{--salt-status-tone:var(--salt-product-salt);}
 .ledwrap .etype.eagreed{color:var(--salt-mist);}
 .ledwrap .lpen{color:var(--salt-brass);}
 .ledwrap .lpen:hover,.ledwrap .lpen:focus-visible{background:rgba(197,160,89,.14);color:var(--salt-salt);}
@@ -3627,37 +3708,37 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 <div class="salt-aurora salt-aurora--page salt-aurora--fixed" aria-hidden="true"><div class="salt-aurora__blob salt-aurora__blob--copper"></div><div class="salt-aurora__blob salt-aurora__blob--brass"></div></div>
 <div id="pbSheet"></div>
 <div class="wrap">
-<button class="fabtn orderbtn" id="orderbtn" type="button" title="Enter an order"
+<button class="fabtn orderbtn salt-orb salt-orb--raised" id="orderbtn" type="button" title="Enter an order"
   aria-label="Enter an order">+</button>
 <div class="navveil" id="navveil"></div>
 <h2 class="sr-only">Salt Command: one dashboard for inventory, margin, receivables, cost-linked pricing and transaction entry.</h2>
 <div class="shell">
-  <nav class="rail" id="tabs" aria-label="Sections">
-    <div class="railbrand">
+  <nav class="rail salt-rail" id="tabs" aria-label="Sections">
+    <div class="railbrand salt-rail__brand">
       <svg class="mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Salt crystal"><defs><linearGradient id="saltCrystalRail" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c5a059"/><stop offset="100%" stop-color="#b87333"/></linearGradient></defs><polygon points="50,5 95,28 95,72 50,95 5,72 5,28" fill="none" stroke="url(#saltCrystalRail)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,5 50,50 95,28" fill="none" stroke="url(#saltCrystalRail)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 5,28" fill="none" stroke="url(#saltCrystalRail)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 50,95" fill="none" stroke="url(#saltCrystalRail)" stroke-width="3" stroke-linejoin="round"/><polygon points="50,28 72,39 50,50 28,39" fill="url(#saltCrystalRail)" opacity="0.85"/></svg>
-      <div><div class="railtitle">Salt</div><div class="kick">Command</div></div>
+      <div><div class="railtitle salt-title">Salt</div><div class="kick salt-wordmark__subtitle">Command</div></div>
     </div>
 
     <!-- v622, HIS INSTRUCTION OF 14 SEP 2026: TWO LEVELS AT MOST. The destinations and, under the open one,
          its pages. The four headings above them (Command, Current, Relationships, Actions) grouped the
          fifteen flat tabs this rail carried before v341 made the seven destinations, which group already. -->
-    <div class="railgroup">
-      <button class="tab on" data-s="today">Today</button>
-      <button class="tab" data-s="money">Order book</button>
-      <button class="tab" data-s="stock">Stock</button>
-      <button class="tab" data-s="price">Pricing</button>
-      <button class="tab" data-s="people">Network</button>
-      <button class="tab" data-s="book">Record</button>
-      <button class="tab" data-s="enter">Enter</button>
+    <div class="railgroup salt-rail__group">
+      <button class="tab on salt-rail__tab" data-s="today">Today</button>
+      <button class="tab salt-rail__tab" data-s="money">Order book</button>
+      <button class="tab salt-rail__tab" data-s="stock">Stock</button>
+      <button class="tab salt-rail__tab" data-s="price">Pricing</button>
+      <button class="tab salt-rail__tab" data-s="people">Network</button>
+      <button class="tab salt-rail__tab" data-s="book">Record</button>
+      <button class="tab salt-rail__tab" data-s="enter">Enter</button>
     </div>
-    <div class="railfoot">
+    <div class="railfoot salt-rail__foot">
     </div>
   </nav>
   <main class="main">
-    <div class="deskbar" id="deskbar">
-      <div class="dhbrand"><svg class="mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Salt crystal"><defs><linearGradient id="saltCrystalBar" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c5a059"/><stop offset="100%" stop-color="#b87333"/></linearGradient></defs><polygon points="50,5 95,28 95,72 50,95 5,72 5,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,5 50,50 95,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 5,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 50,95" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polygon points="50,28 72,39 50,50 28,39" fill="url(#saltCrystalBar)" opacity="0.85"/></svg><div class="dhtext"><div class="dhname">Salt Command</div><div class="meta" id="meta"></div></div></div>
-      <div class="dbtools"><span class="salt-version" id="verChip"></span><span id="revealCtrl"></span>
-        <button class="fabtn navbtn" id="navbtn" type="button" aria-controls="tabs" aria-expanded="false"
+    <div class="deskbar salt-deskbar" id="deskbar">
+      <div class="dhbrand salt-deskbar__brand"><svg class="mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Salt crystal"><defs><linearGradient id="saltCrystalBar" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c5a059"/><stop offset="100%" stop-color="#b87333"/></linearGradient></defs><polygon points="50,5 95,28 95,72 50,95 5,72 5,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,5 50,50 95,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 5,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 50,95" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polygon points="50,28 72,39 50,50 28,39" fill="url(#saltCrystalBar)" opacity="0.85"/></svg><div class="dhtext"><div class="dhname salt-deskbar__name">Salt Command</div><div class="meta" id="meta"></div></div></div>
+      <div class="dbtools salt-deskbar__tools"><span class="salt-version" id="verChip"></span><span id="revealCtrl"></span>
+        <button class="fabtn navbtn salt-orb salt-orb--raised" id="navbtn" type="button" aria-controls="tabs" aria-expanded="false"
           aria-label="Sections"><span class="nbars"><span class="nb1"></span><span class="nb2"></span><span class="nb3"></span></span></button></div>
       <!-- 12 Sep 2026: the date, the stamp and the status ride under the name (#meta, in .dhtext); the provisional notice keeps a row of its own -->
       <div id="provBar"></div>
@@ -3672,7 +3753,7 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   </main>
 </div>
 </div>
-<button class="totop" id="totop" type="button" title="Back to top" aria-label="Back to top">&#9650;</button>
+<button class="totop salt-orb salt-orb--lit" id="totop" type="button" title="Back to top" aria-label="Back to top">&#9650;</button>
 <script>
 /* ==== ENGINE qr: generated from engine/qr.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
 /* engine/qr.mjs: A QR ENCODER, WRITTEN OUT RATHER THAN INSTALLED.
@@ -7199,7 +7280,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    v324 onward, which tabJournal maps in full; master/changelog.json carries every entry
    ever written and is the record. So a bump PREPENDS its entry. Replacing the array,
    which both comments invited, silently drops the whole window. */
-const evolution=[{"v":"v789","d":"22 Sep 2026","t":"ENTER, REDESIGNED: TILES FOR BOOKS, A TYPED PARTY, A DATE THAT STEPS, AND A SECOND BOOK","n":["<b>HIS INSTRUCTION OF 22 SEP 2026, reading the form on screen and naming what was wrong with it.</b> The product dropdown becomes a TILE A BOOK: the dot in the book’s own accent, the name beneath, the chosen one lit in that hue. The select survives, hidden, and is still the value, so <code>wbProdVal</code> and every reader behind it are untouched; the tiles set it and fire its own change, the road <code>setProdView</code> was always reached by.","<b>THE PARTY IS TYPED OR CHOSEN</b>, over the same hidden-select trick, so every reader still gets a CODE. It matches on the code and on the drawn name, both case-insensitively, and it NEVER guesses at a partial: <code>CZ4</code> leaves the select empty and the form refuses it, because a near miss that silently booked to the wrong party is the costliest slip this form could make. Every party list is already in alphabetical order since v783.","<b>THE DATE STEPS A DAY AT A TIME</b>, by tap or by arrow key, through one <code>dateStep</code> so the buttons and the keys cannot disagree. That is a TRADE and it is stated rather than discovered: a native date input uses Left and Right to move between its day, month and year segments, and binding them takes that away. Typing digits still advances the segments, which is how a whole date is entered, and Up and Down are left alone.","<b>A SECOND BOOK IS A SECOND TRANSACTION FOR THE SAME PARTY.</b> Tapping another tile adds a book with its own row of figures, and Record queues one entry a book, sharing the party, the date and the direction, each through the same <code>entryFault</code> and <code>replayAnswer</code> guards the first went through. Three rules on a tile: a book not in the entry joins and becomes active, a book in but not active becomes active, and the active book tapped leaves unless it is the last.","<b>v409 CALLED TWO PRODUCTS IN ONE FORM A FAULT, and that ruling holds here.</b> The margin, the free inventory and the price coach all read the ACTIVE book, so a form holding two read one and recorded the other. The active book still drives every reading; the books after it are plain orders. A gift, a reward cover and a resale are properties of ONE order, each judged against the active book’s cost, ladder and reward, so an entry carrying any of them with a second book is REFUSED and the message says which. <b>That refusal stands ahead of every push, and testing is why</b>: placed after the gift branch, which queues its row and RETURNS, a gift ticked with a second book queued the gift and dropped the other book in silence.","<b>AND THE FULL SHEET OPENS FROM THE CORNER.</b> The panel it opens was already a side drawer, fixed right at 100dvh; what sat in the flow was the button. It keeps the design system’s pill recipe that v784 put on it: the corner is where the control sits, not what it is made of."]},{"v":"v788","d":"22 Sep 2026","t":"THREE LOTS IN, TWO OUT, AND A BLEND STILL UNANSWERED","n":["<b>FIVE ROWS FOLDED, THREE BUYS AND TWO SALES, ALL CASH ON THE DAY.</b> SM4-KEP supplied 35 unit of candy for RM1,140 and 100 unit of rice for RM320 beside RM20 freight, both paid and moved in full on 21 Sep. SA5-BTR delivered 25 unit of rice for RM1,400 on 22 Sep against RM1,240 cash, so RM160 stays open on an account already carrying RM3,100. Nothing on the two SM4-KEP rows is left outstanding.","<b>THE SALES BOTH RAN TO CZ4-MK ON 21 SEP AT RM460 A ROW.</b> Five unit of salt at RM92 a unit clears the RM259.22 floor for that size and sits RM100 under the RM560 ask, costed at RM48 a unit, the inventory's own rate. Ten unit of candy at RM46 a unit carries no cost and no ladder, the floor and ask for 10 unit both standing at zero. Both were collected and paid in full.","<b>TWO DRAFTER FLAGS SURVIVE THE FOLD UNANSWERED.</b> The salt row is costed on an inventory average of RM48 a unit while the shelf spans more than one lot rate, and the dossier carries no lot split, so the blend is not resolved here. The candy sale has no committed candy order for CZ4-MK to test the rate against. The inventory took the salt row out of a shelf of 6 unit counted on 21 Sep."]},
+const evolution=[{"v":"v790","d":"22 Sep 2026","t":"THE RAIL, THE BAR AND THE TAGS DRAW FROM THE SYSTEM'S RECIPES, AND NOTHING LOADS OFF GOOGLE FONTS","n":["<b>HIS INSTRUCTION OF 22 SEP 2026: no Google Fonts, complete the work, one fold at a time, the rail, the bar and the tags first.</b> v784 put the tiles, findings, pills, parts strip, version and aurora onto the design system's recipes. The rail, the bar with its orbs, and the state tags follow here: each recipe first synced to the desk's measured values in <code>Code\\salt-ds</code> (v1.2.1, which also carries the recipes the next folds will take), then carried by class in the markup, the layer keeping bindings and geometry only.","<b>TWO MECHANISMS CARRY THE DESK'S OWN STATE INTO A RECIPE WITHOUT A SECOND RULE.</b> A state word binds to the chip's one tone variable (<code>.tag.paid{--salt-status-tone:...}</code>), so 38 tags and the ledger's own variants moved with eight one-line bindings; the open destination and its open page are read off <code>aria-current</code>, which the recipes honour beside their own modifier classes, so the desk's <code>.on</code> and <code>.solo</code> stay where its script and its suite read them. The rail's width and stickiness live in the recipe under the desk's own media rule, and on a touch phone the drawer's geometry stays the page's, measured: fixed, hidden until the button, the pane fill, the veil. The one base rule that outranked the recipe, the brand-hiding media rule, moved into the layer, where it wins.","<b>THE BAR IS THE RECIPE'S FRAME.</b> Glass with the hairline at the rail's offset, the wordmark in the display face, the quiet mono line, the version and the orbs, all from the system; the desk binds only where it sits (<code>--salt-bar-top</code>) and keeps its own cap once the page scrolls. The orbs are one recipe in three states: bare in the bar, raised over the page, lit as the way back to the top. Measured on the served build at 1180px and 375px against the recipes and against the previous build: the phone's bar is the same 105px it was.","<b>NO GOOGLE FONTS ANYWHERE.</b> The design system's remote stylesheet is gone, its brand plate links the local one, its files moved beside it into <code>src/fonts/</code>, its dist and its Claude Design bundle carry them, and both sync tools pull from the new home. Three suite sections were re-pointed from the layer to the recipes; one new section holds 8 assertions, each proved red on its own; the earlier sections still stand. Ghosts, fields, tables, tiers, product bands and tags, actions and journal entries stay on the layer, each a fold of its own."]},{"v":"v789","d":"22 Sep 2026","t":"ENTER, REDESIGNED: TILES FOR BOOKS, A TYPED PARTY, A DATE THAT STEPS, AND A SECOND BOOK","n":["<b>HIS INSTRUCTION OF 22 SEP 2026, reading the form on screen and naming what was wrong with it.</b> The product dropdown becomes a TILE A BOOK: the dot in the book’s own accent, the name beneath, the chosen one lit in that hue. The select survives, hidden, and is still the value, so <code>wbProdVal</code> and every reader behind it are untouched; the tiles set it and fire its own change, the road <code>setProdView</code> was always reached by.","<b>THE PARTY IS TYPED OR CHOSEN</b>, over the same hidden-select trick, so every reader still gets a CODE. It matches on the code and on the drawn name, both case-insensitively, and it NEVER guesses at a partial: <code>CZ4</code> leaves the select empty and the form refuses it, because a near miss that silently booked to the wrong party is the costliest slip this form could make. Every party list is already in alphabetical order since v783.","<b>THE DATE STEPS A DAY AT A TIME</b>, by tap or by arrow key, through one <code>dateStep</code> so the buttons and the keys cannot disagree. That is a TRADE and it is stated rather than discovered: a native date input uses Left and Right to move between its day, month and year segments, and binding them takes that away. Typing digits still advances the segments, which is how a whole date is entered, and Up and Down are left alone.","<b>A SECOND BOOK IS A SECOND TRANSACTION FOR THE SAME PARTY.</b> Tapping another tile adds a book with its own row of figures, and Record queues one entry a book, sharing the party, the date and the direction, each through the same <code>entryFault</code> and <code>replayAnswer</code> guards the first went through. Three rules on a tile: a book not in the entry joins and becomes active, a book in but not active becomes active, and the active book tapped leaves unless it is the last.","<b>v409 CALLED TWO PRODUCTS IN ONE FORM A FAULT, and that ruling holds here.</b> The margin, the free inventory and the price coach all read the ACTIVE book, so a form holding two read one and recorded the other. The active book still drives every reading; the books after it are plain orders. A gift, a reward cover and a resale are properties of ONE order, each judged against the active book’s cost, ladder and reward, so an entry carrying any of them with a second book is REFUSED and the message says which. <b>That refusal stands ahead of every push, and testing is why</b>: placed after the gift branch, which queues its row and RETURNS, a gift ticked with a second book queued the gift and dropped the other book in silence.","<b>AND THE FULL SHEET OPENS FROM THE CORNER.</b> The panel it opens was already a side drawer, fixed right at 100dvh; what sat in the flow was the button. It keeps the design system’s pill recipe that v784 put on it: the corner is where the control sits, not what it is made of."]},{"v":"v788","d":"22 Sep 2026","t":"THREE LOTS IN, TWO OUT, AND A BLEND STILL UNANSWERED","n":["<b>FIVE ROWS FOLDED, THREE BUYS AND TWO SALES, ALL CASH ON THE DAY.</b> SM4-KEP supplied 35 unit of candy for RM1,140 and 100 unit of rice for RM320 beside RM20 freight, both paid and moved in full on 21 Sep. SA5-BTR delivered 25 unit of rice for RM1,400 on 22 Sep against RM1,240 cash, so RM160 stays open on an account already carrying RM3,100. Nothing on the two SM4-KEP rows is left outstanding.","<b>THE SALES BOTH RAN TO CZ4-MK ON 21 SEP AT RM460 A ROW.</b> Five unit of salt at RM92 a unit clears the RM259.22 floor for that size and sits RM100 under the RM560 ask, costed at RM48 a unit, the inventory's own rate. Ten unit of candy at RM46 a unit carries no cost and no ladder, the floor and ask for 10 unit both standing at zero. Both were collected and paid in full.","<b>TWO DRAFTER FLAGS SURVIVE THE FOLD UNANSWERED.</b> The salt row is costed on an inventory average of RM48 a unit while the shelf spans more than one lot rate, and the dossier carries no lot split, so the blend is not resolved here. The candy sale has no committed candy order for CZ4-MK to test the rate against. The inventory took the salt row out of a shelf of 6 unit counted on 21 Sep."]},
 
 {"v":"v787","d":"22 Sep 2026","t":"A GUEST BOARD NAMES NO LEVEL ON ANY BOOK","n":["<b>HIS INSTRUCTION OF 22 SEP 2026, reading the Bronze board after v786: drop the Bronze heading on the oil pane, and make sure it holds for every book, not both books.</b> The oil pane was headed <i>Bronze</i> on every level's board, Titanium's included, while the salt pane had no heading. A book that falls back to <code>ladderRow</code> took that row's name onto the board as <code>tierName</code>, and the guest page printed whatever it was handed; a row pinned to the link's level has no name, which is why salt never showed one. Oil's fixed board is one price for everybody, so the name was not even true of it.","<b>TWO RULES, ONE FOR THE DATA AND ONE FOR THE PAGE, BECAUSE EITHER ALONE CAN BE UNDONE WITHOUT THE OTHER NOTICING.</b> The board carries no level's name on any book: the field is gone from <code>boardList</code>'s product record, and the standing link's own level stays on the board itself, for his listing. And the page draws none: the pane's sub-line is the fallback note alone, <i>The only price for this product</i>, standing on its own now that nothing precedes it, and a name that reaches the page from anywhere is still not drawn.","<b>FOR EVERY BOOK, WHICH IS WHAT HE ASKED FOR.</b> The check nulls every ladder so every book on the board would take a named row, and walks all five standing boards and the two live ones asserting that no book carries a name; then it hands the page a product that does carry one and reads the visible text for every level's name and for Tier 1 and Tier 2. Each of the two went red under its own mutation and stayed green under the other's. What a level is called is the desk's; a stranger is handed prices."]},{"v":"v786","d":"22 Sep 2026","t":"A BOOK WITH NO COST HAS NO GUEST BOARD","n":["<b>HIS QUESTION OF 22 SEP 2026, whether the purchase cost and the selling price are synchronised.</b> On the desk they are, by construction: one engine strikes the ladder off the last three lots received, and the customer's price lists and the five guest boards are re-sealed from the same snapshot on every publish. The check found the one place they were not. <b>Candy, rice and spare had been on all five guest boards at RM 0 at twelve sizes each</b> since the publish that followed v780, which opened them empty.","<b>WHY.</b> A book opened empty has inputs and a policy and no lot, so its cost stack is 0 and <code>boardList</code>'s fallback row prices every size at 0. The test that a row is usable asked only that a price be finite, and 0 is finite; the guest page draws every row it is given. The customer's own price list was never wrong, because it gates on a tier and reads a book with none as coming soon.","<b>THE RULE IS THE ENGINE'S OWN BASIS.</b> A book is left off the board exactly when its landed cost is nothing, read through <code>ladderCogs</code> and not through a second test on the prices: a price of nothing is a symptom, and a laddered book with no lot would clear a price test at RM 10, 20 and 30, each level sitting a ten over the one below. <b>Nothing else moves</b>: salt and oil price as they did, and a book is back on the boards the moment its first lot is folded and published.","<b>TWO ASSERTIONS, EACH PROVED RED ON ITS OWN.</b> Salt keeps its ladder and is struck of its cost in a copy of the snapshot, and must vanish from the board while the rest stay; and the live boards carry no RM 0 at any size, which today's three empty books make a real check rather than a tautology. The first goes red under the price test as well as under no test at all, which is what it is for."]},{"v":"v785","d":"22 Sep 2026","t":"THE BRAND FACES REACH EVERY SURFACE, SELF-HOSTED","n":["<b>HIS YES OF 22 SEP 2026</b> to fetching the fonts, the one thing the design system pass before this left undone. Fraunces and JetBrains Mono were designed into the identity on 29 Aug and never loaded where it mattered: every surface's policy is self-only, so the desk, the Counter and QR Command have read in Georgia and Consolas since v472. The split between figure and sentence survived; the faces did not.","<b>THE FILES ARE GOOGLE FONTS' OWN LATIN SUBSETS</b>, fetched once with a browser's user agent and kept in the design system (<code>Code\\salt-ds\\fonts\\</code>, 67 KB and 31 KB, both variable, with their OFL licences), declared by <code>src/fonts-local.css</code> from a <code>fonts/</code> folder relative to whatever page carries it. Nothing was subset or re-encoded on this machine, and the weight ranges declared are the files' own, so a 700 resolves to the face and is never synthesised. Symbols outside the latin range fall to the system face, as they always did.","<b>EACH SURFACE SERVES THEM BESIDE ITS PAGE, BY ITS OWN SYNC.</b> The desk: <code>designsync --pull</code> takes the rules and the files into <code>design/</code>, <code>--sync</code> writes a THIRD generated block into the master, before the base and never at the foot, which is the desk layer's place, and copies the files to <code>public/fonts/</code>; <code>--check</code> proves both; the shell precaches them, so the desk reads in its own type offline. The Counter serves no files, so the two ride in <code>stmt/fonts.js</code> as bytes, written by <code>tools/stmt-fonts.mjs</code>, served at <code>/fonts/</code> with a year of cache, under a policy that now admits <code>font-src 'self'</code> on both pages; the page carries the rules first. QR Command pulls the files into <code>src/app/fonts/</code>, hashes them into its build id, stamps their URLs in <code>app.css</code> and precaches them.","<b>ONE SUITE SECTION, 12 ASSERTIONS, EACH PROVED RED ON ITS OWN</b>, the Counter's route exercised against the Worker: a face answers the file with a year of cache, a missing one is the site's usual 404. The Counter's rule that its page loads nothing now reads: nothing but its own two fonts, the chevron included."]},{"v":"v784","d":"22 Sep 2026","t":"THE DESK, THE COUNTER AND QR COMMAND USE THE DESIGN SYSTEM, AND THE SYSTEM ITSELF IS FIXED","n":["<b>HIS INSTRUCTION OF 22 SEP 2026</b>, on the verdict that the design system was a good identity and a thin system: the desk, the Counter and QR Command are to use and import it, every bug listed is to be fixed, and full use made of it. Before this the master used <b>0 of the system's 252 classes</b>: the design layer re-stated each recipe against the desk's own class names, four hand-kept copies of the palette had already drifted (the system's <code>dist/</code> lacked the three hues added that morning), and the layer had grown two colours of its own.","<b>THE SYSTEM FIRST</b>, <code>Code\\salt-ds</code> at v1.1.0. Its root clipped (<code>overflow: hidden</code> to contain an aurora that already clips itself), which made it the scroll ancestor of every sticky element inside it, so its own DeskBar and DeskRail never stuck: measured in the browser, the bar sat at -1200 after a 1200px scroll and holds at 0 now, the rail at its 22px. Nineteen rules set type under its own smallest token and read <code>--salt-text-xs</code> now. The field recipe was 15px on glass against its own principles 4 and 7 and is a well, 16px and 44px tall. The alarm (v557) and the opaque warm panel (v567) are identity tokens, <code>--salt-alarm</code> and <code>--salt-panel</code>, with <code>--salt-mist-bright</code>, <code>--salt-line-strong</code> and <code>--salt-glass-hover</code> for the three values the layer had written by hand; the layer points at them and writes no hex and no alpha of its own. The desk set's values were synced to what the desk had measured since v472.","<b>THE DESK USES THE RECIPES WHERE A CLASS-FOR-CLASS SWAP WAS MECHANICAL.</b> The markup carries both names: 94 tiles as <code>salt-kpi</code> with their label, figure and note, 39 findings as <code>salt-insight</code>, 46 filled buttons as <code>salt-pill--sm</code>, the parts strip as <code>salt-tabs__pill</code>, the version as <code>salt-version</code>, and the two orbs as the system's <code>salt-aurora--fixed</code>. <code>design/desk.css</code> holds no rule for any of them, and the base layer's tile rules, which outranked the recipe on specificity, are retired. Two mechanisms carry the desk's own state into a recipe without a second rule: the tile's tone letters set <code>--salt-kpi-tone</code>, and the strip's open pill is read off <code>aria-selected</code>, which the recipe now honours beside its own modifier. Measured on the served build at 1024px and 375px: every value is the recipe's, the phone tile is 20px, and nothing overflows sideways. The rail, the bar, tags, ghosts, fields and tables stay on the layer, each a fold of its own.","<b>THE COUNTER TAKES THE FIVE RECIPES IT USES.</b> <code>tools/stmt-style.mjs</code> slices the pill, the ghost, the field, the tab strip and the state chip out of the vendored stylesheet into <code>SITE_RECIPES</code>, the page carries them beside the tokens it already took, and its own layer keeps geometry only. The open tab is glass with a hairline now and not a filled brass badge, which decision 5 had always reserved for the one button. <b>QR COMMAND TAKES THE TOKENS BY SYNC</b>: its <code>app.css</code> carries the system's <code>:root</code> between markers, written by its own <code>tools/designsync.mjs --pull</code>, and its build refuses to ship on drift (244 of its assertions green).","<b>TWO NEW SECTIONS, 25 ASSERTIONS, EACH PROVED RED ON ITS OWN</b>, and one of them caught its author: the check that the root no longer clips matched the comment that says so, and reads the stylesheet with its comments stripped now. <b>NOT DONE: THE BRAND FONTS.</b> The CSP is self-only on every surface, so Fraunces and JetBrains Mono can arrive only embedded, and embedding needs the files fetched once, which is a network step and his call."]},{"v":"v783","d":"22 Sep 2026","t":"ENTER LOSES ITS PROSE AND THREE OF ITS FOUR BUTTONS, AND THE PARTY LISTS SORT","n":["<b>HIS INSTRUCTION OF 22 SEP 2026, reading the form on screen.</b> Three sentences went, named one by one: the paragraph beside the product control explaining which book an entry lands on and what the rail does; <i>Cost, the four dates, the settlement flags, the row note</i> beside the full sheet button; and <i>Not in the list? …</i>, a whole row of prose about registering a party, on the form for recording a trade. The control says the book and the book is lit in its own hue; a paragraph restating that is three lines to read before typing a figure.","<b>FOUR BUTTONS WERE THREE TOO MANY.</b> Record acts on what is on the form; Clear queued, Save queue file and Copy queue all act on the QUEUE, and on an empty queue every one of them is a control that can do nothing, since each already refused one. They appear when there is something for them to act on. The card is down from six buttons to two. The queue note went with them: <i>Record pushes each entry to the cloud queue. It is drafted within seconds and folded the moment it is approved; nothing else to do. Copy queue still puts the lines on the clipboard.</i> is now <b>Queued. Drafted in seconds, folded when you approve it.</b> Its laptop twin shortened the same way, and the build patch that carries the cloud wording moved with the line it anchors on.","<b>THE WARNINGS WAIT UNTIL THE ENTRY IS DESCRIBED</b> (his instruction). Every rule fired against a blank form, so opening Enter showed a column of red saying the goods must be more than zero before anything had been typed. They wait for the quantity, the goods and the cash. <b>The rules still RUN</b>, so Record stays disabled on a form that cannot be recorded; what waits is the saying, and nothing unsafe becomes recordable. Cash cannot be tested for emptiness, being born holding 0, which is a real answer, so it carries a touched flag, set by typing and by None, Half and Full. The flag is set in the SAME handler that previews: as a second listener behind it, it was set after the preview had already read it and the warnings stayed silent.","<b>AND THE NOTE IS AT THE END.</b> It sat in the middle of the figures row, between the carriage and the freight, so the eye crossed a free-text box on the way from one number to the next.","<b>EVERY PARTY LIST IS IN ALPHABETICAL ORDER</b> (his instruction). They were in ROSTER order, which is the order parties were registered in, so finding one meant reading the whole list. <code>byName</code> sorts on what is DRAWN and not on the code: ID() answers the name where the vault is open and the code where it is not, and a list sorted by code would sit in a visibly random order the moment the names appear."]},{"v":"v782","d":"22 Sep 2026","t":"A STATEMENT SAYS WHICH BOOK EACH ROW IS, AND UNITS OF DIFFERENT BOOKS DO NOT ADD","n":["<b>HIS INSTRUCTION OF 22 SEP 2026, on a defect found while opening three books and not caused by them.</b> <code>stmtRows</code> filters by PARTY and never by product, the row shape carried no product, and the footer ADDED the quantities: CS6-BS read <b>117.5 unit</b> over 47.5 of one book and 70 of another, on a document that goes to a customer. Six accounts on this book hold more than one. It has been wrong since the second book opened on 06 Aug and nothing on the page could have shown it.","<b>THE MARK SITS WITH THE QUANTITY, because the quantity is what the book qualifies.</b> Five unit of one thing and five of another are not ten. It is DRAWN and never named, which is the oldest rule on this site, and the drawing and its shape word come from <code>stmt/page.js</code> so a statement and the customer’s own page cannot diverge on what a book looks like. The SHAPE is the accessible name: an aria-label naming the product would put the word back for exactly the readers who cannot see it was taken away. A book with no mark draws the Ring.","<b>THE MONEY STILL ADDS AND THE QUANTITY DOES NOT.</b> A ringgit is a ringgit whatever it bought, so the totals, what is paid and what is outstanding are untouched; only the unit figure is kept apart, one a book. An account holding a single book reads exactly as it always did, with its mark in front of the figure.","<b>SALT LEADS, and the first draft of this line broke that.</b> The books were sorted alphabetically, which put oil before salt on every account holding both, against his standing instruction of 11 Aug restated on the 13th. They come out in the BOOK’s own PROD_ORDER now, and an id the order does not name sorts last rather than being dropped, which is the rule PROD_IDS already keeps on the desk.","<b>THE CHECK READS THE TEXT, NOT THE SOURCE.</b> The rule that no product is named in words cannot be tested against the raw document: the inlined stylesheet carries <code>--salt-product-salt</code>, so a search over the source would fail on a token name rather than on anything a customer can read. It strips the tags first, and it asserts the SUM is absent rather than only that the parts are present, because a footer could print both and still print their total."]},{"v":"v781","d":"22 Sep 2026","t":"WHO EARNS IS A FIELD ON THE BOOK, NOT A STRING COMPARISON","n":["<b>THE REWARD SCHEME WAS SALT-ONLY BY SEVEN BARE STRING COMPARISONS</b>, five here and two in the drafter, so no book opened after salt could ever earn however the book described itself. That is a real decision of his and not an accident, but it was written where only a code edit could change it. <code>PRODUCTS[p].reward</code> states it instead: true on salt, false on every other book, which is exactly what those comparisons meant. <b>Nothing moves today.</b> What changes is that whether candy or rice ever earn becomes his decision and a data one.","<b>THE FALLBACK IN THE DRAFTER IS NOT TIDINESS.</b> The drafter reads <code>state.PRODUCTS</code> off the D1 MIRROR, and the mirror is re-seeded by the deploy job AFTER the Worker is already live. Between those two moments the mirror is the old shape and carries no <code>reward</code> field at all, so a bare read would have answered false for salt and refused every redemption in that window, in silence, on a scheme that has been running since v577. Where NO book states the field the old rule stands; where ANY book states it, the field rules. Both halves are asserted, the second against a mirror built without the field.","<b>WHAT IS NOT TOUCHED.</b> Four other comparisons against the literal salt stay exactly as they are, because they are the storage convention and not the reward: a row that names no product IS salt, so <code>if (product !== \"salt\") row.product = product</code> is what keeps 175 of 188 sales from carrying a field they do not need. Those are read in <code>docs/PRODUCTS.md</code> section 6 and are correct at five books for the same reason they were correct at two."]},{"v":"v780","d":"22 Sep 2026","t":"CANDY, RICE AND SPARE OPEN, AND THE PARITY SCAN FINDS THE SPLIT CLEAN","n":["<b>HIS INSTRUCTION OF 22 SEP 2026.</b> Three books opened by <code>tools/product.mjs --add</code>, each registered in all six per-product maps and the order, each EMPTY: no quote, no stated count, no opening figure. The fold refuses a sale on a book with no cost, so the first lot on each goes in by hand, which is v228’s own bootstrap rule and not a gap. <b>spare is the fifth slot</b>, opened to prove that adding a book is repeatable rather than surgical, and given no mark on purpose so the Ring fallback is exercised by a real book.","<b>THE PARITY SCAN FIRED FOR THE FIRST TIME IN FIVE HUNDRED VERSIONS.</b> It was written at v275 and its header says the point is product three. Its RULE 2 asks whether a book with no orders reports commitments or receivables of its own, which is the signature of a whole-book read presented as one product’s, and that rule could never once fire while every book had orders. Three empty books arm it. It reports NO rule 1 and NO rule 2: every empty book reads zero revenue, zero receivable, zero inventory and zero promised out. <b>The unfinished product split of v228 is clean.</b> What it does report, three times, is never counted and declared but empty, which are notes on a new book and not faults.","<b>AND OPENING THEM PUT A FALSE FIGURE ON THE DESK, WHICH IS FIXED HERE.</b> <code>creditCapFor</code> falls back to the default book where a book states no cap of its own, which is what keeps the breach arithmetic working on a book nobody has set a policy for. Printed book by book, that borrowed figure stated salt’s 1 unit as candy’s own, under a sentence that begins <i>Credit caps are per book</i>. The sentence now names the books that HAVE a cap and then says which ones borrow one: the borrowing is stated rather than hidden, and no figure is claimed where it is not true.","<b>FIVE BOOKS FIT ON A PHONE, MEASURED RATHER THAN ASSUMED.</b> At 375px the switch draws five buttons on TWO rows at 67, 60, 75, 67 and 75 pixels wide and 44 tall, every one at or above the tap floor in both directions, with no horizontal scroll; at 1280 it is unchanged and still carries each book’s headline figure. All five dots draw their own hue.","<b>AND ONE OF THIS VERSION’S OWN ASSERTIONS WAS VACUOUS, WHICH IS THE LESSON.</b> The check that no book is given a cap it does not have was inserted through a shell heredoc that ATE ITS BACKSLASHES, so the pattern it built was a backspace character followed by the plain letters s and d, where a word boundary, a space and a digit were meant. It matched nothing. It passed on every book, and it went on passing under the very mutation written to prove it, which is how it was caught: the mutation turned its neighbour red and left it green, and an assertion that will not go red is not an assertion. It is built from a regexp literal’s own source now, and its failure message carries the sentence it read, so the next person sees what it saw. Nothing else would have found it, because a vacuous check and a true one look identical in a green run."]},{"v":"v779","d":"22 Sep 2026","t":"THREE MORE HUES, TWO MORE MARKS, AND FIVE BOOKS FIT ON A PHONE","n":["<b>HIS CHOICE OF 22 SEP 2026, ahead of opening three books.</b> The identity had two product hues and needed five. Each new one avoids the SEMANTIC four: ember, verdigris, steel and copper each mean something on this desk, so a product dot drawn in one would read as a status rather than as a book. The violet and cyan families were retired at v472 and are not used. candy is rose at hue 330, rice indigo at 235, spare olive at 68.","<b>THEY GO IN THE DESIGN SYSTEM AND NOT IN THE DESK, because the Counter reads them too.</b> <code>tools/stmt-style.mjs</code> generates the statement stylesheet from the <code>:root</code> of <code>design/salt-ds.css</code>, which is vendored from <code>Code/salt-ds</code>, so a hue added to the desk layer alone would never reach a customer and one added to the vendored copy alone would be reverted by the next <code>--pull</code> without a word. The edit is upstream, then pull, then sync, then the statement stylesheet: a hue that is missing there does not error, it resolves to nothing, and the product loses its accent in silence.","<b>A LOZENGE AND A CAPSULE, AND SPARE KEEPS THE RING ON PURPOSE.</b> A rhombus for candy and a seamed stadium for rice, drawn in the same hairline stroke as the cube and the droplet; the capsule carries its seam for the reason the cube carries its three inner edges, that without it a stadium is a shape and with it it is a thing. Neither is literal and neither is a word, which is the rule this site has kept since v659. <b>spare is given no mark deliberately</b>, so the Ring fallback is exercised by a real book rather than asserted about a hypothetical one.","<b>AND THE SWITCH STOPS GROWING DOWN THE PAGE.</b> Each button carries a dot, a name and that book at a 150px minimum and the strip wraps, so two books sat on one row and five would have stood THREE rows deep above every per-product page. Below 760px the figure goes and the button shrinks to its content; the figure is on the page underneath either way, so nothing is lost, only moved. It stays wrapped rather than becoming a sideways scroll box, which v466 forbids above the ledger, and the minimum holds at the tap floor because a control must measure 44px in BOTH directions."]},{"v":"v778","d":"22 Sep 2026","t":"A BOOK IS OPENED AND PUT AWAY BY A COMMAND, AND RETIRING ONE THAT TRADED IS REFUSED","n":["<b>HIS DECISION OF 22 SEP 2026, asked before the three new books are opened: add a retired flag and a re-key.</b> Registering a product meant hand-editing <code>ledger/book.json</code> in six places, PRODUCTS, PROD_OPENING, COUNT_ON, PRICE_SET, COST_RULE and QUOTES, plus the order, and then remembering to sync. <code>tools/product.mjs</code> does all of it: <code>--add</code>, <code>--rename</code>, <code>--retire</code>, <code>--unretire</code>, <code>--list</code>. A book opens EMPTY, with no quote and no stated count, because nothing has happened on it yet and inventing a figure would be the one thing a ledger must never do.","<b>RETIRED IS REGISTERED AND NOT SHOWN.</b> <code>prodLive()</code> feeds <code>PROD_IDS</code>, so one flag takes a book off the switch, the Enter form, the tier grid, the ledger's filter and the parity scan, which is every one of the eighteen readers, while its rows, its opening and its tiers stay exactly where they are and the extract still carries it. A device that REMEMBERED a book before it was retired now falls back rather than opening on a book the switch no longer offers.","<b>AND THAT IS WHY RETIRING A BOOK WITH ROWS IS REFUSED.</b> PROD_IDS is read by the consolidated totals as well, so hiding a book that had a past would quietly take its revenue out of the whole-book figures with nothing on screen to say so. The flag is therefore only ever allowed on a book with nothing on it, which makes the filter safe by construction rather than by care. Retiring a book that traded is a different question, and the tool says so instead of guessing.","<b>SALT CANNOT BE RE-KEYED, and the reason is the oldest rule in the book.</b> A row that names no product IS salt, on 175 of 188 sales, so re-keying salt would silently re-attribute every row that names nothing. The tool refuses and points at the section of <code>docs/PRODUCTS.md</code> that states the convention. A rename of anything else moves the six map keys, the order, the id, the accent, every row's product field and every customer's tier for that book: proved on a copy of the real book, where renaming oil moved 24 rows and 2 tiers and left the old id nowhere."]},{"v":"v777","d":"22 Sep 2026","t":"THE TOOLS STOP TYPING THE PRODUCT ORDER AND READ IT OFF THE BOOK","n":["<b>TWO DEFINITIONS ARE TWO THINGS TO KEEP TRUE, AND THE ONE THAT DRIFTS DOES IT SILENTLY.</b> <code>tools/book.mjs</code> carried <code>PROD_ORDER = [\"salt\", \"oil\"]</code>, typed out beside the book that already states it, and <code>tools/d1.mjs</code> FAILED when the two disagreed. So a product could not be registered in one place: the book and that line had to move in step or the mirror check went red. The suite already guards the LEDGER map against exactly this and says why; the order was the one thing it did not cover.","<b>THE ORDER IS THE BOOK'S NOW</b>, read through <code>prodOrder()</code> and cached on first use, the book being a megabyte and <code>bySalt</code> being called once per comparison. Salt still leads, which is his standing instruction of 11 Aug restated on the 13th, and nothing about the order itself has changed.","<b>THE MIRROR CHECK GOT SHARPER RATHER THAN WEAKER.</b> It compared the STORE's copy of the order against a line in a tool, which is a comparison between two things that were both supposed to follow the book. It now compares the store against the book, which is what a staleness check on a mirror was always for.","<b>WHAT THE SUITE CHECKS INSTEAD.</b> That the tools keep NO typed copy, that what they read equals the book's own list, and that it leads with salt. Proved red by mutation: typing the list back in turns the first red, and handing <code>prodOrder</code> a reversed list turns the other two."]},{"v":"v776","d":"22 Sep 2026","t":"THE TWO QUOTE KEYS BECOME ONE MAP, SO A THIRD BOOK NEEDS NO CODE","n":["<b>HIS INSTRUCTION OF 22 SEP 2026, to state what is product-specific and then to open three more books.</b> The live quotes sat under two top-level keys NAMED AFTER THEIR PRODUCTS, <code>supplierQuote</code> for salt and <code>oilQuote</code> for oil, and they were the one per-product thing in this book that was not a map. Everything else, PRODUCTS, PROD_OPENING, COUNT_ON, PRICE_SET, COST_RULE, TIER_OF, is keyed by product and takes a new book as a data entry. The quotes took a new key, a new global and an edit in three files.","<b>THE DESK'S OWN QUOTES WAS AN ACCESSOR OVER THE PAIR</b>, <code>{salt:()=&gt;supplierQuote, oil:()=&gt;oilQuote}</code>, which is why it sat in NOT_LEDGER: stored, it would have arrived as <code>{\"salt\":null,\"oil\":null}</code> with nothing to say a lookup had been lost. QUOTES is the book's own map now, generated into the BOOK block like every other declaration, so it has moved out of NOT_LEDGER and into LEDGER. <code>quoteFor</code> reads the map instead of calling a function, and a product with no quote answers null exactly as an unregistered one used to.","<b>THE LOOKUP THAT COULD NOT FAIL IS THE REASON THIS WENT FIRST.</b> <code>tools/foldcall.mjs</code> read the pair as a literal two-entry object, so a product registered in PRODUCTS but absent from that object yielded <code>undefined</code>, fell to <code>null</code>, and its lot folded with no quote in the dossier while nothing errored and the note was merely worse. That is the shape of bug a third book would have shipped with.","<b>v228 ASKED FOR THIS AND THE PANEL HAS SAID SO EVER SINCE.</b> The supply panel's own comment reads <i>one panel, driven by QUOTES, so a third product needs an entry there and nothing here</i>, and with no quote recorded it tells him to add one to QUOTES. This is that, finished. Two deliberate whole-book reads of the bare salt quote are now <code>QUOTES[DEFAULT_PROD]</code>, which is what they meant; oil's redundant <code>product</code> field goes with the collapse, the key being the product, and nothing ever read it."]},{"v":"v775","d":"21 Sep 2026","t":"A SECOND FREE UNIT ON THE REWARD: NO CASH, NO REVENUE, RM48 OF COST","n":["<b>FOLDED: ONE REDEMPTION ROW FOR CS6-BS, 1 UNIT OF SALT ON 21 SEP.</b> Settled by the reward at RM48 rather than in cash, delivered in full the same day, so nothing is left outstanding. On his ruling of 11 Sep 2026 the row carries both rebate and goodwill, so it stays out of revenue and its RM48 sits as cost at the shelf's own rate. This is the second such redemption for this code since 17 Sep.","<b>UNUSUAL: THE REWARD BALANCE IS THE DESK'S WORD AND CANNOT BE CHECKED HERE.</b> The drafter flagged that 6 earned against 5 applied leaves 1 unit standing, worked out on the desk and not in the book, and the dossier carries no figure that answers it. No price test bites, since no price was charged: the RM51.95 floor and RM160 ask for 1 unit are recorded for the file only. The salt left the shelf and the inventory rolled by it."]},
 
@@ -7852,7 +7933,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='22 Sep 2026, 15:13 KL';
+const LAST_UPDATED='22 Sep 2026, 15:34 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9966,7 +10047,7 @@ function commitRisks(){
         why:'at commit the traceable lot cost is assigned instead, so the margin on this sale will move'});});
   return out;
 }
-const bSevTag={breach:'<span class="tag def">Breach</span>',watch:'<span class="tag unpaid">Watch</span>',risk:'<span class="tag prov">Commit risk</span>'};
+const bSevTag={breach:'<span class="tag salt-status def">Breach</span>',watch:'<span class="tag salt-status unpaid">Watch</span>',risk:'<span class="tag salt-status salt-status--dashed prov">Commit risk</span>'};
 function boundaryPanel(){
   const b=boundaryScan(),r=commitRisks();
   const all=b.filter(x=>x.sev==='breach').concat(b.filter(x=>x.sev==='watch')).concat(r);
@@ -10255,7 +10336,7 @@ function tabOverview(){
     <div class="kpi salt-kpi r"><div class="l salt-kpi__label">Receivables (net)</div><div class="v salt-kpi__value">${fmt0(totDue)}</div><div class="n salt-kpi__note">${(ar>0.009||supRecovNet>0.009)?`${fmt0(ar)} trade${supRecovNet>0.009?` + ${fmt0(supRecovNet)} refund`:''}`:'nothing owed to you'}</div></div>
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Bought to date</div><div class="v salt-kpi__value">${units(buyUnits)}</div><div class="n salt-kpi__note">${buyUnits>0.009?`${fmt0(buyRM)} at ${fmt(buyRM/buyUnits)}/unit avg`:`no lot recorded yet`}</div></div>
   </div>
-  <div class="card"><div class="cardh">&#128220; Latest ledger <span class="sub">most recent orders</span></div><table><thead><tr><th class="l">Date</th><th class="l">Party</th><th>Qty</th><th>Total</th><th>State</th></tr></thead><tbody>${recent.map(s=>{const si=txStat(s);return `<tr><td class="l">${s.date}</td><td class="l mono">${ID(s.customer)}</td><td>${units(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag ${si.cls}">${si.order}</span></td></tr>`;}).join('')}</tbody></table></div>`;
+  <div class="card"><div class="cardh">&#128220; Latest ledger <span class="sub">most recent orders</span></div><table><thead><tr><th class="l">Date</th><th class="l">Party</th><th>Qty</th><th>Total</th><th>State</th></tr></thead><tbody>${recent.map(s=>{const si=txStat(s);return `<tr><td class="l">${s.date}</td><td class="l mono">${ID(s.customer)}</td><td>${units(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag salt-status ${si.cls}">${si.order}</span></td></tr>`;}).join('')}</tbody></table></div>`;
 }
 
 /* ============ TAB: TODAY (v147) ============ */
@@ -10458,7 +10539,7 @@ function tabForward(){
   <div class="chartbox"><canvas id="fwdCashChart"></canvas></div>
   <h2 style="margin-top:18px">What lands, and when <span class="rule"></span></h2>
   <div class="card">${evRows.length?`<table><thead><tr><th class="l">When</th><th class="l">What</th><th class="l">Kind</th><th>Amount</th></tr></thead><tbody>
-    ${evRows.map(e=>`<tr><td class="l">${e.day===0?'<b>today</b>':iso(e.day)+` <span style="color:var(--dim)">d+${e.day}</span>`}</td><td class="l">${e.what}</td><td class="l"><span class="tag ${e.kind==='cash out'?'unpaid':e.kind==='stock in'?'prov':'paid'}">${e.kind}</span></td><td style="color:${e.rm<0?'var(--crim)':'var(--grn)'}">${e.rm<0?'&minus;':''}${fmt0(Math.abs(e.rm))}</td></tr>`).join('')}
+    ${evRows.map(e=>`<tr><td class="l">${e.day===0?'<b>today</b>':iso(e.day)+` <span style="color:var(--dim)">d+${e.day}</span>`}</td><td class="l">${e.what}</td><td class="l"><span class="tag salt-status ${e.kind==='cash out'?'unpaid':e.kind==='stock in'?'prov':'paid'}">${e.kind}</span></td><td style="color:${e.rm<0?'var(--crim)':'var(--grn)'}">${e.rm<0?'&minus;':''}${fmt0(Math.abs(e.rm))}</td></tr>`).join('')}
     </tbody></table>${provNote.length?`<div class="dsc" style="margin-top:8px">Cash-in is <b>net of provisioning</b>: ${provNote.join('; ')}.</div>`:''}`
     :'<div class="pchips" style="margin:0"><span class="pchip">nothing scheduled either way inside the window</span></div>'}</div>
   `;
@@ -10815,7 +10896,7 @@ function tabSourcing(){
       <td class="stkx" style="color:var(--dim)">${s.share.toFixed(0)}%</td>
       <td>${s.wavg==null?'&mdash;':fmt(s.wavg)}</td><td class="stkx">${s.best==null?'&mdash;':fmt(s.best)}</td><td class="stkx">${s.lastRate==null?'&mdash;':fmt(s.lastRate)}</td>
       <td class="stkx" style="color:${fillCol}">${s.fill==null?'&mdash;':s.fill+'%'}</td>
-      <td class="l">${s.defaults?`<span class="tag def">defaulted ${fmt0(s.defaultRM)}</span>`:'<span class="tag paid">clean</span>'}</td></tr>`;}).join('')}
+      <td class="l">${s.defaults?`<span class="tag salt-status def">defaulted ${fmt0(s.defaultRM)}</span>`:'<span class="tag salt-status paid">clean</span>'}</td></tr>`;}).join('')}
   </tbody></table></div>
   ${(()=>{if(!(conc&&conc.recentShare>80))return'';
     const bits=[];
@@ -11599,7 +11680,7 @@ function tabInventory(){
   const loanPre=LN.reduce((a,l)=>a+(l.preOpening?(l.valueKg||0):0),0);
   // reconciliation walk (only lines that apply)
   const recon=[
-    ['Opening (pre-record)','+'+units(op.qty),op.costPerKg?fmt(op.costPerKg)+'/unit':'<span class="tag unpaid">TBC</span>'],
+    ['Opening (pre-record)','+'+units(op.qty),op.costPerKg?fmt(op.costPerKg)+'/unit':'<span class="tag salt-status unpaid">TBC</span>'],
     /* v453: THE LINE PRINTS THE MEASURE THE SUM USED. buyUnits, and so the ledger figure this walk
        closes to, sums poRecvUnits: a lot enters as it lands. This row printed the lot's whole
        quantity, so a lot half received would have walked in whole here and listed its open half
@@ -12599,10 +12680,10 @@ const ledDate=d=>d&&d!=='undefined'?d:'undated';
    because it is noted, not credited. A row still filed on the plain code reads the same way. */
 function ledAttr(t){const r=t._buy||t;
   /* v620: a sale part-covered by the customer's reward says so on its line, and what the cover was worth */
-  const cov=(+r.coverUnits>0)?` <span class="tag inkind" title="${esc(units(+r.coverUnits))} of their reward covered ${esc(fmt(+r.coverRM||0))} of the gap to the ask">reward &middot; ${fmt0(+r.coverRM||0)}</span>`:'';
+  const cov=(+r.coverUnits>0)?` <span class="tag salt-status inkind" title="${esc(units(+r.coverUnits))} of their reward covered ${esc(fmt(+r.coverRM||0))} of the gap to the ask">reward &middot; ${fmt0(+r.coverRM||0)}</span>`:'';
   if(r.rev==='R2'){const a=POSITION_ENGINE.ownerCode(r.customer),d=(r.downstream&&r.downstream!==a&&!POSITION_ENGINE.isBucket(r.downstream))?r.downstream:null;
-    return ` <span class="tag inkind" title="a resale, booked to ${esc(a)}'s -R account${d?'; end buyer '+esc(codeOf(d))+', noted and not credited':''}">R2 &middot; ${ID(a)}</span>`+cov;}
-  if(r.ref)return ` <span class="tag inkind" title="credited to the associate who introduced it">R3 &middot; ${ID(r.ref)}</span>`+cov;
+    return ` <span class="tag salt-status inkind" title="a resale, booked to ${esc(a)}'s -R account${d?'; end buyer '+esc(codeOf(d))+', noted and not credited':''}">R2 &middot; ${ID(a)}</span>`+cov;}
+  if(r.ref)return ` <span class="tag salt-status inkind" title="credited to the associate who introduced it">R3 &middot; ${ID(r.ref)}</span>`+cov;
   return cov;}
 function ledMatches(t,si,am,code){
   if(ledF.party&&t.who!==ledF.party)return false;
@@ -12949,7 +13030,7 @@ function tabLedger(){
   const isPend=ledIsPend;
   const all=ledgerAll();
   const nil='<span class="pnil">&mdash;</span>';
-  const pill=(lab,cls)=>lab?`<span class="tag ${cls}">${lab}</span>`:nil;
+  const pill=(lab,cls)=>lab?`<span class="tag salt-status ${cls}">${lab}</span>`:nil;
   const stateCls=st=>st==='Completed'?'paid':st==='Pending'?'pendingt':st==='In-Kind'?'inkind':(st==='Default'||st==='Cancelled')?'def':/^Open/.test(st)?'open':'open';
   // type badge for an amendment kind
   const kindCls={Fulfilment:'efulfil',Modification:'emod',Cancellation:'ecancel',Rewarded:'erewarded',Linked:'elinked'};
@@ -13086,7 +13167,7 @@ function tabLedger(){
     const penRid=ridOf(t);
     const pen=(finalState!=='Cancelled'&&penRid&&!provOf(t))
       ?`<button type="button" class="lpen" onclick="ledMenu(event,'${penRid}','${t.type}')" title="Update this ${t.type==='BUY'?'lot':'order'}" aria-label="Update ${code}"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M11.3 1.7a1.6 1.6 0 0 1 2.3 0l.7.7a1.6 1.6 0 0 1 0 2.3L5.6 13.4 1.9 14.1l.7-3.7L11.3 1.7zm-8 8.9-.4 2.2 2.2-.4 7.6-7.6-1.8-1.8-7.6 7.6z" fill="currentColor"/></svg></button>`
-      :provOf(t)?`<span class="tag prov lpen lprov" title="recorded but not yet committed">Provisional</span>`:'';
+      :provOf(t)?`<span class="tag salt-status salt-status--dotted prov lpen lprov" title="recorded but not yet committed">Provisional</span>`:'';
     /* v465: every line is the same cells, so the table's columns hold from the heading down: E, step,
        date, type, product, party, then the four figures. A cell a line has no use for stays in place,
        empty. v466: each cell names its area, so a narrower screen can re-flow the line. The step cell
@@ -13113,7 +13194,7 @@ function tabLedger(){
           :`<span class="lcol cqty">${L.units>0.0001?units(L.units):nil}</span><span class="lcol cprc"></span><span class="lcol ctot"><b class="tval">${L.cash>0.0001?fmt0(L.cash):nil}</b></span>`)
         +`<span class="lstate"></span><span class="lc lc-act"></span></div>`;};
     const openLine=`<div class="lrow lopen">`
-      +cells({e:`<span class="ecode">${code}</span><span class="tag ltype ${t.type==='BUY'?'buy':'sell'}">${t.type}</span>`,
+      +cells({e:`<span class="ecode">${code}</span><span class="tag salt-status ltype ${t.type==='BUY'?'buy':'sell'}">${t.type}</span>`,
         date:`<span class="ldate">${isPend(t)?'':ledDate(t.date)}</span>`,
         product:prodTag(t),
         party:`<span class="lparty">${ID(t.who)}</span>${ledAttr(t)}`})
@@ -13448,7 +13529,7 @@ function ifrsPanel(){
      result rather than the title alone. The h2 became the summary. The date it carried is the
      desk's own as-of and is on the header already; "movement costs at today's rates" is the one
      thing here that the P&L above deliberately does NOT do, so that half stays. */
-  return `<details class="obsec" style="margin-top:18px"><summary>Statement of profit or loss <span class="tag buychip">IFRS</span> <span class="q">whole book since it opened, movement costs at today's rates</span><span class="ct">${fmt0(F.opProfit)} operating</span></summary>
+  return `<details class="obsec" style="margin-top:18px"><summary>Statement of profit or loss <span class="tag salt-status buychip">IFRS</span> <span class="q">whole book since it opened, movement costs at today's rates</span><span class="ct">${fmt0(F.opProfit)} operating</span></summary>
   <div class="card">
     <table class="fintab istmt"><tbody>
       ${L('Revenue',F.rev,{ref:'IFRS 15',n:`${units(F.soldUnits)} recognised on transfer of control`})}
@@ -13887,7 +13968,7 @@ function costPanel(){
 
   const stack=s0.perOrderParts.map(p=>`<tr><td class="l">${p.k}</td>
     <td>${p.rm!=null?fmt(p.rm):'<span style="color:var(--crim)">not measured</span>'}</td>
-    <td class="l" style="color:var(--mut)">${esc((COST_BOOK.perOrder[p.k.toLowerCase()]||{}).what||'')}${p.assumed?' <span class="tag prov">assumed, never observed</span>':''}</td></tr>`).join('');
+    <td class="l" style="color:var(--mut)">${esc((COST_BOOK.perOrder[p.k.toLowerCase()]||{}).what||'')}${p.assumed?' <span class="tag salt-status salt-status--dashed prov">assumed, never observed</span>':''}</td></tr>`).join('');
   const monthly=Object.keys(COST_BOOK.perMonth).map(k=>{const m=COST_BOOK.perMonth[k];
     return `<tr><td class="l">${k.charAt(0).toUpperCase()+k.slice(1)}</td>
       <td>${m.rm!=null?fmt(m.rm):'<span style="color:var(--crim)">not measured</span>'}</td>
@@ -15306,7 +15387,7 @@ function renderReveal(){
   }).join('');
   /* 12 Sep 2026: lit only while a name is actually showing, which is namesShown()'s question. On the
      cloud desk `revealed` defaults to true with every name still sealed, so the key glowed all day. */
-  el.innerHTML=`<button id="idBtn" class="fabtn idfix${(idOpen||namesShown())?' on':''}" type="button" title="Names &amp; IDs" aria-label="Names and IDs">${key}</button>
+  el.innerHTML=`<button id="idBtn" class="fabtn salt-orb idfix${(idOpen||namesShown())?' on salt-orb--on':''}" type="button" title="Names &amp; IDs" aria-label="Names and IDs">${key}</button>
   <div id="idBackdrop" style="display:${idOpen?'block':'none'};position:fixed;inset:0;background:rgba(5,8,10,.55);z-index:79"></div>
   <div id="idPanel" style="display:${idOpen?'block':'none'};position:fixed;top:0;right:0;height:100dvh;padding-top:var(--safetop);padding-bottom:var(--safebot);width:min(430px,92vw);z-index:80;text-align:left;overflow-y:auto;background:linear-gradient(180deg,var(--card2),var(--card)),var(--bg0);border-left:1px solid var(--line);padding:15px 16px;box-shadow:-18px 0 40px rgba(0,0,0,.45)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.3px">Names &amp; IDs</div><button id="idClose" aria-label="Close" style="background:none;border:none;color:var(--dim);font-size:19px;line-height:1;cursor:pointer">&times;</button></div>
@@ -16719,7 +16800,7 @@ function apBadge(){try{const b=document.querySelector('.tab[data-s="enter"]');if
      it in words, because a punctuation mark is not a signal on its own. */
   const unread=cloudMode()&&(apNeedKey||!!apUnread);
   if(!n&&!unread){if(c)c.remove();return;}
-  if(!c){c=document.createElement('span');c.className='navct';b.appendChild(c);}
+  if(!c){c=document.createElement('span');c.className='navct salt-rail__count';b.appendChild(c);}
   c.textContent=unread?(n?n+'?':'?'):n;
   c.title=unread?'The drafts could not be read, so this count is a floor and not a total.':'';
 }catch(e){
@@ -16739,7 +16820,7 @@ function renderQueue(){const b=document.getElementById('queueBox');if(!b)return;
   if(!txq.length){b.innerHTML=cleared+stuck;return;}
   b.innerHTML=cleared+stuck;b.innerHTML+='<div style="margin-top:12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold)">Live in the desk, awaiting commit ('+txq.length+'), '+qLabel()+'</div>'
     +'<div class="dsc" style="margin-top:5px">These are already folded into every figure on the desk. Undo removes an entry and rebuilds; once committed it is in the ledger and can only be reversed by a new entry.</div>'
-    +'<table style="margin-top:6px"><thead><tr><th class="l">Entry</th><th>Type</th><th>Party</th><th>Qty</th><th>RM</th><th>Status</th><th></th></tr></thead><tbody>'+txq.map(q=>`<tr><td class="l" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.raw||'')}</td><td>${q.type}</td><td class="mono">${esc(q.party)||'&mdash;'}</td><td>${q.qty!=null?q.qty+'unit':'&mdash;'}</td><td>${q.total!=null?fmt0(q.total):'&mdash;'}</td><td><span class="tag ${q.status==='paid'?'paid':q.status==='inkind'?'inkind':q.status==='modified'?'mod':q.status==='cancelled'?'def':q.status==='count'?'inkind':'unpaid'}">${({paid:'Paid',unpaid:'Unpaid',partial:'Partial',inkind:'In-Kind',modified:'Modified',cancelled:'Cancelled',credit:'Unpaid',count:'Count'})[q.status]||q.status}</span></td><td><button class="ubtn" onclick="undoEntry('${esc(q.at)}')">Undo</button></td></tr>`).join('')+'</tbody></table>';}
+    +'<table style="margin-top:6px"><thead><tr><th class="l">Entry</th><th>Type</th><th>Party</th><th>Qty</th><th>RM</th><th>Status</th><th></th></tr></thead><tbody>'+txq.map(q=>`<tr><td class="l" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.raw||'')}</td><td>${q.type}</td><td class="mono">${esc(q.party)||'&mdash;'}</td><td>${q.qty!=null?q.qty+'unit':'&mdash;'}</td><td>${q.total!=null?fmt0(q.total):'&mdash;'}</td><td><span class="tag salt-status ${q.status==='paid'?'paid':q.status==='inkind'?'inkind':q.status==='modified'?'mod':q.status==='cancelled'?'def':q.status==='count'?'inkind':'unpaid'}">${({paid:'Paid',unpaid:'Unpaid',partial:'Partial',inkind:'In-Kind',modified:'Modified',cancelled:'Cancelled',credit:'Unpaid',count:'Count'})[q.status]||q.status}</span></td><td><button class="ubtn" onclick="undoEntry('${esc(q.at)}')">Undo</button></td></tr>`).join('')+'</tbody></table>';}
 
 /* ============ CHARTS for tracker tabs ============ */
 /* Chart.js is vendored at assets/chart.umd.js and loaded ON DEMAND (v176), never from a
@@ -17720,9 +17801,9 @@ function resellerCard(r){
   /* v365: was ${s.date} with no fallback, so a never-dated row (two real cancelled deals,
      "never dated, paid or handed over" by their own notes) printed the literal word
      "undefined" instead of a date. Same fallback every other date in this file uses. */
-  const buyRows=buys.map(s=>{const si=txStat(s);return `<tr><td class="l">${s.date||'undated'}</td><td>${units(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag ${si.cls}">${si.order}</span></td></tr>`;}).join('');
+  const buyRows=buys.map(s=>{const si=txStat(s);return `<tr><td class="l">${s.date||'undated'}</td><td>${units(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag salt-status ${si.cls}">${si.order}</span></td></tr>`;}).join('');
   const resells=sales.filter(s=>s.total!=null&&s.rev==='R2'&&ownerOf(s.customer)===r.id);
-  const resellRows=resells.map(s=>{const si=txStat(s);return `<tr><td class="l">${s.date}</td><td class="mono">${ID(s.downstream||s.customer)}</td><td>${units(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag ${si.cls}">${si.order}</span></td></tr>`;}).join('');
+  const resellRows=resells.map(s=>{const si=txStat(s);return `<tr><td class="l">${s.date}</td><td class="mono">${ID(s.downstream||s.customer)}</td><td>${units(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag salt-status ${si.cls}">${si.order}</span></td></tr>`;}).join('');
   const refRows=r.referrals.map(c=>`<tr><td class="l mono">${ID(c)}</td><td>${fmt0(firstOrderOf(c))}</td></tr>`).join('');
   /* v401: THESE OPEN SHUT NOW, and so does the card around them. Five associates with three
      ledgers each shipped seventeen open sections and 9,795px of Network on a 375px screen,
@@ -17813,17 +17894,17 @@ function tabNetwork(){
     <div class="cardh">Three streams, one associate</div>
     <div class="netmap">
       <div class="nstream nv">
-        <div class="nsh"><span class="tag pendingt">R1</span> Bought from you</div>
+        <div class="nsh"><span class="tag salt-status pendingt">R1</span> Bought from you</div>
         <div class="nsw">His own orders, priced.</div>
         <div class="nswhy">A partner who is also a buyer. Pooled with R2 and R3 into one count of margin, <b>${rewardRuleTxt(PROD,'associate')}</b>.</div>
       </div>
       <div class="nstream ng">
-        <div class="nsh"><span class="tag paid">R2</span> Sold for you</div>
+        <div class="nsh"><span class="tag salt-status paid">R2</span> Sold for you</div>
         <div class="nsw">Onward sales he runs, booked to him; the end buyer has no separate line.</div>
         <div class="nswhy">Revenue you would not have made alone. Booked to their -R account and pooled into the same count, since it cannot be told from their own buying.</div>
       </div>
       <div class="nstream ni">
-        <div class="nsh"><span class="tag" style="background:rgba(228,233,236,.16);color:var(--ice)">R3</span> Brought you</div>
+        <div class="nsh"><span class="tag salt-status" style="background:rgba(228,233,236,.16);color:var(--ice)">R3</span> Brought you</div>
         <div class="nsw">First-order value of each new customer they introduce.</div>
         <div class="nswhy">Network growth. For the reward, the margin on every order of each customer they introduced counts in the same pool, one level only, against a hurdle ${rewardR3Hurdle(PROD)} times higher, since each of those orders also counts for its own customer.</div>
       </div>
@@ -18651,7 +18732,7 @@ function wbState(total,qty,cash,unitsD,flags){
   const st=txStat(t); return {pay:st.pay,deliv:st.deliv,state:st.order,cls:st.cls};
 }
 const wbPayCls=p=>p==='Paid'||p==='Delivered'?'paid':(p==='Unpaid'||p==='Undelivered')?'unpaid':'open';
-const wbPill=(l,c)=>`<span class="tag ${c}">${l}</span>`;
+const wbPill=(l,c)=>`<span class="tag salt-status ${c}">${l}</span>`;
 const lbl0=()=>'font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim)';
 const wbErr=t=>`<span class="wbmsg wbmsg-err">${t}</span>`;
 const wbWarn=t=>`<span class="wbmsg wbmsg-warn">${t}</span>`;
@@ -18975,7 +19056,7 @@ function tabProductQuote(){
     <div class="card"><div class="dsc">No supply quote is recorded for ${esc(P.name.toLowerCase())}. Add one to <b>QUOTES</b> and this panel fills in.</div></div>`;
   const L=ladderCheck(qt.tiers), sum=prodSummary(PROD);
   const sups=[...new Set(pPurch(PROD).map(x=>x.supplier))];
-  return `<h2 style="margin-top:22px">${esc(P.name)} supply <span class="tag buychip">Buying</span> <span class="sub" style="font-weight:400">${ID(qt.supplier)}, ${esc(qt.quotedOn)}</span> <span class="rule"></span></h2>
+  return `<h2 style="margin-top:22px">${esc(P.name)} supply <span class="tag salt-status buychip">Buying</span> <span class="sub" style="font-weight:400">${ID(qt.supplier)}, ${esc(qt.quotedOn)}</span> <span class="rule"></span></h2>
   <div class="card">
     <table><thead><tr><th class="l">Lot</th><th>Cash</th><th>Rate</th><th class="l">Note</th></tr></thead><tbody>
       ${L.rows.map(r=>{const bad=L.rising.some(x=>x.to.q===r.q),bt=L.beaten.find(b=>b.q===r.q);
@@ -19512,10 +19593,10 @@ function tabPricing(){
          Tier 1 in the other branch, which on a two-tier board leaves the reader to guess which
          column the tag is about. */
       const badOver=!!(L.tier1&&L.tier1.over>0.009);
-      const tag=badOver?' <span class="tag def">Tier 1 above Tier 2</span>'
-        :badT1&&badT2?' <span class="tag def">both under floor</span>'
-        :badT2?' <span class="tag def">'+(T1on?'Tier 2 under floor':'under floor')+'</span>'
-        :badT1?' <span class="tag def">Tier 1 under floor</span>':'';
+      const tag=badOver?' <span class="tag salt-status def">Tier 1 above Tier 2</span>'
+        :badT1&&badT2?' <span class="tag salt-status def">both under floor</span>'
+        :badT2?' <span class="tag salt-status def">'+(T1on?'Tier 2 under floor':'under floor')+'</span>'
+        :badT1?' <span class="tag salt-status def">Tier 1 under floor</span>':'';
       return `<tr${badT1||badT2||badOver?' style="background:rgba(212,105,76,.07)"':''}><td class="l">${units(r.q)}${r.off?'<div class="iref">off the board</div>':''}`
       +tag+`</td>`
       +`<td class="mono" style="color:var(--dim)">${fmt0(L.cogs)}</td>`
@@ -19678,7 +19759,7 @@ function tabPricing(){
   </div>
 
   ${(()=>{const c=pxCost();if(!c.lotQty)return '';
-    const r=(lab,v,tag,n)=>`<tr><td class="l">${lab}<div class="iref">${esc(n||'')}</div></td><td class="mono">${fmt(v)}</td><td><span class="tag ${tag==='inventory'?'paid':'prov'}">${tag==='inventory'?'Inventory':'Period'}</span></td></tr>`;
+    const r=(lab,v,tag,n)=>`<tr><td class="l">${lab}<div class="iref">${esc(n||'')}</div></td><td class="mono">${fmt(v)}</td><td><span class="tag salt-status ${tag==='inventory'?'paid':'prov'}">${tag==='inventory'?'Inventory':'Period'}</span></td></tr>`;
     const LK=priceLockState(PROD);
     /* ============ THE CHIP HAD THREE STATES AND TWO OF THEM COULD NOT RENDER ============
        PRICE_LOCK_ON has been false since the cost was unlocked, so pxCost().locked is always
@@ -19688,7 +19769,7 @@ function tabPricing(){
        Repriced and gave the reader NO sign the figures below were a simulation. Measured on
        both books, override on and off. The order is now sim, then lock, then live, so the
        state that changes what you are looking at is the one that shows. */
-    const chip=c.sim?`<span class="tag prov">Simulated</span>`:c.locked?`<span class="tag paid">Frozen</span>`:`<span class="tag def">Live</span>`;
+    const chip=c.sim?`<span class="tag salt-status salt-status--dashed prov">Simulated</span>`:c.locked?`<span class="tag salt-status paid">Frozen</span>`:`<span class="tag salt-status def">Live</span>`;
     return `<h2 style="margin-top:22px">What a unit costs, and what it returns ${chip} <span class="sub" style="font-weight:400">${c.sim?'an override is in force':c.locked?`held since ${LK.lock.lockedOn}`:'moves with the lot'}</span> <span class="rule"></span></h2>
     <div class="card"><table class="fintab istmt"><tbody>
       <!-- round 5, his call 2: the figure is the trailing 30-day average now, and this caption
@@ -19705,7 +19786,7 @@ function tabPricing(){
            drift from the engine and it stays right under a lock, where the freight is frozen. */
         const ls=pPurch(PROD).filter(x=>poLive(x)&&x.qty>0&&x.freight!=null);
         return ls.length?`freight typed on ${ls.length} lot${ls.length===1?'':'s'}, per unit over the replacement window (v503)`:'no lot carries a typed freight yet, so nothing is charged (v503)';})())}
-      <tr class="tot"><td class="l"><b>Landed</b><div class="iref">what the balance sheet carries</div></td><td class="mono"><b>${fmt(c.landed)}</b></td><td><span class="tag paid">Inventory</span></td></tr>
+      <tr class="tot"><td class="l"><b>Landed</b><div class="iref">what the balance sheet carries</div></td><td class="mono"><b>${fmt(c.landed)}</b></td><td><span class="tag salt-status paid">Inventory</span></td></tr>
       ${r('Non-revenue '+PRODUCTS[PROD].name.toLowerCase(),c.sampleLoad,'period',pxOver.shrink!=null?`${(c.shrink*100).toFixed(1)}%, your override`:`${(c.shrinkRaw*100).toFixed(1)}% of what is bought never sells, ${(SHRINK_ATTRIB*100)}% of it charged`)}
       ${r('Delivery and packaging',c.txn,'period',(()=>{const s=delShare(PROD);return `${fmt0(COST_BASIS.txnPerDelivery.rm)} on ${Math.round(s.v*100)}% of orders (${s.measured?s.delivered+' of '+s.said+' that say':'stated, no row says yet'}), over ${units(c.avgDel)}, the average order`;})())}
       <tr class="tot"><td class="l"><b>Pricing basis</b><div class="iref">what a price has to return</div></td><td class="mono"><b>${fmt(c.eff)}</b></td><td></td></tr>
@@ -19814,7 +19895,7 @@ function tabPricing(){
     const boardRows=_sizes.filter(s=>_by[s]).map(s=>{const r=_by[s];
       const pk=+(r.perUnit-c.eff).toFixed(2);
       const supp=cap!=null&&s>cap+0.009;
-      return `<tr${supp?' style="opacity:.42"':''}><td class="l">${units(s)}${supp?' <span class="tag def">not sold</span>':''}</td>
+      return `<tr${supp?' style="opacity:.42"':''}><td class="l">${units(s)}${supp?' <span class="tag salt-status def">not sold</span>':''}</td>
         <td>${fmt0(r.total)}</td><td>${fmt(r.perUnit)}</td>
         <td style="color:var(--dim)">${fmt(c.eff)}</td>
         <td style="color:${pk<=0?'var(--crim)':pk<10?'var(--gold)':'var(--grn)'}"><b>${fmt(pk)}</b></td>
@@ -19840,7 +19921,7 @@ function tabPricing(){
       <td style="color:${none?'var(--dim)':b.pkEff<0?'var(--crim)':b.pkEff<10?'var(--gold)':'var(--grn)'}"><b>${cell(b.pkEff)}</b></td>
       <td style="color:${none?'var(--dim)':b.profEff<0?'var(--crim)':'var(--ink)'}">${none?'<span style="color:var(--dim)">no trade</span>':fmt0(b.profEff)}</td>
       <td>${none?'<span style="color:var(--dim);font-size:11px">nothing sold in this band</span>'
-        :b.losers.length?`<span class="tag def">${b.losers.length} under cost</span>`:'<span class="tag paid">all clear</span>'}</td></tr>`;}).join('');
+        :b.losers.length?`<span class="tag salt-status def">${b.losers.length} under cost</span>`:'<span class="tag salt-status paid">all clear</span>'}</td></tr>`;}).join('');
     return `<div class="card"><div class="cardh">On the board today <span class="sub">what a fresh quote would earn per unit</span></div>
     <table><thead><tr><th class="l">Lot</th><th>Quote</th><th>RM/unit</th><th>Cost/unit</th><th>Profit/unit</th><th>Profit on the lot</th><th>vs ${one?units(one.q):'the smallest lot'}</th></tr></thead><tbody>${boardRows}</tbody></table>
     <!-- v385: was hardcoded to "a 12.5 unit lot" and "a single unit", both salt sizes. On the oil
@@ -19914,7 +19995,7 @@ function tabPricing(){
       const sm=marg(bandsNow.small.kg,bandsNow.small.perUnit),
             md=marg(bandsNow.mid.kg,bandsNow.mid.perUnit),
             bk=marg(C.unitsEx,C.perUnitEx);
-      return `<tr${L.now?' style="background:rgba(197,160,89,.06)"':''}><td class="l">${L.pct}%${L.now?' <span class="tag prov">now</span>':` <span style="color:var(--dim)">${esc(L.label)}</span>`}</td>
+      return `<tr${L.now?' style="background:rgba(197,160,89,.06)"':''}><td class="l">${L.pct}%${L.now?' <span class="tag salt-status salt-status--dashed prov">now</span>':` <span style="color:var(--dim)">${esc(L.label)}</span>`}</td>
         <td>${fmt(eff)}</td>
         <td style="color:var(--grn)">${cell(sm)}</td><td style="color:var(--grn)">${cell(md)}</td>
         <td style="color:${(bk!=null&&bk<0)?'var(--crim)':'var(--grn)'}"><b>${cell(bk)}</b></td>
@@ -19940,7 +20021,7 @@ function tabPricing(){
       if(s.none)return `<tr style="opacity:.5"><td class="l">${lab}</td><td>0</td><td>&mdash;</td>`
         +`<td colspan="2" style="color:var(--dim)">nothing sold in this segment</td></tr>`;
       const col=s.thin?'var(--gold)':s.m!=null&&s.m<floor?'var(--crim)':tone;
-      return `<tr><td class="l">${lab}${s.thin?` <span class="tag prov">${s.n} order${s.n===1?'':'s'}</span>`:''}</td>`
+      return `<tr><td class="l">${lab}${s.thin?` <span class="tag salt-status salt-status--dashed prov">${s.n} order${s.n===1?'':'s'}</span>`:''}</td>`
         +`<td>${s.n}</td><td>${units(s.k)}</td><td${s.thin?' style="color:var(--gold)"':''}>${fmt(s.p)}/unit</td>`
         +`<td style="color:${col}">${s.m==null?'&mdash;':s.m.toFixed(1)+'%'}</td></tr>`;};
     return `<div class="card"><table><thead><tr><th class="l">Segment</th><th>Orders</th><th>Unit</th><th>Realised</th><th>Margin at ${fmt(c.eff)}/unit</th></tr></thead><tbody>
@@ -22068,7 +22149,7 @@ function navCounts(){
   const put=(sel,n)=>{const b=document.querySelector('.tab[data-s="'+sel+'"]');if(!b)return;
     let c=b.querySelector('.navct');
     if(!n){if(c)c.remove();return;}
-    if(!c){c=document.createElement('span');c.className='navct';b.appendChild(c);}
+    if(!c){c=document.createElement('span');c.className='navct salt-rail__count';b.appendChild(c);}
     c.textContent=n;};
   put('money',openN);
   /* v385: the Enter badge has ONE writer, and it is not this one. planN was computed here
@@ -22095,11 +22176,11 @@ function railSubs(){
     let d=t.nextElementSibling;
     /* v622: a destination with one page lists nothing under itself, which would be the second level
        naming the first again; its open tab closes its own block instead (.solo) */
-    const solo=V.parts.length===0; t.classList.toggle('solo',solo);
+    const solo=V.parts.length===0; t.classList.toggle('solo',solo);t.classList.toggle('salt-rail__tab--solo',solo);
     if(solo){if(d&&d.classList.contains('subs'))d.remove();return;}
-    if(!d||!d.classList.contains('subs')){d=document.createElement('div');d.className='subs';t.parentNode.insertBefore(d,t.nextSibling);}
+    if(!d||!d.classList.contains('subs')){d=document.createElement('div');d.className='subs salt-rail__parts';t.parentNode.insertBefore(d,t.nextSibling);}
     const cur=partOf(V.id);
-    d.innerHTML=[V.lead].concat(V.parts).map(p=>`<button class="sub${(V.id===curTab&&p===cur)?' on':''}" data-s="${p}" title="${esc(PART_Q[p]||'')}">${esc(TAB_LABEL[p]||p)}</button>`).join('');});
+    d.innerHTML=[V.lead].concat(V.parts).map(p=>`<button class="sub salt-rail__part${(V.id===curTab&&p===cur)?' on':''}" aria-current="${(V.id===curTab&&p===cur)?'page':'false'}" data-s="${p}" title="${esc(PART_Q[p]||'')}">${esc(TAB_LABEL[p]||p)}</button>`).join('');});
 }
 function render(){recompute();
   const V=VIEWS.find(v=>v.id===curTab); if(!V)return;
@@ -22139,7 +22220,7 @@ function switchTab(s){
      view's own button takes it back to its lead. */
   const view=VIEW_OF[s]||'today', V=VIEWS.find(v=>v.id===view);
   VIEW_PART[view]=(view!==s)?s:V.lead;
-  curTab=view;document.body.setAttribute('data-sec',view);[...document.querySelectorAll('.tab')].forEach(t=>t.classList.toggle('on',t.dataset.s===view));[...document.querySelectorAll('.sec')].forEach(x=>x.classList.toggle('on',x.id==='sec-'+view));render();
+  curTab=view;document.body.setAttribute('data-sec',view);[...document.querySelectorAll('.tab')].forEach(t=>{const on=t.dataset.s===view;t.classList.toggle('on',on);t.setAttribute('aria-current',on?'page':'false');});[...document.querySelectorAll('.sec')].forEach(x=>x.classList.toggle('on',x.id==='sec-'+view));render();
   if(window.__navClose)window.__navClose();
   const addr=(VIEW_PART[view]===V.lead)?view:VIEW_PART[view];
   curAddr=addr;
@@ -22265,7 +22346,7 @@ document.getElementById('tabs').onclick=e=>{const s=e.target.dataset.s;if(s)swit
   if(vc)vc.textContent=(evolution[0]?evolution[0].v:'');
   document.getElementById('meta').innerHTML=
     /* 12 Sep 2026: one quiet line under the name, the status dot first, then the as-at date and the stamp */
-    '<div class="metarow"><span id="deskRole"></span><span class="dhasat">'+asAt+'</span>'
+    '<div class="metarow salt-deskbar__meta"><span id="deskRole"></span><span class="dhasat">'+asAt+'</span>'
       +'<span class="dhupd">updated '+stamp+'</span></div>';
 })();renderReveal();renderRole();
 /* 12 Sep 2026: Today fills the field it sits in and says so to the field's own listeners; a click

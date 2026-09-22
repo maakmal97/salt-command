@@ -1,9 +1,10 @@
-/* The brand faces, SELF-HOSTED. Google Fonts' own latin subsets, fetched once on 22 Sep 2026 and
-   kept in fonts/ with their OFL licences, for a consumer whose CSP is self-only (the desk, the
-   Counter, QR Command): it serves fonts/ beside its page and carries this file. fonts.css is the
-   remote alternative for a page that may load off another origin. Both are variable fonts, and the
-   weight ranges below are the files' own, so a 700 resolves to the face and is never synthesised.
-   Symbols outside the latin range (a tick, a triangle) fall to the system face, as they always did. */
+/* THE BRAND FACES, SELF-HOSTED, AND THE ONLY WAY THEY LOAD (his instruction of 22 Sep 2026: no Google
+   Fonts). The files are Google's own latin subsets, fetched once and kept in src/fonts/ beside this
+   file with their OFL licences; nothing here loads off another origin. A page that LINKS this file
+   resolves fonts/ against it; a page that INLINES these rules (the desk, the Counter, QR Command)
+   serves fonts/ beside itself. Both are variable fonts and the weight ranges below are the files'
+   own, so a 700 resolves to the face and is never synthesised. Symbols outside the latin range (a
+   tick, a triangle) fall to the system face, as they always did. */
 @font-face {
   font-family: 'Fraunces';
   font-style: normal;

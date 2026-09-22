@@ -1,5 +1,16 @@
 [
  {
+  "v": "v790",
+  "d": "22 Sep 2026",
+  "t": "THE RAIL, THE BAR AND THE TAGS DRAW FROM THE SYSTEM'S RECIPES, AND NOTHING LOADS OFF GOOGLE FONTS",
+  "n": [
+   "<b>HIS INSTRUCTION OF 22 SEP 2026: no Google Fonts, complete the work, one fold at a time, the rail, the bar and the tags first.</b> v784 put the tiles, findings, pills, parts strip, version and aurora onto the design system's recipes. The rail, the bar with its orbs, and the state tags follow here: each recipe first synced to the desk's measured values in <code>Code\\salt-ds</code> (v1.2.1, which also carries the recipes the next folds will take), then carried by class in the markup, the layer keeping bindings and geometry only.",
+   "<b>TWO MECHANISMS CARRY THE DESK'S OWN STATE INTO A RECIPE WITHOUT A SECOND RULE.</b> A state word binds to the chip's one tone variable (<code>.tag.paid{--salt-status-tone:...}</code>), so 38 tags and the ledger's own variants moved with eight one-line bindings; the open destination and its open page are read off <code>aria-current</code>, which the recipes honour beside their own modifier classes, so the desk's <code>.on</code> and <code>.solo</code> stay where its script and its suite read them. The rail's width and stickiness live in the recipe under the desk's own media rule, and on a touch phone the drawer's geometry stays the page's, measured: fixed, hidden until the button, the pane fill, the veil. The one base rule that outranked the recipe, the brand-hiding media rule, moved into the layer, where it wins.",
+   "<b>THE BAR IS THE RECIPE'S FRAME.</b> Glass with the hairline at the rail's offset, the wordmark in the display face, the quiet mono line, the version and the orbs, all from the system; the desk binds only where it sits (<code>--salt-bar-top</code>) and keeps its own cap once the page scrolls. The orbs are one recipe in three states: bare in the bar, raised over the page, lit as the way back to the top. Measured on the served build at 1180px and 375px against the recipes and against the previous build: the phone's bar is the same 105px it was.",
+   "<b>NO GOOGLE FONTS ANYWHERE.</b> The design system's remote stylesheet is gone, its brand plate links the local one, its files moved beside it into <code>src/fonts/</code>, its dist and its Claude Design bundle carry them, and both sync tools pull from the new home. Three suite sections were re-pointed from the layer to the recipes; one new section holds 8 assertions, each proved red on its own; the earlier sections still stand. Ghosts, fields, tables, tiers, product bands and tags, actions and journal entries stay on the layer, each a fold of its own."
+  ]
+ },
+ {
   "v": "v789",
   "d": "22 Sep 2026",
   "t": "ENTER, REDESIGNED: TILES FOR BOOKS, A TYPED PARTY, A DATE THAT STEPS, AND A SECOND BOOK",

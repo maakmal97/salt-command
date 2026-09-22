@@ -9860,26 +9860,27 @@ await (async () => {
      any one of them alone is what failed. Colour and type are decided in design/desk.css and
      synced into the master (hard rule 6), so they are read there; the directory is markup and is
      read in the master. Every one was proved red by putting the v570 rule back. */
-  const railCss = readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  /* 22 Sep 2026: the rail is the system's recipe, so its dress is read there */
+  const railCss = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
   const rule = (sel) => {
-    const at = railCss.indexOf("\n" + sel + "{");
-    return at < 0 ? null : railCss.slice(at + sel.length + 2, railCss.indexOf("}", at));
+    const at = railCss.indexOf("\n" + sel + " {");
+    return at < 0 ? null : railCss.slice(at + sel.length + 3, railCss.indexOf("}", at));
   };
   /* v622 took the group headings out of the rail and v625 took PRODUCT with the switch, so the heading half of
      this section went with them. What stays is the destination's own dress, which the headings were set against. */
-  const tab = rule(".tab");
+  const tab = rule(".salt-rail__tab");
   ok(!!tab, "the layer states the rail's tab in one rule");
-  ok(/text-transform:none/.test(tab), "the tab is sentence case");
-  ok(/color:var\(--salt-mist-light\)/.test(tab), "the tab rests at mist-light");
+  ok(/text-transform: none/.test(tab), "the tab is sentence case");
+  ok(/color: var\(--salt-mist-light\)/.test(tab), "the tab rests at mist-light");
   ok(/padding:[^;]*\s12px[;}]/.test(tab), "every destination is inset 12px");
 
   /* THE WIDTH IS THE STANDING RAIL'S ONLY. This layer's bare .rail carries no media query and sits
      after v371's drawer block at the same specificity, so from v472 to 11 Sep it silently held
      the phone drawer at the desk's rail width instead of min(272px,100vw - 28px). Since v684 the
      rail stands on the wide desk and on any screen that is not a touch one. */
-  ok(/@media\(min-width:861px\),not all and \(pointer:coarse\)\{\.rail\{width:\d+px;flex:0 0 \d+px;\}\}/.test(railCss),
+  ok(/@media \(min-width: 861px\), not all and \(pointer: coarse\) \{\s*\.salt-rail \{ width: \d+px; flex: 0 0 \d+px;/.test(railCss),
      "the rail's width is scoped to wherever it stands, never the drawer");
-  const bare = rule(".rail");
+  const bare = rule(".salt-rail");
   ok(bare !== null && !/width:/.test(bare), "and the unscoped .rail sets no width, so the drawer keeps its own");
 
   /* THE DIRECTORY (his instruction, 11 Sep 2026): Position and Trading were one group, Current. v622 took the
@@ -10623,7 +10624,7 @@ await (async () => {
      stamp sit under them as one quiet line, and the gap above the bar is capped once it sticks. */
   ok(/idfix\$\{\(idOpen\|\|namesShown\(\)\)/.test(mH),
     "the key in the bar is lit only while a name is actually showing, not whenever the vault is open");
-  ok(/<div class="metarow"><span id="deskRole">/.test(mH),
+  ok(/<div class="metarow salt-deskbar__meta"><span id="deskRole">/.test(mH),
     "the role, the as-at and the stamp are one line under the name, not three rows of pills");
   ok(/body\.dbstuck \.deskbar\{box-shadow:/.test(cH),
     "and once the page scrolls, the gap above the bar is capped");
@@ -11452,8 +11453,8 @@ await (async () => {
   const m22 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
   const nav22 = m22.slice(m22.indexOf('<nav class="rail"'), m22.indexOf("</nav>"));
   ok(!/class="grouplbl"/.test(nav22), "no heading stands over the destinations in the rail");
-  const css22 = readFileSync(join(REPO, "design", "desk.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
-  ok(!/\.grouplbl/.test(css22) && /\.tab\.on\.solo\{[^}]*border-radius:var\(--salt-radius-sm\);[^}]*border-bottom-color:var\(--salt-line\)/.test(css22),
+  const css22 = (readFileSync(join(REPO, "design", "desk.css"), "utf8") + readFileSync(join(REPO, "design", "salt-ds.css"), "utf8")).replace(/\/\*[\s\S]*?\*\//g, "");
+  ok(!/\.grouplbl/.test(css22) && /\.salt-rail__tab--solo\.salt-rail__tab--on, \.salt-rail__tab--solo\[aria-current="page"\] \{[^}]*border-radius: var\(--salt-radius-sm\);[^}]*border-bottom-color: var\(--salt-line\)/.test(css22),
     "no rule styles a heading that is gone, and an open destination with one page draws its whole block");
   const { openMaster: om22 } = await import("../tools/payload.mjs");
   const { w: w22 } = await om22();
@@ -19291,6 +19292,38 @@ await (async () => {
   ok(/belong to one order/.test(String(giftBoth.msg)), "and says why: " + String(giftBoth.msg).slice(0, 90));
 
   try { w.close(); } catch (e) { }
+})();
+
+section("22 Sep 2026: the rail, the bar and the tags draw from the system's recipes");
+await (async () => {
+  /* HIS INSTRUCTION OF 22 SEP 2026, one fold at a time: the rail, the bar and its orbs, and the tags follow
+     the tiles onto the system's recipes, each recipe first synced to the desk's measured values. The markup
+     carries the system's class beside the desk's, the layer keeps bindings and geometry, and the one base
+     rule that outranked a recipe moved into the layer. Each assertion was proved red by mutation, one at a
+     time. */
+  const mR = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const dR = readFileSync(join(REPO, "design", "desk.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const sR = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const bodyR = mR.slice(mR.indexOf("<body"));
+  const baseR = mR.slice(mR.indexOf("<style>"), mR.indexOf("/* ==== DESIGN base:"));
+  const nR = (s, re) => (s.match(re) || []).length;
+  const tagsR = nR(bodyR, /class="tag(?=[" ])/g);
+  ok(tagsR > 30 && nR(bodyR, /class="tag salt-status(?=[" ])/g) === tagsR, "every state tag is the system's chip (" + tagsR + ")");
+  ok(!/\n\.tag\{/.test(dR) && /\.tag\.paid\{--salt-status-tone:var\(--salt-verdigris\);\}/.test(dR) && /\.salt-status \{[^}]*color: var\(--salt-status-tone\)/.test(sR),
+    "the layer binds the desk's words to the chip's one tone variable and states no chip of its own");
+  ok(/<nav class="rail salt-rail" id="tabs"/.test(bodyR) && nR(bodyR, /class="tab(?: on)? salt-rail__tab" data-s="/g) === 7 && /d\.className='subs salt-rail__parts'/.test(mR) && /class="sub salt-rail__part\$\{/.test(mR),
+    "the rail, its seven destinations and their parts are the system's");
+  ok(/t\.setAttribute\('aria-current',on\?'page':'false'\)/.test(mR) && /\.salt-rail__tab\[aria-current="page"\]/.test(sR) && /t\.classList\.toggle\('salt-rail__tab--solo',solo\)/.test(mR),
+    "the open destination is read from aria-current, and a lone one closes its own block");
+  ok(!/\n\.rail\{/.test(dR) && !/\n\.tab\{/.test(dR) && !/\n\.tab\.on\{/.test(dR) && !/\.subs \.sub\{/.test(dR) && /\.sub:not\(\.salt-rail__part\)\{/.test(dR),
+    "the layer states no rail, and the card subtitle's rule steps around the rail's parts");
+  ok(/@media \(min-width: 861px\), not all and \(pointer: coarse\) \{\s*\.salt-rail \{ width: 212px; flex: 0 0 212px; position: sticky;/.test(sR) && !/\n\.salt-rail \{[^}]*position: sticky/.test(sR),
+    "the rail stands and sticks only where it stands beside the page; on a phone the drawer's geometry is the page's");
+  ok(!/\.railbrand\{display:none;\}/.test(baseR) && /@media\(min-width:861px\),not all and \(pointer:coarse\)\{\.railbrand\{display:none;\}\}/.test(dR),
+    "the rule that hides the rail's brand beside the page lives in the layer, where it outranks the recipe");
+  ok(/<div class="deskbar salt-deskbar" id="deskbar">/.test(bodyR) && /class="dhname salt-deskbar__name"/.test(bodyR) && /class="fabtn orderbtn salt-orb salt-orb--raised"/.test(bodyR) && /class="totop salt-orb salt-orb--lit"/.test(bodyR)
+    && /--salt-bar-top:calc\(var\(--safetop\) \+ var\(--dbtop\)\)/.test(dR) && !/\n\.deskbar\{/.test(dR) && !/\n\.fabtn\{/.test(dR),
+    "the bar, its name and its orbs are the system's, sitting where the desk binds them, and the layer states none");
 })();
 
 section("The suite frees its windows: every section's body is its own async function");

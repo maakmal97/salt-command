@@ -61,7 +61,7 @@ export function fontFaceCss() {
    customer at the next sync, and the page's own layer decides only geometry. */
 const RECIPE_HEADS = [
   "/* ---- Pill button ---- */", "/* ---- Fields ---- */", "/* ---- Tab strip ---- */",
-  "/* ---- Status chip ---- */", "/* ---- Ghost button:", "/* ---- Status chip, the added tones ---- */",
+  "/* ---- Status chip:", "/* ---- Ghost button:", "/* ---- Status chip, the added tones ---- */",
 ];
 export function siteRecipes() {
   const css = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");

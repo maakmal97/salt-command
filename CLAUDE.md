@@ -109,8 +109,10 @@ decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; s
    variable and nothing else. A colour the layer needs is a token in `Code\salt-ds` first
    (`--salt-alarm`, `--salt-panel`, `--salt-mist-bright`, `--salt-line-strong`, `--salt-glass-hover`
    were lifted that day), pulled by `designsync --pull`; the layer writes no hex and no alpha of its
-   own. What stays on the layer is measured geometry the system has no recipe for yet: the rail, the
-   bar, tags, ghosts, fields and tables. The Counter takes the tokens and the five recipes it uses
+   own. The rail, the bar and its orbs and the tags followed the same day (his instruction: one fold at a
+   time), each recipe first synced to the desk's measured values. What stays on the layer for now is
+   measured geometry the recipes do not yet carry: ghosts, fields, tables, tiers, product bands and
+   tags, actions and journal entries, each a fold of its own. The Counter takes the tokens and the five recipes it uses
    (pill, ghost, field, tab strip, state chip) through `tools/stmt-style.mjs` as `SITE_RECIPES`; QR
    Command takes the tokens through its own `tools/designsync.mjs`. The suite holds all three.
 7. **Git: never from a mounted sandbox** (Cowork, agents on a mount that denies unlink): it

@@ -148,9 +148,10 @@ both names (`class="kpi salt-kpi"`, `salt-kpi__label`, `salt-insight`, `salt-pil
 those are gone, and the base layer's tile rules, which outranked the recipe on specificity, are
 retired. Two mechanisms carry the desk's own state into the recipe without a second rule: the
 tile's tone letters set `--salt-kpi-tone`, and the parts strip's open pill is read off
-`aria-selected`, which the recipe now honours beside its own modifier class. The rail, the bar,
-tags, ghosts, fields and tables stay on the layer: each carries measured geometry the system's
-recipe does not yet match, and moving them is a fold each.
+`aria-selected`, which the recipe now honours beside its own modifier class. The rail, the bar and its orbs and the tags followed the same day on his instruction, one fold at a time,
+each recipe first synced to the desk's measured values. Ghosts, fields, tables, tiers, product bands and
+tags, actions and journal entries stay on the layer: each carries measured geometry the recipe does not
+yet match, and moving them is a fold each.
 
 **The Counter takes the recipes it uses.** `tools/stmt-style.mjs` slices the pill, the ghost, the
 field, the tab strip and the state chip out of the vendored stylesheet into `SITE_RECIPES`, the

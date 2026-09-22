@@ -29,7 +29,7 @@ html[data-tod="register"],:root{
   --acc:var(--salt-brass);--accB:var(--salt-copper);
   --glass:var(--salt-glass);--glass-2:var(--salt-glass-hover);
   --brd:var(--salt-line);--brd-2:var(--salt-line-strong);
-  --wellbg:var(--salt-well);--veil:var(--salt-veil);--menu:var(--salt-slate);--menu-2:#16211f;
+  --wellbg:var(--salt-well);--veil:var(--salt-veil);--menu:var(--salt-slate);--menu-2:var(--salt-slate-light);
   --chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.4 1.6 6 6.2l4.6-4.6' fill='none' stroke='%23c5a059' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --ink-2:rgba(242,244,245,.66);--ink-3:rgba(242,244,245,.40);
   --r:var(--salt-radius-lg);--r-sm:var(--salt-radius-md);--pill:999px;--tap:var(--salt-tap);
@@ -131,15 +131,9 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .rtag{font-weight:500;letter-spacing:.14em;border-color:var(--salt-line-faint);}
 
 /* ---- 5. THE RAIL AND THE BAR ---- */
-.rail{background:var(--salt-glass);border:1px solid var(--salt-line);
-  border-radius:var(--salt-radius-lg);padding:18px 12px 14px;
-  box-shadow:var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);
-  -webkit-backdrop-filter:blur(28px);backdrop-filter:blur(28px);}
-.railbrand{gap:11px;padding:0 4px 14px;border-bottom:1px solid var(--salt-line-faint);margin-bottom:14px;}
+/* the rail is the system's .salt-rail (22 Sep 2026): its glass, its tabs, their parts, the wordmark; the
+   base layer's drawer geometry for a phone stands beneath it */
 .railbrand .mark{width:34px;height:34px;flex:0 0 auto;display:block;}
-.railtitle{font-family:var(--salt-font-display);font-weight:300;font-size:22px;letter-spacing:.04em;line-height:1;
-  background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;margin:0;}
-.kick{font-size:10px;font-weight:500;letter-spacing:.24em;color:var(--salt-brass);margin-top:4px;}
 /* ---- A DIVIDER IS NOT A DESTINATION (his instruction, 11 Sep 2026) ----
    v622, HIS INSTRUCTION OF 14 SEP 2026: THE RAIL IS TWO LEVELS, so the four group headings are gone, and v625
    moved the salt and oil switch onto the page with its PRODUCT label, so the rail carries no heading at all.
@@ -163,22 +157,9 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
              The brighter of the two is the one you can reach, which is the way round it was
              not. The heading is NOT dimmed to make the gap: mist on obsidian is 5.0:1 and
              anything under it fails small text, so the gap is made from above. ---- */
-.railgroup{margin-bottom:15px;}
-.tab{font-size:13px;font-weight:500;letter-spacing:.01em;text-transform:none;color:var(--salt-mist-light);
-  border-radius:var(--salt-radius-sm);padding:8px 10px 8px 12px;}
-/* the resting glass is white 3%, which is also .tab.on's ground, so hover read as selected and
-   selected read as nothing. Hover is its own step now, and the open tab keeps the 5b block. */
-.tab:hover{background:var(--salt-glass-hover);color:var(--salt-salt);}
-.tab.on{background:var(--salt-glass);border-color:var(--salt-line);color:var(--salt-salt);font-weight:500;box-shadow:none;}
-.navct{font-size:11px;font-weight:500;background:none;color:var(--salt-copper);padding:0;}
-.tab.on .navct{background:none;color:var(--salt-copper);}
-.subs{border-left-color:var(--salt-line-faint);}
-.sub{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--salt-mist);min-height:32px;}
-/* the rail's parts follow the tabs into sentence case; bare .sub above is ALSO the card
-   subtitle in every h2 and .cardh on the desk, so this is scoped and that one is untouched. */
-.subs .sub{font-size:11.5px;letter-spacing:.01em;text-transform:none;}
-.sub.on{color:var(--salt-salt);background:var(--salt-glass);}
-.railfoot{border-top-color:var(--salt-line-faint);}
+/* the tabs, their counts and the card subtitle: the subtitle's rule steps around the rail's parts,
+   which are the system's */
+.sub:not(.salt-rail__part){font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--salt-mist);min-height:32px;}
 .prodsw button{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding-left:12px;
   border-radius:var(--salt-radius-sm);border-color:var(--salt-line-faint);background:transparent;color:var(--salt-mist);}
 .prodsw button:hover{background:var(--salt-glass);}
@@ -200,20 +181,12 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 
 .chip{font-size:11px;letter-spacing:.05em;background:var(--salt-glass);border-color:var(--salt-line-faint);color:var(--salt-mist);}
 .chip b{color:var(--salt-salt);font-weight:500;}
-.fabtn{background:var(--salt-pane);border:1px solid var(--salt-line);color:var(--salt-brass);
-  box-shadow:inset 0 1px 0 var(--salt-highlight),0 10px 30px -12px rgba(0,0,0,.8);}
-.fabtn:hover{border-color:rgba(197,160,89,.55);}
-.fabtn:focus-visible{outline-color:var(--salt-brass);}
-.totop{color:var(--salt-brass);border-color:var(--salt-line);background:var(--salt-glass);
-  box-shadow:0 0 18px -4px rgba(197,160,89,.4),0 10px 30px -12px rgba(0,0,0,.8),inset 0 1px 0 var(--salt-highlight);}
+/* the orbs are the system's .salt-orb, raised over the page or lit as the way back to the top */
 .totop.on{animation:none;}
-.totop:hover{background:var(--salt-glass-hover);border-color:rgba(197,160,89,.6);
-  box-shadow:0 0 26px -2px rgba(197,160,89,.5),0 12px 34px -12px rgba(0,0,0,.85),inset 0 1px 0 var(--salt-highlight);}
-.totop:focus-visible{outline-color:var(--salt-brass);}
-.navveil{background:rgba(5,8,10,.55);}
-/* v684: the rail stands beside the page everywhere but a touch screen at 860px or below */
-@media(min-width:861px),not all and (pointer:coarse){.rail{width:212px;flex:0 0 212px;}}
-@media(max-width:860px) and (pointer:coarse){.rail{background:var(--salt-pane);}}
+.navveil{background:var(--salt-scrim);}
+/* v684: the rail stands beside the page everywhere but a touch screen at 860px or below; its width and
+   its stickiness are the recipe's, scoped the same way, and the bar carries the brand there */
+@media(min-width:861px),not all and (pointer:coarse){.railbrand{display:none;}}
 .exitbtn{font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;border-color:var(--salt-line-faint);color:var(--salt-mist);}
 .exitbtn:hover{color:var(--salt-ember);border-color:rgba(212,105,76,.55);background:rgba(212,105,76,.08);}
 .exitfix{background:var(--salt-pane);}
@@ -435,20 +408,20 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .ledwrap .lcard.s-cancelled{border-left-color:var(--salt-mist);opacity:.5;filter:saturate(.4);transition:opacity .13s,filter .13s;}
 .ledwrap .lcard.s-cancelled:hover,.ledwrap .lcard.s-cancelled:focus-within{opacity:.94;filter:none;}
 .ledwrap .lcard.s-cancelled .lparty{text-decoration:line-through;text-decoration-color:rgba(122,134,144,.8);}
-.ledwrap .tag.buy{color:var(--salt-steel);}
-.ledwrap .tag.sell{color:var(--salt-product-salt);}
-.ledwrap .tag.paid{color:var(--salt-verdigris);}
-.ledwrap .tag.open{color:var(--salt-copper);}
-.ledwrap .tag.pendingt{color:var(--salt-steel);}
-.ledwrap .tag.inkind,.ledwrap .tag.prov{color:var(--salt-brass);}
+.ledwrap .tag.buy{--salt-status-tone:var(--salt-steel);}
+.ledwrap .tag.sell{--salt-status-tone:var(--salt-product-salt);}
+.ledwrap .tag.paid{--salt-status-tone:var(--salt-verdigris);}
+.ledwrap .tag.open{--salt-status-tone:var(--salt-copper);}
+.ledwrap .tag.pendingt{--salt-status-tone:var(--salt-steel);}
+.ledwrap .tag.inkind,.ledwrap .tag.prov{--salt-status-tone:var(--salt-brass);}
 /* v495, his instruction: the sheet in the system's ledger recipe. Figures tabular; the Provisional
    pill is the status chip's shape with a dotted line and nothing behind it; Update is a button in
    the same shape rather than an underlined word. Both sit at the end of the entry's second row. */
 .ledwrap{font-variant-numeric:tabular-nums;}
-.ledwrap .tag.prov{border:1px dotted rgba(197,160,89,.6);border-radius:var(--salt-radius-pill);padding:3px 10px;background:transparent;}
+.ledwrap .tag.prov{padding:3px 10px;}
 .ledwrap .lqb{border:1px solid var(--salt-line-strong);border-radius:var(--salt-radius-pill);padding:3px 12px;text-decoration:none;color:var(--salt-brass);}
 .ledwrap .lqb:hover{background:rgba(197,160,89,.10);border-color:var(--salt-brass);}
-.ledwrap .tag.def{color:var(--salt-ember);}
+.ledwrap .tag.def{--salt-status-tone:var(--salt-ember);}
 .entflash{outline-color:var(--salt-brass);}
 .lcard.lpressing::after{background:var(--salt-gradient);}
 .lcard.lpressed{border-color:var(--salt-brass);box-shadow:0 0 0 1px var(--salt-brass),0 6px 22px rgba(197,160,89,.22);}
@@ -478,16 +451,23 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .evo .txt b{color:var(--salt-salt);font-weight:500;}
 
 /* ---- 10. STATES: a word in its colour with a hairline, never a fill ---- */
-.tag{font-size:10.5px;font-weight:500;letter-spacing:.12em;background:transparent;border:1px solid currentColor;padding:2px 9px;}
+/* the tag is the system's .salt-status (22 Sep 2026): the desk's state words bind to its one tone variable,
+   and the bare words below still colour the few things that are not tags */
+.tag.paid{--salt-status-tone:var(--salt-verdigris);}
+.tag.unpaid,.tag.open{--salt-status-tone:var(--salt-copper);}
+.tag.buy{--salt-status-tone:var(--salt-steel);}
+.tag.sell{--salt-status-tone:var(--salt-product-salt);}
+.tag.inkind,.tag.prov,.tag.buychip{--salt-status-tone:var(--salt-brass);}
+.tag.def{--salt-status-tone:var(--salt-ember);}
+.tag.mod,.tag.pendingt{--salt-status-tone:var(--salt-steel);}
 .paid{color:var(--salt-verdigris);}
 .unpaid,.open{color:var(--salt-copper);}
 .buy{color:var(--salt-steel);}
 .sell{color:var(--salt-product-salt);}
 .inkind{color:var(--salt-brass);}
 .def{color:var(--salt-ember);}
-.prov{color:var(--salt-brass);border:1px dashed rgba(197,160,89,.55);}
-.mod,.pendingt{color:var(--salt-steel);border-color:rgba(142,162,182,.5);}
-.tag.buychip{background:transparent;color:var(--salt-brass);border-color:rgba(197,160,89,.4);}
+.prov{color:var(--salt-brass);}
+.mod,.pendingt{color:var(--salt-steel);}
 .provbar{font-size:11px;letter-spacing:.06em;background:rgba(197,160,89,.08);border:1px dashed var(--salt-line-strong);color:var(--salt-brass);}
 .provbar b{color:var(--salt-salt);}
 .ubtn{border-color:rgba(197,160,89,.5);color:var(--salt-brass);}
@@ -578,12 +558,6 @@ details.obs>summary:hover{background:var(--salt-glass);}
 
 /* ---- 13. THE PHONE: the same vocabulary; only the floors the old layer sets stand ---- */
 @media(max-width:560px){
-  .kick{font-size:11px !important;letter-spacing:.18em;}
-  /* the 11px floor is the phone's, not the hierarchy's: at 11px against a 11.5px tab the
-     heading and the destination were level again, which is the fault this rail just lost.
-     The heading keeps the floor and the tab clears it. */
-
-  .tab{font-size:13.5px;}
   /* THE BOARD FITS ITS CARD WITHOUT A SCROLL, measured at v477: 337px of table in a 325px card since
      the mono face arrived at v472, and the width is the figures', not the type's (12.5, 12, 11.5 and
      11px all measure 337). Three-pixel gutters bring it to 325, exactly the card. */
@@ -617,18 +591,8 @@ details.obs>summary:hover{background:var(--salt-glass);}
    two things where there is one. The open tab is now the head of a block and its parts the body
    of the same block: one border, one glass, the head with square bottom corners, the body with
    square top corners, no gap. A part is marked by a brass bar at its left, not a pill. */
-.tab.on{border-radius:var(--salt-radius-sm) var(--salt-radius-sm) 0 0;border-bottom-color:transparent;margin-bottom:0;}
-/* v622: a destination with one page has no body, so its open tab is the whole block */
-.tab.on.solo{border-radius:var(--salt-radius-sm);border-bottom-color:var(--salt-line);margin-bottom:2px;}
 .tab.on+.subs{display:block;}
-.subs{margin:0 0 8px;padding:2px 6px 6px;border:1px solid var(--salt-line);border-top:0;
-  border-radius:0 0 var(--salt-radius-sm) var(--salt-radius-sm);background:var(--salt-glass);}
-.sub{position:relative;display:flex;align-items:center;min-height:32px;padding:6px 10px 6px 18px;border:0;border-radius:8px;
-  color:var(--salt-mist);background:transparent;}
-.sub::before{content:'';position:absolute;left:8px;top:9px;bottom:9px;width:2px;border-radius:2px;background:transparent;}
-.sub:hover{color:var(--salt-salt);background:transparent;}
-.sub.on{color:var(--salt-salt);background:rgba(255,255,255,.035);}
-.sub.on::before{background:var(--salt-brass);}
+
 
 /* ---- 7b. THE LEDGER ROW'S SECOND LINE (v529, his instruction of 08 Sep 2026) ----
    The role and the type sat at the far left under the E code, and Update was a pill button at the
@@ -659,38 +623,25 @@ details.obs>summary:hover{background:var(--salt-glass);}
    key and the menu keep their 44px and lose the disc. One row at every width, the phone included.
    Once the desk has moved, the bar casts an obsidian cap above itself (body.dbstuck, set by the
    back-to-top control's own scroll read), so nothing slides through the gap over it. */
-:root{--dbtop:22px;}
+:root{--dbtop:22px;--salt-bar-top:calc(var(--safetop) + var(--dbtop));}
 @media(max-width:560px){:root{--dbtop:14px;}}
-.deskbar{top:calc(var(--safetop) + var(--dbtop));margin:0 0 18px;padding:9px 8px 9px 16px;gap:10px 12px;flex-wrap:wrap;
-  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02)),rgba(13,11,9,.9);
-  border:1px solid var(--salt-line);border-radius:var(--salt-radius-md);
-  box-shadow:var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);
-  -webkit-backdrop-filter:blur(24px) saturate(1.25);backdrop-filter:blur(24px) saturate(1.25);}
+/* the bar is the system's .salt-deskbar, sitting where the desk binds --salt-bar-top; the cap below is the
+   desk's own */
 /* THE CAP IS FOUR OBSIDIAN COPIES OF THE BAR'S OWN SHAPE, stacked above it 24px apart, so the gap over the
    bar and the slivers outside its top corners are covered, up to a 96px inset. A shadow is not layout: the
    first cut was a pseudo-element reaching into the gutter, and it made the phone's page 2px wide. */
 body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 var(--salt-obsidian),0 -72px 0 0 var(--salt-obsidian),
   0 -96px 0 0 var(--salt-obsidian),var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);}
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.deskbar{background:rgb(18,15,12);}}
-@media (prefers-reduced-transparency:reduce){.deskbar{background:rgb(18,15,12);-webkit-backdrop-filter:none;backdrop-filter:none;}}
-.dhbrand{gap:12px;min-width:0;}
 .dhbrand .mark{width:30px;height:30px;flex:0 0 auto;display:block;}
 .dhtext{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden;}
-.dhname{align-self:flex-start;font-family:var(--salt-font-display);font-weight:300;font-size:21px;letter-spacing:.04em;line-height:1;text-transform:none;
-  background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
 .deskbar .meta{display:block;margin:0;min-width:0;}
-.deskbar .metarow{display:flex;align-items:center;flex-wrap:nowrap;gap:0;overflow:hidden;white-space:nowrap;
-  font-family:var(--salt-font-mono);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;line-height:1.2;color:var(--salt-mist);}
 .dhrole{display:inline-flex;align-items:center;gap:6px;margin-right:12px;}
 .dhrole i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto;}
 .dhrole.live{color:var(--salt-verdigris);}
 .dhrole.ro{color:var(--salt-brass);}
 .dhupd::before{content:"\00b7";margin:0 8px;}
-.deskbar .dbtools{order:2;gap:4px;}
+.deskbar .dbtools{order:2;}
 /* the version is the system's .salt-version, bare (22 Sep 2026) */
-.deskbar .fabtn{background:transparent;border-color:var(--salt-line-faint);box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;}
-.deskbar .fabtn:hover{background:var(--salt-glass-hover);border-color:var(--salt-line);}
-.deskbar .idfix.on{border-color:var(--salt-brass);box-shadow:0 0 12px -4px var(--salt-brass);}
 .deskbar>#provBar{order:3;flex:1 0 100%;}
 .deskbar>#provBar:empty{display:none;}
 .deskbar .provbar{margin-top:0;}
@@ -703,15 +654,14 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   .dhname{font-size:18px;}
   /* the phone's 11px floor for a label (v401); the line keeps one row by dropping the as-at date
      and, while the desk is live, the status word, which the dot already says */
-  .deskbar .metarow{font-size:11px;letter-spacing:.1em;}
   .dhasat,.dhrole.live .dhword{display:none;}
   .dhupd::before{content:none;}
   .dhrole{margin-right:8px;}
 }
 /* ---- AN ENTRY IS TWO ROWS (09 Sep 2026): the corner tag, the pen and its menu, in the identity. ---- */
 .ledwrap .tag.ltype{font-weight:500;letter-spacing:.14em;}
-.ledwrap .tag.ltype.buy{color:var(--salt-steel);}
-.ledwrap .tag.ltype.sell{color:var(--salt-product-salt);}
+.ledwrap .tag.ltype.buy{--salt-status-tone:var(--salt-steel);}
+.ledwrap .tag.ltype.sell{--salt-status-tone:var(--salt-product-salt);}
 .ledwrap .etype.eagreed{color:var(--salt-mist);}
 .ledwrap .lpen{color:var(--salt-brass);}
 .ledwrap .lpen:hover,.ledwrap .lpen:focus-visible{background:rgba(197,160,89,.14);color:var(--salt-salt);}
