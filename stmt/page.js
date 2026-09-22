@@ -32,7 +32,7 @@
 /* The GENERATED stylesheet, not tools/stmt-style.mjs. That module reads design/salt-ds.css
    with node:fs, and a Worker has no filesystem. `node tools/stmt-style.mjs --sync` writes
    this file and CI runs --check, so there is still one source. */
-import { STATEMENT_CSS, SITE_RECIPES } from "./statement-css.js";
+import { STATEMENT_CSS, SITE_RECIPES, FONT_FACE_CSS } from "./statement-css.js";
 import { PAY_SITE, PAY_ACCOUNTS } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 
@@ -349,7 +349,7 @@ export function boardPage(guest, nonce) {
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'
     + "<title>Price list</title>"
-    + '<style nonce="' + nonce + '">' + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
+    + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
     + '<div class="panel">'
     + "<h2>Price list</h2>"
     + '<p class="lead">' + (week ? "For the week of " + esc(week) + ". " : "")
@@ -398,7 +398,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'
     + '<meta name="apple-mobile-web-app-title" content="Salt Counter">'
     + "<title>Salt Counter</title>"
-    + '<style nonce="' + nonce + '">' + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
+    + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
     + bulletinBand(bulletin)
     + (owner
       ? '<div id="roster" class="gate">'

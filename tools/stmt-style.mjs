@@ -48,6 +48,12 @@ export function saltTokens() {
   return m[0];
 }
 
+/** The brand faces' @font-face rules, vendored as design/fonts.css (22 Sep 2026): the page carries
+    them first and the Worker serves the files they name from stmt/fonts.js. */
+export function fontFaceCss() {
+  return readFileSync(join(REPO, "design", "fonts.css"), "utf8");
+}
+
 /* THE SYSTEM'S RECIPES THE SITE USES, VERBATIM (22 Sep 2026, his instruction that the Counter use
    the design system rather than restate it): the one filled button, the quiet one, the field, the
    tab strip and the state chip, sliced by their headers out of the same vendored stylesheet as the
@@ -279,7 +285,8 @@ function moduleText() {
     + " * CI runs `--check` and fails if this file is not what the module produces.\n"
     + " */\n"
     + "export const STATEMENT_CSS = " + JSON.stringify(statementCss()) + ";\n"
-    + "export const SITE_RECIPES = " + JSON.stringify(siteRecipes()) + ";\n";
+    + "export const SITE_RECIPES = " + JSON.stringify(siteRecipes()) + ";\n"
+    + "export const FONT_FACE_CSS = " + JSON.stringify(fontFaceCss()) + ";\n";
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

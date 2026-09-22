@@ -14551,7 +14551,7 @@ await (async () => {
     && page94.includes("a neighbourhood or a landmark") && page94.includes("I have paid")
     && page94.includes("Your order is now complete. Thank you for your loyalty."),
     "the page reviews before it places, asks roughly where it is going, takes the amount paid, and says his closing words");
-  ok(!/url\(/.test(page94), "and nothing on the page loads anything, the chevron included");
+  ok(!/url\((?!fonts\/)/.test(page94), "and nothing on the page loads anything but its own two fonts, the chevron included");
 })();
 section("v695 and v704: a product is a mark and never a word, and the app on his customers' phones is Salt Counter");
 await (async () => {
@@ -19072,6 +19072,47 @@ await (async () => {
     "the page's own layer keeps geometry and states no look the recipe owns");
   ok(/el\('button','btn quiet salt-ghost'/.test(readFileSync(join(REPO, "stmt", "owner.js"), "utf8")),
     "and the master page's quiet button is the system's ghost");
+})();
+
+section("22 Sep 2026: the brand faces reach every surface, self-hosted");
+await (async () => {
+  /* HIS YES OF 22 SEP 2026 to fetching the fonts. Fraunces and JetBrains Mono were designed into the
+     identity and never loaded where it mattered, because every surface's policy is self-only. Google
+     Fonts' own latin subsets are kept in the design system (fonts/, with their licences) and each surface
+     serves them beside its page: the desk from public/fonts/, the Counter from bytes in stmt/fonts.js.
+     Each assertion was proved red by mutation, one at a time. */
+  const FF = ["fraunces-latin.woff2", "jetbrains-mono-latin.woff2"];
+  const has = (p) => { try { readFileSync(p); return true; } catch (e) { return false; } };
+  const mF = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const fcss = readFileSync(join(REPO, "design", "fonts.css"), "utf8");
+  ok(/font-family: 'Fraunces'[^}]*url\(fonts\/fraunces-latin\.woff2\)/.test(fcss) && /font-family: 'JetBrains Mono'[^}]*url\(fonts\/jetbrains-mono-latin\.woff2\)/.test(fcss) && !/https?:\/\//.test(fcss),
+    "the two faces are declared from the page's own fonts/ folder and name no other origin");
+  ok(mF.includes("/* ==== DESIGN fonts:") && mF.indexOf("/* ==== DESIGN fonts:") < mF.indexOf("/* ==== DESIGN base:") && mF.includes(fcss.trim()),
+    "the desk carries them as a third generated block, before the base and never at the foot");
+  for (const f of FF) ok(has(join(REPO, "public", "fonts", f)) && readFileSync(join(REPO, "public", "fonts", f)).equals(readFileSync(join(REPO, "design", "fonts", f))),
+    "public/fonts/" + f + " is the design system's file, byte for byte");
+  const swF = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  ok(FF.every((f) => swF.includes('"./fonts/' + f + '"')), "the shell precaches both, so the desk reads in its own type offline");
+  ok(/font-src 'self'/.test(readFileSync(join(REPO, "public", "_headers"), "utf8")), "and the desk's policy admits its own fonts");
+  /* the Counter */
+  const { expected: fontsExpected } = await import("../tools/stmt-fonts.mjs");
+  ok(readFileSync(join(REPO, "stmt", "fonts.js"), "utf8") === fontsExpected(), "stmt/fonts.js is what tools/stmt-fonts.mjs writes from design/fonts/");
+  const { FONTS: fontsF } = await import("../stmt/fonts.js");
+  ok(FF.every((f) => Buffer.from(fontsF[f] || "", "base64").equals(readFileSync(join(REPO, "design", "fonts", f)))), "and its bytes are the files");
+  const wF = readFileSync(join(REPO, "stmt", "worker.js"), "utf8");
+  ok((wF.match(/font-src 'self'/g) || []).length === 2 && /p\.startsWith\("\/fonts\/"\)/.test(wF) && /"content-type": "font\/woff2"/.test(wF),
+    "both of the site's policies admit its own fonts and the Worker serves them at /fonts/");
+  const stmtWF = (await import("../stmt/worker.js")).default;
+  const rF = await stmtWF.fetch(new Request("https://site.test/fonts/fraunces-latin.woff2"), { STMT: new KV() });
+  const bodyF = Buffer.from(await rF.arrayBuffer());
+  ok(rF.status === 200 && rF.headers.get("content-type") === "font/woff2" && /immutable/.test(rF.headers.get("cache-control") || "") && bodyF.equals(readFileSync(join(REPO, "design", "fonts", "fraunces-latin.woff2"))),
+    "a request for a face answers the file with a year of cache");
+  const r404 = await stmtWF.fetch(new Request("https://site.test/fonts/nothing.woff2"), { STMT: new KV() });
+  ok(r404.status === 404, "and a face that is not there is the site's usual 404");
+  const genF = await import("../stmt/statement-css.js");
+  const pgF = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
+  ok(genF.FONT_FACE_CSS === fcss && (pgF.match(/FONT_FACE_CSS \+ STATEMENT_CSS \+ SITE_RECIPES \+ PAGE_CSS/g) || []).length === 2,
+    "the page carries the same @font-face rules, first, on both pages the Worker serves");
 })();
 
 section("The suite frees its windows: every section's body is its own async function");

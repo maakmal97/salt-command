@@ -1,5 +1,16 @@
 [
  {
+  "v": "v785",
+  "d": "22 Sep 2026",
+  "t": "THE BRAND FACES REACH EVERY SURFACE, SELF-HOSTED",
+  "n": [
+   "<b>HIS YES OF 22 SEP 2026</b> to fetching the fonts, the one thing the design system pass before this left undone. Fraunces and JetBrains Mono were designed into the identity on 29 Aug and never loaded where it mattered: every surface's policy is self-only, so the desk, the Counter and QR Command have read in Georgia and Consolas since v472. The split between figure and sentence survived; the faces did not.",
+   "<b>THE FILES ARE GOOGLE FONTS' OWN LATIN SUBSETS</b>, fetched once with a browser's user agent and kept in the design system (<code>Code\\salt-ds\\fonts\\</code>, 67 KB and 31 KB, both variable, with their OFL licences), declared by <code>src/fonts-local.css</code> from a <code>fonts/</code> folder relative to whatever page carries it. Nothing was subset or re-encoded on this machine, and the weight ranges declared are the files' own, so a 700 resolves to the face and is never synthesised. Symbols outside the latin range fall to the system face, as they always did.",
+   "<b>EACH SURFACE SERVES THEM BESIDE ITS PAGE, BY ITS OWN SYNC.</b> The desk: <code>designsync --pull</code> takes the rules and the files into <code>design/</code>, <code>--sync</code> writes a THIRD generated block into the master, before the base and never at the foot, which is the desk layer's place, and copies the files to <code>public/fonts/</code>; <code>--check</code> proves both; the shell precaches them, so the desk reads in its own type offline. The Counter serves no files, so the two ride in <code>stmt/fonts.js</code> as bytes, written by <code>tools/stmt-fonts.mjs</code>, served at <code>/fonts/</code> with a year of cache, under a policy that now admits <code>font-src 'self'</code> on both pages; the page carries the rules first. QR Command pulls the files into <code>src/app/fonts/</code>, hashes them into its build id, stamps their URLs in <code>app.css</code> and precaches them.",
+   "<b>ONE SUITE SECTION, 12 ASSERTIONS, EACH PROVED RED ON ITS OWN</b>, the Counter's route exercised against the Worker: a face answers the file with a year of cache, a missing one is the site's usual 404. The Counter's rule that its page loads nothing now reads: nothing but its own two fonts, the chevron included."
+  ]
+ },
+ {
   "v": "v784",
   "d": "22 Sep 2026",
   "t": "THE DESK, THE COUNTER AND QR COMMAND USE THE DESIGN SYSTEM, AND THE SYSTEM ITSELF IS FIXED",

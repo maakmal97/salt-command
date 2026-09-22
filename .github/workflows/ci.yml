@@ -80,6 +80,11 @@ jobs:
       - name: The site's QR encoder is engine/qr.mjs
         run: node tools/qrsync.mjs --check
 
+      # AND THE BRAND FACES THE SITE SERVES ARE THE DESIGN SYSTEM'S FILES. The Worker serves no
+      # files, so the two woff2 in design/fonts/ ride in stmt/fonts.js as bytes (22 Sep 2026).
+      - name: The site's fonts are design/fonts, as bytes
+        run: node tools/stmt-fonts.mjs --check
+
       - name: Tests
         run: npm test
 
