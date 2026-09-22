@@ -99,6 +99,14 @@ td.l{text-align:left}
 .rsn{font-size:var(--salt-text-sm);color:var(--salt-text-muted);font-family:var(--salt-font-display)}
 .q{font-size:var(--salt-text-md);color:var(--salt-mist-light)}
 .u{font-size:var(--salt-text-xs);color:var(--salt-text-muted);margin-left:5px}
+/* v782: THE BOOK'S MARK, beside the quantity it qualifies. It takes the row's own colour rather
+   than the book's hue, because a statement is read on paper as often as on a screen and a hue
+   that survives one may not survive the other; the SHAPE is what carries the meaning, which is
+   why the shape is also the accessible name. .sr is the name for a screen reader and is off the
+   page rather than display:none, which would take it out of the accessibility tree as well. */
+.pm{display:inline-flex;align-items:center;margin-right:5px;vertical-align:-1px;color:var(--salt-text-muted)}
+.pm .psym{display:block}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .amt{font-size:var(--salt-text-lg);font-weight:700;color:var(--salt-text)}
 
 /* THE THREE WORDS. Each is a mono word in its colour; nothing here is a filled badge. */

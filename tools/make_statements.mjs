@@ -31,6 +31,11 @@ import { qrSvg } from "./qr.mjs";
 import { sendSheet } from "./stmt-send.mjs";
 import { newPassword, USERNAME_RE, makeVerifier, contentKey, wrapKey, encryptWith, decryptWith, encryptText, userFor, usersJson } from "./stmt-crypto.mjs";
 import { priceList } from "./pricelist.mjs";
+/* v782: the marks the customer's own page draws, so a statement and the site cannot diverge on
+   what a book looks like. tools/ reading stmt/ is the safe direction and is what stmt-send.mjs
+   already does; the ban is on stmt/ reaching OUT, because that Worker bundle must stay free of
+   node builtins. */
+import { psymSvg, PSHAPE } from "../stmt/page.js";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BOOK = process.env.SALT_BOOK || resolve(REPO, "ledger", "book.json");
@@ -55,6 +60,17 @@ const book = JSON.parse(readFileSync(BOOK, "utf8"));
 /* the desk globals the lifted functions read, bound to the same sources the desk binds
    them to: the book's own declarations, and the position engine's own functions */
 const sales = book.sales;
+/* v782: the books in the BOOK's own order, salt first. His standing instruction of 11 Aug,
+   restated on the 13th: salt before oil wherever the two appear separately. An id the order does
+   not name sorts last rather than being dropped, which is the same rule PROD_IDS keeps on the
+   desk, so a book registered but not yet placed still prints. */
+const bookOrder = (ids) => {
+  const o = book.PROD_ORDER || ["salt"];
+  return ids.slice().sort((a, b) => {
+    const i = o.indexOf(a), j = o.indexOf(b);
+    return (i < 0 ? 99 : i) - (j < 0 ? 99 : j);
+  });
+};
 const customerRefunds = book.customerRefunds || [];
 const { txStat, txDates, txOwed } = POSITION_ENGINE;   /* v741: what they owe is the goods and the delivery together */
 const esc = x => ('' + (x == null ? '' : x)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -165,7 +181,12 @@ function stmtRows(party,o){
        figures has to match on party, date and quantity: CH4-MAL has two orders on 14 August of one
        unit each, RM 110 and RM 11.50, so that match is ambiguous on this very book and the first
        assertion written over it reported a correct statement as wrong. */
-    return {rid:s.rid||null,gift:gift,resale:s.customer!==party,date:s.date,qty:s.qty,total:gift?0:s.total,
+    /* v782: THE ROW SAYS WHICH BOOK IT IS. stmtRows filters by party and never by product, so a
+       customer who holds two books got one table with no way to tell the rows apart and a footer
+       that ADDED their quantities: six customers on this book today. An absent product is salt,
+       the book's own convention (docs/PRODUCTS.md section 6). It travels as an id and is DRAWN as
+       a mark, never written as a word: rule 2 of this site is that a product is a mark. */
+    return {rid:s.rid||null,product:(s.product||"salt"),gift:gift,resale:s.customer!==party,date:s.date,qty:s.qty,total:gift?0:s.total,
       unit:s.qty>0?+((s.total)/s.qty).toFixed(2):0,delivery:+(s.delivery||0),   /* v502: the rate is on the goods */
       paidCash:paidCash,inKind:inKind,got:got,inKindUnits:inKindUnits,
       /* PENDING COUNTS NOWHERE, on a statement as everywhere else (v189). An order
@@ -295,6 +316,18 @@ function stmtDoc(party,rows,o){
      made his own rate legible in a single portable document, which is the sort of thing
      that ends up beside another buyer's. Totals say what he paid; the arithmetic behind
      them is his to do if he wants it. */
+  /* v782: the book's mark, drawn inline, with its SHAPE as the accessible name. Never the
+     product's word: an aria-label naming it would put the word back for exactly the readers who
+     cannot see it was taken away, which is the reasoning stmt/page.js states for PSHAPE. The
+     drawing and the shape words come from there, so the statement and the site cannot diverge. */
+  /* A DATED RECORD IS NOT CORRECTED IN PLACE, which is why an archive gets NO mark. A back-issue
+     is rebuilt to say what was issued, and the suite pins that it carries no <svg> at all: that
+     rule was written for the QR, whose code would be dead on a past document, and it catches this
+     just as well. An issue that footed to one blended figure keeps it, exactly as issues sealed
+     before v695 keep the letterhead they were sent with. The correction is for what is live. */
+  const marked=!(o&&o.archive);
+  const markOf=p=>!marked?'':'<span class="pm">'+psymSvg(p,13)
+    +'<span class="sr">'+esc(PSHAPE[String(p||'').toLowerCase()]||PSHAPE._)+'</span></span>';
   const e=esc, n2=v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:2});
   const money=v=>Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
   const refundOwed=(o.refunds||[]).filter(r=>!r.paidOn).reduce((a,r)=>a+(+r.amount||0),0);   // v454
@@ -310,7 +343,7 @@ function stmtDoc(party,rows,o){
      rule 2), so the path is removed rather than parameterised: a statement built here
      cannot carry a real name because nothing here holds one. */
   const who=codeOf(party);
-  const T={qty:0,total:0,paid:0,owed:0};
+  const T={qty:0,total:0,paid:0,owed:0,qtyBy:{}};
   T.toGet=0;T.kindUnits=0;T.got=0;T.ordered=0;
   /* a GIFT is not a payment. Its in-kind value exists so the salt does not fall out of
      the ledger as shrinkage; counting it here made Paid exceed the total ordered, which
@@ -327,6 +360,11 @@ function stmtDoc(party,rows,o){
        booked at v444 is stated as Owed to you rather than left to the Refunds table alone. */
     if(r.cancelled){T.cxN++;T.cxPaid+=r.gift?0:(r.paidCash+r.inKind);T.paid+=r.gift?0:(r.paidCash+r.inKind);return;}
     if(r.pendingOrder){T.pendQty+=r.qty;T.pendVal+=r.total;T.pendN++;}
+    /* v782: UNITS OF DIFFERENT BOOKS DO NOT ADD, which is his standing rule and was being broken
+       here every time a customer held two. The money still adds, because a ringgit is a ringgit
+       whatever it bought; only the quantity is kept apart. T.qty stays for the single-book case
+       and for every caller that already reads it. */
+    T.qtyBy[r.product]=(T.qtyBy[r.product]||0)+r.qty;
     T.qty+=r.qty;T.total+=r.total;T.paid+=r.gift?0:(r.paidCash+r.inKind);T.owed+=r.owed;
     T.toGet+=(r.toGet>0&&!r.pendingOrder)?r.toGet:0;T.kindUnits+=r.gift?0:r.inKindUnits;T.got+=r.got;T.ordered+=r.qty;});
   /* the row label has to agree with the walk printed below it. Where the offset went
@@ -375,7 +413,12 @@ function stmtDoc(party,rows,o){
        belongs to travels with the row. An undated row belongs to no month and is always shown. */
     return '<tr'+(r.date?' data-m="'+e(r.date.slice(0,7))+'"':'')+'>'
       +'<td class="l dt">'+(r.date?e(dLong(r.date)):(moved?'<span class="nodt">'+moved+'</span>':''))+when+'</td>'
-      +'<td class="q'+(r.cancelled?' cxr':'')+'">'+n2(r.qty)+'<span class="u">unit</span>'
+      /* v782: THE MARK SITS WITH THE QUANTITY, because the quantity is what the book qualifies:
+         five unit of one thing and five of another are not ten. It is drawn, never named, and it
+         is drawn on EVERY row rather than only where two books meet, so a row means the same
+         thing on every document. A book with no mark of its own draws the Ring, which is the
+         site's own fallback and reads as an omission rather than as a fault. */
+      +'<td class="q'+(r.cancelled?' cxr':'')+'">'+markOf(r.product)+n2(r.qty)+'<span class="u">unit</span>'
         /* v687, HIS INSTRUCTION OF 18 SEP 2026: the line reads on behalf of a friend, not for
            resale. The row is the same row and books the same way; what changes is the word the
            customer reads, which is theirs rather than the trade's. */
@@ -448,7 +491,14 @@ function stmtDoc(party,rows,o){
    /* the count must match what was actually totalled, or the footer says three orders
       over a figure covering two, which is the first thing a careful reader checks */
    '<div class="tr"><span>'+(rows.length-T.cxN)+' order'+((rows.length-T.cxN)===1?'':'s')
-     +', '+n2(T.qty)+' unit'
+     /* v782: one figure a book, marked, and never one figure over two books. Where the account
+        holds a single book this reads exactly as it always did, with its mark in front.
+        SALT LEADS, his standing instruction of 11 Aug restated on the 13th: the books come out in
+        the BOOK's own PROD_ORDER and not alphabetically, which put oil first on the first draft of
+        this line. A book the order does not name sorts last rather than being dropped. */
+     +', '+(marked
+        ? bookOrder(Object.keys(T.qtyBy)).map(p=>markOf(p)+n2(T.qtyBy[p])+' unit').join(' &middot; ')
+        : n2(T.qty)+' unit')
      +(T.cxN?'<span class="cxn"> &middot; '+T.cxN+' cancelled, not counted</span>':'')
      +'</span><span>'+money(T.total)+'</span></div>',
    '<div class="tr"><span>Paid</span><span>'+money(T.paid)+'</span></div>',

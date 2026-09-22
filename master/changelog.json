@@ -1,5 +1,17 @@
 [
  {
+  "v": "v782",
+  "d": "22 Sep 2026",
+  "t": "A STATEMENT SAYS WHICH BOOK EACH ROW IS, AND UNITS OF DIFFERENT BOOKS DO NOT ADD",
+  "n": [
+   "<b>HIS INSTRUCTION OF 22 SEP 2026, on a defect found while opening three books and not caused by them.</b> <code>stmtRows</code> filters by PARTY and never by product, the row shape carried no product, and the footer ADDED the quantities: CS6-BS read <b>117.5 unit</b> over 47.5 of one book and 70 of another, on a document that goes to a customer. Six accounts on this book hold more than one. It has been wrong since the second book opened on 06 Aug and nothing on the page could have shown it.",
+   "<b>THE MARK SITS WITH THE QUANTITY, because the quantity is what the book qualifies.</b> Five unit of one thing and five of another are not ten. It is DRAWN and never named, which is the oldest rule on this site, and the drawing and its shape word come from <code>stmt/page.js</code> so a statement and the customer’s own page cannot diverge on what a book looks like. The SHAPE is the accessible name: an aria-label naming the product would put the word back for exactly the readers who cannot see it was taken away. A book with no mark draws the Ring.",
+   "<b>THE MONEY STILL ADDS AND THE QUANTITY DOES NOT.</b> A ringgit is a ringgit whatever it bought, so the totals, what is paid and what is outstanding are untouched; only the unit figure is kept apart, one a book. An account holding a single book reads exactly as it always did, with its mark in front of the figure.",
+   "<b>SALT LEADS, and the first draft of this line broke that.</b> The books were sorted alphabetically, which put oil before salt on every account holding both, against his standing instruction of 11 Aug restated on the 13th. They come out in the BOOK’s own PROD_ORDER now, and an id the order does not name sorts last rather than being dropped, which is the rule PROD_IDS already keeps on the desk.",
+   "<b>THE CHECK READS THE TEXT, NOT THE SOURCE.</b> The rule that no product is named in words cannot be tested against the raw document: the inlined stylesheet carries <code>--salt-product-salt</code>, so a search over the source would fail on a token name rather than on anything a customer can read. It strips the tags first, and it asserts the SUM is absent rather than only that the parts are present, because a footer could print both and still print their total."
+  ]
+ },
+ {
   "v": "v781",
   "d": "22 Sep 2026",
   "t": "WHO EARNS IS A FIELD ON THE BOOK, NOT A STRING COMPARISON",

@@ -18907,6 +18907,75 @@ await (async () => {
     "and the old rule still refuses the book it always refused");
 })();
 
+section("v782: a statement says which book each row is, and units of different books do not add");
+await (async () => {
+  /* stmtRows filters by PARTY and never by product, so a customer holding two books got one
+     table with nothing to tell the rows apart and a footer that ADDED their quantities: CS6-BS
+     read 117.5 unit over 47.5 of one book and 70 of another. Six customers on this book hold
+     more than one. The money still adds, because a ringgit is a ringgit whatever it bought. */
+  const M = await import("../tools/make_statements.mjs");
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const at = new Date("2026-09-22T00:00:00Z");
+  const text = (h) => String(h).replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+  const bodyOf = (who) => { const s = M.liveStatement(who, at); return String((s && (s.body || s.html)) || s); };
+
+  /* who actually holds more than one book, asked of the book rather than assumed */
+  const owns = (await import("../engine/position.mjs")).default.ownsCode;
+  const booksOf = (party) => new Set(bk.sales.filter((s) => !s.cancelled && owns(party, s.customer)).map((s) => s.product || "salt"));
+  const many = (bk.roster || []).filter((c) => booksOf(c).size > 1);
+  ok(many.length > 0, `at least one account holds more than one book, or this section proves nothing (${many.length})`);
+
+  const who = many[0];
+  const b = bodyOf(who), t = text(b);
+  const foot = t.slice(t.indexOf(" orders,"));
+
+  /* the footer keeps them apart: one figure a book, and their sum is NOT printed */
+  const qty = {};
+  for (const s of bk.sales.filter((s) => !s.cancelled && owns(who, s.customer))) {
+    const st = (await import("../engine/position.mjs")).default.txStat(s).order;
+    if (st === "Cancelled") continue;
+    qty[s.product || "salt"] = (qty[s.product || "salt"] || 0) + s.qty;
+  }
+  const each = Object.keys(qty);
+  ok(each.length > 1, `${who} holds ${each.length} books on the statement`);
+  ok(each.every((p) => new RegExp(String(qty[p]).replace(".", "\\.") + "\\s*unit").test(foot)),
+    `each book's own quantity is printed (${each.map((p) => p + " " + qty[p]).join(", ")}): ${foot.slice(0, 120)}`);
+  const summed = each.reduce((a, p) => a + qty[p], 0);
+  ok(!new RegExp("\\b" + String(summed).replace(".", "\\.") + "\\s*unit").test(foot),
+    `and their sum ${summed} is nowhere on it, because units of different books do not add`);
+
+  /* SALT LEADS, his standing instruction of 11 Aug restated on the 13th. The first draft of the
+     footer sorted the ids alphabetically, which put oil first. */
+  const order = bk.PROD_ORDER || ["salt"];
+  const seen = each.slice().sort((a, b2) => foot.indexOf(String(qty[a])) - foot.indexOf(String(qty[b2])));
+  ok(order.indexOf(seen[0]) < order.indexOf(seen[1]),
+    `the books come out in the book's own order, salt first (${seen.join(" then ")})`);
+
+  /* A PRODUCT IS A MARK, NOT A WORD, which is the oldest rule on this site. Read the TEXT, not
+     the source: the inlined stylesheet carries --salt-product-salt and a raw search would fail on
+     a token name rather than on anything a customer can read. */
+  ok(!/\b(salt|oil|candy|rice|spare)\b/i.test(t),
+    "and no product is named in words anywhere a customer reads: " + (t.match(/\b(salt|oil|candy|rice|spare)\b/i) || [""])[0]);
+  ok(/Cube/.test(b) && /Droplet/.test(b),
+    "the marks carry their SHAPE as the accessible name, so a screen reader is told what is drawn and not what it is");
+  ok(!/<img|src=/i.test(b.replace(/<svg[\s\S]*?<\/svg>/g, "")),
+    "and the mark is drawn rather than loaded, a statement being a standalone document");
+
+  /* AN ARCHIVE IS NOT CORRECTED IN PLACE, and it is NOT asserted from here. A back-issue is
+     rebuilt to say what was issued, so it carries no mark and foots the way it footed then,
+     blended figure and all. Two assertions in the archive section already pin that a back-issue
+     holds no <svg> at all, and both went red when the marks first reached one, so the behaviour
+     is covered by instruments that have been seen red. A source-text check here would add
+     nothing except a line that cannot fail for the right reason. */
+
+  /* a single-book account reads as it always did */
+  const one = (bk.roster || []).find((c) => booksOf(c).size === 1);
+  if (one) {
+    const t1 = text(bodyOf(one));
+    ok(/ orders?, /.test(t1) || / order, /.test(t1), `a single-book account still foots to one figure (${one})`);
+  }
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

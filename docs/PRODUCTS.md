@@ -217,11 +217,17 @@ the case was anticipated.
   product travels separately in `product`. Every reader only ever tests `=== "cash"`, so it is
   inert, but a reader that tested `=== "salt"` to mean a salt loan would be wrong for every
   oil loan on the book today.
-- **A customer's statement blends products.** `tools/make_statements.mjs` filters by party and
-  never by product, the row shape carries no product, and the footer sums quantities across
-  books into one number. Eight customers already hold both salt and oil. The settlement prose
-  also prints the word salt regardless of the row's product; it is dormant only because no
-  sale on any other book has been settled in kind yet.
+- **A customer's statement no longer blends products** (v782). `tools/make_statements.mjs`
+  filtered by party and never by product, the row shape carried none, and the footer summed
+  quantities across books: CS6-BS read 117.5 unit over 47.5 of one and 70 of the other. Six
+  accounts hold more than one book. Each row now draws its book's mark beside the quantity and
+  the footer prints one figure a book, in the book's own order, salt first. The money still
+  adds. **An archive gets no mark**, because a back-issue is rebuilt to say what was issued and
+  a dated record is not corrected in place; the suite pins that a back-issue carries no `<svg>`
+  at all, a rule written for the QR that catches this too.
+- **The settlement prose still prints the word salt** regardless of the row's product
+  (`make_statements.mjs`, the in-kind settlement lines). Dormant only because no sale on any
+  other book has been settled in kind yet, so the first one prints a wrong word to a customer.
 - **The Associates page mixes scopes.** Its R1, R2 and R3 totals read the whole book across
   every product, while the reward figures beside them read the one book in view, with nothing
   on screen saying so.
