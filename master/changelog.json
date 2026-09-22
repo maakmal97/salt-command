@@ -1,18 +1,5 @@
 [
  {
-  "v": "v787",
-  "d": "22 Sep 2026",
-  "t": "ENTER, REDESIGNED: TILES FOR BOOKS, A TYPED PARTY, A DATE THAT STEPS, AND A SECOND BOOK",
-  "n": [
-   "<b>HIS INSTRUCTION OF 22 SEP 2026, reading the form on screen and naming what was wrong with it.</b> The product dropdown becomes a TILE A BOOK: the dot in the book’s own accent, the name beneath, the chosen one lit in that hue. The select survives, hidden, and is still the value, so <code>wbProdVal</code> and every reader behind it are untouched; the tiles set it and fire its own change, the road <code>setProdView</code> was always reached by.",
-   "<b>THE PARTY IS TYPED OR CHOSEN</b>, over the same hidden-select trick, so every reader still gets a CODE. It matches on the code and on the drawn name, both case-insensitively, and it NEVER guesses at a partial: <code>CZ4</code> leaves the select empty and the form refuses it, because a near miss that silently booked to the wrong party is the costliest slip this form could make. Every party list is already in alphabetical order since v783.",
-   "<b>THE DATE STEPS A DAY AT A TIME</b>, by tap or by arrow key, through one <code>dateStep</code> so the buttons and the keys cannot disagree. That is a TRADE and it is stated rather than discovered: a native date input uses Left and Right to move between its day, month and year segments, and binding them takes that away. Typing digits still advances the segments, which is how a whole date is entered, and Up and Down are left alone.",
-   "<b>A SECOND BOOK IS A SECOND TRANSACTION FOR THE SAME PARTY.</b> Tapping another tile adds a book with its own row of figures, and Record queues one entry a book, sharing the party, the date and the direction, each through the same <code>entryFault</code> and <code>replayAnswer</code> guards the first went through. Three rules on a tile: a book not in the entry joins and becomes active, a book in but not active becomes active, and the active book tapped leaves unless it is the last.",
-   "<b>v409 CALLED TWO PRODUCTS IN ONE FORM A FAULT, and that ruling holds here.</b> The margin, the free inventory and the price coach all read the ACTIVE book, so a form holding two read one and recorded the other. The active book still drives every reading; the books after it are plain orders. A gift, a reward cover and a resale are properties of ONE order, each judged against the active book’s cost, ladder and reward, so an entry carrying any of them with a second book is REFUSED and the message says which. <b>That refusal stands ahead of every push, and testing is why</b>: placed after the gift branch, which queues its row and RETURNS, a gift ticked with a second book queued the gift and dropped the other book in silence.",
-   "<b>AND THE FULL SHEET OPENS FROM THE CORNER.</b> The panel it opens was already a side drawer, fixed right at 100dvh; what sat in the flow was the button. It keeps the design system’s pill recipe that v784 put on it: the corner is where the control sits, not what it is made of."
-  ]
- },
- {
   "v": "v786",
   "d": "22 Sep 2026",
   "t": "A BOOK WITH NO COST HAS NO GUEST BOARD",
