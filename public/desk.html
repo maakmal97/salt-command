@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="486db57afc042bd5";
+var SALT_BUILD_ID="1db29ef5034dd0b0";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -3252,7 +3252,15 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
    calendar on a pointer device. The field keeps its well; the button is a ghost behind a hairline,
    brass like every other quiet control. */
 .dtin{position:relative;display:block;min-width:0;}
-.dtin>input[type="date"]{width:100%;padding-right:74px;}
+/* v784: the field makes room for two steppers and Today. Each stepper holds the tap floor in
+   BOTH directions, 44 by 44, because a control that is only 44 tall is not a control you can hit. */
+.dtin>input[type="date"]{width:100%;padding-right:162px;}
+.dtstep{position:absolute;top:0;bottom:0;right:74px;display:flex;align-items:stretch;}
+.dtar{min-width:var(--tap);min-height:var(--tap);margin:0;padding:0;border:0;
+  border-left:1px solid var(--salt-line-faint);background:transparent;color:var(--salt-brass);
+  cursor:pointer;font-family:var(--salt-font-mono);font-size:17px;line-height:1;}
+.dtar:hover{background:rgba(197,160,89,.10);color:var(--salt-salt);}
+.dtar:focus-visible{outline:2px solid var(--salt-brass);outline-offset:-2px;}
 .dtoday{position:absolute;top:0;right:0;bottom:0;min-width:var(--tap);min-height:var(--tap);margin:0;padding:0 12px;
   border:0;border-left:1px solid var(--salt-line-faint);border-radius:0 var(--salt-radius-sm) var(--salt-radius-sm) 0;
   background:transparent;color:var(--salt-brass);cursor:pointer;
@@ -7803,9 +7811,30 @@ const TODAY=new Date(new Date(Date.now()+8*36e5).toISOString().slice(0,10));
    field's full height so the tap contract holds, and a click anywhere else on the field opens the
    calendar (the listener sits beside renderRole's first call). A phone opens its own picker on the
    tap already, so the calendar call is made on a pointer device only. */
+/* v784, HIS INSTRUCTION OF 22 SEP 2026: A DATE IS MOSTLY TODAY OR YESTERDAY, so stepping a day
+   is a tap and not a calendar. Two steppers and Today, all three reading the same field.
+   THE ARROWS STEP THE DAY AND THAT IS A TRADE, stated rather than discovered: a native date input
+   uses Left and Right to move between its day, month and year segments, and binding them here takes
+   that away. Typing digits still advances the segments by itself, which is how a whole date is
+   entered, and what he does far more often is move one day. Up and Down are left alone, so a
+   segment can still be nudged. */
 function dateIn(id,val,attrs){
   return '<span class="dtin"><input id="'+id+'" type="date"'+(val?' value="'+String(val).replace(/"/g,'&quot;')+'"':'')+(attrs||'')+'>'
+    +'<span class="dtstep">'
+    +'<button type="button" class="dtar" data-dstep="'+id+'" data-by="-1" aria-label="A day earlier" tabindex="-1">&#8249;</button>'
+    +'<button type="button" class="dtar" data-dstep="'+id+'" data-by="1" aria-label="A day later" tabindex="-1">&#8250;</button>'
+    +'</span>'
     +'<button type="button" class="dtoday" data-dt="'+id+'" aria-label="Set to today">Today</button></span>';
+}
+/* one place that moves a date field by whole days, so the buttons and the keys cannot disagree */
+function dateStep(inp,by){
+  if(!inp||inp.disabled)return;
+  const base=inp.value?new Date(inp.value+'T00:00:00Z'):new Date(TODAY.toISOString().slice(0,10)+'T00:00:00Z');
+  if(isNaN(base.getTime()))return;
+  base.setUTCDate(base.getUTCDate()+(+by||0));
+  inp.value=base.toISOString().slice(0,10);
+  inp.dispatchEvent(new Event('input',{bubbles:true}));
+  inp.dispatchEvent(new Event('change',{bubbles:true}));
 }
 /* ============ A ROW IS COSTED IN ITS OWN PRODUCT (v266) ============
    costOf fell back to wavgBuy, which is the ACTIVE product's weighted average, so an oil row
@@ -22075,8 +22104,21 @@ document.addEventListener('click',function(e){
     if(i&&!i.disabled){i.value=TODAY.toISOString().slice(0,10);
       i.dispatchEvent(new Event('input',{bubbles:true}));i.dispatchEvent(new Event('change',{bubbles:true}));}
     return;}
+  /* v784: a day earlier, a day later. Before the calendar branch below, or a tap on the stepper
+     would also open the picker it sits inside. */
+  const st=t.closest('.dtar');
+  if(st){dateStep(document.getElementById(st.getAttribute('data-dstep')),st.getAttribute('data-by'));return;}
   const d=t.closest('input[type="date"]');
   if(d&&!d.disabled&&typeof d.showPicker==='function'&&window.matchMedia&&window.matchMedia('(pointer:fine)').matches){try{d.showPicker();}catch(_){}}
+});
+/* v784, his instruction: LEFT AND RIGHT STEP THE DAY on any date field on the desk. See the note on
+   dateIn for the trade this makes with the input's own segment navigation. */
+document.addEventListener('keydown',function(e){
+  if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;
+  if(e.altKey||e.ctrlKey||e.metaKey)return;
+  const d=e.target;if(!d||d.type!=='date'||d.disabled)return;
+  e.preventDefault();
+  dateStep(d,e.key==='ArrowRight'?1:-1);
 });
 /* the provisional banner rides above every tab, so an uncommitted figure is never
    mistaken for a banked one whichever tab you happen to be looking at */

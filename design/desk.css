@@ -343,7 +343,15 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
    calendar on a pointer device. The field keeps its well; the button is a ghost behind a hairline,
    brass like every other quiet control. */
 .dtin{position:relative;display:block;min-width:0;}
-.dtin>input[type="date"]{width:100%;padding-right:74px;}
+/* v784: the field makes room for two steppers and Today. Each stepper holds the tap floor in
+   BOTH directions, 44 by 44, because a control that is only 44 tall is not a control you can hit. */
+.dtin>input[type="date"]{width:100%;padding-right:162px;}
+.dtstep{position:absolute;top:0;bottom:0;right:74px;display:flex;align-items:stretch;}
+.dtar{min-width:var(--tap);min-height:var(--tap);margin:0;padding:0;border:0;
+  border-left:1px solid var(--salt-line-faint);background:transparent;color:var(--salt-brass);
+  cursor:pointer;font-family:var(--salt-font-mono);font-size:17px;line-height:1;}
+.dtar:hover{background:rgba(197,160,89,.10);color:var(--salt-salt);}
+.dtar:focus-visible{outline:2px solid var(--salt-brass);outline-offset:-2px;}
 .dtoday{position:absolute;top:0;right:0;bottom:0;min-width:var(--tap);min-height:var(--tap);margin:0;padding:0 12px;
   border:0;border-left:1px solid var(--salt-line-faint);border-radius:0 var(--salt-radius-sm) var(--salt-radius-sm) 0;
   background:transparent;color:var(--salt-brass);cursor:pointer;
