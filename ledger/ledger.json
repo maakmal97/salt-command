@@ -1,6 +1,6 @@
 {
- "v": "v780",
- "stamped": "22 Sep 2026, 07:45 KL",
+ "v": "v781",
+ "stamped": "22 Sep 2026, 08:25 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -10,7 +10,8 @@
     "unit": "unit",
     "accent": "var(--salt-product-salt)",
     "since": "2026-05-12",
-    "note": "The original book. Everything before v228 is salt whether or not it says so."
+    "note": "The original book. Everything before v228 is salt whether or not it says so.",
+    "reward": true
    },
    "oil": {
     "id": "oil",
@@ -18,7 +19,8 @@
     "unit": "unit",
     "accent": "var(--salt-product-oil)",
     "since": "2026-08-06",
-    "note": "Second product. Two suppliers named 06 Aug, one live quote, one sale."
+    "note": "Second product. Two suppliers named 06 Aug, one live quote, one sale.",
+    "reward": false
    },
    "candy": {
     "id": "candy",
@@ -27,7 +29,8 @@
     "accent": "var(--salt-product-candy)",
     "since": "2026-09-22",
     "retired": false,
-    "note": "Opened 22 Sep 2026 on his instruction, with no lot, no sale and no count: an empty book, not an invented one. The fold refuses a sale on a book with no cost, so its first lot is entered by hand, which is v228's own bootstrap rule."
+    "note": "Opened 22 Sep 2026 on his instruction, with no lot, no sale and no count: an empty book, not an invented one. The fold refuses a sale on a book with no cost, so its first lot is entered by hand, which is v228's own bootstrap rule.",
+    "reward": false
    },
    "rice": {
     "id": "rice",
@@ -36,7 +39,8 @@
     "accent": "var(--salt-product-rice)",
     "since": "2026-09-22",
     "retired": false,
-    "note": "Opened 22 Sep 2026 on his instruction, empty. Same bootstrap as candy: the first lot is entered by hand before the gate can price anything on this book."
+    "note": "Opened 22 Sep 2026 on his instruction, empty. Same bootstrap as candy: the first lot is entered by hand before the gate can price anything on this book.",
+    "reward": false
    },
    "spare": {
     "id": "spare",
@@ -45,7 +49,8 @@
     "accent": "var(--salt-product-spare)",
     "since": "2026-09-22",
     "retired": false,
-    "note": "Opened 22 Sep 2026 as THE SPARE SLOT, on his instruction, to prove that adding a book is repeatable rather than surgical. It is deliberately given NO mark, so the Ring fallback is exercised by a real book. Put it away with tools/product.mjs --retire spare once it has served."
+    "note": "Opened 22 Sep 2026 as THE SPARE SLOT, on his instruction, to prove that adding a book is repeatable rather than surgical. It is deliberately given NO mark, so the Ring fallback is exercised by a real book. Put it away with tools/product.mjs --retire spare once it has served.",
+    "reward": false
    }
   },
   "PROD_ORDER": [
@@ -5438,7 +5443,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-21T11:26:12.174Z",
   "PRICING": {
-   "takenAt": "2026-09-21T23:49:47.512Z",
+   "takenAt": "2026-09-22T00:25:16.582Z",
    "sizes": [
     0.5,
     1,
@@ -7487,10 +7492,10 @@
      "ladder": []
     }
    },
-   "v": "v780"
+   "v": "v781"
   },
   "OPEN": {
-   "at": "2026-09-21T23:49:47.623Z",
+   "at": "2026-09-22T00:25:16.687Z",
    "count": 6,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
@@ -7655,7 +7660,7 @@
     "rice": null,
     "spare": null
    },
-   "v": "v780"
+   "v": "v781"
   }
  }
 }

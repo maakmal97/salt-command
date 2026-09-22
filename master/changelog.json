@@ -1,5 +1,15 @@
 [
  {
+  "v": "v781",
+  "d": "22 Sep 2026",
+  "t": "WHO EARNS IS A FIELD ON THE BOOK, NOT A STRING COMPARISON",
+  "n": [
+   "<b>THE REWARD SCHEME WAS SALT-ONLY BY SEVEN BARE STRING COMPARISONS</b>, five here and two in the drafter, so no book opened after salt could ever earn however the book described itself. That is a real decision of his and not an accident, but it was written where only a code edit could change it. <code>PRODUCTS[p].reward</code> states it instead: true on salt, false on every other book, which is exactly what those comparisons meant. <b>Nothing moves today.</b> What changes is that whether candy or rice ever earn becomes his decision and a data one.",
+   "<b>THE FALLBACK IN THE DRAFTER IS NOT TIDINESS.</b> The drafter reads <code>state.PRODUCTS</code> off the D1 MIRROR, and the mirror is re-seeded by the deploy job AFTER the Worker is already live. Between those two moments the mirror is the old shape and carries no <code>reward</code> field at all, so a bare read would have answered false for salt and refused every redemption in that window, in silence, on a scheme that has been running since v577. Where NO book states the field the old rule stands; where ANY book states it, the field rules. Both halves are asserted, the second against a mirror built without the field.",
+   "<b>WHAT IS NOT TOUCHED.</b> Four other comparisons against the literal salt stay exactly as they are, because they are the storage convention and not the reward: a row that names no product IS salt, so <code>if (product !== \"salt\") row.product = product</code> is what keeps 175 of 188 sales from carrying a field they do not need. Those are read in <code>docs/PRODUCTS.md</code> section 6 and are correct at five books for the same reason they were correct at two."
+  ]
+ },
+ {
   "v": "v780",
   "d": "22 Sep 2026",
   "t": "CANDY, RICE AND SPARE OPEN, AND THE PARITY SCAN FINDS THE SPLIT CLEAN",

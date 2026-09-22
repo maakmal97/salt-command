@@ -33,6 +33,19 @@ const geoOf = (g) => (Array.isArray(g) && (g.length === 2 || (g.length === 3 && 
 /* v617: whether the book holds a party as departed. PEOPLE reaches the Worker in the mirror's state, as every book key does. */
 const isDepartedIn = (book, id) => !!id && ((book.state && book.state.PEOPLE && book.state.PEOPLE.departed) || []).some((d) => d && d.id === id);
 const prodOf = (r) => (r && r.product) || "salt";
+/* v781: WHICH BOOK EARNS. The reward scheme was gated on the literal "salt" here and in the
+   master, so no book opened after salt could earn however the book described it. It is a field
+   now, true on salt and false everywhere else, which is what the comparison meant.
+   THE FALLBACK IS NOT TIDINESS. This reads state.PRODUCTS off the D1 MIRROR, and the mirror is
+   re-seeded by the deploy job AFTER the Worker is live. Between those two moments the mirror is
+   the old shape and carries no reward field at all, and a bare !!P[p].reward would answer false
+   for salt and refuse every redemption in that window, silently. So: where no book states the
+   field, the old rule stands; where any book states it, the field rules. */
+const rewardBook = (book, p) => {
+  const P = (book && book.state && book.state.PRODUCTS) || {};
+  const stated = Object.keys(P).some((k) => typeof (P[k] || {}).reward === "boolean");
+  return stated ? !!(P[p] || {}).reward : p === "salt";
+};
 
 /* ---- reading the book out of the mirror ------------------------------------------- */
 /* One query per collection, plus the state singletons. The mirror is kept level by the same
@@ -1210,7 +1223,7 @@ export function draftRow(entry, book) {
      payload, beside everything this CAN measure: the party, the inventory and the cost. */
   if (pay.mode === "redeem") {
     const prod = pay.product || "salt";
-    if (prod !== "salt") return { skip: `${prod} has no reward scheme, so there is no reward to redeem` };
+    if (!rewardBook(book, prod)) return { skip: `${prod} has no reward scheme, so there is no reward to redeem` };
     const party = pay.party || null;
     if (!party) return { skip: "a redemption names the party it is for" };
     if (isDepartedIn(book, party)) return { skip: `${party} has departed: they keep earning, but nothing is redeemed until they return, on his ruling of 13 Sep 2026` };
@@ -1403,7 +1416,7 @@ export function draftRow(entry, book) {
      and the ringgit is the units at the book's cost. */
   const coverFlags = [];
   if (row.coverUnits != null || row.coverRM != null) {
-    if (dir !== "SELL" || product !== "salt") return { skip: "a reward covers a sale of salt and nothing else" };
+    if (dir !== "SELL" || !rewardBook(book, product)) return { skip: `a reward covers a sale on a book that earns, and ${product} does not` };
     if (!(row.coverUnits > 0) || !(row.coverRM > 0)) return { skip: "a cover carries both the units of reward and the ringgit they cover" };
     if (((book.state && book.state.associates) || []).includes(POSITION_ENGINE.ownerCode(party)))
       return { skip: `${party} is an associate, whose reward is redeemed or offset on their own card rather than spent covering a sale` };

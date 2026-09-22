@@ -592,9 +592,10 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
 | `tools/stmt-seal.mjs` | Laptop only: seals an issue's passwords under the master, proving each against its own verifier; where a code was re-keyed after the issue it pairs by PROOF, trying only passwords whose code has left the roster (v705) |
 | `tools/stmt-account.mjs` | Laptop only: mints a full account for a roster code that has a username and no record, which the fold never did (v707). Refuses without a master that unwraps an existing record, never touches an account that exists, and skips a bucket and a supplier. The publish names who is stuck on every run |
 | `tools/preflight.mjs` | Whether a run may ship at all: `aheadVerdict` says level, warn or STOP, and update.mjs exits on it. It lives outside update.mjs for the reason commitmsg.mjs does, that a file running its chain on import cannot be driven by the suite (v770) |
+| `tools/product.mjs` | The one road that opens, re-keys, retires or restores a book: `--add`, `--rename`, `--retire`, `--unretire`, `--list`, each writing `ledger/book.json` and syncing. A book opens EMPTY. **It refuses to retire a book that has rows**, because `retired` feeds `PROD_IDS` and every consolidated total reads that, so hiding a book with a past would drop its revenue in silence; and it refuses to re-key **salt**, a row that names no product being salt. What it does not do is give a book a hue or a mark: `docs/PRODUCTS.md` |
 | `tools/rid.mjs` | Stable `rid` per ledger row; `nextRid` is the one minting place |
 | `tools/changelog.mjs` | Prepends `evolution[0]` to `master/changelog.json`; never rewrites |
-| `test/verify.mjs` | ~2,880 assertions over 209 sections, no network or browser; add one per behavioural change, and **prove it red by mutation before trusting its green** |
+| `test/verify.mjs` | ~3,480 assertions over 247 sections, no network or browser; add one per behavioural change, and **prove it red by mutation before trusting its green**, each on its own |
 
 The rest: `docs/DESK.md`.
 
@@ -619,4 +620,10 @@ and local tools: `docs/DESK.md`.
 - **A round points at the newest code.** Probe the diff since the last round, attack the fix;
   older code is regression only.
 - **An instrument is proved red before its green is trusted.** Reading source text, or checking
-  inputs computed by the code under test, does not count.
+  inputs computed by the code under test, does not count. **TWO ASSERTIONS WRITTEN ON 22 SEP 2026
+  WERE VACUOUS AND BOTH PASSED**, which is what this rule is for: one built its pattern through a
+  shell heredoc that ate the backslashes, so it matched a backspace character and two plain
+  letters; the other searched `slice(0, indexOf("const evolution=["))` for code that lives at line
+  17,482, because **the journal sits in the MIDDLE of the master and not at the end**. A vacuous
+  check and a true one are identical in a green run. Prove each new assertion red on its own:
+  mutations run together mask each other, and one of these hid behind its neighbour going red.

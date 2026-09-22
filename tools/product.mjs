@@ -81,6 +81,9 @@ function add(b, id, name, note, since) {
     accent: `var(--salt-product-${id})`,
     since: since || new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10),
     retired: false,
+    /* v781: a new book does not earn. Who earns is a field rather than a string comparison, and
+       turning it on is his decision, not a side effect of opening a book. */
+    reward: false,
     note: note || `Opened by tools/product.mjs. No lot, no sale and no count yet, so the fold will refuse a sale on it until its first lot is entered by hand.`,
   };
   b.PROD_ORDER.push(id);

@@ -6,7 +6,8 @@
       "unit": "unit",
       "accent": "var(--salt-product-salt)",
       "since": "2026-05-12",
-      "note": "The original book. Everything before v228 is salt whether or not it says so."
+      "note": "The original book. Everything before v228 is salt whether or not it says so.",
+      "reward": true
     },
     "oil": {
       "id": "oil",
@@ -14,7 +15,8 @@
       "unit": "unit",
       "accent": "var(--salt-product-oil)",
       "since": "2026-08-06",
-      "note": "Second product. Two suppliers named 06 Aug, one live quote, one sale."
+      "note": "Second product. Two suppliers named 06 Aug, one live quote, one sale.",
+      "reward": false
     },
     "candy": {
       "id": "candy",
@@ -23,7 +25,8 @@
       "accent": "var(--salt-product-candy)",
       "since": "2026-09-22",
       "retired": false,
-      "note": "Opened 22 Sep 2026 on his instruction, with no lot, no sale and no count: an empty book, not an invented one. The fold refuses a sale on a book with no cost, so its first lot is entered by hand, which is v228's own bootstrap rule."
+      "note": "Opened 22 Sep 2026 on his instruction, with no lot, no sale and no count: an empty book, not an invented one. The fold refuses a sale on a book with no cost, so its first lot is entered by hand, which is v228's own bootstrap rule.",
+      "reward": false
     },
     "rice": {
       "id": "rice",
@@ -32,7 +35,8 @@
       "accent": "var(--salt-product-rice)",
       "since": "2026-09-22",
       "retired": false,
-      "note": "Opened 22 Sep 2026 on his instruction, empty. Same bootstrap as candy: the first lot is entered by hand before the gate can price anything on this book."
+      "note": "Opened 22 Sep 2026 on his instruction, empty. Same bootstrap as candy: the first lot is entered by hand before the gate can price anything on this book.",
+      "reward": false
     },
     "spare": {
       "id": "spare",
@@ -41,7 +45,8 @@
       "accent": "var(--salt-product-spare)",
       "since": "2026-09-22",
       "retired": false,
-      "note": "Opened 22 Sep 2026 as THE SPARE SLOT, on his instruction, to prove that adding a book is repeatable rather than surgical. It is deliberately given NO mark, so the Ring fallback is exercised by a real book. Put it away with tools/product.mjs --retire spare once it has served."
+      "note": "Opened 22 Sep 2026 as THE SPARE SLOT, on his instruction, to prove that adding a book is repeatable rather than surgical. It is deliberately given NO mark, so the Ring fallback is exercised by a real book. Put it away with tools/product.mjs --retire spare once it has served.",
+      "reward": false
     }
   },
   "PROD_ORDER": [
@@ -5531,6 +5536,9 @@
       "v505, 07 Sep 2026: the 25 unit tier is RM 1,200 on his word; the other four tiers stand as quoted on 20 Aug.",
       "v517, 08 Sep 2026: the 100 unit tier is RM 4,000 on his word, down RM 300 from the RM 4,300 quoted on 20 Aug; the other four tiers stand. The salt taper refits from -0.100 to -0.121 and five asks come down RM 10 (RM 30 at 12.5 unit); no floor moves.",
       "v514, 07 Sep 2026: SP7-PUD's quote as he relayed it: 10@100, 15@150, 20@180, 30@250, 50@380. The 15 unit tier is new; 30 and 50 moved up RM 20 and RM 30; 10 and 20 stand. The 06 Aug ladder was 10@100, 20@180, 30@230, 50@350."
+    ],
+    "PRODUCTS": [
+      "v781, 22 Sep 2026: WHO EARNS IS A FIELD ON THE BOOK NOW. The reward scheme was salt-only by five bare string comparisons in the master and two in the drafter, so no book opened after salt could ever earn without a code edit, whatever the book said about itself. reward is true on salt and false on every other book, which is exactly what those comparisons meant, so nothing moves today. Whether candy or rice ever earn is his decision and a data one."
     ]
   }
 }

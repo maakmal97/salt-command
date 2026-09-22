@@ -11188,8 +11188,12 @@ await (async () => {
     ok(!dc.skip && dc.row && dc.row.coverUnits === 0.5 && dc.row.coverRM === 22 && (dc.flags || []).some((f) => /held 2 unit of reward/.test(f)),
       "the drafter carries both halves onto the row and says the balance is the desk's word: " + (dc.skip || JSON.stringify((dc.flags || []).slice(0, 2))));
     ok(/associate/.test(dR19(e19("CZ9-AV", { coverUnits: 0.5, coverRM: 22 }), mir19).skip || "") && /both/.test(dR19(e19("CZ9-CV", { coverUnits: 0.5 }), mir19).skip || "")
-      && /salt/.test(dR19(e19("CZ9-CV", { coverUnits: 0.5, coverRM: 22 }, "oil"), mir19).skip || ""),
-      "and refuses a cover for an associate, a cover missing its ringgit, and one on oil");
+      /* v781: the refusal NAMES THE BOOK IT IS REFUSING. It used to say "a sale of salt and nothing
+         else", so this matched the word salt, which was a proxy for the real question. The gate is
+         the reward field now and the message names the book, which is what this was ever about.
+         Note the fixture states no PRODUCTS at all, so this also exercises the mirror fallback. */
+      && /oil/.test(dR19(e19("CZ9-CV", { coverUnits: 0.5, coverRM: 22 }, "oil"), mir19).skip || ""),
+      "and refuses a cover for an associate, a cover missing its ringgit, and one on a book that does not earn");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w19.close(); } catch (e) { /* best effort */ } }
 })();
 
@@ -18842,6 +18846,65 @@ await (async () => {
   ok(capless.every((id) => new RegExp(id, "i").test(after)) && /no cap of (their|its) own/.test(after),
     "saying instead which books borrow one, so the borrowing is stated rather than hidden");
   try { w.close(); } catch (e) { }
+})();
+
+section("v781: who earns is a field on the book, not a string comparison");
+await (async () => {
+  /* The reward scheme was gated on the literal "salt" in five places in the master and two in
+     the drafter, so no book opened after salt could ever earn however the book described it.
+     Nothing moves today: the field is true on salt and false everywhere else, which is exactly
+     what those comparisons meant. What changes is that turning it on becomes his decision and a
+     data one. */
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const ids = Object.keys(book.PRODUCTS || {});
+  ok(ids.every((id) => typeof book.PRODUCTS[id].reward === "boolean"),
+    "every book states whether it earns");
+  ok(book.PRODUCTS.salt.reward === true && ids.filter((id) => book.PRODUCTS[id].reward).length === 1,
+    "salt earns and nothing else does, which is what the comparison it replaced meant");
+
+  /* THE JOURNAL SITS IN THE MIDDLE OF THE MASTER, NOT AT THE END, and the first version of this
+     check did not know that: it read slice(0, indexOf("const evolution=[")), which is the first
+     7,110 lines of a 22,000-line file, and the reward gate it was looking for is at 17,482. It
+     therefore searched a region that could not contain its subject, passed, and went on passing
+     under the mutation written to prove it. The region is now everything EXCEPT the evolution
+     array, which runs from that declaration to LAST_UPDATED; the journal is excluded because it
+     quotes retired code by design, and a check that read it would go red on history. */
+  const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const evAt = msrc.indexOf("const evolution=["), stampAt = msrc.indexOf("const LAST_UPDATED=", evAt);
+  ok(evAt > 0 && stampAt > evAt, "the journal's span can be found, so the code region excludes it");
+  const code = msrc.slice(0, evAt) + msrc.slice(stampAt);
+  ok(code.includes("const rewards=p=>"), "the code region really does carry the reward gate, so this is not searching an empty room");
+  ok(!/PROD!=='salt'/.test(code) && !/wbProdVal\(\)==='salt'/.test(code),
+    "and the master gates the reward on the field rather than on the book's name");
+
+  const { draftRow } = await import("../src/drafter.js");
+  const mk = (PRODUCTS) => ({
+    sales: [], purchases: [],
+    state: { roster: ["CZ8-RW"], associates: [], PRODUCTS, TIER_OF: {} },
+    pricing: { byProduct: {} },
+  });
+  const redeem = (p) => ({ at: "2099-02-02T00:00:00.000Z", payload: { mode: "redeem", product: p, party: "CZ8-RW", qty: 1, date: "2099-02-02" } });
+  const stated = { salt: { name: "Salt", reward: true }, oil: { name: "Oil", reward: false } };
+
+  /* draftRow takes the ENTRY first and the book second. */
+  const onSalt = draftRow(redeem("salt"), mk(stated));
+  const onOil = draftRow(redeem("oil"), mk(stated));
+  ok(!(onOil && onOil.row), "a book that does not earn has no reward to redeem");
+  ok(!(onOil && onOil.row) && /no reward scheme/.test(String(onOil && onOil.skip)),
+    "and the drafter says which book it is refusing");
+  ok(!/no reward scheme/.test(String(onSalt && onSalt.skip)),
+    "while a book that earns is not refused on that ground");
+
+  /* THE MIRROR IS RE-SEEDED AFTER THE WORKER GOES LIVE, so between the deploy and the re-seed
+     state.PRODUCTS is the old shape and carries no reward field at all. A bare read would answer
+     false for salt there and refuse every redemption in that window, silently. */
+  const old = { salt: { name: "Salt" }, oil: { name: "Oil" } };
+  const onSaltOld = draftRow(redeem("salt"), mk(old));
+  const onOilOld = draftRow(redeem("oil"), mk(old));
+  ok(!/no reward scheme/.test(String(onSaltOld && onSaltOld.skip)),
+    "on a mirror that predates the field, salt still earns rather than being refused in silence");
+  ok(/no reward scheme/.test(String(onOilOld && onOilOld.skip)),
+    "and the old rule still refuses the book it always refused");
 })();
 
 section("The suite frees its windows: every section's body is its own async function");
