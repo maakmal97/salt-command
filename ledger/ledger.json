@@ -1,6 +1,6 @@
 {
- "v": "v783",
- "stamped": "22 Sep 2026, 11:43 KL",
+ "v": "v788",
+ "stamped": "22 Sep 2026, 14:49 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 6,
+  "STATED_STOCK": 1,
   "COUNT_ON": {
    "salt": "2026-09-21",
    "oil": "2026-09-19",
@@ -569,6 +569,51 @@
       "note": "<b>FULFILMENT ON p026 DATED 20 SEP: THE SECOND HALF LANDS AND THE LOT CLOSES.</b> SA5-BTR's buy of 19 Sep, 37.5 unit for RM1,725 at RM46 a unit, paid in cash on the day with 18.75 unit moved then, takes the remaining 18.75 unit on 20 Sep. No money moves: RM0 and 18.75 unit against RM0 and 18.75 unit outstanding, leaving nothing open, as the drafter flagged. The rate sits under the party's RM50 median and inside their RM44 to RM64 range across 17 orders; RM3,100 was outstanding before this row. The row itself is applied by ovAmend, not recomputed here."
      }
     ]
+   },
+   {
+    "qty": 35,
+    "total": 1140,
+    "cash": 1140,
+    "handover": "delivered",
+    "supplier": "SM4-KEP",
+    "status": "paid",
+    "product": "candy",
+    "date": "2026-09-21",
+    "receivedOn": "2026-09-21",
+    "receivedQty": 35,
+    "paidOn": "2026-09-21",
+    "note": "<b>CANDY BUY DATED 21 SEP, PAID IN FULL AND RECEIVED IN FULL THE SAME DAY.</b> Booked to SM4-KEP, 35 unit for RM1,140, RM32.57 a unit, RM1,140 cash out and 35 unit received on 21 Sep, delivered, with no freight and no delivery charge beside it, so nothing on this row stays open. It is a purchase, so no floor or ask applies and the row carries no goods cost of its own. SM4-KEP: 1 order, median RM7.67, range RM7.67 to RM7.67, nothing outstanding, none on credit. The drafter raised no flag.",
+    "rid": "p027"
+   },
+   {
+    "qty": 100,
+    "total": 320,
+    "cash": 320,
+    "handover": "collected",
+    "supplier": "SM4-KEP",
+    "freight": 20,
+    "status": "paid",
+    "product": "rice",
+    "date": "2026-09-21",
+    "receivedOn": "2026-09-21",
+    "receivedQty": 100,
+    "paidOn": "2026-09-21",
+    "note": "<b>RICE BUY DATED 21 SEP, PAID IN FULL, COLLECTED IN FULL.</b> Booked to SM4-KEP, 100 unit for RM320, RM3.20 a unit, with RM20 freight beside it, RM320 cash out and 100 unit received on 21 Sep, so nothing on this row stays open. A purchase, so no floor or ask is set against it and it carries no goods cost of its own. SM4-KEP: 1 order, median RM7.67, range RM7.67 to RM7.67, nothing outstanding, none on credit. The drafter raised no flag and nothing is left for a later fold.",
+    "rid": "p028"
+   },
+   {
+    "qty": 25,
+    "total": 1400,
+    "cash": 1240,
+    "handover": "delivered",
+    "supplier": "SA5-BTR",
+    "status": "part",
+    "product": "rice",
+    "date": "2026-09-22",
+    "receivedOn": "2026-09-22",
+    "receivedQty": 25,
+    "note": "<b>RICE BUY DATED 22 SEP, RECEIVED IN FULL, PAID SHORT.</b> Booked to SA5-BTR, 25 unit for RM1,400, RM56 a unit, delivered, with RM1,240 of the RM1,400 paid and all 25 unit received on 22 Sep, so the row sits open on an advance with RM160 unpaid. RM56 stands above the party median of RM50 and inside their RM44 to RM64 range. No floor or ask applies to a purchase and the row carries no goods cost of its own. SA5-BTR: 17 orders, RM3,100 outstanding before this row, nothing defaulted. No flag was raised.",
+    "rid": "p029"
    }
   ],
   "sales": [
@@ -4844,6 +4889,35 @@
     "date": "2026-09-21",
     "note": "<b>SALT REDEEMED FREE BY CS6-BS, 1 UNIT, RM48 SETTLED BY THE REWARD ON 21 SEP.</b> No cash in, RM48 settled by the reward and 1 unit delivered on 21 Sep, so the row closes on arrival and leaves nothing outstanding. Rebate and goodwill both stand, so on his ruling of 11 Sep 2026 it is booked out of revenue and its RM48 is an expense, at RM48 a unit, the inventory's own rate. No rate is set against the RM51.95 floor or RM160 ask for 1 unit. Flagged: 6 earned against 5 applied leaves 1 unit, the desk's word, unanswered here. CS6-BS: 13 orders, median RM95, range RM11 to RM126.67, nothing outstanding, 1 unit on credit against a cap of 2.",
     "rid": "s189"
+   },
+   {
+    "customer": "CZ4-MK",
+    "qty": 5,
+    "total": 460,
+    "cost": 240,
+    "cash": 460,
+    "handover": "collected",
+    "date": "2026-09-21",
+    "deliveredQty": 5,
+    "deliveredOn": "2026-09-21",
+    "paidOn": "2026-09-21",
+    "note": "<b>SALT SALE DATED 21 SEP, COLLECTED AND PAID IN FULL ON THE DAY.</b> CZ4-MK took 5 unit for RM460, RM92 a unit, RM460 cash in and 5 unit moved on 21 Sep, so nothing stays open. The total clears the RM259.22 floor for 5 unit and sits RM100 under the RM560 ask, well below the RM700 ceiling. Costed at RM240, RM48 a unit, the inventory's own rate. Flagged: the shelf spans more than one lot rate, so RM48 is an average and not the lot drawn; the figures here do not answer it. CZ4-MK: 3 orders, median RM84, range RM13 to RM87, nothing outstanding, none on credit against a cap of 1.",
+    "rid": "s190"
+   },
+   {
+    "customer": "CZ4-MK",
+    "qty": 10,
+    "total": 460,
+    "cost": 0,
+    "cash": 460,
+    "handover": "collected",
+    "product": "candy",
+    "date": "2026-09-21",
+    "deliveredQty": 10,
+    "deliveredOn": "2026-09-21",
+    "paidOn": "2026-09-21",
+    "note": "<b>CANDY SALE DATED 21 SEP, COLLECTED AND PAID IN FULL ON THE DAY.</b> CZ4-MK took 10 unit for RM460, RM46 a unit, RM460 cash in and 10 unit moved on 21 Sep, so nothing stays open. Costed at RM0 a unit from the desk's own inventory cost, RM460 on the goods at 100%. The floor, ask and ceiling for 10 unit all stand at zero, so no rate test applies. Flagged: CZ4-MK has no committed candy order on the book, so there is no rate of theirs to compare; the figures do not answer it. CZ4-MK: 3 orders, median RM84, range RM13 to RM87, nothing outstanding, none on credit against a cap of 1.",
+    "rid": "s191"
    }
   ],
   "contacts": [
@@ -5441,9 +5515,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-21T11:26:12.174Z",
+  "QUEUE_COMMITTED": "2026-09-22T06:11:13.632Z",
   "PRICING": {
-   "takenAt": "2026-09-22T03:53:32.071Z",
+   "takenAt": "2026-09-22T06:49:37.162Z",
    "sizes": [
     0.5,
     1,
@@ -5501,6 +5575,10 @@
     "CN6-WM": {
      "salt": "Platinum"
     },
+    "CZ4-MK": {
+     "salt": "Platinum",
+     "oil": "Titanium"
+    },
     "CR3-DAM": {
      "salt": {
       "small": "Titanium",
@@ -5523,10 +5601,6 @@
       "mid": "Titanium",
       "big": "Platinum"
      }
-    },
-    "CZ4-MK": {
-     "salt": "Platinum",
-     "oil": "Titanium"
     },
     "CE4-AD": {
      "salt": "Platinum"
@@ -5771,6 +5845,56 @@
       "lateTwice": false
      }
     },
+    "CZ4-MK": {
+     "salt": {
+      "name": "rare and large",
+      "orders": 3,
+      "tenureDays": 54,
+      "sinceLastDays": 1,
+      "perMonth": 1.69,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     },
+     "oil": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 27,
+      "sinceLastDays": 27,
+      "perMonth": 1.01,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     },
+     "candy": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 1,
+      "sinceLastDays": 1,
+      "perMonth": 1.01,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
     "CR3-DAM": {
      "salt": {
       "name": "small and often",
@@ -5857,40 +5981,6 @@
       "small": true,
       "bigger": false,
       "loyal": true,
-      "rare": false,
-      "lateTwice": false
-     }
-    },
-    "CZ4-MK": {
-     "salt": {
-      "name": "rare and large",
-      "orders": 2,
-      "tenureDays": 54,
-      "sinceLastDays": 27,
-      "perMonth": 1.13,
-      "smallShare": 0,
-      "bigShare": 1,
-      "late": 0,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": false,
-      "lateTwice": false
-     },
-     "oil": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 27,
-      "sinceLastDays": 27,
-      "perMonth": 1.01,
-      "smallShare": 0,
-      "bigShare": 1,
-      "late": 0,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
       "rare": false,
       "lateTwice": false
      }
@@ -6415,40 +6505,40 @@
      "replCost": 45.56,
      "floors": {
       "1": {
-       "floor": 51.84
+       "floor": 51.36
       },
       "2": {
-       "floor": 103.69
+       "floor": 102.73
       },
       "3": {
-       "floor": 155.53
+       "floor": 154.09
       },
       "4": {
-       "floor": 207.38
+       "floor": 205.46
       },
       "5": {
-       "floor": 259.22
+       "floor": 256.82
       },
       "0.5": {
-       "floor": 25.92
+       "floor": 25.68
       },
       "1.5": {
-       "floor": 77.77
+       "floor": 77.05
       },
       "2.5": {
-       "floor": 129.61
+       "floor": 128.41
       },
       "3.5": {
-       "floor": 181.46
+       "floor": 179.78
       },
       "4.5": {
-       "floor": 233.3
+       "floor": 231.14
       },
       "6.25": {
-       "floor": 324.03
+       "floor": 321.03
       },
       "12.5": {
-       "floor": 648.06
+       "floor": 642.06
       }
      },
      "inputs": {
@@ -6523,9 +6613,9 @@
        "repl": 45.56,
        "freightRate": 1.0756,
        "leak": {
-        "ratio": 0.1117,
+        "ratio": 0.1014,
         "leak": 5.5,
-        "sold": 49.25,
+        "sold": 54.25,
         "cycles": 3,
         "from": "2026-09-15",
         "to": "2026-09-21"
@@ -6542,15 +6632,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.37037037037037035
+         "v": 0.36363636363636365
         }
        },
        "attrib": 1,
        "shrinkRate": 0.07833149503659882,
        "avgDel": {
-        "n": 163,
-        "kg": 414.95,
-        "mean": 2.5457
+        "n": 164,
+        "kg": 419.95,
+        "mean": 2.5607
        }
       },
       "policy": {
@@ -6738,7 +6828,7 @@
       {
        "q": 3.5,
        "prices": [
-        190,
+        180,
         280,
         320,
         370,
@@ -7060,44 +7150,44 @@
      ]
     },
     "candy": {
-     "stockCost": 0,
-     "replCost": 0,
+     "stockCost": 32.5714,
+     "replCost": 32.57,
      "floors": {
       "1": {
-       "floor": 0
+       "floor": 32.57
       },
       "2": {
-       "floor": 0
+       "floor": 65.14
       },
       "3": {
-       "floor": 0
+       "floor": 97.71
       },
       "4": {
-       "floor": 0
+       "floor": 130.28
       },
       "5": {
-       "floor": 0
+       "floor": 162.85
       },
       "0.5": {
-       "floor": 0
+       "floor": 16.29
       },
       "1.5": {
-       "floor": 0
+       "floor": 48.86
       },
       "2.5": {
-       "floor": 0
+       "floor": 81.42
       },
       "3.5": {
-       "floor": 0
+       "floor": 114
       },
       "4.5": {
-       "floor": 0
+       "floor": 146.56
       },
       "6.25": {
-       "floor": 0
+       "floor": 203.56
       },
       "12.5": {
-       "floor": 0
+       "floor": 407.13
       }
      },
      "inputs": {
@@ -7107,17 +7197,29 @@
        "lockState": {
         "state": "none",
         "lock": null,
-        "cur": null
+        "cur": {
+         "qty": 35,
+         "total": 1140,
+         "rate": 32.5714,
+         "date": "2026-09-21",
+         "sup": "SM4-KEP"
+        }
        },
        "lockBase": null,
        "over": {
         "cost": null,
         "shrink": null
        },
-       "lot": null,
-       "meanLot": null,
-       "quoteRate": 0,
-       "repl": null,
+       "lot": {
+        "qty": 35,
+        "total": 1140,
+        "rate": 32.5714,
+        "date": "2026-09-21",
+        "sup": "SM4-KEP"
+       },
+       "meanLot": 35,
+       "quoteRate": 32.57,
+       "repl": 32.57,
        "freightRate": 0,
        "leak": null,
        "costRule": {
@@ -7132,15 +7234,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.2
+         "v": 0
         }
        },
        "attrib": 1,
        "shrinkRate": 0,
        "avgDel": {
-        "n": 0,
-        "kg": 0,
-        "mean": null
+        "n": 1,
+        "kg": 10,
+        "mean": 10
        }
       },
       "policy": {
@@ -7204,44 +7306,44 @@
      "ladder": []
     },
     "rice": {
-     "stockCost": 0,
-     "replCost": 0,
+     "stockCost": 13.76,
+     "replCost": 13.76,
      "floors": {
       "1": {
-       "floor": 0
+       "floor": 13.96
       },
       "2": {
-       "floor": 0
+       "floor": 27.92
       },
       "3": {
-       "floor": 0
+       "floor": 41.88
       },
       "4": {
-       "floor": 0
+       "floor": 55.84
       },
       "5": {
-       "floor": 0
+       "floor": 69.8
       },
       "0.5": {
-       "floor": 0
+       "floor": 6.98
       },
       "1.5": {
-       "floor": 0
+       "floor": 20.94
       },
       "2.5": {
-       "floor": 0
+       "floor": 34.9
       },
       "3.5": {
-       "floor": 0
+       "floor": 48.86
       },
       "4.5": {
-       "floor": 0
+       "floor": 62.82
       },
       "6.25": {
-       "floor": 0
+       "floor": 87.25
       },
       "12.5": {
-       "floor": 0
+       "floor": 174.5
       }
      },
      "inputs": {
@@ -7251,18 +7353,30 @@
        "lockState": {
         "state": "none",
         "lock": null,
-        "cur": null
+        "cur": {
+         "qty": 25,
+         "total": 1400,
+         "rate": 56,
+         "date": "2026-09-22",
+         "sup": "SA5-BTR"
+        }
        },
        "lockBase": null,
        "over": {
         "cost": null,
         "shrink": null
        },
-       "lot": null,
-       "meanLot": null,
-       "quoteRate": 0,
-       "repl": null,
-       "freightRate": 0,
+       "lot": {
+        "qty": 25,
+        "total": 1400,
+        "rate": 56,
+        "date": "2026-09-22",
+        "sup": "SA5-BTR"
+       },
+       "meanLot": 62.5,
+       "quoteRate": 13.76,
+       "repl": 13.76,
+       "freightRate": 0.2,
        "leak": null,
        "costRule": {
         "kind": "stack",
@@ -7492,12 +7606,29 @@
      "ladder": []
     }
    },
-   "v": "v783"
+   "v": "v788"
   },
   "OPEN": {
-   "at": "2026-09-22T03:53:32.275Z",
-   "count": 6,
+   "at": "2026-09-22T06:49:37.398Z",
+   "count": 7,
    "byKey": {
+    "SA5-BTR|2026-09-22|1400": {
+     "d": "2026-09-22",
+     "p": "SA5-BTR",
+     "dir": "B",
+     "q": 25,
+     "t": 1400,
+     "cash": 1240,
+     "mv": 25,
+     "st": "oweMoney",
+     "oweRM": 160,
+     "pr": "rice",
+     "rid": "p029",
+     "receivedOn": "2026-09-22",
+     "handover": "delivered",
+     "receivedQty": 25,
+     "key": "SA5-BTR|2026-09-22|1400"
+    },
     "CN6-WM|2026-09-19|250": {
      "d": "2026-09-19",
      "p": "CN6-WM",
@@ -7599,11 +7730,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 6,
-     "free": 6,
+     "onHand": 1,
+     "free": 1,
      "owedOut": 0,
-     "coverDays": 1.1,
-     "rate": 5.59,
+     "coverDays": 0.2,
+     "rate": 5.95,
      "owedToYou": 340,
      "promised": 0,
      "short": 0
@@ -7621,19 +7752,19 @@
     },
     "candy": {
      "name": "Candy",
-     "onHand": 0,
-     "free": 0,
+     "onHand": 25,
+     "free": 25,
      "owedOut": 0,
-     "coverDays": null,
-     "rate": 0,
+     "coverDays": 35,
+     "rate": 0.71,
      "owedToYou": 0,
      "promised": 0,
      "short": 0
     },
     "rice": {
      "name": "Rice",
-     "onHand": 0,
-     "free": 0,
+     "onHand": 125,
+     "free": 125,
      "owedOut": 0,
      "coverDays": null,
      "rate": 0,
@@ -7660,7 +7791,7 @@
     "rice": null,
     "spare": null
    },
-   "v": "v783"
+   "v": "v788"
   }
  }
 }

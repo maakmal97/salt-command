@@ -19154,7 +19154,7 @@ await (async () => {
     "the page carries the same @font-face rules, first, on both pages the Worker serves");
 })();
 
-section("v788: a second book on the Enter form is a second transaction for the same party");
+section("v789: a second book on the Enter form is a second transaction for the same party");
 await (async () => {
   /* v409 called two products in one form a FAULT, and it was right: the margin, the free inventory
      and the price coach all read the ACTIVE book, so a form holding two read one and recorded the
