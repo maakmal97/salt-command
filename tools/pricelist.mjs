@@ -186,6 +186,13 @@ export function boardList(tier, book, pricing, now, pick) {
     const inputs = snap && snap.inputs;
     if (!inputs || !inputs.cost || !inputs.policy) continue;    // a product the desk cannot price is left off
     const C = PRICING_ENGINE.costStack(inputs.cost), P = inputs.policy;
+    /* v785: A BOOK WITH NO COST HAS NO BOARD. A book opened empty (v780) has inputs and a policy and
+       no lot, so its cost stack is 0 and the fallback row below prices every size at 0, which is
+       finite and so passed `usable`: candy, rice and spare went out on all five guest boards at RM 0
+       at twelve sizes each from the v780 publish until this. The test is the engine's own basis and
+       not the prices, because a laddered book with no lot would price at 10, 20, 30, each level a
+       ten over the one below, and clear any test on the prices. */
+    if (!(PRICING_ENGINE.ladderCogs(1, C) > 0)) continue;
     const sizesHere = (Array.isArray(P.boardSizes) && P.boardSizes.length) ? P.boardSizes
       : ((Array.isArray(snap.sizes) && snap.sizes.length) ? snap.sizes : ((pricing && pricing.sizes) || []));
     const sizes = sizesHere.slice().sort((a, b) => a - b);

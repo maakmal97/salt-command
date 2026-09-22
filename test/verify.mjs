@@ -7545,6 +7545,23 @@ await (async () => {
     ok(sameSize.products.length > 0 && sameSize.products.every((p) => p.sizes.length > 0
       && p.sizes.every((r) => Number.isFinite(r.price))),
       "and two anchors naming one size cannot put NaN in front of a stranger");
+    /* v785: A BOOK WITH NO COST IS LEFT OFF, forced rather than waited for. v780 opened three books
+       empty and every publish since put each on all five guest boards at RM 0 at twelve sizes, the
+       fallback row's zeros being finite. Salt keeps its ladder and is struck of its cost in a copy,
+       which is the case a test on the prices would miss (10, 20, 30, a ten a level), and must vanish
+       from the board while the rest stay; and the live boards carry no RM 0 at any size, which
+       today's empty books make a real check rather than a tautology. */
+    const noCost = JSON.parse(JSON.stringify(px));
+    const c0 = noCost.byProduct.salt.inputs.cost;
+    c0.repl = null; c0.lot = null; c0.quoteRate = 0; c0.freightRate = 0;   /* the shape an empty book carries */
+    const struck = bl(2, bk, noCost, new Date()), whole = bl(2, bk, px, new Date());
+    ok(whole.products.some((p) => p.product === "salt") && !struck.products.some((p) => p.product === "salt")
+      && struck.products.length === whole.products.length - 1,
+      "a book whose cost stack is nothing is left off the board and the other books stay: "
+      + JSON.stringify(struck.products.map((p) => p.product)));
+    ok(whole.products.length > 0 && whole.products.every((p) => p.sizes.length > 0 && p.sizes.every((r) => r.price > 0)),
+      "and no board a stranger opens carries RM 0 at any size, empty books included: "
+      + JSON.stringify(whole.products.map((p) => [p.product, Math.min(...p.sizes.map((r) => r.price))])));
   }
 
   /* the vendored encoder is the one encoder, or the site draws a QR from code nobody is testing */

@@ -1,5 +1,16 @@
 [
  {
+  "v": "v786",
+  "d": "22 Sep 2026",
+  "t": "A BOOK WITH NO COST HAS NO GUEST BOARD",
+  "n": [
+   "<b>HIS QUESTION OF 22 SEP 2026, whether the purchase cost and the selling price are synchronised.</b> On the desk they are, by construction: one engine strikes the ladder off the last three lots received, and the customer's price lists and the five guest boards are re-sealed from the same snapshot on every publish. The check found the one place they were not. <b>Candy, rice and spare had been on all five guest boards at RM 0 at twelve sizes each</b> since the publish that followed v780, which opened them empty.",
+   "<b>WHY.</b> A book opened empty has inputs and a policy and no lot, so its cost stack is 0 and <code>boardList</code>'s fallback row prices every size at 0. The test that a row is usable asked only that a price be finite, and 0 is finite; the guest page draws every row it is given. The customer's own price list was never wrong, because it gates on a tier and reads a book with none as coming soon.",
+   "<b>THE RULE IS THE ENGINE'S OWN BASIS.</b> A book is left off the board exactly when its landed cost is nothing, read through <code>ladderCogs</code> and not through a second test on the prices: a price of nothing is a symptom, and a laddered book with no lot would clear a price test at RM 10, 20 and 30, each level sitting a ten over the one below. <b>Nothing else moves</b>: salt and oil price as they did, and a book is back on the boards the moment its first lot is folded and published.",
+   "<b>TWO ASSERTIONS, EACH PROVED RED ON ITS OWN.</b> Salt keeps its ladder and is struck of its cost in a copy of the snapshot, and must vanish from the board while the rest stay; and the live boards carry no RM 0 at any size, which today's three empty books make a real check rather than a tautology. The first goes red under the price test as well as under no test at all, which is what it is for."
+  ]
+ },
+ {
   "v": "v785",
   "d": "22 Sep 2026",
   "t": "THE BRAND FACES REACH EVERY SURFACE, SELF-HOSTED",
