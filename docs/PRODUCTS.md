@@ -180,21 +180,34 @@ the case was anticipated.
   the point is product three. It walks `PROD_IDS` and reports unscoped reads on the
   Whiteboard. Rule 1 catches two books reporting an identical commitment, which is the
   signature of a whole-book read presented as one product's. **Rule 2, a book with no orders
-  reporting commitments or receivables, cannot fire while every book has orders**, so it has
-  never once run in anger; the first empty book arms it. Rules 3 and 5, never counted and
-  declared but empty, are expected on a new book and are not faults.
+  reporting commitments or receivables, could not fire while every book had orders**, so from
+  v275 to v779 it had never once run in anger. Opening three empty books at v780 armed it, and
+  it reported neither rule 1 nor rule 2: every empty book reads zero revenue, zero receivable,
+  zero inventory and zero promised out, so **the unfinished product split of v228 is clean**.
+  Rules 3 and 5, never counted and declared but empty, fire on a new book and are not faults.
+
+- **The suite held two-product assumptions of its own, and they only showed at three.** Opening
+  the books turned thirteen assertions red, none of them a fault in the desk: a board section
+  that guessed which product it was walking from `boardSizes[0] === 0.5 ? "salt" : "oil"` and so
+  reported three books as salt; a guest-link check that excluded the book NAMED oil rather than
+  books with no ladder; a monthly reconciliation whose own `reduce` over a book with no months
+  gave NaN while the desk returned clean zeros; and a page check that expected every switch to
+  list every book, when Sourcing skips an empty one by design. A fixture wider than production
+  hides this class; only a real third book finds it.
 - **`--salt-product-salt` is used as a generic pale hue**, not as salt's product colour, by
   about a dozen ordinary selectors in `design/desk.css` (`.mono`, `.sell`, `.breg`, `.apchip`
   and others). Renaming that token to free it up would recolour half the desk. Oil's hue has
   no such leakage. Note also that `--salt-product-oil` and `--salt-brass` are the same value,
   so oil's product colour is already indistinguishable from ordinary furniture, and that
   `--salt-salt` is the brand ink, one character from `--salt-product-salt`.
-- **A new book silently inherits salt's limits.** `creditCapFor` and `reorderFor` both fall
-  back to `RULES[...][DEFAULT_PROD]` when a product has no entry of its own, so a book opened
-  with neither stated is quoted salt's credit cap (retail 1, associate 2) and salt's reorder
-  point (15) as though they were its own, with nothing on screen saying they were inherited.
-  `anchorsFor` does the same for tier anchors. Nothing errors. State both per product when the
-  book goes live.
+- **A new book inherits salt's limits, and the desk now says so.** `creditCapFor` and
+  `reorderFor` both fall back to `RULES[...][DEFAULT_PROD]` when a product has no entry of its
+  own, which is what keeps the breach arithmetic working on a book nobody has set a policy for.
+  Printed book by book, that borrowed figure stated salt's 1 unit as candy's own the moment
+  three books were opened, under a sentence beginning *Credit caps are per book*. Since v780 the
+  sentence names the books that HAVE a cap and then says which ones borrow one. `anchorsFor`
+  does the same for tier anchors, and `reorderFor` is only ever drawn on Sourcing, which skips
+  an empty book. State both per product when a book goes live.
 - **`Both books` is hard-coded copy** on Financials and Receivables. It states a count, and at
   three products it states a wrong one.
 - **The reward is salt-only by string comparison**, in five places in the master and two in

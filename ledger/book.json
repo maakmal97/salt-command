@@ -15,11 +15,41 @@
       "accent": "var(--salt-product-oil)",
       "since": "2026-08-06",
       "note": "Second product. Two suppliers named 06 Aug, one live quote, one sale."
+    },
+    "candy": {
+      "id": "candy",
+      "name": "Candy",
+      "unit": "unit",
+      "accent": "var(--salt-product-candy)",
+      "since": "2026-09-22",
+      "retired": false,
+      "note": "Opened 22 Sep 2026 on his instruction, with no lot, no sale and no count: an empty book, not an invented one. The fold refuses a sale on a book with no cost, so its first lot is entered by hand, which is v228's own bootstrap rule."
+    },
+    "rice": {
+      "id": "rice",
+      "name": "Rice",
+      "unit": "unit",
+      "accent": "var(--salt-product-rice)",
+      "since": "2026-09-22",
+      "retired": false,
+      "note": "Opened 22 Sep 2026 on his instruction, empty. Same bootstrap as candy: the first lot is entered by hand before the gate can price anything on this book."
+    },
+    "spare": {
+      "id": "spare",
+      "name": "Spare",
+      "unit": "unit",
+      "accent": "var(--salt-product-spare)",
+      "since": "2026-09-22",
+      "retired": false,
+      "note": "Opened 22 Sep 2026 as THE SPARE SLOT, on his instruction, to prove that adding a book is repeatable rather than surgical. It is deliberately given NO mark, so the Ring fallback is exercised by a real book. Put it away with tools/product.mjs --retire spare once it has served."
     }
   },
   "PROD_ORDER": [
     "salt",
-    "oil"
+    "oil",
+    "candy",
+    "rice",
+    "spare"
   ],
   "opening": {
     "qty": 4.9,
@@ -35,12 +65,30 @@
       "qty": 5,
       "costPerKg": 7.666666666666667,
       "stated": 35
+    },
+    "candy": {
+      "qty": 0,
+      "costPerKg": null,
+      "stated": null
+    },
+    "rice": {
+      "qty": 0,
+      "costPerKg": null,
+      "stated": null
+    },
+    "spare": {
+      "qty": 0,
+      "costPerKg": null,
+      "stated": null
     }
   },
   "STATED_STOCK": 6,
   "COUNT_ON": {
     "salt": "2026-09-21",
-    "oil": "2026-09-19"
+    "oil": "2026-09-19",
+    "candy": null,
+    "rice": null,
+    "spare": null
   },
   "COUNTS": [
     {
@@ -5323,7 +5371,10 @@
           "note": "RM7.60/unit, up from the RM350 (RM7) quoted on 06 Aug and paid on the 11 Aug lot; still the sharpest"
         }
       ]
-    }
+    },
+    "candy": null,
+    "rice": null,
+    "spare": null
   },
   "CASH_COUNT_RETIRED": {
     "on": "2026-07-28",
@@ -5346,6 +5397,18 @@
     "oil": {
       "prices": {},
       "hide": []
+    },
+    "candy": {
+      "prices": {},
+      "hide": []
+    },
+    "rice": {
+      "prices": {},
+      "hide": []
+    },
+    "spare": {
+      "prices": {},
+      "hide": []
     }
   },
   "COST_RULE": {
@@ -5356,6 +5419,18 @@
     "salt": {
       "kind": "stack",
       "note": "His instruction of 19 Sep 2026, stated so the two products differ deliberately rather than by one of them being absent. Salt takes the measured stack: replacement, freight, the leak and the delivery share. Nothing changes for salt; what changes is that the difference is now written down."
+    },
+    "candy": {
+      "kind": "stack",
+      "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+    },
+    "rice": {
+      "kind": "stack",
+      "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+    },
+    "spare": {
+      "kind": "stack",
+      "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
     }
   },
   "NOTES": {

@@ -1,5 +1,17 @@
 [
  {
+  "v": "v780",
+  "d": "22 Sep 2026",
+  "t": "CANDY, RICE AND SPARE OPEN, AND THE PARITY SCAN FINDS THE SPLIT CLEAN",
+  "n": [
+   "<b>HIS INSTRUCTION OF 22 SEP 2026.</b> Three books opened by <code>tools/product.mjs --add</code>, each registered in all six per-product maps and the order, each EMPTY: no quote, no stated count, no opening figure. The fold refuses a sale on a book with no cost, so the first lot on each goes in by hand, which is v228’s own bootstrap rule and not a gap. <b>spare is the fifth slot</b>, opened to prove that adding a book is repeatable rather than surgical, and given no mark on purpose so the Ring fallback is exercised by a real book.",
+   "<b>THE PARITY SCAN FIRED FOR THE FIRST TIME IN FIVE HUNDRED VERSIONS.</b> It was written at v275 and its header says the point is product three. Its RULE 2 asks whether a book with no orders reports commitments or receivables of its own, which is the signature of a whole-book read presented as one product’s, and that rule could never once fire while every book had orders. Three empty books arm it. It reports NO rule 1 and NO rule 2: every empty book reads zero revenue, zero receivable, zero inventory and zero promised out. <b>The unfinished product split of v228 is clean.</b> What it does report, three times, is never counted and declared but empty, which are notes on a new book and not faults.",
+   "<b>AND OPENING THEM PUT A FALSE FIGURE ON THE DESK, WHICH IS FIXED HERE.</b> <code>creditCapFor</code> falls back to the default book where a book states no cap of its own, which is what keeps the breach arithmetic working on a book nobody has set a policy for. Printed book by book, that borrowed figure stated salt’s 1 unit as candy’s own, under a sentence that begins <i>Credit caps are per book</i>. The sentence now names the books that HAVE a cap and then says which ones borrow one: the borrowing is stated rather than hidden, and no figure is claimed where it is not true.",
+   "<b>FIVE BOOKS FIT ON A PHONE, MEASURED RATHER THAN ASSUMED.</b> At 375px the switch draws five buttons on TWO rows at 67, 60, 75, 67 and 75 pixels wide and 44 tall, every one at or above the tap floor in both directions, with no horizontal scroll; at 1280 it is unchanged and still carries each book’s headline figure. All five dots draw their own hue.",
+   "<b>AND ONE OF THIS VERSION’S OWN ASSERTIONS WAS VACUOUS, WHICH IS THE LESSON.</b> The check that no book is given a cap it does not have was inserted through a shell heredoc that ATE ITS BACKSLASHES, so the pattern it built was a backspace character followed by the plain letters s and d, where a word boundary, a space and a digit were meant. It matched nothing. It passed on every book, and it went on passing under the very mutation written to prove it, which is how it was caught: the mutation turned its neighbour red and left it green, and an assertion that will not go red is not an assertion. It is built from a regexp literal’s own source now, and its failure message carries the sentence it read, so the next person sees what it saw. Nothing else would have found it, because a vacuous check and a true one look identical in a green run."
+  ]
+ },
+ {
   "v": "v779",
   "d": "22 Sep 2026",
   "t": "THREE MORE HUES, TWO MORE MARKS, AND FIVE BOOKS FIT ON A PHONE",

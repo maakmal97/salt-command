@@ -2680,7 +2680,9 @@ await (async () => {
     const F = read(`ifrsPL(${JSON.stringify(pr)})`);
     const rows = read("finRows()");
     const fy = rows.reduce((a, [, v]) => { Object.keys(v).forEach((k) => a[k] = (a[k] || 0) + v[k]); return a; }, {});
-    const monthly = +(fy.rev - fy.cogs).toFixed(2);
+    /* v780: a book with no month reduces to {}, so this said NaN rather than nothing. The desk
+       itself is clean (ifrsPL on an empty book returns zeros); the gap was in this reduce. */
+    const monthly = +((fy.rev || 0) - (fy.cogs || 0)).toFixed(2);
     ok(+(monthly - F.gross).toFixed(2) === F.freightCos,
       `${pr}: the monthly gross margin and the statement's gross profit part by the freight in (${F.freightCos})`);
     const panel = html("ifrsPanel()");
@@ -2830,10 +2832,17 @@ await (async () => {
   for (const pid0 of JSON.parse(w.eval("JSON.stringify(PROD_IDS)"))) { w.eval("PROD=" + JSON.stringify(pid0) + ";recompute();"); (() => {
     const P = w.pxPolicy(), C = w.pxCost();
     const shown = (typeof w.shownSizes === "function") ? w.shownSizes() : P.boardSizes;
-    const pid = P.boardSizes[0] === 0.5 ? "salt" : "oil";
+    /* v780: the id is the one being walked. This read the board SIZES to guess which book it was
+       looking at, so every book that was not salt-shaped was reported as oil, and a third book
+       would have been mislabelled rather than named. */
+    const pid = pid0;
+    /* A BOOK WITH NO COST HAS NO ASK, and that is the bootstrap rule rather than a fault: the fold
+       refuses a sale on a book whose first lot has not been entered, so its ladder prices nothing. */
+    const priceable = !!(C && C.landed > 0);
     const walk = w.ladderWalk(P.boardSizes);
     const priced = walk.filter((r) => r.p != null && r.p > 0);
-    ok(priced.length === walk.length, `${pid}: every size on the board has an ask (${priced.length} of ${walk.length})`);
+    if (priceable) ok(priced.length === walk.length, `${pid}: every size on the board has an ask (${priced.length} of ${walk.length})`);
+    else ok(priced.length === 0, `${pid}: a book with no cost prices nothing, which is the bootstrap rule (${priced.length} of ${walk.length})`);
 
     /* THE ASK IS A COLLECTION PRICE and must clear the COLLECTED floor at every size, unless HE has
        stated the price there. v552 narrowed the lift to derived asks on his instruction, so the
@@ -3130,8 +3139,14 @@ await (async () => {
     `each board carries a column a level (${heads.map((h) => h.length + " cols").join(", ")} against ${wantCols.join(", ")})`);
   ok(heads.every((h) => !h.some((c) => /^Tier 1/.test(c))), "and no board carries the retired Tier 1 column");
   const lastLevel = String(w.eval("TIER_NAMES[TIER_NAMES.length-1]"));
-  ok(heads.every((h) => h[h.length - 1].indexOf(lastLevel) === 0),
-    `and each board's LAST column is headed ${lastLevel}, the level a stranger is quoted (${heads.map((h) => h[h.length - 1]).join(" / ")})`);
+  /* v780: a book with NO ladder carries the plain Ask column, which the engine keeps for exactly
+     that case, so the rule is about boards that HAVE levels. Stated both ways so neither half can
+     go quiet: a levelled board ends on the last level, a ladderless one ends on Ask. */
+  const levelled = heads.filter((h, i) => lvlOf[i] > 1), flat = heads.filter((h, i) => lvlOf[i] <= 1);
+  ok(levelled.length > 0 && levelled.every((h) => h[h.length - 1].indexOf(lastLevel) === 0),
+    `and each levelled board's LAST column is headed ${lastLevel}, the level a stranger is quoted (${levelled.map((h) => h[h.length - 1]).join(" / ")})`);
+  ok(flat.every((h) => /^Ask/.test(h[h.length - 1])),
+    `and a book with no ladder ends on Ask instead (${flat.map((h) => h[h.length - 1]).join(" / ") || "none"})`);
   ok(heads.every((h) => !h.some((c) => /^Margin/.test(c))), "and no column on the board is headed Margin any more");
   ok(heads.every((h) => !h.some((c) => /^Markup/.test(c))), "and the Markup column is gone from the head, because it moved into the cells");
   {
@@ -7504,11 +7519,21 @@ await (async () => {
       }
       return copy;
     };
+    /* v780: WHICH BOOKS FALL BACK IS A PROPERTY OF THE BOOK, not a name. This excluded the book
+       called "oil" by name, so every book opened after it counted as one that must not fall back,
+       when a book with no ladder falls back by design. Asked of the snapshot instead, and stated
+       both ways so neither half sleeps. */
+    /* A LADDER IS multiples, NOT merely a tierRule. Oil's rule is a FIXED price a size, which is
+       why oil falls back and why this check used to exclude it by name; candy, rice and spare have
+       no rule at all. Salt is the one book that prices every size off a ladder. */
+    const hasLadder = (pid) => Array.isArray((((((px || {}).byProduct || {})[pid] || {}).inputs || {}).policy || {}).tierRule ? ((((px.byProduct[pid] || {}).inputs || {}).policy || {}).tierRule).multiples : null);
     const oneEnd = bl(1, bk, noLadder({ 0.5: 60 }), new Date());
     const sameSize = bl(1, bk, noLadder({ 0.5: 60, "0.50": 875 }), new Date());
     const healthy = bl(1, bk, px, new Date());
     ok(healthy.products.length > 0 && healthy.products.every((p) => p.sizes.length > 0)
-      && healthy.products.filter((p) => p.product !== "oil").every((p) => !p.fellBack),
+      && healthy.products.filter((p) => hasLadder(p.product)).length > 0
+      && healthy.products.filter((p) => hasLadder(p.product)).every((p) => !p.fellBack)
+      && healthy.products.filter((p) => !hasLadder(p.product)).every((p) => p.fellBack),
       "with a ladder, the cheaper guest link prices every size off it and falls back to nothing: "
       + JSON.stringify(healthy.products.map((p) => [p.product, p.sizes.length, !!p.fellBack])));
     ok(oneEnd.products.length > 0 && oneEnd.products.every((p) => p.sizes.length > 0 && p.fellBack),
@@ -11293,7 +11318,13 @@ await (async () => {
     w25.eval("setProdView('salt');");
     const pages = ["receivables", "financials", "inventory", "sourcing", "pricing", "analysis"];
     const seen = Object.fromEntries(pages.map((p) => [p, look(p)]));
-    const bad = pages.filter((p) => { const x = seen[p]; return x.blocks.length !== 1 || x.blocks[0] !== "salt" || !x.before || x.sw.length !== ids25.length || x.sw.filter((b) => b.live).map((b) => b.p).join() !== "salt"; });
+    /* v780: SOURCING SKIPS AN EMPTY BOOK, on purpose: perProduct is called there with skipEmpty,
+       so it draws no block and offers no button for a book with nothing bought or sold. Its switch
+       is therefore the traded subset and not every book, which is right and had never differed
+       while both books traded. */
+    const traded25 = rd25("PROD_IDS.filter(function(p){return pSales(p).length||pPurch(p).length;})");
+    const wantSw = (p) => (p === "sourcing" ? traded25.length : ids25.length);
+    const bad = pages.filter((p) => { const x = seen[p]; return x.blocks.length !== 1 || x.blocks[0] !== "salt" || !x.before || x.sw.length !== wantSw(p) || x.sw.filter((b) => b.live).map((b) => b.p).join() !== "salt"; });
     ok(bad.length === 0, "each of the six pages draws salt's detail alone, under a switch that lists every product and lights salt: " + (bad.length ? JSON.stringify(bad.map((p) => [p, seen[p]])) : "all six"));
     const revs = rd25("PROD_IDS.map(function(p){return fmt0(prodSummary(p).rev);})");
     ok(JSON.stringify(seen.receivables.sw.map((b) => b.fig)) === JSON.stringify(revs), "each button carries its product's revenue, the summary that stays in view: " + JSON.stringify(seen.receivables.sw.map((b) => b.fig)));
@@ -18747,6 +18778,70 @@ await (async () => {
   const words = Object.values(PSHAPE).join(" ").toLowerCase();
   ok(!ids.some((id) => words.includes(id)) && !/\b(salt|oil|candy|rice|spare)\b/.test(words),
     "and no shape word is a product's name: the mark is the thing, never the word for it");
+})();
+
+section("v780: three books open empty, and an empty book reports nothing rather than something");
+await (async () => {
+  /* THE PARITY SCAN WAS WRITTEN AT v275 FOR THIS DAY. Its header says the point is product
+     three, and its rule 2 asks whether a book with NO orders reports commitments or
+     receivables of its own, which is the signature of a whole-book read presented as one
+     product's. That rule could never fire while every book had orders, so from v275 to v779 it
+     had never once run in anger. Three empty books arm it. What it must NOT report is rule 1 or
+     rule 2; rules 3 and 5, never counted and declared but empty, are expected on a new book and
+     are explicitly not faults. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const MAPS6 = ["PRODUCTS", "PROD_OPENING", "COUNT_ON", "PRICE_SET", "COST_RULE", "QUOTES"];
+  const opened = ["candy", "rice", "spare"];
+
+  ok(opened.every((id) => MAPS6.every((k) => book[k] && id in book[k]) && book.PROD_ORDER.includes(id)),
+    "candy, rice and spare are registered in all six per-product maps and the order");
+  ok(opened.every((id) => book.QUOTES[id] === null && book.PROD_OPENING[id].stated === null && !book.PROD_OPENING[id].qty),
+    "and opened empty: no quote, no stated count, no opening figure invented");
+
+  const { w } = await openMaster();
+  const ids = JSON.parse(w.eval("JSON.stringify(PROD_IDS)"));
+  ok(ids.length === 5 && opened.every((id) => ids.includes(id)), "the desk carries five books");
+
+  const ps = JSON.parse(w.eval("JSON.stringify(parityScan())"));
+  const kinds = ps.rows.map((r) => r.k);
+  ok(!kinds.includes("commit"),
+    "the parity scan reports no identical commitment across books, so nothing behind Today and Forward reads every order and calls it one book's");
+  ok(!kinds.includes("empty"),
+    "and no book with nothing sold reports a commitment or a receivable of its own: rule 2 fires for the first time since v275 and finds the product split clean");
+  ok(opened.every((id) => { const d = ps.per[id]; return d && d.rev === 0 && d.ar === 0 && d.inventory === 0 && (!d.fc || d.fc.commit === 0); }),
+    "every empty book reports zero revenue, zero receivable, zero inventory and zero promised out");
+  const declared = ps.rows.filter((r) => r.k === "declared").map((r) => r.pr);
+  ok(opened.every((id) => declared.includes(id)),
+    "and each says so on the Whiteboard: declared but nothing on the books, which is a note and not a fault");
+
+  /* A FIGURE IS STATED WHERE IT IS TRUE. creditCapFor falls back to the default book, so the
+     sentence that begins "Credit caps are per book" stated salt's 1 unit as candy's own the
+     moment three books were opened. It now names the books that have a cap and says what the
+     rest do. */
+  const sentence = String(w.eval("builders.overview()")).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
+  const lo = sentence.indexOf("Credit caps are per book");
+  const hi = sentence.indexOf("), and units of different products do not add.", lo);
+  /* Read the PARENTHESISED LIST itself, not a window of characters after it: a fixed-width slice
+     depends on what happens to follow, and what follows is the breach table. Which books have a
+     cap of their own is asked of RULES directly, so the check still knows the truth when the
+     thing it is checking is the function that answers it. */
+  const listed = lo >= 0 && hi > lo ? sentence.slice(lo, hi) : "";
+  const capless = JSON.parse(w.eval("JSON.stringify(PROD_IDS.filter(function(p){return (RULES.creditUnits||{})[p]==null;}))"));
+  const after = lo >= 0 ? sentence.slice(lo, lo + 400) : "";
+  ok(lo >= 0 && hi > lo, "the Rules page states the credit caps");
+  /* THE PATTERN IS BUILT FROM A REGEXP LITERAL'S SOURCE, not from a hand-escaped string. The first
+     version of this line was written through a shell heredoc that ate its backslashes, so it read
+     new RegExp("\b" + id + "\s+\d"), where \b is a BACKSPACE character and \s and \d are plain
+     letters. It could not match anything, it passed on every book, and it went on passing under the
+     mutation that was meant to prove it. A vacuous assertion is worse than no assertion, and the
+     only reason this one was caught is that its green was not trusted until it had been seen red. */
+  const capRe = (id) => new RegExp(/\b/.source + id + /\s+\d/.source, "i");
+  ok(capless.length > 0 && !capless.some((id) => capRe(id).test(listed)),
+    "and names no cap against a book that has none of its own: " + listed);
+  ok(capless.every((id) => new RegExp(id, "i").test(after)) && /no cap of (their|its) own/.test(after),
+    "saying instead which books borrow one, so the borrowing is stated rather than hidden");
+  try { w.close(); } catch (e) { }
 })();
 
 section("The suite frees its windows: every section's body is its own async function");

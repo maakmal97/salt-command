@@ -1,6 +1,6 @@
 {
- "v": "v776",
- "stamped": "22 Sep 2026, 06:26 KL",
+ "v": "v780",
+ "stamped": "22 Sep 2026, 07:45 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -19,11 +19,41 @@
     "accent": "var(--salt-product-oil)",
     "since": "2026-08-06",
     "note": "Second product. Two suppliers named 06 Aug, one live quote, one sale."
+   },
+   "candy": {
+    "id": "candy",
+    "name": "Candy",
+    "unit": "unit",
+    "accent": "var(--salt-product-candy)",
+    "since": "2026-09-22",
+    "retired": false,
+    "note": "Opened 22 Sep 2026 on his instruction, with no lot, no sale and no count: an empty book, not an invented one. The fold refuses a sale on a book with no cost, so its first lot is entered by hand, which is v228's own bootstrap rule."
+   },
+   "rice": {
+    "id": "rice",
+    "name": "Rice",
+    "unit": "unit",
+    "accent": "var(--salt-product-rice)",
+    "since": "2026-09-22",
+    "retired": false,
+    "note": "Opened 22 Sep 2026 on his instruction, empty. Same bootstrap as candy: the first lot is entered by hand before the gate can price anything on this book."
+   },
+   "spare": {
+    "id": "spare",
+    "name": "Spare",
+    "unit": "unit",
+    "accent": "var(--salt-product-spare)",
+    "since": "2026-09-22",
+    "retired": false,
+    "note": "Opened 22 Sep 2026 as THE SPARE SLOT, on his instruction, to prove that adding a book is repeatable rather than surgical. It is deliberately given NO mark, so the Ring fallback is exercised by a real book. Put it away with tools/product.mjs --retire spare once it has served."
    }
   },
   "PROD_ORDER": [
    "salt",
-   "oil"
+   "oil",
+   "candy",
+   "rice",
+   "spare"
   ],
   "opening": {
    "qty": 4.9,
@@ -39,12 +69,30 @@
     "qty": 5,
     "costPerKg": 7.666666666666667,
     "stated": 35
+   },
+   "candy": {
+    "qty": 0,
+    "costPerKg": null,
+    "stated": null
+   },
+   "rice": {
+    "qty": 0,
+    "costPerKg": null,
+    "stated": null
+   },
+   "spare": {
+    "qty": 0,
+    "costPerKg": null,
+    "stated": null
    }
   },
   "STATED_STOCK": 6,
   "COUNT_ON": {
    "salt": "2026-09-21",
-   "oil": "2026-09-19"
+   "oil": "2026-09-19",
+   "candy": null,
+   "rice": null,
+   "spare": null
   },
   "COUNTS": [
    {
@@ -5327,7 +5375,10 @@
       "note": "RM7.60/unit, up from the RM350 (RM7) quoted on 06 Aug and paid on the 11 Aug lot; still the sharpest"
      }
     ]
-   }
+   },
+   "candy": null,
+   "rice": null,
+   "spare": null
   },
   "COST_RULE": {
    "oil": {
@@ -5337,6 +5388,18 @@
    "salt": {
     "kind": "stack",
     "note": "His instruction of 19 Sep 2026, stated so the two products differ deliberately rather than by one of them being absent. Salt takes the measured stack: replacement, freight, the leak and the delivery share. Nothing changes for salt; what changes is that the difference is now written down."
+   },
+   "candy": {
+    "kind": "stack",
+    "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+   },
+   "rice": {
+    "kind": "stack",
+    "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+   },
+   "spare": {
+    "kind": "stack",
+    "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
    }
   },
   "PRICE_SET": {
@@ -5345,6 +5408,18 @@
     "hide": []
    },
    "oil": {
+    "prices": {},
+    "hide": []
+   },
+   "candy": {
+    "prices": {},
+    "hide": []
+   },
+   "rice": {
+    "prices": {},
+    "hide": []
+   },
+   "spare": {
     "prices": {},
     "hide": []
    }
@@ -5363,7 +5438,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-21T11:26:12.174Z",
   "PRICING": {
-   "takenAt": "2026-09-21T22:31:09.827Z",
+   "takenAt": "2026-09-21T23:49:47.512Z",
    "sizes": [
     0.5,
     1,
@@ -6978,12 +7053,444 @@
        "fixed": true
       }
      ]
+    },
+    "candy": {
+     "stockCost": 0,
+     "replCost": 0,
+     "floors": {
+      "1": {
+       "floor": 0
+      },
+      "2": {
+       "floor": 0
+      },
+      "3": {
+       "floor": 0
+      },
+      "4": {
+       "floor": 0
+      },
+      "5": {
+       "floor": 0
+      },
+      "0.5": {
+       "floor": 0
+      },
+      "1.5": {
+       "floor": 0
+      },
+      "2.5": {
+       "floor": 0
+      },
+      "3.5": {
+       "floor": 0
+      },
+      "4.5": {
+       "floor": 0
+      },
+      "6.25": {
+       "floor": 0
+      },
+      "12.5": {
+       "floor": 0
+      }
+     },
+     "inputs": {
+      "cost": {
+       "prod": "candy",
+       "lockOn": false,
+       "lockState": {
+        "state": "none",
+        "lock": null,
+        "cur": null
+       },
+       "lockBase": null,
+       "over": {
+        "cost": null,
+        "shrink": null
+       },
+       "lot": null,
+       "meanLot": null,
+       "quoteRate": 0,
+       "repl": null,
+       "freightRate": 0,
+       "leak": null,
+       "costRule": {
+        "kind": "stack",
+        "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+       },
+       "costBasis": {
+        "freightPerTrip": {
+         "rm": 0
+        },
+        "txnPerDelivery": {
+         "rm": 0
+        },
+        "deliveredShare": {
+         "v": 0.2
+        }
+       },
+       "attrib": 1,
+       "shrinkRate": 0,
+       "avgDel": {
+        "n": 0,
+        "kg": 0,
+        "mean": null
+       }
+      },
+      "policy": {
+       "LADDER": {
+        "floor": 0.33,
+        "ceiling": 2,
+        "anchorQ": 2.5,
+        "anchorX": 0.958,
+        "at": {
+         "lo": 0.5,
+         "hi": 12.5
+        },
+        "basis": "floor",
+        "anchorG": 0.47,
+        "gLo": 0.25,
+        "gHi": 0.667,
+        "round": {
+         "to": 10,
+         "up": true
+        },
+        "taper": "supplier",
+        "tier1": null
+       },
+       "minPerUnit": 0,
+       "timePerOrder": 0,
+       "lotFloor": {},
+       "stated": {},
+       "tier1": null,
+       "tierRule": null,
+       "tiers": [],
+       "boardSizes": [
+        0.5,
+        1,
+        1.5,
+        2,
+        2.5,
+        3,
+        3.5,
+        4,
+        4.5,
+        5,
+        6.25,
+        12.5
+       ]
+      }
+     },
+     "sizes": [
+      0.5,
+      1,
+      1.5,
+      2,
+      2.5,
+      3,
+      3.5,
+      4,
+      4.5,
+      5,
+      6.25,
+      12.5
+     ],
+     "ladder": []
+    },
+    "rice": {
+     "stockCost": 0,
+     "replCost": 0,
+     "floors": {
+      "1": {
+       "floor": 0
+      },
+      "2": {
+       "floor": 0
+      },
+      "3": {
+       "floor": 0
+      },
+      "4": {
+       "floor": 0
+      },
+      "5": {
+       "floor": 0
+      },
+      "0.5": {
+       "floor": 0
+      },
+      "1.5": {
+       "floor": 0
+      },
+      "2.5": {
+       "floor": 0
+      },
+      "3.5": {
+       "floor": 0
+      },
+      "4.5": {
+       "floor": 0
+      },
+      "6.25": {
+       "floor": 0
+      },
+      "12.5": {
+       "floor": 0
+      }
+     },
+     "inputs": {
+      "cost": {
+       "prod": "rice",
+       "lockOn": false,
+       "lockState": {
+        "state": "none",
+        "lock": null,
+        "cur": null
+       },
+       "lockBase": null,
+       "over": {
+        "cost": null,
+        "shrink": null
+       },
+       "lot": null,
+       "meanLot": null,
+       "quoteRate": 0,
+       "repl": null,
+       "freightRate": 0,
+       "leak": null,
+       "costRule": {
+        "kind": "stack",
+        "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+       },
+       "costBasis": {
+        "freightPerTrip": {
+         "rm": 0
+        },
+        "txnPerDelivery": {
+         "rm": 0
+        },
+        "deliveredShare": {
+         "v": 0.2
+        }
+       },
+       "attrib": 1,
+       "shrinkRate": 0,
+       "avgDel": {
+        "n": 0,
+        "kg": 0,
+        "mean": null
+       }
+      },
+      "policy": {
+       "LADDER": {
+        "floor": 0.33,
+        "ceiling": 2,
+        "anchorQ": 2.5,
+        "anchorX": 0.958,
+        "at": {
+         "lo": 0.5,
+         "hi": 12.5
+        },
+        "basis": "floor",
+        "anchorG": 0.47,
+        "gLo": 0.25,
+        "gHi": 0.667,
+        "round": {
+         "to": 10,
+         "up": true
+        },
+        "taper": "supplier",
+        "tier1": null
+       },
+       "minPerUnit": 0,
+       "timePerOrder": 0,
+       "lotFloor": {},
+       "stated": {},
+       "tier1": null,
+       "tierRule": null,
+       "tiers": [],
+       "boardSizes": [
+        0.5,
+        1,
+        1.5,
+        2,
+        2.5,
+        3,
+        3.5,
+        4,
+        4.5,
+        5,
+        6.25,
+        12.5
+       ]
+      }
+     },
+     "sizes": [
+      0.5,
+      1,
+      1.5,
+      2,
+      2.5,
+      3,
+      3.5,
+      4,
+      4.5,
+      5,
+      6.25,
+      12.5
+     ],
+     "ladder": []
+    },
+    "spare": {
+     "stockCost": 0,
+     "replCost": 0,
+     "floors": {
+      "1": {
+       "floor": 0
+      },
+      "2": {
+       "floor": 0
+      },
+      "3": {
+       "floor": 0
+      },
+      "4": {
+       "floor": 0
+      },
+      "5": {
+       "floor": 0
+      },
+      "0.5": {
+       "floor": 0
+      },
+      "1.5": {
+       "floor": 0
+      },
+      "2.5": {
+       "floor": 0
+      },
+      "3.5": {
+       "floor": 0
+      },
+      "4.5": {
+       "floor": 0
+      },
+      "6.25": {
+       "floor": 0
+      },
+      "12.5": {
+       "floor": 0
+      }
+     },
+     "inputs": {
+      "cost": {
+       "prod": "spare",
+       "lockOn": false,
+       "lockState": {
+        "state": "none",
+        "lock": null,
+        "cur": null
+       },
+       "lockBase": null,
+       "over": {
+        "cost": null,
+        "shrink": null
+       },
+       "lot": null,
+       "meanLot": null,
+       "quoteRate": 0,
+       "repl": null,
+       "freightRate": 0,
+       "leak": null,
+       "costRule": {
+        "kind": "stack",
+        "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+       },
+       "costBasis": {
+        "freightPerTrip": {
+         "rm": 0
+        },
+        "txnPerDelivery": {
+         "rm": 0
+        },
+        "deliveredShare": {
+         "v": 0.2
+        }
+       },
+       "attrib": 1,
+       "shrinkRate": 0,
+       "avgDel": {
+        "n": 0,
+        "kg": 0,
+        "mean": null
+       }
+      },
+      "policy": {
+       "LADDER": {
+        "floor": 0.33,
+        "ceiling": 2,
+        "anchorQ": 2.5,
+        "anchorX": 0.958,
+        "at": {
+         "lo": 0.5,
+         "hi": 12.5
+        },
+        "basis": "floor",
+        "anchorG": 0.47,
+        "gLo": 0.25,
+        "gHi": 0.667,
+        "round": {
+         "to": 10,
+         "up": true
+        },
+        "taper": "supplier",
+        "tier1": null
+       },
+       "minPerUnit": 0,
+       "timePerOrder": 0,
+       "lotFloor": {},
+       "stated": {},
+       "tier1": null,
+       "tierRule": null,
+       "tiers": [],
+       "boardSizes": [
+        0.5,
+        1,
+        1.5,
+        2,
+        2.5,
+        3,
+        3.5,
+        4,
+        4.5,
+        5,
+        6.25,
+        12.5
+       ]
+      }
+     },
+     "sizes": [
+      0.5,
+      1,
+      1.5,
+      2,
+      2.5,
+      3,
+      3.5,
+      4,
+      4.5,
+      5,
+      6.25,
+      12.5
+     ],
+     "ladder": []
     }
    },
-   "v": "v776"
+   "v": "v780"
   },
   "OPEN": {
-   "at": "2026-09-21T22:31:09.931Z",
+   "at": "2026-09-21T23:49:47.623Z",
    "count": 6,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
@@ -7106,13 +7613,49 @@
      "owedToYou": 0,
      "promised": 0,
      "short": 0
+    },
+    "candy": {
+     "name": "Candy",
+     "onHand": 0,
+     "free": 0,
+     "owedOut": 0,
+     "coverDays": null,
+     "rate": 0,
+     "owedToYou": 0,
+     "promised": 0,
+     "short": 0
+    },
+    "rice": {
+     "name": "Rice",
+     "onHand": 0,
+     "free": 0,
+     "owedOut": 0,
+     "coverDays": null,
+     "rate": 0,
+     "owedToYou": 0,
+     "promised": 0,
+     "short": 0
+    },
+    "spare": {
+     "name": "Spare",
+     "onHand": 0,
+     "free": 0,
+     "owedOut": 0,
+     "coverDays": null,
+     "rate": 0,
+     "owedToYou": 0,
+     "promised": 0,
+     "short": 0
     }
    },
    "countedOn": {
     "salt": "2026-09-21",
-    "oil": "2026-09-19"
+    "oil": "2026-09-19",
+    "candy": null,
+    "rice": null,
+    "spare": null
    },
-   "v": "v776"
+   "v": "v780"
   }
  }
 }

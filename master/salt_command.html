@@ -5379,9 +5379,36 @@ const PRODUCTS={
     "accent": "var(--salt-product-oil)",
     "since": "2026-08-06",
     "note": "Second product. Two suppliers named 06 Aug, one live quote, one sale."
+  },
+  "candy": {
+    "id": "candy",
+    "name": "Candy",
+    "unit": "unit",
+    "accent": "var(--salt-product-candy)",
+    "since": "2026-09-22",
+    "retired": false,
+    "note": "Opened 22 Sep 2026 on his instruction, with no lot, no sale and no count: an empty book, not an invented one. The fold refuses a sale on a book with no cost, so its first lot is entered by hand, which is v228's own bootstrap rule."
+  },
+  "rice": {
+    "id": "rice",
+    "name": "Rice",
+    "unit": "unit",
+    "accent": "var(--salt-product-rice)",
+    "since": "2026-09-22",
+    "retired": false,
+    "note": "Opened 22 Sep 2026 on his instruction, empty. Same bootstrap as candy: the first lot is entered by hand before the gate can price anything on this book."
+  },
+  "spare": {
+    "id": "spare",
+    "name": "Spare",
+    "unit": "unit",
+    "accent": "var(--salt-product-spare)",
+    "since": "2026-09-22",
+    "retired": false,
+    "note": "Opened 22 Sep 2026 as THE SPARE SLOT, on his instruction, to prove that adding a book is repeatable rather than surgical. It is deliberately given NO mark, so the Ring fallback is exercised by a real book. Put it away with tools/product.mjs --retire spare once it has served."
   }
 };
-const PROD_ORDER=["salt","oil"];
+const PROD_ORDER=["salt","oil","candy","rice","spare"];
 const opening={
   "qty": 4.9,
   "costPerKg": 64
@@ -5407,6 +5434,21 @@ const PROD_OPENING={
     "qty": 5,
     "costPerKg": 7.666666666666667,
     "stated": 35
+  },
+  "candy": {
+    "qty": 0,
+    "costPerKg": null,
+    "stated": null
+  },
+  "rice": {
+    "qty": 0,
+    "costPerKg": null,
+    "stated": null
+  },
+  "spare": {
+    "qty": 0,
+    "costPerKg": null,
+    "stated": null
   }
 };
 /* ROLLED AT v775: 1 unit to CS6-BS on 2026-09-21, so 7 less 1 is 6. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The salt count is as of 21 Sep and the redeemed unit leaves the shelf on that count. Nothing is owed out or promised, and the shelf stays above the reorder mark of 15. */
@@ -5473,7 +5515,10 @@ const PROD_OPENING={
 const STATED_STOCK=6;
 const COUNT_ON={
   "salt": "2026-09-21",
-  "oil": "2026-09-19"
+  "oil": "2026-09-19",
+  "candy": null,
+  "rice": null,
+  "spare": null
 };
 /* EVERY COUNT, AS TAKEN (v504, 07 Sep 2026): product, date, the figure counted, what the roll said and the drift, negative when units are missing. The fold appends one line per count. A count with no drift bounds a cycle and charges nothing; the 24 Aug anchor is one. Seeded from the fold notes of v473 (02 Sep, 10.5 against 18.75), v489 (04 Sep, 9.8 entered net of a rolled sale, no drift) and v498 (06 Sep, 7 against 8.3); the oil count of 23 Aug has no recorded drift. The leak is charged from these: the units missing over the last three cycles, at landed, over the units sold in them. */
 const COUNTS=[
@@ -6074,7 +6119,10 @@ const QUOTES={
         "note": "RM7.60/unit, up from the RM350 (RM7) quoted on 06 Aug and paid on the 11 Aug lot; still the sharpest"
       }
     ]
-  }
+  },
+  "candy": null,
+  "rice": null,
+  "spare": null
 };
 const CASH_COUNT_RETIRED={
   "on": "2026-07-28",
@@ -6096,6 +6144,18 @@ const PRICE_SET={
   "oil": {
     "prices": {},
     "hide": []
+  },
+  "candy": {
+    "prices": {},
+    "hide": []
+  },
+  "rice": {
+    "prices": {},
+    "hide": []
+  },
+  "spare": {
+    "prices": {},
+    "hide": []
   }
 };
 const COST_RULE={
@@ -6106,6 +6166,18 @@ const COST_RULE={
   "salt": {
     "kind": "stack",
     "note": "His instruction of 19 Sep 2026, stated so the two products differ deliberately rather than by one of them being absent. Salt takes the measured stack: replacement, freight, the leak and the delivery share. Nothing changes for salt; what changes is that the difference is now written down."
+  },
+  "candy": {
+    "kind": "stack",
+    "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+  },
+  "rice": {
+    "kind": "stack",
+    "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+  },
+  "spare": {
+    "kind": "stack",
+    "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
   }
 };
 /* ==== END BOOK ==== */
@@ -7024,7 +7096,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    v324 onward, which tabJournal maps in full; master/changelog.json carries every entry
    ever written and is the record. So a bump PREPENDS its entry. Replacing the array,
    which both comments invited, silently drops the whole window. */
-const evolution=[{"v":"v779","d":"22 Sep 2026","t":"THREE MORE HUES, TWO MORE MARKS, AND FIVE BOOKS FIT ON A PHONE","n":["<b>HIS CHOICE OF 22 SEP 2026, ahead of opening three books.</b> The identity had two product hues and needed five. Each new one avoids the SEMANTIC four: ember, verdigris, steel and copper each mean something on this desk, so a product dot drawn in one would read as a status rather than as a book. The violet and cyan families were retired at v472 and are not used. candy is rose at hue 330, rice indigo at 235, spare olive at 68.","<b>THEY GO IN THE DESIGN SYSTEM AND NOT IN THE DESK, because the Counter reads them too.</b> <code>tools/stmt-style.mjs</code> generates the statement stylesheet from the <code>:root</code> of <code>design/salt-ds.css</code>, which is vendored from <code>Code/salt-ds</code>, so a hue added to the desk layer alone would never reach a customer and one added to the vendored copy alone would be reverted by the next <code>--pull</code> without a word. The edit is upstream, then pull, then sync, then the statement stylesheet: a hue that is missing there does not error, it resolves to nothing, and the product loses its accent in silence.","<b>A LOZENGE AND A CAPSULE, AND SPARE KEEPS THE RING ON PURPOSE.</b> A rhombus for candy and a seamed stadium for rice, drawn in the same hairline stroke as the cube and the droplet; the capsule carries its seam for the reason the cube carries its three inner edges, that without it a stadium is a shape and with it it is a thing. Neither is literal and neither is a word, which is the rule this site has kept since v659. <b>spare is given no mark deliberately</b>, so the Ring fallback is exercised by a real book rather than asserted about a hypothetical one.","<b>AND THE SWITCH STOPS GROWING DOWN THE PAGE.</b> Each button carries a dot, a name and that book at a 150px minimum and the strip wraps, so two books sat on one row and five would have stood THREE rows deep above every per-product page. Below 760px the figure goes and the button shrinks to its content; the figure is on the page underneath either way, so nothing is lost, only moved. It stays wrapped rather than becoming a sideways scroll box, which v466 forbids above the ledger, and the minimum holds at the tap floor because a control must measure 44px in BOTH directions."]},{"v":"v778","d":"22 Sep 2026","t":"A BOOK IS OPENED AND PUT AWAY BY A COMMAND, AND RETIRING ONE THAT TRADED IS REFUSED","n":["<b>HIS DECISION OF 22 SEP 2026, asked before the three new books are opened: add a retired flag and a re-key.</b> Registering a product meant hand-editing <code>ledger/book.json</code> in six places, PRODUCTS, PROD_OPENING, COUNT_ON, PRICE_SET, COST_RULE and QUOTES, plus the order, and then remembering to sync. <code>tools/product.mjs</code> does all of it: <code>--add</code>, <code>--rename</code>, <code>--retire</code>, <code>--unretire</code>, <code>--list</code>. A book opens EMPTY, with no quote and no stated count, because nothing has happened on it yet and inventing a figure would be the one thing a ledger must never do.","<b>RETIRED IS REGISTERED AND NOT SHOWN.</b> <code>prodLive()</code> feeds <code>PROD_IDS</code>, so one flag takes a book off the switch, the Enter form, the tier grid, the ledger's filter and the parity scan, which is every one of the eighteen readers, while its rows, its opening and its tiers stay exactly where they are and the extract still carries it. A device that REMEMBERED a book before it was retired now falls back rather than opening on a book the switch no longer offers.","<b>AND THAT IS WHY RETIRING A BOOK WITH ROWS IS REFUSED.</b> PROD_IDS is read by the consolidated totals as well, so hiding a book that had a past would quietly take its revenue out of the whole-book figures with nothing on screen to say so. The flag is therefore only ever allowed on a book with nothing on it, which makes the filter safe by construction rather than by care. Retiring a book that traded is a different question, and the tool says so instead of guessing.","<b>SALT CANNOT BE RE-KEYED, and the reason is the oldest rule in the book.</b> A row that names no product IS salt, on 175 of 188 sales, so re-keying salt would silently re-attribute every row that names nothing. The tool refuses and points at the section of <code>docs/PRODUCTS.md</code> that states the convention. A rename of anything else moves the six map keys, the order, the id, the accent, every row's product field and every customer's tier for that book: proved on a copy of the real book, where renaming oil moved 24 rows and 2 tiers and left the old id nowhere."]},{"v":"v777","d":"22 Sep 2026","t":"THE TOOLS STOP TYPING THE PRODUCT ORDER AND READ IT OFF THE BOOK","n":["<b>TWO DEFINITIONS ARE TWO THINGS TO KEEP TRUE, AND THE ONE THAT DRIFTS DOES IT SILENTLY.</b> <code>tools/book.mjs</code> carried <code>PROD_ORDER = [\"salt\", \"oil\"]</code>, typed out beside the book that already states it, and <code>tools/d1.mjs</code> FAILED when the two disagreed. So a product could not be registered in one place: the book and that line had to move in step or the mirror check went red. The suite already guards the LEDGER map against exactly this and says why; the order was the one thing it did not cover.","<b>THE ORDER IS THE BOOK'S NOW</b>, read through <code>prodOrder()</code> and cached on first use, the book being a megabyte and <code>bySalt</code> being called once per comparison. Salt still leads, which is his standing instruction of 11 Aug restated on the 13th, and nothing about the order itself has changed.","<b>THE MIRROR CHECK GOT SHARPER RATHER THAN WEAKER.</b> It compared the STORE's copy of the order against a line in a tool, which is a comparison between two things that were both supposed to follow the book. It now compares the store against the book, which is what a staleness check on a mirror was always for.","<b>WHAT THE SUITE CHECKS INSTEAD.</b> That the tools keep NO typed copy, that what they read equals the book's own list, and that it leads with salt. Proved red by mutation: typing the list back in turns the first red, and handing <code>prodOrder</code> a reversed list turns the other two."]},{"v":"v776","d":"22 Sep 2026","t":"THE TWO QUOTE KEYS BECOME ONE MAP, SO A THIRD BOOK NEEDS NO CODE","n":["<b>HIS INSTRUCTION OF 22 SEP 2026, to state what is product-specific and then to open three more books.</b> The live quotes sat under two top-level keys NAMED AFTER THEIR PRODUCTS, <code>supplierQuote</code> for salt and <code>oilQuote</code> for oil, and they were the one per-product thing in this book that was not a map. Everything else, PRODUCTS, PROD_OPENING, COUNT_ON, PRICE_SET, COST_RULE, TIER_OF, is keyed by product and takes a new book as a data entry. The quotes took a new key, a new global and an edit in three files.","<b>THE DESK'S OWN QUOTES WAS AN ACCESSOR OVER THE PAIR</b>, <code>{salt:()=&gt;supplierQuote, oil:()=&gt;oilQuote}</code>, which is why it sat in NOT_LEDGER: stored, it would have arrived as <code>{\"salt\":null,\"oil\":null}</code> with nothing to say a lookup had been lost. QUOTES is the book's own map now, generated into the BOOK block like every other declaration, so it has moved out of NOT_LEDGER and into LEDGER. <code>quoteFor</code> reads the map instead of calling a function, and a product with no quote answers null exactly as an unregistered one used to.","<b>THE LOOKUP THAT COULD NOT FAIL IS THE REASON THIS WENT FIRST.</b> <code>tools/foldcall.mjs</code> read the pair as a literal two-entry object, so a product registered in PRODUCTS but absent from that object yielded <code>undefined</code>, fell to <code>null</code>, and its lot folded with no quote in the dossier while nothing errored and the note was merely worse. That is the shape of bug a third book would have shipped with.","<b>v228 ASKED FOR THIS AND THE PANEL HAS SAID SO EVER SINCE.</b> The supply panel's own comment reads <i>one panel, driven by QUOTES, so a third product needs an entry there and nothing here</i>, and with no quote recorded it tells him to add one to QUOTES. This is that, finished. Two deliberate whole-book reads of the bare salt quote are now <code>QUOTES[DEFAULT_PROD]</code>, which is what they meant; oil's redundant <code>product</code> field goes with the collapse, the key being the product, and nothing ever read it."]},{"v":"v775","d":"21 Sep 2026","t":"A SECOND FREE UNIT ON THE REWARD: NO CASH, NO REVENUE, RM48 OF COST","n":["<b>FOLDED: ONE REDEMPTION ROW FOR CS6-BS, 1 UNIT OF SALT ON 21 SEP.</b> Settled by the reward at RM48 rather than in cash, delivered in full the same day, so nothing is left outstanding. On his ruling of 11 Sep 2026 the row carries both rebate and goodwill, so it stays out of revenue and its RM48 sits as cost at the shelf's own rate. This is the second such redemption for this code since 17 Sep.","<b>UNUSUAL: THE REWARD BALANCE IS THE DESK'S WORD AND CANNOT BE CHECKED HERE.</b> The drafter flagged that 6 earned against 5 applied leaves 1 unit standing, worked out on the desk and not in the book, and the dossier carries no figure that answers it. No price test bites, since no price was charged: the RM51.95 floor and RM160 ask for 1 unit are recorded for the file only. The salt left the shelf and the inventory rolled by it."]},
+const evolution=[{"v":"v780","d":"22 Sep 2026","t":"CANDY, RICE AND SPARE OPEN, AND THE PARITY SCAN FINDS THE SPLIT CLEAN","n":["<b>HIS INSTRUCTION OF 22 SEP 2026.</b> Three books opened by <code>tools/product.mjs --add</code>, each registered in all six per-product maps and the order, each EMPTY: no quote, no stated count, no opening figure. The fold refuses a sale on a book with no cost, so the first lot on each goes in by hand, which is v228’s own bootstrap rule and not a gap. <b>spare is the fifth slot</b>, opened to prove that adding a book is repeatable rather than surgical, and given no mark on purpose so the Ring fallback is exercised by a real book.","<b>THE PARITY SCAN FIRED FOR THE FIRST TIME IN FIVE HUNDRED VERSIONS.</b> It was written at v275 and its header says the point is product three. Its RULE 2 asks whether a book with no orders reports commitments or receivables of its own, which is the signature of a whole-book read presented as one product’s, and that rule could never once fire while every book had orders. Three empty books arm it. It reports NO rule 1 and NO rule 2: every empty book reads zero revenue, zero receivable, zero inventory and zero promised out. <b>The unfinished product split of v228 is clean.</b> What it does report, three times, is never counted and declared but empty, which are notes on a new book and not faults.","<b>AND OPENING THEM PUT A FALSE FIGURE ON THE DESK, WHICH IS FIXED HERE.</b> <code>creditCapFor</code> falls back to the default book where a book states no cap of its own, which is what keeps the breach arithmetic working on a book nobody has set a policy for. Printed book by book, that borrowed figure stated salt’s 1 unit as candy’s own, under a sentence that begins <i>Credit caps are per book</i>. The sentence now names the books that HAVE a cap and then says which ones borrow one: the borrowing is stated rather than hidden, and no figure is claimed where it is not true.","<b>FIVE BOOKS FIT ON A PHONE, MEASURED RATHER THAN ASSUMED.</b> At 375px the switch draws five buttons on TWO rows at 67, 60, 75, 67 and 75 pixels wide and 44 tall, every one at or above the tap floor in both directions, with no horizontal scroll; at 1280 it is unchanged and still carries each book’s headline figure. All five dots draw their own hue.","<b>AND ONE OF THIS VERSION’S OWN ASSERTIONS WAS VACUOUS, WHICH IS THE LESSON.</b> The check that no book is given a cap it does not have was inserted through a shell heredoc that ATE ITS BACKSLASHES, so the pattern it built was a backspace character followed by the plain letters s and d, where a word boundary, a space and a digit were meant. It matched nothing. It passed on every book, and it went on passing under the very mutation written to prove it, which is how it was caught: the mutation turned its neighbour red and left it green, and an assertion that will not go red is not an assertion. It is built from a regexp literal’s own source now, and its failure message carries the sentence it read, so the next person sees what it saw. Nothing else would have found it, because a vacuous check and a true one look identical in a green run."]},{"v":"v779","d":"22 Sep 2026","t":"THREE MORE HUES, TWO MORE MARKS, AND FIVE BOOKS FIT ON A PHONE","n":["<b>HIS CHOICE OF 22 SEP 2026, ahead of opening three books.</b> The identity had two product hues and needed five. Each new one avoids the SEMANTIC four: ember, verdigris, steel and copper each mean something on this desk, so a product dot drawn in one would read as a status rather than as a book. The violet and cyan families were retired at v472 and are not used. candy is rose at hue 330, rice indigo at 235, spare olive at 68.","<b>THEY GO IN THE DESIGN SYSTEM AND NOT IN THE DESK, because the Counter reads them too.</b> <code>tools/stmt-style.mjs</code> generates the statement stylesheet from the <code>:root</code> of <code>design/salt-ds.css</code>, which is vendored from <code>Code/salt-ds</code>, so a hue added to the desk layer alone would never reach a customer and one added to the vendored copy alone would be reverted by the next <code>--pull</code> without a word. The edit is upstream, then pull, then sync, then the statement stylesheet: a hue that is missing there does not error, it resolves to nothing, and the product loses its accent in silence.","<b>A LOZENGE AND A CAPSULE, AND SPARE KEEPS THE RING ON PURPOSE.</b> A rhombus for candy and a seamed stadium for rice, drawn in the same hairline stroke as the cube and the droplet; the capsule carries its seam for the reason the cube carries its three inner edges, that without it a stadium is a shape and with it it is a thing. Neither is literal and neither is a word, which is the rule this site has kept since v659. <b>spare is given no mark deliberately</b>, so the Ring fallback is exercised by a real book rather than asserted about a hypothetical one.","<b>AND THE SWITCH STOPS GROWING DOWN THE PAGE.</b> Each button carries a dot, a name and that book at a 150px minimum and the strip wraps, so two books sat on one row and five would have stood THREE rows deep above every per-product page. Below 760px the figure goes and the button shrinks to its content; the figure is on the page underneath either way, so nothing is lost, only moved. It stays wrapped rather than becoming a sideways scroll box, which v466 forbids above the ledger, and the minimum holds at the tap floor because a control must measure 44px in BOTH directions."]},{"v":"v778","d":"22 Sep 2026","t":"A BOOK IS OPENED AND PUT AWAY BY A COMMAND, AND RETIRING ONE THAT TRADED IS REFUSED","n":["<b>HIS DECISION OF 22 SEP 2026, asked before the three new books are opened: add a retired flag and a re-key.</b> Registering a product meant hand-editing <code>ledger/book.json</code> in six places, PRODUCTS, PROD_OPENING, COUNT_ON, PRICE_SET, COST_RULE and QUOTES, plus the order, and then remembering to sync. <code>tools/product.mjs</code> does all of it: <code>--add</code>, <code>--rename</code>, <code>--retire</code>, <code>--unretire</code>, <code>--list</code>. A book opens EMPTY, with no quote and no stated count, because nothing has happened on it yet and inventing a figure would be the one thing a ledger must never do.","<b>RETIRED IS REGISTERED AND NOT SHOWN.</b> <code>prodLive()</code> feeds <code>PROD_IDS</code>, so one flag takes a book off the switch, the Enter form, the tier grid, the ledger's filter and the parity scan, which is every one of the eighteen readers, while its rows, its opening and its tiers stay exactly where they are and the extract still carries it. A device that REMEMBERED a book before it was retired now falls back rather than opening on a book the switch no longer offers.","<b>AND THAT IS WHY RETIRING A BOOK WITH ROWS IS REFUSED.</b> PROD_IDS is read by the consolidated totals as well, so hiding a book that had a past would quietly take its revenue out of the whole-book figures with nothing on screen to say so. The flag is therefore only ever allowed on a book with nothing on it, which makes the filter safe by construction rather than by care. Retiring a book that traded is a different question, and the tool says so instead of guessing.","<b>SALT CANNOT BE RE-KEYED, and the reason is the oldest rule in the book.</b> A row that names no product IS salt, on 175 of 188 sales, so re-keying salt would silently re-attribute every row that names nothing. The tool refuses and points at the section of <code>docs/PRODUCTS.md</code> that states the convention. A rename of anything else moves the six map keys, the order, the id, the accent, every row's product field and every customer's tier for that book: proved on a copy of the real book, where renaming oil moved 24 rows and 2 tiers and left the old id nowhere."]},{"v":"v777","d":"22 Sep 2026","t":"THE TOOLS STOP TYPING THE PRODUCT ORDER AND READ IT OFF THE BOOK","n":["<b>TWO DEFINITIONS ARE TWO THINGS TO KEEP TRUE, AND THE ONE THAT DRIFTS DOES IT SILENTLY.</b> <code>tools/book.mjs</code> carried <code>PROD_ORDER = [\"salt\", \"oil\"]</code>, typed out beside the book that already states it, and <code>tools/d1.mjs</code> FAILED when the two disagreed. So a product could not be registered in one place: the book and that line had to move in step or the mirror check went red. The suite already guards the LEDGER map against exactly this and says why; the order was the one thing it did not cover.","<b>THE ORDER IS THE BOOK'S NOW</b>, read through <code>prodOrder()</code> and cached on first use, the book being a megabyte and <code>bySalt</code> being called once per comparison. Salt still leads, which is his standing instruction of 11 Aug restated on the 13th, and nothing about the order itself has changed.","<b>THE MIRROR CHECK GOT SHARPER RATHER THAN WEAKER.</b> It compared the STORE's copy of the order against a line in a tool, which is a comparison between two things that were both supposed to follow the book. It now compares the store against the book, which is what a staleness check on a mirror was always for.","<b>WHAT THE SUITE CHECKS INSTEAD.</b> That the tools keep NO typed copy, that what they read equals the book's own list, and that it leads with salt. Proved red by mutation: typing the list back in turns the first red, and handing <code>prodOrder</code> a reversed list turns the other two."]},{"v":"v776","d":"22 Sep 2026","t":"THE TWO QUOTE KEYS BECOME ONE MAP, SO A THIRD BOOK NEEDS NO CODE","n":["<b>HIS INSTRUCTION OF 22 SEP 2026, to state what is product-specific and then to open three more books.</b> The live quotes sat under two top-level keys NAMED AFTER THEIR PRODUCTS, <code>supplierQuote</code> for salt and <code>oilQuote</code> for oil, and they were the one per-product thing in this book that was not a map. Everything else, PRODUCTS, PROD_OPENING, COUNT_ON, PRICE_SET, COST_RULE, TIER_OF, is keyed by product and takes a new book as a data entry. The quotes took a new key, a new global and an edit in three files.","<b>THE DESK'S OWN QUOTES WAS AN ACCESSOR OVER THE PAIR</b>, <code>{salt:()=&gt;supplierQuote, oil:()=&gt;oilQuote}</code>, which is why it sat in NOT_LEDGER: stored, it would have arrived as <code>{\"salt\":null,\"oil\":null}</code> with nothing to say a lookup had been lost. QUOTES is the book's own map now, generated into the BOOK block like every other declaration, so it has moved out of NOT_LEDGER and into LEDGER. <code>quoteFor</code> reads the map instead of calling a function, and a product with no quote answers null exactly as an unregistered one used to.","<b>THE LOOKUP THAT COULD NOT FAIL IS THE REASON THIS WENT FIRST.</b> <code>tools/foldcall.mjs</code> read the pair as a literal two-entry object, so a product registered in PRODUCTS but absent from that object yielded <code>undefined</code>, fell to <code>null</code>, and its lot folded with no quote in the dossier while nothing errored and the note was merely worse. That is the shape of bug a third book would have shipped with.","<b>v228 ASKED FOR THIS AND THE PANEL HAS SAID SO EVER SINCE.</b> The supply panel's own comment reads <i>one panel, driven by QUOTES, so a third product needs an entry there and nothing here</i>, and with no quote recorded it tells him to add one to QUOTES. This is that, finished. Two deliberate whole-book reads of the bare salt quote are now <code>QUOTES[DEFAULT_PROD]</code>, which is what they meant; oil's redundant <code>product</code> field goes with the collapse, the key being the product, and nothing ever read it."]},{"v":"v775","d":"21 Sep 2026","t":"A SECOND FREE UNIT ON THE REWARD: NO CASH, NO REVENUE, RM48 OF COST","n":["<b>FOLDED: ONE REDEMPTION ROW FOR CS6-BS, 1 UNIT OF SALT ON 21 SEP.</b> Settled by the reward at RM48 rather than in cash, delivered in full the same day, so nothing is left outstanding. On his ruling of 11 Sep 2026 the row carries both rebate and goodwill, so it stays out of revenue and its RM48 sits as cost at the shelf's own rate. This is the second such redemption for this code since 17 Sep.","<b>UNUSUAL: THE REWARD BALANCE IS THE DESK'S WORD AND CANNOT BE CHECKED HERE.</b> The drafter flagged that 6 earned against 5 applied leaves 1 unit standing, worked out on the desk and not in the book, and the dossier carries no figure that answers it. No price test bites, since no price was charged: the RM51.95 floor and RM160 ask for 1 unit are recorded for the file only. The salt left the shelf and the inventory rolled by it."]},
 
 {"v":"v774","d":"21 Sep 2026","t":"ONE UNIT OUT AT RM90: UNDER THE PARTY'S OWN RUN, CLEAR OF THE FLOOR","n":["<b>FOLDED: ONE SALT SALE, CLOSED ON THE DAY.</b> A single unit went to CS6-BS on 21 Sep for RM90, collected, RM90 cash in and 1 unit moved, so the row opens and closes on the same date with nothing outstanding. At RM90 a unit it sits above the RM52.06 floor for 1 unit and well under the RM160 ask. Costed at RM48 a unit, the inventory's own rate, RM42 on the goods at 46.7%.","<b>UNUSUAL: THE RATE READS LOW AGAINST THE PARTY, AND THE BLEND IS STILL OPEN.</b> The drafter flagged RM90 as 15.9% under the RM107 a unit CS6-BS typically pays across 19 orders, and flagged that RM48 is the inventory average rather than the lot this row draws. The first is a pricing call on his word at the desk; the second is unanswered in the figures given. The inventory released one unit and holds 8, above the reorder mark of 15 only in stated terms."]},
 
@@ -7647,7 +7719,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='22 Sep 2026, 07:31 KL';
+const LAST_UPDATED='22 Sep 2026, 07:45 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -8161,6 +8233,14 @@ const RULES={
 };
 function creditCapFor(prod,tier){const c=RULES.creditUnits[prod||PROD]||RULES.creditUnits[DEFAULT_PROD];return c[tier==='associate'?'associate':'retail'];}
 function reorderFor(prod){const r=RULES.reorderUnits;const v=r[prod||PROD];return v!=null?v:r[DEFAULT_PROD];}
+/* v780: WHOSE CAP IS ACTUALLY THEIRS. creditCapFor falls back to the default book when a book
+   states no cap of its own, which keeps the breach arithmetic working on a book nobody has set
+   a policy for. Printing that borrowed figure book by book stated salt's 1 unit as candy's own
+   the moment three books were opened, under a sentence that begins "Credit caps are per book".
+   So the sentence names the books that HAVE one and says plainly what the rest do. */
+const capStated=p=>(RULES.creditUnits||{})[p]!=null;
+const capBorrowers=()=>PROD_IDS.filter(p=>!capStated(p));
+const capBorrowNote=()=>{const b=capBorrowers();return b.length?' '+b.map(p=>PRODUCTS[p].name).join(', ')+(b.length>1?' have':' has')+' no cap of '+(b.length>1?'their':'its')+' own and take'+(b.length>1?'':'s')+' '+PRODUCTS[DEFAULT_PROD].name+'’s until one is stated.':'';};
 /* ============ ONE PRICE POLICY (v139) ============
    There were two margin systems on this desk and they disagreed: a size-banded floor
    driving Boundaries and the Transaction check, and a separate log taper driving the
@@ -9768,12 +9848,12 @@ function boundaryPanel(){
   /* v403: THE WHY COLUMN WENT, HIS CALL OF 29 AUG. At 115px wide it wrapped to six lines a
      row and made the table 596px tall at 375px. Each x.why still exists where the rule is
      built, so restoring it is one cell, and the rule names stay self-stating. */
-  if(!all.length)return head+`<div class="card">${chips(`<span class="pchip good">no breaches</span>`)}<div class="dsc">All clear. Nobody past their book's retail cap (${PROD_IDS.map(p=>PRODUCTS[p].name.toLowerCase()+' '+units(creditCapFor(p,'retail'))).join(', ')}) or ${RULES.creditDays} days, nothing under its band floor, nothing owed out beyond the inventory.</div></div>`;
+  if(!all.length)return head+`<div class="card">${chips(`<span class="pchip good">no breaches</span>`)}<div class="dsc">All clear. Nobody past their book's retail cap (${PROD_IDS.filter(capStated).map(p=>PRODUCTS[p].name.toLowerCase()+' '+units(creditCapFor(p,'retail'))).join(', ')}) or ${RULES.creditDays} days, nothing under its band floor, nothing owed out beyond the inventory.${capBorrowNote()}</div></div>`;
   return head+`<div class="card">
     ${chips((nb?`<span class="pchip bad">${nb} breach${nb===1?'':'es'}</span>`:`<span class="pchip good">no breaches</span>`)
       +(nw?`<span class="pchip warn">${nw} to watch</span>`:'')
       +(r.length?`<span class="pchip">${r.length} provisional</span>`:''))}
-    <div class="dsc" style="margin-bottom:9px">Nothing is blocked; a breach is held here until it is resolved. Credit caps are per book since round 5 (${PROD_IDS.map(p=>PRODUCTS[p].name.toLowerCase()+' '+units(creditCapFor(p,'retail'))+' retail / '+units(creditCapFor(p,'associate'))+' associate').join('; ')}), and units of different products do not add.</div>
+    <div class="dsc" style="margin-bottom:9px">Nothing is blocked; a breach is held here until it is resolved. Credit caps are per book since round 5 (${PROD_IDS.filter(capStated).map(p=>PRODUCTS[p].name.toLowerCase()+' '+units(creditCapFor(p,'retail'))+' retail / '+units(creditCapFor(p,'associate'))+' associate').join('; ')}), and units of different products do not add.${capBorrowNote()}</div>
     <table><thead><tr><th class="l">Rule</th><th class="l">Party</th><th class="l">Position</th></tr></thead><tbody>
     ${all.map(x=>`<tr><td class="l">${bSevTag[x.sev]||''} ${x.rule}</td><td class="l mono">${x.who==='stock'?'&mdash;':ID(x.who)}</td><td class="l">${x.what}</td></tr>`).join('')}
     </tbody></table></div>`;
@@ -18624,7 +18704,7 @@ function tabWorkbench(){
         <div class="qfield" id="wbApParentCell" style="display:none"><label>Under which associate</label><select id="wbApParent"></select></div>
         <div class="qfield" id="wbApNameCell"><label>Name</label><input id="wbApName" type="text" placeholder="as they are known" autocomplete="off"></div>
         <div class="qfield" id="wbApPlaceCell"><label>Place</label><input id="wbApPlace" type="text" list="wbPlaces" placeholder="choose, or type a town or area; blank if to be confirmed" autocomplete="off"></div>
-        <div class="qfield" id="wbApTierCell"><label>Starting tiers</label>${PROD_IDS.map(p=>`<select id="wbApTier_${p}" aria-label="Starting tier for ${PRODUCTS[p].name}" style="min-height:var(--tap)"><option value="">${PRODUCTS[p].name}: not set</option>${TIER_NAMES.map(n=>`<option value="${n}"${n==='Bronze'?' selected':''}>${PRODUCTS[p].name}: ${n}</option>`).join('')}</select>`).join(' ')}</div>
+        <div class="qfield" id="wbApTierCell"><label>Starting tiers</label>${/* v780: BRONZE IS PRESELECTED ONLY WHERE A BOOK CAN PRICE. Every book defaulted to Bronze, so the moment three books were opened every party registered picked up a starting tier on three books with no ladder, no cost and no way to price them: data that means nothing, written on every registration. A book with no TIER_RULE opens on "not set", which is what it is. */ ""}${PROD_IDS.map(p=>`<select id="wbApTier_${p}" aria-label="Starting tier for ${PRODUCTS[p].name}" style="min-height:var(--tap)"><option value="">${PRODUCTS[p].name}: not set</option>${TIER_NAMES.map(n=>`<option value="${n}"${(n==='Bronze'&&!!TIER_RULE[p])?' selected':''}>${PRODUCTS[p].name}: ${n}</option>`).join('')}</select>`).join(' ')}</div>
         <div class="qfield" style="flex:1"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbApNote" type="text" placeholder="never the name or the place"></div>
       </div>
       <div class="dsc">The code is made from what you type, never typed itself: <b>C</b> for a customer or <b>S</b> for a supplier, the name&rsquo;s first letter and its length, then the place, its initials when it is several words and its first three letters when it is one. So a four-letter name starting with A is <b>CA4</b>, and with its place <b>CA4-DAM</b>; a blank place gives <b>TBC</b>. If the code is taken, it takes one more letter of the name, as <b>CAB4-DAM</b>. The name goes into the vault on this device, encrypted, and never into the queue.<br>To <b>appoint someone already on the roster</b>, pick Associate or Referrer and choose them under <b>Who</b>: it confers the standing rather than registering a second time, asks for no name, and an associate is given their <b>-R</b> resell account with it.</div>

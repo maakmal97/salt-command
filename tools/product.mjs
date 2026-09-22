@@ -90,8 +90,13 @@ function add(b, id, name, note, since) {
   b.COST_RULE[id] = { kind: "stack", note: "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known." };
   b.QUOTES[id] = null;
   console.log(`added ${id} (${name}): registered in ${MAPS.length} maps and PROD_ORDER.`);
-  console.log(`  no hue: add --salt-product-${id} in the design system, then designsync --pull --sync.`);
-  console.log(`  no mark: add PSYM.${id} and PSHAPE.${id} in stmt/page.js, or it draws the Ring.`);
+  /* Say what is actually missing, not what usually is: a hue and a mark may already have been
+     drawn before the book was opened, and a reminder that is wrong is worse than none. */
+  const has = (f, needle) => { try { return readFileSync(resolve(REPO, f), "utf8").includes(needle); } catch (e) { return false; } };
+  if (!has("design/salt-ds.css", `--salt-product-${id}:`))
+    console.log(`  NO HUE: add --salt-product-${id} upstream in the design system, then designsync --pull --sync and stmt-style --sync. An undefined var() resolves to nothing, so the accent would go missing in silence.`);
+  if (!has("stmt/page.js", `${id}: '`))
+    console.log(`  no mark: add PSYM.${id} and PSHAPE.${id} in stmt/page.js, or the Counter draws it as the Ring.`);
 }
 
 function rename(b, from, to) {
