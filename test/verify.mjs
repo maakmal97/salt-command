@@ -13643,17 +13643,20 @@ await (async () => {
     if (mt.index >= from) { top84 += css84.slice(from, mt.index); from = i; }
   }
   top84 += css84.slice(from);
-  const where = (s) => blocks.filter((b) => b.body.includes(s)).map((b) => b.q);
+  /* 22 Sep 2026: the rail is the system's recipe, spelt with spaces in the DESIGN base block, so every
+     search here strips whitespace first, and two of the rules are read under the recipe's name */
+  const norm84 = (x) => x.replace(/\s+/g, "");
+  const where = (s) => blocks.filter((b) => norm84(b.body).includes(norm84(s))).map((b) => norm84(b.q));
 
-  const MENU = [".navbtn{display:grid", ".shell{display:block", ".rail{position:fixed", ".rail{right:", ".rail{background:var(--salt-pane)", ".rail{top:calc(var(--safetop) + var(--dbtop)"];
+  const MENU = [".navbtn{display:grid", ".shell{display:block", ".rail{position:fixed", ".rail{right:", ".salt-rail{background:var(--salt-pane)", ".rail{top:calc(var(--safetop) + var(--dbtop)"];
   const menu = MENU.map((s) => [s, where(s)]);
-  ok(menu.every(([, q]) => q.length >= 1 && q.every((x) => /^\((max-width:(860|560)px)\) and \(pointer:coarse\)$/.test(x))),
+  ok(menu.every(([, q]) => q.length >= 1 && q.every((x) => /^\(max-width:(860|560)px\)and\(pointer:coarse\)$/.test(x))),
     "every rule that folds the rail into the menu is a touch screen's, at 860px or below: " + JSON.stringify(menu));
-  ok(!MENU.some((s) => top84.includes(s)), "and none of them stands outside a media query, where a desktop would read it");
-  ok(JSON.stringify(where(".railbrand{display:none;}")) === '["(min-width:861px),not all and (pointer:coarse)"]'
-    && JSON.stringify(where(".rail{width:212px;flex:0 0 212px;}")) === '["(min-width:861px),not all and (pointer:coarse)"]',
+  ok(!MENU.some((s) => norm84(top84).includes(norm84(s))), "and none of them stands outside a media query, where a desktop would read it");
+  ok(JSON.stringify(where(".railbrand{display:none;}")) === '["(min-width:861px),notalland(pointer:coarse)"]'
+    && JSON.stringify(where(".salt-rail{width:212px;flex:0 0 212px;")) === '["(min-width:861px),notalland(pointer:coarse)"]',
     "the rail keeps its 212px column and hides its own brand wherever it stands: wide, or any screen but a touch one: "
-    + JSON.stringify([where(".railbrand{display:none;}"), where(".rail{width:212px;flex:0 0 212px;}")]));
+    + JSON.stringify([where(".railbrand{display:none;}"), where(".salt-rail{width:212px;flex:0 0 212px;")]));
 
   /* a standing rail takes 232px from a desktop window's column, so what fitted a phone's 353px has to fit from 860px */
   ok(JSON.stringify(where("h2{white-space:normal;}")) === '["(max-width:860px)"]',
