@@ -5133,8 +5133,18 @@ await (async () => {
   ok(+wA.eval("poOwed(purchases.find(function(p){return p.rid==='z3';}))") === WANT, "and the one real bill owes RM " + WANT);
 
   wA.eval("switchTab('financials');");
-  const billsOut = +wA.eval("+purchases.reduce(function(a,p){return a+poOwed(p);},0).toFixed(2)");
-  ok(billsOut === WANT, `the bills outstanding line reads RM ${billsOut}, which must be RM ${WANT}`);
+  /* v789: MEASURED AS A DIFFERENCE, NOT AS A DAY'S TOTAL. This summed poOwed over EVERY purchase
+     and demanded 1200, which held only while the real book owed its suppliers nothing. The v788
+     fold brought three lots in and one of them is unpaid, so the total moved to 1360 and a test
+     about cancelled and defaulted lots failed for a reason that had nothing to do with either.
+     What the fixture is actually about is the three rows it adds, so that is what is measured:
+     the whole-book total with them, less the same total without them, is exactly z3's bill. It
+     cannot go stale on the next fold. */
+  const sumOwed = (skip) => +wA.eval("+purchases.filter(function(p){return " + (skip ? "['z1','z2','z3'].indexOf(p.rid)<0" : "true") + ";})"
+    + ".reduce(function(a,p){return a+poOwed(p);},0).toFixed(2)");
+  const billsAll = sumOwed(false), billsReal = sumOwed(true);
+  ok(+(billsAll - billsReal).toFixed(2) === WANT,
+    `the three lots add exactly RM ${WANT} to the bills outstanding (RM ${billsAll} with them, RM ${billsReal} without)`);
 
   /* the two cards, read off the rendered pane rather than recomputed here */
   /* TWO CARDS, TWO DIFFERENT READERS, READ OFF THE RENDERED PANE. The first version of this
@@ -5149,11 +5159,15 @@ await (async () => {
   };
   const owe = card("receivables", "/You owe, in cash/");
   ok(owe !== "", "the Order book carries a `You owe, in cash` card at all, so the check below is not reading an empty string");
-  ok(/1,200|1200/.test(owe), `and it says RM 1,200 of supplier bills (${owe.slice(0, 96)})`);
+  /* v789: the card must agree with the ENGINE, which is what this was always for; the literal
+     1,200 was the engine's answer on the day it was written. */
+  const cardRM = (t) => { const m = /RMs*([d,]+(?:.d+)?)s*of supplier bills/.exec(String(t)); return m ? +m[1].replace(/,/g, "") : null; };
+  ok(cardRM(owe) === billsAll, `and it says the engine's own RM ${billsAll} of supplier bills (${owe.slice(0, 96)})`);
 
   const sup = card("overview", "/Suppliers/");
   ok(sup !== "", "the Overview carries a Suppliers card at all");
-  ok(/1,200|1200/.test(sup), `and it says RM 1,200 of bills unpaid (${sup.slice(0, 96)})`);
+  ok(String(sup).replace(/,/g, "").indexOf(String(billsAll)) >= 0,
+    `and the Suppliers card says the same RM ${billsAll} of bills unpaid (${sup.slice(0, 96)})`);
 
   /* THE FORECAST IS THE READER THAT MATTERED MOST: the other two put a wrong number on a card,
      this one moved the day the cash runs out. */
@@ -18846,11 +18860,19 @@ await (async () => {
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const MAPS6 = ["PRODUCTS", "PROD_OPENING", "COUNT_ON", "PRICE_SET", "COST_RULE", "QUOTES"];
   const opened = ["candy", "rice", "spare"];
+  /* v789: WHICH BOOKS ARE EMPTY IS ASKED OF THE BOOK, NOT TYPED HERE. All three were empty the
+     day they were opened; the v788 fold then put a sale and a lot on candy and two lots on rice,
+     so a list typed into this test said "empty" about books that trade. What the parity scan's
+     rule 2 is about is a book with NOTHING on it, whichever that is today, and tomorrow it may be
+     none at all. Registration is still asserted for all three, because that does not change. */
+  const rowsOf = (id) => book.sales.filter((r) => (r.product || "salt") === id).length
+    + book.purchases.filter((r) => (r.product || "salt") === id).length;
+  const empties = opened.filter((id) => rowsOf(id) === 0);
 
   ok(opened.every((id) => MAPS6.every((k) => book[k] && id in book[k]) && book.PROD_ORDER.includes(id)),
     "candy, rice and spare are registered in all six per-product maps and the order");
   ok(opened.every((id) => book.QUOTES[id] === null && book.PROD_OPENING[id].stated === null && !book.PROD_OPENING[id].qty),
-    "and opened empty: no quote, no stated count, no opening figure invented");
+    "and each was opened empty: no quote, no stated count, no opening figure invented");
 
   const { w } = await openMaster();
   const ids = JSON.parse(w.eval("JSON.stringify(PROD_IDS)"));
@@ -18862,11 +18884,11 @@ await (async () => {
     "the parity scan reports no identical commitment across books, so nothing behind Today and Forward reads every order and calls it one book's");
   ok(!kinds.includes("empty"),
     "and no book with nothing sold reports a commitment or a receivable of its own: rule 2 fires for the first time since v275 and finds the product split clean");
-  ok(opened.every((id) => { const d = ps.per[id]; return d && d.rev === 0 && d.ar === 0 && d.inventory === 0 && (!d.fc || d.fc.commit === 0); }),
-    "every empty book reports zero revenue, zero receivable, zero inventory and zero promised out");
+  ok(empties.length > 0 && empties.every((id) => { const d = ps.per[id]; return d && d.rev === 0 && d.ar === 0 && d.inventory === 0 && (!d.fc || d.fc.commit === 0); }),
+    `every book with nothing on it reports zero revenue, zero receivable, zero inventory and zero promised out (${empties.join(", ") || "none left"})`);
   const declared = ps.rows.filter((r) => r.k === "declared").map((r) => r.pr);
-  ok(opened.every((id) => declared.includes(id)),
-    "and each says so on the Whiteboard: declared but nothing on the books, which is a note and not a fault");
+  ok(empties.every((id) => declared.includes(id)) && !opened.filter((id) => !empties.includes(id)).some((id) => declared.includes(id)),
+    `and the Whiteboard says "declared but nothing on the books" of exactly those and no others (${declared.join(", ") || "none"})`);
 
   /* A FIGURE IS STATED WHERE IT IS TRUE. creditCapFor falls back to the default book, so the
      sentence that begins "Credit caps are per book" stated salt's 1 unit as candy's own the
