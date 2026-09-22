@@ -192,9 +192,9 @@ replaceOnce("P4b renderRole cloud label",
   "  el.innerHTML='<i></i><span class=\"dhword\">'+(live?(window.SALT_CLOUD?'cloud':'master'):'read only'+(loc?'':', not served'))+'</span>';");
 
 replaceOnce("P5 qNote cloud line",
-  "  if(qSyncState==='server')return 'Record saves straight to <b>'+QFILE+'</b> in this folder, which the daily run reads. Nothing else to do. <b>Save queue file</b> writes it again on demand and <b>Copy queue</b> puts the lines on the clipboard.';",
-  "  if(qSyncState==='server'&&window.SALT_CLOUD)return 'Record pushes each entry to the cloud queue. It is drafted within seconds and folded the moment it is approved; nothing else to do. <b>Copy queue</b> still puts the lines on the clipboard.';" + EOL +
-  "  if(qSyncState==='server')return 'Record saves straight to <b>'+QFILE+'</b> in this folder, which the daily run reads. Nothing else to do. <b>Save queue file</b> writes it again on demand and <b>Copy queue</b> puts the lines on the clipboard.';");
+  "  if(qSyncState==='server')return 'Saved to <b>'+QFILE+'</b> in this folder; the daily run reads it.';",
+  "  if(qSyncState==='server'&&window.SALT_CLOUD)return 'Queued. Drafted in seconds, folded when you approve it.';" + EOL +
+  "  if(qSyncState==='server')return 'Saved to <b>'+QFILE+'</b> in this folder; the daily run reads it.';");
 
 replaceOnce("P6a qPost success line",
   "    qStatus('Saved <b>'+QFILE+'</b> to this folder &mdash; '+j.entries+' queued.');",

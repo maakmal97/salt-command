@@ -1,5 +1,17 @@
 [
  {
+  "v": "v783",
+  "d": "22 Sep 2026",
+  "t": "ENTER LOSES ITS PROSE AND THREE OF ITS FOUR BUTTONS, AND THE PARTY LISTS SORT",
+  "n": [
+   "<b>HIS INSTRUCTION OF 22 SEP 2026, reading the form on screen.</b> Three sentences went, named one by one: the paragraph beside the product control explaining which book an entry lands on and what the rail does; <i>Cost, the four dates, the settlement flags, the row note</i> beside the full sheet button; and <i>Not in the list? …</i>, a whole row of prose about registering a party, on the form for recording a trade. The control says the book and the book is lit in its own hue; a paragraph restating that is three lines to read before typing a figure.",
+   "<b>FOUR BUTTONS WERE THREE TOO MANY.</b> Record acts on what is on the form; Clear queued, Save queue file and Copy queue all act on the QUEUE, and on an empty queue every one of them is a control that can do nothing, since each already refused one. They appear when there is something for them to act on. The card is down from six buttons to two. The queue note went with them: <i>Record pushes each entry to the cloud queue. It is drafted within seconds and folded the moment it is approved; nothing else to do. Copy queue still puts the lines on the clipboard.</i> is now <b>Queued. Drafted in seconds, folded when you approve it.</b> Its laptop twin shortened the same way, and the build patch that carries the cloud wording moved with the line it anchors on.",
+   "<b>THE WARNINGS WAIT UNTIL THE ENTRY IS DESCRIBED</b> (his instruction). Every rule fired against a blank form, so opening Enter showed a column of red saying the goods must be more than zero before anything had been typed. They wait for the quantity, the goods and the cash. <b>The rules still RUN</b>, so Record stays disabled on a form that cannot be recorded; what waits is the saying, and nothing unsafe becomes recordable. Cash cannot be tested for emptiness, being born holding 0, which is a real answer, so it carries a touched flag, set by typing and by None, Half and Full. The flag is set in the SAME handler that previews: as a second listener behind it, it was set after the preview had already read it and the warnings stayed silent.",
+   "<b>AND THE NOTE IS AT THE END.</b> It sat in the middle of the figures row, between the carriage and the freight, so the eye crossed a free-text box on the way from one number to the next.",
+   "<b>EVERY PARTY LIST IS IN ALPHABETICAL ORDER</b> (his instruction). They were in ROSTER order, which is the order parties were registered in, so finding one meant reading the whole list. <code>byName</code> sorts on what is DRAWN and not on the code: ID() answers the name where the vault is open and the code where it is not, and a list sorted by code would sit in a visibly random order the moment the names appear."
+  ]
+ },
+ {
   "v": "v782",
   "d": "22 Sep 2026",
   "t": "A STATEMENT SAYS WHICH BOOK EACH ROW IS, AND UNITS OF DIFFERENT BOOKS DO NOT ADD",

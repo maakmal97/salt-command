@@ -3489,8 +3489,12 @@ await (async () => {
      live only in its title and aria-label, and a phone has no hover to show them. */
   ok(!/Open <b>Names &amp; IDs<\/b> and use/.test(m),
     "the form does not send the reader to a control by a name that is nowhere on screen");
-  ok(/The <b>key<\/b> icon, top right, then <b>\+ Add ID<\/b>/.test(m),
-    "it names the glyph and the place instead, both of which are on the screen");
+  /* v783: THE SENTENCE THIS PINNED IS GONE, on his instruction of 22 Sep 2026 that the Enter
+     form carries too much prose. It read "Not in the list? The key icon, top right, then
+     + Add ID". The RULE it was written for is neither gone nor weakened: the assertion above
+     still forbids sending the reader to a control by a name that appears nowhere on screen,
+     and the one below still requires the glyph to carry that name in its title. What has gone
+     is the requirement to say it in a paragraph on this particular form. */
   ok(/title="Names &amp; IDs"/.test(m),
     "the bar control keeps its title, which is what the copy stopped relying on");
 })();
