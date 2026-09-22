@@ -12,7 +12,10 @@ const SHELL = [
   "./manifest.webmanifest",
   "./icon-180.png",
   "./icon-192.png",
-  "./icon-512.png"
+  "./icon-512.png",
+  /* the brand faces (22 Sep 2026): cached with the shell, so the desk reads in its own type offline */
+  "./fonts/fraunces-latin.woff2",
+  "./fonts/jetbrains-mono-latin.woff2"
 ];
 
 /* The desk's own HTTP contract. These are answered by the Worker, never the cache.

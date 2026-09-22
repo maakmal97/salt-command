@@ -47,6 +47,7 @@ import { SIGNIN_RE, mintSignin, burnSignin } from "./signin.js";
 import { endpointId, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
+import { FONTS } from "./fonts.js";
 import { mintSession, dropSession, sessionUser, ordersOf, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, toChase, CHASE_KEY, hourOf } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
@@ -795,7 +796,7 @@ async function handleGuest(request, env, id) {
          script to do, so the strongest thing that can be said about it is free to say. */
       "content-security-policy":
         "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
-        + "img-src 'self' data:; style-src 'nonce-" + nonce + "'; script-src 'none'"
+        + "img-src 'self' data:; font-src 'self'; style-src 'nonce-" + nonce + "'; script-src 'none'"
     }, HEADERS)
   });
 }
@@ -815,7 +816,7 @@ export default {
           "content-type": "text/html; charset=utf-8",
           "content-security-policy":
             "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
-            + "img-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; "
+            + "img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; "
             + "style-src 'nonce-" + nonce + "'; script-src 'nonce-" + nonce + "'"
         }, HEADERS)
       });
@@ -929,6 +930,17 @@ export default {
        The site had no manifest and no icon, so adding it to a home screen gave a screenshot with
        no name. These two are the whole of it, served from the Worker because there are no assets:
        a neutral tile and a name that says what the page is and not whose it is. */
+    /* THE BRAND FACES (22 Sep 2026): the two font files the page's @font-face names, as bytes from
+       stmt/fonts.js, because this Worker serves no files. A year of cache: a font file is immutable,
+       and a new face would be a new name. */
+    if (p.startsWith("/fonts/")) {
+      if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
+      const b64 = FONTS[p.slice(7)];
+      if (!b64) return notFound();
+      const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      return new Response(bytes, { headers: Object.assign({}, HEADERS, {
+        "content-type": "font/woff2", "cache-control": "public, max-age=31536000, immutable" }) });
+    }
     if (p === "/icon.png") {
       if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
       const bytes = Uint8Array.from(atob(ICON_PNG_B64), (c) => c.charCodeAt(0));

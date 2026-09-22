@@ -125,6 +125,46 @@ through the book, that Chart.js is told once about mono and brass, and that the 
 the manifest and the icons carry the same. Every one of those regexes was run against the v471
 master first and read red.
 
+## 22 Sep 2026: the recipes, not only the tokens
+
+His instruction: the desk, the Counter and QR Command are to use the design system and make full
+use of it. Until then the master used none of the system's 252 classes: the layer above re-stated
+each recipe against the desk's own class names, and it had grown two colours of its own, a true
+alarm (v557) and the opaque warm panel (v567). Four things changed.
+
+**The system was fixed first**, in `Code\salt-ds` at v1.1.0. Its root clipped (`overflow: hidden`
+to contain an aurora that already clips itself), which made it the scroll ancestor of every sticky
+element inside it, so its own DeskBar and DeskRail never stuck; measured in the browser, the bar sat
+at -1200 after a 1200px scroll and holds at 0 now, the rail at its 22px. Nineteen rules set type
+under its own smallest token; every one reads `--salt-text-xs` now. The field recipe was 15px on
+glass against its own principles 4 and 7; it is a well, 16px and 44px tall. The two desk colours
+became identity tokens, with three words for alphas the layer wrote by hand, and the desk set's
+values were synced to what the desk had measured since v472 (the tile at 24px and 20px on a phone,
+the note at 13.5px, the pill at the desk's size, the parts strip at 11.5px, the version bare).
+
+**The desk adopted the recipes where a class-for-class swap was mechanical.** The markup carries
+both names (`class="kpi salt-kpi"`, `salt-kpi__label`, `salt-insight`, `salt-pill salt-pill--sm`,
+`salt-tabs__pill`, `salt-version`, and the aurora as `salt-aurora--fixed`), the layer's rules for
+those are gone, and the base layer's tile rules, which outranked the recipe on specificity, are
+retired. Two mechanisms carry the desk's own state into the recipe without a second rule: the
+tile's tone letters set `--salt-kpi-tone`, and the parts strip's open pill is read off
+`aria-selected`, which the recipe now honours beside its own modifier class. The rail, the bar,
+tags, ghosts, fields and tables stay on the layer: each carries measured geometry the system's
+recipe does not yet match, and moving them is a fold each.
+
+**The Counter takes the recipes it uses.** `tools/stmt-style.mjs` slices the pill, the ghost, the
+field, the tab strip and the state chip out of the vendored stylesheet into `SITE_RECIPES`, the
+page carries them beside the tokens, and its own layer keeps geometry only: a button runs the width
+of the form, the tabs share a row. The open tab is glass with a hairline now and not a filled brass
+badge, which decision 5 had always reserved for the one button.
+
+**QR Command takes the tokens by sync.** Its `app.css` carries the system's `:root` between markers,
+written by its own `tools/designsync.mjs --pull`, and its build refuses to ship on drift.
+
+What was not done: the brand fonts. The CSP is self-only on every surface, so Fraunces and JetBrains
+Mono can only arrive embedded, and embedding needs the files fetched once. That is a network step
+and his call.
+
 ## What is proposed, and not in v472
 
 - **Retire the older material layers.** Done, v474 to v476, in three folds: the page-level

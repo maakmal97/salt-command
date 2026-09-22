@@ -101,7 +101,18 @@ decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; s
    type change is an edit there, then `--sync`, then build, never a hex in the master's
    older layers. Chart series read the identity's hexes directly (`salt-ds/src/tokens.ts`
    shadows the stylesheet), so a palette change is two places. Product hues are
-   `PRODUCTS.accent` in `ledger/book.json`.
+   `PRODUCTS.accent` in `ledger/book.json`. **THE RECIPES ARE USED, NOT RESTATED** (his instruction
+   of 22 Sep 2026: the desk, the Counter and QR Command are to use the system). The master's markup
+   carries the system's class beside the desk's own for the aurora (`salt-aurora--fixed`), the KPI
+   tile and its three parts, the finding, the filled pill, the parts strip and the version, and
+   `design/desk.css` holds NO rule for those: the desk's tone letters bind to the tile's one
+   variable and nothing else. A colour the layer needs is a token in `Code\salt-ds` first
+   (`--salt-alarm`, `--salt-panel`, `--salt-mist-bright`, `--salt-line-strong`, `--salt-glass-hover`
+   were lifted that day), pulled by `designsync --pull`; the layer writes no hex and no alpha of its
+   own. What stays on the layer is measured geometry the system has no recipe for yet: the rail, the
+   bar, tags, ghosts, fields and tables. The Counter takes the tokens and the five recipes it uses
+   (pill, ghost, field, tab strip, state chip) through `tools/stmt-style.mjs` as `SITE_RECIPES`; QR
+   Command takes the tokens through its own `tools/designsync.mjs`. The suite holds all three.
 7. **Git: never from a mounted sandbox** (Cowork, agents on a mount that denies unlink): it
    leaves `.git/*.lock` and `tmp_obj_*` behind and silently blocks every later commit, and
    `git status` alone recreates `index.lock`. **A native Windows Code session may run git.**

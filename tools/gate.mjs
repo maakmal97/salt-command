@@ -31,6 +31,7 @@ export const CHECKS = [
   ["the geography in the master is geo/", ["tools/geosync.mjs", "--check"]],
   ["the design in the master is design/", ["tools/designsync.mjs", "--check"]],
   ["the statement stylesheet is the generator's", ["tools/stmt-style.mjs", "--check"]],
+  ["the site's fonts are design/fonts, as bytes", ["tools/stmt-fonts.mjs", "--check"]],
   ["the site's QR encoder is engine/qr.mjs", ["tools/qrsync.mjs", "--check"]],
   ["the extract is the book", ["tools/ledger.mjs", "--check"]],
 ];

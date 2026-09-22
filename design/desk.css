@@ -19,49 +19,28 @@
 html[data-tod="register"],:root{
   --bg0:var(--salt-obsidian);
   --card:var(--salt-glass);--card2:rgba(255,255,255,.045);--line:var(--salt-line);
-  --ink:var(--salt-salt);--mut:#b4bcc2;--dim:var(--salt-mist);
+  --ink:var(--salt-salt);--mut:var(--salt-mist-bright);--dim:var(--salt-mist);
   --gold:var(--salt-brass);--amber:var(--salt-copper);--ice:var(--salt-product-salt);
-  /* ---- v557, HIS INSTRUCTION OF 09 SEP 2026: A TRUE ALARM, CLEAR OF THE DECORATION. --crim and
-     --rose both pointed at --salt-ember, and ember is the identity's warm third accent: brass at
-     hue 39, copper at 29, ember at 13, all on the same dark ground. So every warning on the desk
-     was painted in a colour the headings also speak in, and a supplier row with four flags read as
-     a wash rather than as four warnings. Measured rather than eyeballed: ember sits dE 20.7 from
-     copper, which is the collision he pointed at; this alarm sits dE 32.5 from ember, 52.6 from
-     copper and 68.7 from brass, at 5.6:1 on obsidian, so it clears small text as well.
-     IT LIVES IN THE LAYER, NOT THE IDENTITY. The vendored salt-ds.css is synced from Code\salt-ds
-     and an edit there would be overwritten; if this earns a place in the identity proper it goes
-     into that repo's tokens. --rose keeps ember and has no reader (0 uses); the chart series keep
-     their literal #d4694c, because ember there is a SERIES colour and not a warning, which is why
-     this is a one-place change and not the two a palette move usually costs. ---- */
-  --salt-alarm:#fa3c5a;
+  /* ---- v557 (his instruction of 09 Sep 2026): a TRUE ALARM, clear of the decoration. --crim and --rose
+     both pointed at ember, the identity's warm third accent, so every warning on the desk was painted in
+     a colour the headings also speak in. The colour is --salt-alarm, IN THE IDENTITY since 22 Sep 2026
+     (it was defined here until then); --rose keeps ember and has no reader. ---- */
   --rose:var(--salt-ember);--crim:var(--salt-alarm);--grn:var(--salt-verdigris);--vio:var(--salt-steel);
   --acc:var(--salt-brass);--accB:var(--salt-copper);
-  --glass:var(--salt-glass);--glass-2:rgba(255,255,255,.07);
-  --brd:var(--salt-line);--brd-2:rgba(197,160,89,.42);
-  --wellbg:var(--salt-well);--veil:var(--salt-veil);--menu:#0b1215;--menu-2:#16211f;
+  --glass:var(--salt-glass);--glass-2:var(--salt-glass-hover);
+  --brd:var(--salt-line);--brd-2:var(--salt-line-strong);
+  --wellbg:var(--salt-well);--veil:var(--salt-veil);--menu:var(--salt-slate);--menu-2:#16211f;
   --chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.4 1.6 6 6.2l4.6-4.6' fill='none' stroke='%23c5a059' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --ink-2:rgba(242,244,245,.66);--ink-3:rgba(242,244,245,.40);
   --r:var(--salt-radius-lg);--r-sm:var(--salt-radius-md);--pill:999px;--tap:var(--salt-tap);
   --sh:var(--salt-shadow-desk);--glassShadow:var(--salt-shadow-desk);
   --gloss:inset 0 1px 0 var(--salt-highlight);
   --railA:rgba(255,255,255,.035);--railB:rgba(255,255,255,.02);
-  /* v567: THE STICKY TABLE SURFACES ARE WARM, BECAUSE THEY SIT INSIDE A CARD RATHER THAN OVER
-     THE PAGE. --salt-veil is the identity's veil for "sticky and floating surfaces over content"
-     and is right for .menu, which does float over the page. Used on every thead th and every
-     label column it painted 218 cells on the Price view alone in rgba(5,8,10,.86), a cold
-     near-black punched into a card the aurora lights warm, which is what he reported. Same job,
-     warm hue. --panel had been defined here since the design layer landed and read by nothing;
-     it is the name for this and now carries it.
-     AND IT IS FULLY OPAQUE, WHICH THE FIRST CUT OF THIS FIX WAS NOT. That one thinned the label
-     column to .62 to let the card through and did not carry the backdrop blur `thead th` relies
-     on, so 38 per cent of whatever scrolled under it came through. He caught it on the earnings
-     table before it shipped, with the ORDERS column legible straight through the band labels.
-     Ghosting is arithmetic and not a matter of taste: a sticky fill at alpha a passes (1-a) of
-     what is behind it, the .86 this replaced already passed a readable 14 per cent, and the only
-     value that cannot ghost is 1. These tables scroll horizontally (`.tscroll`), so rows really
-     do pass under the label column. The warmth is what fixes what he reported; the opacity is
-     what keeps the fix from costing something else. */
-  --panel:rgba(28,20,13,1);
+  /* v567: THE STICKY TABLE SURFACES ARE WARM AND FULLY OPAQUE. --salt-veil is cold and floats OVER the
+     page; these sit INSIDE a card the aurora lights warm, and he caught the ORDERS column legible through
+     the band labels at .62, while the .86 it replaced already passed 14 per cent. The fill is the
+     identity's --salt-panel since 22 Sep 2026; --panel is the desk's name for it. */
+  --panel:var(--salt-panel);
   --totbg:rgba(197,160,89,.07);--hair:var(--salt-line-faint);
   --field:var(--salt-well);
 }
@@ -75,9 +54,8 @@ body[data-sec]{--acc:var(--salt-brass);--accB:var(--salt-copper);}
    body grounds, the diamond logo and the headline gradient. This section owns the ground. ---- */
 html[data-tod="register"] body,body{background:var(--salt-obsidian);color:var(--salt-salt);
   font-family:var(--salt-font-display);font-size:15px;line-height:1.6;}
-.orb{position:fixed;border-radius:50%;filter:blur(100px);z-index:0;pointer-events:none;opacity:.30;}
-.orb.a{width:55vw;height:55vw;min-width:380px;min-height:380px;top:-22vh;left:-18vw;background:var(--salt-copper);}
-.orb.b{width:45vw;height:45vw;min-width:320px;min-height:320px;bottom:-18vh;right:-12vw;background:var(--salt-brass);}
+/* the light is the system's own since 22 Sep 2026: .salt-aurora--fixed in the markup, drawn by the DESIGN
+   base block; this layer draws none */
 
 /* ---- 3. TYPE. Every figure, code, label and control is mono; every sentence inherits
    the display face from body. The list is the desk's whole figure vocabulary. ---- */
@@ -124,28 +102,23 @@ h2 .rule{opacity:1;background:linear-gradient(90deg,var(--salt-line),transparent
 @media (prefers-reduced-transparency:reduce){
   .kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside,.rail{
     -webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(11,18,21,.97)!important;}
-  .orb{display:none;}}
-.kpi{border-radius:var(--salt-radius-md);padding:14px 16px 13px 18px;}
-.kpi::before{width:2px;top:12px;bottom:12px;border-radius:2px;background:var(--salt-brass);opacity:.85;}
-.kpi.g::before{background:var(--salt-brass);}
-.kpi.r::before{background:var(--salt-ember);}
-.kpi.p::before{background:var(--salt-steel);}
-.kpi.gold::before{background:var(--salt-verdigris);}
-.kpi .l{font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--salt-copper);}
-.kpi .v{font-size:24px;font-weight:500;letter-spacing:0;margin-top:6px;color:var(--salt-salt);}
-.kpi .n{font-size:13.5px;color:var(--mut);margin-top:4px;}
+}
+/* THE TILE IS THE SYSTEM'S .salt-kpi (22 Sep 2026): its bar, label, figure and note are the recipe in the
+   DESIGN base block, and the markup carries both names. The desk's tone letters bind to the recipe's one
+   variable, and nothing else about a tile is decided here; the glass and the blur above are the desk's. */
+.kpi.g{--salt-kpi-tone:var(--salt-brass);}
+.kpi.r{--salt-kpi-tone:var(--salt-ember);}
+.kpi.p{--salt-kpi-tone:var(--salt-steel);}
+.kpi.gold{--salt-kpi-tone:var(--salt-verdigris);}
 .cardh{font-size:16px;font-weight:500;color:var(--salt-salt);}
 .cardh .sub{font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--salt-copper);}
 .dsclead,.dsc{color:var(--mut);font-size:14px;line-height:1.6;}
-/* a finding is one sentence with a brass rule to its left, not a box */
-.insight{background:none;border:0;border-left:2px solid var(--salt-brass);border-radius:0;
-  padding:4px 0 4px 14px;margin:12px 0;font-size:14.5px;line-height:1.6;color:var(--salt-salt);box-shadow:none;}
-.insight b{color:var(--salt-brass);font-weight:500;}
+/* a finding is the system's .salt-insight (22 Sep 2026): one sentence with a brass rule to its left, not a box */
 .note,.stand-note{background:none;border:0;border-left:2px solid var(--salt-copper);border-radius:0;
   padding:4px 0 4px 14px;font-size:14px;line-height:1.6;color:var(--mut);box-shadow:none;
   -webkit-backdrop-filter:none;backdrop-filter:none;}
 .note b,.stand-note b{color:var(--salt-copper);font-weight:500;}
-.pend{border:1px dashed rgba(197,160,89,.45);}
+.pend{border:1px dashed var(--salt-line-strong);}
 .pend.def{border-color:rgba(212,105,76,.55);}
 .pend h3{font-size:11.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--salt-brass);}
 .pend.def h3{color:var(--salt-ember);}
@@ -195,7 +168,7 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
   border-radius:var(--salt-radius-sm);padding:8px 10px 8px 12px;}
 /* the resting glass is white 3%, which is also .tab.on's ground, so hover read as selected and
    selected read as nothing. Hover is its own step now, and the open tab keeps the 5b block. */
-.tab:hover{background:rgba(255,255,255,.06);color:var(--salt-salt);}
+.tab:hover{background:var(--salt-glass-hover);color:var(--salt-salt);}
 .tab.on{background:var(--salt-glass);border-color:var(--salt-line);color:var(--salt-salt);font-weight:500;box-shadow:none;}
 .navct{font-size:11px;font-weight:500;background:none;color:var(--salt-copper);padding:0;}
 .tab.on .navct{background:none;color:var(--salt-copper);}
@@ -227,7 +200,6 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 
 .chip{font-size:11px;letter-spacing:.05em;background:var(--salt-glass);border-color:var(--salt-line-faint);color:var(--salt-mist);}
 .chip b{color:var(--salt-salt);font-weight:500;}
-.chip.ver{color:var(--salt-brass);border-color:rgba(197,160,89,.45);font-weight:500;letter-spacing:.12em;}
 .fabtn{background:var(--salt-pane);border:1px solid var(--salt-line);color:var(--salt-brass);
   box-shadow:inset 0 1px 0 var(--salt-highlight),0 10px 30px -12px rgba(0,0,0,.8);}
 .fabtn:hover{border-color:rgba(197,160,89,.55);}
@@ -235,7 +207,7 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .totop{color:var(--salt-brass);border-color:var(--salt-line);background:var(--salt-glass);
   box-shadow:0 0 18px -4px rgba(197,160,89,.4),0 10px 30px -12px rgba(0,0,0,.8),inset 0 1px 0 var(--salt-highlight);}
 .totop.on{animation:none;}
-.totop:hover{background:var(--salt-glass-2,rgba(255,255,255,.07));border-color:rgba(197,160,89,.6);
+.totop:hover{background:var(--salt-glass-hover);border-color:rgba(197,160,89,.6);
   box-shadow:0 0 26px -2px rgba(197,160,89,.5),0 12px 34px -12px rgba(0,0,0,.85),inset 0 1px 0 var(--salt-highlight);}
 .totop:focus-visible{outline-color:var(--salt-brass);}
 .navveil{background:rgba(5,8,10,.55);}
@@ -249,31 +221,24 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 
 /* ---- 6. THE PARTS STRIP AND THE SWITCHERS: the TabStrip pill, the active one in glass ---- */
 .vnav{gap:8px;margin:0 0 16px;}
-.vpill{font-size:11.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--salt-mist);
-  background:transparent;border:1px solid var(--salt-line-faint);padding:8px 16px;}
-.vpill:hover{color:var(--salt-brass);border-color:var(--salt-line);}
-.vpill.on{color:var(--salt-salt);background:var(--salt-glass);border-color:var(--salt-line);}
+/* the parts strip is the system's .salt-tabs__pill (22 Sep 2026), its open pill read off aria-selected */
 .viewsw{background:var(--salt-glass-faint);border-color:var(--salt-line-faint);border-radius:999px;padding:3px;}
 .viewsw button{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--salt-mist);border-radius:999px;}
 .viewsw button.on{background:rgba(255,255,255,.08);color:var(--salt-salt);}
 .viewsw.mini button{font-size:10.5px;}
 
 /* ---- 7. BUTTONS. The pill books or produces; everything else is a ghost. ---- */
-.vbtn{font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--salt-obsidian);
-  background:var(--salt-gradient);border:0;border-radius:999px;padding:10px 20px;
-  box-shadow:0 8px 24px rgba(184,115,51,.3);}
-.vbtn:hover{box-shadow:0 12px 32px rgba(184,115,51,.4);}
-.vbtn.tiny{padding:3px 10px;font-size:9.5px;}
+/* the one filled button is the system's .salt-pill--sm (22 Sep 2026); .vbtn.tiny had no reader and is gone */
 .navlink,.ubtn,.obsbtn,.lqb,.updchip,.menu button{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
   color:var(--salt-mist);background:transparent;border:1px solid var(--salt-line-faint);border-radius:999px;}
 .menu button{border:0;border-radius:8px;letter-spacing:.08em;color:var(--salt-salt);}
 .menu button[aria-checked="true"]::after{color:var(--salt-brass);}
-.menu{background:var(--salt-veil);border-color:rgba(197,160,89,.42);}
+.menu{background:var(--salt-veil);border-color:var(--salt-line-strong);}
 .navlink:hover,.ubtn:hover,.obsbtn:hover,.lqb:hover,.updchip:hover{color:var(--salt-brass);border-color:var(--salt-line);transform:none;background:transparent;}
 .updchip.on{color:var(--salt-salt);background:var(--salt-glass);border-color:var(--salt-line);}
 .lqb.qpaid{color:var(--salt-verdigris);}
 .lqb.qdeliv{color:var(--salt-product-salt);}
-.lqb.qdone{color:var(--salt-brass);border-color:rgba(197,160,89,.45);}
+.lqb.qdone{color:var(--salt-brass);border-color:var(--salt-line-strong);}
 .lqb.qdone:hover{background:rgba(197,160,89,.10);}
 .badge{color:var(--salt-obsidian);background:var(--salt-brass);border-radius:999px;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;}
 .warnpill{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;background:transparent;
@@ -342,18 +307,17 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
    field's full height, so the tap contract holds; a click anywhere else on the field opens the
    calendar on a pointer device. The field keeps its well; the button is a ghost behind a hairline,
    brass like every other quiet control. */
-/* v784: THE BOOK AS A TILE. The dot is the book's own accent and the name sits under it; the
+/* v787: THE BOOK AS A TILE. The dot is the book's own accent and the name sits under it; the
    chosen tile takes that hue for its border, its name and the dot's glow, which is what makes the
    label read "as per the selected hue". Unchosen tiles stay mist so the lit one is unmistakable.
    Every tile holds the tap floor in BOTH directions. They wrap rather than scroll sideways, which
    v466 forbids above the ledger. */
-/* v784: the full sheet opens from the card's own corner, above the fields rather than among
+/* v787: the full sheet opens from the card's own corner, above the fields rather than among
    them. It is taken out of the flow entirely, so nothing below it shifts when Buy hides it. On a
    phone it returns to the flow: a control pinned over a narrow form would sit on top of the mode
    switch it shares the corner with. */
 #wbCard{position:relative;}   /* the corner positions against THIS card, not against .card everywhere */
 .wbcorner{position:absolute;top:15px;right:16px;z-index:2;}
-.wbcorner .vbtn{font-size:12px;}
 @media(max-width:700px){.wbcorner{position:static;margin-bottom:12px;}}
 .prodtiles{display:flex;flex-wrap:wrap;gap:8px;}
 .ptile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
@@ -366,7 +330,7 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
 .ptile:hover{background:var(--salt-glass);color:var(--salt-salt);}
 .ptile:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px;}
 .ptile.on{border-color:var(--pacc);color:var(--pacc);background:var(--salt-glass);}
-/* v784: a book that is IN the entry but is not the active one. Its hue shows, so it is plainly
+/* v787: a book that is IN the entry but is not the active one. Its hue shows, so it is plainly
    included, but it is not lit: only one book drives the margin and the coach. */
 .ptile.also{border-color:var(--pacc);color:var(--salt-mist-light);}
 .ptile.also .ptdot{opacity:.9;}
@@ -382,7 +346,7 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
 .xrow .xf>input{min-height:var(--tap);width:100%;}
 .ptile.on .ptdot{opacity:1;box-shadow:0 0 8px -1px var(--pacc);}
 .dtin{position:relative;display:block;min-width:0;}
-/* v784: the field makes room for two steppers and Today. Each stepper holds the tap floor in
+/* v787: the field makes room for two steppers and Today. Each stepper holds the tap floor in
    BOTH directions, 44 by 44, because a control that is only 44 tall is not a control you can hit. */
 .dtin>input[type="date"]{width:100%;padding-right:162px;}
 .dtstep{position:absolute;top:0;bottom:0;right:74px;display:flex;align-items:stretch;}
@@ -482,7 +446,7 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
    the same shape rather than an underlined word. Both sit at the end of the entry's second row. */
 .ledwrap{font-variant-numeric:tabular-nums;}
 .ledwrap .tag.prov{border:1px dotted rgba(197,160,89,.6);border-radius:var(--salt-radius-pill);padding:3px 10px;background:transparent;}
-.ledwrap .lqb{border:1px solid rgba(197,160,89,.45);border-radius:var(--salt-radius-pill);padding:3px 12px;text-decoration:none;color:var(--salt-brass);}
+.ledwrap .lqb{border:1px solid var(--salt-line-strong);border-radius:var(--salt-radius-pill);padding:3px 12px;text-decoration:none;color:var(--salt-brass);}
 .ledwrap .lqb:hover{background:rgba(197,160,89,.10);border-color:var(--salt-brass);}
 .ledwrap .tag.def{color:var(--salt-ember);}
 .entflash{outline-color:var(--salt-brass);}
@@ -524,7 +488,7 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .prov{color:var(--salt-brass);border:1px dashed rgba(197,160,89,.55);}
 .mod,.pendingt{color:var(--salt-steel);border-color:rgba(142,162,182,.5);}
 .tag.buychip{background:transparent;color:var(--salt-brass);border-color:rgba(197,160,89,.4);}
-.provbar{font-size:11px;letter-spacing:.06em;background:rgba(197,160,89,.08);border:1px dashed rgba(197,160,89,.45);color:var(--salt-brass);}
+.provbar{font-size:11px;letter-spacing:.06em;background:rgba(197,160,89,.08);border:1px dashed var(--salt-line-strong);color:var(--salt-brass);}
 .provbar b{color:var(--salt-salt);}
 .ubtn{border-color:rgba(197,160,89,.5);color:var(--salt-brass);}
 .tierpill{font-size:10.5px;font-weight:500;letter-spacing:.14em;background:transparent;animation:none!important;}
@@ -608,7 +572,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .apchip{font-weight:500;letter-spacing:.04em;background:rgba(228,233,236,.10);color:var(--salt-product-salt);}
 .apchip.apowes{background:rgba(212,105,76,.14);color:var(--salt-ember);}
 .apchip.aplate{background:rgba(197,160,89,.14);color:var(--salt-brass);}
-.appop{background:var(--salt-veil);border-color:rgba(197,160,89,.42);}
+.appop{background:var(--salt-veil);border-color:var(--salt-line-strong);}
 .appop .apact{border-top-color:var(--salt-line-faint);}
 .appop td:last-child{color:var(--salt-salt);}
 
@@ -620,7 +584,6 @@ details.obs>summary:hover{background:var(--salt-glass);}
      The heading keeps the floor and the tab clears it. */
 
   .tab{font-size:13.5px;}
-  .kpi .v{font-size:20px;}
   /* THE BOARD FITS ITS CARD WITHOUT A SCROLL, measured at v477: 337px of table in a 325px card since
      the mono face arrived at v472, and the width is the figures', not the type's (12.5, 12, 11.5 and
      11px all measure 337). Three-pixel gutters bring it to 325, exactly the card. */
@@ -677,7 +640,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .ledwrap .lrow .lc-step,.ledwrap .lrow .lc-type{align-self:center;}
 .ledwrap .lrow .lclabel{font-size:10.5px;letter-spacing:.14em;min-width:0;}
 .ledwrap .lrow .lc-type .tag{font-size:10.5px;letter-spacing:.14em;}
-.ledwrap .lqb,.ledwrap .lqb.qdone{border:1px solid rgba(197,160,89,.45);background:transparent;border-radius:999px;padding:3px 10px;min-height:0;line-height:1.3;
+.ledwrap .lqb,.ledwrap .lqb.qdone{border:1px solid var(--salt-line-strong);background:transparent;border-radius:999px;padding:3px 10px;min-height:0;line-height:1.3;
   font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--salt-brass);text-decoration:none;}
 .ledwrap .lqb:hover,.ledwrap .lqb.qdone:hover{background:rgba(197,160,89,.10);color:var(--salt-salt);border-color:var(--salt-brass);}
 .ledwrap .lquick{justify-content:flex-end;align-self:center;}
@@ -724,9 +687,9 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .dhrole.ro{color:var(--salt-brass);}
 .dhupd::before{content:"\00b7";margin:0 8px;}
 .deskbar .dbtools{order:2;gap:4px;}
-.deskbar .chip.ver{background:none;border:0;padding:0 8px 0 0;font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--salt-brass);}
+/* the version is the system's .salt-version, bare (22 Sep 2026) */
 .deskbar .fabtn{background:transparent;border-color:var(--salt-line-faint);box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;}
-.deskbar .fabtn:hover{background:rgba(255,255,255,.06);border-color:var(--salt-line);}
+.deskbar .fabtn:hover{background:var(--salt-glass-hover);border-color:var(--salt-line);}
 .deskbar .idfix.on{border-color:var(--salt-brass);box-shadow:0 0 12px -4px var(--salt-brass);}
 .deskbar>#provBar{order:3;flex:1 0 100%;}
 .deskbar>#provBar:empty{display:none;}

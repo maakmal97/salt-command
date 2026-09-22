@@ -1693,7 +1693,7 @@ await (async () => {
     "a caveat standing alone is under the limit and cannot be cut: " + c.length + " of " + NOTE_MIN + ", \"" + c.slice(0, 40) + "...\""));
 
   /* and they must actually STAND alone: one .insight for the count, another for the caveat */
-  ok(plans.includes('<div class="insight">${esc(rhythmCount)}</div>'),
+  ok(plans.includes('<div class="insight salt-insight">${esc(rhythmCount)}</div>'),
     "the count is its own block");
   ok(plans.includes("${rhythmCaveat?") && plans.includes("esc(rhythmCaveat)"),
     "and the caveat is its own block rather than a second sentence in the count's");
@@ -2557,7 +2557,7 @@ await (async () => {
 
   /* a figure that cannot be SPLIT by book must not be drawn inside the per-product repeat */
   const fin = html("builders.financials()"), one = html("tabFinancials()");
-  ok(count(fin, '<div class="l">Trading net</div>') === 1 && count(fin, '<div class="l">Still to come in</div>') === 1,
+  ok(count(fin, '<div class="l salt-kpi__label">Trading net</div>') === 1 && count(fin, '<div class="l salt-kpi__label">Still to come in</div>') === 1,
     "the cash position is on the Financials part once, not once per book");
   ok(count(fin, "Lost to suppliers") === 1, "and so is what the suppliers have cost");
   ok(count(one, "Trading net") === 0 && count(one, "Lost to suppliers") === 0,
@@ -7545,6 +7545,23 @@ await (async () => {
     ok(sameSize.products.length > 0 && sameSize.products.every((p) => p.sizes.length > 0
       && p.sizes.every((r) => Number.isFinite(r.price))),
       "and two anchors naming one size cannot put NaN in front of a stranger");
+    /* v785: A BOOK WITH NO COST IS LEFT OFF, forced rather than waited for. v780 opened three books
+       empty and every publish since put each on all five guest boards at RM 0 at twelve sizes, the
+       fallback row's zeros being finite. Salt keeps its ladder and is struck of its cost in a copy,
+       which is the case a test on the prices would miss (10, 20, 30, a ten a level), and must vanish
+       from the board while the rest stay; and the live boards carry no RM 0 at any size, which
+       today's empty books make a real check rather than a tautology. */
+    const noCost = JSON.parse(JSON.stringify(px));
+    const c0 = noCost.byProduct.salt.inputs.cost;
+    c0.repl = null; c0.lot = null; c0.quoteRate = 0; c0.freightRate = 0;   /* the shape an empty book carries */
+    const struck = bl(2, bk, noCost, new Date()), whole = bl(2, bk, px, new Date());
+    ok(whole.products.some((p) => p.product === "salt") && !struck.products.some((p) => p.product === "salt")
+      && struck.products.length === whole.products.length - 1,
+      "a book whose cost stack is nothing is left off the board and the other books stay: "
+      + JSON.stringify(struck.products.map((p) => p.product)));
+    ok(whole.products.length > 0 && whole.products.every((p) => p.sizes.length > 0 && p.sizes.every((r) => r.price > 0)),
+      "and no board a stranger opens carries RM 0 at any size, empty books included: "
+      + JSON.stringify(whole.products.map((p) => [p.product, Math.min(...p.sizes.map((r) => r.price))])));
   }
 
   /* the vendored encoder is the one encoder, or the site draws a QR from code nobody is testing */
@@ -9254,8 +9271,11 @@ await (async () => {
      add a true alarm, and fix the thresholds. Colour asserted from the stylesheet, thresholds
      asserted against each row's own figures so the rule holds whatever the book does next. */
   const css = readFileSync(join(REPO, "design", "desk.css"), "utf8");
-  const alarm = (css.match(/--salt-alarm:\s*(#[0-9a-fA-F]{6})/) || [])[1];
-  ok(!!alarm, `the layer defines a true alarm colour (${alarm || "none"})`);
+  /* 22 Sep 2026: the colour moved upstream into the identity, and the layer only points at it */
+  const dsAlarm = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
+  const alarm = (dsAlarm.match(/--salt-alarm:\s*(#[0-9a-fA-F]{6})/) || [])[1];
+  ok(!!alarm, `the identity defines a true alarm colour (${alarm || "none"})`);
+  ok(!/--salt-alarm:\s*#/.test(css), "and the desk layer no longer defines one of its own");
   ok(alarm && alarm.toLowerCase() !== "#d4694c", "and it is not ember, which is the accent it was");
   ok(/--crim:var\(--salt-alarm\)/.test(css), "--crim points at it, so all 109 warnings move together");
   ok(/--rose:var\(--salt-ember\)/.test(css), "and --rose keeps ember, which no reader uses");
@@ -9362,9 +9382,12 @@ await (async () => {
   const desk7 = readFileSync(join(REPO, "design", "desk.css"), "utf8");
 
   /* ---- the sticky table fills, read out of the design layer as it is shipped ---- */
-  const tok = (name) => {
-    const m = new RegExp("--" + name + ":\\s*(rgba?\\([^)]*\\))").exec(desk7);
-    return m ? m[1] : null;
+  /* a token may point at the identity's own (22 Sep 2026: --panel is var(--salt-panel)); one step is followed */
+  const ds7 = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
+  const tok = (name, src = desk7) => {
+    const m = new RegExp("--" + name + ":\\s*(rgba?\\([^)]*\\)|var\\(--([\\w-]+)\\))").exec(src);
+    if (!m) return null;
+    return m[2] ? tok(m[2], ds7) : m[1];
   };
   const rgba = (s) => {
     const m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/.exec(s || "");
@@ -14545,7 +14568,7 @@ await (async () => {
     && page94.includes("a neighbourhood or a landmark") && page94.includes("I have paid")
     && page94.includes("Your order is now complete. Thank you for your loyalty."),
     "the page reviews before it places, asks roughly where it is going, takes the amount paid, and says his closing words");
-  ok(!/url\(/.test(page94), "and nothing on the page loads anything, the chevron included");
+  ok(!/url\((?!fonts\/)/.test(page94), "and nothing on the page loads anything but its own two fonts, the chevron included");
 })();
 section("v695 and v704: a product is a mark and never a word, and the app on his customers' phones is Salt Counter");
 await (async () => {
@@ -18980,7 +19003,136 @@ await (async () => {
   }
 })();
 
-section("v784: a second book on the Enter form is a second transaction for the same party");
+section("22 Sep 2026: the desk draws its light, tiles, findings, pills and parts strip from the system's recipes");
+await (async () => {
+  /* HIS INSTRUCTION OF 22 SEP 2026: the desk, the Counter and QR Command are to USE the design system, not
+     carry copies of it. Before this the master used 0 of the system's 252 classes: the design layer re-stated
+     each recipe against the desk's own class names, and the layer had grown two colours of its own. Now the
+     markup carries the system's names beside the desk's, the layer keeps only its bindings, and the colours
+     are the identity's. Each assertion below was proved red by mutation, one at a time. */
+  const mX = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const dX = readFileSync(join(REPO, "design", "desk.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const sX = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
+  const bodyX = mX.slice(mX.indexOf("<body"));
+  /* the light */
+  ok(/<div class="salt-aurora salt-aurora--page salt-aurora--fixed" aria-hidden="true">/.test(bodyX) && !/class="orb [ab]"/.test(bodyX),
+    "the aurora is the system's, pinned to the viewport, and the desk's own orbs are gone");
+  ok(/\.salt-aurora--fixed\s*\{\s*position:\s*fixed;?\s*\}/.test(sX) && !/\.orb\{/.test(dX),
+    "the system pins it and the layer draws no light of its own");
+  /* the tiles: every tile carries the recipe's name, and its three parts theirs */
+  const tiles = (bodyX.match(/class="kpi(?=[" ])/g) || []).length;
+  const named = (bodyX.match(/class="kpi salt-kpi(?=[" ])/g) || []).length;
+  ok(tiles > 80 && named === tiles, "every KPI tile is a .salt-kpi (" + named + " of " + tiles + ")");
+  const lab = (bodyX.match(/<div class="l salt-kpi__label">/g) || []).length;
+  const val = (bodyX.match(/<div class="v salt-kpi__value"/g) || []).length;
+  ok(lab === tiles && val === tiles, "and each carries the recipe's label and figure (" + lab + " labels, " + val + " figures)");
+  ok(!/\.kpi \.[lvn]\{/.test(dX) && !/\.kpi::before/.test(dX) && !/\n\.kpi\{/.test(dX),
+    "the layer no longer states the tile's parts, bar or box; the recipe does");
+  ok(/\.kpi\.r\{--salt-kpi-tone:var\(--salt-ember\);\}/.test(dX) && /\.kpi\.p\{--salt-kpi-tone:var\(--salt-steel\);\}/.test(dX),
+    "the desk's tone letters bind to the recipe's one variable");
+  const baseX = mX.slice(mX.indexOf("<style>"), mX.indexOf("/* ==== DESIGN base:"));
+  ok(!/\.kpi\.r::before/.test(baseX) && !/\.kpi \.l\{font-size:10px/.test(baseX),
+    "and the base layer's tile rules, which outranked the recipe on specificity, are retired");
+  /* the findings, the pill, the parts strip, the version */
+  const ins = (bodyX.match(/class="insight(?=[" ])/g) || []).length;
+  ok(ins > 30 && (bodyX.match(/class="insight salt-insight"/g) || []).length === ins && !/\.insight\{/.test(dX),
+    "every finding is a .salt-insight and the layer states none (" + ins + ")");
+  const pillsX = (bodyX.match(/class="vbtn(?=[" ])/g) || []).length;
+  ok(pillsX > 40 && (bodyX.match(/class="vbtn salt-pill salt-pill--sm/g) || []).length === pillsX && !/\.vbtn\{/.test(dX),
+    "every filled button is the system's small pill and the layer states none (" + pillsX + ")");
+  ok(/<button class="vpill salt-tabs__pill\$\{p===part\?' on':''\}" role="tab" aria-selected=/.test(mX) && !/\.vpill\{/.test(dX)
+    && /\.salt-tabs__pill\[aria-selected="true"\]/.test(sX),
+    "the parts strip is the system's, and its open pill is read off aria-selected rather than a second class");
+  ok(/<span class="salt-version" id="verChip">/.test(bodyX) && !/\.chip\.ver\{/.test(dX) && /\.salt-version \{[^}]*border: 0;/.test(sX),
+    "the version is the system's bare .salt-version");
+  /* the identity owns every colour the layer used to decide */
+  ok(/--salt-alarm:\s*#fa3c5a/.test(sX) && /--salt-panel:\s*rgb\(28, 20, 13\)/.test(sX) && /--salt-mist-bright:\s*#b4bcc2/.test(sX),
+    "the alarm, the opaque panel and the bright mist are the identity's tokens");
+  ok(/--panel:var\(--salt-panel\)/.test(dX) && /--mut:var\(--salt-mist-bright\)/.test(dX) && !/#b4bcc2|#fa3c5a|rgba\(28,20,13/.test(dX),
+    "and the layer points at them rather than restating them");
+  ok(!/rgba\(197,160,89,\.4[25]\)|rgba\(255,255,255,\.06\)/.test(dX) && /--salt-line-strong:/.test(sX) && /--salt-glass-hover:/.test(sX),
+    "the lifted hairline and the hover fill are the identity's words, not alphas written by hand");
+  /* the system itself, read with its comments stripped: the root's own comment names what it no longer does */
+  const sXcode = sX.replace(/\/\*[\s\S]*?\*\//g, "");
+  ok(!/\.salt-root \{[^}]*overflow: hidden/.test(sXcode), "the system's root no longer clips, so a sticky bar inside it can stick (measured 22 Sep 2026)");
+  ok(!/font-size: (9|9\.5|10|10\.5)px/.test(sXcode), "and nothing in the system is set under the smallest type token");
+  ok(/\.salt-field__input \{[^}]*background: var\(--salt-well\);/.test(sXcode) && /\.salt-field__input \{[^}]*font-size: 16px;/.test(sXcode) && /\.salt-field__input \{[^}]*min-height: var\(--salt-tap\);/.test(sXcode),
+    "a field is a well, 16px so a phone never zooms, and 44px tall, as principles 4 and 7 say and the recipe did not");
+})();
+
+section("22 Sep 2026: the Counter draws its field, pill, quiet button, tabs and state chip from the system's recipes");
+await (async () => {
+  /* HIS INSTRUCTION OF 22 SEP 2026, the Counter's half. The site already took the identity's tokens
+     through tools/stmt-style.mjs; it restated every recipe by hand. Now the five it uses are sliced
+     out of the vendored stylesheet into SITE_RECIPES, the page carries them, and its own layer keeps
+     geometry only. Each assertion was proved red by mutation, one at a time. */
+  const { siteRecipes: srY } = await import("../tools/stmt-style.mjs");
+  const genY = await import("../stmt/statement-css.js");
+  ok(typeof genY.SITE_RECIPES === "string" && genY.SITE_RECIPES === srY(),
+    "the site's recipes are generated from the vendored stylesheet, and the shipped copy is what the tool produces");
+  ok(/\.salt-pill \{/.test(genY.SITE_RECIPES) && /\.salt-ghost \{/.test(genY.SITE_RECIPES) && /\.salt-field__input \{/.test(genY.SITE_RECIPES)
+    && /\.salt-tabs__pill\[aria-selected="true"\]/.test(genY.SITE_RECIPES) && /\.salt-status--verdigris/.test(genY.SITE_RECIPES),
+    "and they are the pill, the ghost, the field, the tab strip and the state chip");
+  ok(!/url\(/.test(genY.SITE_RECIPES) && !/salt-field__select/.test(genY.SITE_RECIPES),
+    "and none of them loads anything: the select's data: chevron stays out, the page draws its own from gradients");
+  const pgY = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
+  ok((pgY.match(/STATEMENT_CSS \+ SITE_RECIPES \+ PAGE_CSS/g) || []).length === 2,
+    "both pages the Worker serves carry the recipes between the tokens and the page's own layer");
+  ok(/<button class="btn salt-pill salt-pill--md" id="go" type="submit">/.test(pgY) && /<input class="fld salt-field__input salt-field__input--mono" id="rq"/.test(pgY),
+    "the door's field is the system's field, in mono for a code, and Log in is the system's pill");
+  ok(/class="salt-tabs__pill on" role="tab" aria-selected="true" data-t="stmt"/.test(pgY) && /bs\[i\]\.setAttribute\('aria-selected',on\?'true':'false'\)/.test(pgY),
+    "the tabs are the system's, and a tap moves aria-selected with the open one");
+  ok(/'state salt-status salt-status--'\+\(STATE_TONE\[o\.status\]\|\|'mist'\)/.test(pgY) && /var STATE_TONE=\{placed:'steel',acknowledged:'steel',ready:'brass',done:'verdigris'\}/.test(pgY),
+    "an order's state is the system's chip, in its tone");
+  const pcssY = pgY.slice(pgY.indexOf("const PAGE_CSS = " + String.fromCharCode(96)), pgY.indexOf(String.fromCharCode(96) + ";", pgY.indexOf("const PAGE_CSS = ")));
+  ok(!/\.btn\{[^}]*background/.test(pcssY) && !/\.tabs button\.on\{/.test(pcssY) && !/\n\.state\{/.test(pcssY) && !/\n\.fld\{[^}]*background/.test(pcssY) && /\.btn\{margin-top:18px;width:100%\}/.test(pcssY),
+    "the page's own layer keeps geometry and states no look the recipe owns");
+  ok(/el\('button','btn quiet salt-ghost'/.test(readFileSync(join(REPO, "stmt", "owner.js"), "utf8")),
+    "and the master page's quiet button is the system's ghost");
+})();
+
+section("22 Sep 2026: the brand faces reach every surface, self-hosted");
+await (async () => {
+  /* HIS YES OF 22 SEP 2026 to fetching the fonts. Fraunces and JetBrains Mono were designed into the
+     identity and never loaded where it mattered, because every surface's policy is self-only. Google
+     Fonts' own latin subsets are kept in the design system (fonts/, with their licences) and each surface
+     serves them beside its page: the desk from public/fonts/, the Counter from bytes in stmt/fonts.js.
+     Each assertion was proved red by mutation, one at a time. */
+  const FF = ["fraunces-latin.woff2", "jetbrains-mono-latin.woff2"];
+  const has = (p) => { try { readFileSync(p); return true; } catch (e) { return false; } };
+  const mF = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const fcss = readFileSync(join(REPO, "design", "fonts.css"), "utf8");
+  ok(/font-family: 'Fraunces'[^}]*url\(fonts\/fraunces-latin\.woff2\)/.test(fcss) && /font-family: 'JetBrains Mono'[^}]*url\(fonts\/jetbrains-mono-latin\.woff2\)/.test(fcss) && !/https?:\/\//.test(fcss),
+    "the two faces are declared from the page's own fonts/ folder and name no other origin");
+  ok(mF.includes("/* ==== DESIGN fonts:") && mF.indexOf("/* ==== DESIGN fonts:") < mF.indexOf("/* ==== DESIGN base:") && mF.includes(fcss.trim()),
+    "the desk carries them as a third generated block, before the base and never at the foot");
+  for (const f of FF) ok(has(join(REPO, "public", "fonts", f)) && readFileSync(join(REPO, "public", "fonts", f)).equals(readFileSync(join(REPO, "design", "fonts", f))),
+    "public/fonts/" + f + " is the design system's file, byte for byte");
+  const swF = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  ok(FF.every((f) => swF.includes('"./fonts/' + f + '"')), "the shell precaches both, so the desk reads in its own type offline");
+  ok(/font-src 'self'/.test(readFileSync(join(REPO, "public", "_headers"), "utf8")), "and the desk's policy admits its own fonts");
+  /* the Counter */
+  const { expected: fontsExpected } = await import("../tools/stmt-fonts.mjs");
+  ok(readFileSync(join(REPO, "stmt", "fonts.js"), "utf8") === fontsExpected(), "stmt/fonts.js is what tools/stmt-fonts.mjs writes from design/fonts/");
+  const { FONTS: fontsF } = await import("../stmt/fonts.js");
+  ok(FF.every((f) => Buffer.from(fontsF[f] || "", "base64").equals(readFileSync(join(REPO, "design", "fonts", f)))), "and its bytes are the files");
+  const wF = readFileSync(join(REPO, "stmt", "worker.js"), "utf8");
+  ok((wF.match(/font-src 'self'/g) || []).length === 2 && /p\.startsWith\("\/fonts\/"\)/.test(wF) && /"content-type": "font\/woff2"/.test(wF),
+    "both of the site's policies admit its own fonts and the Worker serves them at /fonts/");
+  const stmtWF = (await import("../stmt/worker.js")).default;
+  const rF = await stmtWF.fetch(new Request("https://site.test/fonts/fraunces-latin.woff2"), { STMT: new KV() });
+  const bodyF = Buffer.from(await rF.arrayBuffer());
+  ok(rF.status === 200 && rF.headers.get("content-type") === "font/woff2" && /immutable/.test(rF.headers.get("cache-control") || "") && bodyF.equals(readFileSync(join(REPO, "design", "fonts", "fraunces-latin.woff2"))),
+    "a request for a face answers the file with a year of cache");
+  const r404 = await stmtWF.fetch(new Request("https://site.test/fonts/nothing.woff2"), { STMT: new KV() });
+  ok(r404.status === 404, "and a face that is not there is the site's usual 404");
+  const genF = await import("../stmt/statement-css.js");
+  const pgF = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
+  ok(genF.FONT_FACE_CSS === fcss && (pgF.match(/FONT_FACE_CSS \+ STATEMENT_CSS \+ SITE_RECIPES \+ PAGE_CSS/g) || []).length === 2,
+    "the page carries the same @font-face rules, first, on both pages the Worker serves");
+})();
+
+section("v787: a second book on the Enter form is a second transaction for the same party");
 await (async () => {
   /* v409 called two products in one form a FAULT, and it was right: the margin, the free inventory
      and the price coach all read the ACTIVE book, so a form holding two read one and recorded the
