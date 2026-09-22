@@ -59,12 +59,20 @@ const RECIPE_HEADS = [
 ];
 export function siteRecipes() {
   const css = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
-  return RECIPE_HEADS.map((h) => {
+  const out = RECIPE_HEADS.map((h) => {
     const i = css.indexOf(h);
     if (i < 0) throw new Error("stmt-style: no recipe headed " + h + " in design/salt-ds.css");
     const j = css.indexOf("\n/* ---- ", i + h.length);
     return css.slice(i, j < 0 ? css.length : j);
-  }).join("\n");
+  }).join("\n")
+    /* NOT THE SELECT. The recipe draws its chevron with a data: image, and this site's page loads
+       NOTHING, a data: URL included (asserted since v694): its own select.fld draws the chevron
+       out of two gradients and keeps it. Stripped here, and a url( anywhere else in a recipe
+       stops the generation rather than the suite. */
+    .replace(/\n\.salt-field__input\.salt-field__select \{[^}]*\}/, "")
+    .replace(/\n\.salt-field__select option \{[^}]*\}/, "");
+  if (/url\(/.test(out)) throw new Error("stmt-style: a site recipe carries a url(), which the page may not load");
+  return out;
 }
 
 /* The statement's own layer. Class names are the ones stmtDoc already emits: this is a

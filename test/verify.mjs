@@ -19056,6 +19056,8 @@ await (async () => {
   ok(/\.salt-pill \{/.test(genY.SITE_RECIPES) && /\.salt-ghost \{/.test(genY.SITE_RECIPES) && /\.salt-field__input \{/.test(genY.SITE_RECIPES)
     && /\.salt-tabs__pill\[aria-selected="true"\]/.test(genY.SITE_RECIPES) && /\.salt-status--verdigris/.test(genY.SITE_RECIPES),
     "and they are the pill, the ghost, the field, the tab strip and the state chip");
+  ok(!/url\(/.test(genY.SITE_RECIPES) && !/salt-field__select/.test(genY.SITE_RECIPES),
+    "and none of them loads anything: the select's data: chevron stays out, the page draws its own from gradients");
   const pgY = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
   ok((pgY.match(/STATEMENT_CSS \+ SITE_RECIPES \+ PAGE_CSS/g) || []).length === 2,
     "both pages the Worker serves carry the recipes between the tokens and the page's own layer");
