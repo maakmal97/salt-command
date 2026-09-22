@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="7fa09adbbcbe33a2";
+var SALT_BUILD_ID="c2cf75e8dd3ec9f9";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -3291,8 +3291,54 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
    field's full height, so the tap contract holds; a click anywhere else on the field opens the
    calendar on a pointer device. The field keeps its well; the button is a ghost behind a hairline,
    brass like every other quiet control. */
+/* v789: THE BOOK AS A TILE. The dot is the book's own accent and the name sits under it; the
+   chosen tile takes that hue for its border, its name and the dot's glow, which is what makes the
+   label read "as per the selected hue". Unchosen tiles stay mist so the lit one is unmistakable.
+   Every tile holds the tap floor in BOTH directions. They wrap rather than scroll sideways, which
+   v466 forbids above the ledger. */
+/* v789: the full sheet opens from the card's own corner, above the fields rather than among
+   them. It is taken out of the flow entirely, so nothing below it shifts when Buy hides it. On a
+   phone it returns to the flow: a control pinned over a narrow form would sit on top of the mode
+   switch it shares the corner with. */
+#wbCard{position:relative;}   /* the corner positions against THIS card, not against .card everywhere */
+.wbcorner{position:absolute;top:15px;right:16px;z-index:2;}
+@media(max-width:700px){.wbcorner{position:static;margin-bottom:12px;}}
+.prodtiles{display:flex;flex-wrap:wrap;gap:8px;}
+.ptile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  min-width:78px;min-height:var(--tap);padding:9px 12px;margin:0;cursor:pointer;
+  border:1px solid var(--salt-line-faint);border-radius:var(--salt-radius-sm);
+  background:transparent;color:var(--salt-mist);}
+.ptile .ptdot{width:11px;height:11px;border-radius:50%;background:var(--pacc);flex:0 0 11px;opacity:.55;}
+.ptile .ptname{font-family:var(--salt-font-mono);font-size:10.5px;font-weight:500;
+  letter-spacing:.1em;text-transform:uppercase;line-height:1;}
+.ptile:hover{background:var(--salt-glass);color:var(--salt-salt);}
+.ptile:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px;}
+.ptile.on{border-color:var(--pacc);color:var(--pacc);background:var(--salt-glass);}
+/* v789: a book that is IN the entry but is not the active one. Its hue shows, so it is plainly
+   included, but it is not lit: only one book drives the margin and the coach. */
+.ptile.also{border-color:var(--pacc);color:var(--salt-mist-light);}
+.ptile.also .ptdot{opacity:.9;}
+/* one compact row a book after the first: the figures and nothing else */
+.xrow{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin-bottom:10px;padding:10px 12px;
+  border:1px solid var(--salt-line-faint);border-left:3px solid var(--pacc);border-radius:var(--salt-radius-sm);}
+.xrow .xname{display:flex;align-items:center;gap:7px;flex:1 1 100%;
+  font-family:var(--salt-font-mono);font-size:10.5px;font-weight:500;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--pacc);}
+.xrow .xname .ptdot{width:9px;height:9px;border-radius:50%;background:var(--pacc);flex:0 0 9px;}
+.xrow .xf{display:flex;flex-direction:column;gap:5px;flex:1 1 130px;min-width:0;}
+.xrow .xf>span{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--salt-text-muted);}
+.xrow .xf>input{min-height:var(--tap);width:100%;}
+.ptile.on .ptdot{opacity:1;box-shadow:0 0 8px -1px var(--pacc);}
 .dtin{position:relative;display:block;min-width:0;}
-.dtin>input[type="date"]{width:100%;padding-right:74px;}
+/* v789: the field makes room for two steppers and Today. Each stepper holds the tap floor in
+   BOTH directions, 44 by 44, because a control that is only 44 tall is not a control you can hit. */
+.dtin>input[type="date"]{width:100%;padding-right:162px;}
+.dtstep{position:absolute;top:0;bottom:0;right:74px;display:flex;align-items:stretch;}
+.dtar{min-width:var(--tap);min-height:var(--tap);margin:0;padding:0;border:0;
+  border-left:1px solid var(--salt-line-faint);background:transparent;color:var(--salt-brass);
+  cursor:pointer;font-family:var(--salt-font-mono);font-size:17px;line-height:1;}
+.dtar:hover{background:rgba(197,160,89,.10);color:var(--salt-salt);}
+.dtar:focus-visible{outline:2px solid var(--salt-brass);outline-offset:-2px;}
 .dtoday{position:absolute;top:0;right:0;bottom:0;min-width:var(--tap);min-height:var(--tap);margin:0;padding:0 12px;
   border:0;border-left:1px solid var(--salt-line-faint);border-radius:0 var(--salt-radius-sm) var(--salt-radius-sm) 0;
   background:transparent;color:var(--salt-brass);cursor:pointer;
@@ -7239,7 +7285,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    v324 onward, which tabJournal maps in full; master/changelog.json carries every entry
    ever written and is the record. So a bump PREPENDS its entry. Replacing the array,
    which both comments invited, silently drops the whole window. */
-const evolution=[{"v":"v788","d":"22 Sep 2026","t":"THREE LOTS IN, TWO OUT, AND A BLEND STILL UNANSWERED","n":["<b>FIVE ROWS FOLDED, THREE BUYS AND TWO SALES, ALL CASH ON THE DAY.</b> SM4-KEP supplied 35 unit of candy for RM1,140 and 100 unit of rice for RM320 beside RM20 freight, both paid and moved in full on 21 Sep. SA5-BTR delivered 25 unit of rice for RM1,400 on 22 Sep against RM1,240 cash, so RM160 stays open on an account already carrying RM3,100. Nothing on the two SM4-KEP rows is left outstanding.","<b>THE SALES BOTH RAN TO CZ4-MK ON 21 SEP AT RM460 A ROW.</b> Five unit of salt at RM92 a unit clears the RM259.22 floor for that size and sits RM100 under the RM560 ask, costed at RM48 a unit, the inventory's own rate. Ten unit of candy at RM46 a unit carries no cost and no ladder, the floor and ask for 10 unit both standing at zero. Both were collected and paid in full.","<b>TWO DRAFTER FLAGS SURVIVE THE FOLD UNANSWERED.</b> The salt row is costed on an inventory average of RM48 a unit while the shelf spans more than one lot rate, and the dossier carries no lot split, so the blend is not resolved here. The candy sale has no committed candy order for CZ4-MK to test the rate against. The inventory took the salt row out of a shelf of 6 unit counted on 21 Sep."]},
+const evolution=[{"v":"v789","d":"22 Sep 2026","t":"ENTER, REDESIGNED: TILES FOR BOOKS, A TYPED PARTY, A DATE THAT STEPS, AND A SECOND BOOK","n":["<b>HIS INSTRUCTION OF 22 SEP 2026, reading the form on screen and naming what was wrong with it.</b> The product dropdown becomes a TILE A BOOK: the dot in the book’s own accent, the name beneath, the chosen one lit in that hue. The select survives, hidden, and is still the value, so <code>wbProdVal</code> and every reader behind it are untouched; the tiles set it and fire its own change, the road <code>setProdView</code> was always reached by.","<b>THE PARTY IS TYPED OR CHOSEN</b>, over the same hidden-select trick, so every reader still gets a CODE. It matches on the code and on the drawn name, both case-insensitively, and it NEVER guesses at a partial: <code>CZ4</code> leaves the select empty and the form refuses it, because a near miss that silently booked to the wrong party is the costliest slip this form could make. Every party list is already in alphabetical order since v783.","<b>THE DATE STEPS A DAY AT A TIME</b>, by tap or by arrow key, through one <code>dateStep</code> so the buttons and the keys cannot disagree. That is a TRADE and it is stated rather than discovered: a native date input uses Left and Right to move between its day, month and year segments, and binding them takes that away. Typing digits still advances the segments, which is how a whole date is entered, and Up and Down are left alone.","<b>A SECOND BOOK IS A SECOND TRANSACTION FOR THE SAME PARTY.</b> Tapping another tile adds a book with its own row of figures, and Record queues one entry a book, sharing the party, the date and the direction, each through the same <code>entryFault</code> and <code>replayAnswer</code> guards the first went through. Three rules on a tile: a book not in the entry joins and becomes active, a book in but not active becomes active, and the active book tapped leaves unless it is the last.","<b>v409 CALLED TWO PRODUCTS IN ONE FORM A FAULT, and that ruling holds here.</b> The margin, the free inventory and the price coach all read the ACTIVE book, so a form holding two read one and recorded the other. The active book still drives every reading; the books after it are plain orders. A gift, a reward cover and a resale are properties of ONE order, each judged against the active book’s cost, ladder and reward, so an entry carrying any of them with a second book is REFUSED and the message says which. <b>That refusal stands ahead of every push, and testing is why</b>: placed after the gift branch, which queues its row and RETURNS, a gift ticked with a second book queued the gift and dropped the other book in silence.","<b>AND THE FULL SHEET OPENS FROM THE CORNER.</b> The panel it opens was already a side drawer, fixed right at 100dvh; what sat in the flow was the button. It keeps the design system’s pill recipe that v784 put on it: the corner is where the control sits, not what it is made of."]},{"v":"v788","d":"22 Sep 2026","t":"THREE LOTS IN, TWO OUT, AND A BLEND STILL UNANSWERED","n":["<b>FIVE ROWS FOLDED, THREE BUYS AND TWO SALES, ALL CASH ON THE DAY.</b> SM4-KEP supplied 35 unit of candy for RM1,140 and 100 unit of rice for RM320 beside RM20 freight, both paid and moved in full on 21 Sep. SA5-BTR delivered 25 unit of rice for RM1,400 on 22 Sep against RM1,240 cash, so RM160 stays open on an account already carrying RM3,100. Nothing on the two SM4-KEP rows is left outstanding.","<b>THE SALES BOTH RAN TO CZ4-MK ON 21 SEP AT RM460 A ROW.</b> Five unit of salt at RM92 a unit clears the RM259.22 floor for that size and sits RM100 under the RM560 ask, costed at RM48 a unit, the inventory's own rate. Ten unit of candy at RM46 a unit carries no cost and no ladder, the floor and ask for 10 unit both standing at zero. Both were collected and paid in full.","<b>TWO DRAFTER FLAGS SURVIVE THE FOLD UNANSWERED.</b> The salt row is costed on an inventory average of RM48 a unit while the shelf spans more than one lot rate, and the dossier carries no lot split, so the blend is not resolved here. The candy sale has no committed candy order for CZ4-MK to test the rate against. The inventory took the salt row out of a shelf of 6 unit counted on 21 Sep."]},
 
 {"v":"v787","d":"22 Sep 2026","t":"A GUEST BOARD NAMES NO LEVEL ON ANY BOOK","n":["<b>HIS INSTRUCTION OF 22 SEP 2026, reading the Bronze board after v786: drop the Bronze heading on the oil pane, and make sure it holds for every book, not both books.</b> The oil pane was headed <i>Bronze</i> on every level's board, Titanium's included, while the salt pane had no heading. A book that falls back to <code>ladderRow</code> took that row's name onto the board as <code>tierName</code>, and the guest page printed whatever it was handed; a row pinned to the link's level has no name, which is why salt never showed one. Oil's fixed board is one price for everybody, so the name was not even true of it.","<b>TWO RULES, ONE FOR THE DATA AND ONE FOR THE PAGE, BECAUSE EITHER ALONE CAN BE UNDONE WITHOUT THE OTHER NOTICING.</b> The board carries no level's name on any book: the field is gone from <code>boardList</code>'s product record, and the standing link's own level stays on the board itself, for his listing. And the page draws none: the pane's sub-line is the fallback note alone, <i>The only price for this product</i>, standing on its own now that nothing precedes it, and a name that reaches the page from anywhere is still not drawn.","<b>FOR EVERY BOOK, WHICH IS WHAT HE ASKED FOR.</b> The check nulls every ladder so every book on the board would take a named row, and walks all five standing boards and the two live ones asserting that no book carries a name; then it hands the page a product that does carry one and reads the visible text for every level's name and for Tier 1 and Tier 2. Each of the two went red under its own mutation and stayed green under the other's. What a level is called is the desk's; a stranger is handed prices."]},{"v":"v786","d":"22 Sep 2026","t":"A BOOK WITH NO COST HAS NO GUEST BOARD","n":["<b>HIS QUESTION OF 22 SEP 2026, whether the purchase cost and the selling price are synchronised.</b> On the desk they are, by construction: one engine strikes the ladder off the last three lots received, and the customer's price lists and the five guest boards are re-sealed from the same snapshot on every publish. The check found the one place they were not. <b>Candy, rice and spare had been on all five guest boards at RM 0 at twelve sizes each</b> since the publish that followed v780, which opened them empty.","<b>WHY.</b> A book opened empty has inputs and a policy and no lot, so its cost stack is 0 and <code>boardList</code>'s fallback row prices every size at 0. The test that a row is usable asked only that a price be finite, and 0 is finite; the guest page draws every row it is given. The customer's own price list was never wrong, because it gates on a tier and reads a book with none as coming soon.","<b>THE RULE IS THE ENGINE'S OWN BASIS.</b> A book is left off the board exactly when its landed cost is nothing, read through <code>ladderCogs</code> and not through a second test on the prices: a price of nothing is a symptom, and a laddered book with no lot would clear a price test at RM 10, 20 and 30, each level sitting a ten over the one below. <b>Nothing else moves</b>: salt and oil price as they did, and a book is back on the boards the moment its first lot is folded and published.","<b>TWO ASSERTIONS, EACH PROVED RED ON ITS OWN.</b> Salt keeps its ladder and is struck of its cost in a copy of the snapshot, and must vanish from the board while the rest stay; and the live boards carry no RM 0 at any size, which today's three empty books make a real check rather than a tautology. The first goes red under the price test as well as under no test at all, which is what it is for."]},{"v":"v785","d":"22 Sep 2026","t":"THE BRAND FACES REACH EVERY SURFACE, SELF-HOSTED","n":["<b>HIS YES OF 22 SEP 2026</b> to fetching the fonts, the one thing the design system pass before this left undone. Fraunces and JetBrains Mono were designed into the identity on 29 Aug and never loaded where it mattered: every surface's policy is self-only, so the desk, the Counter and QR Command have read in Georgia and Consolas since v472. The split between figure and sentence survived; the faces did not.","<b>THE FILES ARE GOOGLE FONTS' OWN LATIN SUBSETS</b>, fetched once with a browser's user agent and kept in the design system (<code>Code\\salt-ds\\fonts\\</code>, 67 KB and 31 KB, both variable, with their OFL licences), declared by <code>src/fonts-local.css</code> from a <code>fonts/</code> folder relative to whatever page carries it. Nothing was subset or re-encoded on this machine, and the weight ranges declared are the files' own, so a 700 resolves to the face and is never synthesised. Symbols outside the latin range fall to the system face, as they always did.","<b>EACH SURFACE SERVES THEM BESIDE ITS PAGE, BY ITS OWN SYNC.</b> The desk: <code>designsync --pull</code> takes the rules and the files into <code>design/</code>, <code>--sync</code> writes a THIRD generated block into the master, before the base and never at the foot, which is the desk layer's place, and copies the files to <code>public/fonts/</code>; <code>--check</code> proves both; the shell precaches them, so the desk reads in its own type offline. The Counter serves no files, so the two ride in <code>stmt/fonts.js</code> as bytes, written by <code>tools/stmt-fonts.mjs</code>, served at <code>/fonts/</code> with a year of cache, under a policy that now admits <code>font-src 'self'</code> on both pages; the page carries the rules first. QR Command pulls the files into <code>src/app/fonts/</code>, hashes them into its build id, stamps their URLs in <code>app.css</code> and precaches them.","<b>ONE SUITE SECTION, 12 ASSERTIONS, EACH PROVED RED ON ITS OWN</b>, the Counter's route exercised against the Worker: a face answers the file with a year of cache, a missing one is the site's usual 404. The Counter's rule that its page loads nothing now reads: nothing but its own two fonts, the chevron included."]},{"v":"v784","d":"22 Sep 2026","t":"THE DESK, THE COUNTER AND QR COMMAND USE THE DESIGN SYSTEM, AND THE SYSTEM ITSELF IS FIXED","n":["<b>HIS INSTRUCTION OF 22 SEP 2026</b>, on the verdict that the design system was a good identity and a thin system: the desk, the Counter and QR Command are to use and import it, every bug listed is to be fixed, and full use made of it. Before this the master used <b>0 of the system's 252 classes</b>: the design layer re-stated each recipe against the desk's own class names, four hand-kept copies of the palette had already drifted (the system's <code>dist/</code> lacked the three hues added that morning), and the layer had grown two colours of its own.","<b>THE SYSTEM FIRST</b>, <code>Code\\salt-ds</code> at v1.1.0. Its root clipped (<code>overflow: hidden</code> to contain an aurora that already clips itself), which made it the scroll ancestor of every sticky element inside it, so its own DeskBar and DeskRail never stuck: measured in the browser, the bar sat at -1200 after a 1200px scroll and holds at 0 now, the rail at its 22px. Nineteen rules set type under its own smallest token and read <code>--salt-text-xs</code> now. The field recipe was 15px on glass against its own principles 4 and 7 and is a well, 16px and 44px tall. The alarm (v557) and the opaque warm panel (v567) are identity tokens, <code>--salt-alarm</code> and <code>--salt-panel</code>, with <code>--salt-mist-bright</code>, <code>--salt-line-strong</code> and <code>--salt-glass-hover</code> for the three values the layer had written by hand; the layer points at them and writes no hex and no alpha of its own. The desk set's values were synced to what the desk had measured since v472.","<b>THE DESK USES THE RECIPES WHERE A CLASS-FOR-CLASS SWAP WAS MECHANICAL.</b> The markup carries both names: 94 tiles as <code>salt-kpi</code> with their label, figure and note, 39 findings as <code>salt-insight</code>, 46 filled buttons as <code>salt-pill--sm</code>, the parts strip as <code>salt-tabs__pill</code>, the version as <code>salt-version</code>, and the two orbs as the system's <code>salt-aurora--fixed</code>. <code>design/desk.css</code> holds no rule for any of them, and the base layer's tile rules, which outranked the recipe on specificity, are retired. Two mechanisms carry the desk's own state into a recipe without a second rule: the tile's tone letters set <code>--salt-kpi-tone</code>, and the strip's open pill is read off <code>aria-selected</code>, which the recipe now honours beside its own modifier. Measured on the served build at 1024px and 375px: every value is the recipe's, the phone tile is 20px, and nothing overflows sideways. The rail, the bar, tags, ghosts, fields and tables stay on the layer, each a fold of its own.","<b>THE COUNTER TAKES THE FIVE RECIPES IT USES.</b> <code>tools/stmt-style.mjs</code> slices the pill, the ghost, the field, the tab strip and the state chip out of the vendored stylesheet into <code>SITE_RECIPES</code>, the page carries them beside the tokens it already took, and its own layer keeps geometry only. The open tab is glass with a hairline now and not a filled brass badge, which decision 5 had always reserved for the one button. <b>QR COMMAND TAKES THE TOKENS BY SYNC</b>: its <code>app.css</code> carries the system's <code>:root</code> between markers, written by its own <code>tools/designsync.mjs --pull</code>, and its build refuses to ship on drift (244 of its assertions green).","<b>TWO NEW SECTIONS, 25 ASSERTIONS, EACH PROVED RED ON ITS OWN</b>, and one of them caught its author: the check that the root no longer clips matched the comment that says so, and reads the stylesheet with its comments stripped now. <b>NOT DONE: THE BRAND FONTS.</b> The CSP is self-only on every surface, so Fraunces and JetBrains Mono can arrive only embedded, and embedding needs the files fetched once, which is a network step and his call."]},{"v":"v783","d":"22 Sep 2026","t":"ENTER LOSES ITS PROSE AND THREE OF ITS FOUR BUTTONS, AND THE PARTY LISTS SORT","n":["<b>HIS INSTRUCTION OF 22 SEP 2026, reading the form on screen.</b> Three sentences went, named one by one: the paragraph beside the product control explaining which book an entry lands on and what the rail does; <i>Cost, the four dates, the settlement flags, the row note</i> beside the full sheet button; and <i>Not in the list? …</i>, a whole row of prose about registering a party, on the form for recording a trade. The control says the book and the book is lit in its own hue; a paragraph restating that is three lines to read before typing a figure.","<b>FOUR BUTTONS WERE THREE TOO MANY.</b> Record acts on what is on the form; Clear queued, Save queue file and Copy queue all act on the QUEUE, and on an empty queue every one of them is a control that can do nothing, since each already refused one. They appear when there is something for them to act on. The card is down from six buttons to two. The queue note went with them: <i>Record pushes each entry to the cloud queue. It is drafted within seconds and folded the moment it is approved; nothing else to do. Copy queue still puts the lines on the clipboard.</i> is now <b>Queued. Drafted in seconds, folded when you approve it.</b> Its laptop twin shortened the same way, and the build patch that carries the cloud wording moved with the line it anchors on.","<b>THE WARNINGS WAIT UNTIL THE ENTRY IS DESCRIBED</b> (his instruction). Every rule fired against a blank form, so opening Enter showed a column of red saying the goods must be more than zero before anything had been typed. They wait for the quantity, the goods and the cash. <b>The rules still RUN</b>, so Record stays disabled on a form that cannot be recorded; what waits is the saying, and nothing unsafe becomes recordable. Cash cannot be tested for emptiness, being born holding 0, which is a real answer, so it carries a touched flag, set by typing and by None, Half and Full. The flag is set in the SAME handler that previews: as a second listener behind it, it was set after the preview had already read it and the warnings stayed silent.","<b>AND THE NOTE IS AT THE END.</b> It sat in the middle of the figures row, between the carriage and the freight, so the eye crossed a free-text box on the way from one number to the next.","<b>EVERY PARTY LIST IS IN ALPHABETICAL ORDER</b> (his instruction). They were in ROSTER order, which is the order parties were registered in, so finding one meant reading the whole list. <code>byName</code> sorts on what is DRAWN and not on the code: ID() answers the name where the vault is open and the code where it is not, and a list sorted by code would sit in a visibly random order the moment the names appear."]},{"v":"v782","d":"22 Sep 2026","t":"A STATEMENT SAYS WHICH BOOK EACH ROW IS, AND UNITS OF DIFFERENT BOOKS DO NOT ADD","n":["<b>HIS INSTRUCTION OF 22 SEP 2026, on a defect found while opening three books and not caused by them.</b> <code>stmtRows</code> filters by PARTY and never by product, the row shape carried no product, and the footer ADDED the quantities: CS6-BS read <b>117.5 unit</b> over 47.5 of one book and 70 of another, on a document that goes to a customer. Six accounts on this book hold more than one. It has been wrong since the second book opened on 06 Aug and nothing on the page could have shown it.","<b>THE MARK SITS WITH THE QUANTITY, because the quantity is what the book qualifies.</b> Five unit of one thing and five of another are not ten. It is DRAWN and never named, which is the oldest rule on this site, and the drawing and its shape word come from <code>stmt/page.js</code> so a statement and the customer’s own page cannot diverge on what a book looks like. The SHAPE is the accessible name: an aria-label naming the product would put the word back for exactly the readers who cannot see it was taken away. A book with no mark draws the Ring.","<b>THE MONEY STILL ADDS AND THE QUANTITY DOES NOT.</b> A ringgit is a ringgit whatever it bought, so the totals, what is paid and what is outstanding are untouched; only the unit figure is kept apart, one a book. An account holding a single book reads exactly as it always did, with its mark in front of the figure.","<b>SALT LEADS, and the first draft of this line broke that.</b> The books were sorted alphabetically, which put oil before salt on every account holding both, against his standing instruction of 11 Aug restated on the 13th. They come out in the BOOK’s own PROD_ORDER now, and an id the order does not name sorts last rather than being dropped, which is the rule PROD_IDS already keeps on the desk.","<b>THE CHECK READS THE TEXT, NOT THE SOURCE.</b> The rule that no product is named in words cannot be tested against the raw document: the inlined stylesheet carries <code>--salt-product-salt</code>, so a search over the source would fail on a token name rather than on anything a customer can read. It strips the tags first, and it asserts the SUM is absent rather than only that the parts are present, because a footer could print both and still print their total."]},{"v":"v781","d":"22 Sep 2026","t":"WHO EARNS IS A FIELD ON THE BOOK, NOT A STRING COMPARISON","n":["<b>THE REWARD SCHEME WAS SALT-ONLY BY SEVEN BARE STRING COMPARISONS</b>, five here and two in the drafter, so no book opened after salt could ever earn however the book described itself. That is a real decision of his and not an accident, but it was written where only a code edit could change it. <code>PRODUCTS[p].reward</code> states it instead: true on salt, false on every other book, which is exactly what those comparisons meant. <b>Nothing moves today.</b> What changes is that whether candy or rice ever earn becomes his decision and a data one.","<b>THE FALLBACK IN THE DRAFTER IS NOT TIDINESS.</b> The drafter reads <code>state.PRODUCTS</code> off the D1 MIRROR, and the mirror is re-seeded by the deploy job AFTER the Worker is already live. Between those two moments the mirror is the old shape and carries no <code>reward</code> field at all, so a bare read would have answered false for salt and refused every redemption in that window, in silence, on a scheme that has been running since v577. Where NO book states the field the old rule stands; where ANY book states it, the field rules. Both halves are asserted, the second against a mirror built without the field.","<b>WHAT IS NOT TOUCHED.</b> Four other comparisons against the literal salt stay exactly as they are, because they are the storage convention and not the reward: a row that names no product IS salt, so <code>if (product !== \"salt\") row.product = product</code> is what keeps 175 of 188 sales from carrying a field they do not need. Those are read in <code>docs/PRODUCTS.md</code> section 6 and are correct at five books for the same reason they were correct at two."]},{"v":"v780","d":"22 Sep 2026","t":"CANDY, RICE AND SPARE OPEN, AND THE PARITY SCAN FINDS THE SPLIT CLEAN","n":["<b>HIS INSTRUCTION OF 22 SEP 2026.</b> Three books opened by <code>tools/product.mjs --add</code>, each registered in all six per-product maps and the order, each EMPTY: no quote, no stated count, no opening figure. The fold refuses a sale on a book with no cost, so the first lot on each goes in by hand, which is v228’s own bootstrap rule and not a gap. <b>spare is the fifth slot</b>, opened to prove that adding a book is repeatable rather than surgical, and given no mark on purpose so the Ring fallback is exercised by a real book.","<b>THE PARITY SCAN FIRED FOR THE FIRST TIME IN FIVE HUNDRED VERSIONS.</b> It was written at v275 and its header says the point is product three. Its RULE 2 asks whether a book with no orders reports commitments or receivables of its own, which is the signature of a whole-book read presented as one product’s, and that rule could never once fire while every book had orders. Three empty books arm it. It reports NO rule 1 and NO rule 2: every empty book reads zero revenue, zero receivable, zero inventory and zero promised out. <b>The unfinished product split of v228 is clean.</b> What it does report, three times, is never counted and declared but empty, which are notes on a new book and not faults.","<b>AND OPENING THEM PUT A FALSE FIGURE ON THE DESK, WHICH IS FIXED HERE.</b> <code>creditCapFor</code> falls back to the default book where a book states no cap of its own, which is what keeps the breach arithmetic working on a book nobody has set a policy for. Printed book by book, that borrowed figure stated salt’s 1 unit as candy’s own, under a sentence that begins <i>Credit caps are per book</i>. The sentence now names the books that HAVE a cap and then says which ones borrow one: the borrowing is stated rather than hidden, and no figure is claimed where it is not true.","<b>FIVE BOOKS FIT ON A PHONE, MEASURED RATHER THAN ASSUMED.</b> At 375px the switch draws five buttons on TWO rows at 67, 60, 75, 67 and 75 pixels wide and 44 tall, every one at or above the tap floor in both directions, with no horizontal scroll; at 1280 it is unchanged and still carries each book’s headline figure. All five dots draw their own hue.","<b>AND ONE OF THIS VERSION’S OWN ASSERTIONS WAS VACUOUS, WHICH IS THE LESSON.</b> The check that no book is given a cap it does not have was inserted through a shell heredoc that ATE ITS BACKSLASHES, so the pattern it built was a backspace character followed by the plain letters s and d, where a word boundary, a space and a digit were meant. It matched nothing. It passed on every book, and it went on passing under the very mutation written to prove it, which is how it was caught: the mutation turned its neighbour red and left it green, and an assertion that will not go red is not an assertion. It is built from a regexp literal’s own source now, and its failure message carries the sentence it read, so the next person sees what it saw. Nothing else would have found it, because a vacuous check and a true one look identical in a green run."]},{"v":"v779","d":"22 Sep 2026","t":"THREE MORE HUES, TWO MORE MARKS, AND FIVE BOOKS FIT ON A PHONE","n":["<b>HIS CHOICE OF 22 SEP 2026, ahead of opening three books.</b> The identity had two product hues and needed five. Each new one avoids the SEMANTIC four: ember, verdigris, steel and copper each mean something on this desk, so a product dot drawn in one would read as a status rather than as a book. The violet and cyan families were retired at v472 and are not used. candy is rose at hue 330, rice indigo at 235, spare olive at 68.","<b>THEY GO IN THE DESIGN SYSTEM AND NOT IN THE DESK, because the Counter reads them too.</b> <code>tools/stmt-style.mjs</code> generates the statement stylesheet from the <code>:root</code> of <code>design/salt-ds.css</code>, which is vendored from <code>Code/salt-ds</code>, so a hue added to the desk layer alone would never reach a customer and one added to the vendored copy alone would be reverted by the next <code>--pull</code> without a word. The edit is upstream, then pull, then sync, then the statement stylesheet: a hue that is missing there does not error, it resolves to nothing, and the product loses its accent in silence.","<b>A LOZENGE AND A CAPSULE, AND SPARE KEEPS THE RING ON PURPOSE.</b> A rhombus for candy and a seamed stadium for rice, drawn in the same hairline stroke as the cube and the droplet; the capsule carries its seam for the reason the cube carries its three inner edges, that without it a stadium is a shape and with it it is a thing. Neither is literal and neither is a word, which is the rule this site has kept since v659. <b>spare is given no mark deliberately</b>, so the Ring fallback is exercised by a real book rather than asserted about a hypothetical one.","<b>AND THE SWITCH STOPS GROWING DOWN THE PAGE.</b> Each button carries a dot, a name and that book at a 150px minimum and the strip wraps, so two books sat on one row and five would have stood THREE rows deep above every per-product page. Below 760px the figure goes and the button shrinks to its content; the figure is on the page underneath either way, so nothing is lost, only moved. It stays wrapped rather than becoming a sideways scroll box, which v466 forbids above the ledger, and the minimum holds at the tap floor because a control must measure 44px in BOTH directions."]},{"v":"v778","d":"22 Sep 2026","t":"A BOOK IS OPENED AND PUT AWAY BY A COMMAND, AND RETIRING ONE THAT TRADED IS REFUSED","n":["<b>HIS DECISION OF 22 SEP 2026, asked before the three new books are opened: add a retired flag and a re-key.</b> Registering a product meant hand-editing <code>ledger/book.json</code> in six places, PRODUCTS, PROD_OPENING, COUNT_ON, PRICE_SET, COST_RULE and QUOTES, plus the order, and then remembering to sync. <code>tools/product.mjs</code> does all of it: <code>--add</code>, <code>--rename</code>, <code>--retire</code>, <code>--unretire</code>, <code>--list</code>. A book opens EMPTY, with no quote and no stated count, because nothing has happened on it yet and inventing a figure would be the one thing a ledger must never do.","<b>RETIRED IS REGISTERED AND NOT SHOWN.</b> <code>prodLive()</code> feeds <code>PROD_IDS</code>, so one flag takes a book off the switch, the Enter form, the tier grid, the ledger's filter and the parity scan, which is every one of the eighteen readers, while its rows, its opening and its tiers stay exactly where they are and the extract still carries it. A device that REMEMBERED a book before it was retired now falls back rather than opening on a book the switch no longer offers.","<b>AND THAT IS WHY RETIRING A BOOK WITH ROWS IS REFUSED.</b> PROD_IDS is read by the consolidated totals as well, so hiding a book that had a past would quietly take its revenue out of the whole-book figures with nothing on screen to say so. The flag is therefore only ever allowed on a book with nothing on it, which makes the filter safe by construction rather than by care. Retiring a book that traded is a different question, and the tool says so instead of guessing.","<b>SALT CANNOT BE RE-KEYED, and the reason is the oldest rule in the book.</b> A row that names no product IS salt, on 175 of 188 sales, so re-keying salt would silently re-attribute every row that names nothing. The tool refuses and points at the section of <code>docs/PRODUCTS.md</code> that states the convention. A rename of anything else moves the six map keys, the order, the id, the accent, every row's product field and every customer's tier for that book: proved on a copy of the real book, where renaming oil moved 24 rows and 2 tiers and left the old id nowhere."]},{"v":"v777","d":"22 Sep 2026","t":"THE TOOLS STOP TYPING THE PRODUCT ORDER AND READ IT OFF THE BOOK","n":["<b>TWO DEFINITIONS ARE TWO THINGS TO KEEP TRUE, AND THE ONE THAT DRIFTS DOES IT SILENTLY.</b> <code>tools/book.mjs</code> carried <code>PROD_ORDER = [\"salt\", \"oil\"]</code>, typed out beside the book that already states it, and <code>tools/d1.mjs</code> FAILED when the two disagreed. So a product could not be registered in one place: the book and that line had to move in step or the mirror check went red. The suite already guards the LEDGER map against exactly this and says why; the order was the one thing it did not cover.","<b>THE ORDER IS THE BOOK'S NOW</b>, read through <code>prodOrder()</code> and cached on first use, the book being a megabyte and <code>bySalt</code> being called once per comparison. Salt still leads, which is his standing instruction of 11 Aug restated on the 13th, and nothing about the order itself has changed.","<b>THE MIRROR CHECK GOT SHARPER RATHER THAN WEAKER.</b> It compared the STORE's copy of the order against a line in a tool, which is a comparison between two things that were both supposed to follow the book. It now compares the store against the book, which is what a staleness check on a mirror was always for.","<b>WHAT THE SUITE CHECKS INSTEAD.</b> That the tools keep NO typed copy, that what they read equals the book's own list, and that it leads with salt. Proved red by mutation: typing the list back in turns the first red, and handing <code>prodOrder</code> a reversed list turns the other two."]},{"v":"v776","d":"22 Sep 2026","t":"THE TWO QUOTE KEYS BECOME ONE MAP, SO A THIRD BOOK NEEDS NO CODE","n":["<b>HIS INSTRUCTION OF 22 SEP 2026, to state what is product-specific and then to open three more books.</b> The live quotes sat under two top-level keys NAMED AFTER THEIR PRODUCTS, <code>supplierQuote</code> for salt and <code>oilQuote</code> for oil, and they were the one per-product thing in this book that was not a map. Everything else, PRODUCTS, PROD_OPENING, COUNT_ON, PRICE_SET, COST_RULE, TIER_OF, is keyed by product and takes a new book as a data entry. The quotes took a new key, a new global and an edit in three files.","<b>THE DESK'S OWN QUOTES WAS AN ACCESSOR OVER THE PAIR</b>, <code>{salt:()=&gt;supplierQuote, oil:()=&gt;oilQuote}</code>, which is why it sat in NOT_LEDGER: stored, it would have arrived as <code>{\"salt\":null,\"oil\":null}</code> with nothing to say a lookup had been lost. QUOTES is the book's own map now, generated into the BOOK block like every other declaration, so it has moved out of NOT_LEDGER and into LEDGER. <code>quoteFor</code> reads the map instead of calling a function, and a product with no quote answers null exactly as an unregistered one used to.","<b>THE LOOKUP THAT COULD NOT FAIL IS THE REASON THIS WENT FIRST.</b> <code>tools/foldcall.mjs</code> read the pair as a literal two-entry object, so a product registered in PRODUCTS but absent from that object yielded <code>undefined</code>, fell to <code>null</code>, and its lot folded with no quote in the dossier while nothing errored and the note was merely worse. That is the shape of bug a third book would have shipped with.","<b>v228 ASKED FOR THIS AND THE PANEL HAS SAID SO EVER SINCE.</b> The supply panel's own comment reads <i>one panel, driven by QUOTES, so a third product needs an entry there and nothing here</i>, and with no quote recorded it tells him to add one to QUOTES. This is that, finished. Two deliberate whole-book reads of the bare salt quote are now <code>QUOTES[DEFAULT_PROD]</code>, which is what they meant; oil's redundant <code>product</code> field goes with the collapse, the key being the product, and nothing ever read it."]},{"v":"v775","d":"21 Sep 2026","t":"A SECOND FREE UNIT ON THE REWARD: NO CASH, NO REVENUE, RM48 OF COST","n":["<b>FOLDED: ONE REDEMPTION ROW FOR CS6-BS, 1 UNIT OF SALT ON 21 SEP.</b> Settled by the reward at RM48 rather than in cash, delivered in full the same day, so nothing is left outstanding. On his ruling of 11 Sep 2026 the row carries both rebate and goodwill, so it stays out of revenue and its RM48 sits as cost at the shelf's own rate. This is the second such redemption for this code since 17 Sep.","<b>UNUSUAL: THE REWARD BALANCE IS THE DESK'S WORD AND CANNOT BE CHECKED HERE.</b> The drafter flagged that 6 earned against 5 applied leaves 1 unit standing, worked out on the desk and not in the book, and the dossier carries no figure that answers it. No price test bites, since no price was charged: the RM51.95 floor and RM160 ask for 1 unit are recorded for the file only. The salt left the shelf and the inventory rolled by it."]},
 
@@ -7850,9 +7896,30 @@ const TODAY=new Date(new Date(Date.now()+8*36e5).toISOString().slice(0,10));
    field's full height so the tap contract holds, and a click anywhere else on the field opens the
    calendar (the listener sits beside renderRole's first call). A phone opens its own picker on the
    tap already, so the calendar call is made on a pointer device only. */
+/* v789, HIS INSTRUCTION OF 22 SEP 2026: A DATE IS MOSTLY TODAY OR YESTERDAY, so stepping a day
+   is a tap and not a calendar. Two steppers and Today, all three reading the same field.
+   THE ARROWS STEP THE DAY AND THAT IS A TRADE, stated rather than discovered: a native date input
+   uses Left and Right to move between its day, month and year segments, and binding them here takes
+   that away. Typing digits still advances the segments by itself, which is how a whole date is
+   entered, and what he does far more often is move one day. Up and Down are left alone, so a
+   segment can still be nudged. */
 function dateIn(id,val,attrs){
   return '<span class="dtin"><input id="'+id+'" type="date"'+(val?' value="'+String(val).replace(/"/g,'&quot;')+'"':'')+(attrs||'')+'>'
+    +'<span class="dtstep">'
+    +'<button type="button" class="dtar" data-dstep="'+id+'" data-by="-1" aria-label="A day earlier" tabindex="-1">&#8249;</button>'
+    +'<button type="button" class="dtar" data-dstep="'+id+'" data-by="1" aria-label="A day later" tabindex="-1">&#8250;</button>'
+    +'</span>'
     +'<button type="button" class="dtoday" data-dt="'+id+'" aria-label="Set to today">Today</button></span>';
+}
+/* one place that moves a date field by whole days, so the buttons and the keys cannot disagree */
+function dateStep(inp,by){
+  if(!inp||inp.disabled)return;
+  const base=inp.value?new Date(inp.value+'T00:00:00Z'):new Date(TODAY.toISOString().slice(0,10)+'T00:00:00Z');
+  if(isNaN(base.getTime()))return;
+  base.setUTCDate(base.getUTCDate()+(+by||0));
+  inp.value=base.toISOString().slice(0,10);
+  inp.dispatchEvent(new Event('input',{bubbles:true}));
+  inp.dispatchEvent(new Event('change',{bubbles:true}));
 }
 /* ============ A ROW IS COSTED IN ITS OWN PRODUCT (v266) ============
    costOf fell back to wavgBuy, which is the ACTIVE product's weighted average, so an oil row
@@ -7871,7 +7938,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='22 Sep 2026, 14:49 KL';
+const LAST_UPDATED='22 Sep 2026, 15:13 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -18689,7 +18756,7 @@ function tabWorkbench(){
   const lbl='font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim)';
   return `<h1>Transaction</h1>
   <div class="dsc dsclead">Queued for approval, never booked here.</div>
-  <div class="card">
+  <div class="card" id="wbCard">
     <span class="viewsw" id="wbModeSw"><button data-m="new" class="on">New order</button><button data-m="amend">Amend an order</button><button data-m="count">Inventory count</button><button data-m="loan">Borrow or lend</button>${cloudMode()?'<button data-m="addid">Add ID</button><button data-m="amendid">Amend ID</button>':''}</span>
     <!-- v275: WHICH BOOK THE ENTRY LANDS ON. Until now there was no such control and no
          product on any payload, so prodOf() defaulted EVERY entry ever made here to salt:
@@ -18699,9 +18766,19 @@ function tabWorkbench(){
          It is hidden for the modes that have no product: an amendment inherits the product
          of the order it attaches to, and an ID names a party, not goods. Showing it there
          would invite a contradiction the desk would then have to resolve. -->
+    <!-- v789, HIS INSTRUCTION OF 22 SEP 2026: THE BOOK IS PICKED BY ITS MARK, not from a dropdown.
+         A tile a book, its dot in the book's own hue and its name beneath, lit when chosen. The
+         SELECT SURVIVES, hidden, as the value every reader already asks for: wbProdVal, wbApply,
+         the drafter's payload and the record path all go on reading #wbProd, so the control changed
+         and nothing downstream had to. The tiles set it and fire its own change event, which is the
+         same road setProdView was always reached by. -->
     <div class="qrow" id="wbProdRow" style="margin-top:13px">
-      <div class="qfield"><label>Product</label><select id="wbProd"></select></div>
-      <div class="qfield" style="flex:2"><div class="dsc" id="wbProdNote" style="padding-top:7px"></div></div>
+      <div class="qfield" style="flex:1 1 100%">
+        <label>Product</label>
+        <div class="prodtiles" id="wbProdTiles" role="group" aria-label="Product"></div>
+        <select id="wbProd" style="display:none" tabindex="-1" aria-hidden="true"></select>
+      </div>
+      <div class="qfield" style="flex:1 1 100%"><div class="dsc" id="wbProdNote"></div></div>
     </div>
 
     <div id="wbPaneNew" style="margin-top:13px">
@@ -18713,12 +18790,27 @@ function tabWorkbench(){
            SELL ONLY, and that is why wbApply hides it on Buy: edSubmitNew reads
            edFields('SELL') and queues direction SELL, so offering it beside Buy would turn
            a lot into an order without saying so. -->
-      <div class="dsc" id="wbFullRow" style="display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-bottom:12px">
+      <!-- v789, his instruction: THE FULL SHEET OPENS FROM THE CORNER. The panel it opens was
+           already a side drawer, fixed to the right at 100dvh; what sat in the flow was the button,
+           taking a line of the form to offer something most entries never need. It moves to the top
+           right corner of the card, out of the reading order of the fields and still one tap.
+           The button keeps the design system's pill recipe, which v784 put on it: the corner is
+           where the control sits, not what it is made of. -->
+      <div id="wbFullRow" class="wbcorner">
         <button class="vbtn salt-pill salt-pill--sm" type="button" onclick="ledNew()">Open the full sheet</button>
       </div>
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield"><label>Direction</label><span class="viewsw" id="wbDirSw" style="display:flex"><button data-d="SELL" class="on">Sell</button><button data-d="BUY">Buy</button></span></div>
-        <div class="qfield" id="wbPartyCell"><label id="wbPartyLbl">Party</label><select id="wbParty"></select></div>
+        <!-- v789, HIS INSTRUCTION OF 22 SEP 2026: THE PARTY IS TYPED OR CHOSEN. A roster of fifty in a
+             dropdown is a scroll; typing three letters is not. The SELECT SURVIVES, hidden, and is
+             still the value: wbVal('wbParty') answers a CODE to every reader behind it, and the box
+             above it only ever writes a code into it. Typing something that is not a party leaves the
+             select EMPTY rather than guessing, so the form refuses it exactly as an unchosen party is
+             refused today, and says so in the preview. -->
+        <div class="qfield" id="wbPartyCell"><label id="wbPartyLbl">Party</label>
+          <input id="wbPartyTxt" list="wbPartyList" placeholder="type or choose" autocomplete="off" spellcheck="false">
+          <datalist id="wbPartyList"></datalist>
+          <select id="wbParty" style="display:none" tabindex="-1" aria-hidden="true"></select></div>
         <div class="qfield" id="wbPartyNote" style="display:none"><label>Party</label><div class="dsc" style="padding-top:7px">Books to the <b>associate</b> below. Name the buyer under <b>End customer</b>.</div></div>
         <div class="qfield"><label>Date</label>${dateIn('wbDate')}</div>
       </div>
@@ -18870,6 +18962,7 @@ function tabWorkbench(){
     <!-- v783, his instruction: THE NOTE IS AT THE END. It sat in the middle of the figures row,
          between the carriage and the freight, so the eye crossed a free-text box on the way from one
          number to the next. It belongs after the entry is described, not inside the describing. -->
+    <div id="wbExtraRows"></div>
     <div class="qrow" id="wbNoteRow" style="margin-bottom:10px">
       <div class="qfield" style="flex:1 1 100%"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbNote" placeholder="anything the row should say"></div>
     </div>
@@ -20377,6 +20470,63 @@ function wbFormEmpty(){
   }
   return true;
 }
+/* v789: THE BOOK IS A TILE. Its dot takes the book's own accent, the name sits beneath it, and
+   the chosen one is lit in that same hue, which is the answer to "label below, as per the selected
+   hue". The tiles are DRAWN FROM PROD_IDS, so a book registered in PRODUCTS appears here and a
+   retired one does not, exactly as the select did; and they write to the hidden select rather than
+   to a state of their own, so wbProdVal and every reader behind it are untouched. */
+/* v789, HIS INSTRUCTION OF 22 SEP 2026: MORE THAN ONE BOOK, WHICH IS MORE THAN ONE TRANSACTION
+   FOR THE SAME PARTY. wbPicked holds the books chosen, and THE FIRST IS THE ACTIVE ONE: it is what
+   #wbProd carries, so the margin, the free inventory and the price coach all read one book, which
+   is v409's ruling and the reason two products in one form was called a fault. The books after it
+   are plain orders sharing the party, the date and the direction; see wbRecord for exactly what
+   they deliberately do not carry. Clicking a picked book unpicks it, and the last one cannot be
+   unpicked, because an order with no book is not an order. */
+let wbPicked=[];
+function wbPickedNow(){
+  const pr=wbEl('wbProd'),act=pr?pr.value:'';
+  wbPicked=wbPicked.filter(p=>PROD_IDS.indexOf(p)>=0);
+  if(act&&wbPicked.indexOf(act)<0)wbPicked.unshift(act);
+  if(!wbPicked.length&&act)wbPicked=[act];
+  /* the active book always leads, so the extras are exactly the tail */
+  if(act)wbPicked=[act].concat(wbPicked.filter(p=>p!==act));
+  return wbPicked;
+}
+function wbExtras(){return wbPickedNow().slice(1);}
+function wbDrawProdTiles(){
+  const box=wbEl('wbProdTiles'),pr=wbEl('wbProd');
+  if(!box||!pr)return;
+  const picked=wbPickedNow();
+  const want=PROD_IDS.join(',')+'|'+pr.value+'|'+picked.join(',')+'|'+(WB_NO_PROD[wbMode]?'1':'0');
+  if(box.dataset.drawn===want)return;
+  box.dataset.drawn=want;
+  const many=!WB_NO_PROD[wbMode]&&wbMode==='new';
+  box.innerHTML=PROD_IDS.map(id=>{
+    const on=pr.value===id, inc=many&&picked.indexOf(id)>=0;
+    return '<button type="button" class="ptile'+(on?' on':'')+(inc&&!on?' also':'')+'" data-p="'+id+'"'
+      +' aria-pressed="'+(inc||on?'true':'false')+'" style="--pacc:'+PRODUCTS[id].accent+'">'
+      +'<span class="ptdot"></span><span class="ptname">'+esc(PRODUCTS[id].name)+'</span></button>';
+  }).join('');
+  wbDrawExtraRows();
+}
+/* one compact row a book after the first: quantity, goods and cash, and nothing else. The heavy
+   fields belong to the order the form is really about, which is the active book's. */
+function wbDrawExtraRows(){
+  const box=wbEl('wbExtraRows');if(!box)return;
+  const ex=wbMode==='new'?wbExtras():[];
+  const want=ex.join(',')+'|'+wbDir;
+  if(box.dataset.drawn===want)return;
+  box.dataset.drawn=want;
+  box.innerHTML=ex.map(p=>'<div class="xrow" style="--pacc:'+PRODUCTS[p].accent+'">'
+    +'<span class="xname"><span class="ptdot"></span>'+esc(PRODUCTS[p].name)+'</span>'
+    +'<label class="xf"><span>Quantity (unit)</span><input id="wbQty_'+p+'" type="number" step="0.5" min="0" inputmode="decimal"></label>'
+    +'<label class="xf"><span>Goods (RM)</span><input id="wbTotal_'+p+'" type="number" step="1" min="0" inputmode="decimal"></label>'
+    +'<label class="xf"><span>Cash now (RM)</span><input id="wbCash_'+p+'" type="number" step="1" min="0" value="0" inputmode="decimal"></label>'
+    +'<label class="xf"><span>Moved now (unit)</span><input id="wbUnits_'+p+'" type="number" step="0.5" min="0" value="0" inputmode="decimal"></label>'
+    +'</div>').join('');
+  ex.forEach(p=>['wbQty_','wbTotal_','wbCash_','wbUnits_'].forEach(k=>{
+    const e=wbEl(k+p);if(e&&!e.oninput)e.oninput=wbPreview;}));
+}
 /* v783: has the cash field been answered? It is born holding 0, so emptiness cannot say. */
 let wbCashTouched=false;
 function wbPreview(){
@@ -20904,6 +21054,17 @@ function wbRecord(){
     const status=st.pay==='Paid'?'paid':st.pay==='Unpaid'?'unpaid':'partial';
     /* v620: planned again at the tap from the book as it stands, never carried over from the preview */
     const cp=(wbDir==='SELL'&&!isR2&&rewards(wbProdVal())&&wbEl('wbCover')&&wbEl('wbCover').checked)?coverPlan(party,qty,total):null;   // v728: the goods ARE the total
+    /* v789: THE REFUSAL COMES BEFORE ANYTHING IS PUSHED, and it sits HERE for a reason found by
+       testing it: the gift branch below queues its row and RETURNS, so a refusal placed after it was
+       never reached and a gift ticked with a second book queued the gift and dropped the other book
+       in silence. That is the exact failure this guard exists to prevent, so it now stands ahead of
+       every push on this path. A gift, a reward cover and a resale are properties of ONE order and
+       each is judged against the active book's cost, ladder and reward; rather than apply them to a
+       book they were never judged against, the whole entry is refused and the message says so. */
+    if(wbExtras().length&&(isGift||cp||isR2)){
+      ok.innerHTML='A gift, a reward cover and a resale belong to one order. Record <b>'+esc(PRODUCTS[wbProdVal()].name)+'</b> on its own, then the other book.';
+      ok.style.color='var(--crim)';return;
+    }
     const raw=(wbDir==='SELL'?'Sell ':'Buy ')+units(qty)+(wbDir==='SELL'?' to ':' from ')+label+' for '+fmt0(total)+' on '+date
       /* v728: the carriage is named in the line, because the figure beside it is the GOODS now and a
          reader of the queue file cannot tell a RM90 order from a RM90 order with RM15 of carriage. */
@@ -20940,6 +21101,36 @@ function wbRecord(){
            is the same question and the thing the freight beside it answers to. */
         handover:hand,second:ra.second||null,
         more:cp?{coverUnits:cp.kg,coverRM:cp.rm}:null,coverFree:cp?cp.free:null}});
+    /* v789, HIS INSTRUCTION OF 22 SEP 2026: A SECOND BOOK IS A SECOND TRANSACTION, SAME PARTY.
+       Each extra book queued here shares the party, the date, the direction and the handover, and
+       carries its OWN quantity, goods, cash and units moved. It goes through the SAME two guards the
+       order above it went through, entryFault and replayAnswer, because a second entry is not a
+       lesser one and the twin check in particular has to see it.
+       WHAT AN EXTRA DELIBERATELY DOES NOT CARRY, and why: a gift, a reward cover and an R2 resale
+       are properties of ONE order, not of two, and each reads the active book's cost, ladder and
+       reward. Rather than quietly apply them to a book they were not judged against, an extra is
+       refused while any of the three is on, and the message says which. That is also why the coach
+       and the margin still read one book: v409 called two products in one form a fault precisely
+       because the readings and the entry disagreed. */
+    for(const xp of wbExtras()){
+      const xq=wbNum('wbQty_'+xp),xt=wbNum('wbTotal_'+xp),xc=wbNum('wbCash_'+xp),xu=wbNum('wbUnits_'+xp);
+      const xf=entryFault({direction:wbDir,product:xp,party,assoc:null,downstream:null,date,cash:xc,kg:xu,qty:xq,total:xt,delivery:0,freight:0,handover:hand,fresh:true});
+      if(xf){ok.innerHTML=esc(PRODUCTS[xp].name)+': '+xf;ok.style.color='var(--crim)';return;}
+      const xr=replayAnswer(wbDir,xp,party,date,xq,xt,null);
+      if(xr.fault){ok.innerHTML=esc(PRODUCTS[xp].name)+': '+xr.fault;ok.style.color='var(--crim)';return;}
+      const xs=wbState(xt,xq,xc,xu,{});
+      queue.push({at:new Date().toISOString(),type:wbDir,party:label,qty:xq,total:xt,
+        status:xs.pay==='Paid'?'paid':xs.pay==='Unpaid'?'unpaid':'partial',
+        raw:(wbDir==='SELL'?'Sell ':'Buy ')+units(xq)+' of '+PRODUCTS[xp].name.toLowerCase()
+          +(wbDir==='SELL'?' to ':' from ')+label+' for '+fmt0(xt)+' on '+date+(hand?', '+hand:'')
+          +', '+fmt0(xc)+' cash, '+units(xu)+' moved → '+xs.state+(note?', '+note:''),
+        payload:{mode:'new',product:xp,direction:wbDir,party:party,newId:null,
+          date:date,qty:xq,total:xt,delivery:0,freight:0,cash:xc,kg:xu,assoc:null,stream:null,downstream:null,
+          kind:null,orderCode:null,linkTo:null,note:note||null,handover:hand,second:xr.second||null,
+          more:null,coverFree:null}});
+      ['wbQty_','wbTotal_'].forEach(k=>{const e=wbEl(k+xp);if(e)e.value='';});
+      ['wbCash_','wbUnits_'].forEach(k=>{const e=wbEl(k+xp);if(e)e.value='0';});
+    }
     {const cb=wbEl('wbCover');if(cb)cb.checked=false;}   // v620: a cover is chosen for each sale, never inherited
     /* v728: AND THE HANDOVER IS STATED FOR EACH ENTRY, NEVER INHERITED, which is the rule the line
        above states for the cover and the same fault. Left behind, a recorded 'collected' opens the
@@ -21102,6 +21293,11 @@ function wbRecord(){
 function wbFillParty(){
   const sel=wbEl('wbParty');if(!sel)return;const cur=sel.value;
   const list=byName(roster.filter(id=>wbDir==='BUY'?id.startsWith('S'):!id.startsWith('S')));
+  /* v789: the datalist carries the CODE as the value, because the code is what is recorded, and the
+     drawn name as the option's text, because the name is what he is looking for. Where the vault is
+     shut ID() answers the code and the two agree. */
+  {const dl=wbEl('wbPartyList');
+   if(dl)dl.innerHTML=list.map(id=>'<option value="'+esc(codeOf(id))+'">'+ID(id)+'</option>').join('');}
   /* deliberately blank first: a party must be chosen, never inherited from whoever
      happens to sort first in the roster */
   sel.innerHTML=`<option value="">Choose a ${wbDir==='BUY'?'supplier':'customer'}…</option>`
@@ -21109,7 +21305,22 @@ function wbFillParty(){
   /* NO "+ Add new" (v174). A party is created by naming it in Names & IDs, which mints the
      final code at once; minting a placeholder here only ever created a re-key to undo. */
   sel.value=(cur&&list.indexOf(cur)>=0)?cur:'';
+  {const tx=wbEl('wbPartyTxt');
+   if(tx){tx.placeholder=wbDir==='BUY'?'type or choose a supplier':'type or choose a customer';
+     if(document.activeElement!==tx)tx.value=sel.value?codeOf(sel.value):'';}}
   const nb=wbEl('wbNewBox');if(nb)nb.style.display='none';
+}
+/* v789: THE BOX WRITES A CODE OR NOTHING. A party is matched on its code and on its drawn name, both
+   case-insensitively and both trimmed, so typing either finds it; anything else clears the select and
+   the form refuses the entry as it refuses an unchosen party. It never guesses at a partial match: a
+   near miss that silently booked to the wrong party is the costliest slip this form could make. */
+function wbPartyFromText(){
+  const tx=wbEl('wbPartyTxt'),sel=wbEl('wbParty');
+  if(!tx||!sel)return;
+  const t=(tx.value||'').trim().toLowerCase();
+  const ids=[...sel.options].map(o=>o.value).filter(Boolean);
+  const hit=ids.find(id=>codeOf(id).toLowerCase()===t)||ids.find(id=>String(ID(id)).toLowerCase()===t)||'';
+  if(sel.value!==hit){sel.value=hit;sel.dispatchEvent(new Event('change',{bubbles:true}));}
 }
 /* the amend pane's Kind list depends on the side: a supplier lot cannot be
    fulfilled, rewarded or linked, it is paid down, received, or defaulted on. */
@@ -21232,6 +21443,7 @@ function wbApply(){
        changing the book mid-entry keeps what has been typed. */
     pr.value=PROD;
     pr.onchange=function(){if(PRODUCTS[pr.value]&&pr.value!==PROD)setProdView(pr.value);};
+    wbDrawProdTiles();
   }
   const prow=wbEl('wbProdRow');
   if(prow)prow.style.display=WB_NO_PROD[wbMode]?'none':'';
@@ -21274,6 +21486,36 @@ function wireWorkbench(){
   const ms=wbEl('wbModeSw');if(!ms)return;
   wbFillParty();wbFillKind();wbFillOrders();wbApply();
   ms.onclick=e=>{const m=e.target.dataset.m;if(!m)return;wbMode=m;wbApply();wbEl('wbOk').textContent='';wbPreview();};
+  /* v789: a tile sets the hidden select and fires its own change, which is the road setProdView was
+     always reached by, so picking a book here moves the whole desk exactly as the dropdown did. */
+  /* v789: the typed box resolves to a code on every keystroke, so the preview and Record read a
+     settled value and never a half-typed one. */
+  {const tx=wbEl('wbPartyTxt');
+   if(tx){tx.oninput=()=>{wbPartyFromText();wbPreview();};
+     tx.onchange=()=>{wbPartyFromText();wbPreview();};}}
+  {const tb=wbEl('wbProdTiles');
+   if(tb)tb.onclick=e=>{const t=e.target&&e.target.closest?e.target.closest('.ptile'):null;
+     if(!t)return;const p=t.dataset.p,pr=wbEl('wbProd');
+     if(!p||!pr)return;
+     const picked=wbPickedNow(), many=wbMode==='new'&&!WB_NO_PROD[wbMode];
+     const redraw=()=>{const b2=wbEl('wbProdTiles');if(b2)b2.dataset.drawn='';};
+     /* v789: THREE RULES, and they are the whole of it.
+        A book not yet in the entry JOINS and becomes the active one, so the ordinary single-book
+        tap still just picks a book. A book that is in but not active BECOMES active, which is how
+        the coach is pointed at the other one; the first draft had no such move at all, so once a
+        second book was added the active one could never be changed again. The active book, tapped,
+        LEAVES, unless it is the last, because an order with no book is not an order. */
+     if(!many){ if(pr.value!==p){pr.value=p;pr.dispatchEvent(new Event('change',{bubbles:true}));} return; }
+     if(pr.value===p){
+       if(picked.length<2)return;
+       const rest=picked.filter(x=>x!==p);           /* KEEP the others */
+       wbPicked=rest;pr.value=rest[0];redraw();
+       pr.dispatchEvent(new Event('change',{bubbles:true}));
+       return;
+     }
+     wbPicked=picked.indexOf(p)>=0?picked.slice():picked.concat([p]);
+     pr.value=p;redraw();
+     pr.dispatchEvent(new Event('change',{bubbles:true}));};}
   const apk=wbEl('wbApKind');if(apk)apk.onchange=()=>{wbApply();wbPreview();};
   const lfm=wbEl('wbLoanForm');if(lfm)lfm.onchange=()=>{wbApply();wbPreview();};   // v589: the switch changes which box shows
   ['wbLoanDir','wbLoanWhich'].forEach(id=>{const e=wbEl(id);if(e)e.onchange=()=>{wbApply();wbPreview();};});   // v595: what happened, and which loan, change the boxes
@@ -22122,8 +22364,21 @@ document.addEventListener('click',function(e){
     if(i&&!i.disabled){i.value=TODAY.toISOString().slice(0,10);
       i.dispatchEvent(new Event('input',{bubbles:true}));i.dispatchEvent(new Event('change',{bubbles:true}));}
     return;}
+  /* v789: a day earlier, a day later. Before the calendar branch below, or a tap on the stepper
+     would also open the picker it sits inside. */
+  const st=t.closest('.dtar');
+  if(st){dateStep(document.getElementById(st.getAttribute('data-dstep')),st.getAttribute('data-by'));return;}
   const d=t.closest('input[type="date"]');
   if(d&&!d.disabled&&typeof d.showPicker==='function'&&window.matchMedia&&window.matchMedia('(pointer:fine)').matches){try{d.showPicker();}catch(_){}}
+});
+/* v789, his instruction: LEFT AND RIGHT STEP THE DAY on any date field on the desk. See the note on
+   dateIn for the trade this makes with the input's own segment navigation. */
+document.addEventListener('keydown',function(e){
+  if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;
+  if(e.altKey||e.ctrlKey||e.metaKey)return;
+  const d=e.target;if(!d||d.type!=='date'||d.disabled)return;
+  e.preventDefault();
+  dateStep(d,e.key==='ArrowRight'?1:-1);
 });
 /* the provisional banner rides above every tab, so an uncommitted figure is never
    mistaken for a banked one whichever tab you happen to be looking at */
