@@ -1,5 +1,14 @@
 [
  {
+  "v": "v798",
+  "d": "23 Sep 2026",
+  "t": "CZ4-MK'S RM20 REFUND IS CLOSED, SET OFF ON 21 SEP",
+  "n": [
+   "<b>HIS WORD OF 23 SEP 2026: close the CZ4-MK refund; his orders came to RM920 and he paid RM900 after the set-off, 5 unit of salt and 10 of candy.</b> The RM20 over-tender of 26 Aug is marked paid on 21 Sep, the day it was set off against s190 and s191, and its note says how. No refund is open anywhere on the book, so Now on Today loses its one Now-from-the-day-it-is-raised item.",
+   "<b>THE ROWS KEEP THE GROSS, AND THE CASH COMES OUT RIGHT.</b> s190 and s191 carry RM460 each as paid, RM920, while RM900 changed hands. Closing the refund on the same day books the RM20 back, so cash reads RM920 in and RM20 out on 21 Sep, which is the RM900 he handed over: trading cash falls from RM6,456.50 to RM6,436.50, the RM20 it had been overstating. His statement shows the orders paid and the overpayment returned to him on 21 Sep. Closed by hand in <code>ledger/book.json</code>, the one road for a refund, since nothing on the phone reaches that list."
+  ]
+ },
+ {
   "v": "v797",
   "d": "23 Sep 2026",
   "t": "EVERY DESK DEPLOY DEPLOYS THE COUNTER",

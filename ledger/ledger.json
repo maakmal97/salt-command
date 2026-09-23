@@ -1,6 +1,6 @@
 {
- "v": "v793",
- "stamped": "23 Sep 2026, 09:05 KL",
+ "v": "v797",
+ "stamped": "23 Sep 2026, 10:30 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5062,7 +5062,8 @@
     "party": "CZ4-MK",
     "amount": 20,
     "since": "2026-08-26",
-    "note": "RM20 over-tender, cash payable to set off."
+    "paidOn": "2026-09-21",
+    "note": "RM20 over-tender, cash payable to set off. Set off on 21 Sep against s190 and s191, 5 unit of salt and 10 of candy for RM920, which he settled with RM900 cash: the two rows carry RM920 as paid and this refund the RM20 back, so the cash nets to the RM900 handed over. Closed on his word of 23 Sep 2026."
    }
   ],
   "roster": [
@@ -5543,7 +5544,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-22T11:53:30.260Z",
   "PRICING": {
-   "takenAt": "2026-09-23T01:05:58.023Z",
+   "takenAt": "2026-09-23T02:55:19.307Z",
    "sizes": [
     0.5,
     1,
@@ -7621,10 +7622,10 @@
      "ladder": []
     }
    },
-   "v": "v793"
+   "v": "v797"
   },
   "OPEN": {
-   "at": "2026-09-23T01:05:58.219Z",
+   "at": "2026-09-23T02:55:19.411Z",
    "count": 6,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
@@ -7789,7 +7790,7 @@
     "rice": null,
     "spare": null
    },
-   "v": "v793"
+   "v": "v797"
   }
  }
 }

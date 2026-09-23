@@ -361,7 +361,7 @@
   },
   "customerRefunds": [
     {"party":"CZ6-WM","amount":80,"since":"2026-07-24","paidOn":"2026-07-31","note":"RM80 overpayment, refunded 31 Jul."},
-    {"party":"CZ4-MK","amount":20,"since":"2026-08-26","note":"RM20 over-tender, cash payable to set off."}
+    {"party":"CZ4-MK","amount":20,"since":"2026-08-26","paidOn":"2026-09-21","note":"RM20 over-tender, cash payable to set off. Set off on 21 Sep against s190 and s191, 5 unit of salt and 10 of candy for RM920, which he settled with RM900 cash: the two rows carry RM920 as paid and this refund the RM20 back, so the cash nets to the RM900 handed over. Closed on his word of 23 Sep 2026."}
   ],
   "roster": [
     "CA5-SEN",

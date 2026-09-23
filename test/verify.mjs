@@ -5172,8 +5172,10 @@ await (async () => {
      English and reads as 0; without that the baseline could not be subtracted from anything, and a
      card whose wording changes reads null and fails loudly rather than as a silent zero. */
   const BILLS_RE = /RM\s*([\d,]+(?:\.\d+)?)\s*(?:of supplier bills|bills unpaid)/;
+  /* v798: and the card's other nil, "no bill and no refund outstanding", which it says once nothing at all is owed; it only
+     surfaced when the last open refund on the book was closed on 23 Sep 2026 */
   const onCard = (t) => {
-    if (/all lots paid/.test(t || "")) return 0;
+    if (/all lots paid|no bill and no refund outstanding/.test(t || "")) return 0;
     const m = BILLS_RE.exec(t || "");
     return m ? +m[1].replace(/,/g, "") : null;
   };
@@ -19449,6 +19451,8 @@ await (async () => {
      one at a time. */
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
+  /* v798: a refund of its own, because the live book's last one closed on 23 Sep 2026 and the rule is not about that day */
+  w.eval("customerRefunds.push({party:'CZ9-RF',amount:20,since:'2026-09-01'})");
   const v = JSON.parse(w.eval(`JSON.stringify((()=>{const txt=h=>{const d=document.createElement('div');d.innerHTML=h;return d.textContent;};
     const per={};liveBooks().forEach(p=>{PROD=p;recompute();per[p]=actions().map(x=>txt(x.title));});
     setProdView('oil');const all=allActions();switchTab('today');const sec=document.querySelector('.sec.on');
@@ -19514,6 +19518,8 @@ await (async () => {
      was proved red by its own mutation, one at a time. */
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
+  /* v798: a refund of its own, as above: the rule is that an event every walk raises lands once, whatever the book holds */
+  w.eval("customerRefunds.push({party:'CZ9-RF',amount:20,since:'2026-09-01'})");
   function probe() {
     const T = (e) => e.textContent.replace(/\s+/g, " ").trim();
     setProdView("oil"); fwdDays = 30; fwdBuy = false; fwdPlans = false;
