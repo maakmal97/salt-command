@@ -1,5 +1,14 @@
 [
  {
+  "v": "v816",
+  "d": "24 Sep 2026",
+  "t": "A REWARD OFFSET SETTLES HALF OF AN ADVANCE IN KIND",
+  "n": [
+   "<b>FOLDED: ONE CORRECTION ON A SALT SELL, NO CASH AND NO STOCK.</b> The patch lands on s196, booked to CS6-PER, 2 unit for RM200 dated 23 Sep 2026 with RM70 cash in. It sets settledRM from unset to RM100, rebate from false to true and rebateKg from unset to 1 unit, so RM100 of the order is recorded as settled in kind by reward rather than paid. The row itself is not rewritten here, only the patch is applied.",
+   "<b>UNUSUAL: A REWARD OF THIS SIZE AGAINST AN ADVANCE STILL SHORT RM30.</b> The drafter flagged the RM100 as 25% above CS6-PER's usual RM80 a unit across 8 orders, flagged the RM48 inventory cost as an average across more than one lot rate, and flagged the row as an advance with RM30 unpaid to be checked against the credit cap. The dossier answers none of the three. The inventory did nothing: it stands at 16.5 unit, cost basis unchanged."
+  ]
+ },
+ {
   "v": "v815",
   "d": "24 Sep 2026",
   "t": "A PART PAYMENT AND A COLLECTION ON THE SAME OPEN ORDER",
