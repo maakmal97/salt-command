@@ -1,5 +1,14 @@
 [
  {
+  "v": "v791",
+  "d": "23 Sep 2026",
+  "t": "P029 READ AS SALT, AND THE RM160 CLOSED",
+  "n": [
+   "<b>FOLDED: TWO AMENDMENTS, BOTH AGAINST SA5-BTR'S LOT P029 OF 22 SEP.</b> The first is a correction that sets the product on that row from rice to salt. The second is a fulfilment of RM160 cash on 22 Sep. Both were decided at the desk on 22 Sep and sit on the same order, 25 unit for RM1,400 at RM56 a unit, received in full on the day.",
+   "<b>UNUSUAL: A BUY ROW THAT CHANGED WHAT IT WAS BEFORE IT CHANGED WHAT IT OWED.</b> The correction moves no cash and no stock, it changes only what the row says about itself, and the drafter raised no flag on it. The fulfilment carries the drafter's flag that it settles the order in full, and the figures answer that: RM160 against RM160 outstanding, leaving nothing open. The inventory held at 1 unit of stock and did not reprice."
+  ]
+ },
+ {
   "v": "v790",
   "d": "22 Sep 2026",
   "t": "THE RAIL, THE BAR AND THE TAGS DRAW FROM THE SYSTEM'S RECIPES, AND NOTHING LOADS OFF GOOGLE FONTS",
