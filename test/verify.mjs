@@ -8610,7 +8610,14 @@ await (async () => {
 
 section("v791: the fold's prose without a model");
 await (async () => {
-  const { toolNotes, scrub } = await import("../tools/foldnotes.mjs");
+  const { toolNotes, scrub, phoneLine } = await import("../tools/foldnotes.mjs");
+  /* v809: the phone's line when the model is not used is plain words, never the API's JSON, and says the fold went through */
+  { const refused = phoneLine('The model could not be called: the model declined: {"type":"refusal","category":"cyber"}. The tool wrote these notes instead.', "v808");
+    const broke = phoneLine("The model could not be called: http 400, 400 {\"type\":\"error\",\"error\":{\"message\":\"Your credit balance is too low\"}}", "v791");
+    const src809 = readFileSync(join(REPO, "tools", "foldcall.mjs"), "utf8");
+    ok(/went through as v808/.test(refused) && /declined/.test(refused) && /went through as v791/.test(broke) && /no credit/.test(broke)
+       && ![refused, broke].some((l) => /[{}"]|http \d|refusal/.test(l)) && /await said\(phoneLine\(why, d\.version\.next\)\)/.test(src809),
+      "the phone is told in plain words that the fold went through and why the notes are the tool's, never the API's JSON: " + refused); }
   const { checkNotes } = await import("../tools/foldcall.mjs");
   const ids = ["2099-01-03T00:00:00.001Z"];
   const d = { todayKL: "22 Sep 2026", version: { last: "v998", next: "v999" },

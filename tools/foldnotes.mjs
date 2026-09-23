@@ -106,4 +106,16 @@ export function toolNotes(d, ids, why) {
   };
 }
 
-export default { toolNotes, scrub };
+/* v809, HIS WORD OF 23 SEP 2026, after a rename folded cleanly and a card on the phone still read like a refusal: the line the
+   PHONE carries when the model is not used is his, in plain words. It says the fold went through, why the notes are the
+   tool's, and that nothing is needed from him. The API's own error, JSON and all, stays in the run's log and in the version
+   entry, where it is read by whoever fixes the call. */
+export function phoneLine(err, version) {
+  const m = String(err == null ? "" : err);
+  const because = /credit balance|billing|payment/i.test(m) ? "the Anthropic account had no credit left"
+    : /refusal|declined/i.test(m) ? "the model declined to write them"
+    : "the model could not be reached";
+  return `This fold went through as ${version}; its notes were written by the desk's own tool because ${because}.`;   /* the card's own foot says nothing is needed from him and what clears it (v805) */
+}
+
+export default { toolNotes, scrub, phoneLine };
