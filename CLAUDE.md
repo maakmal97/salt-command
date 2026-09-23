@@ -59,18 +59,23 @@ decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; s
      both paid-in-full stamps, `txStat`, `txDates`, the statement's owed and billed, the row editor, the dossier,
      the drafter's overpayment flag and the Workbench read it, and nothing reads the total less the cash.
    - **THE BOARD IS THE LADDER** (v656, his decision of 15 Sep 2026). A stranger is quoted the LAST
-     level, Bronze, the one a new customer starts at: `pxPolicy` carries `tierRule`, `priceLadder`
+     level, Silver since 23 Sep 2026 (Bronze before it), the one a new customer starts at: `pxPolicy` carries `tierRule`, `priceLadder`
      takes the ask from it and keeps the old derived figure beside it as `derived`, and every reader
      downstream follows from that one line. **Row zero of `ladderRow` is still the ask and is still
      load bearing**: phone, mirror and suite read `[0]`, so the code stays `T2` while the NAME is the
      level's. **Retired with it:** Tier 1's stated ends (`LADDER.tier1` is null; the mechanism stays
      in the engine for a book with no ladder), and the typing of prices in Set the board, which is
      now the hide list alone. `PRICE_SET` prices are cleared and the drafter refuses a new one.
-   - **Ambassador and five tiers** (Titanium, Platinum, Gold, Silver, Bronze), his decisions of 14 and
-     15 Sep 2026 off his pricing workbook: `TIER_RULE` and `TIER_NAMES` in the master, `fiveTiers` in
-     the engine. **NRV is Titanium**, the lowest level any customer is quoted, never the ask (v656):
-     reading it off Bronze would value the shelf at what a stranger pays and the IAS 2.9 test could
-     never bind. A guest link is a level too: the cheaper one is Titanium, the other Bronze.
+   - **Ambassador and FOUR tiers** (Titanium, Platinum, Gold, Silver), his `salt-command pricing_v2.xlsx`
+     of 23 Sep 2026 (v793; five with Bronze from 14 Sep until then): `TIER_RULE` and `TIER_NAMES` in the
+     master, `fiveTiers` in the engine. **COGS is the supplier's quote, RM56 a unit**, not the landed cost;
+     Ambassador is COGS times 1.5 up to the ten; the tiers are 2.1 down, 2.1 up, 2.5 down and 2.5 up, each
+     multiple falling 0.045 a half unit, never under Ambassador. **The engine's two guards stay over the
+     sheet** (his answer that day), moving 14 of its 48 tier cells. **A tier is salt's alone**: oil, candy and
+     rice are `fixed` boards, one price for everybody (candy and rice a unit, to the ringgit), and
+     `tieredBooks` keeps the Tiers card, Accept all and Add ID off them. **NRV is Titanium**, the lowest
+     level any customer is quoted, never the ask (v656): reading it off the last level would value the
+     shelf at what a stranger pays and the IAS 2.9 test could never bind.
    - **Each customer has a PROFILE on each product** (v666, his decisions of 16 Sep 2026): `buyerProfile`
      reads their own priced orders against `PROFILE_RULE` in the master (frequent 2 a month, small half a
      unit or one, loyal 6 orders with the last inside 30 days, buying bigger 4 in 10 at 3 units or more,
@@ -568,9 +573,10 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   both deliberate. Unknown, malformed and withdrawn ids answer the same 404. **A row named
   "Tier 1" may carry no prices** (the engine gates it on bare `if(P.tier1)`), so take the first
   row with finite prices; oil is a genuine one-tier book and says so.
-- **THE GUEST LINKS ARE FIVE, ONE FOR EACH TIER** (v696, his instruction of 18 Sep 2026). Titanium,
-  Platinum, Gold, Silver, Bronze; **Ambassador is the floor and never a guest's**. They are ENSURED
-  on the first open of the Links panel, not made on a tap, so the answer is always exactly five;
+- **THE GUEST LINKS ARE ONE FOR EACH TIER** (v696, his instruction of 18 Sep 2026; four since v793).
+  Titanium, Platinum, Gold, Silver; **Ambassador is the floor and never a guest's**. Bronze's link is
+  kept, because an id handed out must keep opening something, and it opens the stranger's board. They
+  are ENSURED on the first open of the Links panel, not made on a tap, so the answer is always one a tier;
   minted once and kept for good, because an id handed to a stranger must never change what it opens.
   The level names reach the Worker through the KV key `tiers`, written by the publish, and with no
   names it makes none rather than inventing five. **A STANDING LINK READS ITS LEVEL'S BOARD**
