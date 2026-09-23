@@ -76,8 +76,13 @@ class KV {
     return type === "json" ? JSON.parse(raw) : raw;
   }
   async delete(k) { this.m.delete(k); }
+  /* a key written with a lapse lists its `expiration`, as real KV's listing does, so a route that
+     reads the listing to find such keys is driven by what real KV would tell it */
   async list({ prefix = "" } = {}) {
-    return { keys: [...this.m.keys()].filter(k => k.startsWith(prefix)).map(name => ({ name })), list_complete: true };
+    return { keys: [...this.m.keys()].filter(k => k.startsWith(prefix)).map(name => {
+      const o = this.opts.get(name);
+      return o && o.expirationTtl ? { name, expiration: Math.floor(Date.now() / 1000) + o.expirationTtl } : { name };
+    }), list_complete: true };
   }
 }
 const assets = {
@@ -13969,6 +13974,13 @@ await (async () => {
   ok(uPuts.length > 10 && uPuts.every((p) => !p.value.includes("pwMaster")) && sealedRows.length > 10,
     "the record a customer fetches carries no sealed password, and the account list carries them: "
     + uPuts.length + " records, " + sealedRows.length + " sealed");
+  /* a tick no longer lapses, so a new sealed issue is what clears the last one's, and nothing else does */
+  const ticks88 = ["sent:1999-01-01:aaaa-bbbb", "sent:" + plan88.issued + ":aaaa-bbbb"];
+  const fresh88 = await pp88(join(REPO, "statements"), "", new Date("2026-09-18T02:00:00Z"), ticks88, "1999-01-01");
+  const same88 = await pp88(join(REPO, "statements"), "", new Date("2026-09-18T02:00:00Z"), ticks88, plan88.issued);
+  ok(fresh88.newIssue && fresh88.deletes.includes(ticks88[0]) && !fresh88.deletes.includes(ticks88[1])
+    && !same88.deletes.some((k) => k.startsWith("sent:")),
+    "a new issue clears the last issue's ticks and keeps its own; a publish of the same issue clears none");
 
   /* ---- THE CARD'S DATA, AND THE TICK --------------------------------------------------------- */
   const realFetch88 = globalThis.fetch;
@@ -14012,11 +14024,17 @@ await (async () => {
     const ticked = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-09-01", sent: true }) });
     const tick88 = await ticked.json();
     ok(ticked.status === 200 && tick88.sent && kv88.m.has("sent:2026-09-01:aaaa-bbbb")
-      && (kv88.opts.get("sent:2026-09-01:aaaa-bbbb") || {}).expirationTtl === 61 * 24 * 3600,
-      "a tick is the site's, not one browser's, and expires with its issue");
+      && !(kv88.opts.get("sent:2026-09-01:aaaa-bbbb") || {}).expirationTtl,
+      "a tick is the site's, not one browser's, and no longer lapses (23 Sep 2026)");
     ok((await (await call88("/all/sheet")).json()).accounts[0].sent === tick88.sent, "and the next read shows it");
     const untick = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-09-01", sent: false }) });
     ok(untick.status === 200 && !kv88.m.has("sent:2026-09-01:aaaa-bbbb"), "and it can be taken back");
+    /* A TICK WRITTEN BEFORE 23 SEP 2026 CARRIES THE OLD 61-DAY LAPSE, and reading the list keeps it */
+    await kv88.put("sent:2026-09-01:aaaa-bbbb", JSON.stringify({ at: "2026-09-19T01:00:00Z" }), { expirationTtl: 61 * 24 * 3600 });
+    const kept88 = (await (await call88("/all/sheet")).json()).accounts[0].sent;
+    ok(kept88 === "2026-09-19T01:00:00Z" && !(kv88.opts.get("sent:2026-09-01:aaaa-bbbb") || {}).expirationTtl,
+      "a tick written with the old lapse is rewritten without it the next time the list is read, and keeps its moment");
+    await kv88.delete("sent:2026-09-01:aaaa-bbbb");
     const stale = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-08-01", sent: true }) });
     const unknown = await call88("/all/sent/zzzz-zzzz", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-09-01", sent: true }) });
     const notJson = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "text/plain" }, body: "sent" });
@@ -15536,11 +15554,13 @@ await (async () => {
   ok((await bulletinRelay(denv, "POST", { lines: ["x"] })).ok === true && (await bulletinRelay(denv, "PUT")).ok === true,
     "the relay reads on anything but a POST");
 
-  /* ---- 5. THE PUBLISH NEVER TOUCHES IT: its deletes are u: and fail: keys alone ---- */
+  /* ---- 5. THE PUBLISH NEVER TOUCHES IT: its deletes are u:, fail: and (since 23 Sep 2026, when a
+     tick stopped lapsing) the last issue's sent: keys alone ---- */
   const pubSrc = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");
   const pushes = pubSrc.match(/deletes\.push\([^)]*\)/g) || [];
-  ok(pushes.length === 2 && /k\.startsWith\("u:"\) && !keep\.has\(k\)[^\n]*deletes\.push\(k\)/.test(pubSrc) && /k\.startsWith\("fail:"\)[^\n]*deletes\.push\(k\)/.test(pubSrc),
-    "the publish retires only u: and fail: keys, so a bulletin set from the desk survives every fold and every hourly tick");
+  ok(pushes.length === 3 && /k\.startsWith\("u:"\) && !keep\.has\(k\)[^\n]*deletes\.push\(k\)/.test(pubSrc) && /k\.startsWith\("fail:"\)[^\n]*deletes\.push\(k\)/.test(pubSrc)
+    && /newIssue && k\.startsWith\("sent:"\)[^\n]*deletes\.push\(k\)/.test(pubSrc),
+    "the publish retires only u:, fail: and an old issue's sent: keys, so a bulletin set from the desk survives every fold and every hourly tick");
 
   /* ---- 6. THE ENTER CARD, in the master ---- */
   const { openMaster } = await import("../tools/payload.mjs");
@@ -19094,6 +19114,35 @@ await (async () => {
     "on a mirror that predates the field, salt still earns rather than being refused in silence");
   ok(/no reward scheme/.test(String(onOilOld && onOilOld.skip)),
     "and the old rule still refuses the book it always refused");
+})();
+
+section("23 Sep 2026: a statement reads newest first");
+await (async () => {
+  /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read
+     off the printed date cells of every live statement on the real book, so the order checked is the
+     order a customer sees, not the order of an array handed to the printer. */
+  const M = await import("../tools/make_statements.mjs");
+  const POS = (await import("../engine/position.mjs")).default;
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const sales = (bk.state && bk.state.sales) || bk.sales || [];
+  const at = new Date("2026-09-23T00:00:00Z");
+  const MON = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+  const iso = (t) => { const m = /(\d{2}) ([A-Za-z]{3})[A-Za-z]* (\d{4})/.exec(t); return m ? m[3] + "-" + String(MON.indexOf(m[2].toLowerCase()) + 1).padStart(2, "0") + "-" + m[1] : null; };
+  const parties = [...new Set(sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
+  let checked = 0, multi = 0;
+  const wrong = [];
+  for (const p of parties) {
+    const doc = M.liveStatement(p, at);
+    if (!doc) continue;
+    /* the orders table alone: the Refunds table below it prints its own dates in the same cell class */
+    const days = [...doc.body.split('<table class="rft"')[0].matchAll(/<td class="l dt">([\s\S]*?)<\/td>/g)].map((x) => iso(x[1].replace(/<[^>]+>/g, " "))).filter(Boolean);
+    checked++;
+    if (new Set(days).size > 1) multi++;
+    for (let i = 1; i < days.length; i++) if (days[i] > days[i - 1]) { wrong.push(p + " " + days[i - 1] + " then " + days[i]); break; }
+  }
+  ok(checked > 10 && multi > 5 && !wrong.length,
+    "every live statement prints its rows newest first: " + checked + " statements, " + multi + " with more than one day"
+    + (wrong.length ? "; out of order: " + wrong.slice(0, 3).join(", ") : ""));
 })();
 
 section("v782: a statement says which book each row is, and units of different books do not add");

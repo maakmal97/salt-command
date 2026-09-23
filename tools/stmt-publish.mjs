@@ -88,6 +88,9 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
     for (const k of existingKeys || []) {
       if (k.startsWith("u:") && !keep.has(k) && k !== TEST_REC) deletes.push(k);
       if (newIssue && k.startsWith("fail:")) deletes.push(k);
+      /* a tick no longer lapses (23 Sep 2026), so a new sealed issue, which has to be sent again,
+         is what clears the last one's; the new issue's own ticks are a different key */
+      if (newIssue && k.startsWith("sent:") && !k.startsWith("sent:" + issued + ":")) deletes.push(k);
     }
   }
   if (r.records.length) puts.push({ key: "issue", value: issued });
@@ -183,7 +186,7 @@ async function main() {
   }
   let existing = [], storedIssue = null;
   if (!dry) {
-    existing = [...listKeys("u:"), ...listKeys("fail:")];
+    existing = [...listKeys("u:"), ...listKeys("fail:"), ...listKeys("sent:")];
     /* absent on a fresh store, which wrangler reports as a 404 on stderr; that is not news */
     try { storedIssue = wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", "issue"], { stdio: ["ignore", "pipe", "ignore"] }).trim() || null; }
     catch (e) { storedIssue = null; }

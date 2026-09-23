@@ -578,6 +578,7 @@ async function ownerSheet(env, origin) {
   const byUser = new Map(rows.map((a) => [a.username, a]));
   const issue = sheet ? sheet.issue || null : null;
   const month = monthNameOf(issue);
+  await keepTicks(env);
   const out = [];
   for (const a of await roster(env)) {
     const s = byUser.get(a.username) || null;
@@ -611,9 +612,28 @@ async function ownerSheet(env, origin) {
 /* A TICK IS THE SITE'S, NOT ONE BROWSER'S (v688). The laptop sheet keeps its ticks in that
    browser's storage, so sending half the issue on the phone and half on the laptop meant two
    half-finished lists. This one is a key per account per issue, so both of his devices show the
-   same. It expires two months on: a tick belongs to an issue, and the next one starts clean. */
+   same.
+   A TICK NO LONGER EXPIRES (his instruction of 23 Sep 2026). It was written to lapse 61 days on,
+   when a new issue came every month and started a clean list anyway. The account is one live
+   document now and no new issue is sealed (v772), so the issue key never moves and the lapse
+   would only have unticked accounts he had handed over, two months after he did. A tick is kept
+   until he takes it back; a new sealed issue, which does need sending again, is still a new key,
+   and the publish clears the old issue's ticks when one is sealed. */
 const SENT_KEY = (issue, u) => "sent:" + issue + ":" + u;
-const SENT_TTL = 61 * 24 * 3600;
+/* The ticks written before this carry the old 61-day lapse, and only a put without one removes
+   it. A listing says which do, so each is rewritten once and a listing after that finds none. */
+async function keepTicks(env) {
+  let cursor;
+  do {
+    const page = await env.STMT.list({ prefix: "sent:", cursor });
+    for (const k of page.keys) {
+      if (!k.expiration) continue;
+      const v = await env.STMT.get(k.name);
+      if (v != null) await env.STMT.put(k.name, v);
+    }
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+}
 
 /* ---- MAKING AND UNMAKING THE TEST ACCOUNT (v689) ---------------------------------------------
  * The record is built here, with a key made here, so nothing real is behind it: a bundle of one
@@ -918,7 +938,7 @@ export default {
         if (!issue || String(b.issue || "") !== issue) return json({ ok: false, error: "that is not this issue; reload" }, 409);
         if (b.sent === false) { await env.STMT.delete(SENT_KEY(issue, u)); return json({ ok: true, sent: null }); }
         const at = new Date().toISOString();
-        await env.STMT.put(SENT_KEY(issue, u), JSON.stringify({ at }), { expirationTtl: SENT_TTL });
+        await env.STMT.put(SENT_KEY(issue, u), JSON.stringify({ at }));
         return json({ ok: true, sent: at });
       }
       return notFound();

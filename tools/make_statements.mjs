@@ -371,7 +371,20 @@ function stmtDoc(party,rows,o){
      against a separate arrangement rather than an unpaid earlier order, calling it an
      "earlier balance" contradicts the explanation three inches further down the page. */
   const noLegDates=new Set((o.recon||[]).filter(R=>R.noLegs).map(R=>R.order.date));
-  const body=rows.map(r=>{
+  /* NEWEST FIRST (his instruction of 23 Sep 2026): the statement reads in the inverse order of the
+     entry date, so what a customer opens on is what just happened. A row is placed by the date its
+     cell shows, the cancelled or agreed date where it has no `date` of its own, so the column
+     reads downward without a jump; a row with neither sits last. Same-day rows keep the book's
+     order reversed, so the later entry is on top. Only the PRINTED order changes: every total is
+     summed off `rows` as before. AN ARCHIVE IS NOT RE-ORDERED, being rebuilt to say what was
+     issued, and a dated record is not corrected in place. */
+  const rowDay=r=>r.date||(r.cancelled&&r.cancelledOn)||(r.pendingOrder&&r.agreedOn)||'';
+  const printed=o.archive?rows:rows.slice().reverse().sort((a,b)=>{
+    const da=rowDay(a), db=rowDay(b);
+    if(!da||!db)return (!da)-(!db);
+    return da<db?1:(da>db?-1:0);
+  });
+  const body=printed.map(r=>{
     const due=r.owed>0.009;
     const when=(o.dates&&r.paidOn&&r.paidOn!==r.date)?'<div class="sub2">paid '+e(dLong(r.paidOn))+'</div>':'';
     /* THE DATE CELL OF AN UNDATED ROW CARRIES THE DATE THE ROW DOES HAVE (his ruling,
@@ -481,7 +494,7 @@ function stmtDoc(party,rows,o){
      :'<p class="meta">No orders in this period.</p>',
    ((o.refunds||[]).length?'<p class="whol gap2">Refunds</p>'
      +'<table class="rft"><thead><tr><th class="l">Date</th><th class="l">Reason</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody>'
-     +o.refunds.map(r=>'<tr><td class="l dt">'+e(dLong(r.date))+'</td>'
+     +(o.archive?o.refunds:o.refunds.slice().reverse().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))).map(r=>'<tr><td class="l dt">'+e(dLong(r.date))+'</td>'
        +'<td class="l rsn">'+(r.cancelled?'Cancelled order, money returned to you':'Overpayment returned to you')+'</td>'
        +'<td class="amt">'+money(r.amount)+'</td>'
        +'<td class="r">'+(r.paidOn?'<span class="ok">paid '+e(dLong(r.paidOn))+'</span>'
