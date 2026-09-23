@@ -19,8 +19,9 @@
  *      boardSizes  the sizes the board quotes, for walking an off-board size against them
  *      stated      prices HE has set, by size, overriding the derived ask (PRICE_SET[product])
  *      tier1       the second level's two stated ends, by size; absent means this book has one tier
- *      tierRule    the five-tier rule, {multiples,start,step,scaled,rungs}; a book with one IS its
- *                  ladder, and the ask is the last level, Bronze (v656)
+ *      tierRule    the tier rule, {cogs,overhead,multiples,round,decay,from,rungs}, or a stated
+ *                  board {fixed,rungs}; a book with one IS its ladder, and the ask is the last level (v656)
+ *      lastLevel   the last level's name, what a stranger is quoted (TIER_NAMES' last)
  * and costStack() takes the input record the desk's pxInputs() gathers (see there).
  *
  * PORTED VERBATIM. The bodies are the desk's, with the globals replaced by C, P and I. Every
@@ -480,15 +481,15 @@ function priceLadder(q,C,P,opts){
 function ladderRow(sizes,C,P){
   const col=(k)=>sizes.map(q=>{try{const L=priceLadder(q,C,P);
     return L&&L[k]&&L[k].total!=null?+L[k].total:null;}catch(e){return null;}});
-  /* v656: THE ROW SAYS WHAT IT IS. With a ladder the ask is Bronze, the level a new customer starts
+  /* v656: THE ROW SAYS WHAT IT IS. With a ladder the ask is the last level, the one a new customer starts
      at, and a row still headed "Tier 2" would print that name over the ladder's prices on the board,
      the printed card and a guest link alike. The CODE is untouched: row zero is read by code and by
      index across the phone, the mirror and the suite, and renaming it would break every one of them
      to say the same thing the name already says. */
   const laddered=!!P.tierRule;
   const rows=[{
-    code:'T2', name:laddered?'Bronze':'Tier 2', dflt:true,
-    who:laddered?'the level a new customer starts at, the last of the five':'the default ask, graded by size, tapered as the supplier tapers',
+    code:'T2', name:laddered?(P.lastLevel||'Tier 2'):'Tier 2', dflt:true,
+    who:laddered?'the level a new customer starts at, the last of the ladder':'the default ask, graded by size, tapered as the supplier tapers',
     prices:col('ask')
   }];
   /* v566: GATED ON tier1Anchors, NOT ON THE RAW FIELD. priceLadder decides whether a book HAS a
@@ -506,17 +507,16 @@ function ladderRow(sizes,C,P){
   });
   return rows;
 }
-/* ============ AMBASSADOR AND THE FIVE TIERS, OFF HIS WORKBOOK (his decisions of 14 and 15 Sep 2026) ============
-   prices[0] is Ambassador: the floor itself, COGS plus leakage, rounded up to the ten. The tiers follow,
-   one for each of P.tierRule's multiples, Titanium to Bronze: COGS to the ringgit, times the multiple less
-   a step a rung, rounded up to the ten. Salt's step grows with the multiple, 1 + m x (1 - 0.05 x rung);
-   oil's is flat, m + 0.35 - 0.05 x rung. The rung is a size's row on the board, and a size off the board
-   takes the rung at or below it.
-   TWO GUARDS, IN THIS ORDER. A better level always pays less: each sits at least a ten over the one
-   below, the higher lifting where two meet, which also keeps every tier over the floor, because
-   Ambassador is the floor. And the rate may not rise with size (v328): a price steps down to the ten
-   that holds it flat only where that keeps the first.
-   QUOTED NOWHERE YET: priceLadder, ladderRow and board do not read it. */
+/* ============ AMBASSADOR AND THE TIERS, OFF HIS WORKBOOK (his decisions of 14 and 15 Sep, restated 23 Sep 2026) ============
+   23 Sep 2026, salt-command pricing_v2.xlsx: Ambassador and FOUR tiers, Titanium to Silver. prices[0] is
+   Ambassador, COGS times one and the overhead, up to the ten. Each tier is COGS times its multiple less
+   `decay` for every unit of size past `from`, never under Ambassador, and rounded DOWN or UP to the ten as
+   its column says: salt's are 2.1 down, 2.1 up, 2.5 down and 2.5 up, falling 0.09 a unit from half a unit.
+   TWO GUARDS, IN THIS ORDER, kept on his word of 23 Sep. A better level always pays less: each sits at
+   least a ten over the one below, the higher lifting where two meet. And the rate may not rise with size
+   (v328): a price steps down to the ten that holds it flat only where that keeps the first. They move
+   fourteen of the sheet's 48 tier cells: all four at half a unit and at twelve and a half, three at 2 unit, and Gold at 1.5,
+   2.5 and 3 unit. */
 /* ============ 19 SEP 2026, HIS INSTRUCTION: A PRODUCT MAY HAVE ONE STATED PRICE AND NO TIERS ============
    "For oil, there will no longer be pricing tier since it is not the main product, just a single pricing
    tier. Start at 130 for 10 to 450 at 50. This is the only price for oil, fixed for all."
@@ -553,15 +553,24 @@ function fiveTiers(sizes,C,P){
   }
   if(!R||!Array.isArray(R.multiples)||!R.multiples.length||!Array.isArray(R.rungs)||!R.rungs.length)return null;
   /* up to the ten as the workbook's CEILING does: a column landing exactly on a ten stays there, where
-     floating point would read RM50 x 2.2 as 110.00000000000001 and round it to RM120 */
-  const to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to;
+     floating point would read RM28 x 2.5 as 70.00000000000001 and round it to RM80 */
+  const to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
   const rungs=R.rungs.map(Number).sort((a,b)=>a-b);
+  /* 23 SEP 2026, HIS WORKBOOK (salt-command pricing_v2.xlsx): COGS IS THE SUPPLIER'S QUOTE, the highest rate
+     on it, RM56 a unit at 700 a 12.5 unit lot; the live landed cost where the book has no quote */
+  const qr=(P.tiers||[]).filter(t=>t&&t.qty>0&&t.total>0).map(t=>t.total/t.qty);
+  const per=(R.cogs==='quote'&&qr.length)?Math.max.apply(null,qr):null;
   const prevRate=R.multiples.map(()=>Infinity);
   return sizes.map(q=>{
     let rung=0; rungs.forEach((r,i)=>{if(r<=q+0.009)rung=i;});
-    const fl=floorTotal(q,C,P), cogs=Math.round(ladderCogs(q,C));
-    const cols=R.multiples.map(m=>up(cogs*(m+R.start-R.step*(R.scaled?m:1)*rung)));
-    const prices=[up(fl)];
+    const fl=floorTotal(q,C,P), cogs=per!=null?+(per*q).toFixed(2):Math.round(ladderCogs(q,C));
+    /* the sheet's columns: Ambassador is COGS plus the overhead, up to the ten; each tier is COGS times its
+       multiple less `decay` a unit of size past `from`, never under Ambassador, rounded the way its column
+       rounds. Ambassador never goes under break-even either. */
+    const amb=Math.max(up(cogs*(1+R.overhead)),up(fl));
+    const cols=R.multiples.map((m,k)=>{const raw=Math.max(cogs*(m-R.decay*(q-R.from)),amb);
+      return R.round[k]==='down'?down(raw):up(raw);});
+    const prices=[amb];
     cols.forEach((raw,k)=>{
       const least=prices[k]+to;
       let p=Math.max(raw,least);

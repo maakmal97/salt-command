@@ -10,7 +10,10 @@ speed. **From 03 Sep 2026 the fold runs inside `cloud-commit.yml`: an approval o
 dispatches it, and the Claude Code action folds in the same run, before the deploy. Since v520
 (08 Sep 2026) stage, fold and deploy are steps of one job, `chain`, and since v521 the Fold step
 is `node tools/foldcall.mjs`: the plan below, a dossier the tools compute, one Claude call for the
-notes, a check against the house rules, then `--apply`. This document is what that call is told
+notes, a check against the house rules, then `--apply`. **Since v792 (22 Sep 2026) that call is not
+a condition of the fold**: with no key, with a call that will not go through, or with a reply twice
+against the house rules, `tools/foldnotes.mjs` writes the notes from the same dossier and the fold
+lands, recording no judgement and saying so in every row note and in the version entry. This document is what that call is told
 to do, and what any agent asked to fold by hand still does** (CLAUDE.md, "An approval now runs the whole chain"). The routine is kept, disabled,
 as the manual backup. Whoever folds: if `master/_to_fold.json` is not in master, nothing is
 staged, say so in one line and stop; if `master/_folded.json` is present, the last batch is

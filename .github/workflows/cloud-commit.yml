@@ -210,9 +210,13 @@ jobs:
       # inventory position), asks Claude once for the notes as JSON, checks them against the house
       # rules and the next version, and folds with fold.mjs --apply. The judgement is still a
       # model's, on the same facts; every refusal rule stays in the tool. The step then builds,
-      # tests, commits and pushes as the runner, so no second run starts. A refusal or a refused
-      # reply leaves the batch staged, recorded where the phone shows refusals, for the hourly net
-      # or a person. The Claude Code action is retired from the job; the manual backup stands.
+      # tests, commits and pushes as the runner, so no second run starts. A refusal by fold.mjs, a
+      # rule the tool will not fold, still leaves the batch staged for a person. A refusal by the
+      # MODEL no longer does (22 Sep 2026): no key, a call that will not go through and a reply
+      # twice against the house rules all land on tools/foldnotes.mjs, which writes the same notes
+      # off the same dossier with no judgement in them and says so where it is read. It is still
+      # recorded where the phone shows refusals. The Claude Code action is retired from the job;
+      # the manual backup stands.
       - name: Fold
         if: steps.plan.outputs.fold == '1'
         env:
@@ -221,9 +225,13 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
+          # NO KEY IS NO LONGER A STOP (his instruction of 22 Sep 2026). It exited 1 here, and on
+          # 22 Sep a credit balance of nothing left two approved rows staged with the deploy, the
+          # marks, the mirror, the statements and the suite all behind them. foldcall writes the
+          # notes with tools/foldnotes.mjs instead and the fold lands; what is lost is the
+          # judgement, and the version entry and every row note say so.
           if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
-            echo "::error::ANTHROPIC_API_KEY is not set. Run: gh secret set ANTHROPIC_API_KEY. The batch stays staged; fold it by hand or fire the backup routine."
-            exit 1
+            echo "::warning::ANTHROPIC_API_KEY is not set, so this fold takes the tool's own notes and records no judgement on any row. Set it with: gh secret set ANTHROPIC_API_KEY."
           fi
           if git cat-file -e HEAD:master/_folded.json 2>/dev/null; then
             echo "::notice::master/_folded.json is in HEAD: the last batch is folded and its deploy did not clear it. Nothing is folded until that is resolved."

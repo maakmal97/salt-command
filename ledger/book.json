@@ -691,70 +691,72 @@
   "QUOTES": {
     "salt": {
       "supplier": "SA5-BTR",
-      "quotedOn": "2026-08-20",
+      "quotedOn": "2026-09-23",
       "kind": "live quote",
       "tiers": [
         {
-          "qty": 6.25,
-          "total": 350,
-          "note": "RM56/unit. The smallest lot has never been quoted as its own tier before, and it comes in at the rate the 12.5 unit step used to cost."
-        },
-        {
           "qty": 12.5,
-          "total": 650,
-          "note": "RM52/unit, RM50 off the RM700 this size has cost on every lot since 08 Jul."
-        },
-        {
-          "qty": 25,
-          "total": 1200,
-          "note": "RM48/unit, his word 07 Sep 2026, down from the RM1,250 quoted on 20 Aug; the two 25 unit lots of 02 and 03 Sep already landed at this rate."
-        },
-        {
-          "qty": 50,
-          "total": 2200,
-          "note": "RM44/unit, back to exactly the RM2,200 quoted on 10 Jul after this tier moved up."
-        },
-        {
-          "qty": 100,
-          "total": 4000,
-          "note": "RM40/unit on his word of 08 Sep 2026, down RM300 from the RM4,300 quoted on 20 Aug; cheaper than any rate this desk has ever been quoted or has ever paid."
+          "total": 700,
+          "note": "RM56/unit. His word of 23 Sep 2026: multiples of 12.5 unit at RM700 each, so one tier bought in whole lots."
         }
       ]
     },
     "oil": {
       "supplier": "SP7-PUD",
-      "quotedOn": "2026-09-07",
+      "quotedOn": "2026-09-23",
       "kind": "live quote",
       "tiers": [
         {
           "qty": 10,
           "total": 100,
-          "note": "RM10/unit, unchanged from 06 Aug; the smallest lot and the highest rate"
-        },
-        {
-          "qty": 15,
-          "total": 150,
-          "note": "RM10/unit, a new tier on 07 Sep; the same rate as 10 unit, so it buys nothing but size"
-        },
-        {
-          "qty": 20,
-          "total": 180,
-          "note": "RM9/unit, unchanged from 06 Aug"
-        },
-        {
-          "qty": 30,
-          "total": 250,
-          "note": "RM8.33/unit, up from the RM230 (RM7.67) quoted on 06 Aug, the tier the 26 Aug lot was bought on"
+          "note": "RM10/unit, as quoted; his word of 23 Sep 2026 names this tier and 50 unit alone."
         },
         {
           "qty": 50,
           "total": 380,
-          "note": "RM7.60/unit, up from the RM350 (RM7) quoted on 06 Aug and paid on the 11 Aug lot; still the sharpest"
+          "note": "RM7.60/unit, as quoted."
         }
       ]
     },
-    "candy": null,
-    "rice": null,
+    "candy": {
+      "supplier": "SM4-KEP",
+      "quotedOn": "2026-09-23",
+      "kind": "live quote",
+      "tiers": [
+        {
+          "qty": 10,
+          "total": 550,
+          "note": "RM55/unit, his word of 23 Sep 2026."
+        },
+        {
+          "qty": 20,
+          "total": 940,
+          "note": "RM47/unit."
+        },
+        {
+          "qty": 30,
+          "total": 1140,
+          "note": "RM38/unit; the 21 Sep lot of 35 unit came in at this total."
+        },
+        {
+          "qty": 50,
+          "total": 1500,
+          "note": "RM30/unit."
+        }
+      ]
+    },
+    "rice": {
+      "supplier": "SM4-KEP",
+      "quotedOn": "2026-09-23",
+      "kind": "live quote",
+      "tiers": [
+        {
+          "qty": 100,
+          "total": 320,
+          "note": "RM3.20/unit, his word of 23 Sep 2026; the 21 Sep lot was bought at it."
+        }
+      ]
+    },
     "spare": null
   },
   "CASH_COUNT_RETIRED": {
@@ -905,6 +907,7 @@
       "v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded."
     ],
     "QUOTES": [
+      "v793, 23 Sep 2026: his quotes as relayed with the pricing_v2 workbook. Salt SA5-BTR is multiples of 12.5 unit at RM700 each, RM56 a unit flat and held as the one 12.5 unit tier bought in whole lots, replacing the 6.25 to 100 unit taper of 20 Aug. Oil SP7-PUD names 10@100 and 50@380 alone; 15, 20 and 30 are dropped. Candy SM4-KEP 10@55, 20@47, 30@38, 50@30 a unit. Rice SM4-KEP 100@320.",
       "v776, 22 Sep 2026: QUOTES IS THE BOOK'S OWN MAP, AND supplierQuote AND oilQuote ARE GONE. The two live quotes sat under two top-level keys NAMED AFTER THEIR PRODUCTS, the one per-product thing in this book that was not a map, and the desk's QUOTES was an accessor over them, {salt:()=>supplierQuote, oil:()=>oilQuote}. A third product therefore needed a third key, a third global and an edit in three files, and tools/foldcall.mjs read the pair as a literal two-entry object, so an unregistered product yielded null and its purchase folded with no quote in the dossier while nothing errored. v228's own comment beside the supply panel already stated the shape it wanted, one panel driven by QUOTES so a third product needs an entry there and nothing here, and the panel has told him to add one to QUOTES ever since; this is that, finished. quoteFor reads the map directly, the accessor is retired, and QUOTES leaves NOT_LEDGER for LEDGER because it is a record now and not a lookup. oilQuote's own product field goes with it: the key is the product, and nothing ever read the field.",
       "v505, 07 Sep 2026: the 25 unit tier is RM 1,200 on his word; the other four tiers stand as quoted on 20 Aug.",
       "v517, 08 Sep 2026: the 100 unit tier is RM 4,000 on his word, down RM 300 from the RM 4,300 quoted on 20 Aug; the other four tiers stand. The salt taper refits from -0.100 to -0.121 and five asks come down RM 10 (RM 30 at 12.5 unit); no floor moves.",

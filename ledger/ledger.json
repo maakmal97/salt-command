@@ -1,6 +1,6 @@
 {
- "v": "v791",
- "stamped": "23 Sep 2026, 08:22 KL",
+ "v": "v793",
+ "stamped": "23 Sep 2026, 09:05 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5417,70 +5417,72 @@
   "QUOTES": {
    "salt": {
     "supplier": "SA5-BTR",
-    "quotedOn": "2026-08-20",
+    "quotedOn": "2026-09-23",
     "kind": "live quote",
     "tiers": [
      {
-      "qty": 6.25,
-      "total": 350,
-      "note": "RM56/unit. The smallest lot has never been quoted as its own tier before, and it comes in at the rate the 12.5 unit step used to cost."
-     },
-     {
       "qty": 12.5,
-      "total": 650,
-      "note": "RM52/unit, RM50 off the RM700 this size has cost on every lot since 08 Jul."
-     },
-     {
-      "qty": 25,
-      "total": 1200,
-      "note": "RM48/unit, his word 07 Sep 2026, down from the RM1,250 quoted on 20 Aug; the two 25 unit lots of 02 and 03 Sep already landed at this rate."
-     },
-     {
-      "qty": 50,
-      "total": 2200,
-      "note": "RM44/unit, back to exactly the RM2,200 quoted on 10 Jul after this tier moved up."
-     },
-     {
-      "qty": 100,
-      "total": 4000,
-      "note": "RM40/unit on his word of 08 Sep 2026, down RM300 from the RM4,300 quoted on 20 Aug; cheaper than any rate this desk has ever been quoted or has ever paid."
+      "total": 700,
+      "note": "RM56/unit. His word of 23 Sep 2026: multiples of 12.5 unit at RM700 each, so one tier bought in whole lots."
      }
     ]
    },
    "oil": {
     "supplier": "SP7-PUD",
-    "quotedOn": "2026-09-07",
+    "quotedOn": "2026-09-23",
     "kind": "live quote",
     "tiers": [
      {
       "qty": 10,
       "total": 100,
-      "note": "RM10/unit, unchanged from 06 Aug; the smallest lot and the highest rate"
-     },
-     {
-      "qty": 15,
-      "total": 150,
-      "note": "RM10/unit, a new tier on 07 Sep; the same rate as 10 unit, so it buys nothing but size"
-     },
-     {
-      "qty": 20,
-      "total": 180,
-      "note": "RM9/unit, unchanged from 06 Aug"
-     },
-     {
-      "qty": 30,
-      "total": 250,
-      "note": "RM8.33/unit, up from the RM230 (RM7.67) quoted on 06 Aug, the tier the 26 Aug lot was bought on"
+      "note": "RM10/unit, as quoted; his word of 23 Sep 2026 names this tier and 50 unit alone."
      },
      {
       "qty": 50,
       "total": 380,
-      "note": "RM7.60/unit, up from the RM350 (RM7) quoted on 06 Aug and paid on the 11 Aug lot; still the sharpest"
+      "note": "RM7.60/unit, as quoted."
      }
     ]
    },
-   "candy": null,
-   "rice": null,
+   "candy": {
+    "supplier": "SM4-KEP",
+    "quotedOn": "2026-09-23",
+    "kind": "live quote",
+    "tiers": [
+     {
+      "qty": 10,
+      "total": 550,
+      "note": "RM55/unit, his word of 23 Sep 2026."
+     },
+     {
+      "qty": 20,
+      "total": 940,
+      "note": "RM47/unit."
+     },
+     {
+      "qty": 30,
+      "total": 1140,
+      "note": "RM38/unit; the 21 Sep lot of 35 unit came in at this total."
+     },
+     {
+      "qty": 50,
+      "total": 1500,
+      "note": "RM30/unit."
+     }
+    ]
+   },
+   "rice": {
+    "supplier": "SM4-KEP",
+    "quotedOn": "2026-09-23",
+    "kind": "live quote",
+    "tiers": [
+     {
+      "qty": 100,
+      "total": 320,
+      "note": "RM3.20/unit, his word of 23 Sep 2026; the 21 Sep lot was bought at it."
+     }
+    ]
+   },
    "spare": null
   },
   "COST_RULE": {
@@ -5541,7 +5543,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-22T11:53:30.260Z",
   "PRICING": {
-   "takenAt": "2026-09-23T00:22:28.939Z",
+   "takenAt": "2026-09-23T01:05:58.023Z",
    "sizes": [
     0.5,
     1,
@@ -5570,8 +5572,7 @@
     "Titanium",
     "Platinum",
     "Gold",
-    "Silver",
-    "Bronze"
+    "Silver"
    ],
    "tierOf": {
     "CS6-BS": {
@@ -5582,22 +5583,19 @@
      "salt": "Titanium"
     },
     "CM4-MK": {
-     "salt": "Platinum"
+     "salt": "Titanium"
     },
     "CE4-CHE": {
-     "salt": "Platinum",
-     "oil": "Titanium"
+     "salt": "Platinum"
     },
     "CS6-PER": {
-     "salt": "Titanium",
-     "oil": "Titanium"
+     "salt": "Titanium"
     },
     "CN6-WM": {
      "salt": "Platinum"
     },
     "CZ4-MK": {
-     "salt": "Platinum",
-     "oil": "Titanium"
+     "salt": "Titanium"
     },
     "CR3-DAM": {
      "salt": {
@@ -5623,7 +5621,7 @@
      }
     },
     "CE4-AD": {
-     "salt": "Platinum"
+     "salt": "Titanium"
     },
     "CR4-PJ": {
      "salt": "Titanium"
@@ -5641,8 +5639,7 @@
      "salt": "Titanium"
     },
     "CA7-AMP": {
-     "salt": "Gold",
-     "oil": "Titanium"
+     "salt": "Gold"
     },
     "CC5-OKR": {
      "salt": {
@@ -5652,7 +5649,7 @@
      }
     },
     "CH4-KS": {
-     "salt": "Platinum"
+     "salt": "Titanium"
     },
     "CH6-SET": {
      "salt": "Platinum"
@@ -5673,20 +5670,19 @@
      "salt": "Platinum"
     },
     "CH4-MAL": {
-     "salt": "Titanium",
-     "oil": "Titanium"
+     "salt": "Titanium"
     },
     "CN5-TAI": {
      "salt": "Titanium"
     },
     "CH5-KLC": {
-     "salt": "Bronze"
+     "salt": "Silver"
     },
     "CA2-SEN": {
      "salt": "Titanium"
     },
     "CD4-CS": {
-     "salt": "Gold"
+     "salt": "Silver"
     },
     "CR3-PUD": {
      "salt": "Titanium"
@@ -5705,7 +5701,7 @@
      "salt": "Titanium"
     },
     "CS6-DAM": {
-     "salt": "Gold"
+     "salt": "Platinum"
     }
    },
    "profileOf": {
@@ -6690,16 +6686,22 @@
        "stated": {},
        "tier1": null,
        "tierRule": {
+        "cogs": "quote",
+        "overhead": 0.5,
         "multiples": [
-         1,
-         1.375,
-         1.75,
-         2.125,
+         2.1,
+         2.1,
+         2.5,
          2.5
         ],
-        "start": 1,
-        "step": 0.05,
-        "scaled": true,
+        "round": [
+         "down",
+         "up",
+         "down",
+         "up"
+        ],
+        "decay": 0.09,
+        "from": 0.5,
         "rungs": [
          0.5,
          1,
@@ -6715,31 +6717,12 @@
          12.5
         ]
        },
+       "lastLevel": "Silver",
        "tiers": [
         {
-         "qty": 6.25,
-         "total": 350,
-         "note": "RM56/unit. The smallest lot has never been quoted as its own tier before, and it comes in at the rate the 12.5 unit step used to cost."
-        },
-        {
          "qty": 12.5,
-         "total": 650,
-         "note": "RM52/unit, RM50 off the RM700 this size has cost on every lot since 08 Jul."
-        },
-        {
-         "qty": 25,
-         "total": 1200,
-         "note": "RM48/unit, his word 07 Sep 2026, down from the RM1,250 quoted on 20 Aug; the two 25 unit lots of 02 and 03 Sep already landed at this rate."
-        },
-        {
-         "qty": 50,
-         "total": 2200,
-         "note": "RM44/unit, back to exactly the RM2,200 quoted on 10 Jul after this tier moved up."
-        },
-        {
-         "qty": 100,
-         "total": 4000,
-         "note": "RM40/unit on his word of 08 Sep 2026, down RM300 from the RM4,300 quoted on 20 Aug; cheaper than any rate this desk has ever been quoted or has ever paid."
+         "total": 700,
+         "note": "RM56/unit. His word of 23 Sep 2026: multiples of 12.5 unit at RM700 each, so one tier bought in whole lots."
         }
        ],
        "boardSizes": [
@@ -6776,7 +6759,6 @@
       {
        "q": 0.5,
        "prices": [
-        30,
         50,
         60,
         70,
@@ -6788,132 +6770,121 @@
       {
        "q": 1,
        "prices": [
-        60,
-        100,
+        90,
+        110,
         120,
-        140,
-        160,
-        180
+        130,
+        140
        ],
        "fixed": false
       },
       {
        "q": 1.5,
        "prices": [
-        90,
-        150,
-        180,
-        200,
-        230,
-        250
+        130,
+        160,
+        170,
+        190,
+        210
        ],
        "fixed": false
       },
       {
        "q": 2,
        "prices": [
-        120,
-        190,
-        230,
-        260,
-        290,
-        320
+        170,
+        210,
+        220,
+        250,
+        270
        ],
        "fixed": false
       },
       {
        "q": 2.5,
        "prices": [
-        140,
-        230,
+        210,
+        260,
         270,
         310,
-        350,
-        390
+        330
        ],
        "fixed": false
       },
       {
        "q": 3,
        "prices": [
-        170,
-        270,
+        260,
         310,
-        360,
-        400,
-        440
+        320,
+        370,
+        390
        ],
        "fixed": false
       },
       {
        "q": 3.5,
        "prices": [
-        200,
-        310,
+        300,
         350,
-        400,
-        450,
-        490
+        360,
+        430,
+        440
        ],
        "fixed": false
       },
       {
        "q": 4,
        "prices": [
-        230,
         340,
         390,
-        440,
-        490,
-        540
+        400,
+        480,
+        490
        ],
        "fixed": false
       },
       {
        "q": 4.5,
        "prices": [
-        260,
-        370,
-        420,
-        470,
+        380,
+        430,
+        440,
         530,
-        580
+        540
        ],
        "fixed": false
       },
       {
        "q": 5,
        "prices": [
-        280,
-        400,
-        450,
-        500,
-        560,
-        610
+        420,
+        470,
+        480,
+        580,
+        590
        ],
        "fixed": false
       },
       {
        "q": 6.25,
        "prices": [
-        350,
-        480,
-        540,
-        600,
-        660,
-        720
+        530,
+        550,
+        560,
+        690,
+        700
        ],
        "fixed": false
       },
       {
        "q": 12.5,
        "prices": [
-        700,
-        930,
-        1030,
-        1140,
-        1250,
-        1350
+        1050,
+        1060,
+        1070,
+        1080,
+        1090
        ],
        "fixed": false
       }
@@ -7083,31 +7054,17 @@
          50
         ]
        },
+       "lastLevel": "Silver",
        "tiers": [
         {
          "qty": 10,
          "total": 100,
-         "note": "RM10/unit, unchanged from 06 Aug; the smallest lot and the highest rate"
-        },
-        {
-         "qty": 15,
-         "total": 150,
-         "note": "RM10/unit, a new tier on 07 Sep; the same rate as 10 unit, so it buys nothing but size"
-        },
-        {
-         "qty": 20,
-         "total": 180,
-         "note": "RM9/unit, unchanged from 06 Aug"
-        },
-        {
-         "qty": 30,
-         "total": 250,
-         "note": "RM8.33/unit, up from the RM230 (RM7.67) quoted on 06 Aug, the tier the 26 Aug lot was bought on"
+         "note": "RM10/unit, as quoted; his word of 23 Sep 2026 names this tier and 50 unit alone."
         },
         {
          "qty": 50,
          "total": 380,
-         "note": "RM7.60/unit, up from the RM350 (RM7) quoted on 06 Aug and paid on the 11 Aug lot; still the sharpest"
+         "note": "RM7.60/unit, as quoted."
         }
        ],
        "boardSizes": [
@@ -7176,38 +7133,17 @@
       "1": {
        "floor": 32.57
       },
-      "2": {
-       "floor": 65.14
-      },
-      "3": {
-       "floor": 97.71
-      },
-      "4": {
-       "floor": 130.28
-      },
       "5": {
        "floor": 162.85
       },
-      "0.5": {
-       "floor": 16.29
+      "10": {
+       "floor": 325.7
       },
-      "1.5": {
-       "floor": 48.86
+      "20": {
+       "floor": 651.4
       },
-      "2.5": {
-       "floor": 81.42
-      },
-      "3.5": {
-       "floor": 114
-      },
-      "4.5": {
-       "floor": 146.56
-      },
-      "6.25": {
-       "floor": 203.56
-      },
-      "12.5": {
-       "floor": 407.13
+      "30": {
+       "floor": 977.1
       }
      },
      "inputs": {
@@ -7238,7 +7174,7 @@
         "sup": "SM4-KEP"
        },
        "meanLot": 35,
-       "quoteRate": 32.57,
+       "quoteRate": 55,
        "repl": 32.57,
        "freightRate": 0,
        "leak": null,
@@ -7280,7 +7216,7 @@
         "gLo": 0.25,
         "gHi": 0.667,
         "round": {
-         "to": 10,
+         "to": 1,
          "up": true
         },
         "taper": "supplier",
@@ -7291,39 +7227,99 @@
        "lotFloor": {},
        "stated": {},
        "tier1": null,
-       "tierRule": null,
-       "tiers": [],
+       "tierRule": {
+        "fixed": {
+         "1": 60,
+         "10": 550,
+         "30": 1500
+        },
+        "rungs": [
+         1,
+         10,
+         30
+        ]
+       },
+       "lastLevel": "Silver",
+       "tiers": [
+        {
+         "qty": 10,
+         "total": 550,
+         "note": "RM55/unit, his word of 23 Sep 2026."
+        },
+        {
+         "qty": 20,
+         "total": 940,
+         "note": "RM47/unit."
+        },
+        {
+         "qty": 30,
+         "total": 1140,
+         "note": "RM38/unit; the 21 Sep lot of 35 unit came in at this total."
+        },
+        {
+         "qty": 50,
+         "total": 1500,
+         "note": "RM30/unit."
+        }
+       ],
        "boardSizes": [
-        0.5,
         1,
-        1.5,
-        2,
-        2.5,
-        3,
-        3.5,
-        4,
-        4.5,
         5,
-        6.25,
-        12.5
+        10,
+        20,
+        30
        ]
       }
      },
      "sizes": [
-      0.5,
       1,
-      1.5,
-      2,
-      2.5,
-      3,
-      3.5,
-      4,
-      4.5,
       5,
-      6.25,
-      12.5
+      10,
+      20,
+      30
      ],
-     "ladder": []
+     "ladder": [
+      {
+       "q": 1,
+       "prices": [
+        33,
+        60
+       ],
+       "fixed": true
+      },
+      {
+       "q": 5,
+       "prices": [
+        163,
+        300
+       ],
+       "fixed": true
+      },
+      {
+       "q": 10,
+       "prices": [
+        326,
+        550
+       ],
+       "fixed": true
+      },
+      {
+       "q": 20,
+       "prices": [
+        652,
+        1100
+       ],
+       "fixed": true
+      },
+      {
+       "q": 30,
+       "prices": [
+        978,
+        1500
+       ],
+       "fixed": true
+      }
+     ]
     },
     "rice": {
      "stockCost": 3.2,
@@ -7332,38 +7328,11 @@
       "1": {
        "floor": 3.4
       },
-      "2": {
-       "floor": 6.8
-      },
-      "3": {
-       "floor": 10.2
-      },
-      "4": {
-       "floor": 13.6
-      },
       "5": {
        "floor": 17
       },
-      "0.5": {
-       "floor": 1.7
-      },
-      "1.5": {
-       "floor": 5.1
-      },
-      "2.5": {
-       "floor": 8.5
-      },
-      "3.5": {
-       "floor": 11.9
-      },
-      "4.5": {
-       "floor": 15.3
-      },
-      "6.25": {
-       "floor": 21.25
-      },
-      "12.5": {
-       "floor": 42.5
+      "10": {
+       "floor": 34
       }
      },
      "inputs": {
@@ -7436,7 +7405,7 @@
         "gLo": 0.25,
         "gHi": 0.667,
         "round": {
-         "to": 10,
+         "to": 1,
          "up": true
         },
         "taper": "supplier",
@@ -7447,39 +7416,64 @@
        "lotFloor": {},
        "stated": {},
        "tier1": null,
-       "tierRule": null,
-       "tiers": [],
+       "tierRule": {
+        "fixed": {
+         "1": 8,
+         "5": 35,
+         "10": 60
+        },
+        "rungs": [
+         1,
+         5,
+         10
+        ]
+       },
+       "lastLevel": "Silver",
+       "tiers": [
+        {
+         "qty": 100,
+         "total": 320,
+         "note": "RM3.20/unit, his word of 23 Sep 2026; the 21 Sep lot was bought at it."
+        }
+       ],
        "boardSizes": [
-        0.5,
         1,
-        1.5,
-        2,
-        2.5,
-        3,
-        3.5,
-        4,
-        4.5,
         5,
-        6.25,
-        12.5
+        10
        ]
       }
      },
      "sizes": [
-      0.5,
       1,
-      1.5,
-      2,
-      2.5,
-      3,
-      3.5,
-      4,
-      4.5,
       5,
-      6.25,
-      12.5
+      10
      ],
-     "ladder": []
+     "ladder": [
+      {
+       "q": 1,
+       "prices": [
+        4,
+        8
+       ],
+       "fixed": true
+      },
+      {
+       "q": 5,
+       "prices": [
+        17,
+        35
+       ],
+       "fixed": true
+      },
+      {
+       "q": 10,
+       "prices": [
+        34,
+        60
+       ],
+       "fixed": true
+      }
+     ]
     },
     "spare": {
      "stockCost": 0,
@@ -7592,6 +7586,7 @@
        "stated": {},
        "tier1": null,
        "tierRule": null,
+       "lastLevel": "Silver",
        "tiers": [],
        "boardSizes": [
         0.5,
@@ -7626,10 +7621,10 @@
      "ladder": []
     }
    },
-   "v": "v791"
+   "v": "v793"
   },
   "OPEN": {
-   "at": "2026-09-23T00:22:29.150Z",
+   "at": "2026-09-23T01:05:58.219Z",
    "count": 6,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
@@ -7794,7 +7789,7 @@
     "rice": null,
     "spare": null
    },
-   "v": "v791"
+   "v": "v793"
   }
  }
 }

@@ -13,21 +13,32 @@
  *   node tools/foldcall.mjs            plan, dossier, call, notes, apply
  *   node tools/foldcall.mjs --dry      print the dossier and the request; call nothing
  *   node tools/foldcall.mjs --probe    one cheap call with the key, to prove it where it is used
+ *   node tools/foldcall.mjs --no-model write the notes with the tool and never call at all
  *   SALT_FOLD_FAKE=<notes.json>        use this reply instead of calling (the suite)
+ *   SALT_FOLD_NOMODEL=1                as --no-model, for a runner that cannot add a flag
  *   SALT_FOLD_MODEL                    default claude-opus-5
  *   --staged --book --master --notes --folded --today   as fold.mjs takes them, passed through
  *
  * WHAT IT WRITES. master/_fold_notes.json, then everything fold.mjs --apply writes. It does
  * not build, test, commit or push: the workflow step does those, as the agent did.
  *
- * WHAT IT NEEDS. ANTHROPIC_API_KEY. Nothing else leaves the machine: codes, figures and the
- * drafter's own sentences, never a name (the book carries none).
+ * WHAT IT NEEDS: NOTHING (his instruction of 22 Sep 2026). ANTHROPIC_API_KEY buys the judgement
+ * and nothing else. Without it, and on any refusal the call comes back with, tools/foldnotes.mjs
+ * writes the same notes object off the same dossier and the fold lands anyway, saying in the
+ * version entry and in every row note that no judgement is recorded in it. This used to exit 1
+ * three ways, and on 22 Sep 2026 a credit balance of nothing left two approved rows staged with
+ * the deploy, the marks, the mirror, the statements and the suite all behind them. A judgement is
+ * worth a model; a chain that stops dead without one is not.
+ *
+ * Nothing else leaves the machine: codes, figures and the drafter's own sentences, never a name
+ * (the book carries none).
  */
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 import { plan } from "./fold.mjs";
+import { toolNotes } from "./foldnotes.mjs";
 import { readBookFile } from "./booksync.mjs";
 import { readBook } from "./book.mjs";
 import E from "../engine/position.mjs";   /* v738: what a customer owes is read off the engine, never as total less cash */
@@ -61,7 +72,11 @@ function partyDossier(book, key, party) {
     lastRows: rows.slice(-8).map(pick),
     medianRate: rates.length ? r2(rates[Math.floor(rates.length / 2)]) : null,
     rateRange: rates.length ? [r2(rates[0]), r2(rates[rates.length - 1])] : null,
-    outstandingBefore: r2(live.reduce((a, r) => a + Math.max(0, E.txOwed(r) - (+r.cash || 0)), 0)),   /* v738: the goods and the delivery together */
+    /* v738 on a sale: the goods and the delivery together. ON A LOT IT IS THE ENGINE'S OWN READER
+       (22 Sep 2026): total less the row's cash counted a lot that carries no cash field at all as
+       wholly unpaid, so SA5-BTR read RM3,260 outstanding where poOwed reads RM160, and the notes
+       written off this dossier had been repeating the larger figure. poCash reads the trail. */
+    outstandingBefore: r2(live.reduce((a, r) => a + (key === "customer" ? Math.max(0, E.txOwed(r) - (+r.cash || 0)) : E.poOwed(r)), 0)),
     unitsOnCreditBefore: key === "customer" ? r2(live.reduce((a, r) => { const p = +r.qty > 0 ? r.total / r.qty : 0; return a + Math.max(0, (+r.deliveredQty || 0) - (p > 0 ? (+r.cash || 0) / p : 0)); }, 0)) : null,
     defaultedRM: r2(rows.filter((r) => r.defaulted).reduce((a, r) => a + (E.txOwed(r) - (+r.cash || 0)), 0)),
     associate: (book.associates || []).includes(party),
@@ -264,39 +279,59 @@ if (isMain) {
   try { rb.w.close(); } catch (e) { /* jsdom */ }
   const req = requestFor(d, ids);
   if (dry) { console.log(JSON.stringify({ model: req.model, system: req.system, user: req.messages[0].content, schema: req.output_config.format.schema }, null, 1)); process.exit(0); }
-  let notes, problems = [];
+  let notes, problems = [], why = null;
+  /* WHY, AND NOT A BOOLEAN. Every road to the tool's own notes ends here carrying the reason in
+     words, because that reason is what the version entry and the run's log have to say: a fold
+     that quietly reads differently from the one before it is worse than one that stopped. */
+  const noModel = argv.includes("--no-model") || process.env.SALT_FOLD_NOMODEL === "1";
   if (process.env.SALT_FOLD_FAKE) {
+    /* THE FAKE IS AN INSTRUMENT AND STAYS STRICT. It says use this reply, so a reply against the
+       house rules folds nothing and the suite can still prove the checker gates the model. */
     notes = JSON.parse(readFileSync(process.env.SALT_FOLD_FAKE, "utf8"));
     problems = checkNotes(notes, d.version.next, ids);
+  } else if (noModel) {
+    why = "The tool's own notes were asked for outright, with --no-model.";
+  } else if (!process.env.ANTHROPIC_API_KEY) {
+    why = "No ANTHROPIC_API_KEY was set, so the model was never called.";
   } else {
-    if (!process.env.ANTHROPIC_API_KEY) { console.log("  FAIL  ANTHROPIC_API_KEY is not set. Run: gh secret set ANTHROPIC_API_KEY. The batch stays staged."); process.exit(1); }
     const t0 = Date.now();
     /* A CALL THAT FAILS IS SAID ON THE PHONE (08 Sep 2026). The first live fold failed on an
        unfunded account and nothing outside the run's log said so; the batch sat staged. The
        failure is recorded where the phone shows refusals, under an id above the watermark, so
-       the Approve view carries it until the next fold clears it. */
-    const said = async (why) => {
+       the Approve view carries it until the next fold clears it. It is still said, and since
+       22 Sep 2026 the batch no longer waits on it: the fold lands on the tool's own notes. */
+    const said = async (line) => {
       if (!process.env.CLOUDFLARE_API_TOKEN) return;
-      const r = spawnSync(process.execPath, [resolve(REPO, "tools", "drafts.mjs"), "--refused-note", "fold:" + ids[0], why], { cwd: REPO, encoding: "utf8" });
-      console.log("  " + (r.status === 0 ? "noted" : "could not note") + "  on the phone: " + why.slice(0, 120));
+      const r = spawnSync(process.execPath, [resolve(REPO, "tools", "drafts.mjs"), "--refused-note", "fold:" + ids[0], line], { cwd: REPO, encoding: "utf8" });
+      console.log("  " + (r.status === 0 ? "noted" : "could not note") + "  on the phone: " + line.slice(0, 120));
     };
-    let got;
+    let got = null;
     try { got = await callClaude(req); }
     catch (e) {
-      const why = "The fold could not call Claude: " + (e && e.status ? "http " + e.status + ", " : "") + String((e && e.message) || e).replace(/\s+/g, " ").slice(0, 200) + ". The batch stays staged and the hourly net retries.";
-      console.log("  FAIL  " + why);
+      why = "The model could not be called: " + (e && e.status ? "http " + e.status + ", " : "") + String((e && e.message) || e).replace(/\s+/g, " ").slice(0, 200) + ". The tool wrote these notes instead, so the fold lands.";
+      console.log("  WARN  " + why);
       await said(why);
-      process.exit(1);
     }
-    console.log(`  call  ${MODEL}: ${got.usage.input_tokens} in, ${got.usage.output_tokens} out, ${((Date.now() - t0) / 1000).toFixed(1)} s`);
-    notes = got.notes; problems = checkNotes(notes, d.version.next, ids);
-    if (problems.length) {
-      /* ONE RETRY, with the problems named. A second failure leaves the batch staged. */
-      console.log("  retry " + problems.join("; "));
-      const again = { ...req, messages: req.messages.concat([{ role: "assistant", content: JSON.stringify(notes) }, { role: "user", content: "That reply was refused for these reasons; send the corrected notes JSON:\n- " + problems.join("\n- ") }]) };
-      got = await callClaude(again);
+    if (got) {
+      console.log(`  call  ${MODEL}: ${got.usage.input_tokens} in, ${got.usage.output_tokens} out, ${((Date.now() - t0) / 1000).toFixed(1)} s`);
       notes = got.notes; problems = checkNotes(notes, d.version.next, ids);
+      if (problems.length) {
+        /* ONE RETRY, with the problems named. A second failure takes the tool's own notes. */
+        console.log("  retry " + problems.join("; "));
+        const again = { ...req, messages: req.messages.concat([{ role: "assistant", content: JSON.stringify(notes) }, { role: "user", content: "That reply was refused for these reasons; send the corrected notes JSON:\n- " + problems.join("\n- ") }]) };
+        try { got = await callClaude(again); notes = got.notes; problems = checkNotes(notes, d.version.next, ids); }
+        catch (e) { problems = ["the retry could not be sent: " + String((e && e.message) || e).replace(/\s+/g, " ").slice(0, 120)]; }
+        if (problems.length) { why = "The model answered twice against the house rules: " + problems.join("; ") + ". The tool wrote these notes instead."; console.log("  WARN  " + why); problems = []; }
+      }
     }
+  }
+  /* THE ONE PLACE THE TOOL'S NOTES ARE MADE, whichever road reached it. They are checked like any
+     other reply: notes that could not pass would leave the batch staged for the very reason this
+     road exists to remove, so the check is the proof and not a formality. */
+  if (why) {
+    notes = toolNotes(d, ids, why);
+    problems = checkNotes(notes, d.version.next, ids);
+    console.log("  notes written by the tool, no model: " + why.slice(0, 160));
   }
   if (problems.length) { console.log("  FAIL  the notes were refused:\n        " + problems.join("\n        ")); process.exit(1); }
   const out = { version: notes.version, date: dayOf(TODAY), title: notes.title, notes: notes.notes, rows: {}, stockNote: notes.stockNote || "", stockCost: notes.stockCost == null ? null : notes.stockCost, stockCostNote: notes.stockCostNote || "" };

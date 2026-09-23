@@ -1085,7 +1085,8 @@ const CLIENT_JS = `
         h3.appendChild(m);
       }
       pane.appendChild(h3);
-      pane.appendChild(el('p','sub2', p.basis==='yours'
+      pane.appendChild(el('p','sub2', p.basis==='board' ? 'The same price for everybody. '
+        : p.basis==='yours'
         ? 'Your rate: '+rm(p.rate)+' per '+(p.unit||'unit')+', from your last '+p.orders+' order'+(p.orders===1?'':'s')+'. '
         : 'Your own rate follows your first order. '));
       var t=el('table'), th=el('thead'), tr=el('tr');

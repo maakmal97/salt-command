@@ -301,7 +301,9 @@ async function main() {
        board. Nothing has to be published for a link to be right, so minting one can never be wrong.
        tboard:, not board:, deliberately: board:1 and board:2 are the OLD two-board names and board:2
        already means the LAST level, not the second. Reusing them would make 2 mean two things. */
-    for (let k = 1; k <= 5; k++) {
+    /* one a tier, four since 23 Sep 2026: Bronze's tboard:5 is left where it lies and nothing reads it, a link whose
+       level the book no longer names reading the stranger's board instead */
+    for (let k = 1; k < ((pricing.tierNames || []).length || 6); k++) {
       plan.puts.push({ key: "tboard:" + k, value: JSON.stringify(tierBoard(k, bookNow, pricing, madeAt)) });
     }
     /* ============ v658: AND ONE BOARD PER LINK, FROM ITS INTRODUCER'S LEVEL ============

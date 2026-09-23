@@ -4881,8 +4881,9 @@ return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txU
  *      boardSizes  the sizes the board quotes, for walking an off-board size against them
  *      stated      prices HE has set, by size, overriding the derived ask (PRICE_SET[product])
  *      tier1       the second level's two stated ends, by size; absent means this book has one tier
- *      tierRule    the five-tier rule, {multiples,start,step,scaled,rungs}; a book with one IS its
- *                  ladder, and the ask is the last level, Bronze (v656)
+ *      tierRule    the tier rule, {cogs,overhead,multiples,round,decay,from,rungs}, or a stated
+ *                  board {fixed,rungs}; a book with one IS its ladder, and the ask is the last level (v656)
+ *      lastLevel   the last level's name, what a stranger is quoted (TIER_NAMES' last)
  * and costStack() takes the input record the desk's pxInputs() gathers (see there).
  *
  * PORTED VERBATIM. The bodies are the desk's, with the globals replaced by C, P and I. Every
@@ -5342,15 +5343,15 @@ function priceLadder(q,C,P,opts){
 function ladderRow(sizes,C,P){
   const col=(k)=>sizes.map(q=>{try{const L=priceLadder(q,C,P);
     return L&&L[k]&&L[k].total!=null?+L[k].total:null;}catch(e){return null;}});
-  /* v656: THE ROW SAYS WHAT IT IS. With a ladder the ask is Bronze, the level a new customer starts
+  /* v656: THE ROW SAYS WHAT IT IS. With a ladder the ask is the last level, the one a new customer starts
      at, and a row still headed "Tier 2" would print that name over the ladder's prices on the board,
      the printed card and a guest link alike. The CODE is untouched: row zero is read by code and by
      index across the phone, the mirror and the suite, and renaming it would break every one of them
      to say the same thing the name already says. */
   const laddered=!!P.tierRule;
   const rows=[{
-    code:'T2', name:laddered?'Bronze':'Tier 2', dflt:true,
-    who:laddered?'the level a new customer starts at, the last of the five':'the default ask, graded by size, tapered as the supplier tapers',
+    code:'T2', name:laddered?(P.lastLevel||'Tier 2'):'Tier 2', dflt:true,
+    who:laddered?'the level a new customer starts at, the last of the ladder':'the default ask, graded by size, tapered as the supplier tapers',
     prices:col('ask')
   }];
   /* v566: GATED ON tier1Anchors, NOT ON THE RAW FIELD. priceLadder decides whether a book HAS a
@@ -5368,17 +5369,16 @@ function ladderRow(sizes,C,P){
   });
   return rows;
 }
-/* ============ AMBASSADOR AND THE FIVE TIERS, OFF HIS WORKBOOK (his decisions of 14 and 15 Sep 2026) ============
-   prices[0] is Ambassador: the floor itself, COGS plus leakage, rounded up to the ten. The tiers follow,
-   one for each of P.tierRule's multiples, Titanium to Bronze: COGS to the ringgit, times the multiple less
-   a step a rung, rounded up to the ten. Salt's step grows with the multiple, 1 + m x (1 - 0.05 x rung);
-   oil's is flat, m + 0.35 - 0.05 x rung. The rung is a size's row on the board, and a size off the board
-   takes the rung at or below it.
-   TWO GUARDS, IN THIS ORDER. A better level always pays less: each sits at least a ten over the one
-   below, the higher lifting where two meet, which also keeps every tier over the floor, because
-   Ambassador is the floor. And the rate may not rise with size (v328): a price steps down to the ten
-   that holds it flat only where that keeps the first.
-   QUOTED NOWHERE YET: priceLadder, ladderRow and board do not read it. */
+/* ============ AMBASSADOR AND THE TIERS, OFF HIS WORKBOOK (his decisions of 14 and 15 Sep, restated 23 Sep 2026) ============
+   23 Sep 2026, salt-command pricing_v2.xlsx: Ambassador and FOUR tiers, Titanium to Silver. prices[0] is
+   Ambassador, COGS times one and the overhead, up to the ten. Each tier is COGS times its multiple less
+   `decay` for every unit of size past `from`, never under Ambassador, and rounded DOWN or UP to the ten as
+   its column says: salt's are 2.1 down, 2.1 up, 2.5 down and 2.5 up, falling 0.09 a unit from half a unit.
+   TWO GUARDS, IN THIS ORDER, kept on his word of 23 Sep. A better level always pays less: each sits at
+   least a ten over the one below, the higher lifting where two meet. And the rate may not rise with size
+   (v328): a price steps down to the ten that holds it flat only where that keeps the first. They move
+   fourteen of the sheet's 48 tier cells: all four at half a unit and at twelve and a half, three at 2 unit, and Gold at 1.5,
+   2.5 and 3 unit. */
 /* ============ 19 SEP 2026, HIS INSTRUCTION: A PRODUCT MAY HAVE ONE STATED PRICE AND NO TIERS ============
    "For oil, there will no longer be pricing tier since it is not the main product, just a single pricing
    tier. Start at 130 for 10 to 450 at 50. This is the only price for oil, fixed for all."
@@ -5415,15 +5415,24 @@ function fiveTiers(sizes,C,P){
   }
   if(!R||!Array.isArray(R.multiples)||!R.multiples.length||!Array.isArray(R.rungs)||!R.rungs.length)return null;
   /* up to the ten as the workbook's CEILING does: a column landing exactly on a ten stays there, where
-     floating point would read RM50 x 2.2 as 110.00000000000001 and round it to RM120 */
-  const to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to;
+     floating point would read RM28 x 2.5 as 70.00000000000001 and round it to RM80 */
+  const to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
   const rungs=R.rungs.map(Number).sort((a,b)=>a-b);
+  /* 23 SEP 2026, HIS WORKBOOK (salt-command pricing_v2.xlsx): COGS IS THE SUPPLIER'S QUOTE, the highest rate
+     on it, RM56 a unit at 700 a 12.5 unit lot; the live landed cost where the book has no quote */
+  const qr=(P.tiers||[]).filter(t=>t&&t.qty>0&&t.total>0).map(t=>t.total/t.qty);
+  const per=(R.cogs==='quote'&&qr.length)?Math.max.apply(null,qr):null;
   const prevRate=R.multiples.map(()=>Infinity);
   return sizes.map(q=>{
     let rung=0; rungs.forEach((r,i)=>{if(r<=q+0.009)rung=i;});
-    const fl=floorTotal(q,C,P), cogs=Math.round(ladderCogs(q,C));
-    const cols=R.multiples.map(m=>up(cogs*(m+R.start-R.step*(R.scaled?m:1)*rung)));
-    const prices=[up(fl)];
+    const fl=floorTotal(q,C,P), cogs=per!=null?+(per*q).toFixed(2):Math.round(ladderCogs(q,C));
+    /* the sheet's columns: Ambassador is COGS plus the overhead, up to the ten; each tier is COGS times its
+       multiple less `decay` a unit of size past `from`, never under Ambassador, rounded the way its column
+       rounds. Ambassador never goes under break-even either. */
+    const amb=Math.max(up(cogs*(1+R.overhead)),up(fl));
+    const cols=R.multiples.map((m,k)=>{const raw=Math.max(cogs*(m-R.decay*(q-R.from)),amb);
+      return R.round[k]==='down'?down(raw):up(raw);});
+    const prices=[amb];
     cols.forEach((raw,k)=>{
       const least=prices[k]+to;
       let p=Math.max(raw,least);
@@ -6230,6 +6239,7 @@ const AWARDS={
     "why": "Oil turnover counted at his direction: RM400 of salt plus RM100 of oil is exactly the RM500 step."
   }
 };
+/* v793, 23 Sep 2026: his quotes as relayed with the pricing_v2 workbook. Salt SA5-BTR is multiples of 12.5 unit at RM700 each, RM56 a unit flat and held as the one 12.5 unit tier bought in whole lots, replacing the 6.25 to 100 unit taper of 20 Aug. Oil SP7-PUD names 10@100 and 50@380 alone; 15, 20 and 30 are dropped. Candy SM4-KEP 10@55, 20@47, 30@38, 50@30 a unit. Rice SM4-KEP 100@320. */
 /* v776, 22 Sep 2026: QUOTES IS THE BOOK'S OWN MAP, AND supplierQuote AND oilQuote ARE GONE. The two live quotes sat under two top-level keys NAMED AFTER THEIR PRODUCTS, the one per-product thing in this book that was not a map, and the desk's QUOTES was an accessor over them, {salt:()=>supplierQuote, oil:()=>oilQuote}. A third product therefore needed a third key, a third global and an edit in three files, and tools/foldcall.mjs read the pair as a literal two-entry object, so an unregistered product yielded null and its purchase folded with no quote in the dossier while nothing errored. v228's own comment beside the supply panel already stated the shape it wanted, one panel driven by QUOTES so a third product needs an entry there and nothing here, and the panel has told him to add one to QUOTES ever since; this is that, finished. quoteFor reads the map directly, the accessor is retired, and QUOTES leaves NOT_LEDGER for LEDGER because it is a record now and not a lookup. oilQuote's own product field goes with it: the key is the product, and nothing ever read the field. */
 /* v505, 07 Sep 2026: the 25 unit tier is RM 1,200 on his word; the other four tiers stand as quoted on 20 Aug. */
 /* v517, 08 Sep 2026: the 100 unit tier is RM 4,000 on his word, down RM 300 from the RM 4,300 quoted on 20 Aug; the other four tiers stand. The salt taper refits from -0.100 to -0.121 and five asks come down RM 10 (RM 30 at 12.5 unit); no floor moves. */
@@ -6237,70 +6247,72 @@ const AWARDS={
 const QUOTES={
   "salt": {
     "supplier": "SA5-BTR",
-    "quotedOn": "2026-08-20",
+    "quotedOn": "2026-09-23",
     "kind": "live quote",
     "tiers": [
       {
-        "qty": 6.25,
-        "total": 350,
-        "note": "RM56/unit. The smallest lot has never been quoted as its own tier before, and it comes in at the rate the 12.5 unit step used to cost."
-      },
-      {
         "qty": 12.5,
-        "total": 650,
-        "note": "RM52/unit, RM50 off the RM700 this size has cost on every lot since 08 Jul."
-      },
-      {
-        "qty": 25,
-        "total": 1200,
-        "note": "RM48/unit, his word 07 Sep 2026, down from the RM1,250 quoted on 20 Aug; the two 25 unit lots of 02 and 03 Sep already landed at this rate."
-      },
-      {
-        "qty": 50,
-        "total": 2200,
-        "note": "RM44/unit, back to exactly the RM2,200 quoted on 10 Jul after this tier moved up."
-      },
-      {
-        "qty": 100,
-        "total": 4000,
-        "note": "RM40/unit on his word of 08 Sep 2026, down RM300 from the RM4,300 quoted on 20 Aug; cheaper than any rate this desk has ever been quoted or has ever paid."
+        "total": 700,
+        "note": "RM56/unit. His word of 23 Sep 2026: multiples of 12.5 unit at RM700 each, so one tier bought in whole lots."
       }
     ]
   },
   "oil": {
     "supplier": "SP7-PUD",
-    "quotedOn": "2026-09-07",
+    "quotedOn": "2026-09-23",
     "kind": "live quote",
     "tiers": [
       {
         "qty": 10,
         "total": 100,
-        "note": "RM10/unit, unchanged from 06 Aug; the smallest lot and the highest rate"
-      },
-      {
-        "qty": 15,
-        "total": 150,
-        "note": "RM10/unit, a new tier on 07 Sep; the same rate as 10 unit, so it buys nothing but size"
-      },
-      {
-        "qty": 20,
-        "total": 180,
-        "note": "RM9/unit, unchanged from 06 Aug"
-      },
-      {
-        "qty": 30,
-        "total": 250,
-        "note": "RM8.33/unit, up from the RM230 (RM7.67) quoted on 06 Aug, the tier the 26 Aug lot was bought on"
+        "note": "RM10/unit, as quoted; his word of 23 Sep 2026 names this tier and 50 unit alone."
       },
       {
         "qty": 50,
         "total": 380,
-        "note": "RM7.60/unit, up from the RM350 (RM7) quoted on 06 Aug and paid on the 11 Aug lot; still the sharpest"
+        "note": "RM7.60/unit, as quoted."
       }
     ]
   },
-  "candy": null,
-  "rice": null,
+  "candy": {
+    "supplier": "SM4-KEP",
+    "quotedOn": "2026-09-23",
+    "kind": "live quote",
+    "tiers": [
+      {
+        "qty": 10,
+        "total": 550,
+        "note": "RM55/unit, his word of 23 Sep 2026."
+      },
+      {
+        "qty": 20,
+        "total": 940,
+        "note": "RM47/unit."
+      },
+      {
+        "qty": 30,
+        "total": 1140,
+        "note": "RM38/unit; the 21 Sep lot of 35 unit came in at this total."
+      },
+      {
+        "qty": 50,
+        "total": 1500,
+        "note": "RM30/unit."
+      }
+    ]
+  },
+  "rice": {
+    "supplier": "SM4-KEP",
+    "quotedOn": "2026-09-23",
+    "kind": "live quote",
+    "tiers": [
+      {
+        "qty": 100,
+        "total": 320,
+        "note": "RM3.20/unit, his word of 23 Sep 2026; the 21 Sep lot was bought at it."
+      }
+    ]
+  },
   "spare": null
 };
 const CASH_COUNT_RETIRED={
@@ -7281,7 +7293,9 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    v324 onward, which tabJournal maps in full; master/changelog.json carries every entry
    ever written and is the record. So a bump PREPENDS its entry. Replacing the array,
    which both comments invited, silently drops the whole window. */
-const evolution=[{"v":"v791","d":"23 Sep 2026","t":"P029 READ AS SALT, AND THE RM160 CLOSED","n":["<b>FOLDED: TWO AMENDMENTS, BOTH AGAINST SA5-BTR'S LOT P029 OF 22 SEP.</b> The first is a correction that sets the product on that row from rice to salt. The second is a fulfilment of RM160 cash on 22 Sep. Both were decided at the desk on 22 Sep and sit on the same order, 25 unit for RM1,400 at RM56 a unit, received in full on the day.","<b>UNUSUAL: A BUY ROW THAT CHANGED WHAT IT WAS BEFORE IT CHANGED WHAT IT OWED.</b> The correction moves no cash and no stock, it changes only what the row says about itself, and the drafter raised no flag on it. The fulfilment carries the drafter's flag that it settles the order in full, and the figures answer that: RM160 against RM160 outstanding, leaving nothing open. The inventory held at 1 unit of stock and did not reprice."]},
+const evolution=[{"v":"v793","d":"23 Sep 2026","t":"THE PRICING_V2 WORKBOOK: SALT IS AMBASSADOR AND FOUR TIERS ON RM56, CANDY AND RICE ARE STATED A UNIT","n":["<b>HIS WORKBOOK OF 23 SEP 2026, salt-command pricing_v2.xlsx.</b> Salt's COGS is the supplier's quote, RM56 a unit, and moves only when the quote does. Ambassador is COGS plus half again, up to the ten. The four tiers are the sheet's columns: 2.1 times COGS rounded down, 2.1 up, 2.5 down and 2.5 up, each multiple falling 0.045 every half unit past half a unit and never under Ambassador. One unit reads RM90, 110, 120, 130 and 140.","<b>HIS FOUR ANSWERS THAT DAY.</b> Bronze goes, so the tiers are Titanium, Platinum, Gold and Silver and a stranger is quoted Silver; nobody held Bronze. COGS is the quote, not the live landed cost. Candy from 10 to 29 unit is RM55 a unit. And the engine keeps its two guards over the sheet, a better level at least a ten under the next and a rate that never rises with size, which moves fourteen of the sheet's 48 tier cells (all four at half a unit and at twelve and a half, three at 2 unit, and Gold at 1.5, 2.5 and 3): half a unit reads 50, 60, 70, 80 and 90 where the sheet had 50, 50, 60, 70 and 70, and twelve and a half reads 1,050 to 1,090 where every column met Ambassador at 1,050.","<b>CANDY AND RICE ARE SINGLE TIER, STATED A UNIT, AS OIL IS.</b> Candy RM60 a unit under 10, RM55 to 29, RM50 from 30; rice RM8, RM7 from 5, RM6 from 10. Both round to the ringgit. A size between rungs is its rung's rate times the size, so at a break a bigger order can cost less in total: 29 candy is RM1,595 and 30 is RM1,500, 9 rice RM63 and 10 RM60. That is the rates as he stated them. The rice board's inversion under the ten-rounding, open since v791, is gone with it.","<b>THE QUOTES AS HE RELAYED THEM.</b> Salt from SA5-BTR in multiples of 12.5 unit at RM700 each. Oil from SP7-PUD at 10 for RM100 and 50 for RM380, the 15, 20 and 30 unit tiers dropped. Candy from SM4-KEP at RM55, 47, 38 and 30 a unit for 10, 20, 30 and 50. Rice from SM4-KEP at 100 for RM320. Oil's own board is unchanged.","<b>A TIER IS SALT'S ALONE.</b> His words that day: each customer is quoted differently for salt, and everyone the same for oil, candy and rice. The Tiers card, Accept all and Add ID offer a tier on a tiered book only, so no level is proposed or held where it moves no price. The two oil tiers already held stay on the book and price nothing. On the Counter a stated board now carries no level, so the page draws no mark beside it and says it is the same price for everybody; since 19 Sep it had drawn Ambassador's mark beside oil for every customer and told them their own rate followed their first order.","<b>THE COUNTER FOLLOWS THE NUMBER OF TIERS.</b> The standing guest links are one a tier rather than exactly five. Bronze's link is kept, because an id handed out must keep opening something, and it opens the stranger's board, which is Silver's."]},
+{"v":"v792","d":"22 Sep 2026","t":"THE FOLD NO LONGER STOPS FOR WANT OF A MODEL","n":["<b>NO KEY, NO CREDIT, NO ANSWER: THE FOLD LANDS ANYWAY.</b> <code>tools/foldnotes.mjs</code> writes the same notes object off the same dossier the call was going to be handed, and <code>tools/foldcall.mjs</code> takes it on three roads: no ANTHROPIC_API_KEY, a call that will not go through, and a reply twice against the house rules. The Fold step's own exit on a missing key is a warning now, and <code>--no-model</code> asks for the tool's notes outright. On 22 Sep a credit balance of nothing exited that step twice inside a minute and left two approved rows staged with the deploy, the marks, the mirror, the statements and the suite all behind them.","<b>WHAT IS LOST IS THE JUDGEMENT, AND IT IS SAID WHERE IT IS READ.</b> A model reads the drafter's flag against the figures and says whether they answer it; the tool names the flag and stops there. So every row note it writes ends on the line that no judgement is recorded in it, and the version entry says the same, because a reader holding one row should not have to come to the Journal to learn which kind of note they are holding.","<b>THE ONE UNTRUSTED STRING IS SCRUBBED FIRST.</b> The reason is quoted into the notes, and an API error can carry an em-dash, the wrong unit, the word this house does not write, or markup, every one of which the checker refuses. Notes that could not pass would leave the batch staged for the very reason this road exists to remove, so the tool's notes are put through the same check a model's reply is. Eight assertions, each proved red by its own mutation, one at a time.","<b>AND A LOT'S OUTSTANDING FIGURE IN THE DOSSIER WAS WRONG.</b> <code>partyDossier</code> read the total less the row's own cash, so a lot carrying no cash field at all counted as wholly unpaid: SA5-BTR read RM3,260 outstanding where the engine's <code>poOwed</code> reads RM160, and every purchase note written off this dossier had been repeating the larger figure. It reads <code>poOwed</code> now, which reads the trail."]},
+{"v":"v791","d":"23 Sep 2026","t":"P029 READ AS SALT, AND THE RM160 CLOSED","n":["<b>FOLDED: TWO AMENDMENTS, BOTH AGAINST SA5-BTR'S LOT P029 OF 22 SEP.</b> The first is a correction that sets the product on that row from rice to salt. The second is a fulfilment of RM160 cash on 22 Sep. Both were decided at the desk on 22 Sep and sit on the same order, 25 unit for RM1,400 at RM56 a unit, received in full on the day.","<b>UNUSUAL: A BUY ROW THAT CHANGED WHAT IT WAS BEFORE IT CHANGED WHAT IT OWED.</b> The correction moves no cash and no stock, it changes only what the row says about itself, and the drafter raised no flag on it. The fulfilment carries the drafter's flag that it settles the order in full, and the figures answer that: RM160 against RM160 outstanding, leaving nothing open. The inventory held at 1 unit of stock and did not reprice."]},
 
 {"v":"v790","d":"22 Sep 2026","t":"THE RAIL, THE BAR AND THE TAGS DRAW FROM THE SYSTEM'S RECIPES, AND NOTHING LOADS OFF GOOGLE FONTS","n":["<b>HIS INSTRUCTION OF 22 SEP 2026: no Google Fonts, complete the work, one fold at a time, the rail, the bar and the tags first.</b> v784 put the tiles, findings, pills, parts strip, version and aurora onto the design system's recipes. The rail, the bar with its orbs, and the state tags follow here: each recipe first synced to the desk's measured values in <code>Code\\salt-ds</code> (v1.2.1, which also carries the recipes the next folds will take), then carried by class in the markup, the layer keeping bindings and geometry only.","<b>TWO MECHANISMS CARRY THE DESK'S OWN STATE INTO A RECIPE WITHOUT A SECOND RULE.</b> A state word binds to the chip's one tone variable (<code>.tag.paid{--salt-status-tone:...}</code>), so 38 tags and the ledger's own variants moved with eight one-line bindings; the open destination and its open page are read off <code>aria-current</code>, which the recipes honour beside their own modifier classes, so the desk's <code>.on</code> and <code>.solo</code> stay where its script and its suite read them. The rail's width and stickiness live in the recipe under the desk's own media rule, and on a touch phone the drawer's geometry stays the page's, measured: fixed, hidden until the button, the pane fill, the veil. The one base rule that outranked the recipe, the brand-hiding media rule, moved into the layer, where it wins.","<b>THE BAR IS THE RECIPE'S FRAME.</b> Glass with the hairline at the rail's offset, the wordmark in the display face, the quiet mono line, the version and the orbs, all from the system; the desk binds only where it sits (<code>--salt-bar-top</code>) and keeps its own cap once the page scrolls. The orbs are one recipe in three states: bare in the bar, raised over the page, lit as the way back to the top. Measured on the served build at 1180px and 375px against the recipes and against the previous build: the phone's bar is the same 105px it was.","<b>NO GOOGLE FONTS ANYWHERE.</b> The design system's remote stylesheet is gone, its brand plate links the local one, its files moved beside it into <code>src/fonts/</code>, its dist and its Claude Design bundle carry them, and both sync tools pull from the new home. Three suite sections were re-pointed from the layer to the recipes; one new section holds 8 assertions, each proved red on its own; the earlier sections still stand. Ghosts, fields, tables, tiers, product bands and tags, actions and journal entries stay on the layer, each a fold of its own."]},{"v":"v789","d":"22 Sep 2026","t":"ENTER, REDESIGNED: TILES FOR BOOKS, A TYPED PARTY, A DATE THAT STEPS, AND A SECOND BOOK","n":["<b>HIS INSTRUCTION OF 22 SEP 2026, reading the form on screen and naming what was wrong with it.</b> The product dropdown becomes a TILE A BOOK: the dot in the book’s own accent, the name beneath, the chosen one lit in that hue. The select survives, hidden, and is still the value, so <code>wbProdVal</code> and every reader behind it are untouched; the tiles set it and fire its own change, the road <code>setProdView</code> was always reached by.","<b>THE PARTY IS TYPED OR CHOSEN</b>, over the same hidden-select trick, so every reader still gets a CODE. It matches on the code and on the drawn name, both case-insensitively, and it NEVER guesses at a partial: <code>CZ4</code> leaves the select empty and the form refuses it, because a near miss that silently booked to the wrong party is the costliest slip this form could make. Every party list is already in alphabetical order since v783.","<b>THE DATE STEPS A DAY AT A TIME</b>, by tap or by arrow key, through one <code>dateStep</code> so the buttons and the keys cannot disagree. That is a TRADE and it is stated rather than discovered: a native date input uses Left and Right to move between its day, month and year segments, and binding them takes that away. Typing digits still advances the segments, which is how a whole date is entered, and Up and Down are left alone.","<b>A SECOND BOOK IS A SECOND TRANSACTION FOR THE SAME PARTY.</b> Tapping another tile adds a book with its own row of figures, and Record queues one entry a book, sharing the party, the date and the direction, each through the same <code>entryFault</code> and <code>replayAnswer</code> guards the first went through. Three rules on a tile: a book not in the entry joins and becomes active, a book in but not active becomes active, and the active book tapped leaves unless it is the last.","<b>v409 CALLED TWO PRODUCTS IN ONE FORM A FAULT, and that ruling holds here.</b> The margin, the free inventory and the price coach all read the ACTIVE book, so a form holding two read one and recorded the other. The active book still drives every reading; the books after it are plain orders. A gift, a reward cover and a resale are properties of ONE order, each judged against the active book’s cost, ladder and reward, so an entry carrying any of them with a second book is REFUSED and the message says which. <b>That refusal stands ahead of every push, and testing is why</b>: placed after the gift branch, which queues its row and RETURNS, a gift ticked with a second book queued the gift and dropped the other book in silence.","<b>AND THE FULL SHEET OPENS FROM THE CORNER.</b> The panel it opens was already a side drawer, fixed right at 100dvh; what sat in the flow was the button. It keeps the design system’s pill recipe that v784 put on it: the corner is where the control sits, not what it is made of."]},{"v":"v788","d":"22 Sep 2026","t":"THREE LOTS IN, TWO OUT, AND A BLEND STILL UNANSWERED","n":["<b>FIVE ROWS FOLDED, THREE BUYS AND TWO SALES, ALL CASH ON THE DAY.</b> SM4-KEP supplied 35 unit of candy for RM1,140 and 100 unit of rice for RM320 beside RM20 freight, both paid and moved in full on 21 Sep. SA5-BTR delivered 25 unit of rice for RM1,400 on 22 Sep against RM1,240 cash, so RM160 stays open on an account already carrying RM3,100. Nothing on the two SM4-KEP rows is left outstanding.","<b>THE SALES BOTH RAN TO CZ4-MK ON 21 SEP AT RM460 A ROW.</b> Five unit of salt at RM92 a unit clears the RM259.22 floor for that size and sits RM100 under the RM560 ask, costed at RM48 a unit, the inventory's own rate. Ten unit of candy at RM46 a unit carries no cost and no ladder, the floor and ask for 10 unit both standing at zero. Both were collected and paid in full.","<b>TWO DRAFTER FLAGS SURVIVE THE FOLD UNANSWERED.</b> The salt row is costed on an inventory average of RM48 a unit while the shelf spans more than one lot rate, and the dossier carries no lot split, so the blend is not resolved here. The candy sale has no committed candy order for CZ4-MK to test the rate against. The inventory took the salt row out of a shelf of 6 unit counted on 21 Sep."]},
 
@@ -7936,7 +7950,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='23 Sep 2026, 08:22 KL';
+const LAST_UPDATED='23 Sep 2026, 09:05 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -8743,7 +8757,9 @@ const PRICE_ENGINE={
      (RM720 and RM900 on 16 Sep, RM9.00 a unit). */
   sizesBy:{
     salt:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
-    oil:[10,20,30,40,50]   /* 19 Sep 2026: five sizes, his board. 80 and 100 went with the tiers. */
+    oil:[10,20,30,40,50],   /* 19 Sep 2026: five sizes, his board. 80 and 100 went with the tiers. */
+    candy:[1,5,10,20,30],   /* 23 Sep 2026: his three rates and a size inside each */
+    rice:[1,5,10]
   },
   /* which rungs are PRINTED. A product with no entry prints every rung it has. Empty since
      round 5: oil's grid IS its board now, so the mechanism stands and nothing uses it. */
@@ -9634,31 +9650,41 @@ const LADDER_BY={
      quoted RM700. Oil has one tier on its own merits too: its board is his stated price at all
      five sizes and the 50 unit rung already earns 3%, so there is nothing for a second tier to sit
      under. Give it two ends here the day he states them. */
-  oil:{anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0, tier1:null}   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
+  oil:{anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0, tier1:null},   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
+  /* 23 Sep 2026: stated a unit in single ringgit, so they round to the ringgit and not the ten */
+  candy:{round:{to:1, up:true}, tier1:null},
+  rice:{round:{to:1, up:true}, tier1:null}
 };
 function ladderFor(p){const o=LADDER_BY[p||PROD];return o?{...LADDER,...o}:LADDER;}
-/* ============ AMBASSADOR AND THE FIVE TIERS, PER BOOK (his decisions of 14 and 15 Sep 2026) ============
-   His pricing workbook as stated rules, as he restructured it on 15 Sep: Ambassador pays the floor, and the
-   five tiers are columns at multiples running EVENLY from 1.0 to 2.5 (his decision of 15 Sep, v644), so 0.5
-   unit of salt starts them at RM50, 60, 70, 80 and 90 and 1 unit reads his own RM100, 110, 130, 150 and 160.
-   multiples are the tiers' columns, Titanium first; start and step are the
-   adjustment the sheet's formulas make a rung; scaled says whether the step grows with the multiple, which
-   salt's does and oil's does not; rungs are the sheet's rows, oil gaining 80 and 100 unit. fiveTiers in the
-   ENGINE block reads it. Drawn on the Pricing page, and QUOTED: since v656 the board's ask is its last
-   level, and since v651 a customer's own price list is the level they hold. */
+/* ============ AMBASSADOR AND THE TIERS, PER BOOK (his workbook of 23 Sep 2026, salt-command pricing_v2.xlsx) ============
+   Salt is Ambassador and FOUR tiers. COGS is the supplier's quote, RM56 a unit (700 a 12.5 unit lot), and moves
+   only when the quote does. Ambassador is COGS plus the overhead, half again, up to the ten. The tiers are the
+   sheet's four columns, Titanium first: 2.1 times COGS rounded down, 2.1 up, 2.5 down, 2.5 up, each multiple
+   falling 0.045 every half unit of size past half a unit and never under Ambassador. The engine keeps its two
+   guards over the sheet, on his word of 23 Sep: a better level pays at least a ten less, and the rate never
+   rises with size. So 1 unit reads RM90, 110, 120, 130 and 140. fiveTiers in the ENGINE block reads it; since
+   v656 the board's ask is its last level, and since v651 a customer's own price list is the level they hold. */
 const TIER_RULE={
-  salt:{multiples:[1,1.375,1.75,2.125,2.5], start:1, step:0.05, scaled:true, rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5]},
+  salt:{cogs:'quote', overhead:0.5, multiples:[2.1,2.1,2.5,2.5], round:['down','up','down','up'], decay:0.09, from:0.5,
+        rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5]},
   /* 19 Sep 2026, HIS INSTRUCTION: oil has no pricing tier. One board, typed, the same for every
      customer, RM13 a unit falling a ringgit every ten to RM9. FIVE SIZES: he typed five prices and
      the engine does not extrapolate his taper, so 80 and 100 would have held flat at RM9 and quoted
      RM720 and RM900; he was asked and chose to drop them. `fixed` is what makes fiveTiers state the
      board instead of striking columns, and `multiples`, `start` and `step` are gone because with one
      price there is nothing for them to say. */
-  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50]}
+  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50]},
+  /* 23 SEP 2026, HIS INSTRUCTION: candy and rice are single tier too, stated a unit. Candy RM60 a unit under 10,
+     RM55 from 10 to 29 (his answer that day), RM50 from 30. Rice RM8 a unit, RM7 from 5, RM6 from 10. A size
+     between rungs is its rung's rate times the size, which is what a rate a unit means; both books round to the
+     ringgit (LADDER_BY) so a rate of RM8 is not rounded to a ten. */
+  candy:{fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30]},
+  rice:{fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10]}
 };
-/* the levels' names, cheapest first: Ambassador pays the floor, on his word alone and earning no free units;
-   Titanium to Bronze are the tiers, and a new customer starts at Bronze */
-const TIER_NAMES=['Ambassador','Titanium','Platinum','Gold','Silver','Bronze'];
+/* the levels' names, cheapest first: Ambassador, on his word alone and earning no free units; Titanium to
+   Silver are the tiers, and a new customer starts at Silver, the last. Bronze went on 23 Sep 2026, his choice
+   when the workbook came down to four tiers; nobody held it. */
+const TIER_NAMES=['Ambassador','Titanium','Platinum','Gold','Silver'];
 /* THE SUPPLIER'S OWN ELASTICITY, FITTED RATHER THAN TYPED. Least squares of ln(rate) on ln(qty)
    across every tier of the live quote. It returns the exponent and the r-squared, and the r-squared
    is reported on the tab rather than hidden: a ladder that does not actually follow a power law
@@ -16116,6 +16142,7 @@ function pxPolicy(){
     stated:setPricesFor(PROD),
     tier1:ladderFor(PROD).tier1||null,
     tierRule:(typeof TIER_RULE!=='undefined'?TIER_RULE[PROD]:null)||null,
+    lastLevel:TIER_NAMES[TIER_NAMES.length-1],   /* 23 Sep 2026: the row's name, which was the literal Bronze */
     tiers:(pq&&pq.tiers)?pq.tiers:[],
     boardSizes:(typeof sizesFor==='function')?sizesFor(PROD):[]};
 }
@@ -16123,7 +16150,10 @@ function pxCost(){ return PRICING_ENGINE.costStack(pxInputs()); }
 /* the five tiers for the book in view, on its own rungs; null for a book with no rule */
 function fiveTiersNow(){
   const R=TIER_RULE[PROD];
-  return R?PRICING_ENGINE.fiveTiers(R.rungs,pxCost(),pxPolicy()):null;   /* v656: the policy carries the rule */
+  /* 23 Sep 2026: the board's own sizes walked with the rungs, so candy's 5 and 20 unit reach the customer's list; salt's and
+     oil's sizes are their rungs, so theirs do not move */
+  const sizes=R?R.rungs.concat(sizesFor(PROD).filter(q=>!R.rungs.some(r=>Math.abs(r-q)<0.009))).sort((a,b)=>a-b):null;
+  return R?PRICING_ENGINE.fiveTiers(sizes,pxCost(),pxPolicy()):null;   /* v656: the policy carries the rule */
 }
 /* ============ v643, HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER, BEFORE ANY QUOTE READS IT ============
    A tier for each product since v646 (his instruction of 15 Sep 2026): a customer can hold Gold on salt and Silver on oil.
@@ -16133,6 +16163,9 @@ function fiveTiersNow(){
    Ambassador, which is his word alone; and a product they have never bought is proposed nothing and reads not set until he
    sets it. QUOTED EVERYWHERE SINCE v651 AND v652: the customer's price list, the printed board and every
    quote the desk makes to a named customer read TIER_OF through cardQuote. */
+/* 23 SEP 2026, HIS WORDS: "each customer will be quoted differently for salt, but everyone will have the same quote for oil,
+   candy and rice". A book whose rule is a stated board has no tier to hold, so no tier is offered, proposed or set on it. */
+function tieredBooks(){return PROD_IDS.filter(p=>TIER_RULE[p]&&!TIER_RULE[p].fixed);}
 function tierBoards(){
   const keep=PROD,out={};
   try{PROD_IDS.forEach(p=>{if(!TIER_RULE[p])return;PROD=p;recompute();out[p]=fiveTiersNow();});}
@@ -16191,6 +16224,7 @@ function buyerProfile(code,prod){
    cannot decide their level. It was measured across every size on the board, which handed the decision to the biggest rung:
    adding 80 and 100 unit to oil moved two customers a level on sizes neither of them buys (v654). */
 function tierProposal(code,prod,boards){
+  if(!tieredBooks().includes(prod))return null;   /* 23 Sep 2026: a stated board is one price for all; no level is proposed on it */
   const B=(boards[prod]||[]).filter(r=>sizesFor(prod).some(s=>Math.abs(s-r.q)<0.009)),own=pbOwnRate(code,prod);
   if(!B.length||own.rate==null)return null;
   const mine=pbOrders(code,prod).map(s=>B.reduce((best,r)=>Math.abs(r.q-s.qty)<Math.abs(best.q-s.qty)?r:best,B[0]));
@@ -16202,8 +16236,8 @@ function tierProposal(code,prod,boards){
    tierProposal reads the level nearest what a customer pays. These rules move it on their profile and the stock, and what
    they return is still a PROPOSAL: a tier HELD on the book is his word and is never moved by a rule, only offered one.
    His four, in the order they are applied:
-   1. RARE AND LATE TWICE: down one level at every size. Bronze stays Bronze. A late payer is offered no promotion either.
-   2. FREQUENT AND SMALL: one level worse from three units, Bronze staying Bronze; their normal level below that. A band
+   1. RARE AND LATE TWICE: down one level at every size. The last level stays there. A late payer is offered no promotion either.
+   2. FREQUENT AND SMALL: one level worse from three units, the last level staying there; their normal level below that. A band
       set. NO BETTER LEVEL ON HALF A UNIT OR A UNIT, his decision of 16 Sep 2026: their own rate already covers it, because a
       card is never above what they pay and these customers pay a keen rate on exactly those sizes. Measured that day, the
       three small-and-often customers were all proposed Titanium, where the only better level is Ambassador, his word alone,
@@ -16282,7 +16316,7 @@ function tierSet(code){
 }
 function tierAcceptAll(){
   const boards=tierBoards(),waiting=tierQueued(),t={};
-  tierCustomers().forEach(id=>PROD_IDS.forEach(p=>{
+  tierCustomers().forEach(id=>tieredBooks().forEach(p=>{
     if((TIER_OF[id]||{})[p]||(waiting[id]&&p in waiting[id]))return;
     const pr=ruleProposal(id,p,boards);if(pr)(t[id]=t[id]||{})[p]=pr;}));   /* v671: the rules' proposal, band set or level */
   tierQueue(t);
@@ -16301,11 +16335,11 @@ function tierCard(){
     const bandLine=bands?`<br><span class="iref">${levelSay(shown)}</span>`:'';
     /* one line a product, so a dropdown keeps the width of its longest level on a phone rather than sharing a row with the others */
     return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="min-width:5em;line-height:1.25">${PRODUCTS[p].name}<br><span class="iref">${state}</span>${bandLine}</div><select id="tierSel_${id}_${p}" aria-label="${PRODUCTS[p].name} tier for ${codeOf(id)}" style="min-height:var(--tap);width:auto">${bands?'<option value="__bands" selected>Keep the bands</option>':''}<option value=""${shown?'':' selected'}>Not set</option>${TIER_NAMES.map(n=>`<option${n===shown?' selected':''}>${n}</option>`).join('')}</select></div>`;};
-  const body=ids.map(id=>`<tr><td class="l mono">${ID(id)}<br><button class="vbtn salt-pill salt-pill--sm" style="min-height:var(--tap);margin-top:6px" onclick="tierSet('${id}')">Set</button></td><td class="l">${PROD_IDS.map(p=>cell(id,p)).join('')}</td></tr>`).join('');
+  const body=ids.map(id=>`<tr><td class="l mono">${ID(id)}<br><button class="vbtn salt-pill salt-pill--sm" style="min-height:var(--tap);margin-top:6px" onclick="tierSet('${id}')">Set</button></td><td class="l">${tieredBooks().map(p=>cell(id,p)).join('')}</td></tr>`).join('');
   return `<div class="card"><div class="cardh">Tiers <span class="sub">one for each product; it is what they are quoted</span></div>
     <div class="tscroll"><table class="tiertab"><thead><tr><th class="l">Customer</th><th class="l">Tier for each product</th></tr></thead><tbody>${body}</tbody></table></div>
     ${open?`<button class="vbtn salt-pill salt-pill--sm" style="min-height:var(--tap);margin-top:8px" onclick="tierAcceptAll()">Accept ${open} proposal${open===1?'':'s'}</button>`:''}
-    <div class="insight salt-insight">${held} of ${ids.length*PROD_IDS.length} product tiers are held; a tier moves only when you approve it, and a product a customer has never bought is proposed nothing until you set it.</div></div>`;
+    <div class="insight salt-insight">${held} of ${ids.length*tieredBooks().length} product tiers are held; ${PROD_IDS.filter(p=>TIER_RULE[p]&&TIER_RULE[p].fixed).map(p=>PRODUCTS[p].name).join(', ')} are one price for everybody; a tier moves only when you approve it, and a product a customer has never bought is proposed nothing until you set it.</div></div>`;
 }
 
 /* ---- layer 3: five readings, each worth a few points, summed then clamped ---- */
@@ -18938,7 +18972,7 @@ function tabWorkbench(){
         <div class="qfield" id="wbApParentCell" style="display:none"><label>Under which associate</label><select id="wbApParent"></select></div>
         <div class="qfield" id="wbApNameCell"><label>Name</label><input id="wbApName" type="text" placeholder="as they are known" autocomplete="off"></div>
         <div class="qfield" id="wbApPlaceCell"><label>Place</label><input id="wbApPlace" type="text" list="wbPlaces" placeholder="choose, or type a town or area; blank if to be confirmed" autocomplete="off"></div>
-        <div class="qfield" id="wbApTierCell"><label>Starting tiers</label>${/* v780: BRONZE IS PRESELECTED ONLY WHERE A BOOK CAN PRICE. Every book defaulted to Bronze, so the moment three books were opened every party registered picked up a starting tier on three books with no ladder, no cost and no way to price them: data that means nothing, written on every registration. A book with no TIER_RULE opens on "not set", which is what it is. */ ""}${PROD_IDS.map(p=>`<select id="wbApTier_${p}" aria-label="Starting tier for ${PRODUCTS[p].name}" style="min-height:var(--tap)"><option value="">${PRODUCTS[p].name}: not set</option>${TIER_NAMES.map(n=>`<option value="${n}"${(n==='Bronze'&&!!TIER_RULE[p])?' selected':''}>${PRODUCTS[p].name}: ${n}</option>`).join('')}</select>`).join(' ')}</div>
+        <div class="qfield" id="wbApTierCell"><label>Starting tiers</label>${/* v780: THE LAST LEVEL IS PRESELECTED ONLY WHERE A BOOK CAN PRICE. Every book defaulted to Bronze, so the moment three books were opened every party registered picked up a starting tier on three books with no ladder, no cost and no way to price them: data that means nothing, written on every registration. A book with no TIER_RULE opens on "not set", which is what it is. */ ""}${tieredBooks().map(p=>`<select id="wbApTier_${p}" aria-label="Starting tier for ${PRODUCTS[p].name}" style="min-height:var(--tap)"><option value="">${PRODUCTS[p].name}: not set</option>${TIER_NAMES.map(n=>`<option value="${n}"${(n===TIER_NAMES[TIER_NAMES.length-1])?' selected':''}>${PRODUCTS[p].name}: ${n}</option>`).join('')}</select>`).join(' ')}</div>
         <div class="qfield" style="flex:1"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbApNote" type="text" placeholder="never the name or the place"></div>
       </div>
       <div class="dsc">The code is made from what you type, never typed itself: <b>C</b> for a customer or <b>S</b> for a supplier, the name&rsquo;s first letter and its length, then the place, its initials when it is several words and its first three letters when it is one. So a four-letter name starting with A is <b>CA4</b>, and with its place <b>CA4-DAM</b>; a blank place gives <b>TBC</b>. If the code is taken, it takes one more letter of the name, as <b>CAB4-DAM</b>. The name goes into the vault on this device, encrypted, and never into the queue.<br>To <b>appoint someone already on the roster</b>, pick Associate or Referrer and choose them under <b>Who</b>: it confers the standing rather than registering a second time, asks for no name, and an associate is given their <b>-R</b> resell account with it.</div>

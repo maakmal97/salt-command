@@ -959,6 +959,10 @@ await (async () => {
     ok(/- name: Fold\n\s+if: steps\.plan\.outputs\.fold == '1'\n\s+env:\n\s+ANTHROPIC_API_KEY: \$\{\{ secrets\.ANTHROPIC_API_KEY \}\}/.test(wf) && /\n\s+node tools\/foldcall\.mjs\n/.test(wf), "the Fold step runs in the same job, only when the plan says a batch is staged, and it is tools/foldcall.mjs on the API key");
     ok(/if \[ "\$\{\{ steps\.guard\.outputs\.staged \}\}" = "1" \] \|\| \[ "\$\{\{ steps\.commit\.outputs\.staged \}\}" = "1" \]; then fold=1; fi/.test(wf) && /echo "skip=1" >> "\$GITHUB_OUTPUT"\n(?:\s+#[^\n]*\n)*\s+echo "staged=1"/.test(wf),
        "a batch already staged counts as staged, so a batch a failed fold left behind is folded on the next tick rather than never");
+    /* v791: A MISSING KEY NO LONGER EXITS THE STEP (his instruction of 22 Sep 2026). The guard
+       stays and says it as a warning; foldcall writes the notes with the tool and the fold lands. */
+    ok(/ANTHROPIC_API_KEY:-\}" \]; then\n(?:\s*#[^\n]*\n)*\s+echo "::warning::ANTHROPIC_API_KEY is not set/.test(wf) && !/::error::ANTHROPIC_API_KEY/.test(wf) && !/ANTHROPIC_API_KEY is not set[\s\S]{0,200}?exit 1/.test(wf),
+       "a missing key is a warning in the Fold step and never an exit: the batch is not left staged for want of a judgement");
     ok(!/claude-code-action/.test(wf) && !/CLAUDE_CODE_OAUTH_TOKEN: \$\{\{ secrets/.test(wf) && /node tools\/ledger\.mjs\n\s+npm run build\n\s+node tools\/gate\.mjs\n/.test(wf) && /git push origin HEAD:master\n\s+echo "folded and pushed/.test(wf),
        "the Claude Code action is gone from the job: the fold step folds, extracts, builds, tests and pushes as the runner, which starts no second run");
     ok(/if \[ "\$\{\{ github\.event_name \}\}" = "push" \]; then deploy=1; fi/.test(wf) && /\[ "\$\{\{ inputs\.stage_only \}\}" != "true" \] && \[ "\$\{\{ inputs\.probe_key \}\}" != "true" \]; then deploy=1; fi/.test(wf) && /if \[ "\$fold" = "1" \]; then deploy=1; fi/.test(wf),
@@ -2918,8 +2922,10 @@ await (async () => {
     "oil's policy tiers are the oil quote's");
   const oilB = read("buyTaper()");
   ok(oilB.b != null && oilB.b < 0, "oil's taper is fitted and falls with size");
-  ok(saltB.b != null && Math.abs(oilB.b - saltB.b) > 1e-6,
-    "the two books fit different exponents, so the taper is genuinely per book");
+  /* 23 Sep 2026: salt's quote is one tier, multiples of 12.5 at RM700, so there is no taper to fit on it while oil's
+     two tiers still fit one: the book's own quote decides, which is what this proves */
+  ok(saltB.b == null && /fewer than two/.test(saltB.why || ""),
+    "salt's one-tier quote fits no taper while oil's fits its own, so the taper is genuinely per book: " + JSON.stringify(saltB));
   /* his call 4: the board sizes are what he sells, and the ladder anchor is the book's own */
   /* HIS DECISION OF 19 SEP 2026 SUPERSEDES HIS OF 15 SEP: oil has no pricing tier and five sizes.
      He typed five prices, 10 to 50 in tens, and the engine does not extrapolate his ringgit-a-ten
@@ -3019,10 +3025,10 @@ await (async () => {
   ok(parts.length > 10 && parts.every((x) => Math.abs(x.whole - x.split) < 0.02),
     "per-book delivered-and-unpaid sums to the whole-book figure for every party");
   /* his call 4(e): a suggested restock is priced at the book's own tier, lots bought whole */
-  ok(JSON.stringify(read("restockQuote(7.25)")) === JSON.stringify({ qty: 12.5, total: 650, rate: 52, lots: 1, quoted: true }),
-    "salt: 7.25 unit needed is covered by the 12.5 tier at its RM650 total, not 7.25 at a flat rate");
-  ok(JSON.stringify(read("restockQuote(130)")) === JSON.stringify({ qty: 200, total: 8000, rate: 40, lots: 2, quoted: true }),
-    "beyond the top tier it takes whole top-tier lots: 130 needs two 100s at RM8,000");
+  ok(JSON.stringify(read("restockQuote(7.25)")) === JSON.stringify({ qty: 12.5, total: 700, rate: 56, lots: 1, quoted: true }),
+    "salt: 7.25 unit needed is covered by the 12.5 tier at its RM700 total, not 7.25 at a flat rate");
+  ok(JSON.stringify(read("restockQuote(130)")) === JSON.stringify({ qty: 137.5, total: 7700, rate: 56, lots: 11, quoted: true }),
+    "beyond the top tier it takes whole top-tier lots: 130 needs eleven 12.5s at RM7,700 (his quote of 23 Sep 2026, multiples of 12.5)");
   w.eval("setProd('oil');recompute();");
   ok(JSON.stringify(read("restockQuote(3)")) === JSON.stringify({ qty: 10, total: 100, rate: 10, lots: 1, quoted: true }),
     "oil: 3 unit needed is covered by its own 10 unit tier at RM100");
@@ -7724,7 +7730,7 @@ await (async () => {
   const nowP = new Date("2026-09-03T06:20:00Z");
   /* v651: the tiers ride the snapshot, one for each product; these fixture codes are on no roster, so each list is given its own */
   const tiered = (tierOf) => ({ ...snap, tierOf });
-  const list = PL.priceList("CX0-AA", bookP, tiered({ "CX0-AA": { salt: "Bronze", oil: "Bronze" } }), nowP);
+  const list = PL.priceList("CX0-AA", bookP, tiered({ "CX0-AA": { salt: "Silver", oil: "Silver" } }), nowP);
   const saltL = list.products.find(p => p.product === "salt");
   ok(list.week.monday === "2026-08-31" && list.products.length === 2 && list.soon.length === 0 && saltL && saltL.basis === "yours" && saltL.rate === 130 && saltL.orders === 4,
     "the list is stamped with the week and carries both products, salt on the customer's own rate");
@@ -7732,9 +7738,9 @@ await (async () => {
   const Cs = PE.costStack(snap.byProduct.salt.inputs.cost), Ps = snap.byProduct.salt.inputs.policy;
   const floorC = q => PE.floorTotal(q, Cs, Ps);
   const tierAt = (q, t) => snap.byProduct.salt.ladder.find((r) => Math.abs(r.q - q) < 0.009).prices[t];
-  const bronze = snap.tierNames.indexOf("Bronze"), gold = snap.tierNames.indexOf("Gold");
+  const bronze = snap.tierNames.indexOf("Silver"), gold = snap.tierNames.indexOf("Gold");
   const wrong = saltL.sizes.filter(x => x.price !== PE.cardPrice(130 * x.q, floorC(x.q), tierAt(x.q, bronze)) || "delivered" in x);
-  ok(saltL.tier === "Bronze" && wrong.length === 0 && saltL.sizes.length === snap.sizes.length && !("delivery" in saltL),
+  ok(saltL.tier === "Silver" && wrong.length === 0 && saltL.sizes.length === snap.sizes.length && !("delivery" in saltL),
     "a customer holding Bronze is quoted Bronze, never above his own rate, at every board size; one price, no delivery on the list");
   const goldL = PL.priceList("CX0-AA", bookP, tiered({ "CX0-AA": { salt: "Gold" } }), nowP), goldS = goldL.products.find(p => p.product === "salt");
   /* 19 Sep 2026: OIL IS PRICED FOR EVERYBODY, held tier or none, because he has typed one board for
@@ -7743,10 +7749,10 @@ await (async () => {
   ok(goldS && goldS.tier === "Gold" && goldS.sizes.every(x => x.price === PE.cardPrice(130 * x.q, floorC(x.q), tierAt(x.q, gold)) && x.price <= tierAt(x.q, gold))
     && goldL.soon.length === 0 && goldL.products.some((x) => x.product === "oil"),
     "a customer holding Gold on salt is quoted Gold's price at each size, or his own rate where it is lower, and oil is priced too because its board needs no tier");
-  const cheap = PL.priceList("CX0-CH", { ...bookP, sales: [{ date: "2026-07-01", customer: "CX0-CH", qty: 1, total: 1, cash: 1, deliveredQty: 1 }] }, tiered({ "CX0-CH": { salt: "Bronze" } }), nowP).products[0];
+  const cheap = PL.priceList("CX0-CH", { ...bookP, sales: [{ date: "2026-07-01", customer: "CX0-CH", qty: 1, total: 1, cash: 1, deliveredQty: 1 }] }, tiered({ "CX0-CH": { salt: "Silver" } }), nowP).products[0];
   ok(cheap.rate === 1 && cheap.sizes.every(x => x.price === PE.cardPrice(1 * x.q, floorC(x.q), tierAt(x.q, bronze)) && x.price >= floorC(x.q) - 0.009),
     "a customer whose old rate is under the floor is lifted to the first five above it, never under the floor");
-  const fresh = PL.priceList("CX0-ZZ", bookP, tiered({ "CX0-ZZ": { salt: "Bronze" } }), nowP), none = PL.priceList("CX0-ZZ", bookP, snap, nowP);
+  const fresh = PL.priceList("CX0-ZZ", bookP, tiered({ "CX0-ZZ": { salt: "Silver" } }), nowP), none = PL.priceList("CX0-ZZ", bookP, snap, nowP);
   ok(fresh.products[0].basis === "tier" && fresh.products[0].sizes.every(x => x.price === tierAt(x.q, bronze))
     && JSON.stringify(none.soon.map((s) => s.product)) === '["salt"]' && none.products.some((x) => x.product === "oil"),
     "a customer with no history is quoted the tier set for them, and with no tier SALT is coming soon while oil is priced anyway: "
@@ -8561,7 +8567,6 @@ await (async () => {
   const args9 = ["--staged", S9, "--book", B9, "--master", M9, "--notes", N9, "--folded", FD9, "--today", "2099-01-02"];
   const run9 = (env) => { try { return { code: 0, out: ex9(process.execPath, [j9(REPO, "tools", "foldcall.mjs"), ...args9], { cwd: REPO, encoding: "utf8", stdio: "pipe", env: { ...process.env, ...env } }) }; } catch (e) { return { code: e.status, out: String(e.stdout || "") + String(e.stderr || "") }; } };
   /* the dossier, read from the dry run: it carries the ladder for the size and the party's rows */
-  const dry = run9({ SALT_FOLD_FAKE: "", ANTHROPIC_API_KEY: "" });
   const dryArgs = [j9(REPO, "tools", "foldcall.mjs"), ...args9, "--dry"];
   const dryOut = ex9(process.execPath, dryArgs, { cwd: REPO, encoding: "utf8", stdio: "pipe" });
   const dj = JSON.parse(dryOut.slice(dryOut.indexOf('{\n "model"')));
@@ -8571,8 +8576,20 @@ await (async () => {
   ok(it9.party && it9.party.code === party9 && it9.party.lastRows.length > 0 && it9.party.medianRate > 0 && it9.drafterFlags[0] === "a flag from the drafter", "and the party's last rows, median rate and the drafter's flag");
   ok(dd.inventory.position && typeof dd.inventory.position.stock === "number" && typeof dd.inventory.position.owedOut === "number", "and the inventory position from the engine");
   ok(dj.schema.properties.rows.required[0] === id9 && /never kg or kilo/.test(dj.system), "the request binds the reply to the batch's ids under the house rules");
-  /* no key and no fake: it stops before anything is written */
-  ok(dry.code === 1 && /ANTHROPIC_API_KEY is not set/.test(dry.out) && !existsSync(N9), "without a key it fails plainly and writes nothing");
+  /* v791: NO KEY IS NO LONGER A STOP (his instruction of 22 Sep 2026). Its own copies of the book
+     and the master, because unlike every run above it this one FOLDS, and a folded batch would
+     stand the good reply below down. Proved on the book it writes, never on the run's own words. */
+  const dirN = j9(REPO, "test", "tmp", "foldcall-nokey-" + Date.now());
+  mk9(dirN, { recursive: true });
+  const BN = j9(dirN, "book.json"), MN = j9(dirN, "salt_command.html"), SN = j9(dirN, "_to_fold.json"), NN = j9(dirN, "_fold_notes.json"), FDN = j9(dirN, "_folded.json");
+  cp9(j9(REPO, "ledger", "book.json"), BN); cp9(j9(REPO, "master", "salt_command.html"), MN); cp9(j9(REPO, "master", "changelog.json"), j9(dirN, "changelog.json")); cp9(S9, SN);
+  const argsN = ["--staged", SN, "--book", BN, "--master", MN, "--notes", NN, "--folded", FDN, "--today", "2099-01-02"];
+  const nokey = (() => { try { return { code: 0, out: ex9(process.execPath, [j9(REPO, "tools", "foldcall.mjs"), ...argsN], { cwd: REPO, encoding: "utf8", stdio: "pipe", env: { ...process.env, SALT_FOLD_FAKE: "", ANTHROPIC_API_KEY: "" } }) }; } catch (e) { return { code: e.status, out: String(e.stdout || "") + String(e.stderr || "") }; } })();
+  const afterN = existsSync(BN) ? JSON.parse(rf9(BN, "utf8")) : null;
+  const rowN = afterN && afterN.sales.find((r) => r.date === "2099-01-02" && r.customer === party9 && r.total === 130);
+  ok(nokey.code === 0 && rowN && afterN.QUEUE_COMMITTED === id9, "v791: with no key the fold LANDS on the tool's own notes rather than leaving the batch staged");
+  ok(rowN && /no judgement is recorded/.test(rowN.note) && /WRITTEN BY THE TOOL, NOT A MODEL/.test(rf9(MN, "utf8")), "and the row note and the version entry both say no judgement is in them");
+  rm9(dirN, { recursive: true, force: true });
   /* a fake reply that breaks the rules is refused, and nothing is folded */
   wf9(FAKE9, JSON.stringify({ ...good, version: dd.version.next, rows: { [id9]: { note: "<b>ONE UNIT.</b> A note with an em-dash \u2014 which the house never writes, at length enough to pass.", rowNote: null, cost: null } } }));
   const bad9 = run9({ SALT_FOLD_FAKE: FAKE9 });
@@ -8585,6 +8602,32 @@ await (async () => {
   ok(good9.code === 0 && row9 && /RM 130/.test(row9.note) && after9.QUEUE_COMMITTED === id9, "a good reply folds the row into the book with its note and moves the watermark");
   ok(existsSync(FD9) && JSON.parse(rf9(FD9, "utf8")).ids[0] === id9 && new RegExp('const evolution=\\[\\{"v":"' + dd.version.next + '"').test(rf9(M9, "utf8")), "names the id in _folded.json and stamps the master with the next version");
   rm9(dir9, { recursive: true, force: true });
+})();
+
+section("v791: the fold's prose without a model");
+await (async () => {
+  const { toolNotes, scrub } = await import("../tools/foldnotes.mjs");
+  const { checkNotes } = await import("../tools/foldcall.mjs");
+  const ids = ["2099-01-03T00:00:00.001Z"];
+  const d = { todayKL: "22 Sep 2026", version: { last: "v998", next: "v999" },
+    inventory: { stated: 3, countOn: { salt: "2026-09-21" }, position: { stock: 3 } },
+    items: [{ id: ids[0], what: "SELL CJ4-BJ 1 unit salt RM130 on 2099-01-03", does: ["append a sale to sales"],
+      row: { qty: 1, total: 130, cash: 130, date: "2099-01-03" }, ladder: { size: 1, floor: 60, ask: 130 },
+      party: { code: "CJ4-BJ", orders: 4, medianRate: 120, rateRange: [100, 140], outstandingBefore: 0, defaultedRM: 0 },
+      drafterFlags: ["a flag from the drafter"] }] };
+  const n = toolNotes(d, ids, "No ANTHROPIC_API_KEY was set.");
+  ok(checkNotes(n, "v999", ids).length === 0, "the tool's own notes pass the very check a model's reply must pass");
+  ok(/CJ4-BJ/.test(n.rows[ids[0]].note) && /RM130/.test(n.rows[ids[0]].note) && /floor for 1 unit is RM60/.test(n.rows[ids[0]].note)
+    && /a flag from the drafter/.test(n.rows[ids[0]].note) && /no judgement is recorded/.test(n.rows[ids[0]].note),
+    "a row note carries the party, the terms, the desk's own floor and ask, the drafter's flag, and the line saying no judgement is in it");
+  ok(/WRITTEN BY THE TOOL, NOT A MODEL/.test(n.notes.join(" ")) && n.title === n.title.toUpperCase() && n.stockCost === null,
+    "the version entry says so too, the title is in capitals, and the tool never moves the cost basis");
+  /* THE ONE UNTRUSTED STRING. `why` quotes an API error verbatim, so a fallback triggered by an
+     error carrying an em-dash, the wrong unit, the word he banned or markup would write notes the
+     checker refuses, and the batch would stay staged for the reason this road exists to remove. */
+  const nasty = toolNotes(d, ids, "http 400 \u2014 the lot was 5 kg and came in d\u0065arer <script>x</script>");
+  ok(checkNotes(nasty, "v999", ids).length === 0, "an error message against the house rules is scrubbed before it reaches the notes");
+  ok(scrub("a \u2014 b") === "a , b" && scrub("2 kg") === "2 unit" && !/<b>/.test(scrub("<b>x</b>")), "and scrub is the one place that happens");
 })();
 
 section("v522: the gate before the deploy, the suite after the phone is live");
@@ -9187,7 +9230,7 @@ await (async () => {
     const { w } = await omA();
     const snap = pricingSnapshot(w);
     /* v651: a product with no tier is not priced, so the fixture holds one on each book */
-    const list = PL.priceList("CX0-ZZ", bkR, { ...snap, tierOf: { "CX0-ZZ": { salt: "Bronze", oil: "Bronze" } } }, new Date("2026-09-08T04:00:00Z"));
+    const list = PL.priceList("CX0-ZZ", bkR, { ...snap, tierOf: { "CX0-ZZ": { salt: "Silver", oil: "Silver" } } }, new Date("2026-09-08T04:00:00Z"));
     const oilL = list.products.find((p) => p.product === "oil"), saltL = list.products.find((p) => p.product === "salt");
     ok(oilL && saltL && oilL.sizes.map((x) => x.q).join() === snap.byProduct.oil.sizes.join() && saltL.sizes.map((x) => x.q).join() === snap.byProduct.salt.sizes.join() && oilL.sizes[0].q !== saltL.sizes[0].q,
       `each product's list is drawn on its own board sizes (oil ${oilL && oilL.sizes.map((x) => x.q).join("/")}, salt ${saltL && saltL.sizes.map((x) => x.q).join("/")})`);
@@ -12249,19 +12292,17 @@ await (async () => {
     const ten40 = (v) => Math.ceil(v / 10 - 1e-9) * 10;
     /* v644: the rule's multiples run evenly from 1.0 to 2.5 and no longer carry the workbook's 1.5 and 2.0, so the workbook's
        own four multiples are handed to the engine, with the master's start, step and rungs, to prove the formula itself */
-    const bad1 = [];
-    /* THE FIVE-TIER FORMULA IS SALT'S ALONE SINCE 19 SEP 2026. Oil has no pricing tier on his
-       instruction of that date: one board, typed, the same for every customer. What is proved below is
-       the FORMULA, so it is proved where the formula runs; oil's stated board has its own section.
-       His decision of 15 Sep, which put oil on the same five levels, stands in the Journal at v641. */
-    for (const p of ["salt"]) {
-      const got = walk40(p, SHEET[p].landed, 1, null, [1, 1.5, 2, 2.5]);
-      SHEET[p].rows.forEach((r, i) => { const g = got[i]; if (!g || g.q !== r[0] || g.cogs !== r[1] || JSON.stringify(g.cols) !== JSON.stringify(r.slice(2))) bad1.push({ p, q: r[0], got: g && [g.cogs, ...g.cols] }); });
-    }
-    ok(bad1.length === 0, "the master's rule, at the workbook's own four multiples, reproduces the workbook: every COGS to the ringgit and all 76 column prices, salt and oil " + JSON.stringify(bad1));
-    const bad2 = [];
-    for (const p of ["salt"]) walk40(p, SHEET[p].landed, 1).forEach((g) => { if (g.prices[0] !== ten40(g.q) || JSON.stringify(g.prices.slice(1)) !== JSON.stringify(g.cols)) bad2.push(g); });
-    ok(bad2.length === 0, "where nothing binds, the lowest level is the floor up to the ten and every tier is its column exactly " + JSON.stringify(bad2.slice(0, 2)));
+    /* ============ 23 SEP 2026: THE PRICING_V2 WORKBOOK, AS ITS OWN CELLS ============
+       salt-command pricing_v2.xlsx, its formulas worked through outside the desk on the day: size, then the Floor column
+       (Ambassador), then the four tier columns, each before any guard. COGS is the quote's RM28 a half unit, so the forced
+       landed rate above no longer moves it, which is itself asserted. The 14 Sep sheet stays in SHEET as the dated record. */
+    const V2 = [[0.5,50,50,60,70,70],[1,90,110,120,130,140],[1.5,130,160,170,200,210],[2,170,220,230,260,270],[2.5,210,260,270,320,330],[3,260,310,320,380,390],
+      [3.5,300,350,360,430,440],[4,340,390,400,480,490],[4.5,380,430,440,530,540],[5,420,470,480,580,590],[6.25,530,550,560,690,700],[12.5,1050,1050,1050,1050,1050]];
+    const got1 = walk40("salt", SHEET.salt.landed, 1), bad1 = [];
+    V2.forEach((r, i) => { const g = got1[i]; if (!g || g.q !== r[0] || Math.abs(g.cogs - 56 * r[0]) > 0.01 || JSON.stringify(g.cols) !== JSON.stringify(r.slice(2))) bad1.push({ q: r[0], got: g && [g.cogs, ...g.cols] }); });
+    ok(bad1.length === 0, "the master's rule reproduces the pricing_v2 workbook: COGS at the quote's RM56 a unit and all 48 tier columns before any guard " + JSON.stringify(bad1));
+    const bad2 = got1.filter((g, i) => g.prices[0] !== V2[i][1]);
+    ok(bad2.length === 0, "and Ambassador is the sheet's Floor column, COGS plus half again up to the ten, at every size " + JSON.stringify(bad2.slice(0, 2)));
     /* v642: the board he approved moved with his restructure of 15 Sep and is asserted in that section */
     /* THE GUARDS ON A GRID: landed from a fifth of the sheet's rate to double it, the floor from that rate to 1.8 times it,
        both books. Each law is restated from the outputs alone, and the grid is shown to exercise each guard. */
@@ -12284,7 +12325,9 @@ await (async () => {
           if (t && x < g.prices[t - 1] + 10) order.push({ G: [G.p, G.landed, G.per], q: g.q, t, x, below: g.prices[t - 1] });
           if (t && x > g.cols[t - 1]) lifted++;
           if (t && x < g.cols[t - 1]) stepped++;
-          if (x / g.q > prev[t] + 1e-9) {
+          /* Ambassador is the sheet's Floor column, never walked (23 Sep 2026): stepping it down would take it under
+             COGS plus the overhead, which is the floor the sheet states. The law binds the four tiers. */
+          if (t && x / g.q > prev[t] + 1e-9) {
             const least = t ? g.prices[t - 1] + 10 : ten40(fl), down = Math.floor((prev[t] * g.q + 1e-9) / 10) * 10;
             if (down >= least) rate.push({ G: [G.p, G.landed, G.per], q: g.q, t, x, down, least });
           }
@@ -12296,8 +12339,9 @@ await (async () => {
     ok(order.length === 0, "and a better tier always pays less: every tier at least RM10 over the one below, at every size " + JSON.stringify(order.slice(0, 2)));
     ok(rate.length === 0, "and a tier's rate rises with size only where the step down would meet the tier below or cross the floor " + JSON.stringify(rate.slice(0, 2)));
     ok(lifted > 0 && stepped > 0, `and the grid exercises both guards rather than assuming them: ${lifted} prices lifted over their column, ${stepped} stepped under it`);
-    const dust = walk40("salt", 20, 1, [2.5])[0];
-    ok(dust.cogs === 50 && dust.cols[1] === 110, "a column landing exactly on a ten stays on it: RM50 of COGS at 2.5 unit times 2.2 asks RM110 as the workbook's CEILING does, not the RM120 floating point rounds to " + JSON.stringify(dust.cols));
+    /* 23 Sep 2026: RM28 of COGS at half a unit times 2.5 is exactly RM70, which floating point reads as 70.00000000000001 */
+    const dust = walk40("salt", 20, 1, [0.5])[0];
+    ok(dust.cogs === 28 && dust.cols[2] === 70 && dust.cols[3] === 70, "a column landing exactly on a ten stays on it, rounded down or up: RM28 of COGS times 2.5 is RM70 in both columns, not RM60 or RM80 " + JSON.stringify(dust.cols));
     /* oil's rungs are five since 19 Sep, so 150 unit falls on the last of them rather than the seventh */
     const off = walk40("salt", 46.72, 1, [0.25, 7, 20]).map((g) => g.rung).concat(walk40("oil", 7.8355, 1, [5, 60, 150]).map((g) => g.rung));
     ok(JSON.stringify(off) === JSON.stringify([0, 10, 11, 0, 4, 4]), "a size off the board takes the rung at or below it: salt's 0.25, 7 and 20 unit on rungs 0, 10 and 11, oil's 5, 60 and 150 on 0, 4 and 6 " + JSON.stringify(off));
@@ -12347,14 +12391,13 @@ await (async () => {
     const walk42 = (p, landed, per, sizes) => rd42("(function(){setProd('" + p + "');var P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE['" + p + "']}),"
       + "C=Object.assign({},pxCost(),{landed:" + landed + ",eff:" + per + ",effEx:" + per + "});"
       + "return PRICING_ENGINE.fiveTiers(" + (sizes ? JSON.stringify(sizes) : "TIER_RULE['" + p + "'].rungs") + ",C,P);})()");
-    ok(JSON.stringify(rd42("TIER_NAMES")) === JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"]),
-      "the levels are named cheapest first, Ambassador then Titanium, Platinum, Gold, Silver and Bronze " + JSON.stringify(rd42("TIER_NAMES")));
+    ok(JSON.stringify(rd42("TIER_NAMES")) === JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]),
+      "the levels are named cheapest first, Ambassador then Titanium, Platinum, Gold and Silver; Bronze went on 23 Sep 2026 " + JSON.stringify(rd42("TIER_NAMES")));
+    /* 23 SEP 2026, pricing_v2: salt's COGS is the supplier's quote, so a forced landed cost no longer moves the ladder. The
+       15 Sep columns, Silver between Gold and Bronze, are superseded and asserted by the pricing_v2 section instead. */
     const start = walk42("salt", 46, 1, [0.5])[0];
-    ok(start.cogs === 23 && JSON.stringify(start.prices.slice(1)) === JSON.stringify([50, 60, 70, 80, 90]),
-      "0.5 unit of salt starts the tiers at RM50, 60, 70, 80 and 90 on the workbook's COGS of RM23 " + JSON.stringify(start));
-    const between = [];
-    for (const [p, landed] of [["salt", 46.72]]) walk42(p, landed, 1).forEach((g) => { if (!(g.cols[2] < g.cols[3] && g.cols[3] < g.cols[4])) between.push({ p, q: g.q, cols: g.cols }); });
-    ok(between.length === 0, "and Silver, the new column, sits strictly between Gold and Bronze at every size on both books, before any guard " + JSON.stringify(between.slice(0, 2)));
+    ok(start.cogs === 28 && JSON.stringify(start.prices) === JSON.stringify([50, 60, 70, 80, 90]),
+      "0.5 unit of salt reads RM50, 60, 70, 80 and 90 on the quote's COGS of RM28 whatever the landed cost " + JSON.stringify(start));
     /* THE BOARD HE APPROVED ON 15 SEP 2026, on the costs it was read at: salt landed at RM46.72 with a floor of RM61.147136 a
        unit, oil at RM7.8355 with RM8.7285. Oil's Titanium lifts a ten over Ambassador at 80 and 100 unit.
        v644: the multiples run evenly from 1.0 to 2.5, his decision of the same day, and the board moved with them. */
@@ -12365,8 +12408,8 @@ await (async () => {
     /* SALT'S HALF OF THAT BOARD STANDS; OIL'S WAS SUPERSEDED ON 19 SEP, when he retired oil's tiers
        for one typed board. The oil rows he approved on 15 Sep are left in DECIDED above as the dated
        record they are, and are no longer asserted against a rule that no longer prices oil. */
-    const got = { salt: walk42("salt", 46.72, 61.147136).map((g) => g.prices) };
-    ok(JSON.stringify(got) === JSON.stringify({ salt: DECIDED.salt }), "on the costs of 14 Sep 2026 salt's board is the one he approved on 15 Sep " + JSON.stringify(got.salt.slice(0, 2)));
+    /* AND SALT'S HALF WAS SUPERSEDED ON 23 SEP by the pricing_v2 workbook, four tiers on the quote's RM56; DECIDED.salt stays
+       as the dated record and the new board is asserted in the pricing_v2 section. */
     /* BREAKEVEN IS THE FLOOR ITSELF, his answer of 15 Sep. On oil's costs COGS plus 20% (RM93.60 at 10 unit) sits over the floor
        (RM87.28), which is exactly where "the higher of the two" would have lifted Ambassador; it does not. */
     const amb = walk42("oil", 7.8355, 8.7285, [10])[0];
@@ -12385,7 +12428,7 @@ await (async () => {
   const F43 = await import("../tools/fold.mjs");
   const { w: w43 } = await om43();
   const rd43 = (e) => JSON.parse(String(w43.eval("JSON.stringify(" + e + ")")));
-  const NAMES43 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
+  const NAMES43 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"];
   try {
     const sale43 = (rid, customer, product, date, qty, total) => ({ rid, customer, product, date, qty, total, cost: 1, cash: total, deliveredQty: qty, deliveredOn: date });
     const fx43 = [
@@ -12403,27 +12446,28 @@ await (async () => {
     const nearest43 = (p, q, rate, from) => { const r = FB[p].board.find((x) => Math.abs(x.q - q) < 0.009); let best = from;
       for (let t = from + 1; t < NAMES43.length; t++) if (Math.abs(r.prices[t] / q - rate) < Math.abs(r.prices[best] / q - rate) - 1e-9) best = t; return NAMES43[best]; };
     const prop43 = rd43("(function(){var b={salt:FB43.salt.board,oil:FB43.oil.board};return {TG:tierProposal('CZ9-TG','salt',b),TA:tierProposal('CZ9-TA','salt',b),TOo:tierProposal('CZ9-TO','oil',b),TOs:tierProposal('CZ9-TO','salt',b)};})()");
-    ok(prop43.TG === nearest43("salt", 2.5, 120, 1) && prop43.TOo === nearest43("oil", 10, 15, 1) && prop43.TOs === nearest43("salt", 2.5, 144, 1) && nearest43("oil", 10, 15, 1) !== nearest43("salt", 2.5, 144, 1),
-      `a customer holding no tier on a product is proposed the tier nearest what they pay for it: CZ9-TG salt ${prop43.TG}, CZ9-TO oil ${prop43.TOo} and salt ${prop43.TOs}`);
+    /* 23 SEP 2026: oil is one stated price for everybody, so nobody is proposed a tier on it */
+    ok(prop43.TG === nearest43("salt", 2.5, 120, 1) && prop43.TOs === nearest43("salt", 2.5, 144, 1) && prop43.TG !== prop43.TOs && prop43.TOo === null,
+      `a customer holding no tier on a product is proposed the tier nearest what they pay for it, and none on oil: CZ9-TG salt ${prop43.TG}, CZ9-TO oil ${prop43.TOo} and salt ${prop43.TOs}`);
     ok(prop43.TA === "Titanium" && nearest43("salt", 2.5, 62, 0) === "Ambassador", `and never Ambassador: CZ9-TA pays at the floor, nearest Ambassador, and is proposed ${prop43.TA}`);
     /* THE CARD: a tier held, one waiting in the queue, one proposed */
     const cell43 = "var cell=function(c,p){var s=[].filter.call(t.querySelectorAll('select'),function(x){return x.id==='tierSel_'+c+'_'+p;})[0];return s?{sel:s.value,state:s.parentNode.querySelector('.iref').textContent.trim()}:null;};";
-    const card43 = rd43("(function(){TIER_OF['CZ9-TG']={salt:'Gold'};queue=[{at:'2026-09-15T00:00:00.000Z',type:'TIER',status:'tierset',raw:'Set CZ9-TO: Oil Platinum',payload:{mode:'tierset',tiers:{'CZ9-TO':{oil:'Platinum'}}}}];"
-      + "setProdView('salt');switchTab('people');var t=document.querySelector('.sec.on table.tiertab');if(!t)return null;" + cell43 + "return {TG:cell('CZ9-TG','salt'),TO:cell('CZ9-TO','oil'),TA:cell('CZ9-TA','salt')};})()");
+    const card43 = rd43("(function(){TIER_OF['CZ9-TG']={salt:'Gold'};queue=[{at:'2026-09-15T00:00:00.000Z',type:'TIER',status:'tierset',raw:'Set CZ9-TO: Salt Platinum',payload:{mode:'tierset',tiers:{'CZ9-TO':{salt:'Platinum'}}}}];"
+      + "setProdView('salt');switchTab('people');var t=document.querySelector('.sec.on table.tiertab');if(!t)return null;" + cell43 + "return {TG:cell('CZ9-TG','salt'),TO:cell('CZ9-TO','salt'),TA:cell('CZ9-TA','salt'),TOo:cell('CZ9-TO','oil')};})()");
     /* v666: the state reads the tier's standing first and then how they buy ("held · occasional mid"), so it is read by
        its leading word; the profile beside it has its own assertions in the v666 section */
     const lead43 = (x) => x && String(x.state).split(" · ")[0];
     ok(card43 && card43.TG && card43.TG.sel === "Gold" && lead43(card43.TG) === "held" && card43.TO && card43.TO.sel === "Platinum" && lead43(card43.TO) === "waiting"
-      && card43.TA && lead43(card43.TA) === "proposed" && card43.TA.sel !== "" && card43.TA.sel !== "Ambassador",
-      "the Customers page shows each customer's tier for each product, held, waiting for approval, or proposed: " + JSON.stringify(card43));
+      && card43.TA && lead43(card43.TA) === "proposed" && card43.TA.sel !== "" && card43.TA.sel !== "Ambassador" && card43.TOo === null,
+      "the Customers page shows each customer's salt tier, held, waiting for approval, or proposed, and offers none on oil: " + JSON.stringify(card43));
     const acc43 = rd43("(function(){tierAcceptAll();var e=queue[queue.length-1];return {n:queue.length,mode:e.payload.mode,tiers:e.payload.tiers};})()");
-    ok(acc43.n === 2 && acc43.mode === "tierset" && acc43.tiers["CZ9-TA"] && acc43.tiers["CZ9-TA"].salt && !("CZ9-TG" in acc43.tiers) && acc43.tiers["CZ9-TO"] && !("oil" in acc43.tiers["CZ9-TO"])
+    ok(acc43.n === 2 && acc43.mode === "tierset" && acc43.tiers["CZ9-TA"] && acc43.tiers["CZ9-TA"].salt && !("CZ9-TG" in acc43.tiers) && !("CZ9-TO" in acc43.tiers)
       && !Object.values(acc43.tiers).some((t) => Object.values(t).includes("Ambassador")),
       "and Accept queues one entry of every proposal still open, passing over a tier held and one already waiting: " + JSON.stringify(Object.fromEntries(Object.entries(acc43.tiers).filter(([c]) => /^CZ9-/.test(c)))));
     const nm43 = rd43("(function(){queue=[];vaultNames={'CZ9-TA':'Zed Person (Here)'};revealed=true;render();document.getElementById('tierSel_CZ9-TA_salt').value='Silver';tierSet('CZ9-TA');var q=JSON.stringify(queue);vaultNames={};revealed=false;return q;})()");
     ok(/CZ9-TA/.test(nm43) && /"tiers":\{"CZ9-TA":\{"salt":"Silver"\}\}/.test(nm43) && !/Zed Person/.test(nm43), "a tier set with the names open queues the code and never the name: " + nm43.slice(0, 160));
     const px43 = rd43("(function(){var read=function(){return JSON.stringify([pbPrices('CZ9-TA'),priceLadder(2.5).ask.total,PRICING_ENGINE.board(sizesFor('salt'),pxCost(),pxPolicy())]);};"
-      + "delete TIER_OF['CZ9-TA'];var a=read();TIER_OF['CZ9-TA']={salt:'Titanium',oil:'Gold'};var b=read();TIER_OF['CZ9-TA']={salt:'Bronze'};var c=read();delete TIER_OF['CZ9-TA'];delete TIER_OF['CZ9-TG'];return a===b&&b===c;})()");
+      + "delete TIER_OF['CZ9-TA'];var a=read();TIER_OF['CZ9-TA']={salt:'Titanium',oil:'Gold'};var b=read();TIER_OF['CZ9-TA']={salt:'Silver'};var c=read();delete TIER_OF['CZ9-TA'];delete TIER_OF['CZ9-TG'];return a===b&&b===c;})()");
     ok(px43 === true, "and a tier moves no price yet: the customer's own list, the ask and the phone's board read the same with any tier held");
 
     /* ---- the drafter ---- */
@@ -12464,14 +12508,15 @@ await (async () => {
   const rd44 = (e) => JSON.parse(String(w44.eval("JSON.stringify(" + e + ")")));
   try {
     const R44 = rd44("TIER_RULE");
-    const even = (m) => m.length === 5 && m[0] === 1 && m[4] === 2.5 && m.every((x, i) => !i || Math.abs(x - m[i - 1] - 0.375) < 1e-9);
-    /* 19 Sep 2026: oil has no multiples at all now, so what is asserted of it is that it has a stated
-       board instead, which is the whole of the change */
-    ok(even(R44.salt.multiples) && R44.oil.multiples === undefined && R44.oil.fixed && Object.keys(R44.oil.fixed).length === 5,
-      "salt's tiers run evenly from 1.0 to 2.5, a step of 0.375, and oil has a typed board of five instead: " + JSON.stringify([R44.salt.multiples, R44.oil.fixedes]));
+    /* SUPERSEDED ON 23 SEP 2026 by the pricing_v2 workbook: four columns, not five evenly spaced, and COGS off the quote. The
+       heading stays as the dated record of 15 Sep; what is asserted is the rule that replaced it, beside oil's stated board. */
+    const S44 = R44.salt;
+    ok(JSON.stringify(S44.multiples) === "[2.1,2.1,2.5,2.5]" && JSON.stringify(S44.round) === '["down","up","down","up"]' && S44.overhead === 0.5
+      && S44.decay === 0.09 && S44.from === 0.5 && S44.cogs === "quote" && R44.oil.multiples === undefined && Object.keys(R44.oil.fixed).length === 5,
+      "salt's tiers are the workbook's four columns, 2.1 down and up and 2.5 down and up, and oil keeps its typed board of five: " + JSON.stringify([S44, R44.oil.fixed]));
     const one = rd44("(function(){setProd('salt');var P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),C=Object.assign({},pxCost(),{landed:46.72,eff:1,effEx:1});return PRICING_ENGINE.fiveTiers([0.5,1],C,P);})()");
-    ok(one[0].cogs === 23 && JSON.stringify(one[0].cols) === "[50,60,70,80,90]" && one[1].cogs === 47 && JSON.stringify(one[1].cols) === "[100,110,130,150,160]",
-      "on the workbook's COGS, 0.5 unit of salt reads RM50 to RM90 and 1 unit reads his RM100, 110, 130, 150 and 160: " + JSON.stringify(one.map((g) => g.cols)));
+    ok(one[0].cogs === 28 && JSON.stringify(one[0].cols) === "[50,60,70,70]" && one[1].cogs === 56 && JSON.stringify(one[1].cols) === "[110,120,130,140]",
+      "on the quote's COGS, the sheet's columns read RM50, 60, 70 and 70 at half a unit and RM110, 120, 130 and 140 at 1 unit: " + JSON.stringify(one.map((g) => g.cols)));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w44.close(); } catch (e) { /* best effort */ } }
 })();
 
@@ -12485,7 +12530,7 @@ await (async () => {
   const { draftRow: dr45 } = await import("../src/drafter.js");
   const F45 = await import("../tools/fold.mjs");
   const { webcrypto: wc45 } = await import("node:crypto");
-  const NAMES45 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
+  const NAMES45 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"];
   const { w: w45 } = await om45();
   if (!w45.crypto || !w45.crypto.subtle) { try { Object.defineProperty(w45, "crypto", { value: wc45, configurable: true }); } catch (e) { w45.crypto = wc45; } }
   const rd45 = (e) => JSON.parse(String(w45.eval("JSON.stringify(" + e + ")")));
@@ -12496,19 +12541,20 @@ await (async () => {
       + "return {shown:!!c&&c.style.display!=='none',salt:sel('salt'),oil:sel('oil')};})()");
     const cu45 = cell45("customer"), rs45 = cell45("reseller"), su45 = cell45("supplier"), bu45 = cell45("bucket"), dn45 = cell45("downstream");
     const opts45 = JSON.stringify([""].concat(NAMES45));
-    ok(cu45.shown && cu45.salt && cu45.oil && JSON.stringify(cu45.salt.opts) === opts45 && JSON.stringify(cu45.oil.opts) === opts45 && cu45.salt.val === "Bronze" && cu45.oil.val === "Bronze"
+    /* 23 SEP 2026: a tier is salt's alone, oil, candy and rice being one price for everybody, and a new customer starts at Silver */
+    ok(cu45.shown && cu45.salt && !cu45.oil && JSON.stringify(cu45.salt.opts) === opts45 && cu45.salt.val === "Silver"
       && rs45.shown && !su45.shown && !bu45.shown && !dn45.shown,
-      "Add ID asks a customer's or an associate's starting tier for each product, Bronze by default, and asks nothing of a supplier, a bucket or an end buyer: " + JSON.stringify({ cu45, su45: su45.shown, bu45: bu45.shown, dn45: dn45.shown }));
+      "Add ID asks a customer's or an associate's starting salt tier, Silver by default, none on oil, and asks nothing of a supplier, a bucket or an end buyer: " + JSON.stringify({ cu45, su45: su45.shown, bu45: bu45.shown, dn45: dn45.shown }));
     const env45 = JSON.stringify(await ve45("pw", { "CZ1-OTH": "Other (Here)" }));
     const stub45 = "(function(){queue=[];NAME_VAULT=" + env45 + ";qSyncState='server';window.prompt=function(){return 'pw';};"
       + "window.fetch=function(u,o){var post=!!(o&&o.method==='POST');return Promise.resolve({ok:true,json:function(){return Promise.resolve(post?{ok:true}:{ok:true,vault:" + env45 + "});}});};})();";
     const settle45 = async () => { for (let i = 0; i < 60; i++) { await new Promise((r) => setTimeout(r, 100)); const st = String(w45.eval("(document.getElementById('wbOk')||{}).textContent||''")); if (!/Filing the name/.test(st)) return st; } return ""; };
-    w45.eval("(function(){var s=function(i,v){var e=document.getElementById(i);if(e)e.value=v;};s('wbApKind','customer');wbApply();s('wbApWho','');s('wbApName','Zed Tierfixture');s('wbApPlace','tbc');s('wbApTier_salt','Gold');s('wbApTier_oil','Silver');wbPreview();})()");
+    w45.eval("(function(){var s=function(i,v){var e=document.getElementById(i);if(e)e.value=v;};s('wbApKind','customer');wbApply();s('wbApWho','');s('wbApName','Zed Tierfixture');s('wbApPlace','tbc');s('wbApTier_salt','Gold');wbPreview();})()");
     w45.eval(stub45 + "wbRecord();");
     const st45 = await settle45(), q45 = rd45("queue.map(function(x){return {p:x.payload,raw:x.raw};})"), all45 = JSON.stringify(rd45("queue"));
-    ok(/Registered/.test(st45) && q45.length === 1 && q45[0].p.mode === "addid" && JSON.stringify(q45[0].p.tiers) === '{"salt":"Gold","oil":"Silver"}' && /starting at Salt Gold, Oil Silver/.test(q45[0].raw) && !/Tierfixture/.test(all45),
+    ok(/Registered/.test(st45) && q45.length === 1 && q45[0].p.mode === "addid" && JSON.stringify(q45[0].p.tiers) === '{"salt":"Gold"}' && /starting at Salt Gold/.test(q45[0].raw) && !/Tierfixture/.test(all45),
       "Record queues the registration with the tiers chosen, and never the name: " + st45 + " " + JSON.stringify(q45));
-    ok(q45.length === 1 && JSON.stringify(rd45("tierQueued()")[q45[0].p.code]) === '{"salt":"Gold","oil":"Silver"}', "and the Tiers card reads the registration's tiers as waiting for approval");
+    ok(q45.length === 1 && JSON.stringify(rd45("tierQueued()")[q45[0].p.code]) === '{"salt":"Gold"}', "and the Tiers card reads the registration's tiers as waiting for approval");
 
     /* ---- the drafter ---- */
     const mir45 = { sales: [], purchases: [], state: { roster: [], associates: [], PRODUCTS: { salt: { name: "Salt" }, oil: { name: "Oil" } } }, pricing: { tierNames: NAMES45 } };
@@ -12542,7 +12588,7 @@ await (async () => {
   const F46 = await import("../tools/fold.mjs");
   const { w: w46 } = await om46();
   const rd46 = (e) => JSON.parse(String(w46.eval("JSON.stringify(" + e + ")")));
-  const NAMES46 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
+  const NAMES46 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"];
   try {
     const sale46 = (rid, date) => ({ rid, customer: "CZ9-PS", product: "salt", date, qty: 2.5, total: 300, cost: 1, cash: 300, deliveredQty: 2.5, deliveredOn: date });
     w46.eval("(function(){['CZ9-PS','CZ9-NB'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});BASE_SALES.push.apply(BASE_SALES," + JSON.stringify([sale46("z646p1", "2026-08-01"), sale46("z646p2", "2026-08-02")]) + ");queue=[];applyOverlay();setProdView('salt');})()");
@@ -12554,16 +12600,17 @@ await (async () => {
       + "return {PSs:cell('CZ9-PS','salt'),PSo:cell('CZ9-PS','oil'),NBs:cell('CZ9-NB','salt'),NBo:cell('CZ9-NB','oil')};})()");
     /* v666: read by the leading word, as above; a product never bought has no profile, so it still reads exactly "not set" */
     const lead46 = (x) => x && String(x.state).split(" · ")[0];
-    ok(card46 && card46.PSs && lead46(card46.PSs) === "proposed" && card46.PSo && card46.PSo.sel === "" && card46.PSo.state === "not set"
-      && card46.NBs && card46.NBs.sel === "" && card46.NBs.state === "not set" && card46.NBo && card46.NBo.state === "not set",
-      "the Tiers card lists a customer who has bought nothing yet, and reads not set on every product nobody has bought or set: " + JSON.stringify(card46));
+    /* 23 SEP 2026: oil is one price for everybody, so the card draws no oil tier at all */
+    ok(card46 && card46.PSs && lead46(card46.PSs) === "proposed" && card46.PSo === null
+      && card46.NBs && card46.NBs.sel === "" && card46.NBs.state === "not set" && card46.NBo === null,
+      "the Tiers card lists a customer who has bought nothing yet, reads not set where nobody has bought or set, and draws no oil tier: " + JSON.stringify(card46));
     const acc46 = rd46("(function(){queue=[];tierAcceptAll();var e=queue[queue.length-1];return e?e.payload.tiers:null;})()");
     ok(acc46 && acc46["CZ9-PS"] && acc46["CZ9-PS"].salt === pr46.salt && !("oil" in acc46["CZ9-PS"]) && !("CZ9-NB" in acc46),
       "and Accept takes only the proposals there are, passing over a product proposed nothing: " + JSON.stringify(acc46 && acc46["CZ9-PS"]));
     const set46 = rd46("(function(){queue=[];TIER_OF['CZ9-PS']={salt:'Gold'};render();var s=function(p,v){document.getElementById('tierSel_CZ9-PS_'+p).value=v;};var out=[];"
-      + "tierSet('CZ9-PS');out.push(queue.length);s('oil','Silver');tierSet('CZ9-PS');out.push(queue[queue.length-1].payload.tiers);"
+      + "tierSet('CZ9-PS');out.push(queue.length);s('salt','Silver');tierSet('CZ9-PS');out.push(queue[queue.length-1].payload.tiers);"
       + "queue=[];render();s('salt','');tierSet('CZ9-PS');out.push(queue[queue.length-1].payload.tiers);delete TIER_OF['CZ9-PS'];queue=[];render();return out;})()");
-    ok(set46[0] === 0 && JSON.stringify(set46[1]) === '{"CZ9-PS":{"oil":"Silver"}}' && JSON.stringify(set46[2]) === '{"CZ9-PS":{"salt":null}}',
+    ok(set46[0] === 0 && JSON.stringify(set46[1]) === '{"CZ9-PS":{"salt":"Silver"}}' && JSON.stringify(set46[2]) === '{"CZ9-PS":{"salt":null}}',
       "Set queues only the products whose choice changed, and Not set on a tier held queues it cleared: " + JSON.stringify(set46));
     const pick46 = rd46("(function(){try{cloudMode=function(){return true;};}catch(e){};switchTab('add');wbMode='addid';wbApply();var s=function(i,v){var e=document.getElementById(i);if(e)e.value=v;};"
       + "s('wbApTier_salt','Gold');s('wbApTier_oil','');var a=wbTiersChosen();s('wbApTier_salt','');return [a,wbTiersChosen()];})()");
@@ -12769,27 +12816,29 @@ await (async () => {
     const sale55 = (rid, c, date, qty, total) => ({ rid, customer: c, product: "salt", date, qty, total, cost: 1, cash: total, deliveredQty: qty, deliveredOn: date });
     const fx55 = [sale55("z655a", "CZ9-BR", "2026-06-01", 1, 400), sale55("z655b", "CZ9-BR", "2026-07-01", 1, 90), sale55("z655c", "CZ9-BR", "2026-07-02", 1, 100),
       sale55("z655d", "CZ9-BR", "2026-07-03", 1, 110), sale55("z655e", "CZ9-BR", "2026-07-04", 1, 200),
-      /* CZ9-SM buys half a unit at RM100 a unit and nothing else: at that size the level is Titanium, and summed over the whole board it would be Platinum */
-      sale55("z655f", "CZ9-SM", "2026-07-01", 0.5, 50), sale55("z655g", "CZ9-SM", "2026-07-08", 0.5, 50), sale55("z655h", "CZ9-SM", "2026-07-15", 0.5, 50)];
+      /* CZ9-SM buys half a unit at RM120 a unit and nothing else: at that size the level is Titanium, at 12.5 unit it would be
+         Silver and summed over the whole board Gold. RM100 until 23 Sep 2026, when the pricing_v2 board stopped telling the three
+         apart at that rate (it had stopped on 22 Sep already, when the salt board moved under it). */
+      sale55("z655f", "CZ9-SM", "2026-07-01", 0.5, 60), sale55("z655g", "CZ9-SM", "2026-07-08", 0.5, 60), sale55("z655h", "CZ9-SM", "2026-07-15", 0.5, 60)];
     w55.eval("(function(){['CZ9-BR','CZ9-SM'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});BASE_SALES.push.apply(BASE_SALES," + JSON.stringify(fx55) + ");queue=[];applyOverlay();setProd('salt');recompute();})()");
     const r55 = rd55("(function(){return {rate:pbOwnRate('CZ9-BR').rate,orders:pbOwnRate('CZ9-BR').orders,window:pbOrders('CZ9-BR').map(function(s){return s.rid;})};})()");
     ok(r55.rate === 200 && r55.orders === 4 && JSON.stringify(r55.window) === '["z655b","z655c","z655d","z655e"]',
       "their own rate is the best of the last four priced orders, not the middle one, and the fifth and older is out of the window: " + JSON.stringify(r55));
     const tool55 = PL55.ownRate(rd55("sales"), "CZ9-BR", "salt", "2026-09-01");
     ok(tool55.rate === 200 && tool55.orders === 4, "and the customer's own page reads the same rate off the same four: " + JSON.stringify(tool55));
-    /* THE PROPOSAL AT THEIR OWN SIZES. CZ9-SM pays RM90 a unit and buys half a unit only; the level nearest RM90 a unit at
+    /* THE PROPOSAL AT THEIR OWN SIZES. CZ9-SM pays RM120 a unit and buys half a unit only; the level nearest RM90 a unit at
        half a unit is not the level nearest it across the whole board, because the board's big rungs ask far less a unit. */
     const p55 = rd55("(function(){var b=tierBoards(),lad=b.salt,got=tierProposal('CZ9-SM','salt',b);"
       + "var keep=PRICE_ENGINE.sizesBy.salt.slice();PRICE_ENGINE.sizesBy.salt=keep.filter(function(q){return q<=2.5;});recompute();"
       + "var cut=tierProposal('CZ9-SM','salt',tierBoards());PRICE_ENGINE.sizesBy.salt=keep;recompute();"
       + "var half=lad.find(function(r){return Math.abs(r.q-0.5)<0.009;}),big=lad.find(function(r){return Math.abs(r.q-12.5)<0.009;});"
-      + "var near=function(row){var t=1;for(var k=2;k<TIER_NAMES.length;k++)if(Math.abs(row.prices[k]/row.q-100)<Math.abs(row.prices[t]/row.q-100))t=k;return TIER_NAMES[t];};"
-      + "var whole=function(){var t=1,g=function(k){return lad.reduce(function(a,r){return a+Math.abs(r.prices[k]/r.q-100);},0);};for(var k=2;k<TIER_NAMES.length;k++)if(g(k)<g(t))t=k;return TIER_NAMES[t];};"
+      + "var near=function(row){var t=1;for(var k=2;k<TIER_NAMES.length;k++)if(Math.abs(row.prices[k]/row.q-120)<Math.abs(row.prices[t]/row.q-120))t=k;return TIER_NAMES[t];};"
+      + "var whole=function(){var t=1,g=function(k){return lad.reduce(function(a,r){return a+Math.abs(r.prices[k]/r.q-120);},0);};for(var k=2;k<TIER_NAMES.length;k++)if(g(k)<g(t))t=k;return TIER_NAMES[t];};"
       + "return {got:got,cut:cut,whole:whole(),atHalf:near(half),atBig:near(big),rate:pbOwnRate('CZ9-SM').rate};})()");
-    ok(p55.rate === 100 && p55.got === p55.atHalf && p55.got === p55.cut && p55.got !== p55.whole && p55.atHalf !== p55.atBig,
+    ok(p55.rate === 120 && p55.got === p55.atHalf && p55.got === p55.cut && p55.got !== p55.whole && p55.atHalf !== p55.atBig,
       "a tier is proposed at the sizes they buy: half a unit gives " + p55.atHalf + " where the biggest rung would give " + p55.atBig + ", the whole board would give " + p55.whole + ", and taking every rung above 2.5 unit off the board does not move it");
     /* AND WHAT IT IS WORTH: the card of a customer whose best is above their middle rises to the best, never past their tier */
-    const card55 = rd55("(function(){TIER_OF['CZ9-BR']={salt:'Bronze'};recompute();var lad=fiveTiersNow(),t=TIER_NAMES.indexOf('Bronze');"
+    const card55 = rd55("(function(){TIER_OF['CZ9-BR']={salt:'Silver'};recompute();var lad=fiveTiersNow(),t=TIER_NAMES.indexOf('Silver');"
       + "var one=lad.find(function(r){return Math.abs(r.q-1)<0.009;});var mid=Math.round(105/5)*5,best=Math.round(200/5)*5;"
       + "var px=cardQuote('CZ9-BR',1);delete TIER_OF['CZ9-BR'];recompute();"
       + "return {px:px,tier:one.prices[t],mid:mid,best:best};})()");
@@ -12961,7 +13010,8 @@ await (async () => {
     const cells = rd60("(function(){var res={};['salt','oil'].forEach(function(p){setProd(p);recompute();"
       + "var n=0,onTen=0,under=0,over=[],tot=0,overTier=0;"
       + "roster.filter(function(c){return c.slice(-2)!=='-R';}).forEach(function(c){"
-      + "  if(cardTier(c)<0)return; var own=pbOwnRate(c).rate;"
+      /* 23 Sep 2026: a stated board is carded to everybody, so only a tiered book is gated on the tier */
+      + "  if(!TIER_RULE[p].fixed&&cardTier(c)<0)return; var own=pbOwnRate(c).rate;"
       /* v671: the level is read at each size, because a band set holds a different level for a big order than a small one */
       + "  shownSizes(p).forEach(function(q){ var v=cardQuote(c,q); if(v==null)return; n++; tot+=v;"
       + "    if(Math.abs(v/10-Math.round(v/10))<1e-9)onTen++;"
@@ -13004,13 +13054,16 @@ await (async () => {
     const bk60 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
     const snap60 = ps60(w60);   /* it reads the open master, as every other caller does */
     const who60 = Object.keys(snap60.tierOf || {}).filter((c) => c.slice(-2) !== "-R");
+    /* 23 Sep 2026: each on its own book's grid, the ten for salt and oil and the ringgit for candy and rice, whose rates he
+       states in single ringgit */
     let checked = 0, offTen = 0;
     for (const c of who60.slice(0, 12)) {
       const list = PL60.priceList(c, bk60, snap60, new Date());
-      for (const p of list.products) for (const r of p.sizes) { checked++; if (Math.abs(r.price / 10 - Math.round(r.price / 10)) > 1e-9) offTen++; }
+      for (const p of list.products) { const to = snap60.byProduct[p.product].inputs.policy.LADDER.round.to;
+        for (const r of p.sizes) { checked++; if (Math.abs(r.price / to - Math.round(r.price / to)) > 1e-9) offTen++; } }
     }
-    ok(checked > 40 && offTen === 0,
-      "and every price on the customer's own page is on the ten too, over " + checked + " of them across twelve accounts");
+    ok(checked > 40 && offTen === 0 && snap60.byProduct.salt.inputs.policy.LADDER.round.to === 10,
+      "and every price on the customer's own page is on its book's grid too, the ten for salt, over " + checked + " of them across twelve accounts");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w60.close(); } catch (e) { /* best effort */ } }
 })();
 
@@ -13176,14 +13229,14 @@ await (async () => {
     const ask = (base, flags, slow) => rd71("__ask71(" + JSON.stringify(base) + "," + JSON.stringify(flags) + "," + !!slow + ")");
 
     /* 1. RARE AND LATE TWICE: one level down at every size, a plain level; Bronze stays Bronze; and no promotion reaches them */
-    ok(ask("Gold", ["rare", "lateTwice"]) === "Silver" && ask("Bronze", ["rare", "lateTwice"]) === "Bronze"
+    ok(ask("Gold", ["rare", "lateTwice"]) === "Silver" && ask("Silver", ["rare", "lateTwice"]) === "Silver"
       && ask("Gold", ["rare", "lateTwice"], true) === "Silver" && ask("Gold", ["rare"]) === "Gold",
-      "rare and late twice drops a level everywhere, Bronze stays Bronze, a slowdown promotes nobody who is late, and rare alone moves nothing");
+      "rare and late twice drops a level everywhere, the last level (Silver since 23 Sep 2026) stays there, a slowdown promotes nobody who is late, and rare alone moves nothing");
     /* 2. FREQUENT AND SMALL: the drop from three units and nothing better below it, his decision; Bronze has nowhere to drop */
     const small = ask("Gold", ["frequent", "small"]);
-    ok(JSON.stringify(small) === JSON.stringify({ small: "Gold", mid: "Gold", big: "Silver" }) && ask("Bronze", ["frequent", "small"]) === "Bronze"
+    ok(JSON.stringify(small) === JSON.stringify({ small: "Gold", mid: "Gold", big: "Silver" }) && ask("Silver", ["frequent", "small"]) === "Silver"
       && JSON.stringify(ask("Titanium", ["frequent", "small"])) === JSON.stringify({ small: "Titanium", mid: "Titanium", big: "Platinum" }),
-      "frequent and small drops a level from three units only, with no better level on the small band, and Bronze stays one level: " + JSON.stringify(small));
+      "frequent and small drops a level from three units only, with no better level on the small band, and the last level stays one level: " + JSON.stringify(small));
     /* 3. LOYAL AND BUYING BIGGER: a level up from three units, never past Platinum, and never a level down for someone above it */
     ok(JSON.stringify(ask("Gold", ["loyal", "bigger"])) === JSON.stringify({ small: "Gold", mid: "Gold", big: "Platinum" })
       && ask("Platinum", ["loyal", "bigger"]) === "Platinum" && ask("Titanium", ["loyal", "bigger"]) === "Titanium" && ask("Gold", ["loyal"]) === "Gold",
@@ -14768,6 +14821,7 @@ await (async () => {
      what it opens. Ambassador is the floor and is never one of them. */
   const R96 = await import("../stmt/refs.js");
   const PL96 = await import("../tools/pricelist.mjs");
+  /* the fixture keeps the five of 18 Sep 2026: the mechanism is one standing link a tier, however many tiers there are */
   const NAMES = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
 
   const kv96 = new KV();
@@ -14786,8 +14840,9 @@ await (async () => {
     "ensuring them twice mints nothing: an id handed to a stranger never changes what it opens");
   ok((await R96.listRefs(env96)).length === 5, "and there are exactly five, not ten");
   ok((await R96.ensureStanding({ STMT: new KV() }, null)).length === 0
-    && (await R96.ensureStanding({ STMT: new KV() }, ["Ambassador", "Titanium"])).length === 0,
-    "with no names to hand it makes none, rather than inventing five");
+    && (await R96.ensureStanding({ STMT: new KV() }, ["Ambassador"])).length === 0
+    && (await R96.ensureStanding({ STMT: new KV() }, ["Ambassador", "Titanium"])).length === 1,
+    "with no names to hand it makes none, rather than inventing five, and with one tier it makes one");
 
   /* ---- a standing link beside one that names a customer ---- */
   const intro = await R96.mintRef(env96, { introducer: "abcd-efgh", label: "a shop" });
@@ -14804,15 +14859,17 @@ await (async () => {
   const snap96 = ps96(w96);
   if (snap96 && snap96.byProduct) {
     const at96 = new Date("2026-09-15T02:00:00Z");
-    const boards = [1, 2, 3, 4, 5].map((k) => PL96.tierBoard(k, bookN, snap96, at96));
-    ok(boards.every((b, i) => b.standing === true && b.level === i + 1 && b.tierName === NAMES[i + 1]),
+    /* the boards are the LIVE book's levels, four since 23 Sep 2026 */
+    const LIVE = snap96.tierNames, TOP = LIVE.length - 1;
+    const boards = LIVE.slice(1).map((n, i) => PL96.tierBoard(i + 1, bookN, snap96, at96));
+    ok(boards.length === 4 && boards.every((b, i) => b.standing === true && b.level === i + 1 && b.tierName === LIVE[i + 1]),
       "each board says which level it is and names it: " + boards.map((b) => b.tierName).join(","));
     const salt = boards.map((b) => (b.products.find((x) => x.product === "salt") || {}).sizes)
       .map((z) => (z && z.length ? z[z.length - 1].price : null));
-    ok(salt.every((x) => x != null) && new Set(salt).size === 5 && salt.every((x, i) => i === 0 || x > salt[i - 1]),
-      "and the five prices are five, climbing with the ladder, the last of them the one a stranger is quoted: " + JSON.stringify(salt));
-    ok(PL96.tierBoard(9, bookN, snap96, at96).level === 5 && PL96.tierBoard(0, bookN, snap96, at96).level === 1,
-      "a level off either end is held to the five, so nothing can serve the floor by mistake");
+    ok(salt.every((x) => x != null) && new Set(salt).size === TOP && salt.every((x, i) => i === 0 || x > salt[i - 1]),
+      "and the prices are one a level, climbing with the ladder, the last of them the one a stranger is quoted: " + JSON.stringify(salt));
+    ok(PL96.tierBoard(9, bookN, snap96, at96).level === TOP && PL96.tierBoard(0, bookN, snap96, at96).level === 1,
+      "a level off either end is held to the ladder, so nothing can serve the floor by mistake");
     ok(!("introducer" in boards[0]) && !("levels" in boards[0]),
       "a standing board follows nobody: it carries no introducer and no per-product level to track");
   } else skipData("no pricing snapshot on this machine, so the five boards were not priced");
@@ -14923,7 +14980,8 @@ await (async () => {
 
   /* THE PUBLISH WRITES THE FIVE, AND THE HOURLY RUN RETIRES NOBODY */
   const PUBSRC = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");
-  ok(/for \(let k = 1; k <= 5; k\+\+\) \{\n\s+plan\.puts\.push\(\{ key: "tboard:" \+ k, value: JSON\.stringify\(tierBoard\(k, bookNow, pricing, madeAt\)\) \}\);/.test(PUBSRC),
+  /* 23 Sep 2026: one a tier, however many the book names, four since Bronze went */
+  ok(/for \(let k = 1; k < \(\(pricing\.tierNames \|\| \[\]\)\.length \|\| 6\); k\+\+\) \{\n\s+plan\.puts\.push\(\{ key: "tboard:" \+ k, value: JSON\.stringify\(tierBoard\(k, bookNow, pricing, madeAt\)\) \}\);/.test(PUBSRC),
     "the publish writes one board per level, from the same snapshot the sealed lists are struck from");
   /* v709: ANY link carrying a level is left to its level's board, not only one of the five, because
      he may pin a tier on an associate's; and one waiting on him serves nothing, so nothing is
@@ -18909,8 +18967,11 @@ await (async () => {
 
   ok(opened.every((id) => MAPS6.every((k) => book[k] && id in book[k]) && book.PROD_ORDER.includes(id)),
     "candy, rice and spare are registered in all six per-product maps and the order");
-  ok(opened.every((id) => book.QUOTES[id] === null && book.PROD_OPENING[id].stated === null && !book.PROD_OPENING[id].qty),
-    "and opened empty: no quote, no stated count, no opening figure invented");
+  /* 23 Sep 2026: candy's and rice's quotes came on his word with the pricing_v2 workbook, so a quote is asked only of a
+     book still empty; nothing opened carries a stated count or an opening figure */
+  ok(empties.length > 0 && empties.every((id) => book.QUOTES[id] === null) && opened.every((id) => book.PROD_OPENING[id].stated === null && !book.PROD_OPENING[id].qty)
+    && ["candy", "rice"].every((id) => book.QUOTES[id] && book.QUOTES[id].supplier === "SM4-KEP"),
+    "and opened empty: no stated count, no opening figure invented, and no quote on a book nobody has quoted: " + JSON.stringify(empties));
 
   const { w } = await openMaster();
   const ids = JSON.parse(w.eval("JSON.stringify(PROD_IDS)"));
@@ -19327,6 +19388,50 @@ await (async () => {
   ok(/<div class="deskbar salt-deskbar" id="deskbar">/.test(bodyR) && /class="dhname salt-deskbar__name"/.test(bodyR) && /class="fabtn orderbtn salt-orb salt-orb--raised"/.test(bodyR) && /class="totop salt-orb salt-orb--lit"/.test(bodyR)
     && /--salt-bar-top:calc\(var\(--safetop\) \+ var\(--dbtop\)\)/.test(dR) && !/\n\.deskbar\{/.test(dR) && !/\n\.fabtn\{/.test(dR),
     "the bar, its name and its orbs are the system's, sitting where the desk binds them, and the layer states none");
+})();
+
+section("23 Sep 2026: the pricing_v2 workbook, salt on four tiers and one price for oil, candy and rice");
+await (async () => {
+  /* HIS WORKBOOK OF 23 SEP 2026 and his answers that day: salt is Ambassador and four tiers on the quote's RM56 with the
+     engine's two guards kept, Bronze goes, candy and rice are stated a unit, and every customer gets the same oil, candy and
+     rice price. The salt figures are the ones read off the sheet with the guards applied, before the engine was touched, so
+     they are the workbook's and not the code's own echo. Each assertion was proved red by its own mutation, one at a time. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const v = JSON.parse(w.eval(`JSON.stringify((()=>{const keep=PROD,o={};
+    const ask=(p,qs)=>{PROD=p;recompute();return qs.map(q=>PRICING_ENGINE.priceLadder(q,pxCost(),pxPolicy()).ask.total);};
+    PROD='salt';recompute();o.salt=Object.fromEntries(fiveTiersNow().map(r=>[r.q,r.prices]));
+    o.candy=ask('candy',[1,9,10,20,29,30]);o.rice=ask('rice',[1,4,5,9,10]);
+    PROD='salt';recompute();o.row=PRICING_ENGINE.ladderRow([1],pxCost(),pxPolicy())[0].name;
+    o.names=TIER_NAMES;o.tiered=tieredBooks();o.oilProp=tierCustomers().map(id=>tierProposal(id,'oil',tierBoards())).filter(Boolean).length;
+    PROD=keep;recompute();return o;})())`));
+  const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  ok(eq(v.salt["0.5"], [50, 60, 70, 80, 90]) && eq(v.salt["1"], [90, 110, 120, 130, 140]) && eq(v.salt["3"], [260, 310, 320, 370, 390])
+    && eq(v.salt["6.25"], [530, 550, 560, 690, 700]) && eq(v.salt["12.5"], [1050, 1060, 1070, 1080, 1090]),
+    "salt reads the workbook on RM56 with both guards: " + JSON.stringify(v.salt));
+  ok(eq(v.candy, [60, 540, 550, 1100, 1595, 1500]) && eq(v.rice, [8, 32, 35, 63, 60]),
+    "candy and rice are his rates a unit, to the ringgit: " + JSON.stringify({ candy: v.candy, rice: v.rice }));
+  ok(eq(v.names, ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]) && v.row === "Silver",
+    "Bronze is gone and a stranger's row is named for the last level: " + JSON.stringify({ names: v.names, row: v.row }));
+  ok(eq(v.tiered, ["salt"]) && v.oilProp === 0, "a tier is salt's alone; nobody is proposed one on oil (" + v.oilProp + ")");
+
+  const { priceList } = await import("../tools/pricelist.mjs");
+  const { readBook } = await import("../tools/book.mjs");
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const pricing = (await readBook()).ledger.PRICING;
+  const lists = Object.keys(pricing.tierOf || {}).map((c) => priceList(c, book, pricing, new Date()));
+  const fixed = lists.flatMap((L) => L.products.filter((p) => p.product !== "salt"));
+  const same = (pr) => new Set(fixed.filter((p) => p.product === pr).map((p) => JSON.stringify(p.sizes))).size === 1;
+  const candyQs = (fixed.find((p) => p.product === "candy") || { sizes: [] }).sizes.map((x) => x.q);
+  ok(lists.length > 20 && ["oil", "candy", "rice"].every(same) && fixed.every((p) => p.basis === "board" && p.tier == null),
+    "every customer is carded the same oil, candy and rice, with no level and so no mark");
+  ok(eq(candyQs, [1, 5, 10, 20, 30]), "a stated board reaches the list at every printed size, not only its rungs: " + JSON.stringify(candyQs));
+
+  const { ensureStanding } = await import("../stmt/refs.js");
+  const skv = new KV();
+  const made = await ensureStanding({ STMT: skv }, v.names);
+  ok(eq(made.map((r) => r.level), ["Titanium", "Platinum", "Gold", "Silver"]), "one standing link a tier, four of them: " + JSON.stringify(made.map((r) => r.level)));
+  try { w.close(); } catch (e) { /* best effort */ }
 })();
 
 section("The suite frees its windows: every section's body is its own async function");

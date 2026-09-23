@@ -627,7 +627,7 @@ async function testStatement() {
 function testPrices() {
   const now = new Date(), day = now.toISOString().slice(0, 10);
   return { at: now.toISOString(), week: { monday: day, sunday: day, label: "this week" }, since: day,
-    products: [{ product: "salt", name: "Salt", unit: "unit", basis: "tier", tier: "Bronze", levels: 5,
+    products: [{ product: "salt", name: "Salt", unit: "unit", basis: "tier", tier: "Silver", levels: 4,
       rate: null, orders: 0, sizes: [{ q: 1, price: 120 }, { q: 2.5, price: 280 }, { q: 5, price: 540 }] }],
     soon: [] };
 }
@@ -692,7 +692,8 @@ async function handleRefs(request, env, p, m, origin) {
       await ensureStanding(env, names);
       /* the five come back in the LADDER's order, not the order they happened to be minted in:
          he reads them as a ladder, so they are listed as one. Everything else keeps newest first. */
-      const rank = (r) => (r.standing && Array.isArray(names)) ? names.indexOf(r.level) : 99;
+      /* a standing link whose level the book no longer names (Bronze, 23 Sep 2026) goes after the ladder */
+      const rank = (r) => (r.standing && Array.isArray(names) && names.indexOf(r.level) >= 0) ? names.indexOf(r.level) : 99;
       const all = (await listRefs(env)).sort((a, b) => rank(a) - rank(b));
       /* v709: the level names ride with the list, so his picker never states what the tiers are
          called: the book decides that and this is the one road it travels. */

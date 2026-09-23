@@ -1,5 +1,29 @@
 [
  {
+  "v": "v793",
+  "d": "23 Sep 2026",
+  "t": "THE PRICING_V2 WORKBOOK: SALT IS AMBASSADOR AND FOUR TIERS ON RM56, CANDY AND RICE ARE STATED A UNIT",
+  "n": [
+   "<b>HIS WORKBOOK OF 23 SEP 2026, salt-command pricing_v2.xlsx.</b> Salt's COGS is the supplier's quote, RM56 a unit, and moves only when the quote does. Ambassador is COGS plus half again, up to the ten. The four tiers are the sheet's columns: 2.1 times COGS rounded down, 2.1 up, 2.5 down and 2.5 up, each multiple falling 0.045 every half unit past half a unit and never under Ambassador. One unit reads RM90, 110, 120, 130 and 140.",
+   "<b>HIS FOUR ANSWERS THAT DAY.</b> Bronze goes, so the tiers are Titanium, Platinum, Gold and Silver and a stranger is quoted Silver; nobody held Bronze. COGS is the quote, not the live landed cost. Candy from 10 to 29 unit is RM55 a unit. And the engine keeps its two guards over the sheet, a better level at least a ten under the next and a rate that never rises with size, which moves fourteen of the sheet's 48 tier cells (all four at half a unit and at twelve and a half, three at 2 unit, and Gold at 1.5, 2.5 and 3): half a unit reads 50, 60, 70, 80 and 90 where the sheet had 50, 50, 60, 70 and 70, and twelve and a half reads 1,050 to 1,090 where every column met Ambassador at 1,050.",
+   "<b>CANDY AND RICE ARE SINGLE TIER, STATED A UNIT, AS OIL IS.</b> Candy RM60 a unit under 10, RM55 to 29, RM50 from 30; rice RM8, RM7 from 5, RM6 from 10. Both round to the ringgit. A size between rungs is its rung's rate times the size, so at a break a bigger order can cost less in total: 29 candy is RM1,595 and 30 is RM1,500, 9 rice RM63 and 10 RM60. That is the rates as he stated them. The rice board's inversion under the ten-rounding, open since v791, is gone with it.",
+   "<b>THE QUOTES AS HE RELAYED THEM.</b> Salt from SA5-BTR in multiples of 12.5 unit at RM700 each. Oil from SP7-PUD at 10 for RM100 and 50 for RM380, the 15, 20 and 30 unit tiers dropped. Candy from SM4-KEP at RM55, 47, 38 and 30 a unit for 10, 20, 30 and 50. Rice from SM4-KEP at 100 for RM320. Oil's own board is unchanged.",
+   "<b>A TIER IS SALT'S ALONE.</b> His words that day: each customer is quoted differently for salt, and everyone the same for oil, candy and rice. The Tiers card, Accept all and Add ID offer a tier on a tiered book only, so no level is proposed or held where it moves no price. The two oil tiers already held stay on the book and price nothing. On the Counter a stated board now carries no level, so the page draws no mark beside it and says it is the same price for everybody; since 19 Sep it had drawn Ambassador's mark beside oil for every customer and told them their own rate followed their first order.",
+   "<b>THE COUNTER FOLLOWS THE NUMBER OF TIERS.</b> The standing guest links are one a tier rather than exactly five. Bronze's link is kept, because an id handed out must keep opening something, and it opens the stranger's board, which is Silver's."
+  ]
+ },
+ {
+  "v": "v792",
+  "d": "22 Sep 2026",
+  "t": "THE FOLD NO LONGER STOPS FOR WANT OF A MODEL",
+  "n": [
+   "<b>NO KEY, NO CREDIT, NO ANSWER: THE FOLD LANDS ANYWAY.</b> <code>tools/foldnotes.mjs</code> writes the same notes object off the same dossier the call was going to be handed, and <code>tools/foldcall.mjs</code> takes it on three roads: no ANTHROPIC_API_KEY, a call that will not go through, and a reply twice against the house rules. The Fold step's own exit on a missing key is a warning now, and <code>--no-model</code> asks for the tool's notes outright. On 22 Sep a credit balance of nothing exited that step twice inside a minute and left two approved rows staged with the deploy, the marks, the mirror, the statements and the suite all behind them.",
+   "<b>WHAT IS LOST IS THE JUDGEMENT, AND IT IS SAID WHERE IT IS READ.</b> A model reads the drafter's flag against the figures and says whether they answer it; the tool names the flag and stops there. So every row note it writes ends on the line that no judgement is recorded in it, and the version entry says the same, because a reader holding one row should not have to come to the Journal to learn which kind of note they are holding.",
+   "<b>THE ONE UNTRUSTED STRING IS SCRUBBED FIRST.</b> The reason is quoted into the notes, and an API error can carry an em-dash, the wrong unit, the word this house does not write, or markup, every one of which the checker refuses. Notes that could not pass would leave the batch staged for the very reason this road exists to remove, so the tool's notes are put through the same check a model's reply is. Eight assertions, each proved red by its own mutation, one at a time.",
+   "<b>AND A LOT'S OUTSTANDING FIGURE IN THE DOSSIER WAS WRONG.</b> <code>partyDossier</code> read the total less the row's own cash, so a lot carrying no cash field at all counted as wholly unpaid: SA5-BTR read RM3,260 outstanding where the engine's <code>poOwed</code> reads RM160, and every purchase note written off this dossier had been repeating the larger figure. It reads <code>poOwed</code> now, which reads the trail."
+  ]
+ },
+ {
   "v": "v791",
   "d": "23 Sep 2026",
   "t": "P029 READ AS SALT, AND THE RM160 CLOSED",

@@ -151,11 +151,13 @@ export function priceList(code, book, pricing, now) {
       product: p,
       name,
       unit: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].unit) || "unit",
-      basis: own.rate != null ? "yours" : "tier",
+      /* 23 Sep 2026: a stated board is the same for everybody, so it is neither their rate nor a level; it carries no
+         level, so the page draws no mark (it drew Ambassador's beside oil for every customer from 19 Sep) */
+      basis: fixedBoard ? "board" : (own.rate != null ? "yours" : "tier"),
       /* the page draws ONE mark a product, so `tier` is their normal level, a band set's mid; the set itself travels as
          `levels` for whatever later reads it, and the page still never names either */
-      tier: names[t],
-      levels: (held && typeof held === "object") ? held : null,
+      tier: fixedBoard ? null : names[t],
+      levels: (!fixedBoard && held && typeof held === "object") ? held : null,
       rate: own.rate, orders: own.orders, sizes: rows
     });
   }
@@ -251,7 +253,7 @@ export function boardList(tier, book, pricing, now, pick) {
  * "For the guest links, produce exactly 5 links, for the five tier pricing." A standing link is a
  * LEVEL of the ladder and nothing else: no introducer, nothing to follow, the same board every time
  * it is opened until the board itself moves. The level is the index into the book's own tier names,
- * so 1 is the first of the five and 5 the last, the one a stranger is quoted anyway.
+ * so 1 is the first tier and the last is the one a stranger is quoted anyway.
  *
  * It is boardList with the level pinned, rather than a second way of reading the ladder: one
  * definition of what a board is, which is the same reason guestBoard below is a pick and not a
@@ -261,8 +263,10 @@ export function tierBoard(level, book, pricing, now) {
   /* `+level || 5` sent level 0 to the last rather than the first, because 0 is falsy: the floor
      would have been served as the ask. Read the number, then decide. */
   const n = Number(level);
-  const k = Number.isFinite(n) ? Math.max(1, Math.min(5, Math.round(n))) : 5;
   const names = (pricing && pricing.tierNames) || [];
+  /* the last level is the book's own count, four tiers since 23 Sep 2026; five where no names travel */
+  const top = names.length > 1 ? names.length - 1 : 5;
+  const k = Number.isFinite(n) ? Math.max(1, Math.min(top, Math.round(n))) : top;
   const out = boardList(2, book, pricing, now, (p, last) => Math.min(k, last));
   out.standing = true;
   out.level = k;

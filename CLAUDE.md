@@ -208,7 +208,7 @@ untouched.
 | Draft the row | Worker `src/drafter.js` | on arrival via `waitUntil`, plus the quarter-hour of an every-minute cron as the net (the other minutes nudge on a customer order, `docs/STATEMENTS.md`) |
 | Approve or reject | D1 `draft`, `POST /drafts/<id>/approve` | on tap; a decided row returns 409; a rejection drops the entry from every queue and the phone offers it back to re-enter |
 | Stage approved rows | Actions `cloud-commit.yml`, one job `chain` | dispatched by every approval (Worker holds `SALT_GITHUB_TOKEN`), hourly as the net |
-| **Fold, bump, build, test, push** | the `Fold` step: `tools/foldcall.mjs`, one Claude call for the notes (`ANTHROPIC_API_KEY`) over `fold.mjs`; or any agent asked, per `docs/CLOUD_FOLD.md` | same job when rows were staged; or on demand |
+| **Fold, bump, build, test, push** | the `Fold` step: `tools/foldcall.mjs`, one Claude call for the notes (`ANTHROPIC_API_KEY`) over `fold.mjs`, falling to `tools/foldnotes.mjs` where no call can be made; or any agent asked, per `docs/CLOUD_FOLD.md` | same job when rows were staged; or on demand |
 | Gate (`tools/gate.mjs`), deploy, prove, mark committed (with the clock), re-seed the D1 mirror, publish statements, then the full suite | the steps that follow in the same job; a push runs them alone, and skips the deploy when the phone already has the build; a suite failure after the phone is live turns the run red and is written where the phone shows refusals, never rolled back | same job; or on push |
 | Prove repo and live agree | `ship-check.yml` | 11:00 MYT |
 | Deploy the statements site | the same job, on its own paths. **The checkout is depth 1, so the base commit must be FETCHED before it is diffed**, or a statements-only push deploys nothing while the run goes green. Fails safe: no base, deploy anyway | on push |
@@ -231,10 +231,18 @@ untouched.
 - **A CHANGE TO `cloud-commit.yml` NEVER TESTS ITSELF ON THE WAY IN** (10 Sep 2026): it is not
   in its own `push.paths`. Dispatch a run by hand, or push it with a file on one of those paths,
   and then READ THE STEP LIST: most steps are conditional, so a skipped step is green too.
-- **The fold is a judgement and stays with a model**: the row NOTE, the `evolution` entry and
-  the sentence on the roll come from one Claude call over a dossier the tools compute; what a
-  row DOES, what is refused and what the inventory rolls are `fold.mjs`, never the model. CI
-  holds the API key and the Cloudflare token, nothing else.
+- **The fold's judgement is a model's; the fold no longer WAITS for one** (v792, his instruction
+  of 22 Sep 2026). The row NOTE, the `evolution` entry and the sentence on the roll come from one
+  Claude call over a dossier the tools compute; what a row DOES, what is refused and what the
+  inventory rolls are `fold.mjs`, never the model. **NO KEY, A CALL THAT WILL NOT GO THROUGH, AND A
+  REPLY TWICE AGAINST THE HOUSE RULES ALL LAND ON `tools/foldnotes.mjs`**, which writes the same
+  notes object off the same dossier, records NO judgement, and says so in every row note and in the
+  version entry; `--no-model` asks for it outright and the Fold step's old exit on a missing key is
+  a warning. A refusal by `fold.mjs` still leaves the batch staged, that being a rule and not an
+  outage. The cost of the old shape was measured on 22 Sep 2026: a credit balance of nothing exited
+  the step twice inside a minute and left two approved rows staged with the deploy, the marks, the
+  mirror, the statements and the suite all behind them. CI holds the API key and the Cloudflare
+  token, nothing else.
 - **No clock** since 24 Aug 2026. `Salt fold (manual backup)` (trig_01UrnjQMWA3f6GXN5R6Dzi4S)
   is disabled, no cron: fire it by hand if the Fold step fails. The stage stands down while
   `master/_to_fold.json` is in HEAD, unless `fold.mjs --replays` says the batch is a replay.
@@ -604,6 +612,7 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
 | `stmt/signin.js` | The one-time link: the token is hashed at rest and the wrap is opened only by the token; the two limits it cannot promise away are stated in its header |
 | `tools/stmt-seal.mjs` | Laptop only: seals an issue's passwords under the master, proving each against its own verifier; where a code was re-keyed after the issue it pairs by PROOF, trying only passwords whose code has left the roster (v705) |
 | `tools/stmt-account.mjs` | Laptop only: mints a full account for a roster code that has a username and no record, which the fold never did (v707). Refuses without a master that unwraps an existing record, never touches an account that exists, and skips a bucket and a supplier. The publish names who is stuck on every run |
+| `tools/foldnotes.mjs` | The fold's prose with no model and no network (v792): the same notes object off the same dossier, put through the same `checkNotes` a reply is. It states facts and records NO judgement, and the line saying so is in every row note, not only the version entry. `why` is the one untrusted string, quoted from an API error, and `scrub` is the one place it is made safe |
 | `tools/preflight.mjs` | Whether a run may ship at all: `aheadVerdict` says level, warn or STOP, and update.mjs exits on it. It lives outside update.mjs for the reason commitmsg.mjs does, that a file running its chain on import cannot be driven by the suite (v770) |
 | `tools/product.mjs` | The one road that opens, re-keys, retires or restores a book: `--add`, `--rename`, `--retire`, `--unretire`, `--list`, each writing `ledger/book.json` and syncing. A book opens EMPTY. **It refuses to retire a book that has rows**, because `retired` feeds `PROD_IDS` and every consolidated total reads that, so hiding a book with a past would drop its revenue in silence; and it refuses to re-key **salt**, a row that names no product being salt. What it does not do is give a book a hue or a mark: `docs/PRODUCTS.md` |
 | `tools/rid.mjs` | Stable `rid` per ledger row; `nextRid` is the one minting place |

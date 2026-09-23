@@ -4,10 +4,11 @@
  * tell apart, and each opening a landing page that shows ONE BOARD'S PRICES AND NOTHING ELSE. No
  * statement, no order, no account.
  *
- * SINCE v696 THERE ARE FIVE STANDING LINKS, ONE PER TIER (his instruction, 18 Sep 2026: "for the
- * guest links, produce exactly 5 links, for the five tier pricing"). The five levels a guest may be
- * quoted are Titanium, Platinum, Gold, Silver and Bronze; Ambassador is the floor and never a
- * guest's. Each standing link carries its LEVEL, is minted once and kept for good, so an id already
+ * SINCE v696 THERE IS ONE STANDING LINK PER TIER (his instruction, 18 Sep 2026: "for the
+ * guest links, produce exactly 5 links, for the five tier pricing"). Since 23 Sep 2026 the tiers are
+ * four, Titanium, Platinum, Gold and Silver; Ambassador is the floor and never a guest's. Bronze's
+ * link was kept, because an id already handed out must keep opening something: it names a level the
+ * book no longer has, so it opens the stranger's board, which is Silver's. Each standing link carries its LEVEL, is minted once and kept for good, so an id already
  * handed out never changes what it opens, and he picks which of the five to give a stranger.
  *
  * SINCE v658 A LINK MAY INSTEAD NAME ITS INTRODUCER. The board is the ladder, so a guest's
@@ -122,8 +123,8 @@ export async function mintRef(env, { introducer, tier, label, by, level }) {
   return null;
 }
 
-/* THE FIVE THAT ALWAYS EXIST (v696). Ensured rather than minted on a tap, so the answer to "what
- * are my links" is always exactly five and he never has to remember to make them. It is idempotent:
+/* ONE FOR EACH TIER, ALWAYS (v696). Ensured rather than minted on a tap, so the answer to "what
+ * are my links" is always one a tier and he never has to remember to make them. It is idempotent:
  * a level that already has a standing link keeps the id it was given, because an id handed to a
  * stranger must never change what it opens. Ambassador is not among them; it is the floor.
  *
@@ -131,8 +132,8 @@ export async function mintRef(env, { introducer, tier, label, by, level }) {
  * levels are called and this file never states them. With no names to hand it makes none, rather
  * than inventing five. */
 export async function ensureStanding(env, names) {
-  const want = Array.isArray(names) ? names.slice(1, 6).filter((x) => typeof x === "string" && x) : [];
-  if (want.length !== 5) return [];
+  const want = Array.isArray(names) ? names.slice(1).filter((x) => typeof x === "string" && x) : [];
+  if (!want.length) return [];
   const have = await listRefs(env);
   const out = [];
   for (const level of want) {
