@@ -1,0 +1,68 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-23T15:47:59.411Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CA6-CYB",
+    "qty": 2.5,
+    "total": 250,
+    "cost": 120,
+    "cash": 250,
+    "handover": "collected",
+    "date": "2026-09-23",
+    "deliveredQty": 2.5,
+    "deliveredOn": "2026-09-23",
+    "paidOn": "2026-09-23",
+    "ref": "CM4-TO",
+    "refKg": 2.5
+   },
+   "reasoning": "Sold 2.5 unit of salt to CA6-CYB for RM 250, RM 100/unit. Costed at RM 48/unit from the desk's own inventory cost, so RM 130 on the goods at 52%. Paid in full and delivered in full on 2026-09-23. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CM4-TO is on the roster but is not listed as an associate, so this is a new reselling relationship rather than an existing one.",
+    "The inventory spans more than one lot rate, so RM 48/unit is the inventory average rather than the lot this row draws. Check the blend before approving.",
+    "CA6-CYB has no committed salt order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-23T15:47:59.411Z",
+    "type": "SELL",
+    "party": "CA6-CYB",
+    "qty": 2.5,
+    "total": 250,
+    "status": "paid",
+    "raw": "Sell 2.5 unit to CA6-CYB for RM 250 on 2026-09-23, collected, RM 250 cash, 2.5 unit moved → Completed (R3 referred by CM4-TO)",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CA6-CYB",
+     "newId": null,
+     "date": "2026-09-23",
+     "qty": 2.5,
+     "total": 250,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 250,
+     "kg": 2.5,
+     "assoc": "CM4-TO",
+     "stream": "R3",
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    }
+   },
+   "decidedAt": "2026-09-23T15:48:51.394Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
