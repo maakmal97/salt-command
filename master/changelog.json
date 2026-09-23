@@ -1,5 +1,16 @@
 [
  {
+  "v": "v818",
+  "d": "24 Sep 2026",
+  "t": "RESTOCK SIZED FROM MEASURED DEMAND, BOOK BY BOOK",
+  "n": [
+   "<b>A BUY SIZE AND RESTOCK CARD ON STOCK, FOR THE BOOK IN VIEW</b> (his instruction of 24 Sep 2026: the typical buy size, so he can restock properly, inefficient inventory being as costly). The typical order and its spread, the order sizes as shares of orders and of units, the next 7 and 14 days, cover now, the reorder point, the next lot and whether the next price break pays. Salt today: a median order of 2 unit, but orders of 3 unit and over are 30% of orders and 67% of units; 7 unit free, 1.3 days of cover, next lot 62.5 unit at RM56.",
+   "<b>THE FORECAST USES ONLY MEASURED INPUTS</b>, engine/position.mjs restockPlan: a recency-weighted daily rate (half-life 14 days, a young book read over 28 days), a weekly trend shrunk and capped at 50%, the book's own weekday and pay-window rhythm from the Whiteboard, holidays flagged, and the named customers due on their own cadence as a floor under each window.",
+   "<b>THE REORDER POINT IS DERIVED, NEVER UNDER 4 DAYS AND NEVER OVER 14</b> (his bound): lead time plus a 95% safety stock over the lead and the measured gap between lots, in days of forecast demand. It replaces the typed 15 and 20 unit marks, which stay only for a book with no demand, and every reader follows: the Stock headline and tiles, the chart's trigger line and Today. Candy and rice had borrowed salt's 15.",
+   "<b>THE NEXT LOT IS THE CHEAPEST TO HOLD</b>: each quote tier in whole lots, from the smallest that covers the need up to what the forecast sells in 28 days, scored on the rate plus the measured leakage over the days it is held. Oil's 50 unit break wins over 40 unit at RM10; candy's 60 unit break outlasts the forecast; rice's 90 unit free reaches no reorder point inside it. The approach board's side panel carries the same 14 days against what is free."
+  ]
+ },
+ {
   "v": "v817",
   "d": "24 Sep 2026",
   "t": "THE APPROACH BOARD SORTS BY WHAT TO DO",

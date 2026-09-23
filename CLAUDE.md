@@ -208,6 +208,11 @@ receivables signal, a party's quote), so no loss and no price moves with it. A p
 write-off is not approached, offered or messaged (`approachable`). The customer's statement is
 untouched.
 
+**THE REORDER POINT IS DERIVED, NEVER UNDER 4 DAYS AND NEVER OVER 14** (v818, his rule of 24 Sep 2026): the
+engine's `restockPlan`, read through `restockFor(prod)`, sizes it and the next lot per book from measured demand
+only (recency-weighted rate, shrunk trend, the Whiteboard's rhythm, named customers due); `reorderFor` returns it,
+and `RULES.reorderUnits` is the fallback for a book with no demand alone. Never type a mark back in.
+
 ## The chain: tap to deploy
 
 | Step | Where | When |

@@ -61,7 +61,7 @@ Per-product configuration, all driven off `PROD_IDS`:
 | `LADDER_BY` | per-product overrides merged onto the base `LADDER`, read by `ladderFor` |
 | `TIER_RULE` | the five-tier multiples per product. `TIER_NAMES` is NOT per product: one shared list of level names. |
 | `RULES.creditUnits` | retail and associate credit caps per product, read by `creditCapFor` |
-| `RULES.reorderUnits` | the reorder point per product, read by `reorderFor` |
+| `RULES.reorderUnits` | the typed reorder point, now only the fallback for a book with no demand; `reorderFor` reads the measured one from `restockFor` (24 Sep 2026) |
 | `PRICE_ENGINE.anchors` | tier anchor prices per product, with a derive-from-default fallback in `anchorsFor` |
 | `PRICE_ENGINE.sizesBy` | the size ladder per product, read by `sizesFor` |
 | `PRICE_ENGINE.boardBy` | which sizes print per product; empty today |
@@ -200,14 +200,13 @@ the case was anticipated.
   no such leakage. Note also that `--salt-product-oil` and `--salt-brass` are the same value,
   so oil's product colour is already indistinguishable from ordinary furniture, and that
   `--salt-salt` is the brand ink, one character from `--salt-product-salt`.
-- **A new book inherits salt's limits, and the desk now says so.** `creditCapFor` and
-  `reorderFor` both fall back to `RULES[...][DEFAULT_PROD]` when a product has no entry of its
-  own, which is what keeps the breach arithmetic working on a book nobody has set a policy for.
+- **A new book inherits salt's limits, and the desk now says so.** `creditCapFor` falls back to
+  `RULES[...][DEFAULT_PROD]` when a product has no entry of its own (`reorderFor` does so only for a
+  book with no demand; any book with a priced sale gets its own measured point from `restockFor`), which is what keeps the breach arithmetic working on a book nobody has set a policy for.
   Printed book by book, that borrowed figure stated salt's 1 unit as candy's own the moment
   three books were opened, under a sentence beginning *Credit caps are per book*. Since v780 the
   sentence names the books that HAVE a cap and then says which ones borrow one. `anchorsFor`
-  does the same for tier anchors, and `reorderFor` is only ever drawn on Sourcing, which skips
-  an empty book. State both per product when a book goes live.
+  does the same for tier anchors. State the credit cap per product when a book goes live.
 - **`Both books` is hard-coded copy** on Financials and Receivables. It states a count, and at
   three products it states a wrong one.
 - **The reward is salt-only by string comparison**, in five places in the master and two in

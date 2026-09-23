@@ -3024,12 +3024,15 @@ await (async () => {
     "salt keeps 1 unit retail and 2 associate");
   ok(read("creditCapFor('oil','retail')") === 10 && read("creditCapFor('oil','associate')") === 20,
     "oil reads 10 retail (his correction) and 20 associate (confirmed by him, 29 Aug)");
-  ok(read("reorderFor('salt')") === 15 && read("reorderFor('oil')") === 20,
-    "the reorder trigger is per book: salt 15, oil 20 (his call of 29 Aug)");
+  /* 24 SEP 2026, HIS INSTRUCTION: THE TRIGGER IS MEASURED, NOT TYPED. It pinned salt 15 and oil 20 (his call of
+     29 Aug) until then; what is pinned now is the RULE: each book's trigger is its own restock plan's reorder point,
+     and a book with no demand falls back to the typed mark. */
+  ok(read("reorderFor('salt')") === read("restockFor('salt').reorder.units") && read("reorderFor('oil')") === read("restockFor('oil').reorder.units"),
+    "the reorder trigger is per book and is that book's measured reorder point");
   w.eval("setProd('oil');recompute();");
-  ok(read("coverStats().reorderAt") === 20, "oil's cover is judged against oil's own trigger");
+  ok(read("coverStats().reorderAt") === read("restockFor('oil').reorder.units"), "oil's cover is judged against oil's own trigger");
   w.eval("setProd('salt');recompute();");
-  ok(read("coverStats().reorderAt") === 15, "and salt's against salt's");
+  ok(read("coverStats().reorderAt") === read("restockFor('salt').reorder.units"), "and salt's against salt's");
   /* the per-book credit totals PARTITION the old whole-book figure: proven for every
      customer on the book, so the split cannot drop or double a unit */
   const parts = read(`(()=>{const ids=[...new Set(sales.map(s=>s.customer))];
@@ -3046,6 +3049,107 @@ await (async () => {
   ok(JSON.stringify(read("restockQuote(3)")) === JSON.stringify({ qty: 10, total: 100, rate: 10, lots: 1, quoted: true }),
     "oil: 3 unit needed is covered by its own 10 unit tier at RM100");
   w.eval("setProd('salt');recompute();");
+  try { w.close(); } catch (e) { }
+})();
+
+section("Restock plan: the engine sizes a restock off measured demand (his instruction of 24 Sep 2026)");
+await (async () => {
+  const { default: X } = await import("../engine/position.mjs");
+  const T = new Date("2026-09-24"), DAY = 86400000;
+  const iso = (n) => new Date(T.getTime() - n * DAY).toISOString().slice(0, 10);
+  /* n days of history ending yesterday, f(age) units on each day */
+  const hist = (n, f) => { const r = []; for (let a = 1; a <= n; a++) { const q = f(a); if (q > 0) r.push({ date: iso(a), qty: q }); } return r; };
+  const plan = (o) => X.restockPlan(Object.assign({ today: T, free: 0, tiers: [{ qty: 10, total: 100 }, { qty: 50, total: 380 }], leakPct: 6, leadDays: 1, reviewDays: 9 }, o));
+  const hasNaN = (v) => typeof v === "number" ? Number.isNaN(v) : (v && typeof v === "object" ? Object.values(v).some(hasNaN) : false);
+
+  /* a book with no demand is an empty plan, never a throw */
+  let e = null; try { e = plan({ rows: [] }); } catch (x) { e = x; }
+  ok(e && e.empty === true && e.n === 0, "a book with no demand rows returns an empty plan, not a throw");
+  ok(plan({ rows: [{ date: iso(1), qty: 0 }] }).empty === true, "and a row of nothing is no demand");
+
+  /* HIS BOUND: never under 4 days. A steady 2 unit a day has no spread, so lead plus safety is one day */
+  const steady = plan({ rows: hist(60, () => 2) });
+  ok(steady.reorder.rawDays < 4 && steady.reorder.days === 4 && steady.reorder.bound === "floor",
+    "a steady book's reorder point is held up at the 4-day floor: " + JSON.stringify(steady.reorder));
+  ok(Math.abs(steady.reorder.units - steady.forecast.d7.run * 4 / 7) < 0.05,
+    "and its units are the forecast over those 4 days: " + steady.reorder.units + " against " + steady.forecast.d7.run);
+  /* and never over 14: one 30 unit order every ten days is all spread */
+  const lumpy = plan({ rows: hist(60, (a) => a % 10 === 0 ? 30 : 0) });
+  ok(lumpy.reorder.rawDays > 14 && lumpy.reorder.days === 14 && lumpy.reorder.bound === "ceiling",
+    "a lumpy book's reorder point is held down at the 14-day ceiling: " + JSON.stringify(lumpy.reorder));
+
+  /* OVERSTOCK IS NOT OFFERED: at a unit a day the 50 unit break outlasts the four-week forecast */
+  const slow = plan({ rows: hist(60, () => 1), free: 0 });
+  ok(slow.lot && slow.lot.tier === 10 && slow.lot.qty <= slow.forecast.d28.use + 1e-9 && !slow.lot.overstock,
+    "at a unit a day the lot is taken on the 10 unit tier, inside the 28-day forecast: " + JSON.stringify(slow.lot));
+  ok(slow.next && slow.next.won === false && slow.next.why === "overstock" && slow.next.qty > slow.forecast.d28.use,
+    "and the 50 unit break is named as not taken because it outlasts the forecast: " + JSON.stringify(slow.next));
+
+  /* A PRICE BREAK THAT WINS: at 3 unit a day the 50 unit lot sells inside 28 days and its rate beats the leak */
+  const brisk = plan({ rows: hist(60, () => 3), free: 0 });
+  ok(brisk.lot && brisk.lot.tier === 50 && brisk.next && brisk.next.won === true && brisk.next.over && brisk.next.over.tier === 10,
+    "at 3 unit a day the 50 unit break wins over the 10 unit tier: " + JSON.stringify({ lot: brisk.lot, next: brisk.next }));
+  /* AND ONE THAT DOES NOT: a 4% saving against a 30% leak held for longer */
+  const leaky = plan({ rows: hist(60, () => 3), free: 0, tiers: [{ qty: 10, total: 100 }, { qty: 50, total: 480 }], leakPct: 30, reviewDays: 5 });
+  ok(leaky.lot && leaky.lot.tier === 10 && leaky.next && leaky.next.won === false && leaky.next.why === "leak" && leaky.next.score > leaky.lot.score,
+    "a small saving loses to the leak over the longer hold, and says so: " + JSON.stringify({ lot: leaky.lot, next: leaky.next }));
+  ok(leaky.lot.qty >= leaky.need - 1e-9, "the lot always covers the need: " + leaky.lot.qty + " against " + leaky.need);
+
+  /* THE NAMED FLOOR: customers due inside the week lift the week above the run rate */
+  const named = plan({ rows: hist(60, () => 1), dues: [{ date: iso(-2), units: 20 }, { date: iso(-40), units: 99 }] });
+  ok(named.forecast.d7.named === 20 && named.forecast.d7.use === 20 && named.forecast.d7.by === "named" && named.forecast.d7.run < 20,
+    "a week's demand is the named customers' 20 unit where it beats the run rate, and both are reported: " + JSON.stringify(named.forecast.d7));
+
+  /* BUY SIZE, and the sample's confidence */
+  const sized = plan({ rows: [1, 1, 1, 2, 2, 3, 6, 10].map((q, i) => ({ date: iso(i + 1), qty: q })) });
+  ok(sized.buy.median === 2 && sized.buy.p25 === 1 && sized.buy.common[0].qty === 1 && sized.buy.common[0].n === 3,
+    "the typical order is the median, with the quartile and the most common size: " + JSON.stringify(sized.buy));
+  ok(sized.buy.bands.small.orders === 3 && sized.buy.bands.big.orders === 3 && sized.buy.bands.big.unitShare === 0.73,
+    "orders are banded at 1 and 3 unit, as a share of orders and of units: " + JSON.stringify(sized.buy.bands));
+  ok(sized.conf === "thin" && steady.conf === "measured", "under 40 orders the sample is thin, at 40 or more measured");
+  /* A YOUNG BOOK is read over 28 days, so two orders in three days do not forecast a month of them */
+  const young = plan({ rows: [{ date: iso(1), qty: 16 }, { date: iso(3), qty: 10 }] });
+  ok(young.young === true && young.forecast.d28.run < 26 * 28 / 4 / 2,
+    "a book four days old is read over 28 days, not over its four: " + young.forecast.d28.run);
+  ok(![steady, lumpy, slow, brisk, leaky, named, sized, young].some(hasNaN), "no figure in any plan is NaN");
+})();
+
+section("Restock on the desk: the Stock card and the measured trigger (his instruction of 24 Sep 2026)");
+await (async () => {
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
+  const live = read("liveBooks().filter(function(p){return obsDemandRows(p).length>0;})");
+  ok(live.length >= 2, "at least two books carry demand to plan against: " + live.join(", "));
+  for (const p of live) {
+    w.eval("setProdView(" + JSON.stringify(p) + ");");
+    const r = read("restockFor(PROD)");
+    ok(r && !r.empty && r.n === read("obsDemandRows(PROD).length"), p + ": the plan reads this book's own demand rows");
+    ok(r.reorder.days >= 4 && r.reorder.days <= 14, p + ": the reorder point is never under 4 days nor over 14: " + r.reorder.days);
+    ok(read("reorderFor(PROD)") === r.reorder.units && read("coverStats().reorderAt") === r.reorder.units,
+      p + ": the trigger every reader draws is the plan's reorder point");
+    const html = w.eval("builders.inventory()");
+    const d = w.document.createElement("div"); d.innerHTML = html;
+    const card = d.querySelector("#restockCard"), txt = card ? card.textContent.replace(/\s+/g, " ") : "";
+    ok(card && html.indexOf('id="restockCard"') < html.indexOf("What is on the inventory <span"),
+      p + ": the Buy size and restock card is on Stock, above the inventory figures");
+    ok(txt.includes("Typical order" + read("units(restockFor(PROD).buy.median)")) && txt.includes("always 4 to 14 days")
+      && txt.includes("Reorder point" + read("units(restockFor(PROD).reorder.units)")),
+      p + ": the card leads with the typical order and the reorder point, and states the bound: " + txt.slice(0, 160));
+    ok(!/NaN|undefined|Infinity/.test(txt), p + ": nothing on the card reads NaN, undefined or Infinity");
+  }
+  /* a book other than the one in view is read and put back */
+  w.eval("setProdView('salt');");
+  const held = read("currentStock");
+  const other = read("restockFor('oil').reorder.units");
+  ok(read("PROD") === "salt" && read("currentStock") === held && other === read("(function(){setProdView('oil');var v=reorderFor('oil');setProdView('salt');return v;})()"),
+    "restockFor on another book reads that book and leaves the one in view as it was");
+  /* a book with no demand keeps the typed fallback */
+  const idle = read("PROD_IDS.filter(function(p){return obsDemandRows(p).length===0;})");
+  if (idle.length) ok(read("restockFor(" + JSON.stringify(idle[0]) + ").empty") === true
+      && read("reorderFor(" + JSON.stringify(idle[0]) + ")") === read("RULES.reorderUnits[" + JSON.stringify(idle[0]) + "]!=null?RULES.reorderUnits[" + JSON.stringify(idle[0]) + "]:RULES.reorderUnits[DEFAULT_PROD]"),
+    "a book with no demand falls back to the typed mark: " + idle[0]);
+  else skipData("no book without demand to prove the typed fallback on");
   try { w.close(); } catch (e) { }
 })();
 
@@ -19898,6 +20002,18 @@ await (async () => {
   const t = JSON.parse(w2.eval("JSON.stringify((" + probe2.toString() + ")())"));
   ok(/50%\s*1 of 2 due dates met on time/.test(t), "last month's hit rate counts the due date nobody came back for: " + t);
   try { w2.close(); } catch (e) { /* best effort */ }
+})();
+
+section("v818: the approach board says what the next 14 days take against what is free, off the Stock card's own reader");
+await (async () => {
+  /* the line reads restockFor, so its figures are compared with the reader's, never with a second copy of the rule */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const v = JSON.parse(w.eval("JSON.stringify((function(){switchTab('concentration');var s=document.querySelector('.sec.on .apside');var r=restockFor(PROD);"
+    + "return {t:s?s.textContent.replace(/\\s+/g,' '):'',use:units(r.forecast.d14.use),named:units(r.forecast.d14.named),free:units(r.free)};})())"));
+  ok(v.t.includes("Next 14 days " + v.use) && v.t.includes(v.named + " of it from names due here, against " + v.free + " free"),
+    "the board's side panel carries the 14 days of demand and the free inventory the Stock card reads: " + v.t.slice(-220));
+  try { w.close(); } catch (e) { /* best effort */ }
 })();
 
 section("The suite frees its windows: every section's body is its own async function");

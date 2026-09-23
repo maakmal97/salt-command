@@ -338,6 +338,144 @@ function coverStats(S){
   return {units14,units28,rate14,rate28,rate,free,days,zero,
     reorderAt:S.reorderUnits,below:free<S.reorderUnits,shortBy:+(S.reorderUnits-usable).toFixed(2)};
 }
+/* ============ RESTOCK FROM MEASURED DEMAND (his instruction of 24 Sep 2026) ============
+   "What is the typical buy size, so I can plan to restock properly, as inefficient inventory is also
+   as costly." Then: coverage dynamic, every trend and forecast off measured data points, and the
+   reorder point on the same footing, never more than two weeks and never less than four days.
+   ONE BOOK AT A TIME, EVERY INPUT MEASURED, and the desk gathers them (restockFor in the master):
+     rows      the book's demand rows {date, qty}: priced, not cancelled, not a reward
+     today     the desk's clock; free is on hand less what is owed out, as coverStats reads it
+     tiers     the supplier's quote [{qty, total}]; leakPct the book's measured leak per lot
+     rhythm    {dow:[7], pay, mid}, the Whiteboard's factors, already shrunk; payWin its pay window
+     dues      [{date, units}] a named customer's usual lot on the day their own cadence says
+     holidays  iso -> name; holVerifiedTo where that table stops
+     leadDays  order to receipt, median; reviewDays the median gap between his lots (null: not measured)
+   THE FORECAST is base x trend x weekday x pay window for each day ahead. Base is the units a day,
+   weighted by recency (half-life 14 days) over every calendar day of the book, silent ones included.
+   Trend is the slope of weekly units over up to the last eight full weeks, pulled towards none by
+   n/(n+8) and capped at 50% either way. A holiday in the window is flagged and moves nothing until
+   one has been traded through, the Whiteboard's rule. Any window's demand is the run rate or what
+   the named customers are due to take in it, whichever is more, and both are reported.
+   THE REORDER POINT is lead days plus safety stock over the base rate, clamped to 4 and 14 days (his
+   bound); safety is 1.65 sigma of the last 28 days' daily units, over the lead and review days.
+   THE LOT is the cheapest to HOLD, not to buy: a tier's rate carries the leak for half the lot's cover,
+   and a lot the forecast would not sell inside 28 days is overstock and is not offered.
+   Every division is guarded to null, never NaN; a book with no demand returns {empty:true}. */
+function restockPlan(S){
+  const MS=86400000, today=(S.today instanceof Date)?S.today:new Date(S.today);
+  const rows=(S.rows||[]).filter(r=>r&&r.date&&+r.qty>0);
+  if(!rows.length)return {empty:true,n:0};
+  const div=(a,b)=>(b&&isFinite(b)&&isFinite(a))?a/b:null;
+  const r2=v=>v==null?null:+v.toFixed(2);
+  const iso=d=>d.toISOString().slice(0,10);
+  const ageOf=d=>Math.round((today-new Date(d))/MS);
+  const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
+  /* ---- buy size: what one order looks like ---- */
+  const qs=rows.map(r=>+r.qty).sort((a,b)=>a-b), n=qs.length, tot=qs.reduce((a,x)=>a+x,0);
+  const pct=p=>{const k=(n-1)*p,lo=Math.floor(k),hi=Math.ceil(k);return r2(qs[lo]+(qs[hi]-qs[lo])*(k-lo));};
+  const cnt={};qs.forEach(q=>{cnt[q]=(cnt[q]||0)+1;});
+  const common=Object.keys(cnt).map(q=>({qty:+q,n:cnt[q]})).sort((a,b)=>b.n-a.n||a.qty-b.qty).slice(0,3);
+  const sUp=S.smallUpTo!=null?S.smallUpTo:1, bFrom=S.bigFrom!=null?S.bigFrom:3;
+  const bandOf=q=>q<=sUp+0.0001?'small':(q>=bFrom-0.0001?'big':'mid');
+  const bands={small:{orders:0,units:0},mid:{orders:0,units:0},big:{orders:0,units:0}};
+  qs.forEach(q=>{const b=bands[bandOf(q)];b.orders++;b.units+=q;});
+  Object.keys(bands).forEach(k=>{const b=bands[k];b.units=r2(b.units);
+    b.orderShare=r2(div(b.orders,n));b.unitShare=r2(div(b.units,tot));});
+  const buy={n:n,conf:n>=40?'measured':'thin',median:pct(0.5),p25:pct(0.25),p75:pct(0.75),p90:pct(0.9),
+    mean:r2(div(tot,n)),common:common,bands:bands,smallUpTo:sUp,bigFrom:bFrom};
+  /* ---- base: units a day, recency weighted over every calendar day ----
+     A BOOK YOUNGER THAN 28 DAYS IS READ OVER 28, the days before its first order counted silent. Two
+     candy orders in three days read over three days forecast 174 unit a month and asked for 150 unit;
+     no 28-day forecast stands on fewer than 28 days. The trend is read off the book's real weeks only. */
+  const first=rows.map(r=>r.date).sort()[0];
+  const span=Math.max(1,ageOf(first)+1), bSpan=Math.max(span,28);
+  const byAge=new Array(bSpan).fill(0);
+  rows.forEach(r=>{const a=ageOf(r.date);if(a>=0&&a<bSpan)byAge[a]+=+r.qty;});
+  let wS=0,uS=0;byAge.forEach((u,a)=>{const w=Math.pow(0.5,a/14);wS+=w;uS+=w*u;});
+  const base=div(uS,wS)||0;
+  /* ---- trend: weekly units over up to eight full weeks, today being part of none ---- */
+  const nW=Math.min(8,Math.floor((span-1)/7)), wk=[];
+  for(let j=nW-1;j>=0;j--){let s=0;for(let a=1+7*j;a<=7+7*j;a++)s+=byAge[a]||0;wk.push(s);}
+  let trendRaw=null,trend=0;
+  if(nW>=2){
+    const mx=(nW-1)/2, my=wk.reduce((a,x)=>a+x,0)/nW;
+    let sxy=0,sxx=0;wk.forEach((y,x)=>{sxy+=(x-mx)*(y-my);sxx+=(x-mx)*(x-mx);});
+    const rel=div(div(sxy,sxx),my);
+    if(rel!=null){trendRaw=+rel.toFixed(4);trend=+clamp(rel*nW/(nW+8),-0.5,0.5).toFixed(4);}
+  }
+  /* ---- volatility: daily units over the last 28 days ---- */
+  const last=byAge.slice(0,28), lm=last.reduce((a,x)=>a+x,0)/last.length;
+  const sigma=last.length>1?Math.sqrt(last.reduce((a,x)=>a+(x-lm)*(x-lm),0)/(last.length-1)):0;
+  const lead=Math.max(1,+S.leadDays||0);
+  const reviewMeasured=S.reviewDays!=null&&+S.reviewDays>0;
+  const review=reviewMeasured?+S.reviewDays:14;
+  /* ---- the daily forecast ---- */
+  const H=Math.max(28,Math.ceil(14+review)), R=S.rhythm||null, pw=S.payWin||(()=>false), hol=S.holidays||{};
+  const days=[];
+  for(let i=1;i<=H;i++){
+    const dt=new Date(today.getTime()+i*MS), d=iso(dt);
+    const fD=R&&R.dow&&R.dow[dt.getUTCDay()]!=null?R.dow[dt.getUTCDay()]:1;
+    const fP=R?(pw(dt)?(R.pay!=null?R.pay:1):(R.mid!=null?R.mid:1)):1;
+    const fT=clamp(1+trend*i/7,0.5,1.5);
+    days.push({iso:d,units:base*fT*fD*fP,hol:hol[d]||null});
+  }
+  const dues=(S.dues||[]).filter(x=>x&&x.date&&+x.units>0)
+    .map(x=>({date:x.date,units:+x.units,id:x.id||null,off:Math.max(1,-ageOf(x.date))}));
+  const run=(a,b)=>days.reduce((s,d,k)=>s+d.units*Math.max(0,Math.min(k+1,b)-Math.max(k,a)),0);
+  const named=(a,b)=>dues.filter(x=>x.off>a&&x.off<=b).reduce((s,x)=>s+x.units,0);
+  const demand=(a,b)=>{const r=run(a,b),m=named(a,b);return {run:r2(r),named:r2(m),use:r2(Math.max(r,m)),by:m>r?'named':'run'};};
+  /* ---- the reorder point ---- */
+  const safety=1.65*sigma*Math.sqrt(lead+review);
+  const cover=div(safety,base);
+  const rawDays=cover==null?14:lead+cover;
+  const rDays=+clamp(rawDays,4,14).toFixed(1);
+  const bound=rawDays<4?'floor':(rawDays>14?'ceiling':null);
+  const reorderUnits=demand(0,rDays).use;
+  const free=+(+S.free||0).toFixed(2);
+  /* ---- when the free inventory reaches the reorder point, and when it runs out, on the run rate ---- */
+  const reach=lvl=>{if(free<=lvl+1e-9)return 0;let c=0;
+    for(let k=0;k<days.length;k++){const u=days[k].units;if(free-(c+u)<=lvl+1e-9)return +(k+div(free-lvl-c,u)).toFixed(1);c+=u;}
+    return null;};
+  const reachD=reach(reorderUnits), coverD=reach(0);
+  const dayISO=d=>d==null?null:iso(new Date(today.getTime()+Math.ceil(d)*MS));
+  /* ---- the lot ---- */
+  const need=r2(Math.max(0,reorderUnits+demand(rDays,rDays+review).use-free));
+  const d28=demand(0,28), perDay=div(d28.use,28);
+  const leakDay=div((+S.leakPct||0)/100,review)||0;
+  const price=(q,t)=>{const rate=t.total/t.qty, cov=div(q,perDay);
+    return {qty:r2(q),total:r2(rate*q),rate:r2(rate),lots:Math.round(q/t.qty),tier:t.qty,cover:cov==null?null:+cov.toFixed(1),
+      score:+(rate*(1+leakDay*(cov==null?0:cov/2))).toFixed(4)};};
+  const tiers=(S.tiers||[]).filter(t=>t&&+t.qty>0&&+t.total>0).map(t=>({qty:+t.qty,total:+t.total})).sort((a,b)=>a.qty-b.qty);
+  const cands=[];
+  tiers.forEach(t=>{for(let k=1;k<=1000;k++){const q=k*t.qty;if(q>d28.use+1e-9)break;if(q>=need-1e-9)cands.push(price(q,t));}});
+  const best=l=>l.slice().sort((a,b)=>a.score-b.score||a.qty-b.qty)[0]||null;
+  const smallest=t=>price(Math.max(1,Math.ceil((need-1e-9)/t.qty))*t.qty,t);
+  let lot=best(cands);
+  /* nothing fits under the 28-day cap: the smallest lot that covers the need, marked as overstock */
+  if(!lot&&tiers.length){lot=tiers.map(smallest).sort((a,b)=>a.qty-b.qty||a.rate-b.rate)[0];lot.overstock=true;}
+  /* THE NEXT PRICE BREAK: a cheaper tier than the chosen lot's, and why it lost; or, where the lot is
+     itself on a cheaper tier than the highest rate, the break it took and why it won */
+  let next=null;
+  if(lot){
+    const cheaper=tiers.filter(t=>t.total/t.qty<lot.rate-0.005).sort((a,b)=>b.total/b.qty-a.total/a.qty)[0];
+    if(cheaper){
+      const alt=best(cands.filter(c=>c.tier===cheaper.qty))||smallest(cheaper);
+      next=Object.assign(alt,{won:false,why:alt.qty>d28.use+1e-9?'overstock':'leak'});
+    }else{
+      const pricier=tiers.filter(t=>t.total/t.qty>lot.rate+0.005).sort((a,b)=>a.total/a.qty-b.total/b.qty)[0];
+      if(pricier){const alt=best(cands.filter(c=>c.tier===pricier.qty))||smallest(pricier);
+        next=Object.assign({},lot,{won:true,why:'rate',over:alt});}
+    }
+  }
+  return {empty:false,n:n,conf:buy.conf,buy:buy,
+    base:r2(base),days:span,young:span<28,trend:trend,trendRaw:trendRaw,weeks:nW,sigma:r2(sigma),lead:lead,review:review,reviewMeasured:reviewMeasured,
+    forecast:{d7:demand(0,7),d14:demand(0,14),d28:d28},
+    reorder:{days:rDays,rawDays:+rawDays.toFixed(1),bound:bound,units:reorderUnits,safety:r2(safety),min:4,max:14},
+    free:free,coverDays:coverD,coverDate:dayISO(coverD),reachDays:reachD,reachDate:dayISO(reachD),below:free<=reorderUnits+1e-9,
+    need:need,lot:lot,next:next,leakPct:+(+S.leakPct||0),dues:dues.filter(x=>x.off<=H),
+    hols:days.filter(d=>d.hol).map(d=>({iso:d.iso,name:d.hol})),
+    pastTable:S.holVerifiedTo?iso(new Date(today.getTime()+28*MS))>S.holVerifiedTo:false};
+}
 /* ============ COMMITMENTS ============ what is owed out (paid ahead of delivery) and promised
    (agreed, nothing moved), which is the part of the forecast the phone and the drafter read */
 function commitments(sales,currentStock){
@@ -683,7 +821,7 @@ function renameInBook(book,pairs){
 return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
-        daysBetween:daysBetween,dayAge:dayAge,walk:walk,coverStats:coverStats,commitments:commitments,
+        daysBetween:daysBetween,dayAge:dayAge,walk:walk,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
