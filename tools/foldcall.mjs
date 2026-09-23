@@ -38,7 +38,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 import { plan } from "./fold.mjs";
-import { toolNotes } from "./foldnotes.mjs";
+import { toolNotes, phoneLine } from "./foldnotes.mjs";
 import { readBookFile } from "./booksync.mjs";
 import { readBook } from "./book.mjs";
 import E from "../engine/position.mjs";   /* v738: what a customer owes is read off the engine, never as total less cash */
@@ -312,7 +312,7 @@ if (isMain) {
     catch (e) {
       why = "The model could not be called: " + (e && e.status ? "http " + e.status + ", " : "") + String((e && e.message) || e).replace(/\s+/g, " ").slice(0, 200) + ". The tool wrote these notes instead, so the fold lands.";
       console.log("  WARN  " + why);
-      await said(why);
+      await said(phoneLine(why, d.version.next));   /* v809: plain words on the phone; the raw error stays in `why` */
     }
     if (got) {
       console.log(`  call  ${MODEL}: ${got.usage.input_tokens} in, ${got.usage.output_tokens} out, ${((Date.now() - t0) / 1000).toFixed(1)} s`);
