@@ -1,6 +1,6 @@
 {
- "v": "v810",
- "stamped": "23 Sep 2026, 18:55 KL",
+ "v": "v812",
+ "stamped": "23 Sep 2026, 21:18 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5023,6 +5023,16 @@
     "paidOn": "2026-09-23",
     "note": "<b>RICE SELL DATED 23 SEP, COLLECTED AND PAID IN FULL ON THE SAME VISIT AS THE SALT.</b> CM3-OUG took 10 unit for RM50, RM5 a unit, RM50 cash in and 10 unit collected on 23 Sep on his word, so nothing stays open. Costed at RM3.20 a unit from the desk's own inventory cost, RM32 on the goods, RM18 at 36%. The RM50 clears the floor of RM34 and sits under the ask of RM60, with the ceiling at RM102. Flagged: CM3-OUG has no committed rice order on the book, so there is no rate of theirs to compare; the figures do not answer it. CM3-OUG: 3 orders, median RM52, range RM48 to RM65, nothing outstanding, none on credit against a cap of 1.",
     "rid": "s195"
+   },
+   {
+    "customer": "CS6-PER",
+    "qty": 2,
+    "total": 200,
+    "cash": 0,
+    "date": "2026-09-23",
+    "deliveredQty": 0,
+    "note": "<b>SALT SELL DATED 23 SEP, ACKNOWLEDGED AND PENDING: NOTHING PAID AND NOTHING HANDED OVER.</b> Booked to CS6-PER, 2 unit for RM200, RM100 a unit, from site order 20260923131530-semgxg, to collect, so the whole RM200 and the whole 2 unit stay open. Costed at RM48 a unit from the desk's own inventory cost, RM104 on the goods at 52%. The RM200 clears the floor of RM113.98 and sits under the ask of RM270, with the ceiling at RM310. Flagged: CS6-PER usually pays about RM80 a unit across 7 orders, 25% below this, and the RM48 is an inventory average across more than one lot rate; the figures do not answer the blend. CS6-PER: 7 orders, median RM70.40, range RM11 to RM100, nothing outstanding, none on credit against a cap of 2.",
+    "rid": "s196"
    }
   ],
   "contacts": [
@@ -5646,9 +5656,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-23T10:51:04.870Z",
+  "QUEUE_COMMITTED": "2026-09-23T13:16:12.752Z",
   "PRICING": {
-   "takenAt": "2026-09-23T10:55:05.042Z",
+   "takenAt": "2026-09-23T13:18:51.886Z",
    "sizes": [
     0.5,
     1,
@@ -5690,11 +5700,11 @@
     "CM4-MK": {
      "salt": "Titanium"
     },
-    "CE4-CHE": {
-     "salt": "Platinum"
-    },
     "CS6-PER": {
      "salt": "Titanium"
+    },
+    "CE4-CHE": {
+     "salt": "Platinum"
     },
     "CM4-TO": {
      "salt": "Titanium"
@@ -5886,40 +5896,6 @@
       "lateTwice": false
      }
     },
-    "CE4-CHE": {
-     "salt": {
-      "name": "consistent mid",
-      "orders": 10,
-      "tenureDays": 65,
-      "sinceLastDays": 4,
-      "perMonth": 4.68,
-      "smallShare": 0,
-      "bigShare": 0.2,
-      "late": 0,
-      "frequent": true,
-      "small": false,
-      "bigger": false,
-      "loyal": true,
-      "rare": false,
-      "lateTwice": false
-     },
-     "oil": {
-      "name": "large and regular",
-      "orders": 2,
-      "tenureDays": 11,
-      "sinceLastDays": 4,
-      "perMonth": 2.03,
-      "smallShare": 0,
-      "bigShare": 1,
-      "late": 0,
-      "frequent": true,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": false,
-      "lateTwice": false
-     }
-    },
     "CS6-PER": {
      "salt": {
       "name": "large and regular",
@@ -5947,6 +5923,40 @@
       "bigShare": 1,
       "late": 0,
       "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CE4-CHE": {
+     "salt": {
+      "name": "consistent mid",
+      "orders": 10,
+      "tenureDays": 65,
+      "sinceLastDays": 4,
+      "perMonth": 4.68,
+      "smallShare": 0,
+      "bigShare": 0.2,
+      "late": 0,
+      "frequent": true,
+      "small": false,
+      "bigger": false,
+      "loyal": true,
+      "rare": false,
+      "lateTwice": false
+     },
+     "oil": {
+      "name": "large and regular",
+      "orders": 2,
+      "tenureDays": 11,
+      "sinceLastDays": 4,
+      "perMonth": 2.03,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": true,
       "small": false,
       "bigger": true,
       "loyal": false,
@@ -7766,11 +7776,11 @@
      "ladder": []
     }
    },
-   "v": "v810"
+   "v": "v812"
   },
   "OPEN": {
-   "at": "2026-09-23T10:55:05.148Z",
-   "count": 8,
+   "at": "2026-09-23T13:18:52.074Z",
+   "count": 9,
    "byKey": {
     "CM4-TO|2026-09-23|750": {
      "d": "2026-09-23",
@@ -7787,6 +7797,20 @@
      "deliveredOn": "2026-09-23",
      "handover": "collected",
      "key": "CM4-TO|2026-09-23|750"
+    },
+    "CS6-PER|2026-09-23|200": {
+     "d": "2026-09-23",
+     "p": "CS6-PER",
+     "dir": "S",
+     "q": 2,
+     "t": 200,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 200,
+     "oweUnits": 2,
+     "rid": "s196",
+     "key": "CS6-PER|2026-09-23|200"
     },
     "CR3-DAM|2026-09-22|90": {
      "d": "2026-09-22",
@@ -7912,7 +7936,7 @@
      "coverDays": 1.8,
      "rate": 6.23,
      "owedToYou": 430,
-     "promised": 9.5,
+     "promised": 11.5,
      "short": 0
     },
     "oil": {
@@ -7967,7 +7991,7 @@
     "rice": null,
     "spare": null
    },
-   "v": "v810"
+   "v": "v812"
   }
  }
 }

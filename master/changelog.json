@@ -1,5 +1,15 @@
 [
  {
+  "v": "v812",
+  "d": "23 Sep 2026",
+  "t": "AN ACKNOWLEDGED ORDER IS NOT A MOVED ORDER",
+  "n": [
+   "<b>FOLDED: ONE SALT SELL TO CS6-PER, 2 unit at RM200, taken from the statements site as order 20260923131530-semgxg and acknowledged, to collect.</b> Nothing was paid and nothing was handed over, so the row is folded as pending, dated 23 Sep as the day it was agreed. It clears the RM113.98 floor for this size and sits well under the RM270 ask, with the ceiling at RM310.",
+   "<b>UNUSUAL: the rate runs high against the party's own book and the cost basis is a blend.</b> RM100 a unit is 25% above the RM80 a unit CS6-PER usually pays across 7 orders, and it sits at the top of their range of RM11 to RM100. The drafter flagged that the inventory spans more than one lot rate, so RM48 a unit is the average and not the lot this row draws: the dossier carries no lot split, so the flag stands open.",
+   "<b>THE INVENTORY DID NOTHING.</b> Stock stays at 21 unit and the cost basis is untouched, because a pending row draws no stock and books no revenue until something moves. Salt was counted on 23 Sep, so the floors behind this row rest on a fresh count. Nothing is promised against this order and CS6-PER carries no outstanding balance, so the only thing left open is the collection itself."
+  ]
+ },
+ {
   "v": "v811",
   "d": "23 Sep 2026",
   "t": "WHEN THE MODEL IS NOT USED, THE PHONE IS TOLD SO IN PLAIN WORDS",
