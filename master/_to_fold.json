@@ -1,0 +1,241 @@
+{
+ "ok": true,
+ "count": 5,
+ "approved": [
+  {
+   "id": "2026-09-23T04:30:19.207Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CJ2-TBC",
+    "qty": 16,
+    "total": 760,
+    "cost": 608,
+    "cash": 760,
+    "handover": "collected",
+    "product": "candy",
+    "date": "2026-09-22",
+    "deliveredQty": 16,
+    "deliveredOn": "2026-09-22",
+    "paidOn": "2026-09-22",
+    "note": "His word of 23 Sep 2026: 16 candy for RM760 on 22 Sep, paid in full and collected himself."
+   },
+   "reasoning": "Sold 16 unit of candy to CJ2-TBC for RM 760, RM 47.5/unit. Costed at RM 38/unit from the desk's own inventory cost, so RM 152 on the goods at 20%. Paid in full and delivered in full on 2026-09-22. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CJ2-TBC has no committed candy order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-23T04:30:19.207Z",
+    "payload": {
+     "mode": "new",
+     "product": "candy",
+     "direction": "SELL",
+     "party": "CJ2-TBC",
+     "newId": null,
+     "date": "2026-09-22",
+     "qty": 16,
+     "total": 760,
+     "delivery": 0,
+     "cash": 760,
+     "kg": 16,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "His word of 23 Sep 2026: 16 candy for RM760 on 22 Sep, paid in full and collected himself.",
+     "handover": "collected",
+     "second": null
+    }
+   },
+   "decidedAt": "2026-09-23T05:08:26.561Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-23T04:30:20.207Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CR3-DAM",
+    "qty": 1,
+    "total": 90,
+    "cost": 48,
+    "cash": 0,
+    "handover": "collected",
+    "date": "2026-09-22",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-09-22",
+    "note": "His word of 23 Sep 2026: 1 unit of salt for RM90 on 22 Sep, collected, not paid."
+   },
+   "reasoning": "Sold 1 unit of salt to CR3-DAM for RM 90, RM 90/unit. Costed at RM 48/unit from the desk's own inventory cost, so RM 42 on the goods at 46.7%. RM 0 of RM 90 paid and delivered in full on 2026-09-22. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CR3-DAM typically pays about RM 80/unit for salt across 15 orders; this one is RM 90, 12.5% above that.",
+    "The inventory spans more than one lot rate, so RM 48/unit is the inventory average rather than the lot this row draws. Check the blend before approving.",
+    "This is an ADVANCE: 1 unit goes out with RM 90 unpaid. Check it against CR3-DAM's credit cap."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-23T04:30:20.207Z",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CR3-DAM",
+     "newId": null,
+     "date": "2026-09-22",
+     "qty": 1,
+     "total": 90,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 1,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "His word of 23 Sep 2026: 1 unit of salt for RM90 on 22 Sep, collected, not paid.",
+     "handover": "collected",
+     "second": null
+    }
+   },
+   "decidedAt": "2026-09-23T05:08:27.585Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-23T04:30:21.207Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CM3-OUG",
+    "qty": 12.5,
+    "total": 750,
+    "cost": 600,
+    "cash": 750,
+    "handover": "collected",
+    "date": "2026-09-23",
+    "deliveredQty": 3,
+    "deliveredOn": "2026-09-23",
+    "paidOn": "2026-09-23",
+    "note": "His word of 23 Sep 2026: 12.5 unit of salt for RM750, paid in full, 3 unit collected so far."
+   },
+   "reasoning": "Sold 12.5 unit of salt to CM3-OUG for RM 750, RM 60/unit. Costed at RM 48/unit from the desk's own inventory cost, so RM 150 on the goods at 20%. Paid in full and 3 of 12.5 unit moved on 2026-09-23. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CM3-OUG typically pays about RM 52/unit for salt across 3 orders; this one is RM 60, 15.4% above that.",
+    "The inventory spans more than one lot rate, so RM 48/unit is the inventory average rather than the lot this row draws. Check the blend before approving."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-23T04:30:21.207Z",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CM3-OUG",
+     "newId": null,
+     "date": "2026-09-23",
+     "qty": 12.5,
+     "total": 750,
+     "delivery": 0,
+     "cash": 750,
+     "kg": 3,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "His word of 23 Sep 2026: 12.5 unit of salt for RM750, paid in full, 3 unit collected so far.",
+     "handover": "collected",
+     "second": null
+    }
+   },
+   "decidedAt": "2026-09-23T05:08:28.973Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-23T04:30:18.207Z",
+   "collection": "roster",
+   "row": {
+    "code": "CJ2-TBC",
+    "kind": "customer",
+    "parent": null,
+    "note": null,
+    "tiers": {
+     "salt": "Silver"
+    }
+   },
+   "reasoning": "Registers CJ2-TBC as a customer. It starts them at Salt Silver. It touches no figure: the fold appends the code to the roster. THE NAME AND THE PLACE ARE NOT HERE AND MUST NOT BE: the directory is typed at the laptop and never travels.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-23T04:30:18.207Z",
+    "payload": {
+     "mode": "addid",
+     "code": "CJ2-TBC",
+     "kind": "customer",
+     "parent": null,
+     "tiers": {
+      "salt": "Silver"
+     }
+    }
+   },
+   "decidedAt": "2026-09-23T05:08:32.435Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-23T04:34:56.035Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CM3-OUG",
+    "qty": 10,
+    "total": 50,
+    "cost": 32,
+    "cash": 50,
+    "handover": "collected",
+    "product": "rice",
+    "date": "2026-09-23",
+    "deliveredQty": 10,
+    "deliveredOn": "2026-09-23",
+    "paidOn": "2026-09-23",
+    "note": "His word of 23 Sep 2026: 10 rice for RM50 on the same visit as the 12.5 unit of salt, taken as paid and collected with it."
+   },
+   "reasoning": "Sold 10 unit of rice to CM3-OUG for RM 50, RM 5/unit. Costed at RM 3.2/unit from the desk's own inventory cost, so RM 18 on the goods at 36%. Paid in full and delivered in full on 2026-09-23. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CM3-OUG has no committed rice order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-23T04:34:56.035Z",
+    "payload": {
+     "mode": "new",
+     "product": "rice",
+     "direction": "SELL",
+     "party": "CM3-OUG",
+     "newId": null,
+     "date": "2026-09-23",
+     "qty": 10,
+     "total": 50,
+     "delivery": 0,
+     "cash": 50,
+     "kg": 10,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "His word of 23 Sep 2026: 10 rice for RM50 on the same visit as the 12.5 unit of salt, taken as paid and collected with it.",
+     "handover": "collected",
+     "second": null
+    }
+   },
+   "decidedAt": "2026-09-23T05:08:33.778Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
