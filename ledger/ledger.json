@@ -1,6 +1,6 @@
 {
- "v": "v807",
- "stamped": "23 Sep 2026, 13:09 KL",
+ "v": "v808",
+ "stamped": "23 Sep 2026, 14:36 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -2193,7 +2193,7 @@
    },
    {
     "date": "2026-08-15",
-    "customer": "CM3-OUG",
+    "customer": "CM4-TO",
     "qty": 4,
     "total": 260,
     "cost": 224,
@@ -2436,7 +2436,7 @@
    },
    {
     "date": "2026-08-20",
-    "customer": "CM3-OUG",
+    "customer": "CM4-TO",
     "qty": 12.5,
     "total": 600,
     "cost": 550,
@@ -3444,7 +3444,7 @@
     "paidOn": "2026-09-08"
    },
    {
-    "customer": "CM3-OUG",
+    "customer": "CM4-TO",
     "qty": 12.5,
     "total": 650,
     "cost": 600,
@@ -4996,7 +4996,7 @@
     "rid": "s193"
    },
    {
-    "customer": "CM3-OUG",
+    "customer": "CM4-TO",
     "qty": 12.5,
     "total": 750,
     "cost": 600,
@@ -5010,7 +5010,7 @@
     "rid": "s194"
    },
    {
-    "customer": "CM3-OUG",
+    "customer": "CM4-TO",
     "qty": 10,
     "total": 50,
     "cost": 32,
@@ -5102,7 +5102,7 @@
    },
    {
     "date": "2026-09-08",
-    "party": "CM3-OUG",
+    "party": "CM4-TO",
     "direction": "in",
     "valueKg": 5.5,
     "valueRM": null,
@@ -5181,7 +5181,7 @@
    "CY2-NIL",
    "CR3-PUD",
    "CH4-MAL",
-   "CM3-OUG",
+   "CM4-TO",
    "CA2-SEN",
    "CM6-PJ",
    "CK4-SEN",
@@ -5267,7 +5267,7 @@
     "note": "His ruling of 13 Sep 2026: the first order went through CS6-BS-R on 15 Jul, and every order since has been direct."
    },
    {
-    "by": "CM3-OUG",
+    "by": "CM4-TO",
     "customer": "CS6-DAM",
     "note": "An R3 customer of CM3-OUG, on his word of 19 Sep 2026."
    }
@@ -5472,6 +5472,11 @@
     3.18,
     101.68,
     "Sentul"
+   ],
+   "CM4-TO": [
+    3.07,
+    101.68,
+    "Taman OUG"
    ]
   },
   "TIER_OF": {
@@ -5627,9 +5632,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-23T04:34:56.035Z",
+  "QUEUE_COMMITTED": "2026-09-23T06:35:21.758Z",
   "PRICING": {
-   "takenAt": "2026-09-23T05:09:24.314Z",
+   "takenAt": "2026-09-23T06:36:18.468Z",
    "sizes": [
     0.5,
     1,
@@ -5677,7 +5682,7 @@
     "CS6-PER": {
      "salt": "Titanium"
     },
-    "CM3-OUG": {
+    "CM4-TO": {
      "salt": "Titanium"
     },
     "CN6-WM": {
@@ -5932,7 +5937,7 @@
       "lateTwice": false
      }
     },
-    "CM3-OUG": {
+    "CM4-TO": {
      "salt": {
       "name": "large and regular",
       "orders": 4,
@@ -7744,15 +7749,15 @@
      "ladder": []
     }
    },
-   "v": "v807"
+   "v": "v808"
   },
   "OPEN": {
-   "at": "2026-09-23T05:09:24.505Z",
+   "at": "2026-09-23T06:36:18.653Z",
    "count": 8,
    "byKey": {
-    "CM3-OUG|2026-09-23|750": {
+    "CM4-TO|2026-09-23|750": {
      "d": "2026-09-23",
-     "p": "CM3-OUG",
+     "p": "CM4-TO",
      "dir": "S",
      "q": 12.5,
      "t": 750,
@@ -7764,7 +7769,7 @@
      "paidOn": "2026-09-23",
      "deliveredOn": "2026-09-23",
      "handover": "collected",
-     "key": "CM3-OUG|2026-09-23|750"
+     "key": "CM4-TO|2026-09-23|750"
     },
     "CR3-DAM|2026-09-22|90": {
      "d": "2026-09-22",
@@ -7945,7 +7950,7 @@
     "rice": null,
     "spare": null
    },
-   "v": "v807"
+   "v": "v808"
   }
  }
 }

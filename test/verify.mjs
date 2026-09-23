@@ -4212,7 +4212,7 @@ await (async () => {
     ok(back.j.clock && back.j.clock.id === ID && back.j.clock.liveAt === LIVE && back.j.clock.decidedAt && back.j.clock.committedAt,
       "the pending view carries the clock: the last committed draft with tap, phone and committed times");
     /* v527: a loan draft passes the widened collection check on the real schema */
-    const LOAN = { ...D, id: "suite-sql-loan", collection: "loan", row: { date: "2026-09-08", party: "CM3-OUG", direction: "in", valueKg: 5.5, valueRM: null, status: "open", product: "salt" } };
+    const LOAN = { ...D, id: "suite-sql-loan", collection: "loan", row: { date: "2026-09-08", party: "CM4-TO", direction: "in", valueKg: 5.5, valueRM: null, status: "open", product: "salt" } };
     const madeLoan = await guard("a loan draft passes the widened collection check", () => call("POST", "/drafts", LOAN));
     ok(madeLoan && madeLoan.status === 200 && madeLoan.j.created === true, "a loan draft passes the widened collection check on the real schema");
     ok((await call("POST", "/drafts/" + ID + "/committed", { liveAt: "not a date" })).j.alreadyCommitted === true
@@ -8458,7 +8458,7 @@ await (async () => {
 
 section("v518: salt borrowed in is a loan the other way");
 await (async () => {
-  /* HIS ROWS OF 08 SEP 2026: 5.5 unit borrowed from CM3-OUG and 1.5 from CA2-SEN, owed back in
+  /* HIS ROWS OF 08 SEP 2026: 5.5 unit borrowed from CM4-TO and 1.5 from CA2-SEN, owed back in
      kind. The loan book only knew salt lent OUT (valueKg drawn off the inventory); a loan IN adds
      to it while open, lands on its own date in the history walk, prints its own line on the
      Inventory walk and its own fold on the Order book, and nets out of loanDrawUnits so nothing
@@ -8478,7 +8478,7 @@ await (async () => {
     .sort().filter((d) => !countDays7.has(d));
   const LD = saleDays7[Math.floor(saleDays7.length / 2)];
   bk7.loans = (bk7.loans || []).filter((l) => l.preOpening).concat([
-    { date: LD, party: "CM3-OUG", direction: "in", valueKg: 5.5, valueRM: null, status: "open", product: "salt", note: "fixture" },
+    { date: LD, party: "CM4-TO", direction: "in", valueKg: 5.5, valueRM: null, status: "open", product: "salt", note: "fixture" },
     { date: LD, party: "CA2-SEN", direction: "in", valueKg: 1.5, valueRM: null, status: "open", product: "salt", note: "fixture" },
     { date: LD, party: "CS6-PER", direction: "in", valueKg: 9, valueRM: null, status: "settled", settledOn: LD, product: "salt", note: "fixture, settled: counts nowhere" },
   ]);
@@ -8496,7 +8496,7 @@ await (async () => {
     ok(inv.includes("Borrowed in (to return)") && /Borrowed in \(to return\)\+7 unit/.test(inv), "the Inventory walk prints the borrowed units as their own line, +7 unit");
     w.eval("switchTab('receivables');");
     const ob = String(w.eval(READ7));
-    ok(/Salt you borrowed/.test(ob) && ob.includes("CM3-OUG") && ob.includes("CA2-SEN") && !/CS6-PER[^.]{0,40}9 unit/.test(ob),
+    ok(/Salt you borrowed/.test(ob) && ob.includes("CM4-TO") && ob.includes("CA2-SEN") && !/CS6-PER[^.]{0,40}9 unit/.test(ob),
       "the Order book folds the two open borrowings under Salt you borrowed and leaves the settled one out");
     /* the history walk: the units land on the loan's date, not on day 0 */
     const withIn = JSON.parse(w.eval("JSON.stringify(stockHistory())"));
@@ -8844,7 +8844,7 @@ await (async () => {
      the check below and threw on lender.party. What the section proves is the drafter naming an
      existing open loan, so the loan it measures against is its own, whatever the book holds. */
   bkL.loans = (bkL.loans || []).filter((l) => !(l.direction === "in" && l.status !== "settled"))
-    .concat([{ date: "2026-09-08", party: "CM3-OUG", direction: "in", valueKg: 5.5, valueRM: null, status: "open", product: "salt", note: "fixture: the open loan this section measures against" }]);
+    .concat([{ date: "2026-09-08", party: "CM4-TO", direction: "in", valueKg: 5.5, valueRM: null, status: "open", product: "salt", note: "fixture: the open loan this section measures against" }]);
   const lender = bkL.loans.find((l) => l.direction === "in" && l.status !== "settled");
   ok(lender, "the book carries an open loan in to measure against (" + (lender && lender.party) + ")");
   const mirror = { version: "vX", sales: bkL.sales, purchases: bkL.purchases, state: { roster: bkL.roster, loans: bkL.loans, OPEN: { position: { salt: { onHand: 1, owedOut: 8.5, promised: 0 } } } }, pricing: null };
