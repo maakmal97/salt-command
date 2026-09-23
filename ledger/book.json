@@ -87,7 +87,7 @@
       "stated": null
     }
   },
-  "STATED_STOCK": 25,
+  "STATED_STOCK": 21,
   "COUNT_ON": {
     "salt": "2026-09-23",
     "oil": "2026-09-19",
@@ -332,7 +332,11 @@
     {"customer":"CS6-BS","qty":1,"total":90,"cost":48,"cash":90,"handover":"collected","date":"2026-09-21","deliveredQty":1,"deliveredOn":"2026-09-21","paidOn":"2026-09-21","note":"<b>SALT SELL DATED 21 SEP: 1 UNIT TO CS6-BS FOR RM90, COLLECTED, PAID AND DELIVERED.</b> RM90 of goods, no delivery or freight, RM90 cash in on 21 Sep and 1 unit handed over the same day, so the row closes on collection and leaves nothing outstanding. At RM90 a unit it clears the RM52.06 floor for 1 unit and sits under the RM160 ask. Costed at RM48 a unit, the inventory's own rate, RM42 on the goods at 46.7%. Flagged: RM90 is 15.9% under the RM107 a unit CS6-BS typically pays across 19 orders; and RM48 is a blend of lot rates, unanswered here. CS6-BS: 12 orders, median RM95, range RM11 to RM126.67, nothing outstanding, 1 unit on credit against a cap of 2.","rid":"s188"},
     {"customer":"CS6-BS","qty":1,"total":48,"cost":48,"cash":0,"settledRM":48,"rebate":true,"rebateKg":1,"goodwill":true,"deliveredQty":1,"deliveredOn":"2026-09-21","date":"2026-09-21","note":"<b>SALT REDEEMED FREE BY CS6-BS, 1 UNIT, RM48 SETTLED BY THE REWARD ON 21 SEP.</b> No cash in, RM48 settled by the reward and 1 unit delivered on 21 Sep, so the row closes on arrival and leaves nothing outstanding. Rebate and goodwill both stand, so on his ruling of 11 Sep 2026 it is booked out of revenue and its RM48 is an expense, at RM48 a unit, the inventory's own rate. No rate is set against the RM51.95 floor or RM160 ask for 1 unit. Flagged: 6 earned against 5 applied leaves 1 unit, the desk's word, unanswered here. CS6-BS: 13 orders, median RM95, range RM11 to RM126.67, nothing outstanding, 1 unit on credit against a cap of 2.","rid":"s189"},
     {"customer":"CZ4-MK","qty":5,"total":460,"cost":240,"cash":460,"handover":"collected","date":"2026-09-21","deliveredQty":5,"deliveredOn":"2026-09-21","paidOn":"2026-09-21","note":"<b>SALT SALE DATED 21 SEP, COLLECTED AND PAID IN FULL ON THE DAY.</b> CZ4-MK took 5 unit for RM460, RM92 a unit, RM460 cash in and 5 unit moved on 21 Sep, so nothing stays open. The total clears the RM259.22 floor for 5 unit and sits RM100 under the RM560 ask, well below the RM700 ceiling. Costed at RM240, RM48 a unit, the inventory's own rate. Flagged: the shelf spans more than one lot rate, so RM48 is an average and not the lot drawn; the figures here do not answer it. CZ4-MK: 3 orders, median RM84, range RM13 to RM87, nothing outstanding, none on credit against a cap of 1.","rid":"s190"},
-    {"customer":"CZ4-MK","qty":10,"total":460,"cost":0,"cash":460,"handover":"collected","product":"candy","date":"2026-09-21","deliveredQty":10,"deliveredOn":"2026-09-21","paidOn":"2026-09-21","note":"<b>CANDY SALE DATED 21 SEP, COLLECTED AND PAID IN FULL ON THE DAY.</b> CZ4-MK took 10 unit for RM460, RM46 a unit, RM460 cash in and 10 unit moved on 21 Sep, so nothing stays open. Costed at RM0 a unit from the desk's own inventory cost, RM460 on the goods at 100%. The floor, ask and ceiling for 10 unit all stand at zero, so no rate test applies. Flagged: CZ4-MK has no committed candy order on the book, so there is no rate of theirs to compare; the figures do not answer it. CZ4-MK: 3 orders, median RM84, range RM13 to RM87, nothing outstanding, none on credit against a cap of 1.","rid":"s191"}
+    {"customer":"CZ4-MK","qty":10,"total":460,"cost":0,"cash":460,"handover":"collected","product":"candy","date":"2026-09-21","deliveredQty":10,"deliveredOn":"2026-09-21","paidOn":"2026-09-21","note":"<b>CANDY SALE DATED 21 SEP, COLLECTED AND PAID IN FULL ON THE DAY.</b> CZ4-MK took 10 unit for RM460, RM46 a unit, RM460 cash in and 10 unit moved on 21 Sep, so nothing stays open. Costed at RM0 a unit from the desk's own inventory cost, RM460 on the goods at 100%. The floor, ask and ceiling for 10 unit all stand at zero, so no rate test applies. Flagged: CZ4-MK has no committed candy order on the book, so there is no rate of theirs to compare; the figures do not answer it. CZ4-MK: 3 orders, median RM84, range RM13 to RM87, nothing outstanding, none on credit against a cap of 1.","rid":"s191"},
+    {"customer":"CJ2-TBC","qty":16,"total":760,"cost":608,"cash":760,"handover":"collected","product":"candy","date":"2026-09-22","deliveredQty":16,"deliveredOn":"2026-09-22","paidOn":"2026-09-22","note":"<b>CANDY SELL DATED 22 SEP, COLLECTED AND PAID IN FULL ON THE DAY.</b> CJ2-TBC took 16 unit for RM760, RM47.50 a unit, RM760 cash in and 16 unit collected on 22 Sep, so nothing stays open. Costed at RM38 a unit from the desk's own inventory cost, RM608 on the goods, leaving RM152 at 20%. The floor for 16 unit is RM608 and the ask RM880, so this clears the floor but sits under the ask, with the ceiling at RM1,824. Flagged: CJ2-TBC has no committed candy order on the book, so there is no rate of theirs to compare; the figures do not answer it. CJ2-TBC: no prior orders, nothing outstanding, none on credit against a cap of 1.","rid":"s192"},
+    {"customer":"CR3-DAM","qty":1,"total":90,"cost":48,"cash":0,"handover":"collected","date":"2026-09-22","deliveredQty":1,"deliveredOn":"2026-09-22","note":"<b>SALT SELL DATED 22 SEP, COLLECTED IN FULL, NOT A SEN PAID.</b> CR3-DAM took 1 unit for RM90, collected on 22 Sep on his word, RM0 of RM90 in, so the full RM90 stands open as an advance. Costed at RM48 a unit from the desk's own inventory cost, RM42 on the goods at 46.7%. The rate clears the floor of RM57.49 and sits under the ask of RM140 and the ceiling of RM160. CR3-DAM: 15 orders, median RM80, range RM80 to RM92.50, RM105 outstanding before this and 1.27 unit on credit against a cap of 2. Flagged: 12.5% above his median, the RM48 is an inventory average across more than one lot rate, and the advance needs the cap checked. The blend is not resolved here.","rid":"s193"},
+    {"customer":"CM3-OUG","qty":12.5,"total":750,"cost":600,"cash":750,"handover":"collected","date":"2026-09-23","deliveredQty":3,"deliveredOn":"2026-09-23","paidOn":"2026-09-23","note":"<b>SALT SELL DATED 23 SEP, PAID IN FULL, 3 OF 12.5 UNIT COLLECTED.</b> CM3-OUG bought 12.5 unit for RM750, RM60 a unit, RM750 cash in on 23 Sep with 3 unit collected on his word, so 9.5 unit remain to be handed over and no money is outstanding. Costed at RM48 a unit from the desk's own inventory cost, RM600 on the goods, RM150 at 20%. The RM750 clears the floor of RM718.68 and sits under the ask of RM1,090 and the ceiling of RM1,910. CM3-OUG: 3 orders, median RM52, range RM48 to RM65, nothing outstanding, none on credit against a cap of 1. Flagged: 15.4% above his median, answered by the figures; the RM48 blend is not.","rid":"s194"},
+    {"customer":"CM3-OUG","qty":10,"total":50,"cost":32,"cash":50,"handover":"collected","product":"rice","date":"2026-09-23","deliveredQty":10,"deliveredOn":"2026-09-23","paidOn":"2026-09-23","note":"<b>RICE SELL DATED 23 SEP, COLLECTED AND PAID IN FULL ON THE SAME VISIT AS THE SALT.</b> CM3-OUG took 10 unit for RM50, RM5 a unit, RM50 cash in and 10 unit collected on 23 Sep on his word, so nothing stays open. Costed at RM3.20 a unit from the desk's own inventory cost, RM32 on the goods, RM18 at 36%. The RM50 clears the floor of RM34 and sits under the ask of RM60, with the ceiling at RM102. Flagged: CM3-OUG has no committed rice order on the book, so there is no rate of theirs to compare; the figures do not answer it. CM3-OUG: 3 orders, median RM52, range RM48 to RM65, nothing outstanding, none on credit against a cap of 1.","rid":"s195"}
   ],
   "contacts": [
     {"date":"2026-08-06","party":"CM4-SK","how":"message","outcome":"noreply","next":null,"note":"said hello"},
@@ -414,7 +418,8 @@
     "CI4-OKR-R",
     "CE4-AD-R",
     "CS6-DAM",
-    "CZ5-TM"
+    "CZ5-TM",
+    "CJ2-TBC"
   ],
   "associates": [
     "CS6-BS",
@@ -649,6 +654,9 @@
     "CZ5-TM": {
       "salt": "Titanium",
       "oil": "Titanium"
+    },
+    "CJ2-TBC": {
+      "salt": "Silver"
     }
   },
   "PEOPLE": {
@@ -768,7 +776,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-23T04:00:56.371Z",
+  "QUEUE_COMMITTED": "2026-09-23T04:34:56.035Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -822,6 +830,7 @@
       "RETIRED AT v549 on 2026-09-09, his instruction. The key held one hand-typed lot: 50 unit by 2026-08-28, stated on the 24th. He read it on 9 September with the date twelve days gone and four lots landed since (25 unit on 26 Aug, 25 on 31 Aug, 25 on 03 Sep and 50 on 08 Sep), and said he generally has no information on when he purchases. The Sourcing section is now about the CURRENT lot, and the cadence is measured off the book rather than typed. One standing fact from the retired basis is kept here because it is not a plan: the purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. The rest was the 24 Aug reasoning, that the 100 unit tier was the recommendation and he took the 50, at a landed RM45.20 a unit against RM43.60."
     ],
     "STATED_STOCK": [
+      "ROLLED AT v807: 1 unit to CR3-DAM on 2026-09-22, 3 unit to CM3-OUG on 2026-09-23, so 25 less 4 is 21. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Salt was counted on 23 Sep and stands at 25 unit, still above the reorder mark of 15. Against that, 9.5 unit of CM3-OUG's paid 12.5 remain to be handed over.",
       "COUNTED AT v804 on 2026-09-23: the salt inventory held 25 against 26 on the roll, a drift of -1. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-09-23. <b>SALT COUNTED BY HAND ON 23 SEP: 25 UNIT AGAINST 26 ON THE BOOK.</b> The drift is -1 unit, and the last count was 21 Sep. On his word a count wins over the ledger, so 25 becomes the stated inventory and COUNT_ON.salt moves to 23 Sep. The floors move with it: 1 unit from RM55.94 to RM57.49, 2 unit from RM111.88 to RM114.99, 125 unit from RM699.25 to RM718.68, the ask for 1 unit unchanged at RM140, self use from 77.7 to 78.7. Flagged: the -1 unit is unaccounted for and books as shrinkage across every unit sold. The dossier gives no reason for the gap, and none is offered here. The cost basis stays the desk's own at RM48 a unit, replacement RM49.43. Outstanding: the cause of the -1.",
       "ROLLED AT v799: 25 unit from SA5-BTR landed on 2026-09-22 (p029), so 1 plus 25 is 26. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The lot was booked as rice and corrected to salt at v791, and a correction moves no stock, so it never reached the salt shelf; rolled by hand on his word of 23 Sep 2026, ahead of his count of 25 that day, so the count is measured against 26 and not against 1.",
       "ROLLED AT v788: 5 unit to CZ4-MK on 2026-09-21, so 6 less 5 is 1. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Five unit of salt went out on 21 Sep against a stated shelf of 6 unit, counted 21 Sep, with nothing owed out and nothing promised. The candy and rice lots landed on 21 and 22 Sep and are not carried in the salt position.",

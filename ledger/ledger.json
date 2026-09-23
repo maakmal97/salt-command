@@ -1,6 +1,6 @@
 {
- "v": "v804",
- "stamped": "23 Sep 2026, 12:05 KL",
+ "v": "v807",
+ "stamped": "23 Sep 2026, 13:09 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 25,
+  "STATED_STOCK": 21,
   "COUNT_ON": {
    "salt": "2026-09-23",
    "oil": "2026-09-19",
@@ -4966,6 +4966,63 @@
     "paidOn": "2026-09-21",
     "note": "<b>CANDY SALE DATED 21 SEP, COLLECTED AND PAID IN FULL ON THE DAY.</b> CZ4-MK took 10 unit for RM460, RM46 a unit, RM460 cash in and 10 unit moved on 21 Sep, so nothing stays open. Costed at RM0 a unit from the desk's own inventory cost, RM460 on the goods at 100%. The floor, ask and ceiling for 10 unit all stand at zero, so no rate test applies. Flagged: CZ4-MK has no committed candy order on the book, so there is no rate of theirs to compare; the figures do not answer it. CZ4-MK: 3 orders, median RM84, range RM13 to RM87, nothing outstanding, none on credit against a cap of 1.",
     "rid": "s191"
+   },
+   {
+    "customer": "CJ2-TBC",
+    "qty": 16,
+    "total": 760,
+    "cost": 608,
+    "cash": 760,
+    "handover": "collected",
+    "product": "candy",
+    "date": "2026-09-22",
+    "deliveredQty": 16,
+    "deliveredOn": "2026-09-22",
+    "paidOn": "2026-09-22",
+    "note": "<b>CANDY SELL DATED 22 SEP, COLLECTED AND PAID IN FULL ON THE DAY.</b> CJ2-TBC took 16 unit for RM760, RM47.50 a unit, RM760 cash in and 16 unit collected on 22 Sep, so nothing stays open. Costed at RM38 a unit from the desk's own inventory cost, RM608 on the goods, leaving RM152 at 20%. The floor for 16 unit is RM608 and the ask RM880, so this clears the floor but sits under the ask, with the ceiling at RM1,824. Flagged: CJ2-TBC has no committed candy order on the book, so there is no rate of theirs to compare; the figures do not answer it. CJ2-TBC: no prior orders, nothing outstanding, none on credit against a cap of 1.",
+    "rid": "s192"
+   },
+   {
+    "customer": "CR3-DAM",
+    "qty": 1,
+    "total": 90,
+    "cost": 48,
+    "cash": 0,
+    "handover": "collected",
+    "date": "2026-09-22",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-09-22",
+    "note": "<b>SALT SELL DATED 22 SEP, COLLECTED IN FULL, NOT A SEN PAID.</b> CR3-DAM took 1 unit for RM90, collected on 22 Sep on his word, RM0 of RM90 in, so the full RM90 stands open as an advance. Costed at RM48 a unit from the desk's own inventory cost, RM42 on the goods at 46.7%. The rate clears the floor of RM57.49 and sits under the ask of RM140 and the ceiling of RM160. CR3-DAM: 15 orders, median RM80, range RM80 to RM92.50, RM105 outstanding before this and 1.27 unit on credit against a cap of 2. Flagged: 12.5% above his median, the RM48 is an inventory average across more than one lot rate, and the advance needs the cap checked. The blend is not resolved here.",
+    "rid": "s193"
+   },
+   {
+    "customer": "CM3-OUG",
+    "qty": 12.5,
+    "total": 750,
+    "cost": 600,
+    "cash": 750,
+    "handover": "collected",
+    "date": "2026-09-23",
+    "deliveredQty": 3,
+    "deliveredOn": "2026-09-23",
+    "paidOn": "2026-09-23",
+    "note": "<b>SALT SELL DATED 23 SEP, PAID IN FULL, 3 OF 12.5 UNIT COLLECTED.</b> CM3-OUG bought 12.5 unit for RM750, RM60 a unit, RM750 cash in on 23 Sep with 3 unit collected on his word, so 9.5 unit remain to be handed over and no money is outstanding. Costed at RM48 a unit from the desk's own inventory cost, RM600 on the goods, RM150 at 20%. The RM750 clears the floor of RM718.68 and sits under the ask of RM1,090 and the ceiling of RM1,910. CM3-OUG: 3 orders, median RM52, range RM48 to RM65, nothing outstanding, none on credit against a cap of 1. Flagged: 15.4% above his median, answered by the figures; the RM48 blend is not.",
+    "rid": "s194"
+   },
+   {
+    "customer": "CM3-OUG",
+    "qty": 10,
+    "total": 50,
+    "cost": 32,
+    "cash": 50,
+    "handover": "collected",
+    "product": "rice",
+    "date": "2026-09-23",
+    "deliveredQty": 10,
+    "deliveredOn": "2026-09-23",
+    "paidOn": "2026-09-23",
+    "note": "<b>RICE SELL DATED 23 SEP, COLLECTED AND PAID IN FULL ON THE SAME VISIT AS THE SALT.</b> CM3-OUG took 10 unit for RM50, RM5 a unit, RM50 cash in and 10 unit collected on 23 Sep on his word, so nothing stays open. Costed at RM3.20 a unit from the desk's own inventory cost, RM32 on the goods, RM18 at 36%. The RM50 clears the floor of RM34 and sits under the ask of RM60, with the ceiling at RM102. Flagged: CM3-OUG has no committed rice order on the book, so there is no rate of theirs to compare; the figures do not answer it. CM3-OUG: 3 orders, median RM52, range RM48 to RM65, nothing outstanding, none on credit against a cap of 1.",
+    "rid": "s195"
    }
   ],
   "contacts": [
@@ -5140,7 +5197,8 @@
    "CI4-OKR-R",
    "CE4-AD-R",
    "CS6-DAM",
-   "CZ5-TM"
+   "CZ5-TM",
+   "CJ2-TBC"
   ],
   "associates": [
    "CS6-BS",
@@ -5430,6 +5488,9 @@
    "CZ5-TM": {
     "salt": "Titanium",
     "oil": "Titanium"
+   },
+   "CJ2-TBC": {
+    "salt": "Silver"
    }
   },
   "AWARDS": {
@@ -5566,9 +5627,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-23T04:00:56.371Z",
+  "QUEUE_COMMITTED": "2026-09-23T04:34:56.035Z",
   "PRICING": {
-   "takenAt": "2026-09-23T04:05:43.432Z",
+   "takenAt": "2026-09-23T05:09:24.314Z",
    "sizes": [
     0.5,
     1,
@@ -5616,6 +5677,9 @@
     "CS6-PER": {
      "salt": "Titanium"
     },
+    "CM3-OUG": {
+     "salt": "Titanium"
+    },
     "CN6-WM": {
      "salt": "Platinum"
     },
@@ -5628,9 +5692,6 @@
       "mid": "Titanium",
       "big": "Platinum"
      }
-    },
-    "CM3-OUG": {
-     "salt": "Titanium"
     },
     "CK4-SEN": {
      "salt": "Platinum"
@@ -5653,6 +5714,9 @@
     },
     "CM4-SK": {
      "salt": "Titanium"
+    },
+    "CJ2-TBC": {
+     "salt": "Silver"
     },
     "CG5-SB": {
      "salt": "Titanium"
@@ -5868,6 +5932,40 @@
       "lateTwice": false
      }
     },
+    "CM3-OUG": {
+     "salt": {
+      "name": "large and regular",
+      "orders": 4,
+      "tenureDays": 39,
+      "sinceLastDays": 0,
+      "perMonth": 3.12,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     },
+     "rice": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 0,
+      "sinceLastDays": 0,
+      "perMonth": 1.01,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
     "CN6-WM": {
      "salt": {
       "name": "consistent mid",
@@ -5939,35 +6037,17 @@
     "CR3-DAM": {
      "salt": {
       "name": "small and often",
-      "orders": 15,
+      "orders": 16,
       "tenureDays": 86,
-      "sinceLastDays": 5,
-      "perMonth": 5.31,
-      "smallShare": 0.8,
-      "bigShare": 0.07,
+      "sinceLastDays": 1,
+      "perMonth": 5.66,
+      "smallShare": 0.81,
+      "bigShare": 0.06,
       "late": 0,
       "frequent": true,
       "small": true,
       "bigger": false,
       "loyal": true,
-      "rare": false,
-      "lateTwice": false
-     }
-    },
-    "CM3-OUG": {
-     "salt": {
-      "name": "large and regular",
-      "orders": 3,
-      "tenureDays": 39,
-      "sinceLastDays": 19,
-      "perMonth": 2.34,
-      "smallShare": 0,
-      "bigShare": 1,
-      "late": 0,
-      "frequent": true,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
       "rare": false,
       "lateTwice": false
      }
@@ -6077,6 +6157,24 @@
       "bigger": true,
       "loyal": false,
       "rare": true,
+      "lateTwice": false
+     }
+    },
+    "CJ2-TBC": {
+     "candy": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 1,
+      "sinceLastDays": 1,
+      "perMonth": 1.01,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
       "lateTwice": false
      }
     },
@@ -6546,40 +6644,40 @@
      "replCost": 49.43,
      "floors": {
       "1": {
-       "floor": 57.49
+       "floor": 56.99
       },
       "2": {
-       "floor": 114.99
+       "floor": 113.98
       },
       "3": {
-       "floor": 172.48
+       "floor": 170.97
       },
       "4": {
-       "floor": 229.98
+       "floor": 227.97
       },
       "5": {
-       "floor": 287.47
+       "floor": 284.96
       },
       "0.5": {
-       "floor": 28.75
+       "floor": 28.5
       },
       "1.5": {
-       "floor": 86.24
+       "floor": 85.49
       },
       "2.5": {
-       "floor": 143.74
+       "floor": 142.48
       },
       "3.5": {
-       "floor": 201.23
+       "floor": 199.47
       },
       "4.5": {
-       "floor": 258.72
+       "floor": 256.46
       },
       "6.25": {
-       "floor": 359.34
+       "floor": 356.2
       },
       "12.5": {
-       "floor": 718.68
+       "floor": 712.39
       }
      },
      "inputs": {
@@ -6654,9 +6752,9 @@
        "repl": 49.43,
        "freightRate": 1.36,
        "leak": {
-        "ratio": 0.132,
+        "ratio": 0.1221,
         "leak": 6.5,
-        "sold": 49.25,
+        "sold": 53.25,
         "cycles": 3,
         "from": "2026-09-16",
         "to": "2026-09-23"
@@ -6673,15 +6771,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.36363636363636365
+         "v": 0.3508771929824561
         }
        },
        "attrib": 1,
        "shrinkRate": 0.07650147999618066,
        "avgDel": {
-        "n": 164,
-        "kg": 419.95,
-        "mean": 2.5607
+        "n": 166,
+        "kg": 423.95,
+        "mean": 2.5539
        }
       },
       "policy": {
@@ -7221,9 +7319,9 @@
        "attrib": 1,
        "shrinkRate": 0,
        "avgDel": {
-        "n": 1,
-        "kg": 10,
-        "mean": 10
+        "n": 2,
+        "kg": 26,
+        "mean": 13
        }
       },
       "policy": {
@@ -7404,15 +7502,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.2
+         "v": 0
         }
        },
        "attrib": 1,
        "shrinkRate": 0,
        "avgDel": {
-        "n": 0,
-        "kg": 0,
-        "mean": null
+        "n": 1,
+        "kg": 10,
+        "mean": 10
        }
       },
       "policy": {
@@ -7646,12 +7744,45 @@
      "ladder": []
     }
    },
-   "v": "v804"
+   "v": "v807"
   },
   "OPEN": {
-   "at": "2026-09-23T04:05:43.630Z",
-   "count": 6,
+   "at": "2026-09-23T05:09:24.505Z",
+   "count": 8,
    "byKey": {
+    "CM3-OUG|2026-09-23|750": {
+     "d": "2026-09-23",
+     "p": "CM3-OUG",
+     "dir": "S",
+     "q": 12.5,
+     "t": 750,
+     "cash": 750,
+     "mv": 3,
+     "st": "oweStock",
+     "oweUnits": 9.5,
+     "rid": "s194",
+     "paidOn": "2026-09-23",
+     "deliveredOn": "2026-09-23",
+     "handover": "collected",
+     "key": "CM3-OUG|2026-09-23|750"
+    },
+    "CR3-DAM|2026-09-22|90": {
+     "d": "2026-09-22",
+     "p": "CR3-DAM",
+     "dir": "S",
+     "q": 1,
+     "t": 90,
+     "cash": 0,
+     "mv": 1,
+     "st": "dueMoney",
+     "oweRM": 90,
+     "rid": "s193",
+     "deliveredOn": "2026-09-22",
+     "handover": "collected",
+     "key": "CR3-DAM|2026-09-22|90",
+     "age": 1,
+     "exp": 90
+    },
     "CN6-WM|2026-09-19|250": {
      "d": "2026-09-19",
      "p": "CN6-WM",
@@ -7753,13 +7884,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 25,
-     "free": 25,
-     "owedOut": 0,
-     "coverDays": 4.2,
-     "rate": 5.95,
-     "owedToYou": 340,
-     "promised": 0,
+     "onHand": 21,
+     "free": 11.5,
+     "owedOut": 9.5,
+     "coverDays": 1.8,
+     "rate": 6.23,
+     "owedToYou": 430,
+     "promised": 9.5,
      "short": 0
     },
     "oil": {
@@ -7775,22 +7906,22 @@
     },
     "candy": {
      "name": "Candy",
-     "onHand": 20,
-     "free": 20,
+     "onHand": 4,
+     "free": 4,
      "owedOut": 0,
-     "coverDays": 28,
-     "rate": 0.71,
+     "coverDays": 2.2,
+     "rate": 1.86,
      "owedToYou": 0,
      "promised": 0,
      "short": 0
     },
     "rice": {
      "name": "Rice",
-     "onHand": 100,
-     "free": 100,
+     "onHand": 90,
+     "free": 90,
      "owedOut": 0,
-     "coverDays": null,
-     "rate": 0,
+     "coverDays": 126.1,
+     "rate": 0.71,
      "owedToYou": 0,
      "promised": 0,
      "short": 0
@@ -7814,7 +7945,7 @@
     "rice": null,
     "spare": null
    },
-   "v": "v804"
+   "v": "v807"
   }
  }
 }
