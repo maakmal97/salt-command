@@ -419,7 +419,8 @@
     "CE4-AD-R",
     "CS6-DAM",
     "CZ5-TM",
-    "CJ2-TBC"
+    "CJ2-TBC",
+    "CA6-CYB"
   ],
   "associates": [
     "CS6-BS",
@@ -643,6 +644,11 @@
       3.07,
       101.68,
       "Taman OUG"
+    ],
+    "CA6-CYB": [
+      2.92,
+      101.66,
+      "Cyberjaya"
     ]
   },
   "TIER_OF": {
@@ -662,6 +668,9 @@
     },
     "CJ2-TBC": {
       "salt": "Silver"
+    },
+    "CA6-CYB": {
+      "salt": "Titanium"
     }
   },
   "PEOPLE": {
@@ -781,7 +790,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-23T06:35:21.758Z",
+  "QUEUE_COMMITTED": "2026-09-23T10:48:16.553Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},

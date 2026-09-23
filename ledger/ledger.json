@@ -1,6 +1,6 @@
 {
- "v": "v808",
- "stamped": "23 Sep 2026, 14:36 KL",
+ "v": "v809",
+ "stamped": "23 Sep 2026, 18:49 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5198,7 +5198,8 @@
    "CE4-AD-R",
    "CS6-DAM",
    "CZ5-TM",
-   "CJ2-TBC"
+   "CJ2-TBC",
+   "CA6-CYB"
   ],
   "associates": [
    "CS6-BS",
@@ -5477,6 +5478,11 @@
     3.07,
     101.68,
     "Taman OUG"
+   ],
+   "CA6-CYB": [
+    2.92,
+    101.66,
+    "Cyberjaya"
    ]
   },
   "TIER_OF": {
@@ -5496,6 +5502,9 @@
    },
    "CJ2-TBC": {
     "salt": "Silver"
+   },
+   "CA6-CYB": {
+    "salt": "Titanium"
    }
   },
   "AWARDS": {
@@ -5632,9 +5641,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-23T06:35:21.758Z",
+  "QUEUE_COMMITTED": "2026-09-23T10:48:16.553Z",
   "PRICING": {
-   "takenAt": "2026-09-23T06:36:18.468Z",
+   "takenAt": "2026-09-23T10:49:10.129Z",
    "sizes": [
     0.5,
     1,
@@ -5796,6 +5805,9 @@
     },
     "CS6-DAM": {
      "salt": "Platinum"
+    },
+    "CA6-CYB": {
+     "salt": "Titanium"
     }
    },
    "profileOf": {
@@ -7749,10 +7761,10 @@
      "ladder": []
     }
    },
-   "v": "v808"
+   "v": "v809"
   },
   "OPEN": {
-   "at": "2026-09-23T06:36:18.653Z",
+   "at": "2026-09-23T10:49:10.313Z",
    "count": 8,
    "byKey": {
     "CM4-TO|2026-09-23|750": {
@@ -7950,7 +7962,7 @@
     "rice": null,
     "spare": null
    },
-   "v": "v808"
+   "v": "v809"
   }
  }
 }
