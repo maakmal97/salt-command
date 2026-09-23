@@ -19599,6 +19599,38 @@ await (async () => {
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
+section("v805: a notice from the desk stands apart from refused entries, says nothing is needed, and a passing suite clears it");
+await (async () => {
+  /* HIS WORD OF 23 SEP 2026, on a suite:v791 card under Refused entries: "I never know what to do with this." A notice is the
+     desk telling its next session something; it is not a task and it clears itself. Each assertion was proved red by its own
+     mutation, one at a time. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  w.SALT_CLOUD = true;
+  const d = w.document, el = d.createElement("div");
+  el.className = "vpart"; el.setAttribute("data-tab", "approve"); d.body.appendChild(el);
+  el.innerHTML = w.eval("builders").approve();
+  w.eval("AP_DRAFTS = []; AP_REFUSED = " + JSON.stringify([
+    { id: "2026-09-20T02:00:00.000Z", entry: { raw: "Fulfilment CZ9-NT 1 unit", type: "AMEND" }, why: "a Linked amendment names no figure the drafter can check", party: "CZ9-NT", source: "cloud-drafter", seenAt: "2026-09-20T02:00:01.000Z" },
+    { id: "suite:v791", entry: { raw: "suite:v791" }, why: "The desk's own tests failed after v791 went live.", source: "fold", seenAt: "2026-09-23T00:28:00.000Z" }]));
+  w.apDraw();
+  const ref = d.getElementById("apRef");
+  const hs = [].map.call(ref.querySelectorAll("h2"), (h) => h.textContent.trim());
+  const cards = [].map.call(ref.querySelectorAll(".card"), (c) => c.textContent.replace(/\s+/g, " ").trim());
+  const after = (h) => { const i = ref.innerHTML.indexOf(h); return i < 0 ? "" : ref.innerHTML.slice(i); };
+  ok(hs.length === 2 && /^Refused entries/.test(hs[0]) && /^Notices from the desk/.test(hs[1]) && /suite:v791|tests, after v791/.test(after("Notices from the desk")) && !/tests, after v791/.test(ref.innerHTML.slice(0, ref.innerHTML.indexOf("Notices from the desk"))),
+    "a notice stands under its own heading, after the refused entries and apart from them: " + JSON.stringify(hs));
+  const note = cards.find((c) => /v791/.test(c)) || "";
+  ok(/Nothing for you to do\. It clears itself when the tests next pass\./.test(note) && /The desk.s tests, after v791/.test(note) && !/^suite:v791/.test(note),
+    "and it says in words that nothing is needed from him, and what clears it: " + note);
+  const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8");
+  const clear = wf.slice(wf.indexOf("- name: Clear a test notice once the suite passes"));
+  ok(/if: steps\.suite\.outcome == 'success'/.test(clear.slice(0, 200)) && /run: node tools\/drafts\.mjs --clear-suite-notices/.test(clear.slice(0, 600))
+     && /DELETE FROM refused WHERE id LIKE 'suite:%'/.test(readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8")),
+    "a run whose suite passes clears every test notice, rather than waiting for the next fold");
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

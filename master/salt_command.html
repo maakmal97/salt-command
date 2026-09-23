@@ -7273,7 +7273,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v804","d":"23 Sep 2026","t":"A COUNT WINS, A CORRECTION ONLY SPEAKS","n":["<b>FOLDED TWO ROWS: A SALT COUNT AND A CORRECTION ON AN SM4-KEP CANDY LOT.</b> The salt count of 25 unit on 23 Sep stands against 26 on the book, a drift of -1, and on his word the count becomes the stated inventory with COUNT_ON.salt moved to 23 Sep from 21 Sep. The correction on p027 cuts qty and receivedQty from 35 to 30 and moves no cash, so the book now carries one definition of that lot.","<b>WHAT THE INVENTORY DID.</b> Stated salt fell to 25 unit and the floors lifted with the thinner cover: floor for 1 unit from RM55.94 to RM57.49, for 2 unit from RM111.88 to RM114.99, for 125 unit from RM699.25 to RM718.68, with the ask for 1 unit held at RM140 and self use from 77.7 to 78.7. The candy shelf rolled back 5 unit to SM4-KEP, the difference the correction states, landed 23 Sep. Cost basis untouched at RM48 a unit."]}];
+const evolution=[{"v":"v805","d":"23 Sep 2026","t":"A NOTICE FROM THE DESK SAYS IT NEEDS NOTHING, AND A PASSING SUITE CLEARS IT","n":["<b>HIS WORD OF 23 SEP 2026, on the suite:v791 card: I never know what to do with this.</b> A notice from the fold or the suite sat under Refused entries, headed by a line saying nothing there can be approved, beside cards that can be withdrawn, so it read as a task. It never is one: it is the desk telling its own next session something. Notices now stand under their own heading, Notices from the desk, each saying in words that nothing is needed from him and what clears it.","<b>A TEST NOTICE CLEARS WHEN THE TESTS PASS.</b> It waited for the next fold, so suite:v791 stayed on the phone through six green runs after the two failures it reported were fixed at v793; a run whose suite passes now clears every test notice. A fold notice still clears with the next fold. The v791 notice itself went with v804's fold."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -7388,7 +7388,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='23 Sep 2026, 12:05 KL';
+const LAST_UPDATED='23 Sep 2026, 12:15 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -17679,12 +17679,19 @@ function apDraw(){
      Withdraw is it: it drops the entry from this phone, where it lives, and the cloud's copy goes at the next sync.
      Only for an entry this phone holds; the fold's own notices clear themselves and carry no control. */
   if(ref){const held=new Set(queue.map(q=>q&&q.at));
-    ref.innerHTML=AP_REFUSED.length?`<h2 style="margin-top:18px">Refused entries <span class="rule"></span></h2><div class="dsc" style="margin-bottom:4px">Nothing here can be approved; each card says why. One queued on this phone stays until you withdraw it, and can then be entered again, corrected.</div>`
-    +AP_REFUSED.map(r=>{const e=r.entry||{},seen=(r.seenAt||'').slice(0,10),notice=/^(fold|suite):/.test(r.id||''),mine=!notice&&held.has(r.id);
-      const foot=notice?`<div class="dsc" style="margin-top:3px;color:var(--dim)">A notice from the fold; it clears itself once a later fold commits.</div>`
+    /* v805, HIS WORD OF 23 SEP 2026: "I never know what to do with this." A notice from the fold or the suite sat under Refused
+       entries, headed by a line saying nothing there can be approved, beside cards that CAN be withdrawn, so a notice read as a
+       task. It is not one: it is the desk telling its own next session something, and it clears itself. So the notices stand
+       under their own heading, each saying in words that nothing is needed from him and what clears it. */
+    const isNote=r=>/^(fold|suite):/.test(r.id||''), refs=AP_REFUSED.filter(r=>!isNote(r)), notes=AP_REFUSED.filter(isNote);
+    const refCard=r=>{const e=r.entry||{},seen=(r.seenAt||'').slice(0,10),note=isNote(r),mine=!note&&held.has(r.id);
+      const foot=note?`<div class="dsc" style="margin-top:3px;color:var(--dim)">${/^suite:/.test(r.id)?'Nothing for you to do. It clears itself when the tests next pass.':'Nothing for you to do. It clears itself once a later fold commits.'}</div>`
         :mine?`<div style="margin-top:7px"><button type="button" class="vbtn salt-pill salt-pill--sm" data-wd="${esc(r.id)}">Withdraw</button></div>`
         :`<div class="dsc" style="margin-top:3px;color:var(--dim)">Not queued on this phone, so it cannot be withdrawn here.</div>`;
-      return `<div class="card" style="margin-top:8px"><div style="font-size:13px">${esc(e.raw||((e.type||'Entry')+' '+(r.party||'')))}</div><div class="dsc" style="margin-top:5px">${esc(r.why||'')}</div><div class="dsc" style="margin-top:3px;color:var(--dim)">${esc(r.source||'drafter')}${seen?', '+esc(seen):''}</div>${foot}</div>`;}).join(''):'';
+      const head=note?(/^suite:/.test(r.id)?'The desk&rsquo;s tests, after '+esc(r.id.slice(6)):'The fold, '+esc(seen)):esc(e.raw||((e.type||'Entry')+' '+(r.party||'')));
+      return `<div class="card" style="margin-top:8px"><div style="font-size:13px">${head}</div><div class="dsc" style="margin-top:5px">${esc(r.why||'')}</div>${note?'':`<div class="dsc" style="margin-top:3px;color:var(--dim)">${esc(r.source||'drafter')}${seen?', '+esc(seen):''}</div>`}${foot}</div>`;};
+    ref.innerHTML=(refs.length?`<h2 style="margin-top:18px">Refused entries <span class="rule"></span></h2><div class="dsc" style="margin-bottom:4px">Nothing here can be approved; each card says why. One queued on this phone stays until you withdraw it, and can then be entered again, corrected.</div>`+refs.map(refCard).join(''):'')
+      +(notes.length?`<h2 style="margin-top:18px">Notices from the desk <span class="rule"></span></h2>`+notes.map(refCard).join(''):'');
     ref.querySelectorAll('button[data-wd]').forEach(b=>{b.onclick=()=>apWithdraw(b.dataset.wd);});}
 }
 /* v586: Withdraw a refused entry this phone holds. It leaves the queue here by the road a rejection takes

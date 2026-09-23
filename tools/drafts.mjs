@@ -413,6 +413,13 @@ function refusedNote() {
   ok(id + " recorded as refused by the fold");
 }
 
+/* v805: a test notice goes the moment a later run's suite passes; the drafter's own rule keeps a fold notice until a fold commits */
+function clearSuiteNotices() {
+  const r = execFile("DELETE FROM refused WHERE id LIKE 'suite:%'");
+  if (r.code !== 0) { fail("could not clear the test notices"); return; }
+  ok("test notices cleared: the suite passed");
+}
+
 /* ---- main ---------------------------------------------------------------------------- */
 /* v596: only when run, so the suite can import costAndMargin without reading the live table and
    exiting. fold.mjs's own line: a hand-built file URL is false on Linux, and the job would do nothing. */
@@ -422,6 +429,7 @@ if (isMain) {
   else if (has("--draft")) draft();
   else if (has("--from-queue")) await fromQueue();
   else if (has("--refused-note")) refusedNote();
+  else if (has("--clear-suite-notices")) clearSuiteNotices();
   else if (has("--approve")) approve();
   else if (has("--approved")) approved();
   else if (has("--committed")) committed();

@@ -472,4 +472,15 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           v=$(node -p "require('./master/changelog.json')[0].v")
-          node tools/drafts.mjs --refused-note "suite:$v" "The test suite failed after $v went live. The phone is serving $v; read the run ${{ github.run_id }} before the next fold."
+          node tools/drafts.mjs --refused-note "suite:$v" "The desk's own tests failed after $v went live; the phone is serving $v and working. The next desk session reads run ${{ github.run_id }} and fixes them."
+
+      # v805, HIS WORD OF 23 SEP 2026: "I never know what to do with this." A test notice waited for the next FOLD to clear it,
+      # so one raised by a failing suite stayed on the phone through every green run after it, as suite:v791 did through
+      # six. It goes the moment a later run's suite passes, which is the thing it was about.
+      - name: Clear a test notice once the suite passes
+        if: steps.suite.outcome == 'success'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: node tools/drafts.mjs --clear-suite-notices
