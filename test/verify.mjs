@@ -13992,7 +13992,8 @@ await (async () => {
     const sealedPw = await C88.encryptText(MASTER88, PW88);
     const kv88 = new KV();
     await kv88.put("u:aaaa-bbbb", "{}");
-    await kv88.put("roster", JSON.stringify([{ code: "CX0-AA", username: "aaaa-bbbb" }]));
+    /* CX0-BB is a code the fold gave a username and nobody gave an account: no record, so no sheet row */
+    await kv88.put("roster", JSON.stringify([{ code: "CX0-AA", username: "aaaa-bbbb" }, { code: "CX0-BB", username: "cccc-dddd" }]));
     await kv88.put("issue", "2026-09-01");
     await kv88.put("sheet", JSON.stringify({ at: "2026-09-18T02:00:00Z", issue: "2026-09-01",
       accounts: [{ code: "CX0-AA", username: "aaaa-bbbb", issued: "2026-09-01", t: { n: 3, total: 420, owed: 110, toGet: 0, refund: 0, pend: 0 }, flag: "owes", pwMaster: sealedPw }] }));
@@ -14005,6 +14006,8 @@ await (async () => {
       "a card carries the address, the message, the code and the sealed password");
     ok(!card.msg.includes(PW88) && !JSON.stringify(sheet88).includes(PW88),
       "and the password is in none of it in the clear, message included");
+    ok(card.account === true && sheet88.accounts[1].account === false && sheet88.accounts[1].tot === "",
+      "a roster code the publish wrote no row for is marked as having no account, not as a quiet issue");
 
     const ticked = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-09-01", sent: true }) });
     const tick88 = await ticked.json();
@@ -14044,6 +14047,15 @@ await (async () => {
       const cardEl = D88.querySelector("#slist .scard");
       ok(!!cardEl && /CX0-AA/.test(cardEl.textContent) && /3 orders, RM 420.00/.test(cardEl.textContent) && !!cardEl.querySelector("canvas"),
         "the Send panel draws a card an account, with its totals and its code");
+      /* HIS QUESTION OF 23 SEP 2026: the account is one live document, so nothing on this panel may
+         speak of an issue, and a username with nothing behind it says so and offers no sign-in link */
+      const bare = [...D88.querySelectorAll("#slist .scard")].find((c) => /CX0-BB/.test(c.textContent));
+      const bareLink = bare && [...bare.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
+      const liveLink = [...cardEl.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
+      ok(!!bare && /No account yet, so they cannot sign in/.test(bare.textContent) && !!bareLink && bareLink.disabled && !!liveLink && !liveLink.disabled,
+        "a code with no account says it cannot sign in, and only its sign-in link is shut");
+      ok(!/issue/i.test(D88.getElementById("oSend").textContent),
+        "and the Send panel never says issue: " + JSON.stringify((D88.getElementById("oSend").textContent.match(/.{0,30}issue.{0,30}/i) || [""])[0]));
       const buttons = [...cardEl.querySelectorAll("button")];
       const msgBtn = buttons.find((b) => b.textContent === "Copy message"), pwBtn = buttons.find((b) => b.textContent === "Copy password");
       msgBtn.dispatchEvent(new W88.Event("click", { bubbles: true }));

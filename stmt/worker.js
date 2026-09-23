@@ -588,8 +588,15 @@ async function ownerSheet(env, origin) {
        words the laptop's send sheet uses. The QR is a matrix of 0s and 1s, drawn on the card's
        own canvas, because Share carries a PNG and a PNG needs a canvas. */
     const url = origin + "/?u=" + encodeURIComponent(a.username);
+    /* 23 SEP 2026: THERE IS NO ISSUE TO BE MISSING FROM (his question of 23 Sep 2026: "I thought it is a
+       continuous and live statement"). Every account carries its whole book to now, so a roster
+       code the publish wrote no row for has no ACCOUNT at all: a username the fold minted with
+       nothing behind it, which cannot sign in until the laptop mints one (v707). The card said
+       "No statement in this issue." over exactly that, which read as a quiet month and hid the one
+       fact he needed. The test account is made here and is never in the sheet, so it is not one. */
+    const account = !!a.test || !!s;
     out.push({
-      code: a.code, username: a.username, test: !!a.test,
+      code: a.code, username: a.username, test: !!a.test, account,
       issued: s ? s.issued : null, t: s ? s.t : null, flag: s ? s.flag : null,
       url, msg: linkMessage({ url, user: a.username }), tot: s ? totalsLine(s.t) : "",
       qr: QR.qrMatrix(url).map((line) => line.join("")),
