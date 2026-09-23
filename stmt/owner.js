@@ -35,11 +35,15 @@ export const OWNER_JS = `
     try{ window.scrollTo(0,0); }catch(e){}
   }
   /* ---- REVIEW STATEMENT --------------------------------------------------------------------
-     The list is the roster, so an account with no statement this issue is still on it and says
-     so. Everything else comes from /all/sheet. */
+     The list is the roster, so a code with no account behind its username is still on it and
+     says so. Everything else comes from /all/sheet. */
   var FLAGW={owes:'Owes',goods:'Owes goods',refund:'Refund due',pend:'Agreed, not actioned',clear:'Clear'};
+  /* 23 SEP 2026: THE ACCOUNT IS ONE LIVE DOCUMENT (v769), so there is no issue for an account to be
+     missing from. A row with no totals is a username with nothing behind it, and that is what it
+     says, with the one command that mends it. */
+  var NOACCT='No account yet, so they cannot sign in. Mint it on the laptop: node tools/stmt-account.mjs --mint';
   function flagLine(a){
-    if(!a.t||!a.flag) return 'No statement in this issue.';
+    if(!a.t||!a.flag) return NOACCT;
     var t=a.t;
     if(a.flag==='owes') return FLAGW.owes+' '+rm(t.owed);
     if(a.flag==='goods') return FLAGW.goods+' '+unitsOf(Math.round(t.toGet*100)/100);
@@ -90,7 +94,7 @@ export const OWNER_JS = `
     head.appendChild(el('b',null,a.test?'Test account':(a.code||a.username)));
     head.appendChild(el('span','un',a.username));
     card.appendChild(head);
-    card.appendChild(el('p','tot',a.tot||'No statement in this issue.'));
+    card.appendChild(el('p','tot',a.test?'Counts nowhere; nothing on the book is behind it.':(a.account===false?NOACCT:a.tot)));
     card.appendChild(el('p','op',openedLine(a)+(a.sent?' \\u00b7 sent '+stampDay(a.sent):'')));
     var qw=el('div','qrw'); qw.appendChild(qrCanvas(a.qr||[]));
     qw.appendChild(el('p','qrn','The code opens their page with the username filled in. Sign-in link sends one that opens it outright, once.'));
@@ -127,8 +131,10 @@ export const OWNER_JS = `
        from the one copy of them. MINTED ON A TAP, never on a draw: drawing the panel would write a
        record per account on every page load and burn links nobody sent. */
     var slb=el('button','pw','Sign-in link'); slb.type='button';
+    /* no record means nothing to open under the master, so the link could only fail (23 Sep 2026) */
+    if(a.account===false){ slb.disabled=true; slb.title='No account behind this username yet'; }
     slb.addEventListener('click', async function(){
-      if(!a.pwMaster && !a.username) return;
+      if(a.account===false || (!a.pwMaster && !a.username)) return;
       slb.disabled=true; slb.textContent='Making it...';
       try{
         var o=await (await fetch('/open', {method:'POST', headers:{'content-type':'application/json'},
@@ -177,7 +183,7 @@ export const OWNER_JS = `
     var real=sheetRows.filter(function(a){ return !a.test; });
     var done=real.filter(function(a){ return a.sent; }).length;
     var head=document.getElementById('scount');
-    if(head) head.textContent=done+' of '+real.length+' sent'+(sheetIssue?' this issue':'');
+    if(head) head.textContent=done+' of '+real.length+' sent';
     if(!hits.length){ wrap.appendChild(el('p','rnone','Nothing matches that.')); return; }
     hits.forEach(function(a){ wrap.appendChild(sendCard(a)); });
   }

@@ -76,8 +76,13 @@ class KV {
     return type === "json" ? JSON.parse(raw) : raw;
   }
   async delete(k) { this.m.delete(k); }
+  /* a key written with a lapse lists its `expiration`, as real KV's listing does, so a route that
+     reads the listing to find such keys is driven by what real KV would tell it */
   async list({ prefix = "" } = {}) {
-    return { keys: [...this.m.keys()].filter(k => k.startsWith(prefix)).map(name => ({ name })), list_complete: true };
+    return { keys: [...this.m.keys()].filter(k => k.startsWith(prefix)).map(name => {
+      const o = this.opts.get(name);
+      return o && o.expirationTtl ? { name, expiration: Math.floor(Date.now() / 1000) + o.expirationTtl } : { name };
+    }), list_complete: true };
   }
 }
 const assets = {
@@ -13976,6 +13981,13 @@ await (async () => {
   ok(uPuts.length > 10 && uPuts.every((p) => !p.value.includes("pwMaster")) && sealedRows.length > 10,
     "the record a customer fetches carries no sealed password, and the account list carries them: "
     + uPuts.length + " records, " + sealedRows.length + " sealed");
+  /* a tick no longer lapses, so a new sealed issue is what clears the last one's, and nothing else does */
+  const ticks88 = ["sent:1999-01-01:aaaa-bbbb", "sent:" + plan88.issued + ":aaaa-bbbb"];
+  const fresh88 = await pp88(join(REPO, "statements"), "", new Date("2026-09-18T02:00:00Z"), ticks88, "1999-01-01");
+  const same88 = await pp88(join(REPO, "statements"), "", new Date("2026-09-18T02:00:00Z"), ticks88, plan88.issued);
+  ok(fresh88.newIssue && fresh88.deletes.includes(ticks88[0]) && !fresh88.deletes.includes(ticks88[1])
+    && !same88.deletes.some((k) => k.startsWith("sent:")),
+    "a new issue clears the last issue's ticks and keeps its own; a publish of the same issue clears none");
 
   /* ---- THE CARD'S DATA, AND THE TICK --------------------------------------------------------- */
   const realFetch88 = globalThis.fetch;
@@ -13999,7 +14011,8 @@ await (async () => {
     const sealedPw = await C88.encryptText(MASTER88, PW88);
     const kv88 = new KV();
     await kv88.put("u:aaaa-bbbb", "{}");
-    await kv88.put("roster", JSON.stringify([{ code: "CX0-AA", username: "aaaa-bbbb" }]));
+    /* CX0-BB is a code the fold gave a username and nobody gave an account: no record, so no sheet row */
+    await kv88.put("roster", JSON.stringify([{ code: "CX0-AA", username: "aaaa-bbbb" }, { code: "CX0-BB", username: "cccc-dddd" }]));
     await kv88.put("issue", "2026-09-01");
     await kv88.put("sheet", JSON.stringify({ at: "2026-09-18T02:00:00Z", issue: "2026-09-01",
       accounts: [{ code: "CX0-AA", username: "aaaa-bbbb", issued: "2026-09-01", t: { n: 3, total: 420, owed: 110, toGet: 0, refund: 0, pend: 0 }, flag: "owes", pwMaster: sealedPw }] }));
@@ -14012,15 +14025,23 @@ await (async () => {
       "a card carries the address, the message, the code and the sealed password");
     ok(!card.msg.includes(PW88) && !JSON.stringify(sheet88).includes(PW88),
       "and the password is in none of it in the clear, message included");
+    ok(card.account === true && sheet88.accounts[1].account === false && sheet88.accounts[1].tot === "",
+      "a roster code the publish wrote no row for is marked as having no account, not as a quiet issue");
 
     const ticked = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-09-01", sent: true }) });
     const tick88 = await ticked.json();
     ok(ticked.status === 200 && tick88.sent && kv88.m.has("sent:2026-09-01:aaaa-bbbb")
-      && (kv88.opts.get("sent:2026-09-01:aaaa-bbbb") || {}).expirationTtl === 61 * 24 * 3600,
-      "a tick is the site's, not one browser's, and expires with its issue");
+      && !(kv88.opts.get("sent:2026-09-01:aaaa-bbbb") || {}).expirationTtl,
+      "a tick is the site's, not one browser's, and no longer lapses (23 Sep 2026)");
     ok((await (await call88("/all/sheet")).json()).accounts[0].sent === tick88.sent, "and the next read shows it");
     const untick = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-09-01", sent: false }) });
     ok(untick.status === 200 && !kv88.m.has("sent:2026-09-01:aaaa-bbbb"), "and it can be taken back");
+    /* A TICK WRITTEN BEFORE 23 SEP 2026 CARRIES THE OLD 61-DAY LAPSE, and reading the list keeps it */
+    await kv88.put("sent:2026-09-01:aaaa-bbbb", JSON.stringify({ at: "2026-09-19T01:00:00Z" }), { expirationTtl: 61 * 24 * 3600 });
+    const kept88 = (await (await call88("/all/sheet")).json()).accounts[0].sent;
+    ok(kept88 === "2026-09-19T01:00:00Z" && !(kv88.opts.get("sent:2026-09-01:aaaa-bbbb") || {}).expirationTtl,
+      "a tick written with the old lapse is rewritten without it the next time the list is read, and keeps its moment");
+    await kv88.delete("sent:2026-09-01:aaaa-bbbb");
     const stale = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-08-01", sent: true }) });
     const unknown = await call88("/all/sent/zzzz-zzzz", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-09-01", sent: true }) });
     const notJson = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "text/plain" }, body: "sent" });
@@ -14051,6 +14072,15 @@ await (async () => {
       const cardEl = D88.querySelector("#slist .scard");
       ok(!!cardEl && /CX0-AA/.test(cardEl.textContent) && /3 orders, RM 420.00/.test(cardEl.textContent) && !!cardEl.querySelector("canvas"),
         "the Send panel draws a card an account, with its totals and its code");
+      /* HIS QUESTION OF 23 SEP 2026: the account is one live document, so nothing on this panel may
+         speak of an issue, and a username with nothing behind it says so and offers no sign-in link */
+      const bare = [...D88.querySelectorAll("#slist .scard")].find((c) => /CX0-BB/.test(c.textContent));
+      const bareLink = bare && [...bare.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
+      const liveLink = [...cardEl.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
+      ok(!!bare && /No account yet, so they cannot sign in/.test(bare.textContent) && !!bareLink && bareLink.disabled && !!liveLink && !liveLink.disabled,
+        "a code with no account says it cannot sign in, and only its sign-in link is shut");
+      ok(!/issue/i.test(D88.getElementById("oSend").textContent),
+        "and the Send panel never says issue: " + JSON.stringify((D88.getElementById("oSend").textContent.match(/.{0,30}issue.{0,30}/i) || [""])[0]));
       const buttons = [...cardEl.querySelectorAll("button")];
       const msgBtn = buttons.find((b) => b.textContent === "Copy message"), pwBtn = buttons.find((b) => b.textContent === "Copy password");
       msgBtn.dispatchEvent(new W88.Event("click", { bubbles: true }));
@@ -15531,11 +15561,13 @@ await (async () => {
   ok((await bulletinRelay(denv, "POST", { lines: ["x"] })).ok === true && (await bulletinRelay(denv, "PUT")).ok === true,
     "the relay reads on anything but a POST");
 
-  /* ---- 5. THE PUBLISH NEVER TOUCHES IT: its deletes are u: and fail: keys alone ---- */
+  /* ---- 5. THE PUBLISH NEVER TOUCHES IT: its deletes are u:, fail: and (since 23 Sep 2026, when a
+     tick stopped lapsing) the last issue's sent: keys alone ---- */
   const pubSrc = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");
   const pushes = pubSrc.match(/deletes\.push\([^)]*\)/g) || [];
-  ok(pushes.length === 2 && /k\.startsWith\("u:"\) && !keep\.has\(k\)[^\n]*deletes\.push\(k\)/.test(pubSrc) && /k\.startsWith\("fail:"\)[^\n]*deletes\.push\(k\)/.test(pubSrc),
-    "the publish retires only u: and fail: keys, so a bulletin set from the desk survives every fold and every hourly tick");
+  ok(pushes.length === 3 && /k\.startsWith\("u:"\) && !keep\.has\(k\)[^\n]*deletes\.push\(k\)/.test(pubSrc) && /k\.startsWith\("fail:"\)[^\n]*deletes\.push\(k\)/.test(pubSrc)
+    && /newIssue && k\.startsWith\("sent:"\)[^\n]*deletes\.push\(k\)/.test(pubSrc),
+    "the publish retires only u:, fail: and an old issue's sent: keys, so a bulletin set from the desk survives every fold and every hourly tick");
 
   /* ---- 6. THE ENTER CARD, in the master ---- */
   const { openMaster } = await import("../tools/payload.mjs");
@@ -19089,6 +19121,97 @@ await (async () => {
     "on a mirror that predates the field, salt still earns rather than being refused in silence");
   ok(/no reward scheme/.test(String(onOilOld && onOilOld.skip)),
     "and the old rule still refuses the book it always refused");
+})();
+
+section("23 Sep 2026: a statement reads newest first");
+await (async () => {
+  /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read
+     off the printed date cells of every live statement on the real book, so the order checked is the
+     order a customer sees, not the order of an array handed to the printer. */
+  const M = await import("../tools/make_statements.mjs");
+  const POS = (await import("../engine/position.mjs")).default;
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const sales = (bk.state && bk.state.sales) || bk.sales || [];
+  const at = new Date("2026-09-23T00:00:00Z");
+  const MON = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+  const iso = (t) => { const m = /(\d{2}) ([A-Za-z]{3})[A-Za-z]* (\d{4})/.exec(t); return m ? m[3] + "-" + String(MON.indexOf(m[2].toLowerCase()) + 1).padStart(2, "0") + "-" + m[1] : null; };
+  const parties = [...new Set(sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
+  let checked = 0, multi = 0;
+  const wrong = [];
+  for (const p of parties) {
+    const doc = M.liveStatement(p, at);
+    if (!doc) continue;
+    /* the orders table alone: the Refunds table below it prints its own dates in the same cell class */
+    const days = [...doc.body.split('<table class="rft"')[0].matchAll(/<td class="l dt">([\s\S]*?)<\/td>/g)].map((x) => iso(x[1].replace(/<[^>]+>/g, " "))).filter(Boolean);
+    checked++;
+    if (new Set(days).size > 1) multi++;
+    for (let i = 1; i < days.length; i++) if (days[i] > days[i - 1]) { wrong.push(p + " " + days[i - 1] + " then " + days[i]); break; }
+  }
+  ok(checked > 10 && multi > 5 && !wrong.length,
+    "every live statement prints its rows newest first: " + checked + " statements, " + multi + " with more than one day"
+    + (wrong.length ? "; out of order: " + wrong.slice(0, 3).join(", ") : ""));
+})();
+
+section("23 Sep 2026: over RM 100 owed, the account is a payment page");
+await (async () => {
+  /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead
+     them to a payment page, which states: please pay the overdue amount before making another order".
+     The figure is sealed inside the live statement and is the one its own footer and his Review read. */
+  const M = await import("../tools/make_statements.mjs");
+  const POS = (await import("../engine/position.mjs")).default;
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const sales = (bk.state && bk.state.sales) || bk.sales || [];
+  const at = new Date("2026-09-23T00:00:00Z"), day = M.klToday(at);
+  const parties = [...new Set(sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
+  const off = [];
+  let n = 0, owing = 0;
+  for (const p of parties) {
+    const doc = M.liveStatement(p, at);
+    if (!doc) continue;
+    n++;
+    const t = M.partyTotals(p, day);
+    if (t.owed > 0.009) owing++;
+    if (typeof doc.owed !== "number" || Math.abs(doc.owed - t.owed) > 0.009) off.push(p + " " + doc.owed + " vs " + t.owed);
+  }
+  ok(n > 10 && owing > 0 && !off.length,
+    "every live statement carries what the account owes, the same figure the owner's Review reads: " + n + " statements, "
+    + owing + " owing" + (off.length ? "; differ: " + off.slice(0, 3).join(", ") : ""));
+
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const openWith = async (owed) => {
+    const u = "abcd-efgh", pass = "fixture-pass-hold", ck = await C.contentKey("test-secret", u);
+    const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "",
+      env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await C.encryptWith(ck, JSON.stringify({ at: at.toISOString(), body: "<p>Live</p>", owed })) };
+    const dom = new JD(lp(u, "nhold", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path) => { const open = String(path) === "/open"; return { ok: open, status: open ? 200 : 404, json: async () => (open ? body : { ok: false }) }; };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 150 && !d.getElementById("pOrder").textContent; i++) await new Promise((r) => setTimeout(r, 100));
+      return { order: d.getElementById("pOrder").textContent, orderShown: !d.getElementById("pOrder").hidden,
+        stmtShown: !d.getElementById("pStmt").hidden, orderTab: d.getElementById("tOrder").textContent,
+        pricesTab: !d.getElementById("tPrices").hidden, stmtTab: !d.querySelector('button[data-t="stmt"]').hidden,
+        payLinks: d.querySelectorAll("#pOrder a.lnk").length, form: !!d.querySelector("#pOrder select") };
+    } finally { dom.window.close(); }
+  };
+  const held = await openWith(250.5), under = await openWith(100), none = await openWith(undefined);
+  ok(held.orderShown && !held.stmtShown && held.orderTab === "Pay" && !held.pricesTab && held.stmtTab
+    && /Please pay the overdue amount of RM 250\.5 before placing another order/.test(held.order) && held.payLinks > 0 && !held.form,
+    "owing RM 250.50, the account opens on Pay, says to pay the overdue amount first, offers the ways to pay, and neither the price list nor an order form: "
+    + JSON.stringify({ ...held, order: held.order.slice(0, 90) }));
+  ok(!under.orderShown && under.stmtShown && under.orderTab === "Order" && under.pricesTab && !/overdue/.test(under.order)
+    && !none.orderShown && none.orderTab === "Order" && none.pricesTab,
+    "at RM 100 exactly, and with no figure at all, the account opens as it always has");
 })();
 
 section("v782: a statement says which book each row is, and units of different books do not add");

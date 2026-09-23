@@ -578,6 +578,7 @@ async function ownerSheet(env, origin) {
   const byUser = new Map(rows.map((a) => [a.username, a]));
   const issue = sheet ? sheet.issue || null : null;
   const month = monthNameOf(issue);
+  await keepTicks(env);
   const out = [];
   for (const a of await roster(env)) {
     const s = byUser.get(a.username) || null;
@@ -588,8 +589,15 @@ async function ownerSheet(env, origin) {
        words the laptop's send sheet uses. The QR is a matrix of 0s and 1s, drawn on the card's
        own canvas, because Share carries a PNG and a PNG needs a canvas. */
     const url = origin + "/?u=" + encodeURIComponent(a.username);
+    /* 23 SEP 2026: THERE IS NO ISSUE TO BE MISSING FROM (his question of 23 Sep 2026: "I thought it is a
+       continuous and live statement"). Every account carries its whole book to now, so a roster
+       code the publish wrote no row for has no ACCOUNT at all: a username the fold minted with
+       nothing behind it, which cannot sign in until the laptop mints one (v707). The card said
+       "No statement in this issue." over exactly that, which read as a quiet month and hid the one
+       fact he needed. The test account is made here and is never in the sheet, so it is not one. */
+    const account = !!a.test || !!s;
     out.push({
-      code: a.code, username: a.username, test: !!a.test,
+      code: a.code, username: a.username, test: !!a.test, account,
       issued: s ? s.issued : null, t: s ? s.t : null, flag: s ? s.flag : null,
       url, msg: linkMessage({ url, user: a.username }), tot: s ? totalsLine(s.t) : "",
       qr: QR.qrMatrix(url).map((line) => line.join("")),
@@ -604,9 +612,28 @@ async function ownerSheet(env, origin) {
 /* A TICK IS THE SITE'S, NOT ONE BROWSER'S (v688). The laptop sheet keeps its ticks in that
    browser's storage, so sending half the issue on the phone and half on the laptop meant two
    half-finished lists. This one is a key per account per issue, so both of his devices show the
-   same. It expires two months on: a tick belongs to an issue, and the next one starts clean. */
+   same.
+   A TICK NO LONGER EXPIRES (his instruction of 23 Sep 2026). It was written to lapse 61 days on,
+   when a new issue came every month and started a clean list anyway. The account is one live
+   document now and no new issue is sealed (v772), so the issue key never moves and the lapse
+   would only have unticked accounts he had handed over, two months after he did. A tick is kept
+   until he takes it back; a new sealed issue, which does need sending again, is still a new key,
+   and the publish clears the old issue's ticks when one is sealed. */
 const SENT_KEY = (issue, u) => "sent:" + issue + ":" + u;
-const SENT_TTL = 61 * 24 * 3600;
+/* The ticks written before this carry the old 61-day lapse, and only a put without one removes
+   it. A listing says which do, so each is rewritten once and a listing after that finds none. */
+async function keepTicks(env) {
+  let cursor;
+  do {
+    const page = await env.STMT.list({ prefix: "sent:", cursor });
+    for (const k of page.keys) {
+      if (!k.expiration) continue;
+      const v = await env.STMT.get(k.name);
+      if (v != null) await env.STMT.put(k.name, v);
+    }
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+}
 
 /* ---- MAKING AND UNMAKING THE TEST ACCOUNT (v689) ---------------------------------------------
  * The record is built here, with a key made here, so nothing real is behind it: a bundle of one
@@ -911,7 +938,7 @@ export default {
         if (!issue || String(b.issue || "") !== issue) return json({ ok: false, error: "that is not this issue; reload" }, 409);
         if (b.sent === false) { await env.STMT.delete(SENT_KEY(issue, u)); return json({ ok: true, sent: null }); }
         const at = new Date().toISOString();
-        await env.STMT.put(SENT_KEY(issue, u), JSON.stringify({ at }), { expirationTtl: SENT_TTL });
+        await env.STMT.put(SENT_KEY(issue, u), JSON.stringify({ at }));
         return json({ ok: true, sent: at });
       }
       return notFound();

@@ -493,8 +493,8 @@ export function landingPage(user, nonce, owner, bulletin) {
     + "</div></div>"
     + '<div id="tabs" class="tabs" role="tablist" hidden>'
     + '<button type="button" class="salt-tabs__pill on" role="tab" aria-selected="true" data-t="stmt">Statements</button>'
-    + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="prices">Prices</button>'
-    + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="order">Order</button>'
+    + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="prices" id="tPrices">Prices</button>'
+    + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="order" id="tOrder">Order</button>'
     /* v706: the associate's own card. Hidden for everybody else, and shown only once the record
        that opened actually carries one, so the tab can never lead to an empty panel. */
     + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="card" id="tCard" hidden>Card</button>'
@@ -592,7 +592,17 @@ const CLIENT_JS = `
       tabs=document.getElementById('tabs'),
       pStmt=document.getElementById('pStmt'), pPrices=document.getElementById('pPrices'),
       pOrder=document.getElementById('pOrder'), pCard=document.getElementById('pCard'),
-      tCard=document.getElementById('tCard');
+      tCard=document.getElementById('tCard'),
+      tPrices=document.getElementById('tPrices'), tOrder=document.getElementById('tOrder');
+  /* ---- OVER THE LINE, THE ACCOUNT IS A PAYMENT PAGE (his instruction of 23 Sep 2026) ------------
+     "If someone owes more than RM100, their account will only lead them to a payment page, which
+     states: please pay the overdue amount before making another order." What they owe is sealed
+     inside their own live statement (tools/make_statements.mjs), the same figure its footer reads,
+     so nothing about the book is in the store in the clear to decide it with. Over the line, the
+     account opens on Pay, the order form and the price list are not offered, and the statement
+     stays one tap away, because a figure to pay is only fair beside the orders it is made of. It
+     lifts on its own: the next publish after the payment is recorded writes a smaller figure. */
+  var HOLD_RM=100, owedNow=0, hold=false;
   /* THE MESSAGE GOES WHERE THE READER IS LOOKING. #msg lives inside the gate, so on the owner's
      route, where the gate is hidden behind the roster, every "Checking..." and every refusal was
      written into a hidden element. Both are written; only one is on screen. */
@@ -758,6 +768,7 @@ const CLIENT_JS = `
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
     bundle=null; session=''; prices=null; orders=[]; draft={}; pick={}; assoc=false; card=null; cardMonth=''; myLinks=null; myMax=0;
+    owedNow=0; hold=false; tPrices.hidden=false; tOrder.textContent='Order';
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
     var mfn=document.getElementById('mfnote'); if(mfn) mfn.textContent='';
@@ -883,7 +894,12 @@ const CLIENT_JS = `
        it can never lead to an empty panel and nobody else is shown one at all */
     tCard.hidden=!(assoc&&card&&card.products&&card.products.length);
     if(!tCard.hidden) drawCard();
+    var lv=b.statements.filter(function(s){ return s.live; })[0];
+    owedNow=lv&&isFinite(+lv.owed)?+lv.owed:0;
+    hold=owedNow>HOLD_RM+0.004;
+    tPrices.hidden=hold; tOrder.textContent=hold?'Pay':'Order';
     pickStmt(0);
+    if(hold) showTab('order');
   }
 
   /* ---- THEIR OWN CARD (v706, his instruction of 18 Sep 2026) ----------------------------------
@@ -1129,8 +1145,27 @@ const CLIENT_JS = `
   function drawOrder(){
     var sc=window.scrollY;
     pOrder.textContent='';
-    pOrder.appendChild(el('h2',null,'Order'));
-    if(!prices||!prices.products||!prices.products.length){
+    pOrder.appendChild(el('h2',null,hold?'Payment due':'Order'));
+    if(hold){
+      var dueBox=el('div','pane');
+      dueBox.appendChild(el('div','quote',rm(owedNow)));
+      dueBox.appendChild(el('p','lead','Please pay the overdue amount of '+rm(owedNow)+' before placing another order.'));
+      dueBox.appendChild(el('p','sub2','Ordering opens again here once the payment is recorded on your account. Each order the amount is made of is on your statement.'));
+      var ways=PAY.filter(function(a){ return !a.maintenance&&(a.qr||a.transfer); });
+      if(ways.length){
+        dueBox.appendChild(el('span','lbl','Ways to pay'));
+        ways.forEach(function(a){
+          var l=el('a','btn lnk','Open '+a.name+' in QR Command');
+          l.href=PAY_SITE+'/#'+encodeURIComponent(a.key); l.target='_blank'; l.rel='noopener';
+          dueBox.appendChild(l);
+        });
+      }
+      dueBox.appendChild(el('p','sub2','Once it has left your side, say so on any of your orders below, or tell us directly, so it can be recorded.'));
+      var sv=el('button','btn quiet salt-ghost','See your statement'); sv.type='button';
+      sv.addEventListener('click',function(){ showTab('stmt'); });
+      dueBox.appendChild(sv);
+      pOrder.appendChild(dueBox);
+    } else if(!prices||!prices.products||!prices.products.length){
       pOrder.appendChild(el('p','lead',prices&&prices.soon&&prices.soon.length?'Ordering opens once your prices are set.':'Ordering opens once your price list is written, with the next update.'));
     } else {
       pOrder.appendChild(el('p','lead','Pick a size off your list and check it over before you place it. Once it is acknowledged you can pay, and you are told when the goods are on their way.'));
@@ -1522,7 +1557,7 @@ const CLIENT_JS = `
     if(body.live){
       try{ var l=JSON.parse(await open(ck, body.live));
         if(stale()) return;
-        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body}); }
+        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body, owed:l.owed}); }
       catch(e){ /* the issued statements still open; the live one is simply absent */ }
     }
     prices=null;
@@ -1589,7 +1624,7 @@ const CLIENT_JS = `
     if(stale()) return false;
     if(body.live){
       try{ var l=JSON.parse(await open(ck, body.live));
-        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body}); }
+        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body, owed:l.owed}); }
       catch(e){ /* the issued statements still open */ }
     }
     prices=null;
@@ -1644,7 +1679,7 @@ const CLIENT_JS = `
     if(stale()) return false;
     if(body.live){
       try{ var l=JSON.parse(await open(ck, body.live));
-        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body}); }
+        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body, owed:l.owed}); }
       catch(e){ /* the issued statements still open */ }
     }
     prices=null;
