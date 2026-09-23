@@ -7273,7 +7273,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v805","d":"23 Sep 2026","t":"A NOTICE FROM THE DESK SAYS IT NEEDS NOTHING, AND A PASSING SUITE CLEARS IT","n":["<b>HIS WORD OF 23 SEP 2026, on the suite:v791 card: I never know what to do with this.</b> A notice from the fold or the suite sat under Refused entries, headed by a line saying nothing there can be approved, beside cards that can be withdrawn, so it read as a task. It never is one: it is the desk telling its own next session something. Notices now stand under their own heading, Notices from the desk, each saying in words that nothing is needed from him and what clears it.","<b>A TEST NOTICE CLEARS WHEN THE TESTS PASS.</b> It waited for the next fold, so suite:v791 stayed on the phone through six green runs after the two failures it reported were fixed at v793; a run whose suite passes now clears every test notice. A fold notice still clears with the next fold. The v791 notice itself went with v804's fold."]}];
+const evolution=[{"v":"v806","d":"23 Sep 2026","t":"THE LEDGER OPENS NEWEST FIRST ON THE LAST SEVEN DAYS","n":["<b>HIS WORD OF 23 SEP 2026: the ledger sheet is too long; default to the latest seven days, latest to older, the others collapsed like the customers list.</b> The sheet sorted first to latest and drew all 219 entries. It now opens newest first on the last seven days, today the seventh, with an undated row kept at the top as the most open thing on the book, and the rest folds behind one control that says how many rows and how much money they carry, as the Customers list folds its tail: on the day, 29 rows shown and 190 folded, worth RM60,108.","<b>A SEARCH, A FILTER OR ANOTHER SORT SHOWS EVERY ROW,</b> because folding by date would hide what was asked for. A heading's first tap sorts the E-number or the date newest first, and any other column ascending, as before. The sheet's note no longer points at the Journal, which left the desk at v802: the notes stay on each row in the book."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -7388,7 +7388,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='23 Sep 2026, 12:15 KL';
+const LAST_UPDATED='23 Sep 2026, 12:37 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -12130,7 +12130,12 @@ function goRid(rid){switchTab('ledger');
    days and fold the rest behind a summary, and a folded row reads as a missing one. Every row now
    shows, in book order, and any column heading sorts the list the way a sheet does: once ascending,
    again descending, blanks last either way. E-numbers are minted in book order and keep it. */
-let ledSort={key:'e',dir:1};
+/* v806, HIS WORD OF 23 SEP 2026: the sheet is too long, so it opens newest first on the last seven days, and the rest folds
+   behind one control that says how many rows and how much, as the Customers list folds its tail. A search, a filter or a sort by
+   any other column shows every row, because folding by date would hide what was asked for. */
+let ledSort={key:'e',dir:-1};
+let ledOlder=false;
+function ledOlderToggle(){ledOlder=!ledOlder;render();}
 let ledF={q:'',state:'',party:'',month:'',product:''};
 /* the rows tabLedger last matched. The day-by-day chart draws THIS rather than reaching for
    `sales`, so a chart sitting under the toolbar cannot show a different book from the list
@@ -12216,7 +12221,7 @@ function wireLedger(){
   const cl=document.getElementById('ledClear');if(cl)cl.onclick=()=>{ledF={q:'',state:'',party:'',month:'',product:''};rerun('ledQ');};
   /* v465: a heading sorts; the same heading again reverses */
   document.querySelectorAll('.lhead [data-lsort]').forEach(b=>{b.onclick=()=>{const k=b.getAttribute('data-lsort');
-    if(ledSort.key===k)ledSort.dir=-ledSort.dir;else ledSort={key:k,dir:1};rerun('lsort-'+k);};});
+    if(ledSort.key===k)ledSort.dir=-ledSort.dir;else ledSort={key:k,dir:k==='e'||k==='date'?-1:1};rerun('lsort-'+k);};});
 }
 /* the product stamp for a ledger row, in that product's own accent */
 function prodTag(t){
@@ -12632,7 +12637,14 @@ function tabLedger(){
     if(na||nb)return na===nb?a.k.e-b.k.e:(na?1:-1);
     const c=(typeof ka==='number'&&typeof kb==='number')?ka-kb:String(ka).localeCompare(String(kb));
     return c===0?a.k.e-b.k.e:c*ledSort.dir;};
-  const rowsHtml=rows.slice().sort(cmp).map(r=>r.h).join('');
+  const sorted=rows.slice().sort(cmp);
+  const cut=new Date(TODAY.getTime()-6*864e5).toISOString().slice(0,10);   /* seven days, today the seventh */
+  const fold=!filtered&&(ledSort.key==='e'||ledSort.key==='date')&&ledSort.dir<0;
+  /* an undated row is agreed with nothing moved, the most open thing on the book, so it stays with the recent */
+  const recent=fold?sorted.filter(r=>!r.date||r.date>=cut):sorted, older=fold?sorted.filter(r=>r.date&&r.date<cut):[];
+  const olderRM=older.reduce((a,r)=>a+(r.k.total||0),0);
+  const moreBtn=older.length?`<button type="button" class="ubtn ledmore" style="width:100%;min-height:var(--tap);margin:8px 0" onclick="ledOlderToggle()">${ledOlder?`Show the last seven days only`:`Show the ${older.length} older transaction${older.length===1?'':'s'} &middot; ${fmt0(olderRM)}, before ${cut}`}</button>`:'';
+  const rowsHtml=recent.map(r=>r.h).join('')+(ledOlder?older.map(r=>r.h).join(''):'');
   ledShown=shownTx;                       // the chart draws the same set the list shows
   const parties=[...new Set(all.map(t=>t.who))];
   /* v280: a PENDING order carries no date, because it is not firm until something moves.
@@ -12657,9 +12669,9 @@ function tabLedger(){
     <span class="ledct">${shown} of ${total}</span>
   </div>`;
   return `<h1>Ledger</h1>
-  <div class="dsc dsclead">Every transaction the desk holds, first to latest, with the trail of what moved when.</div>
+  <div class="dsc dsclead">Every transaction the desk holds, latest first, with the trail of what moved when.</div>
   <h2>Transactions ledger <span class="rule"></span></h2>
-  <div class="note">One line per order, <b>Opened &rarr; steps &rarr; Closed</b>, figures only; the notes are in the Journal. Sort by any column from its heading, and again to reverse; the E-numbers keep their place in the book.</div>
+  <div class="note">One line per order, <b>Opened &rarr; steps &rarr; Closed</b>, figures only; the notes stay on each row in the book. The last seven days show first and the rest fold below them. Sort by any column from its heading, and again to reverse; the E-numbers keep their place in the book.</div>
   ${toolbar}
   ${ledSumBar(shownTx,total)}
   <div class="card" style="margin:0 0 6px"><div class="cardh">The book, day by day <span class="sub">RM written and units moved${filtered?', across the rows shown':''}</span></div><div class="chartbox" style="height:180px"><canvas id="lgTimeChart"></canvas></div></div>
@@ -12667,7 +12679,7 @@ function tabLedger(){
     return `<div class="ledwrap"><div class="lhead">`
       +`<span class="lc lc-e">${hb('e','E')}</span><span class="lc lc-step">Transaction</span><span class="lc lc-date">${hb('date','Date')}</span><span class="lc lc-type">${hb('type','Type')}</span><span class="lc lc-prod">${hb('product','Product')}</span><span class="lc lc-party">${hb('party','Party')}</span>`
       +`<span class="lcol cqty">${hb('qty','Qty')}</span><span class="lcol cprc">${hb('price','Price/unit')}</span><span class="lcol ctot">${hb('total','Total')}${hb('margin','margin')}</span><span class="lstate">${hb('state','State')}</span><span class="lc lc-act">Act</span></div>`;})()}
-  <div class="lcards">${rowsHtml||'<div class="dsc" style="padding:14px 4px">Nothing matches this filter.</div>'}</div></div>
+  <div class="lcards">${rowsHtml||(older.length?'<div class="dsc" style="padding:14px 4px">Nothing in the last seven days.</div>':'<div class="dsc" style="padding:14px 4px">Nothing matches this filter.</div>')}</div>${moreBtn}</div>
 `;   /* v533: the quote ladder is on Inventory, Sourcing, per product; it was a salt-only copy here */
 }
 

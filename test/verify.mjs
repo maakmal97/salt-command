@@ -1891,7 +1891,7 @@ await (async () => {
   {
     const { openMaster: omL } = await import("../tools/payload.mjs");
     const { w: wL } = await omL();
-    wL.eval("setProd('salt');recompute();switchTab('ledger');");
+    wL.eval("setProd('salt');recompute();ledOlder=true;switchTab('ledger');");
     const cards = JSON.parse(wL.eval(`JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .lcard[data-rid]')).map(function(c){
       var pills=[].slice.call(c.querySelectorAll('.lstate')).map(function(s){return s.textContent.trim();}).filter(Boolean);
       var steps=[].slice.call(c.querySelectorAll('.lmove .lstate')).map(function(s){return s.textContent.trim();}).filter(Boolean);
@@ -1934,7 +1934,7 @@ await (async () => {
       "s-deferred": { cash: 100, deliveredQty: 0 }, "s-pending": { cash: 0, deliveredQty: 0 },
       "s-default": { cash: 0, deliveredQty: 2, defaulted: true }, "s-cancelled": { cash: 0, deliveredQty: 0, cancelled: true, cancelledOn: "2026-09-02" } };
     Object.keys(PLANT).forEach((k) => wC.eval(`sales.push(Object.assign({customer:'CX9-TINT',qty:2,total:100,date:'2026-09-01',rid:'x-${k.slice(2)}'},${JSON.stringify(PLANT[k])}))`));
-    wC.eval("setProd('salt');recompute();switchTab('ledger');");
+    wC.eval("setProd('salt');recompute();ledOlder=true;switchTab('ledger');");
     const bookC = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
     const got = JSON.parse(wC.eval(`JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .lcard[data-rid]')).map(function(c){
       var st=[].filter.call(c.classList,function(k){return k.slice(0,2)==='s-';});
@@ -4869,7 +4869,7 @@ await (async () => {
   const { join: j8 } = await import("node:path");
 
   const { w: w8 } = await om8();
-  w8.eval("setProd('salt');recompute();switchTab('ledger');");
+  w8.eval("setProd('salt');recompute();ledOlder=true;switchTab('ledger');");
   /* KEYED ON THE CARD'S OWN TYPE. Matching the word "lot" in a card's text also matched sale cards
      carrying "Usual lot", so the count stayed above zero with the fault reintroduced and the check
      read green over it. */
@@ -5664,7 +5664,7 @@ await (async () => {
   ex6("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B6, SALT_MASTER: M6 }, stdio: "pipe" });
   try {
     const { w } = await om6(M6);
-    w.eval("setProd('salt');recompute();switchTab('ledger');");
+    w.eval("setProd('salt');recompute();ledOlder=true;switchTab('ledger');");
     const card = (rid) => String(w.eval("(function(){var e=document.querySelector('.lcard[data-rid=\"" + rid + "\"]');return e?e.textContent:'';})()")).replace(/\s+/g, " ");
     const c = card("p9c"), u = card("p9u");
     ok(c.length > 0 && u.length > 0, "both fixture lots reach the Ledger");
@@ -5709,7 +5709,7 @@ await (async () => {
   ex7("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B7, SALT_MASTER: M7 }, stdio: "pipe" });
   try {
     const { w } = await om7(M7);
-    w.eval("setProd('salt');recompute();switchTab('ledger');");
+    w.eval("setProd('salt');recompute();ledOlder=true;switchTab('ledger');");
     const cell = (rid) => JSON.parse(w.eval("JSON.stringify((function(){var c=document.querySelector('.lcard[data-rid=\"" + rid + "\"]');if(!c)return null;var f=function(sel){var e=c.querySelector(sel);if(!e)return null;var g=e.querySelector('.lfig'),o=e.querySelector('.lof'),ws=e.querySelector('.lwas');return {cls:g?g.className:'',fig:g?g.textContent:'',of:o?o.textContent:'',was:ws?ws.textContent:'',wasCls:ws?ws.className:''};};return {q:f('.lcol.cqty'),t:f('.lcol.ctot')};})())"));
     const grey = (x) => /\bcarried\b/.test(x.cls), white = (x) => x.cls === "lfig", struck = (x) => /\bstruck\b/.test(x.cls);
     const f1 = cell("f1"), f2 = cell("f2"), f3 = cell("f3"), f4 = cell("f4"), f5 = cell("f5"), p3 = cell("p003");
@@ -5749,7 +5749,7 @@ await (async () => {
   const bk8 = JSON.parse(rf8(j8(REPO, "ledger", "book.json"), "utf8"));
   const sale = bk8.sales.find((x) => x.rid && x.date && !x.cancelled), lot = bk8.purchases.find((x) => x.rid && !x.cancelled && !x.defaulted);
   const { w } = await om8(j8(REPO, "master", "salt_command.html"));
-  w.eval("setProd('salt');recompute();switchTab('ledger');");
+  w.eval("setProd('salt');recompute();ledOlder=true;switchTab('ledger');");
   const shape = () => JSON.parse(w.eval("JSON.stringify((function(){var pn=document.querySelector('[role=dialog]');var f=function(e){return !!e.closest('.updmore')};return {out:[].filter.call(pn.querySelectorAll('button.vbtn'),function(b){return !f(b)}).map(function(b){return b.textContent.trim()}),inFold:[].filter.call(pn.querySelectorAll('button.vbtn'),f).map(function(b){return b.id}),chips:[].map.call(pn.querySelectorAll('.updchip'),function(b){return b.textContent.trim()}),dismiss:pn.querySelectorAll('#edX,#edCancel,[aria-label=Close]').length,summary:(pn.querySelector('.updmore>summary')||{}).textContent||null,open:(pn.querySelector('.updmore')||{}).open,whyInFold:(function(){var e=pn.querySelector('#edWhy');return e?f(e):null})()};})())"));
   for (const [rid, type, lab] of [[sale.rid, "SELL", "an order"], [lot.rid, "BUY", "a lot"]]) {
     w.eval("ledEdit(" + JSON.stringify(rid) + "," + JSON.stringify(type) + ");");
@@ -5867,7 +5867,7 @@ await (async () => {
   ex1("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B1, SALT_MASTER: M1 }, stdio: "pipe" });
   try {
     const { w } = await om1(M1);
-    w.eval("setProd('salt');recompute();ledF.q='';switchTab('ledger');");
+    w.eval("setProd('salt');recompute();ledF.q='';ledOlder=true;switchTab('ledger');");
     const card = (rid) => JSON.parse(w.eval("JSON.stringify((function(){var c=document.querySelector('.lcard[data-rid=\"" + rid + "\"]');if(!c)return null;var rows=[].map.call(c.querySelectorAll('.lrow,.lmove'),function(r){return {cls:r.className,date:(r.querySelector('.ldate,.lmdate')||{}).textContent||'',pill:(r.querySelector('.lstate .tag')||{}).textContent||''};});var k=c.querySelector('.lcorr');return {rows:rows,corr:k?{cls:k.className,why:!!k.querySelector('.cwhy'),text:k.textContent.replace(/\s+/g,' ').trim()}:null};})())"));
     const f6 = card("f6"), f7 = card("f7"), p16 = card("p016");
     /* v802: the correction strip was drawn by the Journal alone and left the desk with it on 23 Sep 2026; the claim it read
@@ -5885,7 +5885,7 @@ await (async () => {
       `Completed once on the order row, the closing line dated by the receipt and carrying no state (${f6 && f6.rows.map((r) => (r.pill || "-") + " " + r.date).join(" | ")})`);
     ok(p16 && p16.rows.length >= 2 && /\blopen\b/.test(p16.rows[0].cls) && p16.rows[0].pill === "Completed" && /\blclose\b/.test(p16.rows[p16.rows.length - 1].cls),
       `p016, restated the day it was booked, reads Completed on its order row and its trail closes on its last line (${p16 && p16.rows.map((r) => r.cls + " " + r.pill).join(" | ")})`);
-    w.eval("ledF.q='corrected on 2026-08-30';switchTab('ledger');");
+    w.eval("ledF.q='corrected on 2026-08-30';ledOlder=true;switchTab('ledger');");
     const hit = JSON.parse(w.eval("JSON.stringify([!!document.querySelector('.lcard[data-rid=\"f7\"]'),!!document.querySelector('.lcard[data-rid=\"f6\"]')])"));
     ok(hit[0] && !hit[1], "and the search reads a lot's mod: the corrected lot is found and the other is not");
     w.eval("ledF.q='';");
@@ -6300,7 +6300,7 @@ await (async () => {
   const LABELS = (tag) => `(function(){var out=[];[].slice.call(document.querySelectorAll(".sec.on .lcard")).forEach(function(c){if(c.getAttribute("data-rid")!==${JSON.stringify(tag.toLowerCase())})return;[].slice.call(c.querySelectorAll(".lmove .etype, .lrow.lclose .etype")).forEach(function(e){out.push(e.textContent);});});return JSON.stringify(out);})()`;
   try {
     const { w } = await om11(M11);
-    w.eval("setProd('salt');recompute();switchTab('ledger');");
+    w.eval("setProd('salt');recompute();ledOlder=true;switchTab('ledger');");
     const lot = JSON.parse(String(w.eval(LABELS("F20")))), sale = JSON.parse(String(w.eval(LABELS("F21"))));
     /* 09 Sep 2026: every line shows, the booking's own included, so the lot reads its payment at
        booking, the receipt, then the payment that closed it, each named by what moved */
@@ -6354,7 +6354,7 @@ await (async () => {
      blanks last either way. Driven on the live book through the desk itself. */
   const { openMaster: om15 } = await import("../tools/payload.mjs");
   const { w: w15 } = await om15();
-  w15.eval("setProd('salt');recompute();ledF={q:'',state:'',party:'',month:'',product:''};ledSort={key:'e',dir:1};switchTab('ledger');");
+  w15.eval("setProd('salt');recompute();ledF={q:'',state:'',party:'',month:'',product:''};ledSort={key:'e',dir:1};ledOlder=true;switchTab('ledger');");
   const J15 = (x) => JSON.parse(String(w15.eval(x)));
   const rows15 = +w15.eval("sales.length+purchases.length"), cards15 = +w15.eval("document.querySelectorAll('.sec.on .lcard').length");
   ok(rows15 > 100 && cards15 === rows15, `every row on the book is on screen (${cards15} of ${rows15}), none folded`);
@@ -6392,7 +6392,8 @@ await (async () => {
   w15.eval("document.getElementById('lsort-party').click()");
   const pa = J15("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .lcard .lparty')).map(function(e){return e.textContent;}))");
   ok(pa.length === rows15 && pa.every((x, i) => !i || pa[i - 1].localeCompare(x) <= 0), `Party sorts by code (${pa[0]} first, ${pa[pa.length - 1]} last)`);
-  w15.eval("document.getElementById('lsort-date').click();document.getElementById('lsort-date').click();");
+  /* v806: Date's first tap is newest first, as the sheet opens, so one tap reads it descending */
+  w15.eval("document.getElementById('lsort-date').click();");
   const dd = rids15().map((r) => byRid15[r].date || "");
   const dated = dd.filter(Boolean), blanks = dd.length - dated.length;
   /* v456 required blanks > 0 and took the book's own undated rows as its fixture. From 04 Sep
@@ -6419,7 +6420,7 @@ await (async () => {
      this shipped (scrollWidth equal to clientWidth on the wrap and on the document at each). */
   const { openMaster: om16 } = await import("../tools/payload.mjs");
   const { w: w16 } = await om16();
-  w16.eval("setProd('salt');recompute();ledF={q:'',state:'',party:'',month:'',product:''};ledSort={key:'e',dir:1};switchTab('ledger');");
+  w16.eval("setProd('salt');recompute();ledF={q:'',state:'',party:'',month:'',product:''};ledSort={key:'e',dir:1};ledOlder=true;switchTab('ledger');");
   ok(+w16.eval("document.querySelectorAll('.sec.on .ledscroll').length") === 0 && +w16.eval("document.querySelectorAll('.sec.on .ledwrap').length") === 1
     && +w16.eval("document.querySelectorAll('.sec.on .ledwrap .lhead, .sec.on .ledwrap .lcards').length") === 2,
     "the scroller is gone and one container holds the heading and the rows");
@@ -6492,7 +6493,7 @@ await (async () => {
      markup (where the pill is); the pixel geometry is measured by tools/ledger-probe by hand. */
   const { openMaster: om19 } = await import("../tools/payload.mjs");
   const { w: w19 } = await om19();
-  w19.eval("sales.push({customer:'CX9-PROV',qty:1,total:100,cash:100,deliveredQty:1,date:'2026-09-01',rid:'x-prov',_prov:true});setProd('salt');recompute();switchTab('ledger');");
+  w19.eval("sales.push({customer:'CX9-PROV',qty:1,total:100,cash:100,deliveredQty:1,date:'2026-09-01',rid:'x-prov',_prov:true});setProd('salt');recompute();ledOlder=true;switchTab('ledger');");
   const rowsOf = (sel) => String(w19.eval("getComputedStyle(document.querySelector('" + sel + "')).gridTemplateAreas")).split('"').filter((x, i) => i % 2 === 1).map((r) => r.trim().split(/\s+/));
   const open = rowsOf(".sec.on .lcard .lrow"), step = rowsOf(".sec.on .lcard .lmove");
   ok(open.length === 2 && ["e", "date", "party", "prod", "qty", "price", "tot", "state"].every((k) => open[0].includes(k)),
@@ -6536,7 +6537,7 @@ await (async () => {
      sales 101 closed with the cash and the goods on the SAME DATE, so Completed leads wherever
      both are outstanding, and of 27 open sales 18 owe cash alone. FORCED rather than found, so
      this does not go quietly meaningless the day he settles the row it used to read. */
-  w19.eval("document.body.click();sales.push({customer:'CX9-FAN',qty:4,total:400,cash:100,deliveredQty:1,date:'2026-09-01',rid:'x-fan'});recompute();switchTab('ledger');");
+  w19.eval("document.body.click();sales.push({customer:'CX9-FAN',qty:4,total:400,cash:100,deliveredQty:1,date:'2026-09-01',rid:'x-fan'});recompute();ledOlder=true;switchTab('ledger');");
   w19.eval("document.querySelector('.lcard[data-rid=x-fan] button.lpen').click()");
   const fan5 = JSON.parse(String(w19.eval("JSON.stringify([].slice.call(document.querySelectorAll('#ledMenu button')).map(function(b){return b.textContent;}))")));
   ok(fan5.length === 5 && fan5[0] === "Completed" && fan5[1] === "Paid in full" && fan5[2] === "Delivered in full" && fan5[4] === "More",
@@ -6561,7 +6562,7 @@ await (async () => {
      by its own mutation, one at a time. */
   const { openMaster: om17 } = await import("../tools/payload.mjs");
   const { w: w17 } = await om17();
-  w17.eval("setProd('salt');recompute();ledF={q:'',state:'',party:'',month:'',product:''};ledSort={key:'e',dir:1};switchTab('ledger');");
+  w17.eval("setProd('salt');recompute();ledF={q:'',state:'',party:'',month:'',product:''};ledSort={key:'e',dir:1};ledOlder=true;switchTab('ledger');");
   ok(+w17.eval("document.querySelectorAll('.sec.on .lmnote, .sec.on .lagreed, .sec.on .lc-note').length") === 0, "no note or caption prints on the sheet");
   const cards17 = +w17.eval("document.querySelectorAll('.sec.on .lcard').length");
   ok(cards17 > 140, `and the sheet still shows every row (${cards17})`);
@@ -8772,7 +8773,7 @@ await (async () => {
     "set('party'," + JSON.stringify(party) + ");set('qty','1.3');set('total','113');set('cash'," + JSON.stringify(moved ? "113" : "0") + ");set('deliveredQty'," + JSON.stringify(moved ? "1" : "0") + ");set('date'," + JSON.stringify(date) + ");" +
     "var n0=queue.length;edSubmitNew();var why=(document.getElementById('edWhy')||{}).textContent||'';var q=queue[queue.length-1];" +
     "return JSON.stringify({pushed:queue.length===n0+1,why:why,q:(queue.length===n0+1&&q)?{party:q.payload.party,date:q.payload.date}:null});}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
-  w.eval("switchTab('ledger');");
+  w.eval("ledOlder=true;switchTab('ledger');");
   const C = JSON.parse(String(w.eval(DRIVE_ED("ZZ9-NOPE", "", true))));
   ok(!C.no && !C.pushed && /ZZ9-NOPE is not on the roster/.test(C.why), "the editor refuses a buyer not on the roster and queues nothing: " + (C.no || C.why.slice(0, 100)));
   const D = JSON.parse(String(w.eval(DRIVE_ED(anyCust, "", true))));
@@ -8819,7 +8820,7 @@ await (async () => {
   const { w } = await omD();
   /* the editor is driven on the twin's own product: `real` is the newest live sale, which was oil
      at v542, and a twin is matched on product, so salt would find nothing to ask about */
-  w.eval("setProd(" + JSON.stringify(real.product || "salt") + ");recompute();switchTab('ledger');");
+  w.eval("setProd(" + JSON.stringify(real.product || "salt") + ");recompute();ledOlder=true;switchTab('ledger');");
   const DRIVE = (answer, prime) => "(function(){try{window.confirm=function(){return " + (answer ? "true" : "false") + ";};queue=" + (prime ? "[{at:'2099-02-01T00:00:00.000Z',type:'SELL',payload:{mode:'new',direction:'SELL',party:" + JSON.stringify(real.customer) + ",date:" + JSON.stringify(real.date) + ",qty:" + real.qty + ",total:" + real.total + "}}]" : "[]") + ";" +
     "ledNew();var set=function(k,v){var e=document.getElementById('ed_'+k);if(e)e.value=v;};set('party'," + JSON.stringify(real.customer) + ");set('qty'," + JSON.stringify(String(real.qty)) + ");set('total'," + JSON.stringify(String(real.total)) + ");set('cash'," + JSON.stringify(String(real.total)) + ");set('deliveredQty'," + JSON.stringify(String(real.qty)) + ");set('date'," + JSON.stringify(real.date) + ");" +
     "var n0=queue.length;edSubmitNew();var why=(document.getElementById('edWhy')||{}).textContent||'';var q=queue[queue.length-1];return JSON.stringify({pushed:queue.length===n0+1,why:why,second:q&&q.payload?q.payload.second:undefined});}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
@@ -17462,7 +17463,7 @@ await (async () => {
   ok(!/;\s/.test(html.replace(/<[^>]+>/g, "")), "and nothing is joined by a semicolon any more: " + JSON.stringify(html.replace(/<[^>]+>/g, "")));
 
   /* ---- and the live row he was looking at ---- */
-  w.eval('setProd("salt");recompute();switchTab("ledger");');
+  w.eval('setProd("salt");recompute();ledOlder=true;switchTab("ledger");');
   const seen = rd('(function(){var c=document.querySelectorAll(".lcard");for(var i=0;i<c.length;i++){if(c[i].dataset.rid==="s137"){var t=c[i].querySelector(".ltext");'
     + 'return t?[].map.call(t.querySelectorAll(".chg"),function(x){return x.textContent;}):null;}}return null;})()');
   ok(seen && seen.length === 2 && /^TotalRM 835/.test(seen[0]) && /^DeliveryRM 15/.test(seen[1]),
@@ -19628,6 +19629,36 @@ await (async () => {
   ok(/if: steps\.suite\.outcome == 'success'/.test(clear.slice(0, 200)) && /run: node tools\/drafts\.mjs --clear-suite-notices/.test(clear.slice(0, 600))
      && /DELETE FROM refused WHERE id LIKE 'suite:%'/.test(readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8")),
     "a run whose suite passes clears every test notice, rather than waiting for the next fold");
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
+section("v806: the ledger opens newest first on the last seven days, and the rest folds behind one control");
+await (async () => {
+  /* HIS WORD OF 23 SEP 2026: the ledger sheet is too long; default to the latest seven days, latest to older, the others
+     collapsed like the customers list. The seven days are worked out here from the clock and the book's own dates, not read
+     from the page's own cut. Each assertion was proved red by its own mutation, one at a time. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  function probe() {
+    ledF = { q: "", state: "", party: "", month: "", product: "" }; ledSort = { key: "e", dir: -1 }; ledOlder = false;
+    switchTab("ledger");
+    const read = () => [].map.call(document.querySelectorAll(".sec.on .lcard"), (c) => (c.querySelector(".ldate") || {}).textContent || "");
+    const dates = ledgerAll().map((t) => t.date || "");
+    const shown = read(), btn = (document.querySelector(".sec.on .ledmore") || {}).textContent || "";
+    ledOlderToggle(); const all = read().length; ledOlderToggle();
+    ledF.q = "CM3"; render(); const found = read().length, foldedOnSearch = !!document.querySelector(".sec.on .ledmore"); ledF.q = ""; render();
+    return { today: TODAY.toISOString().slice(0, 10), dates, shown, btn, all, found, foldedOnSearch };
+  }
+  const v = JSON.parse(w.eval("JSON.stringify((" + probe.toString() + ")())"));
+  const cut = new Date(new Date(v.today + "T00:00:00Z").getTime() - 6 * 864e5).toISOString().slice(0, 10);
+  const recent = v.dates.filter((d) => !d || d >= cut).length, older = v.dates.length - recent;
+  const dated = v.shown.filter((d) => /^\d{4}-/.test(d));
+  ok(v.shown.length === recent && dated.every((d) => d >= cut) && dated.every((d, i) => !i || dated[i - 1] >= d),
+    `it opens on the last seven days, from ${cut}, newest first: ${v.shown.length} rows of ${v.dates.length}`);
+  ok(older > 0 && new RegExp("Show the " + older + " older transaction").test(v.btn) && /RM [\d,]+/.test(v.btn),
+    "the rest fold behind one control that says how many and how much: " + v.btn);
+  ok(v.all === v.dates.length, `and opening it shows every row (${v.all})`);
+  ok(v.found > 0 && v.found < v.dates.length && !v.foldedOnSearch, `a search shows every match and folds nothing (${v.found})`);
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
