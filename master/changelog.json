@@ -1,5 +1,14 @@
 [
  {
+  "v": "v797",
+  "d": "23 Sep 2026",
+  "t": "EVERY DESK DEPLOY DEPLOYS THE COUNTER",
+  "n": [
+   "<b>HIS INSTRUCTION OF 23 SEP 2026: make sure every push on the Desk pushes the Counter too.</b> The Counter's content was already published on every run; its CODE deployed only when a push touched its own paths, and even then only by a diff the job read when the phone already had the build. Workers Builds usually ships the desk first, so a desk push left the Counter's code where it was, and a change to its clock needed a hand deploy.",
+   "<b>THREE ROADS, ONE RULE.</b> The job's site deploy runs on every run that deploys the desk, and the statements-path diff that fed the old gate is gone with it. <code>tools/update.mjs</code> deploys the Counter once the desk reads live on the phone, so a desk deploy that failed never ships the Counter alone. <code>npm run deploy</code> deploys both. Workers Builds still ships the desk alone; the job this push starts brings the Counter behind it within minutes."
+  ]
+ },
+ {
   "v": "v796",
   "d": "23 Sep 2026",
   "t": "NEXT 30 DAYS IS EVERY BOOK AT ONCE, THE CASH WALKED ONCE FOR THE BUSINESS",

@@ -7,7 +7,7 @@
   "scripts": {
     "build": "node tools/build.mjs",
     "dev": "npm run build && wrangler dev",
-    "deploy": "npm run build && wrangler deploy",
+    "deploy": "npm run build && wrangler deploy && wrangler deploy -c wrangler.stmt.jsonc",
     "drain": "node tools/drain.mjs",
     "icons": "python tools/make_icons.py",
     "test": "node --max-old-space-size=4096 test/verify.mjs",

@@ -317,6 +317,11 @@ if (NO_DEPLOY) {
     if (!live) warn("deployed, but /rev could not be read back, so the deploy is NOT recorded");
     else if (live.id !== rev.id) fail(`deployed, but /rev still reads ${live.v} ${live.id} after waiting`);
     else { recordDeploy(rev); ok(`live confirms ${live.v} ${live.id}, recorded in .deployed.json`); }
+    /* AND THE COUNTER GOES WITH IT (his instruction, 23 Sep 2026: "make sure every push on the Desk, push the
+       Counter too"). Its code, and its clock in wrangler.stmt.jsonc, which rev.json's id does not cover; what it
+       shows is published by the Actions run this push starts, which holds the statements key. */
+    if (sh("npx", ["wrangler", "deploy", "-c", "wrangler.stmt.jsonc"]).code !== 0) fail("the Counter's deploy failed");
+    else ok("the Counter deployed with it");
   }
 }
 

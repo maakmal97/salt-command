@@ -141,7 +141,9 @@ decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; s
    the same shape of bug for the next trigger nobody thought of. **The hourly run passes `--no-retire`**:
    writing is hourly, retiring an account whose record the newest issue does not carry is a judgement
    about a deploy he made, not about a clock. `tools/update.mjs` does the laptop
-   half and never touches the statements. **Cloudflare Workers Builds deploys the tip of master
+   half and publishes no statements. **EVERY DESK DEPLOY DEPLOYS THE COUNTER** (v797, his instruction of
+   23 Sep 2026): the job's site deploy runs on every run that deploys, `update.mjs` deploys it once the desk
+   reads live, and `npm run deploy` does both. **Cloudflare Workers Builds deploys the tip of master
    and stops** (reconnected on his instruction, 10 Sep 2026): it never folds, never marks a
    draft committed and never writes D1 or KV, and its failure is SILENT. **Its build command is
    `npm ci && node tools/gate.mjs`, then `npx wrangler deploy`** (10 Sep 2026), gate before
@@ -216,7 +218,7 @@ untouched.
 | **Fold, bump, build, test, push** | the `Fold` step: `tools/foldcall.mjs`, one Claude call for the notes (`ANTHROPIC_API_KEY`) over `fold.mjs`, falling to `tools/foldnotes.mjs` where no call can be made; or any agent asked, per `docs/CLOUD_FOLD.md` | same job when rows were staged; or on demand |
 | Gate (`tools/gate.mjs`), deploy, prove, mark committed (with the clock), re-seed the D1 mirror, publish statements, then the full suite | the steps that follow in the same job; a push runs them alone, and skips the deploy when the phone already has the build; a suite failure after the phone is live turns the run red and is written where the phone shows refusals, never rolled back | same job; or on push |
 | Prove repo and live agree | `ship-check.yml` | 11:00 MYT |
-| Deploy the statements site | the same job, on its own paths. **The checkout is depth 1, so the base commit must be FETCHED before it is diffed**, or a statements-only push deploys nothing while the run goes green. Fails safe: no base, deploy anyway | on push |
+| Deploy the statements site | the same job, on every run that deploys the desk (v797; it waited on a diff of its own paths until then, so a desk push Workers Builds had shipped left the Counter's code behind) | on push |
 | Monthly statements | **RETIRED 21 Sep 2026** (v772, his instruction): the account is ONE LIVE DOCUMENT the publish writes on every run, so `make_statements` refuses to seal a new issue without `--new-issue` and says so. Issues already sent still publish and still open; an `--archive` of a past month is not an issue. The Cowork task `salt-monthly-statements` fires from a registry Code cannot see: removing it is his | never |
 
 - **EVERY WAKE THE DESK MINTS REACHES THE PHONE** (v759 to v761, his instruction of 21 Sep 2026: all
@@ -526,9 +528,10 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   touched is never chased. **One wake an hour per CUSTOMER, not per order**, capped by
   `chased:<username>` holding the HOUR BUCKET it was last woken in, expiring after two hours so a
   customer who settles up leaves nothing behind; his test account is skipped. Day and night, until
-  it is paid, and it stops of its own accord. **A CRON HERE NEEDS A HAND DEPLOY**: `rev.json`'s id
-  does not cover `wrangler.stmt.jsonc`, so `update.mjs` reports the phone current and ships nothing
-  (`npx wrangler deploy -c wrangler.stmt.jsonc`).
+  it is paid, and it stops of its own accord. **A CRON HERE SHIPS WITH THE PUSH**
+  (v797): `rev.json`'s id does not cover `wrangler.stmt.jsonc`, but the file is on the job's own push paths
+  and every run that deploys now deploys the Counter; only an unpushed laptop change needs
+  `npx wrangler deploy -c wrangler.stmt.jsonc` by hand.
 - **AN ASSOCIATE SEES THEIR OWN CARD, BY MONTH, FROM THE START** (v706, his instruction of 18 Sep
   2026). A FOURTH SEALED DOCUMENT on their own record, `rec.card`, beside the statement and the price
   list and under the same content key, built by `associateCard` in `tools/book.mjs` off the SAME

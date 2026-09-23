@@ -253,9 +253,9 @@ jobs:
           echo "folded and pushed: $v"
 
       # ---- DEPLOY: the phone gets the build, and only then are the rows marked ----------
-      # ALREADY SERVING? A push of the statements alone, or a re-run, finds the phone already on
-      # the build and no fold waiting, and deploys nothing; it republishes the statements only if
-      # the push touched them.
+      # ALREADY SERVING? A re-run, or a push Workers Builds has already shipped, finds the phone
+      # already on the build and no fold waiting, and deploys the desk no second time. It decides
+      # nothing about the Counter since 23 Sep 2026: that deploys with every run that deploys.
       #
       # IT GATES THE DEPLOY AND NOTHING ELSE (10 Sep 2026, his instruction). It used to stand down
       # eight steps, on the assumption that whatever had already put the build on the phone had
@@ -278,38 +278,12 @@ jobs:
         if: steps.plan.outputs.deploy == '1'
         run: |
           set -euo pipefail
-          live=0; stmt=1
+          live=0
           want=$(node -p "require('./public/rev.json').id")
           got=$(curl -fsS --max-time 20 https://salt-command.qyts8mh72kyg.workers.dev/rev | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).id" || echo none)
           if [ "$got" = "$want" ] && ! git cat-file -e HEAD:master/_folded.json 2>/dev/null; then live=1; fi
-          if [ "${{ github.event_name }}" = "push" ] && [ "$live" = "1" ]; then
-            # THE CHECKOUT IS SHALLOW, SO THE BASE COMMIT HAS TO BE FETCHED BEFORE IT CAN BE
-            # DIFFED (10 Sep 2026). actions/checkout takes depth 1, so github.event.before was
-            # never in the object store: `git diff <before> <sha>` failed, 2>/dev/null ate the
-            # error, grep -q matched nothing and stmt came out 0. A statements-only push could
-            # therefore NEVER deploy the site, which is the one case this branch exists for --
-            # the trigger's own comment says "a statements commit never moves the build id; it
-            # deploys on its own paths". Found by a push that touched stmt/ and wrangler.stmt.jsonc
-            # and deployed neither, with the run green. It only ever bit when live=1, because
-            # every other path leaves stmt at the 1 it is initialised to, which is why the site
-            # has been deploying happily on every fold.
-            # AND IT FAILS SAFE NOW: if the base cannot be had at all, deploy rather than skip.
-            # Deploying the statements site when nothing changed costs a redundant upload; not
-            # deploying it when something did is a silent no-op, and this file has been bitten by
-            # that class twice this week already.
-            base='${{ github.event.before }}'
-            stmt=1
-            if git cat-file -e "$base^{commit}" 2>/dev/null \
-               || git fetch --no-tags --depth=1 origin "$base" 2>/dev/null; then
-              stmt=0
-              if git diff --name-only "$base" "${{ github.sha }}" | grep -qE '^(statements/|stmt/|wrangler\.stmt\.jsonc|tools/stmt-publish\.mjs|tools/make_statements\.mjs)'; then stmt=1; fi
-            else
-              echo "::warning::the base commit $base could not be fetched, so the statements paths could not be compared; deploying the site rather than skipping it"
-            fi
-          fi
           echo "live=$live" >> "$GITHUB_OUTPUT"
-          echo "stmt=$stmt" >> "$GITHUB_OUTPUT"
-          echo "live=$live (phone on $got, repo at $want) stmt=$stmt"
+          echo "live=$live (phone on $got, repo at $want)"
 
       # THE GATE, NOT THE SUITE, STANDS BEFORE THE DEPLOY (v522). What must hold before a build
       # reaches the phone is mechanical and ci.yml already names it: tools/gate.mjs runs those
@@ -420,8 +394,13 @@ jobs:
       # ---- THE STATEMENTS SITE, after everything the ledger needs ------------------------
       # A second Worker on its own address with its own KV store (docs/STATEMENTS.md). Both
       # steps stand down while the store has not been created yet.
+      # EVERY RUN THAT DEPLOYS THE DESK DEPLOYS THE COUNTER (his instruction, 23 Sep 2026: "make sure
+      # every push on the Desk, push the Counter too"). It waited on a diff of the statements paths
+      # until then, and a push Workers Builds had already shipped read live=1 and so compared the
+      # paths: a desk-only push left the Counter's code where it was, and the site's own clock
+      # (wrangler.stmt.jsonc) needed a hand deploy. An upload of unchanged code costs seconds.
       - name: Deploy the statements site
-        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.stmt == '1'
+        if: steps.plan.outputs.deploy == '1'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
@@ -438,7 +417,7 @@ jobs:
       # the phone. Without the key the records go up exactly as issued.
       #
       # IT PUBLISHES ON EVERY DEPLOY, NOT ONLY WHEN A STATEMENTS PATH MOVED (16 Sep 2026). The step
-      # above deploys the site's CODE and is rightly gated on stmt/, statements/ and the two tools.
+      # above deploys the site's CODE, on every deploy since 23 Sep 2026.
       # This one writes the site's CONTENT, and the content is the ledger and the master: the sealed
       # price list is computed here from the desk's PRICING snapshot, so every version that moves a
       # price makes the published list stale. None of v652 (named-customer quotes), v654 (oil 80 and

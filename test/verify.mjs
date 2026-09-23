@@ -8681,13 +8681,12 @@ await (async () => {
      the build id alone, which is what makes live=1 and arms this branch at all. The fix fetches the
      base first and fails safe; it shipped without a guard, so this is the guard. Held by shape, not
      by wording: default 1, lower it only after the base was obtained, and warn when it cannot be. */
+  /* v797, HIS INSTRUCTION OF 23 SEP 2026: every push on the Desk pushes the Counter too. The diff of the statements paths
+     that fed the site's deploy (fetched past the shallow checkout since 10 Sep) is gone with the gate it fed, and Already
+     serving? decides the desk alone; a stmt output left behind would be a gate nothing reads, or one a later edit rewires. */
   const already = wf.slice(wf.indexOf("- name: Already serving?"), wf.indexOf("- name: Gate\n"));
-  const fetchAt = already.indexOf('git fetch --no-tags --depth=1 origin "$base"');
-  ok(/base='\$\{\{ github\.event\.before \}\}'\s*\n\s*stmt=1/.test(already)
-     && fetchAt > 0                                   /* or the ordering below compares against -1 and cannot fail */
-     && already.indexOf("stmt=0") > fetchAt
-     && /::warning::.*could not be fetched/.test(already),
-     "the publish gate defaults to publishing, fetches the base before diffing it, and lowers stmt only on a diff it read");
+  ok(already.includes('echo "live=$live" >> "$GITHUB_OUTPUT"') && !/stmt/.test(already) && !/steps\.already\.outputs\.stmt/.test(wf),
+     "Already serving? decides the desk's deploy alone, and nothing in the job reads a statements-path gate");
   /* AND THE SITE'S CODE AND ITS CONTENT ARE GATED DIFFERENTLY (16 Sep 2026). That gate belongs to the
      upload of the site's own source. The publish writes the CONTENT, and the content is the ledger and
      the master: the sealed price list is computed from the desk's PRICING snapshot, so every version
@@ -8703,9 +8702,17 @@ await (async () => {
      cannot go stale when a trigger is added, which is the shape of bug v698 fixed for the schedule
      and left standing for whatever came next. The retire split is unchanged: writing is every run,
      retiring an account is a judgement about a deploy he made. */
-  ok(/if: steps\.plan\.outputs\.deploy == '1' && steps\.already\.outputs\.stmt == '1'/.test(stmtDeploy)
+  ok(/^- name: Deploy the statements site\n\s+if: steps\.plan\.outputs\.deploy == '1'\n\s+env:/.test(stmtDeploy)
      && /^- name: Publish the statements, live\n\s+if: steps\.plan\.outputs\.publish == '1'\n\s+env:/.test(stmtPub),
-     "the site's code deploys on the statements paths, and its content publishes on every run that publishes");
+     "the Counter's code deploys on every run that deploys the desk (v797), and its content publishes on every run that publishes");
+  /* v797: and the two roads off the laptop take it too, the deploy script and the update chain, the latter only once the
+     desk is seen live, so a desk deploy that failed does not ship the Counter alone */
+  const pkg797 = JSON.parse(readFileSync(join(REPO, "package.json"), "utf8")).scripts.deploy;
+  const upd797 = readFileSync(join(REPO, "tools", "update.mjs"), "utf8");
+  const deskAt797 = upd797.indexOf('sh("npx", ["wrangler", "deploy"])'), liveAt797 = upd797.indexOf("recordDeploy(rev); ok(`live confirms");
+  const ctrAt797 = upd797.indexOf('sh("npx", ["wrangler", "deploy", "-c", "wrangler.stmt.jsonc"])');
+  ok(/wrangler deploy && wrangler deploy -c wrangler\.stmt\.jsonc$/.test(pkg797) && deskAt797 > 0 && liveAt797 > deskAt797 && ctrAt797 > liveAt797,
+     "npm run deploy and tools/update.mjs deploy the Counter after the desk, the chain once the desk reads live: " + pkg797);
   ok(/\n\s+publish=1\n/.test(wf) && wf.includes('inputs.probe_key }}" = "true" ]; then publish=0; fi')
      && /echo "publish=\$publish" >> "\$GITHUB_OUTPUT"/.test(wf),
      "a publish is EVERY run but the key probe, stated as what is excluded so a trigger added later cannot be forgotten");
