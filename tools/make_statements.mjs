@@ -736,7 +736,12 @@ export function liveStatement(party, now) {
   o.refunds = stmtRefunds(party, o);
   o.recon = stmtRecon(party, rows).filter(R => rows.some(x => x.date === R.order.date));
   if (!rows.length && !o.refunds.length) return null;
-  return { at: at.toISOString(), body: docBody(stmtDoc(party, rows, o)) };
+  /* `owed` (his instruction of 23 Sep 2026): what the account owes today, the same figure the
+     document's own footer and the owner's Review read, so the page can hold ordering back while it
+     is over the line. It is SEALED with the document, never written beside the record in the clear:
+     a figure owed is a fact about the book, and nothing about the book goes into the store unsealed. */
+  const owed = +accountTotals(rows, o.refunds).owed.toFixed(2);
+  return { at: at.toISOString(), body: docBody(stmtDoc(party, rows, o)), owed };
 }
 
 /* THE RECORDS AS THE DEPLOY PUBLISHES THEM: the newest issue's records, each with the live

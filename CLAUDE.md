@@ -427,6 +427,11 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   Now for a placement and naming an order waiting on an answer in the same row; an order already agreed
   says nothing there, being a row. **Approve keeps itself current** at the same pace as Site orders, and
   neither card polls over a decision in flight or into a pocket.
+- **OVER RM 100 OWED, THE ACCOUNT IS A PAYMENT PAGE** (his instruction of 23 Sep 2026): `liveStatement` seals
+  `owed` (the statement's own figure, pending and cancelled owing nothing) inside the live document, and over
+  `HOLD_RM` the page opens on Pay, hides Prices and the order form, and asks for the overdue amount first; the
+  statement stays one tap away. **It is the page's gate, not the Worker's**: the figure is never in the store in
+  the clear, so a crafted `POST /orders` still lands and his acknowledgement is the check behind it.
 - **THE BULLETIN** (v732, his instruction of 20 Sep 2026): one clear key `bulletin` `{lines, mode, at}`
   in the site's store, no prefix, so the publish never touches it. Set from the Bulletin card at the
   top of Site orders through the desk's keyed `/bulletin`, relayed to the site's `/desk/bulletin` on

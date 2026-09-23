@@ -19152,6 +19152,68 @@ await (async () => {
     + (wrong.length ? "; out of order: " + wrong.slice(0, 3).join(", ") : ""));
 })();
 
+section("23 Sep 2026: over RM 100 owed, the account is a payment page");
+await (async () => {
+  /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead
+     them to a payment page, which states: please pay the overdue amount before making another order".
+     The figure is sealed inside the live statement and is the one its own footer and his Review read. */
+  const M = await import("../tools/make_statements.mjs");
+  const POS = (await import("../engine/position.mjs")).default;
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const sales = (bk.state && bk.state.sales) || bk.sales || [];
+  const at = new Date("2026-09-23T00:00:00Z"), day = M.klToday(at);
+  const parties = [...new Set(sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
+  const off = [];
+  let n = 0, owing = 0;
+  for (const p of parties) {
+    const doc = M.liveStatement(p, at);
+    if (!doc) continue;
+    n++;
+    const t = M.partyTotals(p, day);
+    if (t.owed > 0.009) owing++;
+    if (typeof doc.owed !== "number" || Math.abs(doc.owed - t.owed) > 0.009) off.push(p + " " + doc.owed + " vs " + t.owed);
+  }
+  ok(n > 10 && owing > 0 && !off.length,
+    "every live statement carries what the account owes, the same figure the owner's Review reads: " + n + " statements, "
+    + owing + " owing" + (off.length ? "; differ: " + off.slice(0, 3).join(", ") : ""));
+
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const openWith = async (owed) => {
+    const u = "abcd-efgh", pass = "fixture-pass-hold", ck = await C.contentKey("test-secret", u);
+    const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "",
+      env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await C.encryptWith(ck, JSON.stringify({ at: at.toISOString(), body: "<p>Live</p>", owed })) };
+    const dom = new JD(lp(u, "nhold", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path) => { const open = String(path) === "/open"; return { ok: open, status: open ? 200 : 404, json: async () => (open ? body : { ok: false }) }; };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 150 && !d.getElementById("pOrder").textContent; i++) await new Promise((r) => setTimeout(r, 100));
+      return { order: d.getElementById("pOrder").textContent, orderShown: !d.getElementById("pOrder").hidden,
+        stmtShown: !d.getElementById("pStmt").hidden, orderTab: d.getElementById("tOrder").textContent,
+        pricesTab: !d.getElementById("tPrices").hidden, stmtTab: !d.querySelector('button[data-t="stmt"]').hidden,
+        payLinks: d.querySelectorAll("#pOrder a.lnk").length, form: !!d.querySelector("#pOrder select") };
+    } finally { dom.window.close(); }
+  };
+  const held = await openWith(250.5), under = await openWith(100), none = await openWith(undefined);
+  ok(held.orderShown && !held.stmtShown && held.orderTab === "Pay" && !held.pricesTab && held.stmtTab
+    && /Please pay the overdue amount of RM 250\.5 before placing another order/.test(held.order) && held.payLinks > 0 && !held.form,
+    "owing RM 250.50, the account opens on Pay, says to pay the overdue amount first, offers the ways to pay, and neither the price list nor an order form: "
+    + JSON.stringify({ ...held, order: held.order.slice(0, 90) }));
+  ok(!under.orderShown && under.stmtShown && under.orderTab === "Order" && under.pricesTab && !/overdue/.test(under.order)
+    && !none.orderShown && none.orderTab === "Order" && none.pricesTab,
+    "at RM 100 exactly, and with no figure at all, the account opens as it always has");
+})();
+
 section("v782: a statement says which book each row is, and units of different books do not add");
 await (async () => {
   /* stmtRows filters by PARTY and never by product, so a customer holding two books got one
