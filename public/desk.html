@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="a5790af70d5e3316";
+var SALT_BUILD_ID="702900e2f054f30c";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -7379,7 +7379,9 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    v324 onward, which tabJournal maps in full; master/changelog.json carries every entry
    ever written and is the record. So a bump PREPENDS its entry. Replacing the array,
    which both comments invited, silently drops the whole window. */
-const evolution=[{"v":"v794","d":"23 Sep 2026","t":"TODAY IS EVERY BOOK AT ONCE","n":["<b>HIS INSTRUCTION OF 23 SEP 2026: combine every book on Today, because not every book has something to note or watch, and keep it a great overview that is not convoluted to read.</b> Today read the book in view alone, so a restock due on oil sat unseen while salt was open, and the Today badge counted one book's Now.","<b>ONE LIST.</b> <code>allActions</code> runs <code>actions()</code> on every book and puts the book in view back. An item the same on every book, a refund, a rule, a site order or the queue, is listed once with no tag; one a book raised on its own carries that book's tag in its own colour. The Today badge counts Now across every book.","<b>A BOOK WITH NOTHING ON IT SAYS NOTHING.</b> A book with no lot and no sale is left off the list and the band alike, or spare would report itself under its own reorder trigger every morning.","<b>ONE ROW A BOOK.</b> The band under the list is a table of the live books: held, out (promised and not yet handed over, a dash when none) with any shortfall, cover in days (red under its trigger) and what is owed on it, short enough headings to sit on a phone without scrolling sideways. Units are never added across books; the money is, once, on the line under the table with the cash. The cover chart draws each book beside its own trigger.","<b>AND THE REFILL SAYS LOTS.</b> Salt's quote is one 12.5 unit tier bought in multiples since v793, so a refill of two reads 2 lots of 12.5 unit rather than a 25 unit tier nobody quotes.","<b>WHAT IS STILL ONE BOOK AT A TIME.</b> Rules and Next 30 days, the two working pages behind Today, keep the book switch: a day-by-day forecast of one inventory is not a thing to add across books."]},
+const evolution=[{"v":"v796","d":"23 Sep 2026","t":"NEXT 30 DAYS IS EVERY BOOK AT ONCE, THE CASH WALKED ONCE FOR THE BUSINESS","n":["<b>THE CASH IS THE BUSINESS'S, SO IT IS WALKED ONCE.</b> Each live book is walked on its own for its inventory, its rate and its lots. Their cash events go into one list, an event every book's walk raises (the refund you owe, the supplier default) going in once, and forecast() walks that list through its own day loop, so there is still one walk. Added book by book instead, the RM20 refund to CZ4-MK came off five times: the business's thirty days read RM130 where they are RM210.","<b>EACH BOOK'S INVENTORY STAYS ITS OWN.</b> A table gives each book its daily rate, the day it empties and what it still owes out, and the first to run empty leads the page, because that is the order to place. The chart draws each book as a share of what it holds today, in its own colour read off the design tokens, so one unit of salt and a hundred of rice read on one scale.","<b>WHAT LANDS, AND WHEN</b> carries every book's lots, receivables and bills, each tagged with its book; the refund is untagged. The agreed-buy switch offers every book's pending buys at once. Every book is now on all three Today pages; the book switch is gone from them."]},
+{"v":"v795","d":"23 Sep 2026","t":"RULES IS EVERY BOOK AT ONCE: MONEY ADDED, UNITS LEFT WITH THEIR BOOK","n":["<b>HIS INSTRUCTION OF 23 SEP 2026: combine Rules and Next 30 days too, after Today (v794).</b> Rules read the book in view, so salt's credit breach and its supplier default were off the page whenever oil was open.","<b>ONE RULE PUTS THE BOOKS TOGETHER: MONEY ADDS AND UNITS DO NOT.</b> Each live book is read on its own through eachBook, as it always was, and a figure in ringgit is summed with each book's part in the note beside it, as the Financials head does: pending orders, what is still to come in, inventory at cost, revenue, margin, receivables, what has been bought. A figure in units stays with its book: the inventory note gives each book its own count, and in transit reads in lots with each book's units beside them.","<b>THE REGISTER IS EVERY BOOK'S.</b> boundaryPanel takes the merged list: a row every book raises is shown once, and a row one book raised names that book, or two books' Margin floor rows read as one rule said twice. Deferred deliveries and advances are merged by party with each book's cap named where it is broken. Concentration is read on each customer's revenue across the books. The supplier default, which only salt's reading carries, is shown once whichever book is open, and the latest ledger is the newest orders across the books, each tagged."]},
+{"v":"v794","d":"23 Sep 2026","t":"TODAY IS EVERY BOOK AT ONCE","n":["<b>HIS INSTRUCTION OF 23 SEP 2026: combine every book on Today, because not every book has something to note or watch, and keep it a great overview that is not convoluted to read.</b> Today read the book in view alone, so a restock due on oil sat unseen while salt was open, and the Today badge counted one book's Now.","<b>ONE LIST.</b> <code>allActions</code> runs <code>actions()</code> on every book and puts the book in view back. An item the same on every book, a refund, a rule, a site order or the queue, is listed once with no tag; one a book raised on its own carries that book's tag in its own colour. The Today badge counts Now across every book.","<b>A BOOK WITH NOTHING ON IT SAYS NOTHING.</b> A book with no lot and no sale is left off the list and the band alike, or spare would report itself under its own reorder trigger every morning.","<b>ONE ROW A BOOK.</b> The band under the list is a table of the live books: held, out (promised and not yet handed over, a dash when none) with any shortfall, cover in days (red under its trigger) and what is owed on it, short enough headings to sit on a phone without scrolling sideways. Units are never added across books; the money is, once, on the line under the table with the cash. The cover chart draws each book beside its own trigger.","<b>AND THE REFILL SAYS LOTS.</b> Salt's quote is one 12.5 unit tier bought in multiples since v793, so a refill of two reads 2 lots of 12.5 unit rather than a 25 unit tier nobody quotes.","<b>WHAT IS STILL ONE BOOK AT A TIME.</b> Rules and Next 30 days, the two working pages behind Today, keep the book switch: a day-by-day forecast of one inventory is not a thing to add across books."]},
 {"v":"v793","d":"23 Sep 2026","t":"THE PRICING_V2 WORKBOOK: SALT IS AMBASSADOR AND FOUR TIERS ON RM56, CANDY AND RICE ARE STATED A UNIT","n":["<b>HIS WORKBOOK OF 23 SEP 2026, salt-command pricing_v2.xlsx.</b> Salt's COGS is the supplier's quote, RM56 a unit, and moves only when the quote does. Ambassador is COGS plus half again, up to the ten. The four tiers are the sheet's columns: 2.1 times COGS rounded down, 2.1 up, 2.5 down and 2.5 up, each multiple falling 0.045 every half unit past half a unit and never under Ambassador. One unit reads RM90, 110, 120, 130 and 140.","<b>HIS FOUR ANSWERS THAT DAY.</b> Bronze goes, so the tiers are Titanium, Platinum, Gold and Silver and a stranger is quoted Silver; nobody held Bronze. COGS is the quote, not the live landed cost. Candy from 10 to 29 unit is RM55 a unit. And the engine keeps its two guards over the sheet, a better level at least a ten under the next and a rate that never rises with size, which moves fourteen of the sheet's 48 tier cells (all four at half a unit and at twelve and a half, three at 2 unit, and Gold at 1.5, 2.5 and 3): half a unit reads 50, 60, 70, 80 and 90 where the sheet had 50, 50, 60, 70 and 70, and twelve and a half reads 1,050 to 1,090 where every column met Ambassador at 1,050.","<b>CANDY AND RICE ARE SINGLE TIER, STATED A UNIT, AS OIL IS.</b> Candy RM60 a unit under 10, RM55 to 29, RM50 from 30; rice RM8, RM7 from 5, RM6 from 10. Both round to the ringgit. A size between rungs is its rung's rate times the size, so at a break a bigger order can cost less in total: 29 candy is RM1,595 and 30 is RM1,500, 9 rice RM63 and 10 RM60. That is the rates as he stated them. The rice board's inversion under the ten-rounding, open since v791, is gone with it.","<b>THE QUOTES AS HE RELAYED THEM.</b> Salt from SA5-BTR in multiples of 12.5 unit at RM700 each. Oil from SP7-PUD at 10 for RM100 and 50 for RM380, the 15, 20 and 30 unit tiers dropped. Candy from SM4-KEP at RM55, 47, 38 and 30 a unit for 10, 20, 30 and 50. Rice from SM4-KEP at 100 for RM320. Oil's own board is unchanged.","<b>A TIER IS SALT'S ALONE.</b> His words that day: each customer is quoted differently for salt, and everyone the same for oil, candy and rice. The Tiers card, Accept all and Add ID offer a tier on a tiered book only, so no level is proposed or held where it moves no price. The two oil tiers already held stay on the book and price nothing. On the Counter a stated board now carries no level, so the page draws no mark beside it and says it is the same price for everybody; since 19 Sep it had drawn Ambassador's mark beside oil for every customer and told them their own rate followed their first order.","<b>THE COUNTER FOLLOWS THE NUMBER OF TIERS.</b> The standing guest links are one a tier rather than exactly five. Bronze's link is kept, because an id handed out must keep opening something, and it opens the stranger's board, which is Silver's."]},
 {"v":"v792","d":"22 Sep 2026","t":"THE FOLD NO LONGER STOPS FOR WANT OF A MODEL","n":["<b>NO KEY, NO CREDIT, NO ANSWER: THE FOLD LANDS ANYWAY.</b> <code>tools/foldnotes.mjs</code> writes the same notes object off the same dossier the call was going to be handed, and <code>tools/foldcall.mjs</code> takes it on three roads: no ANTHROPIC_API_KEY, a call that will not go through, and a reply twice against the house rules. The Fold step's own exit on a missing key is a warning now, and <code>--no-model</code> asks for the tool's notes outright. On 22 Sep a credit balance of nothing exited that step twice inside a minute and left two approved rows staged with the deploy, the marks, the mirror, the statements and the suite all behind them.","<b>WHAT IS LOST IS THE JUDGEMENT, AND IT IS SAID WHERE IT IS READ.</b> A model reads the drafter's flag against the figures and says whether they answer it; the tool names the flag and stops there. So every row note it writes ends on the line that no judgement is recorded in it, and the version entry says the same, because a reader holding one row should not have to come to the Journal to learn which kind of note they are holding.","<b>THE ONE UNTRUSTED STRING IS SCRUBBED FIRST.</b> The reason is quoted into the notes, and an API error can carry an em-dash, the wrong unit, the word this house does not write, or markup, every one of which the checker refuses. Notes that could not pass would leave the batch staged for the very reason this road exists to remove, so the tool's notes are put through the same check a model's reply is. Eight assertions, each proved red by its own mutation, one at a time.","<b>AND A LOT'S OUTSTANDING FIGURE IN THE DOSSIER WAS WRONG.</b> <code>partyDossier</code> read the total less the row's own cash, so a lot carrying no cash field at all counted as wholly unpaid: SA5-BTR read RM3,260 outstanding where the engine's <code>poOwed</code> reads RM160, and every purchase note written off this dossier had been repeating the larger figure. It reads <code>poOwed</code> now, which reads the trail."]},
 {"v":"v791","d":"23 Sep 2026","t":"P029 READ AS SALT, AND THE RM160 CLOSED","n":["<b>FOLDED: TWO AMENDMENTS, BOTH AGAINST SA5-BTR'S LOT P029 OF 22 SEP.</b> The first is a correction that sets the product on that row from rice to salt. The second is a fulfilment of RM160 cash on 22 Sep. Both were decided at the desk on 22 Sep and sit on the same order, 25 unit for RM1,400 at RM56 a unit, received in full on the day.","<b>UNUSUAL: A BUY ROW THAT CHANGED WHAT IT WAS BEFORE IT CHANGED WHAT IT OWED.</b> The correction moves no cash and no stock, it changes only what the row says about itself, and the drafter raised no flag on it. The fulfilment carries the drafter's flag that it settles the order in full, and the figures answer that: RM160 against RM160 outstanding, leaving nothing open. The inventory held at 1 unit of stock and did not reprice."]},
@@ -8037,7 +8039,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='23 Sep 2026, 09:18 KL';
+const LAST_UPDATED='23 Sep 2026, 10:12 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -10164,8 +10166,8 @@ function commitRisks(){
   return out;
 }
 const bSevTag={breach:'<span class="tag salt-status def">Breach</span>',watch:'<span class="tag salt-status unpaid">Watch</span>',risk:'<span class="tag salt-status salt-status--dashed prov">Commit risk</span>'};
-function boundaryPanel(){
-  const b=boundaryScan(),r=commitRisks();
+function boundaryPanel(b,r){
+  b=b||boundaryScan();r=r||commitRisks();   /* v795: Rules hands in every book's register, merged */
   const all=b.filter(x=>x.sev==='breach').concat(b.filter(x=>x.sev==='watch')).concat(r);
   const nb=b.filter(x=>x.sev==='breach').length,nw=b.filter(x=>x.sev==='watch').length;
   const head=`<h2>Boundaries <span class="rule"></span></h2>`;
@@ -10366,93 +10368,69 @@ const isOneOff=id=>ONE_OFFS.some(x=>x.id===id);
 
 /* ============ TAB: OVERVIEW ============ */
 function tabOverview(){
-  /* v385: SCOPED, because defUnits above it always was. defRows was the whole ledger, so the
-     salt tab listed an oil obligation beside a salt total that excluded it: four parties
-     under a header counting three. It sat in prose nobody saw until the chips below made
-     it a field, and it is the v275 rule exactly, a whole-book figure on a per-product tab.
-     advBy rolls the advances up BY PARTY: CR3-DAM carries two and was printed twice, at
-     RM 80 and RM 80, while Today one tap away now states the RM 160 he actually owes. */
-  const defRows=sales.filter(s=>prodOf(s)===PROD&&txDeferUnits(s)>0.009);
-  const advBy=(()=>{const by={};arList.forEach(s=>{const e=by[s.customer]=by[s.customer]||{rm:0,over:false};
-    e.rm+=outstandingOf(s);e.over=e.over||overCap(s);});   /* v513: units out and unpaid against the cap, the register's ruler */
-    return Object.keys(by).map(k=>({who:k,rm:+by[k].rm.toFixed(2),over:by[k].over}));})();
-  const totDue=+(ar+supRecovNet).toFixed(2);
-  const stockCost=stockCostFor(PROD);                          // v230: the ACTIVE product's inventory rate, not always salt's
-  const stockVal=+(currentStock*stockCost).toFixed(2);
-  // ---- digest: the headline from every tab ----
-  const con=concentration();
-  const conRisk=con.hhi>3000?'high':con.hhi>1800?'moderate':'low';
+  /* ============ v795, HIS INSTRUCTION OF 23 SEP 2026: RULES IS EVERY BOOK AT ONCE, as Today is since v794 ============
+     Each live book is read on its own through eachBook, as it always was one at a time, and the page puts the readings
+     together by one rule: MONEY ADDS AND UNITS DO NOT. A figure in ringgit is summed across the books with each book's part
+     in the note beside it, as the Financials head does; a figure in units stays with its book and carries its tag. What
+     is the same on every book (a ban, a queued entry, the supplier default, which only salt's reading carries) is shown
+     once. The v385 scoping notes that made each reading its own book's still hold, one book at a time, inside the walk.
+     The register still leads after the digest (v403), so a breach tapped on Today lands within the first screen. */
+  const B=eachBook(p=>{const S=pSales(p),P=pPurch(p);
+    return {pendRM:+S.reduce((a,s)=>a+txPendRM(s),0).toFixed(2),pendN:S.filter(s=>txPendUnits(s)>0.009).length,
+      lotsIn:P.filter(x=>!x.defaulted&&!x.pending&&poOpenUnits(x)>0.0001).length,
+      itUnits:+P.filter(x=>!x.defaulted&&!x.pending).reduce((a,x)=>a+poOpenUnits(x),0).toFixed(2),
+      bills:+P.reduce((a,x)=>a+poOwed(x),0).toFixed(2),arGross,ar,revTotal,revCollected,grossMargin,held:currentStock,defUnits,
+      stockVal:+(currentStock*stockCostFor(p)).toFixed(2),buyRM,buyUnits,srNet:supRecovNet,srGross:supRecovGross,
+      defRows:S.filter(s=>txDeferUnits(s)>0.009).map(s=>({who:s.customer,u:txDeferUnits(s)})),
+      adv:arList.map(s=>({who:s.customer,rm:outstandingOf(s),over:overCap(s)})),
+      bnd:boundaryScan(),risks:commitRisks(),cust:byCustomer()};});
+  const ids=Object.keys(B), sum=k=>+ids.reduce((a,p)=>a+B[p][k],0).toFixed(2);
+  const tag=p=>prodTag({product:p});
+  const split=(k,f)=>ids.filter(p=>Math.abs(B[p][k])>0.009).map(p=>esc(PRODUCTS[p].name)+' '+f(B[p][k])).join(' &middot; ');
+  /* the same row raised by every book's reading is one row, untagged; a row one book raised carries that book's tag, as
+     Today's do, or two books' "Margin floor" rows read as one rule said twice */
+  const once=k=>{const seen={},out=[];ids.forEach(p=>B[p][k].forEach(x=>{const key=JSON.stringify(x);
+      if(seen[key])seen[key].books.push(p);else{seen[key]={x:x,books:[p]};out.push(seen[key]);}}));
+    return out.map(e=>e.books.length===ids.length?e.x:Object.assign({},e.x,{rule:e.x.rule+' '+e.books.map(tag).join(' ')}));};
+  const bnd=once('bnd'), risks=once('risks');
+  /* concentration over the whole business: each customer's revenue added across the books, then the same shares */
+  const rev={};ids.forEach(p=>B[p].cust.forEach(c=>{rev[c.id]=(rev[c.id]||0)+c.rev;}));
+  const cr=Object.values(rev).sort((a,b)=>b-a), tot=cr.reduce((a,x)=>a+x,0)||1;
+  const hhi=cr.reduce((a,x)=>a+Math.pow(x/tot*100,2),0), topPct=cr.length?cr[0]/tot*100:0;
+  const conRisk=hhi>3000?'high':hhi>1800?'moderate':'low';
   const conCol=conRisk==='high'?'var(--crim)':conRisk==='moderate'?'var(--amber)':'var(--grn)';
-  /* v385: SCOPED. Three cards along this row read the whole book while their neighbours
-     read the product: pending orders, and the two supplier figures below. Nothing shows
-     today because both are empty on both books, which is exactly why it survived. Order
-     book, pending sits beside Order book, owed out, which has always been the product's
-     own, so the first pending order on either book would have put one book's total under
-     the other book's badge with nothing on the card to say so. */
-  const _pS=pSales(PROD);
-  const pendUnits=+_pS.reduce((a,s)=>a+txPendUnits(s),0).toFixed(2), pendRM=+_pS.reduce((a,s)=>a+txPendRM(s),0).toFixed(2);
-  const pendN=_pS.filter(s=>txPendUnits(s)>0.009).length;
-  /* PENDING BUYS COUNT NOWHERE, exactly as pending sales do: nothing paid and nothing
-     received is an intention, not a lot in transit and not a bill. It shows in the Order
-     book only. Without this guard an agreed order books a payable for salt never bought. */
-  const _pP=pPurch(PROD);   // v385: scoped. 18 lots on the book, 3 of them oil's
-  const itUnits=+_pP.filter(p=>!p.defaulted&&!p.pending).reduce((a,p)=>a+poOpenUnits(p),0).toFixed(2);   // the balance still to arrive, not the whole lot
-  /* v438: was status!=='paid' && !defaulted && !pending, over p.cash read raw and with no floor at
-     zero, so a cancelled lot was billed, a paid-by-status lot was measured by a field it does not
-     carry, and an overpaid one subtracted from what the others owed. */
-  const supBills=+_pP.reduce((a,p)=>a+poOwed(p),0).toFixed(2);
-  const uncollected=+(revTotal-revCollected).toFixed(2);
-  /* v385: SCOPED, the same fault as defRows above and for the same reason. Latest ledger
-     read the WHOLE ledger under a product badge, so the oil tab's three most recent orders
-     were CZ4-MK's oil and then two salt rows, CS6-PER at RM 100 and CY2-NIL at RM 92 a unit,
-     on a book that trades at RM 13. Oil's own last three are CZ4-MK, CH4-MLR and CS6-BS-R,
-     and none of them appeared. The digest cards beside it are scoped, so this one panel was
-     answering a different question from every neighbour without saying so. */
-  const recent=pSales(PROD).slice().filter(s=>s.date).sort((a,b)=>{const x=a.date||'',y=b.date||'';return x<y?1:x>y?-1:0;}).slice(0,3);
-  /* v401: FOUR TABLES WENT TO THE VIEW THAT OWNS THEM, and this is why nothing here
-     replaces them. Key accounts, Reconnect, Partner performance and Reseller milestones
-     were this part restating the Customers view: the sortable database, the approach
-     board and the reseller cards each carry the same subject in full. Follow-ups due went
-     with the Follow-up mode at v581. They were also the widest things on the part. Latest ledger stays
-     because three rows IS the headline this part promises, not another view in miniature. */
-  /* ============ THE REGISTER LEADS (v385) ============
-     This part is declared as "every rule the desk trades by, and the register of what is
-     breached", and the rail badge on Today counts those breaches. A reader who taps a broken
-     rule on Today arrives here and used to land on a six-card position strip and a product
-     table, with Boundaries a screen below. That is the v343 fault again: a thing you have to
-     scroll for reads as a thing that is not there. Boundaries and the three standing
-     exposures led from v385 to v402.
-     v403, HIS CALL OF 29 AUG: THE DIGEST LEADS. The desk's headline row sat 1,890px down its
-     own overview; it opens the part now, and a reader arriving from a breach tap still meets
-     Boundaries within the first screen after it. THE SIX-COLUMN PER-PRODUCT TABLE THAT SAT
-     BELOW THE KPIS IS CUT the same day, the round's queued strip: its figures already live on
-     the rail switcher (name and revenue), in Position at a glance (the active book) and on
-     the Inventory view (inventory and value per book), so at 375px it was the desk restating three of
-     its own surfaces sideways. */
+  const pendRM=sum('pendRM'), pendN=ids.reduce((a,p)=>a+B[p].pendN,0), arG=sum('arGross'), arNet=sum('ar');
+  const uncollected=+(sum('revTotal')-sum('revCollected')).toFixed(2), bills=sum('bills'), lotsIn=ids.reduce((a,p)=>a+B[p].lotsIn,0);
+  const srNet=sum('srNet'), srGross=sum('srGross'), totDue=+(arNet+srNet).toFixed(2), margin=sum('grossMargin'), revAll=sum('revTotal');
+  /* advances by party across the books, because the money adds and he calls a person, not a book */
+  const adv={};ids.forEach(p=>B[p].adv.forEach(a=>{const e=adv[a.who]=adv[a.who]||{rm:0,over:[]};e.rm+=a.rm;if(a.over)e.over.push(p);}));
+  const advRows=Object.keys(adv).map(k=>({who:k,rm:+adv[k].rm.toFixed(2),over:adv[k].over})).sort((a,b)=>b.rm-a.rm);
+  const defAll=ids.flatMap(p=>B[p].defRows.map(d=>Object.assign({p},d)));
+  const recent=ids.flatMap(p=>pSales(p).filter(s=>s.date)).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0).slice(0,5);
+  const kpi=(cls,l,v,n)=>`<div class="kpi salt-kpi ${cls}"><div class="l salt-kpi__label">${l}</div><div class="v salt-kpi__value">${v}</div><div class="n salt-kpi__note">${n}</div></div>`;
   return `<h1>Rules</h1>
-  <div class="pscope">${prodBadge()}</div>
+  <div class="pscope"><span class="pbadge">Every book</span></div>
   <div class="dsc dsclead">Where the desk stands right now, with one headline lifted from every other tab.</div>
   <h2>Desk digest <span class="sub" style="font-weight:400">the headline from every tab</span> <span class="rule"></span></h2>
   <div class="kpis k4">
-    <div class="kpi salt-kpi"><div class="l salt-kpi__label">Order book &middot; pending</div><div class="v salt-kpi__value">${units(pendUnits)}</div><div class="n salt-kpi__note">${pendN?`${pendN} order${pendN===1?'':'s'} worth ${fmt0(pendRM)}, off the books`:'nothing pending'}</div></div>
-    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Financials &middot; still to come in</div><div class="v salt-kpi__value">${fmt0(arGross)}</div><div class="n salt-kpi__note">${(uncollected-arGross)>0.009?`${fmt0(uncollected-arGross)} of what is sold settled in kind`:(uncollected>0.009?'all of it a cash receivable':'everything sold is collected')}</div></div>
-    <div class="kpi salt-kpi"><div class="l salt-kpi__label">Customers &middot; concentration</div><div class="v salt-kpi__value" style="color:${conCol}">${con.hhi.toFixed(0)}</div><div class="n salt-kpi__note">${conRisk}; top buyer ${con.top.toFixed(0)}% of ${con.n}</div></div>
-    <div class="kpi salt-kpi g"><div class="l salt-kpi__label">Suppliers &middot; in transit</div><div class="v salt-kpi__value">${units(itUnits)}</div><div class="n salt-kpi__note">${supBills>0.009?`${fmt0(supBills)} bills unpaid`:'all lots paid'}${supRecovNet>0.009?`; ${fmt0(supRecovNet)} refund due`:''}</div></div>
+    ${kpi('','Order book &middot; pending',fmt0(pendRM),pendN?`${pendN} order${pendN===1?'':'s'}, off the books`:'nothing pending')}
+    ${kpi('p','Financials &middot; still to come in',fmt0(arG),(uncollected-arG)>0.009?`${fmt0(uncollected-arG)} of what is sold settled in kind`:(uncollected>0.009?'all of it a cash receivable':'everything sold is collected'))}
+    ${kpi('','Customers &middot; concentration',`<span style="color:${conCol}">${hhi.toFixed(0)}</span>`,`${conRisk}; top buyer ${topPct.toFixed(0)}% of ${cr.length}, across the books`)}
+    ${kpi('g','Suppliers &middot; in transit',`${lotsIn} lot${lotsIn===1?'':'s'}`,`${lotsIn?split('itUnits',units)+'; ':''}${bills>0.009?`${fmt0(bills)} bills unpaid`:'all lots paid'}${srNet>0.009?`; ${fmt0(srNet)} refund due`:''}`)}
   </div>
-  ${boundaryPanel()}
-  ${defUnits>0.009?`<div class="pend"><h3>&#128230; Deferred deliveries <span class="cd" style="color:var(--amber);border-color:var(--amber)">${units(defUnits)} owed out</span></h3><div class="pchips">${defRows.map(s=>`<span class="pchip"><b>${ID(s.customer)}</b> ${units(txDeferUnits(s))}</span>`).join('')}${defUnits>currentStock?`<span class="pchip bad">exceeds ${units(currentStock)} on hand</span>`:''}</div></div>`:''}
-  ${advTotal>0.5?`<div class="pend"><h3>&#128179; Advances out <span class="cd" style="color:var(--amber);border-color:var(--amber)">${fmt0(advTotal)} owed to you</span></h3><div class="pchips">${advBy.map(a=>`<span class="pchip${a.over?' bad':''}"><b>${ID(a.who)}</b> ${fmt0(a.rm)}${a.over?' &middot; over the '+units(capForParty(a.who))+' cap':''}</span>`).join('')}<span class="pchip warn">${fmt0(ar)} net of provisioning</span></div></div>`:''}
-  ${(PROD===DEFAULT_PROD&&typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>&#9888; Supplier default &mdash; ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(supRecovGross)+' written off':fmt0(supRecovNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul, lot never arrived. The ${fmt0(supRecovGross)} provision stays charged, so any recovery is upside.`:`Paid 08 Jul, lot never arrived. Recoverable pending the settlement meeting; ${fmt0(supRecovNet)} net.`}</div><div class="pchips">${supplierReceivable.status==='writtenOff'?`<span class="pchip bad">written off ${supplierReceivable.writtenOffOn}</span><span class="pchip">${dAge(supplierReceivable.since)} days out</span><span class="pchip bad">${fmt0(supRecovGross)} charged to margin</span>`:`<span class="pchip">${dAge(supplierReceivable.since)} days out</span><span class="pchip warn">${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned</span><span class="pchip">${fmt0(supRecovGross)} gross</span><span class="pchip warn">${fmt0(supRecovNet)} net</span>`}</div></div>`:''}
-  <h2>Position at a glance <span class="rule"></span></h2>
+  ${boundaryPanel(bnd,risks)}
+  ${defAll.length?`<div class="pend"><h3>&#128230; Deferred deliveries <span class="cd" style="color:var(--amber);border-color:var(--amber)">${defAll.length} owed out</span></h3><div class="pchips">${defAll.map(d=>`<span class="pchip"><b>${ID(d.who)}</b> ${units(d.u)} ${tag(d.p)}</span>`).join('')}${ids.filter(p=>B[p].defUnits>B[p].held).map(p=>`<span class="pchip bad">${esc(PRODUCTS[p].name)}: exceeds ${units(B[p].held)} on hand</span>`).join('')}</div></div>`:''}
+  ${arG>0.5?`<div class="pend"><h3>&#128179; Advances out <span class="cd" style="color:var(--amber);border-color:var(--amber)">${fmt0(arG)} owed to you</span></h3><div class="pchips">${advRows.map(a=>`<span class="pchip${a.over.length?' bad':''}"><b>${ID(a.who)}</b> ${fmt0(a.rm)}${a.over.map(p=>' &middot; over the '+units(capForParty(a.who,p))+' '+esc(PRODUCTS[p].name.toLowerCase())+' cap').join('')}</span>`).join('')}<span class="pchip warn">${fmt0(arNet)} net of provisioning</span></div></div>`:''}
+  ${(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>&#9888; Supplier default &mdash; ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(srGross)+' written off':fmt0(srNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul, lot never arrived. The ${fmt0(srGross)} provision stays charged, so any recovery is upside.`:`Paid 08 Jul, lot never arrived. Recoverable pending the settlement meeting; ${fmt0(srNet)} net.`}</div><div class="pchips">${supplierReceivable.status==='writtenOff'?`<span class="pchip bad">written off ${supplierReceivable.writtenOffOn}</span><span class="pchip">${dAge(supplierReceivable.since)} days out</span><span class="pchip bad">${fmt0(srGross)} charged to margin</span>`:`<span class="pchip">${dAge(supplierReceivable.since)} days out</span><span class="pchip warn">${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned</span><span class="pchip">${fmt0(srGross)} gross</span><span class="pchip warn">${fmt0(srNet)} net</span>`}</div></div>`:''}
+  <h2>Position at a glance <span class="sub" style="font-weight:400">money added across the books, each book's part beside it</span> <span class="rule"></span></h2>
   <div class="kpis k3">
-    <div class="kpi salt-kpi"><div class="l salt-kpi__label">Inventory on hand</div><div class="v salt-kpi__value">${units(currentStock)}</div><div class="n salt-kpi__note">${defUnits>0.009?`owe out ${units(defUnits)} (deferred)`:'nothing owed out'}</div></div>
-    <div class="kpi salt-kpi g"><div class="l salt-kpi__label">Inventory cost</div><div class="v salt-kpi__value">${fmt(stockCost)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n salt-kpi__note">${fmt0(stockVal)} on the inventory</div></div>
-    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Revenue</div><div class="v salt-kpi__value">${fmt0(revTotal)}</div><div class="n salt-kpi__note">${fmt0(revCollected)} collected${revCollected>revTotal+0.009?`, ${fmt0(revCollected-revTotal)} of it paid ahead of delivery`:''}</div></div>
-    <div class="kpi salt-kpi gold"><div class="l salt-kpi__label">Margin</div><div class="v salt-kpi__value">${fmt0(grossMargin)}</div><div class="n salt-kpi__note">${marginPct.toFixed(1)}% on ${fmt0(revTotal)} sold</div></div>
-    <div class="kpi salt-kpi r"><div class="l salt-kpi__label">Receivables (net)</div><div class="v salt-kpi__value">${fmt0(totDue)}</div><div class="n salt-kpi__note">${(ar>0.009||supRecovNet>0.009)?`${fmt0(ar)} trade${supRecovNet>0.009?` + ${fmt0(supRecovNet)} refund`:''}`:'nothing owed to you'}</div></div>
-    <div class="kpi salt-kpi"><div class="l salt-kpi__label">Bought to date</div><div class="v salt-kpi__value">${units(buyUnits)}</div><div class="n salt-kpi__note">${buyUnits>0.009?`${fmt0(buyRM)} at ${fmt(buyRM/buyUnits)}/unit avg`:`no lot recorded yet`}</div></div>
+    ${kpi('','Inventory at cost',fmt0(sum('stockVal')),split('held',units)||'nothing on hand')}
+    ${kpi('p','Revenue',fmt0(revAll),split('revTotal',fmt0))}
+    ${kpi('gold','Margin',fmt0(margin),`${revAll>0?(margin/revAll*100).toFixed(1):'0.0'}% on ${fmt0(revAll)} sold; ${split('grossMargin',fmt0)}`)}
+    ${kpi('r','Receivables (net)',fmt0(totDue),(arNet>0.009||srNet>0.009)?`${fmt0(arNet)} trade${srNet>0.009?` + ${fmt0(srNet)} refund`:''}`:'nothing owed to you')}
+    ${kpi('','Bought to date',fmt0(sum('buyRM')),split('buyRM',fmt0)||'no lot recorded yet')}
   </div>
-  <div class="card"><div class="cardh">&#128220; Latest ledger <span class="sub">most recent orders</span></div><table><thead><tr><th class="l">Date</th><th class="l">Party</th><th>Qty</th><th>Total</th><th>State</th></tr></thead><tbody>${recent.map(s=>{const si=txStat(s);return `<tr><td class="l">${s.date}</td><td class="l mono">${ID(s.customer)}</td><td>${units(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag salt-status ${si.cls}">${si.order}</span></td></tr>`;}).join('')}</tbody></table></div>`;
+  <div class="card"><div class="cardh">&#128220; Latest ledger <span class="sub">most recent orders, every book</span></div><table><thead><tr><th class="l">Date</th><th class="l">Party</th><th>Qty</th><th>Total</th><th>State</th></tr></thead><tbody>${recent.map(s=>{const si=txStat(s);return `<tr><td class="l">${s.date}</td><td class="l mono">${ID(s.customer)}<br>${tag(prodOf(s))}</td><td>${units(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag salt-status ${si.cls}">${si.order}</span></td></tr>`;}).join('')}</tbody></table></div>`;
 }
 
 /* ============ TAB: TODAY (v147) ============ */
@@ -10641,42 +10619,61 @@ function fwdOpts(){
     onDay:0,payDay:0,who:p[0].supplier}:null;
   return {days:fwdDays,buy,plans:fwdPlans};
 }
+/* ============ v796, HIS INSTRUCTION OF 23 SEP 2026: NEXT 30 DAYS IS EVERY BOOK AT ONCE ============
+   Each live book is walked on its own, as it always was, for its own inventory, its own rate and its own lots. The cash is
+   walked ONCE for the business: every book's receivables and bills go into one list, an event every book's walk raises
+   (a refund, the supplier default) going in once, and forecast() walks that list through its own day loop, so there is
+   still one walk and not a second copy of it. A book's own event carries its tag. */
+function fwdAll(){
+  const per=eachBook(()=>({f:forecast(Object.assign({},fwdOpts(),{plans:false})),buys:pPurch(PROD).filter(x=>x.pending)}));
+  const ids=Object.keys(per);
+  const merge=k=>{const keys=p=>per[p].f[k].map(x=>JSON.stringify(x));
+    const common=keys(ids[0]).filter(key=>ids.every(p=>keys(p).includes(key)));
+    const out=[];ids.forEach((p,i)=>per[p].f[k].forEach(x=>{const key=JSON.stringify(x);
+      if(common.includes(key)){if(i===0)out.push(Object.assign({},x,{books:[]}));}else out.push(Object.assign({},x,{books:[p]}));}));
+    return out;};
+  const cin=merge('cin'),cout=merge('cout');
+  const cash=forecast({days:fwdDays,plans:fwdPlans,cashEvents:{cin,cout}});
+  const lots=ids.flatMap(p=>per[p].f.lots.map(x=>Object.assign({},x,{books:[p]})));
+  return {per,ids,cash,cin,cout,lots};
+}
 function tabForward(){
-  const f=forecast(fwdOpts());
-  const cash=f.cashKnown;
-  const pend=pPurch(PROD).filter(x=>x.pending);   /* v275: scoped, this tab is drawn per product */
+  const A=fwdAll(),f=A.cash,ids=A.ids,cash=f.cashKnown;
+  const tag=p=>prodTag({product:p}), tags=x=>x.books&&x.books.length?' '+x.books.map(tag).join(' '):'';
+  const buys=ids.filter(p=>A.per[p].buys.length);
+  const buyWord=buys.map(p=>`${units(A.per[p].buys.reduce((a,x)=>a+x.qty,0))} of ${esc(PRODUCTS[p].name.toLowerCase())}`).join(' and ');
   const sw=[14,30,60].map(n=>`<button data-n="${n}"${fwdDays===n?' class="on"':''} onclick="fwdSet(${n})">${n} days</button>`).join('');
   const evRows=[];
-  f.lots.forEach(x=>evRows.push({day:x.day,what:`${units(x.kg)} arrives from ${ID(x.who)}`,kind:'stock in',rm:x.rm}));
-  f.cin.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}, ${fmt0(x.gross)} gross${x.age!=null?`, ${dAge(x.age)}d out`:''}${x.gross>x.rm+0.009?`, ${((1-x.rm/x.gross)*100).toFixed(0)}% provisioned`:''}`,kind:'cash in',rm:x.rm}));
-  f.cout.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}`,kind:'cash out',rm:-x.rm}));
+  A.lots.forEach(x=>evRows.push({day:x.day,what:`${units(x.kg)} arrives from ${ID(x.who)}${tags(x)}`,kind:'stock in',rm:x.rm}));
+  A.cin.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}, ${fmt0(x.gross)} gross${x.age!=null?`, ${dAge(x.age)}d out`:''}${x.gross>x.rm+0.009?`, ${((1-x.rm/x.gross)*100).toFixed(0)}% provisioned`:''}${tags(x)}`,kind:'cash in',rm:x.rm}));
+  A.cout.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}${tags(x)}`,kind:'cash out',rm:-x.rm}));
   (f.planRows||[]).forEach(x=>{if(x._taken)evRows.push({day:x.day,what:esc(x.label),kind:'drawing',rm:-x._taken});});
   evRows.sort((a,b)=>a.day-b.day||Math.abs(b.rm)-Math.abs(a.rm));
   const iso=n=>new Date(TODAY.getTime()+n*86400000).toISOString().slice(0,10);
   const taken=(f.planRows||[]).reduce((a,p)=>a+(p._taken||0),0);
-  const provNote=f.cin.filter(x=>x.gross>x.rm).map(x=>`${ID(x.who)} is ${x.age} days out, so ${fmt0(x.gross)} counts as ${fmt0(x.rm)}`);
+  const provNote=A.cin.filter(x=>x.gross>x.rm).map(x=>`${ID(x.who)} is ${x.age} days out, so ${fmt0(x.gross)} counts as ${fmt0(x.rm)}`);
+  /* the book that empties first leads, because that is the order to place */
+  const dryOf=p=>A.per[p].f.dry, first=ids.filter(p=>dryOf(p)!=null).sort((a,b)=>dryOf(a)-dryOf(b))[0];
+  const emptyCell=g=>g.dry==null?`past ${g.days} days`:g.dry===0?'<b style="color:var(--crim)">today</b>':g.dryDate;
+  const bookRows=ids.map(p=>{const g=A.per[p].f;return `<tr><td class="l">${tag(p)}</td><td class="mono">${units(g.rate)}</td><td class="mono">${emptyCell(g)}</td><td class="mono">${g.commitUnits>0.009?units(g.commitUnits):'&mdash;'}</td></tr>`;}).join('');
   return `<h1>Next 30 days</h1>
-  <div class="pscope">${prodBadge()}</div>
-  <div class="dsc dsclead" style="margin-bottom:11px">Not a forecast: it walks what is already on the book at the ${units(f.rate)} a day you have actually been shipping, and no unplaced order appears anywhere.</div>
+  <div class="pscope"><span class="pbadge">Every book</span></div>
+  <div class="dsc dsclead" style="margin-bottom:11px">Not a forecast: it walks what is already on each book at the rate that book has actually been shipping, and no unplaced order appears anywhere.</div>
   <div style="display:flex;flex-wrap:wrap;gap:9px;align-items:center">
     <span class="viewsw" id="fwdSw">${sw}</span>
-    ${pend.length?`<button class="vbtn salt-pill salt-pill--sm" style="${fwdBuy?'':'opacity:.55'}" onclick="fwdToggle('buy')">${fwdBuy?'&#10003; ':''}Include the agreed ${units(pend.reduce((a,p)=>a+p.qty,0))} buy</button>`:''}
+    ${buys.length?`<button class="vbtn salt-pill salt-pill--sm" style="${fwdBuy?'':'opacity:.55'}" onclick="fwdToggle('buy')">${fwdBuy?'&#10003; ':''}Include the agreed ${buyWord}</button>`:''}
     ${(typeof PLANS_CASH!=='undefined'&&PLANS_CASH.length)?`<button class="vbtn salt-pill salt-pill--sm" style="${fwdPlans?'':'opacity:.55'}" onclick="fwdToggle('plans')">${fwdPlans?'&#10003; ':''}Include the planned drawing</button>`:''}
   </div>
-  ${/* v385: ONE SENTENCE CARRIES THE SCENARIO, because stripMethod cuts an .insight over
-       NOTE_MIN to its first sentence WHEREVER it sits and whatever is in it, with no figure
-       exemption. This one read "Scenario, not the book." and then said in a SECOND sentence
-       which buy and which drawing were switched on, so the cut left a warning about a scenario
-       it no longer named. Latent only because both toggles need a pending lot or a PLANS_CASH
-       entry to appear at all. Same fault as priceNote. */''}${(fwdBuy||fwdPlans)?`<div class="insight salt-insight" style="margin-top:11px"><b>Scenario, not the book</b>: ${[fwdBuy?`the agreed ${units(pend.reduce((a,p)=>a+p.qty,0))} at ${fmt(pend.reduce((a,p)=>a+p.total,0)/pend.reduce((a,p)=>a+p.qty,0))}/unit, drawn as though it lands and is paid for today`:'',fwdPlans?`${PLANS_CASH.map(p=>esc(p.label)).join('; ')}${taken>0.009?`, taking ${fmt0(taken)} out on this path`:''}`:''].filter(Boolean).join('; and ')}. Nothing here is recorded anywhere, and turning the switch off removes it entirely.</div>`:''}
+  ${/* v385: one sentence carries the scenario, because stripMethod cuts an .insight to its first sentence */''}${(fwdBuy&&buys.length||fwdPlans)?`<div class="insight salt-insight" style="margin-top:11px"><b>Scenario, not the book</b>: ${[fwdBuy&&buys.length?`the agreed ${buyWord}, drawn as though it lands and is paid for today`:'',fwdPlans?`${PLANS_CASH.map(p=>esc(p.label)).join('; ')}${taken>0.009?`, taking ${fmt0(taken)} out on this path`:''}`:''].filter(Boolean).join('; and ')}. Nothing here is recorded anywhere, and turning the switch off removes it entirely.</div>`:''}
   <div class="kpis k2" style="margin-top:13px">
-    <div class="kpi salt-kpi ${f.dry===0?'r':f.dry!=null?'gold':'g'}"><div class="l salt-kpi__label">Inventory empty</div><div class="v salt-kpi__value">${f.dry==null?'&mdash;':f.dry===0?'today':'day '+f.dry}</div><div class="n salt-kpi__note">${f.dry==null?`holds past ${f.days} days`:f.dry===0?'nothing on the inventory now':`on ${f.dryDate}`}</div></div>
+    <div class="kpi salt-kpi ${first&&dryOf(first)===0?'r':first?'gold':'g'}"><div class="l salt-kpi__label">First to run empty</div><div class="v salt-kpi__value">${first?esc(PRODUCTS[first].name):'&mdash;'}</div><div class="n salt-kpi__note">${first?(dryOf(first)===0?'nothing on the inventory now':`day ${dryOf(first)}, ${A.per[first].f.dryDate}`):`every book holds past ${fwdDays} days`}</div></div>
     <div class="kpi salt-kpi ${f.cashEnd<0?'r':'p'}"><div class="l salt-kpi__label">Cash ${cash?`at day ${f.days}`:`movement, ${f.days} days`}</div><div class="v salt-kpi__value">${f.cashEnd<0?'&minus;':''}${fmt0(Math.abs(f.cashEnd))}</div><div class="n salt-kpi__note">${cash?`low ${f.cashLow.rm<0?'&minus;':''}${fmt0(Math.abs(f.cashLow.rm))} on ${iso(f.cashLow.day)}`:`a change from today, never a balance${f.cashLow.rm<-0.009?`; ${f.cashLow.rm<0?'&minus;':''}${fmt0(Math.abs(f.cashLow.rm))} at its worst on ${iso(f.cashLow.day)}`:''}`}</div></div>
   </div>
-  <h2 style="margin-top:18px">Inventory, day by day <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px"><b>Committed</b> serves only what you have promised; <b>plus rate</b> adds the daily rate and is therefore an estimate.</div>
+  <h2 style="margin-top:18px">Inventory, book by book <span class="rule"></span></h2>
+  <div class="card"><div class="tscroll"><table><thead><tr><th class="l">Book</th><th title="shipped a day over the last fortnight">A day</th><th>Empty on</th><th title="promised out and not yet handed over">Out</th></tr></thead><tbody>${bookRows}</tbody></table></div></div>
+  <div class="dsc" style="margin:9px 0">Each line is a book's inventory as a share of what it holds today, committed orders served first and then its own daily rate, so books of very different sizes read on one scale.</div>
   <div class="chartbox"><canvas id="fwdStockChart"></canvas></div>
-  <h2 style="margin-top:18px">Cash, day by day <span class="rule"></span></h2>
+  <h2 style="margin-top:18px">Cash, day by day <span class="sub" style="font-weight:400">the business, every book</span> <span class="rule"></span></h2>
   <div class="chartbox"><canvas id="fwdCashChart"></canvas></div>
   <h2 style="margin-top:18px">What lands, and when <span class="rule"></span></h2>
   <div class="card">${evRows.length?`<table><thead><tr><th class="l">When</th><th class="l">What</th><th class="l">Kind</th><th>Amount</th></tr></thead><tbody>
@@ -10692,22 +10689,23 @@ function drawFwdCharts(){
   ensureChart(ok=>{
     if(!ok){[s,k].forEach(c=>{chartEmpty(c,'Chart unavailable. Every figure it draws is in the tables on this part.');});return;}
     try{
-      const f=forecast(fwdOpts()),labs=f.rows.map(r=>r.d===0?'today':'d+'+r.d);
-      const opt=(t,pre)=>({responsive:true,maintainAspectRatio:false,
+      const A=fwdAll(),f=A.cash,labs=f.rows.map(r=>r.d===0?'today':'d+'+r.d);
+      /* v796: a book's colour is its token, read off the page, so the chart and the tags agree and no hex is written here */
+      const hue=p=>{const m=/var\((--[^)]+)\)/.exec(PRODUCTS[p].accent||'');return (m&&getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim())||'#8ea2b6';};
+      const opt=(t,pre,post)=>({responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,labels:{color:'rgba(242,244,245,0.66)',boxWidth:12,font:{size:11}}},
                  title:{display:true,text:t,color:'#f2f4f5',font:{size:12}}},
         scales:{x:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(242,244,245,0.66)',maxTicksLimit:12}},
-                y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(242,244,245,0.66)',callback:v=>pre+v}}}});
+                y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(242,244,245,0.66)',callback:v=>pre+v+(post||'')}}}});
       if(fwdStockObj){try{fwdStockObj.destroy();}catch(e){}fwdStockObj=null;}
       if(fwdCashObj){try{fwdCashObj.destroy();}catch(e){}fwdCashObj=null;}
-      fwdStockObj=new Chart(s,{type:'line',data:{labels:labs,datasets:[
-        {label:'Committed only',data:f.rows.map(r=>r.stockCom),borderColor:'#e4e9ec',backgroundColor:'transparent',tension:.2,pointRadius:0,borderWidth:2},
-        {label:'Committed plus rate',data:f.rows.map(r=>r.inventory),borderColor:'#8ea2b6',backgroundColor:'transparent',tension:.2,pointRadius:0,borderWidth:2},
-        {label:'Still owed out',data:f.rows.map(r=>r.backlog),borderColor:'#d4694c',backgroundColor:'transparent',tension:.2,pointRadius:0,borderWidth:2,borderDash:[5,4]}
-      ]},options:opt('Units on the inventory','')});
+      /* each book as a share of what it holds today, committed orders first and then its rate; a book holding nothing is flat at nought */
+      fwdStockObj=new Chart(s,{type:'line',data:{labels:labs,datasets:A.ids.map(p=>{const r=A.per[p].f.rows,h=r[0].inventory+r[0].serv;
+        return {label:PRODUCTS[p].name,data:r.map(x=>h>0.009?+(x.inventory/h*100).toFixed(1):0),borderColor:hue(p),backgroundColor:'transparent',tension:.2,pointRadius:0,borderWidth:2};})
+      },options:opt('Inventory left, as a share of what each book holds today','','%')});
       fwdCashObj=new Chart(k,{type:'line',data:{labels:labs,datasets:[
         {label:f.cashKnown?'Cash held':'Cash movement from today',data:f.rows.map(r=>r.cash),borderColor:'#b87333',backgroundColor:'transparent',tension:.2,pointRadius:0,borderWidth:2}
-      ]},options:opt(f.cashKnown?'Cash position (RM)':'Cash movement from today (RM)','')});
+      ]},options:opt(f.cashKnown?'Cash position (RM), every book':'Cash movement from today (RM), every book','')});
     }catch(e){                                     /* v385: same empty catch as Today's, same probe */
       try{console.error('drawFwdCharts threw',e);}catch(_){}
       const m=esc((e&&e.message)||String(e));
@@ -16689,6 +16687,8 @@ function forecast(o){
     planRows.push(Object.assign({},p,{day}));});
 
   /* --- walk it --- */
+  /* v796: the whole business's cash events, merged across the books by Next 30 days, walked here rather than a second loop */
+  if(o.cashEvents){cin.splice(0,cin.length,...o.cashEvents.cin);cout.splice(0,cout.length,...o.cashEvents.cout);}
   const cf=cashFlow();
   const cashKnown=cf.known;
   let cash=cashKnown?cf.onHand:0;                  // unknown opening: this is a MOVEMENT line, not a balance

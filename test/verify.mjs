@@ -19465,6 +19465,81 @@ await (async () => {
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
+section("v795: Rules is every book at once, money added across the books and units left with their own");
+await (async () => {
+  /* HIS INSTRUCTION OF 23 SEP 2026: combine Rules too. Read with oil in view, so a page still reading the book in view would
+     miss salt's breaches and salt's supplier default. Revenue is checked against the Financials head's own total, a second
+     reader that shares no code with this page. Each assertion was proved red by its own mutation, one at a time. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  function probe() {
+    const T = (e) => e.textContent.replace(/\s+/g, " ").trim();
+    setProdView("oil");
+    const d = document.createElement("div"); d.innerHTML = tabOverview();
+    const kpi = (l) => [].find.call(d.querySelectorAll(".kpi"), (k) => T(k.querySelector(".l")) === l);
+    const tables = d.querySelectorAll("table");
+    return { prod: PROD, scope: T(d.querySelector(".pscope")), conso: Math.round(consoMoney().rev),
+      rev: T(kpi("Revenue").querySelector(".v")), inv: T(kpi("Inventory at cost").querySelector(".n")), invV: T(kpi("Inventory at cost").querySelector(".v")),
+      bnd: [].map.call(tables[0].querySelectorAll("tbody tr"), (r) => ({ t: T(r.cells[0]), tags: [].map.call(r.cells[0].querySelectorAll(".prodtag"), (x) => x.title) })),
+      def: [].map.call(d.querySelectorAll(".pend h3"), T).find((h) => /Supplier default/.test(h)) || "",
+      srAmount: supplierReceivable ? supplierReceivable.amount : null,
+      ledgerTags: [].map.call(tables[tables.length - 1].querySelectorAll("tbody tr .prodtag"), (x) => x.title),
+      live: liveBooks().map((p) => PRODUCTS[p].name) };
+  }
+  const v = JSON.parse(w.eval("JSON.stringify((" + probe.toString() + ")())"));
+  const fmtRM = (n) => "RM " + n.toLocaleString("en-US");
+  ok(v.rev === fmtRM(v.conso), "revenue is added across the books and agrees with the Financials head: " + JSON.stringify([v.rev, v.conso]));
+  ok(v.live.length > 1 && v.live.every((n) => new RegExp("(^|· )" + n + " [0-9.]+ unit").test(v.inv)) && /^RM /.test(v.invV),
+    "units stay with their book: the inventory figure is money, and its note gives every live book its own count: " + JSON.stringify([v.invV, v.inv]));
+  ok(v.bnd.some((r) => /^Breach Credit cap/.test(r.t) && JSON.stringify(r.tags) === '["Salt"]') && v.bnd.filter((r) => /^Watch Margin floor/.test(r.t)).every((r) => r.tags.length === 1),
+    "salt's breach is on Rules with oil in view, and a row one book raised names that book: " + JSON.stringify(v.bnd.map((r) => r.t)));
+  ok(v.srAmount > 0 && v.def.includes(fmtRM(v.srAmount)), "the supplier default reads salt's figure whichever book is in view: " + JSON.stringify([v.def, v.srAmount]));
+  ok(new Set(v.ledgerTags).size > 1 && v.prod === "oil" && /Every book/.test(v.scope),
+    "the latest ledger mixes the books, each tagged, and the book in view is left as it was: " + JSON.stringify({ tags: v.ledgerTags, prod: v.prod }));
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
+section("v796: Next 30 days is every book at once, the cash walked once for the business and each book's inventory on its own");
+await (async () => {
+  /* HIS INSTRUCTION OF 23 SEP 2026: combine Next 30 days too. Read with oil in view. The cash is checked against a sum made
+     straight off the book, every receivable due in the window net of its provision, less every open refund and supplier bill,
+     which shares none of the merge; adding each book's own walk instead would take the refund off once a book. Each assertion
+     was proved red by its own mutation, one at a time. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  function probe() {
+    const T = (e) => e.textContent.replace(/\s+/g, " ").trim();
+    setProdView("oil"); fwdDays = 30; fwdBuy = false; fwdPlans = false;
+    const d = document.createElement("div"); d.innerHTML = tabForward();
+    const A = fwdAll();
+    let book = 0;
+    sales.forEach((s) => { if (txAdvance(s) <= 0.009) return; const age = dAge(s.date);
+      if (Math.max(0, RULES.creditDays - age) <= 30) book += outstandingOf(s) * (1 - saleProvRate(s, age)); });
+    customerRefunds.filter((r) => !r.paidOn).forEach((r) => { book -= +r.amount; });
+    purchases.forEach((p) => { book -= poOwed(p); });
+    const perBook = {}, keep = PROD;
+    liveBooks().forEach((p) => { PROD = p; recompute(); const f = forecast({ days: 30 }); perBook[p] = { dry: f.dry, end: f.cashEnd }; });
+    PROD = keep; recompute();
+    const tables = d.querySelectorAll("table");
+    const ev = [].map.call(tables[1].querySelectorAll("tbody tr"), (r) => ({ t: T(r.cells[1]), tags: [].map.call(r.cells[1].querySelectorAll(".prodtag"), (x) => x.title) }));
+    return { prod: PROD, end: A.cash.cashEnd, book: +book.toFixed(2), perBook, live: liveBooks().map((p) => PRODUCTS[p].name),
+      first: T(d.querySelector(".kpi .v")), rows: [].map.call(tables[0].querySelectorAll("tbody tr .prodtag"), (x) => x.title), ev,
+      lines: A.ids.length, scope: T(d.querySelector(".pscope")) };
+  }
+  const v = JSON.parse(w.eval("JSON.stringify((" + probe.toString() + ")())"));
+  const summed = +Object.values(v.perBook).reduce((a, x) => a + x.end, 0).toFixed(2);
+  ok(Math.abs(v.end - v.book) < 0.02 && Math.abs(summed - v.end) > 0.02,
+    "the cash is walked once for the business, and it is the book's own sum, not the books' walks added: " + JSON.stringify({ walked: v.end, book: v.book, added: summed }));
+  ok(v.ev.filter((e) => /refund you owe/.test(e.t)).length === 1 && v.ev.filter((e) => /refund you owe/.test(e.t)).every((e) => e.tags.length === 0),
+    "a refund every book's walk raises lands once, with no book on it");
+  ok(v.ev.some((e) => /receivable/.test(e.t) && JSON.stringify(e.tags) === '["Salt"]'), "salt's receivables land with oil in view, tagged Salt");
+  const firstBook = Object.entries(v.perBook).filter(([, x]) => x.dry != null).sort((a, b) => a[1].dry - b[1].dry)[0];
+  ok(JSON.stringify(v.rows) === JSON.stringify(v.live) && firstBook && v.first === v.live[Object.keys(v.perBook).indexOf(firstBook[0])],
+    "one row a live book, and the first to run empty is the book whose own walk empties soonest: " + JSON.stringify({ rows: v.rows, first: v.first }));
+  ok(v.prod === "oil" && /Every book/.test(v.scope), "and the book in view is left as it was");
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */
