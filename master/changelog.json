@@ -1,5 +1,14 @@
 [
  {
+  "v": "v815",
+  "d": "24 Sep 2026",
+  "t": "A PART PAYMENT AND A COLLECTION ON THE SAME OPEN ORDER",
+  "n": [
+   "<b>FOLDED: TWO AMENDMENTS, BOTH AGAINST S196 TO CS6-PER.</b> The order of 2 unit for RM200 dated 23 Sep took a RM70 fulfilment on 24 Sep by qr via ryt against site order 20260923131530-semgxg, and a correction that sets deliveredQty to 2, deliveredOn to 24 Sep and handover to collected. Neither row is recomputed here: the master applies the fulfilment and the patch, so one definition governs each. RM130 and the full unit count stay to be settled against the order.",
+   "<b>UNUSUAL: GOODS LEFT THE SHELF AHEAD OF THE CASH.</b> The drafter flagged the row as an advance, 2 unit out with RM200 unpaid at the time, to be checked against the cap, and flagged the RM100 a unit as 25% above the roughly RM80 a unit CS6-PER pays across 7 orders. It also flagged that RM48 a unit is an inventory average across more than one lot rate. The figures answer none of the three. The inventory rolled the shelf out by 2 unit and left the cost basis alone."
+  ]
+ },
+ {
   "v": "v814",
   "d": "23 Sep 2026",
   "t": "A FULL SETTLEMENT AT RM100 A UNIT FROM A PARTY WITH NO RECORD",
