@@ -2,10 +2,12 @@
 /* changelog.mjs — keep 00_Config/changelog.json in step with the master's evolution[0].
  *
  * evolution[0] in the master is the current version, and several places read evolution[0].v for
- * the version chip, the menu payload and the downloaded price sheets. THE ARRAY IS NOT ONE ENTRY,
- * which this header claimed until 16 Sep 2026 and which cost a session every entry in it: it
- * carries the window the desk's own Journal reads, from v324 onward, so a bump PREPENDS to it and
- * never replaces it. changelog.json carries every entry ever written and is the record; the two
+ * the version chip, the menu payload and the downloaded price sheets. SINCE v803 THE ARRAY IS ONE
+ * ENTRY, the current version, on his word of 23 Sep 2026: it held the window the Journal read until
+ * v802 took the Journal off the desk, and a bump now REPLACES it. So this tool is the only road by
+ * which an entry reaches the record, and it must run at every bump, before the next one replaces
+ * the entry; the gate refuses a master whose version changelog.json lacks. changelog.json carries
+ * every entry ever written and is the record; the two
  * are kept in step by hand, which is the drift this tool closes, because the current entry is
  * ~6 KB of prose and copying it across by hand is exactly how a version ends up recorded in one
  * place and not the other.

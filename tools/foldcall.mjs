@@ -273,7 +273,9 @@ if (isMain) {
     console.log("\n  A refusal folds nothing. Resolve it or take the row out of the batch."); process.exit(1);
   }
   const rb = await readBook(MASTER);
-  book.__version = rb.version; book.__evolution = rb.meta.evolution || [];
+  /* v803: the master carries only the current entry, so the style sample is read off the record */
+  book.__version = rb.version;
+  try { book.__evolution = JSON.parse(readFileSync(resolve(REPO, "master", "changelog.json"), "utf8")); } catch (e) { book.__evolution = rb.meta.evolution || []; }
   const ids = p.items.map((it) => it.id);
   const d = dossier(book, staged, p, rb.w);
   try { rb.w.close(); } catch (e) { /* jsdom */ }

@@ -28,10 +28,11 @@ decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; s
    `BOOK` from `ledger/book.json` (`tools/booksync.mjs --sync`), geography from
    `geo/*.json` (`tools/geosync.mjs --sync`), `DESIGN` from `design/salt-ds.css` and
    `design/desk.css` (`tools/designsync.mjs --sync`). Edit the module, sync, build.
-   `evolution` and `LAST_UPDATED` stay in the master. **A BUMP PREPENDS TO `evolution`, which is
-   NOT a one-entry array** (its own comment and `tools/changelog.mjs` both said so until 16 Sep
-   2026, and a session replaced it): it carries the Journal's window from v324, `master/changelog.json`
-   carries every entry, and `tools/changelog.mjs` copies `evolution[0]` across. **A fold edits
+   `evolution` and `LAST_UPDATED` stay in the master. **`evolution` HOLDS ONE ENTRY, THE CURRENT
+   VERSION, AND A BUMP REPLACES IT** (v803, his word of 23 Sep 2026; it held the Journal's window from v324
+   until the Journal left the desk at v802). `master/changelog.json` carries every entry and is the record:
+   `tools/changelog.mjs` copies `evolution[0]` across at every bump, before the next replaces it, and the gate
+   refuses a master whose version the changelog lacks. **A fold edits
    `ledger/book.json`, never rows in the master.** Nothing outside the master may price anything: two
    engines drift.
 2. **Plaintext names never reach the cloud; the encrypted vault may.** `/bio` is

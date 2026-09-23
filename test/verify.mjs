@@ -2515,6 +2515,11 @@ await (async () => {
     ok(B.QUEUE_COMMITTED === ID("01:20"), "the watermark moved to the newest id folded, past the Modification");
     ok(r.folded.length === 5 && r.newest === ID("01:20"), "_folded would name the five ids");
     ok(/const evolution=\[\{"v":"v999"/.test(r.master) && /const LAST_UPDATED='\d\d \w\w\w 2026, \d\d:\d\d KL';/.test(r.master), "the version entry and the stamp are in the master");
+    /* v803: the master holds ONE entry, so the fold REPLACES the current one rather than prepending; read as the desk reads it */
+    { const o = r.master.indexOf("const evolution=["), e = r.master.indexOf("}];", o);
+      const evoF = o >= 0 && e > o ? new Function("return " + r.master.slice(o + "const evolution=".length, e + 2))() : [];
+      ok(evoF.length === 1 && evoF[0].v === "v999" && r.master.indexOf("const evolution=[", o + 1) < 0,
+        "and the fold leaves the master one version entry, its own, having replaced the one before it (" + evoF.map((x) => x.v).join(",") + ")"); }
     const { checkText } = await import("../tools/booksync.mjs");
     ok(checkText(r.master, B) === null, "and the master's book block is the folded book");
     const last = B.sales[B.sales.length - 1];
@@ -10744,10 +10749,10 @@ await (async () => {
      and two places in Journal version notes. Pinned by what they say now. */
   ok(/\/\* THE OIL SUPPLIER'S QUOTE\. Same shape as QUOTES\.salt/.test(msrc),
     "the oil quote comment names the supplier by its role, not by name");
-  ok(/<b>SET IS ON THE MAP\.<\/b> CH6-SET came off/.test(msrc),
-    "the v384 note names the code's suffix, not the place behind it");
-  ok(/<b>NIL JOINS THE GAZETTEER AND CY2-NIL IS SITED AT LAST\.<\/b>/.test(msrc),
-    "the v347 note names the code's suffix, not the place behind it");
+  /* v803: the two version notes that carried a place (v347, v384) left the desk with the history, so what is pinned now is
+     that they are not in it at all, the blanked copies included; master/changelog.json, which is private, keeps them */
+  ok(!/IS ON THE MAP\.<\/b> CH6-SET came off/.test(msrc) && !/JOINS THE GAZETTEER AND CY2-NIL IS SITED AT LAST/.test(msrc),
+    "the v384 and v347 notes, which named a place, are off the desk with the rest of the history");
   /* The gate resolved the directory relative to the master, so once the master moved into
      this repo on 20 Aug it pointed at <repo>/10_Data, found nothing, and passed every run. */
   ok(/const BIO = resolve\(DATA_DIR, "salt_bio\.json"\)/.test(led),

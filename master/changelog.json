@@ -1,5 +1,15 @@
 [
  {
+  "v": "v803",
+  "d": "23 Sep 2026",
+  "t": "THE VERSION HISTORY LEAVES THE DESK",
+  "n": [
+   "<b>HIS WORD OF 23 SEP 2026: cut the history too.</b> With the Journal gone (v802), nothing on the desk read past the current version, yet every download carried 479 version entries. The master now holds one, the current version, which is what the version chip, the phone's payload and the price sheets read; master/changelog.json holds every entry ever written, and every entry dropped was proved to be in it before the cut.",
+   "<b>A FOLD REPLACES THE ENTRY RATHER THAN PREPENDING IT.</b> tools/fold.mjs writes the array as the one new entry, the previous one being in changelog.json already because the gate refuses a version the changelog lacks, and tools/foldcall.mjs reads its style sample from changelog.json instead of the master.",
+   "<b>TWO CORRECTIONS THE DESK'S COPY CARRIED AND THE RECORD DID NOT, CARRIED HERE RATHER THAN WRITTEN INTO THE OLD ENTRIES,</b> because changelog.json never rewrites one. To v535: The map part now says what it is a map of: where the buyers are, revenue by locality as heat inside the Kuala Lumpur boundary. To v326, replacing its last sentence: CORRECTED AT v328: the claim that collected and delivered floors are now the same number is true only above 1 unit. floorTotal still lifts the floor to the cost of SERVING the lot where that bites, and at 0.5 and 1 unit it does, so the delivered floor stands at RM40.99 and RM65.32 against a collected RM30.59 and RM61.18. The delivery saving is real at exactly the sizes a delivery is worth most. Three more differ only where the desk's copy blanked a place name for the public page (v347, v384, v385); the record keeps the names."
+  ]
+ },
+ {
   "v": "v802",
   "d": "23 Sep 2026",
   "t": "THE JOURNAL IS OFF THE DESK",

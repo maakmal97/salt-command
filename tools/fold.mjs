@@ -947,7 +947,11 @@ export function apply(book, staged, notes, masterText) {
   const entry = { v: notes.version, d: notes.date || dayOf(TODAY), t: notes.title, n: notes.notes };
   const open = m.indexOf("const evolution=[");
   if (open < 0) return { ok: false, problems: ["the master has no evolution array"] };
-  m = m.slice(0, open) + "const evolution=[" + JSON.stringify(entry) + ",\n\n" + m.slice(open + "const evolution=[".length);
+  /* v803: THE MASTER HOLDS ONE ENTRY, THE CURRENT VERSION, so the new one REPLACES it; the one it replaces is in
+     master/changelog.json already, the gate refusing a master whose version the changelog lacks */
+  const close = m.indexOf("}];", open);
+  if (close < 0) return { ok: false, problems: ["the master's evolution array is never closed"] };
+  m = m.slice(0, open) + "const evolution=[" + JSON.stringify(entry) + "];" + m.slice(close + 3);
   m = m.replace(/const LAST_UPDATED='[^']*';/, `const LAST_UPDATED='${stamp()}';`);
   if (notes.stockCost != null) {
     const re = /const STOCK_COST=[\d.]+;(\s*\/\*)?/;
