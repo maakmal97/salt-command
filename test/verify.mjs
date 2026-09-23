@@ -13785,8 +13785,9 @@ await (async () => {
 
   ok(/(^|[}\s])\.two\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\);/.test(top85),
     "a chart pair's two columns may be narrower than the chart each holds, so the pair never runs past its column");
-  ok(/(^|[}\s])\.apwrap\{display:grid;grid-template-columns:158px 1fr 158px;/.test(top85) && JSON.stringify(where85(".apwrap{grid-template-columns:1fr;}")) === '["(max-width:1079px)"]',
-    "the approach calendar keeps its three columns only from 1080px, where their 760px fit beside the rail: " + JSON.stringify(where85(".apwrap{grid-template-columns:1fr;}")));
+  /* v817: two columns, the October panel having gone; the one-column rule still starts at 1079px */
+  ok(/(^|[}\s])\.apwrap\{display:grid;grid-template-columns:158px 1fr;/.test(top85) && JSON.stringify(where85(".apwrap{grid-template-columns:1fr;}")) === '["(max-width:1079px)"]',
+    "the approach board keeps its two columns only from 1080px, where they fit beside the rail: " + JSON.stringify(where85(".apwrap{grid-template-columns:1fr;}")));
   const narrow85 = where85(".lrow,.lmove,.lhead{grid-template-columns:56px 74px minmax(60px,1fr) 108px;");
   ok(JSON.stringify(narrow85) === '["ledger (max-width:819px)"]',
     "the ledger re-flows its same cells below 820px of its own width, above the 765px its two-row shape needed: " + JSON.stringify(narrow85));
@@ -19241,6 +19242,9 @@ await (async () => {
   for (const s of bk.sales.filter((s) => !s.cancelled && owns(who, s.customer))) {
     const st = (await import("../engine/position.mjs")).default.txStat(s).order;
     if (st === "Cancelled") continue;
+    /* the statement is struck at `at`, and stmtRows drops a row dated after it unless it is Pending;
+       counting every row pinned this to the day the check was written (CS6-PER's 23 Sep order broke it) */
+    if (st !== "Pending" && s.date && s.date > "2026-09-22") continue;
     qty[s.product || "salt"] = (qty[s.product || "salt"] || 0) + s.qty;
   }
   const each = Object.keys(qty);
@@ -19826,6 +19830,74 @@ await (async () => {
   ok(v.text && !/CZ9|Sept|http|Salt Command/.test(v.text), "and it names no code, no address and no desk, the desk being public and the message his");
   ok(after.copied === v.text && after.label === "Copied", "and the button copies exactly that text, and says so: " + after.label);
   try { w.close(); } catch (e) { /* best effort */ }
+})();
+
+section("v817: the approach board sorts by action, reads a bucket as its associate, and runs five weeks from this Monday");
+await (async () => {
+  /* HIS DECISIONS OF 24 SEP 2026. Fixture customers on dates set from the desk's own clock, so nothing here rides on who
+     buys what today. Each assertion was proved red by its own mutation, one at a time. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  function probe() {
+    const ago = (n) => new Date(TODAY.getTime() - n * 864e5).toISOString().slice(0, 10);
+    const row = (rid, customer, n, paid) => ({ rid, customer, qty: 1, total: 100, cost: 50, cash: paid === false ? 0 : 100, deliveredQty: 1, deliveredOn: ago(n), date: ago(n) });
+    ["CZ9-DU", "CZ9-LP", "CZ9-OW", "CZ9-FR", "CZ9-FR-R", "CZ9-ON", "CZ9-FU"].forEach((c) => { if (roster.indexOf(c) < 0) roster.push(c); TIER_OF[c] = { salt: TIER_NAMES[TIER_NAMES.length - 1] }; });
+    BASE_SALES.push(
+      row("z817a", "CZ9-DU", 30), row("z817b", "CZ9-DU", 20),           // gap 10, due 10 days ago: due now
+      row("z817c", "CZ9-LP", 60), row("z817d", "CZ9-LP", 55),           // gap 5, due 50 days ago: lapsing
+      row("z817e", "CZ9-OW", 30), row("z817f", "CZ9-OW", 20, false),    // owes RM 100: chase first
+      row("z817g", "CZ9-FR", 14), row("z817h", "CZ9-FR-R", 7),          // one person across code and bucket, due today
+      row("z817i", "CZ9-ON", 2),                                         // one order: tried once
+      row("z817j", "CZ9-FU", 30), row("z817k", "CZ9-FU", 10));          // gap 20, due in 10 days: on the grid
+    queue = []; applyOverlay(); recompute(); switchTab("concentration");
+    const sec = document.querySelector(".sec.on");
+    const codes = (el) => el ? [].map.call(el.querySelectorAll(":scope > .apchip"), (c) => c.firstChild.textContent.trim()) : [];
+    const railOf = (k) => { const h = sec.querySelector(".aprh." + k); return h ? codes(h.nextElementSibling) : []; };
+    /* the phone's list repeats the grid's chips and is hidden by a media query jsdom does not apply, so it is left out */
+    const all = [].filter.call(sec.querySelectorAll(".apwrap .apchip:not([style])"), (c) => !c.closest(".aplist")).map((c) => c.firstChild.textContent.trim());
+    const grid = sec.querySelector(".apgrid"), days = grid ? grid.querySelectorAll(".apday") : [];
+    const fu = [].find.call(grid ? grid.querySelectorAll(".apchip") : [], (c) => c.firstChild.textContent.indexOf("CZ9-FU") === 0);
+    const fuDay = fu ? parseInt(fu.closest(".apday").querySelector(".apdn").textContent, 10) : null;
+    const ow = [].find.call(sec.querySelectorAll(".aprh.apch + .aprail .apchip"), (c) => c.firstChild.textContent.indexOf("CZ9-OW") === 0);
+    const mon = new Date(TODAY.getTime() - ((TODAY.getUTCDay() + 6) % 7) * 864e5);
+    return { chase: railOf("apch"), due: railOf("apdue"), lapse: railOf("aplp"), once: railOf("apon"), all,
+      owRm: ow ? ow.querySelector(".apv").textContent : null, days: days.length,
+      first: days[0] ? parseInt(days[0].querySelector(".apdn").textContent, 10) : null, mon: mon.getUTCDate(),
+      fuDay, fuWant: new Date(TODAY.getTime() + 10 * 864e5).getUTCDate() };
+  }
+  const v = JSON.parse(w.eval("JSON.stringify((" + probe.toString() + ")())"));
+  const once = (c) => v.all.filter((x) => x.indexOf(c) === 0).length === 1;
+  ok(v.chase.some((x) => x.indexOf("CZ9-OW") === 0) && v.owRm === "RM 100" && once("CZ9-OW"),
+    "a name that owes sits in Chase first alone, carrying what it owes: " + JSON.stringify([v.chase, v.owRm]));
+  ok(v.due.some((x) => x.indexOf("CZ9-DU") === 0) && !v.lapse.some((x) => x.indexOf("CZ9-DU") === 0),
+    "ten days past a ten-day habit is Due now, not lapsing: " + JSON.stringify(v.due));
+  ok(v.lapse.some((x) => x.indexOf("CZ9-LP") === 0) && !v.due.some((x) => x.indexOf("CZ9-LP") === 0),
+    "fifty days past a five-day habit, over twice the gap, is Lapsing: " + JSON.stringify(v.lapse));
+  ok(once("CZ9-FR") && !v.all.some((x) => x.indexOf("CZ9-FR-R") === 0) && !v.once.some((x) => x.indexOf("CZ9-FR") === 0),
+    "an associate and their bucket are one name with one habit, never two single orders: " + JSON.stringify(v.all.filter((x) => x.indexOf("CZ9-FR") === 0)));
+  ok(v.once.some((x) => /^CZ9-ON 2d ago$/.test(x)) && once("CZ9-ON"),
+    "a single order sits in Tried once, with how long ago: " + JSON.stringify(v.once));
+  ok(v.days === 35 && v.first === v.mon && v.fuDay === v.fuWant,
+    "the grid is five weeks from this Monday, and a date ten days out sits on its own day: " + JSON.stringify([v.days, v.first, v.mon, v.fuDay, v.fuWant]));
+  try { w.close(); } catch (e) { /* best effort */ }
+
+  /* THE HIT RATE COUNTS A DUE DATE NOBODY CAME BACK FOR. A book of one customer, two orders two days apart early last month:
+     the first due date was met by the second order, the second was never met, so one of two. It read one of one until v817. */
+  const { w: w2 } = await openMaster();
+  function probe2() {
+    const d = (n) => new Date(Date.UTC(TODAY.getUTCFullYear(), TODAY.getUTCMonth() - 1, n)).toISOString().slice(0, 10);
+    if (roster.indexOf("CZ9-HR") < 0) roster.push("CZ9-HR");
+    TIER_OF["CZ9-HR"] = { salt: TIER_NAMES[TIER_NAMES.length - 1] };
+    BASE_SALES.splice(0, BASE_SALES.length,
+      { rid: "z817m", customer: "CZ9-HR", qty: 1, total: 100, cost: 50, cash: 100, deliveredQty: 1, deliveredOn: d(2), date: d(2) },
+      { rid: "z817n", customer: "CZ9-HR", qty: 1, total: 100, cost: 50, cash: 100, deliveredQty: 1, deliveredOn: d(4), date: d(4) });
+    queue = []; applyOverlay(); recompute(); switchTab("concentration");
+    const s = document.querySelector(".sec.on .apside");
+    return s ? s.textContent.replace(/\s+/g, " ") : "";
+  }
+  const t = JSON.parse(w2.eval("JSON.stringify((" + probe2.toString() + ")())"));
+  ok(/50%\s*1 of 2 due dates met on time/.test(t), "last month's hit rate counts the due date nobody came back for: " + t);
+  try { w2.close(); } catch (e) { /* best effort */ }
 })();
 
 section("The suite frees its windows: every section's body is its own async function");

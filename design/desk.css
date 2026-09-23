@@ -548,6 +548,19 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .appop{background:var(--salt-veil);border-color:var(--salt-line-strong);}
 .appop .apact{border-top-color:var(--salt-line-faint);}
 .appop td:last-child{color:var(--salt-salt);}
+/* v817: the rail's three rows, the lapsing chip, the RM on every chip and the phone's list by day */
+.apchip.aplapse{background:var(--salt-glass-faint);border-color:var(--salt-line-strong);color:var(--salt-mist);}
+.apchip .apv{font-weight:400;margin-left:6px;}
+.apday .apchip .apv{display:block;margin-left:0;}
+.aprh{font-size:10px;letter-spacing:.16em;text-transform:uppercase;margin-top:10px;color:var(--salt-brass);}
+.aprh.apch{color:var(--salt-ember);}
+.aprh.aplp,.aprh.apon{color:var(--salt-mist);}
+.aplist{display:none;}
+.aplrow{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-top:1px solid var(--salt-line-faint);}
+.apld{flex:0 0 78px;font-size:11px;color:var(--salt-mist);padding-top:4px;}
+.aplc{display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:0;}
+.aplc .apchip{display:inline-flex;align-items:center;width:auto;min-height:44px;min-width:44px;font-size:11px;padding:0 10px;margin-top:0;}
+@media(max-width:767px){.apgrid{display:none;}.aplist{display:block;}}
 
 /* ---- 13. THE PHONE: the same vocabulary; only the floors the old layer sets stand ---- */
 @media(max-width:560px){

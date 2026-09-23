@@ -156,7 +156,7 @@ h2 .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--acc) -40%,var(
    so its failure mode is a click rather than a wrong number. */
 .dsclead{font-size:13px;color:var(--mut);line-height:1.5;margin-bottom:10px;}
 /* ---- the approach calendar (v208). Replaces a ten-column table nobody could scan. ---- */
-.apwrap{display:grid;grid-template-columns:158px 1fr 158px;gap:11px;align-items:stretch;}
+.apwrap{display:grid;grid-template-columns:158px 1fr;gap:11px;align-items:stretch;}
 .apside{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:12px;padding:12px 13px;}
 .apside .apm{font-size:10px;letter-spacing:.9px;text-transform:uppercase;color:var(--dim);margin-bottom:7px;}
 .apside .apbig{font-size:23px;font-weight:600;line-height:1.05;}
@@ -3548,6 +3548,19 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .appop{background:var(--salt-veil);border-color:var(--salt-line-strong);}
 .appop .apact{border-top-color:var(--salt-line-faint);}
 .appop td:last-child{color:var(--salt-salt);}
+/* v817: the rail's three rows, the lapsing chip, the RM on every chip and the phone's list by day */
+.apchip.aplapse{background:var(--salt-glass-faint);border-color:var(--salt-line-strong);color:var(--salt-mist);}
+.apchip .apv{font-weight:400;margin-left:6px;}
+.apday .apchip .apv{display:block;margin-left:0;}
+.aprh{font-size:10px;letter-spacing:.16em;text-transform:uppercase;margin-top:10px;color:var(--salt-brass);}
+.aprh.apch{color:var(--salt-ember);}
+.aprh.aplp,.aprh.apon{color:var(--salt-mist);}
+.aplist{display:none;}
+.aplrow{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-top:1px solid var(--salt-line-faint);}
+.apld{flex:0 0 78px;font-size:11px;color:var(--salt-mist);padding-top:4px;}
+.aplc{display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:0;}
+.aplc .apchip{display:inline-flex;align-items:center;width:auto;min-height:44px;min-width:44px;font-size:11px;padding:0 10px;margin-top:0;}
+@media(max-width:767px){.apgrid{display:none;}.aplist{display:block;}}
 
 /* ---- 13. THE PHONE: the same vocabulary; only the floors the old layer sets stand ---- */
 @media(max-width:560px){
@@ -7303,7 +7316,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v816","d":"24 Sep 2026","t":"A REWARD OFFSET SETTLES HALF OF AN ADVANCE IN KIND","n":["<b>FOLDED: ONE CORRECTION ON A SALT SELL, NO CASH AND NO STOCK.</b> The patch lands on s196, booked to CS6-PER, 2 unit for RM200 dated 23 Sep 2026 with RM70 cash in. It sets settledRM from unset to RM100, rebate from false to true and rebateKg from unset to 1 unit, so RM100 of the order is recorded as settled in kind by reward rather than paid. The row itself is not rewritten here, only the patch is applied.","<b>UNUSUAL: A REWARD OF THIS SIZE AGAINST AN ADVANCE STILL SHORT RM30.</b> The drafter flagged the RM100 as 25% above CS6-PER's usual RM80 a unit across 8 orders, flagged the RM48 inventory cost as an average across more than one lot rate, and flagged the row as an advance with RM30 unpaid to be checked against the credit cap. The dossier answers none of the three. The inventory did nothing: it stands at 16.5 unit, cost basis unchanged."]}];
+const evolution=[{"v":"v817","d":"24 Sep 2026","t":"THE APPROACH BOARD SORTS BY WHAT TO DO","n":["<b>THE RAIL IS THREE ROWS, AND THE ROW IS THE ACTION</b> (his decisions of 24 Sep 2026). Chase first holds every name that owes, with what it owes on the chip, and its profit is no longer counted as waiting. Due now holds names past their own date by up to twice their usual gap, ranked by profit. Lapsing holds names past it by more than twice that gap, a win-back rather than a routine offer: CG5-SB at 81 days had sat first on the rail beside a name one day late.","<b>AN ASSOCIATE AND THEIR BUCKET ARE ONE NAME.</b> The board is built on owner codes, so the habit, the usual lot and the last three orders read the code and the -R bucket together, and a bucket's debt is added to its owner's. CN6-WM had sat on the 28th while CN6-WM-R sat on the rail.","<b>FIVE WEEKS FROM THIS MONDAY, NOT THE CALENDAR MONTH.</b> By the 24th two thirds of the grid was dimmed and empty and next month's dates were a count in a side panel; they are days now, and anything later is one line under the grid. The side panel is the hit rate alone, last month and this month so far, and it now counts a due date nobody came back for, which it left out until today, and reads a bucket with its associate, so August reads 22 of 39 met (56%) where it read 25 of 41 (61%).","<b>EVERY CHIP CARRIES ITS RM</b>, what is owed on a chase and what the order would earn otherwise. <b>A NAME THAT HAS BOUGHT ONCE</b> sits in Tried once under the grid, newest first, eight and a count, where it was a sentence pointing at the foot of the page. <b>ON THE PHONE</b> the grid gives way to a list by day with 44px taps. The copy says their habit, not his."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -7418,7 +7431,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='24 Sep 2026, 02:13 KL';
+const LAST_UPDATED='24 Sep 2026, 02:39 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -16205,15 +16218,17 @@ function actions(){
    customer with one order has no cadence and is said to have none rather than being
    given the desk average, which would invent a habit he has not shown. The suggested
    lot is the median size HE buys, quoted at today's board including his own overlay. */
-function custCadence(id){
-  const ds=[...new Set(pricedSales.filter(s=>s.customer===id&&!s.cancelled&&s.date).map(s=>s.date))].sort();
+function custCadence(id,merge){
+  const ds=[...new Set(pricedSales.filter(s=>(merge?POSITION_ENGINE.ownsCode(id,s.customer):s.customer===id)&&!s.cancelled&&s.date).map(s=>s.date))].sort();
   if(ds.length<2)return null;
   const g=[];for(let i=1;i<ds.length;i++)g.push(Math.round((new Date(ds[i])-new Date(ds[i-1]))/86400000));
   const sorted=g.slice().sort((a,b)=>a-b);
   return {n:ds.length,med:sorted[Math.floor(sorted.length/2)],last:ds[ds.length-1],gaps:g};
 }
-function nextBest(id){
-  const rows=pricedSales.filter(s=>s.customer===id&&!s.cancelled&&s.qty>0);
+/* `merge` (v817, his word of 24 Sep 2026): the approach board reads an associate and their -R bucket
+   as one person, the 13 Sep ruling that a bucket is not its own person, so cadence and lot read both. */
+function nextBest(id,merge){
+  const rows=pricedSales.filter(s=>(merge?POSITION_ENGINE.ownsCode(id,s.customer):s.customer===id)&&!s.cancelled&&s.qty>0);
   if(!rows.length)return null;
   const qs=rows.map(s=>s.qty).sort((a,b)=>a-b);
   const q=qs[Math.floor(qs.length/2)];
@@ -16238,7 +16253,7 @@ function nextBest(id){
   const perUnit=total/q;
   /* v425: custCadence two functions above filters `s.date` and this did not, so an undated row
      sorted last and became "when they last bought". The pair now read the same rows. */
-  const cad=custCadence(id),since=dAge(rows.filter(s=>s.date).map(s=>s.date).sort().slice(-1)[0]);
+  const cad=custCadence(id,merge),since=dAge(rows.filter(s=>s.date).map(s=>s.date).sort().slice(-1)[0]);
   return {q,paid:paid!=null?+paid.toFixed(2):null,total,perUnit,profit:+(total-c.eff*q).toFixed(2),margin:(perUnit-c.eff)/perUnit*100,
     walkTotal:r.walkTotal,cad,since,
     due:cad?since-cad.med:null,                     // positive means overdue by his own habit
@@ -16674,84 +16689,93 @@ let concTail=false;/* the database shows its first eight and folds the rest; the
    that folds them carries their revenue and share, so the shut state still answers. */
 function concMore(){concTail=!concTail;render();}
 function sortConc(k){if(concSort.key===k)concSort.dir*=-1;else{concSort.key=k;concSort.dir=(k==='id')?1:-1;}render();}
-/* ============ THE APPROACH CALENDAR (v208) ============
+/* ============ THE APPROACH BOARD (v208, reshaped at v817) ============
    WHY THIS REPLACED A TABLE. "Who to approach next" was ten columns wide and sorted by
    lateness, so reading it meant holding a date, a cadence, a lot size, a quote and a
    margin delta in your head at once, per row, and the answer to the only question being
-   asked (who do I message today) was buried in the last column. A month grid answers it
+   asked (who do I message today) was buried in the last column. A grid of days answers it
    by position: a name sits on the day it falls due, and everything else moves into the
-   card that opens when you point at it. The figures are unchanged; only the shape is.
+   card that opens when you point at it.
 
-   THREE PLACES A NAME CAN SIT, AND A NAME SITS IN EXACTLY ONE:
-     the RAIL     already past due. It is the work, so it is above the grid, not inside
-                  it. Their due dates are often in a previous month and would otherwise
-                  be off-screen entirely, which is how the old chart lost them.
-     the GRID     falls due from today to the end of this month, on its own day.
-     the FLANKS   last month and next month, in summary only.
-   Cells before today are dimmed rather than filled, because anything that fell due there
-   has already moved up to the rail and printing it twice would double-count the work.
+   v817, HIS DECISIONS OF 24 SEP 2026. THE ROW IS THE ACTION, AND A NAME SITS IN EXACTLY ONE PLACE:
+     CHASE FIRST  owes money, whatever the date. A chase comes before an offer, so what they would
+                  earn is not counted as profit waiting.
+     DUE NOW      past their own date by up to twice their own usual gap, ranked by profit.
+     LAPSING      past it by MORE than twice that gap: a win-back, not a routine offer.
+     THE GRID     falls due from today, on its own day, over five weeks from this week's Monday.
+                  The calendar month left two thirds of the grid dimmed and empty by the 24th and put
+                  the next month's dates in a side panel as a count.
+     TRIED ONCE   bought once, so no habit to put on a day; newest first, eight and a count. It was a
+                  sentence pointing at the database at the foot of the page, which reads as missing.
+   An associate and their -R bucket are one person here (the 13 Sep ruling), so the approach list is
+   built on owner codes and a bucket's debt is added to its owner's. Every chip carries its RM: what is
+   owed on a chase, what the order would earn otherwise. Under 768px the grid gives way to a list by day.
 
-   A PARTY WITH ONE ORDER HAS NO HABIT and is left off rather than handed the desk
-   average, which is the same rule the old table followed and the reason the counts here
-   are smaller than the roster. */
+   THE HIT RATE COUNTS A DUE DATE NOBODY CAME BACK FOR. Until v817 only an order that had a NEXT order
+   could score, so a customer who never returned was left out of the denominator and the rate read high. */
 function approachBoard(approach,owedBy,bm){
   const MS=86400000, MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const iso=d=>d.toISOString().slice(0,10);
   const plus=(s,n)=>new Date(new Date(s).getTime()+n*MS);
   const ord=n=>n+((n%100>=11&&n%100<=13)?'th':({1:'st',2:'nd',3:'rd'})[n%10]||'th');
+  const short=d=>`${d.getUTCDate()} ${MON[d.getUTCMonth()].slice(0,3)}`;
   const y=TODAY.getUTCFullYear(), m=TODAY.getUTCMonth();
-  const mS=new Date(Date.UTC(y,m,1)), mE=new Date(Date.UTC(y,m+1,0));
+  const mS=new Date(Date.UTC(y,m,1));
   const pS=new Date(Date.UTC(y,m-1,1)), pE=new Date(Date.UTC(y,m,0));
-  const nS=new Date(Date.UTC(y,m+1,1)), nE=new Date(Date.UTC(y,m+2,0));
+  const gS=new Date(TODAY.getTime()-((TODAY.getUTCDay()+6)%7)*MS), gE=new Date(gS.getTime()+34*MS);
   const within=(d,a,b)=>d>=a&&d<=b;
-  /* one forward due date per party: his own last order plus his OWN median gap */
-  const items=approach.filter(r=>r.cad&&r.cad.last).map(r=>{
-    const dd=plus(r.cad.last,r.cad.med);
-    return Object.assign({},r,{dd:dd,debt:+(owedBy[r.id]||0)});
-  });
-  const noCad=approach.length-items.length;   /* one order is not a habit; said out loud below */
-  const late=items.filter(x=>x.dd<TODAY).sort((a,b)=>a.dd-b.dd);
-  const soon=items.filter(x=>x.dd>=TODAY&&within(x.dd,mS,mE));
-  const nxt=items.filter(x=>within(x.dd,nS,nE)).sort((a,b)=>a.dd-b.dd);
-  const lateRM=+late.reduce((a,x)=>a+x.profit,0).toFixed(2);
-  const nxtRM=+nxt.reduce((a,x)=>a+x.profit,0).toFixed(2);
-  /* DID LAST MONTH'S CADENCE ACTUALLY PREDICT ANYTHING? Replayed from the order dates
-     themselves rather than asserted: every order but a party's last implies a due date
-     at that order plus his median gap, and it was MET if his next order landed on or
-     before it. This is the only line on the board that says whether the habit is a
-     signal or a story, so it is worth the ten lines it costs. */
-  let pDue=0,pMet=0;
-  approach.forEach(r=>{
-    if(!r.cad||r.cad.n<2)return;
-    const ds=[...new Set(pricedSales.filter(s=>s.customer===r.id&&!s.cancelled&&s.date).map(s=>s.date))].sort();
-    for(let i=0;i<ds.length-1;i++){
-      const due=plus(ds[i],r.cad.med);
-      if(!within(due,pS,pE))continue;
-      pDue++; if(new Date(ds[i+1])<=due)pMet++;
-    }
-  });
-  const pRows=pricedSales.filter(s=>!s.cancelled&&s.date>=iso(pS)&&s.date<=iso(pE));
-  const pRev=+pRows.reduce((a,s)=>a+s.total,0).toFixed(2);
-  /* the card that opens on hover, and on TAP: the chip carries tabindex so :focus-within
-     fires it on a touch screen, where :hover does not exist and the board would
-     otherwise be unreadable on the one device he actually carries */
+  const sum=(l,f)=>+l.reduce((a,x)=>a+f(x),0).toFixed(2);
+  const debtOf=id=>+((owedBy[id]||0)+(owedBy[id+POSITION_ENGINE.BUCKET_SFX]||0)).toFixed(2);
+  /* one forward due date per party: their own last order plus their OWN median gap */
+  const all=approach.map(r=>Object.assign({},r,{debt:debtOf(r.id),dd:r.cad&&r.cad.last?plus(r.cad.last,r.cad.med):null}));
+  const lateBy=x=>dbet(iso(x.dd));                    // positive means already past
+  const lapses=x=>x.dd!=null&&lateBy(x)>2*x.cad.med;
+  const chase=all.filter(x=>x.debt>0.009).sort((a,b)=>b.debt-a.debt);
+  const rest=all.filter(x=>!(x.debt>0.009));
+  const once=rest.filter(x=>!x.dd).sort((a,b)=>(a.since==null?1e9:a.since)-(b.since==null?1e9:b.since));
+  const late=rest.filter(x=>x.dd&&x.dd<TODAY);
+  const lapsing=late.filter(lapses).sort((a,b)=>b.profit-a.profit);
+  const dueNow=late.filter(x=>!lapses(x)).sort((a,b)=>b.profit-a.profit);
+  const soon=rest.filter(x=>x.dd&&within(x.dd,TODAY,gE)).sort((a,b)=>a.dd-b.dd);
+  const beyond=rest.filter(x=>x.dd&&x.dd>gE).sort((a,b)=>a.dd-b.dd);
+  /* DID THE CADENCE ACTUALLY PREDICT ANYTHING? Replayed from the order dates themselves: every order
+     implies a due date at that order plus the party's median gap, and it was MET if their next order
+     landed on or before it. A due date already past with no next order is a miss. */
+  const score=(a,b)=>{let due=0,met=0;
+    approach.forEach(r=>{
+      if(!r.cad||r.cad.n<2)return;
+      const ds=[...new Set(pricedSales.filter(s=>POSITION_ENGINE.ownsCode(r.id,s.customer)&&!s.cancelled&&s.date).map(s=>s.date))].sort();
+      for(let i=0;i<ds.length;i++){
+        const d=plus(ds[i],r.cad.med);
+        if(!within(d,a,b)||d>=TODAY)continue;
+        due++; if(i<ds.length-1&&new Date(ds[i+1])<=d)met++;
+      }
+    });
+    return {due,met,pct:due?Math.round(met/due*100):null};};
+  const P=score(pS,pE), N=score(mS,TODAY);
+  /* the card that opens on hover, and on TAP: the chip carries tabindex so :focus-within fires it on
+     a touch screen, where :hover does not exist */
   const pop=(x,side)=>{
-    const d=dbet(iso(x.dd));                        // positive means already past
-    const hist=pricedSales.filter(s=>s.customer===x.id&&!s.cancelled&&s.qty>0)
-      .sort((a,b)=>{const x=a.date||'',y=b.date||'';return x<y?1:x>y?-1:0;}).slice(0,3)
-      .map(s=>`<tr><td>${s.date||'not dated'}</td><td>${units(s.qty)} &middot; ${fmt0(s.total)}</td></tr>`).join('');
+    const d=x.dd?lateBy(x):null;
+    const hist=pricedSales.filter(s=>POSITION_ENGINE.ownsCode(x.id,s.customer)&&!s.cancelled&&s.qty>0)
+      .sort((a,b)=>{const p=a.date||'',q=b.date||'';return p<q?1:p>q?-1:0;}).slice(0,3)
+      .map(s=>`<tr><td>${s.date||'not dated'}${POSITION_ENGINE.isBucket(s.customer)?' &middot; for a friend':''}</td><td>${units(s.qty)} &middot; ${fmt0(s.total)}</td></tr>`).join('');
+    const offer=`Offer ${units(x.q)} at ${fmt0(x.total)}.`;
     const act=x.debt>0.009
       ?`<span style="color:var(--crim)"><b>Collect ${fmt0(x.debt)} first.</b></span> A chase comes before an offer.`
-      :d>0?`<b style="color:var(--gold)">Overdue by ${d} day${d===1?'':'s'}</b> on his own habit. Offer ${units(x.q)} at ${fmt0(x.total)}.`
-      :d===0?`<b style="color:var(--gold)">Due today.</b> Offer ${units(x.q)} at ${fmt0(x.total)}.`
+      :d==null?`<b>One order so far.</b> ${offer}`
+      :lapses(x)?`<b>Lapsing: ${d} days past</b>, over twice their usual gap. A win-back: ${offer}`
+      :d>0?`<b style="color:var(--gold)">Overdue by ${d} day${d===1?'':'s'}</b> on their own habit. ${offer}`
+      :d===0?`<b style="color:var(--gold)">Due today.</b> ${offer}`
       :`Due in ${-d} day${-d===1?'':'s'}. Nothing needed yet.`;
     return `<span class="appop ap${side}">
       <div class="apname mono">${ID(x.id)}${custBadgeHtml(bm,x.id)}</div>
       <table>
-        <tr><td>Buys every</td><td>${x.cad.med}d over ${x.cad.n} orders</td></tr>
-        <tr><td>Last bought</td><td>${x.cad.last} (${x.since}d ago)</td></tr>
+        <tr><td>Buys every</td><td>${x.cad?`${x.cad.med}d over ${x.cad.n} orders`:'one order, no habit yet'}</td></tr>
+        <tr><td>Last bought</td><td>${x.cad?x.cad.last+' ':''}${x.since==null?'':`(${x.since}d ago)`}</td></tr>
         <tr><td>Usual lot</td><td>${units(x.q)}</td></tr>
-        <tr><td>He has paid</td><td>${x.paid==null?'&mdash; <span style="font-size:10px;color:var(--dim)">free units only</span>':fmt(x.paid)+'/unit'}</td></tr>
+        <tr><td>They have paid</td><td>${x.paid==null?'&mdash; <span style="font-size:10px;color:var(--dim)">free units only</span>':fmt(x.paid)+'/unit'}</td></tr>
         <tr><td>Their price</td><td>${fmt0(x.total)} &middot; ${fmt(x.perUnit)}/unit</td></tr>
         <tr><td>Would earn</td><td>${fmt0(x.profit)} ${x.delta==null?'':`<span style="color:${x.delta>0?'var(--grn)':x.delta<0?'var(--crim)':'var(--dim)'}">${x.delta>=0?'+':''}${x.delta}%</span>`}</td></tr>
       </table>
@@ -16760,72 +16784,60 @@ function approachBoard(approach,owedBy,bm){
       <div class="apact">${act}</div></span>`;
   };
   const chip=(x,side)=>{
-    const d=dbet(iso(x.dd));
-    const cls=x.debt>0.009?'apowes':d>=0?'aplate':'';
-    return `<span class="apchip ${cls}" tabindex="0">${codeOf(x.id)}${d>0?' +'+d+'d':''}${pop(x,side)}</span>`;
+    const d=x.dd?lateBy(x):null, owes=x.debt>0.009;
+    const cls=owes?'apowes':lapses(x)?'aplapse':(d!=null&&d>=0)?'aplate':'';
+    const tag=owes?'':d!=null?(d>0?' +'+d+'d':''):(x.since!=null?' '+x.since+'d ago':'');
+    return `<span class="apchip ${cls}" tabindex="0">${codeOf(x.id)}${tag}<span class="apv">${fmt0(owes?x.debt:x.profit)}</span>${pop(x,side)}</span>`;
   };
-  /* Monday-first grid */
-  const lead=(mS.getUTCDay()+6)%7, dim=mE.getUTCDate(), todayD=TODAY.getUTCDate();
-  const byDay={}; soon.forEach(x=>{const k=x.dd.getUTCDate();(byDay[k]=byDay[k]||[]).push(x);});
+  const names=n=>`${n} name${n===1?'':'s'}`;
+  const row=(k,title,list)=>list.length?`<div class="aprh ${k}">${title}</div><div class="aprail">${list.map(x=>chip(x,'L')).join('')}</div>`:'';
+  const rail=row('apch',`Chase first &middot; ${names(chase.length)} &middot; ${fmt0(sum(chase,x=>x.debt))} owed`,chase)
+    +row('apdue',`Due now &middot; ${names(dueNow.length)} &middot; ${fmt0(sum(dueNow,x=>x.profit))} of profit waiting`,dueNow)
+    +row('aplp',`Lapsing &middot; ${names(lapsing.length)} &middot; ${fmt0(sum(lapsing,x=>x.profit))} to win back`,lapsing);
+  /* five weeks, Monday first, from this week's Monday; a day before today is dimmed and empty */
+  const byDay={}; soon.forEach(x=>{const k=iso(x.dd);(byDay[k]=byDay[k]||[]).push(x);});
   let cells='';
-  for(let i=0;i<lead;i++)cells+='<div class="apday apblank"></div>';
-  for(let dnum=1;dnum<=dim;dnum++){
-    /* the card is 246px wide and the cells are not, so it is anchored left in the first
-       two columns and right in the last two, or it would be clipped off the board */
-    const col=(lead+dnum-1)%7;
-    const s=col<=1?'L':(col>=5?'R':'C');
-    const list=(byDay[dnum]||[]).map(x=>chip(x,s)).join('');
-    const kls=dnum===todayD?'aptoday':(dnum<todayD?'appast':'');
-    cells+=`<div class="apday ${kls}"><div class="apdn">${dnum}</div>${list}</div>`;
+  for(let i=0;i<35;i++){
+    /* the card is 246px wide and the cells are not, so it is anchored left in the first two
+       columns and right in the last two, or it would be clipped off the board */
+    const dt=new Date(gS.getTime()+i*MS), k=iso(dt), col=i%7, s=col<=1?'L':(col>=5?'R':'C');
+    const kls=k===iso(TODAY)?'aptoday':(dt<TODAY?'appast':'');
+    cells+=`<div class="apday ${kls}"><div class="apdn">${i===0||dt.getUTCDate()===1?short(dt):dt.getUTCDate()}</div>${(byDay[k]||[]).map(x=>chip(x,s)).join('')}</div>`;
   }
   const dow=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div class="apdow">${d}</div>`).join('');
-  const railChips=late.map(x=>chip(x,'L')).join('');
+  /* the phone's list: the same chips, one row a day */
+  const list=Object.keys(byDay).sort().map(k=>{const dt=new Date(k);
+    return `<div class="aplrow"><div class="apld">${k===iso(TODAY)?'Today':`${WD[dt.getUTCDay()]} ${short(dt)}`}</div><div class="aplc">${byDay[k].map(x=>chip(x,'L')).join('')}</div></div>`;}).join('')
+    ||'<div class="apsub">Nobody falls due in the next five weeks.</div>';
+  const ONCE=8;
   return `<div class="apwrap">
     <div class="apside">
-      <div class="apm">${MON[pS.getUTCMonth()]} &middot; behind</div>
-      <div class="apbig">${pDue}</div>
-      <div class="apsub">due date${pDue===1?'':'s'} fell in ${MON[pS.getUTCMonth()]}, ${pDue?`<b>${pMet}</b> met on time (${Math.round(pMet/pDue*100)}%)`:'so there is nothing to score'}</div>
+      <div class="apm">${MON[pS.getUTCMonth()]} &middot; habit held</div>
+      <div class="apbig">${P.pct==null?'&mdash;':P.pct+'%'}</div>
+      <div class="apsub">${P.due?`<b>${P.met}</b> of ${P.due} due dates met on time`:'no due date fell in it, so there is nothing to score'}</div>
       <div class="aphr"></div>
-      <div class="apm">Actually traded</div>
-      <div class="apbig" style="font-size:17px">${fmt0(pRev)}</div>
-      <div class="apsub">across ${pRows.length} order${pRows.length===1?'':'s'}</div>
+      <div class="apm">${MON[m]} so far</div>
+      <div class="apbig" style="font-size:17px">${N.pct==null?'&mdash;':N.pct+'%'}</div>
+      <div class="apsub">${N.due?`<b>${N.met}</b> of ${N.due} met`:'no due date has passed yet'}</div>
     </div>
     <div class="apcal">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
-        <div style="font-size:13px;font-weight:600;letter-spacing:.5px">${MON[m]} ${y}</div>
-        <div style="font-size:11px;color:var(--mut)">${soon.length} still to fall due &middot; ${late.length} already past</div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:600;letter-spacing:.5px">${short(TODAY)} to ${short(gE)}</div>
+        <div style="font-size:11px;color:var(--mut)">${soon.length} due in five weeks &middot; ${dueNow.length} overdue &middot; ${lapsing.length} lapsing &middot; ${chase.length} owe</div>
       </div>
-      <!-- ============ v385: THE KEY TO THE COLOURS WAS BEING DELETED ============
-           Gold and red are the whole grammar of this board, and the only thing that said so
-           was the paragraph underneath, which is a .dsc, which stripMethod (v372) removes on
-           every render. So the board shipped with colour as its only signal and no legend at
-           all, which is the one thing a coloured chip must never do. The key is chips now,
-           built from the same two classes the board itself uses, so the swatch cannot drift
-           from the thing it stands for, and each carries a WORD as well as a colour.
-           The count of names with no habit moved up here for the same reason, and because a
-           name that is simply absent reads as a name that was lost: it says how many, why,
-           and where to find them. What went for good is the method behind the board, which
-           is the card that opens on any chip. -->
+      <!-- v385: THE KEY IS CHIPS built from the classes the board itself uses, so the swatch cannot drift
+           from the thing it stands for, and each carries a WORD as well as a colour. -->
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--mut);margin-bottom:9px">
-        <span style="display:inline-flex;align-items:center;gap:6px"><span class="apchip aplate" style="display:inline-block;width:auto;margin:0;padding:2px 7px;pointer-events:none">due</span> on his own habit</span>
         <span style="display:inline-flex;align-items:center;gap:6px"><span class="apchip apowes" style="display:inline-block;width:auto;margin:0;padding:2px 7px;pointer-events:none">owes</span> chase before you offer</span>
-        <span>a dimmed day is past, and anything due there is on the rail</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span class="apchip aplate" style="display:inline-block;width:auto;margin:0;padding:2px 7px;pointer-events:none">due</span> on their own habit</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span class="apchip aplapse" style="display:inline-block;width:auto;margin:0;padding:2px 7px;pointer-events:none">lapsing</span> over twice their usual gap</span>
       </div>
-      ${late.length?`<div class="apm" style="font-size:10px;letter-spacing:.9px;text-transform:uppercase;color:var(--gold)">Overdue &middot; ${late.length} name${late.length===1?'':'s'} &middot; ${fmt0(lateRM)} of profit waiting</div>
-      <div class="aprail">${railChips}</div>
-      <div style="height:1px;background:var(--line);margin:11px 0 9px"></div>`
-      :`<div style="font-size:12px;color:var(--grn);margin-bottom:9px">Nobody is past their own cadence.</div>`}
+      ${rail?`${rail}<div style="height:1px;background:var(--line);margin:11px 0 9px"></div>`
+      :`<div style="font-size:12px;color:var(--grn);margin-bottom:9px">Nobody owes and nobody is past their own date.</div>`}
       <div class="apgrid">${dow}${cells}</div>
-      ${noCad?`<div style="font-size:11px;color:var(--mut);margin-top:9px">${noCad} of the ${approach.length} names you can still approach have bought once, so they have no habit to put on a day. They are not lost: every one is in the database at the foot of this part.</div>`:''}
-    </div>
-    <div class="apside">
-      <div class="apm">${MON[nS.getUTCMonth()]} &middot; ahead</div>
-      <div class="apbig">${nxt.length}</div>
-      <div class="apsub">fall due next month</div>
-      <div class="aphr"></div>
-      <div class="apm">Worth at today's board</div>
-      <div class="apbig" style="font-size:17px">${fmt0(nxtRM)}</div>
-      <div class="apsub">${nxt.length?`first is <b class="mono">${codeOf(nxt[0].id)}</b> on the ${ord(nxt[0].dd.getUTCDate())}`:'nothing scheduled that far out'}</div>
+      <div class="aplist">${list}</div>
+      ${beyond.length?`<div style="font-size:11px;color:var(--mut);margin-top:9px">${names(beyond.length)} fall due after ${short(gE)}, worth ${fmt0(sum(beyond,x=>x.profit))}; first is <b class="mono">${codeOf(beyond[0].id)}</b> on the ${ord(beyond[0].dd.getUTCDate())} of ${MON[beyond[0].dd.getUTCMonth()]}.</div>`:''}
+      ${once.length?`<div class="aprh apon">Tried once &middot; ${names(once.length)}, newest first</div><div class="aprail">${once.slice(0,ONCE).map(x=>chip(x,'L')).join('')}${once.length>ONCE?`<span style="align-self:center;font-size:11px;color:var(--mut)">and ${once.length-ONCE} more in the database at the foot of this part</span>`:''}</div>`:''}
     </div>
   </div>`;
 }
@@ -16888,9 +16900,10 @@ function tabConcentration(){
      underneath it, which meant the first thing on screen was the raw data and the last
      thing was what it meant. Reversed here: what the book is telling him leads, the
      charts carry the shape, and the table sits at the foot for looking a name up. */
-  const approach=c.bc.map(x=>x.id)
+  /* v817: a bucket folds into its associate, so one person is one name on the board and in the tiles */
+  const approach=[...new Set(c.bc.map(x=>POSITION_ENGINE.ownerCode(x.id)))]
     .filter(approachable)
-    .map(id=>{const nb=nextBest(id);return nb?Object.assign({id},nb):null;})
+    .map(id=>{const nb=nextBest(id,true);return nb?Object.assign({id},nb):null;})
     .filter(Boolean)
     .sort((a,b)=>{const ao=a.due==null?-1e9:a.due,bo=b.due==null?-1e9:b.due;
       return (bo-ao)||(b.profit-a.profit);});
