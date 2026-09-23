@@ -7300,7 +7300,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v812","d":"23 Sep 2026","t":"AN ACKNOWLEDGED ORDER IS NOT A MOVED ORDER","n":["<b>FOLDED: ONE SALT SELL TO CS6-PER, 2 unit at RM200, taken from the statements site as order 20260923131530-semgxg and acknowledged, to collect.</b> Nothing was paid and nothing was handed over, so the row is folded as pending, dated 23 Sep as the day it was agreed. It clears the RM113.98 floor for this size and sits well under the RM270 ask, with the ceiling at RM310.","<b>UNUSUAL: the rate runs high against the party's own book and the cost basis is a blend.</b> RM100 a unit is 25% above the RM80 a unit CS6-PER usually pays across 7 orders, and it sits at the top of their range of RM11 to RM100. The drafter flagged that the inventory spans more than one lot rate, so RM48 a unit is the average and not the lot this row draws: the dossier carries no lot split, so the flag stands open.","<b>THE INVENTORY DID NOTHING.</b> Stock stays at 21 unit and the cost basis is untouched, because a pending row draws no stock and books no revenue until something moves. Salt was counted on 23 Sep, so the floors behind this row rest on a fresh count. Nothing is promised against this order and CS6-PER carries no outstanding balance, so the only thing left open is the collection itself."]}];
+const evolution=[{"v":"v813","d":"23 Sep 2026","t":"AN OVERDUE CHASE CARRIES A REMINDER TO COPY","n":["<b>HIS WORD OF 23 SEP 2026: a reminder message, copiable from their cards, for those with overdue.</b> A Chase card on Today whose oldest debt is past the credit term now carries Copy reminder beside its link, and one inside the term does not. The message is the total, each order it is for with its date and age, what is left of a part-paid one, and a request: on the day, Hi, a reminder that RM 50 is still outstanding: RM 50 left of the RM 850 for 12.5 unit of salt on 7 Sep, 16 days ago. Could you settle it when you can? Thank you.","<b>IT NAMES NOBODY.</b> No person, no code and no address, because the desk is public and the message is his to send; the dates come from a fixed month list, never the locale's Sept. The button copies through the clipboard, falling back to a hidden textarea on a phone that refuses it, and says Copied.","<b>LANDED AS v813.</b> Written as v812 on the laptop; a fold took v812 and the Counter's own work (#15) merged while it waited for the push, so it lands on top of both."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -7415,7 +7415,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='23 Sep 2026, 21:18 KL';
+const LAST_UPDATED='23 Sep 2026, 21:34 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9834,6 +9834,7 @@ function bookBand(){
 }
 function tabToday(){
   const a=allActions(),B=bookBand(),live=Object.keys(B);
+  tdRemind=[];
   const now=a.filter(x=>x.sev==='now'),soon=a.filter(x=>x.sev==='soon'),watch=a.filter(x=>x.sev==='watch');
   const money=s=>+a.filter(x=>x.sev===s).reduce((t,x)=>t+x.rm,0).toFixed(2);
   /* A word, not a picture. The kind is scanning furniture, so it should read at a glance
@@ -9850,7 +9851,7 @@ function tabToday(){
     <div class="actk">${KIND[x.kind]||'Item'}</div>
     <div><div class="actt">${x.title}${x.books.length?' '+x.books.map(p=>prodTag({product:p})).join(' '):''}</div><div class="actw">${x.why}</div></div>
     <div class="actm${x.rm>0.009?'':' nil'}" title="${x.rm>0.009?'At stake: what this item itself exposes':'No figure: it costs nothing to leave and something to ignore'}">${x.rm>0.009?fmt0(x.rm):'&mdash;'}</div>
-    <div class="actb"><button class="navlink" onclick="switchTab('${x.tab}')">${TAB_LABEL[x.tab]||x.tab} &rarr;</button></div>
+    <div class="actb">${x.copy?`<button class="navlink" data-remind="${tdRemind.push(x.copy)-1}" onclick="copyRemind(+this.dataset.remind,this)">Copy reminder</button> `:''}<button class="navlink" onclick="switchTab('${x.tab}')">${TAB_LABEL[x.tab]||x.tab} &rarr;</button></div>
     ${x.rm>0.009&&peak>0?`<div class="actbar" title="${fmt0(x.rm)} of the ${fmt0(peak)} largest item"><i style="width:${Math.max(1.5,x.rm/peak*100).toFixed(1)}%"></i></div>`:''}</div>`;
   /* v385: A DATED SEVERITY THAT IS EMPTY STILL SAYS SO. The two count cards that used to
      stand above the list are gone as duplicates, and on a book with nothing due this week
@@ -16033,6 +16034,27 @@ function forecast(o){
    the money at stake, so the order can always be explained. An item carries the tab that
    answers it, because a list you cannot act on is just another report. */
 const ACTSEV={now:{r:0,l:'Now',c:'var(--crim)'},soon:{r:1,l:'This week',c:'var(--gold)'},watch:{r:2,l:'Watch',c:'var(--mut)'}};
+/* ============ v812, HIS WORD OF 23 SEP 2026: A REMINDER, COPIABLE FROM THE CARD, FOR THOSE OVERDUE ============
+   A chase past the credit term carries a message he can paste into a chat as it stands. It names no person, no code and no
+   address, because the desk is public and the message is his: the amount, each order it is for with its date and age, and a
+   request. Plain words, as everything he sends a customer is. The dates are built from a fixed month list, never the
+   locale's, which writes Sept. */
+function remindText(ds,gross){
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const day=d=>d?(+d.slice(8,10))+' '+MON[+d.slice(5,7)-1]:'an undated order';
+  /* a part-paid order says what is left of what total, so RM50 is not read as the price of the whole lot */
+  const line=x=>{const owed=txOwed(x.s),goods=`${units(x.s.qty)} of ${(PRODUCTS[prodOf(x.s)]||{name:'goods'}).name.toLowerCase()} on ${day(x.s.date)}, ${x.age} day${x.age===1?'':'s'} ago`;
+    return x.g<owed-0.009?`${fmt0(x.g)} left of the ${fmt0(owed)} for ${goods}`:`${fmt0(x.g)} for ${goods}`;};
+  return `Hi, a reminder that ${fmt0(gross)} is still outstanding: ${ds.slice().sort((a,b)=>b.age-a.age).map(line).join('; ')}. Could you settle it when you can? Thank you.`;
+}
+/* the one road to the clipboard for a reminder; a phone that refuses the clipboard API gets the textarea copy */
+let tdRemind=[];
+async function copyRemind(i,btn){
+  const text=tdRemind[i];if(!text)return;
+  let ok=false;try{await navigator.clipboard.writeText(text);ok=true;}catch(e){
+    try{const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.top='-1000px';document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');document.body.removeChild(ta);}catch(_){}}
+  if(btn)btn.textContent=ok?'Copied':'Could not copy';
+}
 function actions(){
   const out=[],add=(sev,kind,title,rm,why,tab)=>out.push({sev,kind,title,rm:+(+rm||0).toFixed(2),why,tab});
   const f=forecast(),cv=coverStats(),bm=custBadges();
@@ -16092,7 +16114,7 @@ function actions(){
      ladder is what makes one of them urgent and the total is what makes the call worth it. */
   const chase={};
   arList.forEach(s=>{const g=outstandingOf(s);if(g<=0.009)return;const age=dAge(s.date);
-    (chase[s.customer]=chase[s.customer]||[]).push({g,age,pr:saleProvRate(s,age)});});
+    (chase[s.customer]=chase[s.customer]||[]).push({g,age,pr:saleProvRate(s,age),s});});
   Object.keys(chase).forEach(who=>{
     const ds=chase[who].sort((a,b)=>b.age-a.age), oldest=ds[0].age;
     const gross=+ds.reduce((t,x)=>t+x.g,0).toFixed(2);
@@ -16102,7 +16124,9 @@ function actions(){
       `On a ${RULES.creditDays}d term: `
       +ds.map(x=>`${fmt0(x.g)} at ${x.age}d${x.pr>0?`, ${(x.pr*100).toFixed(0)}% provisioned`:''}`).join('; ')
       +`. ${fmt0(net)} realistic.`
-      +(isBanned(who)?' Banned from sale; the ban ends the trade, not the debt.':''),'receivables');});
+      +(isBanned(who)?' Banned from sale; the ban ends the trade, not the debt.':''),'receivables');
+    /* v812: past the term, the card carries a reminder he can copy and send as it stands */
+    if(oldest>=RULES.creditDays)out[out.length-1].copy=remindText(ds,gross);});
   if(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable'){
     const age=dAge(supplierReceivable.since),pr=provRate(age);
     add(age>=RULES.fullProvDays?'now':'soon','collect',`Settle the ${ID(supplierReceivable.party)} default, ${fmt0(supplierReceivable.amount)}`,

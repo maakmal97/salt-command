@@ -19792,6 +19792,42 @@ await (async () => {
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
+section("v812: a chase past the credit term carries a reminder to copy, and one inside it does not");
+await (async () => {
+  /* HIS WORD OF 23 SEP 2026: a reminder message, copiable from their cards, for those overdue. Fixture customers on dates set
+     from the desk's own clock, so the check does not ride on who owes what today. The copy is driven through a stubbed
+     clipboard and read back. Each assertion was proved red by its own mutation, one at a time. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  function probe() {
+    const ago = (n) => new Date(TODAY.getTime() - n * 864e5).toISOString().slice(0, 10);
+    ["CZ9-RM", "CZ9-OK"].forEach((c) => { if (roster.indexOf(c) < 0) roster.push(c); });
+    BASE_SALES.push(
+      { rid: "z812a", customer: "CZ9-RM", qty: 1, total: 100, cost: 50, cash: 0, deliveredQty: 1, deliveredOn: ago(20), date: ago(20) },
+      { rid: "z812b", customer: "CZ9-RM", qty: 2, total: 200, cost: 100, cash: 150, deliveredQty: 2, deliveredOn: ago(12), date: ago(12) },
+      { rid: "z812c", customer: "CZ9-OK", qty: 1, total: 90, cost: 45, cash: 0, deliveredQty: 1, deliveredOn: ago(3), date: ago(3) });
+    queue = []; applyOverlay(); recompute(); switchTab("today");
+    const card = (code) => [].find.call(document.querySelectorAll(".sec.on .act"), (r) => r.querySelector(".actt").textContent.includes(code));
+    const rm = card("CZ9-RM"), ok = card("CZ9-OK");
+    const btn = rm && rm.querySelector("[data-remind]");
+    const text = btn ? tdRemind[+btn.dataset.remind] : null;
+    Object.defineProperty(navigator, "clipboard", { value: { writeText: (t) => { window.__copied812 = t; return Promise.resolve(); } }, configurable: true });
+    if (btn) btn.click();
+    return { hasRm: !!rm, hasOk: !!ok, btn: !!btn, okBtn: !!(ok && ok.querySelector("[data-remind]")), text, ago20: ago(20) };
+  }
+  const v = JSON.parse(w.eval("JSON.stringify((" + probe.toString() + ")())"));
+  await new Promise((r) => setTimeout(r, 50));
+  const after = JSON.parse(w.eval("JSON.stringify({copied:window.__copied812||null,label:(document.querySelector('.sec.on [data-remind]')||{}).textContent||''})"));
+  const day20 = (+v.ago20.slice(8, 10)) + " " + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][+v.ago20.slice(5, 7) - 1];
+  ok(v.hasRm && v.hasOk && v.btn && !v.okBtn, "the chase past the term carries Copy reminder, and the one inside it does not");
+  ok(v.text && /^Hi, a reminder that RM 150 is still outstanding: /.test(v.text) && v.text.includes("RM 100 for 1 unit of salt on " + day20 + ", 20 days ago")
+     && v.text.includes("RM 50 left of the RM 200 for 2 unit of salt") && /Could you settle it when you can\? Thank you\.$/.test(v.text),
+    "the reminder states the total, each order with its date and age, and what is left of a part-paid one: " + v.text);
+  ok(v.text && !/CZ9|Sept|http|Salt Command/.test(v.text), "and it names no code, no address and no desk, the desk being public and the message his");
+  ok(after.copied === v.text && after.label === "Copied", "and the button copies exactly that text, and says so: " + after.label);
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */
