@@ -1,6 +1,6 @@
 {
- "v": "v812",
- "stamped": "23 Sep 2026, 21:18 KL",
+ "v": "v814",
+ "stamped": "23 Sep 2026, 23:49 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 21,
+  "STATED_STOCK": 18.5,
   "COUNT_ON": {
    "salt": "2026-09-23",
    "oil": "2026-09-19",
@@ -5033,6 +5033,22 @@
     "deliveredQty": 0,
     "note": "<b>SALT SELL DATED 23 SEP, ACKNOWLEDGED AND PENDING: NOTHING PAID AND NOTHING HANDED OVER.</b> Booked to CS6-PER, 2 unit for RM200, RM100 a unit, from site order 20260923131530-semgxg, to collect, so the whole RM200 and the whole 2 unit stay open. Costed at RM48 a unit from the desk's own inventory cost, RM104 on the goods at 52%. The RM200 clears the floor of RM113.98 and sits under the ask of RM270, with the ceiling at RM310. Flagged: CS6-PER usually pays about RM80 a unit across 7 orders, 25% below this, and the RM48 is an inventory average across more than one lot rate; the figures do not answer the blend. CS6-PER: 7 orders, median RM70.40, range RM11 to RM100, nothing outstanding, none on credit against a cap of 2.",
     "rid": "s196"
+   },
+   {
+    "customer": "CA6-CYB",
+    "qty": 2.5,
+    "total": 250,
+    "cost": 120,
+    "cash": 250,
+    "handover": "collected",
+    "date": "2026-09-23",
+    "deliveredQty": 2.5,
+    "deliveredOn": "2026-09-23",
+    "paidOn": "2026-09-23",
+    "ref": "CM4-TO",
+    "refKg": 2.5,
+    "note": "<b>SALT SELL DATED 23 SEP, PAID AND COLLECTED IN FULL: NOTHING LEFT OPEN.</b> Booked to CA6-CYB, 2.5 unit for RM250, RM250 cash received on 23 Sep 2026 and 2.5 unit handed over the same day, referred by CM4-TO on stream R3. Costed at RM48 a unit from the desk's own inventory cost, RM120 on the goods, though the drafter's working reads RM130 at 52%. The RM250 clears the floor of RM142.48 and sits under the ask of RM330, with the ceiling at RM390. Flagged: the RM48 is an inventory average across more than one lot rate and the figures do not answer the blend; CM4-TO is on the roster but not listed as an associate; CA6-CYB has 0 orders, no median rate, no range, nothing outstanding and none on credit against a cap of 1.",
+    "rid": "s197"
    }
   ],
   "contacts": [
@@ -5656,9 +5672,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-23T13:16:12.752Z",
+  "QUEUE_COMMITTED": "2026-09-23T15:47:59.411Z",
   "PRICING": {
-   "takenAt": "2026-09-23T13:18:51.886Z",
+   "takenAt": "2026-09-23T15:49:33.484Z",
    "sizes": [
     0.5,
     1,
@@ -5790,6 +5806,9 @@
     "CH4-MAL": {
      "salt": "Titanium"
     },
+    "CA6-CYB": {
+     "salt": "Titanium"
+    },
     "CN5-TAI": {
      "salt": "Titanium"
     },
@@ -5820,9 +5839,6 @@
     },
     "CS6-DAM": {
      "salt": "Platinum"
-    },
-    "CA6-CYB": {
-     "salt": "Titanium"
     }
    },
    "profileOf": {
@@ -6476,6 +6492,24 @@
       "lateTwice": false
      }
     },
+    "CA6-CYB": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 0,
+      "sinceLastDays": 0,
+      "perMonth": 1.01,
+      "smallShare": 0,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": false,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
     "CN5-TAI": {
      "salt": {
       "name": "one-off",
@@ -6676,40 +6710,40 @@
      "replCost": 49.43,
      "floors": {
       "1": {
-       "floor": 56.99
+       "floor": 56.71
       },
       "2": {
-       "floor": 113.98
+       "floor": 113.42
       },
       "3": {
-       "floor": 170.97
+       "floor": 170.14
       },
       "4": {
-       "floor": 227.97
+       "floor": 226.85
       },
       "5": {
-       "floor": 284.96
+       "floor": 283.56
       },
       "0.5": {
-       "floor": 28.5
+       "floor": 28.36
       },
       "1.5": {
-       "floor": 85.49
+       "floor": 85.07
       },
       "2.5": {
-       "floor": 142.48
+       "floor": 141.78
       },
       "3.5": {
-       "floor": 199.47
+       "floor": 198.49
       },
       "4.5": {
-       "floor": 256.46
+       "floor": 255.2
       },
       "6.25": {
-       "floor": 356.2
+       "floor": 354.45
       },
       "12.5": {
-       "floor": 712.39
+       "floor": 708.9
       }
      },
      "inputs": {
@@ -6784,9 +6818,9 @@
        "repl": 49.43,
        "freightRate": 1.36,
        "leak": {
-        "ratio": 0.1221,
+        "ratio": 0.1166,
         "leak": 6.5,
-        "sold": 53.25,
+        "sold": 55.75,
         "cycles": 3,
         "from": "2026-09-16",
         "to": "2026-09-23"
@@ -6803,15 +6837,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3508771929824561
+         "v": 0.3448275862068966
         }
        },
        "attrib": 1,
        "shrinkRate": 0.07650147999618066,
        "avgDel": {
-        "n": 166,
-        "kg": 423.95,
-        "mean": 2.5539
+        "n": 167,
+        "kg": 426.45,
+        "mean": 2.5536
        }
       },
       "policy": {
@@ -7776,10 +7810,10 @@
      "ladder": []
     }
    },
-   "v": "v812"
+   "v": "v814"
   },
   "OPEN": {
-   "at": "2026-09-23T13:18:52.074Z",
+   "at": "2026-09-23T15:49:33.676Z",
    "count": 9,
    "byKey": {
     "CM4-TO|2026-09-23|750": {
@@ -7930,11 +7964,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 21,
-     "free": 11.5,
+     "onHand": 18.5,
+     "free": 9,
      "owedOut": 9.5,
-     "coverDays": 1.8,
-     "rate": 6.23,
+     "coverDays": 1.4,
+     "rate": 6.41,
      "owedToYou": 430,
      "promised": 11.5,
      "short": 0
@@ -7991,7 +8025,7 @@
     "rice": null,
     "spare": null
    },
-   "v": "v812"
+   "v": "v814"
   }
  }
 }
