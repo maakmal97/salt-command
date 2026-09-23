@@ -1,5 +1,14 @@
 [
  {
+  "v": "v804",
+  "d": "23 Sep 2026",
+  "t": "A COUNT WINS, A CORRECTION ONLY SPEAKS",
+  "n": [
+   "<b>FOLDED TWO ROWS: A SALT COUNT AND A CORRECTION ON AN SM4-KEP CANDY LOT.</b> The salt count of 25 unit on 23 Sep stands against 26 on the book, a drift of -1, and on his word the count becomes the stated inventory with COUNT_ON.salt moved to 23 Sep from 21 Sep. The correction on p027 cuts qty and receivedQty from 35 to 30 and moves no cash, so the book now carries one definition of that lot.",
+   "<b>WHAT THE INVENTORY DID.</b> Stated salt fell to 25 unit and the floors lifted with the thinner cover: floor for 1 unit from RM55.94 to RM57.49, for 2 unit from RM111.88 to RM114.99, for 125 unit from RM699.25 to RM718.68, with the ask for 1 unit held at RM140 and self use from 77.7 to 78.7. The candy shelf rolled back 5 unit to SM4-KEP, the difference the correction states, landed 23 Sep. Cost basis untouched at RM48 a unit."
+  ]
+ },
+ {
   "v": "v803",
   "d": "23 Sep 2026",
   "t": "THE VERSION HISTORY LEAVES THE DESK",
