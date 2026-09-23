@@ -2726,14 +2726,17 @@ await (async () => {
     /* an overtender is stock owed, not a negative debt, and the row says which */
     const fin = html("tabFinancials()");
     const unc = (fin.match(/Still uncollected<\/td>(.*?)<\/tr>/) || [, ""])[1];
-    ok((unc.match(/RM\s*-/g) || []).length === (unc.match(/held against goods/g) || []).length,
+    /* v801: the P&L's figures carry no RM, so a negative is a bare minus inside the cell's bold */
+    ok((unc.match(/<b>-[0-9]/g) || []).length === (unc.match(/held against goods/g) || []).length,
       `${pr}: a negative uncollected figure says it is goods owed out, not cash owed back`);
 
     /* THE CLOSING STOCK IS THIS BOOK'S, AT THIS BOOK'S RATE. It read the salt-wide
        STOCK_COST inside a per-product block, so the oil book valued 20 unit of oil at
        salt's RM50 and reported RM1,000 on a shelf holding RM153. Invisible from v372,
        when stripMethod began deleting the sentence, until v384 put it back. */
-    const right = html("fmt0(currentStock*stockCostFor(PROD))"), wrong = html("fmt0(currentStock*STOCK_COST)");
+    /* v801: the P&L says RM once in its corner, so the figure is matched as the bare number it prints */
+    const bare = (x) => x.replace(/^RM\s/, "");
+    const right = bare(html("fmt0(currentStock*stockCostFor(PROD))")), wrong = bare(html("fmt0(currentStock*STOCK_COST)"));
     /* v401 states it as a P&L row rather than a sentence, so the check is the figure and its
        rate, not the words around them. The invariant is the half that matters and it stands. */
     ok(fin.includes(right) && fin.includes(html("fmt(stockCostFor(PROD))") + "/unit"),
@@ -4093,9 +4096,10 @@ await (async () => {
     return (el ? el.innerHTML : "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   };
   const jan = await paneAt("2027-01-01");
-  ok(/FY 2027 to date, nothing yet/.test(jan), "on 1 January the FY column names its year and says it is empty");
-  ok(/December 2026/.test(jan), "the month column outside the FY year carries that year, so it cannot be read as part of it");
-  ok(/Three periods sit in this part/.test(jan), "the period line reaches the screen and survives stripMethod");
+  /* v801: the columns are six months, quarters, halves and CY, headed in three letters, so the year a month sits in is two digits */
+  ok(/CY 2027, nothing yet/.test(jan), "on 1 January the CY column names its year and says it is empty");
+  ok(/Dec 26/.test(jan) && !/Dec 26[^ ]/.test(jan), "the month column outside the CY year carries that year, so it cannot be read as part of it");
+  ok(/Every figure is in ringgit/.test(jan) && /calendar year to date/.test(jan), "the period line reaches the screen and survives stripMethod");
   ok(/whole book since it opened/.test(jan), "the IFRS statement names its own period, which is not the P&L's");
   ok(/on the revenue in this column/.test(jan), "Still uncollected names the revenue it is measured on");
   ok(/as at today, not a movement in the period/.test(jan), "Closing stock says it is a point in time, not a flow");
@@ -5861,10 +5865,8 @@ await (async () => {
     w.eval("setProd('salt');recompute();ledF.q='';switchTab('ledger');");
     const card = (rid) => JSON.parse(w.eval("JSON.stringify((function(){var c=document.querySelector('.lcard[data-rid=\"" + rid + "\"]');if(!c)return null;var rows=[].map.call(c.querySelectorAll('.lrow,.lmove'),function(r){return {cls:r.className,date:(r.querySelector('.ldate,.lmdate')||{}).textContent||'',pill:(r.querySelector('.lstate .tag')||{}).textContent||''};});var k=c.querySelector('.lcorr');return {rows:rows,corr:k?{cls:k.className,why:!!k.querySelector('.cwhy'),text:k.textContent.replace(/\s+/g,' ').trim()}:null};})())"));
     const f6 = card("f6"), f7 = card("f7"), p16 = card("p016");
-    /* v471: the correction strip lives in the Journal beside the ledger, keyed by the same rid */
-    w.eval("switchTab('journal');");
-    const f7c = JSON.parse(w.eval("JSON.stringify((function(){var k=document.querySelector('.jent[data-rid=\"f7\"] .lcorr');return k?{cls:k.className,why:!!k.querySelector('.cwhy'),text:k.textContent.replace(/[ \\t\\n\\r]+/g,' ').trim()}:null;})())"));
-    w.eval("switchTab('ledger');");
+    /* v802: the correction strip was drawn by the Journal alone and left the desk with it on 23 Sep 2026; the claim it read
+       back stays on the row's own mod, in the book */
     /* 09 Sep 2026, his schematic: an entry is its order row and one line per transaction; the
        line that completed it reads Closed, the ones before it Open */
     ok(f6 && f6.rows.length === 3 && /\blopen\b/.test(f6.rows[0].cls) && !/\blclose\b/.test(f6.rows[1].cls) && /\blclose\b/.test(f6.rows[2].cls),
@@ -5876,8 +5878,6 @@ await (async () => {
        cash of the 10th and the units of the 20th are each their own row. */
     ok(f6 && f6.rows[0].pill === "Completed" && f6.rows[1].pill === "" && f6.rows[2].pill === "" && f6.rows[2].date === "2026-08-20",
       `Completed once on the order row, the closing line dated by the receipt and carrying no state (${f6 && f6.rows.map((r) => (r.pill || "-") + " " + r.date).join(" | ")})`);
-    ok(f7 && f7c && /Corrected 2026-08-30/.test(f7c.text) && !/\bbad\b/.test(f7c.cls) && f7c.why,
-      `a corrected lot carries the correction strip in the Journal, quiet because every claim reads back, its own note behind why (${f7c && f7c.text.slice(0, 60)})`);
     ok(p16 && p16.rows.length >= 2 && /\blopen\b/.test(p16.rows[0].cls) && p16.rows[0].pill === "Completed" && /\blclose\b/.test(p16.rows[p16.rows.length - 1].cls),
       `p016, restated the day it was booked, reads Completed on its order row and its trail closes on its last line (${p16 && p16.rows.map((r) => r.cls + " " + r.pill).join(" | ")})`);
     w.eval("ledF.q='corrected on 2026-08-30';switchTab('ledger');");
@@ -6547,39 +6547,30 @@ await (async () => {
 })();
 
 
-section("v471: the ledger is keyed entries only, and the prose is in the Journal");
+section("v471 and v802: the ledger is keyed entries only, and the Journal is off the desk with nothing lost");
 await (async () => {
-  /* His instruction of 02 Sep 2026: prose goes into a journal; the ledger should be key in, key
-     in, key in, done. The note column, captions, step notes and the correction strip leave the
-     sheet; a Journal part beside it carries every one of them, dated, newest first, linked to its
-     row by rid and E-number, plus the version entries. Driven on the live book. */
+  /* His instruction of 02 Sep 2026: prose goes into a journal; the ledger is key in, key in, done. His word of 23 Sep 2026: the
+     journal does not have to be on the desk, it is a separate file for reference beside the changelogs. So the sheet still
+     prints no prose, the Journal part is gone from Record, and what it showed is still where it was read from: every note on
+     its row in the book, every version in master/changelog.json. Driven on the live book; each new assertion was proved red
+     by its own mutation, one at a time. */
   const { openMaster: om17 } = await import("../tools/payload.mjs");
   const { w: w17 } = await om17();
-  w17.eval("setProd('salt');recompute();ledF={q:'',state:'',party:'',month:'',product:''};ledSort={key:'e',dir:1};jrnF={q:''};switchTab('ledger');");
-  const J17 = (x) => JSON.parse(String(w17.eval(x)));
-  ok(+w17.eval("document.querySelectorAll('.sec.on .lmnote, .sec.on .lagreed, .sec.on .lcorr, .sec.on .lc-note').length") === 0, "no note, caption or correction strip prints on the sheet");
-  const noted17 = +w17.eval("sales.concat(purchases).filter(function(r){return !!r.note;}).length");
+  w17.eval("setProd('salt');recompute();ledF={q:'',state:'',party:'',month:'',product:''};ledSort={key:'e',dir:1};switchTab('ledger');");
+  ok(+w17.eval("document.querySelectorAll('.sec.on .lmnote, .sec.on .lagreed, .sec.on .lc-note').length") === 0, "no note or caption prints on the sheet");
   const cards17 = +w17.eval("document.querySelectorAll('.sec.on .lcard').length");
-  w17.eval("switchTab('journal');");
-  ok(/^journal$/.test(String(w17.eval("(document.querySelector('.sec.on .vpart')||{}).getAttribute('data-tab')"))) || +w17.eval("document.querySelectorAll('.sec.on .jent').length") > 0,
-    "the Journal opens as a part of The book");
-  const ents17 = J17("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .jlist')[0].querySelectorAll('.jent')).map(function(e){return {rid:e.getAttribute('data-rid'),date:(e.querySelector('.jdate')||{}).textContent||'',kind:(e.querySelector('.jkind')||{}).textContent||'',code:(e.querySelector('.eref')||{}).textContent||''};}))");
-  ok(ents17.length >= noted17 && noted17 > 50, `every written row note is an entry (${ents17.length} entries for ${noted17} noted rows, plus step notes and corrections)`);
-  const dated17 = ents17.map((e) => e.date).filter((d) => d !== "undated");
-  ok(dated17.every((d, i) => !i || dated17[i - 1] >= d) && ents17.slice(0, dated17.length).every((e) => e.date !== "undated"), "newest first, undated last");
-  ok(ents17.every((e) => e.rid && /^E\d+$/.test(e.code)), "every entry names its row by rid and E-number");
-  const kinds17 = new Set(ents17.map((e) => e.kind));
-  ok(kinds17.has("Row") && kinds17.has("Fulfilment") && kinds17.has("Correction"), `row notes, step notes and corrections are all there (${[...kinds17].join(", ")})`);
-  const vers17 = +w17.eval("document.querySelectorAll('.sec.on .jlist')[1].querySelectorAll('.jent').length");
-  ok(vers17 === +w17.eval("evolution.length") && vers17 > 100, `and every version entry, ${vers17} of them`);
-  const first17 = ents17[0];
-  w17.eval("switchTab('ledger');");
-  ok(!!w17.eval("document.querySelector('.sec.on .lcard[data-rid='+JSON.stringify(" + JSON.stringify(first17.rid) + ")+']')"), "and the row an entry names is on the sheet, so the link lands");
-  w17.eval("switchTab('journal');jrnF.q='" + first17.code + "';switchTab('journal');");
-  const hits17 = J17("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .jlist')[0].querySelectorAll('.jent .eref')).map(function(e){return e.textContent;}))");
-  ok(hits17.length > 0 && hits17.every((c) => c === first17.code), `the search narrows to one E-number (${hits17.length} entries for ${first17.code})`);
-  w17.eval("jrnF.q='';");
   ok(cards17 > 140, `and the sheet still shows every row (${cards17})`);
+  const parts17 = JSON.parse(String(w17.eval("JSON.stringify(VIEWS.find(function(v){return v.id==='book';}).parts)")));
+  ok(!parts17.includes("journal") && typeof w17.tabJournal === "undefined" && !w17.document.querySelector('.vpart[data-tab="journal"]') && !w17.document.querySelector(".jent"),
+    "the Journal is off the desk: Record carries no Journal part and nothing draws one: " + JSON.stringify(parts17));
+  const bk17 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const noted17 = bk17.sales.concat(bk17.purchases).filter((r) => r.note).length;
+  ok(noted17 > 50, `every row note stays on its row in the book (${noted17} noted rows)`);
+  const log17 = new Set(JSON.parse(readFileSync(join(REPO, "master", "changelog.json"), "utf8")).map((e) => e.v));
+  const evo17 = JSON.parse(String(w17.eval("JSON.stringify(evolution.map(function(e){return e.v;}))")));
+  ok(evo17.length > 0 && evo17.every((v) => log17.has(v)) && log17.size > evo17.length,
+    `and every version the Journal listed is in master/changelog.json, the file he reads (${log17.size} there)`);
+  try { w17.close(); } catch (e) { /* best effort */ }
 })();
 
 /* ---- done ----------------------------------------------------------------------- */
@@ -11443,7 +11434,8 @@ await (async () => {
     const heads24 = {};
     for (const p of all24) heads24[p] = rd24("(function(){switchTab('" + p + "');var h=document.querySelector('.sec.on h1');return h?h.textContent:null;})()");
     const off24 = all24.filter((p) => heads24[p] !== labels24[p]).map((p) => p + ": " + labels24[p] + " / " + heads24[p]);
-    ok(all24.length === 18 && off24.length === 0, "all eighteen pages open under a heading that is their label" + (off24.length ? ": " + off24.join("; ") : ""));
+    /* v802: seventeen, the Journal having left Record */
+    ok(all24.length === 17 && off24.length === 0, "all seventeen pages open under a heading that is their label" + (off24.length ? ": " + off24.join("; ") : ""));
     const names24 = all24.map((p) => labels24[p]);
     ok(new Set(names24).size === names24.length, "no two pages share a name: " + names24.join(", "));
     const echo24 = views24.filter((v) => v.pages.length > 1 && labels24[v.pages[0]] === v.name).map((v) => v.name);
@@ -19550,6 +19542,55 @@ await (async () => {
   ok(JSON.stringify(v.rows) === JSON.stringify(v.live) && firstBook && v.first === v.live[Object.keys(v.perBook).indexOf(firstBook[0])],
     "one row a live book, and the first to run empty is the book whose own walk empties soonest: " + JSON.stringify({ rows: v.rows, first: v.first }));
   ok(v.prod === "oil" && /Every book/.test(v.scope), "and the book in view is left as it was");
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
+section("v800 and v801: the consolidated heads say every book, and the P&L runs six months, quarters, halves and CY");
+await (async () => {
+  /* HIS INSTRUCTIONS OF 23 SEP 2026. A screenshot of Receivables headed "Both books" on a desk of five, and: "Show the last 6
+     months (when available), then quarterly, semi-annually, followed by CY to date. Figure out how to fit those in, without
+     the need to scroll." The columns are worked out here from the calendar and the book's first month, and the sums are read
+     off the table's own cells, so neither side is the code checking itself. Each assertion was proved red by its own
+     mutation, one at a time. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  function probe() {
+    const T = (e) => e.textContent.replace(/\s+/g, " ").trim();
+    const out = { heads: [] };
+    switchTab("financials"); out.heads.push(T(document.querySelector(".sec.on .prodhd")));
+    switchTab("receivables"); out.heads.push(T(document.querySelector(".sec.on .prodhd")));
+    const read = (p) => { setProdView(p); switchTab("financials");
+      const t = document.querySelector(".sec.on table.pgrid"); if (!t) return null;
+      const num = (c) => { const x = T(c).split(" ")[0].replace(/,/g, ""); return /^-?[0-9.]+$/.test(x) ? +x : 0; };
+      const head = [].map.call(t.rows[0].cells, T), rev = [].map.call(t.rows[1].cells, num);
+      const first = finRows().map((x) => x[0]).sort()[0];
+      return { head, rev, cls: t.className, rm: [].slice.call(t.querySelectorAll("td:not(.l)")).filter((c) => /RM/.test(c.textContent)).length,
+        pold: t.querySelectorAll("thead .pold").length, first, today: TODAY.toISOString().slice(0, 7) }; };
+    out.salt = read("salt"); out.candy = read("candy"); setProdView("salt");
+    return out;
+  }
+  const v = JSON.parse(w.eval("JSON.stringify((" + probe.toString() + ")())"));
+  ok(v.heads.every((h) => /Every book/.test(h) && !/Both books/.test(h)), "the Financials and Receivables heads read Every book: " + JSON.stringify(v.heads));
+  /* the columns he asked for, from the calendar: the last six months from the book's first, this year's quarters and halves begun and traded in, then CY */
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const want = (x) => { const y = +x.today.slice(0, 4), m = +x.today.slice(5, 7), ms = [];
+    for (let i = 5; i >= 0; i--) { const d = new Date(Date.UTC(y, m - 1 - i, 1)).toISOString().slice(0, 7); if (d >= x.first) ms.push(d); }
+    const p = (lab, a, b) => (y + "-" + a <= x.today && y + "-" + b >= x.first) ? [lab] : [];
+    return ["RM"].concat(ms.map((d) => MON[+d.slice(5, 7) - 1] + (d.slice(0, 4) === String(y) ? "" : " " + d.slice(2, 4))),
+      p("Q1", "01", "03"), p("Q2", "04", "06"), p("Q3", "07", "09"), p("Q4", "10", "12"), p("H1", "01", "06"), p("H2", "07", "12"), ["CY " + y]); };
+  ok(v.salt && JSON.stringify(v.salt.head) === JSON.stringify(want(v.salt)) && v.salt.head.length >= 8,
+    "salt's columns are its months, then quarters, then halves, then CY: " + JSON.stringify(v.salt && v.salt.head));
+  ok(v.candy && JSON.stringify(v.candy.head) === JSON.stringify(want(v.candy)) && v.candy.head.length < v.salt.head.length,
+    "a book with less history shows only the months it has: " + JSON.stringify(v.candy && v.candy.head));
+  /* the sums, off the cells: each quarter and half is its months, and CY is the two halves */
+  const at = (x, lab) => x.rev[x.head.indexOf(lab)];
+  const sumM = (x, labs) => labs.reduce((a, l) => a + (x.head.includes(l) ? at(x, l) : 0), 0);
+  const s = v.salt;
+  ok(Math.abs(at(s, "Q3") - sumM(s, ["Jul", "Aug", "Sep"])) < 1.5 && Math.abs(at(s, "H2") - at(s, "Q3")) < 1.5
+     && Math.abs(at(s, "CY " + s.today.slice(0, 4)) - (at(s, "H1") + at(s, "H2"))) < 1.5,
+    "Q3 is July to September, H2 is Q3 so far, and CY is the two halves, read off the cells: " + JSON.stringify(s.rev));
+  ok(s.rm === 0 && s.head[0] === "RM" && /\bfg-pm\b/.test(s.cls) && s.pold === Math.max(0, s.head.filter((h) => /^[A-Z][a-z]{2}( \d\d)?$/.test(h)).length - 3),
+    "RM is said once in the corner and no figure cell repeats it, and a phone holds the latest three months: " + JSON.stringify({ rm: s.rm, pold: s.pold, cls: s.cls }));
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 

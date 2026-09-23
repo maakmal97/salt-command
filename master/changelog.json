@@ -1,5 +1,38 @@
 [
  {
+  "v": "v802",
+  "d": "23 Sep 2026",
+  "t": "THE JOURNAL IS OFF THE DESK",
+  "n": [
+   "<b>HIS WORD OF 23 SEP 2026: the journal does not have to be on the desk; it is a separate file for reference when looking at the changelogs.</b> The Journal part leaves Record, with the correction strip only it drew and their styles. Nothing it showed is lost: every note stays on its row in the book, and every version is in master/changelog.json, which is the file he reads. Nothing on the desk now reads past evolution[0]; the array keeps its window because the fold, the changelog tool and the suite read it as a list, and cutting it is his call."
+  ]
+ },
+ {
+  "v": "v801",
+  "d": "23 Sep 2026",
+  "t": "THE P&L RUNS SIX MONTHS, THEN QUARTERS, THEN HALVES, THEN CY, WITHOUT A SCROLL",
+  "n": [
+   "<b>HIS INSTRUCTION OF 23 SEP 2026: show the last 6 months (when available), then quarterly, semi-annually, followed by CY to date, and fit them without the need to scroll.</b> The table was last month, this month and the year since v403. It is now up to six months from the book's first, this calendar year's quarters and halves that have begun and hold trading, and the calendar year to date, which is what the FY column always summed and is now called CY.",
+   "<b>IT FITS BY SAYING RM ONCE.</b> The currency sits in the corner cell and every figure is a bare number under a three-letter head, with the padding tightened and a rule opening each group, so salt's ten figure columns fill 876px of the desk's column at desktop width and 705px at a 1,024px window without a scroll. A phone cannot hold ten columns worth reading, so there a switch draws months, quarters or halves beside CY, the months being the latest three, and each group fits the 325px column exactly. The heading's long subtitle, which pushed the whole page 256px wider than a 1,280px window, is cut to its first clause and the rest moves into the caption."
+  ]
+ },
+ {
+  "v": "v800",
+  "d": "23 Sep 2026",
+  "t": "THE CONSOLIDATED HEADS SAY EVERY BOOK",
+  "n": [
+   "<b>HIS SCREENSHOT OF 23 SEP 2026: Receivables headed Both books on a desk of five.</b> The Financials and Receivables heads read Every book, as the three Today pages do since v794."
+  ]
+ },
+ {
+  "v": "v799",
+  "d": "23 Sep 2026",
+  "t": "P029'S 25 UNIT REACH THE SALT SHELF, AHEAD OF HIS COUNT",
+  "n": [
+   "<b>THE STATED SALT SHELF READ 1 UNIT WITH 25 UNIT OF SALT ON IT.</b> p029, 25 unit from SA5-BTR received on 22 Sep, was booked as rice and corrected to salt at v791, and a correction moves no stock, so the lot never rolled onto the salt shelf; v791 said so and left it for a count or a roll. It is rolled by hand now, 1 plus 25 is 26, on his word of 23 Sep 2026, because he has counted 25 today and a count measured against 1 would have booked 24 unit found where 1 is missing, a surplus that nets off real shrinkage and lowers every salt floor."
+  ]
+ },
+ {
   "v": "v798",
   "d": "23 Sep 2026",
   "t": "CZ4-MK'S RM20 REFUND IS CLOSED, SET OFF ON 21 SEP",

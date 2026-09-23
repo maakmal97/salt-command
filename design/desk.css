@@ -65,14 +65,14 @@ h2,.kick,.tab,.navct,.sub,.sub2,.chip,.tag,.rtag,.etype,.lclabel,.tierpill,.gem,
 .apside .apm,.apside .apbig,.appop .apname,.appop td,
 .kpi .l,.kpi .v,.cardh .sub,table,th,td,.lhead,.lrow,.lmove,.lcol,.ldate,.lparty,.ecode,.eref,.lagreed,
 .lof,.lwas,.submar,.actk,.actm,.rchip,.pchip,.sevh .cnt,.obsk,.obsm,.obsc,.obsevh,
-.jmeta,.evo .v,.qfield label,.qask,.ledsum,.ledbar .ledct,
-.provbar,.lcorr .clab,.lcorr .cclaim,.iref,.isub,.finpct,.fincap,.mono,.railtitle+.kick,
+.evo .v,.qfield label,.qask,.ledsum,.ledbar .ledct,
+.provbar,.iref,.isub,.finpct,.fincap,.mono,.railtitle+.kick,
 .menu button,.stkcolsl,.nchip,.nop,.pend .cd,.pend h3,details.obsec>summary .q,details.obsec>summary .ct,
 details.rcard>summary .rsum,.fintab th,.fintab tr.grp td,.totop,.fabtn,
 input,select,textarea,button{font-family:var(--salt-font-mono);}
-.dsclead,.dsc,.insight,.note,.stand-note,.actt,.actw,.actp,.obst,.obsb,.obsev li,.jtext,
+.dsclead,.dsc,.insight,.note,.stand-note,.actt,.actw,.actp,.obst,.obsb,.obsev li,
 .evo .txt,.nsw,.nswhy,.apsub,.byecard p,.qmeta,.cardh,.nsh,details.obsec>summary,
-details.rcard>summary .rname,.kpi .n,.prodhd .sub,.appop .apact,.lcorr .cprose,.lcorr .cnote,
+details.rcard>summary .rname,.kpi .n,.prodhd .sub,.appop .apact,
 .cardh{font-family:var(--salt-font-display);}
 h1,.byecard h1{font-family:var(--salt-font-display);font-weight:300;letter-spacing:.04em;line-height:1.1;
   background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;}
@@ -437,14 +437,6 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .tscroll{scrollbar-color:rgba(197,160,89,.3) transparent;}
 .tscroll::-webkit-scrollbar-thumb{background:rgba(197,160,89,.3);}
 .rail::-webkit-scrollbar-thumb{background:rgba(197,160,89,.3);}
-.lcorr .clab{font-weight:500;letter-spacing:.14em;color:var(--salt-steel);}
-.lcorr.bad{background:rgba(212,105,76,.07);border-top-color:rgba(212,105,76,.45);}
-.lcorr.bad .clab,.lcorr .cclaim.unknown,.lcorr .cclaim.differs,.lcorr .cclaim.unreadable{color:var(--salt-ember);}
-.jent{border-bottom-color:var(--salt-line-faint);}
-.jmeta{font-size:11.5px;letter-spacing:.06em;color:var(--salt-mist);}
-.jmeta .jkind{font-weight:500;letter-spacing:.14em;font-size:10.5px;}
-.jtext{color:var(--mut);font-size:14.5px;line-height:1.6;}
-.jtext b{color:var(--salt-salt);font-weight:500;}
 .evo .row{border-bottom-color:var(--salt-line-faint);}
 .evo .dot{background:var(--salt-brass);box-shadow:0 0 0 3px rgba(197,160,89,.15);}
 .evo .v{color:var(--salt-brass);}
@@ -673,3 +665,17 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .lmenu button:hover,.lmenu button:focus-visible{background:rgba(197,160,89,.12);color:var(--salt-brass);border-color:var(--salt-brass);}
 .lmenu button.lmore{color:var(--salt-mist);}
 .ledwrap .lmove .ltext{color:var(--salt-mist-light);}
+
+/* v801: the P&L's period grid. The currency is said once in the corner cell, so ten figure columns sit in the desk's column
+   at desktop width with the padding tightened; a rule opens each group. A phone draws one group beside CY, picked by the
+   switch above the table, which shows only there. */
+.fintab.pgrid th,.fintab.pgrid td{padding-left:6px;padding-right:6px;white-space:nowrap;}
+.fintab.pgrid th.l,.fintab.pgrid td.l{white-space:normal;}
+.fintab.pgrid .g0,.fintab.pgrid .fy{border-left:1px solid var(--salt-line-strong);}
+.fgsw{display:none;}
+@media (max-width:860px){
+  .fgsw{display:inline-flex;margin:0 0 10px;}
+  .fintab.pgrid.fg-pm .pq,.fintab.pgrid.fg-pm .ph,.fintab.pgrid.fg-pq .pm,.fintab.pgrid.fg-pq .ph,
+  .fintab.pgrid.fg-ph .pm,.fintab.pgrid.fg-ph .pq,.fintab.pgrid .pold{display:none;}
+  .fintab.pgrid th,.fintab.pgrid td{padding-left:4px;padding-right:4px;font-size:12px;}
+}

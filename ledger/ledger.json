@@ -1,6 +1,6 @@
 {
- "v": "v797",
- "stamped": "23 Sep 2026, 10:30 KL",
+ "v": "v798",
+ "stamped": "23 Sep 2026, 10:55 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 1,
+  "STATED_STOCK": 26,
   "COUNT_ON": {
    "salt": "2026-09-21",
    "oil": "2026-09-19",
@@ -5544,7 +5544,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-22T11:53:30.260Z",
   "PRICING": {
-   "takenAt": "2026-09-23T02:55:19.307Z",
+   "takenAt": "2026-09-23T03:09:15.721Z",
    "sizes": [
     0.5,
     1,
@@ -6653,7 +6653,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.12233361978420702,
+       "shrinkRate": 0.0745918075050129,
        "avgDel": {
         "n": 164,
         "kg": 419.95,
@@ -7622,10 +7622,10 @@
      "ladder": []
     }
    },
-   "v": "v797"
+   "v": "v798"
   },
   "OPEN": {
-   "at": "2026-09-23T02:55:19.411Z",
+   "at": "2026-09-23T03:09:15.825Z",
    "count": 6,
    "byKey": {
     "CN6-WM|2026-09-19|250": {
@@ -7729,10 +7729,10 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 1,
-     "free": 1,
+     "onHand": 26,
+     "free": 26,
      "owedOut": 0,
-     "coverDays": 0.2,
+     "coverDays": 4.4,
      "rate": 5.95,
      "owedToYou": 340,
      "promised": 0,
@@ -7790,7 +7790,7 @@
     "rice": null,
     "spare": null
    },
-   "v": "v797"
+   "v": "v798"
   }
  }
 }

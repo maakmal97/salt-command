@@ -87,7 +87,7 @@
       "stated": null
     }
   },
-  "STATED_STOCK": 1,
+  "STATED_STOCK": 26,
   "COUNT_ON": {
     "salt": "2026-09-21",
     "oil": "2026-09-19",
@@ -821,6 +821,7 @@
       "RETIRED AT v549 on 2026-09-09, his instruction. The key held one hand-typed lot: 50 unit by 2026-08-28, stated on the 24th. He read it on 9 September with the date twelve days gone and four lots landed since (25 unit on 26 Aug, 25 on 31 Aug, 25 on 03 Sep and 50 on 08 Sep), and said he generally has no information on when he purchases. The Sourcing section is now about the CURRENT lot, and the cadence is measured off the book rather than typed. One standing fact from the retired basis is kept here because it is not a plan: the purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. The rest was the 24 Aug reasoning, that the 100 unit tier was the recommendation and he took the 50, at a landed RM45.20 a unit against RM43.60."
     ],
     "STATED_STOCK": [
+      "ROLLED AT v799: 25 unit from SA5-BTR landed on 2026-09-22 (p029), so 1 plus 25 is 26. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The lot was booked as rice and corrected to salt at v791, and a correction moves no stock, so it never reached the salt shelf; rolled by hand on his word of 23 Sep 2026, ahead of his count of 25 that day, so the count is measured against 26 and not against 1.",
       "ROLLED AT v788: 5 unit to CZ4-MK on 2026-09-21, so 6 less 5 is 1. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Five unit of salt went out on 21 Sep against a stated shelf of 6 unit, counted 21 Sep, with nothing owed out and nothing promised. The candy and rice lots landed on 21 and 22 Sep and are not carried in the salt position.",
       "ROLLED AT v775: 1 unit to CS6-BS on 2026-09-21, so 7 less 1 is 6. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The salt count is as of 21 Sep and the redeemed unit leaves the shelf on that count. Nothing is owed out or promised, and the shelf stays above the reorder mark of 15.",
       "ROLLED AT v774: 1 unit to CS6-BS on 2026-09-21, so 8 less 1 is 7. A ROLL AND NOT A COUNT; COUNT_ON is untouched. One unit left the shelf on 21 Sep against the salt count of the same date. Nothing is owed out and nothing is promised.",

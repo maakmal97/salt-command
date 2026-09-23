@@ -595,18 +595,6 @@ details.rcard>summary .rsum b{color:var(--ink);}
 /* A CORRECTION, AND WHETHER IT HOLDS. Quiet while every claim reads back against the row,
    crimson the moment one does not: a claim the book cannot have written has to show as a
    contradiction rather than as prose. */
-.lcorr{padding:7px 12px 8px;border-top:1px dashed var(--line);font-size:11.5px;}
-.lcorr .chead{display:flex;flex-wrap:wrap;align-items:baseline;gap:5px 10px;}
-.lcorr .clab{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--vio);white-space:nowrap;}
-.lcorr .cclaim{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--mut);}
-.lcorr .cclaim em{font-style:normal;font-family:inherit;color:var(--dim);}
-.lcorr .cclaim.later em,.lcorr .cclaim.agrees em{color:var(--dim);}
-.lcorr .cprose{color:var(--dim);}
-.lcorr.bad{background:rgba(212,105,76,.07);border-top-color:rgba(212,105,76,.45);}
-.lcorr.bad .clab{color:var(--crim);}
-.lcorr .cclaim.unknown,.lcorr .cclaim.differs,.lcorr .cclaim.unreadable{color:var(--crim);}
-.lcorr .cclaim.unknown em,.lcorr .cclaim.differs em,.lcorr .cclaim.unreadable em{color:var(--crim);font-weight:600;}
-.lcorr .cwhy{margin-top:0;}
 /* ============ THE CLAIM IS THE SUMMARY, SO THERE IS NO "why" ROW TO HIT ============
    It was a 17px control saying one word, sitting under the line it belonged to, and every
    way of padding it to --tap was worse than removing it. Growing it DOWN is capped at 9px by
@@ -617,15 +605,6 @@ details.rcard>summary .rsum b{color:var(--ink);}
    The head IS the disclosure now. The target is the claim line at --tap, the fold carries
    the answer rather than the word "why", and the ledger is SHORTER by a line per correction
    rather than taller. When there are no notes the head stays a plain div. */
-.lcorr summary.chead{cursor:pointer;list-style:none;min-height:var(--tap);align-content:center;}
-.lcorr summary.chead::-webkit-details-marker{display:none;}
-.lcorr .chev{color:var(--dim);display:inline-block;transition:transform .15s;}
-.lcorr .cwhy[open] .chev{transform:rotate(90deg);}
-.lcorr .cwhyq{margin-left:auto;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--dim);}
-.lcorr .cwhy summary::-webkit-details-marker{display:none;}
-.lcorr .cnote{margin-top:5px;color:var(--mut);line-height:1.5;}
-.lcorr .cnote p{margin:0 0 6px;}
-.lcorr .cnote p:last-child{margin-bottom:0;}
 /* ============ CLOSE THE DESK (v255) ============
    Quiet, and to the right of the stamp, because it is the last thing you want and should not
    compete with the first. Crimson only on hover: a button that shouts all day gets pressed by
@@ -723,14 +702,6 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 .qask.under{color:var(--crim);border-color:rgba(212,105,76,.45);}
 .ledbar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:10px 0 12px;}
 /* v471: the Journal, one entry per note, dated and linked to its row */
-.jent{padding:9px 2px;border-bottom:1px solid var(--line);font-size:13px;}
-.jmeta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--dim);margin-bottom:3px;}
-.jmeta .jdate{font-variant-numeric:tabular-nums;min-width:78px;}
-.jmeta .jkind{margin-left:auto;text-transform:uppercase;letter-spacing:.4px;font-weight:700;}
-.jtext{color:var(--mut);line-height:1.5;overflow-wrap:anywhere;}
-.jtext b{color:var(--ink);}
-.jtext .lcorr{padding:0;border:0;}
-.jsec{margin-top:22px;}
 .ledbar input{flex:1;min-width:170px;border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink);background:#05080a;}
 .ledbar select{border:1px solid var(--line);border-radius:9px;padding:7px 34px 7px 8px;font-size:12px;color:var(--mut);background-color:#05080a;}
 .ledbar .ledct{font-size:11px;color:var(--dim);margin-left:auto;}
@@ -3094,14 +3065,14 @@ h2,.kick,.tab,.navct,.sub,.sub2,.chip,.tag,.rtag,.etype,.lclabel,.tierpill,.gem,
 .apside .apm,.apside .apbig,.appop .apname,.appop td,
 .kpi .l,.kpi .v,.cardh .sub,table,th,td,.lhead,.lrow,.lmove,.lcol,.ldate,.lparty,.ecode,.eref,.lagreed,
 .lof,.lwas,.submar,.actk,.actm,.rchip,.pchip,.sevh .cnt,.obsk,.obsm,.obsc,.obsevh,
-.jmeta,.evo .v,.qfield label,.qask,.ledsum,.ledbar .ledct,
-.provbar,.lcorr .clab,.lcorr .cclaim,.iref,.isub,.finpct,.fincap,.mono,.railtitle+.kick,
+.evo .v,.qfield label,.qask,.ledsum,.ledbar .ledct,
+.provbar,.iref,.isub,.finpct,.fincap,.mono,.railtitle+.kick,
 .menu button,.stkcolsl,.nchip,.nop,.pend .cd,.pend h3,details.obsec>summary .q,details.obsec>summary .ct,
 details.rcard>summary .rsum,.fintab th,.fintab tr.grp td,.totop,.fabtn,
 input,select,textarea,button{font-family:var(--salt-font-mono);}
-.dsclead,.dsc,.insight,.note,.stand-note,.actt,.actw,.actp,.obst,.obsb,.obsev li,.jtext,
+.dsclead,.dsc,.insight,.note,.stand-note,.actt,.actw,.actp,.obst,.obsb,.obsev li,
 .evo .txt,.nsw,.nswhy,.apsub,.byecard p,.qmeta,.cardh,.nsh,details.obsec>summary,
-details.rcard>summary .rname,.kpi .n,.prodhd .sub,.appop .apact,.lcorr .cprose,.lcorr .cnote,
+details.rcard>summary .rname,.kpi .n,.prodhd .sub,.appop .apact,
 .cardh{font-family:var(--salt-font-display);}
 h1,.byecard h1{font-family:var(--salt-font-display);font-weight:300;letter-spacing:.04em;line-height:1.1;
   background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;}
@@ -3466,14 +3437,6 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .tscroll{scrollbar-color:rgba(197,160,89,.3) transparent;}
 .tscroll::-webkit-scrollbar-thumb{background:rgba(197,160,89,.3);}
 .rail::-webkit-scrollbar-thumb{background:rgba(197,160,89,.3);}
-.lcorr .clab{font-weight:500;letter-spacing:.14em;color:var(--salt-steel);}
-.lcorr.bad{background:rgba(212,105,76,.07);border-top-color:rgba(212,105,76,.45);}
-.lcorr.bad .clab,.lcorr .cclaim.unknown,.lcorr .cclaim.differs,.lcorr .cclaim.unreadable{color:var(--salt-ember);}
-.jent{border-bottom-color:var(--salt-line-faint);}
-.jmeta{font-size:11.5px;letter-spacing:.06em;color:var(--salt-mist);}
-.jmeta .jkind{font-weight:500;letter-spacing:.14em;font-size:10.5px;}
-.jtext{color:var(--mut);font-size:14.5px;line-height:1.6;}
-.jtext b{color:var(--salt-salt);font-weight:500;}
 .evo .row{border-bottom-color:var(--salt-line-faint);}
 .evo .dot{background:var(--salt-brass);box-shadow:0 0 0 3px rgba(197,160,89,.15);}
 .evo .v{color:var(--salt-brass);}
@@ -3702,6 +3665,20 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .lmenu button:hover,.lmenu button:focus-visible{background:rgba(197,160,89,.12);color:var(--salt-brass);border-color:var(--salt-brass);}
 .lmenu button.lmore{color:var(--salt-mist);}
 .ledwrap .lmove .ltext{color:var(--salt-mist-light);}
+
+/* v801: the P&L's period grid. The currency is said once in the corner cell, so ten figure columns sit in the desk's column
+   at desktop width with the padding tightened; a rule opens each group. A phone draws one group beside CY, picked by the
+   switch above the table, which shows only there. */
+.fintab.pgrid th,.fintab.pgrid td{padding-left:6px;padding-right:6px;white-space:nowrap;}
+.fintab.pgrid th.l,.fintab.pgrid td.l{white-space:normal;}
+.fintab.pgrid .g0,.fintab.pgrid .fy{border-left:1px solid var(--salt-line-strong);}
+.fgsw{display:none;}
+@media (max-width:860px){
+  .fgsw{display:inline-flex;margin:0 0 10px;}
+  .fintab.pgrid.fg-pm .pq,.fintab.pgrid.fg-pm .ph,.fintab.pgrid.fg-pq .pm,.fintab.pgrid.fg-pq .ph,
+  .fintab.pgrid.fg-ph .pm,.fintab.pgrid.fg-ph .pq,.fintab.pgrid .pold{display:none;}
+  .fintab.pgrid th,.fintab.pgrid td{padding-left:4px;padding-right:4px;font-size:12px;}
+}
 /* ==== END DESIGN desk ==== */
 </style>
 </head>
@@ -5633,6 +5610,7 @@ const PROD_OPENING={
     "stated": null
   }
 };
+/* ROLLED AT v799: 25 unit from SA5-BTR landed on 2026-09-22 (p029), so 1 plus 25 is 26. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The lot was booked as rice and corrected to salt at v791, and a correction moves no stock, so it never reached the salt shelf; rolled by hand on his word of 23 Sep 2026, ahead of his count of 25 that day, so the count is measured against 26 and not against 1. */
 /* ROLLED AT v788: 5 unit to CZ4-MK on 2026-09-21, so 6 less 5 is 1. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Five unit of salt went out on 21 Sep against a stated shelf of 6 unit, counted 21 Sep, with nothing owed out and nothing promised. The candy and rice lots landed on 21 and 22 Sep and are not carried in the salt position. */
 /* ROLLED AT v775: 1 unit to CS6-BS on 2026-09-21, so 7 less 1 is 6. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The salt count is as of 21 Sep and the redeemed unit leaves the shelf on that count. Nothing is owed out or promised, and the shelf stays above the reorder mark of 15. */
 /* ROLLED AT v774: 1 unit to CS6-BS on 2026-09-21, so 8 less 1 is 7. A ROLL AND NOT A COUNT; COUNT_ON is untouched. One unit left the shelf on 21 Sep against the salt count of the same date. Nothing is owed out and nothing is promised. */
@@ -5695,7 +5673,7 @@ const PROD_OPENING={
 /* ROLLED AT v439: 1 unit to CA7-JTR on 2026-09-01, 6 unit to CK4-SEN on 2026-09-01, 1 unit to CR3-DAM on 2026-09-01, so 8.25 less 8 is 0.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Eight of the eight and a quarter unit on the shelf went out today across four rows, leaving 0.25 unit against 3 unit already promised: CE4-CHE's half unit owed out and CY2-NIL's 2.5 unit pending. The book is 2.75 unit short of its own commitments and sourcing is now the first decision on it. */
 /* ROLLED AT v404: 5 unit to CE4-AD on 2026-08-29, so 13.25 less 5 is 8.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v399: 3 unit to CH4-KS on 2026-08-28, so 16.25 less 3 is 13.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
-const STATED_STOCK=1;
+const STATED_STOCK=26;
 const COUNT_ON={
   "salt": "2026-09-21",
   "oil": "2026-09-19",
@@ -7289,11 +7267,16 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    version chip, the menu payload and the downloaded price sheets.
 
    IT IS NOT A ONE-ENTRY ARRAY, whatever this comment said until 16 Sep 2026 and whatever
-   tools/changelog.mjs still said with it. It carries the window the Journal reads, from
-   v324 onward, which tabJournal maps in full; master/changelog.json carries every entry
-   ever written and is the record. So a bump PREPENDS its entry. Replacing the array,
-   which both comments invited, silently drops the whole window. */
-const evolution=[{"v":"v798","d":"23 Sep 2026","t":"CZ4-MK'S RM20 REFUND IS CLOSED, SET OFF ON 21 SEP","n":["<b>HIS WORD OF 23 SEP 2026: close the CZ4-MK refund; his orders came to RM920 and he paid RM900 after the set-off, 5 unit of salt and 10 of candy.</b> The RM20 over-tender of 26 Aug is marked paid on 21 Sep, the day it was set off against s190 and s191, and its note says how. No refund is open anywhere on the book, so Now on Today loses its one Now-from-the-day-it-is-raised item.","<b>THE ROWS KEEP THE GROSS, AND THE CASH COMES OUT RIGHT.</b> s190 and s191 carry RM460 each as paid, RM920, while RM900 changed hands. Closing the refund on the same day books the RM20 back, so cash reads RM920 in and RM20 out on 21 Sep, which is the RM900 he handed over: trading cash falls from RM6,456.50 to RM6,436.50, the RM20 it had been overstating. His statement shows the orders paid and the overpayment returned to him on 21 Sep. Closed by hand in <code>ledger/book.json</code>, the one road for a refund, since nothing on the phone reaches that list."]},
+   tools/changelog.mjs still said with it. It carries the window from v324 onward, which the
+   Journal read until v802 took the Journal off the desk (his word of 23 Sep 2026: it is a separate
+   file for reference, and master/changelog.json, which carries every entry ever written, is that
+   file). Nothing on the desk now reads past evolution[0]; a bump still PREPENDS its entry, because
+   the fold, the changelog tool and the suite read the array as a list. */
+const evolution=[{"v":"v802","d":"23 Sep 2026","t":"THE JOURNAL IS OFF THE DESK","n":["<b>HIS WORD OF 23 SEP 2026: the journal does not have to be on the desk; it is a separate file for reference when looking at the changelogs.</b> The Journal part leaves Record, with the correction strip only it drew and their styles. Nothing it showed is lost: every note stays on its row in the book, and every version is in master/changelog.json, which is the file he reads. Nothing on the desk now reads past evolution[0]; the array keeps its window because the fold, the changelog tool and the suite read it as a list, and cutting it is his call."]},
+{"v":"v801","d":"23 Sep 2026","t":"THE P&L RUNS SIX MONTHS, THEN QUARTERS, THEN HALVES, THEN CY, WITHOUT A SCROLL","n":["<b>HIS INSTRUCTION OF 23 SEP 2026: show the last 6 months (when available), then quarterly, semi-annually, followed by CY to date, and fit them without the need to scroll.</b> The table was last month, this month and the year since v403. It is now up to six months from the book's first, this calendar year's quarters and halves that have begun and hold trading, and the calendar year to date, which is what the FY column always summed and is now called CY.","<b>IT FITS BY SAYING RM ONCE.</b> The currency sits in the corner cell and every figure is a bare number under a three-letter head, with the padding tightened and a rule opening each group, so salt's ten figure columns fill 876px of the desk's column at desktop width and 705px at a 1,024px window without a scroll. A phone cannot hold ten columns worth reading, so there a switch draws months, quarters or halves beside CY, the months being the latest three, and each group fits the 325px column exactly. The heading's long subtitle, which pushed the whole page 256px wider than a 1,280px window, is cut to its first clause and the rest moves into the caption."]},
+{"v":"v800","d":"23 Sep 2026","t":"THE CONSOLIDATED HEADS SAY EVERY BOOK","n":["<b>HIS SCREENSHOT OF 23 SEP 2026: Receivables headed Both books on a desk of five.</b> The Financials and Receivables heads read Every book, as the three Today pages do since v794."]},
+{"v":"v799","d":"23 Sep 2026","t":"P029'S 25 UNIT REACH THE SALT SHELF, AHEAD OF HIS COUNT","n":["<b>THE STATED SALT SHELF READ 1 UNIT WITH 25 UNIT OF SALT ON IT.</b> p029, 25 unit from SA5-BTR received on 22 Sep, was booked as rice and corrected to salt at v791, and a correction moves no stock, so the lot never rolled onto the salt shelf; v791 said so and left it for a count or a roll. It is rolled by hand now, 1 plus 25 is 26, on his word of 23 Sep 2026, because he has counted 25 today and a count measured against 1 would have booked 24 unit found where 1 is missing, a surplus that nets off real shrinkage and lowers every salt floor."]},
+{"v":"v798","d":"23 Sep 2026","t":"CZ4-MK'S RM20 REFUND IS CLOSED, SET OFF ON 21 SEP","n":["<b>HIS WORD OF 23 SEP 2026: close the CZ4-MK refund; his orders came to RM920 and he paid RM900 after the set-off, 5 unit of salt and 10 of candy.</b> The RM20 over-tender of 26 Aug is marked paid on 21 Sep, the day it was set off against s190 and s191, and its note says how. No refund is open anywhere on the book, so Now on Today loses its one Now-from-the-day-it-is-raised item.","<b>THE ROWS KEEP THE GROSS, AND THE CASH COMES OUT RIGHT.</b> s190 and s191 carry RM460 each as paid, RM920, while RM900 changed hands. Closing the refund on the same day books the RM20 back, so cash reads RM920 in and RM20 out on 21 Sep, which is the RM900 he handed over: trading cash falls from RM6,456.50 to RM6,436.50, the RM20 it had been overstating. His statement shows the orders paid and the overpayment returned to him on 21 Sep. Closed by hand in <code>ledger/book.json</code>, the one road for a refund, since nothing on the phone reaches that list."]},
 {"v":"v797","d":"23 Sep 2026","t":"EVERY DESK DEPLOY DEPLOYS THE COUNTER","n":["<b>HIS INSTRUCTION OF 23 SEP 2026: make sure every push on the Desk pushes the Counter too.</b> The Counter's content was already published on every run; its CODE deployed only when a push touched its own paths, and even then only by a diff the job read when the phone already had the build. Workers Builds usually ships the desk first, so a desk push left the Counter's code where it was, and a change to its clock needed a hand deploy.","<b>THREE ROADS, ONE RULE.</b> The job's site deploy runs on every run that deploys the desk, and the statements-path diff that fed the old gate is gone with it. <code>tools/update.mjs</code> deploys the Counter once the desk reads live on the phone, so a desk deploy that failed never ships the Counter alone. <code>npm run deploy</code> deploys both. Workers Builds still ships the desk alone; the job this push starts brings the Counter behind it within minutes."]},
 {"v":"v796","d":"23 Sep 2026","t":"NEXT 30 DAYS IS EVERY BOOK AT ONCE, THE CASH WALKED ONCE FOR THE BUSINESS","n":["<b>THE CASH IS THE BUSINESS'S, SO IT IS WALKED ONCE.</b> Each live book is walked on its own for its inventory, its rate and its lots. Their cash events go into one list, an event every book's walk raises (the refund you owe, the supplier default) going in once, and forecast() walks that list through its own day loop, so there is still one walk. Added book by book instead, the RM20 refund to CZ4-MK came off five times: the business's thirty days read RM130 where they are RM210.","<b>EACH BOOK'S INVENTORY STAYS ITS OWN.</b> A table gives each book its daily rate, the day it empties and what it still owes out, and the first to run empty leads the page, because that is the order to place. The chart draws each book as a share of what it holds today, in its own colour read off the design tokens, so one unit of salt and a hundred of rice read on one scale.","<b>WHAT LANDS, AND WHEN</b> carries every book's lots, receivables and bills, each tagged with its book; the refund is untagged. The agreed-buy switch offers every book's pending buys at once. Every book is now on all three Today pages; the book switch is gone from them."]},
 {"v":"v795","d":"23 Sep 2026","t":"RULES IS EVERY BOOK AT ONCE: MONEY ADDED, UNITS LEFT WITH THEIR BOOK","n":["<b>HIS INSTRUCTION OF 23 SEP 2026: combine Rules and Next 30 days too, after Today (v794).</b> Rules read the book in view, so salt's credit breach and its supplier default were off the page whenever oil was open.","<b>ONE RULE PUTS THE BOOKS TOGETHER: MONEY ADDS AND UNITS DO NOT.</b> Each live book is read on its own through eachBook, as it always was, and a figure in ringgit is summed with each book's part in the note beside it, as the Financials head does: pending orders, what is still to come in, inventory at cost, revenue, margin, receivables, what has been bought. A figure in units stays with its book: the inventory note gives each book its own count, and in transit reads in lots with each book's units beside them.","<b>THE REGISTER IS EVERY BOOK'S.</b> boundaryPanel takes the merged list: a row every book raises is shown once, and a row one book raised names that book, or two books' Margin floor rows read as one rule said twice. Deferred deliveries and advances are merged by party with each book's cap named where it is broken. Concentration is read on each customer's revenue across the books. The supplier default, which only salt's reading carries, is shown once whichever book is open, and the latest ledger is the newest orders across the books, each tagged."]},
@@ -7955,7 +7938,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='23 Sep 2026, 10:55 KL';
+const LAST_UPDATED='23 Sep 2026, 11:18 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -10238,7 +10221,7 @@ const dAhead=d=>(typeof d==='number'?d:dbet(d))<0;
    one page takes its destination's name. The ids are the addresses and do not move. */
 const TAB_LABEL={today:'To do',forward:'Next 30 days',overview:'Rules',receivables:'Receivables',
   inventory:'On hand',financials:'Financials',analysis:'Analysis',concentration:'Clients',
-  network:'Associates',map:'Coverage',ledger:'Ledger',journal:'Journal',add:'Transaction',sourcing:'Sourcing',
+  network:'Associates',map:'Coverage',ledger:'Ledger',add:'Transaction',sourcing:'Sourcing',
   pricing:'Pricing',plans:'Whiteboard',approve:'Approve',orders:'Site orders'};
 const starStr=n=>'★'.repeat(n)+'☆'.repeat(3-n);
 /* v245: THE PRICE TIER LEADS. custBadges() carries a RECENCY badge, Dormant/Loyal/Regular/New,
@@ -12971,114 +12954,13 @@ function modHtml(mod,date){const bits=modBits(mod,date);
     ?'<span class="chg chgraw">'+esc(b.raw)+'</span>'
     :'<span class="chg"><i>'+MOD_LABEL[b.f]+'</i>'+modVal(b.f,b.was)+'<span class="chgto">&rarr;</span>'+modVal(b.f,b.now)+'</span>').join('');}
 
-/* The strip sits at CARD level rather than in the trail, because the trail collapses: four of
-   the six corrected rows on this book render as a single line and drop their correction
-   whole. The claims are the open part, being short and checkable; the prose behind them is
-   folded, being read once and then trusted. */
-function corrStrip(t,dir,corrs){
-  const claims=modClaims(t,dir);
-  if(!claims.length&&!(corrs&&corrs.length))return '';
-  const bad=claims.filter(c=>c.verdict==='unknown'||c.verdict==='differs'||c.verdict==='unreadable');
-  /* ============ A CHECKER THAT STOPS CHECKING MUST SAY SO ============
-     Everything below reads strings the FOLD writes: ", then " between corrections, "corrected
-     on <date>: " at the head, "; " between claims, "<field> <was> to <now>" and the (unset)
-     and (cleared) markers. That is five string contracts owned by tools/fold.mjs, and a
-     reworded reason or a changed separator would leave this function parsing nothing and
-     saying nothing. Tested: of five plausible rewordings, two rendered as quiet prose and
-     reported NO claims at all. So a row that carries a Correction and yields no readable
-     claim is treated as a fault in the READER, stated here, rather than as a row with
-     nothing to check. It cannot be silent about having gone blind. */
-  const chip=c=>c.verdict==='unreadable'
-    ?`<span class="cclaim unreadable">${esc(c.raw)} <em>this desk cannot read that claim</em></span>`
-    :c.prose?`<span class="cprose">${esc(c.prose)}</span>`
-    :`<span class="cclaim ${c.verdict}">${esc(c.field)} ${esc(c.was)} &rarr; ${esc(c.now)}`
-      +(c.why?` <em>${esc(c.why)}</em>`:'')
-      +(c.verdict==='unknown'?' <em>not a field the book can set</em>'
-        :c.verdict==='differs'?` <em>the row reads ${esc(c.reads)}</em>`:'')
-      +'</span>';
-  /* said once, not once per claim: three grey "superseded" chips in a row carry the
-     information of one and read as an alarm that is not being raised. */
-  const later=claims.some(c=>c.verdict==='later')?'<span class="cclaim later"><em>superseded by a later step</em></span>':'';
-  /* `mod` also holds plain restatements nobody generated, and calling those a correction
-     would put the word on four rows that were never corrected. */
-  const lab=(corrs&&corrs.length)||claims.some(c=>c.verdict)?'Corrected':'Restated';
-  const when=(corrs&&corrs.length&&corrs[corrs.length-1].date)||(claims.find(c=>c.on)||{}).on||'';
-  const blind=(corrs&&corrs.length&&!claims.some(c=>c.verdict))
-    ?'<span class="cclaim unreadable"><em>this row was corrected and the desk could not read the trail: check tools/fold.mjs against modClaims</em></span>':'';
-  const notes=(corrs||[]).filter(a=>a.note).map(a=>`<p>${a.note}</p>`).join('');
-  return `<div class="lcorr${bad.length||blind?' bad':''}">`
-    +(()=>{const head=`<span class="clab">${lab}${when?' '+when:''}</span>${claims.map(chip).join('')}${later}${blind}`;
-       return notes
-         ?`<details class="cwhy"><summary class="chead"><span class="chev">&#9656;</span>${head}<span class="cwhyq">why</span></summary><div class="cnote">${notes}</div></details>`
-         :`<div class="chead">${head}</div>`;})()
-    +'</div>';
-}
 /* ============ THE LEDGER'S ORDER, ONE SOURCE (v471) ============
-   tabLedger and tabJournal both mint E-numbers from this list, so a journal entry names the
-   same E12 the ledger draws. A fully pending order carries no meaningful date and sits last. */
+   tabLedger mints E-numbers from this list. A fully pending order carries no meaningful date and sits last. */
 function ledIsPend(t){return t.type==='BUY'?(ledgerBuy(t._buy).order==='Pending'):(txStat(t).order==='Pending');}
 function ledgerAll(){
   return [...purchases.map(p=>({date:p.date,type:'BUY',who:p.supplier,qty:p.qty,total:p.total,_buy:p})),
     ...sales.map(s=>Object.assign({type:'SELL',who:s.customer},s))]
     .sort((a,b)=>{const pa=ledIsPend(a),pb=ledIsPend(b);if(pa!==pb)return pa?1:-1;return new Date(a.date)-new Date(b.date);});
-}
-/* ============ TAB: JOURNAL (v471) ============
-   HIS INSTRUCTION, 02 SEP 2026: prose goes into a journal; the ledger is keyed entries only.
-   Everything the ledger used to print beside a figure lives here, dated, newest first, and
-   linked to the row it belongs to: the note a person wrote on a row, the note on each step of
-   its trail, the correction strip with its claims read back, and the version entries the folds
-   wrote. Nothing here is computed: the journal repeats what was written, it does not comment. */
-let jrnF={q:''};
-function tabJournal(){
-  const all=ledgerAll();
-  const codes=all.map((t,i)=>'E'+(i+1));
-  const codeByKey={};all.forEach((t,i)=>{const k=t.who+'|'+t.date+'|'+t.total;if(!(k in codeByKey))codeByKey[k]=codes[i];});
-  const refHtml=a=>{const bits=[];
-    (a.refKeys||[]).forEach(k=>{const c=codeByKey[k];
-      bits.push(c?`<a class="eref elink" href="#ent-${c}" onclick="return goEnt('${c}')">${c}</a>`:`<span class="eref">${k}</span>`);});
-    if(a.ref)bits.push(`<span class="eref">${a.ref}</span>`);
-    return bits.length?'see '+bits.join(' '):'';};
-  const ents=[];
-  all.forEach((t,i)=>{
-    const raw=t._buy||t,code=codes[i],rid=ridOf(t);
-    const link=`<a class="eref elink" href="#ent-${code}" onclick="return goEnt('${code}')">${code}</a>`;
-    const who=`<span class="lparty">${ID(t.who)}</span>`;
-    if(raw.note)ents.push({date:t.date||raw.agreedOn||'',rid,code,who:t.who,kind:'Row',head:`${link} ${who}`,text:raw.note});
-    (raw.amend||[]).forEach(a=>{
-      if(a.kind==='Correction')return;
-      const bits=[];if(a.note)bits.push(a.note);const rh=refHtml(a);if(rh)bits.push(rh);
-      if(bits.length)ents.push({date:a.date||t.date||'',rid,code,who:t.who,kind:a.kind==='Linked'?'Linked orders':a.kind,head:`${link} ${who}`,text:bits.join(' ')});
-    });
-    const corrs=(raw.amend||[]).filter(a=>a.kind==='Correction');
-    const strip=corrStrip(raw,t.type,corrs);
-    if(strip){const when=(corrs.length&&corrs[corrs.length-1].date)||t.date||'';
-      ents.push({date:when,rid,code,who:t.who,kind:'Correction',head:`${link} ${who}`,text:strip});}
-  });
-  const MON={Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
-  const isoOf=d=>{const m=/^(\d{1,2}) (\w{3}) (\d{4})$/.exec(String(d||''));return m?`${m[3]}-${MON[m[2]]||'01'}-${m[1].padStart(2,'0')}`:'';};
-  const vers=(evolution||[]).map(e=>({date:isoOf(e.d),code:e.v,kind:'Version',head:`<span class="ecode">${esc(e.v)}</span>`,text:`<b>${e.t}</b> ${(e.n||[]).join(' ')}`}));
-  const q=jrnF.q.trim().toLowerCase();
-  const hit=x=>!q||[x.date,x.code,x.who,x.kind,x.text].join(' ').toLowerCase().replace(/<[^>]+>/g,' ').indexOf(q)>=0;
-  const byDate=(a,b)=>{if(!a.date!==!b.date)return a.date?-1:1;return a.date<b.date?1:a.date>b.date?-1:0;};
-  const rows=ents.filter(hit).sort(byDate),vs=vers.filter(hit).sort(byDate);
-  const ent=x=>`<div class="jent"${x.rid?` data-rid="${x.rid}"`:''}>`
-    +`<div class="jmeta"><span class="jdate">${x.date||'undated'}</span>${x.head}<span class="jkind">${x.kind}</span></div>`
-    +`<div class="jtext${x.kind==='Version'?' jquote':''}">${x.text}</div></div>`;
-  return `<h1>Journal</h1>
-  <div class="dsc dsclead">Every note written beside a figure, newest first, and the version entries the folds wrote.</div>
-  <div class="ledbar"><input id="jrnQ" placeholder="Search party, E-code, version, text&hellip;" value="${esc(jrnF.q)}"><span class="ledct">${rows.length} note${rows.length===1?'':'s'}, ${vs.length} version${vs.length===1?'':'s'}</span></div>
-  <h2>Rows and steps <span class="rule"></span></h2>
-  <div class="jlist">${rows.map(ent).join('')||'<div class="dsc" style="padding:14px 4px">Nothing matches.</div>'}</div>
-  <h2 class="jsec">Versions <span class="rule"></span></h2>
-  <div class="jlist">${vs.map(ent).join('')||'<div class="dsc" style="padding:14px 4px">Nothing matches.</div>'}</div>`;
-}
-function wireJournal(){
-  const q=document.getElementById('jrnQ');if(!q)return;
-  q.oninput=()=>{jrnF.q=q.value;
-    const host=document.querySelector('#sec-book .vpart[data-tab="journal"]');if(!host)return;
-    renderPart('journal',host);
-    const el=document.getElementById('jrnQ');if(!el)return;
-    try{el.focus();if(el.setSelectionRange)el.setSelectionRange(el.value.length,el.value.length);}catch(e){}};
 }
 
 function tabLedger(){
@@ -13613,62 +13495,72 @@ function ifrsPanel(){
          did not, so the citation moved onto the row rather than going with the prose. -->
   </div></details>`;
 }
+/* v801: on a phone the P&L draws one group of columns beside CY; the switch picks which, per book's own table */
+function finGroup(b){const t=b.parentNode.parentNode.querySelector('table.pgrid');if(!t)return;t.className=t.className.replace(/fg-p[mqh]/,'fg-'+b.getAttribute('data-g'));
+  [].forEach.call(b.parentNode.children,x=>x.classList.toggle('on',x===b));}
 function tabFinancials(){
   const all=finRows();
-  /* v403: THREE COLUMNS, HIS CALL OF 29 AUG. A column per month overflowed the 375px scroll
-     box by 91px and grew by one every month without bound. Last month, this month, FY to
-     date; a month with no entry renders as dashes rather than as RM 0, and the FY column
-     reduces over every month OF THE CURRENT YEAR, so nothing off screen leaves the year and
-     nothing from another year enters it. Round six found it hardcoded to FY 2026 with no
-     year filter, which would have summed January 2027 into a column labelled 2026. */
-  const thisMo=TODAY.toISOString().slice(0,7);
-  const lastMo=new Date(TODAY.getTime()-TODAY.getUTCDate()*864e5).toISOString().slice(0,7);
-  const rows=[lastMo,thisMo].map(mo=>{const e=all.find(x=>x[0]===mo);return [mo,e?e[1]:null];});
-  const mcell=f=>rows.map(([,v])=>v?f(v):'<td>&mdash;</td>').join('');
-  const mLab=mo=>new Date(mo+'-01').toLocaleDateString('en-GB',{month:'long',year:'numeric'});
-  /* SEEDED WITH THE SHAPE, NOT WITH {}. A book with no month reduces to an empty object, so
-     fy.rev is undefined, fmt0(undefined) is "RM NaN", and the FY strip and both P&L columns
-     printed RM NaN twelve times over. Reachable the day a product is declared before its
-     first sale: the trading book beside it is unaffected, which is why it survived. The seed
-     is finRows()'s own bump shape, so the two cannot drift apart without one being edited. */
-  const fyYear=TODAY.toISOString().slice(0,4);
+  /* ============ v801, HIS INSTRUCTION OF 23 SEP 2026: SIX MONTHS, THEN QUARTERS, THEN HALVES, THEN CY TO DATE ============
+     "Show the last 6 months (when available), then quarterly, semi-annually, followed by CY to date. Figure out how to fit
+     those in, without the need to scroll." v403 cut the table to last month, this month and the year, because a column a
+     month overflowed the 375px box and grew without bound; this bounds it the other way. At most six months, and only
+     from the book's first month, so a book three months old shows three; the current year's quarters and halves that
+     have begun and hold trading; and the calendar year to date, which is what the FY column always summed.
+     IT FITS BY SAYING RM ONCE. The currency is in the corner cell and every figure is a bare number, the heads are three
+     letters (Sep, Q3, H2, CY), and the padding is the table's own, tighter; ten figure columns then sit inside the desk's
+     column at desktop width. A phone cannot hold ten at any size worth reading, so there the table carries a switch,
+     months, quarters or halves, each beside CY, and draws one group at a time (design/desk.css). */
+  const thisMo=TODAY.toISOString().slice(0,7), fyYear=thisMo.slice(0,4);
+  const first=all.length?all.map(x=>x[0]).sort()[0]:thisMo;
+  const seed=()=>({rev:0,cogs:0,cash:0,inkind:0,provAR:0,provSup:0,kg:0});
+  const sumOf=ms=>ms.reduce((a,[,v])=>{Object.keys(v).forEach(k=>a[k]=(a[k]||0)+v[k]);return a;},seed());
+  const moOf=i=>{const d=new Date(Date.UTC(+fyYear,+thisMo.slice(5,7)-1-i,1));return d.toISOString().slice(0,7);};
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const months=[5,4,3,2,1,0].map(moOf).filter(mo=>mo>=first.slice(0,7));
+  /* a quarter or a half of this year that has begun and has a month of trading in it */
+  const span=(from,to)=>all.filter(([mo])=>mo>=from&&mo<=to);
+  const period=(lab,a,b)=>{const from=fyYear+'-'+a,to=fyYear+'-'+b;return (from<=thisMo&&to>=first)?{lab,v:sumOf(span(from,to))}:null;};
+  const quarters=[['Q1','01','03'],['Q2','04','06'],['Q3','07','09'],['Q4','10','12']].map(q=>period(...q)).filter(Boolean);
+  const halves=[['H1','01','06'],['H2','07','12']].map(h=>period(...h)).filter(Boolean);
   const fyMonths=all.filter(([mo])=>mo.slice(0,4)===fyYear);
-  const fy=fyMonths.reduce((a,[,v])=>{Object.keys(v).forEach(k=>a[k]=(a[k]||0)+v[k]);return a;},
-    {rev:0,cogs:0,cash:0,inkind:0,provAR:0,provSup:0,kg:0});
-  /* v427: A CARRIED BALANCE IS NOT A PERIOD CHARGE. The tile below reads "Provisions carried" and
-     was fed the year-filtered figure, so on 1 January it would read RM 0 while the provisions are
-     genuinely still carried; the ROW in the statement is the period's charge and says so since
-     v410. Two different questions, two different reductions, and the tile takes the whole book. */
-  const bookAll=all.reduce((a,[,v])=>{Object.keys(v).forEach(k=>a[k]=(a[k]||0)+v[k]);return a;},
-    {rev:0,cogs:0,cash:0,inkind:0,provAR:0,provSup:0,kg:0});
+  const fy=sumOf(fyMonths);
+  const cols=months.map(mo=>{const e=all.find(x=>x[0]===mo);return {lab:MON[+mo.slice(5,7)-1]+(mo.slice(0,4)===fyYear?'':' '+mo.slice(2,4)),v:e?e[1]:null,g:'pm'};})
+    .concat(quarters.map(q=>({lab:q.lab,v:q.v,g:'pq'})),halves.map(h=>({lab:h.lab,v:h.v,g:'ph'})));
+  /* a phone holds three months beside CY, so the months before the latest three carry pold and stand down there */
+  cols.forEach((c,i)=>{if(c.g==='pm'&&i<months.length-3)c.old=1;});
+  /* the first column of each group carries the rule between groups */
+  cols.forEach((c,i)=>{c.cls=c.g+(i===0||cols[i-1].g!==c.g?' g0':'')+(c.old?' pold':'');});
+  /* v427: A CARRIED BALANCE IS NOT A PERIOD CHARGE: the tile below takes the whole book, the rows take the period */
+  const bookAll=sumOf(all);
   const gm=v=>v.rev-v.cogs, gmp=v=>v.rev>0?gm(v)/v.rev*100:0, net=v=>gm(v)-v.provAR-v.provSup;
-  const uncol=fy.rev-fy.cash-fy.inkind;
-  /* v385: A NEGATIVE HERE IS AN OVERTENDER AND READS AS A NEGATIVE DEBT WITHOUT A WORD ON IT.
-     CZ4-MK tendered RM150 against a RM130 oil order on the 26th, so oil collected RM20 more
-     than it invoiced and this row went to RM -20. The arithmetic is right and the sign is
-     right: what is missing is that the RM20 is not owed back in cash, it is 1.54 unit of oil
-     owed out, which is exactly what the Order book states two views away. Nothing is
-     recomputed to say so; the row says which of the two a minus is. */
+  /* THE FIGURE WITHOUT ITS CURRENCY, said once in the corner cell; a nil reads as a dash */
+  const n0=v=>fmt0(v).replace(CUR+' ','');
+  /* v385: a negative uncollected figure is an overtender held against goods, and the row says which a minus is */
   const unc=v=>{const u=v.rev-v.cash-v.inkind;
-    return `<b>${fmt0(u)}</b>${u<-0.009?'<em class="finpct">held against goods</em>':''}`;};
-  const col=(v,neg)=>`<td style="${neg&&v>0?'color:var(--crim)':''}">${v?fmt0(neg?-v:v):'&mdash;'}</td>`;
-  const grp=lab=>`<tr class="grp"><td class="l" colspan="${rows.length+2}">${lab}</td></tr>`;
-  const pl=`<table class="fintab"><thead><tr><th class="l">Line</th>${rows.map(([mo])=>`<th>${mLab(mo).split(' ')[0]}${mo.slice(0,4)===fyYear?'':' '+mo.slice(0,4)}</th>`).join('')}<th class="fy">FY ${fyYear} to date${fyMonths.length?'':', nothing yet'}</th></tr></thead><tbody>
-    <tr><td class="l">Revenue</td>${mcell(v=>col(v.rev))}<td class="fy">${fmt0(fy.rev)}</td></tr>
-    <tr><td class="l">Cost of goods</td>${mcell(v=>col(v.cogs,1))}<td class="fy" style="color:var(--crim)">${fmt0(-fy.cogs)}</td></tr>
-    <tr class="tot"><td class="l">Gross margin</td>${mcell(v=>`<td><b>${fmt0(gm(v))}</b><em class="finpct">${gmp(v).toFixed(1)}%</em></td>`)}<td class="fy"><b>${fmt0(gm(fy))}</b><em class="finpct">${gmp(fy).toFixed(1)}%</em></td></tr>
-    <tr><td class="l">Provision held &mdash; debtors</td>${mcell(v=>col(v.provAR,1))}<td class="fy" style="color:var(--crim)">${fy.provAR?fmt0(-fy.provAR):'&mdash;'}</td></tr>
-    <tr><td class="l">Provision held &mdash; supplier default</td>${mcell(v=>col(v.provSup,1))}<td class="fy" style="color:var(--crim)">${fy.provSup?fmt0(-fy.provSup):'&mdash;'}</td></tr>
-    <tr class="tot"><td class="l">Result after provisions</td>${mcell(v=>`<td><b>${fmt0(net(v))}</b></td>`)}<td class="fy"><b>${fmt0(net(fy))}</b></td></tr>
+    return `<b>${n0(u)}</b>${u<-0.009?'<em class="finpct">held against goods</em>':''}`;};
+  const td=(c,inner,style)=>`<td class="${c.cls}"${style?` style="${style}"`:''}>${inner}</td>`;
+  const each=f=>cols.map(c=>c.v?f(c):td(c,'&mdash;')).join('');
+  const col=(k,neg)=>each(c=>{const v=c.v[k];return td(c,v?n0(neg?-v:v):'&mdash;',neg&&v>0?'color:var(--crim)':'');});
+  const fyc=(inner,style)=>`<td class="fy"${style?` style="${style}"`:''}>${inner}</td>`;
+  const grp=lab=>`<tr class="grp"><td class="l" colspan="${cols.length+2}">${lab}</td></tr>`;
+  const groups=[['pm','Months',months.length],['pq','Quarters',quarters.length],['ph','Halves',halves.length]].filter(g=>g[2]);
+  const sw=groups.length>1?`<div class="fgsw viewsw" role="group" aria-label="Columns shown">${groups.map((g,i)=>`<button type="button" data-g="${g[0]}"${i?'':' class="on"'} onclick="finGroup(this)">${g[1]}</button>`).join('')}</div>`:'';
+  const pl=`${sw}<table class="fintab pgrid fg-pm"><thead><tr><th class="l">${CUR}</th>${cols.map(c=>`<th class="${c.cls}">${c.lab}</th>`).join('')}<th class="fy">CY ${fyYear}${fyMonths.length?'':', nothing yet'}</th></tr></thead><tbody>
+    <tr><td class="l">Revenue</td>${col('rev')}${fyc(n0(fy.rev))}</tr>
+    <tr><td class="l">Cost of goods</td>${col('cogs',1)}${fyc(n0(-fy.cogs),'color:var(--crim)')}</tr>
+    <tr class="tot"><td class="l">Gross margin</td>${each(c=>td(c,`<b>${n0(gm(c.v))}</b><em class="finpct">${gmp(c.v).toFixed(1)}%</em>`))}${fyc(`<b>${n0(gm(fy))}</b><em class="finpct">${gmp(fy).toFixed(1)}%</em>`)}</tr>
+    <tr><td class="l">Provision held &mdash; debtors</td>${col('provAR',1)}${fyc(fy.provAR?n0(-fy.provAR):'&mdash;','color:var(--crim)')}</tr>
+    <tr><td class="l">Provision held &mdash; supplier default</td>${col('provSup',1)}${fyc(fy.provSup?n0(-fy.provSup):'&mdash;','color:var(--crim)')}</tr>
+    <tr class="tot"><td class="l">Result after provisions</td>${each(c=>td(c,`<b>${n0(net(c.v))}</b>`))}${fyc(`<b>${n0(net(fy))}</b>`)}</tr>
     ${grp('Cash against it')}
-    <tr><td class="l">Collected in cash</td>${mcell(v=>col(v.cash))}<td class="fy">${fmt0(fy.cash)}</td></tr>
-    <tr><td class="l">Settled in kind</td>${mcell(v=>col(v.inkind))}<td class="fy">${fmt0(fy.inkind)}</td></tr>
-    <tr class="tot"><td class="l">Still uncollected<div style="font-size:11px;font-weight:400;color:var(--mut)">on the revenue in this column, not the whole book</div></td>${mcell(v=>`<td>${unc(v)}</td>`)}<td class="fy">${unc(fy)}</td></tr>
+    <tr><td class="l">Collected in cash</td>${col('cash')}${fyc(n0(fy.cash))}</tr>
+    <tr><td class="l">Settled in kind</td>${col('inkind')}${fyc(n0(fy.inkind))}</tr>
+    <tr class="tot"><td class="l">Still uncollected<div style="font-size:11px;font-weight:400;color:var(--mut)">on the revenue in this column, not the whole book</div></td>${each(c=>td(c,unc(c.v)))}${fyc(unc(fy))}</tr>
     ${grp('Inventory behind it')}
-    <tr class="tot"><td class="l">Closing inventory<div style="font-size:11px;font-weight:400;color:var(--mut)">as at today, not a movement in the period &middot; ${units(currentStock)} at ${fmt(stockCostFor(PROD))}/unit, before freight in</div></td><td colspan="${rows.length}"></td><td class="fy">${fmt0(currentStock*stockCostFor(PROD))}</td></tr>
+    <tr class="tot"><td class="l">Closing inventory<div style="font-size:11px;font-weight:400;color:var(--mut)">as at today, not a movement in the period &middot; ${units(currentStock)} at ${fmt(stockCostFor(PROD))}/unit, before freight in</div></td>${cols.map(c=>`<td class="${c.cls}"></td>`).join('')}${fyc(n0(currentStock*stockCostFor(PROD)))}</tr>
   </tbody></table>
   ${(all.undated&&all.undated.length)?`<div class="fincap" style="color:var(--amber)"><b>${all.undated.length} order${all.undated.length===1?'':'s'} carrying ${fmt0(all.undated.reduce((a,t)=>a+((+t.total||0)-txPendRM(t)),0))} of revenue ${all.undated.length===1?'is':'are'} held out of this statement, because ${all.undated.length===1?'it has':'they have'} no date and a month is the only key it has.</b> ${all.undated.map(t=>{const n=(+t.total||0)-txPendRM(t);return ID(t.customer)+' '+fmt0(n)+(Math.abs(n-(+t.total||0))>0.005?' of '+fmt0(t.total)+' ordered':'');}).join(', ')}. ${all.undated.length===1?'It counts':'They count'} on Overview and in the IFRS statement below, which do not need one, so the two figures differ by exactly this much. Give the row a date and it joins the month it belongs to.</div>`:''}
-  <div class="fincap">Three periods sit in this part and they are not the same one. The month columns are last month and this month, whichever year they fall in; the <b>FY ${fyYear}</b> column is the calendar year to date, so on the 1st of January it is empty while the month beside it is not; and Closing inventory is as at today. The IFRS statement below covers the whole book since it opened, which is why its revenue is the larger figure. The two <b>Provision held</b> rows are a fourth thing again: each is that month's debts measured at <b>today's</b> ladder, so a month's figure moves as its own debts age even though nothing happened in that month. v410 called them charges, which is what a period statement usually holds and is not what these are.</div>`;
+  <div class="fincap">Every figure is in ringgit, goods at each lot's own rate and freight in only in the IFRS statement. The months are the last six the book has traded in, whichever year; the quarters and halves are this calendar year's, each summing its own months; <b>CY ${fyYear}</b> is the calendar year to date, so on the 1st of January it is empty while a month beside it is not; and Closing inventory is as at today. The IFRS statement below covers the whole book since it opened, which is why its revenue is the larger figure. The two <b>Provision held</b> rows are each period's debts measured at <b>today's</b> ladder, so a period's figure moves as its own debts age even though nothing happened in it.</div>`;
   /* TWO TABLES RESTATING EACH OTHER ARE ONE TABLE (v401). The cash table's first row was
      `col(v.rev)` -- the SAME EXPRESSION as the P&L's Revenue row, under a different word, in a
      second table under a second heading, on both books. So the part carried the year's revenue
@@ -13693,12 +13585,12 @@ function tabFinancials(){
      revenue KPI where the year is read, the middle two are on the P&L's own h2 sub where the
      basis belongs, and the fourth is the "Settled in kind" row the P&L gained this round. */
   return `<div class="kpis k3">
-    <div class="kpi salt-kpi gold"><div class="l salt-kpi__label">FY revenue</div><div class="v salt-kpi__value">${fmt0(fy.rev)}</div><div class="n salt-kpi__note">${units(fy.kg)} sold &middot; ${fyMonths.length} month${fyMonths.length===1?'':'s'} to 31 Dec ${fyYear}</div></div>
-    <div class="kpi salt-kpi"><div class="l salt-kpi__label">FY gross margin</div><div class="v salt-kpi__value">${fmt0(gm(fy))}</div><div class="n salt-kpi__note">${gmp(fy).toFixed(1)}% of revenue, before freight in</div></div>
+    <div class="kpi salt-kpi gold"><div class="l salt-kpi__label">CY revenue</div><div class="v salt-kpi__value">${fmt0(fy.rev)}</div><div class="n salt-kpi__note">${units(fy.kg)} sold &middot; ${fyMonths.length} month${fyMonths.length===1?'':'s'} to 31 Dec ${fyYear}</div></div>
+    <div class="kpi salt-kpi"><div class="l salt-kpi__label">CY gross margin</div><div class="v salt-kpi__value">${fmt0(gm(fy))}</div><div class="n salt-kpi__note">${gmp(fy).toFixed(1)}% of revenue, before freight in</div></div>
     <div class="kpi salt-kpi r"><div class="l salt-kpi__label">Provisions carried</div><div class="v salt-kpi__value">${fmt0(bookAll.provAR+bookAll.provSup)}</div><div class="n salt-kpi__note">debtors ${fmt0(bookAll.provAR)} &middot; supplier ${fmt0(bookAll.provSup)} &middot; whole book, not the FY column</div></div>
   </div>
   <div class="card" style="margin-top:14px"><div class="cardh">The year, by month <span class="sub">revenue and gross margin</span></div><div class="chartbox" style="height:180px"><canvas id="finMonthChart"></canvas></div></div>
-  <h2 style="margin-top:18px">Profit and loss, and the cash against it <span class="sub" style="font-weight:400">accrual by order date, pending excluded &middot; goods at each lot's own rate, freight in only in the IFRS statement</span> <span class="rule"></span></h2>
+  <h2 style="margin-top:18px">Profit and loss, and the cash against it <span class="sub" style="font-weight:400">accrual by order date, pending excluded</span> <span class="rule"></span></h2>
   <div class="card">${pl}</div>
   ${costPanel()}${ifrsPanel()}`;
 }
@@ -21900,7 +21792,7 @@ function consoBlock(){
   const C=consoMoney();
   const cell=(l,v,n)=>`<div class="kpi salt-kpi"><div class="l salt-kpi__label">${l}</div><div class="v salt-kpi__value">${v}</div><div class="n salt-kpi__note">${n}</div></div>`;
   const split=k=>C.rows.map(r=>codeOfProd(r.id)+' '+(r[k]==null?'&mdash;':fmt0(r[k]))).join(' &middot; ');
-  return `<h1>Financials</h1>`+consoHd('Both books')
+  return `<h1>Financials</h1>`+consoHd('Every book')
     +`<div class="conso"><div class="kpis k4">`
     +cell('Revenue',fmt0(C.rev),split('rev'))
     +cell('Collected',fmt0(C.cash),split('cash'))
@@ -21963,7 +21855,7 @@ function consoOrderBlock(){
   const pend=+sales.reduce((a,s)=>a+txPendRM(s),0).toFixed(2);
   const pendB=+purchases.filter(x=>x.pending&&!x.defaulted).reduce((a,x)=>a+(+x.total||0),0).toFixed(2);
   const cell=(cls,l,v,note)=>`<div class="kpi salt-kpi ${cls}"><div class="l salt-kpi__label">${l}</div><div class="v salt-kpi__value">${v}</div><div class="n salt-kpi__note">${note}</div></div>`;
-  return `<h1>Receivables</h1>`+consoHd('Both books')   /* v622: the page's own name, which the Order book destination opens on */
+  return `<h1>Receivables</h1>`+consoHd('Every book')   /* v622: the page's own name, which the Order book destination opens on */
     +`<div class="conso"><div class="kpis k4">`
     +cell('gold','Owed to you',fmt0(n),g>0.009?`${fmt0(g)} gross; the ladder has already discounted ${fmt0(+(g-n).toFixed(2))}`:'nothing owed to you')
     +cell(o&&o.pr>=0.5?'r':'','Chase first',o?ID(o.who):'&mdash;',o
@@ -22044,7 +21936,7 @@ function setProdView(pr){
   PROD=pr; try{localStorage.setItem('saltProd',pr);}catch(e){}
   recompute(); render();
 }
-const builders={today:tabToday,forward:tabForward,sourcing:()=>{const b=perProduct(tabSourcing,{skipEmpty:true});return srcHead()+(b||'<div class="card"><div class="insight salt-insight">No purchases or sales on any book yet, so there is nothing to source against.</div></div>');},analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory,{head:()=>units(currentStock)+' on hand'}),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,journal:tabJournal,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans,approve:tabApprove,orders:tabOrders};
+const builders={today:tabToday,forward:tabForward,sourcing:()=>{const b=perProduct(tabSourcing,{skipEmpty:true});return srcHead()+(b||'<div class="card"><div class="insight salt-insight">No purchases or sales on any book yet, so there is nothing to source against.</div></div>');},analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory,{head:()=>units(currentStock)+' on hand'}),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans,approve:tabApprove,orders:tabOrders};
 /* ============ SEVEN VIEWS OVER FIFTEEN TABS (v341, move 4 of the rebuild) ============
    The fifteen tabs were fifteen reports stacked: a megabyte to open for one figure, with the
    method prose standing open on every one. A view leads with one tab open, folds that tab's
@@ -22059,7 +21951,7 @@ const VIEWS=[
   {id:'stock', name:'Stock',            lead:'inventory',     parts:['sourcing']},
   {id:'price', name:'Pricing',          lead:'pricing',       parts:[]},
   {id:'people',name:'Network',          lead:'concentration', parts:['network','map']},
-  {id:'book',  name:'Record',           lead:'ledger',        parts:['journal','analysis']},   /* v747: the ID stays 'book', so every /desk#book address still lands */
+  {id:'book',  name:'Record',           lead:'ledger',        parts:['analysis']},   /* v802: the Journal left the desk, his word of 23 Sep 2026: master/changelog.json is the reference */   /* v747: the ID stays 'book', so every /desk#book address still lands */
   {id:'enter', name:'Enter',            lead:'add',           parts:['approve','orders','plans']}
 ];
 const VIEW_OF={}; VIEWS.forEach(v=>{VIEW_OF[v.id]=v.id;VIEW_OF[v.lead]=v.id;v.parts.forEach(p=>{VIEW_OF[p]=v.id;});});
@@ -22075,7 +21967,6 @@ const PART_Q={today:'what needs doing, ranked by the money at stake',
   network:'associates, their downstream buckets and the rewards',
   map:'where the book is concentrated, drawn as heat',
   ledger:'every row on the book, and a statement of account for any party',
-  journal:'the prose beside the figures: every note, step, correction and version, dated',
   analysis:'the month read twelve ways',
   add:'record an order, an amendment, a count or a loan',
   approve:'the rows drafted from the queue, waiting on a decision',
@@ -22086,7 +21977,7 @@ const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),
   pricing:()=>{drawPerProduct([wirePricing,drawPriceCharts,drawEarnChart,drawBoardCharts]);pbWire();},
   today:()=>drawTodayCharts(), concentration:()=>drawConcCharts(),
   receivables:()=>drawPerProduct([drawRecvCharts]), financials:()=>drawPerProduct([drawFinCharts]),
-  network:()=>drawNetworkCharts(), ledger:()=>{drawLedgerCharts();wireLedger();ledFit();}, journal:()=>wireJournal(),
+  network:()=>drawNetworkCharts(), ledger:()=>{drawLedgerCharts();wireLedger();ledFit();},
   sourcing:()=>drawPerProduct([drawSourcingCharts,drawOutlookChart]), forward:()=>drawFwdCharts(),
   analysis:()=>drawPerProduct([drawAnalysis]), approve:()=>apLoad(), orders:()=>{ordLoad();bullLoad();bullWire();}};
 /* THE METHOD PROSE GOES (v372). HIS INSTRUCTION OF 26 Aug: Method and caveats is useless,
