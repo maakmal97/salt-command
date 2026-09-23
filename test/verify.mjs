@@ -19434,6 +19434,37 @@ await (async () => {
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
+section("v794: Today is every book at once, an item on every book listed once and a book's own item tagged with it");
+await (async () => {
+  /* HIS INSTRUCTION OF 23 SEP 2026: combine every book on Today, not too convoluted to read, a great overview in its entirety.
+     Read on the live book with the view left on oil, so a list that still read the book in view would miss salt's items.
+     Titles are compared as text, the markup ID() wraps a code in taken off. Each assertion was proved red by its own mutation,
+     one at a time. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const v = JSON.parse(w.eval(`JSON.stringify((()=>{const txt=h=>{const d=document.createElement('div');d.innerHTML=h;return d.textContent;};
+    const per={};liveBooks().forEach(p=>{PROD=p;recompute();per[p]=actions().map(x=>txt(x.title));});
+    setProdView('oil');const all=allActions();switchTab('today');const sec=document.querySelector('.sec.on');
+    const rows=[].map.call(sec.querySelectorAll('.act'),r=>{const t=r.querySelector('.actt').cloneNode(true);const tags=[].map.call(t.querySelectorAll('.prodtag'),x=>x.title);
+      t.querySelectorAll('.prodtag').forEach(x=>x.remove());return {t:t.textContent.trim(),tags:tags};});
+    const band=[].map.call(sec.querySelectorAll('table tbody tr'),r=>r.querySelector('.prodtag').title);
+    const badge=(document.querySelector('.tab[data-s="today"] .navct')||{}).textContent||'0';
+    return {per,live:liveBooks(),all:all.map(x=>({t:txt(x.title),books:x.books,sev:x.sev})),rows,band,badge,prod:PROD,scope:sec.querySelector('.pscope').textContent};})())`));
+  const books = Object.keys(v.per);
+  const everywhere = v.per.salt.filter((t) => books.every((p) => v.per[p].includes(t)));
+  const saltOnly = v.per.salt.filter((t) => !v.per.oil.includes(t));
+  ok(everywhere.length > 0 && everywhere.every((t) => v.rows.filter((r) => r.t === t).length === 1 && v.rows.find((r) => r.t === t).tags.length === 0),
+    "an item every book raises is listed once and carries no book: " + JSON.stringify(everywhere));
+  ok(saltOnly.length > 0 && saltOnly.every((t) => v.rows.some((r) => r.t === t && JSON.stringify(r.tags) === '["Salt"]')),
+    "salt's own items are on Today with oil in view, each tagged Salt: " + JSON.stringify(saltOnly));
+  ok(JSON.stringify(v.band) === JSON.stringify(v.live.map((p) => p[0].toUpperCase() + p.slice(1))) && !v.live.includes("spare") && v.live.includes("rice"),
+    "the band is one row a book with anything on it, and a book with nothing, spare, is left off: " + JSON.stringify(v.band));
+  ok(!v.all.some((x) => x.books.includes("spare")), "and an empty book raises nothing on Today, not even its own trigger");
+  ok(+v.badge === v.all.filter((x) => x.sev === "now").length && v.prod === "oil" && /Every book/.test(v.scope),
+    "the Today badge counts Now across every book, and the book in view is left as it was: " + JSON.stringify({ badge: v.badge, prod: v.prod }));
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */
