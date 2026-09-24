@@ -68,22 +68,41 @@ export function fontFaceCss() {
 const RECIPE_HEADS = [
   "/* ---- Pill button ---- */", "/* ---- Fields ---- */", "/* ---- Tab strip ---- */",
   "/* ---- Status chip:", "/* ---- Ghost button:", "/* ---- Status chip, the added tones ---- */",
+  /* STAGE 2 OF THE COUNTER REDESIGN (24 Sep 2026): the nine recipes the system gained for it, and
+     fold 2.11's, the ones the Counter will use from stage 3 on. Carried before the page uses them, so
+     a stage 3 fold changes markup and never this list. The Sheet's close control is the Orb, which
+     lives inside the Desk bar section and is not carried. */
+  "/* ---- Sheet:", "/* ---- App bar:", "/* ---- Inbox row:", "/* ---- Option ---- */",
+  "/* ---- Code field ---- */", "/* ---- Statement lines ---- */", "/* ---- Ledger list, plain ---- */",
+  "/* ---- Steps:", "/* ---- Bubble and thread:",
+  "/* ---- Glass card ---- */", "/* ---- Eyebrow ---- */", "/* ---- KPI tile:", "/* ---- Action:",
+  "/* ---- Approve card:", "/* ---- Insight:", "/* ---- Meter:", "/* ---- Ledger list ---- */",
+  "/* ---- Queue chip:", "/* ---- QR panel.", "/* ---- Desk rail", "/* ---- Plan:",
 ];
 export function siteRecipes() {
   const css = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
+  /* IN THE SYSTEM'S OWN ORDER, whatever the order of the list: a modifier (the plain ledger list, the
+     code field) wins over its base only by coming after it, as it does upstream. */
   const out = RECIPE_HEADS.map((h) => {
     const i = css.indexOf(h);
     if (i < 0) throw new Error("stmt-style: no recipe headed " + h + " in design/salt-ds.css");
+    if (css.indexOf(h, i + 1) >= 0) throw new Error("stmt-style: two recipes headed " + h + " in design/salt-ds.css");
     const j = css.indexOf("\n/* ---- ", i + h.length);
-    return css.slice(i, j < 0 ? css.length : j);
-  }).join("\n")
+    return [i, css.slice(i, j < 0 ? css.length : j)];
+  }).sort((a, b) => a[0] - b[0]).map((s) => s[1]).join("\n")
     /* NOT THE SELECT. The recipe draws its chevron with a data: image, and this site's page loads
        NOTHING, a data: URL included (asserted since v694): its own select.fld draws the chevron
        out of two gradients and keeps it. Stripped here, and a url( anywhere else in a recipe
        stops the generation rather than the suite. */
     .replace(/\n\.salt-field__input\.salt-field__select \{[^}]*\}/, "")
-    .replace(/\n\.salt-field__select option \{[^}]*\}/, "");
+    .replace(/\n\.salt-field__select option \{[^}]*\}/, "")
+    /* NOT THE COMMENTS (24 Sep 2026). The system's notes name its other surfaces (the Inbox row's
+       names Salt Admin, which S1 1.10 keeps off the customer's page) and are a fifth of the bytes;
+       the rules are carried whole, the prose stays upstream. No recipe holds a string with a comment
+       mark in it; one that did would unbalance the braces, which stops the generation. */
+    .replace(/\/\*[\s\S]*?\*\//g, "").replace(/\n{3,}/g, "\n\n");
   if (/url\(/.test(out)) throw new Error("stmt-style: a site recipe carries a url(), which the page may not load");
+  if (out.split("{").length !== out.split("}").length) throw new Error("stmt-style: the site recipes' braces do not balance");
   return out;
 }
 

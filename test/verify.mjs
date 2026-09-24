@@ -22437,6 +22437,24 @@ await (async () => {
     "and the master page's quiet button is the system's ghost");
 })();
 
+section("S2 2.11: the Counter carries the recipes it will use, whole, in the system's order, and none of the system's notes");
+await (async () => {
+  /* STAGE 2 OF THE COUNTER REDESIGN, 24 Sep 2026. The nine recipes salt-ds v1.3.0 gained for the Counter, and the ones it
+     will use from stage 3 on, are sliced into SITE_RECIPES before any markup uses them. The comments are stripped: the
+     Inbox row's note named Salt Admin, which S1 1.10 keeps off a customer's page. */
+  const R = (await import("../stmt/statement-css.js")).SITE_RECIPES;
+  const rule = (c) => new RegExp("(^|\\n)" + c.replace(/\./g, "\\.") + "[\\s,{:.\\[]").test(R);
+  const missing = [".salt-sheet", ".salt-appbar", ".salt-inbox-row", ".salt-option__face", ".salt-field__input--code", ".salt-lines",
+    ".salt-ledger--plain", ".salt-steps", ".salt-bubble", ".salt-composer", ".salt-glass-card", ".salt-eyebrow", ".salt-kpi",
+    ".salt-action", ".salt-approve", ".salt-insight", ".salt-meter", ".salt-ledger", ".salt-queue", ".salt-qr", ".salt-rail",
+    ".salt-plan"].filter((c) => !rule(c));
+  ok(!missing.length, "the site carries the nine new recipes and fold 2.11's (missing: " + (missing.join(", ") || "none") + ")");
+  const at = (s) => R.indexOf("\n" + s);
+  ok(at(".salt-ledger {") >= 0 && at(".salt-ledger {") < at(".salt-ledger--plain") && at(".salt-field__input {") >= 0 && at(".salt-field__input {") < at(".salt-field__input--code"),
+    "in the system's own order, so the plain ledger list and the code field come after the rules they modify");
+  ok(!/\/\*|\*\//.test(R) && !/Salt Admin|Salt Command/.test(R), "and with no comment, so no note of the system's reaches a customer's page");
+})();
+
 section("22 Sep 2026: the brand faces reach every surface, self-hosted");
 await (async () => {
   /* HIS YES OF 22 SEP 2026 to fetching the fonts. Fraunces and JetBrains Mono were designed into the
