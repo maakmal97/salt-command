@@ -177,7 +177,7 @@ Each statement carries a QR code and prints the customer's **username**. The QR 
 `https://k7m3p2.qyts8mh72kyg.workers.dev/?u=<username>`, one landing page for every account,
 with the username filled in; the password goes by a different channel. The page checks the
 pair, decrypts in his own browser, and shows a strip: **"Now"**, then every issue by its date,
-newest first. It stays signed in on that device while Remember me is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
+newest first. It stays signed in on that device while Keep me signed in is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
 he likes.
 
 **"Now" is live (his instruction, 03 Sep 2026): every entry from the start to the minute it was
@@ -204,9 +204,9 @@ has lost his asks for it again, and it is read back from `_passwords.json`.
    for byte as a wrong password does, so the list cannot be walked.
 4. `STMT_MASTER`, a secret on the statements Worker, is his override. It opens any account,
    because each issue carries a second wrap of the key under it, made from the same passphrase in
-   `_secrets.json`. Since 16 Sep 2026 the door takes the username in two boxes and the password in
-   four, four symbols each, so the master can no longer be typed there: the owner's list at `/all`
-   fills it in for him.
+   `_secrets.json`. The door is one field for each secret since S3 3.7 (his D3; two boxes and four
+   from 16 Sep until then), and only the owner's page sends what is typed as a master, so the master
+   still cannot be typed at a customer's door: the owner's list at `/all` fills it in for him.
 
 ### The secrets, and where each one lives
 

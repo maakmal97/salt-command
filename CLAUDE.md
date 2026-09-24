@@ -301,9 +301,11 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   gated on the token's SHAPE, so a spent link and an invented one serve the same door. **It is spent
   only on Continue** (asking which account spends nothing), and a spent record answers the page that
   spent it, by its nonce, for two minutes; an app's own browser is sent to Safari or Chrome first.
-- **The door**: log in, remember me (a device key in the browser, the wrapped content key at
-  `rem:<token>`, neither opening anything alone), log out, which also drops that wrap and this
-  phone's notifications. **A lapsed session reopens itself from the remembered phone and repeats the
+- **The door** (his D3): one username field and one password field a password manager fills, Show, a
+  paste that keeps only the password, an alphabet check on the device, the help line, and the site's
+  one refusal; only his page sends a master, so it cannot be typed at a customer's door. Keep me signed
+  in (a device key in the browser, the wrapped content key at `rem:`, neither opening anything alone),
+  log out, which also drops that wrap and this phone's notifications. Nothing says phone on a computer. **A lapsed session reopens itself from the remembered phone and repeats the
   request once** (his D1); only with nothing remembered does a Sheet say so over the page, carrying the
   door and keeping the draft. The page re-reads on every return (`GET /account` on its session, never a
   wrap), and a remembered phone draws "Opening your account", never the door. Kept as an app:

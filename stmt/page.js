@@ -74,9 +74,12 @@ const PAGE_CSS = `
 /* the field is the system's .salt-field__input (22 Sep 2026): a well, 16px so a phone never zooms,
    44px tall; a code or a figure takes --mono and a sentence stays in the display face */
 .fld{display:block}
-/* the username in two boxes and the password in four, one group of four symbols each (16 Sep 2026) */
-.seg{display:flex;gap:8px}
-.seg .fld{flex:1 1 0;min-width:0;padding:13px 4px;text-align:center;letter-spacing:.12em}
+/* S3 3.7: the door's two fields, the password beside its Show */
+#doorBox .salt-field{margin-top:14px}
+.pwrow{display:flex;gap:8px;align-items:stretch}
+.pwrow .fld{flex:1 1 auto;min-width:0}
+.pwrow .salt-ghost{flex:none}
+.gate .salt-insight{margin:22px 0 0}
 /* v694: THE OPEN LIST IS DRAWN BY THE SYSTEM, NOT BY THIS PAGE. With no colour scheme declared it
    draws a white list of black words under a dark field, which is the colour he called bizarre.
    color-scheme tells the system the page is dark and the list follows it; option is named too, for
@@ -381,7 +384,7 @@ function signedOutSheet() {
     + '<div id="outScrim" class="salt-sheet-scrim" hidden></div>'
     + '<div id="outSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="outT" tabindex="-1" hidden>'
     + '<div class="salt-sheet__grab"></div>'
-    + '<div class="salt-sheet__head"><h2 class="salt-sheet__title" id="outT">You were signed out on this phone</h2>'
+    + '<div class="salt-sheet__head"><h2 class="salt-sheet__title" id="outT">You were signed out on this <span class="dev">phone</span></h2>'
     + '<button type="button" class="salt-orb salt-sheet__close" id="outX" aria-label="Close">' + glyphSvg("close", 20) + "</button></div>"
     + '<div class="salt-sheet__body"><p>Sign in again to carry on. What you were doing is kept.</p><div id="outForm"></div></div>'
     + "</div>";
@@ -395,7 +398,7 @@ function linkScreen() {
   return '<div id="link" class="gate" hidden>'
     + '<span class="appmark">' + glyphSvg("ring", 40) + "</span>"
     + "<h1>Your Salt Counter</h1>"
-    + '<p class="lead" id="linkLead">This link opens your account on this phone and keeps it signed in.</p>'
+    + '<p class="lead" id="linkLead">This link opens your account on this <span class="dev">phone</span> and keeps it signed in.</p>'
     + '<div class="salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm">'
     + '<p class="salt-eyebrow salt-eyebrow--copper">Inside</p>'
     + '<div class="salt-ledger salt-ledger--plain">'
@@ -410,7 +413,7 @@ function linkScreen() {
     + '<button class="btn salt-ghost" id="linkCopy" type="button" hidden>Copy the link</button>'
     + '<button class="btn salt-pill salt-pill--md" id="linkGo" type="button">Continue</button>'
     + '<p class="msg" id="linkMsg" role="status" aria-live="polite"></p>'
-    + '<p class="sub2 center" id="linkOnce">The link works once. Not your phone? Close this page and nothing is used.</p>'
+    + '<p class="sub2 center" id="linkOnce">The link works once. Not your <span class="dev">phone</span>? Close this page and nothing is used.</p>'
     + "</div>";
 }
 
@@ -554,22 +557,27 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
       : "")
     + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
-    + "<h1>Statement of account</h1>"
-    + '<p class="lead">Sign in with the username and password sent to you. '
-    + "Tick Remember me and this device stays signed in; Log out ends it.</p>"
-    + '<div id="doorBox"><form id="f" autocomplete="off">'
-    + '<span class="lbl" id="unl">Username</span>'
-    + boxes("un", 2, "text", "Username")
-    + '<input type="hidden" id="un" value="' + u + '">'
-    + '<span class="lbl" id="pwl">Password</span>'
-    + boxes("pw", 4, "password", "Password")
-    + '<input type="hidden" id="pw">'
-    /* v692: Remember me, and the button says what it does */
+    + "<h1>Sign in</h1>"
+    + '<p class="lead">With the username and password we sent you.</p>'
+    /* S3 3.7, HIS D3 OF 24 SEP 2026: ONE FIELD FOR EACH SECRET, named as a password manager reads them, so one can
+       fill the door; the six boxes of 16 Sep could not be filled by anything but fingers */
+    + '<div id="doorBox"><form id="f" novalidate>'
+    + '<div class="salt-field"><label class="salt-field__label" for="un">Username</label>'
+    + '<input class="fld salt-field__input salt-field__input--mono" id="un" name="username" type="text" value="' + u + '" '
+    + 'autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" aria-describedby="unHint">'
+    + '<span class="salt-field__hint" id="unHint">Two groups of four, like abcd-efgh.</span></div>'
+    + '<div class="salt-field"><label class="salt-field__label" for="pw">Password</label>'
+    + '<div class="pwrow"><input class="fld salt-field__input salt-field__input--mono" id="pw" name="password" type="password" '
+    + 'autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" aria-describedby="pwHint">'
+    + '<button class="salt-ghost" id="pwShow" type="button" aria-pressed="false" aria-controls="pw">Show</button></div>'
+    + '<span class="salt-field__hint" id="pwHint">Pasting the whole message works: we keep only the password.</span></div>'
+    /* v692: remembering, in the words the link uses (S3 3.7) */
     + '<label class="rem" for="rem"><input type="checkbox" id="rem" checked>'
-    + "<span>Remember me on this device</span></label>"
-    + '<button class="btn salt-pill salt-pill--md" id="go" type="submit">Log in</button>'
+    + '<span>Keep me signed in on this <span class="dev">phone</span></span></label>'
+    + '<button class="btn salt-pill salt-pill--md" id="go" type="submit">Sign in</button>'
     + "</form>"
     + '<p class="msg" id="msg" role="status" aria-live="polite"></p></div>'
+    + '<p class="salt-insight">Lost your password or your link? Ask us for a <b>new sign-in link</b>. It works straight away.</p>'
     /* v693: how to keep it as an app, on the door where a first-time reader is, and hidden once
        the page is running as one. Three steps, the two phones, and nothing to tap. */
     + '<div class="inst" id="inst" hidden>'
@@ -579,7 +587,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + "<li><b>Android:</b> tap the three dots, then Install app or Add to Home screen.</li>"
     /* S1 1.3: a saved iPhone app keeps its own storage and is not signed in by this browser, so the
        step says where the sign-in happens rather than promising one */
-    + "<li>Open it from that icon after this and sign in there with Remember me ticked. It can tell you when an order moves.</li></ol>"
+    + "<li>Open it from that icon after this and sign in there with Keep me signed in ticked. It can tell you when an order moves.</li></ol>"
     + "</div>"
     + "</div>"
     + (owner ? "" : linkScreen() + signedOutSheet())
@@ -620,16 +628,6 @@ export function landingPage(user, nonce, owner, bulletin) {
       .replace("/*__OWNER_JS__*/", () => (owner ? OWNER_JS : ""))
     + "</script>"
     + "</body></html>";
-}
-
-/* One box per group of four symbols, the hidden field beside them carrying the joined value. */
-function boxes(id, n, type, label) {
-  let out = '<div class="seg" data-for="' + id + '" role="group" aria-labelledby="' + id + 'l">';
-  for (let i = 1; i <= n; i++) {
-    out += '<input class="fld salt-field__input salt-field__input--mono" type="' + type + '" inputmode="text" autocapitalize="none" autocorrect="off" '
-      + 'spellcheck="false" autocomplete="off" placeholder="xxxx" aria-label="' + label + ', part ' + i + ' of ' + n + '">';
-  }
-  return out + "</div>";
 }
 
 /* Kept as one string rather than a file so the whole page is a single Worker response with a
@@ -691,6 +689,12 @@ const CLIENT_JS = `
   var assoc=false;
   /* null for a customer; {master,accounts} for the owner, on the Access-gated route only */
   var OWNER=__OWNER__;
+  /* S3: the device, read once. The words say phone on a phone and computer on anything else (nothing says phone
+     on a laptop), in the markup's .dev words and in every line the script writes. */
+  var UA=navigator.userAgent||'';
+  var IOS=/iPhone|iPad|iPod/.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  var DEV=/Mobi|Android|iPhone|iPad|iPod/.test(UA)||IOS?'phone':'computer';
+  [].forEach.call(document.querySelectorAll('.dev'), function(x){ x.textContent=DEV; });
   /* 24 Sep 2026 (M22): an account he opened under the master is READ ONLY. It has no session, so its
      orders and links come from his own gated route, and nothing on it places, pays, sends or withdraws. */
   var view=false;
@@ -729,19 +733,12 @@ const CLIENT_JS = `
   function norm(s){ s=String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
     return s.length===8 ? s.slice(0,4)+'-'+s.slice(4) : ''; }
 
-  /* TWO BOXES FOR THE USERNAME AND FOUR FOR THE PASSWORD (his instruction, 16 Sep 2026), one group of
-     four symbols in each, as they are sent. A box that fills moves the cursor to the next, the last
-     username box to the first password box; Backspace in an empty box steps back and takes the symbol
-     before. A paste is spread across the boxes from the one it lands in, or from the first when it is
-     the whole username or password; an autofill or a keyboard suggestion that puts more than four in
-     one box is spread the same way. Only letters and digits are kept, in lower case, so hyphens, spaces
-     and capitals in a pasted value are forgiven as they were. The joined value goes into the hidden #un
-     and #pw the form reads, which is also what the owner's roster fills with the master passphrase; the
-     master can no longer be typed at this door, and /all opens every account. */
-  var SEG=[].slice.call(document.querySelectorAll('.seg input'));
-  function idOf(b){ return b.parentNode.getAttribute('data-for'); }
-  function boxesOf(id){ return SEG.filter(function(x){ return idOf(x)===id; }); }
-  function group(b){ return boxesOf(idOf(b)); }
+  /* ---- THE DOOR: ONE FIELD FOR EACH SECRET (S3 3.7, his D3 of 24 Sep 2026) --------------------------------
+     A password manager fills them by their names; Show unmasks the password; a paste keeps only what the field
+     takes, so pasting the whole message into the password keeps the password and nothing else; and a symbol the
+     alphabet never uses is caught on this phone before anything is sent, which says nothing about any account.
+     Every refusal from the site is still its one answer. The owner's roster fills the same two fields with the
+     master; only his page sends it as one, so the master still cannot be typed at a customer's door. */
   function clean(t){ return String(t||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
   /* v695: A PRODUCT IS A MARK, NOT A WORD (his instruction, 18 Sep 2026). Drawn, never written,
      and never labelled either: naming it in aria would put the word back for half the readers. */
@@ -765,53 +762,38 @@ const CLIENT_JS = `
     var sr=el('span','sr',pshape(product)); w.appendChild(sr);
     return w;
   }
-  function sync(b){
-    var parts=group(b).map(function(x){ return x.value; });
-    document.getElementById(idOf(b)).value=parts.join('')?parts.join('-'):'';
+  var ALPHA=/[^23456789abcdefghjkmnpqrstvwxyz]/;
+  var UN_IN=/(?:^|[^a-z0-9_-])([a-z0-9]{4})[- ]([a-z0-9]{4})(?![a-z0-9_-])/;
+  var PW_IN=/(?:^|[^a-z0-9_-])([a-z0-9]{4})[- ]([a-z0-9]{4})[- ]([a-z0-9]{4})[- ]([a-z0-9]{4})(?![a-z0-9_-])/;
+  /* a username or a password in the form it was sent in, or '' when the text holds none */
+  function shaped(t, n){
+    var low=String(t||'').toLowerCase(), m=(n===8?UN_IN:PW_IN).exec(low);
+    var raw=m?m.slice(1).join(''):clean(low);
+    return raw.length===n?raw.match(/.{4}/g).join('-'):'';
   }
-  function toEnd(b){ try{ b.focus(); var n=b.value.length; b.setSelectionRange(n,n); }catch(e){} }
-  /* raw is laid into the boxes from bs[i] on, four to a box; the box after the last full one takes the cursor */
-  function put(bs, i, raw){
-    for(var k=i;k<bs.length;k++) bs[k].value=raw.slice((k-i)*4,(k-i+1)*4);
-    sync(bs[0]);
-    var last=bs[Math.min(bs.length-1, i+Math.max(0,Math.ceil(raw.length/4)-1))];
-    var nx=last.value.length===4&&SEG[SEG.indexOf(last)+1];
-    toEnd(nx||last);
-  }
-  function typed(ev){
-    var b=ev.target, bs=group(b), i=bs.indexOf(b), raw=clean(b.value);
-    if(raw.length<=4){
-      b.value=raw; sync(b);
-      if(raw.length===4&&ev.type==='input'){ var nx=SEG[SEG.indexOf(b)+1]; if(nx) toEnd(nx); }
-      return;
-    }
-    if(raw.length>=bs.length*4){ put(bs, 0, raw); return; }
-    put(bs, i, raw+bs.slice(i+1).map(function(x){ return x.value; }).join(''));
-  }
-  SEG.forEach(function(b){
-    b.addEventListener('input', typed);
-    b.addEventListener('change', typed);
-    b.addEventListener('paste', function(ev){
-      var cd=ev.clipboardData||window.clipboardData, raw=clean(cd&&cd.getData('text'));
-      if(!raw) return;
+  function canonPass(t){ return shaped(t,16)||String(t||'').trim(); }
+  [[un,8],[pw,16]].forEach(function(f){
+    f[0].addEventListener('paste', function(ev){
+      if(OWNER) return;
+      var cd=ev.clipboardData||window.clipboardData, got=shaped(cd&&cd.getData('text'), f[1]);
+      if(!got) return;
       ev.preventDefault();
-      var bs=group(b);
-      put(bs, raw.length>=bs.length*4?0:bs.indexOf(b), raw);
+      f[0].value=got; f[0].removeAttribute('aria-invalid'); f[0].classList.remove('salt-field__input--error');
+      if(f[0]===un) try{ pw.focus(); }catch(e){}
     });
-    b.addEventListener('keydown', function(ev){
-      if(ev.key!=='Backspace'||b.value) return;
-      var pv=SEG[SEG.indexOf(b)-1]; if(!pv) return;
-      ev.preventDefault();
-      pv.value=pv.value.slice(0,-1); sync(pv); toEnd(pv);
-    });
+    f[0].addEventListener('input', function(){ f[0].removeAttribute('aria-invalid'); f[0].classList.remove('salt-field__input--error'); });
   });
-  function firstEmpty(id){
-    var bs=boxesOf(id);
-    for(var i=0;i<bs.length;i++) if(bs[i].value.length<4) return bs[i];
-    return bs[bs.length-1];
+  var pwShow=document.getElementById('pwShow');
+  function showPw(on){ pw.type=on?'text':'password'; pwShow.setAttribute('aria-pressed',on?'true':'false'); pwShow.textContent=on?'Hide':'Show'; }
+  pwShow.addEventListener('click', function(){ showPw(pw.type==='password'); try{ pw.focus(); }catch(e){} });
+  /* what this phone can say about a value before it is sent: that one of the right length holds a symbol the
+     alphabet never uses, which is a typing slip and never a fact about an account. Anything else goes to the site
+     and its one answer. The test account's zeros are its own (v689). */
+  function unfit(v, n, what){
+    var raw=clean(v);
+    return raw.length===n&&!/^0+$/.test(raw)&&ALPHA.test(raw)?'A '+what+' never uses 0, 1, i, l, o or u. Check the symbols you typed.':'';
   }
-  /* a username from the QR arrives in the hidden field; it is shown in its boxes */
-  if(clean(un.value)) put(boxesOf('un'), 0, clean(un.value));
+
   function el(tag,cls,text){ var e=document.createElement(tag); if(cls)e.className=cls; if(text!=null)e.textContent=text; return e; }
   function rm(n){ return 'RM '+Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2}); }
   function unitsOf(q,u){ return q+' '+(u||'unit'); }
@@ -901,10 +883,10 @@ const CLIENT_JS = `
     if(OWNER){ roster.hidden=false; gate.hidden=true; if(whoacct) whoacct.textContent=''; }
     else gate.hidden=false;
     showTab('stmt');
-    pw.value=''; boxesOf('pw').forEach(function(x){ x.value=''; });
+    pw.value=''; showPw(false);
     if(cd) cd.textContent='';
     say(OWNER?'Signed out. Tap an account to open it again.':'Signed out. Sign in again when you want it.');
-    try{ (OWNER?rq:firstEmpty('pw')).focus(); }catch(e){}
+    try{ (OWNER?rq:pw).focus(); }catch(e){}
   }
   /* v692: LOGGING OUT IS A DEPARTURE, NOT A TIMER. It drops the session and the remembered wrap on
      the site as well as everything this page holds, so a phone handed on is a phone signed out. */
@@ -937,7 +919,7 @@ const CLIENT_JS = `
   var lapse=document.getElementById('lapse'), opening=document.getElementById('opening'),
       outSheet=document.getElementById('outSheet'), outScrim=document.getElementById('outScrim'),
       doorBox=document.getElementById('doorBox');
-  var LAPSED='Not sent: you were signed out on this phone. Sign in to carry on.';
+  var LAPSED='Not sent: you were signed out on this '+DEV+'. Sign in to carry on.';
   var reopening=null;
   function reopen(){
     if(OWNER) return Promise.resolve(false);
@@ -948,7 +930,7 @@ const CLIENT_JS = `
     if(poll){ clearInterval(poll); poll=null; }
     if(!lapse.hidden) return;
     var kept=!!remGet();
-    document.getElementById('lapseT').textContent=kept?'This phone could not sign you back in just now.':'You were signed out on this phone.';
+    document.getElementById('lapseT').textContent=kept?'This '+DEV+' could not sign you back in just now.':'You were signed out on this '+DEV+'.';
     document.getElementById('lapseGo').textContent=kept?'Try again':'Sign in';
     lapse.hidden=false;
     if(!kept) openSignedOut();
@@ -956,10 +938,10 @@ const CLIENT_JS = `
   function openSignedOut(){
     if(OWNER||!outSheet||!outSheet.hidden) return;
     document.getElementById('outForm').appendChild(doorBox);
-    if(user){ un.value=user; put(boxesOf('un'),0,clean(user)); }
+    if(user) un.value=user;
     say('');
     outScrim.hidden=false; outSheet.hidden=false;
-    try{ firstEmpty('pw').focus(); }catch(e){}
+    try{ pw.focus(); }catch(e){}
   }
   function closeSignedOut(){
     if(!outSheet||outSheet.hidden) return;
@@ -1826,9 +1808,12 @@ const CLIENT_JS = `
 
   document.getElementById('f').addEventListener('submit', async function(ev){
     ev.preventDefault();
-    var u=norm(un.value), pass=pw.value.trim();
-    if(!u){ say('Enter your username: two groups of four.','bad'); try{firstEmpty('un').focus();}catch(e){} return; }
-    if(!pass){ say('Enter the password sent to you.','bad'); try{firstEmpty('pw').focus();}catch(e){} return; }
+    var u=norm(un.value), pass=OWNER?pw.value.trim():canonPass(pw.value);
+    var bad=function(f,t){ say(t,'bad'); f.setAttribute('aria-invalid','true'); f.classList.add('salt-field__input--error'); try{ f.focus(); }catch(e){} };
+    if(!OWNER&&unfit(un.value,8,'username')){ bad(un,unfit(un.value,8,'username')); return; }
+    if(!u){ bad(un,'Enter your username: two groups of four.'); return; }
+    if(!pass){ bad(pw,'Enter the password sent to you.'); return; }
+    if(!OWNER&&unfit(pass,16,'password')){ bad(pw,unfit(pass,16,'password')); return; }
     un.value=u;
     var mine=++ticket;
     var stale=function(){ return mine!==ticket; };
@@ -1839,7 +1824,7 @@ const CLIENT_JS = `
        unwraps with the matching wrap. A customer never knows there is a second one. */
     try{
       r=await fetch('/open', {method:'POST',
-        headers:{'content-type':'application/json'}, body:JSON.stringify({u:u, password:pass, master:pass})});
+        headers:{'content-type':'application/json'}, body:JSON.stringify(OWNER?{u:u, password:pass, master:pass}:{u:u, password:pass})});
       body=await r.json();
     }catch(e){ if(stale())return; done(); say('No connection. Try again in a moment.','bad'); return; }
     if(stale()) return;
@@ -2011,8 +1996,6 @@ const CLIENT_JS = `
      in this browser and the content key wrapped under it on the site, neither opening anything alone. */
   var linkBox=document.getElementById('link'), linkGo=document.getElementById('linkGo'),
       linkMsg=document.getElementById('linkMsg');
-  var UA=navigator.userAgent||'';
-  var IOS=/iPhone|iPad|iPod/.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   var INAPP=/WhatsApp|Instagram|FBAN|FBAV|FB_IAB|FBIOS|FB4A|Line[/]|MicroMessenger/.test(UA);
   var LOST='Not opened: the answer did not arrive. Tap Continue again. For two minutes this page can still open it.';
   var SPENT='That link has been used already, or it has expired. Sign in with your username and password, or ask us for a new sign-in link.';
@@ -2058,7 +2041,7 @@ const CLIENT_JS = `
     if(r&&r.status===401){ linkSpent(); return false; }
     if(r&&r.ok&&body&&body.ok&&body.u){
       var lead=document.getElementById('linkLead'), who=el('span','mono',body.u);
-      lead.textContent='This link opens account '; lead.appendChild(who); lead.appendChild(document.createTextNode(' on this phone and keeps it signed in.'));
+      lead.textContent='This link opens account '; lead.appendChild(who); lead.appendChild(document.createTextNode(' on this '+DEV+' and keeps it signed in.'));
     }
     linkGo.disabled=false; lsay('');
     return true;
@@ -2112,7 +2095,7 @@ const CLIENT_JS = `
     if(inst&&!installed) inst.hidden=false;
     /* the cursor lands at once, and a remembered device opens over the top of it: a reader with no
        memory on this phone must never wait on a request to be able to type */
-    try{ (un.value?firstEmpty('pw'):firstEmpty('un')).focus(); }catch(e){}
+    try{ (un.value?pw:un).focus(); }catch(e){}
     /* v710: a one-time link first, a remembered device second. A reader arriving on a link came to
        use it, and if it is spent the remembered device is still there behind it. S3 3.3: the link is a
        page of its own now, spent on Continue, so the page waits there. */

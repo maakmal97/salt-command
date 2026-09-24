@@ -46,7 +46,7 @@ const KEEPIT = "Keep it on your phone: on an iPhone tap Share, then Add to Home 
  * Screen app keeps its own storage, so what Safari remembered never reaches it: the sign-in is made inside
  * the saved app. The link's message does not carry this at all: the link keeps the phone signed in
  * itself (S3 3.4), and never shows the door. */
-const REMEMBER = "Open it from there and sign in with Remember me ticked: it stays signed in, and Log out ends it.";
+const REMEMBER = "Open it from there and sign in with Keep me signed in ticked: it stays signed in, and Log out ends it.";
 
 /** The message a customer gets: the link and the username, and no secret. */
 export function linkMessage(row) {

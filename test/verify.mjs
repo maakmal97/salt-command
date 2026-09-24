@@ -7198,8 +7198,8 @@ await (async () => {
   ok(html.includes('value="' + un + '"'), "and fills in the username the QR carried, normalised");
   ok(!html.includes(pw) && !html.includes(envB.ct) && !html.includes("CX0-AA"),
     "the page carries no password, no ciphertext and no account code");
-  ok(html.includes("Remember me") && html.includes("Log in") && html.includes('id="un"') && html.includes('id="pw"'),
-    "it asks for a username and a password, offers Remember me, and the button says Log in (v692)");
+  ok(html.includes("Keep me signed in on this") && html.includes('type="submit">Sign in</button>') && html.includes('id="un"') && html.includes('id="pw"'),
+    "it asks for a username and a password, offers to keep them signed in, and the button says Sign in (v692; S3 3.7)");
   ok(/nonce-/.test(csp) && !/unsafe-inline/.test(csp) && /connect-src 'self'/.test(csp),
     "and declares a nonce CSP rather than allowing inline script wholesale");
   ok((r.headers.get("x-robots-tag") || "").includes("noindex")
@@ -7243,69 +7243,45 @@ await (async () => {
       "anything that is not sixteen symbols of the alphabet is left exactly as typed");
     ok((await stmtWorker.fetch(open({ u: un, password: pw.replace(/-/g, "").toUpperCase() }), senv)).status === 200,
       "so a password typed without hyphens and in capitals opens the statement");
-    /* TWO BOXES AND FOUR (his instruction, 16 Sep 2026): the username in two boxes and the password in four,
-       driven in the page as a phone would: one symbol at a time, a paste, an autofill, and Backspace. */
+    /* ONE FIELD FOR EACH SECRET (S3 3.7, his D3 of 24 Sep 2026; two boxes and four from 16 Sep until then), driven
+       in the page as a phone would: typed, a paste of a whole message, a username from the QR, and Log out. */
     const { landingPage: lpB } = await import("../stmt/page.js");
     const { JSDOM: JDB } = await import("jsdom");
     const drive = (user) => {
       const dom = new JDB(lpB(user, "nb", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true });
-      const W = dom.window, d = W.document, box = [...d.querySelectorAll(".seg input")];
-      const fire = (el, type, extra) => { const e = new W.Event(type, { bubbles: true, cancelable: true }); Object.assign(e, extra || {}); el.dispatchEvent(e); return e; };
-      const typeIn = (text) => { for (const ch of text) { const el = d.activeElement; el.value += ch; fire(el, "input"); } };
+      const W = dom.window, d = W.document;
       const paste = (el, text) => { el.focus(); const e = new W.Event("paste", { bubbles: true, cancelable: true }); Object.defineProperty(e, "clipboardData", { value: { getData: () => text } }); el.dispatchEvent(e); return e; };
-      const back = (el) => { el.focus(); fire(el, "keydown", { key: "Backspace" }); };
-      const state = () => ({ un: d.getElementById("un").value, pw: d.getElementById("pw").value, boxes: box.map((b) => b.value), at: box.indexOf(d.activeElement) });
-      return { W, d, box, typeIn, paste, back, fire, state };
+      const state = () => ({ un: d.getElementById("un").value, pw: d.getElementById("pw").value, at: d.activeElement && d.activeElement.id });
+      return { W, d, paste, state };
     };
     const P16 = "2345678abcdefghj";
     {
       const g = drive("");
-      ok(g.d.querySelectorAll('.seg[data-for="un"] input').length === 2 && g.d.querySelectorAll('.seg[data-for="pw"] input[type="password"]').length === 4
-        && g.d.getElementById("un").type === "hidden" && g.d.getElementById("pw").type === "hidden",
-        "the username is two boxes and the password four masked ones, with the joined values in hidden fields");
-      ok(g.state().at === 0, "a page opened by hand starts in the first username box");
-      g.typeIn("abcdefgh" + P16);
-      const t = g.state();
-      ok(t.un === "abcd-efgh" && t.pw === "2345-678a-bcde-fghj" && JSON.stringify(t.boxes) === JSON.stringify(["abcd", "efgh", "2345", "678a", "bcde", "fghj"]) && t.at === 5,
-        "typed one symbol at a time, each full box hands the cursor to the next, across into the password: " + JSON.stringify(t));
-      g.box[2].value = ""; g.fire(g.box[2], "input");
-      g.back(g.box[2]);
-      const b1 = g.state();
-      ok(b1.at === 1 && b1.boxes[1] === "efg" && b1.un === "abcd-efg", "Backspace in an empty box steps back and takes the symbol before: " + JSON.stringify(b1));
+      const un1 = g.d.getElementById("un"), pw1 = g.d.getElementById("pw");
+      ok(un1.type === "text" && un1.getAttribute("autocomplete") === "username" && pw1.type === "password" && pw1.getAttribute("autocomplete") === "current-password"
+        && g.d.querySelectorAll("#f input:not([type=checkbox])").length === 2 && !g.d.querySelector(".seg input"),
+        "the username is one field and the password one masked field, named as a password manager reads them");
+      ok(g.state().at === "un", "a page opened by hand starts in the username");
+      const e = g.paste(pw1, "Statement password: 2345-678A-bcde-FGHJ\n\nPlease keep it to yourself. It opens the statement at the link in the previous message.");
+      ok(e.defaultPrevented && g.state().pw === "2345-678a-bcde-fghj",
+        "the whole message pasted into the password keeps only the password: " + JSON.stringify(g.state().pw));
       g.d.getElementById("lock").click();
-      const lk = g.state();
-      ok(lk.pw === "" && lk.boxes.slice(2).every((v) => v === "") && lk.un === "abcd-efg" && lk.at === 2,
-        "Lock empties the four password boxes, keeps the username and waits in the first password box: " + JSON.stringify(lk));
+      ok(g.state().pw === "" && g.state().at === "pw", "Log out empties the password and waits in it");
       g.W.close();
     }
     {
       const g = drive("");
-      g.box[1].value = "zz"; g.fire(g.box[1], "input");
-      const e = g.paste(g.box[1], " ABCD-efgh ");
-      const pu = g.state();
-      ok(e.defaultPrevented && pu.un === "abcd-efgh" && pu.boxes[0] === "abcd" && pu.boxes[1] === "efgh" && pu.at === 2,
-        "a whole username pasted into its second box, over what was there, fills both from the first and moves on to the password: " + JSON.stringify(pu));
-      g.paste(g.box[4], P16.toUpperCase().replace(/(.{4})/g, "$1 "));
-      const pp = g.state();
-      ok(pp.pw === "2345-678a-bcde-fghj" && pp.at === 5, "a whole password pasted into its third box, in capitals with spaces, fills all four: " + JSON.stringify(pp));
-      g.W.close();
-    }
-    {
-      const g = drive("");
-      g.paste(g.box[3], "2345ab");
-      const part = g.state();
-      ok(JSON.stringify(part.boxes.slice(2)) === JSON.stringify(["", "2345", "ab", ""]) && part.at === 4,
-        "a part pasted into a middle box fills from that box and leaves the cursor where it stops: " + JSON.stringify(part));
-      g.box[3].value = P16; g.fire(g.box[3], "input");
-      const af = g.state();
-      ok(af.pw === "2345-678a-bcde-fghj" && af.at === 5, "an autofill or suggestion of the whole password into its second box is spread across all four from the first: " + JSON.stringify(af));
+      const e = g.paste(g.d.getElementById("un"), "Your account is ready to use.\n\nOpen it here:\nhttps://site.test/?u=abcd-efgh\n\nUsername: ABCD-efgh\nYour password is in a separate message.");
+      ok(e.defaultPrevented && g.state().un === "abcd-efgh" && g.state().at === "pw",
+        "the whole message pasted into the username keeps only the username and moves on to the password: " + JSON.stringify(g.state()));
+      g.paste(g.d.getElementById("pw"), P16.toUpperCase().replace(/(.{4})/g, "$1 ").trim());
+      ok(g.state().pw === "2345-678a-bcde-fghj", "a bare password in capitals with spaces is put in the form it was sent in: " + JSON.stringify(g.state().pw));
       g.W.close();
     }
     {
       const g = drive("abcd-efgh");
       const q = g.state();
-      ok(q.un === "abcd-efgh" && JSON.stringify(q.boxes.slice(0, 2)) === '["abcd","efgh"]' && q.at === 2,
-        "a username from the QR shows in its two boxes and the cursor waits in the first password box: " + JSON.stringify(q));
+      ok(q.un === "abcd-efgh" && q.at === "pw", "a username from the QR fills its field and the cursor waits in the password: " + JSON.stringify(q));
       g.W.close();
     }
   }
@@ -15310,15 +15286,15 @@ await (async () => {
   const SB = await import("../stmt/send.js");
   const row = { url: "https://site.test/s/" + "t".repeat(32), user: "27a4-gkgw" };
   const door = lpB("", "nB", null), sign = SB.signInMessage(row), link = SB.linkMessage(row);
-  ok(!/It signs you in/.test(door) && /sign in there with Remember me ticked/.test(door),
-    "the door's install step no longer promises a sign-in, and says where to make it: in the saved app, with Remember me ticked");
+  ok(!/It signs you in/.test(door) && /sign in there with Keep me signed in ticked/.test(door),
+    "the door's install step no longer promises a sign-in, and says where to make it: in the saved app, with the tick (S3 3.7's name for it)");
   ok(!/It signs you in/.test(sign) && !/It signs you in/.test(link), "and neither message says it either");
   /* S3 3.4 (his D1): the link keeps the phone signed in, and says so; it still promises no saved app */
-  ok(!/Remember me/.test(sign) && !/Add to Home Screen|Install app/.test(sign)
+  ok(!/Remember me|Keep me signed in/.test(sign) && !/Add to Home Screen|Install app/.test(sign)
     && /keeps this phone signed in/.test(sign) && /ask me for a new link/.test(sign),
     "the link's message says it keeps this phone signed in, promises no saved app, which would open on a door it gives no way past, "
     + "and says to ask for a new link: " + JSON.stringify(sign.slice(-160)));
-  ok(/Open it from there and sign in with Remember me ticked/.test(link),
+  ok(/Open it from there and sign in with Keep me signed in ticked/.test(link),
     "and the username road, which reaches the door, says the sign-in is made in the saved app");
 })();
 section("S1 1.4: a dropped request gives back its control and says Not sent beside it");
@@ -15449,10 +15425,10 @@ await (async () => {
     await wait(() => !two.D.getElementById("barw").hidden);
     st2.lapsed = true;
     await wait(() => !two.D.getElementById("lapse").hidden);
-    ok(!two.D.getElementById("lapse").hidden && /You were signed out on this phone\./.test(two.D.getElementById("lapseT").textContent)
+    ok(!two.D.getElementById("lapse").hidden && /You were signed out on this (phone|computer)\./.test(two.D.getElementById("lapseT").textContent)
       && two.D.getElementById("lapseGo").textContent === "Sign in",
       "a phone that remembers nothing is told so in the bar, with Sign in");
-    const boxes = [...two.D.querySelectorAll('.seg[data-for="un"] input')].map((b) => b.value).join("-");
+    const boxes = two.D.getElementById("un").value;
     ok(!two.D.getElementById("outSheet").hidden && two.D.getElementById("outSheet").contains(two.D.getElementById("f")) && boxes === uD && st2.reopened === 0,
       "and a Sheet carries the door with the username in it, asking nothing of a device it does not have: " + JSON.stringify({ boxes, reopened: st2.reopened }));
   } finally { try { two.W.close(); } catch (e) { /* best effort */ } }
@@ -15493,7 +15469,7 @@ await (async () => {
   const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
   const btn = (t) => [...D.querySelectorAll("#pOrder button")].find((b) => b.textContent === t && !b.disabled);
   const said = () => [...D.querySelectorAll("#pOrder .msg")].map((x) => x.textContent.trim()).filter(Boolean);
-  const lapseOn = () => !D.getElementById("lapse").hidden && /signed out on this phone/.test(D.getElementById("lapse").textContent)
+  const lapseOn = () => !D.getElementById("lapse").hidden && /signed out on this (phone|computer)/.test(D.getElementById("lapse").textContent)
     && !D.getElementById("outSheet").hidden;
   try {
     D.getElementById("pw").value = passX;
@@ -15506,13 +15482,13 @@ await (async () => {
     await until(() => btn("Place this order")); btn("Place this order").click();
     await until(() => lapseOn() && said().length);
     const placed = said();
-    ok(lapseOn() && placed.includes("Not sent: you were signed out on this phone. Sign in to carry on.") && !placed.some((t) => /Sign in again|session has ended/.test(t)),
+    ok(lapseOn() && placed.some((t) => /^Not sent: you were signed out on this (phone|computer)[.] Sign in to carry on[.]$/.test(t)) && !placed.some((t) => /Sign in again|session has ended/.test(t)),
       "Place answered 401 with nothing remembered: the Sheet and the bar say it, and beside Place a pointer to them, never a second wording: " + JSON.stringify(placed));
     const box = D.querySelector('#pOrder input[data-say="' + ord.id + '"]');
     box.value = "is it ready"; box.dispatchEvent(new W.Event("input", { bubbles: true }));
     const send = [...D.querySelectorAll("#pOrder button")].find((b) => b.textContent === "Send");
     send.click();
-    const pointers = () => said().filter((t) => t === "Not sent: you were signed out on this phone. Sign in to carry on.").length;
+    const pointers = () => said().filter((t) => /^Not sent: you were signed out on this (phone|computer)[.] Sign in to carry on[.]$/.test(t)).length;
     await until(() => pointers() >= 2);
     const sent = said();
     ok(pointers() === 2 && !sent.some((t) => /Sign in again|session has ended/.test(t)),
@@ -15820,9 +15796,9 @@ await (async () => {
   const { landingPage: lp92 } = await import("../stmt/page.js");
   const C92 = await import("../tools/stmt-crypto.mjs");
   const door92 = lp92("", "n92", null);
-  ok(door92.includes("Remember me") && door92.includes(">Log in<") && door92.includes(">Log out<")
+  ok(door92.includes("Keep me signed in on this") && door92.includes('type="submit">Sign in</button>') && door92.includes(">Log out<")
     && !door92.includes("three minutes") && !door92.includes("Locks in") && !/WINDOW_MS/.test(door92),
-    "the door offers Remember me, logs in and logs out, and nothing counts down");
+    "the door offers to keep them signed in, signs in and logs out, and nothing counts down (v692; S3 3.7's words)");
 
   const u92 = "aaaa-bbbb", pass92 = "2345-6789-abcd-efgh";
   const ck92 = await C92.contentKey("7".repeat(64), u92);
@@ -18134,7 +18110,7 @@ await (async () => {
   try {
     const D = one.window.document;
     await until(() => !D.getElementById("linkGo").disabled);
-    ok(D.getElementById("linkLead").textContent === "This link opens account " + u34 + " on this phone and keeps it signed in.",
+    ok(D.getElementById("linkLead").textContent === "This link opens account " + u34 + " on this computer and keeps it signed in.",
       "the link page says it keeps the phone signed in: " + JSON.stringify(D.getElementById("linkLead").textContent));
     D.getElementById("linkGo").dispatchEvent(new one.window.Event("click", { bubbles: true }));
     await until(() => store.has("salt-stmt-remember"));
@@ -18305,7 +18281,7 @@ await (async () => {
     g2.st.dead.add(sessOf(g2));
     await until(() => !g2.D.getElementById("outSheet").hidden);
     const sheet = g2.D.getElementById("outSheet");
-    ok(!sheet.hidden && /You were signed out on this phone/.test(sheet.textContent) && sheet.contains(g2.D.getElementById("f"))
+    ok(!sheet.hidden && /You were signed out on this (phone|computer)/.test(sheet.textContent) && sheet.contains(g2.D.getElementById("f"))
       && g2.D.getElementById("un").value === u35 && !g2.D.getElementById("pOrder").hidden,
       "with nothing remembered, a Sheet says so over the order they were writing, carrying the door's own form with the username in it");
     g2.D.getElementById("pw").value = pass35;
@@ -18316,6 +18292,101 @@ await (async () => {
       && g2.D.getElementById("gate").contains(g2.D.getElementById("f")),
       "and signing in there closes it on the same tab with the line they had typed still in it: " + JSON.stringify(line() && line().value));
   } finally { g2.W.close(); }
+})();
+section("S3 3.7: the door is one username field and one password field a password manager can fill, with Show, a paste that keeps only the password, an alphabet check on the device, the tick, the help line, and one refusal");
+await (async () => {
+  /* HIS D3 OF 24 SEP 2026. Six boxes took fingers and nothing else: no password manager could fill them, and a
+     pasted message had to be trimmed by hand first. */
+  const W37 = (await import("../stmt/worker.js")).default;
+  const C37 = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JD37 } = await import("jsdom");
+  const kv = new KV();
+  const u37 = C37.newUsername(), pw37 = C37.newPassword(), ck37 = await C37.contentKey("s37", u37);
+  await kv.put("u:" + u37, JSON.stringify({ u: u37, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C37.makeVerifier(pw37),
+    wrap: await C37.wrapKey(pw37, ck37), env: await C37.encryptWith(ck37, JSON.stringify({ statements: [] })) }));
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const DESK = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36";
+  const drive = async (ua) => {
+    const html = await (await W37.fetch(new Request("https://k7m3p2.example/"), { STMT: kv })).text();
+    const posts = [];
+    const dom = new JD37(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      Object.defineProperty(win.navigator, "userAgent", { value: ua, configurable: true });
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const body = init && init.body ? JSON.parse(init.body) : null;
+        posts.push({ path: String(path), body });
+        const r = await W37.fetch(new Request("https://k7m3p2.example" + String(path), { method: (init && init.method) || "GET",
+          headers: Object.assign({ "content-type": "application/json" }, (init && init.headers) || {}), body: init && init.body }), { STMT: kv });
+        return { ok: r.ok, status: r.status, json: async () => r.json() };
+      };
+    } });
+    const D = dom.window.document;
+    const submit = async (u, p) => {
+      D.getElementById("un").value = u; D.getElementById("pw").value = p;
+      const n = posts.length;
+      D.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 160; i++) {
+        const m = D.getElementById("msg").textContent;
+        if (!/^(Checking|Opening)/.test(m) && (posts.length > n || m)) break;
+        await new Promise((r) => setTimeout(r, 25));
+      }
+      await new Promise((r) => setTimeout(r, 60));
+      return { said: D.getElementById("msg").textContent, sent: posts.slice(n).filter((x) => x.path === "/open") };
+    };
+    return { W: dom.window, D, posts, submit };
+  };
+
+  const g = await drive(IPHONE);
+  try {
+    const { D } = g, gate = D.getElementById("gate");
+    const text = gate.textContent.replace(/\s+/g, " ");
+    ok(/^Sign in/.test(gate.querySelector("h1").textContent) && /With the username and password we sent you\./.test(text)
+      && /Two groups of four, like abcd-efgh\./.test(text) && /Pasting the whole message works: we keep only the password\./.test(text),
+      "the door says Sign in, what to sign in with, and how each field is written");
+    const tick = D.getElementById("rem"), tickText = tick.closest("label").textContent;
+    ok(tick.checked && tickText === "Keep me signed in on this phone", "Keep me signed in on this phone, ticked: " + JSON.stringify(tickText));
+    const help = [...gate.querySelectorAll(".salt-insight")].find((x) => /Lost your password or your link\?/.test(x.textContent));
+    ok(!!help && /Ask us for a new sign-in link\./.test(help.textContent)
+      && (help.compareDocumentPosition(D.getElementById("go")) & D.defaultView.Node.DOCUMENT_POSITION_PRECEDING) !== 0,
+      "and beneath Sign in: Lost your password or your link? Ask us for a new sign-in link");
+
+    /* Show */
+    const pw = D.getElementById("pw"), show = D.getElementById("pwShow");
+    show.click();
+    const shown = [pw.type, show.getAttribute("aria-pressed"), show.textContent];
+    show.click();
+    ok(JSON.stringify(shown) === '["text","true","Hide"]' && pw.type === "password" && show.getAttribute("aria-pressed") === "false" && show.textContent === "Show",
+      "Show unmasks the password and says so; Hide masks it again: " + JSON.stringify(shown));
+
+    /* the alphabet, on the device */
+    const typo = pw37.replace(/[a-z]/, "o");
+    const a1 = await g.submit(u37, typo);
+    ok(a1.sent.length === 0 && /never uses 0, 1, i, l, o or u/.test(a1.said) && pw.getAttribute("aria-invalid") === "true",
+      "a password holding a symbol the alphabet never uses is caught on the phone, beside the field, and nothing is sent: " + JSON.stringify(a1.said));
+    const a2 = await g.submit(u37.slice(0, 8) + "l", pw37);
+    ok(a2.sent.length === 0 && /A username never uses/.test(a2.said), "and so is a username: " + JSON.stringify(a2.said));
+    const z = await g.submit("0000-0000", "0000-0000-0000-0000");
+    ok(z.sent.length === 1, "the test account's zeros are its own and go to the site");
+
+    /* one refusal, and no master from a customer's door */
+    const r1 = await g.submit(u37, C37.newPassword()), r2 = await g.submit(C37.newUsername(), pw37);
+    ok(r1.sent.length === 1 && r1.said === "That username and password were not accepted." && r1.said === r2.said && !gate.hidden,
+      "a wrong password and an unknown username are the site's one refusal, word for word: " + JSON.stringify([r1.said, r2.said]));
+    ok(g.posts.filter((x) => x.path === "/open").every((x) => x.body && !("master" in x.body)),
+      "and a customer's door never sends a master, so it still cannot be typed there");
+    const pasted = (() => { const e = new g.W.Event("paste", { bubbles: true, cancelable: true });
+      Object.defineProperty(e, "clipboardData", { value: { getData: () => "Statement password: " + pw37.toUpperCase() + "\n\nPlease keep it to yourself." } });
+      pw.value = ""; pw.dispatchEvent(e); return pw.value; })();
+    const ok37 = await g.submit(u37, pasted);
+    ok(pasted === pw37 && ok37.sent.length === 1 && gate.hidden, "a pasted message's password, and only that, opens the account");
+  } finally { g.W.close(); }
+
+  const desk = await drive(DESK);
+  try {
+    ok(desk.D.getElementById("rem").closest("label").textContent === "Keep me signed in on this computer",
+      "and on a computer nothing says phone");
+  } finally { desk.W.close(); }
 })();
 section("v710: the shared link signs them in once, so no message carries a password");
 await (async () => {
@@ -22078,8 +22149,8 @@ await (async () => {
     /* S1 1.3, 24 SEP 2026: the door's two switches only where the reader reaches the door. The link route
        never shows the tick, so the link's message promising it was false (B03). */
     /* F5, UX3: nor the home screen steps, which save an icon that opens on that door */
-    ok(what === "the link" ? !/Add to Home Screen|Install app|Remember me/.test(msg) && /ask me for a new link/.test(msg)
-      : /Add to Home Screen/.test(msg) && /Install app/.test(msg) && /Remember me/.test(msg) && /Log out/.test(msg),
+    ok(what === "the link" ? !/Add to Home Screen|Install app|Remember me|Keep me signed in/.test(msg) && /ask me for a new link/.test(msg)
+      : /Add to Home Screen/.test(msg) && /Install app/.test(msg) && /Keep me signed in/.test(msg) && /Log out/.test(msg),
       what + "'s message carries the home screen steps and the door's two switches only where the reader reaches the door");
     ok(siteWords(msg) === "", what + "'s message passes the lock every word sent to a customer passes: " + siteWords(msg));
     ok(!msg.includes(row69.pw), what + "'s message carries no password, which is the rule that made the link");
