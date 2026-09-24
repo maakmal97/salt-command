@@ -20990,6 +20990,85 @@ await (async () => {
       "a complete order has every step done, nothing filled and nothing to cancel");
   } finally { w.close(); }
 })();
+section("S5 5.3: an order's state is said in the customer's words, on the page and in every refusal the site hands it");
+await (async () => {
+  /* 24 SEP 2026, his answer to D11. The page read the desk's states to the customer: Acknowledged, Withdrawn,
+     Declined, "handed over", and a refusal said "an order that is done". Their words are Sent, Confirmed, Ready to
+     collect or deliver, Collected or Delivered, Complete, Not taken, Cancelled by you or by us, and units above
+     one. Driven through the served page, then the site's own state machine. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const O = await import("../stmt/orders.js");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s53", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s53",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const h = (at, status, by, x) => Object.assign({ at, status, by }, x || {});
+  const o = (id, x) => Object.assign({ id, at: "2026-09-2" + id.slice(-1) + "T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0,
+    mode: "collect", paid: 0, moved: 0, status: "placed", history: [h("2026-09-20T01:00:00Z", "placed", "customer")], msgs: [] }, x);
+  const orders = [
+    o("20260929000000-a1", { qty: 0.5 }),
+    o("20260928000000-a2", { status: "acknowledged", paid: 90 }),
+    o("20260927000000-a3", { status: "ready", qty: 2.5, total: 225, paid: 225 }),
+    o("20260926000000-a4", { status: "ready", mode: "deliver", paid: 90 }),
+    o("20260925000000-a5", { status: "ready", mode: "deliver", moved: 1, movedOn: "2026-09-25" }),
+    o("20260924000000-a6", { status: "done", paid: 90, moved: 1, history: [h("2026-09-20T01:00:00Z", "placed", "customer"),
+      h("2026-09-20T02:00:00Z", "acknowledged", "desk"), h("2026-09-20T03:00:00Z", "acknowledged", "customer", { method: "cod" }),
+      h("2026-09-20T04:00:00Z", "acknowledged", "customer", { method: "cod", note: "paid 70.00" }),
+      h("2026-09-20T05:00:00Z", "acknowledged", "desk", { note: "payment of 20.00 recorded" }),
+      h("2026-09-20T06:00:00Z", "acknowledged", "desk", { note: "1 unit collected" }), h("2026-09-20T06:00:00Z", "done", "site")] }),
+    o("20260923000000-a7", { status: "declined", history: [h("2026-09-20T01:00:00Z", "placed", "customer"), h("2026-09-20T02:00:00Z", "declined", "desk", { note: "None this week" })] }),
+    o("20260922000000-a8", { status: "cancelled", history: [h("2026-09-20T01:00:00Z", "placed", "customer"), h("2026-09-20T02:00:00Z", "cancelled", "customer")] }),
+    o("20260921000000-a9", { status: "cancelled", history: [h("2026-09-20T01:00:00Z", "placed", "customer"), h("2026-09-20T02:00:00Z", "cancelled", "desk")] })];
+  const dom = new JSDOM(landingPage(u, "n53", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : { ok: true };
+      return { ok: true, status: 200, json: async () => j };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const row = (id) => d.querySelector('#pOrder [data-row="' + id + '"]');
+  const chip = (id) => { const r = row(id), c = r && r.querySelector(".salt-status"); return c ? c.textContent : null; };
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-olist]"); i++) await new Promise((r) => setTimeout(r, 50));
+    d.querySelector('#tabs button[data-t="order"]').click();
+    const fold = d.querySelector("#pOrder .olater"); if (fold) fold.click();
+    const words = orders.map((x) => chip(x.id));
+    ok(JSON.stringify(words) === JSON.stringify(["Sent", "Confirmed", "Ready to collect", "Ready to deliver", "Delivered", "Complete", "Not taken", "Cancelled by you", "Cancelled by us"]),
+      "each state reads in their words, the goods all with them reading Delivered and a cancellation saying whose it was: " + JSON.stringify(words));
+    ok(!/Acknowledged|Withdrawn|Declined|Completed|Placed|handed over/i.test(d.querySelector("#pOrder [data-olist]").textContent),
+      "and none of the desk's words is left on the list");
+    ok(/0[.]5 unit(?!s)/.test(row("20260929000000-a1").textContent) && /2[.]5 units/.test(row("20260927000000-a3").textContent) && /1 unit(?!s)/.test(row("20260928000000-a2").textContent),
+      "units above one, unit at one and under: " + JSON.stringify([row("20260929000000-a1").textContent, row("20260927000000-a3").textContent]));
+    row("20260924000000-a6").click();
+    const hist = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
+    ok(JSON.stringify(hist) === JSON.stringify(["Sent", "Confirmed", "You chose to pay by cash on handover", "You paid RM 70 by cash on handover",
+      "We recorded a payment of RM 20", "1 unit collected", "Complete"]),
+      "what happened reads a step a line in their words, the desk's shorthand turned into sentences: " + JSON.stringify(hist));
+    d.querySelector("#pOrder .oback").click();
+    row("20260923000000-a7").click();
+    const h7 = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
+    ok(h7[1] === "Not taken: None this week", "his reason stays with the step it came with: " + JSON.stringify(h7));
+  } finally { w.close(); }
+
+  /* ---- the refusals the site hands the page ---- */
+  const at = "2026-09-24T01:00:00Z";
+  const said = [
+    O.decideCustomer({ status: "done", moved: 1, qty: 1 }, "cancel", {}, [], at).error,
+    O.decideCustomer({ status: "declined", moved: 0, qty: 1 }, "cancel", {}, [], at).error,
+    O.decideCustomer({ status: "acknowledged", moved: 1, qty: 1 }, "cancel", {}, [], at).error,
+    O.decideCustomer({ status: "placed", moved: 0, qty: 1, total: 90 }, "method", { method: "cod" }, [], at).error,
+    O.decideCustomer({ status: "placed", moved: 0, qty: 1, total: 90 }, "pay", { amount: 10 }, [], at).error];
+  ok(JSON.stringify(said) === JSON.stringify(["this order is complete, so it cannot be cancelled here", "this order is not taken, so it cannot be cancelled here",
+    "the goods are already with you, so this cannot be cancelled here", "payment is chosen once the order is confirmed", "payment is recorded once the order is confirmed"]),
+    "every refusal of a customer's move says it in their words, never the state's name: " + JSON.stringify(said));
+})();
 section("v753: he answers on the order, and the words are checked on the desk before they leave it");
 await (async () => {
   /* the other half of v751. His answer is a move of his like any other, so it wakes them and changes

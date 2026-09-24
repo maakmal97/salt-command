@@ -770,7 +770,8 @@ const CLIENT_JS = `
   if(clean(un.value)) put(boxesOf('un'), 0, clean(un.value));
   function el(tag,cls,text){ var e=document.createElement(tag); if(cls)e.className=cls; if(text!=null)e.textContent=text; return e; }
   function rm(n){ return 'RM '+Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2}); }
-  function unitsOf(q,u){ return q+' '+(u||'unit'); }
+  /* S5 5.3 (D11): "units" above one, "unit" at one and under */
+  function unitsOf(q,u){ u=u||'unit'; return q+' '+(u==='unit'&&+q>1?'units':u); }
 
   /* THE PASSWORD UNWRAPS A KEY, AND THE KEY OPENS EVERYTHING. The same derivation the vault
      uses, PBKDF2-SHA256 x150000 into AES-GCM-256, but over the wrap rather than the content:
@@ -1468,9 +1469,34 @@ const CLIENT_JS = `
     openWanted();
   }
 
-  /* the chip's tone by state: pending is steel, ready is brass, done is verdigris, anything closed is mist */
-  var STATE_TONE={placed:'steel',acknowledged:'steel',ready:'brass',done:'verdigris'};
-  var STATE_WORDS={placed:'Placed', acknowledged:'Acknowledged', ready:'Ready', done:'Completed', declined:'Declined', cancelled:'Withdrawn'};
+  /* S5 5.3 (D11, his answer of 24 Sep 2026): WHERE AN ORDER IS, IN THE CUSTOMER'S WORDS. The record's states are the
+     desk's; they read Sent, Confirmed, Ready to collect or to deliver, Collected or Delivered once the goods are all
+     with them, Complete, Not taken, and Cancelled by you or by us, read off who cancelled it. Never Acknowledged,
+     Withdrawn or handed over. The tone follows the word: steel and dashed while it waits on us, brass ready,
+     verdigris confirmed or moved, mist closed. */
+  function oWord(st,o,by){
+    var d=o.mode==='deliver';
+    return {placed:'Sent', acknowledged:'Confirmed', ready:d?'Ready to deliver':'Ready to collect', done:'Complete', declined:'Not taken',
+      cancelled:by==='desk'?'Cancelled by us':'Cancelled by you'}[st]||st;
+  }
+  function stateWord(o){
+    if(oPayable(o)&&movedAll(o)) return o.mode==='deliver'?'Delivered':'Collected';
+    var c=(o.history||[]).filter(function(x){ return x.status==='cancelled'; });
+    return oWord(o.status,o,c.length?c[c.length-1].by:'');
+  }
+  function stateChip(o,cls){
+    var s=o.status, tone=s==='placed'?'steel salt-status--dashed':s==='ready'&&!movedAll(o)?'brass':(s==='acknowledged'||s==='done'||oPayable(o))?'verdigris':'mist';
+    return el('span',(cls?cls+' ':'')+'salt-status salt-status--'+tone,stateWord(o));
+  }
+  /* what happened, a step a line, in the same words: the record's notes are the desk's shorthand */
+  function histLine(x,o){
+    var n=String(x.note||''), m, how=x.method?' by '+methodWord(x.method,x.account):'';
+    if((m=/^paid ([0-9.]+)$/.exec(n))) return 'You paid '+rm(+m[1])+how;
+    if((m=/^payment of ([0-9.]+) recorded$/.exec(n))) return 'We recorded a payment of '+rm(+m[1]);
+    if((m=/^([0-9.]+) unit (delivered|collected)$/.exec(n))) return unitsOf(+m[1],oUnit(o))+' '+m[2];
+    if(x.method) return 'You chose to pay'+how;
+    return oWord(x.status,o,x.by)+(n?': '+n:'');
+  }
   /* v694: money and goods are two tracks, so what is still owed and what is still to come are read
      off the order, never off a single word of state. Both figures are the ones the desk holds. */
   function dueOf(o){ return +((o.total+(+o.delivery||0))-(+o.paid||0)).toFixed(2); }
@@ -1529,7 +1555,7 @@ const CLIENT_JS = `
     if(o.id===shown) b.setAttribute('aria-current','true');
     var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
     t.appendChild(withMark(o.product,unitsOf(o.qty,oUnit(o)),18));
-    t.appendChild(el('span','salt-status salt-status--'+(STATE_TONE[o.status]||'mist'),STATE_WORDS[o.status]||o.status));
+    t.appendChild(stateChip(o));
     main.appendChild(t);
     var why=oWhy(o); if(why) main.appendChild(el('span','salt-inbox-row__what',why));
     b.appendChild(main);
@@ -1576,7 +1602,7 @@ const CLIENT_JS = `
     var h=el('div','ohead'), t=el('h3');
     t.appendChild(psym(o.product,26)); t.appendChild(document.createTextNode(' '+unitsOf(o.qty,oUnit(o)))); t.appendChild(el('span','sr',pshape(o.product)));
     h.appendChild(t);
-    h.appendChild(el('span','state salt-status salt-status--'+(STATE_TONE[o.status]||'mist'),STATE_WORDS[o.status]||o.status));
+    h.appendChild(stateChip(o,'state'));
     h.appendChild(el('p','sub2','Ordered '+stamp(o.at)+(o.mode==='deliver'?', to be delivered'+(o.place?' to '+o.place:''):', to collect')
       +(o.forFriend?', on behalf of a friend':'')));
     return h;
@@ -1694,7 +1720,7 @@ const CLIENT_JS = `
     var sm=el('summary'); sm.appendChild(el('span','salt-plan__id',String(h.length))); sm.appendChild(el('span','salt-plan__title','What happened, step by step'));
     dt.appendChild(sm);
     var b=el('div','salt-plan__body'), ul=el('ul','hist');
-    h.forEach(function(x){ ul.appendChild(el('li',null,stamp(x.at)+'  '+(STATE_WORDS[x.status]||x.status)+(x.method?', paying by '+methodWord(x.method,x.account):'')+(x.note?': '+x.note:''))); });
+    h.forEach(function(x){ ul.appendChild(el('li',null,stamp(x.at)+'  '+histLine(x,o))); });
     b.appendChild(ul); dt.appendChild(b); w.appendChild(dt);
     return w;
   }

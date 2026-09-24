@@ -360,6 +360,9 @@ locks), and the order routes take that and nothing else. The states: placed (the
 acknowledged (the owner: agreed, the delivery charge set, and the row queued), ready to collect or
 deliver (the owner), done (**neither side's tap**: what the record reads once both tracks are
 complete), declined (the owner), cancelled (either side, at any stage until the goods move).
+**The customer reads them in their own words** (S5 5.3, his answer to D11): Sent, Confirmed, Ready to
+collect or deliver, Collected or Delivered once the goods are all with them, Complete, Not taken,
+Cancelled by you or by us; "units" above one; and every refusal of a move of theirs says it so.
 
 **A RETRY LANDS ONCE** (24 Sep 2026). Every move the page sends carries a request id it mints per
 tap (per review, per payment, per line, per withdrawal, per rail; S10 10.4), kept with that move until
