@@ -21429,6 +21429,61 @@ await (async () => {
       "a phone told of his reply on the order it left open under another tab turns to it and marks it seen: " + JSON.stringify({ seen: marked, row: rowText(d, O) }));
   }, { later: true });
 })();
+section("S5 fix: Log out takes the record of what this phone has seen with it");
+await (async () => {
+  /* 25 SEP 2026, the stage 5 review. The seen record outlived Log out, which v692 says drops everything the page
+     holds: the next account on the phone inherited the last one's order ids and its first moment. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-f2", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f2",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const O = "20260923090000-oooo";
+  const list = [{ id: O, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 90, moved: 0,
+    status: "acknowledged", history: [], msgs: [{ at: "2026-09-24T05:00:00Z", by: "desk", text: "Ready on Friday." }] }];
+  const drive = async (keepsNothing, go) => {
+    const dom = new JSDOM(landingPage(u, "nf2", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
+      if (keepsNothing) Object.defineProperty(w, "localStorage", { configurable: true, get() { throw new Error("a private window"); } });
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: JSON.parse(JSON.stringify(list)) } : { ok: true };
+        return { ok: true, status: 200, json: async () => j };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    const signIn = async () => {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 30));
+      d.querySelector('#tabs button[data-t="order"]').click();
+    };
+    try { await go(w, d, signIn); } finally { w.close(); }
+  };
+  const rowText = (d) => (d.querySelector('#pOrder [data-row="' + O + '"]') || {}).textContent || "";
+  const logOut = async (d) => { d.getElementById("lock").click(); for (let i = 0; i < 20; i++) await new Promise((r) => setTimeout(r, 10)); };
+  await drive(false, async (w, d, signIn) => {
+    await signIn();
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    const had = /20260923090000-oooo/.test(w.localStorage.getItem("salt-stmt-seen") || "");
+    await logOut(d);
+    ok(had && w.localStorage.getItem("salt-stmt-seen") === null,
+      "Log out takes the seen record off the phone, as it takes the remembered device: " + JSON.stringify({ had, after: w.localStorage.getItem("salt-stmt-seen") }));
+  });
+  await drive(true, async (w, d, signIn) => {
+    await signIn();
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    d.querySelector("#pOrder .oback").click();
+    const before = rowText(d);
+    await logOut(d);
+    await signIn();
+    ok(!/a reply for you/i.test(before) && /a reply for you/i.test(rowText(d)),
+      "and where the browser keeps nothing, Log out forgets what this visit had seen: " + JSON.stringify({ before, after: rowText(d) }));
+  });
+})();
 section("S5 fix: a part or a row passed over for its focus is caught up");
 await (async () => {
   /* 25 SEP 2026, the stage 5 review. The poll never draws what holds the focus, and nothing drew it later: a desk

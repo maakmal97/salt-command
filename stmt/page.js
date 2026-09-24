@@ -836,7 +836,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
+    bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
     owedNow=0; hold=false; tPrices.hidden=false; tOrder.textContent='Order';
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
@@ -857,6 +857,7 @@ const CLIENT_JS = `
   async function logOut(){
     var tok=(remGet()||{}).t||null, s=session, ep=null;
     remClear();
+    try{ localStorage.removeItem(SEEN); }catch(e){}
     lock();
     /* S1 1.42: this phone's alerts go too, here and on the site, and the site is told even when the session
        has lapsed, so the remembered wrap does not outlive the Log out */
@@ -1519,7 +1520,8 @@ const CLIENT_JS = `
   /* A REPLY WAITS until this device has shown it: the moment of his last line seen, per order, kept here and
      nowhere else, because there are no read receipts. The store's first moment stands for everything a closed
      order said before this device ever looked, or the first open after this shipped put every old thank-you
-     under Needs you. Order ids only, never the username; where the browser keeps nothing, it lasts the visit.
+     under Needs you. Order ids only, never the username; where the browser keeps nothing, it lasts the visit. Log out
+     takes it with the rest, so the next account on this phone starts its own.
      HIS READ-ONLY VIEW READS NOTHING AS NEW AND WRITES NOTHING HERE: what their phone has shown is not on his, and
      his route leaves nothing behind on his phone. */
   var SEEN='salt-stmt-seen', seenMem=null;
