@@ -25590,11 +25590,22 @@ await (async () => {
 
   ok(opened.every((id) => MAPS6.every((k) => book[k] && id in book[k]) && book.PROD_ORDER.includes(id)),
     "candy, rice and spare are registered in all six per-product maps and the order");
-  /* 23 Sep 2026: candy's and rice's quotes came on his word with the pricing_v2 workbook, so a quote is asked only of a
-     book still empty; nothing opened carries a stated count or an opening figure */
-  ok(empties.length > 0 && empties.every((id) => book.QUOTES[id] === null) && opened.every((id) => book.PROD_OPENING[id].stated === null && !book.PROD_OPENING[id].qty)
-    && ["candy", "rice"].every((id) => book.QUOTES[id] && book.QUOTES[id].supplier === "SM4-KEP"),
-    "and opened empty: no stated count, no opening figure invented, and no quote on a book nobody has quoted: " + JSON.stringify(empties));
+  /* 25 Sep 2026, test only: WHAT A BOOK WITH NOTHING ON IT CARRIES IS ASKED OF EVERY BOOK, NOT OF THREE BY NAME.
+     This line said nothing opened carries a stated count, and on 24 Sep 2026 (v836) he counted rice at 94, a count
+     that wins over the ledger and that the book is right to hold: a book that trades gets counted. A stated count
+     and a count date come only with a COUNTS row, and a roll only with a lot or a sale, so the rule is that a book
+     with no row of any kind (the one road's own rowsOf) carries neither, nor an opening figure. That a book is
+     OPENED that way is v778's, forced on a book the command opens on a copy. A quote is his word and may come at
+     any time, so it is not asked of an empty book either; what is asked is that every quote names who gave it and
+     when. The message names what it found, because the last one printed the empty books and not the fault. */
+  const { rowsOf: anyRows } = await import("../tools/product.mjs");
+  const bare = Object.keys(book.PRODUCTS).filter((id) => anyRows(book, id) === 0);
+  const counted = bare.filter((id) => book.PROD_OPENING[id].stated !== null || book.PROD_OPENING[id].qty || book.COUNT_ON[id] != null);
+  const unsourced = Object.keys(book.QUOTES).filter((id) => { const q = book.QUOTES[id];
+    return q !== null && !(q && q.supplier && /^\d{4}-\d{2}-\d{2}$/.test(q.quotedOn)); });
+  ok(!counted.length && !unsourced.length,
+    "and a book with nothing on it carries no stated count, no count date and no opening figure, and every quote names who gave it and when: "
+    + JSON.stringify({ bare, counted, unsourced }));
 
   const { w } = await openMaster();
   const ids = JSON.parse(w.eval("JSON.stringify(PROD_IDS)"));
