@@ -87,10 +87,15 @@ async function readSignin(env, token) {
   return rec && rec.u && rec.wrap ? { key, rec } : null;
 }
 
-/** Which account a live link opens, spending nothing. A spent link is null, as an invented one is. */
-export async function peekSignin(env, token) {
+/** Which account a live link opens, spending nothing. A spent link is null, as an invented one is, except to the
+ *  page that spent it, by its nonce, inside the two minutes (S3 fix: a reload there asked without it and was told the
+ *  link was used, although Continue would still have opened it). */
+export async function peekSignin(env, token, nonce) {
   const r = await readSignin(env, token);
-  return r && !r.rec.spent ? { u: r.rec.u } : null;
+  if (!r) return null;
+  if (!r.rec.spent) return { u: r.rec.u };
+  const mine = NONCE_RE.test(String(nonce || "")) ? String(nonce) : null;
+  return mine && r.rec.nonce === mine ? { u: r.rec.u } : null;
 }
 
 /** Spend it, keeping the answer two minutes for the page that spent it. Returns the record, or null

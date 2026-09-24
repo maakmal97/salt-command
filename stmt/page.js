@@ -2307,7 +2307,7 @@ const CLIENT_JS = `
     var r=null, body=null;
     try{
       r=await fetch('/open-link', {method:'POST', headers:{'content-type':'application/json'},
-        body:JSON.stringify({token:tok, peek:true})});
+        body:JSON.stringify({token:tok, peek:true, nonce:linkNonce()})});
       body=await r.json();
     }catch(e){ /* the question was lost, not the link: Continue still asks the real one */ }
     if(r&&r.status===401){ linkSpent(); return false; }

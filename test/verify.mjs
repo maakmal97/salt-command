@@ -19363,6 +19363,81 @@ await (async () => {
   ok(own.onScreen === "B" && own.kept === null && own.st.posted.body.token === "b".repeat(32) && own.st.unsubscribed,
     "the control: Log out of the account the phone remembers forgets it, drops its wrap on the site and unsubscribes: " + JSON.stringify({ kept: own.kept, posted: own.st.posted.body }));
 })();
+section("S3 fix: a link whose answer was lost still opens after a reload of the same tab, its peek carrying the tab's nonce");
+await (async () => {
+  /* S3-SEC-9, F2 (24 Sep 2026). The nonce was kept in the tab "for a reload", but a reloaded page asked peek first
+     without it, peek refused a spent record, and the page said the link was used while Continue would have opened it. */
+  const WN = (await import("../stmt/worker.js")).default;
+  const SN = await import("../stmt/signin.js");
+  const CN = await import("../tools/stmt-crypto.mjs");
+  const kv = new KV(), env = { STMT: kv };
+  const uN = "k7m2-n9qr", ckN = await CN.contentKey("sN", uN);
+  await kv.put("u:" + uN, JSON.stringify({ u: uN, issued: "2026-09-01", issues: ["2026-09-01"],
+    env: await CN.encryptWith(ckN, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })) }));
+  const mint = async () => { const t = SN.newSignin(); await SN.mintSignin(env, uN, t, await CN.wrapKey(t, ckN)); return t; };
+  const post = async (body) => { const r = await WN.fetch(new Request("https://k7m3p2.example/open-link", { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env); return { status: r.status, j: await r.json() }; };
+
+  const t = await mint(), nA = "nonceAAAAAAAAAAAAAAAAAAA", nB = "nonceBBBBBBBBBBBBBBBBBBB";
+  ok((await post({ token: t, nonce: nA })).j.ok, "the fixture: Continue spends the link with the tab's nonce");
+  const mine = await post({ token: t, peek: true, nonce: nA });
+  ok(mine.status === 200 && mine.j.ok && mine.j.u === uN && !mine.j.wrap && !mine.j.session,
+    "inside the two minutes, the peek from the page that spent it answers the account again, and nothing that opens it: " + JSON.stringify(mine.j));
+  const theirs = await post({ token: t, peek: true, nonce: nB }), none = await post({ token: t, peek: true });
+  ok(theirs.status === 401 && none.status === 401, "another page's nonce, or none, is refused as a spent link always was");
+
+  /* the page: the answer is lost after the burn, then the tab is reloaded at the same address */
+  const { JSDOM: JDN } = await import("jsdom");
+  const open = async (tok, nonce, loseSpend) => {
+    const html = await (await WN.fetch(new Request("https://k7m3p2.example/s/" + tok), env)).text();
+    const st = { posts: [], lost: false };
+    const dom = new JDN(html, { url: "https://site.test/s/" + tok, runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      if (nonce) win.sessionStorage.setItem("salt-link-nonce", nonce);
+      win.fetch = async (path, init) => {
+        const body = init && init.body ? JSON.parse(init.body) : {};
+        st.posts.push(Object.assign({ path: String(path) }, body));
+        const r = await WN.fetch(new Request("https://k7m3p2.example" + String(path), { method: (init && init.method) || "GET",
+          headers: Object.assign({ "content-type": "application/json" }, (init && init.headers) || {}), body: init && init.body }), env);
+        if (loseSpend && String(path) === "/open-link" && !body.peek && !st.lost) { st.lost = true; throw new TypeError("Failed to fetch"); }
+        return { ok: r.ok, status: r.status, json: async () => r.json() };
+      };
+    } });
+    const W = dom.window, D = W.document;
+    for (let i = 0; i < 100 && (D.getElementById("linkGo").disabled || !st.posts.length); i++) await new Promise((r) => setTimeout(r, 30));
+    await new Promise((r) => setTimeout(r, 40));
+    return { st, W, D };
+  };
+  const tap = async (g) => {
+    g.D.getElementById("linkGo").click();
+    for (let i = 0; i < 150 && g.D.getElementById("tabs").hidden && !/Tap Continue again|used already/.test(g.D.getElementById("linkMsg").textContent + g.D.getElementById("msg").textContent); i++)
+      await new Promise((r) => setTimeout(r, 40));
+  };
+  const t2 = await mint();
+  const first = await open(t2, null, true);
+  let kept = "";
+  try {
+    await tap(first);
+    kept = first.W.sessionStorage.getItem("salt-link-nonce") || "";
+    ok(/Tap Continue again/.test(first.D.getElementById("linkMsg").textContent) && JSON.parse(await kv.get("ot:" + (await SN.idOf(t2)))).spent && kept.length >= 16,
+      "the fixture: the Worker spent the link, the answer was lost, and the tab holds its nonce");
+  } finally { first.W.close(); }
+  const reload = await open(t2, kept, false);
+  try {
+    ok(!reload.D.getElementById("link").hidden && !reload.D.getElementById("linkGo").disabled && reload.W.location.pathname === "/s/" + t2
+      && !/used already/.test(reload.D.getElementById("msg").textContent),
+      "the same tab reloaded inside two minutes still offers Continue at the link's address, never 'used already': "
+        + JSON.stringify({ path: reload.W.location.pathname, msg: reload.D.getElementById("msg").textContent }));
+    await tap(reload);
+    ok(!reload.D.getElementById("tabs").hidden && reload.st.posts.filter((p) => p.path === "/open-link").every((p) => p.nonce === kept),
+      "and Continue there opens the account, every question carrying the tab's nonce");
+  } finally { reload.W.close(); }
+  const stranger = await open(t2, "nonceZZZZZZZZZZZZZZZZZZZ", false);
+  try {
+    ok(stranger.D.getElementById("link").hidden && /used already/.test(stranger.D.getElementById("msg").textContent),
+      "another tab holding the spent link is still told it has been used");
+  } finally { stranger.W.close(); }
+})();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {
   /* S3, 24 SEP 2026. The door's one way in named its opener unseal, which stmt/owner.js already declared: spliced in

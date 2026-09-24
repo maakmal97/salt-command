@@ -476,7 +476,7 @@ async function handleSignin(request, env) {
   const tok = b && typeof b.token === "string" && SIGNIN_RE.test(b.token) ? b.token : null;
   /* S3 3.3: the page asks which account first, and that spends nothing; a spent link is refused alike */
   if (b && b.peek === true) {
-    const live = tok ? await peekSignin(env, tok) : null;
+    const live = tok ? await peekSignin(env, tok, b.nonce) : null;
     if (!live || !(await env.STMT.get("u:" + live.u))) return json({ ok: false, error: REFUSED }, 401);
     return json({ ok: true, u: live.u });
   }
