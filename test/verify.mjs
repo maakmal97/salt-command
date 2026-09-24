@@ -14155,12 +14155,15 @@ await (async () => {
     ok(await until(() => [...D.querySelectorAll("#rlist button")].some((b) => b.textContent.includes("CX0-AA"))), "Review lists the account");
     [...D.querySelectorAll("#rlist button")].find((b) => b.textContent.includes("CX0-AA")).click();
     const pOrder = D.getElementById("pOrder");
-    ok(await until(() => pOrder.querySelectorAll(".pane .quote").length >= 1),
-      "the account opens and its order is drawn from his route, not None yet: " + JSON.stringify(pOrder.textContent.slice(0, 160)));
-    const words = [...pOrder.querySelectorAll("button, a")].map((b) => b.textContent);
-    ok(/RM\s*150/.test(pOrder.textContent) && /When can I collect/.test(pOrder.textContent) && /Acknowledged/.test(pOrder.textContent) && !/None yet/.test(pOrder.textContent),
-      "the order reads as their page shows it, with its thread and its state: " + JSON.stringify(pOrder.textContent.replace(/\s+/g, " ").slice(0, 200)));
-    ok(!pOrder.querySelector("input, select, textarea") && !words.some((t) => /Review this order|Place|Notify me|Confirm|I have paid|Withdraw|Send/.test(t))
+    ok(await until(() => pOrder.querySelector("[data-row]")),
+      "the account opens and its order is listed from his route, not None yet: " + JSON.stringify(pOrder.textContent.slice(0, 160)));
+    /* S5: an order is a row that opens its own screen, on his view as on theirs */
+    pOrder.querySelector("[data-row]").click();
+    const scr = pOrder.querySelector(".oscreen") || pOrder;
+    const words = [...pOrder.querySelectorAll("button, a")].filter((b) => !b.hasAttribute("data-row") && !b.classList.contains("oback") && !b.classList.contains("olater")).map((b) => b.textContent);
+    ok(/RM\s*150/.test(scr.textContent) && /When can I collect/.test(scr.textContent) && /Confirmed/.test(scr.textContent) && !/None yet/.test(pOrder.textContent),
+      "the order reads as their page shows it, with its thread and its state: " + JSON.stringify(scr.textContent.replace(/\s+/g, " ").slice(0, 200)));
+    ok(!pOrder.querySelector("input, select, textarea") && !words.some((t) => /Review this order|Place|Notify me|Confirm|I have paid|Pay RM|Cancel|Withdraw|Send/.test(t))
       && ![...pOrder.querySelectorAll("h3")].some((x) => /Notifications/.test(x.textContent)),
       "and it is read only: no order form, no Notify me, no pay, withdraw or message control: " + JSON.stringify(words));
     ok(hits.includes("GET /all/orders/" + u) && !hits.some((x) => /^POST \/(orders|push|my\/refs)|^GET \/(orders|my\/refs)$/.test(x)),
@@ -15363,7 +15366,7 @@ await (async () => {
   try {
     D.getElementById("pw").value = passC;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-    await wait(() => btn("Review this order") && btn("Send"));
+    await wait(() => btn("Review this order") && D.querySelector("#pOrder [data-row]"));
     btn("Review this order").click();
     await wait(() => btn("Place this order"));
     btn("Place this order").click();
@@ -15373,14 +15376,16 @@ await (async () => {
     ok(!!place && !place.disabled && !!change && !change.disabled && !!noteNear(place),
       "Place this order is given back after a dropped request, and Not sent is said beside it: "
       + JSON.stringify({ place: place && place.disabled, change: change && change.disabled, note: !!(place && noteNear(place)) }));
-    const pane = btn("Send").closest(".pane");
-    pane.querySelector("input[aria-label='Write about this order']").value = "is it ready";
-    btn("Send").click();
-    await wait(() => [...D.querySelectorAll("#pOrder .pane")].some((x) => x.querySelector("p.msg") && x.contains(btn("Send")) && x.textContent.includes(NS)));
-    const send = btn("Send"), near = send && noteNear(send);
-    ok(!!send && !send.disabled && !!near && near.closest(".pane") === send.closest(".pane") && near.previousElementSibling && near.previousElementSibling.contains(send),
-      "Send on an order is given back too, and Not sent is said beside it, in that order's own pane: "
-      + JSON.stringify({ send: send && send.disabled, near: !!near }));
+    /* S5 5.4: a line is sent from the order's own screen, and a dropped one stands in its thread as Not sent */
+    D.querySelector('#pOrder [data-row="' + oid + '"]').click();
+    const scr = D.querySelector("#pOrder .oscreen"), box = scr && scr.querySelector("input[aria-label='Write about this order']");
+    if (box) { box.value = "is it ready"; box.form.requestSubmit(); }
+    await wait(() => scr && scr.querySelector(".salt-bubble--failed"));
+    const send = btn("Send"), failed = scr && scr.querySelector(".salt-bubble--failed");
+    ok(!!send && !send.disabled && !!failed && /Not sent/.test(failed.textContent) && /Check your connection/.test(failed.textContent)
+      && !!failed.querySelector("button.salt-bubble__retry") && failed.closest(".oscreen") === send.closest(".oscreen"),
+      "Send on an order is given back too, and Not sent is said on the line itself, in that order's own thread: "
+      + JSON.stringify({ send: send && send.disabled, failed: failed && failed.textContent }));
     ok(!errs.length, "and nothing is left unhandled: " + JSON.stringify(errs));
   } finally { try { W.close(); } catch (e) { /* best effort */ } process.off("unhandledRejection", onRej); }
 })();
@@ -15509,15 +15514,15 @@ await (async () => {
     const placed = said();
     ok(lapseOn() && placed.includes("Signed out: tap Continue at the top.") && !placed.some((t) => /Sign in again|session has ended/.test(t)),
       "Place answered 401: the bar says it with Continue, and beside Place a pointer to that Continue, never a second wording: " + JSON.stringify(placed));
+    /* S5 5.4: the line is sent from the order's own screen, and what came back is said on the line itself */
+    D.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
     const box = D.querySelector('#pOrder input[data-say="' + ord.id + '"]');
-    box.value = "is it ready"; box.dispatchEvent(new W.Event("input", { bubbles: true }));
-    const send = [...D.querySelectorAll("#pOrder button")].find((b) => b.textContent === "Send");
-    send.click();
-    const pointers = () => said().filter((t) => t === "Signed out: tap Continue at the top.").length;
-    await until(() => pointers() >= 2);
-    const sent = said();
-    ok(pointers() === 2 && !sent.some((t) => /Sign in again|session has ended/.test(t)),
-      "and so does Send: " + JSON.stringify(sent));
+    if (box) { box.value = "is it ready"; box.dispatchEvent(new W.Event("input", { bubbles: true })); box.form.requestSubmit(); }
+    const onLine = () => [...D.querySelectorAll("#pOrder .salt-bubble--failed [role=status]")].map((x) => x.textContent);
+    await until(() => onLine().length);
+    const sent = said().concat(onLine());
+    ok(JSON.stringify(onLine()) === JSON.stringify(["Signed out: tap Continue at the top."]) && !sent.some((t) => /Sign in again|session has ended/.test(t)),
+      "and so does Send, on the line that did not go: " + JSON.stringify(sent));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
 section("S1 1.9: Notify me waits for the service worker to be ready, and a failure is said in plain words");
@@ -16244,9 +16249,10 @@ await (async () => {
   try {
     D.getElementById("pw").value = passS;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 200 && !/placed 20 /.test(D.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 25));
+    for (let i = 0; i < 200 && !D.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 25));
+    const row = D.querySelector("#pOrder [data-row]"); if (row) row.click();   /* S5: the order's own screen carries its stamps */
     const txt = D.getElementById("pOrder").textContent;
-    ok(txt.includes("placed 20 Sep, 09:02") && txt.includes("21 Sep, 01:30") && !FOUR.test(txt),
+    ok(txt.includes("Ordered 20 Sep, 09:02") && txt.includes("21 Sep, 01:30") && !FOUR.test(txt),
       "the customer's page stamps an order and its history with Sep, in Kuala Lumpur time: " + JSON.stringify((txt.match(/\d\d Sep[a-z]*, \d\d:\d\d/g) || [])));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 
@@ -16387,11 +16393,14 @@ await (async () => {
       && /Price coming soon\./.test(soon95[0].textContent),
       "a product with no price yet is a mark as well, and one with no mark of its own falls back to the ring");
     /* and the card that reports an order, where the product used to be written twice */
-    for (let i = 0; i < 60 && !d95.querySelector("#pOrder .pane .state"); i++) await new Promise((r) => setTimeout(r, 50));
-    const card95 = d95.querySelector("#pOrder .pane .state") && d95.querySelector("#pOrder .pane .state").closest(".pane");
-    ok(card95 && card95.querySelector(".pwith svg.psym") && /Droplet/.test(card95.textContent)
-      && !/\b(salt|oil)\b/i.test(card95.textContent),
-      "an order's own card carries the mark of what was ordered and never its name: " + JSON.stringify(card95 && card95.textContent.slice(0, 60)));
+    for (let i = 0; i < 60 && !d95.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 50));
+    /* S5: the order is a row, and the row opens the order's own screen: both carry the mark */
+    const row95 = d95.querySelector("#pOrder [data-row]");
+    if (row95) row95.click();
+    const card95 = d95.querySelector("#pOrder .oscreen");
+    ok(row95 && row95.querySelector(".pwith svg.psym") && /Droplet/.test(row95.textContent) && card95 && card95.querySelector("h3 svg.psym") && /Droplet/.test(card95.textContent)
+      && !/\b(salt|oil)\b/i.test(card95.textContent + " " + row95.textContent),
+      "an order's row and its own screen carry the mark of what was ordered and never its name: " + JSON.stringify(card95 && card95.textContent.slice(0, 60)));
     const words95 = (d95.getElementById("pPrices").textContent + " " + d95.getElementById("pOrder").textContent);
     ok(!/\b(salt|oil)\b/i.test(words95) && !/Salt Command/i.test(words95),
       "and no product is written as a word anywhere on the prices or the order: " + JSON.stringify((words95.match(/\b(salt|oil)\b/gi) || []).slice(0, 4)));
@@ -19288,7 +19297,11 @@ await (async () => {
     ok(sz.length === 2 && sz[0][1] === 1 && sz[1][1] === 2 && O.RID_RE.test(sz[1][0] || "") && sz[1][0] !== sz[0][0],
       "a size changed after 'not placed' goes under a new id, never as a repeat of the order before: " + JSON.stringify(sz));
     placeOk = true;
-
+    /* S5 5.2: the ways to pay open from the order's own screen, behind its one Pay */
+    await until(() => d.querySelector('#pOrder [data-row="' + ord.id + '"]'));
+    d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
+    const payNow = () => [...d.querySelectorAll("#pOrder button")].find((b) => /^Pay RM/.test(b.textContent));
+    await until(payNow); if (payNow()) payNow().click();
     const payTap = async (n) => { await until(() => d.getElementById("pd-" + ord.id) && !d.getElementById("pd-" + ord.id).disabled);
       d.getElementById("pd-" + ord.id).click(); await until(() => sent.pay.length === n); };
     await payTap(1); await payTap(2);
@@ -19543,6 +19556,10 @@ await (async () => {
       d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
       for (let i = 0; i < 150 && !d.querySelector('button[data-t="order"]'); i++) await new Promise((r) => setTimeout(r, 20));
       d.querySelector('button[data-t="order"]').click();
+      /* S5 5.2: the ways to pay open from the order's own screen, behind its one Pay */
+      for (let i = 0; i < 150 && !d.querySelector('#pOrder [data-row="' + o.id + '"]'); i++) await new Promise((r) => setTimeout(r, 20));
+      const row = d.querySelector('#pOrder [data-row="' + o.id + '"]'); if (row) row.click();
+      const pay = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
       for (let i = 0; i < 150 && !d.querySelector('#pOrder input[name="pm-' + o.id + '"]'); i++) await new Promise((r) => setTimeout(r, 20));
       return [...d.querySelectorAll('#pOrder input[name="pm-' + o.id + '"]')].map((r) => r.value);
     } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
@@ -19778,26 +19795,32 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => d.querySelector('button[data-t="order"]'));
     d.querySelector('button[data-t="order"]').click();
+    /* S5: the order's own screen, and its ways to pay behind its one Pay */
+    await until(() => d.querySelector('#pOrder [data-row="' + ord.id + '"]'));
+    d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
+    const payNow = () => [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent));
+    await until(payNow); if (payNow()) payNow().click();
     await until(() => d.querySelector('#pOrder input[name="pm-' + ord.id + '"][value="tngbiz"]'));
     const r = d.querySelector('#pOrder input[name="pm-' + ord.id + '"][value="tngbiz"]');
     r.checked = true; r.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
     await tap("Confirm", "method", 1); await tap("Confirm", "method", 2);
     const say = () => d.querySelector('#pOrder input[data-say="' + ord.id + '"]');
     const type = async (t) => { await until(say); say().value = t; say().dispatchEvent(new dom.window.Event("input", { bubbles: true })); };
-    await type("is it ready?"); await tap("Send", "say", 1); await type("is it ready?"); await tap("Send", "say", 2);
+    /* S5 5.4: a line that did not go stands in the thread, and Tap to try again sends it again under its own id */
+    await type("is it ready?"); await tap("Send", "say", 1); await tap("Tap to try again", "say", 2);
     await type("is it ready now?"); await tap("Send", "say", 3);
-    await tap("Withdraw this order", "cancel", 1); await tap("Withdraw this order", "cancel", 2);
+    await tap("Cancel this order", "cancel", 1); await tap("Cancel this order", "cancel", 2);
     pass = true;
-    await tap("Withdraw this order", "cancel", 3); await tap("Withdraw this order", "cancel", 4);
+    await tap("Cancel this order", "cancel", 3); await tap("Cancel this order", "cancel", 4);
     await type("thanks"); await tap("Send", "say", 4); await type("thanks"); await tap("Send", "say", 5);
     const ids = (k) => sent[k].map((x) => x && x.rid);
     const good = (a) => a.every((x) => O.RID_RE.test(x || ""));
     const mi = ids("method"), si = ids("say"), ci = ids("cancel");
     ok(good(mi) && mi.length === 2 && mi[1] === mi[0], "Confirm sends an id, and tapped again after it failed, the same one: " + JSON.stringify(mi));
     ok(good(si) && si.length === 5 && si[1] === si[0] && si[2] !== si[0] && si[4] !== si[3],
-      "Send sends an id per line: the same line again carries it, another line a new one, and a line once recorded never lends its id to the next: " + JSON.stringify(si));
+      "Send sends an id per line: the same line tried again carries it, another line a new one, and a line once recorded never lends its id to the next: " + JSON.stringify(si));
     ok(good(ci) && ci.length === 4 && ci[1] === ci[0] && ci[2] === ci[0] && ci[3] !== ci[0],
-      "Withdraw sends an id, carries it through every retry, and drops it once recorded: " + JSON.stringify(ci));
+      "Cancel sends an id, carries it through every retry, and drops it once recorded: " + JSON.stringify(ci));
   } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
 })();
 
@@ -23770,34 +23793,42 @@ await (async () => {
   } });
   const w = dom.window, d = w.document;
   const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
-  const panes = () => [...d.querySelectorAll("#pOrder .pane")].filter((p) => p.querySelector(".state"));
+  /* S5: an order is a row that opens its own screen; its ways to pay open behind its one Pay */
+  const scr = () => d.querySelector("#pOrder .oscreen");
+  const openO = (id) => { const b = d.querySelector("#pOrder .oback"); if (b && scr()) b.click();
+    const r = d.querySelector('#pOrder [data-row="' + id + '"]'); if (r) r.click();
+    const pay = scr() && [...scr().querySelectorAll(".oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
+    return scr() || d; };
   const said = (root, words) => [...root.querySelectorAll('[role="status"]')].find((x) => x.textContent.includes(words) && !x.closest("[hidden]"));
   const after = (a, b) => !!(a && b && (a.compareDocumentPosition(b) & w.Node.DOCUMENT_POSITION_FOLLOWING));
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    await until(() => panes().length === 2);
-    ok(panes().length === 2 && !d.getElementById("pOrder").hidden && d.getElementById("tOrder").textContent === "Pay",
+    await until(() => d.querySelectorAll("#pOrder [data-row]").length === 2);
+    ok(d.querySelectorAll("#pOrder [data-row]").length === 2 && !d.getElementById("pOrder").hidden && d.getElementById("tOrder").textContent === "Pay",
       "the fixture opens on the payment page with its two orders below");
 
+    openO("oA");
     d.getElementById("pd-oA").click();
     await until(() => said(d, "Refused by the fixture: pay"));
-    const payLine = said(panes()[0], "Refused by the fixture: pay");
+    const payLine = said(scr(), "Refused by the fixture: pay");
     ok(payLine && after(d.getElementById("pd-oA"), payLine),
       "I have paid refused: the words are on screen in a role=status line in that order, after the button");
 
-    [...panes()[1].querySelectorAll("button")].find((b) => b.textContent === "Withdraw this order").click();
+    openO("oB");
+    [...scr().querySelectorAll("button")].find((b) => b.textContent === "Cancel this order").click();
     await until(() => said(d, "Refused by the fixture: withdraw"));
-    const wdBtn = [...panes()[1].querySelectorAll("button")].find((b) => b.textContent === "Withdraw this order");
-    const wdLine = said(panes()[1], "Refused by the fixture: withdraw");
+    const wdBtn = [...scr().querySelectorAll("button")].find((b) => b.textContent === "Cancel this order");
+    const wdLine = said(scr(), "Refused by the fixture: withdraw");
     ok(wdLine && after(wdBtn, wdLine) && !said(d, "Refused by the fixture: pay"),
-      "Withdraw refused: the words sit beside Withdraw on that order, and the earlier answer has gone");
+      "Cancel refused: the words sit beside Cancel on that order, and the earlier answer has gone");
 
-    const box = panes()[1].querySelector(".sayw input"); box.value = "Is it ready?";
-    [...panes()[1].querySelectorAll("button")].find((b) => b.textContent === "Send").click();
+    const box = scr().querySelector("form.salt-composer input"); box.value = "Is it ready?";
+    [...scr().querySelectorAll("button")].find((b) => b.textContent === "Send").click();
     await until(() => said(d, "Refused by the fixture: say"));
-    const sayLine = said(panes()[1], "Refused by the fixture: say");
-    ok(sayLine && after(panes()[1].querySelector(".sayw"), sayLine), "Send refused: the words sit under the box that was sent from");
+    const sayLine = said(scr(), "Refused by the fixture: say");
+    ok(sayLine && sayLine.closest(".salt-bubble--failed") && /Is it ready[?]/.test(sayLine.closest(".salt-bubble--failed").textContent),
+      "Send refused: the words sit on the line that did not go, in that order's thread");
 
     /* the order list answering 401 after a tap wrote the form's note, which the payment page never drew. Since
        S1 1.5 a 401 on a live session is said at once in the bar, role=alert, which the payment page shows too */
@@ -23805,6 +23836,7 @@ await (async () => {
       && /signed out after a while/.test(l.textContent); };
     const lapseBefore = lapseOn();
     st.ordersDown = true;
+    openO("oA");
     d.getElementById("pd-oA").click();
     await until(() => lapseOn());
     ok(!lapseBefore && lapseOn() && d.getElementById("tOrder").textContent === "Pay",
@@ -23813,8 +23845,8 @@ await (async () => {
     st.ordersDown = false; st.payOk = true;
     d.getElementById("pd-oA").click();
     await until(() => said(d, "Recorded."));
-    const rec = said(panes()[0], "Recorded.");
-    ok(rec && !d.getElementById("pd-oA") && /Paid in full/.test(panes()[0].textContent) && after(panes()[0].querySelector(".quote"), rec),
+    const rec = said(scr(), "Recorded.");
+    ok(rec && !d.getElementById("pd-oA") && /Paid in full/.test(scr().textContent) && after(scr().querySelector(".salt-insight"), rec),
       "paid in full, the pay box is gone and the answer stands under the order's state instead of vanishing with it");
   } finally { w.close(); }
 })();
@@ -23849,19 +23881,25 @@ await (async () => {
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 100 && !d.getElementById("pd-oA"); i++) await new Promise((r) => setTimeout(r, 50));
+    /* S5 5.2: each order's payment box is in its own screen, behind its one Pay: opened one at a time */
+    for (let i = 0; i < 100 && !d.querySelector('#pOrder [data-row="oA"]'); i++) await new Promise((r) => setTimeout(r, 50));
     const hold = d.querySelector("#pOrder .pane");
-    const scope = [hold, ...d.querySelectorAll("#pOrder .pay")];
-    const ctrls = scope.flatMap((s) => [...s.querySelectorAll("button, a, select, input")]).filter((x) => x.type !== "radio");
+    const openPay = (id) => { const b = d.querySelector("#pOrder .oback"); if (b && d.querySelector("#pOrder .oscreen")) b.click();
+      d.querySelector('#pOrder [data-row="' + id + '"]').click();
+      const pay = [...d.querySelectorAll("#pOrder .oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
+      return d.querySelector("#pOrder .oscreen"); };
+    const scrC = openPay("oC"), boxC = scrC.querySelector(".oact .pay"), pillsC = scrC.querySelectorAll(".salt-pill").length;
+    const ctrlsC = boxC ? [...boxC.querySelectorAll("button, a, select, input")] : [];
+    const scrA = openPay("oA"), boxA = scrA.querySelector(".oact .pay"), pillsA = scrA.querySelectorAll(".salt-pill").length;
+    const ctrls = [hold, boxA].filter(Boolean).flatMap((s) => [...s.querySelectorAll("button, a, select, input")]).concat(ctrlsC).filter((x) => x.type !== "radio");
     const bare = ctrls.filter((x) => !/(^| )salt-(pill|ghost|field__input)( |$)/.test(x.className));
-    ok(d.getElementById("pd-oA") && d.querySelectorAll("#pOrder .pay").length === 2 && ctrls.length >= 8 && !bare.length,
+    ok(d.getElementById("pd-oA") && !!boxA && !!boxC && ctrls.length >= 8 && !bare.length,
       "every button, link and field on the payment pane and in every order's payment box is a recipe ("
       + ctrls.length + " controls): " + bare.map((x) => x.tagName + " " + (x.textContent || x.getAttribute("aria-label"))).join(", "));
-    const orderPanes = [...d.querySelectorAll("#pOrder .pane")].filter((p) => p.querySelector(".state"));
-    const pills = orderPanes.map((p) => p.querySelectorAll(".salt-pill").length);
+    const pills = [pillsA, pillsC];
     ok(pills.join() === "1,1" && d.getElementById("pd-oA").classList.contains("salt-pill") && !hold.querySelector(".salt-pill"),
       "one filled control an order, I have paid on the one with a rail chosen, and the payment pane's ways to pay all quiet: " + pills.join());
-    const amt = orderPanes[0].querySelector('input[type="number"]'), cs = w.getComputedStyle(amt);
+    const amt = scrA.querySelector('input[type="number"]'), cs = w.getComputedStyle(amt);
     ok(amt.classList.contains("salt-field__input") && amt.inputMode === "decimal" && cs.width !== "18px" && cs.height !== "18px",
       "the amount is the field, typed on a decimal keypad, and no longer squeezed by the radio buttons' size: " + cs.width + " x " + cs.height);
   } finally { w.close(); }
@@ -23899,6 +23937,10 @@ await (async () => {
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    /* S5 5.2: the pay row is in the order's own screen, behind its one Pay */
+    for (let i = 0; i < 100 && !d.querySelector('#pOrder [data-row="oA"]'); i++) await new Promise((r) => setTimeout(r, 50));
+    const rowA = d.querySelector('#pOrder [data-row="oA"]'); if (rowA) rowA.click();
+    const payA = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (payA) payA.click();
     for (let i = 0; i < 100 && !d.getElementById("pd-oA"); i++) await new Promise((r) => setTimeout(r, 50));
     const cells = [...d.querySelectorAll("#out td.amt, #out th.amt")].map((x) => w.getComputedStyle(x));
     ok(cells.length === 2 && cells.every((c) => c.display !== "flex" && c.marginTop !== "10px"),
