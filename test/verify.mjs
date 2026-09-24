@@ -25118,6 +25118,42 @@ await (async () => {
   }
 })();
 
+section("S11 fix: a tap in flight shuts its card's buttons and says it is sending");
+await (async () => {
+  /* Found on the rig: the card moved onto the system's Approve card and lost the .card its in-flight guard looked for, so
+     while Accept queued, drafted and moved the order nothing on the card changed, and a second tap was swallowed unsaid. */
+  const { openMaster: omO7 } = await import("../tools/payload.mjs");
+  const { w } = await omO7();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 91; w.clearInterval = () => {};
+    const ord = { id: "b1", u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect",
+      status: "placed", at: "2026-09-24T02:00:00.000Z", history: [], msgs: [], payments: [] };
+    let release = null;
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      if (/\/preview$/.test(p)) return { ok: true, status: 200, json: async () => ({ ok: true, row: { qty: 1, total: 100 }, flags: [], hash: "h1", card: 100 }) };
+      if (/\/accept$/.test(p)) { await new Promise((r) => { release = r; }); return { ok: true, status: 200, json: async () => ({ ok: true, approved: true }) }; }
+      return { ok: true, status: 200, json: async () => (p === "orders" && !post ? { ok: true, orders: [ord] } : { ok: true }) };
+    };
+    const settle = () => new Promise((r) => setTimeout(r, 30));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const card = () => D.querySelector('.ordcard[data-id="b1"]');
+    for (let i = 0; i < 20 && card().querySelector('.ordfoot button[data-ord="acknowledged"]').disabled; i++) await settle();
+    card().querySelector('.ordfoot button[data-ord="acknowledged"]').click();
+    for (let i = 0; i < 20 && !release; i++) await settle();
+    const shut = [...card().querySelectorAll("button")].every((x) => x.disabled), said = (card().querySelector('[data-msg="b1"]') || {}).textContent;
+    if (release) release();
+    ok(release && shut && said === "Sending.", "while Accept is in flight its card's buttons are shut and it says so: " + JSON.stringify({ inFlight: !!release, shut, said }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one

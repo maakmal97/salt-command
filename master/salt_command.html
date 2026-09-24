@@ -19510,7 +19510,6 @@ function ordDraw(){
 }
 async function ordAct(b){
   const id=b.dataset.id,u=b.dataset.u,st=b.dataset.ord;if(!id||ordBusy[id])return;ordBusy[id]=1;
-  const card=b.closest('.card');if(card)card.querySelectorAll('button').forEach(x=>x.disabled=true);
   /* v694: the two figures he types are on the card, not in a browser prompt: a prompt cannot be
      styled, cannot be measured and is refused outright by an installed app on some phones. */
   const typed=what=>{const i=document.querySelector('input[data-'+what+'="'+id+'"]');return i?parseFloat(i.value):null;};
@@ -19565,6 +19564,9 @@ async function ordAct(b){
     body=JSON.stringify({message:t});
   }else body=JSON.stringify(Object.assign({status:st},b.dataset.mode?{mode:b.dataset.mode}:{}));
   if(!url)url='orders/'+encodeURIComponent(u)+'/'+encodeURIComponent(id);
+  /* S11 fix: the tap in flight is seen on its card: its buttons shut and a line where the answer will be. The card is the
+     system's Approve card now, which carries no .card, so the old closest('.card') found nothing and shut nothing. */
+  {const card=b.closest('.ordcard');if(card){card.querySelectorAll('button').forEach(x=>x.disabled=true);const m=card.querySelector('[data-msg]');if(m)m.textContent='Sending.';}}
   try{ let r=await fetch(url,{method:'POST',headers:qHeaders(),body});
     if(r.status===401&&saltAskWriteKey())r=await fetch(url,{method:'POST',headers:qHeaders(),body});
     let j={};try{j=await r.json();}catch(e){}
