@@ -276,7 +276,9 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   carries that key. Each entry is stamped with its stage's own moment (`stageAt`). A move of his
   runs the reconcile at once; the return leg carries what he records on the desk back to the order
   and only ever raises. Cash on handover is withheld while that customer holds an unpaid advance. A
-  delivery's location never reaches a ledger note.
+  delivery's location never reaches a ledger note. The customer reads a whitelisted view of an order,
+  never `ledgerKey`, `queued` or `sync`; a request id makes a retried Place or payment land once.
+  Rejecting a draft a site order made is asked first and written onto that order.
 - **A customer writes on an order, and he answers**: one `msgs[]` thread per order, on any order at
   any stage; theirs capped, his uncapped. **It never rides into a ledger note.** His answer is
   checked by `siteWords` on the desk; every line is escaped on both surfaces.
@@ -297,8 +299,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   inside its window is a bearer credential, and single use is best effort (KV). The `/s/` route is
   gated on the token's SHAPE, so a spent link and an invented one serve the same door.
 - **The door**: log in, remember me (a device key in the browser, the wrapped content key at
-  `rem:<token>`, neither opening anything alone), log out. Kept as an app: manifest and icon served
-  by the Worker, no brand; every login asks about notifications once.
+  `rem:<token>`, neither opening anything alone), log out, which also drops that wrap and this
+  phone's notifications. A lapsed session says so in the bar, with Continue. Kept as an app:
+  manifest and icon served by the Worker, no brand; every login asks about notifications once.
+  Salt Admin links its own manifest with credentials and is titled Salt Admin.
 - **The hourly chase**: the site's own cron (`wrangler.stmt.jsonc`) wakes a customer holding an
   advance once an hour, capped by `chased:<username>`; the test account is skipped. The config
   ships with the job's push paths; an unpushed laptop change needs `npx wrangler deploy -c
@@ -308,14 +312,16 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   `ASSOC_FIELDS`): no margin crosses.
 - **One live document, no monthly statement**: every order from the start, the page filtering by
   month and opening on the whole account. `make_statements` refuses to seal a new issue without
-  `--new-issue`; sealed issues are untouched. A question goes on an order.
+  `--new-issue`; sealed issues are untouched. A question goes on an order. The account line shows
+  the customer's username, never the roster code.
 - **The test account** `0000-0000`, password `0000-0000-0000-0000`, counts nowhere.
 - **Guest links `/g/<id>`**: one board, `script-src 'none'`. **The id IS the credential**
   (rejection sampling, never `byte % 30`) and boards are NOT sealed. Unknown, malformed and
   withdrawn ids answer the same 404. **One standing link per tier**, ensured on the first open of
   the Links panel and kept for good; Ambassador is never a guest's; Bronze's old link opens the
   stranger's board. A standing link reads `tboard:<n>`, never `board:`. **An associate may mint
-  their own, shut until he approves: the test is `approved === false`, NEVER `!approved`.** A link
+  their own, shut until he approves: the test is `approved === false`, NEVER `!approved`.** Decline
+  is its own state, `declined`: shut like a withdrawn link, and Not approved to the associate. A link
   may instead name its introducer and follow them, recomputed every publish as `gboard:<id>`.
 - **What a customer sees is as fresh as the last publish**: price lists are sealed at publish time.
 
