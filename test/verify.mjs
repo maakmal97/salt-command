@@ -13984,6 +13984,83 @@ await (async () => {
     && !/crossorigin|Salt Admin/.test(cust),
     "and the customer's page is unchanged: Salt Counter, its public manifest, no credentials asked: " + JSON.stringify(c));
 })();
+section("S1 1.13: Decline is its own state: shut, left out of Waiting on you, and Not approved to the associate");
+await (async () => {
+  /* 24 SEP 2026, HIS DECISION D13 (H13): Decline wrote approved:false, which is the pending state itself,
+     so a declined link stayed under Waiting on you and the associate read "Waiting to be approved" for
+     ever. Driven through his rendered Decline and the associate's rendered panel, against the real Worker. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+  await kv.put("roster", JSON.stringify([]));
+  await kv.put("board:2", JSON.stringify({ products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 150 }] }] }));
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s1-13", u);
+  const cardDoc = { at: "2026-09-18T00:00:00Z", products: [{ product: "salt", name: "Salt", unit: "unit",
+    summary: { bought: 100, soldFor: 0, onward: 0, introduced: 0, referred: 0 }, reward: null, lines: [{ date: "2026-09-01", kind: "own", qty: 1, rm: 100 }] }] };
+  await kv.put("u:" + u, JSON.stringify({ u, assoc: true, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })),
+    card: Object.assign({ at: cardDoc.at }, await C.encryptWith(ck, JSON.stringify(cardDoc))) }));
+  const TEAM = "maakmal", AUD = "aud-s1-13", KID = "kid-s1-13";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: "mp-s1-13", ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 150 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  const wins = [];
+  const pageAt = (html, path, extra) => { const w = new JSDOM(html, { url: "https://k7m3p2.example" + path, runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+    win.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, extra), body: o.body }); };
+  } }).window; wins.push(w); return w; };
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sess = (await (await site("/open", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ u, password: pw }) })).json()).session;
+    const mint = async () => (await (await site("/my/refs", { method: "POST", headers: { "X-Stmt-Session": sess, "content-type": "application/json" }, body: "{}" })).json()).ref.id;
+    const keep = await mint(), drop = await mint(), third = await mint();
+    const stored = async (id) => JSON.parse(await kv.get("g:" + id));
+
+    /* ---- his side: the rendered Decline ---- */
+    const A = pageAt(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), "/all", { "cf-access-jwt-assertion": tok });
+    const DA = A.document;
+    const cardOf = (id) => [...DA.querySelectorAll("#glist .glink")].find((x) => x.textContent.includes(id));
+    /* the group a card sits in is the last heading before it */
+    const groupOf = (id) => { let g = null; for (const n of DA.getElementById("glist").children) { if (n.classList.contains("ghead")) g = n.textContent; if (n === cardOf(id)) return g; } return null; };
+    DA.querySelector('button[data-m="links"]').click();
+    ok(await until(() => cardOf(keep) && cardOf(drop)) && groupOf(keep) === "Waiting on you" && groupOf(drop) === "Waiting on you",
+      "both links wait on him before he decides: " + JSON.stringify([groupOf(keep), groupOf(drop)]));
+    const de = cardOf(drop) && [...cardOf(drop).querySelectorAll("button")].find((b) => b.textContent === "Decline");
+    if (de) de.click();
+    ok(!!de && await until(async () => (await stored(drop)).declined === true) && (await stored(drop)).approved === false
+      && (await site("/g/" + drop)).status === 404 && (await site("/g/" + third)).status === 404,
+      "a tap on Decline marks it declined, and the door answers the same 404 it gives a pending or unknown id");
+    ok(await until(() => groupOf(drop) !== "Waiting on you") && groupOf(keep) === "Waiting on you"
+      && /Not approved/.test(cardOf(drop).textContent) && ![...cardOf(drop).querySelectorAll("button")].some((b) => b.textContent === "Decline"),
+      "the declined link leaves Waiting on you and says Not approved, while the pending one still waits there: " + JSON.stringify([groupOf(keep), groupOf(drop)]));
+
+    /* ---- the associate's side: their own panel ---- */
+    const P = pageAt(await (await site("/")).text(), "/", {});
+    const DP = P.document;
+    DP.getElementById("un").value = u; DP.getElementById("pw").value = pw;
+    DP.getElementById("f").dispatchEvent(new P.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !DP.getElementById("tCard").hidden);
+    DP.getElementById("tCard").click();
+    ok(await until(() => DP.querySelectorAll("#pCard .glink").length >= 3),
+      "their panel lists their links: " + DP.querySelectorAll("#pCard .glink").length);
+    const words = [...DP.querySelectorAll("#pCard .glink .gt")].map((x) => x.textContent);
+    ok(words.filter((w) => w === "Not approved").length === 1 && words.filter((w) => w === "Waiting to be approved").length === 2,
+      "the declined link reads Not approved and only the two still pending read Waiting to be approved: " + JSON.stringify(words));
+  } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
+})();
 section("v687: the master account opens on its own page, and the owner's script travels only there");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: a master account that opens on what it can do. /all is that account,
@@ -16500,10 +16577,14 @@ await (async () => {
     ok(listed.ok && JSON.stringify(listed.tiers) === JSON.stringify(NAMES9),
       "his listing carries the tier names, so his picker never states what the tiers are called");
     const dec = await (await his("/all/refs/" + made.ref.id + "/decline", {})).json();
-    ok(dec.ok && dec.ref.approved === false && (await guest(made.ref.id)).status === 404,
-      "he may decline one, and a declined link stays shut");
+    /* D13, 24 SEP 2026: DECLINE IS ITS OWN STATE. It wrote approved:false, the pending state itself,
+       so the associate read "waiting" for ever; it keeps that (the door stays shut by the one test)
+       and adds `declined`, which the associate reads as declined and never as waiting. */
+    const st9 = ((await (await my("/my/refs", A9.session)).json()).refs.find((r) => r.id === made.ref.id) || {}).state;
+    ok(dec.ok && dec.ref.approved === false && dec.ref.declined === true && st9 === "declined" && (await guest(made.ref.id)).status === 404,
+      "he may decline one: it is declined, not waiting, to the associate, and it stays shut: " + st9);
     const app = await (await his("/all/refs/" + made.ref.id + "/approve", {})).json();
-    ok(app.ok && app.ref.approved === true && (await guest(made.ref.id)).status === 200,
+    ok(app.ok && app.ref.approved === true && app.ref.declined === false && (await guest(made.ref.id)).status === 200,
       "and approving it opens it, quoting the board it would have quoted all along");
     /* THE FLOOR IS NOT A TIER A GUEST MAY BE QUOTED. Ambassador is index 0; pinning it would
        silently serve the board instead of what he picked. */

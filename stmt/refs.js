@@ -51,6 +51,10 @@
  * he has ever handed out, and shut it SILENTLY: an unknown, a withdrawn and a pending one all answer
  * the same 404 by design, so nobody would report it.
  *
+ * DECLINED IS ITS OWN STATE (his decision D13, 24 Sep 2026): `declined: true` beside `approved: false`,
+ * so the door stays shut by the very test above and nothing that reads only `approved` can open it,
+ * while every reader that says "waiting" leaves it out. Approving it later clears the mark.
+ *
  * "IF NEED BE" MEANS IT WORKS WITHOUT HIM. An approved link with no level follows the v658 rule, the
  * associate being the introducer, so the guest is quoted two levels above theirs. He may pin a level
  * instead, and then it reads that level's board and needs nothing published for it (v699).
@@ -177,7 +181,7 @@ export async function refsBy(env, username) {
 export async function setRef(env, id, patch) {
   const rec = await readRef(env, id);
   if (!rec) return null;
-  for (const k of ["approved", "revoked"]) if (k in (patch || {})) rec[k] = !!patch[k];
+  for (const k of ["approved", "revoked", "declined"]) if (k in (patch || {})) rec[k] = !!patch[k];
   if (patch && "level" in patch) rec.level = patch.level || null;
   if (patch && typeof patch.label === "string") rec.label = cleanLabel(patch.label);
   await env.STMT.put(RKEY(rec.id), JSON.stringify(rec));

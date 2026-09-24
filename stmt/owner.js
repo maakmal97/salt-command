@@ -240,8 +240,9 @@ export const OWNER_JS = `
     if(!links.length){ glist.appendChild(el('p','rnone','No links yet.')); return; }
     var order=(links.filter(function(r){return r.standing;}).map(function(r){return r.level;}));
     var standing=links.filter(function(r){return r.standing;}),
-        waiting=links.filter(function(r){return !r.standing&&r.approved===false;}),
-        older=links.filter(function(r){return !r.standing&&r.approved!==false;});
+        /* a declined link is not waiting on him (D13, 24 Sep 2026): it sits with the rest */
+        waiting=links.filter(function(r){return !r.standing&&r.approved===false&&r.declined!==true;}),
+        older=links.filter(function(r){return !r.standing&&!(r.approved===false&&r.declined!==true);});
     /* v709: WHAT IS WAITING ON HIM COMES FIRST. An associate's link is shut until he approves it,
        so the one group he has to act on is the one at the top. */
     var seq=[], heads={};
@@ -251,9 +252,11 @@ export const OWNER_JS = `
     seq.forEach(function(r,i){
       if(heads[i]) glist.appendChild(el('p','ghead',heads[i]));
       var card=el('div','glink'+(r.revoked?' off':''));
-      card.appendChild(el('p','gt',(r.standing?r.level:(r.level?r.level:(r.approved===false?'Waiting on you':'Tier '+r.tier)))+(r.revoked?' \\u00b7 withdrawn':'')));
+      var declined=r.declined===true, pending=r.approved===false&&!declined;
+      card.appendChild(el('p','gt',(r.standing?r.level:(declined?'Not approved':(r.level?r.level:(pending?'Waiting on you':'Tier '+r.tier))))+(r.revoked?' \\u00b7 withdrawn':'')));
       card.appendChild(el('h4',null,r.standing?'Hand this one to a stranger you would quote '+r.level
-        :(r.approved===false?('Minted by '+(r.by||'an associate')+', and shut until you approve it')
+        :declined?('Minted by '+(r.by||'an associate')+', and not approved, so it stays shut')
+        :(pending?('Minted by '+(r.by||'an associate')+', and shut until you approve it')
         :(r.label||'(no label)'))));
       card.appendChild(el('code','gu',r.url));
       card.appendChild(el('p','gs', r.opens
@@ -276,11 +279,15 @@ export const OWNER_JS = `
          does not set leaves it following the associate, which is what "if need be" means. */
       if(!r.standing&&r.by){
         if(r.approved===false){
+          /* a declined link keeps Approve, which is how a decline is taken back, and loses Decline */
           var ap=el('button',null,'Approve'); ap.type='button';
           ap.addEventListener('click', function(){ moveLink(r,'approve'); });
-          var de=el('button',null,'Decline'); de.type='button';
-          de.addEventListener('click', function(){ moveLink(r,'decline'); });
-          row.appendChild(ap); row.appendChild(de);
+          row.appendChild(ap);
+          if(!declined){
+            var de=el('button',null,'Decline'); de.type='button';
+            de.addEventListener('click', function(){ moveLink(r,'decline'); });
+            row.appendChild(de);
+          }
         }
         if(tiers.length){
           var sel=el('select','fld'); sel.setAttribute('aria-label','The tier this link quotes');

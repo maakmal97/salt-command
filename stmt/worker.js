@@ -350,7 +350,7 @@ async function handleMyRefs(request, env, p, m, origin) {
      often it has been used. Not his label, not the level, not who else holds one. */
   const mineOut = (r) => ({ id: r.id, url: refUrl(origin, r.id), qr: refQr(origin, r.id),
     made: r.made || null, opens: r.opens || 0, last: r.last || null,
-    state: r.revoked ? "withdrawn" : (r.approved === false ? "waiting" : "open") });
+    state: r.revoked ? "withdrawn" : (r.declined === true ? "declined" : (r.approved === false ? "waiting" : "open")) });
 
   if (p === "/my/refs") {
     if (m === "GET") return json({ ok: true, refs: (await refsBy(env, u)).map(mineOut), max: MAX_PER_ASSOC });
@@ -756,8 +756,13 @@ async function handleRefs(request, env, p, m, origin) {
   /* v709: his word on a link an associate minted, and the tier he may change on it. A level he
      does not set leaves it on the v658 rule, where the associate is the introducer: "if need be"
      means it works without him. */
+  /* 24 SEP 2026, HIS DECISION D13: DECLINE IS ITS OWN STATE. It wrote approved:false, which IS the
+     pending state, so a declined link read "waiting" to the associate for ever and stayed in his queue.
+     It keeps approved:false, so the door and the publish, which test that alone, stay shut on it, and
+     adds `declined`, which every reader of "waiting" leaves out. Approving it clears the mark. */
   if (mm[2] === "approve" || mm[2] === "decline") {
-    const rec0 = await setRef(env, id, { approved: mm[2] === "approve" });
+    const yes = mm[2] === "approve";
+    const rec0 = await setRef(env, id, { approved: yes, declined: !yes });
     if (!rec0) return json({ ok: false, error: "no such link" }, 404);
     return json({ ok: true, ref: refOut(origin, rec0) });
   }

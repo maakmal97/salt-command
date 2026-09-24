@@ -1002,8 +1002,9 @@ const CLIENT_JS = `
     if(myLinks===null){ box.appendChild(el('p','sub2','Reading your links.')); pCard.appendChild(box); loadMyLinks(); return; }
     if(!myLinks.length) box.appendChild(el('p','sub2','None yet.'));
     myLinks.forEach(function(r){
-      var row=el('div','glink'+(r.state==='withdrawn'?' off':''));
-      row.appendChild(el('p','gt', r.state==='waiting'?'Waiting to be approved':(r.state==='withdrawn'?'Withdrawn':'Open')));
+      var row=el('div','glink'+(r.state==='withdrawn'||r.state==='declined'?' off':''));
+      /* D13 (24 Sep 2026): a declined link is its own state, never "waiting" */
+      row.appendChild(el('p','gt', r.state==='waiting'?'Waiting to be approved':(r.state==='declined'?'Not approved':(r.state==='withdrawn'?'Withdrawn':'Open'))));
       row.appendChild(el('code','gu', r.state==='open'?r.url:'\u2014'));
       row.appendChild(el('p','gs', r.opens
         ? 'opened '+r.opens+' time'+(r.opens===1?'':'s')
