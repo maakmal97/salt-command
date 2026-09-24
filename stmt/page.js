@@ -1290,7 +1290,7 @@ const CLIENT_JS = `
        does the record of what this phone has seen (S5), which is the kept account's as well */
     var rec=remGet(), other=!!rec&&rec.u!==user, tok=!other&&rec?rec.t||null:null, s=session, ep=null, ho=keepMinted;
     keepMinted=[];
-    if(!other){ remClear(); try{ localStorage.removeItem(SEEN); }catch(e){} }
+    if(!other){ remClear(); try{ localStorage.removeItem(SEEN); }catch(e){} payqDrop(); }
     lock();
     /* S1 1.42: this phone's alerts go too, here and on the site, and the site is told even when the session
        has lapsed, so the remembered wrap does not outlive the Log out */
@@ -2575,7 +2575,7 @@ const CLIENT_JS = `
     payScr.hidden=false; paySh.hidden=false; drawPay();
     try{ paySh.focus(); }catch(e){}
   }
-  function closePay(){ if(!paySh||paySh.hidden) return; paySh.hidden=true; payScr.hidden=true; PS=null; }
+  function closePay(){ if(!paySh||paySh.hidden) return; paySh.hidden=true; payScr.hidden=true; PS=null; payqDrop(); }
   if(paySh){
     document.getElementById('payX').addEventListener('click',closePay);
     payScr.addEventListener('click',closePay);
@@ -2681,13 +2681,34 @@ const CLIENT_JS = `
       :!a?'Say how much you are paying, up to '+rm(PS.ctx.fig)+'.':!PS.rail?'Choose how you are paying.':'Choose which of our accounts to pay into.'));
     var go;
     if(href){ go=el('a','salt-pill salt-pill--md',word); go.href=href; go.target='_blank'; go.rel='noopener';
-      go.addEventListener('click',function(){ PS.away={amt:a, rail:PS.rail, acct:PS.acct, gone:false}; }); }
+      go.addEventListener('click',function(){ PS.away={amt:a, rail:PS.rail, acct:PS.acct, gone:false}; payqPut(); }); }
     else { go=el('button','salt-pill salt-pill--md',word); go.type='button'; go.disabled=true; }
     go.id='payGo'; foot.appendChild(go);
   }
   /* ---- S6 6.5 (his D7): ON RETURN THE SHEET ASKS ONCE. Leaving for the pay page (the page hidden, or the window left)
      and coming back turns the sheet to one question, never a tap beside the account number: Not yet goes back and asks
      nothing more until the pay page is opened again; Yes records a CLAIM, which stays "sent, waiting" until he answers. */
+  /* S6 fix: THE QUESTION OUTLIVES A RELOAD. A saved app is often reloaded or evicted while they are in their bank's app,
+     and the question lived in memory alone, so they came back to Pay with nothing asked. What Show opened is kept on this
+     device for two hours (the way, his account, the figure and the order it was for, with a short mark of the account,
+     never the username), and the next open asks it, if something is still to pay there. Yes, Not yet and closing the
+     sheet clear it; so does Log out. His read-only view keeps nothing. */
+  var PAYQ='salt-stmt-payq';
+  function payqWho(u){ var h=2166136261; for(var i=0;i<u.length;i++){ h^=u.charCodeAt(i); h=Math.imul(h,16777619)>>>0; } return h.toString(36); }
+  function payqPut(){ if(view||!PS||!PS.away) return;
+    try{ localStorage.setItem(PAYQ,JSON.stringify({who:payqWho(user), at:Date.now(), kind:PS.ctx.kind, id:PS.ctx.id||null,
+      away:{amt:PS.away.amt, rail:PS.away.rail, acct:PS.away.acct}})); }catch(e){ /* this visit only */ } }
+  function payqDrop(){ try{ localStorage.removeItem(PAYQ); }catch(e){} }
+  function payqBack(){
+    if(view||PS||!paySh) return;
+    var q=null; try{ q=JSON.parse(localStorage.getItem(PAYQ)||'null'); }catch(e){ q=null; }
+    if(!q) return;
+    var w=q.away||{}, ctx=q.kind==='order'?(oFind(q.id)?orderCtx(q.id):null):acctCtx();
+    if(q.who!==payqWho(user)||!(Date.now()-q.at<2*3600e3)||!ctx||!(ctx.fig>0.004)||!(w.amt>0)||!acct(w.acct)){ payqDrop(); return; }
+    PS={ctx:ctx, part:false, amt:'', rail:w.rail, acct:w.acct, said:'', step:'check', away:{amt:w.amt, rail:w.rail, acct:w.acct, gone:false}, busy:false};
+    payScr.hidden=false; paySh.hidden=false; drawPay();
+    try{ paySh.focus(); }catch(e){}
+  }
   function payGone(){ if(PS&&PS.away) PS.away.gone=true; }
   function payBack(){ if(PS&&PS.away&&PS.away.gone&&PS.step==='pay'){ PS.step='check'; PS.said=''; drawPay(); } }
   document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden') payGone(); else payBack(); });
@@ -2709,7 +2730,7 @@ const CLIENT_JS = `
     again.addEventListener('click',function(){ if(PS&&PS.away) PS.away.gone=false; });
     body.appendChild(again);
     var no=el('button','salt-ghost','Not yet'); no.type='button';
-    no.addEventListener('click',function(){ PS.step='pay'; PS.away=null; PS.said=''; drawPay(); });
+    no.addEventListener('click',function(){ PS.step='pay'; PS.away=null; PS.said=''; payqDrop(); drawPay(); });
     var yes=el('button','salt-pill salt-pill--md','Yes, I sent '+rm(w.amt)); yes.type='button'; yes.id='paySent'; yes.disabled=!!PS.busy;
     yes.addEventListener('click',claimSend);
     foot.appendChild(no); foot.appendChild(yes);
@@ -3009,6 +3030,7 @@ const CLIENT_JS = `
     if(session){ await loadOrders(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
     else if(view){ await loadView(user); if(stale()) return false; }   /* stmt/owner.js: his route alone carries it */
     setHold(); drawOrder(); drawPayHead();   /* S6 6.5 and 6.7: the claims come with the orders, and may lift the hold */
+    if(session) payqBack();   /* S6 fix: a question the last open left unanswered */
     return true;
   }
 

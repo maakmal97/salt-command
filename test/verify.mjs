@@ -32467,6 +32467,83 @@ await (async () => {
     "and under To pay now it goes once they sent it again, and once nothing is owed, and stands while it is still owed: " + JSON.stringify({ sentAgain: sentAgain.head, paidUp: paidUp.head, owing: owing.head }));
 })();
 
+section("S6 fix: Did you send it is asked again after the page is reloaded while they were paying");
+await (async () => {
+  /* HIS D7: on return the sheet asks once. A saved app is often reloaded or evicted while they are in their bank's app,
+     and the question lived in memory alone, so they came back to Pay and no question: the chase and the hold stayed on
+     for money they had sent. What Show opened is kept on the device for two hours, never the username, and the next open
+     asks it; Not yet clears it, and it is never asked of another account or once it is old. */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const Cr = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const U = "abcd-efgh", pass = "fixture-pass-r4", ck = await Cr.contentKey("test-secret", U);
+  const now = new Date(), iso = (h) => new Date(now.getTime() + h * 3600e3).toISOString();
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const list = [{ id: "oR", product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: iso(-30), status: "acknowledged", total: 150, paid: 0, claimed: 0,
+    payments: [], msgs: [], history: [{ at: iso(-30), status: "acknowledged", by: "desk" }] }];
+  const open = async (stored) => {
+    const pay = { term: 10, now: { rm: 0, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+    const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-r4",
+      env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: 0, pay })) };
+    const dom = new JD(lp(U, "nr4", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {}; win.open = () => null;
+      if (stored) win.localStorage.setItem("salt-stmt-payq", stored);
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
+        if (p === "/open") return res(200, body);
+        if (p === "/orders" && m === "GET") return res(200, { ok: true, orders: list, claims: [] });
+        return res(404, { ok: false });
+      };
+    } });
+    const d = dom.window.document;
+    d.getElementById("un").value = U; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !d.getElementById("tabs").hidden);
+    await new Promise((r) => setTimeout(r, 60));
+    return dom;
+  };
+  const asked = (d) => !d.getElementById("paySheet").hidden && t(d.querySelector("#payBody .paycheck h3")) === "Did you send RM 150?" && !!d.getElementById("paySent");
+  /* they pay: the order's Pay, Maybank, Show the account number; then the page is reloaded */
+  const first = await open(null);
+  let kept = null, before = false;
+  try {
+    const d = first.window.document, w = first.window;
+    d.querySelector('button[data-t="order"]').click();
+    await until(() => d.querySelector('#pOrder [data-row="oR"]'));
+    d.querySelector('#pOrder [data-row="oR"]').click();
+    [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b))).click();
+    const s = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true }));
+    before = !!w.localStorage.getItem("salt-stmt-payq");
+    d.getElementById("payGo").click();
+    kept = w.localStorage.getItem("salt-stmt-payq");
+  } finally { first.window.close(); }
+  const again = await open(kept);
+  let back = false, name = false, cleared = false;
+  try {
+    const d = again.window.document, w = again.window;
+    back = asked(d);
+    name = !String(kept || "").includes(U);
+    const ny = [...d.querySelectorAll("#payFoot button")].find((b) => t(b) === "Not yet"); if (ny) ny.click();
+    cleared = !!ny && !w.localStorage.getItem("salt-stmt-payq") && !asked(d);
+  } finally { again.window.close(); }
+  ok(!before && !!kept && back && name && cleared,
+    "Show keeps the question on the device without the username, the page reloaded asks Did you send RM 150 at once, and Not yet clears it: "
+    + JSON.stringify({ before, kept, back, cleared }));
+  const q = JSON.parse(kept || "{}");
+  const other = await open(JSON.stringify(Object.assign({}, q, { who: "zz" })));
+  const old = await open(JSON.stringify(Object.assign({}, q, { at: Date.now() - 3 * 3600e3 })));
+  let nOther = true, nOld = true;
+  try { nOther = asked(other.window.document); nOld = asked(old.window.document); } finally { other.window.close(); old.window.close(); }
+  ok(!nOther && !nOld, "and it is never asked of another account, nor once it is two hours old: " + JSON.stringify({ other: nOther, old: nOld }));
+})();
+
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead

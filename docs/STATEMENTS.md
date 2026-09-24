@@ -558,7 +558,8 @@ a code, Transfer chosen as it opens (the way, never the account), **with no acco
 one Option tile a tap, which of his accounts to pay into from those
 `payHref` links, a suspended one never offered, and their username is the reference. Show the account
 number, or Show the code, hands over one link into QR Command, which the Counter never names or carries
-a number of. **On return the sheet asks once** (S6 6.5, his D7): "Did you send RM 70?", with Not yet, never a tap
+a number of. **On return the sheet asks once** (S6 6.5, his D7), and after a reload too (kept on the device two hours as
+`salt-stmt-payq`, never the username): "Did you send RM 70?", with Not yet, never a tap
 beside the number; Yes posts a CLAIM (an order's to `/orders/<id>/pay`, To pay now's to `/account/claim`), which
 reads "sent, waiting for us to confirm" on the order, its row and To pay now until his Received or Not found, each
 shown when it comes; Pay then asks only for what no claim covers, **never the same money twice**: To pay now nets what was
