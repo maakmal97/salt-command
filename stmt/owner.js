@@ -264,6 +264,9 @@ export const OWNER_JS = `
      Minted, listed and revoked over /all/refs; the Worker draws the QR and returns it as a data
      URI, so nothing here encodes anything and the page loads no library to do it. */
   var links=[];
+  /* UX8: the answer to the last move, drawn on the card it moved, since the card changes group and the page's
+     own line sits at its foot */
+  var moved=null;
   function stampDay(iso){
     /* the page's klBits and MON3, so a day here is written exactly as the customer's page writes one */
     try{ var p=klBits(iso); return p.day+' '+MON3[+p.month-1]+' '+p.year; }catch(e){ return ''; }
@@ -297,7 +300,7 @@ export const OWNER_JS = `
     if(older.length){ heads[seq.length]='Older links, made against a customer'; seq=seq.concat(older); }
     seq.forEach(function(r,i){
       if(heads[i]) glist.appendChild(el('p','ghead',heads[i]));
-      var card=el('div','glink'+(r.revoked?' off':''));
+      var card=el('div','glink'+(r.revoked?' off':'')); card.setAttribute('data-link',r.id);
       var declined=r.declined===true, pending=r.approved===false&&!declined;
       /* a standing link whose level the book no longer names (Bronze, 23 Sep 2026) is kept because it
          was handed out, and it opens the board a stranger sees, never the level it still carries */
@@ -351,6 +354,7 @@ export const OWNER_JS = `
         }
       }
       card.appendChild(row);
+      if(moved&&moved.id===r.id){ var mv=el('p','msg',moved.t); mv.setAttribute('role','status'); card.appendChild(mv); }
       glist.appendChild(card);
     });
     if(want.length&&made<want.length) glist.appendChild(el('p','rnone','Only '+made+' of the '+want.length+' are made. Publish the statements and open this again.'));
@@ -365,6 +369,7 @@ export const OWNER_JS = `
   }
   var tiers=[];
   async function loadLinks(){
+    moved=null;
     try{ var j=await refs('/all/refs'); links=j.refs||[]; tiers=j.tiers||[]; drawLinks(); say(''); }
     catch(e){ say(e.message,'bad'); }
   }
@@ -382,10 +387,14 @@ export const OWNER_JS = `
          came back 405 and nothing moved. */
       var j=await refs('/all/refs/'+r.id+'/'+how, {});
       for(var i=0;i<links.length;i++) if(links[i].id===j.ref.id) links[i]=j.ref;
-      /* UX8: the tap is answered in one line, read off the link as the site now holds it */
+      /* UX8: the tap is answered in one line on the card, read off the link as the site now holds it, and the
+         card is brought into view in the group it has moved to */
       var opens=!j.ref.revoked&&j.ref.approved!==false;
-      drawLinks(); say(({approve:'Approved.',decline:'Declined.',revoke:'Withdrawn.',restore:'Restored.'}[how]||'Done.')
-        +(opens?' It opens now.':' It stays shut.'));
+      moved={id:j.ref.id, t:({approve:'Approved.',decline:'Declined.',revoke:'Withdrawn.',restore:'Restored.'}[how]||'Done.')
+        +(opens?' It opens now.':' It stays shut.')};
+      drawLinks(); say('');
+      var mc=document.querySelector('[data-link="'+j.ref.id+'"]');
+      if(mc&&mc.scrollIntoView) mc.scrollIntoView({block:'center'});
     }catch(e){ say(e.message,'bad'); }
   }
   document.getElementById('gmake').addEventListener('click', async function(){
