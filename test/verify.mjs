@@ -20075,6 +20075,43 @@ await (async () => {
   ok(r.status === 200 && typeof mf.id === "string" && new URL(mf.id, start.origin).href === was && start.pathname === "/app",
     "the manifest's id resolves to the site's root, the identity the old start address gave, while the app still starts at /app: " + JSON.stringify({ id: mf.id, start_url: mf.start_url }));
 })();
+section("S3 fix: only a code is braked and counted, so a flood of bogus codes never shuts the key a saved app or his QR opens, and a v6 host is one address");
+await (async () => {
+  /* S3-SEC-3 (24 Sep 2026). The brakes ran before the body was read, so a hundred bogus codes from ten addresses (or one
+     v6 host, each of its addresses its own count) refused every 192-bit KEY open too: the saved app's Paste, /app#<key>
+     and his counter's QR, for every customer, for as long as the flood was kept up. */
+  const S = await import("../stmt/signin.js");
+  const WB = (await import("../stmt/worker.js")).default;
+  const CB = await import("../tools/stmt-crypto.mjs");
+  const kv = new KV(), env = { STMT: kv, STMT_HANDOVER_KEY: "b".repeat(40) };
+  const uB = "aaaa-bbbb", ckB = await CB.contentKey("0".repeat(64), uB);
+  await kv.put("u:" + uB, JSON.stringify({ u: uB, issued: "2026-09-01", issues: ["2026-09-01"], env: { iv: "x", ct: "y" } }));
+  const open = async (body, ip) => { const r = await WB.fetch(new Request("https://k7m3p2.example/handover/open", { method: "POST",
+    headers: { "content-type": "application/json", "CF-Connecting-IP": ip }, body: JSON.stringify(body) }), env); return r.status; };
+  const mint = async (admin) => { const t = S.newSignin(); const m = await S.mintHandover(env, uB, t, await CB.wrapKey(t, ckB), admin); return m; };
+  const bogus = (i) => "3333-" + String(2000 + i).replace(/[01]/g, "z");
+
+  /* a hundred bogus codes from ten addresses trip the site-wide brake */
+  for (let i = 0; i < 100; i++) await open({ code: bogus(i) }, "192.0.2." + (i % 10));
+  const h1 = await mint(false), h2 = await mint(true);
+  ok((await open({ code: h1.code }, "203.0.113.50")) === 429, "the fixture: a hundred bogus codes shut code sign-in site-wide");
+  ok((await open({ token: h1.token }, "203.0.113.51")) === 200 && (await open({ token: h2.token, tab: true }, "203.0.113.52")) === 200,
+    "while a real key still opens, pasted into the saved app or carried by his counter's QR, from a fresh address");
+
+  /* a key miss is never counted */
+  const kv2 = new KV(), env2 = { STMT: kv2, STMT_HANDOVER_KEY: "b".repeat(40) };
+  for (let i = 0; i < 12; i++) await WB.fetch(new Request("https://k7m3p2.example/handover/open", { method: "POST",
+    headers: { "content-type": "application/json", "CF-Connecting-IP": "198.51.100.77" }, body: JSON.stringify({ token: S.newSignin() }) }), env2);
+  ok(![...kv2.m.keys()].some((k) => k.startsWith("hofail")), "twelve bogus keys from one address count nothing against it or the site");
+
+  /* one v6 host is one address: its /64 */
+  const kv3 = new KV(), env3 = { STMT: kv3, STMT_HANDOVER_KEY: "b".repeat(40) };
+  const at3 = (body, ip) => WB.fetch(new Request("https://k7m3p2.example/handover/open", { method: "POST",
+    headers: { "content-type": "application/json", "CF-Connecting-IP": ip }, body: JSON.stringify(body) }), env3).then((r) => r.status);
+  for (let i = 1; i <= 10; i++) await at3({ code: bogus(i) }, "2001:db8::" + i.toString(16));
+  ok((await at3({ code: bogus(11) }, "2001:db8:0:0:ffff::1")) === 429 && (await at3({ code: bogus(12) }, "2001:db8:0:1::1")) === 401,
+    "ten misses from ten addresses in one v6 /64 shut that /64, and the next network over is still heard");
+})();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {
   /* S3, 24 SEP 2026. The door's one way in named its opener unseal, which stmt/owner.js already declared: spliced in

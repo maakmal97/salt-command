@@ -303,7 +303,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   spent it, by its nonce, for two minutes; an app's own browser is sent to Safari or Chrome first.
 - **The hand-over** (his decision D2): a signed-in page, or Salt Admin's Show a code, hands the sign-in to
   another app or phone as a key and an eight-symbol code, one use in fifteen minutes, filed under a hash keyed by
-  `STMT_HANDOVER_KEY` with the wrap sealed, braked per address and site-wide; unset, `/handover` answers 503.
+  `STMT_HANDOVER_KEY` with the wrap sealed, the code braked per address and site-wide; unset, `/handover` answers 503.
 - **The door** (his D3): one username field and one password field a password manager fills, Show, a
   paste that keeps only the password, an alphabet check on the device, the help line, and the site's
   one refusal; only his page sends a master, so it cannot be typed at a customer's door. Keep me signed

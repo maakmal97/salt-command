@@ -323,9 +323,10 @@ signed in (or Salt Admin, for a customer at his counter) hands the sign-in acros
 - **Keyed and sealed**: filed as `ho:<HMAC(STMT_HANDOVER_KEY, "code:" + code)>` and `ho:<HMAC(..., "key:" + token)>`,
   each holding the other's name, `exp`, and the username, key and wrap sealed under AES-GCM keyed from the same
   secret. Eight symbols are 39 bits: never a plain hash.
-- **Braked** per address (`hofail:<address>`, ten misses) and site-wide (`hofail`, a hundred), fifteen minutes each.
-  A miss is any refusal; a success clears nothing. A flood shuts code sign-in for everyone for fifteen minutes and
-  touches no other door. JSON only, as `/open`.
+- **A code is braked** per address (`hofail:<address>`, a v6 address by its /64, ten misses) and site-wide (`hofail`, a
+  hundred), fifteen minutes each. A miss is any refused code; a success clears nothing. A key is neither braked nor
+  counted (192 bits, as a link's token is), so a flood shuts code sign-in for everyone for fifteen minutes and no other
+  door, the key included (S3 fix). JSON only, as `/open`.
 - **Log out burns them**: `POST /logout` takes `handover`, the keys the page minted (ten at most), and deletes both
   records of each unopened, so a key left on a handed-on phone's clipboard or address opens nothing (S3 fix).
 - **A code open is an open**: `seen:` says `code` or `key`, and its session leaves a pointer (`dev:`).
