@@ -19069,7 +19069,7 @@ await (async () => {
     const payTap = async (n) => { await until(() => d.getElementById("pd-" + ord.id) && !d.getElementById("pd-" + ord.id).disabled);
       d.getElementById("pd-" + ord.id).click(); await until(() => sent.pay.length === n); };
     await payTap(1); await payTap(2);
-    const amt = d.querySelector("#pOrder .amt input");
+    const amt = d.querySelector("#pOrder .payamt input");   /* the pay row is .payamt since S1 1.8 */
     amt.value = "40"; amt.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
     await payTap(3); await payTap(4);
     /* the last tap's handler redraws once its answer lands: let it, or it draws into a closed window
@@ -21389,14 +21389,16 @@ await (async () => {
     const sayLine = said(panes()[1], "Refused by the fixture: say");
     ok(sayLine && after(panes()[1].querySelector(".sayw"), sayLine), "Send refused: the words sit under the box that was sent from");
 
-    /* the order list answering 401 after a tap writes the form's note, which the payment page now draws too */
-    const holdSaid = () => [...d.querySelector("#pOrder .pane").querySelectorAll('[role="status"]')].filter((x) => x.textContent.trim()).length;
-    const holdBefore = holdSaid();
+    /* the order list answering 401 after a tap wrote the form's note, which the payment page never drew. Since
+       S1 1.5 a 401 on a live session is said at once in the bar, role=alert, which the payment page shows too */
+    const lapseOn = () => { const l = d.getElementById("lapse"); return !!l && !l.closest("[hidden]") && l.getAttribute("role") === "alert"
+      && /signed out after a while/.test(l.textContent); };
+    const lapseBefore = lapseOn();
     st.ordersDown = true;
     d.getElementById("pd-oA").click();
-    await until(() => holdSaid() > 0);
-    ok(holdBefore === 0 && holdSaid() > 0 && !d.querySelector("#pOrder .pane").querySelector(".state"),
-      "and a note the form would have carried is drawn in the payment pane itself: " + holdBefore + " then " + holdSaid());
+    await until(() => lapseOn());
+    ok(!lapseBefore && lapseOn() && d.getElementById("tOrder").textContent === "Pay",
+      "and a 401 after a tap on the payment page is said on screen, in the bar: " + lapseBefore + " then " + lapseOn());
 
     st.ordersDown = false; st.payOk = true;
     d.getElementById("pd-oA").click();
