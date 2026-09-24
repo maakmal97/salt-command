@@ -131,7 +131,7 @@ body{
 
 /* FIGURES IN MONO, SENTENCES IN THE DISPLAY FACE. Decision 3 of the identity, and the whole
    figure vocabulary of a statement is listed here once. */
-.dt,.q,.amt,.u,.tr span:last-child,.owedv,.who,.idx td,.mini td,.mini th,.pw,
+.dt,.q,.amt,.u,.tr>span:last-child,.owedv,.who,.idx td,.mini td,.mini th,.pw,
 .ok,.due,.pend,.cx,.owedunits,.gift,.nilamt,.eyebrow,.whol,th,.rvh,.slab
   {font-family:var(--salt-font-mono);font-variant-numeric:tabular-nums}
 
@@ -197,7 +197,8 @@ td.l{text-align:left}
 .tot{margin-top:30px}
 .tr{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:8px 0;
   font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-.tr span:last-child{color:var(--salt-text);white-space:nowrap}
+/* the figure is the row's own last child: the cancelled note nested in the words wraps (S7-R4, 25 Sep 2026) */
+.tr>span:last-child{color:var(--salt-text);white-space:nowrap}
 .tr.big{margin-top:10px;padding-top:16px;border-top:1px solid var(--salt-line);
   font-size:var(--salt-text-xl);font-weight:700;color:var(--salt-text)}
 .tr.big span:last-child{color:var(--salt-ember)}
@@ -255,7 +256,7 @@ b.short{color:var(--salt-ember)}
   .pend{color:#41586e}
   .gift{color:#555}
   td{border-color:#ddd}.rule,.tr.big{border-color:#c9ad74}
-  .tr{color:#333}.tr span:last-child,.amt,.dt{color:#111}
+  .tr{color:#333}.tr>span:last-child,.amt,.dt{color:#111}
   .owed,.rec{background:#fbfaf7;border-color:#d8c79c}
   .stpn{color:#8a5a20;border-color:#d8c79c}
   .stpt{color:#111}

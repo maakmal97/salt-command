@@ -33043,6 +33043,32 @@ await (async () => {
   } finally { if (release) release(); await new Promise((r) => setTimeout(r, 50)); W.close(); }
 })();
 
+section("S7 fix: on a statement's totals line only the figure keeps to one line, so the cancelled note wraps and a small phone never pans");
+await (async () => {
+  /* S7-R4 of the stage 7 review (25 Sep 2026). ".tr span:last-child{white-space:nowrap}" was meant for the figure, but the
+     cancelled note nested in the words is the last child of theirs, so "units · 1 cancelled, not counted" could not wrap:
+     with two books and a cancelled row, Account's totals line widened a 320px page to 322. Read through the cascade of the
+     live statement's own stylesheet, over the line the generator writes. */
+  const { stmtDoc } = await import("../tools/make_statements.mjs");
+  const { STATEMENT_CSS } = await import("../stmt/statement-css.js");
+  const { JSDOM } = await import("jsdom");
+  const row = (x) => Object.assign({ gift: false, resale: false, date: "2026-09-10", qty: 1, total: 110, unit: 110, paidCash: 110, inKind: 0, got: 1, inKindUnits: 0,
+    owed: 0, pendingOrder: false, cancelled: false, cancelledOn: null, agreedOn: null, credit: 0, deliverable: 0, toGet: 0, paidOn: "2026-09-10",
+    gotOn: "2026-09-10", state: "x", links: [], product: "salt" }, x);
+  const rows = [row({}), row({ product: "oil", qty: 10, total: 450, unit: 45, paidCash: 450, got: 10 }),
+    row({ cancelled: true, cancelledOn: "2026-09-12", total: 110, paidCash: 0, got: 0, gotOn: null, paidOn: null })];
+  const doc = stmtDoc("CX-TEST", rows, { brand: "Salt Command", issued: "25 Sep 2026", lines: true });
+  const body = doc.slice(doc.indexOf("<body>") + 6, doc.indexOf("</body>"));
+  const dom = new JSDOM("<!doctype html><html><head><style>" + STATEMENT_CSS + "</style></head><body>" + body + "</body></html>");
+  try {
+    const D = dom.window.document, ws = (e) => dom.window.getComputedStyle(e).whiteSpace;
+    const note = D.querySelector(".tr .cxn"), line = note && note.closest(".tr"), fig = line && line.lastElementChild;
+    ok(!!note && !!fig && fig !== note.parentNode && ws(fig) === "nowrap",
+      "the totals line with a cancelled row carries its note inside the words, and its figure keeps to one line: " + JSON.stringify(line && line.textContent));
+    ok(ws(note) !== "nowrap" && ws(note.parentNode) !== "nowrap", "while the words and the cancelled note in them may wrap: " + JSON.stringify([ws(note), ws(note.parentNode)]));
+  } finally { dom.window.close(); }
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read
