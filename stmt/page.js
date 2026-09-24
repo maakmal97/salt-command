@@ -367,14 +367,14 @@ export function boardPage(guest, nonce) {
     + body
     /* S8 8.2: A STRANGER IS TOLD WHAT TO DO NEXT, in words and with no brand. The board is all they
        have, and it named no way to order. */
-    + '<p class="lead">To order, reply to the person who sent you this link.</p>', nonce);
+    + '<p class="lead">To order, reply to the person who sent you this link.</p>', nonce, "Price list");
 }
 /* S8 8.2: EVERY SHUT LINK ANSWERS THIS, WORD FOR WORD. Unknown, malformed, withdrawn, declined and
    waiting ids all get it, in the board's own look, so the door tells a stranger nothing about which
-   it was and never leaves them on a bare "Not found". */
+   it was and never leaves them on a bare "Not found". Its tab says so too, one title for every kind. */
 export function shutPage(nonce) {
   return guestPage("<h2>This link is not open</h2>"
-    + '<p class="lead">Ask the person who sent it to you.</p>', nonce);
+    + '<p class="lead">Ask the person who sent it to you.</p>', nonce, "Link not open");
 }
 /* S13 13.1, HIS DECISION D12 OF 24 SEP 2026: EVERY PAGE OF THE COUNTER IS KEPT OUT OF THE TRANSLATOR. On a phone set
    to Malay or Chinese, Chrome offers to translate a page, and accepting sends what is on it, an opened statement
@@ -382,12 +382,12 @@ export function shutPage(nonce) {
    the customer's, a guest board, a shut link and Salt Admin. */
 const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no"><head><meta charset="utf-8">'
   + '<meta name="google" content="notranslate">';
-function guestPage(inner, nonce) {
+function guestPage(inner, nonce, title) {
   return DOC_OPEN
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'
-    + "<title>Price list</title>"
+    + "<title>" + title + "</title>"
     + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
     + '<div class="panel">' + inner + "</div></body></html>";
 }

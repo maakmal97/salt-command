@@ -16457,6 +16457,8 @@ await (async () => {
     && /name="viewport"/.test(bare[0]) && /url[(][/]fonts[/]/.test(bare[0]) && !/Not found/.test(bare[0]),
     "it says the link is not open and whom to ask, with a viewport and the brand faces, never the bare Not found");
   ok(bare[0] !== board.split('nonce="' + nonceOf({ body: board }) + '"').join(""), "and an open link is still its board, the control");
+  ok(/<title>Link not open<\/title>/.test(bare[0]) && !/Price list/.test(bare[0]) && /<title>Price list<\/title>/.test(board),
+    "the shut page's tab says the link is not open, never Price list, and the board's still says Price list");
 })();
 section("S8 8.3: the reward line on an associate's card says how to take it, and only where there is some to take");
 await (async () => {
