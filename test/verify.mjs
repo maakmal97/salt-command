@@ -17249,8 +17249,11 @@ await (async () => {
   /* EVERY DOOR READS IT, and the count is the check: a door added later that forgot the mark would
      take an associate's tick away from them on the way in, silently, and only on that one road.
      v710 added the third, which is how this assertion earned its keep. */
-  ok(/assoc=body\.assoc===true;/.test(page2) && (page2.match(/assoc=body\.assoc===true;/g) || []).length === 3,
-    "all three doors read it: a password open, a remembered device and a one-time link");
+  /* S3 3.3: EVERY DOOR GOES THROUGH ONE WAY IN, which reads the mark once: a password open, a remembered device, a
+     one-time link, a code and a return's re-read all call openBeside, and nothing else sets the mark */
+  ok(/var x=\{assoc:body\.assoc===true/.test(page2) && (page2.match(/assoc=x\.assoc;/g) || []).length === 1
+    && (page2.match(/await openBeside\(/g) || []).length === 5 && !/assoc=body\.assoc===true;/.test(page2),
+    "every door reads it through the one way in: a password open, a remembered device, a one-time link, a code and a return");
   ok(!/for resale/i.test(page2), "and nothing on it says 'for resale', which is what he changed it from");
 })();
 section("v705: a password filed under a name that has since moved is paired by its own verifier");
@@ -23057,7 +23060,7 @@ await (async () => {
     /* the order list answering 401 after a tap wrote the form's note, which the payment page never drew. Since
        S1 1.5 a 401 on a live session is said at once in the bar, role=alert, which the payment page shows too */
     const lapseOn = () => { const l = d.getElementById("lapse"); return !!l && !l.closest("[hidden]") && l.getAttribute("role") === "alert"
-      && /signed out after a while/.test(l.textContent); };
+      && /signed out on this (phone|computer)/.test(l.textContent); };
     const lapseBefore = lapseOn();
     st.ordersDown = true;
     d.getElementById("pd-oA").click();
