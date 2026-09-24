@@ -23413,6 +23413,29 @@ await (async () => {
   }
 })();
 
+section("S11 fix: while a reason is chosen, the footer speaks of the decline alone");
+await (async () => {
+  /* 24 Sep 2026, found by the rig at 1280: with Decline's reasons open the footer still said what Accept would do.
+     (The same shot showed the Other charge and his own words drawn although hidden, the field recipe's display
+     outranking the browser's rule for a hidden element; jsdom draws any hidden element as none, so that half is
+     proved in Chromium on the rig, not here.) */
+  const { openMaster: omFx } = await import("../tools/payload.mjs");
+  const { w } = await omFx();
+  try {
+    w.SALT_CLOUD = true;
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0, history: [], msgs: [], payments: [] };
+    const D = w.document, box = D.createElement("div");
+    box.className = "ordgrid"; box.id = "ordBox"; D.body.appendChild(box);
+    w.eval("ORD_OPEN=" + JSON.stringify([Object.assign({}, base, { id: "n1", status: "placed", mode: "deliver", place: "Taman Rekaan", at: "2026-09-24T02:00:00.000Z" })]) + ";ORD_SEL='n1';ORD_WHY.n1={st:'declined',pick:'stock'};ordDraw();");
+    const foot = D.querySelector('.ordcard[data-id="n1"] .ordfoot').textContent;
+    ok(!/Accept tells them|Choose the delivery charge first/.test(foot) && /Decline and tell them/.test(foot),
+      "with the reasons open the footer speaks of the decline alone: " + foot.replace(/\s+/g, " ").trim());
+  } finally {
+    await new Promise((r) => setTimeout(r, 100));
+    try { w.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one

@@ -725,8 +725,9 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .ordcard .ordfoot{position:sticky;bottom:0;z-index:2;margin:0 -20px -18px;padding:12px 20px calc(14px + env(safe-area-inset-bottom,0px));
   background:var(--salt-panel);border-top:1px solid var(--salt-line-faint);border-radius:0 0 var(--salt-radius-lg) var(--salt-radius-lg);
   display:flex;flex-direction:column;gap:8px;}
-/* the Approve card is a flex box, which outranks the browser's own rule for a hidden element */
-.ordcard[hidden]{display:none;}
+/* the Approve card and a field are flex boxes, and a flex box outranks the browser's own rule for a hidden
+   element: a card, the Other charge, his own words and the stepper stay shut until they are opened */
+.ordcard[hidden],.ordcard [hidden]{display:none;}
 /* on the phone the footer clears the desk's two floating buttons, so Accept sits above them */
 @media (max-width:860px){.ordcard .ordfoot{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px));}}
 .ordfee{margin:0;}
@@ -737,6 +738,5 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .ordquick:empty{display:none;}
 /* S11 11.9: Delivered part's stepper, a half unit either side of the figure */
 .ordpart{display:flex;flex-direction:column;gap:8px;}
-.ordpart[hidden]{display:none;}
 .ordstep{display:flex;align-items:stretch;gap:8px;}
 .ordstep .salt-field__input{flex:0 1 140px;text-align:center;}
