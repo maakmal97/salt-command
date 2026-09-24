@@ -19292,6 +19292,77 @@ await (async () => {
       "the control: with B both on screen and remembered, B's lapse reopens B in silence");
   } finally { g4.W.close(); }
 })();
+section("S3 fix: Log out of an account opened for a visit leaves the account the phone keeps remembered, here and on the site");
+await (async () => {
+  /* S3R-2 (24 Sep 2026). Log out of B, opened over A with Keep A, forgot A on the phone while /logout refused to drop
+     A's wrap for B's session, so A was signed out here and left orphaned on the site for thirty days. */
+  const { landingPage: lpV } = await import("../stmt/page.js");
+  const CV = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDV } = await import("jsdom");
+  const uA = "aaaa-vvvv", uB = "bbbb-vvvv", tokL = "V".repeat(32), devA = "a".repeat(32), devB = "b".repeat(32), ep = "https://push.example/ep-v";
+  const ckA = await CV.contentKey("6".repeat(64), uA), ckB = await CV.contentKey("7".repeat(64), uB);
+  const envOf = (ck, t) => CV.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>" + t + "</p>" }] }));
+  const envA = await envOf(ckA, "A"), envB = await envOf(ckB, "B");
+  const recOf = (u, dev) => JSON.stringify({ t: u[0].repeat(32), k: Buffer.from(dev).toString("base64"), u });
+  const drive = async (path, rec, answer) => {
+    const st = { posted: null, unsubscribed: false };
+    const store = new Map([["salt-stmt-remember", rec]]);
+    const dom = new JDV(lpV("", "nV", null), { url: "https://site.test" + path, runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        const sub = { endpoint: ep, unsubscribe: async () => { st.unsubscribed = true; return true; } };
+        Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+          register: async () => { throw new Error("not in this test"); },
+          getRegistration: async () => ({ pushManager: { getSubscription: async () => (st.unsubscribed ? null : sub) } }) } });
+        win.fetch = async (p, init) => {
+          const body = init && init.body ? JSON.parse(init.body) : null, s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
+            : ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(tokL, ckB), env: envB, live: null, prices: null, session: "sessVB00000000000000000000000" });
+          if (p === "/remember/open") {
+            const r = JSON.parse(store.get("salt-stmt-remember"));
+            return r.u === uB ? ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(devB, ckB), env: envB, live: null, prices: null, session: "sessVB00000000000000000000000" })
+              : ans(200, { ok: true, u: uA, wrap: await CV.wrapKey(devA, ckA), env: envA, live: null, prices: null, session: "sessVA00000000000000000000000" });
+          }
+          if (p === "/logout") { st.posted = { body, s }; return ans(200, { ok: true }); }
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    if (answer) {
+      await until(() => !D.getElementById("linkGo").disabled);
+      D.getElementById("linkGo").click();
+      await until(() => !D.getElementById("askRep").hidden);
+      D.getElementById(answer).click();
+    }
+    await until(() => !D.getElementById("barw").hidden);
+    await new Promise((r) => setTimeout(r, 60));
+    const onScreen = D.getElementById("out").textContent.trim();
+    D.getElementById("lock").click();
+    await until(() => st.posted);
+    await new Promise((r) => setTimeout(r, 40));
+    const kept = store.get("salt-stmt-remember") || null;
+    W.close();
+    return { st, kept, onScreen };
+  };
+
+  const v = await drive("/s/" + tokL, recOf(uA, devA), "askNo");
+  ok(v.onScreen === "B" && v.kept === recOf(uA, devA),
+    "Log out of B, opened for a visit with Keep " + uA + ", leaves " + uA + " remembered on this phone: " + JSON.stringify(v.kept && JSON.parse(v.kept).u));
+  ok(!!v.st.posted && v.st.posted.body.token === null && v.st.posted.s === "sessVB00000000000000000000000",
+    "and names no remembered token to the site, so A's wrap stays there, dropping only B's session: " + JSON.stringify(v.st.posted));
+  ok(!v.st.unsubscribed && v.st.posted.body.endpoint === ep,
+    "and keeps this phone subscribed for A, naming the endpoint so the site drops B's record alone");
+
+  const own = await drive("/", recOf(uB, devB), null);
+  ok(own.onScreen === "B" && own.kept === null && own.st.posted.body.token === "b".repeat(32) && own.st.unsubscribed,
+    "the control: Log out of the account the phone remembers forgets it, drops its wrap on the site and unsubscribes: " + JSON.stringify({ kept: own.kept, posted: own.st.posted.body }));
+})();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {
   /* S3, 24 SEP 2026. The door's one way in named its opener unseal, which stmt/owner.js already declared: spliced in

@@ -1152,12 +1152,14 @@ const CLIENT_JS = `
   /* v692: LOGGING OUT IS A DEPARTURE, NOT A TIMER. It drops the session and the remembered wrap on
      the site as well as everything this page holds, so a phone handed on is a phone signed out. */
   async function logOut(){
-    var tok=(remGet()||{}).t||null, s=session, ep=null;
-    remClear();
+    /* S3 fix, 24 Sep 2026: an account open for a visit over one this phone keeps (Keep at the Replace question) signs
+       out alone: the kept account stays remembered here and on the site, and so do its alerts on this phone */
+    var rec=remGet(), other=!!rec&&rec.u!==user, tok=!other&&rec?rec.t||null:null, s=session, ep=null;
+    if(!other) remClear();
     lock();
     /* S1 1.42: this phone's alerts go too, here and on the site, and the site is told even when the session
        has lapsed, so the remembered wrap does not outlive the Log out */
-    if(!OWNER){ try{ var sub=await phoneSub(); if(sub){ ep=sub.endpoint; await sub.unsubscribe(); } }catch(e){} }
+    if(!OWNER){ try{ var sub=await phoneSub(); if(sub){ ep=sub.endpoint; if(!other) await sub.unsubscribe(); } }catch(e){} }
     if(s||tok||ep){
       try{ await fetch('/logout', {method:'POST', headers:{'content-type':'application/json','X-Stmt-Session':s},
         body:JSON.stringify({token:tok, endpoint:ep})}); }catch(e){ /* the page has forgotten it either way */ }
