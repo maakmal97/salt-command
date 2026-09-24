@@ -33197,6 +33197,61 @@ await (async () => {
   } finally { b.W.close(); }
 })();
 
+section("S7 fix: Orders' head is the head of the list's column, so on a desk the open order stands level with it at the top of the place");
+await (async () => {
+  /* S7-R3 of the stage 7 review (25 Sep 2026). The lead, New order and Notifications stood above the list-and-order grid, so
+     at 1280 by 800 the open order began about 505px down, its money, its Pay and its messages under the fold beside an empty
+     quarter, where the plan and its desk mockup put the list beside the open order with its messages in view. They are the
+     head of the list's column now, carried into every list the place draws; on a desk the pane is Account's This device. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s7f-twelve", ck = await C.contentKey("test-secret", u);
+  const list = await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T03:59:00Z", digest: "ds7f12", week: { monday: "2026-09-21", label: "21 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 110 }] }], soon: [] }));
+  const A = "20260922030000-aaaa", B = "20260921030000-bbbb";
+  const o = (id, x) => Object.assign({ id, product: "salt", qty: 1, total: 110, paid: 0, moved: 0, mode: "collect", delivery: 0, status: "acknowledged",
+    at: "2026-09-21T03:00:00Z", history: [], msgs: [] }, x);
+  const orders = [o(A, { at: "2026-09-22T03:00:00Z" }), o(B)];
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f12", prices: list,
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+  const dom = new JSDOM(landingPage(u, "ns7f12", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    /* a desk: the page asks for 1080px and up */
+    win.matchMedia = (q) => ({ matches: /min-width: ?1080px/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+    win.fetch = async (path) => { const p = String(path);
+      const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders } : { ok: true };
+      return { ok: true, status: 200, json: async () => j }; };
+  } });
+  const W = dom.window, D = W.document;
+  const shape = () => {
+    const P = D.getElementById("pOrder"), place = D.getElementById("oArea"), col = place && place.querySelector(".olistcol"), scr = place && place.querySelector(".oscreen");
+    const head = col && col.firstElementChild, nw = D.getElementById("oNew"), yours = col && [...col.children].find((x) => x.tagName === "H2" && x.textContent === "Your orders");
+    return { first: P.firstElementChild === place, headFirst: !!head && head.id === "oTop" && head.contains(nw) && !!yours && head.compareDocumentPosition(yours) === W.Node.DOCUMENT_POSITION_FOLLOWING,
+      beside: !!scr && scr.parentNode === place && col.parentNode === place, open: scr ? scr.getAttribute("data-order") : "",
+      pay: scr ? [...scr.querySelectorAll("button")].filter((b) => /^Pay RM/.test(b.textContent)).map((b) => b.className) : [] };
+  };
+  try {
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !D.querySelector("#pOrder [data-olist]"); i++) await new Promise((r) => setTimeout(r, 25));
+    D.querySelector('nav.salt-appbar button[data-t="order"]').click();
+    D.querySelector('#pOrder [data-row="' + A + '"]').click();
+    const s1 = shape();
+    ok(s1.first && s1.headFirst && s1.beside && s1.open === A,
+      "the list-and-order grid is the first thing in Orders, the lead and New order heading the list's column above Your orders, the open order beside it: " + JSON.stringify(s1));
+    ok(s1.pay.length === 1 && /salt-ghost/.test(s1.pay[0]) && !/salt-pill/.test(s1.pay[0]) && D.getElementById("oNew").classList.contains("salt-pill"),
+      "and on a desk New order is still the one filled control, the order's Pay beside it lit but not filled: " + JSON.stringify(s1.pay));
+    D.querySelector('#pOrder [data-row="' + B + '"]').click();
+    const s2 = shape();
+    ok(s2.first && s2.headFirst && s2.beside && s2.open === B && D.querySelectorAll("#oNew").length === 1,
+      "another order opened draws the place again, and its list keeps the same head: " + JSON.stringify(s2));
+  } finally { W.close(); }
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read

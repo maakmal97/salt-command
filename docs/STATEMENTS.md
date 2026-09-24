@@ -484,7 +484,9 @@ S4 4.4) brings the account's list as it stands, sealed, which the page opens wit
 (`openList` keeps it on the list, unenumerable) and draws in the check: "This size is now RM X (was RM Y). Place at RM X?", one tap, a new request id; a list with nothing left to order, or none, is taken as a sign-in takes it, and the check says so with Place held. The page reads the figure off
 the list; it compares and prices nothing. **Sent answers in the sheet** (S4 4.5) and asks "A buzz when it is
 confirmed?", put only by the tap on Turn on notifications (nothing is asked on the way in since S4, where v693 asked; a sign-in files a phone already on again); See the order
-closes the sheet and opens the order's own screen (S5 5.2). New order stands above Your orders, stage 5's rows; on a desk,
+closes the sheet and opens the order's own screen (S5 5.2). New order stands above Your orders, stage 5's rows, at the head
+of their column, so on a desk the open order beside it starts at the top of the place and the Notifications pane is left to
+Account's This device (S7-R3); on a desk,
 while it stands beside an open order, that order's Pay is the lit ghost, one filled control a screen, and Pay is filled
 wherever nothing else is (the limit in New order's place, the payment page, a phone). **Five open orders are said before the form** (S4 4.6; `MAX_OPEN` is exported from
 `stmt/orders.js` and carried into the page, the Worker still the one that refuses): the Order tab says so in place of

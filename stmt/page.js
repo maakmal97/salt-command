@@ -207,8 +207,9 @@ h3.pmark{margin:0 0 4px;line-height:1}
   .cmain .bar,.chead,.home,.cmain .panel{max-width:none}
   .home{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
   .pgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 20px;align-items:start}
-  /* what stands above the orders (New order, the limit, Notifications) keeps to the list's column */
-  #pOrder>:not(.oplace){max-width:calc((100% - 28px)*5/11)}
+  /* S7-R3 of the review: the Notifications pane is Account's This device on a desk, where it stands beside the statement;
+     in the list's column it pushed the orders down */
+  #oPush{display:none}
 }
 .panel{max-width:620px;margin:0 auto}
 .panel h2{font-size:var(--salt-text-lg);margin:0 0 4px}
@@ -277,7 +278,9 @@ h3.pmark{margin:0 0 4px;line-height:1}
    list, one filled Pay, the thread on Bubble and thread, what happened on Plan, folded. The look is the
    recipes'; this block lays them out and nothing else. On a phone the open order is the whole tab; from 1080px
    the list stands beside it with its messages in view, wider than the reading column. */
-.oplace{margin-top:18px}
+/* S7-R3 of the review: what stood above the orders (the lead, New order or the limit, Notifications, the Pay page) is the
+   head of the list's column, so from 1080px the open order stands level with it at the top of the place */
+.otop{margin:0 0 18px}
 .olab{margin:18px 0 8px}
 .olist .olab:first-child{margin-top:4px}
 .olist .salt-inbox-row{margin:0 0 8px}
@@ -2438,9 +2441,12 @@ const CLIENT_JS = `
     var fo=document.activeElement, keep=fo&&fo.getAttribute&&pOrder.contains(fo)?fo.getAttribute('data-say'):null,
         sel=keep?[fo.selectionStart,fo.selectionEnd]:null;
     pOrder.textContent='';
+    /* S7-R3 of the review: all of this is the head of the list's column (oPlace puts it there), so on a desk the open
+       order beside it starts at the top of the place, its money, Pay and messages in view */
+    var top=el('div','otop'); top.id='oTop'; oTopEl=top;
     /* S7 7.1: the header names the place, Orders; over the line the page below it still says what it is */
-    if(hold) pOrder.appendChild(el('h2',null,'Payment due'));
-    if(view) pOrder.appendChild(el('p','lead','Read only: their orders as their own page shows them. Nothing here is placed, paid or sent.'));
+    if(hold) top.appendChild(el('h2',null,'Payment due'));
+    if(view) top.appendChild(el('p','lead','Read only: their orders as their own page shows them. Nothing here is placed, paid or sent.'));
     if(hold){
       var dueBox=el('div','pane');
       dueBox.appendChild(el('div','quote',rm(owedNow)));
@@ -2461,26 +2467,26 @@ const CLIENT_JS = `
       dueBox.appendChild(sv);
       /* 24 Sep 2026: the note was drawn in the order form alone, which this page never shows */
       if(draft.note) dueBox.appendChild(statusLine(draft.note));
-      pOrder.appendChild(dueBox);
+      top.appendChild(dueBox);
     } else if(view){
       /* no order form on his read-only view */
     } else if(!sold().length){
-      pOrder.appendChild(el('p','lead',noOrderLine()));
+      top.appendChild(el('p','lead',noOrderLine()));
     } else {
       /* S4 4.3: the form is a sheet now, laid over the page from here */
-      pOrder.appendChild(el('p','lead','Pick a size and check it over before you place it. Once we confirm it you can pay, and you are told when the goods are on their way.'));
+      top.appendChild(el('p','lead','Pick a size and check it over before you place it. Once we confirm it you can pay, and you are told when the goods are on their way.'));
       var full=oLive().length>=OMAX;
-      if(full){ var lim=el('p','salt-insight salt-insight--copper',limitLine(oLive().length)); lim.id='oLimit'; pOrder.appendChild(lim); }
+      if(full){ var lim=el('p','salt-insight salt-insight--copper',limitLine(oLive().length)); lim.id='oLimit'; top.appendChild(lim); }
       else {
         var nb=el('button','btn salt-pill salt-pill--md','New order'); nb.type='button'; nb.id='oNew';
         nb.addEventListener('click',function(){ sheetOpen(null,null,nb); });
-        pOrder.appendChild(nb);
+        top.appendChild(nb);
       }
       if(osh&&draft.step==='limit') sheetDraw();
     }
     /* notifications: a wake on the phone when the order moves, so the page need not stay open.
        Not on his read-only view: those are not his phones. */
-    var np=el('div','pane');
+    var np=el('div','pane'); np.id='oPush';
     np.appendChild(el('h3',null,'Notifications'));
     var canPush=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
     if(!canPush){
@@ -2494,7 +2500,7 @@ const CLIENT_JS = `
       nb.addEventListener('click', subscribePush); np.appendChild(nb);
       if(draft.pushNote) np.appendChild(el('p','msg',draft.pushNote));
     }
-    if(!view) pOrder.appendChild(np);
+    if(!view) top.appendChild(np);
     pOrder.appendChild(oPlace());
     if(keep){ var kbox=[].filter.call(pOrder.querySelectorAll('input[data-say]'),function(x){ return x.getAttribute('data-say')===keep; })[0];
       if(kbox){ try{ kbox.focus({preventScroll:true}); kbox.setSelectionRange(sel[0],sel[1]); }catch(e){} } }
@@ -2735,7 +2741,8 @@ const CLIENT_JS = `
      order (S4 4.3; the form itself is a sheet over the page) stands above the open order, and while it does, Pay is the
      lit ghost: one filled control a screen. With the limit said in its place, or the Pay page, nothing else is filled and
      Pay is. On a phone the open order is the whole tab. */
-  function oFormPill(){ return oWide()&&[].some.call(pOrder.querySelectorAll('.salt-pill'),function(p){ return !p.closest('.oplace'); }); }
+  var oTopEl=null;   /* the head of the list's column, drawn by drawOrder and carried by oPlace into each list it draws */
+  function oFormPill(){ return oWide()&&!!oTopEl&&!!oTopEl.querySelector('.salt-pill'); }
   function oAct(o){
     var a=el('div','oact'), tp=oTap(o);
     if(!view&&oOwes(o)){
@@ -2907,7 +2914,8 @@ const CLIENT_JS = `
     draft.oStale='';
     if(o&&!(id in draft.oSince)) draft.oSince[id]=seenMark(o);
     if(o) seeIt(o);
-    var col=el('div','olistcol'); col.appendChild(el('h2',null,'Your orders')); col.appendChild(oList(id));
+    var col=el('div','olistcol'); if(oTopEl) col.appendChild(oTopEl);
+    col.appendChild(el('h2',null,'Your orders')); col.appendChild(oList(id));
     place.appendChild(col);
     if(o) place.appendChild(oScreen(o));
     return place;
