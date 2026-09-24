@@ -893,9 +893,12 @@ export default {
       });
     };
 
-    /* the guest's board; the id in the path is the whole credential */
-    const g = /^\/g\/([^/]+)$/.exec(p);
-    if (g) return handleGuest(request, env, g[1]);
+    /* the guest's board; the id in the path is the whole credential. A path with more after the id is a
+       mangled link, and gets the same shut page as any other (S8, 25 Sep 2026). */
+    if (p.startsWith("/g/")) {
+      const g = /^\/g\/([^/]+)$/.exec(p);
+      return g ? handleGuest(request, env, g[1]) : shut();
+    }
 
     /* the master account: the page, the account list, and the links, all behind one check */
     if (p === "/all" || p.startsWith("/all/")) {

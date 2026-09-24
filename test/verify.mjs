@@ -16437,7 +16437,8 @@ await (async () => {
 
   /* ---- every shut kind: one page, the board's look, the same words ---- */
   const kinds = [["an id nobody holds", "zzzz-zzzz", env], ["a malformed id", "nope", env], ["a withdrawn link", withdrawn.id, env],
-    ["a declined link", declined.id, env], ["a link waiting on him", waiting.id, env], ["a site with no store", open.id, {}]];
+    ["a declined link", declined.id, env], ["a link waiting on him", waiting.id, env], ["a site with no store", open.id, {}],
+    ["a link with more after it", open.id + "/x", env]];
   const got = [];
   for (const [what, id, e] of kinds) {
     const r = await g(id, e);
