@@ -1,6 +1,6 @@
 {
- "v": "v822",
- "stamped": "24 Sep 2026, 12:56 KL",
+ "v": "v830",
+ "stamped": "24 Sep 2026, 20:56 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5092,6 +5092,21 @@
     "refKg": 2.5,
     "note": "<b>SALT SELL DATED 23 SEP, PAID AND COLLECTED IN FULL: NOTHING LEFT OPEN.</b> Booked to CA6-CYB, 2.5 unit for RM250, RM250 cash received on 23 Sep 2026 and 2.5 unit handed over the same day, referred by CM4-TO on stream R3. Costed at RM48 a unit from the desk's own inventory cost, RM120 on the goods, though the drafter's working reads RM130 at 52%. The RM250 clears the floor of RM142.48 and sits under the ask of RM330, with the ceiling at RM390. Flagged: the RM48 is an inventory average across more than one lot rate and the figures do not answer the blend; CM4-TO is on the roster but not listed as an associate; CA6-CYB has 0 orders, no median rate, no range, nothing outstanding and none on credit against a cap of 1.",
     "rid": "s197"
+   },
+   {
+    "customer": "CC5-OKR",
+    "qty": 4,
+    "total": 20,
+    "cost": 12.8,
+    "cash": 20,
+    "handover": "collected",
+    "product": "rice",
+    "date": "2026-09-24",
+    "deliveredQty": 4,
+    "deliveredOn": "2026-09-24",
+    "paidOn": "2026-09-24",
+    "note": "<b>RICE SELL DATED 24 SEP, PAID AND COLLECTED IN FULL: NOTHING LEFT OPEN.</b> Booked to CC5-OKR, 4 unit for RM20, RM20 cash received on 24 Sep 2026 and 4 unit handed over the same day, no delivery or freight. Costed at RM3.2 a unit from the desk's own inventory cost, RM12.8 on the goods, though the drafter's working reads RM7.2 at 36%. The RM20 clears the floor of RM13.6 and sits under the ask of RM32, with the ceiling at RM41. Flagged: CC5-OKR has no committed rice order, so there is no rate of theirs to compare, and the figures do not answer it. Across 10 orders their median rate is RM90 with a range of RM48 to RM90, RM138 outstanding, none defaulted, and 2 unit on credit against a cap of 1. On the roster, not an associate.",
+    "rid": "s198"
    }
   ],
   "contacts": [
@@ -5829,9 +5844,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-24T04:52:38.115Z",
+  "QUEUE_COMMITTED": "2026-09-24T12:19:36.471Z",
   "PRICING": {
-   "takenAt": "2026-09-24T04:56:28.403Z",
+   "takenAt": "2026-09-24T12:56:04.015Z",
    "sizes": [
     0.5,
     1,
@@ -6485,6 +6500,22 @@
       "small": true,
       "bigger": false,
       "loyal": true,
+      "rare": false,
+      "lateTwice": false
+     },
+     "rice": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 0,
+      "sinceLastDays": 0,
+      "perMonth": 1.01,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
       "rare": false,
       "lateTwice": false
      }
@@ -7731,9 +7762,9 @@
        "attrib": 1,
        "shrinkRate": 0,
        "avgDel": {
-        "n": 1,
-        "kg": 10,
-        "mean": 10
+        "n": 2,
+        "kg": 14,
+        "mean": 7
        }
       },
       "policy": {
@@ -7967,10 +7998,10 @@
      "ladder": []
     }
    },
-   "v": "v822"
+   "v": "v830"
   },
   "OPEN": {
-   "at": "2026-09-24T04:56:28.555Z",
+   "at": "2026-09-24T12:56:04.304Z",
    "count": 8,
    "byKey": {
     "CM4-TO|2026-09-23|750": {
@@ -8110,8 +8141,8 @@
      "onHand": 16.5,
      "free": 7,
      "owedOut": 9.5,
-     "coverDays": 1.2,
-     "rate": 5.96,
+     "coverDays": 1.3,
+     "rate": 5.68,
      "owedToYou": 430,
      "promised": 9.5,
      "short": 0
@@ -8121,8 +8152,8 @@
      "onHand": 35,
      "free": 35,
      "owedOut": 0,
-     "coverDays": 10.9,
-     "rate": 3.21,
+     "coverDays": 11.1,
+     "rate": 3.35,
      "owedToYou": 0,
      "promised": 0,
      "short": 0
@@ -8132,19 +8163,19 @@
      "onHand": 4,
      "free": 4,
      "owedOut": 0,
-     "coverDays": 2.2,
-     "rate": 1.86,
+     "coverDays": 2.7,
+     "rate": 1.49,
      "owedToYou": 0,
      "promised": 0,
      "short": 0
     },
     "rice": {
      "name": "Rice",
-     "onHand": 90,
-     "free": 90,
+     "onHand": 86,
+     "free": 86,
      "owedOut": 0,
-     "coverDays": 126.1,
-     "rate": 0.71,
+     "coverDays": 98.9,
+     "rate": 0.87,
      "owedToYou": 0,
      "promised": 0,
      "short": 0
@@ -8168,7 +8199,7 @@
     "rice": null,
     "spare": null
    },
-   "v": "v822"
+   "v": "v830"
   }
  }
 }
