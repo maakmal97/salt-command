@@ -34,7 +34,7 @@ const THEIRS_MARK = "orders:theirs";
 /* what the last of them was, for the banner to read. It expires, because a wake is delivered in
    seconds and a line about a payment made this morning would be a lie at lunchtime. */
 const NEWS_KEY = "orders:news";
-const NEWS_WORD = { pay: "A customer has paid", cancel: "A customer has withdrawn an order" };
+const NEWS_WORD = { pay: "A customer has paid", cancel: "A customer has withdrawn an order", said: "A customer wrote on an order" };
 /* v764: the book the return leg last told the site about. A fold mints a new version and re-seeds
    the mirror, so comparing the version is one cheap read a minute and a full pass only when there
    is something new to say. It moves only when the whole pass got through. */
@@ -95,9 +95,13 @@ export async function moveOrder(env, u, id, body) {
      that never names this desk, a roster code or a level, and a slip of the thumb is how one gets
      there. Checked HERE and not on the site, because the site holds no roster and would not know a
      code if it saw one; a product's name is his to spend, as it is in the bulletin. */
-  if (body && typeof body.message === "string") {
-    const why = siteWords(body.message);
-    if (why) return { ok: false, status: 400, error: "that message says something " + why };
+  /* 24 Sep 2026: AND SO DOES A STATUS NOTE. The site files `note` on the order's history, which the
+     customer's page reads; nothing sends one today, and the first decline to carry a reason would have
+     reached the page unchecked. Every free-text field his moves can carry goes through this one lock,
+     on the one road they take to the site. */
+  for (const k of ["message", "note"]) {
+    const why = body && typeof body[k] === "string" ? siteWords(body[k]) : "";
+    if (why) return { ok: false, status: 400, error: "that " + k + " says something " + why };
   }
   const r = await site(env, "/desk/orders/" + encodeURIComponent(u) + "/" + encodeURIComponent(id), {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body || {})
@@ -341,8 +345,14 @@ export async function reconcileOrders(env) {
         if (job === "ack") e = pendingEntry(order, code, stageAt(order, job, now));
         else if (job === "pay") e = payEntry(order, code, +((+order.paid || 0) - (+q.paid || 0)).toFixed(2), stageAt(order, job, now));
         else if (job === "move") e = handoverEntry(order, code, +order.moved || 0, stageAt(order, job, now));
-        else if (job === "cancel") e = cancelEntry(order, code, order.status === "declined" ? "desk" : "customer", stageAt(order, job, now));
+        /* WHO ENDED IT is read off the event that ended it (24 Sep 2026): a cancellation of his own was
+           noted in the committed row as the customer's, because only a decline was taken to be his */
+        else if (job === "cancel") {
+          const ended = [...(order.history || [])].reverse().find((x) => x && (x.status === "cancelled" || x.status === "declined"));
+          e = cancelEntry(order, code, ended && ended.by === "desk" ? "desk" : "customer", stageAt(order, job, now));
+        }
         if (!e) continue;
+        e.orderId = o.id;   /* which order made it, so a rejection can be told to that order (rejectedOnOrder); never the username */
         while (used.has(e.at)) e.at = new Date(Date.parse(e.at) + 1).toISOString();
         /* counted only when it was actually appended; queueSale may move e.at to a free millisecond, so
            the marks are read off the entry AFTER it */
@@ -373,6 +383,29 @@ export async function reconcileOrders(env) {
   }
   return Object.assign({ ok: true, queued }, unmapped.length ? { unmapped } : {},
     waiting.length ? { waiting } : {}, failed.length ? { failed } : {});
+}
+
+/* ---- A ROW HE REJECTED IS TOLD TO ITS ORDER (24 Sep 2026) -------------------------------------
+ * A rejection drops the entry from every queue and refuses its `at` for good (src/worker.js), while
+ * the order keeps the stage mark saying the ledger was told, so the card went on saying the order was
+ * on its row. The rejection is written onto the order as its `sync`, which the card reads whatever the
+ * marks say. THE MARK STAYS: cleared, the next pass would queue the same stage at the same moment
+ * (stageAt), the drafter would skip it as decided, and the mark would be written again. Offering the
+ * move again is a fold of its own. */
+const REJECTED_WHAT = { Pending: "pending row", Payment: "payment entry", Handover: "handover entry", Cancellation: "cancellation entry" };
+export async function rejectedOnOrder(env, entry, at) {
+  /* the entry names the order and never its account (the ledger's side knows codes), so the account
+     is found among the site's orders, closed ones included */
+  const id = entry && entry.orderId;
+  if (!id) return false;
+  const all = await listOrders(env, true);
+  const o = all.ok && all.orders.find((x) => x.id === id);
+  if (!o) return false;
+  const why = "its " + (REJECTED_WHAT[entry.status] || "entry") + " was rejected under Approve, so the book does not carry it";
+  const r = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mark: { sync: { state: "rejected", why, at } } })
+  });
+  return !!(r && r.ok);
 }
 
 /* ---- THE RETURN LEG (v764, his instruction of 21 Sep 2026) ------------------------------------
@@ -423,11 +456,13 @@ export async function tellSite(env) {
   return Object.assign({ ok: true, told, v }, failed.length ? { failed } : {});
 }
 
-/** How many customer orders are waiting on him: placed, and acknowledged but not yet ready. */
+/** How many customer orders are waiting on him: placed, and acknowledged but not yet ready; and of
+ *  those, how many are still to be acknowledged, which is all his banner may ask him to acknowledge. */
 export async function ordersWaiting(env) {
   const r = await listOrders(env, false);
-  if (!r.ok) return 0;
-  return r.orders.filter((o) => o.status === "placed" || o.status === "acknowledged").length;
+  if (!r.ok) return { waiting: 0, placed: 0 };
+  return { waiting: r.orders.filter((o) => o.status === "placed" || o.status === "acknowledged").length,
+    placed: r.orders.filter((o) => o.status === "placed").length };
 }
 
 /* THE NUDGE, every minute (16 Sep 2026; it was the drafter's quarter-hour, and nothing had
@@ -467,6 +502,12 @@ export async function nudgeOrders(env) {
     /* an hour on the key and ten minutes on the reading: two limits because KV's own expiry is not
        prompt enough to be the freshness rule, and a banner is written from what is true now. */
     if (news) await env.SALT_QUEUE.put(NEWS_KEY, JSON.stringify({ what: news, at: String(theirs).split("|")[0] }), { expirationTtl: 3600 });
+  } else if (spoke && !placed) {
+    /* 24 Sep 2026: A LINE IS NEWS OF ITS OWN. A wake sent because a customer wrote read "New customer
+       order" or "is square", the wrong sentence v760 exists to stop. Not on a placement, whose first
+       line is the note typed with it: there the new order is the news, and the banner already says so. */
+    news = NEWS_WORD.said;
+    await env.SALT_QUEUE.put(NEWS_KEY, JSON.stringify({ what: news, at: said }), { expirationTtl: 3600 });
   }
   const p = await sendPush(env, { tag: "orders", urgency: "high" });
   return { ok: true, sent: p.sent || 0, newest: placed ? newest : null, said: spoke ? said : null, did: did ? news : null };

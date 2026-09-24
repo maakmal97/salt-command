@@ -18161,10 +18161,10 @@ function apCard(d){
   return `<div class="card" style="margin-top:10px" data-id="${esc(d.id)}">
     <div style="font-size:14px">${head}</div>
     <div class="kpis k4" style="margin-top:10px">${grid}</div>
-    ${(d.flags||[]).map(f=>`<div class="warnpill" style="display:block;margin:8px 0 0;background:rgba(184,115,51,.14);border-color:var(--amber);color:#d8c79c">&#9888; ${esc(f)}</div>`).join('')}
+    ${(d.flags||[]).map(f=>`<div class="warnpill" style="display:block;margin:8px 0 0;background:rgba(184,115,51,.14);border-color:var(--amber);color:var(--gold)">&#9888; ${esc(f)}</div>`).join('')}
     ${apGone}
     ${d.reasoning?`<div class="dsc" style="margin-top:8px">${esc(d.reasoning)}</div>`:''}
-    <div style="display:flex;gap:8px;margin-top:10px"><button class="vbtn salt-pill salt-pill--sm" data-ap="approve" data-id="${esc(d.id)}" style="background:linear-gradient(135deg,#6fae97,#4f8f7a);border-color:transparent;color:#05080a;box-shadow:none">Approve</button><button class="vbtn salt-pill salt-pill--sm" data-ap="reject" data-id="${esc(d.id)}" style="background:rgba(212,105,76,.16);border-color:var(--crim);color:var(--crim);box-shadow:none">Reject</button></div>
+    <div style="display:flex;gap:8px;margin-top:10px"><button class="vbtn salt-pill salt-pill--sm" data-ap="approve" data-id="${esc(d.id)}">Approve</button><button class="salt-ghost salt-ghost--danger" data-ap="reject" data-id="${esc(d.id)}">Reject</button></div>
   </div>`;
 }
 function apDraw(){
@@ -18212,17 +18212,24 @@ function apWithdraw(at){
   qPost().catch(()=>{});
 }
 async function apDecide(id,action,btn){
-  if(!id||apBusy[id])return;apBusy[id]=1;
+  if(!id||apBusy[id])return;
+  const was=AP_DRAFTS.find(x=>x.id===id)||null;
+  /* 24 Sep 2026: A ROW A CUSTOMER'S ORDER MADE IS ASKED ABOUT FIRST. Rejecting it drops the entry for
+     good while the order stays where it is, so the order is left with no row behind it; to call the
+     order off is Cancel or Decline on Site orders, which tells the customer and books the cancellation. */
+  if(action==='reject'&&was&&was.entry&&was.entry.orderId&&!confirm('This row was made from a customer\'s order on the site. Rejecting it leaves that order standing with no row behind it, and the desk will not queue it again. To call the order off, cancel or decline it on Site orders instead.\n\nReject the row anyway?'))return;
+  apBusy[id]=1;
   const card=btn.closest('.card');if(card)card.querySelectorAll('button').forEach(b=>b.disabled=true);
   const url='drafts/'+encodeURIComponent(id)+'/'+action,body=JSON.stringify({by:'desk'});
-  const was=AP_DRAFTS.find(x=>x.id===id)||null;
   apRejected=null;
   try{ let r=await fetch(url,{method:'POST',headers:qHeaders(),body});
     if(r.status===401&&saltAskWriteKey())r=await fetch(url,{method:'POST',headers:qHeaders(),body});
+    let j={};try{j=await r.json();}catch(e){}
     apMsg=r.status===401?'That write key was refused. The row is still waiting.'
       :r.status===409?'That row was already decided somewhere else.'
       :!r.ok?'The Worker refused the decision (http '+r.status+'). The row is still waiting.'
-      :action==='approve'?'Approved. The fold runs now; the book and this desk update within about a minute.':'Rejected and dropped from the queue. Nothing of it reaches the ledger.';
+      :action==='approve'?'Approved. The fold runs now; the book and this desk update within about a minute.':'Rejected and dropped from the queue. Nothing of it reaches the ledger.'
+        +(j.order===true?' Its order on Site orders now says so.':j.order===false?' Its order on Site orders could not be told.':'');
     if(r.ok&&action==='reject'){qForgetAt(id);apRejected=was;}
   }catch(e){ apMsg='No connection, so the decision was not recorded. The row is still waiting.'; }
   delete apBusy[id];await apLoad();
@@ -18257,7 +18264,7 @@ function tabOrders(){
   <div class="card" id="bullCard" style="margin-top:10px"><div class="cardh">Bulletin <span class="sub">across the top of Salt Counter, for everyone who opens it</span></div>
     <div class="dsc" id="bullNow" style="margin-top:6px">Reading it.</div>
     <textarea id="bullText" rows="3" placeholder="One line per item" style="width:100%;margin-top:8px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:6px;font:inherit"></textarea>
-    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="vbtn salt-pill salt-pill--sm" data-bmode="run">Running</button><button type="button" class="vbtn salt-pill salt-pill--sm" data-bmode="change">Changing</button><button type="button" class="vbtn salt-pill salt-pill--sm" id="bullSet">Set</button><button type="button" class="vbtn salt-pill salt-pill--sm" id="bullClear">Clear</button></div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="salt-ghost" data-bmode="run" aria-pressed="true">Running</button><button type="button" class="salt-ghost" data-bmode="change" aria-pressed="false">Changing</button><button type="button" class="vbtn salt-pill salt-pill--sm" id="bullSet">Set</button><button type="button" class="vbtn salt-pill salt-pill--sm" id="bullClear">Clear</button></div>
     <div class="dsc" id="bullMsg" style="margin-top:6px"></div></div>
   <div id="ordAlert" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--mut)"></div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--mut)"><button type="button" class="vbtn salt-pill salt-pill--sm" id="ordAllBtn">${ordAll?'Hide the closed ones':'Show the closed ones'}</button><span>${ordAll?'Every order this site has taken, newest first.':'Open orders, and any waiting on an answer from you.'}</span></div>
@@ -18285,6 +18292,7 @@ async function ordLoad(quiet){
   if(!ordTimer)ordTimer=setInterval(()=>{const b=document.getElementById('ordBox');
     if(!b){clearInterval(ordTimer);ordTimer=null;return;}
     if(document.hidden||Object.keys(ordBusy).length)return;
+    if(b.contains(document.activeElement)&&document.activeElement.tagName==='INPUT')return;   /* nor under a thumb mid-word */
     ordLoad(true);},CARD_POLL);
 }
 /* ---- THE BULLETIN (20 Sep 2026, his instruction): a notice board across the top of Salt Counter, set here
@@ -18422,9 +18430,9 @@ function ordCard(o){
   const off=(rate!=null&&usual)?(rate-usual)/usual:null;
   const pay=o.method?(o.method+(o.account?' via '+o.account:'')):'not chosen yet';
   const last=(o.history||[]).slice(-1)[0];
-  const red='background:transparent;color:var(--crim);border-color:var(--crim);box-shadow:none';
-  const green='background:linear-gradient(135deg,#6fae97,#4f8f7a);border-color:transparent;color:#05080a;box-shadow:none';
-  const btn=(st,label,style,mode)=>`<button class="vbtn salt-pill salt-pill--sm" data-ord="${st}" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${mode?` data-mode="${mode}"`:''} style="${style||''}">${label}</button>`;
+  /* 24 Sep 2026 (rule 6): the system's recipes, no colour of the card's own. The pill books or produces;
+     Decline and Cancel are the ghost that warms to ember under a pointer. */
+  const btn=(st,label,off,mode)=>`<button class="${off?'salt-ghost salt-ghost--danger':'vbtn salt-pill salt-pill--sm'}" data-ord="${st}" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${mode?` data-mode="${mode}"`:''}>${label}</button>`;
   /* v694: the two tracks, read off the order. What the ledger will say once the entries fold is
      stated here in the book's own words, so the card and the row never disagree. */
   const due=+((o.total+(+o.delivery||0))-(+o.paid||0)).toFixed(2), moved=+o.moved||0, paid=+o.paid||0;
@@ -18437,7 +18445,10 @@ function ordCard(o){
   /* 20 Sep 2026: what the desk made of its last pass, off the record (sync, written by the reconcile
      when it changes), where this promised the entry was queued within the minute whatever had happened */
   const sy=o.sync||null;
-  const told=!owed?(rowed?', on the row this order made':'')
+  /* 24 Sep 2026: a row he rejected under Approve is said first, whatever the marks say: the mark that
+     the ledger was told is still on the order, and read alone it claimed a row the book never took */
+  const told=(sy&&sy.state==='rejected')?', but '+esc(sy.why)+' ('+when(sy.at)+')'
+    :!owed?(rowed?', on the row this order made':'')
     :(sy&&sy.state==='waiting')?', and '+esc(sy.why)+' (waiting since '+when(sy.at)+')'
     :(sy&&sy.state==='failed')?', but the desk could not tell it: '+esc(sy.why)+' (at '+when(sy.at)+'; it tries again every minute)'
     :', and the entry for that is queued within the minute; approve it under Approve';
@@ -18453,11 +18464,11 @@ function ordCard(o){
   const reply=`<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
     <input type="text" maxlength="200" placeholder="Answer them" aria-label="Answer this customer" data-say="${esc(o.id)}"
       style="flex:1 1 180px;min-width:150px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:8px">
-    ${btn('say','Send','')}</div>`;
+    ${btn('say','Send')}</div>`;
   let acts='';
-  if(o.status==='placed')acts=btn('acknowledged','Acknowledge this order',green)+btn('declined','Decline',red);
-  else if(rowed&&o.status!=='done')acts=(o.status==='acknowledged'?btn('ready','Ready to collect','','collect')+btn('ready','Ready to deliver','','deliver'):'')
-    +(moved>0?'':btn('cancelled','Cancel',red));
+  if(o.status==='placed')acts=btn('acknowledged','Acknowledge this order')+btn('declined','Decline',true);
+  else if(rowed&&o.status!=='done')acts=(o.status==='acknowledged'?btn('ready','Ready to collect',false,'collect')+btn('ready','Ready to deliver',false,'deliver'):'')
+    +(moved>0?'':btn('cancelled','Cancel',true));
   /* the delivery charge is typed where the order is agreed, because that is where it becomes a row */
   const fee=(o.status==='placed'&&o.mode==='deliver')
     ? `<label class="dsc" style="display:flex;gap:8px;align-items:center;margin-top:10px">Delivery charge, RM
@@ -18466,7 +18477,7 @@ function ordCard(o){
     ? `<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
         <label class="dsc" style="display:flex;gap:8px;align-items:center">${o.mode==='deliver'?'Delivered':'Collected'}, units
         <input type="number" min="0" step="0.05" max="${o.qty}" value="${esc(String(o.qty))}" data-hand="${esc(o.id)}" style="width:96px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:6px"></label>
-        ${btn('handover','Record the handover','')}</div>` : '';
+        ${btn('handover','Record the handover')}</div>` : '';
   return `<div class="card" style="margin-top:10px" data-id="${esc(o.id)}">
     <div style="font-size:14px"><b>${who}</b> orders ${units(o.qty)} ${esc(o.product||'salt')} for <b>${fmt(o.total)}</b>${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?'delivered':'collected'} <span class="sub">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
     ${o.mode==='deliver'&&o.place?`<div class="dsc" style="margin-top:6px">To ${esc(o.place)}</div>`:''}
@@ -18480,18 +18491,30 @@ function ordCard(o){
     ${acts?`<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">${acts}</div>`:''}
   </div>`;
 }
+/* 24 Sep 2026: WHAT HE HAS TYPED ON A CARD OUTLIVES THE REDRAW. The poll and every refusal rewrite
+   the box, which put a typed delivery charge back to 0 and emptied a half-written answer. Each box is
+   named by what it holds and the order it is on; only a figure that differs from the card's own is
+   carried, so a move that went through clears its box by putting the default back first. */
+function ordField(i){return ['fee','hand','say'].map(k=>i.dataset[k]!=null?k+':'+i.dataset[k]:'').join('');}
 function ordDraw(){
   apBadge();
+  /* v766: the rail's Today count now includes what is waiting on the site, so it is recounted when
+     THAT changes and not on every draw: actions() walks the whole forecast to answer. BEFORE THE BOX
+     (24 Sep 2026): the read on load lands here with Site orders off screen, which is most loads, and
+     the recount sat below the return, so Today's count never heard of an order until the card was opened. */
+  {const w=ordWaiting();const n=w.placed.length+':'+w.asked.length;
+   if(n!==ordWaitWas){ordWaitWas=n;try{navCounts();}catch(e){}}}
   const box=document.getElementById('ordBox');if(!box)return;
+  const typed={};let focused='';
+  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say]').forEach(i=>{
+    if(i.value!==i.defaultValue)typed[ordField(i)]=i.value;if(i===document.activeElement)focused=ordField(i);});
   if(ordNeedKey)box.innerHTML='<div class="warnpill" style="display:block">The write key is needed to read the orders and it was not accepted. Reload to be asked again. <b>This is not an empty book: orders may be waiting.</b></div>';
   else if(ordUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The orders could not be read: '+esc(ordUnread)+'. <b>This is not an empty book.</b></div>';
   else if(!ORD_OPEN.length)box.innerHTML='<div class="card"><div class="dsc">'+(ordAll?'This site has taken no orders at all yet.':'No open orders. A customer\'s order lands here the moment it is placed.')+'</div></div>';
   else box.innerHTML=ORD_OPEN.map(ordCard).join('');
+  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say]').forEach(i=>{const k=ordField(i);
+    if(k in typed)i.value=typed[k];if(k===focused)i.focus();});
   box.querySelectorAll('button[data-ord]').forEach(b=>{b.onclick=()=>ordAct(b);});
-  /* v766: the rail's Today count now includes what is waiting on the site, so it is recounted when
-     THAT changes and not on every draw: actions() walks the whole forecast to answer. */
-  {const w=ordWaiting();const n=w.placed.length+':'+w.asked.length;
-   if(n!==ordWaitWas){ordWaitWas=n;try{navCounts();}catch(e){}}}
   const ab=document.getElementById('ordAllBtn');
   /* the switch lives outside the box this redraws, so it is re-enabled here: disabled on the tap
      and left that way, one tap would be all it ever took */
@@ -18539,6 +18562,8 @@ async function ordAct(b){
       :st==='declined'?'Declined. The customer sees it.'
       :st==='cancelled'?'Cancelled. Any payment taken is refunded on the row. '+told
       :ORD_WORD[st]+'. '+told;
+    const used=r.ok&&document.querySelector('input[data-'+({say:'say',handover:'hand',acknowledged:'fee'}[st]||'none')+'="'+id+'"]');
+    if(used)used.value=used.defaultValue;   /* what went through is not carried into the redraw */
   }catch(e){ ordMsg='No connection, so nothing moved.'; }
   delete ordBusy[id];await ordLoad(true);
   const m=document.getElementById('ordMsg');if(m)m.textContent=ordMsg;
@@ -22400,18 +22425,23 @@ if(QUEUE_COMMITTED&&queue.length){
    entry was still sitting there. The screen was checked, which is the only reason this was
    caught: the flag was right and the notice was not. */
 queueStuck=qStuckCount(queue,refusedAts);
-try{qInit().then(()=>{if(queueCleared&&qSyncState==='server')qPost();});}catch(e){}   // ask the server for the queue route, then sync any self-clearing
+try{qInit().then(()=>{if(queueCleared&&qSyncState==='server')qPost();   // ask the server for the queue route, then sync any self-clearing
+  /* 24 Sep 2026: WHAT NEEDS THE CLOUD WAITS FOR THE CLOUD. The desk only learns it is the cloud desk in
+     the ping's answer, which lands after every line below has run, so the one read on load (v385, v766)
+     and a cold open on Site orders or Approve (the banner opens desk#orders) both took the laptop's road
+     and read nothing. They run here instead, once the answer is in; the part on screen is opened again
+     so it draws the cloud's card. */
+  if(!cloudMode())return;
+  if(curAddr==='orders'||curAddr==='approve')switchTab(curAddr);
+  /* v385: THE RAIL KNOWS BEFORE APPROVE IS OPENED. One read on load: cloud only, and only where a
+     write key is already stored, so a stranger with the URL is neither prompted nor served anything new. */
+  if(saltWriteKey()){apLoad(true);ordLoad(true);}});}catch(e){}
 applyOverlay();                            // uncommitted entries fold in before anything is drawn
 /* v281: a fresh open still lands on Today (v147: the desk opens on what to do), but an
    address that names a tab is honoured, which is what lets a reload resume in place. */
 recompute();
 (function(){const h=(location.hash||'').slice(1);switchTab(VIEW_OF[h]?h:'today');})();
-/* v385: THE RAIL KNOWS BEFORE APPROVE IS OPENED. A row is drafted within a second of an
-   entry landing, and until now nothing on this desk said so until you happened to open the
-   one part that fetches them, which is the wrong way round for a step that is not optional.
-   One read on load: cloud only, and only where a write key is already stored, so a stranger
-   with the URL is neither prompted nor served anything new. */
-try{if(cloudMode()&&saltWriteKey()){apLoad(true);ordLoad(true);}}catch(e){}
+/* the one read on load (v385) is in qInit's answer above: cloudMode() is false on every line here */
 window.addEventListener('hashchange',()=>{
   const h=(location.hash||'').slice(1);
   /* v365: was VIEW_OF[h]!==curTab, which only ever caught a jump between views. Two
