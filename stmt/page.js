@@ -1681,7 +1681,9 @@ const CLIENT_JS = `
      his read-only view: those are not his phones. OFF IS KEPT ON THIS DEVICE: the subscription is dropped here, the
      site forgets it at the next wake it cannot deliver (stmt/push.js), and the automatic re-filing on the way in
      (askPush) waits for a Turn on. */
-  var devEl=document.getElementById('thisDevice'), devRows=document.getElementById('devRows'), devBusy=false, devNote='';
+  /* devBusy is the ticket of the account a tap is in flight for, so it shuts the buttons for that account alone: a sign-out
+     while Turn off was still unsubscribing left them shut for the next account on the page (S7R-5 of the stage 7 review) */
+  var devEl=document.getElementById('thisDevice'), devRows=document.getElementById('devRows'), devBusy=-1, devNote='';
   var PUSH_OFF='salt-push-off';
   function pushOff(){ try{ return localStorage.getItem(PUSH_OFF)==='1'; }catch(e){ return false; } }
   function pushOffSet(on){ try{ if(on) localStorage.setItem(PUSH_OFF,'1'); else localStorage.removeItem(PUSH_OFF); }catch(e){ /* for this visit only */ } }
@@ -1695,7 +1697,7 @@ const CLIENT_JS = `
     f.setAttribute('role','status'); r.appendChild(f);
     return r;
   }
-  function devBtn(t,go){ var b=el('button','salt-ghost',t); b.type='button'; b.disabled=devBusy; b.addEventListener('click',go); return b; }
+  function devBtn(t,go){ var b=el('button','salt-ghost',t); b.type='button'; b.disabled=devBusy===ticket; b.addEventListener('click',go); return b; }
   function drawDevice(){
     if(!devEl) return;
     devEl.hidden=!session||view||OWNER;
@@ -1713,17 +1715,22 @@ const CLIENT_JS = `
     else if(steps){ var sp=el('span'); [].forEach.call(steps.childNodes,function(n){ sp.appendChild(n.cloneNode(true)); }); devRows.appendChild(devRow('Save as an app',sp)); }
   }
   async function devPushOn(){
-    devBusy=true; devNote=''; draft.pushNote=''; drawDevice();
+    var mine=ticket;
+    devBusy=mine; devNote=''; draft.pushNote=''; drawDevice();
     await subscribePush();
-    devBusy=false; drawDevice();
+    if(devBusy===mine) devBusy=-1;
+    drawDevice();
   }
   async function devPushOff(){
     var mine=ticket;
-    devBusy=true; devNote=''; drawDevice();
+    devBusy=mine; devNote=''; drawDevice();
+    var failed=false;
     try{ var sub=await phoneSub(); if(sub) await sub.unsubscribe(); pushOffSet(true); draft.pushed=false; draft.pushDone=false; draft.pushNote=''; }
-    catch(e){ devNote='They could not be turned off just now. Try again.'; }
+    catch(e){ failed=true; }
+    if(devBusy===mine) devBusy=-1;
     if(mine!==ticket) return;
-    devBusy=false; drawDevice(); drawOrder();
+    if(failed) devNote='They could not be turned off just now. Try again.';
+    drawDevice(); drawOrder();
   }
 
   /* the statements a customer has: the first opens, the rest are at the foot */

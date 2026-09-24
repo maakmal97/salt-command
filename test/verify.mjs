@@ -32994,6 +32994,55 @@ await (async () => {
   } finally { W.close(); }
 })();
 
+section("S7 fix: a sign-out while Turn off is on its way leaves This device's buttons working for whoever signs in next");
+await (async () => {
+  /* S7R-5 of the stage 7 review (25 Sep 2026). Turn off shut This device's buttons while it unsubscribed, and returned early
+     when the account had changed underneath it, so a sign-out in that moment left them shut for the next account on the
+     page until a reload. Busy is now the ticket of the account the tap was for. Forced state: an unsubscribe that waits. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s7f7", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f7",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const st = { subbed: false, unsub: 0 };
+  let release = null;
+  const dom = new JSDOM(landingPage(u, "ns7f7", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.Notification = { permission: "granted", requestPermission: async () => "granted" };
+    win.PushManager = function () {};
+    const sub = { endpoint: "https://push.test/s7f7", toJSON: () => ({ keys: { p256dh: "p", auth: "a" } }),
+      unsubscribe: () => new Promise((r) => { st.unsub++; release = () => { st.subbed = false; r(true); }; }) };
+    const reg = { pushManager: { subscribe: async () => { st.subbed = true; return sub; }, getSubscription: async () => (st.subbed ? sub : null) } };
+    Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: { register: async () => reg, ready: Promise.resolve(reg), getRegistration: async () => reg } });
+    win.fetch = async (path) => { const p = String(path);
+      const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: [] } : p === "/push/key" ? { ok: true, key: "AAAA", configured: true } : { ok: true };
+      return { ok: true, status: 200, json: async () => j }; };
+  } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return !!f(); };
+  const btn = () => { const r = [...D.querySelectorAll("#devRows .salt-ledger__row")].find((x) => x.querySelector(".salt-ledger__label").textContent === "Notifications");
+    return r && r.querySelector("button"); };
+  const signIn = async () => {
+    D.getElementById("un").value = u; D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    return until(() => !D.getElementById("barw").hidden && !!btn());
+  };
+  try {
+    ok(await signIn() && await until(() => btn() && btn().textContent === "Turn off"), "signed in, This device offers Turn off");
+    btn().click();
+    ok(await until(() => st.unsub === 1) && btn().disabled, "Turn off shuts the buttons while the phone unsubscribes");
+    D.getElementById("lock").click();
+    ok(await until(() => !D.getElementById("gate").hidden), "and Sign out of this device signs out in that moment");
+    ok(await signIn(), "then an account signs in on the same page");
+    if (release) release();
+    await new Promise((r) => setTimeout(r, 200));
+    ok(!!btn() && !btn().disabled, "and once the unsubscribe has ended, its This device buttons work: " + JSON.stringify(btn() && [btn().textContent, btn().disabled]));
+  } finally { if (release) release(); await new Promise((r) => setTimeout(r, 50)); W.close(); }
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read
