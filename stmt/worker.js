@@ -689,7 +689,12 @@ async function ownerSheet(env, origin) {
   }
   /* S9 9.8: the desk's own count of what waits there, as it last told this site */
   const desk = await env.STMT.get(DESK_WAITING, "json");
-  return { ok: true, at: sheet ? sheet.at || null : null, issue, month, accounts: out, desk: desk ? { n: +desk.n || 0, at: desk.at || null } : null };
+  /* D15: the level a stranger is quoted, the ladder's last, so the card of an ID still waiting for its
+     account can say which standing link to show. Named by the book through the publish, never here. */
+  const names = await env.STMT.get("tiers", "json");
+  const stranger = Array.isArray(names) && names.length ? String(names[names.length - 1]) : null;
+  return { ok: true, at: sheet ? sheet.at || null : null, issue, month, accounts: out, stranger,
+    desk: desk ? { n: +desk.n || 0, at: desk.at || null } : null };
 }
 
 /* A TICK IS THE SITE'S, NOT ONE BROWSER'S (v688). The laptop sheet keeps its ticks in that

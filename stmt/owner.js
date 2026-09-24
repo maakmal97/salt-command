@@ -46,10 +46,13 @@ export const OWNER_JS = `
   var FLAGW={owes:'Owes',goods:'Owes goods',refund:'Refund due',pend:'Agreed, not actioned',clear:'Clear'};
   /* 23 SEP 2026: THE ACCOUNT IS ONE LIVE DOCUMENT (v769), so there is no issue for an account to be
      missing from. A row with no totals is a username with nothing behind it, and that is what it
-     says, with the one command that mends it. */
-  var NOACCT='No account yet, so they cannot sign in. Mint it on the laptop: node tools/stmt-account.mjs --mint';
+     says: D15 (24 Sep 2026), the laptop's next update makes it. The level is the stranger's, named by the book
+     through the sheet, never here; S9 fix: the sheet is the one source, so Needs you, a row and a card say the
+     same level the moment the sheet lands, whether or not the links have. */
+  var stranger=null;
+  function waitLine(){ return 'Made at the next laptop update.'+(stranger?' Until then, show the '+stranger+' link.':''); }
   function flagLine(a){
-    if(!a.t||!a.flag) return NOACCT;
+    if(!a.t||!a.flag) return waitLine();
     var t=a.t;
     if(a.flag==='owes') return FLAGW.owes+' '+rm(t.owed);
     if(a.flag==='goods') return FLAGW.goods+' '+unitsOf(Math.round(t.toGet*100)/100);
@@ -64,7 +67,7 @@ export const OWNER_JS = `
   async function loadSheet(){
     try{
       var j=await refs('/all/sheet');
-      sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null; deskWait=j.desk||null;
+      sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null; deskWait=j.desk||null; stranger=j.stranger||null;
       sheetRows.forEach(function(a){ sheet[a.username]=a; });
       drawRoster(); drawTest(); drawNeeds();
       if(aOpen) openCard(aOpen);
@@ -116,7 +119,7 @@ export const OWNER_JS = `
     head.appendChild(el('b',null,a.test?'Test account':(a.code||a.username)));
     head.appendChild(el('span','un',a.username));
     card.appendChild(head);
-    card.appendChild(el('p','tot',a.test?'Counts nowhere; nothing on the book is behind it.':(a.account===false?NOACCT:a.tot)));
+    card.appendChild(el('p','tot',a.test?'Counts nowhere; nothing on the book is behind it.':(a.account===false?waitLine():a.tot)));
     card.appendChild(el('p','op',openedLine(a)+(a.sent?' \\u00b7 sent '+stampDay(a.sent):'')));
     /* 24 SEP 2026: A USERNAME WITH NO ACCOUNT BEHIND IT has nothing to share, copy or open: the
        message would say "Your account is ready to use" over an account that is not there, and Open
@@ -217,7 +220,7 @@ export const OWNER_JS = `
      and the statement, the prices and the lock are the customer's own. */
   function openAcct(a){
     if(!OWNER) return;
-    if(sheet&&sheet[a.username]&&sheet[a.username].account===false){ say(NOACCT,'bad'); return; }
+    if(sheet&&sheet[a.username]&&sheet[a.username].account===false){ say(waitLine(),'bad'); return; }
     if(!OWNER.master){ say('No master passphrase is set on this Worker, so nothing can be opened. Set STMT_MASTER.','bad'); return; }
     if(busy) return;
     un.value=a.username; pw.value=OWNER.master;
@@ -279,7 +282,8 @@ export const OWNER_JS = `
     t.appendChild(el('span',null,a.test?'Test account':(a.code||a.username)));
     if(sheet) chipsOf(a).forEach(function(c){ t.appendChild(c); });
     main.appendChild(t);
-    main.appendChild(el('span','salt-inbox-row__what', a.username+(a.tot?', '+a.tot:'')));
+    /* a code with no account says, on its row, when it is made and which link to show until then (D15) */
+    main.appendChild(el('span','salt-inbox-row__what', a.username+(a.account===false?', '+waitLine():a.tot?', '+a.tot:'')));
     b.appendChild(main);
     var side=el('span','salt-inbox-row__side'); side.appendChild(el('span','salt-inbox-row__action','Open'));
     b.appendChild(side);
@@ -498,11 +502,9 @@ export const OWNER_JS = `
     return c;
   }
   function noteOf(c){ var m=el('p','nnote'); m.setAttribute('role','status'); c.appendChild(m); return m; }
-  /* the stranger's level is the ladder's last, and its standing link is what an ID with no account is shown */
-  function lastLevel(){ return tiers.length>1?tiers[tiers.length-1]:''; }
+  /* the stranger's standing link is what an ID with no account is shown */
   function strangerLink(){
-    var s=lastLevel();
-    return links.filter(function(r){ return r.standing&&r.level===s&&!r.revoked; })[0]||null;
+    return links.filter(function(r){ return r.standing&&r.level===stranger&&!r.revoked; })[0]||null;
   }
   /* A LINK SIGNS THEM IN IN TWO TAPS: the first makes it, the second shares it, so the share sheet never
      waits on a key derivation and a round trip inside one tap (the plan's must-not-ship list).
@@ -573,9 +575,8 @@ export const OWNER_JS = `
     return c;
   }
   function bareNeed(a){
-    var lv=lastLevel()||"stranger's";
-    var c=needCard('n:'+a.username, a.code||a.username, 'no account yet',
-      'Made at the next laptop update. Until then, show the '+lv+' link.');
+    var lv=stranger||"stranger's";
+    var c=needCard('n:'+a.username, a.code||a.username, 'no account yet', waitLine());
     var row=el('div','salt-approve__actions'), sh=ghost('Show the '+lv+' link', true), off=ghost('Send, after the update');
     off.disabled=true; off.title='No account behind this username yet';
     row.appendChild(sh); row.appendChild(off); c.appendChild(row);

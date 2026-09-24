@@ -15827,6 +15827,63 @@ await (async () => {
       "and /all/sheet reads no fail: key, so four hundred of them cost it nothing: " + JSON.stringify({ reads: gets.length, fail: gets.filter((k) => k.startsWith("fail:")).length }));
   } finally { globalThis.fetch = realFetch; }
 })();
+section("S9 fix R2: an ID with no account reads the stranger's level off the sheet, on Needs you and on its Accounts row, whether or not the links have loaded");
+await (async () => {
+  /* Needs you named the level off /all/refs while stage 14 names it off /all/sheet: two sources, and until the links
+     landed (or if they never did) the card said "the stranger's link". The sheet is the one source now, and the
+     Accounts row that replaced Review's carries the same line Review's did. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s9-r2";
+  const uF = C.newUsername(), uN = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9-r2", uF);
+  await kv.put("u:" + uF, JSON.stringify({ u: uF, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+  await kv.put("roster", JSON.stringify([{ code: "CX2-FR", username: uF }, { code: "CX3-NO", username: uN }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX2-FR", username: uF, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9-r2", KID = "kid-s9-r2";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 250 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sj = await (await site("/all/sheet", { headers: { "cf-access-jwt-assertion": tok } })).json();
+    ok(sj.ok && sj.stranger === "Silver", "the account list names the stranger's level off the book's names: " + JSON.stringify(sj.stranger));
+    /* the links never load: only the sheet does */
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      w.fetch = async (q, o) => { o = o || {};
+        if (/^[/]all[/]refs/.test(String(q))) return new Response(JSON.stringify({ ok: false, error: "no" }), { status: 404 });
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const nc = () => D.querySelector('#nlist [data-need="n:' + uN + '"]');
+    ok(await until(() => nc() && /Made at the next laptop update[.] Until then, show the Silver link[.]/.test(nc().textContent)
+      && [...nc().querySelectorAll("button")].some((b) => b.textContent === "Show the Silver link")),
+      "Needs you names the Silver link with only the sheet read: " + (nc() || {}).textContent);
+    D.querySelector('.salt-appbar button[data-m="accounts"]').click();
+    const row = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
+    ok(await until(() => row(uN) && row(uN).textContent.startsWith("CX3-NO")
+      && row(uN).textContent.includes("Made at the next laptop update. Until then, show the Silver link.")
+      && row(uF) && !row(uF).textContent.includes("laptop update")),
+      "and its Accounts row says the same, where an account with one does not: " + JSON.stringify([(row(uN) || {}).textContent, (row(uF) || {}).textContent]));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password
@@ -15988,7 +16045,7 @@ await (async () => {
       const bareLink = bare && [...bare.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
       /* HIS QUESTION OF 23 SEP 2026: the account is one live document, so nothing on this panel may
          speak of an issue, and a username with nothing behind it says so and offers no sign-in link */
-      ok(!!bare && /No account yet, so they cannot sign in/.test(bare.textContent) && !!bareLink && bareLink.disabled,
+      ok(!!bare && /Made at the next laptop update./.test(bare.textContent) && !!bareLink && bareLink.disabled,
         "a code with no account says it cannot sign in, and its sign-in link is shut");
       ok(!/issue/i.test(D88.getElementById("oAccts").textContent),
         "and Accounts never says issue: " + JSON.stringify((D88.getElementById("oAccts").textContent.match(/.{0,30}issue.{0,30}/i) || [""])[0]));

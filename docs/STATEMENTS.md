@@ -648,7 +648,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   many addresses and when it opens, never an address; the count off each key's listing metadata, which the
   brake writes, never a read a key, since anyone can mint `fail:` keys) with Send a sign-in link in two taps, one to make
   it and one to share it, so the share sheet never waits on the derivation; an ID with no account (the
-  stranger's standing link, Send off until the laptop mints it); and the accounts neither ticked sent
+  stranger's standing link, its level the sheet's `stranger`, the one source, and its Accounts row saying the
+  same; Send off until the laptop mints it); and the accounts neither ticked sent
   nor ever opened, with **Send them in turn** (S9 9.6): each account's sign-in link is made as its turn
   opens, Share is a tap of its own, and a share that goes through ticks the account sent (the `sent:` tick
   both his devices read) before the next turn; a closed share ticks nothing and Skip leaves one for later. With
