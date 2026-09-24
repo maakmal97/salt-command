@@ -22126,6 +22126,124 @@ await (async () => {
   }
 })();
 
+section("S11 11.1: the card's preview drafts the pending row an Accept would make, against the mirror, and stores nothing");
+await (async () => {
+  /* HIS DECISION D6 OF 24 SEP 2026: his tap approves the ROW, so the row is on the card before his yes, drafted by
+     the drafter from exactly the entry an Accept queues. The judges' list: never /draft-now?dry=1 drawn as the row. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the preview was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const { reconcileOrders, CUSTOMER_SEES } = await import("../src/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const CODE = "CX1-AB", U = "abcd-efgh";
+  const PRICING = { v: "v900", takenAt: "2026-09-24T00:00:00.000Z", tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"],
+    tierOf: { [CODE]: { salt: "Gold" } }, profileRule: { smallUpTo: 1, bigFrom: 3 },
+    byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 2, 3],
+      ladder: [{ q: 1, prices: [84, 100, 110, 120, 130], fixed: false }, { q: 2, prices: [170, 180, 190, 200, 220], fixed: false }],
+      cards: { [CODE]: [[1, 100], [2, 190]] } } } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  ["2026-08-01", "2026-08-10", "2026-08-20"].forEach((d, i) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)")
+    .run("sales", i, "h" + i, JSON.stringify({ rid: "s90" + i, customer: CODE, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d })));
+  setState("roster", [CODE]); setState("PRICING", PRICING); setState("OPEN", { byKey: {}, position: {} });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: CODE }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const call = async (path, body, key = "k-fixture") => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: Object.assign({ "content-type": "application/json" }, key ? { "X-Salt-Key": key } : {}), body: JSON.stringify(body || {}) }), denv, { waitUntil() {} });
+    return { status: r.status, j: await r.json() };
+  };
+  const o = (await O.placeOrder(senv, U, { product: "salt", qty: 2, mode: "deliver", place: "by the old market", unit: 80, total: 160, week: "" })).order;
+  const kvOf = (kv) => JSON.stringify([...kv.m.entries()].sort());
+  const before = { d: kvOf(dkv), s: kvOf(skv) };
+
+  const p1 = await call("/orders/" + o.id + "/preview", { delivery: 15 });
+  const j = p1.j;
+  ok(p1.status === 200 && j.ok && j.stage === "ack" && j.row.customer === CODE && j.row.qty === 2 && j.row.total === 160 && j.row.delivery === 15
+    && j.row.date && j.row.cash === 0 && j.row.deliveredQty === 0,
+    "the preview is the pending row: the goods, the charge beside them, nothing paid and nothing moved: " + JSON.stringify(j.row || j));
+  ok(Array.isArray(j.flags) && j.flags.some((f) => /has paid RM 100\/unit on every one of their 3 orders of salt; this one is RM 80\./.test(f)),
+    "with the drafter's own flags, here their usual against a rate 20% under it: " + JSON.stringify(j.flags));
+  ok(j.cost && j.cost.unit === 56 && j.cost.total === 112 && j.margin && j.margin.rm === 48 && j.margin.pct === 30
+    && j.floor && j.floor.rm === 150 && j.floor.at === 2 && j.quote === 160,
+    "the cost, the margin on the goods and the floor, as the drafter reads them: " + JSON.stringify({ cost: j.cost, margin: j.margin, floor: j.floor }));
+  ok(j.usual && j.usual.rate === 100 && j.usual.orders === 3 && j.usual.dir === "below" && j.usual.off === -20 && j.usual.far === true,
+    "their usual, with which way this order sits from it and whether it is as far as the flag's line: " + JSON.stringify(j.usual));
+  ok(j.card === 190 && /^Gold at 2 unit$/.test(j.cardNote),
+    "their card at this size, the desk's own cardQuote carried in the snapshot, beside the RM 160 their page quoted: " + JSON.stringify({ card: j.card, note: j.cardNote }));
+  ok(j.told === "They see Placed: Waiting to be acknowledged." && j.pricing && j.pricing.v === "v900" && /^[0-9a-f]{16}$/.test(j.pricing.digest)
+    && /^[0-9a-f]{64}$/.test(j.hash) && !("entry" in j),
+    "what their page says, the pricing version and the digest an Accept sends back: " + JSON.stringify({ told: j.told, pricing: j.pricing, hash: j.hash }));
+
+  /* STORES NOTHING: not a draft, not a refusal, not a queue entry, not a mark on the order */
+  const drafts = () => db.prepare("SELECT COUNT(*) AS n FROM draft").get().n + db.prepare("SELECT COUNT(*) AS n FROM refused").get().n;
+  const site1 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
+  ok(drafts() === 0 && kvOf(dkv) === before.d && kvOf(skv) === before.s && site1.status === "placed" && !site1.queued && !site1.ledgerKey && !site1.sync,
+    "and it stores nothing anywhere: no draft, no queue entry, no key on either store, no mark on the order: "
+    + JSON.stringify({ drafts: drafts(), desk: kvOf(dkv) === before.d, site: kvOf(skv) === before.s, status: site1.status, queued: site1.queued || null }));
+
+  /* THE DIGEST IS WHAT HE WAS SHOWN: the same row twice is one digest; a charge or a pricing version moves it */
+  const p2 = await call("/orders/" + o.id + "/preview", { delivery: 15 });
+  const p3 = await call("/orders/" + o.id + "/preview", { delivery: 20 });
+  ok(p2.j.hash === j.hash && p3.j.hash !== j.hash && p3.j.row.delivery === 20,
+    "the same row is the same digest, and another charge is another: " + JSON.stringify([j.hash.slice(0, 8), p2.j.hash.slice(0, 8), p3.j.hash.slice(0, 8)]));
+  setState("PRICING", Object.assign({}, PRICING, { byProduct: { salt: Object.assign({}, PRICING.byProduct.salt, { floors: Object.assign({}, PRICING.byProduct.salt.floors, { "3": { floor: 216 } }) }) } }));
+  const p4 = await call("/orders/" + o.id + "/preview", { delivery: 15 });
+  setState("PRICING", PRICING);
+  ok(JSON.stringify(p4.j.row) === JSON.stringify(j.row) && JSON.stringify(p4.j.flags) === JSON.stringify(j.flags) && p4.j.hash !== j.hash,
+    "and a snapshot that changed anywhere is another pricing version, though the row and the flags read the same: " + JSON.stringify([p4.j.pricing, j.pricing]));
+  ok((await call("/orders/" + o.id + "/preview", { delivery: 15 }, "")).status === 401, "it is keyed, like every read that carries cost");
+
+  /* THE CHAIN DRAFTS THE SAME ROW: acknowledged on the road the card used until now, reconciled, drafted */
+  await O.deskMove(senv, U, o.id, { status: "acknowledged", delivery: 15 });
+  await reconcileOrders(denv);
+  await runDrafter(denv);
+  const got = db.prepare("SELECT row,flags FROM draft").all();
+  ok(got.length === 1 && JSON.stringify(JSON.parse(got[0].row)) === JSON.stringify(j.row) && got[0].flags === JSON.stringify(j.flags),
+    "the row the chain drafts from that order is the row the preview drew, field for field and flag for flag: " + JSON.stringify(got.map((g) => JSON.parse(g.row))));
+  const p5 = await call("/orders/" + o.id + "/preview", {});
+  ok(p5.status === 409 && /acknowledged/.test(p5.j.error), "and once the order is agreed its pending row is no longer Accept's to make: " + JSON.stringify(p5.j));
+
+  /* NO CARD, SAID WHY */
+  const o3 = (await O.placeOrder(senv, U, { product: "salt", qty: 3, mode: "collect", unit: 90, total: 270, week: "" })).order;
+  const p6 = await call("/orders/" + o3.id + "/preview", {});
+  ok(p6.j.ok && p6.j.card === null && /3 unit is not a size on their board/.test(p6.j.cardNote) && p6.j.row.delivery === undefined && p6.j.chargeChosen === true,
+    "a size their card does not carry has no card, and says so; a collection carries no charge: " + JSON.stringify({ card: p6.j.card, note: p6.j.cardNote }));
+
+  /* THE WORDS ARE THE PAGE'S OWN, held together here so the day the page's words change this follows */
+  const page = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
+  const words = /var STATE_WORDS=(\{[^}]*\})/.exec(page);
+  const W = words ? Function("return " + words[1])() : {};
+  const lines = Object.values(CUSTOMER_SEES).flatMap((x) => x.slice(1));
+  ok(words && Object.keys(CUSTOMER_SEES).every((k) => W[k] === CUSTOMER_SEES[k][0]) && lines.every((l) => page.includes("'" + l)),
+    "what the card says they see is the page's own state words and lines: " + JSON.stringify({ page: W, missing: lines.filter((l) => !page.includes("'" + l)) }));
+
+  /* THE CARDS THE PREVIEW READS ARE THE DESK'S OWN, BOOK BY BOOK: the extract takes each product's with that
+     product in view, as every other per-product figure in the snapshot is taken (v407) */
+  const { openMaster: om111c } = await import("../tools/payload.mjs");
+  const { pricingSnapshot: ps111 } = await import("../tools/book.mjs");
+  const { w: w111c } = await om111c();
+  const snap111 = ps111(w111c);
+  const probe = (p) => { const out = {}; w111c.eval("PROD=" + JSON.stringify(p) + ";recompute();");
+    for (const [code, pairs] of Object.entries(snap111.byProduct[p].cards || {})) out[code] = pairs.map(([q]) => [q, w111c.eval("cardQuote(" + JSON.stringify(code) + "," + q + ")")]);
+    return out; };
+  const sizesOf = (p) => JSON.stringify(Object.values(snap111.byProduct[p].cards || {})[0] ? Object.values(snap111.byProduct[p].cards)[0].map((x) => x[0]) : []);
+  const bothBooks = ["salt", "oil"].every((p) => Object.keys(snap111.byProduct[p].cards || {}).length > 0
+    && JSON.stringify(probe(p)) === JSON.stringify(snap111.byProduct[p].cards));
+  ok(bothBooks && sizesOf("salt") !== sizesOf("oil"),
+    "every customer's card in the snapshot is the desk's cardQuote with that book in view, at that book's own sizes: " + JSON.stringify({ salt: sizesOf("salt"), oil: sizesOf("oil") }));
+})();
+
 section("v764: what he records on the desk reaches the customer's order, and the chase stops");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026. Every road built since v694 runs from the site to the book. A

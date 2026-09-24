@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay, rejectedOnOrder } from "./orders.js";
+import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay, rejectedOnOrder, previewOrder } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -814,6 +814,19 @@ export default {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
       const r = await listOrders(env, url.searchParams.get("all") === "1");
       return json(r, r.ok ? 200 : 503);
+    }
+    /* S11: THE CARD'S OWN ROUTES, by the order's id alone. An order id is minted digits and letters with a
+       dash (mintOrderId) and is never one of these words, so they are read before a move `/orders/<u>/<id>`. */
+    const cm = /^\/orders\/([^/]+)\/(preview)$/.exec(p);
+    if (cm) {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b = {};
+      try { b = await request.json(); } catch { b = {}; }
+      const id = decodeURIComponent(cm[1]);
+      let r;
+      try { r = await previewOrder(env, id, b); }
+      catch (e) { r = { ok: false, status: 500, error: String((e && e.message) || e) }; }
+      return json(r, r.ok ? 200 : (r.status || 502));
     }
     const om = /^\/orders\/([^/]+)\/([^/]+)$/.exec(p);
     if (om) {

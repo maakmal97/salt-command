@@ -19,8 +19,9 @@
  * which is what "an updated statement after completion" means on this book.
  */
 import { sendPush } from "./push.js";
-import { readBook } from "./drafter.js";
+import { readBook, draftRow, costFor, floorFor, usualFor, pricingOf, stageDigest } from "./drafter.js";
 import POSITION_ENGINE from "../engine/position.mjs";
+import PRICING_ENGINE from "../engine/pricing.mjs";
 
 const DEVICE = "orders";
 const MARK = "orders:nudged";
@@ -87,6 +88,89 @@ export async function listOrders(env, all) {
   if (!r.ok || !b.ok) return { ok: false, error: b.error || ("the statements site answered http " + r.status) };
   const users = await usersMap(env);
   return { ok: true, orders: (b.orders || []).map((o) => Object.assign({ code: users[o.u] || null }, o)) };
+}
+
+/** One order, closed or open, with its code: the routes below act on an order by its id alone. */
+export async function findOrder(env, id) {
+  const r = await listOrders(env, true);
+  if (!r.ok) return { ok: false, status: 503, error: r.error };
+  const o = r.orders.find((x) => x.id === id);
+  return o ? { ok: true, order: o } : { ok: false, status: 404, error: "no such order" };
+}
+
+/* ---- WHAT THE CUSTOMER'S PAGE SAYS OF EACH STATE (S11 11.1) ------------------------------------
+ * The card says what the customer is looking at before his yes. These are the page's own words, the state
+ * (STATE_WORDS) and the line under it, in stmt/page.js's CLIENT_JS: copied, because they live inside a
+ * template literal the desk cannot import, and HELD TOGETHER by the suite, so the day the page's words
+ * change this turns it red until it follows. No figure: the card draws the figures. */
+export const CUSTOMER_SEES = {
+  placed: ["Placed", "Waiting to be acknowledged"],
+  acknowledged: ["Acknowledged", "Acknowledged, and being prepared"],
+  ready: ["Ready", "Ready to collect", "Ready to be delivered"],
+  done: ["Completed", "Your order is now complete"],
+  declined: ["Declined", "This order could not be taken"],
+  cancelled: ["Withdrawn", "Withdrawn before anything moved", "Withdrawn"]
+};
+export function toldOf(o) {
+  const w = CUSTOMER_SEES[o && o.status];
+  if (!w) return "";
+  const line = o.status === "ready" ? w[o.mode === "deliver" ? 2 : 1] : o.status === "cancelled" ? w[(+o.paid || 0) > 0 ? 2 : 1] : w[1];
+  return "They see " + w[0] + ": " + line + ".";
+}
+
+/* ---- THE ROW BEFORE HIS YES (S11 11.1, his decision D6 of 24 Sep 2026) ---------------------------
+ * The order card draws the pending row an Accept would make BEFORE he taps it: drafted by the drafter,
+ * against the mirror, from exactly the entry an Accept queues, and STORED NOWHERE (no draft, no queue
+ * entry, no mark on the order). It is not /draft-now?dry=1, which drafts the queue; this drafts one
+ * order that is on no queue. Back come the row and the drafter's own flags, the cost, margin and floor
+ * the drafter reads, the customer's usual and their card, what their page says, the pricing version,
+ * and the digest an Accept sends back to prove it answered this row. */
+const chargeOf = (b) => (b && typeof b.delivery === "number" && Number.isFinite(b.delivery) && b.delivery >= 0 ? +b.delivery.toFixed(2) : null);
+/* their card at this size: the desk's own cardQuote, carried in the pricing snapshot (tools/book.mjs), read and never worked out */
+function cardAt(pricing, code, product, qty) {
+  const snap = pricing && pricing.byProduct && pricing.byProduct[product];
+  if (!snap || !snap.cards) return { card: null, cardNote: "the pricing snapshot carries no cards yet: the next re-seed brings them" };
+  const fixed = (snap.ladder || []).some((r) => r && r.fixed);
+  const hit = (snap.cards[code] || []).find((x) => Math.abs(x[0] - qty) < 0.009);
+  if (hit) {
+    const held = ((pricing.tierOf || {})[code] || {})[product];
+    const level = fixed ? null : PRICING_ENGINE.levelAt(held, qty, pricing.profileRule || { smallUpTo: 1, bigFrom: 3 });
+    return { card: hit[1], cardNote: fixed ? "the board, one price for everybody" : (level ? level : "their card") + " at " + qty + " unit" };
+  }
+  if (!snap.cards[code]) return { card: null, cardNote: "no tier is held or proposed for them on " + product + ", so there is no card" };
+  return { card: null, cardNote: qty + " unit is not a size on their board, so there is no card at it" };
+}
+async function previewAck(env, o, code, delivery, now) {
+  if (!env.SALT_LEDGER) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
+  /* the charge is the site's own rule (decideDesk): typed for a delivery, nought for a collection */
+  const agreed = Object.assign({}, o, { delivery: o.mode === "deliver" ? (delivery || 0) : 0 });
+  const entry = pendingEntry(agreed, code, now);
+  entry.orderId = o.id;
+  const book = await readBook(env.SALT_LEDGER);
+  const d = draftRow(entry, book);
+  if (d.skip) return { ok: false, status: 409, error: "the drafter would not draft it: " + d.skip };
+  const pricing = await pricingOf(book);
+  const product = o.product || "salt", qty = +o.qty, goods = +(+o.total).toFixed(2);
+  const priced = costFor(book, product), fl = floorFor(book, product, qty);
+  const cost = priced.cost == null ? null : { unit: priced.cost, total: +(priced.cost * qty).toFixed(2), source: priced.source };
+  return Object.assign({ ok: true, stage: "ack", id: o.id, entry, row: d.row, flags: d.flags, reasoning: d.reasoning,
+    quote: goods, delivery: agreed.delivery, cost,
+    margin: cost && goods > 0 ? { rm: +(goods - cost.total).toFixed(2), pct: +((goods - cost.total) / goods * 100).toFixed(1) } : null,
+    floor: fl ? { rm: fl.floor, at: fl.at, exact: fl.exact } : null,
+    usual: usualFor(book, d.row), told: toldOf(o), pricing, hash: await stageDigest("ack", entry, d, pricing) },
+    cardAt(book.pricing, code, product, qty));
+}
+/** POST /orders/<id>/preview {delivery}: the pending row an Accept would make now. Stores nothing. */
+export async function previewOrder(env, id, body, now) {
+  const f = await findOrder(env, id);
+  if (!f.ok) return f;
+  const o = f.order;
+  if (!o.code) return { ok: false, status: 409, error: "no desk code is mapped to this account yet: publish the statements again" };
+  if (o.status !== "placed") return { ok: false, status: 409, error: "this order is " + o.status + ", so its pending row is not Accept's to make" };
+  const p = await previewAck(env, o, o.code, chargeOf(body), now || new Date());
+  if (!p.ok) return p;
+  delete p.entry;   /* what Accept will queue is Accept's to build again; the card holds the digest */
+  return Object.assign(p, { chargeChosen: o.mode !== "deliver" || chargeOf(body) != null });
 }
 
 /** Forward the owner's move. Returns the site's answer with the code joined. */

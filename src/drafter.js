@@ -347,6 +347,48 @@ export function floorFor(book, product, qty) {
   return f != null ? { floor: f, at: pick, exact: false, time } : null;
 }
 
+/* ---- what a party pays: flag 2 below and the card's "usual" read this one copy (S11 11.1) ---- */
+/* Only rows that actually MOVED count as history. A pending row is an intention: nothing was
+   paid and nothing went out, so it is not evidence of what a party pays. This matters here
+   and not in theory: CC5-OKR's pending RM80 sits on the book undated, and counting it made
+   his four RM90 orders look like a party with no standing rate at all. */
+/* 08 Sep 2026: SINCE v540 EVERY PENDING ROW IS DATED, so "has a date" no longer means "moved".
+   The status is the ruler: a Pending row (nothing paid, nothing out) is not history. */
+const committedSales = (book) => (book.sales || []).filter((s) => !s.cancelled && POSITION_ENGINE.txStat(s).order !== "Pending");
+/* A GIFT IS NOT A PRICE ANYONE PAID, and it is the GOODWILL MARK that says so, not the total.
+   This tested `s.total > 0` alone, which was right when a free unit was written at total nought
+   (s103 still is) and has been inert since s031 in July, because the book's convention became
+   total = COST, settled by settledRM with goodwill true. So every giveaway has been entering
+   these two sets at the inventory rate as though the customer had paid it: measured on the live
+   book, CJ4-BJ's median read RM68 against a real RM70 and CS6-BS RM107 against RM107.50.
+   The zero test stays beside it, because a row at nought is still not a price and one of them
+   pulled salt's observed low to RM0, which made the low-side check unfireable (round six).
+   Both filters are fixed together: v407's own lesson was that fixing one and not its twin
+   leaves the fault live on the other side. */
+const aPriceSomeonePaid = (s) => !s.goodwill && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0;
+/* v407, round seven: the party's own set takes the same two filters as the product's range. v406
+   added the zero-total filter to the observed range and not to the party's own history, so one free
+   unit still dragged a party's median down: CS6-BS read RM 108.50 against a real RM 110, which
+   misfires at a rate they have actually paid and stays silent 10.9% adrift. Same rule, both sets.
+   v611: THE PERSON, NOT THE CODE: `who` is the owner, and their bucket's rows count as theirs. */
+export function theirRates(book, who, p) {
+  return committedSales(book).filter((s) => POSITION_ENGINE.ownsCode(who, s.customer) && prodOf(s) === p && aPriceSomeonePaid(s))
+    .map((s) => (s.total) / s.qty).sort((a, b) => a - b);
+}
+const medianOf = (xs) => (xs.length % 2 ? xs[(xs.length - 1) / 2] : (xs[xs.length / 2 - 1] + xs[xs.length / 2]) / 2);
+/** What a customer typically pays for a product, and where this row's rate sits against it: the card's "usual". */
+export function usualFor(book, row) {
+  const who = POSITION_ENGINE.ownerCode(row.customer), p = prodOf(row);
+  const theirs = theirRates(book, who, p);
+  if (!theirs.length) return { who, rate: null, orders: 0 };
+  const mid = medianOf(theirs), rate = isNum(row.total) && row.qty > 0 ? row.total / row.qty : null;
+  const off = rate != null && mid > 0 ? (rate - mid) / mid : null;
+  return { who, rate: round(mid), orders: theirs.length, uniform: theirs.every((r) => Math.abs(r - theirs[0]) < 0.005),
+    off: off == null ? null : round(off * 100, 1), dir: off == null ? null : (Math.abs(off) < 0.0005 ? "level" : (off > 0 ? "above" : "below")),
+    /* the same line flag 2 draws at, so the card's tone and the drafter's flag agree about what is far */
+    far: off != null && theirs.length >= 2 && Math.abs(off) >= 0.10 };
+}
+
 /* ---- the comparisons an entry cannot make against itself --------------------------- */
 export function flagsFor(entry, row, book, priced) {
   const flags = [];
@@ -362,29 +404,12 @@ export function flagsFor(entry, row, book, priced) {
      RM700 restock was RM300 under floor, which is the kind of flag that teaches a reader to
      stop reading them. */
   const isSale = !row.supplier;
-  /* Only rows that actually MOVED count as history. A pending row is an intention: nothing was
-     paid and nothing went out, so it is not evidence of what a party pays. This matters here
-     and not in theory: CC5-OKR's pending RM80 sits on the book undated, and counting it made
-     his four RM90 orders look like a party with no standing rate at all. */
-  /* 08 Sep 2026: SINCE v540 EVERY PENDING ROW IS DATED, so "has a date" no longer means "moved".
-     The status is the ruler: a Pending row (nothing paid, nothing out) is not history. */
-  const committed = (book.sales || []).filter((s) => !s.cancelled && POSITION_ENGINE.txStat(s).order !== "Pending");
+  const committed = committedSales(book);
 
   /* 1. THE RATE AGAINST THE PRODUCT'S WHOLE OBSERVED RANGE. This is the RM115 oil check, and
         it is first because it is the one that would have caught it: RM115 against a book whose
         oil had never left the RM6 to RM13 band. A factor rather than a fixed band, so it
         scales with whatever the product actually trades at. */
-  /* A GIFT IS NOT A PRICE ANYONE PAID, and it is the GOODWILL MARK that says so, not the total.
-     This tested `s.total > 0` alone, which was right when a free unit was written at total nought
-     (s103 still is) and has been inert since s031 in July, because the book's convention became
-     total = COST, settled by settledRM with goodwill true. So every giveaway has been entering
-     these two sets at the inventory rate as though the customer had paid it: measured on the live
-     book, CJ4-BJ's median read RM68 against a real RM70 and CS6-BS RM107 against RM107.50.
-     The zero test stays beside it, because a row at nought is still not a price and one of them
-     pulled salt's observed low to RM0, which made the low-side check unfireable (round six).
-     Both filters are fixed together: v407's own lesson was that fixing one and not its twin
-     leaves the fault live on the other side. */
-  const aPriceSomeonePaid = (s) => !s.goodwill && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0;
   const seen = committed.filter((s) => prodOf(s) === p && aPriceSomeonePaid(s))
     .map((s) => (s.total) / s.qty);
   /* 08 Sep 2026: gated on isSale like every check after it. `seen` holds SALE rates, and this
@@ -406,16 +431,9 @@ export function flagsFor(entry, row, book, priced) {
      so their history and their credit are read across the code and the bucket and named by the
      associate. The replay check below keeps the exact code, because the fold's guard compares it. */
   const who = isSale ? POSITION_ENGINE.ownerCode(party) : party;
-  const theirs = isSale
-    /* v407, round seven: the TWIN of the fix sixteen lines above. v406 added the zero-total
-       filter to the observed range and not to the party's own history, so one free unit still
-       dragged a party's median down: CS6-BS read RM 108.50 against a real RM 110, which misfires
-       at a rate they have actually paid and stays silent 10.9% adrift. Same rule, both sets. */
-    ? committed.filter((s) => POSITION_ENGINE.ownsCode(who, s.customer) && prodOf(s) === p && aPriceSomeonePaid(s))
-      .map((s) => (s.total) / s.qty).sort((a, b) => a - b)
-    : [];
+  const theirs = isSale ? theirRates(book, who, p) : [];
   if (rate != null && theirs.length >= 2) {
-    const mid = theirs.length % 2 ? theirs[(theirs.length - 1) / 2] : (theirs[theirs.length / 2 - 1] + theirs[theirs.length / 2]) / 2;
+    const mid = medianOf(theirs);
     if (mid > 0 && Math.abs(rate - mid) / mid >= 0.10) {
       const uniform = theirs.every((r) => Math.abs(r - theirs[0]) < 0.005);
       flags.push(uniform
@@ -1576,6 +1594,40 @@ export async function dryRunDrafter(env) {
   return out;
 }
 
+/* ---- WHAT HE WAS SHOWN, AS ONE DIGEST (S11 11.1, his decision D6 of 24 Sep 2026) -------------------------
+ * One tap a stage approves the row it makes only if the real draft EQUALS what he was shown, so what he was shown
+ * is kept as a DIGEST: the preview hands the card one, and a draft is digested the same way the moment it exists.
+ * Nothing here prices or decides: the digest reads the row and the flags this file wrote.
+ *   ack    the pending row: every field of the row, every flag, and the pricing version, which is the snapshot's own
+ *          `v` and a digest of the snapshot, because two extracts of one version on two days propose different tiers
+ *   pay, cash, move, cancel   an amendment: kind, party, target key, date and figures, and every flag. The pricing
+ *          version is left out, because the first row landing IS a fold, which moves it, and an amendment prices nothing */
+const canon = (x) => Array.isArray(x) ? "[" + x.map(canon).join(",") + "]"
+  : (x && typeof x === "object") ? "{" + Object.keys(x).filter((k) => x[k] !== undefined).sort().map((k) => JSON.stringify(k) + ":" + canon(x[k])).join(",") + "}"
+  : JSON.stringify(x === undefined ? null : x);
+async function sha(s) {
+  const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+/** Which stage of a site order an entry is, by the status the reconcile gives it (src/orders.js). */
+export const STAGE_OF = { Pending: "ack", Payment: "pay", Handover: "move", Cancellation: "cancel" };
+/** The pricing version a row was drafted against: the snapshot's own version, and a digest of the rest of it. */
+export async function pricingOf(book) {
+  const p = book && book.pricing;
+  if (!p) return { v: null, digest: null };
+  const rest = Object.assign({}, p); delete rest.takenAt;   /* minted per extract, as tools/d1.mjs says */
+  return { v: p.v || null, digest: (await sha(canon(rest))).slice(0, 16) };
+}
+/** The digest of a draft for its stage. `d` is draftRow's answer or a stored draft ({collection,row,flags,amendKind}). */
+export async function stageDigest(stage, entry, d, pricing) {
+  const pay = (entry && entry.payload) || {};
+  const shown = stage === "ack"
+    ? { stage, collection: d.collection, row: d.row, flags: d.flags || [], pricing: pricing || null }
+    : { stage: stage === "cash" ? "pay" : stage, kind: pay.kind || null, party: pay.party || null, orderKey: pay.orderKey || null,
+        date: pay.date || null, cash: isNum(pay.cash) ? pay.cash : null, kg: isNum(pay.kg) ? pay.kg : null, fields: pay.fields || null,
+        amendKind: d.amendKind || null, flags: d.flags || [] };
+  return sha(canon(shown));
+}
 /* ---- the run ------------------------------------------------------------------------ */
 /* Idempotent by construction: a draft's id IS the entry's own `at`, and the insert is
  * INSERT OR IGNORE, so a cron that fires while the last one is still finishing cannot double
