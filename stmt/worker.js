@@ -51,7 +51,7 @@ import { FONTS } from "./fonts.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
-import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, markChased, chaseSlot, readsBoth, checkStores, claimAccount, claimsOf, claimView, allClaims } from "./orders.js";
+import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, markChased, chaseSlot, readsBoth, checkStores, claimAccount, claimsOf, claimView, allClaims, deskClaim, CLAIM_ID_RE } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -637,6 +637,15 @@ async function handleDesk(request, env, p, m) {
   if (p === "/desk/claims") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     return json({ ok: true, claims: await allClaims(env, new URL(request.url).searchParams.get("all") === "1") });
+  }
+  /* S6 11.14 and 11.15: his Received or Not found on one of them */
+  const cm = /^\/desk\/claims\/([^/]+)\/([^/]+)$/.exec(p);
+  if (cm) {
+    const u = normUser(cm[1]);
+    if (!u || !CLAIM_ID_RE.test(cm[2])) return notFound();
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const r = await deskClaim(env, u, cm[2], await readJson(request));
+    return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, claim: r.claim, push: r.push });
   }
   /* the moment of the newest placement, one read: the desk asks this every minute (16 Sep 2026),
      and since v694 the moment of the newest change of any kind beside it, so the reconcile lists

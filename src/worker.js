@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf } from "./orders.js";
+import { listOrders, listClaims, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -761,6 +761,7 @@ export default {
     if ((p === "/queue" || p === "/ledger" || p.startsWith("/ledger/")
       || p === "/drafts" || p.startsWith("/drafts/")
       || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users" || p === "/bulletin"
+      || p.startsWith("/claims/")   /* S6: a claim against an account, read and answered like an order */
       /* /push/key is the ONE push route left open, and only because the VAPID public
          key is public by definition: a browser cannot create a subscription without
          it, and it authorises nothing on its own. Everything else under /push either
@@ -867,6 +868,17 @@ export default {
     }
     /* S11: THE CARD'S OWN ROUTES, by the order's id alone. An order id is minted digits and letters with a
        dash (mintOrderId) and is never one of these words, so they are read before a move `/orders/<u>/<id>`. */
+    /* S6 11.14: Not found, on a claim of theirs on an order, or against the account (the claim's id begins with `a`) */
+    const nf = /^\/(orders|claims)\/([^/]+)\/notfound$/.exec(p);
+    if (nf) {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b = {};
+      try { b = await request.json(); } catch { b = {}; }
+      let r;
+      try { r = nf[1] === "orders" ? await notFoundOrder(env, decodeURIComponent(nf[2]), b) : await notFoundClaim(env, decodeURIComponent(nf[2]), b); }
+      catch (e) { r = { ok: false, status: 500, error: String((e && e.message) || e) }; }
+      return json(r, r.ok ? 200 : (r.status || 502));
+    }
     const cm = /^\/orders\/([^/]+)\/(preview|accept|handed|cash|received|again)$/.exec(p);
     if (cm) {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);

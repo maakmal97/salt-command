@@ -18885,7 +18885,10 @@ function apCard(d){
     ${(d.flags||[]).map(f=>`<div class="warnpill" style="display:block;margin:8px 0 0;background:rgba(184,115,51,.14);border-color:var(--amber);color:var(--gold)">&#9888; ${esc(f)}</div>`).join('')}
     ${apGone}
     ${d.reasoning?`<div class="dsc" style="margin-top:8px">${esc(d.reasoning)}</div>`:''}
-    <div style="display:flex;gap:8px;margin-top:10px"><button class="vbtn salt-pill salt-pill--sm" data-ap="approve" data-id="${esc(d.id)}">Approve</button><button class="salt-ghost salt-ghost--danger" data-ap="reject" data-id="${esc(d.id)}">Reject</button></div>
+    ${d.entry&&d.entry.claim&&!pa
+      /* S6 (D7): a claim's own row is his check, answered on its order's card; the Worker refuses it here */
+      ?`<p class="dsc" style="margin-top:10px">A payment they say they sent. Answer it on Site orders: <b>Received</b> books this row, <b>Not found</b> files it as not found.</p>`
+      :`<div style="display:flex;gap:8px;margin-top:10px"><button class="vbtn salt-pill salt-pill--sm" data-ap="approve" data-id="${esc(d.id)}">Approve</button><button class="salt-ghost salt-ghost--danger" data-ap="reject" data-id="${esc(d.id)}">Reject</button></div>`}
   </div>`;
 }
 function apDraw(){
@@ -19157,7 +19160,8 @@ function ordUsual(code,product){
 /* S11 11.4 (24 Sep 2026): WAITING ON YOU IS ONE ROW A CUSTOMER ACT, and this is the one reading of it:
    the list on Site orders, Today's row and the Enter badge all count these, so none can disagree.
      new    an order placed and not yet agreed
-     paid   a payment they say they made, its row waiting under Approve (the claim itself is stage 6's)
+     paid   a payment they say they sent, a claim waiting for his Received or Not found (S6); a payment from before
+            claims, its row waiting under Approve
      cash   goods handed over with nothing paid: cash to record
      asked  their line is the last on the order, and he has not said it needs no reply
    A placed order's own line is on its New card, so it is one act and not two. Oldest first, by the
@@ -19165,6 +19169,8 @@ function ordUsual(code,product){
 const ORD_KIND={new:{w:'New',tone:'steel',act:'Accept'},paid:{w:'Paid?',tone:'verdigris',act:'Check'},
   cash:{w:'Cash',tone:'copper',act:'Record'},asked:{w:'Asked',tone:'brass',act:'Answer'}};
 const ordDue=o=>+((+o.total||0)+(+o.delivery||0)-(+o.paid||0)).toFixed(2);
+/* S6 (D7): the claims of theirs still waiting for his answer, oldest first, each named by its moment */
+const ordClaims=o=>((o&&o.payments)||[]).filter(p=>p&&p.claim==='waiting');
 function ordAsked(o){const m=(o&&o.msgs)||[],l=m[m.length-1];return !!(l&&l.by==='customer'&&!(o.quiet&&String(o.quiet)>=String(l.at)));}
 function ordActs(){
   const open=(typeof ORD_OPEN!=='undefined'&&Array.isArray(ORD_OPEN))?ORD_OPEN:[];
@@ -19174,11 +19180,13 @@ function ordActs(){
     const live=['acknowledged','ready'].includes(o.status);
     if(o.status==='placed'&&!o.yes)out.push({kind:'new',o,at:o.at||''});   /* his yes already given waits under Approve, counted there */
     else if(ordAsked(o))out.push({kind:'asked',o,at:o.msgs[o.msgs.length-1].at||''});
-    if(live&&(+o.moved||0)>0.0004&&(+o.paid||0)<=0.004&&ordDue(o)>0.004){
+    const cw=ordClaims(o);   /* S6: a claim of theirs is its own act, and while one waits there is no cash to record */
+    if(live&&(+o.moved||0)>0.0004&&(+o.paid||0)<=0.004&&ordDue(o)>0.004&&!cw.length){
       const h=(o.history||[]).filter(x=>x&&x.by==='desk'&&/ unit (delivered|collected)$/.test(String(x.note||'')));
       out.push({kind:'cash',o,at:o.movedAt||(h.length?h[h.length-1].at:'')||o.at||''});}
     const pd=drafts.filter(d=>d&&d.entry&&d.entry.orderId&&d.entry.orderId===o.id&&d.entry.status==='Payment'&&d.entry.by!=='desk');
-    if(pd.length&&!['cancelled','declined'].includes(o.status)){
+    if(cw.length&&!['cancelled','declined'].includes(o.status))out.push({kind:'paid',o,at:cw[0].at||o.at||'',drafts:pd.filter(d=>d.entry.claim).map(d=>d.id)});
+    else if(pd.length&&!['cancelled','declined'].includes(o.status)){
       const p=(o.payments||[]).filter(x=>x&&x.by!=='desk');
       out.push({kind:'paid',o,at:(p.length?p[p.length-1].at:'')||o.at||'',drafts:pd.map(d=>d.id)});}
   });
@@ -19377,7 +19385,13 @@ function ordCard(o){
   /* S11 11.8: CASH TO RECORD. Goods out and nothing paid: one tap marks the order paid in cash at once, so
      their page says paid and the chase stops, and records the Fulfilment's approval for when its row is drafted
      (POST orders/<id>/cash, the contract of 11.12). It is the card's one filled control; Ready is a ghost. */
-  const cashNow=['acknowledged','ready'].includes(o.status)&&moved>0.0004&&paid<=0.004&&ordDue(o)>0.004;
+  /* S6 11.14 (D7): a claim of theirs, the oldest waiting, is answered here: Received books its row and makes it paid on
+     their page, Not found files its row as not found; either reaches them with its own words. While one waits there
+     is no cash to record, and Received is the card's one filled control. */
+  const cw=ordClaims(o),c0=cw[0]||null;
+  const cashNow=['acknowledged','ready'].includes(o.status)&&moved>0.0004&&paid<=0.004&&ordDue(o)>0.004&&!c0;
+  const claimBtns=c0?`<button class="vbtn salt-pill salt-pill--sm" data-ord="received" data-claim="${esc(c0.at)}" data-amt="${+c0.amount||0}" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Received, ${fmt(+c0.amount||0)}</button>`
+    +`<button class="salt-ghost salt-ghost--danger" data-ord="notfound" data-claim="${esc(c0.at)}" data-amt="${+c0.amount||0}" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Not found</button>`:'';
   const ghostBtn=(st,label,mode)=>`<button class="salt-ghost" data-ord="${st}" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${mode?` data-mode="${mode}"`:''}>${label}</button>`;
   /* S11 11.9: DELIVERED PART. The handover is one tap in the order's own mode for the whole of it; a part is
      stepped to in halves and recorded, keeping the rest owed, or closed at, which restates the order at what
@@ -19392,9 +19406,9 @@ function ordCard(o){
   else if(yes)acts='';
   else if(o.status==='placed')acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk?'':' disabled'}>Accept, ${fmt(sum)}</button>`+btn('declined','Decline',true);
   else if(againAck)acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk?'':' disabled'}>Accept again, ${fmt(sum)}</button>`+(moved>0?'':btn('cancelled','Cancel',true));
-  else if(rowed&&o.status!=='done')acts=(cashNow?`<button class="vbtn salt-pill salt-pill--sm" data-ord="cash" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Cash received, ${fmt(ordDue(o))}</button>`:'')
+  else if(rowed&&o.status!=='done')acts=claimBtns+(cashNow?`<button class="vbtn salt-pill salt-pill--sm" data-ord="cash" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Cash received, ${fmt(ordDue(o))}</button>`:'')
     +(handable?(part?handBtn('Record '+units(partN),' data-partlab="rec"')+handBtn('Close at '+units(partN),' data-close="1" data-partlab="close"')+`<button class="salt-ghost" data-partoff="${esc(o.id)}">Keep it whole</button>`
-      :`<button class="${cashNow?'salt-ghost':'vbtn salt-pill salt-pill--sm'}" data-ord="handover" data-full="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}">${how}${moved>0?' the rest, '+units(owedU):', '+units(o.qty)}</button>`
+      :`<button class="${cashNow||c0?'salt-ghost':'vbtn salt-pill salt-pill--sm'}" data-ord="handover" data-full="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}">${how}${moved>0?' the rest, '+units(owedU):', '+units(o.qty)}</button>`
         +`<button class="salt-ghost" data-partopen="${esc(o.id)}">${how} part</button>`
         +(moved>0?handBtn('Close at '+units(moved)+', '+fmt(shortT(moved)),` data-close="1" data-qty="${moved}"`):'')):'')
     +(!part&&o.status==='acknowledged'?ghostBtn('ready','Ready to collect','collect')+ghostBtn('ready','Ready to deliver','deliver'):'')
@@ -19434,6 +19448,7 @@ function ordCard(o){
     ${hand}${ordWhyBlock(o)}
     <div class="${acts?'ordfoot':'ordnofoot'}">${acts?`<div class="salt-approve__actions">${acts}</div>`:''}
       ${cashNow?`<p class="salt-approve__reason">${o.mode==='deliver'?'Delivered':'Collected'} ${units(moved)}, nothing paid. Cash received marks it paid in cash at once, so the chase stops, and books the payment when its row is drafted, if it is this one.</p>`:''}
+      ${c0&&rowed&&!whyOpen?`<p class="salt-approve__reason ordclaim">They say they sent ${fmt(+c0.amount||0)}${c0.method?' by '+esc(c0.method)+(c0.account?' to '+esc(c0.account):''):''}, reference ${esc(o.u)}, ${when(c0.at)}${cw.length>1?', and '+(cw.length-1)+' more after it':''}. Received books its row and they see it paid; Not found files the row as not found and they are told. They see it as sent, waiting for us to confirm, until then.</p>`:''}
       ${yes?`<p class="salt-approve__reason ordyes">${yes==='differs'?'Your yes waits under Approve: the row came out other than you saw. Approve it there, or reject it there to decide again.'
         :'Your yes is given, and its row is being drafted: it is booked as it lands if it is the row you saw.'}</p>`
       :o.status==='placed'&&!whyOpen?`<p class="salt-approve__reason">${feeNow==null?'Choose the delivery charge first.'
@@ -19463,7 +19478,9 @@ function ordWhen(iso){try{if(!iso)return '';const p={};new Intl.DateTimeFormat('
 function ordWhat(a){const o=a.o;
   if(a.kind==='new')return units(+o.qty||0)+' '+esc(o.product||'salt')+', '+fmt(+o.total||0)+', '+(o.mode==='deliver'?'delivery':'collect');
   if(a.kind==='cash')return (o.mode==='deliver'?'Delivered ':'Collected ')+units(+o.moved||0)+' '+esc(o.product||'salt')+', nothing paid. Cash to record.';
-  if(a.kind==='paid'){const p=(o.payments||[]).filter(x=>x&&x.by!=='desk'),l=p[p.length-1];
+  if(a.kind==='paid'){const cw=ordClaims(o);
+    if(cw.length)return 'Says '+fmt(+cw[0].amount||0)+' sent'+(cw[0].method?' by '+esc(cw[0].method)+(cw[0].account?' via '+esc(cw[0].account):''):'')+'. Received or Not found.';
+    const p=(o.payments||[]).filter(x=>x&&x.by!=='desk'),l=p[p.length-1];
     return 'Says '+fmt(l?+l.amount||0:+o.paid||0)+' paid'+(o.method?' by '+esc(o.method)+(o.account?' via '+esc(o.account):''):'')+'. Its row waits under Approve.';}
   if(a.kind==='asked'){const t=String(o.msgs[o.msgs.length-1].text||'');return '&ldquo;'+esc(t.length>90?t.slice(0,90)+'...':t)+'&rdquo;';}
   return units(+o.qty||0)+' '+esc(o.product||'salt')+', '+fmt(+o.total||0)+', '+esc(ORD_WORD[o.status]||o.status);}
@@ -19586,6 +19603,10 @@ async function ordAct(b){
   }else if(st==='again'){
     body=JSON.stringify({stage:b.dataset.stage});
     url='orders/'+encodeURIComponent(id)+'/again';
+  }else if(st==='received'||st==='notfound'){
+    /* S6 11.14: the claim drawn on the card, by its moment and at its figure; the Worker answers only that one */
+    body=JSON.stringify({claim:b.dataset.claim,amount:+b.dataset.amt});
+    url='orders/'+encodeURIComponent(id)+'/'+st;
   }else if(st==='noreply'){
     body=JSON.stringify({noReply:true});
   }else if(st==='say'){
@@ -19622,6 +19643,8 @@ async function ordAct(b){
         :'Accepted. The row is being drafted; it is approved as it lands if it is the one you saw, and they see Confirmed then.')
       :st==='say'?'Sent. '+told
       :st==='again'?'Offered again under a fresh entry. '+says
+      :st==='received'?'Received: '+fmt(+b.dataset.amt||0)+'. They see it paid. '+says+told
+      :st==='notfound'?'Not found: '+fmt(+b.dataset.amt||0)+'. Its row is filed as not found, and they are told it has not arrived yet. '+told
       :st==='cash'?'Recorded: '+fmt(ordDue(ORD_OPEN.find(x=>x&&x.id===id)||{}))+' in cash. They see it paid and the chase stops. '+says+told
       :st==='noreply'?'Marked as needing no reply. Nothing was sent to them.'
       :st==='declined'?'Declined. They read Not taken: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+'. '+told

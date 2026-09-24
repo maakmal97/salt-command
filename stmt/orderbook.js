@@ -63,7 +63,7 @@
  * suite drive it in Node, over node:sqlite, whose statements run synchronously exactly as the object's do.
  */
 import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, FROZEN, ROAD_KEY, decidePlace, decideCustomer, decideDesk,
-  applyEvent, marksOf, wakes, isClaimId, decideAccountClaim } from "./orders.js";
+  applyEvent, marksOf, wakes, isClaimId, decideAccountClaim, decideClaimDesk } from "./orders.js";
 
 export { BOOK_NAME };
 const MARKS = { last: LAST_PLACED, touched: LAST_TOUCHED, said: LAST_SAID, theirs: LAST_THEIRS };
@@ -82,7 +82,7 @@ const norm = (raw) => { try { const o = JSON.parse(raw); return o && typeof o ==
 /* what writes: refused while the book is moving in. Not "drop": his test account unmade is gone from KV first,
    so no pass brings it back, and it reaches the book from the kv road too (S10 fix P3), where it must neither
    wait on a move-in nor start one */
-const WRITES = ["place", "customer", "desk", "chase", "aclaim"];
+const WRITES = ["place", "customer", "desk", "chase", "aclaim", "adesk"];
 /* S6 6.6: an account claim lives beside the orders, in its own table and under its own KV prefix */
 const TABLE = (oid) => (isClaimId(oid) ? "acl" : "ord");
 const KVKEY = (u, oid) => (isClaimId(oid) ? "aclaim:" : "order:") + u + ":" + oid;
@@ -290,6 +290,14 @@ export class OrderBook {
       const d = decideAccountClaim(u, a.body, waiting, at);
       if (d.error) return { ok: false, error: d.error, status: d.status || 400 };
       return this.append(eid, u, d.ev.claim.id, d.ev, null);
+    }
+    /* his Received or Not found on one, as one event (S6 11.14) */
+    if (op === "adesk") {
+      const u = String(a.u || ""), id = String(a.id || "");
+      const claim = isClaimId(id) ? this.order(u, id) : null;
+      const d = decideClaimDesk(claim, a.body, at);
+      if (d.error) return { ok: false, error: d.error, status: d.status || 400 };
+      return this.append(null, u, id, d.ev, claim);
     }
     if (op === "last") {
       const out = { ok: true };

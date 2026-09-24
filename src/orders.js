@@ -362,8 +362,10 @@ async function stageTap(env, id, body, by, now, stage, build) {
     shown: { from: o.status, figures: b.shown, flags: pv.d.flags, waits: pv.waits } });
   if (b.pin) await db.prepare("UPDATE preapproval SET entry_at=?1 WHERE id=?2").bind(b.pin, preId).run();
   /* the site hears what he did (a handover, cash taken), after the yes is on file, so no pass can draft the row first */
+  let push = null;
   if (b.site) {
     const r = await moveOrder(env, o.u, id, b.site);
+    push = r.push || null;   /* S6: the wake it sent, so the card can say whether their phone heard */
     if (!r.ok) {
       await db.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE id=?2").bind(new Date().toISOString(), preId).run();
       return r;
@@ -374,7 +376,7 @@ async function stageTap(env, id, body, by, now, stage, build) {
      row: a stage the site makes is queued after this, so any row of its stage drafted before it is an older one */
   const pre = await preById(db, preId);
   const spent = pre.status === "waiting" && b.pin ? await settlePre(db, pre, await readBook(db)) : null;
-  return { ok: true, order: o, preapproval: { stage, waits: pv.waits, says: yesWords(pv.waits), flags: pv.d.flags, spent: spent || null,
+  return { ok: true, order: o, push, preapproval: { stage, waits: pv.waits, says: yesWords(pv.waits), flags: pv.d.flags, spent: spent || null,
     draft: spent ? (await preById(db, preId)).draft_id : null } };
 }
 const ROWED_ON_SITE = ["acknowledged", "ready", "done"];
@@ -415,11 +417,14 @@ export async function receivedOrder(env, id, body, by, now) {
   const rej = await rejectedOf(env.SALT_LEDGER, id, "pay");
   /* their payment may be drafted already (the reconcile queues it within the minute once the row is on the book),
      and then that draft's own entry is the one his yes answers */
-  let queued = [];
+  let queued = [], shut = new Set();
   if (env.SALT_LEDGER) {
     const rs = await env.SALT_LEDGER.prepare("SELECT id,entry FROM draft WHERE status='pending' AND entry LIKE ?1 ORDER BY id DESC").bind('%"orderId":"' + id + '"%').all();
     queued = (rs.results || []).map((r) => { try { return JSON.parse(r.entry); } catch (e) { return null; } })
       .filter((e) => e && e.orderId === id && e.status === "Payment" && !e.counter);
+    /* S6 11.14: a claim's entry filed not found never lands, so that claim is not received after it */
+    const rj = await env.SALT_LEDGER.prepare("SELECT id FROM draft WHERE status='rejected' AND decided_by='notfound' AND entry LIKE ?1").bind('%"orderId":"' + id + '"%').all();
+    shut = new Set((rj.results || []).map((r) => r.id));
   }
   return stageTap(env, id, body, by, now, "pay", (o, at) => {
     const amount = body && body.amount;
@@ -431,6 +436,7 @@ export async function receivedOrder(env, id, body, by, now) {
       const p = body.claim ? waiting.find((x) => x.at === body.claim) : waiting[0];
       if (!p) return { status: 409, error: "that claim of theirs is not waiting any more: look again" };
       if (Math.abs(p.amount - amount) > 0.004) return { status: 409, error: "RM " + p.amount.toFixed(2) + " they say they sent is waiting to be received here, not RM " + amount.toFixed(2) };
+      if (shut.has(p.queued || "") || shut.has(p.at)) return { status: 409, error: "that claim was filed not found, and its row with it: it cannot be received now" };
       const site = { verdict: { kind: "received", claim: p.at, amount: p.amount } }, shown = { amount: p.amount, claim: p.at };
       const own = queued.find((e) => e.at === p.queued) || claimEntry(o, p);
       if (p.queued) { own.at = p.queued; return { entry: own, pin: p.queued, site, shown }; }
@@ -449,6 +455,74 @@ export async function receivedOrder(env, id, body, by, now) {
     entry.orderId = o.id;
     return { entry, shown: { amount: inc } };
   });
+}
+
+/* ---- NOT FOUND (S6 11.14, his decision D7) ---------------------------------------------------------------------
+ * What they say they sent has not arrived. The claim's own entry is FILED REJECTED FIRST, under the id it has or will
+ * have (the claim's moment), and dropped from every queue, so no pass of the drafter can draft it after; only then is
+ * the site told, as one event that takes the claim off what they say they sent and its entry's name off the claim (the
+ * order book's; never on the kv road). The site wakes them with its kind. Paid never moved, so nothing lowers it. */
+async function fileNotFound(env, at, entry, now) {
+  const db = env.SALT_LEDGER, when = (now instanceof Date ? now : new Date()).toISOString();
+  await db.prepare("INSERT OR IGNORE INTO draft (id,status,collection,entry,row,reasoning,flags,party,drafter,drafted_at,decided_at,decided_by) "
+    + "VALUES (?1,'rejected','sales',?2,'{}',?3,'[]',?4,'orders',?5,?5,'notfound')")
+    .bind(at, JSON.stringify(entry), "Not found: what they say they sent has not arrived, so nothing reaches the book.", entry.party || null, when).run();
+  await db.prepare("UPDATE draft SET status='rejected', decided_at=?1, decided_by='notfound' WHERE id=?2 AND status='pending'").bind(when, at).run();
+  const cur = await db.prepare("SELECT status FROM draft WHERE id=?1").bind(at).first();
+  return !!cur && cur.status === "rejected";
+}
+/** POST /orders/<id>/notfound {claim, amount}: a claim of theirs on an order has not arrived. */
+export async function notFoundOrder(env, id, body, now) {
+  const f = await findOrder(env, id);
+  if (!f.ok) return f;
+  const o = f.order, db = env.SALT_LEDGER;
+  if (!db) return { ok: false, status: 503, error: "the desk has no ledger binding, so the claim's row cannot be filed" };
+  const amount = body && body.amount;
+  if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { ok: false, status: 400, error: "say which figure was not found" };
+  const waiting = (o.payments || []).filter((p) => p && p.claim === "waiting");
+  const p = body.claim ? waiting.find((x) => x.at === body.claim) : waiting[0];
+  if (!p) return { ok: false, status: 409, error: "that claim of theirs is not waiting any more: look again" };
+  if (Math.abs(p.amount - amount) > 0.004) return { ok: false, status: 409, error: "RM " + p.amount.toFixed(2) + " they say they sent is waiting here, not RM " + amount.toFixed(2) };
+  /* queued, its entry is named on the claim; not yet, the reconcile would give it the claim's own moment, unless another
+     stage's entry already holds that moment, which is then left alone */
+  let at = p.queued || p.at;
+  if (!p.queued) {
+    const d = await db.prepare("SELECT entry FROM draft WHERE id=?1").bind(at).first();
+    let q = null; try { q = ((await env.SALT_QUEUE.get("q:" + DEVICE, "json")) || { queue: [] }).queue.find((e) => e && e.at === at) || null; } catch (e) { q = null; }
+    const theirs = (e) => !e || e.claimOf === p.at;
+    let de = null; try { de = d ? JSON.parse(d.entry) : null; } catch (e) { de = {}; }
+    if (!theirs(de) || !theirs(q)) at = null;
+  }
+  if (at && !(await fileNotFound(env, at, Object.assign(claimEntry(o, p), { at }), now)))
+    return { ok: false, status: 409, error: "its row is decided already, so it cannot be filed not found" };
+  if (at) await dropQueued(env, [at]);
+  return moveOrder(env, o.u, id, { verdict: { kind: "notfound", claim: p.at, amount: p.amount } });
+}
+/** POST /claims/<id>/notfound {amount}: a claim against the account has not arrived. Nothing was queued for it. */
+export async function notFoundClaim(env, id, body) {
+  const f = await findClaim(env, id);
+  if (!f.ok) return f;
+  const c = f.claim, amount = body && body.amount;
+  if (typeof amount !== "number" || !Number.isFinite(amount) || Math.abs(amount - c.amount) > 0.004)
+    return { ok: false, status: 409, error: "RM " + (+c.amount).toFixed(2) + " they say they sent is waiting here" + (typeof amount === "number" ? ", not RM " + amount.toFixed(2) : "") };
+  return moveClaim(env, c.u, id, { verdict: { kind: "notfound", amount: c.amount } });
+}
+/** One claim against an account, waiting or answered, with its code. */
+export async function findClaim(env, id) {
+  const r = await listClaims(env, true);
+  if (!r.ok) return { ok: false, status: 503, error: r.error };
+  const c = r.claims.find((x) => x.id === id);
+  return c ? { ok: true, claim: c } : { ok: false, status: 404, error: "no such claim" };
+}
+/** His answer on a claim against the account, relayed to the site, which wakes them. */
+export async function moveClaim(env, u, id, body) {
+  const r = await site(env, "/desk/claims/" + encodeURIComponent(u) + "/" + encodeURIComponent(id), {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body || {}) });
+  if (!r) return { ok: false, status: 503, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.ok) return { ok: false, status: r.status, error: b.error || ("the statements site answered http " + r.status) };
+  const users = await usersMap(env);
+  return { ok: true, claim: Object.assign({ code: users[b.claim.u] || null }, b.claim), push: b.push };
 }
 
 /** POST /orders/<id>/cash {amount}: cash taken at the counter. The site's cash event marks the order paid at once, which
@@ -493,7 +567,7 @@ async function draftsOfOrders(db, ids) {   /* one order's, in practice: ids hold
 const ofStage = (r, stage) => (stage === "move" ? ["Handover", "Close"].includes(r.entry.status) : r.entry.status === STATUS_OF_STAGE[stage])
   && (stage === "pay" ? !r.entry.counter : stage === "cash" ? !!r.entry.counter : true);
 /* he rejected it: a withdrawal's drop (11.10) is filed rejected too, and is not his */
-const rejectedByHim = (d) => !!d && d.status === "rejected" && d.decided_by !== "withdrawn";
+const rejectedByHim = (d) => !!d && d.status === "rejected" && d.decided_by !== "withdrawn" && d.decided_by !== "notfound";   /* S6: nor a claim not found */
 /** The newest draft of a stage for an order, when it is one he rejected; else null. */
 export async function rejectedOf(db, id, stage) {
   if (!db) return null;

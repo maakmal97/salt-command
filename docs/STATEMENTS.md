@@ -569,7 +569,13 @@ claim's moment (`claimsToQueue`, `claimEntry`), and Approve neither approves nor
 on: `POST /account/claim` (or `/claims`) `{amount, method, account, rid}` on their session, its own record and never an
 order (`acl` in the order book, `aclaim:<username>:<id>` on KV, written behind and moved in as an order is, id `a` and the
 moment), riding beside the orders on their `GET /orders` as `claims` (`claimView`: `state`, and `claim` holding the same
-word) and on the desk's as its own list (`GET /desk/claims`). A waiting one pauses the chase on every order of theirs. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
+word) and on the desk's as its own list (`GET /desk/claims`). A waiting one pauses the chase on every order of theirs.
+**His answer reaches them** (S6 11.14): Received wakes them "Payment received" (or complete); **Not found** files the
+claim's row rejected as `notfound` FIRST, under the id it has or will have, and drops it from every queue, then the site
+takes it as ONE event of the order book: the claim leaves `claimed` and its entry's name leaves the claim together, paid
+never having moved, and the wake says "Payment not found yet" (`notfound` in `NEWS`). **On the kv road Not found is
+refused** (`NOT_FOUND_ON_KV`), a figure that falls never being a read-modify-write. A claim not found is never offered again,
+and a Received on a claim whose row was filed not found is refused. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
 order, the one being paid included: settling that at the door is how one advance becomes two. The quote is the customer's claim
 off his own list: the owner reads the rate against the party's usual on the phone before
 acknowledging, and the drafter flags it again when the row is queued.

@@ -285,6 +285,7 @@ export async function allOrders(env, all) {
  * the answer ("received", "notfound"). Each claim is queued for the ledger as its own Fulfilment, flagged as
  * a claim for his check, and `queued` on the entry names that entry: so the ledger hears of the money once,
  * by that entry, whether he answers before it is queued or after. */
+export const VERDICTS = ["received", "notfound"];
 export const claimedOf = (o) => +(((o && o.payments) || []).filter((p) => p && p.claim === "waiting")
   .reduce((n, p) => n + (+p.amount || 0), 0)).toFixed(2);
 /** Each claim the ledger has not been told of: waiting for his check, or received; never one not found. */
@@ -577,11 +578,12 @@ export function decideDesk(order, body, at) {
     if (isNum(L.moved) && L.moved > (+order.moved || 0) + 0.0004) ev.moved = L.moved;
     return ev.paid === undefined && ev.moved === undefined ? { none: true } : { ev };
   }
-  /* S6 6.5 (D7): HIS ANSWER TO ONE CLAIM, named by its moment. The desk sends the figure it showed him, and this
-     checks that it is that claim's and that it still waits; received makes it money he has confirmed. */
+  /* S6 6.5 and 11.14 (D7): HIS ANSWER TO ONE CLAIM, named by its moment. The desk sends the figure it showed him, and
+     this checks that it is that claim's and that it still waits: received makes it money he has confirmed, not found
+     takes it off what they say they sent. */
   if (body && body.verdict) {
     const v = body.verdict;
-    if (!["received"].includes(v.kind)) return { error: "a claim is answered received", status: 400 };
+    if (!VERDICTS.includes(v.kind)) return { error: "a claim is answered received or not found", status: 400 };
     const p = (order.payments || []).find((x) => x && x.claim === "waiting" && x.at === v.claim);
     if (!p) return { error: "no claim of theirs waits under that name", status: 409 };
     if (!isNum(v.amount) || Math.abs(v.amount - p.amount) > 0.004) return { error: "that claim is " + p.amount.toFixed(2) + ", not " + (isNum(v.amount) ? v.amount.toFixed(2) : "a figure"), status: 409 };
@@ -684,9 +686,18 @@ export function applyEvent(order, ev) {
     order.payments = (order.payments || []).concat([{ at, amount: ev.amount, method: ev.method, account: ev.account, claim: "waiting" }]);
     order.claimed = claimedOf(order);
     order.history.push({ at, status: order.status, by: "customer", method: ev.method, account: ev.account, note: "sent " + ev.amount.toFixed(2) });
+  } else if (ev.kind === "verdict" && order.kind === "account") {   /* S6 6.6: his answer to a claim against the account */
+    if (order.state === "waiting") { order.state = ev.verdict; order.answered = at;
+      order.history.push({ at, by: "desk", note: (ev.verdict === "received" ? "received " : "not found ") + (+order.amount).toFixed(2) }); }
   } else if (ev.kind === "verdict") {   /* S6: his answer to one claim, which keeps its record */
     const p = (order.payments || []).find((x) => x && x.claim === "waiting" && x.at === ev.claim);
-    if (p) {
+    /* S6 11.14: NOT FOUND, IN ONE EVENT: the claim leaves what they say they sent, and its entry's name leaves the claim,
+       because that entry is filed rejected and the ledger was never told; paid never moved, so nothing lowers it */
+    if (p && ev.verdict === "notfound") {
+      order.payments = order.payments.map((x) => { if (x !== p) return x; const c = Object.assign({}, x, { claim: "notfound", answered: at }); delete c.queued; return c; });
+      order.claimed = claimedOf(order);
+      order.history.push({ at, status: order.status, by: "desk", note: "not found " + p.amount.toFixed(2) });
+    } else if (p) {
       order.payments = order.payments.map((x) => (x === p ? Object.assign({}, x, { claim: ev.verdict, answered: at }) : x));
       order.claimed = claimedOf(order);
       order.paid = +((+order.paid || 0) + p.amount).toFixed(2);
@@ -783,7 +794,8 @@ export function wakes(ev, order, done) {
   if (ev.kind === "say" && ev.by === "desk") return { k: "reply", o };
   if (ev.kind === "pay" && done) return { k: "complete", o };
   if (ev.kind === "cash") return { k: done ? "complete" : "paid", o };   /* S11 11.8: his cash is their payment received */
-  if (ev.kind === "verdict") return { k: done ? "complete" : "paid", o };   /* S6: his Received */
+  /* S6: his Received, and his Not found (11.14), whose own words the service worker has; an account's claim opens no order */
+  if (ev.kind === "verdict") return { k: ev.verdict === "notfound" ? "notfound" : done ? "complete" : "paid", o: order && order.kind === "account" ? "" : o };
   return null;
 }
 
@@ -903,6 +915,7 @@ export async function deskMove(env, u, id, body) {
     const push = await wakeCustomer(env, u, r.wake);
     return { order: r.order, push };
   }
+  if (body && body.verdict && body.verdict.kind === "notfound") return { error: NOT_FOUND_ON_KV, status: 503 };
   const order = await env.STMT.get(OKEY(u, id), "json");
   const d = decideDesk(order, body, new Date().toISOString());
   if (d.error) return d;
@@ -953,6 +966,37 @@ export async function allClaims(env, all) {
     : await listOrders(env, "aclaim:");
   return all ? list : list.filter((c) => c.state === "waiting");
 }
+/** His answer to a claim against the account, at the figure the desk showed him. Returns { ev } or { error, status }. */
+export function decideClaimDesk(claim, body, at) {
+  if (!claim) return { error: "no such claim", status: 404 };
+  const v = body && body.verdict;
+  if (!v || !VERDICTS.includes(v.kind)) return { error: "a claim is answered received or not found", status: 400 };
+  if (claim.state !== "waiting") return { error: "that claim is answered already", status: 409 };
+  if (!isNum(v.amount) || Math.abs(v.amount - claim.amount) > 0.004) return { error: "that claim is " + (+claim.amount).toFixed(2) + ", not " + (isNum(v.amount) ? v.amount.toFixed(2) : "a figure"), status: 409 };
+  return { ev: { kind: "verdict", at, verdict: v.kind, claim: claim.id, amount: claim.amount } };
+}
+/* S6 11.14 (D7, D10): NOT FOUND IS ONE EVENT IN THE ORDER BOOK, or it is not taken. On the KV road it would be a record
+   read, changed and written back whole, which is what the judges ruled out for a figure that falls. */
+export const NOT_FOUND_ON_KV = "Not found is recorded in the order book only, and the site is on the kv road: move it back first";
+/** POST /desk/claims/<u>/<id> {verdict}: his Received or Not found on a claim against the account; it wakes them. */
+export async function deskClaim(env, u, id, body) {
+  if (onBook(env)) {
+    const r = await bookMove(env, "adesk", { u, id, body });
+    if (r.error) return r;
+    return { claim: r.order, push: r.wake ? await wakeCustomer(env, u, r.wake) : null };
+  }
+  if (body && body.verdict && body.verdict.kind === "notfound") return { error: NOT_FOUND_ON_KV, status: 503 };
+  const claim = await env.STMT.get(CKEY(u, id), "json");
+  const d = decideClaimDesk(claim, body, new Date().toISOString());
+  if (d.error) return d;
+  applyEvent(claim, d.ev);
+  await env.STMT.put(CKEY(u, id), JSON.stringify(claim));
+  await markRoad(env);
+  for (const [k, v] of marksOf(d.ev, claim)) await putSoft(env, k, v);
+  const w = wakes(d.ev, claim, false);
+  return { claim, push: w ? await wakeCustomer(env, u, w) : null };
+}
+
 /** POST /account/claim: their word that they sent a figure against the account. A retry under its id lands once. */
 export async function claimAccount(env, u, body) {
   const rid = ridOf(body);

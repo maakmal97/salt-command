@@ -27181,6 +27181,210 @@ await (async () => {
     "and a claim the KV road took is in the book once it moves in, as an order is, and still not as an order: " + JSON.stringify(!!moved));
 })();
 
+section("S6 11.14: Received and Not found on his card reach the customer with their kind, and Not found files the claim's row and lowers the site's figure in one event");
+await (async () => {
+  /* HIS DECISION D7 OF 24 SEP 2026: a claim stays a claim until his Received; his Received or Not found reaches them
+     with a wake of its kind; Not found lowers the site's figure in ONE event of the order book (D10), the claim leaving
+     what they say they sent and its entry's name leaving the claim together, its row filed as not found first so no
+     drafter pass books it; never a read-modify-write on KV. The judges' list: no Not found that lowers a figure without
+     its queued mark. Driven through both Workers over the real schema, and read back off the customer's own phone. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so Not found was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, claimEntry, queueSale } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const { NEWS } = await import("../stmt/sw.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  /* the customer's phone, whose keys are on file, so a wake carries its kind (as in S12 12.3) */
+  const b64u = (a) => Buffer.from(a).toString("base64url");
+  const cat = (...a) => { const o = new Uint8Array(a.reduce((n, x) => n + x.length, 0)); let i = 0; for (const x of a) { o.set(x, i); i += x.length; } return o; };
+  const hk = async (salt, ikm, info, n) => new Uint8Array(await crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info },
+    await crypto.subtle.importKey("raw", ikm, "HKDF", false, ["deriveBits"]), n * 8));
+  const te = new TextEncoder();
+  const kp = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+  const pub = new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey)), auth = crypto.getRandomValues(new Uint8Array(16));
+  const read = async (msg) => {
+    const salt = msg.slice(0, 16), asPub = msg.slice(21, 21 + msg[20]), ct = msg.slice(21 + msg[20]);
+    const secret = new Uint8Array(await crypto.subtle.deriveBits({ name: "ECDH",
+      public: await crypto.subtle.importKey("raw", asPub, { name: "ECDH", namedCurve: "P-256" }, false, []) }, kp.privateKey, 256));
+    const ikm = await hk(auth, secret, cat(te.encode("WebPush: info"), [0], pub, asPub), 32);
+    const pt = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: await hk(salt, ikm, cat(te.encode("Content-Encoding: nonce"), [0]), 12) },
+      await crypto.subtle.importKey("raw", await hk(salt, ikm, cat(te.encode("Content-Encoding: aes128gcm"), [0]), 16), "AES-GCM", false, ["decrypt"]), ct));
+    return JSON.parse(new TextDecoder().decode(pt.slice(0, pt.lastIndexOf(2))));
+  };
+  const vp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const U = "abcd-efgh", C = "CX1-AB";
+  const skv = new KV(), dkv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object", STMT_VAPID_PUBLIC_KEY: "pub", STMT_VAPID_SUBJECT: "mailto:a@b.test",
+    STMT_VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", vp.privateKey)) };
+  await skv.put("push:" + U + ":p1", JSON.stringify({ endpoint: "https://push.example/p1", at: "2026-09-24T00:00:00Z", keys: { p256dh: b64u(pub), auth: b64u(auth) } }));
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const realF = globalThis.fetch;
+  /* a desk tap, with every wake it sends read back off the phone as its kind */
+  const tap = async (path, body, key) => {
+    const hit = [];
+    globalThis.fetch = async (url, init) => { if (String(url).startsWith("https://push.example/")) hit.push(init.body); return new Response("", { status: 201 }); };
+    let status, j;
+    try {
+      const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+        headers: Object.assign({ "content-type": "application/json" }, key === false ? {} : { "X-Salt-Key": "k-fixture" }), body: JSON.stringify(body || {}) }), denv, { waitUntil: () => {} });
+      status = r.status; j = await r.json();
+    } finally { globalThis.fetch = realF; }
+    const kinds = [];
+    for (const b of hit) kinds.push(b ? await read(b) : null);
+    return { status, j, kinds };
+  };
+  const mine = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const draft = (id) => db.prepare("SELECT id,status,decided_by FROM draft WHERE id = ?").get(id) || null;
+  const q = async () => ((await dkv.get("q:orders", "json")) || { queue: [] }).queue;
+  const agreed = async (total, key) => {
+    const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: total, total, week: "" })).order;
+    await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+    await O.deskMove(senv, U, o.id, { mark: { ledgerKey: key, ack: "2026-09-25T01:00:00.000Z" } });
+    await O.customerMove(senv, U, o.id, "method", { method: "tngbiz", account: "tngbiz" });
+    return o;
+  };
+  const keyA = C + "|2026-09-25|120", keyB = C + "|2026-09-25|130";
+  db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run("OPEN", JSON.stringify({ byKey: { [keyA]: { key: keyA } }, position: {} }));
+
+  /* A. NOT FOUND ON A CLAIM QUEUED AND DRAFTED */
+  const a = await agreed(120, keyA);
+  await O.customerMove(senv, U, a.id, "pay", { amount: 60 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const c = (await mine(a.id)).payments.slice(-1)[0];
+  const before = bk.db.prepare("SELECT COUNT(*) AS n FROM ev WHERE oid = ?").get(a.id).n;
+  ok(!!c.queued && (draft(c.queued) || {}).status === "pending", "the fixture: their claim is queued and its row drafted, waiting: " + JSON.stringify(draft(c.queued)));
+  const wrong = await tap("/orders/" + a.id + "/notfound", { claim: c.at, amount: 50 });
+  const anon = await tap("/orders/" + a.id + "/notfound", { claim: c.at, amount: 60 }, false);
+  const nf = await tap("/orders/" + a.id + "/notfound", { claim: c.at, amount: 60 });
+  const after = await mine(a.id), ca = after.payments.find((p) => p.at === c.at);
+  const evs = bk.db.prepare("SELECT kind, body FROM ev WHERE oid = ? ORDER BY seq").all(a.id);
+  ok(wrong.status === 409 && anon.status === 401 && nf.status === 200 && (draft(c.queued) || {}).status === "rejected" && draft(c.queued).decided_by === "notfound"
+    && !(await q()).some((e) => e.at === c.queued),
+    "Not found, at the claim's own figure and on the write key, files its row rejected as not found and takes it out of the queue: "
+    + JSON.stringify({ wrong: wrong.j.error, anon: anon.status, draft: draft(c.queued) }));
+  ok(evs.length === before + 1 && evs[evs.length - 1].kind === "verdict" && JSON.parse(evs[evs.length - 1].body).verdict === "notfound"
+    && after.claimed === 0 && ca.claim === "notfound" && !("queued" in ca) && !after.paid && after.history.slice(-1)[0].note === "not found 60.00",
+    "and the site hears it as ONE event, which takes the claim off what they say they sent and its entry's name off the claim together, paid untouched: "
+    + JSON.stringify({ events: evs.length - before, claimed: after.claimed, claim: ca, paid: after.paid }));
+  ok(JSON.stringify(nf.kinds) === JSON.stringify([{ k: "notfound", o: a.id }]) && NEWS.notfound === "Payment not found yet",
+    "their phone is woken with its kind, Payment not found yet, opening that order: " + JSON.stringify(nf.kinds));
+  const again = await tap("/orders/" + a.id + "/received", { claim: c.at, amount: 60 });
+  const rc = await reconcileOrders(denv);
+  const list = await (await deskW.fetch(new Request("https://salt-command.example/orders?all=1", { headers: { "X-Salt-Key": "k-fixture" } }), denv, { waitUntil: () => {} })).json();
+  ok(again.status === 409 && rc.queued === 0 && !O.claimWaits(after) && !((list.orders || []).find((x) => x.id === a.id) || {}).again,
+    "a claim not found is answered: Received on it is refused, nothing is queued again, the chase is free, and no payment is offered again: "
+    + JSON.stringify({ again: again.j.error, rc, offered: ((list.orders || []).find((x) => x.id === a.id) || {}).again }));
+
+  /* B. RECEIVED reaches them as Payment received */
+  await O.customerMove(senv, U, a.id, "pay", { amount: 60 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const c2 = (await mine(a.id)).payments.slice(-1)[0];
+  const rv = await tap("/orders/" + a.id + "/received", { claim: c2.at, amount: 60 });
+  ok(rv.status === 200 && (draft(c2.queued) || {}).status === "approved" && (await mine(a.id)).paid === 60 && JSON.stringify(rv.kinds) === JSON.stringify([{ k: "paid", o: a.id }]),
+    "Received approves the claim's row, makes it paid on their page, and wakes them with Payment received: " + JSON.stringify({ status: rv.status, kinds: rv.kinds, draft: draft(c2.queued) }));
+
+  /* C. NOT FOUND BEFORE IT WAS QUEUED: its row's id is filed first, so a queue written in the same minute books nothing */
+  const b = await agreed(130, keyB);   /* keyB is not on the book: the claim waits for the row, unqueued */
+  await O.customerMove(senv, U, b.id, "pay", { amount: 30 });
+  const cb = (await mine(b.id)).payments.slice(-1)[0];
+  const nfb = await tap("/orders/" + b.id + "/notfound", { claim: cb.at, amount: 30 });
+  await queueSale(denv, claimEntry(Object.assign({ code: C }, await mine(b.id)), cb));   /* a reconcile that read the claim just before */
+  const dr = await runDrafter(denv);
+  ok(nfb.status === 200 && (draft(cb.at) || {}).status === "rejected" && draft(cb.at).decided_by === "notfound" && !db.prepare("SELECT 1 FROM draft WHERE id = ? AND status = 'pending'").get(cb.at),
+    "not yet queued, the id its entry will carry is filed not found first, so an entry queued in the same minute is never drafted: " + JSON.stringify({ draft: draft(cb.at), drafted: dr.drafted }));
+
+  /* D. ON THE KV ROAD NOT FOUND IS REFUSED, being a read-modify-write there; Received is taken as every move is */
+  const kvenv = { STMT: new KV(), STMT_DESK_KEY: "desk-key" };
+  const k = (await O.placeOrder(kvenv, U, { product: "salt", qty: 1, mode: "collect", unit: 90, total: 90, week: "" })).order;
+  await O.deskMove(kvenv, U, k.id, { status: "acknowledged", mode: "collect" });
+  await O.customerMove(kvenv, U, k.id, "pay", { amount: 20, method: "tngbiz", account: "tngbiz" });
+  const kc = (await O.ordersOf(kvenv, U)).find((x) => x.id === k.id).payments.slice(-1)[0];
+  const knf = await O.deskMove(kvenv, U, k.id, { verdict: { kind: "notfound", claim: kc.at, amount: 20 } });
+  const krv = await O.deskMove(kvenv, U, k.id, { verdict: { kind: "received", claim: kc.at, amount: 20 } });
+  ok(knf.status === 503 && knf.error === O.NOT_FOUND_ON_KV && !krv.error && krv.order.paid === 20,
+    "on the KV road Not found is refused rather than written as a read-modify-write, and Received is taken: " + JSON.stringify({ knf: knf.error, paid: krv.order && krv.order.paid }));
+
+  /* E. A CLAIM AGAINST THE ACCOUNT, NOT FOUND: its own event, their phone told, the chase free again */
+  const ac = (await O.claimAccount(senv, U, { amount: 45, method: "tngbiz", account: "tngbiz" })).claim;
+  const anf0 = await tap("/claims/" + ac.id + "/notfound", { amount: 45 }, false);
+  const anfW = await tap("/claims/" + ac.id + "/notfound", { amount: 40 });
+  const anf = await tap("/claims/" + ac.id + "/notfound", { amount: 45 });
+  const acA = (await O.claimsOf(senv, U)).find((x) => x.id === ac.id);
+  const acEv = bk.db.prepare("SELECT kind FROM ev WHERE oid = ? ORDER BY seq").all(ac.id).map((x) => x.kind);
+  ok(anf0.status === 401 && anfW.status === 409 && anf.status === 200 && acA.state === "notfound" && !!acA.answered && acEv.join() === "aclaim,verdict"
+    && JSON.stringify(anf.kinds) === JSON.stringify([{ k: "notfound", o: "" }]) && !(await O.allClaims(senv)).some((x) => x.id === ac.id),
+    "Not found on a claim against the account is keyed, at its own figure, one event, and wakes them with its kind and no order to open: "
+    + JSON.stringify({ anon: anf0.status, wrong: anfW.j.error, state: acA.state, ev: acEv, kinds: anf.kinds }));
+
+  const ac2 = (await O.claimAccount(senv, U, { amount: 35, method: "tngbiz", account: "tngbiz" })).claim;
+  const siteWrong = await O.deskClaim(senv, U, ac2.id, { verdict: { kind: "notfound", amount: 30 } });
+  ok(siteWrong.status === 409 && (await O.claimsOf(senv, U)).find((x) => x.id === ac2.id).state === "waiting",
+    "and the site itself answers a claim only at its own figure: " + JSON.stringify(siteWrong.error));
+
+  /* A NOT FOUND WHOSE SITE MOVE FAILED leaves its row filed: Received on that claim is then refused, never booked into nothing */
+  await O.customerMove(senv, U, a.id, "pay", { amount: 20 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const c3 = (await mine(a.id)).payments.slice(-1)[0];
+  const realSite = denv.STMT_SITE;
+  denv.STMT_SITE = { fetch: async (url, init) => (/\/desk\/orders\/[^/]+\/[^/]+$/.test(new URL(url).pathname) && init && init.method === "POST" && /verdict/.test(String(init.body))
+    ? new Response(JSON.stringify({ ok: false, error: "no" }), { status: 500, headers: { "content-type": "application/json" } }) : realSite.fetch(url, init)) };
+  const nfBroken = await tap("/orders/" + a.id + "/notfound", { claim: c3.at, amount: 20 });
+  denv.STMT_SITE = realSite;
+  const rv3 = await tap("/orders/" + a.id + "/received", { claim: c3.at, amount: 20 });
+  ok(nfBroken.status !== 200 && (draft(c3.queued) || {}).status === "rejected" && (await mine(a.id)).claimed === 20 && rv3.status === 409 && /filed not found/.test(rv3.j.error),
+    "a Not found whose site move failed leaves the claim waiting with its row filed, and Received on it is refused rather than paid with no row: " + JSON.stringify({ nf: nfBroken.status, rv: rv3.j.error }));
+
+  /* F. THE CARD: a claim is a Paid? row whose card answers it, Received the one filled control, and Approve decides none */
+  const { openMaster: om1114 } = await import("../tools/payload.mjs");
+  const { w } = await om1114();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 96; w.clearInterval = () => {};
+    const base = { u: U, code: C, product: "salt", qty: 1, total: 100, delivery: 0, mode: "collect", history: [], msgs: [] };
+    const orders = [Object.assign({}, base, { id: "c1", status: "ready", at: "2026-09-20T02:00:00.000Z", qty: 2, total: 200, moved: 1, paid: 0, movedAt: "2026-09-24T01:00:00.000Z", claimed: 70,
+      payments: [{ at: "2026-09-24T05:00:00.000Z", amount: 70, method: "transfer", account: "maybank", claim: "waiting" }] })];
+    const calls = [];
+    w.fetch = async (path, init) => {
+      const pp = String(path), post = !!(init && init.method === "POST");
+      calls.push({ p: pp, body: init && init.body ? JSON.parse(init.body) : null });
+      return { ok: true, status: 200, json: async () => (pp === "orders" && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)), claims: [] } : { ok: true }) };
+    };
+    w.eval("AP_DRAFTS=[];");   /* the claim not drafted yet: the row is the claim's own, not a draft's */
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const kinds = JSON.parse(String(w.eval("JSON.stringify(ordActs().map(function(a){return a.kind+':'+a.o.id;}))")));
+    const card = D.querySelector('.ordcard[data-id="c1"]');
+    const filled = [...card.querySelectorAll("button.salt-pill")];
+    const rcv = card.querySelector('button[data-ord="received"]'), nfd = card.querySelector('button[data-ord="notfound"]');
+    const text = (card.textContent || "").replace(/\s+/g, " ");
+    ok(kinds.join(",") === "paid:c1" && filled.length === 1 && filled[0] === rcv && rcv.textContent === "Received, RM 70" && nfd && nfd.textContent === "Not found"
+      && nfd.classList.contains("salt-ghost") && !card.querySelector('button[data-ord="cash"]') && /They say they sent RM 70 by transfer to maybank, reference abcd-efgh/.test(text)
+      && !!card.querySelector('button[data-ord="handover"].salt-ghost'),
+      "a claim is one Paid? row, and its card draws what they say they sent, the account and the reference, with Received the one filled control and no cash to record: "
+      + JSON.stringify({ kinds, filled: filled.map((x) => x.textContent) }));
+    rcv.click(); await new Promise((r) => setTimeout(r, 30));
+    const sent = calls.find((x) => x.p === "orders/c1/received");
+    ok(sent && sent.body.claim === "2026-09-24T05:00:00.000Z" && sent.body.amount === 70,
+      "Received posts that claim, by its moment and at its figure, to the desk Worker's route: " + JSON.stringify(sent && sent.body));
+    const apHtml = String(w.eval("apCard({id:'dc1',status:'pending',collection:'sales',row:{},entry:{orderId:'c1',status:'Payment',by:'customer',claim:true}})"));
+    ok(/Answer it on Site orders/.test(apHtml) && !/data-ap="approve"/.test(apHtml) && !/data-ap="reject"/.test(apHtml),
+      "and under Approve a claim's row carries no Approve and no Reject, only where it is answered");
+  } finally { w.close(); }
+})();
+
 section("v764: what he records on the desk reaches the customer's order, and the chase stops");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026. Every road built since v694 runs from the site to the book. A
