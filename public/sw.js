@@ -161,7 +161,7 @@ async function banner() {
       body: (s.orders ? (s.orders === 1 ? "1 order waiting on you" : s.orders + " orders waiting on you") : "Open the desk to look")
         + (bits.length ? " \u00b7 " + bits.join(" \u00b7 ") : "") + ".",
       tag: "salt",
-      url: "./desk#orders",
+      url: "./desk#orders/newest",   /* the card of the newest act, which is what woke him (S11) */
     };
   }
   /* A CUSTOMER ORDER LEADS (16 Sep 2026): it is the one thing here a customer is waiting on, so it
@@ -178,7 +178,7 @@ async function banner() {
       title: placed === 1 ? "New customer order" : placed + " customer orders waiting",
       body: "Open the desk to acknowledge " + (placed === 1 ? "it" : "them") + "." + (bits.length ? " Also " + bits.join(" \u00b7 ") + "." : ""),
       tag: "salt",
-      url: "./desk#orders",
+      url: "./desk#orders/newest",
     };
   }
 

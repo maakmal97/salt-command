@@ -25209,6 +25209,44 @@ await (async () => {
   }
 })();
 
+section("S11 fix: his wake opens the card of the newest act, which is the one that woke him");
+await (async () => {
+  /* Found in review: PLAN 5 says each of his wakes opens its card, and every wake opened the list, where the act that woke
+     him is the newest and so the last row, oldest first. The banner now opens desk#orders/newest, which carries no code,
+     amount or id, and the desk opens the newest act's card on its first draw. */
+  const vm = await import("node:vm");
+  const sw = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const wake = async (s) => { const L = {}, shown = [];
+    const c = { URL, console, caches: {}, self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" },
+      registration: { scope: "https://salt-command.example/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
+      clients: { matchAll: async () => [], openWindow: async () => {} }, fetch: async () => ({ ok: true, json: async () => s }) };
+    vm.createContext(c); vm.runInContext(sw, c);
+    const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits); return shown[0]; };
+  const news = await wake({ ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 1, placed: 0, news: "A customer wrote" });
+  const placed = await wake({ ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 1, placed: 1 });
+  ok(news && news.opt.data.url === "./desk#orders/newest" && placed && placed.opt.data.url === "./desk#orders/newest",
+    "a wake about a customer's act opens the newest act: " + JSON.stringify([news && news.opt.data.url, placed && placed.opt.data.url]));
+
+  const { openMaster: omO10 } = await import("../tools/payload.mjs");
+  const { w } = await omO10();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 89; w.clearInterval = () => {};
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", status: "placed", history: [], msgs: [], payments: [] };
+    const orders = [Object.assign({}, base, { id: "old1", at: "2026-09-24T01:00:00.000Z" }), Object.assign({}, base, { id: "new2", total: 110, at: "2026-09-24T03:00:00.000Z" })];
+    w.fetch = async (path, init) => { const p = String(path), post = !!(init && init.method === "POST");
+      return { ok: true, status: 200, json: async () => (p.startsWith("orders") && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)) } : { ok: true }) }; };
+    w.location.hash = "#orders/newest";
+    for (let i = 0; i < 40 && w.eval("ORD_SEL") !== "new2"; i++) await new Promise((r) => setTimeout(r, 30));
+    ok(w.eval("ORD_SEL") === "new2" && w.eval("ORD_OPENED") === true && w.location.hash === "#orders",
+      "the address opens Site orders on the newest act's card, and settles back to #orders: " + JSON.stringify({ sel: w.eval("ORD_SEL"), opened: w.eval("ORD_OPENED"), hash: w.location.hash }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one

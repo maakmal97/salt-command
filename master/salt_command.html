@@ -19429,7 +19429,10 @@ function ordField(i){return ['fee','hand','say','why'].map(k=>i.dataset[k]!=null
    stand side by side and the card is the first row's until he picks another; on the phone the list comes
    first and a row opens its card, with the way back at its head. Every card is drawn and the others are
    hidden, so what he typed on one survives a poll while he reads another. */
-let ORD_SEL='',ORD_OPENED=false,ORD_FILTER='all',ORD_SAID=null;
+let ORD_SEL='',ORD_OPENED=false,ORD_FILTER='all',ORD_SAID=null,ORD_WAKE=false;
+/* S11 fix: A WAKE OPENS ITS CARD. His banner opens desk#orders/newest (public/sw.js): the address is Site orders, and the
+   newest act on it, the one that woke him, is opened on the first draw that has one. The wake carries nothing but that. */
+function ordWakeAddr(h){if(h==='orders/newest'){ORD_WAKE=true;return 'orders';}return h;}
 function ordWhen(iso){try{if(!iso)return '';const p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(x=>{p[x.type]=x.value;});return p.day+' '+MAP_MON[+p.month-1]+', '+p.hour+':'+p.minute;}catch(e){return '';}}
 function ordWhat(a){const o=a.o;
   if(a.kind==='new')return units(+o.qty||0)+' '+esc(o.product||'salt')+', '+fmt(+o.total||0)+', '+(o.mode==='deliver'?'delivery':'collect');
@@ -19471,6 +19474,7 @@ function ordDraw(){
   else if(ordUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The orders could not be read: '+esc(ordUnread)+'. <b>This is not an empty book.</b></div>';
   else if(!ORD_OPEN.length)box.innerHTML=gone+'<div class="card"><div class="dsc">'+(ordAll?'This site has taken no orders at all yet.':'No open orders. A customer\'s order lands here the moment it is placed.')+'</div></div>';
   else{
+    if(ORD_WAKE&&acts.length){ORD_SEL=acts[acts.length-1].o.id;ORD_OPENED=true;ORD_FILTER='all';ORD_WAKE=false;}
     const shown=acts.filter(a=>ORD_FILTER==='all'||a.kind===ORD_FILTER);
     const inActs=new Set(acts.map(a=>a.o.id));
     const rest=ORD_OPEN.filter(o=>o&&!inActs.has(o.id)).map(o=>({kind:'other',o,at:o.at||''}));
@@ -23475,10 +23479,12 @@ applyOverlay();                            // uncommitted entries fold in before
 /* v281: a fresh open still lands on Today (v147: the desk opens on what to do), but an
    address that names a tab is honoured, which is what lets a reload resume in place. */
 recompute();
-(function(){const h=(location.hash||'').slice(1);switchTab(VIEW_OF[h]?h:'today');})();
+(function(){const h=ordWakeAddr((location.hash||'').slice(1));switchTab(VIEW_OF[h]?h:'today');})();
 /* the one read on load (v385) is in qInit's answer above: cloudMode() is false on every line here */
 window.addEventListener('hashchange',()=>{
-  const h=(location.hash||'').slice(1);
+  const h=ordWakeAddr((location.hash||'').slice(1));
+  /* a wake on a desk already showing Site orders reads the orders again, which opens the newest act */
+  if(ORD_WAKE&&h===curAddr){try{history.replaceState(null,'','#'+h);}catch(e){}ordLoad(true);return;}
   /* v365: was VIEW_OF[h]!==curTab, which only ever caught a jump between views. Two
      addresses in the SAME view (#inventory, #sourcing) both resolve to that one view id,
      so the guard was true and the part never redrew: the hash moved, the screen didn't.

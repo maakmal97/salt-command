@@ -616,7 +616,8 @@ store; the desk's every-minute cron reads it through `/desk/orders/last`, one re
 than `orders:nudged` wakes every desk subscription asking for `orders`, once. The switch is **Alert me
 to new orders** on the cloud desk's Orders card, per device: it subscribes with `topics: ["orders"]`,
 so a row he entered himself does not wake him, and hands the write key to the service worker, whose
-banner then reads New customer order and opens `/desk#orders`. A subscription with no topics hears
+banner then reads New customer order and opens `/desk#orders/newest`, the card of the newest act, which is the
+one that woke him (the address carries nothing else). A subscription with no topics hears
 everything, as at v321. On an iPhone the desk has to be opened from the Home Screen. **His wakes name
 the kind of act and never a code, a username or an amount** (S11 11.16): New customer order, A customer
 wrote, A customer says they paid (their word until he checks it), A customer cancelled (`NEWS_WORD` in
