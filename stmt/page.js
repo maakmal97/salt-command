@@ -492,7 +492,10 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<div id="barw" hidden><div class="bar">'
     + '<span><b id="whoacct"></b><span id="cd"></span></span>'
     + '<button type="button" id="lock">Log out</button>'
-    + "</div></div>"
+    + "</div>"
+    /* S1 1.5: a lapsed session says so where the reader is, with the one way back */
+    + '<div id="lapse" class="bar" role="alert" hidden><span id="lapseT"></span><button type="button" id="lapseGo">Continue</button></div>'
+    + "</div>"
     + '<div id="tabs" class="tabs" role="tablist" hidden>'
     + '<button type="button" class="salt-tabs__pill on" role="tab" aria-selected="true" data-t="stmt">Statements</button>'
     + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="prices" id="tPrices">Prices</button>'
@@ -775,7 +778,7 @@ const CLIENT_JS = `
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
     var mfn=document.getElementById('mfnote'); if(mfn) mfn.textContent='';
     pPrices.textContent=''; pOrder.textContent='';
-    tabs.hidden=true; barw.hidden=true;
+    tabs.hidden=true; barw.hidden=true; lapse.hidden=true;
     /* the owner goes back to his list, never to a password field he has no password for */
     if(OWNER){ roster.hidden=false; gate.hidden=true; if(whoacct) whoacct.textContent=''; }
     else gate.hidden=false;
@@ -797,6 +800,24 @@ const CLIENT_JS = `
     }
   }
   document.getElementById('lock').addEventListener('click', logOut);
+
+  /* S1 1.5, 24 SEP 2026: A LAPSED SESSION SAYS SO AT ONCE, IN VIEW. The fifteen minutes ran out in silence:
+     the poll stopped and a note was set that nothing drew, telling them to "lock", a control gone since
+     v692. Continue opens again through the remembered device where there is one, else puts the door back
+     with the username in it. Nothing is renewed without the tap. */
+  var lapse=document.getElementById('lapse');
+  function lapsed(){
+    if(poll){ clearInterval(poll); poll=null; }
+    if(!lapse.hidden) return;
+    document.getElementById('lapseT').textContent='You were signed out after a while.';
+    lapse.hidden=false;
+  }
+  document.getElementById('lapseGo').addEventListener('click', async function(){
+    var u=user;
+    lock();
+    if(!OWNER&&remGet()&&await openRemembered()) return;
+    if(!OWNER&&u){ un.value=u; put(boxesOf('un'),0,clean(u)); }
+  });
 
   /* ---- the tabs: three for everyone, a fourth for an associate ---- */
   function showTab(t){
@@ -1152,6 +1173,7 @@ const CLIENT_JS = `
         headers:Object.assign({'X-Stmt-Session':session}, body?{'content-type':'application/json'}:{}),
         body:body?JSON.stringify(body):undefined});
     }catch(e){ return {status:0, body:{ok:false, error:NOT_SENT}}; }
+    if(r.status===401&&session) lapsed();
     var j=null; try{ j=await r.json(); }catch(e){}
     return {status:r.status, body:j||{}};
   }
@@ -1510,7 +1532,7 @@ const CLIENT_JS = `
     var mine=ticket;
     var r=await api('/orders');
     if(mine!==ticket) return;
-    if(r.status===401){ if(poll){clearInterval(poll);poll=null;} draft.note='Your session has ended; lock and sign in again to follow your order.'; return; }
+    if(r.status===401) return;   /* api() has said so in the bar */
     if(r.body.ok) orders=r.body.orders||[];
   }
   async function refresh(){
