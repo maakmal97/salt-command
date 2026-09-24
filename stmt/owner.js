@@ -238,7 +238,7 @@ export const OWNER_JS = `
       p.then(async function(how){
         if(how==='copied'){ retire(a, 'Copied. Paste it into a message to them, then tick Sent.'); linkMoved(u); return; }
         var said=madeLink[u]={note:'Sent. It signs them in once; the next tap sends a new one.'};
-        linkMoved(u);
+        markOut(u, m.j); linkMoved(u);
         try{ var r=await refs('/all/sent/'+u, {issue:sheetIssue, sent:true}); a.sent=r.sent; countSent(); drawRoster(); onSent(); }
         catch(e){ said.note='Sent, but the tick did not save: '+e.message; said.bad=true; }
         makeLink(a); linkMoved(u);
@@ -304,13 +304,19 @@ export const OWNER_JS = `
     if(j.phones) parts.push('alerts on '+n(j.phones,'phone','phones'));
     return parts.length?'Signed out: '+andList(parts)+'.':'Nothing was signed in.';
   }
-  /* the link his own page made as the account opened, named by its token's hash, which Sign out everywhere spares */
-  async function linkId(u){
-    var m=madeLink[u], t=m&&m.j?String(m.j.url||'').split('/s/')[1]||'':'';
+  /* a link named by its token's hash, as the site files it */
+  async function tokHash(j){
+    var t=j?String(j.url||'').split('/s/')[1]||'':'';
     if(!t) return '';
     var h=new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)));
     return [].map.call(h, function(x){ return (x<16?'0':'')+x.toString(16); }).join('');
   }
+  /* the link his own page made as the account opened, which Sign out everywhere spares */
+  function linkId(u){ var m=madeLink[u]; return tokHash(m&&m.j); }
+  /* S9 fix: A LINK THAT HAS LEFT THE PAGE IS MARKED SO ON THE SITE (POST /all/out), so Sign out everywhere counts it among
+     those not yet used and never spares it; one made as an account opened and never sent is burnt with them, uncounted.
+     Best effort: a mark that does not land costs the count, never the burning. */
+  function markOut(u, j){ tokHash(j).then(function(id){ return id?refs('/all/out', {u:u, id:id}):null; }).catch(function(){}); }
   async function loadStory(a){
     var u=a.username, j=null, err='';
     try{ j=await refs('/all/account/'+encodeURIComponent(u)); }catch(e){ err=e.message; }
@@ -715,7 +721,8 @@ export const OWNER_JS = `
      (linkId), so a link shared or copied, from any card, is dropped here, and a fresh one made wherever a Send a
      sign-in link is drawn for the account; a forwarded link is then ended with the rest. */
   function retire(a, note){
-    var u=a.username; madeLink[u]={note:note};
+    var u=a.username, was=madeLink[u]; madeLink[u]={note:note};
+    if(was&&was.j) markOut(u, was.j);
     if([].some.call(document.querySelectorAll('[data-pill]'), function(b){ return b.getAttribute('data-pill')===u; })) makeLink(a);
   }
   function linkButton(a, note){
@@ -842,8 +849,8 @@ export const OWNER_JS = `
     t.busy=true; drawNeeds();
     if(!t.copied){
       try{
-        if(navigator.share) await navigator.share({text:t.j.msg});
-        else { await navigator.clipboard.writeText(t.j.msg); t.copied=true; t.busy=false; t.why='Paste it into a message to them, then tap Sent it.'; drawNeeds(); return; }
+        if(navigator.share){ await navigator.share({text:t.j.msg}); markOut(a.username, t.j); }
+        else { await navigator.clipboard.writeText(t.j.msg); markOut(a.username, t.j); t.copied=true; t.busy=false; t.why='Paste it into a message to them, then tap Sent it.'; drawNeeds(); return; }
       }catch(e){ t.busy=false; t.why='Not shared. Tap Share again, or Skip.'; drawNeeds(); return; }
     }
     var note='';

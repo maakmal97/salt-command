@@ -16386,6 +16386,7 @@ await (async () => {
     /* ---- Sign out everywhere: every device, every link and code not yet opened, every phone's alerts, counted ---- */
     const keepTok = S.newSignin(), sentTok = S.newSignin();
     await S.mintSignin(env, u, keepTok, wrap); await S.mintSignin(env, u, sentTok, wrap);
+    await post("/all/out", { u, id: await S.idOf(sentTok) }, A);   /* sent, as his page marks a link it shares */
     const all = await post("/all/signout", { u, keep: await S.idOf(keepTok) }, A);
     ok(all.status === 200 && all.j.devices === 2 && all.j.links === 2 && all.j.phones === 1 && all.j.ended === 5,
       "Sign out everywhere says it ended the phone and the computer the link opened on, the link sent and the hand-over not yet used, and the phone's alerts: " + JSON.stringify(all.j));
@@ -16831,6 +16832,104 @@ await (async () => {
       "Sign out everywhere ends the phone: " + JSON.stringify(all.j));
     ok(await orders(s2) === 401 && await orders(s1) === 401, "and the sessions it names, the newest included, read nothing after");
   } finally { globalThis.fetch = realFetch; }
+})();
+section("S9 fix S9R-4: Sign out everywhere counts the links that left a page, burns the ones made as an account opened uncounted, and never spares one sent");
+await (async () => {
+  /* Every opening of an account makes a live link, and from 1080px Salt Admin opens one by itself on each load, so the
+     answer's "links and codes not yet used" counted links nobody was ever sent, and read as links out in the world. */
+  const W = (await import("../stmt/worker.js")).default;
+  const S = await import("../stmt/signin.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV(), MASTER = "mp-s9r4";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r4", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX4-CT", username: u }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-25T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX4-CT", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9r4", KID = "kid-s9r4";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const post = async (path, body, headers) => { const r = await site(path, { method: "POST", headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) });
+    return { status: r.status, j: await r.json().catch(() => ({})) }; };
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const A = { "cf-access-jwt-assertion": h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c)))) };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  const opens = async (t) => (await post("/open-link", { token: t })).status;
+  const live = async () => { let n = 0; for (const k of (await kv.list({ prefix: "ot:" })).keys) if (!JSON.parse(await kv.get(k.name)).spent) n++; return n; };
+  const wins = [];
+  try {
+    /* ---- the Worker ---- */
+    const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" };
+    const made = S.newSignin(), sent = S.newSignin(), keep = S.newSignin();
+    for (const t of [made, sent, keep]) await S.mintSignin(env, u, t, wrap);
+    ok((await post("/all/out", { u, id: await S.idOf(sent) })).status === 401, "marking a link sent is behind Access");
+    const mk = await post("/all/out", { u, id: await S.idOf(sent) }, A);
+    ok(mk.j.out === true, "his page marks a link it has sent");
+    const r1 = await post("/all/signout", { u, keep: await S.idOf(keep) }, A);
+    ok(r1.j.links === 1 && await opens(made) === 401 && await opens(sent) === 401,
+      "Sign out everywhere burns the link made and never sent and the one sent, and counts the sent one alone: " + JSON.stringify(r1.j));
+    ok(await opens(keep) === 200, "while the one his page holds unsent still opens");
+    const k2 = S.newSignin();
+    await S.mintSignin(env, u, k2, wrap);
+    await post("/all/out", { u, id: await S.idOf(k2) }, A);
+    const r2 = await post("/all/signout", { u, keep: await S.idOf(k2) }, A);
+    ok(r2.j.links === 1 && await opens(k2) === 401, "and a link marked sent is never the one kept, whatever the page names: " + JSON.stringify(r2.j));
+
+    /* ---- the page: a link shared is marked; one made by an earlier load is burnt and not counted ---- */
+    const load = async () => {
+      const shared = [];
+      const w = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(x) {
+        try { Object.defineProperty(x, "crypto", { value: crypto, configurable: true }); } catch (e) { x.crypto = crypto; }
+        if (!x.TextEncoder) x.TextEncoder = TextEncoder;
+        if (!x.TextDecoder) x.TextDecoder = TextDecoder;
+        Object.defineProperty(x.navigator, "share", { value: (d) => { shared.push(d.text); return Promise.resolve(); }, configurable: true });
+        x.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+      } }).window;
+      wins.push(w);
+      const D = w.document;
+      const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+      await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+      D.querySelector('button[data-m="accounts"]').click();
+      await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
+      D.querySelector('#rlist [data-u="' + u + '"]').click();
+      const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
+      const pill = () => card() && card().querySelector(".apill");
+      await until(() => pill() && !pill().disabled);
+      const signOutAll = async () => {
+        const sob = () => [...card().querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again/.test(b.textContent));
+        sob().click(); sob().click();
+        await until(() => /Signed out|Nothing was signed in/.test((card().querySelector(".agrid + .anote") || {}).textContent || ""));
+        return (card().querySelector(".agrid + .anote") || {}).textContent || "";
+      };
+      return { shared, pill, until, signOutAll };
+    };
+    await post("/all/signout", { u }, A);
+    const p1 = await load();
+    p1.pill().click();
+    ok(await p1.until(() => p1.shared.length === 1 && !p1.pill().disabled), "the first page shares its link and makes a fresh one");
+    const ptr = async () => JSON.parse((await kv.get("dev:" + u + ":" + (await S.idOf("ot:" + (await S.idOf(p1.shared[0].split("/s/")[1].split(/\s/)[0])))))) || "{}");
+    ok(await p1.until(async () => (await ptr()).out === true), "and marks the one it shared as sent: " + JSON.stringify(await ptr()));
+    const said1 = await p1.signOutAll();
+    ok(said1 === "Signed out: 1 link or code not yet used.", "Sign out everywhere counts the link it shared, and not the fresh one it holds: " + said1);
+    wins.pop().close();
+    const p2 = await load();
+    const before = await live();
+    ok(before === 2, "a second load has made its own link, the first page's still live: " + before);
+    const said2 = await p2.signOutAll();
+    ok(said2 === "Nothing was signed in." && await live() === 1,
+      "and its Sign out everywhere burns the first page's link, never sent, without counting it: " + said2);
+  } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
 })();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {

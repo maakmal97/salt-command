@@ -43,7 +43,7 @@ import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, linkWaiting, MAX_PER_ASSOC } from "./refs.js";
-import { SIGNIN_RE, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover, dropHandover, sessKey, deviceOf } from "./signin.js";
+import { SIGNIN_RE, SIGNIN_TTL, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover, dropHandover, sessKey, deviceOf } from "./signin.js";
 import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE, ADMIN_ICON_PNG_B64 } from "./icons.js";
@@ -1062,9 +1062,11 @@ async function signOutEverywhere(env, u, keep) {
     /* S9 fix: a device ends as his one-device Sign out ends it, a remembered phone taking the sessions it names, whose
        own pointers may be missing (written best effort, or not yet in the list) */
     if (/^(rem|sess):/.test(p.key)) { phones += await endDevice(env, u, p); continue; }
-    if (keep && p.key === "ot:" + keep) continue;
+    if (keep && p.key === "ot:" + keep && !p.out) continue;
+    /* S9 fix: counted only when it has left a page (`out`, POST /all/out) or is a code, which is shown; a link made as an
+       account opened and never sent is burnt uncounted, so the answer names what somebody may hold */
     const live = await env.STMT.get(p.key, "json");
-    if (live && !live.spent) links++;
+    if (live && !live.spent && (p.out || /^ho:/.test(p.key))) links++;
     await env.STMT.delete(p.key);
     if (p.pair) await env.STMT.delete(p.pair);
     await env.STMT.delete(p.name);
@@ -1344,6 +1346,19 @@ export default {
         return json({ ok: true, at: a ? a.at || null : null, products: a ? a.products || [] : [] });
       }
       /* the test account: made and unmade with one tap, and counted nowhere (v689) */
+      /* S9 fix: A LINK THAT HAS LEFT HIS PAGE, shared or copied, marked on its pointer by the token's hash: Sign out
+         everywhere counts it and never spares it. A link already opened has no pointer, and is left alone. */
+      if (p === "/all/out") {
+        if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+        const b = await readJson(request);
+        const u = normUser(b && b.u), id = b && typeof b.id === "string" && /^[0-9a-f]{64}$/.test(b.id) ? b.id : "";
+        if (!u || !id) return json({ ok: false, error: "send the username and the link's hash" }, 400);
+        const pk = devPrefix(u) + (await idOf("ot:" + id)), ptr = await env.STMT.get(pk, "json");
+        const left = ptr ? Math.floor((Date.parse(ptr.at || "") + SIGNIN_TTL * 1000 - Date.now()) / 1000) : 0;
+        if (!ptr || ptr.key !== "ot:" + id || !(left > 60)) return json({ ok: true, out: false });
+        await env.STMT.put(pk, JSON.stringify(Object.assign(ptr, { out: true })), { expirationTtl: left });
+        return json({ ok: true, out: true });
+      }
       /* S3 fix: Sign out everywhere, for one account */
       if (p === "/all/signout") {
         if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
