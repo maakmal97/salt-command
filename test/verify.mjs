@@ -15910,12 +15910,12 @@ await (async () => {
   ok(r.status === 200 && ttl(key) === 30 * 24 * 3600 && ttl(ptr) === 30 * 24 * 3600 && JSON.parse(await kv.get(key)).at === at,
     "a phone ticked twenty-five days ago and opened today is kept thirty days from today, its pointer with it, and still says when it was ticked: "
     + JSON.stringify({ rec: ttl(key), ptr: ttl(ptr) }));
-  /* one filed the old way slides as it moves */
+  /* one filed the old way moves under its hash keeping the end it had (S3 fix: it never slides) */
   const old = "old36" + "e".repeat(27);
   await kv.put("rem:" + old, JSON.stringify({ u, wrap, at }), { expirationTtl: 5 * 86400 });
   await post("/remember/open", { token: old });
-  ok(ttl("rem:" + sha(old)) === 30 * 24 * 3600 && !(await kv.get("rem:" + old)),
-    "and one filed the old way is moved under its hash for thirty days from today: " + ttl("rem:" + sha(old)));
+  ok(ttl("rem:" + sha(old)) > 5 * 86400 - 120 && ttl("rem:" + sha(old)) <= 5 * 86400 && !(await kv.get("rem:" + old)),
+    "and one filed the old way is moved under its hash keeping the five days it had left: " + ttl("rem:" + sha(old)));
   /* a put that cannot be made never fails the open */
   const realPut = kv.put.bind(kv);
   kv.put = async (k, v, o) => { if (String(k) === key) throw new Error("KV PUT failed: 429 Too Many Requests"); return realPut(k, v, o); };
@@ -20111,6 +20111,35 @@ await (async () => {
   for (let i = 1; i <= 10; i++) await at3({ code: bogus(i) }, "2001:db8::" + i.toString(16));
   ok((await at3({ code: bogus(11) }, "2001:db8:0:0:ffff::1")) === 429 && (await at3({ code: bogus(12) }, "2001:db8:0:1::1")) === 401,
     "ten misses from ten addresses in one v6 /64 shut that /64, and the next network over is still heard");
+})();
+section("S3 fix: a remembered record found under its raw token keeps the end it had and never slides, so a copy of the store taken before 3.1 dies on time");
+await (async () => {
+  /* S3-SEC-7 (24 Sep 2026). The first open after landing moved a raw record under its hash with a fresh thirty days,
+     and every later open slid it again, so a token read off a copy of the store taken before landing, which died thirty
+     days after the tick until this stage, could be renewed for as long as it was used. */
+  const kv = new KV(), env = { STMT: kv }, u = "aaaa-eeee";
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", env: { v: 2, iv: "aXY=", ct: "Y3Q=" } }));
+  const post = (body) => stmtWorker.fetch(new Request("https://k7m3p2.example/remember/open", { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env);
+  const sha = (s) => createHash("sha256").update(s).digest("hex");
+  const ttl = (k) => (kv.opts.get(k) || {}).expirationTtl || 0;
+  const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" }, day = 86400;
+  const tok = "cop" + "f".repeat(29), at = new Date(Date.now() - 29 * day * 1000).toISOString();
+  await kv.put("rem:" + tok, JSON.stringify({ u, wrap, at }), { expirationTtl: day });
+  const first = await post({ token: tok }), key = "rem:" + sha(tok), ptr = "dev:" + u + ":" + sha(key);
+  ok(first.status === 200 && ttl(key) <= day && ttl(key) > day - 120 && ttl(ptr) === ttl(key) && !(await kv.get("rem:" + tok)),
+    "a raw record ticked twenty-nine days ago opens and moves under its hash with the one day it had left, its pointer too: " + JSON.stringify({ rec: ttl(key), ptr: ttl(ptr) }));
+  const second = await post({ token: tok });
+  ok(second.status === 200 && ttl(key) <= day, "and opened again from its new place it still does not slide: " + ttl(key));
+  /* past that end, should KV not yet have dropped it, it is refused and forgotten */
+  const rec = JSON.parse(await kv.get(key)); rec.end = new Date(Date.now() - 1000).toISOString(); await kv.put(key, JSON.stringify(rec));
+  const late = await post({ token: tok });
+  ok(late.status === 401 && !(await kv.get(key)) && !(await kv.get(ptr)), "and past its end it is the door's refusal, the record and its pointer gone");
+  /* the control: a record filed under its hash since 3.1 slides thirty days from each open */
+  const fresh = "new" + "g".repeat(29), fk = "rem:" + sha(fresh);
+  await kv.put(fk, JSON.stringify({ u, wrap, at }), { expirationTtl: day });
+  await post({ token: fresh });
+  ok(ttl(fk) === 30 * day, "the control: a record filed under its hash is kept thirty days from this open");
 })();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {

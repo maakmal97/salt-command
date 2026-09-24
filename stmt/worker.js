@@ -450,11 +450,18 @@ async function handleRemember(request, env) {
      S3 3.2: the phone's own pointer says when it was last used, lives as long, and one filed before pointers is
      given its first. */
   const now = new Date().toISOString();
+  /* S3 FIX, 24 SEP 2026: A RECORD FOUND UNDER ITS RAW TOKEN KEEPS THE END IT HAD, thirty days from its tick, and never
+     slides. A copy of the store taken before 3.1 names that token, and sliding would renew it for as long as it was
+     used; the phone signs in again at that end, and the record it then makes is filed under a hash and slides. */
+  if (raw && !rec.end) rec.end = new Date(Date.parse(rec.at || now) + REM_TTL * 1000).toISOString();
+  const left = rec.end ? Math.floor((Date.parse(rec.end) - Date.now()) / 1000) : REM_TTL;
+  if (!(left > 0)) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); await unpoint(env, rec.u, key); return json({ ok: false, error: REFUSED }, 401); }
+  const ttl = Math.max(60, left);
   try {
-    await env.STMT.put(key, JSON.stringify(rec), { expirationTtl: REM_TTL });
+    await env.STMT.put(key, JSON.stringify(rec), { expirationTtl: ttl });
     if (raw) await env.STMT.delete(raw);
   } catch (e) { /* it opens either way, and slides on the next */ }
-  try { await pointAt(env, rec.u, key, { how: "remember", at: rec.at || now, last: now }, REM_TTL); } catch (e) { /* the next open writes it */ }
+  try { await pointAt(env, rec.u, key, { how: "remember", at: rec.at || now, last: now }, ttl); } catch (e) { /* the next open writes it */ }
   const session = await openSession(env, rec.u, "remembered");
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
