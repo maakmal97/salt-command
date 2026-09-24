@@ -15435,6 +15435,67 @@ await (async () => {
       "and Continue puts the door back with the username in it, asking nothing of a device it does not have: " + JSON.stringify({ boxes, reopened: st2.reopened }));
   } finally { try { two.W.close(); } catch (e) { /* best effort */ } }
 })();
+section("S1 fix UX5: one lapse is said once, in the bar, and a tapped control points to its Continue");
+await (async () => {
+  /* UX5, 24 SEP 2026. A 401 on Place said "Your session has ended. Sign in again to order." and on Send "Sign in
+     again.", beside the bar's "You were signed out after a while." with Continue: two wordings of one event, and
+     the lower one named a sign-in the page did not show. Driven through the served page, Place and Send each
+     answered 401 on a live session. */
+  const { landingPage: lpX } = await import("../stmt/page.js");
+  const CX = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDX } = await import("jsdom");
+  const { webcrypto: wcX } = await import("node:crypto");
+  const uX = "aaaa-xxxx", passX = "2345-6789-abcd-efgh", ckX = await CX.contentKey("8".repeat(64), uX);
+  const list = { at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] };
+  const ord = { id: "20260918000000-aa11", product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, at: "2026-09-18T01:00:00Z",
+    status: "placed", paid: 0, moved: 0, delivery: 0, history: [], msgs: [] };
+  const openX = { ok: true, byMaster: false, wrap: await CX.wrapKey(passX, ckX), wrapMaster: null, live: null, session: "sessXaaaaaaaaaaaaaaaaaaaaaaa",
+    env: await CX.encryptWith(ckX, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] })),
+    prices: await CX.encryptWith(ckX, JSON.stringify(list)) };
+  const st = { lapsed: false };
+  const refused = { ok: false, status: 401, json: async () => ({ ok: false, error: "Sign in again to see your orders.", session: false }) };
+  const dom = new JDX(lpX(uX, "nX", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcX, configurable: true }); } catch (e) { win.crypto = wcX; }
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/open") return { ok: true, status: 200, json: async () => openX };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [ord] }) };
+        if (st.lapsed) return refused;
+        return { ok: true, status: 200, json: async () => ({ ok: true }) };
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  const btn = (t) => [...D.querySelectorAll("#pOrder button")].find((b) => b.textContent === t && !b.disabled);
+  const said = () => [...D.querySelectorAll("#pOrder .msg")].map((x) => x.textContent.trim()).filter(Boolean);
+  const lapseOn = () => !D.getElementById("lapse").hidden && /signed out after a while/.test(D.getElementById("lapse").textContent);
+  try {
+    D.getElementById("pw").value = passX;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => D.getElementById("pPrices").textContent);
+    D.querySelector('button[data-t="order"]').click();
+    await until(() => D.getElementById("oGo") && !D.getElementById("oGo").disabled);
+    st.lapsed = true;
+    D.getElementById("oGo").click();
+    await until(() => btn("Place this order")); btn("Place this order").click();
+    await until(() => lapseOn() && said().length);
+    const placed = said();
+    ok(lapseOn() && placed.includes("Signed out: tap Continue at the top.") && !placed.some((t) => /Sign in again|session has ended/.test(t)),
+      "Place answered 401: the bar says it with Continue, and beside Place a pointer to that Continue, never a second wording: " + JSON.stringify(placed));
+    const box = D.querySelector('#pOrder input[data-say="' + ord.id + '"]');
+    box.value = "is it ready"; box.dispatchEvent(new W.Event("input", { bubbles: true }));
+    const send = [...D.querySelectorAll("#pOrder button")].find((b) => b.textContent === "Send");
+    send.click();
+    const pointers = () => said().filter((t) => t === "Signed out: tap Continue at the top.").length;
+    await until(() => pointers() >= 2);
+    const sent = said();
+    ok(pointers() === 2 && !sent.some((t) => /Sign in again|session has ended/.test(t)),
+      "and so does Send: " + JSON.stringify(sent));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } }
+})();
 section("S1 1.9: Notify me waits for the service worker to be ready, and a failure is said in plain words");
 await (async () => {
   /* H09, 24 SEP 2026. subscribe() ran straight after register(), before the worker was active, and Chromium

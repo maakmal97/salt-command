@@ -857,6 +857,7 @@ const CLIENT_JS = `
      v692. Continue opens again through the remembered device where there is one, else puts the door back
      with the username in it. Nothing is renewed without the tap. */
   var lapse=document.getElementById('lapse');
+  var LAPSED='Signed out: tap Continue at the top.';
   function lapsed(){
     if(poll){ clearInterval(poll); poll=null; }
     if(!lapse.hidden) return;
@@ -1235,7 +1236,10 @@ const CLIENT_JS = `
         headers:Object.assign({'X-Stmt-Session':session}, body?{'content-type':'application/json'}:{}),
         body:body?JSON.stringify(body):undefined});
     }catch(e){ return {status:0, body:{ok:false, error:NOT_SENT}}; }
-    if(r.status===401&&session) lapsed();
+    /* UX5, 24 Sep 2026: ONE LAPSE, ONE VOICE. The bar says it with Continue; beside the tapped control each
+       caller says whatever the answer's error is, which is now a pointer to that Continue, where Place and Send
+       said "Sign in again" of a door the page did not show */
+    if(r.status===401&&session){ lapsed(); return {status:401, body:{ok:false, error:LAPSED}}; }
     var j=null; try{ j=await r.json(); }catch(e){}
     return {status:r.status, body:j||{}};
   }
@@ -1389,8 +1393,7 @@ const CLIENT_JS = `
             week:(prices.week&&prices.week.monday)||''});
           if(mine!==ticket) return;
           draft.busy=false;
-          if(r.status===401){ draft.note='Your session has ended. Sign in again to order.'; }
-          else if(!r.body.ok){ draft.note=r.body.error||'The order was not placed.'; }
+          if(!r.body.ok){ draft.note=r.body.error||'The order was not placed.'; }
           else { draft.note='Placed. You will see it acknowledged below.'; draft.confirm=false; draft.place=''; draft.say=''; await loadOrders(); if(mine!==ticket) return; }
           drawOrder();
         });
@@ -1519,8 +1522,7 @@ const CLIENT_JS = `
       var r=await api('/orders/'+o.id+'/say',{text:t});
       if(mine!==ticket) return;
       sg.disabled=false;
-      if(r.status===401) tapSaid(o,'say','Your session has ended. Sign in again.');
-      else if(!r.body.ok) tapSaid(o,'say',r.body.error||'It was not sent.');
+      if(!r.body.ok) tapSaid(o,'say',r.body.error||'It was not sent.');
       else { tapSaid(o,'say',''); if(draft.says) delete draft.says[o.id]; await loadOrders(); if(mine!==ticket) return; }
       drawOrder();
     });
