@@ -33014,15 +33014,17 @@ await (async () => {
     for (let i = 0; i < 60 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 50));
     d.getElementById("oNew").click();
     /* S4 4.3: the way is chosen in the order sheet, by the system's pressed ghost */
-    const chosen = [d.querySelector("#mfil button.on"), [...d.querySelectorAll('#osheet button[aria-pressed="true"]')].find((b) => /collect|Deliver/.test(b.textContent))];
+    /* S7 7.3: the month filter is the system's tab strip, the chosen pill read off aria-pressed */
+    const chosen = [d.querySelector('#mfil button[aria-pressed="true"]'), [...d.querySelectorAll('#osheet button[aria-pressed="true"]')].find((b) => /collect|Deliver/.test(b.textContent))];
     const look = chosen.map((b) => { const c = b && w.getComputedStyle(b);
       return c ? { fill: [c.background, c.backgroundColor, c.backgroundImage].join(" "), ink: c.color } : null; });
     ok(chosen.every(Boolean) && chosen[0].textContent === "All" && chosen[1].textContent === "I will collect",
       "the fixture draws a chosen month (All) and a chosen way (I will collect) to measure");
     ok(look.every((x) => x && !/brass/.test(x.fill)), "neither chosen control is filled brass: " + JSON.stringify(look.map((x) => x && x.fill)));
     /* the hairline itself is the rig's to see: jsdom reads a border drawn in a token as transparent */
-    ok(look[0] && /--salt-brass/.test(look[0].ink) && chosen[1].classList.contains("salt-ghost") && chosen[1].getAttribute("aria-pressed") === "true",
-      "and each is still told apart: the month in brass ink, the way as the system's ghost, pressed: " + JSON.stringify(look.map((x) => x && x.ink)));
+    ok(look[0] && /--salt-salt/.test(look[0].ink) && chosen[0].classList.contains("salt-tabs__pill--active")
+      && chosen[1].classList.contains("salt-ghost") && chosen[1].getAttribute("aria-pressed") === "true",
+      "and each is still told apart: the month as the system's tab pill, active, the way as the system's ghost, pressed: " + JSON.stringify(look.map((x) => x && x.ink)));
   } finally { w.close(); }
 })();
 
