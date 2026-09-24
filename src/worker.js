@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim } from "./orders.js";
+import { listOrders, listClaims, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -877,6 +877,23 @@ export default {
       let r;
       try { r = nf[1] === "orders" ? await notFoundOrder(env, decodeURIComponent(nf[2]), b) : await notFoundClaim(env, decodeURIComponent(nf[2]), b); }
       catch (e) { r = { ok: false, status: 500, error: String((e && e.message) || e) }; }
+      return json(r, r.ok ? 200 : (r.status || 502));
+    }
+    /* S6 11.15: a claim against the account, drawn row by row and received in one tap */
+    const cc = /^\/claims\/([^/]+)\/(preview|received)$/.exec(p);
+    if (cc) {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b = {};
+      try { b = await request.json(); } catch { b = {}; }
+      const by = (b && typeof b.by === "string" && b.by.trim().slice(0, 40)) || "phone";
+      let r;
+      try {
+        if (cc[2] === "preview") { r = await claimPreview(env, decodeURIComponent(cc[1])); if (r.ok) delete r.own; }
+        else {
+          r = await claimReceived(env, decodeURIComponent(cc[1]), b, by);
+          if (r.approved && r.approved.length) await afterApproval(env, ctx, r.approved);
+        }
+      } catch (e) { r = { ok: false, status: 500, error: String((e && e.message) || e) }; }
       return json(r, r.ok ? 200 : (r.status || 502));
     }
     const cm = /^\/orders\/([^/]+)\/(preview|accept|handed|cash|received|again)$/.exec(p);

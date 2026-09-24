@@ -171,7 +171,8 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   (his decision D6)**: the order card's yes is recorded in `preapproval` and spent by the drafter only
   if the draft equals what he was shown, every field, flag and (for Accept) pricing version; else it
   waits under Approve, marked. Accept moves the order only once its row is approved; a later stage
-  tapped before the first row lands is booked when it lands, and the answer says so. A close under what they paid
+  tapped before the first row lands is booked when it lands, and the answer says so. A claim against the account (S6) is
+  drawn as the engine's oldest-first `claimAlloc`, row by row, and its one Received approves exactly those rows. A close under what they paid
   is never approved on a tap: nothing books the difference as a refund yet.
 - **What the drafter refuses, the phone does not let you type**: `entryFault` answers both entry
   forms. **An R2 row books to the associate's `-R` bucket whether or not the end buyer is named**,
@@ -200,7 +201,7 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   laptop (approve last), are in `docs/CLOUD_FOLD.md`. A ledger row edit queues as a Correction.
 - Endpoints: `GET /drafts?status=…`, `POST /drafts/<id>/approve|reject|committed`, `POST
   /draft-now?dry=1`, `POST /orders/<id>/preview` (the row an Accept would make, stored nowhere, never
-  the dry run) and `/accept|handed|cash|received|notfound|again` (the card's taps), and `/claims/<id>/notfound`, all keyed. Nothing writes
+  the dry run) and `/accept|handed|cash|received|notfound|again` (the card's taps), and `/claims/<id>/preview|received|notfound`, all keyed. Nothing writes
   to `entry`. **The `draft` table's CHECK lists every collection by name**: a collection the drafter
   newly returns needs a migration rebuilding it, applied to the live D1 BEFORE the deploy and as that
   file alone (`wrangler d1 execute salt_ledger --remote --file=...`); re-running an older one drops

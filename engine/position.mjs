@@ -780,6 +780,19 @@ const BUCKET_SFX='-R';
 function isBucket(code){return typeof code==='string'&&code.length>BUCKET_SFX.length&&code.slice(-BUCKET_SFX.length)===BUCKET_SFX;}
 function ownerCode(code){return isBucket(code)?code.slice(0,-BUCKET_SFX.length):code;}
 function ownsCode(party,code){return !!party&&(code===party||code===party+BUCKET_SFX);}
+/* S6 11.15 (his decision D7 of 24 Sep 2026): A PAYMENT AGAINST THE ACCOUNT, OLDEST FIRST. What a customer says they sent
+   against the account settles the rows they owe on as the statement's To pay now lists them: every row of theirs or their
+   bucket with goods out and money owed (txAdvance; a gift or a write-off owes nothing), by the order date, undated last.
+   Each row takes what it owes or what is left of the figure; what no row owes is `left`. The desk draws this and nothing
+   else, so the rows his one tap approves are the engine's. */
+function claimAlloc(sales,party,amount){
+  const rows=(sales||[]).filter(s=>s&&ownsCode(party,s.customer)&&!s.goodwill&&txAdvance(s)>0.009)
+    .slice().sort((a,b)=>String(a.date||'9999').localeCompare(String(b.date||'9999')));
+  let left=+(+amount||0).toFixed(2);const out=[];
+  for(const s of rows){if(left<=0.004)break;const owed=+txAdvance(s).toFixed(2),take=+Math.min(left,owed).toFixed(2);
+    out.push({key:ovKey(s),rid:s.rid||null,party:s.customer,date:s.date||null,owed:owed,rm:take});left=+(left-take).toFixed(2);}
+  return {rows:out,left:Math.max(0,left)};
+}
 function appointBucket(kind,code){return (ADDID_APPOINTS[kind]&&code)?code+BUCKET_SFX:null;}
 /* ====== v611, HIS RULING OF 13 SEP 2026: AN R2 SALE BOOKS TO THE ASSOCIATE'S BUCKET ===============
    Whether or not the end buyer is named: R2 sales are parked under the -R account only, and a buyer
@@ -843,7 +856,7 @@ return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txU
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
-        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,appointBucket:appointBucket,bookR2:bookR2,
+        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,appointBucket:appointBucket,bookR2:bookR2,claimAlloc:claimAlloc,
         renamePairs:renamePairs,renameInBook:renameInBook,placeKey:placeKey,placeBare:placeBare,placeCandidates:placeCandidates};
 })();
 export default POSITION_ENGINE;

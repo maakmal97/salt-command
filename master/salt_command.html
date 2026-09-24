@@ -5632,6 +5632,19 @@ const BUCKET_SFX='-R';
 function isBucket(code){return typeof code==='string'&&code.length>BUCKET_SFX.length&&code.slice(-BUCKET_SFX.length)===BUCKET_SFX;}
 function ownerCode(code){return isBucket(code)?code.slice(0,-BUCKET_SFX.length):code;}
 function ownsCode(party,code){return !!party&&(code===party||code===party+BUCKET_SFX);}
+/* S6 11.15 (his decision D7 of 24 Sep 2026): A PAYMENT AGAINST THE ACCOUNT, OLDEST FIRST. What a customer says they sent
+   against the account settles the rows they owe on as the statement's To pay now lists them: every row of theirs or their
+   bucket with goods out and money owed (txAdvance; a gift or a write-off owes nothing), by the order date, undated last.
+   Each row takes what it owes or what is left of the figure; what no row owes is `left`. The desk draws this and nothing
+   else, so the rows his one tap approves are the engine's. */
+function claimAlloc(sales,party,amount){
+  const rows=(sales||[]).filter(s=>s&&ownsCode(party,s.customer)&&!s.goodwill&&txAdvance(s)>0.009)
+    .slice().sort((a,b)=>String(a.date||'9999').localeCompare(String(b.date||'9999')));
+  let left=+(+amount||0).toFixed(2);const out=[];
+  for(const s of rows){if(left<=0.004)break;const owed=+txAdvance(s).toFixed(2),take=+Math.min(left,owed).toFixed(2);
+    out.push({key:ovKey(s),rid:s.rid||null,party:s.customer,date:s.date||null,owed:owed,rm:take});left=+(left-take).toFixed(2);}
+  return {rows:out,left:Math.max(0,left)};
+}
 function appointBucket(kind,code){return (ADDID_APPOINTS[kind]&&code)?code+BUCKET_SFX:null;}
 /* ====== v611, HIS RULING OF 13 SEP 2026: AN R2 SALE BOOKS TO THE ASSOCIATE'S BUCKET ===============
    Whether or not the end buyer is named: R2 sales are parked under the -R account only, and a buyer
@@ -5695,7 +5708,7 @@ return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txU
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
-        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,appointBucket:appointBucket,bookR2:bookR2,
+        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,appointBucket:appointBucket,bookR2:bookR2,claimAlloc:claimAlloc,
         renamePairs:renamePairs,renameInBook:renameInBook,placeKey:placeKey,placeBare:placeBare,placeCandidates:placeCandidates};
 })();
 /* ==== END ENGINE position ==== */
@@ -19010,7 +19023,8 @@ async function ordLoad(quiet){
   try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go();
     ordNeedKey=(r.status===401); let j=null; try{j=await r.json();}catch(e){}
     ordUnread=r.ok?'':(r.status===401?'':(j&&j.error)||'the Worker answered http '+r.status);
-    ORD_OPEN=(r.ok&&j&&j.orders)||[];
+    /* S6 11.15: and each claim against an account still waiting, a card of its own beside the orders (kind 'account') */
+    ORD_OPEN=((r.ok&&j&&j.orders)||[]).concat(((r.ok&&j&&j.claims)||[]).filter(c=>c&&c.kind==='account'&&c.state==='waiting'));
     if(r.ok)ORD_PV_GEN++;   /* S11 11.2: every read of the orders drafts the open card's row afresh */
   }catch(e){ ordUnread=(e&&e.message)||'the request did not complete'; ORD_OPEN=[]; }
   ordDraw();
@@ -19177,6 +19191,7 @@ function ordActs(){
   const drafts=(typeof AP_DRAFTS!=='undefined'&&Array.isArray(AP_DRAFTS))?AP_DRAFTS:[];
   const out=[];
   open.forEach(o=>{if(!o)return;
+    if(o.kind==='account'){if(o.state==='waiting')out.push({kind:'paid',o,at:o.at||''});return;}   /* S6 11.15 */
     const live=['acknowledged','ready'].includes(o.status);
     if(o.status==='placed'&&!o.yes)out.push({kind:'new',o,at:o.at||''});   /* his yes already given waits under Approve, counted there */
     else if(ordAsked(o))out.push({kind:'asked',o,at:o.msgs[o.msgs.length-1].at||''});
@@ -19321,7 +19336,44 @@ function ordTold(o){
 }
 function ordToldLine(o){const t=ordTold(o);
   return `<p class="salt-approve__reason ordtold">They see <b>${esc(t.word)}</b>${t.line?', '+esc(t.line):''}${t.since?', since '+ordWhen(t.since):''}.</p>`;}
+/* ---- S6 11.15 (24 Sep 2026, his decisions D6 and D7): A CLAIM AGAINST THE ACCOUNT, ROW BY ROW. What a customer says they
+   sent against the account settles the rows they owe on, oldest first, by the ENGINE'S allocation, drafted by the desk
+   Worker against the mirror and stored nowhere (POST claims/<id>/preview) and drawn here row by row before his yes. ONE TAP,
+   Received, approves exactly those rows: it sends the digest of what is drawn, and the Worker queues and approves them only
+   if the rows are still those. The desk computes no figure here. More than the rows owe is never approved on a tap. ---- */
+let CLM_PV={};
+async function clmPreview(c){
+  if(!c||c.kind!=='account'||!cloudMode())return;
+  const cur=CLM_PV[c.id];if(cur&&cur.gen===ORD_PV_GEN)return;
+  const mine=cur&&cur.st==='ok'?Object.assign({},cur,{gen:ORD_PV_GEN}):{gen:ORD_PV_GEN,st:'wait'};CLM_PV[c.id]=mine;
+  let st='err',j=null,err='';
+  try{const r=await fetch('claims/'+encodeURIComponent(c.id)+'/preview',{method:'POST',headers:qHeaders(),body:'{}'});
+    try{j=await r.json();}catch(e){}
+    if(r.ok&&j&&j.ok)st='ok';else err=r.status===401?'the write key was refused':((j&&j.error)||'the Worker answered http '+r.status);
+  }catch(e){err='no connection';}
+  if(CLM_PV[c.id]!==mine)return;
+  CLM_PV[c.id]=Object.assign(mine,{st,j,err});
+  ordDraw();
+}
+function clmCard(c){
+  const who=c.code?codeOf(c.code):'unmapped '+esc(c.u),pv=CLM_PV[c.id],j=(pv&&pv.st==='ok'&&pv.j)||null;
+  const rows=j?(j.rows||[]):[],left=j?+j.left||0:0,sum=+c.amount||0;
+  const body=!pv||pv.st==='wait'?`<p class="salt-approve__reason">Drawing the rows it settles.</p>`
+    :pv.st==='err'?`<p class="salt-approve__reason">The rows could not be drawn: ${esc(pv.err)}. Received opens once they can, your yes being to the rows drawn here.</p>`
+    :`<div class="salt-ledger salt-ledger--plain clmrows">${rows.map(r=>`<div class="salt-ledger__row"><div class="salt-ledger__line"><span class="salt-ledger__label">${esc(r.date||'no date')}, owes ${fmt(+r.owed||0)}</span><span class="salt-ledger__value">${fmt(+r.rm||0)}</span></div>${(r.flags||[]).length?`<span class="salt-ledger__flag">${(r.flags||[]).map(esc).join(' ')}</span>`:''}</div>`).join('')}
+      ${left>0.004?`<div class="salt-ledger__row"><div class="salt-ledger__line"><span class="salt-ledger__label">More than the rows owe</span><span class="salt-ledger__value">${fmt(left)}</span></div></div>`:''}</div>`;
+  const can=!!j&&rows.length>0&&left<=0.004;
+  return `<div class="salt-approve ordcard" data-id="${esc(c.id)}">
+    <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">Sent against the account, ${ordWhen(c.at)}</span></div>
+    <p class="ordline">They say they sent ${fmt(sum)}${c.method?' by '+esc(c.method)+(c.account?' to '+esc(c.account):''):''}, reference ${esc(c.u)}. Oldest first, it settles:</p>
+    ${body}
+    <div class="ordfoot"><div class="salt-approve__actions"><button class="vbtn salt-pill salt-pill--sm" data-ord="creceived" data-id="${esc(c.id)}" data-u="${esc(c.u)}"${can?'':' disabled'}>Received, ${fmt(sum)}</button><button class="salt-ghost salt-ghost--danger" data-ord="cnotfound" data-amt="${sum}" data-id="${esc(c.id)}" data-u="${esc(c.u)}">Not found</button></div>
+      <p class="salt-approve__reason">${!j?'Received approves the rows drawn here, and only those.':left>0.004?'It is more than their rows owe by '+fmt(left)+', so Received is not a tap here: record it by hand, or answer Not found.':'Received approves exactly these rows and they see it received; Not found tells them it has not arrived. They see it as sent, waiting for us to confirm, until then.'}</p>
+      <p class="dsc ordsaid" role="status" data-msg="${esc(c.id)}">${ORD_SAID&&ORD_SAID.id===c.id?esc(ORD_SAID.t):''}</p></div>
+  </div>`;
+}
 function ordCard(o){
+  if(o&&o.kind==='account')return clmCard(o);
   /* 24 Sep 2026: the month off MAP_MON, because en-GB writes Sept */
   const when=iso=>{try{const p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(x=>{p[x.type]=x.value;});return p.day+' '+MAP_MON[+p.month-1]+', '+p.hour+':'+p.minute;}catch(e){return '';}};
   const cell=(k,v,cls,note)=>`<div class="kpi salt-kpi ${cls||''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value" style="font-size:17px">${v}</div>${note?`<div class="salt-kpi__note">${note}</div>`:''}</div>`;
@@ -19472,12 +19524,14 @@ let ORD_SEL='',ORD_OPENED=false,ORD_FILTER='all',ORD_SAID=null,ORD_WAKE=false;
    newest act on it, the one that woke him, is opened on the first draw that has one. The wake carries nothing but that. */
 /* S11 fix: an order named as he would name it (its code, size and day, and what it comes to), for an answer said away from
    its card: at the head of the list, once the tap that closed it has taken the card off the open list */
-function ordName(o){return (o.code||'unmapped')+', '+units(+o.qty||0)+' '+(o.product||'salt')+' of '+ordWhen(o.at).split(',')[0]+', '+fmt(+((+o.total||0)+(+o.delivery||0)).toFixed(2));}
+function ordName(o){if(o&&o.kind==='account')return (o.code||'unmapped')+', '+fmt(+o.amount||0)+' against the account of '+ordWhen(o.at).split(',')[0];
+  return (o.code||'unmapped')+', '+units(+o.qty||0)+' '+(o.product||'salt')+' of '+ordWhen(o.at).split(',')[0]+', '+fmt(+((+o.total||0)+(+o.delivery||0)).toFixed(2));}
 function ordWakeAddr(h){if(h==='orders/newest'){ORD_WAKE=true;return 'orders';}return h;}
 function ordWhen(iso){try{if(!iso)return '';const p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(x=>{p[x.type]=x.value;});return p.day+' '+MAP_MON[+p.month-1]+', '+p.hour+':'+p.minute;}catch(e){return '';}}
 function ordWhat(a){const o=a.o;
   if(a.kind==='new')return units(+o.qty||0)+' '+esc(o.product||'salt')+', '+fmt(+o.total||0)+', '+(o.mode==='deliver'?'delivery':'collect');
   if(a.kind==='cash')return (o.mode==='deliver'?'Delivered ':'Collected ')+units(+o.moved||0)+' '+esc(o.product||'salt')+', nothing paid. Cash to record.';
+  if(a.kind==='paid'&&o.kind==='account')return 'Says '+fmt(+o.amount||0)+' sent against the account'+(o.method?' by '+esc(o.method)+(o.account?' via '+esc(o.account):''):'')+'. Received or Not found.';
   if(a.kind==='paid'){const cw=ordClaims(o);
     if(cw.length)return 'Says '+fmt(+cw[0].amount||0)+' sent'+(cw[0].method?' by '+esc(cw[0].method)+(cw[0].account?' via '+esc(cw[0].account):''):'')+'. Received or Not found.';
     const p=(o.payments||[]).filter(x=>x&&x.by!=='desk'),l=p[p.length-1];
@@ -19538,7 +19592,7 @@ function ordDraw(){
   box.querySelectorAll('input[data-fee],input[data-hand],input[data-say],input[data-why]').forEach(i=>{const k=ordField(i);
     if(k in typed)i.value=typed[k];if(k===focused)i.focus();});
   /* S11 11.2: the open card, if it is a new order, asks for its row, once what he typed is back in place */
-  if(selO)ordPreview(selO);
+  if(selO)(selO.kind==='account'?clmPreview(selO):ordPreview(selO));
   box.querySelectorAll('button[data-ord]').forEach(b=>{b.onclick=()=>ordAct(b);});
   box.querySelectorAll('button[data-row]').forEach(b=>{b.onclick=()=>{ORD_SEL=b.dataset.row;ORD_OPENED=true;ordDraw();ordToPane();};});
   box.querySelectorAll('button[data-of]').forEach(b=>{b.onclick=()=>{ORD_FILTER=b.dataset.of;ORD_SEL='';ordDraw();};});
@@ -19603,6 +19657,14 @@ async function ordAct(b){
   }else if(st==='again'){
     body=JSON.stringify({stage:b.dataset.stage});
     url='orders/'+encodeURIComponent(id)+'/again';
+  }else if(st==='creceived'){
+    /* S6 11.15: the digest of the rows drawn, which the Worker approves only if they are still those */
+    const pv=CLM_PV[id];
+    body=JSON.stringify({hash:(pv&&pv.st==='ok'&&pv.j&&pv.j.hash)||null});
+    url='claims/'+encodeURIComponent(id)+'/received';
+  }else if(st==='cnotfound'){
+    body=JSON.stringify({amount:+b.dataset.amt});
+    url='claims/'+encodeURIComponent(id)+'/notfound';
   }else if(st==='received'||st==='notfound'){
     /* S6 11.14: the claim drawn on the card, by its moment and at its figure; the Worker answers only that one */
     body=JSON.stringify({claim:b.dataset.claim,amount:+b.dataset.amt});
@@ -19644,6 +19706,9 @@ async function ordAct(b){
       :st==='say'?'Sent. '+told
       :st==='again'?'Offered again under a fresh entry. '+says
       :st==='received'?'Received: '+fmt(+b.dataset.amt||0)+'. They see it paid. '+says+told
+      :st==='creceived'?(j.approved&&j.rows&&j.approved.length===j.rows.length?'Received, and the '+j.rows.length+' row'+(j.rows.length===1?' is':'s are')+' approved as drawn. They see it received. '
+        :'Received. A row that came out other than drawn waits under Approve, marked. They see it received. ')+told
+      :st==='cnotfound'?'Not found. They are told it has not arrived yet. '+told
       :st==='notfound'?'Not found: '+fmt(+b.dataset.amt||0)+'. Its row is filed as not found, and they are told it has not arrived yet. '+told
       :st==='cash'?'Recorded: '+fmt(ordDue(ORD_OPEN.find(x=>x&&x.id===id)||{}))+' in cash. They see it paid and the chase stops. '+says+told
       :st==='noreply'?'Marked as needing no reply. Nothing was sent to them.'

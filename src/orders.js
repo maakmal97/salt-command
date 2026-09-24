@@ -507,6 +507,82 @@ export async function notFoundClaim(env, id, body) {
     return { ok: false, status: 409, error: "RM " + (+c.amount).toFixed(2) + " they say they sent is waiting here" + (typeof amount === "number" ? ", not RM " + amount.toFixed(2) : "") };
   return moveClaim(env, c.u, id, { verdict: { kind: "notfound", amount: c.amount } });
 }
+/* ---- A CLAIM AGAINST THE ACCOUNT, ROW BY ROW, AND ONE TAP (S6 11.15, his decisions D6 and D7) ---------------------------
+ * What they say they sent against the account settles the rows they owe on, oldest first: the ENGINE'S allocation
+ * (claimAlloc in engine/position.mjs), drawn on his card row by row before his yes. Each row is a Fulfilment of its own,
+ * drafted here against the mirror exactly as it will be queued and stored nowhere, and the digest of all of them is
+ * what the card sends back. ONE TAP APPROVES EXACTLY THOSE ROWS by the stage 11 road: drafted again, and only if the
+ * digest is the one he was shown is each queued with a yes of its own carrying its entry, spent by the drafter only on
+ * an exact match; then the site hears Received. Different, the tap is refused with the rows as they now stand and
+ * nothing is queued. A figure more than the rows owe is never approved on a tap: the card says what is left over. */
+const hex = async (s) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)))].map((b) => b.toString(16).padStart(2, "0")).join("");
+function claimRows(book, c) {
+  const alloc = POSITION_ENGINE.claimAlloc(book.sales || [], c.code, +c.amount);
+  const date = klDate(new Date(c.at)), method = c.method + (c.account ? " via " + c.account : "");
+  const entries = alloc.rows.map((r, i) => ({ at: new Date(Date.parse(c.at) + i).toISOString(), type: "SELL", party: r.party, qty: 0, total: r.rm,
+    status: "Payment", by: "customer", claim: true, claimId: c.id,
+    raw: "Payment of RM " + r.rm + " on " + r.party + ", against the account (claim " + c.id + "), by " + method,
+    payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: r.party, rid: r.rid || null, orderKey: r.key, orderCode: null, linkTo: null,
+      assoc: null, downstream: null, date, qty: 0, total: 0, cash: r.rm, kg: 0, note: "Paid on the statements site against the account, by " + method + "." } }));
+  return { alloc, entries };
+}
+/** POST /claims/<id>/preview: the rows the claim settles, drafted, stored nowhere. */
+export async function claimPreview(env, id) {
+  const f = await findClaim(env, id);
+  if (!f.ok) return f;
+  const c = f.claim, db = env.SALT_LEDGER;
+  if (!c.code) return { ok: false, status: 409, error: "no desk code is mapped to this account yet: publish the statements again" };
+  if (!db) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
+  if (c.state !== "waiting") return { ok: false, status: 409, error: "that claim is answered already" };
+  const book = await readBook(db);
+  const { alloc, entries } = claimRows(book, c);
+  const rows = [], own = [];
+  for (let i = 0; i < entries.length; i++) {
+    const d = draftRow(entries[i], book);
+    if (d.skip) return { ok: false, status: 409, error: "the row of " + (alloc.rows[i].date || "no date") + " would not draft: " + d.skip };
+    const digest = await stageDigest("pay", entries[i], d, null);
+    rows.push(Object.assign({}, alloc.rows[i], { flags: d.flags || [] }));
+    own.push({ entry: entries[i], digest, flags: d.flags || [] });
+  }
+  const hash = await hex(JSON.stringify({ claim: c.id, amount: +c.amount, left: alloc.left, rows: own.map((x) => x.digest) }));
+  return { ok: true, claim: c, rows, left: alloc.left, hash, own };
+}
+/** POST /claims/<id>/received {hash}: his one tap on the rows drawn. */
+export async function claimReceived(env, id, body, by, now) {
+  const at = now || new Date();
+  const pv = await claimPreview(env, id);
+  if (!pv.ok) return pv;
+  const own = pv.own, db = env.SALT_LEDGER;
+  delete pv.own;
+  if (!body || typeof body.hash !== "string") return { ok: false, status: 400, error: "Received answers the rows drawn: send the digest the preview gave" };
+  if (pv.hash !== body.hash) return { ok: false, status: 409, differs: true, error: "the rows have changed since the card drew them: look at them again", preview: pv };
+  if (pv.left > 0.004) return { ok: false, status: 409, error: "RM " + pv.left.toFixed(2) + " of it is more than their rows owe, so it is not approved on a tap: record it by hand, or answer Not found" };
+  if (!own.length) return { ok: false, status: 409, error: "no row of theirs owes anything to settle" };
+  const pres = [];
+  for (let i = 0; i < own.length; i++) {
+    const e = own[i].entry;
+    const was = await db.prepare("SELECT status FROM draft WHERE id=?1").bind(e.at).first();
+    if (was && was.status === "approved") continue;   /* a tap retried after the site did not hear: that row is booked */
+    if (was && was.status === "rejected") return { ok: false, status: 409, error: "the row of " + (pv.rows[i].date || "no date") + " was rejected: answer it under Approve" };
+    const preId = await recordPre(db, { order_id: id, u: pv.claim.u, stage: "pay", hash: own[i].digest, entry: e, by,
+      at: new Date(at.getTime() + i).toISOString(), shown: { claim: id, figures: { amount: e.payload.cash }, row: pv.rows[i].key, flags: own[i].flags } });
+    if (!was) await queueSale(env, e);
+    await db.prepare("UPDATE preapproval SET entry_at=?1, entry=?2 WHERE id=?3").bind(e.at, JSON.stringify(e), preId).run();
+    pres.push(preId);
+  }
+  const drafted = pres.length ? await runDrafter(env) : null;
+  const book = pres.length ? await readBook(db) : null;
+  const rows = [];
+  for (const preId of pres) {
+    let pre = await preById(db, preId);
+    if (pre.status === "waiting") { await settlePre(db, pre, book); pre = await preById(db, preId); }
+    rows.push({ draft: pre.entry_at, state: pre.status });
+  }
+  const r = await moveClaim(env, pv.claim.u, id, { verdict: { kind: "received", amount: pv.claim.amount } });
+  return Object.assign({ ok: r.ok, rows, drafted, approved: rows.filter((x) => x.state === "applied").map((x) => x.draft) },
+    r.ok ? { claim: r.claim, push: r.push } : { status: r.status, error: "the rows are booked, but the site was not told: " + r.error });
+}
+
 /** One claim against an account, waiting or answered, with its code. */
 export async function findClaim(env, id) {
   const r = await listClaims(env, true);

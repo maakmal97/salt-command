@@ -575,7 +575,12 @@ claim's row rejected as `notfound` FIRST, under the id it has or will have, and 
 takes it as ONE event of the order book: the claim leaves `claimed` and its entry's name leaves the claim together, paid
 never having moved, and the wake says "Payment not found yet" (`notfound` in `NEWS`). **On the kv road Not found is
 refused** (`NOT_FOUND_ON_KV`), a figure that falls never being a read-modify-write. A claim not found is never offered again,
-and a Received on a claim whose row was filed not found is refused. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
+and a Received on a claim whose row was filed not found is refused. **A claim against the account is received row by
+row** (S6 11.15, D6): the desk Worker drafts the engine's oldest-first allocation (`claimAlloc`: their rows and their
+bucket's with goods out and money owed, by date, each to what it owes) as one Fulfilment a row, against the mirror and
+stored nowhere (`POST /claims/<id>/preview`); the card draws it, and Received sends the digest of the rows drawn, which the
+Worker approves only if the rows still stand, each with a yes of its own spent by the drafter (`madeBy` reads `claimId`),
+then tells the site. More than the rows owe is never a tap. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
 order, the one being paid included: settling that at the door is how one advance becomes two. The quote is the customer's claim
 off his own list: the owner reads the rate against the party's usual on the phone before
 acknowledging, and the drafter flags it again when the row is queued.

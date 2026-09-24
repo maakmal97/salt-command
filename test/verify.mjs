@@ -27385,6 +27385,141 @@ await (async () => {
   } finally { w.close(); }
 })();
 
+section("S6 11.15: a claim against the account is drawn as the engine's oldest-first allocation, row by row, and one tap approves exactly those rows");
+await (async () => {
+  /* HIS DECISIONS D6 AND D7 OF 24 SEP 2026: an account-level claim covers money owed on rows he entered on the desk. The
+     desk draws the ENGINE'S oldest-first allocation row by row, and ONE tap approves exactly those rows through the stage
+     11 exact-match road: the Worker approves only what was shown, and a figure more than the rows owe is never a tap. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the account claim was not driven against the real schema"); return; }
+  const PE = (await import("../engine/position.mjs")).default;
+  const O = await import("../stmt/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const C = "CX1-AB", U = "abcd-efgh";
+
+  /* A. THE ENGINE'S ALLOCATION: their rows and their bucket's, oldest first, each taking what it owes */
+  const book = [
+    { rid: "s1", customer: C, date: "2026-09-01", qty: 1, total: 50, cash: 0, deliveredQty: 1 },
+    { rid: "s2", customer: C, date: "2026-08-20", qty: 1, total: 30, cash: 0, deliveredQty: 1 },
+    { rid: "s3", customer: C + "-R", date: "2026-09-05", qty: 1, total: 40, cash: 0, deliveredQty: 1 },
+    { rid: "s4", customer: C, date: "2026-08-01", qty: 1, total: 90, cash: 90, deliveredQty: 1 },
+    { rid: "s5", customer: "CX9-ZZ", date: "2026-07-01", qty: 1, total: 70, cash: 0, deliveredQty: 1 },
+    { rid: "s6", customer: C, date: "2026-07-15", qty: 1, total: 20, cash: 0, deliveredQty: 1, goodwill: true },
+    { rid: "s7", customer: C, date: "2026-07-10", qty: 2, total: 100, cash: 0, deliveredQty: 0 }];
+  const a100 = PE.claimAlloc(book, C, 100), a200 = PE.claimAlloc(book, C, 200);
+  ok(JSON.stringify(a100.rows.map((r) => [r.rid, r.owed, r.rm])) === '[["s2",30,30],["s1",50,50],["s3",40,20]]' && a100.left === 0
+    && a200.rows.length === 3 && a200.left === 80 && a200.rows.every((r) => r.rm === r.owed) && a100.rows[0].key === PE.ovKey(book[1]),
+    "the engine settles what they sent against their rows and their bucket's, oldest first, each to what it owes, leaving a paid row, another party's, a gift and goods not yet out alone, and says what no row owes: "
+    + JSON.stringify({ a100: a100.rows.map((r) => [r.rid, r.rm]), left: a200.left }));
+
+  /* B. DRIVEN THROUGH BOTH WORKERS over the real schema */
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  putSale({ rid: "s21", customer: C, date: "2026-09-10", qty: 1, total: 60, cash: 0, deliveredQty: 1, deliveredOn: "2026-09-10" });
+  putSale({ rid: "s20", customer: C, date: "2026-09-02", qty: 1, total: 50, cash: 0, deliveredQty: 1, deliveredOn: "2026-09-02" });
+  setState("roster", [C]); setState("OPEN", { byKey: {}, position: {} });
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 30, floors: { "1": { floor: 40 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const call = async (path, body, key) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: Object.assign({ "content-type": "application/json" }, key === false ? {} : { "X-Salt-Key": "k-fixture" }), body: JSON.stringify(body || {}) }), denv, { waitUntil: () => {} });
+    return { status: r.status, j: await r.json() };
+  };
+  const q = async () => ((await dkv.get("q:orders", "json")) || { queue: [] }).queue;
+  const drafts = (id) => db.prepare("SELECT id,status,decided_by,entry FROM draft").all().filter((d) => JSON.parse(d.entry).claimId === id);
+
+  const c1 = (await O.claimAccount(senv, U, { amount: 80, method: "transfer", account: "wise" })).claim;
+  const anon = await call("/claims/" + c1.id + "/preview", {}, false);
+  const pv = await call("/claims/" + c1.id + "/preview", {});
+  ok(anon.status === 401 && pv.status === 200 && JSON.stringify(pv.j.rows.map((r) => [r.rid, r.owed, r.rm])) === '[["s20",50,50],["s21",60,30]]' && pv.j.left === 0
+    && typeof pv.j.hash === "string" && !pv.j.own && (await q()).length === 0 && drafts(c1.id).length === 0,
+    "on the write key the card is handed the rows it settles, oldest first, drafted and stored nowhere: " + JSON.stringify({ anon: anon.status, rows: pv.j.rows && pv.j.rows.map((r) => [r.rid, r.rm]), left: pv.j.left }));
+  const bad = await call("/claims/" + c1.id + "/received", { hash: "0".repeat(64) });
+  ok(bad.status === 409 && bad.j.differs === true && (await q()).length === 0 && drafts(c1.id).length === 0,
+    "a yes to rows other than those drawn is refused, and nothing is queued: " + JSON.stringify(bad.j.error));
+  const yes = await call("/claims/" + c1.id + "/received", { hash: pv.j.hash });
+  const ds = drafts(c1.id).sort((x, y) => (x.id < y.id ? -1 : 1));
+  const es = ds.map((d) => JSON.parse(d.entry));
+  const site = (await O.claimsOf(senv, U)).find((x) => x.id === c1.id);
+  ok(yes.status === 200 && yes.j.approved.length === 2 && ds.length === 2 && ds.every((d) => d.status === "approved" && /^preapproved/.test(d.decided_by))
+    && JSON.stringify(es.map((e) => [e.payload.rid, e.payload.cash, e.payload.kind])) === '[["s20",50,"Fulfilment"],["s21",30,"Fulfilment"]]' && es.every((e) => e.claim === true && !e.orderId)
+    && site.state === "received",
+    "ONE tap approves exactly the rows drawn, each its own Fulfilment spent by the drafter on an exact match, and the site hears Received: "
+    + JSON.stringify({ rows: ds.map((d) => [d.status, d.decided_by]), state: site.state }));
+  const twice = await call("/claims/" + c1.id + "/received", { hash: pv.j.hash });
+  ok(twice.status === 409 && drafts(c1.id).length === 2, "and a second tap on an answered claim books nothing more: " + JSON.stringify(twice.j.error));
+
+  /* the book moves between the card and the tap: refused, with the rows as they now stand */
+  const c2 = (await O.claimAccount(senv, U, { amount: 40, method: "tngbiz", account: "tngbiz" })).claim;
+  const pv2 = await call("/claims/" + c2.id + "/preview", {});
+  putSale({ rid: "s19", customer: C, date: "2026-08-25", qty: 1, total: 25, cash: 0, deliveredQty: 1, deliveredOn: "2026-08-25" });
+  const moved = await call("/claims/" + c2.id + "/received", { hash: pv2.j.hash });
+  ok(moved.status === 409 && moved.j.differs === true && moved.j.preview.rows[0].rid === "s19" && drafts(c2.id).length === 0
+    && (await O.claimsOf(senv, U)).find((x) => x.id === c2.id).state === "waiting",
+    "rows that moved since the card drew them are not approved: the tap is refused with the rows as they now stand, and the claim still waits: "
+    + JSON.stringify(moved.j.preview && moved.j.preview.rows.map((r) => r.rid)));
+
+  /* more than the rows owe is never a tap */
+  const c3 = (await O.claimAccount(senv, U, { amount: 500, method: "tngbiz", account: "tngbiz" })).claim;
+  const pv3 = await call("/claims/" + c3.id + "/preview", {});
+  const over = await call("/claims/" + c3.id + "/received", { hash: pv3.j.hash });
+  ok(pv3.j.left > 0 && over.status === 409 && /more than their rows owe/.test(over.j.error) && drafts(c3.id).length === 0,
+    "a claim for more than their rows owe says what is left over, and Received on it is refused: " + JSON.stringify({ left: pv3.j.left, err: over.j.error }));
+
+  /* C. THE CARD: the claim is a Paid? row whose card draws the rows, and Received sends the digest of what is drawn */
+  const { openMaster: om1115 } = await import("../tools/payload.mjs");
+  const { w } = await om1115();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 96; w.clearInterval = () => {};
+    const claim = { id: "a20260925010000-abcd", u: U, code: C, kind: "account", at: "2026-09-25T01:00:00.000Z", amount: 80, method: "transfer", account: "maybank", state: "waiting" };
+    let LEFT = 0;
+    const calls = [];
+    w.fetch = async (path, init) => {
+      const pp = String(path), post = !!(init && init.method === "POST");
+      calls.push({ p: pp, body: init && init.body ? JSON.parse(init.body) : null });
+      const out = pp === "orders" && !post ? { ok: true, orders: [], claims: [claim] }
+        : /\/preview$/.test(pp) ? { ok: true, rows: [{ rid: "s20", date: "2026-09-02", owed: 50, rm: 50, flags: [] }, { rid: "s21", date: "2026-09-10", owed: 60, rm: 30, flags: [] }], left: LEFT, hash: "h-drawn" }
+        : { ok: true, approved: ["x", "y"], rows: [{}, {}] };
+      return { ok: true, status: 200, json: async () => out };
+    };
+    w.eval("AP_DRAFTS=[];");
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    await new Promise((r) => setTimeout(r, 30));
+    const kinds = JSON.parse(String(w.eval("JSON.stringify(ordActs().map(function(a){return a.kind+':'+a.o.id;}))")));
+    const card = D.querySelector('.ordcard[data-id="' + claim.id + '"]');
+    const lines = card ? [...card.querySelectorAll(".clmrows .salt-ledger__row")].map((r) => (r.textContent || "").replace(/\s+/g, " ").trim()) : [];
+    const rcv = card && card.querySelector('button[data-ord="creceived"]'), filled = card ? [...card.querySelectorAll("button.salt-pill")] : [];
+    ok(kinds.join(",") === "paid:" + claim.id && lines.length === 2 && /2026-09-02, owes RM 50 ?RM 50/.test(lines[0]) && /2026-09-10, owes RM 60 ?RM 30/.test(lines[1])
+      && rcv && !rcv.disabled && rcv.textContent === "Received, RM 80" && filled.length === 1 && filled[0] === rcv && !!card.querySelector('button[data-ord="cnotfound"]'),
+      "a claim against the account is one Paid? row, and its card draws the rows it settles, oldest first, with Received the one filled control: " + JSON.stringify({ kinds, lines }));
+    rcv.click(); await new Promise((r) => setTimeout(r, 30));
+    const sent = calls.find((x) => x.p === "claims/" + claim.id + "/received");
+    ok(sent && sent.body.hash === "h-drawn", "Received sends the digest of the rows drawn, which the Worker approves only if they still stand: " + JSON.stringify(sent && sent.body));
+    LEFT = 20; w.eval("CLM_PV={};ORD_PV_GEN++;"); await w.eval("ordLoad(true)"); await new Promise((r) => setTimeout(r, 30));
+    const card2 = D.querySelector('.ordcard[data-id="' + claim.id + '"]');
+    ok(card2.querySelector('button[data-ord="creceived"]').disabled && /More than the rows owe/.test(card2.textContent) && /is not a tap here/.test(card2.textContent),
+      "and with more sent than the rows owe the card says so, and Received is not a tap");
+  } finally { w.close(); }
+})();
+
 section("v764: what he records on the desk reaches the customer's order, and the chase stops");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026. Every road built since v694 runs from the site to the book. A
