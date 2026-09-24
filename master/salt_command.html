@@ -19206,12 +19206,14 @@ async function ordAct(b){
   }else if(st==='say'){
     /* v753: HIS ANSWER, CHECKED HERE AND AGAIN ON THE WORKER. This page can refuse it before it
        leaves, which is the kinder place to be told; the Worker refuses it whatever asks, which is
-       the place that has to hold. Same lock as the bulletin: a product's name warns and goes. */
+       the place that has to hold. Same lock as the bulletin, and the same ask (S8, 25 Sep 2026): a line
+       it warns on, a product's name or a bare emas, perak or gangsa, goes only once he says so. */
     const si=document.querySelector('input[data-say="'+id+'"]');
     const t=si?String(si.value||'').trim():'';
     if(!t)return refuse('Write something first; nothing was sent.');
     const chk=siteSafe(t);
     if(chk.refuse)return refuse(chk.refuse+' Nothing was sent.');
+    if(chk.warn&&!confirm(chk.warn+' Send it anyway?'))return refuse('Not sent.');
     body=JSON.stringify({message:t});
   }else body=JSON.stringify(Object.assign({status:st},b.dataset.mode?{mode:b.dataset.mode}:{}));
   const url='orders/'+encodeURIComponent(u)+'/'+encodeURIComponent(id);

@@ -16569,6 +16569,46 @@ await (async () => {
       "and a line with none of them passes clean");
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
+section("S13 13.2: his answer on an order asks before sending a line the desk warns on, as the bulletin does");
+await (async () => {
+  /* 25 SEP 2026, the stage 8 review: the answer road read siteSafe's refusal and never its warning, so a bare
+     emas or perak, which the Worker's lock lets through by design, reached a customer's thread with no ask at all.
+     Driven through ordAct itself, on a card built as ordCard draws one, with confirm and fetch stubbed. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    const d = w.document, asked = [], posted = [];
+    let answer = false;
+    w.confirm = (m) => { asked.push(String(m)); return answer; };
+    w.fetch = async (u, o) => { if (o && o.method === "POST") posted.push({ u: String(u), body: String(o.body || "") });
+      return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) }; };
+    const card = d.createElement("div");
+    card.className = "card";
+    card.innerHTML = '<input data-say="o1" value=""><button data-ord="say" data-id="o1" data-u="aaaa-bbbb">Send</button>';
+    d.body.appendChild(card);
+    const send = async (t, yes) => {
+      asked.length = 0; posted.length = 0; answer = yes;
+      card.querySelector("input").value = t;
+      await w.eval("ordAct(document.querySelector('button[data-ord=\"say\"]'))");
+      return { asked: asked.slice(), posted: posted.slice(), msg: String(w.eval("ordMsg")) };
+    };
+    const warned = "Emas dan Perak dibuka minggu ini.";
+    const no = await send(warned, false);
+    ok(no.asked.length === 1 && /level in Malay/.test(no.asked[0]) && no.posted.length === 0 && /^Not sent[.]$/.test(no.msg),
+      "a bare Malay level word is put to him, and on a no nothing leaves: " + JSON.stringify(no));
+    const yes = await send(warned, true);
+    ok(yes.asked.length === 1 && yes.posted.length === 1 && JSON.parse(yes.posted[0].body).message === warned,
+      "and on a yes it goes, as the bulletin's does: " + JSON.stringify(yes));
+    const prod = await send("your salt is ready to collect", false);
+    ok(prod.asked.length === 1 && /product in words/.test(prod.asked[0]) && prod.posted.length === 0,
+      "a product's word is asked about the same way: " + JSON.stringify(prod));
+    const clean = await send("Siap, boleh ambil esok.", false);
+    ok(clean.asked.length === 0 && clean.posted.length === 1, "a line with nothing to warn on goes without an ask: " + JSON.stringify(clean));
+    const refused = await send("Tahap emas anda naik", true);
+    ok(refused.asked.length === 0 && refused.posted.length === 0 && /Nothing was sent/.test(refused.msg),
+      "and a refused line is refused before any ask: " + JSON.stringify(refused));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
 section("v696: the guest links are five, one for each tier, and each one is a level and nothing else");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "for the guest links, produce exactly 5 links, for the five
