@@ -19432,6 +19432,9 @@ function ordField(i){return ['fee','hand','say','why'].map(k=>i.dataset[k]!=null
 let ORD_SEL='',ORD_OPENED=false,ORD_FILTER='all',ORD_SAID=null,ORD_WAKE=false;
 /* S11 fix: A WAKE OPENS ITS CARD. His banner opens desk#orders/newest (public/sw.js): the address is Site orders, and the
    newest act on it, the one that woke him, is opened on the first draw that has one. The wake carries nothing but that. */
+/* S11 fix: an order named as he would name it (its code, size and day, and what it comes to), for an answer said away from
+   its card: at the head of the list, once the tap that closed it has taken the card off the open list */
+function ordName(o){return (o.code||'unmapped')+', '+units(+o.qty||0)+' '+(o.product||'salt')+' of '+ordWhen(o.at).split(',')[0]+', '+fmt(+((+o.total||0)+(+o.delivery||0)).toFixed(2));}
 function ordWakeAddr(h){if(h==='orders/newest'){ORD_WAKE=true;return 'orders';}return h;}
 function ordWhen(iso){try{if(!iso)return '';const p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(x=>{p[x.type]=x.value;});return p.day+' '+MAP_MON[+p.month-1]+', '+p.hour+':'+p.minute;}catch(e){return '';}}
 function ordWhat(a){const o=a.o;
@@ -19468,7 +19471,7 @@ function ordDraw(){
   const lead=document.getElementById('ordLead');
   /* a tap that closed its order (Cash received taking the last of what was owed) takes its card off the open list,
      and the answer with it: that answer is said at the head of the list instead, and the phone goes back to the list */
-  const gone=ORD_SAID&&!ORD_OPEN.some(o=>o&&o.id===ORD_SAID.id)?`<p class="dsc ordsaid" role="status" data-msg="${esc(ORD_SAID.id)}">${esc(ORD_SAID.t)}</p>`:'';
+  const gone=ORD_SAID&&!ORD_OPEN.some(o=>o&&o.id===ORD_SAID.id)?`<p class="dsc ordsaid" role="status" data-msg="${esc(ORD_SAID.id)}">${ORD_SAID.name?'<b>'+esc(ORD_SAID.name)+'.</b> ':''}${esc(ORD_SAID.t)}</p>`:'';
   if(lead&&!ordNeedKey&&!ordUnread)lead.textContent=acts.length?acts.length+', oldest first.':'Nothing waiting on you.';
   if(ordNeedKey)box.innerHTML='<div class="warnpill" style="display:block">The write key is needed to read the orders and it was not accepted. Reload to be asked again. <b>This is not an empty book: orders may be waiting.</b></div>';
   else if(ordUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The orders could not be read: '+esc(ordUnread)+'. <b>This is not an empty book.</b></div>';
@@ -19599,7 +19602,7 @@ async function ordAct(b){
       :st==='declined'?'Declined. They read Not taken: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+'. '+told
       :st==='cancelled'?'Cancelled. They read Cancelled by us: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+'. Any payment taken is refunded on the row. '+told
       :ORD_WORD[st]+'. '+told;
-    ORD_SAID={id,t:said};
+    {const o=ORD_OPEN.find(x=>x&&x.id===id);ORD_SAID={id,t:said,name:o?ordName(o):''};}
     if(r.ok&&(st==='declined'||st==='cancelled'))delete ORD_WHY[id];
     if(r.ok&&st==='handover')delete ORD_PART[id];
     const used=r.ok&&document.querySelector('input[data-'+({say:'say',handover:'hand',acknowledged:'fee'}[st]||'none')+'="'+id+'"]');

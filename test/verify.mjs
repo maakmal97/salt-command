@@ -24484,9 +24484,9 @@ await (async () => {
     D.querySelector('.ordcard[data-id="c1"] button[data-ord="cash"]').click();
     for (let i = 0; i < 30 && !D.querySelector('.ordlist [data-msg="c1"]'); i++) await new Promise((r) => setTimeout(r, 30));
     const said = D.querySelector('.ordlist [data-msg="c1"]');
-    ok(said && /^Recorded: RM 100 in cash\. They see it paid and the chase stops\. Booked as it is drafted/.test(said.textContent) && w.eval("ORD_OPENED") === false
+    ok(said && /^CC5-OKR, 1 unit salt of 20 Sep, RM 100\. Recorded: RM 100 in cash\. They see it paid and the chase stops\. Booked as it is drafted/.test(said.textContent) && w.eval("ORD_OPENED") === false
       && !D.querySelector('.ordcard[data-id="c1"]'),
-      "the order it closed has left the list, and its answer heads the list, the phone back on it: " + JSON.stringify({ said: said && said.textContent, opened: w.eval("ORD_OPENED") }));
+      "the order it closed has left the list, and its answer heads the list naming the order, the phone back on it: " + JSON.stringify({ said: said && said.textContent, opened: w.eval("ORD_OPENED") }));
   } finally {
     await new Promise((r) => setTimeout(r, 200));
     try { w.close(); } catch (x) { /* best effort */ }
