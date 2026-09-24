@@ -100,7 +100,12 @@ export const OWNER_JS = `
     qw.appendChild(el('p','qrn','The code opens their page with the username filled in. Sign-in link sends one that opens it outright, once.'));
     card.appendChild(qw);
     var row=el('div','grow');
+    /* 24 SEP 2026: A USERNAME WITH NO ACCOUNT BEHIND IT has nothing to share, copy or open: the
+       message would say "Your account is ready to use" over an account that is not there, and Open
+       could only be refused. All four go off together, each saying why; the card's line says how to mend it. */
+    var noAcct=a.account===false, why='No account behind this username yet';
     var share=el('button',null,'Share'); share.type='button';
+    if(noAcct){ share.disabled=true; share.title=why; }
     share.addEventListener('click', async function(){
       try{
         if(navigator.share) await navigator.share({text:a.msg});
@@ -109,6 +114,7 @@ export const OWNER_JS = `
       setTimeout(function(){ share.textContent='Share'; }, 1600);
     });
     var copy=el('button',null,'Copy message'); copy.type='button';
+    if(noAcct){ copy.disabled=true; copy.title=why; }
     copy.addEventListener('click', function(){
       try{ navigator.clipboard.writeText(a.msg); copy.textContent='Copied'; }catch(e){ copy.textContent='Copy failed'; }
       setTimeout(function(){ copy.textContent='Copy message'; }, 1600);
@@ -132,7 +138,7 @@ export const OWNER_JS = `
        record per account on every page load and burn links nobody sent. */
     var slb=el('button','pw','Sign-in link'); slb.type='button';
     /* no record means nothing to open under the master, so the link could only fail (23 Sep 2026) */
-    if(a.account===false){ slb.disabled=true; slb.title='No account behind this username yet'; }
+    if(noAcct){ slb.disabled=true; slb.title=why; }
     slb.addEventListener('click', async function(){
       if(a.account===false || (!a.pwMaster && !a.username)) return;
       slb.disabled=true; slb.textContent='Making it...';
@@ -155,6 +161,7 @@ export const OWNER_JS = `
       setTimeout(function(){ slb.textContent='Sign-in link'; slb.disabled=false; }, 2200);
     });
     var open=el('button',null,'Open account'); open.type='button';
+    if(noAcct){ open.disabled=true; open.title=why; }
     open.addEventListener('click', function(){ openAcct(a); });
     row.appendChild(share); row.appendChild(copy); row.appendChild(slb); row.appendChild(pwb); row.appendChild(open);
     card.appendChild(row);
@@ -193,6 +200,7 @@ export const OWNER_JS = `
      and the statement, the prices and the lock are the customer's own. */
   function openAcct(a){
     if(!OWNER) return;
+    if(sheet&&sheet[a.username]&&sheet[a.username].account===false){ say(NOACCT,'bad'); return; }
     if(!OWNER.master){ say('No master passphrase is set on this Worker, so nothing can be opened. Set STMT_MASTER.','bad'); return; }
     if(busy) return;
     un.value=a.username; pw.value=OWNER.master;
@@ -225,6 +233,8 @@ export const OWNER_JS = `
     hits.forEach(function(a){
       var s=(sheet&&sheet[a.username])||a;
       var b=el('button',null,a.test?'Test account':(a.code||a.username)); b.type='button';
+      /* no account, nothing to open: the row says so and does not take a tap (24 Sep 2026) */
+      if(sheet&&s.account===false){ b.disabled=true; b.title='No account behind this username yet'; }
       if(a.code) b.appendChild(el('span',null,a.username));
       if(a.test) b.appendChild(el('span','fl f-none','Counts nowhere; open it to try the page.'));
       else if(sheet){

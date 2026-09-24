@@ -216,7 +216,11 @@ async function handleOpen(request, env) {
        owner's override from that address for fifteen minutes: on his own phone, helping that
        customer, exactly when it is for. A value shaped like a statement password was never a
        master attempt. */
-    if (master && masterKey && !PASS_RE.test(String(master))) await bump(mKey, mFails);
+    /* AND HIS CORRECT MASTER IS NEVER A MISS (24 Sep 2026). On a username with no account behind it
+       the override has nothing to open, so it refuses, but that is the account's fault and not a wrong
+       passphrase: counted, ten taps on such a row locked his override on every account for fifteen
+       minutes. */
+    if (master && masterKey && !ctEq(master, masterKey) && !PASS_RE.test(String(master))) await bump(mKey, mFails);
     return json({ ok: false, error: REFUSED }, 401);
   }
 

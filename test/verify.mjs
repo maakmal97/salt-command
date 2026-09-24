@@ -14150,6 +14150,85 @@ await (async () => {
       "an associate's links are drawn as they see them, with nothing that mints or withdraws: " + JSON.stringify([...pCard.querySelectorAll("button")].map((b) => b.textContent)));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S1 1.22: a username with no account has Share, Copy, Sign-in and Open switched off, and his master on it is never a miss");
+await (async () => {
+  /* 24 SEP 2026 (M23): the Send card switched off Sign-in link alone on a username with no account, so
+     Share and Copy message still handed over "Your account is ready to use", and Open account and the
+     Review row still posted /open with his master. byMaster needs a record, so each such tap counted
+     as a failed master attempt, and ten of them locked his override on every account for fifteen minutes. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s1-22";
+  const uA = C.newUsername(), uB = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s1-22", uA);
+  await kv.put("u:" + uA, JSON.stringify({ u: uA, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX0-AA", username: uA }, { code: "CX1-BB", username: uB }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX0-AA", username: uA, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s1-22", KID = "kid-s1-22";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 150 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  const hits = [];
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    /* ---- Send: the four controls on the card with no account ---- */
+    D.querySelector('button[data-m="send"]').click();
+    const cardOf = (u) => [...D.querySelectorAll("#slist .scard")].find((x) => x.textContent.includes(u));
+    ok(await until(() => cardOf(uA) && cardOf(uB)), "Send draws a card for both usernames");
+    const btn = (u, t) => [...cardOf(u).querySelectorAll("button")].find((b) => b.textContent === t);
+    const four = ["Share", "Copy message", "Sign-in link", "Open account"];
+    ok(four.every((t) => btn(uB, t) && btn(uB, t).disabled && /No account/.test(btn(uB, t).title)) && /No account yet/.test(cardOf(uB).textContent),
+      "on the card with no account, Share, Copy message, Sign-in link and Open account are all off, each saying why: "
+        + JSON.stringify(four.map((t) => [t, btn(uB, t) && btn(uB, t).disabled])));
+    ok(four.every((t) => btn(uA, t) && !btn(uA, t).disabled), "and on a card with an account all four stay on");
+    /* ---- Review: the row with no account takes no tap ---- */
+    D.querySelector("button[data-back]").click();
+    D.querySelector('button[data-m="review"]').click();
+    const rowOf = (u) => [...D.querySelectorAll("#rlist button")].find((b) => b.textContent.includes(u));
+    ok(await until(() => rowOf(uB) && /No account yet/.test(rowOf(uB).textContent)), "Review says the username has no account");
+    const before = hits.length;
+    rowOf(uB).click();
+    await new Promise((r) => setTimeout(r, 60));
+    ok(rowOf(uB).disabled && !hits.slice(before).some((x) => /\/open$/.test(x)),
+      "and a tap on its row posts nothing: " + JSON.stringify(hits.slice(before)));
+
+    /* ---- the Worker: his correct master on a username with no account is never a miss ---- */
+    const from = { "content-type": "application/json", "CF-Connecting-IP": "203.0.113.22" };
+    for (let i = 0; i < 10; i++) await site("/open", { method: "POST", headers: from, body: JSON.stringify({ u: uB, password: MASTER, master: MASTER }) });
+    const r = await site("/open", { method: "POST", headers: from, body: JSON.stringify({ u: uA, password: MASTER, master: MASTER }) });
+    const j = await r.json().catch(() => ({}));
+    ok(r.status === 200 && j.byMaster === true && !(await kv.get("mfail:203.0.113.22")),
+      "ten opens of a no-account username with his right master leave his override working on a real account from that address: "
+        + JSON.stringify({ status: r.status, mfail: await kv.get("mfail:203.0.113.22") }));
+    /* the control: a fresh no-account username, since uB's own brake now answers 429 before any count */
+    const uC = C.newUsername();
+    for (let i = 0; i < 10; i++) await site("/open", { method: "POST", headers: from, body: JSON.stringify({ u: uC, password: "not-the-master", master: "not-the-master" }) });
+    ok((await site("/open", { method: "POST", headers: from, body: JSON.stringify({ u: uA, password: MASTER, master: MASTER }) })).status === 401,
+      "while ten WRONG masters from that address still brake it, as they always did");
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v687: the master account opens on its own page, and the owner's script travels only there");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: a master account that opens on what it can do. /all is that account,
