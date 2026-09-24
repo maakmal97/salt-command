@@ -315,7 +315,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   wrap), and a remembered phone draws "Opening your account", never the door. Kept as an app:
   manifest and icon served by the Worker, no brand; every login asks about notifications once. How to
   keep it is a card once signed in, never on the door: an Install button wherever the browser offers one,
-  Samsung Internet's steps or a computer's address-bar mark drawn elsewhere; on an iPhone its Sheet mints the hand-over as it
+  Samsung Internet's steps, a computer's address-bar mark or another Android browser's menu mark drawn elsewhere; on an iPhone its Sheet mints the hand-over as it
   opens and copies the key in a tap of its own, rewriting the address to `/app#<key>` (his D2), and never
   says a link signs the saved app in. **The saved app starts at `/app`** (the manifest's `start_url`): with
   nothing remembered, an iPhone opens on One step to finish, the key by Paste or the eight symbols typed

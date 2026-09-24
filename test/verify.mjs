@@ -20009,6 +20009,60 @@ await (async () => {
       "the door's code screen answers an empty clipboard without naming Safari: " + JSON.stringify(droid.D.getElementById("codeMsg").textContent));
   } finally { droid.W.close(); }
 })();
+section("S3 fix: an Android browser that offers no install, or whose offer was turned down, is shown its own menu's mark and the words to look for");
+await (async () => {
+  /* S3R-9 (24 Sep 2026). Android Chrome, Firefox or Edge with no install event got no card at all, and neither did one
+     whose offer was dismissed; the plan says that browser's own menu mark is drawn, and the door's old Android steps
+     went in this stage. */
+  const { landingPage: lpA } = await import("../stmt/page.js");
+  const CA = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDA } = await import("jsdom");
+  const uA = "aaaa-gggg", passA = "2345-6789-abcd-efgg", ckA = await CA.contentKey("8".repeat(64), uA);
+  const envA = await CA.encryptWith(ckA, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>x</p>" }] }));
+  const UA = {
+    chrome: "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Mobile Safari/537.36",
+    firefox: "Mozilla/5.0 (Android 14; Mobile; rv:130.0) Gecko/130.0 Firefox/130.0"
+  };
+  const drive = async (ua, bip) => {
+    const dom = new JDA(lpA(uA, "nA", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: ua, configurable: true });
+        win.matchMedia = (q) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+        win.scrollTo = () => {};
+        win.fetch = async (p) => {
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CA.wrapKey(passA, ckA), env: envA, live: null, prices: null, session: "sessAa000000000000000000000000" });
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    if (bip) {
+      const ev = new W.Event("beforeinstallprompt", { cancelable: true });
+      ev.prompt = () => {}; ev.userChoice = Promise.resolve({ outcome: "dismissed" });
+      W.dispatchEvent(ev);
+    }
+    D.getElementById("pw").value = passA;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && D.getElementById("barw").hidden; i++) await new Promise((r) => setTimeout(r, 25));
+    const card = D.getElementById("keepCard"), droid = D.getElementById("keepDroid");
+    return { W, D, card, droid, seen: () => !card.hidden && !droid.hidden && !!droid.querySelector("svg.glyph") && /Install app or Add to Home screen/.test(droid.textContent) };
+  };
+  const plain = await drive(UA.chrome, false);
+  try {
+    ok(plain.seen() && plain.D.getElementById("keepInstall").hidden && plain.D.getElementById("keepGo").hidden,
+      "Android Chrome with no install offered is shown its menu's mark and Install app or Add to Home screen: " + JSON.stringify(plain.card.textContent.replace(/\s+/g, " ")));
+  } finally { plain.W.close(); }
+  const fx = await drive(UA.firefox, false);
+  try { ok(fx.seen(), "and so is Firefox on Android"); } finally { fx.W.close(); }
+  const turned = await drive(UA.chrome, true);
+  try {
+    ok(!turned.D.getElementById("keepInstall").hidden && turned.droid.hidden, "the fixture: an install offered is the one Install button");
+    turned.D.getElementById("keepInstall").click();
+    await new Promise((r) => setTimeout(r, 30));
+    ok(turned.seen() && turned.D.getElementById("keepInstall").hidden, "and turned down, it falls back to the menu's mark rather than vanishing");
+  } finally { turned.W.close(); }
+})();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {
   /* S3, 24 SEP 2026. The door's one way in named its opener unseal, which stmt/owner.js already declared: spliced in

@@ -426,6 +426,8 @@ function keepCard() {
     /* S3 3.12: the browser's own Install where it offers one; else that browser's own marks, drawn */
     + '<p class="kline" id="keepSam" hidden>Tap ' + glyphSvg("menu", 22) + " then Add page to, then Home screen.</p>"
     + '<p class="kline" id="keepDesk" hidden>Look for the install mark ' + glyphSvg("install", 22) + " at the end of the address bar.</p>"
+    /* S3 fix: an Android browser that offers no install, or whose offer was turned down, is shown its own menu's mark */
+    + '<p class="kline" id="keepDroid" hidden>Tap ' + glyphSvg("vdots", 22) + " then Install app or Add to Home screen.</p>"
     + '<button class="btn salt-ghost salt-ghost--lit" id="keepGo" type="button">Show me how</button>'
     + '<button class="btn salt-ghost salt-ghost--lit" id="keepInstall" type="button" hidden>Install Salt Counter</button></div>';
 }
@@ -978,10 +980,10 @@ const CLIENT_JS = `
      shares this browser's storage, so it opens signed in). Where it does not, Samsung Internet's own steps are drawn,
      and a computer's Chrome or Edge is pointed at the install mark in its address bar; nothing says phone there. */
   var bip=null;
-  var SAMSUNG=/SamsungBrowser/.test(UA), DESKTOP=!IOS&&!/Mobi|Android/.test(UA), CHROMIUM=/Chrome[/]|Chromium|Edg[/]/.test(UA);
+  var SAMSUNG=/SamsungBrowser/.test(UA), ANDROID=/Android/.test(UA), DESKTOP=!IOS&&!/Mobi|Android/.test(UA), CHROMIUM=/Chrome[/]|Chromium|Edg[/]/.test(UA);
   function keepMode(){
     if(INAPP||STANDALONE||OWNER||view||!session) return '';
-    return IOS?'ios':bip?'install':SAMSUNG?'samsung':(DESKTOP&&CHROMIUM)?'desk':'';
+    return IOS?'ios':bip?'install':SAMSUNG?'samsung':(DESKTOP&&CHROMIUM)?'desk':ANDROID?'droid':'';
   }
   function drawKeep(){
     if(!keepCardEl) return;
@@ -994,6 +996,7 @@ const CLIENT_JS = `
     document.getElementById('keepInstall').hidden=mode!=='install';
     document.getElementById('keepSam').hidden=mode!=='samsung';
     document.getElementById('keepDesk').hidden=mode!=='desk';
+    document.getElementById('keepDroid').hidden=mode!=='droid';
   }
   window.addEventListener('beforeinstallprompt', function(ev){ ev.preventDefault(); bip=ev; drawKeep(); });
   window.addEventListener('appinstalled', function(){ bip=null; if(keepCardEl) keepCardEl.hidden=true; });
