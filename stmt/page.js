@@ -3131,7 +3131,7 @@ const CLIENT_JS = `
     setHold(); drawOrder(); drawPayHead();
   }
   function drawPay(){
-    if(PS.step==='check'){ drawCheck(); return; }
+    if(PS.step==='check'){ drawPayCheck(); return; }
     var body=document.getElementById('payBody'), c=PS.ctx;
     body.textContent=''; payTitle();
     body.appendChild(kpiTile('ember',c.label,rm(c.fig),c.note()));
@@ -3235,7 +3235,7 @@ const CLIENT_JS = `
   function payBack(){ if(PS&&PS.away&&PS.away.gone&&PS.step==='pay'){ PS.step='check'; PS.said=''; drawPay(); } }
   document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden') payGone(); else payBack(); });
   window.addEventListener('blur',payGone); window.addEventListener('focus',payBack);
-  function drawCheck(){
+  function drawPayCheck(){
     var body=document.getElementById('payBody'), foot=document.getElementById('payFoot'), w=PS.away, a=acct(w.acct), qr=w.rail==='qr';
     body.textContent=''; foot.textContent='';
     document.getElementById('payT').textContent='Pay '+rm(w.amt);
