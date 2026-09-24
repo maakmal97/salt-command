@@ -1693,7 +1693,8 @@ const CLIENT_JS = `
      An associate's place OPENS ON THEIR LINKS, then the reward in units with its bar, then the card by month.
      drawRewards(el) is what a place calls: it draws into el from then on; drawCard redraws wherever that is. */
   var rewardsEl=pCard;
-  function drawRewards(el){ if(el) rewardsEl=el; drawCard(); }
+  /* an associate's alone: a place built before anybody signs in reads nothing (the links read needs a session) */
+  function drawRewards(el){ if(el) rewardsEl=el; if(assoc) drawCard(); }
   function drawCard(){
     var box=rewardsEl;
     box.textContent='';
