@@ -274,14 +274,14 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   (`PSHAPE`), never its product. **The one name on the site is the app's, `Salt Counter`**, twelve
   characters, which is what iOS gives a home screen; the desk's name never appears. **A customer's
   level is a mark, never named**; no name is used because none exists there (rule 2).
-- **AN ORDER REACHES THE BOOK IN STAGES, AND SITE ORDERS WRITES NOTHING.** The desk's every-minute
+- **AN ORDER REACHES THE BOOK IN STAGES.** The desk's every-minute
   `reconcileOrders` is the one road that queues what the site makes (Accept and Cash received queue
   their own): the acknowledgement a **Pending** row (delivery beside its total), a payment a **Fulfilment**, a
-  handover a **Correction** stating the running total (rolling the shelf by the difference), a
-  withdrawal a **Cancellation** (theirs, nothing paid, while the pending row is unapproved: the row
-  dropped instead; an approved row never). The row is named by
-  `ledgerKey`, **the engine's `ovKey` to the character**; an amendment waits until `OPEN.byKey`
-  carries that key. Each entry is stamped with its stage's own moment (`stageAt`). A move of his
+  handover a **Correction** stating the running total (rolling the shelf by the difference), a close at
+  what was handed over a **Correction** restating size and total, a withdrawal a **Cancellation** (theirs,
+  nothing paid, while the pending row is unapproved: the row dropped instead; an approved row never). The
+  row is named by `ledgerKey`, **the engine's `ovKey` to the character**, which a close moves; an amendment
+  waits until `OPEN.byKey` carries that key. Each entry is stamped with its stage's own moment (`stageAt`). A move of his
   runs the reconcile at once; the return leg carries what he records on the desk back to the order
   and only ever raises. Cash on handover is withheld while that customer holds an unpaid advance. A
   delivery's location never reaches a ledger note. The customer reads a whitelisted view of an order,

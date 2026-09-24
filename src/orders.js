@@ -587,8 +587,9 @@ export function pendingEntry(order, code, now) {
   };
 }
 
-/** What a customer paid, as a Fulfilment against the row the acknowledgement made. `cash`: money he took
- *  at the counter and recorded on the card (S11 11.12), the one payment the site did not hear first. */
+/** What a customer paid, as a Fulfilment against the row the acknowledgement made. `cash`: money he took at the
+ *  handover and recorded on the card (S11 11.8, 11.12), the one payment the site did not hear first: the desk's own
+ *  entry, said as his and marked `by: "desk"`, so the desk never reads it as a payment of theirs waiting on him. */
 export function payEntry(order, code, amount, now, cash) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
   const date = klDate(at);
@@ -596,12 +597,12 @@ export function payEntry(order, code, amount, now, cash) {
   const books = partyOnBook(order, code);
   const method = cash ? "cash at the counter" : (order.method ? (order.method + (order.account ? " via " + order.account : "")) : "not stated");
   return {
-    at: at.toISOString(), type: "SELL", party: books, qty: 0, total: rm, status: "Payment",
+    at: at.toISOString(), type: "SELL", party: books, qty: 0, total: rm, status: "Payment", by: cash ? "desk" : "customer",
     raw: "Payment of RM " + rm + " on " + books + ", order " + order.id + ", by " + method,
     payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: books, rid: null,
       orderKey: order.ledgerKey || null, orderCode: null, linkTo: null, assoc: null, downstream: null,
       date, qty: 0, total: 0, cash: rm, kg: 0,
-      note: cash ? "Paid in cash at the counter against order " + order.id + ", recorded on the desk." : "Paid on the statements site, order " + order.id + ", by " + method + "." }
+      note: (cash ? "Cash received at the handover, recorded on the desk, order " + order.id : "Paid on the statements site, order " + order.id + ", by " + method) + "." }
   };
 }
 
@@ -624,6 +625,32 @@ export function handoverEntry(order, code, units, now) {
       note: moved + " unit " + how + " for order " + order.id + "." }
   };
 }
+
+/** S11 11.9: an order closed at what was handed over, as a Correction restating the row: its size and the
+ *  goods' total at what went, what was handed over and when. The cost follows the size in the fold. */
+export function closeEntry(order, code, now) {
+  const at = now instanceof Date ? now : new Date(now || Date.now());
+  const date = order.movedOn || klDate(at);
+  const books = partyOnBook(order, code);
+  const how = order.mode === "deliver" ? "delivered" : "collected";
+  const qty = +(+order.qty).toFixed(3), goods = +(+order.total).toFixed(2), was = (order.closed && order.closed.qty) || qty;
+  return {
+    at: at.toISOString(), type: "SELL", party: books, qty, total: goods, status: "Close",
+    raw: "Closed at " + qty + " unit " + how + " to " + books + " for RM " + goods + ", order " + order.id + ", of " + was + " ordered",
+    payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: null,
+      orderKey: order.ledgerKey || null, orderCode: null, linkTo: null, assoc: null, downstream: null,
+      date, qty: 0, total: 0, cash: 0, kg: 0,
+      fields: { qty, total: goods, deliveredQty: +(+order.moved || 0).toFixed(3), deliveredOn: date, handover: how },
+      note: "Closed at " + qty + " unit " + how + " for order " + order.id + ", of the " + was + " ordered." }
+  };
+}
+/* THE ROW'S NAME MOVES WITH ITS TOTAL: the engine's ovKey of the row as the close leaves it, the party and the
+   day kept from the key the acknowledgement wrote. Later stages then wait for the close to fold, as a first
+   stage waits for its pending row, and the return leg finds the row by the name it will carry. */
+export const closedKey = (order) => {
+  const [party, date] = String(order.ledgerKey || "").split("|");
+  return POSITION_ENGINE.ovKey({ customer: party, date, total: +(+order.total).toFixed(2), delivery: +order.delivery || 0 });
+};
 
 /** Either side withdrew it: the row is cancelled, and the fold raises any refund itself. */
 export function cancelEntry(order, code, why, now) {
@@ -658,6 +685,7 @@ export function stageAt(order, job, now) {
   else if (job === "pay") { const p = (order && order.payments) || []; at = p.length ? p[p.length - 1].at : null; }
   else if (job === "move") at = (order && order.movedAt) || last((x) => x.by === "desk" && / unit (delivered|collected)$/.test(String(x.note || "")));
   else if (job === "cancel") at = last((x) => x.status === "cancelled" || x.status === "declined");
+  else if (job === "close") at = (order && order.closed && order.closed.at) || null;
   const d = at ? new Date(at) : null;
   return d && !isNaN(d.getTime()) ? d : (now instanceof Date ? now : new Date(now || Date.now()));
 }
@@ -721,7 +749,7 @@ export async function reconcileOrders(env) {
   const onBook = (book && book.state && book.state.OPEN && book.state.OPEN.byKey) || null;
   const now = new Date();
   let queued = 0; const unmapped = [], failed = [], waiting = [], dropped = [];
-  const STAGE_WORD = { pay: "payment", move: "handover", cancel: "withdrawal" };
+  const STAGE_WORD = { pay: "payment", move: "handover", close: "close", cancel: "withdrawal" };
   for (const o of owing) {
     const code = users[o.u] || null;
     const q = o.queued || {}, mark = {}; const order = Object.assign({}, o);
@@ -735,7 +763,7 @@ export async function reconcileOrders(env) {
     else {
     /* the ids already spent on this order: two stages stamped in the same millisecond would share a
        draft id, so the later one takes the next millisecond, and takes it again on a re-queue */
-    const used = new Set([q.ack, q.cancel].filter(Boolean));
+    const used = new Set([q.ack, q.cancel, q.close].filter(Boolean));
     try {
       /* S11 11.10: WITHDRAWN BY THEM WHILE ITS ROW WAITED UNDER APPROVE, nothing paid: the row is dropped (dropAck)
          and the withdrawal is spent with it, so no Cancellation waits behind a row that will never land */
@@ -761,6 +789,7 @@ export async function reconcileOrders(env) {
         if (job === "ack") e = pendingEntry(order, code, stageAt(order, job, now));
         else if (job === "pay") e = payEntry(order, code, +((+order.paid || 0) - (+q.paid || 0)).toFixed(2), stageAt(order, job, now));
         else if (job === "move") e = handoverEntry(order, code, +order.moved || 0, stageAt(order, job, now));
+        else if (job === "close") e = closeEntry(order, code, stageAt(order, job, now));
         /* WHO ENDED IT is read off the event that ended it (24 Sep 2026): a cancellation of his own was
            noted in the committed row as the customer's, because only a decline was taken to be his */
         else if (job === "cancel") {
@@ -777,6 +806,10 @@ export async function reconcileOrders(env) {
         if (job === "ack") { mark.ledgerKey = e.orderKey; order.ledgerKey = e.orderKey; mark.ack = e.at; }
         else if (job === "pay") mark.paid = +(+order.paid || 0).toFixed(2);
         else if (job === "move") mark.moved = +(+order.moved || 0).toFixed(3);
+        else if (job === "close") {
+          mark.close = e.at; mark.moved = +(+order.moved || 0).toFixed(3);
+          const nk = closedKey(order); mark.ledgerKey = nk; order.ledgerKey = nk;
+        }
         else if (job === "cancel") mark.cancel = e.at;
         if (!state) state = { state: "queued", why: "" };
       }
@@ -855,7 +888,7 @@ export async function dropQueued(env, ats) {
  * marks say. THE MARK STAYS: cleared, the next pass would queue the same stage at the same moment
  * (stageAt), the drafter would skip it as decided, and the mark would be written again. Offering the
  * move again is a fold of its own. */
-const REJECTED_WHAT = { Pending: "pending row", Payment: "payment entry", Handover: "handover entry", Cancellation: "cancellation entry" };
+const REJECTED_WHAT = { Pending: "pending row", Payment: "payment entry", Handover: "handover entry", Close: "closing correction", Cancellation: "cancellation entry" };
 export async function rejectedOnOrder(env, entry, at) {
   /* the entry names the order and never its account (the ledger's side knows codes), so the account
      is found among the site's orders, closed ones included */

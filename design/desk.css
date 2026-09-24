@@ -696,3 +696,47 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   .fintab.pgrid.fg-ph .pm,.fintab.pgrid.fg-ph .pq,.fintab.pgrid .pold{display:none;}
   .fintab.pgrid th,.fintab.pgrid td{padding-left:4px;padding-right:4px;font-size:12px;}
 }
+
+/* S11 11.4 (24 Sep 2026): SITE ORDERS OPENS ON WAITING ON YOU. The rows are the system's Inbox row and the
+   filters its tab strip; this is only the geometry they sit in. On the laptop the list and the open card
+   stand side by side; under 1080px the list comes first and a row opens its card, with the way back at its
+   head. A filter pill is 44px tall, the strip's own being 33. */
+.ordgrid{display:grid;gap:16px;min-width:0;}
+.ordlist,.ordpane{min-width:0;}
+.ordrows{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+.ordtabs .ordtab{min-height:var(--salt-tap);}
+.ordrest{margin-top:18px;}
+.ordnote{margin-top:14px;}
+.ordsaid:empty{display:none;}
+@media (min-width:1080px){
+  .ordgrid{grid-template-columns:minmax(0,360px) minmax(0,1fr);align-items:start;}
+  .ordback{display:none;}
+}
+@media (max-width:1079px){
+  .ordgrid.ord-open .ordlist{display:none;}
+  .ordgrid:not(.ord-open) .ordpane{display:none;}
+}
+/* S11 11.2: the order's card is the system's Approve card; its one line under the party is the entry as
+   ordered, in the figures' face */
+.ordline{margin:0;font-family:var(--salt-font-mono);font-size:14px;line-height:1.5;color:var(--salt-salt);}
+.ordpv .kpis{margin:0;}
+/* S11 11.3: the card's actions sit in a footer that stays in reach while the card scrolls under a thumb,
+   drawn to the card's edges on the opaque panel so nothing reads through it */
+.ordcard .ordfoot{position:sticky;bottom:0;z-index:2;margin:0 -20px -18px;padding:12px 20px calc(14px + env(safe-area-inset-bottom,0px));
+  background:var(--salt-panel);border-top:1px solid var(--salt-line-faint);border-radius:0 0 var(--salt-radius-lg) var(--salt-radius-lg);
+  display:flex;flex-direction:column;gap:8px;}
+/* the Approve card and a field are flex boxes, and a flex box outranks the browser's own rule for a hidden
+   element: a card, the Other charge, his own words and the stepper stay shut until they are opened */
+.ordcard[hidden],.ordcard [hidden]{display:none;}
+/* on the phone the footer clears the desk's two floating buttons, so Accept sits above them */
+@media (max-width:860px){.ordcard .ordfoot{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px));}}
+.ordfee{margin:0;}
+.ordother{margin-top:10px;}
+/* S11 11.6: the answer box and his quick replies under it */
+.ordreply{margin-top:4px;}
+.ordquick{display:flex;flex-wrap:wrap;gap:6px;}
+.ordquick:empty{display:none;}
+/* S11 11.9: Delivered part's stepper, a half unit either side of the figure */
+.ordpart{display:flex;flex-direction:column;gap:8px;}
+.ordstep{display:flex;align-items:stretch;gap:8px;}
+.ordstep .salt-field__input{flex:0 1 140px;text-align:center;}

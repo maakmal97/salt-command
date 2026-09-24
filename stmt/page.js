@@ -1443,7 +1443,12 @@ const CLIENT_JS = `
 
   /* the chip's tone by state: pending is steel, ready is brass, done is verdigris, anything closed is mist */
   var STATE_TONE={placed:'steel',acknowledged:'steel',ready:'brass',done:'verdigris'};
-  var STATE_WORDS={placed:'Placed', acknowledged:'Acknowledged', ready:'Ready', done:'Completed', declined:'Declined', cancelled:'Withdrawn'};
+  var STATE_WORDS={placed:'Placed', acknowledged:'Acknowledged', ready:'Ready', done:'Completed', declined:'Not taken', cancelled:'Withdrawn'};
+  /* S11 11.7: an order he ended says so with his reason: Not taken, or Cancelled by us. One withdrawn by
+     them stays Withdrawn. The reason is the note on the event that ended it. */
+  function endOf(o){ var h=(o.history||[]).filter(function(x){return x&&x.status===o.status;}); return h.length?h[h.length-1]:null; }
+  function evWord(h){ return h.status==='cancelled'&&h.by==='desk'?'Cancelled by us':(STATE_WORDS[h.status]||h.status); }
+  function stateWord(o){ var e=endOf(o); return o.status==='cancelled'&&e&&e.by==='desk'?'Cancelled by us':(STATE_WORDS[o.status]||o.status); }
   /* v694: money and goods are two tracks, so what is still owed and what is still to come are read
      off the order, never off a single word of state. Both figures are the ones the desk holds. */
   function dueOf(o){ return +((o.total+(+o.delivery||0))-(+o.paid||0)).toFixed(2); }
@@ -1466,7 +1471,7 @@ const CLIENT_JS = `
     var due=dueOf(o), moved=+o.moved||0, paid=+o.paid||0, payable=['acknowledged','ready'].indexOf(o.status)>=0;
     var tap=(draft.tap&&draft.tap.id===o.id)?draft.tap:null, tk=tap&&tap.k;
     if(tk==='pay'&&!(payable&&due>0.004) || tk==='withdraw'&&!((payable||o.status==='placed')&&!(moved>0))) tk='state';
-    pane.appendChild(el('div','state salt-status salt-status--'+(STATE_TONE[o.status]||'mist'), STATE_WORDS[o.status]||o.status));
+    pane.appendChild(el('div','state salt-status salt-status--'+(STATE_TONE[o.status]||'mist'), stateWord(o)));
     pane.appendChild(el('div','quote', rm(o.total+(o.delivery||0))));
     if(o.delivery>0) pane.appendChild(el('div','sub2', rm(o.total)+' for the goods and '+rm(o.delivery)+' delivery'));
     var line2=el('div','sub2');
@@ -1480,7 +1485,10 @@ const CLIENT_JS = `
       +(paid>0?(due>0.004?rm(paid)+' of '+rm(o.total+(o.delivery||0))+' paid, '+rm(due)+' to go.':'Paid in full.'):'Nothing paid yet.')
       +(moved>0?(moved<o.qty-0.004?' '+unitsOf(moved,unit)+' of '+unitsOf(o.qty,unit)+' handed over.':' Handed over in full.'):'');
     else if(o.status==='done') line='Your order is now complete. Thank you for your loyalty.';
-    else if(o.status==='declined') line='This order could not be taken. Nothing is owed.';
+    /* S11 11.9: an order he closed at what was handed over says so, the size it was and the size it is */
+    if(o.closed&&o.closed.qty) line+=' Closed at '+unitsOf(o.qty,unit)+' of the '+o.closed.qty+' ordered, '+rm(o.total)+' for the goods.';
+    else if(o.status==='declined'){ var dn=endOf(o); line='Not taken'+(dn&&dn.note?': '+dn.note:'')+'. Nothing is owed.'; }
+    else if(o.status==='cancelled'&&endOf(o)&&endOf(o).by==='desk'){ var cn=endOf(o); line='Cancelled by us'+(cn.note?': '+cn.note:'')+'. '+(paid>0?'The '+rm(paid)+' you paid is refunded.':'Nothing is owed.'); }
     else if(o.status==='cancelled') line=paid>0?'Withdrawn. The '+rm(paid)+' you paid is refunded.':'Withdrawn before anything moved. Nothing is owed.';
     pane.appendChild(el('p','sub2',line));
     if(tk==='state') pane.appendChild(statusLine(tap.t));
@@ -1539,7 +1547,7 @@ const CLIENT_JS = `
     if(!view) pane.appendChild(sayw);
     if(tk==='say') pane.appendChild(statusLine(tap.t));
     var hist=el('ul','hist');
-    (o.history||[]).forEach(function(h){ var li=el('li',null,stamp(h.at)+'  '+(STATE_WORDS[h.status]||h.status)+(h.method?', paying by '+methodWord(h.method,h.account):'')+(h.note?': '+h.note:'')); hist.appendChild(li); });
+    (o.history||[]).forEach(function(h){ var li=el('li',null,stamp(h.at)+'  '+evWord(h)+(h.method?', paying by '+methodWord(h.method,h.account):'')+(h.note?': '+h.note:'')); hist.appendChild(li); });
     pane.appendChild(hist);
     return pane;
   }
