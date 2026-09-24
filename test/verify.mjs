@@ -31875,7 +31875,7 @@ await (async () => {
     "To pay now heads the statement tab: its figure, what it is for with the day it was received and the day it is due, and the one filled Pay: "
     + JSON.stringify([one.first, one.tile, one.pill]));
   ok(one.heads.join() === "Coming up" && one.rows.length === 1
-    && one.rows[0].join("|") === "Cube 1 unit, ordered " + said(kl(-1)) + "|RM 110|Pay now, or when it arrives"
+    && one.rows[0].join("|") === "Cube 1 unit, ordered " + said(kl(-1)) + "|RM 110|Due when you receive it"
     && one.marks === 2 && !/salt|oil|Gold|Silver/i.test(one.text),
     "an order agreed and not yet handed over is Coming up beneath, drawn as a mark and never a word; one part says its due day in the line above, so no Overdue list: "
     + JSON.stringify([one.heads, one.rows]));

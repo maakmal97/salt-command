@@ -2539,7 +2539,8 @@ const CLIENT_JS = `
     if(cm.rm>0.004){
       box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab','Coming up'));
       var C=el('div','salt-ledger salt-ledger--plain');
-      cm.parts.forEach(function(p){ C.appendChild(lrowN(partSpan(p,true),rm(p.rm),'Pay now, or when it arrives')); });
+      /* S6 fix: its due day, never an offer to pay now that this tab has no control for */
+      cm.parts.forEach(function(p){ C.appendChild(lrowN(partSpan(p,true),rm(p.rm),'Due when you receive it')); });
       box.appendChild(C);
     }
   }
