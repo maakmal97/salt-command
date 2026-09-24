@@ -221,7 +221,7 @@ export async function mintAccounts(root, opts = {}) {
       const ck = await contentKey(secrets.key, u);
       /* THE BUNDLE IS THEIR POSITION AS IT STANDS, one statement dated today. A brand-new account
          has no issued history, and an empty bundle would open on a page with nothing on it. */
-      const doc = liveStatement(code, now);
+      const doc = liveStatement(code, now, u);
       const bundle = { v: 1, issued: issueDate, statements: doc ? [{ issued: issueDate, label: issued, body: doc.body || "" }] : [] };
       const rec = { u, issued: issueDate, issues: [issueDate],
         verifier: await makeVerifier(pw), wrap: await wrapKey(pw, ck),

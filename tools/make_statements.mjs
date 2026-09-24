@@ -9,8 +9,9 @@
  * lifted verbatim, with exactly two substitutions, each marked where it sits:
  *   - txStat and txDates come from engine/position.mjs, the same module the desk runs, so
  *     every figure on a statement is still the desk's own arithmetic and cannot drift;
- *   - the who-line is codes-only, because the desk-era useName option read the laptop's
- *     plaintext directory, which never reaches this repo.
+ *   - the who-line never carries a name (an issue prints the code, the live statement the
+ *     username), because the desk-era useName option read the laptop's plaintext directory,
+ *     which never reaches this repo.
  * What lives here alone is the statement's own law: what a customer may see and how the
  * document reads. Nothing else in the repo states it, so this is one copy, not a second.
  * IF THE DESK EVER REGAINS A STATEMENTS PANEL, inline this file the way tools/engine.mjs
@@ -342,11 +343,15 @@ function stmtDoc(party,rows,o){
      column already says what such a row is; the date cell stays quiet. Whether it
      should instead show the row's cancelledOn or agreedOn is his call, not made here. */
   const dLong=d=>{try{const t=new Date(d);if(!d||isNaN(t))return '';return t.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(x){return d;}};
-  /* CODES ONLY, ALWAYS: the one substitution in this lifted block. The desk-era useName
+  /* NEVER A NAME: the one substitution in this lifted block. The desk-era useName
      option read the laptop's plaintext directory, which never reaches this repo (hard
      rule 2), so the path is removed rather than parameterised: a statement built here
      cannot carry a real name because nothing here holds one. */
-  const who=codeOf(party);
+  /* THE LIVE STATEMENT NAMES THE ACCOUNT BY ITS USERNAME (stage 1 of the Counter redesign, his choice of
+     24 Sep 2026): a customer's page never shows the desk's roster code, and the username is what they sign
+     in with. With none to hand the line is left off rather than filled with the code. An issue keeps the
+     code it was issued with, a dated record not being corrected in place. */
+  const who=o.live?(o.user||''):codeOf(party);
   const T={qty:0,total:0,paid:0,owed:0,qtyBy:{},toGetBy:{}};
   T.toGet=0;T.kindUnits=0;T.got=0;T.ordered=0;
   /* a GIFT is not a payment. Its in-kind value exists so the salt does not fall out of
@@ -490,8 +495,8 @@ function stmtDoc(party,rows,o){
        : (o.from||o.to?' &middot; '+e(o.from?dLong(o.from):'from the beginning')+' to '+e(o.to?dLong(o.to):'today')
          +(T.pendN&&rows.some(r=>r.pendingOrder&&o.to&&new Date(r.date)>new Date(o.to))
             ?', plus any order agreed and not yet actioned':''):''))+'</p>'),
-   '<p class="whol gap1">Account</p>',
-   '<div class="who">'+e(who)+'</div>',
+   who?'<p class="whol gap1">Account</p>':'',
+   who?'<div class="who">'+e(who)+'</div>':'',
    '<div class="rule"></div>',
    rows.length?box('<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead>'
      +'<tbody>'+body+'</tbody></table>')
@@ -737,12 +742,12 @@ export function partyTotals(party, to) {
    written. It is written by the deploy after every fold, so it changes as the book does, and
    its heading says so to the minute in Kuala Lumpur time. It is not written to disk anywhere
    and never has a QR: the QR on the issued statement already opens it. */
-export function liveStatement(party, now) {
+export function liveStatement(party, now, user) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
   const kl = at.toLocaleString('en-GB', { timeZone: 'Asia/Kuala_Lumpur', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
   const today = at.toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
   const o = { from: null, to: today, completed: true, open: true, pending: true,
-              dates: true, brand: null, issued: kl.replace(',', ''), live: true };
+              dates: true, brand: null, issued: kl.replace(',', ''), live: true, user: user || null };
   const rows = stmtRows(party, o);
   o.refunds = stmtRefunds(party, o);
   o.recon = stmtRecon(party, rows).filter(R => rows.some(x => x.date === R.order.date));
@@ -799,7 +804,7 @@ export async function liveRecords(root, key, now, pricing, cards) {
         JSON.parse(await decryptWith(ck, rec.env));
       } catch (e) { ck = null; }
       if (!ck) { wrongKey.push(rec.u); records.push(rec); continue; }
-      const doc = liveStatement(code, now);
+      const doc = liveStatement(code, now, rec.u);
       if (doc) {
         rec.live = Object.assign({ at: doc.at }, await encryptWith(ck, JSON.stringify(doc)));
         live++;

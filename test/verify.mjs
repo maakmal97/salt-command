@@ -8316,11 +8316,12 @@ await (async () => {
     const { liveStatement, liveRecords } = await import("../tools/make_statements.mjs");
     const { planPublish } = await import("../tools/stmt-publish.mjs");
     const now = new Date("2026-09-03T06:20:00Z");
-    const lv = liveStatement(both.who, now);
+    const lv = liveStatement(both.who, now, u);
     ok(lv && lv.at === now.toISOString() && /Live statement/.test(lv.body) && /as at 03 Sept? 2026 14:20/.test(lv.body)
       && /every entry from the beginning to today/.test(lv.body) && !/class="qrb"/.test(lv.body) && !/>Issued /.test(lv.body),
       "a live statement says it is one, to the minute in Kuala Lumpur time, covers everything, and carries no QR");
-    ok(lv.body.includes(both.who), "and it is that customer's");
+    ok(lv.body.includes('<div class="who">' + u + "</div>") && !lv.body.includes(both.who),
+      "and it is that customer's, named by the username they sign in with and never the desk's code (S1 1.33)");
     const bookL = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
     const afterIssue = bookL.sales.find(s => s.date && s.date > "2026-09-01" && !s.cancelled);
     if (afterIssue) {
@@ -16145,8 +16146,12 @@ await (async () => {
       "the password is sealed under the master too, so Send can hand it over from his phone without the laptop");
     const viaMaster = await C7.unwrapKey(MASTER7, made.wrapMaster);
     ok(!!viaMaster, "and the master unwraps the content key, so his override opens it as it opens every other account");
-    ok(JSON.parse(await C7.decryptWith(ckNew, made.env)).v === 1,
+    const bundle7 = JSON.parse(await C7.decryptWith(ckNew, made.env));
+    ok(bundle7.v === 1,
       "the bundle it sealed opens under that key and is the shape every other bundle is");
+    if (bundle7.statements.length) ok(bundle7.statements.every((s) => s.body.includes('<div class="who">27a4-gkgw</div>') && !s.body.includes("CF5-WM")),
+      "and its statement names the account by the username, never the desk's code (S1 1.33)");
+    else skipData("CF5-WM has no rows, so the minted statement's account line went unchecked");
 
     /* THE ISSUE IT STAMPS IS THE ISSUE'S DATE, NOT THE FOLDER IT LIVES IN, and this is the one
        field whose blast radius is the whole site rather than the one account. newestIssue answers
@@ -19431,6 +19436,35 @@ await (async () => {
   ok(!!ref && fetched >= 6 && !bad.length,
     "every face named by the door at /s/, a guest board at /g/ and the root resolves to a font the Worker serves ("
     + fetched + " fetched)" + (bad.length ? ": " + bad.join("; ") : ""));
+})();
+
+section("S1 1.33: the live statement names the account by its username, never the desk's code");
+await (async () => {
+  /* STAGE 1 OF THE COUNTER REDESIGN (M35, his choice of 24 Sep 2026): the live statement printed
+     "Account <roster code>" onto the customer's own page, which siteWords says never shows a code.
+     Read off every live statement on the real book, through siteWords itself. */
+  const M = await import("../tools/make_statements.mjs");
+  const POS = (await import("../engine/position.mjs")).default;
+  const { siteWords } = await import("../src/orders.js");
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const at = new Date("2026-09-24T00:00:00Z");
+  const text = (h) => h.replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+  const parties = [...new Set(bk.sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
+  let docs = 0;
+  const named = [], said = [], bare = [];
+  for (const p of parties) {
+    const d = M.liveStatement(p, at, "abcd-efgh");
+    if (!d) continue;
+    docs++;
+    if (!d.body.includes('<p class="whol gap1">Account</p>\n<div class="who">abcd-efgh</div>')) named.push(p);
+    const why = siteWords(text(d.body));
+    if (why) said.push(p + " " + why);
+    const d0 = M.liveStatement(p, at);
+    if (/class="who"|>Account</.test(d0.body) || d0.body.includes(p)) bare.push(p);
+  }
+  ok(docs > 10 && !named.length, "every live statement (" + docs + ") names its account by the username" + (named.length ? "; not: " + named.slice(0, 3).join(", ") : ""));
+  ok(docs > 10 && !said.length, "and none says anything a customer's page never shows" + (said.length ? ": " + said.slice(0, 3).join("; ") : ""));
+  ok(docs > 10 && !bare.length, "with no username to hand the line is left off, never filled with the code" + (bare.length ? ": " + bare.slice(0, 3).join(", ") : ""));
 })();
 
 section("v782: a statement says which book each row is, and units of different books do not add");
