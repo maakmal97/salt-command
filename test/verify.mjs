@@ -21408,6 +21408,80 @@ await (async () => {
       "an order a desk opened by itself marks nothing seen: his line is New and its row still says a reply is waiting: " + JSON.stringify({ seen: seen(w), row: rowText(d, O) }));
   });
 })();
+section("S5 fix: a part or a row passed over for its focus is caught up");
+await (async () => {
+  /* 25 SEP 2026, the stage 5 review. The poll never draws what holds the focus, and nothing drew it later: a desk
+     browser leaves the focus on a clicked button, so Cancel stayed offered after the goods had moved, and the history
+     missed the handover, until the order changed again. Driven by the page's own poll, shortened in the served HTML. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-f3", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f3",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const A = "20260924090000-aaaa", B = "20260923090000-bbbb";
+  const o = (id, x) => Object.assign({ id, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 90,
+    moved: 0, status: "acknowledged", history: [{ at: "2026-09-23T01:00:00Z", status: "placed", by: "customer" }, { at: "2026-09-23T02:00:00Z", status: "acknowledged", by: "desk" }], msgs: [] }, x);
+  const drive = async (go) => {
+    const st = { a: o(A), b: o(B) };
+    const html = landingPage(u, "nf3", null), fast = html.replace(/var POLL_MS=[0-9]+/, "var POLL_MS=120");
+    const dom = new JSDOM(fast, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {}; w.confirm = () => false;
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: JSON.parse(JSON.stringify([st.a, st.b])) } : { ok: true };
+        return { ok: true, status: 200, json: async () => j };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    try {
+      ok(fast !== html, "the served page's poll is shortened, or this proves nothing about a poll");
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 30));
+      d.querySelector('#tabs button[data-t="order"]').click();
+      await go(w, d, st);
+    } finally { w.close(); }
+  };
+  const until = async (f) => { for (let i = 0; i < 60 && !f(); i++) await new Promise((r) => setTimeout(r, 30)); return f(); };
+  const scr = (d) => d.querySelector("#pOrder .oscreen");
+  const part = (d, k) => (scr(d).querySelector('[data-part="' + k + '"]') || {}).textContent || "";
+  const hand = (st) => { st.a.moved = 1; st.a.movedOn = "2026-09-24"; st.a.history = st.a.history.concat([{ at: "2026-09-24T03:00:00Z", status: "acknowledged", by: "desk", note: "1 unit collected" }]); };
+  await drive(async (w, d, st) => {
+    d.querySelector('#pOrder [data-row="' + A + '"]').click();
+    const c = [...scr(d).querySelectorAll("button")].find((b) => b.textContent === "Cancel this order");
+    c.focus(); c.click();   /* the confirm answers no, and the focus stays on the button */
+    hand(st);
+    await until(() => /Collected on/.test(part(d, "when")));
+    const held = d.contains(c) && d.activeElement === c;
+    c.blur();
+    await until(() => !/Cancel this order/.test(part(d, "foot")));
+    ok(held && /no longer be cancelled/.test(part(d, "foot")) && ![...scr(d).querySelectorAll("button")].some((b) => b.textContent === "Cancel this order"),
+      "Cancel keeps its focus while the goods move, and once the focus leaves the next poll takes it away: " + JSON.stringify({ held, foot: part(d, "foot") }));
+  });
+  await drive(async (w, d, st) => {
+    d.querySelector('#pOrder [data-row="' + A + '"]').click();
+    const sm = scr(d).querySelector('[data-part="hist"] summary');
+    sm.focus();
+    hand(st);
+    await until(() => /Collected on/.test(part(d, "when")));
+    const held = d.contains(sm) && d.activeElement === sm && !/collected/.test(part(d, "hist"));
+    sm.blur();
+    await until(() => /collected/.test(part(d, "hist")));
+    ok(held && /1 unit collected/.test(part(d, "hist")), "and the history held back for its focused summary is drawn once the focus leaves: " + JSON.stringify({ held, hist: part(d, "hist") }));
+  });
+  await drive(async (w, d, st) => {
+    const r = d.querySelector('#pOrder [data-row="' + B + '"]');
+    r.focus();
+    st.b.status = "ready";
+    await until(() => /Ready/.test((d.querySelector('#pOrder [data-row="' + B + '"]') || {}).textContent || ""));
+    const n = d.querySelector('#pOrder [data-row="' + B + '"]');
+    ok(/Ready/.test(n.textContent) && d.activeElement === n,
+      "a row that changes while it holds the focus is drawn again at once and keeps the focus: " + JSON.stringify({ row: n.textContent, focus: d.activeElement && d.activeElement.getAttribute("data-row") }));
+  });
+})();
 section("v753: he answers on the order, and the words are checked on the desk before they leave it");
 await (async () => {
   /* the other half of v751. His answer is a move of his like any other, so it wakes them and changes

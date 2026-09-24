@@ -1818,6 +1818,7 @@ const CLIENT_JS = `
     /* New is read against what this device had seen when the order was opened, and stays until it is left; the
        list is drawn after the open order is seen, so its row does not call a reply on screen waiting */
     if(draft.oShown!==id){ draft.oShown=id; draft.oSince={}; }
+    draft.oStale='';
     if(o&&!(id in draft.oSince)) draft.oSince[id]=seenMark(o);
     if(o) seeIt(o);
     var col=el('div','olistcol'); col.appendChild(el('h2',null,'Your orders')); col.appendChild(oList(id));
@@ -1826,8 +1827,9 @@ const CLIENT_JS = `
     return place;
   }
   function oDraw(){ var was=document.getElementById('oPlace'); if(was) was.replaceWith(oPlace()); }
-  /* S5 5.5: the orders that changed, patched where they stand. The list keeps every row that did not change and
-     whatever has the focus; the open order keeps any part holding the focus, and a part that reads the same is left
+  /* S5 5.5: the orders that changed, patched where they stand. The list keeps every row that did not change; a row
+     that did is drawn again and keeps the focus, holding nothing typed. The open order keeps any part holding the
+     focus, and draft.oStale has the next poll draw it once the focus has left; a part that reads the same is left
      as it is, which is always the composer. Only an order opened or gone draws the place again. */
   function oShape(list){ return [].map.call(list.children,function(x){ return x.getAttribute('data-row')||x.textContent; }).join('|'); }
   function oSync(ids){
@@ -1838,11 +1840,13 @@ const CLIENT_JS = `
     if(scr&&ids.indexOf(sid)>=0){
       var o=oFind(sid);
       seeIt(o);
+      draft.oStale='';
       Object.keys(OPARTS).forEach(function(k){
         var p=[].filter.call(scr.children,function(c){ return c.getAttribute('data-part')===k; })[0];
-        if(!p||p.contains(ae)) return;
+        if(!p) return;
         var n=OPARTS[k](o); n.setAttribute('data-part',k); n.hidden=!n.childNodes.length;
-        if(n.outerHTML!==p.outerHTML) p.replaceWith(n);
+        if(n.outerHTML===p.outerHTML) return;
+        if(p.contains(ae)) draft.oStale=sid; else p.replaceWith(n);
       });
     }
     var was=place.querySelector('[data-olist]'), nl=oList(shown);
@@ -1852,7 +1856,9 @@ const CLIENT_JS = `
       var fb=fr&&nl.querySelector('[data-row="'+fr+'"]'); if(fb) try{ fb.focus({preventScroll:true}); }catch(e){}
     } else if(was) ids.forEach(function(id){
       var r=was.querySelector('[data-row="'+id+'"]'), n=nl.querySelector('[data-row="'+id+'"]');
-      if(r&&n&&!r.contains(ae)&&r.outerHTML!==n.outerHTML) r.replaceWith(n);
+      if(!r||!n||r.outerHTML===n.outerHTML) return;
+      var had=r.contains(ae); r.replaceWith(n);
+      if(had) try{ n.focus({preventScroll:true}); }catch(e){}
     });
   }
   /* an order drawn open while the tab was elsewhere is seen when the tab is turned to */
@@ -1986,6 +1992,7 @@ const CLIENT_JS = `
     await loadOrders();
     var changed=orders.filter(function(o){ return before[o.id]!==JSON.stringify(o); }).map(function(o){ return o.id; }),
         gone=Object.keys(before).some(function(id){ return !oFind(id); });
+    if(draft.oStale&&changed.indexOf(draft.oStale)<0) changed.push(draft.oStale);
     if(changed.length||gone) oSync(changed);
   }
   async function refresh(){
