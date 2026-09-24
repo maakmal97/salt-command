@@ -19755,6 +19755,69 @@ await (async () => {
     ok(W.location.hash === "" && W.location.pathname === "/app", "and takes the key out of the address: " + W.location.href);
   } finally { await new Promise((r) => setTimeout(r, 40)); W.close(); }
 })();
+section("S3 fix: a remembered saved app the site could not open just now says so with Try again, never the code screen's Safari steps");
+await (async () => {
+  /* F6, S3R-4 (24 Sep 2026). On a transient fault the saved iPhone app kept the phone remembered and wrote "still
+     remembered: try again" into the hidden door, then opened One step to finish, sending a customer who was still
+     signed in to Safari for a code; and a saved app has no reload to try again with. */
+  const { landingPage: lpT } = await import("../stmt/page.js");
+  const CT = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDT } = await import("jsdom");
+  const uT = "aaaa-tttt", devT = "t".repeat(32), ckT = await CT.contentKey("4".repeat(64), uT);
+  const envT = await CT.encryptWith(ckT, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] }));
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const drive = async (url, stored, fault) => {
+    const st = { opens: 0, fault };
+    const store = new Map(stored ? [["salt-stmt-remember", JSON.stringify({ t: "t".repeat(32), k: Buffer.from(devT).toString("base64"), u: uT })]] : []);
+    const dom = new JDT(lpT("", "nT", null), { url, runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: IPHONE, configurable: true });
+        win.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (p) => {
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/remember/open") {
+            st.opens++;
+            if (st.fault === "drop") throw new TypeError("Failed to fetch");
+            if (st.fault) return ans(503, { ok: false, error: "busy" });
+            return ans(200, { ok: true, u: uT, remembered: true, wrap: await CT.wrapKey(devT, ckT), env: envT, live: null, prices: null, session: "sessTa000000000000000000000000" });
+          }
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    await until(() => (!stored || st.opens) && (!D.getElementById("gate").hidden || !D.getElementById("codeBox").hidden || !D.getElementById("barw").hidden));
+    await new Promise((r) => setTimeout(r, 40));
+    return { st, store, W, D, until };
+  };
+  for (const fault of [503, "drop"]) {
+    const g = await drive("https://site.test/app", true, fault);
+    try {
+      const again = g.D.getElementById("remAgain");
+      ok(g.D.getElementById("codeBox").hidden && !g.D.getElementById("gate").hidden
+        && /could not be opened just now\. This (phone|computer) is still remembered/.test(g.D.getElementById("msg").textContent)
+        && !!again && !again.hidden && g.store.has("salt-stmt-remember"),
+        "the saved app, still remembered, meets a " + (fault === "drop" ? "dropped connection" : "server fault") + " and says so in view with Try again, not One step to finish: "
+          + JSON.stringify({ code: !g.D.getElementById("codeBox").hidden, msg: g.D.getElementById("msg").textContent, again: again && !again.hidden }));
+      g.st.fault = null;
+      again.click();
+      await g.until(() => !g.D.getElementById("barw").hidden);
+      ok(!g.D.getElementById("barw").hidden && g.st.opens === 2 && again.hidden && g.D.getElementById("gate").hidden,
+        "and Try again opens it once the site answers");
+    } finally { g.W.close(); }
+  }
+  const fresh = await drive("https://site.test/app", false, null);
+  try {
+    await fresh.until(() => !fresh.D.getElementById("codeBox").hidden);
+    ok(!fresh.D.getElementById("codeBox").hidden && fresh.D.getElementById("remAgain").hidden,
+      "the control: a saved app with nothing remembered still opens on One step to finish, with no Try again");
+  } finally { fresh.W.close(); }
+})();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {
   /* S3, 24 SEP 2026. The door's one way in named its opener unseal, which stmt/owner.js already declared: spliced in

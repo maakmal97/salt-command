@@ -652,7 +652,10 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<span>Keep me signed in on this <span class="dev">phone</span></span></label>'
     + '<button class="btn salt-pill salt-pill--md" id="go" type="submit">Sign in</button>'
     + "</form>"
-    + '<p class="msg" id="msg" role="status" aria-live="polite"></p></div>'
+    + '<p class="msg" id="msg" role="status" aria-live="polite"></p>'
+    /* S3 fix: a remembered phone the site could not open just now tries again from here, which a saved app with no
+       reload needs */
+    + (owner ? "" : '<button class="btn salt-ghost" id="remAgain" type="button" hidden>Try again</button>') + "</div>"
     /* S3 3.11: a code from another device, or from Salt Admin at the counter */
     + (owner ? "" : '<button class="btn salt-ghost" id="toCode" type="button">I have a sign-in code</button>')
     + '<p class="salt-insight">Lost your password or your link? Ask us for a <b>new sign-in link</b>. It works straight away.</p>'
@@ -2103,7 +2106,7 @@ const CLIENT_JS = `
     var mine=++ticket;
     var stale=function(){ return mine!==ticket; };
     var done=function(){ if(!stale()){ busy=false; go.disabled=false; } };
-    busy=true; go.disabled=true; say('Checking...','wait');
+    busy=true; go.disabled=true; again(false); say('Checking...','wait');
     var r, body;
     /* the one field carries either secret: the Worker says which it matched, and the page
        unwraps with the matching wrap. A customer never knows there is a second one. */
@@ -2170,9 +2173,12 @@ const CLIENT_JS = `
      The token names the record and brings back the wrap; the key beside it in this browser opens
      it. A refusal, a stale token or a record that has gone simply falls through to the door. */
   var KEPT='Your account could not be opened just now. This phone is still remembered: try again in a moment.';
+  var remAgain=document.getElementById('remAgain');
+  function again(on){ if(remAgain) remAgain.hidden=!on; }
   async function openRemembered(keep){
     var rec=remGet();
     if(!rec||!rec.t||!rec.k||OWNER) return false;
+    if(!keep) again(false);
     /* S3 3.5: reopening a lapse runs under the flow that met it, so it takes no ticket of its own and says nothing */
     var mine=keep?ticket:++ticket, stale=function(){ return mine!==ticket; };
     if(!keep) say('Opening...','wait');
@@ -2181,13 +2187,13 @@ const CLIENT_JS = `
       r=await fetch('/remember/open', {method:'POST', headers:{'content-type':'application/json'},
         body:JSON.stringify({token:rec.t})});
       body=await r.json();
-    }catch(e){ if(!stale()&&!keep) say(KEPT,'bad'); return false; }
+    }catch(e){ if(!stale()&&!keep){ say(KEPT,'bad'); again(true); } return false; }
     if(stale()) return false;
     /* S1 1.41, 24 SEP 2026: ONLY THE DOOR'S REFUSAL FORGETS THIS PHONE. A server fault forgot it too, so one
        bad minute on the site signed every returning phone out for good; that, and a dropped connection,
        now keep it and say so. */
     if(r.status===401){ remClear(); if(!keep) say(''); return false; }
-    if(!r.ok||!body.ok){ if(!keep) say(KEPT,'bad'); return false; }
+    if(!r.ok||!body.ok){ if(!keep){ say(KEPT,'bad'); again(true); } return false; }
     var ck, b;
     try{
       ck=await unwrapUnder(b64d(rec.k), body.wrap);
@@ -2228,6 +2234,15 @@ const CLIENT_JS = `
   }
   document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') reread(); });
   window.addEventListener('pageshow', function(ev){ if(ev&&ev.persisted) reread(); });
+  if(remAgain) remAgain.addEventListener('click', async function(){
+    if(busy) return;
+    again(false); say('');
+    if(opening){ gate.hidden=true; opening.hidden=false; }
+    var inNow=await openRemembered();
+    if(inNow||session) return;
+    if(opening) opening.hidden=true;
+    gate.hidden=false;
+  });
   /* ---- ONE WAY IN (S3 3.3, 24 Sep 2026) ----------------------------------------------------------
      The password, a remembered phone and the link all hand back the same record: these open it with the
      content key and put the account on screen, so the roads cannot drift apart. openBeside opens what sits
@@ -2245,7 +2260,7 @@ const CLIENT_JS = `
     return x;
   }
   function enter(u, body, b, x, ck, keep){
-    say('');
+    say(''); again(false);
     /* S3 3.5: the same account let in again (a lapse reopened, a sign-in on the Sheet, a return re-read) keeps
        the draft, the tab, the month and the place on the page */
     var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
@@ -2404,9 +2419,12 @@ const CLIENT_JS = `
       var inNow=await openRemembered();
       if(inNow||session) return;
       if(opening) opening.hidden=true;
-      if(APP&&(IOS||key||qm)) showCode(!!qm&&!STANDALONE); else gate.hidden=false;
+      /* S3 fix: a phone still remembered, which the site could not open just now, says so on the door with Try again,
+         never on the saved app's code screen, which would send a customer still signed in to Safari for a code */
+      var kept=!!remGet();
+      if(APP&&!kept&&(IOS||key||qm)) showCode(!!qm&&!STANDALONE); else gate.hidden=false;
       if(APP&&qm&&INAPP&&!STANDALONE) csay(INAPP_KEY,'bad');
-      if(key) await openHandover({token:key});
+      if(key&&!kept) await openHandover({token:key});
     })();
   }
 })();
