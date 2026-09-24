@@ -34,6 +34,7 @@
  *   node tools/pricelist.mjs --show <CODE>     print the list the customer would see, now
  */
 import { readFileSync } from "node:fs";
+import { createHmac } from "node:crypto";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import PRICING_ENGINE from "../engine/pricing.mjs";
@@ -167,6 +168,16 @@ export function priceList(code, book, pricing, now) {
     });
   }
   return out;
+}
+
+/* S4 4.1: THE LIST'S STAMP IS A DIGEST OF ITS FIGURES, each product's sizes and prices, and never its `at`: the
+   hourly publish re-strikes every list, so a stamp that moved with the clock would refuse every order placed across
+   the hour. It is sealed inside the list and written in the clear beside it, and the Worker compares the two at
+   Place (4.2) without reading a price. KEYED, under STMT_KEY and over the username: a bare hash in the clear would
+   let a copy of the store test a guessed board against it, and would show which accounts share one. */
+export function priceDigest(list, secret, username) {
+  const figures = ((list && list.products) || []).map((p) => [p.product, (p.sizes || []).map((r) => [r.q, r.price])]);
+  return createHmac("sha256", String(secret)).update("prices\n" + username + "\n" + JSON.stringify(figures)).digest("hex");
 }
 
 /* THE BOARD A STRANGER IS SHOWN (his instruction, 10 Sep 2026), pinned to one tier.

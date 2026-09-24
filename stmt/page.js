@@ -35,6 +35,7 @@
 import { STATEMENT_CSS, SITE_RECIPES, FONT_FACE_CSS } from "./statement-css.js";
 import { PAY_SITE, PAY_ACCOUNTS } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
+import { MAX_OPEN, OPEN_STATES } from "./orders.js";
 
 /* v692: THE THREE-MINUTE LOCK IS GONE (his instruction, 18 Sep 2026). It was a privacy lock for a
    phone left on a table; he asked for a page that stays signed in and a button that leaves. What
@@ -56,8 +57,6 @@ const PAGE_CSS = `
    decision 5 of the identity. Everything else is a hairline or a word. */
 .gate{max-width:440px;margin:10vh auto 0;padding:0 4px}
 .gate h1{font-size:var(--salt-text-xl);margin:0 0 8px}
-/* the level's mark: small, quiet, and never in the way of the price beside it (16 Sep 2026) */
-.mark{margin-left:7px;font-size:0.72em;line-height:1;vertical-align:0.12em;opacity:0.85}
 .gate p.lead{color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.75;margin:0 0 24px}
 /* S3 3.3: the link page, in the system's card, eyebrow, plain ledger and insight; the ring is the app's mark */
 .appmark{display:block;margin:0 0 14px}
@@ -103,8 +102,6 @@ select.fld option{background:var(--salt-well);color:var(--salt-text)}
 /* v695: a product is a mark. Brass, hairline, and it sits on the baseline of whatever it is beside. */
 .psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}
 h3.pmark{margin:0 0 4px;line-height:1}
-/* on a button the mark takes the button's own ink, brass on the chosen one and muted on the rest */
-.seg button .psym{vertical-align:-0.28em;color:inherit}
 .pwith{display:inline-flex;align-items:center;gap:7px}
 /* read aloud, never drawn: the shape's word, so a mark in a sentence is not a hole */
 .sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
@@ -119,6 +116,33 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .conf li:last-child{border-bottom:0}
 .conf .k{color:var(--salt-mist)}
 .conf .v{color:var(--salt-text);text-align:right}
+/* S4, 24 SEP 2026: ORDERING, IN TODAY'S PLACES (stage 4 of the Counter's redesign). The look is the system's: the
+   Sheet, Option tiles, pressed ghosts, the plain ledger, the insight and the glass card. What is here is where those
+   pieces sit inside the osh; no colour of its own. */
+.osheet .salt-sheet__title{flex:1 1 auto}
+.osheet .salt-sheet__close{margin-left:auto}
+.osheet .salt-sheet__body > * + *{margin-top:18px}
+.osheet .salt-options__grid .salt-ghost,.osheet .ofull{width:100%}
+/* a mark on a pressed ghost takes the ghost's own ink, so the chosen product reads as chosen (v695's rule for a mark on a
+   control, which the segment it replaced carried) */
+.osheet .salt-ghost .psym{color:inherit}
+/* New order stands where the order form's pane stood, so it keeps the pane's gap to the Notifications card under it */
+#oNew{margin-bottom:14px}
+.ototal{flex:1 1 0;min-width:0}
+.ototal .salt-kpi__value{margin-top:0}
+.ototal .sub2{display:block;margin-top:2px}
+.osheet .salt-sheet__foot .msg{flex:1 1 100%;margin:0}
+.szrow{display:block;width:100%;min-height:52px;padding-left:0;padding-right:0;background:none;border-style:none none solid;
+  font:inherit;color:inherit;text-align:left;cursor:pointer}
+.szrow:last-child{border-bottom-style:none}
+.szrow:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
+.ochev{flex:0 0 auto;color:var(--salt-prose)}
+.osent{text-align:center}
+.otick{display:block;margin:4px auto 10px;color:var(--salt-verdigris)}
+.obuzz > * + *{margin-top:10px}
+.obuzz .salt-pill,.obuzz .salt-ghost{width:100%}
+.olim{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-top:6px}
+.olim .salt-ghost{flex:0 0 auto}
 /* the one filled control is the system's .salt-pill and the quiet ones its .salt-ghost (22 Sep 2026);
    this page decides only that they run the width of the form */
 .btn{margin-top:18px;width:100%}
@@ -201,7 +225,7 @@ h3.pmark{margin:0 0 4px;line-height:1}
 /* THE DOCUMENT KEEPS THE GEOMETRY IT WAS PROOFED IN. What is injected is the INSIDE of the
    statement's own .w wrapper, so without this the page rendered the tables full-bleed to the
    window while the lock bar and the issue strip stayed pinned at 620px above them: on a laptop
-   the sheet the customer opens and the sheet he was sent were different documents. */
+   the osh the customer opens and the osh he was sent were different documents. */
 #out{max-width:620px;margin:0 auto}
 /* a pane is white 3% with a brass hairline */
 .pane{border:1px solid var(--salt-line);border-radius:var(--salt-radius-md);background:var(--salt-glass);
@@ -215,9 +239,6 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .row2{display:flex;gap:8px}
 .row2 .fld{flex:1}
 .seg{display:flex;gap:8px;margin-top:6px}
-.seg button{flex:1;min-height:var(--salt-tap);font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
-  color:var(--salt-text-muted);background:none;border:1px solid var(--salt-line);border-radius:var(--salt-radius-pill);cursor:pointer}
-.seg button.on{color:var(--salt-brass);border-color:var(--salt-brass);font-weight:700}
 .pay{margin-top:12px;display:flex;flex-direction:column;gap:8px}
 .pay label{display:flex;gap:10px;align-items:center;min-height:var(--salt-tap);padding:0 6px;font-size:var(--salt-text-sm);cursor:pointer}
 .pay input[type=radio]{width:18px;height:18px;accent-color:var(--salt-brass)}
@@ -426,12 +447,20 @@ export const PSHAPE = { salt: "Cube", oil: "Droplet", candy: "Lozenge", rice: "C
 /* THE SHORT MONTHS, NAMED ONCE (24 Sep 2026). Node and every browser write "Sept" for September in en-GB, and
    the house writes Sep: the page, his page, the statement and the price list all read the month from here. */
 export const MON3 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/* S4 4.9, 24 SEP 2026: ONE DELIVERY SENTENCE, wherever the charge is explained (the plan's words, his "all recommended"):
+   Prices, the check before Place, and a guest's board. It replaces three wordings, one of which ("quoted when you order")
+   was never true: the charge is set when he confirms the order, and only then. */
+export const DELIVERY = "Delivery is charged by area. We tell you the charge when we confirm, before you pay, and you can cancel then at no cost.";
 /** The mark for a product, as SVG source. `px` is the drawn size; the stroke stays hairline. */
 export function psymSvg(product, px) {
   const d = PSYM[String(product || "").toLowerCase()] || RING;
   return '<svg class="psym" viewBox="0 0 24 24" width="' + px + '" height="' + px + '" aria-hidden="true" focusable="false">'
     + '<path d="' + d + '" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>';
 }
+
+/** A size in words, units above one and unit at one (S4). The one copy: a guest's board calls it here, and the page's own
+ *  script is served its source, so the two cannot drift apart. */
+export function unitsOf(q, u) { u = u || "unit"; return q + " " + (+q > 1 && u.slice(-1) !== "s" ? u + "s" : u); }
 
 /* ---- THE MARKS A SCREEN DRAWS BESIDE ITS WORDS (S3, 24 Sep 2026) ------------------------------------
    The app's ring, the three things inside it, and the phone's own controls (the menu's dots, Share, Add to
@@ -606,13 +635,13 @@ export function boardPage(guest, nonce) {
            carries no name since v787, and this line draws none, so a name that reaches it is not drawn either. */
         + (p.fellBack ? '<p class="sub2">The only price for this product</p>' : "")
         + '<div class="tblw"><table><thead><tr><th class="l">Size</th><th>Price</th></tr></thead><tbody>'
-        + p.sizes.map((r) => "<tr><td class=\"l\">" + esc(r.q) + " " + esc(p.unit || "unit")
+        + p.sizes.map((r) => "<tr><td class=\"l\">" + esc(unitsOf(r.q, p.unit))
             + "</td><td>" + esc(rm(r.price)) + "</td></tr>").join("")
         + "</tbody></table></div></div>").join("")
     : '<p class="lead">No price list has been written yet.</p>';
   return guestPage("<h2>Price list</h2>"
     + '<p class="lead">' + (week ? "For the week of " + esc(week) + ". " : "")
-    + "The price is for the goods. Delivery is charged separately and quoted when you order. "
+    + "The price is for the goods. " + DELIVERY + " "
     + "Ask about any size that is not listed.</p>"
     + body
     /* S8 8.2: A STRANGER IS TOLD WHAT TO DO NEXT, in words and with no brand. The board is all they
@@ -844,6 +873,11 @@ export function landingPage(user, nonce, owner, bulletin) {
       /* v695: the product marks, so the page can draw one wherever it would have written a name */
       .replace("__PSYM__", JSON.stringify(Object.assign({ _: RING }, PSYM)))
       .replace("__PSHAPE__", JSON.stringify(PSHAPE)).replace("__MON3__", JSON.stringify(MON3))
+      /* S4 4.6: the open-order limit the Worker refuses at, so the page can say it before the form */
+      .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES))
+      .replace("__DELIVERY__", () => JSON.stringify(DELIVERY))
+      /* S4: the size in words, the same function a guest's board calls */
+      .replace("/*__UNITS_OF__*/", () => String(unitsOf))
       /* "<" is escaped because this one carries the master passphrase, and a "</script>" inside a
          string literal ends the block wherever it appears: the browser closes the tag first and
          reads the rest of the passphrase as page text. */
@@ -1035,8 +1069,8 @@ const CLIENT_JS = `
   /* S9: whether the page is still there, for work that lands after a wait (a closed window has no document) */
   function docLive(){ try{ return !!document&&!!document.body; }catch(e){ return false; } }
   function rm(n){ return 'RM '+Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2}); }
-  /* S5 5.3 (D11): "units" above one, "unit" at one and under */
-  function unitsOf(q,u){ u=u||'unit'; return q+' '+(u==='unit'&&+q>1?'units':u); }
+  /* D11 (S4, 24 Sep 2026): units above one, unit at one and under */
+  /*__UNITS_OF__*/
 
   /* THE PASSWORD UNWRAPS A KEY, AND THE KEY OPENS EVERYTHING. The same derivation the vault
      uses, PBKDF2-SHA256 x150000 into AES-GCM-256, but over the wrap rather than the content:
@@ -1056,6 +1090,13 @@ const CLIENT_JS = `
   async function open(ck, blob){
     var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(blob.iv)}, ck, b64d(blob.ct));
     return new TextDecoder().decode(pt);
+  }
+  /* S4 4.4: THE PRICE LIST KEEPS THE KEY THAT OPENED IT, unenumerable, so a Place answered "prices moved" can open the
+     list that came back with it in the same breath; it goes with the list, so signing out forgets both */
+  async function openList(ck, blob){
+    var l=JSON.parse(await open(ck, blob));
+    if(l&&typeof l==='object') Object.defineProperty(l,'_k',{value:ck});
+    return l;
   }
   /* a moment in Kuala Lumpur, in parts: the month is read off MON3, never off en-GB's own short month */
   var MON3=__MON3__;
@@ -1512,6 +1553,11 @@ const CLIENT_JS = `
     return reopening;
   }
   function lapsed(){
+    /* S4 fix: the order sheet lies over the bar, so a lapse closes it; Continue is then in reach, and the sheet will
+       not open again until it is tapped (sheetOpen). What was chosen and typed in it stays in draft, and the same account
+       let in again opens it again at the form (enter), so an order they were writing is kept, as S3 3.5 keeps it */
+    if(osh&&!view&&(draft.step==='form'||draft.step==='check')) draft.sheetBack=true;
+    sheetClose();
     if(poll){ clearInterval(poll); poll=null; }
     if(!lapse.hidden) return;
     var kept=keptMine();
@@ -1552,6 +1598,7 @@ const CLIENT_JS = `
 
   /* ---- the tabs: three for everyone, a fourth for an associate ---- */
   function showTab(t){
+    sheetClose();
     tab=t;
     var bs=tabs.querySelectorAll('button');
     for(var i=0;i<bs.length;i++){ var on=bs[i].getAttribute('data-t')===t; bs[i].className='salt-tabs__pill'+(on?' on':''); bs[i].setAttribute('aria-selected',on?'true':'false'); }
@@ -1839,14 +1886,16 @@ const CLIENT_JS = `
     return h<12?'Good morning.':(h<18?'Good afternoon.':'Good evening.');
   }
   var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  /* S4 4.8: a moment as the Prices stamp says it, "Thu 24 Sep, 11:59", in Kuala Lumpur; the weekday from the date's own parts */
+  var DAY3=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  function pricesAt(iso){
+    try{ var p=klBits(iso); return DAY3[new Date(Date.UTC(+p.year,+p.month-1,+p.day)).getUTCDay()]+' '+(+p.day)+' '+MON3[+p.month-1]+', '+p.hour+':'+p.minute; }
+    catch(e){ return ''; }
+  }
   function monthOf(d){
     var m=/^(\\d{4})-(\\d{2})/.exec(String(d||'')); if(!m) return '';
     return MONTHS[+m[2]-1]+' '+m[1];
   }
-  /* the mark for each level, symbol then colour; all six shapes come from one Unicode block so they
-     render the same everywhere, and none of them is a count */
-  var MARK={ 'Ambassador':['\\u25C7','#2b2f33'], 'Titanium':['\\u25CF','#6e7b85'], 'Platinum':['\\u25C6','#9aa7b0'],
-             'Gold':['\\u25B2','#c08a3e'], 'Silver':['\\u25A0','#8c97a0'], 'Bronze':['\\u25CB','#b06a3b'] };
   function drawPrices(){
     pPrices.textContent='';
     var h=el('h2',null,'Your prices'); pPrices.appendChild(h);
@@ -1856,42 +1905,35 @@ const CLIENT_JS = `
       pPrices.appendChild(el('p','lead','No price list has been written for your account yet. It is written with the next update and changes weekly.'));
       return;
     }
-    pPrices.appendChild(el('p','lead','For the week of '+(prices.week&&prices.week.label||'')+'. The price is for the goods; if you ask for delivery, the charge is set when your order is acknowledged, and you see it then. The list is written from your own history and changes weekly.'));
+    /* S4 4.8: THE STAMP SAYS WHEN THE LIST WAS WRITTEN, "Prices as at Thu 24 Sep, 11:59" in Kuala Lumpur, where "for the week
+       of" stayed on an open page for good; a list sealed before it carried a time keeps its week. Every size is a tap. */
+    var tapTo=!view&&!hold;
+    pPrices.appendChild(el('p','lead',(prices.at&&pricesAt(prices.at)?'Prices as at '+pricesAt(prices.at)+'.':'For the week of '+(prices.week&&prices.week.label||'')+'.')
+      +(tapTo?' Tap a size to order it.':'')));
+    pPrices.appendChild(el('p','lead','The price is for the goods. '+DELIVERY+' The list is written from your own history and changes weekly.'));
     if(prices.since) pPrices.appendChild(el('p','sub2','Buying with us since '+monthOf(prices.since)+'.'));
     sold().forEach(function(p){
       var pane=el('div','pane');
       var h3=el('h3','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
-      /* ============ HIS INSTRUCTION, 16 SEP 2026: THE LABEL IS A VERY SUBTLE MARK ============
-         A symbol and a colour for each level, beside the product it belongs to, because a customer
-         holds a level per product. THE LEVEL IS NEVER NAMED HERE, which is the whole of "subtle":
-         the mark is theirs to recognise, not a rank to read off, and the shapes deliberately do not
-         count up or down so two customers comparing pages cannot order themselves by it. The name
-         travels in the sealed list, as it has since v651, and stays out of the page's text and out
-         of the mark's own label. */
-      var mk=MARK[p.tier];
-      if(mk){
-        var m=el('span','mark');
-        m.textContent=mk[0];
-        m.style.color=mk[1];
-        m.setAttribute('aria-hidden','true');
-        h3.appendChild(m);
-      }
+      /* S4 4.10, D11 (his "all recommended" of 24 Sep 2026): THE LEVEL LEAVES PRICES. v659 drew a symbol and a colour
+         for it beside each product, never named; a customer now sees no level at all, in words or in a mark. The name
+         still travels inside the sealed list, and nothing here reads it. */
       pane.appendChild(h3);
       pane.appendChild(el('p','sub2', p.basis==='board' ? 'The same price for everybody. '
         : p.basis==='yours'
         ? 'Your rate: '+rm(p.rate)+' per '+(p.unit||'unit')+', from your last '+p.orders+' order'+(p.orders===1?'':'s')+'. '
         : 'Your own rate follows your first order. '));
-      var t=el('table'), th=el('thead'), tr=el('tr');
-      [['Size','l'],['Price','']].forEach(function(c){ var x=el('th',c[1]||null,c[0]); tr.appendChild(x); });
-      th.appendChild(tr); t.appendChild(th);
-      var tb=el('tbody');
+      /* S4 4.8: a size is a row of the plain ledger, and each row is one tap that opens the order sheet at that size */
+      var L=el('div','salt-ledger salt-ledger--plain');
       p.sizes.forEach(function(r){
-        var row=el('tr');
-        row.appendChild(el('td','l',unitsOf(r.q,p.unit)));
-        row.appendChild(el('td',null,rm(r.price)));
-        tb.appendChild(row);
+        var row=el(tapTo?'button':'div','salt-ledger__row szrow'), line=el('span','salt-ledger__line');
+        line.appendChild(el('span','salt-ledger__label',unitsOf(r.q,p.unit)));
+        var v=el('span','salt-ledger__value',rm(r.price)); line.appendChild(v); row.appendChild(line);
+        if(tapTo){ row.type='button'; row.setAttribute('data-q',String(r.q)); v.appendChild(oGlyph('next','ochev'));
+          row.addEventListener('click',function(){ sheetOpen(p.product,r.q,row); }); }
+        L.appendChild(row);
       });
-      t.appendChild(tb); pane.appendChild(t); pPrices.appendChild(pane);
+      pane.appendChild(L); pPrices.appendChild(pane);
     });
     /* his instruction of 15 Sep 2026: a product with no tier set is not priced, and says so */
     soon.forEach(function(p){
@@ -1910,6 +1952,8 @@ const CLIENT_JS = `
   /* 24 Sep 2026: what can be ordered is a product with a priced size. The list sends none without one now, and an
      older sealed list still can: its first size was read unguarded, and the throw blanked the whole tab. */
   function sold(){ return ((prices&&prices.products)||[]).filter(function(x){ return x.sizes&&x.sizes.length; }); }
+  /* what the page says where nothing can be ordered: a list with nothing priced, or no list at all */
+  function noOrderLine(){ return prices&&(prices.soon&&prices.soon.length||prices.products&&prices.products.length)?'Ordering opens once your prices are set.':'Ordering opens once your price list is written, with the next update.'; }
   async function api(path, body, method){
     var send=function(){ return fetch(path,{method:method||(body?'POST':'GET'), cache:'no-store',
         headers:Object.assign({'X-Stmt-Session':session}, body?{'content-type':'application/json'}:{}),
@@ -1942,10 +1986,368 @@ const CLIENT_JS = `
     var total=r.price;
     return {p:p, q:r.q, total:total, unit:+(total/r.q).toFixed(2)};
   }
-  /* what the tab above the orders is drawn off: the Pay page or the order form. A re-read of the account (a return to
-     the page, a lapse reopened, S3 3.5) that changes it draws the tab again; otherwise the orders are patched (S5 5.5) */
+  /* ==== THE ORDER IS A SHEET (S4 4.3, 24 SEP 2026; the Counter's redesign, his "all recommended" of that day) ====
+     The order form was a pane at the head of the Order tab, filled field by field and reviewed in a second pane under
+     it. It is a task laid over the page now, the system's Sheet: the product as its mark, the sizes as Option tiles
+     carrying their prices with the size they order most tagged your usual, the way and the place as last time, a line
+     folded away until it is wanted, and the total with Review in the foot, in reach of the thumb. Review turns the
+     sheet into the check, which draws what will be sent from one frozen copy, so nothing on it can differ from what
+     Place sends. Built from the page's own nodes at the root of the body, because a fixed element inside a glass card
+     is held by the card's blur; Escape, the scrim and the close control all close it, except while Place is on its way,
+     and focus goes back to what opened it. */
+  /* the open sheet, or null. Not "sheet": the owner's script, spliced into this closure on his route, keeps its account list under that name */
+  var osh=null;
+  var OMAX=__MAX_OPEN__, OPEN_ST=__OPEN_STATES__, DELIVERY=__DELIVERY__;
+  function oLive(){ return orders.filter(function(o){ return OPEN_ST.indexOf(o.status)>=0; }); }
+  var GLYPH={close:'M4 4 L12 12 M12 4 L4 12', back:'M10 3.5 L5.5 8 L10 12.5', next:'M6 3.5 L10.5 8 L6 12.5', tick:'M3 8.5 L6.5 12 L13 4.5'};
+  function oGlyph(k,cls,px){
+    var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg');
+    s.setAttribute('viewBox','0 0 16 16'); s.setAttribute('width',px||16); s.setAttribute('height',px||16);
+    s.setAttribute('aria-hidden','true'); s.setAttribute('focusable','false'); if(cls) s.setAttribute('class',cls);
+    var d=document.createElementNS(NS,'path'); d.setAttribute('d',GLYPH[k]); d.setAttribute('fill','none'); d.setAttribute('stroke','currentColor');
+    d.setAttribute('stroke-width','1.5'); d.setAttribute('stroke-linecap','round'); d.setAttribute('stroke-linejoin','round');
+    s.appendChild(d); return s;
+  }
+  /* the size they order most, read off their own orders on this page; the later order breaks a tie */
+  function oUsual(){
+    var n={}, best=null;
+    orders.slice().sort(function(a,b){ return String(a.at).localeCompare(String(b.at)); }).forEach(function(o){
+      var k=o.product+'|'+o.qty; n[k]=(n[k]||0)+1; if(!best||n[k]>=n[best]) best=k;
+    });
+    if(!best) return null;
+    var i=best.indexOf('|'); return {product:best.slice(0,i), q:best.slice(i+1)};
+  }
+  function oLatest(pick){ var l=null; orders.forEach(function(o){ if(pick(o)&&(!l||String(o.at)>String(l.at))) l=o; }); return l; }
+  function oSoldHas(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0];
+    return !!P&&(q==null||P.sizes.some(function(s){ return String(s.q)===String(q); })); }
+  function sheetOpen(product,q,opener){
+    if(view||hold||!sold().length||!lapse.hidden) return;
+    var U=oUsual();
+    if(product&&oSoldHas(product,q)){ draft.product=product; draft.q=String(q); }
+    else if(!draft.product&&U&&oSoldHas(U.product,U.q)){ draft.product=U.product; draft.q=String(U.q); }
+    /* the way and the place are the last order's, and the hint says so while the place is still that one */
+    if(draft.mode==null){ var L=oLatest(function(){ return true; }); draft.mode=L&&L.mode==='deliver'?'deliver':'collect'; }
+    if(draft.place==null){ var W=oLatest(function(o){ return !!o.place; }); draft.place=W?W.place:''; draft.placeWas=draft.place; }
+    draft.step=oLive().length>=OMAX?'limit':'form'; draft.snote=''; draft.check=null;
+    if(!osh){
+      var wrap=el('div'); wrap.id='osheet';
+      var scrim=el('div','salt-sheet-scrim'); scrim.setAttribute('aria-hidden','true'); scrim.addEventListener('click',sheetDismiss);
+      var box=el('div','salt-sheet osheet'); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
+      box.setAttribute('aria-labelledby','oshT'); box.tabIndex=-1;
+      var grab=el('div','salt-sheet__grab'); grab.setAttribute('aria-hidden','true');
+      var head=el('div','salt-sheet__head'), body=el('div','salt-sheet__body'), foot=el('div','salt-sheet__foot');
+      box.appendChild(grab); box.appendChild(head); box.appendChild(body); box.appendChild(foot);
+      box.addEventListener('keydown',sheetKeys);
+      wrap.appendChild(scrim); wrap.appendChild(box); document.body.appendChild(wrap);
+      osh={wrap:wrap, box:box, head:head, body:body, foot:foot, opener:opener||document.activeElement};
+      try{ box.focus({preventScroll:true}); }catch(e){}
+    }
+    sheetDraw();
+  }
+  function sheetClose(){
+    if(!osh) return;
+    var s=osh; osh=null; draft.step=''; draft.check=null;
+    s.wrap.parentNode.removeChild(s.wrap);
+    try{ if(s.opener&&s.opener.isConnected) s.opener.focus({preventScroll:true}); }catch(e){}
+  }
+  /* the customer's own ways out (the scrim, Close, Escape) wait while Place is on its way: closed then, the answer had
+     nowhere to be drawn, an order landed unsaid or a refusal was dropped, and the same order could be placed again */
+  function sheetDismiss(){ if(!draft.busy) sheetClose(); }
+  /* the sheet keeps focus while it is open: Escape closes it, and Tab wraps at its own first and last controls */
+  function sheetKeys(ev){
+    if(ev.key==='Escape'){ ev.stopPropagation(); sheetDismiss(); return; }
+    if(ev.key!=='Tab'||!osh) return;
+    var all=[].filter.call(osh.box.querySelectorAll('button:not([disabled]),input:not([disabled]),a[href]'),function(x){
+      if(x.type==='radio'&&x.name){ var g=[].filter.call(osh.box.querySelectorAll('input[type=radio]'),function(r){ return r.name===x.name; });
+        if(x!==(g.filter(function(r){ return r.checked; })[0]||g[0])) return false; }
+      return x.getClientRects().length>0; });
+    if(!all.length) return;
+    var at=document.activeElement;
+    if(ev.shiftKey&&(at===all[0]||at===osh.box)){ ev.preventDefault(); all[all.length-1].focus(); }
+    else if(!ev.shiftKey&&at===all[all.length-1]){ ev.preventDefault(); all[0].focus(); }
+  }
+  /* one draw for every step; the control that had focus gets it back, found by its data-k */
+  function sheetDraw(){
+    if(!osh) return;
+    var fo=document.activeElement, inside=!!fo&&osh.box.contains(fo), fk=inside?fo.getAttribute('data-k'):null;
+    osh.head.textContent=''; osh.body.textContent=''; osh.foot.textContent='';
+    if(draft.step==='limit'&&oLive().length<OMAX) draft.step='form';
+    if(draft.step==='check') drawCheck(); else if(draft.step==='sent') drawSent(); else if(draft.step==='limit') drawLimit(); else drawForm();
+    osh.foot.hidden=!osh.foot.firstChild;
+    if(fk){ var back=[].filter.call(osh.box.querySelectorAll('[data-k]'),function(x){ return x.getAttribute('data-k')===fk; })[0];
+      if(back) try{ back.focus({preventScroll:true}); }catch(e){} }
+    /* a redraw that took the focused control away (Place, once it is answered) leaves focus on the sheet itself, never on
+       the page behind it, so Escape and Tab still reach the sheet */
+    if(inside&&!osh.box.contains(document.activeElement)) try{ osh.box.focus({preventScroll:true}); }catch(e){}
+  }
+  function sheetHead(title,back){
+    if(back){ var b=el('button','salt-orb'); b.type='button'; b.setAttribute('aria-label','Change'); b.setAttribute('data-k','back'); b.disabled=!!draft.busy;
+      b.appendChild(oGlyph('back')); b.addEventListener('click',back); osh.head.appendChild(b); }
+    if(title!=null){ var h=el('h2','salt-sheet__title',title); h.id='oshT'; osh.head.appendChild(h); }
+    var x=el('button','salt-orb salt-sheet__close'); x.type='button'; x.setAttribute('aria-label','Close'); x.setAttribute('data-k','close'); x.disabled=!!draft.busy;
+    x.appendChild(oGlyph('close')); x.addEventListener('click',sheetDismiss); osh.head.appendChild(x);
+  }
+  /* a question answered by pressed ghosts: the system's Option group holds them, and the chosen one is pressed, never filled */
+  function oChoice(legend,opts,cur,key,pick){
+    var fs=el('fieldset','salt-options');
+    if(legend) fs.appendChild(el('legend','salt-options__legend',legend));
+    var g=el('div','salt-options__grid salt-options__grid--2');
+    /* data-k by position: a product's word never reaches the page, an attribute included */
+    opts.forEach(function(o,i){
+      var b=el('button','salt-ghost'); b.type='button'; b.setAttribute('data-k',key+':'+i); b.setAttribute('aria-pressed',o[0]===cur?'true':'false');
+      if(typeof o[1]==='string') b.textContent=o[1]; else { b.appendChild(o[1]); b.setAttribute('aria-label',o[2]); }
+      b.addEventListener('click',function(){ pick(o[0]); });
+      g.appendChild(b);
+    });
+    fs.appendChild(g); return fs;
+  }
+  function formWhy(){
+    if(assoc&&draft.forFriend==null) return 'Say who it is for.';
+    if(!quoteFor()) return 'Pick a size.';
+    if(draft.mode==='deliver'&&String(draft.place||'').trim().length<2) return 'Say roughly where it is going.';
+    return '';
+  }
+  function whereHint(){
+    return (draft.placeWas&&String(draft.place||'').trim()===draft.placeWas?'Same as last time. ':'')+'An area, not an address.';
+  }
+  function drawForm(){
+    sheetHead('New order');
+    var S=sold(), P=S.filter(function(x){ return x.product===draft.product; })[0]||S[0], B=osh.body;
+    /* a list that came back with nothing priced (a 409, then Change) leaves nothing to pick: the Order tab's own line */
+    if(!P){ B.appendChild(el('p','lead',noOrderLine())); return; }
+    draft.product=P.product;
+    if(!P.sizes.some(function(x){ return String(x.q)===String(draft.q); })) draft.q=String(P.sizes[0].q);
+    /* S4 4.7: AN ASSOCIATE IS ASKED WHO IT IS FOR, FIRST (v702's tick, which was the last field and easy to pass). Nothing is
+       chosen for them: Review waits for the answer, and every order asks again. Nobody else is asked. */
+    if(assoc) B.appendChild(oChoice('Who is it for?',[['me','Me'],['friend','A friend']],draft.forFriend==null?'':(draft.forFriend?'friend':'me'),'for',
+      function(v){ draft.forFriend=(v==='friend'); sheetDraw(); }));
+    /* v695: a product is a mark named by its shape; with one on the list the tiles say which by their legend */
+    if(S.length>1) B.appendChild(oChoice('',S.map(function(x){ return [x.product,psym(x.product,24),pshape(x.product)]; }),draft.product,'prod',
+      function(v){ draft.product=v; draft.q=null; var U=oUsual(); if(U&&U.product===v&&oSoldHas(v,U.q)) draft.q=String(U.q); sheetDraw(); }));
+    var fs=el('fieldset','salt-options');
+    if(S.length>1) fs.setAttribute('aria-label','Size');
+    else { var lg=el('legend','salt-options__legend'); lg.appendChild(withMark(P.product,'',22)); fs.appendChild(lg); }
+    var grid=el('div','salt-options__grid salt-options__grid--2'), U=oUsual();
+    P.sizes.forEach(function(x){
+      var lab=el('label','salt-option'), r=el('input','salt-option__input');
+      r.type='radio'; r.name='osize'; r.value=String(x.q); r.checked=String(x.q)===String(draft.q); r.setAttribute('data-k','size:'+x.q);
+      r.addEventListener('change',function(){ draft.q=String(x.q); sheetDraw(); });
+      var face=el('span','salt-option__face'), tx=el('span','salt-option__text'), lb=el('span','salt-option__label',unitsOf(x.q,P.unit));
+      if(U&&U.product===P.product&&String(U.q)===String(x.q)) lb.appendChild(el('span','salt-status salt-status--brass','your usual'));
+      tx.appendChild(lb); tx.appendChild(el('span','salt-option__figure',rm(x.price)));
+      face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); grid.appendChild(lab);
+    });
+    fs.appendChild(grid); B.appendChild(fs);
+    B.appendChild(oChoice('How it reaches you',[['collect','I will collect'],['deliver','Deliver to me']],draft.mode,'mode',
+      function(v){ draft.mode=v; sheetDraw(); }));
+    /* v694: a delivery says roughly where it is going, in his words a general location; never an address */
+    if(draft.mode==='deliver'){
+      var wf=el('div','salt-field'), wl=el('label','salt-field__label','Where to'); wl.htmlFor='oWhere';
+      var wi=el('input','salt-field__input'); wi.id='oWhere'; wi.type='text'; wi.maxLength=60; wi.value=draft.place||''; wi.autocomplete='off';
+      wi.placeholder='a neighbourhood or a landmark'; wi.setAttribute('data-k','where');
+      var wh=el('span','salt-field__hint',whereHint());
+      wi.addEventListener('input',function(){ draft.place=wi.value; wh.textContent=whereHint(); formFoot(); });
+      wf.appendChild(wl); wf.appendChild(wi); wf.appendChild(wh); B.appendChild(wf);
+    }
+    /* v751: a line with it, never required; it opens the order's thread. Folded until it is wanted */
+    if(draft.noteOpen||String(draft.say||'').trim()){
+      var nf=el('div','salt-field'), nl=el('label','salt-field__label','Note'); nl.htmlFor='oSay';
+      var ni=el('input','salt-field__input'); ni.id='oSay'; ni.type='text'; ni.maxLength=140; ni.value=draft.say||''; ni.autocomplete='off';
+      ni.placeholder='optional, a line about this order'; ni.setAttribute('data-k','say');
+      ni.addEventListener('input',function(){ draft.say=ni.value; });
+      nf.appendChild(nl); nf.appendChild(ni); B.appendChild(nf);
+    } else {
+      var an=el('button','salt-ghost ofull','Add a note'); an.type='button'; an.id='oAddNote'; an.setAttribute('data-k','addnote');
+      an.addEventListener('click',function(){ draft.noteOpen=true; sheetDraw(); var f=document.getElementById('oSay'); if(f) try{ f.focus(); }catch(e){} });
+      B.appendChild(an);
+    }
+    formFoot();
+  }
+  /* the foot alone, so typing a place never redraws the field under the thumb */
+  function formFoot(){
+    var F=osh.foot; F.textContent='';
+    var qt=quoteFor(), why=formWhy(), t=el('div','ototal');
+    t.appendChild(el('b','salt-kpi__value',qt?rm(qt.total):''));
+    t.appendChild(el('span','sub2',why||(draft.mode==='deliver'?'and delivery, set when we confirm':'to collect')));
+    F.appendChild(t);
+    var go=el('button','salt-pill salt-pill--md','Review'); go.type='button'; go.id='oGo'; go.disabled=!!why; go.setAttribute('data-k','review');
+    go.addEventListener('click',reviewSheet);
+    F.appendChild(go); F.hidden=false;
+  }
+  /* REVIEW FREEZES THE ORDER. The check draws from this copy and Place sends this copy, so what is placed is what
+     was shown; the request id is minted with it, and a retry of Place is the same order under the same id */
+  function reviewSheet(){
+    var qt=quoteFor(); if(!qt||formWhy()) return;
+    draft.check={product:qt.p.product, unit:qt.p.unit||'unit', q:qt.q, mode:draft.mode,
+      place:draft.mode==='deliver'?String(draft.place||'').trim():'', say:String(draft.say||'').trim(),
+      forFriend:!!(assoc&&draft.forFriend), total:qt.total, rate:qt.unit, rid:mintRid(),
+      /* S4 4.4: the stamp of the list this price was read from, and the price as shown, for a moved list to be told against */
+      digest:(prices&&prices.digest)||'', shown:qt.total, was:null, gone:false};
+    draft.step='check'; draft.snote=''; sheetDraw();
+  }
+  /* S4 4.4: THE LIST MOVED BETWEEN REVIEW AND PLACE. The Worker compares the stamp Place carried with the account's own
+     and, where they differ, answers 409 with the list as it stands, sealed; it is opened here with the key the page
+     already holds. The check then shows this size at the new figure beside the one they were shown, and Place becomes
+     Place at that figure, one tap; nothing is placed until it is tapped. The page compares nothing and prices nothing:
+     it reads the figure off the list. A price that did not move for this size keeps the check as it was, with the new
+     stamp. A new figure is a different order, so it takes a new request id. */
+  async function pricesMoved(envl){
+    var c=draft.check, k=prices&&prices._k, fresh=null;
+    try{ fresh=(k&&envl)?await openList(k,envl):null; }catch(e){ fresh=null; }
+    if(!c) return;
+    /* the list as the account holds it now, or none where it holds none (or none this key opens), which is what a
+       sign-in would show; with nothing left to order, the check says so and Place is held, where "open your prices
+       again" reopened the same list and met the same refusal */
+    prices=fresh; drawPrices(); drawOrder();
+    if(!sold().length){ c.shut=true; draft.snote=noOrderLine(); return; }
+    var P=(fresh.products||[]).filter(function(x){ return x.product===c.product&&x.sizes&&x.sizes.length; })[0];
+    var z=P&&P.sizes.filter(function(x){ return String(x.q)===String(c.q); })[0];
+    c.digest=fresh.digest||'';
+    if(!z){ c.gone=true; c.was=null; return; }
+    if(Math.abs(z.price-c.total)>0.004){ c.total=z.price; c.rate=+(z.price/z.q).toFixed(2); c.rid=mintRid(); }
+    else draft.snote='Your prices were updated just now. This size is still '+rm(c.total)+'.';
+    c.was=Math.abs(c.total-c.shown)>0.004?c.shown:null;
+  }
+  /* S4 4.6: FIVE OPEN ORDERS ARE SAID BEFORE THE FORM, not after it. The Worker refuses a sixth (MAX_OPEN in
+     stmt/orders.js, carried here), and the refusal used to come after the form was filled and checked. With five open the
+     sheet opens on the limit instead, naming the open orders, each with Cancel where the goods have not moved, and moves on
+     to the form of its own accord once one is cancelled or finishes. */
+  function limitLine(n){ return 'You have '+n+' orders open, the most at one time. Cancel one, or wait for one to finish, and you can order again.'; }
+  function drawLimit(){
+    sheetHead('New order');
+    var B=osh.body, open=oLive();
+    var say=el('p','salt-insight salt-insight--copper',limitLine(open.length)); say.setAttribute('role','status'); B.appendChild(say);
+    var L=el('div','salt-ledger salt-ledger--plain');
+    open.forEach(function(o){
+      var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label');
+      lab.appendChild(withMark(o.product,unitsOf(o.qty,oUnit(o))+' ',16));
+      /* the order's own word, stage 5's (stateWord, over oWord), as its row under Your orders says it; goods handed over in
+         part keep an order open at ready, so they read as the banner's part word, never Ready over "part of it is with you" */
+      var mv=+o.moved||0, part=mv>0&&!movedAll(o), dl=o.mode==='deliver';
+      lab.appendChild(document.createTextNode(', '+(part?(dl?'Part delivered':'Part collected'):stateWord(o))));
+      l.appendChild(lab); l.appendChild(el('span','salt-ledger__value',rm(o.total+(+o.delivery||0)))); r.appendChild(l);
+      if(!(+o.moved>0)){
+        var row=el('div','olim'); row.appendChild(el('span','salt-ledger__flag','Placed '+stamp(o.at)));
+        var cb=el('button','salt-ghost','Cancel this order'); cb.type='button'; cb.setAttribute('data-k','cancel:'+o.id);
+        cb.addEventListener('click',function(){ limitCancel(o); }); row.appendChild(cb); r.appendChild(row);
+      } else r.appendChild(el('span','salt-ledger__flag',part?'Part of it is with you, so this one finishes once the rest is with you'
+        +((+o.paid||0)<(+o.total||0)+(+o.delivery||0)-0.004?' and it is paid.':'.'):'The goods are with you, so this one finishes when it is paid.'));
+      if(draft.limTap&&draft.limTap.id===o.id) r.appendChild(statusLine(draft.limTap.t));
+      L.appendChild(r);
+    });
+    B.appendChild(L);
+  }
+  async function limitCancel(o){
+    var paid=+o.paid||0;
+    if(!confirm(paid>0?'Cancel this order? The '+rm(paid)+' you paid is refunded.':'Cancel this order?')) return;
+    var mine=ticket, r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel','')});
+    if(mine!==ticket) return;
+    if(r.body.ok) ridDone(o.id+':cancel');
+    draft.limTap=r.body.ok?null:{id:o.id, t:r.body.error||'It could not be cancelled.'};
+    await loadOrders(); if(mine!==ticket) return;
+    drawOrder(); sheetDraw();
+  }
+  function toForm(){ draft.step='form'; draft.check=null; draft.snote=''; sheetDraw(); }
+  function drawCheck(){
+    var c=draft.check, B=osh.body;
+    sheetHead('Check your order',toForm);
+    var L=el('div','salt-ledger salt-ledger--plain');
+    function row(k,v){ var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), val=el('span','salt-ledger__value');
+      l.appendChild(el('span','salt-ledger__label',k)); if(typeof v==='string') val.textContent=v; else val.appendChild(v);
+      l.appendChild(val); r.appendChild(l); L.appendChild(r); }
+    if(assoc) row('For',c.forFriend?'A friend':'Me');
+    row('What',withMark(c.product,unitsOf(c.q,c.unit)+' ',16));
+    row('Price',rm(c.total));
+    row('How',c.mode==='deliver'?'Delivered to '+c.place:'You collect it');
+    if(c.mode==='deliver') row('Delivery','Set when we confirm');
+    if(c.say) row('Note',c.say);
+    B.appendChild(L);
+    /* S4 4.4: a list re-struck since it was opened is said here, before anything is placed, and Place names the new figure */
+    if(c.was!=null){ var mv=el('p','salt-insight salt-insight--copper'); mv.setAttribute('role','status');
+      mv.appendChild(document.createTextNode('This size is now ')); mv.appendChild(el('b',null,rm(c.total)));
+      mv.appendChild(document.createTextNode(' (was '+rm(c.was)+'). Place at '+rm(c.total)+'?')); B.appendChild(mv); }
+    if(c.gone){ var gn=el('p','salt-insight salt-insight--copper','This size is no longer on your list. Change it to pick another.');
+      gn.setAttribute('role','status'); B.appendChild(gn); }
+    /* S4 4.9: a delivery is checked beside the one sentence that says how its charge is set */
+    if(c.mode==='deliver') B.appendChild(el('p','salt-insight',DELIVERY));
+    var F=osh.foot;
+    var bk=el('button','salt-ghost','Change'); bk.type='button'; bk.id='oBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','change');
+    bk.addEventListener('click',toForm); F.appendChild(bk);
+    var pl=el('button','salt-pill salt-pill--md',c.was!=null?'Place at '+rm(c.total):'Place order'); pl.type='button'; pl.id='oPlace';
+    pl.disabled=!!draft.busy||!!c.gone||!!c.shut; pl.setAttribute('data-k','place');
+    pl.addEventListener('click',oPlaceIt); F.appendChild(pl);
+    /* the answer is drawn beside Place, which is what was tapped */
+    if(draft.snote) F.appendChild(statusLine(draft.snote));
+  }
+  async function oPlaceIt(){
+    var c=draft.check; if(!c||draft.busy) return;
+    draft.busy=true; draft.snote=''; sheetDraw();
+    var mine=ticket;
+    var r=await api('/orders',{product:c.product,qty:c.q,mode:c.mode,unit:c.rate,total:c.total,place:c.place,
+      forFriend:!!(assoc&&c.forFriend),note:c.say,rid:c.rid,week:(prices&&prices.week&&prices.week.monday)||'',digest:c.digest});
+    if(mine!==ticket) return;
+    draft.busy=false;
+    if(r.status===409&&r.body.error==='prices moved'){ await pricesMoved(r.body.prices); if(mine!==ticket) return; sheetDraw(); return; }
+    if(!r.body.ok){
+      draft.snote=r.body.error||'The order was not placed.';
+      /* S4 4.6: a refusal that the open orders explain (placed from another phone meanwhile) turns to the limit itself */
+      if(r.status===400){ await loadOrders(); if(mine!==ticket) return; drawOrder();
+        if(oLive().length>=OMAX){ draft.step='limit'; draft.check=null; draft.snote=''; } }
+      sheetDraw(); return;
+    }
+    /* S4 4.5: Sent answers in the sheet; the Order tab behind it is drawn again with the order in it */
+    var o=r.body.order;
+    draft.sent=(o&&o.id)||''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.buzzNo=false; draft.forFriend=null;
+    sheetDraw();
+    await loadOrders(); if(mine!==ticket) return;
+    drawOrder();
+  }
+  /* S4 4.5: SENT, AND THE ONE QUESTION WORTH ASKING THEN. An order placed is the moment a buzz means something (it says
+     when the order is confirmed), so the question is asked here and put only by a tap: nothing is asked as the sheet
+     draws. A phone that is already on is not asked; a browser that cannot be woken is told how to become one that can.
+     See the order closes the sheet on the order itself. */
+  function drawSent(){
+    sheetHead(null);
+    var B=osh.body, top=el('div','osent');
+    top.appendChild(oGlyph('tick','otick',40));
+    var h=el('h2','salt-sheet__title','Order sent'); h.id='oshT'; top.appendChild(h);
+    top.appendChild(el('p',null,'It is under Your orders now. We confirm it there, and you pay once it is confirmed.'));
+    B.appendChild(top);
+    var can=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
+    var on=!!draft.pushed||(can&&Notification.permission==='granted'&&!!draft.pushDone);
+    if(on){ if(draft.buzzAsked) B.appendChild(statusLine('On. This phone is told when it is confirmed.')); }
+    else if(!draft.buzzNo&&!(can&&Notification.permission==='denied')){
+      var bx=el('div','salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm obuzz');
+      bx.appendChild(el('p','salt-eyebrow salt-eyebrow--brass','A buzz when it is confirmed?'));
+      if(!can) bx.appendChild(el('p',null,'This browser cannot give notifications. On an iPhone, add this page to the Home Screen from the Share menu and open it from there.'));
+      else {
+        bx.appendChild(el('p',null,'Only for your orders and your payments.'));
+        var yes=el('button','salt-pill salt-pill--md','Turn on notifications'); yes.type='button'; yes.id='oBuzz'; yes.setAttribute('data-k','buzz');
+        yes.disabled=!!draft.buzzBusy;
+        yes.addEventListener('click',async function(){
+          if(draft.buzzBusy) return;
+          draft.buzzBusy=true; draft.buzzAsked=true; draft.pushNote=''; sheetDraw();
+          await subscribePush(); draft.buzzBusy=false; sheetDraw();
+        });
+        var no=el('button','salt-ghost','Not now'); no.type='button'; no.setAttribute('data-k','nobuzz');
+        no.addEventListener('click',function(){ draft.buzzNo=true; sheetDraw(); });
+        bx.appendChild(yes); bx.appendChild(no);
+        if(draft.pushNote) bx.appendChild(statusLine(draft.pushNote));
+      }
+      B.appendChild(bx);
+    }
+    var see=el('button','salt-ghost ofull','See the order'); see.type='button'; see.id='oSee'; see.setAttribute('data-k','see');
+    /* stage 5's own screen for it; an order the list has not brought back yet opens on the next draw that has it */
+    see.addEventListener('click',function(){ var id=draft.sent; sheetClose(); showTab('order');
+      if(id&&oFind(id)) oOpen(id); else { wantOrder=id||''; drawOrder(); } });
+    B.appendChild(see);
+  }
+  /* what the tab above the orders is drawn off: the Pay page, or New order and the limit in its place. A re-read of the
+     account (a return to the page, a lapse reopened, S3 3.5) that changes it, or an order opening or closing across the
+     limit, draws the tab again; otherwise the orders are patched (S5 5.5). The order sheet is never drawn by either:
+     it lives at the root of the body, and only the limit step, which holds nothing typed, follows the orders */
   var drawnSig='';
-  function formSig(){ return JSON.stringify([hold,owedNow,view,assoc,prices]); }
+  function formSig(){ return JSON.stringify([hold,owedNow,view,assoc,prices,oLive().length>=OMAX]); }
   function drawOrder(){
     var sc=window.scrollY;
     drawnSig=formSig();
@@ -1980,129 +2382,18 @@ const CLIENT_JS = `
     } else if(view){
       /* no order form on his read-only view */
     } else if(!sold().length){
-      pOrder.appendChild(el('p','lead',prices&&(prices.soon&&prices.soon.length||prices.products&&prices.products.length)?'Ordering opens once your prices are set.':'Ordering opens once your price list is written, with the next update.'));
+      pOrder.appendChild(el('p','lead',noOrderLine()));
     } else {
-      pOrder.appendChild(el('p','lead','Pick a size off your list and check it over before you place it. Once it is acknowledged you can pay, and you are told when the goods are on their way.'));
-      var form=el('div','pane');
-      var S=sold();
-      if(!draft.product) draft.product=S[0].product;
-      var P=S.filter(function(x){return x.product===draft.product;})[0]||S[0];
-      draft.product=P.product;
-      if(!draft.q||!P.sizes.some(function(x){return String(x.q)===String(draft.q);})) draft.q=P.sizes[0].q;
-      if(!draft.mode) draft.mode='collect';
-      /* v695: the product was a dropdown, and an option carries text and nothing else, so a mark
-         could not go in one. Two products are a segment anyway, which is one tap rather than two. */
-      if(S.length>1){
-        var pseg=el('div','seg');
-        S.forEach(function(x){
-          var b=el('button',x.product===draft.product?'on':''); b.type='button';
-          b.setAttribute('aria-label',pshape(x.product));
-          b.setAttribute('aria-pressed',x.product===draft.product?'true':'false');
-          b.appendChild(psym(x.product,22));
-          b.addEventListener('click',function(){ draft.product=x.product; draft.q=null; draft.confirm=false; drawOrder(); });
-          pseg.appendChild(b);
-        });
-        form.appendChild(pseg);
+      /* S4 4.3: the form is a sheet now, laid over the page from here */
+      pOrder.appendChild(el('p','lead','Pick a size and check it over before you place it. Once we confirm it you can pay, and you are told when the goods are on their way.'));
+      var full=oLive().length>=OMAX;
+      if(full){ var lim=el('p','salt-insight salt-insight--copper',limitLine(oLive().length)); lim.id='oLimit'; pOrder.appendChild(lim); }
+      else {
+        var nb=el('button','btn salt-pill salt-pill--md','New order'); nb.type='button'; nb.id='oNew';
+        nb.addEventListener('click',function(){ sheetOpen(null,null,nb); });
+        pOrder.appendChild(nb);
       }
-      var sq=el('select','fld salt-field__input salt-field__input--mono'); sq.setAttribute('aria-label','Size');
-      P.sizes.forEach(function(x){ var o=el('option',null,unitsOf(x.q,P.unit)); o.value=String(x.q); if(String(x.q)===String(draft.q))o.selected=true; sq.appendChild(o); });
-      sq.addEventListener('change',function(){ draft.q=sq.value; drawOrder(); });
-      form.appendChild(sq);
-      var seg=el('div','seg');
-      [['collect','I will collect'],['deliver','Deliver to me']].forEach(function(m){
-        var b=el('button',draft.mode===m[0]?'on':'',m[1]); b.type='button';
-        b.addEventListener('click',function(){ draft.mode=m[0]; drawOrder(); }); seg.appendChild(b);
-      });
-      form.appendChild(seg);
-      /* 24 Sep 2026: WHILE CHECK THIS OVER IS OPEN, THE PLACE AND THE LINE ARE WHAT IT SHOWS. Typing in either drew
-         nothing, so the list said one place and Place sent another (v694: the first tap shows what is about to be
-         ordered). They are read-only until Change it; the size and the mode redraw the list, so they stay live. */
-      var locked=!!draft.confirm&&!!quoteFor()&&(draft.mode!=='deliver'||String(draft.place||'').trim().length>=2);
-      /* v694: a delivery says roughly where it is going, in his words a general location. It tells
-         him which way to drive and what to charge; it is not an address and is not asked for one. */
-      if(draft.mode==='deliver'){
-        form.appendChild(el('span','lbl','Where to'));
-        var pl=el('input','fld salt-field__input'); pl.type='text'; pl.maxLength=60; pl.value=draft.place||'';
-        pl.placeholder='a neighbourhood or a landmark'; pl.setAttribute('aria-label','Roughly where it is going'); pl.readOnly=locked;
-        pl.addEventListener('input',function(){ draft.place=pl.value; var b=document.getElementById('oGo'); if(b)b.disabled=!quoteFor()||!!draft.busy||pl.value.trim().length<2; });
-        form.appendChild(pl);
-        form.appendChild(el('div','sub2','A neighbourhood is enough. The delivery charge is set when the order is acknowledged, and you see it here before you pay.'));
-      }
-      /* v751: ANYTHING THEY WANT TO SAY WITH IT, on any order and never required. It opens the
-         order's thread rather than sitting in a field of its own, so there is one place to read. */
-      form.appendChild(el('span','lbl','Anything to add'));
-      var sy=el('input','fld salt-field__input'); sy.type='text'; sy.maxLength=140; sy.value=draft.say||'';
-      sy.placeholder='optional, a line about this order'; sy.setAttribute('aria-label','Anything to add about this order'); sy.readOnly=locked;
-      sy.addEventListener('input',function(){ draft.say=sy.value; });
-      form.appendChild(sy);
-      /* v702, HIS INSTRUCTION OF 18 SEP 2026: an associate's own order and one placed for somebody
-         else are no longer told apart by what they buy, so they tick it. "On behalf of a friend",
-         his words, and the words he replaced an earlier phrasing with. Nobody else sees the tick. */
-      if(assoc){
-        var fl=el('label','rem'); var fb=el('input'); fb.type='checkbox'; fb.id='ofriend'; fb.checked=!!draft.forFriend;
-        fb.addEventListener('change',function(){ draft.forFriend=fb.checked; draft.confirm=false; drawOrder(); });
-        fl.appendChild(fb); fl.appendChild(el('span',null,'On behalf of a friend'));
-        form.appendChild(fl);
-      }
-      var qt=quoteFor();
-      form.appendChild(el('div','quote',qt?rm(qt.total):''));
-      if(qt){
-        var sub=el('div','sub2');
-        sub.appendChild(withMark(P.product,unitsOf(qt.q,P.unit)+' ',18));
-        sub.appendChild(document.createTextNode(' at '+rm(qt.unit)+' per '+(P.unit||'unit')
-          +(draft.mode==='deliver'?'; delivery is added when the order is acknowledged':', to collect')));
-        form.appendChild(sub);
-      } else form.appendChild(el('div','sub2',''));
-      var ready=!!qt&&!draft.busy&&(draft.mode!=='deliver'||String(draft.place||'').trim().length>=2);
-      /* 24 Sep 2026: THE REQUEST ID IS FOR THIS ORDER. The size and the mode stay live while Check this over is open,
-         and the Worker answers any repeat of an id with the order first stored under it, so a changed order takes a
-         new id, as a changed payment figure does; a retry of the same one keeps it. */
-      var what=qt?[P.product,qt.q,draft.mode,qt.total].join('|'):'';
-      /* v694: NOTHING IS PLACED ON ONE TAP (his instruction, 18 Sep 2026). The first tap shows what
-         is about to be ordered, in words, and the second places it. Going back keeps the choices. */
-      if(draft.confirm&&ready){
-        var cf=el('div','pane'); cf.style.marginTop='14px';
-        cf.appendChild(el('h3',null,'Check this over'));
-        var ul=el('ul','conf');
-        var rows=[['What',withMark(P.product,unitsOf(qt.q,P.unit)+' ',18)],
-                  ['How',draft.mode==='deliver'?'Delivered to you':'You collect it'],
-                  ['Rate',rm(qt.unit)+' per '+(P.unit||'unit')],
-                  ['Goods',rm(qt.total)]];
-        if(draft.mode==='deliver'){ rows.splice(2,0,['Where',draft.place.trim()]); rows.push(['Delivery','set when it is acknowledged']); }
-        if(assoc) rows.splice(1,0,['For',draft.forFriend?'A friend':'Yourself']);
-        if(String(draft.say||'').trim()) rows.push(['You said',String(draft.say).trim()]);
-        rows.forEach(function(r){ var li=el('li'); li.appendChild(el('span','k',r[0]));
-          var v=el('span','v'); if(typeof r[1]==='string') v.textContent=r[1]; else v.appendChild(r[1]);
-          li.appendChild(v); ul.appendChild(li); });
-        cf.appendChild(ul);
-        var ok2=el('button','btn salt-pill salt-pill--md','Place this order'); ok2.type='button'; ok2.disabled=!!draft.busy;
-        ok2.addEventListener('click', async function(){
-          if(draft.busy) return; draft.busy=true;
-          if(draft.ridFor!==what){ draft.rid=mintRid(); draft.ridFor=what; }
-          drawOrder();
-          var mine=ticket;
-          var r=await api('/orders',{product:P.product,qty:qt.q,mode:draft.mode,unit:qt.unit,total:qt.total,
-            place:draft.mode==='deliver'?draft.place.trim():'',forFriend:!!(assoc&&draft.forFriend),
-            note:String(draft.say||'').trim(), rid:draft.rid,
-            week:(prices.week&&prices.week.monday)||''});
-          if(mine!==ticket) return;
-          draft.busy=false;
-          if(!r.body.ok){ draft.note=r.body.error||'The order was not placed.'; }
-          else { draft.note='Placed. You will see it acknowledged below.'; draft.confirm=false; draft.place=''; draft.say=''; await loadOrders(); if(mine!==ticket) return; }
-          drawOrder();
-        });
-        cf.appendChild(ok2);
-        var back=el('button','btn quiet salt-ghost','Change it'); back.type='button'; back.disabled=!!draft.busy;
-        back.addEventListener('click',function(){ draft.confirm=false; drawOrder(); });
-        cf.appendChild(back);
-        form.appendChild(cf);
-      } else {
-        var go2=el('button','btn salt-pill salt-pill--md','Review this order'); go2.type='button'; go2.id='oGo'; go2.disabled=!ready;
-        go2.addEventListener('click',function(){ draft.confirm=true; draft.note=''; draft.rid=mintRid(); draft.ridFor=what; drawOrder(); });
-        form.appendChild(go2);
-      }
-      if(draft.note) form.appendChild(el('p','msg',draft.note));
-      pOrder.appendChild(form);
+      if(osh&&draft.step==='limit') sheetDraw();
     }
     /* notifications: a wake on the phone when the order moves, so the page need not stay open.
        Not on his read-only view: those are not his phones. */
@@ -2266,7 +2557,7 @@ const CLIENT_JS = `
     var oMq=window.matchMedia&&window.matchMedia('(min-width: 1080px)');
     if(oMq&&oMq.addEventListener) oMq.addEventListener('change',function(){
       if(!oWide()&&draft.oAuto){ draft.oOpen=''; draft.oAuto=false; }
-      if(document.getElementById('oPlace')) oDraw();
+      if(document.getElementById('oArea')) oDraw();
     });
   }catch(e){ /* a browser that cannot say keeps the phone's one column */ }
   /* ---- S5 5.2 (24 Sep 2026): AN ORDER'S OWN SCREEN. The goods on their own track (Sent, Confirmed, Ready, then
@@ -2349,9 +2640,10 @@ const CLIENT_JS = `
     }
     return L;
   }
-  /* ONE NEXT ACTION. Pay opens the ways to pay in its place, and theirs is then the one filled control. On a desk the
-     order form's own filled control stands beside the open order until the form moves into a sheet (stage 4), and
-     while one does, Pay is the lit ghost: one filled control a screen. On a phone the open order is the whole tab. */
+  /* ONE NEXT ACTION. Pay opens the ways to pay in its place, and theirs is then the one filled control. On a desk New
+     order (S4 4.3; the form itself is a sheet over the page) stands above the open order, and while it does, Pay is the
+     lit ghost: one filled control a screen. With the limit said in its place, or the Pay page, nothing else is filled and
+     Pay is. On a phone the open order is the whole tab. */
   function oFormPill(){ return oWide()&&[].some.call(pOrder.querySelectorAll('.salt-pill'),function(p){ return !p.closest('.oplace'); }); }
   function oAct(o){
     var a=el('div','oact'), tp=oTap(o);
@@ -2516,7 +2808,7 @@ const CLIENT_JS = `
   /* on a phone the open order is the whole tab, with the way back at its head */
   function oPlace(){
     var id=oShownId(), o=oFind(id), open=!!(draft.oOpen&&o), place=el('div','oplace'+(open?' o-open':''));
-    place.id='oPlace';
+    place.id='oArea';
     pOrder.classList.toggle('o-open',open);
     /* New is read against what this device had seen when the order was opened, and stays until it is left; the
        list is drawn after the open order is seen, so its row does not call a reply on screen waiting */
@@ -2529,14 +2821,14 @@ const CLIENT_JS = `
     if(o) place.appendChild(oScreen(o));
     return place;
   }
-  function oDraw(){ var was=document.getElementById('oPlace'); if(was) was.replaceWith(oPlace()); }
+  function oDraw(){ var was=document.getElementById('oArea'); if(was) was.replaceWith(oPlace()); }
   /* S5 5.5: the orders that changed, patched where they stand. The list keeps every row that did not change; a row
      that did is drawn again and keeps the focus, holding nothing typed. The open order keeps any part holding the
      focus, and draft.oStale has the next poll draw it once the focus has left; a part that reads the same is left
      as it is, which is always the composer. Only an order opened or gone draws the place again. */
   function oShape(list){ return [].map.call(list.children,function(x){ return x.getAttribute('data-row')||x.textContent; }).join('|'); }
   function oSync(ids){
-    var place=document.getElementById('oPlace'); if(!place) return;
+    var place=document.getElementById('oArea'); if(!place) return;
     var shown=oShownId(), scr=place.querySelector('.oscreen'), sid=scr?scr.getAttribute('data-order'):'';
     if(sid!==shown){ oDraw(); return; }
     var ae=document.activeElement;
@@ -2697,11 +2989,11 @@ const CLIENT_JS = `
     var before={}, mine=ticket; orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
     await loadOrders();
     if(mine!==ticket) return;
-    if(document.getElementById('oPlace')&&formSig()!==drawnSig){ drawOrder(); return; }
+    if(document.getElementById('oArea')&&formSig()!==drawnSig){ drawOrder(); return; }
     var changed=orders.filter(function(o){ return before[o.id]!==JSON.stringify(o); }).map(function(o){ return o.id; }),
         gone=Object.keys(before).some(function(id){ return !oFind(id); });
     if(draft.oStale&&changed.indexOf(draft.oStale)<0) changed.push(draft.oStale);
-    if(changed.length||gone) oSync(changed);
+    if(changed.length||gone){ oSync(changed); if(osh&&draft.step==='limit') sheetDraw(); }
   }
   async function refresh(){
     await oReread();
@@ -2746,9 +3038,8 @@ const CLIENT_JS = `
       var k=await (await fetch('/push/key',{cache:'no-store'})).json();
       if(!k.key||!k.configured){ draft.pushNote='Notifications are not switched on for this site yet.'; drawOrder(); return; }
       /* v693: THE ASK COMES FIRST. Registering a service worker before it meant a browser that
-         refuses the registration never got as far as the question, and since every login now asks,
-         that silence would be the ordinary case rather than the odd one. Nothing is installed on a
-         phone whose reader says no. */
+         refuses the registration never got as far as the question, which only a tap puts (S4), so
+         that silence would waste the one tap. Nothing is installed on a phone whose reader says no. */
       var perm=await Notification.requestPermission();
       if(perm!=='granted'){ draft.pushNote='Permission was not given, so nothing will be sent.'; drawOrder(); return; }
       await navigator.serviceWorker.register('/sw.js?u='+encodeURIComponent(user));
@@ -2826,11 +3117,11 @@ const CLIENT_JS = `
     askPush();
   });
 
-  /* ---- ASKED ON EVERY LOGIN (v693, his instruction of 18 Sep 2026) ----------------------------
-     The button in the order tab stays, for a reader who said no and changed their mind; this asks
-     on the way in, which is when the answer is worth having. A browser that has already been
-     answered is not asked again: permission is 'granted' or 'denied' by then, and only 'default'
-     can raise the dialog at all. The owner's route never asks: those are not his phones. */
+  /* ---- ON THE WAY IN, NOTHING IS ASKED (S4, 24 SEP 2026; v693 asked here) ----------------------
+     The plan he answered "all recommended" asks at the first order, from a tap: Sent's "A buzz when it is
+     confirmed?", and the Order tab's Notify me. Asked on the way in, a phone that answered never saw that
+     question, and a remembered phone was asked on load with nothing tapped. What stays is the phone already
+     on, filed again below. The owner's route never asks: those are not his phones. */
   function askPush(){
     if(OWNER||!session) return;
     try{
@@ -2840,7 +3131,7 @@ const CLIENT_JS = `
          which every sign-in empties. ON IS WHAT THE SITE HOLDS: with the answer already yes this subscribes again,
          which asks nothing and hands back the phone's own subscription, and names it to the site, so a phone that
          logged out is woken again and a record the site lost is put back; On is said only once the site has it. */
-      if(Notification.permission==='default'||Notification.permission==='granted') subscribePush();
+      if(Notification.permission==='granted') subscribePush();
     }catch(e){ /* a browser that refuses to be asked is not a fault */ }
   }
 
@@ -2929,7 +3220,7 @@ const CLIENT_JS = `
       catch(e){ /* the issued statements still open; the live one is simply absent */ }
     }
     if(body.card){ try{ x.card=JSON.parse(await open(ck, body.card)); }catch(e){ /* the statement still opens; the card is simply absent */ } }
-    if(body.prices){ try{ x.prices=JSON.parse(await open(ck, body.prices)); }catch(e){ /* the statements still open; the list is simply absent */ } }
+    if(body.prices){ try{ x.prices=await openList(ck, body.prices); }catch(e){ /* the statements still open; the list is simply absent */ } }
     return x;
   }
   function enter(u, body, b, x, ck, keep){
@@ -2952,6 +3243,7 @@ const CLIENT_JS = `
       if(t!==tab&&!(hold&&t==='prices')&&!(t==='card'&&tCard.hidden)) showTab(t);
       if(mf&&mfil.querySelector('button[data-mf="'+mf+'"]')){ mfPick=mf; applyMonths(); }
       window.scrollTo(0,sy);
+      if(draft.sheetBack){ draft.sheetBack=false; sheetOpen(); }
     }
   }
   async function follow(stale){

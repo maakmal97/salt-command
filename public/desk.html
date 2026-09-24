@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="bc3cc35e34c500a7";
+var SALT_BUILD_ID="251a1da12e9827b1";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -8400,7 +8400,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v843","d":"25 Sep 2026","t":"SALT ADMIN OPENS ON WHAT NEEDS HIM","n":["<b>STAGE 9, THE FIRST PART</b> (his answer D13 of 24 Sep 2026). Salt Admin opens on Needs you, one card a thing with its action on the card: an associate's waiting link (Approve, the tier pin, Decline), a customer locked out with the cause and Send a sign-in link or Show a code, an ID with no account and the Silver link, and the accounts not yet sent with Send them in turn, each ticked as its share goes.","<b>ONE LIST OF ACCOUNTS.</b> Accounts replaces Send and Review: search, filters, and chips for owes, locked, no account, opened how and when, alerts on and sent; a row opens the account's card beside the list on a laptop. View as them opens their page read only with Back to accounts. His places are the App bar on a phone and the Desk rail from 1080px.","<b>ITS OWN APP.</b> Salt Admin has its own icon, the ring with a keyhole, and when Access lapses it says the sign-in has ended with a way to sign in again, instead of Failed to fetch; the Access session is now a week. Each owner app counts what waits in the other, with no link and no name."]}];
+const evolution=[{"v":"v844","d":"25 Sep 2026","t":"ORDERING IS A SHEET, AND A MOVED PRICE IS CAUGHT BEFORE PLACING","n":["<b>STAGE 4 OF THE REDESIGN</b> (his answer D11 of 24 Sep 2026). New order lays a sheet over the page: the product as its mark, sizes as tiles with their prices, the size they order most tagged your usual, the way and the place from last time, the total and Review in reach. Every size on Prices opens it at that size, and Prices reads as at its day and time. An associate is asked Who is it for? first; the five-order limit is said before the form, with the open orders to cancel; one delivery sentence everywhere.","<b>A MOVED PRICE.</b> The publish seals a keyed digest of each price list, and Place carries the digest of the list the page opened; when the list has moved the Worker answers 409 with the new sealed list, and the check shows the size's new price with Place at RM X, one tap. The site compares stamps and prices nothing.","<b>SENT.</b> Place answers in the sheet and asks A buzz when it is confirmed? from that tap only; See the order opens its screen. A lapse closes the sheet and signing back in reopens it with what was typed. The level mark has left Prices."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8515,7 +8515,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Sep 2026, 02:11 KL';
+const LAST_UPDATED='25 Sep 2026, 02:30 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

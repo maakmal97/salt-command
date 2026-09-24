@@ -336,8 +336,8 @@ for oil. `PSYM` in `stmt/page.js` holds both paths and `psymSvg` draws one; the 
 the table through `__PSYM__` and draws its own with `createElementNS`, so nothing is loaded and the
 mark takes the ink it sits in (on a brass button it is the button's own, or a brass cube on brass is
 no cube at all). A product with no mark of its own draws the **ring** rather than nothing. The order
-form's product dropdown became a **segment of marks**, because an `<option>` carries text and no
-drawing. A control holding only a mark is named by its **shape** (`PSHAPE`: Cube, Droplet, Ring) and
+form's product dropdown became a **segment of marks** (pressed ghosts in the order sheet since S4), because
+an `<option>` carries text and no drawing. A control holding only a mark is named by its **shape** (`PSHAPE`: Cube, Droplet, Ring) and
 never by its product, so a screen reader is told what is drawn rather than what it is.
 
 **The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title, the
@@ -403,13 +403,11 @@ Three things sit behind the one password since v499: the statements, a **price l
 the week, and an **order**. The page shows them as three tabs once the password has opened
 the record. Nothing about the statements changed.
 
-**THE LABEL IS A MARK, NOT A NAME** (v659, his instruction of 16 Sep 2026: "a very subtle tier level,
-in symbol and colour (for each tier), marked in the pricing"). Each product on the price list carries
-a small glyph in its level's colour beside the product's name: `MARK` in `stmt/page.js`, six shapes
-from one Unicode block so they render the same everywhere, and none of them a count. **The level is
-never named in the page**, which is the whole of subtle: two customers comparing pages cannot order
-themselves by it. The name does travel inside the sealed list, as it has since v651, and stays out of
-the text and out of the mark's own label, which is `aria-hidden` so it is not read out either.
+**THE CUSTOMER SEES NO LEVEL** (S4 4.10, his D11 of 24 Sep 2026, reversing v659's "a very subtle tier
+level, in symbol and colour"). Prices drew a glyph in the level's colour beside each product (`MARK`, v659
+to S4); it is gone, and nothing on the page reads the level. The name still travels inside the sealed list,
+as it has since v651, and the suite holds two lists differing only in level to the same Prices, to the
+character.
 
 **AND THEY ARE GREETED AS PERSONALLY AS THIS SITE CAN** (v659, the same instruction). The hour is
 theirs, off their own device, so the page opens with Good morning, Good afternoon or Good evening,
@@ -432,7 +430,7 @@ tier held on the book or proposed from what they pay for it, never above that ra
 rounded DOWN to the ten and never up (v660), and lifted only to clear the floor: the engine's
 `cardPrice`, which the desk's printed board calls too, and the suite holds the two equal. The v510 draw toward the ask retired
 with it. **A product with no tier, held or proposed, is not priced**: the list carries it in `soon`,
-the page says its price is coming soon, and the order form does not offer it. One
+the page says its price is coming soon, and the order sheet does not offer it. One
 price per size, for the goods (v502): delivery is not on the list. It is a figure
 he types **when he acknowledges the order** (v694; it was at ready until then, and the order becomes
 a row at the acknowledgement, so the charge has to be settled there), the customer sees goods plus
@@ -442,6 +440,13 @@ engine prices: the publish opens the master in jsdom for the desk's PRICING inpu
 drafter reads), which carry each customer's tier and the ladder, and calls `floorTotal` and
 `cardPrice`. `node tools/pricelist.mjs --show <CODE>` prints what
 a customer sees. `--no-prices` on the publish leaves the list out.
+**The list's stamp is a digest of its figures** (S4 4.1), never `prices.at`, which the hourly publish moves:
+`priceDigest` in `tools/pricelist.mjs`, keyed under `STMT_KEY` over the username and each product's sizes and
+prices, sealed inside the list and in the clear beside it as `prices.digest`. **Place carries the stamp of the
+list the page opened** (4.2): one that differs from the record's is answered 409 `prices moved` with the record's
+sealed list, after the request id and the order's own checks, on both roads. The page sends the field on every Place,
+empty included; a body with none is a page loaded before the stamp, which cannot re-quote, and places as it did. The
+site compares stamps; it prices nothing.
 
 **The order lives on the site, in its one Durable Object** (`stmt/orderbook.js`; S10, his answer
 to D10 of 24 Sep 2026): every move an event appended under its id, the order the fold of its
@@ -463,6 +468,29 @@ collect or deliver, Collected or Delivered once the goods are all with them, Com
 Cancelled by you or by us; "units" above one; and every refusal of a move of theirs says it so. His
 reason for a decline or a cancellation (S11 11.7) follows its word, on the order and in its history; a
 close short says on the order and on its Goods line what was handed over of what was ordered.
+
+**THE ORDER IS A SHEET** (S4 4.3, his "all recommended" of 24 Sep 2026). New order lays the system's Sheet
+over the page: the product as its mark, the sizes as Option tiles with their prices, the size they order
+most tagged *your usual* (read off their own orders on the page), the way and the place as last time, a
+folded note, and the total with Review in the foot. **Review freezes one copy of the order** with its
+request id: the check draws that copy and Place sends it, and while the check is open the sheet holds no
+field, so nothing typed can reach the order unseen. Units above one, unit at one, a guest's board included (one `unitsOf`). A 409 `prices moved` (above;
+S4 4.4) brings the account's list as it stands, sealed, which the page opens with the key it already holds
+(`openList` keeps it on the list, unenumerable) and draws in the check: "This size is now RM X (was RM Y). Place at RM X?", one tap, a new request id; a list with nothing left to order, or none, is taken as a sign-in takes it, and the check says so with Place held. The page reads the figure off
+the list; it compares and prices nothing. **Sent answers in the sheet** (S4 4.5) and asks "A buzz when it is
+confirmed?", put only by the tap on Turn on notifications (nothing is asked on the way in since S4, where v693 asked; a sign-in files a phone already on again); See the order
+closes the sheet and opens the order's own screen (S5 5.2). New order stands above Your orders, stage 5's rows; on a desk,
+while it stands beside an open order, that order's Pay is the lit ghost, one filled control a screen, and Pay is filled
+wherever nothing else is (the limit in New order's place, the payment page, a phone). **Five open orders are said before the form** (S4 4.6; `MAX_OPEN` is exported from
+`stmt/orders.js` and carried into the page, the Worker still the one that refuses): the Order tab says so in place of
+New order, and the sheet opens on the open orders, each in stage 5's word for it (goods handed over in part say so),
+Cancel on each whose goods have not moved, going on to the form once
+one is gone; a refusal those orders explain turns the sheet to the same list. **Every size on Prices is one tap to
+the sheet at that size** (S4 4.8, rows of the plain ledger), and the list says **"Prices as at Thu 24 Sep, 11:59"**
+in Kuala Lumpur off its own `at`; a list sealed without one keeps "For the week of". **One delivery sentence**
+(`DELIVERY` in `stmt/page.js`, S4 4.9) wherever the charge is explained: Prices, a delivery's check and a guest's
+board: "Delivery is charged by area. We tell you the charge when we confirm, before you pay, and you can cancel then
+at no cost."
 
 **A RETRY LANDS ONCE** (24 Sep 2026). Every move the page sends carries a request id it mints per
 tap (per review, per payment, per line, per withdrawal, per rail; S10 10.4), kept with that move until
@@ -544,7 +572,9 @@ be tapped.
 **AN ASSOCIATE TICKS AN ORDER AS ON BEHALF OF A FRIEND** (v703, his instruction of 18 Sep 2026).
 Their own orders and the ones they place for somebody else can no longer be told apart by what they
 buy, so they tick it; the words are his, and they replaced an earlier phrasing he rejected. The tick
-is drawn only for an associate, rides the placement as `forFriend`, and is stored on the order.
+is drawn only for an associate, rides the placement as `forFriend`, and is stored on the order. Since S4 4.7 it is the
+order sheet's first question, **Who is it for? Me / A friend**, neither chosen and asked on every order: Review waits
+for the answer.
 
 *Who is an associate* is the desk's own answer, never a second one: `planPublish` reads the report
 card snapshot's `products[].rows[].id` and marks that account's record `assoc: true`. The mark is
@@ -743,8 +773,9 @@ A tap opens the Counter at `#o=<id>`; a Counter page already open (never a guest
 another tab) is sent a message instead, re-reads its orders, patching only what changed, and opens that one,
 or, its session lapsed, keeps it until the phone is back in (reopened from its memory, S3 3.5, or signed in
 on the Sheet). A return to the page (S3 3.5) and a lapse reopened patch the orders the same way, so an open
-order and a half-typed line survive; only an order form the account now draws differently (the prices, the
-payment page) draws the tab again. A subscription filed before its keys gets a payload-free wake and the
+order and a half-typed line survive; only a head of the tab the account now draws differently (the prices, the
+payment page, the open orders reaching or leaving the limit) draws the tab again. Neither ever draws the order sheet or
+its check; only the sheet's limit step, which holds nothing typed, follows the orders. A subscription filed before its keys gets a payload-free wake and the
 old fixed words, so nothing already subscribed went dark; the page re-files the keys at the next
 sign-in. A notice keeps its own road: its wake carries no payload, and the service worker reads
 the public `bulletin` (v761). On an

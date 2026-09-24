@@ -87,6 +87,13 @@ class KV {
     }), list_complete: true };
   }
 }
+/* THE CLOCK PAST A MOMENT (25 Sep 2026). The site stamps a move to the millisecond, and the desk's nudge wakes for a
+   placement or a line only on a moment LATER than the mark it holds, so a second one stamped in the first one's
+   millisecond reads as nothing new.
+   In memory a section's moves land a millisecond or less apart: S1 1.27 failed so on the Cloud commit job's runner
+   (run 36041951078) and passed in CI and on the laptop on the same commit. A section proving that a later move is
+   seen waits here first, so the state it proves is forced and never the runner's speed. */
+const clockPast = async (moment) => { while (new Date().toISOString() <= String(moment)) await new Promise((r) => setTimeout(r, 1)); };
 const assets = {
   async fetch(req) {
     const p = new URL(req.url).pathname;
@@ -12950,6 +12957,117 @@ await (async () => {
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w46.close(); } catch (e) { /* best effort */ } }
 })();
 
+section("S4 4.1: the publish seals a digest of each price list's figures, inside the list and in the clear beside it, and the clock never moves it");
+await (async () => {
+  /* The judges' must-not-ship: a stamp read from prices.at, which the hourly publish moves, so every order placed across
+     the hour would read as a moved price. The stamp is a digest of the figures alone, keyed per account. Each assertion
+     below was proved red by its own mutation. */
+  const { mkdirSync: mk41, writeFileSync: wf41, rmSync: rm41 } = await import("node:fs");
+  const { liveRecords: lr41 } = await import("../tools/make_statements.mjs");
+  const C41 = await import("../tools/stmt-crypto.mjs");
+  const cost41 = { repl: 50, freightRate: 0, shrinkRate: 0, avgDel: { n: 0, mean: 0 }, attrib: {},
+    costBasis: { txnPerDelivery: { rm: 0 }, freightPerTrip: { rm: 0 }, deliveredShare: { v: 0 } } };
+  const pricing41 = (p2) => ({ sizes: [1, 2], tierNames: ["Ambassador", "Titanium", "Silver"],
+    tierOf: { "CX0-DGA": { salt: "Silver" }, "CX0-DGB": { salt: "Silver" } },
+    byProduct: { salt: { sizes: [1, 2], inputs: { cost: cost41, policy: {} }, ladder: [{ q: 1, prices: [80, 90, 100] }, { q: 2, prices: [150, 170, p2] }] } } });
+  const users41 = { "CX0-DGA": "abcd-efgh", "CX0-DGB": "hjkm-npqr" };
+  const tmp41 = join(REPO, "test", "tmp", "s4-digest-" + Date.now());
+  try {
+    mk41(join(tmp41, "2026-09", "_kv"), { recursive: true });
+    wf41(join(tmp41, "_users.json"), JSON.stringify(users41));
+    const ck41 = {};
+    for (const u of Object.values(users41)) {
+      ck41[u] = await C41.contentKey("test-secret", u);
+      wf41(join(tmp41, "2026-09", "_kv", u + ".json"), JSON.stringify({ u, issued: "2026-09-01", issues: ["2026-09-01"],
+        verifier: await C41.makeVerifier("fixture-pass-41"), wrap: await C41.wrapKey("fixture-pass-41", ck41[u]),
+        env: await C41.encryptWith(ck41[u], JSON.stringify({ statements: [] })) }));
+    }
+    /* one publish: each account's clear stamp, its `at`, and the list as the customer opens it */
+    const strike41 = async (at, p2) => {
+      const lr = await lr41(tmp41, "test-secret", new Date(at), pricing41(p2)), out = {};
+      for (const rec of lr.records) out[rec.u] = { clear: rec.prices && rec.prices.digest, at: rec.prices && rec.prices.at,
+        sealed: JSON.parse(await C41.decryptWith(ck41[rec.u], rec.prices)) };
+      return out;
+    };
+    const now41 = await strike41("2026-09-24T02:00:00Z", 190), hour41 = await strike41("2026-09-24T03:00:00Z", 190),
+      week41 = await strike41("2026-10-01T02:00:00Z", 190), moved41 = await strike41("2026-09-24T03:00:00Z", 200);
+    const A41 = now41["abcd-efgh"], B41 = now41["hjkm-npqr"], figs41 = (x) => JSON.stringify(x.sealed.products.map((p) => [p.product, p.sizes]));
+    ok(/^[0-9a-f]{64}$/.test(A41.clear || "") && A41.sealed.digest === A41.clear && A41.sealed.products.length === 1 && A41.sealed.products[0].sizes.length === 2,
+      "the record carries the list's stamp in the clear, and the sealed list carries the same stamp: " + JSON.stringify([A41.clear, A41.sealed.digest]));
+    ok(hour41["abcd-efgh"].at !== A41.at && week41["abcd-efgh"].sealed.week.monday !== A41.sealed.week.monday
+      && figs41(hour41["abcd-efgh"]) === figs41(A41) && figs41(week41["abcd-efgh"]) === figs41(A41)
+      && hour41["abcd-efgh"].clear === A41.clear && week41["abcd-efgh"].clear === A41.clear,
+      "the next hour's publish and the next week's strike the same figures, and the stamp does not move with the clock: "
+        + JSON.stringify([A41.clear, hour41["abcd-efgh"].clear, week41["abcd-efgh"].clear]));
+    ok(figs41(moved41["abcd-efgh"]) !== figs41(A41) && moved41["abcd-efgh"].clear !== A41.clear && moved41["abcd-efgh"].sealed.digest === moved41["abcd-efgh"].clear,
+      "one price moved and the stamp moves with it: " + figs41(A41) + " to " + figs41(moved41["abcd-efgh"]));
+    ok(figs41(A41) === figs41(B41) && JSON.stringify(A41.sealed.products) === JSON.stringify(B41.sealed.products) && A41.clear !== B41.clear,
+      "two accounts quoted the same figures carry different stamps, so a copy of the store cannot tell which share a list");
+  } finally { rm41(tmp41, { recursive: true, force: true }); }
+})();
+
+section("S4 4.2: Place carries the stamp of the list it was read from, and a moved list answers 409 with itself, on both roads");
+await (async () => {
+  /* The site compares two strings and prices nothing: the stamp Place carries against the one on the account's record
+     now. A moved list is refused with the list as it stands, sealed, so the page can show the new price before placing,
+     and a retry of a placement that landed is answered with its order whatever has moved since. Each assertion below
+     was proved red by its own mutation. */
+  const O42 = await import("../stmt/orders.js");
+  const SW42 = (await import("../stmt/worker.js")).default;
+  const H42 = await import("../test/orderbook-harness.mjs");
+  const u42 = "k7m3-p2q4";
+  /* the record's list as the publish writes it: the stamp in the clear beside an envelope the site cannot open */
+  const sealed42 = (digest) => Object.assign({ at: "2026-09-24T02:05:00.000Z", week: "2026-09-21" }, digest ? { digest } : {},
+    { v: 2, iv: "aXZpdml2aXZpdml2", ct: "Y2lwaGVydGV4dA" });
+  const run42 = async (store) => {
+    const kv = new KV(), bk = H42.orderBook({});
+    const env = Object.assign({ STMT: kv, STMT_DESK_KEY: "desk-key" }, store ? { ORDERBOOK: bk.ns, ORDER_STORE: store } : {});
+    const tok = await O42.mintSession(env, u42);
+    const setList = (digest) => kv.put("u:" + u42, JSON.stringify({ u: u42, issued: "2026-09-01", prices: sealed42(digest) }));
+    const place = async (body) => {
+      const r = await SW42.fetch(new Request("https://k7m3p2.example/orders", { method: "POST",
+        headers: { "content-type": "application/json", "X-Stmt-Session": tok }, body: JSON.stringify(body) }), env);
+      return { status: r.status, b: await r.json() };
+    };
+    const count = async () => (await O42.ordersOf(env, u42)).length;
+    const order = (extra) => Object.assign({ product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, week: "2026-09-21" }, extra);
+    const rid = (s) => s.repeat(16).slice(0, 32);
+    await setList("d-one");
+    const same = await place(order({ digest: "d-one", rid: rid("s1") }));
+    const stale = await place(order({ digest: "d-old", rid: rid("s2") }));
+    const empty = await place(order({ digest: "", rid: rid("s6") }));
+    const bare = await place(order({ rid: rid("s3") }));
+    const n1 = await count();
+    await setList("d-two");
+    const retry = await place(order({ digest: "d-one", rid: rid("s1") }));
+    const own = await place(order({ digest: "d-old", mode: "fly", rid: rid("s4") }));
+    await setList(null);
+    const unstamped = await place(order({ rid: rid("s5") }));
+    return { same, stale, empty, bare, n1, retry, own, unstamped, n2: await count() };
+  };
+  for (const store of [null, "object", "object+kv"]) {
+    const nm = store || "kv", R = await run42(store);
+    ok(R.same.status === 200 && R.same.b.ok === true && R.same.b.order && R.same.b.order.total === 120,
+      nm + ": a placement carrying the stamp on the account's list now is placed: " + JSON.stringify([R.same.status, R.same.b.error]));
+    ok(R.stale.status === 409 && R.stale.b.ok === false && R.stale.b.error === "prices moved" && JSON.stringify(R.stale.b.prices) === JSON.stringify(sealed42("d-one"))
+      && R.empty.status === 409 && R.empty.b.error === "prices moved" && JSON.stringify(R.empty.b.prices) === JSON.stringify(sealed42("d-one")),
+      nm + ": a placement carrying an older stamp, or an empty one, is refused 409 with the account's list as it stands, sealed, and places nothing: "
+        + JSON.stringify([R.stale.status, R.stale.b, R.empty.status, R.empty.b.error]));
+    /* S4 fix (S4R-1): a Counter loaded before the stamp sends no stamp field at all and has no way to re-quote, so a
+       refusal held it until a reload nothing tells it to make; it places as it did, and the desk's acknowledgement is
+       the check behind its total. The page since S4 always sends the field (S4 fix section below). */
+    ok(R.bare.status === 200 && R.bare.b.ok === true && R.n1 === 2,
+      nm + ": a page from before the stamp, whose Place carries no stamp field at all, places as it did against a stamped list: "
+        + JSON.stringify([R.bare.status, R.bare.b.error, R.n1]));
+    ok(R.retry.status === 200 && R.retry.b.ok === true && R.same.b.order && R.retry.b.order && R.retry.b.order.id === R.same.b.order.id,
+      nm + ": a retry of a placement that landed is answered with its order after the list has moved, never refused: " + JSON.stringify([R.retry.status, R.retry.b.error]));
+    ok(R.own.status === 400 && R.own.b.ok === false && R.own.b.error && R.own.b.error !== "prices moved" && !("prices" in R.own.b),
+      nm + ": an order refused on its own terms says so, and not that the price moved: " + JSON.stringify([R.own.status, R.own.b.error]));
+    ok(R.unstamped.status === 200 && R.unstamped.b.ok === true && R.n2 === 3,
+      nm + ": a list published before the stamp, and a page sending none, still place: " + JSON.stringify([R.unstamped.status, R.unstamped.b.error, R.n2]));
+  }
+})();
+
 section("v651: a customer's price is their tier for each product, and a product with no tier reads price coming soon and cannot be ordered");
 await (async () => {
   /* HIS DECISIONS OF 15 SEP 2026. The tier for the product is a ceiling: its price at each size, held or proposed, lowered by
@@ -13036,11 +13154,14 @@ await (async () => {
       for (let i = 0; i < 150 && !d.getElementById("pPrices").textContent; i++) await new Promise((r) => setTimeout(r, 100));
       /* v695: the product is a mark, not a word, so it is read off the marks and the segment that
          holds them rather than off a dropdown of names, which is what this read until then. */
-      return { prices: d.getElementById("pPrices").textContent, order: d.getElementById("pOrder").textContent,
+      /* S4 4.3: the form is a sheet, opened from New order, and the product segment is inside it */
+      const nw = d.getElementById("oNew"); if (nw) nw.click();
+      const sh = d.getElementById("osheet");
+      return { prices: d.getElementById("pPrices").textContent, order: d.getElementById("pOrder").textContent + " " + (sh ? sh.textContent : ""),
         marks: [...d.querySelectorAll("#pPrices h3.pmark")].map((h) => h.getAttribute("aria-label")),
-        priced: [...d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector("table")).length,
-        products: [...d.querySelectorAll("#pOrder .seg button[aria-pressed]")].map((b) => b.getAttribute("aria-label")),
-        orderable: !!d.querySelector("#pOrder .quote") };
+        priced: [...d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector(".salt-ledger .szrow")).length,
+        products: [...d.querySelectorAll("#osheet button[aria-pressed][aria-label]")].map((b) => b.getAttribute("aria-label")),
+        orderable: !!nw && !!d.querySelector('#osheet input[name="osize"]') };
     } finally { dom.window.close(); }
   };
   /* 19 SEP 2026: OIL IS PRICED FOR EVERYBODY NOW, so a page with one product priced and one coming
@@ -13226,6 +13347,826 @@ await (async () => {
 })();
 
 
+section("S4 4.3: the order is a sheet, with size tiles and their prices, the usual size, the last way and place, and the total with Review in the foot");
+await (async () => {
+  /* STAGE 4 OF THE COUNTER'S REDESIGN, HIS "ALL RECOMMENDED" OF 24 SEP 2026. The form was a pane at the head of the Order
+     tab; it is the system's Sheet now, laid over the page from New order. Driven on the real page with the real crypto. */
+  const { landingPage: lpS } = await import("../stmt/page.js");
+  const CS = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcS } = await import("node:crypto");
+  const { JSDOM: JDS } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s43", ck = await CS.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 0.5, price: 60 }, { q: 1, price: 110 }, { q: 2.5, price: 250 }] },
+      { product: "oil", unit: "unit", basis: "board", tier: null, sizes: [{ q: 1, price: 45 }] }] };
+  /* two of 2.5 and one of 1, so 2.5 is the usual; the newest order is a delivery, and the newest place is Old market */
+  const orders = [
+    { id: "20260920010000-aaaa", product: "salt", qty: 2.5, mode: "collect", place: "", at: "2026-09-20T01:00:00Z", status: "done", total: 250, paid: 250, moved: 2.5, history: [], msgs: [] },
+    { id: "20260922010000-bbbb", product: "salt", qty: 2.5, mode: "deliver", place: "Old market", at: "2026-09-22T01:00:00Z", status: "acknowledged", total: 250, paid: 0, moved: 0, delivery: 10, history: [], msgs: [] },
+    { id: "20260910010000-cccc", product: "salt", qty: 1, mode: "deliver", place: "Hill top", at: "2026-09-10T01:00:00Z", status: "done", total: 110, paid: 110, moved: 1, history: [], msgs: [] }];
+  const body = { ok: true, wrap: await CS.wrapKey(pass, ck), session: "sess-s43",
+    env: await CS.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await CS.encryptWith(ck, JSON.stringify(prices)) };
+  const dom = new JDS(lpS(u, "ns43", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcS, configurable: true }); } catch (e) { win.crypto = wcS; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !(d.getElementById("oNew") && /Your orders/.test(d.getElementById("pOrder").textContent)); i++) await new Promise((r) => setTimeout(r, 30));
+    const formOnTab = [...d.querySelectorAll("#pOrder button")].filter((b) => /^(Review|I will collect|Deliver to me)$/.test(b.textContent)).length
+      + d.querySelectorAll("#pOrder select").length;
+    ok(!!d.getElementById("oNew") && formOnTab === 0 && !d.getElementById("osheet"),
+      "the Order tab offers New order and holds no form of its own: " + formOnTab);
+    d.getElementById("oNew").click();
+    const dlg = d.querySelector("#osheet .salt-sheet");
+    ok(!!dlg && d.getElementById("osheet").parentNode === d.body && dlg.getAttribute("role") === "dialog" && dlg.getAttribute("aria-modal") === "true"
+      && d.getElementById(dlg.getAttribute("aria-labelledby")).textContent === "New order" && !!d.querySelector("#osheet .salt-sheet-scrim"),
+      "New order lays the system's Sheet over the page, at the root of the body, as a named modal dialog");
+    const tiles = [...d.querySelectorAll('#osheet .salt-option input[type=radio][name="osize"]')].map((r) => ({ q: r.value, on: r.checked,
+      label: r.closest(".salt-option").querySelector(".salt-option__label").textContent, fig: r.closest(".salt-option").querySelector(".salt-option__figure").textContent }));
+    ok(tiles.length === 3 && tiles.map((t) => t.fig).join() === "RM 60,RM 110,RM 250" && tiles.map((t) => t.label.replace("your usual", "")).join() === "0.5 unit,1 unit,2.5 units",
+      "the sizes are Option tiles, each carrying its own price, units above one and unit at one: " + JSON.stringify(tiles));
+    ok(tiles.filter((t) => /your usual/.test(t.label)).map((t) => t.q).join() === "2.5" && tiles.filter((t) => t.on).map((t) => t.q).join() === "2.5",
+      "the size they order most is tagged your usual and chosen to begin with: " + JSON.stringify(tiles.map((t) => [t.q, t.on, /usual/.test(t.label)])));
+    const pressed = (t) => { const b = [...d.querySelectorAll("#osheet button.salt-ghost")].find((x) => x.textContent === t); return b && b.getAttribute("aria-pressed"); };
+    const where = d.getElementById("oWhere");
+    ok(pressed("Deliver to me") === "true" && pressed("I will collect") === "false" && where && where.value === "Old market"
+      && /^Same as last time[.]/.test(d.querySelector("#osheet .salt-field__hint").textContent),
+      "the way is the last order's and the place the last one given, and the hint says so: " + JSON.stringify({ where: where && where.value }));
+    const foot = d.querySelector("#osheet .salt-sheet__foot");
+    ok(foot && foot.contains(d.getElementById("oGo")) && d.getElementById("oGo").classList.contains("salt-pill") && /^RM 250/.test(foot.textContent) && !d.getElementById("oGo").disabled,
+      "the total and Review, the one filled control, sit in the sheet's foot: " + JSON.stringify(foot && foot.textContent));
+    const one = d.querySelector('#osheet input[name="osize"][value="1"]');
+    one.checked = true; one.dispatchEvent(new w.Event("change", { bubbles: true }));
+    ok(/^RM 110/.test(d.querySelector("#osheet .salt-sheet__foot").textContent), "a tap on another size moves the total with it");
+    ok(!/salt|oil|Gold/i.test(d.getElementById("osheet").outerHTML.replace(/salt-[a-z_-]+/g, "")),
+      "and the sheet carries no product word and no level's name, in its text or its attributes");
+    d.querySelector("#osheet .salt-sheet").dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    ok(!d.getElementById("osheet"), "Escape closes it");
+  } finally { w.close(); }
+})();
+section("S4 4.4: Place carries the list's stamp, and a list moved since it was opened shows the new price in the check before anything is placed");
+await (async () => {
+  /* HIS "ALL RECOMMENDED" OF 24 SEP 2026, AND THE JUDGES' "NEVER prices.at". The publish seals a digest of the list's
+     figures inside it (tools/pricelist.mjs); Place carries the digest of the list the page opened, and the Worker answers
+     409 "prices moved" with the account's list as it stands, sealed. The page opens it with the key it already holds and
+     shows the new figure beside the one they were shown; nothing is placed until they tap. The Worker's side is the
+     digest fold's; this drives the page against the answer shape, with the real crypto. */
+  const { landingPage: lpM } = await import("../stmt/page.js");
+  const CM = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcM } = await import("node:crypto");
+  const { JSDOM: JDM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s44", ck = await CM.contentKey("test-secret", u);
+  const list = (digest, sizes) => ({ at: "2026-09-24T03:59:00Z", digest, week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes }] });
+  const sealed = async (l) => Object.assign({ at: l.at, week: l.week.monday, digest: l.digest }, await CM.encryptWith(ck, JSON.stringify(l)));
+  const first = list("d1", [{ q: 1, price: 100 }, { q: 2, price: 190 }]);
+  const drive = async (answers) => {
+    const posted = [];
+    const body = { ok: true, wrap: await CM.wrapKey(pass, ck), session: "sess-s44", prices: await sealed(first),
+      env: await CM.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+    const dom = new JDM(lpM(u, "ns44", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcM, configurable: true }); } catch (e) { win.crypto = wcM; }
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/open") return { ok: true, status: 200, json: async () => body };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+        if (p === "/orders" && m === "POST") {
+          const j = JSON.parse(init.body); posted.push(j);
+          const a = answers[posted.length - 1] || { status: 200, body: { ok: true, order: { id: "20260924040000-zzzz", product: "salt", qty: j.qty, status: "placed", at: "2026-09-24T04:00:00Z", total: j.total, history: [], msgs: [] } } };
+          return { ok: a.status === 200, status: a.status, json: async () => a.body };
+        }
+        return { ok: false, status: 404, json: async () => ({ ok: false }) };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click();
+    const one = d.querySelector('#osheet input[name="osize"][value="1"]');
+    one.checked = true; one.dispatchEvent(new w.Event("change", { bubbles: true }));
+    d.getElementById("oGo").click();
+    d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !(posted.length && d.getElementById("oBack") && !d.getElementById("oBack").disabled); i++) await new Promise((r) => setTimeout(r, 30));
+    await new Promise((r) => setTimeout(r, 60));
+    return { w, d, posted };
+  };
+  const moved = async (l) => ({ status: 409, body: { ok: false, error: "prices moved", prices: await sealed(l) } });
+
+  /* the size moved: RM 100 when the list was opened, RM 120 in the list that came back */
+  const A = await drive([await moved(list("d2", [{ q: 1, price: 120 }, { q: 2, price: 190 }]))]);
+  try {
+    const { d, posted } = A;
+    const say = (d.querySelector("#osheet .salt-insight") || {}).textContent || "";
+    ok(posted.length === 1 && posted[0].digest === "d1" && posted[0].total === 100,
+      "Place carries the stamp of the list the page opened, with the price it showed: " + JSON.stringify(posted.map((x) => [x.digest, x.total])));
+    ok(say === "This size is now RM 120 (was RM 100). Place at RM 120?" && d.getElementById("oPlace").textContent === "Place at RM 120",
+      "a 409 prices moved opens the list that came back and says the new price beside the one shown, and Place names it: " + JSON.stringify([say, d.getElementById("oPlace").textContent]));
+    ok(posted.length === 1 && /RM 120/.test(d.getElementById("pPrices").textContent) && !/RM 100/.test(d.getElementById("pPrices").textContent),
+      "nothing is placed until they tap, and Prices behind the sheet reads the new list: " + posted.length);
+    d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && posted.length < 2; i++) await new Promise((r) => setTimeout(r, 30));
+    ok(posted.length === 2 && posted[1].total === 120 && posted[1].unit === 120 && posted[1].qty === 1 && posted[1].digest === "d2"
+      && /^[0-9a-f]{32}$/.test(posted[1].rid || "") && posted[1].rid !== posted[0].rid,
+      "one tap places it at the new price, under the new list's stamp and a new request id: " + JSON.stringify(posted.map((x) => [x.total, x.digest, x.rid && x.rid.slice(0, 6)])));
+  } finally { await new Promise((r) => setTimeout(r, 100)); A.w.close(); }
+
+  /* the size left the list: said, and Place is not offered */
+  const B = await drive([await moved(list("d3", [{ q: 2, price: 190 }]))]);
+  try {
+    const say = (B.d.querySelector("#osheet .salt-insight") || {}).textContent || "";
+    ok(/no longer on your list/.test(say) && B.d.getElementById("oPlace").disabled && B.posted.length === 1,
+      "a size gone from the list is said, and Place is held: " + JSON.stringify(say));
+  } finally { B.w.close(); }
+
+  /* the list moved but this size did not: the check stays, under the new stamp */
+  const E = await drive([await moved(list("d4", [{ q: 1, price: 100 }, { q: 2, price: 200 }]))]);
+  try {
+    const { d, posted } = E;
+    ok(!d.querySelector("#osheet .salt-insight") && d.getElementById("oPlace").textContent === "Place order" && /still RM 100/.test(d.querySelector("#osheet .salt-sheet__foot").textContent),
+      "where this size did not move the check stays as it was and says so beside Place");
+    d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && posted.length < 2; i++) await new Promise((r) => setTimeout(r, 30));
+    ok(posted.length === 2 && posted[1].total === 100 && posted[1].digest === "d4", "and Place carries the new stamp: " + JSON.stringify(posted.map((x) => x.digest)));
+  } finally { await new Promise((r) => setTimeout(r, 100)); E.w.close(); }
+})();
+section("S4 4.5: Sent answers in the sheet, and notifications are asked from a tap there");
+await (async () => {
+  /* HIS "ALL RECOMMENDED" OF 24 SEP 2026: Sent answers where Place was tapped, not in a line at the head of the Order tab,
+     and asks "A buzz when it is confirmed?", the moment the answer means something. The question is put only by the tap
+     on Turn on notifications: a browser grants nothing asked outside a gesture, and nothing is asked as the sheet draws. */
+  const { landingPage: lpB } = await import("../stmt/page.js");
+  const CB = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcB } = await import("node:crypto");
+  const { JSDOM: JDB } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s45", ck = await CB.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] }] };
+  const vapid = Buffer.from("k".repeat(65)).toString("base64url");
+  const placed = { id: "20260924040000-s45a", product: "salt", qty: 1, mode: "collect", status: "placed", at: "2026-09-24T04:00:00Z", total: 100, paid: 0, moved: 0, history: [], msgs: [] };
+  const drive = async (push) => {
+    const st = { asked: 0, orders: [], subscribed: [] };
+    const body = { ok: true, wrap: await CB.wrapKey(pass, ck), session: "sess-s45", prices: await CB.encryptWith(ck, JSON.stringify(prices)),
+      env: await CB.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+    const dom = new JDB(lpB(u, "ns45", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcB, configurable: true }); } catch (e) { win.crypto = wcB; }
+      win.scrollTo = () => {};
+      if (push) {
+        win.PushManager = function () {};
+        /* a phone not yet asked: nothing is asked on the way in (S4), so every ask counted is a tap's */
+        let perm = "default";
+        win.Notification = { get permission() { return perm; }, requestPermission: async () => { st.asked++; perm = "granted"; return "granted"; } };
+        const reg = { pushManager: { getSubscription: async () => null, subscribe: async () => ({ endpoint: "https://push.example/ep-s45" }) } };
+        Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+          register: async () => reg, ready: Promise.resolve(reg), getRegistration: async () => reg } });
+      }
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/open") return { ok: true, status: 200, json: async () => body };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: st.orders }) };
+        if (p === "/orders" && m === "POST") { st.orders = [placed]; return { ok: true, status: 200, json: async () => ({ ok: true, order: placed }) }; }
+        if (p === "/push/key") return { ok: true, status: 200, json: async () => ({ key: vapid, configured: true }) };
+        if (p === "/push/subscribe") { st.subscribed.push(JSON.parse(init.body).endpoint); return { ok: true, status: 200, json: async () => ({ ok: true }) }; }
+        return { ok: false, status: 404, json: async () => ({ ok: false }) };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    await new Promise((r) => setTimeout(r, 100));
+    d.getElementById("oNew").click();
+    d.getElementById("oGo").click();
+    d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !(d.getElementById("osheet") && /Order sent/.test(d.getElementById("osheet").textContent) && d.querySelector('#pOrder [data-row]')); i++) await new Promise((r) => setTimeout(r, 30));
+    return { w, d, st };
+  };
+  const A = await drive(true);
+  try {
+    const { w, d, st } = A;
+    const sh = () => d.getElementById("osheet");
+    const box = () => sh() && sh().querySelector(".obuzz");
+    ok(!!sh() && /Order sent/.test(sh().textContent) && !d.getElementById("oPlace") && !!d.querySelector('#pOrder [data-row="' + placed.id + '"]'),
+      "Place answers in the sheet, Order sent, and the order is a row of Your orders behind it (S5 5.1): " + JSON.stringify(sh() && sh().textContent.slice(0, 80)));
+    ok(!!box() && /A buzz when it is confirmed[?]/.test(box().textContent) && !!d.getElementById("oBuzz") && st.asked === 0,
+      "it asks A buzz when it is confirmed?, and drawing the question asks the browser nothing: " + st.asked);
+    d.getElementById("oBuzz").click();
+    for (let i = 0; i < 100 && !(st.subscribed.length && !box()); i++) await new Promise((r) => setTimeout(r, 30));
+    ok(st.asked === 1 && JSON.stringify(st.subscribed) === '["https://push.example/ep-s45"]' && !box() && /On[.] This phone is told/.test(sh().textContent),
+      "the tap asks once, the phone is subscribed, and the sheet says it is on where the question was: " + JSON.stringify({ asked: st.asked, subscribed: st.subscribed }));
+    d.getElementById("oSee").click();
+    const scr = d.querySelector("#pOrder .oscreen");
+    ok(!sh() && !d.getElementById("pOrder").hidden && !!scr && scr.getAttribute("data-order") === placed.id,
+      "See the order closes the sheet and opens that order's own screen on the Order tab (S5 5.2): " + JSON.stringify(scr && scr.getAttribute("data-order")));
+    void w;
+  } finally { await new Promise((r) => setTimeout(r, 100)); A.w.close(); }
+  /* Not now puts the question away, and a browser that cannot be woken is told how rather than asked */
+  const B = await drive(true);
+  try {
+    [...B.d.querySelectorAll("#osheet .obuzz button")].find((b) => b.textContent === "Not now").click();
+    ok(!B.d.querySelector("#osheet .obuzz") && /Order sent/.test(B.d.getElementById("osheet").textContent) && B.st.asked === 0,
+      "Not now puts the question away and asks nothing");
+  } finally { await new Promise((r) => setTimeout(r, 100)); B.w.close(); }
+  const E = await drive(false);
+  try {
+    const bx = E.d.querySelector("#osheet .obuzz");
+    ok(!!bx && /add this page to the Home Screen/.test(bx.textContent) && !bx.querySelector("button"),
+      "a browser with no push is told how to become one that can, with nothing to tap: " + JSON.stringify(bx && bx.textContent.slice(0, 80)));
+  } finally { await new Promise((r) => setTimeout(r, 100)); E.w.close(); }
+})();
+section("S4 4.6: the open-order limit is said before the form, naming the open orders, with Cancel on each that can be");
+await (async () => {
+  /* HIS "ALL RECOMMENDED" OF 24 SEP 2026. The Worker refuses a sixth open order (MAX_OPEN in stmt/orders.js), and the
+     refusal came after the form was filled and checked, lower case under a live Place. The page carries the Worker's own
+     figure and says it first: on the Order tab in place of New order, and in the sheet, which lists the open orders with
+     Cancel on each whose goods have not moved and goes on to the form once one is gone. */
+  const { landingPage: lpL } = await import("../stmt/page.js");
+  const OL = await import("../stmt/orders.js");
+  const CL = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcL } = await import("node:crypto");
+  const { JSDOM: JDL } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s46", ck = await CL.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }, { q: 2, price: 190 }] }] };
+  const ord = (n, status, extra) => Object.assign({ id: "2026092" + n + "010000-l46" + n, product: "salt", qty: 1, mode: "collect", place: "",
+    at: "2026-09-2" + n + "T01:00:00Z", status, total: 100, paid: 0, moved: 0, delivery: 0, history: [], msgs: [] }, extra || {});
+  const five = [ord(1, "placed"), ord(2, "placed"), ord(3, "acknowledged"), ord(4, "acknowledged", { mode: "deliver", place: "Old market", delivery: 10 }),
+    ord(5, "ready", { moved: 1 }), ord(0, "done", { paid: 100, moved: 1 })];
+  const drive = async (start) => {
+    const st = { orders: start.slice(), cancels: [], placed: 0 };
+    const body = { ok: true, wrap: await CL.wrapKey(pass, ck), session: "sess-s46", prices: await CL.encryptWith(ck, JSON.stringify(prices)),
+      env: await CL.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+    const dom = new JDL(lpL(u, "ns46", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcL, configurable: true }); } catch (e) { win.crypto = wcL; }
+      win.scrollTo = () => {}; win.confirm = () => true;
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/open") return { ok: true, status: 200, json: async () => body };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: st.orders }) };
+        if (p === "/orders" && m === "POST") { st.placed++; st.orders = five.slice();   /* another phone filled the fifth place meanwhile */
+          return { ok: false, status: 400, json: async () => ({ ok: false, error: "you already have 5 orders open; wait for one to be completed" }) }; }
+        const c = /^[/]orders[/]([^/]+)[/]cancel$/.exec(p);
+        if (c) { st.cancels.push(c[1]); st.orders = st.orders.map((o) => (o.id === c[1] ? Object.assign({}, o, { status: "cancelled" }) : o));
+          return { ok: true, status: 200, json: async () => ({ ok: true }) }; }
+        return { ok: false, status: 404, json: async () => ({ ok: false }) };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !/Your orders/.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 30));
+    return { w, d, st };
+  };
+  ok(OL.MAX_OPEN === 5 && five.filter((o) => OL.OPEN_STATES.includes(o.status)).length === OL.MAX_OPEN, "the fixture holds exactly the Worker's limit open");
+  const A = await drive(five);
+  try {
+    const lim = A.d.getElementById("oLimit");
+    ok(!!lim && lim.textContent === "You have 5 orders open, the most at one time. Cancel one, or wait for one to finish, and you can order again." && !A.d.getElementById("oNew"),
+      "at the limit the Order tab says so, in place of New order: " + JSON.stringify(lim && lim.textContent));
+  } finally { A.w.close(); }
+  /* one short of it, then refused because the fifth was filled from another phone */
+  const B = await drive(five.filter((o) => o.id !== five[1].id));
+  try {
+    const { w, d, st } = B;
+    ok(!!d.getElementById("oNew") && !d.getElementById("oLimit"), "one short of the limit, New order is offered");
+    d.getElementById("oNew").click(); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !d.querySelector("#osheet .olim"); i++) await new Promise((r) => setTimeout(r, 30));
+    const rows = [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => ({ t: r.querySelector(".salt-ledger__label").textContent, cancel: !!r.querySelector("button") }));
+    ok(st.placed === 1 && /You have 5 orders open/.test((d.querySelector("#osheet .salt-insight") || {}).textContent || "") && !d.getElementById("oPlace") && rows.length === 5
+      && JSON.stringify(rows.map((r) => r.cancel)) === "[true,true,true,true,false]"
+      && rows.map((r) => r.t.replace(/^1 unit Cube, /, "")).join("|") === "Sent|Sent|Confirmed|Confirmed|Collected",
+      "a refusal the open orders explain turns the sheet to the limit, naming each open order with Cancel where the goods have not moved: " + JSON.stringify(rows));
+    const cb = d.querySelector("#osheet .olim button"); if (cb) cb.click();
+    for (let i = 0; i < 100 && !d.getElementById("oGo"); i++) await new Promise((r) => setTimeout(r, 30));
+    ok(st.cancels.length === 1 && st.cancels[0] === five[0].id && !!d.getElementById("oGo") && !d.querySelector("#osheet .olim"),
+      "Cancel withdraws that order, and the sheet goes on to the form of its own accord: " + JSON.stringify(st.cancels));
+    void w;
+  } finally { await new Promise((r) => setTimeout(r, 100)); B.w.close(); }
+})();
+section("S4 4.7: an associate is asked Who is it for? first, and nothing is chosen for them");
+await (async () => {
+  /* HIS "ALL RECOMMENDED" OF 24 SEP 2026. v702's tick, "On behalf of a friend", was the last field of the form, easy to
+     pass with the order booked to the wrong party. An associate is asked first now, Me or A friend, with neither chosen:
+     Review waits for the answer, the check says it, Place carries it as forFriend, and the next order asks again. */
+  const { landingPage: lpF } = await import("../stmt/page.js");
+  const CF = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcF } = await import("node:crypto");
+  const { JSDOM: JDF } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s47", ck = await CF.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] }] };
+  const drive = async (assoc) => {
+    const st = { posted: [] };
+    const body = { ok: true, assoc, wrap: await CF.wrapKey(pass, ck), session: "sess-s47", prices: await CF.encryptWith(ck, JSON.stringify(prices)),
+      env: await CF.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+    const dom = new JDF(lpF(u, "ns47", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcF, configurable: true }); } catch (e) { win.crypto = wcF; }
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/open") return { ok: true, status: 200, json: async () => body };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+        if (p === "/orders" && m === "POST") { const j = JSON.parse(init.body); st.posted.push(j);
+          return { ok: true, status: 200, json: async () => ({ ok: true, order: { id: "20260924040000-s47" + st.posted.length, product: "salt", qty: 1, status: "placed", at: "2026-09-24T04:00:00Z", total: 100, history: [], msgs: [] } }) }; }
+        return { ok: false, status: 404, json: async () => ({ ok: false }) };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click();
+    return { w, d, st };
+  };
+  const who = (d) => { const fs = d.querySelector("#osheet .salt-sheet__body > fieldset");
+    return fs && /Who is it for[?]/.test(fs.textContent) ? [...fs.querySelectorAll("button")].map((b) => b.textContent + "=" + b.getAttribute("aria-pressed")) : null; };
+  const A = await drive(true);
+  try {
+    const { d, st } = A;
+    const why = () => d.querySelector("#osheet .ototal .sub2").textContent;
+    ok(JSON.stringify(who(d)) === '["Me=false","A friend=false"]' && d.getElementById("oGo").disabled && why() === "Say who it is for.",
+      "an associate's sheet opens on Who is it for?, neither chosen, and Review waits for the answer and says why: " + JSON.stringify([who(d), why()]));
+    [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "A friend").click();
+    ok(JSON.stringify(who(d)) === '["Me=false","A friend=true"]' && !d.getElementById("oGo").disabled, "a tap answers it and lets Review go");
+    d.getElementById("oGo").click();
+    const forRow = [...d.querySelectorAll("#osheet .salt-ledger__row")].find((r) => r.querySelector(".salt-ledger__label").textContent === "For");
+    ok(!!forRow && forRow.querySelector(".salt-ledger__value").textContent === "A friend", "the check says who it is for");
+    d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !(d.getElementById("osheet") && /Order sent/.test(d.getElementById("osheet").textContent)); i++) await new Promise((r) => setTimeout(r, 30));
+    ok(st.posted.length === 1 && st.posted[0].forFriend === true, "and Place carries it: " + JSON.stringify(st.posted.map((x) => x.forFriend)));
+    d.getElementById("oNew").click();
+    ok(JSON.stringify(who(d)) === '["Me=false","A friend=false"]' && d.getElementById("oGo").disabled, "the next order asks again: " + JSON.stringify(who(d)));
+    [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Me").click();
+    d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && st.posted.length < 2; i++) await new Promise((r) => setTimeout(r, 30));
+    ok(st.posted.length === 2 && st.posted[1].forFriend === false, "and Me places it as their own");
+  } finally { await new Promise((r) => setTimeout(r, 100)); A.w.close(); }
+  const B = await drive(false);
+  try {
+    ok(who(B.d) === null && !/Who is it for/.test(B.d.getElementById("osheet").textContent) && !B.d.getElementById("oGo").disabled,
+      "a customer who is not an associate is never asked");
+  } finally { B.w.close(); }
+})();
+section("S4 4.8: every size on Prices opens the order sheet at that size, and the list says Prices as at its moment");
+await (async () => {
+  /* HIS "ALL RECOMMENDED" OF 24 SEP 2026. The size was found twice, once on Prices and again in the form's dropdown; a size
+     row is one tap now, straight to the sheet at that size. And "For the week of" stayed on an open page for good, so the
+     list says when it was written, in Kuala Lumpur, a list with no moment keeping its week. */
+  const { landingPage: lpP } = await import("../stmt/page.js");
+  const CP = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcP } = await import("node:crypto");
+  const { JSDOM: JDP } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s48", ck = await CP.contentKey("test-secret", u);
+  const list = (at) => Object.assign(at ? { at } : {}, { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }, { q: 2, price: 190 }] },
+      { product: "oil", unit: "unit", basis: "board", tier: null, sizes: [{ q: 1, price: 45 }, { q: 3, price: 120 }] }] });
+  const drive = async (l) => {
+    const body = { ok: true, wrap: await CP.wrapKey(pass, ck), session: "sess-s48", prices: await CP.encryptWith(ck, JSON.stringify(l)),
+      env: await CP.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+    const dom = new JDP(lpP(u, "ns48", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcP, configurable: true }); } catch (e) { win.crypto = wcP; }
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: [] } : null;
+        return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.querySelector("#pPrices .szrow"); i++) await new Promise((r) => setTimeout(r, 30));
+    return { w, d, lead: [...d.querySelectorAll("#pPrices p.lead")].map((p) => p.textContent) };
+  };
+  /* 03:59 UTC is 11:59 in Kuala Lumpur on Thursday; 16:05 UTC the same day is already Friday there */
+  const A = await drive(list("2026-09-24T03:59:00Z"));
+  try {
+    const { w, d, lead } = A;
+    ok(lead.includes("Prices as at Thu 24 Sep, 11:59. Tap a size to order it.") && !lead.some((t) => /week of/.test(t)),
+      "the list says when it was written, in Kuala Lumpur, and that a size is a tap: " + JSON.stringify(lead.slice(1, 2)));
+    const rows = [...d.querySelectorAll("#pPrices .szrow")];
+    ok(rows.length === 4 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-ledger__row"))
+      && rows.map((r) => r.textContent).join("|") === "1 unitRM 100|2 unitsRM 190|1 unitRM 45|3 unitsRM 120",
+      "every size is a row of the plain ledger, and each row is a button: " + JSON.stringify(rows.map((r) => r.textContent)));
+    rows[3].click();
+    const sh = d.getElementById("osheet");
+    const on = sh ? [...sh.querySelectorAll('input[name="osize"]')].filter((r) => r.checked).map((r) => r.value) : [];
+    const prod = sh ? [...sh.querySelectorAll("button[aria-pressed][aria-label]")].filter((b) => b.getAttribute("aria-pressed") === "true").map((b) => b.getAttribute("aria-label")) : [];
+    ok(!!sh && on.join() === "3" && prod.join() === "Droplet" && /^RM 120/.test(sh.querySelector(".salt-sheet__foot").textContent),
+      "a tap on a size opens the order sheet on that product at that size: " + JSON.stringify({ on, prod }));
+    void w;
+  } finally { A.w.close(); }
+  const B = await drive(list("2026-09-24T16:05:00Z"));
+  try { ok(B.lead.includes("Prices as at Fri 25 Sep, 00:05. Tap a size to order it."), "the day is Kuala Lumpur's, past its midnight: " + JSON.stringify(B.lead[1])); }
+  finally { B.w.close(); }
+  const E = await drive(list(null));
+  try { ok(E.lead.includes("For the week of 21 to 27 Sep 2026. Tap a size to order it."), "a list sealed with no moment keeps its week: " + JSON.stringify(E.lead[1])); }
+  finally { E.w.close(); }
+})();
+section("S4 4.9: one delivery sentence, on Prices, in the check before Place and on a guest's board");
+await (async () => {
+  /* HIS "ALL RECOMMENDED" OF 24 SEP 2026. Three wordings of the delivery charge stood on the site, and a guest's board
+     said it was "quoted when you order", which it never was: it is set when he confirms. One sentence now, one copy of it
+     (DELIVERY in stmt/page.js), wherever the charge is explained. */
+  const PG = await import("../stmt/page.js");
+  const C9 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc9 } = await import("node:crypto");
+  const { JSDOM: JD9 } = await import("jsdom");
+  const ONE = "Delivery is charged by area. We tell you the charge when we confirm, before you pay, and you can cancel then at no cost.";
+  ok(PG.DELIVERY === ONE, "the sentence is the plan's, word for word");
+  const board = PG.boardPage({ prices: { week: { label: "21 to 27 Sep 2026" }, products: [{ product: "salt", unit: "unit", sizes: [{ q: 1, price: 150 }] }] } }, "n49");
+  ok(board.includes(ONE) && !/quoted when you order|charged separately/.test(board), "a guest's board says it, and no longer says the charge is quoted when they order");
+  const u = "abcd-efgh", pass = "fixture-pass-s49", ck = await C9.contentKey("test-secret", u);
+  const prices = { at: "2026-09-24T03:59:00Z", week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] }] };
+  const body = { ok: true, wrap: await C9.wrapKey(pass, ck), session: "sess-s49", prices: await C9.encryptWith(ck, JSON.stringify(prices)),
+    env: await C9.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const dom = new JD9(PG.landingPage(u, "n49", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wc9, configurable: true }); } catch (e) { win.crypto = wc9; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: [] } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    const lead = [...d.querySelectorAll("#pPrices p.lead")].map((p) => p.textContent);
+    ok(lead.some((t) => t.includes(ONE)) && !lead.some((t) => /acknowledged/.test(t)), "Prices says it, in the customer's word for the step: " + JSON.stringify(lead.find((t) => /Delivery/.test(t))));
+    d.getElementById("oNew").click();
+    [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Deliver to me").click();
+    const wh = d.getElementById("oWhere"); wh.value = "Old market"; wh.dispatchEvent(new w.Event("input", { bubbles: true }));
+    d.getElementById("oGo").click();
+    const says = [...d.querySelectorAll("#osheet .salt-insight")].map((x) => x.textContent);
+    const row = [...d.querySelectorAll("#osheet .salt-ledger__row")].find((r) => r.querySelector(".salt-ledger__label").textContent === "Delivery");
+    ok(says.includes(ONE) && row && row.querySelector(".salt-ledger__value").textContent === "Set when we confirm",
+      "the check of a delivery says it beside the order, and its Delivery line says when: " + JSON.stringify(says));
+    [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Change").click();
+    [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "I will collect").click();
+    d.getElementById("oGo").click();
+    ok(![...d.querySelectorAll("#osheet .salt-insight")].some((x) => x.textContent === ONE), "and a collection's check does not, having no charge to explain");
+  } finally { w.close(); }
+})();
+section("S4 4.5 fix: a redraw that takes away the tapped control keeps focus in the sheet, so Escape still closes it");
+await (async () => {
+  /* Found by the rig on 24 Sep 2026: Place order is gone once Sent draws, focus fell to the page behind the sheet, and
+     Escape, which the sheet listens for, closed nothing. Focus is put on the sheet itself when its control goes. */
+  const { landingPage: lpK } = await import("../stmt/page.js");
+  const CK = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcK } = await import("node:crypto");
+  const { JSDOM: JDK } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s45k", ck = await CK.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] }] };
+  const body = { ok: true, wrap: await CK.wrapKey(pass, ck), session: "sess-s45k", prices: await CK.encryptWith(ck, JSON.stringify(prices)),
+    env: await CK.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const dom = new JDK(lpK(u, "ns45k", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcK, configurable: true }); } catch (e) { win.crypto = wcK; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      if (p === "/open") return { ok: true, status: 200, json: async () => body };
+      if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      if (p === "/orders" && m === "POST") return { ok: true, status: 200, json: async () => ({ ok: true, order: { id: "20260924040000-s45k", product: "salt", qty: 1, status: "placed", at: "2026-09-24T04:00:00Z", total: 100, history: [], msgs: [] } }) };
+      return { ok: false, status: 404, json: async () => ({ ok: false }) };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click(); d.getElementById("oGo").click();
+    const pl = d.getElementById("oPlace"); pl.focus(); pl.click();
+    for (let i = 0; i < 100 && !/Order sent/.test((d.getElementById("osheet") || {}).textContent || ""); i++) await new Promise((r) => setTimeout(r, 30));
+    await new Promise((r) => setTimeout(r, 60));
+    const at = d.activeElement;
+    ok(!!d.getElementById("osheet") && d.getElementById("osheet").contains(at), "with Place gone, focus is on the sheet and not the page behind it: " + (at && at.tagName));
+    at.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    ok(!d.getElementById("osheet"), "so Escape closes it");
+  } finally { w.close(); }
+})();
+section("S4 4.3 fix: the order sheet's names never meet the owner's script, so his route still changes tabs");
+await (async () => {
+  /* Found by the whole suite on 24 Sep 2026: stmt/owner.js is spliced into the page's own closure on his route and keeps
+     its account list as `sheet`, the name the order sheet's state took; every tab change then closed a "sheet" that was a
+     list, and threw. The sheet's state is `osh` and its functions carry the sheet's own names. */
+  const { landingPage: lpO } = await import("../stmt/page.js");
+  const { JSDOM: JDO } = await import("jsdom");
+  const errs = [];
+  const dom = new JDO(lpO("", "nso", { master: "m".repeat(20), accounts: [] }), { url: "https://site.test/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    win.scrollTo = () => {};
+    win.addEventListener("error", (e) => errs.push(String(e.message || e.error)));
+    win.fetch = async () => ({ ok: true, status: 200, json: async () => ({ ok: true, rows: [], accounts: [] }) });
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    await new Promise((r) => setTimeout(r, 100));
+    d.querySelector('#tabs button[data-t="prices"]').click();
+    d.querySelector('#tabs button[data-t="order"]').click();
+    ok(!errs.length && d.getElementById("pPrices").hidden && !d.getElementById("pOrder").hidden,
+      "on his route a tab changes with nothing thrown: " + JSON.stringify(errs));
+  } finally { w.close(); }
+})();
+section("S4 fix: the page's Place always carries the stamp field, empty included, so only a page from before the stamp skips the check");
+await (async () => {
+  /* S4R-1: the Worker lets a Place with no stamp field through, because only a Counter loaded before the stamp existed
+     sends none and it cannot re-quote. That holds only while this page sends the field on every Place: here from a list
+     sealed with no stamp, where the field is empty and still there. */
+  const { landingPage: lpF1 } = await import("../stmt/page.js");
+  const CF1 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcF1 } = await import("node:crypto");
+  const { JSDOM: JDF1 } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-sf1", ck = await CF1.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] }] };
+  const posted = [];
+  const body = { ok: true, wrap: await CF1.wrapKey(pass, ck), session: "sess-sf1", prices: await CF1.encryptWith(ck, JSON.stringify(prices)),
+    env: await CF1.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const dom = new JDF1(lpF1(u, "nsf1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcF1, configurable: true }); } catch (e) { win.crypto = wcF1; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      if (p === "/open") return { ok: true, status: 200, json: async () => body };
+      if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      if (p === "/orders" && m === "POST") { posted.push(JSON.parse(init.body));
+        return { ok: true, status: 200, json: async () => ({ ok: true, order: { id: "20260924040000-sf1a", product: "salt", qty: 1, status: "placed", at: "2026-09-24T04:00:00Z", total: 100, history: [], msgs: [] } }) }; }
+      return { ok: false, status: 404, json: async () => ({ ok: false }) };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click(); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !posted.length; i++) await new Promise((r) => setTimeout(r, 30));
+    ok(posted.length === 1 && Object.prototype.hasOwnProperty.call(posted[0], "digest") && posted[0].digest === "",
+      "Place from a list sealed with no stamp still carries the stamp field, empty: " + JSON.stringify(posted.map((x) => Object.keys(x))));
+  } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
+})();
+section("S4 fix: while Place is on its way the sheet stays open, so its answer is drawn where it was tapped");
+await (async () => {
+  /* S4R-7: the scrim, Close, the back control and Escape all stayed live while Place was in flight; closed then, the
+     order landed with no word beside anything, a refusal was dropped, and the same order could be placed again under a
+     new request id. The ways out wait for the answer. */
+  const { landingPage: lpF2 } = await import("../stmt/page.js");
+  const CF2 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcF2 } = await import("node:crypto");
+  const { JSDOM: JDF2 } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-sf2", ck = await CF2.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] }] };
+  const st = { posted: 0, release: null };
+  const body = { ok: true, wrap: await CF2.wrapKey(pass, ck), session: "sess-sf2", prices: await CF2.encryptWith(ck, JSON.stringify(prices)),
+    env: await CF2.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const dom = new JDF2(lpF2(u, "nsf2", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcF2, configurable: true }); } catch (e) { win.crypto = wcF2; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      if (p === "/open") return { ok: true, status: 200, json: async () => body };
+      if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      if (p === "/orders" && m === "POST") { st.posted++; await new Promise((r) => { st.release = r; });
+        return { ok: true, status: 200, json: async () => ({ ok: true, order: { id: "20260924040000-sf2a", product: "salt", qty: 1, status: "placed", at: "2026-09-24T04:00:00Z", total: 100, history: [], msgs: [] } }) }; }
+      return { ok: false, status: 404, json: async () => ({ ok: false }) };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click(); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !st.release; i++) await new Promise((r) => setTimeout(r, 30));
+    const orbs = [...d.querySelectorAll("#osheet .salt-sheet__head button")].map((b) => [b.getAttribute("aria-label"), b.disabled]);
+    ok(st.posted === 1 && orbs.length === 2 && orbs.every((o) => o[1] === true),
+      "while Place is on its way, the sheet's own Close and Change controls are held: " + JSON.stringify(orbs));
+    const tap = (sel, ev) => { const x = d.querySelector(sel); if (x) (ev ? x.dispatchEvent(ev) : x.click()); return !!d.getElementById("osheet"); };
+    const held = [tap("#osheet .salt-sheet", new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true })),
+      tap("#osheet .salt-sheet-scrim"), tap("#osheet .salt-sheet__close")];
+    ok(held.join() === "true,true,true", "and Escape, the scrim and Close leave the sheet open: " + JSON.stringify(held));
+    st.release();
+    for (let i = 0; i < 100 && !/Order sent/.test((d.getElementById("osheet") || {}).textContent || ""); i++) await new Promise((r) => setTimeout(r, 30));
+    ok(/Order sent/.test((d.getElementById("osheet") || {}).textContent || ""), "so the answer is drawn in the sheet where Place was tapped");
+    d.querySelector("#osheet .salt-sheet").dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    ok(!d.getElementById("osheet"), "and once it is answered, Escape closes it again");
+  } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
+})();
+section("S4 fix: a session that lapses under the order sheet closes it, so Continue is in reach, and the sheet waits for it");
+await (async () => {
+  /* S4R-3: Place answered "Signed out: tap Continue at the top." while the sheet's scrim lay over the bar holding
+     Continue (under it at 390 wide, behind the drawer at 1280), and a size row or New order opened the sheet over a
+     lapse the bar was already showing. A lapse closes the sheet, and the sheet opens again once Continue is tapped. */
+  const { landingPage: lpF3 } = await import("../stmt/page.js");
+  const CF3 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcF3 } = await import("node:crypto");
+  const { JSDOM: JDF3 } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-sf3", ck = await CF3.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] }] };
+  const st = { posted: 0 };
+  const body = { ok: true, wrap: await CF3.wrapKey(pass, ck), session: "sess-sf3", prices: await CF3.encryptWith(ck, JSON.stringify(prices)),
+    env: await CF3.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const dom = new JDF3(lpF3(u, "nsf3", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcF3, configurable: true }); } catch (e) { win.crypto = wcF3; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      if (p === "/open") return { ok: true, status: 200, json: async () => body };
+      if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      if (p === "/orders" && m === "POST") { st.posted++; return { ok: false, status: 401, json: async () => ({ ok: false, error: "sign in again" }) }; }
+      return { ok: false, status: 404, json: async () => ({ ok: false }) };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click(); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && d.getElementById("lapse").hidden; i++) await new Promise((r) => setTimeout(r, 30));
+    await new Promise((r) => setTimeout(r, 60));
+    ok(st.posted === 1 && !d.getElementById("lapse").hidden && !d.getElementById("osheet"),
+      "a Place answered signed out closes the sheet, and the bar with Continue is what is left in view: " + JSON.stringify({ posted: st.posted, sheet: !!d.getElementById("osheet") }));
+    d.getElementById("oNew").click();
+    const row = d.querySelector("#pPrices .szrow"); if (row) row.click();
+    ok(!!row && !d.getElementById("osheet"), "and neither New order nor a size on Prices opens it again over the lapse");
+  } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
+})();
+section("S4 fix: a moved list that leaves nothing to order says so in the check and holds Place, with no dead end behind it");
+await (async () => {
+  /* S4R-2: a 409 whose list had nothing priced left the check at "Change it to pick another", and Change threw, leaving
+     the sheet empty; a 409 with no list at all said "Close this and open your prices again", which reopened the same
+     list, placed under the same stamp and met the same refusal until a new sign-in. The page takes the list the account
+     holds now, or none, as a sign-in would, and says the Order tab's own line. */
+  const { landingPage: lpF4 } = await import("../stmt/page.js");
+  const CF4 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcF4 } = await import("node:crypto");
+  const { JSDOM: JDF4 } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-sf4", ck = await CF4.contentKey("test-secret", u);
+  const list = (digest, sizes) => ({ at: "2026-09-24T03:59:00Z", digest, week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes }] });
+  const sealed = async (l) => Object.assign({ at: l.at, week: l.week.monday, digest: l.digest }, await CF4.encryptWith(ck, JSON.stringify(l)));
+  const drive = async (answer) => {
+    const posted = [], errs = [];
+    const body = { ok: true, wrap: await CF4.wrapKey(pass, ck), session: "sess-sf4", prices: await sealed(list("d1", [{ q: 1, price: 100 }])),
+      env: await CF4.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+    const dom = new JDF4(lpF4(u, "nsf4", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcF4, configurable: true }); } catch (e) { win.crypto = wcF4; }
+      win.scrollTo = () => {};
+      win.addEventListener("error", (e) => errs.push(String(e.message || e.error)));
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/open") return { ok: true, status: 200, json: async () => body };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+        if (p === "/orders" && m === "POST") { posted.push(JSON.parse(init.body)); return { ok: false, status: 409, json: async () => answer }; }
+        return { ok: false, status: 404, json: async () => ({ ok: false }) };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click(); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !(posted.length && d.getElementById("oBack") && !d.getElementById("oBack").disabled); i++) await new Promise((r) => setTimeout(r, 30));
+    await new Promise((r) => setTimeout(r, 60));
+    return { w, d, posted, errs };
+  };
+  const foot = (d) => ((d.querySelector("#osheet .salt-sheet__foot") || {}).textContent || "");
+  /* the list came back with nothing priced */
+  const A = await drive({ ok: false, error: "prices moved", prices: await sealed(list("d2", [])) });
+  try {
+    const { d, errs } = A;
+    ok(/Ordering opens once your prices are set[.]/.test(foot(d)) && d.getElementById("oPlace").disabled && !/pick another/.test(d.getElementById("osheet").textContent),
+      "a list that comes back with nothing priced says ordering opens once the prices are set, and Place is held: " + JSON.stringify(foot(d)));
+    d.getElementById("oBack").click();
+    const bodyText = ((d.querySelector("#osheet .salt-sheet__body") || {}).textContent || "");
+    ok(!errs.length && bodyText === "Ordering opens once your prices are set." && !d.getElementById("oNew"),
+      "and Change draws that line in the sheet, throwing nothing, with New order gone from the Order tab: " + JSON.stringify({ errs, bodyText }));
+  } finally { await new Promise((r) => setTimeout(r, 100)); A.w.close(); }
+  /* the answer carried no list at all */
+  const B = await drive({ ok: false, error: "prices moved", prices: null });
+  try {
+    const { d, posted } = B;
+    ok(/Ordering opens once your price list is written, with the next update[.]/.test(foot(d)) && d.getElementById("oPlace").disabled && !/open your prices again/.test(foot(d)),
+      "a refusal carrying no list says ordering opens once the list is written, and Place is held: " + JSON.stringify(foot(d)));
+    d.querySelector("#osheet .salt-sheet__close").click();
+    ok(posted.length === 1 && !d.getElementById("oNew") && /No price list has been written/.test(d.getElementById("pPrices").textContent) && !d.querySelector("#pPrices .szrow"),
+      "and behind it the page holds no list, as a sign-in would show it, so the same stamp cannot be placed again: " + JSON.stringify({ posted: posted.length }));
+  } finally { await new Promise((r) => setTimeout(r, 100)); B.w.close(); }
+})();
+section("S4 fix: in the sheet a product's mark takes its ghost's ink, so the chosen product reads as chosen");
+await (async () => {
+  /* S4R-2 (ux): every mark was brass whatever it sat in, so the pressed cube and the unpressed droplet differed by a fill
+     and a border alone; the rule letting a mark on a control take the control's ink went with the segment it was for.
+     jsdom does not resolve var(), so the colours are read as the cascade leaves them: the mark's own against its ghost's. */
+  const { landingPage: lpF6 } = await import("../stmt/page.js");
+  const CF6 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcF6 } = await import("node:crypto");
+  const { JSDOM: JDF6 } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-sf6", ck = await CF6.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] },
+      { product: "oil", unit: "unit", basis: "board", tier: null, sizes: [{ q: 1, price: 45 }] }] };
+  const body = { ok: true, wrap: await CF6.wrapKey(pass, ck), session: "sess-sf6", prices: await CF6.encryptWith(ck, JSON.stringify(prices)),
+    env: await CF6.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const dom = new JDF6(lpF6(u, "nsf6", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcF6, configurable: true }); } catch (e) { win.crypto = wcF6; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: [] } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click();
+    const ink = (x) => w.getComputedStyle(x).color;
+    const ghosts = [...d.querySelectorAll('#osheet button.salt-ghost[data-k^="prod:"]')].map((b) => ({
+      pressed: b.getAttribute("aria-pressed"), ghost: ink(b), mark: b.querySelector(".psym") ? ink(b.querySelector(".psym")) : null }));
+    const on = ghosts.find((g) => g.pressed === "true"), off = ghosts.find((g) => g.pressed === "false");
+    ok(ghosts.length === 2 && on && off && on.mark === on.ghost && off.mark === off.ghost && on.mark !== off.mark,
+      "the chosen product's mark takes the pressed ghost's ink and the other's its own, so the two differ: " + JSON.stringify(ghosts));
+  } finally { w.close(); }
+})();
+section("S4 fix: in the open-order limit, goods handed over read as Delivered or Collected, in part where only some moved");
+await (async () => {
+  /* S4R-4 (ux): an order stays open at ready once its goods are handed over and until it is paid, and the limit list
+     read it "Ready to deliver" over "The goods are with you", the one line contradicting the other. It reads as D11's
+     word for what happened to the goods, the banner's part word where only some moved, and the line under it says what
+     is left: the rest, the money, or both. */
+  const { landingPage: lpF7 } = await import("../stmt/page.js");
+  const CF7 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcF7 } = await import("node:crypto");
+  const { JSDOM: JDF7 } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-sf7", ck = await CF7.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }, { q: 2, price: 190 }] }] };
+  const ord = (n, status, extra) => Object.assign({ id: "2026092" + n + "010000-f7" + n, product: "salt", qty: 2, mode: "deliver", place: "Old market",
+    at: "2026-09-2" + n + "T01:00:00Z", status, total: 190, paid: 0, moved: 0, delivery: 10, history: [], msgs: [] }, extra || {});
+  const five = [ord(1, "placed"), ord(2, "placed"), ord(3, "ready", { moved: 2 }), ord(4, "ready", { moved: 1 }),
+    ord(5, "ready", { mode: "collect", place: "", delivery: 0, moved: 1, paid: 190 })];
+  const body = { ok: true, wrap: await CF7.wrapKey(pass, ck), session: "sess-sf7", prices: await CF7.encryptWith(ck, JSON.stringify(prices)),
+    env: await CF7.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const dom = new JDF7(lpF7(u, "nsf7", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcF7, configurable: true }); } catch (e) { win.crypto = wcF7; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: five } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.querySelector("#pPrices .szrow"); i++) await new Promise((r) => setTimeout(r, 30));
+    await new Promise((r) => setTimeout(r, 60));
+    d.querySelector("#pPrices .szrow").click();
+    const rows = [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => ({
+      word: r.querySelector(".salt-ledger__label").textContent.replace(/^2 units Cube, /, ""),
+      flag: [...r.querySelectorAll(".salt-ledger__flag")].map((f) => f.textContent).filter((t) => !/^Placed /.test(t)).join("") }));
+    ok(rows.map((r) => r.word).join("|") === "Sent|Sent|Delivered|Part delivered|Part collected",
+      "a handover reads as what happened to the goods, in part where only some moved, never Ready: " + JSON.stringify(rows.map((r) => r.word)));
+    ok(rows[2] && rows[2].flag === "The goods are with you, so this one finishes when it is paid."
+      && rows[3] && rows[3].flag === "Part of it is with you, so this one finishes once the rest is with you and it is paid."
+      && rows[4] && rows[4].flag === "Part of it is with you, so this one finishes once the rest is with you.",
+      "and the line under it says what is left, the money, the rest, or both: " + JSON.stringify(rows.slice(2).map((r) => r.flag)));
+  } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
+})();
+section("S4 fix: a guest's board says units above one and unit at one, from the same function the page is served");
+await (async () => {
+  /* S4R-6: the page took "units above one" and the guest's board, edited in the same stage, still printed "2.5 unit".
+     One function now: the board calls it, and the page's own script is served its source. */
+  const PG = await import("../stmt/page.js");
+  const board = PG.boardPage({ prices: { week: { label: "21 to 27 Sep 2026" }, products: [{ product: "salt", unit: "unit",
+    sizes: [{ q: 0.5, price: 60 }, { q: 1, price: 110 }, { q: 2.5, price: 250 }] }] } }, "nf9");
+  const cells = [...board.matchAll(/<td class="l">([^<]*)<[/]td>/g)].map((m) => m[1]);
+  ok(cells.join("|") === "0.5 unit|1 unit|2.5 units", "a guest's board says units above one and unit at one: " + JSON.stringify(cells));
+  const page = PG.landingPage("abcd-efgh", "nf9", null);
+  ok(page.includes(String(PG.unitsOf)) && !page.includes("__UNITS_OF__"), "and the page's own script carries that same function");
+})();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {
   /* HIS INSTRUCTION OF 16 SEP 2026: "The label to them is a very subtle tier level, in symbol and colour (for each tier),
@@ -13261,7 +14202,9 @@ await (async () => {
         text: d.getElementById("pPrices").textContent,
         words: nodes.join(" "),   /* text node by text node: textContent runs a heading into the next line */
         marks: [...d.querySelectorAll("#pPrices .mark")].map((m) => ({ ch: m.textContent, colour: m.style.color, hidden: m.getAttribute("aria-hidden") })),
-        heads: [...d.querySelectorAll("#pPrices h3")].map((h) => h.textContent)
+        heads: [...d.querySelectorAll("#pPrices h3")].map((h) => h.textContent),
+        /* the panel with the greeting taken out, which is the hour's and not the level's */
+        html: d.getElementById("pPrices").innerHTML.replace(/Good (morning|afternoon|evening)[.]/, "")
       };
     } finally { dom.window.close(); }
   };
@@ -13271,11 +14214,11 @@ await (async () => {
     soon: [] });
 
   const a59 = await open59(list59("Gold", "Bronze", "2026-03-04"));
-  /* 1. A MARK FOR EACH PRODUCT, AND THE TWO LEVELS DIFFER IN BOTH SYMBOL AND COLOUR. Both halves are
-     asserted: one map keyed by level with the same glyph twice would pass a check on colour alone. */
-  ok(a59.marks.length === 2 && a59.marks[0].ch !== a59.marks[1].ch && a59.marks[0].colour !== a59.marks[1].colour
-    && a59.marks.every((m) => m.ch && m.colour && m.hidden === "true"),
-    "each product carries its level's own mark, symbol and colour, and the mark is not read out: " + JSON.stringify(a59.marks));
+  /* 1. S4 4.10, D11 (HIS "ALL RECOMMENDED" OF 24 SEP 2026): THE MARK LEAVES PRICES. The customer sees no level at all,
+     named or marked: no mark is drawn, and none of v659's six glyphs is anywhere on the panel. */
+  const glyphs59 = new RegExp("[" + [0x25C7, 0x25CF, 0x25C6, 0x25B2, 0x25A0, 0x25CB].map((c) => String.fromCharCode(c)).join("") + "]");
+  ok(a59.marks.length === 0 && !glyphs59.test(a59.html),
+    "no product carries a mark of its level any more: " + JSON.stringify(a59.marks));
   /* 2. AND THE LEVEL IS NEVER NAMED. This is the whole of "subtle": the name travels in the sealed list and stays out of
      the page's text, so two customers comparing pages cannot order themselves by it. */
   const names59 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
@@ -13283,11 +14226,10 @@ await (async () => {
   const WL59 = await import("../src/orders.js");
   ok(names59.every((n) => a59.text.indexOf(n) < 0) && a59.words.length > 100 && WL59.wordsIn(a59.words, WL59.LEVEL_WORDS_MS).length === 0,
     "and no level is named anywhere in the prices they read, in English or Malay: " + JSON.stringify(a59.heads));
-  /* 3. THE SAME LEVEL ON BOTH PRODUCTS GIVES THE SAME MARK, which is what makes it a label and not a decoration. */
-  const b59 = await open59(list59("Gold", "Gold", "2026-03-04"));
-  ok(b59.marks.length === 2 && b59.marks[0].ch === b59.marks[1].ch && b59.marks[0].colour === b59.marks[1].colour
-    && b59.marks[0].ch === a59.marks[0].ch,
-    "the same level on both products draws the same mark: " + JSON.stringify(b59.marks));
+  /* 3. AND THE LEVEL LEAVES NO TRACE: two lists that differ only in their levels draw the same panel, to the character. */
+  const b59 = await open59(list59("Silver", "Gold", "2026-03-04"));
+  ok(b59.html.length > 200 && b59.html === a59.html,
+    "two lists that differ only in their levels draw the same Prices, to the character: " + JSON.stringify([a59.html.length, b59.html.length]));
   /* 4. THE GREETING, AND THE MONTH THEIR FIRST ORDER FALLS IN. The hour is the device's, so the greeting is checked
      against the hour this run happens to be at rather than against one of the three words. */
   const hour59 = new Date().getHours();
@@ -14754,12 +15696,14 @@ await (async () => {
     D.getElementById("un").value = u; D.getElementById("pw").value = pw;
     D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
     const pOrder = D.getElementById("pOrder"), pCard = D.getElementById("pCard");
-    ok(await until(() => D.getElementById("oGo")), "the associate's page opens with an order form");
+    ok(await until(() => D.getElementById("oNew")), "the associate's page opens with New order");
+    D.getElementById("oNew").click();
+    [...D.querySelectorAll("#osheet button")].find((b) => b.textContent === "Me").click();   /* S4 4.7: asked who it is for, first */
     D.getElementById("oGo").click();
-    const place = () => [...pOrder.querySelectorAll("button")].find((b) => b.textContent === "Place this order");
-    ok(await until(() => place()), "Review this order shows Place this order");
+    const place = () => D.getElementById("oPlace");
+    ok(await until(() => place()), "Review shows Place order");
     place().click();
-    ok(await until(() => /Placed[.]/.test(pOrder.textContent)), "the order is placed and the form says so");
+    ok(await until(() => D.getElementById("osheet") && /Order sent/.test(D.getElementById("osheet").textContent)), "the order is placed and the sheet says so");
     D.getElementById("tCard").click();
     const box = () => [...pCard.querySelectorAll(".pane")].find((x) => /Your links/.test(x.textContent));
     ok(await until(() => box() && box().querySelectorAll(".glink").length === RF.MAX_PER_ASSOC - 1),
@@ -17819,7 +18763,7 @@ await (async () => {
       for (let i = 0; i < 200 && !D.querySelector("#pOrder .pane") && !errs.length && !D.getElementById("msg").textContent.includes("could not"); i++) await new Promise((r) => setTimeout(r, 50));
       await new Promise((r) => setTimeout(r, 50));
       return { errs: errs.slice(), out: D.getElementById("out").textContent, gate: D.getElementById("gate").hidden, msg: D.getElementById("msg").textContent,
-        prices: !!D.querySelector("#pPrices table"), review: [...D.querySelectorAll("#pOrder button")].some((b) => b.textContent === "Review this order") };
+        prices: !!D.querySelector("#pPrices .szrow"), review: !!D.getElementById("oNew") };
     } finally { try { W.close(); } catch (e) { /* best effort */ } }
   };
   try {
@@ -17890,20 +18834,21 @@ await (async () => {
     } });
   const W = dom.window, D = W.document;
   const wait = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); };
-  const btn = (t) => [...D.querySelectorAll("#pOrder button")].find((b) => b.textContent === t);
-  const noteNear = (b) => [...D.querySelectorAll("#pOrder p.msg")].find((p) => p.textContent === NS && p.parentNode.contains(b));
+  const btn = (t) => [...D.querySelectorAll("#pOrder button, #osheet button")].find((b) => b.textContent === t);
+  const noteNear = (b) => [...D.querySelectorAll("#pOrder p.msg, #osheet p.msg")].find((p) => p.textContent === NS && p.parentNode.contains(b));
   try {
     D.getElementById("pw").value = passC;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-    await wait(() => btn("Review this order") && D.querySelector("#pOrder [data-row]"));
-    btn("Review this order").click();
-    await wait(() => btn("Place this order"));
-    btn("Place this order").click();
-    await wait(() => D.getElementById("pOrder").textContent.includes(NS));
+    await wait(() => D.getElementById("oNew") && D.querySelector("#pOrder [data-row]"));
+    D.getElementById("oNew").click();
+    btn("Review").click();
+    await wait(() => btn("Place order"));
+    btn("Place order").click();
+    await wait(() => D.getElementById("osheet").textContent.includes(NS));
     await new Promise((r) => setTimeout(r, 50));
-    const place = btn("Place this order"), change = btn("Change it");
+    const place = btn("Place order"), change = btn("Change");
     ok(!!place && !place.disabled && !!change && !change.disabled && !!noteNear(place),
-      "Place this order is given back after a dropped request, and Not sent is said beside it: "
+      "Place order is given back after a dropped request, and Not sent is said beside it, in the sheet's foot: "
       + JSON.stringify({ place: place && place.disabled, change: change && change.disabled, note: !!(place && noteNear(place)) }));
     /* S5 5.4: a line is sent from the order's own screen, and a dropped one stands in its thread as Not sent */
     D.querySelector('#pOrder [data-row="' + oid + '"]').click();
@@ -18027,8 +18972,8 @@ await (async () => {
     } });
   const W = dom.window, D = W.document;
   const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
-  const btn = (t) => [...D.querySelectorAll("#pOrder button")].find((b) => b.textContent === t && !b.disabled);
-  const said = () => [...D.querySelectorAll("#pOrder .msg")].map((x) => x.textContent.trim()).filter(Boolean);
+  const btn = (t) => [...D.querySelectorAll("#pOrder button, #osheet button")].find((b) => b.textContent === t && !b.disabled);
+  const said = () => [...D.querySelectorAll("#pOrder .msg, #osheet .msg")].map((x) => x.textContent.trim()).filter(Boolean);
   const lapseOn = () => !D.getElementById("lapse").hidden && /signed out on this (phone|computer)/.test(D.getElementById("lapse").textContent)
     && !D.getElementById("outSheet").hidden;
   try {
@@ -18036,15 +18981,19 @@ await (async () => {
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => D.getElementById("pPrices").textContent);
     D.querySelector('button[data-t="order"]').click();
+    await until(() => D.getElementById("oNew"));
+    D.getElementById("oNew").click();
     await until(() => D.getElementById("oGo") && !D.getElementById("oGo").disabled);
     st.lapsed = true;
     D.getElementById("oGo").click();
-    await until(() => btn("Place this order")); btn("Place this order").click();
-    await until(() => lapseOn() && said().length);
+    await until(() => btn("Place order")); btn("Place order").click();
+    /* S4 fix (S4R-3): Place is in the order sheet now, whose scrim lay over Continue, so a lapse closes the sheet and
+       the bar is the one voice; beside Place there is nothing left to point */
+    await until(() => lapseOn() && !D.getElementById("osheet"));
     const placed = said();
     const lapsedLine = (t) => /^Not sent: you were signed out on this (phone|computer)[.] Sign in to carry on[.]$/.test(t);
-    ok(lapseOn() && placed.some(lapsedLine) && !placed.some((t) => /Sign in again|session has ended/.test(t)),
-      "Place answered 401 with nothing remembered: the Sheet and the bar say it, and beside Place a pointer to them, never a second wording: " + JSON.stringify(placed));
+    ok(lapseOn() && !D.getElementById("osheet") && !placed.some(lapsedLine) && !placed.some((t) => /Sign in again|session has ended/.test(t)),
+      "Place answered 401 with nothing remembered: the order sheet closes so the Sheet and the bar say it, with nothing left beside Place to point, never a second wording: " + JSON.stringify(placed));
     /* S5 5.4: the line is sent from the order's own screen; refused, its words go back in the box and the answer
        stands under it (the stage 5 review: a refusal is not offered again) */
     D.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
@@ -18053,7 +19002,7 @@ await (async () => {
     const underBox = () => [...D.querySelectorAll('#pOrder .oscreen [data-part="say"] [role=status]')].filter((x) => !x.hidden).map((x) => x.textContent);
     await until(() => underBox().length);
     const sent = said();
-    ok(underBox().length === 1 && lapsedLine(underBox()[0]) && sent.filter(lapsedLine).length === 2 && !!box && box.value === "is it ready"
+    ok(underBox().length === 1 && lapsedLine(underBox()[0]) && sent.filter(lapsedLine).length === 1 && !!box && box.value === "is it ready"
       && !D.querySelector("#pOrder .salt-bubble--failed") && !sent.some((t) => /Sign in again|session has ended/.test(t)),
       "and so does Send, under the box its words are back in: " + JSON.stringify(sent));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
@@ -18780,7 +19729,7 @@ await (async () => {
     } finally { try { second.W.close(); } catch (e) { /* best effort */ } }
   } finally { try { first.W.close(); } catch (e) { /* best effort */ } }
 })();
-section("v693: the site can be kept as an app, and every login asks about notifications");
+section("v693: the site can be kept as an app, and notifications are asked from a tap, never on the way in (S4)");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: a short tutorial for saving the page as an app, and an ask for
      notifications on every login. The site serves no assets, so the icon is bytes in a module and the
@@ -18854,8 +19803,16 @@ await (async () => {
     browser93.D.getElementById("un").value = u93;
     browser93.D.getElementById("pw").value = pass93;
     browser93.D.getElementById("f").dispatchEvent(new browser93.W.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 80 && browser93.asked.times === 0; i++) await new Promise((r) => setTimeout(r, 50));
-    ok(browser93.asked.times === 1, "and signing in asks about notifications once: " + browser93.asked.times);
+    /* S4 (S4R-4): v693 asked here; the plan asks at the first order, from a tap. The Order tab's Notify me is the
+       control: the counter moves for a tap, so its standing still through the sign-in is the sign-in asking nothing */
+    for (let i = 0; i < 80 && !/Your orders/.test(browser93.D.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, 400));
+    const signedIn93 = browser93.asked.times;
+    const notify93 = [...browser93.D.querySelectorAll("#pOrder button")].find((b) => b.textContent === "Notify me on this phone");
+    if (notify93) notify93.click();
+    for (let i = 0; i < 80 && browser93.asked.times === signedIn93; i++) await new Promise((r) => setTimeout(r, 50));
+    ok(signedIn93 === 0 && !!notify93 && browser93.asked.times === 1,
+      "signing in asks nothing about notifications, and the tap on Notify me asks once: " + JSON.stringify([signedIn93, !!notify93, browser93.asked.times]));
     ok(browser93.D.getElementById("keepCard").hidden === false, "a page opened in a browser shows how to keep it, once they are in");
   } finally { try { browser93.W.close(); } catch (e) { /* best effort */ } }
   const app93 = drive93(true, "denied");
@@ -19069,7 +20026,7 @@ await (async () => {
   ok(/select\.fld\{[^}]*color-scheme:dark/.test(page94) && /select\.fld option\{background:var\(--salt-well\)/.test(page94)
     && /select\.fld\{[^}]*linear-gradient\(45deg/.test(page94),
     "the open list is told the page is dark and the chevron is drawn on the page, which is the bizarre colour fixed");
-  ok(page94.includes("Review this order") && page94.includes("Check this over") && page94.includes("Place this order")
+  ok(page94.includes("'Review'") && page94.includes("'Check your order'") && page94.includes("'Place order'")
     && page94.includes("a neighbourhood or a landmark") && page94.includes("I have paid")
     && page94.includes("Your order is now complete. Thank you for your loyalty."),
     "the page reviews before it places, asks roughly where it is going, takes the amount paid, and says his closing words");
@@ -19240,16 +20197,20 @@ await (async () => {
     ok(JSON.stringify(marks95) === '["Cube","Droplet","Ring"]' && d95.querySelectorAll("#pPrices svg.psym").length === 3,
       "the price list heads each block with its mark, the one still waiting for a price included: " + JSON.stringify(marks95));
     d95.querySelector('button[data-t="order"]').click();
-    const seg95 = [...d95.querySelectorAll("#pOrder .seg button[aria-pressed]")];
+    /* S4 4.3: in the order sheet, which opens on the product they order most, so the tap below goes to the other one */
+    for (let i = 0; i < 60 && !d95.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 50));
+    d95.getElementById("oNew").click();
+    const segOf95 = () => [...d95.querySelectorAll("#osheet button[aria-pressed][aria-label]")];
+    const seg95 = segOf95(), on95 = seg95.findIndex((b) => b.getAttribute("aria-pressed") === "true");
     ok(seg95.length === 2 && seg95.map((b) => b.getAttribute("aria-label")).join(",") === "Cube,Droplet"
-      && seg95[0].getAttribute("aria-pressed") === "true" && seg95.every((b) => b.querySelector("svg.psym")),
+      && seg95.filter((b) => b.getAttribute("aria-pressed") === "true").length === 1 && seg95.every((b) => b.querySelector("svg.psym")),
       "the product is picked from a segment of marks, one tap, and the chosen one says so: it was a dropdown, and an option carries no drawing");
-    seg95[1].click();
-    ok(d95.querySelectorAll("#pOrder .seg button[aria-pressed=true]").length === 1
-      && d95.querySelector("#pOrder .seg button[aria-pressed=true]").getAttribute("aria-label") === "Droplet",
+    seg95[1 - on95].click();
+    ok(segOf95().filter((b) => b.getAttribute("aria-pressed") === "true").length === 1
+      && segOf95().find((b) => b.getAttribute("aria-pressed") === "true").getAttribute("aria-label") === ["Cube", "Droplet"][1 - on95],
       "and a tap moves it");
     /* a product waiting for its price is a mark too, not a name */
-    const soon95 = [...d95.querySelectorAll("#pPrices .pane")].filter((x) => !x.querySelector("table"));
+    const soon95 = [...d95.querySelectorAll("#pPrices .pane")].filter((x) => !x.querySelector(".szrow"));
     ok(soon95.length === 1 && soon95[0].querySelector("h3.pmark svg.psym")
       && soon95[0].querySelector("h3.pmark").getAttribute("aria-label") === "Ring"
       && /Price coming soon\./.test(soon95[0].textContent),
@@ -19265,7 +20226,7 @@ await (async () => {
       "an order's row and its own screen carry the mark of what was ordered and never its name: " + JSON.stringify(card95 && card95.textContent.slice(0, 60)));
     /* text node by text node (25 Sep 2026): textContent runs a heading into the next line, and "GaramGood" hides a word */
     const nodes95 = (el) => { const tw = d95.createTreeWalker(el, 4), s = []; while (tw.nextNode()) s.push(tw.currentNode.nodeValue); return s.join(" "); };
-    const words95 = nodes95(d95.getElementById("pPrices")) + " " + nodes95(d95.getElementById("pOrder"));
+    const words95 = nodes95(d95.getElementById("pPrices")) + " " + nodes95(d95.getElementById("pOrder")) + " " + nodes95(d95.getElementById("osheet"));
     ok(!/\b(salt|oil)\b/i.test(words95) && !WL95.wordsIn(words95, WL95.PRODUCT_WORDS).length && !/Salt Command/i.test(words95),
       "and no product is written as a word anywhere on the prices or the order: " + JSON.stringify((words95.match(/\b(salt|oil)\b/gi) || []).slice(0, 4)));
   } finally { try { dom95.window.close(); } catch (e) { /* best effort */ } }
@@ -20385,9 +21346,10 @@ await (async () => {
 
   /* ---- the page draws the tick only for an associate ---- */
   const page2 = await (await stmtW2.fetch(new Request("https://k7m3p2.example/"), { STMT: kv2 })).text();
-  ok(page2.includes("On behalf of a friend") && page2.includes("if(assoc){"),
-    "the words are on the page and the tick is behind the mark, so nobody else is offered it");
-  ok(/forFriend:!!\(assoc&&draft\.forFriend\)/.test(page2),
+  /* S4 4.7: the tick became the sheet's first question, Who is it for? Me / A friend, asked of an associate alone */
+  ok(page2.includes("'Who is it for?'") && page2.includes("['friend','A friend']") && page2.includes("if(assoc) B.appendChild(oChoice('Who is it for?'"),
+    "the question is on the page and behind the mark, so nobody else is asked it");
+  ok(/forFriend:!!\(assoc&&c\.forFriend\)/.test(page2),
     "and the placement cannot send the tick unless the account carries the mark");
   /* EVERY DOOR READS IT, and the count is the check: a door added later that forgot the mark would
      take an associate's tick away from them on the way in, silently, and only on that one road.
@@ -21846,15 +22808,18 @@ await (async () => {
 
     /* the session lapses; Place is tapped: the phone reopens itself and the order goes, once */
     g1.D.querySelector('button[data-t="order"]').click();
+    await until(() => g1.D.getElementById("oNew"));
+    g1.D.getElementById("oNew").click();   /* S4 4.3: the order is a sheet */
     await until(() => g1.D.getElementById("oGo") && !g1.D.getElementById("oGo").disabled);
     g1.st.dead.add(sessOf(g1));
     const before = g1.st.reopened;
     g1.D.getElementById("oGo").click();
-    await until(() => [...g1.D.querySelectorAll("#pOrder button")].some((b) => b.textContent === "Place this order"));
-    [...g1.D.querySelectorAll("#pOrder button")].find((b) => b.textContent === "Place this order").click();
+    await until(() => g1.D.getElementById("oPlace"));
+    g1.D.getElementById("oPlace").click();
     await until(() => g1.st.posts.length);
-    await until(() => /Placed/.test(g1.D.getElementById("pOrder").textContent));
-    ok(g1.st.reopened === before + 1 && g1.st.posts.length === 1 && !g1.st.dead.has(g1.st.posts[0].s) && /Placed/.test(g1.D.getElementById("pOrder").textContent),
+    const sent = () => !!g1.D.getElementById("osheet") && /Order sent/.test(g1.D.getElementById("osheet").textContent);
+    await until(sent);
+    ok(g1.st.reopened === before + 1 && g1.st.posts.length === 1 && !g1.st.dead.has(g1.st.posts[0].s) && sent(),
       "a lapse met by Place reopens from the remembered phone and the order goes once, on the new session: " + JSON.stringify({ reopened: g1.st.reopened - before, posts: g1.st.posts.length }));
     ok(g1.D.getElementById("lapse").hidden && g1.D.getElementById("outSheet").hidden,
       "and nothing is said: no line in the bar and no Sheet");
@@ -21896,7 +22861,11 @@ await (async () => {
     g2.D.getElementById("f").dispatchEvent(new g2.W.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => !g2.D.getElementById("barw").hidden);
     g2.D.querySelector('button[data-t="order"]').click();
-    const line = () => g2.D.querySelector('#pOrder input[aria-label="Anything to add about this order"]');
+    /* S4 4.3: the line is the order sheet's note, folded until Add a note; a lapse closes the sheet and the same
+       account let in again opens it again, the line in it */
+    await until(() => g2.D.getElementById("oNew"));
+    g2.D.getElementById("oNew").click(); g2.D.getElementById("oAddNote").click();
+    const line = () => g2.D.querySelector("#osheet #oSay");
     await until(() => line());
     line().value = "leave it with the guard"; line().dispatchEvent(new g2.W.Event("input", { bubbles: true }));
     g2.st.dead.add(sessOf(g2));
@@ -22527,11 +23496,13 @@ await (async () => {
     ok(/STATEMENT OF B/.test(g1.D.getElementById("out").textContent) && JSON.parse(g1.store.get("salt-stmt-remember")).u === uA,
       "the fixture: Keep leaves A remembered with B on screen");
     g1.D.querySelector('button[data-t="order"]').click();
+    await until(() => g1.D.getElementById("oNew"));
+    g1.D.getElementById("oNew").click();   /* S4 4.3: the order is a sheet */
     await until(() => g1.D.getElementById("oGo") && !g1.D.getElementById("oGo").disabled);
     g1.st.dead.add(g1.st.sB);
     g1.D.getElementById("oGo").click();
-    await until(() => [...g1.D.querySelectorAll("#pOrder button")].some((b) => b.textContent === "Place this order"));
-    [...g1.D.querySelectorAll("#pOrder button")].find((b) => b.textContent === "Place this order").click();
+    await until(() => g1.D.getElementById("oPlace"));
+    g1.D.getElementById("oPlace").click();
     await until(() => !g1.D.getElementById("outSheet").hidden);
     await new Promise((r) => setTimeout(r, 120));
     ok(!g1.st.posts.some((x) => x.s === g1.st.sA) && g1.st.reopens === 0,
@@ -22539,8 +23510,10 @@ await (async () => {
     ok(/STATEMENT OF B/.test(g1.D.getElementById("out").textContent) && !/STATEMENT OF A/.test(g1.D.getElementById("out").textContent)
       && !g1.D.getElementById("outSheet").hidden && g1.D.getElementById("un").value === uB,
       "B stays on screen and the Sheet asks B to sign in again, B's username in it");
-    ok(/Not sent: you were signed out on this (phone|computer)/.test(g1.D.getElementById("pOrder").textContent),
-      "and beside Place it says the order was not sent because B was signed out, not a bare Not sent: " + JSON.stringify(g1.D.getElementById("pOrder").textContent.match(/Not sent[^.]*\./)));
+    /* S4 fix: the order sheet lay over the bar, so the lapse closes it and the Sheet over the page is the one voice */
+    ok(!g1.D.getElementById("osheet") && /You were signed out on this (phone|computer)/.test(g1.D.getElementById("outSheet").textContent)
+      && !/Check your connection/.test(g1.D.getElementById("pOrder").textContent + g1.D.getElementById("outSheet").textContent),
+      "and the order sheet closes, so the Sheet says the order was not sent because B was signed out, never a bare Not sent: " + JSON.stringify(g1.D.getElementById("outSheet").textContent.slice(0, 60)));
     ok(JSON.parse(g1.store.get("salt-stmt-remember")).u === uA, "and the phone still remembers A, untouched");
   } finally { g1.W.close(); }
 
@@ -23188,7 +24161,10 @@ await (async () => {
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => !D.getElementById("barw").hidden);
     D.querySelector('button[data-t="order"]').click();
-    const line = () => D.querySelector('#pOrder input[aria-label="Anything to add about this order"]');
+    /* S4 4.3: the line is the order sheet's note; a lapse closes the sheet, and the same account let in opens it again */
+    await until(() => D.getElementById("oNew"));
+    D.getElementById("oNew").click(); D.getElementById("oAddNote").click();
+    const line = () => D.querySelector("#osheet #oSay");
     await until(() => line());
     line().value = "by the side gate"; line().dispatchEvent(new W.Event("input", { bubbles: true }));
     st.dead.add(st.last);
@@ -24851,36 +25827,41 @@ await (async () => {
     } });
   const d = dom.window.document;
   const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
-  const btn = (t) => [...d.querySelectorAll("#pOrder button")].find((b) => b.textContent === t && !b.disabled);
+  const btn = (t) => [...d.querySelectorAll("#pOrder button, #osheet button")].find((b) => b.textContent === t && !b.disabled);
+  /* S4 4.3: a review is New order (unless the sheet is already on the form) and then Review */
+  const review = async () => { if (!d.getElementById("oGo")) { await until(() => d.getElementById("oNew")); d.getElementById("oNew").click(); }
+    await until(() => d.getElementById("oGo") && !d.getElementById("oGo").disabled); d.getElementById("oGo").click(); };
   try {
     d.getElementById("un").value = un; d.getElementById("pw").value = pw;
     d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => d.getElementById("pPrices").textContent);
     d.querySelector('button[data-t="order"]').click();
-    await until(() => d.getElementById("oGo") && !d.getElementById("oGo").disabled);
-    d.getElementById("oGo").click();
-    await until(() => btn("Place this order")); btn("Place this order").click();
-    await until(() => sent.place.length === 1 && btn("Place this order"));
+    await review();
+    await until(() => btn("Place order")); btn("Place order").click();
+    await until(() => sent.place.length === 1 && btn("Place order"));
     placeOk = true;
-    btn("Place this order").click();
-    await until(() => sent.place.length === 2 && d.getElementById("oGo") && !d.getElementById("oGo").disabled);
-    d.getElementById("oGo").click();
-    await until(() => btn("Place this order")); btn("Place this order").click();
+    btn("Place order").click();
+    await until(() => sent.place.length === 2 && !d.getElementById("oPlace"));
+    await review();
+    await until(() => btn("Place order")); btn("Place order").click();
     await until(() => sent.place.length === 3);
     const pr = sent.place.map((x) => x && x.rid);
     ok(pr.length === 3 && O.RID_RE.test(pr[0] || "") && pr[1] === pr[0] && pr[2] !== pr[0] && O.RID_RE.test(pr[2] || ""),
       "the page sends one id a review: Place tapped again after 'not placed' carries the same one, and the next review a new one: " + JSON.stringify(pr));
-    /* F3: a size changed while Check this over is open is a different order, so it is never sent under the id of
-       the one before: the Worker answers any repeat of an id with the order first stored under it */
+    /* F3: a size changed after "not placed" is a different order, so it is never sent under the id of the one
+       before: the Worker answers any repeat of an id with the order first stored under it. In the sheet the size is
+       changed by going back to the form (S4 4.3), and the next Review mints the next id */
     placeOk = false;
-    await until(() => d.getElementById("oGo") && !d.getElementById("oGo").disabled);
+    await until(() => sent.place.length === 3 && !d.getElementById("oPlace"));
+    await review();
+    await until(() => btn("Place order")); btn("Place order").click();
+    await until(() => sent.place.length === 4 && btn("Place order"));
+    btn("Change").click();
+    const size = d.querySelector('#osheet input[name="osize"][value="2"]');
+    size.checked = true; size.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
     d.getElementById("oGo").click();
-    await until(() => btn("Place this order")); btn("Place this order").click();
-    await until(() => sent.place.length === 4 && btn("Place this order"));
-    const size = d.querySelector('#pOrder select[aria-label="Size"]');
-    size.value = "2"; size.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    await until(() => btn("Place this order")); btn("Place this order").click();
-    await until(() => sent.place.length === 5 && btn("Place this order"));
+    await until(() => btn("Place order")); btn("Place order").click();
+    await until(() => sent.place.length === 5 && btn("Place order"));
     const sz = sent.place.slice(3).map((x) => x && [x.rid, x.qty]);
     ok(sz.length === 2 && sz[0][1] === 1 && sz[1][1] === 2 && O.RID_RE.test(sz[1][0] || "") && sz[1][0] !== sz[0][0],
       "a size changed after 'not placed' goes under a new id, never as a repeat of the order before: " + JSON.stringify(sz));
@@ -26512,10 +27493,10 @@ await (async () => {
       "a row is one tap: the mark and the size with the state, the day and the figure, and nothing of the order's own screen: " + JSON.stringify(r.textContent));
     r.click();
     const scr = d.querySelector("#pOrder .oscreen");
-    ok(!!scr && scr.getAttribute("data-order") === OWES && d.getElementById("oPlace").classList.contains("o-open") && d.getElementById("pOrder").classList.contains("o-open"),
+    ok(!!scr && scr.getAttribute("data-order") === OWES && d.getElementById("oArea").classList.contains("o-open") && d.getElementById("pOrder").classList.contains("o-open"),
       "a tap opens that order's own screen, and on a phone the place says it is open, so the list and the form stand aside");
     const back = d.querySelector("#pOrder .oback"); if (back) back.click();
-    ok(!!back && !d.querySelector("#pOrder .oscreen") && !d.getElementById("oPlace").classList.contains("o-open") && !!row(OWES),
+    ok(!!back && !d.querySelector("#pOrder .oscreen") && !d.getElementById("oArea").classList.contains("o-open") && !!row(OWES),
       "the way back is the list again");
   } finally { w.close(); }
 })();
@@ -26795,7 +27776,7 @@ await (async () => {
   const list = () => [
     o(A, { msgs: [{ at: "2026-09-23T02:00:00Z", by: "customer", text: "Before noon please" }].concat(phase ? [{ at: "2026-09-24T03:00:00Z", by: "desk", text: "It goes out Thursday." }] : []) }),
     o(B, { status: phase ? "ready" : "acknowledged" }),
-    o(D, { total: 150, paid: phase > 1 ? 30 : 0, method: "transfer", account: "maybank" }),
+    o(D, { total: 150, paid: phase > 1 ? 30 : 0, method: "transfer", account: "maybank", status: phase > 2 ? "ready" : "acknowledged" }),
     o(Cc, { status: "done", moved: 1 })];
   const html = landingPage(u, "n55", null), fast = html.replace(/var POLL_MS=[0-9]+/, "var POLL_MS=120");
   const dom = new JSDOM(fast, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -26815,11 +27796,11 @@ await (async () => {
     ok(fast !== html, "the served page's poll is shortened, or this proves nothing about a poll");
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    await until(() => row(A) && d.getElementById("oGo"));
+    await until(() => row(A) && d.getElementById("oNew"));
     d.querySelector('#tabs button[data-t="order"]').click();
     d.querySelector("#pOrder .olater").click();
     row(A).click();
-    const box = d.querySelector('#pOrder input[data-say="' + A + '"]'), form = d.getElementById("oGo"), rowC = row(Cc), rowA = row(A), head = d.querySelector('#pOrder .oscreen [data-part="head"]');
+    const box = d.querySelector('#pOrder input[data-say="' + A + '"]'), form = d.getElementById("oNew"), rowC = row(Cc), rowA = row(A), head = d.querySelector('#pOrder .oscreen [data-part="head"]');
     box.focus(); box.value = "Could it"; box.dispatchEvent(new w.Event("input", { bubbles: true })); box.setSelectionRange(5, 5);
     phase = 1;
     await until(() => /It goes out Thursday/.test(scr().textContent));
@@ -26829,7 +27810,7 @@ await (async () => {
     ok(d.contains(box) && d.activeElement === box && box.value === "Could it" && box.selectionStart === 5,
       "the box being typed in is the same box, with its words and its caret where they were");
     ok(d.contains(form) && d.contains(rowC) && d.contains(rowA) && d.contains(head),
-      "and nothing that did not change was drawn again: the order form, a row that did not move and a part that reads the same");
+      "and nothing that did not change was drawn again: New order (S4 4.3, where the order form stood), a row that did not move and a part that reads the same");
 
     /* a part that DOES change while its field has the focus: the amount being typed on an order whose payment moved */
     d.querySelector("#pOrder .oback").click();
@@ -26841,6 +27822,14 @@ await (async () => {
     await until(() => /Paid/.test((scr().querySelector('[data-part="money"]') || {}).textContent || ""));
     ok(!!amt && /RM 30/.test(scr().querySelector('[data-part="money"]').textContent) && d.contains(amt) && d.activeElement === amt && amt.value === "40",
       "the money moved and its lines say so, while the amount being typed keeps its field, its focus and its figure");
+
+    /* S4 over S5: the order sheet lies over the page, and a poll that patches the orders never draws it or its check again */
+    d.getElementById("oNew").click(); d.getElementById("oGo").click();
+    const sheet = d.getElementById("osheet"), place = d.getElementById("oPlace");
+    phase = 3;
+    await until(() => /Ready to collect/.test(row(D).textContent));
+    ok(/Ready to collect/.test(row(D).textContent) && !!place && d.contains(sheet) && d.getElementById("oPlace") === place && place.textContent === "Place order",
+      "and with the check open over the page, the poll patches the order under it and draws neither the sheet nor its check again");
   } finally { w.close(); }
 })();
 section("S5 5.6: a banner's tap opens its order on the Counter's own page, a stale page re-reads without losing a line, and a desk shows the list beside the open order");
@@ -27304,10 +28293,11 @@ await (async () => {
       "a line the site refuses goes back in the box with the reason under it, and is not offered again: " + JSON.stringify({ lines: lines(d), box: box.value, said: said && said.textContent }));
   });
 })();
-section("S5 fix: a desk with the order form beside the open order shows one filled control");
+section("S5 fix: a desk with New order beside the open order shows one filled control, and Pay is filled where nothing else is");
 await (async () => {
-  /* 25 SEP 2026, the stage 5 review. From 1080px an order is always open beside the list, and the order form still
-     stands on the same tab until stage 4 moves it into a sheet: its Review and the order's Pay were both filled. */
+  /* 25 SEP 2026, the stage 5 review. From 1080px an order is always open beside the list, and the order form stood on
+     the same tab: its Review and the order's Pay were both filled. Stage 4 moved the form into a sheet, and New order
+     stands in its place, filled; with the limit said instead of it, nothing else on the tab is, and Pay is filled again. */
   const { landingPage } = await import("../stmt/page.js");
   const C = await import("../tools/stmt-crypto.mjs");
   const { webcrypto } = await import("node:crypto");
@@ -27320,14 +28310,17 @@ await (async () => {
   const O = "20260923090000-oooo";
   const list = [{ id: O, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 0, moved: 0,
     status: "acknowledged", history: [], msgs: [] }];
-  const drive = async (wide, go) => {
+  const placed = (n) => ({ id: "2026092" + n + "090000-pppp", at: "2026-09-2" + n + "T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90,
+    delivery: 0, mode: "collect", paid: 0, moved: 0, status: "placed", history: [], msgs: [] });
+  const full = list.concat([4, 5, 6, 7].map(placed));
+  const drive = async (wide, go, orders) => {
     const dom = new JSDOM(landingPage(u, "nf5", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
       w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
       w.matchMedia = (q) => ({ matches: wide && /min-width: *1080px/.test(q), media: q, addEventListener() {}, removeEventListener() {} });
       w.fetch = async (path, init) => {
         const p = String(path), m = (init && init.method) || "GET";
-        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: JSON.parse(JSON.stringify(list)) } : { ok: true };
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: JSON.parse(JSON.stringify(orders || list)) } : { ok: true };
         return { ok: true, status: 200, json: async () => j };
       };
     } });
@@ -27335,7 +28328,7 @@ await (async () => {
     try {
       d.getElementById("un").value = u; d.getElementById("pw").value = pass;
       d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-      for (let i = 0; i < 100 && !(d.querySelector("#pOrder [data-row]") && d.getElementById("oGo")); i++) await new Promise((r) => setTimeout(r, 30));
+      for (let i = 0; i < 100 && !(d.querySelector("#pOrder [data-row]") && (d.getElementById("oNew") || d.getElementById("oLimit"))); i++) await new Promise((r) => setTimeout(r, 30));
       d.querySelector('#tabs button[data-t="order"]').click();
       await go(w, d);
     } finally { w.close(); }
@@ -27344,9 +28337,14 @@ await (async () => {
   const filled = (d) => [...d.querySelectorAll("#pOrder .salt-pill")].map((b) => b.textContent);
   await drive(true, async (w, d) => {
     const pay = payOf(d);
-    ok(!!d.getElementById("oGo") && !!pay && !pay.classList.contains("salt-pill") && pay.classList.contains("salt-ghost") && JSON.stringify(filled(d)) === JSON.stringify(["Review this order"]),
-      "on a desk, with the order form's Review beside the open order, its Pay is the lit ghost and Review the one filled control: " + JSON.stringify({ pay: pay && pay.className, filled: filled(d) }));
+    ok(!!d.getElementById("oNew") && !!pay && !pay.classList.contains("salt-pill") && pay.classList.contains("salt-ghost") && JSON.stringify(filled(d)) === JSON.stringify(["New order"]),
+      "on a desk, with New order beside the open order, its Pay is the lit ghost and New order the one filled control: " + JSON.stringify({ pay: pay && pay.className, filled: filled(d) }));
   });
+  await drive(true, async (w, d) => {
+    const pay = payOf(d);
+    ok(!!d.getElementById("oLimit") && !d.getElementById("oNew") && !!pay && pay.classList.contains("salt-pill") && JSON.stringify(filled(d)) === JSON.stringify(["Pay RM 90"]),
+      "at the limit, said in New order's place, nothing else is filled and the open order's Pay is: " + JSON.stringify({ pay: pay && pay.className, filled: filled(d) }));
+  }, full);
   await drive(false, async (w, d) => {
     d.querySelector('#pOrder [data-row="' + O + '"]').click();
     const pay = payOf(d);
@@ -28387,6 +29385,7 @@ await (async () => {
   ok(again6.hit.length === 0, "the same payment does not wake him every minute after: " + JSON.stringify(again6.hit));
 
   /* ---- THE THREE MARKS DO NOT BURY EACH OTHER ---- */
+  await clockPast(o6.at);   /* a second placement in the first one's millisecond would not move the mark at all */
   const o7 = await place6();
   await customerMove(senv6, u6, o7.id, "cancel", {});
   const both = await nudge();
@@ -29291,6 +30290,7 @@ await (async () => {
   await O.customerMove(senv, u, o.id, "pay", { amount: 190 });
   await nudge();
   const tPaid = await told();
+  await clockPast(o.at);   /* a second placement in the first one's millisecond would not move the mark, and the payment's news would stand */
   const o2 = (await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
   await nudge();
   const tPlaced2 = await told();
@@ -29795,12 +30795,15 @@ await (async () => {
   ok(shown[0] && shown[0].t === "A customer wrote" && shown[0].opt.data.url === "./desk#orders/newest",
     "so the banner says a customer wrote, and opens the card where he answers: " + JSON.stringify(shown[0] && shown[0].t));
 
-  /* A PLACEMENT WITH A NOTE IS A NEW ORDER, whose first line is the note typed with it */
+  /* A PLACEMENT WITH A NOTE IS A NEW ORDER, whose first line is the note typed with it. Both marks have to move for
+     this to prove which news wins, so the placement is stamped after the line (and so after the first placement) */
   await dkv.delete("orders:news");
+  await clockPast([o.at, n1.said].sort().pop());
   await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "", note: "call when ready" });
   const n2 = await nudgeOrders(denv);
   ok(n2.newest && n2.said && (await dkv.get("orders:news")) === null,
-    "and a new order that carries a line wakes as a new order, not as a line: " + JSON.stringify(await dkv.get("orders:news")));
+    "and a new order that carries a line wakes as a new order, not as a line: "
+      + JSON.stringify({ newest: !!n2.newest, said: !!n2.said, news: await dkv.get("orders:news") }));
 })();
 
 section("S1 1.48: Acknowledge, Approve and the notice's mode buttons wear the system's recipes, with no colour of their own");
@@ -32750,7 +33753,7 @@ await (async () => {
   const { webcrypto: wcN } = await import("node:crypto");
   const { JSDOM: JDN } = await import("jsdom");
   const u = "abcd-efgh", pass = "fixture-pass-m20", ck = await CN.contentKey("test-secret", u);
-  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [], digest: "d-m20",
     products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 120 }, { q: 2, price: 230 }] }] };
   const body = { ok: true, wrap: await CN.wrapKey(pass, ck), session: "sess-m20",
     env: await CN.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
@@ -32770,34 +33773,38 @@ await (async () => {
     };
   } });
   const w = dom.window, d = w.document;
-  const field = (label) => d.querySelector('#pOrder input[aria-label="' + label + '"]');
+  /* S4 4.3: the check is a step of the order sheet now. Review freezes one copy of the order; the check draws it and
+     Place sends it, and while it is open the sheet holds no field at all, so nothing typed can reach the order */
   const type = (f, t) => { if (f && !f.readOnly) { f.value = t; f.dispatchEvent(new w.Event("input", { bubbles: true })); } };
-  const button = (t) => [...d.querySelectorAll("#pOrder button")].find((b) => b.textContent === t);
+  const button = (t) => [...d.querySelectorAll("#pOrder button, #osheet button")].find((b) => b.textContent === t);
+  const row = (k) => { const r = [...d.querySelectorAll("#osheet .salt-ledger__row")].find((x) => x.querySelector(".salt-ledger__label").textContent === k);
+    return r && r.querySelector(".salt-ledger__value").textContent; };
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 100 && !button("Deliver to me"); i++) await new Promise((r) => setTimeout(r, 50));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 50));
+    d.getElementById("oNew").click();
     button("Deliver to me").click();
-    type(field("Roughly where it is going"), "Old market");
-    type(field("Anything to add about this order"), "Ring the bell");
+    type(d.getElementById("oWhere"), "Old market");
+    d.getElementById("oAddNote").click();
+    type(d.getElementById("oSay"), "Ring the bell");
     d.getElementById("oGo").click();
-    const where = () => { const li = [...d.querySelectorAll("#pOrder .conf li")].find((x) => x.querySelector(".k").textContent === "Where"); return li && li.querySelector(".v").textContent; };
-    const locked = field("Roughly where it is going").readOnly && field("Anything to add about this order").readOnly;
-    type(field("Roughly where it is going"), "Somewhere else");
-    type(field("Anything to add about this order"), "Changed my mind");
-    ok(locked && where() === "Old market" && field("Roughly where it is going").value === "Old market",
-      "with the check-over open both fields are read-only, and the list and the field still say the same place: " + where());
-    button("Place this order").click();
-    for (let i = 0; i < 100 && !/Placed\./.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
-    ok(posted.length === 1 && posted[0].place === "Old market" && posted[0].note === "Ring the bell",
-      "Place sends exactly the place and the line the check-over showed: " + JSON.stringify(posted.map((x) => [x.place, x.note])));
-    /* and the way back opens them again */
-    button("Deliver to me").click();
-    type(field("Roughly where it is going"), "Old market");
+    const typeable = [...d.querySelectorAll("#osheet input, #osheet textarea, #osheet select")].filter((x) => !x.readOnly && !x.disabled);
+    ok(typeable.length === 0 && row("How") === "Delivered to Old market" && row("Note") === "Ring the bell",
+      "with the check open the sheet holds nothing to type into, and it shows the place and the line: " + JSON.stringify({ how: row("How"), note: row("Note"), typeable: typeable.length }));
+    button("Place order").click();
+    for (let i = 0; i < 100 && !posted.length; i++) await new Promise((r) => setTimeout(r, 50));
+    ok(posted.length === 1 && posted[0].place === "Old market" && posted[0].note === "Ring the bell" && posted[0].digest === "d-m20",
+      "Place sends exactly the place and the line the check showed, and the stamp of the list it read (S4 4.2): " + JSON.stringify(posted.map((x) => [x.place, x.note, x.digest])));
+    /* and the way back opens the form again, holding what was typed; once the placement has answered */
+    for (let i = 0; i < 100 && d.getElementById("oPlace"); i++) await new Promise((r) => setTimeout(r, 50));
+    d.getElementById("oNew").click();
+    type(d.getElementById("oWhere"), "Old market");
     d.getElementById("oGo").click();
-    button("Change it").click();
-    ok(!field("Roughly where it is going").readOnly && !field("Anything to add about this order").readOnly,
-      "Change it closes the list and both fields take typing again");
+    button("Change").click();
+    const back = d.getElementById("oWhere");
+    ok(!!back && !back.readOnly && back.value === "Old market",
+      "Change goes back to the form, the place kept and taking typing again");
   } finally { w.close(); }
 })();
 
@@ -32853,13 +33860,15 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 60 && !thrown.length && !/Your orders/.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
-    const po = d.getElementById("pOrder"), sizes = [...po.querySelectorAll("select option")].map((o) => o.value);
+    const po = d.getElementById("pOrder");
+    if (d.getElementById("oNew")) d.getElementById("oNew").click();
+    const sizes = [...d.querySelectorAll('#osheet input[name="osize"]')].map((o) => o.value);
     ok(!thrown.length && /Notifications/.test(po.textContent) && /Your orders/.test(po.textContent) && po.querySelectorAll("[data-row] .salt-status").length === 1
-      && sizes.join() === "1" && !po.querySelector(".seg button[aria-label]"),
-      "the Order tab draws: the form offers the one product with a price, and Notifications and their order are there: " + JSON.stringify({ sizes, thrown }));
+      && sizes.join() === "1" && !d.querySelector("#osheet button[aria-pressed][aria-label]"),
+      "the Order tab draws: the order sheet offers the one product with a price, and Notifications and their order are there: " + JSON.stringify({ sizes, thrown }));
     const pp = d.getElementById("pPrices");
-    ok(/Price coming soon\./.test(pp.textContent) && pp.querySelectorAll("table").length === 1,
-      "and Prices says coming soon for the one with no size rather than drawing an empty table");
+    ok(/Price coming soon\./.test(pp.textContent) && pp.querySelectorAll(".salt-ledger").length === 1,
+      "and Prices says coming soon for the one with no size rather than drawing an empty list");
   } finally { process.off("unhandledRejection", onRej); w.close(); }
 })();
 
@@ -32949,9 +33958,11 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 60 && !d.querySelector("#pPrices p.lead + p.lead"); i++) await new Promise((r) => setTimeout(r, 50));
-    const lead = [...d.querySelectorAll("#pPrices p.lead")].map((p) => p.textContent).find((t) => /delivery/.test(t)) || "";
-    ok(/the charge is set when your order is acknowledged/.test(lead) && !/marked ready|confirm/.test(lead),
-      "the Prices lead puts the delivery charge at the acknowledgement, where v694 moved it, in the page's own word: " + lead.slice(0, 160));
+    const lead = [...d.querySelectorAll("#pPrices p.lead")].map((p) => p.textContent).find((t) => /delivery/i.test(t)) || "";
+    /* S4 4.9 and D11 (his "all recommended" of 24 Sep 2026): the one delivery sentence, in the customer's word for that step,
+       confirm, which D11 gives them for acknowledged; still never "marked ready" */
+    ok(/We tell you the charge when we confirm, before you pay/.test(lead) && !/marked ready|acknowledged/.test(lead),
+      "the Prices lead puts the delivery charge at the confirmation, where v694 moved it, in the customer's word: " + lead.slice(0, 160));
   } finally { w.close(); }
 })();
 
@@ -32982,16 +33993,18 @@ await (async () => {
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 60 && !d.querySelector("#pOrder .seg button.on"); i++) await new Promise((r) => setTimeout(r, 50));
-    const chosen = [d.querySelector("#mfil button.on"), d.querySelector("#pOrder .seg button.on")];
+    for (let i = 0; i < 60 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 50));
+    d.getElementById("oNew").click();
+    /* S4 4.3: the way is chosen in the order sheet, by the system's pressed ghost */
+    const chosen = [d.querySelector("#mfil button.on"), [...d.querySelectorAll('#osheet button[aria-pressed="true"]')].find((b) => /collect|Deliver/.test(b.textContent))];
     const look = chosen.map((b) => { const c = b && w.getComputedStyle(b);
       return c ? { fill: [c.background, c.backgroundColor, c.backgroundImage].join(" "), ink: c.color } : null; });
     ok(chosen.every(Boolean) && chosen[0].textContent === "All" && chosen[1].textContent === "I will collect",
-      "the fixture draws a chosen month (All) and a chosen mode (I will collect) to measure");
-    ok(look.every((x) => x && !/brass/.test(x.fill)), "neither chosen pill is filled brass: " + JSON.stringify(look.map((x) => x && x.fill)));
+      "the fixture draws a chosen month (All) and a chosen way (I will collect) to measure");
+    ok(look.every((x) => x && !/brass/.test(x.fill)), "neither chosen control is filled brass: " + JSON.stringify(look.map((x) => x && x.fill)));
     /* the hairline itself is the rig's to see: jsdom reads a border drawn in a token as transparent */
-    ok(look.every((x) => x && /--salt-brass/.test(x.ink)),
-      "and each is still told apart, in brass ink: " + JSON.stringify(look.map((x) => x && x.ink)));
+    ok(look[0] && /--salt-brass/.test(look[0].ink) && chosen[1].classList.contains("salt-ghost") && chosen[1].getAttribute("aria-pressed") === "true",
+      "and each is still told apart: the month in brass ink, the way as the system's ghost, pressed: " + JSON.stringify(look.map((x) => x && x.ink)));
   } finally { w.close(); }
 })();
 

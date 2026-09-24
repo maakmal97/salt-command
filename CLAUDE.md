@@ -276,8 +276,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **No brand on the customer's page, and no product word either.** Nothing under `stmt/` names
   Salt Command. A product is a mark (`PSYM`), and a control holding only a mark is named by its shape
   (`PSHAPE`), never its product. **The one name on the site is the app's, `Salt Counter`**, twelve
-  characters, which is what iOS gives a home screen; the desk's name never appears. **A customer's
-  level is a mark, never named**; no name is used because none exists there (rule 2).
+  characters, which is what iOS gives a home screen; the desk's name never appears. **A customer never
+  sees a level**, named or marked (D11); no name is used because none exists there (rule 2).
 - **AN ORDER REACHES THE BOOK IN STAGES.** The desk's every-minute
   `reconcileOrders` is the one road that queues what the site makes (Accept and Cash received queue
   their own): the acknowledgement a **Pending** row (delivery beside its total), a payment a **Fulfilment**, a
@@ -307,7 +307,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   overdue and coming up (`txPendRM`), each part due at its order date plus the desk's
   `RULES.creditDays`, read from the master, and overdue only after that day. **The bulletin** is KV
   `bulletin`, set through the desk's keyed `/bulletin` and checked by `siteWords`.
-- **An associate may tick an order as on behalf of a friend**: it books to their `-R` bucket
+- **An associate is asked who an order is for, first (Me / A friend)**: a friend's books to their `-R` bucket
   through the engine's `bookR2`, and the `orderKey` is built on the bucket. **A bucket is not its
   own person**: `ownsCode` reads the code and the bucket together; a bucket has no statement and no
   published username.
@@ -337,7 +337,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   phone and repeats the request once** (his D1), **only when the phone remembers the account on screen**;
   otherwise a Sheet says so over the page, carrying the door and keeping the draft. The page re-reads on every return (`GET /account` on its session, never a
   wrap), and a remembered phone draws "Opening your account", never the door. Kept as an app:
-  manifest and icon served by the Worker, no brand; every login asks about notifications once. How to
+  manifest and icon served by the Worker, no brand; notifications are asked only from a tap. How to
   keep it is This device's first row once signed in, never on the door: an Install button wherever the browser offers one,
   Samsung Internet's steps, a computer's address-bar mark or another Android browser's menu mark drawn elsewhere; on an iPhone its Sheet mints the hand-over as it
   opens and copies the key in a tap of its own, rewriting the address to `/app#<key>` (his D2), and never
