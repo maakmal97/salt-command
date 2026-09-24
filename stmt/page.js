@@ -929,8 +929,10 @@ export function landingPage(user, nonce, owner, bulletin) {
     + "</div>" + placesBar() + "</div>"
     + '<script nonce="' + nonce + '">'
     + CLIENT_JS.replace(/__POLL__/g, String(POLL_MS))
-      /* the notice as the page was served, so the card is drawn with no request; the poll reads it again */
-      .replace("__BULL__", JSON.stringify({ lines: (bulletin && bulletin.lines) || [] }).replace(/</g, "\\u003c"))
+      /* the notice as the page was served, so the card is drawn with no request; the poll reads it again. A function
+         replacement, as every splice carrying typed words: a $' or $` in the notice was read as a pattern and pasted the
+         page into the script, which then did not run (S7-R2 of the stage 7 review) */
+      .replace("__BULL__", () => JSON.stringify({ lines: (bulletin && bulletin.lines) || [] }).replace(/</g, "\\u003c"))
       .replace("__PAY_SITE__", JSON.stringify(PAY_SITE)).replace("__PAY_ACCOUNTS__", JSON.stringify(PAY_ACCOUNTS))
       /* v695: the product marks, so the page can draw one wherever it would have written a name */
       .replace("__PSYM__", JSON.stringify(Object.assign({ _: RING }, PSYM)))
@@ -944,8 +946,8 @@ export function landingPage(user, nonce, owner, bulletin) {
       .replace("/*__UNITS_OF__*/", () => String(unitsOf))
       /* "<" is escaped because this one carries the master passphrase, and a "</script>" inside a
          string literal ends the block wherever it appears: the browser closes the tag first and
-         reads the rest of the passphrase as page text. */
-      .replace("__OWNER__", JSON.stringify(owner || null).replace(/</g, "\\u003c"))
+         reads the rest of the passphrase as page text. A function replacement, so a $ in it is kept as typed. */
+      .replace("__OWNER__", () => JSON.stringify(owner || null).replace(/</g, "\\u003c"))
       /* v687: the owner's script travels only on his route. A function replacement, so nothing in
          it is read as a $ pattern. */
       .replace("/*__OWNER_JS__*/", () => (owner ? OWNER_JS : ""))

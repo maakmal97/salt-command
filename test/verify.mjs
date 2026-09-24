@@ -32921,6 +32921,27 @@ await (async () => {
   }
 })();
 
+section("S7 fix: a notice or a passphrase holding a $ pattern is served as typed, and the page's script still runs");
+await (async () => {
+  /* S7-R2 of the stage 7 review (25 Sep 2026). The notice was spliced into the served script by a string replacement, so
+     String.replace read $' and $` in it as patterns: a notice line "Card or cash, $' accepted" pasted the rest of the page
+     into a string, the script did not parse, and no customer could sign in, on a notice a Set wakes every phone to. His
+     passphrase on /all went the same way. Both are function replacements now. */
+  const { landingPage } = await import("../stmt/page.js");
+  const typed = ["Card or cash, $' accepted", "Promo $` here", "Save $& now", "Pay $$5 less"];
+  const script = (html) => { const m = /<script nonce="N">([\s\S]*?)<\/script>/.exec(html); return m ? m[1] : ""; };
+  const parses = (js) => { try { new Function(js); return true; } catch (e) { return false; } };
+  const cust = script(landingPage("", "N", null, { lines: typed }));
+  const bull = /var BULL=(\{[^\n]*?\}), bullN=0;/.exec(cust);
+  ok(parses(cust) && !!bull && JSON.stringify(JSON.parse(bull[1]).lines) === JSON.stringify(typed),
+    "a notice holding $' $` $& and $$ leaves the customer's script whole, and the page holds each line as typed: " + JSON.stringify([parses(cust), bull && bull[1]]));
+  const master = "pa$'ss$`wo$&rd$$";
+  const his = script(landingPage("", "N", { master, accounts: [] }, null));
+  const own = /var OWNER=(\{[^\n]*?\});/.exec(his);
+  ok(parses(his) && !!own && JSON.parse(own[1]).master === master,
+    "and his passphrase holding them leaves his page's script whole and is held as typed");
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read
