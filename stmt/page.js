@@ -1259,6 +1259,8 @@ const CLIENT_JS = `
   /* 24 Sep 2026: what can be ordered is a product with a priced size. The list sends none without one now, and an
      older sealed list still can: its first size was read unguarded, and the throw blanked the whole tab. */
   function sold(){ return ((prices&&prices.products)||[]).filter(function(x){ return x.sizes&&x.sizes.length; }); }
+  /* what the page says where nothing can be ordered: a list with nothing priced, or no list at all */
+  function noOrderLine(){ return prices&&(prices.soon&&prices.soon.length||prices.products&&prices.products.length)?'Ordering opens once your prices are set.':'Ordering opens once your price list is written, with the next update.'; }
   async function api(path, body, method){
     var r;
     try{
@@ -1416,6 +1418,8 @@ const CLIENT_JS = `
   function drawForm(){
     sheetHead('New order');
     var S=sold(), P=S.filter(function(x){ return x.product===draft.product; })[0]||S[0], B=osh.body;
+    /* a list that came back with nothing priced (a 409, then Change) leaves nothing to pick: the Order tab's own line */
+    if(!P){ B.appendChild(el('p','lead',noOrderLine())); return; }
     draft.product=P.product;
     if(!P.sizes.some(function(x){ return String(x.q)===String(draft.q); })) draft.q=String(P.sizes[0].q);
     /* S4 4.7: AN ASSOCIATE IS ASKED WHO IT IS FOR, FIRST (v702's tick, which was the last field and easy to pass). Nothing is
@@ -1496,8 +1500,11 @@ const CLIENT_JS = `
     var c=draft.check, k=prices&&prices._k, fresh=null;
     try{ fresh=(k&&envl)?await openList(k,envl):null; }catch(e){ fresh=null; }
     if(!c) return;
-    if(!fresh){ draft.snote='Your prices have changed. Close this and open your prices again.'; return; }
-    prices=fresh; drawPrices();
+    /* the list as the account holds it now, or none where it holds none (or none this key opens), which is what a
+       sign-in would show; with nothing left to order, the check says so and Place is held, where "open your prices
+       again" reopened the same list and met the same refusal */
+    prices=fresh; drawPrices(); drawOrder();
+    if(!sold().length){ c.shut=true; draft.snote=noOrderLine(); return; }
     var P=(fresh.products||[]).filter(function(x){ return x.product===c.product&&x.sizes&&x.sizes.length; })[0];
     var z=P&&P.sizes.filter(function(x){ return String(x.q)===String(c.q); })[0];
     c.digest=fresh.digest||'';
@@ -1570,7 +1577,7 @@ const CLIENT_JS = `
     var bk=el('button','salt-ghost','Change'); bk.type='button'; bk.id='oBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','change');
     bk.addEventListener('click',toForm); F.appendChild(bk);
     var pl=el('button','salt-pill salt-pill--md',c.was!=null?'Place at '+rm(c.total):'Place order'); pl.type='button'; pl.id='oPlace';
-    pl.disabled=!!draft.busy||!!c.gone; pl.setAttribute('data-k','place');
+    pl.disabled=!!draft.busy||!!c.gone||!!c.shut; pl.setAttribute('data-k','place');
     pl.addEventListener('click',oPlaceIt); F.appendChild(pl);
     /* the answer is drawn beside Place, which is what was tapped */
     if(draft.snote) F.appendChild(statusLine(draft.snote));
@@ -1669,7 +1676,7 @@ const CLIENT_JS = `
     } else if(view){
       /* no order form on his read-only view */
     } else if(!sold().length){
-      pOrder.appendChild(el('p','lead',prices&&(prices.soon&&prices.soon.length||prices.products&&prices.products.length)?'Ordering opens once your prices are set.':'Ordering opens once your price list is written, with the next update.'));
+      pOrder.appendChild(el('p','lead',noOrderLine()));
     } else {
       /* S4 4.3: the form is a sheet now, laid over the page from here */
       pOrder.appendChild(el('p','lead','Pick a size and check it over before you place it. Once we confirm it you can pay, and you are told when the goods are on their way.'));

@@ -13839,6 +13839,68 @@ await (async () => {
     ok(!!row && !d.getElementById("osheet"), "and neither New order nor a size on Prices opens it again over the lapse");
   } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
 })();
+section("S4 fix: a moved list that leaves nothing to order says so in the check and holds Place, with no dead end behind it");
+await (async () => {
+  /* S4R-2: a 409 whose list had nothing priced left the check at "Change it to pick another", and Change threw, leaving
+     the sheet empty; a 409 with no list at all said "Close this and open your prices again", which reopened the same
+     list, placed under the same stamp and met the same refusal until a new sign-in. The page takes the list the account
+     holds now, or none, as a sign-in would, and says the Order tab's own line. */
+  const { landingPage: lpF4 } = await import("../stmt/page.js");
+  const CF4 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcF4 } = await import("node:crypto");
+  const { JSDOM: JDF4 } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-sf4", ck = await CF4.contentKey("test-secret", u);
+  const list = (digest, sizes) => ({ at: "2026-09-24T03:59:00Z", digest, week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes }] });
+  const sealed = async (l) => Object.assign({ at: l.at, week: l.week.monday, digest: l.digest }, await CF4.encryptWith(ck, JSON.stringify(l)));
+  const drive = async (answer) => {
+    const posted = [], errs = [];
+    const body = { ok: true, wrap: await CF4.wrapKey(pass, ck), session: "sess-sf4", prices: await sealed(list("d1", [{ q: 1, price: 100 }])),
+      env: await CF4.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+    const dom = new JDF4(lpF4(u, "nsf4", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcF4, configurable: true }); } catch (e) { win.crypto = wcF4; }
+      win.scrollTo = () => {};
+      win.addEventListener("error", (e) => errs.push(String(e.message || e.error)));
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/open") return { ok: true, status: 200, json: async () => body };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+        if (p === "/orders" && m === "POST") { posted.push(JSON.parse(init.body)); return { ok: false, status: 409, json: async () => answer }; }
+        return { ok: false, status: 404, json: async () => ({ ok: false }) };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click(); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !(posted.length && d.getElementById("oBack") && !d.getElementById("oBack").disabled); i++) await new Promise((r) => setTimeout(r, 30));
+    await new Promise((r) => setTimeout(r, 60));
+    return { w, d, posted, errs };
+  };
+  const foot = (d) => ((d.querySelector("#osheet .salt-sheet__foot") || {}).textContent || "");
+  /* the list came back with nothing priced */
+  const A = await drive({ ok: false, error: "prices moved", prices: await sealed(list("d2", [])) });
+  try {
+    const { d, errs } = A;
+    ok(/Ordering opens once your prices are set[.]/.test(foot(d)) && d.getElementById("oPlace").disabled && !/pick another/.test(d.getElementById("osheet").textContent),
+      "a list that comes back with nothing priced says ordering opens once the prices are set, and Place is held: " + JSON.stringify(foot(d)));
+    d.getElementById("oBack").click();
+    const bodyText = ((d.querySelector("#osheet .salt-sheet__body") || {}).textContent || "");
+    ok(!errs.length && bodyText === "Ordering opens once your prices are set." && !d.getElementById("oNew"),
+      "and Change draws that line in the sheet, throwing nothing, with New order gone from the Order tab: " + JSON.stringify({ errs, bodyText }));
+  } finally { await new Promise((r) => setTimeout(r, 100)); A.w.close(); }
+  /* the answer carried no list at all */
+  const B = await drive({ ok: false, error: "prices moved", prices: null });
+  try {
+    const { d, posted } = B;
+    ok(/Ordering opens once your price list is written, with the next update[.]/.test(foot(d)) && d.getElementById("oPlace").disabled && !/open your prices again/.test(foot(d)),
+      "a refusal carrying no list says ordering opens once the list is written, and Place is held: " + JSON.stringify(foot(d)));
+    d.querySelector("#osheet .salt-sheet__close").click();
+    ok(posted.length === 1 && !d.getElementById("oNew") && /No price list has been written/.test(d.getElementById("pPrices").textContent) && !d.querySelector("#pPrices .szrow"),
+      "and behind it the page holds no list, as a sign-in would show it, so the same stamp cannot be placed again: " + JSON.stringify({ posted: posted.length }));
+  } finally { await new Promise((r) => setTimeout(r, 100)); B.w.close(); }
+})();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {
   /* HIS INSTRUCTION OF 16 SEP 2026: "The label to them is a very subtle tier level, in symbol and colour (for each tier),
