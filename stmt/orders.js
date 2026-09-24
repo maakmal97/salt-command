@@ -494,7 +494,7 @@ export async function deskMove(env, u, id, body) {
     }
     if (typeof L.moved === "number" && Number.isFinite(L.moved) && L.moved > (+order.moved || 0) + 0.0004) {
       order.moved = +L.moved.toFixed(3); q.moved = order.moved; told = true;
-      if (!order.movedOn) order.movedOn = klDay(at);
+      order.movedOn = klDay(at);   /* the day of the LAST handover, as Site orders writes it: the chase's grace runs from it */
       order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
     }
     if (!told) return { order };

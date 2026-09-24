@@ -20383,6 +20383,34 @@ await (async () => {
     + JSON.stringify({ r, hit: hit.map((x) => x.u) }));
 })();
 
+section("S12 fix: a handover the return leg carries back starts the day's grace again, as one on Site orders does");
+await (async () => {
+  /* S12-R1 and S12-C1, 24 Sep 2026: the return leg wrote movedOn only when it was empty, so the rest of an order
+     taken at the counter and recorded on the desk kept the FIRST handover's day, and graceOver let the 18:00 chase
+     ask for it that same evening. Driven through deskMove { ledger }, the road tellSite takes, on the real clock. */
+  const O = await import("../stmt/orders.js");
+  const kv = new KV(), env = { STMT: kv };
+  const u = "aaaa-1111", id = "20260920010000-abcd1234", key = "order:" + u + ":" + id;
+  await kv.put(key, JSON.stringify({ id, u, at: "2026-09-20T01:00:00Z", status: "acknowledged", product: "salt", qty: 5, unit: 100,
+    total: 500, delivery: 0, mode: "collect", paid: 0, payments: [], moved: 0, movedOn: null, history: [], msgs: [] }));
+  /* two of five handed over and paid for, weeks ago */
+  await O.deskMove(env, u, id, { ledger: { paid: 200, moved: 2 } });
+  const first = JSON.parse(await kv.get(key));
+  first.movedOn = "2026-09-01";
+  await kv.put(key, JSON.stringify(first));
+  ok(!O.isAdvance(first) && (await O.toChase(env, "2026-09-02T02:00:00Z")).length === 0,
+    "paid for the share they hold, nobody is chased: " + JSON.stringify({ paid: first.paid, moved: first.moved }));
+  /* the rest goes out today, recorded on the desk, nothing more paid */
+  await O.deskMove(env, u, id, { ledger: { moved: 5 } });
+  const after = JSON.parse(await kv.get(key));
+  const day = new Date(after.history[after.history.length - 1].at).toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
+  const next = new Date(Date.parse(day + "T00:00:00Z") + 86400000).toISOString().slice(0, 10);
+  const eve = (await O.toChase(env, day + "T10:00:00Z")).map((x) => x.u), morning = (await O.toChase(env, next + "T02:00:00Z")).map((x) => x.u);
+  ok(O.isAdvance(after) && after.moved === 5 && after.movedOn === day && eve.length === 0 && JSON.stringify(morning) === JSON.stringify([u]),
+    "the order is now an advance, its handover day is today's, 18:00 today asks nothing and 10:00 tomorrow does: "
+    + JSON.stringify({ movedOn: after.movedOn, day, eve, morning }));
+})();
+
 section("v760: a customer paying or taking an order back wakes him, and the banner says which");
 await (async () => {
   /* MEASURED 21 SEP 2026: the site has written the moment of every change since v694, the desk asked
