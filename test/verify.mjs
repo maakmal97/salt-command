@@ -19438,6 +19438,70 @@ await (async () => {
       "another tab holding the spent link is still told it has been used");
   } finally { stranger.W.close(); }
 })();
+section("S3 fix: Replace drops this phone's alerts for the account it replaced, and a phone re-remembering its own account keeps them");
+await (async () => {
+  /* F3 (24 Sep 2026). Replace dropped the old account's wrap on the site but named no endpoint, so a phone handed
+     over kept waking for the account it had replaced: its order news and the twice-daily chase. */
+  const { landingPage: lpP } = await import("../stmt/page.js");
+  const { endpointId } = await import("../stmt/push.js");
+  const CP = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDP } = await import("jsdom");
+  const uA = "aaaa-pppp", uB = "bbbb-pppp", passB = "2345-6789-abcd-efgh", ep = "https://push.example/ep-p", ckB = await CP.contentKey("8".repeat(64), uB);
+  const envB = await CP.encryptWith(ckB, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>B</p>" }] }));
+  const drive = async (stored, answer) => {
+    const st = { logout: null };
+    const store = new Map([["salt-stmt-remember", stored]]);
+    const dom = new JDP(lpP(uB, "nP", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+          register: async () => { throw new Error("not in this test"); },
+          getRegistration: async () => ({ pushManager: { getSubscription: async () => ({ endpoint: ep, unsubscribe: async () => true }) } }) } });
+        win.fetch = async (p, init) => {
+          const body = init && init.body ? JSON.parse(init.body) : null;
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/remember/open") return ans(500, { ok: false, error: "fault" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CP.wrapKey(passB, ckB), env: envB, live: null, prices: null, session: "sessPB00000000000000000000000" });
+          if (p === "/remember") return ans(200, { ok: true, token: "n".repeat(32), days: 30 });
+          if (p === "/logout") { st.logout = body; return ans(200, { ok: true }); }
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    await until(() => /could not be opened/.test(D.getElementById("msg").textContent));
+    D.getElementById("pw").value = passB;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !D.getElementById("askRep").hidden || !D.getElementById("barw").hidden);
+    if (answer && !D.getElementById("askRep").hidden) D.getElementById(answer).click();
+    await until(() => st.logout);
+    await new Promise((r) => setTimeout(r, 40));
+    W.close();
+    return st;
+  };
+  const oldA = JSON.stringify({ t: "a".repeat(32), k: Buffer.from("k".repeat(32)).toString("base64"), u: uA });
+  const rep = await drive(oldA, "askYes");
+  ok(!!rep.logout && rep.logout.token === "a".repeat(32) && rep.logout.endpoint === ep,
+    "Replace names this phone's endpoint beside the replaced account's token: " + JSON.stringify(rep.logout));
+  const sameB = await drive(JSON.stringify({ t: "c".repeat(32), k: "x", u: uB }), null);
+  ok(!!sameB.logout && sameB.logout.token === "c".repeat(32) && !sameB.logout.endpoint,
+    "the same account remembered afresh drops its old wrap and names no endpoint, so its own alerts stay: " + JSON.stringify(sameB.logout));
+
+  /* the site's half: that request drops the replaced account's record for this phone and leaves the new one's */
+  const kv = new KV(), env = { STMT: kv };
+  const idOf = async (t) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map((x) => x.toString(16).padStart(2, "0")).join("");
+  await kv.put("rem:" + (await idOf("a".repeat(32))), JSON.stringify({ u: uA, wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" }, at: new Date().toISOString() }));
+  const pA = "push:" + uA + ":" + (await endpointId(ep)), pB = "push:" + uB + ":" + (await endpointId(ep));
+  await kv.put(pA, JSON.stringify({ endpoint: ep })); await kv.put(pB, JSON.stringify({ endpoint: ep }));
+  const r = await stmtWorker.fetch(new Request("https://k7m3p2.example/logout", { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify(rep.logout) }), env);
+  ok(r.status === 200 && !(await kv.get(pA)) && !!(await kv.get(pB)),
+    "and on the site that drops the replaced account's alerts for this phone and leaves the new account's");
+})();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {
   /* S3, 24 SEP 2026. The door's one way in named its opener unseal, which stmt/owner.js already declared: spliced in

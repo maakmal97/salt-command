@@ -938,9 +938,14 @@ const CLIENT_JS = `
       if(r.ok&&j.ok&&j.token){
         var was=remGet();
         remSet({t:j.token, k:b64e(key), u:u});
-        /* S3 3.8: what this phone remembered before is gone from it, so its wrap goes from the site as well */
-        if(was&&was.t&&was.t!==j.token) fetch('/logout',{method:'POST', headers:{'content-type':'application/json'},
-          body:JSON.stringify({token:was.t})}).catch(function(){});
+        /* S3 3.8: what this phone remembered before is gone from it, so its wrap goes from the site as well; S3 fix: and,
+           for another account, this phone's alerts for it, or a phone handed over kept waking for the account it replaced */
+        if(was&&was.t&&was.t!==j.token){
+          var ep=null;
+          if(was.u!==u){ try{ var sub=await phoneSub(); ep=sub?sub.endpoint:null; }catch(e){} }
+          fetch('/logout',{method:'POST', headers:{'content-type':'application/json'},
+            body:JSON.stringify({token:was.t, endpoint:ep})}).catch(function(){});
+        }
       }
     }catch(e){ /* not remembered; the password still opens it */ }
   }
