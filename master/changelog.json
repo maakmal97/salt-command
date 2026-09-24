@@ -1,5 +1,14 @@
 [
  {
+  "v": "v841",
+  "d": "25 Sep 2026",
+  "t": "WHAT IS DUE, AND WHEN, SEALED WITH THE STATEMENT",
+  "n": [
+   "<b>STAGE 6, THE FIRST PART</b> (his answers D8, as he amended it, and D9 of 24 Sep 2026). The live statement now carries what is owed as the engine reads it: To pay now, each part due on its order date plus the desk's own credit term, soonest first; Overdue, the parts whose due day has passed; and Coming up, orders agreed but not yet handed over. Rows entered on the desk count as well as site orders; gifts, write-offs and cancelled orders count in none. Nothing draws them yet.",
+   "<b>A PAY LINK THAT OPENS AT THE RAIL AND THE AMOUNT.</b> stmt/pay.js gains payHref, which builds QR Command's #account/rail/amount/reference link for the two ways, Transfer and Scan a code, and never carries a number; QR Command (shipped first) opens that rail with the amount and the reference beside the code."
+  ]
+ },
+ {
   "v": "v840",
   "d": "25 Sep 2026",
   "t": "A GUEST KNOWS WHAT TO DO NEXT, AND THE WORD CHECKS READ MALAY",
