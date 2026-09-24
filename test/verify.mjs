@@ -16536,13 +16536,17 @@ await (async () => {
   /* ---- the Worker's lock ---- */
   const refused = ["Harga tahap emas minggu ini RM 150", "Peringkat perak dapat harga istimewa", "Ahli emas dapat harga istimewa",
     "Pelanggan gangsa: RM 170",
-    "HARGA EMAS naik", "Peringkat Platinum dibuka", "Kad titanium untuk anda"];
+    "HARGA EMAS naik", "Peringkat Platinum dibuka", "Kad titanium untuk anda",
+    /* 25 Sep 2026: a label's colon, a dash or a quote between, a "your" or "new", and the words for reward, now and up to */
+    "Tahap: Emas", "Tahap anda: Perak", 'Tahap "Emas" dibuka', "tahap-emas", "Level - Perak", "Kategori:Perak", "Status: Emas",
+    "Harga (emas)", "Keahlian Emas: harga istimewa untuk anda", "Tahniah, anda naik ke Emas!", "Pakej Gangsa kini dibuka",
+    "Ganjaran Emas untuk pelanggan setia", "Anda kini Emas!"];
   const passes = ["Penghantaran ke Ipoh, Perak setiap Selasa.", "Peluang emas: stok baru tiba minggu ini.",
     "Kedai tutup hari Jumaat, buka semula Isnin.", "Pesanan anda sudah sampai di Taiping, Perak.",
     "Garam baru tiba, minyak minggu depan.", "Terima kasih, sila bayar sebelum Jumaat.",
     /* 25 Sep 2026: Perak the state after a word for customer, price, class or status, Malay putting the place last */
     "Pelanggan Perak: penghantaran setiap Jumaat.", "Harga Perak sama seperti di KL.", "Ya, harga Perak termasuk penghantaran RM 15.",
-    "Kelas Perak bermula esok.", "Status Perak: dihantar.",
+    "Kelas Perak bermula esok.", "Status Perak: dihantar.", "Hantar naik ke Perak minggu depan.", "Tahap stok di Perak rendah minggu ini.",
     "\u8BF7\u5728\u94F6\u884C\u8F6C\u8D26\u540E\u544A\u8BC9\u6211\u91D1\u989D\u3002"];
   ok(refused.every((t) => /names a level/.test(siteWords(t))),
     "a level named in Malay is refused, after a word that says level, or member, customer or price before emas or gangsa: " + JSON.stringify(refused.filter((t) => !siteWords(t))));
@@ -16567,6 +16571,11 @@ await (async () => {
       + JSON.stringify(refused.filter((t) => !g(t).refuse).concat(passes.filter((t) => g(t).refuse))));
     ok(/level in Malay/.test(g("Penghantaran ke Ipoh, Perak setiap Selasa.").warn) && /level in Malay/.test(g("Emas RM 150").warn),
       "and a bare emas or perak warns, so he sees it before it goes");
+    const putToHim = ["Ahli Perak boleh ambil di Ipoh.", "Tahniah, anda naik ke Perak bulan ini.", "Emas dan Perak dibuka minggu ini.",
+      "Anda kini di Gangsa.", "Emas: RM 60 seunit, Perak: RM 70"];
+    ok(putToHim.every((t) => g(t).refuse || /level in Malay/.test(g(t).warn)),
+      "and every line naming a level in Malay that the lock cannot tell from the state or the metal is at least put to him: "
+      + JSON.stringify(putToHim.filter((t) => !g(t).refuse && !g(t).warn)));
     const prod = names.concat(MS_PRODUCTS).filter((p) => !/product in words/.test(g("Stok " + p + " baru tiba").warn) || g("Stok " + p + " baru tiba").refuse);
     ok(!prod.length, "every book's name and its Malay word warn on the desk and none is refused: " + JSON.stringify(prod));
     ok(!g("Kedai tutup hari Jumaat, buka semula Isnin.").warn && !g(passes[passes.length - 1]).warn,
