@@ -378,7 +378,9 @@ function bulletinBand(b) {
   const lines = (b && Array.isArray(b.lines)) ? b.lines : [];
   const mode = (b && b.mode === "change") ? "change" : "run";
   return '<div id="bull" class="bull" data-mode="' + mode + '"' + (lines.length ? "" : " hidden") + ' role="status" aria-live="polite">'
-    + '<div class="track" id="bullTrack">' + esc(mode === "run" ? lines.join("  ·  ") : (lines[0] || "")) + "</div></div>";
+    + '<div class="track" id="bullTrack">' + esc(mode === "run" ? lines.join("  ·  ") : (lines[0] || "")) + "</div>"
+    /* 24 Sep 2026: what a screen reader is told while the lines change, once, instead of a new line every four seconds */
+    + '<span class="sr" id="bullSr"></span></div>';
 }
 export function landingPage(user, nonce, owner, bulletin) {
   const u = esc(user || "");
@@ -553,18 +555,27 @@ const CLIENT_JS = `
   var BULL=__BULL__, bullI=0, bullTimer=null, bullN=0;
   function bullDraw(b){
     BULL=b||{lines:[],mode:'run'};
-    var box=document.getElementById('bull'), tr=document.getElementById('bullTrack'); if(!box||!tr) return;
+    var box=document.getElementById('bull'), tr=document.getElementById('bullTrack'), sr=document.getElementById('bullSr'); if(!box||!tr||!sr) return;
     var lines=BULL.lines||[]; box.hidden=!lines.length; box.setAttribute('data-mode',BULL.mode==='change'?'change':'run');
     if(bullTimer){ clearInterval(bullTimer); bullTimer=null; }
+    tr.removeAttribute('aria-hidden'); sr.textContent='';
     if(!lines.length){ tr.textContent=''; return; }
     if(BULL.mode==='change'){
-      bullI=0; tr.textContent=lines[0];
-      if(lines.length>1) bullTimer=setInterval(function(){ bullI=(bullI+1)%lines.length; tr.textContent=lines[bullI]; }, 4000);
+      /* 24 Sep 2026: UNDER REDUCED MOTION THE LINES STAND STILL, all of them at once, as running does. And while they
+         change, the changing line is hidden from the live region and every line is told to it once, so a screen
+         reader is not read a new line every four seconds. */
+      var still=lines.length<2||stillMotion();
+      bullI=0; tr.textContent=still?lines.join('  ·  '):lines[0];
+      if(!still){
+        tr.setAttribute('aria-hidden','true'); sr.textContent=lines.join('  ·  ');
+        bullTimer=setInterval(function(){ bullI=(bullI+1)%lines.length; tr.textContent=lines[bullI]; }, 4000);
+      }
     } else {
       var t=lines.join('  ·  '); tr.textContent=t;
       tr.style.animationDuration=Math.max(12, Math.round(t.length/6))+'s';
     }
   }
+  function stillMotion(){ try{ return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return false; } }
   async function bullRead(){
     try{
       var r=await fetch('/bulletin',{cache:'no-store'}); var j=await r.json();

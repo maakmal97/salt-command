@@ -19746,6 +19746,40 @@ await (async () => {
   } finally { w.close(); }
 })();
 
+section("24 Sep 2026: a changing bulletin stands still under reduced motion and is announced once");
+await (async () => {
+  /* L51 of the Counter study: the changing bulletin swapped its line every four seconds whatever the reader had asked
+     for, inside a role=status live region, so a screen reader was read a new line every four seconds for as long as
+     the page was open. Under prefers-reduced-motion the lines now stand still, all of them; otherwise the changing
+     line is hidden from the live region and every line is told to it once. The timer is captured, never waited for. */
+  const { landingPage: lpB } = await import("../stmt/page.js");
+  const { JSDOM: JDB } = await import("jsdom");
+  const lines = ["Closed Friday", "Open Saturday", "New sizes"];
+  const open = (reduce) => {
+    const timers = [];
+    const dom = new JDB(lpB("", "nl51", null, { lines, mode: "change" }), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      win.matchMedia = (q) => ({ matches: reduce && /prefers-reduced-motion:\s*reduce/.test(q), media: q, addListener() {}, removeListener() {} });
+      win.setInterval = (f, ms) => { if (ms === 4000) timers.push(f); return 900 + timers.length; };
+      win.fetch = async () => ({ ok: false, status: 404, json: async () => ({ ok: false }) });
+    } });
+    return { dom, d: dom.window.document, timers };
+  };
+  const still = open(true), moving = open(false);
+  try {
+    const trS = still.d.getElementById("bullTrack");
+    ok(still.timers.length === 0 && lines.every((l) => trS.textContent.includes(l)) && !trS.hasAttribute("aria-hidden"),
+      "under reduced motion no four-second timer is set and every line stands still in the band: " + JSON.stringify([still.timers.length, trS.textContent]));
+    const trM = moving.d.getElementById("bullTrack"), live = moving.d.getElementById("bull");
+    const told = () => [...live.childNodes].filter((n) => !(n.getAttribute && n.getAttribute("aria-hidden") === "true")).map((n) => n.textContent).join("");
+    const before = told();
+    ok(moving.timers.length === 1 && trM.textContent === "Closed Friday" && live.getAttribute("role") === "status",
+      "without it the lines still change, one at a time, in the live region: " + JSON.stringify([moving.timers.length, trM.textContent]));
+    moving.timers[0]();
+    ok(trM.textContent === "Open Saturday" && trM.getAttribute("aria-hidden") === "true" && told() === before && lines.every((l) => before.includes(l)),
+      "and what the live region is told is every line, once, and does not change when the line on screen does: " + JSON.stringify(before));
+  } finally { still.dom.window.close(); moving.dom.window.close(); }
+})();
+
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead
