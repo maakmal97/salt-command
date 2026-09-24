@@ -843,6 +843,13 @@ export default {
       if (r.ok && env.SALT_LEDGER) {
         const again = await againOf(env.SALT_LEDGER, r.orders.map((o) => o.id));
         for (const o of r.orders) if (again[o.id]) o.again = again[o.id];
+        /* and whether his Accept is given and not yet spent: its row being drafted (`waiting`), or waiting under Approve
+           because it came out other than he saw (`differs`); the card then offers no second Accept */
+        try {
+          const ys = await env.SALT_LEDGER.prepare("SELECT order_id,status FROM preapproval WHERE stage='ack' AND status IN ('waiting','differs')").all();
+          const yes = new Map((ys.results || []).map((y) => [y.order_id, y.status]));
+          for (const o of r.orders) if (yes.has(o.id)) o.yes = yes.get(o.id);
+        } catch (e) { /* a store before migrations/0011 has no yes to say */ }
       }
       return json(r, r.ok ? 200 : 503);
     }

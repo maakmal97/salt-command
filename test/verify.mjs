@@ -24929,6 +24929,57 @@ await (async () => {
   }
 })();
 
+section("S11 fix: an order whose Accept is given and waiting reads as that, never as a new order to accept again");
+await (async () => {
+  /* Found in review: an Accept whose row differed (or was still being drafted) left the order Placed, and the card drew it
+     as a brand-new order, Accept open and counted in Waiting on you and Today, while its row also counted under Approve.
+     GET /orders now says the yes is given (`yes`), and the card says where it waits and offers no second Accept. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the order list was not read against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const U1 = "abcd-efgh";
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: "CX1-AB" }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const a = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  const b = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit: 110, total: 110, week: "" })).order;
+  db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,status,at,draft_id) VALUES (?,?,?,?,?,?,?,?,?)")
+    .run(a.id + "|ack|x", a.id, U1, "ack", "h", "{}", "differs", "2026-09-24T01:00:00.000Z", "2026-09-24T01:00:00.001Z");
+  const r = await deskW.fetch(new Request("https://salt-command.example/orders", { headers: { "X-Salt-Key": "k-fixture" } }), denv, { waitUntil() {} });
+  const list = (await r.json()).orders || [];
+  const la = list.find((o) => o.id === a.id) || {}, lb = list.find((o) => o.id === b.id) || {};
+  ok(la.yes === "differs" && !("yes" in lb), "GET /orders says which order's Accept is given and waits: " + JSON.stringify({ a: la.yes, b: lb.yes }));
+
+  const { openMaster: omO2 } = await import("../tools/payload.mjs");
+  const { w } = await omO2();
+  try {
+    w.SALT_CLOUD = true;
+    w.setInterval = () => 94; w.clearInterval = () => {};
+    const D = w.document, box = D.createElement("div");
+    box.className = "ordgrid"; box.id = "ordBox"; D.body.appendChild(box);
+    const base = { u: U1, code: "CX1-AB", product: "salt", qty: 1, delivery: 0, paid: 0, moved: 0, mode: "collect", status: "placed", history: [], msgs: [], payments: [] };
+    w.eval("ORD_OPEN=" + JSON.stringify([Object.assign({}, base, { id: "y1", total: 100, at: "2026-09-24T01:00:00.000Z", yes: "differs" }),
+      Object.assign({}, base, { id: "n2", total: 110, at: "2026-09-24T02:00:00.000Z" })]) + ";ORD_SEL='y1';ordDraw();");
+    const card = D.querySelector('.ordcard[data-id="y1"]'), text = card ? card.textContent.replace(/\s+/g, " ") : "";
+    const kinds = JSON.parse(w.eval("JSON.stringify(ordActs().map(a=>a.kind+':'+a.o.id))"));
+    ok(card && !card.querySelector('button[data-ord="acknowledged"]') && /Your yes waits under Approve: the row came out other than you saw\./.test(text)
+      && JSON.stringify(kinds) === '["new:n2"]',
+      "the card says his yes waits under Approve, offers no second Accept, and only the other order is new: " + JSON.stringify({ kinds, text: text.slice(0, 200) }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 100));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one

@@ -547,7 +547,8 @@ entry, a new moment and so a new draft id, the rejected id being refused for goo
 Received or Cash received at the rejected figure) or `POST /orders/<id>/again {stage}` (pay, cash, move,
 cancel). The fresh entry keeps the move's figures and day, and is approved as it is drafted only if it
 equals what he was shown. Cash offered again never raises the order twice. `GET /orders` carries `again`,
-the stages each order has to offer, read off the drafts; a row dropped because they withdrew (11.10) is
+the stages each order has to offer, read off the drafts, and `yes` where his Accept is given and not yet spent
+(`waiting` or `differs`), when the card offers no second Accept and says where it waits; a row dropped because they withdrew (11.10) is
 not his rejection and offers nothing.
 
 **A withdrawal before the row is approved drops it** (S11 11.10). The customer withdraws while the
