@@ -14510,37 +14510,27 @@ function observations(){
   }
 
   /* ---------- CUSTOMERS ---------- */
-  /* PAST THEIR OWN CADENCE, not past a number somebody picked. A customer who buys weekly
+  /* PAST THEIR OWN HABIT, not past a number somebody picked. A customer who buys weekly
      and a customer who buys monthly are both silent at three weeks and only one of them
-     has gone quiet. */
-  const late=[];
-  cust.filter(approachable).forEach(c=>{   // v634: no message to a party written off, banned or departed, as the approach list
-    const rows=D.filter(s=>s.customer===c).sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
-    if(rows.length<3)return;
-    const gaps=[];for(let i=1;i<rows.length;i++)gaps.push((new Date(rows[i].date)-new Date(rows[i-1].date))/86400000);
-    gaps.sort((a,b)=>a-b);
-    const med=gaps.length%2?gaps[(gaps.length-1)/2]:(gaps[gaps.length/2-1]+gaps[gaps.length/2])/2;
-    if(!(med>0))return;
-    const since=dAge(rows[rows.length-1].date);
-    if(since>med*1.5&&since>=7){
-      const avg=obsDiv(rows.reduce((a,r)=>a+(+r.total||0),0),rows.length)||0;
-      /* HOW LONG THE RHYTHM ITSELF TOOK TO SET. Three orders inside one week give a median
-         gap of three days, and dividing a 38-day silence by that produces "15.2 times his
-         own rhythm", which is arithmetically true and reads as nonsense. The span is
-         carried so the card can say plainly that the rhythm came out of a short burst. */
-      const span=(new Date(rows[rows.length-1].date)-new Date(rows[0].date))/86400000;
-      late.push({c:c,med:med,since:since,avg:avg,n:rows.length,span:span,
-                 burst:span<14,over:+(since/med).toFixed(1)});
-    }
+     has gone quiet.
+     v824, HIS REPORT OF 24 SEP 2026: ONE ITEM A BOOK, READ OFF THE APPROACH BOARD'S SPLIT (approachSplit, per live book
+     through eachBook), so its count and its RM are the board's due now plus lapsing. It kept a rule of its own until then
+     (three orders, silent over 1.5 times the gap and a week) over every book's customers at once, valued at their average
+     order, and said a fourth number for the question the board, the Clients tile and To do each answered.
+     HOW LONG THE HABIT ITSELF TOOK TO SET. Three orders inside one week give a median gap of three days, and a 38-day
+     silence against that reads as fifteen times the habit, arithmetically true and nonsense. The span is carried so the
+     card can say plainly that the habit came out of a short burst. */
+  const pastBy=eachBook(()=>{const S=approachSplit();
+    return {S:{dueNow:S.dueNow.length,lapsing:S.lapsing.length,rm:+(S.dueRM+S.lapseRM).toFixed(2)},past:S.dueNow.concat(S.lapsing)};});
+  Object.keys(pastBy).forEach(p=>{const B=pastBy[p], past=B.past;
+    if(!past.length)return;
+    const span=x=>x.cad.gaps.reduce((a,g)=>a+g,0), burst=x=>span(x)<14;
+    const f=past.slice().sort((a,b)=>b.late-a.late)[0], nm=esc(PRODUCTS[p].name.toLowerCase());
+    add({id:'cust:cadence:'+p,fam:'customer',sev:'watch',conf:'measured',rm:B.S.rm,tab:'concentration',
+      title:`${past.length} ${past.length===1?'customer is':'customers are'} past their own habit on ${nm}`,
+      why:`${B.S.dueNow} due now and ${B.S.lapsing} lapsing, split as the Clients board splits them: due now is past their own date by up to twice their own usual gap, lapsing by more. ${ID(f.id)} is furthest out: ${f.late} days past a ${f.cad.med}-day habit${burst(f)?`, though that habit was cut from ${f.cad.n} orders inside ${span(f)} days, so it is the pace of one burst rather than a settled habit`:''}. Worth ${fmt0(B.S.rm)} of profit if each reorders their usual lot at their own price: what they have paid before, not a forecast that they will.`,
+      ev:past.slice(0,8).map(x=>`${ID(x.id)}: ${x.cad.n} orders over ${span(x)} days, ${x.cad.med}-day habit${burst(x)?' (one burst)':''}, ${x.late} days past it, ${x.lapse?'lapsing':'due now'}, worth ${fmt0(x.profit)}`)});
   });
-  if(late.length){
-    late.sort((a,b)=>b.avg*b.over-a.avg*a.over);
-    const rm=late.reduce((a,x)=>a+x.avg,0);
-    add({id:'cust:cadence',fam:'customer',sev:'watch',conf:'measured',rm:rm,tab:'concentration',
-      title:`${late.length} settled ${late.length===1?'customer is':'customers are'} past their own rhythm`,
-      why:`Each has bought at least three times, so the gap is theirs rather than a number picked for everybody. ${ID(late[0].c)} is furthest out: silent ${late[0].since} days against a ${late[0].med.toFixed(0)}-day rhythm${late[0].burst?`, though that rhythm was cut from ${late[0].n} orders inside ${late[0].span.toFixed(0)} days, so it is the pace of one burst rather than a settled habit and the multiple it implies means very little`:''}. Worth about ${fmt0(rm)} if each reorders at his usual size, which is the only claim being made: it is what they have paid before, not a forecast that they will.`,
-      ev:late.slice(0,8).map(x=>`${ID(x.c)}: ${x.n} orders over ${x.span.toFixed(0)} days, ${x.med.toFixed(0)}-day rhythm${x.burst?' (one burst)':''}, silent ${x.since} days, usually ${fmt0(x.avg)}`)});
-  }
   /* ONE AND DONE. The single most expensive pattern a young book can have and the one it
      is least likely to notice, because every first order looks like a success. */
   const once=cust.filter(c=>D.filter(s=>s.customer===c).length===1);
@@ -14612,14 +14602,15 @@ function observations(){
             `the board's own floors still apply: a promotion under floor is a loss with a name on it`]});
     }
   }
-  /* REVIVING THE QUIET NAMES, sized at what they have actually paid. */
-  if(late.length>=2){
-    const top=late.slice(0,3), rm=top.reduce((a,x)=>a+x.avg,0);
-    add({id:'promo:revive',fam:'promo',sev:'note',conf:'measured',rm:rm,tab:'concentration',
-      title:`Three messages are worth about ${fmt0(rm)} at their own usual sizes`,
-      why:`${top.map(x=>ID(x.c)).join(', ')} are the three furthest past their own rhythm weighted by what they usually spend. Nothing here needs a discount: they are lapsed rather than lost, they bought at a price they accepted, and the cost of asking is one message each.`,
-      ev:top.map(x=>`${ID(x.c)}: silent ${x.since} days on a ${x.med.toFixed(0)}-day rhythm, usually ${fmt0(x.avg)}`)});
-  }
+  /* REVIVING THE QUIET NAMES: v824, the most profit among the same split's due now and lapsing, per book, as above. */
+  Object.keys(pastBy).forEach(p=>{const past=pastBy[p].past;
+    if(past.length<2)return;
+    const top=past.slice().sort((a,b)=>b.profit-a.profit).slice(0,3), rm=+top.reduce((a,x)=>a+x.profit,0).toFixed(2);
+    add({id:'promo:revive:'+p,fam:'promo',sev:'note',conf:'measured',rm:rm,tab:'concentration',
+      title:`${top.length===3?'Three':'Two'} messages are worth about ${fmt0(rm)} on ${esc(PRODUCTS[p].name.toLowerCase())}`,
+      why:`${top.map(x=>ID(x.id)).join(', ')} are the ${top.length===3?'three':'two'} past their own habit with the most profit in their usual lot. Nothing here needs a discount: they bought at a price they accepted, and the cost of asking is one message each.`,
+      ev:top.map(x=>`${ID(x.id)}: ${x.late} days past a ${x.cad.med}-day habit, ${x.lapse?'lapsing':'due now'}, worth ${fmt0(x.profit)}`)});
+  });
 
   /* ---------- UPKEEP ---------- */
   /* THE PLUG. The count always wins, so this figure never moves a number; it is the size
@@ -16528,21 +16519,21 @@ function actions(){
      measured against a party's OWN median gap, so it is late by his habit rather than by the
      calendar. A party with one order has no habit and is not counted: the desk has always
      refused to hand him the book average and it is not starting here.
-     OUT OF AREA IS COUNTED SEPARATELY AND NAMED, never silently dropped. */
-  const quietAll=custStats().filter(x=>approachable(x.id))
-    .map(x=>{const cad=custCadence(x.id);
-      return cad?Object.assign({},x,{med:cad.med,late:dbet(x.last)-cad.med}):null;})
-    .filter(x=>x&&x.late>0);
-  const farQ=quietAll.filter(x=>{const pl=placeOf(x.id);return !!pl&&!inMetro(pl);});
-  const quiet=quietAll.filter(x=>farQ.indexOf(x)<0).sort((a,b)=>b.late-a.late);
+     v824, HIS REPORT OF 24 SEP 2026: THE ROW IS THE APPROACH BOARD'S DUE NOW AND LAPSING, read off approachSplit, so its
+     count and its RM are the board's. It read custStats with no bucket merged and summed nextBest per code, so it said a
+     different number from the page its button opens. A name that owes is not here: a chase comes before an offer, and the
+     debt is To do's chase row already. OUT OF AREA IS COUNTED, as the board counts it, and NAMED in the why; v257 left it
+     out of the count, which the board never did. */
+  const AS=approachSplit(), quiet=AS.dueNow.concat(AS.lapsing);
   if(quiet.length){
-    const worth=quiet.reduce((a,x)=>{const nb=nextBest(x.id);return a+(nb?nb.profit:0);},0);
-    const worst=quiet[0];
+    const worth=+(AS.dueRM+AS.lapseRM).toFixed(2);
+    const worst=quiet.slice().sort((a,b)=>b.late-a.late)[0];
+    const farQ=quiet.filter(x=>{const pl=placeOf(x.id);return !!pl&&!inMetro(pl);});
     add('watch','reconnect',
-      `${quiet.length} customer${quiet.length===1?'':'s'} past their own cadence`,
+      `${quiet.length} customer${quiet.length===1?'':'s'} past their own habit`,
       worth,
-      `${fmt0(worth)} at their own prices. Furthest: ${ID(worst.id)}, ${worst.late}d past a ${worst.med}d rhythm.`
-      +(farQ.length?` ${farQ.length} out of area, not counted (${farQ.map(x=>ID(x.id)).join(', ')}).`:''),
+      `${fmt0(worth)} of profit waiting: ${AS.dueNow.length} due now, ${AS.lapsing.length} lapsing. Furthest: ${ID(worst.id)}, ${worst.late}d past a ${worst.cad.med}d habit.`
+      +(farQ.length?` ${farQ.length} of them out of area: ${farQ.map(x=>ID(x.id)).join(', ')}.`:''),
       'concentration');
   }
   /* 8. rewards already earned and not yet handed over; v617: a departed associate's is held, so it is not a task */
@@ -17052,13 +17043,56 @@ function sortConc(k){if(concSort.key===k)concSort.dir*=-1;else{concSort.key=k;co
                   the next month's dates in a side panel as a count.
      TRIED ONCE   bought once, so no habit to put on a day; newest first, eight and a count. It was a
                   sentence pointing at the database at the foot of the page, which reads as missing.
-   An associate and their -R bucket are one person here (the 13 Sep ruling), so the approach list is
-   built on owner codes and a bucket's debt is added to its owner's. Every chip carries its RM: what is
-   owed on a chase, what the order would earn otherwise. Under 768px the grid gives way to a list by day.
+   The rows are approachSplit's (v824), which every other reader of the question reads too. Every chip
+   carries its RM: what is owed on a chase, what the order would earn otherwise. Under 768px the grid
+   gives way to a list by day.
 
    THE HIT RATE COUNTS A DUE DATE NOBODY CAME BACK FOR. Until v817 only an order that had a NEXT order
    could score, so a customer who never returned was left out of the denominator and the rate read high. */
-function approachBoard(approach,owedBy,bm){
+/* ============ WHO IS PAST THEIR OWN HABIT: ONE ANSWER (v824) ============
+   HIS REPORT OF 24 SEP 2026: "the same question answered differently on different pages; fix them all". Which customers are
+   past their own buying habit, and what they are worth, was answered four ways: this board's rows; the Clients tile and read,
+   counting everyone past their date, owing and lapsing names included; To do's row, off custStats with no bucket merged and
+   out-of-area names dropped; and the Whiteboard's own rule (three orders, silent over 1.5 times the gap) over every book at
+   once. This is the one split, for the book in view, and every one of those reads it:
+     chase    owes money, whatever the date, in the order Receivables chases (chaseOrder), so the first chip here is the
+              name its Chase first tile gives wherever that claim is on this book
+     dueNow   past their own date by up to twice their own median gap, by profit
+     lapsing  past it by MORE than twice the gap, by profit
+     soon     falls due from today to the end of the board's five weeks, by date; beyond, after it
+     once     one order, so no habit; newest first
+   An associate and their -R bucket are one person (the 13 Sep ruling): owner codes, nextBest(id,true), and a bucket's debt
+   is added to its owner's. A party written off, banned or departed is not approached. The RM sums are made here once, so
+   no reader adds its own. */
+function approachSplit(){
+  const MS=86400000, iso=d=>d.toISOString().slice(0,10), plus=(s,n)=>new Date(new Date(s).getTime()+n*MS);
+  const gS=new Date(TODAY.getTime()-((TODAY.getUTCDay()+6)%7)*MS), gE=new Date(gS.getTime()+34*MS);
+  const sum=(l,f)=>+l.reduce((a,x)=>a+f(x),0).toFixed(2);
+  const owedBy={};arList.forEach(s=>{owedBy[s.customer]=+((owedBy[s.customer]||0)+outstandingOf(s)).toFixed(2);});
+  const debtOf=id=>+((owedBy[id]||0)+(owedBy[id+POSITION_ENGINE.BUCKET_SFX]||0)).toFixed(2);
+  const approach=[...new Set(byCustomer().map(x=>POSITION_ENGINE.ownerCode(x.id)))]
+    .filter(approachable)
+    .map(id=>{const nb=nextBest(id,true);return nb?Object.assign({id},nb):null;})
+    .filter(Boolean)
+    .sort((a,b)=>{const ao=a.due==null?-1e9:a.due,bo=b.due==null?-1e9:b.due;
+      return (bo-ao)||(b.profit-a.profit);});
+  /* one forward due date per party: their own last order plus their OWN median gap; late is days past it */
+  const all=approach.map(r=>{const dd=r.cad&&r.cad.last?plus(r.cad.last,r.cad.med):null, late=dd?dbet(iso(dd)):null;
+    return Object.assign({},r,{debt:debtOf(r.id),dd,late,lapse:dd!=null&&late>2*r.cad.med});});
+  const claims=saleClaims(arList).sort(chaseOrder);
+  const rank=id=>{const i=claims.findIndex(c=>POSITION_ENGINE.ownerCode(c.who)===id);return i<0?1e9:i;};
+  const chase=all.filter(x=>x.debt>0.009).sort((a,b)=>rank(a.id)-rank(b.id));
+  const rest=all.filter(x=>!(x.debt>0.009));
+  const once=rest.filter(x=>!x.dd).sort((a,b)=>(a.since==null?1e9:a.since)-(b.since==null?1e9:b.since));
+  const late=rest.filter(x=>x.dd&&x.dd<TODAY);
+  const lapsing=late.filter(x=>x.lapse).sort((a,b)=>b.profit-a.profit);
+  const dueNow=late.filter(x=>!x.lapse).sort((a,b)=>b.profit-a.profit);
+  const soon=rest.filter(x=>x.dd&&x.dd>=TODAY&&x.dd<=gE).sort((a,b)=>a.dd-b.dd);
+  const beyond=rest.filter(x=>x.dd&&x.dd>gE).sort((a,b)=>a.dd-b.dd);
+  return {approach,owedBy,gS,gE,chase,dueNow,lapsing,soon,beyond,once,
+    chaseRM:sum(chase,x=>x.debt),dueRM:sum(dueNow,x=>x.profit),lapseRM:sum(lapsing,x=>x.profit),beyondRM:sum(beyond,x=>x.profit)};
+}
+function approachBoard(S,bm){
   const MS=86400000, MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
   const WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const iso=d=>d.toISOString().slice(0,10);
@@ -17068,22 +17102,10 @@ function approachBoard(approach,owedBy,bm){
   const y=TODAY.getUTCFullYear(), m=TODAY.getUTCMonth();
   const mS=new Date(Date.UTC(y,m,1));
   const pS=new Date(Date.UTC(y,m-1,1)), pE=new Date(Date.UTC(y,m,0));
-  const gS=new Date(TODAY.getTime()-((TODAY.getUTCDay()+6)%7)*MS), gE=new Date(gS.getTime()+34*MS);
   const within=(d,a,b)=>d>=a&&d<=b;
-  const sum=(l,f)=>+l.reduce((a,x)=>a+f(x),0).toFixed(2);
-  const debtOf=id=>+((owedBy[id]||0)+(owedBy[id+POSITION_ENGINE.BUCKET_SFX]||0)).toFixed(2);
-  /* one forward due date per party: their own last order plus their OWN median gap */
-  const all=approach.map(r=>Object.assign({},r,{debt:debtOf(r.id),dd:r.cad&&r.cad.last?plus(r.cad.last,r.cad.med):null}));
-  const lateBy=x=>dbet(iso(x.dd));                    // positive means already past
-  const lapses=x=>x.dd!=null&&lateBy(x)>2*x.cad.med;
-  const chase=all.filter(x=>x.debt>0.009).sort((a,b)=>b.debt-a.debt);
-  const rest=all.filter(x=>!(x.debt>0.009));
-  const once=rest.filter(x=>!x.dd).sort((a,b)=>(a.since==null?1e9:a.since)-(b.since==null?1e9:b.since));
-  const late=rest.filter(x=>x.dd&&x.dd<TODAY);
-  const lapsing=late.filter(lapses).sort((a,b)=>b.profit-a.profit);
-  const dueNow=late.filter(x=>!lapses(x)).sort((a,b)=>b.profit-a.profit);
-  const soon=rest.filter(x=>x.dd&&within(x.dd,TODAY,gE)).sort((a,b)=>a.dd-b.dd);
-  const beyond=rest.filter(x=>x.dd&&x.dd>gE).sort((a,b)=>a.dd-b.dd);
+  const {approach,gS,gE,chase,dueNow,lapsing,soon,beyond,once}=S;
+  const lateBy=x=>x.late;                              // positive means already past
+  const lapses=x=>x.lapse;
   /* DID THE CADENCE ACTUALLY PREDICT ANYTHING? Replayed from the order dates themselves: every order
      implies a due date at that order plus the party's median gap, and it was MET if their next order
      landed on or before it. A due date already past with no next order is a miss. */
@@ -17138,9 +17160,9 @@ function approachBoard(approach,owedBy,bm){
   };
   const names=n=>`${n} name${n===1?'':'s'}`;
   const row=(k,title,list)=>list.length?`<div class="aprh ${k}">${title}</div><div class="aprail">${list.map(x=>chip(x,'L')).join('')}</div>`:'';
-  const rail=row('apch',`Chase first &middot; ${names(chase.length)} &middot; ${fmt0(sum(chase,x=>x.debt))} owed`,chase)
-    +row('apdue',`Due now &middot; ${names(dueNow.length)} &middot; ${fmt0(sum(dueNow,x=>x.profit))} of profit waiting`,dueNow)
-    +row('aplp',`Lapsing &middot; ${names(lapsing.length)} &middot; ${fmt0(sum(lapsing,x=>x.profit))} to win back`,lapsing);
+  const rail=row('apch',`Chase first &middot; ${names(chase.length)} &middot; ${fmt0(S.chaseRM)} owed`,chase)
+    +row('apdue',`Due now &middot; ${names(dueNow.length)} &middot; ${fmt0(S.dueRM)} of profit waiting`,dueNow)
+    +row('aplp',`Lapsing &middot; ${names(lapsing.length)} &middot; ${fmt0(S.lapseRM)} to win back`,lapsing);
   /* five weeks, Monday first, from this week's Monday; a day before today is dimmed and empty */
   const byDay={}; soon.forEach(x=>{const k=iso(x.dd);(byDay[k]=byDay[k]||[]).push(x);});
   let cells='';
@@ -17187,7 +17209,7 @@ function approachBoard(approach,owedBy,bm){
       :`<div style="font-size:12px;color:var(--grn);margin-bottom:9px">Nobody owes and nobody is past their own date.</div>`}
       <div class="apgrid">${dow}${cells}</div>
       <div class="aplist">${list}</div>
-      ${beyond.length?`<div style="font-size:11px;color:var(--mut);margin-top:9px">${names(beyond.length)} fall due after ${short(gE)}, worth ${fmt0(sum(beyond,x=>x.profit))}; first is <b class="mono">${codeOf(beyond[0].id)}</b> on the ${ord(beyond[0].dd.getUTCDate())} of ${MON[beyond[0].dd.getUTCMonth()]}.</div>`:''}
+      ${beyond.length?`<div style="font-size:11px;color:var(--mut);margin-top:9px">${names(beyond.length)} fall due after ${short(gE)}, worth ${fmt0(S.beyondRM)}; first is <b class="mono">${codeOf(beyond[0].id)}</b> on the ${ord(beyond[0].dd.getUTCDate())} of ${MON[beyond[0].dd.getUTCMonth()]}.</div>`:''}
       ${once.length?`<div class="aprh apon">Tried once &middot; ${names(once.length)}, newest first</div><div class="aprail">${once.slice(0,ONCE).map(x=>chip(x,'L')).join('')}${once.length>ONCE?`<span style="align-self:center;font-size:11px;color:var(--mut)">and ${once.length-ONCE} more in the database at the foot of this part</span>`:''}</div>`:''}
     </div>
   </div>`;
@@ -17251,20 +17273,15 @@ function tabConcentration(){
      underneath it, which meant the first thing on screen was the raw data and the last
      thing was what it meant. Reversed here: what the book is telling him leads, the
      charts carry the shape, and the table sits at the foot for looking a name up. */
-  /* v817: a bucket folds into its associate, so one person is one name on the board and in the tiles */
-  const approach=[...new Set(c.bc.map(x=>POSITION_ENGINE.ownerCode(x.id)))]
-    .filter(approachable)
-    .map(id=>{const nb=nextBest(id,true);return nb?Object.assign({id},nb):null;})
-    .filter(Boolean)
-    .sort((a,b)=>{const ao=a.due==null?-1e9:a.due,bo=b.due==null?-1e9:b.due;
-      return (bo-ao)||(b.profit-a.profit);});
-  const owedBy={};arList.forEach(s=>{owedBy[s.customer]=+((owedBy[s.customer]||0)+outstandingOf(s)).toFixed(2);});
+  /* v824: the board, the tile and both insights read ONE split (approachSplit), so the page answers who is past their own
+     habit once. The tile counted everyone past their date until then, owing and lapsing names included (7 against the
+     board's 3 due now), and the owing line listed every code with a debt, bucket and associate apart. */
+  const S=approachSplit();
   /* Bounded at three codes plus a count, so a book with thirty debtors cannot push this
      insight past the trim threshold and lose the sentence that names the action. */
-  const owes=Object.keys(owedBy);
+  const owes=S.chase.map(x=>x.id);
   const thin=c.bc.filter(x=>x.rev>0&&x.margin/x.rev<0.20);
-  const overdue=approach.filter(r=>r.due!=null&&r.due>0);
-  const overdueRM=+overdue.reduce((a,r)=>a+r.profit,0).toFixed(2);
+  const nDue=S.dueNow.length, nLapse=S.lapsing.length;
   /* how few names carry 80% of the book: the concentration question stated as a count
      rather than as an index nobody reads intuitively */
   let run=0,to80=0;
@@ -17280,8 +17297,11 @@ function tabConcentration(){
      So it is ONE short sentence naming the single thing to act on, and it is deliberately
      kept short. The four findings it used to restate are the five tiles directly above it,
      which is where they belong; a block that repeats the strip beside it earns nothing. */
-  const read=overdue.length
-    ? `<b>${overdue.length}</b> ${overdue.length===1?'buyer is':'buyers are'} past their own habit, worth <b>${fmt0(overdueRM)}</b>. That is a message, not a decision.`
+  const are=n=>n===1?'buyer is':'buyers are';
+  const read=nDue+nLapse
+    ? (nDue?`<b>${nDue}</b> ${are(nDue)} due now on their own habit, worth <b>${fmt0(S.dueRM)}</b>`
+        :`<b>${nLapse}</b> ${are(nLapse)} lapsing on their own habit, worth <b>${fmt0(S.lapseRM)}</b>`)
+      +(nDue&&nLapse?`, and <b>${nLapse}</b> lapsing, worth <b>${fmt0(S.lapseRM)}</b>`:'')+'.'
     : thin.length
     ? `<b>${thin.length}</b> customer${thin.length===1?'':'s'} under a 20% margin: the same ${PRODUCTS[PROD].name.toLowerCase()} earns more elsewhere on this book.`
     : `Nobody is past their own habit and nobody is under a 20% margin.`;
@@ -17330,7 +17350,7 @@ function tabConcentration(){
     <div class="kpi salt-kpi ${risk==='high'?'r':risk==='moderate'?'gold':'g'}"><div class="l salt-kpi__label">Concentration</div><div class="v salt-kpi__value" style="color:${riskCol}">${c.hhi.toFixed(0)}</div><div class="n salt-kpi__note">${risk} on the Herfindahl over ${c.n} buyers; ${c.hhi>2500?'widen the base before growing the top':'no single lapse decides the month'}</div></div>
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Carry 80% of revenue</div><div class="v salt-kpi__value">${to80}</div><div class="n salt-kpi__note">of ${c.n} names; top is ${topName} at ${c.top.toFixed(0)}%</div></div>
     <div class="kpi salt-kpi ${thin.length?'r':'g'}"><div class="l salt-kpi__label">Thin margin</div><div class="v salt-kpi__value">${thin.length}</div><div class="n salt-kpi__note">${thin.length?'under 20%: '+thin.slice(0,3).map(x=>codeOf(x.id)).join(', ')+(thin.length>3?'…':''):'nobody under 20%'}</div></div>
-    <div class="kpi salt-kpi ${overdue.length?'gold':'g'}"><div class="l salt-kpi__label">Overdue on habit</div><div class="v salt-kpi__value">${overdue.length}</div><div class="n salt-kpi__note">${overdue.length?fmt0(overdueRM)+' of profit waiting':'everyone inside their own cadence'}</div></div>
+    <div class="kpi salt-kpi ${nDue?'gold':'g'}"><div class="l salt-kpi__label">Due now</div><div class="v salt-kpi__value">${nDue}</div><div class="n salt-kpi__note">${nDue+nLapse+S.chase.length?[nDue?fmt0(S.dueRM)+' of profit waiting':'nobody due',[nLapse?nLapse+' lapsing':'',S.chase.length?S.chase.length+' owe first':''].filter(Boolean).join(', ')].filter(Boolean).join('; '):'everyone inside their own habit'}</div></div>
     <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Bought once only</div><div class="v salt-kpi__value">${single}</div><div class="n salt-kpi__note">${single?'no habit yet, so no cadence to read':'every buyer has repeated'}</div></div>
   </div>
   <!-- v385: THESE WERE ONE INSIGHT AND IT WAS 130 CHARACTERS AGAINST A LIMIT OF 140. The
@@ -17344,7 +17364,7 @@ function tabConcentration(){
   ${owes.length?`<div class="insight salt-insight" style="margin-top:4px;color:var(--mut)">${owes.slice(0,3).map(ID).join(', ')}${owes.length>3?` and ${owes.length-3} more`:''} owe${owes.length===1?'s':''} money; a chase comes before an offer.</div>`:''}
 
   <h2 style="margin-top:18px">Who to approach next <span class="rule"></span></h2>
-  ${approach.filter(r=>r.cad&&r.cad.last).length?approachBoard(approach,owedBy,bm)
+  ${S.approach.filter(r=>r.cad&&r.cad.last).length?approachBoard(S,bm)
     :'<div class="card"><table><tbody><tr><td class="l" style="color:var(--dim)">No customer has two priced orders yet, so there is no habit to read and nothing to place on a calendar.</td></tr></tbody></table></div>'}
 
   <div style="margin-top:16px">${crCard}</div>
@@ -21728,11 +21748,16 @@ function obClaims(){
      v634, HIS INSTRUCTION OF 14 SEP 2026: "Write-off defaulted entries". A written-off claim is off this list altogether,
      since txAdvance reads nothing owed on a defaulted sale, as a written-off supplier receivable already was; the card
      reads the write-offs from the rows that carry them. */
-  const row=(who,date,g,pr)=>{const d=dAge(date);return {who:who,d:d,g:+(+g).toFixed(2),pr:pr,n:+(g*(1-pr)).toFixed(2)};};
-  return sales.filter(s=>txAdvance(s)>0.009).map(s=>row(s.customer,s.date,txAdvance(s),saleProvRate(s,dAge(s.date))))
-    .concat(sr?[row(sr.party,sr.since,sr.amount,provRate(dAge(sr.since)))]:[])
-    .sort((a,b)=>b.d-a.d||b.g-a.g);
+  return saleClaims(sales)
+    .concat(sr?[claimRow(sr.party,sr.since,sr.amount,provRate(dAge(sr.since)))]:[])
+    .sort(chaseOrder);
 }
+/* v824: THE ORDER A DEBT IS CHASED IN, the one rule behind every "Chase first" on the desk: the oldest claim first, the
+   larger on a tie. The Receivables tile names the first claim; the approach board (approachSplit) ranks a person by their
+   first claim in the same order. The board led with the largest debt until then, so the two named different people. */
+function chaseOrder(a,b){return b.d-a.d||b.g-a.g;}
+function claimRow(who,date,g,pr){const d=dAge(date);return {who:who,d:d,g:+(+g).toFixed(2),pr:pr,n:+(g*(1-pr)).toFixed(2)};}
+function saleClaims(list){return list.filter(s=>txAdvance(s)>0.009).map(s=>claimRow(s.customer,s.date,txAdvance(s),saleProvRate(s,dAge(s.date))));}
 function consoOrderBlock(){
   /* v557: the oldest claim that can still be worked, not the oldest claim. `wo` is what has been
      written off, so the card can say what became of the money rather than printing a dash. */
