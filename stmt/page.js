@@ -107,6 +107,11 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .ototal .salt-kpi__value{margin-top:0}
 .ototal .sub2{display:block;margin-top:2px}
 .osheet .salt-sheet__foot .msg{flex:1 1 100%;margin:0}
+.szrow{display:block;width:100%;min-height:52px;padding-left:0;padding-right:0;background:none;border-style:none none solid;
+  font:inherit;color:inherit;text-align:left;cursor:pointer}
+.szrow:last-child{border-bottom-style:none}
+.szrow:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
+.ochev{flex:0 0 auto;color:var(--salt-prose)}
 .osent{text-align:center}
 .otick{display:block;margin:4px auto 10px;color:var(--salt-verdigris)}
 .obuzz > * + *{margin-top:10px}
@@ -1182,6 +1187,12 @@ const CLIENT_JS = `
     return h<12?'Good morning.':(h<18?'Good afternoon.':'Good evening.');
   }
   var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  /* S4 4.8: a moment as the Prices stamp says it, "Thu 24 Sep, 11:59", in Kuala Lumpur; the weekday from the date's own parts */
+  var DAY3=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  function pricesAt(iso){
+    try{ var p=klBits(iso); return DAY3[new Date(Date.UTC(+p.year,+p.month-1,+p.day)).getUTCDay()]+' '+(+p.day)+' '+MON3[+p.month-1]+', '+p.hour+':'+p.minute; }
+    catch(e){ return ''; }
+  }
   function monthOf(d){
     var m=/^(\\d{4})-(\\d{2})/.exec(String(d||'')); if(!m) return '';
     return MONTHS[+m[2]-1]+' '+m[1];
@@ -1199,7 +1210,12 @@ const CLIENT_JS = `
       pPrices.appendChild(el('p','lead','No price list has been written for your account yet. It is written with the next update and changes weekly.'));
       return;
     }
-    pPrices.appendChild(el('p','lead','For the week of '+(prices.week&&prices.week.label||'')+'. The price is for the goods; if you ask for delivery, the charge is set when your order is acknowledged, and you see it then. The list is written from your own history and changes weekly.'));
+    /* S4 4.8: THE STAMP SAYS WHEN THE LIST WAS WRITTEN, "Prices as at Thu 24 Sep, 11:59" in Kuala Lumpur, where "for the week
+       of" stayed on an open page for good; a list sealed before it carried a time keeps its week. Every size is a tap. */
+    var tapTo=!view&&!hold;
+    pPrices.appendChild(el('p','lead',(prices.at&&pricesAt(prices.at)?'Prices as at '+pricesAt(prices.at)+'.':'For the week of '+(prices.week&&prices.week.label||'')+'.')
+      +(tapTo?' Tap a size to order it.':'')));
+    pPrices.appendChild(el('p','lead','The price is for the goods; if you ask for delivery, the charge is set when your order is acknowledged, and you see it then. The list is written from your own history and changes weekly.'));
     if(prices.since) pPrices.appendChild(el('p','sub2','Buying with us since '+monthOf(prices.since)+'.'));
     sold().forEach(function(p){
       var pane=el('div','pane');
@@ -1224,17 +1240,17 @@ const CLIENT_JS = `
         : p.basis==='yours'
         ? 'Your rate: '+rm(p.rate)+' per '+(p.unit||'unit')+', from your last '+p.orders+' order'+(p.orders===1?'':'s')+'. '
         : 'Your own rate follows your first order. '));
-      var t=el('table'), th=el('thead'), tr=el('tr');
-      [['Size','l'],['Price','']].forEach(function(c){ var x=el('th',c[1]||null,c[0]); tr.appendChild(x); });
-      th.appendChild(tr); t.appendChild(th);
-      var tb=el('tbody');
+      /* S4 4.8: a size is a row of the plain ledger, and each row is one tap that opens the order sheet at that size */
+      var L=el('div','salt-ledger salt-ledger--plain');
       p.sizes.forEach(function(r){
-        var row=el('tr');
-        row.appendChild(el('td','l',unitsOf(r.q,p.unit)));
-        row.appendChild(el('td',null,rm(r.price)));
-        tb.appendChild(row);
+        var row=el(tapTo?'button':'div','salt-ledger__row szrow'), line=el('span','salt-ledger__line');
+        line.appendChild(el('span','salt-ledger__label',unitsOf(r.q,p.unit)));
+        var v=el('span','salt-ledger__value',rm(r.price)); line.appendChild(v); row.appendChild(line);
+        if(tapTo){ row.type='button'; row.setAttribute('data-q',String(r.q)); v.appendChild(glyph('next','ochev'));
+          row.addEventListener('click',function(){ sheetOpen(p.product,r.q,row); }); }
+        L.appendChild(row);
       });
-      t.appendChild(tb); pane.appendChild(t); pPrices.appendChild(pane);
+      pane.appendChild(L); pPrices.appendChild(pane);
     });
     /* his instruction of 15 Sep 2026: a product with no tier set is not priced, and says so */
     soon.forEach(function(p){

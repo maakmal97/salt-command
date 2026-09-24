@@ -12877,7 +12877,7 @@ await (async () => {
       const sh = d.getElementById("osheet");
       return { prices: d.getElementById("pPrices").textContent, order: d.getElementById("pOrder").textContent + " " + (sh ? sh.textContent : ""),
         marks: [...d.querySelectorAll("#pPrices h3.pmark")].map((h) => h.getAttribute("aria-label")),
-        priced: [...d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector("table")).length,
+        priced: [...d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector(".salt-ledger .szrow")).length,
         products: [...d.querySelectorAll("#osheet button[aria-pressed][aria-label]")].map((b) => b.getAttribute("aria-label")),
         orderable: !!nw && !!d.querySelector('#osheet input[name="osize"]') };
     } finally { dom.window.close(); }
@@ -13435,6 +13435,62 @@ await (async () => {
     ok(who(B.d) === null && !/Who is it for/.test(B.d.getElementById("osheet").textContent) && !B.d.getElementById("oGo").disabled,
       "a customer who is not an associate is never asked");
   } finally { B.w.close(); }
+})();
+section("S4 4.8: every size on Prices opens the order sheet at that size, and the list says Prices as at its moment");
+await (async () => {
+  /* HIS "ALL RECOMMENDED" OF 24 SEP 2026. The size was found twice, once on Prices and again in the form's dropdown; a size
+     row is one tap now, straight to the sheet at that size. And "For the week of" stayed on an open page for good, so the
+     list says when it was written, in Kuala Lumpur, a list with no moment keeping its week. */
+  const { landingPage: lpP } = await import("../stmt/page.js");
+  const CP = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcP } = await import("node:crypto");
+  const { JSDOM: JDP } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s48", ck = await CP.contentKey("test-secret", u);
+  const list = (at) => Object.assign(at ? { at } : {}, { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }, { q: 2, price: 190 }] },
+      { product: "oil", unit: "unit", basis: "board", tier: null, sizes: [{ q: 1, price: 45 }, { q: 3, price: 120 }] }] });
+  const drive = async (l) => {
+    const body = { ok: true, wrap: await CP.wrapKey(pass, ck), session: "sess-s48", prices: await CP.encryptWith(ck, JSON.stringify(l)),
+      env: await CP.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+    const dom = new JDP(lpP(u, "ns48", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcP, configurable: true }); } catch (e) { win.crypto = wcP; }
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: [] } : null;
+        return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.querySelector("#pPrices .szrow"); i++) await new Promise((r) => setTimeout(r, 30));
+    return { w, d, lead: [...d.querySelectorAll("#pPrices p.lead")].map((p) => p.textContent) };
+  };
+  /* 03:59 UTC is 11:59 in Kuala Lumpur on Thursday; 16:05 UTC the same day is already Friday there */
+  const A = await drive(list("2026-09-24T03:59:00Z"));
+  try {
+    const { w, d, lead } = A;
+    ok(lead.includes("Prices as at Thu 24 Sep, 11:59. Tap a size to order it.") && !lead.some((t) => /week of/.test(t)),
+      "the list says when it was written, in Kuala Lumpur, and that a size is a tap: " + JSON.stringify(lead.slice(1, 2)));
+    const rows = [...d.querySelectorAll("#pPrices .szrow")];
+    ok(rows.length === 4 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-ledger__row"))
+      && rows.map((r) => r.textContent).join("|") === "1 unitRM 100|2 unitsRM 190|1 unitRM 45|3 unitsRM 120",
+      "every size is a row of the plain ledger, and each row is a button: " + JSON.stringify(rows.map((r) => r.textContent)));
+    rows[3].click();
+    const sh = d.getElementById("osheet");
+    const on = sh ? [...sh.querySelectorAll('input[name="osize"]')].filter((r) => r.checked).map((r) => r.value) : [];
+    const prod = sh ? [...sh.querySelectorAll("button[aria-pressed][aria-label]")].filter((b) => b.getAttribute("aria-pressed") === "true").map((b) => b.getAttribute("aria-label")) : [];
+    ok(!!sh && on.join() === "3" && prod.join() === "Droplet" && /^RM 120/.test(sh.querySelector(".salt-sheet__foot").textContent),
+      "a tap on a size opens the order sheet on that product at that size: " + JSON.stringify({ on, prod }));
+    void w;
+  } finally { A.w.close(); }
+  const B = await drive(list("2026-09-24T16:05:00Z"));
+  try { ok(B.lead.includes("Prices as at Fri 25 Sep, 00:05. Tap a size to order it."), "the day is Kuala Lumpur's, past its midnight: " + JSON.stringify(B.lead[1])); }
+  finally { B.w.close(); }
+  const E = await drive(list(null));
+  try { ok(E.lead.includes("For the week of 21 to 27 Sep 2026. Tap a size to order it."), "a list sealed with no moment keeps its week: " + JSON.stringify(E.lead[1])); }
+  finally { E.w.close(); }
 })();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {
@@ -15667,7 +15723,7 @@ await (async () => {
       for (let i = 0; i < 200 && !D.querySelector("#pOrder .pane") && !errs.length && !D.getElementById("msg").textContent.includes("could not"); i++) await new Promise((r) => setTimeout(r, 50));
       await new Promise((r) => setTimeout(r, 50));
       return { errs: errs.slice(), out: D.getElementById("out").textContent, gate: D.getElementById("gate").hidden, msg: D.getElementById("msg").textContent,
-        prices: !!D.querySelector("#pPrices table"), review: !!D.getElementById("oNew") };
+        prices: !!D.querySelector("#pPrices .szrow"), review: !!D.getElementById("oNew") };
     } finally { try { W.close(); } catch (e) { /* best effort */ } }
   };
   try {
@@ -16764,7 +16820,7 @@ await (async () => {
       && segOf95().find((b) => b.getAttribute("aria-pressed") === "true").getAttribute("aria-label") === ["Cube", "Droplet"][1 - on95],
       "and a tap moves it");
     /* a product waiting for its price is a mark too, not a name */
-    const soon95 = [...d95.querySelectorAll("#pPrices .pane")].filter((x) => !x.querySelector("table"));
+    const soon95 = [...d95.querySelectorAll("#pPrices .pane")].filter((x) => !x.querySelector(".szrow"));
     ok(soon95.length === 1 && soon95[0].querySelector("h3.pmark svg.psym")
       && soon95[0].querySelector("h3.pmark").getAttribute("aria-label") === "Ring"
       && /Price coming soon\./.test(soon95[0].textContent),
@@ -24155,8 +24211,8 @@ await (async () => {
       && sizes.join() === "1" && !d.querySelector("#osheet button[aria-pressed][aria-label]"),
       "the Order tab draws: the order sheet offers the one product with a price, and Notifications and their order are there: " + JSON.stringify({ sizes, thrown }));
     const pp = d.getElementById("pPrices");
-    ok(/Price coming soon\./.test(pp.textContent) && pp.querySelectorAll("table").length === 1,
-      "and Prices says coming soon for the one with no size rather than drawing an empty table");
+    ok(/Price coming soon\./.test(pp.textContent) && pp.querySelectorAll(".salt-ledger").length === 1,
+      "and Prices says coming soon for the one with no size rather than drawing an empty list");
   } finally { process.off("unhandledRejection", onRej); w.close(); }
 })();
 

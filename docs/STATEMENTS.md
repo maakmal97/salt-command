@@ -375,7 +375,9 @@ confirmed?", put only by the tap on Turn on notifications (the ask on the way in
 closes the sheet on the order. **Five open orders are said before the form** (S4 4.6; `MAX_OPEN` is exported from
 `stmt/orders.js` and carried into the page, the Worker still the one that refuses): the Order tab says so in place of
 New order, and the sheet opens on the open orders, Cancel on each whose goods have not moved, going on to the form once
-one is gone; a refusal those orders explain turns the sheet to the same list.
+one is gone; a refusal those orders explain turns the sheet to the same list. **Every size on Prices is one tap to
+the sheet at that size** (S4 4.8, rows of the plain ledger), and the list says **"Prices as at Thu 24 Sep, 11:59"**
+in Kuala Lumpur off its own `at`; a list sealed without one keeps "For the week of".
 
 **A RETRY LANDS ONCE** (24 Sep 2026). Every move the page sends carries a request id it mints per
 tap (per review, per payment, per line, per withdrawal, per rail; S10 10.4), kept with that move until
