@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
+import { listOrders, listClaims, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -849,7 +849,8 @@ export default {
     }
     if (p === "/orders") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-      const r = await listOrders(env, url.searchParams.get("all") === "1");
+      /* S9 9.8: the page's own read carries the count of associate links waiting in Salt Admin */
+      const r = await listOrders(env, url.searchParams.get("all") === "1", true);
       /* S6 6.6: and the claims against accounts beside them, each on a card of its own; a site that cannot say leaves none */
       if (r.ok) { const c = await listClaims(env, url.searchParams.get("all") === "1"); r.claims = c.ok ? c.claims : []; if (!c.ok) r.claimsUnread = c.error; }
       /* S11 11.13: and what each has to offer again, a row he rejected, read off the drafts; the desk's alone */
@@ -865,6 +866,14 @@ export default {
         } catch (e) { /* a store before migrations/0011 has no yes to say */ }
       }
       return json(r, r.ok ? 200 : 503);
+    }
+    /* S9 9.8 FIX: the desk's page tells Salt Admin what waits here, its own Waiting on you count (tellWaiting) */
+    if (p === "/orders/waiting") {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b = {};
+      try { b = await request.json(); } catch { b = {}; }
+      const r = await tellWaiting(env, b && b.n, b && b.age);
+      return json(r, r.ok ? 200 : (r.status || 502));
     }
     /* S11: THE CARD'S OWN ROUTES, by the order's id alone. An order id is minted digits and letters with a
        dash (mintOrderId) and is never one of these words, so they are read before a move `/orders/<u>/<id>`. */

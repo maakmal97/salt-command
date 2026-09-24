@@ -8327,7 +8327,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v841","d":"25 Sep 2026","t":"WHAT IS DUE, AND WHEN, SEALED WITH THE STATEMENT","n":["<b>STAGE 6, THE FIRST PART</b> (his answers D8, as he amended it, and D9 of 24 Sep 2026). The live statement now carries what is owed as the engine reads it: To pay now, each part due on its order date plus the desk's own credit term, soonest first; Overdue, the parts whose due day has passed; and Coming up, orders agreed but not yet handed over. Rows entered on the desk count as well as site orders; gifts, write-offs and cancelled orders count in none. Nothing draws them yet.","<b>A PAY LINK THAT OPENS AT THE RAIL AND THE AMOUNT.</b> stmt/pay.js gains payHref, which builds QR Command's #account/rail/amount/reference link for the two ways, Transfer and Scan a code, and never carries a number; QR Command (shipped first) opens that rail with the amount and the reference beside the code."]}];
+const evolution=[{"v":"v844","d":"25 Sep 2026","t":"ORDERING IS A SHEET, AND A MOVED PRICE IS CAUGHT BEFORE PLACING","n":["<b>STAGE 4 OF THE REDESIGN</b> (his answer D11 of 24 Sep 2026). New order lays a sheet over the page: the product as its mark, sizes as tiles with their prices, the size they order most tagged your usual, the way and the place from last time, the total and Review in reach. Every size on Prices opens it at that size, and Prices reads as at its day and time. An associate is asked Who is it for? first; the five-order limit is said before the form, with the open orders to cancel; one delivery sentence everywhere.","<b>A MOVED PRICE.</b> The publish seals a keyed digest of each price list, and Place carries the digest of the list the page opened; when the list has moved the Worker answers 409 with the new sealed list, and the check shows the size's new price with Place at RM X, one tap. The site compares stamps and prices nothing.","<b>SENT.</b> Place answers in the sheet and asks A buzz when it is confirmed? from that tap only; See the order opens its screen. A lapse closes the sheet and signing back in reopens it with what was typed. The level mark has left Prices."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8442,7 +8442,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Sep 2026, 01:23 KL';
+const LAST_UPDATED='25 Sep 2026, 02:30 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -18790,9 +18790,11 @@ async function apLoad(quiet){
     apUnread=(r.ok||r.status===401)?'':'the Worker answered http '+r.status;
     AP_DRAFTS=(j&&j.drafts)||[]; AP_REFUSED=(j&&j.refused)||[]; AP_CLOCK=(j&&j.clock)||null;
     if(r.ok){try{localStorage.setItem('saltRefusedAts',JSON.stringify(AP_REFUSED.map(x=>x.id)));}catch(e){}}   // v586: only a good read may say what is refused
+    if(r.ok){AP_READ=true;AP_AT=Date.now();}
   }catch(e){ apUnread=(e&&e.message)||'the request did not complete'; AP_DRAFTS=[]; AP_REFUSED=[]; }
   if(!apUnread&&!apNeedKey)autoOffsets();   // v585: only on a read that succeeded, or its duplicate check is blind
   apDraw();
+  ordTell();   /* S9 9.8 fix */
   /* v765, his instruction of 21 Sep 2026: APPROVE KEEPS ITSELF CURRENT. Site orders has followed the
      site at the phone's own pace since v499 and this part never did, so a row that landed while he was
      looking at it did not appear until he left the part and came back. Since v762 a tap on Site orders
@@ -19025,9 +19027,13 @@ async function ordLoad(quiet){
     ordUnread=r.ok?'':(r.status===401?'':(j&&j.error)||'the Worker answered http '+r.status);
     /* S6 11.15: and each claim against an account still waiting, a card of its own beside the orders (kind 'account') */
     ORD_OPEN=((r.ok&&j&&j.orders)||[]).concat(((r.ok&&j&&j.claims)||[]).filter(c=>c&&c.kind==='account'&&c.state==='waiting'));
+    /* S9 9.8: the rail's foot counts the associate links waiting in Salt Admin: a count, no link and no name */
+    {const f=document.querySelector('.rail .railfoot'),n=r.ok&&j?+j.links||0:null;if(f&&n!==null)f.textContent=n?n+(n===1?' link waits':' links wait')+' in Salt Admin':'';}
     if(r.ok)ORD_PV_GEN++;   /* S11 11.2: every read of the orders drafts the open card's row afresh */
+    if(r.ok){ORD_READ=true;ORD_AT=Date.now();}
   }catch(e){ ordUnread=(e&&e.message)||'the request did not complete'; ORD_OPEN=[]; }
   ordDraw();
+  ordTell();   /* S9 9.8 fix */
   {const a=document.getElementById('ordAlert');if(a&&!a.dataset.drawn)ordAlertDraw();}
   /* the card follows the site while it is on screen, at the phone's own pace, and v765 adds the two
      guards Approve needed: not over a decision in flight, and not into a pocket */
@@ -19210,6 +19216,20 @@ function ordActs(){
 function ordWaiting(){
   const acts=ordActs(),placed=acts.filter(a=>a.kind==='new').map(a=>a.o),asked=acts.filter(a=>a.kind==='asked').map(a=>a.o);
   return {placed,asked,acts,rm:+placed.reduce((a,o)=>a+(+o.total||0)+(+o.delivery||0),0).toFixed(2)};
+}
+/* S9 9.8 FIX (25 Sep 2026): SALT ADMIN'S LINE IS THIS COUNT. Once the orders and the drafts have both been read, and
+   neither read failed, the Waiting on you figure Today's row and the Enter badge count (ordActs) goes to the desk Worker
+   (POST orders/waiting), which sets the site's desk-waiting mark: one reading, the desk's. A change is sent, and the
+   first count of every load, so the mark's moment says when the desk last looked.
+   S9 fix: THE MOMENT IS THE READING'S, the older of its two reads, sent as an age so no clock but the site's stamps it:
+   Approve polls the drafts alone, and a count made there over orders read hours before went out as fresh. The same
+   figure goes again once the reading has moved on five minutes, so the moment moves with it. */
+let ORD_TOLD=null,ORD_TOLD_AT=0,ORD_READ=false,AP_READ=false,ORD_AT=0,AP_AT=0;
+async function ordTell(){
+  if(!cloudMode()||!ORD_READ||!AP_READ||ordUnread||ordNeedKey||apUnread||apNeedKey)return;
+  const n=ordActs().length,read=Math.min(ORD_AT,AP_AT);if(n===ORD_TOLD&&read-ORD_TOLD_AT<300000)return;
+  const age=Math.max(0,Math.round((Date.now()-read)/1000));
+  try{const r=await fetch('orders/waiting',{method:'POST',headers:qHeaders(),body:JSON.stringify({n,age})});if(r.ok){ORD_TOLD=n;ORD_TOLD_AT=read;}}catch(e){}
 }
 /* ---- S11 11.2 (24 Sep 2026): THE ROW BEFORE THE YES. A new order's card asks the desk Worker to draft
    the pending row it would queue, against the mirror, storing nothing (POST orders/<id>/preview, the

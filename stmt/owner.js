@@ -11,30 +11,36 @@
  * (so every backslash is doubled), and it runs inside CLIENT_JS's own function, which is where
  * say(), el(), stamp(), un, pw, whoacct, busy and OWNER live.
  *
- * WHAT IT DRAWS. A master account opens on its items, not on a list: Review statement, then the
- * links. Review reads /all/sheet, which is the publish's account list merged with the opens this
- * Worker has recorded all along, so each account shows where it stands, in one word, and when it
- * was last opened. A tap still opens the account the customer's own way, through the form. */
+ * WHAT IT DRAWS. Four places (S9): Needs you, a card for each thing waiting on him with its action on
+ * it; Accounts, one list for what Send and Review were, read off /all/sheet, the publish's account
+ * list merged with the opens this Worker records, a row opening the account's card; Links; and More.
+ * View as them opens the account the customer's own way, through the form. */
 
 export const OWNER_JS = `
-  var mHome=document.getElementById('mHome'),
-      oReview=document.getElementById('oReview'), oLinks=document.getElementById('oLinks'),
-      oSend=document.getElementById('oSend'), oCards=document.getElementById('oCards'),
-      sheet=null, sheetAt=null, sheetRows=[], sheetIssue=null, cards=null;
+  var mHome=document.getElementById('mHome'), oAccts=document.getElementById('oAccts'),
+      oLinks=document.getElementById('oLinks'), oMore=document.getElementById('oMore'),
+      oCards=document.getElementById('oCards'), aopen=document.getElementById('aopen'),
+      sheet=null, sheetAt=null, sheetRows=[], sheetIssue=null, cards=null, deskWait=null;
+  /* S9 9.2: FOUR PLACES, Needs you (null), Accounts, Links and More; the report card is a page of More */
+  var PLACE={accounts:'accounts', links:'links', more:'more', cards:'more'};
   function panel(which){
+    if(which==='needs') which=null;
     mHome.hidden=!!which;
-    oReview.hidden=(which!=='review');
+    oAccts.hidden=(which!=='accounts');
     oLinks.hidden=(which!=='links');
-    oSend.hidden=(which!=='send');
+    oMore.hidden=(which!=='more');
     oCards.hidden=(which!=='cards');
+    var here=which?PLACE[which]:'needs';
+    [].slice.call(document.querySelectorAll('.place[data-m]')).forEach(function(b){
+      if(b.getAttribute('data-m')===here) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
     say('');
-    if(which==='links'&&!links.length) loadLinks();
-    if(which==='review'){ drawRoster(); if(!sheet) loadSheet(); try{ rq.focus(); }catch(e){} }
-    if(which==='send'){ if(!sheet) loadSheet(); else drawSend(); }
+    if(which==='links'){ if(!linksRead) loadLinks(); else drawLinks(); }
+    if(!which) drawNeeds();
+    if(which==='accounts'){ drawRoster(); if(!sheet) loadSheet(); }
     if(which==='cards'){ if(!cards) loadCards(); else drawCards(); }
     try{ window.scrollTo(0,0); }catch(e){}
   }
-  /* ---- REVIEW STATEMENT --------------------------------------------------------------------
+  /* ---- WHERE AN ACCOUNT STANDS ---------------------------------------------------------------
      The list is the roster, so a code with no account behind its username is still on it and
      says so. Everything else comes from /all/sheet. */
   var FLAGW={owes:'Owes',goods:'Owes goods',refund:'Refund due',pend:'Agreed, not actioned',clear:'Clear'};
@@ -42,7 +48,9 @@ export const OWNER_JS = `
      missing from. A row with no totals is a username with nothing behind it, and that is what it
      says. D15 (24 Sep 2026): the fold binds a spare account at Add ID and this run's publish opens it,
      so a row reads this only when no spare was free, and the laptop's next update makes it. The level
-     is the stranger's, named by the book through the sheet, never here. */
+     is the stranger's, named by the book through the sheet, never here; S9 fix: the sheet is the one
+     source, so Needs you, a row and a card say the same level the moment the sheet lands, whether or not
+     the links have. */
   var stranger=null;
   function waitLine(){ return 'Made at the next laptop update.'+(stranger?' Until then, show the '+stranger+' link.':''); }
   function flagLine(a){
@@ -61,12 +69,14 @@ export const OWNER_JS = `
   async function loadSheet(){
     try{
       var j=await refs('/all/sheet');
-      sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null; stranger=j.stranger||null;
+      sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null; deskWait=j.desk||null; stranger=j.stranger||null;
       sheetRows.forEach(function(a){ sheet[a.username]=a; });
-      drawRoster(); drawSend(); drawTest();
-      var n=document.getElementById('mCount');
+      drawRoster(); drawTest(); drawNeeds(); drawNeedOpen(true);
+      if(aOpen) openCard(aOpen);
+      var n=document.getElementById('mCount'), real=sheetRows.filter(function(a){ return !a.test; }).length;
       /* the count is of accounts on the book: the test account is not one (v689) */
-      if(n) n.textContent=sheetRows.filter(function(a){ return !a.test; }).length+' accounts on the site.';
+      if(n) n.textContent=real+' accounts on the site.';
+      document.getElementById('mFoot').textContent=real+' accounts, as at '+hm(new Date().toISOString());
     }catch(e){ say(e.message,'bad'); }
   }
   /* ---- SEND STATEMENT (v688) ---------------------------------------------------------------
@@ -82,15 +92,6 @@ export const OWNER_JS = `
     var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(e.iv)}, key, b64d(e.ct));
     return new TextDecoder().decode(pt);
   }
-  function qrCanvas(rows){
-    var n=rows.length, box=4, pad=4, size=(n+pad*2)*box;
-    var c=document.createElement('canvas'); c.width=size; c.height=size;
-    c.style.width='104px'; c.style.height='104px';
-    var x=c.getContext('2d');
-    if(x){ x.fillStyle='#f2f4f5'; x.fillRect(0,0,size,size); x.fillStyle='#05080a';
-      for(var r=0;r<n;r++) for(var k=0;k<n;k++) if(rows[r][k]==='1') x.fillRect((k+pad)*box,(r+pad)*box,box,box); }
-    return c;
-  }
   /* THE ACCOUNT'S KEY, WRAPPED UNDER A FRESH ONE, for a link or a hand-over: opened HERE under the master and
      wrapped under a key minted here, so the Worker sees a wrap and a key and never the account's own key.
      CHARACTER CLASSES, NOT ESCAPES: this file is spliced into a template literal, where a backslash before
@@ -103,6 +104,14 @@ export const OWNER_JS = `
     var raw=crypto.getRandomValues(new Uint8Array(24));
     var tok=btoa(String.fromCharCode.apply(null, raw)).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/[=]+$/,'');
     return {token:tok, wrap:await wrapUnder(new TextEncoder().encode(tok), ck)};
+  }
+  /* v710's one-time link, minted for one account on keyFor: only the token's hash and the wrap reach the Worker,
+     which answers with the finished words. The card's Sign-in link, Needs you and Send them in turn all make it here. */
+  async function mintLink(a){
+    var k=await keyFor(a);
+    var j=await refs('/all/signin/'+encodeURIComponent(a.username), {token:k.token, wrap:k.wrap});
+    k=null;
+    return j;
   }
   /* ---- SHOW A CODE, IN PERSON (S3 3.13, his decision D2 of 24 Sep 2026) -------------------------------
      A customer at his counter signs in on their own phone without a message: a QR their camera opens, signed
@@ -184,46 +193,165 @@ export const OWNER_JS = `
       wait.className='salt-code__error'; wait.textContent='Could not make a code: '+e.message;
     }
   }
-  function sendCard(a){
-    var card=el('div','scard'+(a.sent?' done':''));
-    var head=el('div','srow');
-    head.appendChild(el('b',null,a.test?'Test account':(a.code||a.username)));
-    head.appendChild(el('span','un',a.username));
-    card.appendChild(head);
-    card.appendChild(el('p','tot',a.test?'Counts nowhere; nothing on the book is behind it.':(a.account===false?waitLine():a.tot)));
-    card.appendChild(el('p','op',openedLine(a)+(a.sent?' \\u00b7 sent '+stampDay(a.sent):'')));
-    /* 24 SEP 2026: A USERNAME WITH NO ACCOUNT BEHIND IT has nothing to share, copy or open: the
-       message would say "Your account is ready to use" over an account that is not there, and Open
-       could only be refused. All four go off together, each saying why; the card's line says how to mend it.
-       UX9: and it draws no code, which opens the address Share would have sent, under a caption offering
-       the Sign-in link that is off */
-    var noAcct=a.account===false, why='No account behind this username yet';
-    if(!noAcct){
-      var qw=el('div','qrw'); qw.appendChild(qrCanvas(a.qr||[]));
-      qw.appendChild(el('p','qrn','The code opens their page with the username filled in. Sign-in link sends one that opens it outright, once.'));
-      card.appendChild(qw);
-    }
-    var row=el('div','grow');
-    var share=el('button',null,'Share'); share.type='button';
-    if(noAcct){ share.disabled=true; share.title=why; }
-    share.addEventListener('click', async function(){
-      try{
-        if(navigator.share) await navigator.share({text:a.msg});
-        else { await navigator.clipboard.writeText(a.msg); share.textContent='Message copied'; }
-      }catch(e){ /* a share the reader dismissed is not a fault */ }
-      setTimeout(function(){ share.textContent='Share'; }, 1600);
+  /* ---- AN ACCOUNT (S9 9.3, the plan's f13) ----------------------------------------------------------
+     What a row opens: its code and username, the chips, ONE filled Send a sign-in link with its answer under it, and
+     beside it the other ways, Show a code in person, View as them, Copy password and Sign out everywhere; then how
+     they got in. THE LINK IS MADE AS THE ACCOUNT OPENS (the plan's must-not-ship list: never a key derivation and a
+     fetch inside the share's tap), so the tap shares and does nothing before it. It is kept by username with Needs
+     you's (madeLink), so a redraw, or the same account's card on Needs you, never makes a second; a share that goes
+     through ticks the account sent, and a link shared or copied from any card is dropped and a fresh one made
+     (retire). A username with no account makes nothing and posts nothing, and every control says why it is off. The password is opened on its own tap, straight to the
+     clipboard, never into the page. */
+  var story={};
+  /* the link moved: every Send a sign-in link drawn for that account is painted from madeLink, including one a redraw
+     put in the place of the button that asked (a sheet read lands while the link is being made), and Needs you with it */
+  /* S9 fix: a link that could not be made leaves the pill on, as Try again, whose tap makes it again and shares nothing */
+  function paintPill(b){
+    var m=madeLink[b.getAttribute('data-pill')]||{}, again=!m.j&&!m.busy&&!!m.fail;
+    b.disabled=b.getAttribute('data-none')==='1'||(!m.j&&!again);
+    b.textContent=m.busy?'Making the link...':again?'Try again':'Send a sign-in link';
+    if(b.note){ b.note.textContent=m.note||''; b.note.className='anote'+(m.bad?' bad':''); }
+  }
+  function paintPills(u){ [].slice.call(document.querySelectorAll('[data-pill]')).forEach(function(b){ if(b.getAttribute('data-pill')===u) paintPill(b); }); }
+  function linkMoved(u){ if(!docLive()) return; paintPills(u); if(!mHome.hidden) drawNeeds(); }
+  function makeLink(a){
+    var u=a.username, m=madeLink[u]||(madeLink[u]={});
+    if(m.j||m.busy||a.account===false) return;
+    if(m.fail){ m.fail=false; m.bad=false; m.note=''; }
+    m.busy=true;
+    mintLink(a).then(function(j){ m.j=j; m.busy=false; linkMoved(u); },
+      function(e){ m.busy=false; m.fail=m.bad=true; m.note='Could not make a link: '+e.message; linkMoved(u); });
+  }
+  function sendPill(a, note, onSent){
+    var u=a.username, b=el('button','salt-pill salt-pill--md apill','Send a sign-in link'); b.type='button';
+    b.setAttribute('data-pill', u); b.note=note;
+    if(a.account===false){ b.setAttribute('data-none','1'); b.title='No account behind this username yet'; }
+    paintPill(b); makeLink(a);
+    b.addEventListener('click', function(){
+      var m=madeLink[u];
+      if(!m||!m.j){ if(m&&m.fail&&!m.busy){ makeLink(a); linkMoved(u); } return; }
+      var msg=m.j.msg, p;
+      /* the tap's first act, before anything that waits: the share sheet, or with none the clipboard */
+      try{ p=navigator.share?navigator.share({text:msg}).then(function(){ return 'sent'; })
+        :navigator.clipboard.writeText(msg).then(function(){ return 'copied'; }); }
+      catch(e){ p=Promise.reject(e); }
+      p.then(async function(how){
+        if(how==='copied'){ retire(a, 'Copied. Paste it into a message to them, then tick Sent.'); linkMoved(u); return; }
+        var said=madeLink[u]={note:'Sent. It signs them in once; the next tap sends a new one.'};
+        markOut(u, m.j); linkMoved(u);
+        try{ var r=await refs('/all/sent/'+u, {issue:sheetIssue, sent:true}); a.sent=r.sent; countSent(); drawRoster(); onSent(); }
+        catch(e){ said.note='Sent, but the tick did not save: '+e.message; said.bad=true; }
+        makeLink(a); linkMoved(u);
+      }, function(){ m.note=navigator.share?'Not shared. Tap Send a sign-in link again.':'Not copied: this browser refused the clipboard.'; m.bad=true; linkMoved(u); });
     });
-    var copy=el('button',null,'Copy message'); copy.type='button';
-    if(noAcct){ copy.disabled=true; copy.title=why; }
-    /* 24 SEP 2026: THE WRITE IS AWAITED. writeText answers with a promise, so a refusal never reached
-       the catch and the button said Copied over an empty clipboard. */
-    copy.addEventListener('click', async function(){
-      try{ await navigator.clipboard.writeText(a.msg); copy.textContent='Copied'; }catch(e){ copy.textContent='Copy failed'; }
-      setTimeout(function(){ copy.textContent='Copy message'; }, 1600);
+    return b;
+  }
+  /* HOW THEY GOT IN (/all/account/<u>): each way in, newest first, with its moment and the kind of device it was used
+     on, as the browser described itself then, never an address; a password refused at an address stands above them */
+  /* S9 fix: a code his counter showed is scanned; a customer's own is copied across; key, before the two were told apart */
+  var HOWW={link:'Sign-in link', qr:'Code, scanned', copy:'Code, copied across', key:'Code', code:'Code, typed', password:'Password'};
+  function lineRow(label, value, flag){
+    var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), v=el('span','salt-ledger__value');
+    l.appendChild(el('span','salt-ledger__label',label));
+    if(value) v.appendChild(value);
+    l.appendChild(v); r.appendChild(l);
+    if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
+    return r;
+  }
+  function onWhat(where){ return where?' on '+String(where).replace(/^A /,'a '):''; }
+  function drawStory(box, a){
+    var s=story[a.username];
+    box.textContent='';
+    box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','How they got in'));
+    var list=el('div','salt-ledger salt-ledger--plain'), L=a.locked;
+    if(L) list.appendChild(lineRow('Password', chip('alarm','Refused'),
+      'Ten wrong '+(L.from>1?'from each of '+L.from+' addresses':'from one address')+(L.until?', shut there till '+hm(L.until):'')+'.'));
+    var log=(s&&s.log)||[];
+    log.forEach(function(x){
+      list.appendChild(lineRow(HOWW[x.how]||'Signed in', x.how==='password'?null:chip('verdigris','Used'), dayMon(x.at)+', '+hm(x.at)+onWhat(x.where)));
     });
-    var pwb=el('button','pw','Copy password'); pwb.type='button';
-    if(!a.pwMaster){ pwb.disabled=true; pwb.title='Not sealed yet: run tools/stmt-seal.mjs on the laptop'; }
-    else pwb.addEventListener('click', async function(){
+    if(!s) list.appendChild(lineRow('Reading how they got in.', null, ''));
+    else if(s.err) list.appendChild(lineRow('Not read', null, s.err));
+    else if(!log.length) list.appendChild(a.seen&&a.seen.opens
+      ?lineRow('Last opened', null, dayMon(a.seen.last)+(howOf(a.seen)?', '+howOf(a.seen):'')+'. Earlier ways in were not kept.')
+      :lineRow('Not opened yet', null, a.sent?'Sent '+dayMon(a.sent)+'.':''));
+    box.appendChild(list);
+    /* S9 9.4: PHONES AND COMPUTERS, off the account's own pointers: each device named as its browser described itself when
+       it signed in, when it came and when it was last used, whether it is kept signed in, and a Sign out of its own */
+    var devs=(s&&s.devices)||[], dh=el('h3','salt-eyebrow salt-eyebrow--copper dhead','Phones and computers');
+    if(devs.length) dh.appendChild(el('span','dcount',String(devs.length)));
+    box.appendChild(dh);
+    var dl=el('div','salt-ledger salt-ledger--plain');
+    devs.forEach(function(d){
+      var so=ghost('Sign out');
+      so.addEventListener('click', function(){ endOne(a, d, so); });
+      dl.appendChild(lineRow(d.label||'A device named before this list began', so, d.kept
+        ?'Kept signed in since '+dayMon(d.at)+', last used '+when(d.last)+'.'
+        :'Signed in '+when(d.at)+' for this visit, not kept.'));
+    });
+    if(s&&!s.err&&!devs.length) dl.appendChild(lineRow('None signed in', null, 'A sign-in link or a code signs them in.'));
+    box.appendChild(dl);
+  }
+  async function endOne(a, d, b){
+    b.disabled=true; b.textContent='Signing out...';
+    try{ await refs('/all/signout', {u:a.username, id:d.id}); loadStory(a); }
+    catch(e){ b.textContent='Not signed out'; b.title=e.message; b.disabled=false; }
+  }
+  /* what Sign out everywhere ended, in words */
+  function endedLine(j){
+    var n=function(x, one, many){ return x+' '+(x===1?one:many); }, parts=[];
+    if(j.devices) parts.push(n(j.devices,'device','devices'));
+    if(j.links) parts.push(n(j.links,'link or code not yet used','links and codes not yet used'));
+    if(j.phones) parts.push('alerts on '+n(j.phones,'phone','phones'));
+    return parts.length?'Signed out: '+andList(parts)+'.':'Nothing was signed in.';
+  }
+  /* a link named by its token's hash, as the site files it */
+  async function tokHash(j){
+    var t=j?String(j.url||'').split('/s/')[1]||'':'';
+    if(!t) return '';
+    var h=new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)));
+    return [].map.call(h, function(x){ return (x<16?'0':'')+x.toString(16); }).join('');
+  }
+  /* the link his own page made as the account opened, which Sign out everywhere spares */
+  function linkId(u){ var m=madeLink[u]; return tokHash(m&&m.j); }
+  /* S9 fix: A LINK THAT HAS LEFT THE PAGE IS MARKED SO ON THE SITE (POST /all/out), so Sign out everywhere counts it among
+     those not yet used and never spares it; one made as an account opened and never sent is burnt with them, uncounted.
+     Best effort: a mark that does not land costs the count, never the burning. */
+  function markOut(u, j){ tokHash(j).then(function(id){ return id?refs('/all/out', {u:u, id:id}):null; }).catch(function(){}); }
+  async function loadStory(a){
+    var u=a.username, j=null, err='';
+    try{ j=await refs('/all/account/'+encodeURIComponent(u)); }catch(e){ err=e.message; }
+    if(!docLive()) return;
+    story[u]=j?{log:j.log||[], devices:j.devices||[]}:{err:err};
+    [].slice.call(document.querySelectorAll('[data-story]')).forEach(function(b){ if(b.getAttribute('data-story')===u) drawStory(b, a); });
+  }
+  function acctCard(a){
+    var u=a.username, none=a.account===false, why='No account behind this username yet';
+    var c=el('section','acct scard'); c.setAttribute('data-acct', u);
+    var h=el('div','ahead srow');
+    h.appendChild(el('h2',null,a.test?'Test account':(a.code||u)));
+    h.appendChild(el('span','un',u));
+    c.appendChild(h);
+    var cs=el('div','achips');
+    function chips(){ cs.textContent=''; if(sheet) chipsOf(a).forEach(function(x){ cs.appendChild(x); }); }
+    chips(); c.appendChild(cs);
+    if(a.test) c.appendChild(el('p','atot','Counts nowhere; nothing on the book is behind it.'));
+    else if(none) c.appendChild(el('p','atot',waitLine()));
+    else if(a.tot) c.appendChild(el('p','atot',a.tot));
+    var box=document.createElement('input');
+    var pn=el('p','anote'); pn.setAttribute('role','status');
+    c.appendChild(sendPill(a, pn, function(){ box.checked=!!a.sent; chips(); }));
+    c.appendChild(pn);
+    var grid=el('div','agrid'), gn=el('p','anote'); gn.setAttribute('role','status');
+    var hob=ghost('Show a code, in person'), open=ghost('View as them'), pwb=ghost('Copy password'), sob=ghost('Sign out everywhere');
+    pwb.classList.add('salt-ghost--danger'); sob.classList.add('salt-ghost--danger');
+    [hob, open, pwb, sob].forEach(function(b){ if(none){ b.disabled=true; b.title=why; } grid.appendChild(b); });
+    if(!none&&!a.pwMaster){ pwb.disabled=true; pwb.title='Not sealed yet: run tools/stmt-seal.mjs on the laptop'; }
+    hob.addEventListener('click', function(){ if(!none) showHandover(a, hob); });
+    /* S9 9.5: View as them, their own page, read only */
+    open.addEventListener('click', function(){ openAcct(a); });
+    pwb.addEventListener('click', async function(){
+      if(none||!a.pwMaster) return;
       pwb.disabled=true; pwb.textContent='Opening...';
       try{
         var pw=await unseal(OWNER.master, a.pwMaster);
@@ -233,66 +361,34 @@ export const OWNER_JS = `
       }catch(e){ pwb.textContent='Could not open it'; }
       setTimeout(function(){ pwb.textContent='Copy password'; pwb.disabled=false; }, 2200);
     });
-    /* v710: A LINK THAT SIGNS THEM IN, so no message carries a password at all (his instruction of
-       18 Sep 2026). The content key is opened HERE, under the master, wrapped under a token minted
-       here, and only the token's hash and that wrap reach the Worker; the finished words come back
-       from the one copy of them. MINTED ON A TAP, never on a draw: drawing the panel would write a
-       record per account on every page load and burn links nobody sent. */
-    var slb=el('button','pw','Sign-in link'); slb.type='button';
-    /* no record means nothing to open under the master, so the link could only fail (23 Sep 2026) */
-    if(noAcct){ slb.disabled=true; slb.title=why; }
-    slb.addEventListener('click', async function(){
-      if(a.account===false || (!a.pwMaster && !a.username)) return;
-      slb.disabled=true; slb.textContent='Making it...';
-      var made=false;
-      try{
-        var k=await keyFor(a);
-        var j=await refs('/all/signin/'+encodeURIComponent(a.username), {token:k.token, wrap:k.wrap});
-        k=null; made=true;
-        /* 24 SEP 2026: ONCE IT IS MADE, A FAILURE IS NOT "COULD NOT MAKE ONE". A share sheet he closed
-           rejects too, and the link was already minted; it goes to the clipboard instead, and the
-           button says which of the three happened. */
-        var sent=false;
-        if(navigator.share){ try{ await navigator.share({text:j.msg}); sent=true; }catch(e){ sent=false; } }
-        if(sent) slb.textContent='Link sent';
-        else { await navigator.clipboard.writeText(j.msg); slb.textContent='Link made and copied'; }
-      }catch(e){ slb.textContent=made?'Link made, not copied':'Could not make one'; }
-      setTimeout(function(){ slb.textContent='Sign-in link'; slb.disabled=false; }, 2200);
-    });
-    var hob=el('button',null,'Show a code'); hob.type='button';
-    if(noAcct){ hob.disabled=true; hob.title=why; }
-    hob.addEventListener('click', function(){ if(a.account!==false) showHandover(a, hob); });
-    /* S3 FIX, 24 SEP 2026: SIGN OUT EVERYWHERE (fold 9.4's server half). A forwarded link or a lost phone stays signed
-       in while it is used, so this ends every phone and session on the account; a second tap within four seconds says
-       yes, and a new link or a code then signs them back in */
-    var sob=el('button',null,'Sign out everywhere'); sob.type='button';
-    if(noAcct){ sob.disabled=true; sob.title=why; }
+    /* SIGN OUT EVERYWHERE, on a second tap within four seconds: a forwarded link or a lost phone stays signed in while
+       it is used, so this ends every device, link, code and alert on the account (S9 9.4), sparing the link this page
+       made as the account opened and has not sent, and says what it ended; a new link or a code signs them back in */
     var soArmed=null;
     sob.addEventListener('click', async function(){
-      if(a.account===false) return;
+      if(none) return;
       if(!soArmed){ sob.textContent='Tap again to sign them out'; soArmed=setTimeout(function(){ soArmed=null; sob.textContent='Sign out everywhere'; }, 4000); return; }
       clearTimeout(soArmed); soArmed=null; sob.disabled=true; sob.textContent='Signing out...';
-      try{ var j=await refs('/all/signout', {u:a.username}); sob.textContent=j.ended?'Signed out everywhere':'Nothing was signed in'; }
-      catch(e){ sob.textContent='Could not sign out'; }
-      setTimeout(function(){ sob.textContent='Sign out everywhere'; sob.disabled=false; }, 2200);
+      try{ var j=await refs('/all/signout', {u:u, keep:await linkId(u)}); gn.textContent=endedLine(j); gn.className='anote'; }
+      catch(e){ gn.textContent='Could not sign out: '+e.message; gn.className='anote bad'; }
+      sob.textContent='Sign out everywhere'; sob.disabled=false;
+      loadStory(a);
     });
-    var open=el('button',null,'Open account'); open.type='button';
-    if(noAcct){ open.disabled=true; open.title=why; }
-    open.addEventListener('click', function(){ openAcct(a); });
-    row.appendChild(share); row.appendChild(copy); row.appendChild(slb); row.appendChild(hob); row.appendChild(pwb); row.appendChild(sob); row.appendChild(open);
-    card.appendChild(row);
+    c.appendChild(grid); c.appendChild(gn);
     var tick=el('label','tick');
-    var box=document.createElement('input'); box.type='checkbox'; box.checked=!!a.sent;
+    box.type='checkbox'; box.checked=!!a.sent; box.disabled=none;
     box.addEventListener('change', async function(){
       var want=box.checked;
       try{
-        var j=await refs('/all/sent/'+a.username, {issue:sheetIssue, sent:want});
-        a.sent=j.sent; card.className='scard'+(a.sent?' done':''); say(''); countSent();
+        var j=await refs('/all/sent/'+u, {issue:sheetIssue, sent:want});
+        a.sent=j.sent; chips(); say(''); countSent(); drawRoster(); drawNeeds();
       }catch(e){ box.checked=!want; say(e.message,'bad'); }
     });
     tick.appendChild(box); tick.appendChild(el('span',null,'Sent'));
-    card.appendChild(tick);
-    return card;
+    c.appendChild(tick);
+    var st=el('div','astory'); st.setAttribute('data-story', u);
+    if(!none){ c.appendChild(st); drawStory(st, a); loadStory(a); }
+    return c;
   }
   /* the test account is not part of a send, so it is out of both halves of the count (v689). A tick
      recounts as well as a draw (24 Sep 2026): the header sat on its first figure while he ticked. */
@@ -301,18 +397,6 @@ export const OWNER_JS = `
     var done=real.filter(function(a){ return a.sent; }).length;
     var head=document.getElementById('scount');
     if(head) head.textContent=done+' of '+real.length+' sent';
-  }
-  function drawSend(){
-    var wrap=document.getElementById('slist'); if(!wrap) return;
-    wrap.textContent='';
-    var q=((document.getElementById('sq')||{}).value||'').toLowerCase().replace(/\\s+/g,'');
-    var hits=sheetRows.filter(function(a){
-      if(!q) return true;
-      return ((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0;
-    });
-    countSent();
-    if(!hits.length){ wrap.appendChild(el('p','rnone','Nothing matches that.')); return; }
-    hits.forEach(function(a){ wrap.appendChild(sendCard(a)); });
   }
   /* ---- THE ROSTER (10 Sep 2026) ------------------------------------------------------------
      A tap fills the customer's own form with his username and the master, and submits it. Nothing
@@ -325,47 +409,107 @@ export const OWNER_JS = `
     if(busy) return;
     un.value=a.username; pw.value=OWNER.master;
     if(whoacct) whoacct.textContent=(a.code||a.username)+' \\u00b7 ';
+    document.getElementById('vasU').textContent=a.username;
     var f=document.getElementById('f');
     if(f.requestSubmit) f.requestSubmit();
     else f.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
   }
+  /* S9 9.5: BACK TO ACCOUNTS. The bar's one control on his page runs the page's own Log out first, which puts
+     his page back (lock); this then shows Accounts, where the account he was viewing is still open. */
+  document.getElementById('lock').addEventListener('click', function(){ panel('accounts'); });
   /* 24 SEP 2026 (M22): AN ACCOUNT HE OPENS IS READ ONLY, and it draws what their own page draws. It
      has no session, the owner does not order, so the orders and an associate's own links come from
      /all/orders/<u>, behind the prefix's one Access check. The page calls this when view is set. */
   async function loadView(u){
-    var mine=ticket;
-    var r=await api('/all/orders/'+encodeURIComponent(u));
+    var mine=ticket, j=null;
+    /* through refs, so a lapsed Access session reads as one (S9 9.7) */
+    try{ j=await refs('/all/orders/'+encodeURIComponent(u)); }
+    catch(e){ if(mine===ticket) say('Their orders could not be read: '+e.message,'bad'); }
     if(mine!==ticket) return;
-    orders=(r.body&&r.body.ok&&r.body.orders)||[];
-    claims=(r.body&&r.body.ok&&Array.isArray(r.body.claims))?r.body.claims:[];   /* S6 6.6: their account's claims, as their page reads them */
-    myLinks=(r.body&&r.body.ok&&r.body.refs)||[]; myMax=(r.body&&r.body.max)||0;
-    if(!r.body||!r.body.ok) say('Their orders could not be read: '+((r.body&&r.body.error)||'try again'),'bad');
+    orders=(j&&j.orders)||[]; myLinks=(j&&j.refs)||[]; myMax=(j&&j.max)||0;
+    claims=(j&&Array.isArray(j.claims))?j.claims:[];   /* S6 6.6: their account's claims, as their page reads them */
     if(!tCard.hidden) drawCard();
+  }
+  /* ---- ACCOUNTS (S9 9.2) -----------------------------------------------------------------------
+     One list for what Send and Review were: the system's Inbox row an account, its code and chips for where it
+     stands and how it has been reached, found by a word and narrowed by a filter. A row opens the account's
+     card, beside the list from 1080px and in its place on a phone with a way back; the card is Send's. */
+  var aFilter='all', aOpen=null;
+  var FILTER={
+    all:function(){ return true; },
+    unsent:function(a){ return a.account!==false&&!a.test&&!a.sent; },
+    unopened:function(a){ return a.account!==false&&!a.test&&!(a.seen&&a.seen.opens); },
+    owes:function(a){ return a.flag==='owes'||a.flag==='goods'; },
+    locked:function(a){ return !!a.locked; },
+    none:function(a){ return a.account===false; }
+  };
+  /* HOW AN OPEN CAME: the road markSeen recorded. Stage 3's hand-over records qr (his counter's code, scanned), copy (a
+     customer's own, copied across) and code (typed), and key where it was one word for the first two; a road this
+     page does not know says no road, and only an open with none at all, from before v827 when the password was the
+     one road recorded, was by password. */
+  var HOW={password:'by password', link:'by link', remembered:'on a remembered phone', qr:'by a scanned code', copy:'by a copied code', key:'by a code', code:'by a typed code'};
+  function howOf(s){ return s.how?HOW[s.how]||'':HOW.password; }
+  function chip(tone, t){ return el('span','salt-status salt-status--'+tone, t); }
+  function chipsOf(a){
+    if(a.test) return [chip('mist','Test, counts nowhere')];
+    if(a.account===false) return [chip('alarm','No account')];
+    var out=[];
+    if(a.locked) out.push(chip('alarm','Refused at '+(a.locked.from>1?a.locked.from+' addresses':'1 address')+(a.locked.until?' till '+hm(a.locked.until):'')));
+    if(a.flag&&a.flag!=='clear') out.push(chip({owes:'ember', goods:'steel', refund:'brass', pend:'copper'}[a.flag]||'mist', flagLine(a)));
+    out.push(a.seen&&a.seen.opens?chip('mist','Opened '+dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):'')):chip('steel','Not opened'));
+    if(a.alerts) out.push(chip('verdigris','Alerts on'));
+    if(a.sent) out.push(chip('verdigris','Sent '+dayMon(a.sent)));
+    return out;
+  }
+  function rowOf(a){
+    var b=el('button','salt-inbox-row'); b.type='button'; b.setAttribute('data-u', a.username);
+    if(aOpen===a.username) b.setAttribute('aria-current','true');
+    var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
+    t.appendChild(el('span',null,a.test?'Test account':(a.code||a.username)));
+    if(sheet) chipsOf(a).forEach(function(c){ t.appendChild(c); });
+    main.appendChild(t);
+    /* a code with no account says, on its row, when it is made and which link to show until then (D15) */
+    main.appendChild(el('span','salt-inbox-row__what', a.username+(a.account===false?', '+waitLine():a.tot?', '+a.tot:'')));
+    b.appendChild(main);
+    var side=el('span','salt-inbox-row__side'); side.appendChild(el('span','salt-inbox-row__action','Open'));
+    b.appendChild(side);
+    b.addEventListener('click', function(){ openCard(a.username); });
+    return b;
   }
   function drawRoster(){
     if(!OWNER) return;
-    var q=(rq.value||'').toLowerCase().replace(/\\s+/g,'');
+    var q=(rq.value||'').toLowerCase().replace(/\\s+/g,''), f=FILTER[aFilter]||FILTER.all;
     rlist.textContent='';
-    var hits=OWNER.accounts.filter(function(a){
-      if(!q) return true;
-      return ((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0;
+    var hits=(sheet?sheetRows:OWNER.accounts).filter(function(a){
+      return f(a)&&(!q||((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0);
     });
+    countSent();
     if(!hits.length){ rlist.appendChild(el('p','rnone','Nothing matches that.')); return; }
-    hits.forEach(function(a){
-      var s=(sheet&&sheet[a.username])||a;
-      var b=el('button',null,a.test?'Test account':(a.code||a.username)); b.type='button';
-      /* no account, nothing to open: the row says so and does not take a tap (24 Sep 2026) */
-      if(sheet&&s.account===false){ b.disabled=true; b.title='No account behind this username yet'; }
-      if(a.code) b.appendChild(el('span',null,a.username));
-      if(a.test) b.appendChild(el('span','fl f-none','Counts nowhere; open it to try the page.'));
-      else if(sheet){
-        b.appendChild(el('span','fl f-'+(s.flag||'none'),flagLine(s)));
-        b.appendChild(el('span','op',openedLine(s)));
-      }
-      b.addEventListener('click', function(){ openAcct(a); });
-      rlist.appendChild(b);
-    });
+    hits.forEach(function(a){ rlist.appendChild(rowOf(a)); });
   }
+  function filterBy(f){
+    aFilter=FILTER[f]?f:'all';
+    [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){
+      x.setAttribute('aria-pressed', x.getAttribute('data-f')===aFilter?'true':'false'); });
+    drawRoster();
+  }
+  /* the open account: its chips, then Send's card, and on a phone the way back to the list above it */
+  function openCard(u){
+    var a=u&&((sheet&&sheet[u])||OWNER.accounts.filter(function(x){ return x.username===u; })[0]);
+    aOpen=a?u:null;
+    oAccts.classList.toggle('open', !!a);
+    aopen.hidden=!a; aopen.textContent='';
+    [].slice.call(rlist.querySelectorAll('[data-u]')).forEach(function(r){
+      if(r.getAttribute('data-u')===aOpen) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });
+    if(!a) return;
+    var back=el('button','aback','← Accounts'); back.type='button'; back.setAttribute('data-back','accounts');
+    aopen.appendChild(back);
+    acctPane(aopen, a);
+    try{ window.scrollTo(0,0); }catch(e){}
+  }
+  /* an account as it opens (S9 9.3) */
+  function acctPane(box, a){ box.appendChild(acctCard(a)); }
+  function setCount(m, n){ [].slice.call(document.querySelectorAll('[data-count="'+m+'"]')).forEach(function(c){ c.textContent=n?String(n):''; }); }
   /* ---- THE GUEST LINKS, on the same gated route -------------------------------------------
      Minted, listed and revoked over /all/refs; the Worker draws the QR and returns it as a data
      URI, so nothing here encodes anything and the page loads no library to do it. */
@@ -373,6 +517,12 @@ export const OWNER_JS = `
   /* UX8: the answer to the last move, drawn on the card it moved, since the card changes group and the page's
      own line sits at its foot */
   var moved=null;
+  /* S9 fix: AND A TAP THAT FAILS, or a tier pinned, is answered on the card it was tapped on as well, in Needs you
+     and in Links, where the page's own line sat under every card, off a phone's screen. The link keeps its buttons. */
+  var linkSaid=null;
+  function saidOn(r, node){ if(linkSaid&&linkSaid.id===r.id){ node.textContent=linkSaid.t; node.className+=linkSaid.bad?' bad':''; } }
+  /* waiting means he still has to act on it: not declined (D13), and not withdrawn either */
+  function waitingLink(r){ return !r.standing&&r.approved===false&&r.declined!==true&&!r.revoked; }
   function stampDay(iso){
     /* the page's klBits and MON3, so a day here is written exactly as the customer's page writes one */
     try{ var p=klBits(iso); return p.day+' '+MON3[+p.month-1]+' '+p.year; }catch(e){ return ''; }
@@ -388,8 +538,7 @@ export const OWNER_JS = `
     /* the guest tiers are the list less Ambassador, the floor, which is never a guest's */
     var want=tiers.slice(1);
     var made=want.filter(function(t){ return links.some(function(r){ return r.standing&&r.level===t; }); }).length;
-    /* waiting means he still has to act on it: not declined (D13), and not withdrawn either */
-    var isWaiting=function(r){ return !r.standing&&r.approved===false&&r.declined!==true&&!r.revoked; };
+    var isWaiting=waitingLink;
     /* UX8, 24 Sep 2026: AN ASSOCIATE'S LINK STAYS THEIRS once he has decided on it. Approved or declined, it went
        under "made against a customer" as "Tier 2, (no label)", with nothing to say who minted it */
     var isAssoc=function(r){ return !r.standing&&!!r.by&&r.by!=='standing'; };
@@ -461,14 +610,25 @@ export const OWNER_JS = `
       }
       card.appendChild(row);
       if(moved&&moved.id===r.id){ var mv=el('p','msg',moved.t); mv.setAttribute('role','status'); card.appendChild(mv); }
+      if(linkSaid&&linkSaid.id===r.id){ var ls=el('p','msg'); ls.setAttribute('role','status'); saidOn(r, ls); card.appendChild(ls); }
       glist.appendChild(card);
     });
     if(want.length&&made<want.length) glist.appendChild(el('p','rnone','Only '+made+' of the '+want.length+' are made. Publish the statements and open this again.'));
   }
+  /* S9 9.7, HIS D13: WHEN ACCESS LAPSES, SAY SO. A request under /all after the Access session has ended is
+     sent to the Access login, a redirect a fetch cannot follow, and every tap read "Failed to fetch". Asked not
+     to follow it, the fetch answers an opaque redirect, and that or the Worker's own 401 is the sign-in ending:
+     the page gives way to Sign in again, which loads /all and so the Access login. A fetch that throws is the
+     connection, and says so. */
+  var ENDED='Your admin sign-in has ended.';
+  function ended(){ document.getElementById('aEnded').hidden=false; document.body.classList.add('ended'); }
   async function refs(path, body){
     var o = body ? {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)}
                  : {};
-    var r = await fetch(path, o);
+    o.redirect='manual';
+    var r;
+    try{ r = await fetch(path, o); }catch(e){ throw new Error('Not sent. Check the connection and try again.'); }
+    if(r.type==='opaqueredirect'||r.status===401){ ended(); throw new Error(ENDED); }
     var j = await r.json().catch(function(){ return {}; });
     if(!r.ok||!j.ok) throw new Error(j.error||'that did not work');
     return j;
@@ -476,17 +636,20 @@ export const OWNER_JS = `
   var tiers=[];
   async function loadLinks(){
     moved=null;
-    try{ var j=await refs('/all/refs'); links=j.refs||[]; tiers=j.tiers||[]; drawLinks(); say(''); }
+    try{ var j=await refs('/all/refs'); links=j.refs||[]; tiers=j.tiers||[]; linksRead=true; drawLinks(); drawNeeds(); say(''); }
     catch(e){ say(e.message,'bad'); }
   }
   async function setLevel(r, level){
+    linkSaid=null;
     try{
       var j=await refs('/all/refs/'+r.id+'/level', {level: level||null});
       for(var i=0;i<links.length;i++) if(links[i].id===j.ref.id) links[i]=j.ref;
-      drawLinks(); say(level?('That link now quotes '+level+'.'):'That link follows the associate again.');
-    }catch(e){ say(e.message,'bad'); }
+      linkSaid={id:r.id, t:level?('That link now quotes '+level+'.'):'That link follows the associate again.'};
+    }catch(e){ linkSaid={id:r.id, t:e.message, bad:true}; }
+    drawLinks(); drawNeeds(); say('');
   }
   async function moveLink(r, how){
+    linkSaid=null;
     try{
       /* THE BODY IS WHAT MAKES IT A POST (24 Sep 2026): refs() sends a GET when it is given none,
          and every move on a link is a POST-only route, so Approve, Decline, Withdraw and Restore all
@@ -498,10 +661,252 @@ export const OWNER_JS = `
       var opens=!j.ref.revoked&&j.ref.approved!==false;
       moved={id:j.ref.id, t:({approve:'Approved.',decline:'Declined.',revoke:'Withdrawn.',restore:'Restored.'}[how]||'Done.')
         +(opens?' It opens now.':' It stays shut.')};
-      drawLinks(); say('');
+      drawLinks(); drawNeeds(); say('');
       var mc=document.querySelector('[data-link="'+j.ref.id+'"]');
-      if(mc&&mc.scrollIntoView) mc.scrollIntoView({block:'center'});
-    }catch(e){ say(e.message,'bad'); }
+      if(mc&&mc.scrollIntoView&&!oLinks.hidden) mc.scrollIntoView({block:'center'});
+    }catch(e){ linkSaid={id:r.id, t:e.message, bad:true}; drawLinks(); drawNeeds(); say(''); }
+  }
+  /* ---- NEEDS YOU (S9 9.1, the plan's section 5) -------------------------------------------------
+     His home: one card a thing that waits on him, each with the one action it needs, in the system's Approve
+     card. A link an associate made (Approve, the tier it quotes, Decline); an account whose customer is locked
+     out (why, and Send a sign-in link); an ID with no account yet (the stranger's link until the laptop makes
+     one, Send switched off); and the accounts nobody has been sent. Read off /all/sheet and /all/refs, the two
+     reads the page makes anyway. A tap is answered on its own card. */
+  var nlist=document.getElementById('nlist'), nCount=document.getElementById('nCount'), linksRead=false;
+  function codeByUser(u){ var a=OWNER.accounts.filter(function(x){ return x.username===u; })[0]; return (a&&a.code)||u||'An associate'; }
+  function hm(iso){ try{ var p=klBits(iso); return p.hour+':'+p.minute; }catch(e){ return ''; } }
+  function dayMon(iso){ try{ var p=klBits(iso); return +p.day+' '+MON3[+p.month-1]; }catch(e){ return ''; } }
+  /* a moment today is its time, any other its day */
+  function when(iso){ var t=dayMon(iso); return t===dayMon(new Date().toISOString())?hm(iso):t; }
+  function andList(xs){ return xs.length<2?xs.join(''):xs.slice(0,-1).join(', ')+' and '+xs[xs.length-1]; }
+  function ghost(t, lit){ var b=el('button','salt-ghost'+(lit?' salt-ghost--lit':''),t); b.type='button'; return b; }
+  function needCard(key, party, entry, reason, u){
+    var c=el('article','salt-approve need'); c.setAttribute('data-need', key);
+    var h=el('div','salt-approve__head');
+    /* S9 fix: a card about an account opens it, beside the list from 1080px and on Accounts on a phone */
+    var p=el(u?'button':'span','salt-approve__party',party);
+    if(u){ p.type='button'; p.setAttribute('aria-label','Open '+party); c.setAttribute('data-u', u); p.addEventListener('click', function(){ openNeed(u); }); }
+    h.appendChild(p); h.appendChild(el('span','salt-approve__entry',entry));
+    c.appendChild(h);
+    if(reason) c.appendChild(el('p','salt-approve__reason',reason));
+    return c;
+  }
+  function noteOf(c){ var m=el('p','nnote'); m.setAttribute('role','status'); c.appendChild(m); return m; }
+  /* S9 fix: FROM 1080PX NEEDS YOU STANDS BESIDE AN ACCOUNT (the plan's f13w), as Accounts does: the one he opened
+     from a card, else the first card's about an account. The pane is drawn again only when its account changes or
+     the sheet is read again, so a redraw of the list never takes a tap in flight off the open card. */
+  var nopen=document.getElementById('nopen'), nOpen=null;
+  function wide(){ return !!(window.matchMedia&&window.matchMedia('(min-width:1080px)').matches); }
+  function openNeed(u){
+    if(!wide()){ panel('accounts'); openCard(u); return; }
+    nOpen=u; drawNeedOpen(true);
+  }
+  function drawNeedOpen(force){
+    if(!nOpen&&wide()){ var first=nlist.querySelector('[data-u]'); nOpen=first?first.getAttribute('data-u'):null; }
+    var a=nOpen&&sheet&&sheet[nOpen];
+    [].slice.call(nlist.querySelectorAll('[data-u]')).forEach(function(c){
+      if(c.getAttribute('data-u')===nOpen) c.setAttribute('aria-current','true'); else c.removeAttribute('aria-current'); });
+    if(!force&&nopen.getAttribute('data-u')===(a?nOpen:'')) return;
+    mHome.classList.toggle('open', !!a); nopen.hidden=!a; nopen.textContent=''; nopen.setAttribute('data-u', a?nOpen:'');
+    if(a) acctPane(nopen, a);
+  }
+  /* the stranger's standing link is what an ID with no account is shown */
+  function strangerLink(){
+    return links.filter(function(r){ return r.standing&&r.level===stranger&&!r.revoked; })[0]||null;
+  }
+  /* A LINK SIGNS THEM IN IN TWO TAPS: the first makes it, the second shares it, so the share sheet never
+     waits on a key derivation and a round trip inside one tap (the plan's must-not-ship list).
+     S9 fix: WHAT A CARD HAS MADE OUTLIVES A REDRAW. Needs you is drawn afresh on every move, tick and read, and
+     the made link and the open Silver link lived in the card, so a redraw put the button back to Send a sign-in
+     link (the next tap minting a second) and took the code off the screen. They are kept here by username. */
+  var madeLink={}, silverOpen={};
+  /* S9 fix: A LINK THAT HAS LEFT THE PAGE IS NEVER THE ONE KEPT. Sign out everywhere spares the link this page holds
+     (linkId), so a link shared or copied, from any card, is dropped here, and a fresh one made wherever a Send a
+     sign-in link is drawn for the account; a forwarded link is then ended with the rest. */
+  function retire(a, note){
+    var u=a.username, was=madeLink[u]; madeLink[u]={note:note};
+    if(was&&was.j) markOut(u, was.j);
+    if([].some.call(document.querySelectorAll('[data-pill]'), function(b){ return b.getAttribute('data-pill')===u; })) makeLink(a);
+  }
+  function linkButton(a, note){
+    var u=a.username, b=ghost('', true);
+    function paint(){
+      var m=madeLink[u]||{};
+      b.disabled=!!m.busy; b.textContent=m.busy?'Making it...':m.j?'Share the link':'Send a sign-in link'; note.textContent=m.note||'';
+    }
+    /* answered on this button, or on the one a redraw put in its place */
+    function after(){ if(!docLive()) return; paintPills(u); if(b.isConnected) paint(); else drawNeeds(); }
+    paint();
+    b.addEventListener('click', async function(){
+      var m=madeLink[u]||(madeLink[u]={});
+      if(m.busy) return;
+      if(!m.j){
+        m.busy=true; m.note=''; paint();
+        try{ m.j=await mintLink(a); m.note='Made. It signs '+(a.code||a.username)+' in once.'; }
+        catch(e){ m.note='Could not make one: '+e.message; }
+        m.busy=false; after(); return;
+      }
+      try{
+        if(navigator.share){ await navigator.share({text:m.j.msg}); retire(a, 'Sent.'); }
+        else { await navigator.clipboard.writeText(m.j.msg); retire(a, 'Copied. Paste it into a message to them.'); }
+      }catch(e){ m.note='Not shared. Tap Share the link again.'; }
+      after();
+    });
+    return b;
+  }
+  function linkNeed(r){
+    var who=codeByUser(r.by);
+    var c=needCard('l:'+r.id, who, 'guest link, made '+when(r.made), 'A link for a friend. It opens nothing until you approve it.');
+    if(moved&&moved.id===r.id){ noteOf(c).textContent=moved.t; return c; }
+    if(tiers.length){
+      var f=el('div','salt-field'), lab=el('label','salt-field__label','Their friend is quoted'), sel=el('select','fld salt-field__input');
+      sel.id='npin'+r.id; lab.htmlFor=sel.id;
+      var o0=el('option',null,'Follows '+who); o0.value=''; if(!r.level)o0.selected=true; sel.appendChild(o0);
+      /* Ambassador is the floor and never a guest's */
+      tiers.slice(1).forEach(function(t){ var o=el('option',null,t); o.value=t; if(r.level===t)o.selected=true; sel.appendChild(o); });
+      sel.addEventListener('change', function(){ setLevel(r, sel.value); });
+      f.appendChild(lab); f.appendChild(sel); c.appendChild(f);
+    }
+    var row=el('div','salt-approve__actions'), ap=ghost('Approve', true), de=ghost('Decline');
+    ap.addEventListener('click', function(){ moveLink(r,'approve'); });
+    de.addEventListener('click', function(){ moveLink(r,'decline'); });
+    row.appendChild(ap); row.appendChild(de); c.appendChild(row);
+    saidOn(r, noteOf(c));
+    return c;
+  }
+  /* S9 fix: WHAT THE BRAKE KNOWS, NOT A LOCKED-OUT CUSTOMER. It refuses the address the misses came from, and
+     that may be anybody holding the username, so the card says an address is refused and offers the link that
+     lets the customer in if it was them, never that they are shut out. */
+  function lockNeed(a){
+    var L=a.locked, s=a.seen, at=L.from>1?L.from+' addresses':'one address';
+    var c=needCard('k:'+a.username, a.code||a.username, 'refused at '+at,
+      'Ten wrong passwords '+(L.from>1?'each ':'')+'from '+at+', refused there'+(L.until?' until '+hm(L.until):'')+'.'
+      +' If it was them, a sign-in link lets them in.'
+      +(s&&s.opens?' Last got in'+(howOf(s)?' '+howOf(s):'')+', '+dayMon(s.last)+'.':' Has never got in.'), a.username);
+    var row=el('div','salt-approve__actions');
+    c.appendChild(row);
+    row.appendChild(linkButton(a, noteOf(c)));
+    /* and Show a code, in person, stage 3's hand-over (showHandover), for a customer at his counter */
+    var sc=ghost('Show a code'); sc.addEventListener('click', function(){ showHandover(a, sc); }); row.appendChild(sc);
+    return c;
+  }
+  function bareNeed(a){
+    var lv=stranger||"stranger's";
+    var c=needCard('n:'+a.username, a.code||a.username, 'no account yet', waitLine(), a.username);
+    var row=el('div','salt-approve__actions'), sh=ghost('Show the '+lv+' link', true), off=ghost('Send, after the update');
+    off.disabled=true; off.title='No account behind this username yet';
+    row.appendChild(sh); row.appendChild(off); c.appendChild(row);
+    var note=noteOf(c);
+    function openSilver(){
+      var r=strangerLink();
+      if(!r){ note.textContent='The '+lv+' link is not made yet. Open Links once, then try again.'; return; }
+      silverOpen[a.username]=true;
+      var box=el('div','glink'), img=document.createElement('img'), cp=ghost('Copy link');
+      box.appendChild(el('code','gu',r.url));
+      img.src=r.qr; img.alt='QR to the '+lv+' guest price list'; img.width=180; img.height=180; box.appendChild(img);
+      cp.addEventListener('click', async function(){
+        try{ await navigator.clipboard.writeText(r.url); note.textContent='Copied.'; }catch(e){ note.textContent='Copy failed.'; }
+      });
+      box.appendChild(cp);
+      c.insertBefore(box, row); sh.disabled=true;
+    }
+    sh.addEventListener('click', openSilver);
+    if(silverOpen[a.username]) openSilver();
+    return c;
+  }
+  function sendNeed(rows){
+    var codes=rows.map(function(a){ return a.code||a.username; }), first=rows.map(function(a){ return a.issued||''; }).sort()[0];
+    var named=codes.length>6?codes.slice(0,5).concat([(codes.length-5)+' more']):codes;
+    var c=needCard('s', rows.length+' to send', first?'ready since '+dayMon(first):'',
+      andList(named)+(rows.length===1?' has an account':' have accounts')+' and no sign-in yet.');
+    var row=el('div','salt-approve__actions'), go=ghost('Send them in turn', true);
+    go.addEventListener('click', function(){ turn={rows:rows.slice(), i:0, sent:[], j:null, why:''}; turnStep(); });
+    row.appendChild(go); c.appendChild(row);
+    return c;
+  }
+  /* ---- SEND THEM IN TURN (S9 9.6) --------------------------------------------------------------
+     One account at a time, in the card's own order: its sign-in link is made as its turn opens, Share is a tap
+     of its own (so the share sheet never waits on the making), and once shared the account is ticked sent, the
+     site's tick both his devices read, before the next turn opens. Skip leaves one unticked. The run is state
+     the card is drawn from, so a redraw of Needs you in the middle of it loses nothing. */
+  var turn=null;
+  /* S9 fix: a note carried from the turn before (a share whose tick did not save) is drawn on the next turn's
+     card; it was cleared here before anything drew it */
+  function turnStep(note){
+    var t=turn; if(!t) return;
+    t.j=null; t.copied=false; t.why=note||'';
+    drawNeeds();
+    if(t.i>=t.rows.length) return;
+    var at=t.i;
+    mintLink(t.rows[at]).then(function(j){ if(turn===t&&t.i===at){ t.j=j; drawNeeds(); } },
+      function(e){ if(turn===t&&t.i===at){ t.why=(t.why?t.why+' ':'')+'Could not make their link: '+e.message; drawNeeds(); } });
+  }
+  /* S9 fix: ONE SHARE AT A TIME. The tick is awaited after the share, and a second tap in that window shared the
+     same link again and stepped twice, so the next account was never shared or ticked and the end said all were
+     sent. Share and Skip wait while one is in flight, and the end counts the accounts ticked, not the taps. */
+  /* S9 fix: WITH NO SHARE SHEET, SHARE COPIES AND TICKS NOTHING. A copied message is not a sent one, so the tick
+     both his devices read waits for his own Sent it, once he has pasted it. */
+  async function turnShare(){
+    var t=turn, a=t&&t.rows[t.i];
+    if(!a||!t.j||t.busy) return;
+    t.busy=true; drawNeeds();
+    if(!t.copied){
+      try{
+        if(navigator.share){ await navigator.share({text:t.j.msg}); markOut(a.username, t.j); }
+        else { await navigator.clipboard.writeText(t.j.msg); markOut(a.username, t.j); t.copied=true; t.busy=false; t.why='Paste it into a message to them, then tap Sent it.'; drawNeeds(); return; }
+      }catch(e){ t.busy=false; t.why='Not shared. Tap Share again, or Skip.'; drawNeeds(); return; }
+    }
+    var note='';
+    try{ var r=await refs('/all/sent/'+a.username, {issue:sheetIssue, sent:true}); a.sent=r.sent; t.sent.push(a.username); }
+    catch(e){ note=(a.code||a.username)+' was shared, but the tick did not save: '+e.message; }
+    t.busy=false; t.i++; countSent(); drawRoster(); turnStep(note);
+  }
+  function turnCard(){
+    var t=turn, n=t.rows.length, fin=t.i>=n, a=t.rows[t.i];
+    var did=t.rows.filter(function(x){ return t.sent.indexOf(x.username)>=0; }).length;
+    var c=needCard('s', fin?'All done':(t.i+1)+' of '+n, did+' of '+n+' sent',
+      fin?(did===n?'Each has their link, and each is ticked sent.':'The ones not ticked are still on Accounts, under Not sent.')
+        :(a.code||a.username)+(t.copied?': their message is copied.':t.j?': their link is made. Share it and it is ticked sent.':': making their link.'));
+    var ticks=el('div','achips');
+    t.rows.forEach(function(x, k){ var did=t.sent.indexOf(x.username)>=0;
+      ticks.appendChild(chip(did?'verdigris':(k===t.i?'brass':'mist'), (x.code||x.username)+(did?', sent':''))); });
+    c.appendChild(ticks);
+    var row=el('div','salt-approve__actions');
+    if(fin){ var dn=ghost('Done', true); dn.addEventListener('click', function(){ turn=null; drawNeeds(); }); row.appendChild(dn); }
+    else {
+      var sh=el('button','salt-pill salt-pill--md',t.copied?'Sent it':'Share'); sh.type='button'; sh.disabled=!t.j||!!t.busy; sh.addEventListener('click', turnShare);
+      var sk=ghost('Skip'); sk.disabled=!!t.busy; sk.addEventListener('click', function(){ if(turn.busy) return; turn.i++; turnStep(); });
+      row.appendChild(sh); row.appendChild(sk);
+    }
+    c.appendChild(row);
+    noteOf(c).textContent=t.why;
+    return c;
+  }
+  function drawNeeds(){
+    if(!nlist) return;
+    nlist.textContent='';
+    var real=sheetRows.filter(function(a){ return !a.test; }), n=0;
+    var add=function(c, counts){ nlist.appendChild(c); if(counts) n++; };
+    /* a link he has just moved stays where he tapped it, saying what happened, and is no longer counted */
+    links.filter(function(r){ return waitingLink(r)||(moved&&moved.id===r.id&&!r.standing&&r.by); })
+      .forEach(function(r){ add(linkNeed(r), waitingLink(r)&&!(moved&&moved.id===r.id)); });
+    real.filter(function(a){ return a.account&&a.locked; }).forEach(function(a){ add(lockNeed(a), true); });
+    real.filter(function(a){ return a.account===false; }).forEach(function(a){ add(bareNeed(a), true); });
+    var fresh=real.filter(function(a){ return a.account&&!a.sent&&!(a.seen&&a.seen.opens); });
+    if(turn||fresh.length) add(turn?turnCard():sendNeed(fresh), fresh.length>0);
+    setCount('needs', n); setCount('links', links.filter(waitingLink).length);
+    /* S9 9.8: what waits on the desk, as the desk last told the site; a count, with no link and no name */
+    var dw=document.getElementById('nDesk'), dn=deskWait?deskWait.n:0;
+    dw.hidden=!deskWait;
+    /* S9 9.8 fix: the desk's own Waiting on you count, as fresh as the desk's last read, so it says when that was.
+       S9 fix: and in the past tense, saying so, once an order has moved since that reading */
+    var dAt=deskWait&&deskWait.at?' as at '+when(deskWait.at):'';
+    document.getElementById('nDeskT').textContent=deskWait&&deskWait.moved
+      ?(dn?dn+(dn===1?' thing':' things')+' waited on the desk':'Nothing waited on the desk')+dAt+', and an order has moved since.'
+      :(dn?dn+(dn===1?' thing waits':' things wait')+' on the desk':'Nothing waits on the desk')+(dAt?','+dAt:'')+'.';
+    nCount.textContent=(!sheet||!linksRead)?'Reading what needs you.'
+      :(n?n+(n===1?' thing':' things'):'Nothing needs you')+', as at '+hm(new Date().toISOString())+'.';
+    drawNeedOpen(false);
   }
   document.getElementById('gmake').addEventListener('click', async function(){
     var b=this, intro=document.getElementById('gintro').value,
@@ -597,16 +1002,17 @@ export const OWNER_JS = `
     });
     box.appendChild(b);
   }
-  mHome.addEventListener('click', function(ev){
-    var b=ev.target.closest('button[data-m]'); if(!b) return;
-    panel(b.getAttribute('data-m'));
+  /* a place, an item on More, or a way back: one listener for the whole of his page */
+  roster.addEventListener('click', function(ev){
+    var bk=ev.target.closest('button[data-back]');
+    if(bk){ if(bk.getAttribute('data-back')==='accounts') openCard(null); else panel(bk.getAttribute('data-back')||null); return; }
+    var b=ev.target.closest('button[data-m]'); if(b) panel(b.getAttribute('data-m'));
   });
-  [].slice.call(document.querySelectorAll('button[data-back]')).forEach(function(b){
-    b.addEventListener('click', function(){ panel(null); });
+  document.getElementById('afil').addEventListener('click', function(ev){
+    var b=ev.target.closest('button[data-f]'); if(b) filterBy(b.getAttribute('data-f'));
   });
   rq.addEventListener('input', drawRoster);
-  var sq=document.getElementById('sq'); if(sq) sq.addEventListener('input', drawSend);
   panel(null);
-  /* the home itself needs the account list, for the count and for whether a test account is live */
-  loadSheet();
+  /* the home itself needs the account list and the links: Needs you is read off both (S9 9.1) */
+  loadSheet(); loadLinks();
 `;

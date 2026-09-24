@@ -113,14 +113,17 @@ export async function usersMap(env) {
   try { return (await env.SALT_QUEUE.get("stmt-users", "json")) || {}; } catch { return {}; }
 }
 
-/** Every open order (or all with `all`), each with the desk code the username maps to. */
-export async function listOrders(env, all) {
-  const r = await site(env, "/desk/orders" + (all ? "?all=1" : ""));
+/** Every open order (or all with `all`), each with the desk code the username maps to; with `links`, how many
+ *  associate links wait in Salt Admin as well (S9 9.8), a count the desk's page shows and nothing more. */
+export async function listOrders(env, all, links) {
+  const q = [all ? "all=1" : "", links ? "links=1" : ""].filter(Boolean).join("&");
+  const r = await site(env, "/desk/orders" + (q ? "?" + q : ""));
   if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
   const b = await r.json().catch(() => ({}));
   if (!r.ok || !b.ok) return { ok: false, error: b.error || ("the statements site answered http " + r.status) };
   const users = await usersMap(env);
-  return { ok: true, orders: (b.orders || []).map((o) => Object.assign({ code: users[o.u] || null }, o)) };
+  return Object.assign({ ok: true, orders: (b.orders || []).map((o) => Object.assign({ code: users[o.u] || null }, o)) },
+    links && Number.isInteger(b.links) ? { links: b.links } : {});
 }
 
 /** S6 6.6: every claim against an account still waiting (or all with `all`), each with the desk code its username maps
@@ -1327,9 +1330,26 @@ export async function tellSite(env) {
  *  those, how many are still to be acknowledged, which is all his banner may ask him to acknowledge. */
 export async function ordersWaiting(env) {
   const r = await listOrders(env, false);
-  if (!r.ok) return { waiting: 0, placed: 0 };
-  return { waiting: r.orders.filter((o) => o.status === "placed" || o.status === "acknowledged").length,
+  if (!r.ok) return { ok: false, waiting: 0, placed: 0 };
+  return { ok: true, waiting: r.orders.filter((o) => o.status === "placed" || o.status === "acknowledged").length,
     placed: r.orders.filter((o) => o.status === "placed").length };
+}
+
+/* S9 9.8 FIX (25 Sep 2026): SALT ADMIN'S LINE IS THE DESK'S OWN COUNT. The desk's page counts Waiting on you (the
+   master's ordActs, over the orders and the drafts together: a new order not yet accepted, a question of theirs not
+   marked No reply needed, cash to record, a payment they say they made) for its Today row and its Enter badge, and once
+   it has read both it sends that figure here (POST /orders/waiting), which this relays to the site's desk-waiting mark.
+   One reading, the desk's: this Worker's own recount every minute (placed, or their line last) missed cash and payments
+   and ignored his No reply needed, so the two apps disagreed. The trade, stated: the figure is as fresh as the desk's
+   last read of its orders, and the mark carries its moment, which Salt Admin shows. S9 fix: the page sends how old its
+   reading is (`age`, whole seconds), passed through, and the site stamps the moment from it. */
+export async function tellWaiting(env, n, age) {
+  if (!Number.isInteger(n) || n < 0 || n > 9999) return { ok: false, status: 400, error: "send the count as a whole number" };
+  const a = Number.isInteger(age) && age >= 0 && age <= 30 * 86400 ? age : 0;
+  const t = await site(env, "/desk/waiting", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ n, age: a }) });
+  if (!t) return { ok: false, status: 503, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  if (!t.ok) return { ok: false, status: 502, error: "the site would not take the count (http " + t.status + ")" };
+  return { ok: true, n };
 }
 
 /* THE NUDGE, every minute (16 Sep 2026; it was the drafter's quarter-hour, and nothing had

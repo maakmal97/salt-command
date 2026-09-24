@@ -31,7 +31,7 @@ import { statementCss, REVIEW_CSS } from "./stmt-style.mjs";
 import { qrSvg } from "./qr.mjs";
 import { sendSheet } from "./stmt-send.mjs";
 import { newPassword, USERNAME_RE, makeVerifier, contentKey, wrapKey, encryptWith, decryptWith, encryptText, userFor, usersJson } from "./stmt-crypto.mjs";
-import { priceList } from "./pricelist.mjs";
+import { priceList, priceDigest } from "./pricelist.mjs";
 /* v782: the marks the customer's own page draws, so a statement and the site cannot diverge on
    what a book looks like. tools/ reading stmt/ is the safe direction and is what stmt-send.mjs
    already does; the ban is on stmt/ reaching OUT, because that Worker bundle must stay free of
@@ -871,7 +871,9 @@ export async function liveRecords(root, key, now, pricing, cards) {
       }
       if (pricing) {
         const list = priceList(code, book, pricing, now);
-        rec.prices = Object.assign({ at: list.at, week: list.week.monday }, await encryptWith(ck, JSON.stringify(list)));
+        /* S4 4.1: its stamp, a digest of its figures, sealed inside and in the clear beside it for Place to be checked against */
+        list.digest = priceDigest(list, key, rec.u);
+        rec.prices = Object.assign({ at: list.at, week: list.week.monday, digest: list.digest }, await encryptWith(ck, JSON.stringify(list)));
         priced++;
       }
       /* v706, his instruction of 18 Sep 2026: an associate sees their own report card, by month,
