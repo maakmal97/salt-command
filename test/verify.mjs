@@ -32508,6 +32508,8 @@ await (async () => {
   const withOrders = [
     { ...base, id: "oR", status: "acknowledged", paid: 110, msgs: [{ by: "customer", text: "Is it in?", at: "2026-09-20T04:00:00Z" }, { by: "desk", text: "Ready Thursday.", at: "2026-09-21T02:00:00Z" }] },
     { ...base, id: "oC", status: "acknowledged", qty: 2, total: 200, paid: 50, mode: "deliver", place: "Veloria" },
+    /* S7-R2 of the stage 7 review: an order they collect is paid now or when they collect it, as its own screen says */
+    { ...base, id: "oK", status: "acknowledged", paid: 20 },
     { ...base, id: "oP", status: "placed" },
     { ...base, id: "oD", status: "done", paid: 110, moved: 1 }];
   const open = async (opt) => {
@@ -32543,12 +32545,13 @@ await (async () => {
       "To pay now is the sealed RM 70, never the statement's RM 90, with what it is for and the one filled Pay: " + JSON.stringify(pay71.slice(0, 120)));
     const rows = (id) => [...D.querySelectorAll("#" + id + " [data-row]")].map((r) => r.getAttribute("data-row")).join(",");
     ok(rows("hNeeds") === "oR" && /A reply: Ready Thursday\./.test(D.getElementById("hNeeds").textContent)
-      && rows("hComing") === "oC,oP" && /RM 150 still to pay, now or when it arrives/.test(D.getElementById("hComing").textContent)
+      && rows("hComing") === "oC,oK,oP" && /RM 150 still to pay, now or when it arrives/.test(D.getElementById("hComing").textContent)
+      && /RM 90 still to pay, now or when you collect/.test(D.getElementById("hComing").textContent)
       && /Waiting to be confirmed/.test(D.getElementById("hComing").textContent),
-      "Needs you holds the reply not yet shown, and Coming up the orders agreed or sent and not handed over, with what is still to pay: "
-      + JSON.stringify([rows("hNeeds"), rows("hComing")]));
-    ok([...D.querySelectorAll('#tabs [data-n="order"]')].map((c) => c.textContent).join(",") === "2,2" && !D.querySelector('#tabs [data-n="home"]').textContent,
-      "the Orders place counts the two orders that need them, as a numeral on the bar and the rail");
+      "Needs you holds the reply not yet shown, and Coming up the orders agreed or sent and not handed over, with what is still to pay and when, by the way it comes: "
+      + JSON.stringify([rows("hNeeds"), rows("hComing"), D.getElementById("hComing").textContent]));
+    ok([...D.querySelectorAll('#tabs [data-n="order"]')].map((c) => c.textContent).join(",") === "3,3" && !D.querySelector('#tabs [data-n="home"]').textContent,
+      "the Orders place counts the three orders that need them, as a numeral on the bar and the rail");
     ok(D.getElementById("tCard").hidden && D.querySelector('nav.salt-appbar button[data-t="card"]').hidden
       && D.querySelector("#pStmt #thisDevice #lock") && /^Sign out of this /.test(D.getElementById("lock").textContent) && !D.querySelector("#barw #lock"),
       "Rewards is not offered to a customer, and Log out is This device's, on Account, not the bar's");

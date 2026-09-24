@@ -2705,6 +2705,12 @@ const CLIENT_JS = `
     r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
     return r;
   }
+  /* when what is still to pay may be paid, in one set of words for the order's screen and, inline, Home's Coming up, which
+     said "when it arrives" of an order they collect (S7-R2 of the stage 7 review) */
+  function payWhen(o,inline){
+    var mv=+o.moved||0, w=mv>0?(movedAll(o)?'the goods are with you':'part of the goods is with you'):(o.mode==='deliver'?'when it arrives':'when you collect');
+    return mv>0?(inline?w:w.charAt(0).toUpperCase()+w.slice(1)):(inline?'now or ':'Now, or ')+w;
+  }
   /* THE MONEY ON ITS OWN LINES: the goods, the delivery, what is paid, what they have sent and is waiting, and what
      is still to pay, with when it may be paid */
   function oMoney(o){
@@ -2715,9 +2721,9 @@ const CLIENT_JS = `
     if(paid>0) L.appendChild(lrow('Paid',rm(paid)));
     if(claimed>0) L.appendChild(lrow('Sent by you',rm(claimed),'Waiting for us to confirm it arrived'));
     if(oPayable(o)){
-      var tp=oToPay(o), mv=+o.moved||0;
+      var tp=oToPay(o);
       L.appendChild(tp>0.004
-        ?lrow('Still to pay',rm(tp),mv>0?(movedAll(o)?'The goods are with you':'Part of the goods is with you'):(d?'Now, or when it arrives':'Now, or when you collect'),'odue')
+        ?lrow('Still to pay',rm(tp),payWhen(o),'odue')
         :lrow('Still to pay',rm(0),'Paid in full'));
     }
     return L;
@@ -3154,7 +3160,7 @@ const CLIENT_JS = `
     if(!list.length) return box;
     box.appendChild(hHead('Coming up'));
     list.forEach(function(o){
-      var c=oClaimed(o), t=o.status==='placed'?'Waiting to be confirmed':oToPay(o)>0.004?rm(oToPay(o))+' still to pay, now or when it arrives':'Paid';
+      var c=oClaimed(o), t=o.status==='placed'?'Waiting to be confirmed':oToPay(o)>0.004?rm(oToPay(o))+' still to pay, '+payWhen(o,true):'Paid';
       box.appendChild(homeRow(o,t+(c>0?'. '+rm(c)+' sent, waiting for us to confirm':'')));
     });
     return box;
