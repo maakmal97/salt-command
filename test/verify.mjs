@@ -20391,9 +20391,10 @@ await (async () => {
   const page6 = await (await stmtW6.fetch(new Request("https://k7m3p2.example/"), { STMT: kv6 })).text();
   /* 24 Sep 2026: the tab follows the mark alone, so an associate with no card yet still reaches their
      links; a panel with no card says when it comes and carries the links (behaviour: "S1 1.40") */
-  ok(/data-t="card" id="tCard" hidden/.test(page6) && /tCard\.hidden=!assoc;/.test(page6),
-    "the tab starts hidden and is shown to an associate alone");
-  ok(/pCard\.hidden=\(t!=='card'\)/.test(page6), "and the panel is switched with the other three");
+  /* S7 7.1: the tab is Rewards, a place on the bar and the rail, hidden on both until the account is an associate's */
+  ok(/id="tCard" data-t="card" hidden/.test(page6) && /class="salt-appbar__item" data-t="card" hidden/.test(page6) && /placeHide\('card',!assoc\);/.test(page6),
+    "the place starts hidden and is shown to an associate alone");
+  ok(/card:pCard\}/.test(page6) && /PANEL\[k\]\.hidden=k!==t;/.test(page6), "and its panel is switched with the other places");
   ok(/card=null; cardMonth=null;/.test(page6), "logging out forgets it, as it forgets the price list");
   /* the month pill was 29px tall since v690, on a strip whose whole purpose is to be tapped */
   ok(/min-height:var\(--salt-tap\);display:inline-flex/.test(page6) && !/cursor:pointer;min-height:auto/.test(page6),
@@ -32334,7 +32335,7 @@ await (async () => {
       && /Waiting to be confirmed/.test(D.getElementById("hComing").textContent),
       "Needs you holds the reply not yet shown, and Coming up the orders agreed or sent and not handed over, with what is still to pay: "
       + JSON.stringify([rows("hNeeds"), rows("hComing")]));
-    ok([...D.querySelectorAll('#tabs [data-count="order"]')].map((c) => c.textContent).join(",") === "2,2" && !D.querySelector('#tabs [data-count="home"]').textContent,
+    ok([...D.querySelectorAll('#tabs [data-n="order"]')].map((c) => c.textContent).join(",") === "2,2" && !D.querySelector('#tabs [data-n="home"]').textContent,
       "the Orders place counts the two orders that need them, as a numeral on the bar and the rail");
     ok(D.getElementById("tCard").hidden && D.querySelector('nav.salt-appbar button[data-t="card"]').hidden
       && D.querySelector("#pStmt #devSlot #lock") && D.getElementById("lock").textContent === "Log out" && !D.querySelector("#barw #lock"),

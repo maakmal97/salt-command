@@ -709,13 +709,13 @@ function placesRail() {
     + '<div class="salt-rail__brand"><span class="aring">' + glyphSvg("ring", 22) + '</span><b class="salt-title">Salt Counter</b></div>'
     + '<div class="salt-rail__group">' + PLACES.map(([t, w]) => '<button type="button" class="salt-rail__tab salt-rail__tab--solo"' + placeAttrs(t, true) + ">"
       + '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico(t) + "</span><span>" + w + "</span></span>"
-      + '<span class="salt-rail__count" data-count="' + t + '"></span></button>').join("") + "</div>"
+      + '<span class="salt-rail__count" data-n="' + t + '"></span></button>').join("") + "</div>"
     + '<p class="salt-rail__foot cfoot" data-wholine>Signed in as <span class="mono" data-who></span></p></nav>';
 }
 function placesBar() {
   return '<nav class="salt-appbar" aria-label="Salt Counter">' + PLACES.map(([t, w]) => '<button type="button" class="salt-appbar__item"' + placeAttrs(t) + ">"
     + '<span class="salt-appbar__icon">' + aico(t) + '</span><span class="salt-appbar__label">' + w + "</span>"
-    + '<span class="salt-appbar__count" data-count="' + t + '"></span></button>').join("") + "</nav>";
+    + '<span class="salt-appbar__count" data-n="' + t + '"></span></button>').join("") + "</nav>";
 }
 /* S7 7.1: THIS DEVICE, Account's slot for what belongs to the phone in the hand rather than the account: Log out today;
    notifications, saving it as an app and the other devices draw into it as their folds land */
@@ -875,8 +875,8 @@ export function landingPage(user, nonce, owner, bulletin) {
     /* the header names the place and whose account it is, so every customer knows their username */
     + '<header class="chead"><h1 id="placeT">Home</h1>'
     + '<p class="cwho" data-wholine>Signed in as <span class="mono" data-who></span><span id="cstay"></span></p></header>'
-    /* HOME: what they owe, what needs them and what they order again; the keep card first, where stage 3 put it
-       first on the page. Two columns from 1080px (S7 7.2) */
+    /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5), then the keep card,
+       which stage 3 put first on the page. Two columns from 1080px (S7 7.2) */
     + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin) + (owner ? "" : keepCard()) + '<div id="hPay"></div><div id="hNeeds"></div></div>'
     + '<div class="hcol"><div id="hComing"></div><div id="hAgain"></div></div></div>'
     /* ACCOUNT: the statement, and This device beside it */
@@ -3038,10 +3038,10 @@ const CLIENT_JS = `
     box.appendChild(g);
     return box;
   }
-  /* a count beside a place is what waits there: the orders that need them */
+  /* a count beside a place is what waits there: the orders that need them. data-n: data-count is the owner's own */
   function placeCounts(){
     var n=orders.filter(oNeeds).length;
-    [].forEach.call(tabs.querySelectorAll('[data-count]'),function(c){ c.textContent=c.getAttribute('data-count')==='order'&&n?String(n):''; });
+    [].forEach.call(tabs.querySelectorAll('[data-n]'),function(c){ c.textContent=c.getAttribute('data-n')==='order'&&n?String(n):''; });
   }
   /* ---- ACCOUNT AND REWARDS: what goes inside them is drawn here (the places area, S7 7.3 and S8 8.1); the shell calls
      these two when the account opens ---- */
