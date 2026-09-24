@@ -439,7 +439,7 @@ function keepSheet() {
     + "<p>On iPhone the Home Screen app starts signed out, so it asks once for this code. Copy it now, and paste it there.</p>"
     + '<ol class="keepsteps">'
     + "<li>Tap " + glyphSvg("dots", 22) + " then " + glyphSvg("share", 22)
-    + '<span class="sub2">At the foot of Safari. On an older iPhone, just the second mark.</span></li>'
+    + '<span class="sub2" id="keepWhere">At the foot of Safari. On an older iPhone, just the second mark.</span></li>'
     + "<li>Tap " + glyphSvg("addsq", 22) + " then Add</li>"
     + "<li>Open the new icon and tap " + glyphSvg("paste", 22) + " Paste the code</li></ol>"
     + '<div class="salt-code"><label class="salt-code__label" for="keepCode">Your code</label>'
@@ -768,7 +768,9 @@ const CLIENT_JS = `
      on a laptop), in the markup's .dev words and in every line the script writes. */
   var UA=navigator.userAgent||'';
   var IOS=/iPhone|iPad|iPod/.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  var DEV=/Mobi|Android|iPhone|iPad|iPod/.test(UA)||IOS?'phone':'computer';
+  /* S3 fix: an iPad is called one, and its Safari's Share is not at the foot, so the Sheet's position line is left off */
+  var IPAD=/iPad/.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  var DEV=IPAD?'iPad':/Mobi|Android|iPhone|iPod/.test(UA)||IOS?'phone':'computer';
   /* already kept as an app: nothing teaches how to keep it (v693) */
   var STANDALONE=false;
   try{ STANDALONE=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){}
@@ -986,7 +988,8 @@ const CLIENT_JS = `
     var mode=keepMode();
     keepCardEl.hidden=!mode;
     if(!mode) return;
-    document.getElementById('keepHead').textContent=DEV==='phone'?'Keep it on your Home Screen':'Keep it as an app';
+    document.getElementById('keepHead').textContent=IOS||DEV==='phone'?'Keep it on your Home Screen':'Keep it as an app';
+    document.getElementById('keepWhere').hidden=IPAD;
     document.getElementById('keepGo').hidden=mode!=='ios';
     document.getElementById('keepInstall').hidden=mode!=='install';
     document.getElementById('keepSam').hidden=mode!=='samsung';
@@ -1055,13 +1058,13 @@ const CLIENT_JS = `
      app is remembered, with the same split key as everywhere else, so this is done once. */
   var APP=location.pathname==='/app';
   var codeBox=document.getElementById('codeBox'), codeIn=document.getElementById('codeIn'), codeMsg=document.getElementById('codeMsg');
-  var TOK_RE=/^[A-Za-z0-9_-]{20,64}$/;
+  var TOK_RE=/^[A-Za-z0-9_-]{20,64}$/, codeIos=false;
   function csay(t,cls){ if(codeMsg){ codeMsg.textContent=t||''; codeMsg.className='msg'+(cls?' '+cls:''); } }
   function showCode(fromDoor){
     if(!codeBox) return;
     gate.hidden=true; if(opening) opening.hidden=true; codeBox.hidden=false;
     /* the words fit the road: the saved iPhone app is told the true way to get a code; a browser is not told about Safari */
-    var ios=IOS&&!fromDoor;
+    var ios=codeIos=IOS&&!fromDoor;
     document.getElementById('codeH').textContent=ios?'One step to finish':'Sign in with a code';
     document.getElementById('codeLead').textContent=ios?'Bring your sign-in across from Safari. You do this once on this '+DEV+'.'
       :'Type the eight letters and numbers you were given. A code works once.';
@@ -1136,7 +1139,8 @@ const CLIENT_JS = `
       if(TOK_RE.test(t)){ openHandover({token:t}); return; }
       var c=codeOf(t);
       if(c&&!ALPHA.test(clean(c))){ codeIn.value=c.toUpperCase().replace('-',' '); openHandover({code:c}); return; }
-      csay('There is no code on the clipboard. Copy it in Safari, or type it below.','bad');
+      /* S3 fix: Safari is named only on the saved iPhone app's screen */
+      csay(codeIos?'There is no code on the clipboard. Copy it in Safari, or type it below.':'There is no code on the clipboard. Type it below.','bad');
     });
   }
 
@@ -2195,7 +2199,7 @@ const CLIENT_JS = `
   /* ---- OPENING A REMEMBERED DEVICE (v692) -----------------------------------------------------
      The token names the record and brings back the wrap; the key beside it in this browser opens
      it. A refusal, a stale token or a record that has gone simply falls through to the door. */
-  var KEPT='Your account could not be opened just now. This phone is still remembered: try again in a moment.';
+  var KEPT='Your account could not be opened just now. This '+DEV+' is still remembered: try again in a moment.';
   var remAgain=document.getElementById('remAgain');
   function again(on){ if(remAgain) remAgain.hidden=!on; }
   async function openRemembered(keep){

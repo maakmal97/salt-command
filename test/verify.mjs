@@ -15653,7 +15653,7 @@ await (async () => {
       return { kept: store.has("salt-stmt-remember"), msg: dom.window.document.getElementById("msg").textContent, gate: !dom.window.document.getElementById("gate").hidden };
     } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
   };
-  const said = /could not be opened just now\. This phone is still remembered/;
+  const said = /could not be opened just now\. This (phone|computer) is still remembered/;
   for (const a of [500, "drop"]) {
     const r = await drive(a);
     ok(r.kept && r.gate && said.test(r.msg), (a === "drop" ? "a dropped connection" : "a server fault (" + a + ")")
@@ -19941,6 +19941,73 @@ await (async () => {
     ok(got.link === user && got.password === pass, "and the link's message keeps the username, the password's message the password: " + JSON.stringify(got));
     ok(paste(un, "Your test account is 0000-0000.") === "0000-0000", "his test account's zeros are still taken");
   } finally { W.close(); }
+})();
+section("S3 fix: the words fit the device: a computer is still remembered as a computer, an iPad is called one without the foot of Safari, and the door's code screen never names Safari");
+await (async () => {
+  /* S3R-8 (24 Sep 2026). "This phone is still remembered" reached laptops, now remembered by default; an iPad was
+     called a phone and told Share was at the foot of Safari; and the door's code screen, shown to Android and
+     computers, answered an empty clipboard with "Copy it in Safari". */
+  const { landingPage: lpD } = await import("../stmt/page.js");
+  const CD = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDD } = await import("jsdom");
+  const DESK = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36";
+  const IPAD = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15";
+  const DROID = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Mobile Safari/537.36";
+  const uD = "aaaa-dddd", passD = "2345-6789-abcd-efgd", ckD = await CD.contentKey("7".repeat(64), uD);
+  const envD = await CD.encryptWith(ckD, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] }));
+  const drive = async (ua, opts) => {
+    const store = new Map(opts.rem ? [["salt-stmt-remember", JSON.stringify({ t: "d".repeat(32), k: Buffer.from("e".repeat(32)).toString("base64"), u: uD })]] : []);
+    const dom = new JDD(lpD(opts.u || "", "nD", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: ua, configurable: true });
+        if (opts.touch) { Object.defineProperty(win.navigator, "platform", { value: "MacIntel", configurable: true }); Object.defineProperty(win.navigator, "maxTouchPoints", { value: 5, configurable: true }); }
+        Object.defineProperty(win.navigator, "clipboard", { configurable: true, value: { readText: async () => "", writeText: async () => {} } });
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (p, init) => {
+          const body = init && init.body ? JSON.parse(init.body) : null;
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/remember/open") return ans(503, { ok: false, error: "busy" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CD.wrapKey(passD, ckD), env: envD, live: null, prices: null, session: "sessDa000000000000000000000000" });
+          if (p === "/handover") return ans(200, { ok: true, code: "h4tn-8xwc", token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() });
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    await new Promise((r) => setTimeout(r, 60));
+    return { W, D, until };
+  };
+
+  const desk = await drive(DESK, { rem: true });
+  try {
+    await desk.until(() => /could not be opened/.test(desk.D.getElementById("msg").textContent));
+    ok(/This computer is still remembered/.test(desk.D.getElementById("msg").textContent),
+      "a computer the site could not open is told the computer is still remembered: " + JSON.stringify(desk.D.getElementById("msg").textContent));
+  } finally { desk.W.close(); }
+
+  const pad = await drive(IPAD, { touch: true, u: uD });
+  try {
+    ok(/on this iPad/.test(pad.D.getElementById("gate").textContent), "an iPad is called an iPad at the door: " + JSON.stringify(pad.D.querySelector("label.rem").textContent));
+    pad.D.getElementById("pw").value = passD;
+    pad.D.getElementById("f").dispatchEvent(new pad.W.Event("submit", { bubbles: true, cancelable: true }));
+    await pad.until(() => !pad.D.getElementById("barw").hidden);
+    ok(!pad.D.getElementById("keepCard").hidden && /Keep it on your Home Screen/.test(pad.D.getElementById("keepHead").textContent)
+      && pad.D.getElementById("keepWhere").hidden && !pad.D.getElementById("keepSheet").querySelector(".keepsteps").hidden,
+      "and its Keep it on your Home Screen keeps the marks but leaves off where Share sits on an iPhone");
+  } finally { pad.W.close(); }
+
+  const droid = await drive(DROID, {});
+  try {
+    droid.D.getElementById("toCode").click();
+    droid.D.getElementById("codePaste").click();
+    await droid.until(() => /no code on the clipboard/.test(droid.D.getElementById("codeMsg").textContent));
+    ok(!/Safari/.test(droid.D.getElementById("codeMsg").textContent) && /Type it below/.test(droid.D.getElementById("codeMsg").textContent),
+      "the door's code screen answers an empty clipboard without naming Safari: " + JSON.stringify(droid.D.getElementById("codeMsg").textContent));
+  } finally { droid.W.close(); }
 })();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {
