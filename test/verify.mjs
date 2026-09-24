@@ -35558,7 +35558,7 @@ await (async () => {
       const out = { tab: t(d.getElementById("tOrder")), onOrder: !d.getElementById("pOrder").hidden, head: t(d.querySelector("#pOrder h2")),
         tile: pane ? [".salt-kpi__label", ".salt-kpi__value"].map((q) => t(pane.querySelector(q))).join(" ") : "",
         rows: pane ? [...pane.querySelectorAll(".salt-ledger__row")].map((r) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((q) => t(r.querySelector(q))).join("|")) : [],
-        form: !!d.getElementById("oGo"), pricesTab: !d.getElementById("tPrices").hidden, claimLine: t(d.querySelector("#payHead .msg")) };
+        form: !!d.getElementById("oNew"), pricesTab: !d.getElementById("tPrices").hidden, claimLine: t(d.querySelector("#payHead .msg")) };
       d.getElementById("tPrices").click();
       out.prices = !d.getElementById("pPrices").hidden && /100/.test(t(d.getElementById("pPrices")));
       return out;
