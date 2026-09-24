@@ -43,12 +43,12 @@ import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, MAX_PER_ASSOC } from "./refs.js";
-import { SIGNIN_RE, mintSignin, burnSignin, idOf } from "./signin.js";
+import { SIGNIN_RE, mintSignin, burnSignin, idOf, pointAt, unpoint, devPrefix } from "./signin.js";
 import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
 import { FONTS } from "./fonts.js";
-import { mintSession, dropSession, sessionUser, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, toChase, CHASE_KEY, chaseSlot } from "./orders.js";
+import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, toChase, CHASE_KEY, chaseSlot } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -165,6 +165,16 @@ async function markSeen(env, u, rec, how) {
   } catch (e) { /* the next open counts */ }
 }
 
+/* S3 3.2: EVERY SESSION AN OPEN MINTS LEAVES ITS POINTER under the account (stmt/signin.js), so signing an account
+   out everywhere reaches a session minted a minute ago as well as a remembered phone. Best effort, as markSeen is:
+   a pointer that cannot be written never fails an open, and the session lapses on its own in fifteen minutes. */
+async function openSession(env, u, how) {
+  const session = await mintSession(env, u);
+  const now = new Date().toISOString();
+  try { await pointAt(env, u, "sess:" + session, { how, at: now, last: now }, SESSION_TTL); } catch (e) { /* it lapses on its own */ }
+  return session;
+}
+
 async function handleOpen(request, env) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
 
@@ -267,7 +277,7 @@ async function handleOpen(request, env) {
   /* THE SESSION (06 Sep 2026): a token the order routes take in place of the password, minted here
      because this is the one place the password has just been proved. Fifteen minutes in the store;
      the page forgets it the moment it locks. The override gets none: the owner does not order. */
-  const session = byMaster ? null : await mintSession(env, u);
+  const session = byMaster ? null : await openSession(env, u, "password");
   return new Response(JSON.stringify({
     ok: true, byMaster, issued: rec.issued || null, issues: rec.issues || null,
     wrap: byMaster ? null : (rec.wrap || null),
@@ -325,7 +335,10 @@ async function handleCustomer(request, env, p, m) {
     const wrap = b && b.wrap;
     if (!wrap || typeof wrap !== "object" || !wrap.salt || !wrap.iv || !wrap.ct) return json({ ok: false, error: "send the wrap" }, 400);
     const tok = b64e(crypto.getRandomValues(new Uint8Array(24))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-    await env.STMT.put(await remKey(tok), JSON.stringify({ u, wrap, at: new Date().toISOString() }), { expirationTtl: REM_TTL });
+    const key = await remKey(tok), now = new Date().toISOString();
+    /* S3 3.2: the pointer first, so a phone is never remembered where it cannot be found again */
+    await pointAt(env, u, key, { how: "remember", at: now, last: now }, REM_TTL);
+    await env.STMT.put(key, JSON.stringify({ u, wrap, at: now }), { expirationTtl: REM_TTL });
     return json({ ok: true, token: tok, days: REM_TTL / 86400 });
   }
   const mm = /^\/orders\/([^/]+)\/(method|cancel|pay|say)$/.exec(p);   /* v751: say, a line on the order */
@@ -345,7 +358,9 @@ async function logOut(request, env, m, su) {
   await dropSession(env, String(request.headers.get("X-Stmt-Session") || ""));
   const tok = b && typeof b.token === "string" && REM_RE.test(b.token) ? b.token : null;
   const { key, rec, raw } = tok ? await readRem(env, tok, false) : {};
-  if (rec && (!su || rec.u === su)) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); }
+  if (rec && (!su || rec.u === su)) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); await unpoint(env, rec.u, key); }
+  const stok = String(request.headers.get("X-Stmt-Session") || "");
+  if (su && stok) await unpoint(env, su, "sess:" + stok);
   const u = su || (rec && rec.u) || "";
   const ep = b && typeof b.endpoint === "string" && /^https:\/\//.test(b.endpoint) ? b.endpoint : null;
   if (u && ep) await env.STMT.delete("push:" + u + ":" + await endpointId(ep));
@@ -415,9 +430,12 @@ async function handleRemember(request, env) {
   const { key, rec } = tok ? await readRem(env, tok, true) : {};
   if (!rec || !rec.u) return json({ ok: false, error: REFUSED }, 401);
   const acct = await env.STMT.get("u:" + rec.u, "json");
-  if (!acct) { await env.STMT.delete(key); return json({ ok: false, error: REFUSED }, 401); }
+  if (!acct) { await env.STMT.delete(key); await unpoint(env, rec.u, key); return json({ ok: false, error: REFUSED }, 401); }
   await markSeen(env, rec.u, acct, "remembered");
-  const session = await mintSession(env, rec.u);
+  /* S3 3.2: the phone's own pointer says when it was last used, and one filed before pointers is given its first */
+  const now = new Date().toISOString();
+  try { await pointAt(env, rec.u, key, { how: "remember", at: rec.at || now, last: now }, remLeft(rec)); } catch (e) { /* the next open writes it */ }
+  const session = await openSession(env, rec.u, "remembered");
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
@@ -443,7 +461,7 @@ async function handleSignin(request, env) {
   const acct = await env.STMT.get("u:" + rec.u, "json");
   if (!acct) return json({ ok: false, error: REFUSED }, 401);
   await markSeen(env, rec.u, acct, "link");
-  const session = await mintSession(env, rec.u);
+  const session = await openSession(env, rec.u, "link");
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
@@ -596,6 +614,7 @@ const REM_RE = /^[A-Za-z0-9_-]{20,64}$/;
    its hash on its next open, keeping the time it had left. ONLY A TOKEN OF THE OLD MINTING'S OWN SHAPE is looked up
    raw (24 bytes, 32 characters): a hash read off a copy is 64, so it can never name a record by itself. */
 const REM_RAW_RE = /^[A-Za-z0-9_-]{32}$/;
+const remLeft = (rec) => Math.max(60, Math.round(REM_TTL - (Date.now() - (Date.parse(rec.at) || Date.now())) / 1000));
 const remKey = async (tok) => "rem:" + (await idOf(tok));
 async function readRem(env, tok, refile) {
   const key = await remKey(tok);
@@ -603,9 +622,8 @@ async function readRem(env, tok, refile) {
   if (rec || !REM_RAW_RE.test(tok)) return { key, rec, raw: null };
   const raw = "rem:" + tok, old = await env.STMT.get(raw, "json");
   if (!old || !refile) return { key, rec: old, raw: old ? raw : null };
-  const left = Math.round(REM_TTL - (Date.now() - (Date.parse(old.at) || Date.now())) / 1000);
   try {
-    await env.STMT.put(key, JSON.stringify(old), { expirationTtl: Math.max(60, left) });
+    await env.STMT.put(key, JSON.stringify(old), { expirationTtl: remLeft(old) });
     await env.STMT.delete(raw);
   } catch (e) { /* it opens either way, and is re-filed on the next */ }
   return { key, rec: old, raw: null };
@@ -743,11 +761,16 @@ async function makeTest(env) {
 }
 async function unmakeTest(env) {
   const gone = [TEST_REC, "seen:" + TEST_USER];
-  for (const pre of ["order:" + TEST_USER + ":", "push:" + TEST_USER + ":", "sent:"]) {
+  for (const pre of ["order:" + TEST_USER + ":", "push:" + TEST_USER + ":", "sent:", devPrefix(TEST_USER)]) {
     let cursor;
     do {
       const page = await env.STMT.list({ prefix: pre, cursor });
       for (const k of page.keys) if (!pre.startsWith("sent:") || k.name.endsWith(":" + TEST_USER)) gone.push(k.name);
+      /* S3 3.2: its remembered phones and live sessions, found through their pointers */
+      if (pre.startsWith("dev:")) for (const k of page.keys) {
+        const at = await env.STMT.get(k.name, "json");
+        if (at && /^(rem|sess):/.test(String(at.key))) gone.push(at.key);
+      }
       cursor = page.list_complete ? null : page.cursor;
     } while (cursor);
   }

@@ -56,6 +56,19 @@ export async function mintSignin(env, u, token, wrap) {
   return true;
 }
 
+/* ---- WHERE AN ACCOUNT IS SIGNED IN (S3 3.2, 24 Sep 2026) ------------------------------------------
+ * Every credential an open hands out, a remembered phone's wrap or a session, leaves a POINTER under the
+ * account: `dev:<username>:<sha256 of the key it names>`, holding that key, how it came, when it came and
+ * when it was last used. The credentials are filed under their tokens or their hashes, so without this an
+ * account's phones could be found only by reading every record in the store; listed by the prefix, they
+ * can be shown and signed out (stage 9) without a scan. A pointer opens nothing: it names a record, and
+ * the record still needs what only the phone holds. It lives as long as what it names. */
+export const devPrefix = (u) => "dev:" + u + ":";
+export async function pointAt(env, u, key, fields, ttl) {
+  await env.STMT.put(devPrefix(u) + (await idOf(key)), JSON.stringify(Object.assign({ key }, fields)), { expirationTtl: ttl });
+}
+export const unpoint = async (env, u, key) => env.STMT.delete(devPrefix(u) + (await idOf(key)));
+
 /** Read it and delete it, in that order. Returns the record, or null for anything at all wrong. */
 export async function burnSignin(env, token) {
   if (!SIGNIN_RE.test(String(token || ""))) return null;

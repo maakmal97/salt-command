@@ -15836,6 +15836,79 @@ await (async () => {
     "an old raw record opens, and is re-filed under its hash with the time it had left: " + JSON.stringify({ status: back.status, ttl }));
   ok((await post("/remember/open", { token: old })).status === 200, "and it opens again from where it now lives");
 })();
+section("S3 3.2: every remember and every open leaves a pointer under the username, listable by prefix, and Log out takes its own");
+await (async () => {
+  /* Stage 9 lists an account's phones and signs them all out. The credentials are filed under tokens or their
+     hashes, so without a pointer under the username that meant reading every record in the store. */
+  const C = await import("../tools/stmt-crypto.mjs"), S = await import("../stmt/signin.js");
+  const kv = new KV(), MASTER = "mp-s3-32", env = { STMT: kv, STMT_MASTER: MASTER };
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s3-32", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, "{}") }));
+  const post = async (path, body, headers) => { const r = await stmtWorker.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }), env); return { status: r.status, j: await r.json() }; };
+  const sha = (s) => createHash("sha256").update(s).digest("hex");
+  const ptrs = async () => { const out = {}; for (const k of (await kv.list({ prefix: "dev:" + u + ":" })).keys) out[k.name] = JSON.parse(await kv.get(k.name)); return out; };
+
+  const byPw = await post("/open", { u, password: pw });
+  const made = await post("/remember", { wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" } }, { "X-Stmt-Session": byPw.j.session });
+  const remK = "rem:" + sha(made.j.token);
+  const dev = (await ptrs())["dev:" + u + ":" + sha(remK)];
+  ok(!!dev && dev.key === remK && dev.how === "remember" && !!(await kv.get(remK))
+    && (kv.opts.get("dev:" + u + ":" + sha(remK)) || {}).expirationTtl === 30 * 24 * 3600 && !JSON.stringify(dev).includes(made.j.token),
+    "remembering a phone files a pointer under the username naming its record, living as long as it, and holding no token: " + JSON.stringify(dev));
+
+  const byRem = await post("/remember/open", { token: made.j.token });
+  const tok = S.newSignin();
+  await S.mintSignin(env, u, tok, await C.wrapKey(tok, ck));
+  const byLink = await post("/open-link", { token: tok });
+  const all = await ptrs();
+  const sessOf = (s, how) => { const p = all["dev:" + u + ":" + sha("sess:" + s)]; return !!p && p.key === "sess:" + s && p.how === how
+    && (kv.opts.get("dev:" + u + ":" + sha("sess:" + s)) || {}).expirationTtl === 900; };
+  ok(Object.keys(all).length === 4 && sessOf(byPw.j.session, "password") && sessOf(byRem.j.session, "remembered") && sessOf(byLink.j.session, "link"),
+    "a password, a remembered phone and a one-time link each leave a pointer naming the session they opened, listed by the prefix: "
+    + JSON.stringify(Object.values(all).map((p) => p.how)));
+
+  /* a phone remembered before pointers: its first open gives it one, dated when it was remembered */
+  const old = "old32" + "c".repeat(27), at = new Date(Date.now() - 5 * 86400e3).toISOString();
+  await kv.put("rem:" + old, JSON.stringify({ u, wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" }, at }));
+  await post("/remember/open", { token: old });
+  const od = (await ptrs())["dev:" + u + ":" + sha("rem:" + sha(old))];
+  ok(!!od && od.key === "rem:" + sha(old) && od.at === at && od.last > at,
+    "a phone remembered before pointers is given one on its next open, dated when it was remembered: " + JSON.stringify(od));
+
+  /* Log out takes its own phone's pointer and its session's, and nobody else's */
+  await post("/logout", { token: made.j.token }, { "X-Stmt-Session": byRem.j.session });
+  const left = await ptrs();
+  ok(!left["dev:" + u + ":" + sha(remK)] && !left["dev:" + u + ":" + sha("sess:" + byRem.j.session)]
+    && !!left["dev:" + u + ":" + sha("sess:" + byLink.j.session)] && !!left["dev:" + u + ":" + sha("rem:" + sha(old))],
+    "Log out takes this phone's pointer and its session's, and leaves the others: " + Object.keys(left).length);
+
+  /* the test account goes with everything it signed in */
+  const TEAM = "maakmal", AUD = "aud-s3-32", KID = "kid-s3-32";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const jwt = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+  Object.assign(env, { ACCESS_TEAM: TEAM, ACCESS_AUD: AUD });
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  try {
+    await post("/all/test", { make: true }, { "cf-access-jwt-assertion": jwt });
+    const t = await post("/open", { u: "0000-0000", password: "0000-0000-0000-0000" });
+    const tr = await post("/remember", { wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" } }, { "X-Stmt-Session": t.j.session });
+    const had = (await kv.list({ prefix: "dev:0000-0000:" })).keys.length;
+    await post("/all/test", { make: false }, { "cf-access-jwt-assertion": jwt });
+    ok(had === 2 && (await kv.list({ prefix: "dev:0000-0000:" })).keys.length === 0 && !(await kv.get("sess:" + t.j.session))
+      && !(await kv.get("rem:" + sha(tr.j.token))) && Object.keys(await ptrs()).length === Object.keys(left).length,
+      "unmaking the test account takes its pointers, its session and its remembered phone, and nobody else's: " + had);
+  } finally { globalThis.fetch = realFetch; }
+})();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: no three-minute lock, Remember me, and a Log out. The two halves of
