@@ -20560,6 +20560,23 @@ await (async () => {
       "and a held reward, or one with nothing left, never invites an ask: " + JSON.stringify([lineOf("Droplet"), lineOf("Lozenge")]));
   } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S13 fix: the send sheet splices its rows and its issue by function, so a $ pattern or a placeholder in a row is kept as typed");
+await (async () => {
+  /* 25 SEP 2026: tools/stmt-send.mjs spliced __ROWS__ and __ISSUE__ with the string form of replace, so $' in a row pasted
+     the rest of the script into the data, and a row carrying __ISSUE__ took the issue where the placeholder was. */
+  const { sendSheet } = await import("../tools/stmt-send.mjs");
+  const url = "https://k7m3p2.example/?u=abcd-efgh#$'$&$`__ISSUE__</script>";
+  const sheet = sendSheet([{ who: "CX0-$&", user: "abcd-efgh", pw: "hjkm-npqr-stvw-xyz2", url, t: { n: 1, total: 100, owed: 0 } }],
+    { issue: "2026-09-01", monthName: "September 2026" });
+  const js = (/<script>([\s\S]*)<\/script><\/body>/.exec(sheet) || [, ""])[1];
+  const rowsAt = /var ROWS = (.*);\n/.exec(js), keyAt = /var KEY = 'salt-send-' \+ (.*);\n/.exec(js);
+  let rows = null; try { rows = JSON.parse(rowsAt[1]); } catch (e) { rows = null; }
+  let parses = true; try { new Function(js); } catch (e) { parses = false; }
+  ok(!!rows && rows.length === 1 && rows[0].url === url && rows[0].who === "CX0-$&" && keyAt && keyAt[1] === '"2026-09-01"' && parses
+    && (sheet.match(/<\/script>/g) || []).length === 1,
+    "a row's $ patterns, a placeholder's name and a closing tag in it land as typed, the issue where its placeholder was, and the script parses: "
+    + JSON.stringify([rows && rows[0] && rows[0].url, keyAt && keyAt[1], parses]));
+})();
 section("S13 13.1: every page of the Counter is kept out of the translator, Salt Admin's and a guest's included");
 await (async () => {
   /* 24 SEP 2026, his decision D12: on a Malay or Chinese phone Chrome offers to translate the page, and accepting

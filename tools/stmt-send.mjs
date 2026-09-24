@@ -294,7 +294,10 @@ export function sendSheet(rows, opts) {
     + "</div>"
     + '<div class="grid" id="grid"></div>'
     + "</div><script>"
-    + JS.replace("__ROWS__", JSON.stringify(data)).replace("__ISSUE__", JSON.stringify(String(o.issue || "")))
+    /* S13 fix: BOTH SPLICED BY FUNCTION, IN ONE PASS, as stmt/page.js splices the notice and his roster. The string form read
+       a $' or $& in a row as a replacement pattern and pasted the script into the data, and a row carrying __ISSUE__ took the
+       issue in the placeholder's stead; a "<" is escaped, so a "</script>" in a row cannot end the block */
+    + JS.replace(/__ROWS__|__ISSUE__/g, (m) => JSON.stringify(m === "__ROWS__" ? data : String(o.issue || "")).replace(/</g, "\\u003c"))
     + "</script></body></html>";
 }
 
