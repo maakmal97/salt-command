@@ -480,8 +480,9 @@ Site orders card in Enter (cloud desk) is the taps.
 
 **AN ORDER REACHES THE BOOK IN STAGES, AND NO TAP WRITES** (v694, his instruction of 18 Sep 2026;
 it reached it once, at the end, as a sale paid and delivered in full on the day). **Site orders moves
-the ORDER; Approve lands the ROW.** The desk's every-minute cron runs `reconcileOrders`, and it is
-the ONE road that queues anything, so a stage cannot be queued twice by two roads racing:
+the ORDER; Approve lands the ROW** (since D6 a tap on the card can be that approval, below). The desk's
+every-minute cron runs `reconcileOrders`, and it is the ONE road that queues a stage the site makes, so
+a stage cannot be queued twice by two roads racing (Accept's pending row is the desk's own, below):
 
 | Stage | What is queued | Why that kind |
 |---|---|---|
@@ -502,6 +503,52 @@ that is the one place a stage is decided owed.
 drafted, approved, folded, mirror re-seeded. Until `OPEN.byKey` carries the key, the reconcile holds
 the amendment rather than queueing one the drafter would refuse, so a customer paying early puts no
 refusal on his phone. A mirror that cannot be read holds everything.
+
+**ONE TAP A STAGE, ON AN EXACT MATCH** (S11, his decision D6 of 24 Sep 2026). The card's taps approve
+the row they make, in the desk Worker, and only if the real draft equals what he was shown. His yes is
+a row in `preapproval` (`migrations/0011`): the digest of what he saw (`stageDigest` in
+`src/drafter.js`), spent by the drafter the moment the row is drafted (`preFor`, `applyPre`): equal, the
+row is approved where it is drafted; different, it waits under Approve, marked "differs from what you
+saw" with what he was shown beside it (`GET /drafts` carries it as `preapproval`), and a yes is spent
+once. **Accept** (`POST /orders/<id>/accept {delivery, hash}`) answers a preview (`POST
+/orders/<id>/preview`, which drafts the row against the mirror and stores nothing): it drafts again,
+refuses with the fresh preview if the digest moved, records the yes, queues the pending row itself and
+runs the drafter; the digest covers every field of the row, every flag and the pricing version (the
+snapshot's `v` and a digest of the rest). **Only an approved row moves the order** (`ackOnApproval`:
+the key and moment marked first, then acknowledged with the charge), so a row that differs leaves the
+customer reading Placed, and his approval under Approve moves it then. That is the one stage the desk
+queues itself, because the row must exist before the order moves; `deskPass`, beside the reconcile,
+follows it up each minute.
+
+**The later stages are one tap too** (S11 11.12): **Collected or Delivered** (`/handed {qty, close}`,
+the running total, in the order's own mode), **Received** (`/received {amount}`, their recorded payment
+in his bank; the site already counts it) and **Cash received** (`/cash {amount}`, money taken at the
+counter: the order is marked paid at once through the `ledger` move, which stops the chase, and the
+Fulfilment is the desk's own entry, `counter: true`, queued by `deskPass` once the row is on the book;
+refused while a payment of theirs still waits to be queued, which the mark would swallow). Each builds its
+entry as the reconcile will, drafts it now, or before the first row lands against the book as it will
+stand (`withPending`), and records that digest; the drafter spends it when the real row is drafted, only
+if the kind, party, target, date, figures and every flag are equal (no pricing version: the first row
+landing is itself a fold). **Such a stage never waits silently**: the answer carries `waits` and "Booked
+when the first row lands". A Received on a payment already drafted is tested at the tap.
+
+**A rejected row is offered again** (S11 11.13). His Reject on a site-made draft is written onto the
+order (`sync` rejected) and spends any yes waiting on it, and the move is offered again under a FRESH
+entry, a new moment and so a new draft id, the rejected id being refused for good: the stage's own tap
+(Accept on a pending row, against its preview and the charge the order already carries; Collected,
+Received or Cash received at the rejected figure) or `POST /orders/<id>/again {stage}` (pay, cash, move,
+cancel). The fresh entry keeps the move's figures and day, and is approved as it is drafted only if it
+equals what he was shown. Cash offered again never raises the order twice. `GET /orders` carries `again`,
+the stages each order has to offer, read off the drafts; a row dropped because they withdrew (11.10) is
+not his rejection and offers nothing.
+
+**A withdrawal before the row is approved drops it** (S11 11.10). The customer withdraws while the
+pending row still waits under Approve, with nothing paid: `dropAck` rejects that draft as `withdrawn`
+(filing it rejected first if it is not drafted yet, so no drafter part-way through a pass can draft it
+after), takes it off every queue, and marks the withdrawal told, so no Cancellation waits behind a row
+that will never land. **An approved row is never dropped**: its Cancellation follows it as before. Money
+paid keeps the row too, the refund being the book's to carry, and a cancellation of his own keeps the old
+road.
 
 The username-to-code map the relay needs is written to the DESK's
 KV as `stmt-users` by every publish; the site never holds it, and an order whose username the map
@@ -561,7 +608,11 @@ than `orders:nudged` wakes every desk subscription asking for `orders`, once. Th
 to new orders** on the cloud desk's Orders card, per device: it subscribes with `topics: ["orders"]`,
 so a row he entered himself does not wake him, and hands the write key to the service worker, whose
 banner then reads New customer order and opens `/desk#orders`. A subscription with no topics hears
-everything, as at v321. On an iPhone the desk has to be opened from the Home Screen.
+everything, as at v321. On an iPhone the desk has to be opened from the Home Screen. **His wakes name
+the kind of act and never a code, a username or an amount** (S11 11.16): New customer order, A customer
+wrote, A customer says they paid (their word until he checks it), A customer cancelled (`NEWS_WORD` in
+`src/orders.js`, carried in the summary while fresh); a placement clears older news, so a new order is
+never titled by a payment's, and `public/sw.js` takes news as a title only in letters and spaces.
 
 **Notifications.** The page polls the customer's orders every ten seconds while it is open.
 For a closed page the site has its own Web Push pair. **The banner names the KIND of news** (S12

@@ -11735,7 +11735,9 @@ await (async () => {
   }
 
   /* ---- the draft table takes every collection the drafter returns: 0007 never named repayment ---- */
-  const mig28 = readdirSync(join(REPO, "migrations")).filter((f) => /^\d{4}_.*\.sql$/.test(f)).sort().pop();
+  /* the newest migration that REBUILDS the draft table (S11: 0011 adds a table of its own and leaves draft alone) */
+  const mig28 = readdirSync(join(REPO, "migrations")).filter((f) => /^\d{4}_.*\.sql$/.test(f)).sort()
+    .filter((f) => /CREATE TABLE IF NOT EXISTS draft(_new)? \(/.test(readFileSync(join(REPO, "migrations", f), "utf8"))).pop();
   const allowed28 = ((/CHECK \(collection IN \(([^)]*)\)\)/.exec(readFileSync(join(REPO, "migrations", mig28), "utf8")) || [])[1] || "").split(",").map((x) => x.trim().replace(/'/g, ""));
   const returns28 = [...new Set([...readFileSync(join(REPO, "src", "drafter.js"), "utf8").matchAll(/collection: "([A-Za-z]+)"/g)].map((m) => m[1]))];
   const staged28 = (/\[([^\]]*)\]\.includes\(d\.collection\)/.exec(readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8")) || [])[1] || "";
@@ -21860,7 +21862,7 @@ await (async () => {
     "the desk reads it in the same one call it already made, and only on the desk key: " + JSON.stringify(lastJ.theirs));
 
   const paid6 = await nudge();
-  ok(paid6.hit.length === 1 && paid6.hit[0] === "https://push.example/his-phone" && paid6.r.did === "A customer has paid",
+  ok(paid6.hit.length === 1 && paid6.hit[0] === "https://push.example/his-phone" && paid6.r.did === "A customer says they paid",
     "and that wakes him, which nothing did before: " + JSON.stringify({ hit: paid6.hit, did: paid6.r.did }));
   const again6 = await nudge();
   ok(again6.hit.length === 0, "the same payment does not wake him every minute after: " + JSON.stringify(again6.hit));
@@ -21869,7 +21871,7 @@ await (async () => {
   const o7 = await place6();
   await customerMove(senv6, u6, o7.id, "cancel", {});
   const both = await nudge();
-  ok(both.r.newest && both.r.did === "A customer has withdrawn an order" && both.hit.length === 1,
+  ok(both.r.newest && both.r.did === "A customer cancelled" && both.hit.length === 1,
     "a placement and a withdrawal inside one minute are both seen, and are one wake: " + JSON.stringify({ newest: !!both.r.newest, did: both.r.did }));
   ok((await dkv6.get("orders:theirs")) && (await dkv6.get("orders:nudged")),
     "each keeps its own mark, so the newer of them cannot make the other look old");
@@ -21883,7 +21885,7 @@ await (async () => {
   await dkv6.put("orders:theirs", tie + "|pay");
   await skv6.put(LAST_THEIRS, tie + "|cancel");
   const tied = await nudge();
-  ok(tied.r.did === "A customer has withdrawn an order" && tied.hit.length === 1,
+  ok(tied.r.did === "A customer cancelled" && tied.hit.length === 1,
     "a withdrawal in the same millisecond as a payment is still seen, whichever word sorts lower: "
     + JSON.stringify({ did: tied.r.did, hit: tied.hit.length }));
   const same = await nudge();
@@ -21891,14 +21893,14 @@ await (async () => {
 
   /* ---- THE BANNER IS WRITTEN FROM THE SUMMARY, so the summary carries it while it is fresh ---- */
   const news = await dkv6.get("orders:news", "json");
-  ok(news && news.what === "A customer has withdrawn an order", "the desk remembers what to say: " + JSON.stringify(news));
+  ok(news && news.what === "A customer cancelled", "the desk remembers what to say: " + JSON.stringify(news));
   const d1S6 = { prepare: (q) => { const first = async () => (/COUNT_ON/.test(q) ? { doc: JSON.stringify({ salt: "2026-09-21", oil: "2026-09-21" }) } : (/COUNT\(\*\)/.test(q) ? { n: 0 } : null));
     const all = async () => ({ results: [] }); return { bind: () => ({ all, first, run: async () => ({}) }), all, first, run: async () => ({}) }; } };
   const summ6 = async () => (await (await deskW6.fetch(new Request("https://salt-command.example/push/summary"),
     Object.assign({ SALT_LEDGER: d1S6, REQUIRE_ACCESS: "0" }, denv6))).json());
   const fresh = await summ6();
-  ok(fresh.news === "A customer has withdrawn an order", "the summary carries it: " + JSON.stringify(fresh.news));
-  await dkv6.put("orders:news", JSON.stringify({ what: "A customer has paid", at: "2026-09-21T00:00:00.000Z" }));
+  ok(fresh.news === "A customer cancelled", "the summary carries it: " + JSON.stringify(fresh.news));
+  await dkv6.put("orders:news", JSON.stringify({ what: "A customer says they paid", at: "2026-09-21T00:00:00.000Z" }));
   ok((await summ6()).news === undefined,
     "and drops it once it is stale, because a banner about a payment made this morning is a lie by lunchtime");
 
@@ -21915,9 +21917,9 @@ await (async () => {
     const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits);
     return shown[0];
   };
-  const bNews = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, news: "A customer has paid" });
+  const bNews = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, news: "A customer says they paid" });
   const bPlain = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, placed: 2 });
-  ok(bNews && bNews.t === "A customer has paid" && /2 orders waiting on you/.test(bNews.opt.body)
+  ok(bNews && bNews.t === "A customer says they paid" && /2 orders waiting on you/.test(bNews.opt.body)
     && /1 row waiting for approval/.test(bNews.opt.body) && bNews.opt.data.url === "./desk#orders",
     "the banner leads with what they just did, and still carries what is waiting: " + JSON.stringify(bNews && bNews.opt.body));
   ok(bPlain && bPlain.t === "2 customer orders waiting",
@@ -22124,6 +22126,663 @@ await (async () => {
     await new Promise((r) => setTimeout(r, 200));
     try { w63.close(); } catch (e) { /* best effort */ }
   }
+})();
+
+section("S11 11.1: the card's preview drafts the pending row an Accept would make, against the mirror, and stores nothing");
+await (async () => {
+  /* HIS DECISION D6 OF 24 SEP 2026: his tap approves the ROW, so the row is on the card before his yes, drafted by
+     the drafter from exactly the entry an Accept queues. The judges' list: never /draft-now?dry=1 drawn as the row. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the preview was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const { reconcileOrders, CUSTOMER_SEES } = await import("../src/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const CODE = "CX1-AB", U = "abcd-efgh";
+  const PRICING = { v: "v900", takenAt: "2026-09-24T00:00:00.000Z", tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"],
+    tierOf: { [CODE]: { salt: "Gold" } }, profileRule: { smallUpTo: 1, bigFrom: 3 },
+    byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 2, 3],
+      ladder: [{ q: 1, prices: [84, 100, 110, 120, 130], fixed: false }, { q: 2, prices: [170, 180, 190, 200, 220], fixed: false }],
+      cards: { [CODE]: [[1, 100], [2, 190]] } } } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  ["2026-08-01", "2026-08-10", "2026-08-20"].forEach((d, i) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)")
+    .run("sales", i, "h" + i, JSON.stringify({ rid: "s90" + i, customer: CODE, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d })));
+  setState("roster", [CODE]); setState("PRICING", PRICING); setState("OPEN", { byKey: {}, position: {} });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: CODE }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const call = async (path, body, key = "k-fixture") => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: Object.assign({ "content-type": "application/json" }, key ? { "X-Salt-Key": key } : {}), body: JSON.stringify(body || {}) }), denv, { waitUntil() {} });
+    return { status: r.status, j: await r.json() };
+  };
+  const o = (await O.placeOrder(senv, U, { product: "salt", qty: 2, mode: "deliver", place: "by the old market", unit: 80, total: 160, week: "" })).order;
+  const kvOf = (kv) => JSON.stringify([...kv.m.entries()].sort());
+  const before = { d: kvOf(dkv), s: kvOf(skv) };
+
+  const p1 = await call("/orders/" + o.id + "/preview", { delivery: 15 });
+  const j = p1.j;
+  ok(p1.status === 200 && j.ok && j.stage === "ack" && j.row.customer === CODE && j.row.qty === 2 && j.row.total === 160 && j.row.delivery === 15
+    && j.row.date && j.row.cash === 0 && j.row.deliveredQty === 0,
+    "the preview is the pending row: the goods, the charge beside them, nothing paid and nothing moved: " + JSON.stringify(j.row || j));
+  ok(Array.isArray(j.flags) && j.flags.some((f) => /has paid RM 100\/unit on every one of their 3 orders of salt; this one is RM 80\./.test(f)),
+    "with the drafter's own flags, here their usual against a rate 20% under it: " + JSON.stringify(j.flags));
+  ok(j.cost && j.cost.unit === 56 && j.cost.total === 112 && j.margin && j.margin.rm === 48 && j.margin.pct === 30
+    && j.floor && j.floor.rm === 150 && j.floor.at === 2 && j.quote === 160,
+    "the cost, the margin on the goods and the floor, as the drafter reads them: " + JSON.stringify({ cost: j.cost, margin: j.margin, floor: j.floor }));
+  ok(j.usual && j.usual.rate === 100 && j.usual.orders === 3 && j.usual.dir === "below" && j.usual.off === -20 && j.usual.far === true,
+    "their usual, with which way this order sits from it and whether it is as far as the flag's line: " + JSON.stringify(j.usual));
+  ok(j.card === 190 && /^Gold at 2 unit$/.test(j.cardNote),
+    "their card at this size, the desk's own cardQuote carried in the snapshot, beside the RM 160 their page quoted: " + JSON.stringify({ card: j.card, note: j.cardNote }));
+  ok(j.told === "They see Placed: Waiting to be acknowledged." && j.pricing && j.pricing.v === "v900" && /^[0-9a-f]{16}$/.test(j.pricing.digest)
+    && /^[0-9a-f]{64}$/.test(j.hash) && !("entry" in j),
+    "what their page says, the pricing version and the digest an Accept sends back: " + JSON.stringify({ told: j.told, pricing: j.pricing, hash: j.hash }));
+
+  /* STORES NOTHING: not a draft, not a refusal, not a queue entry, not a mark on the order */
+  const drafts = () => db.prepare("SELECT COUNT(*) AS n FROM draft").get().n + db.prepare("SELECT COUNT(*) AS n FROM refused").get().n;
+  const site1 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
+  ok(drafts() === 0 && kvOf(dkv) === before.d && kvOf(skv) === before.s && site1.status === "placed" && !site1.queued && !site1.ledgerKey && !site1.sync,
+    "and it stores nothing anywhere: no draft, no queue entry, no key on either store, no mark on the order: "
+    + JSON.stringify({ drafts: drafts(), desk: kvOf(dkv) === before.d, site: kvOf(skv) === before.s, status: site1.status, queued: site1.queued || null }));
+
+  /* THE DIGEST IS WHAT HE WAS SHOWN: the same row twice is one digest; a charge or a pricing version moves it */
+  const p2 = await call("/orders/" + o.id + "/preview", { delivery: 15 });
+  const p3 = await call("/orders/" + o.id + "/preview", { delivery: 20 });
+  ok(p2.j.hash === j.hash && p3.j.hash !== j.hash && p3.j.row.delivery === 20,
+    "the same row is the same digest, and another charge is another: " + JSON.stringify([j.hash.slice(0, 8), p2.j.hash.slice(0, 8), p3.j.hash.slice(0, 8)]));
+  setState("PRICING", Object.assign({}, PRICING, { byProduct: { salt: Object.assign({}, PRICING.byProduct.salt, { floors: Object.assign({}, PRICING.byProduct.salt.floors, { "3": { floor: 216 } }) }) } }));
+  const p4 = await call("/orders/" + o.id + "/preview", { delivery: 15 });
+  setState("PRICING", PRICING);
+  ok(JSON.stringify(p4.j.row) === JSON.stringify(j.row) && JSON.stringify(p4.j.flags) === JSON.stringify(j.flags) && p4.j.hash !== j.hash,
+    "and a snapshot that changed anywhere is another pricing version, though the row and the flags read the same: " + JSON.stringify([p4.j.pricing, j.pricing]));
+  ok((await call("/orders/" + o.id + "/preview", { delivery: 15 }, "")).status === 401, "it is keyed, like every read that carries cost");
+
+  /* THE CHAIN DRAFTS THE SAME ROW: acknowledged on the road the card used until now, reconciled, drafted */
+  await O.deskMove(senv, U, o.id, { status: "acknowledged", delivery: 15 });
+  await reconcileOrders(denv);
+  await runDrafter(denv);
+  const got = db.prepare("SELECT row,flags FROM draft").all();
+  ok(got.length === 1 && JSON.stringify(JSON.parse(got[0].row)) === JSON.stringify(j.row) && got[0].flags === JSON.stringify(j.flags),
+    "the row the chain drafts from that order is the row the preview drew, field for field and flag for flag: " + JSON.stringify(got.map((g) => JSON.parse(g.row))));
+  const p5 = await call("/orders/" + o.id + "/preview", {});
+  ok(p5.status === 409 && /acknowledged/.test(p5.j.error), "and once the order is agreed its pending row is no longer Accept's to make: " + JSON.stringify(p5.j));
+
+  /* NO CARD, SAID WHY */
+  const o3 = (await O.placeOrder(senv, U, { product: "salt", qty: 3, mode: "collect", unit: 90, total: 270, week: "" })).order;
+  const p6 = await call("/orders/" + o3.id + "/preview", {});
+  ok(p6.j.ok && p6.j.card === null && /3 unit is not a size on their board/.test(p6.j.cardNote) && p6.j.row.delivery === undefined && p6.j.chargeChosen === true,
+    "a size their card does not carry has no card, and says so; a collection carries no charge: " + JSON.stringify({ card: p6.j.card, note: p6.j.cardNote }));
+
+  /* THE WORDS ARE THE PAGE'S OWN, held together here so the day the page's words change this follows */
+  const page = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
+  const words = /var STATE_WORDS=(\{[^}]*\})/.exec(page);
+  const W = words ? Function("return " + words[1])() : {};
+  const lines = Object.values(CUSTOMER_SEES).flatMap((x) => x.slice(1));
+  ok(words && Object.keys(CUSTOMER_SEES).every((k) => W[k] === CUSTOMER_SEES[k][0]) && lines.every((l) => page.includes("'" + l)),
+    "what the card says they see is the page's own state words and lines: " + JSON.stringify({ page: W, missing: lines.filter((l) => !page.includes("'" + l)) }));
+
+  /* THE CARDS THE PREVIEW READS ARE THE DESK'S OWN, BOOK BY BOOK: the extract takes each product's with that
+     product in view, as every other per-product figure in the snapshot is taken (v407) */
+  const { openMaster: om111c } = await import("../tools/payload.mjs");
+  const { pricingSnapshot: ps111 } = await import("../tools/book.mjs");
+  const { w: w111c } = await om111c();
+  const snap111 = ps111(w111c);
+  const probe = (p) => { const out = {}; w111c.eval("PROD=" + JSON.stringify(p) + ";recompute();");
+    for (const [code, pairs] of Object.entries(snap111.byProduct[p].cards || {})) out[code] = pairs.map(([q]) => [q, w111c.eval("cardQuote(" + JSON.stringify(code) + "," + q + ")")]);
+    return out; };
+  const sizesOf = (p) => JSON.stringify(Object.values(snap111.byProduct[p].cards || {})[0] ? Object.values(snap111.byProduct[p].cards)[0].map((x) => x[0]) : []);
+  const bothBooks = ["salt", "oil"].every((p) => Object.keys(snap111.byProduct[p].cards || {}).length > 0
+    && JSON.stringify(probe(p)) === JSON.stringify(snap111.byProduct[p].cards));
+  ok(bothBooks && sizesOf("salt") !== sizesOf("oil"),
+    "every customer's card in the snapshot is the desk's cardQuote with that book in view, at that book's own sizes: " + JSON.stringify({ salt: sizesOf("salt"), oil: sizesOf("oil") }));
+})();
+
+section("S11 11.10: a customer's withdrawal drops the queued acknowledgement only while its row is pending, and nothing paid");
+await (async () => {
+  /* THE STUDY'S F12, and the judges' list: a withdrawal before the row folded cost him an approval of a row for a
+     dead order and then an approval of its Cancellation. It now drops the pending row, and ONLY a pending one: an
+     approved row is never dropped by a withdrawal. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the withdrawal was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const { reconcileOrders } = await import("../src/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const CODE = "CX1-AB", U = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  setState("roster", [CODE]); setState("OPEN", { byKey: {}, position: {} });
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: CODE }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const draftOf = (id) => db.prepare("SELECT status,decided_by FROM draft WHERE id=?").get(id) || null;
+  const queued = async () => ((await dkv.get("q:orders", "json")) || { queue: [] }).queue.map((e) => e.at);
+  /* an order agreed on the road the card has used, its pending row queued by the reconcile */
+  const agreed = async (draft) => {
+    const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+    await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+    await reconcileOrders(denv);
+    if (draft) await runDrafter(denv);
+    return (await orderOf(o.id));
+  };
+
+  /* A. DRAFTED AND PENDING: dropped, rejected as withdrawn, out of the queue, and the withdrawal spent with it */
+  const a = await agreed(true);
+  ok(draftOf(a.queued.ack) && draftOf(a.queued.ack).status === "pending" && (await queued()).includes(a.queued.ack), "the pending row is drafted and queued: " + JSON.stringify(draftOf(a.queued.ack)));
+  await O.customerMove(senv, U, a.id, "cancel", {});
+  const rcA = await reconcileOrders(denv), a2 = await orderOf(a.id);
+  ok(rcA.queued === 0 && (rcA.dropped || []).includes(a.id) && draftOf(a.queued.ack).status === "rejected" && draftOf(a.queued.ack).decided_by === "withdrawn"
+    && !(await queued()).includes(a.queued.ack),
+    "their withdrawal drops the pending row: rejected as withdrawn, out of the queue, and no Cancellation queued behind it: " + JSON.stringify({ rc: rcA, draft: draftOf(a.queued.ack) }));
+  ok(a2.queued.cancel && a2.sync && a2.sync.state === "queued" && /withdrawn by the customer while its pending row waited under Approve/.test(a2.sync.why)
+    && (await reconcileOrders(denv)).queued === 0 && !((await reconcileOrders(denv)).dropped),
+    "the order says so, and the withdrawal is spent, so the next pass has nothing to do: " + JSON.stringify({ queued: a2.queued, sync: a2.sync }));
+
+  /* B. QUEUED AND NOT YET DRAFTED: filed rejected first, so a drafter coming after cannot draft it */
+  const b = await agreed(false);
+  ok(!draftOf(b.queued.ack) && (await queued()).includes(b.queued.ack), "a pending row queued and not yet drafted: " + JSON.stringify(draftOf(b.queued.ack)));
+  await O.customerMove(senv, U, b.id, "cancel", {});
+  await reconcileOrders(denv);
+  const dr = await runDrafter(denv);
+  ok(draftOf(b.queued.ack) && draftOf(b.queued.ack).status === "rejected" && !(await queued()).includes(b.queued.ack) && dr.drafted === 0,
+    "is filed rejected under its own id and taken off the queue, so the drafter drafts nothing for it: " + JSON.stringify({ draft: draftOf(b.queued.ack), drafted: dr.drafted }));
+
+  /* C. APPROVED: NEVER DROPPED. Its Cancellation waits for the row, as it did */
+  const c = await agreed(true);
+  const ap = await deskW.fetch(new Request("https://salt-command.example/drafts/" + encodeURIComponent(c.queued.ack) + "/approve", { method: "POST",
+    headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: "{}" }), denv, { waitUntil() {} });
+  await O.customerMove(senv, U, c.id, "cancel", {});
+  const rcC = await reconcileOrders(denv), c2 = await orderOf(c.id);
+  ok(ap.status === 200 && draftOf(c.queued.ack).status === "approved" && !(rcC.dropped || []).includes(c.id) && !c2.queued.cancel
+    && c2.sync.state === "waiting" && /withdrawal waits for the pending row/.test(c2.sync.why),
+    "an APPROVED row is never dropped by a withdrawal: it stays approved and its Cancellation waits for it to land: " + JSON.stringify({ draft: draftOf(c.queued.ack), sync: c2.sync }));
+
+  /* D. MONEY PAID: kept, because what they paid is a refund the book has to carry */
+  const d = await agreed(true);
+  await O.customerMove(senv, U, d.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U, d.id, "pay", { amount: 40 });
+  await O.customerMove(senv, U, d.id, "cancel", {});
+  const rcD = await reconcileOrders(denv);
+  ok(!(rcD.dropped || []).includes(d.id) && draftOf(d.queued.ack).status === "pending",
+    "with money paid the pending row is kept, since the refund is the book's to carry: " + JSON.stringify({ rc: rcD, draft: draftOf(d.queued.ack) }));
+
+  /* E. HIS OWN CANCEL IS NOT THEIR WITHDRAWAL: the rule he decided is for theirs, and his keeps its old road */
+  const e = await agreed(true);
+  await O.deskMove(senv, U, e.id, { status: "cancelled" });
+  const rcE = await reconcileOrders(denv);
+  ok(!(rcE.dropped || []).includes(e.id) && draftOf(e.queued.ack).status === "pending",
+    "a cancellation of his own drops nothing: " + JSON.stringify({ rc: rcE, draft: draftOf(e.queued.ack) }));
+})();
+
+section("S11 11.11: Accept approves the pending row in the desk Worker only on an exact match, and moves the order only then");
+await (async () => {
+  /* HIS DECISION D6 OF 24 SEP 2026, and the judges' list: no one-tap approval without the exact server-side match
+     PROVED RED. Accept rechecks the preview, queues the row, and the drafter approves it where it drafts it only if
+     the real draft equals the preview in every field, every flag and the pricing version. Anything different waits
+     under Approve, marked, and the customer still reads Placed. Each of the three is made to differ on its own. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so Accept was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, deskPass } = await import("../src/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  let hook = null;
+  const D1 = { prepare(sql) { const st = db.prepare(sql), h = (a) => { if (hook) hook(sql, a); };
+    const mk = (a) => ({ run() { h(a); const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { h(a); const r = st.get(...a); return r === undefined ? null : r; }, all() { h(a); return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", C2 = "CX2-CD", U1 = "abcd-efgh", U2 = "wxyz-mnpq";
+  const PRICING = { v: "v900", takenAt: "2026-09-24T00:00:00.000Z", tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"], profileRule: { smallUpTo: 1, bigFrom: 3 },
+    byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 2, 3] } } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const history = (code, d) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)")
+    .run("sales", seq++, "h" + seq, JSON.stringify({ rid: "s9" + seq, customer: code, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d }));
+  for (const c of [C1, C2]) for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) history(c, d);
+  setState("roster", [C1, C2]); setState("PRICING", PRICING); setState("OPEN", { byKey: {}, position: {} });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  /* the queue can be tampered with between Accept's write and the drafter's read, which is how a row field differs */
+  let tamper = false;
+  class TKV extends KV { async get(k, t) { const v = await super.get(k, t);
+    if (!(tamper && k === "q:orders" && v)) return v;
+    const q = typeof v === "string" ? JSON.parse(v) : v;
+    for (const e of q.queue || []) if (e.status === "Pending" && e.payload) e.payload.note = e.payload.note + " Changed on the way.";
+    return t === "json" ? q : JSON.stringify(q); } }
+  const skv = new KV(), dkv = new TKV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1, [U2]: C2 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil() {} });
+    return { status: r.status, j: await r.json() };
+  };
+  const place = async (u, qty, total, mode) => (await O.placeOrder(senv, u, { product: "salt", qty, mode, place: mode === "deliver" ? "by the old market" : "", unit: total / qty, total, week: "" })).order;
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const draftOf = (id) => db.prepare("SELECT status,decided_by FROM draft WHERE id=?").get(id) || null;
+  const preOf = (id) => db.prepare("SELECT status,draft_id,entry_at FROM preapproval WHERE order_id=? ORDER BY at DESC").get(id) || null;
+  const accept = async (o, delivery, before) => { const pv = await call("/orders/" + o.id + "/preview", { delivery });
+    if (before) before(); const a = await call("/orders/" + o.id + "/accept", { delivery, hash: pv.j.hash }); hook = null; tamper = false; return { pv, a }; };
+
+  /* A. EQUAL: approved where it is drafted, and only then is the order moved */
+  const o1 = await place(U1, 2, 200, "deliver");
+  const { pv: pv1, a: a1 } = await accept(o1, 15);
+  const s1 = await orderOf(o1.id), d1 = draftOf(a1.j.draft);
+  ok(a1.status === 200 && a1.j.approved === true && d1 && d1.status === "approved" && /^preapproved by phone$/.test(d1.decided_by) && preOf(o1.id).status === "applied",
+    "a row equal to the preview is approved where it is drafted, by his yes: " + JSON.stringify({ a: a1.j.approved, draft: d1, pre: preOf(o1.id) }));
+  const row1 = JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(a1.j.draft).row);
+  ok(JSON.stringify(row1) === JSON.stringify(pv1.j.row), "and the row approved is the row the card drew: " + JSON.stringify(row1));
+  ok(s1.status === "acknowledged" && s1.delivery === 15 && s1.queued && s1.queued.ack === a1.j.draft && s1.ledgerKey === C1 + "|" + row1.date + "|215" && s1.sync.state === "queued",
+    "then the order is moved on the site, with the charge, and marked with the row's key and moment so nothing queues a second row: "
+    + JSON.stringify({ status: s1.status, delivery: s1.delivery, queued: s1.queued, key: s1.ledgerKey }));
+  const rc1 = await reconcileOrders(denv);
+  const again = await call("/orders/" + o1.id + "/accept", { delivery: 15, hash: pv1.j.hash });
+  ok(rc1.queued === 0 && again.status === 200 && again.j.again === true && db.prepare("SELECT COUNT(*) AS n FROM draft").get().n === 1,
+    "the reconcile then owes it nothing, and a second tap finds the yes already given rather than giving it twice: " + JSON.stringify({ rc: rc1, again: again.j.again }));
+
+  /* B. THE CARD DREW A ROW THAT NO LONGER IS: refused with the fresh one, and nothing stored or moved */
+  const o2 = await place(U1, 1, 100, "collect");
+  const pvOld = await call("/orders/" + o2.id + "/preview", {});
+  setState("PRICING", Object.assign({}, PRICING, { floorPct: 1 }));
+  const a2 = await call("/orders/" + o2.id + "/accept", { hash: pvOld.j.hash });
+  setState("PRICING", PRICING);
+  ok(a2.status === 409 && a2.j.differs === true && a2.j.preview && a2.j.preview.hash !== pvOld.j.hash && !preOf(o2.id)
+    && (await orderOf(o2.id)).status === "placed" && !((await dkv.get("q:orders", "json")) || { queue: [] }).queue.some((e) => e.orderId === o2.id),
+    "a digest the card drew before something changed is refused with the row as it now is, and nothing is queued or moved: " + JSON.stringify({ status: a2.status, differs: a2.j.differs }));
+  const noCharge = await call("/orders/" + (await place(U1, 1, 100, "deliver")).id + "/accept", { hash: "x" });
+  ok(noCharge.status === 400 && /delivery charge/.test(noCharge.j.error), "a delivery is not accepted with no charge chosen: " + JSON.stringify(noCharge.j));
+
+  /* C. DIFFERENT, EACH WAY ON ITS OWN: waits under Approve, marked, and the customer still reads Placed */
+  const differs = async (u, why, before, total) => {
+    const o = await place(u, 1, total || 100, "collect");
+    const { a } = await accept(o, undefined, before);
+    const d = draftOf(a.j.draft), s = await orderOf(o.id);
+    ok(a.status === 200 && a.j.approved === false && a.j.differs === true && d && d.status === "pending" && preOf(o.id).status === "differs"
+      && s.status === "placed" && !(s.queued && s.queued.ack) && s.sync && /differs from what you saw/.test(s.sync.why),
+      "a draft whose " + why + " differs from the preview is NOT approved: it waits under Approve, and the order stays Placed: "
+      + JSON.stringify({ a: a.j, draft: d, pre: preOf(o.id), status: s.status }));
+    return { o, a };
+  };
+  const cRow = await differs(U1, "row", () => { tamper = true; });
+  let fired = false;
+  const cFlags = await differs(U2, "flags", () => { hook = (sql, a) => { if (!fired && /FROM entry WHERE collection/.test(sql) && a[0] === "purchases") { fired = true; history(C2, "2026-08-25"); } }; }, 80);
+  let firedP = false;
+  const cPrice = await differs(U2, "pricing version", () => { hook = (sql) => { if (!firedP && /FROM snapshot/.test(sql)) { firedP = true;
+    setState("PRICING", Object.assign({}, PRICING, { byProduct: { salt: Object.assign({}, PRICING.byProduct.salt, { floors: Object.assign({}, PRICING.byProduct.salt.floors, { "3": { floor: 216 } }) }) } })); } }; });
+  setState("PRICING", PRICING);
+
+  /* Approve marks it, and his approval there moves the order then */
+  const list = await deskW.fetch(new Request("https://salt-command.example/drafts?status=pending", { headers: { "X-Salt-Key": "k-fixture" } }), denv, { waitUntil() {} });
+  const lj = await list.json();
+  const marked = (id) => (lj.drafts.find((d) => d.id === id) || {}).preapproval;
+  ok([cRow, cFlags, cPrice].every((c) => marked(c.a.j.draft) && marked(c.a.j.draft).says === "differs from what you saw" && marked(c.a.j.draft).stage === "ack" && marked(c.a.j.draft).shown.row),
+    "each waits under Approve marked as differing from what he saw, with what he was shown beside it: " + JSON.stringify(marked(cRow.a.j.draft)));
+  const ap = await deskW.fetch(new Request("https://salt-command.example/drafts/" + encodeURIComponent(cRow.a.j.draft) + "/approve", { method: "POST",
+    headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify({ by: "desk" }) }), denv, { waitUntil() {} });
+  const sRow = await orderOf(cRow.o.id);
+  ok(ap.status === 200 && sRow.status === "acknowledged" && sRow.queued.ack === cRow.a.j.draft && preOf(cRow.o.id).status === "applied",
+    "approved there by his tap, the row moves its order then: " + JSON.stringify({ status: sRow.status, queued: sRow.queued }));
+
+  /* D. AND A CUSTOMER WHO WITHDRAWS WHILE SUCH A ROW WAITS takes it with them (11.10 on Accept's road) */
+  await O.customerMove(senv, U2, cFlags.o.id, "cancel", {});
+  const dp = await deskPass(denv, new Date());
+  ok((dp.dropped || []).includes(cFlags.o.id) && draftOf(cFlags.a.j.draft).status === "rejected" && draftOf(cFlags.a.j.draft).decided_by === "withdrawn" && preOf(cFlags.o.id).status === "void",
+    "a row Accept queued that still waits is dropped when the customer withdraws, and his yes is spent with it: " + JSON.stringify({ dp, draft: draftOf(cFlags.a.j.draft) }));
+})();
+
+section("S11 11.12: Collected, Cash received and Received are a yes for a row not drafted yet, spent only if the row equals it");
+await (async () => {
+  /* HIS DECISION D6: each later stage is one tap. Before the first row lands it is a PRE-APPROVAL of that exact row,
+     applied when the row is drafted and only if equal; the judges' list: a later stage never waits SILENTLY on the
+     pending row, so the answer says it waits, in words the card can print. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the later stages were not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, deskPass } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh", C2 = "CX2-CD", U2 = "wxyz-mnpq";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  const OPEN = { byKey: {}, position: {} };
+  setState("roster", [C1, C2]); setState("OPEN", OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 } }, inputs: null, sizes: [1, 2] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  /* THE FIRST ROW LANDS: the fold writes the approved pending row, and the re-seed puts it in the open orders */
+  const land = (draftId, over) => { const row = Object.assign(JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(draftId).row), { rid: "s99" + seq }, over || {});
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN);
+    db.prepare("UPDATE draft SET committed_at=? WHERE id=?").run(new Date().toISOString(), draftId); return row; };
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1, [U2]: C2 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const settle = async () => { while (tails.length) await tails.shift(); };
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); await settle(); return { status: r.status, j };
+  };
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const accepted = async (qty, total, u) => {
+    const o = (await O.placeOrder(senv, u || U1, { product: "salt", qty, mode: "collect", unit: total / qty, total, week: "" })).order;
+    const pv = await call("/orders/" + o.id + "/preview", {});
+    const a = await call("/orders/" + o.id + "/accept", { hash: pv.j.hash });
+    return { o, draft: a.j.draft, ok: a.j.approved === true };
+  };
+  const draftsOf = (id, status) => db.prepare("SELECT id,status,decided_by,entry,flags FROM draft").all()
+    .filter((d) => JSON.parse(d.entry).orderId === id && JSON.parse(d.entry).status === status);
+  const preOf = (id, stage) => db.prepare("SELECT status,draft_id,entry_at FROM preapproval WHERE order_id=? AND stage=? ORDER BY at DESC").get(id, stage) || null;
+
+  /* each order its own figure: two orders alike on one day share the book's key (ovKey), a known limit */
+  /* A. COLLECTED BEFORE THE FIRST ROW LANDS: said so at once, then booked when it lands, equal */
+  const A = await accepted(2, 200);
+  const h = await call("/orders/" + A.o.id + "/handed", { qty: 2 });
+  const sA = await orderOf(A.o.id);
+  ok(A.ok && h.status === 200 && h.j.preapproval.waits === true && h.j.preapproval.says === "Booked when the first row lands" && sA.moved === 2
+    && preOf(A.o.id, "move").status === "waiting" && !draftsOf(A.o.id, "Handover").length && sA.sync.state === "waiting",
+    "Collected before the first row lands is recorded at once and says it is booked when that row lands, never waiting silently: "
+    + JSON.stringify({ pre: h.j.preapproval, moved: sA.moved, sync: sA.sync }));
+  land(A.draft);
+  await reconcileOrders(denv); await runDrafter(denv);
+  const hA = draftsOf(A.o.id, "Handover");
+  ok(hA.length === 1 && hA[0].status === "approved" && /^preapproved/.test(hA[0].decided_by) && preOf(A.o.id, "move").status === "applied"
+    && /ADVANCE: 2 unit goes out with RM 200 unpaid/.test(hA[0].flags),
+    "and when it lands the Correction is drafted and approved by that yes, being equal, advance flag and all: " + JSON.stringify(hA.map((d) => [d.status, d.decided_by])));
+
+  /* B. RECEIVED ON A PAYMENT ALREADY DRAFTED: that draft is approved at the tap */
+  const B = await accepted(1, 100);
+  land(B.draft);
+  await O.customerMove(senv, U1, B.o.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U1, B.o.id, "pay", { amount: 40 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  ok(draftsOf(B.o.id, "Payment").length === 1 && draftsOf(B.o.id, "Payment")[0].status === "pending", "their payment is drafted and waits: " + JSON.stringify(draftsOf(B.o.id, "Payment").map((d) => d.status)));
+  const wrong = await call("/orders/" + B.o.id + "/received", { amount: 45 });
+  const rB = await call("/orders/" + B.o.id + "/received", { amount: 40 });
+  ok(wrong.status === 409 && rB.status === 200 && rB.j.preapproval.spent === "applied" && rB.j.preapproval.waits === false && draftsOf(B.o.id, "Payment")[0].status === "approved",
+    "Received for another figure is refused; for the figure drafted it approves that draft at the tap: " + JSON.stringify({ wrong: wrong.j.error, pre: rB.j.preapproval }));
+
+  /* C. RECEIVED BEFORE THE ROW LANDS: waits, and is spent when the Fulfilment is drafted */
+  const C = await accepted(1, 110);
+  await O.customerMove(senv, U1, C.o.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U1, C.o.id, "pay", { amount: 30 });
+  const rC = await call("/orders/" + C.o.id + "/received", { amount: 30 });
+  ok(rC.status === 200 && rC.j.preapproval.waits === true && preOf(C.o.id, "pay").status === "waiting" && !draftsOf(C.o.id, "Payment").length,
+    "Received before the first row lands waits for it, and says so: " + JSON.stringify(rC.j.preapproval));
+  land(C.draft);
+  await reconcileOrders(denv); await runDrafter(denv);
+  ok(draftsOf(C.o.id, "Payment").length === 1 && draftsOf(C.o.id, "Payment")[0].status === "approved" && preOf(C.o.id, "pay").status === "applied",
+    "and the Fulfilment is approved as it is drafted: " + JSON.stringify(draftsOf(C.o.id, "Payment").map((d) => d.status)));
+
+  /* D. CASH TAKEN AT THE COUNTER: paid on the order at once, and the desk's own Fulfilment when the row lands */
+  const D = await accepted(1, 120);
+  const cD = await call("/orders/" + D.o.id + "/cash", { amount: 120 });
+  const sD = await orderOf(D.o.id);
+  ok(cD.status === 200 && cD.j.preapproval.waits === true && sD.paid === 120 && sD.queued.paid === 120 && sD.status === "acknowledged"
+    && !((await dkv.get("q:orders", "json")).queue.some((e) => e.orderId === D.o.id && e.status === "Payment")),
+    "Cash received marks the order paid at once, which is what stops the chase, and queues nothing before the row is there: " + JSON.stringify({ paid: sD.paid, queued: sD.queued }));
+  land(D.draft);
+  const dp = await deskPass(denv, new Date()); await runDrafter(denv);
+  const pD = draftsOf(D.o.id, "Payment");
+  ok(dp.queued === 1 && pD.length === 1 && pD[0].status === "approved" && /cash at the counter/.test(JSON.parse(pD[0].entry).raw) && (await reconcileOrders(denv)).queued === 0,
+    "when it lands the desk queues its own Fulfilment, approved as drafted, and the reconcile queues no second one: " + JSON.stringify({ dp, pD: pD.map((d) => d.status) }));
+  const E = await accepted(1, 130);
+  await O.customerMove(senv, U1, E.o.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U1, E.o.id, "pay", { amount: 20 });
+  const cE = await call("/orders/" + E.o.id + "/cash", { amount: 50 });
+  ok(cE.status === 409 && /receive that first/.test(cE.j.error) && (await orderOf(E.o.id)).paid === 20,
+    "cash is refused while a payment of theirs still waits to be queued, which its mark would swallow: " + JSON.stringify(cE.j));
+
+  /* F. DIFFERENT WHEN IT LANDS: a payment folded beside the row, so the advance it would flag is another figure */
+  const F = await accepted(2, 210, U2);   /* five open orders is a customer's cap */
+  const hF = await call("/orders/" + F.o.id + "/handed", { qty: 2 });
+  land(F.draft, { cash: 50 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const dF = draftsOf(F.o.id, "Handover");
+  const lj = await (await deskW.fetch(new Request("https://salt-command.example/drafts?status=pending", { headers: { "X-Salt-Key": "k-fixture" } }), denv, ctx)).json();
+  const mark = dF[0] && (lj.drafts.find((d) => d.id === dF[0].id) || {}).preapproval;
+  ok(hF.j.preapproval.waits && dF.length === 1 && dF[0].status === "pending" && preOf(F.o.id, "move").status === "differs" && mark && mark.stage === "move" && mark.says === "differs from what you saw",
+    "a row that lands other than he was shown is NOT approved by that yes: it waits under Approve, marked: " + JSON.stringify({ draft: dF.map((d) => d.status), pre: preOf(F.o.id, "move"), mark }));
+})();
+
+section("S11 11.13: a site-made row he rejects is written back to its order, and its move is offered again under a fresh entry");
+await (async () => {
+  /* HIS DECISION D6, and the study's F1: a Reject on a site-made draft dropped the entry while the order kept the
+     mark that the ledger was told, so the order and the book parted for good. The rejection is written back to the
+     order, and the same move is offered again: a fresh entry, a new draft id, approved only if equal. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so offering again was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, deskPass, againOrder } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh", C2 = "CX2-CD", U2 = "wxyz-mnpq";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  const OPEN = { byKey: {}, position: {} };
+  setState("roster", [C1, C2]); setState("OPEN", OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 } }, inputs: null, sizes: [1, 2] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const land = (draftId, over) => { const row = Object.assign(JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(draftId).row), { rid: "s99" + seq }, over || {});
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN); return row; };
+  let tamper = false;
+  class TKV extends KV { async get(k, t) { const v = await super.get(k, t);
+    if (!(tamper && k === "q:orders" && v)) return v;
+    const q = typeof v === "string" ? JSON.parse(v) : v;
+    for (const e of q.queue || []) if (e.status === "Pending" && e.payload) e.payload.note = e.payload.note + " Changed on the way.";
+    return t === "json" ? q : JSON.stringify(q); } }
+  const skv = new KV(), dkv = new TKV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1, [U2]: C2 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const settle = async () => { while (tails.length) await tails.shift(); };
+  const call = async (path, body, method) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: method || "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: method === "GET" ? undefined : JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); await settle(); return { status: r.status, j };
+  };
+  const reject = (id) => call("/drafts/" + encodeURIComponent(id) + "/reject", { by: "desk" });
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const againOn = async (id) => ((await call("/orders?all=1", null, "GET")).j.orders.find((x) => x.id === id) || {}).again || [];
+  const drafts = (id, status) => db.prepare("SELECT id,status,decided_by,entry FROM draft ORDER BY id").all()
+    .filter((d) => JSON.parse(d.entry).orderId === id && JSON.parse(d.entry).status === status);
+  const place = async (u, qty, total) => (await O.placeOrder(senv, u, { product: "salt", qty, mode: "collect", unit: total / qty, total, week: "" })).order;
+  const accept = async (o) => { const pv = await call("/orders/" + o.id + "/preview", {}); return call("/orders/" + o.id + "/accept", { hash: pv.j.hash }); };
+
+  /* A. ACCEPT'S ROW, REJECTED: the order was never moved, so Accept again makes a fresh row */
+  const a = await place(U1, 1, 101);
+  tamper = true; const a1 = await accept(a); tamper = false;
+  const rA = await reject(a1.j.draft);
+  const sA = await orderOf(a.id);
+  ok(a1.j.differs && rA.status === 200 && rA.j.order === true && sA.status === "placed" && sA.sync.state === "rejected" && /pending row was rejected under Approve/.test(sA.sync.why)
+    && JSON.stringify(await againOn(a.id)) === JSON.stringify(["ack"]),
+    "a rejected pending row is written back to its order, which still reads Placed, and the card is told it can offer it again: " + JSON.stringify({ sync: sA.sync, again: await againOn(a.id) }));
+  const a2 = await accept(a);
+  const sA2 = await orderOf(a.id), dA = drafts(a.id, "Pending");
+  ok(a2.j.approved === true && a2.j.draft !== a1.j.draft && dA.length === 2 && dA.find((d) => d.id === a1.j.draft).status === "rejected" && dA.find((d) => d.id === a2.j.draft).status === "approved"
+    && sA2.status === "acknowledged" && sA2.queued.ack === a2.j.draft && sA2.sync.state === "queued" && !(await againOn(a.id)).length,
+    "Accept again makes a FRESH entry, approved being equal, and moves the order; the rejected one stays rejected: " + JSON.stringify(dA.map((d) => [d.id === a1.j.draft ? "first" : "fresh", d.status])));
+
+  /* B. A ROW THE OLD ROAD MADE, REJECTED: the order is agreed already, so Accept offers it again and moves nothing */
+  const b = await place(U1, 1, 102);
+  await O.deskMove(senv, U1, b.id, { status: "acknowledged", mode: "collect" });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const bOld = (await orderOf(b.id)).queued.ack;
+  await reject(bOld);
+  const pvB = await call("/orders/" + b.id + "/preview", { delivery: 99 });
+  const b2 = await call("/orders/" + b.id + "/accept", { hash: pvB.j.hash, delivery: 99 });
+  const sB = await orderOf(b.id);
+  ok(pvB.j.ok && pvB.j.again === true && !pvB.j.row.delivery && b2.j.approved === true && b2.j.draft !== bOld && sB.queued.ack === b2.j.draft
+    && sB.ledgerKey === C1 + "|" + pvB.j.row.date + "|102" && sB.sync.state === "queued" && sB.status === "acknowledged" && !sB.delivery,
+    "an agreed order whose row he rejected is offered again by Accept, on the charge it already carries, marked with the fresh row's key: " + JSON.stringify({ pv: pvB.j.again, queued: sB.queued, key: sB.ledgerKey }));
+
+  /* C. A HANDOVER, REJECTED: Collected again at the same figure is that handover under a fresh entry */
+  land(b2.j.draft);
+  await O.deskMove(senv, U1, b.id, { handover: { units: 1, mode: "collect" } });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const hOld = drafts(b.id, "Handover")[0];
+  await reject(hOld.id);
+  ok(JSON.stringify(await againOn(b.id)) === JSON.stringify(["move"]), "the card is told the handover can be offered again: " + JSON.stringify(await againOn(b.id)));
+  const hC = await call("/orders/" + b.id + "/handed", { qty: 1 });
+  const hs = drafts(b.id, "Handover");
+  ok(hC.status === 200 && hC.j.preapproval.again === hOld.id && hs.length === 2 && hs[1].id !== hOld.id && hs[1].status === "approved"
+    && JSON.stringify(JSON.parse(hs[1].entry).payload.fields) === JSON.stringify(JSON.parse(hOld.entry).payload.fields),
+    "Collected again at the same figure queues that handover under a fresh entry, approved as drafted: " + JSON.stringify(hs.map((d) => d.status)));
+
+  /* D. THEIR PAYMENT, REJECTED: Received at that figure offers it again */
+  const d = await place(U2, 1, 104);
+  const d1 = await accept(d); land(d1.j.draft);
+  await O.customerMove(senv, U2, d.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U2, d.id, "pay", { amount: 30 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const pOld = drafts(d.id, "Payment")[0];
+  await reject(pOld.id);
+  const rD = await call("/orders/" + d.id + "/received", { amount: 30 });
+  const ps = drafts(d.id, "Payment");
+  ok(rD.status === 200 && rD.j.preapproval.again === pOld.id && ps.length === 2 && ps[1].status === "approved" && JSON.parse(ps[1].entry).payload.cash === 30,
+    "Received at the figure of a payment he rejected offers that payment again: " + JSON.stringify(ps.map((x) => x.status)));
+
+  /* E. CASH, REJECTED: offered again, and the order is never told the cash twice */
+  const e = await place(U2, 2, 210);
+  const e1 = await accept(e);
+  await call("/orders/" + e.id + "/cash", { amount: 60 });
+  land(e1.j.draft, { cash: 180 });   /* landed other than it was shown (a payment folded beside it), so the cash waits under Approve */
+  await deskPass(denv, new Date()); await runDrafter(denv);
+  const cOld = drafts(e.id, "Payment")[0];
+  ok(cOld && cOld.status === "pending", "the cash Fulfilment, landing other than shown, waits under Approve: " + JSON.stringify(cOld && cOld.status));
+  await reject(cOld.id);
+  const cE = await call("/orders/" + e.id + "/cash", { amount: 60 });
+  const cs = drafts(e.id, "Payment"), sE = await orderOf(e.id);
+  ok(cE.status === 200 && cE.j.preapproval.again === cOld.id && cs.length === 2 && cs[1].status !== "rejected" && sE.paid === 60,
+    "Cash received again at that figure offers the rejected entry again, and the order still counts the cash once: " + JSON.stringify({ drafts: cs.map((x) => x.status), paid: sE.paid }));
+
+  /* F. A CANCELLATION, REJECTED: offered again by /again */
+  const g = await place(U2, 1, 106);
+  const g1 = await accept(g); land(g1.j.draft);
+  await O.customerMove(senv, U2, g.id, "cancel", {});
+  await reconcileOrders(denv); await runDrafter(denv);
+  const xOld = drafts(g.id, "Cancellation")[0];
+  await reject(xOld.id);
+  const t0 = Date.now();   /* two taps, a moment apart */
+  const xG = await againOrder(denv, g.id, { stage: "cancel" }, "phone", new Date(t0)), xG2 = await againOrder(denv, g.id, { stage: "cancel" }, "phone", new Date(t0 + 5));
+  await deskPass(denv, new Date()); await runDrafter(denv);
+  const xs = drafts(g.id, "Cancellation");
+  ok(xG.ok && xG2.status === 409 && /offered again already/.test(xG2.error) && xs.length === 2 && xs[1].status === "approved"
+    && (await call("/orders/" + g.id + "/again", { stage: "ack" })).status === 400,
+    "a cancellation he rejected is offered again under a fresh entry, once however often it is tapped; a pending row is offered again only by Accept: "
+    + JSON.stringify({ second: xG2.error, drafts: xs.map((x) => x.status) }));
+
+  /* G. A WITHDRAWAL'S DROP IS NOT HIS REJECTION, and offers nothing */
+  const w = await place(U1, 1, 107);
+  await O.deskMove(senv, U1, w.id, { status: "acknowledged", mode: "collect" });
+  await reconcileOrders(denv); await runDrafter(denv);
+  await O.customerMove(senv, U1, w.id, "cancel", {});
+  await reconcileOrders(denv);
+  ok(drafts(w.id, "Pending")[0].decided_by === "withdrawn" && !(await againOn(w.id)).length,
+    "a row dropped because they withdrew is not offered again: " + JSON.stringify({ draft: drafts(w.id, "Pending")[0].decided_by, again: await againOn(w.id) }));
+})();
+
+section("S11 11.16: his wakes name the kind of act and never a code or an amount, and a new order is never titled by older news");
+await (async () => {
+  /* HIS DECISION (PLAN section 5): "New customer order", "A customer wrote", "A customer says they paid", "A customer
+     cancelled", and never a code or an amount. A payment is what they SAY until he checks it. */
+  const O = await import("../stmt/orders.js");
+  const { nudgeOrders } = await import("../src/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default, deskW = (await import("../src/worker.js")).default;
+  const kp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const denv = { SALT_QUEUE: dkv, STMT_DESK_KEY: "desk-key", VAPID_PUBLIC_KEY: "pub", VAPID_SUBJECT: "mailto:a@b.test",
+    VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kp.privateKey)),
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  await dkv.put("push:his", JSON.stringify({ endpoint: "https://push.example/his-phone", topics: ["orders", "approve", "salt"] }));
+  const u = "abcd-efgh";
+  const nudge = async () => { const realF = globalThis.fetch;
+    globalThis.fetch = async () => new Response("", { status: 201 });
+    try { return await nudgeOrders(denv); } finally { globalThis.fetch = realF; } };
+  const d1 = { prepare: (q) => { const first = async () => (/COUNT\(\*\)/.test(q) ? { n: 0 } : null);
+    const all = async () => ({ results: [] }); return { bind: () => ({ all, first, run: async () => ({}) }), all, first, run: async () => ({}) }; } };
+  const summary = async () => (await (await deskW.fetch(new Request("https://salt-command.example/push/summary"), Object.assign({ SALT_LEDGER: d1, REQUIRE_ACCESS: "0" }, denv))).json());
+  const vm = await import("node:vm");
+  const sw = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const wake = async (s) => { const L = {}, shown = [];
+    const c = { URL, console, caches: {}, self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" },
+      registration: { scope: "https://salt-command.example/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
+      clients: { matchAll: async () => [], openWindow: async () => {} }, fetch: async () => ({ ok: true, json: async () => s }) };
+    vm.createContext(c); vm.runInContext(sw, c);
+    const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits); return shown[0]; };
+  const told = async () => { const b = await wake(await summary()); return b ? b.t + " | " + b.opt.body : ""; };
+  const noCodeNoMoney = (t) => !/\b[A-Z]{2}\d{1,2}-[A-Z]{2,4}\b/.test(t) && !/RM\s?\d/.test(t) && !/abcd-efgh/.test(t);
+
+  /* each act, its own words */
+  const o = (await O.placeOrder(senv, u, { product: "salt", qty: 2, mode: "collect", unit: 95, total: 190, week: "" })).order;
+  await nudge();
+  const tPlaced = await told();
+  await O.customerMove(senv, u, o.id, "say", { text: "can I collect on Friday" });
+  await nudge();
+  const tSaid = await told();
+  await O.deskMove(senv, u, o.id, { status: "acknowledged", mode: "collect" });
+  await O.customerMove(senv, u, o.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, u, o.id, "pay", { amount: 190 });
+  await nudge();
+  const tPaid = await told();
+  const o2 = (await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  await nudge();
+  const tPlaced2 = await told();
+  await O.customerMove(senv, u, o2.id, "cancel", {});
+  await nudge();
+  const tCancel = await told();
+  ok(/^New customer order \|/.test(tPlaced) && /^A customer wrote \|/.test(tSaid) && /^A customer says they paid \|/.test(tPaid) && /^A customer cancelled \|/.test(tCancel),
+    "each wake names the kind of act, in his words: " + JSON.stringify([tPlaced, tSaid, tPaid, tCancel].map((t) => t.split(" | ")[0])));
+  ok(/^New customer order \|/.test(tPlaced2),
+    "a new order minutes after a payment is titled a new order, not by the payment's news still fresh: " + JSON.stringify(tPlaced2.split(" | ")[0]));
+  ok([tPlaced, tSaid, tPaid, tPlaced2, tCancel].every(noCodeNoMoney),
+    "and no wake carries a code, a username or an amount: " + JSON.stringify([tPlaced, tSaid, tPaid, tPlaced2, tCancel]));
+
+  /* THE BANNER TAKES NEWS IN LETTERS AND SPACES ONLY, so nothing that could carry a code or a figure is ever its title */
+  const forged = await wake({ ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 1, placed: 0, news: "CX1-AB paid RM 190" });
+  ok(forged && forged.t !== "CX1-AB paid RM 190" && noCodeNoMoney(forged.t + " " + forged.opt.body),
+    "news carrying a code or an amount never reaches the title: " + JSON.stringify(forged && forged.t));
 })();
 
 section("v764: what he records on the desk reaches the customer's order, and the chase stops");
@@ -22590,13 +23249,13 @@ await (async () => {
   await O.customerMove(senv, u, o.id, "say", { text: "is it ready yet" });
   const n1 = await nudgeOrders(denv);
   const news = await dkv.get("orders:news", "json");
-  ok(n1.said && news && news.what === "A customer wrote on an order" && news.at === n1.said,
+  ok(n1.said && news && news.what === "A customer wrote" && news.at === n1.said,
     "the line is the news, at the moment it was written: " + JSON.stringify({ said: n1.said, news }));
   const d1 = { prepare: (q) => { const first = async () => (/COUNT_ON/.test(q) ? null : (/COUNT\(\*\)/.test(q) ? { n: 0 } : null));
     const all = async () => ({ results: [] }); return { bind: () => ({ all, first, run: async () => ({}) }), all, first, run: async () => ({}) }; } };
   const summ = await (await deskW.fetch(new Request("https://salt-command.example/push/summary"),
     Object.assign({ SALT_LEDGER: d1, REQUIRE_ACCESS: "0" }, denv))).json();
-  ok(summ.news === "A customer wrote on an order", "the summary the banner is written from carries it: " + JSON.stringify(summ.news));
+  ok(summ.news === "A customer wrote", "the summary the banner is written from carries it: " + JSON.stringify(summ.news));
   const vm = await import("node:vm");
   const swSrc = readFileSync(join(REPO, "public", "sw.js"), "utf8");
   const L = {}, shown = [];
@@ -22607,7 +23266,7 @@ await (async () => {
     fetch: async () => ({ ok: true, json: async () => summ }) };
   vm.createContext(ctx); vm.runInContext(swSrc, ctx);
   const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits);
-  ok(shown[0] && shown[0].t === "A customer wrote on an order" && shown[0].opt.data.url === "./desk#orders",
+  ok(shown[0] && shown[0].t === "A customer wrote" && shown[0].opt.data.url === "./desk#orders",
     "so the banner says a customer wrote, and opens the card where he answers: " + JSON.stringify(shown[0] && shown[0].t));
 
   /* A PLACEMENT WITH A NOTE IS A NEW ORDER, whose first line is the note typed with it */
