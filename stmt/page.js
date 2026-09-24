@@ -104,6 +104,8 @@ h3.pmark{margin:0 0 4px;line-height:1}
 /* a mark on a pressed ghost takes the ghost's own ink, so the chosen product reads as chosen (v695's rule for a mark on a
    control, which the segment it replaced carried) */
 .osheet .salt-ghost .psym{color:inherit}
+/* New order stands where the order form's pane stood, so it keeps the pane's gap to the Notifications card under it */
+#oNew{margin-bottom:14px}
 .ototal{flex:1 1 0;min-width:0}
 .ototal .salt-kpi__value{margin-top:0}
 .ototal .sub2{display:block;margin-top:2px}
