@@ -1,5 +1,14 @@
 [
  {
+  "v": "v832",
+  "d": "24 Sep 2026",
+  "t": "TWO CASH ROWS, BOTH SHUT THE SAME DAY",
+  "n": [
+   "<b>FOLDED: TWO COMPLETED SELLS DATED 24 SEP, BOTH PAID AND HANDED OVER ON THE DAY.</b> CC5-OKR took 10 unit of oil for RM130, and CZ4-MK took 4 unit of candy for RM200. Cash matched the totals in both cases, the goods moved the same day, and neither row leaves a balance, a pending quantity or a carriage line behind it. One flag was raised, on CC5-OKR, and it is recorded unanswered.",
+   "<b>UNUSUAL: BOTH DRAFTER WORKINGS STATE A GOODS FIGURE THAT DOES NOT MATCH THE COSTED ROW.</b> The oil row costs at RM7.6 a unit, RM76, against a working that reads RM54 at 41.5%; the candy row costs at RM38 a unit, RM152, against a working that reads RM48 at 24%. Both are left as the desk's own inventory cost. The salt inventory did not move on either row and the cost basis stands."
+  ]
+ },
+ {
   "v": "v831",
   "d": "24 Sep 2026",
   "t": "SITE ORDERS IN ONE SAFE STORE, EVERY MOVE AN EVENT",
