@@ -22689,7 +22689,9 @@ await (async () => {
   answers.push((await call("/orders/" + id + "/method", { method: "tngbiz" }, S)).b.order);
   answers.push((await call("/orders/" + id + "/pay", { amount: 20 }, S)).b.order);
   answers.push((await call("/orders/" + id + "/say", { text: "on my way" }, S)).b.order);
-  answers.push((await call("/orders/" + id + "/cancel", {}, S)).b.order);
+  /* S6 fix: the withdrawal is of an order of its own, the first carrying a claim of theirs, which holds a cancel until answered */
+  const gone = (await call("/orders", { product: "salt", qty: 1, mode: "collect", unit: 130, total: 130, week: "" }, S)).b.order;
+  answers.push((await call("/orders/" + (gone && gone.id) + "/cancel", {}, S)).b.order);
   answers.push((await call("/orders", { product: "salt", qty: 1, mode: "collect", unit: 130, total: 130, week: "" }, S)).b.order);
   ok(answers.length === 5 && answers.every(bare) && answers[1].claimed === 20 && !answers[1].paid && answers[0].method === "tngbiz",
     "and so does the answer to every move of theirs, a rail, a payment, a line, a withdrawal and a placement: "
