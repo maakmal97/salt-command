@@ -22704,7 +22704,8 @@ await (async () => {
   await reconcileOrders(denv); await runDrafter(denv);
   const xOld = drafts(g.id, "Cancellation")[0];
   await reject(xOld.id);
-  const xG = await againOrder(denv, g.id, { stage: "cancel" }, "phone"), xG2 = await againOrder(denv, g.id, { stage: "cancel" }, "phone");
+  const t0 = Date.now();   /* two taps, a moment apart */
+  const xG = await againOrder(denv, g.id, { stage: "cancel" }, "phone", new Date(t0)), xG2 = await againOrder(denv, g.id, { stage: "cancel" }, "phone", new Date(t0 + 5));
   await deskPass(denv, new Date()); await runDrafter(denv);
   const xs = drafts(g.id, "Cancellation");
   ok(xG.ok && xG2.status === 409 && /offered again already/.test(xG2.error) && xs.length === 2 && xs[1].status === "approved"

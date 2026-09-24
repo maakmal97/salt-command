@@ -392,8 +392,8 @@ export async function cashOrder(env, id, body, by, now) {
  * GET /orders says which stages an order has to offer again (`again`), read off the drafts. */
 const STATUS_OF_STAGE = { ack: "Pending", pay: "Payment", cash: "Payment", move: "Handover", cancel: "Cancellation" };
 const STAGE_WORD = { ack: "pending row", pay: "payment", cash: "cash payment", move: "handover", cancel: "cancellation" };
-async function draftsOfOrders(db, ids) {
-  const rs = await db.prepare("SELECT id,status,decided_by,entry FROM draft WHERE entry LIKE ?1 ORDER BY id DESC").bind(ids.length === 1 ? '%"orderId":"' + ids[0] + '"%' : '%"orderId":"%').all();
+async function draftsOfOrders(db, ids) {   /* one order's, in practice: ids holds one */
+  const rs = await db.prepare("SELECT id,status,decided_by,entry FROM draft WHERE entry LIKE ?1 ORDER BY id DESC").bind('%"orderId":"' + ids[0] + '"%').all();
   const want = new Set(ids);
   return (rs.results || []).map((r) => { try { return Object.assign({}, r, { entry: JSON.parse(r.entry) }); } catch (e) { return null; } })
     .filter((r) => r && r.entry && want.has(r.entry.orderId));
@@ -411,10 +411,17 @@ export async function rejectedOf(db, id, stage) {
 export async function againOf(db, ids) {
   const out = {};
   if (!db || !ids.length) return out;
-  let all = [];
-  try { all = await draftsOfOrders(db, ids); } catch (e) { return out; }
-  for (const id of ids) for (const st of Object.keys(STATUS_OF_STAGE)) {
-    if (rejectedByHim(all.find((r) => r.entry.orderId === id && ofStage(r, st)))) (out[id] = out[id] || []).push(st);
+  /* the card polls this, so it reads the few rows he rejected, and only their orders' drafts, never every site draft */
+  let hit = [];
+  try {
+    const rs = await db.prepare("SELECT entry FROM draft WHERE status='rejected' AND entry LIKE ?1").bind('%"orderId":"%').all();
+    const want = new Set(ids);
+    hit = [...new Set((rs.results || []).map((r) => { try { return JSON.parse(r.entry).orderId; } catch (e) { return null; } }).filter((x) => x && want.has(x)))];
+  } catch (e) { return out; }
+  for (const id of hit) {
+    let all = [];
+    try { all = await draftsOfOrders(db, [id]); } catch (e) { continue; }
+    for (const st of Object.keys(STATUS_OF_STAGE)) if (rejectedByHim(all.find((r) => ofStage(r, st)))) (out[id] = out[id] || []).push(st);
   }
   return out;
 }

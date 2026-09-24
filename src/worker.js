@@ -981,7 +981,9 @@ export default {
       if (!writeOk(request, env)) return needsKey();
       try {
         if (url.searchParams.get("dry") === "1") return json(await dryRunDrafter(env));
-        return json(await runDrafter(env));
+        const r = await runDrafter(env);
+        await afterApproval(env, ctx, r.approved);   /* S11: a row his yes approved sets going what any approval does */
+        return json(r);
       } catch (e) {
         return json({ ok: false, error: String((e && e.message) || e) }, 500);
       }
