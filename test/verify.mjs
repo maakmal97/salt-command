@@ -20483,6 +20483,14 @@ await (async () => {
     "the rejection is written onto the order it came from, and the answer says it was: " + JSON.stringify({ order: r1.j.order, sync: got.sync }));
   ok((await reconcileOrders(denv)).queued === 0 && (await after()).sync.state === "rejected",
     "the stage mark stays, so the next pass neither queues the same moment again nor talks over the rejection");
+  /* and a later stage does not talk over it either: the customer paying is the ordinary next step, and
+     that pass has work, which a pass with none never proved */
+  await O.customerMove(senv, u, o1.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, u, o1.id, "pay", { amount: 40 });
+  const rcPay = await reconcileOrders(denv), paidOn = await after();
+  ok(rcPay.queued === 0 && (rcPay.waiting || []).includes(o1.id) && paidOn.sync && paidOn.sync.state === "rejected"
+    && /pending row was rejected under Approve/.test(paidOn.sync.why),
+    "a payment after the rejection waits behind it, and the order still says its row was rejected: " + JSON.stringify({ rc: rcPay, sync: paidOn.sync }));
 
   /* a row typed on the desk has no order behind it, and its rejection writes nothing anywhere */
   const eDesk = { at: "2026-09-24T03:00:00.000Z", type: "SELL", party: "CC5-OKR", qty: 1, total: 100, status: "Pending", raw: "SELL CC5-OKR 1 salt RM 100", payload: {} };
@@ -20497,6 +20505,9 @@ await (async () => {
     const card = String(w114.eval("ordCard(" + JSON.stringify(got) + ")"));
     ok(/rejected under Approve, so the book does not carry it/.test(card) && !/on the row this order made/.test(card),
       "the order's card says its row was rejected, where it claimed the row: " + (/The ledger reads[^.]*\./.exec(card) || [""])[0]);
+    const cardPaid = String(w114.eval("ordCard(" + JSON.stringify(paidOn) + ")"));
+    ok(/rejected under Approve, so the book does not carry it/.test(cardPaid) && !/approve it under Approve/.test(cardPaid),
+      "and once they have paid, the card never sends him to approve the row he rejected: " + (/The ledger reads[^.]*\./.exec(cardPaid) || [""])[0]);
 
     const asked = [], sent = [];
     w114.confirm = (t) => { asked.push(String(t)); return false; };

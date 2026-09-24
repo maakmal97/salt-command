@@ -338,7 +338,11 @@ export async function reconcileOrders(env) {
         let e = null;
         if (job !== "ack" && !(onBook && onBook[order.ledgerKey])) {
           waiting.push(o.id);
-          state = { state: "waiting", why: "the " + (STAGE_WORD[job] || job) + " waits for the pending row to reach the book: approve it under Approve, and the fold lands it" };
+          /* A REJECTED ROW STAYS SAID (24 Sep 2026): a row he rejected never reaches the book, so every
+             later stage waits here, and "approve it under Approve" would send him to a row he has already
+             turned down and that Approve no longer lists */
+          if (!(o.sync && o.sync.state === "rejected"))
+            state = { state: "waiting", why: "the " + (STAGE_WORD[job] || job) + " waits for the pending row to reach the book: approve it under Approve, and the fold lands it" };
           break;
         }
         /* each entry is stamped with its stage's own moment (stageAt), never the pass's clock */
