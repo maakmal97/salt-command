@@ -15202,6 +15202,483 @@ await (async () => {
     } finally { try { W91.close(); } catch (e) { /* best effort */ } }
   } finally { globalThis.fetch = realFetch91; }
 })();
+section("S1 1.2: a new account with no rows opens on its empty state, and Prices and Order are drawn, by password, remembered device and link");
+await (async () => {
+  /* B02, 24 SEP 2026. tools/stmt-account.mjs mints an account whose bundle holds NO statement, and no live
+     document until the next publish. The password road refused it ("could not be read"), and the remembered
+     and link roads threw in show() reading a body that was not there, so Prices and Order were never drawn:
+     a customer on the day they were added saw a refusal or a blank page. */
+  const { landingPage: lpA } = await import("../stmt/page.js");
+  const CA = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDA } = await import("jsdom");
+  const { webcrypto: wcA } = await import("node:crypto");
+  const uA = "aaaa-cccc", passA = "2345-6789-abcd-efgh", devA = "d".repeat(32), tokA = "t".repeat(32);
+  const ckA = await CA.contentKey("9".repeat(64), uA);
+  const common = { ok: true, u: uA, issued: "2026-09-24", issues: ["2026-09-24"], live: null, session: "sessAaaaaaaaaaaaaaaaaaaaaaaa",
+    env: await CA.encryptWith(ckA, JSON.stringify({ v: 1, issued: "2026-09-24", statements: [] })),
+    prices: await CA.encryptWith(ckA, JSON.stringify({ week: { label: "21 Sep 2026", monday: "2026-09-21" }, soon: [],
+      products: [{ product: "salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 100 }, { q: 2, price: 190 }] }] })) };
+  const answers = {
+    "/open": { ...common, byMaster: false, wrap: await CA.wrapKey(passA, ckA), wrapMaster: null },
+    "/remember/open": { ...common, remembered: true, wrap: await CA.wrapKey(devA, ckA) },
+    "/open-link": { ...common, wrap: await CA.wrapKey(tokA, ckA) }
+  };
+  const errs = [], onRej = (e) => errs.push(String((e && e.message) || e));
+  process.on("unhandledRejection", onRej);
+  const drive = async (road) => {
+    errs.length = 0;
+    const stored = road === "remembered" ? JSON.stringify({ t: "r".repeat(32), k: Buffer.from(devA).toString("base64"), u: uA }) : null;
+    const dom = new JDA(lpA(road === "password" ? uA : "", "nA", null), {
+      url: road === "link" ? "https://site.test/s/" + tokA : "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: wcA, configurable: true }); } catch (e) { win.crypto = wcA; }
+        const store = new Map(stored ? [["salt-stmt-remember", stored]] : []);
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.addEventListener("error", (e) => errs.push(String(e.message)));
+        win.fetch = async (path) => { const a = answers[String(path)] || { ok: true, orders: [] }; return { ok: true, status: 200, json: async () => a }; };
+      } });
+    const W = dom.window, D = W.document;
+    try {
+      if (road === "password") {
+        D.getElementById("pw").value = passA;
+        D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+      }
+      for (let i = 0; i < 200 && !D.querySelector("#pOrder .pane") && !errs.length && !D.getElementById("msg").textContent.includes("could not"); i++) await new Promise((r) => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 50));
+      return { errs: errs.slice(), out: D.getElementById("out").textContent, gate: D.getElementById("gate").hidden, msg: D.getElementById("msg").textContent,
+        prices: !!D.querySelector("#pPrices table"), review: [...D.querySelectorAll("#pOrder button")].some((b) => b.textContent === "Review this order") };
+    } finally { try { W.close(); } catch (e) { /* best effort */ } }
+  };
+  try {
+    for (const road of ["password", "remembered", "link"]) {
+      const r = await drive(road);
+      ok(r.gate && /Nothing on your account yet\. Your orders will show here\./.test(r.out) && !/could not/.test(r.msg) && !r.errs.length,
+        "by " + road + ", a new account opens on its empty state, with no refusal and no page error: " + JSON.stringify({ out: r.out.slice(0, 60), msg: r.msg, errs: r.errs }));
+      ok(r.prices && r.review, "and by " + road + ", Prices and Order are drawn after it: " + JSON.stringify({ prices: r.prices, review: r.review }));
+    }
+  } finally { process.off("unhandledRejection", onRej); }
+})();
+section("S1 1.3: no sentence promises a sign-in the phone does not keep");
+await (async () => {
+  /* B03 (the fallback that keeps v710) and M34, 24 SEP 2026. The door's install step said "It signs you in",
+     false on a saved iPhone app, which keeps its own storage, and false for a link customer; the one-time
+     link's message said "Tick Remember me and that device stays signed in", on a route that never shows the
+     tick. The link keeping the phone signed in is a later stage (his D1), so nothing here says "once" either. */
+  const { landingPage: lpB } = await import("../stmt/page.js");
+  const SB = await import("../stmt/send.js");
+  const row = { url: "https://site.test/s/" + "t".repeat(32), user: "27a4-gkgw" };
+  const door = lpB("", "nB", null), sign = SB.signInMessage(row), link = SB.linkMessage(row);
+  ok(!/It signs you in/.test(door) && /sign in there with Remember me ticked/.test(door),
+    "the door's install step no longer promises a sign-in, and says where to make it: in the saved app, with Remember me ticked");
+  ok(!/It signs you in/.test(sign) && !/It signs you in/.test(link), "and neither message says it either");
+  ok(!/Remember me/.test(sign) && !/stays signed in/.test(sign) && /Add to Home Screen/.test(sign),
+    "the link's message promises no remembered phone, because the link route never shows the tick: " + JSON.stringify(sign.slice(-160)));
+  ok(/Open it from there and sign in with Remember me ticked/.test(link),
+    "and the username road, which reaches the door, says the sign-in is made in the saved app");
+})();
+section("S1 1.4: a dropped request gives back its control and says Not sent beside it");
+await (async () => {
+  /* H04, 24 SEP 2026. api() had no catch: a request the phone could not send threw, so Place this order
+     stayed disabled with the order half-sent in the reader's mind, and Send on an order stayed grey for good.
+     The answer is now drawn beside the control that was tapped, not at the top of the tab. */
+  const { landingPage: lpC } = await import("../stmt/page.js");
+  const CC = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDC } = await import("jsdom");
+  const { webcrypto: wcC } = await import("node:crypto");
+  const uC = "aaaa-dddd", passC = "2345-6789-abcd-efgh", oid = "20260924120000-abcd";
+  const ckC = await CC.contentKey("8".repeat(64), uC);
+  const openC = { ok: true, byMaster: false, u: uC, issued: "2026-09-24", issues: ["2026-09-24"], live: null, session: "sessCaaaaaaaaaaaaaaaaaaaaaaa",
+    wrap: await CC.wrapKey(passC, ckC), wrapMaster: null,
+    env: await CC.encryptWith(ckC, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] })),
+    prices: await CC.encryptWith(ckC, JSON.stringify({ week: { label: "21 Sep 2026", monday: "2026-09-21" }, soon: [],
+      products: [{ product: "salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 100 }] }] })) };
+  const order = { id: oid, product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, status: "acknowledged", mode: "collect",
+    at: "2026-09-24T04:00:00Z", history: [], msgs: [] };
+  const NS = "Not sent. Check your connection and try again.";
+  const errs = [], onRej = (e) => errs.push(String((e && e.message) || e));
+  process.on("unhandledRejection", onRej);
+  const dom = new JDC(lpC(uC, "nC", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcC, configurable: true }); } catch (e) { win.crypto = wcC; }
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/open") return { ok: true, status: 200, json: async () => openC };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [order] }) };
+        if (m === "POST" && (p === "/orders" || p === "/orders/" + oid + "/say")) throw new TypeError("Failed to fetch");
+        return { ok: true, status: 200, json: async () => ({ ok: true }) };
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const wait = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); };
+  const btn = (t) => [...D.querySelectorAll("#pOrder button")].find((b) => b.textContent === t);
+  const noteNear = (b) => [...D.querySelectorAll("#pOrder p.msg")].find((p) => p.textContent === NS && p.parentNode.contains(b));
+  try {
+    D.getElementById("pw").value = passC;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await wait(() => btn("Review this order") && btn("Send"));
+    btn("Review this order").click();
+    await wait(() => btn("Place this order"));
+    btn("Place this order").click();
+    await wait(() => D.getElementById("pOrder").textContent.includes(NS));
+    await new Promise((r) => setTimeout(r, 50));
+    const place = btn("Place this order"), change = btn("Change it");
+    ok(!!place && !place.disabled && !!change && !change.disabled && !!noteNear(place),
+      "Place this order is given back after a dropped request, and Not sent is said beside it: "
+      + JSON.stringify({ place: place && place.disabled, change: change && change.disabled, note: !!(place && noteNear(place)) }));
+    const pane = btn("Send").closest(".pane");
+    pane.querySelector("input[aria-label='Write about this order']").value = "is it ready";
+    btn("Send").click();
+    await wait(() => [...D.querySelectorAll("#pOrder .pane")].some((x) => x.querySelector("p.msg") && x.contains(btn("Send")) && x.textContent.includes(NS)));
+    const send = btn("Send"), near = send && noteNear(send);
+    ok(!!send && !send.disabled && !!near && near.closest(".pane") === send.closest(".pane") && near.previousElementSibling && near.previousElementSibling.contains(send),
+      "Send on an order is given back too, and Not sent is said beside it, in that order's own pane: "
+      + JSON.stringify({ send: send && send.disabled, near: !!near }));
+    ok(!errs.length, "and nothing is left unhandled: " + JSON.stringify(errs));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } process.off("unhandledRejection", onRej); }
+})();
+section("S1 1.5: a lapsed session says so in the bar at once, and Continue opens again or puts the door back");
+await (async () => {
+  /* H05, 24 SEP 2026. On a 401 the poll stopped and a note was set that nothing drew until the orders
+     changed, and it told them to "lock", a control gone since v692. Driven with the poll shortened in the
+     served page, and the session made to lapse under it. */
+  const { landingPage: lpD } = await import("../stmt/page.js");
+  const CD = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDD } = await import("jsdom");
+  const { webcrypto: wcD } = await import("node:crypto");
+  const uD = "aaaa-eeee", passD = "2345-6789-abcd-efgh", devD = "e".repeat(32);
+  const ckD = await CD.contentKey("6".repeat(64), uD);
+  const envD = await CD.encryptWith(ckD, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] }));
+  const tokD = "k".repeat(32);
+  const drive = (stored, st) => {
+    const html = lpD("", "nD", null).replace("var POLL_MS=10000", "var POLL_MS=40");
+    const dom = new JDD(html, { url: stored ? "https://site.test/" : "https://site.test/s/" + tokD, runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: wcD, configurable: true }); } catch (e) { win.crypto = wcD; }
+        const store = new Map(stored ? [["salt-stmt-remember", stored]] : []);
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (path, init) => {
+          const p = String(path);
+          if (p === "/remember/open") { st.reopened++; return { ok: true, status: 200, json: async () => ({ ok: true, u: uD, remembered: true,
+            wrap: await CD.wrapKey(devD, ckD), env: envD, live: null, prices: null, session: "sessD" + st.reopened + "aaaaaaaaaaaaaaaaaaaaaa" }) }; }
+          if (p === "/open-link") return { ok: true, status: 200, json: async () => ({ ok: true, u: uD, wrap: await CD.wrapKey(tokD, ckD),
+            env: envD, live: null, prices: null, session: "sessDlinkaaaaaaaaaaaaaaaaaaaa" }) };
+          if (p === "/orders") return st.lapsed ? { ok: false, status: 401, json: async () => ({ ok: false, error: "Sign in again to see your orders.", session: false }) }
+            : { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+          return { ok: true, status: 200, json: async () => ({ ok: true }) };
+        };
+      } });
+    return { W: dom.window, D: dom.window.document };
+  };
+  const wait = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); };
+
+  /* a remembered phone: the line appears with no tap, and Continue opens again through the device */
+  const st1 = { reopened: 0, lapsed: false };
+  const one = drive(JSON.stringify({ t: "r".repeat(32), k: Buffer.from(devD).toString("base64"), u: uD }), st1);
+  try {
+    await wait(() => !one.D.getElementById("barw").hidden);
+    st1.lapsed = true;
+    const alertEl = () => [...one.D.querySelectorAll("#barw [role=alert]")].find((e) => !e.hidden && e.textContent.trim());
+    await wait(() => !!alertEl());
+    const a = alertEl();
+    ok(!!a && /You were signed out after a while\./.test(a.textContent) && !/lock/i.test(a.textContent) && !!a.querySelector("button"),
+      "with no tap, a line in the bar says the session lapsed, with Continue, and never says lock: " + JSON.stringify(a && a.textContent));
+    ok(!/lock and sign in/.test(one.D.documentElement.outerHTML), "and the old note telling them to lock is gone from the page");
+    st1.lapsed = false;
+    const before = st1.reopened;
+    const go = a && [...a.querySelectorAll("button")].find((x) => x.textContent === "Continue");
+    if (go) go.click();
+    await wait(() => st1.reopened > before && !one.D.getElementById("barw").hidden);
+    ok(st1.reopened === before + 1 && !one.D.getElementById("barw").hidden && one.D.getElementById("lapse").hidden && one.D.getElementById("gate").hidden,
+      "Continue opens the account again through the remembered device, and the line is gone: " + JSON.stringify({ reopened: st1.reopened - before }));
+  } finally { try { one.W.close(); } catch (e) { /* best effort */ } }
+
+  /* opened by a one-time link, so nothing is remembered and nothing was typed: Continue puts the door back
+     with the username in it */
+  const st2 = { reopened: 0, lapsed: false };
+  const two = drive(null, st2);
+  try {
+    await wait(() => !two.D.getElementById("barw").hidden);
+    st2.lapsed = true;
+    await wait(() => !two.D.getElementById("lapse").hidden);
+    ok(!two.D.getElementById("lapse").hidden, "a phone that remembers nothing is told the same, in the bar");
+    two.D.getElementById("lapseGo").click();
+    await new Promise((r) => setTimeout(r, 60));
+    const boxes = [...two.D.querySelectorAll('.seg[data-for="un"] input')].map((b) => b.value).join("-");
+    ok(!two.D.getElementById("gate").hidden && boxes === uD && st2.reopened === 0,
+      "and Continue puts the door back with the username in it, asking nothing of a device it does not have: " + JSON.stringify({ boxes, reopened: st2.reopened }));
+  } finally { try { two.W.close(); } catch (e) { /* best effort */ } }
+})();
+section("S1 1.9: Notify me waits for the service worker to be ready, and a failure is said in plain words");
+await (async () => {
+  /* H09, 24 SEP 2026. subscribe() ran straight after register(), before the worker was active, and Chromium
+     refused it ("Subscription failed - no active Service Worker"), which the page then showed raw. The stub
+     refuses to subscribe until ready has resolved, as Chromium does, and ready resolves only after register. */
+  const { landingPage: lpE } = await import("../stmt/page.js");
+  const CE = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDE } = await import("jsdom");
+  const { webcrypto: wcE } = await import("node:crypto");
+  const uE = "aaaa-ffff", passE = "2345-6789-abcd-efgh";
+  const ckE = await CE.contentKey("5".repeat(64), uE);
+  const openE = { ok: true, byMaster: false, wrap: await CE.wrapKey(passE, ckE), wrapMaster: null, live: null, prices: null, session: "sessEaaaaaaaaaaaaaaaaaaaaaaa",
+    env: await CE.encryptWith(ckE, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] })) };
+  const drive = async (never) => {
+    const st = { posted: [], active: false };
+    const reg = { pushManager: { subscribe: async () => {
+      if (never || !st.active) throw new Error("Subscription failed - no active Service Worker");
+      return { endpoint: "https://push.example/ep-e" }; } } };
+    let readyP = null;
+    const dom = new JDE(lpE(uE, "nE", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: wcE, configurable: true }); } catch (e) { win.crypto = wcE; }
+        win.scrollTo = () => {};
+        win.PushManager = function () {};
+        win.Notification = { permission: "granted", requestPermission: async () => "granted" };
+        Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+          register: async () => { readyP = readyP || new Promise((r) => setTimeout(() => { st.active = true; r(reg); }, 40)); return reg; },
+          get ready() { return readyP || new Promise(() => {}); },
+          getRegistration: async () => undefined } });
+        win.fetch = async (path, init) => {
+          const p = String(path);
+          if (p === "/open") return { ok: true, status: 200, json: async () => openE };
+          if (p === "/push/key") return { ok: true, status: 200, json: async () => ({ ok: true, key: "BA", configured: true }) };
+          if (p === "/push/subscribe") { st.posted.push(JSON.parse(init.body)); return { ok: true, status: 200, json: async () => ({ ok: true, id: "x" }) }; }
+          return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const pane = () => [...D.querySelectorAll("#pOrder .pane")].find((x) => /Notifications/.test(x.textContent));
+    try {
+      D.getElementById("pw").value = passE;
+      D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 200 && !(pane() && pane().querySelector("button")); i++) await new Promise((r) => setTimeout(r, 25));
+      const nb = pane() && [...pane().querySelectorAll("button")].find((b) => /Notify me/.test(b.textContent));
+      if (nb) nb.click();
+      for (let i = 0; i < 200 && !(pane() && (/^Notifications\s*On\./.test(pane().textContent) || pane().querySelector(".msg"))); i++) await new Promise((r) => setTimeout(r, 25));
+      const p = pane();
+      return { clicked: !!nb, posted: st.posted, text: p ? p.textContent : "", note: p && p.querySelector(".msg") ? p.querySelector(".msg").textContent : null };
+    } finally { try { W.close(); } catch (e) { /* best effort */ } }
+  };
+  const good = await drive(false);
+  ok(good.clicked && good.posted.length === 1 && good.posted[0].endpoint === "https://push.example/ep-e" && good.note === null && /On\. You will be told/.test(good.text),
+    "Notify me subscribes once the worker is ready, posts the endpoint and says On, with no note: " + JSON.stringify({ posted: good.posted.length, note: good.note }));
+  const bad = await drive(true);
+  ok(bad.posted.length === 0 && bad.note === "Notifications could not be switched on here. Try again later." && !/Subscription failed|Service Worker/.test(bad.text),
+    "and a phone that still cannot subscribe is told so in plain words, never the browser's own error: " + JSON.stringify(bad.note));
+})();
+section("S1 1.32: the bar with Log out is held by a sticky wrapper, so it stays in view");
+await (async () => {
+  /* M33, 24 SEP 2026. .bar was sticky inside #barw, which is exactly its height, so it had nowhere to stick
+     and scrolled away with Log out (and, since 1.5, the lapsed line). The geometry is proved in the rig;
+     this pins the rule the page is served with. */
+  const { landingPage: lpF } = await import("../stmt/page.js");
+  const { JSDOM: JDF } = await import("jsdom");
+  const dom = new JDF(lpF("", "nF", null), { url: "https://site.test/", pretendToBeVisual: true });
+  try {
+    const W = dom.window, D = W.document, barw = D.getElementById("barw");
+    barw.hidden = false;
+    const cs = W.getComputedStyle(barw), inner = W.getComputedStyle(barw.querySelector(".bar"));
+    ok(cs.position === "sticky" && cs.top === "0px" && inner.position !== "sticky",
+      "the wrapper is the sticky element, pinned to the top, and the bar inside it is not: " + JSON.stringify({ wrapper: cs.position, top: cs.top, bar: inner.position }));
+  } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
+})();
+section("S1 1.39: no em-dash reaches the served page, and a waiting link says No address yet");
+await (async () => {
+  /* L43, 24 SEP 2026. The links pane wrote an em-dash where a waiting or withdrawn link has no address:
+     an escape inside CLIENT_JS, which the template literal turns into the character itself. The house
+     writes no em-dash. The character is built here from its code, so this file carries none either. */
+  const DASH = String.fromCharCode(0x2014);
+  const { landingPage: lpG } = await import("../stmt/page.js");
+  const env = { STMT: new KV() };
+  const served = await (await stmtWorker.fetch(new Request("https://k7m3p2.example/"), env)).text();
+  ok(served.length > 1000 && !served.includes(DASH) && !lpG("", "nG", { master: "m", accounts: [] }).includes(DASH),
+    "neither the customer's page nor the owner's carries an em-dash");
+  const CG = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDG } = await import("jsdom");
+  const { webcrypto: wcG } = await import("node:crypto");
+  const uG = "aaaa-gggg", passG = "2345-6789-abcd-efgh";
+  const ckG = await CG.contentKey("4".repeat(64), uG);
+  const openG = { ok: true, byMaster: false, wrap: await CG.wrapKey(passG, ckG), wrapMaster: null, live: null, prices: null, assoc: true,
+    session: "sessGaaaaaaaaaaaaaaaaaaaaaaa",
+    env: await CG.encryptWith(ckG, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] })),
+    card: await CG.encryptWith(ckG, JSON.stringify({ products: [{ product: "salt", unit: "unit", summary: {}, lines: [] }] })) };
+  const refs = [{ id: "w1", state: "waiting", opens: 0 }, { id: "x1", state: "withdrawn", opens: 2 }];
+  const dom = new JDG(lpG(uG, "nG", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcG, configurable: true }); } catch (e) { win.crypto = wcG; }
+      win.scrollTo = () => {};
+      win.fetch = async (path) => {
+        const p = String(path);
+        if (p === "/open") return { ok: true, status: 200, json: async () => openG };
+        if (p === "/my/refs") return { ok: true, status: 200, json: async () => ({ ok: true, refs, max: 3 }) };
+        return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      };
+    } });
+  const W = dom.window, D = W.document;
+  try {
+    D.getElementById("pw").value = passG;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && D.getElementById("tCard").hidden; i++) await new Promise((r) => setTimeout(r, 25));
+    D.getElementById("tCard").click();
+    for (let i = 0; i < 200 && D.querySelectorAll("#pCard .glink").length < 2; i++) await new Promise((r) => setTimeout(r, 25));
+    const rows = [...D.querySelectorAll("#pCard .glink")];
+    const txt = D.getElementById("pCard").textContent;
+    ok(rows.length === 2 && !txt.includes(DASH) && rows[0].querySelector("code.gu").textContent === "No address yet" && !rows[1].querySelector("code.gu"),
+      "the drawn links carry no em-dash: a waiting one says No address yet, and a withdrawn one needs no line: "
+      + JSON.stringify(rows.map((r) => r.textContent.slice(0, 50))));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } }
+})();
+section("S1 1.41: only a refusal forgets a remembered phone; a server fault or a dropped connection keeps it and says so");
+await (async () => {
+  /* L45, 24 SEP 2026. Any answer but ok cleared the device's key, so one 500 from the site signed a returning
+     phone out for good, and a dropped connection said nothing at all. */
+  const { landingPage: lpH } = await import("../stmt/page.js");
+  const { JSDOM: JDH } = await import("jsdom");
+  const rec = JSON.stringify({ t: "r".repeat(32), k: Buffer.from("h".repeat(32)).toString("base64"), u: "aaaa-hhhh" });
+  const drive = async (answer) => {
+    const store = new Map([["salt-stmt-remember", rec]]);
+    const dom = new JDH(lpH("", "nH", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (path) => {
+          if (String(path) !== "/remember/open") return { ok: false, status: 404, json: async () => ({ ok: false }) };
+          if (answer === "drop") throw new TypeError("Failed to fetch");
+          return { ok: false, status: answer, json: async () => ({ ok: false, error: answer === 401 ? "That username and password were not accepted." : "no KV binding" }) };
+        };
+      } });
+    try {
+      const m = () => dom.window.document.getElementById("msg").textContent;
+      for (let i = 0; i < 100 && (i < 2 || /Opening/.test(m())); i++) await new Promise((r) => setTimeout(r, 25));
+      return { kept: store.has("salt-stmt-remember"), msg: dom.window.document.getElementById("msg").textContent, gate: !dom.window.document.getElementById("gate").hidden };
+    } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
+  };
+  const said = /could not be opened just now\. This phone is still remembered/;
+  for (const a of [500, "drop"]) {
+    const r = await drive(a);
+    ok(r.kept && r.gate && said.test(r.msg), (a === "drop" ? "a dropped connection" : "a server fault (" + a + ")")
+      + " keeps the phone remembered and says so on the door: " + JSON.stringify(r));
+  }
+  const r401 = await drive(401);
+  ok(!r401.kept && r401.gate && !said.test(r401.msg), "and the door's own refusal still forgets it: " + JSON.stringify(r401));
+})();
+section("S1 1.42: Log out drops the remembered wrap even after the session lapsed, and this phone's push subscription with it");
+await (async () => {
+  /* L46, 24 SEP 2026. /logout sat behind the session check, so a phone logging out after its fifteen minutes
+     got a 401 and its wrap stayed on the site for the rest of thirty days; and the phone stayed subscribed,
+     so a phone handed on kept waking for the account it had signed out of (v692: it should not). */
+  const { endpointId } = await import("../stmt/push.js");
+  const kv = new KV(), env = { STMT: kv };
+  const uI = "aaaa-iiii", other = "cccc-iiii", tok = "t".repeat(32), ep = "https://push.example/ep-i";
+  const pushKey = "push:" + uI + ":" + (await endpointId(ep));
+  const post = (body, sess) => stmtWorker.fetch(new Request("https://k7m3p2.example/logout", { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, sess ? { "X-Stmt-Session": sess } : {}), body: JSON.stringify(body) }), env);
+  const seed = async () => {
+    await kv.put("rem:" + tok, JSON.stringify({ u: uI, wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" } }));
+    await kv.put(pushKey, JSON.stringify({ endpoint: ep }));
+  };
+  /* another account's live session cannot forget this one's memory or its phone */
+  await seed();
+  await kv.put("sess:" + "o".repeat(24), JSON.stringify({ u: other, at: new Date().toISOString() }));
+  await post({ token: tok, endpoint: ep }, "o".repeat(24));
+  ok(!!(await kv.get("rem:" + tok)) && !!(await kv.get(pushKey)), "another account's session forgets neither this account's wrap nor its push record");
+  /* sixteen minutes on: the session this page holds has lapsed, so the store no longer carries it */
+  const r = await post({ token: tok, endpoint: ep }, "l".repeat(24));
+  ok(r.status === 200 && !(await kv.get("rem:" + tok)) && !(await kv.get(pushKey)),
+    "a Log out after the session lapsed drops the remembered wrap and the push record for that phone: " + r.status);
+  /* and with a live session the phone's record goes as well */
+  await seed();
+  await kv.put("sess:" + "s".repeat(24), JSON.stringify({ u: uI, at: new Date().toISOString() }));
+  await post({ token: tok, endpoint: ep }, "s".repeat(24));
+  ok(!(await kv.get("rem:" + tok)) && !(await kv.get(pushKey)) && !(await kv.get("sess:" + "s".repeat(24))),
+    "a Log out inside the session drops the session, the wrap and the phone's push record together");
+
+  /* the page's half: the subscription is dropped on the phone and named to the site */
+  const { landingPage: lpI } = await import("../stmt/page.js");
+  const CI = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDI } = await import("jsdom");
+  const { webcrypto: wcI } = await import("node:crypto");
+  const devI = "i".repeat(32), ckI = await CI.contentKey("3".repeat(64), uI);
+  const st = { posted: null, unsubscribed: false };
+  const dom = new JDI(lpI("", "nI", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcI, configurable: true }); } catch (e) { win.crypto = wcI; }
+      const store = new Map([["salt-stmt-remember", JSON.stringify({ t: tok, k: Buffer.from(devI).toString("base64"), u: uI })]]);
+      Object.defineProperty(win, "localStorage", { configurable: true, value: {
+        getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+        removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+      win.scrollTo = () => {};
+      const sub = { endpoint: ep, unsubscribe: async () => { st.unsubscribed = true; return true; } };
+      Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+        register: async () => { throw new Error("not in this test"); },
+        getRegistration: async () => ({ pushManager: { getSubscription: async () => (st.unsubscribed ? null : sub) } }) } });
+      win.fetch = async (path, init) => {
+        const p = String(path);
+        if (p === "/remember/open") return { ok: true, status: 200, json: async () => ({ ok: true, u: uI, remembered: true, wrap: await CI.wrapKey(devI, ckI),
+          env: await CI.encryptWith(ckI, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] })),
+          live: null, prices: null, session: "sessIaaaaaaaaaaaaaaaaaaaaaaa" }) };
+        if (p === "/logout") { st.posted = JSON.parse(init.body); return { ok: true, status: 200, json: async () => ({ ok: true }) }; }
+        return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      };
+    } });
+  const W = dom.window, D = W.document;
+  try {
+    for (let i = 0; i < 200 && D.getElementById("barw").hidden; i++) await new Promise((r) => setTimeout(r, 25));
+    D.getElementById("lock").click();
+    for (let i = 0; i < 200 && !st.posted; i++) await new Promise((r) => setTimeout(r, 25));
+    ok(st.unsubscribed && !!st.posted && st.posted.token === tok && st.posted.endpoint === ep,
+      "Log out unsubscribes this phone and names its endpoint and token to the site: " + JSON.stringify({ unsubscribed: st.unsubscribed, posted: st.posted }));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } }
+})();
+section("S1 1.43: the Notifications pane shows this phone's real state on a reopen");
+await (async () => {
+  /* L47, 24 SEP 2026. The pane said On only from this page's own memory, which every sign-in empties, so a
+     phone that was subscribed was offered Notify me again on every reopen. It is read off the phone now. */
+  const { landingPage: lpJ } = await import("../stmt/page.js");
+  const CJ = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDJ } = await import("jsdom");
+  const { webcrypto: wcJ } = await import("node:crypto");
+  const uJ = "aaaa-jjjj", devJ = "j".repeat(32), ckJ = await CJ.contentKey("2".repeat(64), uJ);
+  const envJ = await CJ.encryptWith(ckJ, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] }));
+  const drive = async (subscribed) => {
+    const dom = new JDJ(lpJ("", "nJ", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: wcJ, configurable: true }); } catch (e) { win.crypto = wcJ; }
+        const store = new Map([["salt-stmt-remember", JSON.stringify({ t: "r".repeat(32), k: Buffer.from(devJ).toString("base64"), u: uJ })]]);
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.PushManager = function () {};
+        win.Notification = { permission: "granted", requestPermission: async () => "granted" };
+        Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+          register: async () => { throw new Error("not in this test"); },
+          getRegistration: async () => ({ pushManager: { getSubscription: async () => (subscribed ? { endpoint: "https://push.example/ep-j" } : null) } }) } });
+        win.fetch = async (path) => String(path) === "/remember/open"
+          ? { ok: true, status: 200, json: async () => ({ ok: true, u: uJ, remembered: true, wrap: await CJ.wrapKey(devJ, ckJ), env: envJ, live: null, prices: null, session: "sessJaaaaaaaaaaaaaaaaaaaaaaa" }) }
+          : { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      } });
+    const D = dom.window.document;
+    const pane = () => [...D.querySelectorAll("#pOrder .pane")].find((x) => /Notifications/.test(x.textContent));
+    try {
+      for (let i = 0; i < 200 && !pane(); i++) await new Promise((r) => setTimeout(r, 25));
+      for (let i = 0; i < 8; i++) await new Promise((r) => setTimeout(r, 25));
+      const p = pane();
+      return { on: !!p && /On\. You will be told/.test(p.textContent), offer: !!p && [...p.querySelectorAll("button")].some((b) => /Notify me/.test(b.textContent)) };
+    } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
+  };
+  const yes = await drive(true), no = await drive(false);
+  ok(yes.on && !yes.offer, "a reopen on a phone with a live subscription says On and offers nothing: " + JSON.stringify(yes));
+  ok(!no.on && no.offer, "and one without a subscription still offers Notify me: " + JSON.stringify(no));
+})();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: no three-minute lock, Remember me, and a Log out. The two halves of
@@ -20390,8 +20867,11 @@ await (async () => {
     ok(/write it on the order and I will answer you there/.test(msg),
       what + "'s message says where a question goes, which is ON AN ORDER, because that is where the "
       + "thread lives and there is no other channel to promise");
-    ok(/Add to Home Screen/.test(msg) && /Install app/.test(msg) && /Remember me/.test(msg) && /Log out/.test(msg),
-      what + "'s message carries the home screen steps for both phones, and the two switches on the door");
+    /* S1 1.3, 24 SEP 2026: the door's two switches only where the reader reaches the door. The link route
+       never shows the tick, so the link's message promising it was false (B03). */
+    ok(/Add to Home Screen/.test(msg) && /Install app/.test(msg)
+      && (what === "the link" ? !/Remember me/.test(msg) : /Remember me/.test(msg) && /Log out/.test(msg)),
+      what + "'s message carries the home screen steps for both phones, and the two switches on the door only where the reader reaches the door");
     ok(siteWords(msg) === "", what + "'s message passes the lock every word sent to a customer passes: " + siteWords(msg));
     ok(!msg.includes(row69.pw), what + "'s message carries no password, which is the rule that made the link");
   }

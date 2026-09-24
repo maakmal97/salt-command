@@ -116,12 +116,17 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .msg.bad{color:var(--salt-ember)}
 .msg.wait{color:var(--salt-text-muted)}
 /* a veil is obsidian 86%, decision 4 */
-.bar{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;
+/* S1 1.32: THE WRAPPER STICKS, NOT THE BAR. #barw is exactly the bar's height, so a sticky bar inside it
+   had nowhere to stick and scrolled away with Log out; the wrapper sticks to the page and carries both lines */
+#barw{position:sticky;top:0;z-index:5}
+.bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;
   gap:12px;padding:11px 16px;margin:0 auto 14px;max-width:620px;
   background:var(--salt-veil);border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);
   backdrop-filter:blur(10px);font-size:var(--salt-text-sm);color:var(--salt-text-muted);
   font-family:var(--salt-font-mono)}
 .bar b{color:var(--salt-text);font-variant-numeric:tabular-nums}
+.lapse{flex-basis:100%;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.lapse[hidden]{display:none}
 .bar button{font:inherit;color:var(--salt-brass);background:none;border:0;cursor:pointer;
   padding:0;text-decoration:underline;min-height:auto}
 /* THE THREE TABS: statements, prices, order. The same pill vocabulary as the issue strip, one
@@ -489,12 +494,16 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<p class="sub2">It is saved as <b>Salt Counter</b>, and opens straight here.</p>'
     + '<ol><li><b>iPhone:</b> tap Share, then Add to Home Screen, then Add.</li>'
     + "<li><b>Android:</b> tap the three dots, then Install app or Add to Home screen.</li>"
-    + "<li>Open it from that icon after this. It signs you in and tells you when an order moves.</li></ol>"
+    /* S1 1.3: a saved iPhone app keeps its own storage and is not signed in by this browser, so the
+       step says where the sign-in happens rather than promising one */
+    + "<li>Open it from that icon after this and sign in there with Remember me ticked. It can tell you when an order moves.</li></ol>"
     + "</div>"
     + "</div>"
     + '<div id="barw" hidden><div class="bar">'
     + '<span><b id="whoacct"></b><span id="cd"></span></span>'
     + '<button type="button" id="lock">Log out</button>'
+    /* S1 1.5: a lapsed session says so where the reader is, with the one way back: a second row of the bar */
+    + '<div id="lapse" class="lapse" role="alert" hidden><span id="lapseT"></span><button type="button" id="lapseGo">Continue</button></div>'
     + "</div></div>"
     + '<div id="tabs" class="tabs" role="tablist" hidden>'
     + '<button type="button" class="salt-tabs__pill on" role="tab" aria-selected="true" data-t="stmt">Statements</button>'
@@ -775,13 +784,13 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; assoc=false; card=null; cardMonth=''; myLinks=null; myMax=0; myNote='';
+    bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; oNote={}; assoc=false; card=null; cardMonth=''; myLinks=null; myMax=0; myNote='';
     owedNow=0; hold=false; tPrices.hidden=false; tOrder.textContent='Order';
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
     var mfn=document.getElementById('mfnote'); if(mfn) mfn.textContent='';
     pPrices.textContent=''; pOrder.textContent='';
-    tabs.hidden=true; barw.hidden=true;
+    tabs.hidden=true; barw.hidden=true; lapse.hidden=true;
     /* the owner goes back to his list, never to a password field he has no password for */
     if(OWNER){ roster.hidden=false; gate.hidden=true; if(whoacct) whoacct.textContent=''; }
     else gate.hidden=false;
@@ -794,15 +803,42 @@ const CLIENT_JS = `
   /* v692: LOGGING OUT IS A DEPARTURE, NOT A TIMER. It drops the session and the remembered wrap on
      the site as well as everything this page holds, so a phone handed on is a phone signed out. */
   async function logOut(){
-    var tok=(remGet()||{}).t||null, s=session;
+    var tok=(remGet()||{}).t||null, s=session, ep=null;
     remClear();
     lock();
-    if(s){
+    /* S1 1.42: this phone's alerts go too, here and on the site, and the site is told even when the session
+       has lapsed, so the remembered wrap does not outlive the Log out */
+    if(!OWNER){ try{ var sub=await phoneSub(); if(sub){ ep=sub.endpoint; await sub.unsubscribe(); } }catch(e){} }
+    if(s||tok||ep){
       try{ await fetch('/logout', {method:'POST', headers:{'content-type':'application/json','X-Stmt-Session':s},
-        body:JSON.stringify({token:tok})}); }catch(e){ /* the page has forgotten it either way */ }
+        body:JSON.stringify({token:tok, endpoint:ep})}); }catch(e){ /* the page has forgotten it either way */ }
     }
   }
+  /* this phone's push subscription, or null; asking never registers anything */
+  async function phoneSub(){
+    if(!('serviceWorker' in navigator)||!navigator.serviceWorker.getRegistration) return null;
+    var reg=await navigator.serviceWorker.getRegistration();
+    return reg&&reg.pushManager?await reg.pushManager.getSubscription():null;
+  }
   document.getElementById('lock').addEventListener('click', logOut);
+
+  /* S1 1.5, 24 SEP 2026: A LAPSED SESSION SAYS SO AT ONCE, IN VIEW. The fifteen minutes ran out in silence:
+     the poll stopped and a note was set that nothing drew, telling them to "lock", a control gone since
+     v692. Continue opens again through the remembered device where there is one, else puts the door back
+     with the username in it. Nothing is renewed without the tap. */
+  var lapse=document.getElementById('lapse');
+  function lapsed(){
+    if(poll){ clearInterval(poll); poll=null; }
+    if(!lapse.hidden) return;
+    document.getElementById('lapseT').textContent='You were signed out after a while.';
+    lapse.hidden=false;
+  }
+  document.getElementById('lapseGo').addEventListener('click', async function(){
+    var u=user;
+    lock();
+    if(!OWNER&&remGet()&&await openRemembered()) return;
+    if(!OWNER&&u){ un.value=u; put(boxesOf('un'),0,clean(u)); }
+  });
 
   /* ---- the tabs: three for everyone, a fourth for an associate ---- */
   function showTab(t){
@@ -819,7 +855,17 @@ const CLIENT_JS = `
 
   function pickStmt(i){
     if(!bundle) return;
-    at=i; out.innerHTML=bundle.statements[i].body;
+    at=i;
+    /* AN ACCOUNT WITH NO ROWS HAS NO STATEMENT AT ALL (tools/stmt-account.mjs mints it so): it says so,
+       and Prices and Order are still drawn after it. Reading a body that is not there threw here, and
+       the page stopped on a blank tab. */
+    var s=bundle.statements[i];
+    if(!s){
+      out.textContent=''; var e=el('div','panel'); e.appendChild(el('p','lead','Nothing on your account yet. Your orders will show here.')); out.appendChild(e);
+      mfil.hidden=true; var mfn=document.getElementById('mfnote'); if(mfn) mfn.textContent='';
+      return;
+    }
+    out.innerHTML=s.body;
     var bs=mos.querySelectorAll('button');
     for(var k=0;k<bs.length;k++) bs[k].className=(k===i?'on':'');
     drawMonths();
@@ -1012,7 +1058,8 @@ const CLIENT_JS = `
       var row=el('div','glink'+(r.state==='withdrawn'||r.state==='declined'?' off':''));
       /* D13 (24 Sep 2026): a declined link is its own state, never "waiting" */
       row.appendChild(el('p','gt', r.state==='waiting'?'Waiting to be approved':(r.state==='declined'?'Not approved':(r.state==='withdrawn'?'Withdrawn':'Open'))));
-      row.appendChild(el('code','gu', r.state==='open'?r.url:'\u2014'));
+      /* S1 1.39: words, not a dash (an em-dash reached the page); a withdrawn or declined link says so above and needs no line here */
+      if(r.state!=='withdrawn'&&r.state!=='declined') row.appendChild(el('code','gu', r.state==='open'?r.url:'No address yet'));
       row.appendChild(el('p','gs', r.opens
         ? 'opened '+r.opens+' time'+(r.opens===1?'':'s')
         : (r.state==='open'?'never opened yet':'nothing can open it')));
@@ -1035,8 +1082,8 @@ const CLIENT_JS = `
         var wd=el('button',null,'Withdraw'); wd.type='button';
         wd.addEventListener('click', async function(){
           if(!confirm('Withdraw this link? Whoever holds it will not be able to open it.')) return;
-          var mine=ticket; await api('/my/refs/'+encodeURIComponent(r.id)+'/revoke',{});
-          if(mine!==ticket) return; await loadMyLinks();
+          var mine=ticket; var rv=await api('/my/refs/'+encodeURIComponent(r.id)+'/revoke',{});
+          if(mine!==ticket) return; if(rv.status===0) myNote=rv.body.error; await loadMyLinks();
         });
         acts.appendChild(wd);
       }
@@ -1064,6 +1111,8 @@ const CLIENT_JS = `
     var mine=ticket;
     var r=await api('/my/refs');
     if(mine!==ticket) return;
+    /* a dropped read keeps the list already drawn and redraws it, which gives back a button a tap disabled */
+    if(r.status===0){ if(myLinks!==null) drawCard(); return; }
     myLinks=(r.body&&r.body.refs)||[]; myMax=(r.body&&r.body.max)||0;
     drawCard();
   }
@@ -1142,15 +1191,26 @@ const CLIENT_JS = `
   }
 
   /* ---- ORDER: the form, then every order and where it stands ---- */
+  /* S1 1.4, 24 SEP 2026: A DROPPED REQUEST ANSWERS LIKE A REFUSAL, IN WORDS. It threw, so Place stayed
+     busy and Send stayed grey for good; now every caller clears its busy state and shows this beside the
+     control it came from. */
+  var NOT_SENT='Not sent. Check your connection and try again.';
   async function api(path, body, method){
-    var r=await fetch(path,{method:method||(body?'POST':'GET'), cache:'no-store',
-      headers:Object.assign({'X-Stmt-Session':session}, body?{'content-type':'application/json'}:{}),
-      body:body?JSON.stringify(body):undefined});
+    var r;
+    try{
+      r=await fetch(path,{method:method||(body?'POST':'GET'), cache:'no-store',
+        headers:Object.assign({'X-Stmt-Session':session}, body?{'content-type':'application/json'}:{}),
+        body:body?JSON.stringify(body):undefined});
+    }catch(e){ return {status:0, body:{ok:false, error:NOT_SENT}}; }
+    if(r.status===401&&session) lapsed();
     var j=null; try{ j=await r.json(); }catch(e){}
     return {status:r.status, body:j||{}};
   }
   /* one id a review and one a payment, sent with the tap, so a retry of that tap is recorded once */
   function mintRid(){ var a=crypto.getRandomValues(new Uint8Array(16)), s=''; for(var i=0;i<a.length;i++) s+=(a[i]<16?'0':'')+a[i].toString(16); return s; }
+  /* the answer to a tap on an order, drawn beside the control that was tapped: 'pay', 'wd' or 'say' */
+  var oNote={};
+  function noteAt(pane,id,at){ var n=oNote[id]; if(n&&n.at===at){ var p=el('p','msg',n.t); p.setAttribute('role','status'); pane.appendChild(p); } }
   function quoteFor(){
     var p=prices&&prices.products&&prices.products.filter(function(x){return x.product===draft.product;})[0];
     if(!p) return null;
@@ -1353,6 +1413,7 @@ const CLIENT_JS = `
     else if(o.status==='cancelled') line=paid>0?'Withdrawn. The '+rm(paid)+' you paid is refunded.':'Withdrawn before anything moved. Nothing is owed.';
     pane.appendChild(el('p','sub2',line));
     if(!view&&payable&&due>0.004) pane.appendChild((o.method&&!(pick[o.id]||{}).again)?payBox(o):payChooser(o));
+    noteAt(pane,o.id,'pay');
     /* v694: either side may withdraw at any stage until the goods move (his rule, 18 Sep 2026) */
     if(!view&&(payable||o.status==='placed')){
       if(moved>0) pane.appendChild(el('p','sub2','The goods are with you, so this can no longer be withdrawn here.'));
@@ -1362,11 +1423,12 @@ const CLIENT_JS = `
           if(!confirm(paid>0?'Withdraw this order? The '+rm(paid)+' you paid is refunded.':'Withdraw this order?')) return;
           var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{});
           if(mine!==ticket) return;
-          if(!r.body.ok) draft.note=r.body.error||'It could not be withdrawn.';
+          oNote[o.id]=r.body.ok?null:{at:'wd',t:r.body.error||'It could not be withdrawn.'};
           await loadOrders(); if(mine!==ticket) return; drawOrder();
         });
         pane.appendChild(wb);
       }
+      noteAt(pane,o.id,'wd');
     }
     /* v751: THE THREAD, oldest first, theirs and his. It sits above the history because it is the
        part a reader came back for; the history is the record underneath it. */
@@ -1394,13 +1456,14 @@ const CLIENT_JS = `
       var r=await api('/orders/'+o.id+'/say',{text:t});
       if(mine!==ticket) return;
       sg.disabled=false;
-      if(r.status===401) draft.note='Your session has ended. Sign in again.';
-      else if(!r.body.ok) draft.note=r.body.error||'It was not sent.';
-      else { draft.note=''; await loadOrders(); if(mine!==ticket) return; }
+      if(r.status===401) oNote[o.id]={at:'say',t:'Your session has ended. Sign in again.'};
+      else if(!r.body.ok) oNote[o.id]={at:'say',t:r.body.error||'It was not sent.'};
+      else { delete oNote[o.id]; await loadOrders(); if(mine!==ticket) return; }
       drawOrder();
     });
     sayw.appendChild(si); sayw.appendChild(sg);
     if(!view) pane.appendChild(sayw);
+    noteAt(pane,o.id,'say');
     var hist=el('ul','hist');
     (o.history||[]).forEach(function(h){ var li=el('li',null,stamp(h.at)+'  '+(STATE_WORDS[h.status]||h.status)+(h.method?', paying by '+methodWord(h.method,h.account):'')+(h.note?': '+h.note:'')); hist.appendChild(li); });
     pane.appendChild(hist);
@@ -1446,7 +1509,7 @@ const CLIENT_JS = `
       if(!ok) return; var mine=ticket;
       var r=await api('/orders/'+encodeURIComponent(o.id)+'/method',{method:cur.method,account:cur.account||undefined});
       if(mine!==ticket) return;
-      if(!r.body.ok) draft.note=r.body.error||'The choice was not recorded.'; else delete pick[o.id];
+      if(!r.body.ok) oNote[o.id]={at:'pay',t:r.body.error||'The choice was not recorded.'}; else { delete pick[o.id]; delete oNote[o.id]; }
       await loadOrders(); if(mine!==ticket) return; drawOrder();
     });
     box.appendChild(cb);
@@ -1479,7 +1542,7 @@ const CLIENT_JS = `
       var r=await api('/orders/'+encodeURIComponent(o.id)+'/pay',{amount:+fig,rid:pick[o.id].rid});
       if(mine!==ticket) return;
       var took=!!(r.body&&r.body.ok);
-      draft.note=took?'Recorded. It shows on your statement once it is folded into the book.':((r.body&&r.body.error)||'That payment was not recorded.');
+      oNote[o.id]={at:'pay',t:took?'Recorded. It shows on your statement once it is folded into the book.':((r.body&&r.body.error)||'That payment was not recorded.')};
       if(took) delete pick[o.id];
       await loadOrders(); if(mine!==ticket) return; drawOrder();
     });
@@ -1512,7 +1575,7 @@ const CLIENT_JS = `
     var mine=ticket;
     var r=await api('/orders');
     if(mine!==ticket) return;
-    if(r.status===401){ if(poll){clearInterval(poll);poll=null;} draft.note='Your session has ended; lock and sign in again to follow your order.'; return; }
+    if(r.status===401) return;   /* api() has said so in the bar */
     if(r.body.ok) orders=r.body.orders||[];
   }
   async function refresh(){
@@ -1533,7 +1596,11 @@ const CLIENT_JS = `
          phone whose reader says no. */
       var perm=await Notification.requestPermission();
       if(perm!=='granted'){ draft.pushNote='Permission was not given, so nothing will be sent.'; drawOrder(); return; }
-      var reg=await navigator.serviceWorker.register('/sw.js?u='+encodeURIComponent(user));
+      await navigator.serviceWorker.register('/sw.js?u='+encodeURIComponent(user));
+      /* S1 1.9, 24 SEP 2026: a registration is not yet an active worker, and Chromium refuses to subscribe
+         until there is one ("no active Service Worker"); ready resolves once there is */
+      var reg=await navigator.serviceWorker.ready;
+      if(mine!==ticket) return;
       var raw=atob(k.key.replace(/-/g,'+').replace(/_/g,'/')), key=new Uint8Array(raw.length);
       for(var i=0;i<raw.length;i++) key[i]=raw.charCodeAt(i);
       var sub=await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:key});
@@ -1541,7 +1608,7 @@ const CLIENT_JS = `
       var r=await api('/push/subscribe',{endpoint:sub.endpoint});
       if(mine!==ticket) return;
       if(r.body.ok){ draft.pushed=true; draft.pushDone=true; } else draft.pushNote=r.body.error||'The subscription was not recorded.';
-    }catch(e){ draft.pushNote='Notifications could not be set up here: '+((e&&e.message)||e); }
+    }catch(e){ draft.pushNote='Notifications could not be switched on here. Try again later.'; }
     drawOrder();
   }
 
@@ -1582,7 +1649,8 @@ const CLIENT_JS = `
     try{ ck=await unwrap(pass, w); b=JSON.parse(await open(ck, body.env)); }
     catch(e){ if(stale())return; done(); say('That password did not open the statement.','bad'); return; }
     if(stale()) return;
-    if(!b||!b.statements||!b.statements.length){ done(); say('The statement could not be read. Ask for it to be re-issued.','bad'); return; }
+    /* an empty bundle is a new account, not a fault: pickStmt says so */
+    if(!b||!b.statements){ done(); say('The statement could not be read. Ask for it to be re-issued.','bad'); return; }
     if(body.live){
       try{ var l=JSON.parse(await open(ck, body.live));
         if(stale()) return;
@@ -1626,14 +1694,19 @@ const CLIENT_JS = `
     if(OWNER||!session) return;
     try{
       var can=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
-      if(!can||Notification.permission!=='default') return;
-      subscribePush();
+      if(!can) return;
+      if(Notification.permission==='default'){ subscribePush(); return; }
+      /* S1 1.43, 24 SEP 2026: a phone already subscribed says On. The pane read this page's own memory, which
+         every sign-in empties, so a subscribed phone was offered Notify me again. */
+      var mine=ticket;
+      if(Notification.permission==='granted') phoneSub().then(function(sub){ if(sub&&mine===ticket){ draft.pushed=true; drawOrder(); } }).catch(function(){});
     }catch(e){ /* a browser that refuses to be asked is not a fault */ }
   }
 
   /* ---- OPENING A REMEMBERED DEVICE (v692) -----------------------------------------------------
      The token names the record and brings back the wrap; the key beside it in this browser opens
      it. A refusal, a stale token or a record that has gone simply falls through to the door. */
+  var KEPT='Your account could not be opened just now. This phone is still remembered: try again in a moment.';
   async function openRemembered(){
     var rec=remGet();
     if(!rec||!rec.t||!rec.k||OWNER) return false;
@@ -1644,9 +1717,13 @@ const CLIENT_JS = `
       r=await fetch('/remember/open', {method:'POST', headers:{'content-type':'application/json'},
         body:JSON.stringify({token:rec.t})});
       body=await r.json();
-    }catch(e){ say(''); return false; }
+    }catch(e){ if(!stale()) say(KEPT,'bad'); return false; }
     if(stale()) return false;
-    if(!r.ok||!body.ok){ remClear(); say(''); return false; }
+    /* S1 1.41, 24 SEP 2026: ONLY THE DOOR'S REFUSAL FORGETS THIS PHONE. A server fault forgot it too, so one
+       bad minute on the site signed every returning phone out for good; that, and a dropped connection,
+       now keep it and say so. */
+    if(r.status===401){ remClear(); say(''); return false; }
+    if(!r.ok||!body.ok){ say(KEPT,'bad'); return false; }
     var ck, b;
     try{
       ck=await unwrapUnder(b64d(rec.k), body.wrap);
