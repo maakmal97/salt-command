@@ -22449,7 +22449,7 @@ await (async () => {
   const missing = [".salt-sheet", ".salt-appbar", ".salt-inbox-row", ".salt-option__face", ".salt-field__input--code", ".salt-lines",
     ".salt-ledger--plain", ".salt-steps", ".salt-bubble", ".salt-composer", ".salt-glass-card", ".salt-eyebrow", ".salt-kpi",
     ".salt-action", ".salt-approve", ".salt-insight", ".salt-meter", ".salt-ledger", ".salt-queue", ".salt-qr", ".salt-rail",
-    ".salt-plan"].filter((c) => !rule(c));
+    ".salt-plan", ".salt-orb"].filter((c) => !rule(c));
   ok(!missing.length, "the site carries the nine new recipes and fold 2.11's (missing: " + (missing.join(", ") || "none") + ")");
   const at = (s) => R.indexOf("\n" + s);
   ok(at(".salt-ledger {") >= 0 && at(".salt-ledger {") < at(".salt-ledger--plain") && at(".salt-field__input {") >= 0 && at(".salt-field__input {") < at(".salt-field__input--code"),

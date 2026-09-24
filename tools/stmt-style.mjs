@@ -70,9 +70,9 @@ const RECIPE_HEADS = [
   "/* ---- Status chip:", "/* ---- Ghost button:", "/* ---- Status chip, the added tones ---- */",
   /* STAGE 2 OF THE COUNTER REDESIGN (24 Sep 2026): the nine recipes the system gained for it, and
      fold 2.11's, the ones the Counter will use from stage 3 on. Carried before the page uses them, so
-     a stage 3 fold changes markup and never this list. The Sheet's close control is the Orb, which
-     lives inside the Desk bar section and is not carried. */
-  "/* ---- Sheet:", "/* ---- App bar:", "/* ---- Inbox row:", "/* ---- Option ---- */",
+     a stage 3 fold changes markup and never this list. The Sheet's close control is the Orb, carried
+     from its own section since the review of 24 Sep 2026 (it lived inside the Desk bar's). */
+  "/* ---- Sheet:", "/* ---- Orb:", "/* ---- App bar:", "/* ---- Inbox row:", "/* ---- Option ---- */",
   "/* ---- Code field ---- */", "/* ---- Statement lines ---- */", "/* ---- Ledger list, plain ---- */",
   "/* ---- Steps:", "/* ---- Bubble and thread:",
   "/* ---- Glass card ---- */", "/* ---- Eyebrow ---- */", "/* ---- KPI tile:", "/* ---- Action:",
