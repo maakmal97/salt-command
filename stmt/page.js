@@ -1030,6 +1030,8 @@ const CLIENT_JS = `
   }
 
   function el(tag,cls,text){ var e=document.createElement(tag); if(cls)e.className=cls; if(text!=null)e.textContent=text; return e; }
+  /* S9: whether the page is still there, for work that lands after a wait (a closed window has no document) */
+  function docLive(){ try{ return !!document&&!!document.body; }catch(e){ return false; } }
   function rm(n){ return 'RM '+Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2}); }
   /* S5 5.3 (D11): "units" above one, "unit" at one and under */
   function unitsOf(q,u){ u=u||'unit'; return q+' '+(u==='unit'&&+q>1?'units':u); }
@@ -1224,10 +1226,15 @@ const CLIENT_JS = `
   async function drawDev(){
     if(!devCard) return;
     if(!session||view||OWNER){ devCard.hidden=true; return; }
-    var n=++devN, rec=remGet(), tok=rec&&rec.u===user?rec.t||null:null, sub=null;
-    var r=await api('/devices',{token:tok});
+    var n=++devN, rec=remGet(), tok=rec&&rec.u===user?rec.t||null:null, sub=null, r={status:0, body:{ok:false, error:NOT_SENT}};
+    /* a read in the background, so a lapse it meets is left to the next thing they tap, which reopens the session (api) */
+    try{
+      var x=await fetch('/devices',{method:'POST', cache:'no-store', headers:{'content-type':'application/json','X-Stmt-Session':session}, body:JSON.stringify({token:tok})});
+      var j=null; try{ j=await x.json(); }catch(e){ j=null; }
+      r={status:x.status, body:j||{ok:false}};
+    }catch(e){ /* not sent: the card says so */ }
     try{ sub=await phoneSub(); }catch(e){ sub=null; }
-    if(n!==devN||!session) return;
+    if(n!==devN||!session||!docLive()) return;
     devCard.hidden=false; devBody.textContent='';
     var list=el('div','salt-ledger salt-ledger--plain');
     var canPush=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window), nb=null;
@@ -1239,7 +1246,7 @@ const CLIENT_JS = `
       list.appendChild(devRow(d.label||'A device', d.here?chipEl('verdigris','This one'):null,
         d.kept?'Kept signed in since '+devDay(d.at)+', last used '+devDay(d.last)+'.':'Signed in '+devDay(d.at)+', for that visit.'));
     });
-    if(!r.body.ok) list.appendChild(devRow('Your devices', null, r.body.error||'They could not be read just now.'));
+    if(!r.body.ok) list.appendChild(devRow('Your devices', null, r.status===401?'Sign in again to see them.':'They could not be read just now.'));
     devBody.appendChild(list);
     var acts=el('div','dacts'), note=el('p','dnote'+(devSaid.bad?' bad':''),devSaid.t); note.setAttribute('role','status');
     var another=devQuiet('Sign in another device'); another.addEventListener('click', function(){ openDevSheet(another); });
@@ -1277,7 +1284,7 @@ const CLIENT_JS = `
       var tok=b64e(crypto.getRandomValues(new Uint8Array(24))).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/=+$/,'');
       var wrap=await wrapUnder(new TextEncoder().encode(tok), curCk);
       var r=await api('/handover',{token:tok, wrap:wrap});
-      if(n!==devM||devSheetEl.hidden) return;
+      if(n!==devM||!docLive()||devSheetEl.hidden) return;
       if(r.status===503){ dsay('Signing in with a code is not switched on here yet. Ask us for a sign-in link instead.','bad'); return; }
       if(!r.body.ok||!r.body.code){ dsay(r.status===401?r.body.error:'The code could not be made just now. Close this and open it again.','bad'); return; }
       keepMinted=keepMinted.concat(r.body.token||tok).slice(-10);

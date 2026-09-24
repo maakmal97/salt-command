@@ -388,7 +388,8 @@ signed in (or Salt Admin, for a customer at his counter) hands the sign-in acros
 A card at the foot of the Statements tab (stage 7 moves it into Account), once signed in and never on his read-only
 view: notifications on or off on this device (off unsubscribes and `POST /push/unsubscribe {endpoint}` drops that
 phone's own record); its phones and computers (`POST /devices {token}` on the session, `token` this phone's own
-remembered one, answering each device's name, `at`, `last`, `kept` and `here`, no id and no address), drawn again once
+remembered one, answering each device's name, `at`, `last`, `kept` and `here`, no id and no address), read in the background, so a lapse it meets
+says Sign in again on the card and leaves the reopen to the next tap, and drawn again once
 the phone is kept; **Sign out other devices** on a second tap (`POST /devices/signout {token, endpoint}`, sparing this
 one, its sessions and its alerts); and **Sign in another device**, a Sheet that mints the hand-over as it opens, Copy
 the code a tap of its own, and a QR of `<site>/app` for the other device's camera. **The QR never carries the key**: a

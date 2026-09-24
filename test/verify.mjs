@@ -16427,6 +16427,31 @@ await (async () => {
     sob().click(); sob().click();
     ok(await until(() => /Signed out: 1 device[.]/.test(card().textContent) && /Phones and computers/.test(story()) && /None signed in/.test(story())) && !pill().disabled,
       "Sign out everywhere says what it ended, the list empties, and Send a sign-in link still has its link: " + JSON.stringify((card().querySelector(".agrid + .anote") || {}).textContent));
+    /* ---- an account closed while its link and its story are still on their way lands on nothing ---- */
+    const errs = [], onRej = (e) => errs.push(String((e && e.message) || e));
+    process.on("unhandledRejection", onRej);
+    try {
+      const gate = { go: null };
+      const w3 = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+        try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+        if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+        if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+        w.fetch = async (q, o) => { o = o || {};
+          if (/^[/]all[/](account|signin)[/]/.test(String(q))) await new Promise((r) => { const was = gate.go; gate.go = () => { if (was) was(); r(); }; });
+          return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+      } }).window;
+      const D3 = w3.document;
+      await until(() => /as at/.test(D3.getElementById("mFoot").textContent));
+      D3.querySelector('button[data-m="accounts"]').click();
+      await until(() => D3.querySelector('#rlist [data-u="' + u + '"]'));
+      D3.querySelector('#rlist [data-u="' + u + '"]').click();
+      ok(await until(() => !!gate.go), "the account opened, its story is on its way");
+      w3.close();
+      await until(() => !!gate.go);
+      for (let i = 0; i < 40 && gate.go; i++) { const g = gate.go; gate.go = null; g(); await new Promise((r) => setTimeout(r, 50)); }
+      await new Promise((r) => setTimeout(r, 200));
+      ok(errs.length === 0, "and when it and the link land after the page has gone, nothing is drawn and nothing throws: " + JSON.stringify(errs));
+    } finally { process.off("unhandledRejection", onRej); }
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("S9 9.9: the customer's This device card lists their devices with this one marked, signs the others out, and signs in another device by a code made as its Sheet opens");
@@ -16512,6 +16537,47 @@ await (async () => {
       "logging out burns the code the Sheet made and takes the card away");
     ok(!landingPage("", "n99o", { master: "x", accounts: [] }).includes('id="devCard"'), "and his own page carries no This device card");
   } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
+
+  /* ---- the list is a read in the background: a lapse it meets is left to the next tap, and it lands on nothing once
+     the page has gone. Driven with the site stood in, the list's answer held until the test lets it go. ---- */
+  const wrap = await C.wrapKey(pw, ck), envSealed = JSON.parse(await kv.get("u:" + u)).env;
+  const drive = async (devices) => {
+    const st = { posts: [], release: null };
+    const w2 = new JSDOM(landingPage(u, "n99b", null), { url: ORIGIN + "/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      w.scrollTo = () => {};
+      w.fetch = async (q, o) => {
+        const path = String(q); st.posts.push(path);
+        const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+        if (path === "/open") return ans(200, { ok: true, byMaster: false, wrap, env: envSealed, live: null, prices: null, session: "sess99b0000000000000000000000" });
+        if (path === "/remember") return ans(200, { ok: true, token: "rem99b00000000000000000000000000", days: 30 });
+        if (path === "/devices") return devices(st, ans);
+        return ans(200, { ok: true, orders: [] });
+      };
+    } }).window;
+    const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    w2.document.getElementById("pw").value = pw;
+    w2.document.getElementById("f").dispatchEvent(new w2.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !w2.document.getElementById("barw").hidden);
+    return { st, w2, until };
+  };
+  const d1 = await drive((st, ans) => ans(401, { ok: false, error: "Sign in again to see your orders.", session: false }));
+  try {
+    const card2 = d1.w2.document.getElementById("devCard");
+    ok(await d1.until(() => !card2.hidden && /Sign in again to see them[.]/.test(card2.textContent)) && d1.w2.document.getElementById("lapse").hidden
+      && !d1.st.posts.includes("/remember/open"),
+      "a list that meets a lapsed session says so on the card, and neither reopens the session nor raises the lapse bar: " + JSON.stringify(d1.st.posts));
+  } finally { try { d1.w2.close(); } catch (e) { /* best effort */ } }
+  const errs = [], onRej = (e) => errs.push(String((e && e.message) || e));
+  process.on("unhandledRejection", onRej);
+  try {
+    const d2 = await drive((st, ans) => new Promise((r) => { st.release = () => r(ans(200, { ok: true, devices: [{ label: "iPhone, Safari", kind: "phone", at: null, last: null, kept: true, here: true }] })); }));
+    await d2.until(() => !!d2.st.release);
+    d2.w2.close();
+    d2.st.release();
+    await new Promise((r) => setTimeout(r, 150));
+    ok(errs.length === 0, "and a list that lands after the page has gone draws nothing and throws nothing: " + JSON.stringify(errs));
+  } finally { process.off("unhandledRejection", onRej); }
 })();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {

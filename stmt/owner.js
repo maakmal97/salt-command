@@ -212,7 +212,7 @@ export const OWNER_JS = `
     if(b.note){ b.note.textContent=m.note||''; b.note.className='anote'+(m.bad?' bad':''); }
   }
   function paintPills(u){ [].slice.call(document.querySelectorAll('[data-pill]')).forEach(function(b){ if(b.getAttribute('data-pill')===u) paintPill(b); }); }
-  function linkMoved(u){ paintPills(u); if(!mHome.hidden) drawNeeds(); }
+  function linkMoved(u){ if(!docLive()) return; paintPills(u); if(!mHome.hidden) drawNeeds(); }
   function makeLink(a){
     var u=a.username, m=madeLink[u]||(madeLink[u]={});
     if(m.j||m.busy||a.account===false) return;
@@ -312,6 +312,7 @@ export const OWNER_JS = `
   async function loadStory(a){
     var u=a.username, j=null, err='';
     try{ j=await refs('/all/account/'+encodeURIComponent(u)); }catch(e){ err=e.message; }
+    if(!docLive()) return;
     story[u]=j?{log:j.log||[], devices:j.devices||[]}:{err:err};
     [].slice.call(document.querySelectorAll('[data-story]')).forEach(function(b){ if(b.getAttribute('data-story')===u) drawStory(b, a); });
   }
@@ -715,7 +716,7 @@ export const OWNER_JS = `
       b.disabled=!!m.busy; b.textContent=m.busy?'Making it...':m.j?'Share the link':'Send a sign-in link'; note.textContent=m.note||'';
     }
     /* answered on this button, or on the one a redraw put in its place */
-    function after(){ paintPills(u); if(b.isConnected) paint(); else drawNeeds(); }
+    function after(){ if(!docLive()) return; paintPills(u); if(b.isConnected) paint(); else drawNeeds(); }
     paint();
     b.addEventListener('click', async function(){
       var m=madeLink[u]||(madeLink[u]={});
