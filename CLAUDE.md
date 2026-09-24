@@ -295,16 +295,31 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **Send statement hands over the password from his phone** (`pwMaster` under `STMT_MASTER`, in
   `sheet` behind Access, decrypted to the clipboard). The plain password stays laptop-only in
   `_passwords.json`, and no message ever carries it.
-- **The shared link signs them in, once**: the link signs in, the password is never in it. A link
+- **The shared link signs them in, once, and keeps the phone signed in** (his D1: the door's split key,
+  three days to use, the message naming the username): the password is never in it. A link
   inside its window is a bearer credential, and single use is best effort (KV). The `/s/` route is
-  gated on the token's SHAPE, so a spent link and an invented one serve the same door.
+  gated on the token's SHAPE, so a spent link and an invented one serve the same door. **It is spent
+  only on Continue** (asking which account spends nothing), and a spent record answers the page that
+  spent it, by its nonce, for two minutes; an app's own browser is sent to Safari or Chrome first.
 - **The hand-over** (his decision D2): a signed-in page, or Salt Admin's Show a code, hands the sign-in to
   another app or phone as a key and an eight-symbol code, one use in fifteen minutes, filed under a hash keyed by
   `STMT_HANDOVER_KEY` with the wrap sealed, braked per address and site-wide; unset, `/handover` answers 503.
-- **The door**: log in, remember me (a device key in the browser, the wrapped content key at
-  `rem:<sha256(token)>`, neither opening anything alone, thirty days from the last open), log out, which also drops that wrap and this
-  phone's notifications. A lapsed session says so in the bar, with Continue. Kept as an app:
-  manifest and icon served by the Worker, no brand; every login asks about notifications once.
+- **The door** (his D3): one username field and one password field a password manager fills, Show, a
+  paste that keeps only the password, an alphabet check on the device, the help line, and the site's
+  one refusal; only his page sends a master, so it cannot be typed at a customer's door. Keep me signed
+  in (a device key in the browser, the wrapped content key at `rem:<sha256(token)>`, neither opening anything
+  alone, thirty days from the last open), log out, which also drops that wrap and this phone's
+  notifications. Nothing says phone on a computer. **A lapsed session reopens itself from the remembered
+  phone and repeats the request once** (his D1); only with nothing remembered does a Sheet say so over
+  the page, carrying the door and keeping the draft. The page re-reads on every return (`GET /account` on its session, never a
+  wrap), and a remembered phone draws "Opening your account", never the door. Kept as an app:
+  manifest and icon served by the Worker, no brand; every login asks about notifications once. How to
+  keep it is a card once signed in, never on the door: an Install button wherever the browser offers one,
+  Samsung Internet's steps or a computer's address-bar mark drawn elsewhere; on an iPhone its Sheet mints the hand-over as it
+  opens and copies the key in a tap of its own, rewriting the address to `/app#<key>` (his D2), and never
+  says a link signs the saved app in. **The saved app starts at `/app`** (the manifest's `start_url`): with
+  nothing remembered, an iPhone opens on One step to finish, the key by Paste or the eight symbols typed
+  (`POST /handover/open`), and the app is remembered; only a standalone app spends a key in its address.
   Salt Admin links its own manifest with credentials and is titled Salt Admin.
 - **A customer's banner names the kind of news, never an amount, a product, an order or a name**:
   `{k, o}` sealed for the one phone (`sealFor`, RFC 8291) under the keys its subscription filed, the

@@ -43,7 +43,7 @@ import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, MAX_PER_ASSOC } from "./refs.js";
-import { SIGNIN_RE, mintSignin, burnSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover } from "./signin.js";
+import { SIGNIN_RE, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover } from "./signin.js";
 import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
@@ -313,6 +313,15 @@ async function handleCustomer(request, env, p, m) {
      its fifteen minutes got a 401 and left its remembered wrap on the site for the rest of thirty days. */
   if (p === "/logout") return logOut(request, env, m, u);
   if (!u) return json({ ok: false, error: "Sign in again to see your orders.", session: false }, 401);
+  /* S3 3.5: THE PAGE RE-READS ON EVERY RETURN, on its session: the sealed documents as an open hands them over,
+     and never a wrap, because the page still holds the key it opened them with */
+  if (p === "/account") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    const acct = await env.STMT.get("u:" + u, "json");
+    if (!acct) return json({ ok: false, error: "Sign in again to see your orders.", session: false }, 401);
+    return json({ ok: true, u, issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc,
+      card: acct.card || null, env: acct.env, live: acct.live || null, prices: acct.prices || null });
+  }
   if (p === "/orders") {
     if (m === "GET") return json({ ok: true, orders: (await ordersOf(env, u)).map(customerView) });
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -465,7 +474,13 @@ async function handleSignin(request, env) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   const b = await readJson(request);
   const tok = b && typeof b.token === "string" && SIGNIN_RE.test(b.token) ? b.token : null;
-  const rec = tok ? await burnSignin(env, tok) : null;
+  /* S3 3.3: the page asks which account first, and that spends nothing; a spent link is refused alike */
+  if (b && b.peek === true) {
+    const live = tok ? await peekSignin(env, tok) : null;
+    if (!live || !(await env.STMT.get("u:" + live.u))) return json({ ok: false, error: REFUSED }, 401);
+    return json({ ok: true, u: live.u });
+  }
+  const rec = tok ? await burnSignin(env, tok, b && b.nonce) : null;
   if (!rec) return json({ ok: false, error: REFUSED }, 401);
   const acct = await env.STMT.get("u:" + rec.u, "json");
   if (!acct) return json({ ok: false, error: REFUSED }, 401);
@@ -1149,7 +1164,8 @@ export default {
            still a mark and never a word (v695); this is the app's name, the one place on the site
            where something has to be called something. What never appears is the DESK's name, Salt
            Command, which is a different rule and still holds. */
-        name: "Salt Counter", short_name: "Salt Counter", start_url: "./", scope: "./",
+        /* S3 3.11 (his D2): the saved app starts at /app, the Counter's own page in app mode */
+        name: "Salt Counter", short_name: "Salt Counter", start_url: "/app", scope: "./",
         display: "standalone", orientation: "portrait", background_color: "#05080a", theme_color: "#05080a",
         icons: [{ src: "icon.png", sizes: ICON_SIZE + "x" + ICON_SIZE, type: "image/png", purpose: "any maskable" }]
       };
@@ -1168,7 +1184,7 @@ export default {
     }
     /* S3 3.9: the hand-over, minted on a session and opened by its key or its code */
     if (p === "/handover" || p === "/handover/open") return handleHandover(request, env, p, m);
-    if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout") return handleCustomer(request, env, p, m);
+    if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account") return handleCustomer(request, env, p, m);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
     if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin") return handleDesk(request, env, p, m);
@@ -1186,6 +1202,11 @@ export default {
        been a link. The shape is no secret, being minted by the page this route serves. */
     const sLink = p.startsWith("/s/") && SIGNIN_RE.test(p.slice(3));
     if (sLink) {
+      if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
+      return pageResponse("", null);
+    }
+    /* S3 3.11: THE SAVED APP'S START, the Counter's own page; it knows it is the app by its own address */
+    if (p === "/app") {
       if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
       return pageResponse("", null);
     }

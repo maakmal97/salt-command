@@ -31,8 +31,9 @@
 
 /** The same shape the remembered-device token has: 24 random bytes, base64url. */
 export const SIGNIN_RE = /^[A-Za-z0-9_-]{20,64}$/;
-/** Seven days. Long enough to be opened at their leisure, short enough to be worth expiring. */
-export const SIGNIN_TTL = 7 * 24 * 3600;
+/** Three days (his D1, 24 Sep 2026; seven until then): the link now keeps a phone signed in, so an unopened
+ *  one forwarded is worth more, and it lives shorter for that. */
+export const SIGNIN_TTL = 3 * 24 * 3600;
 
 const b64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
   .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -69,15 +70,41 @@ export async function pointAt(env, u, key, fields, ttl) {
 }
 export const unpoint = async (env, u, key) => env.STMT.delete(devPrefix(u) + (await idOf(key)));
 
-/** Read it and delete it, in that order. Returns the record, or null for anything at all wrong. */
-export async function burnSignin(env, token) {
+/* S3 3.3, 24 SEP 2026: NOTHING IS SPENT UNTIL CONTINUE, AND A LOST ANSWER IS NOT A LOST LINK. The page
+ * asks first which account a link opens (peekSignin), which spends nothing, so a preview or an in-app
+ * view that runs the page cannot use it up; only the Continue tap burns it. The page carries a nonce it
+ * minted for itself, and the spent record keeps the answer for TWO MINUTES for that nonce alone: a
+ * connection that drops after the burn is retried from the same page, while another device holding
+ * the same link is refused as before. */
+export const NONCE_RE = /^[A-Za-z0-9_-]{16,64}$/;
+export const RETRY_TTL = 120;
+
+async function readSignin(env, token) {
   if (!SIGNIN_RE.test(String(token || ""))) return null;
   const key = "ot:" + (await idOf(token));
   let rec = null;
   try { rec = await env.STMT.get(key, "json"); } catch (e) { rec = null; }
-  if (!rec || !rec.u || !rec.wrap) return null;
-  try { await env.STMT.delete(key); } catch (e) { /* it expires on its own; the open still stands */ }
-  return rec;
+  return rec && rec.u && rec.wrap ? { key, rec } : null;
+}
+
+/** Which account a live link opens, spending nothing. A spent link is null, as an invented one is. */
+export async function peekSignin(env, token) {
+  const r = await readSignin(env, token);
+  return r && !r.rec.spent ? { u: r.rec.u } : null;
+}
+
+/** Spend it, keeping the answer two minutes for the page that spent it. Returns the record, or null
+ *  for anything at all wrong, a second device included. */
+export async function burnSignin(env, token, nonce) {
+  const r = await readSignin(env, token);
+  if (!r) return null;
+  const mine = NONCE_RE.test(String(nonce || "")) ? String(nonce) : null;
+  if (r.rec.spent) return mine && r.rec.nonce === mine ? r.rec : null;
+  try {
+    await env.STMT.put(r.key, JSON.stringify({ u: r.rec.u, wrap: r.rec.wrap, spent: new Date().toISOString(), nonce: mine }),
+      { expirationTtl: RETRY_TTL });
+  } catch (e) { /* it expires on its own; the open still stands */ }
+  return r.rec;
 }
 
 /* ---- THE HAND-OVER: A KEY AND AN EIGHT-SYMBOL CODE (S3 3.9, his decision D2 of 24 Sep 2026) ---------------

@@ -136,7 +136,7 @@ export const OWNER_JS = `
     svg.appendChild(g);
     return svg;
   }
-  async function showCode(a, from){
+  async function showHandover(a, from){
     closeHo();
     var scrim=el('div','salt-sheet-scrim'); scrim.setAttribute('aria-hidden','true');
     var box=el('div','salt-sheet ho'); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
@@ -258,7 +258,7 @@ export const OWNER_JS = `
     });
     var hob=el('button',null,'Show a code'); hob.type='button';
     if(noAcct){ hob.disabled=true; hob.title=why; }
-    hob.addEventListener('click', function(){ if(a.account!==false) showCode(a, hob); });
+    hob.addEventListener('click', function(){ if(a.account!==false) showHandover(a, hob); });
     var open=el('button',null,'Open account'); open.type='button';
     if(noAcct){ open.disabled=true; open.title=why; }
     open.addEventListener('click', function(){ openAcct(a); });

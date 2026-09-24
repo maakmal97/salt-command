@@ -177,7 +177,7 @@ Each statement carries a QR code and prints the customer's **username**. The QR 
 `https://k7m3p2.qyts8mh72kyg.workers.dev/?u=<username>`, one landing page for every account,
 with the username filled in; the password goes by a different channel. The page checks the
 pair, decrypts in his own browser, and shows a strip: **"Now"**, then every issue by its date,
-newest first. It stays signed in on that device while Remember me is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
+newest first. It stays signed in on that device while Keep me signed in is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
 he likes.
 
 **"Now" is live (his instruction, 03 Sep 2026): every entry from the start to the minute it was
@@ -204,9 +204,9 @@ has lost his asks for it again, and it is read back from `_passwords.json`.
    for byte as a wrong password does, so the list cannot be walked.
 4. `STMT_MASTER`, a secret on the statements Worker, is his override. It opens any account,
    because each issue carries a second wrap of the key under it, made from the same passphrase in
-   `_secrets.json`. Since 16 Sep 2026 the door takes the username in two boxes and the password in
-   four, four symbols each, so the master can no longer be typed there: the owner's list at `/all`
-   fills it in for him.
+   `_secrets.json`. The door is one field for each secret since S3 3.7 (his D3; two boxes and four
+   from 16 Sep until then), and only the owner's page sends what is typed as a master, so the master
+   still cannot be typed at a customer's door: the owner's list at `/all` fills it in for him.
 
 ### The secrets, and where each one lives
 
@@ -215,7 +215,7 @@ has lost his asks for it again, and it is read back from `_passwords.json`.
 | `STMT_KEY` | `statements\_secrets.json`, `"key"` | GitHub Actions secret `STMT_KEY` | Derives every customer's content key. The same string in both places. **Lose it and every account is re-issued.** |
 | `STMT_MASTER` | `statements\_secrets.json`, `"master"` | Cloudflare secret on the site | His override. The Worker compares it; the laptop wraps the key under it at issue time. |
 | the passwords | `statements\<YYYY-MM>\_passwords.json` | sealed under `STMT_MASTER` as `pwMaster`, served only behind Access | One per customer, one live month. In the clear on the laptop alone (v688), and since v710 no message carries one at all. |
-| a sign-in link | nowhere | KV `ot:<sha256(token)>`, 7 days, one use | The content key wrapped under a token his page mints (v710). The token is stored nowhere, so the record opens only for whoever holds the link. |
+| a sign-in link | nowhere | KV `ot:<sha256(token)>`, 3 days (7 until his D1), one use | The content key wrapped under a token his page mints (v710). The token is stored nowhere, so the record opens only for whoever holds the link. Its page asks which account first (`peek`, spending nothing) and spends it on Continue; spent, the record answers the nonce of the page that spent it for two minutes (`RETRY_TTL`), so a lost answer is tried again and a second device is refused (S3 3.3). Continue also remembers the phone with the door's own split key, and the message says so and names the username (S3 3.4, his D1). |
 | a remembered phone | nowhere | KV `rem:<sha256(token)>`, 30 days from the last open (S3 3.6; from the tick until then) | The content key wrapped under a key that never leaves that browser (v692). Filed under the token's hash since S3 3.1, so a copy of the store names no token; a record filed the old way is re-filed on its next open. |
 | where an account is signed in | nowhere | KV `dev:<username>:<sha256(key)>`, as long as what it names | A pointer per remembered phone (`rem:`) and per session an open mints (`sess:`), with `how` it came, `at` and `last` (S3 3.2). Listed by the prefix, it is what shows an account's phones and signs them all out; it opens nothing. |
 | `STMT_HANDOVER_KEY` | nowhere | Cloudflare secret on the site, set by hand (S3 3.9) | Keys the hash a hand-over's code and key are filed under and seals the wrap beside them. Unset, the hand-over routes answer 503. Changing it only strands the codes alive at that moment. |
@@ -295,8 +295,8 @@ form's product dropdown became a **segment of marks**, because an `<option>` car
 drawing. A control holding only a mark is named by its **shape** (`PSHAPE`: Cube, Droplet, Ring) and
 never by its product, so a screen reader is told what is drawn rather than what it is.
 
-**The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title and the
-install tutorial all say **Salt Counter** (v704, his instruction of 18 Sep 2026; it went Order Salt,
+**The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title, the
+sign-in link's page and the Keep it on your Home Screen card all say **Salt Counter** (v704, his instruction of 18 Sep 2026; it went Order Salt,
 then The Counter, then his own name for it). The icon on a customer's home screen has to say
 something: it is the ONE place on this site where something is called something, and the product
 word is his to spend there. Inside the page a product is still a mark and never a word. What never
@@ -562,7 +562,7 @@ not taken, cancelled. **Never an amount, a product, an order or a name**; the su
 One banner an order: the notification's tag and a sealed wake's push `Topic` are per order (the topic a
 digest of the id), so news of one order never replaces another's on the lock screen or at the push service.
 A tap opens the Counter at `#o=<id>`; a page already open is sent a message instead, re-reads its
-orders and opens that one, or, its session lapsed, keeps it for the sign-in after Continue. A subscription filed before its keys gets a payload-free wake and the
+orders and opens that one, or, its session lapsed, keeps it until the phone is back in (reopened from its memory, S3 3.5, or signed in on the Sheet). A subscription filed before its keys gets a payload-free wake and the
 old fixed words, so nothing already subscribed went dark; the page re-files the keys at the next
 sign-in. A notice keeps its own road: its wake carries no payload, and the service worker reads
 the public `bulletin` (v761). On an
