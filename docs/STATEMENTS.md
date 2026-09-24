@@ -662,7 +662,9 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   the system's Sheet and, as it opens, mints a hand-over through `POST /all/handover` (his page opens the account
   under the master and wraps as the Sign-in link does). It shows a QR of `<site>/app#<key>`, drawn in rectangles,
   and the eight symbols in the Code field with when they stop working. It copies and shares nothing, so no
-  clipboard waits on the derivation and the fetch. Closing it does not spend the code.
+  clipboard waits on the derivation and the fetch. Closing it does not spend the code. The camera opens the QR in
+  a browser tab, which spends a key it did not write itself; the tab whose Keep Sheet wrote `/app#<key>` marks
+  itself (`salt-keep-wrote` in session storage) and never spends it, leaving it for the saved app.
 - **Guest links `/g/<id>`** (v566) are minted inside `/all` and labelled: a board is what he prints
   and hands to strangers, and the link exists to say WHICH stranger. `stmt/refs.js` mints, lists,
   revokes and counts opens; it prices nothing, and neither does `tools/pricelist.mjs`, which reads

@@ -18867,6 +18867,94 @@ await (async () => {
     ok(wa.D.getElementById("keepCard").hidden, "an app's own browser, which keeps nothing, is not offered it");
   } finally { wa.W.close(); }
 })();
+section("S3 merge: the QR Salt Admin shows at the counter signs in the phone that scans it, while the Safari tab whose Keep Sheet wrote /app#<key> never spends it");
+await (async () => {
+  /* 3.13 draws <site>/app#<key> for a customer at his counter to scan with the camera, which opens a browser tab, and
+     3.11 spent a key in the address only in a standalone app, so the QR opened a page that asked for the code. The
+     tab that must not spend it is the one whose Keep Sheet wrote it: that tab says so in its own session storage. */
+  const { landingPage: lpM } = await import("../stmt/page.js");
+  const CM = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDM } = await import("jsdom");
+  const uM = "aaaa-mmmm", passM = "2345-6789-abcd-efgm", tokM = "Q".repeat(32), ckM = await CM.contentKey("9".repeat(64), uM);
+  const envM = await CM.encryptWith(ckM, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Scanned</p>" }] }));
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const drive = async (url, opts) => {
+    const st = { posts: [] }, store = new Map();
+    const dom = new JDM(lpM(opts.u || "", "nM", null), { url, runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: IPHONE, configurable: true });
+        win.matchMedia = (q) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+        Object.defineProperty(win.navigator, "clipboard", { configurable: true, value: { readText: async () => "", writeText: async () => {} } });
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        if (opts.wrote) win.sessionStorage.setItem("salt-keep-wrote", opts.wrote);
+        win.scrollTo = () => {};
+        win.fetch = async (p, init) => {
+          const body = init && init.body ? JSON.parse(init.body) : null;
+          st.posts.push({ path: String(p), body });
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CM.wrapKey(passM, ckM), env: envM, live: null, prices: null, session: "sessMa0000000000000000000000" });
+          if (p === "/handover") return ans(200, { ok: true, code: "h4tn-8xwc", token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() });
+          if (p === "/handover/open") {
+            return body && body.token === tokM && !opts.refuse
+              ? ans(200, { ok: true, u: uM, remembered: true, token: tokM, wrap: await CM.wrapKey(tokM, ckM), env: envM, live: null, prices: null, session: "sessMb0000000000000000000000" })
+              : ans(401, { ok: false, error: "That username and password were not accepted." });
+          }
+          if (p === "/remember") return ans(200, { ok: true, token: "r".repeat(32), days: 30 });
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    await new Promise((r) => setTimeout(r, 60));
+    return { st, W, D, until, store };
+  };
+
+  /* the Keep Sheet's Copy marks its own tab, in the same tap that writes the address */
+  const k = await drive("https://site.test/", { u: uM });
+  try {
+    k.D.getElementById("pw").value = passM;
+    k.D.getElementById("f").dispatchEvent(new k.W.Event("submit", { bubbles: true, cancelable: true }));
+    await k.until(() => !k.D.getElementById("barw").hidden);
+    k.D.getElementById("keepGo").click();
+    await k.until(() => k.D.getElementById("keepCode").value);
+    k.D.getElementById("keepCopy").click();
+    const ho = k.st.posts.find((x) => x.path === "/handover");
+    ok(!!ho && k.W.location.hash === "#" + ho.body.token && k.W.sessionStorage.getItem("salt-keep-wrote") === ho.body.token,
+      "Copy marks the tab that wrote /app#<key> in its own session storage: " + JSON.stringify(k.W.sessionStorage.getItem("salt-keep-wrote")));
+  } finally { k.W.close(); }
+
+  /* that tab, reloaded at the address, spends nothing */
+  const mine = await drive("https://site.test/app#" + tokM, { wrote: tokM });
+  try {
+    await new Promise((r) => setTimeout(r, 120));
+    ok(!mine.st.posts.some((x) => x.path === "/handover/open") && !mine.D.getElementById("codeBox").hidden,
+      "the Safari tab that wrote the key, reloaded at that address, never spends it");
+  } finally { mine.W.close(); }
+
+  /* a camera's browser tab at Salt Admin's QR spends the key and is in */
+  const qr = await drive("https://site.test/app#" + tokM, {});
+  try {
+    await qr.until(() => !qr.D.getElementById("barw").hidden);
+    const sent = qr.st.posts.find((x) => x.path === "/handover/open");
+    ok(!qr.D.getElementById("barw").hidden && !!sent && sent.body.token === tokM && !sent.body.code && qr.W.location.hash === "",
+      "a browser tab opened on Salt Admin's QR spends the key in the address, opens the account and forgets the address");
+    await qr.until(() => qr.store.has("salt-stmt-remember"));
+    ok(JSON.parse(qr.store.get("salt-stmt-remember") || "{}").u === uM, "and the phone that scanned it is remembered");
+  } finally { qr.W.close(); }
+
+  /* a QR already used says so in a code's words, never the saved app's Safari words */
+  const used = await drive("https://site.test/app#" + tokM, { refuse: true });
+  try {
+    await used.until(() => /did not open/.test(used.D.getElementById("codeMsg").textContent));
+    ok(used.st.posts.some((x) => x.path === "/handover/open") && /Sign in with a code/.test(used.D.getElementById("codeH").textContent)
+      && !/Safari/.test(used.D.getElementById("codeBox").textContent.replace(/No code\?[^]*$/, "")) && used.D.getElementById("codeHelp").hidden,
+      "a spent QR is refused in a code's words, with no word about Safari: " + JSON.stringify(used.D.getElementById("codeH").textContent));
+  } finally { used.W.close(); }
+})();
+
 section("S3 3.11: the saved app starts at /app on One step to finish, takes the key by Paste or the eight symbols typed, gives the true help, and remembers the app");
 await (async () => {
   /* HIS D2 OF 24 SEP 2026. The saved iPhone app keeps its own storage and opened on a door, which a customer who
@@ -18900,6 +18988,7 @@ await (async () => {
         Object.defineProperty(win.navigator, "userAgent", { value: opts.ua || IPHONE, configurable: true });
         win.matchMedia = (q) => ({ matches: !!opts.standalone && /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
         Object.defineProperty(win.navigator, "clipboard", { configurable: true, value: { readText: async () => st.clip, writeText: async () => {} } });
+        if (opts.wrote) win.sessionStorage.setItem("salt-keep-wrote", opts.wrote);   /* S3 merge: the tab that wrote the key */
         Object.defineProperty(win, "localStorage", { configurable: true, value: {
           getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
           removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
@@ -18966,7 +19055,7 @@ await (async () => {
       "a saved app that kept the address signs itself in with the key in it, and forgets the address");
   } finally { g3.W.close(); }
 
-  const g4 = await drive("https://site.test/app#" + tok311, { standalone: false });
+  const g4 = await drive("https://site.test/app#" + tok311, { standalone: false, wrote: tok311 });
   try {
     ok(!g4.st.posts.some((x) => x.path === "/handover/open"), "a Safari tab reloaded at that address never spends the key meant for the saved app");
   } finally { g4.W.close(); }

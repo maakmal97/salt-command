@@ -1015,6 +1015,7 @@ const CLIENT_JS = `
       var done=null;
       try{ done=navigator.clipboard.writeText(keepTok); }catch(e){ done=Promise.reject(e); }
       try{ history.replaceState(null,'','/app#'+keepTok); }catch(e){}
+      try{ sessionStorage.setItem('salt-keep-wrote', keepTok); }catch(e){}   /* this tab never spends the key it wrote */
       Promise.resolve(done).then(function(){ ksay('Copied. Now tap the marks above, then open the new icon and paste.'); },
         function(){ ksay('Copy failed. Type the code in the new app instead.','bad'); });
     });
@@ -2371,9 +2372,12 @@ const CLIENT_JS = `
       if(inNow||session) return;
       if(opening) opening.hidden=true;
       /* S3 3.11: the saved app. A key in the address is the one Safari's Keep it on your Home Screen wrote there, and
-         only the saved app itself spends it, never a Safari tab reloaded at that address */
-      var carried=APP&&STANDALONE&&TOK_RE.test(hk);
-      if(APP&&(IOS||carried)) showCode(false); else gate.hidden=false;
+         the saved app spends it, never the Safari tab that wrote it, reloaded at that address. S3 merge: a browser tab
+         spends a key it did not write, which is the QR his page shows at the counter (3.13), scanned by the
+         customer's camera, and is told about a code, not about Safari */
+      var wrote=''; try{ wrote=sessionStorage.getItem('salt-keep-wrote')||''; }catch(e){}
+      var carried=APP&&TOK_RE.test(hk)&&(STANDALONE||wrote!==hk);
+      if(APP&&(IOS||carried)) showCode(carried&&!STANDALONE); else gate.hidden=false;
       if(carried) await openHandover({token:hk});
     })();
   }

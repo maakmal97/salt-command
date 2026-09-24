@@ -319,7 +319,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   opens and copies the key in a tap of its own, rewriting the address to `/app#<key>` (his D2), and never
   says a link signs the saved app in. **The saved app starts at `/app`** (the manifest's `start_url`): with
   nothing remembered, an iPhone opens on One step to finish, the key by Paste or the eight symbols typed
-  (`POST /handover/open`), and the app is remembered; only a standalone app spends a key in its address.
+  (`POST /handover/open`), and the app is remembered. A key in the address is spent by the saved app or by a tab
+  that did not write it (Salt Admin's QR, scanned), never by the tab whose Keep Sheet wrote it.
   Salt Admin links its own manifest with credentials and is titled Salt Admin.
 - **A customer's banner names the kind of news, never an amount, a product, an order or a name**:
   `{k, o}` sealed for the one phone (`sealFor`, RFC 8291) under the keys its subscription filed, the
