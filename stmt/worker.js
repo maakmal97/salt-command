@@ -1167,8 +1167,10 @@ export default {
            still a mark and never a word (v695); this is the app's name, the one place on the site
            where something has to be called something. What never appears is the DESK's name, Salt
            Command, which is a different rule and still holds. */
-        /* S3 3.11 (his D2): the saved app starts at /app, the Counter's own page in app mode */
-        name: "Salt Counter", short_name: "Salt Counter", start_url: "/app", scope: "./",
+        /* S3 3.11 (his D2): the saved app starts at /app, the Counter's own page in app mode. S3 fix: `id` holds the
+           identity the old start_url gave every copy installed before (the site's root), or a browser would take the
+           moved start_url for a new app and stop updating those */
+        id: "/", name: "Salt Counter", short_name: "Salt Counter", start_url: "/app", scope: "./",
         display: "standalone", orientation: "portrait", background_color: "#05080a", theme_color: "#05080a",
         icons: [{ src: "icon.png", sizes: ICON_SIZE + "x" + ICON_SIZE, type: "image/png", purpose: "any maskable" }]
       };

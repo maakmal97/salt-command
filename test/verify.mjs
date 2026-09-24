@@ -20063,6 +20063,18 @@ await (async () => {
     ok(turned.seen() && turned.D.getElementById("keepInstall").hidden, "and turned down, it falls back to the menu's mark rather than vanishing");
   } finally { turned.W.close(); }
 })();
+section("S3 fix: the Counter's manifest keeps the identity the old start address gave every copy already installed");
+await (async () => {
+  /* S3R-10 (24 Sep 2026). start_url moved from ./ to /app with no id, and a browser takes start_url as the app's identity
+     when id is absent, so every copy installed before would stop taking the site's name and icon updates. */
+  const WM = (await import("../stmt/worker.js")).default;
+  const r = await WM.fetch(new Request("https://k7m3p2.example/manifest.webmanifest"), { STMT: new KV() });
+  const mf = await r.json();
+  const at = "https://k7m3p2.example/manifest.webmanifest";
+  const was = new URL("./", at).href, start = new URL(mf.start_url, at);
+  ok(r.status === 200 && typeof mf.id === "string" && new URL(mf.id, start.origin).href === was && start.pathname === "/app",
+    "the manifest's id resolves to the site's root, the identity the old start address gave, while the app still starts at /app: " + JSON.stringify({ id: mf.id, start_url: mf.start_url }));
+})();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {
   /* S3, 24 SEP 2026. The door's one way in named its opener unseal, which stmt/owner.js already declared: spliced in
