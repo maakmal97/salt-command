@@ -1648,7 +1648,17 @@ export function withPending(book, row) {
  * different, it waits under Approve, marked. A pre-approval's yes is spent once, on the first draft of its order
  * and stage, equal or not. */
 /* The pre-approval a draft answers: the one whose entry the desk queued itself (Accept, Cash received, a move offered
-   again), else the newest waiting one of its stage whose entry the site's own stage makes (Collected, Received). */
+   again), else the newest waiting one of its stage whose entry the site's own stage makes (Collected, Received) AND
+   whose figures are this row's: the units he handed over (and whether he closed there), or the amount he received.
+   A yes names no draft until its row exists, so without the figures it was spent on an older row of the same stage. */
+function answers(pre, entry) {
+  let f = {};
+  try { f = (JSON.parse(pre.shown || "{}") || {}).figures || {}; } catch (e) { return false; }
+  const p = (entry && entry.payload) || {};
+  if (pre.stage === "move") return !!f.close === (entry.status === "Close") && Math.abs((+(p.fields || {}).deliveredQty || 0) - (+f.units || 0)) < 0.0004;
+  if (pre.stage === "pay") return Math.abs((+p.cash || 0) - (+f.amount || 0)) < 0.005;
+  return false;
+}
 export async function preFor(db, at, entry) {
   const id = entry && entry.orderId, stage = entry && STAGE_OF[entry.status];
   if (!id || !stage) return null;
@@ -1656,7 +1666,7 @@ export async function preFor(db, at, entry) {
   /* a store before migrations/0011 has no pre-approvals, and every row waits under Approve as it did before D6 */
   try { rows = (await db.prepare("SELECT * FROM preapproval WHERE order_id=?1 AND status='waiting' ORDER BY at DESC").bind(id).all()).results || []; }
   catch (e) { return null; }
-  return rows.find((r) => r.entry_at === at) || (entry.counter ? null : rows.find((r) => !r.entry && !r.entry_at && r.stage === stage)) || null;
+  return rows.find((r) => r.entry_at === at) || (entry.counter ? null : rows.find((r) => !r.entry && !r.entry_at && r.stage === stage && answers(r, entry))) || null;
 }
 /** Approve the draft if it equals what he was shown, else mark it. "applied", "differs", or null if he decided it first. */
 export async function applyPre(db, pre, draft, book, now) {
@@ -1674,7 +1684,7 @@ export async function applyPre(db, pre, draft, book, now) {
 }
 /** A pre-approval whose draft already exists when it is tested (drafted in the moment between the queue and the
  *  pre-approval learning its id, or a payment drafted a minute before his Received): the same test, on the draft as
- *  it is stored. What applyPre returns, or null with no draft to test. */
+ *  it is stored, and only on the draft it names. What applyPre returns, or null with no draft to test. */
 export async function settlePre(db, pre, book, now) {
   const rs = await db.prepare("SELECT id,entry,row,flags,collection,amend_kind FROM draft WHERE status='pending' AND entry LIKE ?1 ORDER BY id DESC")
     .bind('%"orderId":"' + pre.order_id + '"%').all();
@@ -1682,8 +1692,7 @@ export async function settlePre(db, pre, book, now) {
   const parse = (s, f) => { try { return JSON.parse(s); } catch (e) { return f; } };
   const rows = (rs.results || []).map((r) => ({ id: r.id, entry: parse(r.entry, {}), row: parse(r.row, {}), flags: parse(r.flags, []), collection: r.collection, amendKind: r.amend_kind || null }))
     .filter((r) => r.entry && r.entry.orderId === pre.order_id && r.entry.status === want);
-  /* the draft it names, else (a yes the site's own stage answers) the newest of its stage the site made */
-  const draft = rows.find((r) => r.id === pre.entry_at) || (pre.entry || pre.entry_at ? null : rows.find((r) => !r.entry.counter));
+  const draft = pre.entry_at ? rows.find((r) => r.id === pre.entry_at) : null;
   return draft ? applyPre(db, pre, draft, book, now) : null;
 }
 

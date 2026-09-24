@@ -317,9 +317,10 @@ async function stageTap(env, id, body, by, now, stage, build) {
     }
     o.moved = r.order.moved; o.paid = r.order.paid; o.status = r.order.status;
   }
-  /* a row already drafted (a payment of theirs, drafted a minute before his Received) is tested now */
+  /* a row already drafted (a payment of theirs, drafted a minute before his Received) is tested now, and only that
+     row: a stage the site makes is queued after this, so any row of its stage drafted before it is an older one */
   const pre = await preById(db, preId);
-  const spent = pre.status === "waiting" && !b.queueIt ? await settlePre(db, pre, await readBook(db)) : null;
+  const spent = pre.status === "waiting" && b.pin ? await settlePre(db, pre, await readBook(db)) : null;
   return { ok: true, order: o, preapproval: { stage, waits: pv.waits, says: yesWords(pv.waits), flags: pv.d.flags, spent: spent || null,
     draft: spent ? (await preById(db, preId)).draft_id : null } };
 }

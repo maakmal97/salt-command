@@ -24578,6 +24578,82 @@ await (async () => {
   }
 })();
 
+section("S11 fix: a yes for a stage the site makes is spent on its own row, never an older row of the same stage");
+await (async () => {
+  /* Found in review: Collected 3, tapped while an older handover row waited under Approve, spent its yes on that older
+     row at the tap, marking it "differs"; the row he said yes to then waited unmarked. A yes the site's own stage
+     answers is spent only on a row carrying the figures he was shown, and never tested at the tap. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the yes was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  const OPEN = { byKey: {}, position: {} };
+  setState("roster", [C1]); setState("OPEN", OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 3] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const land = (draftId, over) => { const row = Object.assign(JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(draftId).row), { rid: "s99" + seq }, over || {});
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN);
+    db.prepare("UPDATE draft SET committed_at=? WHERE id=?").run(new Date().toISOString(), draftId); return row; };
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  /* `bare`: no request tail, so the test runs the reconcile and the drafter itself, in the order the race needs */
+  const send = async (path, body, bare) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, bare ? {} : ctx);
+    const j = await r.json(); while (tails.length) await tails.shift(); return { status: r.status, j };
+  };
+  const hand = (id) => db.prepare("SELECT id,status,decided_by,entry FROM draft").all().filter((d) => JSON.parse(d.entry).orderId === id && JSON.parse(d.entry).status === "Handover")
+    .map((d) => ({ id: d.id, units: JSON.parse(d.entry).payload.fields.deliveredQty, status: d.status }));
+  const pres = (id) => db.prepare("SELECT status,draft_id,json_extract(shown,'$.figures.units') AS units FROM preapproval WHERE order_id=? AND stage='move' ORDER BY at").all(id);
+  const accepted = async (qty, unit) => {   /* a different total for each order, or two rows share one key */
+    const o = (await O.placeOrder(senv, U1, { product: "salt", qty, mode: "collect", unit, total: qty * unit, week: "" })).order;
+    const pv = await send("/orders/" + o.id + "/preview", {});
+    return { o, draft: (await send("/orders/" + o.id + "/accept", { hash: pv.j.hash })).j.draft };
+  };
+
+  /* A. an older handover waits under Approve, marked; the next Collected is booked on its own row */
+  const A = await accepted(3, 100);
+  await send("/orders/" + A.o.id + "/handed", { qty: 1 });
+  land(A.draft, { cash: 50 });   /* the row lands other than the card assumed, so Handover 1 differs */
+  await reconcileOrders(denv); await runDrafter(denv);
+  const t2 = await send("/orders/" + A.o.id + "/handed", { qty: 3 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const hA = hand(A.o.id), pA = pres(A.o.id), h1 = hA.find((d) => d.units === 1), h3 = hA.find((d) => d.units === 3);
+  ok(t2.status === 200 && !t2.j.preapproval.spent && h1 && h1.status === "pending" && h3 && h3.status === "approved"
+    && pA.length === 2 && pA[0].status === "differs" && pA[0].draft_id === h1.id && pA[1].status === "applied" && pA[1].draft_id === h3.id,
+    "Collected 3 is booked on its own row, and the older handover keeps its own mark: " + JSON.stringify({ spent: t2.j.preapproval.spent, hA, pA }));
+
+  /* B. a second Collected lands while the first's row is queued and not yet drafted: the second yes waits for its own row */
+  const B = await accepted(3, 110);
+  land(B.draft);
+  await send("/orders/" + B.o.id + "/handed", { qty: 1 }, true);
+  await reconcileOrders(denv);                                 /* Handover 1 is queued */
+  await send("/orders/" + B.o.id + "/handed", { qty: 2 }, true);
+  await runDrafter(denv);                                      /* ... and drafted after the second yes */
+  await reconcileOrders(denv); await runDrafter(denv);         /* Handover 2 */
+  const hB = hand(B.o.id), two = hB.find((d) => d.units === 2), last = pres(B.o.id).slice(-1)[0] || {};
+  ok(two && two.status === "approved" && last.status === "applied" && last.draft_id === two.id && +last.units === 2,
+    "a yes for 2 units is never spent on the row for 1, and books the row for 2: " + JSON.stringify({ hB, pres: pres(B.o.id) }));
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one
