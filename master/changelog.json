@@ -1,5 +1,15 @@
 [
  {
+  "v": "v831",
+  "d": "24 Sep 2026",
+  "t": "SITE ORDERS IN ONE SAFE STORE, EVERY MOVE AN EVENT",
+  "n": [
+   "<b>STAGE 10 OF THE REDESIGN</b> (his answer D10 of 24 Sep 2026). Site orders move into one Durable Object, OrderBook: every move on an order is an appended event with the device's own id, so a retry lands once and no writer can erase another's move. The study's six erasures (a line, a payment, a handover or a withdrawal lost to a stale copy, and a payment counted twice) replay in the suite and none can happen now; a seventh found on the way, a queued payment falling back, is closed too.",
+   "<b>THE MOVE IN.</b> The first call copies every KV order in, pauses moves for one minute with a plain 'try again in a minute', copies again what changed, and takes moves. For a week every change is also written back to KV and the hourly check compares the two; rollback is one switch, ORDER_STORE kv. Retiring the KV keys after a clean week is still to come.",
+   "<b>NOTHING ELSE CHANGES.</b> Every customer and desk route answers as before, and the reconcile, the return leg and the chase run unchanged over the new store."
+  ]
+ },
+ {
   "v": "v830",
   "d": "24 Sep 2026",
   "t": "A RICE ROW AGAINST A SALT HABIT",

@@ -8256,7 +8256,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v830","d":"24 Sep 2026","t":"A RICE ROW AGAINST A SALT HABIT","n":["<b>FOLDED: ONE RICE SELL, PAID AND COLLECTED ON THE DAY.</b> CC5-OKR took 4 unit of rice for RM20 on 24 Sep 2026, RM20 cash in and 4 unit out, so nothing on the row stays open. The RM20 clears the floor of RM13.6 for that size and sits well under the ask of RM32, with the ceiling at RM41. Costed at RM3.2 a unit from the desk's own inventory cost, RM12.8 on the goods.","<b>UNUSUAL: THE PARTY'S BOOK IS A SALT BOOK, AND IT IS STRETCHED.</b> The drafter flagged that CC5-OKR has no committed rice order, so there is no rate of theirs to set this against, and the figures do not answer it: their median rate of RM90 and range of RM48 to RM90 are salt figures across 10 orders. RM138 stands outstanding and 2 unit sit on credit against a cap of 1. The drafter's working reads RM7.2 at 36% where the row carries RM12.8.","<b>THE INVENTORY DID NOT MOVE.</b> The rice draw of 4 unit is recorded as not landed, so the salt position holds at 16.5 unit at RM48 a unit against a replacement cost of RM49.43, with the reorder mark at 32.2 and RM9.5 owed out. The last salt count stands at 23 Sep 2026 and the oil count at 19 Sep 2026; candy, rice and spare remain uncounted, which is where this row's product sits."]}];
+const evolution=[{"v":"v831","d":"24 Sep 2026","t":"SITE ORDERS IN ONE SAFE STORE, EVERY MOVE AN EVENT","n":["<b>STAGE 10 OF THE REDESIGN</b> (his answer D10 of 24 Sep 2026). Site orders move into one Durable Object, OrderBook: every move on an order is an appended event with the device's own id, so a retry lands once and no writer can erase another's move. The study's six erasures (a line, a payment, a handover or a withdrawal lost to a stale copy, and a payment counted twice) replay in the suite and none can happen now; a seventh found on the way, a queued payment falling back, is closed too.","<b>THE MOVE IN.</b> The first call copies every KV order in, pauses moves for one minute with a plain 'try again in a minute', copies again what changed, and takes moves. For a week every change is also written back to KV and the hourly check compares the two; rollback is one switch, ORDER_STORE kv. Retiring the KV keys after a clean week is still to come.","<b>NOTHING ELSE CHANGES.</b> Every customer and desk route answers as before, and the reconcile, the return leg and the chase run unchanged over the new store."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8371,7 +8371,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='24 Sep 2026, 20:56 KL';
+const LAST_UPDATED='24 Sep 2026, 21:16 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
