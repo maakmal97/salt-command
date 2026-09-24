@@ -17916,6 +17916,102 @@ await (async () => {
     + JSON.stringify({ placed: await kv.get(O.LAST_PLACED), theirs: await kv.get(O.LAST_THEIRS) }));
 })();
 
+section("A customer's order list carries only what they may see, and a desk mark does not redraw their page");
+await (async () => {
+  /* Stage 1 of the Counter redesign, fold 1.17. GET /orders returned the whole record: `ledgerKey`,
+     which names a roster code, and `queued` and `sync`, the desk's own bookkeeping. And because every
+     desk mark changed that JSON, the page's ten-second poll redrew the order tab over whatever they
+     were typing into an order's thread. */
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const un = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("test-secret", un);
+  const list = { at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] };
+  const kv = new KV();
+  await kv.put("u:" + un, JSON.stringify({ u: un, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C.makeVerifier(pw),
+    wrap: await C.wrapKey(pw, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await C.encryptWith(ck, JSON.stringify(list)) }));
+  const senv = { STMT: kv, STMT_DESK_KEY: "desk-key" };
+  const site = (path, init) => stmtW.fetch(new Request("https://k7m3p2.example" + path,
+    { method: (init && init.method) || "GET", headers: (init && init.headers) || {}, body: init && init.body }), senv);
+  const call = async (path, body, headers) => { const r = await site(path, { method: body ? "POST" : "GET",
+    headers: Object.assign(body ? { "content-type": "application/json" } : {}, headers), body: body ? JSON.stringify(body) : undefined });
+    return { status: r.status, b: await r.json() }; };
+  const S = { "X-Stmt-Session": (await call("/open", { u: un, password: pw })).b.session };
+  const D = { "X-Stmt-Desk": "desk-key" };
+  const DESK = ["ledgerKey", "queued", "sync"];
+  const bare = (o) => !!o && DESK.every((k) => !(k in o)) && !JSON.stringify(o).includes("CX1-AB")
+    && Object.keys(o).every((k) => O.CUSTOMER_FIELDS.includes(k));
+
+  const first = { product: "salt", qty: 1, mode: "deliver", place: "near the market", unit: 130, total: 130, week: "2026-09-14", note: "hello", rid: "c9".repeat(16) };
+  const placed = (await call("/orders", first, S)).b.order;
+  const id = placed.id;
+  await call("/desk/orders/" + un + "/" + id, { status: "acknowledged", delivery: 10 }, D);
+  await call("/desk/orders/" + un + "/" + id, { mark: { ledgerKey: "CX1-AB|2026-09-24|130", ack: "2026-09-24T01:00:00.000Z",
+    sync: { state: "queued", why: "", at: "2026-09-24T01:00:00.000Z" } } }, D);
+  const rec = await kv.get("order:" + un + ":" + id, "json");
+  ok(rec.ledgerKey === "CX1-AB|2026-09-24|130" && rec.queued && rec.queued.ack && rec.sync && rec.sync.state === "queued",
+    "the stored record carries the desk's bookkeeping, or this section proves nothing: " + JSON.stringify(DESK.map((k) => k in rec)));
+
+  /* ---- their list, and every answer to a move of theirs ---- */
+  const got = (await call("/orders", null, S)).b.orders || [];
+  const mine = got.find((o) => o.id === id);
+  ok(got.length === 1 && bare(mine), "their order list carries no ledger key, no queue marks and no sync, and nothing off the whitelist: "
+    + JSON.stringify(mine && Object.keys(mine)));
+  ok(mine && mine.status === "acknowledged" && mine.total === 130 && mine.delivery === 10 && mine.paid === 0 && mine.moved === 0
+    && mine.mode === "deliver" && mine.place === "near the market" && mine.history.length === 2 && mine.msgs.length === 1 && mine.product === "salt",
+    "and still carries what their page reads: the state, the figures, the place, the history and the thread");
+  const answers = [];
+  /* a placement answered again under its request id (fold 1.15) is the stored record, marks and all */
+  const again = (await call("/orders", first, S)).b.order;
+  ok(again && again.id === id && bare(again), "a placement repeated under its request id answers with the view too, not the record the desk has marked: "
+    + JSON.stringify(again && DESK.filter((k) => k in again)));
+  answers.push((await call("/orders/" + id + "/method", { method: "tngbiz" }, S)).b.order);
+  answers.push((await call("/orders/" + id + "/pay", { amount: 20 }, S)).b.order);
+  answers.push((await call("/orders/" + id + "/say", { text: "on my way" }, S)).b.order);
+  answers.push((await call("/orders/" + id + "/cancel", {}, S)).b.order);
+  answers.push((await call("/orders", { product: "salt", qty: 1, mode: "collect", unit: 130, total: 130, week: "" }, S)).b.order);
+  ok(answers.length === 5 && answers.every(bare) && answers[1].paid === 20 && answers[0].method === "tngbiz",
+    "and so does the answer to every move of theirs, a rail, a payment, a line, a withdrawal and a placement: "
+    + JSON.stringify(answers.map((a) => a && DESK.filter((k) => k in a))));
+
+  /* ---- the page, against this Worker: a desk mark does not redraw it, a change of theirs does ---- */
+  const { JSDOM: JD } = await import("jsdom");
+  const ticks = [];
+  const dom = new JD(await (await site("/?u=" + un)).text(), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    const si = win.setInterval.bind(win);
+    win.setInterval = (fn, ms) => { if (ms === 10000) { ticks.push(fn); return 0; } return si(fn, ms); };
+    win.fetch = async (path, init) => site(String(path), init);
+  } });
+  const d = dom.window.document;
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  try {
+    const second = answers[4].id;
+    d.getElementById("un").value = un; d.getElementById("pw").value = pw;
+    d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => ticks.length > 0);
+    d.querySelector('button[data-t="order"]').click();
+    await until(() => d.querySelectorAll("#pOrder .sayw input").length === 2);
+    const box = d.querySelectorAll("#pOrder .sayw input")[0];
+    box.focus(); box.value = "half typed";
+    await call("/desk/orders/" + un + "/" + second, { mark: { ledgerKey: "CX1-AB|2026-09-24|130", ack: "2026-09-24T02:00:00.000Z",
+      sync: { state: "waiting", why: "the row is not on the book yet", at: "2026-09-24T02:00:00.000Z" } } }, D);
+    const poll = ticks[ticks.length - 1];
+    await poll();
+    ok(ticks.length > 0 && d.contains(box) && d.activeElement === box && box.value === "half typed",
+      "a mark the desk wrote on their order leaves the page alone: the thread box keeps its line and the cursor");
+    await call("/desk/orders/" + un + "/" + second, { message: "it is ready" }, D);
+    await poll();
+    ok(!d.contains(box) && /it is ready/.test(d.getElementById("pOrder").textContent),
+      "while a change they can see, his answer, still redraws it, so the check above could have failed");
+  } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
+})();
+
 section("v751: a customer may write a line on an order, at placement and after, and it never reaches a ledger note");
 await (async () => {
   /* his instruction of 20 Sep 2026, and the last part of what he asked at the start of this work:

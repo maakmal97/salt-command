@@ -156,6 +156,19 @@ async function listOrders(env, prefix) {
 /** The customer's own orders, newest first. */
 export const ordersOf = (env, u) => listOrders(env, "order:" + u + ":");
 
+/* WHAT A CUSTOMER'S OWN PAGE IS HANDED (24 Sep 2026). The record also carries the desk's
+   bookkeeping: `ledgerKey`, which names a roster code when this file says nothing here says which
+   account a username is, `queued` and `sync`. Their order list and every answer to a move of theirs
+   carry this view instead. A WHITELIST, so a field the desk adds later stays on the desk until it is
+   named here; and a desk mark, which changes none of these, no longer redraws their page. */
+export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "week",
+  "total", "delivery", "paid", "payments", "moved", "movedOn", "method", "account", "history", "msgs"];
+export const customerView = (o) => {
+  const v = {};
+  for (const k of CUSTOMER_FIELDS) if (o && o[k] !== undefined) v[k] = o[k];
+  return v;
+};
+
 /** Every order still open, or all of them with `all`, across every customer: the desk's read. */
 /* v752: AN ORDER WAITING FOR AN ANSWER IS STILL HIS TO LOOK AT. His card lists the OPEN orders, and
    v751 lets a customer write on any order at any stage, so a question asked about one he has closed

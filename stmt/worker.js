@@ -48,7 +48,7 @@ import { endpointId, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
 import { FONTS } from "./fonts.js";
-import { mintSession, dropSession, sessionUser, ordersOf, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, toChase, CHASE_KEY, hourOf } from "./orders.js";
+import { mintSession, dropSession, sessionUser, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, toChase, CHASE_KEY, hourOf } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -283,10 +283,10 @@ async function handleCustomer(request, env, p, m) {
   const u = await sessionUser(request, env);
   if (!u) return json({ ok: false, error: "Sign in again to see your orders.", session: false }, 401);
   if (p === "/orders") {
-    if (m === "GET") return json({ ok: true, orders: await ordersOf(env, u) });
+    if (m === "GET") return json({ ok: true, orders: (await ordersOf(env, u)).map(customerView) });
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const r = await placeOrder(env, u, await readJson(request));
-    return r.error ? json({ ok: false, error: r.error }, 400) : json({ ok: true, order: r.order });
+    return r.error ? json({ ok: false, error: r.error }, 400) : json({ ok: true, order: customerView(r.order) });
   }
   if (p === "/push/subscribe") {
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -323,7 +323,7 @@ async function handleCustomer(request, env, p, m) {
   if (!mm || !OID_RE.test(mm[1])) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   const r = await customerMove(env, u, mm[1], mm[2], await readJson(request));
-  return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, order: r.order });
+  return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, order: customerView(r.order) });
 }
 
 /* ---- AN ASSOCIATE'S OWN LINKS (v709, his instruction of 18 Sep 2026) --------------------------

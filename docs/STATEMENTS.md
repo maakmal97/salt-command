@@ -362,6 +362,8 @@ repeat with that order, changing nothing. Best effort, KV being eventually consi
 **The order's own put decides the answer**: what is written after it (the shared marks
 `last-placed`, `last-touched`, `last-said`, `last-theirs`, and the request id) is best effort, logged
 when KV refuses it, so a stored move never answers as a failure. A lost mark costs a wake, not a stage.
+**The customer is handed a view, not the record**: their order list and every answer to a move of
+theirs carry `customerView` (`CUSTOMER_FIELDS`, a whitelist), never `ledgerKey`, `queued` or `sync`.
 
 **A DELIVERY SAYS ROUGHLY WHERE IT IS GOING** (v694, his instruction of 18 Sep 2026): `place`, one
 line of at most sixty characters, a neighbourhood and not an address, refused empty on a delivery and
