@@ -430,8 +430,8 @@ the page hands over one link into QR Command for the rail chosen, and the accoun
 are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
 number, payload or reference shipped. **The customer types what they paid** (the site takes no money
 and no rail tells it anything), part payments accumulate, and more than what is outstanding is
-refused. **Cash on handover is withheld** from anyone holding an unpaid advance on another live
-order: settling that at the door is how one advance becomes two. The quote is the customer's claim
+refused. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
+order, the one being paid included: settling that at the door is how one advance becomes two. The quote is the customer's claim
 off his own list: the owner reads the rate against the party's usual on the phone before
 acknowledging, and the drafter flags it again when the row is queued.
 
@@ -475,9 +475,10 @@ had**: until v700 it woke a phone only as a side effect of the desk touching an 
 `wrangler.stmt.jsonc` carries `"triggers": {"crons": ["0 * * * *"]}` and `stmt/worker.js` exports a
 `scheduled()` handler beside `fetch`.
 
-**Who is chased.** `isAdvance(o)` in `stmt/orders.js`: the order is agreed (`ROWED`), something has
-been handed over, and something is still owed, the delivery charge included because that is what the
-customer is asked for. A customer who has paid nothing on an order he has not touched yet is not
+**Who is chased.** `isAdvance(o)` in `stmt/orders.js`: the order is agreed (`ROWED`) and its goods are
+ahead of its money as the engine reads Open · Advance (24 Sep 2026): the share handed over above the
+share of what is owed that is paid, the delivery charge in what is owed because that is what the
+customer is asked for. The same test (`aheadOnGoods`) withholds cash on handover. A customer who has paid nothing on an order he has not touched yet is not
 chased, because nothing of his is in their hands. `toChase(env)` groups them by CUSTOMER.
 
 **How often.** One wake an hour per customer, not per order: two unpaid advances are one person's

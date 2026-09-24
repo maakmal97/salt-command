@@ -207,15 +207,23 @@ export function orderWork(o) {
 
 /* ---- WHO IS CHASED, AND HOW OFTEN (v700, his instruction of 18 Sep 2026) ---------------------
  * "The customer will be notified every hour to pay if it is an advanced order." An advance is the
- * book's own word for goods out with money owed, so that is the test: something has been handed
- * over and something is still outstanding. A customer who has paid nothing on an order he has not
- * touched yet is not chased, because nothing of his is in their hands.
+ * book's own word for goods out ahead of the money, so that is the test, READ AS THE ENGINE READS IT
+ * (24 Sep 2026): the share of the goods handed over above the share of what is owed that is paid
+ * (engine/position.mjs, txStat's Open · Advance). It read "anything moved and anything due" until
+ * then, which chased a customer who had paid for the 2 of 5 units they held, every hour, for the 3
+ * not yet handed over. A customer who has paid nothing on an order he has not touched yet is not
+ * chased, because nothing of his is in their hands.
  *
  * DAY AND NIGHT, HIS WORD, and until it is paid. The cap is one wake an hour per CUSTOMER, not per
  * order: two unpaid advances are one person's problem and one banner, and the banner names no
  * amount and no order anyway.
  */
-export const isAdvance = (o) => !!o && ROWED.includes(o.status) && (+o.moved || 0) > 0.004 && dueOf(o) > 0.004;
+export const aheadOnGoods = (o) => {
+  const owed = +o.total + (+o.delivery || 0), paidF = owed > 0 ? (+o.paid || 0) / owed : 0;
+  const movedF = +o.qty > 0 ? (+o.moved || 0) / +o.qty : 0;
+  return movedF > paidF + 1e-9 && dueOf(o) > 0.004;
+};
+export const isAdvance = (o) => !!o && ROWED.includes(o.status) && aheadOnGoods(o);
 export const CHASE_KEY = (u) => "chased:" + u;
 /** An hour in whole hours since the epoch: the same hour twice is the same bucket, and no clock is read twice. */
 export const hourOf = (at) => Math.floor(new Date(at).getTime() / 3600000);
@@ -276,9 +284,11 @@ export const owedUnits = (o) => +((+o.qty) - (+o.moved || 0)).toFixed(3);
 
 /* CASH ON DELIVERY IS NOT OFFERED TO SOMEONE ALREADY HOLDING GOODS THEY HAVE NOT PAID FOR (his
    instruction, 18 Sep 2026). That is an advance in the book's words, and offering to settle it at
-   the door is how an advance becomes two. Their own orders answer it; nothing here reads the book. */
-export const hasUnpaidAdvance = (orders, exceptId) => (orders || []).some(
-  (o) => o.id !== exceptId && !["cancelled", "declined"].includes(o.status) && (+o.moved || 0) > 0 && dueOf(o) > 0.004);
+   the door is how an advance becomes two. Their own orders answer it; nothing here reads the book.
+   The order being paid counts as well (24 Sep 2026): it was left out, so cash was still offered on
+   the very order whose goods were out ahead of its money. */
+export const hasUnpaidAdvance = (orders) => (orders || []).some(
+  (o) => !["cancelled", "declined"].includes(o.status) && aheadOnGoods(o));
 
 /* A RETRY LANDS ONCE (24 Sep 2026). Place and I have paid are the two taps that ADD: a second
    placement is a second order and a second payment is paid twice. The page mints a request id per
@@ -393,7 +403,7 @@ export async function customerMove(env, u, id, action, body) {
 function pickRail(order, body, mine) {
   const method = String((body && body.method) || "");
   if (!METHODS.includes(method)) return { error: "that is not a way to pay this site offers", status: 400 };
-  if (method === "cod" && hasUnpaidAdvance(mine, order.id))
+  if (method === "cod" && hasUnpaidAdvance(mine))
     return { error: "cash on handover is not offered while goods you already hold are unpaid", status: 409 };
   let account = null;
   if (method === "transfer" || method === "qr" || method === "jompay") {

@@ -1308,7 +1308,9 @@ const CLIENT_JS = `
   /* v694: money and goods are two tracks, so what is still owed and what is still to come are read
      off the order, never off a single word of state. Both figures are the ones the desk holds. */
   function dueOf(o){ return +((o.total+(+o.delivery||0))-(+o.paid||0)).toFixed(2); }
-  function heldUnpaid(exceptId){ return orders.some(function(o){ return o.id!==exceptId&&['cancelled','declined'].indexOf(o.status)<0&&(+o.moved||0)>0&&dueOf(o)>0.004; }); }
+  /* an advance as the engine reads it: the share of the goods handed over above the share paid */
+  function aheadOnGoods(o){ var owed=o.total+(+o.delivery||0), pf=owed>0?(+o.paid||0)/owed:0, mf=o.qty>0?(+o.moved||0)/o.qty:0; return mf>pf+1e-9&&dueOf(o)>0.004; }
+  function heldUnpaid(){ return orders.some(function(o){ return ['cancelled','declined'].indexOf(o.status)<0&&aheadOnGoods(o); }); }
   function orderPane(o){
     var pane=el('div','pane');
     var P=prices&&prices.products&&prices.products.filter(function(x){return x.product===o.product;})[0];
@@ -1396,7 +1398,7 @@ const CLIENT_JS = `
   function payChooser(o){
     var box=el('div','pay');
     box.appendChild(el('p','sub2','How will you pay '+rm(dueOf(o))+'?'));
-    var cur=pick[o.id]||{}, noCod=heldUnpaid(o.id);
+    var cur=pick[o.id]||{}, noCod=heldUnpaid();
     var opts=[['cod', o.mode==='deliver'?'Cash on delivery':'Cash when I collect'],
               ['transfer','DuitNow Transfer, to an account number'],
               ['qr','DuitNow QR, a code I save and scan'],

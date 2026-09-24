@@ -1034,8 +1034,9 @@ export default {
 
   /* ---- THE HOURLY CHASE (v700, his instruction of 18 Sep 2026) --------------------------------
    * "The customer will be notified every hour to pay if it is an advanced order." An advance is
-   * the book's own word for goods out with money owed, and this is the first clock this Worker has
-   * ever had: until now it woke a phone only as a side effect of the desk touching an order.
+   * the book's own word for goods out ahead of the money (isAdvance, as the engine reads it), and
+   * this is the first clock this Worker has ever had: until now it woke a phone only as a side
+   * effect of the desk touching an order.
    *
    * DAY AND NIGHT, HIS WORD, and until it is paid. One wake an hour per CUSTOMER, not per order:
    * two unpaid advances are one person's problem and one banner, and the banner names no amount

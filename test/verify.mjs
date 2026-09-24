@@ -14813,10 +14813,13 @@ await (async () => {
 
   /* ---- 9. CASH ON HANDOVER IS WITHHELD FROM ANYONE HOLDING AN UNPAID ADVANCE ---- */
   const held = [{ id: "a", status: "acknowledged", qty: 2, total: 200, delivery: 0, paid: 0, moved: 2 }];
-  ok(O.hasUnpaidAdvance(held) && !O.hasUnpaidAdvance(held, "a")
+  /* 24 Sep 2026 (stage 1, fold 1.25): as the engine reads it, the goods ahead of the money, and the
+     order being paid counts too, so `held` is an advance to itself; one paid for what it holds is not */
+  ok(O.hasUnpaidAdvance(held)
+    && !O.hasUnpaidAdvance([{ id: "d", status: "acknowledged", qty: 5, total: 500, delivery: 0, paid: 200, moved: 2 }])
     && !O.hasUnpaidAdvance([{ id: "b", status: "acknowledged", qty: 2, total: 200, delivery: 0, paid: 200, moved: 2 }])
     && !O.hasUnpaidAdvance([{ id: "c", status: "cancelled", qty: 2, total: 200, delivery: 0, paid: 0, moved: 2 }]),
-    "an unpaid advance is goods out with money owed, on another live order, and neither a settled one nor a withdrawn one");
+    "an unpaid advance is goods out ahead of the money on a live order, and neither one paid for what it holds, a settled one nor a withdrawn one");
   const o5 = (await J(await post("/orders", { product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, week: "" }, S94))).b.order;
   await post("/desk/orders/" + un94 + "/" + o5.id, { status: "acknowledged" }, D94);
   await post("/desk/orders/" + un94 + "/" + o5.id, { handover: { units: 1 } }, D94);
@@ -15168,8 +15171,9 @@ await (async () => {
   /* ---- the predicate, on records alone ---- */
   const ord = (over) => Object.assign({ id: "o", u: "aaaa-bbbb", status: "acknowledged", qty: 2, total: 200,
     delivery: 0, paid: 0, moved: 0 }, over);
-  ok(O7.isAdvance(ord({ moved: 2, paid: 0 })) && O7.isAdvance(ord({ moved: 1, paid: 100 })),
-    "goods out and money owed is an advance, in part as well as in whole");
+  /* 24 Sep 2026 (stage 1, fold 1.25): half the goods and half the money is not ahead, so it moved to a quarter paid */
+  ok(O7.isAdvance(ord({ moved: 2, paid: 0 })) && O7.isAdvance(ord({ moved: 1, paid: 50 })),
+    "goods out ahead of the money is an advance, in part as well as in whole");
   ok(!O7.isAdvance(ord({ moved: 0, paid: 0 })) && !O7.isAdvance(ord({ moved: 2, paid: 200 }))
     && !O7.isAdvance(ord({ moved: 2, paid: 0, status: "placed" }))
     && !O7.isAdvance(ord({ moved: 2, paid: 0, status: "cancelled" })),
@@ -18010,6 +18014,94 @@ await (async () => {
     ok(!d.contains(box) && /it is ready/.test(d.getElementById("pOrder").textContent),
       "while a change they can see, his answer, still redraws it, so the check above could have failed");
   } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
+})();
+
+section("An advance is the goods ahead of the money, as the engine reads it, for the hourly chase and for cash on handover");
+await (async () => {
+  /* Stage 1 of the Counter redesign, fold 1.25. The chase and the cash rule read "anything moved and
+     anything due", so a customer who paid for the 2 of 5 units handed over was chased every hour for
+     the 3 not yet received; and cash was still offered on the very order whose goods were out ahead
+     of its money. The engine's Open · Advance is the share moved above the share paid. */
+  const O = await import("../stmt/orders.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const ord = (over) => Object.assign({ id: "20260924000000-aa11", u: "aaaa-bbbb", status: "acknowledged", product: "salt", qty: 5, total: 500,
+    delivery: 0, paid: 0, moved: 0, mode: "collect", at: "2026-09-24T01:00:00Z", history: [], msgs: [] }, over);
+  const inStep = ord({ moved: 2, paid: 200 }), ahead = ord({ moved: 2, paid: 100 });
+  ok(!O.isAdvance(inStep) && O.isAdvance(ahead),
+    "2 of 5 handed over and 200 of 500 paid is not an advance; 100 paid is: " + JSON.stringify([O.isAdvance(inStep), O.isAdvance(ahead)]));
+  /* the engine is the reference, not a restatement: the same two orders as ledger rows */
+  const row = (o) => ({ date: "2026-09-24", customer: "CX0-AA", qty: o.qty, total: o.total, delivery: o.delivery, cash: o.paid, deliveredQty: o.moved });
+  ok(PE.txStat(row(inStep)).order !== "Open · Advance" && PE.txStat(row(ahead)).order === "Open · Advance",
+    "which is what the book says of the same two rows: " + JSON.stringify([PE.txStat(row(inStep)).order, PE.txStat(row(ahead)).order]));
+  const withDel = ord({ qty: 2, total: 200, delivery: 20, moved: 1, paid: 110 });
+  ok(!O.isAdvance(withDel) && O.isAdvance(ord({ qty: 2, total: 200, delivery: 20, moved: 1, paid: 100 })),
+    "the delivery charge is part of what is owed, as the engine's txOwed reads it: half the goods and half of 220 is in step");
+
+  /* ---- the chase ---- */
+  const kv = new KV();
+  await kv.put("order:aaaa-bbbb:" + inStep.id, JSON.stringify(inStep));
+  await kv.put("order:cccc-dddd:" + inStep.id, JSON.stringify(Object.assign({}, ahead, { u: "cccc-dddd" })));
+  const chased = (await O.toChase({ STMT: kv })).map((x) => x.u);
+  ok(JSON.stringify(chased) === '["cccc-dddd"]', "the hourly chase asks only the customer whose goods are ahead of their money: " + JSON.stringify(chased));
+
+  /* ---- cash on handover, at the Worker ---- */
+  const un = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("test-secret", un);
+  const skv = new KV();
+  await skv.put("u:" + un, JSON.stringify({ u: un, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C.makeVerifier(pw),
+    wrap: await C.wrapKey(pw, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const call = async (path, body, headers) => { const r = await stmtW.fetch(new Request("https://k7m3p2.example" + path,
+    { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) }), senv);
+    return { status: r.status, b: await r.json() }; };
+  const S = { "X-Stmt-Session": (await call("/open", { u: un, password: pw })).b.session };
+  const D = { "X-Stmt-Desk": "desk-key" };
+  const one = (await call("/orders", { product: "salt", qty: 5, mode: "collect", unit: 100, total: 500, week: "" }, S)).b.order.id;
+  await call("/desk/orders/" + un + "/" + one, { status: "acknowledged" }, D);
+  await call("/orders/" + one + "/pay", { amount: 200, method: "tngbiz" }, S);
+  await call("/desk/orders/" + un + "/" + one, { handover: { units: 2 } }, D);
+  const inStepCod = await call("/orders/" + one + "/method", { method: "cod" }, S);
+  ok(inStepCod.status === 200 && inStepCod.b.order.method === "cod",
+    "an order paid for what it holds may still settle the rest in cash on handover: " + JSON.stringify({ status: inStepCod.status, error: inStepCod.b.error }));
+  const two = (await call("/orders", { product: "salt", qty: 2, mode: "collect", unit: 100, total: 200, week: "" }, S)).b.order.id;
+  await call("/desk/orders/" + un + "/" + two, { status: "acknowledged" }, D);
+  await call("/desk/orders/" + un + "/" + two, { handover: { units: 1 } }, D);
+  const own = await call("/orders/" + two + "/method", { method: "cod" }, S);
+  ok(own.status === 409 && (await call("/orders/" + two + "/method", { method: "tngbiz" }, S)).b.ok,
+    "an order whose own goods are out ahead of its money is not offered cash on handover, and every other rail still is: " + own.status);
+
+  /* ---- the chooser on the page ---- */
+  const { JSDOM: JD } = await import("jsdom");
+  const list = { at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 100, orders: 4, basis: "yours", sizes: [{ q: 1, price: 100 }] }], soon: [] };
+  const body = { ok: true, wrap: await C.wrapKey(pw, ck), session: "fixture-session-token-adv-abcdefgh",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await C.encryptWith(ck, JSON.stringify(list)) };
+  const door = await (await stmtW.fetch(new Request("https://k7m3p2.example/?u=" + un), senv)).text();
+  const rails = async (o) => {
+    const dom = new JD(door, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path) => { const p = String(path);
+        const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: [o] } : { ok: false };
+        return { ok: !!j.ok, status: j.ok ? 200 : 404, json: async () => j }; };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = un; d.getElementById("pw").value = pw;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 150 && !d.querySelector('button[data-t="order"]'); i++) await new Promise((r) => setTimeout(r, 20));
+      d.querySelector('button[data-t="order"]').click();
+      for (let i = 0; i < 150 && !d.querySelector('#pOrder input[name="pm-' + o.id + '"]'); i++) await new Promise((r) => setTimeout(r, 20));
+      return [...d.querySelectorAll('#pOrder input[name="pm-' + o.id + '"]')].map((r) => r.value);
+    } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
+  };
+  const railsAhead = await rails(ord({ moved: 2, paid: 0 })), railsInStep = await rails(ord({ moved: 2, paid: 200 }));
+  ok(railsAhead.length > 0 && !railsAhead.includes("cod") && railsInStep.includes("cod"),
+    "the chooser on an order moved and unpaid offers no cash, and on one paid for what it holds it does: " + JSON.stringify({ railsAhead, railsInStep }));
 })();
 
 section("v751: a customer may write a line on an order, at placement and after, and it never reaches a ledger note");
