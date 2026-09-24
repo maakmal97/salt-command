@@ -446,10 +446,16 @@ const fileRid = (env, u, rid, id) => (rid ? putSoft(env, RID_KEY(u, rid), JSON.s
 export const mintOrderId = (at) => at.replace(/[-:.TZ]/g, "").slice(0, 14) + "-"
   + b64url(crypto.getRandomValues(new Uint8Array(4))).toLowerCase().replace(/[^a-z0-9]/g, "x");
 
-/** A placement, checked against the customer's open orders. Returns { ev } or { error }. */
-export function decidePlace(u, body, open, at) {
+/* S4 4.2: THE LIST MOVED. Place carries the stamp of the list the page quoted from, and `digest` is the stamp on the
+   account's record now (tools/pricelist.mjs priceDigest): two strings compared, and nothing here reads a price. It is
+   checked after the order's own checks, so a 409 says the price and nothing else is in the way. */
+export const PRICES_MOVED = "prices moved";
+
+/** A placement, checked against the customer's open orders and the account's list now. Returns { ev } or { error }. */
+export function decidePlace(u, body, open, at, digest) {
   const c = checkPlacement(body, open);
   if (c.error) return { error: c.error };
+  if (String(body.digest || "") !== String(digest || "")) return { error: PRICES_MOVED };
   const order = Object.assign({ id: mintOrderId(at), u, at, status: "placed", paid: 0, payments: [], moved: 0, movedOn: null,
     msgs: c.note ? [{ at, by: "customer", text: c.note }] : [],   /* v751: the line they typed with the order is its first message */
     history: [{ at, status: "placed", by: "customer" }] }, c.order);
@@ -688,9 +694,12 @@ export async function dropOrders(env, u) {
 }
 
 export async function placeOrder(env, u, body) {
+  /* S4 4.2: the account's list as it stands; a moved list is answered with itself, sealed, for the page to re-open */
+  const rec = await env.STMT.get("u:" + u, "json"), prices = (rec && rec.prices) || null, digest = (prices && prices.digest) || "";
+  const moved = (r) => (r.error === PRICES_MOVED ? { error: r.error, status: 409, prices } : r);
   if (onBook(env)) {
-    const rid = ridOf(body), r = await bookMove(env, "place", { u, body, rid });
-    if (r.error) return r;
+    const rid = ridOf(body), r = await bookMove(env, "place", { u, body, rid, digest });
+    if (r.error) return moved(r);
     /* in the week of reading both the id is filed for the KV road too, so a retry after a flip back lands once (S10 fix DS4) */
     if (readsBoth(env) && !r.again) await fileRid(env, u, rid, r.order.id);
     return { order: r.order };
@@ -698,8 +707,8 @@ export async function placeOrder(env, u, body) {
   const rid = ridOf(body), again = await repeatOf(env, u, rid);
   if (again) return again;
   const open = (await ordersOf(env, u)).filter((o) => OPEN_STATES.includes(o.status));
-  const d = decidePlace(u, body, open, new Date().toISOString());
-  if (d.error) return { error: d.error };
+  const d = decidePlace(u, body, open, new Date().toISOString(), digest);
+  if (d.error) return moved({ error: d.error });
   const { order } = applyEvent(null, d.ev);
   await env.STMT.put(OKEY(u, order.id), JSON.stringify(order));
   await markRoad(env);

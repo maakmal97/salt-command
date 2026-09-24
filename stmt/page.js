@@ -1396,7 +1396,7 @@ const CLIENT_JS = `
           var r=await api('/orders',{product:P.product,qty:qt.q,mode:draft.mode,unit:qt.unit,total:qt.total,
             place:draft.mode==='deliver'?draft.place.trim():'',forFriend:!!(assoc&&draft.forFriend),
             note:String(draft.say||'').trim(), rid:draft.rid,
-            week:(prices.week&&prices.week.monday)||''});
+            week:(prices.week&&prices.week.monday)||'', digest:prices.digest||''});
           if(mine!==ticket) return;
           draft.busy=false;
           if(!r.body.ok){ draft.note=r.body.error||'The order was not placed.'; }

@@ -12835,6 +12835,61 @@ await (async () => {
   } finally { rm41(tmp41, { recursive: true, force: true }); }
 })();
 
+section("S4 4.2: Place carries the stamp of the list it was read from, and a moved list answers 409 with itself, on both roads");
+await (async () => {
+  /* The site compares two strings and prices nothing: the stamp Place carries against the one on the account's record
+     now. A moved list is refused with the list as it stands, sealed, so the page can show the new price before placing,
+     and a retry of a placement that landed is answered with its order whatever has moved since. Each assertion below
+     was proved red by its own mutation. */
+  const O42 = await import("../stmt/orders.js");
+  const SW42 = (await import("../stmt/worker.js")).default;
+  const H42 = await import("../test/orderbook-harness.mjs");
+  const u42 = "k7m3-p2q4";
+  /* the record's list as the publish writes it: the stamp in the clear beside an envelope the site cannot open */
+  const sealed42 = (digest) => Object.assign({ at: "2026-09-24T02:05:00.000Z", week: "2026-09-21" }, digest ? { digest } : {},
+    { v: 2, iv: "aXZpdml2aXZpdml2", ct: "Y2lwaGVydGV4dA" });
+  const run42 = async (store) => {
+    const kv = new KV(), bk = H42.orderBook({});
+    const env = Object.assign({ STMT: kv, STMT_DESK_KEY: "desk-key" }, store ? { ORDERBOOK: bk.ns, ORDER_STORE: store } : {});
+    const tok = await O42.mintSession(env, u42);
+    const setList = (digest) => kv.put("u:" + u42, JSON.stringify({ u: u42, issued: "2026-09-01", prices: sealed42(digest) }));
+    const place = async (body) => {
+      const r = await SW42.fetch(new Request("https://k7m3p2.example/orders", { method: "POST",
+        headers: { "content-type": "application/json", "X-Stmt-Session": tok }, body: JSON.stringify(body) }), env);
+      return { status: r.status, b: await r.json() };
+    };
+    const count = async () => (await O42.ordersOf(env, u42)).length;
+    const order = (extra) => Object.assign({ product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, week: "2026-09-21" }, extra);
+    const rid = (s) => s.repeat(16).slice(0, 32);
+    await setList("d-one");
+    const same = await place(order({ digest: "d-one", rid: rid("s1") }));
+    const stale = await place(order({ digest: "d-old", rid: rid("s2") }));
+    const bare = await place(order({ rid: rid("s3") }));
+    const n1 = await count();
+    await setList("d-two");
+    const retry = await place(order({ digest: "d-one", rid: rid("s1") }));
+    const own = await place(order({ digest: "d-old", mode: "fly", rid: rid("s4") }));
+    await setList(null);
+    const unstamped = await place(order({ rid: rid("s5") }));
+    return { same, stale, bare, n1, retry, own, unstamped, n2: await count() };
+  };
+  for (const store of [null, "object", "object+kv"]) {
+    const nm = store || "kv", R = await run42(store);
+    ok(R.same.status === 200 && R.same.b.ok === true && R.same.b.order && R.same.b.order.total === 120,
+      nm + ": a placement carrying the stamp on the account's list now is placed: " + JSON.stringify([R.same.status, R.same.b.error]));
+    ok(R.stale.status === 409 && R.stale.b.ok === false && R.stale.b.error === "prices moved" && JSON.stringify(R.stale.b.prices) === JSON.stringify(sealed42("d-one"))
+      && R.bare.status === 409 && R.bare.b.error === "prices moved" && R.n1 === 1,
+      nm + ": a placement carrying an older stamp, or none, is refused 409 with the account's list as it stands, sealed, and places nothing: "
+        + JSON.stringify([R.stale.status, R.stale.b, R.bare.status, R.n1]));
+    ok(R.retry.status === 200 && R.retry.b.ok === true && R.same.b.order && R.retry.b.order && R.retry.b.order.id === R.same.b.order.id,
+      nm + ": a retry of a placement that landed is answered with its order after the list has moved, never refused: " + JSON.stringify([R.retry.status, R.retry.b.error]));
+    ok(R.own.status === 400 && R.own.b.ok === false && R.own.b.error && R.own.b.error !== "prices moved" && !("prices" in R.own.b),
+      nm + ": an order refused on its own terms says so, and not that the price moved: " + JSON.stringify([R.own.status, R.own.b.error]));
+    ok(R.unstamped.status === 200 && R.unstamped.b.ok === true && R.n2 === 2,
+      nm + ": a list published before the stamp, and a page sending none, still place: " + JSON.stringify([R.unstamped.status, R.unstamped.b.error, R.n2]));
+  }
+})();
+
 section("v651: a customer's price is their tier for each product, and a product with no tier reads price coming soon and cannot be ordered");
 await (async () => {
   /* HIS DECISIONS OF 15 SEP 2026. The tier for the product is a ceiling: its price at each size, held or proposed, lowered by
@@ -23701,7 +23756,7 @@ await (async () => {
   const { webcrypto: wcN } = await import("node:crypto");
   const { JSDOM: JDN } = await import("jsdom");
   const u = "abcd-efgh", pass = "fixture-pass-m20", ck = await CN.contentKey("test-secret", u);
-  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [], digest: "d-m20",
     products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 120 }, { q: 2, price: 230 }] }] };
   const body = { ok: true, wrap: await CN.wrapKey(pass, ck), session: "sess-m20",
     env: await CN.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
@@ -23740,8 +23795,8 @@ await (async () => {
       "with the check-over open both fields are read-only, and the list and the field still say the same place: " + where());
     button("Place this order").click();
     for (let i = 0; i < 100 && !/Placed\./.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
-    ok(posted.length === 1 && posted[0].place === "Old market" && posted[0].note === "Ring the bell",
-      "Place sends exactly the place and the line the check-over showed: " + JSON.stringify(posted.map((x) => [x.place, x.note])));
+    ok(posted.length === 1 && posted[0].place === "Old market" && posted[0].note === "Ring the bell" && posted[0].digest === "d-m20",
+      "Place sends exactly the place and the line the check-over showed, and the stamp of the list it read (S4 4.2): " + JSON.stringify(posted.map((x) => [x.place, x.note, x.digest])));
     /* and the way back opens them again */
     button("Deliver to me").click();
     type(field("Roughly where it is going"), "Old market");
