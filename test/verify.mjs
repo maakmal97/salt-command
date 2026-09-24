@@ -22802,13 +22802,15 @@ await (async () => {
       for (let i = 0; i < 150 && !d.querySelector('#pOrder [data-row="' + o.id + '"]'); i++) await new Promise((r) => setTimeout(r, 20));
       const row = d.querySelector('#pOrder [data-row="' + o.id + '"]'); if (row) row.click();
       const pay = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
-      for (let i = 0; i < 150 && !d.querySelector('#pOrder input[name="pm-' + o.id + '"]'); i++) await new Promise((r) => setTimeout(r, 20));
-      return [...d.querySelectorAll('#pOrder input[name="pm-' + o.id + '"]')].map((r) => r.value);
+      /* S6 6.8: the ways are the pay sheet's tiles; cash withheld is shown, dashed and off, with the reason as its line */
+      for (let i = 0; i < 150 && !d.querySelector('#payBody input[name="payHow"]'); i++) await new Promise((r) => setTimeout(r, 20));
+      return [...d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value + (r.disabled ? ":off " + r.nextSibling.querySelector(".salt-option__detail").textContent : ""));
     } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
   };
   const railsAhead = await rails(ord({ moved: 2, paid: 0 })), railsInStep = await rails(ord({ moved: 2, paid: 200 }));
-  ok(railsAhead.length > 0 && !railsAhead.includes("cod") && railsInStep.includes("cod"),
-    "the chooser on an order moved and unpaid offers no cash, and on one paid for what it holds it does: " + JSON.stringify({ railsAhead, railsInStep }));
+  ok(railsAhead.length === 3 && railsAhead.includes("cod:off Not offered while goods you already have are unpaid. Pay for those first and it comes back.")
+    && !railsAhead.includes("cod") && railsInStep.includes("cod"),
+    "the pay sheet on an order moved and unpaid does not offer cash and says why, and on one paid for what it holds it offers it: " + JSON.stringify({ railsAhead, railsInStep }));
 })();
 
 section("S10 10.1: one Durable Object for the site's orders is bound, SQLite-backed, and idle");
@@ -23042,10 +23044,14 @@ await (async () => {
     d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
     const payNow = () => [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent));
     await until(payNow); if (payNow()) payNow().click();
-    await until(() => d.querySelector('#pOrder input[name="pm-' + ord.id + '"][value="tngbiz"]'));
-    const r = d.querySelector('#pOrder input[name="pm-' + ord.id + '"][value="tngbiz"]');
-    r.checked = true; r.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    await tap("Confirm", "method", 1); await tap("Confirm", "method", 2);
+    /* S6 6.8: the rail a customer chooses on the site is cash, in the pay sheet; its id is carried as Confirm's was */
+    await until(() => d.querySelector('#payBody input[name="payHow"][value="cod"]'));
+    const r = d.querySelector('#payBody input[name="payHow"][value="cod"]');
+    if (r) { r.checked = true; r.dispatchEvent(new dom.window.Event("change", { bubbles: true })); }
+    const cashTap = async (n) => { await until(() => d.getElementById("payGo") && !d.getElementById("payGo").disabled);
+      d.getElementById("payGo").click(); await until(() => sent.method.length === n); await new Promise((q) => setTimeout(q, 120)); };
+    await cashTap(1); await cashTap(2);
+    const x = d.getElementById("payX"); if (x) x.click();
     const say = () => d.querySelector('#pOrder input[data-say="' + ord.id + '"]');
     const type = async (t) => { await until(say); say().value = t; say().dispatchEvent(new dom.window.Event("input", { bubbles: true })); };
     /* S5 5.4: a line that did not go stands in the thread, and Tap to try again sends it again under its own id */
@@ -23058,7 +23064,8 @@ await (async () => {
     const ids = (k) => sent[k].map((x) => x && x.rid);
     const good = (a) => a.every((x) => O.RID_RE.test(x || ""));
     const mi = ids("method"), si = ids("say"), ci = ids("cancel");
-    ok(good(mi) && mi.length === 2 && mi[1] === mi[0], "Confirm sends an id, and tapped again after it failed, the same one: " + JSON.stringify(mi));
+    ok(good(mi) && mi.length === 2 && mi[1] === mi[0] && sent.method.every((m) => m && m.method === "cod"),
+      "Pay in cash sends an id, and tapped again after it failed, the same one: " + JSON.stringify(mi));
     ok(good(si) && si.length === 5 && si[1] === si[0] && si[2] !== si[0] && si[4] !== si[3],
       "Send sends an id per line: the same line tried again carries it, another line a new one, and a line once recorded never lends its id to the next: " + JSON.stringify(si));
     ok(good(ci) && ci.length === 4 && ci[1] === ci[0] && ci[2] === ci[0] && ci[3] !== ci[0],
@@ -31075,6 +31082,71 @@ await (async () => {
     && ord.tab === "Order" && ord.form,
     "a claim waiting on him, on the account or on an order, reopens ordering, and To pay now says it was sent and is waiting: "
     + JSON.stringify({ acct: [acct.tab, acct.head, acct.form, acct.claimLine], ord: [ord.tab, ord.form] }));
+})();
+
+section("S6 6.8: cash when it arrives is an order's third way where the rule allows, says why where it does not, and is never declared as sent");
+await (async () => {
+  /* STAGE 6 OF THE COUNTER REDESIGN. Cash is his to record when he takes it (S11 11.8), so choosing it tells him how
+     they will pay and nothing more; it is never on To pay now's sheet, whose goods they already have. Where it is
+     withheld (goods held unpaid) the tile says why (the section above drives that). Forced state: an order confirmed
+     and not handed over, and RM 70 to pay now. */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s68", ck = await C.contentKey("test-secret", u);
+  const pay = { term: 10, now: { rm: 70, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s68",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 70, pay })) };
+  const st = { method: null, sent: [] };
+  const list = () => [{ id: "oA", product: "salt", qty: 1, mode: "collect", total: 110, delivery: 0, paid: 0, moved: 0, at: "2026-09-20T03:00:00Z",
+    status: "acknowledged", history: [], msgs: [], method: st.method }];
+  const dom = new JD(lp(u, "ns68", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
+      const res = (x) => ({ ok: !!x, status: x ? 200 : 404, json: async () => x || { ok: false } });
+      if (p === "/open") return res(body);
+      if (p === "/orders" && m === "GET") return res({ ok: true, orders: list(), claims: [] });
+      if (p === "/orders/oA/method") { st.sent.push(j); st.method = j.method; return res({ ok: true }); }
+      return res(null);
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const ways = () => [...d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value + (r.disabled ? ":off" : ""));
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => d.getElementById("payNow"));
+    d.getElementById("payNow").click();
+    const onAccount = ways();
+    d.getElementById("payX").click();
+    d.querySelector('button[data-t="order"]').click();
+    await until(() => d.querySelector('#pOrder [data-row="oA"]'));
+    d.querySelector('#pOrder [data-row="oA"]').click();
+    const payO = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b))); if (payO) payO.click();
+    const onOrder = ways(), label = t([...d.querySelectorAll("#payBody .salt-option__label")].pop());
+    const r = d.querySelector('#payBody input[name="payHow"][value="cod"]'); if (r) { r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); }
+    const chosen = { into: !!d.getElementById("payInto"), ref: !!d.querySelector("#payBody .payref"), part: !!d.querySelector("#payBody .payseg"),
+      go: t(d.getElementById("payGo")) + ":" + d.getElementById("payGo").tagName, cap: t(d.querySelector("#payFoot .paycap")) };
+    ok(JSON.stringify(onAccount) === '["transfer","qr"]' && JSON.stringify(onOrder) === '["transfer","qr","cod"]' && label === "Cash when you collect"
+      && !chosen.into && !chosen.ref && !chosen.part && chosen.go === "Pay in cash when I collect:BUTTON"
+      && chosen.cap === "We record it when we take it, so there is nothing to tell us afterwards.",
+      "To pay now's sheet has no cash; an order's has a third way, cash when you collect, which asks for no account, reference or figure: "
+      + JSON.stringify({ onAccount, onOrder, label, chosen }));
+    d.getElementById("payGo").click();
+    await until(() => st.sent.length === 1 && d.getElementById("paySheet").hidden && /In cash when you collect/.test(t(d.querySelector("#pOrder .oscreen"))));
+    const scr = d.querySelector("#pOrder .oscreen");
+    ok(st.sent.length === 1 && st.sent[0].method === "cod" && !("amount" in st.sent[0]) && !!st.sent[0].rid
+      && /You pay in cash when you collect\. We record it when we take it\./.test(t(scr)) && /Still to payRM 110In cash when you collect/.test(scr.querySelector('[data-part="money"]').textContent),
+      "choosing it sends the choice and no figure, and the order then says it is paid in cash at the handover, recorded by us: " + JSON.stringify(st.sent));
+  } finally { w.close(); }
 })();
 
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");

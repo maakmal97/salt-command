@@ -426,6 +426,7 @@ const GLYPH = {
   paste: "M7.6 4.8 H16.4 A2 2 0 0 1 18.4 6.8 V18.4 A2 2 0 0 1 16.4 20.4 H7.6 A2 2 0 0 1 5.6 18.4 V6.8 A2 2 0 0 1 7.6 4.8 Z M9.2 4.8 V3.4 H14.8 V4.8 M9 10.2 H15 M9 13.6 H15 M9 17 H12.6",
   bank: "M3.8 9.4 L12 4.6 L20.2 9.4 Z M5.8 10.6 V16.8 M9.9 10.6 V16.8 M14.1 10.6 V16.8 M18.2 10.6 V16.8 M3.8 19.4 H20.2",
   qr: "M4.2 4.2 H10 V10 H4.2 Z M14 4.2 H19.8 V10 H14 Z M4.2 14 H10 V19.8 H4.2 Z M14 14 H16.4 V16.4 H14 Z M17.6 17.6 H19.8 V19.8 H17.6 Z M14 17.6 V19.8 M17.6 14 H19.8",
+  cash: "M3.6 7 H20.4 V17 H3.6 Z M12 9.6 A2.4 2.4 0 1 1 12 14.4 A2.4 2.4 0 1 1 12 9.6 Z M6.4 12 H7.4 M16.6 12 H17.6",
   copy: "M10.6 8.6 H17.4 A2 2 0 0 1 19.4 10.6 V17.4 A2 2 0 0 1 17.4 19.4 H10.6 A2 2 0 0 1 8.6 17.4 V10.6 A2 2 0 0 1 10.6 8.6 Z M15.4 8.6 V6.6 A2 2 0 0 0 13.4 4.6 H6.6 A2 2 0 0 0 4.6 6.6 V13.4 A2 2 0 0 0 6.6 15.4 H8.6",
   vdots: "M10.6 6.5 A1.4 1.4 0 1 0 13.4 6.5 A1.4 1.4 0 1 0 10.6 6.5 Z M10.6 12 A1.4 1.4 0 1 0 13.4 12 A1.4 1.4 0 1 0 10.6 12 Z M10.6 17.5 A1.4 1.4 0 1 0 13.4 17.5 A1.4 1.4 0 1 0 10.6 17.5 Z",
 };
@@ -769,7 +770,7 @@ export function landingPage(user, nonce, owner, bulletin) {
       .replace("__PSYM__", JSON.stringify(Object.assign({ _: RING }, PSYM)))
       .replace("__PSHAPE__", JSON.stringify(PSHAPE)).replace("__MON3__", JSON.stringify(MON3))
       /* S6 6.4: the pay sheet's three marks, and the one link into the pay page, its source carried as it is */
-      .replace("__GLYPH__", JSON.stringify({ bank: GLYPH.bank, qr: GLYPH.qr, copy: GLYPH.copy }))
+      .replace("__GLYPH__", JSON.stringify({ bank: GLYPH.bank, qr: GLYPH.qr, copy: GLYPH.copy, cash: GLYPH.cash }))
       .replace("/*__PAYHREF__*/", () => payHref.toString())
       /* "<" is escaped because this one carries the master passphrase, and a "</script>" inside a
          string literal ends the block wherever it appears: the browser closes the tag first and
@@ -2172,7 +2173,7 @@ const CLIENT_JS = `
     if(oPayable(o)){
       var tp=oToPay(o), mv=+o.moved||0;
       L.appendChild(tp>0.004
-        ?lrow('Still to pay',rm(tp),mv>0?(movedAll(o)?'The goods are with you':'Part of the goods is with you'):(d?'Now, or when it arrives':'Now, or when you collect'),'odue')
+        ?lrow('Still to pay',rm(tp),mv>0?(movedAll(o)?'The goods are with you':'Part of the goods is with you'):o.method==='cod'?(d?'In cash when it arrives':'In cash when you collect'):(d?'Now, or when it arrives':'Now, or when you collect'),'odue')
         :lrow('Still to pay',rm(0),claimed>0?'Sent, waiting for us to confirm':'Paid in full'));
     }
     return L;
@@ -2542,19 +2543,43 @@ const CLIENT_JS = `
   function payAmt(){ if(!PS.part) return PS.ctx.fig; var v=parseFloat(PS.amt); return v>0&&v<=PS.ctx.fig+0.004?+v.toFixed(2):0; }
   function payTitle(){ document.getElementById('payT').textContent='Pay '+rm(payAmt()||PS.ctx.fig); }
   var HOW=[{v:'transfer', label:'Transfer to an account', g:'bank'}, {v:'qr', label:'Scan a code', g:'qr', detail:'DuitNow QR, any bank or e-wallet'}];
+  /* ---- S6 6.8: CASH WHEN IT ARRIVES, OFFERED ONLY WHERE THE RULE ALLOWS, AND SAYING WHY WHEN NOT. A third way on an
+     order's sheet, never on To pay now's, whose goods they already have. Withheld while goods they hold are unpaid, this
+     order's own included (v694): the tile stays, dashed, with the reason in place of its line. Choosing it tells him how
+     they will pay; the cash itself is his to record when he takes it, so the customer never declares it. */
+  function cashWay(){
+    var o=oFind(PS.ctx.id), d=o&&o.mode==='deliver', no=heldUnpaid();
+    return {v:'cod', label:d?'Cash when it arrives':'Cash when you collect', g:'cash', off:no,
+      detail:no?'Not offered while goods you already have are unpaid. Pay for those first and it comes back.':'Paid to us at the handover. We record it when we take it.'};
+  }
+  function cashWord(){ var o=oFind(PS.ctx.id); return o&&o.mode==='deliver'?'Pay in cash when it arrives':'Pay in cash when I collect'; }
+  async function cashSend(){
+    if(!PS||PS.busy) return;
+    var ps=PS, id=ps.ctx.id, mine=ticket;
+    ps.busy=true; ps.said=''; drawPayFoot();
+    var r=await api('/orders/'+encodeURIComponent(id)+'/method',{method:'cod', rid:ridFor(id+':method','cod')});
+    if(mine!==ticket||PS!==ps) return;
+    ps.busy=false;
+    if(!(r.body&&r.body.ok)){ ps.said=(r.body&&r.body.error)||'The choice was not recorded.'; drawPayFoot(); return; }
+    ridDone(id+':method'); closePay();
+    var o=oFind(id); if(o) tapSaid(o,'pay','You pay in cash '+(o.mode==='deliver'?'when it arrives':'when you collect')+'. We record it when we take it.');
+    await loadOrders(); if(mine!==ticket) return;
+    setHold(); drawOrder(); drawPayHead();
+  }
   function drawPay(){
     if(PS.step==='check'){ drawCheck(); return; }
     var body=document.getElementById('payBody'), c=PS.ctx;
     body.textContent=''; payTitle();
     body.appendChild(kpiTile('ember',c.label,rm(c.fig),c.note()));
+    var cash=PS.rail==='cod';
     var seg=el('div','payseg');
     [[false,'All, '+rm(c.fig)],[true,'Part of it']].forEach(function(x){
       var b=el('button','salt-ghost',x[1]); b.type='button'; b.setAttribute('aria-pressed',PS.part===x[0]?'true':'false');
       b.addEventListener('click',function(){ PS.part=x[0]; drawPay(); var f=document.getElementById('payAmt'); if(f) try{ f.focus(); }catch(e){} });
       seg.appendChild(b);
     });
-    body.appendChild(seg);
-    if(PS.part){
+    if(!cash) body.appendChild(seg);
+    if(PS.part&&!cash){
       var row=el('div','payamt'); row.appendChild(el('span','cur','RM'));
       var inp=el('input','fld salt-field__input salt-field__input--mono'); inp.id='payAmt'; inp.type='number'; inp.min='0'; inp.step='0.01'; inp.inputMode='decimal';
       inp.value=PS.amt; inp.setAttribute('aria-label','How much you are paying, in ringgit');
@@ -2564,10 +2589,10 @@ const CLIENT_JS = `
     }
     var fs=el('fieldset','salt-options payhow'), g=el('div','salt-options__grid');
     fs.appendChild(el('legend','salt-options__legend','How you pay'));
-    HOW.forEach(function(w){
+    HOW.concat(c.kind==='order'?[cashWay()]:[]).forEach(function(w){
       var lab=el('label','salt-option'), r=el('input','salt-option__input'), face=el('span','salt-option__face'),
           ld=el('span','salt-option__lead'), tx=el('span','salt-option__text'), a=w.v==='transfer'&&PS.rail==='transfer'&&acct(PS.acct);
-      r.type='radio'; r.name='payHow'; r.value=w.v; r.checked=PS.rail===w.v;
+      r.type='radio'; r.name='payHow'; r.value=w.v; r.checked=PS.rail===w.v; r.disabled=!!w.off;
       r.addEventListener('change',function(){ PS.rail=w.v; if(!payInto(w.v,payAmt()||c.fig).some(function(x){ return x.key===PS.acct; })) PS.acct=''; drawPay(); });
       ld.appendChild(glyph(w.g,22)); face.appendChild(ld);
       tx.appendChild(el('span','salt-option__label',w.label));
@@ -2575,7 +2600,7 @@ const CLIENT_JS = `
       face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); g.appendChild(lab);
     });
     fs.appendChild(g); body.appendChild(fs);
-    if(PS.rail){
+    if(PS.rail&&!cash){
       var fw=el('div','salt-field payinto'), lb=el('label','salt-field__label','Pay into'), sel=el('select','fld salt-field__input');
       lb.htmlFor='payInto'; sel.id='payInto';
       var o0=el('option',null,'Choose one of our accounts'); o0.value=''; sel.appendChild(o0);
@@ -2591,7 +2616,7 @@ const CLIENT_JS = `
       if(!PS) return; PS.said=t; said.textContent=t; said.hidden=false;
     });
     rr.querySelector('.salt-ledger__value').appendChild(cp);
-    L.appendChild(rr); body.appendChild(L); body.appendChild(said);
+    L.appendChild(rr); if(!cash){ body.appendChild(L); body.appendChild(said); }
     drawPayFoot();
   }
   /* the one filled control, and above it what it opens or what is still to choose */
@@ -2599,6 +2624,13 @@ const CLIENT_JS = `
     var foot=document.getElementById('payFoot'), a=payAmt(), qr=PS.rail==='qr', word=qr?'Show the code':'Show the account number',
         href=PS.rail&&PS.acct&&a?payHref(PS.acct,PS.rail,a,user):'';
     foot.textContent='';
+    if(PS.rail==='cod'){
+      foot.appendChild(el('p','paycap','We record it when we take it, so there is nothing to tell us afterwards.'));
+      var cb=el('button','salt-pill salt-pill--md',cashWord()); cb.type='button'; cb.id='payGo'; cb.disabled=!!PS.busy;
+      cb.addEventListener('click',cashSend); foot.appendChild(cb);
+      if(PS.said){ var l=statusLine(PS.said); l.className+=' paysaid'; foot.appendChild(l); }
+      return;
+    }
     foot.appendChild(el('p','paycap',href?'Opens our payment page with the '+(qr?'code':'account number')+'. Come back here after paying.'
       :!a?'Say how much you are paying, up to '+rm(PS.ctx.fig)+'.':!PS.rail?'Choose how you are paying.':'Choose which of our accounts to pay into.'));
     var go;

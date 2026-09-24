@@ -567,7 +567,9 @@ and `PAY`, the names `CLIENT_JS` declares, so the page carries `payHref.toString
 back through QR Command's own `linkOf`, so a format change ships there first. **The customer types
 what they paid** (the site takes no money and no rail tells it anything), part payments accumulate, and more than what is outstanding is
 refused. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
-order, the one being paid included: settling that at the door is how one advance becomes two. The quote is the customer's claim
+order, the one being paid included: settling that at the door is how one advance becomes two. It is an
+order sheet's third way (S6 6.8), never To pay now's, shown dashed with that reason where withheld;
+choosing it sends no figure, because he records the cash when he takes it. The quote is the customer's claim
 off his own list: the owner reads the rate against the party's usual on the phone before
 acknowledging, and the drafter flags it again when the row is queued.
 
