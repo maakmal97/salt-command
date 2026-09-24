@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="b3bd500898a9703b";
+var SALT_BUILD_ID="5b2f3efaddd5469d";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -8400,7 +8400,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v839","d":"25 Sep 2026","t":"A WALK-IN CAN SIGN IN ON DAY ONE","n":["<b>STAGE 14 OF THE REDESIGN</b> (his answer D15 of 24 Sep 2026). The laptop mints a pool of spare accounts (node tools/stmt-account.mjs --pool, ten by default, refusing without the master): each a username, a record with an empty bundle and its password sealed under the master, marked spare in the clear. The publish writes a spare like any account, never retires one and lists none as a customer; the door treats a spare as no account at all.","<b>BOUND AT ADD ID.</b> The fold binds the next free spare to a new code where the username is minted today, so the binding lives in the repo and needs no key in CI; the next publish seals the customer's statement and prices into it and the account opens by password and by link. With no spare free it falls back to today's road, and Salt Admin says: Made at the next laptop update; until then, show the Silver link. The gate refuses two codes on one username, and the pool mint proves the content key as well as the master."]}];
+const evolution=[{"v":"v840","d":"25 Sep 2026","t":"A GUEST KNOWS WHAT TO DO NEXT, AND THE WORD CHECKS READ MALAY","n":["<b>STAGES 8 AND 13, THE FIRST PART</b> (his answers D12 and D13 of 24 Sep 2026). The guest board ends with its next step, To order, reply to the person who sent you this link, and every shut link, unknown, withdrawn, declined or waiting, answers one styled page with the same words, so the door gives nothing away. An associate's reward line says how to take it: Ask on any order to take it.","<b>KEPT OUT OF THE TRANSLATOR.</b> Every Counter page carries translate=\"no\", so Chrome never offers to send an opened statement to a translator.","<b>THE WORD CHECKS READ MALAY.</b> siteWords and the desk's siteSafe refuse a level's Malay name after a cue (tahap emas, ahli gangsa, Keahlian Emas) while ordinary Malay passes (Ipoh, Perak; peluang emas), warn on every book's name and its Malay word (garam, minyak, gula-gula, beras), and every scan in the suite reads the same lists. His answer on an order asks before sending a line that warns, as the bulletin does."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8515,7 +8515,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Sep 2026, 00:40 KL';
+const LAST_UPDATED='25 Sep 2026, 01:06 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -19112,12 +19112,21 @@ async function ordLoad(quiet){
    being the one place that may hold its own name: a customer's page never names the desk, a roster code or a
    level, and a product is a mark there rather than a word, so a product's name warns and is his to allow. ---- */
 let BULL_MODE='run';
+/* S13 13.2 (his decision D12, 24 Sep 2026): the same words in Malay, mirroring siteWords in src/orders.js, whose
+   lists the suite pins against the book and TIER_NAMES. Emas, perak and gangsa are ordinary words (Perak is a state,
+   "peluang emas" a golden chance), so they are refused only after a word that says level, or member, customer, price,
+   reward, now or up to before emas or gangsa (pelanggan Perak is Perak's customers), a colon, dash or quote and a "your"
+   or "new" allowed between (Tahap: Emas, tahap anda: Perak), and warn anywhere else. Every book's name warns, and its Malay word with it. */
 function siteSafe(t){
   const s=String(t||'');
   if(/salt\s*command/i.test(s))return {refuse:'That names the desk, which a customer\'s page never does.',warn:''};
   if(/\b[A-Z]{2}\d{1,2}-[A-Z]{2,4}(-R)?\b/.test(s))return {refuse:'That carries a roster code, which a customer\'s page never shows.',warn:''};
-  if(/\b(ambassador|titanium|platinum|gold|silver|bronze)\b/i.test(s))return {refuse:'That names a level, which a customer\'s page never does.',warn:''};
-  if(/\b(salt|oil)\b/i.test(s))return {refuse:'',warn:'That names a product in words; the customer\'s page draws a mark instead.'};
+  if(/\b(ambassador|titanium|platinum|gold|silver|bronze)\b/i.test(s)
+    ||/\b(tahap|peringkat|taraf|pangkat|kategori|level|tier)([^a-z0-9.,;!?]{1,4}(anda|awak|kamu|baru))?[^a-z0-9.,;!?]{1,4}(emas|perak|gangsa)\b/i.test(s)
+    ||/\b(ahli|keahlian|pelanggan|harga|kad|kelas|status|pakej|ganjaran|kini|naik ke)([^a-z0-9.,;!?]{1,4}(anda|awak|kamu|baru))?[^a-z0-9.,;!?]{1,4}(emas|gangsa)\b/i.test(s))
+    return {refuse:'That names a level, which a customer\'s page never does.',warn:''};
+  if(/\b(emas|perak|gangsa)\b/i.test(s))return {refuse:'',warn:'That may name a level in Malay, which a customer\'s page never does; Perak the state is fine.'};
+  if(/\b(salt|oil|candy|rice|spare|garam|minyak|gula-gula|gula|beras)\b/i.test(s))return {refuse:'',warn:'That names a product in words; the customer\'s page draws a mark instead.'};
   return {refuse:'',warn:''};
 }
 function bullPressed(){document.querySelectorAll('button[data-bmode]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.bmode===BULL_MODE?'true':'false'));}
@@ -19664,12 +19673,14 @@ async function ordAct(b){
   }else if(st==='say'){
     /* v753: HIS ANSWER, CHECKED HERE AND AGAIN ON THE WORKER. This page can refuse it before it
        leaves, which is the kinder place to be told; the Worker refuses it whatever asks, which is
-       the place that has to hold. Same lock as the bulletin: a product's name warns and goes. */
+       the place that has to hold. Same lock as the bulletin, and the same ask (S8, 25 Sep 2026): a line
+       it warns on, a product's name or a bare emas, perak or gangsa, goes only once he says so. */
     const si=document.querySelector('input[data-say="'+id+'"]');
     const t=si?String(si.value||'').trim():'';
     if(!t)return refuse('Write something first; nothing was sent.');
     const chk=siteSafe(t);
     if(chk.refuse)return refuse(chk.refuse+' Nothing was sent.');
+    if(chk.warn&&!confirm(chk.warn+' Send it anyway?'))return refuse('Not sent.');
     body=JSON.stringify({message:t});
   }else body=JSON.stringify(Object.assign({status:st},b.dataset.mode?{mode:b.dataset.mode}:{}));
   if(!url)url='orders/'+encodeURIComponent(u)+'/'+encodeURIComponent(id);
