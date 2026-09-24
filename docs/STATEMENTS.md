@@ -187,6 +187,21 @@ page in the same run that reaches the phone. Its heading names that minute in Ku
 time. The dated issues beside it are the monthly statements exactly as sent, the August archive
 included, and they never change.
 
+**What is to pay, sealed beside `owed`** (S6, his D9 of 24 Sep 2026). `liveStatement` carries `owed`,
+the footer's figure, and `pay` from `payDue` in `tools/make_statements.mjs`: `{term, now: {rm, due,
+parts}, overdue: {rm, parts}, coming: {rm, parts}}`. **To pay now** is the desk's receivable,
+`txAdvance`, row by row: goods handed over and not paid for, each part due at its order date plus
+`term`, the desk's `RULES.creditDays` read out of the master (a master stating none stops the
+publish); `now.due` is the soonest. A part is `late`, and listed in **overdue**, only once its due
+day has passed, the desk's `buyerProfile` reading of late; an undated part is never overdue. The
+desk's Credit age breach and its chase flag the same part a day earlier, on the due day itself.
+**Coming up** is `txPendRM`: agreed, not handed over, money still to pay, an undated order dated by
+`agreedOn`. A part carries `date`, `due`, `late`, `rm`, `whole` (goods and delivery), `product` (an
+id, drawn as a mark), `qty`, `got`, `gotOn` and `resale`; a coming part `date`, `rm`, `product`,
+`qty`, `toCome` and `resale`. A gift and a write-off count in none of them, so now plus coming is `owed` less the
+agreed orders it leaves out and plus the write-off it still prints. The site draws them and
+computes nothing.
+
 **One live password a month, and it cannot be changed.** Each issue mints a fresh password per
 customer and re-wraps their key under it, so last month's password stops opening anything the
 moment the new issue publishes. There is no change-password control anywhere: a customer who
