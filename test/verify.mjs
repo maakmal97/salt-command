@@ -24852,6 +24852,17 @@ await (async () => {
     "offered again, the close moves the name once more, so later stages wait for it to land: " + JSON.stringify({ st: again.status, err: again.j.error, key: moved.ledgerKey }));
 })();
 
+section("S11 fix: drafts.mjs --schema applies every migration from 0002, the pre-approval table included");
+await (async () => {
+  /* Found in review: the --schema list was written by hand and stopped at 0009 while 0010 and 0011 shipped, so a local
+     D1 built by it had no preapproval table and every tap on the order card that records a yes failed there. */
+  const { schemaFiles } = await import("../tools/drafts.mjs");
+  const want = readdirSync(join(REPO, "migrations")).filter((n) => /^\d{4}_.*\.sql$/.test(n) && !n.startsWith("0001")).sort();
+  const got = schemaFiles();
+  ok(want.length >= 10 && want.includes("0011_preapproval.sql") && JSON.stringify(got) === JSON.stringify(want),
+    "--schema applies every migration from 0002 in order: " + JSON.stringify({ missing: want.filter((n) => !got.includes(n)), got: got.slice(-3) }));
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one
