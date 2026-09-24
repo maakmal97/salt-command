@@ -30669,6 +30669,74 @@ await (async () => {
   } finally { still.dom.window.close(); moving.dom.window.close(); }
 })();
 
+section("S6 6.2: To pay now heads the statement tab, with its due date and Pay, and Overdue and Coming up beneath");
+await (async () => {
+  /* STAGE 6 OF THE COUNTER REDESIGN (his D9 of 24 Sep 2026). The publish seals `pay` beside owed (v841) and the page
+     draws it at the head of the statement tab, pricing nothing. Forced state: a fixture live document whose days are
+     set against today in Kuala Lumpur, so what is proved is the page's reading of the calendar, not a day's figures. */
+  const { landingPage: lp, MON3 } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+  const said = (s) => { const t = new Date(s + "T00:00:00Z"); return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][t.getUTCDay()] + " " + t.getUTCDate() + " " + MON3[t.getUTCMonth()]; };
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const open = async (pay) => {
+    const u = "abcd-efgh", pass = "fixture-pass-s62", ck = await C.contentKey("test-secret", u);
+    const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "",
+      env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 0, pay })) };
+    const dom = new JD(lp(u, "ns62", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path) => { const o = String(path) === "/open"; return { ok: o, status: o ? 200 : 404, json: async () => (o ? body : { ok: false }) }; };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 150 && d.getElementById("tabs").hidden; i++) await new Promise((r) => setTimeout(r, 100));
+      const h = d.getElementById("payHead");
+      return { hidden: h.hidden, first: d.getElementById("pStmt").firstElementChild === h, shown: !d.getElementById("pStmt").hidden,
+        tile: [".salt-kpi__label", ".salt-kpi__value", ".salt-kpi__note"].map((s) => t(h.querySelector(".salt-kpi--ember " + s))),
+        pill: t(h.querySelector("button.salt-pill")), pills: h.querySelectorAll(".salt-pill").length, heads: [...h.querySelectorAll("h3")].map(t),
+        rows: [...h.querySelectorAll(".salt-ledger__row")].map((r) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((s) => t(r.querySelector(s)))),
+        marks: h.querySelectorAll("svg.psym").length, text: t(h) };
+    } finally { dom.window.close(); }
+  };
+  const part = (o) => Object.assign({ late: false, whole: o.rm, product: "salt", qty: 2.5, got: 2.5, resale: false }, o);
+  const one = await open({ term: 10,
+    now: { rm: 70, due: kl(2), parts: [part({ date: kl(-8), due: kl(2), rm: 70, whole: 120, gotOn: kl(-8) })] },
+    overdue: { rm: 0, parts: [] },
+    coming: { rm: 110, parts: [{ date: kl(-1), rm: 110, product: "salt", qty: 1, toCome: 1, resale: false }] } });
+  ok(one.shown && one.first && !one.hidden && one.tile[0] === "To pay now" && one.tile[1] === "RM 70"
+    && one.tile[2] === "The rest of Cube 2.5 units you received " + said(kl(-8)) + ". Due by " + said(kl(2)) + ", in 2 days."
+    && one.pill === "Pay RM 70" && one.pills === 1,
+    "To pay now heads the statement tab: its figure, what it is for with the day it was received and the day it is due, and the one filled Pay: "
+    + JSON.stringify([one.first, one.tile, one.pill]));
+  ok(one.heads.join() === "Coming up" && one.rows.length === 1
+    && one.rows[0].join("|") === "Cube 1 unit, ordered " + said(kl(-1)) + "|RM 110|Pay now, or when it arrives"
+    && one.marks === 2 && !/salt|oil|Gold|Silver/i.test(one.text),
+    "an order agreed and not yet handed over is Coming up beneath, drawn as a mark and never a word; one part says its due day in the line above, so no Overdue list: "
+    + JSON.stringify([one.heads, one.rows]));
+  const two = await open({ term: 10,
+    now: { rm: 300, due: kl(-10), parts: [part({ date: kl(-20), due: kl(-10), late: true, rm: 180, whole: 250, gotOn: kl(-20) }),
+      part({ date: kl(-7), due: kl(3), rm: 120, qty: 1, got: 1, gotOn: kl(-7), resale: true })] },
+    overdue: { rm: 180, parts: [part({ date: kl(-20), due: kl(-10), late: true, rm: 180, whole: 250, gotOn: kl(-20) })] },
+    coming: { rm: 0, parts: [] } });
+  ok(two.tile[2] === "2 orders you have received. The first was due by " + said(kl(-10)) + "." && two.pill === "Pay RM 300"
+    && two.heads.join() === "Overdue" && two.rows.length === 1
+    && two.rows[0].join("|") === "The rest of Cube 2.5 units you received " + said(kl(-20)) + "|RM 180|It was due by " + said(kl(-10)) + ".",
+    "of several parts, the line says the first due day, and each overdue part stands beneath with the day it fell due: "
+    + JSON.stringify([two.tile[2], two.heads, two.rows]));
+  const none = await open({ term: 10, now: { rm: 0, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } });
+  const unsealed = await open(undefined);
+  ok(none.hidden && !none.pills && unsealed.hidden && unsealed.shown,
+    "with nothing to pay and nothing coming, or a live document sealed before v841, nothing is drawn above the statement");
+})();
+
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead

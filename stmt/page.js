@@ -189,6 +189,11 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .mfnote{max-width:620px;margin:0 auto 18px;font-size:var(--salt-text-xs);color:var(--salt-text-muted);
   font-family:var(--salt-font-mono);letter-spacing:.04em;line-height:1.6}
 .mfnote:empty{display:none}
+/* S6 6.2: To pay now heads the statement, the reading column's width, its parts on the plain Ledger list */
+.payhead{max-width:620px;margin:0 auto 22px}
+.payhead[hidden]{display:none}
+.payhead .btn{margin-top:12px}
+.payhead .salt-ledger__value{white-space:nowrap}
 /* THE DOCUMENT KEEPS THE GEOMETRY IT WAS PROOFED IN. What is injected is the INSIDE of the
    statement's own .w wrapper, so without this the page rendered the tables full-bleed to the
    window while the lock bar and the issue strip stayed pinned at 620px above them: on a laptop
@@ -719,7 +724,8 @@ export function landingPage(user, nonce, owner, bulletin) {
        that opened actually carries one, so the tab can never lead to an empty panel. */
     + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="card" id="tCard" hidden>Card</button>'
     + "</div>"
-    + '<div id="pStmt">' + (owner ? "" : keepCard())
+    /* S6 6.2: what is to pay now heads the statement tab, drawn from the sealed `pay` */
+    + '<div id="pStmt"><div id="payHead" class="payhead" hidden></div>' + (owner ? "" : keepCard())
     + '<div id="mos" class="mos" hidden></div>'
     + '<div id="mfil" class="mos mfil" hidden></div><p class="mfnote" id="mfnote"></p>'
     + '<div id="out"></div></div>'
@@ -840,6 +846,9 @@ const CLIENT_JS = `
      stays one tap away, because a figure to pay is only fair beside the orders it is made of. It
      lifts on its own: the next publish after the payment is recorded writes a smaller figure. */
   var HOLD_RM=100, owedNow=0, hold=false;
+  /* S6: what the live statement seals beside owed (tools/make_statements.mjs payDue): to pay now, overdue and
+     coming up, each part with its dates. Read, never priced here. */
+  var payDue=null, liveAt='';
   /* THE MESSAGE GOES WHERE THE READER IS LOOKING. #msg lives inside the gate, so on the owner's
      route, where the gate is hidden behind the roster, every "Checking..." and every refusal was
      written into a hidden element. Both are written; only one is on screen. */
@@ -1215,6 +1224,7 @@ const CLIENT_JS = `
     if(poll){ clearInterval(poll); poll=null; }
     bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
     owedNow=0; hold=false; tPrices.hidden=false; tOrder.textContent='Order';
+    payDue=null; liveAt=''; drawPayHead();
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
     var mfn=document.getElementById('mfnote'); if(mfn) mfn.textContent='';
@@ -1431,7 +1441,9 @@ const CLIENT_JS = `
     if(!tCard.hidden) drawCard();
     var lv=b.statements.filter(function(s){ return s.live; })[0];
     owedNow=lv&&isFinite(+lv.owed)?+lv.owed:0;
+    payDue=lv&&lv.pay&&lv.pay.now?lv.pay:null; liveAt=lv&&lv.at||'';
     hold=owedNow>HOLD_RM+0.004;
+    drawPayHead();
     tPrices.hidden=hold; tOrder.textContent=hold?'Pay':'Order';
     pickStmt(0);
     if(hold) showTab('order');
@@ -2348,6 +2360,74 @@ const CLIENT_JS = `
     if(!n) return; var bw=document.getElementById('barw');
     try{ n.style.scrollMarginTop=Math.ceil((bw&&!bw.hidden?bw.getBoundingClientRect().bottom:0)+12)+'px'; n.scrollIntoView({block:'start'}); }catch(e){}
   }
+  /* ---- S6 6.2 (his D9 of 24 Sep 2026): TO PAY NOW HEADS THE STATEMENT, with its due date and Pay, and what is
+     overdue and what is coming up beneath it, each part with its own day. The figures are the publish's, sealed with
+     the statement (payDue) and read here, never worked out: the site prices nothing. A part is a mark and a size. */
+  var WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  function ymdAt(s){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?Date.UTC(+m[1],+m[2]-1,+m[3]):null; }
+  function dayName(s){ var t=ymdAt(s); if(t==null) return ''; var d=new Date(t); return WD[d.getUTCDay()]+' '+d.getUTCDate()+' '+MON3[d.getUTCMonth()]; }
+  function todayKL(){ var p=klBits(new Date().toISOString()); return p.year+'-'+('0'+p.month).slice(-2)+'-'+p.day; }
+  function daysTo(s){ var t=ymdAt(s), n=ymdAt(todayKL()); return t==null||n==null?null:Math.round((t-n)/864e5); }
+  /* "Due by Sat 26 Sep, in 2 days.", or of the first of several parts, "The first is due by ..." */
+  function dueWords(due,first){
+    var n=daysTo(due), d=dayName(due);
+    if(n==null) return '';
+    var s=first?'The first ':'', is=first?'is due':'Due';
+    return n<0?s+(first?'was due':'It was due')+' by '+d+'.':n===0?s+is+' today, '+d+'.':s+is+' by '+d+(n===1?', tomorrow.':', in '+n+' days.');
+  }
+  function unitFor(pr){ var P=prices&&prices.products&&prices.products.filter(function(x){ return x.product===pr; })[0]; return P?P.unit:'unit'; }
+  /* "The rest of [cube] 2.5 units you received Wed 16 Sep": the rest where part of the order is paid; a part to come says when it was ordered */
+  function partSpan(p,coming){
+    var s=el('span');
+    if(!coming&&+p.whole>+p.rm+0.004) s.appendChild(document.createTextNode('The rest of '));
+    s.appendChild(psym(p.product,15)); s.appendChild(el('span','sr',pshape(p.product)));
+    s.appendChild(document.createTextNode(' '+unitsOf(p.qty,unitFor(p.product))+(p.resale?' on behalf of a friend':'')
+      +(!coming&&p.gotOn?' you received '+dayName(p.gotOn):(p.date?', ordered '+dayName(p.date):''))));
+    return s;
+  }
+  function lrowN(node,value,flag,cls){ var r=lrow('',value,flag,cls); r.querySelector('.salt-ledger__label').appendChild(node); return r; }
+  function kpiTile(tone,label,value,note){
+    var k=el('div','salt-kpi salt-kpi--'+tone);
+    k.appendChild(el('span','salt-kpi__label',label)); k.appendChild(el('span','salt-kpi__value',value));
+    if(note){ var n=el('span','salt-kpi__note'); n.appendChild(note); k.appendChild(n); }
+    return k;
+  }
+  /* what To pay now is for, in one line under its figure */
+  function nowNote(now){
+    var n=el('span'), ps=now.parts||[];
+    if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0].due))); }
+    else n.appendChild(document.createTextNode(ps.length+' orders you have received. '+dueWords(now.due,true)));
+    return n;
+  }
+  function drawPayHead(){
+    var box=document.getElementById('payHead'); if(!box) return;
+    box.textContent='';
+    var P=payDue||{}, now=P.now||{rm:0,parts:[]}, od=P.overdue||{rm:0,parts:[]}, cm=P.coming||{rm:0,parts:[]};
+    box.hidden=!(now.rm>0.004||cm.rm>0.004);
+    if(box.hidden) return;
+    if(now.rm>0.004){
+      box.appendChild(kpiTile('ember','To pay now',rm(now.rm),nowNote(now)));
+      if(!view){
+        var pb=el('button','btn salt-pill salt-pill--md','Pay '+rm(now.rm)); pb.type='button'; pb.id='payNow';
+        pb.addEventListener('click',function(){ showTab('order'); });
+        box.appendChild(pb);
+      }
+      /* each overdue part with the day it fell due; one part says so in the line above */
+      if(od.rm>0.004&&(now.parts||[]).length>1){
+        box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab','Overdue'));
+        var L=el('div','salt-ledger salt-ledger--plain');
+        od.parts.forEach(function(p){ L.appendChild(lrowN(partSpan(p),rm(p.rm),dueWords(p.due),'odue')); });
+        box.appendChild(L);
+      }
+    }
+    if(cm.rm>0.004){
+      box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab','Coming up'));
+      var C=el('div','salt-ledger salt-ledger--plain');
+      cm.parts.forEach(function(p){ C.appendChild(lrowN(partSpan(p,true),rm(p.rm),'Pay now, or when it arrives')); });
+      box.appendChild(C);
+    }
+  }
+
   var METHOD_WORDS={cod:'cash on handover', transfer:'DuitNow Transfer', qr:'DuitNow QR', jompay:'JomPAY', tngbiz:"Touch 'n Go Business"};
   function acct(key){ return PAY.filter(function(a){return a.key===key;})[0]; }
   function methodWord(m,a){ var x=acct(a); return (METHOD_WORDS[m]||m)+(x&&m!=='tngbiz'?' to '+x.name:''); }
@@ -2693,7 +2773,7 @@ const CLIENT_JS = `
     var x={assoc:body.assoc===true, card:null, prices:null};
     if(body.live){
       try{ var l=JSON.parse(await open(ck, body.live));
-        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body, owed:l.owed}); }
+        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body, owed:l.owed, pay:l.pay||null}); }
       catch(e){ /* the issued statements still open; the live one is simply absent */ }
     }
     if(body.card){ try{ x.card=JSON.parse(await open(ck, body.card)); }catch(e){ /* the statement still opens; the card is simply absent */ } }
