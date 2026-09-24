@@ -481,8 +481,11 @@ have paid, `moved` and `movedOn` what he says he handed over, and either may lea
 Transfer to a named account, a DuitNow QR to save, JomPAY, and the Touch 'n Go Business code;
 the page hands over one link into QR Command for the rail chosen, and the accounts it may name
 are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
-number, payload or reference shipped. **The customer types what they paid** (the site takes no money
-and no rail tells it anything), part payments accumulate, and more than what is outstanding is
+number, payload or reference shipped. **`payHref` in it is the one link builder** (D8, 24 Sep
+2026): `#<key>/<rail>/<amount>/<reference>`, Transfer or Scan a code, the figure to the sen, the
+username as the reference, and "" for anything QR Command would not open. The suite reads the link
+back through QR Command's own `linkOf`, so a format change ships there first. **The customer types
+what they paid** (the site takes no money and no rail tells it anything), part payments accumulate, and more than what is outstanding is
 refused. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
 order, the one being paid included: settling that at the door is how one advance becomes two. The quote is the customer's claim
 off his own list: the owner reads the rate against the party's usual on the phone before
