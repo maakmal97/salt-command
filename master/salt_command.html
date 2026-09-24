@@ -8255,7 +8255,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v828","d":"24 Sep 2026","t":"A BANNER SAYS WHAT KIND OF NEWS IT IS, AND THE CHASE IS FAIR","n":["<b>STAGE 12 OF THE REDESIGN</b> (his answers D4 and D5 of 24 Sep 2026). A customer's phone keeps its subscription's encryption keys, and a wake carries the kind of news sealed for that phone alone (RFC 8291 in the Worker's own WebCrypto): Your order is confirmed, Your order is ready, A reply on your order, Payment received, A payment is due, and the rest of an order's life. Never an amount, a product, an order or a name; a phone with no keys on file keeps today's wake and words until it next signs in.","<b>THE TAP OPENS THE ORDER.</b> The banner opens the Counter at the order it is about, and a window already open re-reads rather than only coming forward.","<b>THE CHASE, TWICE A DAY.</b> v700's hourly chase now wakes at 10:00 and 18:00 Kuala Lumpur, from the day after a handover, only for goods received and not yet paid, paused while a payment claim waits, one wake a slot, in its own words: A payment is due."]}];
+const evolution=[{"v":"v829","d":"24 Sep 2026","t":"THE DESIGN SYSTEM FIRST: NINE RECIPES, AND EDGES YOU CAN SEE","n":["<b>STAGE 2 OF THE REDESIGN</b> (rule 6: a look is a recipe in Code/salt-ds first). Salt-ds v1.3.0 adds the nine patterns the new Counter and Salt Admin are built from: Sheet, Option, App bar, Steps, Bubble and thread, Line, Code field, Inbox row, Plain ledger, and the Orb in its own section. The Counter now carries them and the recipes it will use from stage 3 on; nothing draws them yet.","<b>THE ONE VISIBLE CHANGE.</b> Field and ghost edges rise from about 1.1:1 to 3:1 or more, a focused field gets a 2px brass ring, placeholders and recipe prose move to mist-light, and type is set in rem, which maps today's pixels exactly. No page height moved in any of the rig's 332 shots."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8370,7 +8370,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='24 Sep 2026, 20:15 KL';
+const LAST_UPDATED='24 Sep 2026, 20:48 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

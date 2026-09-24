@@ -1,5 +1,14 @@
 [
  {
+  "v": "v829",
+  "d": "24 Sep 2026",
+  "t": "THE DESIGN SYSTEM FIRST: NINE RECIPES, AND EDGES YOU CAN SEE",
+  "n": [
+   "<b>STAGE 2 OF THE REDESIGN</b> (rule 6: a look is a recipe in Code/salt-ds first). Salt-ds v1.3.0 adds the nine patterns the new Counter and Salt Admin are built from: Sheet, Option, App bar, Steps, Bubble and thread, Line, Code field, Inbox row, Plain ledger, and the Orb in its own section. The Counter now carries them and the recipes it will use from stage 3 on; nothing draws them yet.",
+   "<b>THE ONE VISIBLE CHANGE.</b> Field and ghost edges rise from about 1.1:1 to 3:1 or more, a focused field gets a 2px brass ring, placeholders and recipe prose move to mist-light, and type is set in rem, which maps today's pixels exactly. No page height moved in any of the rig's 332 shots."
+  ]
+ },
+ {
   "v": "v828",
   "d": "24 Sep 2026",
   "t": "A BANNER SAYS WHAT KIND OF NEWS IT IS, AND THE CHASE IS FAIR",
