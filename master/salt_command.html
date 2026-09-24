@@ -19185,6 +19185,19 @@ function ordPvBlock(o){
     <p class="salt-approve__reason" style="margin-top:8px">The pending row, drafted now and stored nowhere. ${flags.length?'The drafter flags '+(flags.length===1?'one thing':flags.length+' things')+':':'The drafter raises no flag.'}</p>
     ${flags.length?`<div class="salt-approve__flags">${flags.map(f=>`<span class="salt-status salt-status--ember">${esc(f)}</span>`).join('')}</div>`:''}</div>`;
 }
+/* S11 11.5 (24 Sep 2026): WHAT THE CUSTOMER WAS TOLD. His card says what their own page says of this order,
+   in its own words, so he answers what they are reading. The words are the page's (stmt/page.js, the state
+   chip and the first line under it) and the suite holds the two copies together: a word changed on one side
+   and not the other goes red. */
+function ordTold(o){
+  const T={placed:['Placed','waiting to be acknowledged'],acknowledged:['Acknowledged','being prepared'],
+    ready:['Ready',o.mode==='deliver'?'ready to be delivered':'ready to collect'],done:['Completed','complete'],
+    declined:['Declined','could not be taken'],cancelled:['Withdrawn','withdrawn']}[o.status]||[o.status,''];
+  const h=(o.history||[]).filter(x=>x&&x.status===o.status),since=h.length?h[h.length-1].at:o.at;
+  return {word:T[0],line:T[1],since};
+}
+function ordToldLine(o){const t=ordTold(o);
+  return `<p class="salt-approve__reason ordtold">They see <b>${esc(t.word)}</b>${t.line?', '+esc(t.line):''}${t.since?', since '+ordWhen(t.since):''}.</p>`;}
 function ordCard(o){
   /* 24 Sep 2026: the month off MAP_MON, because en-GB writes Sept */
   const when=iso=>{try{const p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(x=>{p[x.type]=x.value;});return p.day+' '+MAP_MON[+p.month-1]+', '+p.hour+':'+p.minute;}catch(e){return '';}};
@@ -19251,6 +19264,7 @@ function ordCard(o){
       +cell('Their usual',usual==null?'&mdash;':fmt(usual)+'/unit',off==null?'':Math.abs(off)>=0.10?'r':'g')
       +cell('Paid',paid>0?fmt(paid)+(due>0.004?' of '+fmt(o.total+(+o.delivery||0)):''):'nothing yet',due<=0.004&&rowed?'g':'')
       +cell('Handed over',moved>0?units(moved)+(moved<o.qty-0.004?' of '+units(o.qty):''):'nothing yet',moved>=o.qty-0.004&&rowed?'g':'')}</div>`}
+    ${ordToldLine(o)}
     <div class="dsc">Paying by ${esc(pay)}. The ledger reads <b>${ledger}</b>${told}.</div>
     ${thread}${reply}
     ${fee}${hand}

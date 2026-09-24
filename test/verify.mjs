@@ -22898,6 +22898,37 @@ await (async () => {
   }
 })();
 
+section("S11 11.5: the order's card says what the customer's own page tells them, in the page's words, and since when");
+await (async () => {
+  /* 24 Sep 2026 (PLAN 5). He answered an order without knowing what the customer was looking at. The card
+     now says it: the state chip their page draws and its first line, from the moment that state began. The
+     words live on the page (stmt/page.js) and are copied on the desk, so the two copies are held together here. */
+  const { openMaster: om115 } = await import("../tools/payload.mjs");
+  const { w } = await om115();
+  try {
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, msgs: [], payments: [] };
+    const card = (x) => { const d = w.document.createElement("div"); d.innerHTML = String(w.eval("ordCard(" + JSON.stringify(Object.assign({}, base, x)) + ")"));
+      const t = d.querySelector(".ordtold"); return t ? t.textContent.replace(/\s+/g, " ").trim() : ""; };
+    const placed = card({ id: "a", status: "placed", mode: "collect", at: "2026-09-24T02:00:00.000Z", history: [{ at: "2026-09-24T02:00:00.000Z", status: "placed", by: "customer" }] });
+    ok(placed === "They see Placed, waiting to be acknowledged, since 24 Sep, 10:00.", "a new order: what their page says, and since when: " + placed);
+    const acked = card({ id: "b", status: "ready", mode: "deliver", at: "2026-09-20T02:00:00.000Z",
+      history: [{ at: "2026-09-20T02:00:00.000Z", status: "placed", by: "customer" }, { at: "2026-09-23T03:30:00.000Z", status: "acknowledged", by: "desk" },
+        { at: "2026-09-24T03:30:00.000Z", status: "ready", by: "desk" }] });
+    ok(acked === "They see Ready, ready to be delivered, since 24 Sep, 11:30.",
+      "a later state is dated from when it began, in the order's own mode: " + acked);
+    const src = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
+    const m = /var STATE_WORDS=(\{[^}]*\})/.exec(src);
+    const page = m ? Function("return " + m[1])() : {};
+    const desk = JSON.parse(String(w.eval("JSON.stringify(['placed','acknowledged','ready','done','declined','cancelled'].map(function(s){return [s,ordTold({status:s,mode:'collect',history:[]}).word];}))")));
+    const off = desk.filter(([s, word]) => page[s] !== word);
+    ok(m && desk.length === 6 && off.length === 0,
+      "the desk's words are the page's own chip words, state by state: " + JSON.stringify({ off, page }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 100));
+    try { w.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one
