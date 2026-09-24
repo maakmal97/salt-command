@@ -35690,6 +35690,54 @@ await (async () => {
   } finally { W.close(); }
 })();
 
+section("S7 polish: Account stands the statement beside This device from 1080px, and stacks them below it");
+await (async () => {
+  /* The plan's f06w family, fold 7.2: from 1080px Account is two columns, the statement on the left and This device on
+     the right. Salt Admin's account card (S9 9.3) was also .acct, and its column of one came later in the sheet, so after
+     the three-way merge Account stacked at every width. The page's CSS is resolved at a width (an @media kept when its
+     min-width and max-width hold, dropped when they do not or when it asks anything but a width), and jsdom's cascade
+     then says what #acct is and where its two parts land: the computed structure, not a rule's text. */
+  const { landingPage } = await import("../stmt/page.js");
+  const { JSDOM } = await import("jsdom");
+  const page = landingPage("", "npol2", null);
+  const css = (page.match(/<style nonce="npol2">([\s\S]*?)<\/style>/) || ["", ""])[1];
+  const FEAT = /\(\s*(min-width|max-width)\s*:\s*([0-9.]+)px\s*\)/g;
+  const at = (w) => {
+    let out = "", i = 0;
+    for (;;) {
+      const m = css.indexOf("@media", i);
+      if (m < 0) { out += css.slice(i); break; }
+      out += css.slice(i, m);
+      const open = css.indexOf("{", m), cond = css.slice(m + 6, open);
+      let depth = 0, end = css.length - 1;
+      for (let k = open; k < css.length; k++) { if (css[k] === "{") depth++; else if (css[k] === "}" && --depth === 0) { end = k; break; } }
+      const rest = cond.replace(FEAT, "").replace(/\band\b|\bscreen\b|\ball\b|\s/g, "");
+      if (!rest && [...cond.matchAll(FEAT)].every(([, f, v]) => (f === "min-width" ? w >= +v : w <= +v))) out += css.slice(open + 1, end);
+      i = end + 1;
+    }
+    return out;
+  };
+  const shape = (w) => {
+    const dom = new JSDOM(page.replace(css, () => at(w)), { url: "https://site.test/" });
+    try {
+      const W = dom.window, a = W.document.getElementById("acct"), cs = W.getComputedStyle(a);
+      return { display: cs.display, tracks: cs.gridTemplateColumns.split(/\s+(?![^(]*\))/).filter(Boolean).length,
+        kids: [...a.children].map((n) => n.tagName.toLowerCase() + (n.id ? "#" + n.id : "." + n.className.split(" ")[0])).join(" "),
+        /* jsdom keeps a shorthand as written, so each road to a column is read, and order, which moves auto-placement */
+        placed: [...a.children].map((n) => { const c = W.getComputedStyle(n);
+          return (c.gridArea || c.gridColumn || (c.gridColumnStart !== "auto" && c.gridColumnStart) || "auto") + "/" + (c.order || "0"); }).join(" ") };
+    } finally { dom.window.close(); }
+  };
+  ok(css.length > 1000 && /@media \(min-width:1080px\)\{/.test(css) && /@media print\{/.test(css)
+    && [1280, 390].every((w) => !/@media/.test(at(w)) && !at(w).includes("background:#fff;color:#111")),
+    "the page's own sheet is read, with its 1080px blocks; resolved at a width no @media is left, and the block for print is dropped");
+  const wide = [1080, 1280].map(shape), narrow = [1079, 390, 320].map(shape);
+  ok(wide.every((s) => s.display === "grid" && s.tracks === 2 && s.kids === "div.acct__main section#thisDevice" && s.placed === "auto/0 auto/0"),
+    "from 1080px Account is a grid of two columns, the statement first and This device placed by the grid into the second, beside it: " + JSON.stringify(wide));
+  ok(narrow.every((s) => s.display === "block" && s.kids === "div.acct__main section#thisDevice"),
+    "below 1080px it is one column, This device under the statement: " + JSON.stringify(narrow));
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read

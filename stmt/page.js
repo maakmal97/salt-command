@@ -425,22 +425,24 @@ button.salt-approve__party{display:inline-flex;align-items:center;min-height:var
 .mtest .btn{margin-top:0}
 /* S9 9.3: AN ACCOUNT, as a row opens it (the plan's f13): the code large and the username under it, the chips, the one
    filled Send a sign-in link across the column with its answer under it, the other ways two by two with theirs, the
-   Sent tick, then how they got in. The two quiet ways that must not be tapped by accident are the system's danger ghost. */
-.acct{display:flex;flex-direction:column;gap:12px}
-.acct .ahead h2{margin:0;font-size:var(--salt-text-2xl);line-height:1.15;overflow-wrap:anywhere}
-.acct .ahead .un{display:block;margin-top:4px;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
+   Sent tick, then how they got in. The two quiet ways that must not be tapped by accident are the system's danger ghost.
+   S7 polish: its own name, .oacct. The customer's Account is .acct (S7 7.3), and this block's single column, coming
+   after it, took that Account's two columns from 1080px when the stages were merged */
+.oacct{display:flex;flex-direction:column;gap:12px}
+.oacct .ahead h2{margin:0;font-size:var(--salt-text-2xl);line-height:1.15;overflow-wrap:anywhere}
+.oacct .ahead .un{display:block;margin-top:4px;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
   letter-spacing:.06em;color:var(--salt-text-muted)}
-.acct .achips{margin:0}
-.acct .atot{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-.acct .apill{width:100%;margin-top:4px}
+.oacct .achips{margin:0}
+.oacct .atot{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.oacct .apill{width:100%;margin-top:4px}
 .agrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .agrid .salt-ghost{width:100%;text-align:center}
 .anote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .anote:empty{display:none}
 .anote.bad{color:var(--salt-ember)}
-.acct .tick{display:flex;align-items:center;gap:8px;align-self:flex-start;min-height:var(--salt-tap);min-width:var(--salt-tap);
+.oacct .tick{display:flex;align-items:center;gap:8px;align-self:flex-start;min-height:var(--salt-tap);min-width:var(--salt-tap);
   font-size:var(--salt-text-sm);color:var(--salt-text-muted);cursor:pointer}
-.acct .tick input{width:18px;height:18px;accent-color:var(--salt-verdigris)}
+.oacct .tick input{width:18px;height:18px;accent-color:var(--salt-verdigris)}
 .astory{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 /* S9 9.4: the phones and computers under their own head, the count at its end */
 .astory .dhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:14px}
