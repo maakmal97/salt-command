@@ -585,13 +585,16 @@ export function decideDesk(order, body, at) {
     if (MODES.includes(body.handover.mode)) ev.mode = body.handover.mode;
     /* S11 11.9: CLOSE AT WHAT WAS HANDED OVER. A short delivery could never complete: nothing amended the
        size, so it held an open slot and was chased for goods never sent. Closing restates the order at what
-       went: the size becomes the units handed over and the goods' total follows at the rate they agreed,
-       resolved here into the event. The delivery charge stands. Its row is a Correction (src/orders.js). */
+       went: the size becomes the units handed over and the goods' total is the figure THE DESK STATES
+       (its engine's closeGoods), which this only checks lies between nothing and what was agreed: the
+       site prices nothing. The delivery charge stands. Its row is a Correction (src/orders.js). */
     if (body.handover.close === true && n < order.qty - 0.004) {
       if (!(n > 0)) return { error: "nothing was handed over, so there is nothing to close at: cancel it instead", status: 400 };
       if (!PAYABLE.includes(order.status)) return { error: "an order that is " + order.status + " cannot be closed short", status: 409 };
+      const t = body.handover.total;
+      if (!isNum(t) || t < 0 || t > (+order.total) + 0.004) return { error: "a close states the goods' total, from nothing to the " + (+order.total).toFixed(2) + " agreed", status: 400 };
       ev.close = true;
-      ev.total = +((+order.total) * n / (+order.qty)).toFixed(2);
+      ev.total = +t.toFixed(2);
     }
     return { ev };
   }

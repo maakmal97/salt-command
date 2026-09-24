@@ -351,11 +351,11 @@ export async function handedOrder(env, id, body, by, now) {
     /* stamped as the site stamps it: the Kuala Lumpur day of the tap, the handover's own day */
     const handed = Object.assign({}, o, { movedOn: klDate(at), moved: qty });
     const entry = closing
-      ? closeEntry(Object.assign(handed, { qty, total: +((+o.total) * qty / (+o.qty)).toFixed(2), closed: { at: at.toISOString(), qty: o.qty, total: o.total } }), o.code, at)
+      ? closeEntry(Object.assign(handed, { qty, total: POSITION_ENGINE.closeGoods(o.total, +o.qty, qty), closed: { at: at.toISOString(), qty: o.qty, total: o.total } }), o.code, at)
       : handoverEntry(handed, o.code, qty, at);
     entry.orderId = o.id;
     const handover = { units: qty, mode: o.mode };
-    if (closing) handover.close = true;
+    if (closing) { handover.close = true; handover.total = entry.total; }   /* stated, the site pricing nothing */
     /* A CLOSE UNDER WHAT THEY HAVE PAID leaves money he holds that is theirs, and nothing books that as a refund yet (the
        fold raises one only for a cancelled row): so no tap approves it, and it waits under Approve for him */
     const over = closing ? +((+o.paid || 0) - (+entry.total + (+o.delivery || 0))).toFixed(2) : 0;

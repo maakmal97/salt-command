@@ -23967,7 +23967,7 @@ await (async () => {
   await O.deskMove(senv, u, o.id, { mark: { ledgerKey: K0, ack: "2026-09-24T01:00:00.000Z" } });
   const zero = await O.deskMove(senv, u, o.id, { handover: { units: 0, close: true } });
   ok(zero.status === 400 && /cancel it instead/.test(zero.error), "a close at nothing is refused: " + zero.error);
-  await O.deskMove(senv, u, o.id, { handover: { units: 2, close: true } });
+  await O.deskMove(senv, u, o.id, { handover: { units: 2, close: true, total: 200 } });   /* the goods' total as the desk states it */
   const c = JSON.parse(await skv.get("order:" + u + ":" + o.id));
   ok(c.qty === 2 && c.total === 200 && c.moved === 2 && c.closed && c.closed.qty === 5 && c.closed.total === 500 && c.status === "acknowledged"
     && O.owedUnits(c) === 0 && O.dueOf(c) === 200 && /closed at 2 unit of the 5 ordered/.test(c.history.slice(-1)[0].note),
@@ -24861,6 +24861,29 @@ await (async () => {
   const got = schemaFiles();
   ok(want.length >= 10 && want.includes("0011_preapproval.sql") && JSON.stringify(got) === JSON.stringify(want),
     "--schema applies every migration from 0002 in order: " + JSON.stringify({ missing: want.filter((n) => !got.includes(n)), got: got.slice(-3) }));
+})();
+
+section("S11 fix: a close's goods total is the desk's stated figure, which the site only checks and never works out");
+await (async () => {
+  /* Found in review: the site worked out a short close's goods total itself (the agreed total pro rata), the one place it
+     priced anything, with two more copies of the formula in the desk Worker and the card. The figure is now the engine's
+     closeGoods, shown by the card and sent by the Worker as a stated total, which the site checks lies between nothing and
+     what was agreed and stores as it is. (Whether a short close charges that rate awaits his word.) */
+  const O = await import("../stmt/orders.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const skv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const u = "abcd-efgh";
+  const o = (await O.placeOrder(senv, u, { product: "salt", qty: 5, mode: "collect", unit: 100, total: 500, week: "" })).order;
+  await O.deskMove(senv, u, o.id, { status: "acknowledged", mode: "collect" });
+  const none = await O.deskMove(senv, u, o.id, { handover: { units: 2, close: true } });
+  const over = await O.deskMove(senv, u, o.id, { handover: { units: 2, close: true, total: 600 } });
+  const said = await O.deskMove(senv, u, o.id, { handover: { units: 2, close: true, total: 190 } });
+  const c = JSON.parse(await skv.get("order:" + u + ":" + o.id));
+  ok(none.status === 400 && over.status === 400 && said.ok !== false && c.qty === 2 && c.total === 190 && c.closed && c.closed.total === 500,
+    "the site refuses a close with no stated total or one above what was agreed, and keeps the figure it is told: "
+    + JSON.stringify({ none: none.status, over: over.status, total: c.total }));
+  ok(PE.closeGoods(500, 5, 2) === 200 && PE.closeGoods(250, 3, 1) === 83.33,
+    "the one copy of the figure is the engine's: " + JSON.stringify([PE.closeGoods(500, 5, 2), PE.closeGoods(250, 3, 1)]));
 })();
 
 section("v766: what is waiting on the site is on Today, ranked against everything else");
