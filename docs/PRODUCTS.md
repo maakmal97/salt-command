@@ -161,8 +161,10 @@ but a purchase defaults to null.
    `stmt/statement-css.js`. Miss that last one and the product's statement rows silently lose
    their accent, because an undefined `var()` with no fallback resolves to nothing.
 9. A `PSYM` path and a `PSHAPE` word, or accept the Ring.
-10. Its name and its Malay word in `PRODUCT_WORDS` (`src/orders.js`) and the desk's `siteSafe`;
-    the suite fails until both carry them.
+10. Its name and its Malay word in `PRODUCT_WORDS` (`src/orders.js`) and the desk's `siteSafe`.
+    The suite fails until both carry the book's name, and holds the desk to every word on the
+    list; the Malay word it cannot know, so add it by hand, to the list and to `MS_PRODUCTS` in
+    the suite's S13 13.2 section.
 
 **Then** `booksync --sync`, build, and read the Whiteboard: see section 8.
 

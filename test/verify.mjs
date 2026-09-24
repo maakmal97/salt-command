@@ -16580,6 +16580,30 @@ await (async () => {
     ok(!prod.length, "every book's name and its Malay word warn on the desk and none is refused: " + JSON.stringify(prod));
     ok(!g("Kedai tutup hari Jumaat, buka semula Isnin.").warn && !g(passes[passes.length - 1]).warn,
       "and a line with none of them passes clean");
+
+    /* ---- THE DESK'S COPY IS PINNED TO THE LISTS, word by word and pair by pair (25 Sep 2026). siteSafe is typed by
+       hand, and sample lines exercised four cues of thirteen, so either copy could lose a word under a green suite. The
+       lists themselves are pinned too, so dropping a word from one is a decision the suite asks for. ---- */
+    ok(JSON.stringify(WL.LEVEL_CUES_MS) === '["tahap","peringkat","taraf","pangkat","kategori","level","tier"]'
+      && JSON.stringify(WL.LEVEL_CUES_MS_NOT_PERAK) === '["ahli","keahlian","pelanggan","harga","kad","kelas","status","pakej","ganjaran","kini","naik ke"]'
+      && JSON.stringify(WL.LEVEL_BETWEEN_MS) === '["anda","awak","kamu","baru"]',
+      "the cue lists are the ones decided, perak's narrower than emas's and gangsa's");
+    const lines = [];
+    for (const [cues, perakToo] of [[WL.LEVEL_CUES_MS, true], [WL.LEVEL_CUES_MS_NOT_PERAK, false]])
+      for (const c of cues) for (const lw of WL.LEVEL_WORDS_MS) for (const b of [""].concat(WL.LEVEL_BETWEEN_MS)) for (const sep of [" ", ": "])
+        lines.push({ t: c + (b ? " " + b : "") + sep + lw + " minggu ini", refuse: perakToo || lw !== "perak", kind: "level" });
+    for (const lw of WL.LEVEL_WORDS) lines.push({ t: "Harga " + lw[0].toUpperCase() + lw.slice(1) + " minggu ini", refuse: true, kind: "level" });
+    for (const lw of WL.LEVEL_WORDS_MS) lines.push({ t: "Stok " + lw + " baru", refuse: false, kind: "level" });
+    for (const p of WL.PRODUCT_WORDS) lines.push({ t: "Stok " + p + " baru", refuse: false, kind: "product" });
+    const desk = JSON.parse(String(w.eval("JSON.stringify(" + JSON.stringify(lines.map((x) => x.t)) + ".map(function(t){return siteSafe(t);}))")));
+    const off = lines.filter((x, i) => {
+      const d = desk[i], wk = siteWords(x.t);
+      if (x.refuse) return !/names a level/.test(wk) || !/names a level/.test(d.refuse || "");
+      return wk !== "" || !!d.refuse || !(x.kind === "level" ? /level in Malay/ : /product in words/).test(d.warn);
+    });
+    ok(lines.length > 500 && !off.length,
+      "every cue before every Malay level, with and without a word between, is refused by both locks where it names one, and "
+      + "every English level, bare Malay level and product word is refused or warned alike on the desk: " + JSON.stringify(off.slice(0, 6).map((x) => x.t)));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 section("S13 13.2: his answer on an order asks before sending a line the desk warns on, as the bulletin does");

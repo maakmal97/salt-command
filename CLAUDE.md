@@ -285,9 +285,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   Rejecting a draft a site order made is asked first and written onto that order.
 - **A customer writes on an order, and he answers**: one `msgs[]` thread per order, on any order at
   any stage; theirs capped, his uncapped. **It never rides into a ledger note.** His answer is
-  checked by `siteWords` on the desk; every line is escaped on both surfaces. `siteWords` and the
-  desk's `siteSafe` read English and Malay off the lists in `src/orders.js`, pinned by the suite to
-  the book's names and `TIER_NAMES`: a new book or level goes on both.
+  checked by `siteWords` on the desk; every line is escaped on both surfaces. `siteWords` reads
+  English and Malay off the lists in `src/orders.js` and the desk's `siteSafe` mirrors them by hand;
+  the suite pins the lists to the book's names and `TIER_NAMES` and drives every word through both:
+  a new book or level goes on both, its Malay word by hand.
 - **Over RM 100 owed (`HOLD_RM`) the account opens as a payment page**: the page's gate, not the
   Worker's. **The bulletin** is KV `bulletin`, set through the desk's keyed `/bulletin` and checked
   by `siteWords`.
