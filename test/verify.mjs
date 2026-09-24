@@ -22549,7 +22549,7 @@ await (async () => {
     const win = dom.window;
     const fire = (e, k) => { if (e) e.dispatchEvent(new win.Event(k, { bubbles: true })); };
     const way = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); if (way) { way.checked = true; fire(way, "change"); }
-    const into = d.getElementById("payInto"); if (into) { into.value = "maybank"; fire(into, "change"); }
+    const into = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); if (into) { into.checked = true; fire(into, "change"); }
     const toCheck = () => { const g = d.getElementById("payGo"); if (g) g.click(); fire(win, "blur"); fire(win, "focus"); };
     const payTap = async (n) => { await until(() => d.getElementById("paySent") && !d.getElementById("paySent").disabled);
       d.getElementById("paySent").click(); await until(() => sent.pay.length === n); };
@@ -31320,7 +31320,7 @@ await (async () => {
   const claim = () => {
     const pay = scr() && [...scr().querySelectorAll(".oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
     const r = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); if (r) { r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); }
-    const s = d.getElementById("payInto"); if (s) { s.value = "maybank"; s.dispatchEvent(new w.Event("change", { bubbles: true })); }
+    const s = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); if (s) { s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true })); }
     const g = d.getElementById("payGo"); if (g) g.click();
     w.dispatchEvent(new w.Event("blur")); w.dispatchEvent(new w.Event("focus"));
     const y = d.getElementById("paySent"); if (y) y.click();
@@ -31422,7 +31422,7 @@ await (async () => {
     d.querySelector('#pOrder [data-row="oA"]').click();
     const pay = [...d.querySelectorAll("#pOrder .oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
     const r = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true }));
-    const s = d.getElementById("payInto"); s.value = "maybank"; s.dispatchEvent(new w.Event("change", { bubbles: true }));
+    const s = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true }));
     [...d.querySelectorAll("#payBody .payseg button")].find((b) => b.textContent === "Part of it").click();
     const ctrls = [hold, sh].filter(Boolean).flatMap((x) => [...x.querySelectorAll("button, a, select, input")]);
     const bare = ctrls.filter((x) => !/(^| )salt-(pill|ghost|field__input|orb|option__input)( |$)/.test(x.className));
@@ -31933,8 +31933,9 @@ await (async () => {
   const go = () => d.getElementById("payGo");
   const cap = () => t(d.querySelector("#payFoot .paycap"));
   const how = (v) => { const r = d.querySelector('#payBody input[name="payHow"][value="' + v + '"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); };
-  const into = () => [...d.querySelectorAll("#payInto option")].map((o) => o.value).filter(Boolean);
-  const pickInto = (k) => { const s = d.getElementById("payInto"); s.value = k; s.dispatchEvent(new w.Event("change", { bubbles: true })); };
+  /* S6 fix: his accounts are Option tiles, one tap each */
+  const into = () => [...d.querySelectorAll('#payBody input[name="payInto"]')].map((o) => o.value);
+  const pickInto = (k) => { const s = d.querySelector('#payBody input[name="payInto"][value="' + k + '"]'); s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true })); };
   const linked = (rail, amt) => PAY_ACCOUNTS.filter((a) => payHref(a.key, rail, amt, u)).map((a) => a.key);
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
@@ -31944,16 +31945,16 @@ await (async () => {
     const first = { open: !sh().hidden, title: t(d.getElementById("payT")), tile: t(d.querySelector("#payBody .salt-kpi__label")) + " " + t(d.querySelector("#payBody .salt-kpi__value")),
       seg: [...d.querySelectorAll("#payBody .payseg button")].map((b) => t(b) + ":" + b.getAttribute("aria-pressed")),
       ways: [...d.querySelectorAll('#payBody input.salt-option__input[name="payHow"]')].map((r) => r.value + (r.checked ? "*" : "")),
-      labels: [...d.querySelectorAll("#payBody .salt-option__label")].map(t), select: !!d.getElementById("payInto"),
+      labels: [...d.querySelectorAll("#payBody .payhow .salt-option__label")].map(t), select: !!d.querySelector('#payBody input[name="payInto"]'),
       go: go().tagName + (go().disabled ? " disabled" : ""), cap: cap(), ref: t(d.querySelector("#payBody .payref .salt-ledger__value")),
       copy: !!d.querySelector('#payBody .payref button[aria-label="Copy the reference"]'), pills: sh().querySelectorAll(".salt-pill").length };
     ok(first.open && first.title === "Pay RM 70" && first.tile === "To pay now RM 70" && first.seg.join() === "All, RM 70:true,Part of it:false"
-      && first.ways.join() === "transfer,qr" && first.labels.join() === "Transfer to an account,Scan a code" && !first.select
-      && first.go === "BUTTON disabled" && first.cap === "Choose how you are paying." && first.ref === u && first.copy && first.pills === 1,
-      "To pay now's Pay opens the sheet on the figure and what it is for, All chosen, the two ways and nothing chosen for them, the username as the reference with Copy, and Show waiting: "
+      && first.ways.join() === "transfer*,qr" && first.labels.join() === "Transfer to an account,Scan a code" && first.select
+      && first.go === "BUTTON disabled" && first.cap === "Choose which of our accounts to pay into." && first.ref === u && first.copy && first.pills === 1,
+      "To pay now's Pay opens the sheet on the figure and what it is for, All chosen, the two ways with Transfer chosen as the mockup draws it and no account chosen for them, the username as the reference with Copy, and Show waiting: "
       + JSON.stringify(first));
     how("transfer");
-    const tIn = into(), tPicked = d.getElementById("payInto").value, tGo = go().tagName + (go().disabled ? " disabled" : ""), tCap = cap();
+    const tIn = into(), tPicked = (d.querySelector('#payBody input[name="payInto"]:checked') || { value: "" }).value, tGo = go().tagName + (go().disabled ? " disabled" : ""), tCap = cap();
     pickInto("maybank");
     const a1 = go(), live = t(sh());
     ok(JSON.stringify(tIn) === JSON.stringify(linked("transfer", 70)) && tIn.includes("wise") && !tIn.includes("spay") && tPicked === ""
@@ -31985,8 +31986,8 @@ await (async () => {
     const payO = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b)));
     if (payO) payO.click();
     ok(closed && !!payO && !sh().hidden && t(d.getElementById("payT")) === "Pay RM 200" && t(d.querySelector("#payBody .salt-kpi__label")) === "Still to pay"
-      && !d.querySelector("#payBody input[name=payHow]:checked") && !d.querySelector("#pOrder .oact .pay"),
-      "Escape closes it, and an order's Pay opens the same sheet for what is still to pay on that order, nothing chosen and nothing drawn in the order itself");
+      && (d.querySelector("#payBody input[name=payHow]:checked") || {}).value === "transfer" && !d.querySelector("#payBody input[name=payInto]:checked") && !d.querySelector("#pOrder .oact .pay"),
+      "Escape closes it, and an order's Pay opens the same sheet for what is still to pay on that order, Transfer chosen and no account, and nothing drawn in the order itself");
   } finally { w.close(); }
 })();
 
@@ -32055,7 +32056,7 @@ await (async () => {
     d.querySelector('#pOrder [data-row="oA"]').click();
     [...scr().querySelectorAll(".oact button")].find((b) => /^Pay RM/.test(t(b))).click();
     const r = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true }));
-    const s = d.getElementById("payInto"); s.value = "maybank"; s.dispatchEvent(new w.Event("change", { bubbles: true }));
+    const s = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true }));
     const besideCode = asked() || /Did you send|I have paid|I sent/i.test(t(sh));
     away();
     const unasked = asked();
@@ -32125,7 +32126,7 @@ await (async () => {
     dB.querySelector('#tabs button[data-t="stmt"]').click();
     dB.getElementById("payNow").click();
     const r = dB.querySelector('#payBody input[name="payHow"][value="transfer"]'); r.checked = true; r.dispatchEvent(new wB.Event("change", { bubbles: true }));
-    const s = dB.getElementById("payInto"); s.value = "maybank"; s.dispatchEvent(new wB.Event("change", { bubbles: true }));
+    const s = dB.querySelector('#payBody input[name="payInto"][value="maybank"]'); s.checked = true; s.dispatchEvent(new wB.Event("change", { bubbles: true }));
     const tapB = (id) => { const b = dB.getElementById(id); if (b) b.click(); };
     tapB("payGo"); wB.dispatchEvent(new wB.Event("blur")); wB.dispatchEvent(new wB.Event("focus"));
     tapB("paySent");
@@ -32248,7 +32249,7 @@ await (async () => {
     await until(() => d.querySelector('#pOrder [data-row="oA"]'));
     d.querySelector('#pOrder [data-row="oA"]').click();
     const payO = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b))); if (payO) payO.click();
-    const onOrder = ways(), label = t([...d.querySelectorAll("#payBody .salt-option__label")].pop());
+    const onOrder = ways(), label = t([...d.querySelectorAll("#payBody .payhow .salt-option__label")].pop());
     const r = d.querySelector('#payBody input[name="payHow"][value="cod"]'); if (r) { r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); }
     const chosen = { into: !!d.getElementById("payInto"), ref: !!d.querySelector("#payBody .payref"), part: !!d.querySelector("#payBody .payseg"),
       go: t(d.getElementById("payGo")) + ":" + d.getElementById("payGo").tagName, cap: t(d.querySelector("#payFoot .paycap")) };

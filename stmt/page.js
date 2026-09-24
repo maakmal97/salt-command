@@ -2570,7 +2570,8 @@ const CLIENT_JS = `
   }
   function openPay(ctx){
     if(!paySh||view||!(ctx.fig>0.004)) return;
-    PS={ctx:ctx, part:false, amt:'', rail:'', acct:'', said:'', step:'pay', away:null, busy:false};
+    /* S6 fix: Transfer is the way chosen as it opens, as the mockup draws it; the way is not the account, and no account is */
+    PS={ctx:ctx, part:false, amt:'', rail:'transfer', acct:'', said:'', step:'pay', away:null, busy:false};
     payScr.hidden=false; paySh.hidden=false; drawPay();
     try{ paySh.focus(); }catch(e){}
   }
@@ -2642,12 +2643,16 @@ const CLIENT_JS = `
     });
     fs.appendChild(g); body.appendChild(fs);
     if(PS.rail&&!cash){
-      var fw=el('div','salt-field payinto'), lb=el('label','salt-field__label','Pay into'), sel=el('select','fld salt-field__input');
-      lb.htmlFor='payInto'; sel.id='payInto';
-      var o0=el('option',null,'Choose one of our accounts'); o0.value=''; sel.appendChild(o0);
-      payInto(PS.rail,payAmt()||c.fig).forEach(function(a){ var op=el('option',null,a.name); op.value=a.key; op.selected=PS.acct===a.key; sel.appendChild(op); });
-      sel.addEventListener('change',function(){ PS.acct=sel.value; drawPay(); });
-      fw.appendChild(lb); fw.appendChild(sel); body.appendChild(fw);
+      /* S6 fix: his accounts as the system's Option tiles, one tap each where a select took two or three, and none chosen */
+      var fi=el('fieldset','salt-options payinto'), gi=el('div','salt-options__grid salt-options__grid--2');
+      fi.id='payInto'; fi.appendChild(el('legend','salt-options__legend','Pay into'));
+      payInto(PS.rail,payAmt()||c.fig).forEach(function(a){
+        var lab=el('label','salt-option'), r=el('input','salt-option__input'), face=el('span','salt-option__face'), tx=el('span','salt-option__text');
+        r.type='radio'; r.name='payInto'; r.value=a.key; r.checked=PS.acct===a.key;
+        r.addEventListener('change',function(){ PS.acct=a.key; drawPay(); });
+        tx.appendChild(el('span','salt-option__label',a.name)); face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); gi.appendChild(lab);
+      });
+      fi.appendChild(gi); body.appendChild(fi);
     }
     var L=el('div','salt-ledger salt-ledger--plain payref'), rr=lrow('Reference',user,'Put this in the reference, so we can match it.'),
         cp=el('button','salt-ghost'); cp.type='button'; cp.setAttribute('aria-label','Copy the reference'); cp.appendChild(glyph('copy',18));

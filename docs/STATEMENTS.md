@@ -554,7 +554,8 @@ it does with the quoted total. An associate with no bucket on the roster is refu
 sent and `paid` what he has received (S6), `moved` and `movedOn` what he says he handed over, and either may lead. Payment is offered
 **from the acknowledgement**, in **one pay sheet for every Pay** (To pay now, an order, the held page;
 S6 6.4, his D8 as amended): the figure and what it is for, All or Part, then two ways, Transfer or Scan
-a code, **with no account chosen for them**: they choose which of his accounts to pay into from those
+a code, Transfer chosen as it opens (the way, never the account), **with no account chosen for them**: they choose,
+one Option tile a tap, which of his accounts to pay into from those
 `payHref` links, a suspended one never offered, and their username is the reference. Show the account
 number, or Show the code, hands over one link into QR Command, which the Counter never names or carries
 a number of. **On return the sheet asks once** (S6 6.5, his D7): "Did you send RM 70?", with Not yet, never a tap
