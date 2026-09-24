@@ -27134,7 +27134,7 @@ await (async () => {
   await O.deskMove(senv, U, o.id, { ledger: { paid: 100 } });
   const twice = await O.deskMove(senv, U, o.id, { verdict: { kind: "received", claim: at4, amount: 40 } });
   const r4 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
-  ok(twice.status === 409 && /answer it not found/.test(twice.error) && r4.paid === 100 && r4.claimed === 40,
+  ok(twice.status === 409 && /answer it Received, on the book already, if you recorded it, or Not found/.test(twice.error) && r4.paid === 100 && r4.claimed === 40,
     "and a claim that money recorded since already covers is not received on top of it: " + JSON.stringify({ err: twice.error, paid: r4.paid, claimed: r4.claimed }));
 })();
 
@@ -27563,8 +27563,10 @@ await (async () => {
     ok(sent && sent.body.hash === "h-drawn", "Received sends the digest of the rows drawn, which the Worker approves only if they still stand: " + JSON.stringify(sent && sent.body));
     LEFT = 20; w.eval("CLM_PV={};ORD_PV_GEN++;"); await w.eval("ordLoad(true)"); await new Promise((r) => setTimeout(r, 30));
     const card2 = D.querySelector('.ordcard[data-id="' + claim.id + '"]');
-    ok(card2.querySelector('button[data-ord="creceived"]').disabled && /More than the rows owe/.test(card2.textContent) && /is not a tap here/.test(card2.textContent),
-      "and with more sent than the rows owe the card says so, and Received is not a tap");
+    const cov2 = card2.querySelector('button[data-ord="creceived"]');
+    ok(!cov2.disabled && cov2.dataset.covered === "1" && cov2.textContent === "Received, on the book already" && /More than the rows owe/.test(card2.textContent)
+      && /no row is booked on a tap/.test(card2.textContent),
+      "and with more sent than the rows owe the card says so, and its Received is the one that books no row, on the book already");
   } finally { w.close(); }
 })();
 
@@ -27966,6 +27968,124 @@ await (async () => {
     && (await O.ordersOf(senv, U)).find((x) => x.id === b.id).claimed === 120,
     "and an order claim's Received is refused on a row a claim against the account booked and no fold has landed, the claim still waiting: "
     + JSON.stringify({ acct: yes.j.approved, order: twice.status, error: twice.j.error }));
+})();
+
+section("S6 fix: a claim that money he recorded another way already covers is answered Received, on the book already, never Not found");
+await (async () => {
+  /* HIS D7: his Received or Not found answers a claim. A claim that money he recorded another way already covers (a
+     transfer typed on the desk and carried back, or rows he paid by hand) was refused as Received, leaving only Not
+     found, which told them to pay again for money that had arrived, and until then it paused the chase. Received, on
+     the book already, closes it as received and books nothing: its entry is filed never to land, paid (which carries
+     the money) never moves, and they are woken Payment received. Both Workers over the real schema, then the card. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so a covered claim was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders } = await import("../src/orders.js");
+  const { runDrafter, withPending } = await import("../src/drafter.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const C = "CX1-AB", U = "abcd-efgh", key = C + "|2026-09-20|70";
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  /* his row, paid by hand (the transfer he typed on the desk), and a row of theirs he entered, paid by hand as well */
+  const rows = [{ rid: "s40", customer: C, product: "salt", date: "2026-09-20", qty: 1, total: 70, cash: 70, deliveredQty: 0, orderKey: key },
+    { rid: "s41", customer: C, product: "salt", date: "2026-09-02", qty: 1, total: 150, cash: 150, deliveredQty: 1, deliveredOn: "2026-09-02" }];
+  rows.forEach((r, i) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", i, "h" + i, JSON.stringify(r)));
+  setState("roster", [C]); setState("OPEN", withPending({ sales: [], state: { OPEN: { byKey: {}, position: {} } } }, rows[0]).state.OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 30, floors: { "1": { floor: 40 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [];
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil: (p) => tails.push(p) });
+    const j = await r.json(); await Promise.allSettled(tails.splice(0));
+    return { status: r.status, j };
+  };
+  const mine = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 70, total: 70, week: "" })).order;
+  await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+  await O.deskMove(senv, U, o.id, { mark: { ledgerKey: key, ack: "2026-09-20T01:00:00.000Z" } });
+  await O.customerMove(senv, U, o.id, "pay", { amount: 70, method: "transfer", account: "maybank" });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const c = (await mine(o.id)).payments.find((p) => p.claim === "waiting");
+  await O.deskMove(senv, U, o.id, { ledger: { paid: 70 } });   /* the return leg: the transfer he typed on the desk */
+  const plain = await call("/orders/" + o.id + "/received", { claim: c.at, amount: 70 });
+  const cov = await call("/orders/" + o.id + "/received", { claim: c.at, amount: 70, covered: true });
+  const after = await mine(o.id), ca = after.payments.find((p) => p.at === c.at);
+  const d = db.prepare("SELECT status,decided_by FROM draft WHERE id = ?").get(c.queued);
+  const rc = await reconcileOrders(denv);
+  const ev = bk.db.prepare("SELECT body FROM ev WHERE oid = ? AND kind = 'verdict'").all(o.id).map((x) => JSON.parse(x.body));
+  ok(plain.status === 409 && /on the book already/.test(plain.j.error) && cov.status === 200 && ca.claim === "received" && ca.covered === true && !("queued" in ca)
+    && after.claimed === 0 && after.paid === 70 && d && d.status === "rejected" && d.decided_by === "covered" && rc.queued === 0
+    && ev.length === 1 && ev[0].verdict === "received" && !O.claimWaits(after),
+    "a claim money he recorded by hand already covers is refused as a plain Received and taken as Received, on the book already: received, paid unmoved, its row filed never to land, nothing queued again, the chase free: "
+    + JSON.stringify({ plain: plain.j.error, cov: cov.status, claim: ca, paid: after.paid, draft: d, rc }));
+  /* not where the order still owes it: that is a Received like any other */
+  const o2 = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 70, total: 70, week: "" })).order;
+  await O.deskMove(senv, U, o2.id, { status: "acknowledged", mode: "collect" });
+  await O.customerMove(senv, U, o2.id, "pay", { amount: 70, method: "transfer", account: "maybank" });
+  const c2 = (await mine(o2.id)).payments.find((p) => p.claim === "waiting");
+  const owed = await O.deskMove(senv, U, o2.id, { verdict: { kind: "received", covered: true, claim: c2.at, amount: 70 } });
+  const kvenv = { STMT: new KV(), STMT_DESK_KEY: "desk-key" };
+  const k = (await O.placeOrder(kvenv, U, { product: "salt", qty: 1, mode: "collect", unit: 70, total: 70, week: "" })).order;
+  await O.deskMove(kvenv, U, k.id, { status: "acknowledged", mode: "collect" });
+  await O.customerMove(kvenv, U, k.id, "pay", { amount: 70, method: "transfer", account: "maybank" });
+  await O.deskMove(kvenv, U, k.id, { ledger: { paid: 70 } });
+  const kc = (await O.ordersOf(kvenv, U)).find((x) => x.id === k.id).payments.find((p) => p.claim === "waiting");
+  const onKv = await O.deskMove(kvenv, U, k.id, { verdict: { kind: "received", covered: true, claim: kc.at, amount: 70 } });
+  ok(owed.status === 409 && /answer it Received/.test(owed.error) && onKv.status === 503,
+    "on the book already is refused where the order still owes the claim, and on the kv road, as Not found is: " + JSON.stringify({ owed: owed.error, kv: onKv.error }));
+
+  /* A CLAIM AGAINST THE ACCOUNT whose rows he paid by hand: more than they owe, so it books no row */
+  const ac = (await O.claimAccount(senv, U, { amount: 150, method: "transfer", account: "wise" })).claim;
+  const pv = await call("/claims/" + ac.id + "/preview", {});
+  const acov = await call("/claims/" + ac.id + "/received", { covered: true });
+  const acA = (await O.claimsOf(senv, U)).find((x) => x.id === ac.id);
+  const booked = db.prepare("SELECT entry FROM draft").all().filter((x) => JSON.parse(x.entry).claimId === ac.id).length;
+  ok(pv.j.left === 150 && acov.status === 200 && acov.j.covered === true && acA.state === "received" && booked === 0,
+    "and a claim against the account that no row owes is answered Received, on the book already, booking no row: " + JSON.stringify({ left: pv.j.left, status: acov.status, state: acA.state, booked }));
+
+  /* THE CARD: a claim on an order his hand-typed money completed is still his to answer, and Received posts it covered */
+  const o3 = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 70, total: 70, week: "" })).order;
+  await O.deskMove(senv, U, o3.id, { status: "acknowledged", mode: "collect" });
+  await O.deskMove(senv, U, o3.id, { handover: { units: 1, mode: "collect" } });
+  await O.customerMove(senv, U, o3.id, "pay", { amount: 70, method: "transfer", account: "maybank" });
+  await O.deskMove(senv, U, o3.id, { ledger: { paid: 70 } });
+  const done3 = (await mine(o3.id)).status, listed = (await O.allOrders(senv, false)).some((x) => x.id === o3.id);
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 96; w.clearInterval = () => {};
+    const ord = { id: "d1", u: U, code: C, product: "salt", qty: 1, total: 70, delivery: 0, mode: "collect", history: [], msgs: [], status: "done", at: "2026-09-20T02:00:00.000Z",
+      moved: 1, paid: 70, claimed: 70, payments: [{ at: "2026-09-24T05:00:00.000Z", amount: 70, method: "transfer", account: "maybank", claim: "waiting" }] };
+    const calls = [];
+    w.fetch = async (path, init) => { const post = !!(init && init.method === "POST"); calls.push({ p: String(path), body: init && init.body ? JSON.parse(init.body) : null });
+      return { ok: true, status: 200, json: async () => (String(path) === "orders" && !post ? { ok: true, orders: [JSON.parse(JSON.stringify(ord))], claims: [] } : { ok: true }) }; };
+    w.eval("AP_DRAFTS=[];");
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const b = D.querySelector('.ordcard[data-id="d1"] button[data-ord="received"]');
+    const label = b ? b.textContent : null;
+    if (b) b.click();
+    await new Promise((r) => setTimeout(r, 30));
+    const sent = calls.find((x) => x.p === "orders/d1/received");
+    ok(done3 === "done" && listed && label === "Received, on the book already" && sent && sent.body.covered === true && sent.body.amount === 70,
+      "a claim on an order his recorded money completed stays on his card, and its Received is on the book already: " + JSON.stringify({ done3, listed, label, sent: sent && sent.body }));
+  } finally { w.close(); }
 })();
 
 section("v764: what he records on the desk reaches the customer's order, and the chase stops");

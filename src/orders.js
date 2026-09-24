@@ -416,6 +416,7 @@ export async function handedOrder(env, id, body, by, now) {
 
 /** POST /orders/<id>/received {amount}: the payment they recorded is in his bank. The site already counts it. */
 export async function receivedOrder(env, id, body, by, now) {
+  if (body && body.covered === true) return notFoundOrder(env, id, body, now, true);   /* S6 fix: on the book already */
   const rej = await rejectedOf(env.SALT_LEDGER, id, "pay");
   /* their payment may be drafted already (the reconcile queues it within the minute once the row is on the book),
      and then that draft's own entry is the one his yes answers */
@@ -468,17 +469,21 @@ export async function receivedOrder(env, id, body, by, now) {
  * have (the claim's moment), and dropped from every queue, so no pass of the drafter can draft it after; only then is
  * the site told, as one event that takes the claim off what they say they sent and its entry's name off the claim (the
  * order book's; never on the kv road). The site wakes them with its kind. Paid never moved, so nothing lowers it. */
-async function fileNotFound(env, at, entry, now) {
-  const db = env.SALT_LEDGER, when = (now instanceof Date ? now : new Date()).toISOString();
+const FILED = { notfound: "Not found: what they say they sent has not arrived, so nothing reaches the book.",
+  covered: "Received, on the book already: money he recorded another way carries it, so this entry never lands." };
+async function fileNotFound(env, at, entry, now, how) {
+  const db = env.SALT_LEDGER, when = (now instanceof Date ? now : new Date()).toISOString(), by = how || "notfound";
   await db.prepare("INSERT OR IGNORE INTO draft (id,status,collection,entry,row,reasoning,flags,party,drafter,drafted_at,decided_at,decided_by) "
-    + "VALUES (?1,'rejected','sales',?2,'{}',?3,'[]',?4,'orders',?5,?5,'notfound')")
-    .bind(at, JSON.stringify(entry), "Not found: what they say they sent has not arrived, so nothing reaches the book.", entry.party || null, when).run();
-  await db.prepare("UPDATE draft SET status='rejected', decided_at=?1, decided_by='notfound' WHERE id=?2 AND status='pending'").bind(when, at).run();
+    + "VALUES (?1,'rejected','sales',?2,'{}',?3,'[]',?4,'orders',?5,?5,?6)")
+    .bind(at, JSON.stringify(entry), FILED[by], entry.party || null, when, by).run();
+  await db.prepare("UPDATE draft SET status='rejected', decided_at=?1, decided_by=?3 WHERE id=?2 AND status='pending'").bind(when, at, by).run();
   const cur = await db.prepare("SELECT status FROM draft WHERE id=?1").bind(at).first();
   return !!cur && cur.status === "rejected";
 }
-/** POST /orders/<id>/notfound {claim, amount}: a claim of theirs on an order has not arrived. */
-export async function notFoundOrder(env, id, body, now) {
+/** POST /orders/<id>/notfound {claim, amount}: a claim of theirs on an order has not arrived. S6 fix: `covered` (from
+ *  /received) is Received, on the book already: money he recorded another way carries it, so its entry is filed the same
+ *  way and never lands, and the site hears Received, which it takes only where the claim is more than is still owed. */
+export async function notFoundOrder(env, id, body, now, covered) {
   const f = await findOrder(env, id);
   if (!f.ok) return f;
   const o = f.order, db = env.SALT_LEDGER;
@@ -499,10 +504,13 @@ export async function notFoundOrder(env, id, body, now) {
     let de = null; try { de = d ? JSON.parse(d.entry) : null; } catch (e) { de = {}; }
     if (!theirs(de) || !theirs(q)) at = null;
   }
-  if (at && !(await fileNotFound(env, at, Object.assign(claimEntry(o, p), { at }), now)))
-    return { ok: false, status: 409, error: "its row is decided already, so it cannot be filed not found" };
+  /* the site's own test, asked first, so nothing is filed for a claim it would refuse */
+  if (covered && !(p.amount > +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2) + 0.004))
+    return { ok: false, status: 409, error: "the order still owes what this claim is: answer it Received" };
+  if (at && !(await fileNotFound(env, at, Object.assign(claimEntry(o, p), { at }), now, covered ? "covered" : "notfound")))
+    return { ok: false, status: 409, error: "its row is decided already, so it cannot be filed " + (covered ? "as on the book already" : "not found") };
   if (at) await dropQueued(env, [at]);
-  return moveOrder(env, o.u, id, { verdict: { kind: "notfound", claim: p.at, amount: p.amount } });
+  return moveOrder(env, o.u, id, { verdict: covered ? { kind: "received", covered: true, claim: p.at, amount: p.amount } : { kind: "notfound", claim: p.at, amount: p.amount } });
 }
 /** POST /claims/<id>/notfound {amount}: a claim against the account has not arrived. Nothing was queued for it. */
 export async function notFoundClaim(env, id, body) {
@@ -614,9 +622,15 @@ export async function claimReceived(env, id, body, by, now) {
     return Object.assign({ ok: r.ok, again: true, rows: [], approved: [] },
       r.ok ? { claim: r.claim, push: r.push } : { status: r.status, error: "the rows are booked, but the site was not told: " + r.error });
   }
+  /* S6 fix: RECEIVED, ON THE BOOK ALREADY: more than their rows owe, because he recorded it by hand, so it books nothing */
+  if (body && body.covered === true) {
+    if (!(pv.left > 0.004)) return { ok: false, status: 409, error: "their rows owe all of it: answer it Received" };
+    const r = await moveClaim(env, pv.claim.u, id, { verdict: { kind: "received", amount: pv.claim.amount, covered: true } });
+    return Object.assign({ ok: r.ok, covered: true, rows: [], approved: [] }, r.ok ? { claim: r.claim, push: r.push } : { status: r.status, error: r.error });
+  }
   if (!body || typeof body.hash !== "string") return { ok: false, status: 400, error: "Received answers the rows drawn: send the digest the preview gave" };
   if (pv.hash !== body.hash) return { ok: false, status: 409, differs: true, error: "the rows have changed since the card drew them: look at them again", preview: pv };
-  if (pv.left > 0.004) return { ok: false, status: 409, error: "RM " + pv.left.toFixed(2) + " of it is more than their rows owe, so it is not approved on a tap: record it by hand, or answer Not found" };
+  if (pv.left > 0.004) return { ok: false, status: 409, error: "RM " + pv.left.toFixed(2) + " of it is more than their rows owe, so it is not approved on a tap: answer Received, on the book already, if you recorded it by hand, or Not found" };
   if (!own.length) return { ok: false, status: 409, error: "no row of theirs owes anything to settle" };
   const pres = [];
   for (let i = 0; i < own.length; i++) {
@@ -702,7 +716,7 @@ async function draftsOfOrders(db, ids) {   /* one order's, in practice: ids hold
 const ofStage = (r, stage) => (stage === "move" ? ["Handover", "Close"].includes(r.entry.status) : r.entry.status === STATUS_OF_STAGE[stage])
   && (stage === "pay" ? !r.entry.counter : stage === "cash" ? !!r.entry.counter : true);
 /* he rejected it: a withdrawal's drop (11.10) is filed rejected too, and is not his */
-const rejectedByHim = (d) => !!d && d.status === "rejected" && d.decided_by !== "withdrawn" && d.decided_by !== "notfound";   /* S6: nor a claim not found */
+const rejectedByHim = (d) => !!d && d.status === "rejected" && !["withdrawn", "notfound", "covered"].includes(d.decided_by);   /* S6: nor a claim not found, or on the book already */
 /** The newest draft of a stage for an order, when it is one he rejected; else null. */
 export async function rejectedOf(db, id, stage) {
   if (!db) return null;

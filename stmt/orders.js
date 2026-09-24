@@ -279,7 +279,8 @@ export const awaitingAnswer = (o) => {
 };
 export async function allOrders(env, all) {
   const list = await everyOrder(env);
-  return all ? list : list.filter((o) => OPEN_STATES.includes(o.status) || awaitingAnswer(o));
+  /* S6 fix: and one a claim waits on, which money he recorded another way may have completed: it is his to answer */
+  return all ? list : list.filter((o) => OPEN_STATES.includes(o.status) || awaitingAnswer(o) || claimWaits(o));
 }
 
 /* ---- A CLAIM IS NOT A PAYMENT (S6 6.5, his decision D7 of 24 Sep 2026) --------------------------
@@ -293,7 +294,7 @@ export const VERDICTS = ["received", "notfound"];
 export const claimedOf = (o) => +(((o && o.payments) || []).filter((p) => p && p.claim === "waiting")
   .reduce((n, p) => n + (+p.amount || 0), 0)).toFixed(2);
 /** Each claim the ledger has not been told of: waiting for his check, or received; never one not found. */
-export const claimsToQueue = (o) => ((o && o.payments) || []).filter((p) => p && (p.claim === "waiting" || p.claim === "received") && !p.queued);
+export const claimsToQueue = (o) => ((o && o.payments) || []).filter((p) => p && (p.claim === "waiting" || (p.claim === "received" && !p.covered)) && !p.queued);
 /** Money he confirmed that the ledger has not been told of, less a received claim, which its own entry tells. */
 export const paidUntold = (o) => +((+o.paid || 0) - (+((o.queued || {}).paid) || 0)
   - claimsToQueue(o).filter((p) => p.claim === "received").reduce((n, p) => n + (+p.amount || 0), 0)).toFixed(2);
@@ -593,8 +594,16 @@ export function decideDesk(order, body, at) {
     const p = (order.payments || []).find((x) => x && x.claim === "waiting" && x.at === v.claim);
     if (!p) return { error: "no claim of theirs waits under that name", status: 409 };
     if (!isNum(v.amount) || Math.abs(v.amount - p.amount) > 0.004) return { error: "that claim is " + p.amount.toFixed(2) + ", not " + (isNum(v.amount) ? v.amount.toFixed(2) : "a figure"), status: 409 };
+    /* S6 fix: RECEIVED, ON THE BOOK ALREADY. Money he recorded another way since (a transfer typed on the desk, carried back
+       here) covers it: it becomes received and books nothing, paid already carrying it. Only where the claim is more than
+       is still owed; below that it is a Received like any other. */
+    if (v.covered === true) {
+      if (v.kind !== "received") return { error: "only a claim received can be on the book already", status: 400 };
+      if (!(p.amount > dueOf(order) + 0.004)) return { error: "RM " + dueOf(order).toFixed(2) + " is still owed on this order, which this claim fits: answer it Received", status: 409 };
+      return { ev: { kind: "verdict", at, verdict: "received", covered: true, claim: p.at, amount: p.amount } };
+    }
     /* money he recorded another way since (the return leg, his cash) may already cover it: received, it would count twice */
-    if (v.kind === "received" && p.amount > dueOf(order) + 0.004) return { error: "only " + Math.max(0, dueOf(order)).toFixed(2) + " is owed on this order now, less than this claim: answer it not found", status: 409 };
+    if (v.kind === "received" && p.amount > dueOf(order) + 0.004) return { error: "only " + Math.max(0, dueOf(order)).toFixed(2) + " is owed on this order now, less than this claim: answer it Received, on the book already, if you recorded it, or Not found", status: 409 };
     return { ev: { kind: "verdict", at, verdict: v.kind, claim: p.at, amount: p.amount } };
   }
   /* S11 11.6: NO REPLY NEEDED. A "thanks" had to be answered to leave his card. This answers it without a
@@ -696,13 +705,18 @@ export function applyEvent(order, ev) {
     order.claimed = claimedOf(order);
     order.history.push({ at, status: order.status, by: "customer", method: ev.method, account: ev.account, note: "sent " + ev.amount.toFixed(2) });
   } else if (ev.kind === "verdict" && order.kind === "account") {   /* S6 6.6: his answer to a claim against the account */
-    if (order.state === "waiting") { order.state = ev.verdict; order.answered = at;
+    if (order.state === "waiting") { order.state = ev.verdict; order.answered = at; if (ev.covered) order.covered = true;
       order.history.push({ at, by: "desk", note: (ev.verdict === "received" ? "received " : "not found ") + (+order.amount).toFixed(2) }); }
   } else if (ev.kind === "verdict") {   /* S6: his answer to one claim, which keeps its record */
     const p = (order.payments || []).find((x) => x && x.claim === "waiting" && x.at === ev.claim);
     /* S6 11.14: NOT FOUND, IN ONE EVENT: the claim leaves what they say they sent, and its entry's name leaves the claim,
        because that entry is filed rejected and the ledger was never told; paid never moved, so nothing lowers it */
-    if (p && ev.verdict === "notfound") {
+    if (p && ev.covered) {   /* S6 fix: on the book already, so paid, which carries it, never moves, and its entry never lands */
+      order.payments = order.payments.map((x) => { if (x !== p) return x; const c = Object.assign({}, x, { claim: "received", covered: true, answered: at }); delete c.queued; return c; });
+      order.claimed = claimedOf(order);
+      order.history.push({ at, status: order.status, by: "desk", note: "received " + p.amount.toFixed(2) });
+      done = settle(order, at);
+    } else if (p && ev.verdict === "notfound") {
       order.payments = order.payments.map((x) => { if (x !== p) return x; const c = Object.assign({}, x, { claim: "notfound", answered: at }); delete c.queued; return c; });
       order.claimed = claimedOf(order);
       order.history.push({ at, status: order.status, by: "desk", note: "not found " + p.amount.toFixed(2) });
@@ -924,7 +938,8 @@ export async function deskMove(env, u, id, body) {
     const push = await wakeCustomer(env, u, r.wake);
     return { order: r.order, push };
   }
-  if (body && body.verdict && body.verdict.kind === "notfound") return { error: NOT_FOUND_ON_KV, status: 503 };
+  /* S6 fix: and Received, on the book already, which takes a claim and its entry's name off the order as Not found does */
+  if (body && body.verdict && (body.verdict.kind === "notfound" || body.verdict.covered)) return { error: NOT_FOUND_ON_KV, status: 503 };
   const order = await env.STMT.get(OKEY(u, id), "json");
   const d = decideDesk(order, body, new Date().toISOString());
   if (d.error) return d;
@@ -982,7 +997,8 @@ export function decideClaimDesk(claim, body, at) {
   if (!v || !VERDICTS.includes(v.kind)) return { error: "a claim is answered received or not found", status: 400 };
   if (claim.state !== "waiting") return { error: "that claim is answered already", status: 409 };
   if (!isNum(v.amount) || Math.abs(v.amount - claim.amount) > 0.004) return { error: "that claim is " + (+claim.amount).toFixed(2) + ", not " + (isNum(v.amount) ? v.amount.toFixed(2) : "a figure"), status: 409 };
-  return { ev: { kind: "verdict", at, verdict: v.kind, claim: claim.id, amount: claim.amount } };
+  if (v.covered === true && v.kind !== "received") return { error: "only a claim received can be on the book already", status: 400 };
+  return { ev: Object.assign({ kind: "verdict", at, verdict: v.kind, claim: claim.id, amount: claim.amount }, v.covered === true ? { covered: true } : {}) };
 }
 /* S6 11.14 (D7, D10): NOT FOUND IS ONE EVENT IN THE ORDER BOOK, or it is not taken. On the KV road it would be a record
    read, changed and written back whole, which is what the judges ruled out for a figure that falls. */

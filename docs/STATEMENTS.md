@@ -583,7 +583,9 @@ claim's row rejected as `notfound` FIRST, under the id it has or will have, and 
 takes it as ONE event of the order book: the claim leaves `claimed` and its entry's name leaves the claim together, paid
 never having moved, and the wake says "Payment not found yet" (`notfound` in `NEWS`). **On the kv road Not found is
 refused** (`NOT_FOUND_ON_KV`), a figure that falls never being a read-modify-write. A claim not found is never offered again,
-and a Received on a claim whose row was filed not found is refused. **A claim against the account is received row by
+and a Received on a claim whose row was filed not found is refused. **Received, on the book already** answers a claim
+that money he recorded another way covers (more than the order still owes, or than the account's rows owe): filed as
+`covered` the way Not found files it, one event, the claim received with paid unmoved, the wake Payment received. **A claim against the account is received row by
 row** (S6 11.15, D6): the desk Worker drafts the engine's oldest-first allocation (`claimAlloc`: their rows and their
 bucket's with goods out and money owed, by date, each to what it owes, less the money already on its way to it: a claim
 on its order waiting or received, cash not folded, another account claim's booked row) as one Fulfilment a row, against the mirror and
