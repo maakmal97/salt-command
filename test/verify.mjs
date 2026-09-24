@@ -13572,7 +13572,9 @@ await (async () => {
       return {
         text: d.getElementById("pPrices").textContent,
         marks: [...d.querySelectorAll("#pPrices .mark")].map((m) => ({ ch: m.textContent, colour: m.style.color, hidden: m.getAttribute("aria-hidden") })),
-        heads: [...d.querySelectorAll("#pPrices h3")].map((h) => h.textContent)
+        heads: [...d.querySelectorAll("#pPrices h3")].map((h) => h.textContent),
+        /* the panel with the greeting taken out, which is the hour's and not the level's */
+        html: d.getElementById("pPrices").innerHTML.replace(/Good (morning|afternoon|evening)[.]/, "")
       };
     } finally { dom.window.close(); }
   };
@@ -13582,21 +13584,20 @@ await (async () => {
     soon: [] });
 
   const a59 = await open59(list59("Gold", "Bronze", "2026-03-04"));
-  /* 1. A MARK FOR EACH PRODUCT, AND THE TWO LEVELS DIFFER IN BOTH SYMBOL AND COLOUR. Both halves are
-     asserted: one map keyed by level with the same glyph twice would pass a check on colour alone. */
-  ok(a59.marks.length === 2 && a59.marks[0].ch !== a59.marks[1].ch && a59.marks[0].colour !== a59.marks[1].colour
-    && a59.marks.every((m) => m.ch && m.colour && m.hidden === "true"),
-    "each product carries its level's own mark, symbol and colour, and the mark is not read out: " + JSON.stringify(a59.marks));
+  /* 1. S4 4.10, D11 (HIS "ALL RECOMMENDED" OF 24 SEP 2026): THE MARK LEAVES PRICES. The customer sees no level at all,
+     named or marked: no mark is drawn, and none of v659's six glyphs is anywhere on the panel. */
+  const glyphs59 = new RegExp("[" + [0x25C7, 0x25CF, 0x25C6, 0x25B2, 0x25A0, 0x25CB].map((c) => String.fromCharCode(c)).join("") + "]");
+  ok(a59.marks.length === 0 && !glyphs59.test(a59.html),
+    "no product carries a mark of its level any more: " + JSON.stringify(a59.marks));
   /* 2. AND THE LEVEL IS NEVER NAMED. This is the whole of "subtle": the name travels in the sealed list and stays out of
      the page's text, so two customers comparing pages cannot order themselves by it. */
   const names59 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
   ok(names59.every((n) => a59.text.indexOf(n) < 0),
     "and no level is named anywhere in the prices they read: " + JSON.stringify(a59.heads));
-  /* 3. THE SAME LEVEL ON BOTH PRODUCTS GIVES THE SAME MARK, which is what makes it a label and not a decoration. */
-  const b59 = await open59(list59("Gold", "Gold", "2026-03-04"));
-  ok(b59.marks.length === 2 && b59.marks[0].ch === b59.marks[1].ch && b59.marks[0].colour === b59.marks[1].colour
-    && b59.marks[0].ch === a59.marks[0].ch,
-    "the same level on both products draws the same mark: " + JSON.stringify(b59.marks));
+  /* 3. AND THE LEVEL LEAVES NO TRACE: two lists that differ only in their levels draw the same panel, to the character. */
+  const b59 = await open59(list59("Silver", "Gold", "2026-03-04"));
+  ok(b59.html.length > 200 && b59.html === a59.html,
+    "two lists that differ only in their levels draw the same Prices, to the character: " + JSON.stringify([a59.html.length, b59.html.length]));
   /* 4. THE GREETING, AND THE MONTH THEIR FIRST ORDER FALLS IN. The hour is the device's, so the greeting is checked
      against the hour this run happens to be at rather than against one of the three words. */
   const hour59 = new Date().getHours();

@@ -308,13 +308,11 @@ Three things sit behind the one password since v499: the statements, a **price l
 the week, and an **order**. The page shows them as three tabs once the password has opened
 the record. Nothing about the statements changed.
 
-**THE LABEL IS A MARK, NOT A NAME** (v659, his instruction of 16 Sep 2026: "a very subtle tier level,
-in symbol and colour (for each tier), marked in the pricing"). Each product on the price list carries
-a small glyph in its level's colour beside the product's name: `MARK` in `stmt/page.js`, six shapes
-from one Unicode block so they render the same everywhere, and none of them a count. **The level is
-never named in the page**, which is the whole of subtle: two customers comparing pages cannot order
-themselves by it. The name does travel inside the sealed list, as it has since v651, and stays out of
-the text and out of the mark's own label, which is `aria-hidden` so it is not read out either.
+**THE CUSTOMER SEES NO LEVEL** (S4 4.10, his D11 of 24 Sep 2026, reversing v659's "a very subtle tier
+level, in symbol and colour"). Prices drew a glyph in the level's colour beside each product (`MARK`, v659
+to S4); it is gone, and nothing on the page reads the level. The name still travels inside the sealed list,
+as it has since v651, and the suite holds two lists differing only in level to the same Prices, to the
+character.
 
 **AND THEY ARE GREETED AS PERSONALLY AS THIS SITE CAN** (v659, the same instruction). The hour is
 theirs, off their own device, so the page opens with Good morning, Good afternoon or Good evening,
