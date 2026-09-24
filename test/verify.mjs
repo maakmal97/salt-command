@@ -1477,7 +1477,7 @@ await (async () => {
 
   const t = readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8");
   ok(/INSERT OR REPLACE INTO refused/.test(t), "--from-queue records laptop refusals too, which is the case that caused this");
-  ok(/0003_refused\.sql/.test(t), "--schema applies the migration");
+  ok((await import("../tools/drafts.mjs")).schemaFiles().includes("0003_refused.sql"), "--schema applies the migration");   /* read off the folder since S11 */
 
   /* ONE STOP-LIST, NOT TWO. ledger.mjs and this file each carried their own copy; "general"
      was added to one and the other went on failing, which is the exact silent divergence
