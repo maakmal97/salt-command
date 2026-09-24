@@ -102,6 +102,16 @@ export const saidBy = (o, who) => ((o && o.msgs) || []).filter((m) => m && m.by 
 
 const isNum = (v) => typeof v === "number" && Number.isFinite(v);
 const OKEY = (u, id) => "order:" + u + ":" + id;
+/* THE ORDER'S OWN PUT DECIDES THE ANSWER (24 Sep 2026). What is written after it (the shared marks,
+   which every move writes to the same few keys, and a request id) is best effort: KV refuses a
+   second write to one key inside a second and the put throws, which answered 500 on a move already
+   stored, and the page said "not placed" of an order that was. A put that fails here is logged and
+   the move answers with what was stored. A lost mark costs a wake, never a stage: the desk's
+   reconcile lists every minute whatever the marks say. */
+async function putSoft(env, key, value, opts) {
+  try { await env.STMT.put(key, value, opts); }
+  catch (e) { console.log("orders: " + key.split(":")[0] + " not written: " + String((e && e.message) || e)); }
+}
 
 const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
   .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -146,6 +156,19 @@ async function listOrders(env, prefix) {
 /** The customer's own orders, newest first. */
 export const ordersOf = (env, u) => listOrders(env, "order:" + u + ":");
 
+/* WHAT A CUSTOMER'S OWN PAGE IS HANDED (24 Sep 2026). The record also carries the desk's
+   bookkeeping: `ledgerKey`, which names a roster code when this file says nothing here says which
+   account a username is, `queued` and `sync`. Their order list and every answer to a move of theirs
+   carry this view instead. A WHITELIST, so a field the desk adds later stays on the desk until it is
+   named here; and a desk mark, which changes none of these, no longer redraws their page. */
+export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "week",
+  "total", "delivery", "paid", "payments", "moved", "movedOn", "method", "account", "history", "msgs"];
+export const customerView = (o) => {
+  const v = {};
+  for (const k of CUSTOMER_FIELDS) if (o && o[k] !== undefined) v[k] = o[k];
+  return v;
+};
+
 /** Every order still open, or all of them with `all`, across every customer: the desk's read. */
 /* v752: AN ORDER WAITING FOR AN ANSWER IS STILL HIS TO LOOK AT. His card lists the OPEN orders, and
    v751 lets a customer write on any order at any stage, so a question asked about one he has closed
@@ -184,15 +207,23 @@ export function orderWork(o) {
 
 /* ---- WHO IS CHASED, AND HOW OFTEN (v700, his instruction of 18 Sep 2026) ---------------------
  * "The customer will be notified every hour to pay if it is an advanced order." An advance is the
- * book's own word for goods out with money owed, so that is the test: something has been handed
- * over and something is still outstanding. A customer who has paid nothing on an order he has not
- * touched yet is not chased, because nothing of his is in their hands.
+ * book's own word for goods out ahead of the money, so that is the test, READ AS THE ENGINE READS IT
+ * (24 Sep 2026): the share of the goods handed over above the share of what is owed that is paid
+ * (engine/position.mjs, txStat's Open · Advance). It read "anything moved and anything due" until
+ * then, which chased a customer who had paid for the 2 of 5 units they held, every hour, for the 3
+ * not yet handed over. A customer who has paid nothing on an order he has not touched yet is not
+ * chased, because nothing of his is in their hands.
  *
  * DAY AND NIGHT, HIS WORD, and until it is paid. The cap is one wake an hour per CUSTOMER, not per
  * order: two unpaid advances are one person's problem and one banner, and the banner names no
  * amount and no order anyway.
  */
-export const isAdvance = (o) => !!o && ROWED.includes(o.status) && (+o.moved || 0) > 0.004 && dueOf(o) > 0.004;
+export const aheadOnGoods = (o) => {
+  const owed = +o.total + (+o.delivery || 0), paidF = owed > 0 ? (+o.paid || 0) / owed : 0;
+  const movedF = +o.qty > 0 ? (+o.moved || 0) / +o.qty : 0;
+  return movedF > paidF + 1e-9 && dueOf(o) > 0.004;
+};
+export const isAdvance = (o) => !!o && ROWED.includes(o.status) && aheadOnGoods(o);
 export const CHASE_KEY = (u) => "chased:" + u;
 /** An hour in whole hours since the epoch: the same hour twice is the same bucket, and no clock is read twice. */
 export const hourOf = (at) => Math.floor(new Date(at).getTime() / 3600000);
@@ -253,11 +284,35 @@ export const owedUnits = (o) => +((+o.qty) - (+o.moved || 0)).toFixed(3);
 
 /* CASH ON DELIVERY IS NOT OFFERED TO SOMEONE ALREADY HOLDING GOODS THEY HAVE NOT PAID FOR (his
    instruction, 18 Sep 2026). That is an advance in the book's words, and offering to settle it at
-   the door is how an advance becomes two. Their own orders answer it; nothing here reads the book. */
-export const hasUnpaidAdvance = (orders, exceptId) => (orders || []).some(
-  (o) => o.id !== exceptId && !["cancelled", "declined"].includes(o.status) && (+o.moved || 0) > 0 && dueOf(o) > 0.004);
+   the door is how an advance becomes two. Their own orders answer it; nothing here reads the book.
+   The order being paid counts as well (24 Sep 2026): it was left out, so cash was still offered on
+   the very order whose goods were out ahead of its money. */
+export const hasUnpaidAdvance = (orders) => (orders || []).some(
+  (o) => !["cancelled", "declined"].includes(o.status) && aheadOnGoods(o));
+
+/* A RETRY LANDS ONCE (24 Sep 2026). Place and I have paid are the two taps that ADD: a second
+   placement is a second order and a second payment is paid twice. The page mints a request id per
+   review and per payment and sends it with the tap, so a retry of the same tap (an answer lost on the
+   way back, a second tap after "not placed") carries the same one. The first that lands files
+   rid:<username>:<rid> for a day naming its order, and a repeat is answered with that order as it
+   stands and changes nothing. KV is eventually consistent, so a repeat at another edge inside its
+   first minute may not see the key: best effort, as the one-time link is. No id, taken as before. */
+export const RID_RE = /^[A-Za-z0-9_-]{16,64}$/;
+export const RID_TTL = 86400;
+export const RID_KEY = (u, rid) => "rid:" + u + ":" + rid;
+const ridOf = (body) => (body && typeof body.rid === "string" && RID_RE.test(body.rid) ? body.rid : "");
+async function repeatOf(env, u, rid, id) {
+  if (!rid) return null;
+  const seen = await env.STMT.get(RID_KEY(u, rid), "json");
+  if (!seen || !seen.id || (id && seen.id !== id)) return null;
+  const order = await env.STMT.get(OKEY(u, seen.id), "json");
+  return order ? { order } : null;
+}
+const fileRid = (env, u, rid, id) => (rid ? putSoft(env, RID_KEY(u, rid), JSON.stringify({ id }), { expirationTtl: RID_TTL }) : null);
 
 export async function placeOrder(env, u, body) {
+  const rid = ridOf(body), again = await repeatOf(env, u, rid);
+  if (again) return again;
   const open = (await ordersOf(env, u)).filter((o) => OPEN_STATES.includes(o.status));
   const c = checkPlacement(body, open);
   if (c.error) return { error: c.error };
@@ -267,14 +322,19 @@ export async function placeOrder(env, u, body) {
     msgs: c.note ? [{ at, by: "customer", text: c.note }] : [],   /* v751: the line they typed with the order is its first message */
     history: [{ at, status: "placed", by: "customer" }] }, c.order);
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
-  await env.STMT.put(LAST_PLACED, at);
-  await env.STMT.put(LAST_TOUCHED, at);
-  if (c.note) await env.STMT.put(LAST_SAID, at);
+  await fileRid(env, u, rid, id);
+  await putSoft(env, LAST_PLACED, at);
+  await putSoft(env, LAST_TOUCHED, at);
+  if (c.note) await putSoft(env, LAST_SAID, at);
   return { order };
 }
 
 /** The customer's own moves: a rail at ready, or a withdrawal before anything is on the road. */
 export async function customerMove(env, u, id, action, body) {
+  /* a payment already recorded under this id is answered before anything is checked, because the
+     first may have completed the order, and a repeat must not read as a refusal */
+  const rid = action === "pay" ? ridOf(body) : "", again = await repeatOf(env, u, rid, id);
+  if (again) return again;
   const order = await env.STMT.get(OKEY(u, id), "json");
   if (!order) return { error: "no such order", status: 404 };
   const at = new Date().toISOString();
@@ -325,12 +385,13 @@ export async function customerMove(env, u, id, action, body) {
     said = true;
   } else return { error: "not found", status: 404 };
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
-  await env.STMT.put(LAST_TOUCHED, at);
+  await fileRid(env, u, rid, id);
+  await putSoft(env, LAST_TOUCHED, at);
   /* v751: and a mark the desk's own nudge can read, so a line waits for him rather than for a poll */
-  if (said) await env.STMT.put(LAST_SAID, at);
+  if (said) await putSoft(env, LAST_SAID, at);
   /* v760: money in, or the order taken back. Both are things he has to act on and neither happens
      in front of him, so both wake him; choosing a rail does not. */
-  if (action === "pay" || action === "cancel") await env.STMT.put(LAST_THEIRS, at + "|" + action);
+  if (action === "pay" || action === "cancel") await putSoft(env, LAST_THEIRS, at + "|" + action);
   /* v700: a payment that completes the order is the one customer move worth waking the phone for,
      because it is the only one whose answer arrives after they have put the phone down. Every
      other move of theirs happens with the page in front of them. */
@@ -342,7 +403,7 @@ export async function customerMove(env, u, id, action, body) {
 function pickRail(order, body, mine) {
   const method = String((body && body.method) || "");
   if (!METHODS.includes(method)) return { error: "that is not a way to pay this site offers", status: 400 };
-  if (method === "cod" && hasUnpaidAdvance(mine, order.id))
+  if (method === "cod" && hasUnpaidAdvance(mine))
     return { error: "cash on handover is not offered while goods you already hold are unpaid", status: 409 };
   let account = null;
   if (method === "transfer" || method === "qr" || method === "jompay") {
@@ -419,7 +480,7 @@ export async function deskMove(env, u, id, body) {
     order.queued = q;
     settle(order, at);
     await env.STMT.put(OKEY(u, id), JSON.stringify(order));
-    await env.STMT.put(LAST_TOUCHED, at);
+    await putSoft(env, LAST_TOUCHED, at);
     const push = await wakeCustomer(env, u);
     return { order, push };
   }
@@ -431,7 +492,7 @@ export async function deskMove(env, u, id, body) {
     if (!text) return { error: "write something first", status: 400 };
     order.msgs = ((order.msgs) || []).concat([{ at, by: "desk", text }]);
     await env.STMT.put(OKEY(u, id), JSON.stringify(order));
-    await env.STMT.put(LAST_TOUCHED, at);
+    await putSoft(env, LAST_TOUCHED, at);
     const push = await wakeCustomer(env, u);
     return { order, push };
   }
@@ -449,7 +510,7 @@ export async function deskMove(env, u, id, body) {
     order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
     settle(order, at);
     await env.STMT.put(OKEY(u, id), JSON.stringify(order));
-    await env.STMT.put(LAST_TOUCHED, at);
+    await putSoft(env, LAST_TOUCHED, at);
     const push = await wakeCustomer(env, u);
     return { order, push };
   }
@@ -470,7 +531,7 @@ export async function deskMove(env, u, id, body) {
   if (body && typeof body.note === "string" && body.note.trim()) ev.note = body.note.trim().slice(0, 200);
   order.history.push(ev);
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
-  await env.STMT.put(LAST_TOUCHED, at);
+  await putSoft(env, LAST_TOUCHED, at);
   const push = await wakeCustomer(env, u);
   return { order, push };
 }

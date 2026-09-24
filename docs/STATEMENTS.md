@@ -356,6 +356,15 @@ acknowledged (the owner: agreed, the delivery charge set, and the row queued), r
 deliver (the owner), done (**neither side's tap**: what the record reads once both tracks are
 complete), declined (the owner), cancelled (either side, at any stage until the goods move).
 
+**A RETRY LANDS ONCE** (24 Sep 2026). Place and I have paid carry a request id the page mints per
+review and per payment; the site files `rid:<username>:<rid>` for a day naming the order and answers a
+repeat with that order, changing nothing. Best effort, KV being eventually consistent.
+**The order's own put decides the answer**: what is written after it (the shared marks
+`last-placed`, `last-touched`, `last-said`, `last-theirs`, and the request id) is best effort, logged
+when KV refuses it, so a stored move never answers as a failure. A lost mark costs a wake, not a stage.
+**The customer is handed a view, not the record**: their order list and every answer to a move of
+theirs carry `customerView` (`CUSTOMER_FIELDS`, a whitelist), never `ledgerKey`, `queued` or `sync`.
+
 **A DELIVERY SAYS ROUGHLY WHERE IT IS GOING** (v694, his instruction of 18 Sep 2026): `place`, one
 line of at most sixty characters, a neighbourhood and not an address, refused empty on a delivery and
 dropped on a collection. It is shown on his card and **never rides into the ledger row's note**: a
@@ -421,8 +430,8 @@ the page hands over one link into QR Command for the rail chosen, and the accoun
 are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
 number, payload or reference shipped. **The customer types what they paid** (the site takes no money
 and no rail tells it anything), part payments accumulate, and more than what is outstanding is
-refused. **Cash on handover is withheld** from anyone holding an unpaid advance on another live
-order: settling that at the door is how one advance becomes two. The quote is the customer's claim
+refused. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
+order, the one being paid included: settling that at the door is how one advance becomes two. The quote is the customer's claim
 off his own list: the owner reads the rate against the party's usual on the phone before
 acknowledging, and the drafter flags it again when the row is queued.
 
@@ -466,9 +475,10 @@ had**: until v700 it woke a phone only as a side effect of the desk touching an 
 `wrangler.stmt.jsonc` carries `"triggers": {"crons": ["0 * * * *"]}` and `stmt/worker.js` exports a
 `scheduled()` handler beside `fetch`.
 
-**Who is chased.** `isAdvance(o)` in `stmt/orders.js`: the order is agreed (`ROWED`), something has
-been handed over, and something is still owed, the delivery charge included because that is what the
-customer is asked for. A customer who has paid nothing on an order he has not touched yet is not
+**Who is chased.** `isAdvance(o)` in `stmt/orders.js`: the order is agreed (`ROWED`) and its goods are
+ahead of its money as the engine reads Open · Advance (24 Sep 2026): the share handed over above the
+share of what is owed that is paid, the delivery charge in what is owed because that is what the
+customer is asked for. The same test (`aheadOnGoods`) withholds cash on handover. A customer who has paid nothing on an order he has not touched yet is not
 chased, because nothing of his is in their hands. `toChase(env)` groups them by CUSTOMER.
 
 **How often.** One wake an hour per customer, not per order: two unpaid advances are one person's
