@@ -79,7 +79,7 @@
     "rice": {
       "qty": 0,
       "costPerKg": null,
-      "stated": null
+      "stated": 94
     },
     "spare": {
       "qty": 0,
@@ -92,7 +92,7 @@
     "salt": "2026-09-23",
     "oil": "2026-09-24",
     "candy": null,
-    "rice": null,
+    "rice": "2026-09-24",
     "spare": null
   },
   "COUNTS": [
@@ -110,7 +110,8 @@
     {"product":"oil","date":"2026-09-19","qty":40,"was":60,"drift":-20,"note":"Counted on his word of 19 Sep 2026: 40 unit of the 18 Sep lot remain. Oil is mostly for his own use, so the leak is high by design and is never costed into a sale."},
     {"product":"salt","date":"2026-09-21","qty":8,"was":11.15,"drift":-3.15},
     {"product":"salt","date":"2026-09-23","qty":25,"was":26,"drift":-1},
-    {"product":"oil","date":"2026-09-24","qty":0,"was":35,"drift":-35}
+    {"product":"oil","date":"2026-09-24","qty":0,"was":35,"drift":-35},
+    {"product":"rice","date":"2026-09-24","qty":94,"was":95,"drift":-1}
   ],
   "purchases": [
     {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -917,7 +918,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-24T15:10:07.576Z",
+  "QUEUE_COMMITTED": "2026-09-24T15:43:57.801Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -1043,6 +1044,7 @@
       "paidSplit: cash landed either side of the 28 Jul count; RM200 inside it, the rest after. Without the split the walk double-counted the RM200."
     ],
     "PROD_OPENING": [
+      "COUNTED AT v836 on 2026-09-24: the rice inventory held 94 against 95 on the roll, a drift of -1. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-09-24. <b>RICE COUNT ON 24 SEP 2026: 94 UNIT ON HAND AGAINST 95 ON THE BOOK.</b> A drift of -1 unit, and on his word a count wins over the ledger, so the stated rice inventory becomes 94 and COUNT_ON for rice moves to 24 Sep 2026. No party, no rate and no cash attach, and the row carries no cost, so the inventory's own rate is untouched. The floors move with the count: floor1 RM3.40 to RM4.08, floor2 RM6.80 to RM8.16, floor125 RM42.50 to RM51, ask at RM8 for 1 unit held, self use 0 to 1. The drafter flagged the gap as shrinkage across every unit sold, and flagged that 9 unit of this inventory is owed out and already paid for. The figures cover the shrinkage; the 9 unit owed out stays outstanding.",
       "ROLLED AT v834 (oil): 50 unit from SP7-PUD on 2026-09-24, so 0 plus 50 is 50. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "COUNTED AT v833 on 2026-09-24: the oil inventory held 0 against 35 on the roll, a drift of -35. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-09-24. <b>OIL COUNT DATED 24 SEP, NOTHING ON HAND AGAINST 35 ON THE BOOK.</b> Counted by hand at 0 unit on 24 Sep 2026, a drift of -35 against the book, with the previous count standing at 19 Sep 2026. A count wins over the ledger, so the stated oil inventory becomes 0 and COUNT_ON for oil moves to 24 Sep 2026. The drafter flagged the 35 unit as unaccounted for and booking as shrinkage across every unit sold; the dossier offers no cause and none is entered. Floors are unchanged at RM7.82 for 1 unit, RM15.65 for 2 unit and RM97.80 for 12.5 unit, ask RM10 for 1 unit, with self use moving from 79 to 104. No party, no cash, no cost on this row.",
       "ROLLED AT v832 (oil): 10 unit to CC5-OKR on 2026-09-24, so 35 less 10 is 25. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",

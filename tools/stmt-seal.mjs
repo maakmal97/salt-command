@@ -32,17 +32,13 @@ import POSITION_ENGINE from "../engine/position.mjs";
 import { checkVerifier, decryptText, encryptText, unwrapKey } from "./stmt-crypto.mjs";
 import { loadSecrets } from "./make_statements.mjs";
 import { sheetParty } from "./stmt-send.mjs";
+import { newestIssue } from "./stmt-pool.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-/** The newest month folder that has a `_kv`, which is the one the publish reads. */
-export function newestIssue(root) {
-  let latest = null;
-  for (const d of readdirSync(root).filter((x) => /^\d{4}-\d{2}$/.test(x)).sort()) {
-    if (existsSync(join(root, d, "_kv"))) latest = d;
-  }
-  return latest;
-}
+/* the newest month folder that has a `_kv`, which is the one the publish reads: stated once, in
+   tools/stmt-pool.mjs, because the fold reads it too and must not load the statements run to do so */
+export { newestIssue };
 
 /** Seal every password in `dir` under the master. Returns what it did, or would do. */
 export async function sealPasswords(dir, opts = {}) {

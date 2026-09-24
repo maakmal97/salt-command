@@ -1477,7 +1477,7 @@ await (async () => {
 
   const t = readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8");
   ok(/INSERT OR REPLACE INTO refused/.test(t), "--from-queue records laptop refusals too, which is the case that caused this");
-  ok(/0003_refused\.sql/.test(t), "--schema applies the migration");
+  ok((await import("../tools/drafts.mjs")).schemaFiles().includes("0003_refused.sql"), "--schema applies the migration");   /* read off the folder since S11 */
 
   /* ONE STOP-LIST, NOT TWO. ledger.mjs and this file each carried their own copy; "general"
      was added to one and the other went on failing, which is the exact silent divergence
@@ -5032,6 +5032,127 @@ await (async () => {
 })();
 
 
+section("S6 6.1: the publish seals what is to pay now, what is overdue and what is coming up");
+await (async () => {
+  /* HIS DECISION D9 OF 24 SEP 2026: the hold counts only what is past its 10-day term, with each part's
+     due date, so the live statement carries, beside `owed`, TO PAY NOW (the desk's receivable, each part
+     due at its order date plus the term), OVERDUE (a part once that day has passed) and COMING UP (an
+     order agreed and not handed over, with money still to pay on it). The engine computes them; the
+     site only draws them. Fixture rows under invented codes, on a copy of the book, on 24 Sep. */
+  const { pathToFileURL: pu } = await import("node:url");
+  const at = new Date("2026-09-24T04:00:00Z"), P = "CX7-PY";
+  const fx = (rid, date, extra) => Object.assign({ rid, date, customer: P, product: "salt", qty: 1, total: 100, cost: 44 }, extra || {});
+  const rows = [
+    fx("sp01", "2026-09-01", { deliveredQty: 1,                                                // due 11 Sep, collected 12 Sep: overdue
+      amend: [{ kind: "Fulfilment", kg: 1, date: "2026-09-12" }] }),
+    fx("sp02", "2026-09-16", { qty: 2.5, total: 225, delivery: 10, cash: 165, deliveredQty: 2.5 }), // the rest, RM 70, due 26 Sep
+    fx("sp03", "2026-09-14", { total: 50, deliveredQty: 1 }),                                  // due today: not yet overdue
+    fx("sp04", "2026-09-22", { qty: 2.5, total: 250, delivery: 15 }),                          // agreed, nothing moved: coming up
+    fx("sp05", "2026-09-20", { qty: 2, total: 200, deliveredQty: 1,                            // half collected, the day after: RM 100 each way
+      amend: [{ kind: "Fulfilment", kg: 1, date: "2026-09-21" }] }),
+    fx("sp06", "2026-09-10", { total: 90, cancelled: true, cancelledOn: "2026-09-11" }),       // cancelled: nowhere
+    fx("sp07", "2026-09-02", { goodwill: true, rebate: true, deliveredQty: 1 }),               // a gift: nowhere
+    fx("sp08", "2026-09-03", { qty: 2, total: 240, deliveredQty: 1, defaulted: true }),       // written off, half handed over: nowhere
+    fx("sp09", "2026-09-05", { customer: P + "-R", total: 80, deliveredQty: 1, rev: "R2" }),   // their bucket: theirs, overdue
+    fx("sp10", "2026-09-06", { customer: "CX8-QZ", total: 60, deliveredQty: 1 }),              // somebody else's
+    fx("sp11", "2026-09-07", { cash: 100, deliveredQty: 1 }),                                  // paid and collected
+    fx("sp12", "2026-09-21", { qty: 2, total: 200, cash: 200 }),                               // paid ahead: nothing to pay
+    fx("sp13", null, { total: 40, deliveredQty: 1 }),                                          // undated: never overdue
+    fx("sp14", null, { total: 90, agreedOn: "2026-09-23" }),                                   // undated and agreed: dated by agreement
+    fx("sp15", "2026-09-25", { deliveredQty: 1 }),                                             // after the statement's day: not on it yet
+    fx("sp16", "2026-09-26", { total: 30 })                                                    // agreed, dated ahead: open whatever its date
+  ];
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  book.sales = rows; book.customerRefunds = [];
+  const tmp = join(REPO, "test", "tmp", "s6pay-" + Date.now());
+  mkdirSync(tmp, { recursive: true });
+  const bookFile = join(tmp, "book.json");
+  writeFileSync(bookFile, JSON.stringify(book));
+  /* a fresh copy of the tool on the fixture book, and on a master whose term is 7 (an unset variable is deleted) */
+  const load = async (tag, master) => {
+    const keep = [process.env.SALT_BOOK, process.env.SALT_MASTER];
+    process.env.SALT_BOOK = bookFile;
+    if (master) process.env.SALT_MASTER = master; else delete process.env.SALT_MASTER;
+    try { return await import(pu(join(REPO, "tools", "make_statements.mjs")).href + "?" + tag); }
+    finally {
+      if (keep[0] === undefined) delete process.env.SALT_BOOK; else process.env.SALT_BOOK = keep[0];
+      if (keep[1] === undefined) delete process.env.SALT_MASTER; else process.env.SALT_MASTER = keep[1];
+    }
+  };
+  try {
+    const M = await load("s6pay");
+    const doc = M.liveStatement(P, at), pay = doc && doc.pay;
+    const brief = (a) => (a || []).map((x) => (x.date || "undated") + ":" + x.rm + ":" + (x.due || "-")).join(" ");
+    ok(pay && pay.term === 10 && pay.now.rm === 440 && pay.now.due === "2026-09-11"
+      && brief(pay.now.parts) === "2026-09-01:100:2026-09-11 2026-09-05:80:2026-09-15 2026-09-14:50:2026-09-24 2026-09-16:70:2026-09-26 2026-09-20:100:2026-09-30 undated:40:-",
+      "to pay now is the goods handed over and not paid for, their bucket's included, soonest due first, and no gift, write-off, "
+      + "cancelled, settled or other party's row, nor one dated after the statement's day: " + JSON.stringify(pay && { term: pay.term, rm: pay.now.rm, due: pay.now.due, parts: brief(pay.now.parts) }));
+    const p2 = pay && pay.now.parts.find((x) => x.date === "2026-09-16");
+    ok(p2 && p2.rm === 70 && p2.whole === 235 && p2.qty === 2.5 && p2.got === 2.5 && p2.gotOn === "2026-09-16" && p2.product === "salt" && p2.late === false,
+      "a part says what it is for: the rest, RM 70 of the RM 235 owed on 2.5 units collected 16 Sep, due by 26 Sep: " + JSON.stringify(p2));
+    /* THE TERM RUNS FROM THE ORDER'S DATE, the desk's rule (its Credit age reads the same), never from the
+       handover: on the book an order of 7 Sep finished going on 19 Sep and fell due on 17 Sep */
+    const p1 = pay && pay.now.parts.find((x) => x.date === "2026-09-01");
+    ok(p1 && p1.gotOn === "2026-09-12" && p1.due === "2026-09-11" && p1.late === true,
+      "a part falls due at its order's date plus the term even when the goods went later, and is late the day they go: " + JSON.stringify(p1));
+    const p5 = pay && pay.now.parts.find((x) => x.date === "2026-09-20");
+    ok(p5 && p5.got === 1 && p5.qty === 2 && p5.gotOn === "2026-09-21",
+      "a part handed over in stages still says when the goods went, the day of its last handover: " + JSON.stringify(p5));
+    const p3 = pay && pay.now.parts.find((x) => x.date === "2026-09-14"), p13 = pay && pay.now.parts.find((x) => !x.date);
+    ok(pay && pay.overdue.rm === 180 && brief(pay.overdue.parts) === "2026-09-01:100:2026-09-11 2026-09-05:80:2026-09-15"
+      && pay.overdue.parts[1].resale === true && p3 && p3.due === "2026-09-24" && p3.late === false && p13 && p13.due === null && p13.late === false,
+      "overdue is a part once its due day has passed, each with the day it fell due: not on the due day itself, and never an undated one: "
+      + JSON.stringify(pay && { rm: pay.overdue.rm, parts: brief(pay.overdue.parts), today: p3 && p3.late, undated: p13 && p13.late }));
+    const cm = pay ? pay.coming.parts.map((x) => x.date + ":" + x.rm + ":" + x.toCome).join(" ") : "";
+    ok(pay && pay.coming.rm === 485 && cm === "2026-09-20:100:1 2026-09-22:265:2.5 2026-09-23:90:1 2026-09-26:30:1",
+      "coming up is what is agreed and not handed over with money still to pay, delivery included, an undated one by the day it was agreed, "
+      + "one dated ahead because an agreed order is open whatever its date, and not an order paid ahead: " + cm);
+    /* the three add up to the statement's own owed: the pending orders it leaves out, the write-off it keeps in,
+       and nothing from a row dated after the statement's day, which neither owed nor the body carries yet */
+    ok(doc && doc.owed === 780 && +(pay.now.rm + pay.coming.rm - 385 + 240).toFixed(2) === doc.owed,
+      "and they reconcile to the statement's owed, less the agreed orders it counts nowhere and plus the write-off it still prints: "
+      + JSON.stringify(doc && { owed: doc.owed, now: pay.now.rm, coming: pay.coming.rm }));
+    ok(JSON.stringify(M.payDue(P, "2026-09-24")) === JSON.stringify(pay) && JSON.stringify(M.payDue("CX8-QZ", "2026-09-24").now.parts.map((x) => x.rm)) === "[60]",
+      "the live statement seals exactly the engine's reading, party by party");
+
+    /* THE TERM IS THE DESK'S, read out of the master: a copy at 7 days moves every due date, and a master that states none stops the publish */
+    const src = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    const seven = src.replace(/(const RULES=\{[^;]*?\bcreditDays:)10\b/, (all, head) => head + "7");
+    ok(seven !== src, "the fixture master carries a 7-day term");
+    writeFileSync(join(tmp, "m7.html"), seven);
+    writeFileSync(join(tmp, "m0.html"), src.replace(/(const RULES=\{[^;]*?\b)creditDays:10\b/, (all, head) => head + "creditWeeks:2"));
+    const M7 = await load("s6pay7", join(tmp, "m7.html"));
+    const pay7 = M7.liveStatement(P, at).pay, q2 = pay7.now.parts.find((x) => x.date === "2026-09-16");
+    ok(pay7.term === 7 && q2.due === "2026-09-23" && q2.late === true && pay7.overdue.rm === 300,
+      "the term is the desk's RULES.creditDays: at 7 days the rest of the 16 Sep order falls due on 23 Sep and is overdue: "
+      + JSON.stringify({ term: pay7.term, due: q2.due, late: q2.late, overdue: pay7.overdue.rm }));
+    const M0 = await load("s6pay0", join(tmp, "m0.html"));
+    let threw = "";
+    try { M0.liveStatement(P, at); } catch (e) { threw = String(e && e.message); }
+    ok(/creditDays/.test(threw), "and a master that states no term stops the publish rather than guessing a due date: " + JSON.stringify(threw));
+  } finally { rmSync(tmp, { recursive: true, force: true }); }
+
+  /* over the real book, the rule and never a day's figures: every live statement's three reconcile to its own owed */
+  const M = await import("../tools/make_statements.mjs");
+  const POS = (await import("../engine/position.mjs")).default;
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const parties = [...new Set(bk.sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
+  const off = [];
+  let n = 0;
+  for (const p of parties) {
+    const d = M.liveStatement(p, at);
+    if (!d) continue;
+    n++;
+    /* the statement's window: an agreed order whatever its date, anything else up to the day */
+    const own = bk.sales.filter((s) => POS.ownsCode(p, s.customer) && (POS.txStat(s).order === "Pending" || !(new Date(s.date) > new Date("2026-09-24"))));
+    const pend = own.filter((s) => !s.goodwill && !s.defaulted && POS.txStat(s).order === "Pending").reduce((a, s) => a + POS.txOwed(s), 0);
+    const lost = own.filter((s) => s.defaulted).reduce((a, s) => a + Math.max(0, POS.txOwed(s) - POS.txPaid(s)), 0);
+    if (!d.pay || Math.abs(d.pay.now.rm + d.pay.coming.rm - pend + lost - d.owed) > 0.011) off.push(p);
+  }
+  ok(n > 10 && !off.length, "on the book, every live statement's to pay now and coming up reconcile to its owed: " + n + " statements"
+    + (off.length ? "; differ: " + off.slice(0, 3).join(", ") : ""));
+})();
+
 section("v432: the money on a statement is the money on the book");
 await (async () => {
   /* ROUND TEN. The statements section beside this one holds eight assertions and NOT ONE reads a
@@ -7206,8 +7327,8 @@ await (async () => {
   ok(html.includes('value="' + un + '"'), "and fills in the username the QR carried, normalised");
   ok(!html.includes(pw) && !html.includes(envB.ct) && !html.includes("CX0-AA"),
     "the page carries no password, no ciphertext and no account code");
-  ok(html.includes("Remember me") && html.includes("Log in") && html.includes('id="un"') && html.includes('id="pw"'),
-    "it asks for a username and a password, offers Remember me, and the button says Log in (v692)");
+  ok(html.includes("Keep me signed in on this") && html.includes('type="submit">Sign in</button>') && html.includes('id="un"') && html.includes('id="pw"'),
+    "it asks for a username and a password, offers to keep them signed in, and the button says Sign in (v692; S3 3.7)");
   ok(/nonce-/.test(csp) && !/unsafe-inline/.test(csp) && /connect-src 'self'/.test(csp),
     "and declares a nonce CSP rather than allowing inline script wholesale");
   ok((r.headers.get("x-robots-tag") || "").includes("noindex")
@@ -7251,69 +7372,45 @@ await (async () => {
       "anything that is not sixteen symbols of the alphabet is left exactly as typed");
     ok((await stmtWorker.fetch(open({ u: un, password: pw.replace(/-/g, "").toUpperCase() }), senv)).status === 200,
       "so a password typed without hyphens and in capitals opens the statement");
-    /* TWO BOXES AND FOUR (his instruction, 16 Sep 2026): the username in two boxes and the password in four,
-       driven in the page as a phone would: one symbol at a time, a paste, an autofill, and Backspace. */
+    /* ONE FIELD FOR EACH SECRET (S3 3.7, his D3 of 24 Sep 2026; two boxes and four from 16 Sep until then), driven
+       in the page as a phone would: typed, a paste of a whole message, a username from the QR, and Log out. */
     const { landingPage: lpB } = await import("../stmt/page.js");
     const { JSDOM: JDB } = await import("jsdom");
     const drive = (user) => {
       const dom = new JDB(lpB(user, "nb", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true });
-      const W = dom.window, d = W.document, box = [...d.querySelectorAll(".seg input")];
-      const fire = (el, type, extra) => { const e = new W.Event(type, { bubbles: true, cancelable: true }); Object.assign(e, extra || {}); el.dispatchEvent(e); return e; };
-      const typeIn = (text) => { for (const ch of text) { const el = d.activeElement; el.value += ch; fire(el, "input"); } };
+      const W = dom.window, d = W.document;
       const paste = (el, text) => { el.focus(); const e = new W.Event("paste", { bubbles: true, cancelable: true }); Object.defineProperty(e, "clipboardData", { value: { getData: () => text } }); el.dispatchEvent(e); return e; };
-      const back = (el) => { el.focus(); fire(el, "keydown", { key: "Backspace" }); };
-      const state = () => ({ un: d.getElementById("un").value, pw: d.getElementById("pw").value, boxes: box.map((b) => b.value), at: box.indexOf(d.activeElement) });
-      return { W, d, box, typeIn, paste, back, fire, state };
+      const state = () => ({ un: d.getElementById("un").value, pw: d.getElementById("pw").value, at: d.activeElement && d.activeElement.id });
+      return { W, d, paste, state };
     };
     const P16 = "2345678abcdefghj";
     {
       const g = drive("");
-      ok(g.d.querySelectorAll('.seg[data-for="un"] input').length === 2 && g.d.querySelectorAll('.seg[data-for="pw"] input[type="password"]').length === 4
-        && g.d.getElementById("un").type === "hidden" && g.d.getElementById("pw").type === "hidden",
-        "the username is two boxes and the password four masked ones, with the joined values in hidden fields");
-      ok(g.state().at === 0, "a page opened by hand starts in the first username box");
-      g.typeIn("abcdefgh" + P16);
-      const t = g.state();
-      ok(t.un === "abcd-efgh" && t.pw === "2345-678a-bcde-fghj" && JSON.stringify(t.boxes) === JSON.stringify(["abcd", "efgh", "2345", "678a", "bcde", "fghj"]) && t.at === 5,
-        "typed one symbol at a time, each full box hands the cursor to the next, across into the password: " + JSON.stringify(t));
-      g.box[2].value = ""; g.fire(g.box[2], "input");
-      g.back(g.box[2]);
-      const b1 = g.state();
-      ok(b1.at === 1 && b1.boxes[1] === "efg" && b1.un === "abcd-efg", "Backspace in an empty box steps back and takes the symbol before: " + JSON.stringify(b1));
+      const un1 = g.d.getElementById("un"), pw1 = g.d.getElementById("pw");
+      ok(un1.type === "text" && un1.getAttribute("autocomplete") === "username" && pw1.type === "password" && pw1.getAttribute("autocomplete") === "current-password"
+        && g.d.querySelectorAll("#f input:not([type=checkbox])").length === 2 && !g.d.querySelector(".seg input"),
+        "the username is one field and the password one masked field, named as a password manager reads them");
+      ok(g.state().at === "un", "a page opened by hand starts in the username");
+      const e = g.paste(pw1, "Statement password: 2345-678A-bcde-FGHJ\n\nPlease keep it to yourself. It opens the statement at the link in the previous message.");
+      ok(e.defaultPrevented && g.state().pw === "2345-678a-bcde-fghj",
+        "the whole message pasted into the password keeps only the password: " + JSON.stringify(g.state().pw));
       g.d.getElementById("lock").click();
-      const lk = g.state();
-      ok(lk.pw === "" && lk.boxes.slice(2).every((v) => v === "") && lk.un === "abcd-efg" && lk.at === 2,
-        "Lock empties the four password boxes, keeps the username and waits in the first password box: " + JSON.stringify(lk));
+      ok(g.state().pw === "" && g.state().at === "pw", "Log out empties the password and waits in it");
       g.W.close();
     }
     {
       const g = drive("");
-      g.box[1].value = "zz"; g.fire(g.box[1], "input");
-      const e = g.paste(g.box[1], " ABCD-efgh ");
-      const pu = g.state();
-      ok(e.defaultPrevented && pu.un === "abcd-efgh" && pu.boxes[0] === "abcd" && pu.boxes[1] === "efgh" && pu.at === 2,
-        "a whole username pasted into its second box, over what was there, fills both from the first and moves on to the password: " + JSON.stringify(pu));
-      g.paste(g.box[4], P16.toUpperCase().replace(/(.{4})/g, "$1 "));
-      const pp = g.state();
-      ok(pp.pw === "2345-678a-bcde-fghj" && pp.at === 5, "a whole password pasted into its third box, in capitals with spaces, fills all four: " + JSON.stringify(pp));
-      g.W.close();
-    }
-    {
-      const g = drive("");
-      g.paste(g.box[3], "2345ab");
-      const part = g.state();
-      ok(JSON.stringify(part.boxes.slice(2)) === JSON.stringify(["", "2345", "ab", ""]) && part.at === 4,
-        "a part pasted into a middle box fills from that box and leaves the cursor where it stops: " + JSON.stringify(part));
-      g.box[3].value = P16; g.fire(g.box[3], "input");
-      const af = g.state();
-      ok(af.pw === "2345-678a-bcde-fghj" && af.at === 5, "an autofill or suggestion of the whole password into its second box is spread across all four from the first: " + JSON.stringify(af));
+      const e = g.paste(g.d.getElementById("un"), "Your account is ready to use.\n\nOpen it here:\nhttps://site.test/?u=abcd-efgh\n\nUsername: ABCD-efgh\nYour password is in a separate message.");
+      ok(e.defaultPrevented && g.state().un === "abcd-efgh" && g.state().at === "pw",
+        "the whole message pasted into the username keeps only the username and moves on to the password: " + JSON.stringify(g.state()));
+      g.paste(g.d.getElementById("pw"), P16.toUpperCase().replace(/(.{4})/g, "$1 ").trim());
+      ok(g.state().pw === "2345-678a-bcde-fghj", "a bare password in capitals with spaces is put in the form it was sent in: " + JSON.stringify(g.state().pw));
       g.W.close();
     }
     {
       const g = drive("abcd-efgh");
       const q = g.state();
-      ok(q.un === "abcd-efgh" && JSON.stringify(q.boxes.slice(0, 2)) === '["abcd","efgh"]' && q.at === 2,
-        "a username from the QR shows in its two boxes and the cursor waits in the first password box: " + JSON.stringify(q));
+      ok(q.un === "abcd-efgh" && q.at === "pw", "a username from the QR fills its field and the cursor waits in the password: " + JSON.stringify(q));
       g.W.close();
     }
   }
@@ -7744,9 +7841,11 @@ await (async () => {
     const visible = (h) => h.replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]+>/g, " ");
     const handedName = visible(bp({ prices: { week: { label: "x" }, products: [{ product: "oil", name: "Oil", unit: "unit",
       tierName: "Bronze", fellBack: true, sizes: [{ q: 10, price: 130 }] }] } }, "n"));
-    ok(everyBoard.every((b) => levelWords.every((w) => !visible(bp({ prices: b }, "n")).includes(w)))
+    /* S13 13.2 (25 Sep 2026): nor in Malay. A board carries no place, so a bare perak on it is a level. */
+    const { wordsIn: wi87, LEVEL_WORDS_MS: ms87 } = await import("../src/orders.js");
+    ok(everyBoard.every((b) => { const v = visible(bp({ prices: b }, "n")); return levelWords.every((w) => !v.includes(w)) && wi87(v, ms87).length === 0; })
       && !handedName.includes("Bronze") && handedName.includes("The only price for this product"),
-      "and the page names no level on any pane, even when handed one: " + levelWords.join(", "));
+      "and the page names no level on any pane, even when handed one, in English or Malay: " + levelWords.concat(ms87).join(", "));
   }
 
   /* the vendored encoder is the one encoder, or the site draws a QR from code nobody is testing */
@@ -8171,6 +8270,66 @@ await (async () => {
   ok(/fold\.mjs --replays/.test(yml) && /--refused-note/.test(yml) && /git rm -q master\/_to_fold\.json/.test(yml),
     "and the stage job asks the planner, records the refusals and clears the handoff before standing down");
   ok(/--refused-note/.test(readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8")), "drafts.mjs can record a refusal the fold made");
+})();
+
+section("Statements: the pay link opens QR Command at the account, the rail and the amount (S6)");
+await (async () => {
+  /* THE ONE LINK INTO THE PAY PAGE (the owner's D8, 24 Sep 2026): stmt/pay.js builds QR Command's
+     #<key>/<rail>/<amount>/<reference> and carries nothing that pays. Driven on a rendered fixture,
+     so the live store's accounts can neither pass it nor fail it. */
+  const { shipAccounts, renderPayJs, QR_REPO } = await import("../tools/paysync.mjs");
+  const accts = shipAccounts({ accounts: [
+    { key: "m", name: "M", bank: "M Bank", payload: "p", acct: "a" },
+    { key: "w", name: "W", bank: "W Bank", acct: "a" },
+    { key: "s", name: "S", bank: "S Bank", payload: "p", acct: "a", maintenance: true },
+    { key: "j", name: "J", biller: "b", ref1: "r" }] });
+  const src = renderPayJs("https://q.example", accts);
+  const { payHref } = await import("data:text/javascript," + encodeURIComponent(src));
+  const u = "k7m2-p9qr";
+  ok(payHref("m", "transfer", 70, u) === "https://q.example/#m/transfer/70.00/k7m2-p9qr"
+    && payHref("m", "qr", "215.5", "0000-0000") === "https://q.example/#m/qr/215.50/0000-0000"
+    && payHref("m", "qr", 999999.99, u) === "https://q.example/#m/qr/999999.99/k7m2-p9qr",
+    "the link names the account, the way, the figure to the sen and the username as the reference");
+  const wrongly = [["w", "qr", 70, u], ["s", "transfer", 70, u], ["j", "jompay", 70, u], ["x", "qr", 70, u], ["m", "cash", 70, u],
+    ["m", "qr", 0, u], ["m", "qr", -5, u], ["m", "qr", "abc", u], ["m", "qr", 1e6, u],
+    ["m", "qr", 70, ""], ["m", "qr", 70, "a b"], ["m", "qr", 70, "a/b"], ["m", "qr", 70, "a".repeat(21)]]
+    .filter((c) => payHref(...c) !== "");
+  ok(wrongly.length === 0,
+    "and it answers nothing for an account, a way, a figure or a reference the page could not open: " + JSON.stringify(wrongly));
+  /* AS IT IS: its source, run as a classic script beside the page's own declaration of the site and the
+     list (CLIENT_JS calls the list PAY), writes the same links, so no name is missing there */
+  const decl = (/var [^;\n]*__PAY_ACCOUNTS__[^;\n]*;/.exec(readFileSync(join(REPO, "stmt", "page.js"), "utf8")) || [""])[0];
+  let paged;
+  try {
+    const f = new Function(decl.replace("__PAY_SITE__", JSON.stringify("https://q.example")).replace("__PAY_ACCOUNTS__", JSON.stringify(accts))
+      + "\n" + payHref.toString() + "\nreturn payHref;")();
+    paged = [f("m", "transfer", 70, u), f("w", "qr", 70, u)];
+  } catch (e) { paged = String(e && e.message); }
+  ok(!/[\\`]|=>|\blet\b|\bconst\b/.test(payHref.toString()) && decl.includes("__PAY_SITE__")
+    && JSON.stringify(paged) === JSON.stringify(["https://q.example/#m/transfer/70.00/k7m2-p9qr", ""]),
+    "its source is ES5 with no backslash or backtick and reads only what the page's own script declares, so the page can carry it "
+    + "inside its template literal as it is: " + JSON.stringify(paged));
+
+  /* THE TWO REPOS AGREE ON THE FORMAT. QR Command's parser, lifted out of the app.js it ships, reads
+     every part back; where QR Command is not on the machine (CI) this stands down. */
+  const qrApp = join(QR_REPO, "public", "app.js");
+  if (existsSync(qrApp)) {
+    const app = readFileSync(qrApp, "utf8");
+    const at = app.indexOf("function linkOf(");
+    /* the landing order, named where it bites: QR Command ships first, so a checkout without its parser is red with the cause */
+    if (at < 0) ok(false, "QR Command's checkout at " + QR_REPO + " has no linkOf, so nothing can read the link back: land QR Command's "
+      + "payer's link first and fast-forward that checkout, or point QR_REPO at one that has it. The landing order, not the change under test");
+    else {
+      let d = 0, j = app.indexOf("{", at);
+      for (; j >= 0 && j < app.length; j++) { if (app[j] === "{") d++; else if (app[j] === "}" && --d === 0) break; }
+      const rails = (/var RAILS = \[[\s\S]*?\n  \];/.exec(app) || [""])[0];
+      const linkOf = new Function(rails + "\n" + app.slice(at, j + 1) + "\nreturn linkOf;")();
+      const cases = [["m", "transfer", 70, u], ["m", "qr", "215.5", "0000-0000"], ["m", "qr", 999999.99, u]];
+      const back = cases.map((c) => linkOf(payHref(...c).slice("https://q.example/".length)));
+      ok(back.every((L, n) => L.key === cases[n][0] && L.rail === cases[n][1] && Number(L.amount) === Number(cases[n][2]) && L.ref === cases[n][3]),
+        "and QR Command's own parser, as it ships, reads every part back, so the Counter never links to what the page cannot open: " + JSON.stringify(back));
+    }
+  } else okOff(true, "QR Command is not on this machine, so the link goes unread by its parser");
 })();
 
 section("Statements — the QR, the sort and the Salt identity");
@@ -10568,9 +10727,10 @@ await (async () => {
   const ms = readFileSync(join(REPO, "tools", "make_statements.mjs"), "utf8");
   ok(/import \{[^}]*\buserFor\b[^}]*\busersJson\b[^}]*\} from "\.\/stmt-crypto\.mjs"/.test(ms) && !/function userFor\(/.test(ms),
     "the statements run mints and writes through the same two functions, with no copy of its own");
-  /* THE ONE STEP HERE NOT DRIVEN IN MEMORY: the suite never runs fold.mjs as a process, so its run is read */
+  /* the fold's run, read here; since D15 it is also driven as a process, pool and all, in "S14 14.3" */
   const fm = readFileSync(join(REPO, "tools", "fold.mjs"), "utf8");
-  ok(/mintUsernames\(users, staged, res\.folded\)/.test(fm) && /writeFileSync\(USERS, usersJson\(users\)\)/.test(fm),
+  ok(/registerAccounts\(STMTS, USERS, staged, res\.folded\)/.test(fm) && /mintUsernames\(users, staged, folded, spares\)/.test(fm)
+    && /writeFileSync\(usersFile, usersJson\(users\)\)/.test(fm),
     "and the fold's run mints after a fold that took, and writes the file in the one format");
 })();
 
@@ -11743,7 +11903,9 @@ await (async () => {
   }
 
   /* ---- the draft table takes every collection the drafter returns: 0007 never named repayment ---- */
-  const mig28 = readdirSync(join(REPO, "migrations")).filter((f) => /^\d{4}_.*\.sql$/.test(f)).sort().pop();
+  /* the newest migration that REBUILDS the draft table (S11: 0011 adds a table of its own and leaves draft alone) */
+  const mig28 = readdirSync(join(REPO, "migrations")).filter((f) => /^\d{4}_.*\.sql$/.test(f)).sort()
+    .filter((f) => /CREATE TABLE IF NOT EXISTS draft(_new)? \(/.test(readFileSync(join(REPO, "migrations", f), "utf8"))).pop();
   const allowed28 = ((/CHECK \(collection IN \(([^)]*)\)\)/.exec(readFileSync(join(REPO, "migrations", mig28), "utf8")) || [])[1] || "").split(",").map((x) => x.trim().replace(/'/g, ""));
   const returns28 = [...new Set([...readFileSync(join(REPO, "src", "drafter.js"), "utf8").matchAll(/collection: "([A-Za-z]+)"/g)].map((m) => m[1]))];
   const staged28 = (/\[([^\]]*)\]\.includes\(d\.collection\)/.exec(readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8")) || [])[1] || "";
@@ -13377,7 +13539,7 @@ await (async () => {
     d.getElementById("oNew").click();
     d.getElementById("oGo").click();
     d.getElementById("oPlace").click();
-    for (let i = 0; i < 100 && !(d.getElementById("osheet") && /Order sent/.test(d.getElementById("osheet").textContent) && d.querySelector('#pOrder [data-order]')); i++) await new Promise((r) => setTimeout(r, 30));
+    for (let i = 0; i < 100 && !(d.getElementById("osheet") && /Order sent/.test(d.getElementById("osheet").textContent) && d.querySelector('#pOrder [data-row]')); i++) await new Promise((r) => setTimeout(r, 30));
     return { w, d, st };
   };
   const A = await drive(true);
@@ -13385,8 +13547,8 @@ await (async () => {
     const { w, d, st } = A;
     const sh = () => d.getElementById("osheet");
     const box = () => sh() && sh().querySelector(".obuzz");
-    ok(!!sh() && /Order sent/.test(sh().textContent) && !d.getElementById("oPlace") && !!d.querySelector('#pOrder [data-order="' + placed.id + '"]'),
-      "Place answers in the sheet, Order sent, and the order is on the Order tab behind it: " + JSON.stringify(sh() && sh().textContent.slice(0, 80)));
+    ok(!!sh() && /Order sent/.test(sh().textContent) && !d.getElementById("oPlace") && !!d.querySelector('#pOrder [data-row="' + placed.id + '"]'),
+      "Place answers in the sheet, Order sent, and the order is a row of Your orders behind it (S5 5.1): " + JSON.stringify(sh() && sh().textContent.slice(0, 80)));
     ok(!!box() && /A buzz when it is confirmed[?]/.test(box().textContent) && !!d.getElementById("oBuzz") && st.asked === 0,
       "it asks A buzz when it is confirmed?, and drawing the question asks the browser nothing: " + st.asked);
     d.getElementById("oBuzz").click();
@@ -13394,8 +13556,9 @@ await (async () => {
     ok(st.asked === 1 && JSON.stringify(st.subscribed) === '["https://push.example/ep-s45"]' && !box() && /On[.] This phone is told/.test(sh().textContent),
       "the tap asks once, the phone is subscribed, and the sheet says it is on where the question was: " + JSON.stringify({ asked: st.asked, subscribed: st.subscribed }));
     d.getElementById("oSee").click();
-    ok(!sh() && !d.getElementById("pOrder").hidden && !!d.querySelector('#pOrder [data-order="' + placed.id + '"]'),
-      "See the order closes the sheet on the Order tab, with the order in it");
+    const scr = d.querySelector("#pOrder .oscreen");
+    ok(!sh() && !d.getElementById("pOrder").hidden && !!scr && scr.getAttribute("data-order") === placed.id,
+      "See the order closes the sheet and opens that order's own screen on the Order tab (S5 5.2): " + JSON.stringify(scr && scr.getAttribute("data-order")));
     void w;
   } finally { await new Promise((r) => setTimeout(r, 100)); A.w.close(); }
   /* Not now puts the question away, and a browser that cannot be woken is told how rather than asked */
@@ -14024,8 +14187,11 @@ await (async () => {
       d.getElementById("un").value = u; d.getElementById("pw").value = pass;
       d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
       for (let i = 0; i < 150 && !d.getElementById("pPrices").textContent; i++) await new Promise((r) => setTimeout(r, 100));
+      const tw = d.createTreeWalker(d.getElementById("pPrices"), 4), nodes = [];
+      while (tw.nextNode()) nodes.push(tw.currentNode.nodeValue);
       return {
         text: d.getElementById("pPrices").textContent,
+        words: nodes.join(" "),   /* text node by text node: textContent runs a heading into the next line */
         marks: [...d.querySelectorAll("#pPrices .mark")].map((m) => ({ ch: m.textContent, colour: m.style.color, hidden: m.getAttribute("aria-hidden") })),
         heads: [...d.querySelectorAll("#pPrices h3")].map((h) => h.textContent),
         /* the panel with the greeting taken out, which is the hour's and not the level's */
@@ -14047,8 +14213,10 @@ await (async () => {
   /* 2. AND THE LEVEL IS NEVER NAMED. This is the whole of "subtle": the name travels in the sealed list and stays out of
      the page's text, so two customers comparing pages cannot order themselves by it. */
   const names59 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
-  ok(names59.every((n) => a59.text.indexOf(n) < 0),
-    "and no level is named anywhere in the prices they read: " + JSON.stringify(a59.heads));
+  /* S13 13.2 (25 Sep 2026): nor in Malay. The page carries no place, so a bare perak here is a level. */
+  const WL59 = await import("../src/orders.js");
+  ok(names59.every((n) => a59.text.indexOf(n) < 0) && a59.words.length > 100 && WL59.wordsIn(a59.words, WL59.LEVEL_WORDS_MS).length === 0,
+    "and no level is named anywhere in the prices they read, in English or Malay: " + JSON.stringify(a59.heads));
   /* 3. AND THE LEVEL LEAVES NO TRACE: two lists that differ only in their levels draw the same panel, to the character. */
   const b59 = await open59(list59("Silver", "Gold", "2026-03-04"));
   ok(b59.html.length > 200 && b59.html === a59.html,
@@ -14494,7 +14662,7 @@ await (async () => {
   const wake = async (summary) => { const sw = runSw(summary), waits = []; sw.L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits); return sw.shown[0]; };
   const bOrd = await wake({ ok: true, pending: 2, refused: 0, countDue: [], orders: 1, placed: 1 });
   const bRow = await wake({ ok: true, pending: 2, refused: 0, countDue: [], orders: 0 });
-  ok(bOrd && bOrd.t === "New customer order" && /acknowledge/.test(bOrd.opt.body) && bOrd.opt.data.url === "./desk#orders"
+  ok(bOrd && bOrd.t === "New customer order" && /acknowledge/.test(bOrd.opt.body) && bOrd.opt.data.url === "./desk#orders/newest"
     && bRow && bRow.t === "Salt Command" && /2 rows waiting/.test(bRow.opt.body) && bRow.opt.data.url === "./",
     "an order waiting is the banner's title and opens Orders; without one the banner is as it was: " + JSON.stringify({ bOrd, bRow }));
   {
@@ -15042,7 +15210,7 @@ await (async () => {
   await kv.put("roster", JSON.stringify([{ code: "CX0-AA", username: u }]));
   const oid = "20260921010000-abcd", at = "2026-09-21T01:00:00Z";
   await kv.put("order:" + u + ":" + oid, JSON.stringify({ id: oid, u, at, status: "acknowledged", product: "salt", qty: 1, total: 150, delivery: 0,
-    mode: "collect", paid: 0, payments: [], moved: 0, movedOn: null, msgs: [{ at, by: "customer", text: "When can I collect" }],
+    mode: "collect", paid: 0, payments: [], moved: 0, movedOn: null, msgs: [{ at, by: "customer", text: "When can I collect" }, { at: "2026-09-21T02:00:00Z", by: "desk", text: "After six is fine" }],
     history: [{ at, status: "placed", by: "customer" }, { at, status: "acknowledged", by: "desk" }] }));
   const TEAM = "maakmal", AUD = "aud-s1-21", KID = "kid-s1-21";
   const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
@@ -15089,14 +15257,20 @@ await (async () => {
     ok(await until(() => [...D.querySelectorAll("#rlist button")].some((b) => b.textContent.includes("CX0-AA"))), "Review lists the account");
     [...D.querySelectorAll("#rlist button")].find((b) => b.textContent.includes("CX0-AA")).click();
     const pOrder = D.getElementById("pOrder");
-    ok(await until(() => pOrder.querySelectorAll(".pane .quote").length >= 1),
-      "the account opens and its order is drawn from his route, not None yet: " + JSON.stringify(pOrder.textContent.slice(0, 160)));
-    const words = [...pOrder.querySelectorAll("button, a")].map((b) => b.textContent);
-    ok(/RM\s*150/.test(pOrder.textContent) && /When can I collect/.test(pOrder.textContent) && /Acknowledged/.test(pOrder.textContent) && !/None yet/.test(pOrder.textContent),
-      "the order reads as their page shows it, with its thread and its state: " + JSON.stringify(pOrder.textContent.replace(/\s+/g, " ").slice(0, 200)));
-    ok(!pOrder.querySelector("input, select, textarea") && !words.some((t) => /Review this order|Place|Notify me|Confirm|I have paid|Withdraw|Send/.test(t))
+    ok(await until(() => pOrder.querySelector("[data-row]")),
+      "the account opens and its order is listed from his route, not None yet: " + JSON.stringify(pOrder.textContent.slice(0, 160)));
+    /* S5: an order is a row that opens its own screen, on his view as on theirs */
+    pOrder.querySelector("[data-row]").click();
+    const scr = pOrder.querySelector(".oscreen") || pOrder;
+    const words = [...pOrder.querySelectorAll("button, a")].filter((b) => !b.hasAttribute("data-row") && !b.classList.contains("oback") && !b.classList.contains("olater")).map((b) => b.textContent);
+    ok(/RM\s*150/.test(scr.textContent) && /When can I collect/.test(scr.textContent) && /Confirmed/.test(scr.textContent) && !/None yet/.test(pOrder.textContent),
+      "the order reads as their page shows it, with its thread and its state: " + JSON.stringify(scr.textContent.replace(/\s+/g, " ").slice(0, 200)));
+    ok(!pOrder.querySelector("input, select, textarea") && !words.some((t) => /Review this order|Place|Notify me|Confirm|I have paid|Pay RM|Cancel|Withdraw|Send/.test(t))
       && ![...pOrder.querySelectorAll("h3")].some((x) => /Notifications/.test(x.textContent)),
       "and it is read only: no order form, no Notify me, no pay, withdraw or message control: " + JSON.stringify(words));
+    ok(!win.localStorage.getItem("salt-stmt-seen") && !pOrder.querySelector(".salt-bubble__new") && /After six is fine/.test(scr.textContent)
+      && !/reply for you/i.test(pOrder.querySelector("[data-row]").textContent),
+      "and it marks nothing seen or New: what their phone has shown is not on his, and his route leaves nothing on his phone (S5 5.4)");
     ok(hits.includes("GET /all/orders/" + u) && !hits.some((x) => /^POST \/(orders|push|my\/refs)|^GET \/(orders|my\/refs)$/.test(x)),
       "it read through his route and never through the customer's session routes: " + JSON.stringify(hits));
     D.getElementById("tCard").click();
@@ -15155,7 +15329,7 @@ await (async () => {
     ok(await until(() => cardOf(uA) && cardOf(uB)), "Send draws a card for both usernames");
     const btn = (u, t) => [...cardOf(u).querySelectorAll("button")].find((b) => b.textContent === t);
     const four = ["Share", "Copy message", "Sign-in link", "Open account"];
-    ok(four.every((t) => btn(uB, t) && btn(uB, t).disabled && /No account/.test(btn(uB, t).title)) && /No account yet/.test(cardOf(uB).textContent),
+    ok(four.every((t) => btn(uB, t) && btn(uB, t).disabled && /No account/.test(btn(uB, t).title)) && /Made at the next laptop update./.test(cardOf(uB).textContent),
       "on the card with no account, Share, Copy message, Sign-in link and Open account are all off, each saying why: "
         + JSON.stringify(four.map((t) => [t, btn(uB, t) && btn(uB, t).disabled])));
     ok(four.every((t) => btn(uA, t) && !btn(uA, t).disabled), "and on a card with an account all four stay on");
@@ -15167,7 +15341,7 @@ await (async () => {
     D.querySelector("button[data-back]").click();
     D.querySelector('button[data-m="review"]').click();
     const rowOf = (u) => [...D.querySelectorAll("#rlist button")].find((b) => b.textContent.includes(u));
-    ok(await until(() => rowOf(uB) && /No account yet/.test(rowOf(uB).textContent)), "Review says the username has no account");
+    ok(await until(() => rowOf(uB) && /Made at the next laptop update./.test(rowOf(uB).textContent)), "Review says the username has no account");
     const before = hits.length;
     rowOf(uB).click();
     await new Promise((r) => setTimeout(r, 60));
@@ -15536,6 +15710,8 @@ await (async () => {
 })();
 section("S1 1.40: an associate with no sealed card yet still reaches their links");
 await (async () => {
+  /* S3 fix: a session is filed under its hash, so the page's own orders read is a digest away, and the jsdom this
+     laptop runs drops a closed window's document: each page is let finish that read before it is closed */
   /* 24 SEP 2026 (L44): the Card tab waited on a sealed card as well as the associate mark, and the links
      live inside it, so an associate the publish had not yet written a card for could never make or see
      a link, though v709 gates the links on the mark alone. Driven on their page against the real Worker. */
@@ -15582,7 +15758,7 @@ await (async () => {
     const DB = await signIn(B);
     ok(!DB.getElementById("tabs").hidden && DB.getElementById("tCard").hidden,
       "while a customer who is not an associate is still shown no Card tab at all");
-  } finally { for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
+  } finally { await new Promise((r) => setTimeout(r, 300)); for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
 })();
 section("S1 1.35 page: the associate's Copy link says Copy failed when the clipboard refuses");
 await (async () => {
@@ -15910,7 +16086,7 @@ await (async () => {
       const bare = [...D88.querySelectorAll("#slist .scard")].find((c) => /CX0-BB/.test(c.textContent));
       const bareLink = bare && [...bare.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
       const liveLink = [...cardEl.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
-      ok(!!bare && /No account yet, so they cannot sign in/.test(bare.textContent) && !!bareLink && bareLink.disabled && !!liveLink && !liveLink.disabled,
+      ok(!!bare && /Made at the next laptop update./.test(bare.textContent) && !!bareLink && bareLink.disabled && !!liveLink && !liveLink.disabled,
         "a code with no account says it cannot sign in, and only its sign-in link is shut");
       ok(!/issue/i.test(D88.getElementById("oSend").textContent),
         "and the Send panel never says issue: " + JSON.stringify((D88.getElementById("oSend").textContent.match(/.{0,30}issue.{0,30}/i) || [""])[0]));
@@ -16224,6 +16400,11 @@ await (async () => {
         D.getElementById("pw").value = passA;
         D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
       }
+      /* S3 3.3: a link waits on its own page for Continue */
+      if (road === "link") {
+        for (let i = 0; i < 100 && D.getElementById("linkGo").disabled; i++) await new Promise((r) => setTimeout(r, 30));
+        D.getElementById("linkGo").dispatchEvent(new W.Event("click", { bubbles: true }));
+      }
       for (let i = 0; i < 200 && !D.querySelector("#pOrder .pane") && !errs.length && !D.getElementById("msg").textContent.includes("could not"); i++) await new Promise((r) => setTimeout(r, 50));
       await new Promise((r) => setTimeout(r, 50));
       return { errs: errs.slice(), out: D.getElementById("out").textContent, gate: D.getElementById("gate").hidden, msg: D.getElementById("msg").textContent,
@@ -16249,14 +16430,18 @@ await (async () => {
   const SB = await import("../stmt/send.js");
   const row = { url: "https://site.test/s/" + "t".repeat(32), user: "27a4-gkgw" };
   const door = lpB("", "nB", null), sign = SB.signInMessage(row), link = SB.linkMessage(row);
-  ok(!/It signs you in/.test(door) && /sign in there with Remember me ticked/.test(door),
-    "the door's install step no longer promises a sign-in, and says where to make it: in the saved app, with Remember me ticked");
+  /* S3 3.10: the steps left the door for a Sheet that carries the sign-in across with a code; it says the saved app
+     asks once for it, and never that a link signs the app in (the judges' must-not-ship list) */
+  const keepText = door.slice(door.indexOf('id="keepSheet"'), door.indexOf('id="keepCopy"')).replace(/<[^>]*>/g, " ");
+  ok(!/It signs you in/.test(door) && /asks once for this code/.test(keepText) && !/link/i.test(keepText) && door.indexOf('id="keepSheet"') > 0,
+    "the saved app's steps promise no sign-in they do not make: the app asks once for a code, and no link is said to sign it in");
   ok(!/It signs you in/.test(sign) && !/It signs you in/.test(link), "and neither message says it either");
-  ok(!/Remember me/.test(sign) && !/stays signed in/.test(sign) && !/Add to Home Screen|Install app/.test(sign)
-    && /in this phone's browser and does not keep you signed in/.test(sign) && /ask me for a new link/.test(sign),
-    "the link's message promises no remembered phone and no saved app, which would open on a door it gives no way past, "
+  /* S3 3.4 (his D1): the link keeps the phone signed in, and says so; it still promises no saved app */
+  ok(!/Remember me|Keep me signed in/.test(sign) && !/Add to Home Screen|Install app/.test(sign)
+    && /keeps this phone signed in/.test(sign) && /ask me for a new link/.test(sign),
+    "the link's message says it keeps this phone signed in, promises no saved app, which would open on a door it gives no way past, "
     + "and says to ask for a new link: " + JSON.stringify(sign.slice(-160)));
-  ok(/Open it from there and sign in with Remember me ticked/.test(link),
+  ok(/Open it from there and sign in with Keep me signed in ticked/.test(link),
     "and the username road, which reaches the door, says the sign-in is made in the saved app");
 })();
 section("S1 1.4: a dropped request gives back its control and says Not sent beside it");
@@ -16299,7 +16484,7 @@ await (async () => {
   try {
     D.getElementById("pw").value = passC;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-    await wait(() => D.getElementById("oNew") && btn("Send"));
+    await wait(() => D.getElementById("oNew") && D.querySelector("#pOrder [data-row]"));
     D.getElementById("oNew").click();
     btn("Review").click();
     await wait(() => btn("Place order"));
@@ -16310,18 +16495,20 @@ await (async () => {
     ok(!!place && !place.disabled && !!change && !change.disabled && !!noteNear(place),
       "Place order is given back after a dropped request, and Not sent is said beside it, in the sheet's foot: "
       + JSON.stringify({ place: place && place.disabled, change: change && change.disabled, note: !!(place && noteNear(place)) }));
-    const pane = btn("Send").closest(".pane");
-    pane.querySelector("input[aria-label='Write about this order']").value = "is it ready";
-    btn("Send").click();
-    await wait(() => [...D.querySelectorAll("#pOrder .pane")].some((x) => x.querySelector("p.msg") && x.contains(btn("Send")) && x.textContent.includes(NS)));
-    const send = btn("Send"), near = send && noteNear(send);
-    ok(!!send && !send.disabled && !!near && near.closest(".pane") === send.closest(".pane") && near.previousElementSibling && near.previousElementSibling.contains(send),
-      "Send on an order is given back too, and Not sent is said beside it, in that order's own pane: "
-      + JSON.stringify({ send: send && send.disabled, near: !!near }));
+    /* S5 5.4: a line is sent from the order's own screen, and a dropped one stands in its thread as Not sent */
+    D.querySelector('#pOrder [data-row="' + oid + '"]').click();
+    const scr = D.querySelector("#pOrder .oscreen"), box = scr && scr.querySelector("input[aria-label='Write about this order']");
+    if (box) { box.value = "is it ready"; box.form.requestSubmit(); }
+    await wait(() => scr && scr.querySelector(".salt-bubble--failed"));
+    const send = btn("Send"), failed = scr && scr.querySelector(".salt-bubble--failed");
+    ok(!!send && !send.disabled && !!failed && /Not sent/.test(failed.textContent) && /Check your connection/.test(failed.textContent)
+      && !!failed.querySelector("button.salt-bubble__retry") && failed.closest(".oscreen") === send.closest(".oscreen"),
+      "Send on an order is given back too, and Not sent is said on the line itself, in that order's own thread: "
+      + JSON.stringify({ send: send && send.disabled, failed: failed && failed.textContent }));
     ok(!errs.length, "and nothing is left unhandled: " + JSON.stringify(errs));
   } finally { try { W.close(); } catch (e) { /* best effort */ } process.off("unhandledRejection", onRej); }
 })();
-section("S1 1.5: a lapsed session says so in the bar at once, and Continue opens again or puts the door back");
+section("S1 1.5: a lapsed session says so in view only when the phone cannot sign itself back in, and a phone that remembers nothing gets the door with its username");
 await (async () => {
   /* H05, 24 SEP 2026. On a 401 the poll stopped and a note was set that nothing drew until the orders
      changed, and it told them to "lock", a control gone since v692. Driven with the poll shortened in the
@@ -16350,7 +16537,9 @@ await (async () => {
             wrap: await CD.wrapKey(devD, ckD), env: envD, live: null, prices: null, session: "sessD" + st.reopened + "aaaaaaaaaaaaaaaaaaaaaa" }) }; }
           if (p === "/open-link") return { ok: true, status: 200, json: async () => ({ ok: true, u: uD, wrap: await CD.wrapKey(tokD, ckD),
             env: envD, live: null, prices: null, session: "sessDlinkaaaaaaaaaaaaaaaaaaaa" }) };
-          if (p === "/orders") return st.lapsed ? { ok: false, status: 401, json: async () => ({ ok: false, error: "Sign in again to see your orders.", session: false }) }
+          /* S3 3.5: a lapse is the session the page held; a fresh one is answered */
+          const sess = ((init && init.headers) || {})["X-Stmt-Session"] || "";
+          if (p === "/orders") return st.lapsed && sess === st.dead ? { ok: false, status: 401, json: async () => ({ ok: false, error: "Sign in again to see your orders.", session: false }) }
             : { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
           return { ok: true, status: 200, json: async () => ({ ok: true }) };
         };
@@ -16359,42 +16548,40 @@ await (async () => {
   };
   const wait = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); };
 
-  /* a remembered phone: the line appears with no tap, and Continue opens again through the device */
-  const st1 = { reopened: 0, lapsed: false };
+  /* a remembered phone (S3 3.5, his D1): the lapse reopens it with no tap and nothing said */
+  const st1 = { reopened: 0, lapsed: false, dead: "sessD1aaaaaaaaaaaaaaaaaaaaaa" };
   const one = drive(JSON.stringify({ t: "r".repeat(32), k: Buffer.from(devD).toString("base64"), u: uD }), st1);
   try {
     await wait(() => !one.D.getElementById("barw").hidden);
-    st1.lapsed = true;
-    const alertEl = () => [...one.D.querySelectorAll("#barw [role=alert]")].find((e) => !e.hidden && e.textContent.trim());
-    await wait(() => !!alertEl());
-    const a = alertEl();
-    ok(!!a && /You were signed out after a while\./.test(a.textContent) && !/lock/i.test(a.textContent) && !!a.querySelector("button"),
-      "with no tap, a line in the bar says the session lapsed, with Continue, and never says lock: " + JSON.stringify(a && a.textContent));
-    ok(!/lock and sign in/.test(one.D.documentElement.outerHTML), "and the old note telling them to lock is gone from the page");
-    st1.lapsed = false;
     const before = st1.reopened;
-    const go = a && [...a.querySelectorAll("button")].find((x) => x.textContent === "Continue");
-    if (go) go.click();
-    await wait(() => st1.reopened > before && !one.D.getElementById("barw").hidden);
-    ok(st1.reopened === before + 1 && !one.D.getElementById("barw").hidden && one.D.getElementById("lapse").hidden && one.D.getElementById("gate").hidden,
-      "Continue opens the account again through the remembered device, and the line is gone: " + JSON.stringify({ reopened: st1.reopened - before }));
-  } finally { try { one.W.close(); } catch (e) { /* best effort */ } }
+    st1.dead = "sessD" + st1.reopened + "aaaaaaaaaaaaaaaaaaaaaa";
+    st1.lapsed = true;
+    await wait(() => st1.reopened > before);
+    await new Promise((r) => setTimeout(r, 120));
+    ok(st1.reopened === before + 1 && one.D.getElementById("lapse").hidden && one.D.getElementById("outSheet").hidden
+      && !one.D.getElementById("barw").hidden && one.D.getElementById("gate").hidden,
+      "with no tap, a remembered phone signs itself back in through the device, and nothing is said: " + JSON.stringify({ reopened: st1.reopened - before }));
+    ok(!/lock and sign in/.test(one.D.documentElement.outerHTML), "and the old note telling them to lock is gone from the page");
+  } finally { await new Promise((r) => setTimeout(r, 600)); try { one.W.close(); } catch (e) { /* best effort */ } }
 
-  /* opened by a one-time link, so nothing is remembered and nothing was typed: Continue puts the door back
-     with the username in it */
-  const st2 = { reopened: 0, lapsed: false };
+  /* opened by a one-time link whose remembering the site did not take, so nothing is remembered and nothing was
+     typed: the Sheet carries the door with the username in it */
+  const st2 = { reopened: 0, lapsed: false, dead: "sessDlinkaaaaaaaaaaaaaaaaaaaa" };
   const two = drive(null, st2);
   try {
+    /* S3 3.3: the link waits on its own page for Continue */
+    await wait(() => !two.D.getElementById("linkGo").disabled);
+    two.D.getElementById("linkGo").click();
     await wait(() => !two.D.getElementById("barw").hidden);
     st2.lapsed = true;
     await wait(() => !two.D.getElementById("lapse").hidden);
-    ok(!two.D.getElementById("lapse").hidden, "a phone that remembers nothing is told the same, in the bar");
-    two.D.getElementById("lapseGo").click();
-    await new Promise((r) => setTimeout(r, 60));
-    const boxes = [...two.D.querySelectorAll('.seg[data-for="un"] input')].map((b) => b.value).join("-");
-    ok(!two.D.getElementById("gate").hidden && boxes === uD && st2.reopened === 0,
-      "and Continue puts the door back with the username in it, asking nothing of a device it does not have: " + JSON.stringify({ boxes, reopened: st2.reopened }));
-  } finally { try { two.W.close(); } catch (e) { /* best effort */ } }
+    ok(!two.D.getElementById("lapse").hidden && /You were signed out on this (phone|computer)\./.test(two.D.getElementById("lapseT").textContent)
+      && two.D.getElementById("lapseGo").textContent === "Sign in",
+      "a phone that remembers nothing is told so in the bar, with Sign in");
+    const boxes = two.D.getElementById("un").value;
+    ok(!two.D.getElementById("outSheet").hidden && two.D.getElementById("outSheet").contains(two.D.getElementById("f")) && boxes === uD && st2.reopened === 0,
+      "and a Sheet carries the door with the username in it, asking nothing of a device it does not have: " + JSON.stringify({ boxes, reopened: st2.reopened }));
+  } finally { await new Promise((r) => setTimeout(r, 600)); try { two.W.close(); } catch (e) { /* best effort */ } }
 })();
 section("S1 fix UX5: one lapse is said once, in the bar, and a tapped control points to its Continue");
 await (async () => {
@@ -16432,7 +16619,8 @@ await (async () => {
   const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
   const btn = (t) => [...D.querySelectorAll("#pOrder button, #osheet button")].find((b) => b.textContent === t && !b.disabled);
   const said = () => [...D.querySelectorAll("#pOrder .msg, #osheet .msg")].map((x) => x.textContent.trim()).filter(Boolean);
-  const lapseOn = () => !D.getElementById("lapse").hidden && /signed out after a while/.test(D.getElementById("lapse").textContent);
+  const lapseOn = () => !D.getElementById("lapse").hidden && /signed out on this (phone|computer)/.test(D.getElementById("lapse").textContent)
+    && !D.getElementById("outSheet").hidden;
   try {
     D.getElementById("pw").value = passX;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
@@ -16448,17 +16636,20 @@ await (async () => {
        the bar is the one voice; beside Place there is nothing left to point */
     await until(() => lapseOn() && !D.getElementById("osheet"));
     const placed = said();
-    ok(lapseOn() && !D.getElementById("osheet") && !placed.some((t) => /Sign in again|session has ended/.test(t)),
-      "Place answered 401: the bar says it with Continue, and the order sheet closes so that Continue is in reach, never a second wording: " + JSON.stringify(placed));
+    const lapsedLine = (t) => /^Not sent: you were signed out on this (phone|computer)[.] Sign in to carry on[.]$/.test(t);
+    ok(lapseOn() && !D.getElementById("osheet") && !placed.some(lapsedLine) && !placed.some((t) => /Sign in again|session has ended/.test(t)),
+      "Place answered 401 with nothing remembered: the order sheet closes so the Sheet and the bar say it, with nothing left beside Place to point, never a second wording: " + JSON.stringify(placed));
+    /* S5 5.4: the line is sent from the order's own screen; refused, its words go back in the box and the answer
+       stands under it (the stage 5 review: a refusal is not offered again) */
+    D.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
     const box = D.querySelector('#pOrder input[data-say="' + ord.id + '"]');
-    box.value = "is it ready"; box.dispatchEvent(new W.Event("input", { bubbles: true }));
-    const send = [...D.querySelectorAll("#pOrder button")].find((b) => b.textContent === "Send");
-    send.click();
-    const pointers = () => said().filter((t) => t === "Signed out: tap Continue at the top.").length;
-    await until(() => pointers() >= 1);
+    if (box) { box.value = "is it ready"; box.dispatchEvent(new W.Event("input", { bubbles: true })); box.form.requestSubmit(); }
+    const underBox = () => [...D.querySelectorAll('#pOrder .oscreen [data-part="say"] [role=status]')].filter((x) => !x.hidden).map((x) => x.textContent);
+    await until(() => underBox().length);
     const sent = said();
-    ok(pointers() === 1 && !sent.some((t) => /Sign in again|session has ended/.test(t)),
-      "and so does Send: " + JSON.stringify(sent));
+    ok(underBox().length === 1 && lapsedLine(underBox()[0]) && sent.filter(lapsedLine).length === 1 && !!box && box.value === "is it ready"
+      && !D.querySelector("#pOrder .salt-bubble--failed") && !sent.some((t) => /Sign in again|session has ended/.test(t)),
+      "and so does Send, under the box its words are back in: " + JSON.stringify(sent));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
 section("S1 1.9: Notify me waits for the service worker to be ready, and a failure is said in plain words");
@@ -16616,7 +16807,7 @@ await (async () => {
       return { kept: store.has("salt-stmt-remember"), msg: dom.window.document.getElementById("msg").textContent, gate: !dom.window.document.getElementById("gate").hidden };
     } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
   };
-  const said = /could not be opened just now\. This phone is still remembered/;
+  const said = /could not be opened just now\. This (phone|computer) is still remembered/;
   for (const a of [500, "drop"]) {
     const r = await drive(a);
     ok(r.kept && r.gate && said.test(r.msg), (a === "drop" ? "a dropped connection" : "a server fault (" + a + ")")
@@ -16642,7 +16833,7 @@ await (async () => {
   };
   /* another account's live session cannot forget this one's memory or its phone */
   await seed();
-  await kv.put("sess:" + "o".repeat(24), JSON.stringify({ u: other, at: new Date().toISOString() }));
+  await kv.put("sess:" + createHash("sha256").update("o".repeat(24)).digest("hex"), JSON.stringify({ u: other, at: new Date().toISOString() }));
   await post({ token: tok, endpoint: ep }, "o".repeat(24));
   ok(!!(await kv.get("rem:" + tok)) && !!(await kv.get(pushKey)), "another account's session forgets neither this account's wrap nor its push record");
   /* sixteen minutes on: the session this page holds has lapsed, so the store no longer carries it */
@@ -16651,9 +16842,9 @@ await (async () => {
     "a Log out after the session lapsed drops the remembered wrap and the push record for that phone: " + r.status);
   /* and with a live session the phone's record goes as well */
   await seed();
-  await kv.put("sess:" + "s".repeat(24), JSON.stringify({ u: uI, at: new Date().toISOString() }));
+  await kv.put("sess:" + createHash("sha256").update("s".repeat(24)).digest("hex"), JSON.stringify({ u: uI, at: new Date().toISOString() }));
   await post({ token: tok, endpoint: ep }, "s".repeat(24));
-  ok(!(await kv.get("rem:" + tok)) && !(await kv.get(pushKey)) && !(await kv.get("sess:" + "s".repeat(24))),
+  ok(!(await kv.get("rem:" + tok)) && !(await kv.get(pushKey)) && !(await kv.get("sess:" + createHash("sha256").update("s".repeat(24)).digest("hex"))),
     "a Log out inside the session drops the session, the wrap and the phone's push record together");
 
   /* the page's half: the subscription is dropped on the phone and named to the site */
@@ -16754,6 +16945,327 @@ await (async () => {
     "a phone that logged out, signing in with the answer still yes, is subscribed and recorded again, not left silent: " + JSON.stringify(gone));
   ok(!lost.on && lost.offer, "and a subscription the site will not take is not called On: Notify me stays offered: " + JSON.stringify(lost));
 })();
+section("S3 3.1: a remembered device is filed under the hash of its token, and an old raw key is re-filed on its next open");
+await (async () => {
+  /* The key was the token, so a copy of the store was a list of tokens any browser could post to
+     /remember/open for a session. Filed under the hash, the copy names nothing a phone can present. */
+  const kv = new KV(), env = { STMT: kv }, u = "aaaa-rrrr", sess = "sess31" + "a".repeat(22);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", env: { v: 2, iv: "aXY=", ct: "Y3Q=" } }));
+  await kv.put("sess:" + createHash("sha256").update(sess).digest("hex"), JSON.stringify({ u, at: new Date().toISOString() }));
+  const post = (path, body, headers) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }), env);
+  const sha = (s) => createHash("sha256").update(s).digest("hex");
+  const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" };
+  const made = await (await post("/remember", { wrap }, { "X-Stmt-Session": sess })).json();
+  const rems = (await kv.list({ prefix: "rem:" })).keys.map((k) => k.name);
+  ok(made.ok && rems.length === 1 && rems[0] === "rem:" + sha(made.token)
+    && ![...kv.m.keys()].some((k) => k.includes(made.token)) && ![...kv.m.values()].some((v) => String(v).includes(made.token)),
+    "a remembered device is filed under its token's hash, and the token is nowhere in the store: " + JSON.stringify(rems));
+  ok((await post("/remember/open", { token: made.token })).status === 200, "and the token still opens it");
+  const stolen = rems[0].slice(4);
+  ok((await post("/remember/open", { token: stolen })).status === 401 && (await post("/remember/open", { token: stolen.slice(0, 32) })).status === 401,
+    "a hash read off a copy of the store opens nothing, whole or cut to a token's length");
+
+  /* a record filed before this fold: the raw token as the key, ten days into its thirty */
+  const old = "old31" + "b".repeat(27), at = new Date(Date.now() - 10 * 86400e3).toISOString();
+  await kv.put("rem:" + old, JSON.stringify({ u, wrap, at }), { expirationTtl: 20 * 86400 });
+  const back = await post("/remember/open", { token: old });
+  ok(back.status === 200 && !(await kv.get("rem:" + old)) && JSON.parse((await kv.get("rem:" + sha(old))) || "{}").u === u,
+    "an old raw record opens, and is re-filed under its hash: " + back.status);
+  ok((await post("/remember/open", { token: old })).status === 200, "and it opens again from where it now lives");
+})();
+section("S3 3.2: every remember and every open leaves a pointer under the username, listable by prefix, and Log out takes its own");
+await (async () => {
+  /* Stage 9 lists an account's phones and signs them all out. The credentials are filed under tokens or their
+     hashes, so without a pointer under the username that meant reading every record in the store. */
+  const C = await import("../tools/stmt-crypto.mjs"), S = await import("../stmt/signin.js");
+  const kv = new KV(), MASTER = "mp-s3-32", env = { STMT: kv, STMT_MASTER: MASTER };
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s3-32", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, "{}") }));
+  const post = async (path, body, headers) => { const r = await stmtWorker.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }), env); return { status: r.status, j: await r.json() }; };
+  const sha = (s) => createHash("sha256").update(s).digest("hex");
+  const ptrs = async () => { const out = {}; for (const k of (await kv.list({ prefix: "dev:" + u + ":" })).keys) out[k.name] = JSON.parse(await kv.get(k.name)); return out; };
+
+  const byPw = await post("/open", { u, password: pw });
+  const made = await post("/remember", { wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" } }, { "X-Stmt-Session": byPw.j.session });
+  const remK = "rem:" + sha(made.j.token);
+  const dev = (await ptrs())["dev:" + u + ":" + sha(remK)];
+  ok(!!dev && dev.key === remK && dev.how === "remember" && !!(await kv.get(remK))
+    && (kv.opts.get("dev:" + u + ":" + sha(remK)) || {}).expirationTtl === 30 * 24 * 3600 && !JSON.stringify(dev).includes(made.j.token),
+    "remembering a phone files a pointer under the username naming its record, living as long as it, and holding no token: " + JSON.stringify(dev));
+
+  const byRem = await post("/remember/open", { token: made.j.token });
+  const tok = S.newSignin();
+  await S.mintSignin(env, u, tok, await C.wrapKey(tok, ck));
+  const byLink = await post("/open-link", { token: tok });
+  const all = await ptrs();
+  /* S3 fix: a session is filed under its token's hash, so its pointer names that and never the token */
+  const sessOf = (s, how) => { const p = all["dev:" + u + ":" + sha("sess:" + sha(s))]; return !!p && p.key === "sess:" + sha(s) && p.how === how
+    && !JSON.stringify(p).includes(s) && (kv.opts.get("dev:" + u + ":" + sha("sess:" + sha(s))) || {}).expirationTtl === 900; };
+  ok(Object.keys(all).length === 4 && sessOf(byPw.j.session, "password") && sessOf(byRem.j.session, "remembered") && sessOf(byLink.j.session, "link"),
+    "a password, a remembered phone and a one-time link each leave a pointer naming the session they opened, listed by the prefix: "
+    + JSON.stringify(Object.values(all).map((p) => p.how)));
+
+  /* a phone remembered before pointers: its first open gives it one, dated when it was remembered */
+  const old = "old32" + "c".repeat(27), at = new Date(Date.now() - 5 * 86400e3).toISOString();
+  await kv.put("rem:" + old, JSON.stringify({ u, wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" }, at }));
+  await post("/remember/open", { token: old });
+  const od = (await ptrs())["dev:" + u + ":" + sha("rem:" + sha(old))];
+  ok(!!od && od.key === "rem:" + sha(old) && od.at === at && od.last > at,
+    "a phone remembered before pointers is given one on its next open, dated when it was remembered: " + JSON.stringify(od));
+
+  /* Log out takes its own phone's pointer and its session's, and nobody else's */
+  await post("/logout", { token: made.j.token }, { "X-Stmt-Session": byRem.j.session });
+  const left = await ptrs();
+  ok(!left["dev:" + u + ":" + sha(remK)] && !left["dev:" + u + ":" + sha("sess:" + sha(byRem.j.session))]
+    && !!left["dev:" + u + ":" + sha("sess:" + sha(byLink.j.session))] && !!left["dev:" + u + ":" + sha("rem:" + sha(old))],
+    "Log out takes this phone's pointer and its session's, and leaves the others: " + Object.keys(left).length);
+
+  /* the test account goes with everything it signed in */
+  const TEAM = "maakmal", AUD = "aud-s3-32", KID = "kid-s3-32";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const jwt = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+  Object.assign(env, { ACCESS_TEAM: TEAM, ACCESS_AUD: AUD });
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  try {
+    await post("/all/test", { make: true }, { "cf-access-jwt-assertion": jwt });
+    const t = await post("/open", { u: "0000-0000", password: "0000-0000-0000-0000" });
+    const tr = await post("/remember", { wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" } }, { "X-Stmt-Session": t.j.session });
+    const had = (await kv.list({ prefix: "dev:0000-0000:" })).keys.length;
+    await post("/all/test", { make: false }, { "cf-access-jwt-assertion": jwt });
+    ok(had === 2 && (await kv.list({ prefix: "dev:0000-0000:" })).keys.length === 0 && !(await kv.get("sess:" + sha(t.j.session)))
+      && !(await kv.get("rem:" + sha(tr.j.token))) && Object.keys(await ptrs()).length === Object.keys(left).length,
+      "unmaking the test account takes its pointers, its session and its remembered phone, and nobody else's: " + had);
+  } finally { globalThis.fetch = realFetch; }
+})();
+section("S3 3.6: Keep me signed in runs thirty days from the last open, not from the tick");
+await (async () => {
+  /* HIS DECISION D1 OF 24 SEP 2026. Thirty days from the tick signed out a customer who opened the page every day, on
+     the thirty-first, silently. Every open now files the record, and its pointer, again for thirty days. */
+  const kv = new KV(), env = { STMT: kv }, u = "aaaa-ssss";
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", env: { v: 2, iv: "aXY=", ct: "Y3Q=" } }));
+  const post = (path, body) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env);
+  const sha = (s) => createHash("sha256").update(s).digest("hex");
+  const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" }, at = new Date(Date.now() - 25 * 86400e3).toISOString();
+  const tok = "new36" + "d".repeat(27), key = "rem:" + sha(tok), ptr = "dev:" + u + ":" + sha(key);
+  await kv.put(key, JSON.stringify({ u, wrap, at }), { expirationTtl: 5 * 86400 });
+  const r = await post("/remember/open", { token: tok });
+  const ttl = (k) => (kv.opts.get(k) || {}).expirationTtl || 0;
+  ok(r.status === 200 && ttl(key) === 30 * 24 * 3600 && ttl(ptr) === 30 * 24 * 3600 && JSON.parse(await kv.get(key)).at === at,
+    "a phone ticked twenty-five days ago and opened today is kept thirty days from today, its pointer with it, and still says when it was ticked: "
+    + JSON.stringify({ rec: ttl(key), ptr: ttl(ptr) }));
+  /* one filed the old way moves under its hash keeping the end it had (S3 fix: it never slides) */
+  const old = "old36" + "e".repeat(27);
+  await kv.put("rem:" + old, JSON.stringify({ u, wrap, at }), { expirationTtl: 5 * 86400 });
+  await post("/remember/open", { token: old });
+  ok(ttl("rem:" + sha(old)) > 5 * 86400 - 120 && ttl("rem:" + sha(old)) <= 5 * 86400 && !(await kv.get("rem:" + old)),
+    "and one filed the old way is moved under its hash keeping the five days it had left: " + ttl("rem:" + sha(old)));
+  /* a put that cannot be made never fails the open */
+  const realPut = kv.put.bind(kv);
+  kv.put = async (k, v, o) => { if (String(k) === key) throw new Error("KV PUT failed: 429 Too Many Requests"); return realPut(k, v, o); };
+  try {
+    const again = await post("/remember/open", { token: tok });
+    ok(again.status === 200 && !!(await again.json()).session, "and a slide KV refuses still lets the phone in: " + again.status);
+  } finally { kv.put = realPut; }
+})();
+section("S3 3.9: the hand-over: a key and an eight-symbol code minted on a session, filed under a keyed hash with the wrap sealed, one use in fifteen minutes, braked per address and site-wide");
+await (async () => {
+  /* HIS DECISION D2 OF 24 SEP 2026. The saved iPhone app keeps its own storage, so a signed-in page hands its
+     sign-in across: a key for Paste and /app#<key>, eight symbols to type. A code is 39 bits: never a plain hash. */
+  const C = await import("../tools/stmt-crypto.mjs");
+  const kv = new KV(), SECRET = "s3-39-handover-secret", env = { STMT: kv, STMT_HANDOVER_KEY: SECRET };
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s3-39", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, "{}"), live: { at: "2026-09-24T01:00:00Z", iv: "aXY=", ct: "Y3Q=" } }));
+  const call = async (path, body, headers, e = env, ip = "203.0.113.9") => {
+    const r = await stmtWorker.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+      headers: Object.assign({ "content-type": "application/json", "CF-Connecting-IP": ip }, headers || {}),
+      body: typeof body === "string" ? body : JSON.stringify(body) }), e);
+    let j = {}; try { j = await r.json(); } catch (x) { j = {}; }
+    return { status: r.status, j };
+  };
+  const sha = (x) => createHash("sha256").update(x).digest("hex");
+  const newKey = () => Buffer.from(crypto.getRandomValues(new Uint8Array(24))).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const REFUSED = "That username and password were not accepted.";
+
+  /* with the secret unset, the routes are off and the door is not */
+  const off = { STMT: kv };
+  ok((await call("/handover", {}, {}, off)).status === 503 && (await call("/handover/open", { code: "abcd-efgh" }, {}, off)).status === 503
+    && (await call("/open", { u, password: pw }, {}, off)).status === 200,
+    "with STMT_HANDOVER_KEY unset the hand-over answers 503 and the password still opens");
+
+  const sess = (await call("/open", { u, password: pw })).j.session;
+  const mint = async () => {
+    const token = newKey(), wrap = await C.wrapKey(token, ck);
+    return Object.assign((await call("/handover", { token, wrap }, { "X-Stmt-Session": sess })).j, { wrap });
+  };
+  ok((await call("/handover", { token: newKey(), wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" } })).status === 401
+    && (await call("/handover", { token: newKey() }, { "X-Stmt-Session": sess })).status === 400,
+    "minting needs a live session, and the key with its wrap");
+  const before = new Set(kv.m.keys());
+  const h1 = await mint();
+  const ho = [...kv.m.keys()].filter((k) => !before.has(k) && k.startsWith("ho:"));
+  const exp = Date.parse(h1.exp) - Date.now();
+  ok(h1.ok && /^[23456789abcdefghjkmnpqrstvwxyz]{4}-[23456789abcdefghjkmnpqrstvwxyz]{4}$/.test(h1.code) && typeof h1.token === "string" && h1.token.length >= 20
+    && exp > 14 * 60e3 && exp <= 15 * 60e3,
+    "a session mints { code, token, exp }: eight symbols of the username alphabet, the key back, fifteen minutes: " + JSON.stringify({ code: h1.code, exp }));
+  const plain = [h1.code, h1.code.replace("-", ""), h1.token, sha(h1.code), sha(h1.code.replace("-", "")), sha(h1.token), u, h1.wrap.ct];
+  ok(ho.length === 2 && ho.every((k) => (kv.opts.get(k) || {}).expirationTtl === 900)
+    && !ho.some((k) => plain.some((x) => k.includes(x))) && !ho.some((k) => plain.some((x) => String(kv.m.get(k)).includes(x))),
+    "it is filed twice for fifteen minutes, under names no plain hash of the code or the key computes, and neither record holds the code, the key, the username or the wrap");
+
+  /* opened by the code, typed any way: the answer is a link's, with the key to unwrap under */
+  const o1 = await call("/handover/open", { code: " " + h1.code.toUpperCase().replace("-", " ") + " " });
+  const ck1 = o1.j.wrap && o1.j.token ? await C.unwrapKey(o1.j.token, o1.j.wrap).catch(() => null) : null;
+  ok(o1.status === 200 && o1.j.ok && o1.j.u === u && o1.j.remembered === true && !!o1.j.session && !!o1.j.env && !!o1.j.live
+    && o1.j.token === h1.token && !!ck1 && Buffer.from(ck1).equals(Buffer.from(ck)),
+    "the code opens what a one-time link opens, and the wrap unwraps under the key in the answer to the account's own key");
+  ok(ho.every((k) => !kv.m.has(k)) && (await call("/handover/open", { token: h1.token })).j.error === REFUSED,
+    "and it is burnt, both names at once: its key, used after its code, gets the door's one refusal");
+  const ptr = [...kv.m.keys()].find((k) => k.startsWith("dev:" + u + ":") && JSON.parse(kv.m.get(k)).key === "sess:" + createHash("sha256").update(o1.j.session).digest("hex"));
+  ok(!!ptr && JSON.parse(kv.m.get(ptr)).how === "code" && JSON.parse(await kv.get("seen:" + u)).how === "code",
+    "a code open is an open: its session leaves a pointer and the opened mark says how");
+
+  /* opened by the key, as Paste and /app#<key> do */
+  const h2 = await mint();
+  const o2 = await call("/handover/open", { token: h2.token });
+  ok(o2.status === 200 && o2.j.u === u && o2.j.token === h2.token && (await call("/handover/open", { code: h2.code })).status === 401,
+    "the key opens it too, and burns the code with it");
+  /* a record past its fifteen minutes that KV has not yet dropped is refused */
+  const h3 = await mint();
+  for (const k of [...kv.m.keys()].filter((k) => k.startsWith("ho:"))) {
+    const r = JSON.parse(kv.m.get(k)); r.exp = new Date(Date.now() - 1000).toISOString(); kv.m.set(k, JSON.stringify(r));
+  }
+  ok((await call("/handover/open", { code: h3.code })).status === 401, "a hand-over past its fifteen minutes opens nothing");
+  /* only JSON reaches it, so another site's page cannot spend an allowance */
+  const was = kv.m.get("hofail:203.0.113.9");
+  ok((await call("/handover/open", "code=abcd-efgh", { "content-type": "text/plain" })).status === 401 && !!was && kv.m.get("hofail:203.0.113.9") === was,
+    "a form post is refused and counts nothing");
+
+  /* the brakes: ten misses from one address shut it, a hundred across the site shut every address */
+  const h4 = await mint();
+  for (let i = 0; i < 10; i++) await call("/handover/open", { code: "2222-222" + "23456789ab"[i] }, {}, env, "198.51.100.1");
+  const shut = await call("/handover/open", { code: h4.code }, {}, env, "198.51.100.1");
+  ok(shut.status === 429 && [...kv.m.keys()].filter((k) => k.startsWith("ho:")).length === 2,
+    "ten misses from one address shut it, even to a real code, and the code is not spent: " + shut.status);
+  ok((await call("/handover/open", { code: h4.code }, {}, env, "198.51.100.2")).status === 200, "while another address still opens");
+  const h5 = await mint();
+  for (let i = 0; i < 100; i++) await call("/handover/open", { code: "3333-" + String(2000 + i).replace(/[01]/g, "z") }, {}, env, "192.0.2." + (i % 90));
+  ok((await call("/handover/open", { code: h5.code }, {}, env, "203.0.113.200")).status === 429,
+    "a hundred misses across the site shut code sign-in everywhere, a fresh address included");
+  ok((await call("/open", { u, password: pw }, {}, env, "203.0.113.200")).status === 200, "and the password door is untouched by it");
+})();
+section("S3 3.13: Salt Admin shows a customer at the counter a QR and the eight symbols, minted as the sheet opens and never copied or shared");
+await (async () => {
+  /* HIS DECISION D2 OF 24 SEP 2026. At the counter the customer's own phone signs in from his screen: a QR their
+     camera opens and eight symbols to type in the saved app. The judges: a copy or a share never waits on a key
+     derivation and a fetch in the same tap, so this one is minted as the sheet opens and only shown. */
+  const C = await import("../tools/stmt-crypto.mjs");
+  const QR = (await import("../stmt/qr.js")).default;
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const kv = new KV(), MASTER = "mp-s3-313", SECRET = "s3-313-secret";
+  const u = C.newUsername(), ghost = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s3-313", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX1-AA", username: u }, { code: "CX2-BB", username: ghost }]));
+  await kv.put("sheet", JSON.stringify({ issue: "2026-09-01", accounts: [{ username: u, issued: "2026-09-01", flag: "clear", t: { owed: 0 } }] }));
+  const TEAM = "maakmal", AUD = "aud-s3-313", KID = "kid-s3-313";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const jwt = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+  const env = { STMT: kv, STMT_MASTER: MASTER, STMT_HANDOVER_KEY: SECRET, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o, e = env) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path, o), e);
+  const post = (path, body, headers, e = env) => site(path, { method: "POST", headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }, e);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  let win = null;
+  try {
+    /* the route: behind Access, off without the secret, and only for an account on the roster */
+    const wrap0 = await C.wrapKey("k".repeat(32), ck);
+    const noSecret = Object.assign({}, env); delete noSecret.STMT_HANDOVER_KEY;
+    ok((await post("/all/handover", { u, token: "k".repeat(32), wrap: wrap0 })).status === 401
+      && (await post("/all/handover", { u, token: "k".repeat(32), wrap: wrap0 }, { "cf-access-jwt-assertion": jwt }, noSecret)).status === 503
+      && (await post("/all/handover", { u: C.newUsername(), token: "k".repeat(32), wrap: wrap0 }, { "cf-access-jwt-assertion": jwt })).status === 400,
+      "his mint needs Access, answers 503 without STMT_HANDOVER_KEY, and refuses a username the roster does not carry");
+    /* S3 fix: what his route mints is marked his, the one kind a browser tab spends from its address */
+    const kQ = "Q".repeat(32), mQ = await post("/all/handover", { u, token: kQ, wrap: await C.wrapKey(kQ, ck) }, { "cf-access-jwt-assertion": jwt });
+    ok(mQ.status === 200 && (await mQ.json()).url === "https://k7m3p2.example/app#qr." + kQ && (await post("/handover/open", { token: kQ, tab: true })).status === 200,
+      "his mint answers the QR's own form, /app#qr.<key>, and the browser tab a camera opens on it spends it");
+
+    /* the page: Send statement, the account's card, Show a code */
+    const html = await (await site("/all", { headers: { "cf-access-jwt-assertion": jwt } })).text();
+    const seen = { handover: null, copied: 0, shared: 0 };
+    win = new JSDOM(html, { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      Object.defineProperty(w.navigator, "clipboard", { configurable: true, value: { writeText: async () => { seen.copied++; } } });
+      w.navigator.share = async () => { seen.shared++; };
+      w.fetch = async (path, o) => {
+        o = o || {};
+        const r = await site(String(path), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": jwt }), body: o.body });
+        if (String(path) === "/all/handover") seen.handover = await r.clone().json();
+        return r;
+      };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 300 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    D.querySelector('button[data-m="send"]').click();
+    const cardOf = (x) => [...D.querySelectorAll("#slist .scard")].find((k) => k.textContent.includes(x));
+    const btnOf = (x) => { const k = cardOf(x); return k && [...k.querySelectorAll("button")].find((b) => b.textContent === "Show a code"); };
+    ok(await until(() => !!btnOf(u) && !!btnOf(ghost)) && btnOf(ghost).disabled && !btnOf(u).disabled,
+      "each account's card carries Show a code, switched off where no account stands behind the username");
+    const btn = btnOf(u);
+    btn.click();
+    const sheet = () => D.querySelector(".salt-sheet[role=dialog]");
+    ok(!!sheet() && sheet().getAttribute("aria-modal") === "true" && D.getElementById(sheet().getAttribute("aria-labelledby")).textContent === "Sign in on their phone"
+      && !!D.querySelector(".salt-sheet-scrim") && !!sheet().querySelector(".salt-orb.salt-sheet__close[aria-label=Close]")
+      && /Making a code/.test(sheet().textContent) && D.activeElement === sheet(),
+      "the tap opens the system's Sheet at once, saying a code is being made, with focus inside it");
+    ok(await until(() => !!D.getElementById("hoC")), "and the code is drawn once it is made");
+    const inp = D.getElementById("hoC"), code = inp.value;
+    ok(inp.readOnly && inp.classList.contains("salt-field__input--code") && inp.closest(".salt-code") && /^[a-z2-9]{4} [a-z2-9]{4}$/.test(code)
+      && seen.handover && code === seen.handover.code.replace("-", " ") && /Works once, until [0-9]{2}:[0-9]{2}[.]/.test(sheet().textContent),
+      "the eight symbols are shown in the Code field, grouped four and four, with when they stop working: " + code);
+    /* the QR is rectangles drawing the matrix of <site>/app#<key>, the saved app's own page */
+    const rects = [...sheet().querySelectorAll(".salt-qr .salt-qr__code svg rect")];
+    const want = QR.qrMatrix(seen.handover.url);
+    const drawn = want.map((row) => row.map(() => 0));
+    let off = false;
+    for (const r of rects) for (let i = 0; i < +r.getAttribute("width"); i++) {
+      const y = +r.getAttribute("y") - 4, x = +r.getAttribute("x") - 4 + i;
+      if (!drawn[y] || x < 0 || x >= drawn.length) off = true; else drawn[y][x] = 1;
+    }
+    ok(/^https:[/][/]k7m3p2[.]example[/]app#qr[.][A-Za-z0-9_-]{32}$/.test(seen.handover.url) && rects.length > 20 && !off
+      && JSON.stringify(drawn) === JSON.stringify(want),
+      "the QR is drawn in rectangles, module for module the matrix of the saved app's page with the key after the #: " + rects.length + " runs");
+    ok(seen.copied === 0 && seen.shared === 0, "nothing was copied or shared: the sheet only shows");
+    /* what he showed opens their account, once */
+    const opened = await (await post("/handover/open", { code })).json();
+    const ck2 = opened.wrap ? await C.unwrapKey(opened.token, opened.wrap).catch(() => null) : null;
+    ok(opened.ok && opened.u === u && !!ck2 && Buffer.from(ck2).equals(Buffer.from(ck)) && (await post("/handover/open", { code })).status === 401,
+      "the code on his screen opens their account on their phone, once");
+    /* Escape closes it and hands focus back */
+    sheet().dispatchEvent(new win.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    ok(!sheet() && !D.querySelector(".salt-sheet-scrim") && D.activeElement === btn, "Escape closes the sheet and focus returns to Show a code");
+  } finally { globalThis.fetch = realFetch; if (win) { try { win.close(); } catch (e) { /* best effort */ } } }
+})();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: no three-minute lock, Remember me, and a Log out. The two halves of
@@ -16762,9 +17274,9 @@ await (async () => {
   const { landingPage: lp92 } = await import("../stmt/page.js");
   const C92 = await import("../tools/stmt-crypto.mjs");
   const door92 = lp92("", "n92", null);
-  ok(door92.includes("Remember me") && door92.includes(">Log in<") && door92.includes(">Log out<")
+  ok(door92.includes("Keep me signed in on this") && door92.includes('type="submit">Sign in</button>') && door92.includes(">Log out<")
     && !door92.includes("three minutes") && !door92.includes("Locks in") && !/WINDOW_MS/.test(door92),
-    "the door offers Remember me, logs in and logs out, and nothing counts down");
+    "the door offers to keep them signed in, signs in and logs out, and nothing counts down (v692; S3 3.7's words)");
 
   const u92 = "aaaa-bbbb", pass92 = "2345-6789-abcd-efgh";
   const ck92 = await C92.contentKey("7".repeat(64), u92);
@@ -16778,14 +17290,15 @@ await (async () => {
   /* the Worker's own half: a session mints a token, the token brings the wrap back, logging out ends both */
   const kv92 = new KV();
   await kv92.put("u:" + u92, JSON.stringify({ u: u92, issued: "2026-09-01", issues: ["2026-09-01"], env: openBody.env }));
-  await kv92.put("sess:sess92aaaaaaaaaaaaaaaaaaaaaa", JSON.stringify({ u: u92, at: new Date().toISOString() }));
+  await kv92.put("sess:" + createHash("sha256").update("sess92aaaaaaaaaaaaaaaaaaaaaa").digest("hex"), JSON.stringify({ u: u92, at: new Date().toISOString() }));
   const env92 = { STMT: kv92 };
   const post92 = (path, body, headers) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path,
     { method: "POST", headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }), env92);
   const fakeWrap = { v: 2, salt: "c2FsdA==", iv: "aXZpdml2aXZpdg==", ct: "Y3Q=" };
   ok((await post92("/remember", { wrap: fakeWrap })).status === 401, "remembering needs a session, which only a password mints");
   const remOut = await (await post92("/remember", { wrap: fakeWrap }, { "X-Stmt-Session": "sess92aaaaaaaaaaaaaaaaaaaaaa" })).json();
-  const remKey = "rem:" + remOut.token;
+  /* S3 3.1: filed under the token's hash, never the token */
+  const remKey = "rem:" + createHash("sha256").update(remOut.token).digest("hex");
   ok(remOut.ok && /^[A-Za-z0-9_-]{20,64}$/.test(remOut.token) && remOut.days === 30
     && (kv92.opts.get(remKey) || {}).expirationTtl === 30 * 24 * 3600
     && JSON.parse(await kv92.get(remKey)).u === u92 && !JSON.stringify(await kv92.get(remKey)).includes(pass92),
@@ -16796,12 +17309,12 @@ await (async () => {
   const bad92 = await post92("/remember/open", { token: "z".repeat(24) });
   ok(bad92.status === 401 && (await bad92.json()).error === "That username and password were not accepted.",
     "and an unknown token is refused in the door's own words, saying nothing about what exists");
-  await kv92.put("sess:other0000000000000000000000", JSON.stringify({ u: "cccc-dddd", at: new Date().toISOString() }));
+  await kv92.put("sess:" + createHash("sha256").update("other0000000000000000000000").digest("hex"), JSON.stringify({ u: "cccc-dddd", at: new Date().toISOString() }));
   await post92("/logout", { token: remOut.token }, { "X-Stmt-Session": "other0000000000000000000000" });
-  ok(!!(await kv92.get(remKey)) && !(await kv92.get("sess:other0000000000000000000000")),
+  ok(!!(await kv92.get(remKey)) && !(await kv92.get("sess:" + createHash("sha256").update("other0000000000000000000000").digest("hex"))),
     "another account's log out drops its own session and leaves this one's memory alone");
   await post92("/logout", { token: remOut.token }, { "X-Stmt-Session": back.session });
-  ok(!(await kv92.get(remKey)) && !(await kv92.get("sess:" + back.session)),
+  ok(!(await kv92.get(remKey)) && !(await kv92.get("sess:" + createHash("sha256").update(back.session).digest("hex"))),
     "its own log out drops the session and the remembered wrap together");
 
   /* the page's half, end to end: sign in once with the box ticked, then open a second page with no password */
@@ -16871,8 +17384,8 @@ await (async () => {
   const mres = await stmtWorker.fetch(new Request("https://k7m3p2.example/manifest.webmanifest"), env93);
   const mf = await mres.json();
   ok(mres.status === 200 && /application\/manifest\+json/.test(mres.headers.get("content-type"))
-    && mf.display === "standalone" && mf.start_url === "./" && mf.icons.length === 1 && mf.icons[0].src === "icon.png",
-    "the manifest is served, standalone, with one icon");
+    && mf.display === "standalone" && mf.start_url === "/app" && mf.icons.length === 1 && mf.icons[0].src === "icon.png",
+    "the manifest is served, standalone, with one icon, starting at /app (S3 3.11)");
   /* v704, HIS INSTRUCTION OF 18 SEP 2026: the user-facing name is Salt Counter. The app's name is
      the ONE place on this site where something has to be called something, and the product word is
      his to spend there; inside the page a product is still a mark and never a word (v695). What
@@ -16891,8 +17404,9 @@ await (async () => {
   ok(html93.includes('rel="manifest"') && html93.includes('rel="apple-touch-icon"') && html93.includes('name="theme-color"')
     && /manifest-src 'self'/.test(page93.headers.get("content-security-policy")),
     "the page links both and the policy admits its own manifest");
-  ok(/Add to Home Screen/.test(html93) && /Install app/.test(html93),
-    "and the door says how, on an iPhone and on an Android");
+  /* S3 3.10: how to keep it moved off the door to the signed-in page, a card and its Sheet */
+  ok(/id="keepCard"/.test(html93) && /id="keepSheet"/.test(html93) && !/id="inst"/.test(html93),
+    "and the page says how once they are in, on a card and a Sheet of its own, no longer on the door");
 
   /* the tutorial is for a browser, and the ask is for a login */
   const { landingPage: lp93 } = await import("../stmt/page.js");
@@ -16916,6 +17430,7 @@ await (async () => {
           getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
           removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
         win.matchMedia = (q) => ({ matches: standalone && /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+        Object.defineProperty(win.navigator, "userAgent", { value: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) Mobile/15E148 Safari/604.1", configurable: true });
         win.PushManager = function () {};
         win.Notification = { permission, requestPermission: async () => { asked.times++; return "denied"; } };
         Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: { register: async () => { throw new Error("no sw in jsdom"); } } });
@@ -16927,7 +17442,6 @@ await (async () => {
   };
   const browser93 = drive93(false, "default");
   try {
-    ok(browser93.D.getElementById("inst").hidden === false, "a page opened in a browser shows the tutorial");
     browser93.D.getElementById("un").value = u93;
     browser93.D.getElementById("pw").value = pass93;
     browser93.D.getElementById("f").dispatchEvent(new browser93.W.Event("submit", { bubbles: true, cancelable: true }));
@@ -16941,15 +17455,16 @@ await (async () => {
     for (let i = 0; i < 80 && browser93.asked.times === signedIn93; i++) await new Promise((r) => setTimeout(r, 50));
     ok(signedIn93 === 0 && !!notify93 && browser93.asked.times === 1,
       "signing in asks nothing about notifications, and the tap on Notify me asks once: " + JSON.stringify([signedIn93, !!notify93, browser93.asked.times]));
+    ok(browser93.D.getElementById("keepCard").hidden === false, "a page opened in a browser shows how to keep it, once they are in");
   } finally { try { browser93.W.close(); } catch (e) { /* best effort */ } }
   const app93 = drive93(true, "denied");
   try {
-    ok(app93.D.getElementById("inst").hidden === true, "a page already kept as an app does not teach how to keep it");
     app93.D.getElementById("un").value = u93;
     app93.D.getElementById("pw").value = pass93;
     app93.D.getElementById("f").dispatchEvent(new app93.W.Event("submit", { bubbles: true, cancelable: true }));
     await new Promise((r) => setTimeout(r, 400));
     ok(app93.asked.times === 0, "and a browser that has already refused is not asked again");
+    ok(app93.D.getElementById("keepCard").hidden === true, "a page already kept as an app does not teach how to keep it");
   } finally { try { app93.W.close(); } catch (e) { /* best effort */ } }
 })();
 section("v694: an order reaches the ledger in stages, and money and goods move apart");
@@ -17193,9 +17708,10 @@ await (async () => {
   try {
     D.getElementById("pw").value = passS;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 200 && !/placed 20 /.test(D.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 25));
+    for (let i = 0; i < 200 && !D.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 25));
+    const row = D.querySelector("#pOrder [data-row]"); if (row) row.click();   /* S5: the order's own screen carries its stamps */
     const txt = D.getElementById("pOrder").textContent;
-    ok(txt.includes("placed 20 Sep, 09:02") && txt.includes("21 Sep, 01:30") && !FOUR.test(txt),
+    ok(txt.includes("Ordered 20 Sep, 09:02") && txt.includes("21 Sep, 01:30") && !FOUR.test(txt),
       "the customer's page stamps an order and its history with Sep, in Kuala Lumpur time: " + JSON.stringify((txt.match(/\d\d Sep[a-z]*, \d\d:\d\d/g) || [])));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 
@@ -17266,7 +17782,9 @@ await (async () => {
   /* the WORDS on it, not its source: every design token is named --salt-something, which is a
      variable a reader never sees and not a name the page writes */
   const boardText = board95.replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]*>/g, " ");
-  ok(!/\b(salt|oil)\b/i.test(boardText) && (board95.match(/class="psym"/g) || []).length === 2,
+  /* S13 13.2: nor in Malay, off the lock's own list */
+  const WL95 = await import("../src/orders.js");
+  ok(!/\b(salt|oil)\b/i.test(boardText) && !WL95.wordsIn(boardText, WL95.PRODUCT_WORDS).length && (board95.match(/class="psym"/g) || []).length === 2,
     "the guest board draws two marks and writes neither name: " + JSON.stringify((boardText.match(/\b(salt|oil)\b/gi) || []).slice(0, 4)));
   ok(/aria-label="Cube"/.test(board95) && /aria-label="Droplet"/.test(board95), "and each heading is named by its shape");
 
@@ -17340,15 +17858,270 @@ await (async () => {
       && /Price coming soon\./.test(soon95[0].textContent),
       "a product with no price yet is a mark as well, and one with no mark of its own falls back to the ring");
     /* and the card that reports an order, where the product used to be written twice */
-    for (let i = 0; i < 60 && !d95.querySelector("#pOrder .pane .state"); i++) await new Promise((r) => setTimeout(r, 50));
-    const card95 = d95.querySelector("#pOrder .pane .state") && d95.querySelector("#pOrder .pane .state").closest(".pane");
-    ok(card95 && card95.querySelector(".pwith svg.psym") && /Droplet/.test(card95.textContent)
-      && !/\b(salt|oil)\b/i.test(card95.textContent),
-      "an order's own card carries the mark of what was ordered and never its name: " + JSON.stringify(card95 && card95.textContent.slice(0, 60)));
-    const words95 = (d95.getElementById("pPrices").textContent + " " + d95.getElementById("pOrder").textContent + " " + d95.getElementById("osheet").textContent);
-    ok(!/\b(salt|oil)\b/i.test(words95) && !/Salt Command/i.test(words95),
+    for (let i = 0; i < 60 && !d95.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 50));
+    /* S5: the order is a row, and the row opens the order's own screen: both carry the mark */
+    const row95 = d95.querySelector("#pOrder [data-row]");
+    if (row95) row95.click();
+    const card95 = d95.querySelector("#pOrder .oscreen");
+    ok(row95 && row95.querySelector(".pwith svg.psym") && /Droplet/.test(row95.textContent) && card95 && card95.querySelector("h3 svg.psym") && /Droplet/.test(card95.textContent)
+      && !/\b(salt|oil)\b/i.test(card95.textContent + " " + row95.textContent),
+      "an order's row and its own screen carry the mark of what was ordered and never its name: " + JSON.stringify(card95 && card95.textContent.slice(0, 60)));
+    /* text node by text node (25 Sep 2026): textContent runs a heading into the next line, and "GaramGood" hides a word */
+    const nodes95 = (el) => { const tw = d95.createTreeWalker(el, 4), s = []; while (tw.nextNode()) s.push(tw.currentNode.nodeValue); return s.join(" "); };
+    const words95 = nodes95(d95.getElementById("pPrices")) + " " + nodes95(d95.getElementById("pOrder")) + " " + nodes95(d95.getElementById("osheet"));
+    ok(!/\b(salt|oil)\b/i.test(words95) && !WL95.wordsIn(words95, WL95.PRODUCT_WORDS).length && !/Salt Command/i.test(words95),
       "and no product is written as a word anywhere on the prices or the order: " + JSON.stringify((words95.match(/\b(salt|oil)\b/gi) || []).slice(0, 4)));
   } finally { try { dom95.window.close(); } catch (e) { /* best effort */ } }
+})();
+section("S8 8.2: the guest board ends with a next step, and every shut link answers one styled page");
+await (async () => {
+  /* 24 SEP 2026, stage 8 of the Counter redesign. The board named no way to order, and a shut link answered the
+     site's bare "Not found" in the browser's own face. Every shut kind is made here as the store holds it and
+     opened through the real Worker. */
+  const W = (await import("../stmt/worker.js")).default;
+  const RF = await import("../stmt/refs.js");
+  const kv = new KV(), env = { STMT: kv };
+  const g = (id, e) => W.fetch(new Request("https://k7m3p2.example/g/" + id), e || env);
+  await kv.put("board:2", JSON.stringify({ week: { label: "21 Sep 2026" },
+    products: [{ product: "salt", unit: "unit", sizes: [{ q: 1, price: 150 }, { q: 2.5, price: 350 }] }] }));
+  const open = await RF.mintRef(env, { label: "open" });
+  const waiting = await RF.mintRef(env, { introducer: "abcd-efgh", by: "abcd-efgh" });
+  const declined = await RF.mintRef(env, { introducer: "abcd-efgh", by: "abcd-efgh" });
+  await RF.setRef(env, declined.id, { approved: false, declined: true });
+  const withdrawn = await RF.mintRef(env, { label: "gone" });
+  await RF.revokeRef(env, withdrawn.id, true);
+
+  /* ---- the board ENDS with the next step, after the last price ---- */
+  const r0 = await g(open.id), board = await r0.text();
+  const next = "To order, reply to the person who sent you this link.";
+  const at = board.indexOf(next), lastTable = board.lastIndexOf("</table>");
+  ok(r0.status === 200 && lastTable >= 0 && at > lastTable && board.slice(at + next.length) === "</p></div></body></html>",
+    "the guest board ends with what to do next, after the last price: " + JSON.stringify(board.slice(-90)));
+  const words0 = board.replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]*>/g, " ");
+  ok(!/salt command|\bsalt\b|counter/i.test(words0), "and the words carry no brand and no product");
+
+  /* ---- every shut kind: one page, the board's look, the same words ---- */
+  const kinds = [["an id nobody holds", "zzzz-zzzz", env], ["a malformed id", "nope", env], ["a withdrawn link", withdrawn.id, env],
+    ["a declined link", declined.id, env], ["a link waiting on him", waiting.id, env], ["a site with no store", open.id, {}],
+    ["a link with more after it", open.id + "/x", env]];
+  const got = [];
+  for (const [what, id, e] of kinds) {
+    const r = await g(id, e);
+    got.push({ what, status: r.status, type: r.headers.get("content-type") || "", csp: r.headers.get("content-security-policy") || "", body: await r.text() });
+  }
+  const nonceOf = (x) => (/<style nonce="([A-Za-z0-9]+)">/.exec(x.body) || [])[1] || "";
+  const bad = got.filter((x) => !(x.status === 404 && /^text\/html/.test(x.type) && /script-src 'none'/.test(x.csp)
+    && nonceOf(x) && x.csp.includes("'nonce-" + nonceOf(x) + "'")));
+  ok(!bad.length, "every shut kind is a 404 page styled under the board's own policy: "
+    + JSON.stringify(bad.map((x) => [x.what, x.status, x.type, x.body.slice(0, 20)])));
+  const bare = got.map((x) => x.body.split('nonce="' + (nonceOf(x) || "none") + '"').join(""));
+  ok(new Set(bare).size === 1 && bare[0].length > 1000,
+    "and it is ONE page, byte for byte but its nonce, so the door says nothing about which it was: "
+    + JSON.stringify(got.map((x, i) => [x.what, bare[i].length])));
+  ok(/This link is not open/.test(bare[0]) && /Ask the person who sent it to you[.]/.test(bare[0])
+    && /name="viewport"/.test(bare[0]) && /url[(][/]fonts[/]/.test(bare[0]) && !/Not found/.test(bare[0]),
+    "it says the link is not open and whom to ask, with a viewport and the brand faces, never the bare Not found");
+  ok(bare[0] !== board.split('nonce="' + nonceOf({ body: board }) + '"').join(""), "and an open link is still its board, the control");
+  ok(/<title>Link not open<\/title>/.test(bare[0]) && !/Price list/.test(bare[0]) && /<title>Price list<\/title>/.test(board),
+    "the shut page's tab says the link is not open, never Price list, and the board's still says Price list");
+})();
+section("S8 8.3: the reward line on an associate's card says how to take it, and only where there is some to take");
+await (async () => {
+  /* 24 SEP 2026, stage 8: the line said how much was there to take and never how. Driven on the associate's own
+     page against the real Worker: one book with a reward to take, one held, one with nothing left. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s8-83", u);
+  const day = "2026-09-21";
+  const book = (product, reward) => ({ product, name: "x", unit: "unit",
+    summary: { bought: 150, soldFor: 0, onward: 0, introduced: 0, referred: 0 }, reward, lines: [{ date: day, kind: "own", qty: 1, rm: 150 }] });
+  const cardDoc = { at: day + "T00:00:00Z", products: [
+    book("salt", { earned: 1.6, taken: 1, left: 0.6, next: 0.4, held: false }),
+    book("oil", { earned: 2, taken: 0, left: 2, next: 0.5, held: true }),
+    book("candy", { earned: 1, taken: 1, left: 0, next: 0.2, held: false })] };
+  await kv.put("u:" + u, JSON.stringify({ u, assoc: true, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })),
+    card: Object.assign({ at: cardDoc.at }, await C.encryptWith(ck, JSON.stringify(cardDoc))) }));
+  const env = { STMT: kv };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const until = async (f) => { for (let i = 0; i < 200 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  try {
+    win = new JSDOM(await (await site("/")).text(), { url: "https://k7m3p2.example/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: o.headers, body: o.body }); };
+    } }).window;
+    const D = win.document;
+    D.getElementById("un").value = u; D.getElementById("pw").value = pw;
+    D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+    ok(await until(() => D.getElementById("tCard") && !D.getElementById("tCard").hidden), "the associate's page opens with a Card tab");
+    D.getElementById("tCard").click();
+    const pCard = D.getElementById("pCard");
+    const lineOf = (shape) => { const h = [...pCard.querySelectorAll("h3.pmark")].find((x) => x.getAttribute("aria-label") === shape);
+      const p = h && [...h.closest(".pane").querySelectorAll("p.sub2")].find((x) => /^Reward: /.test(x.textContent)); return p ? p.textContent : ""; };
+    ok(await until(() => lineOf("Cube") && lineOf("Droplet") && lineOf("Lozenge")), "each book's pane carries its reward line");
+    const take = /Ask on any order to take it[.]$/;
+    ok(take.test(lineOf("Cube")) && /^Reward: 0[.]6 unit to take /.test(lineOf("Cube")),
+      "a reward there to take says how to take it: " + JSON.stringify(lineOf("Cube")));
+    ok(!take.test(lineOf("Droplet")) && /Held for now[.]$/.test(lineOf("Droplet")) && !take.test(lineOf("Lozenge")),
+      "and a held reward, or one with nothing left, never invites an ask: " + JSON.stringify([lineOf("Droplet"), lineOf("Lozenge")]));
+  } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S13 13.1: every page of the Counter is kept out of the translator, Salt Admin's and a guest's included");
+await (async () => {
+  /* 24 SEP 2026, his decision D12: on a Malay or Chinese phone Chrome offers to translate the page, and accepting
+     sends an opened statement to a translation service. Each page as it is served, and his own as the route builds it. */
+  const W = (await import("../stmt/worker.js")).default;
+  const P = await import("../stmt/page.js");
+  const RF = await import("../stmt/refs.js");
+  const env = { STMT: new KV() };
+  const get = async (p) => (await W.fetch(new Request("https://k7m3p2.example" + p), env)).text();
+  const open = await RF.mintRef(env, { label: "open" });
+  const pages = [["the door", await get("/")], ["the door with a username", await get("/?u=abcd-efgh")],
+    ["a sign-in link", await get("/s/" + "a".repeat(24))], ["a guest board", await get("/g/" + open.id)],
+    ["a shut link", await get("/g/zzzz-zzzz")], ["Salt Admin", P.landingPage("", "n131", { master: "m131", accounts: [] })]];
+  const root = /^<!DOCTYPE html>\n<html lang="en" translate="no"><head><meta charset="utf-8"><meta name="google" content="notranslate">/;
+  const off = pages.filter(([, h]) => !root.test(h)).map(([w, h]) => w + ": " + h.slice(0, 80));
+  ok(pages.every(([, h]) => h.length > 1000) && !off.length,
+    "every page says translate=no on its root and carries Google's notranslate, before anything else: " + JSON.stringify(off));
+})();
+section("S13 13.2: the word checks know the Malay level and product words, and ordinary Malay still passes");
+await (async () => {
+  /* 24 SEP 2026, his decision D12: no Malay ships before siteWords, the desk's siteSafe, the leak scan and the
+     banned-word scan know it. The lists are pinned against the book's names and the master's TIER_NAMES, so a new
+     book or level cannot slip past them. */
+  const WL = await import("../src/orders.js");
+  const { siteWords, wordsIn } = WL;
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const tierNames = JSON.parse((/const TIER_NAMES=(\[[^\]]*\]);/.exec(msrc) || [, "[]"])[1].replace(/'/g, '"'));
+  const names = Object.values(book.PRODUCTS || {}).map((p) => String(p.name).toLowerCase());
+  const MS_PRODUCTS = ["garam", "minyak", "gula-gula", "gula", "beras"];
+
+  /* ---- the lists ---- */
+  ok(tierNames.length >= 4 && tierNames.every((n) => WL.LEVEL_WORDS.includes(n.toLowerCase())) && WL.LEVEL_WORDS.includes("bronze"),
+    "every level the master names is on the lock's list, Bronze's old name kept: " + JSON.stringify(tierNames));
+  ok(JSON.stringify(WL.LEVEL_WORDS_MS) === '["emas","perak","gangsa"]' && ["platinum", "titanium"].every((w) => WL.LEVEL_WORDS.includes(w)),
+    "and the ladder in Malay: emas, perak and gangsa, platinum and titanium being the same word in both");
+  ok(names.length >= 5 && names.concat(MS_PRODUCTS).every((w) => WL.PRODUCT_WORDS.includes(w)),
+    "every book's name and its Malay word are on the product list: " + JSON.stringify(names.concat(MS_PRODUCTS).filter((w) => !WL.PRODUCT_WORDS.includes(w))));
+  const all = WL.LEVEL_WORDS.concat(WL.LEVEL_WORDS_MS, WL.PRODUCT_WORDS);
+  ok(all.every((w) => /[a-z]/.test(w) || w.length >= 2), "and no word in another script is a single character");
+
+  /* ---- the Worker's lock ---- */
+  const refused = ["Harga tahap emas minggu ini RM 150", "Peringkat perak dapat harga istimewa", "Ahli emas dapat harga istimewa",
+    "Pelanggan gangsa: RM 170",
+    "HARGA EMAS naik", "Peringkat Platinum dibuka", "Kad titanium untuk anda",
+    /* 25 Sep 2026: a label's colon, a dash or a quote between, a "your" or "new", and the words for reward, now and up to */
+    "Tahap: Emas", "Tahap anda: Perak", 'Tahap "Emas" dibuka', "tahap-emas", "Level - Perak", "Kategori:Perak", "Status: Emas",
+    "Harga (emas)", "Keahlian Emas: harga istimewa untuk anda", "Tahniah, anda naik ke Emas!", "Pakej Gangsa kini dibuka",
+    "Ganjaran Emas untuk pelanggan setia", "Anda kini Emas!"];
+  const passes = ["Penghantaran ke Ipoh, Perak setiap Selasa.", "Peluang emas: stok baru tiba minggu ini.",
+    "Kedai tutup hari Jumaat, buka semula Isnin.", "Pesanan anda sudah sampai di Taiping, Perak.",
+    "Garam baru tiba, minyak minggu depan.", "Terima kasih, sila bayar sebelum Jumaat.",
+    /* 25 Sep 2026: Perak the state after a word for customer, price, class or status, Malay putting the place last */
+    "Pelanggan Perak: penghantaran setiap Jumaat.", "Harga Perak sama seperti di KL.", "Ya, harga Perak termasuk penghantaran RM 15.",
+    "Kelas Perak bermula esok.", "Status Perak: dihantar.", "Hantar naik ke Perak minggu depan.", "Tahap stok di Perak rendah minggu ini.",
+    "\u8BF7\u5728\u94F6\u884C\u8F6C\u8D26\u540E\u544A\u8BC9\u6211\u91D1\u989D\u3002"];
+  ok(refused.every((t) => /names a level/.test(siteWords(t))),
+    "a level named in Malay is refused, after a word that says level, or member, customer or price before emas or gangsa: " + JSON.stringify(refused.filter((t) => !siteWords(t))));
+  ok(passes.every((t) => siteWords(t) === ""),
+    "and ordinary Malay passes: Perak the state, a golden chance, a product's word, and a Chinese line holding amount and bank: "
+    + JSON.stringify(passes.filter((t) => siteWords(t))));
+
+  /* ---- another script is found by substring, where \b is blind ---- */
+  const zh = "\u91D1\u7EA7", line = "\u8FD9\u662F" + zh + "\u4EF7\u683C";
+  ok(!new RegExp("\\b" + zh + "\\b").test(line) && JSON.stringify(wordsIn(line, [zh])) === JSON.stringify([zh])
+    && wordsIn("golden", ["gold"]).length === 0 && wordsIn("Gold price", ["gold"]).length === 1,
+    "a word in another script is found inside a line where a word boundary cannot see it, and a Latin word is still whole");
+  ok(wordsIn(passes[passes.length - 1], all).length === 0, "and nothing on the lists breaks the words for amount and bank");
+
+  /* ---- the desk's siteSafe says the same ---- */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    const g = (t) => JSON.parse(String(w.eval("JSON.stringify(siteSafe(" + JSON.stringify(t) + "))")));
+    ok(refused.every((t) => g(t).refuse) && passes.every((t) => !g(t).refuse),
+      "the desk refuses the same Malay lines and lets the same ordinary ones through: "
+      + JSON.stringify(refused.filter((t) => !g(t).refuse).concat(passes.filter((t) => g(t).refuse))));
+    ok(/level in Malay/.test(g("Penghantaran ke Ipoh, Perak setiap Selasa.").warn) && /level in Malay/.test(g("Emas RM 150").warn),
+      "and a bare emas or perak warns, so he sees it before it goes");
+    const putToHim = ["Ahli Perak boleh ambil di Ipoh.", "Tahniah, anda naik ke Perak bulan ini.", "Emas dan Perak dibuka minggu ini.",
+      "Anda kini di Gangsa.", "Emas: RM 60 seunit, Perak: RM 70"];
+    ok(putToHim.every((t) => g(t).refuse || /level in Malay/.test(g(t).warn)),
+      "and every line naming a level in Malay that the lock cannot tell from the state or the metal is at least put to him: "
+      + JSON.stringify(putToHim.filter((t) => !g(t).refuse && !g(t).warn)));
+    const prod = names.concat(MS_PRODUCTS).filter((p) => !/product in words/.test(g("Stok " + p + " baru tiba").warn) || g("Stok " + p + " baru tiba").refuse);
+    ok(!prod.length, "every book's name and its Malay word warn on the desk and none is refused: " + JSON.stringify(prod));
+    ok(!g("Kedai tutup hari Jumaat, buka semula Isnin.").warn && !g(passes[passes.length - 1]).warn,
+      "and a line with none of them passes clean");
+
+    /* ---- THE DESK'S COPY IS PINNED TO THE LISTS, word by word and pair by pair (25 Sep 2026). siteSafe is typed by
+       hand, and sample lines exercised four cues of thirteen, so either copy could lose a word under a green suite. The
+       lists themselves are pinned too, so dropping a word from one is a decision the suite asks for. ---- */
+    ok(JSON.stringify(WL.LEVEL_CUES_MS) === '["tahap","peringkat","taraf","pangkat","kategori","level","tier"]'
+      && JSON.stringify(WL.LEVEL_CUES_MS_NOT_PERAK) === '["ahli","keahlian","pelanggan","harga","kad","kelas","status","pakej","ganjaran","kini","naik ke"]'
+      && JSON.stringify(WL.LEVEL_BETWEEN_MS) === '["anda","awak","kamu","baru"]',
+      "the cue lists are the ones decided, perak's narrower than emas's and gangsa's");
+    const lines = [];
+    for (const [cues, perakToo] of [[WL.LEVEL_CUES_MS, true], [WL.LEVEL_CUES_MS_NOT_PERAK, false]])
+      for (const c of cues) for (const lw of WL.LEVEL_WORDS_MS) for (const b of [""].concat(WL.LEVEL_BETWEEN_MS)) for (const sep of [" ", ": "])
+        lines.push({ t: c + (b ? " " + b : "") + sep + lw + " minggu ini", refuse: perakToo || lw !== "perak", kind: "level" });
+    for (const lw of WL.LEVEL_WORDS) lines.push({ t: "Harga " + lw[0].toUpperCase() + lw.slice(1) + " minggu ini", refuse: true, kind: "level" });
+    for (const lw of WL.LEVEL_WORDS_MS) lines.push({ t: "Stok " + lw + " baru", refuse: false, kind: "level" });
+    for (const p of WL.PRODUCT_WORDS) lines.push({ t: "Stok " + p + " baru", refuse: false, kind: "product" });
+    const desk = JSON.parse(String(w.eval("JSON.stringify(" + JSON.stringify(lines.map((x) => x.t)) + ".map(function(t){return siteSafe(t);}))")));
+    const off = lines.filter((x, i) => {
+      const d = desk[i], wk = siteWords(x.t);
+      if (x.refuse) return !/names a level/.test(wk) || !/names a level/.test(d.refuse || "");
+      return wk !== "" || !!d.refuse || !(x.kind === "level" ? /level in Malay/ : /product in words/).test(d.warn);
+    });
+    ok(lines.length > 500 && !off.length,
+      "every cue before every Malay level, with and without a word between, is refused by both locks where it names one, and "
+      + "every English level, bare Malay level and product word is refused or warned alike on the desk: " + JSON.stringify(off.slice(0, 6).map((x) => x.t)));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+section("S13 13.2: his answer on an order asks before sending a line the desk warns on, as the bulletin does");
+await (async () => {
+  /* 25 SEP 2026, the stage 8 review: the answer road read siteSafe's refusal and never its warning, so a bare
+     emas or perak, which the Worker's lock lets through by design, reached a customer's thread with no ask at all.
+     Driven through ordAct itself, on a card built as ordCard draws one, with confirm and fetch stubbed. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    const d = w.document, asked = [], posted = [];
+    let answer = false;
+    w.confirm = (m) => { asked.push(String(m)); return answer; };
+    w.fetch = async (u, o) => { if (o && o.method === "POST") posted.push({ u: String(u), body: String(o.body || "") });
+      return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) }; };
+    const card = d.createElement("div");
+    card.className = "card";
+    card.innerHTML = '<input data-say="o1" value=""><button data-ord="say" data-id="o1" data-u="aaaa-bbbb">Send</button>';
+    d.body.appendChild(card);
+    const send = async (t, yes) => {
+      asked.length = 0; posted.length = 0; answer = yes;
+      card.querySelector("input").value = t;
+      await w.eval("ordAct(document.querySelector('button[data-ord=\"say\"]'))");
+      return { asked: asked.slice(), posted: posted.slice(), msg: String(w.eval("(ORD_SAID&&ORD_SAID.t)||''")) };
+    };
+    const warned = "Emas dan Perak dibuka minggu ini.";
+    const no = await send(warned, false);
+    ok(no.asked.length === 1 && /level in Malay/.test(no.asked[0]) && no.posted.length === 0 && /^Not sent[.]$/.test(no.msg),
+      "a bare Malay level word is put to him, and on a no nothing leaves: " + JSON.stringify(no));
+    const yes = await send(warned, true);
+    ok(yes.asked.length === 1 && yes.posted.length === 1 && JSON.parse(yes.posted[0].body).message === warned,
+      "and on a yes it goes, as the bulletin's does: " + JSON.stringify(yes));
+    const prod = await send("your salt is ready to collect", false);
+    ok(prod.asked.length === 1 && /product in words/.test(prod.asked[0]) && prod.posted.length === 0,
+      "a product's word is asked about the same way: " + JSON.stringify(prod));
+    const clean = await send("Siap, boleh ambil esok.", false);
+    ok(clean.asked.length === 0 && clean.posted.length === 1, "a line with nothing to warn on goes without an ask: " + JSON.stringify(clean));
+    const refused = await send("Tahap emas anda naik", true);
+    ok(refused.asked.length === 0 && refused.posted.length === 0 && /Nothing was sent/.test(refused.msg),
+      "and a refused line is refused before any ask: " + JSON.stringify(refused));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 section("v696: the guest links are five, one for each tier, and each one is a level and nothing else");
 await (async () => {
@@ -18076,7 +18849,7 @@ await (async () => {
     const laptop = String(w.eval("tabOrders()"));
     ok(/id="bullText"/.test(cloud) && /data-bmode="run"/.test(cloud) && /data-bmode="change"/.test(cloud) && /id="bullSet"/.test(cloud) && /id="bullClear"/.test(cloud)
       && cloud.indexOf('id="bullCard"') < cloud.indexOf('id="ordAlert"') && !/bullText/.test(laptop),
-      "the cloud desk's Site orders page opens with the Bulletin card, and the laptop copy has none");
+      "the cloud desk's Site orders page carries the Bulletin card (folded below the list since S11 11.4), and the laptop copy has none");
     const g = (t) => w.eval("siteSafe(" + JSON.stringify(t) + ")");
     ok(g("Salt Command says hi").refuse && g("ask CS6-BS").refuse && g("see CN6-WM-R").refuse && g("Gold members").refuse
       && g("the salt is in").warn && !g("the salt is in").refuse && !g("Closed Friday").refuse && !g("Closed Friday").warn,
@@ -18223,8 +18996,11 @@ await (async () => {
   /* EVERY DOOR READS IT, and the count is the check: a door added later that forgot the mark would
      take an associate's tick away from them on the way in, silently, and only on that one road.
      v710 added the third, which is how this assertion earned its keep. */
-  ok(/assoc=body\.assoc===true;/.test(page2) && (page2.match(/assoc=body\.assoc===true;/g) || []).length === 3,
-    "all three doors read it: a password open, a remembered device and a one-time link");
+  /* S3 3.3: EVERY DOOR GOES THROUGH ONE WAY IN, which reads the mark once: a password open, a remembered device, a
+     one-time link, a code and a return's re-read all call openBeside, and nothing else sets the mark */
+  ok(/var x=\{assoc:body\.assoc===true/.test(page2) && (page2.match(/assoc=x\.assoc;/g) || []).length === 1
+    && (page2.match(/await openBeside\(/g) || []).length === 5 && !/assoc=body\.assoc===true;/.test(page2),
+    "every door reads it through the one way in: a password open, a remembered device, a one-time link, a code and a return");
   ok(!/for resale/i.test(page2), "and nothing on it says 'for resale', which is what he changed it from");
 })();
 section("v705: a password filed under a name that has since moved is paired by its own verifier");
@@ -18452,6 +19228,465 @@ await (async () => {
   /* the month pill was 29px tall since v690, on a strip whose whole purpose is to be tapped */
   ok(/min-height:var\(--salt-tap\);display:inline-flex/.test(page6) && !/cursor:pointer;min-height:auto/.test(page6),
     "and every month pill is a real tap target now, swept across the class rather than fixed on the one new strip");
+})();
+section("S14 14.1: the publish learns the pool, marks a spare in the clear, never retires one, and the door opens it for nobody");
+await (async () => {
+  /* D15, HIS ANSWER OF 24 SEP 2026: accounts ready on day one. A spare is an account the laptop minted
+     ahead of need, filed in the newest issue's _kv and marked `spare: true`, free while no code in
+     _users.json holds its username. The publish must carry it (so it is in the store the moment the
+     fold binds it), mark it, keep it off every list, and never retire it; the door opens it for nobody. */
+  const { planPublish: pp141 } = await import("../tools/stmt-publish.mjs");
+  const C141 = await import("../tools/stmt-crypto.mjs");
+  const W141 = (await import("../stmt/worker.js")).default;
+  const root141 = join(REPO, "test", "tmp", "pool141"), kv141dir = join(root141, "2026-09", "_kv");
+  rmSync(root141, { recursive: true, force: true });
+  mkdirSync(kv141dir, { recursive: true });
+  const KEY141 = "key-141", M141 = "master-141";
+  const make141 = async (u, pw, extra) => {
+    const ck = await C141.contentKey(KEY141, u);
+    return Object.assign({ u, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C141.makeVerifier(pw),
+      wrap: await C141.wrapKey(pw, ck), wrapMaster: await C141.wrapKey(M141, ck), pwMaster: await C141.encryptText(M141, pw),
+      env: await C141.encryptWith(ck, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [] })) }, extra || {});
+  };
+  const uOld = "aaaa-bbbb", pwOld = "pw-old-141", uSp = "2bbb-cccc", pwSp = "pw-spare-141";
+  writeFileSync(join(kv141dir, uOld + ".json"), JSON.stringify(await make141(uOld, pwOld)) + "\n");
+  writeFileSync(join(kv141dir, uSp + ".json"), JSON.stringify(await make141(uSp, pwSp, { spare: true })) + "\n");
+  /* S14-R2: an unbound record with NO spare mark, what a re-key gone wrong leaves behind with somebody's password and wraps */
+  const uOrph = "3ccc-dddd";
+  writeFileSync(join(kv141dir, uOrph + ".json"), JSON.stringify(await make141(uOrph, "pw-orphan-141")) + "\n");
+  writeFileSync(join(root141, "_users.json"), JSON.stringify({ "CZ9-OLD": uOld }));
+  const now141 = new Date("2026-09-24T02:00:00Z");
+  try {
+    /* ---- free: published, marked, kept, and on no list ---- */
+    const plan = await pp141(root141, KEY141, now141, ["u:" + uOld, "u:" + uSp, "u:zzzz-zzzz"], "2026-09-01");
+    const putOf = (p, u) => { const x = p.puts.find((y) => y.key === "u:" + u); return x ? JSON.parse(x.value) : null; };
+    const sp = putOf(plan, uSp), old = putOf(plan, uOld);
+    ok(!!sp && sp.spare === true && !("pwMaster" in sp) && !!sp.env && !!old && !("spare" in old),
+      "a free spare is published like any record, marked spare in the clear, with its sealed password left out: " + JSON.stringify(sp && Object.keys(sp)));
+    ok(plan.deletes.includes("u:zzzz-zzzz") && !plan.deletes.includes("u:" + uSp),
+      "and the retire, which runs (it takes the record no issue carries), never takes the spare: " + JSON.stringify(plan.deletes));
+    ok(!plan.sheet.some((a) => a.username === uSp) && !(uSp in plan.users) && !plan.unmatched.includes(uSp)
+      && JSON.stringify(plan.spares) === JSON.stringify([uSp]),
+      "it is on no list: not his sheet, not the roster or the desk's map, not the unmatched warning; the plan counts it apart: "
+      + JSON.stringify({ sheet: plan.sheet.map((a) => a.username), unmatched: plan.unmatched, spares: plan.spares }));
+    const { freeSpares: fs141 } = await import("../tools/stmt-pool.mjs");
+    const orph = putOf(plan, uOrph);
+    ok(!!orph && !("spare" in orph) && !plan.spares.includes(uOrph) && plan.unmatched.includes(uOrph)
+      && JSON.stringify(fs141(root141, { "CZ9-OLD": uOld })) === JSON.stringify([uSp]),
+      "only a record the laptop marked is a spare: an unbound one with no mark is not free to the fold, not marked, and still warned of as unmatched: "
+      + JSON.stringify({ free: fs141(root141, { "CZ9-OLD": uOld }), mark: orph && orph.spare, unmatched: plan.unmatched }));
+
+    /* ---- the door opens a spare for nobody, his override included; the same record bound opens ---- */
+    const door = async (puts, body) => {
+      const kv = new KV();
+      for (const p of puts) await kv.put(p.key, p.value);
+      const r = await W141.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
+        headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), { STMT: kv, STMT_MASTER: M141 });
+      return { status: r.status, seen: await kv.get("seen:" + body.u) };
+    };
+    const byPw = await door(plan.puts, { u: uSp, password: pwSp }), byM = await door(plan.puts, { u: uSp, password: M141, master: M141 });
+    ok(byPw.status === 401 && byM.status === 401 && byPw.seen === null,
+      "a free spare answers the door's one refusal, to its own password and to his master, and no open is counted: " + JSON.stringify([byPw.status, byM.status]));
+
+    /* ---- bound: the fold wrote its line, so it is an ordinary account ---- */
+    writeFileSync(join(root141, "_users.json"), JSON.stringify({ "CZ9-OLD": uOld, "CZ9-NEW": uSp }));
+    const plan2 = await pp141(root141, KEY141, now141, ["u:" + uOld, "u:" + uSp], "2026-09-01");
+    const sp2 = putOf(plan2, uSp), row2 = plan2.sheet.find((a) => a.username === uSp);
+    ok(!!sp2 && !("spare" in sp2) && plan2.spares.length === 0 && !!row2 && row2.code === "CZ9-NEW" && !!row2.pwMaster
+      && plan2.users[uSp] === "CZ9-NEW",
+      "once a code holds it the mark goes and it is on his sheet with its sealed password, so Send can hand it over: " + JSON.stringify(row2 && row2.code));
+    const bound = await door(plan2.puts, { u: uSp, password: pwSp });
+    ok(bound.status === 200 && !!bound.seen, "and the same password now opens it, which is what makes the refusal above the mark's and not the password's: " + bound.status);
+  } finally { rmSync(root141, { recursive: true, force: true }); }
+})();
+section("S14 14.2: the laptop mints the pool of spare accounts, tops it up to a count, refuses without the master, and says when it runs low");
+await (async () => {
+  /* D15: the pool is minted on the laptop only, where the content key and the master are, so no key
+     ever reaches CI. One line, the same every time: it tops the pool up rather than adding to it. */
+  const { mintPool, accountSweep, sweepLines } = await import("../tools/stmt-account.mjs");
+  const { freeSpares } = await import("../tools/stmt-pool.mjs");
+  const C142 = await import("../tools/stmt-crypto.mjs");
+  const root142 = join(REPO, "test", "tmp", "pool142"), dir142 = join(root142, "2026-09");
+  rmSync(root142, { recursive: true, force: true });
+  mkdirSync(join(dir142, "_kv"), { recursive: true });
+  const M142 = "master-142", K142 = "key-142";
+  /* one account already there, for the master to be proved against, cut on the 15th so a spare must
+     take its date off its neighbours rather than assume the first of the month */
+  const uHave = "aaaa-bbbb", pwHave = "pw-have-142", ckHave = await C142.contentKey(K142, uHave);
+  writeFileSync(join(dir142, "_kv", uHave + ".json"), JSON.stringify({ u: uHave, issued: "2026-09-15", issues: ["2026-09-15"],
+    verifier: await C142.makeVerifier(pwHave), wrap: await C142.wrapKey(pwHave, ckHave),
+    wrapMaster: await C142.wrapKey(M142, ckHave), env: await C142.encryptWith(ckHave, "{}") }) + "\n");
+  writeFileSync(join(root142, "_secrets.json"), JSON.stringify({ key: K142 }));
+  const usersText = JSON.stringify({ "CZ9-OLD": uHave });
+  writeFileSync(join(root142, "_users.json"), usersText);
+  writeFileSync(join(dir142, "_passwords.json"), JSON.stringify({ "CZ9-OLD": pwHave }));
+  const kvCount = () => readdirSync(join(dir142, "_kv")).length;
+  const was142 = process.env.STMT_MASTER;
+  try {
+    delete process.env.STMT_MASTER;
+    let noMaster = false;
+    try { await mintPool(root142, { count: 3 }); } catch (e) { noMaster = /master passphrase/.test(String(e.message)); }
+    ok(noMaster && kvCount() === 1, "with no master it refuses and writes nothing: a password nobody can hand over is not an account");
+    process.env.STMT_MASTER = "not-the-master";
+    let wrongMaster = false;
+    try { await mintPool(root142, { count: 3 }); } catch (e) { wrongMaster = /does not unwrap/.test(String(e.message)); }
+    ok(wrongMaster && kvCount() === 1, "and a master that unwraps no record is refused before a byte is written");
+
+    process.env.STMT_MASTER = M142;
+    const dry = await mintPool(root142, { count: 3, check: true });
+    ok(dry.minted.length === 3 && dry.wrote === 0 && kvCount() === 1, "a check says it would mint three and writes nothing: " + JSON.stringify(dry));
+    const did = await mintPool(root142, { count: 3 });
+    ok(did.wrote === 3 && did.free === 3 && kvCount() === 4 && freeSpares(root142, JSON.parse(usersText)).length === 3,
+      "the mint writes three spares into the newest issue, and all three read as free: " + JSON.stringify({ wrote: did.wrote, free: did.free }));
+
+    /* EACH ONE IS A WHOLE ACCOUNT, and opens as one */
+    const pws = JSON.parse(readFileSync(join(dir142, "_passwords.json"), "utf8"));
+    const whole = [];
+    for (const u of did.minted) {
+      try {
+        const rec = JSON.parse(readFileSync(join(dir142, "_kv", u + ".json"), "utf8"));
+        const pw = pws[u];
+        const bundle = JSON.parse(await C142.decryptWith(await C142.unwrapKey(pw, rec.wrap), rec.env));
+        whole.push(rec.spare === true && rec.u === u && C142.USERNAME_RE.test(u) && u !== uHave
+          && await C142.checkVerifier(pw, rec.verifier) && (await C142.decryptText(M142, rec.pwMaster)) === pw
+          && !!(await C142.unwrapKey(M142, rec.wrapMaster)) && bundle.v === 1 && bundle.statements.length === 0
+          && rec.issued === "2026-09-15" && rec.issues.join() === "2026-09-15" && bundle.issued === "2026-09-15");
+      } catch (e) { whole.push("threw " + e.message); }
+    }
+    ok(whole.length === 3 && whole.every((x) => x === true),
+      "each is marked spare, its password filed under its username answers its verifier and unwraps its key, the same password is "
+      + "sealed under the master for Send, its bundle is empty, and it carries its neighbours' issue date: " + JSON.stringify(whole));
+    ok(pws["CZ9-OLD"] === pwHave && readFileSync(join(root142, "_users.json"), "utf8") === usersText,
+      "a customer's password is left alone and _users.json is untouched, a spare having no code until the fold gives it one");
+
+    const again = await mintPool(root142, { count: 3 });
+    ok(again.wrote === 0 && again.free === 3 && kvCount() === 4, "the same line again mints nothing, the pool being full: " + JSON.stringify(again));
+    const more = await mintPool(root142, { count: 5 });
+    ok(more.wrote === 2 && more.free === 5 && kvCount() === 6, "and a larger count tops it up by the difference: " + JSON.stringify({ wrote: more.wrote, free: more.free }));
+
+    /* A DRY PUBLISH CARRIES THEM, apart from the accounts */
+    const out142 = join(root142, "out");
+    let said = "";
+    try {
+      said = execFileSync(process.execPath, [join(REPO, "tools", "stmt-publish.mjs"), "--dry", out142],
+        { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, SALT_STATEMENTS_DIR: root142, STMT_KEY: K142 } });
+    } catch (e) { said = String(e.stdout || "") + String(e.stderr || ""); }
+    const put142 = existsSync(join(out142, "put.json")) ? JSON.parse(readFileSync(join(out142, "put.json"), "utf8")) : [];
+    ok(/would publish 6 records from 2026-09.*5 of them spare account\(s\) free for the next Add ID/.test(said)
+      && put142.filter((x) => x.key.startsWith("u:") && JSON.parse(x.value).spare === true).length === 5,
+      "and a publish over the pool carries all five, marked, and counts them apart: " + (said.match(/would publish[^\n]*/) || [said.slice(-200)])[0]);
+
+    /* THE CHAIN SAYS WHEN IT RUNS LOW, with the one line */
+    const sw = await accountSweep(root142, { roster: ["CZ9-OLD"] });
+    ok(sw.ran === true && sw.pool === 5, "the laptop's sweep counts the free spares: " + JSON.stringify({ ran: sw.ran, pool: sw.pool }));
+    const say = (s) => sweepLines(s).map((l) => l.level + ": " + l.text);
+    const low = say({ ran: true, minted: [], named: [], failed: [], wrote: 0, pool: 2 });
+    const none = say({ ran: false, why: "no master", minted: [], stuck: [], pool: 0 });
+    const fine = say({ ran: true, minted: [], named: [], failed: [], wrote: 0, pool: 3 });
+    ok(low.length === 2 && /^warn: only 2 spare accounts free/.test(low[1]) && /node tools\/stmt-account\.mjs --pool$/.test(low[1])
+      && /^warn: no spare accounts free/.test(none[1]) && fine.length === 1,
+      "under three free it warns with the one line that tops it up, with or without the master; at three it says nothing: "
+      + JSON.stringify({ low, none, fine }));
+  } finally {
+    if (was142 === undefined) delete process.env.STMT_MASTER; else process.env.STMT_MASTER = was142;
+    rmSync(root142, { recursive: true, force: true });
+  }
+})();
+section("S14 14.3: the fold binds the next spare account at Add ID, so a walk-in signs in at the same run's publish, by password and by link");
+await (async () => {
+  /* D15, the whole road on fixtures: the laptop mints a pool, the fold registers a new code and binds the
+     next spare in _users.json (no key in CI), the publish seals it, and the new customer's account opens
+     by password and by his sign-in link. A second code in the same batch finds no spare free, takes a
+     bare username as before, and Salt Admin says it is made at the next laptop update. */
+  const { mintPool } = await import("../tools/stmt-account.mjs");
+  const { planPublish: pp143 } = await import("../tools/stmt-publish.mjs");
+  const { mintUsernames: mu143 } = await import("../tools/fold.mjs");
+  const C143 = await import("../tools/stmt-crypto.mjs");
+  const S143 = await import("../stmt/signin.js");
+  const W143 = (await import("../stmt/worker.js")).default;
+  const stage143 = (rows) => ({ ok: true, count: rows.length, approved: rows.map(([id, code, kind]) => ({ id, collection: "roster",
+    row: { code, kind, parent: null, note: null }, entry: { at: id, payload: { mode: "addid", code, kind } } })) });
+
+  /* ---- in memory: the next spare first, in order, then a bare username; nobody else is touched ---- */
+  const mem = { "CZ9-OLD": "aaaa-bbbb" };
+  const got = mu143(mem, stage143([["b1", "CZ9-ONE", "customer"], ["b2", "SZ9-SUP", "supplier"], ["b3", "CZ9-TWO", "reseller"],
+    ["b4", "CZ9-THR", "customer"], ["b5", "CZ9-OLD", "customer"]]), ["b1", "b2", "b3", "b4", "b5"], ["2ccc-dddd", "3ddd-eeee"]);
+  ok(got.join() === "CZ9-ONE,CZ9-TWO,CZ9-THR" && mem["CZ9-ONE"] === "2ccc-dddd" && mem["CZ9-TWO"] === "3ddd-eeee"
+    && C143.USERNAME_RE.test(mem["CZ9-THR"] || "") && !["2ccc-dddd", "3ddd-eeee"].includes(mem["CZ9-THR"])
+    && mem["CZ9-OLD"] === "aaaa-bbbb" && !("SZ9-SUP" in mem),
+    "a registration takes the next free spare, in order; with none left it is minted a bare username as before; a supplier gets none and a username that exists is never replaced: " + JSON.stringify(mem));
+
+  /* ---- the fixture: one account already there, the laptop's secrets, and a pool of ONE ---- */
+  const root = join(REPO, "test", "tmp", "pool143"), dir = join(root, "2026-09");
+  rmSync(root, { recursive: true, force: true });
+  mkdirSync(join(dir, "_kv"), { recursive: true });
+  const M = "master-143", K = "key-143", uHave = "aaaa-bbbb", pwHave = "pw-have-143", ckHave = await C143.contentKey(K, uHave);
+  writeFileSync(join(dir, "_kv", uHave + ".json"), JSON.stringify({ u: uHave, issued: "2026-09-01", issues: ["2026-09-01"],
+    verifier: await C143.makeVerifier(pwHave), wrap: await C143.wrapKey(pwHave, ckHave), wrapMaster: await C143.wrapKey(M, ckHave),
+    pwMaster: await C143.encryptText(M, pwHave), env: await C143.encryptWith(ckHave, "{}") }) + "\n");
+  writeFileSync(join(root, "_secrets.json"), JSON.stringify({ key: K }));
+  writeFileSync(join(root, "_users.json"), JSON.stringify({ "CZ9-OLD": uHave }));
+  writeFileSync(join(dir, "_passwords.json"), JSON.stringify({ "CZ9-OLD": pwHave }));
+  const fold = join(REPO, "test", "tmp", "pool143fold"), f = (n) => join(fold, n);
+  rmSync(fold, { recursive: true, force: true });
+  mkdirSync(fold, { recursive: true });
+  const was143 = process.env.STMT_MASTER;
+  const realFetch143 = globalThis.fetch;
+  try {
+    process.env.STMT_MASTER = M;
+    const spare = (await mintPool(root, { count: 1 })).minted[0];
+    delete process.env.STMT_MASTER;
+
+    /* ---- THE FOLD, run as the cloud job runs it, with no key and no master anywhere in its environment ---- */
+    writeFileSync(f("book.json"), readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    writeFileSync(f("salt_command.html"), readFileSync(join(REPO, "master", "salt_command.html"), "utf8"));
+    writeFileSync(f("changelog.json"), readFileSync(join(REPO, "master", "changelog.json"), "utf8"));
+    writeFileSync(f("staged.json"), JSON.stringify(stage143([["2099-01-01T00:00:00.001Z", "CZ9-WLK", "customer"], ["2099-01-01T00:00:00.002Z", "CZ9-LTR", "customer"]])));
+    writeFileSync(f("notes.json"), JSON.stringify({ version: "v9998", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: {} }));
+    const envCI = { ...process.env };
+    delete envCI.STMT_MASTER; delete envCI.STMT_KEY;
+    const run = spawnSync(process.execPath, [join(REPO, "tools", "fold.mjs"), "--apply", "--book", f("book.json"), "--master", f("salt_command.html"),
+      "--staged", f("staged.json"), "--notes", f("notes.json"), "--folded", f("folded.json"), "--users", join(root, "_users.json"),
+      "--statements", root, "--today", "2099-01-01"], { encoding: "utf8", env: envCI });
+    const users = JSON.parse(readFileSync(join(root, "_users.json"), "utf8"));
+    ok(run.status === 0 && users["CZ9-WLK"] === spare && C143.USERNAME_RE.test(users["CZ9-LTR"] || "") && users["CZ9-LTR"] !== spare
+      && users["CZ9-OLD"] === uHave,
+      "the fold binds the pool's one spare to the first new code in _users.json, and the second finds none free and takes a bare username: "
+      + (run.status === 0 ? JSON.stringify(users) : (run.stdout + run.stderr).slice(-300)));
+    ok(/CZ9-WLK on a spare account, which opens at this run's publish/.test(run.stdout) && /no spare account was free for CZ9-LTR/.test(run.stdout),
+      "and says which is which: " + (run.stdout.match(/statement username[^\n]*\n[^\n]*/) || [""])[0]);
+
+    /* ---- A SECOND FOLD against the same pool, its one spare now bound and still marked in its committed file:
+       the next walk-in takes a bare username, never the spare a customer already holds (S14-R1) ---- */
+    writeFileSync(f("staged2.json"), JSON.stringify(stage143([["2099-01-01T00:00:00.003Z", "CZ9-THD", "customer"]])));
+    writeFileSync(f("notes.json"), JSON.stringify({ version: "v9999", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: {} }));
+    const run2 = spawnSync(process.execPath, [join(REPO, "tools", "fold.mjs"), "--apply", "--book", f("book.json"), "--master", f("salt_command.html"),
+      "--staged", f("staged2.json"), "--notes", f("notes.json"), "--folded", f("folded2.json"), "--users", join(root, "_users.json"),
+      "--statements", root, "--today", "2099-01-01"], { encoding: "utf8", env: envCI });
+    const users2 = JSON.parse(readFileSync(join(root, "_users.json"), "utf8")), held2 = Object.values(users2);
+    ok(run2.status === 0 && users2["CZ9-WLK"] === spare && C143.USERNAME_RE.test(users2["CZ9-THD"] || "") && users2["CZ9-THD"] !== spare
+      && new Set(held2).size === held2.length && JSON.parse(readFileSync(join(dir, "_kv", spare + ".json"), "utf8")).spare === true,
+      "a second fold, the spare bound and still marked in its file, gives the next code a bare username, and no two codes share one: "
+      + (run2.status === 0 ? JSON.stringify(users2) : (run2.stdout + run2.stderr).slice(-300)));
+
+    /* ---- THE PUBLISH seals it, with the deploy's key only ---- */
+    const plan = await pp143(root, K, new Date("2099-01-01T02:00:00Z"), ["u:" + uHave, "u:" + spare], "2026-09-01");
+    const put = plan.puts.find((x) => x.key === "u:" + spare), rec = put ? JSON.parse(put.value) : null;
+    const row = plan.sheet.find((a) => a.code === "CZ9-WLK");
+    const pw = JSON.parse(readFileSync(join(dir, "_passwords.json"), "utf8"))[spare];
+    ok(!!rec && !("spare" in rec) && !!row && row.username === spare && (await C143.decryptText(M, row.pwMaster)) === pw
+      && !plan.sheet.some((a) => a.code === "CZ9-LTR") && plan.users[users["CZ9-LTR"]] === "CZ9-LTR",
+      "the publish writes the bound spare as CZ9-WLK's account, on his sheet with the password Send hands over; CZ9-LTR is on the roster with no account: "
+      + JSON.stringify({ row: row && row.code, spareMark: rec && rec.spare }));
+
+    /* ---- THE CUSTOMER SIGNS IN, by password and by his sign-in link ---- */
+    const kv = new KV();
+    for (const p of plan.puts) await kv.put(p.key, p.value);
+    await kv.put("roster", JSON.stringify(Object.entries(plan.users).map(([username, code]) => ({ code, username }))));
+    await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+    const TEAM = "maakmal", AUD = "aud-143", KID = "kid-143";
+    const env = { STMT: kv, STMT_MASTER: M, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+    const post = async (path, body) => { const r = await W143.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+      headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env); return { status: r.status, j: await r.json() }; };
+    const opened = async (key, reply) => JSON.parse(await C143.decryptWith(await C143.unwrapKey(key, reply.j.wrap), reply.j.env));
+    const byPw = await post("/open", { u: spare, password: pw });
+    ok(byPw.status === 200 && !!byPw.j.session && (await opened(pw, byPw)).v === 1,
+      "by password: the door lets them in and their own password opens the account: " + byPw.status);
+    const his = await post("/open", { u: spare, password: M, master: M });
+    const ck = await C143.unwrapKey(M, his.j.wrapMaster), tok = S143.newSignin();
+    await S143.mintSignin(env, spare, tok, await C143.wrapKey(tok, ck));
+    const byLink = await post("/open-link", { token: tok });
+    ok(his.status === 200 && byLink.status === 200 && !!byLink.j.session && (await opened(tok, byLink)).v === 1,
+      "by link: his page opens it under the master, mints the one-time link, and the link signs them in: " + byLink.status);
+
+    /* ---- SALT ADMIN: the bound one is an account; the other says it is made at the next laptop update ---- */
+    const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+    globalThis.fetch = async (u) => {
+      if (String(u) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+      throw new Error("the Access gate reached for " + u);
+    };
+    const b64u = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+    const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+    const jwt = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sheetRes = await W143.fetch(new Request("https://k7m3p2.example/all/sheet", { headers: { "cf-access-jwt-assertion": jwt } }), env);
+    const sheetJ = await sheetRes.json();
+    const wlk = sheetJ.accounts.find((a) => a.code === "CZ9-WLK"), ltr = sheetJ.accounts.find((a) => a.code === "CZ9-LTR");
+    ok(sheetRes.status === 200 && wlk && wlk.account === true && ltr && ltr.account === false && sheetJ.stranger === "Silver",
+      "his list has the walk-in's account, the other code with none, and the stranger's level off the book's names: "
+      + JSON.stringify({ wlk: wlk && wlk.account, ltr: ltr && ltr.account, stranger: sheetJ.stranger }));
+    const { landingPage: lp143 } = await import("../stmt/page.js");
+    const { JSDOM: JD143 } = await import("jsdom");
+    const dom = new JD143(lp143("", "n143", { master: M, accounts: JSON.parse(await kv.get("roster")) }), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true });
+    const Wd = dom.window, D = Wd.document;
+    Wd.fetch = async (path) => (String(path) === "/all/sheet" ? { ok: true, status: 200, json: async () => sheetJ } : { ok: false, status: 404, json: async () => ({ ok: false, error: "no" }) });
+    try {
+      D.querySelector('button[data-m="review"]').dispatchEvent(new Wd.Event("click", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 60));
+      const rows = [...D.querySelectorAll("#rlist button")].map((b) => b.textContent);
+      const ltrRow = rows.find((t) => t.startsWith("CZ9-LTR")) || "", wlkRow = rows.find((t) => t.startsWith("CZ9-WLK")) || "";
+      ok(ltrRow.includes("Made at the next laptop update. Until then, show the Silver link.") && !!wlkRow && !wlkRow.includes("laptop update"),
+        "Salt Admin says the waiting one is made at the next laptop update, and to show the Silver link until then; the bound one does not: "
+        + JSON.stringify({ ltrRow, wlkRow }));
+    } finally { try { Wd.close(); } catch (e) { /* best effort */ } }
+  } finally {
+    globalThis.fetch = realFetch143;
+    if (was143 === undefined) delete process.env.STMT_MASTER; else process.env.STMT_MASTER = was143;
+    rmSync(root, { recursive: true, force: true });
+    rmSync(fold, { recursive: true, force: true });
+  }
+})();
+section("S14 fix SEC-1: one username, one code: the fold, the gate and the publish refuse a _users.json that gives one account to two codes");
+await (async () => {
+  /* The binding is the same on every machine: two folds made from one base take the same spare, and git merges
+     their two one-line additions to _users.json cleanly. The publish then sealed whichever code sorted last into
+     the account with no word, so a customer already handed its password read somebody else's statement. */
+  const { registerAccounts: ra1 } = await import("../tools/fold.mjs");
+  const { planPublish: pp1 } = await import("../tools/stmt-publish.mjs");
+  const G1 = await import("../tools/gate.mjs");
+  const root = join(REPO, "test", "tmp", "poolsec1"), kv = join(root, "2026-09", "_kv"), fold = join(REPO, "test", "tmp", "poolsec1fold");
+  rmSync(root, { recursive: true, force: true }); rmSync(fold, { recursive: true, force: true });
+  mkdirSync(kv, { recursive: true }); mkdirSync(fold, { recursive: true });
+  const rec = (u, extra) => JSON.stringify(Object.assign({ u, issued: "2026-09-01", issues: ["2026-09-01"], wrap: { v: 2 }, env: { v: 2 } }, extra || {})) + "\n";
+  writeFileSync(join(kv, "aaaa-bbbb.json"), rec("aaaa-bbbb"));
+  writeFileSync(join(kv, "2aaa-aaaa.json"), rec("2aaa-aaaa", { spare: true }));
+  writeFileSync(join(kv, "3aaa-aaaa.json"), rec("3aaa-aaaa", { spare: true }));
+  const base = JSON.stringify({ "CZ9-OLD": "aaaa-bbbb" }) + "\n";
+  const stage = (id, code) => ({ ok: true, count: 1, approved: [{ id, collection: "roster", row: { code, kind: "customer", parent: null, note: null },
+    entry: { at: id, payload: { mode: "addid", code, kind: "customer" } } }] });
+  const wasDir = process.env.SALT_STATEMENTS_DIR;
+  try {
+    /* ---- two folds from one base bind the same spare, and their lines merge without a conflict ---- */
+    const a = join(fold, "users-a.json"), b = join(fold, "users-b.json");
+    writeFileSync(a, base); writeFileSync(b, base);
+    ra1(root, a, stage("s1", "CZ1-AAA"), ["s1"]); ra1(root, b, stage("s2", "CZ1-ZZZ"), ["s2"]);
+    const merged = Object.assign(JSON.parse(readFileSync(a, "utf8")), JSON.parse(readFileSync(b, "utf8")));
+    ok(merged["CZ1-AAA"] === "2aaa-aaaa" && merged["CZ1-ZZZ"] === "2aaa-aaaa",
+      "the fixture is the fault: two folds from one base take the same spare, and the merge holds both lines: " + JSON.stringify(merged));
+    const mergedText = JSON.stringify(merged, null, 2) + "\n";
+    writeFileSync(join(root, "_users.json"), mergedText);
+
+    /* ---- the fold's own half refuses it and writes nothing ---- */
+    let why = "";
+    try { ra1(root, join(root, "_users.json"), stage("s3", "CZ1-NEW"), ["s3"]); } catch (e) { why = String(e.message); }
+    ok(/one username to two codes: 2aaa-aaaa is held by CZ1-AAA and CZ1-ZZZ/.test(why) && readFileSync(join(root, "_users.json"), "utf8") === mergedText,
+      "registerAccounts refuses a file giving one username to two codes, naming both, and leaves the file as it was: " + why.slice(0, 120));
+
+    /* ---- the fold as the cloud job runs it: refused before the book is written, so nothing folds ---- */
+    const f = (n) => join(fold, n);
+    const bookText = readFileSync(join(REPO, "ledger", "book.json"), "utf8"), masterText = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    writeFileSync(f("book.json"), bookText); writeFileSync(f("salt_command.html"), masterText);
+    writeFileSync(f("changelog.json"), readFileSync(join(REPO, "master", "changelog.json"), "utf8"));
+    writeFileSync(f("staged.json"), JSON.stringify(stage("2099-01-01T00:00:00.001Z", "CZ1-NEW")));
+    writeFileSync(f("notes.json"), JSON.stringify({ version: "v9998", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: {} }));
+    const run = spawnSync(process.execPath, [join(REPO, "tools", "fold.mjs"), "--apply", "--book", f("book.json"), "--master", f("salt_command.html"),
+      "--staged", f("staged.json"), "--notes", f("notes.json"), "--folded", f("folded.json"), "--users", join(root, "_users.json"),
+      "--statements", root, "--today", "2099-01-01"], { encoding: "utf8" });
+    ok(run.status === 1 && /FAIL  nothing folded: statements\/_users\.json gives one username to two codes/.test(run.stdout)
+      && readFileSync(f("book.json"), "utf8") === bookText && readFileSync(f("salt_command.html"), "utf8") === masterText
+      && !existsSync(f("folded.json")) && readFileSync(join(root, "_users.json"), "utf8") === mergedText,
+      "fold.mjs --apply over it stops red with the book, the master and the file untouched: " + JSON.stringify({ status: run.status, out: run.stdout.slice(-160) }));
+
+    /* ---- the publish refuses before anything is sealed or put ---- */
+    let pubWhy = "", plan = null;
+    try { plan = await pp1(root, null, new Date("2026-09-24T02:00:00Z"), [], "2026-09-01"); } catch (e) { pubWhy = String(e.message); }
+    ok(plan === null && /one username to two codes/.test(pubWhy), "planPublish refuses it rather than sealing the code that sorts last into the account: " + (pubWhy || JSON.stringify(plan && plan.users)));
+
+    /* ---- the gate: first, and nothing after runs; the base file passes ---- */
+    const g = spawnSync(process.execPath, [join(REPO, "tools", "gate.mjs")], { cwd: REPO, encoding: "utf8", env: { ...process.env, SALT_STATEMENTS_DIR: root } });
+    process.env.SALT_STATEMENTS_DIR = fold;
+    writeFileSync(join(fold, "_users.json"), base);
+    let baseOk = -1;
+    try { baseOk = G1.usersCheck(); } catch (e) { baseOk = String(e.message); }
+    ok(g.status === 1 && /FAIL  statements\/_users\.json gives one username to two codes/.test(g.stdout) && !/ok    the workflows parse/.test(g.stdout) && baseOk === 1,
+      "the gate fails on it before any other check, and passes a file where each username has one code: " + JSON.stringify({ status: g.status, baseOk, out: g.stdout.slice(0, 160) }));
+  } finally {
+    if (wasDir === undefined) delete process.env.SALT_STATEMENTS_DIR; else process.env.SALT_STATEMENTS_DIR = wasDir;
+    rmSync(root, { recursive: true, force: true }); rmSync(fold, { recursive: true, force: true });
+  }
+})();
+section("S14 fix SEC-2: the laptop's mint proves the content key before it seals a spare or an account, so a stale STMT_KEY in the shell writes nothing");
+await (async () => {
+  /* openIssue proved the master and never the key, and prefers $env:STMT_KEY to the file by design. Ten spares
+     sealed under a stale one read as free and fine until the fold bound one; the publish then found the key
+     wrong and stopped on every run, and the walk-in's account opened empty. */
+  const { mintPool, mintAccounts, accountSweep, sweepLines } = await import("../tools/stmt-account.mjs");
+  const C2 = await import("../tools/stmt-crypto.mjs");
+  const root = join(REPO, "test", "tmp", "poolsec2"), dir = join(root, "2026-09"), kv = join(dir, "_kv");
+  rmSync(root, { recursive: true, force: true });
+  mkdirSync(kv, { recursive: true });
+  const M = "master-sec2", K = "right-key-sec2", STALE = "a-stale-key-in-the-shell";
+  const seal = async (key, u, pw, extra) => {
+    const ck = await C2.contentKey(key, u);
+    return JSON.stringify(Object.assign({ u, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C2.makeVerifier(pw),
+      wrap: await C2.wrapKey(pw, ck), wrapMaster: await C2.wrapKey(M, ck), pwMaster: await C2.encryptText(M, pw),
+      env: await C2.encryptWith(ck, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [] })) }, extra || {})) + "\n";
+  };
+  /* an account under the right key, and a spare already sealed under the stale one, which a proof over any record would accept */
+  writeFileSync(join(kv, "aaaa-bbbb.json"), await seal(K, "aaaa-bbbb", "pw-old"));
+  writeFileSync(join(kv, "2bbb-cccc.json"), await seal(STALE, "2bbb-cccc", "pw-stale", { spare: true }));
+  writeFileSync(join(root, "_secrets.json"), JSON.stringify({ key: K, master: M }));
+  writeFileSync(join(root, "_users.json"), JSON.stringify({ "CZ9-OLD": "aaaa-bbbb", "CZ9-NEW": "2ccc-dddd" }));
+  const pwText = JSON.stringify({ "CZ9-OLD": "pw-old", "2bbb-cccc": "pw-stale" });
+  writeFileSync(join(dir, "_passwords.json"), pwText);
+  const files = () => readdirSync(kv).sort().join();
+  const before = files();
+  const wasKey = process.env.STMT_KEY, wasM = process.env.STMT_MASTER;
+  try {
+    delete process.env.STMT_MASTER;
+    process.env.STMT_KEY = STALE;
+    let poolWhy = "", mintWhy = "";
+    try { await mintPool(root, { count: 3 }); } catch (e) { poolWhy = String(e.message); }
+    try { await mintAccounts(root, { roster: ["CZ9-OLD", "CZ9-NEW"] }); } catch (e) { mintWhy = String(e.message); }
+    ok(/the key given does not open any record in 2026-09: nothing was written/.test(poolWhy) && /the key given does not open any record/.test(mintWhy)
+      && files() === before && readFileSync(join(dir, "_passwords.json"), "utf8") === pwText,
+      "with a stale STMT_KEY in the shell, --pool and --mint both refuse and write nothing: " + JSON.stringify({ poolWhy, mintWhy, files: files() }));
+    const said = sweepLines(await accountSweep(root, { roster: ["CZ9-OLD", "CZ9-NEW"] })).map((l) => l.level + ": " + l.text);
+    ok(/^warn: the account sweep stopped: the key given does not open any record/.test(said[0] || ""),
+      "and the laptop's update says so rather than minting: " + JSON.stringify(said[0]));
+
+    delete process.env.STMT_KEY;
+    const did = await mintPool(root, { count: 3 });
+    const opens = [];
+    for (const u of did.minted) {
+      const rec = JSON.parse(readFileSync(join(kv, u + ".json"), "utf8"));
+      try { opens.push(JSON.parse(await C2.decryptWith(await C2.contentKey(K, u), rec.env)).v === 1); } catch (e) { opens.push(false); }
+    }
+    ok(did.wrote === 2 && opens.length === 2 && opens.every(Boolean),
+      "with the file's key it mints, and every spare it seals opens under the key the publish holds: " + JSON.stringify({ wrote: did.wrote, opens }));
+  } finally {
+    if (wasKey === undefined) delete process.env.STMT_KEY; else process.env.STMT_KEY = wasKey;
+    if (wasM === undefined) delete process.env.STMT_MASTER; else process.env.STMT_MASTER = wasM;
+    rmSync(root, { recursive: true, force: true });
+  }
+})();
+section("S14 fix R3: a bound spare's password, filed under its username, is found by code: a retry keeps it and Send hands it over");
+await (async () => {
+  /* The pool files a spare's password under its USERNAME, a spare having no code, and the fold binds it in
+     _users.json without moving it. Every laptop reader looked by code, so a same-issue retry of
+     make_statements minted the walk-in a new password in silence, and Send found none. */
+  const { makeStatements: ms3 } = await import("../tools/make_statements.mjs");
+  const { sheetParty: sp3 } = await import("../tools/stmt-send.mjs");
+  const C3 = await import("../tools/stmt-crypto.mjs");
+  const p = sp3("CZ9-WLK", { "CZ9-WLK": "2aaa-aaaa" }, { "2aaa-aaaa": "pw-walk-in" }, "");
+  ok(!!p && p.pw === "pw-walk-in" && p.who === "CZ9-WLK" && p.user === "2aaa-aaaa",
+    "Send's pairing finds a bound spare's password under its username: " + JSON.stringify(p));
+  const root = join(REPO, "test", "tmp", "poolr3"), out = join(root, "2026-09");
+  rmSync(root, { recursive: true, force: true });
+  const q = console.log; console.log = () => { };
+  try {
+    const first = await ms3(out, "2026-09-01", { key: "test-secret", master: "mp", newIssue: true });
+    const code = Object.keys(first.passwords).sort()[0], u = first.users[code], pw = first.passwords[code];
+    /* the file as it reads once a spare minted into the pool is bound to this code */
+    const filed = Object.assign({}, first.passwords); delete filed[code]; filed[u] = pw;
+    writeFileSync(join(out, "_passwords.json"), JSON.stringify(filed, null, 2) + "\n");
+    const again = await ms3(out, "2026-09-01", { key: "test-secret", master: "mp", newIssue: true });
+    const rec = JSON.parse(readFileSync(join(out, "_kv", u + ".json"), "utf8"));
+    console.log = q;
+    ok(again.passwords[code] === pw && await C3.checkVerifier(pw, rec.verifier),
+      "a same-issue retry keeps the password filed under the username, so the walk-in's own still opens the account: " + code);
+  } finally { console.log = q; rmSync(root, { recursive: true, force: true }); }
 })();
 section("v707: an ID with no account cannot sign in, and now something mints one and something says so");
 await (async () => {
@@ -18920,10 +20155,2022 @@ await (async () => {
      MARK can be drawn, and a comment names the owner's file while saying a customer never gets it;
      neither is rendered. What matters is that THIS panel names no tier and draws none of his. */
   const panel9 = page9.slice(page9.indexOf("function drawMyLinks()"), page9.indexOf("async function loadMyLinks()"));
-  ok(/Waiting to be approved/.test(panel9) && !/Titanium|Platinum|Gold|Silver|Bronze|Ambassador/.test(panel9),
-    "it tells them it is waiting and names no tier, which a customer's page never does");
+  const WL9 = await import("../src/orders.js");
+  ok(/Waiting to be approved/.test(panel9) && !/Titanium|Platinum|Gold|Silver|Bronze|Ambassador/.test(panel9)
+    && WL9.wordsIn(panel9, WL9.LEVEL_WORDS_MS).length === 0,
+    "it tells them it is waiting and names no tier, in English or Malay, which a customer's page never does");
   ok(!/drawLinks\(/.test(page9) && !/getElementById\('glist'\)/.test(page9) && !/\/all\/refs/.test(page9),
     "and nothing of his links panel is in it: not the drawing, not its element, not his route");
+})();
+section("S3 3.3: the link page spends nothing until Continue, names its account, sends an app's own browser to Safari or Chrome, and a lost answer is tried again for two minutes");
+await (async () => {
+  /* S3 fix: a session is filed under its hash, so the page's own orders read is a digest away, and the jsdom this
+     laptop runs drops a closed window's document: each page is let finish that read before it is closed */
+  /* S3 3.3, 24 SEP 2026. The link burnt on load, so a preview that ran the page, an app's own browser or a
+     dropped connection used it up and stranded a customer who had nothing else (the study's A8). */
+  const W33 = (await import("../stmt/worker.js")).default;
+  const S33 = await import("../stmt/signin.js");
+  const C33 = await import("../tools/stmt-crypto.mjs");
+  const kv33 = new KV();
+  const env33 = { STMT: kv33 };
+  const u33 = "k7m2-p9qr", ck33 = await C33.contentKey("s33", u33);
+  await kv33.put("u:" + u33, JSON.stringify({ u: u33, issued: "2026-09-01", issues: ["2026-09-01"],
+    env: await C33.encryptWith(ck33, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })) }));
+  const mint = async () => { const t = S33.newSignin(); await S33.mintSignin(env33, u33, t, await C33.wrapKey(t, ck33)); return t; };
+  const post = async (body) => { const r = await W33.fetch(new Request("https://k7m3p2.example/open-link", { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env33); return { status: r.status, j: await r.json() }; };
+
+  /* ---- asking spends nothing ---- */
+  const t1 = await mint(), h1 = "ot:" + (await S33.idOf(t1));
+  const pk = await post({ token: t1, peek: true });
+  ok(pk.status === 200 && pk.j.ok && pk.j.u === u33 && !pk.j.wrap && !pk.j.session,
+    "asking which account a link opens answers the username and nothing that opens it: " + JSON.stringify(pk.j));
+  ok(!JSON.parse(await kv33.get(h1)).spent && (await post({ token: t1, peek: true })).j.u === u33,
+    "and spends nothing: the record is whole and asking again answers again");
+  const pkBad = await post({ token: S33.newSignin(), peek: true });
+  ok(pkBad.status === 401 && pkBad.j.error === "That username and password were not accepted.",
+    "a link that never existed is the door's one refusal, asked or opened");
+
+  /* ---- Continue spends it, and the answer waits two minutes for that page alone ---- */
+  const nA = "nonceAAAAAAAAAAAAAAAAAAA", nB = "nonceBBBBBBBBBBBBBBBBBBB";
+  const first = await post({ token: t1, nonce: nA });
+  ok(first.j.ok && first.j.u === u33 && !!first.j.wrap && !!first.j.session, "Continue opens it");
+  ok(JSON.parse(await kv33.get(h1)).spent && (kv33.opts.get(h1) || {}).expirationTtl === S33.RETRY_TTL && S33.RETRY_TTL === 120,
+    "the record is marked spent and left to expire in two minutes");
+  const again = await post({ token: t1, nonce: nA });
+  ok(again.j.ok && JSON.stringify(again.j.wrap) === JSON.stringify(first.j.wrap) && again.j.session && again.j.session !== first.j.session,
+    "the same page asking again inside two minutes gets the answer it lost, with a session of its own");
+  const other = await post({ token: t1, nonce: nB }), bare = await post({ token: t1 });
+  ok(other.status === 401 && bare.status === 401 && other.j.error === pkBad.j.error,
+    "another page holding the same link is refused, in the door's one refusal, as a spent link always was");
+  ok((await post({ token: t1, peek: true })).status === 401, "and a spent link asked about is refused alike");
+
+  /* ---- the page ---- */
+  const { JSDOM: JD33 } = await import("jsdom");
+  const drive = async (ua, failFirst) => {
+    const t = await mint();
+    const html = await (await W33.fetch(new Request("https://k7m3p2.example/s/" + t), env33)).text();
+    const posts = [];
+    let failed = false;
+    const dom = new JD33(html, { url: "https://site.test/s/" + t, runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      if (ua) Object.defineProperty(win.navigator, "userAgent", { value: ua, configurable: true });
+      win.fetch = async (path, init) => {
+        const body = init && init.body ? JSON.parse(init.body) : {};
+        posts.push(Object.assign({ path: String(path) }, body));
+        const r = await W33.fetch(new Request("https://k7m3p2.example" + String(path), { method: init && init.method || "GET",
+          headers: Object.assign({ "content-type": "application/json" }, (init && init.headers) || {}), body: init && init.body }), env33);
+        /* the Worker has acted; the answer is lost on the way back, once */
+        if (failFirst && String(path) === "/open-link" && !body.peek && !failed) { failed = true; throw new TypeError("Failed to fetch"); }
+        return { ok: r.ok, status: r.status, json: async () => r.json() };
+      };
+    } });
+    const D = dom.window.document;
+    for (let i = 0; i < 100 && (D.getElementById("linkGo").disabled || !posts.length); i++) await new Promise((r) => setTimeout(r, 30));
+    return { t, dom, W: dom.window, D, posts };
+  };
+  const tapGo = async (g) => {
+    g.D.getElementById("linkGo").dispatchEvent(new g.W.Event("click", { bubbles: true }));
+    for (let i = 0; i < 150 && g.D.getElementById("tabs").hidden && !/Tap Continue again/.test(g.D.getElementById("linkMsg").textContent); i++)
+      await new Promise((r) => setTimeout(r, 50));
+  };
+
+  const plain = await drive("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1");
+  try {
+    ok(!plain.D.getElementById("link").hidden && plain.D.getElementById("gate").hidden
+      && plain.D.getElementById("linkLead").textContent === "This link opens account " + u33 + " on this phone and keeps it signed in.",
+      "a link opens on its own page, naming the account it opens: " + JSON.stringify(plain.D.getElementById("linkLead").textContent));
+    ok(/What you owe/.test(plain.D.getElementById("link").textContent) && /Your prices/.test(plain.D.getElementById("link").textContent)
+      && /Each order/.test(plain.D.getElementById("link").textContent),
+      "and says what is inside");
+    ok(plain.posts.length === 1 && plain.posts[0].peek === true && !(await kv33.get("ot:" + (await S33.idOf(plain.t))).then(JSON.parse)).spent
+      && plain.W.location.pathname === "/s/" + plain.t,
+      "and has spent nothing: one question asked, the record whole, the address still the link's");
+    ok(plain.D.getElementById("linkInapp").hidden && /salt-pill/.test(plain.D.getElementById("linkGo").className),
+      "Safari is not told to go anywhere else, and Continue is the one filled control");
+    await tapGo(plain);
+    ok(!plain.D.getElementById("tabs").hidden && plain.W.location.pathname === "/"
+      && JSON.parse(await kv33.get("ot:" + (await S33.idOf(plain.t)))).spent,
+      "Continue signs them in, spends the link and rewrites the address");
+  } finally { await new Promise((r) => setTimeout(r, 300)); plain.W.close(); }
+
+  const wa = await drive("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 WhatsApp/2.24.1");
+  const ig = await drive("Mozilla/5.0 (Linux; Android 14; SM-S911B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36 Instagram 330.0");
+  try {
+    const box = (g) => g.D.getElementById("linkInapp");
+    ok(!box(wa).hidden && !wa.D.getElementById("inappIos").hidden && wa.D.getElementById("inappDroid").hidden
+      && /Safari/.test(wa.D.getElementById("inappIos").textContent) && wa.D.getElementById("inappIos").querySelector("svg.glyph"),
+      "WhatsApp's own browser on an iPhone is sent to Safari, with the menu's mark drawn");
+    ok(!box(ig).hidden && ig.D.getElementById("inappIos").hidden && !ig.D.getElementById("inappDroid").hidden
+      && /Chrome/.test(ig.D.getElementById("inappDroid").textContent),
+      "and Instagram's on an Android to Chrome");
+    ok(/salt-ghost/.test(wa.D.getElementById("linkGo").className) && !/salt-pill/.test(wa.D.getElementById("linkGo").className)
+      && wa.posts.every((p) => p.peek === true),
+      "where Continue stays, quieter, and nothing has been spent");
+  } finally { wa.W.close(); ig.W.close(); }
+
+  const lost = await drive("", true);
+  try {
+    await tapGo(lost);
+    ok(/Tap Continue again/.test(lost.D.getElementById("linkMsg").textContent) && lost.D.getElementById("tabs").hidden
+      && lost.W.location.pathname === "/s/" + lost.t && !lost.D.getElementById("linkGo").disabled,
+      "an answer lost after the Worker spent the link says so beside Continue and keeps the address");
+    await tapGo(lost);
+    const spends = lost.posts.filter((p) => p.path === "/open-link" && !p.peek);
+    ok(!lost.D.getElementById("tabs").hidden && spends.length === 2 && spends[0].nonce && spends[0].nonce === spends[1].nonce,
+      "and Continue again opens it, the page asking with the nonce it spent it with");
+  } finally { await new Promise((r) => setTimeout(r, 300)); lost.W.close(); }
+})();
+section("S3 3.4: the sign-in link keeps the phone signed in with the door's own split key, lives three days, and its message says so with the username");
+await (async () => {
+  /* S3 fix: a session is filed under its hash, so the page's own orders read is a digest away, and the jsdom this
+     laptop runs drops a closed window's document: each page is let finish that read before it is closed */
+  /* HIS D1 OF 24 SEP 2026. The link opened one visit and kept nothing, so a reload, a closed tab or a saved app
+     stranded a customer who had no password in hand. It now remembers the phone exactly as the door's tick does:
+     a device key in the browser, the content key wrapped under it on the site, neither opening anything alone. */
+  const W34 = (await import("../stmt/worker.js")).default;
+  const S34 = await import("../stmt/signin.js");
+  const SEND34 = await import("../stmt/send.js");
+  const C34 = await import("../tools/stmt-crypto.mjs");
+  const kv34 = new KV();
+  const env34 = { STMT: kv34 };
+  const u34 = "k7m2-p9qr", ck34 = await C34.contentKey("s34", u34);
+  const env34doc = await C34.encryptWith(ck34, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] }));
+  await kv34.put("u:" + u34, JSON.stringify({ u: u34, issued: "2026-09-01", issues: ["2026-09-01"], env: env34doc }));
+
+  /* ---- three days, not seven ---- */
+  const t34 = S34.newSignin();
+  await S34.mintSignin(env34, u34, t34, await C34.wrapKey(t34, ck34));
+  ok(S34.SIGNIN_TTL === 3 * 24 * 3600 && (kv34.opts.get("ot:" + (await S34.idOf(t34))) || {}).expirationTtl === 3 * 24 * 3600,
+    "a link lives three days: " + S34.SIGNIN_TTL);
+
+  /* ---- Continue, then a fresh page with no link and no password ---- */
+  const { JSDOM: JD34 } = await import("jsdom");
+  const store = new Map();
+  const posts = [];
+  const page = (url) => {
+    const html = W34.fetch(new Request("https://k7m3p2.example" + new URL(url).pathname), env34).then((r) => r.text());
+    return html.then((h) => new JD34(h, { url, runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      Object.defineProperty(win, "localStorage", { configurable: true, value: {
+        getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+        removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const body = init && init.body ? JSON.parse(init.body) : null;
+        posts.push({ path: String(path), body });
+        const r = await W34.fetch(new Request("https://k7m3p2.example" + String(path), { method: (init && init.method) || "GET",
+          headers: Object.assign({ "content-type": "application/json" }, (init && init.headers) || {}), body: init && init.body }), env34);
+        return { ok: r.ok, status: r.status, json: async () => r.json() };
+      };
+    } }));
+  };
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 30)); };
+  const one = await page("https://site.test/s/" + t34);
+  try {
+    const D = one.window.document;
+    await until(() => !D.getElementById("linkGo").disabled);
+    ok(D.getElementById("linkLead").textContent === "This link opens account " + u34 + " on this computer and keeps it signed in.",
+      "the link page says it keeps the phone signed in: " + JSON.stringify(D.getElementById("linkLead").textContent));
+    D.getElementById("linkGo").dispatchEvent(new one.window.Event("click", { bubbles: true }));
+    await until(() => store.has("salt-stmt-remember"));
+    const kept = JSON.parse(store.get("salt-stmt-remember") || "{}");
+    const rem = posts.find((x) => x.path === "/remember");
+    ok(kept.u === u34 && /^[A-Za-z0-9_-]{20,64}$/.test(kept.t || "") && typeof kept.k === "string" && kept.k.length > 20
+      && !!rem && !!rem.body.wrap && !JSON.stringify(kept).includes(t34) && !JSON.stringify(rem.body).includes(t34),
+      "Continue remembers the phone: a device key kept here, a wrap filed there, and the link's token in neither");
+    const back = await (await W34.fetch(new Request("https://k7m3p2.example/remember/open", { method: "POST",
+      headers: { "content-type": "application/json" }, body: JSON.stringify({ token: kept.t }) }), env34)).json();
+    /* the device key this phone kept opens the wrap the site hands back, and what comes out opens the statement */
+    const b64 = (x) => Uint8Array.from(Buffer.from(x, "base64"));
+    let opened34 = null;
+    try {
+      const base = await crypto.subtle.importKey("raw", b64(kept.k), "PBKDF2", false, ["deriveKey"]);
+      const kek = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: b64(back.wrap.salt), iterations: 150000, hash: "SHA-256" },
+        base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+      const raw = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(back.wrap.iv) }, kek, b64(back.wrap.ct));
+      const ck = await crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, false, ["decrypt"]);
+      opened34 = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(env34doc.iv) }, ck, b64(env34doc.ct))));
+    } catch (e) { opened34 = null; }
+    ok(back.ok && back.u === u34 && !!opened34 && opened34.statements.length === 1,
+      "and the site hands back a wrap that only the key this phone kept opens, to the account's own statement");
+  } finally { await new Promise((r) => setTimeout(r, 300)); one.window.close(); }
+  posts.length = 0;
+  const two = await page("https://site.test/");
+  try {
+    const D = two.window.document;
+    await until(() => !D.getElementById("barw").hidden);
+    ok(!D.getElementById("barw").hidden && D.getElementById("gate").hidden && posts.some((x) => x.path === "/remember/open")
+      && !posts.some((x) => x.path === "/open" || x.path === "/open-link"),
+      "so the next visit opens with no link and no password: the remembered phone, as the door's tick leaves it");
+  } finally { await new Promise((r) => setTimeout(r, 300)); two.window.close(); }
+
+  /* ---- the words ---- */
+  const msg = SEND34.signInMessage({ url: "https://site.test/s/" + t34, user: u34 });
+  ok(/^Your Salt Counter account is ready\. Tap to open it on this phone:/.test(msg) && msg.includes("Your username is " + u34 + ".")
+    && /The link works once and keeps this phone signed in\./.test(msg) && /stops working after three days/.test(msg),
+    "the message says the link works once and keeps this phone signed in, names the username, and says three days: " + JSON.stringify(msg.slice(0, 120)));
+})();
+section("S3 3.5: a lapsed session reopens itself from the remembered phone and repeats the request once, the page re-reads on every return, and only with nothing remembered does a Sheet ask, keeping the draft");
+await (async () => {
+  /* HIS D1 OF 24 SEP 2026. The fifteen-minute session lapsed under an open page, and a saved app has no reload: the
+     page looked alive and did nothing, and the only way out forgot the phone. */
+  const { landingPage: lp35 } = await import("../stmt/page.js");
+  const W35 = (await import("../stmt/worker.js")).default;
+  const C35 = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JD35 } = await import("jsdom");
+  const u35 = "aaaa-rrrr", pass35 = "2345-6789-abcd-efgh", dev35 = "r".repeat(32), ck35 = await C35.contentKey("3".repeat(64), u35);
+  const doc = async (t) => C35.encryptWith(ck35, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>" + t + "</p>" }] }));
+  const list = await C35.encryptWith(ck35, JSON.stringify({ at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] }));
+  const first = await doc("First reading"), second = await doc("Second reading");
+
+  /* ---- the Worker's half: the documents again on a session, never a wrap ---- */
+  const kv = new KV();
+  await kv.put("u:" + u35, JSON.stringify({ u: u35, issued: "2026-09-24", issues: ["2026-09-24"], env: first, prices: list, wrap: { v: 1 }, wrapMaster: { v: 1 } }));
+  await kv.put("sess:" + createHash("sha256").update("sess35live0000000000000000").digest("hex"), JSON.stringify({ u: u35, at: new Date().toISOString() }));
+  const acct = async (s) => { const r = await W35.fetch(new Request("https://k7m3p2.example/account", { headers: s ? { "X-Stmt-Session": s } : {} }), { STMT: kv }); return { status: r.status, j: await r.json().catch(() => ({})) }; };
+  const got = await acct("sess35live0000000000000000"), none = await acct("");
+  ok(got.status === 200 && got.j.ok && got.j.u === u35 && JSON.stringify(got.j.env) === JSON.stringify(first) && !!got.j.prices
+    && !("wrap" in got.j) && !("wrapMaster" in got.j),
+    "on a live session the page can read its sealed documents again, and no wrap comes with them: " + Object.keys(got.j).join(","));
+  ok(none.status === 401 && none.j.session === false, "and with no session it is refused as the orders are");
+
+  /* ---- the page ---- */
+  const drive = (stored, fast) => {
+    const st = { dead: new Set(), n: 0, last: "", reopened: 0, remFail: false, posts: [], accounts: 0, env: first, holdRem: null };
+    const html = lp35(stored ? "" : u35, "n35", null);
+    const dom = new JD35(fast ? html.replace("var POLL_MS=10000", "var POLL_MS=40") : html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        const store = new Map(stored ? [["salt-stmt-remember", JSON.stringify({ t: "t".repeat(32), k: Buffer.from(dev35).toString("base64"), u: u35 })]] : []);
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (path, init) => {
+          const p = String(path), m = (init && init.method) || "GET", h = (init && init.headers) || {}, s = h["X-Stmt-Session"] || "";
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/remember/open") {
+            if (st.holdRem) await st.holdRem;
+            if (st.remFail) throw new TypeError("Failed to fetch");
+            st.reopened++;
+            return ans(200, { ok: true, u: u35, remembered: true, wrap: await C35.wrapKey(dev35, ck35), env: st.env, prices: list, live: null, session: (st.last = "sess35n" + (++st.n) + "0000000000000000000") });
+          }
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C35.wrapKey(pass35, ck35), wrapMaster: null, env: st.env, prices: list, live: null, session: (st.last = "sess35p" + (++st.n) + "0000000000000000000") });
+          if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
+          if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: u35, env: st.env, prices: list, live: null }); }
+          if (p === "/orders" && m === "POST") { st.posts.push({ s, body: JSON.parse(init.body) }); return ans(200, { ok: true, order: {} }); }
+          if (p === "/orders") return ans(200, { ok: true, orders: [] });
+          return ans(200, { ok: true });
+        };
+      } });
+    return { st, W: dom.window, D: dom.window.document };
+  };
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  const sessOf = (g) => g.st.last;
+
+  /* a remembered phone: Opening your account, never the door, while it opens */
+  let release;
+  const g1 = drive(true);
+  g1.st.holdRem = new Promise((r) => { release = r; });
+  try {
+    await new Promise((r) => setTimeout(r, 60));
+    ok(g1.D.getElementById("gate").hidden && !g1.D.getElementById("opening").hidden
+      && /Opening your account/.test(g1.D.getElementById("opening").textContent),
+      "a remembered phone draws Opening your account while it opens, and never the door");
+    g1.st.holdRem = null; release();
+    await until(() => !g1.D.getElementById("barw").hidden);
+    ok(g1.D.getElementById("opening").hidden && g1.D.getElementById("gate").hidden, "and goes straight in");
+
+    /* the session lapses; Place is tapped: the phone reopens itself and the order goes, once */
+    g1.D.querySelector('button[data-t="order"]').click();
+    await until(() => g1.D.getElementById("oNew"));
+    g1.D.getElementById("oNew").click();   /* S4 4.3: the order is a sheet */
+    await until(() => g1.D.getElementById("oGo") && !g1.D.getElementById("oGo").disabled);
+    g1.st.dead.add(sessOf(g1));
+    const before = g1.st.reopened;
+    g1.D.getElementById("oGo").click();
+    await until(() => g1.D.getElementById("oPlace"));
+    g1.D.getElementById("oPlace").click();
+    await until(() => g1.st.posts.length);
+    const sent = () => !!g1.D.getElementById("osheet") && /Order sent/.test(g1.D.getElementById("osheet").textContent);
+    await until(sent);
+    ok(g1.st.reopened === before + 1 && g1.st.posts.length === 1 && !g1.st.dead.has(g1.st.posts[0].s) && sent(),
+      "a lapse met by Place reopens from the remembered phone and the order goes once, on the new session: " + JSON.stringify({ reopened: g1.st.reopened - before, posts: g1.st.posts.length }));
+    ok(g1.D.getElementById("lapse").hidden && g1.D.getElementById("outSheet").hidden,
+      "and nothing is said: no line in the bar and no Sheet");
+
+    /* the page is shown again: it re-reads on the session, keeping the tab */
+    g1.st.env = second;
+    const reads = g1.st.accounts;
+    Object.defineProperty(g1.D, "visibilityState", { value: "visible", configurable: true });
+    g1.D.dispatchEvent(new g1.W.Event("visibilitychange"));
+    await until(() => /Second reading/.test(g1.D.getElementById("out").textContent));
+    ok(g1.st.accounts === reads + 1 && /Second reading/.test(g1.D.getElementById("out").textContent) && !g1.D.getElementById("pOrder").hidden,
+      "coming back to the page re-reads the account on its session and keeps the tab they were on");
+    g1.st.env = first;
+    const ev = new g1.W.Event("pageshow"); Object.defineProperty(ev, "persisted", { value: true });
+    g1.W.dispatchEvent(ev);
+    await until(() => /First reading/.test(g1.D.getElementById("out").textContent));
+    ok(g1.st.accounts === reads + 2 && /First reading/.test(g1.D.getElementById("out").textContent),
+      "and so does a page brought back from the back-forward cache");
+
+    /* the site cannot be reached to reopen: the bar says so, with Try again */
+    g1.st.dead.add(sessOf(g1)); g1.st.remFail = true;
+    g1.D.dispatchEvent(new g1.W.Event("visibilitychange"));
+    await until(() => !g1.D.getElementById("lapse").hidden);
+    ok(!g1.D.getElementById("lapse").hidden && /could not sign you back in/.test(g1.D.getElementById("lapseT").textContent)
+      && g1.D.getElementById("lapseGo").textContent === "Try again" && g1.D.getElementById("outSheet").hidden && !!g1.W.localStorage.getItem("salt-stmt-remember"),
+      "a reopen that cannot reach the site keeps the phone remembered and says so in the bar, with Try again");
+    g1.st.remFail = false;
+    g1.D.getElementById("lapseGo").click();
+    await until(() => g1.D.getElementById("lapse").hidden && !g1.st.dead.has(sessOf(g1)));
+    ok(g1.D.getElementById("lapse").hidden && !g1.st.dead.has(sessOf(g1)), "and Try again reopens it");
+    await new Promise((r) => setTimeout(r, 100));
+  } finally { g1.W.close(); }
+
+  /* nothing remembered: the Sheet, over what they were doing, and the draft kept */
+  const g2 = drive(false, true);
+  try {
+    g2.D.getElementById("rem").checked = false;
+    g2.D.getElementById("pw").value = pass35;
+    g2.D.getElementById("f").dispatchEvent(new g2.W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !g2.D.getElementById("barw").hidden);
+    g2.D.querySelector('button[data-t="order"]').click();
+    /* S4 4.3: the line is the order sheet's note, folded until Add a note; a lapse closes the sheet and the same
+       account let in again opens it again, the line in it */
+    await until(() => g2.D.getElementById("oNew"));
+    g2.D.getElementById("oNew").click(); g2.D.getElementById("oAddNote").click();
+    const line = () => g2.D.querySelector("#osheet #oSay");
+    await until(() => line());
+    line().value = "leave it with the guard"; line().dispatchEvent(new g2.W.Event("input", { bubbles: true }));
+    g2.st.dead.add(sessOf(g2));
+    await until(() => !g2.D.getElementById("outSheet").hidden);
+    const sheet = g2.D.getElementById("outSheet");
+    ok(!sheet.hidden && /You were signed out on this (phone|computer)/.test(sheet.textContent) && sheet.contains(g2.D.getElementById("f"))
+      && g2.D.getElementById("un").value === u35 && !g2.D.getElementById("pOrder").hidden,
+      "with nothing remembered, a Sheet says so over the order they were writing, carrying the door's own form with the username in it");
+    g2.D.getElementById("pw").value = pass35;
+    g2.D.getElementById("f").dispatchEvent(new g2.W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => sheet.hidden);
+    await until(() => line());
+    ok(sheet.hidden && !g2.D.getElementById("pOrder").hidden && line() && line().value === "leave it with the guard"
+      && g2.D.getElementById("gate").contains(g2.D.getElementById("f")),
+      "and signing in there closes it on the same tab with the line they had typed still in it: " + JSON.stringify(line() && line().value));
+  } finally { g2.W.close(); }
+})();
+section("S3 3.7: the door is one username field and one password field a password manager can fill, with Show, a paste that keeps only the password, an alphabet check on the device, the tick, the help line, and one refusal");
+await (async () => {
+  /* HIS D3 OF 24 SEP 2026. Six boxes took fingers and nothing else: no password manager could fill them, and a
+     pasted message had to be trimmed by hand first. */
+  const W37 = (await import("../stmt/worker.js")).default;
+  const C37 = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JD37 } = await import("jsdom");
+  const kv = new KV();
+  const u37 = C37.newUsername(), pw37 = C37.newPassword(), ck37 = await C37.contentKey("s37", u37);
+  await kv.put("u:" + u37, JSON.stringify({ u: u37, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C37.makeVerifier(pw37),
+    wrap: await C37.wrapKey(pw37, ck37), env: await C37.encryptWith(ck37, JSON.stringify({ statements: [] })) }));
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const DESK = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36";
+  const drive = async (ua) => {
+    const html = await (await W37.fetch(new Request("https://k7m3p2.example/"), { STMT: kv })).text();
+    const posts = [];
+    const dom = new JD37(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      Object.defineProperty(win.navigator, "userAgent", { value: ua, configurable: true });
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const body = init && init.body ? JSON.parse(init.body) : null;
+        posts.push({ path: String(path), body });
+        const r = await W37.fetch(new Request("https://k7m3p2.example" + String(path), { method: (init && init.method) || "GET",
+          headers: Object.assign({ "content-type": "application/json" }, (init && init.headers) || {}), body: init && init.body }), { STMT: kv });
+        return { ok: r.ok, status: r.status, json: async () => r.json() };
+      };
+    } });
+    const D = dom.window.document;
+    const submit = async (u, p) => {
+      D.getElementById("un").value = u; D.getElementById("pw").value = p;
+      const n = posts.length;
+      D.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 160; i++) {
+        const m = D.getElementById("msg").textContent;
+        if (!/^(Checking|Opening)/.test(m) && (posts.length > n || m)) break;
+        await new Promise((r) => setTimeout(r, 25));
+      }
+      await new Promise((r) => setTimeout(r, 60));
+      return { said: D.getElementById("msg").textContent, sent: posts.slice(n).filter((x) => x.path === "/open") };
+    };
+    return { W: dom.window, D, posts, submit };
+  };
+
+  const g = await drive(IPHONE);
+  try {
+    const { D } = g, gate = D.getElementById("gate");
+    const text = gate.textContent.replace(/\s+/g, " ");
+    ok(/^Sign in/.test(gate.querySelector("h1").textContent) && /With the username and password we sent you\./.test(text)
+      && /Two groups of four, like abcd-efgh\./.test(text) && /Pasting the whole message works: we keep only the password\./.test(text),
+      "the door says Sign in, what to sign in with, and how each field is written");
+    const tick = D.getElementById("rem"), tickText = tick.closest("label").textContent;
+    ok(tick.checked && tickText === "Keep me signed in on this phone", "Keep me signed in on this phone, ticked: " + JSON.stringify(tickText));
+    const help = [...gate.querySelectorAll(".salt-insight")].find((x) => /Lost your password or your link\?/.test(x.textContent));
+    ok(!!help && /Ask us for a new sign-in link\./.test(help.textContent)
+      && (help.compareDocumentPosition(D.getElementById("go")) & D.defaultView.Node.DOCUMENT_POSITION_PRECEDING) !== 0,
+      "and beneath Sign in: Lost your password or your link? Ask us for a new sign-in link");
+
+    /* Show */
+    const pw = D.getElementById("pw"), show = D.getElementById("pwShow");
+    show.click();
+    const shown = [pw.type, show.getAttribute("aria-pressed"), show.textContent];
+    show.click();
+    ok(JSON.stringify(shown) === '["text","true","Hide"]' && pw.type === "password" && show.getAttribute("aria-pressed") === "false" && show.textContent === "Show",
+      "Show unmasks the password and says so; Hide masks it again: " + JSON.stringify(shown));
+
+    /* the alphabet, on the device */
+    const typo = pw37.replace(/[a-z]/, "o");
+    const a1 = await g.submit(u37, typo);
+    ok(a1.sent.length === 0 && /never uses 0, 1, i, l, o or u/.test(a1.said) && pw.getAttribute("aria-invalid") === "true",
+      "a password holding a symbol the alphabet never uses is caught on the phone, beside the field, and nothing is sent: " + JSON.stringify(a1.said));
+    const a2 = await g.submit(u37.slice(0, 8) + "l", pw37);
+    ok(a2.sent.length === 0 && /A username never uses/.test(a2.said), "and so is a username: " + JSON.stringify(a2.said));
+    const z = await g.submit("0000-0000", "0000-0000-0000-0000");
+    ok(z.sent.length === 1, "the test account's zeros are its own and go to the site");
+
+    /* one refusal, and no master from a customer's door */
+    const r1 = await g.submit(u37, C37.newPassword()), r2 = await g.submit(C37.newUsername(), pw37);
+    ok(r1.sent.length === 1 && r1.said === "That username and password were not accepted." && r1.said === r2.said && !gate.hidden,
+      "a wrong password and an unknown username are the site's one refusal, word for word: " + JSON.stringify([r1.said, r2.said]));
+    ok(g.posts.filter((x) => x.path === "/open").every((x) => x.body && !("master" in x.body)),
+      "and a customer's door never sends a master, so it still cannot be typed there");
+    const pasted = (() => { const e = new g.W.Event("paste", { bubbles: true, cancelable: true });
+      Object.defineProperty(e, "clipboardData", { value: { getData: () => "Statement password: " + pw37.toUpperCase() + "\n\nPlease keep it to yourself." } });
+      pw.value = ""; pw.dispatchEvent(e); return pw.value; })();
+    const ok37 = await g.submit(u37, pasted);
+    ok(pasted === pw37 && ok37.sent.length === 1 && gate.hidden, "a pasted message's password, and only that, opens the account");
+  } finally { g.W.close(); }
+
+  const desk = await drive(DESK);
+  try {
+    ok(desk.D.getElementById("rem").closest("label").textContent === "Keep me signed in on this computer",
+      "and on a computer nothing says phone");
+  } finally { desk.W.close(); }
+})();
+section("S3 3.8: signing in as another account over a remembered one asks Replace first, beside the control, and Keep leaves the phone's own account remembered");
+await (async () => {
+  /* S3 3.8, 24 SEP 2026. A shop with two accounts, or a phone handed over: the second sign-in overwrote the first
+     phone's memory in silence. */
+  const { landingPage: lp38 } = await import("../stmt/page.js");
+  const C38 = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JD38 } = await import("jsdom");
+  const uA = "aaaa-kkkk", uB = "bbbb-mmmm", passB = "2345-6789-abcd-efgh", tokL = "L".repeat(32), ckB = await C38.contentKey("4".repeat(64), uB);
+  const envB = await C38.encryptWith(ckB, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>B</p>" }] }));
+  const oldA = JSON.stringify({ t: "a".repeat(32), k: Buffer.from("k".repeat(32)).toString("base64"), u: uA });
+  const drive = async (path, stored, road, answer) => {
+    const st = { posts: [] };
+    const store = new Map(stored ? [["salt-stmt-remember", stored]] : []);
+    const dom = new JD38(lp38(road === "door" ? uB : "", "n38", null), { url: "https://site.test" + path, runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) Mobile/15E148 Safari/604.1", configurable: true });
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (p, init) => {
+          const body = init && init.body ? JSON.parse(init.body) : null;
+          st.posts.push({ path: String(p), body });
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/remember/open") return ans(500, { ok: false, error: "fault" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C38.wrapKey(passB, ckB), env: envB, live: null, prices: null, session: "sess38b0000000000000000000000" });
+          if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
+            : ans(200, { ok: true, u: uB, wrap: await C38.wrapKey(tokL, ckB), env: envB, live: null, prices: null, session: "sess38l0000000000000000000000" });
+          if (p === "/remember") return ans(200, { ok: true, token: "b".repeat(32), days: 30 });
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    if (road === "door") {
+      await until(() => /could not be opened/.test(D.getElementById("msg").textContent));
+      D.getElementById("pw").value = passB;
+      D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    } else {
+      await until(() => !D.getElementById("linkGo").disabled);
+      D.getElementById("linkGo").click();
+    }
+    const asked = await until(() => !D.getElementById("askRep").hidden || !D.getElementById("barw").hidden);
+    const ask = D.getElementById("askRep");
+    const q = { shown: !ask.hidden, text: ask.textContent, beside: ask.previousElementSibling && ask.previousElementSibling.id,
+      anchorHidden: road === "door" ? D.getElementById("go").hidden : D.getElementById("linkGo").hidden, noLabel: D.getElementById("askNo").textContent };
+    if (!ask.hidden) (answer ? D.getElementById("askYes") : D.getElementById("askNo")).click();
+    await until(() => !D.getElementById("barw").hidden);
+    await new Promise((r) => setTimeout(r, 80));
+    const kept = JSON.parse(store.get("salt-stmt-remember") || "null");
+    W.close();
+    return { q, kept, posts: st.posts };
+  };
+
+  const d1 = await drive("/", oldA, "door", true);
+  ok(d1.q.shown && d1.q.text.startsWith("Replace " + uA + " on this phone? It will open " + uB + " instead.") && d1.q.beside === "go" && d1.q.anchorHidden
+    && d1.q.noLabel === "Keep " + uA,
+    "signing in at the door over a remembered account asks first, where Sign in was: " + JSON.stringify(d1.q.text));
+  ok(d1.kept && d1.kept.u === uB && d1.posts.some((x) => x.path === "/logout" && x.body && x.body.token === "a".repeat(32)),
+    "Replace keeps the new account and drops the old one's wrap on the site");
+  const d2 = await drive("/", oldA, "door", false);
+  ok(d2.q.shown && d2.kept && d2.kept.u === uA && !d2.posts.some((x) => x.path === "/remember" || x.path === "/logout"),
+    "Keep opens the new account for this visit and leaves the phone's own remembered, untouched");
+  const l1 = await drive("/s/" + tokL, oldA, "link", true);
+  ok(l1.q.shown && l1.q.beside === "linkGo" && /Replace aaaa-kkkk on this phone/.test(l1.q.text) && l1.kept && l1.kept.u === uB,
+    "a sign-in link over another remembered account asks the same, beside Continue, and Replace keeps it");
+  const same = await drive("/s/" + tokL, JSON.stringify({ t: "c".repeat(32), k: "x", u: uB }), "link", true);
+  ok(!same.q.shown && same.kept && same.kept.u === uB, "the same account is not asked about");
+})();
+section("S3 3.10: Keep it on your Home Screen mints the hand-over as its Sheet opens, draws the phone's own marks, and copies the key in a tap of its own that also rewrites the address to /app#<key>");
+await (async () => {
+  /* HIS D2 OF 24 SEP 2026. A saved iPhone app keeps its own storage, so a customer who saved it opened a door
+     with nothing to get past it. The judges' must-not-ship list: no copy after a derivation and a fetch in the same
+     tap, and no help telling the saved app that a link signs it in. */
+  const { landingPage: lp310 } = await import("../stmt/page.js");
+  const C310 = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JD310 } = await import("jsdom");
+  const u310 = "aaaa-hhhh", pass310 = "2345-6789-abcd-efgh", ck310 = await C310.contentKey("5".repeat(64), u310);
+  const env310 = await C310.encryptWith(ck310, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] }));
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const drive = async (ua, handover) => {
+    const st = { posts: [], clip: [], inTap: false };
+    const dom = new JD310(lp310(u310, "n310", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: ua, configurable: true });
+        Object.defineProperty(win.navigator, "clipboard", { configurable: true, value: {
+          writeText: (t) => { st.clip.push({ t, inTap: st.inTap, posts: st.posts.length }); return Promise.resolve(); } } });
+        win.scrollTo = () => {};
+        win.fetch = async (p, init) => {
+          const body = init && init.body ? JSON.parse(init.body) : null;
+          st.posts.push({ path: String(p), body, session: ((init && init.headers) || {})["X-Stmt-Session"] || "" });
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C310.wrapKey(pass310, ck310), env: env310, live: null, prices: null, session: "sess310a000000000000000000000" });
+          if (p === "/handover") return handover(body, ans);
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    D.getElementById("pw").value = pass310;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !D.getElementById("barw").hidden);
+    return { st, W, D, until };
+  };
+  const minted = (body, ans) => ans(200, { ok: true, code: "h4tn-8xwc", token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() });
+
+  const g = await drive(IPHONE, minted);
+  try {
+    const { D, st, until } = g;
+    ok(!D.getElementById("keepCard").hidden && /Keep it on your Home Screen/.test(D.getElementById("keepCard").textContent),
+      "an iPhone in Safari, signed in, is offered Keep it on your Home Screen");
+    const copy = D.getElementById("keepCopy");
+    const before = st.posts.length;
+    D.getElementById("keepGo").click();
+    ok(!D.getElementById("keepSheet").hidden && copy.disabled, "the Sheet opens with Copy held until there is something to copy");
+    await until(() => D.getElementById("keepCode").value);
+    const ho = st.posts.slice(before).find((x) => x.path === "/handover");
+    ok(!!ho && /^[A-Za-z0-9_-]{32}$/.test(ho.body.token) && !!ho.body.wrap && ho.session === "sess310a000000000000000000000",
+      "opening the Sheet mints the hand-over on the session: a key of the link's shape and a wrap");
+    let opened = null;
+    try { opened = JSON.parse(await C310.decryptWith(await C310.unwrapKey(ho.body.token, ho.body.wrap), env310)); } catch (e) { opened = null; }
+    ok(!!opened && opened.statements[0].body === "<p>Mine</p>", "and the key it mints unwraps this account's own content key, which opens the statement");
+    ok(D.getElementById("keepCode").value === "H4TN 8XWC" && !copy.disabled && D.getElementById("keepCode").closest(".salt-code")
+      && D.getElementById("keepCode").classList.contains("salt-field__input--code"),
+      "the code is shown in the system's Code field, four and four, and Copy is ready");
+    const sheetText = D.getElementById("keepSheet").textContent;
+    ok(D.getElementById("keepSheet").querySelectorAll(".keepsteps svg.glyph").length === 4 && /At the foot of Safari/.test(sheetText)
+      && /asks once for this code/.test(sheetText) && !/link/i.test(sheetText),
+      "its three steps draw the phone's own marks, and nothing in it says a link signs the saved app in");
+    const n = st.posts.length;
+    st.inTap = true; copy.click(); st.inTap = false;
+    await new Promise((r) => setTimeout(r, 40));
+    ok(st.clip.length === 1 && st.clip[0].inTap && st.clip[0].t === ho.body.token && st.clip[0].posts === n && st.posts.length === n,
+      "Copy puts the key on the clipboard inside the tap itself, with no fetch before it or after it");
+    ok(g.W.location.pathname === "/app" && g.W.location.hash === "#" + ho.body.token,
+      "and the same tap rewrites the address to /app#<key>, for a saved app that keeps it: " + g.W.location.pathname);
+    ok(/Copied/.test(D.getElementById("keepMsg").textContent), "and says it copied, beside the button");
+  } finally { g.W.close(); }
+
+  const off = await drive(IPHONE, (body, ans) => ans(503, { ok: false, error: "Signing in with a code is not switched on here." }));
+  try {
+    off.D.getElementById("keepGo").click();
+    await off.until(() => off.D.getElementById("keepMsg").textContent && !/Making/.test(off.D.getElementById("keepMsg").textContent));
+    ok(/not switched on/.test(off.D.getElementById("keepMsg").textContent) && off.D.getElementById("keepCopy").disabled && !off.D.getElementById("keepCode").value,
+      "with the site's hand-over switched off, the Sheet says so and there is nothing to copy");
+  } finally { off.W.close(); }
+
+  const wa = await drive("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 WhatsApp/2.24.1", minted);
+  try {
+    ok(wa.D.getElementById("keepCard").hidden, "an app's own browser, which keeps nothing, is not offered it");
+  } finally { wa.W.close(); }
+})();
+section("S3 merge: the QR Salt Admin shows at the counter signs in the phone that scans it, while the Safari tab whose Keep Sheet wrote /app#<key> never spends it");
+await (async () => {
+  /* 3.13 draws <site>/app#<key> for a customer at his counter to scan with the camera, which opens a browser tab, and
+     3.11 spent a key in the address only in a standalone app, so the QR opened a page that asked for the code. The
+     tab that must not spend it is the one whose Keep Sheet wrote it: that tab says so in its own session storage. */
+  const { landingPage: lpM } = await import("../stmt/page.js");
+  const CM = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDM } = await import("jsdom");
+  const uM = "aaaa-mmmm", passM = "2345-6789-abcd-efgm", tokM = "Q".repeat(32), ckM = await CM.contentKey("9".repeat(64), uM);
+  const envM = await CM.encryptWith(ckM, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Scanned</p>" }] }));
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const drive = async (url, opts) => {
+    const st = { posts: [] }, store = new Map();
+    const dom = new JDM(lpM(opts.u || "", "nM", null), { url, runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: IPHONE, configurable: true });
+        win.matchMedia = (q) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+        Object.defineProperty(win.navigator, "clipboard", { configurable: true, value: { readText: async () => "", writeText: async () => {} } });
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (p, init) => {
+          const body = init && init.body ? JSON.parse(init.body) : null;
+          st.posts.push({ path: String(p), body });
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CM.wrapKey(passM, ckM), env: envM, live: null, prices: null, session: "sessMa0000000000000000000000" });
+          if (p === "/handover") return ans(200, { ok: true, code: "h4tn-8xwc", token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() });
+          if (p === "/handover/open") {
+            return body && body.token === tokM && !opts.refuse
+              ? ans(200, { ok: true, u: uM, remembered: true, token: tokM, wrap: await CM.wrapKey(tokM, ckM), env: envM, live: null, prices: null, session: "sessMb0000000000000000000000" })
+              : ans(401, { ok: false, error: "That username and password were not accepted." });
+          }
+          if (p === "/remember") return ans(200, { ok: true, token: "r".repeat(32), days: 30 });
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    await new Promise((r) => setTimeout(r, 60));
+    return { st, W, D, until, store };
+  };
+
+  /* the Keep Sheet's Copy marks its own tab, in the same tap that writes the address */
+  const k = await drive("https://site.test/", { u: uM });
+  try {
+    k.D.getElementById("pw").value = passM;
+    k.D.getElementById("f").dispatchEvent(new k.W.Event("submit", { bubbles: true, cancelable: true }));
+    await k.until(() => !k.D.getElementById("barw").hidden);
+    k.D.getElementById("keepGo").click();
+    await k.until(() => k.D.getElementById("keepCode").value);
+    k.D.getElementById("keepCopy").click();
+    const ho = k.st.posts.find((x) => x.path === "/handover");
+    ok(!!ho && k.W.location.pathname === "/app" && k.W.location.hash === "#" + ho.body.token,
+      "Copy writes the plain key into the address, the form no browser tab spends: " + JSON.stringify(k.W.location.hash.slice(0, 4)));
+  } finally { k.W.close(); }
+
+  /* S3 fix: a plain key in a browser tab's address is spent by no tab at all, the one that wrote it or another */
+  const mine = await drive("https://site.test/app#" + tokM, {});
+  try {
+    await new Promise((r) => setTimeout(r, 120));
+    ok(!mine.st.posts.some((x) => x.path === "/handover/open") && !mine.D.getElementById("codeBox").hidden,
+      "a browser tab at /app#<key>, the form the Keep Sheet writes, never spends it, whichever tab it is");
+  } finally { mine.W.close(); }
+
+  /* a camera's browser tab at Salt Admin's QR spends the key and is in */
+  const qr = await drive("https://site.test/app#qr." + tokM, {});
+  try {
+    await qr.until(() => !qr.D.getElementById("barw").hidden);
+    const sent = qr.st.posts.find((x) => x.path === "/handover/open");
+    ok(!qr.D.getElementById("barw").hidden && !!sent && sent.body.token === tokM && sent.body.tab === true && !sent.body.code && qr.W.location.hash === "",
+      "a browser tab opened on Salt Admin's QR (/app#qr.<key>) spends the key as a tab's, opens the account and forgets the address");
+    await qr.until(() => qr.store.has("salt-stmt-remember"));
+    ok(JSON.parse(qr.store.get("salt-stmt-remember") || "{}").u === uM, "and the phone that scanned it is remembered");
+  } finally { qr.W.close(); }
+
+  /* a QR already used says so in a code's words, never the saved app's Safari words */
+  const used = await drive("https://site.test/app#qr." + tokM, { refuse: true });
+  try {
+    await used.until(() => /did not open/.test(used.D.getElementById("codeMsg").textContent));
+    ok(used.st.posts.some((x) => x.path === "/handover/open") && /Sign in with a code/.test(used.D.getElementById("codeH").textContent)
+      && !/Safari/.test(used.D.getElementById("codeBox").textContent.replace(/No code\?[^]*$/, "")) && used.D.getElementById("codeHelp").hidden,
+      "a spent QR is refused in a code's words, with no word about Safari: " + JSON.stringify(used.D.getElementById("codeH").textContent));
+  } finally { used.W.close(); }
+})();
+
+section("S3 3.11: the saved app starts at /app on One step to finish, takes the key by Paste or the eight symbols typed, gives the true help, and remembers the app");
+await (async () => {
+  /* HIS D2 OF 24 SEP 2026. The saved iPhone app keeps its own storage and opened on a door, which a customer who
+     came by a link had nothing to get past. */
+  const { landingPage: lp311 } = await import("../stmt/page.js");
+  const W311 = (await import("../stmt/worker.js")).default;
+  const C311 = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JD311 } = await import("jsdom");
+
+  /* ---- the Worker: /app is the Counter's own page, and the saved app starts there ---- */
+  const env311 = { STMT: new KV() };
+  const appPage = await W311.fetch(new Request("https://k7m3p2.example/app"), env311);
+  const rootPage = await W311.fetch(new Request("https://k7m3p2.example/"), env311);
+  const noNonce = (t) => t.replace(/nonce="[^"]*"/g, 'nonce="N"');
+  ok(appPage.status === 200 && noNonce(await appPage.text()) === noNonce(await rootPage.text())
+    && (await W311.fetch(new Request("https://k7m3p2.example/app", { method: "POST" }), env311)).status === 405,
+    "/app is the Counter's own page, the same bytes as the door bar the nonce");
+  const mf = await (await W311.fetch(new Request("https://k7m3p2.example/manifest.webmanifest"), env311)).json();
+  ok(mf.start_url === "/app" && mf.scope === "./", "and the saved app's manifest starts there: " + mf.start_url);
+
+  /* ---- the page ---- */
+  const u311 = "aaaa-pppp", tok311 = "K".repeat(32), ck311 = await C311.contentKey("7".repeat(64), u311);
+  const envDoc = await C311.encryptWith(ck311, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>App</p>" }] }));
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148";
+  const drive = async (url, opts) => {
+    const st = { posts: [], clip: opts.clip || "" };
+    const store = new Map();
+    const dom = new JD311(lp311("", "n311", null), { url, runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: opts.ua || IPHONE, configurable: true });
+        win.matchMedia = (q) => ({ matches: !!opts.standalone && /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+        Object.defineProperty(win.navigator, "clipboard", { configurable: true, value: { readText: async () => st.clip, writeText: async () => {} } });
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (p, init) => {
+          const body = init && init.body ? JSON.parse(init.body) : null;
+          st.posts.push({ path: String(p), body });
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/handover/open") {
+            const good = body && (body.token === tok311 || body.code === "h4tn-8xwc");
+            return good ? ans(200, { ok: true, u: u311, remembered: true, token: tok311, wrap: await C311.wrapKey(tok311, ck311), env: envDoc, live: null, prices: null, session: "sess311a00000000000000000000" })
+              : ans(401, { ok: false, error: "That username and password were not accepted." });
+          }
+          if (p === "/remember") return ans(200, { ok: true, token: "r".repeat(32), days: 30 });
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    await new Promise((r) => setTimeout(r, 60));
+    return { st, W, D, until, store };
+  };
+  const type = (g, text) => { const f = g.D.getElementById("codeIn"); f.value = text; f.dispatchEvent(new g.W.Event("input", { bubbles: true })); };
+
+  const g1 = await drive("https://site.test/app", { standalone: true });
+  try {
+    const box = g1.D.getElementById("codeBox"), text = box.textContent.replace(/\s+/g, " ");
+    ok(!box.hidden && g1.D.getElementById("gate").hidden && /One step to finish/.test(text)
+      && /Bring your sign-in across from Safari\. You do this once on this phone\./.test(text),
+      "the saved iPhone app with nothing remembered opens on One step to finish, never the door");
+    const paste = g1.D.getElementById("codePaste"), field = g1.D.getElementById("codeIn");
+    ok(/salt-pill/.test(paste.className) && /Paste the code/.test(paste.textContent) && box.querySelectorAll(".salt-pill").length === 1
+      && field.classList.contains("salt-field__input--code") && field.getAttribute("autocomplete") === "one-time-code",
+      "with one filled Paste the code, and the Code field to type eight symbols");
+    ok(g1.D.getElementById("codeHelp").textContent === "No code? Open your sign-in link in Safari, tap Keep it on your Home Screen, and copy the code shown there.",
+      "and the true help line: " + JSON.stringify(g1.D.getElementById("codeHelp").textContent));
+    type(g1, "h4tn8xw1");
+    await new Promise((r) => setTimeout(r, 40));
+    ok(field.getAttribute("aria-invalid") === "true" && /never uses 0, 1, I, L, O or U/.test(g1.D.getElementById("codeMsg").textContent)
+      && !g1.st.posts.some((x) => x.path === "/handover/open"),
+      "a symbol the alphabet never uses is caught on the phone and nothing is sent");
+    type(g1, "h4tn 8xwc");
+    await g1.until(() => !g1.D.getElementById("barw").hidden);
+    const sent = g1.st.posts.find((x) => x.path === "/handover/open");
+    ok(!g1.D.getElementById("barw").hidden && box.hidden && sent && sent.body.code === "h4tn-8xwc" && !sent.body.token,
+      "eight symbols typed open the account, sent as the code: " + JSON.stringify(sent && sent.body));
+    await g1.until(() => g1.store.has("salt-stmt-remember"));
+    ok(JSON.parse(g1.store.get("salt-stmt-remember") || "{}").u === u311, "and the saved app is remembered, so this is done once");
+  } finally { g1.W.close(); }
+
+  const g2 = await drive("https://site.test/app", { standalone: true, clip: tok311 });
+  try {
+    g2.D.getElementById("codePaste").click();
+    await g2.until(() => !g2.D.getElementById("barw").hidden);
+    const sent = g2.st.posts.find((x) => x.path === "/handover/open");
+    ok(!g2.D.getElementById("barw").hidden && sent && sent.body.token === tok311 && !sent.body.code,
+      "Paste the code takes the key Safari copied and opens the account with it");
+  } finally { g2.W.close(); }
+
+  const g3 = await drive("https://site.test/app#" + tok311, { standalone: true });
+  try {
+    await g3.until(() => !g3.D.getElementById("barw").hidden);
+    ok(!g3.D.getElementById("barw").hidden && g3.W.location.hash === "" && g3.st.posts.some((x) => x.path === "/handover/open" && x.body.token === tok311 && !x.body.tab),
+      "a saved app that kept the address signs itself in with the key in it, and forgets the address");
+  } finally { g3.W.close(); }
+
+  const g4 = await drive("https://site.test/app#" + tok311, { standalone: false });
+  try {
+    ok(!g4.st.posts.some((x) => x.path === "/handover/open"), "a Safari tab reloaded at that address never spends the key meant for the saved app");
+  } finally { g4.W.close(); }
+
+  const g5 = await drive("https://site.test/app", { standalone: true, clip: "nothing useful" });
+  try {
+    type(g5, "zzzz zzzz");
+    await g5.until(() => /did not open/.test(g5.D.getElementById("codeMsg").textContent));
+    ok(/That code did not open anything\. A code works once, for 15 minutes/.test(g5.D.getElementById("codeMsg").textContent)
+      && !g5.D.getElementById("codeBox").hidden && !g5.store.has("salt-stmt-remember"),
+      "a refused code says so in the code's own words, beside it, and nothing is kept");
+    g5.D.getElementById("codePaste").click();
+    await g5.until(() => /no code on the clipboard/.test(g5.D.getElementById("codeMsg").textContent));
+    ok(/There is no code on the clipboard/.test(g5.D.getElementById("codeMsg").textContent), "and a clipboard with no code on it says so");
+  } finally { g5.W.close(); }
+
+  const g6 = await drive("https://site.test/", { ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0 Safari/537.36" });
+  try {
+    ok(!g6.D.getElementById("gate").hidden && g6.D.getElementById("codeBox").hidden, "a browser opens on the door");
+    g6.D.getElementById("toCode").click();
+    ok(!g6.D.getElementById("codeBox").hidden && /Sign in with a code/.test(g6.D.getElementById("codeH").textContent)
+      && g6.D.getElementById("codeHelp").hidden && !/Safari/.test(g6.D.getElementById("codeBox").textContent.replace(g6.D.getElementById("codeHelp").textContent, "")),
+      "where I have a sign-in code opens the same field, and says nothing about Safari off an iPhone");
+  } finally { g6.W.close(); }
+})();
+section("S3 3.12: an Install button wherever the browser offers one, Samsung Internet's own steps drawn, a computer pointed at its address bar's install mark, and nothing saying phone on a laptop");
+await (async () => {
+  /* S3 3.12, 24 SEP 2026. The door said "tap the three dots, then Install app" to every Android, which is not
+     Samsung Internet's menu, and a laptop was told about phones. */
+  const { landingPage: lp312 } = await import("../stmt/page.js");
+  const C312 = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JD312 } = await import("jsdom");
+  const u312 = "aaaa-nnnn", pass312 = "2345-6789-abcd-efgh", ck312 = await C312.contentKey("6".repeat(64), u312);
+  const env312 = await C312.encryptWith(ck312, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>x</p>" }] }));
+  const UA = {
+    android: "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Mobile Safari/537.36",
+    samsung: "Mozilla/5.0 (Linux; Android 14; SM-S911B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/25.0 Chrome/121.0 Mobile Safari/537.36",
+    chrome: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+    firefox: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0"
+  };
+  const drive = async (ua, opts) => {
+    const st = { prompted: 0, inTap: false, promptedInTap: false };
+    const dom = new JD312(lp312(u312, "n312", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: ua, configurable: true });
+        win.matchMedia = (q) => ({ matches: !!(opts && opts.standalone) && /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+        win.scrollTo = () => {};
+        win.fetch = async (p) => {
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C312.wrapKey(pass312, ck312), env: env312, live: null, prices: null, session: "sess312a00000000000000000000" });
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    if (opts && opts.bip) {
+      const ev = new W.Event("beforeinstallprompt", { cancelable: true });
+      ev.prompt = () => { st.prompted++; st.promptedInTap = st.inTap; };
+      ev.userChoice = Promise.resolve({ outcome: opts.choice || "accepted" });
+      W.dispatchEvent(ev);
+      st.prevented = ev.defaultPrevented;
+    }
+    D.getElementById("pw").value = pass312;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && D.getElementById("barw").hidden; i++) await new Promise((r) => setTimeout(r, 25));
+    const card = D.getElementById("keepCard");
+    const shown = (id) => !D.getElementById(id).hidden;
+    return { st, W, D, card, shown, text: () => card.textContent.replace(/\s+/g, " ") };
+  };
+
+  const a = await drive(UA.android, { bip: true });
+  try {
+    ok(a.st.prevented && !a.card.hidden && a.shown("keepInstall") && !a.shown("keepGo") && /Install Salt Counter/.test(a.D.getElementById("keepInstall").textContent)
+      && a.D.getElementById("keepHead").textContent === "Keep it on your Home Screen",
+      "where the browser offers an install, the card is one Install button: " + JSON.stringify(a.text()));
+    a.st.inTap = true; a.D.getElementById("keepInstall").click(); a.st.inTap = false;
+    await new Promise((r) => setTimeout(r, 30));
+    ok(a.st.prompted === 1 && a.st.promptedInTap && a.card.hidden, "and it asks the browser's own question inside the tap");
+  } finally { a.W.close(); }
+  const ca = await drive(UA.chrome, { bip: true, choice: "accepted" });
+  try {
+    ca.D.getElementById("keepInstall").click();
+    await new Promise((r) => setTimeout(r, 30));
+    ok(ca.card.hidden, "and the card goes once it is installed, even where it would otherwise point at the address bar");
+  } finally { ca.W.close(); }
+
+  const s = await drive(UA.samsung, {});
+  try {
+    ok(!s.card.hidden && s.shown("keepSam") && !s.shown("keepInstall") && /Add page to, then Home screen/.test(s.text())
+      && s.D.getElementById("keepSam").querySelector("svg.glyph"),
+      "Samsung Internet with no install offered is shown its own menu's steps, the mark drawn: " + JSON.stringify(s.text()));
+  } finally { s.W.close(); }
+
+  const c = await drive(UA.chrome, {});
+  try {
+    ok(!c.card.hidden && c.shown("keepDesk") && /install mark/.test(c.text()) && /address bar/.test(c.text())
+      && c.D.getElementById("keepHead").textContent === "Keep it as an app" && !/phone/i.test(c.text()),
+      "a computer's Chrome is pointed at the install mark at the end of its address bar, and nothing says phone: " + JSON.stringify(c.text()));
+  } finally { c.W.close(); }
+
+  const cb = await drive(UA.chrome, { bip: true, choice: "dismissed" });
+  try {
+    ok(cb.shown("keepInstall") && !/phone/i.test(cb.text()), "a computer offered an install gets the button, and still no phone");
+    cb.D.getElementById("keepInstall").click();
+    await new Promise((r) => setTimeout(r, 30));
+    ok(!cb.card.hidden && cb.shown("keepDesk") && !cb.shown("keepInstall"), "and turned down, it falls back to the address bar's mark");
+  } finally { cb.W.close(); }
+
+  const f = await drive(UA.firefox, {});
+  try { ok(f.card.hidden, "a browser that cannot install is offered nothing"); } finally { f.W.close(); }
+  const inApp = await drive(UA.android, { bip: true, standalone: true });
+  try { ok(inApp.card.hidden, "and an installed app is not told to install itself"); } finally { inApp.W.close(); }
+})();
+section("S3 fix: a lapse reopens only the account on screen, so Keep <old> or another tab's Replace never swaps the page or resends an order on another account");
+await (async () => {
+  /* S3-SEC-1, F1, S3R-1 (24 Sep 2026). A phone remembering A with B open for a visit reopened A when B's fifteen
+     minutes ran out, drew A in silence and sent B's waiting request again on A's session, Place this order included. */
+  const { landingPage: lpK } = await import("../stmt/page.js");
+  const CK = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDK } = await import("jsdom");
+  const uA = "aaaa-kkkk", uB = "bbbb-mmmm", tokL = "L".repeat(32), devA = "k".repeat(32), devB = "m".repeat(32);
+  const ckA = await CK.contentKey("3".repeat(64), uA), ckB = await CK.contentKey("4".repeat(64), uB);
+  const envOf = (ck, t) => CK.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>" + t + "</p>" }] }));
+  const listOf = (ck) => CK.encryptWith(ck, JSON.stringify({ at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] }));
+  const envA = await envOf(ckA, "STATEMENT OF A"), envB = await envOf(ckB, "STATEMENT OF B"), listA = await listOf(ckA), listB = await listOf(ckB);
+  const recOf = (u, dev) => JSON.stringify({ t: u[0].repeat(32), k: Buffer.from(dev).toString("base64"), u });
+  const drive = (fast, path, rec) => {
+    const st = { dead: new Set(), posts: [], reopens: 0, sB: "sessKB000000000000000000000", sA: "sessKA000000000000000000000" };
+    const store = new Map([["salt-stmt-remember", rec || recOf(uA, devA)]]);
+    const html = lpK("", "nK", null);
+    const dom = new JDK(fast ? html.replace("var POLL_MS=10000", "var POLL_MS=40") : html, { url: "https://site.test" + (path || "/s/" + tokL), runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (p, init) => {
+          const m = (init && init.method) || "GET", s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
+          const body = init && init.body ? JSON.parse(init.body) : null;
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
+            : ans(200, { ok: true, u: uB, wrap: await CK.wrapKey(tokL, ckB), env: envB, live: null, prices: listB, session: st.sB });
+          if (p === "/remember/open") {
+            st.reopens++;
+            const rec = JSON.parse(store.get("salt-stmt-remember") || "null");
+            return rec && rec.u === uB
+              ? ans(200, { ok: true, u: uB, remembered: true, wrap: await CK.wrapKey(devB, ckB), env: envB, live: null, prices: listB, session: (st.sB = "sessKB" + st.reopens + "00000000000000000000") })
+              : ans(200, { ok: true, u: uA, remembered: true, wrap: await CK.wrapKey(devA, ckA), env: envA, live: null, prices: listA, session: st.sA });
+          }
+          if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
+          if (p === "/orders" && m === "POST") { st.posts.push({ s, body }); return ans(200, { ok: true, order: {} }); }
+          if (p === "/orders") return ans(200, { ok: true, orders: [] });
+          if (p === "/remember") return ans(200, { ok: true, token: "b".repeat(32), days: 30 });
+          return ans(200, { ok: true });
+        };
+      } });
+    return { st, store, W: dom.window, D: dom.window.document };
+  };
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  const openB = async (g, answer) => {
+    await until(() => !g.D.getElementById("linkGo").disabled);
+    g.D.getElementById("linkGo").click();
+    await until(() => !g.D.getElementById("askRep").hidden);
+    g.D.getElementById(answer).click();
+    await until(() => !g.D.getElementById("barw").hidden);
+    await new Promise((r) => setTimeout(r, 60));
+  };
+
+  /* Keep aaaa-kkkk, then B's session lapses under Place this order */
+  const g1 = drive(false);
+  try {
+    await openB(g1, "askNo");
+    ok(/STATEMENT OF B/.test(g1.D.getElementById("out").textContent) && JSON.parse(g1.store.get("salt-stmt-remember")).u === uA,
+      "the fixture: Keep leaves A remembered with B on screen");
+    g1.D.querySelector('button[data-t="order"]').click();
+    await until(() => g1.D.getElementById("oNew"));
+    g1.D.getElementById("oNew").click();   /* S4 4.3: the order is a sheet */
+    await until(() => g1.D.getElementById("oGo") && !g1.D.getElementById("oGo").disabled);
+    g1.st.dead.add(g1.st.sB);
+    g1.D.getElementById("oGo").click();
+    await until(() => g1.D.getElementById("oPlace"));
+    g1.D.getElementById("oPlace").click();
+    await until(() => !g1.D.getElementById("outSheet").hidden);
+    await new Promise((r) => setTimeout(r, 120));
+    ok(!g1.st.posts.some((x) => x.s === g1.st.sA) && g1.st.reopens === 0,
+      "Place on B's lapsed page never reopens A and never sends the order on A's session: " + JSON.stringify({ posts: g1.st.posts.map((x) => x.s), reopens: g1.st.reopens }));
+    ok(/STATEMENT OF B/.test(g1.D.getElementById("out").textContent) && !/STATEMENT OF A/.test(g1.D.getElementById("out").textContent)
+      && !g1.D.getElementById("outSheet").hidden && g1.D.getElementById("un").value === uB,
+      "B stays on screen and the Sheet asks B to sign in again, B's username in it");
+    /* S4 fix: the order sheet lay over the bar, so the lapse closes it and the Sheet over the page is the one voice */
+    ok(!g1.D.getElementById("osheet") && /You were signed out on this (phone|computer)/.test(g1.D.getElementById("outSheet").textContent)
+      && !/Check your connection/.test(g1.D.getElementById("pOrder").textContent + g1.D.getElementById("outSheet").textContent),
+      "and the order sheet closes, so the Sheet says the order was not sent because B was signed out, never a bare Not sent: " + JSON.stringify(g1.D.getElementById("outSheet").textContent.slice(0, 60)));
+    ok(JSON.parse(g1.store.get("salt-stmt-remember")).u === uA, "and the phone still remembers A, untouched");
+  } finally { g1.W.close(); }
+
+  /* the poll meets the lapse with no tap at all */
+  const g2 = drive(true);
+  try {
+    await openB(g2, "askNo");
+    g2.st.dead.add(g2.st.sB);
+    await until(() => !g2.D.getElementById("outSheet").hidden);
+    await new Promise((r) => setTimeout(r, 150));
+    ok(g2.st.reopens === 0 && /STATEMENT OF B/.test(g2.D.getElementById("out").textContent) && !g2.D.getElementById("outSheet").hidden,
+      "the ten-second poll meeting B's lapse never swaps the page to A: " + JSON.stringify({ reopens: g2.st.reopens }));
+  } finally { g2.W.close(); }
+
+  /* B remembered here, then another tab's Replace makes the phone remember A: this page's lapse is not reopened as A */
+  const g3 = drive(false, "/", recOf(uB, devB));
+  try {
+    await until(() => !g3.D.getElementById("barw").hidden);
+    await new Promise((r) => setTimeout(r, 60));
+    ok(/STATEMENT OF B/.test(g3.D.getElementById("out").textContent), "the fixture: B open, B remembered");
+    g3.store.set("salt-stmt-remember", recOf(uA, devA));
+    const n = g3.st.reopens;
+    g3.st.dead.add(g3.st.sB);
+    Object.defineProperty(g3.D, "visibilityState", { value: "visible", configurable: true });
+    g3.D.dispatchEvent(new g3.W.Event("visibilitychange"));
+    await until(() => !g3.D.getElementById("outSheet").hidden);
+    ok(g3.st.reopens === n && /STATEMENT OF B/.test(g3.D.getElementById("out").textContent) && !g3.D.getElementById("outSheet").hidden,
+      "after another tab replaced B with A, B's page coming back to a lapse asks B to sign in and never opens A: " + JSON.stringify({ reopens: g3.st.reopens - n }));
+  } finally { g3.W.close(); }
+
+  /* the account on screen is the one remembered: it still reopens itself (3.5) */
+  const g4 = drive(false, "/", recOf(uB, devB));
+  try {
+    await until(() => !g4.D.getElementById("barw").hidden);
+    await new Promise((r) => setTimeout(r, 60));
+    const n = g4.st.reopens, was = g4.st.sB;
+    g4.st.dead.add(was);
+    Object.defineProperty(g4.D, "visibilityState", { value: "visible", configurable: true });
+    g4.D.dispatchEvent(new g4.W.Event("visibilitychange"));
+    await until(() => g4.st.reopens > n);
+    await new Promise((r) => setTimeout(r, 80));
+    ok(g4.st.reopens === n + 1 && g4.st.sB !== was && g4.D.getElementById("outSheet").hidden && g4.D.getElementById("lapse").hidden,
+      "the control: with B both on screen and remembered, B's lapse reopens B in silence");
+  } finally { g4.W.close(); }
+})();
+section("S3 fix: Log out of an account opened for a visit leaves the account the phone keeps remembered, here and on the site");
+await (async () => {
+  /* S3R-2 (24 Sep 2026). Log out of B, opened over A with Keep A, forgot A on the phone while /logout refused to drop
+     A's wrap for B's session, so A was signed out here and left orphaned on the site for thirty days. */
+  const { landingPage: lpV } = await import("../stmt/page.js");
+  const CV = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDV } = await import("jsdom");
+  const uA = "aaaa-vvvv", uB = "bbbb-vvvv", tokL = "V".repeat(32), devA = "a".repeat(32), devB = "b".repeat(32), ep = "https://push.example/ep-v";
+  const ckA = await CV.contentKey("6".repeat(64), uA), ckB = await CV.contentKey("7".repeat(64), uB);
+  const envOf = (ck, t) => CV.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>" + t + "</p>" }] }));
+  const envA = await envOf(ckA, "A"), envB = await envOf(ckB, "B");
+  const recOf = (u, dev) => JSON.stringify({ t: u[0].repeat(32), k: Buffer.from(dev).toString("base64"), u });
+  /* S5 over S3 (the merge of 25 Sep 2026): what this phone has seen, which the kept account's orders are in */
+  const SEEN0 = JSON.stringify({ t: "2026-09-20T00:00:00.000Z", o: { "20260920000000-aaaa": "2026-09-21T00:00:00.000Z" } });
+  const drive = async (path, rec, answer) => {
+    const st = { posted: null, unsubscribed: false };
+    const store = new Map([["salt-stmt-remember", rec], ["salt-stmt-seen", SEEN0]]);
+    const dom = new JDV(lpV("", "nV", null), { url: "https://site.test" + path, runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        const sub = { endpoint: ep, unsubscribe: async () => { st.unsubscribed = true; return true; } };
+        Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+          register: async () => { throw new Error("not in this test"); },
+          getRegistration: async () => ({ pushManager: { getSubscription: async () => (st.unsubscribed ? null : sub) } }) } });
+        win.fetch = async (p, init) => {
+          const body = init && init.body ? JSON.parse(init.body) : null, s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
+            : ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(tokL, ckB), env: envB, live: null, prices: null, session: "sessVB00000000000000000000000" });
+          if (p === "/remember/open") {
+            const r = JSON.parse(store.get("salt-stmt-remember"));
+            return r.u === uB ? ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(devB, ckB), env: envB, live: null, prices: null, session: "sessVB00000000000000000000000" })
+              : ans(200, { ok: true, u: uA, wrap: await CV.wrapKey(devA, ckA), env: envA, live: null, prices: null, session: "sessVA00000000000000000000000" });
+          }
+          if (p === "/logout") { st.posted = { body, s }; return ans(200, { ok: true }); }
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    if (answer) {
+      await until(() => !D.getElementById("linkGo").disabled);
+      D.getElementById("linkGo").click();
+      await until(() => !D.getElementById("askRep").hidden);
+      D.getElementById(answer).click();
+    }
+    await until(() => !D.getElementById("barw").hidden);
+    await new Promise((r) => setTimeout(r, 60));
+    const onScreen = D.getElementById("out").textContent.trim();
+    D.getElementById("lock").click();
+    await until(() => st.posted);
+    await new Promise((r) => setTimeout(r, 40));
+    const kept = store.get("salt-stmt-remember") || null, seen = store.get("salt-stmt-seen") || null;
+    W.close();
+    return { st, kept, onScreen, seen };
+  };
+
+  const v = await drive("/s/" + tokL, recOf(uA, devA), "askNo");
+  ok(v.onScreen === "B" && v.kept === recOf(uA, devA),
+    "Log out of B, opened for a visit with Keep " + uA + ", leaves " + uA + " remembered on this phone: " + JSON.stringify(v.kept && JSON.parse(v.kept).u));
+  ok(!!v.st.posted && v.st.posted.body.token === null && v.st.posted.s === "sessVB00000000000000000000000",
+    "and names no remembered token to the site, so A's wrap stays there, dropping only B's session: " + JSON.stringify(v.st.posted));
+  ok(!v.st.unsubscribed && v.st.posted.body.endpoint === ep,
+    "and keeps this phone subscribed for A, naming the endpoint so the site drops B's record alone");
+  ok(v.seen === SEEN0, "and keeps the record of what this phone has seen, which is A's as well (S5): " + v.seen);
+
+  const own = await drive("/", recOf(uB, devB), null);
+  ok(own.onScreen === "B" && own.kept === null && own.st.posted.body.token === "b".repeat(32) && own.st.unsubscribed,
+    "the control: Log out of the account the phone remembers forgets it, drops its wrap on the site and unsubscribes: " + JSON.stringify({ kept: own.kept, posted: own.st.posted.body }));
+  ok(own.seen === null, "and takes the record of what this phone has seen with it, so the next account starts its own (S5): " + own.seen);
+})();
+section("S3 fix: a link whose answer was lost still opens after a reload of the same tab, its peek carrying the tab's nonce");
+await (async () => {
+  /* S3-SEC-9, F2 (24 Sep 2026). The nonce was kept in the tab "for a reload", but a reloaded page asked peek first
+     without it, peek refused a spent record, and the page said the link was used while Continue would have opened it. */
+  const WN = (await import("../stmt/worker.js")).default;
+  const SN = await import("../stmt/signin.js");
+  const CN = await import("../tools/stmt-crypto.mjs");
+  const kv = new KV(), env = { STMT: kv };
+  const uN = "k7m2-n9qr", ckN = await CN.contentKey("sN", uN);
+  await kv.put("u:" + uN, JSON.stringify({ u: uN, issued: "2026-09-01", issues: ["2026-09-01"],
+    env: await CN.encryptWith(ckN, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })) }));
+  const mint = async () => { const t = SN.newSignin(); await SN.mintSignin(env, uN, t, await CN.wrapKey(t, ckN)); return t; };
+  const post = async (body) => { const r = await WN.fetch(new Request("https://k7m3p2.example/open-link", { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env); return { status: r.status, j: await r.json() }; };
+
+  const t = await mint(), nA = "nonceAAAAAAAAAAAAAAAAAAA", nB = "nonceBBBBBBBBBBBBBBBBBBB";
+  ok((await post({ token: t, nonce: nA })).j.ok, "the fixture: Continue spends the link with the tab's nonce");
+  const mine = await post({ token: t, peek: true, nonce: nA });
+  ok(mine.status === 200 && mine.j.ok && mine.j.u === uN && !mine.j.wrap && !mine.j.session,
+    "inside the two minutes, the peek from the page that spent it answers the account again, and nothing that opens it: " + JSON.stringify(mine.j));
+  const theirs = await post({ token: t, peek: true, nonce: nB }), none = await post({ token: t, peek: true });
+  ok(theirs.status === 401 && none.status === 401, "another page's nonce, or none, is refused as a spent link always was");
+
+  /* the page: the answer is lost after the burn, then the tab is reloaded at the same address */
+  const { JSDOM: JDN } = await import("jsdom");
+  const open = async (tok, nonce, loseSpend) => {
+    const html = await (await WN.fetch(new Request("https://k7m3p2.example/s/" + tok), env)).text();
+    const st = { posts: [], lost: false };
+    const dom = new JDN(html, { url: "https://site.test/s/" + tok, runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      if (nonce) win.sessionStorage.setItem("salt-link-nonce", nonce);
+      win.fetch = async (path, init) => {
+        const body = init && init.body ? JSON.parse(init.body) : {};
+        st.posts.push(Object.assign({ path: String(path) }, body));
+        const r = await WN.fetch(new Request("https://k7m3p2.example" + String(path), { method: (init && init.method) || "GET",
+          headers: Object.assign({ "content-type": "application/json" }, (init && init.headers) || {}), body: init && init.body }), env);
+        if (loseSpend && String(path) === "/open-link" && !body.peek && !st.lost) { st.lost = true; throw new TypeError("Failed to fetch"); }
+        return { ok: r.ok, status: r.status, json: async () => r.json() };
+      };
+    } });
+    const W = dom.window, D = W.document;
+    for (let i = 0; i < 100 && (D.getElementById("linkGo").disabled || !st.posts.length); i++) await new Promise((r) => setTimeout(r, 30));
+    await new Promise((r) => setTimeout(r, 40));
+    return { st, W, D };
+  };
+  const tap = async (g) => {
+    g.D.getElementById("linkGo").click();
+    for (let i = 0; i < 150 && g.D.getElementById("tabs").hidden && !/Tap Continue again|used already/.test(g.D.getElementById("linkMsg").textContent + g.D.getElementById("msg").textContent); i++)
+      await new Promise((r) => setTimeout(r, 40));
+  };
+  const t2 = await mint();
+  const first = await open(t2, null, true);
+  let kept = "";
+  try {
+    await tap(first);
+    kept = first.W.sessionStorage.getItem("salt-link-nonce") || "";
+    ok(/Tap Continue again/.test(first.D.getElementById("linkMsg").textContent) && JSON.parse(await kv.get("ot:" + (await SN.idOf(t2)))).spent && kept.length >= 16,
+      "the fixture: the Worker spent the link, the answer was lost, and the tab holds its nonce");
+  } finally { first.W.close(); }
+  const reload = await open(t2, kept, false);
+  try {
+    ok(!reload.D.getElementById("link").hidden && !reload.D.getElementById("linkGo").disabled && reload.W.location.pathname === "/s/" + t2
+      && !/used already/.test(reload.D.getElementById("msg").textContent),
+      "the same tab reloaded inside two minutes still offers Continue at the link's address, never 'used already': "
+        + JSON.stringify({ path: reload.W.location.pathname, msg: reload.D.getElementById("msg").textContent }));
+    await tap(reload);
+    ok(!reload.D.getElementById("tabs").hidden && reload.st.posts.filter((p) => p.path === "/open-link").every((p) => p.nonce === kept),
+      "and Continue there opens the account, every question carrying the tab's nonce");
+  } finally { await new Promise((r) => setTimeout(r, 300)); reload.W.close(); }
+  const stranger = await open(t2, "nonceZZZZZZZZZZZZZZZZZZZ", false);
+  try {
+    ok(stranger.D.getElementById("link").hidden && /used already/.test(stranger.D.getElementById("msg").textContent),
+      "another tab holding the spent link is still told it has been used");
+  } finally { stranger.W.close(); }
+})();
+section("S3 fix: Replace drops this phone's alerts for the account it replaced, and a phone re-remembering its own account keeps them");
+await (async () => {
+  /* F3 (24 Sep 2026). Replace dropped the old account's wrap on the site but named no endpoint, so a phone handed
+     over kept waking for the account it had replaced: its order news and the twice-daily chase. */
+  const { landingPage: lpP } = await import("../stmt/page.js");
+  const { endpointId } = await import("../stmt/push.js");
+  const CP = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDP } = await import("jsdom");
+  const uA = "aaaa-pppp", uB = "bbbb-pppp", passB = "2345-6789-abcd-efgh", ep = "https://push.example/ep-p", ckB = await CP.contentKey("8".repeat(64), uB);
+  const envB = await CP.encryptWith(ckB, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>B</p>" }] }));
+  const drive = async (stored, answer) => {
+    const st = { logout: null };
+    const store = new Map([["salt-stmt-remember", stored]]);
+    const dom = new JDP(lpP(uB, "nP", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+          register: async () => { throw new Error("not in this test"); },
+          getRegistration: async () => ({ pushManager: { getSubscription: async () => ({ endpoint: ep, unsubscribe: async () => true }) } }) } });
+        win.fetch = async (p, init) => {
+          const body = init && init.body ? JSON.parse(init.body) : null;
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/remember/open") return ans(500, { ok: false, error: "fault" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CP.wrapKey(passB, ckB), env: envB, live: null, prices: null, session: "sessPB00000000000000000000000" });
+          if (p === "/remember") return ans(200, { ok: true, token: "n".repeat(32), days: 30 });
+          if (p === "/logout") { st.logout = body; return ans(200, { ok: true }); }
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    await until(() => /could not be opened/.test(D.getElementById("msg").textContent));
+    D.getElementById("pw").value = passB;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !D.getElementById("askRep").hidden || !D.getElementById("barw").hidden);
+    if (answer && !D.getElementById("askRep").hidden) D.getElementById(answer).click();
+    await until(() => st.logout);
+    await new Promise((r) => setTimeout(r, 40));
+    W.close();
+    return st;
+  };
+  const oldA = JSON.stringify({ t: "a".repeat(32), k: Buffer.from("k".repeat(32)).toString("base64"), u: uA });
+  const rep = await drive(oldA, "askYes");
+  ok(!!rep.logout && rep.logout.token === "a".repeat(32) && rep.logout.endpoint === ep,
+    "Replace names this phone's endpoint beside the replaced account's token: " + JSON.stringify(rep.logout));
+  const sameB = await drive(JSON.stringify({ t: "c".repeat(32), k: "x", u: uB }), null);
+  ok(!!sameB.logout && sameB.logout.token === "c".repeat(32) && !sameB.logout.endpoint,
+    "the same account remembered afresh drops its old wrap and names no endpoint, so its own alerts stay: " + JSON.stringify(sameB.logout));
+
+  /* the site's half: that request drops the replaced account's record for this phone and leaves the new one's */
+  const kv = new KV(), env = { STMT: kv };
+  const idOf = async (t) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map((x) => x.toString(16).padStart(2, "0")).join("");
+  await kv.put("rem:" + (await idOf("a".repeat(32))), JSON.stringify({ u: uA, wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" }, at: new Date().toISOString() }));
+  const pA = "push:" + uA + ":" + (await endpointId(ep)), pB = "push:" + uB + ":" + (await endpointId(ep));
+  await kv.put(pA, JSON.stringify({ endpoint: ep })); await kv.put(pB, JSON.stringify({ endpoint: ep }));
+  const r = await stmtWorker.fetch(new Request("https://k7m3p2.example/logout", { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify(rep.logout) }), env);
+  ok(r.status === 200 && !(await kv.get(pA)) && !!(await kv.get(pB)),
+    "and on the site that drops the replaced account's alerts for this phone and leaves the new account's");
+})();
+section("S3 fix: every opening of Keep it on your Home Screen mints a fresh key and code, so a code the saved app spent is never shown or copied again");
+await (async () => {
+  /* F4, S3R-5 (24 Sep 2026). The Sheet minted once and showed the same key and code on every opening until a minute
+     before expiry, so a customer whose saved app had spent it (or burnt it and lost the answer) was handed the dead
+     code again, while the app told them to make a new one. */
+  const { landingPage: lpF } = await import("../stmt/page.js");
+  const CF = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDF } = await import("jsdom");
+  const uF = "aaaa-ffff", passF = "2345-6789-abcd-efgf", ckF = await CF.contentKey("2".repeat(64), uF);
+  const envF = await CF.encryptWith(ckF, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] }));
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const codes = ["h4tn-8xwc", "k2mp-9rsv"];
+  const st = { minted: [], clip: [] };
+  const dom = new JDF(lpF(uF, "nF", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      Object.defineProperty(win.navigator, "userAgent", { value: IPHONE, configurable: true });
+      Object.defineProperty(win.navigator, "clipboard", { configurable: true, value: { writeText: (t) => { st.clip.push(t); return Promise.resolve(); } } });
+      win.scrollTo = () => {};
+      win.fetch = async (p, init) => {
+        const body = init && init.body ? JSON.parse(init.body) : null;
+        const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CF.wrapKey(passF, ckF), env: envF, live: null, prices: null, session: "sessFa000000000000000000000000" });
+        if (p === "/handover") { st.minted.push(body.token); return ans(200, { ok: true, code: codes[st.minted.length - 1], token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() }); }
+        return ans(200, { ok: true, orders: [] });
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  try {
+    D.getElementById("pw").value = passF;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !D.getElementById("barw").hidden);
+    D.getElementById("keepGo").click();
+    await until(() => D.getElementById("keepCode").value);
+    D.getElementById("keepCopy").click();
+    await new Promise((r) => setTimeout(r, 30));
+    ok(st.minted.length === 1 && D.getElementById("keepCode").value === "H4TN 8XWC" && st.clip[0] === st.minted[0], "the fixture: the first opening mints and Copy copies that key");
+    D.getElementById("keepX").click();
+    ok(!D.getElementById("keepCode").value && D.getElementById("keepCopy").disabled && !/Copied/.test(D.getElementById("keepMsg").textContent),
+      "closing the Sheet forgets its code, and Copy has nothing to copy");
+    D.getElementById("keepGo").click();
+    await until(() => D.getElementById("keepCode").value);
+    ok(st.minted.length === 2 && st.minted[1] !== st.minted[0] && D.getElementById("keepCode").value === "K2MP 9RSV",
+      "opening it again mints a fresh key and shows its own code, never the one the saved app may have spent: " + JSON.stringify({ minted: st.minted.length, code: D.getElementById("keepCode").value }));
+    D.getElementById("keepCopy").click();
+    await new Promise((r) => setTimeout(r, 30));
+    ok(st.clip.length === 2 && st.clip[1] === st.minted[1] && W.location.hash === "#" + st.minted[1],
+      "and Copy then copies the fresh key, and the address carries it");
+  } finally { await new Promise((r) => setTimeout(r, 60)); W.close(); }
+})();
+section("S3 fix: a browser tab spends only Salt Admin's counter QR from its address, so a key one customer sends another never signs the other in");
+await (async () => {
+  /* S3-SEC-6, S3R-3 (24 Sep 2026). After the merge fix any tab with nothing of its own spent /app#<key> with no tap and
+     remembered it, and any customer can mint a key for their own account (the Keep Sheet even writes it into the
+     address the Share sheet then carries), so an address sent to somebody else signed that browser into the sender's
+     account for thirty days, their orders and delivery places landing on it. */
+  const S = await import("../stmt/signin.js");
+  const WQ = (await import("../stmt/worker.js")).default;
+  const CQ = await import("../tools/stmt-crypto.mjs");
+  const kv = new KV(), env = { STMT: kv, STMT_HANDOVER_KEY: "q".repeat(40) };
+  const uQ = "aaaa-qqqq", ckQ = await CQ.contentKey("1".repeat(64), uQ);
+  await kv.put("u:" + uQ, JSON.stringify({ u: uQ, issued: "2026-09-01", issues: ["2026-09-01"], env: { iv: "x", ct: "y" } }));
+  const open = async (body) => { const r = await WQ.fetch(new Request("https://k7m3p2.example/handover/open", { method: "POST",
+    headers: { "content-type": "application/json", "CF-Connecting-IP": "198.51.100.9" }, body: JSON.stringify(body) }), env); return { status: r.status, j: await r.json() }; };
+  const keyOf = async () => { const t = S.newSignin(); return { t, wrap: await CQ.wrapKey(t, ckQ) }; };
+
+  /* a customer's own key, as the Keep Sheet mints it on a session */
+  const mine = await keyOf();
+  const made = await S.mintHandover(env, uQ, mine.t, mine.wrap);
+  const tab = await open({ token: mine.t, tab: true });
+  ok(tab.status === 401 && tab.j.error === "That username and password were not accepted.",
+    "a customer's key opened as a browser tab found it in its address is the door's one refusal: " + tab.status);
+  const stillCode = await open({ code: made.code });
+  ok(stillCode.status === 200 && stillCode.j.u === uQ,
+    "and it is left unspent: the same hand-over still opens by its code, typed, as the saved app would");
+  const k2 = await keyOf(); await S.mintHandover(env, uQ, k2.t, k2.wrap);
+  ok((await open({ token: k2.t })).status === 200, "a customer's key pasted or kept by the saved app ({token}, no tab) opens as before");
+
+  /* his counter's: minted through /all/handover, marked, and its address the QR's own form */
+  const adm = await keyOf();
+  await S.mintHandover(env, uQ, adm.t, adm.wrap, true);
+  const scanned = await open({ token: adm.t, tab: true });
+  ok(scanned.status === 200 && scanned.j.u === uQ && scanned.j.token === adm.t, "and a browser tab opens one minted as his, the QR the customer's camera opened");
+
+  /* the page: a tab spends only the QR's form, as a tab's, and an app's own browser nothing */
+  const { landingPage: lpQ } = await import("../stmt/page.js");
+  const { JSDOM: JDQ } = await import("jsdom");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const WA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 WhatsApp/2.24.1";
+  const tokQ = "Z".repeat(32);
+  const drive = async (url, ua, standalone) => {
+    const posts = [];
+    const dom = new JDQ(lpQ("", "nQ", null), { url, runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: ua, configurable: true });
+        win.matchMedia = (q) => ({ matches: !!standalone && /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+        win.scrollTo = () => {};
+        win.fetch = async (p, init) => {
+          posts.push({ path: String(p), body: init && init.body ? JSON.parse(init.body) : null });
+          return { ok: false, status: 401, json: async () => ({ ok: false, error: "That username and password were not accepted." }) };
+        };
+      } });
+    await new Promise((r) => setTimeout(r, 150));
+    const D = dom.window.document, out = { posts: posts.filter((x) => x.path === "/handover/open"), code: !D.getElementById("codeBox").hidden, msg: D.getElementById("codeMsg").textContent };
+    dom.window.close();
+    return out;
+  };
+  const plainTab = await drive("https://site.test/app#" + tokQ, IPHONE, false);
+  ok(plainTab.posts.length === 0, "a browser tab at /app#<key>, the form a customer's own Keep Sheet writes, sends nothing");
+  const qrTab = await drive("https://site.test/app#qr." + tokQ, IPHONE, false);
+  ok(qrTab.posts.length === 1 && qrTab.posts[0].body.token === tokQ && qrTab.posts[0].body.tab === true,
+    "a tab at the QR's form sends its key marked as a tab's, for the Worker to open only if he minted it: " + JSON.stringify(qrTab.posts.map((x) => x.body)));
+  const inApp = await drive("https://site.test/app#qr." + tokQ, WA, false);
+  ok(inApp.posts.length === 0 && inApp.code && /Open this page in Safari or Chrome/.test(inApp.msg),
+    "an app's own browser spends nothing, and says to open the page in Safari or Chrome: " + JSON.stringify(inApp.msg));
+  const saved = await drive("https://site.test/app#" + tokQ, IPHONE, true);
+  ok(saved.posts.length === 1 && saved.posts[0].body.token === tokQ && !saved.posts[0].body.tab,
+    "the saved app still spends the plain key its start address kept, as its own");
+})();
+section("S3 fix: his counter's QR in a browser tab is opened before the phone's memory, and Replace asks over another remembered account");
+await (async () => {
+  /* F5 (24 Sep 2026). The key in the address was tried only if the remembered phone failed, so a phone remembering A
+     that scanned the QR for B opened A in silence, left B's key unspent in the address and never asked Replace. */
+  const { landingPage: lpR } = await import("../stmt/page.js");
+  const CR = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDR } = await import("jsdom");
+  const uA = "aaaa-rrrr", uB = "bbbb-rrrr", tokB = "R".repeat(32), devA = "d".repeat(32);
+  const ckA = await CR.contentKey("5".repeat(64), uA), ckB = await CR.contentKey("6".repeat(64), uB);
+  const envOf = (ck, t) => CR.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>" + t + "</p>" }] }));
+  const envA = await envOf(ckA, "STATEMENT OF A"), envB = await envOf(ckB, "STATEMENT OF B");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const drive = async (url, standalone) => {
+    const st = { posts: [] };
+    const store = new Map([["salt-stmt-remember", JSON.stringify({ t: "a".repeat(32), k: Buffer.from(devA).toString("base64"), u: uA })]]);
+    const dom = new JDR(lpR("", "nR", null), { url, runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: IPHONE, configurable: true });
+        win.matchMedia = (q) => ({ matches: !!standalone && /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (p, init) => {
+          const body = init && init.body ? JSON.parse(init.body) : null;
+          st.posts.push(String(p));
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/remember/open") return ans(200, { ok: true, u: uA, remembered: true, wrap: await CR.wrapKey(devA, ckA), env: envA, live: null, prices: null, session: "sessRA0000000000000000000000" });
+          if (p === "/handover/open") return body.token === tokB
+            ? ans(200, { ok: true, u: uB, remembered: true, token: tokB, wrap: await CR.wrapKey(tokB, ckB), env: envB, live: null, prices: null, session: "sessRB0000000000000000000000" })
+            : ans(401, { ok: false, error: "That username and password were not accepted." });
+          if (p === "/remember") return ans(200, { ok: true, token: "b".repeat(32), days: 30 });
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    return { st, store, W, D, until };
+  };
+
+  const g = await drive("https://site.test/app#qr." + tokB, false);
+  try {
+    await g.until(() => !g.D.getElementById("askRep").hidden || !g.D.getElementById("barw").hidden);
+    const ask = g.D.getElementById("askRep");
+    ok(!ask.hidden && /^Replace aaaa-rrrr on this phone\? It will open bbbb-rrrr instead\./.test(ask.textContent) && ask.previousElementSibling.id === "codePaste"
+      && g.st.posts[0] === "/handover/open" && !g.st.posts.includes("/remember/open"),
+      "a phone remembering A that scans the QR for B opens B's key first and asks Replace, never opening A: " + JSON.stringify({ posts: g.st.posts, ask: ask.textContent }));
+    g.D.getElementById("askYes").click();
+    await g.until(() => !g.D.getElementById("barw").hidden);
+    await g.until(() => JSON.parse(g.store.get("salt-stmt-remember")).u === uB);
+    ok(/STATEMENT OF B/.test(g.D.getElementById("out").textContent) && JSON.parse(g.store.get("salt-stmt-remember")).u === uB && g.W.location.hash === "",
+      "and Replace opens B, keeps B on this phone and forgets the address");
+  } finally { await new Promise((r) => setTimeout(r, 40)); g.W.close(); }
+
+  /* the saved app: its start address may keep a key it spent long ago, so its memory still comes first */
+  const app = await drive("https://site.test/app#" + tokB, true);
+  try {
+    await app.until(() => !app.D.getElementById("barw").hidden);
+    await new Promise((r) => setTimeout(r, 60));
+    ok(/STATEMENT OF A/.test(app.D.getElementById("out").textContent) && app.st.posts[0] === "/remember/open" && !app.st.posts.includes("/handover/open"),
+      "the control: a remembered saved app opens its own account and never retries the key its start address kept: " + JSON.stringify(app.st.posts));
+  } finally { app.W.close(); }
+})();
+section("S3 fix: Log out burns every hand-over the page minted and takes the key out of the address, so a phone handed on carries none");
+await (async () => {
+  /* S3-SEC-5 (24 Sep 2026). After Copy the code the key sat in the clipboard, the address and the tab for fifteen
+     minutes, and Log out ended neither, so the next person on a handed-on phone could open the previous customer's
+     account with it and keep it (v692: a phone handed on is a phone signed out). */
+  const WH = (await import("../stmt/worker.js")).default;
+  const SH = await import("../stmt/signin.js");
+  const CH = await import("../tools/stmt-crypto.mjs");
+  const kv = new KV(), env = { STMT: kv, STMT_HANDOVER_KEY: "h".repeat(40) };
+  const uH = "aaaa-hhhh", ckH = await CH.contentKey("9".repeat(64), uH);
+  await kv.put("u:" + uH, JSON.stringify({ u: uH, issued: "2026-09-01", issues: ["2026-09-01"], env: { iv: "x", ct: "y" } }));
+  const post = async (path, body, sess) => { const r = await WH.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, sess ? { "X-Stmt-Session": sess } : {}), body: JSON.stringify(body) }), env); return { status: r.status, j: await r.json() }; };
+  const hos = () => [...kv.m.keys()].filter((k) => k.startsWith("ho:")).length;
+  const k1 = SH.newSignin(), k2 = SH.newSignin(), other = SH.newSignin();
+  const m1 = await SH.mintHandover(env, uH, k1, await CH.wrapKey(k1, ckH));
+  await SH.mintHandover(env, uH, k2, await CH.wrapKey(k2, ckH));
+  await SH.mintHandover(env, uH, other, await CH.wrapKey(other, ckH));
+  ok(hos() === 6, "the fixture: three hand-overs, each filed twice");
+  const out = await post("/logout", { token: null, endpoint: null, handover: [k1, k2] });
+  ok(out.status === 200 && hos() === 2 && (await post("/handover/open", { token: k1 })).status === 401 && (await post("/handover/open", { code: m1.code })).status === 401,
+    "Log out naming the page's keys burns each by its key and by its code, even with the session gone: " + hos());
+  ok((await post("/handover/open", { token: other })).status === 200, "and a key it did not name still opens");
+
+  /* the page: Copy, then Log out */
+  const { landingPage: lpH } = await import("../stmt/page.js");
+  const { JSDOM: JDH } = await import("jsdom");
+  const passH = "2345-6789-abcd-efgh";
+  const envH = await CH.encryptWith(ckH, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] }));
+  const st = { minted: [], logout: null };
+  const dom = new JDH(lpH(uH, "nH", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      Object.defineProperty(win.navigator, "userAgent", { value: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1", configurable: true });
+      Object.defineProperty(win.navigator, "clipboard", { configurable: true, value: { writeText: () => Promise.resolve() } });
+      win.scrollTo = () => {};
+      win.fetch = async (p, init) => {
+        const body = init && init.body ? JSON.parse(init.body) : null;
+        const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CH.wrapKey(passH, ckH), env: envH, live: null, prices: null, session: "sessHa000000000000000000000000" });
+        if (p === "/handover") { st.minted.push(body.token); return ans(200, { ok: true, code: "h4tn-8xwc", token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() }); }
+        if (p === "/logout") { st.logout = body; return ans(200, { ok: true }); }
+        return ans(200, { ok: true, orders: [] });
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  try {
+    D.getElementById("rem").checked = false;
+    D.getElementById("pw").value = passH;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !D.getElementById("barw").hidden);
+    D.getElementById("keepGo").click();
+    await until(() => D.getElementById("keepCode").value);
+    D.getElementById("keepCopy").click();
+    D.getElementById("keepX").click();
+    D.getElementById("keepGo").click();
+    await until(() => st.minted.length === 2 && D.getElementById("keepCode").value);
+    ok(W.location.hash === "#" + st.minted[0], "the fixture: two keys minted, the first copied into the address");
+    D.getElementById("lock").click();
+    await until(() => st.logout);
+    ok(!!st.logout && JSON.stringify(st.logout.handover) === JSON.stringify(st.minted),
+      "Log out names every key this page minted, for the site to burn: " + JSON.stringify(st.logout && st.logout.handover && st.logout.handover.length));
+    ok(W.location.hash === "" && W.location.pathname === "/app", "and takes the key out of the address: " + W.location.href);
+  } finally { await new Promise((r) => setTimeout(r, 40)); W.close(); }
+})();
+section("S3 fix: a remembered saved app the site could not open just now says so with Try again, never the code screen's Safari steps");
+await (async () => {
+  /* F6, S3R-4 (24 Sep 2026). On a transient fault the saved iPhone app kept the phone remembered and wrote "still
+     remembered: try again" into the hidden door, then opened One step to finish, sending a customer who was still
+     signed in to Safari for a code; and a saved app has no reload to try again with. */
+  const { landingPage: lpT } = await import("../stmt/page.js");
+  const CT = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDT } = await import("jsdom");
+  const uT = "aaaa-tttt", devT = "t".repeat(32), ckT = await CT.contentKey("4".repeat(64), uT);
+  const envT = await CT.encryptWith(ckT, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] }));
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const drive = async (url, stored, fault) => {
+    const st = { opens: 0, fault };
+    const store = new Map(stored ? [["salt-stmt-remember", JSON.stringify({ t: "t".repeat(32), k: Buffer.from(devT).toString("base64"), u: uT })]] : []);
+    const dom = new JDT(lpT("", "nT", null), { url, runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: IPHONE, configurable: true });
+        win.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (p) => {
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/remember/open") {
+            st.opens++;
+            if (st.fault === "drop") throw new TypeError("Failed to fetch");
+            if (st.fault) return ans(503, { ok: false, error: "busy" });
+            return ans(200, { ok: true, u: uT, remembered: true, wrap: await CT.wrapKey(devT, ckT), env: envT, live: null, prices: null, session: "sessTa000000000000000000000000" });
+          }
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    await until(() => (!stored || st.opens) && (!D.getElementById("gate").hidden || !D.getElementById("codeBox").hidden || !D.getElementById("barw").hidden));
+    await new Promise((r) => setTimeout(r, 40));
+    return { st, store, W, D, until };
+  };
+  for (const fault of [503, "drop"]) {
+    const g = await drive("https://site.test/app", true, fault);
+    try {
+      const again = g.D.getElementById("remAgain");
+      ok(g.D.getElementById("codeBox").hidden && !g.D.getElementById("gate").hidden
+        && /could not be opened just now\. This (phone|computer) is still remembered/.test(g.D.getElementById("msg").textContent)
+        && !!again && !again.hidden && g.store.has("salt-stmt-remember"),
+        "the saved app, still remembered, meets a " + (fault === "drop" ? "dropped connection" : "server fault") + " and says so in view with Try again, not One step to finish: "
+          + JSON.stringify({ code: !g.D.getElementById("codeBox").hidden, msg: g.D.getElementById("msg").textContent, again: again && !again.hidden }));
+      g.st.fault = null;
+      again.click();
+      await g.until(() => !g.D.getElementById("barw").hidden);
+      ok(!g.D.getElementById("barw").hidden && g.st.opens === 2 && again.hidden && g.D.getElementById("gate").hidden,
+        "and Try again opens it once the site answers");
+    } finally { g.W.close(); }
+  }
+  const fresh = await drive("https://site.test/app", false, null);
+  try {
+    await fresh.until(() => !fresh.D.getElementById("codeBox").hidden);
+    ok(!fresh.D.getElementById("codeBox").hidden && fresh.D.getElementById("remAgain").hidden,
+      "the control: a saved app with nothing remembered still opens on One step to finish, with no Try again");
+  } finally { fresh.W.close(); }
+})();
+section("S3 fix: the door's form goes back where it came from when the signed-out Sheet closes, above I have a sign-in code");
+await (async () => {
+  /* F7 (24 Sep 2026). closeSignedOut put the form back before the help line, after I have a sign-in code, so once a
+     lapse had happened the code button stood above the username field until a reload. */
+  const { landingPage: lpO } = await import("../stmt/page.js");
+  const CO = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDO } = await import("jsdom");
+  const uO = "aaaa-wwww", passO = "2345-6789-abcd-efgw", ckO = await CO.contentKey("3".repeat(64), uO);
+  const envO = await CO.encryptWith(ckO, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] }));
+  const st = { dead: new Set(), n: 0, last: "" };
+  const dom = new JDO(lpO(uO, "nO", null).replace("var POLL_MS=10000", "var POLL_MS=40"), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      win.scrollTo = () => {};
+      win.fetch = async (p, init) => {
+        const s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
+        const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CO.wrapKey(passO, ckO), env: envO, live: null, prices: null, session: (st.last = "sessO" + (++st.n) + "0000000000000000000000") });
+        if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
+        return ans(200, { ok: true, orders: [] });
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  const order = () => [...D.getElementById("gate").children].map((e) => e.id || e.tagName.toLowerCase() + (e.className ? "." + e.className.split(" ")[0] : "")).join(" | ");
+  try {
+    const before = order();
+    ok(/p\.lead \| doorBox$/.test(before), "the fixture: the heading, the lead, then the door's box: " + before);
+    const signIn = async () => { D.getElementById("rem").checked = false; D.getElementById("pw").value = passO;
+      D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true })); };
+    await signIn();
+    await until(() => !D.getElementById("barw").hidden);
+    st.dead.add(st.last);
+    await until(() => !D.getElementById("outSheet").hidden);
+    ok(D.getElementById("outSheet").contains(D.getElementById("doorBox")), "the fixture: a lapse with nothing remembered carries the form into the Sheet");
+    await signIn();
+    await until(() => D.getElementById("outSheet").hidden);
+    D.getElementById("lock").click();
+    await until(() => !D.getElementById("gate").hidden);
+    ok(order() === before, "after the Sheet and a Log out the door stands as it did, the form above I have a sign-in code: " + order());
+  } finally { await new Promise((r) => setTimeout(r, 60)); W.close(); }
+})();
+section("S3 fix: the signed-out Sheet carries the help line and I have a sign-in code, and a code opened there keeps what they were doing");
+await (async () => {
+  /* S3R-6 (24 Sep 2026). The Sheet carried the password form alone, so a customer who came in by link and never had a
+     password had no way on from it but Log out or a reload: the help line and the code option stayed on the hidden door. */
+  const { landingPage: lpC } = await import("../stmt/page.js");
+  const CC = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDC } = await import("jsdom");
+  const uC = "aaaa-cccc", passC = "2345-6789-abcd-efgc", keyC = "C".repeat(32), ckC = await CC.contentKey("2".repeat(64), uC);
+  const envC = await CC.encryptWith(ckC, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] }));
+  const list = await CC.encryptWith(ckC, JSON.stringify({ at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] }));
+  const st = { dead: new Set(), n: 0, last: "", codes: [] };
+  const dom = new JDC(lpC(uC, "nC", null).replace("var POLL_MS=10000", "var POLL_MS=40"), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      win.scrollTo = () => {};
+      win.fetch = async (p, init) => {
+        const s = ((init && init.headers) || {})["X-Stmt-Session"] || "", body = init && init.body ? JSON.parse(init.body) : null;
+        const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CC.wrapKey(passC, ckC), env: envC, live: null, prices: list, session: (st.last = "sessC" + (++st.n) + "0000000000000000000000") });
+        if (p === "/handover/open") { st.codes.push(body.code); return ans(200, { ok: true, u: uC, remembered: true, token: keyC, wrap: await CC.wrapKey(keyC, ckC), env: envC, live: null, prices: list, session: (st.last = "sessC" + (++st.n) + "0000000000000000000000") }); }
+        if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
+        return ans(200, { ok: true, orders: [] });
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  try {
+    D.getElementById("rem").checked = false; D.getElementById("pw").value = passC;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !D.getElementById("barw").hidden);
+    D.querySelector('button[data-t="order"]').click();
+    /* S4 4.3: the line is the order sheet's note; a lapse closes the sheet, and the same account let in opens it again */
+    await until(() => D.getElementById("oNew"));
+    D.getElementById("oNew").click(); D.getElementById("oAddNote").click();
+    const line = () => D.querySelector("#osheet #oSay");
+    await until(() => line());
+    line().value = "by the side gate"; line().dispatchEvent(new W.Event("input", { bubbles: true }));
+    st.dead.add(st.last);
+    await until(() => !D.getElementById("outSheet").hidden);
+    const sheet = D.getElementById("outSheet");
+    const toCode = D.getElementById("toCode"), help = [...sheet.querySelectorAll(".salt-insight")].find((p) => /new sign-in link/.test(p.textContent));
+    ok(sheet.contains(toCode) && !!help && !toCode.hidden,
+      "the Sheet carries I have a sign-in code and the help line under the form: " + JSON.stringify({ code: sheet.contains(toCode), help: !!help }));
+    toCode.click();
+    const codeBox = D.getElementById("codeBox"), codeIn = D.getElementById("codeIn");
+    ok(sheet.contains(codeBox) && !codeBox.hidden && D.getElementById("doorBox").hidden && D.getElementById("gate").hidden
+      && /Sign in with a code/.test(D.getElementById("codeH").textContent) && !/Safari/.test(D.getElementById("codeLead").textContent),
+      "and I have a sign-in code there opens the code field in the Sheet, in a code's words, over the page they were on");
+    codeIn.value = "h4tn 8xwc"; codeIn.dispatchEvent(new W.Event("input", { bubbles: true }));
+    await until(() => sheet.hidden);
+    await until(() => line());
+    ok(sheet.hidden && st.codes[0] === "h4tn-8xwc" && !D.getElementById("pOrder").hidden && line() && line().value === "by the side gate",
+      "a code opened there closes the Sheet on the same tab with the line they had typed still in it: " + JSON.stringify(line() && line().value));
+    ok(codeBox.hidden && !sheet.contains(codeBox) && !D.getElementById("doorBox").hidden && D.getElementById("gate").contains(D.getElementById("doorBox")),
+      "and the code screen and the form go back to their own places");
+  } finally { await new Promise((r) => setTimeout(r, 60)); W.close(); }
+})();
+section("S3 fix: pasting any message a customer is sent into the username keeps the username, passing over four-letter words");
+await (async () => {
+  /* F8 (24 Sep 2026). 3.4's sign-in message opens "Your Salt Counter account is ready", and the username field kept its
+     first two words, your-salt, which the alphabet then refused; that is the message a customer with a spent link
+     would paste from. */
+  const { landingPage: lpU } = await import("../stmt/page.js");
+  const SU = await import("../stmt/send.js");
+  const { JSDOM: JDU } = await import("jsdom");
+  const user = "k7mp-q2wx", pass = "abcd-efgh-jkmn-pqrs";
+  const dom = new JDU(lpU("", "nU", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) { win.scrollTo = () => {}; win.fetch = async () => ({ ok: false, status: 404, json: async () => ({ ok: false }) }); } });
+  const W = dom.window, D = W.document;
+  const paste = (field, text) => { const e = new W.Event("paste", { bubbles: true, cancelable: true });
+    Object.defineProperty(e, "clipboardData", { value: { getData: () => text } }); field.value = ""; field.dispatchEvent(e); return field.value; };
+  try {
+    const un = D.getElementById("un"), pw = D.getElementById("pw");
+    const msgs = {
+      signIn: SU.signInMessage({ url: "https://k7m3p2.example/s/" + "Ab3_x".repeat(6) + "Zq", user }),
+      link: SU.linkMessage({ url: "https://k7m3p2.example/?u=" + user, user }),
+      password: SU.passwordMessage({ pw: pass })
+    };
+    const got = { signIn: paste(un, msgs.signIn), link: paste(un, msgs.link), password: paste(pw, msgs.password) };
+    ok(got.signIn === user, "the sign-in link's message pasted into the username keeps the username, not its opening words: " + JSON.stringify(got.signIn));
+    ok(got.link === user && got.password === pass, "and the link's message keeps the username, the password's message the password: " + JSON.stringify(got));
+    ok(paste(un, "Your test account is 0000-0000.") === "0000-0000", "his test account's zeros are still taken");
+  } finally { W.close(); }
+})();
+section("S3 fix: the words fit the device: a computer is still remembered as a computer, an iPad is called one without the foot of Safari, and the door's code screen never names Safari");
+await (async () => {
+  /* S3R-8 (24 Sep 2026). "This phone is still remembered" reached laptops, now remembered by default; an iPad was
+     called a phone and told Share was at the foot of Safari; and the door's code screen, shown to Android and
+     computers, answered an empty clipboard with "Copy it in Safari". */
+  const { landingPage: lpD } = await import("../stmt/page.js");
+  const CD = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDD } = await import("jsdom");
+  const DESK = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36";
+  const IPAD = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15";
+  const DROID = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Mobile Safari/537.36";
+  const uD = "aaaa-dddd", passD = "2345-6789-abcd-efgd", ckD = await CD.contentKey("7".repeat(64), uD);
+  const envD = await CD.encryptWith(ckD, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] }));
+  const drive = async (ua, opts) => {
+    const store = new Map(opts.rem ? [["salt-stmt-remember", JSON.stringify({ t: "d".repeat(32), k: Buffer.from("e".repeat(32)).toString("base64"), u: uD })]] : []);
+    const dom = new JDD(lpD(opts.u || "", "nD", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: ua, configurable: true });
+        if (opts.touch) { Object.defineProperty(win.navigator, "platform", { value: "MacIntel", configurable: true }); Object.defineProperty(win.navigator, "maxTouchPoints", { value: 5, configurable: true }); }
+        Object.defineProperty(win.navigator, "clipboard", { configurable: true, value: { readText: async () => "", writeText: async () => {} } });
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (p, init) => {
+          const body = init && init.body ? JSON.parse(init.body) : null;
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/remember/open") return ans(503, { ok: false, error: "busy" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CD.wrapKey(passD, ckD), env: envD, live: null, prices: null, session: "sessDa000000000000000000000000" });
+          if (p === "/handover") return ans(200, { ok: true, code: "h4tn-8xwc", token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() });
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    await new Promise((r) => setTimeout(r, 60));
+    return { W, D, until };
+  };
+
+  const desk = await drive(DESK, { rem: true });
+  try {
+    await desk.until(() => /could not be opened/.test(desk.D.getElementById("msg").textContent));
+    ok(/This computer is still remembered/.test(desk.D.getElementById("msg").textContent),
+      "a computer the site could not open is told the computer is still remembered: " + JSON.stringify(desk.D.getElementById("msg").textContent));
+  } finally { desk.W.close(); }
+
+  const pad = await drive(IPAD, { touch: true, u: uD });
+  try {
+    ok(/on this iPad/.test(pad.D.getElementById("gate").textContent), "an iPad is called an iPad at the door: " + JSON.stringify(pad.D.querySelector("label.rem").textContent));
+    pad.D.getElementById("pw").value = passD;
+    pad.D.getElementById("f").dispatchEvent(new pad.W.Event("submit", { bubbles: true, cancelable: true }));
+    await pad.until(() => !pad.D.getElementById("barw").hidden);
+    ok(!pad.D.getElementById("keepCard").hidden && /Keep it on your Home Screen/.test(pad.D.getElementById("keepHead").textContent)
+      && pad.D.getElementById("keepWhere").hidden && !pad.D.getElementById("keepSheet").querySelector(".keepsteps").hidden,
+      "and its Keep it on your Home Screen keeps the marks but leaves off where Share sits on an iPhone");
+  } finally { pad.W.close(); }
+
+  const droid = await drive(DROID, {});
+  try {
+    droid.D.getElementById("toCode").click();
+    droid.D.getElementById("codePaste").click();
+    await droid.until(() => /no code on the clipboard/.test(droid.D.getElementById("codeMsg").textContent));
+    ok(!/Safari/.test(droid.D.getElementById("codeMsg").textContent) && /Type it below/.test(droid.D.getElementById("codeMsg").textContent),
+      "the door's code screen answers an empty clipboard without naming Safari: " + JSON.stringify(droid.D.getElementById("codeMsg").textContent));
+  } finally { droid.W.close(); }
+})();
+section("S3 fix: an Android browser that offers no install, or whose offer was turned down, is shown its own menu's mark and the words to look for");
+await (async () => {
+  /* S3R-9 (24 Sep 2026). Android Chrome, Firefox or Edge with no install event got no card at all, and neither did one
+     whose offer was dismissed; the plan says that browser's own menu mark is drawn, and the door's old Android steps
+     went in this stage. */
+  const { landingPage: lpA } = await import("../stmt/page.js");
+  const CA = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDA } = await import("jsdom");
+  const uA = "aaaa-gggg", passA = "2345-6789-abcd-efgg", ckA = await CA.contentKey("8".repeat(64), uA);
+  const envA = await CA.encryptWith(ckA, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>x</p>" }] }));
+  const UA = {
+    chrome: "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Mobile Safari/537.36",
+    firefox: "Mozilla/5.0 (Android 14; Mobile; rv:130.0) Gecko/130.0 Firefox/130.0"
+  };
+  const drive = async (ua, bip) => {
+    const dom = new JDA(lpA(uA, "nA", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: ua, configurable: true });
+        win.matchMedia = (q) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+        win.scrollTo = () => {};
+        win.fetch = async (p) => {
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CA.wrapKey(passA, ckA), env: envA, live: null, prices: null, session: "sessAa000000000000000000000000" });
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    if (bip) {
+      const ev = new W.Event("beforeinstallprompt", { cancelable: true });
+      ev.prompt = () => {}; ev.userChoice = Promise.resolve({ outcome: "dismissed" });
+      W.dispatchEvent(ev);
+    }
+    D.getElementById("pw").value = passA;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && D.getElementById("barw").hidden; i++) await new Promise((r) => setTimeout(r, 25));
+    const card = D.getElementById("keepCard"), droid = D.getElementById("keepDroid");
+    return { W, D, card, droid, seen: () => !card.hidden && !droid.hidden && !!droid.querySelector("svg.glyph") && /Install app or Add to Home screen/.test(droid.textContent) };
+  };
+  const plain = await drive(UA.chrome, false);
+  try {
+    ok(plain.seen() && plain.D.getElementById("keepInstall").hidden && plain.D.getElementById("keepGo").hidden,
+      "Android Chrome with no install offered is shown its menu's mark and Install app or Add to Home screen: " + JSON.stringify(plain.card.textContent.replace(/\s+/g, " ")));
+  } finally { plain.W.close(); }
+  const fx = await drive(UA.firefox, false);
+  try { ok(fx.seen(), "and so is Firefox on Android"); } finally { fx.W.close(); }
+  const turned = await drive(UA.chrome, true);
+  try {
+    ok(!turned.D.getElementById("keepInstall").hidden && turned.droid.hidden, "the fixture: an install offered is the one Install button");
+    turned.D.getElementById("keepInstall").click();
+    await new Promise((r) => setTimeout(r, 30));
+    ok(turned.seen() && turned.D.getElementById("keepInstall").hidden, "and turned down, it falls back to the menu's mark rather than vanishing");
+  } finally { turned.W.close(); }
+})();
+section("S3 fix: the Counter's manifest keeps the identity the old start address gave every copy already installed");
+await (async () => {
+  /* S3R-10 (24 Sep 2026). start_url moved from ./ to /app with no id, and a browser takes start_url as the app's identity
+     when id is absent, so every copy installed before would stop taking the site's name and icon updates. */
+  const WM = (await import("../stmt/worker.js")).default;
+  const r = await WM.fetch(new Request("https://k7m3p2.example/manifest.webmanifest"), { STMT: new KV() });
+  const mf = await r.json();
+  const at = "https://k7m3p2.example/manifest.webmanifest";
+  const was = new URL("./", at).href, start = new URL(mf.start_url, at);
+  ok(r.status === 200 && typeof mf.id === "string" && new URL(mf.id, start.origin).href === was && start.pathname === "/app",
+    "the manifest's id resolves to the site's root, the identity the old start address gave, while the app still starts at /app: " + JSON.stringify({ id: mf.id, start_url: mf.start_url }));
+})();
+section("S3 fix: only a code is braked and counted, so a flood of bogus codes never shuts the key a saved app or his QR opens, and a v6 host is one address");
+await (async () => {
+  /* S3-SEC-3 (24 Sep 2026). The brakes ran before the body was read, so a hundred bogus codes from ten addresses (or one
+     v6 host, each of its addresses its own count) refused every 192-bit KEY open too: the saved app's Paste, /app#<key>
+     and his counter's QR, for every customer, for as long as the flood was kept up. */
+  const S = await import("../stmt/signin.js");
+  const WB = (await import("../stmt/worker.js")).default;
+  const CB = await import("../tools/stmt-crypto.mjs");
+  const kv = new KV(), env = { STMT: kv, STMT_HANDOVER_KEY: "b".repeat(40) };
+  const uB = "aaaa-bbbb", ckB = await CB.contentKey("0".repeat(64), uB);
+  await kv.put("u:" + uB, JSON.stringify({ u: uB, issued: "2026-09-01", issues: ["2026-09-01"], env: { iv: "x", ct: "y" } }));
+  const open = async (body, ip) => { const r = await WB.fetch(new Request("https://k7m3p2.example/handover/open", { method: "POST",
+    headers: { "content-type": "application/json", "CF-Connecting-IP": ip }, body: JSON.stringify(body) }), env); return r.status; };
+  const mint = async (admin) => { const t = S.newSignin(); const m = await S.mintHandover(env, uB, t, await CB.wrapKey(t, ckB), admin); return m; };
+  const bogus = (i) => "3333-" + String(2000 + i).replace(/[01]/g, "z");
+
+  /* a hundred bogus codes from ten addresses trip the site-wide brake */
+  for (let i = 0; i < 100; i++) await open({ code: bogus(i) }, "192.0.2." + (i % 10));
+  const h1 = await mint(false), h2 = await mint(true);
+  ok((await open({ code: h1.code }, "203.0.113.50")) === 429, "the fixture: a hundred bogus codes shut code sign-in site-wide");
+  ok((await open({ token: h1.token }, "203.0.113.51")) === 200 && (await open({ token: h2.token, tab: true }, "203.0.113.52")) === 200,
+    "while a real key still opens, pasted into the saved app or carried by his counter's QR, from a fresh address");
+
+  /* a key miss is never counted */
+  const kv2 = new KV(), env2 = { STMT: kv2, STMT_HANDOVER_KEY: "b".repeat(40) };
+  for (let i = 0; i < 12; i++) await WB.fetch(new Request("https://k7m3p2.example/handover/open", { method: "POST",
+    headers: { "content-type": "application/json", "CF-Connecting-IP": "198.51.100.77" }, body: JSON.stringify({ token: S.newSignin() }) }), env2);
+  ok(![...kv2.m.keys()].some((k) => k.startsWith("hofail")), "twelve bogus keys from one address count nothing against it or the site");
+
+  /* one v6 host is one address: its /64 */
+  const kv3 = new KV(), env3 = { STMT: kv3, STMT_HANDOVER_KEY: "b".repeat(40) };
+  const at3 = (body, ip) => WB.fetch(new Request("https://k7m3p2.example/handover/open", { method: "POST",
+    headers: { "content-type": "application/json", "CF-Connecting-IP": ip }, body: JSON.stringify(body) }), env3).then((r) => r.status);
+  for (let i = 1; i <= 10; i++) await at3({ code: bogus(i) }, "2001:db8::" + i.toString(16));
+  ok((await at3({ code: bogus(11) }, "2001:db8:0:0:ffff::1")) === 429 && (await at3({ code: bogus(12) }, "2001:db8:0:1::1")) === 401,
+    "ten misses from ten addresses in one v6 /64 shut that /64, and the next network over is still heard");
+})();
+section("S3 fix: a remembered record found under its raw token keeps the end it had and never slides, so a copy of the store taken before 3.1 dies on time");
+await (async () => {
+  /* S3-SEC-7 (24 Sep 2026). The first open after landing moved a raw record under its hash with a fresh thirty days,
+     and every later open slid it again, so a token read off a copy of the store taken before landing, which died thirty
+     days after the tick until this stage, could be renewed for as long as it was used. */
+  const kv = new KV(), env = { STMT: kv }, u = "aaaa-eeee";
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", env: { v: 2, iv: "aXY=", ct: "Y3Q=" } }));
+  const post = (body) => stmtWorker.fetch(new Request("https://k7m3p2.example/remember/open", { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env);
+  const sha = (s) => createHash("sha256").update(s).digest("hex");
+  const ttl = (k) => (kv.opts.get(k) || {}).expirationTtl || 0;
+  const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" }, day = 86400;
+  const tok = "cop" + "f".repeat(29), at = new Date(Date.now() - 29 * day * 1000).toISOString();
+  await kv.put("rem:" + tok, JSON.stringify({ u, wrap, at }), { expirationTtl: day });
+  const first = await post({ token: tok }), key = "rem:" + sha(tok), ptr = "dev:" + u + ":" + sha(key);
+  ok(first.status === 200 && ttl(key) <= day && ttl(key) > day - 120 && ttl(ptr) === ttl(key) && !(await kv.get("rem:" + tok)),
+    "a raw record ticked twenty-nine days ago opens and moves under its hash with the one day it had left, its pointer too: " + JSON.stringify({ rec: ttl(key), ptr: ttl(ptr) }));
+  const second = await post({ token: tok });
+  ok(second.status === 200 && ttl(key) <= day, "and opened again from its new place it still does not slide: " + ttl(key));
+  /* past that end, should KV not yet have dropped it, it is refused and forgotten */
+  const rec = JSON.parse(await kv.get(key)); rec.end = new Date(Date.now() - 1000).toISOString(); await kv.put(key, JSON.stringify(rec));
+  const late = await post({ token: tok });
+  ok(late.status === 401 && !(await kv.get(key)) && !(await kv.get(ptr)), "and past its end it is the door's refusal, the record and its pointer gone");
+  /* the control: a record filed under its hash since 3.1 slides thirty days from each open */
+  const fresh = "new" + "g".repeat(29), fk = "rem:" + sha(fresh);
+  await kv.put(fk, JSON.stringify({ u, wrap, at }), { expirationTtl: day });
+  await post({ token: fresh });
+  ok(ttl(fk) === 30 * day, "the control: a record filed under its hash is kept thirty days from this open");
+})();
+section("S3 fix: a session is filed under its token's hash, so neither its pointer nor a copy of the store holds a live session");
+await (async () => {
+  /* S3-SEC-8 (24 Sep 2026). The pointer to a session stored {key: "sess:<token>"}, the live token itself, while the docs
+     said a pointer opens nothing; a listing of an account's phones (stage 9) returning pointers as stored would have
+     handed out every other device's session, and every session sat in the store under its token. */
+  const O = await import("../stmt/orders.js");
+  const kv = new KV(), env = { STMT: kv }, u = "aaaa-jjjj";
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", env: { v: 2, iv: "aXY=", ct: "Y3Q=" } }));
+  const tok = await O.mintSession(env, u);
+  const req = (s) => new Request("https://k7m3p2.example/orders", { headers: { "X-Stmt-Session": s } });
+  ok(await O.sessionUser(req(tok), env) === u, "the fixture: the token the page holds names its account");
+  ok(![...kv.m.keys()].some((k) => k.includes(tok)) && ![...kv.m.values()].some((v) => String(v).includes(tok)),
+    "the token is nowhere in the store, as a key or in a value");
+  const key = [...kv.m.keys()].find((k) => k.startsWith("sess:"));
+  ok(!!key && await O.sessionUser(req(key.slice(5)), env) === "" && await O.sessionUser(req(key.slice(5, 37)), env) === "",
+    "and the name it is filed under, whole or cut to a token's length, opens nothing: " + String(key).slice(0, 12));
+
+  /* the pointer an open leaves */
+  const C = await import("../tools/stmt-crypto.mjs");
+  const pw = C.newPassword(), ck = await C.contentKey("s3-sess", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck), env: { v: 2, iv: "aXY=", ct: "Y3Q=" } }));
+  const r = await stmtWorker.fetch(new Request("https://k7m3p2.example/open", { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ u, password: pw }) }), env);
+  const s = (await r.json()).session;
+  const ptrs = [...kv.m.entries()].filter(([k]) => k.startsWith("dev:" + u + ":")).map(([, v]) => JSON.parse(v));
+  const mine = ptrs.find((p) => p.how === "password");
+  ok(!!s && !!mine && /^sess:[0-9a-f]{64}$/.test(mine.key) && !JSON.stringify(ptrs).includes(s) && await O.sessionUser(req(mine.key.slice(5)), env) === "",
+    "the pointer a password open leaves names its session's hash, never the session, and what it names opens nothing: " + JSON.stringify(mine && mine.key.slice(0, 12)));
+  await kv.delete(mine.key);
+  ok(await O.sessionUser(req(s), env) === "", "and deleting what it names ends that session, which is what signing an account out everywhere needs");
+})();
+section("S3 fix: Sign out everywhere ends every remembered phone, session and alert on one account, behind Access, from Salt Admin's card");
+await (async () => {
+  /* S3-SEC-2 (24 Sep 2026). Every link now remembers the phone and every open slides it thirty days, so a forwarded
+     link or a lost phone stayed signed in for as long as it was used, and the plan's answer, Sign out everywhere (9.4),
+     was not built: the pointers were written and nothing read them but the test account's unmaking. */
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { endpointId } = await import("../stmt/push.js");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const kv = new KV(), MASTER = "mp-s3-so";
+  const u = C.newUsername(), other = C.newUsername(), pw = C.newPassword(), pw2 = C.newPassword(), ck = await C.contentKey("s3-so", u), ck2 = await C.contentKey("s3-so", other);
+  const rec = async (x, p, k) => JSON.stringify({ u: x, issued: "2026-09-01", verifier: await C.makeVerifier(p), wrap: await C.wrapKey(p, k),
+    wrapMaster: await C.wrapKey(MASTER, k), env: await C.encryptWith(k, JSON.stringify({ statements: [] })) });
+  await kv.put("u:" + u, await rec(u, pw, ck)); await kv.put("u:" + other, await rec(other, pw2, ck2));
+  await kv.put("roster", JSON.stringify([{ code: "CX1-SO", username: u }, { code: "CX2-SO", username: other }]));
+  await kv.put("sheet", JSON.stringify({ issue: "2026-09-01", accounts: [{ username: u, issued: "2026-09-01", flag: "clear", t: { owed: 0 } }] }));
+  const TEAM = "maakmal", AUD = "aud-s3-so", KID = "kid-s3-so";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const jwt = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const post = async (path, body, headers) => { const r = await site(path, { method: "POST", headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) });
+    return { status: r.status, j: await r.json().catch(() => ({})) }; };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  let win = null;
+  try {
+    /* the account signed in twice, one of them remembered, with an alert; another account alike */
+    const signIn = async (x, p) => (await post("/open", { u: x, password: p })).j.session;
+    const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" };
+    const s1 = await signIn(u, pw), s2 = await signIn(u, pw), s3 = await signIn(other, pw2);
+    const t1 = (await post("/remember", { wrap }, { "X-Stmt-Session": s1 })).j.token, t3 = (await post("/remember", { wrap }, { "X-Stmt-Session": s3 })).j.token;
+    await post("/push/subscribe", { endpoint: "https://push.example/so-1" }, { "X-Stmt-Session": s2 });
+    await post("/push/subscribe", { endpoint: "https://push.example/so-3" }, { "X-Stmt-Session": s3 });
+    const orders = async (s) => (await site("/orders", { headers: { "X-Stmt-Session": s } })).status;
+    ok(await orders(s1) === 200 && await orders(s2) === 200 && (await post("/remember/open", { token: t1 })).status === 200,
+      "the fixture: the account is signed in on its phones, one of them remembered");
+
+    ok((await post("/all/signout", { u })).status === 401, "Sign out everywhere is behind Access");
+    const out = await post("/all/signout", { u }, { "cf-access-jwt-assertion": jwt });
+    ok(out.status === 200 && out.j.ok && out.j.ended >= 3, "with Access it ends the account's phones and sessions and says how many: " + JSON.stringify(out.j));
+    ok(await orders(s1) === 401 && await orders(s2) === 401 && (await post("/remember/open", { token: t1 })).status === 401
+      && ![...kv.m.keys()].some((k) => k.startsWith("dev:" + u + ":") || k.startsWith("push:" + u + ":")),
+      "every session is refused, the remembered phone is the door's refusal, and no pointer or alert is left for it");
+    ok(await orders(s3) === 200 && (await post("/remember/open", { token: t3 })).status === 200 && !!(await kv.get("push:" + other + ":" + (await endpointId("https://push.example/so-3")))),
+      "and another account's phones, sessions and alerts are untouched");
+
+    /* his card: a second tap says yes */
+    const html = await (await site("/all", { headers: { "cf-access-jwt-assertion": jwt } })).text();
+    const seen = [];
+    win = new JSDOM(html, { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.fetch = async (path, o) => {
+        o = o || {};
+        if (String(path) === "/all/signout") seen.push(JSON.parse(o.body));
+        return site(String(path), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": jwt }), body: o.body });
+      };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 300 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    D.querySelector('button[data-m="send"]').click();
+    const btn = () => { const k = [...D.querySelectorAll("#slist .scard")].find((x) => x.textContent.includes(u)); return k && [...k.querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again|Signing out|Signed out|Nothing was|Could not sign out/.test(b.textContent)); };
+    ok(await until(() => !!btn()) && btn().textContent === "Sign out everywhere", "each account's card carries Sign out everywhere");
+    btn().click();
+    await new Promise((r) => setTimeout(r, 40));
+    ok(seen.length === 0 && /Tap again/.test(btn().textContent), "one tap only asks, on the button itself, and sends nothing");
+    btn().click();
+    ok(await until(() => seen.length === 1) && seen[0].u === u && await until(() => /Signed out everywhere|Nothing was signed in/.test(btn().textContent)),
+      "and the second signs the account out everywhere: " + JSON.stringify(seen));
+  } finally { globalThis.fetch = realFetch; if (win) { try { win.close(); } catch (e) { /* best effort */ } } }
+})();
+section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
+await (async () => {
+  /* S3, 24 SEP 2026. The door's one way in named its opener unseal, which stmt/owner.js already declared: spliced in
+     after it, the owner's declaration won everywhere on his page, and Review opened no account at all. Found by the
+     suite (S1 1.21), whose shard died on the unhandled throw. */
+  const { landingPage: lpF } = await import("../stmt/page.js");
+  const all = lpF("", "nF", { master: "x", accounts: [] });
+  const js = all.slice(all.indexOf("<script"));
+  const names = [...js.matchAll(/(?:^|[^.\w])(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/g)].map((x) => x[1]);
+  const twice = [...new Set(names.filter((n, i) => names.indexOf(n) !== i))];
+  ok(names.length > 100 && names.includes("openBeside") && names.includes("loadView") && twice.length === 0,
+    "every function on his page is declared once, the Counter's and his own together: " + JSON.stringify(twice));
 })();
 section("v710: the shared link signs them in once, so no message carries a password");
 await (async () => {
@@ -18985,7 +22232,9 @@ await (async () => {
   /* ---- and never again ---- */
   const second = await openLink(tok10);
   ok(second.ok === false, "the second open is refused: the record is burnt on the way through");
-  ok(!(await kv10.get("ot:" + hash10)), "and nothing of it is left in the store");
+  /* S3 3.3: what is left answers only the page that spent it, and only for two minutes */
+  ok(JSON.parse(await kv10.get("ot:" + hash10)).spent && (kv10.opts.get("ot:" + hash10) || {}).expirationTtl === S10.RETRY_TTL,
+    "and what is left of it is marked spent and expires in two minutes");
   /* the refusal is the door's one refusal, byte for byte, so a used link reads as an invented one */
   const invented = await openLink(S10.newSignin());
   const badPass = await (await stmtW10.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
@@ -19031,7 +22280,7 @@ await (async () => {
     const tokA = S10.newSignin();
     const wrapA = await C10.wrapKey(tokA, ck10);
     const okMint = await mintAt(u10, { token: tokA, wrap: wrapA });
-    ok(okMint.ok && okMint.url.endsWith("/s/" + tokA) && /signs you in, once/.test(okMint.msg) && Array.isArray(okMint.qr),
+    ok(okMint.ok && okMint.url.endsWith("/s/" + tokA) && /The link works once/.test(okMint.msg) && Array.isArray(okMint.qr),
       "his route builds the finished link, the words and the code, so the one copy of the message holds");
     ok(!okMint.msg.includes(pw10) && !("token" in okMint && okMint.token !== tokA),
       "and the message it hands back carries no password");
@@ -19070,7 +22319,7 @@ await (async () => {
   const msg10 = SEND10.signInMessage({ url: "https://k7m3p2.example/s/" + tok10, user: u10 }, "September 2026");
   ok(!/password/i.test(msg10.replace(/username and password/i, "")) && !msg10.includes(pw10),
     "the message carries no password at all, which is the whole of why the link exists");
-  ok(/signs you in, once/.test(msg10) && /do not pass it on/.test(msg10) && /stops working after a week/.test(msg10),
+  ok(/The link works once/.test(msg10) && /do not pass it on/.test(msg10) && /stops working after three days/.test(msg10),
     "and it says plainly what the link is: theirs, once, and not for passing on");
   const sendSrc = readFileSync(join(REPO, "stmt", "send.js"), "utf8");
   ok((sendSrc.match(/export function signInMessage/g) || []).length === 1
@@ -19079,9 +22328,9 @@ await (async () => {
 
   /* ---- the page reads the token off its own address ---- */
   const page10 = await (await doorOf("/")).text();
-  ok(/function openSignin\(\)/.test(page10) && /\/open-link/.test(page10) && /history\.replaceState/.test(page10),
+  ok(/async function showLink\(\)/.test(page10) && /\/open-link/.test(page10) && /history\.replaceState/.test(page10),
     "the page posts the token once and rewrites its own address, so a reload never presents a spent link");
-  ok(/if\(!\(await openSignin\(\)\)\) await openRemembered\(\);/.test(page10),
+  ok(/if\(await showLink\(\)\) return;/.test(page10) && page10.indexOf("if(await showLink()) return;") < page10.indexOf("var inNow=await openRemembered();"),
     "a link is tried first and a remembered device is still there behind it");
 
   /* ---- AND THE PAGE, DRIVEN ON THE LINK ITSELF. Reading its source proves the code is there; it
@@ -19105,13 +22354,16 @@ await (async () => {
   } });
   try {
     const d10 = dom10.window.document;
+    /* S3 3.3: the link waits on its own page for Continue */
+    for (let i = 0; i < 100 && d10.getElementById("linkGo").disabled; i++) await new Promise((r) => setTimeout(r, 30));
+    d10.getElementById("linkGo").dispatchEvent(new dom10.window.Event("click", { bubbles: true }));
     for (let i = 0; i < 150 && d10.getElementById("tabs").hidden; i++) await new Promise((r) => setTimeout(r, 100));
     ok(!d10.getElementById("tabs").hidden && d10.getElementById("gate").hidden,
-      "a reader landing on the link is signed in without typing anything: the tabs are up and the door is gone");
+      "a reader landing on the link is signed in with one tap and nothing typed: the tabs are up and the door is gone");
     ok(posts10.includes("/open-link"), "and it got there by posting the token off its own address");
     ok(dom10.window.location.pathname === "/",
       "which the page has already forgotten: the address is rewritten, so a reload never presents a spent link");
-    ok((await S10.burnSignin(env10, liveTok)) === null, "and the link itself is spent");
+    ok((await S10.burnSignin(env10, liveTok, "anotherPageNonce0000000")) === null, "and the link itself is spent");
   } finally { try { dom10.window.close(); } catch (e) { /* best effort */ } }
 })();
 section("v710a: -m takes a message or a file holding one, so a note is never committed as a path");
@@ -19243,7 +22495,7 @@ await (async () => {
 
     /* ---- and the customer's own is untouched, still opening on the customer's door ---- */
     const cust = await (await get("/manifest.webmanifest")).json();
-    ok(cust.start_url === "./" && cust.name === "Salt Counter" && mf.name !== cust.name,
+    ok(cust.start_url === "/app" && cust.name === "Salt Counter" && mf.name !== cust.name,
       "the customer's manifest is untouched and the two are different apps: " + JSON.stringify([cust.name, mf.name]));
 
     /* ---- THE DESK'S NAME IS NOWHERE ON THIS SITE, which is the rule this change could most easily
@@ -20247,7 +23499,11 @@ await (async () => {
     ok(sz.length === 2 && sz[0][1] === 1 && sz[1][1] === 2 && O.RID_RE.test(sz[1][0] || "") && sz[1][0] !== sz[0][0],
       "a size changed after 'not placed' goes under a new id, never as a repeat of the order before: " + JSON.stringify(sz));
     placeOk = true;
-
+    /* S5 5.2: the ways to pay open from the order's own screen, behind its one Pay */
+    await until(() => d.querySelector('#pOrder [data-row="' + ord.id + '"]'));
+    d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
+    const payNow = () => [...d.querySelectorAll("#pOrder button")].find((b) => /^Pay RM/.test(b.textContent));
+    await until(payNow); if (payNow()) payNow().click();
     const payTap = async (n) => { await until(() => d.getElementById("pd-" + ord.id) && !d.getElementById("pd-" + ord.id).disabled);
       d.getElementById("pd-" + ord.id).click(); await until(() => sent.pay.length === n); };
     await payTap(1); await payTap(2);
@@ -20407,19 +23663,22 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => ticks.length > 0);
     d.querySelector('button[data-t="order"]').click();
-    await until(() => d.querySelectorAll("#pOrder .sayw input").length === 2);
-    const box = d.querySelectorAll("#pOrder .sayw input")[0];
+    /* S5 5.5: the order open, its thread part and its box held; a poll patches only a part that changed */
+    await until(() => d.querySelector('#pOrder [data-row="' + second + '"]'));
+    d.querySelector('#pOrder [data-row="' + second + '"]').click();
+    const box = d.querySelector('#pOrder input[data-say="' + second + '"]');
+    const thread = () => d.querySelector('#pOrder .oscreen [data-part="thread"]'), thread0 = thread();
     box.focus(); box.value = "half typed";
     await call("/desk/orders/" + un + "/" + second, { mark: { ledgerKey: "CX1-AB|2026-09-24|130", ack: "2026-09-24T02:00:00.000Z",
       sync: { state: "waiting", why: "the row is not on the book yet", at: "2026-09-24T02:00:00.000Z" } } }, D);
     const poll = ticks[ticks.length - 1];
     await poll();
-    ok(ticks.length > 0 && d.contains(box) && d.activeElement === box && box.value === "half typed",
-      "a mark the desk wrote on their order leaves the page alone: the thread box keeps its line and the cursor");
+    ok(ticks.length > 0 && d.contains(box) && d.activeElement === box && box.value === "half typed" && thread() === thread0,
+      "a mark the desk wrote on their order leaves the page alone: the thread is not drawn again, and the box keeps its line and the cursor");
     await call("/desk/orders/" + un + "/" + second, { message: "it is ready" }, D);
     await poll();
-    ok(!d.contains(box) && /it is ready/.test(d.getElementById("pOrder").textContent),
-      "while a change they can see, his answer, still redraws it, so the check above could have failed");
+    ok(thread() !== thread0 && /it is ready/.test(thread().textContent) && d.contains(box) && box.value === "half typed",
+      "while a change they can see, his answer, draws the thread again, so the check above could have failed, and the box is still left alone");
   } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
 })();
 
@@ -20502,6 +23761,10 @@ await (async () => {
       d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
       for (let i = 0; i < 150 && !d.querySelector('button[data-t="order"]'); i++) await new Promise((r) => setTimeout(r, 20));
       d.querySelector('button[data-t="order"]').click();
+      /* S5 5.2: the ways to pay open from the order's own screen, behind its one Pay */
+      for (let i = 0; i < 150 && !d.querySelector('#pOrder [data-row="' + o.id + '"]'); i++) await new Promise((r) => setTimeout(r, 20));
+      const row = d.querySelector('#pOrder [data-row="' + o.id + '"]'); if (row) row.click();
+      const pay = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
       for (let i = 0; i < 150 && !d.querySelector('#pOrder input[name="pm-' + o.id + '"]'); i++) await new Promise((r) => setTimeout(r, 20));
       return [...d.querySelectorAll('#pOrder input[name="pm-' + o.id + '"]')].map((r) => r.value);
     } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
@@ -20737,26 +24000,32 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => d.querySelector('button[data-t="order"]'));
     d.querySelector('button[data-t="order"]').click();
+    /* S5: the order's own screen, and its ways to pay behind its one Pay */
+    await until(() => d.querySelector('#pOrder [data-row="' + ord.id + '"]'));
+    d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
+    const payNow = () => [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent));
+    await until(payNow); if (payNow()) payNow().click();
     await until(() => d.querySelector('#pOrder input[name="pm-' + ord.id + '"][value="tngbiz"]'));
     const r = d.querySelector('#pOrder input[name="pm-' + ord.id + '"][value="tngbiz"]');
     r.checked = true; r.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
     await tap("Confirm", "method", 1); await tap("Confirm", "method", 2);
     const say = () => d.querySelector('#pOrder input[data-say="' + ord.id + '"]');
     const type = async (t) => { await until(say); say().value = t; say().dispatchEvent(new dom.window.Event("input", { bubbles: true })); };
-    await type("is it ready?"); await tap("Send", "say", 1); await type("is it ready?"); await tap("Send", "say", 2);
+    /* S5 5.4: a line that did not go stands in the thread, and Tap to try again sends it again under its own id */
+    await type("is it ready?"); await tap("Send", "say", 1); await tap("Tap to try again", "say", 2);
     await type("is it ready now?"); await tap("Send", "say", 3);
-    await tap("Withdraw this order", "cancel", 1); await tap("Withdraw this order", "cancel", 2);
+    await tap("Cancel this order", "cancel", 1); await tap("Cancel this order", "cancel", 2);
     pass = true;
-    await tap("Withdraw this order", "cancel", 3); await tap("Withdraw this order", "cancel", 4);
+    await tap("Cancel this order", "cancel", 3); await tap("Cancel this order", "cancel", 4);
     await type("thanks"); await tap("Send", "say", 4); await type("thanks"); await tap("Send", "say", 5);
     const ids = (k) => sent[k].map((x) => x && x.rid);
     const good = (a) => a.every((x) => O.RID_RE.test(x || ""));
     const mi = ids("method"), si = ids("say"), ci = ids("cancel");
     ok(good(mi) && mi.length === 2 && mi[1] === mi[0], "Confirm sends an id, and tapped again after it failed, the same one: " + JSON.stringify(mi));
     ok(good(si) && si.length === 5 && si[1] === si[0] && si[2] !== si[0] && si[4] !== si[3],
-      "Send sends an id per line: the same line again carries it, another line a new one, and a line once recorded never lends its id to the next: " + JSON.stringify(si));
+      "Send sends an id per line: the same line tried again carries it, another line a new one, and a line once recorded never lends its id to the next: " + JSON.stringify(si));
     ok(good(ci) && ci.length === 4 && ci[1] === ci[0] && ci[2] === ci[0] && ci[3] !== ci[0],
-      "Withdraw sends an id, carries it through every retry, and drops it once recorded: " + JSON.stringify(ci));
+      "Cancel sends an id, carries it through every retry, and drops it once recorded: " + JSON.stringify(ci));
   } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
 })();
 
@@ -21802,6 +25071,919 @@ await (async () => {
   ok(!/On this order/.test(quiet), "and an order nobody wrote on draws no thread at all");
 })();
 
+section("S5 5.1: the orders are rows, what needs them first, and the earlier ones folded and not drawn until opened");
+await (async () => {
+  /* 24 SEP 2026, the Counter redesign's stage 5. Every order was a pane with its whole thread, its pay controls
+     and its history, drawn in the order it was placed and drawn again on every poll: a customer with sixty
+     orders built sixty panes to find the one that needed them. Driven through the served page. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s51", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s51",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const o = (id, at, x) => Object.assign({ id, at, product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 0, moved: 0,
+    status: "placed", history: [{ at, status: "placed", by: "customer" }], msgs: [] }, x);
+  const OPEN = "20260924090000-open", OWES = "20260923090000-owes", SAID = "20260922090000-said", DONE = "20260901090000-done", GONE = "20260902090000-gone";
+  const orders = [o(OPEN, "2026-09-24T01:00:00Z"), o(OWES, "2026-09-23T01:00:00Z", { status: "acknowledged" }),
+    o(SAID, "2026-09-22T01:00:00Z", { status: "acknowledged", paid: 90, msgs: [{ at: "2026-09-22T02:00:00Z", by: "desk", text: "Ready on Friday." }] }),
+    o(DONE, "2026-09-01T01:00:00Z", { status: "done", paid: 90, moved: 1 }), o(GONE, "2026-09-02T01:00:00Z", { status: "cancelled" })];
+  const dom = new JSDOM(landingPage(u, "n51", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : { ok: true };
+      return { ok: true, status: 200, json: async () => j };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const list = () => d.querySelector("#pOrder [data-olist]");
+  const seq = () => [...list().children].map((x) => x.getAttribute("data-row") || x.textContent);
+  const row = (id) => d.querySelector('#pOrder [data-row="' + id + '"]');
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !list(); i++) await new Promise((r) => setTimeout(r, 50));
+    d.querySelector('#tabs button[data-t="order"]').click();
+    const s0 = seq();
+    ok(s0[0] === "Needs you" && s0[1] === OWES && s0[2] === SAID && s0[3] === "Open" && s0[4] === OPEN
+      && /RM 90 to pay/.test(row(OWES).textContent) && /A reply for you/.test(row(SAID).textContent),
+      "Needs you comes first, with the order that has money to pay and the one with a reply not yet read, then Open: " + JSON.stringify(s0));
+    const fold = list().querySelector("button.olater");
+    ok(!!fold && fold.textContent === "2 earlier orders" && fold.getAttribute("aria-expanded") === "false"
+      && !row(DONE) && !row(GONE) && s0.length === 6 && s0[5] === "2 earlier orders",
+      "the two closed orders are one fold at the foot, and nothing of them is drawn: " + JSON.stringify(s0));
+    fold.click();
+    const f2 = list().querySelector("button.olater");
+    ok(f2 && f2.getAttribute("aria-expanded") === "true" && !!row(DONE) && !!row(GONE),
+      "opening the fold draws them under it: " + JSON.stringify(seq()));
+    const r = row(OWES);
+    ok(r.tagName === "BUTTON" && r.classList.contains("salt-inbox-row") && !!r.querySelector("svg.psym") && /1 unit/.test(r.textContent)
+      && !!r.querySelector(".salt-status") && /23 Sep/.test((r.querySelector(".salt-inbox-row__age") || {}).textContent)
+      && (r.querySelector(".salt-inbox-row__action") || {}).textContent === "RM 90" && !r.querySelector("input, textarea, select, .salt-thread, .hist"),
+      "a row is one tap: the mark and the size with the state, the day and the figure, and nothing of the order's own screen: " + JSON.stringify(r.textContent));
+    r.click();
+    const scr = d.querySelector("#pOrder .oscreen");
+    ok(!!scr && scr.getAttribute("data-order") === OWES && d.getElementById("oArea").classList.contains("o-open") && d.getElementById("pOrder").classList.contains("o-open"),
+      "a tap opens that order's own screen, and on a phone the place says it is open, so the list and the form stand aside");
+    const back = d.querySelector("#pOrder .oback"); if (back) back.click();
+    ok(!!back && !d.querySelector("#pOrder .oscreen") && !d.getElementById("oArea").classList.contains("o-open") && !!row(OWES),
+      "the way back is the list again");
+  } finally { w.close(); }
+})();
+section("S5 5.2: an order opens its own screen, the goods on their own steps, the money on its own lines, one next action and Cancel at the foot");
+await (async () => {
+  /* 24 SEP 2026, the Counter redesign's stage 5. A pane said "Ready. Handed over in full. Nothing paid yet." in one
+     line, so Paid could be read as a stage of the goods; the pay controls stood open on every order owing, beside
+     Withdraw, with the history in full under them. Driven through the served page, one order opened at a time. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s52", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s52",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const o = (id, at, x) => Object.assign({ id, at, product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 0, moved: 0,
+    status: "acknowledged", history: [{ at, status: "placed", by: "customer" }, { at, status: "acknowledged", by: "desk" }], msgs: [] }, x);
+  const ADV = "20260924090000-adv", PART = "20260923090000-part", UP = "20260922090000-paidup", CLAIM = "20260921090000-claim", DONE = "20260901090000-done";
+  const orders = [
+    o(ADV, "2026-09-24T01:00:00Z", { status: "ready", mode: "deliver", place: "Taman Contoh", delivery: 10, moved: 1, movedOn: "2026-09-24" }),
+    o(PART, "2026-09-23T01:00:00Z", { qty: 5, total: 390, paid: 200, method: "transfer", account: "maybank" }),
+    o(UP, "2026-09-22T01:00:00Z", { paid: 90 }),
+    o(CLAIM, "2026-09-21T01:00:00Z", { claimed: 50 }),
+    o(DONE, "2026-09-01T01:00:00Z", { status: "done", paid: 90, moved: 1, movedOn: "2026-09-02" })];
+  const dom = new JSDOM(landingPage(u, "n52", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : { ok: true };
+      return { ok: true, status: 200, json: async () => j };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const scr = () => d.querySelector("#pOrder .oscreen");
+  const part = (k) => scr() && scr().querySelector('[data-part="' + k + '"]');
+  const open = (id) => {
+    const back = d.querySelector("#pOrder .oback"); if (back && scr()) back.click();
+    if (!d.querySelector('#pOrder [data-row="' + id + '"]')) { const f = d.querySelector("#pOrder .olater"); if (f) f.click(); }
+    const r = d.querySelector('#pOrder [data-row="' + id + '"]'); if (r) r.click();
+    return scr() && scr().getAttribute("data-order") === id;
+  };
+  const lines = () => [...scr().querySelectorAll(".salt-ledger__row")].map((r) => [r.querySelector(".salt-ledger__label").textContent,
+    r.querySelector(".salt-ledger__value").textContent, (r.querySelector(".salt-ledger__flag") || {}).textContent || ""]);
+  const pills = () => [...scr().querySelectorAll(".salt-pill")].filter((b) => !b.closest("[hidden]")).map((b) => b.textContent);
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-olist]"); i++) await new Promise((r) => setTimeout(r, 50));
+    d.querySelector('#tabs button[data-t="order"]').click();
+
+    ok(open(ADV), "the delivered, unpaid order opens");
+    const steps = [...scr().querySelectorAll("ol.salt-steps > li")];
+    ok(steps.map((s) => s.textContent).join("|") === "Sent|Confirmed|Ready|Delivered"
+      && steps.slice(0, 3).every((s) => s.classList.contains("salt-steps__step--done")) && steps[3].getAttribute("aria-current") === "step"
+      && !/pa(y|id)/i.test(part("steps").textContent),
+      "the goods are on their own track, at Delivered, with nothing about money on it: " + JSON.stringify(steps.map((s) => s.className)));
+    const L1 = lines();
+    ok(JSON.stringify(L1) === JSON.stringify([["Goods", "RM 90", ""], ["Delivery", "RM 10", "To Taman Contoh"], ["Still to pay", "RM 100", "The goods are with you"]]),
+      "the money has its own lines, what is still to pay among them: " + JSON.stringify(L1));
+    ok(JSON.stringify(pills()) === JSON.stringify(["Pay RM 100"]) && !scr().querySelector(".oact input"),
+      "one next action, the filled Pay for what is still to pay, and no pay controls until it is tapped: " + JSON.stringify(pills()));
+    ok(!scr().querySelector('[data-part="foot"] button') && /can no longer be cancelled/.test(part("foot").textContent),
+      "with the goods already with them, the foot offers no Cancel and says why");
+
+    ok(open(PART), "the part-paid order opens");
+    ok(JSON.stringify(lines()) === JSON.stringify([["Goods", "RM 390", ""], ["Paid", "RM 200", ""], ["Still to pay", "RM 190", "Now, or when you collect"]]),
+      "what is paid is a line of its own and what is left is the rest: " + JSON.stringify(lines()));
+    const foot = part("foot"), cancel = foot && [...foot.querySelectorAll("button")].find((b) => b.textContent === "Cancel this order");
+    ok(!!cancel && scr().lastElementChild === foot, "Cancel this order stands at the foot while nothing has moved");
+    const pay = [...scr().querySelectorAll("button")].find((b) => b.textContent === "Pay RM 190");
+    if (pay) pay.click();
+    ok(!!pay && !!scr().querySelector(".oact .pay") && JSON.stringify(pills()) === JSON.stringify(["I have paid"]),
+      "Pay opens the ways to pay in its place, and theirs is then the one filled control: " + JSON.stringify(pills()));
+    const hist = part("hist").querySelector("details.salt-plan");
+    ok(!!hist && !hist.open && /What happened, step by step/.test(hist.querySelector("summary").textContent),
+      "what happened is folded under its own line");
+
+    ok(open(UP) && pills().length === 0 && JSON.stringify(lines().pop()) === JSON.stringify(["Still to pay", "RM 0", "Paid in full"]),
+      "an order paid up has nothing filled on it: " + JSON.stringify(pills()));
+    ok(open(CLAIM) && JSON.stringify(lines().slice(1)) === JSON.stringify([["Sent by you", "RM 50", "Waiting for us to confirm it arrived"], ["Still to pay", "RM 40", "Now, or when you collect"]])
+      && JSON.stringify(pills()) === JSON.stringify(["Pay RM 40"]),
+      "what they have sent and is waiting is its own line, read from claimed, and not asked for again: " + JSON.stringify(lines()));
+    ok(open(DONE) && pills().length === 0 && !part("foot").childNodes.length
+      && [...scr().querySelectorAll("ol.salt-steps > li")].every((s) => s.classList.contains("salt-steps__step--done")),
+      "a complete order has every step done, nothing filled and nothing to cancel");
+  } finally { w.close(); }
+})();
+section("S5 5.3: an order's state is said in the customer's words, on the page and in every refusal the site hands it");
+await (async () => {
+  /* 24 SEP 2026, his answer to D11. The page read the desk's states to the customer: Acknowledged, Withdrawn,
+     Declined, "handed over", and a refusal said "an order that is done". Their words are Sent, Confirmed, Ready to
+     collect or deliver, Collected or Delivered, Complete, Not taken, Cancelled by you or by us, and units above
+     one. Driven through the served page, then the site's own state machine. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const O = await import("../stmt/orders.js");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s53", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s53",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const h = (at, status, by, x) => Object.assign({ at, status, by }, x || {});
+  const o = (id, x) => Object.assign({ id, at: "2026-09-2" + id.slice(-1) + "T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0,
+    mode: "collect", paid: 0, moved: 0, status: "placed", history: [h("2026-09-20T01:00:00Z", "placed", "customer")], msgs: [] }, x);
+  const orders = [
+    o("20260929000000-a1", { qty: 0.5 }),
+    o("20260928000000-a2", { status: "acknowledged", paid: 90 }),
+    o("20260927000000-a3", { status: "ready", qty: 2.5, total: 225, paid: 225 }),
+    o("20260926000000-a4", { status: "ready", mode: "deliver", paid: 90 }),
+    o("20260925000000-a5", { status: "ready", mode: "deliver", moved: 1, movedOn: "2026-09-25" }),
+    o("20260924000000-a6", { status: "done", paid: 90, moved: 1, history: [h("2026-09-20T01:00:00Z", "placed", "customer"),
+      h("2026-09-20T02:00:00Z", "acknowledged", "desk"), h("2026-09-20T03:00:00Z", "acknowledged", "customer", { method: "cod" }),
+      h("2026-09-20T04:00:00Z", "acknowledged", "customer", { method: "cod", note: "paid 70.00" }),
+      h("2026-09-20T05:00:00Z", "acknowledged", "desk", { note: "payment of 20.00 recorded" }),
+      h("2026-09-20T06:00:00Z", "acknowledged", "desk", { note: "1 unit collected" }), h("2026-09-20T06:00:00Z", "done", "site")] }),
+    o("20260923000000-a7", { status: "declined", history: [h("2026-09-20T01:00:00Z", "placed", "customer"), h("2026-09-20T02:00:00Z", "declined", "desk", { note: "None this week" })] }),
+    o("20260922000000-a8", { status: "cancelled", history: [h("2026-09-20T01:00:00Z", "placed", "customer"), h("2026-09-20T02:00:00Z", "cancelled", "customer")] }),
+    o("20260921000000-a9", { status: "cancelled", history: [h("2026-09-20T01:00:00Z", "placed", "customer"), h("2026-09-20T02:00:00Z", "cancelled", "desk")] })];
+  const dom = new JSDOM(landingPage(u, "n53", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : { ok: true };
+      return { ok: true, status: 200, json: async () => j };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const row = (id) => d.querySelector('#pOrder [data-row="' + id + '"]');
+  const chip = (id) => { const r = row(id), c = r && r.querySelector(".salt-status"); return c ? c.textContent : null; };
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-olist]"); i++) await new Promise((r) => setTimeout(r, 50));
+    d.querySelector('#tabs button[data-t="order"]').click();
+    const fold = d.querySelector("#pOrder .olater"); if (fold) fold.click();
+    const words = orders.map((x) => chip(x.id));
+    ok(JSON.stringify(words) === JSON.stringify(["Sent", "Confirmed", "Ready to collect", "Ready to deliver", "Delivered", "Complete", "Not taken", "Cancelled by you", "Cancelled by us"]),
+      "each state reads in their words, the goods all with them reading Delivered and a cancellation saying whose it was: " + JSON.stringify(words));
+    ok(!/Acknowledged|Withdrawn|Declined|Completed|Placed|handed over/i.test(d.querySelector("#pOrder [data-olist]").textContent),
+      "and none of the desk's words is left on the list");
+    ok(/0[.]5 unit(?!s)/.test(row("20260929000000-a1").textContent) && /2[.]5 units/.test(row("20260927000000-a3").textContent) && /1 unit(?!s)/.test(row("20260928000000-a2").textContent),
+      "units above one, unit at one and under: " + JSON.stringify([row("20260929000000-a1").textContent, row("20260927000000-a3").textContent]));
+    row("20260924000000-a6").click();
+    const hist = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
+    ok(JSON.stringify(hist) === JSON.stringify(["Sent", "Confirmed", "You chose to pay by cash on handover", "You paid RM 70 by cash on handover",
+      "We recorded a payment of RM 20", "1 unit collected", "Complete"]),
+      "what happened reads a step a line in their words, the desk's shorthand turned into sentences: " + JSON.stringify(hist));
+    d.querySelector("#pOrder .oback").click();
+    row("20260923000000-a7").click();
+    const h7 = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
+    ok(h7[1] === "Not taken: None this week", "his reason stays with the step it came with: " + JSON.stringify(h7));
+  } finally { w.close(); }
+
+  /* ---- the refusals the site hands the page ---- */
+  const at = "2026-09-24T01:00:00Z";
+  const said = [
+    O.decideCustomer({ status: "done", moved: 1, qty: 1 }, "cancel", {}, [], at).error,
+    O.decideCustomer({ status: "declined", moved: 0, qty: 1 }, "cancel", {}, [], at).error,
+    O.decideCustomer({ status: "acknowledged", moved: 1, qty: 1 }, "cancel", {}, [], at).error,
+    O.decideCustomer({ status: "placed", moved: 0, qty: 1, total: 90 }, "method", { method: "cod" }, [], at).error,
+    O.decideCustomer({ status: "placed", moved: 0, qty: 1, total: 90 }, "pay", { amount: 10 }, [], at).error];
+  ok(JSON.stringify(said) === JSON.stringify(["this order is complete, so it cannot be cancelled here", "this order is not taken, so it cannot be cancelled here",
+    "the goods are already with you, so this cannot be cancelled here", "payment is chosen once the order is confirmed", "payment is recorded once the order is confirmed"]),
+    "every refusal of a customer's move says it in their words, never the state's name: " + JSON.stringify(said));
+})();
+section("S5 5.4: a line on an order shows where it is, Return sends it, and his lines are New until seen");
+await (async () => {
+  /* 24 SEP 2026, the Counter redesign's stage 5. A line was sent from a box beside a Send that went grey, and
+     nothing on the thread said whether it had gone: a dropped request put Not sent under the box and the line was
+     lost with the next draw. His answers looked like every other line. Driven through the served page. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s54", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s54",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const A = "20260924090000-aaaa", B = "20260923090000-bbbb";
+  const o = (id, x) => Object.assign({ id, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 90,
+    moved: 0, status: "acknowledged", history: [], msgs: [] }, x);
+  const ordA = o(A, { msgs: [{ at: "2026-09-23T02:00:00Z", by: "customer", text: "Before noon please" }, { at: "2026-09-23T03:00:00Z", by: "desk", text: "Noted, Thursday morning." }] });
+  const orders = [ordA, o(B)];
+  const said = [];
+  let mode = "hold", release = null;
+  const dom = new JSDOM(landingPage(u, "n54", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
+      if (p === "/open") return { ok: true, status: 200, json: async () => body };
+      if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders }) };
+      if (p === "/orders/" + A + "/say") {
+        said.push(j);
+        if (mode === "fail") throw new TypeError("Failed to fetch");
+        if (mode === "hold") await new Promise((r) => { release = r; });
+        ordA.msgs = ordA.msgs.concat([{ at: "2026-09-24T02:00:00Z", by: "customer", text: j.text }]);
+        return { ok: true, status: 200, json: async () => ({ ok: true, order: JSON.parse(JSON.stringify(ordA)) }) };
+      }
+      return { ok: true, status: 200, json: async () => ({ ok: true }) };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const scr = () => d.querySelector("#pOrder .oscreen");
+  const open = (id) => { const b = d.querySelector("#pOrder .oback"); if (b && scr()) b.click(); d.querySelector('#pOrder [data-row="' + id + '"]').click(); };
+  const bubbles = () => [...scr().querySelectorAll(".salt-thread__lines .salt-bubble")].map((b) => ({
+    side: b.classList.contains("salt-bubble--mine") ? "mine" : b.classList.contains("salt-bubble--theirs") ? "theirs" : "?",
+    text: b.querySelector(".salt-bubble__text").textContent, state: (b.querySelector(".salt-bubble__state") || {}).textContent || "",
+    isNew: !!b.querySelector(".salt-bubble__new"), failed: b.classList.contains("salt-bubble--failed"),
+    retry: [...b.querySelectorAll("button")].filter((x) => x.textContent === "Tap to try again" && x.classList.contains("salt-ghost")).length }));
+  const box = () => scr().querySelector('input[aria-label="Write about this order"]');
+  const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const send = (t) => { box().value = t; box().dispatchEvent(new w.Event("input", { bubbles: true })); if (box().form) box().form.requestSubmit(); };
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => d.querySelector("#pOrder [data-olist]"));
+    d.querySelector('#tabs button[data-t="order"]').click();
+    open(A);
+    const b0 = bubbles();
+    ok(JSON.stringify(b0) === JSON.stringify([{ side: "mine", text: "Before noon please", state: "Sent", isNew: false, failed: false, retry: 0 },
+      { side: "theirs", text: "Noted, Thursday morning.", state: "", isNew: true, failed: false, retry: 0 }])
+      && !/[Rr]ead|[Ss]een/.test(scr().querySelector(".salt-thread").textContent),
+      "their line stands right and says Sent, his stands left marked New, and nothing says read: " + JSON.stringify(b0));
+    open(B); open(A);
+    ok(bubbles()[1].isNew === false, "once shown, his line is no longer New when the order is opened again: " + JSON.stringify(bubbles()[1]));
+
+    ok(!!box().form && box().form.classList.contains("salt-composer") && box().getAttribute("enterkeyhint") === "send" && box().form.querySelector('button[type="submit"]').textContent === "Send",
+      "the composer is a form, so Return sends it, and the key says so");
+    send("Thursday is fine");
+    await until(() => said.length === 1);
+    const b1 = bubbles().pop();
+    ok(b1.text === "Thursday is fine" && b1.state === "Sending" && box().value === "",
+      "a line in flight stands in the thread as Sending, and the box is empty for the next: " + JSON.stringify(b1));
+    if (release) release();
+    await until(() => bubbles().length === 3 && bubbles()[2].state === "Sent");
+    ok(JSON.stringify(bubbles().map((b) => b.state)) === JSON.stringify(["Sent", "", "Sent"]), "stored, it says Sent: " + JSON.stringify(bubbles()));
+
+    mode = "fail";
+    send("Someone will be in after eleven");
+    await until(() => bubbles().some((b) => b.failed));
+    const b2 = bubbles().pop();
+    ok(b2.failed && b2.state === "Not sent" && b2.retry === 1 && b2.text === "Someone will be in after eleven",
+      "a line that could not go says Not sent, keeps its words, and offers Tap to try again: " + JSON.stringify(b2));
+    mode = "ok";
+    const again = [...scr().querySelectorAll("button")].find((x) => x.textContent === "Tap to try again"); if (again) again.click();
+    await until(() => said.length === 3 && !bubbles().some((b) => b.failed || b.state === "Sending"));
+    ok(said.length === 3 && said[2].rid === said[1].rid && said[1].rid !== said[0].rid && said[2].text === said[1].text,
+      "tried again, it carries the same id, so a line that did arrive is not recorded twice: " + JSON.stringify(said.map((x) => x.rid)));
+
+    box().value = "Half a thought"; box().dispatchEvent(new w.Event("input", { bubbles: true }));
+    open(B);
+    const other = box().value;
+    open(A);
+    ok(other === "" && box().value === "Half a thought", "what is typed is kept for its own order, and only there: " + JSON.stringify([other, box().value]));
+  } finally { if (release) release(); w.close(); }
+})();
+section("S5 5.5: the poll patches the order that changed, and never draws again what is being typed");
+await (async () => {
+  /* 24 SEP 2026, the Counter redesign's stage 5. A poll bringing any change to any order drew the whole tab again:
+     the order form, every order, and the box a line was being typed in, which v827 then refilled and refocused as
+     a new element. Driven by the page's own poll, shortened in the served HTML. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s55", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s55",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await C.encryptWith(ck, JSON.stringify({ week: { label: "21 Sep to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+      products: [{ product: "salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 90 }] }] })) };
+  const A = "20260924090000-aaaa", B = "20260923090000-bbbb", Cc = "20260901090000-cccc", D = "20260922090000-dddd";
+  const o = (id, x) => Object.assign({ id, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 90,
+    moved: 0, status: "acknowledged", history: [], msgs: [] }, x);
+  let phase = 0;
+  const list = () => [
+    o(A, { msgs: [{ at: "2026-09-23T02:00:00Z", by: "customer", text: "Before noon please" }].concat(phase ? [{ at: "2026-09-24T03:00:00Z", by: "desk", text: "It goes out Thursday." }] : []) }),
+    o(B, { status: phase ? "ready" : "acknowledged" }),
+    o(D, { total: 150, paid: phase > 1 ? 30 : 0, method: "transfer", account: "maybank", status: phase > 2 ? "ready" : "acknowledged" }),
+    o(Cc, { status: "done", moved: 1 })];
+  const html = landingPage(u, "n55", null), fast = html.replace(/var POLL_MS=[0-9]+/, "var POLL_MS=120");
+  const dom = new JSDOM(fast, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: list() } : { ok: true };
+      return { ok: true, status: 200, json: async () => j };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const row = (id) => d.querySelector('#pOrder [data-row="' + id + '"]');
+  const scr = () => d.querySelector("#pOrder .oscreen");
+  const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 30)); return f(); };
+  try {
+    ok(fast !== html, "the served page's poll is shortened, or this proves nothing about a poll");
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => row(A) && d.getElementById("oNew"));
+    d.querySelector('#tabs button[data-t="order"]').click();
+    d.querySelector("#pOrder .olater").click();
+    row(A).click();
+    const box = d.querySelector('#pOrder input[data-say="' + A + '"]'), form = d.getElementById("oNew"), rowC = row(Cc), rowA = row(A), head = d.querySelector('#pOrder .oscreen [data-part="head"]');
+    box.focus(); box.value = "Could it"; box.dispatchEvent(new w.Event("input", { bubbles: true })); box.setSelectionRange(5, 5);
+    phase = 1;
+    await until(() => /It goes out Thursday/.test(scr().textContent));
+    const line = [...d.querySelectorAll("#pOrder .oscreen .salt-bubble--theirs")].pop();
+    ok(!!line && /It goes out Thursday/.test(line.textContent) && !!line.querySelector(".salt-bubble__new") && /Ready to collect/.test(row(B).textContent),
+      "the poll brought his answer into the open order's thread, marked New, and the other order's new state onto its row");
+    ok(d.contains(box) && d.activeElement === box && box.value === "Could it" && box.selectionStart === 5,
+      "the box being typed in is the same box, with its words and its caret where they were");
+    ok(d.contains(form) && d.contains(rowC) && d.contains(rowA) && d.contains(head),
+      "and nothing that did not change was drawn again: New order (S4 4.3, where the order form stood), a row that did not move and a part that reads the same");
+
+    /* a part that DOES change while its field has the focus: the amount being typed on an order whose payment moved */
+    d.querySelector("#pOrder .oback").click();
+    row(D).click();
+    const pay = [...scr().querySelectorAll(".oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
+    const amt = scr().querySelector('.oact input[type="number"]');
+    if (amt) { amt.focus(); amt.value = "40"; amt.dispatchEvent(new w.Event("input", { bubbles: true })); }
+    phase = 2;
+    await until(() => /Paid/.test((scr().querySelector('[data-part="money"]') || {}).textContent || ""));
+    ok(!!amt && /RM 30/.test(scr().querySelector('[data-part="money"]').textContent) && d.contains(amt) && d.activeElement === amt && amt.value === "40",
+      "the money moved and its lines say so, while the amount being typed keeps its field, its focus and its figure");
+
+    /* S4 over S5: the order sheet lies over the page, and a poll that patches the orders never draws it or its check again */
+    d.getElementById("oNew").click(); d.getElementById("oGo").click();
+    const sheet = d.getElementById("osheet"), place = d.getElementById("oPlace");
+    phase = 3;
+    await until(() => /Ready to collect/.test(row(D).textContent));
+    ok(/Ready to collect/.test(row(D).textContent) && !!place && d.contains(sheet) && d.getElementById("oPlace") === place && place.textContent === "Place order",
+      "and with the check open over the page, the poll patches the order under it and draws neither the sheet nor its check again");
+  } finally { w.close(); }
+})();
+section("S5 5.6: a banner's tap opens its order on the Counter's own page, a stale page re-reads without losing a line, and a desk shows the list beside the open order");
+await (async () => {
+  /* 24 SEP 2026, the Counter redesign's stage 5, over stage 12's tap. The service worker told the first window under
+     its scope, which a guest board or Salt Admin in another tab also is, and neither can open an order. A page
+     already open re-read and drew every order again, the line being typed with it. And on a desk the orders were
+     one column under the form, where the plan (f12w) stands the list beside the open order, its thread in view. */
+  const { SW_JS } = await import("../stmt/sw.js");
+  const vm = await import("node:vm");
+  const id = "20260924101500-ab12cd34";
+  const tap = async (clients) => {
+    const L = {}, opened = [];
+    const ctx = { URL, Date, console, fetch: async () => ({ ok: false }),
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { href: "https://site.test/sw.js?u=abcd-efgh" },
+        registration: { scope: "https://site.test/", showNotification: async () => {} },
+        clients: { matchAll: async () => clients, openWindow: async (u) => { opened.push(u); } } } };
+    ctx.clients = ctx.self.clients;
+    vm.createContext(ctx); vm.runInContext(SW_JS, ctx);
+    const waits = [];
+    L.notificationclick({ notification: { data: { url: "./?u=abcd-efgh#o=" + id, order: id }, close() {} }, waitUntil: (p) => waits.push(p) });
+    await Promise.all(waits);
+    return opened;
+  };
+  const win = (url) => { const w = { url, told: [], focused: 0 }; w.postMessage = (m) => w.told.push(m); w.focus = async () => { w.focused++; }; return w; };
+  const guest = win("https://site.test/g/k7m2p9qr4s"), admin = win("https://site.test/all"), counter = win("https://site.test/?u=abcd-efgh");
+  const o1 = await tap([guest, admin, counter]);
+  ok(counter.told.length === 1 && counter.told[0].order === id && counter.focused === 1 && !guest.told.length && !admin.told.length && !o1.length,
+    "the tap goes to the Counter's own page, past a guest board and Salt Admin open in other tabs: " + JSON.stringify({ counter: counter.told, guest: guest.told.length, admin: admin.told.length }));
+  const g2 = win("https://site.test/g/k7m2p9qr4s"), o2 = await tap([g2]);
+  ok(!g2.told.length && JSON.stringify(o2) === JSON.stringify(["./?u=abcd-efgh#o=" + id]), "and with only a guest board open, the Counter opens at the order: " + JSON.stringify(o2));
+
+  /* ---- the page ---- */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s56", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s56",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const P = "20260924090000-pppp", O = "20260923090000-oooo", D = "20260901090000-dddd";
+  const o = (oid, x) => Object.assign({ id: oid, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 0,
+    moved: 0, status: "acknowledged", history: [], msgs: [] }, x);
+  const drive = async (wide, go) => {
+    let answered = false, reads = 0;
+    const list = () => [o(P, { status: "placed" }), o(O, { msgs: answered ? [{ at: "2026-09-24T05:00:00Z", by: "desk", text: "Ready on Friday." }] : [] }),
+      o(D, { status: "done", paid: 90, moved: 1 })];
+    const st = { listen: null };
+    const dom = new JSDOM(landingPage(u, "n56", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
+      w.matchMedia = (q) => ({ matches: wide && /min-width: *1080px/.test(q), media: q, addEventListener() {}, removeEventListener() {} });
+      Object.defineProperty(w.navigator, "serviceWorker", { configurable: true, value: {
+        addEventListener: (t, f) => { if (t === "message") st.listen = f; }, getRegistration: async () => undefined } });
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? (reads++, { ok: true, orders: list() }) : { ok: true };
+        return { ok: true, status: 200, json: async () => j };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 30));
+      d.querySelector('#tabs button[data-t="order"]').click();
+      await go(w, d, st, { answer: () => { answered = true; }, reads: () => reads });
+    } finally { w.close(); }
+  };
+  const shownOf = (d) => { const s = d.querySelector("#pOrder .oscreen"); return s && s.getAttribute("data-order"); };
+  const current = (d) => [...d.querySelectorAll("#pOrder [data-row][aria-current=true]")].map((b) => b.getAttribute("data-row"));
+  await drive(true, async (w, d) => {
+    ok(shownOf(d) === O && JSON.stringify(current(d)) === JSON.stringify([O]) && !!d.querySelector('#pOrder [data-row="' + P + '"]'),
+      "on a desk the list stands beside an open order without a tap, what needs them first, its row marked: " + JSON.stringify({ shown: shownOf(d), current: current(d) }));
+    d.querySelector('#pOrder [data-row="' + P + '"]').click();
+    ok(shownOf(d) === P && JSON.stringify(current(d)) === JSON.stringify([P]) && !!d.querySelector('#pOrder [data-row="' + O + '"]'),
+      "and a tap on another row opens that one beside the same list: " + JSON.stringify({ shown: shownOf(d), current: current(d) }));
+  });
+  await drive(false, async (w, d, st, fx) => {
+    ok(!shownOf(d), "on a phone nothing is open until it is tapped");
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    const box = d.querySelector('#pOrder input[data-say="' + O + '"]');
+    box.focus(); box.value = "Is Friday"; box.dispatchEvent(new w.Event("input", { bubbles: true }));
+    fx.answer();
+    const before = fx.reads();
+    await st.listen({ data: { salt: "news", order: O } });
+    ok(fx.reads() === before + 1 && /Ready on Friday/.test(d.querySelector("#pOrder .oscreen").textContent)
+      && d.contains(box) && d.activeElement === box && box.value === "Is Friday",
+      "a banner about the order being written on re-reads it and shows his answer, and the line being typed keeps its box: "
+      + JSON.stringify({ reads: fx.reads() - before, kept: d.contains(box), value: box.value }));
+  });
+})();
+section("S3 x S5: a return to the page and a lapse reopened patch the orders, so the open order and a half-typed line survive, and only a form the account changed draws the tab");
+await (async () => {
+  /* 25 Sep 2026, the merge of stage 3 (sign-in) into stage 5 (an order and its messages). Stage 3 re-read the account
+     on every return and after a lapse, then drew the whole order tab again, the box being typed in with it; stage 5's
+     poll patches only what changed. Both roads now patch; an account whose form above the orders reads differently
+     (here, over RM 100 owed, the Pay page) draws the tab, the line kept in its box. */
+  const { landingPage: lpM } = await import("../stmt/page.js");
+  const CM = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDM } = await import("jsdom");
+  const uM = "aaaa-mmmm", devM = "m".repeat(32), ckM = await CM.contentKey("5".repeat(64), uM);
+  const env = await CM.encryptWith(ckM, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] }));
+  const list = await CM.encryptWith(ckM, JSON.stringify({ at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] }));
+  const owing = await CM.encryptWith(ckM, JSON.stringify({ at: "2026-09-25T01:00:00Z", body: "<p>Live</p>", owed: 150 }));
+  const A = "20260924090000-aaaa";
+  const st = { dead: new Set(), n: 0, last: "", reopened: 0, remFail: false, accounts: 0, lines: 0, live: null };
+  const said = (k) => ({ at: "2026-09-25T0" + k + ":00:00Z", by: "desk", text: "Answer " + k });
+  const orders = () => [{ id: A, at: "2026-09-24T01:00:00Z", product: "salt", qty: 1, unit: 130, total: 130, delivery: 0, mode: "collect", paid: 130,
+    moved: 0, status: "acknowledged", history: [], msgs: [{ at: "2026-09-24T02:00:00Z", by: "customer", text: "Before noon please" }]
+      .concat([1, 2, 3].slice(0, st.lines).map(said)) }];
+  const dom = new JDM(lpM("", "nM", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      const store = new Map([["salt-stmt-remember", JSON.stringify({ t: "t".repeat(32), k: Buffer.from(devM).toString("base64"), u: uM })]]);
+      Object.defineProperty(win, "localStorage", { configurable: true, value: {
+        getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+        removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+      win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET", h = (init && init.headers) || {}, s = h["X-Stmt-Session"] || "";
+        const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+        if (p === "/remember/open") {
+          if (st.remFail) throw new TypeError("Failed to fetch");
+          st.reopened++;
+          return ans(200, { ok: true, u: uM, remembered: true, wrap: await CM.wrapKey(devM, ckM), env, prices: list, live: st.live, session: (st.last = "sessMn" + (++st.n) + "0000000000000000000") });
+        }
+        if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
+        if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: uM, env, prices: list, live: st.live }); }
+        if (p === "/orders" && m === "GET") return ans(200, { ok: true, orders: orders() });
+        return ans(200, { ok: true });
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  const box = () => D.querySelector('#pOrder input[data-say="' + A + '"]');
+  const thread = () => (D.querySelector('#pOrder .oscreen[data-order="' + A + '"] [data-part="thread"]') || {}).textContent || "";
+  try {
+    await until(() => !D.getElementById("barw").hidden);
+    D.querySelector('button[data-t="order"]').click();
+    await until(() => D.querySelector('#pOrder [data-row="' + A + '"]'));
+    D.querySelector('#pOrder [data-row="' + A + '"]').click();
+    const b0 = box(), form0 = D.getElementById("oGo");
+    b0.focus(); b0.value = "Could it"; b0.dispatchEvent(new W.Event("input", { bubbles: true })); b0.setSelectionRange(5, 5);
+
+    /* a return to the page, on a live session */
+    st.lines = 1;
+    const reads = st.accounts;
+    Object.defineProperty(D, "visibilityState", { value: "visible", configurable: true });
+    D.dispatchEvent(new W.Event("visibilitychange"));
+    await until(() => /Answer 1/.test(thread()));
+    ok(st.accounts === reads + 1 && /Answer 1/.test(thread()) && box() === b0 && D.activeElement === b0 && b0.value === "Could it" && b0.selectionStart === 5
+      && D.getElementById("oGo") === form0,
+      "a return re-reads the account and patches the open order: his new line is in, the box being typed in is the same box, words and caret kept, and the form was not drawn again");
+
+    /* a return that meets a lapse: api() reopens from the remembered phone and the re-read goes on, patching */
+    st.dead.add(st.last); st.lines = 2;
+    const n0 = st.reopened;
+    const ev = new W.Event("pageshow"); Object.defineProperty(ev, "persisted", { value: true });
+    W.dispatchEvent(ev);
+    await until(() => /Answer 2/.test(thread()));
+    ok(st.reopened === n0 + 1 && /Answer 2/.test(thread()) && box() === b0 && b0.value === "Could it" && D.getElementById("oGo") === form0,
+      "a lapse met on the way reopens the phone once and the orders are still patched, the box and the form untouched");
+
+    /* the phone cannot reopen, the bar offers Try again, and Try again patches too */
+    st.dead.add(st.last); st.remFail = true;
+    D.dispatchEvent(new W.Event("visibilitychange"));
+    await until(() => !D.getElementById("lapse").hidden);
+    st.remFail = false; st.lines = 3;
+    D.getElementById("lapseGo").click();
+    await until(() => /Answer 3/.test(thread()));
+    ok(!!D.getElementById("lapse").hidden && /Answer 3/.test(thread()) && box() === b0 && b0.value === "Could it" && D.getElementById("oGo") === form0,
+      "and Try again reopens it and patches the same way: " + JSON.stringify({ lapse: D.getElementById("lapse").hidden, box: box() === b0 }));
+
+    /* the account now owes over RM 100: the form above the orders is the Pay page, so the tab is drawn again */
+    st.live = owing;
+    D.dispatchEvent(new W.Event("visibilitychange"));
+    await until(() => /Payment due/.test((D.querySelector("#pOrder h2") || {}).textContent || ""));
+    ok(/Payment due/.test(D.querySelector("#pOrder h2").textContent) && !D.getElementById("oGo") && !!D.querySelector('#pOrder .oscreen[data-order="' + A + '"]')
+      && !!box() && box().value === "Could it",
+      "a re-read that changes the form draws the tab: the Pay page stands where the form was, the order is still open and the line still in its box");
+  } finally { await new Promise((r) => setTimeout(r, 100)); W.close(); }
+})();
+section("S5 fix: an order a desk opened by itself is not a tapped one");
+await (async () => {
+  /* 25 SEP 2026, the stage 5 review. From 1080px an order opens beside the list without a tap, and it was then held
+     as if tapped: turned to portrait, the phone layout filled the tab with it. And a banner's tap on an order already
+     open only scrolled to it, so his reply stayed unseen: New again on the next visit, its row still waiting. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-f1", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f1",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const P = "20260924090000-pppp", O = "20260923090000-oooo", D = "20260901090000-dddd";
+  const o = (oid, x) => Object.assign({ id: oid, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 0,
+    moved: 0, status: "acknowledged", history: [], msgs: [] }, x);
+  const drive = async (wide, go, opt = {}) => {
+    const mq = { wide, fns: [] }, sw = { listen: null }, fx = { answered: !opt.later };
+    const list = () => [o(P, { status: "placed" }), o(O, { msgs: fx.answered ? [{ at: "2026-09-24T05:00:00Z", by: "desk", text: "Ready on Friday." }] : [] }),
+      o(D, { status: "done", paid: 90, moved: 1 })];
+    const dom = new JSDOM(landingPage(u, "nf1", null), { url: "https://site.test/" + (opt.hash || ""), runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
+      Object.defineProperty(w.navigator, "serviceWorker", { configurable: true, value: {
+        addEventListener: (t, f) => { if (t === "message") sw.listen = f; }, getRegistration: async () => undefined } });
+      w.matchMedia = (q) => ({ get matches() { return mq.wide && /min-width: *1080px/.test(q); }, media: q,
+        addEventListener(t, f) { if (t === "change") mq.fns.push(f); }, removeEventListener() {} });
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: list() } : { ok: true };
+        return { ok: true, status: 200, json: async () => j };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    const turn = (on) => { mq.wide = on; mq.fns.forEach((f) => f({ matches: on })); };
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 30));
+      if (!opt.hash) d.querySelector('#tabs button[data-t="order"]').click();   /* a banner's address turns the tab itself */
+      await go(w, d, turn, sw, fx);
+    } finally { w.close(); }
+  };
+  const shownOf = (d) => { const s = d.querySelector("#pOrder .oscreen"); return s && s.getAttribute("data-order"); };
+  await drive(true, async (w, d, turn) => {
+    const wideShown = shownOf(d);
+    turn(false);
+    ok(wideShown === O && !shownOf(d) && !d.getElementById("pOrder").classList.contains("o-open") && !!d.querySelector('#pOrder [data-row="' + O + '"]'),
+      "an order the desk opened by itself goes when the width drops below 1080px, and the list is back: " + JSON.stringify({ wide: wideShown, narrow: shownOf(d) }));
+  });
+  await drive(true, async (w, d, turn) => {
+    d.querySelector('#pOrder [data-row="' + P + '"]').click();
+    turn(false);
+    ok(shownOf(d) === P && d.getElementById("pOrder").classList.contains("o-open"),
+      "and an order they tapped stays open when the width drops: " + JSON.stringify({ narrow: shownOf(d) }));
+  });
+  /* his reply on the order a desk opened by itself: the order form stands above it, so it may be off screen */
+  const seen = (w) => { try { return (JSON.parse(w.localStorage.getItem("salt-stmt-seen") || "null") || { o: {} }).o; } catch (e) { return {}; } };
+  const rowText = (d, id) => (d.querySelector('#pOrder [data-row="' + id + '"]') || {}).textContent || "";
+  await drive(true, async (w, d) => {
+    ok(shownOf(d) === O && !!d.querySelector("#pOrder .oscreen .salt-bubble__new") && !seen(w)[O] && /a reply for you/.test(rowText(d, O)),
+      "an order a desk opened by itself marks nothing seen: his line is New and its row still says a reply is waiting: " + JSON.stringify({ seen: seen(w), row: rowText(d, O) }));
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    ok(seen(w)[O] === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)) && !!d.querySelector("#pOrder .oscreen .salt-bubble__new"),
+      "a tap on its row, already open, marks it seen and clears its row, his line staying New while it is open: " + JSON.stringify({ seen: seen(w), row: rowText(d, O) }));
+  });
+  /* a banner's tap: on a desk, for the order it opened by itself at sign-in; on a phone, for one left open under another tab */
+  await drive(true, async (w, d) => {
+    const tab = d.querySelector('#tabs button[data-t="order"]').getAttribute("aria-selected");
+    ok(tab === "true" && shownOf(d) === O && seen(w)[O] === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)),
+      "a desk opened at a banner's address for the order it opens by itself turns to it and marks his reply seen: " + JSON.stringify({ tab, shown: shownOf(d), seen: seen(w), row: rowText(d, O) }));
+  }, { hash: "#o=" + O });
+  await drive(false, async (w, d, turn, sw, fx) => {
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    d.querySelector('#tabs button[data-t="stmt"]').click();
+    fx.answered = true;
+    await sw.listen({ data: { salt: "news", order: O } });
+    const marked = seen(w)[O], back = d.querySelector("#pOrder .oback"); if (back) back.click();
+    ok(shownOf(d) === null && marked === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)),
+      "a phone told of his reply on the order it left open under another tab turns to it and marks it seen: " + JSON.stringify({ seen: marked, row: rowText(d, O) }));
+  }, { later: true });
+})();
+section("S5 fix: Log out takes the record of what this phone has seen with it");
+await (async () => {
+  /* 25 SEP 2026, the stage 5 review. The seen record outlived Log out, which v692 says drops everything the page
+     holds: the next account on the phone inherited the last one's order ids and its first moment. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-f2", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f2",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const O = "20260923090000-oooo";
+  const list = [{ id: O, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 90, moved: 0,
+    status: "acknowledged", history: [], msgs: [{ at: "2026-09-24T05:00:00Z", by: "desk", text: "Ready on Friday." }] }];
+  const drive = async (keepsNothing, go) => {
+    const dom = new JSDOM(landingPage(u, "nf2", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
+      if (keepsNothing) Object.defineProperty(w, "localStorage", { configurable: true, get() { throw new Error("a private window"); } });
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: JSON.parse(JSON.stringify(list)) } : { ok: true };
+        return { ok: true, status: 200, json: async () => j };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    const signIn = async () => {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 30));
+      d.querySelector('#tabs button[data-t="order"]').click();
+    };
+    try { await go(w, d, signIn); } finally { w.close(); }
+  };
+  const rowText = (d) => (d.querySelector('#pOrder [data-row="' + O + '"]') || {}).textContent || "";
+  const logOut = async (d) => { d.getElementById("lock").click(); for (let i = 0; i < 20; i++) await new Promise((r) => setTimeout(r, 10)); };
+  await drive(false, async (w, d, signIn) => {
+    await signIn();
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    const had = /20260923090000-oooo/.test(w.localStorage.getItem("salt-stmt-seen") || "");
+    await logOut(d);
+    ok(had && w.localStorage.getItem("salt-stmt-seen") === null,
+      "Log out takes the seen record off the phone, as it takes the remembered device: " + JSON.stringify({ had, after: w.localStorage.getItem("salt-stmt-seen") }));
+  });
+  await drive(true, async (w, d, signIn) => {
+    await signIn();
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    d.querySelector("#pOrder .oback").click();
+    const before = rowText(d);
+    await logOut(d);
+    await signIn();
+    ok(!/a reply for you/i.test(before) && /a reply for you/i.test(rowText(d)),
+      "and where the browser keeps nothing, Log out forgets what this visit had seen: " + JSON.stringify({ before, after: rowText(d) }));
+  });
+})();
+section("S5 fix: a part or a row passed over for its focus is caught up");
+await (async () => {
+  /* 25 SEP 2026, the stage 5 review. The poll never draws what holds the focus, and nothing drew it later: a desk
+     browser leaves the focus on a clicked button, so Cancel stayed offered after the goods had moved, and the history
+     missed the handover, until the order changed again. Driven by the page's own poll, shortened in the served HTML. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-f3", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f3",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const A = "20260924090000-aaaa", B = "20260923090000-bbbb";
+  const o = (id, x) => Object.assign({ id, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 90,
+    moved: 0, status: "acknowledged", history: [{ at: "2026-09-23T01:00:00Z", status: "placed", by: "customer" }, { at: "2026-09-23T02:00:00Z", status: "acknowledged", by: "desk" }], msgs: [] }, x);
+  const drive = async (go) => {
+    const st = { a: o(A), b: o(B) };
+    const html = landingPage(u, "nf3", null), fast = html.replace(/var POLL_MS=[0-9]+/, "var POLL_MS=120");
+    const dom = new JSDOM(fast, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {}; w.confirm = () => false;
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: JSON.parse(JSON.stringify([st.a, st.b])) } : { ok: true };
+        return { ok: true, status: 200, json: async () => j };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    try {
+      ok(fast !== html, "the served page's poll is shortened, or this proves nothing about a poll");
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 30));
+      d.querySelector('#tabs button[data-t="order"]').click();
+      await go(w, d, st);
+    } finally { w.close(); }
+  };
+  const until = async (f) => { for (let i = 0; i < 60 && !f(); i++) await new Promise((r) => setTimeout(r, 30)); return f(); };
+  const scr = (d) => d.querySelector("#pOrder .oscreen");
+  const part = (d, k) => (scr(d).querySelector('[data-part="' + k + '"]') || {}).textContent || "";
+  const hand = (st) => { st.a.moved = 1; st.a.movedOn = "2026-09-24"; st.a.history = st.a.history.concat([{ at: "2026-09-24T03:00:00Z", status: "acknowledged", by: "desk", note: "1 unit collected" }]); };
+  await drive(async (w, d, st) => {
+    d.querySelector('#pOrder [data-row="' + A + '"]').click();
+    const c = [...scr(d).querySelectorAll("button")].find((b) => b.textContent === "Cancel this order");
+    c.focus(); c.click();   /* the confirm answers no, and the focus stays on the button */
+    hand(st);
+    await until(() => /Collected on/.test(part(d, "when")));
+    const held = d.contains(c) && d.activeElement === c;
+    c.blur();
+    await until(() => !/Cancel this order/.test(part(d, "foot")));
+    ok(held && /no longer be cancelled/.test(part(d, "foot")) && ![...scr(d).querySelectorAll("button")].some((b) => b.textContent === "Cancel this order"),
+      "Cancel keeps its focus while the goods move, and once the focus leaves the next poll takes it away: " + JSON.stringify({ held, foot: part(d, "foot") }));
+  });
+  await drive(async (w, d, st) => {
+    d.querySelector('#pOrder [data-row="' + A + '"]').click();
+    const sm = scr(d).querySelector('[data-part="hist"] summary');
+    sm.focus();
+    hand(st);
+    await until(() => /Collected on/.test(part(d, "when")));
+    const held = d.contains(sm) && d.activeElement === sm && !/collected/.test(part(d, "hist"));
+    sm.blur();
+    await until(() => /collected/.test(part(d, "hist")));
+    ok(held && /1 unit collected/.test(part(d, "hist")), "and the history held back for its focused summary is drawn once the focus leaves: " + JSON.stringify({ held, hist: part(d, "hist") }));
+  });
+  await drive(async (w, d, st) => {
+    const r = d.querySelector('#pOrder [data-row="' + B + '"]');
+    r.focus();
+    st.b.status = "ready";
+    await until(() => /Ready/.test((d.querySelector('#pOrder [data-row="' + B + '"]') || {}).textContent || ""));
+    const n = d.querySelector('#pOrder [data-row="' + B + '"]');
+    ok(/Ready/.test(n.textContent) && d.activeElement === n,
+      "a row that changes while it holds the focus is drawn again at once and keeps the focus: " + JSON.stringify({ row: n.textContent, focus: d.activeElement && d.activeElement.getAttribute("data-row") }));
+  });
+})();
+section("S5 fix: a line on an order says where it is once, and truly");
+await (async () => {
+  /* 25 SEP 2026, the stage 5 review. A line stored whose answer was lost stood twice, Sent from the thread and Not sent
+     with Tap to try again from the page's own copy. And a line the site refused, which it would refuse again, was
+     offered again for good, its words out of the box. Driven by the page's own poll, shortened in the served HTML. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-f4", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f4",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const A = "20260924090000-aaaa";
+  const drive = async (mode, earlier, go) => {
+    const st = { mode, order: { id: A, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 90, moved: 0,
+      status: "acknowledged", history: [], msgs: earlier.map((t, i) => ({ at: "2026-09-23T0" + (2 + i) + ":00:00Z", by: "customer", text: t })) } };
+    const html = landingPage(u, "nf4", null), fast = html.replace(/var POLL_MS=[0-9]+/, "var POLL_MS=120");
+    const dom = new JSDOM(fast, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
+        if (p === "/open") return { ok: true, status: 200, json: async () => body };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [JSON.parse(JSON.stringify(st.order))] }) };
+        if (p === "/orders/" + A + "/say") {
+          if (st.mode === "lost") { st.order.msgs = st.order.msgs.concat([{ at: "2026-09-24T02:00:00Z", by: "customer", text: j.text.replace(/ +/g, " ") }]); throw new TypeError("Failed to fetch"); }
+          if (st.mode === "drop") throw new TypeError("Failed to fetch");
+          if (st.mode === "refuse") return { ok: false, status: 409, json: async () => ({ ok: false, error: "there are already 20 of your messages on this order" }) };
+        }
+        return { ok: true, status: 200, json: async () => ({ ok: true }) };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    try {
+      ok(fast !== html, "the served page's poll is shortened, or this proves nothing about a poll");
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 30));
+      d.querySelector('#tabs button[data-t="order"]').click();
+      d.querySelector('#pOrder [data-row="' + A + '"]').click();
+      await go(w, d, st);
+    } finally { w.close(); }
+  };
+  const scr = (d) => d.querySelector("#pOrder .oscreen");
+  const lines = (d) => [...scr(d).querySelectorAll(".salt-bubble")].map((b) => b.querySelector(".salt-bubble__text").textContent + " | " + ((b.querySelector(".salt-bubble__state") || {}).textContent || "")
+    + ([...b.querySelectorAll("button")].some((x) => x.textContent === "Tap to try again") ? " | retry" : ""));
+  const send = (w, d, t) => { const b = scr(d).querySelector("input[data-say]"); b.value = t; b.dispatchEvent(new w.Event("input", { bubbles: true })); b.form.requestSubmit(); };
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  await drive("lost", [], async (w, d) => {
+    send(w, d, "Is it  ready");
+    await wait(600);
+    ok(JSON.stringify(lines(d)) === JSON.stringify(["Is it ready | Sent"]),
+      "a line stored whose answer was lost stands once, as Sent, once the thread shows it: " + JSON.stringify(lines(d)));
+  });
+  await drive("drop", ["Is it ready"], async (w, d) => {
+    send(w, d, "Is it ready");
+    await wait(600);
+    ok(JSON.stringify(lines(d)) === JSON.stringify(["Is it ready | Sent", "Is it ready | Not sent | retry"]),
+      "and a line that did not go stays Not sent, though the same words went earlier: " + JSON.stringify(lines(d)));
+  });
+  await drive("refuse", ["One", "Two"], async (w, d) => {
+    send(w, d, "And a third");
+    await wait(300);
+    const box = scr(d).querySelector("input[data-say]"), said = scr(d).querySelector('[data-part="say"] [role="status"]');
+    ok(JSON.stringify(lines(d)) === JSON.stringify(["One | Sent", "Two | Sent"]) && box.value === "And a third"
+      && !!said && !said.hidden && /^There are already 20 of your messages/.test(said.textContent),
+      "a line the site refuses goes back in the box with the reason under it, and is not offered again: " + JSON.stringify({ lines: lines(d), box: box.value, said: said && said.textContent }));
+  });
+})();
+section("S5 fix: a desk with New order beside the open order shows one filled control, and Pay is filled where nothing else is");
+await (async () => {
+  /* 25 SEP 2026, the stage 5 review. From 1080px an order is always open beside the list, and the order form stood on
+     the same tab: its Review and the order's Pay were both filled. Stage 4 moved the form into a sheet, and New order
+     stands in its place, filled; with the limit said instead of it, nothing else on the tab is, and Pay is filled again. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-f5", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f5",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await C.encryptWith(ck, JSON.stringify({ week: { label: "21 Sep to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+      products: [{ product: "salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 90 }] }] })) };
+  const O = "20260923090000-oooo";
+  const list = [{ id: O, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 0, moved: 0,
+    status: "acknowledged", history: [], msgs: [] }];
+  const placed = (n) => ({ id: "2026092" + n + "090000-pppp", at: "2026-09-2" + n + "T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90,
+    delivery: 0, mode: "collect", paid: 0, moved: 0, status: "placed", history: [], msgs: [] });
+  const full = list.concat([4, 5, 6, 7].map(placed));
+  const drive = async (wide, go, orders) => {
+    const dom = new JSDOM(landingPage(u, "nf5", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
+      w.matchMedia = (q) => ({ matches: wide && /min-width: *1080px/.test(q), media: q, addEventListener() {}, removeEventListener() {} });
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: JSON.parse(JSON.stringify(orders || list)) } : { ok: true };
+        return { ok: true, status: 200, json: async () => j };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !(d.querySelector("#pOrder [data-row]") && (d.getElementById("oNew") || d.getElementById("oLimit"))); i++) await new Promise((r) => setTimeout(r, 30));
+      d.querySelector('#tabs button[data-t="order"]').click();
+      await go(w, d);
+    } finally { w.close(); }
+  };
+  const payOf = (d) => [...d.querySelectorAll('#pOrder .oscreen [data-part="act"] button')].find((b) => /^Pay RM/.test(b.textContent));
+  const filled = (d) => [...d.querySelectorAll("#pOrder .salt-pill")].map((b) => b.textContent);
+  await drive(true, async (w, d) => {
+    const pay = payOf(d);
+    ok(!!d.getElementById("oNew") && !!pay && !pay.classList.contains("salt-pill") && pay.classList.contains("salt-ghost") && JSON.stringify(filled(d)) === JSON.stringify(["New order"]),
+      "on a desk, with New order beside the open order, its Pay is the lit ghost and New order the one filled control: " + JSON.stringify({ pay: pay && pay.className, filled: filled(d) }));
+  });
+  await drive(true, async (w, d) => {
+    const pay = payOf(d);
+    ok(!!d.getElementById("oLimit") && !d.getElementById("oNew") && !!pay && pay.classList.contains("salt-pill") && JSON.stringify(filled(d)) === JSON.stringify(["Pay RM 90"]),
+      "at the limit, said in New order's place, nothing else is filled and the open order's Pay is: " + JSON.stringify({ pay: pay && pay.className, filled: filled(d) }));
+  }, full);
+  await drive(false, async (w, d) => {
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    const pay = payOf(d);
+    ok(!!pay && pay.classList.contains("salt-pill"), "on a phone the open order is the whole tab, and Pay is its filled control: " + JSON.stringify(pay && pay.className));
+  });
+})();
 section("v753: he answers on the order, and the words are checked on the desk before they leave it");
 await (async () => {
   /* the other half of v751. His answer is a move of his like any other, so it wakes them and changes
@@ -22246,7 +26428,10 @@ await (async () => {
   /* ---- THE WORDS: a kind, never an amount, a product, an order or a name ---- */
   const words = Object.values(NEWS);
   const banned = /salt|oil|candy|rice|garam|minyak|beras|titanium|platinum|gold|silver|bronze|ambassador|command|update/i;
-  const plain = (t) => /^[A-Z][a-z ]+$/.test(t) && !/[0-9]|RM/.test(t) && !banned.test(t);
+  /* S13 13.2: and every word the site's lock knows, in both languages, off its own lists */
+  const WL = await import("../src/orders.js");
+  const plain = (t) => /^[A-Z][a-z ]+$/.test(t) && !/[0-9]|RM/.test(t) && !banned.test(t)
+    && !WL.wordsIn(t, WL.LEVEL_WORDS.concat(WL.LEVEL_WORDS_MS, WL.PRODUCT_WORDS)).length;
   ok(words.length >= 10 && words.every(plain) && !plain("Your salt is ready") && !plain("RM 45 is due") && !plain("Your order has an update"),
     "every banner is plain words: no figure, no product, no level, no name, and never the old 'update': " + JSON.stringify(words.filter((t) => !plain(t))));
   ok(NEWS.due === "A payment is due" && NEWS.ready === "Your order is ready" && NEWS.reply === "A reply on your order"
@@ -22827,7 +27012,7 @@ await (async () => {
     "the desk reads it in the same one call it already made, and only on the desk key: " + JSON.stringify(lastJ.theirs));
 
   const paid6 = await nudge();
-  ok(paid6.hit.length === 1 && paid6.hit[0] === "https://push.example/his-phone" && paid6.r.did === "A customer has paid",
+  ok(paid6.hit.length === 1 && paid6.hit[0] === "https://push.example/his-phone" && paid6.r.did === "A customer says they paid",
     "and that wakes him, which nothing did before: " + JSON.stringify({ hit: paid6.hit, did: paid6.r.did }));
   const again6 = await nudge();
   ok(again6.hit.length === 0, "the same payment does not wake him every minute after: " + JSON.stringify(again6.hit));
@@ -22836,7 +27021,7 @@ await (async () => {
   const o7 = await place6();
   await customerMove(senv6, u6, o7.id, "cancel", {});
   const both = await nudge();
-  ok(both.r.newest && both.r.did === "A customer has withdrawn an order" && both.hit.length === 1,
+  ok(both.r.newest && both.r.did === "A customer cancelled" && both.hit.length === 1,
     "a placement and a withdrawal inside one minute are both seen, and are one wake: " + JSON.stringify({ newest: !!both.r.newest, did: both.r.did }));
   ok((await dkv6.get("orders:theirs")) && (await dkv6.get("orders:nudged")),
     "each keeps its own mark, so the newer of them cannot make the other look old");
@@ -22850,7 +27035,7 @@ await (async () => {
   await dkv6.put("orders:theirs", tie + "|pay");
   await skv6.put(LAST_THEIRS, tie + "|cancel");
   const tied = await nudge();
-  ok(tied.r.did === "A customer has withdrawn an order" && tied.hit.length === 1,
+  ok(tied.r.did === "A customer cancelled" && tied.hit.length === 1,
     "a withdrawal in the same millisecond as a payment is still seen, whichever word sorts lower: "
     + JSON.stringify({ did: tied.r.did, hit: tied.hit.length }));
   const same = await nudge();
@@ -22858,14 +27043,14 @@ await (async () => {
 
   /* ---- THE BANNER IS WRITTEN FROM THE SUMMARY, so the summary carries it while it is fresh ---- */
   const news = await dkv6.get("orders:news", "json");
-  ok(news && news.what === "A customer has withdrawn an order", "the desk remembers what to say: " + JSON.stringify(news));
+  ok(news && news.what === "A customer cancelled", "the desk remembers what to say: " + JSON.stringify(news));
   const d1S6 = { prepare: (q) => { const first = async () => (/COUNT_ON/.test(q) ? { doc: JSON.stringify({ salt: "2026-09-21", oil: "2026-09-21" }) } : (/COUNT\(\*\)/.test(q) ? { n: 0 } : null));
     const all = async () => ({ results: [] }); return { bind: () => ({ all, first, run: async () => ({}) }), all, first, run: async () => ({}) }; } };
   const summ6 = async () => (await (await deskW6.fetch(new Request("https://salt-command.example/push/summary"),
     Object.assign({ SALT_LEDGER: d1S6, REQUIRE_ACCESS: "0" }, denv6))).json());
   const fresh = await summ6();
-  ok(fresh.news === "A customer has withdrawn an order", "the summary carries it: " + JSON.stringify(fresh.news));
-  await dkv6.put("orders:news", JSON.stringify({ what: "A customer has paid", at: "2026-09-21T00:00:00.000Z" }));
+  ok(fresh.news === "A customer cancelled", "the summary carries it: " + JSON.stringify(fresh.news));
+  await dkv6.put("orders:news", JSON.stringify({ what: "A customer says they paid", at: "2026-09-21T00:00:00.000Z" }));
   ok((await summ6()).news === undefined,
     "and drops it once it is stale, because a banner about a payment made this morning is a lie by lunchtime");
 
@@ -22882,10 +27067,10 @@ await (async () => {
     const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits);
     return shown[0];
   };
-  const bNews = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, news: "A customer has paid" });
+  const bNews = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, news: "A customer says they paid" });
   const bPlain = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, placed: 2 });
-  ok(bNews && bNews.t === "A customer has paid" && /2 orders waiting on you/.test(bNews.opt.body)
-    && /1 row waiting for approval/.test(bNews.opt.body) && bNews.opt.data.url === "./desk#orders",
+  ok(bNews && bNews.t === "A customer says they paid" && /2 orders waiting on you/.test(bNews.opt.body)
+    && /1 row waiting for approval/.test(bNews.opt.body) && bNews.opt.data.url === "./desk#orders/newest",
     "the banner leads with what they just did, and still carries what is waiting: " + JSON.stringify(bNews && bNews.opt.body));
   ok(bPlain && bPlain.t === "2 customer orders waiting",
     "and with no news it is the count, as it was: " + (bPlain && bPlain.t));
@@ -23093,6 +27278,669 @@ await (async () => {
   }
 })();
 
+section("S11 11.1: the card's preview drafts the pending row an Accept would make, against the mirror, and stores nothing");
+await (async () => {
+  /* HIS DECISION D6 OF 24 SEP 2026: his tap approves the ROW, so the row is on the card before his yes, drafted by
+     the drafter from exactly the entry an Accept queues. The judges' list: never /draft-now?dry=1 drawn as the row. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the preview was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const { reconcileOrders, CUSTOMER_SEES, toldOf } = await import("../src/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const CODE = "CX1-AB", U = "abcd-efgh";
+  const PRICING = { v: "v900", takenAt: "2026-09-24T00:00:00.000Z", tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"],
+    tierOf: { [CODE]: { salt: "Gold" } }, profileRule: { smallUpTo: 1, bigFrom: 3 },
+    byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 2, 3],
+      ladder: [{ q: 1, prices: [84, 100, 110, 120, 130], fixed: false }, { q: 2, prices: [170, 180, 190, 200, 220], fixed: false }],
+      cards: { [CODE]: [[1, 100], [2, 190]] } } } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  ["2026-08-01", "2026-08-10", "2026-08-20"].forEach((d, i) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)")
+    .run("sales", i, "h" + i, JSON.stringify({ rid: "s90" + i, customer: CODE, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d })));
+  setState("roster", [CODE]); setState("PRICING", PRICING); setState("OPEN", { byKey: {}, position: {} });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: CODE }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const call = async (path, body, key = "k-fixture") => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: Object.assign({ "content-type": "application/json" }, key ? { "X-Salt-Key": key } : {}), body: JSON.stringify(body || {}) }), denv, { waitUntil() {} });
+    return { status: r.status, j: await r.json() };
+  };
+  const o = (await O.placeOrder(senv, U, { product: "salt", qty: 2, mode: "deliver", place: "by the old market", unit: 80, total: 160, week: "" })).order;
+  const kvOf = (kv) => JSON.stringify([...kv.m.entries()].sort());
+  const before = { d: kvOf(dkv), s: kvOf(skv) };
+
+  const p1 = await call("/orders/" + o.id + "/preview", { delivery: 15 });
+  const j = p1.j;
+  ok(p1.status === 200 && j.ok && j.stage === "ack" && j.row.customer === CODE && j.row.qty === 2 && j.row.total === 160 && j.row.delivery === 15
+    && j.row.date && j.row.cash === 0 && j.row.deliveredQty === 0,
+    "the preview is the pending row: the goods, the charge beside them, nothing paid and nothing moved: " + JSON.stringify(j.row || j));
+  ok(Array.isArray(j.flags) && j.flags.some((f) => /has paid RM 100\/unit on every one of their 3 orders of salt; this one is RM 80\./.test(f)),
+    "with the drafter's own flags, here their usual against a rate 20% under it: " + JSON.stringify(j.flags));
+  ok(j.cost && j.cost.unit === 56 && j.cost.total === 112 && j.margin && j.margin.rm === 48 && j.margin.pct === 30
+    && j.floor && j.floor.rm === 150 && j.floor.at === 2 && j.quote === 160,
+    "the cost, the margin on the goods and the floor, as the drafter reads them: " + JSON.stringify({ cost: j.cost, margin: j.margin, floor: j.floor }));
+  ok(j.usual && j.usual.rate === 100 && j.usual.orders === 3 && j.usual.dir === "below" && j.usual.off === -20 && j.usual.far === true,
+    "their usual, with which way this order sits from it and whether it is as far as the flag's line: " + JSON.stringify(j.usual));
+  ok(j.card === 190 && /^Gold at 2 unit$/.test(j.cardNote),
+    "their card at this size, the desk's own cardQuote carried in the snapshot, beside the RM 160 their page quoted: " + JSON.stringify({ card: j.card, note: j.cardNote }));
+  ok(j.told === "They see Sent: Waiting to be confirmed." && j.pricing && j.pricing.v === "v900" && /^[0-9a-f]{16}$/.test(j.pricing.digest)
+    && /^[0-9a-f]{64}$/.test(j.hash) && !("entry" in j),
+    "what their page says, the pricing version and the digest an Accept sends back: " + JSON.stringify({ told: j.told, pricing: j.pricing, hash: j.hash }));
+
+  /* STORES NOTHING: not a draft, not a refusal, not a queue entry, not a mark on the order */
+  const drafts = () => db.prepare("SELECT COUNT(*) AS n FROM draft").get().n + db.prepare("SELECT COUNT(*) AS n FROM refused").get().n;
+  const site1 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
+  ok(drafts() === 0 && kvOf(dkv) === before.d && kvOf(skv) === before.s && site1.status === "placed" && !site1.queued && !site1.ledgerKey && !site1.sync,
+    "and it stores nothing anywhere: no draft, no queue entry, no key on either store, no mark on the order: "
+    + JSON.stringify({ drafts: drafts(), desk: kvOf(dkv) === before.d, site: kvOf(skv) === before.s, status: site1.status, queued: site1.queued || null }));
+
+  /* THE DIGEST IS WHAT HE WAS SHOWN: the same row twice is one digest; a charge or a pricing version moves it */
+  const p2 = await call("/orders/" + o.id + "/preview", { delivery: 15 });
+  const p3 = await call("/orders/" + o.id + "/preview", { delivery: 20 });
+  ok(p2.j.hash === j.hash && p3.j.hash !== j.hash && p3.j.row.delivery === 20,
+    "the same row is the same digest, and another charge is another: " + JSON.stringify([j.hash.slice(0, 8), p2.j.hash.slice(0, 8), p3.j.hash.slice(0, 8)]));
+  setState("PRICING", Object.assign({}, PRICING, { byProduct: { salt: Object.assign({}, PRICING.byProduct.salt, { floors: Object.assign({}, PRICING.byProduct.salt.floors, { "3": { floor: 216 } }) }) } }));
+  const p4 = await call("/orders/" + o.id + "/preview", { delivery: 15 });
+  setState("PRICING", PRICING);
+  ok(JSON.stringify(p4.j.row) === JSON.stringify(j.row) && JSON.stringify(p4.j.flags) === JSON.stringify(j.flags) && p4.j.hash !== j.hash,
+    "and a snapshot that changed anywhere is another pricing version, though the row and the flags read the same: " + JSON.stringify([p4.j.pricing, j.pricing]));
+  ok((await call("/orders/" + o.id + "/preview", { delivery: 15 }, "")).status === 401, "it is keyed, like every read that carries cost");
+
+  /* THE CHAIN DRAFTS THE SAME ROW: acknowledged on the road the card used until now, reconciled, drafted */
+  await O.deskMove(senv, U, o.id, { status: "acknowledged", delivery: 15 });
+  await reconcileOrders(denv);
+  await runDrafter(denv);
+  const got = db.prepare("SELECT row,flags FROM draft").all();
+  ok(got.length === 1 && JSON.stringify(JSON.parse(got[0].row)) === JSON.stringify(j.row) && got[0].flags === JSON.stringify(j.flags),
+    "the row the chain drafts from that order is the row the preview drew, field for field and flag for flag: " + JSON.stringify(got.map((g) => JSON.parse(g.row))));
+  const p5 = await call("/orders/" + o.id + "/preview", {});
+  ok(p5.status === 409 && /acknowledged/.test(p5.j.error), "and once the order is agreed its pending row is no longer Accept's to make: " + JSON.stringify(p5.j));
+
+  /* NO CARD, SAID WHY */
+  const o3 = (await O.placeOrder(senv, U, { product: "salt", qty: 3, mode: "collect", unit: 90, total: 270, week: "" })).order;
+  const p6 = await call("/orders/" + o3.id + "/preview", {});
+  ok(p6.j.ok && p6.j.card === null && /3 unit is not a size on their board/.test(p6.j.cardNote) && p6.j.row.delivery === undefined && p6.j.chargeChosen === true,
+    "a size their card does not carry has no card, and says so; a collection carries no charge: " + JSON.stringify({ card: p6.j.card, note: p6.j.cardNote }));
+
+  /* THE WORDS ARE THE PAGE'S OWN, held together here so the day the page's words change this follows. Since the
+     Counter's stage 5 the chip is the page's oWord, by state, mode and whose the cancellation was: it is run here
+     off the page's own source, and every sentence the desk quotes must open a string the page writes. */
+  const page = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
+  const fnW = /function oWord\(st,o,by\)\{[\s\S]*?\n  \}/.exec(page);
+  const oWordP = fnW ? Function("return " + fnW[0])() : null;
+  const cases = [["placed", "collect", "customer"], ["acknowledged", "collect", "desk"], ["ready", "collect", "desk"], ["ready", "deliver", "desk"],
+    ["done", "collect", "site"], ["declined", "collect", "desk"], ["cancelled", "collect", "customer"], ["cancelled", "deliver", "desk"]];
+  const W = cases.map(([s, mode, by]) => [s, mode, by, oWordP ? oWordP(s, { mode }, by) : null, (/^They see (.+?)(?::|[.]$)/.exec(toldOf({ status: s, mode, history: [{ status: s, by }] })) || [])[1]]);
+  const lines = Object.values(CUSTOMER_SEES).flatMap((x) => x.filter((_, i) => i % 2 === 1));
+  ok(!!oWordP && W.every((x) => x[3] && x[3] === x[4]) && Object.keys(CUSTOMER_SEES).length === 6 && lines.every((l) => page.includes("'" + l)),
+    "what the card says they see is the page's own state words and lines: " + JSON.stringify({ off: W.filter((x) => x[3] !== x[4]), missing: lines.filter((l) => !page.includes("'" + l)) }));
+
+  /* THE CARDS THE PREVIEW READS ARE THE DESK'S OWN, BOOK BY BOOK: the extract takes each product's with that
+     product in view, as every other per-product figure in the snapshot is taken (v407) */
+  const { openMaster: om111c } = await import("../tools/payload.mjs");
+  const { pricingSnapshot: ps111 } = await import("../tools/book.mjs");
+  const { w: w111c } = await om111c();
+  const snap111 = ps111(w111c);
+  const probe = (p) => { const out = {}; w111c.eval("PROD=" + JSON.stringify(p) + ";recompute();");
+    for (const [code, pairs] of Object.entries(snap111.byProduct[p].cards || {})) out[code] = pairs.map(([q]) => [q, w111c.eval("cardQuote(" + JSON.stringify(code) + "," + q + ")")]);
+    return out; };
+  const sizesOf = (p) => JSON.stringify(Object.values(snap111.byProduct[p].cards || {})[0] ? Object.values(snap111.byProduct[p].cards)[0].map((x) => x[0]) : []);
+  const bothBooks = ["salt", "oil"].every((p) => Object.keys(snap111.byProduct[p].cards || {}).length > 0
+    && JSON.stringify(probe(p)) === JSON.stringify(snap111.byProduct[p].cards));
+  ok(bothBooks && sizesOf("salt") !== sizesOf("oil"),
+    "every customer's card in the snapshot is the desk's cardQuote with that book in view, at that book's own sizes: " + JSON.stringify({ salt: sizesOf("salt"), oil: sizesOf("oil") }));
+})();
+
+section("S11 11.10: a customer's withdrawal drops the queued acknowledgement only while its row is pending, and nothing paid");
+await (async () => {
+  /* THE STUDY'S F12, and the judges' list: a withdrawal before the row folded cost him an approval of a row for a
+     dead order and then an approval of its Cancellation. It now drops the pending row, and ONLY a pending one: an
+     approved row is never dropped by a withdrawal. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the withdrawal was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const { reconcileOrders } = await import("../src/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const CODE = "CX1-AB", U = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  setState("roster", [CODE]); setState("OPEN", { byKey: {}, position: {} });
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: CODE }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const draftOf = (id) => db.prepare("SELECT status,decided_by FROM draft WHERE id=?").get(id) || null;
+  const queued = async () => ((await dkv.get("q:orders", "json")) || { queue: [] }).queue.map((e) => e.at);
+  /* an order agreed on the road the card has used, its pending row queued by the reconcile */
+  const agreed = async (draft) => {
+    const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+    await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+    await reconcileOrders(denv);
+    if (draft) await runDrafter(denv);
+    return (await orderOf(o.id));
+  };
+
+  /* A. DRAFTED AND PENDING: dropped, rejected as withdrawn, out of the queue, and the withdrawal spent with it */
+  const a = await agreed(true);
+  ok(draftOf(a.queued.ack) && draftOf(a.queued.ack).status === "pending" && (await queued()).includes(a.queued.ack), "the pending row is drafted and queued: " + JSON.stringify(draftOf(a.queued.ack)));
+  await O.customerMove(senv, U, a.id, "cancel", {});
+  const rcA = await reconcileOrders(denv), a2 = await orderOf(a.id);
+  ok(rcA.queued === 0 && (rcA.dropped || []).includes(a.id) && draftOf(a.queued.ack).status === "rejected" && draftOf(a.queued.ack).decided_by === "withdrawn"
+    && !(await queued()).includes(a.queued.ack),
+    "their withdrawal drops the pending row: rejected as withdrawn, out of the queue, and no Cancellation queued behind it: " + JSON.stringify({ rc: rcA, draft: draftOf(a.queued.ack) }));
+  ok(a2.queued.cancel && a2.sync && a2.sync.state === "queued" && /withdrawn by the customer while its pending row waited under Approve/.test(a2.sync.why)
+    && (await reconcileOrders(denv)).queued === 0 && !((await reconcileOrders(denv)).dropped),
+    "the order says so, and the withdrawal is spent, so the next pass has nothing to do: " + JSON.stringify({ queued: a2.queued, sync: a2.sync }));
+
+  /* B. QUEUED AND NOT YET DRAFTED: filed rejected first, so a drafter coming after cannot draft it */
+  const b = await agreed(false);
+  ok(!draftOf(b.queued.ack) && (await queued()).includes(b.queued.ack), "a pending row queued and not yet drafted: " + JSON.stringify(draftOf(b.queued.ack)));
+  await O.customerMove(senv, U, b.id, "cancel", {});
+  await reconcileOrders(denv);
+  const dr = await runDrafter(denv);
+  ok(draftOf(b.queued.ack) && draftOf(b.queued.ack).status === "rejected" && !(await queued()).includes(b.queued.ack) && dr.drafted === 0,
+    "is filed rejected under its own id and taken off the queue, so the drafter drafts nothing for it: " + JSON.stringify({ draft: draftOf(b.queued.ack), drafted: dr.drafted }));
+
+  /* C. APPROVED: NEVER DROPPED. Its Cancellation waits for the row, as it did */
+  const c = await agreed(true);
+  const ap = await deskW.fetch(new Request("https://salt-command.example/drafts/" + encodeURIComponent(c.queued.ack) + "/approve", { method: "POST",
+    headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: "{}" }), denv, { waitUntil() {} });
+  await O.customerMove(senv, U, c.id, "cancel", {});
+  const rcC = await reconcileOrders(denv), c2 = await orderOf(c.id);
+  ok(ap.status === 200 && draftOf(c.queued.ack).status === "approved" && !(rcC.dropped || []).includes(c.id) && !c2.queued.cancel
+    && c2.sync.state === "waiting" && /withdrawal waits for the pending row/.test(c2.sync.why),
+    "an APPROVED row is never dropped by a withdrawal: it stays approved and its Cancellation waits for it to land: " + JSON.stringify({ draft: draftOf(c.queued.ack), sync: c2.sync }));
+
+  /* D. MONEY PAID: kept, because what they paid is a refund the book has to carry */
+  const d = await agreed(true);
+  await O.customerMove(senv, U, d.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U, d.id, "pay", { amount: 40 });
+  await O.customerMove(senv, U, d.id, "cancel", {});
+  const rcD = await reconcileOrders(denv);
+  ok(!(rcD.dropped || []).includes(d.id) && draftOf(d.queued.ack).status === "pending",
+    "with money paid the pending row is kept, since the refund is the book's to carry: " + JSON.stringify({ rc: rcD, draft: draftOf(d.queued.ack) }));
+
+  /* E. HIS OWN CANCEL IS NOT THEIR WITHDRAWAL: the rule he decided is for theirs, and his keeps its old road */
+  const e = await agreed(true);
+  await O.deskMove(senv, U, e.id, { status: "cancelled" });
+  const rcE = await reconcileOrders(denv);
+  ok(!(rcE.dropped || []).includes(e.id) && draftOf(e.queued.ack).status === "pending",
+    "a cancellation of his own drops nothing: " + JSON.stringify({ rc: rcE, draft: draftOf(e.queued.ack) }));
+})();
+
+section("S11 11.11: Accept approves the pending row in the desk Worker only on an exact match, and moves the order only then");
+await (async () => {
+  /* HIS DECISION D6 OF 24 SEP 2026, and the judges' list: no one-tap approval without the exact server-side match
+     PROVED RED. Accept rechecks the preview, queues the row, and the drafter approves it where it drafts it only if
+     the real draft equals the preview in every field, every flag and the pricing version. Anything different waits
+     under Approve, marked, and the customer still reads Placed. Each of the three is made to differ on its own. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so Accept was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, deskPass } = await import("../src/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  let hook = null;
+  const D1 = { prepare(sql) { const st = db.prepare(sql), h = (a) => { if (hook) hook(sql, a); };
+    const mk = (a) => ({ run() { h(a); const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { h(a); const r = st.get(...a); return r === undefined ? null : r; }, all() { h(a); return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", C2 = "CX2-CD", U1 = "abcd-efgh", U2 = "wxyz-mnpq";
+  const PRICING = { v: "v900", takenAt: "2026-09-24T00:00:00.000Z", tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"], profileRule: { smallUpTo: 1, bigFrom: 3 },
+    byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 2, 3] } } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const history = (code, d) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)")
+    .run("sales", seq++, "h" + seq, JSON.stringify({ rid: "s9" + seq, customer: code, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d }));
+  for (const c of [C1, C2]) for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) history(c, d);
+  setState("roster", [C1, C2]); setState("PRICING", PRICING); setState("OPEN", { byKey: {}, position: {} });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  /* the queue can be tampered with between Accept's write and the drafter's read, which is how a row field differs */
+  let tamper = false;
+  class TKV extends KV { async get(k, t) { const v = await super.get(k, t);
+    if (!(tamper && k === "q:orders" && v)) return v;
+    const q = typeof v === "string" ? JSON.parse(v) : v;
+    for (const e of q.queue || []) if (e.status === "Pending" && e.payload) e.payload.note = e.payload.note + " Changed on the way.";
+    return t === "json" ? q : JSON.stringify(q); } }
+  const skv = new KV(), dkv = new TKV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1, [U2]: C2 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil() {} });
+    return { status: r.status, j: await r.json() };
+  };
+  const place = async (u, qty, total, mode) => (await O.placeOrder(senv, u, { product: "salt", qty, mode, place: mode === "deliver" ? "by the old market" : "", unit: total / qty, total, week: "" })).order;
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const draftOf = (id) => db.prepare("SELECT status,decided_by FROM draft WHERE id=?").get(id) || null;
+  const preOf = (id) => db.prepare("SELECT status,draft_id,entry_at FROM preapproval WHERE order_id=? ORDER BY at DESC").get(id) || null;
+  const accept = async (o, delivery, before) => { const pv = await call("/orders/" + o.id + "/preview", { delivery });
+    if (before) before(); const a = await call("/orders/" + o.id + "/accept", { delivery, hash: pv.j.hash }); hook = null; tamper = false; return { pv, a }; };
+
+  /* A. EQUAL: approved where it is drafted, and only then is the order moved */
+  const o1 = await place(U1, 2, 200, "deliver");
+  const { pv: pv1, a: a1 } = await accept(o1, 15);
+  const s1 = await orderOf(o1.id), d1 = draftOf(a1.j.draft);
+  ok(a1.status === 200 && a1.j.approved === true && d1 && d1.status === "approved" && /^preapproved by phone$/.test(d1.decided_by) && preOf(o1.id).status === "applied",
+    "a row equal to the preview is approved where it is drafted, by his yes: " + JSON.stringify({ a: a1.j.approved, draft: d1, pre: preOf(o1.id) }));
+  const row1 = JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(a1.j.draft).row);
+  ok(JSON.stringify(row1) === JSON.stringify(pv1.j.row), "and the row approved is the row the card drew: " + JSON.stringify(row1));
+  ok(s1.status === "acknowledged" && s1.delivery === 15 && s1.queued && s1.queued.ack === a1.j.draft && s1.ledgerKey === C1 + "|" + row1.date + "|215" && s1.sync.state === "queued",
+    "then the order is moved on the site, with the charge, and marked with the row's key and moment so nothing queues a second row: "
+    + JSON.stringify({ status: s1.status, delivery: s1.delivery, queued: s1.queued, key: s1.ledgerKey }));
+  const rc1 = await reconcileOrders(denv);
+  const again = await call("/orders/" + o1.id + "/accept", { delivery: 15, hash: pv1.j.hash });
+  ok(rc1.queued === 0 && again.status === 200 && again.j.again === true && db.prepare("SELECT COUNT(*) AS n FROM draft").get().n === 1,
+    "the reconcile then owes it nothing, and a second tap finds the yes already given rather than giving it twice: " + JSON.stringify({ rc: rc1, again: again.j.again }));
+
+  /* B. THE CARD DREW A ROW THAT NO LONGER IS: refused with the fresh one, and nothing stored or moved */
+  const o2 = await place(U1, 1, 100, "collect");
+  const pvOld = await call("/orders/" + o2.id + "/preview", {});
+  setState("PRICING", Object.assign({}, PRICING, { floorPct: 1 }));
+  const a2 = await call("/orders/" + o2.id + "/accept", { hash: pvOld.j.hash });
+  setState("PRICING", PRICING);
+  ok(a2.status === 409 && a2.j.differs === true && a2.j.preview && a2.j.preview.hash !== pvOld.j.hash && !preOf(o2.id)
+    && (await orderOf(o2.id)).status === "placed" && !((await dkv.get("q:orders", "json")) || { queue: [] }).queue.some((e) => e.orderId === o2.id),
+    "a digest the card drew before something changed is refused with the row as it now is, and nothing is queued or moved: " + JSON.stringify({ status: a2.status, differs: a2.j.differs }));
+  const noCharge = await call("/orders/" + (await place(U1, 1, 100, "deliver")).id + "/accept", { hash: "x" });
+  ok(noCharge.status === 400 && /delivery charge/.test(noCharge.j.error), "a delivery is not accepted with no charge chosen: " + JSON.stringify(noCharge.j));
+
+  /* C. DIFFERENT, EACH WAY ON ITS OWN: waits under Approve, marked, and the customer still reads Placed */
+  const differs = async (u, why, before, total) => {
+    const o = await place(u, 1, total || 100, "collect");
+    const { a } = await accept(o, undefined, before);
+    const d = draftOf(a.j.draft), s = await orderOf(o.id);
+    ok(a.status === 200 && a.j.approved === false && a.j.differs === true && d && d.status === "pending" && preOf(o.id).status === "differs"
+      && s.status === "placed" && !(s.queued && s.queued.ack) && s.sync && /differs from what you saw/.test(s.sync.why),
+      "a draft whose " + why + " differs from the preview is NOT approved: it waits under Approve, and the order stays Placed: "
+      + JSON.stringify({ a: a.j, draft: d, pre: preOf(o.id), status: s.status }));
+    return { o, a };
+  };
+  const cRow = await differs(U1, "row", () => { tamper = true; });
+  let fired = false;
+  const cFlags = await differs(U2, "flags", () => { hook = (sql, a) => { if (!fired && /FROM entry WHERE collection/.test(sql) && a[0] === "purchases") { fired = true; history(C2, "2026-08-25"); } }; }, 80);
+  let firedP = false;
+  const cPrice = await differs(U2, "pricing version", () => { hook = (sql) => { if (!firedP && /FROM snapshot/.test(sql)) { firedP = true;
+    setState("PRICING", Object.assign({}, PRICING, { byProduct: { salt: Object.assign({}, PRICING.byProduct.salt, { floors: Object.assign({}, PRICING.byProduct.salt.floors, { "3": { floor: 216 } }) }) } })); } }; });
+  setState("PRICING", PRICING);
+
+  /* Approve marks it, and his approval there moves the order then */
+  const list = await deskW.fetch(new Request("https://salt-command.example/drafts?status=pending", { headers: { "X-Salt-Key": "k-fixture" } }), denv, { waitUntil() {} });
+  const lj = await list.json();
+  const marked = (id) => (lj.drafts.find((d) => d.id === id) || {}).preapproval;
+  ok([cRow, cFlags, cPrice].every((c) => marked(c.a.j.draft) && marked(c.a.j.draft).says === "differs from what you saw" && marked(c.a.j.draft).stage === "ack" && marked(c.a.j.draft).shown.row),
+    "each waits under Approve marked as differing from what he saw, with what he was shown beside it: " + JSON.stringify(marked(cRow.a.j.draft)));
+  const ap = await deskW.fetch(new Request("https://salt-command.example/drafts/" + encodeURIComponent(cRow.a.j.draft) + "/approve", { method: "POST",
+    headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify({ by: "desk" }) }), denv, { waitUntil() {} });
+  const sRow = await orderOf(cRow.o.id);
+  ok(ap.status === 200 && sRow.status === "acknowledged" && sRow.queued.ack === cRow.a.j.draft && preOf(cRow.o.id).status === "applied",
+    "approved there by his tap, the row moves its order then: " + JSON.stringify({ status: sRow.status, queued: sRow.queued }));
+
+  /* D. AND A CUSTOMER WHO WITHDRAWS WHILE SUCH A ROW WAITS takes it with them (11.10 on Accept's road) */
+  await O.customerMove(senv, U2, cFlags.o.id, "cancel", {});
+  const dp = await deskPass(denv, new Date());
+  ok((dp.dropped || []).includes(cFlags.o.id) && draftOf(cFlags.a.j.draft).status === "rejected" && draftOf(cFlags.a.j.draft).decided_by === "withdrawn" && preOf(cFlags.o.id).status === "void",
+    "a row Accept queued that still waits is dropped when the customer withdraws, and his yes is spent with it: " + JSON.stringify({ dp, draft: draftOf(cFlags.a.j.draft) }));
+})();
+
+section("S11 11.12: Collected, Cash received and Received are a yes for a row not drafted yet, spent only if the row equals it");
+await (async () => {
+  /* HIS DECISION D6: each later stage is one tap. Before the first row lands it is a PRE-APPROVAL of that exact row,
+     applied when the row is drafted and only if equal; the judges' list: a later stage never waits SILENTLY on the
+     pending row, so the answer says it waits, in words the card can print. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the later stages were not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, deskPass } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh", C2 = "CX2-CD", U2 = "wxyz-mnpq";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  const OPEN = { byKey: {}, position: {} };
+  setState("roster", [C1, C2]); setState("OPEN", OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 } }, inputs: null, sizes: [1, 2] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  /* THE FIRST ROW LANDS: the fold writes the approved pending row, and the re-seed puts it in the open orders */
+  const land = (draftId, over) => { const row = Object.assign(JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(draftId).row), { rid: "s99" + seq }, over || {});
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN);
+    db.prepare("UPDATE draft SET committed_at=? WHERE id=?").run(new Date().toISOString(), draftId); return row; };
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1, [U2]: C2 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const settle = async () => { while (tails.length) await tails.shift(); };
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); await settle(); return { status: r.status, j };
+  };
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const accepted = async (qty, total, u) => {
+    const o = (await O.placeOrder(senv, u || U1, { product: "salt", qty, mode: "collect", unit: total / qty, total, week: "" })).order;
+    const pv = await call("/orders/" + o.id + "/preview", {});
+    const a = await call("/orders/" + o.id + "/accept", { hash: pv.j.hash });
+    return { o, draft: a.j.draft, ok: a.j.approved === true };
+  };
+  const draftsOf = (id, status) => db.prepare("SELECT id,status,decided_by,entry,flags FROM draft").all()
+    .filter((d) => JSON.parse(d.entry).orderId === id && JSON.parse(d.entry).status === status);
+  const preOf = (id, stage) => db.prepare("SELECT status,draft_id,entry_at FROM preapproval WHERE order_id=? AND stage=? ORDER BY at DESC").get(id, stage) || null;
+
+  /* each order its own figure: two orders alike on one day share the book's key (ovKey), a known limit */
+  /* A. COLLECTED BEFORE THE FIRST ROW LANDS: said so at once, then booked when it lands, equal */
+  const A = await accepted(2, 200);
+  const h = await call("/orders/" + A.o.id + "/handed", { qty: 2 });
+  const sA = await orderOf(A.o.id);
+  ok(A.ok && h.status === 200 && h.j.preapproval.waits === true && h.j.preapproval.says === "Booked when the first row lands" && sA.moved === 2
+    && preOf(A.o.id, "move").status === "waiting" && !draftsOf(A.o.id, "Handover").length && sA.sync.state === "waiting",
+    "Collected before the first row lands is recorded at once and says it is booked when that row lands, never waiting silently: "
+    + JSON.stringify({ pre: h.j.preapproval, moved: sA.moved, sync: sA.sync }));
+  land(A.draft);
+  await reconcileOrders(denv); await runDrafter(denv);
+  const hA = draftsOf(A.o.id, "Handover");
+  ok(hA.length === 1 && hA[0].status === "approved" && /^preapproved/.test(hA[0].decided_by) && preOf(A.o.id, "move").status === "applied"
+    && /ADVANCE: 2 unit goes out with RM 200 unpaid/.test(hA[0].flags),
+    "and when it lands the Correction is drafted and approved by that yes, being equal, advance flag and all: " + JSON.stringify(hA.map((d) => [d.status, d.decided_by])));
+
+  /* B. RECEIVED ON A PAYMENT ALREADY DRAFTED: that draft is approved at the tap */
+  const B = await accepted(1, 100);
+  land(B.draft);
+  await O.customerMove(senv, U1, B.o.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U1, B.o.id, "pay", { amount: 40 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  ok(draftsOf(B.o.id, "Payment").length === 1 && draftsOf(B.o.id, "Payment")[0].status === "pending", "their payment is drafted and waits: " + JSON.stringify(draftsOf(B.o.id, "Payment").map((d) => d.status)));
+  const wrong = await call("/orders/" + B.o.id + "/received", { amount: 45 });
+  const rB = await call("/orders/" + B.o.id + "/received", { amount: 40 });
+  ok(wrong.status === 409 && rB.status === 200 && rB.j.preapproval.spent === "applied" && rB.j.preapproval.waits === false && draftsOf(B.o.id, "Payment")[0].status === "approved",
+    "Received for another figure is refused; for the figure drafted it approves that draft at the tap: " + JSON.stringify({ wrong: wrong.j.error, pre: rB.j.preapproval }));
+
+  /* C. RECEIVED BEFORE THE ROW LANDS: waits, and is spent when the Fulfilment is drafted */
+  const C = await accepted(1, 110);
+  await O.customerMove(senv, U1, C.o.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U1, C.o.id, "pay", { amount: 30 });
+  const rC = await call("/orders/" + C.o.id + "/received", { amount: 30 });
+  ok(rC.status === 200 && rC.j.preapproval.waits === true && preOf(C.o.id, "pay").status === "waiting" && !draftsOf(C.o.id, "Payment").length,
+    "Received before the first row lands waits for it, and says so: " + JSON.stringify(rC.j.preapproval));
+  land(C.draft);
+  await reconcileOrders(denv); await runDrafter(denv);
+  ok(draftsOf(C.o.id, "Payment").length === 1 && draftsOf(C.o.id, "Payment")[0].status === "approved" && preOf(C.o.id, "pay").status === "applied",
+    "and the Fulfilment is approved as it is drafted: " + JSON.stringify(draftsOf(C.o.id, "Payment").map((d) => d.status)));
+
+  /* D. CASH TAKEN AT THE COUNTER: paid on the order at once, and the desk's own Fulfilment when the row lands */
+  const D = await accepted(1, 120);
+  const cD = await call("/orders/" + D.o.id + "/cash", { amount: 120 });
+  const sD = await orderOf(D.o.id);
+  ok(cD.status === 200 && cD.j.preapproval.waits === true && sD.paid === 120 && sD.queued.paid === 120 && sD.status === "acknowledged"
+    && (sD.payments || []).slice(-1).some((p) => p.by === "desk" && p.method === "cod" && p.amount === 120)
+    && !((await dkv.get("q:orders", "json")).queue.some((e) => e.orderId === D.o.id && e.status === "Payment")),
+    "Cash received marks the order paid at once, in cash as his (the site's cash event), which is what stops the chase, and queues nothing before the row is there: " + JSON.stringify({ paid: sD.paid, queued: sD.queued, payments: sD.payments }));
+  land(D.draft);
+  const dp = await deskPass(denv, new Date()); await runDrafter(denv);
+  const pD = draftsOf(D.o.id, "Payment");
+  ok(dp.queued === 1 && pD.length === 1 && pD[0].status === "approved" && /cash at the counter/.test(JSON.parse(pD[0].entry).raw) && (await reconcileOrders(denv)).queued === 0,
+    "when it lands the desk queues its own Fulfilment, approved as drafted, and the reconcile queues no second one: " + JSON.stringify({ dp, pD: pD.map((d) => d.status) }));
+  const E = await accepted(1, 130);
+  await O.customerMove(senv, U1, E.o.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U1, E.o.id, "pay", { amount: 20 });
+  const cE = await call("/orders/" + E.o.id + "/cash", { amount: 50 });
+  ok(cE.status === 409 && /receive that first/.test(cE.j.error) && (await orderOf(E.o.id)).paid === 20,
+    "cash is refused while a payment of theirs still waits to be queued, which its mark would swallow: " + JSON.stringify(cE.j));
+
+  /* F. DIFFERENT WHEN IT LANDS: a payment folded beside the row, so the advance it would flag is another figure */
+  const F = await accepted(2, 210, U2);   /* five open orders is a customer's cap */
+  const hF = await call("/orders/" + F.o.id + "/handed", { qty: 2 });
+  land(F.draft, { cash: 50 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const dF = draftsOf(F.o.id, "Handover");
+  const lj = await (await deskW.fetch(new Request("https://salt-command.example/drafts?status=pending", { headers: { "X-Salt-Key": "k-fixture" } }), denv, ctx)).json();
+  const mark = dF[0] && (lj.drafts.find((d) => d.id === dF[0].id) || {}).preapproval;
+  ok(hF.j.preapproval.waits && dF.length === 1 && dF[0].status === "pending" && preOf(F.o.id, "move").status === "differs" && mark && mark.stage === "move" && mark.says === "differs from what you saw",
+    "a row that lands other than he was shown is NOT approved by that yes: it waits under Approve, marked: " + JSON.stringify({ draft: dF.map((d) => d.status), pre: preOf(F.o.id, "move"), mark }));
+})();
+
+section("S11 11.13: a site-made row he rejects is written back to its order, and its move is offered again under a fresh entry");
+await (async () => {
+  /* HIS DECISION D6, and the study's F1: a Reject on a site-made draft dropped the entry while the order kept the
+     mark that the ledger was told, so the order and the book parted for good. The rejection is written back to the
+     order, and the same move is offered again: a fresh entry, a new draft id, approved only if equal. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so offering again was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, deskPass, againOrder } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh", C2 = "CX2-CD", U2 = "wxyz-mnpq";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  const OPEN = { byKey: {}, position: {} };
+  setState("roster", [C1, C2]); setState("OPEN", OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 } }, inputs: null, sizes: [1, 2] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const land = (draftId, over) => { const row = Object.assign(JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(draftId).row), { rid: "s99" + seq }, over || {});
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN); return row; };
+  let tamper = false;
+  class TKV extends KV { async get(k, t) { const v = await super.get(k, t);
+    if (!(tamper && k === "q:orders" && v)) return v;
+    const q = typeof v === "string" ? JSON.parse(v) : v;
+    for (const e of q.queue || []) if (e.status === "Pending" && e.payload) e.payload.note = e.payload.note + " Changed on the way.";
+    return t === "json" ? q : JSON.stringify(q); } }
+  const skv = new KV(), dkv = new TKV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1, [U2]: C2 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const settle = async () => { while (tails.length) await tails.shift(); };
+  const call = async (path, body, method) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: method || "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: method === "GET" ? undefined : JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); await settle(); return { status: r.status, j };
+  };
+  const reject = (id) => call("/drafts/" + encodeURIComponent(id) + "/reject", { by: "desk" });
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const againOn = async (id) => ((await call("/orders?all=1", null, "GET")).j.orders.find((x) => x.id === id) || {}).again || [];
+  const drafts = (id, status) => db.prepare("SELECT id,status,decided_by,entry FROM draft ORDER BY id").all()
+    .filter((d) => JSON.parse(d.entry).orderId === id && JSON.parse(d.entry).status === status);
+  const place = async (u, qty, total) => (await O.placeOrder(senv, u, { product: "salt", qty, mode: "collect", unit: total / qty, total, week: "" })).order;
+  const accept = async (o) => { const pv = await call("/orders/" + o.id + "/preview", {}); return call("/orders/" + o.id + "/accept", { hash: pv.j.hash }); };
+
+  /* A. ACCEPT'S ROW, REJECTED: the order was never moved, so Accept again makes a fresh row */
+  const a = await place(U1, 1, 101);
+  tamper = true; const a1 = await accept(a); tamper = false;
+  const rA = await reject(a1.j.draft);
+  const sA = await orderOf(a.id);
+  ok(a1.j.differs && rA.status === 200 && rA.j.order === true && sA.status === "placed" && sA.sync.state === "rejected" && /pending row was rejected under Approve/.test(sA.sync.why)
+    && JSON.stringify(await againOn(a.id)) === JSON.stringify(["ack"]),
+    "a rejected pending row is written back to its order, which still reads Placed, and the card is told it can offer it again: " + JSON.stringify({ sync: sA.sync, again: await againOn(a.id) }));
+  const a2 = await accept(a);
+  const sA2 = await orderOf(a.id), dA = drafts(a.id, "Pending");
+  ok(a2.j.approved === true && a2.j.draft !== a1.j.draft && dA.length === 2 && dA.find((d) => d.id === a1.j.draft).status === "rejected" && dA.find((d) => d.id === a2.j.draft).status === "approved"
+    && sA2.status === "acknowledged" && sA2.queued.ack === a2.j.draft && sA2.sync.state === "queued" && !(await againOn(a.id)).length,
+    "Accept again makes a FRESH entry, approved being equal, and moves the order; the rejected one stays rejected: " + JSON.stringify(dA.map((d) => [d.id === a1.j.draft ? "first" : "fresh", d.status])));
+
+  /* B. A ROW THE OLD ROAD MADE, REJECTED: the order is agreed already, so Accept offers it again and moves nothing */
+  const b = await place(U1, 1, 102);
+  await O.deskMove(senv, U1, b.id, { status: "acknowledged", mode: "collect" });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const bOld = (await orderOf(b.id)).queued.ack;
+  await reject(bOld);
+  const pvB = await call("/orders/" + b.id + "/preview", { delivery: 99 });
+  const b2 = await call("/orders/" + b.id + "/accept", { hash: pvB.j.hash, delivery: 99 });
+  const sB = await orderOf(b.id);
+  ok(pvB.j.ok && pvB.j.again === true && !pvB.j.row.delivery && b2.j.approved === true && b2.j.draft !== bOld && sB.queued.ack === b2.j.draft
+    && sB.ledgerKey === C1 + "|" + pvB.j.row.date + "|102" && sB.sync.state === "queued" && sB.status === "acknowledged" && !sB.delivery,
+    "an agreed order whose row he rejected is offered again by Accept, on the charge it already carries, marked with the fresh row's key: " + JSON.stringify({ pv: pvB.j.again, queued: sB.queued, key: sB.ledgerKey }));
+
+  /* C. A HANDOVER, REJECTED: Collected again at the same figure is that handover under a fresh entry */
+  land(b2.j.draft);
+  await O.deskMove(senv, U1, b.id, { handover: { units: 1, mode: "collect" } });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const hOld = drafts(b.id, "Handover")[0];
+  await reject(hOld.id);
+  ok(JSON.stringify(await againOn(b.id)) === JSON.stringify(["move"]), "the card is told the handover can be offered again: " + JSON.stringify(await againOn(b.id)));
+  const hC = await call("/orders/" + b.id + "/handed", { qty: 1 });
+  const hs = drafts(b.id, "Handover");
+  ok(hC.status === 200 && hC.j.preapproval.again === hOld.id && hs.length === 2 && hs[1].id !== hOld.id && hs[1].status === "approved"
+    && JSON.stringify(JSON.parse(hs[1].entry).payload.fields) === JSON.stringify(JSON.parse(hOld.entry).payload.fields),
+    "Collected again at the same figure queues that handover under a fresh entry, approved as drafted: " + JSON.stringify(hs.map((d) => d.status)));
+
+  /* D. THEIR PAYMENT, REJECTED: Received at that figure offers it again */
+  const d = await place(U2, 1, 104);
+  const d1 = await accept(d); land(d1.j.draft);
+  await O.customerMove(senv, U2, d.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U2, d.id, "pay", { amount: 30 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const pOld = drafts(d.id, "Payment")[0];
+  await reject(pOld.id);
+  const rD = await call("/orders/" + d.id + "/received", { amount: 30 });
+  const ps = drafts(d.id, "Payment");
+  ok(rD.status === 200 && rD.j.preapproval.again === pOld.id && ps.length === 2 && ps[1].status === "approved" && JSON.parse(ps[1].entry).payload.cash === 30,
+    "Received at the figure of a payment he rejected offers that payment again: " + JSON.stringify(ps.map((x) => x.status)));
+
+  /* E. CASH, REJECTED: offered again, and the order is never told the cash twice */
+  const e = await place(U2, 2, 210);
+  const e1 = await accept(e);
+  await call("/orders/" + e.id + "/cash", { amount: 60 });
+  land(e1.j.draft, { cash: 180 });   /* landed other than it was shown (a payment folded beside it), so the cash waits under Approve */
+  await deskPass(denv, new Date()); await runDrafter(denv);
+  const cOld = drafts(e.id, "Payment")[0];
+  ok(cOld && cOld.status === "pending", "the cash Fulfilment, landing other than shown, waits under Approve: " + JSON.stringify(cOld && cOld.status));
+  await reject(cOld.id);
+  const cE = await call("/orders/" + e.id + "/cash", { amount: 60 });
+  const cs = drafts(e.id, "Payment"), sE = await orderOf(e.id);
+  ok(cE.status === 200 && cE.j.preapproval.again === cOld.id && cs.length === 2 && cs[1].status !== "rejected" && sE.paid === 60,
+    "Cash received again at that figure offers the rejected entry again, and the order still counts the cash once: " + JSON.stringify({ drafts: cs.map((x) => x.status), paid: sE.paid }));
+
+  /* F. A CANCELLATION, REJECTED: offered again by /again */
+  const g = await place(U2, 1, 106);
+  const g1 = await accept(g); land(g1.j.draft);
+  await O.customerMove(senv, U2, g.id, "cancel", {});
+  await reconcileOrders(denv); await runDrafter(denv);
+  const xOld = drafts(g.id, "Cancellation")[0];
+  await reject(xOld.id);
+  const t0 = Date.now();   /* two taps, a moment apart */
+  const xG = await againOrder(denv, g.id, { stage: "cancel" }, "phone", new Date(t0)), xG2 = await againOrder(denv, g.id, { stage: "cancel" }, "phone", new Date(t0 + 5));
+  await deskPass(denv, new Date()); await runDrafter(denv);
+  const xs = drafts(g.id, "Cancellation");
+  ok(xG.ok && xG2.status === 409 && /offered again already/.test(xG2.error) && xs.length === 2 && xs[1].status === "approved"
+    && (await call("/orders/" + g.id + "/again", { stage: "ack" })).status === 400,
+    "a cancellation he rejected is offered again under a fresh entry, once however often it is tapped; a pending row is offered again only by Accept: "
+    + JSON.stringify({ second: xG2.error, drafts: xs.map((x) => x.status) }));
+
+  /* G. A WITHDRAWAL'S DROP IS NOT HIS REJECTION, and offers nothing */
+  const w = await place(U1, 1, 107);
+  await O.deskMove(senv, U1, w.id, { status: "acknowledged", mode: "collect" });
+  await reconcileOrders(denv); await runDrafter(denv);
+  await O.customerMove(senv, U1, w.id, "cancel", {});
+  await reconcileOrders(denv);
+  ok(drafts(w.id, "Pending")[0].decided_by === "withdrawn" && !(await againOn(w.id)).length,
+    "a row dropped because they withdrew is not offered again: " + JSON.stringify({ draft: drafts(w.id, "Pending")[0].decided_by, again: await againOn(w.id) }));
+})();
+
+section("S11 11.16: his wakes name the kind of act and never a code or an amount, and a new order is never titled by older news");
+await (async () => {
+  /* HIS DECISION (PLAN section 5): "New customer order", "A customer wrote", "A customer says they paid", "A customer
+     cancelled", and never a code or an amount. A payment is what they SAY until he checks it. */
+  const O = await import("../stmt/orders.js");
+  const { nudgeOrders } = await import("../src/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default, deskW = (await import("../src/worker.js")).default;
+  const kp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const denv = { SALT_QUEUE: dkv, STMT_DESK_KEY: "desk-key", VAPID_PUBLIC_KEY: "pub", VAPID_SUBJECT: "mailto:a@b.test",
+    VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kp.privateKey)),
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  await dkv.put("push:his", JSON.stringify({ endpoint: "https://push.example/his-phone", topics: ["orders", "approve", "salt"] }));
+  const u = "abcd-efgh";
+  const nudge = async () => { const realF = globalThis.fetch;
+    globalThis.fetch = async () => new Response("", { status: 201 });
+    try { return await nudgeOrders(denv); } finally { globalThis.fetch = realF; } };
+  const d1 = { prepare: (q) => { const first = async () => (/COUNT\(\*\)/.test(q) ? { n: 0 } : null);
+    const all = async () => ({ results: [] }); return { bind: () => ({ all, first, run: async () => ({}) }), all, first, run: async () => ({}) }; } };
+  const summary = async () => (await (await deskW.fetch(new Request("https://salt-command.example/push/summary"), Object.assign({ SALT_LEDGER: d1, REQUIRE_ACCESS: "0" }, denv))).json());
+  const vm = await import("node:vm");
+  const sw = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const wake = async (s) => { const L = {}, shown = [];
+    const c = { URL, console, caches: {}, self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" },
+      registration: { scope: "https://salt-command.example/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
+      clients: { matchAll: async () => [], openWindow: async () => {} }, fetch: async () => ({ ok: true, json: async () => s }) };
+    vm.createContext(c); vm.runInContext(sw, c);
+    const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits); return shown[0]; };
+  const told = async () => { const b = await wake(await summary()); return b ? b.t + " | " + b.opt.body : ""; };
+  const noCodeNoMoney = (t) => !/\b[A-Z]{2}\d{1,2}-[A-Z]{2,4}\b/.test(t) && !/RM\s?\d/.test(t) && !/abcd-efgh/.test(t);
+
+  /* each act, its own words */
+  const o = (await O.placeOrder(senv, u, { product: "salt", qty: 2, mode: "collect", unit: 95, total: 190, week: "" })).order;
+  await nudge();
+  const tPlaced = await told();
+  await O.customerMove(senv, u, o.id, "say", { text: "can I collect on Friday" });
+  await nudge();
+  const tSaid = await told();
+  await O.deskMove(senv, u, o.id, { status: "acknowledged", mode: "collect" });
+  await O.customerMove(senv, u, o.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, u, o.id, "pay", { amount: 190 });
+  await nudge();
+  const tPaid = await told();
+  const o2 = (await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  await nudge();
+  const tPlaced2 = await told();
+  await O.customerMove(senv, u, o2.id, "cancel", {});
+  await nudge();
+  const tCancel = await told();
+  ok(/^New customer order \|/.test(tPlaced) && /^A customer wrote \|/.test(tSaid) && /^A customer says they paid \|/.test(tPaid) && /^A customer cancelled \|/.test(tCancel),
+    "each wake names the kind of act, in his words: " + JSON.stringify([tPlaced, tSaid, tPaid, tCancel].map((t) => t.split(" | ")[0])));
+  ok(/^New customer order \|/.test(tPlaced2),
+    "a new order minutes after a payment is titled a new order, not by the payment's news still fresh: " + JSON.stringify(tPlaced2.split(" | ")[0]));
+  ok([tPlaced, tSaid, tPaid, tPlaced2, tCancel].every(noCodeNoMoney),
+    "and no wake carries a code, a username or an amount: " + JSON.stringify([tPlaced, tSaid, tPaid, tPlaced2, tCancel]));
+
+  /* THE BANNER TAKES NEWS IN LETTERS AND SPACES ONLY, so nothing that could carry a code or a figure is ever its title */
+  const forged = await wake({ ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 1, placed: 0, news: "CX1-AB paid RM 190" });
+  ok(forged && forged.t !== "CX1-AB paid RM 190" && noCodeNoMoney(forged.t + " " + forged.opt.body),
+    "news carrying a code or an amount never reaches the title: " + JSON.stringify(forged && forged.t));
+})();
+
 section("v764: what he records on the desk reaches the customer's order, and the chase stops");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026. Every road built since v694 runs from the site to the book. A
@@ -23273,7 +28121,8 @@ await (async () => {
     const reads = [], posts = [];
     w111.fetch = async (path, init) => {
       const post = !!(init && init.method === "POST");
-      (post ? posts : reads).push(String(path));
+      /* S11 11.2: the open card's own preview is a POST too, and not a move of his */
+      (post ? (/\/preview$/.test(String(path)) ? [] : posts) : reads).push(String(path));
       return { ok: true, status: 200, json: async () => (post ? { ok: true } : { ok: true, orders: JSON.parse(JSON.stringify(orders)) }) };
     };
     w111.document.body.innerHTML = String(w111.eval("tabOrders()"));
@@ -23301,8 +28150,8 @@ await (async () => {
     q('button[data-ord="say"][data-id="p1"]').click();
     await new Promise((r) => setTimeout(r, 30));
     ok(say().value === "the Gold one is ready" && fee().value === "15" && posts.length === 0
-      && /names a level/.test(q("#ordMsg").textContent),
-      "a refusal says why and leaves the answer and the charge where they were: " + JSON.stringify({ say: say().value, fee: fee().value, msg: q("#ordMsg").textContent }));
+      && /names a level/.test(q('[data-msg="p1"]').textContent),
+      "a refusal says why, on the card beside the control (S11 11.4), and leaves the answer and the charge where they were: " + JSON.stringify({ say: say().value, fee: fee().value, msg: q('[data-msg="p1"]').textContent }));
 
     /* AND WHAT WENT THROUGH IS NOT CARRIED, or the next tap would send it twice */
     say().value = "on its way this afternoon";
@@ -23557,13 +28406,13 @@ await (async () => {
   await O.customerMove(senv, u, o.id, "say", { text: "is it ready yet" });
   const n1 = await nudgeOrders(denv);
   const news = await dkv.get("orders:news", "json");
-  ok(n1.said && news && news.what === "A customer wrote on an order" && news.at === n1.said,
+  ok(n1.said && news && news.what === "A customer wrote" && news.at === n1.said,
     "the line is the news, at the moment it was written: " + JSON.stringify({ said: n1.said, news }));
   const d1 = { prepare: (q) => { const first = async () => (/COUNT_ON/.test(q) ? null : (/COUNT\(\*\)/.test(q) ? { n: 0 } : null));
     const all = async () => ({ results: [] }); return { bind: () => ({ all, first, run: async () => ({}) }), all, first, run: async () => ({}) }; } };
   const summ = await (await deskW.fetch(new Request("https://salt-command.example/push/summary"),
     Object.assign({ SALT_LEDGER: d1, REQUIRE_ACCESS: "0" }, denv))).json();
-  ok(summ.news === "A customer wrote on an order", "the summary the banner is written from carries it: " + JSON.stringify(summ.news));
+  ok(summ.news === "A customer wrote", "the summary the banner is written from carries it: " + JSON.stringify(summ.news));
   const vm = await import("node:vm");
   const swSrc = readFileSync(join(REPO, "public", "sw.js"), "utf8");
   const L = {}, shown = [];
@@ -23574,7 +28423,7 @@ await (async () => {
     fetch: async () => ({ ok: true, json: async () => summ }) };
   vm.createContext(ctx); vm.runInContext(swSrc, ctx);
   const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits);
-  ok(shown[0] && shown[0].t === "A customer wrote on an order" && shown[0].opt.data.url === "./desk#orders",
+  ok(shown[0] && shown[0].t === "A customer wrote" && shown[0].opt.data.url === "./desk#orders/newest",
     "so the banner says a customer wrote, and opens the card where he answers: " + JSON.stringify(shown[0] && shown[0].t));
 
   /* A PLACEMENT WITH A NOTE IS A NEW ORDER, whose first line is the note typed with it */
@@ -23724,6 +28573,1893 @@ await (async () => {
     "and the message it always checked is checked as before: " + JSON.stringify(said.j.error));
 })();
 
+section("S11 11.4: Site orders opens on Waiting on you, one row a customer act, oldest first, counted the same on Today and the Enter badge");
+await (async () => {
+  /* 24 Sep 2026 (his answer "all recommended", PLAN 5). The card listed whole orders newest first with the notice
+     above them, Today counted placements and answers, and the Enter badge counted placements alone, so the three
+     disagreed about what was waiting. One reading, ordActs, lists each act: new, a payment said and waiting under
+     Approve, cash to record, a question; oldest first, filtered by kind, the notice folded below. */
+  const { openMaster: om114s } = await import("../tools/payload.mjs");
+  const { w } = await om114s();
+  try {
+    w.SALT_CLOUD = true;
+    const rd = (x) => JSON.parse(String(w.eval("JSON.stringify(" + x + ")")));
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const o = (x) => Object.assign({}, base, x);
+    const fixture = [
+      o({ id: "n1", status: "placed", at: "2026-09-24T02:00:00.000Z" }),
+      o({ id: "q1", status: "acknowledged", at: "2026-09-20T02:00:00.000Z", msgs: [{ at: "2026-09-24T01:00:00.000Z", by: "customer", text: "can I collect after six" }] }),
+      o({ id: "c1", status: "ready", at: "2026-09-19T02:00:00.000Z", moved: 2, movedAt: "2026-09-24T00:00:00.000Z" }),
+      o({ id: "p1", status: "acknowledged", at: "2026-09-18T02:00:00.000Z", paid: 50, payments: [{ at: "2026-09-24T03:00:00.000Z", amount: 50, method: "transfer" }] }),
+      o({ id: "x1", status: "acknowledged", at: "2026-09-17T02:00:00.000Z" }),
+      o({ id: "q2", status: "acknowledged", at: "2026-09-16T02:00:00.000Z", quiet: "2026-09-23T05:00:00.000Z",
+        msgs: [{ at: "2026-09-23T05:00:00.000Z", by: "customer", text: "thanks" }] }),
+    ];
+    w.eval("ORD_OPEN=" + JSON.stringify(fixture) + ";AP_DRAFTS=[{id:'d-p1',status:'pending',collection:'sales',row:{},entry:{orderId:'p1',status:'Payment'}},"
+      + "{id:'d-own',status:'pending',collection:'sales',row:{},entry:{status:'Pending'}}];queue=[];");
+    const seq = rd("ordActs().map(function(a){return a.kind+':'+a.o.id;})").join(",");
+    ok(seq === "cash:c1,asked:q1,new:n1,paid:p1",
+      "one row a customer act, oldest first, and a line he said needs no reply is not one: " + seq);
+
+    w.document.body.innerHTML = String(w.eval("tabOrders()"));
+    w.eval("ordDraw()");
+    const D = w.document, box = D.getElementById("ordBox");
+    const rows = (i) => { const g = box.querySelectorAll(".ordlist .ordrows")[i]; return g ? [...g.querySelectorAll("button[data-row]")].map((b) => b.getAttribute("data-row")) : []; };
+    ok(rows(0).join(",") === "c1,q1,n1,p1"
+      && rows(1).join(",") === "x1,q2",
+      "the list draws those rows in that order, and the orders waiting on nothing under them: " + rows(0).concat(rows(1)).join(","));
+    box.querySelector('button[data-of="cash"]').click();
+    ok(rows(0).join(",") === "c1"
+      && box.querySelector('button[data-of="cash"]').getAttribute("aria-selected") === "true",
+      "a filter shows its own kind and is drawn as chosen: " + rows(0).join(","));
+    box.querySelector('button[data-of="all"]').click();
+
+    const shown = [...box.querySelectorAll(".ordpane .ordcard")].filter((c) => !c.hidden).map((c) => c.getAttribute("data-id"));
+    ok(shown.join(",") === "c1", "one card is open, the first row's, and every other is drawn hidden: " + shown.join(","));
+    box.querySelector('button[data-row="n1"]').click();
+    const open2 = [...box.querySelectorAll(".ordpane .ordcard")].filter((c) => !c.hidden).map((c) => c.getAttribute("data-id"));
+    ok(open2.join(",") === "n1" && box.classList.contains("ord-open")
+      && box.querySelector('button[data-row="n1"]').getAttribute("aria-current") === "true",
+      "a tap on a row opens its card, marks the row, and on a phone puts the card in place of the list: " + open2.join(","));
+
+    ok(rd("enterCount()") === 5,
+      "the Enter badge is the four rows and his own draft, the payment's draft being its Paid? row and counted once: " + rd("enterCount()"));
+    const today = rd("actions().filter(function(a){return a.kind==='orders';})")[0];
+    ok(today && /Site orders: 4 waiting on you/.test(today.title) && /1 new, 1 say they paid, 1 cash to record, 1 waiting on an answer/.test(today.why),
+      "and Today counts the same four rows, by kind: " + JSON.stringify(today && [today.title, today.why]));
+
+    const html = String(w.eval("tabOrders()"));
+    const fold = /<details class="salt-plan ordnote" id="bullFold">/.exec(html);
+    ok(fold && html.indexOf('id="ordBox"') >= 0 && html.indexOf('id="bullFold"') > html.indexOf('id="ordBox"') && html.indexOf('id="bullText"') > html.indexOf('id="bullFold"'),
+      "the notice is folded below the list, shut, with its editor inside the fold");
+  } finally {
+    try { w.eval("if(typeof ordTimer!=='undefined'&&ordTimer){clearInterval(ordTimer);ordTimer=null;}"); } catch (e) { /* best effort */ }
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
+section("S11 11.2: a new order's card draws the row the preview drafted before the yes: their card against the quote, margin, floor, usual and flags");
+await (async () => {
+  /* 24 Sep 2026 (PLAN 5, the judges' list). The card showed the customer's own rate and their usual and
+     nothing the drafter would say, so the price check came after the yes, under Approve. It now asks the
+     desk Worker for the pending row this one order would make (POST orders/<id>/preview, stored nowhere,
+     never /draft-now?dry=1, which drafts the whole queue) and draws that row's figures first. */
+  const { openMaster: om112 } = await import("../tools/payload.mjs");
+  const { w } = await om112();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 92; w.clearInterval = () => {};
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2.5, total: 250, delivery: 0, paid: 0, moved: 0,
+      status: "placed", history: [], msgs: [], payments: [] };
+    const orders = [Object.assign({ id: "n1", mode: "collect", at: "2026-09-24T02:00:00.000Z" }, base),
+      Object.assign({ id: "n2", mode: "deliver", place: "Taman Rekaan", at: "2026-09-24T03:00:00.000Z" }, base)];
+    /* the preview's own shapes, as src/orders.js previewAck answers */
+    let pv = { ok: true, row: { customer: "CC5-OKR", qty: 2.5, total: 250, delivery: 0 }, flags: [], cost: { unit: 56, total: 140, source: "stockCost" },
+      margin: { rm: 110, pct: 44 }, floor: { rm: 152, at: 2.5, exact: true }, usual: { who: "CC5-OKR", rate: 104, orders: 3 }, card: 250, cardNote: "", told: "x",
+      pricing: { v: "p1", digest: "d1" }, hash: "h1" };
+    const calls = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      calls.push({ p, body: init && init.body ? JSON.parse(init.body) : null });
+      const j = (b, s) => ({ ok: (s || 200) < 400, status: s || 200, json: async () => b });
+      if (p === "orders" && !post) return j({ ok: true, orders: JSON.parse(JSON.stringify(orders)) });
+      if (/\/preview$/.test(p)) return pv.status ? j({ ok: false, error: pv.error }, pv.status) : j(JSON.parse(JSON.stringify(pv)));
+      return j({ ok: true });
+    };
+    const settle = () => new Promise((r) => setTimeout(r, 30));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    await settle();
+    const card = (id) => D.querySelector('.ordcard[data-id="' + id + '"]');
+    const pvs = () => calls.filter((c) => /\/preview$/.test(c.p));
+    ok(pvs().length === 1 && pvs()[0].p === "orders/n1/preview" && JSON.stringify(pvs()[0].body) === '{"delivery":0}'
+      && !calls.some((c) => /draft-now/.test(c.p)),
+      "the open card asks for its own order's row, at no delivery for a collection, and never drafts the queue: " + JSON.stringify(calls.map((c) => c.p)));
+    const tiles = () => [...card("n1").querySelectorAll(".ordpv .salt-kpi")].map((t) => t.className.replace(/.*salt-kpi--/, "") + "|" + [...t.children].map((c) => c.textContent.replace(/\s+/g, " ").trim()).join(" "));
+    const t1 = tiles();
+    ok(t1.length === 4 && /verdigris\|Their card today RM 250 matches the quote/.test(t1[0]) && /verdigris\|Margin RM 110 on RM 140 cost/.test(t1[1])
+      && /verdigris\|Floor RM 152 clear by RM 98/.test(t1[2]) && /copper\|Their usual RM 104 a unit; this is RM 100$/.test(t1[3]),
+      "their card today matches the quote, the margin on its cost, the floor cleared, and a rate under their usual toned by that direction: " + JSON.stringify(t1));
+    ok(/drafted now and stored nowhere\. The drafter raises no flag\./.test(card("n1").textContent), "and it says the row is the drafter's, and that it flags nothing");
+
+    pv = Object.assign({}, pv, { card: 280, usual: { who: "CC5-OKR", rate: 96, orders: 3 }, flags: ["a rate under their held tier"] });
+    await w.eval("ordLoad(true)");
+    await settle();
+    const t2 = tiles();
+    ok(pvs().length === 2 && /copper\|Their card today RM 280 the quote is RM 30 under/.test(t2[0]) && /verdigris\|Their usual RM 96 a unit/.test(t2[3]),
+      "the next read drafts it again, and a quote under today's card says by how much, a rate above their usual toned the other way: " + JSON.stringify([pvs().length, t2[0], t2[3]]));
+    ok(/The drafter flags one thing:/.test(card("n1").textContent)
+      && [...card("n1").querySelectorAll(".salt-approve__flags .salt-status")].map((x) => x.textContent).join("|") === "a rate under their held tier",
+      "the drafter's flags are drawn as they came: " + card("n1").textContent.replace(/\s+/g, " ").slice(0, 200));
+
+    D.querySelector('button[data-row="n2"]').click();
+    await settle();
+    /* since 11.3 the charge is an option; Other takes a figure of his own */
+    const oth = D.querySelector('input[type="radio"][data-chip="n2"][value="other"]');
+    oth.checked = true; oth.dispatchEvent(new w.Event("change", { bubbles: true }));
+    await settle();
+    const fee = D.querySelector('input[data-fee="n2"]');
+    fee.value = "15"; fee.dispatchEvent(new w.Event("change", { bubbles: true }));
+    await settle();
+    ok(pvs().slice(-1)[0].p === "orders/n2/preview" && pvs().slice(-1)[0].body.delivery === 15,
+      "a delivery's card is drafted again at the charge he sets: " + JSON.stringify(pvs().slice(-2)));
+
+    pv = { status: 503, error: "the mirror could not be read" };
+    await w.eval("ordLoad(true)");
+    await settle();
+    const shut = card("n2").querySelector('.ordfoot button[data-ord="acknowledged"]');
+    ok(/could not be drafted: the mirror could not be read/.test(card("n2").textContent) && !card("n2").querySelector(".ordpv .salt-kpi")
+      && shut && shut.disabled && /The row could not be drafted, so Accept waits until it can\./.test(card("n2").textContent),
+      "a preview that fails says why, draws no figure it does not have, and keeps Accept shut, the Worker taking no yes without the row's digest: " + (shut && shut.disabled));
+  } finally {
+    try { w.eval("if(typeof ordTimer!=='undefined'&&ordTimer){ordTimer=null;}"); } catch (e) { /* best effort */ }
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
+section("S11 11.5: the order's card says what the customer's own page tells them, in the page's words, and since when");
+await (async () => {
+  /* 24 Sep 2026 (PLAN 5). He answered an order without knowing what the customer was looking at. The card
+     now says it: the state chip their page draws and its first line, from the moment that state began. The
+     words live on the page (stmt/page.js) and are copied on the desk, so the two copies are held together here. */
+  const { openMaster: om115 } = await import("../tools/payload.mjs");
+  const { w } = await om115();
+  try {
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, msgs: [], payments: [] };
+    const card = (x) => { const d = w.document.createElement("div"); d.innerHTML = String(w.eval("ordCard(" + JSON.stringify(Object.assign({}, base, x)) + ")"));
+      const t = d.querySelector(".ordtold"); return t ? t.textContent.replace(/\s+/g, " ").trim() : ""; };
+    const placed = card({ id: "a", status: "placed", mode: "collect", at: "2026-09-24T02:00:00.000Z", history: [{ at: "2026-09-24T02:00:00.000Z", status: "placed", by: "customer" }] });
+    ok(placed === "They see Sent, waiting to be confirmed, since 24 Sep, 10:00.", "a new order: what their page says, and since when: " + placed);
+    const acked = card({ id: "b", status: "ready", mode: "deliver", at: "2026-09-20T02:00:00.000Z",
+      history: [{ at: "2026-09-20T02:00:00.000Z", status: "placed", by: "customer" }, { at: "2026-09-23T03:30:00.000Z", status: "acknowledged", by: "desk" },
+        { at: "2026-09-24T03:30:00.000Z", status: "ready", by: "desk" }] });
+    ok(acked === "They see Ready to deliver, since 24 Sep, 11:30.",
+      "a later state is dated from when it began, in the order's own mode: " + acked);
+    /* THE TWO COPIES HELD TOGETHER. Since the Counter's stage 5 the page's words are its chip (by state, mode, whose
+       the cancellation was, and the goods all with them) and the sentence under it, so the page itself is drawn over
+       an order in every state and read back, and the desk's word must be its chip and the desk's line inside its sentence. */
+    const { landingPage: lp115 } = await import("../stmt/page.js");
+    const C115 = await import("../tools/stmt-crypto.mjs");
+    const { webcrypto: wc115 } = await import("node:crypto");
+    const { JSDOM: JD115 } = await import("jsdom");
+    const u115 = "abcd-efgh", pass115 = "fixture-pass-115", ck115 = await C115.contentKey("test-secret", u115);
+    const open115 = { ok: true, wrap: await C115.wrapKey(pass115, ck115), session: "sess-115",
+      env: await C115.encryptWith(ck115, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+    const ev = (status, by, x) => Object.assign({ at: "2026-09-23T03:30:00.000Z", status, by }, x || {});
+    const mk = (n, x) => Object.assign({}, base, { id: "2026092" + n + "000000-a" + n, at: "2026-09-20T02:00:00.000Z", mode: "collect", status: "placed",
+      history: [ev("placed", "customer")] }, x);
+    const list = [mk(1, {}), mk(2, { status: "acknowledged", history: [ev("acknowledged", "desk")] }), mk(3, { status: "ready", history: [ev("ready", "desk")] }),
+      mk(4, { status: "ready", mode: "deliver", history: [ev("ready", "desk")] }),
+      mk(5, { status: "ready", mode: "deliver", moved: 1, movedOn: "2026-09-23", history: [ev("ready", "desk")] }),
+      mk(6, { status: "done", moved: 1, paid: 100, history: [ev("done", "site")] }),
+      mk(7, { status: "declined", history: [ev("declined", "desk", { note: "None this week" })] }),
+      mk(8, { status: "cancelled", history: [ev("cancelled", "customer")] }),
+      mk(9, { status: "cancelled", history: [ev("cancelled", "desk", { note: "Prices have changed" })] })];
+    const dom115 = new JD115(lp115(u115, "n115", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc115, configurable: true }); } catch (e) { win.crypto = wc115; }
+      win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? open115 : (p === "/orders" && m === "GET") ? { ok: true, orders: list } : { ok: true };
+        return { ok: true, status: 200, json: async () => j };
+      };
+    } });
+    const pd = dom115.window.document;
+    const seen = [];
+    try {
+      pd.getElementById("un").value = u115; pd.getElementById("pw").value = pass115;
+      pd.getElementById("f").dispatchEvent(new dom115.window.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !pd.querySelector("#pOrder [data-olist]"); i++) await new Promise((r) => setTimeout(r, 50));
+      pd.querySelector('#tabs button[data-t="order"]').click();
+      const fold = pd.querySelector("#pOrder .olater"); if (fold) fold.click();
+      for (const o of list) {
+        const r = pd.querySelector('#pOrder [data-row="' + o.id + '"]'); if (r) r.click();
+        const s = pd.querySelector('#pOrder .oscreen[data-order="' + o.id + '"]');
+        const t = JSON.parse(String(w.eval("JSON.stringify(ordTold(" + JSON.stringify(o) + "))")));
+        seen.push({ id: o.id.slice(-2), chip: s ? s.querySelector(".state").textContent : null, when: s ? s.querySelector('[data-part="when"] .salt-insight').textContent : "", word: t.word, line: t.line });
+      }
+    } finally { dom115.window.close(); }
+    const off = seen.filter((x) => x.chip !== x.word || (x.line && !x.when.toLowerCase().includes(x.line.toLowerCase())));
+    ok(seen.length === 9 && seen.every((x) => x.chip) && off.length === 0,
+      "the desk's words are the page's own chip words, state by state, and its line is in the page's sentence: " + JSON.stringify(off.length ? off : seen.map((x) => x.word)));
+  } finally {
+    await new Promise((r) => setTimeout(r, 100));
+    try { w.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
+section("S11 11.3: a delivery's charge is chosen from RM 0, 10, 15 or Other with none chosen, and Accept, RM <total> sends it with the row's hash from a footer in reach");
+await (async () => {
+  /* 24 Sep 2026 (PLAN 5, the study's F-list: a charge typed as 15 went back to 0 under the poll, and 0 was
+     the default nobody chose). The charge is one of four options, none chosen until he chooses; Accept names
+     the whole sum and is open only once the row it approves has been drafted at that charge, and it posts the
+     charge with that row's hash to the desk Worker's accept route (the contract of 11.11). */
+  const { openMaster: om113 } = await import("../tools/payload.mjs");
+  const { w } = await om113();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 93; w.clearInterval = () => {};
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2.5, total: 250, delivery: 0, paid: 0, moved: 0,
+      status: "placed", history: [], msgs: [], payments: [] };
+    const orders = [Object.assign({ id: "n2", mode: "deliver", place: "Taman Rekaan", at: "2026-09-24T02:00:00.000Z" }, base),
+      Object.assign({ id: "n1", mode: "collect", at: "2026-09-24T03:00:00.000Z" }, base)];
+    const calls = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST"), body = init && init.body ? JSON.parse(init.body) : null;
+      calls.push({ p, body });
+      const j = (b) => ({ ok: true, status: 200, json: async () => b });
+      if (p === "orders" && !post) return j({ ok: true, orders: JSON.parse(JSON.stringify(orders)) });
+      if (/\/preview$/.test(p)) return j({ ok: true, row: { qty: 2.5, total: 250, delivery: body.delivery }, flags: [], cost: { unit: 56, total: 140 },
+        margin: { rm: 110, pct: 44 }, floor: { rm: 152 }, usual: { rate: 100 }, card: 250, hash: "h" + body.delivery });
+      return j({ ok: true });
+    };
+    const settle = () => new Promise((r) => setTimeout(r, 30));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    await settle();
+    const card = (id) => D.querySelector('.ordcard[data-id="' + id + '"]');
+    const radios = () => [...card("n2").querySelectorAll('input[type="radio"][data-chip="n2"]')];
+    const accept = () => card("n2").querySelector('.ordfoot button[data-ord="acknowledged"]');
+    ok(radios().map((r) => r.value).join(",") === "0,10,15,other" && radios().every((r) => !r.checked && r.classList.contains("salt-option__input"))
+      && accept() && accept().disabled && /Choose the delivery charge first/.test(card("n2").textContent),
+      "a delivery offers RM 0, 10, 15 and Other as the system's options with none chosen, and Accept waits for one: "
+      + JSON.stringify({ r: radios().map((r) => r.value + (r.checked ? "*" : "")), acc: accept() && [accept().textContent, accept().disabled] }));
+
+    const pick = (v) => { const r = radios().find((x) => x.value === v); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); };
+    pick("15");
+    await settle();
+    const pv15 = calls.filter((c) => /n2\/preview$/.test(c.p)).slice(-1)[0];
+    ok(pv15 && pv15.body.delivery === 15 && accept() && !accept().disabled && accept().textContent === "Accept, RM 265"
+      && /Accept tells them RM 265 and approves this row\. If the real row differs, it waits under Approve, marked\./.test(card("n2").textContent),
+      "choosing RM 15 drafts the row at RM 15, and Accept names the whole sum and what it does: " + JSON.stringify({ body: pv15 && pv15.body, acc: accept() && accept().textContent }));
+
+    await w.eval("ordLoad(true)");
+    await settle();
+    ok(radios().find((x) => x.value === "15").checked && accept().textContent === "Accept, RM 265",
+      "the choice survives the poll: " + JSON.stringify(radios().map((r) => r.value + (r.checked ? "*" : ""))));
+
+    accept().click();
+    await settle();
+    const acc = calls.filter((c) => /\/accept$/.test(c.p));
+    ok(acc.length === 1 && acc[0].p === "orders/n2/accept" && JSON.stringify(acc[0].body) === '{"delivery":15,"hash":"h15"}'
+      && !calls.some((c) => c.p === "orders/abcd-efgh/n2"),
+      "Accept posts the charge and the hash of the row he was shown to the accept route, and not the bare move: " + JSON.stringify(acc));
+
+    pick("other");
+    await settle();
+    const other = card("n2").querySelector('input[data-fee="n2"]');
+    ok(other && !other.closest("label").hidden && accept().disabled,
+      "Other opens a field of its own, and Accept waits for its figure");
+    other.value = "12"; other.dispatchEvent(new w.Event("change", { bubbles: true }));
+    await settle();
+    ok(calls.filter((c) => /n2\/preview$/.test(c.p)).slice(-1)[0].body.delivery === 12 && accept().textContent === "Accept, RM 262" && !accept().disabled,
+      "and a figure typed there is drafted and named on Accept: " + accept().textContent);
+
+    D.querySelector('button[data-row="n1"]').click();
+    await settle();
+    const a1 = card("n1").querySelector('.ordfoot button[data-ord="acknowledged"]');
+    ok(!card("n1").querySelector('input[type="radio"]') && a1 && !a1.disabled && a1.textContent === "Accept, RM 250",
+      "a collection has no charge to choose, and Accept opens on its drafted row: " + (a1 && a1.textContent));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
+section("S11 11.6: his saved quick replies fill the answer box, and No reply needed lets a line stand without a word to them");
+await (async () => {
+  /* 24 Sep 2026 (PLAN 5; the study's F26: a "thanks" had to be answered to leave his card). A line of theirs
+     can now be marked as needing no reply: the site keeps the moment of that line as `quiet`, bookkeeping that
+     moves nothing, sends nothing and never reaches their page, and a later line waits again. Lines he answers
+     often are kept on his device, checked by siteSafe before they are kept. */
+  const O = await import("../stmt/orders.js");
+  const kv = new KV(), env = { STMT: kv };
+  const u = "abcd-efgh";
+  const o = (await O.placeOrder(env, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  await O.deskMove(env, u, o.id, { status: "acknowledged", mode: "collect" });
+  await O.customerMove(env, u, o.id, "say", { text: "thanks, see you then" });
+  const before = JSON.parse(await kv.get("order:" + u + ":" + o.id));
+  const r = await O.deskMove(env, u, o.id, { noReply: true });
+  const after = JSON.parse(await kv.get("order:" + u + ":" + o.id));
+  ok(O.awaitingAnswer(before) === true && O.awaitingAnswer(after) === false && after.msgs.length === before.msgs.length
+    && after.status === before.status && after.history.length === before.history.length && !r.push && after.quiet === before.msgs[before.msgs.length - 1].at,
+    "No reply needed answers their line with no line of his, no state and no wake: " + JSON.stringify({ before: O.awaitingAnswer(before), after: O.awaitingAnswer(after), quiet: after.quiet, push: r.push }));
+  ok(!("quiet" in O.customerView(after)), "and it never reaches their page");
+  await new Promise((r2) => setTimeout(r2, 5));   /* a later line is a later moment */
+  await O.customerMove(env, u, o.id, "say", { text: "one more thing" });
+  const later = JSON.parse(await kv.get("order:" + u + ":" + o.id));
+  ok(O.awaitingAnswer(later) === true, "a later line of theirs waits for him again: " + JSON.stringify({ quiet: later.quiet, msgs: later.msgs.map((m) => m.at) }));
+  const again = await O.deskMove(env, u, o.id, { message: "yes?" });
+  const n = (await O.deskMove(env, u, o.id, { noReply: true })).order;
+  ok(again.order && n.quiet === after.quiet, "with his own line the last there is nothing to mark, and nothing is");
+
+  const { openMaster: om116 } = await import("../tools/payload.mjs");
+  const { w } = await om116();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 94; w.clearInterval = () => {};
+    const base = { u, code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], payments: [] };
+    const orders = [Object.assign({ id: "q1", status: "acknowledged", at: "2026-09-20T02:00:00.000Z", msgs: [{ at: "2026-09-24T01:00:00.000Z", by: "customer", text: "thanks" }] }, base),
+      Object.assign({ id: "q2", status: "acknowledged", at: "2026-09-21T02:00:00.000Z", msgs: [] }, base)];
+    const calls = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      calls.push({ p, body: init && init.body ? JSON.parse(init.body) : null });
+      return { ok: true, status: 200, json: async () => (p === "orders" && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)) } : { ok: true }) };
+    };
+    const settle = () => new Promise((r2) => setTimeout(r2, 30));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const card = (id) => D.querySelector('.ordcard[data-id="' + id + '"]');
+    const nr = card("q1").querySelector('button[data-ord="noreply"]');
+    ok(nr && nr.classList.contains("salt-ghost") && !card("q2").querySelector('button[data-ord="noreply"]'),
+      "No reply needed is offered where their line is the last, and only there");
+    nr.click();
+    await settle();
+    const post = calls.find((c) => c.p === "orders/" + u + "/q1");
+    ok(post && JSON.stringify(post.body) === '{"noReply":true}' && /Marked as needing no reply\. Nothing was sent to them\./.test(card("q1").querySelector('[data-msg="q1"]').textContent),
+      "it posts that and nothing else, and says so on the card: " + JSON.stringify(post));
+
+    const box = card("q1").querySelector('input[data-say="q1"]');
+    box.value = "Ready after 2pm"; card("q1").querySelector('button[data-keep="q1"]').click();
+    ok((JSON.parse(w.localStorage.getItem("saltQuickReplies")) || []).join("|") === "Ready after 2pm",
+      "a line he keeps is kept on this device: " + w.localStorage.getItem("saltQuickReplies"));
+    card("q1").querySelector('input[data-say="q1"]').value = "your Gold price holds";
+    card("q1").querySelector('button[data-keep="q1"]').click();
+    ok((JSON.parse(w.localStorage.getItem("saltQuickReplies")) || []).join("|") === "Ready after 2pm" && /names a level/.test(card("q1").querySelector('[data-msg="q1"]').textContent),
+      "a line siteSafe refuses is not kept, and the card says why");
+    w.eval("ORD_SEL='q2';ordDraw();");
+    const chipq = card("q2").querySelector('button[data-quick="q2"]');
+    chipq.click();
+    ok(chipq.textContent === "Ready after 2pm" && card("q2").querySelector('input[data-say="q2"]').value === "Ready after 2pm"
+      && !calls.some((c) => c.p === "orders/" + u + "/q2"),
+      "on another order the kept line is a quick reply that fills the box and sends nothing on its own");
+  } finally {
+    await new Promise((r2) => setTimeout(r2, 200));
+    try { w.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
+section("S11 11.7: Decline and Cancel take a reason, checked on the desk, which the customer reads as Not taken or Cancelled by us");
+await (async () => {
+  /* 24 Sep 2026 (PLAN 5; the study's F13: one tap, no reason, and the card vanished). The first tap opens the
+     reasons; a second, once one is chosen, moves the order with it as the event's note. Their page says Not taken
+     or Cancelled by us with that reason; one they withdrew reads Cancelled by you (S5 5.3). The reason is his and never reaches
+     a ledger note: the entry the reconcile queues is built from fixed words. */
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const deskW = (await import("../src/worker.js")).default;
+  const { cancelEntry } = await import("../src/orders.js");
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const u = "abcd-efgh";
+  await dkv.put("stmt-users", JSON.stringify({ [u]: "CC5-OKR" }));
+  const denv = { SALT_QUEUE: dkv, SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", STMT_DESK_KEY: "desk-key",
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const ctx = { waitUntil: (p) => { Promise.resolve(p).catch(() => {}); } };
+  const move = async (id, body) => {
+    const log = console.log; console.log = () => {};
+    try {
+      const r = await deskW.fetch(new Request("https://salt-command.example/orders/" + u + "/" + id, { method: "POST",
+        headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body) }), denv, ctx);
+      return { status: r.status, j: await r.json() };
+    } finally { await new Promise((r) => setTimeout(r, 20)); console.log = log; }
+  };
+  const place = async (x) => (await O.placeOrder(senv, u, Object.assign({ product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" }, x || {}))).order;
+  const dec = await place();
+  await move(dec.id, { status: "declined", note: "  Out of stock   this week " });
+  const can = await place();
+  await move(can.id, { status: "acknowledged", mode: "collect" });
+  await move(can.id, { status: "cancelled", note: "Prices have changed" });
+  const wd = await place();
+  await O.customerMove(senv, u, wd.id, "cancel", {});
+  const rec = async (id) => JSON.parse(await skv.get("order:" + u + ":" + id));
+  const dR = await rec(dec.id), cR = await rec(can.id);
+  ok(dR.history.slice(-1)[0].note === "Out of stock this week" && cR.history.slice(-1)[0].note === "Prices have changed" && cR.history.slice(-1)[0].by === "desk",
+    "his reason rides on the event that ended the order, as one line: " + JSON.stringify([dR.history.slice(-1)[0], cR.history.slice(-1)[0]]));
+  const e = cancelEntry(cR, "CC5-OKR", "desk", new Date("2026-09-24T03:00:00Z"));
+  ok(!/Prices have changed/.test(JSON.stringify(e)) && /Withdrawn on the statements site by the desk/.test(e.payload.note),
+    "and the Cancellation the reconcile queues says who ended it in fixed words, never the reason: " + e.payload.note);
+
+  /* ---- THEIR PAGE ---- */
+  const { landingPage } = await import("../stmt/page.js");
+  const CR = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const pass = "fixture-pass-117", ck = await CR.contentKey("test-secret", u);
+  const openB = { ok: true, wrap: await CR.wrapKey(pass, ck), session: "sess-117",
+    env: await CR.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await CR.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+  const list = [dR, cR, await rec(wd.id)].map(O.customerView);
+  const dom = new JSDOM(landingPage(u, "n117", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (x) { win.crypto = webcrypto; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? openB : (p === "/orders" && m === "GET") ? { ok: true, orders: list } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const pw = dom.window, pd = pw.document;
+  try {
+    pd.getElementById("un").value = u; pd.getElementById("pw").value = pass;
+    pd.getElementById("f").dispatchEvent(new pw.Event("submit", { bubbles: true, cancelable: true }));
+    /* S5: an ended order is a row under the earlier fold, and its own screen says where it stands (the chip, the
+       sentence under the steps) and what happened, a step a line */
+    for (let i = 0; i < 100 && !pd.querySelector("#pOrder .olater"); i++) await new Promise((r) => setTimeout(r, 50));
+    pd.querySelector("#pOrder .olater").click();
+    const said = (id) => {
+      const r = pd.querySelector('#pOrder [data-row="' + id + '"]'); if (!r) return null;
+      r.click();
+      const s = pd.querySelector('#pOrder .oscreen[data-order="' + id + '"]'); if (!s) return null;
+      const h = [...s.querySelectorAll('[data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
+      return [s.querySelector(".state").textContent, s.querySelector('[data-part="when"] .salt-insight').textContent, h[h.length - 1]];
+    };
+    ok(JSON.stringify(said(dec.id)) === JSON.stringify(["Not taken", "Not taken: Out of stock this week. Nothing is owed.", "Not taken: Out of stock this week"]),
+      "a decline reads Not taken, with his reason, on the order and in what happened: " + JSON.stringify(said(dec.id)));
+    ok(JSON.stringify(said(can.id)) === JSON.stringify(["Cancelled by us", "Cancelled by us: Prices have changed. Nothing is owed.", "Cancelled by us: Prices have changed"]),
+      "a cancellation of his reads Cancelled by us, with his reason, on the order and in what happened: " + JSON.stringify(said(can.id)));
+    ok(said(wd.id) && said(wd.id)[0] === "Cancelled by you" && /^Cancelled before anything moved/.test(said(wd.id)[1]) && said(wd.id)[2] === "Cancelled by you",
+      "and one they withdrew reads Cancelled by you, in their words (S5 5.3), with no reason of his: " + JSON.stringify(said(wd.id)));
+  } finally { pw.close(); }
+
+  /* ---- THE DESK: two taps, a reason between them ---- */
+  const { openMaster: om117 } = await import("../tools/payload.mjs");
+  const { w } = await om117();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 95; w.clearInterval = () => {};
+    const base = { u, code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const orders = [Object.assign({ id: "p1", status: "placed", at: "2026-09-24T02:00:00.000Z" }, base)];
+    const calls = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      calls.push({ p, body: init && init.body ? JSON.parse(init.body) : null });
+      return { ok: true, status: 200, json: async () => (p === "orders" && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)) } : { ok: true }) };
+    };
+    const settle = () => new Promise((r) => setTimeout(r, 30));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const card = () => D.querySelector('.ordcard[data-id="p1"]');
+    const moves = () => calls.filter((c) => c.p === "orders/" + u + "/p1");
+    card().querySelector('button[data-ord="declined"]').click();
+    await settle();
+    const picks = () => [...card().querySelectorAll('input[data-whypick="p1"]')];
+    const go = () => card().querySelector('button[data-ord="declined"][data-go="1"]');
+    ok(moves().length === 0 && picks().map((x) => x.value).join(",") === "stock,price,own" && go() && go().disabled,
+      "the first tap moves nothing and opens the reasons, a collection's without Cannot deliver there, and the second waits for one: "
+      + JSON.stringify({ moves: moves().length, picks: picks().map((x) => x.value) }));
+    const own = picks().find((x) => x.value === "own"); own.checked = true; own.dispatchEvent(new w.Event("change", { bubbles: true }));
+    card().querySelector('input[data-why="p1"]').value = "your Gold rate is gone";
+    go().click();
+    await settle();
+    ok(moves().length === 0 && /names a level/.test(card().querySelector('[data-msg="p1"]').textContent),
+      "his own words are checked before they leave, and a level's name moves nothing");
+    const st = picks().find((x) => x.value === "stock"); st.checked = true; st.dispatchEvent(new w.Event("change", { bubbles: true }));
+    go().click();
+    await settle();
+    ok(moves().length === 1 && JSON.stringify(moves()[0].body) === '{"status":"declined","note":"Out of stock this week"}'
+      && /They read Not taken: Out of stock this week/.test(card().querySelector('[data-msg="p1"]').textContent),
+      "a chosen reason goes with the decline, and the card says what they read: " + JSON.stringify(moves()));
+    const told = String(w.eval("ordToldLine(" + JSON.stringify(Object.assign({}, base, { id: "c1", status: "cancelled", at: "2026-09-20T02:00:00.000Z",
+      history: [{ at: "2026-09-24T02:00:00.000Z", status: "cancelled", by: "desk", note: "Prices have changed" }] })) + ")"));
+    ok(/They see <b>Cancelled by us<\/b>, Prices have changed, since 24 Sep, 10:00\./.test(told), "and his card says the same of an order he cancelled: " + told);
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 11.8: a handover with nothing paid is a Cash to record row, and Cash received marks the order paid in cash at once, so the chase stops");
+await (async () => {
+  /* 24 Sep 2026 (PLAN 5; the study: taking cash at the counter was about seven taps and typing on the Workbench,
+     then Approve, the hourly chase running meanwhile). Goods out and nothing paid is a row of its own on Waiting on
+     you; its one tap posts the cash to the desk Worker (POST orders/<id>/cash, the contract of 11.12), which moves
+     the order as a cash event: paid at once, the chase stopped, and the desk's own Fulfilment, said as his. */
+  const O = await import("../stmt/orders.js");
+  const { payEntry } = await import("../src/orders.js");
+  const kv = new KV(), env = { STMT: kv };
+  const u = "abcd-efgh";
+  const o = (await O.placeOrder(env, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  await O.deskMove(env, u, o.id, { status: "acknowledged", mode: "collect" });
+  await O.deskMove(env, u, o.id, { handover: { units: 1 } });
+  const later = new Date(Date.now() + 2 * 86400e3);
+  later.setUTCHours(2, 0, 0, 0);   /* 10:00 in Kuala Lumpur, a chase slot, two days on */
+  const held = JSON.parse(await kv.get("order:" + u + ":" + o.id));
+  ok(O.isAdvance(held) && (await O.toChase(env, later)).some((c) => c.u === u), "the fixture holds goods out, nothing paid, and chased");
+  const over = await O.deskMove(env, u, o.id, { cash: { amount: 150 } });
+  ok(over.error && over.status === 400 && /more than the 100\.00 outstanding/.test(over.error), "cash over what is owed is refused: " + over.error);
+  const r = await O.deskMove(env, u, o.id, { cash: { amount: 100 } });
+  const paid = JSON.parse(await kv.get("order:" + u + ":" + o.id));
+  const p = paid.payments.slice(-1)[0];
+  ok(paid.paid === 100 && paid.status === "done" && p.by === "desk" && p.method === "cod" && !O.isAdvance(paid)
+    && !(await O.toChase(env, later)).some((c) => c.u === u) && !O.claimWaits(paid),
+    "Cash received pays it at once in cash, marked as his, the order completes and the chase stops: " + JSON.stringify({ paid: paid.paid, st: paid.status, p }));
+  ok(O.wakes({ kind: "cash", at: "x" }, paid, true).k === "complete" && O.marksOf({ kind: "cash", at: "x" }, paid).every(([k]) => k !== O.LAST_THEIRS),
+    "they are told it is complete, and his cash never marks a move of theirs");
+  const placed = (await O.placeOrder(env, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  ok((await O.deskMove(env, u, placed.id, { cash: { amount: 50 } })).status === 409, "and an order not yet agreed takes no cash");
+  const his = payEntry(paid, "CC5-OKR", 100, new Date("2026-09-24T03:00:00Z"), true);
+  const theirs = payEntry(Object.assign({}, paid, { method: "transfer", account: "maybank", payments: [{ at: "x", amount: 100, method: "transfer" }] }), "CC5-OKR", 100, new Date("2026-09-24T03:00:00Z"));
+  ok(his.by === "desk" && /Cash received at the handover, recorded on the desk/.test(his.payload.note) && theirs.by === "customer" && /Paid on the statements site/.test(theirs.payload.note),
+    "the Fulfilment says whose money it is, his cash being the desk's own entry: " + JSON.stringify([his.by, his.payload.note, theirs.by]));
+
+  const { openMaster: om118 } = await import("../tools/payload.mjs");
+  const { w } = await om118();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 96; w.clearInterval = () => {};
+    const base = { u, code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const orders = [Object.assign({ id: "c1", status: "ready", at: "2026-09-20T02:00:00.000Z", moved: 1, paid: 0, movedAt: "2026-09-24T01:00:00.000Z" }, base),
+      Object.assign({ id: "d1", status: "acknowledged", at: "2026-09-21T02:00:00.000Z", moved: 1, paid: 40,
+        payments: [{ at: "2026-09-24T02:00:00.000Z", amount: 40, method: "cod", by: "desk" }] }, base)];
+    const calls = [];
+    w.fetch = async (path, init) => {
+      const pp = String(path), post = !!(init && init.method === "POST");
+      calls.push({ p: pp, body: init && init.body ? JSON.parse(init.body) : null });
+      return { ok: true, status: 200, json: async () => (pp === "orders" && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)) } : { ok: true }) };
+    };
+    w.eval("AP_DRAFTS=[{id:'dd1',status:'pending',collection:'sales',row:{},entry:{orderId:'d1',status:'Payment',by:'desk'}}];");
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const kinds = JSON.parse(String(w.eval("JSON.stringify(ordActs().map(function(a){return a.kind+':'+a.o.id;}))")));
+    ok(kinds.join(",") === "cash:c1", "goods out with nothing paid is a Cash row, and his own cash waiting under Approve is no Paid? row: " + kinds.join(","));
+    const card = D.querySelector('.ordcard[data-id="c1"]');
+    const pill = card.querySelector('.ordfoot button[data-ord="cash"]');
+    const filled = [...card.querySelectorAll("button.salt-pill")];
+    ok(pill && pill.textContent === "Cash received, RM 100" && filled.length === 1 && filled[0] === pill,
+      "its card leads with Cash received and the sum, the card's one filled control: " + JSON.stringify(filled.map((b) => b.textContent)));
+    pill.click();
+    await new Promise((r2) => setTimeout(r2, 30));
+    const post = calls.filter((c) => /\/cash$/.test(c.p));
+    ok(post.length === 1 && post[0].p === "orders/c1/cash" && JSON.stringify(post[0].body) === '{"amount":100}'
+      && /Recorded: RM 100 in cash\. They see it paid and the chase stops/.test(D.querySelector('[data-msg="c1"]').textContent),
+      "one tap posts the cash to the desk Worker's cash route and says what it did: " + JSON.stringify(post));
+  } finally {
+    await new Promise((r2) => setTimeout(r2, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 11.9: Delivered part steps to a part of the handover, and Close at what was handed over restates a short order as a Correction");
+await (async () => {
+  /* 24 Sep 2026 (PLAN 5; the study's short-shipment-stuck: once a unit moved neither side could cancel and nothing
+     amended the size, so a short delivery never completed, held an open slot and was chased for goods never
+     sent). A close is a handover event that restates the order at what went: the size is the units handed over,
+     the goods' total follows at the rate agreed, the old figures kept. The reconcile queues it as one Correction
+     stating the size, the total and what was handed over, and the row's name moves with its total. */
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const { reconcileOrders, closeEntry, closedKey } = await import("../src/orders.js");
+  const skv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const u = "abcd-efgh";
+  const o = (await O.placeOrder(senv, u, { product: "salt", qty: 5, mode: "collect", unit: 100, total: 500, week: "" })).order;
+  await O.deskMove(senv, u, o.id, { status: "acknowledged", mode: "collect" });
+  const K0 = "CC5-OKR|2026-09-24|500";
+  await O.deskMove(senv, u, o.id, { mark: { ledgerKey: K0, ack: "2026-09-24T01:00:00.000Z" } });
+  const zero = await O.deskMove(senv, u, o.id, { handover: { units: 0, close: true } });
+  ok(zero.status === 400 && /cancel it instead/.test(zero.error), "a close at nothing is refused: " + zero.error);
+  await O.deskMove(senv, u, o.id, { handover: { units: 2, close: true, total: 200 } });   /* the goods' total as the desk states it */
+  const c = JSON.parse(await skv.get("order:" + u + ":" + o.id));
+  ok(c.qty === 2 && c.total === 200 && c.moved === 2 && c.closed && c.closed.qty === 5 && c.closed.total === 500 && c.status === "acknowledged"
+    && O.owedUnits(c) === 0 && O.dueOf(c) === 200 && /closed at 2 unit of the 5 ordered/.test(c.history.slice(-1)[0].note),
+    "closing at 2 of 5 makes it an order of 2 at the rate agreed, the old size and total kept: " + JSON.stringify({ qty: c.qty, total: c.total, closed: c.closed, due: O.dueOf(c) }));
+  ok(JSON.stringify(O.orderWork(c)) === '["close"]' && (O.customerView(c).closed || {}).qty === 5,
+    "the ledger is owed one close, which states the handover with it, and their page is handed the size it was: " + JSON.stringify(O.orderWork(c)));
+
+  /* ---- THE RECONCILE: one Correction against the row the acknowledgement made, then the row's new name ---- */
+  const dkv = new KV(); await dkv.put("stmt-users", JSON.stringify({ [u]: "CC5-OKR" }));
+  const STATE = { OPEN: { v: "v119", byKey: { [K0]: { rid: "s119" } } } }, D1 = {
+    prepare(q) {
+      const run = async () => ({});
+      return { bind: () => ({ all: async () => D1._all(q), first: async () => D1._first(q), run }), all: async () => D1._all(q), first: async () => D1._first(q), run };
+    },
+    async _all(q) { return /FROM state/.test(q) ? { results: Object.keys(STATE).map((k) => ({ key: k, doc: JSON.stringify(STATE[k]) })) } : { results: [] }; },
+    async _first(q) { return /FROM snapshot/.test(q) ? { v: "v119" } : null; }
+  };
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: (x, i) => stmtW.fetch(new Request(x, i), senv) } };
+  const rc = await reconcileOrders(denv);
+  const q = JSON.parse((await dkv.get("q:orders")) || '{"queue":[]}').queue;
+  const e = q[0] || {}, f = (e.payload && e.payload.fields) || {};
+  ok(rc.queued === 1 && q.length === 1 && e.status === "Close" && e.payload.kind === "Correction" && e.payload.orderKey === K0
+    && f.qty === 2 && f.total === 200 && f.deliveredQty === 2 && f.handover === "collected" && /^\d{4}-\d{2}-\d{2}$/.test(f.deliveredOn),
+    "the reconcile queues one Correction naming the row as it stands, stating the size, the total and the handover: " + JSON.stringify({ n: q.length, st: e.status, key: e.payload && e.payload.orderKey, f }));
+  const after = JSON.parse(await skv.get("order:" + u + ":" + o.id));
+  ok(after.ledgerKey === "CC5-OKR|2026-09-24|200" && closedKey(c) === after.ledgerKey && after.queued.close && after.queued.moved === 2
+    && (await reconcileOrders(denv)).queued === 0,
+    "the order then names the row by the total the close leaves, is marked told, and a second pass queues nothing: " + JSON.stringify({ key: after.ledgerKey, q: after.queued }));
+  ok(!/CC5-OKR\|/.test(closeEntry(c, "CC5-OKR", new Date()).payload.note), "and the note is fixed words and figures");
+
+  /* ---- THEIR PAGE ---- */
+  const { landingPage } = await import("../stmt/page.js");
+  const CR = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const pass = "fixture-pass-119", ck = await CR.contentKey("test-secret", u);
+  const openB = { ok: true, wrap: await CR.wrapKey(pass, ck), session: "sess-119",
+    env: await CR.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await CR.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+  const dom = new JSDOM(landingPage(u, "n119", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (x) { win.crypto = webcrypto; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? openB : (p === "/orders" && m === "GET") ? { ok: true, orders: [O.customerView(after)] } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const pw = dom.window, pd = pw.document;
+  try {
+    pd.getElementById("un").value = u; pd.getElementById("pw").value = pass;
+    pd.getElementById("f").dispatchEvent(new pw.Event("submit", { bubbles: true, cancelable: true }));
+    /* S5: the order is a row, and its own screen carries the goods on steps and the money on its lines */
+    for (let i = 0; i < 100 && !pd.querySelector('#pOrder [data-row="' + o.id + '"]'); i++) await new Promise((r) => setTimeout(r, 50));
+    pd.querySelector('#pOrder [data-row="' + o.id + '"]').click();
+    const scr = pd.querySelector('#pOrder .oscreen[data-order="' + o.id + '"]');
+    const line = scr ? scr.querySelector('[data-part="when"] .salt-insight').textContent : "";
+    ok(/ Closed at 2 units of the 5 ordered, RM 200 for the goods\.$/.test(line), "their page says it was closed there, and at what: " + line);
+    const steps = scr ? [...scr.querySelectorAll(".salt-steps__step")].map((x) => x.textContent + (x.getAttribute("aria-current") ? "*" : "")) : [];
+    const goods = scr ? [...scr.querySelectorAll('[data-part="money"] .salt-ledger__row')].map((x) => x.textContent) : [];
+    ok(JSON.stringify(steps) === JSON.stringify(["Sent", "Confirmed", "Ready", "Collected*"]) && scr.querySelector(".state").textContent === "Collected"
+      && goods[0] === "GoodsRM 2002 units handed over of the 5 ordered" && goods.some((g) => /^Still to payRM 200The goods are with you$/.test(g)),
+      "its goods stand at Collected, all of what was kept being with them, and the money is billed for the 2 units, saying so: " + JSON.stringify({ steps, goods }));
+    const h = [...scr.querySelectorAll('[data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
+    ok(h[h.length - 1] === "Closed at 2 units of the 5 ordered", "and what happened says it in their words: " + JSON.stringify(h));
+  } finally { pw.close(); }
+
+  /* ---- THE DESK ---- */
+  const { openMaster: om119 } = await import("../tools/payload.mjs");
+  const { w } = await om119();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 97; w.clearInterval = () => {};
+    const base = { u, code: "CC5-OKR", product: "salt", qty: 5, total: 500, delivery: 0, paid: 500, mode: "collect", history: [], msgs: [], payments: [] };
+    const orders = [Object.assign({}, base, { id: "a1", status: "acknowledged", at: "2026-09-20T02:00:00.000Z", moved: 0 }),
+      Object.assign({}, base, { id: "a2", status: "ready", at: "2026-09-21T02:00:00.000Z", moved: 2 })];
+    const calls = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      calls.push({ p, body: init && init.body ? JSON.parse(init.body) : null });
+      return { ok: true, status: 200, json: async () => (p === "orders" && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)) } : { ok: true }) };
+    };
+    const settle = () => new Promise((r) => setTimeout(r, 30));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const card = (id) => D.querySelector('.ordcard[data-id="' + id + '"]');
+    const handed = () => calls.filter((x) => /\/handed$/.test(x.p));
+    const full = card("a1").querySelector('button[data-ord="handover"][data-full="1"]');
+    ok(full && full.classList.contains("salt-pill") && full.textContent === "Collected, 5 unit" && card("a1").querySelector(".ordpart").hidden,
+      "a whole handover is one tap in the order's own mode, the part stepper shut: " + (full && full.textContent));
+    full.click();
+    await settle();
+    ok(handed().length === 1 && handed()[0].p === "orders/a1/handed" && JSON.stringify(handed()[0].body) === '{"qty":5,"close":false}',
+      "and it posts the whole to the desk Worker's handed route: " + JSON.stringify(handed()));
+    card("a1").querySelector('button[data-partopen="a1"]').click();
+    const less = () => card("a1").querySelector('button[data-step="-0.5"]');
+    less().click(); less().click();
+    const box = card("a1").querySelector('input[data-hand="a1"]');
+    const close = card("a1").querySelector('button[data-ord="handover"][data-close="1"]');
+    ok(!card("a1").querySelector(".ordpart").hidden && box.value === "4" && close && close.textContent === "Close at 4 unit"
+      && /Close at 4 unit ends the order there: RM 400 for the goods at the rate they agreed, nothing more owed on the rest\. They have paid RM 500, RM 100 more than that, so a close there waits under Approve: the book carries no refund for it\./.test(card("a1").textContent)
+      && !/would be theirs to refund/.test(card("a1").textContent),
+      "Delivered part steps down in halves and says what a close there would mean, and never promises a refund the book does not carry: " + JSON.stringify({ v: box.value, c: close && close.textContent }));
+    close.click();
+    await settle();
+    ok(JSON.stringify(handed().slice(-1)[0].body) === '{"qty":4,"close":true}' && /Closed at 4 unit\. They see it closed there/.test(card("a1").querySelector('[data-msg="a1"]').textContent),
+      "Close posts that part as a close, and the card says what they see: " + JSON.stringify(handed().slice(-1)));
+    w.eval("ORD_SEL='a2';ordDraw();");
+    const direct = card("a2").querySelector('button[data-ord="handover"][data-close="1"][data-qty="2"]');
+    const rest = card("a2").querySelector('button[data-ord="handover"][data-full="1"]');
+    ok(direct && direct.textContent === "Close at 2 unit, RM 200" && rest && rest.textContent === "Collected the rest, 3 unit",
+      "with a part already out, closing at it is one tap beside the rest: " + JSON.stringify([direct && direct.textContent, rest && rest.textContent]));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 fix: while a reason is chosen, the footer speaks of the decline alone");
+await (async () => {
+  /* 24 Sep 2026, found by the rig at 1280: with Decline's reasons open the footer still said what Accept would do.
+     (The same shot showed the Other charge and his own words drawn although hidden, the field recipe's display
+     outranking the browser's rule for a hidden element; jsdom draws any hidden element as none, so that half is
+     proved in Chromium on the rig, not here.) */
+  const { openMaster: omFx } = await import("../tools/payload.mjs");
+  const { w } = await omFx();
+  try {
+    w.SALT_CLOUD = true;
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0, history: [], msgs: [], payments: [] };
+    const D = w.document, box = D.createElement("div");
+    box.className = "ordgrid"; box.id = "ordBox"; D.body.appendChild(box);
+    w.eval("ORD_OPEN=" + JSON.stringify([Object.assign({}, base, { id: "n1", status: "placed", mode: "deliver", place: "Taman Rekaan", at: "2026-09-24T02:00:00.000Z" })]) + ";ORD_SEL='n1';ORD_WHY.n1={st:'declined',pick:'stock'};ordDraw();");
+    const foot = D.querySelector('.ordcard[data-id="n1"] .ordfoot').textContent;
+    ok(!/Accept tells them|Choose the delivery charge first/.test(foot) && /Decline and tell them/.test(foot),
+      "with the reasons open the footer speaks of the decline alone: " + foot.replace(/\s+/g, " ").trim());
+  } finally {
+    await new Promise((r) => setTimeout(r, 100));
+    try { w.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
+section("S11 merge: Cash received is the site's own cash event, moving the ledger's mark by its figure, and no other road may send cash");
+await (async () => {
+  /* The two halves of stage 11 met here. The card's Cash received (11.8) was the site's cash event, whose Fulfilment the
+     reconcile would queue; the Worker's (11.12) booked the desk's own Fulfilment behind a mark it raised through the book's
+     ledger move. Merged, the site's cash event moves the ledger's mark BY THE AMOUNT: the desk's own entry is the one
+     Fulfilment for the cash, and a claim of theirs not yet queued stays theirs to queue. And because the cash moves the
+     mark, only the cash route, which books the row, may send it. */
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default, deskW = (await import("../src/worker.js")).default;
+  const kv = new KV(), senv = { STMT: kv, STMT_DESK_KEY: "desk-key" };
+  const u = "abcd-efgh";
+  const o = (await O.placeOrder(senv, u, { product: "salt", qty: 2, mode: "collect", unit: 100, total: 200, week: "" })).order;
+  await O.deskMove(senv, u, o.id, { status: "acknowledged", mode: "collect" });
+  await O.deskMove(senv, u, o.id, { mark: { ack: "2026-09-24T01:00:00.000Z", ledgerKey: "CX1-AB|2026-09-24|200" } });
+  await O.customerMove(senv, u, o.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, u, o.id, "pay", { amount: 30 });
+  await O.deskMove(senv, u, o.id, { cash: { amount: 50 } });
+  const got = JSON.parse(await kv.get("order:" + u + ":" + o.id));
+  ok(got.paid === 80 && got.queued && got.queued.paid === 50 && O.orderWork(got).includes("pay") && Math.abs(got.paid - got.queued.paid - 30) < 0.005,
+    "his cash moves the ledger's mark by the cash alone, so their RM 30 is still owed to the ledger as theirs and his RM 50 is never queued twice: "
+    + JSON.stringify({ paid: got.paid, queued: got.queued, work: O.orderWork(got) }));
+
+  const dkv = new KV(); await dkv.put("stmt-users", JSON.stringify({ [u]: "CX1-AB" }));
+  const denv = { SALT_QUEUE: dkv, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (x, i) => stmtW.fetch(new Request(x, i), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const bare = async (body) => { const r = await deskW.fetch(new Request("https://salt-command.example/orders/" + u + "/" + o.id, { method: "POST",
+    headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body) }), denv, ctx);
+    while (tails.length) await tails.shift(); return r.status; };
+  const said = await bare({ message: "Thank you" });
+  const cashed = await bare({ cash: { amount: 20 } });
+  const after = JSON.parse(await kv.get("order:" + u + ":" + o.id));
+  ok(said === 200 && cashed === 400 && after.paid === 80 && after.queued.paid === 50,
+    "the bare move route carries his line but refuses cash, which would move the mark with no row booked behind it: " + JSON.stringify({ said, cashed, paid: after.paid }));
+})();
+
+section("S11 merge: Close at what was handed over is a yes for its own Correction, spent only if equal, and offered again once he rejects it");
+await (async () => {
+  /* The card's 11.9 posts a close to the Worker's handed route (11.12) as {qty, close}. The site makes it a close, whose
+     row is ONE Correction restating size and total (closeEntry); the route took his yes as the digest of a plain
+     handover, which that row never equals, so every close waited under Approve unmarked, and a close at what was
+     already out was refused as nothing new. Merged: a close under the size is previewed as the Correction it makes,
+     Collected's yes answers it, and a close he rejects is Collected's to offer again. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the close was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, deskPass } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  const OPEN = { byKey: {}, position: {} };
+  setState("roster", [C1]); setState("OPEN", OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 } }, inputs: null, sizes: [1, 2] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const land = (draftId, over) => { const row = Object.assign(JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(draftId).row), { rid: "s99" + seq }, over || {});
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN);
+    db.prepare("UPDATE draft SET committed_at=? WHERE id=?").run(new Date().toISOString(), draftId); return row; };
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const settle = async () => { while (tails.length) await tails.shift(); };
+  const send = async (path, body, method) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: method || "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: method === "GET" ? undefined : JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); await settle(); return { status: r.status, j };
+  };
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const accepted = async (qty, total) => {
+    const o = (await O.placeOrder(senv, U1, { product: "salt", qty, mode: "collect", unit: total / qty, total, week: "" })).order;
+    const pv = await send("/orders/" + o.id + "/preview", {});
+    const a = await send("/orders/" + o.id + "/accept", { hash: pv.j.hash });
+    return { o, draft: a.j.draft };
+  };
+  const draftsOf = (id, status) => db.prepare("SELECT id,status,decided_by,entry FROM draft").all()
+    .filter((d) => JSON.parse(d.entry).orderId === id && JSON.parse(d.entry).status === status);
+  const preOf = (id, stage) => db.prepare("SELECT status FROM preapproval WHERE order_id=? AND stage=? ORDER BY at DESC").get(id, stage) || null;
+
+  /* A. A PART, THEN A CLOSE AT WHAT IS OUT, each one tap, each booked as drafted */
+  const A = await accepted(5, 500);
+  land(A.draft);
+  await send("/orders/" + A.o.id + "/handed", { qty: 2, close: false });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const c = await send("/orders/" + A.o.id + "/handed", { qty: 2, close: true });
+  const sA = await orderOf(A.o.id);
+  ok(c.status === 200 && c.j.preapproval && c.j.preapproval.says === "Booked as it is drafted" && sA.qty === 2 && sA.total === 200 && sA.closed && sA.closed.qty === 5,
+    "a close at the 2 units already out is a tap of its own, and the site restates the order at them: " + JSON.stringify({ st: c.status, err: c.j.error, pre: c.j.preapproval, qty: sA.qty, total: sA.total }));
+  await reconcileOrders(denv); await runDrafter(denv);
+  const cl = draftsOf(A.o.id, "Close");
+  ok(draftsOf(A.o.id, "Handover").length === 1 && cl.length === 1 && cl[0].status === "approved" && /^preapproved/.test(cl[0].decided_by) && (preOf(A.o.id, "move") || {}).status === "applied",
+    "and its one restating Correction is approved as drafted, being the row he said yes to: " + JSON.stringify({ close: cl.map((d) => [d.status, d.decided_by]), pre: preOf(A.o.id, "move") }));
+
+  /* B. A CLOSE THAT LANDS OTHER THAN SHOWN waits marked; rejected, Collected offers it again, and the fresh one is booked */
+  const B = await accepted(4, 400);
+  const cB = await send("/orders/" + B.o.id + "/handed", { qty: 3, close: true });
+  land(B.draft, { cash: 50 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const dB = draftsOf(B.o.id, "Close");
+  ok(cB.status === 200 && cB.j.preapproval.waits === true && dB.length === 1 && dB[0].status === "pending" && (preOf(B.o.id, "move") || {}).status === "differs",
+    "a close before the first row lands waits for it, and a Correction other than shown waits under Approve, marked: " + JSON.stringify({ st: cB.status, err: cB.j.error, d: dB.map((d) => d.status), pre: preOf(B.o.id, "move") }));
+  if (!dB.length) return;
+  await send("/drafts/" + encodeURIComponent(dB[0].id) + "/reject", { by: "fixture" });
+  const listed = (await send("/orders", null, "GET")).j.orders.find((x) => x.id === B.o.id) || {};
+  const again = await send("/orders/" + B.o.id + "/again", { stage: "move" });
+  await deskPass(denv, new Date()); await runDrafter(denv);
+  const fresh = draftsOf(B.o.id, "Close").filter((d) => d.id !== dB[0].id);
+  ok(JSON.stringify(listed.again || []) === JSON.stringify(["move"]) && again.status === 200 && fresh.length === 1 && fresh[0].status === "approved",
+    "a close he rejects is Collected's to offer again, and the fresh Correction is booked as drafted: " + JSON.stringify({ again: listed.again, st: again.status, err: again.j.error, fresh: fresh.map((d) => d.status) }));
+})();
+
+section("S11 merge: the card drives the real desk Worker, drawing the preview it answers and saying what each yes did");
+await (async () => {
+  /* The two halves of stage 11 were built apart: the card against a stand-in for the routes, the routes against no
+     card. Here the card's fetch is the desk Worker itself, over a real D1 schema and the real site. The preview's
+     cost, margin, floor and usual are objects, which the card read as bare figures, so it drew "no floor" on every
+     order; and the answer to a tap said "They see Acknowledged" and "booked as it is drafted" whatever the Worker had
+     done, so a row that differed, or a stage waiting on the first row, went unsaid. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the card was not driven against the Worker"); return; }
+  const O = await import("../stmt/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  setState("roster", [C1]); setState("OPEN", { byKey: {}, position: {} });
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 } }, inputs: null, sizes: [1, 2],
+    cards: { [C1]: [[1, 100], [2, 200]] } } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const o = (await O.placeOrder(senv, U1, { product: "salt", qty: 2, mode: "collect", unit: 100, total: 200, week: "" })).order;
+
+  const { openMaster: omM } = await import("../tools/payload.mjs");
+  const { w } = await omM();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 98; w.clearInterval = () => {};
+    let stub = null;
+    w.fetch = async (path, init) => {
+      if (stub) { const s = stub(String(path)); if (s) return s; }
+      const r = await deskW.fetch(new Request("https://salt-command.example/" + String(path), { method: (init && init.method) || "GET",
+        headers: (init && init.headers) || {}, body: init && init.body ? init.body : undefined }), denv, ctx);
+      while (tails.length) await tails.shift();
+      const text = await r.text();
+      return { ok: r.ok, status: r.status, json: async () => JSON.parse(text) };
+    };
+    const settle = () => new Promise((r) => setTimeout(r, 60));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    for (let i = 0; i < 40 && !D.querySelector('.ordcard[data-id="' + o.id + '"] .ordpv .salt-kpi'); i++) await settle();
+    const card = () => D.querySelector('.ordcard[data-id="' + o.id + '"]');
+    const tiles = [...card().querySelectorAll(".ordpv .salt-kpi")].map((t) => [...t.children].map((c) => c.textContent.replace(/\s+/g, " ").trim()).join(" "));
+    ok(tiles.length === 4 && /Their card today RM 200 matches the quote/.test(tiles[0]) && /Margin RM 88 on RM 112 cost/.test(tiles[1])
+      && /Floor RM 150 clear by RM 50/.test(tiles[2]) && /Their usual RM 100 a unit/.test(tiles[3]),
+      "the card draws the Worker's own preview: their card, the margin on the cost, the floor and their usual: " + JSON.stringify(tiles));
+
+    const acc = card().querySelector('.ordfoot button[data-ord="acknowledged"]');
+    acc.click();
+    for (let i = 0; i < 40 && !/Accepted/.test((D.querySelector('[data-msg="' + o.id + '"]') || {}).textContent || ""); i++) await settle();
+    const pend = db.prepare("SELECT status FROM draft").all().map((d) => d.status);
+    const site1 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
+    const msg1 = (D.querySelector('[data-msg="' + o.id + '"]') || {}).textContent || "";
+    ok(pend.join() === "approved" && site1.status === "acknowledged" && /^Accepted\. They see Confirmed, and the row you saw is approved\./.test(msg1),
+      "Accept approves the row it drew, moves the order, and says so: " + JSON.stringify({ pend, st: site1.status, msg1 }));
+
+    const coll = card().querySelector('button[data-ord="handover"][data-full="1"]');
+    coll.click();
+    for (let i = 0; i < 40 && !/Recorded/.test((D.querySelector('[data-msg="' + o.id + '"]') || {}).textContent || ""); i++) await settle();
+    const msg2 = (D.querySelector('[data-msg="' + o.id + '"]') || {}).textContent || "";
+    ok(/Recorded: 2 unit handed over\. Booked when the first row lands, if it is the row you saw\./.test(msg2),
+      "Collected before the first row lands says it is booked when that row lands, never waiting silently: " + msg2);
+
+    /* an Accept whose row came out other than shown is said as that, and the order is said to stay Placed */
+    const o2 = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+    await w.eval("ordLoad(true)");
+    w.eval("ORD_SEL=" + JSON.stringify(o2.id) + ";ordDraw();");
+    for (let i = 0; i < 40 && !(D.querySelector('.ordcard[data-id="' + o2.id + '"] .ordfoot button[data-ord="acknowledged"]') || {}).disabled === false; i++) await settle();
+    stub = (p) => /\/accept$/.test(p) ? { ok: true, status: 200, json: async () => ({ ok: true, approved: false, differs: true, draft: "x" }) } : null;
+    D.querySelector('.ordcard[data-id="' + o2.id + '"] .ordfoot button[data-ord="acknowledged"]').click();
+    for (let i = 0; i < 40 && !/Accepted/.test((D.querySelector('[data-msg="' + o2.id + '"]') || {}).textContent || ""); i++) await settle();
+    const msg3 = (D.querySelector('[data-msg="' + o2.id + '"]') || {}).textContent || "";
+    ok(/waits under Approve, marked, and they still see Sent/.test(msg3) && !/They see Confirmed/.test(msg3),
+      "a row that came out other than shown is said as waiting under Approve, the customer still reading Sent: " + msg3);
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 merge: a row other than he said yes to waits under Approve marked, with what he was shown beside it");
+await (async () => {
+  /* HIS DECISION D6: anything different from the preview waits under Approve, marked "differs from what you saw". The
+     Worker carries the mark on GET /drafts as `preapproval` (11.11); neither half drew it, so the row waited unmarked
+     and he could not tell it from any other. The card now says so where the eye lands, with what he said yes to. */
+  const { openMaster: omH } = await import("../tools/payload.mjs");
+  const { w } = await omH();
+  try {
+    const card = (d) => { const x = w.document.createElement("div"); x.innerHTML = String(w.eval("apCard(" + JSON.stringify(d) + ")")); return x.textContent.replace(/\s+/g, " ").trim(); };
+    const base = { id: "2026-09-24T01:00:00.000Z", status: "pending", collection: "sales", party: "CX1-AB", flags: [], reasoning: "" };
+    const pend = Object.assign({}, base, { row: { customer: "CX1-AB", qty: 2, total: 190, date: "2026-09-24" },
+      preapproval: { state: "differs", says: "differs from what you saw", stage: "ack", at: "x", shown: { from: "placed", row: { qty: 2, total: 200 }, flags: [] } } });
+    const hand = Object.assign({}, base, { amends: true, amendKind: "Correction", row: { customer: "CX1-AB", qty: 2, total: 200, changes: [] },
+      preapproval: { state: "differs", says: "differs from what you saw", stage: "move", at: "x", shown: { from: "acknowledged", figures: { units: 2, how: "collected" }, flags: ["one"] } } });
+    const plain = Object.assign({}, base, { row: { customer: "CX1-AB", qty: 2, total: 200, date: "2026-09-24" } });
+    const a = card(pend), b = card(hand), c = card(plain);
+    ok(/Differs from what you saw On the order card you said yes to 2 unit for RM 200, with no flag\./.test(a)
+      && /Differs from what you saw On the order card you said yes to 2 unit collected, with 1 flag\./.test(b) && !/Differs from what you saw/.test(c),
+      "a row that differs is marked in the Worker's words with what he said yes to, and a row with no yes behind it is not: " + JSON.stringify([a.slice(0, 160), b.slice(0, 160), c.slice(0, 80)]));
+  } finally {
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 merge: a move whose row he rejected is offered again from its own card, under a fresh entry booked only if equal");
+await (async () => {
+  /* HIS DECISION D6: rejecting a site-made draft writes back to the order and offers the move again. The Worker offers
+     it (11.13: `again` on GET /orders, the stage's own tap, POST /orders/<id>/again) and the card drew none of it, so a
+     rejected row could only be read about. The card now offers each: a later move by its own ghost, and a pending row
+     on an order already agreed by Accept again, against its preview, at the charge they were told. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the offer was not driven against the Worker"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, deskPass } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  const OPEN = { byKey: {}, position: {} };
+  setState("roster", [C1]); setState("OPEN", OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 } }, inputs: null, sizes: [1, 2] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const land = (draftId, over) => { const row = Object.assign(JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(draftId).row), { rid: "s99" + seq }, over || {});
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN);
+    db.prepare("UPDATE draft SET committed_at=? WHERE id=?").run(new Date().toISOString(), draftId); return row; };
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const settle0 = async () => { while (tails.length) await tails.shift(); };
+  const send = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); await settle0(); return { status: r.status, j };
+  };
+  const draftsOf = (id, status) => db.prepare("SELECT id,status,decided_by,entry FROM draft").all()
+    .filter((d) => JSON.parse(d.entry).orderId === id && JSON.parse(d.entry).status === status);
+
+  /* A. A HANDOVER THAT LANDED OTHER THAN SHOWN, REJECTED */
+  const oA = (await O.placeOrder(senv, U1, { product: "salt", qty: 2, mode: "collect", unit: 105, total: 210, week: "" })).order;
+  const pvA = await send("/orders/" + oA.id + "/preview", {});
+  const aA = await send("/orders/" + oA.id + "/accept", { hash: pvA.j.hash });
+  await send("/orders/" + oA.id + "/handed", { qty: 2 });
+  land(aA.j.draft, { cash: 50 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const hA = draftsOf(oA.id, "Handover");
+  if (hA.length) await send("/drafts/" + encodeURIComponent(hA[0].id) + "/reject", { by: "fixture" });
+  /* B. A PENDING ROW QUEUED BY THE OLD ROAD (the site moved first), REJECTED */
+  const oB = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  await O.deskMove(senv, U1, oB.id, { status: "acknowledged", mode: "collect" });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const pB = draftsOf(oB.id, "Pending");
+  if (pB.length) await send("/drafts/" + encodeURIComponent(pB[0].id) + "/reject", { by: "fixture" });
+
+  const { openMaster: omF } = await import("../tools/payload.mjs");
+  const { w } = await omF();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 99; w.clearInterval = () => {};
+    w.fetch = async (path, init) => {
+      const r = await deskW.fetch(new Request("https://salt-command.example/" + String(path), { method: (init && init.method) || "GET",
+        headers: (init && init.headers) || {}, body: init && init.body ? init.body : undefined }), denv, ctx);
+      await settle0();
+      const text = await r.text();
+      return { ok: r.ok, status: r.status, json: async () => JSON.parse(text) };
+    };
+    const settle = () => new Promise((r) => setTimeout(r, 60));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const card = (id) => D.querySelector('.ordcard[data-id="' + id + '"]');
+    const msg = (id) => ((D.querySelector('[data-msg="' + id + '"]') || {}).textContent || "");
+
+    w.eval("ORD_SEL=" + JSON.stringify(oA.id) + ";ordDraw();");
+    const offer = card(oA.id) && card(oA.id).querySelector('button[data-ord="again"][data-stage="move"]');
+    ok(hA.length === 1 && offer && offer.textContent === "Offer the handover again" && offer.classList.contains("salt-ghost"),
+      "a handover whose row he rejected is offered again on its card: " + JSON.stringify({ rejected: hA.length, btn: offer && offer.textContent }));
+    if (offer) {
+      offer.click();
+      for (let i = 0; i < 40 && !/Offered again/.test(msg(oA.id)); i++) await settle();
+      await deskPass(denv, new Date()); await runDrafter(denv);
+      const fresh = draftsOf(oA.id, "Handover").filter((d) => d.id !== hA[0].id);
+      ok(/^Offered again under a fresh entry\. Booked as it is drafted, if it is the row you saw\./.test(msg(oA.id)) && fresh.length === 1 && fresh[0].status === "approved",
+        "one tap offers it under a fresh entry, which is booked as drafted: " + JSON.stringify({ msg: msg(oA.id), fresh: fresh.map((d) => d.status) }));
+    }
+
+    w.eval("ORD_SEL=" + JSON.stringify(oB.id) + ";ordDraw();");
+    for (let i = 0; i < 40 && !(card(oB.id) && card(oB.id).querySelector(".ordpv .salt-kpi")); i++) await settle();
+    const again = card(oB.id) && card(oB.id).querySelector('.ordfoot button[data-ord="acknowledged"]');
+    ok(pB.length === 1 && again && again.textContent === "Accept again, RM 100" && !again.disabled && card(oB.id).querySelector(".ordpv .salt-kpi"),
+      "a pending row he rejected on an agreed order is drawn again and offered by Accept again at the charge they were told: " + JSON.stringify({ rejected: pB.length, btn: again && [again.textContent, again.disabled] }));
+    if (again) {
+      again.click();
+      for (let i = 0; i < 40 && !/Accepted/.test(msg(oB.id)); i++) await settle();
+      const freshB = draftsOf(oB.id, "Pending").filter((d) => d.id !== pB[0].id);
+      ok(freshB.length === 1 && freshB[0].status === "approved" && /^Accepted\./.test(msg(oB.id)),
+        "and Accept again books the fresh pending row as drafted: " + JSON.stringify({ fresh: freshB.map((d) => d.status), msg: msg(oB.id) }));
+    }
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 merge: a tap that closes its order keeps its answer, said at the head of the list once the card has left it");
+await (async () => {
+  /* Found by the rig on the merge: Cash received on goods all handed over pays the last of what is owed, the order
+     completes and leaves the open list, and the card that carried the answer (S11 11.4: the answer beside the control)
+     left with it, so "Recorded ... Booked as it is drafted" was never drawn. The answer now stands at the head of the
+     list, and the phone goes back to the list to show it. */
+  const { openMaster: omG } = await import("../tools/payload.mjs");
+  const { w } = await omG();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 97; w.clearInterval = () => {};
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const c1 = Object.assign({ id: "c1", status: "ready", at: "2026-09-20T02:00:00.000Z", moved: 1, paid: 0, movedAt: "2026-09-24T01:00:00.000Z" }, base);
+    const n1 = Object.assign({ id: "n1", status: "acknowledged", at: "2026-09-21T02:00:00.000Z", moved: 0, paid: 0 }, base);
+    let orders = [c1, n1];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      const body = p === "orders" && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)) }
+        : /\/cash$/.test(p) ? { ok: true, preapproval: { stage: "cash", waits: false, says: "Booked as it is drafted" } } : { ok: true };
+      if (/\/cash$/.test(p)) orders = orders.filter((o) => o.id !== "c1");
+      return { ok: true, status: 200, json: async () => body };
+    };
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    w.eval("ORD_SEL='c1';ORD_OPENED=true;ordDraw();");
+    D.querySelector('.ordcard[data-id="c1"] button[data-ord="cash"]').click();
+    for (let i = 0; i < 30 && !D.querySelector('.ordlist [data-msg="c1"]'); i++) await new Promise((r) => setTimeout(r, 30));
+    const said = D.querySelector('.ordlist [data-msg="c1"]');
+    ok(said && /^CC5-OKR, 1 unit salt of 20 Sep, RM 100\. Recorded: RM 100 in cash\. They see it paid and the chase stops\. Booked as it is drafted/.test(said.textContent) && w.eval("ORD_OPENED") === false
+      && !D.querySelector('.ordcard[data-id="c1"]'),
+      "the order it closed has left the list, and its answer heads the list naming the order, the phone back on it: " + JSON.stringify({ said: said && said.textContent, opened: w.eval("ORD_OPENED") }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 fix: a close that leaves more paid than it comes to is never approved on the tap, and waits under Approve");
+await (async () => {
+  /* Found in review: an order paid RM 300 and closed at 1 unit of 3 had its Correction approved at the tap, with the
+     drafter's own overpaid flags on it, and nothing booked the RM 200 as money owed back (the fold raises a refund only
+     for a cancelled row). Such a close now waits under Approve, and the tap says why. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the close was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, deskPass } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  const OPEN = { byKey: {}, position: {} };
+  setState("roster", [C1]); setState("OPEN", OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 3] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const land = (draftId, over) => { const row = Object.assign(JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(draftId).row), { rid: "s99" + seq }, over || {});
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN);
+    db.prepare("UPDATE draft SET committed_at=? WHERE id=?").run(new Date().toISOString(), draftId); return row; };
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const send = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); while (tails.length) await tails.shift(); return { status: r.status, j };
+  };
+  const draftsOf = (id, status) => db.prepare("SELECT id,status,decided_by,entry FROM draft").all()
+    .filter((d) => JSON.parse(d.entry).orderId === id && JSON.parse(d.entry).status === status);
+
+  const o = (await O.placeOrder(senv, U1, { product: "salt", qty: 3, mode: "collect", unit: 100, total: 300, week: "" })).order;
+  const pv = await send("/orders/" + o.id + "/preview", {});
+  const a = await send("/orders/" + o.id + "/accept", { hash: pv.j.hash });
+  land(a.j.draft);
+  await send("/orders/" + o.id + "/cash", { amount: 300 });
+  await deskPass(denv, new Date()); await runDrafter(denv);
+  const cash = draftsOf(o.id, "Payment");
+  const c = await send("/orders/" + o.id + "/handed", { qty: 1, close: true });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const cl = draftsOf(o.id, "Close");
+  ok(cash.length === 1 && cash[0].status === "approved" && c.status === 200 && c.j.preapproval && c.j.preapproval.held === true
+    && /^It waits under Approve: they have paid RM 300, RM 200 more than it now comes to, and the book carries no refund for that$/.test(c.j.preapproval.says)
+    && cl.length === 1 && cl[0].status === "pending" && !db.prepare("SELECT id FROM preapproval WHERE order_id=? AND stage='move'").all(o.id).length,
+    "a close under what they paid is said to wait, carries no yes, and its Correction waits under Approve: "
+    + JSON.stringify({ cash: cash.map((d) => d.status), st: c.status, pre: c.j.preapproval, close: cl.map((d) => [d.status, d.decided_by]) }));
+
+  /* and the card says it in those words, never "if it is the row you saw" of a row no yes is waiting for */
+  const { openMaster: omHd } = await import("../tools/payload.mjs");
+  const { w } = await omHd();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 96; w.clearInterval = () => {};
+    const ord = { id: "h1", u: U1, code: C1, product: "salt", qty: 3, total: 300, delivery: 0, paid: 300, moved: 1, mode: "collect", status: "ready",
+      at: "2026-09-20T02:00:00.000Z", history: [], msgs: [], payments: [], queued: { ack: "x", paid: 300, moved: 1 } };
+    w.fetch = async (path, init) => { const p = String(path), post = !!(init && init.method === "POST");
+      return { ok: true, status: 200, json: async () => (p === "orders" && !post ? { ok: true, orders: [ord] } : /\/handed$/.test(p) ? c.j : { ok: true }) }; };
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    D.querySelector('.ordcard[data-id="h1"] button[data-ord="handover"][data-close="1"]').click();
+    for (let i = 0; i < 30 && !/Closed/.test((D.querySelector('[data-msg="h1"]') || {}).textContent || ""); i++) await new Promise((r) => setTimeout(r, 30));
+    const said = (D.querySelector('[data-msg="h1"]') || {}).textContent || "";
+    ok(/^Closed at 1 unit\. They see it closed there\. It waits under Approve: they have paid RM 300, RM 200 more than it now comes to, and the book carries no refund for that\. The customer is told/.test(said)
+      && !/row you saw/.test(said), "the card says the close waits, and why: " + said);
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 fix: a yes for a stage the site makes is spent on its own row, never an older row of the same stage");
+await (async () => {
+  /* Found in review: Collected 3, tapped while an older handover row waited under Approve, spent its yes on that older
+     row at the tap, marking it "differs"; the row he said yes to then waited unmarked. A yes the site's own stage
+     answers is spent only on a row carrying the figures he was shown, and never tested at the tap. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the yes was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  const OPEN = { byKey: {}, position: {} };
+  setState("roster", [C1]); setState("OPEN", OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 3] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const land = (draftId, over) => { const row = Object.assign(JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(draftId).row), { rid: "s99" + seq }, over || {});
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN);
+    db.prepare("UPDATE draft SET committed_at=? WHERE id=?").run(new Date().toISOString(), draftId); return row; };
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  /* `bare`: no request tail, so the test runs the reconcile and the drafter itself, in the order the race needs */
+  const send = async (path, body, bare) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, bare ? {} : ctx);
+    const j = await r.json(); while (tails.length) await tails.shift(); return { status: r.status, j };
+  };
+  const hand = (id) => db.prepare("SELECT id,status,decided_by,entry FROM draft").all().filter((d) => JSON.parse(d.entry).orderId === id && JSON.parse(d.entry).status === "Handover")
+    .map((d) => ({ id: d.id, units: JSON.parse(d.entry).payload.fields.deliveredQty, status: d.status }));
+  const pres = (id) => db.prepare("SELECT status,draft_id,json_extract(shown,'$.figures.units') AS units FROM preapproval WHERE order_id=? AND stage='move' ORDER BY at").all(id);
+  const accepted = async (qty, unit) => {   /* a different total for each order, or two rows share one key */
+    const o = (await O.placeOrder(senv, U1, { product: "salt", qty, mode: "collect", unit, total: qty * unit, week: "" })).order;
+    const pv = await send("/orders/" + o.id + "/preview", {});
+    return { o, draft: (await send("/orders/" + o.id + "/accept", { hash: pv.j.hash })).j.draft };
+  };
+
+  /* A. an older handover waits under Approve, marked; the next Collected is booked on its own row */
+  const A = await accepted(3, 100);
+  await send("/orders/" + A.o.id + "/handed", { qty: 1 });
+  land(A.draft, { cash: 50 });   /* the row lands other than the card assumed, so Handover 1 differs */
+  await reconcileOrders(denv); await runDrafter(denv);
+  const t2 = await send("/orders/" + A.o.id + "/handed", { qty: 3 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const hA = hand(A.o.id), pA = pres(A.o.id), h1 = hA.find((d) => d.units === 1), h3 = hA.find((d) => d.units === 3);
+  ok(t2.status === 200 && !t2.j.preapproval.spent && h1 && h1.status === "pending" && h3 && h3.status === "approved"
+    && pA.length === 2 && pA[0].status === "differs" && pA[0].draft_id === h1.id && pA[1].status === "applied" && pA[1].draft_id === h3.id,
+    "Collected 3 is booked on its own row, and the older handover keeps its own mark: " + JSON.stringify({ spent: t2.j.preapproval.spent, hA, pA }));
+
+  /* B. a second Collected lands while the first's row is queued and not yet drafted: the second yes waits for its own row */
+  const B = await accepted(3, 110);
+  land(B.draft);
+  await send("/orders/" + B.o.id + "/handed", { qty: 1 }, true);
+  await reconcileOrders(denv);                                 /* Handover 1 is queued */
+  await send("/orders/" + B.o.id + "/handed", { qty: 2 }, true);
+  await runDrafter(denv);                                      /* ... and drafted after the second yes */
+  await reconcileOrders(denv); await runDrafter(denv);         /* Handover 2 */
+  const hB = hand(B.o.id), two = hB.find((d) => d.units === 2), last = pres(B.o.id).slice(-1)[0] || {};
+  ok(two && two.status === "approved" && last.status === "applied" && last.draft_id === two.id && +last.units === 2,
+    "a yes for 2 units is never spent on the row for 1, and books the row for 2: " + JSON.stringify({ hB, pres: pres(B.o.id) }));
+})();
+
+section("S11 fix: a second cash tap before the first row lands books both, a yes carrying its own entry never voided");
+await (async () => {
+  /* Found in review: two Cash received taps on one order before its first row landed each raised what the site counts as
+     paid, and the second yes voided the first while its Fulfilment was still unqueued, so only one reached the book. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the cash was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { deskPass } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  const OPEN = { byKey: {}, position: {} };
+  setState("roster", [C1]); setState("OPEN", OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const land = (draftId) => { const row = Object.assign(JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(draftId).row), { rid: "s99" + seq });
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN); };
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const send = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); while (tails.length) await tails.shift(); return { status: r.status, j };
+  };
+  const o = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, week: "" })).order;
+  const pv = await send("/orders/" + o.id + "/preview", {});
+  const a = await send("/orders/" + o.id + "/accept", { hash: pv.j.hash });
+  const c1 = await send("/orders/" + o.id + "/cash", { amount: 60 }), c2 = await send("/orders/" + o.id + "/cash", { amount: 60 });
+  land(a.j.draft);
+  await deskPass(denv, new Date()); await runDrafter(denv);
+  const pays = db.prepare("SELECT status,entry FROM draft").all().filter((d) => JSON.parse(d.entry).orderId === o.id && JSON.parse(d.entry).status === "Payment")
+    .map((d) => [JSON.parse(d.entry).payload.cash, d.status]);
+  ok(c1.j.preapproval && c1.j.preapproval.waits === true && c2.j.preapproval && c2.j.preapproval.waits === true
+    && pays.length === 2 && pays.every((p) => p[0] === 60 && p[1] === "approved"),
+    "both cash taps are booked once the first row lands, as the site counts both: " + JSON.stringify({ c1: c1.status, c2: c2.status, pays }));
+})();
+
+section("S11 fix: an Accept whose yes a fault left unspent, or whose order was never told, is settled and told again");
+await (async () => {
+  /* Found in review: a D1 fault while his yes was being spent left it waiting for good. His approval under Approve then
+     moved nothing (only a yes marked "differs" was flipped), Accept answered "being drafted" for ever, and a withdrawal
+     after the row landed queued no Cancellation, the order never having been marked. Now his approval spends a waiting
+     yes too, the desk's pass spends one whose row was drafted without it, and tells an order its approved row again. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the faults were not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  let failApprove = 0, failEntryAt = 0, failMark = 0;
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() {
+        if (failApprove > 0 && /^UPDATE draft SET status='approved', decided_at=\?1, decided_by=\?2/.test(sql)) { failApprove--; throw new Error("D1 fault (fixture)"); }
+        if (failEntryAt > 0 && /^UPDATE preapproval SET entry_at=\?1, entry=\?2 WHERE id=\?3/.test(sql)) { failEntryAt--; throw new Error("D1 fault (fixture)"); }
+        const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  setState("roster", [C1]); setState("OPEN", { byKey: {}, position: {} });
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => {
+      if (failMark > 0 && init && /"ack":/.test(String(init.body || ""))) { failMark--; return Promise.resolve(new Response("{}", { status: 503 })); }
+      return stmtW.fetch(new Request(url, init), senv); } } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const settle = async () => { while (tails.length) await tails.shift(); };
+  const send = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); await settle(); return { status: r.status, j };
+  };
+  const minute = async () => { await deskW.scheduled({ cron: "* * * * *", scheduledTime: Date.parse("2026-09-24T03:01:00Z") }, denv, ctx); await settle(); };
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const pending = (id) => db.prepare("SELECT id,status FROM draft").all().filter((d) => d.id && JSON.parse(db.prepare("SELECT entry FROM draft WHERE id=?").get(d.id).entry).orderId === id);
+  const preOf = (id) => db.prepare("SELECT status FROM preapproval WHERE order_id=? AND stage='ack'").get(id) || {};
+  const place = async (unit) => { const o = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit, total: unit, week: "" })).order;
+    return { o, pv: await send("/orders/" + o.id + "/preview", {}) }; };
+
+  /* 1. the drafter's spend and Accept's own test each meet a fault; his approval under Approve moves the order */
+  const A = await place(101);
+  failApprove = 2;
+  const aA = await send("/orders/" + A.o.id + "/accept", { hash: A.pv.j.hash });
+  failApprove = 0;
+  const dA = pending(A.o.id);
+  const apA = dA.length ? await send("/drafts/" + encodeURIComponent(dA[0].id) + "/approve", { by: "fixture" }) : { status: 0 };
+  ok(aA.status === 500 && dA.length === 1 && dA[0].status === "pending" && apA.status === 200 && (await orderOf(A.o.id)).status === "acknowledged" && preOf(A.o.id).status === "applied",
+    "a yes a fault left waiting is spent by his approval, which moves the order: " + JSON.stringify({ accept: aA.status, drafts: dA, approve: apA.status, order: (await orderOf(A.o.id)).status, pre: preOf(A.o.id) }));
+
+  /* 2. Accept's own write fails after its entry is queued, and another pass drafts the row first: the next minute spends the yes */
+  const B = await place(102);
+  failEntryAt = 1;
+  const aB = await send("/orders/" + B.o.id + "/accept", { hash: B.pv.j.hash });
+  await runDrafter(denv);
+  await minute();
+  const dB = pending(B.o.id);
+  ok(aB.status === 500 && dB.length === 1 && dB[0].status === "approved" && (await orderOf(B.o.id)).status === "acknowledged",
+    "a row drafted before the yes knew its id is booked by the next minute's pass, and the order moved: " + JSON.stringify({ accept: aB.status, drafts: dB, order: (await orderOf(B.o.id)).status, pre: preOf(B.o.id) }));
+
+  /* 3. the row is approved but the order's mark fails: the next minute tells the order again */
+  const C = await place(103);
+  failMark = 1;
+  const aC = await send("/orders/" + C.o.id + "/accept", { hash: C.pv.j.hash });
+  const before = (await orderOf(C.o.id)).status;
+  await minute();
+  const sC = await orderOf(C.o.id);
+  ok(aC.j.approved === true && before === "placed" && sC.status === "acknowledged" && sC.queued && sC.queued.ack && sC.ledgerKey,
+    "an approved row whose order could not be told is told by the next minute's pass: " + JSON.stringify({ accept: aC.j, before, after: sC.status, q: sC.queued }));
+})();
+
+section("S11 fix: a close he rejects gives the row back its name, and offered again moves it once more");
+await (async () => {
+  /* Found in review: the order took the name its close would leave when the close was QUEUED. Rejected, the close never
+     landed, so every later stage waited for a row that would never exist, and the return leg could not find the row.
+     A rejected close now gives the order back the key the row still carries; offered again, it moves it once more. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the close was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, closedKey } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  const OPEN = { byKey: {}, position: {} };
+  setState("roster", [C1]); setState("OPEN", OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 3] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const land = (draftId, over) => { const row = Object.assign(JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(draftId).row), { rid: "s99" + seq }, over || {});
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN); return key; };
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const send = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); while (tails.length) await tails.shift(); return { status: r.status, j };
+  };
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const draftsOf = (id, status) => db.prepare("SELECT id,status,entry FROM draft").all().filter((d) => JSON.parse(d.entry).orderId === id && JSON.parse(d.entry).status === status);
+
+  const o = (await O.placeOrder(senv, U1, { product: "salt", qty: 3, mode: "collect", unit: 100, total: 300, week: "" })).order;
+  const pv = await send("/orders/" + o.id + "/preview", {});
+  const a = await send("/orders/" + o.id + "/accept", { hash: pv.j.hash });
+  await send("/orders/" + o.id + "/handed", { qty: 1, close: true });   /* before the row lands */
+  const key = land(a.j.draft, { cash: 50 });                            /* it lands other than shown, so the close waits */
+  await reconcileOrders(denv); await runDrafter(denv);
+  const cl = draftsOf(o.id, "Close");
+  if (cl.length) await send("/drafts/" + encodeURIComponent(cl[0].id) + "/reject", { by: "fixture" });
+  const back = await orderOf(o.id);
+  await O.customerMove(senv, U1, o.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U1, o.id, "pay", { amount: 20 });
+  const rc = await reconcileOrders(denv); await runDrafter(denv);
+  const pay = draftsOf(o.id, "Payment");
+  ok(cl.length === 1 && cl[0].status === "pending" && back.ledgerKey === key && rc.queued === 1 && pay.length === 1 && JSON.parse(pay[0].entry).payload.orderKey === key,
+    "a rejected close gives the order back the key the row carries, so a later payment amends that row: " + JSON.stringify({ close: cl.map((d) => d.status), key, order: back.ledgerKey, rc, pay: pay.map((d) => JSON.parse(d.entry).payload.orderKey) }));
+
+  const again = await send("/orders/" + o.id + "/again", { stage: "move" });
+  const moved = await orderOf(o.id);
+  ok(again.status === 200 && moved.ledgerKey === closedKey(moved) && moved.ledgerKey !== key,
+    "offered again, the close moves the name once more, so later stages wait for it to land: " + JSON.stringify({ st: again.status, err: again.j.error, key: moved.ledgerKey }));
+})();
+
+section("S11 fix: drafts.mjs --schema applies every migration from 0002, the pre-approval table included");
+await (async () => {
+  /* Found in review: the --schema list was written by hand and stopped at 0009 while 0010 and 0011 shipped, so a local
+     D1 built by it had no preapproval table and every tap on the order card that records a yes failed there. */
+  const { schemaFiles } = await import("../tools/drafts.mjs");
+  const want = readdirSync(join(REPO, "migrations")).filter((n) => /^\d{4}_.*\.sql$/.test(n) && !n.startsWith("0001")).sort();
+  const got = schemaFiles();
+  ok(want.length >= 10 && want.includes("0011_preapproval.sql") && JSON.stringify(got) === JSON.stringify(want),
+    "--schema applies every migration from 0002 in order: " + JSON.stringify({ missing: want.filter((n) => !got.includes(n)), got: got.slice(-3) }));
+})();
+
+section("S11 fix: a close's goods total is the desk's stated figure, which the site only checks and never works out");
+await (async () => {
+  /* Found in review: the site worked out a short close's goods total itself (the agreed total pro rata), the one place it
+     priced anything, with two more copies of the formula in the desk Worker and the card. The figure is now the engine's
+     closeGoods, shown by the card and sent by the Worker as a stated total, which the site checks lies between nothing and
+     what was agreed and stores as it is. (Whether a short close charges that rate awaits his word.) */
+  const O = await import("../stmt/orders.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const skv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const u = "abcd-efgh";
+  const o = (await O.placeOrder(senv, u, { product: "salt", qty: 5, mode: "collect", unit: 100, total: 500, week: "" })).order;
+  await O.deskMove(senv, u, o.id, { status: "acknowledged", mode: "collect" });
+  const none = await O.deskMove(senv, u, o.id, { handover: { units: 2, close: true } });
+  const over = await O.deskMove(senv, u, o.id, { handover: { units: 2, close: true, total: 600 } });
+  const said = await O.deskMove(senv, u, o.id, { handover: { units: 2, close: true, total: 190 } });
+  const c = JSON.parse(await skv.get("order:" + u + ":" + o.id));
+  ok(none.status === 400 && over.status === 400 && said.ok !== false && c.qty === 2 && c.total === 190 && c.closed && c.closed.total === 500,
+    "the site refuses a close with no stated total or one above what was agreed, and keeps the figure it is told: "
+    + JSON.stringify({ none: none.status, over: over.status, total: c.total }));
+  ok(PE.closeGoods(500, 5, 2) === 200 && PE.closeGoods(250, 3, 1) === 83.33,
+    "the one copy of the figure is the engine's: " + JSON.stringify([PE.closeGoods(500, 5, 2), PE.closeGoods(250, 3, 1)]));
+})();
+
+section("S11 fix: Accept tapped while a poll drafts the row again sends the digest of the row it drew");
+await (async () => {
+  /* Found in review: every read of the orders drafts the open card's row again, and while that was in flight the card
+     kept Accept open over a preview it had already thrown away, so a tap sent no digest and the Worker refused it. The
+     row drawn stays, digest and all, until the fresh one lands. */
+  const { openMaster: omO1 } = await import("../tools/payload.mjs");
+  const { w } = await omO1();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 95; w.clearInterval = () => {};
+    const ord = { id: "p1", u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect",
+      status: "placed", at: "2026-09-24T02:00:00.000Z", history: [], msgs: [], payments: [] };
+    let hold = null, n = 0;
+    const accepts = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      if (/\/preview$/.test(p)) { n++; if (n > 1) await new Promise((r) => { hold = r; });
+        return { ok: true, status: 200, json: async () => ({ ok: true, row: { qty: 1, total: 100 }, flags: [], hash: "digest-" + n, card: 100 }) }; }
+      if (/\/accept$/.test(p)) { accepts.push(JSON.parse(init.body)); return { ok: true, status: 200, json: async () => ({ ok: true, approved: true }) }; }
+      return { ok: true, status: 200, json: async () => (p === "orders" && !post ? { ok: true, orders: [ord] } : { ok: true }) };
+    };
+    const settle = () => new Promise((r) => setTimeout(r, 30));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    for (let i = 0; i < 20 && D.querySelector('.ordcard[data-id="p1"] .ordfoot button[data-ord="acknowledged"]').disabled; i++) await settle();
+    w.eval("ordLoad(true)");                                  /* the poll, whose preview does not come back yet */
+    for (let i = 0; i < 20 && !hold; i++) await settle();
+    const acc = D.querySelector('.ordcard[data-id="p1"] .ordfoot button[data-ord="acknowledged"]');
+    const open = acc && !acc.disabled;
+    if (acc) acc.click();
+    await settle();
+    if (hold) hold();
+    await settle();
+    ok(hold && open && accepts.length === 1 && accepts[0].hash === "digest-1",
+      "a tap while the row is drafted again sends the digest of the row on the card: " + JSON.stringify({ inFlight: !!hold, open, sent: accepts }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 fix: an order whose Accept is given and waiting reads as that, never as a new order to accept again");
+await (async () => {
+  /* Found in review: an Accept whose row differed (or was still being drafted) left the order Placed, and the card drew it
+     as a brand-new order, Accept open and counted in Waiting on you and Today, while its row also counted under Approve.
+     GET /orders now says the yes is given (`yes`), and the card says where it waits and offers no second Accept. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the order list was not read against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const U1 = "abcd-efgh";
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: "CX1-AB" }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const a = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  const b = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit: 110, total: 110, week: "" })).order;
+  db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,status,at,draft_id) VALUES (?,?,?,?,?,?,?,?,?)")
+    .run(a.id + "|ack|x", a.id, U1, "ack", "h", "{}", "differs", "2026-09-24T01:00:00.000Z", "2026-09-24T01:00:00.001Z");
+  const r = await deskW.fetch(new Request("https://salt-command.example/orders", { headers: { "X-Salt-Key": "k-fixture" } }), denv, { waitUntil() {} });
+  const list = (await r.json()).orders || [];
+  const la = list.find((o) => o.id === a.id) || {}, lb = list.find((o) => o.id === b.id) || {};
+  ok(la.yes === "differs" && !("yes" in lb), "GET /orders says which order's Accept is given and waits: " + JSON.stringify({ a: la.yes, b: lb.yes }));
+
+  const { openMaster: omO2 } = await import("../tools/payload.mjs");
+  const { w } = await omO2();
+  try {
+    w.SALT_CLOUD = true;
+    w.setInterval = () => 94; w.clearInterval = () => {};
+    const D = w.document, box = D.createElement("div");
+    box.className = "ordgrid"; box.id = "ordBox"; D.body.appendChild(box);
+    const base = { u: U1, code: "CX1-AB", product: "salt", qty: 1, delivery: 0, paid: 0, moved: 0, mode: "collect", status: "placed", history: [], msgs: [], payments: [] };
+    w.eval("ORD_OPEN=" + JSON.stringify([Object.assign({}, base, { id: "y1", total: 100, at: "2026-09-24T01:00:00.000Z", yes: "differs" }),
+      Object.assign({}, base, { id: "n2", total: 110, at: "2026-09-24T02:00:00.000Z" })]) + ";ORD_SEL='y1';ordDraw();");
+    const card = D.querySelector('.ordcard[data-id="y1"]'), text = card ? card.textContent.replace(/\s+/g, " ") : "";
+    const kinds = JSON.parse(w.eval("JSON.stringify(ordActs().map(a=>a.kind+':'+a.o.id))"));
+    ok(card && !card.querySelector('button[data-ord="acknowledged"]') && /Your yes waits under Approve: the row came out other than you saw\./.test(text)
+      && JSON.stringify(kinds) === '["new:n2"]',
+      "the card says his yes waits under Approve, offers no second Accept, and only the other order is new: " + JSON.stringify({ kinds, text: text.slice(0, 200) }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 100));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 fix: a stage waiting on a row his yes approved says the fold is left, never to approve it under Approve");
+await (async () => {
+  /* Found in review: Collected tapped straight after Accept waited for the pending row with the words "approve it under
+     Approve", but his yes had approved that row already and Approve no longer listed it; the card's own fallback said the
+     same of a handover he had tapped. Now the wait says the row is approved and the next fold lands it, and the card sends
+     him to Approve only for what the customer did. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the wait was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  setState("roster", [C1]); setState("OPEN", { byKey: {}, position: {} });
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const send = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); while (tails.length) await tails.shift(); return { status: r.status, j };
+  };
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+
+  /* his road: Accept approves the row, and Collected before it lands waits on the fold alone */
+  const a = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit: 101, total: 101, week: "" })).order;
+  const pv = await send("/orders/" + a.id + "/preview", {});
+  await send("/orders/" + a.id + "/accept", { hash: pv.j.hash });
+  await send("/orders/" + a.id + "/handed", { qty: 1 });
+  const sa = ((await orderOf(a.id)).sync || {}).why || "";
+  /* the old road: a row nobody has approved still sends him to Approve */
+  const b = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit: 102, total: 102, week: "" })).order;
+  await O.deskMove(senv, U1, b.id, { status: "acknowledged", mode: "collect" });
+  await reconcileOrders(denv); await runDrafter(denv);
+  await O.customerMove(senv, U1, b.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U1, b.id, "pay", { amount: 20 });
+  await reconcileOrders(denv);
+  const sb = ((await orderOf(b.id)).sync || {}).why || "";
+  ok(sa === "the handover waits for the pending row to reach the book: it is approved, and the next fold lands it"
+    && /^the payment waits for the pending row to reach the book: approve it under Approve/.test(sb),
+    "a wait on a row his yes approved says the fold is left, and one on a row nobody approved says Approve: " + JSON.stringify({ sa, sb }));
+
+  const { openMaster: omO3 } = await import("../tools/payload.mjs");
+  const { w } = await omO3();
+  try {
+    w.SALT_CLOUD = true;
+    const card = (o) => { const x = w.document.createElement("div"); x.innerHTML = String(w.eval("ordCard(" + JSON.stringify(o) + ")")); return x.textContent.replace(/\s+/g, " "); };
+    const base = { id: "c1", u: U1, code: C1, product: "salt", qty: 2, total: 200, delivery: 0, mode: "collect", status: "acknowledged", at: "2026-09-24T01:00:00.000Z", history: [], msgs: [], payments: [] };
+    const handed = card(Object.assign({}, base, { moved: 1, paid: 0, queued: { ack: "x", moved: 0 } }));
+    const paidT = card(Object.assign({}, base, { moved: 0, paid: 50, queued: { ack: "x", paid: 0 } }));
+    ok(/queued within the minute, booked as it is drafted if it is the row you saw\./.test(handed) && !/approve it under Approve/.test(handed)
+      && /queued within the minute; approve it under Approve/.test(paidT),
+      "the card sends him to Approve for their payment, and not for a handover he tapped: " + JSON.stringify({ handed: handed.slice(0, 220), paid: paidT.slice(0, 220) }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 100));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 fix: a card opened from the list lands below the sticky desk bar, its way back and its head in sight");
+await (async () => {
+  /* Found on the rig: opening a card scrolled it to the top of the window, under the sticky desk bar, so on the phone the
+     way back to the list and on the laptop the card's head sat beneath it. The card now lands below the bar's measured
+     bottom edge. (jsdom lays nothing out, so the boxes are given here; the rig measures the real ones.) */
+  const { openMaster: omO4 } = await import("../tools/payload.mjs");
+  const { w } = await omO4();
+  try {
+    w.SALT_CLOUD = true;
+    w.setInterval = () => 93; w.clearInterval = () => {};
+    const D = w.document;
+    D.body.innerHTML = '<div class="salt-deskbar"></div>' + String(w.eval("tabOrders()"));
+    const rect = w.HTMLElement.prototype.getBoundingClientRect;
+    w.HTMLElement.prototype.getBoundingClientRect = function () {
+      if (this.classList.contains("salt-deskbar")) return { top: 14, bottom: 74, left: 0, right: 375, width: 375, height: 60 };
+      if (this.classList.contains("ordpane")) return { top: 261, bottom: 900, left: 0, right: 375, width: 375, height: 639 };
+      return rect.call(this);
+    };
+    Object.defineProperty(w, "scrollY", { configurable: true, get: () => 40 });
+    const to = [];
+    w.scrollTo = (o) => to.push(o);
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    w.eval("ORD_OPEN=" + JSON.stringify([Object.assign({}, base, { id: "a1", status: "acknowledged", at: "2026-09-20T02:00:00.000Z", msgs: [{ at: "2026-09-21T02:00:00.000Z", by: "customer", text: "When?" }] })]) + ";ordDraw();");
+    D.querySelector('button[data-row="a1"]').click();
+    ok(to.length === 1 && to[0].top === 40 + 261 - 74 - 8,
+      "the card is scrolled to below the bar's bottom edge, not to the top of the window: " + JSON.stringify(to));
+  } finally {
+    await new Promise((r) => setTimeout(r, 100));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 fix: a part typed into Delivered part is said as it is typed, and the box's change never redraws the card under a tap");
+await (async () => {
+  /* Found on the rig: with 3 typed into the units box the buttons still read "Close at 5 unit", and tapping Close fired the
+     box's change first, which redrew the card and replaced the button under the finger, so the tap was lost unsaid. The
+     labels and the line under the stepper now follow each keystroke on the nodes drawn, and a change redraws nothing. */
+  const { openMaster: omO6 } = await import("../tools/payload.mjs");
+  const { w } = await omO6();
+  try {
+    w.SALT_CLOUD = true;
+    w.setInterval = () => 92; w.clearInterval = () => {};
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 5, total: 500, delivery: 0, paid: 0, moved: 0, mode: "deliver", history: [], msgs: [], payments: [] };
+    w.eval("ORD_OPEN=" + JSON.stringify([Object.assign({}, base, { id: "d1", status: "acknowledged", at: "2026-09-20T02:00:00.000Z" })]) + ";ORD_SEL='d1';ordDraw();");
+    D.querySelector('button[data-partopen="d1"]').click();
+    const card = () => D.querySelector('.ordcard[data-id="d1"]');
+    const box = card().querySelector('input[data-hand="d1"]');
+    const close = card().querySelector('button[data-ord="handover"][data-close="1"]');
+    box.value = "3";
+    box.dispatchEvent(new w.Event("input", { bubbles: true }));
+    const labels = [...card().querySelectorAll("button[data-partlab]")].map((b) => b.textContent);
+    const cap = (card().querySelector("[data-partcap]") || {}).textContent || "";
+    box.dispatchEvent(new w.Event("change", { bubbles: true }));   /* what a tap on Close fires first, as the box loses focus */
+    ok(JSON.stringify(labels) === '["Record 3 unit","Close at 3 unit"]' && /^Record keeps the other 2 unit owed\. Close at 3 unit ends the order there: RM 300/.test(cap)
+      && close.isConnected && close.textContent === "Close at 3 unit",
+      "the labels follow the typed figure, and the button under the finger survives the box's change: " + JSON.stringify({ labels, cap: cap.slice(0, 80), connected: close.isConnected }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 100));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 fix: a tap in flight shuts its card's buttons and says it is sending");
+await (async () => {
+  /* Found on the rig: the card moved onto the system's Approve card and lost the .card its in-flight guard looked for, so
+     while Accept queued, drafted and moved the order nothing on the card changed, and a second tap was swallowed unsaid. */
+  const { openMaster: omO7 } = await import("../tools/payload.mjs");
+  const { w } = await omO7();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 91; w.clearInterval = () => {};
+    const ord = { id: "b1", u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect",
+      status: "placed", at: "2026-09-24T02:00:00.000Z", history: [], msgs: [], payments: [] };
+    let release = null;
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      if (/\/preview$/.test(p)) return { ok: true, status: 200, json: async () => ({ ok: true, row: { qty: 1, total: 100 }, flags: [], hash: "h1", card: 100 }) };
+      if (/\/accept$/.test(p)) { await new Promise((r) => { release = r; }); return { ok: true, status: 200, json: async () => ({ ok: true, approved: true }) }; }
+      return { ok: true, status: 200, json: async () => (p === "orders" && !post ? { ok: true, orders: [ord] } : { ok: true }) };
+    };
+    const settle = () => new Promise((r) => setTimeout(r, 30));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const card = () => D.querySelector('.ordcard[data-id="b1"]');
+    for (let i = 0; i < 20 && card().querySelector('.ordfoot button[data-ord="acknowledged"]').disabled; i++) await settle();
+    card().querySelector('.ordfoot button[data-ord="acknowledged"]').click();
+    for (let i = 0; i < 20 && !release; i++) await settle();
+    const shut = [...card().querySelectorAll("button")].every((x) => x.disabled), said = (card().querySelector('[data-msg="b1"]') || {}).textContent;
+    if (release) release();
+    ok(release && shut && said === "Sending.", "while Accept is in flight its card's buttons are shut and it says so: " + JSON.stringify({ inFlight: !!release, shut, said }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 fix: an order card's rate tiles carry the figure alone, the unit in the note, so a narrow tile never breaks inside a word");
+await (async () => {
+  /* Found on the rig: "RM 93.60/unit" in the preview's tile at 375, and "RM 100/unit" in the agreed card's tiles beside the
+     list at 1280, broke inside "unit" (the tile's value breaks anywhere), leaving a lone "t". The unit rides in the note. */
+  const { openMaster: omO8 } = await import("../tools/payload.mjs");
+  const { w } = await omO8();
+  try {
+    w.SALT_CLOUD = true;
+    const D = w.document;
+    const html = (js) => { const x = D.createElement("div"); x.innerHTML = String(w.eval(js)); return x; };
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    w.eval("ORD_PV.p1={d:0,gen:0,st:'ok',j:{ok:true,row:{qty:2,total:200},flags:[],card:200,usual:{rate:93.6}}}");
+    const pv = html("ordPvBlock(" + JSON.stringify(Object.assign({}, base, { id: "p1", status: "placed" })) + ")");
+    const ag = html("ordCard(" + JSON.stringify(Object.assign({}, base, { id: "a1", status: "acknowledged", at: "2026-09-24T01:00:00.000Z" })) + ")");
+    const vals = [...pv.querySelectorAll(".salt-kpi__value"), ...ag.querySelectorAll(".salt-kpi__value")].map((e) => e.textContent);
+    const tile = (root, k) => [...root.querySelectorAll(".salt-kpi")].find((t) => (t.querySelector(".salt-kpi__label") || {}).textContent === k);
+    const us = tile(pv, "Their usual"), rate = tile(ag, "Rate");
+    ok(vals.length >= 8 && !vals.some((v) => /unit/.test(v)) && us && us.querySelector(".salt-kpi__value").textContent === "RM 93.60"
+      && /^a unit; this is RM 100$/.test(us.querySelector(".salt-kpi__note").textContent) && rate && rate.querySelector(".salt-kpi__note").textContent === "a unit",
+      "no tile value carries the unit, which is said in its note: " + JSON.stringify({ vals, usual: us && us.textContent, rate: rate && rate.textContent }));
+  } finally {
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 fix: the quick-reply button says Forget over a line already kept, and Keep over a new one");
+await (async () => {
+  /* Found on the rig: a saved reply tapped into the box and then "Keep as a quick reply" forgot it, the label never saying
+     that a second keep is a forget. The button now names what it will do with the line in the box. */
+  const { openMaster: omO9 } = await import("../tools/payload.mjs");
+  const { w } = await omO9();
+  try {
+    w.SALT_CLOUD = true;
+    w.setInterval = () => 90; w.clearInterval = () => {};
+    w.localStorage.setItem("saltQuickReplies", JSON.stringify(["Goes out tomorrow morning."]));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    w.eval("ORD_OPEN=" + JSON.stringify([Object.assign({}, base, { id: "q1", status: "acknowledged", at: "2026-09-20T02:00:00.000Z" })]) + ";ORD_SEL='q1';ordDraw();");
+    const keep = () => D.querySelector('button[data-keep="q1"]').textContent;
+    const first = keep();
+    D.querySelector('button[data-quick="q1"]').click();
+    const onKept = keep();
+    const box = D.querySelector('input[data-say="q1"]');
+    box.value = "Ready at six.";
+    box.dispatchEvent(new w.Event("input", { bubbles: true }));
+    const onNew = keep();
+    ok(first === "Keep as a quick reply" && onKept === "Forget this quick reply" && onNew === "Keep as a quick reply",
+      "the button names what it will do with the line in the box: " + JSON.stringify({ first, onKept, onNew }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 100));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 fix: his wake opens the card of the newest act, which is the one that woke him");
+await (async () => {
+  /* Found in review: PLAN 5 says each of his wakes opens its card, and every wake opened the list, where the act that woke
+     him is the newest and so the last row, oldest first. The banner now opens desk#orders/newest, which carries no code,
+     amount or id, and the desk opens the newest act's card on its first draw. */
+  const vm = await import("node:vm");
+  const sw = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const wake = async (s) => { const L = {}, shown = [];
+    const c = { URL, console, caches: {}, self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" },
+      registration: { scope: "https://salt-command.example/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
+      clients: { matchAll: async () => [], openWindow: async () => {} }, fetch: async () => ({ ok: true, json: async () => s }) };
+    vm.createContext(c); vm.runInContext(sw, c);
+    const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits); return shown[0]; };
+  const news = await wake({ ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 1, placed: 0, news: "A customer wrote" });
+  const placed = await wake({ ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 1, placed: 1 });
+  ok(news && news.opt.data.url === "./desk#orders/newest" && placed && placed.opt.data.url === "./desk#orders/newest",
+    "a wake about a customer's act opens the newest act: " + JSON.stringify([news && news.opt.data.url, placed && placed.opt.data.url]));
+
+  const { openMaster: omO10 } = await import("../tools/payload.mjs");
+  const { w } = await omO10();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 89; w.clearInterval = () => {};
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", status: "placed", history: [], msgs: [], payments: [] };
+    const orders = [Object.assign({}, base, { id: "old1", at: "2026-09-24T01:00:00.000Z" }), Object.assign({}, base, { id: "new2", total: 110, at: "2026-09-24T03:00:00.000Z" })];
+    w.fetch = async (path, init) => { const p = String(path), post = !!(init && init.method === "POST");
+      return { ok: true, status: 200, json: async () => (p.startsWith("orders") && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)) } : { ok: true }) }; };
+    w.location.hash = "#orders/newest";
+    for (let i = 0; i < 40 && w.eval("ORD_SEL") !== "new2"; i++) await new Promise((r) => setTimeout(r, 30));
+    ok(w.eval("ORD_SEL") === "new2" && w.eval("ORD_OPENED") === true && w.location.hash === "#orders",
+      "the address opens Site orders on the newest act's card, and settles back to #orders: " + JSON.stringify({ sel: w.eval("ORD_SEL"), opened: w.eval("ORD_OPENED"), hash: w.location.hash }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one
@@ -23743,8 +30479,8 @@ await (async () => {
       + "{id:'a2',u:'wxyz-1234',code:'CE4-CHE',product:'salt',qty:1,total:110,delivery:0,status:'placed',mode:'collect',at:'2026-09-21T02:05:00.000Z',history:[],msgs:[]},"
       + "{id:'a3',u:'wxyz-1234',code:'CE4-CHE',product:'salt',qty:1,total:110,delivery:0,status:'acknowledged',mode:'collect',at:'2026-09-20T02:00:00.000Z',history:[],msgs:[{at:'2026-09-21T03:00:00.000Z',by:'customer',text:'when can I collect'}]}];");
     const row = rd66("actions().filter(function(a){return a.kind==='orders';})")[0];
-    ok(row && row.sev === "now" && /2 waiting to be acknowledged/.test(row.title) && row.tab === "orders",
-      "two placed orders are ONE row, at Now, opening the card that answers it: " + JSON.stringify(row && { t: row.title, sev: row.sev, tab: row.tab }));
+    ok(row && row.sev === "now" && /3 waiting on you/.test(row.title) && /2 new/.test(row.why) && row.tab === "orders",
+      "two placed orders and a question are ONE row (S11 11.4: the rows Waiting on you lists), at Now, opening the card that answers it: " + JSON.stringify(row && { t: row.title, sev: row.sev, tab: row.tab }));
     ok(row && Math.abs(row.rm - 325) < 0.005,
       "ranked by what was ordered, goods and carriage together, which is what the pending row will carry: " + JSON.stringify(row && row.rm));
     ok(row && /waiting on an answer/.test(row.why),
@@ -23911,7 +30647,7 @@ await (async () => {
     ok(!/statement of account for /.test(msg) && !/\bmonthly\b/.test(msg)
       && !/January|February|March|April|May|June|July|August|September|October|November|December/.test(msg),
       what + "'s message names no month and promises no monthly statement: " + JSON.stringify(msg.slice(0, 60)));
-    ok(/^Your account is ready to use\./.test(msg), what + "'s message opens on the account, not on a document");
+    ok(/^Your (Salt Counter )?account is ready[ .]/.test(msg), what + "'s message opens on the account, not on a document");
     ok(/statement of account, which keeps up with your orders/.test(msg) && /latest prices/.test(msg)
       && /a form to place an order/.test(msg),
       what + "'s message says the three things it is for: " + what);
@@ -23921,15 +30657,15 @@ await (async () => {
     /* S1 1.3, 24 SEP 2026: the door's two switches only where the reader reaches the door. The link route
        never shows the tick, so the link's message promising it was false (B03). */
     /* F5, UX3: nor the home screen steps, which save an icon that opens on that door */
-    ok(what === "the link" ? !/Add to Home Screen|Install app|Remember me/.test(msg) && /ask me for a new link/.test(msg)
-      : /Add to Home Screen/.test(msg) && /Install app/.test(msg) && /Remember me/.test(msg) && /Log out/.test(msg),
+    ok(what === "the link" ? !/Add to Home Screen|Install app|Remember me|Keep me signed in/.test(msg) && /ask me for a new link/.test(msg)
+      : /Add to Home Screen/.test(msg) && /Install app/.test(msg) && /Keep me signed in/.test(msg) && /Log out/.test(msg),
       what + "'s message carries the home screen steps and the door's two switches only where the reader reaches the door");
     ok(siteWords(msg) === "", what + "'s message passes the lock every word sent to a customer passes: " + siteWords(msg));
     ok(!msg.includes(row69.pw), what + "'s message carries no password, which is the rule that made the link");
   }
 
   /* ---- AND WHAT EACH ONE STILL HAS TO SAY ---- */
-  ok(/This link signs you in, once/.test(sign) && /stops working after a week/.test(sign)
+  ok(/The link works once/.test(sign) && /stops working after three days/.test(sign)
     && /anybody holding it can open your account until you have used it/.test(sign),
     "the link's own message still says it is theirs, once, and not for passing on: it can be forwarded "
     + "and the message does not pretend otherwise");
@@ -24209,7 +30945,8 @@ await (async () => {
     "a book with no mark draws the Ring rather than a blank, which would read as a fault");
   ok(psymSvg("SALT", 24) === psymSvg("salt", 24), "a mark is found whatever the case of the id");
   const words = Object.values(PSHAPE).join(" ").toLowerCase();
-  ok(!ids.some((id) => words.includes(id)) && !/\b(salt|oil|candy|rice|spare)\b/.test(words),
+  const WLs = await import("../src/orders.js");
+  ok(!ids.some((id) => words.includes(id)) && !/\b(salt|oil|candy|rice|spare)\b/.test(words) && !WLs.wordsIn(words, WLs.PRODUCT_WORDS).length,
     "and no shape word is a product's name: the mark is the thing, never the word for it");
 })();
 
@@ -24237,11 +30974,22 @@ await (async () => {
 
   ok(opened.every((id) => MAPS6.every((k) => book[k] && id in book[k]) && book.PROD_ORDER.includes(id)),
     "candy, rice and spare are registered in all six per-product maps and the order");
-  /* 23 Sep 2026: candy's and rice's quotes came on his word with the pricing_v2 workbook, so a quote is asked only of a
-     book still empty; nothing opened carries a stated count or an opening figure */
-  ok(empties.length > 0 && empties.every((id) => book.QUOTES[id] === null) && opened.every((id) => book.PROD_OPENING[id].stated === null && !book.PROD_OPENING[id].qty)
-    && ["candy", "rice"].every((id) => book.QUOTES[id] && book.QUOTES[id].supplier === "SM4-KEP"),
-    "and opened empty: no stated count, no opening figure invented, and no quote on a book nobody has quoted: " + JSON.stringify(empties));
+  /* 25 Sep 2026, test only: WHAT A BOOK WITH NOTHING ON IT CARRIES IS ASKED OF EVERY BOOK, NOT OF THREE BY NAME.
+     This line said nothing opened carries a stated count, and on 24 Sep 2026 (v836) he counted rice at 94, a count
+     that wins over the ledger and that the book is right to hold: a book that trades gets counted. A stated count
+     and a count date come only with a COUNTS row, and a roll only with a lot or a sale, so the rule is that a book
+     with no row of any kind (the one road's own rowsOf) carries neither, nor an opening figure. That a book is
+     OPENED that way is v778's, forced on a book the command opens on a copy. A quote is his word and may come at
+     any time, so it is not asked of an empty book either; what is asked is that every quote names who gave it and
+     when. The message names what it found, because the last one printed the empty books and not the fault. */
+  const { rowsOf: anyRows } = await import("../tools/product.mjs");
+  const bare = Object.keys(book.PRODUCTS).filter((id) => anyRows(book, id) === 0);
+  const counted = bare.filter((id) => book.PROD_OPENING[id].stated !== null || book.PROD_OPENING[id].qty || book.COUNT_ON[id] != null);
+  const unsourced = Object.keys(book.QUOTES).filter((id) => { const q = book.QUOTES[id];
+    return q !== null && !(q && q.supplier && /^\d{4}-\d{2}-\d{2}$/.test(q.quotedOn)); });
+  ok(!counted.length && !unsourced.length,
+    "and a book with nothing on it carries no stated count, no count date and no opening figure, and every quote names who gave it and when: "
+    + JSON.stringify({ bare, counted, unsourced }));
 
   const { w } = await openMaster();
   const ids = JSON.parse(w.eval("JSON.stringify(PROD_IDS)"));
@@ -24412,41 +31160,50 @@ await (async () => {
   } });
   const w = dom.window, d = w.document;
   const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
-  const panes = () => [...d.querySelectorAll("#pOrder .pane")].filter((p) => p.querySelector(".state"));
+  /* S5: an order is a row that opens its own screen; its ways to pay open behind its one Pay */
+  const scr = () => d.querySelector("#pOrder .oscreen");
+  const openO = (id) => { const b = d.querySelector("#pOrder .oback"); if (b && scr()) b.click();
+    const r = d.querySelector('#pOrder [data-row="' + id + '"]'); if (r) r.click();
+    const pay = scr() && [...scr().querySelectorAll(".oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
+    return scr() || d; };
   const said = (root, words) => [...root.querySelectorAll('[role="status"]')].find((x) => x.textContent.includes(words) && !x.closest("[hidden]"));
   const after = (a, b) => !!(a && b && (a.compareDocumentPosition(b) & w.Node.DOCUMENT_POSITION_FOLLOWING));
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    await until(() => panes().length === 2);
-    ok(panes().length === 2 && !d.getElementById("pOrder").hidden && d.getElementById("tOrder").textContent === "Pay",
+    await until(() => d.querySelectorAll("#pOrder [data-row]").length === 2);
+    ok(d.querySelectorAll("#pOrder [data-row]").length === 2 && !d.getElementById("pOrder").hidden && d.getElementById("tOrder").textContent === "Pay",
       "the fixture opens on the payment page with its two orders below");
 
+    openO("oA");
     d.getElementById("pd-oA").click();
     await until(() => said(d, "Refused by the fixture: pay"));
-    const payLine = said(panes()[0], "Refused by the fixture: pay");
+    const payLine = said(scr(), "Refused by the fixture: pay");
     ok(payLine && after(d.getElementById("pd-oA"), payLine),
       "I have paid refused: the words are on screen in a role=status line in that order, after the button");
 
-    [...panes()[1].querySelectorAll("button")].find((b) => b.textContent === "Withdraw this order").click();
+    openO("oB");
+    [...scr().querySelectorAll("button")].find((b) => b.textContent === "Cancel this order").click();
     await until(() => said(d, "Refused by the fixture: withdraw"));
-    const wdBtn = [...panes()[1].querySelectorAll("button")].find((b) => b.textContent === "Withdraw this order");
-    const wdLine = said(panes()[1], "Refused by the fixture: withdraw");
+    const wdBtn = [...scr().querySelectorAll("button")].find((b) => b.textContent === "Cancel this order");
+    const wdLine = said(scr(), "Refused by the fixture: withdraw");
     ok(wdLine && after(wdBtn, wdLine) && !said(d, "Refused by the fixture: pay"),
-      "Withdraw refused: the words sit beside Withdraw on that order, and the earlier answer has gone");
+      "Cancel refused: the words sit beside Cancel on that order, and the earlier answer has gone");
 
-    const box = panes()[1].querySelector(".sayw input"); box.value = "Is it ready?";
-    [...panes()[1].querySelectorAll("button")].find((b) => b.textContent === "Send").click();
+    const box = scr().querySelector("form.salt-composer input"); box.value = "Is it ready?";
+    [...scr().querySelectorAll("button")].find((b) => b.textContent === "Send").click();
     await until(() => said(d, "Refused by the fixture: say"));
-    const sayLine = said(panes()[1], "Refused by the fixture: say");
-    ok(sayLine && after(panes()[1].querySelector(".sayw"), sayLine), "Send refused: the words sit under the box that was sent from");
+    const sayLine = said(scr(), "Refused by the fixture: say");
+    ok(sayLine && sayLine.closest('[data-part="say"]') && after(box, sayLine) && box.value === "Is it ready?" && !scr().querySelector(".salt-bubble--failed"),
+      "Send refused: the words are back in that order's box, and the answer stands under it");
 
     /* the order list answering 401 after a tap wrote the form's note, which the payment page never drew. Since
        S1 1.5 a 401 on a live session is said at once in the bar, role=alert, which the payment page shows too */
     const lapseOn = () => { const l = d.getElementById("lapse"); return !!l && !l.closest("[hidden]") && l.getAttribute("role") === "alert"
-      && /signed out after a while/.test(l.textContent); };
+      && /signed out on this (phone|computer)/.test(l.textContent); };
     const lapseBefore = lapseOn();
     st.ordersDown = true;
+    openO("oA");
     d.getElementById("pd-oA").click();
     await until(() => lapseOn());
     ok(!lapseBefore && lapseOn() && d.getElementById("tOrder").textContent === "Pay",
@@ -24455,8 +31212,8 @@ await (async () => {
     st.ordersDown = false; st.payOk = true;
     d.getElementById("pd-oA").click();
     await until(() => said(d, "Recorded."));
-    const rec = said(panes()[0], "Recorded.");
-    ok(rec && !d.getElementById("pd-oA") && /Paid in full/.test(panes()[0].textContent) && after(panes()[0].querySelector(".quote"), rec),
+    const rec = said(scr(), "Recorded.");
+    ok(rec && !d.getElementById("pd-oA") && /Paid in full/.test(scr().textContent) && after(scr().querySelector(".salt-insight"), rec),
       "paid in full, the pay box is gone and the answer stands under the order's state instead of vanishing with it");
   } finally { w.close(); }
 })();
@@ -24491,19 +31248,25 @@ await (async () => {
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 100 && !d.getElementById("pd-oA"); i++) await new Promise((r) => setTimeout(r, 50));
+    /* S5 5.2: each order's payment box is in its own screen, behind its one Pay: opened one at a time */
+    for (let i = 0; i < 100 && !d.querySelector('#pOrder [data-row="oA"]'); i++) await new Promise((r) => setTimeout(r, 50));
     const hold = d.querySelector("#pOrder .pane");
-    const scope = [hold, ...d.querySelectorAll("#pOrder .pay")];
-    const ctrls = scope.flatMap((s) => [...s.querySelectorAll("button, a, select, input")]).filter((x) => x.type !== "radio");
+    const openPay = (id) => { const b = d.querySelector("#pOrder .oback"); if (b && d.querySelector("#pOrder .oscreen")) b.click();
+      d.querySelector('#pOrder [data-row="' + id + '"]').click();
+      const pay = [...d.querySelectorAll("#pOrder .oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
+      return d.querySelector("#pOrder .oscreen"); };
+    const scrC = openPay("oC"), boxC = scrC.querySelector(".oact .pay"), pillsC = scrC.querySelectorAll(".salt-pill").length;
+    const ctrlsC = boxC ? [...boxC.querySelectorAll("button, a, select, input")] : [];
+    const scrA = openPay("oA"), boxA = scrA.querySelector(".oact .pay"), pillsA = scrA.querySelectorAll(".salt-pill").length;
+    const ctrls = [hold, boxA].filter(Boolean).flatMap((s) => [...s.querySelectorAll("button, a, select, input")]).concat(ctrlsC).filter((x) => x.type !== "radio");
     const bare = ctrls.filter((x) => !/(^| )salt-(pill|ghost|field__input)( |$)/.test(x.className));
-    ok(d.getElementById("pd-oA") && d.querySelectorAll("#pOrder .pay").length === 2 && ctrls.length >= 8 && !bare.length,
+    ok(d.getElementById("pd-oA") && !!boxA && !!boxC && ctrls.length >= 8 && !bare.length,
       "every button, link and field on the payment pane and in every order's payment box is a recipe ("
       + ctrls.length + " controls): " + bare.map((x) => x.tagName + " " + (x.textContent || x.getAttribute("aria-label"))).join(", "));
-    const orderPanes = [...d.querySelectorAll("#pOrder .pane")].filter((p) => p.querySelector(".state"));
-    const pills = orderPanes.map((p) => p.querySelectorAll(".salt-pill").length);
+    const pills = [pillsA, pillsC];
     ok(pills.join() === "1,1" && d.getElementById("pd-oA").classList.contains("salt-pill") && !hold.querySelector(".salt-pill"),
       "one filled control an order, I have paid on the one with a rail chosen, and the payment pane's ways to pay all quiet: " + pills.join());
-    const amt = orderPanes[0].querySelector('input[type="number"]'), cs = w.getComputedStyle(amt);
+    const amt = scrA.querySelector('input[type="number"]'), cs = w.getComputedStyle(amt);
     ok(amt.classList.contains("salt-field__input") && amt.inputMode === "decimal" && cs.width !== "18px" && cs.height !== "18px",
       "the amount is the field, typed on a decimal keypad, and no longer squeezed by the radio buttons' size: " + cs.width + " x " + cs.height);
   } finally { w.close(); }
@@ -24541,6 +31304,10 @@ await (async () => {
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    /* S5 5.2: the pay row is in the order's own screen, behind its one Pay */
+    for (let i = 0; i < 100 && !d.querySelector('#pOrder [data-row="oA"]'); i++) await new Promise((r) => setTimeout(r, 50));
+    const rowA = d.querySelector('#pOrder [data-row="oA"]'); if (rowA) rowA.click();
+    const payA = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (payA) payA.click();
     for (let i = 0; i < 100 && !d.getElementById("pd-oA"); i++) await new Promise((r) => setTimeout(r, 50));
     const cells = [...d.querySelectorAll("#out td.amt, #out th.amt")].map((x) => w.getComputedStyle(x));
     ok(cells.length === 2 && cells.every((c) => c.display !== "flex" && c.marginTop !== "10px"),
@@ -24580,21 +31347,24 @@ await (async () => {
     };
   } });
   const w = dom.window, d = w.document;
-  const boxOf = (i) => [...d.querySelectorAll("#pOrder .pane")].filter((p) => p.querySelector(".state"))[i].querySelector(".sayw input");
+  const boxOf = (i) => d.querySelector('#pOrder input[data-say="' + ["oA", "oB"][i] + '"]');
   try {
     ok(fast !== html, "the served page's poll is shortened, or this proves nothing about a poll");
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 100 && !(d.querySelectorAll("#pOrder .sayw input").length === 2); i++) await new Promise((r) => setTimeout(r, 50));
+    /* S5 5.5: the order is opened on its own screen; the poll then patches it and never draws the box again */
+    for (let i = 0; i < 100 && !d.querySelector('#pOrder [data-row="oB"]'); i++) await new Promise((r) => setTimeout(r, 50));
+    d.querySelector('#pOrder [data-row="oB"]').click();
     const typed = boxOf(1);
     typed.focus(); typed.value = "Could it come on Fri"; typed.dispatchEvent(new w.Event("input", { bubbles: true }));
     typed.setSelectionRange(9, 9);
-    for (let i = 0; i < 100 && !/Fixture reply/.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+    const replied = () => /A reply for you/.test((d.querySelector('#pOrder [data-row="oA"]') || {}).textContent || "");
+    for (let i = 0; i < 100 && !replied(); i++) await new Promise((r) => setTimeout(r, 50));
     const now = boxOf(1);
-    ok(/Fixture reply/.test(d.getElementById("pOrder").textContent) && now !== typed,
-      "a poll brought a changed order and the orders were drawn again, so the box is a new element");
-    ok(now.value === "Could it come on Fri" && boxOf(0).value === "",
-      "the half-typed line is still in its own order's box, and only there: " + JSON.stringify([boxOf(0).value, now.value]));
+    ok(replied() && now === typed,
+      "a poll brought a changed order onto the list, and the box being typed in is the same element");
+    ok(now.value === "Could it come on Fri",
+      "the half-typed line is still in its own order's box: " + JSON.stringify(now.value));
     ok(d.activeElement === now && now.selectionStart === 9,
       "and the caret is back where it was, in that box: " + (d.activeElement && d.activeElement.getAttribute("data-say")) + " at " + now.selectionStart);
   } finally { w.close(); }
@@ -24721,7 +31491,7 @@ await (async () => {
     const po = d.getElementById("pOrder");
     if (d.getElementById("oNew")) d.getElementById("oNew").click();
     const sizes = [...d.querySelectorAll('#osheet input[name="osize"]')].map((o) => o.value);
-    ok(!thrown.length && /Notifications/.test(po.textContent) && /Your orders/.test(po.textContent) && po.querySelectorAll(".state").length === 1
+    ok(!thrown.length && /Notifications/.test(po.textContent) && /Your orders/.test(po.textContent) && po.querySelectorAll("[data-row] .salt-status").length === 1
       && sizes.join() === "1" && !d.querySelector("#osheet button[aria-pressed][aria-label]"),
       "the Order tab draws: the order sheet offers the one product with a price, and Notifications and their order are there: " + JSON.stringify({ sizes, thrown }));
     const pp = d.getElementById("pPrices");
@@ -25157,8 +31927,10 @@ await (async () => {
   /* A PRODUCT IS A MARK, NOT A WORD, which is the oldest rule on this site. Read the TEXT, not
      the source: the inlined stylesheet carries --salt-product-salt and a raw search would fail on
      a token name rather than on anything a customer can read. */
-  ok(!/\b(salt|oil|candy|rice|spare)\b/i.test(t),
-    "and no product is named in words anywhere a customer reads: " + (t.match(/\b(salt|oil|candy|rice|spare)\b/i) || [""])[0]);
+  /* S13 13.2: in either language, off the site lock's own list */
+  const WL82 = await import("../src/orders.js");
+  ok(!/\b(salt|oil|candy|rice|spare)\b/i.test(t) && !WL82.wordsIn(t, WL82.PRODUCT_WORDS).length,
+    "and no product is named in words anywhere a customer reads: " + (t.match(/\b(salt|oil|candy|rice|spare)\b/i) || WL82.wordsIn(t, WL82.PRODUCT_WORDS))[0]);
   ok(/Cube/.test(b) && /Droplet/.test(b),
     "the marks carry their SHAPE as the accessible name, so a screen reader is told what is drawn and not what it is");
   ok(!/<img|src=/i.test(b.replace(/<svg[\s\S]*?<\/svg>/g, "")),
@@ -25260,7 +32032,8 @@ await (async () => {
     "the door's field is the system's field, in mono for a code, and Log in is the system's pill");
   ok(/class="salt-tabs__pill on" role="tab" aria-selected="true" data-t="stmt"/.test(pgY) && /bs\[i\]\.setAttribute\('aria-selected',on\?'true':'false'\)/.test(pgY),
     "the tabs are the system's, and a tap moves aria-selected with the open one");
-  ok(/'state salt-status salt-status--'\+\(STATE_TONE\[o\.status\]\|\|'mist'\)/.test(pgY) && /var STATE_TONE=\{placed:'steel',acknowledged:'steel',ready:'brass',done:'verdigris'\}/.test(pgY),
+  /* S5 5.3: the chip is drawn in one place, stateChip, its word the customer's and its tone read off the order */
+  ok(/\+'salt-status salt-status--'\+tone,stateWord\(o\)\)/.test(pgY) && /tone=s==='placed'\?'steel salt-status--dashed':/.test(pgY) && /h\.appendChild\(stateChip\(o,'state'\)\)/.test(pgY),
     "an order's state is the system's chip, in its tone");
   const pcssY = pgY.slice(pgY.indexOf("const PAGE_CSS = " + String.fromCharCode(96)), pgY.indexOf(String.fromCharCode(96) + ";", pgY.indexOf("const PAGE_CSS = ")));
   ok(!/\.btn\{[^}]*background/.test(pcssY) && !/\.tabs button\.on\{/.test(pcssY) && !/\n\.state\{/.test(pcssY) && !/\n\.fld\{[^}]*background/.test(pcssY) && /\.btn\{margin-top:18px;width:100%\}/.test(pcssY),

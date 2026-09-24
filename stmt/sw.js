@@ -70,8 +70,10 @@ self.addEventListener('notificationclick', function(e){
   var d = e.notification.data || {}, want = d.url || './';
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(list){
     for (var i = 0; i < list.length; i++) {
-      var c = list[i];
-      if (c.url.indexOf(self.registration.scope) === 0 && 'focus' in c) {
+      var c = list[i], path = '';
+      try { path = new URL(c.url).pathname; } catch (x) { path = ''; }
+      /* S5 5.6: only the Counter's own page can open an order; a guest board or Salt Admin in another tab cannot */
+      if (c.url.indexOf(self.registration.scope) === 0 && (path === '/' || path.indexOf('/s/') === 0) && 'focus' in c) {
         try { c.postMessage({ salt: 'news', order: d.order || '' }); } catch (x) {}
         return c.focus();
       }
