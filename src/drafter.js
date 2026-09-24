@@ -1628,6 +1628,19 @@ export async function stageDigest(stage, entry, d, pricing) {
         amendKind: d.amendKind || null, flags: d.flags || [] };
   return sha(canon(shown));
 }
+/* A LATER STAGE BEFORE ITS ROW HAS LANDED (S11 11.12) is previewed against the book as it will stand when it does:
+   the pending row appended, and the open-order snapshot carrying it in the engine's own ledgerRow shape, which is
+   what that snapshot's entries are. Nothing else is guessed at: whatever else moves before it lands shows as a
+   difference, and the row waits under Approve. */
+export function withPending(book, row) {
+  const key = POSITION_ENGINE.ovKey(row);
+  const state = Object.assign({}, book.state || {});
+  const open = Object.assign({}, state.OPEN || {});
+  open.byKey = Object.assign({}, open.byKey || {}, { [key]: Object.assign(POSITION_ENGINE.ledgerRow(row, "S", "salt"), { key }) });
+  state.OPEN = open;
+  return Object.assign({}, book, { sales: (book.sales || []).concat([row]), state });
+}
+
 /* ---- HIS YES BEFORE THE ROW EXISTED (S11 11.11 and 11.12, migrations/0011) -------------------------
  * A tap on the order card records a PRE-APPROVAL: the digest of what he was shown. It is spent here, the moment
  * the row it answers is drafted, and only on an exact match: equal, the row is approved where it is drafted;
@@ -1642,7 +1655,7 @@ export async function preFor(db, at, entry) {
   /* a store before migrations/0011 has no pre-approvals, and every row waits under Approve as it did before D6 */
   try { rows = (await db.prepare("SELECT * FROM preapproval WHERE order_id=?1 AND status='waiting' ORDER BY at DESC").bind(id).all()).results || []; }
   catch (e) { return null; }
-  return rows.find((r) => r.entry_at === at) || rows.find((r) => !r.entry && r.stage === stage) || null;
+  return rows.find((r) => r.entry_at === at) || (entry.counter ? null : rows.find((r) => !r.entry && !r.entry_at && r.stage === stage)) || null;
 }
 /** Approve the draft if it equals what he was shown, else mark it. "applied", "differs", or null if he decided it first. */
 export async function applyPre(db, pre, draft, book, now) {
@@ -1668,7 +1681,8 @@ export async function settlePre(db, pre, book, now) {
   const parse = (s, f) => { try { return JSON.parse(s); } catch (e) { return f; } };
   const rows = (rs.results || []).map((r) => ({ id: r.id, entry: parse(r.entry, {}), row: parse(r.row, {}), flags: parse(r.flags, []), collection: r.collection, amendKind: r.amend_kind || null }))
     .filter((r) => r.entry && r.entry.orderId === pre.order_id && r.entry.status === want);
-  const draft = rows.find((r) => r.id === pre.entry_at) || (pre.entry ? null : rows[0]);
+  /* the draft it names, else (a yes the site's own stage answers) the newest of its stage the site made */
+  const draft = rows.find((r) => r.id === pre.entry_at) || (pre.entry || pre.entry_at ? null : rows.find((r) => !r.entry.counter));
   return draft ? applyPre(db, pre, draft, book, now) : null;
 }
 

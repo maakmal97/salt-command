@@ -19,7 +19,7 @@
  * which is what "an updated statement after completion" means on this book.
  */
 import { sendPush } from "./push.js";
-import { readBook, draftRow, costFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre } from "./drafter.js";
+import { readBook, draftRow, costFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending } from "./drafter.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 
@@ -252,9 +252,125 @@ export async function acceptOrder(env, id, body, by, now) {
   return Object.assign(out, { ok: true, approved: false, waiting: true });
 }
 
+/* ---- COLLECTED, CASH RECEIVED, RECEIVED: A YES FOR A ROW NOT DRAFTED YET (S11 11.12, D6) ----------
+ * Each later stage is one tap too. The tap builds the entry exactly as it will be queued (the reconcile's own
+ * builder, stamped as the reconcile stamps it), drafts it now against the book, or, before the first row has
+ * landed, against the book as it will stand when it does (withPending), and records the digest of that draft
+ * as his yes. The drafter spends it when the real row is drafted, only if equal: the kind, party, target,
+ * date, figures and every flag. So a stage that waits on the first row NEVER WAITS SILENTLY: it is booked
+ * when that row lands, and the card can say so ("waits": true). The pricing version is not part of it,
+ * because the first row landing is itself a fold. */
+async function stagePreview(env, o, stage, entry) {
+  const db = env.SALT_LEDGER;
+  const book = await readBook(db);
+  const open = (book.state && book.state.OPEN && book.state.OPEN.byKey) || {};
+  let against = book, waits = false;
+  if (!open[entry.payload.orderKey]) {
+    /* not on the book yet: the pending row, as it was drafted, is what will land */
+    const ack = o.queued && o.queued.ack;
+    const r = ack ? await db.prepare("SELECT row,status FROM draft WHERE id=?1").bind(ack).first() : null;
+    if (!r || r.status === "rejected") return { ok: false, status: 409, error: "its pending row " + (r ? "was rejected" : "is not drafted yet") + ", so there is no row for this to amend" };
+    against = withPending(book, JSON.parse(r.row));
+    waits = true;
+  }
+  const d = draftRow(entry, against);
+  if (d.skip) return { ok: false, status: 409, error: "the drafter would not draft it: " + d.skip };
+  return { ok: true, waits, d, hash: await stageDigest(stage, entry, d, null) };
+}
+const yesWords = (waits) => (waits ? "Booked when the first row lands" : "Booked as it is drafted");
+async function stageTap(env, id, body, by, now, stage, build) {
+  const at = now || new Date();
+  const f = await findOrder(env, id);
+  if (!f.ok) return f;
+  const o = f.order, db = env.SALT_LEDGER;
+  if (!o.code) return { ok: false, status: 409, error: "no desk code is mapped to this account yet: publish the statements again" };
+  if (!db) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
+  if (!ROWED_ON_SITE.includes(o.status)) return { ok: false, status: 409, error: "this order is " + o.status + ", so there is nothing to record against it" };
+  if (!o.ledgerKey) return { ok: false, status: 409, error: "its pending row is not queued yet: accept it first" };
+  const b = build(o, at);
+  if (b.error) return { ok: false, status: b.status || 400, error: b.error };
+  const pv = await stagePreview(env, o, stage, b.entry);
+  if (!pv.ok) return pv;
+  const preId = await recordPre(db, { order_id: id, u: o.u, stage, hash: pv.hash, entry: b.queueIt ? b.entry : null, at: at.toISOString(), by,
+    shown: { from: o.status, figures: b.shown, flags: pv.d.flags, waits: pv.waits } });
+  if (b.pin) await db.prepare("UPDATE preapproval SET entry_at=?1 WHERE id=?2").bind(b.pin, preId).run();
+  /* the site hears what he did (a handover, cash taken), after the yes is on file, so no pass can draft the row first */
+  if (b.site) {
+    const r = await moveOrder(env, o.u, id, b.site);
+    if (!r.ok) {
+      await db.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE id=?2").bind(new Date().toISOString(), preId).run();
+      return r;
+    }
+    o.moved = r.order.moved; o.paid = r.order.paid; o.status = r.order.status;
+  }
+  /* a row already drafted (a payment of theirs, drafted a minute before his Received) is tested now */
+  const pre = await preById(db, preId);
+  const spent = pre.status === "waiting" && !b.queueIt ? await settlePre(db, pre, await readBook(db)) : null;
+  return { ok: true, order: o, preapproval: { stage, waits: pv.waits, says: yesWords(pv.waits), flags: pv.d.flags, spent: spent || null,
+    draft: spent ? (await preById(db, preId)).draft_id : null } };
+}
+const ROWED_ON_SITE = ["acknowledged", "ready", "done"];
+
+/** POST /orders/<id>/handed {qty, close}: Collected or Delivered, in the order's own mode, the running total handed over. */
+export function handedOrder(env, id, body, by, now) {
+  return stageTap(env, id, body, by, now, "move", (o, at) => {
+    const qty = body && body.qty;
+    if (typeof qty !== "number" || !Number.isFinite(qty) || qty < 0 || qty > +o.qty + 0.004) return { error: "the units handed over have to be a figure from zero to the " + o.qty + " ordered" };
+    if (Math.abs(qty - (+o.moved || 0)) < 0.0004) return { status: 409, error: "that is what the order already says was handed over" };
+    /* stamped as the site stamps it: the Kuala Lumpur day of the tap, the handover's own day */
+    const entry = handoverEntry(Object.assign({}, o, { movedOn: klDate(at), moved: qty }), o.code, qty, at);
+    entry.orderId = o.id;
+    const handover = { units: qty, mode: o.mode };
+    if (body.close === true) handover.close = true;   /* closing short is the site's to learn (S11 11.9); it is passed as asked */
+    return { entry, site: { handover }, shown: { units: qty, how: o.mode === "deliver" ? "delivered" : "collected" } };
+  });
+}
+
+/** POST /orders/<id>/received {amount}: the payment they recorded is in his bank. The site already counts it. */
+export async function receivedOrder(env, id, body, by, now) {
+  /* their payment may be drafted already (the reconcile queues it within the minute once the row is on the book),
+     and then that draft's own entry is the one his yes answers */
+  let queued = [];
+  if (env.SALT_LEDGER) {
+    const rs = await env.SALT_LEDGER.prepare("SELECT id,entry FROM draft WHERE status='pending' AND entry LIKE ?1 ORDER BY id DESC").bind('%"orderId":"' + id + '"%').all();
+    queued = (rs.results || []).map((r) => { try { return JSON.parse(r.entry); } catch (e) { return null; } })
+      .filter((e) => e && e.orderId === id && e.status === "Payment" && !e.counter);
+  }
+  return stageTap(env, id, body, by, now, "pay", (o, at) => {
+    const amount = body && body.amount;
+    if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { error: "say how much was received" };
+    const drafted = queued.find((e) => Math.abs(+e.payload.cash - amount) < 0.005);
+    if (drafted) return { entry: drafted, pin: drafted.at, shown: { amount: +drafted.payload.cash } };
+    const inc = +((+o.paid || 0) - (+((o.queued || {}).paid) || 0)).toFixed(2);
+    if (!(inc > 0.004)) return { status: 409, error: "nothing they recorded is waiting to be received here" };
+    if (Math.abs(inc - amount) > 0.004) return { status: 409, error: "RM " + inc.toFixed(2) + " they recorded is waiting to be received, not RM " + amount.toFixed(2) };
+    /* the Fulfilment the reconcile will queue for it: the increment, stamped with their last payment */
+    const entry = payEntry(o, o.code, inc, stageAt(o, "pay", at));
+    entry.orderId = o.id;
+    return { entry, shown: { amount: inc } };
+  });
+}
+
+/** POST /orders/<id>/cash {amount}: cash taken at the counter. The order is marked paid at once, which stops the chase,
+ *  and the Fulfilment is the desk's own entry, queued when the first row is on the book (deskPass). */
+export function cashOrder(env, id, body, by, now) {
+  return stageTap(env, id, body, by, now, "cash", (o, at) => {
+    const amount = body && body.amount;
+    if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { error: "say how much cash was taken" };
+    const due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2);
+    if (amount > due + 0.004) return { error: "that is more than the RM " + due.toFixed(2) + " still owed on this order" };
+    /* a payment of theirs not yet queued would be swallowed by the mark the cash moves (orderWork reads paid against it) */
+    if ((+o.paid || 0) > (+((o.queued || {}).paid) || 0) + 0.004) return { status: 409, error: "a payment they recorded is still waiting for its row: receive that first" };
+    const entry = payEntry(o, o.code, amount, at, true);
+    entry.orderId = o.id; entry.counter = true;   /* the desk's own, which a Received never answers */
+    return { entry, queueIt: true, site: { ledger: { paid: +((+o.paid || 0) + amount).toFixed(2) } }, shown: { amount: +amount.toFixed(2), cash: true } };
+  });
+}
+
 /* ---- THE DESK'S OWN PASS, EVERY MINUTE (S11) ------------------------------------------------------
  * What the desk queued itself is followed up here, beside the reconcile that follows what the site made:
- *   an entry recorded and not yet queued (a queue write that failed) is queued now;
+ *   an entry recorded and not yet queued is queued now: an Accept's whose queue write failed, and cash taken
+ *   at the counter (11.12) once the row it amends is on the book;
  *   a pending row an Accept queued, whose order the CUSTOMER then withdrew while the row was still not
  *   approved, is dropped as 11.10 drops one the reconcile queued. The site cannot say so here, because an order
  *   Accept has not moved yet owes the reconcile nothing and is never on its list. */
@@ -265,10 +381,14 @@ export async function deskPass(env, now) {
   try { pres = (await db.prepare("SELECT * FROM preapproval WHERE status IN ('waiting','differs') AND entry IS NOT NULL ORDER BY at").all()).results || []; }
   catch (e) { return { ok: true, queued: 0 }; }   /* before migrations/0011 */
   if (!pres.length) return { ok: true, queued: 0 };
-  let queued = 0; const dropped = [];
+  let queued = 0; const dropped = []; let open = null;
   for (const p of pres.filter((x) => !x.entry_at)) {
     const entry = JSON.parse(p.entry);
-    if (p.stage !== "ack") continue;
+    /* an amendment the desk made itself (cash taken, 11.12) waits for its row exactly as a stage the site made does */
+    if (p.stage !== "ack") {
+      if (!open) { const bk = await readBook(db).catch(() => null); open = (bk && bk.state && bk.state.OPEN && bk.state.OPEN.byKey) || {}; }
+      if (!open[entry.payload.orderKey]) continue;
+    }
     await queueSale(env, entry);
     await db.prepare("UPDATE preapproval SET entry_at=?1, entry=?2 WHERE id=?3").bind(entry.at, JSON.stringify(entry), p.id).run();
     queued++;
@@ -384,20 +504,21 @@ export function pendingEntry(order, code, now) {
   };
 }
 
-/** What a customer paid, as a Fulfilment against the row the acknowledgement made. */
-export function payEntry(order, code, amount, now) {
+/** What a customer paid, as a Fulfilment against the row the acknowledgement made. `cash`: money he took
+ *  at the counter and recorded on the card (S11 11.12), the one payment the site did not hear first. */
+export function payEntry(order, code, amount, now, cash) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
   const date = klDate(at);
-  const cash = +(+amount).toFixed(2);
+  const rm = +(+amount).toFixed(2);
   const books = partyOnBook(order, code);
-  const method = order.method ? (order.method + (order.account ? " via " + order.account : "")) : "not stated";
+  const method = cash ? "cash at the counter" : (order.method ? (order.method + (order.account ? " via " + order.account : "")) : "not stated");
   return {
-    at: at.toISOString(), type: "SELL", party: books, qty: 0, total: cash, status: "Payment",
-    raw: "Payment of RM " + cash + " on " + books + ", order " + order.id + ", by " + method,
+    at: at.toISOString(), type: "SELL", party: books, qty: 0, total: rm, status: "Payment",
+    raw: "Payment of RM " + rm + " on " + books + ", order " + order.id + ", by " + method,
     payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: books, rid: null,
       orderKey: order.ledgerKey || null, orderCode: null, linkTo: null, assoc: null, downstream: null,
-      date, qty: 0, total: 0, cash, kg: 0,
-      note: "Paid on the statements site, order " + order.id + ", by " + method + "." }
+      date, qty: 0, total: 0, cash: rm, kg: 0,
+      note: cash ? "Paid in cash at the counter against order " + order.id + ", recorded on the desk." : "Paid on the statements site, order " + order.id + ", by " + method + "." }
   };
 }
 

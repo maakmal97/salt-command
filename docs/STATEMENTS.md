@@ -520,6 +520,18 @@ customer reading Placed, and his approval under Approve moves it then. That is t
 queues itself, because the row must exist before the order moves; `deskPass`, beside the reconcile,
 follows it up each minute.
 
+**The later stages are one tap too** (S11 11.12): **Collected or Delivered** (`/handed {qty, close}`,
+the running total, in the order's own mode), **Received** (`/received {amount}`, their recorded payment
+in his bank; the site already counts it) and **Cash received** (`/cash {amount}`, money taken at the
+counter: the order is marked paid at once through the `ledger` move, which stops the chase, and the
+Fulfilment is the desk's own entry, `counter: true`, queued by `deskPass` once the row is on the book;
+refused while a payment of theirs still waits to be queued, which the mark would swallow). Each builds its
+entry as the reconcile will, drafts it now, or before the first row lands against the book as it will
+stand (`withPending`), and records that digest; the drafter spends it when the real row is drafted, only
+if the kind, party, target, date, figures and every flag are equal (no pricing version: the first row
+landing is itself a fold). **Such a stage never waits silently**: the answer carries `waits` and "Booked
+when the first row lands". A Received on a payment already drafted is tested at the tap.
+
 **A withdrawal before the row is approved drops it** (S11 11.10). The customer withdraws while the
 pending row still waits under Approve, with nothing paid: `dropAck` rejects that draft as `withdrawn`
 (filing it rejected first if it is not drafted yet, so no drafter part-way through a pass can draft it

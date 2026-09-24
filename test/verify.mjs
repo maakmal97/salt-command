@@ -22451,6 +22451,131 @@ await (async () => {
     "a row Accept queued that still waits is dropped when the customer withdraws, and his yes is spent with it: " + JSON.stringify({ dp, draft: draftOf(cFlags.a.j.draft) }));
 })();
 
+section("S11 11.12: Collected, Cash received and Received are a yes for a row not drafted yet, spent only if the row equals it");
+await (async () => {
+  /* HIS DECISION D6: each later stage is one tap. Before the first row lands it is a PRE-APPROVAL of that exact row,
+     applied when the row is drafted and only if equal; the judges' list: a later stage never waits SILENTLY on the
+     pending row, so the answer says it waits, in words the card can print. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the later stages were not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, deskPass } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh", C2 = "CX2-CD", U2 = "wxyz-mnpq";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  const OPEN = { byKey: {}, position: {} };
+  setState("roster", [C1, C2]); setState("OPEN", OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 } }, inputs: null, sizes: [1, 2] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  /* THE FIRST ROW LANDS: the fold writes the approved pending row, and the re-seed puts it in the open orders */
+  const land = (draftId, over) => { const row = Object.assign(JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(draftId).row), { rid: "s99" + seq }, over || {});
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN);
+    db.prepare("UPDATE draft SET committed_at=? WHERE id=?").run(new Date().toISOString(), draftId); return row; };
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1, [U2]: C2 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const settle = async () => { while (tails.length) await tails.shift(); };
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); await settle(); return { status: r.status, j };
+  };
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const accepted = async (qty, total, u) => {
+    const o = (await O.placeOrder(senv, u || U1, { product: "salt", qty, mode: "collect", unit: total / qty, total, week: "" })).order;
+    const pv = await call("/orders/" + o.id + "/preview", {});
+    const a = await call("/orders/" + o.id + "/accept", { hash: pv.j.hash });
+    return { o, draft: a.j.draft, ok: a.j.approved === true };
+  };
+  const draftsOf = (id, status) => db.prepare("SELECT id,status,decided_by,entry,flags FROM draft").all()
+    .filter((d) => JSON.parse(d.entry).orderId === id && JSON.parse(d.entry).status === status);
+  const preOf = (id, stage) => db.prepare("SELECT status,draft_id,entry_at FROM preapproval WHERE order_id=? AND stage=? ORDER BY at DESC").get(id, stage) || null;
+
+  /* each order its own figure: two orders alike on one day share the book's key (ovKey), a known limit */
+  /* A. COLLECTED BEFORE THE FIRST ROW LANDS: said so at once, then booked when it lands, equal */
+  const A = await accepted(2, 200);
+  const h = await call("/orders/" + A.o.id + "/handed", { qty: 2 });
+  const sA = await orderOf(A.o.id);
+  ok(A.ok && h.status === 200 && h.j.preapproval.waits === true && h.j.preapproval.says === "Booked when the first row lands" && sA.moved === 2
+    && preOf(A.o.id, "move").status === "waiting" && !draftsOf(A.o.id, "Handover").length && sA.sync.state === "waiting",
+    "Collected before the first row lands is recorded at once and says it is booked when that row lands, never waiting silently: "
+    + JSON.stringify({ pre: h.j.preapproval, moved: sA.moved, sync: sA.sync }));
+  land(A.draft);
+  await reconcileOrders(denv); await runDrafter(denv);
+  const hA = draftsOf(A.o.id, "Handover");
+  ok(hA.length === 1 && hA[0].status === "approved" && /^preapproved/.test(hA[0].decided_by) && preOf(A.o.id, "move").status === "applied"
+    && /ADVANCE: 2 unit goes out with RM 200 unpaid/.test(hA[0].flags),
+    "and when it lands the Correction is drafted and approved by that yes, being equal, advance flag and all: " + JSON.stringify(hA.map((d) => [d.status, d.decided_by])));
+
+  /* B. RECEIVED ON A PAYMENT ALREADY DRAFTED: that draft is approved at the tap */
+  const B = await accepted(1, 100);
+  land(B.draft);
+  await O.customerMove(senv, U1, B.o.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U1, B.o.id, "pay", { amount: 40 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  ok(draftsOf(B.o.id, "Payment").length === 1 && draftsOf(B.o.id, "Payment")[0].status === "pending", "their payment is drafted and waits: " + JSON.stringify(draftsOf(B.o.id, "Payment").map((d) => d.status)));
+  const wrong = await call("/orders/" + B.o.id + "/received", { amount: 45 });
+  const rB = await call("/orders/" + B.o.id + "/received", { amount: 40 });
+  ok(wrong.status === 409 && rB.status === 200 && rB.j.preapproval.spent === "applied" && rB.j.preapproval.waits === false && draftsOf(B.o.id, "Payment")[0].status === "approved",
+    "Received for another figure is refused; for the figure drafted it approves that draft at the tap: " + JSON.stringify({ wrong: wrong.j.error, pre: rB.j.preapproval }));
+
+  /* C. RECEIVED BEFORE THE ROW LANDS: waits, and is spent when the Fulfilment is drafted */
+  const C = await accepted(1, 110);
+  await O.customerMove(senv, U1, C.o.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U1, C.o.id, "pay", { amount: 30 });
+  const rC = await call("/orders/" + C.o.id + "/received", { amount: 30 });
+  ok(rC.status === 200 && rC.j.preapproval.waits === true && preOf(C.o.id, "pay").status === "waiting" && !draftsOf(C.o.id, "Payment").length,
+    "Received before the first row lands waits for it, and says so: " + JSON.stringify(rC.j.preapproval));
+  land(C.draft);
+  await reconcileOrders(denv); await runDrafter(denv);
+  ok(draftsOf(C.o.id, "Payment").length === 1 && draftsOf(C.o.id, "Payment")[0].status === "approved" && preOf(C.o.id, "pay").status === "applied",
+    "and the Fulfilment is approved as it is drafted: " + JSON.stringify(draftsOf(C.o.id, "Payment").map((d) => d.status)));
+
+  /* D. CASH TAKEN AT THE COUNTER: paid on the order at once, and the desk's own Fulfilment when the row lands */
+  const D = await accepted(1, 120);
+  const cD = await call("/orders/" + D.o.id + "/cash", { amount: 120 });
+  const sD = await orderOf(D.o.id);
+  ok(cD.status === 200 && cD.j.preapproval.waits === true && sD.paid === 120 && sD.queued.paid === 120 && sD.status === "acknowledged"
+    && !((await dkv.get("q:orders", "json")).queue.some((e) => e.orderId === D.o.id && e.status === "Payment")),
+    "Cash received marks the order paid at once, which is what stops the chase, and queues nothing before the row is there: " + JSON.stringify({ paid: sD.paid, queued: sD.queued }));
+  land(D.draft);
+  const dp = await deskPass(denv, new Date()); await runDrafter(denv);
+  const pD = draftsOf(D.o.id, "Payment");
+  ok(dp.queued === 1 && pD.length === 1 && pD[0].status === "approved" && /cash at the counter/.test(JSON.parse(pD[0].entry).raw) && (await reconcileOrders(denv)).queued === 0,
+    "when it lands the desk queues its own Fulfilment, approved as drafted, and the reconcile queues no second one: " + JSON.stringify({ dp, pD: pD.map((d) => d.status) }));
+  const E = await accepted(1, 130);
+  await O.customerMove(senv, U1, E.o.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U1, E.o.id, "pay", { amount: 20 });
+  const cE = await call("/orders/" + E.o.id + "/cash", { amount: 50 });
+  ok(cE.status === 409 && /receive that first/.test(cE.j.error) && (await orderOf(E.o.id)).paid === 20,
+    "cash is refused while a payment of theirs still waits to be queued, which its mark would swallow: " + JSON.stringify(cE.j));
+
+  /* F. DIFFERENT WHEN IT LANDS: a payment folded beside the row, so the advance it would flag is another figure */
+  const F = await accepted(2, 210, U2);   /* five open orders is a customer's cap */
+  const hF = await call("/orders/" + F.o.id + "/handed", { qty: 2 });
+  land(F.draft, { cash: 50 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const dF = draftsOf(F.o.id, "Handover");
+  const lj = await (await deskW.fetch(new Request("https://salt-command.example/drafts?status=pending", { headers: { "X-Salt-Key": "k-fixture" } }), denv, ctx)).json();
+  const mark = dF[0] && (lj.drafts.find((d) => d.id === dF[0].id) || {}).preapproval;
+  ok(hF.j.preapproval.waits && dF.length === 1 && dF[0].status === "pending" && preOf(F.o.id, "move").status === "differs" && mark && mark.stage === "move" && mark.says === "differs from what you saw",
+    "a row that lands other than he was shown is NOT approved by that yes: it waits under Approve, marked: " + JSON.stringify({ draft: dF.map((d) => d.status), pre: preOf(F.o.id, "move"), mark }));
+})();
+
 section("v764: what he records on the desk reaches the customer's order, and the chase stops");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026. Every road built since v694 runs from the site to the book. A

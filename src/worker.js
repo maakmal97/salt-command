@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass } from "./orders.js";
+import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -214,7 +214,9 @@ function reconcileOnTap(env, ctx) {
     try {
       const rc = await reconcileOrders(env);
       console.log("orders reconcile (on the tap): " + JSON.stringify(rc));
-      if (rc.queued && env.SALT_LEDGER) { const d = await runDrafter(env); console.log("drafter (on the tap): " + JSON.stringify(d)); await afterApproval(env, ctx, d.approved); }
+      /* S11: and what the desk queues itself (cash taken at the counter), in the same tail */
+      const dp = await deskPass(env, new Date());
+      if ((rc.queued || dp.queued) && env.SALT_LEDGER) { const d = await runDrafter(env); console.log("drafter (on the tap): " + JSON.stringify(d)); await afterApproval(env, ctx, d.approved); }
     } catch (e) { console.log("orders reconcile (on the tap) FAILED: " + String((e && e.stack) || e)); }
   })());
 }
@@ -837,7 +839,7 @@ export default {
     }
     /* S11: THE CARD'S OWN ROUTES, by the order's id alone. An order id is minted digits and letters with a
        dash (mintOrderId) and is never one of these words, so they are read before a move `/orders/<u>/<id>`. */
-    const cm = /^\/orders\/([^/]+)\/(preview|accept)$/.exec(p);
+    const cm = /^\/orders\/([^/]+)\/(preview|accept|handed|cash|received)$/.exec(p);
     if (cm) {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       let b = {};
@@ -847,13 +849,19 @@ export default {
       const by = (b && typeof b.by === "string" && b.by.trim().slice(0, 40)) || "phone";
       try {
         if (cm[2] === "preview") r = await previewOrder(env, id, b);
-        else {
+        else if (cm[2] === "accept") {
           r = await acceptOrder(env, id, b, by);
           /* the stage rung for the row his yes approved; any other row the same drafting pass approved is followed
              as every approval is (its own order moved), this one having moved its order already */
           const others = ((r.drafted && r.drafted.approved) || []).filter((x) => x !== r.draft);
           if (others.length) await afterApproval(env, ctx, others);
           else if (r.approved) stageOnApproval(env, ctx);
+        } else {
+          /* S11 11.12: Collected, Cash received and Received record his yes, then the site hears the move and the
+             ledger is told in the request's tail, as any move of his is (v762) */
+          r = await ({ handed: handedOrder, cash: cashOrder, received: receivedOrder })[cm[2]](env, id, b, by);
+          if (r.ok && r.preapproval && r.preapproval.spent === "applied") await afterApproval(env, ctx, [r.preapproval.draft]);
+          if (r.ok) reconcileOnTap(env, ctx);
         }
       } catch (e) { r = { ok: false, status: 500, error: String((e && e.message) || e) }; }
       return json(r, r.ok ? 200 : (r.status || 502));
