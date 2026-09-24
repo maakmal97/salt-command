@@ -167,7 +167,12 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   version. Re-landing after origin moved: `docs/WORKING.md`.
 - **What is approved is the ROW, not the entry.** The phone leads with cost and margin read from
   the draft and computes nothing; the drafter's flags do the measuring, and a purchase is never
-  measured with a seller's ruler. A card's flags freeze at drafting.
+  measured with a seller's ruler. A card's flags freeze at drafting. **One tap a stage on a site order
+  (his decision D6)**: the order card's yes is recorded in `preapproval` and spent by the drafter only
+  if the draft equals what he was shown, every field, flag and (for Accept) pricing version; else it
+  waits under Approve, marked. Accept moves the order only once its row is approved; a later stage
+  tapped before the first row lands is booked when it lands, and the answer says so. A close under what they paid
+  is never approved on a tap: nothing books the difference as a refund yet.
 - **What the drafter refuses, the phone does not let you type**: `entryFault` answers both entry
   forms. **An R2 row books to the associate's `-R` bucket whether or not the end buyer is named**,
   through the engine's `bookR2`, which every road calls; a named buyer is `downstream` and credited
@@ -194,10 +199,12 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   draft keeps its id for good; re-drafting an entry he later calls real, and folding from the
   laptop (approve last), are in `docs/CLOUD_FOLD.md`. A ledger row edit queues as a Correction.
 - Endpoints: `GET /drafts?status=…`, `POST /drafts/<id>/approve|reject|committed`, `POST
-  /draft-now?dry=1`, all keyed. Nothing writes to `entry`. **The `draft` table's CHECK lists every
-  collection by name**: a collection the drafter newly returns needs a migration rebuilding it,
-  applied to the live D1 BEFORE the deploy and as that file alone (`wrangler d1 execute salt_ledger
-  --remote --file=...`); re-running an older one drops rows. Newest: `migrations/0010`.
+  /draft-now?dry=1`, `POST /orders/<id>/preview` (the row an Accept would make, stored nowhere, never
+  the dry run) and `/accept|handed|cash|received|again` (the card's taps), all keyed. Nothing writes
+  to `entry`. **The `draft` table's CHECK lists every collection by name**: a collection the drafter
+  newly returns needs a migration rebuilding it, applied to the live D1 BEFORE the deploy and as that
+  file alone (`wrangler d1 execute salt_ledger --remote --file=...`); re-running an older one drops
+  rows. Newest rebuild: `migrations/0010`; `0011` adds `preapproval`, applied alone the same way.
 - **Cowork:** Salt left Cowork on 20 Aug 2026. `salt-daily-price-brief` and
   `salt-monthly-statements` may still fire from Cowork's registry (`Scheduled\README.md`), which
   Code cannot see: retiring them is his.
@@ -258,7 +265,7 @@ and carries on). Minting cannot run in CI, by design. Amend ID needs nothing. Hi
 
 ## Statements site
 
-`stmt/worker.js` and `stmt/page.js`: a second Worker on its own cryptic address and KV store,
+`stmt/worker.js` and `stmt/page.js`: a second Worker on its own cryptic address, KV store and order book,
 config `wrangler.stmt.jsonc`, every command taking `-c`. Nothing under `stmt/` imports from `src/`,
 `tools/` or a node builtin; the suite checks. `statements/_secrets.json` is laptop only and
 gitignored; lose its key and every account is re-issued. `stmt/page.js` `CLIENT_JS`, `stmt/owner.js`
@@ -271,17 +278,24 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   (`PSHAPE`), never its product. **The one name on the site is the app's, `Salt Counter`**, twelve
   characters, which is what iOS gives a home screen; the desk's name never appears. **A customer's
   level is a mark, never named**; no name is used because none exists there (rule 2).
-- **AN ORDER REACHES THE BOOK IN STAGES, AND SITE ORDERS WRITES NOTHING.** The desk's every-minute
-  `reconcileOrders` is the one road that queues: the acknowledgement a **Pending** row (delivery
-  beside its total), a payment a **Fulfilment**, a handover a **Correction** stating the running
-  total (rolling the shelf by the difference), a withdrawal a **Cancellation**. The row is named by
-  `ledgerKey`, **the engine's `ovKey` to the character**; an amendment waits until `OPEN.byKey`
-  carries that key. Each entry is stamped with its stage's own moment (`stageAt`). A move of his
+- **AN ORDER REACHES THE BOOK IN STAGES.** The desk's every-minute
+  `reconcileOrders` is the one road that queues what the site makes (Accept and Cash received queue
+  their own): the acknowledgement a **Pending** row (delivery beside its total), a payment a **Fulfilment**, a
+  handover a **Correction** stating the running total (rolling the shelf by the difference), a close at
+  what was handed over a **Correction** restating size and total, a withdrawal a **Cancellation** (theirs,
+  nothing paid, while the pending row is unapproved: the row dropped instead; an approved row never). The
+  row is named by `ledgerKey`, **the engine's `ovKey` to the character**, which a close moves (a rejected close gives it back); an amendment
+  waits until `OPEN.byKey` carries that key. Each entry is stamped with its stage's own moment (`stageAt`). A move of his
   runs the reconcile at once; the return leg carries what he records on the desk back to the order
   and only ever raises. Cash on handover is withheld while that customer holds an unpaid advance. A
   delivery's location never reaches a ledger note. The customer reads a whitelisted view of an order,
-  never `ledgerKey`, `queued` or `sync`; a request id makes a retried Place or payment land once.
-  Rejecting a draft a site order made is asked first and written onto that order.
+  never `ledgerKey`, `queued` or `sync`. **Every move is an event in the site's one Durable Object**
+  (`stmt/orderbook.js`) under a device-minted id, so a retry lands once and no writer erases another's;
+  `ORDER_STORE` is the switch (`object+kv` the week of reading both, `kv` the way back, `object` after a
+  clean week of KV `orderbook:check`). **Coming back from `kv`, raise `ORDER_MOVE_IN`**; forgotten, the `kv`
+  road's mark (`orderbook:road`) moves the book in again on its first request.
+  Rejecting a draft a site order made is asked first and written onto that order, and its move is
+  offered again under a fresh entry (the stage's own tap, or `/again`; `again` on `GET /orders`).
 - **A customer writes on an order, and he answers**: one `msgs[]` thread per order, on any order at
   any stage; theirs capped, his uncapped. **It never rides into a ledger note.** His answer is
   checked by `siteWords` on the desk; every line is escaped on both surfaces.
@@ -298,18 +312,46 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **Send statement hands over the password from his phone** (`pwMaster` under `STMT_MASTER`, in
   `sheet` behind Access, decrypted to the clipboard). The plain password stays laptop-only in
   `_passwords.json`, and no message ever carries it.
-- **The shared link signs them in, once**: the link signs in, the password is never in it. A link
+- **The shared link signs them in, once, and keeps the phone signed in** (his D1: the door's split key,
+  three days to use, the message naming the username): the password is never in it. A link
   inside its window is a bearer credential, and single use is best effort (KV). The `/s/` route is
-  gated on the token's SHAPE, so a spent link and an invented one serve the same door.
-- **The door**: log in, remember me (a device key in the browser, the wrapped content key at
-  `rem:<token>`, neither opening anything alone), log out, which also drops that wrap and this
-  phone's notifications. A lapsed session says so in the bar, with Continue. Kept as an app:
-  manifest and icon served by the Worker, no brand; every login asks about notifications once.
+  gated on the token's SHAPE, so a spent link and an invented one serve the same door. **It is spent
+  only on Continue** (asking which account spends nothing), and a spent record answers the page that
+  spent it, by its nonce, for two minutes; an app's own browser is sent to Safari or Chrome first.
+- **The hand-over** (his decision D2): a signed-in page, or Salt Admin's Show a code, hands the sign-in to
+  another app or phone as a key and an eight-symbol code, one use in fifteen minutes, filed under a hash keyed by
+  `STMT_HANDOVER_KEY` with the wrap sealed, the code braked per address and site-wide; unset, `/handover` answers 503.
+- **The door** (his D3): one username field and one password field a password manager fills, Show, a
+  paste that keeps only the password, an alphabet check on the device, the help line, and the site's
+  one refusal; only his page sends a master, so it cannot be typed at a customer's door. Keep me signed
+  in (a device key in the browser, the wrapped content key at `rem:<sha256(token)>`, neither opening anything
+  alone, thirty days from the last open), log out, which also drops that wrap, this phone's
+  notifications and every hand-over the page minted. Salt Admin's **Sign out everywhere** (`POST /all/signout`) ends
+  every phone, session and alert on an account: the answer to a forwarded link or a lost phone. Nothing says phone on a computer. **A lapsed session reopens itself from the remembered
+  phone and repeats the request once** (his D1), **only when the phone remembers the account on screen**;
+  otherwise a Sheet says so over the page, carrying the door and keeping the draft. The page re-reads on every return (`GET /account` on its session, never a
+  wrap), and a remembered phone draws "Opening your account", never the door. Kept as an app:
+  manifest and icon served by the Worker, no brand; every login asks about notifications once. How to
+  keep it is a card once signed in, never on the door: an Install button wherever the browser offers one,
+  Samsung Internet's steps, a computer's address-bar mark or another Android browser's menu mark drawn elsewhere; on an iPhone its Sheet mints the hand-over as it
+  opens and copies the key in a tap of its own, rewriting the address to `/app#<key>` (his D2), and never
+  says a link signs the saved app in. **The saved app starts at `/app`** (the manifest's `start_url`): with
+  nothing remembered, an iPhone opens on One step to finish, the key by Paste or the eight symbols typed
+  (`POST /handover/open`), and the app is remembered. A key in the address (`/app#<key>`) is spent by the saved app
+  alone; a browser tab spends only Salt Admin's QR (`/app#qr.<key>`), as `{token, tab: true}`, which the Worker
+  opens only for a key his `/all/handover` minted; an app's own browser spends nothing.
   Salt Admin links its own manifest with credentials and is titled Salt Admin.
-- **The hourly chase**: the site's own cron (`wrangler.stmt.jsonc`) wakes a customer holding an
-  advance once an hour, capped by `chased:<username>`; the test account is skipped. The config
-  ships with the job's push paths; an unpushed laptop change needs `npx wrangler deploy -c
-  wrangler.stmt.jsonc`.
+- **A customer's banner names the kind of news, never an amount, a product, an order or a name**:
+  `{k, o}` sealed for the one phone (`sealFor`, RFC 8291) under the keys its subscription filed, the
+  words `NEWS` in `stmt/sw.js`; a record with no keys gets the payload-free wake and the old words. A
+  tap opens that order (`#o=<id>`), and a page already open re-reads first.
+- **The chase, twice a day** (his decision D5): the site's hourly cron (`wrangler.stmt.jsonc`) wakes a
+  customer holding goods unpaid (`isAdvance`) only at 10:00 and 18:00 Kuala Lumpur (`chaseSlot`), from
+  the day after the handover (`graceOver`), paused while a claim waits (`claimWaits`, where stage 6's
+  claim plugs in), in its own words (`due`); one wake a slot per customer, capped by the chase
+  mark (`markChased`: in the order book, `chased:<username>` on the `kv` road); the test account is
+  skipped. The config ships with the job's push paths; an unpushed laptop change needs `npx wrangler
+  deploy -c wrangler.stmt.jsonc`.
 - **An associate's own card** (`rec.card`): `share`, `stars` and `rank` never travel, and every
   figure adds up to the list under it. **The associates report card** (`/all/assoc`, whitelist
   `ASSOC_FIELDS`): no margin crosses.

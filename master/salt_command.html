@@ -1528,6 +1528,16 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   --salt-mist: #7a8690;       /* muted labels and captions */
   --salt-mist-light: #a6afb5; /* mist for running prose at 13px, where mist itself is too dark */
   --salt-mist-bright: #b4bcc2; /* prose on a figure surface, one step under salt: a tile's note, a finding's body */
+  /* Running prose, the sentences a person reads under a figure or a field (24 Sep 2026). Mist was
+     3.6:1 on a pane over the aurora at its brightest; mist-light is 6.0:1 there, 8.2:1 on the
+     panel and 9.0:1 on obsidian. A recipe's prose reads this and never mist. */
+  --salt-prose: var(--salt-mist-light);
+  /* THE EDGE OF A FIELD AND A GHOST (24 Sep 2026): brass at three quarters, so the hairline keeps the
+     identity's hue and still meets 3:1 (WCAG 1.4.11). The faint line it replaces was 1.1:1, so no box
+     was visible until it had focus. Measured: 3.2:1 on a pane over the aurora at its brightest (the
+     worst ground), 3.8:1 against the well it borders there, 4.4:1 on the panel, 4.8:1 on obsidian.
+     A state that lifts a control (hover, on, lit, focus) goes to full brass, above it. */
+  --salt-edge-field: #947843;
 
   /* The desk's semantic colours, added 02 Sep 2026. Direction and risk need hues the six
      brand colours do not carry, and each sits in the identity's temperature: verdigris is
@@ -1562,7 +1572,6 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   --salt-line-strong: rgba(197, 160, 89, 0.45); /* the hairline lifted: a chip's edge, a held or hovered control */
   --salt-glass-hover: rgba(255, 255, 255, 0.06); /* a ghost, a row or a tab under the pointer */
   --salt-highlight: rgba(255, 255, 255, 0.08);
-  --salt-focus-ring: 0 0 0 3px rgba(197, 160, 89, 0.18); /* the ring a focused control wears beside its brass hairline */
   --salt-shadow: 0 32px 64px rgba(0, 0, 0, 0.55);
   --salt-shadow-desk: 0 18px 40px rgba(0, 0, 0, 0.42); /* lighter, for a page of many panes */
   --salt-well: rgba(0, 0, 0, 0.28);      /* inset: fields and meter tracks */
@@ -1574,6 +1583,9 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
                                              A veil at .86 passes 14% of whatever scrolls under it, and the
                                              only fill that cannot ghost is 1 (the desk's v567; here 22 Sep 2026) */
   --salt-tap: 44px;                      /* the least a control may measure, either way */
+  --salt-bar-h: 4rem;                    /* the phone's bar of places, above the safe area: 64px at the
+                                            default text size, and in rem so it grows with the words in it */
+  --salt-sheet-radius: var(--salt-radius-lg); /* the top corners of a sheet, the inner corners of a drawer */
 
   /* Gradients. Brass to copper for marks and fills; white to copper for titles. */
   --salt-gradient: linear-gradient(135deg, var(--salt-brass), var(--salt-copper));
@@ -1589,15 +1601,23 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   --salt-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
   --salt-font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, monospace;
 
-  --salt-text-xs: 11px;
-  --salt-text-sm: 13px;
-  --salt-text-md: 15px;
-  --salt-text-lg: 17px;
-  --salt-text-xl: 24px;
-  --salt-text-2xl: 34px;
-  --salt-text-3xl: 48px;
-  --salt-text-4xl: 64px;
-  --salt-text-5xl: 88px;
+  /* The type scale in rem since 24 Sep 2026: at the default 16px each is the pixel size it was
+     (11, 13, 15, 17, 24, 34, 48, 64, 88), and a browser's own default text size (a desktop browser's
+     setting) now reaches them. A PHONE'S DOES NOT, YET: an iPhone's Text Size reaches a page only through
+     the system font keywords (font: -apple-system-body, 17px at its default), and Android's only where
+     the page opts in (meta name="text-scale"). Nothing sets either: that is a decision still open.
+     Every screen recipe sets its type in rem the same day, a token where the size is one and its
+     exact rem where not (11.5px is 0.71875rem), so a control grows with the prose beside it. A slide,
+     the document page and the footnote keep px: they are frames of a fixed size. */
+  --salt-text-xs: 0.6875rem;
+  --salt-text-sm: 0.8125rem;
+  --salt-text-md: 0.9375rem;
+  --salt-text-lg: 1.0625rem;
+  --salt-text-xl: 1.5rem;
+  --salt-text-2xl: 2.125rem;
+  --salt-text-3xl: 3rem;
+  --salt-text-4xl: 4rem;
+  --salt-text-5xl: 5.5rem;
 
   /* Space, radius */
   --salt-space-1: 4px;
@@ -1735,14 +1755,14 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   margin: 0;
 }
 .salt-wordmark--sm .salt-wordmark__subtitle { font-size: var(--salt-text-xs); }
-.salt-wordmark--md .salt-wordmark__subtitle { font-size: 12px; }
-.salt-wordmark--lg .salt-wordmark__subtitle { font-size: 14px; letter-spacing: 0.28em; }
+.salt-wordmark--md .salt-wordmark__subtitle { font-size: 0.75rem; }
+.salt-wordmark--lg .salt-wordmark__subtitle { font-size: 0.875rem; letter-spacing: 0.28em; }
 
 /* ---- Eyebrow ---- */
 
 .salt-eyebrow {
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.24em;
   text-transform: uppercase;
@@ -1766,7 +1786,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 .salt-metrics__label {
   display: block;
   color: var(--salt-copper);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1845,7 +1865,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   align-items: center;
   justify-content: center;
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--salt-mist);
 }
 .salt-qr__meta { text-align: center; }
@@ -1885,8 +1905,8 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   box-shadow: 0 8px 24px rgba(184, 115, 51, 0.3);
   transition: transform 0.2s, box-shadow 0.2s;
 }
-.salt-pill--md { padding: 16px 40px; font-size: 14px; }
-.salt-pill--sm { padding: 10px 20px; font-size: 11.5px; }
+.salt-pill--md { padding: 16px 40px; font-size: 0.875rem; }
+.salt-pill--sm { padding: 10px 20px; font-size: 0.71875rem; }
 .salt-pill:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(184, 115, 51, 0.4); }
 .salt-pill:active { transform: translateY(0); box-shadow: 0 8px 24px rgba(184, 115, 51, 0.3); }
 .salt-pill:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 3px; }
@@ -1899,6 +1919,264 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 @media (prefers-reduced-motion: reduce) {
   .salt-pill { transition: none; }
   .salt-pill:hover { transform: none; }
+}
+
+/* ---- Sheet: a task laid over the page (an order, a payment). Opaque slate, rounded at the top, with a
+   grabber; the body scrolls and the foot stays in reach of the thumb, holding the one filled action.
+   From 1080px it is a drawer on the right, full height. The scrim behind it is the page behind a
+   drawer. Moving focus in and closing on Escape are the component's; this is the look (24 Sep 2026). ---- */
+
+.salt-sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: var(--salt-scrim);
+  animation: salt-sheet-fade 0.2s ease-out;
+}
+.salt-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 71;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100% - var(--salt-space-6) - env(safe-area-inset-top));
+  background: var(--salt-slate);
+  color: var(--salt-salt);
+  border-top: 1px solid var(--salt-line);
+  border-radius: var(--salt-sheet-radius) var(--salt-sheet-radius) 0 0;
+  box-shadow: var(--salt-shadow), inset 0 1px 0 var(--salt-highlight);
+  font-family: var(--salt-font-display);
+  animation: salt-sheet-rise 0.24s ease-out;
+}
+.salt-sheet:focus { outline: none; } /* the dialog takes focus as it opens; its controls carry the ring */
+.salt-sheet__grab {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 4px;
+  margin: var(--salt-space-2) auto 0;
+  border-radius: 2px;
+  background: var(--salt-line-strong);
+}
+.salt-sheet__head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--salt-space-3);
+  padding: var(--salt-space-2) var(--salt-space-4) var(--salt-space-3);
+}
+.salt-sheet__title {
+  margin: 0;
+  min-width: 0;
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-xl);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--salt-salt);
+}
+.salt-sheet__close { flex: 0 0 auto; }
+.salt-sheet__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--salt-space-1) var(--salt-space-4) var(--salt-space-4);
+  font-size: var(--salt-text-md);
+  line-height: 1.55;
+  color: var(--salt-prose);
+}
+.salt-sheet__foot {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--salt-space-3);
+  padding: var(--salt-space-3) var(--salt-space-4) calc(var(--salt-space-3) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--salt-line-faint);
+}
+@media (min-width: 1080px) {
+  .salt-sheet {
+    top: 0;
+    left: auto;
+    width: min(460px, 100%);
+    max-height: none;
+    border-top: 0;
+    border-left: 1px solid var(--salt-line);
+    border-radius: var(--salt-sheet-radius) 0 0 var(--salt-sheet-radius);
+    animation-name: salt-sheet-slide;
+  }
+  .salt-sheet__grab { display: none; }
+  .salt-sheet__head { padding-top: var(--salt-space-5); }
+}
+@keyframes salt-sheet-fade { from { opacity: 0; } }
+@keyframes salt-sheet-rise { from { transform: translateY(100%); } }
+@keyframes salt-sheet-slide { from { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) {
+  .salt-sheet, .salt-sheet-scrim { animation: none; }
+}
+
+/* ---- App bar: the phone's places under the thumb. Opaque slate with one brass hairline, an icon and a
+   word for each place; the open one is read from aria-current and marked by a brass tick on the hairline;
+   a count is a copper numeral, never a filled badge. The bar is --salt-bar-h tall above the safe area,
+   which is what the page keeps clear at its foot. From 1080px the bar gives way to the Desk rail, which
+   the component draws from the same places, so the rail's recipe is used and not restated. Each place is
+   its own container, and its word and count are sized no larger than a fifth of it: a mono word of seven
+   letters then always fits its column, so five places never overprint each other however large the text
+   (measured 24 Sep 2026: Account and Rewards overlapped by 13px at 320 and 150%). The count is pulled
+   back inside its place when the place is too narrow for it beside the icon. ---- */
+
+.salt-appbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  padding: 0 var(--salt-space-2) env(safe-area-inset-bottom);
+  background: var(--salt-slate);
+  border-top: 1px solid var(--salt-line);
+}
+.salt-appbar__item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--salt-space-1);
+  min-width: var(--salt-tap);
+  min-height: calc(var(--salt-bar-h) - 1px);
+  padding: var(--salt-space-1) 2px;
+  background: none;
+  border: 0;
+  border-radius: var(--salt-radius-sm);
+  color: var(--salt-mist-light);
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  container-type: inline-size;
+}
+.salt-appbar__label, .salt-appbar__count { font-size: min(var(--salt-text-xs), 20cqi); }
+.salt-appbar__label { max-width: 100%; overflow-wrap: anywhere; } /* a word longer than seven letters breaks rather than spill */
+.salt-appbar__icon { display: flex; width: 24px; height: 24px; }
+.salt-appbar__icon svg { width: 100%; height: 100%; }
+.salt-appbar__item:hover, .salt-appbar__item[aria-current="page"] { color: var(--salt-salt); }
+.salt-appbar__item[aria-current="page"]::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 30%;
+  right: 30%;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: var(--salt-brass);
+}
+.salt-appbar__count {
+  position: absolute;
+  /* at the icon's upper right whatever the bar's height: the place centres an icon (24px), a 4px gap and one line
+     of its word, and 1em here is that word's size, so this is 4px at the default as it was */
+  top: calc(50% - 21px - 0.6em);
+  left: calc(50% + 12px);
+  translate: min(0px, calc(50cqi - 12px - 100%)) 0; /* back inside the place's right edge, never further left than it must */
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--salt-copper);
+}
+.salt-appbar__item:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: -2px; }
+/* the place as the rail draws it: the same icon, beside the word */
+.salt-appbar__place { display: inline-flex; align-items: center; gap: 10px; }
+.salt-appbar__place .salt-appbar__icon { width: 20px; height: 20px; flex: 0 0 auto; }
+@media (min-width: 1080px) {
+  .salt-appbar { display: none; }
+}
+@media (max-width: 1079.98px) {
+  .salt-rail.salt-appbar__rail { display: none; } /* two classes, so the rail's own display, later in the file, cannot outrank it */
+}
+
+/* ---- Inbox row: one waiting thing in a list beside its card (the desk's Waiting on you, Salt Admin's
+   Needs you). Who it concerns and its kind as a chip, what it is in one sentence, how long it has waited,
+   and the one action it leads to in brass. The whole row is one tap that opens its card; the row whose
+   card is open is read from aria-current and takes the brass rule down its left edge. The sentence keeps
+   10rem at least: where the row cannot give it that beside the age and the action (a narrow column, a
+   larger text size), those two go under it at the right, rather than the sentence falling to a letter a
+   line (measured 24 Sep 2026: 20px wide at 320 and 200%). ---- */
+
+.salt-inbox-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--salt-space-1) var(--salt-space-3);
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 14px;
+  text-align: left;
+  background: var(--salt-glass-faint);
+  border: 1px solid var(--salt-line);
+  border-radius: var(--salt-radius-md);
+  color: var(--salt-salt);
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.16s, border-color 0.16s;
+}
+.salt-inbox-row:hover { background: var(--salt-glass-hover); border-color: var(--salt-line-strong); }
+.salt-inbox-row[aria-current="true"] {
+  background: var(--salt-glass);
+  border-color: var(--salt-line-strong);
+  box-shadow: inset 2px 0 0 var(--salt-brass);
+}
+.salt-inbox-row:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+.salt-inbox-row__main { flex: 1 1 10rem; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+.salt-inbox-row__side { flex: 0 0 auto; margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.salt-inbox-row__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--salt-space-2);
+  min-width: 0;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-md);
+  font-weight: 500;
+  color: var(--salt-salt);
+}
+.salt-inbox-row__what {
+  min-width: 0;
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-sm);
+  line-height: 1.45;
+  color: var(--salt-prose);
+  overflow-wrap: anywhere;
+}
+.salt-inbox-row__age {
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--salt-prose);
+  white-space: nowrap;
+}
+.salt-inbox-row__action {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--salt-brass);
+  white-space: nowrap;
+}
+.salt-inbox-row__action svg { width: 16px; height: 16px; flex: 0 0 auto; }
+@media (prefers-reduced-motion: reduce) {
+  .salt-inbox-row { transition: none; }
 }
 
 /* ---- Voice line ---- */
@@ -1929,7 +2207,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 .salt-swatch__meta { padding: var(--salt-space-3) 14px 14px; }
 .salt-swatch__name {
   font-family: var(--salt-font-mono);
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1938,13 +2216,13 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 }
 .salt-swatch__hex {
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--salt-mist);
 }
 .salt-swatch__role {
   font-family: var(--salt-font-display);
   font-size: var(--salt-text-sm);
-  color: var(--salt-mist);
+  color: var(--salt-prose);
   display: block;
   margin-top: 6px;
   line-height: 1.45;
@@ -1953,7 +2231,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 /* ---- Section header ---- */
 
 .salt-section-head { display: flex; flex-direction: column; gap: var(--salt-space-3); }
-.salt-section-head__lede { margin: 0; color: var(--salt-mist); max-width: 62ch; font-size: var(--salt-text-lg); }
+.salt-section-head__lede { margin: 0; color: var(--salt-prose); max-width: 62ch; font-size: var(--salt-text-lg); }
 
 /* ---- Ledger list ---- */
 
@@ -1969,7 +2247,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 .salt-ledger__flag {
   display: block;
   margin-top: 4px;
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--salt-mist);
@@ -2020,31 +2298,38 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 .salt-field__label,
 label.salt-field__label {
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--salt-copper);
 }
 .salt-field__input {
-  /* a well, not glass (principle 4), 16px so a phone never zooms on focus and 44px tall
-     (principle 7); the recipe said 15px on glass until 22 Sep 2026 */
+  /* a well, not glass (principle 4), never under 16px so a phone never zooms on focus, and 44px
+     tall (principle 7); the recipe said 15px on glass until 22 Sep 2026 */
   background: var(--salt-well);
-  border: 1px solid var(--salt-line-faint);
+  border: 1px solid var(--salt-edge-field);
   border-radius: var(--salt-radius-sm);
   padding: 12px 16px;
   min-height: var(--salt-tap);
   color: var(--salt-salt);
   font-family: var(--salt-font-display);
-  font-size: 16px;
+  font-size: max(16px, 1rem);
   line-height: 1.4;
   color-scheme: dark;
   width: 100%;
 }
-.salt-field__input::placeholder { color: var(--salt-mist); opacity: 0.7; }
-.salt-field__input:focus-visible { outline: none; border-color: var(--salt-brass); box-shadow: var(--salt-focus-ring); }
+/* a placeholder in mist at full strength, 5.3:1 in the well (24 Sep 2026): at 0.7 it was 3.1:1, and on the
+   thread's composer it is the only line saying what the field is for */
+.salt-field__input::placeholder { color: var(--salt-mist); opacity: 1; }
+/* FOCUS IS ITS OWN CHANGE OF 3:1 (24 Sep 2026): a 2px brass ring clear of the edge, as every other control in the
+   system has. Brass on the resting edge is 1.70:1 and the old 0.18 ring 1.29:1, so once the edge became
+   visible a focused field read as a resting one; the edge still lifts to brass beside the ring. */
+.salt-field__input:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; border-color: var(--salt-brass); }
 .salt-field__input--mono { font-family: var(--salt-font-mono); font-variant-numeric: tabular-nums; }
-.salt-field__input--error { border-color: rgba(184, 115, 51, 0.7); }
+/* a refused value DOUBLES the edge as well as recolouring it (24 Sep 2026): copper on the resting edge is 1.10:1,
+   so a hue alone told it from a valid field */
+.salt-field__input--error { border-color: var(--salt-copper); box-shadow: inset 0 0 0 1px var(--salt-copper); }
 .salt-field__input.salt-field__select {
   appearance: none;
   -webkit-appearance: none;
@@ -2055,8 +2340,243 @@ label.salt-field__label {
   padding-right: 40px;
 }
 .salt-field__select option { background: var(--salt-slate); color: var(--salt-salt); }
-.salt-field__hint { font-family: var(--salt-font-mono); font-size: 11px; color: var(--salt-mist); }
-.salt-field__error { font-family: var(--salt-font-mono); font-size: 11px; color: var(--salt-copper); }
+.salt-field__hint { font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); color: var(--salt-prose); }
+.salt-field__error { font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); color: var(--salt-copper); }
+
+/* ---- Option ---- */
+/* A choice that carries its figure: a size and its price, a way to pay (24 Sep 2026, the Counter's
+   redesign). It is a real radio, so the group is one tab stop, the arrows move the choice and a form
+   posts it with no script. The radio lies over its whole tile unseen, so the tile is the hit area
+   and never under 44px either way, and the face is the sibling after it, so the chosen state needs
+   no :has(). Glass faint on the field's own edge, 3:1; chosen, it is pressed with a brass edge twice
+   the hairline, and never filled: the one filled control on a screen is the pill that acts on the
+   choice. The legend is the customer's sentence case, not the desk's eyebrow. A tile a row by
+   default, two for sizes; a modifier, because the Counter's policy refuses a style attribute. */
+
+.salt-options { margin: 0; padding: 0; border: 0; min-width: 0; }
+.salt-options__legend {
+  padding: 0;
+  margin: 0 0 var(--salt-space-2);
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-md);
+  font-weight: 500;
+  color: var(--salt-prose);
+}
+.salt-options__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--salt-space-2); }
+.salt-options__grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.salt-option { position: relative; display: flex; min-width: 0; }
+.salt-option__input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.salt-option__face {
+  display: flex;
+  align-items: center;
+  gap: var(--salt-space-3);
+  width: 100%;
+  min-height: var(--salt-tap);
+  padding: var(--salt-space-3) var(--salt-space-4);
+  background: var(--salt-glass-faint);
+  border: 1px solid var(--salt-edge-field);
+  border-radius: var(--salt-radius-sm);
+  color: var(--salt-salt);
+  transition: border-color 0.16s, background 0.16s, box-shadow 0.16s;
+}
+.salt-option__lead { flex: 0 0 auto; display: inline-flex; color: var(--salt-brass); }
+.salt-option__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.salt-option__label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--salt-space-1) var(--salt-space-2);
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-md);
+  font-weight: 500;
+  line-height: 1.35;
+}
+.salt-option__figure { font-family: var(--salt-font-mono); font-size: var(--salt-text-md); font-variant-numeric: tabular-nums; line-height: 1.35; }
+.salt-option__detail { font-family: var(--salt-font-display); font-size: var(--salt-text-sm); line-height: 1.45; color: var(--salt-prose); }
+.salt-option__input:checked + .salt-option__face {
+  background: var(--salt-glass);
+  border-color: var(--salt-brass);
+  box-shadow: inset 0 0 0 1px var(--salt-brass);
+}
+.salt-option__input:focus-visible + .salt-option__face { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+/* not on offer: a dashed edge and the label stepped down to prose, never faded, so the line saying why
+   stays readable (a faded disabled control read 1.5:1 on the Counter, measured 23 Sep 2026) */
+.salt-option__input:disabled { cursor: not-allowed; }
+.salt-option__input:disabled + .salt-option__face { background: transparent; border-style: dashed; }
+.salt-option__input:disabled + .salt-option__face .salt-option__label,
+.salt-option__input:disabled + .salt-option__face .salt-option__figure { color: var(--salt-prose); font-weight: 400; }
+@media (hover: hover) {
+  .salt-option__input:not(:checked):not(:disabled):hover + .salt-option__face { background: var(--salt-glass-hover); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .salt-option__face { transition: none; }
+}
+
+/* ---- Code field ---- */
+/* An eight-symbol one-time code (24 Sep 2026, the Counter's redesign): a modifier on the field, so it
+   keeps the well, the 44px floor and the brass focus of the Fields recipe, which it needs beside it.
+   Large mono, grouped four and four by a real space the component writes, and centred: the tracking
+   after the last symbol is given back by the indent, or the code sits left of the centre. The size is
+   a multiple of a rem token, so a larger text size reaches it, and it is 30px at the default,
+   far above the 16px under which a phone zooms. It is also held to the field's width: the wrapper,
+   .salt-code, is a container, and eight symbols, their space, tracking and indent are 7.4em, so the size
+   never passes the width inside the padding over 7.5 and the last symbol is never cut (measured
+   24 Sep 2026: at 320 and 125% it was). The label, the hint and the refusal are the
+   customer's sentence case in the display face, never the desk's caps, and a refusal is alarm. */
+
+.salt-code { container-type: inline-size; }
+.salt-field__input--code {
+  min-height: 4rem;
+  border-color: var(--salt-edge-field);
+  font-family: var(--salt-font-mono);
+  font-size: max(16px, min(calc(var(--salt-text-xl) * 1.25), calc((100cqi - 2 * 16px - 2px) / 7.5)));
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  letter-spacing: 0.2em;
+  text-indent: 0.2em;
+  text-align: center;
+}
+.salt-field__input--code[aria-invalid="true"] { border-color: var(--salt-alarm); box-shadow: inset 0 0 0 1px var(--salt-alarm); }
+.salt-code__label { font-family: var(--salt-font-display); font-size: var(--salt-text-md); font-weight: 500; color: var(--salt-prose); }
+.salt-code__hint,
+.salt-code__error { font-family: var(--salt-font-display); font-size: var(--salt-text-sm); line-height: 1.45; color: var(--salt-prose); }
+.salt-code__error { color: var(--salt-alarm); }
+
+/* ---- Statement lines ---- */
+/* A statement row that stacks on a phone (24 Sep 2026, the Counter's redesign; the statement's table
+   was 340px at least and put the whole page sideways at 360). Stacked, the date and the state share a
+   line and the mark with its quantity and the amount share the next, in two equal halves, so a long
+   state wraps inside its half and a long note never widens the other side. From 37.5rem of the LIST'S
+   OWN width (a container query, so a narrow column on a desk still stacks, and a larger text size
+   stacks sooner) the same cells take one row of a table under heads that were until then read aloud
+   and not drawn. Mono with tabular figures; the state wraps and is never cut, clipped or ellipsed. A
+   cancelled line is struck through in prose rather than faded, which read 2:1 on the Counter. The
+   mark is brass and sized in em, so it follows the text. Its role is a table at every width. */
+
+.salt-lines { container: salt-lines / inline-size; font-family: var(--salt-font-mono); font-variant-numeric: tabular-nums; }
+.salt-lines__head {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.salt-lines__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: "date state" "what amount";
+  gap: var(--salt-space-1) var(--salt-space-4);
+  align-items: baseline;
+  padding: var(--salt-space-3) 0;
+  border-bottom: 1px solid var(--salt-line-faint);
+}
+.salt-lines__date { grid-area: date; font-size: var(--salt-text-sm); color: var(--salt-prose); }
+.salt-lines__what { grid-area: what; font-size: var(--salt-text-md); color: var(--salt-salt); }
+.salt-lines__amount { grid-area: amount; font-size: var(--salt-text-md); font-weight: 500; color: var(--salt-salt); text-align: right; }
+.salt-lines__state {
+  grid-area: state;
+  font-size: var(--salt-text-sm);
+  font-weight: 500;
+  color: var(--salt-prose);
+  text-align: right;
+  overflow-wrap: break-word;
+}
+.salt-lines__state--verdigris { color: var(--salt-verdigris); }
+.salt-lines__state--ember { color: var(--salt-ember); }
+.salt-lines__state--steel { color: var(--salt-steel); }
+.salt-lines__state--alarm { color: var(--salt-alarm); }
+.salt-lines__mark { display: inline-flex; vertical-align: -0.2em; margin-right: var(--salt-space-2); color: var(--salt-brass); }
+.salt-lines__mark svg { width: 1.2em; height: 1.2em; }
+.salt-lines__sub {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-sm);
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--salt-prose);
+}
+.salt-lines__row--cancelled .salt-lines__what,
+.salt-lines__row--cancelled .salt-lines__amount {
+  color: var(--salt-prose);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+@container salt-lines (min-width: 37.5rem) {
+  .salt-lines__head,
+  .salt-lines__row {
+    grid-template-columns: 7.5rem minmax(0, 1fr) 8rem minmax(0, 1fr);
+    grid-template-areas: "date what amount state";
+    column-gap: var(--salt-space-4);
+  }
+  .salt-lines__head {
+    position: static;
+    display: grid;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+    padding: 0 0 var(--salt-space-2);
+    border-bottom: 1px solid var(--salt-line);
+  }
+  .salt-lines__head > * {
+    font-family: var(--salt-font-display);
+    font-size: var(--salt-text-sm);
+    font-weight: 500;
+    color: var(--salt-prose);
+  }
+}
+
+/* ---- Ledger list, plain ---- */
+/* The customer's reading of the ledger list (24 Sep 2026, the Counter's redesign), a modifier that needs
+   the Ledger list recipe beside it. Letter-spaced capitals at 11 to 13px are the desk's and are hard on
+   older eyes, so the label is a sentence-case word in the display face at the reading size, in prose,
+   and the flag under a row is a quiet sentence rather than a caps line faded to .8. The value stays mono,
+   a step up to the reading size, set right, and lays out a mark or a Copy ghost beside its figure. */
+
+.salt-ledger--plain { font-size: var(--salt-text-md); }
+.salt-ledger--plain .salt-ledger__row { padding: var(--salt-space-3) 0; }
+/* centred, not on the baseline: a value that opens with a drawn mark takes its baseline from the mark's
+   foot, which set the label low (measured 24 Sep 2026), and a Copy ghost is 44px tall */
+.salt-ledger--plain .salt-ledger__line { align-items: center; }
+.salt-ledger--plain .salt-ledger__label {
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-md);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--salt-prose);
+}
+.salt-ledger--plain .salt-ledger__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--salt-space-2);
+  font-size: var(--salt-text-md);
+  text-align: right;
+}
+.salt-ledger--plain .salt-ledger__flag {
+  margin-top: var(--salt-space-1);
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-sm);
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--salt-prose);
+  opacity: 1;
+}
 
 /* ---- The material of a native control inside a scope (22 Sep 2026). A page that draws its own
    forms, with its own geometry and its figures in mono (the desk), puts .salt-fields on its body,
@@ -2064,13 +2584,13 @@ label.salt-field__label {
    the option colours, and nothing else: size, face and padding stay the page's. ---- */
 .salt-fields :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
   background-color: var(--salt-well);
-  border: 1px solid var(--salt-line-faint);
+  border: 1px solid var(--salt-edge-field);
   border-radius: var(--salt-radius-sm);
   color: var(--salt-salt);
   font-weight: 400;
 }
-.salt-fields :is(input, select, textarea):focus { border-color: var(--salt-brass); box-shadow: var(--salt-focus-ring); }
-.salt-fields input::placeholder { color: var(--salt-mist); opacity: 0.7; }
+.salt-fields :is(input, select, textarea):focus { border-color: var(--salt-brass); outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+.salt-fields input::placeholder { color: var(--salt-mist); opacity: 1; }
 .salt-fields select:hover { background-color: var(--salt-well-hover); }
 .salt-fields option, .salt-fields optgroup { background-color: var(--salt-slate); color: var(--salt-salt); }
 .salt-fields option:checked { background-color: var(--salt-slate-light); }
@@ -2141,7 +2661,7 @@ label.salt-field__label {
 .salt-nav__links { display: flex; gap: var(--salt-space-5); flex: 1; flex-wrap: wrap; }
 .salt-nav__link {
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -2164,7 +2684,7 @@ label.salt-field__label {
 .salt-footer__column { display: flex; flex-direction: column; gap: var(--salt-space-2); }
 .salt-footer__title {
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--salt-copper);
@@ -2172,7 +2692,7 @@ label.salt-field__label {
 }
 .salt-footer__link {
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--salt-mist);
@@ -2181,7 +2701,7 @@ label.salt-field__label {
 .salt-footer__link:hover { color: var(--salt-brass); }
 .salt-footer__line {
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--salt-mist);
@@ -2194,24 +2714,145 @@ label.salt-field__label {
 .salt-tabs { display: flex; gap: var(--salt-space-2); flex-wrap: wrap; }
 .salt-tabs__pill {
   font-family: var(--salt-font-mono);
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--salt-mist);
   background: transparent;
-  border: 1px solid var(--salt-line-faint);
+  border: 1px solid var(--salt-edge-field); /* a ghost's edge, 3:1, since 24 Sep 2026: the faint line was 1.1:1 */
   border-radius: var(--salt-radius-pill);
   padding: 8px 16px;
   cursor: pointer;
 }
-.salt-tabs__pill:hover { color: var(--salt-brass); border-color: var(--salt-line); }
+.salt-tabs__pill:hover { color: var(--salt-brass); border-color: var(--salt-brass); }
 /* The active pill is also read from ARIA, so a strip carrying role="tab" needs no second class and
    a consumer's older rule on its own state class cannot outrank it. */
-.salt-tabs__pill--active, .salt-tabs__pill[aria-selected="true"] { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-line); }
+.salt-tabs__pill--active, .salt-tabs__pill[aria-selected="true"] { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-brass); }
 .salt-tabs__pill--active:hover, .salt-tabs__pill[aria-selected="true"]:hover { color: var(--salt-salt); }
 .salt-tabs__pill:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
 .salt-tabs__count { color: var(--salt-copper); margin-left: 8px; }
+
+/* ---- Steps: where an order's GOODS are, and nothing else: Sent, Confirmed, Ready, then Collected or
+   Delivered. A bar a step: done in verdigris, now in brass, ahead a well with the field's edge. The step
+   now is read from aria-current="step" as well as its class. Money has its own lines and never rides
+   this track, so Paid can never run ahead of the goods. The names are words in sentence case, and the
+   track is its own container: where four names of nine letters no longer fit side by side (24em at the
+   names' own size, so a larger text size moves the break with it), the steps stack, each bar
+   standing to the left of its name. ---- */
+
+.salt-steps {
+  container: salt-steps / inline-size;
+  display: grid;
+  grid-template-columns: repeat(var(--salt-steps-n, 4), minmax(0, 1fr));
+  gap: 0 0.75em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-sm);
+  letter-spacing: 0;
+  line-height: 1.3;
+}
+.salt-steps__step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  min-width: 0;
+  color: var(--salt-mist-light);
+  overflow-wrap: anywhere;
+}
+.salt-steps__step::before {
+  content: '';
+  flex: none;
+  height: 4px;
+  border-radius: var(--salt-radius-pill);
+  background: var(--salt-well);
+  box-shadow: inset 0 0 0 1px var(--salt-edge-field);
+}
+.salt-steps__step--done::before { background: var(--salt-verdigris); box-shadow: none; }
+.salt-steps__step--now, .salt-steps__step[aria-current="step"] { color: var(--salt-salt); font-weight: 700; }
+.salt-steps__step--now::before, .salt-steps__step[aria-current="step"]::before { background: var(--salt-brass); box-shadow: none; }
+@container salt-steps (max-width: 24em) {
+  .salt-steps__step { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 0.75em; padding: 0.2em 0; }
+  .salt-steps__step::before { width: 4px; height: auto; align-self: stretch; margin: calc(1px - 0.2em) 0; }
+}
+
+/* ---- Bubble and thread: an order's thread, one line a bubble, and the composer under it. Mine stand
+   right on the lit slate, theirs left on glass with the brass hairline, so whoever reads the thread (the
+   customer on their page, he on the desk) reads their own lines as mine. Under a line of mine is where it
+   is, in words and a drawn mark: Sending, Sent (stored, never read: there are no read receipts), or Not
+   sent in alarm, with Tap to try again as a lit 44px ghost. A line of theirs not yet seen carries New, a
+   copper dot and the word. The composer is one row at the foot, the field and Send side by side and the
+   same height, Send at the thumb's end; it is a form, so Return sends. The sending mark turns, and stands
+   still under reduced motion. ---- */
+
+.salt-thread { display: flex; flex-direction: column; gap: var(--salt-space-3); min-width: 0; }
+.salt-thread__lines { display: flex; flex-direction: column; gap: var(--salt-space-2); }
+.salt-bubble {
+  max-width: 84%;
+  padding: 9px 13px 8px;
+  border: 1px solid var(--salt-line-faint);
+  border-radius: var(--salt-radius-md);
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-md);
+  line-height: 1.45;
+  color: var(--salt-salt);
+  overflow-wrap: anywhere;
+}
+.salt-bubble--mine { align-self: flex-end; background: var(--salt-slate-light); border-bottom-right-radius: 4px; }
+.salt-bubble--theirs { align-self: flex-start; background: var(--salt-glass); border-color: var(--salt-line); border-bottom-left-radius: 4px; }
+.salt-bubble--failed { border-color: var(--salt-alarm); }
+.salt-bubble__text { margin: 0; }
+.salt-bubble__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
+  margin: 3px 0 0;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  color: var(--salt-mist-light);
+}
+.salt-bubble__state { display: inline-flex; align-items: center; gap: 5px; }
+.salt-bubble__state::before { content: ''; flex: none; box-sizing: border-box; }
+.salt-bubble__state--sent::before {
+  width: 0.4em;
+  height: 0.75em;
+  margin: 0 0.2em 0.2em;
+  border: solid currentColor;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+.salt-bubble__state--sending::before {
+  width: 1em;
+  height: 1em;
+  border: 1.5px dotted currentColor;
+  border-radius: 50%;
+  animation: salt-bubble-turn 2.4s linear infinite;
+}
+.salt-bubble__state--failed { color: var(--salt-alarm); font-weight: 700; }
+.salt-bubble__state--failed::before {
+  width: 1.1em;
+  height: 1.1em;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  background:
+    linear-gradient(currentColor, currentColor) 50% 26% / 1.5px 36% no-repeat,
+    linear-gradient(currentColor, currentColor) 50% 76% / 1.5px 1.5px no-repeat;
+}
+.salt-bubble__new { display: inline-flex; align-items: center; gap: 6px; color: var(--salt-salt); letter-spacing: 0.14em; text-transform: uppercase; }
+.salt-bubble__new::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--salt-copper); box-shadow: 0 0 6px var(--salt-copper); }
+.salt-bubble__retry { margin-top: var(--salt-space-2); }
+.salt-composer { display: flex; align-items: stretch; gap: var(--salt-space-2); margin: 0; }
+.salt-composer__field { flex: 1 1 0; min-width: 0; }
+.salt-composer__send { flex: none; }
+@keyframes salt-bubble-turn { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) {
+  .salt-bubble__state--sending::before { animation: none; }
+}
 
 /* ---- Slides ---- */
 
@@ -2320,7 +2961,7 @@ label.salt-field__label {
   font-family: var(--salt-font-display);
   font-size: 12.5px;
   line-height: 1.6;
-  color: var(--salt-mist);
+  color: var(--salt-prose);
   margin: 0;
   max-width: 62ch;
 }
@@ -2370,7 +3011,7 @@ label.salt-field__label {
   min-width: var(--salt-tap);
   padding: 8px 16px;
   background: transparent;
-  border: 1px solid var(--salt-line-faint);
+  border: 1px solid var(--salt-edge-field);
   border-radius: var(--salt-radius-pill);
   color: var(--salt-ghost-tone);
   font-family: var(--salt-font-mono);
@@ -2382,12 +3023,14 @@ label.salt-field__label {
   text-decoration: none;
   transition: color 0.16s, border-color 0.16s, background 0.16s;
 }
-.salt-ghost:hover { color: var(--salt-brass); border-color: var(--salt-line); background: transparent; transform: none; }
-.salt-ghost--on, .salt-ghost[aria-pressed="true"] { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-line); }
-.salt-ghost--lit { --salt-ghost-tone: var(--salt-brass); border-color: var(--salt-line-strong); }
+.salt-ghost:hover { color: var(--salt-brass); border-color: var(--salt-brass); background: transparent; transform: none; }
+.salt-ghost--on, .salt-ghost[aria-pressed="true"] { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-brass); }
+.salt-ghost--lit { --salt-ghost-tone: var(--salt-brass); border-color: var(--salt-brass); }
 .salt-ghost--tight { min-width: 0; padding: 3px 9px; }
 .salt-ghost--sm { min-height: 32px; padding: 4px 12px; font-size: var(--salt-text-xs); }
-.salt-ghost--danger:hover { color: var(--salt-ember); border-color: rgba(212, 105, 76, 0.55); background: rgba(212, 105, 76, 0.08); }
+/* the danger ghost under a pointer lifts to full ember, above the resting edge as every lift is (24 Sep 2026: its
+   0.55 ember ring had come to 2.39:1, under the 4.81:1 edge it rose from) */
+.salt-ghost--danger:hover { color: var(--salt-ember); border-color: var(--salt-ember); }
 .salt-ghost:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
 .salt-ghost:disabled { opacity: 0.45; cursor: not-allowed; }
 
@@ -2433,7 +3076,7 @@ label.salt-field__label {
   display: block;
   margin-top: 6px;
   font-family: var(--salt-font-mono);
-  font-size: 24px;
+  font-size: var(--salt-text-xl);
   font-weight: 500;
   letter-spacing: 0;
   line-height: 1.1;
@@ -2442,13 +3085,13 @@ label.salt-field__label {
   overflow-wrap: anywhere;
 }
 @media (max-width: 560px) {
-  .salt-kpi__value { font-size: 20px; }
+  .salt-kpi__value { font-size: 1.25rem; }
 }
 .salt-kpi__note {
   display: block;
   margin-top: 4px;
   font-family: var(--salt-font-display);
-  font-size: 13.5px;
+  font-size: 0.84375rem;
   line-height: 1.45;
   color: var(--salt-mist-bright);
 }
@@ -2484,12 +3127,12 @@ label.salt-field__label {
   color: var(--salt-sev);
   padding-top: 3px;
 }
-.salt-action__title { font-family: var(--salt-font-display); font-size: 16px; font-weight: 400; line-height: 1.4; color: var(--salt-salt); }
-.salt-action__why { font-family: var(--salt-font-display); font-size: 13.5px; line-height: 1.55; color: var(--salt-mist-bright); margin-top: 4px; }
+.salt-action__title { font-family: var(--salt-font-display); font-size: 1rem; font-weight: 400; line-height: 1.4; color: var(--salt-salt); }
+.salt-action__why { font-family: var(--salt-font-display); font-size: 0.84375rem; line-height: 1.55; color: var(--salt-mist-bright); margin-top: 4px; }
 .salt-action__why b { color: var(--salt-salt); font-weight: 500; }
 .salt-action__money {
   font-family: var(--salt-font-mono);
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 500;
   color: var(--salt-salt);
   white-space: nowrap;
@@ -2497,7 +3140,7 @@ label.salt-field__label {
   font-variant-numeric: tabular-nums;
   padding-top: 2px;
 }
-.salt-action__money--nil { color: var(--salt-mist); font-weight: 400; font-size: 13px; }
+.salt-action__money--nil { color: var(--salt-mist); font-weight: 400; font-size: var(--salt-text-sm); }
 .salt-action__body { min-width: 0; }
 .salt-action__chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; grid-column: 2 / 3; }
 .salt-action__bar {
@@ -2534,7 +3177,7 @@ label.salt-field__label {
   gap: 9px;
   margin: 0 0 10px;
   font-family: var(--salt-font-mono);
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -2546,7 +3189,7 @@ label.salt-field__label {
 .salt-product--rice { --salt-hue: var(--salt-product-rice); }
 .salt-product--spare { --salt-hue: var(--salt-product-spare); }
 .salt-product__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--salt-hue); box-shadow: 0 0 8px -1px var(--salt-hue); flex: 0 0 auto; }
-.salt-product__sub { font-family: var(--salt-font-display); font-size: 11.5px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--salt-mist); }
+.salt-product__sub { font-family: var(--salt-font-display); font-size: 0.71875rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--salt-mist); }
 .salt-product__rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--salt-line), transparent); }
 
 /* ---- Product tag: the stamp on a row. The dot is an element and not a pseudo, because the desk
@@ -2582,7 +3225,7 @@ label.salt-field__label {
    for a threshold. The fill is set as --salt-fill on the element, 0 to 100. ---- */
 
 .salt-meter { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-.salt-meter__line { display: flex; justify-content: space-between; gap: 12px; font-family: var(--salt-font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--salt-mist); }
+.salt-meter__line { display: flex; justify-content: space-between; gap: 12px; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.1em; text-transform: uppercase; color: var(--salt-mist); }
 .salt-meter__line b { color: var(--salt-salt); font-weight: 500; }
 .salt-meter__track {
   position: relative;
@@ -2619,7 +3262,7 @@ label.salt-field__label {
 .salt-ageing__seg--1 { background: var(--salt-brass); }
 .salt-ageing__seg--2 { background: var(--salt-copper); }
 .salt-ageing__seg--3 { background: var(--salt-ember); }
-.salt-ageing__legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--salt-font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--salt-mist); font-variant-numeric: tabular-nums; }
+.salt-ageing__legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--salt-mist); font-variant-numeric: tabular-nums; }
 .salt-ageing__legend > span { display: inline-flex; align-items: center; gap: 7px; }
 .salt-ageing__legend b { color: var(--salt-salt); font-weight: 500; }
 .salt-ageing__swatch { width: 8px; height: 8px; border-radius: 2px; }
@@ -2639,10 +3282,10 @@ label.salt-field__label {
   gap: 14px;
 }
 .salt-approve__head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
-.salt-approve__party { font-family: var(--salt-font-mono); font-size: 15px; font-weight: 500; color: var(--salt-salt); }
-.salt-approve__entry { font-family: var(--salt-font-mono); font-size: 12px; color: var(--salt-mist); font-variant-numeric: tabular-nums; }
+.salt-approve__party { font-family: var(--salt-font-mono); font-size: var(--salt-text-md); font-weight: 500; color: var(--salt-salt); }
+.salt-approve__entry { font-family: var(--salt-font-mono); font-size: 0.75rem; color: var(--salt-mist); font-variant-numeric: tabular-nums; }
 .salt-approve__flags { display: flex; flex-wrap: wrap; gap: 6px; }
-.salt-approve__reason { font-family: var(--salt-font-display); font-size: 13px; line-height: 1.5; color: var(--salt-mist-light); margin: 0; }
+.salt-approve__reason { font-family: var(--salt-font-display); font-size: var(--salt-text-sm); line-height: 1.5; color: var(--salt-prose); margin: 0; }
 .salt-approve__actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .salt-approve--decided { opacity: 0.6; }
 
@@ -2650,7 +3293,7 @@ label.salt-field__label {
 
 .salt-insight {
   font-family: var(--salt-font-display);
-  font-size: 14.5px;
+  font-size: 0.90625rem;
   line-height: 1.6;
   color: var(--salt-salt);
   /* not a box: the material is stated in full, so an older rule underneath cannot give it one */
@@ -2677,7 +3320,7 @@ label.salt-field__label {
   align-items: center;
   gap: 7px;
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--salt-mist);
@@ -2739,24 +3382,24 @@ label.salt-field__label {
 .salt-plan > summary::marker { content: ''; }
 .salt-plan[open] > summary { border-bottom: 1px solid var(--salt-line-faint); }
 .salt-plan__id { font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.12em; color: var(--salt-mist); }
-.salt-plan__title { font-family: var(--salt-font-display); font-size: 14px; color: var(--salt-salt); }
-.salt-plan__money { grid-column: 3; font-family: var(--salt-font-mono); font-size: 12px; color: var(--salt-mist-light); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.salt-plan__title { font-family: var(--salt-font-display); font-size: 0.875rem; color: var(--salt-salt); }
+.salt-plan__money { grid-column: 3; font-family: var(--salt-font-mono); font-size: 0.75rem; color: var(--salt-mist-light); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .salt-plan__state { grid-column: 4; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.16em; text-transform: uppercase; color: var(--salt-mist); white-space: nowrap; }
 .salt-plan--late { border-color: var(--salt-line-strong); }
 .salt-plan--late .salt-plan__state { color: var(--salt-brass); }
 .salt-plan--done { opacity: 0.55; }
-.salt-plan__body { padding: 10px 14px 12px; font-family: var(--salt-font-display); font-size: 13px; line-height: 1.55; color: var(--salt-mist-light); }
+.salt-plan__body { padding: 10px 14px 12px; font-family: var(--salt-font-display); font-size: var(--salt-text-sm); line-height: 1.55; color: var(--salt-prose); }
 @media (max-width: 720px) { .salt-plan > summary { grid-template-columns: 40px minmax(0, 1fr); row-gap: 3px; } }
 
 /* ---- Journal entry: a dated note, linked to its row (synced to the desk 22 Sep 2026) ---- */
 
 .salt-journal { padding: 9px 2px; border-bottom: 1px solid var(--salt-line-faint); }
-.salt-journal__meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-family: var(--salt-font-mono); font-size: 11.5px; letter-spacing: 0.06em; color: var(--salt-mist); margin-bottom: 3px; }
+.salt-journal__meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-family: var(--salt-font-mono); font-size: 0.71875rem; letter-spacing: 0.06em; color: var(--salt-mist); margin-bottom: 3px; }
 .salt-journal__date { font-variant-numeric: tabular-nums; min-width: 78px; }
 .salt-journal__ref { color: var(--salt-brass); text-decoration: none; }
 a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2px; }
 .salt-journal__kind { margin-left: auto; text-transform: uppercase; letter-spacing: 0.14em; font-size: var(--salt-text-xs); font-weight: 500; }
-.salt-journal__text { font-family: var(--salt-font-display); font-size: 14.5px; line-height: 1.6; color: var(--salt-mist-bright); overflow-wrap: anywhere; }
+.salt-journal__text { font-family: var(--salt-font-display); font-size: 0.90625rem; line-height: 1.6; color: var(--salt-mist-bright); overflow-wrap: anywhere; }
 .salt-journal__text b { color: var(--salt-salt); font-weight: 500; }
 
 /* ---- Desk rail (synced to the desk 22 Sep 2026): the way between views. It stands beside the page
@@ -2786,7 +3429,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   .salt-rail { background: var(--salt-pane); }
 }
 .salt-rail__brand { display: flex; align-items: center; gap: 11px; margin: 0; padding: 0 4px 14px; border-bottom: 1px solid var(--salt-line-faint); }
-.salt-rail__brand .salt-title { font-size: 22px; letter-spacing: 0.04em; line-height: 1; }
+.salt-rail__brand .salt-title { font-size: 1.375rem; letter-spacing: 0.04em; line-height: 1; }
 .salt-rail__brand .salt-wordmark__subtitle { font-size: var(--salt-text-xs); letter-spacing: 0.24em; margin-top: 4px; }
 .salt-rail__group { display: flex; flex-direction: column; gap: 2px; margin: 0; }
 .salt-rail__label {
@@ -2812,7 +3455,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   background: none;
   color: var(--salt-mist-light);
   font-family: var(--salt-font-mono);
-  font-size: 13px;
+  font-size: var(--salt-text-sm);
   font-weight: 500;
   letter-spacing: 0.01em;
   text-transform: none;
@@ -2859,7 +3502,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   background: transparent;
   color: var(--salt-mist);
   font-family: var(--salt-font-mono);
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   font-weight: 500;
   letter-spacing: 0.01em;
   text-transform: none;
@@ -2870,7 +3513,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 .salt-rail__part--on, .salt-rail__part[aria-current="page"] { color: var(--salt-salt); background: rgba(255, 255, 255, 0.035); }
 .salt-rail__part--on::before, .salt-rail__part[aria-current="page"]::before { background: var(--salt-brass); }
 .salt-rail__foot { border-top: 1px solid var(--salt-line-faint); padding-top: 10px; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--salt-mist); }
-@media (max-width: 560px) { .salt-rail__tab { font-size: 13.5px; } }
+@media (max-width: 560px) { .salt-rail__tab { font-size: 0.84375rem; } }
 
 /* ---- Desk bar (synced to the desk 22 Sep 2026): one frame across the top in the rail's own
    material, glass with the hairline at the rail's offset, so the two read as one; the wordmark in
@@ -2900,7 +3543,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   align-self: flex-start;
   font-family: var(--salt-font-display);
   font-weight: 300;
-  font-size: 21px;
+  font-size: 1.3125rem;
   letter-spacing: 0.04em;
   line-height: 1;
   text-transform: none;
@@ -2932,7 +3575,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 @media (prefers-reduced-transparency: reduce) { .salt-deskbar { background: rgb(18, 15, 12); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 .salt-version {
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   font-weight: 500;
   letter-spacing: 0.14em;
   color: var(--salt-brass);
@@ -2945,9 +3588,11 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   white-space: nowrap;
   flex: 0 0 auto;
 }
-/* the orb: a 44px disc holding one glyph. Bare, as in the bar, it is a hairline on nothing; raised,
-   it floats over the page on the pane fill; lit, it is glass with a brass glow (back to top); on,
-   its ring is brass. */
+/* ---- Orb: a 44px disc holding one glyph, the desk bar's tools and the Sheet's close. Bare, as in the bar, it
+   is a hairline on nothing; raised, it floats over the page on the pane fill; lit, it is glass with a brass
+   glow (back to top); on, its ring is brass. Its own section since 24 Sep 2026, so a surface that carries
+   the Sheet carries its close without the Desk bar. ---- */
+
 .salt-orb {
   width: var(--salt-tap);
   height: var(--salt-tap);
@@ -2956,11 +3601,11 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   place-items: center;
   padding: 0;
   background: transparent;
-  border: 1px solid var(--salt-line-faint);
+  border: 1px solid var(--salt-edge-field); /* a ghost's edge, 3:1, since 24 Sep 2026: the faint line was 1.1:1 */
   color: var(--salt-brass);
   cursor: pointer;
 }
-.salt-orb:hover { background: var(--salt-glass-hover); border-color: var(--salt-line); }
+.salt-orb:hover { background: var(--salt-glass-hover); border-color: var(--salt-brass); }
 .salt-orb:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 3px; }
 .salt-orb--on { border-color: var(--salt-brass); box-shadow: 0 0 12px -4px var(--salt-brass); }
 .salt-orb--raised {
@@ -3698,6 +4343,50 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   .fintab.pgrid.fg-ph .pm,.fintab.pgrid.fg-ph .pq,.fintab.pgrid .pold{display:none;}
   .fintab.pgrid th,.fintab.pgrid td{padding-left:4px;padding-right:4px;font-size:12px;}
 }
+
+/* S11 11.4 (24 Sep 2026): SITE ORDERS OPENS ON WAITING ON YOU. The rows are the system's Inbox row and the
+   filters its tab strip; this is only the geometry they sit in. On the laptop the list and the open card
+   stand side by side; under 1080px the list comes first and a row opens its card, with the way back at its
+   head. A filter pill is 44px tall, the strip's own being 33. */
+.ordgrid{display:grid;gap:16px;min-width:0;}
+.ordlist,.ordpane{min-width:0;}
+.ordrows{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+.ordtabs .ordtab{min-height:var(--salt-tap);}
+.ordrest{margin-top:18px;}
+.ordnote{margin-top:14px;}
+.ordsaid:empty{display:none;}
+@media (min-width:1080px){
+  .ordgrid{grid-template-columns:minmax(0,360px) minmax(0,1fr);align-items:start;}
+  .ordback{display:none;}
+}
+@media (max-width:1079px){
+  .ordgrid.ord-open .ordlist{display:none;}
+  .ordgrid:not(.ord-open) .ordpane{display:none;}
+}
+/* S11 11.2: the order's card is the system's Approve card; its one line under the party is the entry as
+   ordered, in the figures' face */
+.ordline{margin:0;font-family:var(--salt-font-mono);font-size:14px;line-height:1.5;color:var(--salt-salt);}
+.ordpv .kpis{margin:0;}
+/* S11 11.3: the card's actions sit in a footer that stays in reach while the card scrolls under a thumb,
+   drawn to the card's edges on the opaque panel so nothing reads through it */
+.ordcard .ordfoot{position:sticky;bottom:0;z-index:2;margin:0 -20px -18px;padding:12px 20px calc(14px + env(safe-area-inset-bottom,0px));
+  background:var(--salt-panel);border-top:1px solid var(--salt-line-faint);border-radius:0 0 var(--salt-radius-lg) var(--salt-radius-lg);
+  display:flex;flex-direction:column;gap:8px;}
+/* the Approve card and a field are flex boxes, and a flex box outranks the browser's own rule for a hidden
+   element: a card, the Other charge, his own words and the stepper stay shut until they are opened */
+.ordcard[hidden],.ordcard [hidden]{display:none;}
+/* on the phone the footer clears the desk's two floating buttons, so Accept sits above them */
+@media (max-width:860px){.ordcard .ordfoot{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px));}}
+.ordfee{margin:0;}
+.ordother{margin-top:10px;}
+/* S11 11.6: the answer box and his quick replies under it */
+.ordreply{margin-top:4px;}
+.ordquick{display:flex;flex-wrap:wrap;gap:6px;}
+.ordquick:empty{display:none;}
+/* S11 11.9: Delivered part's stepper, a half unit either side of the figure */
+.ordpart{display:flex;flex-direction:column;gap:8px;}
+.ordstep{display:flex;align-items:stretch;gap:8px;}
+.ordstep .salt-field__input{flex:0 1 140px;text-align:center;}
 /* ==== END DESIGN desk ==== */
 </style>
 </head>
@@ -4195,6 +4884,10 @@ function txPaid(s){return (s.cash||0)+(s.settledRM||0);}
    the convention changed, a bare `total` would have been right by luck in twelve places and wrong
    in the twelve that meant what they owe. */
 function txGoods(s){return +(s.total||0);}
+/* S11 11.9: WHAT AN ORDER CLOSED SHORT COMES TO, the goods at the rate agreed pro rata to the units that went, to the sen.
+   The ONE copy: the desk's card shows it and the desk Worker sends it to the site as a stated figure, the site pricing
+   nothing. Whether a short close charges this or their card at the size that went awaits his word (24 Sep 2026). */
+function closeGoods(total,qty,n){return qty>0?+((+total||0)*n/qty).toFixed(2):0;}
 function txDeliv(s){return (s.deliveredQty||0)+(s.settledKg||0);}
 /* ====== COST IS ABSOLUTE (v496, his instruction of 05 Sep 2026) ================
    A sale's `cost` is the cost of the order in RM, stored as a person states it, and the cost
@@ -4995,7 +5688,7 @@ function renameInBook(book,pairs){
 }
 
 return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,
-        txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
+        txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,refundOnCancel:refundOnCancel,
@@ -5742,6 +6435,10 @@ const opening={
   "qty": 4.9,
   "costPerKg": 64
 };
+/* COUNTED AT v836 on 2026-09-24: the rice inventory held 94 against 95 on the roll, a drift of -1. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-09-24. <b>RICE COUNT ON 24 SEP 2026: 94 UNIT ON HAND AGAINST 95 ON THE BOOK.</b> A drift of -1 unit, and on his word a count wins over the ledger, so the stated rice inventory becomes 94 and COUNT_ON for rice moves to 24 Sep 2026. No party, no rate and no cash attach, and the row carries no cost, so the inventory's own rate is untouched. The floors move with the count: floor1 RM3.40 to RM4.08, floor2 RM6.80 to RM8.16, floor125 RM42.50 to RM51, ask at RM8 for 1 unit held, self use 0 to 1. The drafter flagged the gap as shrinkage across every unit sold, and flagged that 9 unit of this inventory is owed out and already paid for. The figures cover the shrinkage; the 9 unit owed out stays outstanding. */
+/* ROLLED AT v834 (oil): 50 unit from SP7-PUD on 2026-09-24, so 0 plus 50 is 50. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
+/* COUNTED AT v833 on 2026-09-24: the oil inventory held 0 against 35 on the roll, a drift of -35. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-09-24. <b>OIL COUNT DATED 24 SEP, NOTHING ON HAND AGAINST 35 ON THE BOOK.</b> Counted by hand at 0 unit on 24 Sep 2026, a drift of -35 against the book, with the previous count standing at 19 Sep 2026. A count wins over the ledger, so the stated oil inventory becomes 0 and COUNT_ON for oil moves to 24 Sep 2026. The drafter flagged the 35 unit as unaccounted for and booking as shrinkage across every unit sold; the dossier offers no cause and none is entered. Floors are unchanged at RM7.82 for 1 unit, RM15.65 for 2 unit and RM97.80 for 12.5 unit, ask RM10 for 1 unit, with self use moving from 79 to 104. No party, no cash, no cost on this row. */
+/* ROLLED AT v832 (oil): 10 unit to CC5-OKR on 2026-09-24, so 35 less 10 is 25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v755 (oil): 5 unit to CE4-CHE on 2026-09-19, so 40 less 5 is 35. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v713 (oil): 50 unit from SP7-PUD on 2026-09-18, so 10 plus 50 is 60. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v712 (oil): 10 unit to CH4-MAL on 2026-09-18, so 20 less 10 is 10. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
@@ -5762,7 +6459,7 @@ const PROD_OPENING={
   "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 35
+    "stated": 50
   },
   "candy": {
     "qty": 0,
@@ -5772,7 +6469,7 @@ const PROD_OPENING={
   "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": null
+    "stated": 94
   },
   "spare": {
     "qty": 0,
@@ -5850,9 +6547,9 @@ const PROD_OPENING={
 const STATED_STOCK=16.5;
 const COUNT_ON={
   "salt": "2026-09-23",
-  "oil": "2026-09-19",
+  "oil": "2026-09-24",
   "candy": null,
-  "rice": null,
+  "rice": "2026-09-24",
   "spare": null
 };
 /* EVERY COUNT, AS TAKEN (v504, 07 Sep 2026): product, date, the figure counted, what the roll said and the drift, negative when units are missing. The fold appends one line per count. A count with no drift bounds a cycle and charges nothing; the 24 Aug anchor is one. Seeded from the fold notes of v473 (02 Sep, 10.5 against 18.75), v489 (04 Sep, 9.8 entered net of a rolled sale, no drift) and v498 (06 Sep, 7 against 8.3); the oil count of 23 Aug has no recorded drift. The leak is charged from these: the units missing over the last three cycles, at landed, over the units sold in them. */
@@ -5870,7 +6567,9 @@ const COUNTS=[
   {"product":"salt","date":"2026-09-19","qty":0.9,"was":3.25,"drift":-2.35,"note":"Counted on his word of 19 Sep 2026. The stated position it is measured against is the one standing before this fold's corrections; the drift is what it is and is not explained away."},
   {"product":"oil","date":"2026-09-19","qty":40,"was":60,"drift":-20,"note":"Counted on his word of 19 Sep 2026: 40 unit of the 18 Sep lot remain. Oil is mostly for his own use, so the leak is high by design and is never costed into a sale."},
   {"product":"salt","date":"2026-09-21","qty":8,"was":11.15,"drift":-3.15},
-  {"product":"salt","date":"2026-09-23","qty":25,"was":26,"drift":-1}
+  {"product":"salt","date":"2026-09-23","qty":25,"was":26,"drift":-1},
+  {"product":"oil","date":"2026-09-24","qty":0,"was":35,"drift":-35},
+  {"product":"rice","date":"2026-09-24","qty":94,"was":95,"drift":-1}
 ];
 const purchases=[
   {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -5901,7 +6600,9 @@ const purchases=[
   {"qty":37.5,"total":1725,"cash":1725,"supplier":"SA5-BTR","freight":45,"status":"paid","date":"2026-09-19","receivedOn":"2026-09-20","receivedQty":37.5,"paidOn":"2026-09-19","note":"<b>SALT BUY DATED 19 SEP, PAID IN FULL, HALF THE LOT RECEIVED.</b> Booked to SA5-BTR, 37.5 unit for RM1,725, RM46 a unit, RM1,725 cash out on 19 Sep with RM45 freight, and 18.75 of the 37.5 unit moved on the day. The 20 Aug sheet has no 37.5 unit tier: the rate sits between RM48 on the 25 unit step, his word of 07 Sep, and RM44 on the 50 unit step. RM46 is under his median of RM56 and at the low end of his range of RM44 to RM64. Sixteen orders, on the roster, not an associate, nothing defaulted, RM3,100 outstanding before. The drafter flagged nothing. 18.75 unit stay outstanding on delivery.","rid":"p026","amend":[{"date":"2026-09-19","kind":"Fulfilment","cash":1725,"kg":18.75,"note":"as booked"},{"date":"2026-09-20","kind":"Fulfilment","cash":0,"kg":18.75,"note":"<b>FULFILMENT ON p026 DATED 20 SEP: THE SECOND HALF LANDS AND THE LOT CLOSES.</b> SA5-BTR's buy of 19 Sep, 37.5 unit for RM1,725 at RM46 a unit, paid in cash on the day with 18.75 unit moved then, takes the remaining 18.75 unit on 20 Sep. No money moves: RM0 and 18.75 unit against RM0 and 18.75 unit outstanding, leaving nothing open, as the drafter flagged. The rate sits under the party's RM50 median and inside their RM44 to RM64 range across 17 orders; RM3,100 was outstanding before this row. The row itself is applied by ovAmend, not recomputed here."}]},
   {"qty":30,"total":1140,"cash":1140,"handover":"delivered","supplier":"SM4-KEP","status":"paid","product":"candy","date":"2026-09-21","receivedOn":"2026-09-21","receivedQty":30,"paidOn":"2026-09-21","note":"<b>CORRECTION RECORDED 23 SEP AGAINST SM4-KEP LOT p027 OF 21 SEP.</b> That row was candy, 35 unit for RM1,140, RM32.57 a unit, paid in full and received in full on 21 Sep, delivered. The correction sets qty from 35 to 30 and receivedQty from 35 to 30. It moves no cash: RM1,140 stands as booked, and the shelf rolls back 5 unit to SM4-KEP as the difference the correction states. A purchase, so no rate test against the desk's floor or ask applies, and the cost is the inventory's own. SM4-KEP: 3 orders, median RM7.67, range RM3.20 to RM32.57, nothing outstanding, none on credit, no cap stated, on the roster, not an associate. Flagged: 30 unit is under the 35 unit already received; the figures do not answer why. Outstanding: the RM1,140 against 30 unit. <b>CANDY BUY DATED 21 SEP, PAID IN FULL AND RECEIVED IN FULL THE SAME DAY.</b> Booked to SM4-KEP, 35 unit for RM1,140, RM32.57 a unit, RM1,140 cash out and 35 unit received on 21 Sep, delivered, with no freight and no delivery charge beside it, so nothing on this row stays open. It is a purchase, so no floor or ask applies and the row carries no goods cost of its own. SM4-KEP: 1 order, median RM7.67, range RM7.67 to RM7.67, nothing outstanding, none on credit. The drafter raised no flag.","rid":"p027","mod":"corrected on 2026-09-23: qty 35 to 30; receivedQty 35 to 30","amend":[{"date":"2026-09-21","kind":"Fulfilment","cash":1140,"kg":30,"note":"as booked"},{"date":"2026-09-23","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION RECORDED 23 SEP AGAINST SM4-KEP LOT p027 OF 21 SEP.</b> That row was candy, 35 unit for RM1,140, RM32.57 a unit, paid in full and received in full on 21 Sep, delivered. The correction sets qty from 35 to 30 and receivedQty from 35 to 30. It moves no cash: RM1,140 stands as booked, and the shelf rolls back 5 unit to SM4-KEP as the difference the correction states. A purchase, so no rate test against the desk's floor or ask applies, and the cost is the inventory's own. SM4-KEP: 3 orders, median RM7.67, range RM3.20 to RM32.57, nothing outstanding, none on credit, no cap stated, on the roster, not an associate. Flagged: 30 unit is under the 35 unit already received; the figures do not answer why. Outstanding: the RM1,140 against 30 unit."}]},
   {"qty":100,"total":320,"cash":320,"handover":"collected","supplier":"SM4-KEP","freight":20,"status":"paid","product":"rice","date":"2026-09-21","receivedOn":"2026-09-21","receivedQty":100,"paidOn":"2026-09-21","note":"<b>RICE BUY DATED 21 SEP, PAID IN FULL, COLLECTED IN FULL.</b> Booked to SM4-KEP, 100 unit for RM320, RM3.20 a unit, with RM20 freight beside it, RM320 cash out and 100 unit received on 21 Sep, so nothing on this row stays open. A purchase, so no floor or ask is set against it and it carries no goods cost of its own. SM4-KEP: 1 order, median RM7.67, range RM7.67 to RM7.67, nothing outstanding, none on credit. The drafter raised no flag and nothing is left for a later fold.","rid":"p028"},
-  {"qty":25,"total":1400,"cash":1400,"handover":"delivered","supplier":"SA5-BTR","status":"paid","date":"2026-09-22","receivedOn":"2026-09-22","receivedQty":25,"note":"<b>CORRECTION ON P029 DATED 22 SEP: PRODUCT FROM RICE TO SALT.</b> Booked to SA5-BTR, the target lot is 25 unit for RM1,400, RM56 a unit, delivered, with RM1,240 of the RM1,400 paid and all 25 unit received on 22 Sep. The correction moves no cash and no stock: it changes what the row says about itself, and the row is not rewritten here. No cost attaches to it and the inventory's own rate is untouched. The drafter raised no flag. SA5-BTR: 18 orders, median RM56, range RM44 to RM64, RM3,260 outstanding before, nothing defaulted, on the roster. Outstanding after this row: the RM160 advance, taken up separately. <b>RICE BUY DATED 22 SEP, RECEIVED IN FULL, PAID SHORT.</b> Booked to SA5-BTR, 25 unit for RM1,400, RM56 a unit, delivered, with RM1,240 of the RM1,400 paid and all 25 unit received on 22 Sep, so the row sits open on an advance with RM160 unpaid. RM56 stands above the party median of RM50 and inside their RM44 to RM64 range. No floor or ask applies to a purchase and the row carries no goods cost of its own. SA5-BTR: 17 orders, RM3,100 outstanding before this row, nothing defaulted. No flag was raised.","rid":"p029","mod":"corrected on 2026-09-22: product rice to salt","amend":[{"date":"2026-09-22","kind":"Fulfilment","cash":1240,"kg":25,"note":"as booked"},{"date":"2026-09-22","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON P029 DATED 22 SEP: PRODUCT FROM RICE TO SALT.</b> Booked to SA5-BTR, the target lot is 25 unit for RM1,400, RM56 a unit, delivered, with RM1,240 of the RM1,400 paid and all 25 unit received on 22 Sep. The correction moves no cash and no stock: it changes what the row says about itself, and the row is not rewritten here. No cost attaches to it and the inventory's own rate is untouched. The drafter raised no flag. SA5-BTR: 18 orders, median RM56, range RM44 to RM64, RM3,260 outstanding before, nothing defaulted, on the roster. Outstanding after this row: the RM160 advance, taken up separately."},{"date":"2026-09-22","kind":"Fulfilment","cash":160,"kg":0,"note":"<b>FULFILMENT OF RM160 CASH ON P029, RECORDED 22 SEP.</b> Against SA5-BTR's lot of 25 unit for RM1,400 agreed 22 Sep, RM56 a unit, RM160 and no unit move on 22 Sep, against RM160 and no unit outstanding, leaving RM0 and no unit open. The row is not recomputed here. No cost attaches and the inventory's own rate does not move. Flagged: this settles the order in full, and the figures answer it exactly. SA5-BTR: 18 orders, median RM56, range RM44 to RM64, RM3,260 outstanding before, nothing defaulted, none on credit against a cap, on the roster."}],"paidOn":"2026-09-22"}
+  {"qty":25,"total":1400,"cash":1400,"handover":"delivered","supplier":"SA5-BTR","status":"paid","date":"2026-09-22","receivedOn":"2026-09-22","receivedQty":25,"note":"<b>CORRECTION ON P029 DATED 22 SEP: PRODUCT FROM RICE TO SALT.</b> Booked to SA5-BTR, the target lot is 25 unit for RM1,400, RM56 a unit, delivered, with RM1,240 of the RM1,400 paid and all 25 unit received on 22 Sep. The correction moves no cash and no stock: it changes what the row says about itself, and the row is not rewritten here. No cost attaches to it and the inventory's own rate is untouched. The drafter raised no flag. SA5-BTR: 18 orders, median RM56, range RM44 to RM64, RM3,260 outstanding before, nothing defaulted, on the roster. Outstanding after this row: the RM160 advance, taken up separately. <b>RICE BUY DATED 22 SEP, RECEIVED IN FULL, PAID SHORT.</b> Booked to SA5-BTR, 25 unit for RM1,400, RM56 a unit, delivered, with RM1,240 of the RM1,400 paid and all 25 unit received on 22 Sep, so the row sits open on an advance with RM160 unpaid. RM56 stands above the party median of RM50 and inside their RM44 to RM64 range. No floor or ask applies to a purchase and the row carries no goods cost of its own. SA5-BTR: 17 orders, RM3,100 outstanding before this row, nothing defaulted. No flag was raised.","rid":"p029","mod":"corrected on 2026-09-22: product rice to salt","amend":[{"date":"2026-09-22","kind":"Fulfilment","cash":1240,"kg":25,"note":"as booked"},{"date":"2026-09-22","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON P029 DATED 22 SEP: PRODUCT FROM RICE TO SALT.</b> Booked to SA5-BTR, the target lot is 25 unit for RM1,400, RM56 a unit, delivered, with RM1,240 of the RM1,400 paid and all 25 unit received on 22 Sep. The correction moves no cash and no stock: it changes what the row says about itself, and the row is not rewritten here. No cost attaches to it and the inventory's own rate is untouched. The drafter raised no flag. SA5-BTR: 18 orders, median RM56, range RM44 to RM64, RM3,260 outstanding before, nothing defaulted, on the roster. Outstanding after this row: the RM160 advance, taken up separately."},{"date":"2026-09-22","kind":"Fulfilment","cash":160,"kg":0,"note":"<b>FULFILMENT OF RM160 CASH ON P029, RECORDED 22 SEP.</b> Against SA5-BTR's lot of 25 unit for RM1,400 agreed 22 Sep, RM56 a unit, RM160 and no unit move on 22 Sep, against RM160 and no unit outstanding, leaving RM0 and no unit open. The row is not recomputed here. No cost attaches and the inventory's own rate does not move. Flagged: this settles the order in full, and the figures answer it exactly. SA5-BTR: 18 orders, median RM56, range RM44 to RM64, RM3,260 outstanding before, nothing defaulted, none on credit against a cap, on the roster."}],"paidOn":"2026-09-22"},
+  {"qty":50,"total":400,"cash":400,"supplier":"SP7-PUD","status":"paid","product":"oil","date":"2026-09-24","receivedOn":"2026-09-24","receivedQty":50,"paidOn":"2026-09-24","note":"<b>OIL PURCHASE DATED 24 SEP, PAID AND RECEIVED IN FULL THE SAME DAY.</b> BUY from SP7-PUD, 50 unit for RM400, RM8 a unit on the drafter's working, RM400 cash out and 50 unit received on 24 Sep, with no delivery and no freight, so nothing on this row stays open. His word of 23 Sep 2026 quotes 50 unit at RM380, RM7.60 a unit, and names that tier and the 10 unit tier at RM100 alone, so this total is RM20 above the quote. Across 5 orders his median rate is RM7.53 with a range of RM7 to RM7.67, nothing outstanding, none defaulted, no unit on credit. On the roster, not an associate. No flag was raised, and the dossier gives no reason for the gap to the quote.","rid":"p030"},
+  {"qty":15,"total":630,"cash":630,"supplier":"SM4-KEP","status":"paid","product":"candy","date":"2026-09-24","receivedOn":"2026-09-24","receivedQty":15,"paidOn":"2026-09-24","note":"<b>CANDY PURCHASE DATED 24 SEP, PAID AND RECEIVED IN FULL THE SAME DAY.</b> BUY from SM4-KEP, 15 unit for RM630, RM42 a unit on the drafter's working, RM630 cash out and 15 unit received on 24 Sep, with no delivery and no freight, so nothing stays open. His word of 23 Sep 2026 quotes 10 unit at RM55 and 20 unit at RM47, then 30 unit at RM38 and 50 unit at RM30; 15 unit falls between tiers, so no quoted rate answers this size. Across 3 orders his median rate is RM7.67 with a range of RM3.20 to RM38, nothing outstanding, none defaulted, no unit on credit. On the roster, not an associate. No flag was raised.","rid":"p031"}
 ];
 /* paidSplit: cash landed either side of the 28 Jul count; RM200 inside it, the rest after. Without the split the walk double-counted the RM200. */
 const sales=[
@@ -6086,7 +6787,7 @@ const sales=[
   {"rid":"s181","customer":"CE4-CHE","qty":1,"total":48,"cash":0,"goodwill":true,"delivery":0,"handover":"collected","date":"2026-09-18","deliveredQty":0,"note":"<b>AMENDED 20 SEP: SETTLED RM AND SETTLED UNITS BOTH BACK TO 0.</b> <b>CORRECTION ON S181 RECORDED 20 SEP: THE SETTLEMENT IS TAKEN BACK OFF.</b> CE4-CHE's row of 1 unit for RM48 dated 18 Sep, the unit promised free with the sale above it, has cash set to 0, delivered quantity to 0, settled RM from RM48 to 0 and settled units from unset to 0. No cash and no stock move. RM48 a unit is 47.8% under his median of RM92, inside his range of RM13 to RM115, and RM4.83 under the RM52.83 floor for this size. Twelve orders, on the roster, not an associate, RM278 outstanding before, no units on credit, nothing defaulted. Nothing has moved, so the row carries no cost yet. The drafter flagged the lot blend: the figures do not answer it. <b>ONE UNIT OF SALT PROMISED FREE TO CE4-CHE ON 18 SEP, WITH THE SALE ON the row above.</b> Nothing has moved, so it draws no stock and carries no cost yet; it settles as goodwill when the order is collected. Entered on his word of 19 Sep. <b>SETTLED BY GOODWILL FROM THE START, CORRECTED 19 SEP:</b> the row was entered with no settledRM because nothing had moved, and the other six giveaways on the book all carry it. Without it the row would have read RM48 OWED the moment the unit was handed over, so CE4-CHE would have entered the debtor list, counted against their own credit cap and joined the hourly chase, for a gift. A gift is settled when it is given, not when it is paid for.","settledRM":0,"settledKg":0,"mod":"corrected on 2026-09-20: settledRM 48 to 0; settledKg (unset) to 0","amend":[{"date":"2026-09-18","kind":"Fulfilment","cash":0,"kg":0,"note":"as booked"},{"date":"2026-09-20","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON S181 RECORDED 20 SEP: THE SETTLEMENT IS TAKEN BACK OFF.</b> CE4-CHE's row of 1 unit for RM48 dated 18 Sep, the unit promised free with the sale above it, has cash set to 0, delivered quantity to 0, settled RM from RM48 to 0 and settled units from unset to 0. No cash and no stock move. RM48 a unit is 47.8% under his median of RM92, inside his range of RM13 to RM115, and RM4.83 under the RM52.83 floor for this size. Twelve orders, on the roster, not an associate, RM278 outstanding before, no units on credit, nothing defaulted. Nothing has moved, so the row carries no cost yet. The drafter flagged the lot blend: the figures do not answer it."},{"date":"2026-09-20","kind":"Cancellation","cash":0,"kg":0,"note":"<b>CANCELLATION ON S181 RECORDED 20 SEP: THE ROW IS WITHDRAWN.</b> CE4-CHE's order of 1 unit for RM48 agreed 18 Sep, the unit promised free with the sale above it, is cancelled and counts nowhere: 0 unit moved, RM0 in, no floor or ask cited for this size. Twelve orders, on the roster, not an associate, median rate RM92 within a range of RM13 to RM115, RM278 outstanding before, no units on credit, nothing defaulted. Cost would have been the inventory's own RM48 a unit; no goods are drawn. The drafter flagged that a row which has moved cancels differently: the trail shows a fulfilment of RM0 and 0 unit on 18 Sep and a correction on 20 Sep, so settled cash and settled units are both 0 and nothing is clawed back. RM278 stays outstanding."}],"cancelled":true,"cancelledOn":"2026-09-20"},
   {"customer":"CF5-WM","qty":1,"total":100,"cash":100,"delivery":0,"handover":"collected","date":"2026-09-19","deliveredQty":1,"note":"<b>TOTAL RESTATED TO RM100, 19 SEP.</b> <b>CORRECTION ON S175 RECORDED 19 SEP: TOTAL FROM RM110 TO RM100.</b> The target is CF5-WM's SELL of 1 unit dated 19 Sep, collected, RM0 in and 0 unit moved, so the row is still pending and the change moves no cash and no stock. It follows the RM10 of carriage dropped from that row on 19 Sep, which had read the goods as RM100. At RM100 the row sits below CF5-WM's range of RM110 to RM115 and below the median of RM115. Three orders, not an associate but on the roster, RM110 outstanding before and 0 unit on credit, nothing defaulted. Cost is the inventory's own RM48 a unit. The full RM100 stays outstanding. <b>PENDING SALT SELL DATED 19 SEP, THE DAY IT WAS AGREED.</b> SELL to CF5-WM, 1 unit for RM110, collected, nothing paid and nothing moved, so the row draws no stock and books no revenue until something does. <b>CARRIAGE DROPPED 19 SEP:</b> the row carried RM10 of delivery on an order marked COLLECTED, which read the goods as RM100, RM10 under their own card. His rule of 19 Sep is that a collected order cannot carry a delivery charge at all, and this is the row that rule exists to stop. Nothing was paid or moved, so it is set right rather than corrected.","rid":"s175","mod":"corrected on 2026-09-19: total 110 to 100","amend":[{"date":"2026-09-19","kind":"Fulfilment","cash":0,"kg":0,"note":"as booked"},{"date":"2026-09-19","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON S175 RECORDED 19 SEP: TOTAL FROM RM110 TO RM100.</b> The target is CF5-WM's SELL of 1 unit dated 19 Sep, collected, RM0 in and 0 unit moved, so the row is still pending and the change moves no cash and no stock. It follows the RM10 of carriage dropped from that row on 19 Sep, which had read the goods as RM100. At RM100 the row sits below CF5-WM's range of RM110 to RM115 and below the median of RM115. Three orders, not an associate but on the roster, RM110 outstanding before and 0 unit on credit, nothing defaulted. Cost is the inventory's own RM48 a unit. The full RM100 stays outstanding."},{"date":"2026-09-19","kind":"Fulfilment","cash":100,"kg":1,"note":"<b>FULFILMENT ON S175 RECORDED 19 SEP: RM100 IN, 1 UNIT MOVED.</b> The target is CF5-WM's SELL of 1 unit for RM100 dated 19 Sep, collected, previously RM0 in and 0 unit moved after the correction that took the total from RM110 to RM100. RM100 and 1 unit go against RM100 and 1 unit outstanding, leaving RM0 and 0 unit. At RM100 the row sits at the foot of CF5-WM's range of RM100 to RM115 and below the median of RM115, and matches the board's two-unit ask of RM100 cited on s127. Three orders, not an associate but on the roster, RM100 outstanding before and 0 unit on credit, nothing defaulted. Cost is the inventory's own RM48 a unit. The drafter flagged that this settles the order in full, and the figures answer it: nothing is left outstanding.","cost":48}],"deliveredOn":"2026-09-19","paidOn":"2026-09-19","cost":48},
   {"customer":"CN6-WM","qty":2.5,"total":250,"cost":120,"cash":40,"handover":"collected","date":"2026-09-19","deliveredQty":2.5,"deliveredOn":"2026-09-19","note":"<b>SALT SELL DATED 19 SEP, DELIVERED IN FULL, RM40 IN.</b> CN6-WM takes 2.5 unit for RM250, RM100 a unit, collected, 2.5 unit moved on 19 Sep, RM40 paid and RM210 left. The total clears the RM134.61 floor for this size and sits under the RM360 ask. The rate is his median of RM100, inside his range of RM75 to RM110. Eight orders, an associate and on the roster, RM100 outstanding before and 1 unit on credit against a cap of 2 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, RM120 on the goods. The drafter flagged the advance against the cap: 1 unit already on credit plus 2.5 unit released goes beyond the 2 unit cap. RM210 stays outstanding.","rid":"s182"},
-  {"customer":"CS6-BS-R","qty":5,"total":420,"cash":435,"delivery":15,"date":"2026-09-19","deliveredQty":5,"note":"<b>CORRECTION ON s183 DATED 20 SEP: THE RM15 OF DELIVERY IS STILL OWED.</b> The fulfilment of 19 Sep took RM420 against RM435 owed, the goods and the delivery together, and the fold read the goods alone as paid in full; from v738 every reader takes both. RM15 stays outstanding, and nothing else on the row moves. <b>DELIVERY BOOKED 19 SEP: 5 UNIT HANDED OVER, STILL UNPAID.</b> <b>CORRECTION ON s183 DATED 19 SEP: THE SALT GOES OUT, THE MONEY STAYS OWED.</b> CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, booked as 20260919121050-zhim2a, has delivered quantity moved from 0 to 5, delivered on from unset to 19 Sep and handover from unset to delivered. No cash moves. The total still clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fifteen orders, on the roster, RM420 outstanding before, nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, a blend of lots. RM435 stays outstanding. <b>SALT SELL DATED 19 SEP, PENDING, NOTHING PAID AND NOTHING MOVED.</b> CS6-BS-R takes 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, ordered on the statements site as 20260919121050-zhim2a, acknowledged, on behalf of a friend, to be delivered. The total clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fourteen orders, on the roster, nothing outstanding before and nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, RM405 of goods. The drafter flagged the R2 booking, the 21.9% gap to CS6-BS's usual RM107.5, and that RM48 is a blend of lots. RM435 stays outstanding.","rid":"s183","deliveredOn":"2026-09-19","handover":"delivered","mod":"corrected on 2026-09-19: deliveredQty 0 to 5; deliveredOn (unset) to 2026-09-19; handover (unset) to delivered, then corrected on 2026-09-20: paidOn 2026-09-19 to (cleared)","amend":[{"date":"2026-09-19","kind":"Fulfilment","cash":0,"kg":5,"note":"as booked"},{"date":"2026-09-19","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON s183 DATED 19 SEP: THE SALT GOES OUT, THE MONEY STAYS OWED.</b> CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, booked as 20260919121050-zhim2a, has delivered quantity moved from 0 to 5, delivered on from unset to 19 Sep and handover from unset to delivered. No cash moves. The total still clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fifteen orders, on the roster, RM420 outstanding before, nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, a blend of lots. RM435 stays outstanding."},{"date":"2026-09-19","kind":"Fulfilment","cash":420,"kg":0,"note":"<b>PAID IN FULL 19 SEP: RM420 IN, NOTHING LEFT ON s183.</b> Fulfilment against CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM84 a unit. RM420 and 0 unit move on 19 Sep against RM420 and 0 unit outstanding, the goods having been handed over on the correction of the same day. The rate sits below his median of RM96.67 and inside his range of RM6 to RM120. Fifteen orders, on the roster, 5 unit on credit before, nothing defaulted. Cost is the inventory's own RM48 a unit, a blend of lots. The drafter flags this as settling the order in full, and the figures answer it: nothing is left outstanding."},{"date":"2026-09-20","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON s183 DATED 20 SEP: THE RM15 OF DELIVERY IS STILL OWED.</b> The fulfilment of 19 Sep took RM420 against RM435 owed, the goods and the delivery together, and the fold read the goods alone as paid in full; from v738 every reader takes both. RM15 stays outstanding, and nothing else on the row moves."},{"date":"2026-09-20","kind":"Fulfilment","cash":15,"kg":0,"note":"<b>FULFILMENT ON s183 DATED 20 SEP: THE RM15 OF DELIVERY IS PAID AND THE ORDER CLOSES.</b> CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM435 owed, was delivered in full and paid RM420 on the day, and the v738 correction held the carriage open. RM15 cash moves on 20 Sep against RM15 outstanding, leaving RM0 and 0 unit, which answers the drafter's settlement flag. The party has 15 orders, a median of RM96.67 and a range of RM6 to RM120, with RM15 outstanding before this and nothing defaulted. Nothing else on the row moves."}],"rev":"R2","paidOn":"2026-09-20"},
+  {"customer":"CS6-BS-R","qty":5,"total":420,"cash":435,"delivery":15,"date":"2026-09-19","deliveredQty":5,"note":"<b>CORRECTION ON s183 DATED 20 SEP: THE RM15 OF DELIVERY IS STILL OWED.</b> The fulfilment of 19 Sep took RM420 against RM435 owed, the goods and the delivery together, and the fold read the goods alone as paid in full; from v738 every reader takes both. RM15 stays outstanding, and nothing else on the row moves. <b>DELIVERY BOOKED 19 SEP: 5 UNIT HANDED OVER, STILL UNPAID.</b> <b>CORRECTION ON s183 DATED 19 SEP: THE SALT GOES OUT, THE MONEY STAYS OWED.</b> CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, booked as 20260919121050-zhim2a, has delivered quantity moved from 0 to 5, delivered on from unset to 19 Sep and handover from unset to delivered. No cash moves. The total still clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fifteen orders, on the roster, RM420 outstanding before, nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, a blend of lots. RM435 stays outstanding. <b>SALT SELL DATED 19 SEP, PENDING, NOTHING PAID AND NOTHING MOVED.</b> CS6-BS-R takes 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, ordered on the statements site as 20260919121050-zhim2a, acknowledged, on behalf of a friend, to be delivered. The total clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fourteen orders, on the roster, nothing outstanding before and nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, RM405 of goods. The drafter flagged the R2 booking, the 21.9% gap to CS6-BS's usual RM107.5, and that RM48 is a blend of lots. RM435 stays outstanding.","rid":"s183","deliveredOn":"2026-09-19","handover":"delivered","mod":"corrected on 2026-09-19: deliveredQty 0 to 5; deliveredOn (unset) to 2026-09-19; handover (unset) to delivered, then corrected on 2026-09-20: paidOn 2026-09-19 to (cleared), then corrected on 2026-09-24: cost (unset) to 240","amend":[{"date":"2026-09-19","kind":"Fulfilment","cash":0,"kg":5,"note":"as booked","cost":240},{"date":"2026-09-19","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON s183 DATED 19 SEP: THE SALT GOES OUT, THE MONEY STAYS OWED.</b> CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, booked as 20260919121050-zhim2a, has delivered quantity moved from 0 to 5, delivered on from unset to 19 Sep and handover from unset to delivered. No cash moves. The total still clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fifteen orders, on the roster, RM420 outstanding before, nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, a blend of lots. RM435 stays outstanding."},{"date":"2026-09-19","kind":"Fulfilment","cash":420,"kg":0,"note":"<b>PAID IN FULL 19 SEP: RM420 IN, NOTHING LEFT ON s183.</b> Fulfilment against CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM84 a unit. RM420 and 0 unit move on 19 Sep against RM420 and 0 unit outstanding, the goods having been handed over on the correction of the same day. The rate sits below his median of RM96.67 and inside his range of RM6 to RM120. Fifteen orders, on the roster, 5 unit on credit before, nothing defaulted. Cost is the inventory's own RM48 a unit, a blend of lots. The drafter flags this as settling the order in full, and the figures answer it: nothing is left outstanding."},{"date":"2026-09-20","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON s183 DATED 20 SEP: THE RM15 OF DELIVERY IS STILL OWED.</b> The fulfilment of 19 Sep took RM420 against RM435 owed, the goods and the delivery together, and the fold read the goods alone as paid in full; from v738 every reader takes both. RM15 stays outstanding, and nothing else on the row moves."},{"date":"2026-09-20","kind":"Fulfilment","cash":15,"kg":0,"note":"<b>FULFILMENT ON s183 DATED 20 SEP: THE RM15 OF DELIVERY IS PAID AND THE ORDER CLOSES.</b> CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM435 owed, was delivered in full and paid RM420 on the day, and the v738 correction held the carriage open. RM15 cash moves on 20 Sep against RM15 outstanding, leaving RM0 and 0 unit, which answers the drafter's settlement flag. The party has 15 orders, a median of RM96.67 and a range of RM6 to RM120, with RM15 outstanding before this and nothing defaulted. Nothing else on the row moves."},{"date":"2026-09-24","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON s183 DATED 24 SEP: COST SET TO RM240, 5 UNIT AT RM48.</b> The order went out by a correction raising the delivered quantity, which moved no units through the fold, so the shelf's cost was never written although the note of the day stated RM48 a unit. Without it the gross margin across every book read blank. Nothing else on the row moves."}],"rev":"R2","paidOn":"2026-09-20","cost":240},
   {"customer":"CZ5-TM","qty":1,"total":110,"cost":48,"cash":110,"handover":"collected","date":"2026-09-19","deliveredQty":1,"deliveredOn":"2026-09-19","paidOn":"2026-09-19","note":"<b>SALT SELL DATED 19 SEP: 1 UNIT AT RM110, PAID AND COLLECTED ON THE DAY.</b> Booked to CZ5-TM, 1 unit for RM110 with no delivery or freight, RM110 cash in and 1 unit handed over on 19 Sep, so nothing stays open. The rate clears the RM51.10 floor for that size and sits under the RM160 ask and the RM140 ceiling. Costed at RM48 a unit, the inventory's own rate, for RM62 on the goods at 56.4%. The drafter flags that RM48 is the average across more than one lot rate, not the lot drawn, and that CZ5-TM has no committed salt order, so there is no rate of theirs to test this against. Credit cap 1, nothing on credit.","rid":"s184"},
   {"customer":"CE4-CHE","qty":2.5,"total":250,"cost":120,"cash":250,"handover":"collected","date":"2026-09-19","deliveredQty":2.5,"deliveredOn":"2026-09-19","paidOn":"2026-09-19","note":"<b>SALT SELL DATED 19 SEP: 2.5 UNIT FOR RM250, PAID AND COLLECTED ON THE DAY.</b> Booked to CE4-CHE, 2.5 unit at RM100 a unit, no delivery or freight, RM250 cash in and 2.5 unit handed over on 19 Sep, so nothing stays open. The total clears the RM127.47 floor for 2.5 unit and sits under the RM360 ask and the RM350 ceiling. Costed at RM48 a unit, the inventory's own rate, RM130 on the goods at 52%. The drafter flags that RM48 is the average across more than one lot rate, not the lot drawn; that blend is not shown here. Median RM92 a unit over 12 orders, range RM13 to RM107.50, nothing outstanding, credit cap 1 and nothing on credit.","rid":"s185"},
   {"customer":"CE4-CHE","qty":5,"total":50,"cost":38,"cash":50,"handover":"collected","product":"oil","date":"2026-09-19","deliveredQty":5,"deliveredOn":"2026-09-19","paidOn":"2026-09-19","note":"<b>OIL SELL DATED 19 SEP: 5 UNIT FOR RM50, PAID AND COLLECTED ON THE DAY.</b> Booked to CE4-CHE, 5 unit at RM10 a unit, no delivery or freight, RM50 cash in and 5 unit handed over on 19 Sep, so nothing stays open. The total clears the RM39.12 floor for 5 unit but falls under the RM60 ask, well under the RM120 ceiling. Costed at RM7.60 a unit, the inventory's own rate, RM12 on the goods at 24%. This party's median is RM92 a unit over 12 orders, range RM13 to RM107.50, with the oil rows at the low end. No flags from the drafter, nothing outstanding, credit cap 10 and nothing on credit.","rid":"s186"},
@@ -6098,9 +6799,12 @@ const sales=[
   {"customer":"CJ2-KUC","qty":16,"total":760,"cost":608,"cash":760,"handover":"collected","product":"candy","date":"2026-09-22","deliveredQty":16,"deliveredOn":"2026-09-22","paidOn":"2026-09-22","note":"<b>CANDY SELL DATED 22 SEP, COLLECTED AND PAID IN FULL ON THE DAY.</b> CJ2-TBC took 16 unit for RM760, RM47.50 a unit, RM760 cash in and 16 unit collected on 22 Sep, so nothing stays open. Costed at RM38 a unit from the desk's own inventory cost, RM608 on the goods, leaving RM152 at 20%. The floor for 16 unit is RM608 and the ask RM880, so this clears the floor but sits under the ask, with the ceiling at RM1,824. Flagged: CJ2-TBC has no committed candy order on the book, so there is no rate of theirs to compare; the figures do not answer it. CJ2-TBC: no prior orders, nothing outstanding, none on credit against a cap of 1.","rid":"s192"},
   {"customer":"CR3-DAM","qty":1,"total":90,"cost":48,"cash":0,"handover":"collected","date":"2026-09-22","deliveredQty":1,"deliveredOn":"2026-09-22","note":"<b>SALT SELL DATED 22 SEP, COLLECTED IN FULL, NOT A SEN PAID.</b> CR3-DAM took 1 unit for RM90, collected on 22 Sep on his word, RM0 of RM90 in, so the full RM90 stands open as an advance. Costed at RM48 a unit from the desk's own inventory cost, RM42 on the goods at 46.7%. The rate clears the floor of RM57.49 and sits under the ask of RM140 and the ceiling of RM160. CR3-DAM: 15 orders, median RM80, range RM80 to RM92.50, RM105 outstanding before this and 1.27 unit on credit against a cap of 2. Flagged: 12.5% above his median, the RM48 is an inventory average across more than one lot rate, and the advance needs the cap checked. The blend is not resolved here.","rid":"s193"},
   {"customer":"CM4-TO","qty":12.5,"total":750,"cost":600,"cash":750,"handover":"collected","date":"2026-09-23","deliveredQty":3,"deliveredOn":"2026-09-23","paidOn":"2026-09-23","note":"<b>SALT SELL DATED 23 SEP, PAID IN FULL, 3 OF 12.5 UNIT COLLECTED.</b> CM3-OUG bought 12.5 unit for RM750, RM60 a unit, RM750 cash in on 23 Sep with 3 unit collected on his word, so 9.5 unit remain to be handed over and no money is outstanding. Costed at RM48 a unit from the desk's own inventory cost, RM600 on the goods, RM150 at 20%. The RM750 clears the floor of RM718.68 and sits under the ask of RM1,090 and the ceiling of RM1,910. CM3-OUG: 3 orders, median RM52, range RM48 to RM65, nothing outstanding, none on credit against a cap of 1. Flagged: 15.4% above his median, answered by the figures; the RM48 blend is not.","rid":"s194"},
-  {"customer":"CM4-TO","qty":10,"total":50,"cost":32,"cash":50,"handover":"collected","product":"rice","date":"2026-09-23","deliveredQty":10,"deliveredOn":"2026-09-23","paidOn":"2026-09-23","note":"<b>RICE SELL DATED 23 SEP, COLLECTED AND PAID IN FULL ON THE SAME VISIT AS THE SALT.</b> CM3-OUG took 10 unit for RM50, RM5 a unit, RM50 cash in and 10 unit collected on 23 Sep on his word, so nothing stays open. Costed at RM3.20 a unit from the desk's own inventory cost, RM32 on the goods, RM18 at 36%. The RM50 clears the floor of RM34 and sits under the ask of RM60, with the ceiling at RM102. Flagged: CM3-OUG has no committed rice order on the book, so there is no rate of theirs to compare; the figures do not answer it. CM3-OUG: 3 orders, median RM52, range RM48 to RM65, nothing outstanding, none on credit against a cap of 1.","rid":"s195"},
-  {"customer":"CS6-PER","qty":2,"total":200,"cash":100,"date":"2026-09-23","deliveredQty":2,"note":"<b>CORRECTION ON S196: RM100 RECORDED SETTLED IN KIND BY REWARD, 1 UNIT.</b> Against CS6-PER's order of 2 unit for RM200 dated 23 Sep 2026, RM70 cash, collected. Sets settledRM from unset to RM100, rebate from false to true and rebateKg from unset to 1 unit. It moves no cash and no stock: it changes what the row says about itself. Flagged: CS6-PER pays about RM80 a unit across 8 orders and this reads RM100, 25% above; RM48 a unit is the inventory average across more than one lot rate, and the blend is not answered; the row is an advance with RM30 unpaid against the credit cap. CS6-PER shows a median rate of RM85.52, a range of RM11 to RM100, RM130 outstanding before this and 1.3 unit on credit, associate and on the roster, nothing defaulted. The RM30 stays open. <b>CORRECTION ON S196: 2 UNIT RECORDED COLLECTED ON 24 SEP.</b> Sets deliveredQty from 0 to 2, deliveredOn from unset to 24 Sep 2026 and handover from unset to collected, on the note that 2 unit was collected for order 20260923131530-semgxg. It moves no cash: it changes what the row says about itself, and the shelf rolls out by the 2 unit the correction states. Costed at RM48 a unit, the inventory's own average, with replacement at RM49.43. Flagged: RM100 a unit sits 25% above the roughly RM80 CS6-PER pays across 7 orders; RM48 is a blend across more than one lot rate; and this is an advance, 2 unit out with RM200 unpaid against a cap. The figures answer none of the three. <b>SALT SELL DATED 23 SEP, ACKNOWLEDGED AND PENDING: NOTHING PAID AND NOTHING HANDED OVER.</b> Booked to CS6-PER, 2 unit for RM200, RM100 a unit, from site order 20260923131530-semgxg, to collect, so the whole RM200 and the whole 2 unit stay open. Costed at RM48 a unit from the desk's own inventory cost, RM104 on the goods at 52%. The RM200 clears the floor of RM113.98 and sits under the ask of RM270, with the ceiling at RM310. Flagged: CS6-PER usually pays about RM80 a unit across 7 orders, 25% below this, and the RM48 is an inventory average across more than one lot rate; the figures do not answer the blend. CS6-PER: 7 orders, median RM70.40, range RM11 to RM100, nothing outstanding, none on credit against a cap of 2.","rid":"s196","amend":[{"date":"2026-09-23","kind":"Fulfilment","cash":0,"kg":0,"note":"as booked"},{"date":"2026-09-24","kind":"Fulfilment","cash":70,"kg":0,"note":"<b>FULFILMENT ON S196 DATED 24 SEP: RM70 IN, NO UNIT MOVED.</b> Against CS6-PER's order of 2 unit for RM200 agreed 23 Sep, RM70 arrives on 24 Sep, paid on the statements site, order 20260923131530-semgxg, by qr via ryt, against RM200 and 2 unit outstanding. That leaves RM130 and 2 unit open on the row. The row itself is not recomputed here: the master applies the fulfilment. CS6-PER is an associate and on the roster, 8 orders, median rate RM85.52, range RM11 to RM100, RM200 outstanding before this, none on credit and nothing defaulted. The drafter raised no flag on this one."},{"date":"2026-09-24","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON S196: 2 UNIT RECORDED COLLECTED ON 24 SEP.</b> Sets deliveredQty from 0 to 2, deliveredOn from unset to 24 Sep 2026 and handover from unset to collected, on the note that 2 unit was collected for order 20260923131530-semgxg. It moves no cash: it changes what the row says about itself, and the shelf rolls out by the 2 unit the correction states. Costed at RM48 a unit, the inventory's own average, with replacement at RM49.43. Flagged: RM100 a unit sits 25% above the roughly RM80 CS6-PER pays across 7 orders; RM48 is a blend across more than one lot rate; and this is an advance, 2 unit out with RM200 unpaid against a cap. The figures answer none of the three."},{"date":"2026-09-24","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON S196: RM100 RECORDED SETTLED IN KIND BY REWARD, 1 UNIT.</b> Against CS6-PER's order of 2 unit for RM200 dated 23 Sep 2026, RM70 cash, collected. Sets settledRM from unset to RM100, rebate from false to true and rebateKg from unset to 1 unit. It moves no cash and no stock: it changes what the row says about itself. Flagged: CS6-PER pays about RM80 a unit across 8 orders and this reads RM100, 25% above; RM48 a unit is the inventory average across more than one lot rate, and the blend is not answered; the row is an advance with RM30 unpaid against the credit cap. CS6-PER shows a median rate of RM85.52, a range of RM11 to RM100, RM130 outstanding before this and 1.3 unit on credit, associate and on the roster, nothing defaulted. The RM30 stays open."},{"date":"2026-09-24","kind":"Fulfilment","cash":30,"kg":0,"note":"<b>FULFILMENT DATED 24 SEP ON S196: RM30 CASH, THE ORDER NOW SETTLED IN FULL.</b> Against CS6-PER's order of 2 unit for RM200 dated 23 Sep 2026, RM30 and 0 unit move on 24 Sep 2026 against RM30 and 0 unit outstanding, leaving RM0 and 0 unit open. The order already shows RM70 cash, 2 unit collected and a correction recording RM100 settled in kind by reward, 1 unit. No goods move, so the row carries no cost of its own. Flagged as settling the order in full and the figures answer it. CS6-PER: 8 orders, median rate RM70.4, range RM11 to RM100, nothing outstanding before, none on credit, an associate and on the roster."}],"deliveredOn":"2026-09-24","handover":"collected","mod":"corrected on 2026-09-24: deliveredQty 0 to 2; deliveredOn (unset) to 2026-09-24; handover (unset) to collected, then corrected on 2026-09-24: settledRM (unset) to 100; rebateKg (unset) to 1; rebate (unset) to true","settledRM":100,"rebateKg":1,"rebate":true},
-  {"customer":"CA6-CYB","qty":2.5,"total":250,"cost":120,"cash":250,"handover":"collected","date":"2026-09-23","deliveredQty":2.5,"deliveredOn":"2026-09-23","paidOn":"2026-09-23","ref":"CM4-TO","refKg":2.5,"note":"<b>SALT SELL DATED 23 SEP, PAID AND COLLECTED IN FULL: NOTHING LEFT OPEN.</b> Booked to CA6-CYB, 2.5 unit for RM250, RM250 cash received on 23 Sep 2026 and 2.5 unit handed over the same day, referred by CM4-TO on stream R3. Costed at RM48 a unit from the desk's own inventory cost, RM120 on the goods, though the drafter's working reads RM130 at 52%. The RM250 clears the floor of RM142.48 and sits under the ask of RM330, with the ceiling at RM390. Flagged: the RM48 is an inventory average across more than one lot rate and the figures do not answer the blend; CM4-TO is on the roster but not listed as an associate; CA6-CYB has 0 orders, no median rate, no range, nothing outstanding and none on credit against a cap of 1.","rid":"s197"}
+  {"customer":"CM4-TO","qty":10,"total":50,"cost":32,"cash":50,"handover":"collected","product":"rice","date":"2026-09-23","deliveredQty":1,"deliveredOn":"2026-09-23","paidOn":"2026-09-23","note":"<b>CORRECTION DATED 24 SEP ON S195, DELIVERED QUANTITY CUT FROM 10 TO 1.</b> The target is CM4-TO's rice sell of 23 Sep 2026, 10 unit for RM50 at RM5 a unit, RM50 cash in and paid on the day. The correction moves no cash: it rolls 9 unit back from CM4-TO, the difference it states, and leaves 1 unit handed over. Across 5 orders their median rate is RM52 with a range of RM5 to RM65, nothing outstanding, none defaulted and no unit on credit. On the roster, not an associate. No flag was raised. The 9.5 unit of salt owed out on s194 stays open. <b>RICE SELL DATED 23 SEP, COLLECTED AND PAID IN FULL ON THE SAME VISIT AS THE SALT.</b> CM3-OUG took 10 unit for RM50, RM5 a unit, RM50 cash in and 10 unit collected on 23 Sep on his word, so nothing stays open. Costed at RM3.20 a unit from the desk's own inventory cost, RM32 on the goods, RM18 at 36%. The RM50 clears the floor of RM34 and sits under the ask of RM60, with the ceiling at RM102. Flagged: CM3-OUG has no committed rice order on the book, so there is no rate of theirs to compare; the figures do not answer it. CM3-OUG: 3 orders, median RM52, range RM48 to RM65, nothing outstanding, none on credit against a cap of 1.","rid":"s195","mod":"corrected on 2026-09-24: deliveredQty 10 to 1","amend":[{"date":"2026-09-23","kind":"Fulfilment","cash":50,"kg":1,"note":"as booked"},{"date":"2026-09-24","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION DATED 24 SEP ON S195, DELIVERED QUANTITY CUT FROM 10 TO 1.</b> The target is CM4-TO's rice sell of 23 Sep 2026, 10 unit for RM50 at RM5 a unit, RM50 cash in and paid on the day. The correction moves no cash: it rolls 9 unit back from CM4-TO, the difference it states, and leaves 1 unit handed over. Across 5 orders their median rate is RM52 with a range of RM5 to RM65, nothing outstanding, none defaulted and no unit on credit. On the roster, not an associate. No flag was raised. The 9.5 unit of salt owed out on s194 stays open."}]},
+  {"customer":"CS6-PER","qty":2,"total":200,"cash":100,"date":"2026-09-23","deliveredQty":2,"note":"<b>CORRECTION ON S196: RM100 RECORDED SETTLED IN KIND BY REWARD, 1 UNIT.</b> Against CS6-PER's order of 2 unit for RM200 dated 23 Sep 2026, RM70 cash, collected. Sets settledRM from unset to RM100, rebate from false to true and rebateKg from unset to 1 unit. It moves no cash and no stock: it changes what the row says about itself. Flagged: CS6-PER pays about RM80 a unit across 8 orders and this reads RM100, 25% above; RM48 a unit is the inventory average across more than one lot rate, and the blend is not answered; the row is an advance with RM30 unpaid against the credit cap. CS6-PER shows a median rate of RM85.52, a range of RM11 to RM100, RM130 outstanding before this and 1.3 unit on credit, associate and on the roster, nothing defaulted. The RM30 stays open. <b>CORRECTION ON S196: 2 UNIT RECORDED COLLECTED ON 24 SEP.</b> Sets deliveredQty from 0 to 2, deliveredOn from unset to 24 Sep 2026 and handover from unset to collected, on the note that 2 unit was collected for order 20260923131530-semgxg. It moves no cash: it changes what the row says about itself, and the shelf rolls out by the 2 unit the correction states. Costed at RM48 a unit, the inventory's own average, with replacement at RM49.43. Flagged: RM100 a unit sits 25% above the roughly RM80 CS6-PER pays across 7 orders; RM48 is a blend across more than one lot rate; and this is an advance, 2 unit out with RM200 unpaid against a cap. The figures answer none of the three. <b>SALT SELL DATED 23 SEP, ACKNOWLEDGED AND PENDING: NOTHING PAID AND NOTHING HANDED OVER.</b> Booked to CS6-PER, 2 unit for RM200, RM100 a unit, from site order 20260923131530-semgxg, to collect, so the whole RM200 and the whole 2 unit stay open. Costed at RM48 a unit from the desk's own inventory cost, RM104 on the goods at 52%. The RM200 clears the floor of RM113.98 and sits under the ask of RM270, with the ceiling at RM310. Flagged: CS6-PER usually pays about RM80 a unit across 7 orders, 25% below this, and the RM48 is an inventory average across more than one lot rate; the figures do not answer the blend. CS6-PER: 7 orders, median RM70.40, range RM11 to RM100, nothing outstanding, none on credit against a cap of 2.","rid":"s196","amend":[{"date":"2026-09-23","kind":"Fulfilment","cash":0,"kg":0,"note":"as booked"},{"date":"2026-09-24","kind":"Fulfilment","cash":70,"kg":0,"note":"<b>FULFILMENT ON S196 DATED 24 SEP: RM70 IN, NO UNIT MOVED.</b> Against CS6-PER's order of 2 unit for RM200 agreed 23 Sep, RM70 arrives on 24 Sep, paid on the statements site, order 20260923131530-semgxg, by qr via ryt, against RM200 and 2 unit outstanding. That leaves RM130 and 2 unit open on the row. The row itself is not recomputed here: the master applies the fulfilment. CS6-PER is an associate and on the roster, 8 orders, median rate RM85.52, range RM11 to RM100, RM200 outstanding before this, none on credit and nothing defaulted. The drafter raised no flag on this one."},{"date":"2026-09-24","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON S196: 2 UNIT RECORDED COLLECTED ON 24 SEP.</b> Sets deliveredQty from 0 to 2, deliveredOn from unset to 24 Sep 2026 and handover from unset to collected, on the note that 2 unit was collected for order 20260923131530-semgxg. It moves no cash: it changes what the row says about itself, and the shelf rolls out by the 2 unit the correction states. Costed at RM48 a unit, the inventory's own average, with replacement at RM49.43. Flagged: RM100 a unit sits 25% above the roughly RM80 CS6-PER pays across 7 orders; RM48 is a blend across more than one lot rate; and this is an advance, 2 unit out with RM200 unpaid against a cap. The figures answer none of the three."},{"date":"2026-09-24","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON S196: RM100 RECORDED SETTLED IN KIND BY REWARD, 1 UNIT.</b> Against CS6-PER's order of 2 unit for RM200 dated 23 Sep 2026, RM70 cash, collected. Sets settledRM from unset to RM100, rebate from false to true and rebateKg from unset to 1 unit. It moves no cash and no stock: it changes what the row says about itself. Flagged: CS6-PER pays about RM80 a unit across 8 orders and this reads RM100, 25% above; RM48 a unit is the inventory average across more than one lot rate, and the blend is not answered; the row is an advance with RM30 unpaid against the credit cap. CS6-PER shows a median rate of RM85.52, a range of RM11 to RM100, RM130 outstanding before this and 1.3 unit on credit, associate and on the roster, nothing defaulted. The RM30 stays open."},{"date":"2026-09-24","kind":"Fulfilment","cash":30,"kg":0,"note":"<b>FULFILMENT DATED 24 SEP ON S196: RM30 CASH, THE ORDER NOW SETTLED IN FULL.</b> Against CS6-PER's order of 2 unit for RM200 dated 23 Sep 2026, RM30 and 0 unit move on 24 Sep 2026 against RM30 and 0 unit outstanding, leaving RM0 and 0 unit open. The order already shows RM70 cash, 2 unit collected and a correction recording RM100 settled in kind by reward, 1 unit. No goods move, so the row carries no cost of its own. Flagged as settling the order in full and the figures answer it. CS6-PER: 8 orders, median rate RM70.4, range RM11 to RM100, nothing outstanding before, none on credit, an associate and on the roster."},{"date":"2026-09-24","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON s196 DATED 24 SEP: COST SET TO RM96, 2 UNIT AT RM48.</b> The order went out by a correction raising the delivered quantity, which moved no units through the fold, so the shelf's cost was never written although the note of the day stated RM48 a unit. Without it the gross margin across every book read blank. Nothing else on the row moves."}],"deliveredOn":"2026-09-24","handover":"collected","mod":"corrected on 2026-09-24: deliveredQty 0 to 2; deliveredOn (unset) to 2026-09-24; handover (unset) to collected, then corrected on 2026-09-24: settledRM (unset) to 100; rebateKg (unset) to 1; rebate (unset) to true, then corrected on 2026-09-24: cost (unset) to 96","settledRM":100,"rebateKg":1,"rebate":true,"cost":96},
+  {"customer":"CA6-CYB","qty":2.5,"total":250,"cost":120,"cash":250,"handover":"collected","date":"2026-09-23","deliveredQty":2.5,"deliveredOn":"2026-09-23","paidOn":"2026-09-23","ref":"CM4-TO","refKg":2.5,"note":"<b>SALT SELL DATED 23 SEP, PAID AND COLLECTED IN FULL: NOTHING LEFT OPEN.</b> Booked to CA6-CYB, 2.5 unit for RM250, RM250 cash received on 23 Sep 2026 and 2.5 unit handed over the same day, referred by CM4-TO on stream R3. Costed at RM48 a unit from the desk's own inventory cost, RM120 on the goods, though the drafter's working reads RM130 at 52%. The RM250 clears the floor of RM142.48 and sits under the ask of RM330, with the ceiling at RM390. Flagged: the RM48 is an inventory average across more than one lot rate and the figures do not answer the blend; CM4-TO is on the roster but not listed as an associate; CA6-CYB has 0 orders, no median rate, no range, nothing outstanding and none on credit against a cap of 1.","rid":"s197"},
+  {"customer":"CC5-OKR","qty":4,"total":20,"cost":12.8,"cash":20,"handover":"collected","product":"rice","date":"2026-09-24","deliveredQty":4,"deliveredOn":"2026-09-24","paidOn":"2026-09-24","note":"<b>RICE SELL DATED 24 SEP, PAID AND COLLECTED IN FULL: NOTHING LEFT OPEN.</b> Booked to CC5-OKR, 4 unit for RM20, RM20 cash received on 24 Sep 2026 and 4 unit handed over the same day, no delivery or freight. Costed at RM3.2 a unit from the desk's own inventory cost, RM12.8 on the goods, though the drafter's working reads RM7.2 at 36%. The RM20 clears the floor of RM13.6 and sits under the ask of RM32, with the ceiling at RM41. Flagged: CC5-OKR has no committed rice order, so there is no rate of theirs to compare, and the figures do not answer it. Across 10 orders their median rate is RM90 with a range of RM48 to RM90, RM138 outstanding, none defaulted, and 2 unit on credit against a cap of 1. On the roster, not an associate.","rid":"s198"},
+  {"customer":"CC5-OKR","qty":10,"total":130,"cost":76,"cash":130,"handover":"collected","product":"oil","date":"2026-09-24","deliveredQty":10,"deliveredOn":"2026-09-24","paidOn":"2026-09-24","note":"<b>OIL SELL DATED 24 SEP, PAID AND COLLECTED IN FULL: NOTHING LEFT OPEN.</b> Booked to CC5-OKR, 10 unit for RM130, RM130 cash in and 10 unit handed over on 24 Sep 2026, no delivery or freight. Costed at RM7.6 a unit from the desk's own inventory cost, RM76 on the goods, though the drafter's working reads RM54 at 41.5%. The RM130 clears the floor of RM78.24 and sits exactly at the ask for 10 unit, with the ceiling at RM240. Flagged: CC5-OKR has no committed oil order, so there is no rate of theirs to compare, and the figures do not answer it. Across 11 orders their median rate is RM90 with a range of RM5 to RM90, RM138 outstanding, none defaulted, and 2 unit on credit against a cap of 10. On the roster, not an associate.","rid":"s199"},
+  {"customer":"CZ4-MK","qty":4,"total":200,"cost":152,"cash":200,"handover":"collected","product":"candy","date":"2026-09-24","deliveredQty":4,"deliveredOn":"2026-09-24","paidOn":"2026-09-24","note":"<b>CANDY SELL DATED 24 SEP, COLLECTED AND PAID IN FULL ON THE DAY.</b> Booked to CZ4-MK, 4 unit for RM200, RM50 a unit, RM200 cash in and 4 unit moved on 24 Sep 2026, with no delivery or freight, so nothing stays open. Costed at RM38 a unit from the desk's own inventory cost, RM152 on the goods, though the drafter's working reads RM48 at 24%. The RM200 sits on the floor's right side at RM152 and RM40 under the ask of RM240 for 4 unit, ceiling RM456. No flag was raised. Across 5 orders their median rate is RM84 with a range of RM13 to RM92, nothing outstanding, none defaulted, and no unit on credit against a cap of 1. On the roster, not an associate.","rid":"s200"}
 ];
 const contacts=[
   {"date":"2026-08-06","party":"CM4-SK","how":"message","outcome":"noreply","next":null,"note":"said hello"},
@@ -6618,7 +7322,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-09-24T04:52:38.115Z";
+const QUEUE_COMMITTED="2026-09-24T15:43:57.801Z";
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
@@ -6702,7 +7406,7 @@ const openingFor=p=>PROD_OPENING[p||PROD]||{qty:0,costPerKg:null,stated:null,unc
    there is no blend to solve: RM 7.525 is the rate of what is actually there. Left at RM 7.6667
    it would have valued a RM 451 inventory at RM 460 and fed that figure to Financials' closing
    inventory, the PRICING snapshot the drafter approves against, and the Inventory value card. */
-const PROD_STOCK_COST={salt:null, oil:7.6};   // null = use STOCK_COST, the salt roll
+const PROD_STOCK_COST={salt:null, oil:8};   // null = use STOCK_COST, the salt roll
 function stockCostFor(p){const k=p||PROD,v=PROD_STOCK_COST[k];
   if(v!=null)return v;
   if(k===DEFAULT_PROD&&typeof STOCK_COST!=='undefined'&&STOCK_COST!=null)return STOCK_COST;
@@ -7610,7 +8314,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v827","d":"24 Sep 2026","t":"THE COUNTER AND SALT ADMIN DO WHAT THEY PROMISE","n":["<b>STAGE 1 OF THE REDESIGN</b> (his instruction of 24 Sep 2026: customers found the Counter hard to follow and hard to keep as an app; he answered all recommended to the plan's fifteen decisions). Fifty fixes that need none of those decisions, each its own commit with its own assertion, proved red first.","<b>GETTING IN.</b> A new account with no rows opens on Nothing on your account yet, with Prices and Order working, where it was a blank page or a refusal. A lapsed session says so in the bar with Continue; a dropped request says Not sent beside what was tapped; a server fault on a remembered reopen keeps the phone; Log out drops its wrap and this phone's notifications; notifications wait for the service worker and show this phone's real state.","<b>ORDERING AND PAYING.</b> The pay step takes the system's pill, ghost and field, one filled control a card, and the RM 100 page answers every tap. Check this over is exactly what Place sends; Place and I have paid carry a request id, so a retry lands once; a half-typed line survives a redraw; the Amount column lines up; the tab strip wraps at 320px; a product with no priced size reads coming soon.","<b>THE STATEMENT.</b> Its account line shows the username, never the roster code; its table sits in its own scroll box; Still to collect is one line a book; the faces load on the link and guest pages; every short date says Sep.","<b>SALT ADMIN.</b> Approve, Decline, Withdraw and Restore on a link now post, where every one had answered 405 since 10 Sep; Decline is its own state, Not approved to the associate. It saves as Salt Admin, its manifest fetched with credentials. Review reads the account's orders and offers no order form; a row with no account offers nothing to send; a customer's typo no longer brakes his override; Opened counts every open, and how.","<b>THE DESK.</b> Site orders keeps a typed charge and answer across its poll; Today counts site orders from a cold open; a customer's line wakes him as A customer wrote on an order; Approve asks before rejecting a row a site order made and writes the rejection onto the order; his cancellation is noted as his; a status note passes siteWords; the cards' buttons are the system's recipes.","<b>UNDER THE COUNTER.</b> The customer reads a whitelisted view of an order, never ledgerKey, queued or sync; a stored move never answers not placed when a shared mark fails; the chase and the cash rule read an advance as the engine does, goods moved beyond goods paid."]}];
+const evolution=[{"v":"v838","d":"25 Sep 2026","t":"ONE CARD, ONE TAP A STAGE, THE ROW SHOWN BEFORE THE YES","n":["<b>STAGE 11 OF THE REDESIGN</b> (his answer D6 of 24 Sep 2026). Site orders opens on Waiting on you: one row per customer act, oldest first, filtered New, Paid?, Cash and Asked, the notice folded below; Today and the Enter badge count the same rows from a cold open, and on the laptop the card sits beside the list.","<b>FIGURES BEFORE THE YES.</b> A new order's card drafts the row it would make and shows it first: their card today against the quote, the margin, the floor, their usual, the drafter's flags, and what the customer was told. The delivery charge is a chip with none chosen for a delivery.","<b>ONE TAP A STAGE.</b> Accept, Collected, Cash received and Received approve the row they make in the desk Worker only when the drafted row equals what he was shown in every field, flag and pricing version; anything different waits under Approve, marked. A stage before the first row lands is a pre-approval spent when its row is drafted (migration 0011). A rejection writes back and the move can be offered again under a fresh entry; their withdrawal drops only a still-pending acknowledgement.","<b>AT THE COUNTER.</b> A handover with nothing paid raises Cash to record, whose tap stops the chase; Delivered part takes a stepper and Close at what was handed over; Decline and Cancel take a reason the customer reads as by us; saved quick replies and No reply needed. His wakes name the kind of act and never a code or an amount."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -7725,7 +8429,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='24 Sep 2026, 18:37 KL';
+const LAST_UPDATED='25 Sep 2026, 00:14 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -16505,13 +17209,15 @@ function actions(){
      the money is what was ordered, goods and carriage together, which is what the pending row will
      carry. It is empty on the laptop desk and on a cold boot, and says nothing when it is. */
   {
-    const ow=(typeof ordWaiting==='function')?ordWaiting():{placed:[],asked:[],rm:0};
-    if(ow.placed.length||ow.asked.length){
-      const title=ow.placed.length
-        ?`Site orders: ${ow.placed.length} waiting to be acknowledged`
-        :`Site orders: ${ow.asked.length} waiting on an answer`;
-      const why=(ow.placed.length?`<b>${fmt0(ow.rm)}</b> ordered and not yet agreed. Acknowledging one queues its pending row, which you approve under Approve. `:'')
-        +(ow.asked.length?`${ow.asked.length===1?'One order is':ow.asked.length+' orders are'} waiting on an answer from you.`:'');
+    /* S11 11.4: the rows Site orders lists, counted here as they are counted there and on the Enter badge */
+    const ow=(typeof ordWaiting==='function')?ordWaiting():{placed:[],asked:[],acts:[],rm:0};
+    const acts=ow.acts||[];
+    if(acts.length){
+      const n=k=>acts.filter(a=>a.kind===k).length;
+      const title=`Site orders: ${acts.length} waiting on you`;
+      const why=(ow.placed.length?`<b>${fmt0(ow.rm)}</b> ordered and not yet agreed. `:'')
+        +[['new','new'],['paid','say they paid'],['cash','cash to record'],['asked','waiting on an answer']]
+          .filter(x=>n(x[0])).map(x=>n(x[0])+' '+x[1]).join(', ')+'. Oldest first on Site orders.';
       add(ow.placed.length?'now':'soon','orders',title,ow.rm,why,'orders');
     }
   }
@@ -16675,7 +17381,10 @@ const qTx=()=>queue.filter(q=>!(q.payload&&(q.payload.mode==='plan'||q.payload.m
    stage: drafted and waiting on a tap, approved and waiting to go live, or refused and waiting on him.
    Orders placed on the statements site are a separate thing until one is done and queued, so they
    stay a separate term. */
-const enterCount=()=>new Set(qTx().map(q=>q.at).concat(AP_DRAFTS.map(d=>d.id))).size+ORD_OPEN.filter(o=>o.status==='placed').length;
+/* S11 11.4: AND THE SITE'S TERM IS WAITING ON YOU, row for row. A payment's draft behind a Paid? row is
+   that row, so it is counted once, as the row. */
+const enterCount=()=>{const acts=ordActs(),behind=new Set();acts.forEach(a=>(a.drafts||[]).forEach(id=>behind.add(id)));
+  return new Set(qTx().map(q=>q.at).concat(AP_DRAFTS.map(d=>d.id).filter(id=>!behind.has(id)))).size+acts.length;};
 function apBadge(){try{const b=document.querySelector('.tab[data-s="enter"]');if(!b)return;
   let c=b.querySelector('.navct');const n=enterCount();
   /* v385: AND WHERE THE DRAFTS COULD NOT BE READ THE BADGE SAYS SO RATHER THAN COUNTING THEM
@@ -18162,8 +18871,16 @@ function apCard(d){
      a roster draft, where a code the book does not hold is the whole point of the row. */
   const apGone=(col==='sales'||col==='purchases')&&d.party&&roster.indexOf(d.party)<0
     ?`<div class="warnpill" style="display:block;margin:8px 0 0;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)"><b>Read here, not from the draft.</b> ${esc(codeOf(d.party))} is not on the roster this book holds. The row was drafted ${esc((d.draftedAt||'').slice(0,10)||'earlier')} and the code has been retired or renamed since. Do not approve it against a code the book no longer has.</div>`:'';
+  /* S11 (D6): A ROW OTHER THAN HE SAID YES TO ON THE ORDER CARD waits here, marked in the Worker's words, with what he
+     was shown beside it (GET /drafts carries it as `preapproval`), so he compares before he approves */
+  const pa=d.preapproval&&d.preapproval.state==='differs'?d.preapproval:null,sh=(pa&&pa.shown)||{},fg=sh.figures||{};
+  const saw=!pa?'':sh.row?units(+sh.row.qty||0)+' for '+fmt(+sh.row.total||0)
+    :fg.close?'closing it at '+units(+fg.units||0):fg.units!=null?units(+fg.units||0)+' '+esc(fg.how||'handed over')
+    :fg.amount!=null?fmt(+fg.amount||0)+(fg.cash?' in cash':' received'):'this move';
+  const nf=pa&&Array.isArray(sh.flags)?sh.flags.length:null;
+  const apDiffers=pa?`<p class="dsc" style="margin-top:8px"><span class="salt-status salt-status--ember">${esc(String(pa.says||'differs from what you saw').replace(/^./,c=>c.toUpperCase()))}</span> On the order card you said yes to ${saw}${nf==null?'':nf?', with '+nf+' flag'+(nf===1?'':'s'):', with no flag'}. This row came out otherwise, so it waits for you here.</p>`:'';
   return `<div class="card" style="margin-top:10px" data-id="${esc(d.id)}">
-    <div style="font-size:14px">${head}</div>
+    <div style="font-size:14px">${head}</div>${apDiffers}
     <div class="kpis k4" style="margin-top:10px">${grid}</div>
     ${(d.flags||[]).map(f=>`<div class="warnpill" style="display:block;margin:8px 0 0;background:rgba(184,115,51,.14);border-color:var(--amber);color:var(--gold)">&#9888; ${esc(f)}</div>`).join('')}
     ${apGone}
@@ -18262,18 +18979,21 @@ function tabOrders(){
     <div class="cardh">Where an order is decided <span class="sub">the phone, or /desk in the cloud</span></div>
     <div class="insight salt-insight">An order placed on the statements site lands on the cloud desk's Site orders card the moment it is placed. Acknowledge it there, with the delivery charge where there is one, and the pending row is queued for Approve. Payment and handover follow separately, each queueing its own amendment against that row.</div>
   </div>`;
-  return `<h1>Site orders</h1>
-  <div class="dsc dsclead">What customers ordered on the statements site, each priced off his own weekly list.</div>
-  <div class="insight salt-insight">Acknowledge the order, with the delivery charge where there is one: that queues the pending row within the minute, and you approve it under Approve. After that, money and goods move apart. The customer records what they paid; you record what you handed over. Both complete and the order completes itself. Every step queues its own amendment.</div>
-  <div class="card" id="bullCard" style="margin-top:10px"><div class="cardh">Bulletin <span class="sub">across the top of Salt Counter, for everyone who opens it</span></div>
+  /* S11 11.4 (24 Sep 2026): SITE ORDERS OPENS ON WAITING ON YOU. One row a customer act, oldest first,
+     with its card beside it on the laptop and behind a tap on the phone; the notice folds below, where it
+     is set once a week and not read every visit. The switch to the closed ones stays under the list. */
+  return `<h1>Waiting on you</h1>
+  <div class="dsc dsclead" id="ordLead">Every customer act on the site, oldest first: a new order, a payment they say they made, cash to record, a question.</div>
+  <div class="ordgrid" id="ordBox"><div style="font-size:12px;color:var(--dim)">Reading the orders.</div></div>
+  <div id="ordMsg" role="status" style="margin-top:8px;font-size:12px;color:var(--mut)">${esc(ordMsg)}</div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0;font-size:12px;color:var(--mut)"><button type="button" class="salt-ghost" id="ordAllBtn">${ordAll?'Hide the closed ones':'Show the closed ones'}</button><span>${ordAll?'Every order this site has taken, newest first.':'Open orders, and any waiting on an answer from you.'}</span></div>
+  <details class="salt-plan ordnote" id="bullFold"><summary><span class="salt-plan__id" id="bullN">&middot;</span><span class="salt-plan__title" id="bullHead">Notice</span></summary>
+  <div class="salt-plan__body" id="bullCard"><div class="dsc">Across the top of Salt Counter, for everyone who opens it.</div>
     <div class="dsc" id="bullNow" style="margin-top:6px">Reading it.</div>
     <textarea id="bullText" rows="3" placeholder="One line per item" style="width:100%;margin-top:8px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:6px;font:inherit"></textarea>
-    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="salt-ghost" data-bmode="run" aria-pressed="true">Running</button><button type="button" class="salt-ghost" data-bmode="change" aria-pressed="false">Changing</button><button type="button" class="vbtn salt-pill salt-pill--sm" id="bullSet">Set</button><button type="button" class="vbtn salt-pill salt-pill--sm" id="bullClear">Clear</button></div>
-    <div class="dsc" id="bullMsg" style="margin-top:6px"></div></div>
-  <div id="ordAlert" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--mut)"></div>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--mut)"><button type="button" class="vbtn salt-pill salt-pill--sm" id="ordAllBtn">${ordAll?'Hide the closed ones':'Show the closed ones'}</button><span>${ordAll?'Every order this site has taken, newest first.':'Open orders, and any waiting on an answer from you.'}</span></div>
-  <div id="ordBox"><div style="font-size:12px;color:var(--dim)">Reading the orders.</div></div>
-  <div id="ordMsg" style="margin-top:8px;font-size:12px;color:var(--mut)">${esc(ordMsg)}</div>`;
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="salt-ghost" data-bmode="run" aria-pressed="true">Running</button><button type="button" class="salt-ghost" data-bmode="change" aria-pressed="false">Changing</button><button type="button" class="salt-ghost salt-ghost--lit" id="bullSet">Set</button><button type="button" class="salt-ghost" id="bullClear">Clear</button></div>
+    <div class="dsc" id="bullMsg" style="margin-top:6px"></div></div></details>
+  <div id="ordAlert" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--mut)"></div>`;
 }
 /* v763, his instruction of 21 Sep 2026: a CLOSED order can be opened. The card has shown the open
    ones since v499 and, since v752, any whose last line is the customer's; a question about an order
@@ -18288,6 +19008,7 @@ async function ordLoad(quiet){
     ordNeedKey=(r.status===401); let j=null; try{j=await r.json();}catch(e){}
     ordUnread=r.ok?'':(r.status===401?'':(j&&j.error)||'the Worker answered http '+r.status);
     ORD_OPEN=(r.ok&&j&&j.orders)||[];
+    if(r.ok)ORD_PV_GEN++;   /* S11 11.2: every read of the orders drafts the open card's row afresh */
   }catch(e){ ordUnread=(e&&e.message)||'the request did not complete'; ORD_OPEN=[]; }
   ordDraw();
   {const a=document.getElementById('ordAlert');if(a&&!a.dataset.drawn)ordAlertDraw();}
@@ -18319,9 +19040,13 @@ async function bullLoad(quiet){
   const go=()=>fetch('bulletin',{cache:'no-store',headers:qHeaders()});
   let j=null;
   try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go(); if(r.ok){try{j=await r.json();}catch(e){}} }catch(e){}
-  if(!j||!j.ok){now.textContent='The bulletin could not be read.';return;}
+  const head=document.getElementById('bullHead'),nl=document.getElementById('bullN');
+  if(!j||!j.ok){now.textContent='The bulletin could not be read.';if(head)head.textContent='Notice: could not be read';return;}
   BULL_MODE=j.mode==='change'?'change':'run';bullPressed();
   const lines=Array.isArray(j.lines)?j.lines:[];
+  /* S11 11.4: the fold says what is posted, so a closed notice is still read at a glance */
+  if(head)head.textContent=lines.length?'Notice: '+lines.length+(lines.length===1?' line':' lines')+', '+(BULL_MODE==='change'?'changing':'running'):'Notice: nothing posted';
+  if(nl)nl.textContent=String(lines.length);
   now.innerHTML=lines.length?'Showing now, '+(BULL_MODE==='change'?'changing':'running')+': '+esc(lines.join(' · ')):'Nothing posted. Type a line and tap Set.';
   if(ta&&document.activeElement!==ta)ta.value=lines.join('\n');
 }
@@ -18420,16 +19145,165 @@ function ordUsual(code,product){
    WHAT IS WAITING ON HIM: an order placed and not yet agreed, which is a yes he owes somebody, and
    an order whose last line is theirs (v752). An order already acknowledged is a ROW, and the book's
    own readings carry it from there; counting it here as well would say the same money twice. */
-function ordWaiting(){
+/* S11 11.4 (24 Sep 2026): WAITING ON YOU IS ONE ROW A CUSTOMER ACT, and this is the one reading of it:
+   the list on Site orders, Today's row and the Enter badge all count these, so none can disagree.
+     new    an order placed and not yet agreed
+     paid   a payment they say they made, its row waiting under Approve (the claim itself is stage 6's)
+     cash   goods handed over with nothing paid: cash to record
+     asked  their line is the last on the order, and he has not said it needs no reply
+   A placed order's own line is on its New card, so it is one act and not two. Oldest first, by the
+   moment of the act. */
+const ORD_KIND={new:{w:'New',tone:'steel',act:'Accept'},paid:{w:'Paid?',tone:'verdigris',act:'Check'},
+  cash:{w:'Cash',tone:'copper',act:'Record'},asked:{w:'Asked',tone:'brass',act:'Answer'}};
+const ordDue=o=>+((+o.total||0)+(+o.delivery||0)-(+o.paid||0)).toFixed(2);
+function ordAsked(o){const m=(o&&o.msgs)||[],l=m[m.length-1];return !!(l&&l.by==='customer'&&!(o.quiet&&String(o.quiet)>=String(l.at)));}
+function ordActs(){
   const open=(typeof ORD_OPEN!=='undefined'&&Array.isArray(ORD_OPEN))?ORD_OPEN:[];
-  const placed=open.filter(o=>o&&o.status==='placed');
-  const asked=open.filter(o=>o&&(o.msgs||[]).length&&o.msgs[o.msgs.length-1].by==='customer');
-  return {placed,asked,rm:+placed.reduce((a,o)=>a+(+o.total||0)+(+o.delivery||0),0).toFixed(2)};
+  const drafts=(typeof AP_DRAFTS!=='undefined'&&Array.isArray(AP_DRAFTS))?AP_DRAFTS:[];
+  const out=[];
+  open.forEach(o=>{if(!o)return;
+    const live=['acknowledged','ready'].includes(o.status);
+    if(o.status==='placed'&&!o.yes)out.push({kind:'new',o,at:o.at||''});   /* his yes already given waits under Approve, counted there */
+    else if(ordAsked(o))out.push({kind:'asked',o,at:o.msgs[o.msgs.length-1].at||''});
+    if(live&&(+o.moved||0)>0.0004&&(+o.paid||0)<=0.004&&ordDue(o)>0.004){
+      const h=(o.history||[]).filter(x=>x&&x.by==='desk'&&/ unit (delivered|collected)$/.test(String(x.note||'')));
+      out.push({kind:'cash',o,at:o.movedAt||(h.length?h[h.length-1].at:'')||o.at||''});}
+    const pd=drafts.filter(d=>d&&d.entry&&d.entry.orderId&&d.entry.orderId===o.id&&d.entry.status==='Payment'&&d.entry.by!=='desk');
+    if(pd.length&&!['cancelled','declined'].includes(o.status)){
+      const p=(o.payments||[]).filter(x=>x&&x.by!=='desk');
+      out.push({kind:'paid',o,at:(p.length?p[p.length-1].at:'')||o.at||'',drafts:pd.map(d=>d.id)});}
+  });
+  return out.sort((a,b)=>String(a.at)<String(b.at)?-1:String(a.at)>String(b.at)?1:0);
 }
+function ordWaiting(){
+  const acts=ordActs(),placed=acts.filter(a=>a.kind==='new').map(a=>a.o),asked=acts.filter(a=>a.kind==='asked').map(a=>a.o);
+  return {placed,asked,acts,rm:+placed.reduce((a,o)=>a+(+o.total||0)+(+o.delivery||0),0).toFixed(2)};
+}
+/* ---- S11 11.2 (24 Sep 2026): THE ROW BEFORE THE YES. A new order's card asks the desk Worker to draft
+   the pending row it would queue, against the mirror, storing nothing (POST orders/<id>/preview, the
+   contract of 11.1), and draws it first: their card today against the quote, the margin on the cost, the
+   floor, their usual toned by the way the rate moved, and the drafter's own flags. The desk computes no
+   price here: every figure is the preview's but the two differences it draws beside them. The preview is
+   asked again on every read of the orders and whenever the delivery charge changes, so what he sees is
+   what Accept will send; its hash rides with Accept (11.3), and the Worker approves only an exact match.
+   It is never /draft-now?dry=1, which drafts the whole queue and not this order. ---- */
+let ORD_PV={},ORD_PV_GEN=0;
+/* S11 11.3: the charge he chose, or null while none is chosen or Other holds no figure */
+let ORD_CHIP={};
+function ordFeeNow(o){const c=ORD_CHIP[o.id];if(!c)return null;if(c!=='other')return +c;
+  const i=document.querySelector('input[data-fee="'+o.id+'"]');const v=i?parseFloat(i.value):NaN;return v>=0?+v.toFixed(2):null;}
+/* S11 11.13 (D6): an agreed order whose pending row he rejected offers that row again, by Accept against its
+   preview, at the charge the order already carries (the customer was told it) */
+function ordAgainAck(o){return ['acknowledged','ready','done'].includes(o.status)&&(o.again||[]).includes('ack');}
+/* the row is drafted at the chosen charge, and at none until one is chosen, its figures being the goods' */
+function ordPvDelivery(o){if(ordAgainAck(o))return +o.delivery||0;if(o.mode!=='deliver')return 0;const d=ordFeeNow(o);return d==null?0:d;}
+async function ordPreview(o){
+  if(!o||o.yes||!(o.status==='placed'||ordAgainAck(o))||!cloudMode())return;
+  const d=ordPvDelivery(o);if(d==null)return;
+  const cur=ORD_PV[o.id];
+  if(cur&&cur.d===d&&cur.gen===ORD_PV_GEN)return;
+  /* the row already drawn at this charge stays, its digest with it, while it is drafted again on a poll: Accept tapped in
+     between sends that digest, and the Worker's own recheck answers a row that moved with the fresh one */
+  const mine=cur&&cur.st==='ok'&&cur.d===d?Object.assign({},cur,{gen:ORD_PV_GEN}):{d,gen:ORD_PV_GEN,st:'wait'};ORD_PV[o.id]=mine;
+  let st='err',j=null,err='';
+  try{const r=await fetch('orders/'+encodeURIComponent(o.id)+'/preview',{method:'POST',headers:qHeaders(),body:JSON.stringify({delivery:d})});
+    try{j=await r.json();}catch(e){}
+    if(r.ok&&j&&j.ok)st='ok';else err=r.status===401?'the write key was refused':((j&&j.error)||'the Worker answered http '+r.status);
+  }catch(e){err='no connection';}
+  if(ORD_PV[o.id]!==mine)return;   /* a newer ask has taken its place */
+  ORD_PV[o.id]=Object.assign(mine,{st,j,err});
+  ordDraw();
+}
+function ordPvBlock(o){
+  const pv=ORD_PV[o.id];
+  if(!pv||pv.st==='wait')return `<p class="salt-approve__reason ordpv" data-pv="${esc(o.id)}">Drafting the row this order would make.</p>`;
+  if(pv.st==='err')return `<p class="salt-approve__reason ordpv" data-pv="${esc(o.id)}">The row could not be drafted: ${esc(pv.err)}. Accept opens once it can, your yes being to the row drawn here.</p>`;
+  const j=pv.j||{},row=j.row||{},num=v=>(typeof v==='number'&&isFinite(v))?v:null;
+  const goods=num(row.total)!=null?+row.total:+o.total||0,qty=num(row.qty)!=null&&row.qty>0?+row.qty:+o.qty||0;
+  /* the preview's own shapes (src/orders.js previewAck): cost {unit,total}, margin {rm,pct}, floor {rm}, usual {rate} */
+  const card=num(j.card),cost=j.cost?num(j.cost.total):null,floor=j.floor?num(j.floor.rm):null;
+  const margin=j.margin?num(j.margin.rm):null;
+  const usual=j.usual?num(j.usual.rate):null,rate=qty?goods/qty:null;
+  const tile=(k,v,note,tone)=>`<div class="kpi salt-kpi ${tone?'salt-kpi--'+tone:''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value">${v}</div><div class="salt-kpi__note">${note}</div></div>`;
+  const q=+o.total||0,gap=card==null?null:+(q-card).toFixed(2);
+  const cardT=card==null?tile('Their card today','&mdash;',esc(j.cardNote||'no card for this size'),'')
+    :tile('Their card today',fmt(card),(Math.abs(gap)<0.005?'':'the quote is ')+`<span class="salt-status salt-status--${Math.abs(gap)<0.005?'verdigris':gap<0?'copper':'steel'}">${Math.abs(gap)<0.005?'matches':fmt(Math.abs(gap))+(gap<0?' under':' over')}</span>`+(Math.abs(gap)<0.005?' the quote':'')+(j.cardNote?' '+esc(j.cardNote):''),Math.abs(gap)<0.005?'verdigris':gap<0?'copper':'steel');
+  const marT=margin==null?tile('Margin','&mdash;','no cost on this book',''):tile('Margin',fmt(margin),cost!=null?'on '+fmt(cost)+' cost':'',margin>0.004?'verdigris':'ember');
+  const flT=floor==null?tile('Floor','&mdash;','no floor for this size',''):tile('Floor',fmt(floor),goods-floor>=-0.004?'clear by '+fmt(+(goods-floor).toFixed(2)):fmt(+(floor-goods).toFixed(2))+' under it',goods-floor>=-0.004?'verdigris':'ember');
+  const dir=(usual&&rate!=null)?(rate-usual)/usual:null;
+  /* S11 fix: the unit rides in the note, so a narrow tile breaks a figure at its space and never inside the word */
+  const usT=usual==null?tile('Their usual','&mdash;','no priced order yet',''):tile('Their usual',fmt(usual),'a unit'+(rate==null?'':'; this is '+fmt(rate)),dir==null||Math.abs(dir)<0.005?'steel':dir>0?'verdigris':'copper');
+  const flags=Array.isArray(j.flags)?j.flags:[];
+  return `<div class="ordpv" data-pv="${esc(o.id)}"><div class="kpis k2">${cardT+marT+flT+usT}</div>
+    <p class="salt-approve__reason" style="margin-top:8px">The pending row, drafted now and stored nowhere. ${flags.length?'The drafter flags '+(flags.length===1?'one thing':flags.length+' things')+':':'The drafter raises no flag.'}</p>
+    ${flags.length?`<div class="salt-approve__flags">${flags.map(f=>`<span class="salt-status salt-status--ember">${esc(f)}</span>`).join('')}</div>`:''}</div>`;
+}
+/* S11 11.6 (24 Sep 2026): HIS QUICK REPLIES live on this device, as the plan has it: lines he saves
+   himself, six at most, each put through siteSafe before it is kept and again when it is sent. */
+const ORD_QUICK_KEY='saltQuickReplies';
+function ordQuick(){try{const a=JSON.parse(localStorage.getItem(ORD_QUICK_KEY)||'[]');return Array.isArray(a)?a.filter(x=>typeof x==='string'&&x).slice(0,6):[];}catch(e){return [];}}
+function ordQuickKeep(id){
+  const si=document.querySelector('input[data-say="'+id+'"]'),t=si?String(si.value||'').trim().replace(/\s+/g,' ').slice(0,200):'';
+  const cur=ordQuick();let said;
+  if(!t)said='Type the line first, then keep it.';
+  else if(cur.includes(t)){try{localStorage.setItem(ORD_QUICK_KEY,JSON.stringify(cur.filter(x=>x!==t)));}catch(e){}said='Forgotten: it is no longer a quick reply.';}
+  else{const g=siteSafe(t);
+    if(g.refuse)said=g.refuse+' It was not kept.';
+    else{try{localStorage.setItem(ORD_QUICK_KEY,JSON.stringify([t].concat(cur).slice(0,6)));said='Kept as a quick reply on this device.';}catch(e){said='This browser would not keep it.';}}}
+  ORD_SAID={id,t:said};ordDraw();
+}
+/* S11 fix: the one button keeps a line or forgets one already kept, and says which, as the box changes */
+function ordKeepSay(id){const b=document.querySelector('button[data-keep="'+id+'"]'),i=document.querySelector('input[data-say="'+id+'"]');if(!b)return;
+  const t=i?String(i.value||'').trim().replace(/\s+/g,' ').slice(0,200):'';
+  b.textContent=t&&ordQuick().includes(t)?'Forget this quick reply':'Keep as a quick reply';}
+/* S11 11.9: which cards have Delivered part open, and the units stepped to, read off the box as a charge is */
+let ORD_PART={};
+function ordPartNow(o){const i=document.querySelector('input[data-hand="'+o.id+'"]');const v=i?parseFloat(i.value):NaN;return v>=0?+v.toFixed(3):((+o.moved||0)>0?+o.moved:+o.qty||0);}
+/* what a part of n units would mean, said under the stepper */
+function ordPartCap(o,n){const paid=+o.paid||0,st=POSITION_ENGINE.closeGoods(o.total,+o.qty,n),over=+(paid-st-(+o.delivery||0)).toFixed(2);
+  return n>0&&n<o.qty-0.004?`Record keeps the other ${units(+(o.qty-n).toFixed(3))} owed. Close at ${units(n)} ends the order there: ${fmt(st)} for the goods at the rate they agreed${+o.delivery>0?', and the '+fmt(+o.delivery)+' delivery':''}, nothing more owed on the rest.${over>0.004?' They have paid '+fmt(paid)+', '+fmt(over)+' more than that, so a close there waits under Approve: the book carries no refund for it.':''}`
+    :'Step to what went. Record keeps the rest owed; Close ends the order there.';}
+/* S11 fix: A FIGURE TYPED OR STEPPED IS SAID IN PLACE. The card was redrawn on the box's change, which a tap on Close
+   fires first, so the button under the finger was replaced and the tap was lost; the labels and the line under the
+   stepper now follow each keystroke on the nodes already drawn, and Record and Close read the box when tapped. */
+function ordPartSay(id){const o=ORD_OPEN.find(x=>x&&x.id===id),c=document.querySelector('.ordcard[data-id="'+id+'"]');if(!o||!c)return;
+  const n=ordPartNow(o);
+  c.querySelectorAll('button[data-partlab]').forEach(b=>{b.textContent=(b.dataset.partlab==='close'?'Close at ':'Record ')+units(n);});
+  const p=c.querySelector('[data-partcap]');if(p)p.innerHTML=ordPartCap(o,n);}
+/* S11 11.7 (24 Sep 2026): DECLINE AND CANCEL TAKE A REASON, which the customer reads with the words for it:
+   Not taken, or Cancelled by us. The first tap opens the reasons; the second, once one is chosen, moves the
+   order. Every reason is checked by siteSafe here and by siteWords on the Worker, as his answers are. */
+let ORD_WHY={};
+const ORD_WHY_PICK=[['stock','Out of stock this week'],['place','Cannot deliver there'],['price','Prices have changed'],['own','Other']];
+function ordWhyText(o){const w=ORD_WHY[o.id]||{};if(!w.pick)return '';if(w.pick!=='own'){const r=ORD_WHY_PICK.find(x=>x[0]===w.pick);return r?r[1]:'';}
+  const i=document.querySelector('input[data-why="'+o.id+'"]');return i?String(i.value||'').trim().replace(/\s+/g,' ').slice(0,140):'';}
+function ordWhyBlock(o){const w=ORD_WHY[o.id];if(!w)return '';
+  const opt=(k,t)=>`<label class="salt-option"><input type="radio" class="salt-option__input" name="why-${esc(o.id)}" value="${k}" data-whypick="${esc(o.id)}"${w.pick===k?' checked':''}><span class="salt-option__face"><span class="salt-option__label">${t}</span></span></label>`;
+  const picks=ORD_WHY_PICK.filter(x=>x[0]!=='place'||o.mode==='deliver');
+  return `<fieldset class="salt-options ordwhy"><legend class="salt-options__legend">${w.st==='declined'?'Why it is not taken':'Why it is cancelled'}, for them to read</legend>
+    <div class="salt-options__grid">${picks.map(x=>opt(x[0],x[1])).join('')}</div>
+    <label class="salt-field ordother"${w.pick==='own'?'':' hidden'}><span class="salt-field__label">In your words</span>
+      <input type="text" maxlength="140" value="" class="salt-field__input" data-why="${esc(o.id)}"></label></fieldset>`;}
+/* S11 11.5 (24 Sep 2026): WHAT THE CUSTOMER WAS TOLD. His card says what their own page says of this order,
+   in its own words, so he answers what they are reading. The words are the page's (stmt/page.js, the state
+   chip and the first line under it) and the suite holds the two copies together: a word changed on one side
+   and not the other goes red. */
+function ordTold(o){
+  const T={placed:['Placed','waiting to be acknowledged'],acknowledged:['Acknowledged','being prepared'],
+    ready:['Ready',o.mode==='deliver'?'ready to be delivered':'ready to collect'],done:['Completed','complete'],
+    declined:['Not taken',''],cancelled:['Withdrawn','withdrawn']}[o.status]||[o.status,''];
+  /* S11 11.7: an end of his is said with its reason, and a cancellation of his is Cancelled by us */
+  if(o.status==='declined'||o.status==='cancelled'){const e=(o.history||[]).filter(x=>x&&x.status===o.status).slice(-1)[0];
+    if(e&&e.by==='desk'){if(o.status==='cancelled')T[0]='Cancelled by us';T[1]=e.note||'';}}
+  const h=(o.history||[]).filter(x=>x&&x.status===o.status),since=h.length?h[h.length-1].at:o.at;
+  return {word:T[0],line:T[1],since};
+}
+function ordToldLine(o){const t=ordTold(o);
+  return `<p class="salt-approve__reason ordtold">They see <b>${esc(t.word)}</b>${t.line?', '+esc(t.line):''}${t.since?', since '+ordWhen(t.since):''}.</p>`;}
 function ordCard(o){
   /* 24 Sep 2026: the month off MAP_MON, because en-GB writes Sept */
   const when=iso=>{try{const p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(x=>{p[x.type]=x.value;});return p.day+' '+MAP_MON[+p.month-1]+', '+p.hour+':'+p.minute;}catch(e){return '';}};
-  const cell=(k,v,cls)=>`<div class="kpi salt-kpi ${cls||''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value" style="font-size:17px">${v}</div></div>`;
+  const cell=(k,v,cls,note)=>`<div class="kpi salt-kpi ${cls||''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value" style="font-size:17px">${v}</div>${note?`<div class="salt-kpi__note">${note}</div>`:''}</div>`;
   const who=o.code?codeOf(o.code):'unmapped '+esc(o.u);
   const rate=o.qty?o.total/o.qty:null, usual=o.code?ordUsual(o.code,o.product):null;
   const off=(rate!=null&&usual)?(rate-usual)/usual:null;
@@ -18445,8 +19319,8 @@ function ordCard(o){
   const ledger=!rowed?'no row yet':(o.status==='cancelled'||o.status==='declined')?'Cancelled'
     :(due<=0.004&&moved>=o.qty-0.004)?'Completed':(paid<=0.004&&moved<=0.004)?'Pending'
     :(moved/o.qty>paid/(o.total+(+o.delivery||0))+1e-9)?'Open · Advance':'Open · Deferred';
-  const q=o.queued||{}, owed=(!q.ack&&rowed)||paid>(+q.paid||0)+0.004||Math.abs(moved-(+q.moved||0))>0.0004
-    ||(['cancelled','declined'].includes(o.status)&&q.ack&&!q.cancel);
+  const q=o.queued||{}, theirs=(!q.ack&&rowed)||paid>(+q.paid||0)+0.004||(['cancelled','declined'].includes(o.status)&&q.ack&&!q.cancel);
+  const owed=theirs||Math.abs(moved-(+q.moved||0))>0.0004;
   /* 20 Sep 2026: what the desk made of its last pass, off the record (sync, written by the reconcile
      when it changes), where this promised the entry was queued within the minute whatever had happened */
   const sy=o.sync||null;
@@ -18456,70 +19330,201 @@ function ordCard(o){
     :!owed?(rowed?', on the row this order made':'')
     :(sy&&sy.state==='waiting')?', and '+esc(sy.why)+' (waiting since '+when(sy.at)+')'
     :(sy&&sy.state==='failed')?', but the desk could not tell it: '+esc(sy.why)+' (at '+when(sy.at)+'; it tries again every minute)'
-    :', and the entry for that is queued within the minute; approve it under Approve';
+    /* a handover of his own is a yes already (S11 D6): only what they did, or a withdrawal, waits for a tap under Approve */
+    :', and the entry for that is queued within the minute'+(theirs?'; approve it under Approve':', booked as it is drafted if it is the row you saw');
   /* v752: WHAT THE CUSTOMER WROTE ON THIS ORDER, oldest first. Their words are the only free text on
      this desk a stranger typed, so every line goes through esc and none of it is interpolated raw. */
   const msgs=(o.msgs||[]);
-  const waiting=msgs.length&&msgs[msgs.length-1].by==='customer';
+  const waiting=ordAsked(o);   /* S11 11.6: a line he let stand needs no answer */
   const thread=msgs.length?`<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px">
     <div class="l" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)">On this order${waiting?' &middot; waiting for an answer':''}</div>
     ${msgs.map(m=>`<div class="dsc" style="margin-top:6px"><b>${m.by==='desk'?'You':who}</b> <span style="color:var(--dim)">${when(m.at)}</span><br>${esc(m.text||'')}</div>`).join('')}
   </div>`:'';
   /* v753: and a line back. It sits under the thread because that is what it answers. */
-  const reply=`<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
-    <input type="text" maxlength="200" placeholder="Answer them" aria-label="Answer this customer" data-say="${esc(o.id)}"
-      style="flex:1 1 180px;min-width:150px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:8px">
-    ${btn('say','Send')}</div>`;
+  /* S11 11.6: the system's composer, and under it his saved quick replies, which fill the box and send
+     nothing until Send, and No reply needed where their line is the last. Send is a lit ghost: the one
+     filled control on the card is the move it exists for. */
+  const quick=ordQuick();
+  const reply=`<div class="salt-composer ordreply"><input type="text" maxlength="200" placeholder="Answer them" aria-label="Answer this customer" data-say="${esc(o.id)}" class="salt-field__input salt-composer__field">
+    <button class="salt-ghost salt-ghost--lit salt-composer__send" data-ord="say" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Send</button></div>
+    <div class="ordquick">${quick.map(t=>`<button type="button" class="salt-ghost salt-ghost--tight" data-quick="${esc(o.id)}" data-text="${esc(t)}">${esc(t)}</button>`).join('')}${waiting?btn('noreply','No reply needed',false).replace('vbtn salt-pill salt-pill--sm','salt-ghost salt-ghost--tight'):''}<button type="button" class="salt-ghost salt-ghost--tight" data-keep="${esc(o.id)}">Keep as a quick reply</button></div>`;
   let acts='';
-  if(o.status==='placed')acts=btn('acknowledged','Acknowledge this order')+btn('declined','Decline',true);
-  else if(rowed&&o.status!=='done')acts=(o.status==='acknowledged'?btn('ready','Ready to collect',false,'collect')+btn('ready','Ready to deliver',false,'deliver'):'')
-    +(moved>0?'':btn('cancelled','Cancel',true));
-  /* the delivery charge is typed where the order is agreed, because that is where it becomes a row */
+  /* S11 11.3: ACCEPT, RM <total>, the goods and the charge together, in a footer that stays in reach. It is
+     open only once the row it approves is on the card: a delivery needs its charge chosen, and the preview has
+     to be of that charge. With no row drawn there is nothing to say yes to, and the Worker refuses an Accept
+     without the preview's digest, so it stays shut until the preview comes back. */
+  const againAck=ordAgainAck(o);
+  /* S11 (D6): HIS YES ALREADY GIVEN (GET /orders carries `yes`): its row is being drafted, or came out other than he saw
+     and waits under Approve. The order still reads as it did, so the card says where the decision is, and offers no
+     second Accept, which the Worker would refuse. */
+  const yes=(o.status==='placed'||againAck)?(o.yes||''):'';
+  const feeNow=o.status==='placed'?(o.mode==='deliver'?ordFeeNow(o):0):againAck?(+o.delivery||0):null,pv=ORD_PV[o.id];
+  const pvFor=pv&&feeNow!=null&&pv.d===feeNow&&pv.st!=='wait',pvOk=pvFor&&pv.st==='ok';
+  const sum=+((+o.total||0)+(feeNow||0)).toFixed(2);
+  /* S11 11.8: CASH TO RECORD. Goods out and nothing paid: one tap marks the order paid in cash at once, so
+     their page says paid and the chase stops, and records the Fulfilment's approval for when its row is drafted
+     (POST orders/<id>/cash, the contract of 11.12). It is the card's one filled control; Ready is a ghost. */
+  const cashNow=['acknowledged','ready'].includes(o.status)&&moved>0.0004&&paid<=0.004&&ordDue(o)>0.004;
+  const ghostBtn=(st,label,mode)=>`<button class="salt-ghost" data-ord="${st}" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${mode?` data-mode="${mode}"`:''}>${label}</button>`;
+  /* S11 11.9: DELIVERED PART. The handover is one tap in the order's own mode for the whole of it; a part is
+     stepped to in halves and recorded, keeping the rest owed, or closed at, which restates the order at what
+     went (the site's close event, its row a Correction). Both post to the desk Worker's handed route (11.12). */
+  const owedU=+(o.qty-moved).toFixed(3),handable=['acknowledged','ready'].includes(o.status)&&owedU>0.004;
+  const how=o.mode==='deliver'?'Delivered':'Collected',part=!!ORD_PART[o.id],partN=ordPartNow(o);
+  const shortT=n=>POSITION_ENGINE.closeGoods(o.total,+o.qty,n);
+  const handBtn=(label,extra)=>`<button class="salt-ghost" data-ord="handover" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${extra}>${label}</button>`;
+  const whyOpen=ORD_WHY[o.id];
+  const goWhy=st=>`<button class="salt-ghost salt-ghost--danger" data-ord="${st}" data-go="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${ORD_WHY[o.id].pick?'':' disabled'}>${st==='declined'?'Decline and tell them':'Cancel and tell them'}</button><button class="salt-ghost" data-whyoff="${esc(o.id)}">Keep the order</button>`;
+  if(whyOpen&&(o.status==='placed'||(rowed&&o.status!=='done'&&!(moved>0))))acts=goWhy(whyOpen.st);
+  else if(yes)acts='';
+  else if(o.status==='placed')acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk?'':' disabled'}>Accept, ${fmt(sum)}</button>`+btn('declined','Decline',true);
+  else if(againAck)acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk?'':' disabled'}>Accept again, ${fmt(sum)}</button>`+(moved>0?'':btn('cancelled','Cancel',true));
+  else if(rowed&&o.status!=='done')acts=(cashNow?`<button class="vbtn salt-pill salt-pill--sm" data-ord="cash" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Cash received, ${fmt(ordDue(o))}</button>`:'')
+    +(handable?(part?handBtn('Record '+units(partN),' data-partlab="rec"')+handBtn('Close at '+units(partN),' data-close="1" data-partlab="close"')+`<button class="salt-ghost" data-partoff="${esc(o.id)}">Keep it whole</button>`
+      :`<button class="${cashNow?'salt-ghost':'vbtn salt-pill salt-pill--sm'}" data-ord="handover" data-full="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}">${how}${moved>0?' the rest, '+units(owedU):', '+units(o.qty)}</button>`
+        +`<button class="salt-ghost" data-partopen="${esc(o.id)}">${how} part</button>`
+        +(moved>0?handBtn('Close at '+units(moved)+', '+fmt(shortT(moved)),` data-close="1" data-qty="${moved}"`):'')):'')
+    +(!part&&o.status==='acknowledged'?ghostBtn('ready','Ready to collect','collect')+ghostBtn('ready','Ready to deliver','deliver'):'')
+    +(moved>0||part?'':btn('cancelled','Cancel',true));
+  /* S11 11.13 (D6): A LATER MOVE WHOSE ROW HE REJECTED is offered again under a fresh entry (POST orders/<id>/again),
+     booked only if the fresh row equals it; GET /orders says which (`again`) */
+  const AGAIN={pay:'payment',cash:'cash',move:'handover',cancel:'cancellation'};
+  if(!whyOpen)acts=(o.again||[]).filter(s=>AGAIN[s]).map(s=>`<button class="salt-ghost" data-ord="again" data-stage="${s}" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Offer the ${AGAIN[s]} again</button>`).join('')+acts;
+  /* S11 11.3: the delivery charge is chosen where the order is agreed, because that is where it becomes a
+     row: RM 0, 10, 15 or a figure of his own, and NONE is chosen until he chooses, so a delivery is never
+     agreed at a charge nobody set. The choice is kept per order across every poll. */
+  const chip=ORD_CHIP[o.id]||'';
+  const opt=(v,w)=>`<label class="salt-option"><input type="radio" class="salt-option__input" name="fee-${esc(o.id)}" value="${v}" data-chip="${esc(o.id)}"${chip===v?' checked':''}><span class="salt-option__face"><span class="salt-option__label">${w}</span></span></label>`;
   const fee=(o.status==='placed'&&o.mode==='deliver')
-    ? `<label class="dsc" style="display:flex;gap:8px;align-items:center;margin-top:10px">Delivery charge, RM
-        <input type="number" min="0" step="0.5" value="0" data-fee="${esc(o.id)}" style="width:96px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:6px"></label>` : '';
-  const hand=(rowed&&o.status!=='done'&&moved<o.qty-0.004)
-    ? `<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
-        <label class="dsc" style="display:flex;gap:8px;align-items:center">${o.mode==='deliver'?'Delivered':'Collected'}, units
-        <input type="number" min="0" step="0.05" max="${o.qty}" value="${esc(String(o.qty))}" data-hand="${esc(o.id)}" style="width:96px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:6px"></label>
-        ${btn('handover','Record the handover')}</div>` : '';
-  return `<div class="card" style="margin-top:10px" data-id="${esc(o.id)}">
-    <div style="font-size:14px"><b>${who}</b> orders ${units(o.qty)} ${esc(o.product||'salt')} for <b>${fmt(o.total)}</b>${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?'delivered':'collected'} <span class="sub">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
-    ${o.mode==='deliver'&&o.place?`<div class="dsc" style="margin-top:6px">To ${esc(o.place)}</div>`:''}
-    <div class="kpis k4" style="margin-top:10px">${cell('Rate',rate==null?'&mdash;':fmt(rate)+'/unit')
-      +cell('Their usual',usual==null?'&mdash;':fmt(usual)+'/unit',off==null?'':Math.abs(off)>=0.10?'r':'g')
+    ? `<fieldset class="salt-options ordfee"><legend class="salt-options__legend">Delivery charge</legend>
+        <div class="salt-options__grid salt-options__grid--2">${opt('0','RM 0')+opt('10','RM 10')+opt('15','RM 15')+opt('other','Other')}</div>
+        <label class="salt-field ordother"${chip==='other'?'':' hidden'}><span class="salt-field__label">Other, RM</span>
+          <input type="number" inputmode="decimal" min="0" step="0.5" value="" class="salt-field__input salt-field__input--mono" data-fee="${esc(o.id)}"></label></fieldset>` : '';
+  const hand=handable
+    ? `<div class="ordpart"${part?'':' hidden'}><span class="salt-field__label">${how} so far, units</span>
+        <div class="ordstep"><button type="button" class="salt-ghost" data-step="-0.5" data-for="${esc(o.id)}" aria-label="Half a unit less">&minus;</button>
+          <input type="number" inputmode="decimal" min="0" step="0.5" max="${o.qty}" value="${esc(String(moved>0?moved:o.qty))}" data-hand="${esc(o.id)}" class="salt-field__input salt-field__input--mono" aria-label="Units ${how.toLowerCase()} so far">
+          <button type="button" class="salt-ghost" data-step="0.5" data-for="${esc(o.id)}" aria-label="Half a unit more">+</button></div>
+        <p class="salt-approve__reason" data-partcap="${esc(o.id)}">${ordPartCap(o,partN)}</p></div>` : '';
+  /* S11 11.2: the system's Approve card, because deciding a site order is deciding a row. A new order
+     leads with the row the preview drafted; one already agreed with the two tracks as before. */
+  return `<div class="salt-approve ordcard" data-id="${esc(o.id)}">
+    <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
+    <p class="ordline">${units(o.qty)} ${esc(o.product||'salt')}, ${fmt(o.total)}${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?(o.place?'deliver to '+esc(o.place):'delivered'):'to collect'}</p>
+    ${yes?'':o.status==='placed'||againAck?ordPvBlock(o):`<div class="kpis k4">${cell('Rate',rate==null?'&mdash;':fmt(rate),'',rate==null?'':'a unit')
+      +cell('Their usual',usual==null?'&mdash;':fmt(usual),off==null?'':Math.abs(off)>=0.10?'r':'g',usual==null?'':'a unit')
       +cell('Paid',paid>0?fmt(paid)+(due>0.004?' of '+fmt(o.total+(+o.delivery||0)):''):'nothing yet',due<=0.004&&rowed?'g':'')
-      +cell('Handed over',moved>0?units(moved)+(moved<o.qty-0.004?' of '+units(o.qty):''):'nothing yet',moved>=o.qty-0.004&&rowed?'g':'')}</div>
-    <div class="dsc" style="margin-top:8px">Paying by ${esc(pay)}. The ledger reads <b>${ledger}</b>${told}.</div>
-    ${thread}${reply}
-    ${fee}${hand}
-    ${acts?`<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">${acts}</div>`:''}
+      +cell('Handed over',moved>0?units(moved)+(moved<o.qty-0.004?' of '+units(o.qty):''):'nothing yet',moved>=o.qty-0.004&&rowed?'g':'')}</div>`}
+    ${ordToldLine(o)}
+    ${o.status==='placed'?'':`<div class="dsc">Paying by ${esc(pay)}. The ledger reads <b>${ledger}</b>${told}.</div>`}
+    ${fee}${thread}${reply}
+    ${hand}${ordWhyBlock(o)}
+    <div class="${acts?'ordfoot':'ordnofoot'}">${acts?`<div class="salt-approve__actions">${acts}</div>`:''}
+      ${cashNow?`<p class="salt-approve__reason">${o.mode==='deliver'?'Delivered':'Collected'} ${units(moved)}, nothing paid. Cash received marks it paid in cash at once, so the chase stops, and books the payment when its row is drafted, if it is this one.</p>`:''}
+      ${yes?`<p class="salt-approve__reason ordyes">${yes==='differs'?'Your yes waits under Approve: the row came out other than you saw. Approve it there, or reject it there to decide again.'
+        :'Your yes is given, and its row is being drafted: it is booked as it lands if it is the row you saw.'}</p>`
+      :o.status==='placed'&&!whyOpen?`<p class="salt-approve__reason">${feeNow==null?'Choose the delivery charge first.'
+        :!pvFor?'Drafting the row first.'
+        :pv.st==='err'?'The row could not be drafted, so Accept waits until it can.'
+        :'Accept tells them '+fmt(sum)+' and approves this row. If the real row differs, it waits under Approve, marked.'}</p>`:''}
+      <p class="dsc ordsaid" role="status" data-msg="${esc(o.id)}">${ORD_SAID&&ORD_SAID.id===o.id?esc(ORD_SAID.t):''}</p></div>
   </div>`;
 }
 /* 24 Sep 2026: WHAT HE HAS TYPED ON A CARD OUTLIVES THE REDRAW. The poll and every refusal rewrite
    the box, which put a typed delivery charge back to 0 and emptied a half-written answer. Each box is
    named by what it holds and the order it is on; only a figure that differs from the card's own is
    carried, so a move that went through clears its box by putting the default back first. */
-function ordField(i){return ['fee','hand','say'].map(k=>i.dataset[k]!=null?k+':'+i.dataset[k]:'').join('');}
+function ordField(i){return ['fee','hand','say','why'].map(k=>i.dataset[k]!=null?k+':'+i.dataset[k]:'').join('');}
+/* S11 11.4: WHAT IS SELECTED, and whether the phone has opened it. On the laptop the list and the card
+   stand side by side and the card is the first row's until he picks another; on the phone the list comes
+   first and a row opens its card, with the way back at its head. Every card is drawn and the others are
+   hidden, so what he typed on one survives a poll while he reads another. */
+let ORD_SEL='',ORD_OPENED=false,ORD_FILTER='all',ORD_SAID=null,ORD_WAKE=false;
+/* S11 fix: A WAKE OPENS ITS CARD. His banner opens desk#orders/newest (public/sw.js): the address is Site orders, and the
+   newest act on it, the one that woke him, is opened on the first draw that has one. The wake carries nothing but that. */
+/* S11 fix: an order named as he would name it (its code, size and day, and what it comes to), for an answer said away from
+   its card: at the head of the list, once the tap that closed it has taken the card off the open list */
+function ordName(o){return (o.code||'unmapped')+', '+units(+o.qty||0)+' '+(o.product||'salt')+' of '+ordWhen(o.at).split(',')[0]+', '+fmt(+((+o.total||0)+(+o.delivery||0)).toFixed(2));}
+function ordWakeAddr(h){if(h==='orders/newest'){ORD_WAKE=true;return 'orders';}return h;}
+function ordWhen(iso){try{if(!iso)return '';const p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(x=>{p[x.type]=x.value;});return p.day+' '+MAP_MON[+p.month-1]+', '+p.hour+':'+p.minute;}catch(e){return '';}}
+function ordWhat(a){const o=a.o;
+  if(a.kind==='new')return units(+o.qty||0)+' '+esc(o.product||'salt')+', '+fmt(+o.total||0)+', '+(o.mode==='deliver'?'delivery':'collect');
+  if(a.kind==='cash')return (o.mode==='deliver'?'Delivered ':'Collected ')+units(+o.moved||0)+' '+esc(o.product||'salt')+', nothing paid. Cash to record.';
+  if(a.kind==='paid'){const p=(o.payments||[]).filter(x=>x&&x.by!=='desk'),l=p[p.length-1];
+    return 'Says '+fmt(l?+l.amount||0:+o.paid||0)+' paid'+(o.method?' by '+esc(o.method)+(o.account?' via '+esc(o.account):''):'')+'. Its row waits under Approve.';}
+  if(a.kind==='asked'){const t=String(o.msgs[o.msgs.length-1].text||'');return '&ldquo;'+esc(t.length>90?t.slice(0,90)+'...':t)+'&rdquo;';}
+  return units(+o.qty||0)+' '+esc(o.product||'salt')+', '+fmt(+o.total||0)+', '+esc(ORD_WORD[o.status]||o.status);}
+function ordRow(a,cur){const o=a.o,K=ORD_KIND[a.kind]||{w:ORD_WORD[o.status]||o.status,tone:'mist',act:'Open'};
+  return `<button type="button" class="salt-inbox-row" data-row="${esc(o.id)}" data-kind="${esc(a.kind)}" aria-current="${cur?'true':'false'}">
+    <span class="salt-inbox-row__main"><span class="salt-inbox-row__title">${o.code?codeOf(o.code):'unmapped'} <span class="salt-status salt-status--${K.tone}">${esc(K.w)}</span></span>
+      <span class="salt-inbox-row__what">${ordWhat(a)}</span></span>
+    <span class="salt-inbox-row__side"><span class="salt-inbox-row__age">${ordWhen(a.at)}</span><span class="salt-inbox-row__action">${K.act}</span></span></button>`;}
+/* S11 fix: the card opened lands BELOW the sticky desk bar, its way back and its head in sight: scrolled to its top
+   less the bar's own bottom edge, measured, since the bar's height is its content's */
+function ordToPane(){const c=document.querySelector('#ordBox .ordpane');if(!c)return;
+  try{const bar=document.querySelector('.salt-deskbar'),under=bar?Math.max(0,bar.getBoundingClientRect().bottom):0;
+    window.scrollTo({top:Math.max(0,Math.round(window.scrollY+c.getBoundingClientRect().top-under-8)),left:0,behavior:'auto'});}catch(e){}}
 function ordDraw(){
   apBadge();
   /* v766: the rail's Today count now includes what is waiting on the site, so it is recounted when
      THAT changes and not on every draw: actions() walks the whole forecast to answer. BEFORE THE BOX
      (24 Sep 2026): the read on load lands here with Site orders off screen, which is most loads, and
      the recount sat below the return, so Today's count never heard of an order until the card was opened. */
-  {const w=ordWaiting();const n=w.placed.length+':'+w.asked.length;
+  const acts=ordActs();
+  {const n=acts.map(a=>a.kind+':'+(a.o&&a.o.id)).join(',');
    if(n!==ordWaitWas){ordWaitWas=n;try{navCounts();}catch(e){}}}
   const box=document.getElementById('ordBox');if(!box)return;
   const typed={};let focused='';
-  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say]').forEach(i=>{
+  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say],input[data-why]').forEach(i=>{
     if(i.value!==i.defaultValue)typed[ordField(i)]=i.value;if(i===document.activeElement)focused=ordField(i);});
+  let selO=null;
+  const lead=document.getElementById('ordLead');
+  /* a tap that closed its order (Cash received taking the last of what was owed) takes its card off the open list,
+     and the answer with it: that answer is said at the head of the list instead, and the phone goes back to the list */
+  const gone=ORD_SAID&&!ORD_OPEN.some(o=>o&&o.id===ORD_SAID.id)?`<p class="dsc ordsaid" role="status" data-msg="${esc(ORD_SAID.id)}">${ORD_SAID.name?'<b>'+esc(ORD_SAID.name)+'.</b> ':''}${esc(ORD_SAID.t)}</p>`:'';
+  if(lead&&!ordNeedKey&&!ordUnread)lead.textContent=acts.length?acts.length+', oldest first.':'Nothing waiting on you.';
   if(ordNeedKey)box.innerHTML='<div class="warnpill" style="display:block">The write key is needed to read the orders and it was not accepted. Reload to be asked again. <b>This is not an empty book: orders may be waiting.</b></div>';
   else if(ordUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The orders could not be read: '+esc(ordUnread)+'. <b>This is not an empty book.</b></div>';
-  else if(!ORD_OPEN.length)box.innerHTML='<div class="card"><div class="dsc">'+(ordAll?'This site has taken no orders at all yet.':'No open orders. A customer\'s order lands here the moment it is placed.')+'</div></div>';
-  else box.innerHTML=ORD_OPEN.map(ordCard).join('');
-  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say]').forEach(i=>{const k=ordField(i);
+  else if(!ORD_OPEN.length)box.innerHTML=gone+'<div class="card"><div class="dsc">'+(ordAll?'This site has taken no orders at all yet.':'No open orders. A customer\'s order lands here the moment it is placed.')+'</div></div>';
+  else{
+    if(ORD_WAKE&&acts.length){ORD_SEL=acts[acts.length-1].o.id;ORD_OPENED=true;ORD_FILTER='all';ORD_WAKE=false;}
+    const shown=acts.filter(a=>ORD_FILTER==='all'||a.kind===ORD_FILTER);
+    const inActs=new Set(acts.map(a=>a.o.id));
+    const rest=ORD_OPEN.filter(o=>o&&!inActs.has(o.id)).map(o=>({kind:'other',o,at:o.at||''}));
+    if(!ORD_OPEN.some(o=>o&&o.id===ORD_SEL)){ORD_SEL='';if(gone)ORD_OPENED=false;}
+    const sel=ORD_SEL||(shown[0]&&shown[0].o.id)||(acts[0]&&acts[0].o.id)||(rest[0]&&rest[0].o.id)||'';
+    const cnt=k=>k==='all'?acts.length:acts.filter(a=>a.kind===k).length;
+    const tab=(k,w)=>`<button type="button" class="salt-tabs__pill ordtab" role="tab" data-of="${k}" aria-selected="${ORD_FILTER===k}">${w}${cnt(k)?` <span class="salt-tabs__count">${cnt(k)}</span>`:''}</button>`;
+    box.classList.toggle('ord-open',!!ORD_OPENED);
+    box.innerHTML=`<div class="ordlist">${gone}
+      <div class="salt-tabs ordtabs" role="tablist" aria-label="Show">${tab('all','All')+tab('new','New')+tab('paid','Paid?')+tab('cash','Cash')+tab('asked','Asked')}</div>
+      <div class="ordrows">${shown.length?shown.map(a=>ordRow(a,a.o.id===sel)).join(''):`<div class="dsc">${acts.length?'None of this kind.':'Nothing waiting on you.'}</div>`}</div>
+      ${rest.length?`<div class="salt-eyebrow ordrest">${ordAll?'Every other order':'Other open orders'}</div><div class="ordrows">${rest.map(a=>ordRow(a,a.o.id===sel)).join('')}</div>`:''}
+    </div>
+    <div class="ordpane"><button type="button" class="salt-ghost ordback" data-back="1">&lsaquo; Waiting on you, ${acts.length}</button>
+      ${ORD_OPEN.filter(Boolean).map(o=>{const c=ordCard(o);return o.id===sel?c:c.replace('<div class="salt-approve ordcard"','<div hidden class="salt-approve ordcard"');}).join('')}</div>`;
+    selO=ORD_OPEN.find(o=>o&&o.id===sel)||null;
+  }
+  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say],input[data-why]').forEach(i=>{const k=ordField(i);
     if(k in typed)i.value=typed[k];if(k===focused)i.focus();});
+  /* S11 11.2: the open card, if it is a new order, asks for its row, once what he typed is back in place */
+  if(selO)ordPreview(selO);
   box.querySelectorAll('button[data-ord]').forEach(b=>{b.onclick=()=>ordAct(b);});
+  box.querySelectorAll('button[data-row]').forEach(b=>{b.onclick=()=>{ORD_SEL=b.dataset.row;ORD_OPENED=true;ordDraw();ordToPane();};});
+  box.querySelectorAll('button[data-of]').forEach(b=>{b.onclick=()=>{ORD_FILTER=b.dataset.of;ORD_SEL='';ordDraw();};});
+  box.querySelectorAll('button[data-back]').forEach(b=>{b.onclick=()=>{ORD_OPENED=false;ordDraw();};});
+  box.querySelectorAll('input[data-fee]').forEach(i=>{i.onchange=()=>{const o=ORD_OPEN.find(x=>x&&x.id===i.dataset.fee);if(o){ordDraw();ordPreview(o);}};});
+  box.querySelectorAll('button[data-quick]').forEach(b=>{b.onclick=()=>{const i=box.querySelector('input[data-say="'+b.dataset.quick+'"]');if(i){i.value=b.dataset.text;i.focus();ordKeepSay(b.dataset.quick);}};});
+  box.querySelectorAll('input[data-say]').forEach(i=>{i.oninput=()=>ordKeepSay(i.dataset.say);ordKeepSay(i.dataset.say);});
+  box.querySelectorAll('button[data-partopen]').forEach(b=>{b.onclick=()=>{ORD_PART[b.dataset.partopen]=1;ordDraw();};});
+  box.querySelectorAll('button[data-partoff]').forEach(b=>{b.onclick=()=>{delete ORD_PART[b.dataset.partoff];ordDraw();};});
+  box.querySelectorAll('button[data-step]').forEach(b=>{b.onclick=()=>{const i=box.querySelector('input[data-hand="'+b.dataset.for+'"]');if(!i)return;
+    const mx=parseFloat(i.max)||0,v=Math.min(mx,Math.max(0,(parseFloat(i.value)||0)+parseFloat(b.dataset.step)));i.value=String(+v.toFixed(3));ordPartSay(b.dataset.for);};});
+  box.querySelectorAll('input[data-hand]').forEach(i=>{i.oninput=()=>ordPartSay(i.dataset.hand);});
+  box.querySelectorAll('input[data-whypick]').forEach(i=>{i.onchange=()=>{const w=ORD_WHY[i.dataset.whypick];if(w){w.pick=i.value;ordDraw();}};});
+  box.querySelectorAll('button[data-whyoff]').forEach(b=>{b.onclick=()=>{delete ORD_WHY[b.dataset.whyoff];ordDraw();};});
+  box.querySelectorAll('button[data-keep]').forEach(b=>{b.onclick=()=>ordQuickKeep(b.dataset.keep);});
+  box.querySelectorAll('input[data-chip]').forEach(i=>{i.onchange=()=>{ORD_CHIP[i.dataset.chip]=i.value;ordDraw();};});
   const ab=document.getElementById('ordAllBtn');
   /* the switch lives outside the box this redraws, so it is re-enabled here: disabled on the tap
      and left that way, one tap would be all it ever took */
@@ -18528,20 +19533,48 @@ function ordDraw(){
 }
 async function ordAct(b){
   const id=b.dataset.id,u=b.dataset.u,st=b.dataset.ord;if(!id||ordBusy[id])return;ordBusy[id]=1;
-  const card=b.closest('.card');if(card)card.querySelectorAll('button').forEach(x=>x.disabled=true);
   /* v694: the two figures he types are on the card, not in a browser prompt: a prompt cannot be
      styled, cannot be measured and is refused outright by an installed app on some phones. */
   const typed=what=>{const i=document.querySelector('input[data-'+what+'="'+id+'"]');return i?parseFloat(i.value):null;};
-  const refuse=t=>{ordMsg=t;delete ordBusy[id];ordDraw();const m0=document.getElementById('ordMsg');if(m0)m0.textContent=ordMsg;};
-  let body;
+  /* S11 11.4: the answer to a tap is written on the card that was tapped, beside its control */
+  const refuse=t=>{ORD_SAID={id,t};delete ordBusy[id];ordDraw();};
+  let body,url='';
   if(st==='handover'){
-    const n=typed('hand');
-    if(!(n>=0))return refuse('That is not a figure of units; nothing moved.');
-    body=JSON.stringify({handover:{units:n}});
+    /* S11 11.9: the whole, a part, or a close at a part, to the desk Worker's handed route */
+    const o=ORD_OPEN.find(x=>x&&x.id===id)||{};
+    const n=b.dataset.full?+o.qty:b.dataset.qty!=null?+b.dataset.qty:typed('hand');
+    if(!(n>=0)||n>(+o.qty||0)+0.004)return refuse('That is not a figure of units from nothing to the '+units(+o.qty||0)+' ordered; nothing moved.');
+    const close=!!b.dataset.close;
+    if(close&&!(n>0&&n<(+o.qty||0)-0.004))return refuse('Close at a part: step to what went, above nothing and under the whole; nothing moved.');
+    body=JSON.stringify({qty:n,close});
+    url='orders/'+encodeURIComponent(id)+'/handed';
   }else if(st==='acknowledged'){
-    const d=typed('fee');
-    if(d!==null&&!(d>=0))return refuse('That is not a delivery figure; nothing moved.');
-    body=JSON.stringify({status:st,delivery:d||0});
+    /* S11 11.3: Accept sends the charge and the hash of the row he was shown; the desk Worker agrees the
+       order and approves the pending row only if the real draft equals that one (11.11) */
+    const o=ORD_OPEN.find(x=>x&&x.id===id)||{};
+    const d=ordAgainAck(o)?(+o.delivery||0):o.mode==='deliver'?ordFeeNow(o):0;
+    if(d==null)return refuse('Choose the delivery charge first; nothing moved.');
+    const pv=ORD_PV[id];
+    body=JSON.stringify({delivery:d,hash:(pv&&pv.st==='ok'&&pv.d===d&&pv.j&&pv.j.hash)||null});
+    url='orders/'+encodeURIComponent(id)+'/accept';
+  }else if((st==='declined'||st==='cancelled')&&!b.dataset.go){
+    ORD_WHY[id]={st,pick:''};delete ordBusy[id];ORD_SAID=null;ordDraw();return;
+  }else if(st==='declined'||st==='cancelled'){
+    const o=ORD_OPEN.find(x=>x&&x.id===id)||{id};
+    const why=ordWhyText(o);
+    if(!why)return refuse('Choose a reason first; nothing moved.');
+    const chk=siteSafe(why);
+    if(chk.refuse)return refuse(chk.refuse+' Nothing moved.');
+    body=JSON.stringify({status:st,note:why});
+  }else if(st==='cash'){
+    const o=ORD_OPEN.find(x=>x&&x.id===id)||{};
+    body=JSON.stringify({amount:ordDue(o)});
+    url='orders/'+encodeURIComponent(id)+'/cash';
+  }else if(st==='again'){
+    body=JSON.stringify({stage:b.dataset.stage});
+    url='orders/'+encodeURIComponent(id)+'/again';
+  }else if(st==='noreply'){
+    body=JSON.stringify({noReply:true});
   }else if(st==='say'){
     /* v753: HIS ANSWER, CHECKED HERE AND AGAIN ON THE WORKER. This page can refuse it before it
        leaves, which is the kinder place to be told; the Worker refuses it whatever asks, which is
@@ -18553,25 +19586,39 @@ async function ordAct(b){
     if(chk.refuse)return refuse(chk.refuse+' Nothing was sent.');
     body=JSON.stringify({message:t});
   }else body=JSON.stringify(Object.assign({status:st},b.dataset.mode?{mode:b.dataset.mode}:{}));
-  const url='orders/'+encodeURIComponent(u)+'/'+encodeURIComponent(id);
+  if(!url)url='orders/'+encodeURIComponent(u)+'/'+encodeURIComponent(id);
+  /* S11 fix: the tap in flight is seen on its card: its buttons shut and a line where the answer will be. The card is the
+     system's Approve card now, which carries no .card, so the old closest('.card') found nothing and shut nothing. */
+  {const card=b.closest('.ordcard');if(card){card.querySelectorAll('button').forEach(x=>x.disabled=true);const m=card.querySelector('[data-msg]');if(m)m.textContent='Sending.';}}
   try{ let r=await fetch(url,{method:'POST',headers:qHeaders(),body});
     if(r.status===401&&saltAskWriteKey())r=await fetch(url,{method:'POST',headers:qHeaders(),body});
     let j={};try{j=await r.json();}catch(e){}
     const told='The customer is told'+(j.push&&j.push.sent?' on the phone':' on the page')+'.';
-    ordMsg=r.status===401?'That write key was refused. The order is unchanged.'
+    /* S11 (D6): what the desk Worker did with the yes, in its own words: booked as it is drafted, or when the
+       first row lands, never a stage waiting silently; and whether Accept's row was the one he saw */
+    const says=!(j.preapproval&&j.preapproval.says)?'':j.preapproval.held?j.preapproval.says+'. ':j.preapproval.says+', if it is the row you saw. ';
+    const said=r.status===401?'That write key was refused. The order is unchanged.'
       :!r.ok?'The Worker refused the move: '+(j.error||'http '+r.status)+'. The order is unchanged.'
       :j.warn?j.warn
-      :st==='handover'?'Recorded. The correction is queued within the minute; approve it under Approve. '+told
-      :st==='acknowledged'?'Acknowledged. The pending row is queued within the minute; approve it under Approve. '+told
+      :st==='handover'?(b.dataset.close?'Closed at '+units(JSON.parse(body).qty)+'. They see it closed there. '
+        :'Recorded: '+units(JSON.parse(body).qty)+' handed over. ')+says+told
+      :st==='acknowledged'?(j.approved?'Accepted. They see Acknowledged, and the row you saw is approved. '+told
+        :j.differs?'Accepted, but the row came out other than you saw, so it waits under Approve, marked, and they still see Placed until you approve it there.'
+        :'Accepted. The row is being drafted; it is approved as it lands if it is the one you saw, and they see Acknowledged then.')
       :st==='say'?'Sent. '+told
-      :st==='declined'?'Declined. The customer sees it.'
-      :st==='cancelled'?'Cancelled. Any payment taken is refunded on the row. '+told
+      :st==='again'?'Offered again under a fresh entry. '+says
+      :st==='cash'?'Recorded: '+fmt(ordDue(ORD_OPEN.find(x=>x&&x.id===id)||{}))+' in cash. They see it paid and the chase stops. '+says+told
+      :st==='noreply'?'Marked as needing no reply. Nothing was sent to them.'
+      :st==='declined'?'Declined. They read Not taken: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+'. '+told
+      :st==='cancelled'?'Cancelled. They read Cancelled by us: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+'. Any payment taken is refunded on the row. '+told
       :ORD_WORD[st]+'. '+told;
+    {const o=ORD_OPEN.find(x=>x&&x.id===id);ORD_SAID={id,t:said,name:o?ordName(o):''};}
+    if(r.ok&&(st==='declined'||st==='cancelled'))delete ORD_WHY[id];
+    if(r.ok&&st==='handover')delete ORD_PART[id];
     const used=r.ok&&document.querySelector('input[data-'+({say:'say',handover:'hand',acknowledged:'fee'}[st]||'none')+'="'+id+'"]');
     if(used)used.value=used.defaultValue;   /* what went through is not carried into the redraw */
-  }catch(e){ ordMsg='No connection, so nothing moved.'; }
+  }catch(e){ ORD_SAID={id,t:'No connection, so nothing moved.'}; }
   delete ordBusy[id];await ordLoad(true);
-  const m=document.getElementById('ordMsg');if(m)m.textContent=ordMsg;
   if(st==='done')apLoad(true);
 }
 const wbEl=id=>document.getElementById(id);
@@ -22445,10 +23492,12 @@ applyOverlay();                            // uncommitted entries fold in before
 /* v281: a fresh open still lands on Today (v147: the desk opens on what to do), but an
    address that names a tab is honoured, which is what lets a reload resume in place. */
 recompute();
-(function(){const h=(location.hash||'').slice(1);switchTab(VIEW_OF[h]?h:'today');})();
+(function(){const h=ordWakeAddr((location.hash||'').slice(1));switchTab(VIEW_OF[h]?h:'today');})();
 /* the one read on load (v385) is in qInit's answer above: cloudMode() is false on every line here */
 window.addEventListener('hashchange',()=>{
-  const h=(location.hash||'').slice(1);
+  const h=ordWakeAddr((location.hash||'').slice(1));
+  /* a wake on a desk already showing Site orders reads the orders again, which opens the newest act */
+  if(ORD_WAKE&&h===curAddr){try{history.replaceState(null,'','#'+h);}catch(e){}ordLoad(true);return;}
   /* v365: was VIEW_OF[h]!==curTab, which only ever caught a jump between views. Two
      addresses in the SAME view (#inventory, #sourcing) both resolve to that one view id,
      so the guard was true and the part never redrew: the hash moved, the screen didn't.

@@ -33,6 +33,19 @@
 			"remote": true
 		}
 	],
+	// THE ORDER BOOK (S10, D10, his answer of 24 Sep 2026): ONE Durable Object for the whole site's
+	// orders, stmt/orderbook.js, SQLite-backed (the kind the free plan offers). The migration makes the
+	// class on the first deploy of this file; a deploy is how it reaches production, and the push job
+	// deploys this site on every run that deploys. Never rename the class or re-tag the migration: a
+	// tag already applied is a record, and a new class is a new tag after it.
+	"durable_objects": {
+		"bindings": [
+			{ "name": "ORDERBOOK", "class_name": "OrderBook" }
+		]
+	},
+	"migrations": [
+		{ "tag": "v1", "new_sqlite_classes": ["OrderBook"] }
+	],
 	// The owner's override lives in the STMT_MASTER secret:
 	//   npx wrangler secret put STMT_MASTER -c wrangler.stmt.jsonc
 	// Unset, the override is simply off and every open needs the customer's own password.
@@ -42,6 +55,11 @@
 	//                           those routes refuse everything
 	//   STMT_VAPID_PRIVATE_JWK  the site's own Web Push signing key, for waking a customer's
 	//                           phone when his order moves; the public half is the var below
+	// AND ONE SINCE S3 3.9 (24 Sep 2026), set by hand, any long random string:
+	//   npx wrangler secret put STMT_HANDOVER_KEY -c wrangler.stmt.jsonc
+	//   STMT_HANDOVER_KEY       keys the hash each hand-over code and key is filed under, and seals
+	//                           the wrap beside it (stmt/signin.js); unset, /handover, /handover/open
+	//                           and /all/handover answer 503 and nothing else changes
 	// THE OWNER'S ROUTE, /all, IS BEHIND CLOUDFLARE ACCESS (10 Sep 2026). These two name the
 	// application stmt/access.js verifies the token against, and they are not secrets: the audience
 	// tag is public, and holding it opens nothing. WITH EITHER EMPTY THE ROUTE ANSWERS 401 AND HANDS
@@ -58,13 +76,23 @@
 		"ACCESS_TEAM": "maakmal",
 		"ACCESS_AUD": "14a921e2b5c1ba14ca75026b930208093644ef349993a4fc66015f689060fecf",
 		"STMT_VAPID_PUBLIC_KEY": "BDIvD4Y6s-Ucr6twgOkmcYPZiUhGLaXMNzAqFrBKhdNCNy-Iyr9xYl7iWLTEAfL1rtQOJJg7g-m8ZeokZqM493c",
-		"STMT_VAPID_SUBJECT": "mailto:maakmal97@icloud.com"
+		"STMT_VAPID_SUBJECT": "mailto:maakmal97@icloud.com",
+		// S10 (D10): THE SWITCH for the site's orders (stmt/orders.js, onBook). "object+kv" is the week of
+		// reading both: the orders in the one Durable Object, every order it changes written to its KV key
+		// behind it, KV read when the object cannot answer, and an hourly check kept at KV orderbook:check.
+		// "kv" is the way back. "object" is 10.5, after seven days of that check clean (cleanSince); it
+		// stops the KV writes, and deleting the old keys is a fold of its own.
+		"ORDER_STORE": "object+kv",
+		// The move-in's generation: a one-minute freeze and a copy of every KV order, once per value. Raise
+		// it by one only to come back from "kv", when KV has taken moves the object has not; forgotten, the
+		// KV road's mark (orderbook:road) moves the book in again on its first request.
+		"ORDER_MOVE_IN": "1"
 	},
-	// THE HOURLY CHASE (v700, his instruction of 18 Sep 2026): "the customer will be notified every
-	// hour to pay if it is an advanced order", day and night, until it is paid. This Worker had no
-	// clock at all until now; it woke a phone only as a side effect of the desk touching an order.
-	// On the hour, every hour, and stmt/worker.js's scheduled() caps it at one wake an hour per
-	// customer through the chased:<username> mark, so a tick that fires twice cannot chase twice.
+	// THE CHASE (v700, his instruction of 18 Sep 2026; twice a day since S12 12.3, his decision D5 of
+	// 24 Sep 2026). This Worker had no clock at all until v700; it woke a phone only as a side effect
+	// of the desk touching an order. The cron stays on the hour, every hour, and stmt/worker.js's
+	// scheduled() decides: it chases only at 10:00 and 18:00 in Kuala Lumpur (chaseSlot), one wake a
+	// slot per customer through the chased:<username> mark, so a tick that fires twice cannot chase twice.
 	//
 	// A CRON HERE REACHES PRODUCTION ONLY THROUGH A DEPLOY OF THIS CONFIG, and public/rev.json's id
 	// does not cover this file, so tools/update.mjs will report the phone current and deploy nothing.
