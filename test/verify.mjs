@@ -14193,6 +14193,8 @@ await (async () => {
       while (tw.nextNode()) nodes.push(tw.currentNode.nodeValue);
       return {
         text: d.getElementById("pPrices").textContent,
+        /* S7 7.1: the greeting is Home's heading, which the page opens on */
+        greet: d.getElementById("placeT").textContent, home: !d.getElementById("pHome").hidden,
         words: nodes.join(" "),   /* text node by text node: textContent runs a heading into the next line */
         marks: [...d.querySelectorAll("#pPrices .mark")].map((m) => ({ ch: m.textContent, colour: m.style.color, hidden: m.getAttribute("aria-hidden") })),
         heads: [...d.querySelectorAll("#pPrices h3")].map((h) => h.textContent),
@@ -14224,15 +14226,16 @@ await (async () => {
   ok(b59.html.length > 200 && b59.html === a59.html,
     "two lists that differ only in their levels draw the same Prices, to the character: " + JSON.stringify([a59.html.length, b59.html.length]));
   /* 4. THE GREETING, AND THE MONTH THEIR FIRST ORDER FALLS IN. The hour is the device's, so the greeting is checked
-     against the hour this run happens to be at rather than against one of the three words. */
+     against the hour this run happens to be at rather than against one of the three words. S7 7.1: the greeting is
+     Home's heading, on the place the page opens on, and the month stays on Prices. */
   const hour59 = new Date().getHours();
-  const want59 = hour59 < 12 ? "Good morning." : (hour59 < 18 ? "Good afternoon." : "Good evening.");
-  ok(a59.text.indexOf(want59) >= 0 && a59.text.indexOf("Buying with us since March 2026.") >= 0,
-    "they are greeted for the hour and told how long they have been buying: " + JSON.stringify(a59.text.slice(0, 90)));
+  const want59 = hour59 < 12 ? "Good morning" : (hour59 < 18 ? "Good afternoon" : "Good evening");
+  ok(a59.home && a59.greet === want59 && a59.text.indexOf("Buying with us since March 2026.") >= 0,
+    "they are greeted for the hour on Home and told on Prices how long they have been buying: " + JSON.stringify([a59.greet, a59.text.slice(0, 90)]));
   /* 5. AND NO NAME IS INVENTED. There is none to use: the rule that keeps plaintext names off the cloud means the page
      cannot know one, and a greeting that guessed at one would be worse than the hour. */
   const c59 = await open59(list59("Gold", "Bronze", null));
-  ok(c59.text.indexOf(want59) >= 0 && c59.text.indexOf("Buying with us since") < 0,
+  ok(c59.greet === want59 && c59.text.indexOf("Buying with us since") < 0,
     "and a customer with no first order yet is greeted without it, rather than with a blank month");
   /* 6. `since` IS THE FIRST PRICED ORDER, on the same rule the rate uses: a cancelled row, a defaulted one and an award
      with no cash are not orders they placed at a price. */
@@ -26891,8 +26894,9 @@ await (async () => {
   });
   /* a banner's tap: on a desk, for the order it opened by itself at sign-in; on a phone, for one left open under another tab */
   await drive(true, async (w, d) => {
-    const tab = d.querySelector('#tabs button[data-t="order"]').getAttribute("aria-selected");
-    ok(tab === "true" && shownOf(d) === O && seen(w)[O] === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)),
+    /* S7 7.1: the place turned to carries aria-current, which the App bar and the rail draw */
+    const tab = d.querySelector('#tabs button[data-t="order"]').getAttribute("aria-current");
+    ok(tab === "page" && shownOf(d) === O && seen(w)[O] === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)),
       "a desk opened at a banner's address for the order it opens by itself turns to it and marks his reply seen: " + JSON.stringify({ tab, shown: shownOf(d), seen: seen(w), row: rowText(d, O) }));
   }, { hash: "#o=" + O });
   await drive(false, async (w, d, turn, sw, fx) => {
@@ -32272,6 +32276,95 @@ await (async () => {
     "and the old rule still refuses the book it always refused");
 })();
 
+section("S7 7.1: Home opens first, and the places sit on a bar under the thumb with the header saying whose account it is");
+await (async () => {
+  /* HIS D11 OF 24 SEP 2026 ("all recommended"). The three tabs and a fourth became places on the system's App bar (its rail
+     from 1080px): Home, Prices, Orders, Account, and Rewards for an associate. Home opens first and answers what they owe
+     (the sealed To pay now, with its one filled Pay), what needs them (a reply not yet shown) and what is coming up (an
+     order agreed and not handed over); a place has an address, a tap writes it and a sign-in opens the one it names; a
+     row on Home opens its order in Orders; a new account opens on Welcome; Log out is This device's, on Account.
+     Forced state: fixtures of each kind of order, owing RM 90 on the statement and RM 70 sealed as to pay now. */
+  const { landingPage: lp71 } = await import("../stmt/page.js");
+  const C71 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc71 } = await import("node:crypto");
+  const { JSDOM: JD71 } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-71", ck = await C71.contentKey("test-secret", u);
+  const part = { date: "2026-09-16", due: "2026-09-26", late: false, rm: 70, whole: 110, product: "salt", qty: 1, got: 1, gotOn: "2026-09-16", resale: false };
+  const pay = { term: 10, now: { rm: 70, due: "2026-09-26", parts: [part] }, overdue: { rm: 0, parts: [] }, coming: { rm: 150, parts: [] } };
+  const list = await C71.encryptWith(ck, JSON.stringify({ at: "2026-09-24T03:59:00Z", week: { monday: "2026-09-21", label: "21 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 110 }] }], soon: [] }));
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, total: 110, at: "2026-09-20T03:00:00Z", history: [], msgs: [] };
+  const withOrders = [
+    { ...base, id: "oR", status: "acknowledged", paid: 110, msgs: [{ by: "customer", text: "Is it in?", at: "2026-09-20T04:00:00Z" }, { by: "desk", text: "Ready Thursday.", at: "2026-09-21T02:00:00Z" }] },
+    { ...base, id: "oC", status: "acknowledged", qty: 2, total: 200, paid: 50, mode: "deliver", place: "Veloria" },
+    { ...base, id: "oP", status: "placed" },
+    { ...base, id: "oD", status: "done", paid: 110, moved: 1 }];
+  const open = async (opt) => {
+    const body = { ok: true, wrap: await C71.wrapKey(pass, ck), session: "sess-71", prices: list,
+      env: await C71.encryptWith(ck, JSON.stringify({ statements: opt.fresh ? [] : [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: opt.fresh ? null : await C71.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 90, pay })) };
+    const dom = new JD71(lp71(u, "n71", null), { url: "https://site.test/" + (opt.hash || ""), runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc71, configurable: true }); } catch (e) { win.crypto = wc71; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path) => { const p = String(path);
+        const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: opt.fresh ? [] : withOrders } : { ok: true };
+        return { ok: true, status: 200, json: async () => j }; };
+    } });
+    const W = dom.window, D = W.document;
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !(!D.getElementById("barw").hidden && D.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 25));
+    return { W, D };
+  };
+  const shown = (D) => ["pHome", "pPrices", "pOrder", "pStmt", "pCard"].filter((id) => !D.getElementById(id).hidden).join(",");
+  const current = (D) => [...D.querySelectorAll('#tabs button[aria-current="page"]')].map((b) => (b.closest(".salt-appbar") ? "bar:" : "rail:") + b.getAttribute("data-t")).sort().join(",");
+  const a = await open({});
+  try {
+    const { W, D } = a, head = () => D.getElementById("placeT").textContent;
+    ok(shown(D) === "pHome" && current(D) === "bar:home,rail:home" && /^Good (morning|afternoon|evening)$/.test(head())
+      && [...D.querySelectorAll("#tabs [data-who]")].map((x) => x.textContent).join(",") === u + "," + u,
+      "signed in, Home opens first, marked on the bar and the rail, greeted, with the username in the header and at the rail's foot: "
+      + JSON.stringify([shown(D), current(D), head()]));
+    const pay71 = D.getElementById("hPay").textContent, go = D.getElementById("hPayGo");
+    ok(/To pay nowRM 70/.test(pay71) && /you received/.test(pay71) && go && go.textContent === "Pay RM 70" && D.querySelectorAll("#pHome .salt-pill").length === 1,
+      "To pay now is the sealed RM 70, never the statement's RM 90, with what it is for and the one filled Pay: " + JSON.stringify(pay71.slice(0, 120)));
+    const rows = (id) => [...D.querySelectorAll("#" + id + " [data-row]")].map((r) => r.getAttribute("data-row")).join(",");
+    ok(rows("hNeeds") === "oR" && /A reply: Ready Thursday\./.test(D.getElementById("hNeeds").textContent)
+      && rows("hComing") === "oC,oP" && /RM 150 still to pay, now or when it arrives/.test(D.getElementById("hComing").textContent)
+      && /Waiting to be confirmed/.test(D.getElementById("hComing").textContent),
+      "Needs you holds the reply not yet shown, and Coming up the orders agreed or sent and not handed over, with what is still to pay: "
+      + JSON.stringify([rows("hNeeds"), rows("hComing")]));
+    ok([...D.querySelectorAll('#tabs [data-count="order"]')].map((c) => c.textContent).join(",") === "2,2" && !D.querySelector('#tabs [data-count="home"]').textContent,
+      "the Orders place counts the two orders that need them, as a numeral on the bar and the rail");
+    ok(D.getElementById("tCard").hidden && D.querySelector('nav.salt-appbar button[data-t="card"]').hidden
+      && D.querySelector("#pStmt #devSlot #lock") && D.getElementById("lock").textContent === "Log out" && !D.querySelector("#barw #lock"),
+      "Rewards is not offered to a customer, and Log out is This device's, on Account, not the bar's");
+    D.querySelector('nav.salt-appbar button[data-t="order"]').click();
+    ok(shown(D) === "pOrder" && current(D) === "bar:order,rail:order" && head() === "Orders" && W.location.hash === "#orders",
+      "a tap on Orders shows that place, marks it on both, names it in the header and writes its address: " + JSON.stringify([shown(D), current(D), head(), W.location.hash]));
+    D.querySelector('nav.salt-appbar button[data-t="home"]').click();
+    D.querySelector('#hNeeds [data-row="oR"]').click();
+    ok(shown(D) === "pOrder" && !!D.querySelector('#pOrder .oscreen[data-order="oR"]') && current(D) === "bar:order,rail:order",
+      "a row on Home opens its order, in Orders: " + JSON.stringify(shown(D)));
+  } finally { a.W.close(); }
+  const b = await open({ hash: "#prices" });
+  try {
+    ok(shown(b.D) === "pPrices" && b.D.getElementById("placeT").textContent === "Prices",
+      "an address naming a place opens that place at sign-in: " + JSON.stringify(shown(b.D)));
+  } finally { b.W.close(); }
+  const c = await open({ fresh: true });
+  try {
+    const { D } = c, home = D.getElementById("pHome").textContent;
+    ok(shown(D) === "pHome" && D.getElementById("placeT").textContent === "Welcome"
+      && /To payRM 0Nothing on your account yet\. Your orders will show here\./.test(home) && !D.getElementById("hPayGo"),
+      "a new account opens Home on Welcome and says there is nothing on it yet: " + JSON.stringify(home.slice(0, 120)));
+    D.getElementById("hPrices").click();
+    ok(shown(D) === "pPrices" && !!D.querySelector("#pPrices .szrow"), "and its one filled control opens Prices, where a size can be ordered");
+  } finally { c.W.close(); }
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read
@@ -32349,8 +32442,11 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => d.querySelectorAll("#pOrder [data-row]").length === 2);
-    ok(d.querySelectorAll("#pOrder [data-row]").length === 2 && !d.getElementById("pOrder").hidden && d.getElementById("tOrder").textContent === "Pay",
-      "the fixture opens on the payment page with its two orders below");
+    /* S7 7.1: Home opens first, and its Pay goes to Orders, where the payment page is */
+    d.getElementById("hPayGo").click();
+    const payPage = () => !d.getElementById("pOrder").hidden && /Payment due/.test((d.querySelector("#pOrder h2") || {}).textContent || "");
+    ok(d.querySelectorAll("#pOrder [data-row]").length === 2 && payPage(),
+      "the fixture's Pay on Home opens the payment page with its two orders below");
 
     openO("oA");
     d.getElementById("pd-oA").click();
@@ -32383,7 +32479,7 @@ await (async () => {
     openO("oA");
     d.getElementById("pd-oA").click();
     await until(() => lapseOn());
-    ok(!lapseBefore && lapseOn() && d.getElementById("tOrder").textContent === "Pay",
+    ok(!lapseBefore && lapseOn() && payPage(),
       "and a 401 after a tap on the payment page is said on screen, in the bar: " + lapseBefore + " then " + lapseOn());
 
     st.ordersDown = false; st.payOk = true;
@@ -32677,7 +32773,7 @@ await (async () => {
   } finally { process.off("unhandledRejection", onRej); w.close(); }
 })();
 
-section("24 Sep 2026: the Counter's tab strip is the system's wrapping container, so four tabs fit a narrow phone");
+section("24 Sep 2026: the Counter's places are the system's App bar and rail, so five fit a narrow phone");
 await (async () => {
   /* M31 of the Counter study: .tabs restated the container as a flex row that never wraps, so an associate's four
      tabs (363 to 387px) ran off a 360 screen and Card could not be reached. The strip is .salt-tabs now, which
@@ -32688,13 +32784,15 @@ await (async () => {
   try {
     /* whether it still hides at the door is not asked here: jsdom answers display none for [hidden] whatever the
        author rules say, so that check stayed green with the page's [hidden] rule removed (tried, 24 Sep 2026) */
-    const tabs = dom.window.document.getElementById("tabs");
-    ok(tabs.classList.contains("salt-tabs") && tabs.getAttribute("role") === "tablist",
-      "the strip carries the system's container class");
-    tabs.hidden = false;
-    const on = dom.window.getComputedStyle(tabs);
-    ok(on.display === "flex" && on.flexWrap === "wrap" && tabs.querySelectorAll("button.salt-tabs__pill").length === 4,
-      "shown, it is a flex row that wraps, so the fourth tab moves to a second line instead of off the screen: " + on.display + " " + on.flexWrap);
+    /* S7 7.1: THE TABS ARE PLACES NOW, on the system's App bar, a grid whose five columns share the width (the recipe
+       sizes each word to its column, measured at 320 and 150%), and on its rail from 1080px */
+    const D = dom.window.document, bar = D.querySelector("#tabs nav.salt-appbar"), rail = D.querySelector("#tabs nav.salt-rail.salt-appbar__rail");
+    const ids = (n) => n ? [...n.querySelectorAll("button[data-t]")].map((b) => b.getAttribute("data-t")).join(",") : "";
+    ok(bar && rail && ids(bar) === "home,prices,order,stmt,card" && ids(rail) === ids(bar)
+      && bar.querySelectorAll("button.salt-appbar__item").length === 5 && rail.querySelectorAll("button.salt-rail__tab").length === 5,
+      "the places are the system's App bar and its rail, the same five on each: " + ids(bar) + " | " + ids(rail));
+    ok(bar.querySelector('button[data-t="card"]').hidden && rail.querySelector('button[data-t="card"]').hidden && !bar.querySelector('button[data-t="stmt"]').hidden,
+      "and Rewards is hidden until an associate's account opens");
   } finally { dom.window.close(); }
 })();
 
@@ -32894,19 +32992,21 @@ await (async () => {
       d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
       for (let i = 0; i < 150 && !d.getElementById("pOrder").textContent; i++) await new Promise((r) => setTimeout(r, 100));
       return { order: d.getElementById("pOrder").textContent, orderShown: !d.getElementById("pOrder").hidden,
-        stmtShown: !d.getElementById("pStmt").hidden, orderTab: d.getElementById("tOrder").textContent,
+        stmtShown: !d.getElementById("pStmt").hidden, home: !d.getElementById("pHome").hidden, homeText: d.getElementById("pHome").textContent,
         pricesTab: !d.getElementById("tPrices").hidden, stmtTab: !d.querySelector('button[data-t="stmt"]').hidden,
         payLinks: d.querySelectorAll("#pOrder a.lnk").length, form: !!d.querySelector("#pOrder select") };
     } finally { dom.window.close(); }
   };
   const held = await openWith(250.5), under = await openWith(100), none = await openWith(undefined);
-  ok(held.orderShown && !held.stmtShown && held.orderTab === "Pay" && !held.pricesTab && held.stmtTab
+  /* S7 7.1: HOME OPENS FIRST, over the line too, and leads with the overdue amount and Pay; Orders is the payment page */
+  ok(held.home && !held.orderShown && !held.stmtShown && !held.pricesTab && held.stmtTab
+    && /Please pay the overdue amount of RM 250\.5 before placing another order/.test(held.homeText) && /Pay RM 250\.5/.test(held.homeText)
     && /Please pay the overdue amount of RM 250\.5 before placing another order/.test(held.order) && held.payLinks > 0 && !held.form,
-    "owing RM 250.50, the account opens on Pay, says to pay the overdue amount first, offers the ways to pay, and neither the price list nor an order form: "
-    + JSON.stringify({ ...held, order: held.order.slice(0, 90) }));
-  ok(!under.orderShown && under.stmtShown && under.orderTab === "Order" && under.pricesTab && !/overdue/.test(under.order)
-    && !none.orderShown && none.orderTab === "Order" && none.pricesTab,
-    "at RM 100 exactly, and with no figure at all, the account opens as it always has");
+    "owing RM 250.50, Home says to pay the overdue amount first with its Pay, Orders offers the ways to pay, and neither the price list nor an order form: "
+    + JSON.stringify({ ...held, order: held.order.slice(0, 90), homeText: held.homeText.slice(0, 90) }));
+  ok(under.home && !under.orderShown && under.pricesTab && !/overdue/.test(under.order + under.homeText)
+    && none.home && !none.orderShown && none.pricesTab && !/overdue/.test(none.homeText),
+    "at RM 100 exactly, and with no figure at all, Home opens with Prices beside it and no overdue line");
 })();
 
 section("S1 1.28: Still to collect is one line a book, never units of different books added");
@@ -33207,8 +33307,10 @@ await (async () => {
     "both pages the Worker serves carry the recipes between the tokens and the page's own layer");
   ok(/<button class="btn salt-pill salt-pill--md" id="go" type="submit">/.test(pgY) && /<input class="fld salt-field__input salt-field__input--mono" id="rq"/.test(pgY),
     "the door's field is the system's field, in mono for a code, and Log in is the system's pill");
-  ok(/class="salt-tabs__pill on" role="tab" aria-selected="true" data-t="stmt"/.test(pgY) && /bs\[i\]\.setAttribute\('aria-selected',on\?'true':'false'\)/.test(pgY),
-    "the tabs are the system's, and a tap moves aria-selected with the open one");
+  /* S7 7.1: the tabs are places on the system's App bar and rail, and the open one carries aria-current, which both draw */
+  ok(/'<button type="button" class="salt-appbar__item"' \+ placeAttrs\(t\)/.test(pgY) && /class="salt-rail__tab salt-rail__tab--solo"' \+ placeAttrs\(t, true\)/.test(pgY)
+    && /b\.setAttribute\('aria-current','page'\); else b\.removeAttribute\('aria-current'\)/.test(pgY),
+    "the places are the system's, and a tap moves aria-current with the open one");
   /* S5 5.3: the chip is drawn in one place, stateChip, its word the customer's and its tone read off the order */
   ok(/\+'salt-status salt-status--'\+tone,stateWord\(o\)\)/.test(pgY) && /tone=s==='placed'\?'steel salt-status--dashed':/.test(pgY) && /h\.appendChild\(stateChip\(o,'state'\)\)/.test(pgY),
     "an order's state is the system's chip, in its tone");

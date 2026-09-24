@@ -386,8 +386,16 @@ signed in (or Salt Admin, for a customer at his counter) hands the sign-in acros
 ## The price list and the order book (06 Sep 2026, his instruction)
 
 Three things sit behind the one password since v499: the statements, a **price list** for
-the week, and an **order**. The page shows them as three tabs once the password has opened
-the record. Nothing about the statements changed.
+the week, and an **order**. The page shows them in PLACES once the password has opened the record (S7 7.1, his
+D11 of 24 Sep 2026; three tabs and a fourth until then): **Home**, which opens first, **Prices**, **Orders**, **Account**
+(the statement and This device, where Log out is) and **Rewards** for an associate. They sit on the system's App bar
+at the foot of a phone and on its rail from 1080px. A place keeps its tab's id (`stmt`, `order`, `card`) and has an
+address (`#home`, `#prices`, `#orders`, `#account`, `#rewards`): a tap writes it, over an empty address or a place's
+and never over a key, and a sign-in opens the place it names once. `placeShow` is the one road between them; a
+banner's `#o=<id>` still opens Orders at that order. **Home** reads the sealed To pay now with its one filled Pay (the
+overdue amount over the line), Needs you (a reply not yet shown on this device, goods ready to collect) and Coming up
+(an order agreed or sent and not handed over); a new account opens on Welcome and "Nothing on your account yet". Nothing
+about the statements changed.
 
 **THE CUSTOMER SEES NO LEVEL** (S4 4.10, his D11 of 24 Sep 2026, reversing v659's "a very subtle tier
 level, in symbol and colour"). Prices drew a glyph in the level's colour beside each product (`MARK`, v659
@@ -396,8 +404,8 @@ as it has since v651, and the suite holds two lists differing only in level to t
 character.
 
 **AND THEY ARE GREETED AS PERSONALLY AS THIS SITE CAN** (v659, the same instruction). The hour is
-theirs, off their own device, so the page opens with Good morning, Good afternoon or Good evening,
-and under the week's line it says the month their first priced order falls in (`since` in
+theirs, off their own device, so Home's heading is Good morning, Good afternoon or Good evening
+(S7 7.1; Prices opened with it until then), and under Prices' week line it says the month their first priced order falls in (`since` in
 `tools/pricelist.mjs`, on the same rule the rate uses: a cancelled row, a defaulted one and an award
 with no cash are not orders they placed at a price). **No customer's name is used, because none
 exists anywhere this site can reach**: hard rule 2 keeps plaintext names off the cloud and
