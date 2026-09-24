@@ -253,30 +253,38 @@ export const OWNER_JS = `
     try{ return new Date(iso).toLocaleDateString('en-GB',{timeZone:'Asia/Kuala_Lumpur',
       day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return ''; }
   }
-  /* v696, his instruction of 18 Sep 2026: FIVE LINKS, ONE PER TIER. The five stand at the top, in
-     the ladder's own order, each named by its level; anything minted against a customer sits below
-     them under its own heading, so "exactly five" is what the panel reads at a glance. */
+  /* v696, his instruction of 18 Sep 2026: ONE LINK PER TIER. They stand at the top, in the ladder's
+     own order, each named by its level; anything minted against a customer sits below them under its
+     own heading. HOW MANY IS THE BOOK'S (24 Sep 2026): the count is read off the tier list the route
+     sends, never written here, because "the five" outlived the fifth tier by a day. */
   function drawLinks(){
     var glist=document.getElementById('glist');
     glist.textContent='';
     if(!links.length){ glist.appendChild(el('p','rnone','No links yet.')); return; }
-    var order=(links.filter(function(r){return r.standing;}).map(function(r){return r.level;}));
+    /* the guest tiers are the list less Ambassador, the floor, which is never a guest's */
+    var want=tiers.slice(1);
+    var made=want.filter(function(t){ return links.some(function(r){ return r.standing&&r.level===t; }); }).length;
+    /* waiting means he still has to act on it: not declined (D13), and not withdrawn either */
+    var isWaiting=function(r){ return !r.standing&&r.approved===false&&r.declined!==true&&!r.revoked; };
     var standing=links.filter(function(r){return r.standing;}),
-        /* a declined link is not waiting on him (D13, 24 Sep 2026): it sits with the rest */
-        waiting=links.filter(function(r){return !r.standing&&r.approved===false&&r.declined!==true;}),
-        older=links.filter(function(r){return !r.standing&&!(r.approved===false&&r.declined!==true);});
+        waiting=links.filter(isWaiting),
+        older=links.filter(function(r){return !r.standing&&!isWaiting(r);});
     /* v709: WHAT IS WAITING ON HIM COMES FIRST. An associate's link is shut until he approves it,
        so the one group he has to act on is the one at the top. */
     var seq=[], heads={};
     if(waiting.length){ heads[seq.length]='Waiting on you'; seq=seq.concat(waiting); }
-    if(standing.length){ heads[seq.length]='The five, one for each tier'; seq=seq.concat(standing); }
+    if(standing.length){ heads[seq.length]=want.length?'One for each of the '+want.length+' tiers':'One for each tier'; seq=seq.concat(standing); }
     if(older.length){ heads[seq.length]='Older links, made against a customer'; seq=seq.concat(older); }
     seq.forEach(function(r,i){
       if(heads[i]) glist.appendChild(el('p','ghead',heads[i]));
       var card=el('div','glink'+(r.revoked?' off':''));
       var declined=r.declined===true, pending=r.approved===false&&!declined;
+      /* a standing link whose level the book no longer names (Bronze, 23 Sep 2026) is kept because it
+         was handed out, and it opens the board a stranger sees, never the level it still carries */
+      var retired=r.standing&&want.length&&want.indexOf(r.level)<0;
       card.appendChild(el('p','gt',(r.standing?r.level:(declined?'Not approved':(r.level?r.level:(pending?'Waiting on you':'Tier '+r.tier))))+(r.revoked?' \\u00b7 withdrawn':'')));
-      card.appendChild(el('h4',null,r.standing?'Hand this one to a stranger you would quote '+r.level
+      card.appendChild(el('h4',null,retired?'Kept because it was handed out. It opens the board a stranger sees'
+        :r.standing?'Hand this one to a stranger you would quote '+r.level
         :declined?('Minted by '+(r.by||'an associate')+', and not approved, so it stays shut')
         :(pending?('Minted by '+(r.by||'an associate')+', and shut until you approve it')
         :(r.label||'(no label)'))));
@@ -300,8 +308,9 @@ export const OWNER_JS = `
       /* v709: his word on one an associate minted, and the tier he may change on it. A tier he
          does not set leaves it following the associate, which is what "if need be" means. */
       if(!r.standing&&r.by){
-        if(r.approved===false){
-          /* a declined link keeps Approve, which is how a decline is taken back, and loses Decline */
+        if(r.approved===false&&!r.revoked){
+          /* a declined link keeps Approve, which is how a decline is taken back, and loses Decline;
+             a withdrawn one has neither, Restore being the way back */
           var ap=el('button',null,'Approve'); ap.type='button';
           ap.addEventListener('click', function(){ moveLink(r,'approve'); });
           row.appendChild(ap);
@@ -323,7 +332,7 @@ export const OWNER_JS = `
       card.appendChild(row);
       glist.appendChild(card);
     });
-    if(order.length&&order.length<5) glist.appendChild(el('p','rnone','Only '+order.length+' of the five are made. Publish the statements and open this again.'));
+    if(want.length&&made<want.length) glist.appendChild(el('p','rnone','Only '+made+' of the '+want.length+' are made. Publish the statements and open this again.'));
   }
   async function refs(path, body){
     var o = body ? {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)}

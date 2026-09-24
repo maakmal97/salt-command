@@ -14297,6 +14297,77 @@ await (async () => {
     && (await seen()).opens === 3,
     "a spent link and an unknown device are refused and count nothing");
 })();
+section("S1 1.34: the Links panel counts the tiers off the list, Bronze's kept link says what it opens, and a withdrawn link is not waiting");
+await (async () => {
+  /* 24 SEP 2026 (L36, L37): the panel said "The five, one for each tier" over four tiers and warned "Only 4
+     of the five are made" with every link made; Bronze's kept link was captioned "quote Bronze", a level
+     the book no longer has, though it opens the stranger's board (stmt/refs.js); and a pending link the
+     associate had withdrawn still sat under Waiting on you with Approve on it. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const RF = await import("../stmt/refs.js");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+  await kv.put("roster", JSON.stringify([]));
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s1-34", u);
+  await kv.put("u:" + u, JSON.stringify({ u, assoc: true, issued: "2026-09-01", verifier: await C.makeVerifier(pw),
+    wrap: await C.wrapKey(pw, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  const TEAM = "maakmal", AUD = "aud-s1-34", KID = "kid-s1-34";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: "mp-s1-34", ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 150 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  const wins = [];
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const html = await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text();
+    const panel = async () => {
+      const w = new JSDOM(html, { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(x) {
+        x.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET",
+          headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+      } }).window;
+      wins.push(w);
+      w.document.querySelector('button[data-m="links"]').click();
+      await until(() => w.document.querySelectorAll("#glist .glink").length > 0);
+      return w.document;
+    };
+    /* ---- every tier's link made: four, and nothing said to be missing ---- */
+    const D1 = await panel();
+    const heads1 = [...D1.querySelectorAll("#glist .ghead")].map((x) => x.textContent), text1 = D1.getElementById("glist").textContent;
+    ok(D1.querySelectorAll("#glist .glink").length === 4 && heads1.includes("One for each of the 4 tiers") && !/five/i.test(text1) && !/Only \d/.test(text1),
+      "with a link for each of the four tiers the heading counts four off the list and nothing is said to be missing: " + JSON.stringify({ heads1, only: (/Only[^.]*\./.exec(text1) || [""])[0] }));
+
+    /* ---- Bronze's kept link, and a pending link its associate withdrew ---- */
+    const bronze = await RF.mintRef({ STMT: kv }, { level: "Bronze", label: "Bronze", by: "standing" });
+    const sess = (await (await site("/open", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ u, password: pw }) })).json()).session;
+    const my = (path) => site(path, { method: "POST", headers: { "X-Stmt-Session": sess, "content-type": "application/json" }, body: "{}" });
+    const gone = (await (await my("/my/refs")).json()).ref.id, still = (await (await my("/my/refs")).json()).ref.id;
+    ok((await my("/my/refs/" + gone + "/revoke")).status === 200, "the associate withdraws one of their two pending links");
+    const D2 = await panel();
+    const cardOf = (id) => [...D2.querySelectorAll("#glist .glink")].find((x) => x.textContent.includes(id));
+    const groupOf = (id) => { let g = null; for (const n of D2.getElementById("glist").children) { if (n.classList.contains("ghead")) g = n.textContent; if (n === cardOf(id)) return g; } return null; };
+    await until(() => cardOf(gone) && cardOf(still) && cardOf(bronze.id));
+    const bh4 = cardOf(bronze.id) ? cardOf(bronze.id).querySelector("h4").textContent : "";
+    ok(!/quote Bronze/.test(bh4) && /board a stranger sees/.test(bh4),
+      "Bronze's kept link says it opens the board a stranger sees, not a level the book no longer has: " + JSON.stringify(bh4));
+    ok(groupOf(still) === "Waiting on you" && groupOf(gone) !== "Waiting on you",
+      "a pending link its associate withdrew is not waiting on him, while the one still pending is: " + JSON.stringify([groupOf(still), groupOf(gone)]));
+    ok(cardOf(gone) && ![...cardOf(gone).querySelectorAll("button")].some((b) => /Approve|Decline/.test(b.textContent))
+      && [...cardOf(gone).querySelectorAll("button")].some((b) => b.textContent === "Restore"),
+      "and it carries no Approve or Decline, Restore being the way back: " + JSON.stringify(cardOf(gone) && [...cardOf(gone).querySelectorAll("button")].map((b) => b.textContent)));
+  } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
+})();
 section("v687: the master account opens on its own page, and the owner's script travels only there");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: a master account that opens on what it can do. /all is that account,
