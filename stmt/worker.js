@@ -150,15 +150,19 @@ const REFUSED = "That username and password were not accepted.";
 /* EVERY OPEN IS AN OPEN (24 Sep 2026). `seen:` was written on a password open alone, so a customer who
    signed in once from his link and then came back on a remembered phone read "Not opened" on his list,
    or one open, for ever. All three roads write it now, with the road the last one took. His own opens
-   under the master are not the customer's and are never counted. */
+   under the master are not the customer's and are never counted. BEST EFFORT: the count gates nothing,
+   and KV refuses a second write to one key inside a second, so a put that throws must never fail an
+   open; on the link road the token is already burnt by then. */
 async function markSeen(env, u, rec, how) {
-  const seen = await env.STMT.get(SKEY(u), "json");
-  const now = new Date().toISOString();
-  await env.STMT.put(SKEY(u), JSON.stringify({
-    first: (seen && seen.first) || now, last: now,
-    opens: ((seen && seen.opens) || 0) + 1,
-    how, issued: (rec && rec.issued) || null
-  }));
+  try {
+    const seen = await env.STMT.get(SKEY(u), "json");
+    const now = new Date().toISOString();
+    await env.STMT.put(SKEY(u), JSON.stringify({
+      first: (seen && seen.first) || now, last: now,
+      opens: ((seen && seen.opens) || 0) + 1,
+      how, issued: (rec && rec.issued) || null
+    }));
+  } catch (e) { /* the next open counts */ }
 }
 
 async function handleOpen(request, env) {

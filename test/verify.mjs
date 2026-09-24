@@ -14297,6 +14297,24 @@ await (async () => {
   ok((await post("/open-link", { token: tok })).status === 401 && (await post("/remember/open", { token: "rem" + "b".repeat(29) })).status === 401
     && (await seen()).opens === 3,
     "a spent link and an unknown device are refused and count nothing");
+
+  /* THE COUNT GATES NOTHING, SO IT CANNOT FAIL AN OPEN (F2, R1): KV refuses a second write to one key
+     inside a second, and seen: is one key an account. On the link road the token is burnt before the
+     count, so a throwing put there lost the customer their link and signed nobody in. */
+  const realPut = kv.put.bind(kv);
+  kv.put = async (k, v, o) => { if (String(k).startsWith("seen:")) throw new Error("KV PUT failed: 429 Too Many Requests"); return realPut(k, v, o); };
+  try {
+    const tok2 = S.newSignin();
+    await S.mintSignin(env, u, tok2, await C.wrapKey(tok2, ck));
+    const bodyOf = async (p) => { try { return { status: p.status, j: await p.json() } } catch (e) { return { status: p && p.status, j: {} }; } };
+    const call = async (path, body) => { try { return await bodyOf(await post(path, body)); } catch (e) { return { status: "threw " + e.message, j: {} }; } };
+    const l = await call("/open-link", { token: tok2 });
+    const m = await call("/remember/open", { token: rem });
+    const p = await call("/open", { u, password: pw });
+    ok(l.status === 200 && !!l.j.session && m.status === 200 && !!m.j.session && p.status === 200 && !!p.j.session,
+      "a count that cannot be written still lets the link, the remembered phone and the password open: "
+      + JSON.stringify({ link: l.status, remembered: m.status, password: p.status }));
+  } finally { kv.put = realPut; }
 })();
 section("S1 1.34: the Links panel counts the tiers off the list, Bronze's kept link says what it opens, and a withdrawn link is not waiting");
 await (async () => {
