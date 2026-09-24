@@ -31453,9 +31453,10 @@ await (async () => {
     "their order with a claim waiting says why in place of Cancel; one with none keeps Cancel: " + JSON.stringify(foot));
   const held = await page({ term: 10, now: { rm: 300, due: "2026-09-11", parts: [part] }, overdue: { rm: 300, parts: [part] }, coming: none },
     [{ ...base, ...waiting, id: "oC", status: "cancelled", history: [{ at: iso(-30), status: "cancelled", by: "customer" }] }]);
-  let tab = "";
-  try { tab = t(held.window.document.querySelector('button[data-t="order"]')); } finally { held.window.close(); }
-  ok(tab === "Pay", "and a claim on an order that has ended does not lift the RM 100 hold: " + JSON.stringify(tab));
+  /* S7 merge: Orders keeps its name over the line (S7 7.1), so the held page is told by its head */
+  let head = "";
+  try { await until(() => t(held.window.document.getElementById("pOrder"))); head = t(held.window.document.querySelector("#pOrder h2")); } finally { held.window.close(); }
+  ok(head === "Payment due", "and a claim on an order that has ended does not lift the RM 100 hold: " + JSON.stringify(head));
 
   /* HIS CARD: no Cancel beside Received while a claim waits */
   const { openMaster } = await import("../tools/payload.mjs");
@@ -34995,11 +34996,14 @@ await (async () => {
     { ...base, id: "o3", status: "done", qty: 2, total: 180, paid: 180, moved: 2, mode: "deliver", place: "Veloria", at: "2026-09-10T03:00:00Z" },
     { ...base, id: "o4", status: "cancelled", qty: 3, total: 270, at: "2026-09-19T03:00:00Z" },
     { ...base, id: "o5", status: "done", qty: 5, total: 450, paid: 450, moved: 5, at: "2026-09-17T03:00:00Z" }];
+  const late74 = (rm) => ({ date: "2026-09-01", due: "2026-09-11", late: true, rm, whole: rm, product: "salt", qty: 2, got: 2, gotOn: "2026-09-01", resale: false });
   const open = async (opt) => {
     const posts = [];
     const body = { ok: true, wrap: await C74.wrapKey(pass, ck), session: "sess-74", prices: list,
       env: await C74.encryptWith(ck, JSON.stringify({ statements: opt.fresh ? [] : [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: opt.fresh ? null : await C74.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: opt.owed || 0 })) };
+      live: opt.fresh ? null : await C74.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: opt.owed || 0,
+        /* S7 merge: the line counts what is past its term, the sealed pay.overdue (S6 6.7), so the fixture seals it */
+        pay: opt.owed ? { term: 10, now: { rm: opt.owed, due: "2026-09-11", parts: [late74(opt.owed)] }, overdue: { rm: opt.owed, parts: [late74(opt.owed)] }, coming: { rm: 0, parts: [] } } : undefined })) };
     const dom = new JD74(lp74(u, "n74", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc74, configurable: true }); } catch (e) { win.crypto = wc74; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -35382,6 +35386,49 @@ await (async () => {
     await new Promise((r) => setTimeout(r, 200));
     ok(!!btn() && !btn().disabled, "and once the unsubscribe has ended, its This device buttons work: " + JSON.stringify(btn() && [btn().textContent, btn().disabled]));
   } finally { if (release) release(); await new Promise((r) => setTimeout(r, 50)); W.close(); }
+})();
+
+section("S7 merge: This device's Turn off drops this phone's subscription and tells the site, on its session");
+await (async () => {
+  /* THE MERGE'S RULE 2: one Notifications row, This device's (S7 7.3), with stage 9's richer Turn off: the phone's own
+     subscription dropped, the site told on the session (POST /push/unsubscribe, S9 9.9), and off kept on the device.
+     Forced state: a browser that already said yes, so the way in files the phone. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s7m1", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7m1",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const st = { subbed: false, unsub: 0, told: [] };
+  const dom = new JSDOM(landingPage(u, "ns7m1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.Notification = { permission: "granted", requestPermission: async () => "granted" };
+    win.PushManager = function () {};
+    const sub = { endpoint: "https://push.test/s7m1", toJSON: () => ({ keys: { p256dh: "p", auth: "a" } }), unsubscribe: async () => { st.unsub++; st.subbed = false; return true; } };
+    const reg = { pushManager: { subscribe: async () => { st.subbed = true; return sub; }, getSubscription: async () => (st.subbed ? sub : null) } };
+    Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: { register: async () => reg, ready: Promise.resolve(reg), getRegistration: async () => reg } });
+    win.fetch = async (path, o) => { const p = String(path);
+      if (p === "/push/unsubscribe") st.told.push({ session: o.headers["X-Stmt-Session"], body: JSON.parse(o.body) });
+      const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: [] } : p === "/push/key" ? { ok: true, key: "AAAA", configured: true } : { ok: true };
+      return { ok: true, status: 200, json: async () => j }; };
+  } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return !!f(); };
+  const btn = () => { const r = [...D.querySelectorAll("#thisDevice .salt-ledger__row")].find((x) => x.querySelector(".salt-ledger__label").textContent === "Notifications");
+    return r && r.querySelector("button"); };
+  try {
+    D.getElementById("un").value = u; D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    ok(await until(() => btn() && btn().textContent === "Turn off"), "signed in, This device offers Turn off");
+    btn().click();
+    ok(await until(() => btn() && btn().textContent === "Turn on") && st.unsub === 1
+      && st.told.length === 1 && st.told[0].session === "sess-s7m1" && st.told[0].body.endpoint === "https://push.test/s7m1"
+      && W.localStorage.getItem("salt-push-off") === "1"
+      && [...D.querySelectorAll("#thisDevice .salt-ledger__label")].filter((l) => l.textContent === "Notifications").length === 1,
+      "Turn off drops the subscription, tells the site which phone on its session, keeps off on the device, and This device has one Notifications row: " + JSON.stringify([st.unsub, st.told]));
+  } finally { await new Promise((r) => setTimeout(r, 50)); W.close(); }
 })();
 
 section("S7 merge: a sign-in's notifications still being filed when its page goes draw nothing after it");
