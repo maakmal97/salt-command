@@ -940,7 +940,8 @@ export async function makeStatements(outDir, issue, opts) {
         + 'Tick Remember me and that device stays signed in; Log out ends it.<br>'
         + '<code>' + esc(url) + '</code></p></div>';
       html = baseDoc.replace('</div></body></html>', qrBlock + '\n</div></body></html>');
-      pw = priorPw[p] || newPassword();
+      /* a spare account bound by the fold has its password filed under the username, not the code (S14) */
+      pw = priorPw[p] || priorPw[u] || newPassword();
       passwords[p] = pw;
       const history = priorIssues(outDir, p, issue);
       const bundle = { v: 1, issued: issue, statements: [

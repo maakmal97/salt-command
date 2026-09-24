@@ -32,6 +32,10 @@ function txPaid(s){return (s.cash||0)+(s.settledRM||0);}
    the convention changed, a bare `total` would have been right by luck in twelve places and wrong
    in the twelve that meant what they owe. */
 function txGoods(s){return +(s.total||0);}
+/* S11 11.9: WHAT AN ORDER CLOSED SHORT COMES TO, the goods at the rate agreed pro rata to the units that went, to the sen.
+   The ONE copy: the desk's card shows it and the desk Worker sends it to the site as a stated figure, the site pricing
+   nothing. Whether a short close charges this or their card at the size that went awaits his word (24 Sep 2026). */
+function closeGoods(total,qty,n){return qty>0?+((+total||0)*n/qty).toFixed(2):0;}
 function txDeliv(s){return (s.deliveredQty||0)+(s.settledKg||0);}
 /* ====== COST IS ABSOLUTE (v496, his instruction of 05 Sep 2026) ================
    A sale's `cost` is the cost of the order in RM, stored as a person states it, and the cost
@@ -832,7 +836,7 @@ function renameInBook(book,pairs){
 }
 
 return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,
-        txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
+        txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,refundOnCancel:refundOnCancel,

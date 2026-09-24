@@ -60,6 +60,7 @@ import { sortBook } from "./sort-ledger.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { nextRid } from "./rid.mjs";
 import { userFor, usersJson } from "./stmt-crypto.mjs";
+import { freeSpares, oneCodeEach } from "./stmt-pool.mjs";
 import { CORRECT_BOOL, CORRECT_DATE, CORRECT_NUM_NN, CORRECT_NUM_POS, CORRECT_TEXT } from "../src/drafter.js";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -87,16 +88,33 @@ const APPOINTS = POSITION_ENGINE.ADDID_APPOINTS;
    kinds whose rows book to them and so are issued a statement; a supplier, a bucket and an associate's end
    buyer are not, and get none. */
 const STATEMENT_KINDS = ["customer", "reseller", "referral"];
-export function mintUsernames(users, staged, folded) {
+/* D15, HIS ANSWER OF 24 SEP 2026: ACCOUNTS READY ON DAY ONE. `spares` are the free spare accounts the laptop
+   minted ahead of need (tools/stmt-pool.mjs), in order: a registration takes the next one, so its username
+   already has a sealed record behind it and the publish in this same run opens it. The binding is the one
+   line in _users.json, so it lives in the repo, and nothing here needs a key. With none free it mints a bare
+   username as before, and the laptop's next update makes the account. */
+export function mintUsernames(users, staged, folded, spares) {
   const minted = [];
+  const free = (spares || []).slice();
   for (const a of (staged && staged.approved) || []) {
     const r = a.row || {};
     if (a.collection === "roster" && folded.includes(a.id) && STATEMENT_KINDS.includes(r.kind) && !users[r.code]) {
-      userFor(users, r.code);
+      if (free.length) users[r.code] = free.shift(); else userFor(users, r.code);
       minted.push(r.code);
     }
   }
   return minted;
+}
+/* The run's half: read the pool off the committed records, bind, and write _users.json in its one format.
+   It throws, writing nothing, on a file that gives one username to two codes (oneCodeEach), and the run
+   calls it before the book is written, so that refusal folds nothing. */
+export function registerAccounts(stmtsDir, usersFile, staged, folded) {
+  const users = existsSync(usersFile) ? JSON.parse(readFileSync(usersFile, "utf8")) : {};
+  const spares = freeSpares(stmtsDir, users);
+  const minted = mintUsernames(users, staged, folded, spares);
+  oneCodeEach(users);
+  if (minted.length) writeFileSync(usersFile, usersJson(users));
+  return { users, minted, bound: minted.filter((c) => spares.includes(users[c])) };
 }
 const stamp = () => { const d = new Date(Date.now() + 8 * 36e5); const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   return `${String(d.getUTCDate()).padStart(2, "0")} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}, ${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")} KL`; };
@@ -355,7 +373,7 @@ export function plan(book, staged, notes) {
       entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: r.tiers || null };
       if (entry.roster.register) entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
       if (r.geo) entry.does.push(`file ${r.code} as a point on the map, about a kilometre, where its place was found`);
-      if (STATEMENT_KINDS.includes(r.kind)) entry.does.push(`give ${r.code} a statement username if they have none, kept for life`);
+      if (STATEMENT_KINDS.includes(r.kind)) entry.does.push(`give ${r.code} a statement username if they have none, kept for life, on the next free spare account where there is one`);
       /* THE FIGURES ARE NOT RESTATED HERE. The reward hurdles and the credit caps are the
          engine's (REWARD.hurdleMultiple, RULES.creditUnits), and a second copy in the fold's
          prose is a second copy that will differ. What the line says is which rules start
@@ -998,13 +1016,20 @@ if (isMain) {
     const masterText = readFileSync(MASTER, "utf8");
     const res = apply(book, staged, notes, masterText);
     if (!res.ok) { console.log("  FAIL  nothing folded:"); res.problems.forEach((x) => console.log("         " + x)); process.exit(1); }
+    /* v588: a registration that folded is minted its statement username now, not the month of its first statement;
+       D15: on the next free spare account where there is one, which opens at this run's publish. Before the book
+       is written, so a _users.json giving one username to two codes folds nothing. */
+    let reg;
+    try { reg = registerAccounts(STMTS, USERS, staged, res.folded); }
+    catch (e) { console.log("  FAIL  nothing folded: " + e.message); process.exit(1); }
+    const { users, minted, bound } = reg;
     writeBookFile(book, BOOK);
     writeFileSync(MASTER, res.master);
     writeFileSync(FOLDED, JSON.stringify({ ids: res.folded }) + "\n");
-    /* v588: a registration that folded is minted its statement username now, not the month of its first statement */
-    const users = existsSync(USERS) ? JSON.parse(readFileSync(USERS, "utf8")) : {};
-    const minted = mintUsernames(users, staged, res.folded);
-    if (minted.length) { writeFileSync(USERS, usersJson(users)); console.log(`  ok    statement username minted for ${minted.join(", ")}, kept for life`); }
+    if (minted.length) console.log(`  ok    statement username minted for ${minted.join(", ")}, kept for life`
+      + (bound.length ? `; ${bound.join(", ")} on a spare account, which opens at this run's publish` : ""));
+    const waiting = minted.filter((c) => !bound.includes(c));
+    if (waiting.length) console.log(`  note  no spare account was free for ${waiting.join(", ")}: the account is made at the next laptop update`);
     /* v628: a rename reaches three files beyond the book: the statement key, a place override and the suite */
     const pairs = res.renames.flatMap((x) => x.pairs);
     if (pairs.length) {
