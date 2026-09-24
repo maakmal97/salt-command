@@ -1351,6 +1351,10 @@ const CLIENT_JS = `
         form.appendChild(sub);
       } else form.appendChild(el('div','sub2',''));
       var ready=!!qt&&!draft.busy&&(draft.mode!=='deliver'||String(draft.place||'').trim().length>=2);
+      /* 24 Sep 2026: THE REQUEST ID IS FOR THIS ORDER. The size and the mode stay live while Check this over is open,
+         and the Worker answers any repeat of an id with the order first stored under it, so a changed order takes a
+         new id, as a changed payment figure does; a retry of the same one keeps it. */
+      var what=qt?[P.product,qt.q,draft.mode,qt.total].join('|'):'';
       /* v694: NOTHING IS PLACED ON ONE TAP (his instruction, 18 Sep 2026). The first tap shows what
          is about to be ordered, in words, and the second places it. Going back keeps the choices. */
       if(draft.confirm&&ready){
@@ -1370,7 +1374,9 @@ const CLIENT_JS = `
         cf.appendChild(ul);
         var ok2=el('button','btn salt-pill salt-pill--md','Place this order'); ok2.type='button'; ok2.disabled=!!draft.busy;
         ok2.addEventListener('click', async function(){
-          if(draft.busy) return; draft.busy=true; drawOrder();
+          if(draft.busy) return; draft.busy=true;
+          if(draft.ridFor!==what){ draft.rid=mintRid(); draft.ridFor=what; }
+          drawOrder();
           var mine=ticket;
           var r=await api('/orders',{product:P.product,qty:qt.q,mode:draft.mode,unit:qt.unit,total:qt.total,
             place:draft.mode==='deliver'?draft.place.trim():'',forFriend:!!(assoc&&draft.forFriend),
@@ -1390,7 +1396,7 @@ const CLIENT_JS = `
         form.appendChild(cf);
       } else {
         var go2=el('button','btn salt-pill salt-pill--md','Review this order'); go2.type='button'; go2.id='oGo'; go2.disabled=!ready;
-        go2.addEventListener('click',function(){ draft.confirm=true; draft.note=''; draft.rid=mintRid(); drawOrder(); });
+        go2.addEventListener('click',function(){ draft.confirm=true; draft.note=''; draft.rid=mintRid(); draft.ridFor=what; drawOrder(); });
         form.appendChild(go2);
       }
       if(draft.note) form.appendChild(el('p','msg',draft.note));

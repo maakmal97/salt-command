@@ -19110,7 +19110,7 @@ await (async () => {
   /* ---- the page mints the id per review and per payment, and a retry carries it ---- */
   const { JSDOM: JD } = await import("jsdom");
   const list = { at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
-    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] };
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }, { q: 2, price: 250 }] }], soon: [] };
   const ord = { id: "20260918000000-aa11", product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, at: "2026-09-18T01:00:00Z",
     status: "acknowledged", paid: 0, moved: 0, delivery: 0, method: "tngbiz", account: "tngbiz", history: [], msgs: [] };
   const body = { ok: true, wrap: await C.wrapKey(pw, ck), session: "fixture-session-token-rid-abcdefgh",
@@ -19155,6 +19155,21 @@ await (async () => {
     const pr = sent.place.map((x) => x && x.rid);
     ok(pr.length === 3 && O.RID_RE.test(pr[0] || "") && pr[1] === pr[0] && pr[2] !== pr[0] && O.RID_RE.test(pr[2] || ""),
       "the page sends one id a review: Place tapped again after 'not placed' carries the same one, and the next review a new one: " + JSON.stringify(pr));
+    /* F3: a size changed while Check this over is open is a different order, so it is never sent under the id of
+       the one before: the Worker answers any repeat of an id with the order first stored under it */
+    placeOk = false;
+    await until(() => d.getElementById("oGo") && !d.getElementById("oGo").disabled);
+    d.getElementById("oGo").click();
+    await until(() => btn("Place this order")); btn("Place this order").click();
+    await until(() => sent.place.length === 4 && btn("Place this order"));
+    const size = d.querySelector('#pOrder select[aria-label="Size"]');
+    size.value = "2"; size.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+    await until(() => btn("Place this order")); btn("Place this order").click();
+    await until(() => sent.place.length === 5 && btn("Place this order"));
+    const sz = sent.place.slice(3).map((x) => x && [x.rid, x.qty]);
+    ok(sz.length === 2 && sz[0][1] === 1 && sz[1][1] === 2 && O.RID_RE.test(sz[1][0] || "") && sz[1][0] !== sz[0][0],
+      "a size changed after 'not placed' goes under a new id, never as a repeat of the order before: " + JSON.stringify(sz));
+    placeOk = true;
 
     const payTap = async (n) => { await until(() => d.getElementById("pd-" + ord.id) && !d.getElementById("pd-" + ord.id).disabled);
       d.getElementById("pd-" + ord.id).click(); await until(() => sent.pay.length === n); };
