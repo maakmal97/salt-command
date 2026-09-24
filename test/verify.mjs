@@ -27566,6 +27566,77 @@ await (async () => {
   } finally { w.close(); }
 })();
 
+section("S6 fix: two claims on one order, received before either row is drafted, are each booked by their own yes");
+await (async () => {
+  /* HIS D6 AND D7: a claim's Received is his yes to that claim's own row. A second claim's Received, given before the
+     first claim's row was drafted (the order's row not on the book yet: Booked when the first row lands), voided the
+     first yes, so that row was drafted pending with no yes, and Approve and Reject both refuse a claim's row without
+     one: money they were told was received, never booked. Driven through both Workers over the real schema. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so two claims were not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders } = await import("../src/orders.js");
+  const { runDrafter, withPending } = await import("../src/drafter.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const U = "abcd-efgh", C = "CX1-AB", keyA = C + "|2026-09-25|120", ACK = "2026-09-25T01:00:00.000Z";
+  const ROW = { date: "2026-09-25", customer: C, product: "salt", qty: 1, total: 120, cash: 0, deliveredQty: 0, orderKey: keyA };
+  for (const [x, y] of [[50, 20], [50, 50]]) {
+    const db = new DatabaseSync(":memory:");
+    for (const f of readdirSync(join(REPO, "migrations")).filter((n) => /^\d+_.*\.sql$/.test(n)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+    const D1 = { prepare(sql) { const st = db.prepare(sql);
+      const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+        first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+      const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+    const skv = new KV(), dkv = new KV(), bk = H.orderBook({});
+    const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+    await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+    const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+      STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+    const tails = [], realF = globalThis.fetch;
+    const tap = async (path, body) => {
+      globalThis.fetch = async () => new Response("", { status: 201 });
+      try {
+        const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+          headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil: (p) => tails.push(p) });
+        const j = await r.json();
+        await Promise.allSettled(tails.splice(0));   /* each tap's tail done before the next: the order of a real phone */
+        return { status: r.status, j };
+      } finally { globalThis.fetch = realF; }
+    };
+    const mine = async (id) => (await O.allOrders(senv, true)).find((o) => o.id === id);
+    /* the order's pending row is approved and not folded yet: Received on a claim waits for it to land */
+    db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run("OPEN", JSON.stringify({ byKey: {}, position: {} }));
+    db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,flags,party,drafter,drafted_at,decided_at,decided_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
+      .run(ACK, "approved", "sales", "{}", JSON.stringify(ROW), "fixture", "[]", C, "orders", ACK, ACK, "preapproved");
+    const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, week: "" })).order;
+    await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+    await O.deskMove(senv, U, o.id, { mark: { ledgerKey: keyA, ack: ACK } });
+    await O.customerMove(senv, U, o.id, "method", { method: "tngbiz", account: "tngbiz" });
+    await O.customerMove(senv, U, o.id, "pay", { amount: x });
+    await new Promise((r) => setTimeout(r, 5));
+    await O.customerMove(senv, U, o.id, "pay", { amount: y });
+    const ps = (await mine(o.id)).payments;
+    const r1 = await tap("/orders/" + o.id + "/received", { claim: ps[0].at, amount: x });
+    const r2 = await tap("/orders/" + o.id + "/received", { claim: ps[1].at, amount: y });
+    const yes = db.prepare("SELECT status FROM preapproval WHERE order_id = ? AND stage = 'pay' ORDER BY at").all(o.id).map((p) => p.status);
+    /* the fold lands the row: on the mirror, and in the open-order snapshot in the engine's own shape */
+    db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", 0, "h0", JSON.stringify(ROW));
+    db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run("OPEN", JSON.stringify(withPending({ sales: [], state: { OPEN: { byKey: {}, position: {} } } }, ROW).state.OPEN));
+    await reconcileOrders(denv); await runDrafter(denv);
+    const after = await mine(o.id);
+    const rows = db.prepare("SELECT id,status,entry FROM draft WHERE id <> ?").all(ACK).filter((d) => JSON.parse(d.entry).claim);
+    const stuck = rows.find((d) => d.status === "pending");
+    const decide = stuck ? await tap("/drafts/" + encodeURIComponent(stuck.id) + "/approve", { by: "suite" }) : null;
+    ok(r1.status === 200 && r2.status === 200 && r1.j.preapproval.waits && yes.join() === "waiting,waiting"
+      && after.paid === x + y && after.claimed === 0 && rows.length === 2 && rows.every((d) => d.status === "approved")
+      && JSON.stringify(rows.map((d) => JSON.parse(d.entry).claimOf).sort()) === JSON.stringify([ps[0].at, ps[1].at].sort()),
+      "two claims of RM " + x + " and RM " + y + " received before the order's row lands keep a yes each, and each claim's own row is approved as it is drafted: "
+      + JSON.stringify({ yes, paid: after.paid, rows: rows.map((d) => d.status), stuck: decide && decide.j.error }));
+  }
+})();
+
 section("v764: what he records on the desk reaches the customer's order, and the chase stops");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026. Every road built since v694 runs from the site to the book. A

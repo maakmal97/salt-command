@@ -241,10 +241,12 @@ const livePre = async (db, orderId, stage) => {
 const preById = async (db, id) => db.prepare("SELECT * FROM preapproval WHERE id=?1").bind(id).first();
 /* a newer yes on the same order and stage replaces one still waiting for a row the SITE makes: the newest is what he
    last said. Never one carrying its own entry (cash taken, a move offered again): each of those is a row of its own,
-   and voided before it was queued it was never booked, the site already counting the cash. */
+   and voided before it was queued it was never booked, the site already counting the cash. S6 fix: nor a claim's.
+   Each claim is a row of its own and its yes answers that claim alone: a second claim's Received, given before the
+   first claim's row was drafted, voided the first yes, and that row could then never be booked. */
 async function recordPre(db, p) {
   const id = p.order_id + "|" + p.stage + "|" + p.at;
-  await db.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE order_id=?2 AND stage=?3 AND status='waiting' AND entry IS NULL").bind(p.at, p.order_id, p.stage).run();
+  await db.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE order_id=?2 AND stage=?3 AND status='waiting' AND entry IS NULL AND json_extract(shown,'$.figures.claim') IS NULL").bind(p.at, p.order_id, p.stage).run();
   await db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,tapped_by,at) VALUES (?1,?2,?3,?4,?5,?6,?7,'waiting',?8,?9)")
     .bind(id, p.order_id, p.u || null, p.stage, p.hash, JSON.stringify(p.shown || {}), p.entry ? JSON.stringify(p.entry) : null, p.by || null, p.at).run();
   return id;
