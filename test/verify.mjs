@@ -32916,7 +32916,7 @@ await (async () => {
   for (const fresh of [false, true]) {
     const { W, D } = await open(fresh);
     try {
-      const n = D.querySelectorAll("#hAgain button").length, marks = D.querySelectorAll("#hAgain svg").length;
+      const n = D.querySelectorAll("#hAgain .salt-option__face").length, marks = D.querySelectorAll("#hAgain .salt-option__face svg").length;
       ok(n >= 2 && marks >= n && !words.test(bare(D)),
         (fresh ? "a new account's" : "an account with orders:") + " Home draws its tiles with their marks, and no product word or level's name is in its text or its attributes: "
         + JSON.stringify([n, marks, (bare(D).match(words) || []).length]));
@@ -33143,6 +33143,58 @@ await (async () => {
     ok(!!tile && cs(tile).cursor === "pointer" && cs(grid).display === "grid" && cs(grid).gap === "var(--salt-space-2)" && /^repeat[(]2,/.test(cs(grid).gridTemplateColumns),
       "and the served stylesheet draws it by the recipe, a tap in a grid two across on the system's gap: " + JSON.stringify(tile && [cs(tile).cursor, cs(grid).display, cs(grid).gap, cs(grid).gridTemplateColumns]));
   } finally { W.close(); }
+})();
+
+section("S7 fix: the keep card leads only a new account's Home, under the three questions otherwise, and See all prices follows the first sizes");
+await (async () => {
+  /* S7-R5 of the stage 7 review (25 Sep 2026). In a browser tab the keep card stood above To pay now on every Home, so on a
+     small phone Pay sat under the bar and Needs you, Coming up and Order again below the fold; the plan draws it first only
+     on a new account's first Home (f02), whose sizes to start from come before See all prices, which stood above them. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s7f-ten", ck = await C.contentKey("test-secret", u);
+  const list = await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T03:59:00Z", digest: "ds7f10", week: { monday: "2026-09-21", label: "21 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 110 }, { q: 2, price: 200 }] }], soon: [] }));
+  const past = [{ id: "20260921030000-aaaa", product: "salt", status: "acknowledged", qty: 1, total: 110, paid: 0, moved: 0, mode: "collect",
+    delivery: 0, at: "2026-09-21T03:00:00Z", history: [], msgs: [{ by: "desk", text: "Thursday.", at: "2026-09-22T02:00:00Z" }] }];
+  const open = async (fresh) => {
+    const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f10", prices: list,
+      env: await C.encryptWith(ck, JSON.stringify({ statements: fresh ? [] : [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: fresh ? null : await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+    const dom = new JSDOM(landingPage(u, "ns7f10", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+      win.fetch = async (path) => { const p = String(path);
+        const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: fresh ? [] : past } : { ok: true };
+        return { ok: true, status: 200, json: async () => j }; };
+    } });
+    const W = dom.window, D = W.document;
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !D.querySelector("#hAgain button"); i++) await new Promise((r) => setTimeout(r, 25));
+    return { W, D };
+  };
+  /* the order Home's first column reads in, by id, and the order of See all prices and the tiles */
+  const col = (D) => [...D.getElementById("hPay").parentNode.children].map((x) => x.id || x.className.split(" ")[0]).join(",");
+  const before = (D, a, b) => !!a && !!b && !!(a.compareDocumentPosition(b) & D.defaultView.Node.DOCUMENT_POSITION_FOLLOWING);
+  const a = await open(true);
+  try {
+    const { D } = a, sp = D.getElementById("hPrices"), tiles = D.querySelector("#hAgain .salt-options__grid");
+    const c = col(D).split(",");
+    ok(c.indexOf("keepCard") >= 0 && c.indexOf("hPay") === c.indexOf("keepCard") + 1,
+      "a new account's Home leads with the keep card, above To pay: " + JSON.stringify(col(D)));
+    ok(!!sp && D.getElementById("hAgain").contains(sp) && before(D, tiles, sp) && !D.getElementById("hPay").querySelector(".salt-pill"),
+      "and its one filled control, See all prices, follows the sizes to start from: " + JSON.stringify(D.getElementById("hAgain").textContent.slice(0, 120)));
+  } finally { a.W.close(); }
+  const b = await open(false);
+  try {
+    const { D } = b, c = col(D).split(",");
+    ok(c.indexOf("hPay") >= 0 && c.indexOf("hNeeds") === c.indexOf("hPay") + 1 && c.indexOf("keepCard") === c.indexOf("hNeeds") + 1
+      && D.querySelector("#hNeeds [data-row]") && !D.getElementById("hPrices"),
+      "an account with an order has To pay and Needs you first and the keep card under them, and no See all prices: " + JSON.stringify(c));
+  } finally { b.W.close(); }
 })();
 
 section("23 Sep 2026: a statement reads newest first");

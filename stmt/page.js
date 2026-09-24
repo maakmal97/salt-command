@@ -905,7 +905,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<header class="chead"><h1 id="placeT">Home</h1>'
     + '<p class="cwho" data-wholine>Signed in as <span class="mono" data-who></span><span id="cstay"></span></p></header>'
     /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5), then the keep card,
-       which stage 3 put first on the page. Two columns from 1080px (S7 7.2) */
+       which homeKeep leaves first only on a new account and otherwise puts under Needs you. Two columns from 1080px (S7 7.2) */
     + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin) + (owner ? "" : keepCard()) + '<div id="hPay"></div><div id="hNeeds"></div></div>'
     + '<div class="hcol"><div id="hComing"></div><div id="hAgain"></div></div></div>'
     /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place: the statement with its one month filter (placed
@@ -3112,11 +3112,21 @@ const CLIENT_JS = `
   function drawHome(){
     var parts={hPay:homePay(), hNeeds:homeNeeds(), hComing:homeComing(), hAgain:homeAgain()};
     Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
+    homeKeep();
     placeCounts();
     placeTitle();
   }
   /* what Home's Pay says: over the line the overdue amount, else the sealed To pay now, else what is owed */
   function payNowFig(){ return hold?owedNow:payDue?(+payDue.now.rm||0):owedNow; }
+  /* the keep card first on a new account's Home, as the plan's first Home draws it; for an account with anything on it,
+     under what they owe and what needs them, so a small phone answers those first (S7-R5 of the stage 7 review). Moved
+     only when that changes, so a poll never takes a tap's focus from it */
+  function homeKeep(){
+    var k=document.getElementById('keepCard'), pay=document.getElementById('hPay'); if(!k||!pay) return;
+    var col=pay.parentNode;
+    if(fresh()){ if(k.nextElementSibling!==pay) col.insertBefore(k,pay); }
+    else if(col.lastElementChild!==k) col.appendChild(k);
+  }
   /* STAGE 6 FILLS THIS: Home's one Pay opens the pay sheet on what is to pay now. Until it does, Pay goes only where the
      same figure is: over the line the payment page; else the one order whose goods are all with them and whose still to
      pay is that figure, which its own Pay says; else Account, whose statement lists what the figure is made of. Never
@@ -3138,9 +3148,6 @@ const CLIENT_JS = `
     if(view) return box;
     if(due){ var pb=el('button','salt-pill salt-pill--md hfill','Pay '+rm(fig)); pb.type='button'; pb.id='hPayGo';
       pb.addEventListener('click',openPayNow); box.appendChild(pb); }
-    /* a new account's one filled control: the list they can order from */
-    else if(fr&&sold().length){ var sp=el('button','salt-pill salt-pill--md hfill','See all prices'); sp.type='button'; sp.id='hPrices';
-      sp.addEventListener('click',function(){ placeShow('prices',true); }); box.appendChild(sp); }
     return box;
   }
   function hHead(t,n){ var h=el('h2','salt-eyebrow salt-eyebrow--copper hlab',t); if(n) h.appendChild(el('span','hn',String(n))); return h; }
@@ -3214,6 +3221,10 @@ const CLIENT_JS = `
       g.appendChild(b);
     });
     box.appendChild(g);
+    /* a new account's one filled control, under the sizes it can start from: the whole list (S7-R5, as the plan's first
+       Home has it; it stood above them, under To pay) */
+    if(fresh()){ var sp=el('button','salt-pill salt-pill--md hfill','See all prices'); sp.type='button'; sp.id='hPrices';
+      sp.addEventListener('click',function(){ placeShow('prices',true); }); box.appendChild(sp); }
     return box;
   }
   /* a count beside a place is what waits there: the orders that need them. data-n: data-count is the owner's own */
