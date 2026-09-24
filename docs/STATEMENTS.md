@@ -836,7 +836,9 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   its two reads (Approve polls the drafts alone), the site stamps now less that, and a reading a minute older than the
   one held never replaces it, so a desk left open elsewhere cannot overwrite a newer one. The cron no longer
   counts: its recount (placed, or their line last) missed cash and payments and ignored No reply needed. So the
-  figure is as fresh as the desk's last read, and Needs you says when: "N things wait on the desk, as at 14:06." The
+  figure is as fresh as the desk's last read, and Needs you says when: "N things wait on the desk, as at 14:06." Once
+  an order has moved since that reading (the site's `touched` mark later than `at`, `moved` on the sheet's `desk`) it
+  says so in the past tense: "Nothing waited on the desk as at 09:00, and an order has moved since." The
   desk's page reads its orders with the count of
   associate links waiting on his word (`/desk/orders?links=1`, `linkWaiting` in `stmt/refs.js`, the
   `approved === false` test), and its rail's foot says "N links wait in Salt Admin".

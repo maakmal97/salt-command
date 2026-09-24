@@ -15539,7 +15539,7 @@ await (async () => {
     const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
     const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
     const sj = await (await site("/all/sheet", { headers: { "cf-access-jwt-assertion": tok } })).json();
-    ok(sj.desk && sj.desk.n === 1 && Object.keys(sj.desk).sort().join() === "at,n", "his account list carries the desk's figure and its moment, nothing else: " + JSON.stringify(sj.desk));
+    ok(sj.desk && sj.desk.n === 1 && Object.keys(sj.desk).sort().join() === "at,moved,n", "his account list carries the desk's figure, its moment and whether an order moved since, nothing else: " + JSON.stringify(sj.desk));
     win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
     } }).window;
@@ -17275,6 +17275,62 @@ await (async () => {
     await w.eval("ordLoad(true)");
     ok(told.length === 4 && told[3].n === 2 && told[3].age <= 2, "once it has, the same figure goes again, so its moment moves: " + JSON.stringify(told.slice(3)));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix S9R-2b: Salt Admin's desk line says an order has moved since the desk's reading, where it went on saying the old figure waits");
+await (async () => {
+  /* The desk's page is the one writer of the figure, and on his phone the desk and Salt Admin are never open together: an
+     order placed after the desk last looked left "Nothing waits on the desk, as at 09:00" standing as fact. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV(), MASTER = "mp-s9r2b";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r2b", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX2-DW", username: u }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-25T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX2-DW", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  await kv.put("sent:2026-09-01:" + u, JSON.stringify({ at: "2026-09-02T01:00:00Z" }));
+  const TEAM = "maakmal", AUD = "aud-s9r2b", KID = "kid-s9r2b";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD, STMT_DESK_KEY: "dk-s9r2b" };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const A = { "cf-access-jwt-assertion": h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c)))) };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  const tell = (n, age) => site("/desk/waiting", { method: "POST", headers: { "content-type": "application/json", "X-Stmt-Desk": "dk-s9r2b" }, body: JSON.stringify({ n, age }) });
+  const line = async () => {
+    const win = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+    } }).window;
+    try {
+      const el = win.document.getElementById("nDesk");
+      for (let i = 0; i < 200 && el.hidden; i++) await new Promise((r) => setTimeout(r, 20));
+      return el.textContent;
+    } finally { win.close(); }
+  };
+  try {
+    /* the desk looked two hours ago and nothing waited; an order has been placed since */
+    await tell(0, 7200);
+    await kv.put("last-touched", new Date(Date.now() - 3600000).toISOString());
+    const sj = await (await site("/all/sheet", { headers: A })).json();
+    ok(sj.desk && sj.desk.n === 0 && sj.desk.moved === true, "the sheet says an order has moved since the desk's reading: " + JSON.stringify(sj.desk));
+    const t1 = await line();
+    ok(/^Nothing waited on the desk as at ([0-9]{2}:[0-9]{2}|[0-9]{1,2} [A-Z][a-z]{2}), and an order has moved since[.]$/.test(t1) && !/Nothing waits/.test(t1),
+      "Needs you says nothing waited then, and that an order has moved since, never that nothing waits: " + JSON.stringify(t1));
+    /* the desk looks again */
+    await tell(1, 0);
+    const t2 = await line();
+    ok(/^1 thing waits on the desk, as at ([0-9]{2}:[0-9]{2}|[0-9]{1,2} [A-Z][a-z]{2})[.]$/.test(t2), "once the desk has read again, the figure stands as it did: " + JSON.stringify(t2));
+  } finally { globalThis.fetch = realFetch; }
 })();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
