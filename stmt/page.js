@@ -205,7 +205,7 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .ohead .state{margin-left:auto}
 .ohead .sub2{flex-basis:100%;margin:0}
 .odue{color:var(--salt-ember)}
-.oact .salt-pill{width:100%;margin-top:16px}
+.oact .salt-pill,.oact>.salt-ghost{width:100%;margin-top:16px}
 .omsgs{margin-top:22px}
 .omsgs .olab{display:flex;justify-content:space-between;margin:0 0 10px}
 .omsgs .salt-bubble__text{white-space:pre-wrap}
@@ -1673,13 +1673,16 @@ const CLIENT_JS = `
     }
     return L;
   }
-  /* ONE NEXT ACTION. Pay opens the ways to pay in its place, and theirs is then the one filled control */
+  /* ONE NEXT ACTION. Pay opens the ways to pay in its place, and theirs is then the one filled control. On a desk the
+     order form's own filled control stands beside the open order until the form moves into a sheet (stage 4), and
+     while one does, Pay is the lit ghost: one filled control a screen. On a phone the open order is the whole tab. */
+  function oFormPill(){ return oWide()&&[].some.call(pOrder.querySelectorAll('.salt-pill'),function(p){ return !p.closest('.oplace'); }); }
   function oAct(o){
     var a=el('div','oact'), tp=oTap(o);
     if(!view&&oOwes(o)){
       if((draft.oPay||{})[o.id]) a.appendChild((o.method&&!(pick[o.id]||{}).again)?payBox(o):payChooser(o));
       else {
-        var pb=el('button','salt-pill salt-pill--md','Pay '+rm(oToPay(o))); pb.type='button';
+        var pb=el('button',oFormPill()?'salt-ghost salt-ghost--lit':'salt-pill salt-pill--md','Pay '+rm(oToPay(o))); pb.type='button';
         pb.addEventListener('click',function(){ (draft.oPay=draft.oPay||{})[o.id]=true; oDraw(); });
         a.appendChild(pb);
       }

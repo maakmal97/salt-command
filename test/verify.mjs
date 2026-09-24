@@ -21627,6 +21627,55 @@ await (async () => {
       "a line the site refuses goes back in the box with the reason under it, and is not offered again: " + JSON.stringify({ lines: lines(d), box: box.value, said: said && said.textContent }));
   });
 })();
+section("S5 fix: a desk with the order form beside the open order shows one filled control");
+await (async () => {
+  /* 25 SEP 2026, the stage 5 review. From 1080px an order is always open beside the list, and the order form still
+     stands on the same tab until stage 4 moves it into a sheet: its Review and the order's Pay were both filled. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-f5", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f5",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await C.encryptWith(ck, JSON.stringify({ week: { label: "21 Sep to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+      products: [{ product: "salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 90 }] }] })) };
+  const O = "20260923090000-oooo";
+  const list = [{ id: O, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 0, moved: 0,
+    status: "acknowledged", history: [], msgs: [] }];
+  const drive = async (wide, go) => {
+    const dom = new JSDOM(landingPage(u, "nf5", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
+      w.matchMedia = (q) => ({ matches: wide && /min-width: *1080px/.test(q), media: q, addEventListener() {}, removeEventListener() {} });
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: JSON.parse(JSON.stringify(list)) } : { ok: true };
+        return { ok: true, status: 200, json: async () => j };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !(d.querySelector("#pOrder [data-row]") && d.getElementById("oGo")); i++) await new Promise((r) => setTimeout(r, 30));
+      d.querySelector('#tabs button[data-t="order"]').click();
+      await go(w, d);
+    } finally { w.close(); }
+  };
+  const payOf = (d) => [...d.querySelectorAll('#pOrder .oscreen [data-part="act"] button')].find((b) => /^Pay RM/.test(b.textContent));
+  const filled = (d) => [...d.querySelectorAll("#pOrder .salt-pill")].map((b) => b.textContent);
+  await drive(true, async (w, d) => {
+    const pay = payOf(d);
+    ok(!!d.getElementById("oGo") && !!pay && !pay.classList.contains("salt-pill") && pay.classList.contains("salt-ghost") && JSON.stringify(filled(d)) === JSON.stringify(["Review this order"]),
+      "on a desk, with the order form's Review beside the open order, its Pay is the lit ghost and Review the one filled control: " + JSON.stringify({ pay: pay && pay.className, filled: filled(d) }));
+  });
+  await drive(false, async (w, d) => {
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    const pay = payOf(d);
+    ok(!!pay && pay.classList.contains("salt-pill"), "on a phone the open order is the whole tab, and Pay is its filled control: " + JSON.stringify(pay && pay.className));
+  });
+})();
 section("v753: he answers on the order, and the words are checked on the desk before they leave it");
 await (async () => {
   /* the other half of v751. His answer is a move of his like any other, so it wakes them and changes
