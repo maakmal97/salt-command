@@ -13908,6 +13908,64 @@ await (async () => {
   ok(JSON.stringify(narrow85) === '["ledger (max-width:819px)"]',
     "the ledger re-flows its same cells below 820px of its own width, above the 765px its two-row shape needed: " + JSON.stringify(narrow85));
 })();
+section("S1 1.1: Salt Admin's link moves are POSTs, so Approve, Withdraw and Restore tapped on the page move the link");
+await (async () => {
+  /* 24 SEP 2026 (B01): moveLink called refs(path) with no body, refs sends a GET when it has none,
+     and every move on a link is a POST-only route, so each tap came back 405 and nothing moved. The
+     routes were always right, which is why this drives the RENDERED buttons against the real Worker. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+  await kv.put("roster", JSON.stringify([]));
+  await kv.put("board:2", JSON.stringify({ products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 150 }] }] }));
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s1-1", u);
+  await kv.put("u:" + u, JSON.stringify({ u, assoc: true, issued: "2026-09-01", verifier: await C.makeVerifier(pw),
+    wrap: await C.wrapKey(pw, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  const TEAM = "maakmal", AUD = "aud-s1-1", KID = "kid-s1-1";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: "mp-s1-1", ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  let win = null;
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sess = (await (await site("/open", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ u, password: pw }) })).json()).session;
+    const id = (await (await site("/my/refs", { method: "POST", headers: { "X-Stmt-Session": sess, "content-type": "application/json" }, body: "{}" })).json()).ref.id;
+    const stored = async () => JSON.parse(await kv.get("g:" + id));
+    const html = await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text();
+    win = new JSDOM(html, { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      w.fetch = async (path, o) => { o = o || {}; return site(String(path), { method: o.method || "GET",
+        headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 100 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+    const tap = (label) => { const card = [...D.querySelectorAll("#glist .glink")].find((x) => x.textContent.includes(id));
+      const b = card && [...card.querySelectorAll("button")].find((x) => x.textContent === label); if (b) b.click(); return !!b; };
+    D.querySelector('button[data-m="links"]').click();
+    ok(await until(() => [...D.querySelectorAll("#glist .glink")].some((x) => x.textContent.includes(id))),
+      "the associate's link is drawn on his Links panel");
+    ok(tap("Approve") && await until(async () => (await stored()).approved === true)
+      && (await site("/g/" + id)).status === 200,
+      "a tap on Approve opens the link, and the guest door answers 200: " + JSON.stringify({ approved: (await stored()).approved, msg: D.getElementById("rmsg").textContent }));
+    ok(await until(() => [...D.querySelectorAll("#glist button")].some((b) => b.textContent === "Withdraw")) && tap("Withdraw")
+      && await until(async () => (await stored()).revoked === true) && (await site("/g/" + id)).status === 404,
+      "a tap on Withdraw shuts it: " + JSON.stringify({ revoked: (await stored()).revoked, msg: D.getElementById("rmsg").textContent }));
+    ok(await until(() => [...D.querySelectorAll("#glist button")].some((b) => b.textContent === "Restore")) && tap("Restore")
+      && await until(async () => (await stored()).revoked === false) && (await site("/g/" + id)).status === 200,
+      "and a tap on Restore opens it again: " + JSON.stringify({ revoked: (await stored()).revoked, msg: D.getElementById("rmsg").textContent }));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v687: the master account opens on its own page, and the owner's script travels only there");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: a master account that opens on what it can do. /all is that account,

@@ -318,7 +318,10 @@ export const OWNER_JS = `
   }
   async function moveLink(r, how){
     try{
-      var j=await refs('/all/refs/'+r.id+'/'+how);
+      /* THE BODY IS WHAT MAKES IT A POST (24 Sep 2026): refs() sends a GET when it is given none,
+         and every move on a link is a POST-only route, so Approve, Decline, Withdraw and Restore all
+         came back 405 and nothing moved. */
+      var j=await refs('/all/refs/'+r.id+'/'+how, {});
       for(var i=0;i<links.length;i++) if(links[i].id===j.ref.id) links[i]=j.ref;
       drawLinks(); say('');
     }catch(e){ say(e.message,'bad'); }
