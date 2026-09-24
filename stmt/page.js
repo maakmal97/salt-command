@@ -1182,15 +1182,19 @@ const CLIENT_JS = `
       doorBox=document.getElementById('doorBox');
   var LAPSED='Not sent: you were signed out on this '+DEV+'. Sign in to carry on.';
   var reopening=null;
+  /* S3 fix, 24 Sep 2026: THE PHONE REOPENS ONLY THE ACCOUNT ON SCREEN. It remembers one account, and another can be
+     open for a visit (Keep at the Replace question, or the door with the tick off): a lapse there reopened the
+     remembered one, drew it in silence and sent the waiting request again on its session, an order included. */
+  function keptMine(){ var r=remGet(); return !!r&&!!user&&r.u===user; }
   function reopen(){
-    if(OWNER) return Promise.resolve(false);
+    if(OWNER||!keptMine()) return Promise.resolve(false);
     if(!reopening) reopening=openRemembered(true).then(function(v){ reopening=null; return v; }, function(){ reopening=null; return false; });
     return reopening;
   }
   function lapsed(){
     if(poll){ clearInterval(poll); poll=null; }
     if(!lapse.hidden) return;
-    var kept=!!remGet();
+    var kept=keptMine();
     document.getElementById('lapseT').textContent=kept?'This '+DEV+' could not sign you back in just now.':'You were signed out on this '+DEV+'.';
     document.getElementById('lapseGo').textContent=kept?'Try again':'Sign in';
     lapse.hidden=false;
@@ -1216,7 +1220,7 @@ const CLIENT_JS = `
   }
   document.getElementById('lapseGo').addEventListener('click', async function(){
     if(OWNER) return;
-    if(!remGet()){ openSignedOut(); return; }
+    if(!keptMine()){ openSignedOut(); return; }
     /* the line stays until the phone is back in: enter() takes it away; a refusal forgets the phone, so it is redrawn */
     if(!(await reopen())){ lapse.hidden=true; lapsed(); return; }
     await loadOrders(); drawOrder();
@@ -1592,7 +1596,7 @@ const CLIENT_JS = `
     }
     /* UX5, 24 Sep 2026: ONE LAPSE, ONE VOICE. The Sheet and the bar say it; beside the tapped control each
        caller says whatever the answer's error is, which is a pointer to them */
-    if(r.status===401&&session){ lapsed(); return {status:401, body:{ok:false, error:remGet()?NOT_SENT:LAPSED}}; }
+    if(r.status===401&&session){ lapsed(); return {status:401, body:{ok:false, error:keptMine()?NOT_SENT:LAPSED}}; }
     var j=null; try{ j=await r.json(); }catch(e){}
     return {status:r.status, body:j||{}};
   }

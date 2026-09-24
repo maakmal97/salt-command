@@ -310,8 +310,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   in (a device key in the browser, the wrapped content key at `rem:<sha256(token)>`, neither opening anything
   alone, thirty days from the last open), log out, which also drops that wrap and this phone's
   notifications. Nothing says phone on a computer. **A lapsed session reopens itself from the remembered
-  phone and repeats the request once** (his D1); only with nothing remembered does a Sheet say so over
-  the page, carrying the door and keeping the draft. The page re-reads on every return (`GET /account` on its session, never a
+  phone and repeats the request once** (his D1), **only when the phone remembers the account on screen**;
+  otherwise a Sheet says so over the page, carrying the door and keeping the draft. The page re-reads on every return (`GET /account` on its session, never a
   wrap), and a remembered phone draws "Opening your account", never the door. Kept as an app:
   manifest and icon served by the Worker, no brand; every login asks about notifications once. How to
   keep it is a card once signed in, never on the door: an Install button wherever the browser offers one,

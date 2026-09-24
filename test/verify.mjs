@@ -19169,6 +19169,129 @@ await (async () => {
   const inApp = await drive(UA.android, { bip: true, standalone: true });
   try { ok(inApp.card.hidden, "and an installed app is not told to install itself"); } finally { inApp.W.close(); }
 })();
+section("S3 fix: a lapse reopens only the account on screen, so Keep <old> or another tab's Replace never swaps the page or resends an order on another account");
+await (async () => {
+  /* S3-SEC-1, F1, S3R-1 (24 Sep 2026). A phone remembering A with B open for a visit reopened A when B's fifteen
+     minutes ran out, drew A in silence and sent B's waiting request again on A's session, Place this order included. */
+  const { landingPage: lpK } = await import("../stmt/page.js");
+  const CK = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDK } = await import("jsdom");
+  const uA = "aaaa-kkkk", uB = "bbbb-mmmm", tokL = "L".repeat(32), devA = "k".repeat(32), devB = "m".repeat(32);
+  const ckA = await CK.contentKey("3".repeat(64), uA), ckB = await CK.contentKey("4".repeat(64), uB);
+  const envOf = (ck, t) => CK.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>" + t + "</p>" }] }));
+  const listOf = (ck) => CK.encryptWith(ck, JSON.stringify({ at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] }));
+  const envA = await envOf(ckA, "STATEMENT OF A"), envB = await envOf(ckB, "STATEMENT OF B"), listA = await listOf(ckA), listB = await listOf(ckB);
+  const recOf = (u, dev) => JSON.stringify({ t: u[0].repeat(32), k: Buffer.from(dev).toString("base64"), u });
+  const drive = (fast, path, rec) => {
+    const st = { dead: new Set(), posts: [], reopens: 0, sB: "sessKB000000000000000000000", sA: "sessKA000000000000000000000" };
+    const store = new Map([["salt-stmt-remember", rec || recOf(uA, devA)]]);
+    const html = lpK("", "nK", null);
+    const dom = new JDK(fast ? html.replace("var POLL_MS=10000", "var POLL_MS=40") : html, { url: "https://site.test" + (path || "/s/" + tokL), runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (p, init) => {
+          const m = (init && init.method) || "GET", s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
+          const body = init && init.body ? JSON.parse(init.body) : null;
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
+            : ans(200, { ok: true, u: uB, wrap: await CK.wrapKey(tokL, ckB), env: envB, live: null, prices: listB, session: st.sB });
+          if (p === "/remember/open") {
+            st.reopens++;
+            const rec = JSON.parse(store.get("salt-stmt-remember") || "null");
+            return rec && rec.u === uB
+              ? ans(200, { ok: true, u: uB, remembered: true, wrap: await CK.wrapKey(devB, ckB), env: envB, live: null, prices: listB, session: (st.sB = "sessKB" + st.reopens + "00000000000000000000") })
+              : ans(200, { ok: true, u: uA, remembered: true, wrap: await CK.wrapKey(devA, ckA), env: envA, live: null, prices: listA, session: st.sA });
+          }
+          if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
+          if (p === "/orders" && m === "POST") { st.posts.push({ s, body }); return ans(200, { ok: true, order: {} }); }
+          if (p === "/orders") return ans(200, { ok: true, orders: [] });
+          if (p === "/remember") return ans(200, { ok: true, token: "b".repeat(32), days: 30 });
+          return ans(200, { ok: true });
+        };
+      } });
+    return { st, store, W: dom.window, D: dom.window.document };
+  };
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  const openB = async (g, answer) => {
+    await until(() => !g.D.getElementById("linkGo").disabled);
+    g.D.getElementById("linkGo").click();
+    await until(() => !g.D.getElementById("askRep").hidden);
+    g.D.getElementById(answer).click();
+    await until(() => !g.D.getElementById("barw").hidden);
+    await new Promise((r) => setTimeout(r, 60));
+  };
+
+  /* Keep aaaa-kkkk, then B's session lapses under Place this order */
+  const g1 = drive(false);
+  try {
+    await openB(g1, "askNo");
+    ok(/STATEMENT OF B/.test(g1.D.getElementById("out").textContent) && JSON.parse(g1.store.get("salt-stmt-remember")).u === uA,
+      "the fixture: Keep leaves A remembered with B on screen");
+    g1.D.querySelector('button[data-t="order"]').click();
+    await until(() => g1.D.getElementById("oGo") && !g1.D.getElementById("oGo").disabled);
+    g1.st.dead.add(g1.st.sB);
+    g1.D.getElementById("oGo").click();
+    await until(() => [...g1.D.querySelectorAll("#pOrder button")].some((b) => b.textContent === "Place this order"));
+    [...g1.D.querySelectorAll("#pOrder button")].find((b) => b.textContent === "Place this order").click();
+    await until(() => !g1.D.getElementById("outSheet").hidden);
+    await new Promise((r) => setTimeout(r, 120));
+    ok(!g1.st.posts.some((x) => x.s === g1.st.sA) && g1.st.reopens === 0,
+      "Place on B's lapsed page never reopens A and never sends the order on A's session: " + JSON.stringify({ posts: g1.st.posts.map((x) => x.s), reopens: g1.st.reopens }));
+    ok(/STATEMENT OF B/.test(g1.D.getElementById("out").textContent) && !/STATEMENT OF A/.test(g1.D.getElementById("out").textContent)
+      && !g1.D.getElementById("outSheet").hidden && g1.D.getElementById("un").value === uB,
+      "B stays on screen and the Sheet asks B to sign in again, B's username in it");
+    ok(/Not sent: you were signed out on this (phone|computer)/.test(g1.D.getElementById("pOrder").textContent),
+      "and beside Place it says the order was not sent because B was signed out, not a bare Not sent: " + JSON.stringify(g1.D.getElementById("pOrder").textContent.match(/Not sent[^.]*\./)));
+    ok(JSON.parse(g1.store.get("salt-stmt-remember")).u === uA, "and the phone still remembers A, untouched");
+  } finally { g1.W.close(); }
+
+  /* the poll meets the lapse with no tap at all */
+  const g2 = drive(true);
+  try {
+    await openB(g2, "askNo");
+    g2.st.dead.add(g2.st.sB);
+    await until(() => !g2.D.getElementById("outSheet").hidden);
+    await new Promise((r) => setTimeout(r, 150));
+    ok(g2.st.reopens === 0 && /STATEMENT OF B/.test(g2.D.getElementById("out").textContent) && !g2.D.getElementById("outSheet").hidden,
+      "the ten-second poll meeting B's lapse never swaps the page to A: " + JSON.stringify({ reopens: g2.st.reopens }));
+  } finally { g2.W.close(); }
+
+  /* B remembered here, then another tab's Replace makes the phone remember A: this page's lapse is not reopened as A */
+  const g3 = drive(false, "/", recOf(uB, devB));
+  try {
+    await until(() => !g3.D.getElementById("barw").hidden);
+    await new Promise((r) => setTimeout(r, 60));
+    ok(/STATEMENT OF B/.test(g3.D.getElementById("out").textContent), "the fixture: B open, B remembered");
+    g3.store.set("salt-stmt-remember", recOf(uA, devA));
+    const n = g3.st.reopens;
+    g3.st.dead.add(g3.st.sB);
+    Object.defineProperty(g3.D, "visibilityState", { value: "visible", configurable: true });
+    g3.D.dispatchEvent(new g3.W.Event("visibilitychange"));
+    await until(() => !g3.D.getElementById("outSheet").hidden);
+    ok(g3.st.reopens === n && /STATEMENT OF B/.test(g3.D.getElementById("out").textContent) && !g3.D.getElementById("outSheet").hidden,
+      "after another tab replaced B with A, B's page coming back to a lapse asks B to sign in and never opens A: " + JSON.stringify({ reopens: g3.st.reopens - n }));
+  } finally { g3.W.close(); }
+
+  /* the account on screen is the one remembered: it still reopens itself (3.5) */
+  const g4 = drive(false, "/", recOf(uB, devB));
+  try {
+    await until(() => !g4.D.getElementById("barw").hidden);
+    await new Promise((r) => setTimeout(r, 60));
+    const n = g4.st.reopens, was = g4.st.sB;
+    g4.st.dead.add(was);
+    Object.defineProperty(g4.D, "visibilityState", { value: "visible", configurable: true });
+    g4.D.dispatchEvent(new g4.W.Event("visibilitychange"));
+    await until(() => g4.st.reopens > n);
+    await new Promise((r) => setTimeout(r, 80));
+    ok(g4.st.reopens === n + 1 && g4.st.sB !== was && g4.D.getElementById("outSheet").hidden && g4.D.getElementById("lapse").hidden,
+      "the control: with B both on screen and remembered, B's lapse reopens B in silence");
+  } finally { g4.W.close(); }
+})();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {
   /* S3, 24 SEP 2026. The door's one way in named its opener unseal, which stmt/owner.js already declared: spliced in
