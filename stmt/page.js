@@ -86,7 +86,10 @@ const PAGE_CSS = `
 .pwrow{display:flex;gap:8px;align-items:stretch}
 .pwrow .fld{flex:1 1 auto;min-width:0}
 .pwrow .salt-ghost{flex:none}
-.gate .salt-insight{margin:22px 0 0}
+.gate .salt-insight,#doorBox .salt-insight{margin:22px 0 0}
+/* S3 fix: the code screen, carried into the signed-out Sheet, under the Sheet's own title */
+#outForm #codeBox{margin:0}
+#outForm .appmark{display:none}
 /* v694: THE OPEN LIST IS DRAWN BY THE SYSTEM, NOT BY THIS PAGE. With no colour scheme declared it
    draws a white list of black words under a dark field, which is the colour he called bizarre.
    color-scheme tells the system the page is dark and the list follows it; option is named too, for
@@ -655,11 +658,12 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<p class="msg" id="msg" role="status" aria-live="polite"></p>'
     /* S3 fix: a remembered phone the site could not open just now tries again from here, which a saved app with no
        reload needs */
-    + (owner ? "" : '<button class="btn salt-ghost" id="remAgain" type="button" hidden>Try again</button>') + "</div>"
-    /* S3 3.11: a code from another device, or from Salt Admin at the counter */
+    + (owner ? "" : '<button class="btn salt-ghost" id="remAgain" type="button" hidden>Try again</button>')
+    /* S3 3.11: a code from another device, or from Salt Admin at the counter. S3 fix: both inside the form's box, so
+       the signed-out Sheet carries them with it */
     + (owner ? "" : '<button class="btn salt-ghost" id="toCode" type="button">I have a sign-in code</button>')
     + '<p class="salt-insight">Lost your password or your link? Ask us for a <b>new sign-in link</b>. It works straight away.</p>'
-    + "</div>"
+    + "</div></div>"
     + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + keepSheet())
     + '<div id="barw" hidden><div class="bar">'
     + '<span><b id="whoacct"></b><span id="cd"></span></span>'
@@ -1086,7 +1090,7 @@ const CLIENT_JS = `
     var keep=await askReplace(document.getElementById('codePaste'), body.u);   /* S3 3.8 */
     if(stale()) return false;
     csay(''); codeBox.hidden=true; codeIn.value='';
-    enter(body.u, body, b, x, ck);
+    enter(body.u, body, b, x, ck, true);
     if(!(await follow(stale))) return true;
     if(keep) await remember(body.u, ck);
     askPush();
@@ -1097,8 +1101,16 @@ const CLIENT_JS = `
   /* an app's own browser keeps nothing once it closes: a key in its address is not spent there */
   var INAPP_KEY='This app keeps nothing once you close it. Open this page in Safari or Chrome to sign in.';
   if(codeBox){
-    document.getElementById('toCode').addEventListener('click', function(){ showCode(true); try{ codeIn.focus(); }catch(e){} });
-    document.getElementById('codeDoor').addEventListener('click', function(){ codeBox.hidden=true; gate.hidden=false; try{ (un.value?pw:un).focus(); }catch(e){} });
+    /* S3 fix: in the signed-out Sheet the code screen takes the form's place there, and the draft is kept */
+    document.getElementById('toCode').addEventListener('click', function(){
+      if(outSheet&&!outSheet.hidden){ codeHome=codeHome||{p:codeBox.parentNode, n:codeBox.nextSibling}; document.getElementById('outForm').appendChild(codeBox); doorBox.hidden=true; }
+      showCode(true); try{ codeIn.focus(); }catch(e){}
+    });
+    document.getElementById('codeDoor').addEventListener('click', function(){
+      codeBox.hidden=true;
+      if(outSheet&&outSheet.contains(codeBox)) doorBox.hidden=false; else gate.hidden=false;
+      try{ (un.value?pw:un).focus(); }catch(e){}
+    });
     codeIn.addEventListener('input', function(){
       var v=codeIn.value.trim();
       codeIn.removeAttribute('aria-invalid');
@@ -1223,7 +1235,7 @@ const CLIENT_JS = `
     lapse.hidden=false;
     if(!kept) openSignedOut();
   }
-  var doorNext=null;
+  var doorNext=null, codeHome=null;
   function openSignedOut(){
     if(OWNER||!outSheet||!outSheet.hidden) return;
     doorNext=doorBox.nextSibling;
@@ -1236,8 +1248,9 @@ const CLIENT_JS = `
   function closeSignedOut(){
     if(!outSheet||outSheet.hidden) return;
     outSheet.hidden=true; outScrim.hidden=true;
-    /* S3 fix: back where it came from, above I have a sign-in code, which stayed on the door */
-    gate.insertBefore(doorBox, doorNext);
+    /* S3 fix: back where it came from, and the code screen too if the Sheet took it */
+    gate.insertBefore(doorBox, doorNext); doorBox.hidden=false;
+    if(codeHome&&outSheet.contains(codeBox)){ codeHome.p.insertBefore(codeBox, codeHome.n); codeBox.hidden=true; }
   }
   if(outSheet){
     document.getElementById('outX').addEventListener('click', function(){ closeSignedOut(); try{ document.getElementById('lapseGo').focus(); }catch(e){} });

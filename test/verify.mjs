@@ -19845,7 +19845,7 @@ await (async () => {
   const order = () => [...D.getElementById("gate").children].map((e) => e.id || e.tagName.toLowerCase() + (e.className ? "." + e.className.split(" ")[0] : "")).join(" | ");
   try {
     const before = order();
-    ok(/doorBox \| toCode \| p\.salt-insight$/.test(before), "the fixture: the door's form, then I have a sign-in code, then the help line: " + before);
+    ok(/p\.lead \| doorBox$/.test(before), "the fixture: the heading, the lead, then the door's box: " + before);
     const signIn = async () => { D.getElementById("rem").checked = false; D.getElementById("pw").value = passO;
       D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true })); };
     await signIn();
@@ -19858,6 +19858,61 @@ await (async () => {
     D.getElementById("lock").click();
     await until(() => !D.getElementById("gate").hidden);
     ok(order() === before, "after the Sheet and a Log out the door stands as it did, the form above I have a sign-in code: " + order());
+  } finally { await new Promise((r) => setTimeout(r, 60)); W.close(); }
+})();
+section("S3 fix: the signed-out Sheet carries the help line and I have a sign-in code, and a code opened there keeps what they were doing");
+await (async () => {
+  /* S3R-6 (24 Sep 2026). The Sheet carried the password form alone, so a customer who came in by link and never had a
+     password had no way on from it but Log out or a reload: the help line and the code option stayed on the hidden door. */
+  const { landingPage: lpC } = await import("../stmt/page.js");
+  const CC = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDC } = await import("jsdom");
+  const uC = "aaaa-cccc", passC = "2345-6789-abcd-efgc", keyC = "C".repeat(32), ckC = await CC.contentKey("2".repeat(64), uC);
+  const envC = await CC.encryptWith(ckC, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] }));
+  const list = await CC.encryptWith(ckC, JSON.stringify({ at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] }));
+  const st = { dead: new Set(), n: 0, last: "", codes: [] };
+  const dom = new JDC(lpC(uC, "nC", null).replace("var POLL_MS=10000", "var POLL_MS=40"), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      win.scrollTo = () => {};
+      win.fetch = async (p, init) => {
+        const s = ((init && init.headers) || {})["X-Stmt-Session"] || "", body = init && init.body ? JSON.parse(init.body) : null;
+        const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CC.wrapKey(passC, ckC), env: envC, live: null, prices: list, session: (st.last = "sessC" + (++st.n) + "0000000000000000000000") });
+        if (p === "/handover/open") { st.codes.push(body.code); return ans(200, { ok: true, u: uC, remembered: true, token: keyC, wrap: await CC.wrapKey(keyC, ckC), env: envC, live: null, prices: list, session: (st.last = "sessC" + (++st.n) + "0000000000000000000000") }); }
+        if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
+        return ans(200, { ok: true, orders: [] });
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  try {
+    D.getElementById("rem").checked = false; D.getElementById("pw").value = passC;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !D.getElementById("barw").hidden);
+    D.querySelector('button[data-t="order"]').click();
+    const line = () => D.querySelector('#pOrder input[aria-label="Anything to add about this order"]');
+    await until(() => line());
+    line().value = "by the side gate"; line().dispatchEvent(new W.Event("input", { bubbles: true }));
+    st.dead.add(st.last);
+    await until(() => !D.getElementById("outSheet").hidden);
+    const sheet = D.getElementById("outSheet");
+    const toCode = D.getElementById("toCode"), help = [...sheet.querySelectorAll(".salt-insight")].find((p) => /new sign-in link/.test(p.textContent));
+    ok(sheet.contains(toCode) && !!help && !toCode.hidden,
+      "the Sheet carries I have a sign-in code and the help line under the form: " + JSON.stringify({ code: sheet.contains(toCode), help: !!help }));
+    toCode.click();
+    const codeBox = D.getElementById("codeBox"), codeIn = D.getElementById("codeIn");
+    ok(sheet.contains(codeBox) && !codeBox.hidden && D.getElementById("doorBox").hidden && D.getElementById("gate").hidden
+      && /Sign in with a code/.test(D.getElementById("codeH").textContent) && !/Safari/.test(D.getElementById("codeLead").textContent),
+      "and I have a sign-in code there opens the code field in the Sheet, in a code's words, over the page they were on");
+    codeIn.value = "h4tn 8xwc"; codeIn.dispatchEvent(new W.Event("input", { bubbles: true }));
+    await until(() => sheet.hidden);
+    await until(() => line());
+    ok(sheet.hidden && st.codes[0] === "h4tn-8xwc" && !D.getElementById("pOrder").hidden && line() && line().value === "by the side gate",
+      "a code opened there closes the Sheet on the same tab with the line they had typed still in it: " + JSON.stringify(line() && line().value));
+    ok(codeBox.hidden && !sheet.contains(codeBox) && !D.getElementById("doorBox").hidden && D.getElementById("gate").contains(D.getElementById("doorBox")),
+      "and the code screen and the form go back to their own places");
   } finally { await new Promise((r) => setTimeout(r, 60)); W.close(); }
 })();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
