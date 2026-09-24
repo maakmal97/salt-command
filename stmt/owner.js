@@ -585,7 +585,7 @@ export const OWNER_JS = `
      card; it was cleared here before anything drew it */
   function turnStep(note){
     var t=turn; if(!t) return;
-    t.j=null; t.why=note||'';
+    t.j=null; t.copied=false; t.why=note||'';
     drawNeeds();
     if(t.i>=t.rows.length) return;
     var at=t.i;
@@ -595,12 +595,18 @@ export const OWNER_JS = `
   /* S9 fix: ONE SHARE AT A TIME. The tick is awaited after the share, and a second tap in that window shared the
      same link again and stepped twice, so the next account was never shared or ticked and the end said all were
      sent. Share and Skip wait while one is in flight, and the end counts the accounts ticked, not the taps. */
+  /* S9 fix: WITH NO SHARE SHEET, SHARE COPIES AND TICKS NOTHING. A copied message is not a sent one, so the tick
+     both his devices read waits for his own Sent it, once he has pasted it. */
   async function turnShare(){
     var t=turn, a=t&&t.rows[t.i];
     if(!a||!t.j||t.busy) return;
     t.busy=true; drawNeeds();
-    try{ if(navigator.share) await navigator.share({text:t.j.msg}); else await navigator.clipboard.writeText(t.j.msg); }
-    catch(e){ t.busy=false; t.why='Not shared. Tap Share again, or Skip.'; drawNeeds(); return; }
+    if(!t.copied){
+      try{
+        if(navigator.share) await navigator.share({text:t.j.msg});
+        else { await navigator.clipboard.writeText(t.j.msg); t.copied=true; t.busy=false; t.why='Paste it into a message to them, then tap Sent it.'; drawNeeds(); return; }
+      }catch(e){ t.busy=false; t.why='Not shared. Tap Share again, or Skip.'; drawNeeds(); return; }
+    }
     var note='';
     try{ var r=await refs('/all/sent/'+a.username, {issue:sheetIssue, sent:true}); a.sent=r.sent; t.sent.push(a.username); }
     catch(e){ note=(a.code||a.username)+' was shared, but the tick did not save: '+e.message; }
@@ -611,7 +617,7 @@ export const OWNER_JS = `
     var did=t.rows.filter(function(x){ return t.sent.indexOf(x.username)>=0; }).length;
     var c=needCard('s', fin?'All done':(t.i+1)+' of '+n, did+' of '+n+' sent',
       fin?(did===n?'Each has their link, and each is ticked sent.':'The ones not ticked are still on Accounts, under Not sent.')
-        :(a.code||a.username)+(t.j?': their link is made. Share it and it is ticked sent.':': making their link.'));
+        :(a.code||a.username)+(t.copied?': their message is copied.':t.j?': their link is made. Share it and it is ticked sent.':': making their link.'));
     var ticks=el('div','achips');
     t.rows.forEach(function(x, k){ var did=t.sent.indexOf(x.username)>=0;
       ticks.appendChild(chip(did?'verdigris':(k===t.i?'brass':'mist'), (x.code||x.username)+(did?', sent':''))); });
@@ -619,7 +625,7 @@ export const OWNER_JS = `
     var row=el('div','salt-approve__actions');
     if(fin){ var dn=ghost('Done', true); dn.addEventListener('click', function(){ turn=null; drawNeeds(); }); row.appendChild(dn); }
     else {
-      var sh=el('button','salt-pill salt-pill--md','Share'); sh.type='button'; sh.disabled=!t.j||!!t.busy; sh.addEventListener('click', turnShare);
+      var sh=el('button','salt-pill salt-pill--md',t.copied?'Sent it':'Share'); sh.type='button'; sh.disabled=!t.j||!!t.busy; sh.addEventListener('click', turnShare);
       var sk=ghost('Skip'); sk.disabled=!!t.busy; sk.addEventListener('click', function(){ if(turn.busy) return; turn.i++; turnStep(); });
       row.appendChild(sh); row.appendChild(sk);
     }

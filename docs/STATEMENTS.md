@@ -649,7 +649,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   stranger's standing link, Send off until the laptop mints it); and the accounts neither ticked sent
   nor ever opened, with **Send them in turn** (S9 9.6): each account's sign-in link is made as its turn
   opens, Share is a tap of its own, and a share that goes through ticks the account sent (the `sent:` tick
-  both his devices read) before the next turn; a closed share ticks nothing and Skip leaves one for later. Stage 3's Show a code joins the locked card where `showHandover` is on the page.
+  both his devices read) before the next turn; a closed share ticks nothing and Skip leaves one for later. With
+  no share sheet, Share copies the message and only his Sent it ticks. Stage 3's Show a code joins the locked card where `showHandover` is on the page.
 - **Each owner app counts the other's waiting items** (S9 9.8), a figure with no link and no name. The
   desk's every-minute cron (`tellWaiting` in `src/orders.js`) tells the site what waits on the desk, the
   count its own banner reads (`ordersWaiting`), through the keyed `POST /desk/waiting` into the clear key
