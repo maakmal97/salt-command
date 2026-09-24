@@ -17489,6 +17489,67 @@ await (async () => {
   ok(/min-height:var\(--salt-tap\);display:inline-flex/.test(page6) && !/cursor:pointer;min-height:auto/.test(page6),
     "and every month pill is a real tap target now, swept across the class rather than fixed on the one new strip");
 })();
+section("S14 14.1: the publish learns the pool, marks a spare in the clear, never retires one, and the door opens it for nobody");
+await (async () => {
+  /* D15, HIS ANSWER OF 24 SEP 2026: accounts ready on day one. A spare is an account the laptop minted
+     ahead of need, filed in the newest issue's _kv and marked `spare: true`, free while no code in
+     _users.json holds its username. The publish must carry it (so it is in the store the moment the
+     fold binds it), mark it, keep it off every list, and never retire it; the door opens it for nobody. */
+  const { planPublish: pp141 } = await import("../tools/stmt-publish.mjs");
+  const C141 = await import("../tools/stmt-crypto.mjs");
+  const W141 = (await import("../stmt/worker.js")).default;
+  const root141 = join(REPO, "test", "tmp", "pool141"), kv141dir = join(root141, "2026-09", "_kv");
+  rmSync(root141, { recursive: true, force: true });
+  mkdirSync(kv141dir, { recursive: true });
+  const KEY141 = "key-141", M141 = "master-141";
+  const make141 = async (u, pw, extra) => {
+    const ck = await C141.contentKey(KEY141, u);
+    return Object.assign({ u, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C141.makeVerifier(pw),
+      wrap: await C141.wrapKey(pw, ck), wrapMaster: await C141.wrapKey(M141, ck), pwMaster: await C141.encryptText(M141, pw),
+      env: await C141.encryptWith(ck, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [] })) }, extra || {});
+  };
+  const uOld = "aaaa-bbbb", pwOld = "pw-old-141", uSp = "2bbb-cccc", pwSp = "pw-spare-141";
+  writeFileSync(join(kv141dir, uOld + ".json"), JSON.stringify(await make141(uOld, pwOld)) + "\n");
+  writeFileSync(join(kv141dir, uSp + ".json"), JSON.stringify(await make141(uSp, pwSp, { spare: true })) + "\n");
+  writeFileSync(join(root141, "_users.json"), JSON.stringify({ "CZ9-OLD": uOld }));
+  const now141 = new Date("2026-09-24T02:00:00Z");
+  try {
+    /* ---- free: published, marked, kept, and on no list ---- */
+    const plan = await pp141(root141, KEY141, now141, ["u:" + uOld, "u:" + uSp, "u:zzzz-zzzz"], "2026-09-01");
+    const putOf = (p, u) => { const x = p.puts.find((y) => y.key === "u:" + u); return x ? JSON.parse(x.value) : null; };
+    const sp = putOf(plan, uSp), old = putOf(plan, uOld);
+    ok(!!sp && sp.spare === true && !("pwMaster" in sp) && !!sp.env && !!old && !("spare" in old),
+      "a free spare is published like any record, marked spare in the clear, with its sealed password left out: " + JSON.stringify(sp && Object.keys(sp)));
+    ok(plan.deletes.includes("u:zzzz-zzzz") && !plan.deletes.includes("u:" + uSp),
+      "and the retire, which runs (it takes the record no issue carries), never takes the spare: " + JSON.stringify(plan.deletes));
+    ok(!plan.sheet.some((a) => a.username === uSp) && !(uSp in plan.users) && !plan.unmatched.includes(uSp)
+      && JSON.stringify(plan.spares) === JSON.stringify([uSp]),
+      "it is on no list: not his sheet, not the roster or the desk's map, not the unmatched warning; the plan counts it apart: "
+      + JSON.stringify({ sheet: plan.sheet.map((a) => a.username), unmatched: plan.unmatched, spares: plan.spares }));
+
+    /* ---- the door opens a spare for nobody, his override included; the same record bound opens ---- */
+    const door = async (puts, body) => {
+      const kv = new KV();
+      for (const p of puts) await kv.put(p.key, p.value);
+      const r = await W141.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
+        headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), { STMT: kv, STMT_MASTER: M141 });
+      return { status: r.status, seen: await kv.get("seen:" + body.u) };
+    };
+    const byPw = await door(plan.puts, { u: uSp, password: pwSp }), byM = await door(plan.puts, { u: uSp, password: M141, master: M141 });
+    ok(byPw.status === 401 && byM.status === 401 && byPw.seen === null,
+      "a free spare answers the door's one refusal, to its own password and to his master, and no open is counted: " + JSON.stringify([byPw.status, byM.status]));
+
+    /* ---- bound: the fold wrote its line, so it is an ordinary account ---- */
+    writeFileSync(join(root141, "_users.json"), JSON.stringify({ "CZ9-OLD": uOld, "CZ9-NEW": uSp }));
+    const plan2 = await pp141(root141, KEY141, now141, ["u:" + uOld, "u:" + uSp], "2026-09-01");
+    const sp2 = putOf(plan2, uSp), row2 = plan2.sheet.find((a) => a.username === uSp);
+    ok(!!sp2 && !("spare" in sp2) && plan2.spares.length === 0 && !!row2 && row2.code === "CZ9-NEW" && !!row2.pwMaster
+      && plan2.users[uSp] === "CZ9-NEW",
+      "once a code holds it the mark goes and it is on his sheet with its sealed password, so Send can hand it over: " + JSON.stringify(row2 && row2.code));
+    const bound = await door(plan2.puts, { u: uSp, password: pwSp });
+    ok(bound.status === 200 && !!bound.seen, "and the same password now opens it, which is what makes the refusal above the mark's and not the password's: " + bound.status);
+  } finally { rmSync(root141, { recursive: true, force: true }); }
+})();
 section("v707: an ID with no account cannot sign in, and now something mints one and something says so");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "an add ID, or amend ID, is applicable to the accounts available

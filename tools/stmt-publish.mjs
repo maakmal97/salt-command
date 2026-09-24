@@ -24,6 +24,7 @@ import { dirname, resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { liveRecords, siteBaseUrl, partyTotals, reviewFlag, klToday } from "./make_statements.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
+import { isSpare } from "./stmt-pool.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CONFIG = join(REPO, "wrangler.stmt.jsonc");
@@ -62,9 +63,16 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
   const byUser0 = usersMap(root);
   const assocCodes = new Set();
   for (const prod of (assoc && assoc.products) || []) for (const row of prod.rows || []) if (row && row.id) assocCodes.add(row.id);
+  /* D15, HIS ANSWER OF 24 SEP 2026: THE POOL. A spare account (tools/stmt-pool.mjs) is published like
+     any record, so it is in the store the moment the fold binds it, and so never retired; it is marked
+     `spare` IN THE CLEAR, as assoc is, and the site's door opens it for nobody until a code holds it.
+     No code, so no row on his list, no line on the roster and nothing in any count. Once bound, the
+     mark goes and it is an ordinary account: the live statement and the price list are sealed in above. */
+  const spares = new Set(r.records.filter((rec) => isSpare(rec, byUser0)).map((rec) => rec.u));
   const puts = r.records.map(rec => {
-    const { pwMaster, ...forCustomer } = rec;
+    const { pwMaster, spare, ...forCustomer } = rec;
     if (assocCodes.has(byUser0[rec.u])) forCustomer.assoc = true;
+    if (spares.has(rec.u)) forCustomer.spare = true;
     return { key: "u:" + rec.u, value: JSON.stringify(forCustomer) };
   });
   const keep = new Set(r.records.map(rec => "u:" + rec.u));
@@ -117,7 +125,8 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
   /* v691: the associates' report card rides the same bulk put, so it lands or fails with the
      records rather than in a write of its own. Given only when the desk was opened for prices. */
   if (assoc) puts.push({ key: "assoc", value: JSON.stringify(assoc) });
-  return { latest: r.latest, issued, newIssue, live: r.live, priced: r.priced || 0, unmatched: r.unmatched, stale: r.stale, wrongKey: r.wrongKey || [], puts, deletes, sheet, users: usersMap(root) };
+  return { latest: r.latest, issued, newIssue, live: r.live, priced: r.priced || 0, unmatched: r.unmatched.filter((u) => !spares.has(u)),
+    spares: [...spares], stale: r.stale, wrongKey: r.wrongKey || [], puts, deletes, sheet, users: usersMap(root) };
 }
 
 /* shell:true, and NOT an npx.cmd branch. Node refuses to spawn a .cmd without a shell on Windows
@@ -352,7 +361,8 @@ async function main() {
   const recordCount = plan.puts.filter((x) => String(x.key || "").startsWith("u:")).length;
   console.log((dry ? "would publish " : "publishing ") + recordCount + " records from " + plan.latest
     + (key ? ", " + plan.live + " with a live statement, " + plan.priced + " with a price list" : ", NO live statements: STMT_KEY is not set")
-    + (plan.newIssue ? ", a new issue (" + plan.issued + "), attempt counters cleared" : ""));
+    + (plan.newIssue ? ", a new issue (" + plan.issued + "), attempt counters cleared" : "")
+    + ", " + plan.spares.length + " of them spare account(s) free for the next Add ID");
   if (plan.unmatched.length) console.log("::warning::no code in _users.json for: " + plan.unmatched.join(", "));
   if (dry) { console.log("wrote " + putFile + ", " + delFile + " and " + usersFile); return; }
 

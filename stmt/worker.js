@@ -204,7 +204,11 @@ async function handleOpen(request, env) {
   if (ipFails >= MAX_IP_FAILS) return tooMany();
   if (!u) { await bump(ipKey, ipFails); return json({ ok: false, error: REFUSED }, 401); }
 
-  const rec = await env.STMT.get(UKEY(u), "json");
+  /* D15: A SPARE ACCOUNT IS NOBODY'S YET. The publish marks one the laptop minted ahead of need and the
+     fold has not bound to a code, and the door treats it as no account at all, his override included:
+     nobody has been handed its password, and an open would be counted as a customer's. */
+  const got = await env.STMT.get(UKEY(u), "json");
+  const rec = got && got.spare === true ? null : got;
   const masterKey = String(env.STMT_MASTER || "");
 
   /* THE OVERRIDE IS WEIGHED BEFORE THE CUSTOMER'S LOCKOUT, on its own counter. It is the

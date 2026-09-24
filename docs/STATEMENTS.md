@@ -76,6 +76,12 @@ fold registers them (v588; before, the first month a statement was made for them
 customer keeps, so re-keying one would strand everything they were ever sent. It is committed,
 because an address is not a secret; the password beside it is, and that stays out.
 
+**Spare accounts** (D15, his answer of 24 Sep 2026: accounts ready on day one). A spare is a record
+in the newest issue's `_kv` marked `spare: true`, free while no code in `_users.json` holds its
+username (`tools/stmt-pool.mjs`). The publish writes it like any record and so never retires it,
+marks it `spare` in the clear as it marks `assoc`, and lists it nowhere: no sheet row, no roster line,
+no count. The site's door answers a spare with its one refusal, his master included, until a code holds it.
+
 One per customer with anything to show, named by code so the folder sorts alphabetically, plus
 a review sheet stitching every account together. **The review sheet is not for sending.** It puts
 every account beside every other, which is exactly what a statement must never do, and it exists
