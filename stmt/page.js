@@ -363,6 +363,7 @@ const GLYPH = {
   prices: "M3.8 12.6 V4.3 H12.1 L20.2 12.4 L12.4 20.2 Z M9.7 8.6 A1.5 1.5 0 1 1 6.7 8.6 A1.5 1.5 0 1 1 9.7 8.6 Z",
   orders: "M6.5 3.5 H17.5 V20.5 L15.3 19.2 L13.1 20.5 L10.9 19.2 L8.7 20.5 L6.5 19.2 Z M9.5 8 H14.5 M9.5 11.5 H14.5 M9.5 15 H12.5",
   dots: "M5.1 12 A1.4 1.4 0 1 0 7.9 12 A1.4 1.4 0 1 0 5.1 12 Z M10.6 12 A1.4 1.4 0 1 0 13.4 12 A1.4 1.4 0 1 0 10.6 12 Z M16.1 12 A1.4 1.4 0 1 0 18.9 12 A1.4 1.4 0 1 0 16.1 12 Z",
+  close: "M6.5 6.5 L17.5 17.5 M17.5 6.5 L6.5 17.5",
   vdots: "M10.6 6.5 A1.4 1.4 0 1 0 13.4 6.5 A1.4 1.4 0 1 0 10.6 6.5 Z M10.6 12 A1.4 1.4 0 1 0 13.4 12 A1.4 1.4 0 1 0 10.6 12 Z M10.6 17.5 A1.4 1.4 0 1 0 13.4 17.5 A1.4 1.4 0 1 0 10.6 17.5 Z",
 };
 const FILLED = { dots: true, vdots: true };
@@ -370,6 +371,20 @@ export function glyphSvg(name, px) {
   const fill = FILLED[name] ? 'fill="currentColor" stroke="none"' : 'fill="none" stroke="currentColor" stroke-width="1.4"';
   return '<svg class="psym glyph" viewBox="0 0 24 24" width="' + px + '" height="' + px + '" aria-hidden="true" focusable="false">'
     + '<path d="' + GLYPH[name] + '" ' + fill + ' stroke-linejoin="round" stroke-linecap="round"/></svg>';
+}
+
+/* S3 3.5: A REMEMBERED PHONE DRAWS THIS, NOT THE DOOR, while it opens; and when a session lapses with nothing
+   remembered, a Sheet says so over whatever they were doing, and the door's own form moves into it. */
+function signedOutSheet() {
+  return '<div id="opening" class="gate" hidden><span class="appmark">' + glyphSvg("ring", 40) + "</span>"
+    + '<p class="lead" role="status">Opening your account...</p></div>'
+    + '<div id="outScrim" class="salt-sheet-scrim" hidden></div>'
+    + '<div id="outSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="outT" tabindex="-1" hidden>'
+    + '<div class="salt-sheet__grab"></div>'
+    + '<div class="salt-sheet__head"><h2 class="salt-sheet__title" id="outT">You were signed out on this phone</h2>'
+    + '<button type="button" class="salt-orb salt-sheet__close" id="outX" aria-label="Close">' + glyphSvg("close", 20) + "</button></div>"
+    + '<div class="salt-sheet__body"><p>Sign in again to carry on. What you were doing is kept.</p><div id="outForm"></div></div>'
+    + "</div>";
 }
 
 /* S3 3.3: THE LINK PAGE. A link opens here and spends nothing until Continue: it says which account it opens
@@ -542,7 +557,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + "<h1>Statement of account</h1>"
     + '<p class="lead">Sign in with the username and password sent to you. '
     + "Tick Remember me and this device stays signed in; Log out ends it.</p>"
-    + '<form id="f" autocomplete="off">'
+    + '<div id="doorBox"><form id="f" autocomplete="off">'
     + '<span class="lbl" id="unl">Username</span>'
     + boxes("un", 2, "text", "Username")
     + '<input type="hidden" id="un" value="' + u + '">'
@@ -554,7 +569,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + "<span>Remember me on this device</span></label>"
     + '<button class="btn salt-pill salt-pill--md" id="go" type="submit">Log in</button>'
     + "</form>"
-    + '<p class="msg" id="msg" role="status" aria-live="polite"></p>'
+    + '<p class="msg" id="msg" role="status" aria-live="polite"></p></div>'
     /* v693: how to keep it as an app, on the door where a first-time reader is, and hidden once
        the page is running as one. Three steps, the two phones, and nothing to tap. */
     + '<div class="inst" id="inst" hidden>'
@@ -567,7 +582,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + "<li>Open it from that icon after this and sign in there with Remember me ticked. It can tell you when an order moves.</li></ol>"
     + "</div>"
     + "</div>"
-    + (owner ? "" : linkScreen())
+    + (owner ? "" : linkScreen() + signedOutSheet())
     + '<div id="barw" hidden><div class="bar">'
     + '<span><b id="whoacct"></b><span id="cd"></span></span>'
     + '<button type="button" id="lock">Log out</button>'
@@ -666,6 +681,8 @@ const CLIENT_JS = `
   bullDraw(BULL);
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
   var session='', user='', prices=null, orders=[], poll=null, tab='stmt', draft={}, pick={};
+  /* S3 3.5: the content key the account was opened with, so a return re-reads it without asking for anything */
+  var curCk=null;
   /* v706: the associate's own card, opened from their record like the price list */
   /* cardMonth: null opens on the newest month, '' is All (24 Sep 2026: '' was both, so All showed the newest) */
   var card=null, cardMonth=null;
@@ -879,6 +896,7 @@ const CLIENT_JS = `
     var mfn=document.getElementById('mfnote'); if(mfn) mfn.textContent='';
     pPrices.textContent=''; pOrder.textContent='';
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
+    curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
     /* the owner goes back to his list, never to a password field he has no password for */
     if(OWNER){ roster.hidden=false; gate.hidden=true; if(whoacct) whoacct.textContent=''; }
     else gate.hidden=false;
@@ -910,23 +928,55 @@ const CLIENT_JS = `
   }
   document.getElementById('lock').addEventListener('click', logOut);
 
-  /* S1 1.5, 24 SEP 2026: A LAPSED SESSION SAYS SO AT ONCE, IN VIEW. The fifteen minutes ran out in silence:
-     the poll stopped and a note was set that nothing drew, telling them to "lock", a control gone since
-     v692. Continue opens again through the remembered device where there is one, else puts the door back
-     with the username in it. Nothing is renewed without the tap. */
-  var lapse=document.getElementById('lapse');
-  var LAPSED='Signed out: tap Continue at the top.';
+  /* S1 1.5, 24 SEP 2026: A LAPSED SESSION SAYS SO AT ONCE, IN VIEW, where the fifteen minutes had run out in
+     silence. S3 3.5, HIS D1 OF 24 SEP 2026: IT REOPENS ITSELF FROM THE REMEMBERED PHONE. api() asks the phone's own
+     memory for a fresh session, once, and repeats the request, so nobody is stranded on a page that looks alive.
+     Only with nothing remembered does a Sheet say "You were signed out on this phone" over what they were doing,
+     carrying the door's own form, and a sign-in there keeps the draft. The bar keeps a line with the way back,
+     for a Sheet that was closed, or a site that could not be reached to reopen. */
+  var lapse=document.getElementById('lapse'), opening=document.getElementById('opening'),
+      outSheet=document.getElementById('outSheet'), outScrim=document.getElementById('outScrim'),
+      doorBox=document.getElementById('doorBox');
+  var LAPSED='Not sent: you were signed out on this phone. Sign in to carry on.';
+  var reopening=null;
+  function reopen(){
+    if(OWNER) return Promise.resolve(false);
+    if(!reopening) reopening=openRemembered(true).then(function(v){ reopening=null; return v; }, function(){ reopening=null; return false; });
+    return reopening;
+  }
   function lapsed(){
     if(poll){ clearInterval(poll); poll=null; }
     if(!lapse.hidden) return;
-    document.getElementById('lapseT').textContent='You were signed out after a while.';
+    var kept=!!remGet();
+    document.getElementById('lapseT').textContent=kept?'This phone could not sign you back in just now.':'You were signed out on this phone.';
+    document.getElementById('lapseGo').textContent=kept?'Try again':'Sign in';
     lapse.hidden=false;
+    if(!kept) openSignedOut();
+  }
+  function openSignedOut(){
+    if(OWNER||!outSheet||!outSheet.hidden) return;
+    document.getElementById('outForm').appendChild(doorBox);
+    if(user){ un.value=user; put(boxesOf('un'),0,clean(user)); }
+    say('');
+    outScrim.hidden=false; outSheet.hidden=false;
+    try{ firstEmpty('pw').focus(); }catch(e){}
+  }
+  function closeSignedOut(){
+    if(!outSheet||outSheet.hidden) return;
+    outSheet.hidden=true; outScrim.hidden=true;
+    gate.insertBefore(doorBox, gate.querySelector('#inst'));
+  }
+  if(outSheet){
+    document.getElementById('outX').addEventListener('click', function(){ closeSignedOut(); try{ document.getElementById('lapseGo').focus(); }catch(e){} });
+    outScrim.addEventListener('click', closeSignedOut);
+    document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') closeSignedOut(); });
   }
   document.getElementById('lapseGo').addEventListener('click', async function(){
-    var u=user;
-    lock();
-    if(!OWNER&&remGet()&&await openRemembered()) return;
-    if(!OWNER&&u){ un.value=u; put(boxesOf('un'),0,clean(u)); }
+    if(OWNER) return;
+    if(!remGet()){ openSignedOut(); return; }
+    /* the line stays until the phone is back in: enter() takes it away; a refusal forgets the phone, so it is redrawn */
+    if(!(await reopen())){ lapse.hidden=true; lapsed(); return; }
+    await loadOrders(); drawOrder();
   });
 
   /* ---- the tabs: three for everyone, a fourth for an associate ---- */
@@ -1288,16 +1338,18 @@ const CLIENT_JS = `
      older sealed list still can: its first size was read unguarded, and the throw blanked the whole tab. */
   function sold(){ return ((prices&&prices.products)||[]).filter(function(x){ return x.sizes&&x.sizes.length; }); }
   async function api(path, body, method){
-    var r;
-    try{
-      r=await fetch(path,{method:method||(body?'POST':'GET'), cache:'no-store',
+    var send=function(){ return fetch(path,{method:method||(body?'POST':'GET'), cache:'no-store',
         headers:Object.assign({'X-Stmt-Session':session}, body?{'content-type':'application/json'}:{}),
-        body:body?JSON.stringify(body):undefined});
-    }catch(e){ return {status:0, body:{ok:false, error:NOT_SENT}}; }
-    /* UX5, 24 Sep 2026: ONE LAPSE, ONE VOICE. The bar says it with Continue; beside the tapped control each
-       caller says whatever the answer's error is, which is now a pointer to that Continue, where Place and Send
-       said "Sign in again" of a door the page did not show */
-    if(r.status===401&&session){ lapsed(); return {status:401, body:{ok:false, error:LAPSED}}; }
+        body:body?JSON.stringify(body):undefined}); };
+    var r;
+    try{ r=await send(); }catch(e){ return {status:0, body:{ok:false, error:NOT_SENT}}; }
+    /* S3 3.5: a lapse reopens from the remembered phone and the request goes again, once */
+    if(r.status===401&&session&&await reopen()){
+      try{ r=await send(); }catch(e){ return {status:0, body:{ok:false, error:NOT_SENT}}; }
+    }
+    /* UX5, 24 Sep 2026: ONE LAPSE, ONE VOICE. The Sheet and the bar say it; beside the tapped control each
+       caller says whatever the answer's error is, which is a pointer to them */
+    if(r.status===401&&session){ lapsed(); return {status:401, body:{ok:false, error:remGet()?NOT_SENT:LAPSED}}; }
     var j=null; try{ j=await r.json(); }catch(e){}
     return {status:r.status, body:j||{}};
   }
@@ -1814,7 +1866,7 @@ const CLIENT_JS = `
     var x=await unseal(body, ck, b);
     if(stale()) return;
     done();
-    enter(u, body, b, x);
+    enter(u, body, b, x, ck, !!(outSheet&&!outSheet.hidden));
     if(!(await follow(stale))) return;
     /* v692: remembered only on a customer's own sign-in, and only when asked. The owner's route
        opens accounts with the master and must leave nothing behind on his phone. */
@@ -1845,36 +1897,64 @@ const CLIENT_JS = `
      The token names the record and brings back the wrap; the key beside it in this browser opens
      it. A refusal, a stale token or a record that has gone simply falls through to the door. */
   var KEPT='Your account could not be opened just now. This phone is still remembered: try again in a moment.';
-  async function openRemembered(){
+  async function openRemembered(keep){
     var rec=remGet();
     if(!rec||!rec.t||!rec.k||OWNER) return false;
-    var mine=++ticket, stale=function(){ return mine!==ticket; };
-    say('Opening...','wait');
+    /* S3 3.5: reopening a lapse runs under the flow that met it, so it takes no ticket of its own and says nothing */
+    var mine=keep?ticket:++ticket, stale=function(){ return mine!==ticket; };
+    if(!keep) say('Opening...','wait');
     var r, body;
     try{
       r=await fetch('/remember/open', {method:'POST', headers:{'content-type':'application/json'},
         body:JSON.stringify({token:rec.t})});
       body=await r.json();
-    }catch(e){ if(!stale()) say(KEPT,'bad'); return false; }
+    }catch(e){ if(!stale()&&!keep) say(KEPT,'bad'); return false; }
     if(stale()) return false;
     /* S1 1.41, 24 SEP 2026: ONLY THE DOOR'S REFUSAL FORGETS THIS PHONE. A server fault forgot it too, so one
        bad minute on the site signed every returning phone out for good; that, and a dropped connection,
        now keep it and say so. */
-    if(r.status===401){ remClear(); say(''); return false; }
-    if(!r.ok||!body.ok){ say(KEPT,'bad'); return false; }
+    if(r.status===401){ remClear(); if(!keep) say(''); return false; }
+    if(!r.ok||!body.ok){ if(!keep) say(KEPT,'bad'); return false; }
     var ck, b;
     try{
       ck=await unwrapUnder(b64d(rec.k), body.wrap);
       b=JSON.parse(await open(ck, body.env));
-    }catch(e){ remClear(); say(''); return false; }
+    }catch(e){ remClear(); if(!keep) say(''); return false; }
     if(stale()) return false;
     var x=await unseal(body, ck, b);
     if(stale()) return false;
-    enter(body.u, body, b, x);
+    enter(body.u, body, b, x, ck, keep);
+    /* a reopen hands the session back to the request that met the lapse, which repeats itself; the poll resumes */
+    if(keep){ if(!poll) poll=setInterval(refresh, POLL_MS); return true; }
     if(!(await follow(stale))) return true;
     askPush();
     return true;
   }
+
+  /* ---- THE PAGE RE-READS ON EVERY RETURN (S3 3.5) ------------------------------------------------------
+     A saved app has no reload, so coming back to the page (shown again, or restored from the back-forward cache)
+     reads the sealed documents and the orders afresh on the session, with the key it was opened with, keeping
+     what the customer was doing. A session that lapsed meanwhile reopens itself on the way, in api(). */
+  var rereading=false;
+  async function reread(){
+    if(OWNER||!session||!curCk||rereading) return;
+    rereading=true;
+    try{
+      var mine=ticket, ck=curCk;
+      var r=await api('/account');
+      if(mine!==ticket||!r.body.ok||!r.body.env) return;
+      var b=JSON.parse(await open(ck, r.body.env));
+      var x=await unseal(r.body, ck, b);
+      if(mine!==ticket) return;
+      enter(user, {session:session}, b, x, ck, true);
+      await loadOrders();
+      if(mine!==ticket) return;
+      drawOrder();
+    }catch(e){ /* what is on screen stays, and the next return tries again */ }
+    finally{ rereading=false; }
+  }
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') reread(); });
+  window.addEventListener('pageshow', function(ev){ if(ev&&ev.persisted) reread(); });
   /* ---- ONE WAY IN (S3 3.3, 24 Sep 2026) ----------------------------------------------------------
      The password, a remembered phone and the link all hand back the same record: these open it with the
      content key and put the account on screen, so the roads cannot drift apart. unseal opens what sits
@@ -1890,14 +1970,25 @@ const CLIENT_JS = `
     if(body.prices){ try{ x.prices=JSON.parse(await open(ck, body.prices)); }catch(e){ /* the statements still open; the list is simply absent */ } }
     return x;
   }
-  function enter(u, body, b, x){
+  function enter(u, body, b, x, ck, keep){
     say('');
-    prices=x.prices; assoc=x.assoc; card=x.card;
-    user=u; session=body.session||''; orders=[]; draft={}; pick={};
+    /* S3 3.5: the same account let in again (a lapse reopened, a sign-in on the Sheet, a return re-read) keeps
+       the draft, the tab, the month and the place on the page */
+    var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
+    prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
+    user=u; session=body.session||'';
+    if(!same){ orders=[]; draft={}; pick={}; }
     view=!!(OWNER&&body.byMaster);
     if(linkBox) linkBox.hidden=true;
+    if(opening) opening.hidden=true;
+    lapse.hidden=true; closeSignedOut();
     show(b);
     drawPrices();
+    if(same){
+      if(t!==tab&&!(hold&&t==='prices')&&!(t==='card'&&tCard.hidden)) showTab(t);
+      if(mf&&mfil.querySelector('button[data-mf="'+mf+'"]')){ mfPick=mf; applyMonths(); }
+      window.scrollTo(0,sy);
+    }
   }
   async function follow(stale){
     if(session){ await loadOrders(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
@@ -2001,7 +2092,7 @@ const CLIENT_JS = `
       var x=await unseal(body, ck, b);
       if(stale()) return;
       lsay('');
-      enter(body.u, body, b, x);
+      enter(body.u, body, b, x, ck);
       if(!(await follow(stale))) return;
       /* S3 3.4 (his D1): the link keeps this phone signed in, with the same split key the door's tick makes */
       await remember(body.u, ck);
@@ -2025,7 +2116,14 @@ const CLIENT_JS = `
     /* v710: a one-time link first, a remembered device second. A reader arriving on a link came to
        use it, and if it is spent the remembered device is still there behind it. S3 3.3: the link is a
        page of its own now, spent on Continue, so the page waits there. */
-    (async function(){ if(!(await showLink())) await openRemembered(); })();
+    (async function(){
+      if(await showLink()) return;
+      /* S3 3.5: a remembered phone draws "Opening your account" while it opens, so nobody starts typing into a door
+         that is about to vanish; the door comes back only if it does not open */
+      if(remGet()&&opening){ gate.hidden=true; opening.hidden=false; }
+      var inNow=await openRemembered();
+      if(!inNow&&!session){ if(opening) opening.hidden=true; gate.hidden=false; }
+    })();
   }
 })();
 `;

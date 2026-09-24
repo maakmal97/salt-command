@@ -303,7 +303,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   spent it, by its nonce, for two minutes; an app's own browser is sent to Safari or Chrome first.
 - **The door**: log in, remember me (a device key in the browser, the wrapped content key at
   `rem:<token>`, neither opening anything alone), log out, which also drops that wrap and this
-  phone's notifications. A lapsed session says so in the bar, with Continue. Kept as an app:
+  phone's notifications. **A lapsed session reopens itself from the remembered phone and repeats the
+  request once** (his D1); only with nothing remembered does a Sheet say so over the page, carrying the
+  door and keeping the draft. The page re-reads on every return (`GET /account` on its session, never a
+  wrap), and a remembered phone draws "Opening your account", never the door. Kept as an app:
   manifest and icon served by the Worker, no brand; every login asks about notifications once.
   Salt Admin links its own manifest with credentials and is titled Salt Admin.
 - **A customer's banner names the kind of news, never an amount, a product, an order or a name**:

@@ -303,6 +303,15 @@ async function handleCustomer(request, env, p, m) {
      its fifteen minutes got a 401 and left its remembered wrap on the site for the rest of thirty days. */
   if (p === "/logout") return logOut(request, env, m, u);
   if (!u) return json({ ok: false, error: "Sign in again to see your orders.", session: false }, 401);
+  /* S3 3.5: THE PAGE RE-READS ON EVERY RETURN, on its session: the sealed documents as an open hands them over,
+     and never a wrap, because the page still holds the key it opened them with */
+  if (p === "/account") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    const acct = await env.STMT.get("u:" + u, "json");
+    if (!acct) return json({ ok: false, error: "Sign in again to see your orders.", session: false }, 401);
+    return json({ ok: true, u, issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc,
+      card: acct.card || null, env: acct.env, live: acct.live || null, prices: acct.prices || null });
+  }
   if (p === "/orders") {
     if (m === "GET") return json({ ok: true, orders: (await ordersOf(env, u)).map(customerView) });
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -1058,7 +1067,7 @@ export default {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       return handleSignin(request, env);
     }
-    if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout") return handleCustomer(request, env, p, m);
+    if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account") return handleCustomer(request, env, p, m);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
     if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin") return handleDesk(request, env, p, m);

@@ -534,7 +534,7 @@ not taken, cancelled. **Never an amount, a product, an order or a name**; the su
 One banner an order: the notification's tag and a sealed wake's push `Topic` are per order (the topic a
 digest of the id), so news of one order never replaces another's on the lock screen or at the push service.
 A tap opens the Counter at `#o=<id>`; a page already open is sent a message instead, re-reads its
-orders and opens that one, or, its session lapsed, keeps it for the sign-in after Continue. A subscription filed before its keys gets a payload-free wake and the
+orders and opens that one, or, its session lapsed, keeps it until the phone is back in (reopened from its memory, S3 3.5, or signed in on the Sheet). A subscription filed before its keys gets a payload-free wake and the
 old fixed words, so nothing already subscribed went dark; the page re-files the keys at the next
 sign-in. A notice keeps its own road: its wake carries no payload, and the service worker reads
 the public `bulletin` (v761). On an

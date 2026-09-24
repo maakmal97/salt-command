@@ -15382,7 +15382,7 @@ await (async () => {
     ok(!errs.length, "and nothing is left unhandled: " + JSON.stringify(errs));
   } finally { try { W.close(); } catch (e) { /* best effort */ } process.off("unhandledRejection", onRej); }
 })();
-section("S1 1.5: a lapsed session says so in the bar at once, and Continue opens again or puts the door back");
+section("S1 1.5: a lapsed session says so in view only when the phone cannot sign itself back in, and a phone that remembers nothing gets the door with its username");
 await (async () => {
   /* H05, 24 SEP 2026. On a 401 the poll stopped and a note was set that nothing drew until the orders
      changed, and it told them to "lock", a control gone since v692. Driven with the poll shortened in the
@@ -15411,7 +15411,9 @@ await (async () => {
             wrap: await CD.wrapKey(devD, ckD), env: envD, live: null, prices: null, session: "sessD" + st.reopened + "aaaaaaaaaaaaaaaaaaaaaa" }) }; }
           if (p === "/open-link") return { ok: true, status: 200, json: async () => ({ ok: true, u: uD, wrap: await CD.wrapKey(tokD, ckD),
             env: envD, live: null, prices: null, session: "sessDlinkaaaaaaaaaaaaaaaaaaaa" }) };
-          if (p === "/orders") return st.lapsed ? { ok: false, status: 401, json: async () => ({ ok: false, error: "Sign in again to see your orders.", session: false }) }
+          /* S3 3.5: a lapse is the session the page held; a fresh one is answered */
+          const sess = ((init && init.headers) || {})["X-Stmt-Session"] || "";
+          if (p === "/orders") return st.lapsed && sess === st.dead ? { ok: false, status: 401, json: async () => ({ ok: false, error: "Sign in again to see your orders.", session: false }) }
             : { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
           return { ok: true, status: 200, json: async () => ({ ok: true }) };
         };
@@ -15420,30 +15422,25 @@ await (async () => {
   };
   const wait = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); };
 
-  /* a remembered phone: the line appears with no tap, and Continue opens again through the device */
-  const st1 = { reopened: 0, lapsed: false };
+  /* a remembered phone (S3 3.5, his D1): the lapse reopens it with no tap and nothing said */
+  const st1 = { reopened: 0, lapsed: false, dead: "sessD1aaaaaaaaaaaaaaaaaaaaaa" };
   const one = drive(JSON.stringify({ t: "r".repeat(32), k: Buffer.from(devD).toString("base64"), u: uD }), st1);
   try {
     await wait(() => !one.D.getElementById("barw").hidden);
-    st1.lapsed = true;
-    const alertEl = () => [...one.D.querySelectorAll("#barw [role=alert]")].find((e) => !e.hidden && e.textContent.trim());
-    await wait(() => !!alertEl());
-    const a = alertEl();
-    ok(!!a && /You were signed out after a while\./.test(a.textContent) && !/lock/i.test(a.textContent) && !!a.querySelector("button"),
-      "with no tap, a line in the bar says the session lapsed, with Continue, and never says lock: " + JSON.stringify(a && a.textContent));
-    ok(!/lock and sign in/.test(one.D.documentElement.outerHTML), "and the old note telling them to lock is gone from the page");
-    st1.lapsed = false;
     const before = st1.reopened;
-    const go = a && [...a.querySelectorAll("button")].find((x) => x.textContent === "Continue");
-    if (go) go.click();
-    await wait(() => st1.reopened > before && !one.D.getElementById("barw").hidden);
-    ok(st1.reopened === before + 1 && !one.D.getElementById("barw").hidden && one.D.getElementById("lapse").hidden && one.D.getElementById("gate").hidden,
-      "Continue opens the account again through the remembered device, and the line is gone: " + JSON.stringify({ reopened: st1.reopened - before }));
+    st1.dead = "sessD" + st1.reopened + "aaaaaaaaaaaaaaaaaaaaaa";
+    st1.lapsed = true;
+    await wait(() => st1.reopened > before);
+    await new Promise((r) => setTimeout(r, 120));
+    ok(st1.reopened === before + 1 && one.D.getElementById("lapse").hidden && one.D.getElementById("outSheet").hidden
+      && !one.D.getElementById("barw").hidden && one.D.getElementById("gate").hidden,
+      "with no tap, a remembered phone signs itself back in through the device, and nothing is said: " + JSON.stringify({ reopened: st1.reopened - before }));
+    ok(!/lock and sign in/.test(one.D.documentElement.outerHTML), "and the old note telling them to lock is gone from the page");
   } finally { try { one.W.close(); } catch (e) { /* best effort */ } }
 
-  /* opened by a one-time link, so nothing is remembered and nothing was typed: Continue puts the door back
-     with the username in it */
-  const st2 = { reopened: 0, lapsed: false };
+  /* opened by a one-time link whose remembering the site did not take, so nothing is remembered and nothing was
+     typed: the Sheet carries the door with the username in it */
+  const st2 = { reopened: 0, lapsed: false, dead: "sessDlinkaaaaaaaaaaaaaaaaaaaa" };
   const two = drive(null, st2);
   try {
     /* S3 3.3: the link waits on its own page for Continue */
@@ -15452,12 +15449,12 @@ await (async () => {
     await wait(() => !two.D.getElementById("barw").hidden);
     st2.lapsed = true;
     await wait(() => !two.D.getElementById("lapse").hidden);
-    ok(!two.D.getElementById("lapse").hidden, "a phone that remembers nothing is told the same, in the bar");
-    two.D.getElementById("lapseGo").click();
-    await new Promise((r) => setTimeout(r, 60));
+    ok(!two.D.getElementById("lapse").hidden && /You were signed out on this phone\./.test(two.D.getElementById("lapseT").textContent)
+      && two.D.getElementById("lapseGo").textContent === "Sign in",
+      "a phone that remembers nothing is told so in the bar, with Sign in");
     const boxes = [...two.D.querySelectorAll('.seg[data-for="un"] input')].map((b) => b.value).join("-");
-    ok(!two.D.getElementById("gate").hidden && boxes === uD && st2.reopened === 0,
-      "and Continue puts the door back with the username in it, asking nothing of a device it does not have: " + JSON.stringify({ boxes, reopened: st2.reopened }));
+    ok(!two.D.getElementById("outSheet").hidden && two.D.getElementById("outSheet").contains(two.D.getElementById("f")) && boxes === uD && st2.reopened === 0,
+      "and a Sheet carries the door with the username in it, asking nothing of a device it does not have: " + JSON.stringify({ boxes, reopened: st2.reopened }));
   } finally { try { two.W.close(); } catch (e) { /* best effort */ } }
 })();
 section("S1 fix UX5: one lapse is said once, in the bar, and a tapped control points to its Continue");
@@ -15496,7 +15493,8 @@ await (async () => {
   const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
   const btn = (t) => [...D.querySelectorAll("#pOrder button")].find((b) => b.textContent === t && !b.disabled);
   const said = () => [...D.querySelectorAll("#pOrder .msg")].map((x) => x.textContent.trim()).filter(Boolean);
-  const lapseOn = () => !D.getElementById("lapse").hidden && /signed out after a while/.test(D.getElementById("lapse").textContent);
+  const lapseOn = () => !D.getElementById("lapse").hidden && /signed out on this phone/.test(D.getElementById("lapse").textContent)
+    && !D.getElementById("outSheet").hidden;
   try {
     D.getElementById("pw").value = passX;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
@@ -15508,13 +15506,13 @@ await (async () => {
     await until(() => btn("Place this order")); btn("Place this order").click();
     await until(() => lapseOn() && said().length);
     const placed = said();
-    ok(lapseOn() && placed.includes("Signed out: tap Continue at the top.") && !placed.some((t) => /Sign in again|session has ended/.test(t)),
-      "Place answered 401: the bar says it with Continue, and beside Place a pointer to that Continue, never a second wording: " + JSON.stringify(placed));
+    ok(lapseOn() && placed.includes("Not sent: you were signed out on this phone. Sign in to carry on.") && !placed.some((t) => /Sign in again|session has ended/.test(t)),
+      "Place answered 401 with nothing remembered: the Sheet and the bar say it, and beside Place a pointer to them, never a second wording: " + JSON.stringify(placed));
     const box = D.querySelector('#pOrder input[data-say="' + ord.id + '"]');
     box.value = "is it ready"; box.dispatchEvent(new W.Event("input", { bubbles: true }));
     const send = [...D.querySelectorAll("#pOrder button")].find((b) => b.textContent === "Send");
     send.click();
-    const pointers = () => said().filter((t) => t === "Signed out: tap Continue at the top.").length;
+    const pointers = () => said().filter((t) => t === "Not sent: you were signed out on this phone. Sign in to carry on.").length;
     await until(() => pointers() >= 2);
     const sent = said();
     ok(pointers() === 2 && !sent.some((t) => /Sign in again|session has ended/.test(t)),
@@ -18177,6 +18175,148 @@ await (async () => {
     && /The link works once and keeps this phone signed in\./.test(msg) && /stops working after three days/.test(msg),
     "the message says the link works once and keeps this phone signed in, names the username, and says three days: " + JSON.stringify(msg.slice(0, 120)));
 })();
+section("S3 3.5: a lapsed session reopens itself from the remembered phone and repeats the request once, the page re-reads on every return, and only with nothing remembered does a Sheet ask, keeping the draft");
+await (async () => {
+  /* HIS D1 OF 24 SEP 2026. The fifteen-minute session lapsed under an open page, and a saved app has no reload: the
+     page looked alive and did nothing, and the only way out forgot the phone. */
+  const { landingPage: lp35 } = await import("../stmt/page.js");
+  const W35 = (await import("../stmt/worker.js")).default;
+  const C35 = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JD35 } = await import("jsdom");
+  const u35 = "aaaa-rrrr", pass35 = "2345-6789-abcd-efgh", dev35 = "r".repeat(32), ck35 = await C35.contentKey("3".repeat(64), u35);
+  const doc = async (t) => C35.encryptWith(ck35, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>" + t + "</p>" }] }));
+  const list = await C35.encryptWith(ck35, JSON.stringify({ at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] }));
+  const first = await doc("First reading"), second = await doc("Second reading");
+
+  /* ---- the Worker's half: the documents again on a session, never a wrap ---- */
+  const kv = new KV();
+  await kv.put("u:" + u35, JSON.stringify({ u: u35, issued: "2026-09-24", issues: ["2026-09-24"], env: first, prices: list, wrap: { v: 1 }, wrapMaster: { v: 1 } }));
+  await kv.put("sess:sess35live0000000000000000", JSON.stringify({ u: u35, at: new Date().toISOString() }));
+  const acct = async (s) => { const r = await W35.fetch(new Request("https://k7m3p2.example/account", { headers: s ? { "X-Stmt-Session": s } : {} }), { STMT: kv }); return { status: r.status, j: await r.json().catch(() => ({})) }; };
+  const got = await acct("sess35live0000000000000000"), none = await acct("");
+  ok(got.status === 200 && got.j.ok && got.j.u === u35 && JSON.stringify(got.j.env) === JSON.stringify(first) && !!got.j.prices
+    && !("wrap" in got.j) && !("wrapMaster" in got.j),
+    "on a live session the page can read its sealed documents again, and no wrap comes with them: " + Object.keys(got.j).join(","));
+  ok(none.status === 401 && none.j.session === false, "and with no session it is refused as the orders are");
+
+  /* ---- the page ---- */
+  const drive = (stored, fast) => {
+    const st = { dead: new Set(), n: 0, last: "", reopened: 0, remFail: false, posts: [], accounts: 0, env: first, holdRem: null };
+    const html = lp35(stored ? "" : u35, "n35", null);
+    const dom = new JD35(fast ? html.replace("var POLL_MS=10000", "var POLL_MS=40") : html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        const store = new Map(stored ? [["salt-stmt-remember", JSON.stringify({ t: "t".repeat(32), k: Buffer.from(dev35).toString("base64"), u: u35 })]] : []);
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (path, init) => {
+          const p = String(path), m = (init && init.method) || "GET", h = (init && init.headers) || {}, s = h["X-Stmt-Session"] || "";
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/remember/open") {
+            if (st.holdRem) await st.holdRem;
+            if (st.remFail) throw new TypeError("Failed to fetch");
+            st.reopened++;
+            return ans(200, { ok: true, u: u35, remembered: true, wrap: await C35.wrapKey(dev35, ck35), env: st.env, prices: list, live: null, session: (st.last = "sess35n" + (++st.n) + "0000000000000000000") });
+          }
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C35.wrapKey(pass35, ck35), wrapMaster: null, env: st.env, prices: list, live: null, session: (st.last = "sess35p" + (++st.n) + "0000000000000000000") });
+          if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
+          if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: u35, env: st.env, prices: list, live: null }); }
+          if (p === "/orders" && m === "POST") { st.posts.push({ s, body: JSON.parse(init.body) }); return ans(200, { ok: true, order: {} }); }
+          if (p === "/orders") return ans(200, { ok: true, orders: [] });
+          return ans(200, { ok: true });
+        };
+      } });
+    return { st, W: dom.window, D: dom.window.document };
+  };
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  const sessOf = (g) => g.st.last;
+
+  /* a remembered phone: Opening your account, never the door, while it opens */
+  let release;
+  const g1 = drive(true);
+  g1.st.holdRem = new Promise((r) => { release = r; });
+  try {
+    await new Promise((r) => setTimeout(r, 60));
+    ok(g1.D.getElementById("gate").hidden && !g1.D.getElementById("opening").hidden
+      && /Opening your account/.test(g1.D.getElementById("opening").textContent),
+      "a remembered phone draws Opening your account while it opens, and never the door");
+    g1.st.holdRem = null; release();
+    await until(() => !g1.D.getElementById("barw").hidden);
+    ok(g1.D.getElementById("opening").hidden && g1.D.getElementById("gate").hidden, "and goes straight in");
+
+    /* the session lapses; Place is tapped: the phone reopens itself and the order goes, once */
+    g1.D.querySelector('button[data-t="order"]').click();
+    await until(() => g1.D.getElementById("oGo") && !g1.D.getElementById("oGo").disabled);
+    g1.st.dead.add(sessOf(g1));
+    const before = g1.st.reopened;
+    g1.D.getElementById("oGo").click();
+    await until(() => [...g1.D.querySelectorAll("#pOrder button")].some((b) => b.textContent === "Place this order"));
+    [...g1.D.querySelectorAll("#pOrder button")].find((b) => b.textContent === "Place this order").click();
+    await until(() => g1.st.posts.length);
+    await until(() => /Placed/.test(g1.D.getElementById("pOrder").textContent));
+    ok(g1.st.reopened === before + 1 && g1.st.posts.length === 1 && !g1.st.dead.has(g1.st.posts[0].s) && /Placed/.test(g1.D.getElementById("pOrder").textContent),
+      "a lapse met by Place reopens from the remembered phone and the order goes once, on the new session: " + JSON.stringify({ reopened: g1.st.reopened - before, posts: g1.st.posts.length }));
+    ok(g1.D.getElementById("lapse").hidden && g1.D.getElementById("outSheet").hidden,
+      "and nothing is said: no line in the bar and no Sheet");
+
+    /* the page is shown again: it re-reads on the session, keeping the tab */
+    g1.st.env = second;
+    const reads = g1.st.accounts;
+    Object.defineProperty(g1.D, "visibilityState", { value: "visible", configurable: true });
+    g1.D.dispatchEvent(new g1.W.Event("visibilitychange"));
+    await until(() => /Second reading/.test(g1.D.getElementById("out").textContent));
+    ok(g1.st.accounts === reads + 1 && /Second reading/.test(g1.D.getElementById("out").textContent) && !g1.D.getElementById("pOrder").hidden,
+      "coming back to the page re-reads the account on its session and keeps the tab they were on");
+    g1.st.env = first;
+    const ev = new g1.W.Event("pageshow"); Object.defineProperty(ev, "persisted", { value: true });
+    g1.W.dispatchEvent(ev);
+    await until(() => /First reading/.test(g1.D.getElementById("out").textContent));
+    ok(g1.st.accounts === reads + 2 && /First reading/.test(g1.D.getElementById("out").textContent),
+      "and so does a page brought back from the back-forward cache");
+
+    /* the site cannot be reached to reopen: the bar says so, with Try again */
+    g1.st.dead.add(sessOf(g1)); g1.st.remFail = true;
+    g1.D.dispatchEvent(new g1.W.Event("visibilitychange"));
+    await until(() => !g1.D.getElementById("lapse").hidden);
+    ok(!g1.D.getElementById("lapse").hidden && /could not sign you back in/.test(g1.D.getElementById("lapseT").textContent)
+      && g1.D.getElementById("lapseGo").textContent === "Try again" && g1.D.getElementById("outSheet").hidden && !!g1.W.localStorage.getItem("salt-stmt-remember"),
+      "a reopen that cannot reach the site keeps the phone remembered and says so in the bar, with Try again");
+    g1.st.remFail = false;
+    g1.D.getElementById("lapseGo").click();
+    await until(() => g1.D.getElementById("lapse").hidden && !g1.st.dead.has(sessOf(g1)));
+    ok(g1.D.getElementById("lapse").hidden && !g1.st.dead.has(sessOf(g1)), "and Try again reopens it");
+    await new Promise((r) => setTimeout(r, 100));
+  } finally { g1.W.close(); }
+
+  /* nothing remembered: the Sheet, over what they were doing, and the draft kept */
+  const g2 = drive(false, true);
+  try {
+    g2.D.getElementById("rem").checked = false;
+    g2.D.getElementById("pw").value = pass35;
+    g2.D.getElementById("f").dispatchEvent(new g2.W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !g2.D.getElementById("barw").hidden);
+    g2.D.querySelector('button[data-t="order"]').click();
+    const line = () => g2.D.querySelector('#pOrder input[aria-label="Anything to add about this order"]');
+    await until(() => line());
+    line().value = "leave it with the guard"; line().dispatchEvent(new g2.W.Event("input", { bubbles: true }));
+    g2.st.dead.add(sessOf(g2));
+    await until(() => !g2.D.getElementById("outSheet").hidden);
+    const sheet = g2.D.getElementById("outSheet");
+    ok(!sheet.hidden && /You were signed out on this phone/.test(sheet.textContent) && sheet.contains(g2.D.getElementById("f"))
+      && g2.D.getElementById("un").value === u35 && !g2.D.getElementById("pOrder").hidden,
+      "with nothing remembered, a Sheet says so over the order they were writing, carrying the door's own form with the username in it");
+    g2.D.getElementById("pw").value = pass35;
+    g2.D.getElementById("f").dispatchEvent(new g2.W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => sheet.hidden);
+    await until(() => line());
+    ok(sheet.hidden && !g2.D.getElementById("pOrder").hidden && line() && line().value === "leave it with the guard"
+      && g2.D.getElementById("gate").contains(g2.D.getElementById("f")),
+      "and signing in there closes it on the same tab with the line they had typed still in it: " + JSON.stringify(line() && line().value));
+  } finally { g2.W.close(); }
+})();
 section("v710: the shared link signs them in once, so no message carries a password");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "when sharing the link, QR to the user, the site pre-fills their
@@ -18335,7 +18475,7 @@ await (async () => {
   const page10 = await (await doorOf("/")).text();
   ok(/async function showLink\(\)/.test(page10) && /\/open-link/.test(page10) && /history\.replaceState/.test(page10),
     "the page posts the token once and rewrites its own address, so a reload never presents a spent link");
-  ok(/if\(!\(await showLink\(\)\)\) await openRemembered\(\);/.test(page10),
+  ok(/if\(await showLink\(\)\) return;/.test(page10) && page10.indexOf("if(await showLink()) return;") < page10.indexOf("var inNow=await openRemembered();"),
     "a link is tried first and a remembered device is still there behind it");
 
   /* ---- AND THE PAGE, DRIVEN ON THE LINK ITSELF. Reading its source proves the code is there; it
