@@ -9309,7 +9309,8 @@ await (async () => {
   ok(!!checkPlacement({ product: "salt", qty: 1, mode: "collect", total: 0, unit: 0 }, []).error, "an order for RM 0 is not placed");
   const ssrc = readFileSync(join(REPO, "stmt", "worker.js"), "utf8");
   ok(/DUMMY_VERIFIER/.test(ssrc) && /known \? rec\.verifier : DUMMY_VERIFIER/.test(ssrc), "an unknown username runs the same verifier work as a known one, so the refusal cannot be timed");
-  ok(/!PASS_RE\.test\(String\(master\)\)/.test(ssrc), "a customer's wrong password does not count against the owner's override brake");
+  /* a customer's wrong password does not count against the owner's override brake: proved by behaviour
+     in "S1 1.23", since this read the source and passed over the hyphens the page sends (24 Sep 2026) */
   ok(/\(process\.env\.STMT_KEY \|\| ""\)\.trim\(\)/.test(readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8")), "the publish trims STMT_KEY as the generator does");
   ok(/new Anthropic\(\{ maxRetries: 6 \}\)/.test(readFileSync(join(REPO, "tools", "foldcall.mjs"), "utf8")), "the fold's call retries six times on 529 before leaving the batch staged");
   ok(!/JSON\.stringify\("(UPDATE|INSERT)/.test(readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8")), "no write in drafts.mjs goes to wrangler by --command, where a shell reads the text");
@@ -14228,6 +14229,36 @@ await (async () => {
     ok((await site("/open", { method: "POST", headers: from, body: JSON.stringify({ u: uA, password: MASTER, master: MASTER }) })).status === 401,
       "while ten WRONG masters from that address still brake it, as they always did");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S1 1.23: a customer's mistyped password, hyphens and all, never counts against his override");
+await (async () => {
+  /* 24 SEP 2026 (M24): the page sends every typed value as both password and master, hyphenated from its
+     four boxes, and the brake's test for "shaped like a statement password" read the raw value, which a
+     hyphen never matches. So ten wrong customer passwords from one address still locked his override
+     there for fifteen minutes, against the comment above the line. Driven through the real Worker. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const kv = new KV();
+  const MASTER = "mp-s1-23";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s1-23", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, "{}") }));
+  const env = { STMT: kv, STMT_MASTER: MASTER };
+  const open = (ip, typed) => W.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
+    headers: { "content-type": "application/json", "CF-Connecting-IP": ip }, body: JSON.stringify({ u, password: typed, master: typed }) }), env);
+  for (const [ip, typed] of [["203.0.113.31", "zzzz-zzzz-zzzz-zzzz"], ["203.0.113.32", "0000-0000-0000-0000"], ["203.0.113.33", "ZZZZ zzzz ZZZZ zzzz"]]) {
+    const codes = [];
+    for (let i = 0; i < 10; i++) codes.push((await open(ip, typed)).status);
+    const r = await open(ip, MASTER), j = await r.json().catch(() => ({}));
+    ok(codes.every((x) => x === 401) && r.status === 200 && j.byMaster === true && !(await kv.get("mfail:" + ip)),
+      "ten wrong passwords typed as " + JSON.stringify(typed) + " are refused, and his master from that address still opens the account: "
+        + JSON.stringify({ status: r.status, mfail: await kv.get("mfail:" + ip) }));
+  }
+  /* the control: a value that is not a password's shape is an override attempt, and still counts */
+  for (let i = 0; i < 10; i++) await open("203.0.113.34", "a-guess-at-the-master");
+  const r34 = await open("203.0.113.34", MASTER), j34 = await r34.json().catch(() => ({}));
+  ok(r34.status !== 200 && j34.byMaster !== true && (await kv.get("mfail:203.0.113.34")) === "10",
+    "while ten guesses at the master from one address still brake it there");
 })();
 section("v687: the master account opens on its own page, and the owner's script travels only there");
 await (async () => {

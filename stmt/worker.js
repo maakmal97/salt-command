@@ -220,7 +220,11 @@ async function handleOpen(request, env) {
        the override has nothing to open, so it refuses, but that is the account's fault and not a wrong
        passphrase: counted, ten taps on such a row locked his override on every account for fifteen
        minutes. */
-    if (master && masterKey && !ctEq(master, masterKey) && !PASS_RE.test(String(master))) await bump(mKey, mFails);
+    /* 24 SEP 2026: THE SHAPE IS READ AS normPass READS IT. The page sends what was typed in the four
+       boxes joined with hyphens, so the raw test never matched and every mistyped customer password
+       still counted here; the test password's sixteen zeros are a password's shape too. */
+    const shaped = String(master).toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (master && masterKey && !ctEq(master, masterKey) && !PASS_RE.test(shaped) && !/^0{16}$/.test(shaped)) await bump(mKey, mFails);
     return json({ ok: false, error: REFUSED }, 401);
   }
 
