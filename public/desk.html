@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="26af35a9390bbbcb";
+var SALT_BUILD_ID="4f21473d1c3e75ba";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -7540,7 +7540,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v818","d":"24 Sep 2026","t":"RESTOCK SIZED FROM MEASURED DEMAND, BOOK BY BOOK","n":["<b>A BUY SIZE AND RESTOCK CARD ON STOCK, FOR THE BOOK IN VIEW</b> (his instruction of 24 Sep 2026: the typical buy size, so he can restock properly, inefficient inventory being as costly). The typical order and its spread, the order sizes as shares of orders and of units, the next 7 and 14 days, cover now, the reorder point, the next lot and whether the next price break pays. Salt today: a median order of 2 unit, but orders of 3 unit and over are 30% of orders and 67% of units; 7 unit free, 1.3 days of cover, next lot 62.5 unit at RM56.","<b>THE FORECAST USES ONLY MEASURED INPUTS</b>, engine/position.mjs restockPlan: a recency-weighted daily rate (half-life 14 days, a young book read over 28 days), a weekly trend shrunk and capped at 50%, the book's own weekday and pay-window rhythm from the Whiteboard, holidays flagged, and the named customers due on their own cadence as a floor under each window.","<b>THE REORDER POINT IS DERIVED, NEVER UNDER 4 DAYS AND NEVER OVER 14</b> (his bound): lead time plus a 95% safety stock over the lead and the measured gap between lots, in days of forecast demand. It replaces the typed 15 and 20 unit marks, which stay only for a book with no demand, and every reader follows: the Stock headline and tiles, the chart's trigger line and Today. Candy and rice had borrowed salt's 15.","<b>THE NEXT LOT IS THE CHEAPEST TO HOLD</b>: each quote tier in whole lots, from the smallest that covers the need up to what the forecast sells in 28 days, scored on the rate plus the measured leakage over the days it is held. Oil's 50 unit break wins over 40 unit at RM10; candy's 60 unit break outlasts the forecast; rice's 90 unit free reaches no reorder point inside it. The approach board's side panel carries the same 14 days against what is free."]}];
+const evolution=[{"v":"v819","d":"24 Sep 2026","t":"EVERY PAGE SAYS WHAT IT IS FOR","n":["<b>RULES OPENED ON ANOTHER PAGE'S LEAD</b> (his report of 24 Sep 2026): \"one headline lifted from every other tab\", written for the digest it replaced. It now reads: every rule the desk trades by, what breaks one today, and where each book stands. Its digest named two pages by old names, Customers and Suppliers; they read Clients and Sourcing, and the digest's own line says page, not tab.","<b>EVERY PAGE WAS WALKED.</b> Next 30 days no longer opens on \"Not a forecast\" now that Stock carries one; On hand's lead names the restock card that leads it; Analysis opens on what it holds, not on a caveat. Pricing, Sourcing, Rules and the Whiteboard lost their history notes: the Register, round 5, v503, v504 and the product split at v228.","<b>THE SUITE HOLDS IT</b>: every page's heading is its rail name, every page but To do, Receivables and Financials has a lead, and no heading, lead or prose block names a tab, a version or a round."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -7655,7 +7655,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='24 Sep 2026, 02:52 KL';
+const LAST_UPDATED='24 Sep 2026, 10:44 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9805,7 +9805,7 @@ function boundaryPanel(b,r){
     ${chips((nb?`<span class="pchip bad">${nb} breach${nb===1?'':'es'}</span>`:`<span class="pchip good">no breaches</span>`)
       +(nw?`<span class="pchip warn">${nw} to watch</span>`:'')
       +(r.length?`<span class="pchip">${r.length} provisional</span>`:''))}
-    <div class="dsc" style="margin-bottom:9px">Nothing is blocked; a breach is held here until it is resolved. Credit caps are per book since round 5 (${PROD_IDS.filter(capStated).map(p=>PRODUCTS[p].name.toLowerCase()+' '+units(creditCapFor(p,'retail'))+' retail / '+units(creditCapFor(p,'associate'))+' associate').join('; ')}), and units of different products do not add.${capBorrowNote()}</div>
+    <div class="dsc" style="margin-bottom:9px">Nothing is blocked; a breach is held here until it is resolved. Credit caps are per book (${PROD_IDS.filter(capStated).map(p=>PRODUCTS[p].name.toLowerCase()+' '+units(creditCapFor(p,'retail'))+' retail / '+units(creditCapFor(p,'associate'))+' associate').join('; ')}), and units of different products do not add.${capBorrowNote()}</div>
     <table><thead><tr><th class="l">Rule</th><th class="l">Party</th><th class="l">Position</th></tr></thead><tbody>
     ${all.map(x=>`<tr><td class="l">${bSevTag[x.sev]||''} ${x.rule}</td><td class="l mono">${x.who==='stock'?'&mdash;':ID(x.who)}</td><td class="l">${x.what}</td></tr>`).join('')}
     </tbody></table></div>`;
@@ -10031,13 +10031,13 @@ function tabOverview(){
   const kpi=(cls,l,v,n)=>`<div class="kpi salt-kpi ${cls}"><div class="l salt-kpi__label">${l}</div><div class="v salt-kpi__value">${v}</div><div class="n salt-kpi__note">${n}</div></div>`;
   return `<h1>Rules</h1>
   <div class="pscope"><span class="pbadge">Every book</span></div>
-  <div class="dsc dsclead">Where the desk stands right now, with one headline lifted from every other tab.</div>
-  <h2>Desk digest <span class="sub" style="font-weight:400">the headline from every tab</span> <span class="rule"></span></h2>
+  <div class="dsc dsclead">Every rule the desk trades by, what breaks one today, and where each book stands.</div>
+  <h2>Desk digest <span class="sub" style="font-weight:400">the headline from every page</span> <span class="rule"></span></h2>
   <div class="kpis k4">
     ${kpi('','Order book &middot; pending',fmt0(pendRM),pendN?`${pendN} order${pendN===1?'':'s'}, off the books`:'nothing pending')}
     ${kpi('p','Financials &middot; still to come in',fmt0(arG),(uncollected-arG)>0.009?`${fmt0(uncollected-arG)} of what is sold settled in kind`:(uncollected>0.009?'all of it a cash receivable':'everything sold is collected'))}
-    ${kpi('','Customers &middot; concentration',`<span style="color:${conCol}">${hhi.toFixed(0)}</span>`,`${conRisk}; top buyer ${topPct.toFixed(0)}% of ${cr.length}, across the books`)}
-    ${kpi('g','Suppliers &middot; in transit',`${lotsIn} lot${lotsIn===1?'':'s'}`,`${lotsIn?split('itUnits',units)+'; ':''}${bills>0.009?`${fmt0(bills)} bills unpaid`:'all lots paid'}${srNet>0.009?`; ${fmt0(srNet)} refund due`:''}`)}
+    ${kpi('','Clients &middot; concentration',`<span style="color:${conCol}">${hhi.toFixed(0)}</span>`,`${conRisk}; top buyer ${topPct.toFixed(0)}% of ${cr.length}, across the books`)}
+    ${kpi('g','Sourcing &middot; in transit',`${lotsIn} lot${lotsIn===1?'':'s'}`,`${lotsIn?split('itUnits',units)+'; ':''}${bills>0.009?`${fmt0(bills)} bills unpaid`:'all lots paid'}${srNet>0.009?`; ${fmt0(srNet)} refund due`:''}`)}
   </div>
   ${boundaryPanel(bnd,risks)}
   ${defAll.length?`<div class="pend"><h3>&#128230; Deferred deliveries <span class="cd" style="color:var(--amber);border-color:var(--amber)">${defAll.length} owed out</span></h3><div class="pchips">${defAll.map(d=>`<span class="pchip"><b>${ID(d.who)}</b> ${units(d.u)} ${tag(d.p)}</span>`).join('')}${ids.filter(p=>B[p].defUnits>B[p].held).map(p=>`<span class="pchip bad">${esc(PRODUCTS[p].name)}: exceeds ${units(B[p].held)} on hand</span>`).join('')}</div></div>`:''}
@@ -10280,7 +10280,7 @@ function tabForward(){
   const bookRows=ids.map(p=>{const g=A.per[p].f;return `<tr><td class="l">${tag(p)}</td><td class="mono">${units(g.rate)}</td><td class="mono">${emptyCell(g)}</td><td class="mono">${g.commitUnits>0.009?units(g.commitUnits):'&mdash;'}</td></tr>`;}).join('');
   return `<h1>Next 30 days</h1>
   <div class="pscope"><span class="pbadge">Every book</span></div>
-  <div class="dsc dsclead" style="margin-bottom:11px">Not a forecast: it walks what is already on each book at the rate that book has actually been shipping, and no unplaced order appears anywhere.</div>
+  <div class="dsc dsclead" style="margin-bottom:11px">Each book's inventory and the cash, day by day, at the rate that book has actually been shipping; an order not yet placed is in none of it.</div>
   <div style="display:flex;flex-wrap:wrap;gap:9px;align-items:center">
     <span class="viewsw" id="fwdSw">${sw}</span>
     ${buys.length?`<button class="vbtn salt-pill salt-pill--sm" style="${fwdBuy?'':'opacity:.55'}" onclick="fwdToggle('buy')">${fwdBuy?'&#10003; ':''}Include the agreed ${buyWord}</button>`:''}
@@ -10551,7 +10551,7 @@ function tabSourcing(){
     <div class="kpi salt-kpi gold"><div class="l salt-kpi__label">Effective cost</div><div class="v salt-kpi__value">${fmt(c.eff)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n salt-kpi__note">${c.rule==='buyPlusPct'
       ? `${fmt(c.repl)} to buy plus ${c.rulePct}%${c.rulePlaceholder?', a placeholder':''}; freight and the ${(c.shrink*100).toFixed(1)}% leak are inside it, not added`
       : `${fmt(c.repl)} goods + ${fmt(c.freight)} freight, loaded ${(c.shrink*100).toFixed(1)}% for leak`}</div></div>
-    <div class="kpi salt-kpi"><div class="l salt-kpi__label">Freight per unit</div><div class="v salt-kpi__value">${fmt(c.freight)}</div><div class="n salt-kpi__note">${ml?`typed on the lots, per unit over the replacement window (v503)`:'no lot received to average'}</div></div>
+    <div class="kpi salt-kpi"><div class="l salt-kpi__label">Freight per unit</div><div class="v salt-kpi__value">${fmt(c.freight)}</div><div class="n salt-kpi__note">${ml?`typed on the lots, per unit over the replacement window`:'no lot received to average'}</div></div>
     <div class="kpi salt-kpi ${ss.some(s=>s.defaults)?'r':'g'}"><div class="l salt-kpi__label">Lost to defaults</div><div class="v salt-kpi__value">${fmt0(ss.reduce((a,s)=>a+s.defaultRM,0))}</div><div class="n salt-kpi__note">${ss.reduce((a,s)=>a+s.defaults,0)} lot${ss.reduce((a,s)=>a+s.defaults,0)===1?'':'s'} paid for and never delivered</div></div>
   </div>
 
@@ -10797,7 +10797,7 @@ function stockHistory(){
    .insight, or sit inside a <details>, or carry an RM/unit/% figure. */
 function anaHead(){
   return `<h1>Analysis</h1>
-  <div class="dsc dsclead" style="margin-bottom:12px">Observed trade only: no fitted curve, no elasticity, no seasonality.</div>`;
+  <div class="dsc dsclead" style="margin-bottom:12px">The month read four ways: where the money goes, the board against what is paid, the inventory rebuilt, and whether buying in size got cheaper.</div>`;
 }
 function tabAnalysis(){
   const c=pxCost(),sg=pxSignals(),mk=pxMarket(),cv=coverStats();
@@ -11468,7 +11468,7 @@ function restockCard(){
 }
 /* ============ TAB: INVENTORY & MARGIN ============ */
 function invHead(){return `<h1>On hand</h1>
-  <div class="dsc dsclead">What is on the inventory, what it cost, and how long it lasts.</div>`;}
+  <div class="dsc dsclead">What to restock, what is on the inventory, what it cost, and how long it lasts.</div>`;}
 function tabInventory(){
   /* v365: openingFor(PROD), not the bare `opening` (Salt's alone). The KPI above these
      tables already used the product-aware helper, which is why it was right while these
@@ -11776,7 +11776,7 @@ const EDFORM=[
   {k:'party',   l:'Supplier',           kind:'code', only:'B'},
   {k:'qty',     l:'Quantity, unit',     kind:'num'},
   {k:'total',   l:'Goods, RM',          kind:'num'},
-  {k:'freight', l:'Freight, RM',         kind:'num', only:'B', hint:'The trip this lot cost, typed per purchase (v503). Beside the goods, so the lot rate stays the goods; it feeds collection per unit.'},
+  {k:'freight', l:'Freight, RM',         kind:'num', only:'B', hint:'The trip this lot cost, typed per purchase. Beside the goods, so the lot rate stays the goods; it feeds collection per unit.'},
   {k:'delivery',l:'Delivery, RM',        kind:'num', only:'S', hint:'The carriage, typed per order, standing BESIDE the goods since v727 rather than inside them. The rate per unit is the goods over the units; what they owe is the two together.'},
   {k:'unpriced',l:'Price not agreed yet', kind:'bool', hint:'A zero total on an unpriced row is not the same as paid in full. This is what tells them apart.'},
   {g:'Attribution', only:'S'},
@@ -14252,13 +14252,13 @@ function parityScan(){
         Transaction tab it cannot be recorded, which is how oil went four versions with three
         hand-written rows and no way to add a fourth. */
   const reach=(typeof WB_NO_PROD!=='undefined');
-  if(!reach)out.push({k:'form',pr:null,what:'The Transaction tab cannot say which book an entry is for',
+  if(!reach)out.push({k:'form',pr:null,what:'The Transaction page cannot say which book an entry is for',
     why:'Every entry would book to '+((PRODUCTS[DEFAULT_PROD]||{}).name||DEFAULT_PROD)+' whatever the rail shows.'});
   /* 5. A PRODUCT DECLARED BUT ABSENT FROM THE BOOKS is not an error, but it is worth saying,
         because every per-product surface will draw an empty block for it. */
   PROD_IDS.forEach(pr=>{const d=per[pr];if(d&&d.sold===0&&d.bought===0)
     out.push({k:'declared',pr:pr,what:PRODUCTS[pr].name+' is declared but has nothing on the books',
-      why:'Every per-product tab will draw an empty block for it until the first entry lands.'});});
+      why:'Every per-product page will draw an empty block for it until the first entry lands.'});});
   return {rows:out,per:per};
 }
 
@@ -14633,7 +14633,7 @@ function observations(){
       const sev=(r.k==='commit'||r.k==='empty'||r.k==='form')?'act':(r.k==='uncounted'?'watch':'note');
       add({id:'parity:'+r.k+':'+(r.pr||'all'),fam:'upkeep',sev:sev,conf:'measured',rm:null,tab:r.k==='form'?'add':'inventory',
         title:r.what,
-        why:r.why+' The desk checks this itself on every load rather than waiting to be read: the product split at v228 wrapped six tabs and left roughly forty reads behind them looking at both books, and nothing noticed for forty-seven versions.',
+        why:r.why+' The desk checks this itself on every load.',
         ev:PROD_IDS.map(pr=>{const d=PS.per[pr]||{};
           return `${esc(PRODUCTS[pr].name)}: ${d.sold||0} orders, ${d.bought||0} lots, inventory ${d.inventory==null?'unknown':units(d.inventory)}${d.counted?' (counted)':' (ledger, uncounted)'}, promised out ${d.fc?units(d.fc.commit):'n/a'}`;})});
     });
@@ -19471,10 +19471,10 @@ function tabPricing(){
       /* the note is NOT run through esc(): it carries entities. Data inside it is escaped. */
       const sR=(lab,v,n)=>`<tr><td class="l">${lab}<div class="iref">${n||''}</div></td><td class="mono">${v}</td></tr>`;
       return `<table class="fintab istmt" style="margin-top:12px"><tbody>
-      ${LD.anchorG!=null?sR('Level',(LD.anchorG*100).toFixed(0)+'% margin',`typed, at ${units(LD.anchorQ)}, on the floor (v504)`):sR('Level',LD.anchorX.toFixed(3)+'x',`typed, at ${units(LD.anchorQ)} on cogs`)}
+      ${LD.anchorG!=null?sR('Level',(LD.anchorG*100).toFixed(0)+'% margin',`typed, at ${units(LD.anchorQ)}, on the floor`):sR('Level',LD.anchorX.toFixed(3)+'x',`typed, at ${units(LD.anchorQ)} on cogs`)}
       ${sR('Taper',(sT.b!=null?sT.b.toFixed(3):'&mdash;'),sT.b!=null?`fitted to ${esc(sSup)}&rsquo;s quote ladder${sT.r2!=null?`, r&sup2; ${sT.r2.toFixed(2)}`:''}, ${units(LD.at.lo)} to ${units(LD.at.hi)}${sBor?`; <b>${esc(sOwn)}&rsquo;s own ladder is on the book and is not the one this is fitted to</b>`:''}`:'no supplier ladder to fit')}
       ${sR('Ceiling',LD.ceiling.toFixed(2)+'x','does not bind at any printed size')}
-      ${sR('Floor','break-even',`${fmt(sC.effEx)} a unit after the leak, from the last three lots and the last three counts (v504); delivery and his time are not in it`)}
+      ${sR('Floor','break-even',`${fmt(sC.effEx)} a unit after the leak, from the last three lots and the last three counts; delivery and his time are not in it`)}
       <!-- round 5: the asks' own markups, for the board-column reason: the curve ends read
            0.62x to 0.12x on oil while the stated board actually runs 0.62x to 0.15x. -->
       <tr class="tot"><td class="l"><b>Markup across the board</b><div class="iref">${units(sSZ[0])} down to ${units(sSZ[sSZ.length-1])}</div></td><td class="mono"><b>${sLo.ask.markupX.toFixed(2)}x to ${sHi.ask.markupX.toFixed(2)}x</b></td></tr>
@@ -19594,7 +19594,7 @@ function tabPricing(){
            rather than recomputed here, the same discipline the floor markup follows, so it cannot
            drift from the engine and it stays right under a lock, where the freight is frozen. */
         const ls=pPurch(PROD).filter(x=>poLive(x)&&x.qty>0&&x.freight!=null);
-        return ls.length?`freight typed on ${ls.length} lot${ls.length===1?'':'s'}, per unit over the replacement window (v503)`:'no lot carries a typed freight yet, so nothing is charged (v503)';})())}
+        return ls.length?`freight typed on ${ls.length} lot${ls.length===1?'':'s'}, per unit over the replacement window`:'no lot carries a typed freight yet, so nothing is charged (v503)';})())}
       <tr class="tot"><td class="l"><b>Landed</b><div class="iref">what the balance sheet carries</div></td><td class="mono"><b>${fmt(c.landed)}</b></td><td><span class="tag salt-status paid">Inventory</span></td></tr>
       ${r('Non-revenue '+PRODUCTS[PROD].name.toLowerCase(),c.sampleLoad,'period',pxOver.shrink!=null?`${(c.shrink*100).toFixed(1)}%, your override`:`${(c.shrinkRaw*100).toFixed(1)}% of what is bought never sells, ${(SHRINK_ATTRIB*100)}% of it charged`)}
       ${r('Delivery and packaging',c.txn,'period',(()=>{const s=delShare(PROD);return `${fmt0(COST_BASIS.txnPerDelivery.rm)} on ${Math.round(s.v*100)}% of orders (${s.measured?s.delivered+' of '+s.said+' that say':'stated, no row says yet'}), over ${units(c.avgDel)}, the average order`;})())}
@@ -19858,7 +19858,7 @@ function tabPricing(){
   <div class="dsc">Left: the ask per unit at each printed size, against the floor it has to clear, which is the same figure as effective cost and as break-even, with Tier 1 beside it where the book states one. A flat line is a ladder that has stopped rewarding size, and the gap between the ask and the floor it clears is all the room there is. Right: every priced order ever written, plotted at the rate actually paid on the day it was agreed, grouped into three lot bands taken from this book&rsquo;s own board, with today&rsquo;s ask for each band drawn as a dashed line. There is no fitted curve on either chart and no elasticity anywhere on this desk.</div>
   </details>
   <details class="obsec"><summary>Price response <span class="q">what has sold at each price</span></summary>
-  <div class="dsc" style="margin-bottom:9px">What you have actually sold at each price, carried over from the original Register. Observed trade only &mdash; <b>no fitted demand curve and no invented elasticity</b>. Volume tells you where the business really sits; revenue tells you which price is carrying it. Prices are grouped to the nearest ringgit, and the axis lists the prices you have traded at rather than a continuous scale, so the gaps are not to scale.</div>
+  <div class="dsc" style="margin-bottom:9px">What you have actually sold at each price. Volume tells you where the business really sits; revenue tells you which price is carrying it. Prices are grouped to the nearest ringgit, and the axis lists only the prices you have traded at, so the gaps are not to scale.</div>
   <div class="two">
     <div class="chartbox"><canvas id="priceQtyChart"></canvas></div>
     <div class="chartbox"><canvas id="priceRevChart"></canvas></div>
@@ -21812,14 +21812,14 @@ const PART_Q={today:'what needs doing, ranked by the money at stake',
   forward:'the next thirty days of inventory and cash, day by day',
   receivables:'who owes you, what you owe, and what the ageing ladder says it is worth',
   financials:'the profit and loss, the cash position and the cost of doing business',
-  inventory:'what is on the inventory, how long it lasts and where the shrinkage went',
+  inventory:'what to restock, what is on the inventory, how long it lasts and where the shrinkage went',
   sourcing:'the current lot: the quote, the taper, the leak and who you buy from',
   pricing:'the board, the floors and what the book has actually earned',
   concentration:'who buys, and who to approach next',
   network:'associates, their downstream buckets and the rewards',
   map:'where the book is concentrated, drawn as heat',
   ledger:'every row on the book, and a statement of account for any party',
-  analysis:'the month read twelve ways',
+  analysis:'the month read four ways',
   add:'record an order, an amendment, a count or a loan',
   approve:'the rows drafted from the queue, waiting on a decision',
   orders:'what customers ordered on the statements site, and where each order stands',

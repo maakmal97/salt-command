@@ -5275,7 +5275,7 @@ await (async () => {
       return w.eval("(function(){var k=[].slice.call(document.querySelectorAll('.sec.on .kpi')).filter(function(x){return " + needle + ".test(x.textContent);})[0];return k?k.textContent.replace(/[ \\t\\n\\r]+/g,' ').trim():'';})()");
     };
     const owe = card("receivables", "/You owe, in cash/");
-    const sup = card("overview", "/Suppliers/");
+    const sup = card("overview", "/Sourcing/");   /* v819: the digest names the page, Sourcing */
     const cout = JSON.parse(w.eval("JSON.stringify((forecast({days:30})||{}).cout||[])"));
     const billRM = +cout.filter((c) => /supplier bill/.test(c.label || "")).reduce((a, c) => a + (+c.rm || 0), 0).toFixed(2);
     const owedBy = {};
@@ -5316,7 +5316,7 @@ await (async () => {
   ok(onCard(fix.owe) - onCard(base.owe) === WANT,
     `and that figure moves by RM ${onCard(fix.owe) - onCard(base.owe)}, which must be RM ${WANT} (${fix.owe.slice(0, 96)})`);
 
-  ok(base.sup !== "" && fix.sup !== "", "the Overview carries a Suppliers card at all");
+  ok(base.sup !== "" && fix.sup !== "", "the Rules page carries a Sourcing card at all");
   ok(onCard(base.sup) !== null && onCard(fix.sup) !== null,
     "and its figure can be read out of its words too: " + JSON.stringify([base.sup.slice(0, 72), fix.sup.slice(0, 72)]));
   ok(onCard(fix.sup) - onCard(base.sup) === WANT,
@@ -20013,6 +20013,26 @@ await (async () => {
     + "return {t:s?s.textContent.replace(/\\s+/g,' '):'',use:units(r.forecast.d14.use),named:units(r.forecast.d14.named),free:units(r.free)};})())"));
   ok(v.t.includes("Next 14 days " + v.use) && v.t.includes(v.named + " of it from names due here, against " + v.free + " free"),
     "the board's side panel carries the 14 days of demand and the free inventory the Stock card reads: " + v.t.slice(-220));
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
+section("v819: every page opens on its own name and a lead of its own, and no heading or lead speaks in tabs, versions or rounds");
+await (async () => {
+  /* HIS REPORT OF 24 SEP 2026: Rules opened on "one headline lifted from every other tab", the lead of the page it replaced.
+     Every page is walked; the words checked are the desk's own (headings, leads, tile labels, prose blocks), never book data. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const v = JSON.parse(w.eval("JSON.stringify(Object.keys(TAB_LABEL).map(function(id){switchTab(id);var s=document.querySelector('.sec.on');"
+    + "var h=s.querySelector('h1'),l=s.querySelector('.dsclead');"
+    + "var words=[].map.call(s.querySelectorAll('h1,h2,.dsclead,.dsc,.salt-kpi__label'),function(e){return e.textContent;}).join(' | ');"
+    + "return {id:id,label:TAB_LABEL[id],h1:h?h.textContent.trim():null,lead:l?l.textContent.trim():null,words:words};}))"));
+  const bad = v.filter((p) => p.h1 !== p.label);
+  ok(v.length >= 17 && bad.length === 0, "every page's heading is its own name on the rail: " + JSON.stringify(bad.map((p) => [p.id, p.h1, p.label])));
+  /* To do opens straight on the list, and Receivables and Financials on the pill and the tiles, each by design */
+  const noLead = v.filter((p) => ["today", "receivables", "financials"].indexOf(p.id) < 0 && !p.lead);
+  ok(noLead.length === 0, "every page but To do, Receivables and Financials carries a lead: " + JSON.stringify(noLead.map((p) => p.id)));
+  const jargon = v.map((p) => [p.id, (p.words.match(/\btabs?\b|\bv\d{3}\b|\bround \d+\b/g) || [])]).filter((x) => x[1].length);
+  ok(jargon.length === 0, "no heading, lead or prose block names a tab, a version or a round: " + JSON.stringify(jargon));
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
