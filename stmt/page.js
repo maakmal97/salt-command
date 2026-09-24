@@ -127,7 +127,7 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .keepcard .kline{margin:6px 0 10px;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .keepcard b{color:var(--salt-text);font-weight:600}
 .keepsteps{margin:14px 0;padding-left:22px;line-height:2.1}
-.keepsteps .glyph{vertical-align:-0.3em;margin:0 3px}
+.keepsteps .glyph,.keepcard .glyph{vertical-align:-0.3em;margin:0 3px}
 .keepsteps .sub2{display:block;line-height:1.5;margin:0 0 6px}
 /* REMEMBER ME (v692): a checkbox on the door, at the tap size everything else here is */
 .rem{display:flex;align-items:center;gap:10px;margin-top:16px;min-height:var(--salt-tap);
@@ -377,6 +377,8 @@ const GLYPH = {
   close: "M6.5 6.5 L17.5 17.5 M17.5 6.5 L6.5 17.5",
   share: "M12 3.6 V14.4 M8.3 7.2 L12 3.6 L15.7 7.2 M8.6 10.4 H6.6 V20.4 H17.4 V10.4 H15.4",
   addsq: "M8.2 4.6 H15.8 A3.6 3.6 0 0 1 19.4 8.2 V15.8 A3.6 3.6 0 0 1 15.8 19.4 H8.2 A3.6 3.6 0 0 1 4.6 15.8 V8.2 A3.6 3.6 0 0 1 8.2 4.6 Z M12 8.4 V15.6 M8.4 12 H15.6",
+  install: "M12 4 V14.6 M8 10.8 L12 14.8 L16 10.8 M5 16.6 V19.6 H19 V16.6",
+  menu: "M4.5 7 H19.5 M4.5 12 H19.5 M4.5 17 H19.5",
   paste: "M7.6 4.8 H16.4 A2 2 0 0 1 18.4 6.8 V18.4 A2 2 0 0 1 16.4 20.4 H7.6 A2 2 0 0 1 5.6 18.4 V6.8 A2 2 0 0 1 7.6 4.8 Z M9.2 4.8 V3.4 H14.8 V4.8 M9 10.2 H15 M9 13.6 H15 M9 17 H12.6",
   vdots: "M10.6 6.5 A1.4 1.4 0 1 0 13.4 6.5 A1.4 1.4 0 1 0 10.6 6.5 Z M10.6 12 A1.4 1.4 0 1 0 13.4 12 A1.4 1.4 0 1 0 10.6 12 Z M10.6 17.5 A1.4 1.4 0 1 0 13.4 17.5 A1.4 1.4 0 1 0 10.6 17.5 Z",
 };
@@ -418,7 +420,11 @@ function keepCard() {
   return '<div id="keepCard" class="keepcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" hidden>'
     + '<p class="salt-eyebrow salt-eyebrow--brass" id="keepHead">Keep it on your Home Screen</p>'
     + '<p class="kline" id="keepLine">One tap to open, and it stays signed in. It is saved as <b>Salt Counter</b>.</p>'
-    + '<button class="btn salt-ghost salt-ghost--lit" id="keepGo" type="button">Show me how</button></div>';
+    /* S3 3.12: the browser's own Install where it offers one; else that browser's own marks, drawn */
+    + '<p class="kline" id="keepSam" hidden>Tap ' + glyphSvg("menu", 22) + " then Add page to, then Home screen.</p>"
+    + '<p class="kline" id="keepDesk" hidden>Look for the install mark ' + glyphSvg("install", 22) + " at the end of the address bar.</p>"
+    + '<button class="btn salt-ghost salt-ghost--lit" id="keepGo" type="button">Show me how</button>'
+    + '<button class="btn salt-ghost salt-ghost--lit" id="keepInstall" type="button" hidden>Install Salt Counter</button></div>';
 }
 function keepSheet() {
   return '<div id="keepScrim" class="salt-sheet-scrim" hidden></div>'
@@ -947,10 +953,28 @@ const CLIENT_JS = `
       keepScrim=document.getElementById('keepScrim'), keepCode=document.getElementById('keepCode'),
       keepCopy=document.getElementById('keepCopy'), keepMsg=document.getElementById('keepMsg');
   var keepTok='', keepExp=0;
+  /* S3 3.12: WHERE THE BROWSER OFFERS AN INSTALL, ONE BUTTON TAKES IT (beforeinstallprompt; the app it installs
+     shares this browser's storage, so it opens signed in). Where it does not, Samsung Internet's own steps are drawn,
+     and a computer's Chrome or Edge is pointed at the install mark in its address bar; nothing says phone there. */
+  var bip=null;
+  var SAMSUNG=/SamsungBrowser/.test(UA), DESKTOP=!IOS&&!/Mobi|Android/.test(UA), CHROMIUM=/Chrome[/]|Chromium|Edg[/]/.test(UA);
+  function keepMode(){
+    if(INAPP||STANDALONE||OWNER||view||!session) return '';
+    return IOS?'ios':bip?'install':SAMSUNG?'samsung':(DESKTOP&&CHROMIUM)?'desk':'';
+  }
   function drawKeep(){
     if(!keepCardEl) return;
-    keepCardEl.hidden=!(IOS&&!INAPP&&!STANDALONE&&!OWNER&&!view&&!!session);
+    var mode=keepMode();
+    keepCardEl.hidden=!mode;
+    if(!mode) return;
+    document.getElementById('keepHead').textContent=DEV==='phone'?'Keep it on your Home Screen':'Keep it as an app';
+    document.getElementById('keepGo').hidden=mode!=='ios';
+    document.getElementById('keepInstall').hidden=mode!=='install';
+    document.getElementById('keepSam').hidden=mode!=='samsung';
+    document.getElementById('keepDesk').hidden=mode!=='desk';
   }
+  window.addEventListener('beforeinstallprompt', function(ev){ ev.preventDefault(); bip=ev; drawKeep(); });
+  window.addEventListener('appinstalled', function(){ bip=null; if(keepCardEl) keepCardEl.hidden=true; });
   function ksay(t,cls){ keepMsg.textContent=t||''; keepMsg.className='msg'+(cls?' '+cls:''); }
   async function mintKeep(){
     keepCopy.disabled=true; keepCode.value=''; ksay('Making your code...','wait');
@@ -975,6 +999,13 @@ const CLIENT_JS = `
   function closeKeep(){ if(!keepSheetEl||keepSheetEl.hidden) return; keepSheetEl.hidden=true; keepScrim.hidden=true; try{ document.getElementById('keepGo').focus(); }catch(e){} }
   if(keepSheetEl){
     document.getElementById('keepGo').addEventListener('click', openKeep);
+    document.getElementById('keepInstall').addEventListener('click', function(){
+      if(!bip) return;
+      /* the browser's own question, asked inside the tap; it can be asked once, so the event is spent here */
+      var e=bip; bip=null;
+      try{ e.prompt(); }catch(x){ drawKeep(); return; }
+      Promise.resolve(e.userChoice).then(function(c){ if(c&&c.outcome==='accepted') keepCardEl.hidden=true; else drawKeep(); }, function(){ drawKeep(); });
+    });
     document.getElementById('keepX').addEventListener('click', closeKeep);
     keepScrim.addEventListener('click', closeKeep);
     document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') closeKeep(); });

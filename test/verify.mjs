@@ -18672,6 +18672,94 @@ await (async () => {
       "where I have a sign-in code opens the same field, and says nothing about Safari off an iPhone");
   } finally { g6.W.close(); }
 })();
+section("S3 3.12: an Install button wherever the browser offers one, Samsung Internet's own steps drawn, a computer pointed at its address bar's install mark, and nothing saying phone on a laptop");
+await (async () => {
+  /* S3 3.12, 24 SEP 2026. The door said "tap the three dots, then Install app" to every Android, which is not
+     Samsung Internet's menu, and a laptop was told about phones. */
+  const { landingPage: lp312 } = await import("../stmt/page.js");
+  const C312 = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JD312 } = await import("jsdom");
+  const u312 = "aaaa-nnnn", pass312 = "2345-6789-abcd-efgh", ck312 = await C312.contentKey("6".repeat(64), u312);
+  const env312 = await C312.encryptWith(ck312, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>x</p>" }] }));
+  const UA = {
+    android: "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Mobile Safari/537.36",
+    samsung: "Mozilla/5.0 (Linux; Android 14; SM-S911B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/25.0 Chrome/121.0 Mobile Safari/537.36",
+    chrome: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+    firefox: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0"
+  };
+  const drive = async (ua, opts) => {
+    const st = { prompted: 0, inTap: false, promptedInTap: false };
+    const dom = new JD312(lp312(u312, "n312", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: ua, configurable: true });
+        win.matchMedia = (q) => ({ matches: !!(opts && opts.standalone) && /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+        win.scrollTo = () => {};
+        win.fetch = async (p) => {
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C312.wrapKey(pass312, ck312), env: env312, live: null, prices: null, session: "sess312a00000000000000000000" });
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    if (opts && opts.bip) {
+      const ev = new W.Event("beforeinstallprompt", { cancelable: true });
+      ev.prompt = () => { st.prompted++; st.promptedInTap = st.inTap; };
+      ev.userChoice = Promise.resolve({ outcome: opts.choice || "accepted" });
+      W.dispatchEvent(ev);
+      st.prevented = ev.defaultPrevented;
+    }
+    D.getElementById("pw").value = pass312;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && D.getElementById("barw").hidden; i++) await new Promise((r) => setTimeout(r, 25));
+    const card = D.getElementById("keepCard");
+    const shown = (id) => !D.getElementById(id).hidden;
+    return { st, W, D, card, shown, text: () => card.textContent.replace(/\s+/g, " ") };
+  };
+
+  const a = await drive(UA.android, { bip: true });
+  try {
+    ok(a.st.prevented && !a.card.hidden && a.shown("keepInstall") && !a.shown("keepGo") && /Install Salt Counter/.test(a.D.getElementById("keepInstall").textContent)
+      && a.D.getElementById("keepHead").textContent === "Keep it on your Home Screen",
+      "where the browser offers an install, the card is one Install button: " + JSON.stringify(a.text()));
+    a.st.inTap = true; a.D.getElementById("keepInstall").click(); a.st.inTap = false;
+    await new Promise((r) => setTimeout(r, 30));
+    ok(a.st.prompted === 1 && a.st.promptedInTap && a.card.hidden, "and it asks the browser's own question inside the tap");
+  } finally { a.W.close(); }
+  const ca = await drive(UA.chrome, { bip: true, choice: "accepted" });
+  try {
+    ca.D.getElementById("keepInstall").click();
+    await new Promise((r) => setTimeout(r, 30));
+    ok(ca.card.hidden, "and the card goes once it is installed, even where it would otherwise point at the address bar");
+  } finally { ca.W.close(); }
+
+  const s = await drive(UA.samsung, {});
+  try {
+    ok(!s.card.hidden && s.shown("keepSam") && !s.shown("keepInstall") && /Add page to, then Home screen/.test(s.text())
+      && s.D.getElementById("keepSam").querySelector("svg.glyph"),
+      "Samsung Internet with no install offered is shown its own menu's steps, the mark drawn: " + JSON.stringify(s.text()));
+  } finally { s.W.close(); }
+
+  const c = await drive(UA.chrome, {});
+  try {
+    ok(!c.card.hidden && c.shown("keepDesk") && /install mark/.test(c.text()) && /address bar/.test(c.text())
+      && c.D.getElementById("keepHead").textContent === "Keep it as an app" && !/phone/i.test(c.text()),
+      "a computer's Chrome is pointed at the install mark at the end of its address bar, and nothing says phone: " + JSON.stringify(c.text()));
+  } finally { c.W.close(); }
+
+  const cb = await drive(UA.chrome, { bip: true, choice: "dismissed" });
+  try {
+    ok(cb.shown("keepInstall") && !/phone/i.test(cb.text()), "a computer offered an install gets the button, and still no phone");
+    cb.D.getElementById("keepInstall").click();
+    await new Promise((r) => setTimeout(r, 30));
+    ok(!cb.card.hidden && cb.shown("keepDesk") && !cb.shown("keepInstall"), "and turned down, it falls back to the address bar's mark");
+  } finally { cb.W.close(); }
+
+  const f = await drive(UA.firefox, {});
+  try { ok(f.card.hidden, "a browser that cannot install is offered nothing"); } finally { f.W.close(); }
+  const inApp = await drive(UA.android, { bip: true, standalone: true });
+  try { ok(inApp.card.hidden, "and an installed app is not told to install itself"); } finally { inApp.W.close(); }
+})();
 section("v710: the shared link signs them in once, so no message carries a password");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "when sharing the link, QR to the user, the site pre-fills their
