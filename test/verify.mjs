@@ -14677,6 +14677,63 @@ await (async () => {
       "and Continue puts the door back with the username in it, asking nothing of a device it does not have: " + JSON.stringify({ boxes, reopened: st2.reopened }));
   } finally { try { two.W.close(); } catch (e) { /* best effort */ } }
 })();
+section("S1 1.9: Notify me waits for the service worker to be ready, and a failure is said in plain words");
+await (async () => {
+  /* H09, 24 SEP 2026. subscribe() ran straight after register(), before the worker was active, and Chromium
+     refused it ("Subscription failed - no active Service Worker"), which the page then showed raw. The stub
+     refuses to subscribe until ready has resolved, as Chromium does, and ready resolves only after register. */
+  const { landingPage: lpE } = await import("../stmt/page.js");
+  const CE = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDE } = await import("jsdom");
+  const { webcrypto: wcE } = await import("node:crypto");
+  const uE = "aaaa-ffff", passE = "2345-6789-abcd-efgh";
+  const ckE = await CE.contentKey("5".repeat(64), uE);
+  const openE = { ok: true, byMaster: false, wrap: await CE.wrapKey(passE, ckE), wrapMaster: null, live: null, prices: null, session: "sessEaaaaaaaaaaaaaaaaaaaaaaa",
+    env: await CE.encryptWith(ckE, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] })) };
+  const drive = async (never) => {
+    const st = { posted: [], active: false };
+    const reg = { pushManager: { subscribe: async () => {
+      if (never || !st.active) throw new Error("Subscription failed - no active Service Worker");
+      return { endpoint: "https://push.example/ep-e" }; } } };
+    let readyP = null;
+    const dom = new JDE(lpE(uE, "nE", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: wcE, configurable: true }); } catch (e) { win.crypto = wcE; }
+        win.scrollTo = () => {};
+        win.PushManager = function () {};
+        win.Notification = { permission: "granted", requestPermission: async () => "granted" };
+        Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+          register: async () => { readyP = readyP || new Promise((r) => setTimeout(() => { st.active = true; r(reg); }, 40)); return reg; },
+          get ready() { return readyP || new Promise(() => {}); },
+          getRegistration: async () => undefined } });
+        win.fetch = async (path, init) => {
+          const p = String(path);
+          if (p === "/open") return { ok: true, status: 200, json: async () => openE };
+          if (p === "/push/key") return { ok: true, status: 200, json: async () => ({ ok: true, key: "BA", configured: true }) };
+          if (p === "/push/subscribe") { st.posted.push(JSON.parse(init.body)); return { ok: true, status: 200, json: async () => ({ ok: true, id: "x" }) }; }
+          return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const pane = () => [...D.querySelectorAll("#pOrder .pane")].find((x) => /Notifications/.test(x.textContent));
+    try {
+      D.getElementById("pw").value = passE;
+      D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 200 && !(pane() && pane().querySelector("button")); i++) await new Promise((r) => setTimeout(r, 25));
+      const nb = pane() && [...pane().querySelectorAll("button")].find((b) => /Notify me/.test(b.textContent));
+      if (nb) nb.click();
+      for (let i = 0; i < 200 && !(pane() && (/^Notifications\s*On\./.test(pane().textContent) || pane().querySelector(".msg"))); i++) await new Promise((r) => setTimeout(r, 25));
+      const p = pane();
+      return { clicked: !!nb, posted: st.posted, text: p ? p.textContent : "", note: p && p.querySelector(".msg") ? p.querySelector(".msg").textContent : null };
+    } finally { try { W.close(); } catch (e) { /* best effort */ } }
+  };
+  const good = await drive(false);
+  ok(good.clicked && good.posted.length === 1 && good.posted[0].endpoint === "https://push.example/ep-e" && good.note === null && /On\. You will be told/.test(good.text),
+    "Notify me subscribes once the worker is ready, posts the endpoint and says On, with no note: " + JSON.stringify({ posted: good.posted.length, note: good.note }));
+  const bad = await drive(true);
+  ok(bad.posted.length === 0 && bad.note === "Notifications could not be switched on here. Try again later." && !/Subscription failed|Service Worker/.test(bad.text),
+    "and a phone that still cannot subscribe is told so in plain words, never the browser's own error: " + JSON.stringify(bad.note));
+})();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: no three-minute lock, Remember me, and a Log out. The two halves of

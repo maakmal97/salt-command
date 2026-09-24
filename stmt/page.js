@@ -1553,7 +1553,11 @@ const CLIENT_JS = `
          phone whose reader says no. */
       var perm=await Notification.requestPermission();
       if(perm!=='granted'){ draft.pushNote='Permission was not given, so nothing will be sent.'; drawOrder(); return; }
-      var reg=await navigator.serviceWorker.register('/sw.js?u='+encodeURIComponent(user));
+      await navigator.serviceWorker.register('/sw.js?u='+encodeURIComponent(user));
+      /* S1 1.9, 24 SEP 2026: a registration is not yet an active worker, and Chromium refuses to subscribe
+         until there is one ("no active Service Worker"); ready resolves once there is */
+      var reg=await navigator.serviceWorker.ready;
+      if(mine!==ticket) return;
       var raw=atob(k.key.replace(/-/g,'+').replace(/_/g,'/')), key=new Uint8Array(raw.length);
       for(var i=0;i<raw.length;i++) key[i]=raw.charCodeAt(i);
       var sub=await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:key});
@@ -1561,7 +1565,7 @@ const CLIENT_JS = `
       var r=await api('/push/subscribe',{endpoint:sub.endpoint});
       if(mine!==ticket) return;
       if(r.body.ok){ draft.pushed=true; draft.pushDone=true; } else draft.pushNote=r.body.error||'The subscription was not recorded.';
-    }catch(e){ draft.pushNote='Notifications could not be set up here: '+((e&&e.message)||e); }
+    }catch(e){ draft.pushNote='Notifications could not be switched on here. Try again later.'; }
     drawOrder();
   }
 
