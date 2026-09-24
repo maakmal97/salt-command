@@ -302,10 +302,14 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   English and Malay off the lists in `src/orders.js` and the desk's `siteSafe` mirrors them by hand;
   the suite pins the lists to the book's names and `TIER_NAMES` and drives every word through both:
   a new book or level goes on both, its Malay word by hand.
-- **Over RM 100 owed (`HOLD_RM`) the account opens as a payment page**: the page's gate, not the
-  Worker's. Beside `owed` the live document seals `pay` (`payDue`): to pay now (`txAdvance`),
-  overdue and coming up (`txPendRM`), each part due at its order date plus the desk's
-  `RULES.creditDays`, read from the master, and overdue only after that day. **The bulletin** is KV
+- **Over RM 100 past its term (`HOLD_RM` against `pay.overdue`, his D9) the account opens as a payment
+  page**: the page's gate, not the Worker's. It shows each part's due date, Prices stays readable, and a
+  claim waiting on him reopens ordering, his acknowledgement still the check. Beside `owed` the live
+  document seals `pay` (`payDue`): to pay now (`txAdvance`), overdue and coming up (`txPendRM`), each
+  part due at its order date plus the desk's `RULES.creditDays`, read from the master, and overdue only
+  after that day. To pay now heads the statement tab; every Pay opens one sheet (D8: no account chosen
+  for them, the username the reference, QR Command through `payHref`, never named), and on return it
+  asks once, Did you send it: a claim reads "sent, waiting for us to confirm" until his answer (D7). **The bulletin** is KV
   `bulletin`, set through the desk's keyed `/bulletin` and checked by `siteWords`.
 - **An associate may tick an order as on behalf of a friend**: it books to their `-R` bucket
   through the engine's `bookR2`, and the `orderKey` is built on the bucket. **A bucket is not its

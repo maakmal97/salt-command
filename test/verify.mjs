@@ -31012,6 +31012,71 @@ await (async () => {
   } finally { wB.close(); }
 })();
 
+section("S6 6.7: the hold counts only what is past its term, shows each part with the day it fell due, keeps Prices readable, and a claim waiting reopens ordering");
+await (async () => {
+  /* STAGE 6 OF THE COUNTER REDESIGN, his D9 of 24 Sep 2026. Forced state: a fixture live document with two overdue
+     parts (RM 300 past the term) and a price list, the order list answering with no claim, with one on the account,
+     or with one on an order. */
+  const { landingPage: lp, MON3 } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s67", ck = await C.contentKey("test-secret", u);
+  const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+  const said = (x) => { const d = new Date(x + "T00:00:00Z"); return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()] + " " + d.getUTCDate() + " " + MON3[d.getUTCMonth()]; };
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const part = (o) => Object.assign({ late: true, product: "salt", qty: 2, got: 2, resale: false }, o);
+  const parts = [part({ date: kl(-30), due: kl(-20), rm: 180, whole: 180, gotOn: kl(-30) }), part({ date: kl(-14), due: kl(-4), rm: 120, whole: 200, gotOn: kl(-14) })];
+  const pay = { term: 10, now: { rm: 300, due: kl(-20), parts }, overdue: { rm: 300, parts }, coming: { rm: 0, parts: [] } };
+  const list = { at: "2026-09-24T00:00:00Z", week: { monday: "2026-09-21", label: "21 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 100, orders: 4, basis: "yours", sizes: [{ q: 1, price: 100 }] }], soon: [] };
+  const open = async (orders, claims) => {
+    const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s67",
+      env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 300, pay })),
+      prices: await C.encryptWith(ck, JSON.stringify(list)) };
+    const dom = new JD(lp(u, "ns67", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders, claims } : null;
+        return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+      };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 150 && !d.getElementById("pOrder").textContent; i++) await new Promise((r) => setTimeout(r, 20));
+      await new Promise((r) => setTimeout(r, 200));
+      const pane = d.querySelector("#pOrder .pane");
+      const out = { tab: t(d.getElementById("tOrder")), onOrder: !d.getElementById("pOrder").hidden, head: t(d.querySelector("#pOrder h2")),
+        tile: pane ? [".salt-kpi__label", ".salt-kpi__value"].map((q) => t(pane.querySelector(q))).join(" ") : "",
+        rows: pane ? [...pane.querySelectorAll(".salt-ledger__row")].map((r) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((q) => t(r.querySelector(q))).join("|")) : [],
+        form: !!d.getElementById("oGo"), pricesTab: !d.getElementById("tPrices").hidden, claimLine: t(d.querySelector("#payHead .msg")) };
+      d.getElementById("tPrices").click();
+      out.prices = !d.getElementById("pPrices").hidden && /100/.test(t(d.getElementById("pPrices")));
+      return out;
+    } finally { dom.window.close(); }
+  };
+  const held = await open([], []);
+  ok(held.onOrder && held.tab === "Pay" && held.head === "Payment due" && held.tile === "Overdue RM 300" && !held.form
+    && JSON.stringify(held.rows) === JSON.stringify(["Cube 2 units you received " + said(kl(-30)) + "|RM 180|It was due by " + said(kl(-20)) + ".",
+      "The rest of Cube 2 units you received " + said(kl(-14)) + "|RM 120|It was due by " + said(kl(-4)) + "."]),
+    "RM 300 past its term opens on Pay with the overdue figure and each part with the day it fell due, and no order form: " + JSON.stringify(held));
+  ok(held.pricesTab && held.prices, "and the price list stays one tap away and readable while it is held");
+  const acct = await open([], [{ id: "c1", at: new Date().toISOString(), amount: 300, method: "transfer", account: "maybank", state: "waiting" }]);
+  const ord = await open([{ id: "oZ", product: "salt", qty: 1, mode: "collect", total: 20, delivery: 0, paid: 0, claimed: 20, moved: 0, at: "2026-09-20T03:00:00Z",
+    status: "acknowledged", history: [], msgs: [], payments: [{ at: "2026-09-24T01:00:00Z", amount: 20, method: "transfer", account: "maybank", claim: "waiting" }] }], []);
+  ok(acct.tab === "Order" && acct.head === "Order" && acct.form && acct.claimLine === "RM 300 sent, waiting for us to confirm."
+    && ord.tab === "Order" && ord.form,
+    "a claim waiting on him, on the account or on an order, reopens ordering, and To pay now says it was sent and is waiting: "
+    + JSON.stringify({ acct: [acct.tab, acct.head, acct.form, acct.claimLine], ord: [ord.tab, ord.form] }));
+})();
+
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead
@@ -31041,11 +31106,14 @@ await (async () => {
   const C = await import("../tools/stmt-crypto.mjs");
   const { webcrypto: wc } = await import("node:crypto");
   const { JSDOM: JD } = await import("jsdom");
-  const openWith = async (owed) => {
+  /* S6 6.7 (his D9): the line counts what is past its term, the sealed pay.overdue, and never what is owed */
+  const openWith = async (overdue, owed) => {
     const u = "abcd-efgh", pass = "fixture-pass-hold", ck = await C.contentKey("test-secret", u);
+    const part = { date: "2026-09-01", due: "2026-09-11", late: true, rm: overdue, whole: overdue, product: "salt", qty: 2, got: 2, gotOn: "2026-09-01", resale: false };
+    const pay = overdue === undefined ? undefined : { term: 10, now: { rm: owed || overdue, due: "2026-09-11", parts: [part] }, overdue: { rm: overdue, parts: overdue ? [part] : [] }, coming: { rm: 0, parts: [] } };
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "",
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: at.toISOString(), body: "<p>Live</p>", owed })) };
+      live: await C.encryptWith(ck, JSON.stringify({ at: at.toISOString(), body: "<p>Live</p>", owed: owed || overdue, pay })) };
     const dom = new JD(lp(u, "nhold", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -31061,17 +31129,18 @@ await (async () => {
       return { order: d.getElementById("pOrder").textContent, orderShown: !d.getElementById("pOrder").hidden,
         stmtShown: !d.getElementById("pStmt").hidden, orderTab: d.getElementById("tOrder").textContent,
         pricesTab: !d.getElementById("tPrices").hidden, stmtTab: !d.querySelector('button[data-t="stmt"]').hidden,
-        payLinks: d.querySelectorAll("#pOrder a.lnk").length, form: !!d.querySelector("#pOrder select") };
+        pay: [...d.querySelectorAll("#pOrder .pane button.salt-pill")].map((b) => b.textContent).join(), form: !!d.querySelector("#pOrder select") };
     } finally { dom.window.close(); }
   };
-  const held = await openWith(250.5), under = await openWith(100), none = await openWith(undefined);
-  ok(held.orderShown && !held.stmtShown && held.orderTab === "Pay" && !held.pricesTab && held.stmtTab
-    && /Please pay the overdue amount of RM 250\.5 before placing another order/.test(held.order) && held.payLinks > 0 && !held.form,
-    "owing RM 250.50, the account opens on Pay, says to pay the overdue amount first, offers the ways to pay, and neither the price list nor an order form: "
+  const held = await openWith(250.5), under = await openWith(100), none = await openWith(undefined), owedOnly = await openWith(50, 300);
+  ok(held.orderShown && !held.stmtShown && held.orderTab === "Pay" && held.pricesTab && held.stmtTab
+    && /Please pay the overdue amount of RM 250\.5 before placing another order/.test(held.order) && held.pay === "Pay RM 250.5" && !held.form,
+    "RM 250.50 past its term, the account opens on Pay, says to pay the overdue amount first, offers Pay, no order form, and the price list stays readable (S6 6.7): "
     + JSON.stringify({ ...held, order: held.order.slice(0, 90) }));
   ok(!under.orderShown && under.stmtShown && under.orderTab === "Order" && under.pricesTab && !/overdue/.test(under.order)
-    && !none.orderShown && none.orderTab === "Order" && none.pricesTab,
-    "at RM 100 exactly, and with no figure at all, the account opens as it always has");
+    && !none.orderShown && none.orderTab === "Order" && none.pricesTab
+    && !owedOnly.orderShown && owedOnly.orderTab === "Order" && !/overdue/.test(owedOnly.order),
+    "at RM 100 overdue exactly, with no figure at all, and owing RM 300 of which only RM 50 is past its term, the account opens as it always has");
 })();
 
 section("S1 1.28: Still to collect is one line a book, never units of different books added");

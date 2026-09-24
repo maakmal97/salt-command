@@ -875,10 +875,14 @@ const CLIENT_JS = `
      states: please pay the overdue amount before making another order." What they owe is sealed
      inside their own live statement (tools/make_statements.mjs), the same figure its footer reads,
      so nothing about the book is in the store in the clear to decide it with. Over the line, the
-     account opens on Pay, the order form and the price list are not offered, and the statement
-     stays one tap away, because a figure to pay is only fair beside the orders it is made of. It
-     lifts on its own: the next publish after the payment is recorded writes a smaller figure. */
-  var HOLD_RM=100, owedNow=0, hold=false;
+     account opens on Pay, the order form is not offered, and the statement stays one tap away,
+     because a figure to pay is only fair beside the orders it is made of. It lifts on its own: the
+     next publish after the payment is recorded writes a smaller figure.
+     S6 6.7, HIS D9 OF 24 SEP 2026: THE LINE COUNTS ONLY WHAT IS PAST ITS TERM, the sealed pay.overdue, never
+     what is owed (a delivery made yesterday is owed, not overdue). The page shows each part with the day it
+     fell due, Prices stays readable, and a claim waiting on him reopens ordering: his acknowledgement of the
+     next order is still the check. */
+  var HOLD_RM=100, hold=false;
   /* S6: what the live statement seals beside owed (tools/make_statements.mjs payDue): to pay now, overdue and
      coming up, each part with its dates. Read, never priced here. */
   var payDue=null, liveAt='';
@@ -1256,7 +1260,7 @@ const CLIENT_JS = `
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
     bundle=null; session=''; view=false; prices=null; orders=[]; claims=[]; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
-    owedNow=0; hold=false; tPrices.hidden=false; tOrder.textContent='Order';
+    hold=false; tOrder.textContent='Order';
     payDue=null; liveAt=''; drawPayHead();
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
@@ -1473,11 +1477,9 @@ const CLIENT_JS = `
     tCard.hidden=!assoc;
     if(!tCard.hidden) drawCard();
     var lv=b.statements.filter(function(s){ return s.live; })[0];
-    owedNow=lv&&isFinite(+lv.owed)?+lv.owed:0;
     payDue=lv&&lv.pay&&lv.pay.now?lv.pay:null; liveAt=lv&&lv.at||'';
-    hold=owedNow>HOLD_RM+0.004;
+    setHold();
     drawPayHead();
-    tPrices.hidden=hold; tOrder.textContent=hold?'Pay':'Order';
     pickStmt(0);
     if(hold) showTab('order');
   }
@@ -1759,7 +1761,7 @@ const CLIENT_JS = `
   /* what the tab above the orders is drawn off: the Pay page or the order form. A re-read of the account (a return to
      the page, a lapse reopened, S3 3.5) that changes it draws the tab again; otherwise the orders are patched (S5 5.5) */
   var drawnSig='';
-  function formSig(){ return JSON.stringify([hold,owedNow,view,assoc,prices]); }
+  function formSig(){ return JSON.stringify([hold,odRm(),view,assoc,prices]); }
   function drawOrder(){
     var sc=window.scrollY;
     drawnSig=formSig();
@@ -1771,17 +1773,22 @@ const CLIENT_JS = `
     pOrder.appendChild(el('h2',null,hold?'Payment due':'Order'));
     if(view) pOrder.appendChild(el('p','lead','Read only: their orders as their own page shows them. Nothing here is placed, paid or sent.'));
     if(hold){
-      var dueBox=el('div','pane');
-      dueBox.appendChild(el('div','quote',rm(owedNow)));
-      dueBox.appendChild(el('p','lead','Please pay the overdue amount of '+rm(owedNow)+' before placing another order.'));
-      dueBox.appendChild(el('p','sub2','Ordering opens again here once the payment is recorded on your account. Each order the amount is made of is on your statement.'));
+      /* S6 6.7: what is past its term, each part with the day it fell due, and one Pay for it */
+      var dueBox=el('div','pane'), od=payDue.overdue;
+      dueBox.appendChild(kpiTile('ember','Overdue',rm(od.rm),odNote(od)));
+      dueBox.appendChild(el('p','lead','Please pay the overdue amount of '+rm(od.rm)+' before placing another order.'));
+      if(od.parts.length>1){
+        var L=el('div','salt-ledger salt-ledger--plain');
+        od.parts.forEach(function(x){ L.appendChild(lrowN(partSpan(x),rm(x.rm),dueWords(x.due),'odue')); });
+        dueBox.appendChild(L);
+      }
       /* S6 6.4: one Pay, opening the pay sheet, where there were thirteen links naming the pay page */
       if(!view){
-        var hp=el('button','btn salt-pill salt-pill--md','Pay '+rm(owedNow)); hp.type='button';
-        hp.addEventListener('click',function(){ openPay({kind:'acct', fig:owedNow, label:'Overdue', note:function(){ return document.createTextNode('Each order the amount is made of is on your statement.'); }}); });
+        var hp=el('button','btn salt-pill salt-pill--md','Pay '+rm(od.rm)); hp.type='button';
+        hp.addEventListener('click',function(){ openPay({kind:'acct', fig:od.rm, label:'Overdue', note:function(){ return odNote(od); }}); });
         dueBox.appendChild(hp);
       }
-      dueBox.appendChild(el('p','sub2','Once it has left your side, say so on any of your orders below, or tell us directly, so it can be recorded.'));
+      dueBox.appendChild(el('p','sub2','Ordering opens again as soon as you tell us it is sent, and your prices stay open meanwhile. Each order the amount is made of is on your statement.'));
       var sv=el('button','btn quiet salt-ghost','See your statement'); sv.type='button';
       sv.addEventListener('click',function(){ showTab('stmt'); });
       dueBox.appendChild(sv);
@@ -2429,6 +2436,15 @@ const CLIENT_JS = `
     if(note){ var n=el('span','salt-kpi__note'); n.appendChild(note); k.appendChild(n); }
     return k;
   }
+  /* S6 6.7: the overdue figure, the line, and whether a claim waiting on him has lifted it. The owner's view holds too. */
+  function odRm(){ return payDue&&payDue.overdue?+payDue.overdue.rm||0:0; }
+  function setHold(){ hold=odRm()>HOLD_RM+0.004&&!(sentWaiting()>0.004); if(tOrder) tOrder.textContent=hold?'Pay':'Order'; }
+  function odNote(od){
+    var n=el('span'), ps=od.parts||[];
+    if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0].due))); }
+    else n.appendChild(document.createTextNode(ps.length+' orders past the day they were due. '+dueWords(ps.length?ps[0].due:null,true)));
+    return n;
+  }
   /* what To pay now is for, in one line under its figure */
   function nowNote(now){
     var n=el('span'), ps=now.parts||[];
@@ -2635,7 +2651,7 @@ const CLIENT_JS = `
     ridDone(key); closePay();
     if(c.kind==='order'){ var o=oFind(c.id); if(o) tapSaid(o,'pay','Sent, waiting for us to confirm. We tell you when it arrives.'); }
     await loadOrders(); if(mine!==ticket) return;
-    drawOrder(); drawPayHead();
+    setHold(); drawOrder(); drawPayHead();
   }
 
   async function loadOrders(){
@@ -2655,7 +2671,7 @@ const CLIENT_JS = `
     var before={}, mine=ticket, was=JSON.stringify([claims,orders.map(oClaimed)]); orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
     await loadOrders();
     if(mine!==ticket) return;
-    if(JSON.stringify([claims,orders.map(oClaimed)])!==was) drawPayHead();
+    if(JSON.stringify([claims,orders.map(oClaimed)])!==was){ setHold(); drawPayHead(); }
     if(document.getElementById('oPlace')&&formSig()!==drawnSig){ drawOrder(); return; }
     var changed=orders.filter(function(o){ return before[o.id]!==JSON.stringify(o); }).map(function(o){ return o.id; }),
         gone=Object.keys(before).some(function(id){ return !oFind(id); });
@@ -2906,7 +2922,7 @@ const CLIENT_JS = `
     drawPrices();
     drawKeep();
     if(same){
-      if(t!==tab&&!(hold&&t==='prices')&&!(t==='card'&&tCard.hidden)) showTab(t);
+      if(t!==tab&&!(t==='card'&&tCard.hidden)) showTab(t);
       if(mf&&mfil.querySelector('button[data-mf="'+mf+'"]')){ mfPick=mf; applyMonths(); }
       window.scrollTo(0,sy);
     }
@@ -2914,7 +2930,7 @@ const CLIENT_JS = `
   async function follow(stale){
     if(session){ await loadOrders(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
     else if(view){ await loadView(user); if(stale()) return false; }   /* stmt/owner.js: his route alone carries it */
-    drawOrder(); drawPayHead();   /* S6 6.5: the claims come with the orders */
+    setHold(); drawOrder(); drawPayHead();   /* S6 6.5 and 6.7: the claims come with the orders, and may lift the hold */
     return true;
   }
 
