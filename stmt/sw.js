@@ -8,7 +8,8 @@
  * whose keys are on file carries { k, o }, encrypted for that phone (stmt/push.js), and the words
  * are NEWS below, this file's own: never an amount, a product, an order or a name. A tap opens
  * the Counter at that order (#o=<id>, which the page reads), and a page already open is told to
- * re-read and open it, where focusing it alone showed whatever it drew last. A wake with no
+ * re-read and open it, where focusing it alone showed whatever it drew last. The tag is the order's,
+ * so a banner about one order never replaces another's (S12-C3). A wake with no
  * payload, from a subscription filed before its keys were, keeps the fixed words below.
  *
  * v761: THE ONE THING IT MAY READ IS THE NOTICE, because the notice is public: the page polls it
@@ -47,7 +48,7 @@ self.addEventListener('push', function(e){
   var o = n && typeof n.o === 'string' && /^[0-9]{14}-[a-z0-9]{1,8}$/.test(n.o) ? n.o : '';
   var to = { url: './' + (u ? '?u=' + encodeURIComponent(u) : '') + (o ? '#o=' + o : ''), order: o };
   if (n && typeof n.k === 'string' && Object.prototype.hasOwnProperty.call(NEWS, n.k)) {
-    e.waitUntil(self.registration.showNotification(NEWS[n.k], { body: 'Tap to open it.', tag: 'order-update', renotify: true, data: to }));
+    e.waitUntil(self.registration.showNotification(NEWS[n.k], { body: 'Tap to open it.', tag: o ? 'order-' + o : 'order-update', renotify: true, data: to }));
     return;
   }
   e.waitUntil(fetch('bulletin', { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : null; })

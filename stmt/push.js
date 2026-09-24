@@ -137,8 +137,12 @@ async function wake(env, u, topic, news) {
     const subs = await listSubs(env, u);
     if (!subs.length) return { ok: true, sent: 0 };
     const tokens = new Map();
-    const text = news && Object.prototype.hasOwnProperty.call(NEWS, news.k)
-      ? JSON.stringify({ k: news.k, o: typeof news.o === "string" ? news.o : "" }) : null;
+    const o = news && typeof news.o === "string" ? news.o : "";
+    const text = news && Object.prototype.hasOwnProperty.call(NEWS, news.k) ? JSON.stringify({ k: news.k, o }) : null;
+    /* a sealed wake collapses per ORDER, under the digest that names a subscription so the push service never
+       reads the id: news of another order no longer replaces it while the phone is off. A bare wake's words
+       are all the same, so it keeps the one topic. */
+    const orderTopic = text && o ? "o-" + (await endpointId(o)) : topic;
     let sent = 0, gone = 0, failed = 0, sealed = 0;
     for (const s of subs) {
       let origin;
@@ -152,7 +156,7 @@ async function wake(env, u, topic, news) {
       if (keys) { try { body = await sealFor(keys, text); } catch { body = null; } }
       let r;
       try {
-        if (body) { Object.assign(headers, { "Content-Encoding": "aes128gcm", "Content-Type": "application/octet-stream" }); sealed++; }
+        if (body) { Object.assign(headers, { Topic: orderTopic, "Content-Encoding": "aes128gcm", "Content-Type": "application/octet-stream" }); sealed++; }
         else headers["Content-Length"] = "0";
         r = await fetch(s.endpoint, body ? { method: "POST", headers, body } : { method: "POST", headers });
       } catch { failed++; continue; }

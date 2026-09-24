@@ -531,6 +531,8 @@ for that one phone by `sealFor` in `stmt/push.js` (RFC 8291 aes128gcm, WebCrypto
 the service worker at `/sw.js` shows the kind's words from its own `NEWS` table: confirmed, ready, a
 reply, payment received, a payment is due, delivered or collected (in part or in full), complete,
 not taken, cancelled. **Never an amount, a product, an order or a name**; the suite reads every word.
+One banner an order: the notification's tag and a sealed wake's push `Topic` are per order (the topic a
+digest of the id), so news of one order never replaces another's on the lock screen or at the push service.
 A tap opens the Counter at `#o=<id>`; a page already open is sent a message instead, re-reads its
 orders and opens that one, or, its session lapsed, keeps it for the sign-in after Continue. A subscription filed before its keys gets a payload-free wake and the
 old fixed words, so nothing already subscribed went dark; the page re-files the keys at the next

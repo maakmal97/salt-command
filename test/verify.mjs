@@ -20103,11 +20103,11 @@ await (async () => {
   };
   const w = await caught(() => P.wakeCustomer(env, u, { k: "reply", o: "20260924101500-ab12cd34" }));
   ok(w.r.sent === 2 && w.r.sealed === 1 && w.keyed && w.keyed.h["Content-Encoding"] === "aes128gcm"
-    && w.keyed.h["Content-Type"] === "application/octet-stream" && w.keyed.h.Topic === "salt-order" && /^vapid t=/.test(w.keyed.h.Authorization),
+    && w.keyed.h["Content-Type"] === "application/octet-stream" && /^vapid t=/.test(w.keyed.h.Authorization),
     "the keyed phone is sent an aes128gcm body under the same VAPID wake: " + JSON.stringify(w.keyed && w.keyed.h));
   ok(w.news && JSON.stringify(w.news) === '{"k":"reply","o":"20260924101500-ab12cd34"}',
     "and what it reads is the kind and the order a tap opens, and nothing else: " + JSON.stringify(w.news));
-  ok(w.bare && w.bare.body === undefined && w.bare.h["Content-Length"] === "0" && !w.bare.h["Content-Encoding"],
+  ok(w.bare && w.bare.body === undefined && w.bare.h["Content-Length"] === "0" && !w.bare.h["Content-Encoding"] && w.bare.h.Topic === "salt-order",
     "a phone filed before its keys is woken with nothing in it, as every phone was, so it does not go dark: " + JSON.stringify(w.bare && w.bare.h));
   const odd = await caught(() => P.wakeCustomer(env, u, { k: "an amount of 45", o: "x" }));
   const none = await caught(() => P.wakeCustomer(env, u));
@@ -20470,6 +20470,59 @@ await (async () => {
       "after Continue and the sign-in, the orders are read afresh and the one the banner was about is opened: "
       + JSON.stringify({ reads: st.reads - reads, onOrder: onOrder(), scrolled: st.scrolled }));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("S12 fix: news of one order never replaces another's, on the lock screen or at the push service");
+await (async () => {
+  /* S12-C3, 24 Sep 2026: every kind shared one tag and one push Topic. With one fixed sentence that lost nothing;
+     with the kind named, "Your order is ready" for one order was replaced by the 18:00 chase for another, on the
+     lock screen and, with the phone off, at the push service, and the tap then opened the other order. */
+  const { SW_JS } = await import("../stmt/sw.js");
+  const P = await import("../stmt/push.js");
+  const vm = await import("node:vm");
+  const A = "20260924175900-aaaa1111", B = "20260920120000-bbbb2222";
+  const shownBy = async (data) => {
+    const L = {}, shown = [], waits = [];
+    const ctx = { URL, Date, console, fetch: async () => ({ ok: true, json: async () => ({ ok: true, lines: [], at: null }) }),
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { href: "https://site.test/sw.js?u=abcd-efgh" },
+        registration: { scope: "https://site.test/", showNotification: async (t, opt) => { shown.push({ t, tag: opt.tag }); } },
+        clients: { matchAll: async () => [], openWindow: async () => {} } } };
+    vm.createContext(ctx); vm.runInContext(SW_JS, ctx);
+    L.push({ data, waitUntil: (p) => waits.push(p) });
+    await Promise.all(waits);
+    return shown[0];
+  };
+  const json = (v) => ({ json: () => v });
+  const ready = await shownBy(json({ k: "ready", o: A })), due = await shownBy(json({ k: "due", o: B })), readyAgain = await shownBy(json({ k: "paid", o: A }));
+  const loose = await shownBy(json({ k: "due", o: "" })), bare = await shownBy(undefined);
+  ok(ready.tag !== due.tag && ready.tag === readyAgain.tag && loose.tag === "order-update" && bare.tag === "order-update",
+    "a banner for one order and one for another sit side by side, a newer one for the same order replaces the older, "
+    + "and a banner naming no order keeps the one tag: " + JSON.stringify([ready.tag, due.tag, readyAgain.tag, loose.tag, bare.tag]));
+
+  const kv = new KV();
+  const vp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const env = { STMT: kv, STMT_VAPID_PUBLIC_KEY: "pub", STMT_VAPID_SUBJECT: "mailto:a@b.test",
+    STMT_VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", vp.privateKey)) };
+  const ua = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+  const keys = { p256dh: Buffer.from(new Uint8Array(await crypto.subtle.exportKey("raw", ua.publicKey))).toString("base64url"),
+    auth: Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString("base64url") };
+  const u = "m3n5-q7s9";
+  await kv.put("push:" + u + ":keyed", JSON.stringify({ endpoint: "https://push.example/keyed", keys }));
+  await kv.put("push:" + u + ":bare", JSON.stringify({ endpoint: "https://push.example/bare" }));
+  const realF = globalThis.fetch;
+  const topics = async (news) => {
+    const t = {};
+    globalThis.fetch = async (url, init) => { t[String(url).split("/").pop()] = init.headers.Topic; return new Response("", { status: 201 }); };
+    try { await P.wakeCustomer(env, u, news); } finally { globalThis.fetch = realF; }
+    return t;
+  };
+  const tA = await topics({ k: "ready", o: A }), tB = await topics({ k: "due", o: B }), tA2 = await topics({ k: "paid", o: A }), tNone = await topics({ k: "due", o: "" });
+  const fits = (x) => /^[A-Za-z0-9_-]{1,32}$/.test(x) && !x.includes("aaaa1111") && !x.includes("20260924");
+  ok(tA.keyed !== tB.keyed && tA.keyed === tA2.keyed && fits(tA.keyed) && fits(tB.keyed) && tNone.keyed === "salt-order",
+    "at the push service a sealed wake collapses per order, under a topic of the RFC's shape that does not carry the order's id: "
+    + JSON.stringify([tA.keyed, tB.keyed, tA2.keyed, tNone.keyed]));
+  ok([tA, tB, tA2, tNone].every((t) => t.bare === "salt-order"),
+    "and a phone with no keys, whose banners all say the same, keeps the one topic: " + JSON.stringify([tA.bare, tB.bare]));
 })();
 
 section("v760: a customer paying or taking an order back wakes him, and the banner says which");
