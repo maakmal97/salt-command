@@ -14464,6 +14464,65 @@ await (async () => {
     } finally { try { W91.close(); } catch (e) { /* best effort */ } }
   } finally { globalThis.fetch = realFetch91; }
 })();
+section("S1 1.2: a new account with no rows opens on its empty state, and Prices and Order are drawn, by password, remembered device and link");
+await (async () => {
+  /* B02, 24 SEP 2026. tools/stmt-account.mjs mints an account whose bundle holds NO statement, and no live
+     document until the next publish. The password road refused it ("could not be read"), and the remembered
+     and link roads threw in show() reading a body that was not there, so Prices and Order were never drawn:
+     a customer on the day they were added saw a refusal or a blank page. */
+  const { landingPage: lpA } = await import("../stmt/page.js");
+  const CA = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDA } = await import("jsdom");
+  const { webcrypto: wcA } = await import("node:crypto");
+  const uA = "aaaa-cccc", passA = "2345-6789-abcd-efgh", devA = "d".repeat(32), tokA = "t".repeat(32);
+  const ckA = await CA.contentKey("9".repeat(64), uA);
+  const common = { ok: true, u: uA, issued: "2026-09-24", issues: ["2026-09-24"], live: null, session: "sessAaaaaaaaaaaaaaaaaaaaaaaa",
+    env: await CA.encryptWith(ckA, JSON.stringify({ v: 1, issued: "2026-09-24", statements: [] })),
+    prices: await CA.encryptWith(ckA, JSON.stringify({ week: { label: "21 Sep 2026", monday: "2026-09-21" }, soon: [],
+      products: [{ product: "salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 100 }, { q: 2, price: 190 }] }] })) };
+  const answers = {
+    "/open": { ...common, byMaster: false, wrap: await CA.wrapKey(passA, ckA), wrapMaster: null },
+    "/remember/open": { ...common, remembered: true, wrap: await CA.wrapKey(devA, ckA) },
+    "/open-link": { ...common, wrap: await CA.wrapKey(tokA, ckA) }
+  };
+  const errs = [], onRej = (e) => errs.push(String((e && e.message) || e));
+  process.on("unhandledRejection", onRej);
+  const drive = async (road) => {
+    errs.length = 0;
+    const stored = road === "remembered" ? JSON.stringify({ t: "r".repeat(32), k: Buffer.from(devA).toString("base64"), u: uA }) : null;
+    const dom = new JDA(lpA(road === "password" ? uA : "", "nA", null), {
+      url: road === "link" ? "https://site.test/s/" + tokA : "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: wcA, configurable: true }); } catch (e) { win.crypto = wcA; }
+        const store = new Map(stored ? [["salt-stmt-remember", stored]] : []);
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.addEventListener("error", (e) => errs.push(String(e.message)));
+        win.fetch = async (path) => { const a = answers[String(path)] || { ok: true, orders: [] }; return { ok: true, status: 200, json: async () => a }; };
+      } });
+    const W = dom.window, D = W.document;
+    try {
+      if (road === "password") {
+        D.getElementById("pw").value = passA;
+        D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+      }
+      for (let i = 0; i < 200 && !D.querySelector("#pOrder .pane") && !errs.length && !D.getElementById("msg").textContent.includes("could not"); i++) await new Promise((r) => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 50));
+      return { errs: errs.slice(), out: D.getElementById("out").textContent, gate: D.getElementById("gate").hidden, msg: D.getElementById("msg").textContent,
+        prices: !!D.querySelector("#pPrices table"), review: [...D.querySelectorAll("#pOrder button")].some((b) => b.textContent === "Review this order") };
+    } finally { try { W.close(); } catch (e) { /* best effort */ } }
+  };
+  try {
+    for (const road of ["password", "remembered", "link"]) {
+      const r = await drive(road);
+      ok(r.gate && /Nothing on your account yet\. Your orders will show here\./.test(r.out) && !/could not/.test(r.msg) && !r.errs.length,
+        "by " + road + ", a new account opens on its empty state, with no refusal and no page error: " + JSON.stringify({ out: r.out.slice(0, 60), msg: r.msg, errs: r.errs }));
+      ok(r.prices && r.review, "and by " + road + ", Prices and Order are drawn after it: " + JSON.stringify({ prices: r.prices, review: r.review }));
+    }
+  } finally { process.off("unhandledRejection", onRej); }
+})();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: no three-minute lock, Remember me, and a Log out. The two halves of

@@ -811,7 +811,17 @@ const CLIENT_JS = `
 
   function pickStmt(i){
     if(!bundle) return;
-    at=i; out.innerHTML=bundle.statements[i].body;
+    at=i;
+    /* AN ACCOUNT WITH NO ROWS HAS NO STATEMENT AT ALL (tools/stmt-account.mjs mints it so): it says so,
+       and Prices and Order are still drawn after it. Reading a body that is not there threw here, and
+       the page stopped on a blank tab. */
+    var s=bundle.statements[i];
+    if(!s){
+      out.textContent=''; var e=el('div','panel'); e.appendChild(el('p','lead','Nothing on your account yet. Your orders will show here.')); out.appendChild(e);
+      mfil.hidden=true; var mfn=document.getElementById('mfnote'); if(mfn) mfn.textContent='';
+      return;
+    }
+    out.innerHTML=s.body;
     var bs=mos.querySelectorAll('button');
     for(var k=0;k<bs.length;k++) bs[k].className=(k===i?'on':'');
     drawMonths();
@@ -1553,7 +1563,8 @@ const CLIENT_JS = `
     try{ ck=await unwrap(pass, w); b=JSON.parse(await open(ck, body.env)); }
     catch(e){ if(stale())return; done(); say('That password did not open the statement.','bad'); return; }
     if(stale()) return;
-    if(!b||!b.statements||!b.statements.length){ done(); say('The statement could not be read. Ask for it to be re-issued.','bad'); return; }
+    /* an empty bundle is a new account, not a fault: pickStmt says so */
+    if(!b||!b.statements){ done(); say('The statement could not be read. Ask for it to be re-issued.','bad'); return; }
     if(body.live){
       try{ var l=JSON.parse(await open(ck, body.live));
         if(stale()) return;
