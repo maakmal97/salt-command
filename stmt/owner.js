@@ -273,11 +273,46 @@ export const OWNER_JS = `
       ?lineRow('Last opened', null, dayMon(a.seen.last)+(howOf(a.seen)?', '+howOf(a.seen):'')+'. The ways in before 25 Sep were not kept.')
       :lineRow('Not opened yet', null, a.sent?'Sent '+dayMon(a.sent)+'.':''));
     box.appendChild(list);
+    /* S9 9.4: PHONES AND COMPUTERS, off the account's own pointers: each device named as its browser described itself when
+       it signed in, when it came and when it was last used, whether it is kept signed in, and a Sign out of its own */
+    var devs=(s&&s.devices)||[], dh=el('h3','salt-eyebrow salt-eyebrow--copper dhead','Phones and computers');
+    if(devs.length) dh.appendChild(el('span','dcount',String(devs.length)));
+    box.appendChild(dh);
+    var dl=el('div','salt-ledger salt-ledger--plain');
+    devs.forEach(function(d){
+      var so=ghost('Sign out');
+      so.addEventListener('click', function(){ endOne(a, d, so); });
+      dl.appendChild(lineRow(d.label||'A device named before 25 Sep', so, d.kept
+        ?'Kept signed in since '+dayMon(d.at)+', last used '+when(d.last)+'.'
+        :'Signed in '+when(d.at)+' for this visit, not kept.'));
+    });
+    if(s&&!s.err&&!devs.length) dl.appendChild(lineRow('None signed in', null, 'A sign-in link or a code signs them in.'));
+    box.appendChild(dl);
+  }
+  async function endOne(a, d, b){
+    b.disabled=true; b.textContent='Signing out...';
+    try{ await refs('/all/signout', {u:a.username, id:d.id}); loadStory(a); }
+    catch(e){ b.textContent='Not signed out'; b.title=e.message; b.disabled=false; }
+  }
+  /* what Sign out everywhere ended, in words */
+  function endedLine(j){
+    var n=function(x, one, many){ return x+' '+(x===1?one:many); }, parts=[];
+    if(j.devices) parts.push(n(j.devices,'device','devices'));
+    if(j.links) parts.push(n(j.links,'link or code not yet used','links and codes not yet used'));
+    if(j.phones) parts.push('alerts on '+n(j.phones,'phone','phones'));
+    return parts.length?'Signed out: '+andList(parts)+'.':'Nothing was signed in.';
+  }
+  /* the link his own page made as the account opened, named by its token's hash, which Sign out everywhere spares */
+  async function linkId(u){
+    var m=madeLink[u], t=m&&m.j?String(m.j.url||'').split('/s/')[1]||'':'';
+    if(!t) return '';
+    var h=new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)));
+    return [].map.call(h, function(x){ return (x<16?'0':'')+x.toString(16); }).join('');
   }
   async function loadStory(a){
     var u=a.username, j=null, err='';
     try{ j=await refs('/all/account/'+encodeURIComponent(u)); }catch(e){ err=e.message; }
-    story[u]=j?{log:j.log||[]}:{err:err};
+    story[u]=j?{log:j.log||[], devices:j.devices||[]}:{err:err};
     [].slice.call(document.querySelectorAll('[data-story]')).forEach(function(b){ if(b.getAttribute('data-story')===u) drawStory(b, a); });
   }
   function acctCard(a){
@@ -317,13 +352,14 @@ export const OWNER_JS = `
       setTimeout(function(){ pwb.textContent='Copy password'; pwb.disabled=false; }, 2200);
     });
     /* SIGN OUT EVERYWHERE, on a second tap within four seconds: a forwarded link or a lost phone stays signed in while
-       it is used, so this ends every phone and session on the account, and a new link or a code signs them back in */
+       it is used, so this ends every device, link, code and alert on the account (S9 9.4), sparing the link this page
+       made as the account opened and has not sent, and says what it ended; a new link or a code signs them back in */
     var soArmed=null;
     sob.addEventListener('click', async function(){
       if(none) return;
       if(!soArmed){ sob.textContent='Tap again to sign them out'; soArmed=setTimeout(function(){ soArmed=null; sob.textContent='Sign out everywhere'; }, 4000); return; }
       clearTimeout(soArmed); soArmed=null; sob.disabled=true; sob.textContent='Signing out...';
-      try{ var j=await refs('/all/signout', {u:u}); gn.textContent=j.ended?'Signed out everywhere: '+j.ended+' ended.':'Nothing was signed in.'; gn.className='anote'; }
+      try{ var j=await refs('/all/signout', {u:u, keep:await linkId(u)}); gn.textContent=endedLine(j); gn.className='anote'; }
       catch(e){ gn.textContent='Could not sign out: '+e.message; gn.className='anote bad'; }
       sob.textContent='Sign out everywhere'; sob.disabled=false;
       loadStory(a);

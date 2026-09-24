@@ -178,10 +178,11 @@ async function markSeen(env, u, rec, how, request) {
 /* S3 3.2: EVERY SESSION AN OPEN MINTS LEAVES ITS POINTER under the account (stmt/signin.js), so signing an account
    out everywhere reaches a session minted a minute ago as well as a remembered phone. Best effort, as markSeen is:
    a pointer that cannot be written never fails an open, and the session lapses on its own in fifteen minutes. */
-async function openSession(env, u, how) {
+/* S9 9.4: and the pointer names the device in the site's own words (deviceOf), for the account's phones and computers */
+async function openSession(env, u, how, request) {
   const session = await mintSession(env, u);
-  const now = new Date().toISOString();
-  try { await pointAt(env, u, await sessKey(session), { how, at: now, last: now }, SESSION_TTL); } catch (e) { /* it lapses on its own */ }
+  const now = new Date().toISOString(), d = deviceOf(request && request.headers.get("user-agent"));
+  try { await pointAt(env, u, await sessKey(session), { how, at: now, last: now, label: d.label, kind: d.kind }, SESSION_TTL); } catch (e) { /* it lapses on its own */ }
   return session;
 }
 
@@ -292,7 +293,7 @@ async function handleOpen(request, env) {
   /* THE SESSION (06 Sep 2026): a token the order routes take in place of the password, minted here
      because this is the one place the password has just been proved. Fifteen minutes in the store;
      the page forgets it the moment it locks. The override gets none: the owner does not order. */
-  const session = byMaster ? null : await openSession(env, u, "password");
+  const session = byMaster ? null : await openSession(env, u, "password", request);
   return new Response(JSON.stringify({
     ok: true, byMaster, issued: rec.issued || null, issues: rec.issues || null,
     wrap: byMaster ? null : (rec.wrap || null),
@@ -337,6 +338,23 @@ async function handleCustomer(request, env, p, m) {
     return json({ ok: true, u, issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc,
       card: acct.card || null, env: acct.env, live: acct.live || null, prices: acct.prices || null });
   }
+  /* S9 9.4, FOR THE CUSTOMER'S OWN THIS DEVICE CARD (9.9): their phones and computers, on their session, and signing the
+     others out. The list carries no id and no address: the kind of device, when it came and was last used, whether it
+     is kept signed in, and which is this one, told by this session and this phone's own remembered token. Signing the
+     others out spares this one and the alerts on this phone's own subscription, and touches nothing of the account's. */
+  if (p === "/devices" || p === "/devices/signout") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const b = (await readJson(request)) || {};
+    const here = [await sessKey(String(request.headers.get("X-Stmt-Session") || ""))];
+    if (typeof b.token === "string" && REM_RE.test(b.token)) here.push(await remKey(b.token));
+    const isHere = (d) => here.includes(d.key) || opened(d).some((s) => here.includes(s));
+    const devs = devicesIn(await pointersOf(env, u));
+    if (p === "/devices") return json({ ok: true, devices: devs.map((d) => Object.assign(deviceOut(d), { here: isHere(d) })) });
+    let devices = 0;
+    for (const d of devs) if (!isHere(d)) { await endDevice(env, u, d); devices++; }
+    const ep = typeof b.endpoint === "string" && /^https:\/\//.test(b.endpoint) ? await endpointId(b.endpoint) : null;
+    return json({ ok: true, devices, phones: await dropPhones(env, u, ep) });
+  }
   if (p === "/orders") {
     if (m === "GET") return json({ ok: true, orders: (await ordersOf(env, u)).map(customerView) });
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -360,8 +378,11 @@ async function handleCustomer(request, env, p, m) {
     if (!wrap || typeof wrap !== "object" || !wrap.salt || !wrap.iv || !wrap.ct) return json({ ok: false, error: "send the wrap" }, 400);
     const tok = b64e(crypto.getRandomValues(new Uint8Array(24))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     const key = await remKey(tok), now = new Date().toISOString();
-    /* S3 3.2: the pointer first, so a phone is never remembered where it cannot be found again */
-    await pointAt(env, u, key, { how: "remember", at: now, last: now }, REM_TTL);
+    /* S3 3.2: the pointer first, so a phone is never remembered where it cannot be found again. S9 9.4: naming the device
+       and the session it was kept on, so the phone is listed once */
+    const d = deviceOf(request.headers.get("user-agent")), stok = String(request.headers.get("X-Stmt-Session") || "");
+    await pointAt(env, u, key, Object.assign({ how: "remember", at: now, last: now, label: d.label, kind: d.kind },
+      stok ? { sess: await sessKey(stok) } : {}), REM_TTL);
     await env.STMT.put(key, JSON.stringify({ u, wrap, at: now }), { expirationTtl: REM_TTL });
     return json({ ok: true, token: tok, days: REM_TTL / 86400 });
   }
@@ -476,8 +497,17 @@ async function handleRemember(request, env) {
     await env.STMT.put(key, JSON.stringify(rec), { expirationTtl: ttl });
     if (raw) await env.STMT.delete(raw);
   } catch (e) { /* it opens either way, and slides on the next */ }
-  try { await pointAt(env, rec.u, key, { how: "remember", at: rec.at || now, last: now }, ttl); } catch (e) { /* the next open writes it */ }
-  const session = await openSession(env, rec.u, "remembered");
+  /* S9 9.4: the session first, so the phone's pointer names it (`sess`): the account's list shows the phone once, and
+     signing the phone out ends the session it opened */
+  const session = await openSession(env, rec.u, "remembered", request);
+  const d = deviceOf(request.headers.get("user-agent"));
+  try {
+    /* and the sessions it opened before (`was`, four at most), which may still be live in another tab on the same phone:
+       they are this phone too, so they are not listed as other devices, and signing the phone out ends them */
+    const old = await env.STMT.get(devPrefix(rec.u) + (await idOf(key)), "json");
+    const was = [old && old.sess].concat((old && old.was) || []).filter((x) => typeof x === "string").slice(0, 4);
+    await pointAt(env, rec.u, key, { how: "remember", at: rec.at || now, last: now, label: d.label, kind: d.kind, sess: await sessKey(session), was }, ttl);
+  } catch (e) { /* the next open writes it */ }
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
@@ -509,7 +539,7 @@ async function handleSignin(request, env) {
   const acct = await env.STMT.get("u:" + rec.u, "json");
   if (!acct) return json({ ok: false, error: REFUSED }, 401);
   await markSeen(env, rec.u, acct, "link", request);
-  const session = await openSession(env, rec.u, "link");
+  const session = await openSession(env, rec.u, "link", request);
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
@@ -571,7 +601,7 @@ async function handleHandover(request, env, p, m) {
     return json({ ok: false, error: REFUSED }, 401);
   }
   await markSeen(env, rec.u, acct, rec.by, request);
-  const session = await openSession(env, rec.u, rec.by);
+  const session = await openSession(env, rec.u, rec.by, request);
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap, token: rec.token,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
@@ -929,7 +959,8 @@ async function unmakeTest(env) {
       /* S3 3.2: its remembered phones and live sessions, found through their pointers */
       if (pre.startsWith("dev:")) for (const k of page.keys) {
         const at = await env.STMT.get(k.name, "json");
-        if (at && /^(rem|sess):/.test(String(at.key))) gone.push(at.key);
+        if (at && /^(rem|sess|ot|ho):/.test(String(at.key))) gone.push(at.key);
+        if (at && at.pair) gone.push(at.pair);
       }
       cursor = page.list_complete ? null : page.cursor;
     } while (cursor);
@@ -944,21 +975,68 @@ async function unmakeTest(env) {
    a remembered phone or a session, and each goes with its pointer; so do the account's push records, since a phone
    signed out stops waking (v692). A phone remembered before pointers and not opened since has none, and ends thirty
    days from its tick (handleRemember). Returns how many phones and sessions it ended. */
-async function signOutEverywhere(env, u) {
-  let n = 0;
-  for (const pre of [devPrefix(u), "push:" + u + ":"]) {
-    let cursor;
-    do {
-      const page = await env.STMT.list({ prefix: pre, cursor });
-      for (const k of page.keys) {
-        const at = pre.startsWith("dev:") ? await env.STMT.get(k.name, "json") : null;
-        if (at && /^(rem|sess):/.test(String(at.key))) { await env.STMT.delete(at.key); n++; }
-        await env.STMT.delete(k.name);
-      }
-      cursor = page.list_complete ? null : page.cursor;
-    } while (cursor);
-  }
+/* S9 9.4: AN ACCOUNT'S PHONES AND COMPUTERS, and signing them out. Every pointer under dev:<username>: names what it
+   points at (stmt/signin.js): a remembered phone (rem:) or a session (sess:), each a device, named in the site's own
+   words when it opened; an unopened sign-in link (ot:) or hand-over (ho:, its code's record beside it as `pair`). A
+   remembered phone names the session it opened (`sess`), so the phone is one device and not two. Nothing here is an
+   address, and nothing reads or rewrites the account's own u: record, which the publish owns. */
+async function pointersOf(env, u) {
+  const out = [], pre = devPrefix(u);
+  let cursor;
+  do {
+    const page = await env.STMT.list({ prefix: pre, cursor });
+    for (const k of page.keys) {
+      const p = await env.STMT.get(k.name, "json");
+      if (p && typeof p.key === "string") out.push(Object.assign({}, p, { name: k.name, id: k.name.slice(pre.length) }));
+      else await env.STMT.delete(k.name);
+    }
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+  return out;
+}
+/* the sessions a remembered phone opened: the newest (`sess`) and the ones before it (`was`) */
+const opened = (p) => /^rem:/.test(p.key) ? [p.sess].concat(Array.isArray(p.was) ? p.was : []).filter((x) => typeof x === "string") : [];
+function devicesIn(ptrs) {
+  const held = new Set([].concat(...ptrs.map(opened)));
+  return ptrs.filter((p) => /^(rem|sess):/.test(p.key) && !held.has(p.key))
+    .sort((a, b) => String(b.last || b.at || "").localeCompare(String(a.last || a.at || "")));
+}
+const deviceOut = (p) => ({ label: p.label || null, kind: p.kind || null, at: p.at || null, last: p.last || p.at || null, kept: /^rem:/.test(p.key) });
+/* one device ended: its credential, the sessions a remembered phone opened, and the pointers to all of them */
+async function endDevice(env, u, p) {
+  await env.STMT.delete(p.key);
+  for (const s of opened(p)) { await env.STMT.delete(s); await unpoint(env, u, s); }
+  await env.STMT.delete(p.name);
+}
+/* the account's push records, all but the one a phone keeping its sign-in names */
+async function dropPhones(env, u, keepId) {
+  let n = 0, cursor;
+  do {
+    const page = await env.STMT.list({ prefix: "push:" + u + ":", cursor });
+    for (const k of page.keys) if (!keepId || k.name !== "push:" + u + ":" + keepId) { await env.STMT.delete(k.name); n++; }
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
   return n;
+}
+/* S3 FIX, 24 SEP 2026, and S9 9.4: SIGN OUT EVERYWHERE, the answer to a forwarded link or a lost phone. Every device on
+   the account is ended, every link and code not yet opened is burnt, and every phone stops taking its alerts, since a
+   phone signed out stops waking (v692). `keep` spares the one link his own page made as the account opened and has not
+   sent, named by its token's hash, so Send still works after. A phone remembered before pointers and not opened since
+   has none, and ends thirty days from its tick (handleRemember). Returns how many devices, links and phones it ended. */
+async function signOutEverywhere(env, u, keep) {
+  const ptrs = await pointersOf(env, u), devs = devicesIn(ptrs);
+  let links = 0;
+  for (const p of ptrs) {
+    if (/^(rem|sess):/.test(p.key)) { await env.STMT.delete(p.key); await env.STMT.delete(p.name); continue; }
+    if (keep && p.key === "ot:" + keep) continue;
+    const live = await env.STMT.get(p.key, "json");
+    if (live && !live.spent) links++;
+    await env.STMT.delete(p.key);
+    if (p.pair) await env.STMT.delete(p.pair);
+    await env.STMT.delete(p.name);
+  }
+  const phones = await dropPhones(env, u, null);
+  return { devices: devs.length, links, phones, ended: devs.length + links + phones };
 }
 
 async function handleRefs(request, env, p, m, origin) {
@@ -1221,7 +1299,9 @@ export default {
         const seen = await env.STMT.get(SKEY(u), "json");
         const log = (seen && Array.isArray(seen.log) ? seen.log : [])
           .map((x) => ({ how: String(x.how || ""), at: x.at || null, where: x.where || null, kind: x.kind || null }));
-        return json({ ok: true, log });
+        /* S9 9.4: and its phones and computers, newest use first, each by its pointer's id for his Sign out */
+        const devices = devicesIn(await pointersOf(env, u)).map((d) => Object.assign({ id: d.id }, deviceOut(d)));
+        return json({ ok: true, log, devices });
       }
       /* the associates' report card, written by the publish and read only here (v691) */
       if (p === "/all/assoc") {
@@ -1236,7 +1316,14 @@ export default {
         const b = await readJson(request);
         const u = normUser(b && b.u);
         if (!u) return json({ ok: false, error: "send the username" }, 400);
-        return json({ ok: true, ended: await signOutEverywhere(env, u) });
+        /* S9 9.4: one of its devices, by the id his list carries, or everything */
+        if (b.id != null) {
+          const d = devicesIn(await pointersOf(env, u)).find((x) => x.id === String(b.id));
+          if (d) await endDevice(env, u, d);
+          return json({ ok: true, devices: d ? 1 : 0, links: 0, phones: 0, ended: d ? 1 : 0 });
+        }
+        const keep = typeof b.keep === "string" && /^[0-9a-f]{64}$/.test(b.keep) ? b.keep : "";
+        return json(Object.assign({ ok: true }, await signOutEverywhere(env, u, keep)));
       }
       if (p === "/all/test") {
         if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -1331,7 +1418,8 @@ export default {
     }
     /* S3 3.9: the hand-over, minted on a session and opened by its key or its code */
     if (p === "/handover" || p === "/handover/open") return handleHandover(request, env, p, m);
-    if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account") return handleCustomer(request, env, p, m);
+    if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account"
+      || p === "/devices" || p === "/devices/signout") return handleCustomer(request, env, p, m);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
     if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/waiting") return handleDesk(request, env, p, m);

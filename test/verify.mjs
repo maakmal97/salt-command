@@ -16269,6 +16269,142 @@ await (async () => {
       "How they got in lists each way in with the device it was used on, and no address: " + JSON.stringify(story()));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S9 9.4: an account lists its phones and computers by the kind of device, and Sign out everywhere ends every device, unused link and code and alert, and says how many");
+await (async () => {
+  /* THE PLAN'S 9.4: the account's phones and computers from its dev: pointers, each named in the site's own words, added
+     and last used, never an address or anything typed; one signed out by his tap, or all of them, every link and code
+     not yet opened and every phone's alerts with them, counted, and never the account's own record, which the publish
+     owns. The customer's own list (9.9) is the same list on their session, with the others signed out and this one kept. */
+  const W = (await import("../stmt/worker.js")).default;
+  const S = await import("../stmt/signin.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { endpointId } = await import("../stmt/push.js");
+  const { JSDOM } = await import("jsdom");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const EDGE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0";
+  const kv = new KV(), MASTER = "mp-s9-4", IP = "198.51.100.44";
+  const u = C.newUsername(), other = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9-4", u);
+  const urec = JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) });
+  await kv.put("u:" + u, urec);
+  await kv.put("roster", JSON.stringify([{ code: "CX4-DV", username: u }, { code: "CX5-DV", username: other }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-25T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX4-DV", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9-4", KID = "kid-s9-4";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD, STMT_HANDOVER_KEY: "ho-secret-s9-4" };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const post = async (path, body, headers) => { const r = await site(path, { method: "POST", headers: Object.assign({ "content-type": "application/json", "CF-Connecting-IP": IP }, headers || {}), body: JSON.stringify(body) });
+    return { status: r.status, j: await r.json().catch(() => ({})) }; };
+  const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" };
+  const signIn = async (ua) => (await post("/open", { u, password: pw }, { "user-agent": ua })).j.session;
+  const orders = async (s) => (await site("/orders", { headers: { "X-Stmt-Session": s } })).status;
+  const E1 = "https://push.example/s94-iphone", E2 = "https://push.example/s94-windows";
+  const kb = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kb.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const jwt = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kb.privateKey, new TextEncoder().encode(h + "." + c))));
+  const A = { "cf-access-jwt-assertion": jwt };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  const ptrs = () => [...kv.m.keys()].filter((k) => k.startsWith("dev:" + u + ":"));
+  let win = null;
+  try {
+    /* ---- the fixture: an iPhone kept signed in, a Windows computer for this visit, each with alerts, and a hand-over made ---- */
+    const s1 = await signIn(IPHONE);
+    const t1 = (await post("/remember", { wrap }, { "X-Stmt-Session": s1, "user-agent": IPHONE })).j.token;
+    const s2 = await signIn(EDGE);
+    await post("/push/subscribe", { endpoint: E1 }, { "X-Stmt-Session": s1 });
+    await post("/push/subscribe", { endpoint: E2 }, { "X-Stmt-Session": s2 });
+    const hoTok = S.newSignin(), ho = await post("/handover", { token: hoTok, wrap }, { "X-Stmt-Session": s1 });
+    ok(!!t1 && ho.status === 200 && await orders(s1) === 200 && await orders(s2) === 200, "the fixture: two devices signed in, one kept, and a hand-over made");
+
+    /* ---- his list ---- */
+    const acct = async () => (await site("/all/account/" + u, { headers: A })).json();
+    const a1 = await acct();
+    ok(a1.devices.length === 2 && a1.devices.map((d) => d.label).sort().join("|") === "Windows computer, Edge|iPhone, Safari"
+      && a1.devices.find((d) => d.kept).label === "iPhone, Safari" && !a1.devices.find((d) => d.label === "Windows computer, Edge").kept,
+      "his account lists the iPhone once, kept signed in, and the computer for this visit: " + JSON.stringify(a1.devices));
+    ok(a1.devices.every((d) => Object.keys(d).sort().join() === "at,id,kept,kind,label,last") && !JSON.stringify(a1).includes(IP) && !JSON.stringify(a1).includes("Mozilla"),
+      "each device is its id, kind, name and moments, never an address or the browser's own description");
+
+    /* ---- theirs, on their session: the same list, this one marked, no id ---- */
+    const mine = await post("/devices", { token: t1 }, { "X-Stmt-Session": s1 });
+    ok(mine.status === 200 && mine.j.devices.length === 2 && mine.j.devices.every((d) => Object.keys(d).sort().join() === "at,here,kept,kind,label,last")
+      && mine.j.devices.filter((d) => d.here).map((d) => d.label).join() === "iPhone, Safari",
+      "the customer's own list is the same devices, this one marked and no id handed over: " + JSON.stringify(mine.j.devices));
+    ok((await post("/devices", {}, {})).status === 401, "and it needs their session");
+    const theirs = await post("/devices/signout", { token: t1, endpoint: E1 }, { "X-Stmt-Session": s1 });
+    ok(theirs.j.ok && theirs.j.devices === 1 && theirs.j.phones === 1 && await orders(s2) === 401 && await orders(s1) === 200
+      && !!(await kv.get("push:" + u + ":" + (await endpointId(E1)))) && !(await kv.get("push:" + u + ":" + (await endpointId(E2)))),
+      "Sign out other devices ends the computer and its alerts, and keeps this phone, its session and its alerts: " + JSON.stringify(theirs.j));
+    ok((await post("/remember/open", { token: t1 }, { "user-agent": IPHONE })).status === 200, "and this phone still opens as a remembered phone");
+
+    /* ---- his Sign out of one device, by its id ---- */
+    const s3 = await signIn(EDGE);
+    const win1 = (await acct()).devices.find((d) => !d.kept);
+    const one = await post("/all/signout", { u, id: win1.id }, A);
+    ok(one.j.devices === 1 && await orders(s3) === 401 && (await acct()).devices.map((d) => d.label).join() === "iPhone, Safari",
+      "his Sign out on one device ends that one alone: " + JSON.stringify(one.j));
+
+    /* ---- a link opened is no longer one to sign out ---- */
+    const spent = S.newSignin();
+    await S.mintSignin(env, u, spent, wrap);
+    const lp = "dev:" + u + ":" + (await S.idOf("ot:" + (await S.idOf(spent)))), had = kv.m.has(lp);
+    await post("/open-link", { token: spent }, { "user-agent": EDGE });
+    ok(had && !kv.m.has(lp), "a link opened takes its pointer with it, being no longer one to sign out");
+
+    /* ---- Sign out everywhere: every device, every link and code not yet opened, every phone's alerts, counted ---- */
+    const keepTok = S.newSignin(), sentTok = S.newSignin();
+    await S.mintSignin(env, u, keepTok, wrap); await S.mintSignin(env, u, sentTok, wrap);
+    const all = await post("/all/signout", { u, keep: await S.idOf(keepTok) }, A);
+    ok(all.status === 200 && all.j.devices === 2 && all.j.links === 2 && all.j.phones === 1 && all.j.ended === 5,
+      "Sign out everywhere says it ended the phone and the computer the link opened on, the link sent and the hand-over not yet used, and the phone's alerts: " + JSON.stringify(all.j));
+    ok(await orders(s1) === 401 && (await post("/remember/open", { token: t1 })).status === 401
+      && (await post("/open-link", { token: sentTok })).status === 401 && (await post("/handover/open", { token: hoTok })).status === 401
+      && (await post("/handover/open", { code: ho.j.code })).status === 401 && ![...kv.m.keys()].some((k) => k.startsWith("push:" + u + ":")),
+      "and each of them is refused afterwards, the code as well as its key");
+    ok((await post("/open-link", { token: keepTok }, { "user-agent": IPHONE })).status === 200,
+      "while the one link his page made as the account opened, and named, still opens");
+    ok((await kv.get("u:" + u)) === urec, "and the account's own record is untouched");
+    await post("/all/signout", { u }, A);
+
+    /* ---- his page: the list drawn, one signed out by its own button, and everything by the second tap ---- */
+    const s4 = await signIn(IPHONE);
+    await post("/remember", { wrap }, { "X-Stmt-Session": s4, "user-agent": IPHONE });
+    await signIn(EDGE);
+    win = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    D.querySelector('button[data-m="accounts"]').click();
+    await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
+    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
+    const story = () => ((card() && card().querySelector("[data-story]")) || {}).textContent || "";
+    ok(await until(() => /Phones and computers2/.test(story()) && /iPhone, SafariSign outKept signed in since/.test(story()) && /Windows computer, EdgeSign outSigned in .* for this visit, not kept/.test(story())),
+      "the account lists its two devices under Phones and computers, each with its own Sign out: " + JSON.stringify(story()));
+    const outOf = (label) => [...card().querySelectorAll("[data-story] .salt-ledger__row")].find((r) => r.textContent.startsWith(label)).querySelector("button");
+    outOf("Windows computer, Edge").click();
+    ok(await until(() => /Phones and computers1/.test(story()) && !/Windows computer, Edge/.test(story().split("Phones and computers")[1])), "one tap on a device's Sign out ends it and the list follows: " + JSON.stringify(story()));
+    const pill = () => card().querySelector(".apill");
+    ok(await until(() => pill() && !pill().disabled), "the account's link is made as it opened");
+    const sob = () => [...card().querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again/.test(b.textContent));
+    sob().click(); sob().click();
+    ok(await until(() => /Signed out: 1 device[.]/.test(card().textContent) && /Phones and computers/.test(story()) && /None signed in/.test(story())) && !pill().disabled,
+      "Sign out everywhere says what it ended, the list empties, and Send a sign-in link still has its link: " + JSON.stringify((card().querySelector(".agrid + .anote") || {}).textContent));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password

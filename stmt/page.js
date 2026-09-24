@@ -351,6 +351,9 @@ button.salt-approve__party{display:inline-flex;align-items:center;min-height:var
   font-size:var(--salt-text-sm);color:var(--salt-text-muted);cursor:pointer}
 .acct .tick input{width:18px;height:18px;accent-color:var(--salt-verdigris)}
 .astory{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+/* S9 9.4: the phones and computers under their own head, the count at its end */
+.astory .dhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:14px}
+.astory .dcount{color:var(--salt-text-muted);letter-spacing:0}
 /* the way back is a quiet line, not a second filled control: the page has one of those and it is
    the one that opens an account */
 button[data-back]{display:inline-flex;align-items:center;min-height:var(--salt-tap);margin:0;padding:0;

@@ -52,8 +52,10 @@ export async function idOf(token) {
 export async function mintSignin(env, u, token, wrap) {
   if (!SIGNIN_RE.test(String(token || ""))) return false;
   if (!u || !wrap || typeof wrap !== "object" || !wrap.salt || !wrap.iv || !wrap.ct) return false;
-  await env.STMT.put("ot:" + (await idOf(token)), JSON.stringify({ u, wrap, at: new Date().toISOString() }),
-    { expirationTtl: SIGNIN_TTL });
+  const key = "ot:" + (await idOf(token)), at = new Date().toISOString();
+  /* S9 9.4: its pointer first, so Sign out everywhere reaches a link not yet opened */
+  await pointAt(env, u, key, { how: "link", at }, SIGNIN_TTL);
+  await env.STMT.put(key, JSON.stringify({ u, wrap, at }), { expirationTtl: SIGNIN_TTL });
   return true;
 }
 
@@ -132,6 +134,7 @@ export async function burnSignin(env, token, nonce) {
   try {
     await env.STMT.put(r.key, JSON.stringify({ u: r.rec.u, wrap: r.rec.wrap, spent: new Date().toISOString(), nonce: mine }),
       { expirationTtl: RETRY_TTL });
+    await unpoint(env, r.rec.u, r.key);   /* S9 9.4: a spent link is no longer one to sign out */
   } catch (e) { /* it expires on its own; the open still stands */ }
   return r.rec;
 }
@@ -196,6 +199,8 @@ export async function mintHandover(env, u, token, wrap, admin) {
   const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await sealKey(secret), enc(JSON.stringify({ u, token, wrap })));
   const exp = new Date(Date.now() + HANDOVER_TTL * 1000).toISOString(), s = { iv: b64(iv), ct: b64(ct) };
   const mark = admin === true ? { admin: true } : {};
+  /* S9 9.4: its pointer, under the key's name with the code's beside it, so Sign out everywhere reaches it unopened */
+  await pointAt(env, u, byKey, { how: "code", at: new Date().toISOString(), pair: byCode }, HANDOVER_TTL);
   await env.STMT.put(byCode, JSON.stringify(Object.assign({ pair: byKey, exp, s }, mark)), { expirationTtl: HANDOVER_TTL });
   await env.STMT.put(byKey, JSON.stringify(Object.assign({ pair: byCode, exp, s }, mark)), { expirationTtl: HANDOVER_TTL });
   return { code, token, exp };
@@ -233,6 +238,8 @@ export async function burnHandover(env, b) {
   try {
     const body = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(rec.s.iv) },
       await sealKey(secret), unb64(rec.s.ct))));
-    return body && body.u && body.token && body.wrap ? Object.assign(body, { by: token ? "key" : "code" }) : null;
+    if (!(body && body.u && body.token && body.wrap)) return null;
+    try { await unpoint(env, body.u, token ? id : rec.pair); } catch (e) { /* the pointer lapses with it */ }
+    return Object.assign(body, { by: token ? "key" : "code" });
   } catch (e) { return null; }
 }
