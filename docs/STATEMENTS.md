@@ -326,6 +326,8 @@ signed in (or Salt Admin, for a customer at his counter) hands the sign-in acros
 - **Braked** per address (`hofail:<address>`, ten misses) and site-wide (`hofail`, a hundred), fifteen minutes each.
   A miss is any refusal; a success clears nothing. A flood shuts code sign-in for everyone for fifteen minutes and
   touches no other door. JSON only, as `/open`.
+- **Log out burns them**: `POST /logout` takes `handover`, the keys the page minted (ten at most), and deletes both
+  records of each unopened, so a key left on a handed-on phone's clipboard or address opens nothing (S3 fix).
 - **A code open is an open**: `seen:` says `code` or `key`, and its session leaves a pointer (`dev:`).
 - The same two limits as the link: a bearer credential inside its fifteen minutes, and one use best effort on KV.
 

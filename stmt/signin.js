@@ -176,6 +176,20 @@ export async function mintHandover(env, u, token, wrap, admin) {
   return { code, token, exp };
 }
 
+/** S3 FIX, 24 SEP 2026: LOG OUT BURNS WHAT THE PAGE MINTED, so a key left on the clipboard or in the address of a phone
+ *  handed on opens nothing. Burnt by the key alone, unopened: whoever holds it could spend it anyway. */
+export async function dropHandover(env, token) {
+  const secret = String(env.STMT_HANDOVER_KEY || "");
+  if (!secret || !SIGNIN_RE.test(String(token || ""))) return false;
+  const id = "ho:" + (await mac(secret, "key:" + token));
+  let rec = null;
+  try { rec = await env.STMT.get(id, "json"); } catch (e) { rec = null; }
+  if (!rec) return false;
+  await env.STMT.delete(id);
+  if (rec.pair) await env.STMT.delete(rec.pair);
+  return true;
+}
+
 /** Open by { token } or { code }: both records burnt, then { u, token, wrap, by }, or null for anything at all wrong.
  *  S3 FIX, 24 SEP 2026: A KEY A BROWSER TAB FOUND IN ITS ADDRESS ({ token, tab: true }) OPENS ONLY ONE HE MINTED, the QR
  *  at his counter, and anything else is refused unspent. Any customer can mint a key for their own account, and

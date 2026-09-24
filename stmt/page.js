@@ -957,7 +957,7 @@ const CLIENT_JS = `
   var keepCardEl=document.getElementById('keepCard'), keepSheetEl=document.getElementById('keepSheet'),
       keepScrim=document.getElementById('keepScrim'), keepCode=document.getElementById('keepCode'),
       keepCopy=document.getElementById('keepCopy'), keepMsg=document.getElementById('keepMsg');
-  var keepTok='', keepN=0;
+  var keepTok='', keepN=0, keepMinted=[];   /* S3 fix: every key this page minted, for Log out to burn */
   /* S3 3.12: WHERE THE BROWSER OFFERS AN INSTALL, ONE BUTTON TAKES IT (beforeinstallprompt; the app it installs
      shares this browser's storage, so it opens signed in). Where it does not, Samsung Internet's own steps are drawn,
      and a computer's Chrome or Edge is pointed at the install mark in its address bar; nothing says phone there. */
@@ -991,7 +991,7 @@ const CLIENT_JS = `
       if(n!==keepN||keepSheetEl.hidden) return;
       if(r.status===503){ ksay('Saving it as an app is not switched on yet. Ask us, and sign in inside the new app meanwhile.','bad'); return; }
       if(!r.body.ok||!r.body.code){ ksay(r.status===401?r.body.error:'The code could not be made just now. Close this and open it again.','bad'); return; }
-      keepTok=r.body.token||tok;
+      keepTok=r.body.token||tok; keepMinted=keepMinted.concat(keepTok).slice(-10);
       keepCode.value=String(r.body.code).toUpperCase().replace('-',' ');
       keepCopy.disabled=false; ksay('');
     }catch(e){ if(n===keepN) ksay('The code could not be made just now. Close this and open it again.','bad'); }
@@ -1154,6 +1154,8 @@ const CLIENT_JS = `
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
     closeKeep(); keepTok=''; if(keepCardEl) keepCardEl.hidden=true; if(codeBox) codeBox.hidden=true;
+    /* S3 fix: a key the Keep Sheet wrote into the address leaves it with the account */
+    try{ if(location.hash) history.replaceState(null,'',location.pathname); }catch(e){}
     var ask=document.getElementById('askRep'); if(ask&&!ask.hidden){ ask.hidden=true; document.getElementById('askNo').click(); }
     /* the owner goes back to his list, never to a password field he has no password for */
     if(OWNER){ roster.hidden=false; gate.hidden=true; if(whoacct) whoacct.textContent=''; }
@@ -1169,15 +1171,16 @@ const CLIENT_JS = `
   async function logOut(){
     /* S3 fix, 24 Sep 2026: an account open for a visit over one this phone keeps (Keep at the Replace question) signs
        out alone: the kept account stays remembered here and on the site, and so do its alerts on this phone */
-    var rec=remGet(), other=!!rec&&rec.u!==user, tok=!other&&rec?rec.t||null:null, s=session, ep=null;
+    var rec=remGet(), other=!!rec&&rec.u!==user, tok=!other&&rec?rec.t||null:null, s=session, ep=null, ho=keepMinted;
+    keepMinted=[];
     if(!other) remClear();
     lock();
     /* S1 1.42: this phone's alerts go too, here and on the site, and the site is told even when the session
        has lapsed, so the remembered wrap does not outlive the Log out */
     if(!OWNER){ try{ var sub=await phoneSub(); if(sub){ ep=sub.endpoint; if(!other) await sub.unsubscribe(); } }catch(e){} }
-    if(s||tok||ep){
+    if(s||tok||ep||ho.length){
       try{ await fetch('/logout', {method:'POST', headers:{'content-type':'application/json','X-Stmt-Session':s},
-        body:JSON.stringify({token:tok, endpoint:ep})}); }catch(e){ /* the page has forgotten it either way */ }
+        body:JSON.stringify({token:tok, endpoint:ep, handover:ho})}); }catch(e){ /* the page has forgotten it either way */ }
     }
   }
   /* this phone's push subscription, or null; asking never registers anything */

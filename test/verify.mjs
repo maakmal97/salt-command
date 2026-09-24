@@ -19689,6 +19689,72 @@ await (async () => {
       "the control: a remembered saved app opens its own account and never retries the key its start address kept: " + JSON.stringify(app.st.posts));
   } finally { app.W.close(); }
 })();
+section("S3 fix: Log out burns every hand-over the page minted and takes the key out of the address, so a phone handed on carries none");
+await (async () => {
+  /* S3-SEC-5 (24 Sep 2026). After Copy the code the key sat in the clipboard, the address and the tab for fifteen
+     minutes, and Log out ended neither, so the next person on a handed-on phone could open the previous customer's
+     account with it and keep it (v692: a phone handed on is a phone signed out). */
+  const WH = (await import("../stmt/worker.js")).default;
+  const SH = await import("../stmt/signin.js");
+  const CH = await import("../tools/stmt-crypto.mjs");
+  const kv = new KV(), env = { STMT: kv, STMT_HANDOVER_KEY: "h".repeat(40) };
+  const uH = "aaaa-hhhh", ckH = await CH.contentKey("9".repeat(64), uH);
+  await kv.put("u:" + uH, JSON.stringify({ u: uH, issued: "2026-09-01", issues: ["2026-09-01"], env: { iv: "x", ct: "y" } }));
+  const post = async (path, body, sess) => { const r = await WH.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, sess ? { "X-Stmt-Session": sess } : {}), body: JSON.stringify(body) }), env); return { status: r.status, j: await r.json() }; };
+  const hos = () => [...kv.m.keys()].filter((k) => k.startsWith("ho:")).length;
+  const k1 = SH.newSignin(), k2 = SH.newSignin(), other = SH.newSignin();
+  const m1 = await SH.mintHandover(env, uH, k1, await CH.wrapKey(k1, ckH));
+  await SH.mintHandover(env, uH, k2, await CH.wrapKey(k2, ckH));
+  await SH.mintHandover(env, uH, other, await CH.wrapKey(other, ckH));
+  ok(hos() === 6, "the fixture: three hand-overs, each filed twice");
+  const out = await post("/logout", { token: null, endpoint: null, handover: [k1, k2] });
+  ok(out.status === 200 && hos() === 2 && (await post("/handover/open", { token: k1 })).status === 401 && (await post("/handover/open", { code: m1.code })).status === 401,
+    "Log out naming the page's keys burns each by its key and by its code, even with the session gone: " + hos());
+  ok((await post("/handover/open", { token: other })).status === 200, "and a key it did not name still opens");
+
+  /* the page: Copy, then Log out */
+  const { landingPage: lpH } = await import("../stmt/page.js");
+  const { JSDOM: JDH } = await import("jsdom");
+  const passH = "2345-6789-abcd-efgh";
+  const envH = await CH.encryptWith(ckH, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] }));
+  const st = { minted: [], logout: null };
+  const dom = new JDH(lpH(uH, "nH", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      Object.defineProperty(win.navigator, "userAgent", { value: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1", configurable: true });
+      Object.defineProperty(win.navigator, "clipboard", { configurable: true, value: { writeText: () => Promise.resolve() } });
+      win.scrollTo = () => {};
+      win.fetch = async (p, init) => {
+        const body = init && init.body ? JSON.parse(init.body) : null;
+        const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CH.wrapKey(passH, ckH), env: envH, live: null, prices: null, session: "sessHa000000000000000000000000" });
+        if (p === "/handover") { st.minted.push(body.token); return ans(200, { ok: true, code: "h4tn-8xwc", token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() }); }
+        if (p === "/logout") { st.logout = body; return ans(200, { ok: true }); }
+        return ans(200, { ok: true, orders: [] });
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  try {
+    D.getElementById("rem").checked = false;
+    D.getElementById("pw").value = passH;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !D.getElementById("barw").hidden);
+    D.getElementById("keepGo").click();
+    await until(() => D.getElementById("keepCode").value);
+    D.getElementById("keepCopy").click();
+    D.getElementById("keepX").click();
+    D.getElementById("keepGo").click();
+    await until(() => st.minted.length === 2 && D.getElementById("keepCode").value);
+    ok(W.location.hash === "#" + st.minted[0], "the fixture: two keys minted, the first copied into the address");
+    D.getElementById("lock").click();
+    await until(() => st.logout);
+    ok(!!st.logout && JSON.stringify(st.logout.handover) === JSON.stringify(st.minted),
+      "Log out names every key this page minted, for the site to burn: " + JSON.stringify(st.logout && st.logout.handover && st.logout.handover.length));
+    ok(W.location.hash === "" && W.location.pathname === "/app", "and takes the key out of the address: " + W.location.href);
+  } finally { await new Promise((r) => setTimeout(r, 40)); W.close(); }
+})();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {
   /* S3, 24 SEP 2026. The door's one way in named its opener unseal, which stmt/owner.js already declared: spliced in

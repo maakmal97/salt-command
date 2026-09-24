@@ -43,7 +43,7 @@ import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, MAX_PER_ASSOC } from "./refs.js";
-import { SIGNIN_RE, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover } from "./signin.js";
+import { SIGNIN_RE, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover, dropHandover } from "./signin.js";
 import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
@@ -373,6 +373,8 @@ async function logOut(request, env, m, su) {
   const u = su || (rec && rec.u) || "";
   const ep = b && typeof b.endpoint === "string" && /^https:\/\//.test(b.endpoint) ? b.endpoint : null;
   if (u && ep) await env.STMT.delete("push:" + u + ":" + await endpointId(ep));
+  /* S3 fix: and the hand-overs this page minted, ten at most */
+  for (const k of (b && Array.isArray(b.handover) ? b.handover.slice(0, 10) : [])) await dropHandover(env, k);
   return json({ ok: true });
 }
 
