@@ -81,7 +81,7 @@ select.fld option{background:var(--salt-well);color:var(--salt-text)}
 /* v695: a product is a mark. Brass, hairline, and it sits on the baseline of whatever it is beside. */
 .psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}
 h3.pmark{margin:0 0 4px;line-height:1}
-/* on a brass button the mark takes the button's own ink: a brass cube on brass is no cube at all */
+/* on a button the mark takes the button's own ink, brass on the chosen one and muted on the rest */
 .seg button .psym{vertical-align:-0.28em;color:inherit}
 .pwith{display:inline-flex;align-items:center;gap:7px}
 /* read aloud, never drawn: the shape's word, so a mark in a sentence is not a hole */
@@ -146,8 +146,8 @@ h3.pmark{margin:0 0 4px;line-height:1}
      v690, on a strip whose whole purpose is to be tapped on a phone. His bar is 44px in BOTH
      dimensions, measured; swept across the class rather than fixed on the one new strip. */
   min-height:var(--salt-tap);display:inline-flex;align-items:center}
-.mos button.on{color:var(--salt-obsidian);background:var(--salt-brass);border-color:var(--salt-brass);
-  font-weight:700}
+/* 24 Sep 2026: the chosen pill is what this comment always said, brass on a brass hairline; it was filled */
+.mos button.on{color:var(--salt-brass);border-color:var(--salt-brass);font-weight:700}
 .mos button small{margin-left:6px;font-weight:400;letter-spacing:.02em;text-transform:uppercase}
 /* THE MONTH FILTER (v690): the same pill vocabulary as the issue strip, a step quieter, because it
    sits inside a statement rather than choosing between statements. The note under it says what the
@@ -175,7 +175,7 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .seg{display:flex;gap:8px;margin-top:6px}
 .seg button{flex:1;min-height:var(--salt-tap);font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
   color:var(--salt-text-muted);background:none;border:1px solid var(--salt-line);border-radius:var(--salt-radius-pill);cursor:pointer}
-.seg button.on{color:var(--salt-obsidian);background:var(--salt-brass);border-color:var(--salt-brass);font-weight:700}
+.seg button.on{color:var(--salt-brass);border-color:var(--salt-brass);font-weight:700}
 .pay{margin-top:12px;display:flex;flex-direction:column;gap:8px}
 .pay label{display:flex;gap:10px;align-items:center;min-height:var(--salt-tap);padding:0 6px;font-size:var(--salt-text-sm);cursor:pointer}
 .pay input[type=radio]{width:18px;height:18px;accent-color:var(--salt-brass)}

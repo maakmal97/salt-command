@@ -19706,6 +19706,46 @@ await (async () => {
   } finally { w.close(); }
 })();
 
+section("24 Sep 2026: a chosen pill on the Counter is a brass hairline, not a filled badge");
+await (async () => {
+  /* L50 of the Counter study: the month strip's own comment says "the chosen one is brass: no filled badge", and
+     decision 5 keeps the fill for the one button that books; the chosen month and the chosen mode were filled brass.
+     Read off the real strips a signed-in page draws. jsdom does not resolve var(), so the token names are compared. */
+  const { landingPage: lpQ } = await import("../stmt/page.js");
+  const CQ = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcQ } = await import("node:crypto");
+  const { JSDOM: JDQ } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-l50", ck = await CQ.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 120 }] }] };
+  const stmtBody = "<table><tbody><tr data-m=\"2026-09\"><td>a</td></tr><tr data-m=\"2026-08\"><td>b</td></tr></tbody></table>";
+  const body = { ok: true, wrap: await CQ.wrapKey(pass, ck), session: "",
+    env: await CQ.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: stmtBody }] })),
+    prices: await CQ.encryptWith(ck, JSON.stringify(prices)) };
+  const dom = new JDQ(lpQ(u, "nl50", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcQ, configurable: true }); } catch (e) { win.crypto = wcQ; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path) => { const j = String(path) === "/open" ? body : null; return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } }; };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 60 && !d.querySelector("#pOrder .seg button.on"); i++) await new Promise((r) => setTimeout(r, 50));
+    const chosen = [d.querySelector("#mfil button.on"), d.querySelector("#pOrder .seg button.on")];
+    const look = chosen.map((b) => { const c = b && w.getComputedStyle(b);
+      return c ? { fill: [c.background, c.backgroundColor, c.backgroundImage].join(" "), ink: c.color } : null; });
+    ok(chosen.every(Boolean) && chosen[0].textContent === "All" && chosen[1].textContent === "I will collect",
+      "the fixture draws a chosen month (All) and a chosen mode (I will collect) to measure");
+    ok(look.every((x) => x && !/brass/.test(x.fill)), "neither chosen pill is filled brass: " + JSON.stringify(look.map((x) => x && x.fill)));
+    /* the hairline itself is the rig's to see: jsdom reads a border drawn in a token as transparent */
+    ok(look.every((x) => x && /--salt-brass/.test(x.ink)),
+      "and each is still told apart, in brass ink: " + JSON.stringify(look.map((x) => x && x.ink)));
+  } finally { w.close(); }
+})();
+
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead
