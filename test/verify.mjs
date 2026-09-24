@@ -20036,6 +20036,23 @@ await (async () => {
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
+section("v820: the scope pill sits under the page heading and on its left edge, never into it");
+await (async () => {
+  /* HIS REPORT OF 24 SEP 2026: on Rules the EVERY BOOK pill rode 4px into the heading and 4px in from its edge. jsdom lays
+     nothing out, so the rule is read off the stylesheet the page actually carries, every .pscope and .pbadge block in it. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const css = [].map.call(w.document.querySelectorAll("style"), (s) => s.textContent).join("\n").replace(/\/\*[\s\S]*?\*\//g, "");
+  const blocks = (sel) => (css.match(new RegExp("(^|[}\\s,])" + sel.replace(".", "\\.") + "\\{[^}]*\\}", "g")) || []);
+  const scope = blocks(".pscope"), badge = blocks(".pbadge");
+  const tops = scope.map((b) => (b.match(/margin:\s*(-?\d+)px/) || [])[1]).filter((x) => x != null).map(Number);
+  ok(scope.length > 0 && tops.length > 0 && tops.every((t) => t > 0),
+    "every margin given to the scope row starts below the heading, none pulls it up into it: " + JSON.stringify(tops));
+  ok(badge.length > 0 && !badge.some((b) => /margin-left:\s*[1-9]/.test(b)),
+    "and the pill carries no left margin, so it starts on the heading's edge: " + JSON.stringify(badge.map((b) => b.slice(0, 90))));
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

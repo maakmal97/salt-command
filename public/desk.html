@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="4f21473d1c3e75ba";
+var SALT_BUILD_ID="0a55828fc7ed68e2";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -1087,12 +1087,14 @@ select[multiple],select[size]{background-image:none;padding-right:9px;}
    and lost its markup. A label that stops a figure being misread cannot be the thing that
    folds away. */
 .pscope{display:flex;align-items:center;flex-wrap:wrap;gap:7px;font-size:11px;color:var(--dim);
-  margin:-4px 0 10px;}
+  margin:8px 0 12px;}
+/* v820, HIS REPORT OF 24 SEP 2026: the row sat 4px INTO the heading above it (margin -4px) and the pill 4px in from
+   the heading's left edge. It now starts 8px under the heading and on its left edge, as the lead below it does. */
 .pscopen{color:var(--dim);}
 .pscopen::before{content:"\00b7";margin-right:6px;}
 .pbadge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;
   letter-spacing:.4px;text-transform:uppercase;color:var(--ink);
-  border:1px solid var(--line);border-radius:999px;padding:3px 10px;margin-left:4px;}
+  border:1px solid var(--line);border-radius:999px;padding:3px 10px;}
 .pbadgeo{font-size:11px;color:var(--dim);margin-left:8px;}
 /* the tap contract is width as well as height, and a short book name is not wide
    enough to reach it on its own: "Oil" measured 33px against 44. Scoped to the book switch,
@@ -7540,7 +7542,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v819","d":"24 Sep 2026","t":"EVERY PAGE SAYS WHAT IT IS FOR","n":["<b>RULES OPENED ON ANOTHER PAGE'S LEAD</b> (his report of 24 Sep 2026): \"one headline lifted from every other tab\", written for the digest it replaced. It now reads: every rule the desk trades by, what breaks one today, and where each book stands. Its digest named two pages by old names, Customers and Suppliers; they read Clients and Sourcing, and the digest's own line says page, not tab.","<b>EVERY PAGE WAS WALKED.</b> Next 30 days no longer opens on \"Not a forecast\" now that Stock carries one; On hand's lead names the restock card that leads it; Analysis opens on what it holds, not on a caveat. Pricing, Sourcing, Rules and the Whiteboard lost their history notes: the Register, round 5, v503, v504 and the product split at v228.","<b>THE SUITE HOLDS IT</b>: every page's heading is its rail name, every page but To do, Receivables and Financials has a lead, and no heading, lead or prose block names a tab, a version or a round."]}];
+const evolution=[{"v":"v820","d":"24 Sep 2026","t":"THE SCOPE PILL SITS UNDER THE HEADING","n":["<b>THE EVERY BOOK PILL RODE INTO THE HEADING</b> (his report of 24 Sep 2026, on Rules). Its row carried a margin of minus 4px, so it overlapped the heading's box by 4px, and the pill a left margin of 4px, so it started off the heading's edge. The row now starts 8px under the heading and on its left edge, as the lead does, on To do, Rules, Next 30 days and Coverage alike. The suite reads the stylesheet the page carries and refuses either again."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -7655,7 +7657,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='24 Sep 2026, 10:44 KL';
+const LAST_UPDATED='24 Sep 2026, 10:59 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
