@@ -20525,6 +20525,53 @@ await (async () => {
     "and a phone with no keys, whose banners all say the same, keeps the one topic: " + JSON.stringify([tA.bare, tB.bare]));
 })();
 
+section("S12 fix: the Notifications pane says what the phone will hear, the reply and the payment due at 10:00 and 18:00 included");
+await (async () => {
+  /* S12-C4, 24 Sep 2026: both states promised "acknowledged, ready, or completed", while the phone is also woken
+     for a reply, a payment received, a handover and, twice a day, a payment due. Read off the pane as it draws. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), un);
+  const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, live: null, prices: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 Sep 2026", body: "<p>Statement</p>" }] })) };
+  const drive = async (permission) => {
+    const reg = { pushManager: { subscribe: async () => ({ endpoint: "https://push.example/c4", toJSON: () => ({ endpoint: "https://push.example/c4" }) }) } };
+    const dom = new JSDOM(landingPage(un, "nN", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+        win.scrollTo = () => {};
+        win.PushManager = function () {};
+        win.Notification = { permission, requestPermission: async () => permission };
+        Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+          register: async () => reg, ready: Promise.resolve(reg), getRegistration: async () => undefined, addEventListener() {} } });
+        win.fetch = async (path) => {
+          const p = String(path);
+          if (p === "/open") return { ok: true, status: 200, json: async () => openB };
+          if (p === "/push/key") return { ok: true, status: 200, json: async () => ({ ok: true, key: "BA", configured: true }) };
+          if (p === "/push/subscribe") return { ok: true, status: 200, json: async () => ({ ok: true, id: "x", keys: false }) };
+          return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const pane = () => [...D.querySelectorAll("#pOrder .pane")].find((x) => /Notifications/.test(x.textContent));
+    try {
+      D.getElementById("pw").value = pass;
+      D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+      const want = permission === "granted" ? /Notifications\s*On\./ : /Notify me/;
+      for (let i = 0; i < 200 && !(pane() && want.test(pane().textContent)); i++) await new Promise((r) => setTimeout(r, 25));
+      return pane() ? pane().textContent : "";
+    } finally { try { W.close(); } catch (e) { /* best effort */ } }
+  };
+  const on = await drive("granted"), off = await drive("denied");
+  const says = (t) => /a reply/.test(t) && /at 10:00 and 18:00 when a payment is due/.test(t) && /your order changes/.test(t)
+    && !/acknowledged, ready/.test(t);
+  ok(/On\. You will be told/.test(on) && says(on), "switched on, it says what the phone will hear, the payment due and its two hours included: " + on);
+  ok(/Notify me on this phone/.test(off) && says(off) && /only what kind of news it is/.test(off),
+    "and the offer says the same before the tap, and that the banner names only the kind: " + off);
+})();
+
 section("v760: a customer paying or taking an order back wakes him, and the banner says which");
 await (async () => {
   /* MEASURED 21 SEP 2026: the site has written the moment of every change since v694, the desk asked

@@ -1418,9 +1418,9 @@ const CLIENT_JS = `
     if(!canPush){
       np.appendChild(el('p','sub2','This browser cannot receive notifications. On an iPhone, add this page to the Home Screen from the Share menu and open it from there; otherwise keep the page open and it checks every ten seconds.'));
     } else if(draft.pushed||Notification.permission==='granted'&&draft.pushDone){
-      np.appendChild(el('p','sub2','On. You will be told when your order is acknowledged, ready, or completed.'));
+      np.appendChild(el('p','sub2','On. You will be told when your order changes, when there is a reply, and at 10:00 and 18:00 when a payment is due.'));
     } else {
-      np.appendChild(el('p','sub2','Be told on this phone when your order is acknowledged, ready for collection or delivery, and completed. The banner says only what kind of news it is, never an amount or which order, and a tap opens the order.'));
+      np.appendChild(el('p','sub2','Be told on this phone when your order changes, when there is a reply, and at 10:00 and 18:00 when a payment is due. The banner says only what kind of news it is, never an amount or which order, and a tap opens the order.'));
       var nb=el('button','btn quiet salt-ghost','Notify me on this phone'); nb.type='button';
       nb.addEventListener('click', subscribePush); np.appendChild(nb);
       if(draft.pushNote) np.appendChild(el('p','msg',draft.pushNote));
