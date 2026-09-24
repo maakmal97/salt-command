@@ -45,13 +45,9 @@ export const POLL_MS = 10000;
 const PAGE_CSS = `
 /* hidden wins over every display rule below: the tab strip and the issue strip are flex */
 [hidden]{display:none!important}
-/* the bulletin, his notice board across the top (20 Sep 2026): a marquee when running, a line at a time when changing */
-.bull{max-width:620px;margin:12px auto 0;padding:9px 14px;border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);
-  background:var(--salt-well);font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text);overflow:hidden;white-space:nowrap}
-.bull[data-mode=run] .track{display:inline-block;padding-left:100%;animation:bullrun 24s linear infinite}
-@keyframes bullrun{to{transform:translateX(-100%)}}
-.bull[data-mode=change] .track{white-space:normal}
-@media (prefers-reduced-motion:reduce){.bull[data-mode=run] .track{animation:none;padding-left:0;white-space:normal}}
+/* S7 7.5 (his D14 of 24 Sep 2026): the notice is a still card on Home, the system's insight, a line a paragraph */
+.hnote p{margin:0}
+.hnote p+p{margin-top:6px}
 /* The gate, in the same material as the document behind it. One filled control, the
    brass-to-copper pill, because this is the one thing on the page that produces something;
    decision 5 of the identity. Everything else is a hairline or a word. */
@@ -171,10 +167,13 @@ h3.pmark{margin:0 0 4px;line-height:1}
    top:0 a saved iPhone app held Log out behind the clock, as the desk's bar was until v392 */
 #barw{position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
 .bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;
-  gap:12px;padding:0 16px;margin:0 auto 14px;max-width:620px;
-  background:var(--salt-veil);border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);
-  backdrop-filter:blur(10px);font-size:var(--salt-text-sm);color:var(--salt-text-muted);
+  gap:12px;margin:0 auto;max-width:620px;font-size:var(--salt-text-sm);color:var(--salt-text-muted);
   font-family:var(--salt-font-mono)}
+/* S7 7.1: the veil is drawn by what the bar holds, his view line or a lapse, so a customer's bar, whose Log out is This
+   device's now, takes no room until it has something to say */
+.vbar,.lapse{padding:0 16px;margin-bottom:14px;background:var(--salt-veil);border:1px solid var(--salt-line);
+  border-radius:var(--salt-radius-sm);backdrop-filter:blur(10px)}
+.vbar .lapse{padding:0;margin:0;background:none;border:0;backdrop-filter:none}
 .bar b{color:var(--salt-text);font-variant-numeric:tabular-nums}
 .lapse{flex-basis:100%;display:flex;justify-content:space-between;align-items:center;gap:12px}
 .lapse[hidden]{display:none}
@@ -183,13 +182,41 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .bar button{font:inherit;color:var(--salt-brass);background:none;border:0;cursor:pointer;
   padding:0;text-decoration:underline;min-height:var(--salt-tap);min-width:var(--salt-tap);
   display:inline-flex;align-items:center;justify-content:center;flex:none}
-/* THE THREE TABS: statements, prices, order. The same pill vocabulary as the issue strip, one
-   step larger because these are destinations rather than dates. The strip is the system's .salt-tabs
-   (24 Sep 2026), which wraps: an associate's four tabs need 363 to 387px and ran off a 360 screen. */
-.tabs{max-width:620px;margin:0 auto 18px}
-/* the tabs are the system's .salt-tabs__pill (22 Sep 2026): the open one is read off aria-selected and
-   set in glass with a hairline, not a filled badge, which decision 5 reserves for the one button */
-.tabs button{flex:1;min-height:var(--salt-tap)}
+/* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES, which were three tabs and a fourth. The system's App bar at the foot of a
+   phone and its rail from 1080px draw them, and the recipe decides which shows; this page keeps the bar's height clear
+   at the foot, names the place in the header and lays Home out. */
+.cshell{padding-bottom:calc(var(--salt-bar-h) + 24px + env(safe-area-inset-bottom))}
+.chead{max-width:620px;margin:0 auto 18px}
+.chead h1{margin:0;font-size:var(--salt-text-2xl);line-height:1.15}
+.cwho{margin:6px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+/* a username is a credential, so the rail's capitals never reach it */
+.cfoot .mono{text-transform:none;letter-spacing:.02em}
+.home{max-width:620px;margin:0 auto}
+.home .hcol>div{margin:0 0 24px}
+.home .hcol>:empty{display:none}
+.hfill{width:100%;margin-top:14px}
+.hlab{display:flex;justify-content:space-between;gap:12px;margin:0 0 10px}
+.home .salt-inbox-row{margin:0 0 8px}
+/* S7 7.4: Order again, the Option recipe's face a tile, two across */
+.hagain{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.htile{font:inherit;text-align:left;cursor:pointer}
+.htile:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
+.devslot{max-width:620px;margin:28px auto 0;padding-top:18px;border-top:1px solid var(--salt-line-faint)}
+.devslot .salt-ghost{width:100%;margin-top:12px}
+/* S7 7.2: FROM 1080PX THE BAR IS THE RAIL, beside the page (the recipe's own switch), and each place takes two columns:
+   Home its money and what needs them beside what is coming, Account the statement beside This device, Prices a book a
+   column; Orders keeps stage 5's list beside the open order. A sheet is the recipe's drawer on the right. */
+@media (min-width:1080px){
+  .cshell{display:flex;gap:28px;align-items:flex-start;max-width:1240px;margin:0 auto;padding-bottom:48px}
+  .cmain{flex:1 1 auto;min-width:0}
+  .cmain .bar,.chead,.home,.cmain .panel{max-width:none}
+  .home{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+  .acols{display:grid;grid-template-columns:minmax(0,620px) minmax(0,1fr);gap:28px;align-items:start}
+  .acols .devslot{margin:0;padding-top:0;border-top:0}
+  .pgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 20px;align-items:start}
+  /* what stands above the orders (New order, the limit, Notifications) keeps to the list's column */
+  #pOrder>:not(.oplace){max-width:calc((100% - 28px)*5/11)}
+}
 .panel{max-width:620px;margin:0 auto}
 .panel h2{font-size:var(--salt-text-lg);margin:0 0 4px}
 .panel p.lead{color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.7;margin:0 0 18px}
@@ -259,14 +286,13 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .ofoot .salt-ghost{width:100%}
 @media (max-width:1079px){#pOrder.o-open>:not(.oplace){display:none}.oplace.o-open>.olistcol{display:none}.oplace.o-open{margin-top:0}}
 @media (min-width:1080px){
-  .oplace{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px;align-items:start;
-    width:min(1120px,100vw - 64px);margin-left:calc((100% - min(1120px,100vw - 64px))/2)}
+  .oplace{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px;align-items:start}
   .oback{display:none}
-  /* the open order stands under the bar while the list scrolls beside it, its thread in reach inside it */
-  .oscreen{position:sticky;top:84px;max-height:calc(100vh - 100px);overflow-y:auto}
+  /* the open order stands still while the list scrolls beside it, its thread in reach inside it */
+  .oscreen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
 }
 
-@media print{.bar,.mos,.tabs{display:none}}
+@media print{.bar,.mos,.salt-appbar,.salt-rail{display:none}}
 /* THE OWNER'S ROSTER, in the gate's own geometry so the door looks like the door. One row per
    account: the code leads because that is what he knows an account by, and the username follows
    in mist because that is what is printed on the paper. A row is a tap target at the full 44px. */
@@ -642,15 +668,12 @@ function guestPage(inner, nonce, title) {
     statement, the prices, the lock -- is then the customer's own code, opened the customer's own
     way. Only the door changes. The route that serves this is behind Cloudflare Access and verifies
     the token itself; see stmt/access.js. */
-/* the bulletin band (20 Sep 2026): the first thing in the body, above the door and the bar alike, and
-   hidden until there is a line to show; running joins the lines as one track, changing starts on the first */
-function bulletinBand(b) {
+/* THE NOTICE (20 Sep 2026; S7 7.5, his D14 of 24 Sep 2026): a still card at the head of Home, every line standing, drawn at
+   first paint and hidden until there is a line to show. It was a band across the top of every page, running as one
+   track or changing a line every four seconds; the mode it was set in is no longer read. */
+function noticeCard(b) {
   const lines = (b && Array.isArray(b.lines)) ? b.lines : [];
-  const mode = (b && b.mode === "change") ? "change" : "run";
-  return '<div id="bull" class="bull" data-mode="' + mode + '"' + (lines.length ? "" : " hidden") + ' role="status" aria-live="polite">'
-    + '<div class="track" id="bullTrack">' + esc(mode === "run" ? lines.join("  ·  ") : (lines[0] || "")) + "</div>"
-    /* 24 Sep 2026: what a screen reader is told while the lines change, once, instead of a new line every four seconds */
-    + '<span class="sr" id="bullSr"></span></div>';
+  return '<div id="bull" class="salt-insight hnote"' + (lines.length ? "" : " hidden") + ">" + lines.map((l) => "<p>" + esc(l) + "</p>").join("") + "</div>";
 }
 /* S9 9.2: SALT ADMIN'S PLACES AND ITS FILTERS. The icons are drawn here, stroked like the product marks,
    and loaded from nowhere; the key is the ring with a keyhole its home-screen icon carries (9.7). */
@@ -665,7 +688,41 @@ const ADMIN_ICONS = {
   key: '<circle cx="12" cy="12" r="7.4"/><circle cx="12" cy="10.6" r="1.7"/><path d="M11.3 12.1 L10.8 15.2 H13.2 L12.7 12.1"/>'
 };
 const aico = (n) => '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" '
-  + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + ADMIN_ICONS[n] + "</svg>";
+  + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + (ADMIN_ICONS[n] || PLACE_ICONS[n]) + "</svg>";
+/* S7 7.1 (his D11 of 24 Sep 2026): THE CUSTOMER'S PLACES, in the order the bar draws them. Each is [the id its panel and
+   its buttons carry, its word, its address]: Home opens first, and Rewards is an associate's alone. The ids are the
+   tabs' own (stmt, order, card), so every road that named a tab still names its place. */
+export const PLACES = [["home", "Home", "home"], ["prices", "Prices", "prices"], ["order", "Orders", "orders"],
+  ["stmt", "Account", "account"], ["card", "Rewards", "rewards"]];
+const PLACE_ICONS = {
+  home: '<path d="M4 11.2 L12 4.6 L20 11.2 M6.2 9.4 V19.4 H10 V14.4 H14 V19.4 H17.8 V9.4"/>',
+  prices: '<path d="M12.6 3.8 H19.4 A0.8 0.8 0 0 1 20.2 4.6 V11.4 L11.4 20.2 L3.8 12.6 Z"/><circle cx="16.2" cy="7.8" r="1.4"/>',
+  order: '<path d="M6 3.8 H18 V20.2 L15.6 18.8 L13.2 20.2 L10.8 18.8 L8.4 20.2 L6 18.8 Z M9 8.4 H15 M9 11.8 H15 M9 15.2 H12.6"/>',
+  stmt: '<circle cx="12" cy="8.4" r="3.6"/><path d="M4.8 20 C5.6 16.2 8.4 14.2 12 14.2 C15.6 14.2 18.4 16.2 19.2 20"/>',
+  card: '<circle cx="12" cy="9.2" r="5.2"/><path d="M9 13.6 L7.6 20.2 L12 18 L16.4 20.2 L15 13.6"/>'
+};
+/* a place as a button, on the rail or on the bar; both carry data-t, and Rewards starts hidden. The rail's keeps the tab's
+   old id (tPrices, tOrder, tCard), so what found a tab by its id finds its place */
+const placeAttrs = (t, id) => (id ? ' id="t' + t.charAt(0).toUpperCase() + t.slice(1) + '"' : "") + ' data-t="' + t + '"' + (t === "home" ? ' aria-current="page"' : "") + (t === "card" ? " hidden" : "");
+function placesRail() {
+  return '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Counter">'
+    + '<div class="salt-rail__brand"><span class="aring">' + glyphSvg("ring", 22) + '</span><b class="salt-title">Salt Counter</b></div>'
+    + '<div class="salt-rail__group">' + PLACES.map(([t, w]) => '<button type="button" class="salt-rail__tab salt-rail__tab--solo"' + placeAttrs(t, true) + ">"
+      + '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico(t) + "</span><span>" + w + "</span></span>"
+      + '<span class="salt-rail__count" data-n="' + t + '"></span></button>').join("") + "</div>"
+    + '<p class="salt-rail__foot cfoot" data-wholine>Signed in as <span class="mono" data-who></span></p></nav>';
+}
+function placesBar() {
+  return '<nav class="salt-appbar" aria-label="Salt Counter">' + PLACES.map(([t, w]) => '<button type="button" class="salt-appbar__item"' + placeAttrs(t) + ">"
+    + '<span class="salt-appbar__icon">' + aico(t) + '</span><span class="salt-appbar__label">' + w + "</span>"
+    + '<span class="salt-appbar__count" data-n="' + t + '"></span></button>').join("") + "</nav>";
+}
+/* S7 7.1: THIS DEVICE, Account's slot for what belongs to the phone in the hand rather than the account: Log out today;
+   notifications, saving it as an app and the other devices draw into it as their folds land */
+function devSlot() {
+  return '<section class="devslot" id="devSlot" aria-labelledby="devT"><h2 class="salt-eyebrow salt-eyebrow--copper" id="devT">This device</h2>'
+    + '<button type="button" class="salt-ghost" id="lock">Log out</button></section>';
+}
 export function landingPage(user, nonce, owner, bulletin) {
   const u = esc(user || "");
   return DOC_OPEN
@@ -693,7 +750,6 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<meta name="apple-mobile-web-app-title" content="' + (owner ? "Salt Admin" : "Salt Counter") + '">'
     + "<title>" + (owner ? "Salt Admin" : "Salt Counter") + "</title>"
     + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
-    + bulletinBand(bulletin)
     + (owner
       ? '<div id="roster" class="gate adm">'
         /* S9 9.2: HIS PLACES, the phone's App bar and, from 1080px, the Desk rail the bar gives way to (the
@@ -803,39 +859,48 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<p class="salt-insight">Lost your password or your link? Ask us for a <b>new sign-in link</b>. It works straight away.</p>'
     + "</div></div>"
     + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + keepSheet())
-    + '<div id="barw" hidden><div class="bar">'
+    /* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES. Home opens first, and the places sit on the system's App bar under
+       the thumb on a phone and on its rail beside the page from 1080px, the recipe's own switch. The bar of lines
+       and the header live inside the shell, so what is hidden while signed out is hidden in one place. */
+    + '<div id="tabs" class="cshell" hidden>' + placesRail() + '<div class="cmain">'
+    + '<div id="barw" hidden><div class="bar' + (owner ? " vbar" : "") + '">'
     /* S9 9.5: on his page an account is viewed, never signed into, so the bar says whose it is and that it is
-       read only, and its one control takes him back to that account on Accounts */
-    + '<span><b id="whoacct"></b><span id="cd"></span>' + (owner ? '<span id="vas">Viewing as <b id="vasU"></b>, read only</span>' : "") + "</span>"
-    + '<button type="button" id="lock">' + (owner ? "Back to accounts" : "Log out") + "</button>"
+       read only, and its one control takes him back to that account on Accounts. A customer's Log out is This
+       device's, on Account (S7 7.1), so their bar holds nothing until it has a lapse to say */
+    + (owner ? '<span><b id="whoacct"></b><span id="cd"></span><span id="vas">Viewing as <b id="vasU"></b>, read only</span></span>'
+      + '<button type="button" id="lock">Back to accounts</button>' : "")
     /* S1 1.5: a lapsed session says so where the reader is, with the one way back: a second row of the bar */
     + '<div id="lapse" class="lapse" role="alert" hidden><span id="lapseT"></span><button type="button" id="lapseGo">Continue</button></div>'
     + "</div></div>"
-    + '<div id="tabs" class="tabs salt-tabs" role="tablist" hidden>'
-    + '<button type="button" class="salt-tabs__pill on" role="tab" aria-selected="true" data-t="stmt">Statements</button>'
-    + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="prices" id="tPrices">Prices</button>'
-    + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="order" id="tOrder">Order</button>'
-    /* v706: the associate's own card. Hidden for everybody else, and shown only once the record
-       that opened actually carries one, so the tab can never lead to an empty panel. */
-    + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="card" id="tCard" hidden>Card</button>'
-    + "</div>"
-    + '<div id="pStmt">' + (owner ? "" : keepCard())
+    /* the header names the place and whose account it is, so every customer knows their username */
+    + '<header class="chead"><h1 id="placeT">Home</h1>'
+    + '<p class="cwho" data-wholine>Signed in as <span class="mono" data-who></span><span id="cstay"></span></p></header>'
+    /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5), then the keep card,
+       which stage 3 put first on the page. Two columns from 1080px (S7 7.2) */
+    + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin) + (owner ? "" : keepCard()) + '<div id="hPay"></div><div id="hNeeds"></div></div>'
+    + '<div class="hcol"><div id="hComing"></div><div id="hAgain"></div></div></div>'
+    /* ACCOUNT: the statement, and This device beside it */
+    + '<div id="pStmt" hidden><div class="acols"><div class="acol">'
     + '<div id="mos" class="mos" hidden></div>'
     + '<div id="mfil" class="mos mfil" hidden></div><p class="mfnote" id="mfnote"></p>'
-    + '<div id="out"></div></div>'
+    + '<div id="out"></div></div>' + (owner ? "" : devSlot()) + "</div></div>"
     + '<div id="pPrices" class="panel" hidden></div>'
     + '<div id="pOrder" class="panel" hidden></div>'
+    /* v706: the associate's own card, Rewards since S7 7.1. Its place is hidden for everybody else */
     + '<div id="pCard" class="panel" hidden></div>'
+    + "</div>" + placesBar() + "</div>"
     + '<script nonce="' + nonce + '">'
     + CLIENT_JS.replace(/__POLL__/g, String(POLL_MS))
-      /* the bulletin as the page was served, so the band is drawn with no request; the poll reads it again */
-      .replace("__BULL__", JSON.stringify(bulletin || { lines: [], mode: "run" }).replace(/</g, "\\u003c"))
+      /* the notice as the page was served, so the card is drawn with no request; the poll reads it again */
+      .replace("__BULL__", JSON.stringify({ lines: (bulletin && bulletin.lines) || [] }).replace(/</g, "\\u003c"))
       .replace("__PAY_SITE__", JSON.stringify(PAY_SITE)).replace("__PAY_ACCOUNTS__", JSON.stringify(PAY_ACCOUNTS))
       /* v695: the product marks, so the page can draw one wherever it would have written a name */
       .replace("__PSYM__", JSON.stringify(Object.assign({ _: RING }, PSYM)))
       .replace("__PSHAPE__", JSON.stringify(PSHAPE)).replace("__MON3__", JSON.stringify(MON3))
       /* S4 4.6: the open-order limit the Worker refuses at, so the page can say it before the form */
       .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES))
+      /* S7 7.1: the places, so the script names them as the markup does */
+      .replace("__PLACES__", JSON.stringify(PLACES))
       .replace("__DELIVERY__", () => JSON.stringify(DELIVERY))
       /* S4: the size in words, the same function a guest's board calls */
       .replace("/*__UNITS_OF__*/", () => String(unitsOf))
@@ -862,43 +927,26 @@ const CLIENT_JS = `
      happened through the natural three-minute expiry. Every await below is followed by a ticket
      check, and lock() bumps the ticket, so anything still in flight lands on nothing. */
   var POLL_MS=__POLL__, bundle=null, at=0, ticket=0, busy=false;
-  /* the bulletin (20 Sep 2026): drawn from what the page was served with, read again every sixth poll */
-  var BULL=__BULL__, bullI=0, bullTimer=null, bullN=0;
+  /* THE NOTICE (20 Sep 2026): drawn from what the page was served with, read again every sixth poll. S7 7.5, his D14:
+     a still card on Home, every line standing, so nothing runs, changes or is told again to a screen reader */
+  var BULL=__BULL__, bullN=0;
   function bullDraw(b){
-    BULL=b||{lines:[],mode:'run'};
-    var box=document.getElementById('bull'), tr=document.getElementById('bullTrack'), sr=document.getElementById('bullSr'); if(!box||!tr||!sr) return;
-    var lines=BULL.lines||[]; box.hidden=!lines.length; box.setAttribute('data-mode',BULL.mode==='change'?'change':'run');
-    if(bullTimer){ clearInterval(bullTimer); bullTimer=null; }
-    tr.removeAttribute('aria-hidden'); sr.textContent='';
-    if(!lines.length){ tr.textContent=''; return; }
-    if(BULL.mode==='change'){
-      /* 24 Sep 2026: UNDER REDUCED MOTION THE LINES STAND STILL, all of them at once, as running does. And while they
-         change, the changing line is hidden from the live region and every line is told to it once, so a screen
-         reader is not read a new line every four seconds. */
-      var still=lines.length<2||stillMotion();
-      bullI=0; tr.textContent=still?lines.join('  ·  '):lines[0];
-      if(!still){
-        tr.setAttribute('aria-hidden','true'); sr.textContent=lines.join('  ·  ');
-        bullTimer=setInterval(function(){ bullI=(bullI+1)%lines.length; tr.textContent=lines[bullI]; }, 4000);
-      }
-    } else {
-      var t=lines.join('  ·  '); tr.textContent=t;
-      tr.style.animationDuration=Math.max(12, Math.round(t.length/6))+'s';
-    }
+    BULL=b||{lines:[]};
+    var box=document.getElementById('bull'); if(!box) return;
+    var lines=BULL.lines||[]; box.hidden=!lines.length; box.textContent='';
+    lines.forEach(function(l){ var p=document.createElement('p'); p.textContent=l; box.appendChild(p); });
   }
-  function stillMotion(){ try{ return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return false; } }
   async function bullRead(){
     try{
       var r=await fetch('/bulletin',{cache:'no-store'}); var j=await r.json();
       if(!j||!j.ok) return;
-      var same=JSON.stringify(j.lines||[])===JSON.stringify(BULL.lines||[]) && (j.mode||'run')===(BULL.mode||'run');
-      if(!same) bullDraw({lines:j.lines||[], mode:j.mode||'run'});
+      if(JSON.stringify(j.lines||[])!==JSON.stringify(BULL.lines||[])) bullDraw({lines:j.lines||[]});
     }catch(e){}
   }
   window.bullDraw=bullDraw; window.bullRead=bullRead;   /* reachable from outside the closure, which is how the suite drives them */
   bullDraw(BULL);
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
-  var session='', user='', prices=null, orders=[], poll=null, tab='stmt', draft={}, pick={};
+  var session='', user='', prices=null, orders=[], poll=null, tab='home', draft={}, pick={};
   /* S3 3.5: the content key the account was opened with, so a return re-reads it without asking for anything */
   var curCk=null;
   /* v706: the associate's own card, opened from their record like the price list */
@@ -934,8 +982,13 @@ const CLIENT_JS = `
       tabs=document.getElementById('tabs'),
       pStmt=document.getElementById('pStmt'), pPrices=document.getElementById('pPrices'),
       pOrder=document.getElementById('pOrder'), pCard=document.getElementById('pCard'),
-      tCard=document.getElementById('tCard'),
-      tPrices=document.getElementById('tPrices'), tOrder=document.getElementById('tOrder');
+      pHome=document.getElementById('pHome');
+  /* S7 7.1: THE PLACES. Each is a button on the rail and one on the App bar, both carrying data-t; tCard is the rail's
+     Rewards, whose hidden says whether this account has the place (stmt/owner.js reads it) */
+  var PLACES=__PLACES__, PANEL={home:pHome, prices:pPrices, order:pOrder, stmt:pStmt, card:pCard};
+  function placeBtns(t){ return document.querySelectorAll('button[data-t="'+t+'"]'); }
+  function placeHide(t,on){ [].forEach.call(placeBtns(t),function(b){ b.hidden=on; }); }
+  var tCard=placeBtns('card')[0];
   /* ---- OVER THE LINE, THE ACCOUNT IS A PAYMENT PAGE (his instruction of 23 Sep 2026) ------------
      "If someone owes more than RM100, their account will only lead them to a payment page, which
      states: please pay the overdue amount before making another order." What they owe is sealed
@@ -945,6 +998,9 @@ const CLIENT_JS = `
      stays one tap away, because a figure to pay is only fair beside the orders it is made of. It
      lifts on its own: the next publish after the payment is recorded writes a smaller figure. */
   var HOLD_RM=100, owedNow=0, hold=false;
+  /* S6: what the live statement seals beside owed (tools/make_statements.mjs payDue): to pay now, overdue and
+     coming up, each part with its dates. Read, never priced here. */
+  var payDue=null, liveAt='';
   /* THE MESSAGE GOES WHERE THE READER IS LOOKING. #msg lives inside the gate, so on the owner's
      route, where the gate is hidden behind the roster, every "Checking..." and every refusal was
      written into a hidden element. Both are written; only one is on screen. */
@@ -1326,11 +1382,11 @@ const CLIENT_JS = `
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
     bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
-    owedNow=0; hold=false; tPrices.hidden=false; tOrder.textContent='Order';
+    owedNow=0; hold=false; placeHide('prices',false); payDue=null; liveAt='';
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
     var mfn=document.getElementById('mfnote'); if(mfn) mfn.textContent='';
-    pPrices.textContent=''; pOrder.textContent='';
+    pPrices.textContent=''; pOrder.textContent=''; drawHome();
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
     closeKeep(); keepTok=''; if(keepCardEl) keepCardEl.hidden=true; if(codeBox) codeBox.hidden=true;
@@ -1340,7 +1396,7 @@ const CLIENT_JS = `
     /* the owner goes back to his list, never to a password field he has no password for */
     if(OWNER){ roster.hidden=false; gate.hidden=true; if(whoacct) whoacct.textContent=''; }
     else gate.hidden=false;
-    showTab('stmt');
+    placeShow('home');
     pw.value=''; showPw(false);
     if(cd) cd.textContent='';
     say(OWNER?'Signed out. Tap an account to open it again.':'Signed out. Sign in again when you want it.');
@@ -1436,19 +1492,40 @@ const CLIENT_JS = `
     await oReread();
   });
 
-  /* ---- the tabs: three for everyone, a fourth for an associate ---- */
-  function showTab(t){
+  /* ---- S7 7.1 (his D11 of 24 Sep 2026): THE PLACES. Home, Prices, Orders, Account, and Rewards for an associate.
+     One is shown at a time, and its buttons on the bar and the rail carry aria-current, which the recipes draw. A
+     place this account does not have (Rewards for a customer, Prices over the line) is Home. Each has an address, so
+     a place a reader was in is where the page opens again; only a tap writes it, and only over an address that is
+     empty or a place's, never over a key the Keep Sheet wrote there (S3 3.10). ---- */
+  function placeOf(h){ var m=/^#([a-z]+)$/.exec(h||''), p=m&&PLACES.filter(function(x){ return x[2]===m[1]; })[0]; return p?p[0]:''; }
+  var wantPlace=placeOf(location.hash);
+  function placeShow(t,tapped){
+    if(!PANEL[t]||placeBtns(t)[0].hidden) t='home';
     sheetClose();
     tab=t;
-    var bs=tabs.querySelectorAll('button');
-    for(var i=0;i<bs.length;i++){ var on=bs[i].getAttribute('data-t')===t; bs[i].className='salt-tabs__pill'+(on?' on':''); bs[i].setAttribute('aria-selected',on?'true':'false'); }
-    pStmt.hidden=(t!=='stmt'); pPrices.hidden=(t!=='prices'); pOrder.hidden=(t!=='order');
-    pCard.hidden=(t!=='card');
+    [].forEach.call(tabs.querySelectorAll('button[data-t]'),function(b){ if(b.getAttribute('data-t')===t) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
+    Object.keys(PANEL).forEach(function(k){ PANEL[k].hidden=k!==t; });
+    placeTitle();
+    if(tapped&&(!location.hash||placeOf(location.hash))){
+      var p=PLACES.filter(function(x){ return x[0]===t; })[0];
+      try{ history.replaceState(null,'',location.pathname+location.search+'#'+p[2]); }catch(e){}
+    }
     window.scrollTo(0,0);
+    /* S5: an order drawn open while the place was elsewhere is seen when the place is turned to */
+    if(t==='order'){ var o=oFind(draft.oShown||''); if(o){ seeIt(o); oSync([o.id]); } }
   }
   tabs.addEventListener('click', function(ev){
-    var b=ev.target.closest('button[data-t]'); if(b) showTab(b.getAttribute('data-t'));
+    var b=ev.target.closest('button[data-t]'); if(b) placeShow(b.getAttribute('data-t'),true);
   });
+  /* the header names the place; Home greets them for the hour off their own device, or welcomes a new account, and says
+     when this phone keeps them signed in */
+  function placeTitle(){
+    var T=document.getElementById('placeT'), p=PLACES.filter(function(x){ return x[0]===tab; })[0];
+    T.textContent=tab==='home'?(fresh()?'Welcome':hail()):p[1];
+    document.getElementById('cstay').textContent=tab==='home'&&keptMine()?'. This '+DEV+' stays signed in.':'';
+  }
+  /* an account with nothing on it yet: no statement, and no order */
+  function fresh(){ return !!bundle&&!bundle.statements.length&&!orders.length; }
 
   function pickStmt(i){
     if(!bundle) return;
@@ -1541,18 +1618,22 @@ const CLIENT_JS = `
     }
     gate.hidden=true; if(roster) roster.hidden=true;
     barw.hidden=false; tabs.hidden=false;
-    /* v706: the fourth tab is an associate's alone, and nobody else is shown one at all. It waited on
+    /* S7 7.1: whose account this is, in the header and at the foot of the rail; on his read-only view the bar says it */
+    [].forEach.call(tabs.querySelectorAll('[data-who]'),function(x){ x.textContent=user; });
+    [].forEach.call(tabs.querySelectorAll('[data-wholine]'),function(x){ x.hidden=view; });
+    /* v706: Rewards (the card, until S7) is an associate's alone, and nobody else is shown the place at all. It waited on
        a sealed card as well, so an associate the publish had not yet written one for had no way to
        their links (v709 gates those on the mark, not the card); since 24 Sep 2026 the mark alone opens
        it, and a panel with no card says when it comes and still carries the links. */
-    tCard.hidden=!assoc;
-    if(!tCard.hidden) drawCard();
+    placeHide('card',!assoc);
+    if(assoc) drawRewards(pCard);
     var lv=b.statements.filter(function(s){ return s.live; })[0];
     owedNow=lv&&isFinite(+lv.owed)?+lv.owed:0;
+    payDue=lv&&lv.pay&&lv.pay.now?lv.pay:null; liveAt=lv&&lv.at||'';
     hold=owedNow>HOLD_RM+0.004;
-    tPrices.hidden=hold; tOrder.textContent=hold?'Pay':'Order';
-    pickStmt(0);
-    if(hold) showTab('order');
+    placeHide('prices',hold);
+    drawAccount(pStmt);
+    drawHome();
   }
 
   /* ---- THEIR OWN CARD (v706, his instruction of 18 Sep 2026) ----------------------------------
@@ -1720,10 +1801,11 @@ const CLIENT_JS = `
   /* HIS INSTRUCTION, 16 SEP 2026: GREETED AS PERSONALLY AS POSSIBLE. As personally as this site can,
      which is the honest limit: no name of any customer exists anywhere it can reach, by the rule that
      keeps plaintext names off the cloud, so the greeting is built from what their own sealed record
-     holds. The hour is theirs, off their own device; the month is the one their first order falls in. */
+     holds. The hour is theirs, off their own device; the month is the one their first order falls in.
+     S7 7.1: the greeting is Home's heading now, and the month stays on Prices. */
   function hail(){
     var h=new Date().getHours();
-    return h<12?'Good morning.':(h<18?'Good afternoon.':'Good evening.');
+    return h<12?'Good morning':(h<18?'Good afternoon':'Good evening');
   }
   var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
   /* S4 4.8: a moment as the Prices stamp says it, "Thu 24 Sep, 11:59", in Kuala Lumpur; the weekday from the date's own parts */
@@ -1738,8 +1820,6 @@ const CLIENT_JS = `
   }
   function drawPrices(){
     pPrices.textContent='';
-    var h=el('h2',null,'Your prices'); pPrices.appendChild(h);
-    var g=el('p','lead',hail()); g.style.marginTop='0'; pPrices.appendChild(g);
     var soon=((prices&&prices.soon)||[]).concat(((prices&&prices.products)||[]).filter(function(x){ return !(x.sizes&&x.sizes.length); }));
     if(!prices||((!prices.products||!prices.products.length)&&!soon.length)){
       pPrices.appendChild(el('p','lead','No price list has been written for your account yet. It is written with the next update and changes weekly.'));
@@ -1752,6 +1832,8 @@ const CLIENT_JS = `
       +(tapTo?' Tap a size to order it.':'')));
     pPrices.appendChild(el('p','lead','The price is for the goods. '+DELIVERY+' The list is written from your own history and changes weekly.'));
     if(prices.since) pPrices.appendChild(el('p','sub2','Buying with us since '+monthOf(prices.since)+'.'));
+    /* S7 7.2: the books stand in a grid, two across from 1080px */
+    var grid=el('div','pgrid'); pPrices.appendChild(grid);
     sold().forEach(function(p){
       var pane=el('div','pane');
       var h3=el('h3','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
@@ -1773,14 +1855,14 @@ const CLIENT_JS = `
           row.addEventListener('click',function(){ sheetOpen(p.product,r.q,row); }); }
         L.appendChild(row);
       });
-      pane.appendChild(L); pPrices.appendChild(pane);
+      pane.appendChild(L); grid.appendChild(pane);
     });
     /* his instruction of 15 Sep 2026: a product with no tier set is not priced, and says so */
     soon.forEach(function(p){
       var pane=el('div','pane');
       var sh=el('h3','pmark'); sh.setAttribute('aria-label',pshape(p.product)); sh.appendChild(psym(p.product,28)); pane.appendChild(sh);
       pane.appendChild(el('p','sub2','Price coming soon.'));
-      pPrices.appendChild(pane);
+      grid.appendChild(pane);
     });
   }
 
@@ -2155,7 +2237,7 @@ const CLIENT_JS = `
     B.appendChild(top);
     var can=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
     var on=!!draft.pushed||(can&&Notification.permission==='granted'&&!!draft.pushDone);
-    if(on){ if(draft.buzzAsked) B.appendChild(statusLine('On. This phone is told when it is confirmed.')); }
+    if(on){ if(draft.buzzAsked) B.appendChild(statusLine('On. This '+DEV+' is told when it is confirmed.')); }
     else if(!draft.buzzNo&&!(can&&Notification.permission==='denied')){
       var bx=el('div','salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm obuzz');
       bx.appendChild(el('p','salt-eyebrow salt-eyebrow--brass','A buzz when it is confirmed?'));
@@ -2178,7 +2260,7 @@ const CLIENT_JS = `
     }
     var see=el('button','salt-ghost ofull','See the order'); see.type='button'; see.id='oSee'; see.setAttribute('data-k','see');
     /* stage 5's own screen for it; an order the list has not brought back yet opens on the next draw that has it */
-    see.addEventListener('click',function(){ var id=draft.sent; sheetClose(); showTab('order');
+    see.addEventListener('click',function(){ var id=draft.sent; sheetClose(); placeShow('order');
       if(id&&oFind(id)) oOpen(id); else { wantOrder=id||''; drawOrder(); } });
     B.appendChild(see);
   }
@@ -2196,7 +2278,8 @@ const CLIENT_JS = `
     var fo=document.activeElement, keep=fo&&fo.getAttribute&&pOrder.contains(fo)?fo.getAttribute('data-say'):null,
         sel=keep?[fo.selectionStart,fo.selectionEnd]:null;
     pOrder.textContent='';
-    pOrder.appendChild(el('h2',null,hold?'Payment due':'Order'));
+    /* S7 7.1: the header names the place, Orders; over the line the page below it still says what it is */
+    if(hold) pOrder.appendChild(el('h2',null,'Payment due'));
     if(view) pOrder.appendChild(el('p','lead','Read only: their orders as their own page shows them. Nothing here is placed, paid or sent.'));
     if(hold){
       var dueBox=el('div','pane');
@@ -2214,7 +2297,7 @@ const CLIENT_JS = `
       }
       dueBox.appendChild(el('p','sub2','Once it has left your side, say so on any of your orders below, or tell us directly, so it can be recorded.'));
       var sv=el('button','btn quiet salt-ghost','See your statement'); sv.type='button';
-      sv.addEventListener('click',function(){ showTab('stmt'); });
+      sv.addEventListener('click',function(){ placeShow('stmt'); });
       dueBox.appendChild(sv);
       /* 24 Sep 2026: the note was drawn in the order form alone, which this page never shows */
       if(draft.note) dueBox.appendChild(statusLine(draft.note));
@@ -2245,8 +2328,9 @@ const CLIENT_JS = `
     } else if(draft.pushed||Notification.permission==='granted'&&draft.pushDone){
       np.appendChild(el('p','sub2','On. You will be told when your order changes, when there is a reply, and at 10:00 and 18:00 when a payment is due.'));
     } else {
-      np.appendChild(el('p','sub2','Be told on this phone when your order changes, when there is a reply, and at 10:00 and 18:00 when a payment is due. The banner says only what kind of news it is, never an amount or which order, and a tap opens the order.'));
-      var nb=el('button','btn quiet salt-ghost','Notify me on this phone'); nb.type='button';
+      np.appendChild(el('p','sub2','Be told on this '+DEV+' when your order changes, when there is a reply, and at 10:00 and 18:00 when a payment is due. The banner says only what kind of news it is, never an amount or which order, and a tap opens the order.'));
+      /* S7 7.2: nothing says phone on a computer */
+      var nb=el('button','btn quiet salt-ghost','Notify me on this '+DEV); nb.type='button';
       nb.addEventListener('click', subscribePush); np.appendChild(nb);
       if(draft.pushNote) np.appendChild(el('p','msg',draft.pushNote));
     }
@@ -2255,6 +2339,7 @@ const CLIENT_JS = `
     if(keep){ var kbox=[].filter.call(pOrder.querySelectorAll('input[data-say]'),function(x){ return x.getAttribute('data-say')===keep; })[0];
       if(kbox){ try{ kbox.focus({preventScroll:true}); kbox.setSelectionRange(sel[0],sel[1]); }catch(e){} } }
     window.scrollTo(0,sc);
+    drawHome();
     openWanted();
   }
 
@@ -2340,7 +2425,7 @@ const CLIENT_JS = `
   /* shown means drawn open on a tab that is showing, by a tap on its row or a banner; his read-only view marks
      nothing. An order a desk opened by itself is not shown in this sense: the order form stands above it, so its
      thread can be a screen below the fold, and a tap on its row marks it. */
-  function seeIt(o){ if(view||!o||pOrder.hidden||draft.oAuto) return; var l=hisLast(o); if(!l) return; var s=seenGet(); if((s.o[o.id]||'')>=l) return; s.o[o.id]=l; seenPut(s); }
+  function seeIt(o){ if(view||!o||pOrder.hidden||draft.oAuto) return; var l=hisLast(o); if(!l) return; var s=seenGet(); if((s.o[o.id]||'')>=l) return; s.o[o.id]=l; seenPut(s); drawHome(); }
   function oNeeds(o){ return oOwes(o)||replyWaiting(o); }
   function oWhy(o){
     var b=[];
@@ -2696,11 +2781,11 @@ const CLIENT_JS = `
       if(had) try{ n.focus({preventScroll:true}); }catch(e){}
     });
   }
-  /* an order drawn open while the tab was elsewhere is seen when the tab is turned to */
-  tabs.addEventListener('click',function(){ var o=tab==='order'&&oFind(draft.oShown||''); if(o){ seeIt(o); oSync([o.id]); } });
   /* the order already open is brought into view and seen, and its row patched: drawn again, it would lose what is
      being typed in it. A banner's tap comes here too, on an order the desk opened by itself or one left open. */
   function oOpen(id){
+    /* S7 7.1: from wherever it was tapped (a row on Home, a banner, Sent), the order opens in its place */
+    if(tab!=='order') placeShow('order');
     draft.oAuto=false;
     if(draft.oOpen!==id||!pOrder.querySelector('.oscreen[data-order="'+id+'"]')){ draft.oOpen=id; oDraw(); }
     else { seeIt(oFind(id)); oSync([id]); }
@@ -2711,6 +2796,44 @@ const CLIENT_JS = `
     if(!n) return; var bw=document.getElementById('barw');
     try{ n.style.scrollMarginTop=Math.ceil((bw&&!bw.hidden?bw.getBoundingClientRect().bottom:0)+12)+'px'; n.scrollIntoView({block:'start'}); }catch(e){}
   }
+  /* ---- WHAT IS DUE, IN WORDS (the helpers stage 6's To pay now draws with; S7 7.1's Home reads them too). The figures
+     are the publish's, sealed with the statement (payDue) and read here, never worked out: the site prices nothing. */
+  var WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  function ymdAt(s){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?Date.UTC(+m[1],+m[2]-1,+m[3]):null; }
+  function dayName(s){ var t=ymdAt(s); if(t==null) return ''; var d=new Date(t); return WD[d.getUTCDay()]+' '+d.getUTCDate()+' '+MON3[d.getUTCMonth()]; }
+  function todayKL(){ var p=klBits(new Date().toISOString()); return p.year+'-'+('0'+p.month).slice(-2)+'-'+p.day; }
+  function daysTo(s){ var t=ymdAt(s), n=ymdAt(todayKL()); return t==null||n==null?null:Math.round((t-n)/864e5); }
+  /* "Due by Sat 26 Sep, in 2 days.", or of the first of several parts, "The first is due by ..." */
+  function dueWords(due,first){
+    var n=daysTo(due), d=dayName(due);
+    if(n==null) return '';
+    var s=first?'The first ':'', is=first?'is due':'Due';
+    return n<0?s+(first?'was due':'It was due')+' by '+d+'.':n===0?s+is+' today, '+d+'.':s+is+' by '+d+(n===1?', tomorrow.':', in '+n+' days.');
+  }
+  function unitFor(pr){ var P=prices&&prices.products&&prices.products.filter(function(x){ return x.product===pr; })[0]; return P?P.unit:'unit'; }
+  /* "The rest of [cube] 2.5 units you received Wed 16 Sep": the rest where part of the order is paid; a part to come says when it was ordered */
+  function partSpan(p,coming){
+    var s=el('span');
+    if(!coming&&+p.whole>+p.rm+0.004) s.appendChild(document.createTextNode('The rest of '));
+    s.appendChild(psym(p.product,15)); s.appendChild(el('span','sr',pshape(p.product)));
+    s.appendChild(document.createTextNode(' '+unitsOf(p.qty,unitFor(p.product))+(p.resale?' on behalf of a friend':'')
+      +(!coming&&p.gotOn?' you received '+dayName(p.gotOn):(p.date?', ordered '+dayName(p.date):''))));
+    return s;
+  }
+  function kpiTile(tone,label,value,note){
+    var k=el('div','salt-kpi salt-kpi--'+tone);
+    k.appendChild(el('span','salt-kpi__label',label)); k.appendChild(el('span','salt-kpi__value',value));
+    if(note){ var n=el('span','salt-kpi__note'); n.appendChild(note); k.appendChild(n); }
+    return k;
+  }
+  /* what To pay now is for, in one line under its figure */
+  function nowNote(now){
+    var n=el('span'), ps=now.parts||[];
+    if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0].due))); }
+    else n.appendChild(document.createTextNode(ps.length+' orders you have received. '+dueWords(now.due,true)));
+    return n;
+  }
+
   var METHOD_WORDS={cod:'cash on handover', transfer:'DuitNow Transfer', qr:'DuitNow QR', jompay:'JomPAY', tngbiz:"Touch 'n Go Business"};
   function acct(key){ return PAY.filter(function(a){return a.key===key;})[0]; }
   function methodWord(m,a){ var x=acct(a); return (METHOD_WORDS[m]||m)+(x&&m!=='tngbiz'?' to '+x.name:''); }
@@ -2812,6 +2935,119 @@ const CLIENT_JS = `
     return box;
   }
 
+  /* ==== S7 7.1 (his D11 of 24 Sep 2026): HOME, THE PLACE THAT OPENS FIRST ====================================
+     Three questions: what do I owe, what needs me, and what do I order again. TO PAY NOW is the sealed figure with
+     its due date and the one filled Pay (over the line, the overdue amount, in the words the payment page says);
+     NEEDS YOU is an order with a reply not yet shown on this device, or goods ready to collect; COMING UP is an order
+     agreed and not yet handed over, with what is still to pay, now or when it arrives. A new account says there is
+     nothing on it yet, and Prices and ordering work from here. Each part is drawn afresh and put on the page only
+     where it reads differently, so a poll moves nothing that has not changed. A row opens its order in Orders. */
+  function drawHome(){
+    var parts={hPay:homePay(), hNeeds:homeNeeds(), hComing:homeComing(), hAgain:homeAgain()};
+    Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
+    placeCounts();
+    placeTitle();
+  }
+  /* STAGE 6 FILLS THIS: Home's one Pay opens the pay sheet on what is to pay now. Until it does, Pay goes where paying
+     is today: the payment page over the line, else the order that owes, else the orders */
+  function openPayNow(){
+    var o=hold?null:orders.filter(oOwes)[0];
+    if(o) oOpen(o.id); else placeShow('order',true);
+  }
+  function homePay(){
+    var box=el('div'); if(!bundle) return box;
+    var now=payDue&&payDue.now, fig=hold?owedNow:payDue?(+now.rm||0):owedNow, due=fig>0.004, fr=fresh(), note=el('span');
+    if(hold) note.textContent='Please pay the overdue amount of '+rm(owedNow)+' before placing another order.';
+    else if(fr) note.textContent='Nothing on your account yet. Your orders will show here.';
+    else if(due&&payDue&&(now.parts||[]).length) note=nowNote(now);
+    else if(!due) note.textContent='Nothing to pay now.';
+    else note=null;
+    box.appendChild(kpiTile(due?'ember':'verdigris',fr?'To pay':'To pay now',rm(fig),note));
+    if(view) return box;
+    if(due){ var pb=el('button','salt-pill salt-pill--md hfill','Pay '+rm(fig)); pb.type='button'; pb.id='hPayGo';
+      pb.addEventListener('click',openPayNow); box.appendChild(pb); }
+    /* a new account's one filled control: the list they can order from */
+    else if(fr&&sold().length){ var sp=el('button','salt-pill salt-pill--md hfill','See all prices'); sp.type='button'; sp.id='hPrices';
+      sp.addEventListener('click',function(){ placeShow('prices',true); }); box.appendChild(sp); }
+    return box;
+  }
+  function hHead(t,n){ var h=el('h2','salt-eyebrow salt-eyebrow--copper hlab',t); if(n) h.appendChild(el('span','hn',String(n))); return h; }
+  /* the Orders row, with Home's own sentence for why it is here */
+  function homeRow(o,what){ var r=oRow(o,''), w=r.querySelector('.salt-inbox-row__what');
+    if(!w){ w=el('span','salt-inbox-row__what'); r.querySelector('.salt-inbox-row__main').appendChild(w); }
+    w.textContent=what; return r; }
+  function toCollect(o){ return o.status==='ready'&&o.mode!=='deliver'&&!movedAll(o); }
+  function homeNeeds(){
+    var box=el('div'), list=orders.filter(function(o){ return replyWaiting(o)||toCollect(o); });
+    if(!list.length) return box;
+    box.appendChild(hHead('Needs you',list.length));
+    list.forEach(function(o){
+      var m=(o.msgs||[]).filter(function(x){ return x.by==='desk'; }).pop(), t=m?String(m.text||''):'';
+      box.appendChild(homeRow(o,replyWaiting(o)?'A reply: '+(t.length>120?t.slice(0,117)+'...':t):'Ready to collect, since '+oDay(firstAt(o,'ready'))));
+    });
+    return box;
+  }
+  function homeComing(){
+    var box=el('div'), list=orders.filter(function(o){ return OPEN_ST.indexOf(o.status)>=0&&!movedAll(o)&&!replyWaiting(o)&&!toCollect(o); });
+    if(!list.length) return box;
+    box.appendChild(hHead('Coming up'));
+    list.forEach(function(o){
+      var c=oClaimed(o), t=o.status==='placed'?'Waiting to be confirmed':oToPay(o)>0.004?rm(oToPay(o))+' still to pay, now or when it arrives':'Paid';
+      box.appendChild(homeRow(o,t+(c>0?'. '+rm(c)+' sent, waiting for us to confirm':'')));
+    });
+    return box;
+  }
+  /* S7 7.4: ORDER AGAIN. A tile for each thing they have ordered (a size, a way and a place), newest first, while that size
+     is still on their list, at TODAY'S price, read off the list: a tap opens the check with the same size, way and place,
+     so the second tap places it. The note is not carried: it was about that order. A declined or cancelled order is not
+     offered again. A new account, or one whose orders are all off the list, is offered the list's first sizes, which open
+     the sheet at that size. Nothing is offered over the line or on his read-only view. */
+  function againList(){
+    var seen={}, out=[];
+    orders.slice().sort(function(a,b){ return String(b.at).localeCompare(String(a.at)); }).forEach(function(o){
+      if(o.status==='declined'||o.status==='cancelled'||!oSoldHas(o.product,o.qty)) return;
+      var way=o.mode==='deliver'?'deliver':'collect', where=way==='deliver'?String(o.place||''):'', k=[o.product,o.qty,way,where,!!o.forFriend].join('|');
+      if(seen[k]) return; seen[k]=1;
+      out.push({product:o.product, q:o.qty, mode:way, place:where, forFriend:!!o.forFriend});
+    });
+    return out;
+  }
+  function againOpen(a,tile){
+    draft.mode=a.mode; draft.place=a.place; draft.placeWas=a.place; draft.say=''; draft.noteOpen=false;
+    if(assoc) draft.forFriend=a.forFriend;
+    sheetOpen(a.product,a.q,tile);
+    if(osh&&draft.step==='form'&&!formWhy()) reviewSheet();
+  }
+  function homeAgain(){
+    var box=el('div'); if(!bundle||view||hold||!sold().length) return box;
+    var list=againList(), start=!list.length;
+    if(start) sold().forEach(function(P){ P.sizes.slice(0,2).forEach(function(z){ list.push({product:P.product, q:z.q, start:true}); }); });
+    box.appendChild(hHead(!start?'Order again':fresh()?'Start your first order':'Start an order'));
+    var g=el('div','hagain');
+    list.slice(0,4).forEach(function(a){
+      var P=sold().filter(function(x){ return x.product===a.product; })[0], z=P.sizes.filter(function(x){ return String(x.q)===String(a.q); })[0];
+      var b=el('button','salt-option__face htile'), t=el('span','salt-option__text'), l=el('span','salt-option__label');
+      b.type='button'; b.setAttribute('data-again',a.product+'|'+a.q+(a.start?'':'|'+a.mode));
+      l.appendChild(psym(a.product,18)); l.appendChild(document.createTextNode(unitsOf(a.q,P.unit))); l.appendChild(el('span','sr',pshape(a.product)));
+      t.appendChild(l);
+      t.appendChild(el('span','salt-option__detail',rm(z.price)+(a.start?'':', '+(a.mode==='deliver'?'delivered to '+a.place:'collected')+(a.forFriend?', for a friend':''))));
+      b.appendChild(t);
+      b.addEventListener('click',function(){ if(a.start) sheetOpen(a.product,a.q,b); else againOpen(a,b); });
+      g.appendChild(b);
+    });
+    box.appendChild(g);
+    return box;
+  }
+  /* a count beside a place is what waits there: the orders that need them. data-n: data-count is the owner's own */
+  function placeCounts(){
+    var n=orders.filter(oNeeds).length;
+    [].forEach.call(tabs.querySelectorAll('[data-n]'),function(c){ c.textContent=c.getAttribute('data-n')==='order'&&n?String(n):''; });
+  }
+  /* ---- ACCOUNT AND REWARDS: what goes inside them is drawn here (the places area, S7 7.3 and S8 8.1); the shell calls
+     these two when the account opens ---- */
+  function drawAccount(box){ pickStmt(0); }
+  function drawRewards(box){ drawCard(); }
+
   async function loadOrders(){
     if(!session) return;
     var mine=ticket;
@@ -2833,7 +3069,7 @@ const CLIENT_JS = `
     var changed=orders.filter(function(o){ return before[o.id]!==JSON.stringify(o); }).map(function(o){ return o.id; }),
         gone=Object.keys(before).some(function(id){ return !oFind(id); });
     if(draft.oStale&&changed.indexOf(draft.oStale)<0) changed.push(draft.oStale);
-    if(changed.length||gone){ oSync(changed); if(osh&&draft.step==='limit') sheetDraw(); }
+    if(changed.length||gone){ oSync(changed); drawHome(); if(osh&&draft.step==='limit') sheetDraw(); }
   }
   async function refresh(){
     await oReread();
@@ -2854,7 +3090,6 @@ const CLIENT_JS = `
     wantOrder='';
     try{ if(location.hash) history.replaceState(null,'',location.pathname+location.search); }catch(e){}
     if(!oFind(id)) return;
-    showTab('order');
     oOpen(id);
   }
   try{
@@ -3055,7 +3290,7 @@ const CLIENT_JS = `
     var x={assoc:body.assoc===true, card:null, prices:null};
     if(body.live){
       try{ var l=JSON.parse(await open(ck, body.live));
-        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body, owed:l.owed}); }
+        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body, owed:l.owed, pay:l.pay||null}); }
       catch(e){ /* the issued statements still open; the live one is simply absent */ }
     }
     if(body.card){ try{ x.card=JSON.parse(await open(ck, body.card)); }catch(e){ /* the statement still opens; the card is simply absent */ } }
@@ -3077,8 +3312,12 @@ const CLIENT_JS = `
     show(b);
     drawPrices();
     drawKeep();
+    /* HOME OPENS FIRST (S7 7.1), over the line too, where it leads with what to pay; an address naming a place opens
+       that place once. The same account let in again stays where it was, the order sheet open over it included,
+       unless that place has gone (Prices, over the line) */
+    if(!same){ var w=wantPlace; wantPlace=''; placeShow(w||'home'); }
+    else if(placeBtns(t)[0].hidden) placeShow(t);
     if(same){
-      if(t!==tab&&!(hold&&t==='prices')&&!(t==='card'&&tCard.hidden)) showTab(t);
       if(mf&&mfil.querySelector('button[data-mf="'+mf+'"]')){ mfPick=mf; applyMonths(); }
       window.scrollTo(0,sy);
       if(draft.sheetBack){ draft.sheetBack=false; sheetOpen(); }

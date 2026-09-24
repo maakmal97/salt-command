@@ -13555,7 +13555,7 @@ await (async () => {
       "it asks A buzz when it is confirmed?, and drawing the question asks the browser nothing: " + st.asked);
     d.getElementById("oBuzz").click();
     for (let i = 0; i < 100 && !(st.subscribed.length && !box()); i++) await new Promise((r) => setTimeout(r, 30));
-    ok(st.asked === 1 && JSON.stringify(st.subscribed) === '["https://push.example/ep-s45"]' && !box() && /On[.] This phone is told/.test(sh().textContent),
+    ok(st.asked === 1 && JSON.stringify(st.subscribed) === '["https://push.example/ep-s45"]' && !box() && /On[.] This computer is told/.test(sh().textContent),   /* S7 7.2: jsdom's browser is a computer */
       "the tap asks once, the phone is subscribed, and the sheet says it is on where the question was: " + JSON.stringify({ asked: st.asked, subscribed: st.subscribed }));
     d.getElementById("oSee").click();
     const scr = d.querySelector("#pOrder .oscreen");
@@ -14193,6 +14193,8 @@ await (async () => {
       while (tw.nextNode()) nodes.push(tw.currentNode.nodeValue);
       return {
         text: d.getElementById("pPrices").textContent,
+        /* S7 7.1: the greeting is Home's heading, which the page opens on */
+        greet: d.getElementById("placeT").textContent, home: !d.getElementById("pHome").hidden,
         words: nodes.join(" "),   /* text node by text node: textContent runs a heading into the next line */
         marks: [...d.querySelectorAll("#pPrices .mark")].map((m) => ({ ch: m.textContent, colour: m.style.color, hidden: m.getAttribute("aria-hidden") })),
         heads: [...d.querySelectorAll("#pPrices h3")].map((h) => h.textContent),
@@ -14224,15 +14226,16 @@ await (async () => {
   ok(b59.html.length > 200 && b59.html === a59.html,
     "two lists that differ only in their levels draw the same Prices, to the character: " + JSON.stringify([a59.html.length, b59.html.length]));
   /* 4. THE GREETING, AND THE MONTH THEIR FIRST ORDER FALLS IN. The hour is the device's, so the greeting is checked
-     against the hour this run happens to be at rather than against one of the three words. */
+     against the hour this run happens to be at rather than against one of the three words. S7 7.1: the greeting is
+     Home's heading, on the place the page opens on, and the month stays on Prices. */
   const hour59 = new Date().getHours();
-  const want59 = hour59 < 12 ? "Good morning." : (hour59 < 18 ? "Good afternoon." : "Good evening.");
-  ok(a59.text.indexOf(want59) >= 0 && a59.text.indexOf("Buying with us since March 2026.") >= 0,
-    "they are greeted for the hour and told how long they have been buying: " + JSON.stringify(a59.text.slice(0, 90)));
+  const want59 = hour59 < 12 ? "Good morning" : (hour59 < 18 ? "Good afternoon" : "Good evening");
+  ok(a59.home && a59.greet === want59 && a59.text.indexOf("Buying with us since March 2026.") >= 0,
+    "they are greeted for the hour on Home and told on Prices how long they have been buying: " + JSON.stringify([a59.greet, a59.text.slice(0, 90)]));
   /* 5. AND NO NAME IS INVENTED. There is none to use: the rule that keeps plaintext names off the cloud means the page
      cannot know one, and a greeting that guessed at one would be worse than the hour. */
   const c59 = await open59(list59("Gold", "Bronze", null));
-  ok(c59.text.indexOf(want59) >= 0 && c59.text.indexOf("Buying with us since") < 0,
+  ok(c59.greet === want59 && c59.text.indexOf("Buying with us since") < 0,
     "and a customer with no first order yet is greeted without it, rather than with a blank month");
   /* 6. `since` IS THE FIRST PRICED ORDER, on the same rule the rate uses: a cancelled row, a defaulted one and an award
      with no cash are not orders they placed at a price. */
@@ -19898,7 +19901,7 @@ await (async () => {
   ok(/wr\(\["kv", "key", "put", name, "--path", file\]\)/.test(src) && !/"put", name, JSON\.stringify/.test(src),
     "the only KV put in drain.mjs goes through --path, never a JSON argument the shell can strip");
 })();
-section("v732: a bulletin runs or changes across the top of Salt Counter, set from Enter, and never names the desk, a code or a level");
+section("v732: a bulletin is set from Enter, stands on Salt Counter (a still card on Home since S7 7.5), and never names the desk, a code or a level");
 await (async () => {
   /* 20 Sep 2026, his instruction: at the top of Salt Counter, space for a running bulletin he sets from Enter on
      the desk, running or changing. One clear key on the site, set over the binding on the desk key, spliced into
@@ -19931,46 +19934,45 @@ await (async () => {
     "the public read is read only, anything past it is the site's 404, an unknown desk path is still a 404, the desk key still gates the orders, and a set with no JSON is refused");
   await req("/desk/bulletin", "POST", { lines: ["Closed Friday", "Back Monday"], mode: "change" }, D);
 
-  /* ---- 2. THE DOOR CARRIES IT AT FIRST PAINT, in the nonce'd style, with the script's copy spliced ---- */
+  /* ---- 2. THE PAGE CARRIES IT AT FIRST PAINT, with the script's copy spliced. S7 7.5 (his D14 of 24 Sep 2026): a still
+     card at the head of Home, every line standing, where it was a band across the top of the door and every page ---- */
   const door = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
   const bodyAt = door.indexOf("<body>");
-  ok(bodyAt > 0 && door.slice(bodyAt, bodyAt + 120).includes('<div id="bull" class="bull" data-mode="change" role="status"')
-    && /id="bullTrack">Closed Friday<\/div>/.test(door) && !/id="bull"[^>]*hidden/.test(door),
-    "the band is the first thing in the body, in change mode, showing the first line and not hidden");
-  ok(/@keyframes bullrun/.test(door) && /prefers-reduced-motion/.test(door) && !/<div id="bull"[^>]*style=/.test(door)
-    && /var BULL=\{"lines":\["Closed Friday","Back Monday"\],"mode":"change"/.test(door),
-    "the marquee and its reduced-motion stop are in the nonce'd style with no style attribute on the band, and the script is served its own copy");
+  ok(bodyAt > 0 && !door.slice(bodyAt, bodyAt + 120).includes('id="bull"')
+    && /<div id="pHome" class="home"><div class="hcol"><div id="bull" class="salt-insight hnote"><p>Closed Friday<\/p><p>Back Monday<\/p><\/div>/.test(door),
+    "the notice is no longer the first thing in the body: it is a still card at the head of Home, every line standing and not hidden");
+  ok(!/bullrun|data-mode|[.]bull[{[ ]/.test(door) && !/<div id="bull"[^>]*style=/.test(door)
+    && /var BULL=\{"lines":\["Closed Friday","Back Monday"\]\}/.test(door),
+    "nothing on the page runs or changes, the card carries no style attribute, and the script is served its own copy of the lines alone");
   await req("/desk/bulletin", "POST", { lines: ["Tuesday <b>3</b>"], mode: "run" }, D);
   const door2 = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
-  ok(/id="bullTrack">Tuesday &lt;b&gt;3&lt;\/b&gt;<\/div>/.test(door2) && /var BULL=\{"lines":\["Tuesday \\u003cb>3\\u003c\/b>"\]/.test(door2),
-    "a line is escaped on the band and in the script's copy");
+  ok(/<div id="bull" class="salt-insight hnote"><p>Tuesday &lt;b&gt;3&lt;\/b&gt;<\/p><\/div>/.test(door2) && /var BULL=\{"lines":\["Tuesday \\u003cb>3\\u003c\/b>"\]\}/.test(door2),
+    "a line is escaped on the card and in the script's copy");
   r = await J(await req("/desk/bulletin", "POST", { lines: [] }, D));
   const door3 = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
-  ok(r.b.ok && r.b.cleared === true && (await skv.get("bulletin")) === null && /<div id="bull" class="bull" data-mode="run" hidden/.test(door3) && !/Tuesday/.test(door3),
-    "an empty set clears the key, and the door then carries the band hidden with nothing in it");
+  ok(r.b.ok && r.b.cleared === true && (await skv.get("bulletin")) === null && /<div id="bull" class="salt-insight hnote" hidden><\/div>/.test(door3) && !/Tuesday/.test(door3),
+    "an empty set clears the key, and the page then carries the card hidden with nothing in it");
 
-  /* ---- 3. THE PAGE, DRIVEN: the band draws from the served copy, changes line by line, and follows the poll ---- */
+  /* ---- 3. THE PAGE, DRIVEN: the card draws from the served copy, stands still, and follows the poll ---- */
   await req("/desk/bulletin", "POST", { lines: ["First line", "Second line"], mode: "change" }, D);
   const { JSDOM } = await import("jsdom");
   const html = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
-  const served = [];
+  const served = [], ticks = [];
   const dom = new JSDOM(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    const si = win.setInterval.bind(win); win.setInterval = (f, ms) => { ticks.push(ms); return si(f, ms); };
     win.fetch = async (path) => { const p = String(path); served.push(p);
       if (p === "/bulletin") return { ok: true, status: 200, json: async () => ({ ok: true, lines: ["Only line"], mode: "run", at: "x" }) };
       return { ok: false, status: 404, json: async () => ({ ok: false }) }; };
   } });
   try {
-    const d = dom.window.document, tr = () => d.getElementById("bullTrack").textContent;
-    ok(tr() === "First line" && d.getElementById("bull").getAttribute("data-mode") === "change" && !d.getElementById("bull").hidden,
-      "the page draws the served bulletin on the first line");
-    await new Promise((res) => setTimeout(res, 4300));
-    ok(tr() === "Second line", "and four seconds later the second: " + JSON.stringify(tr()));
+    const d = dom.window.document, tr = () => [...d.querySelectorAll("#bull > p")].map((x) => x.textContent).join("|");
+    ok(tr() === "First line|Second line" && !d.getElementById("bull").hidden && !ticks.includes(4000),
+      "the page draws every line of the served notice, standing, with no timer to change it: " + JSON.stringify([tr(), ticks]));
     await dom.window.eval("bullRead()");
-    ok(tr() === "Only line" && d.getElementById("bull").getAttribute("data-mode") === "run" && served.includes("/bulletin")
-      && /^\d+s$/.test(d.getElementById("bullTrack").style.animationDuration),
-      "a read that finds a different bulletin redraws it, running, with a duration set from its length: " + JSON.stringify([tr(), d.getElementById("bullTrack").style.animationDuration]));
-    await dom.window.eval("bullDraw({lines:[],mode:'run'})");
-    ok(d.getElementById("bull").hidden && tr() === "", "and an empty bulletin hides the band");
+    ok(tr() === "Only line" && served.includes("/bulletin") && !d.querySelector("#bull [style]"),
+      "a read that finds a different notice redraws it, still: " + JSON.stringify(tr()));
+    await dom.window.eval("bullDraw({lines:[]})");
+    ok(d.getElementById("bull").hidden && tr() === "", "and an empty notice hides the card");
     ok(/if\(\+\+bullN%6===0\) await bullRead\(\);/.test(html), "the open page reads the bulletin again every sixth poll, once a minute");
   } finally { dom.window.close(); }
 
@@ -20015,7 +20017,7 @@ await (async () => {
     const cloud = String(w.eval("tabOrders()"));
     w.SALT_CLOUD = false;
     const laptop = String(w.eval("tabOrders()"));
-    ok(/id="bullText"/.test(cloud) && /data-bmode="run"/.test(cloud) && /data-bmode="change"/.test(cloud) && /id="bullSet"/.test(cloud) && /id="bullClear"/.test(cloud)
+    ok(/id="bullText"/.test(cloud) && !/data-bmode/.test(cloud) && /id="bullSet"/.test(cloud) && /id="bullClear"/.test(cloud)
       && cloud.indexOf('id="bullCard"') < cloud.indexOf('id="ordAlert"') && !/bullText/.test(laptop),
       "the cloud desk's Site orders page carries the Bulletin card (folded below the list since S11 11.4), and the laptop copy has none");
     const g = (t) => w.eval("siteSafe(" + JSON.stringify(t) + ")");
@@ -20028,17 +20030,17 @@ await (async () => {
     w.fetch = async (path, init) => { sent.push({ path: String(path), method: init && init.method, key: init && init.headers && init.headers["X-Salt-Key"], body: init && init.body ? JSON.parse(init.body) : null });
       return { ok: true, status: 200, json: async () => ({ ok: true, lines: ["Closed Friday", "Back Monday"], mode: "change" }) }; };
     await w.eval("bullLoad()");
-    ok(sent[0] && sent[0].path === "bulletin" && sent[0].key === "k-fixture" && /Showing now, changing: Closed Friday · Back Monday/.test(w.document.getElementById("bullNow").textContent)
-      && w.document.getElementById("bullText").value === "Closed Friday\nBack Monday" && w.eval("BULL_MODE") === "change",
+    ok(sent[0] && sent[0].path === "bulletin" && sent[0].key === "k-fixture" && /Showing now: Closed Friday · Back Monday/.test(w.document.getElementById("bullNow").textContent)
+      && w.document.getElementById("bullText").value === "Closed Friday\nBack Monday",
       "the card reads the bulletin keyed and shows what is running: " + JSON.stringify(sent[0]));
     w.eval("bullWire()");
     w.document.getElementById("bullText").value = "Closed Friday\n\n  Back Monday ";
-    w.document.querySelector('button[data-bmode="run"]').click();
+    w.confirm = () => true;   /* S7 7.5: a Set asks before it wakes every phone; the ask is the next section's */
     sent.length = 0;
     await w.eval("bullPost(false)");
     const post = sent.find((x) => x.method === "POST");
-    ok(post && post.key === "k-fixture" && JSON.stringify(post.body) === '{"lines":["Closed Friday","Back Monday"],"mode":"run"}' && /Posted\./.test(w.document.getElementById("bullMsg").textContent),
-      "Set posts the lines tidied, in the mode pressed, keyed, and says so: " + JSON.stringify(post));
+    ok(post && post.key === "k-fixture" && JSON.stringify(post.body) === '{"lines":["Closed Friday","Back Monday"]}' && /Posted\./.test(w.document.getElementById("bullMsg").textContent),
+      "Set posts the lines tidied, with no mode, keyed, and says so: " + JSON.stringify(post));
     sent.length = 0;
     await w.eval("bullPost(true)");
     ok(sent.some((x) => x.method === "POST" && Array.isArray(x.body.lines) && x.body.lines.length === 0) && /Cleared\./.test(w.document.getElementById("bullMsg").textContent),
@@ -20389,9 +20391,10 @@ await (async () => {
   const page6 = await (await stmtW6.fetch(new Request("https://k7m3p2.example/"), { STMT: kv6 })).text();
   /* 24 Sep 2026: the tab follows the mark alone, so an associate with no card yet still reaches their
      links; a panel with no card says when it comes and carries the links (behaviour: "S1 1.40") */
-  ok(/data-t="card" id="tCard" hidden/.test(page6) && /tCard\.hidden=!assoc;/.test(page6),
-    "the tab starts hidden and is shown to an associate alone");
-  ok(/pCard\.hidden=\(t!=='card'\)/.test(page6), "and the panel is switched with the other three");
+  /* S7 7.1: the tab is Rewards, a place on the bar and the rail, hidden on both until the account is an associate's */
+  ok(/id="tCard" data-t="card" hidden/.test(page6) && /class="salt-appbar__item" data-t="card" hidden/.test(page6) && /placeHide\('card',!assoc\);/.test(page6),
+    "the place starts hidden and is shown to an associate alone");
+  ok(/card:pCard\}/.test(page6) && /PANEL\[k\]\.hidden=k!==t;/.test(page6), "and its panel is switched with the other places");
   ok(/card=null; cardMonth=null;/.test(page6), "logging out forgets it, as it forgets the price list");
   /* the month pill was 29px tall since v690, on a strip whose whole purpose is to be tapped */
   ok(/min-height:var\(--salt-tap\);display:inline-flex/.test(page6) && !/cursor:pointer;min-height:auto/.test(page6),
@@ -26891,8 +26894,9 @@ await (async () => {
   });
   /* a banner's tap: on a desk, for the order it opened by itself at sign-in; on a phone, for one left open under another tab */
   await drive(true, async (w, d) => {
-    const tab = d.querySelector('#tabs button[data-t="order"]').getAttribute("aria-selected");
-    ok(tab === "true" && shownOf(d) === O && seen(w)[O] === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)),
+    /* S7 7.1: the place turned to carries aria-current, which the App bar and the rail draw */
+    const tab = d.querySelector('#tabs button[data-t="order"]').getAttribute("aria-current");
+    ok(tab === "page" && shownOf(d) === O && seen(w)[O] === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)),
       "a desk opened at a banner's address for the order it opens by itself turns to it and marks his reply seen: " + JSON.stringify({ tab, shown: shownOf(d), seen: seen(w), row: rowText(d, O) }));
   }, { hash: "#o=" + O });
   await drive(false, async (w, d, turn, sw, fx) => {
@@ -28031,8 +28035,9 @@ await (async () => {
   const says = (t) => /a reply/.test(t) && /at 10:00 and 18:00 when a payment is due/.test(t) && /your order changes/.test(t)
     && !/acknowledged, ready/.test(t);
   ok(/On\. You will be told/.test(on) && says(on), "switched on, it says what the phone will hear, the payment due and its two hours included: " + on);
-  ok(/Notify me on this phone/.test(off) && says(off) && /only what kind of news it is/.test(off),
-    "and the offer says the same before the tap, and that the banner names only the kind: " + off);
+  /* S7 7.2: nothing says phone on a computer, which is what jsdom's browser says it is */
+  ok(/Notify me on this computer/.test(off) && /Be told on this computer/.test(off) && !/phone/.test(off) && says(off) && /only what kind of news it is/.test(off),
+    "and the offer says the same before the tap, and that the banner names only the kind, naming the device it is on: " + off);
 })();
 
 section("S10 with S12: on both roads every wake carries its kind and its order, and the chase runs at its slots, one wake a slot");
@@ -29611,7 +29616,7 @@ await (async () => {
     "and a new order that carries a line wakes as a new order, not as a line: " + JSON.stringify(await dkv.get("orders:news")));
 })();
 
-section("S1 1.48: Acknowledge, Approve and the notice's mode buttons wear the system's recipes, with no colour of their own");
+section("S1 1.48: Acknowledge, Approve and the notice's buttons wear the system's recipes, with no colour of their own");
 await (async () => {
   /* 24 Sep 2026 (L52, rule 6). Acknowledge and Approve were painted with a literal green gradient and
      obsidian text in a style attribute, Reject, Decline and Cancel restated a crimson outline, and the
@@ -29643,13 +29648,11 @@ await (async () => {
     ok(w148.getComputedStyle(yes).color === "var(--salt-obsidian)" && w148.getComputedStyle(no).color === "var(--salt-ghost-tone)",
       "and no older layer of the desk paints over either recipe: " + JSON.stringify([w148.getComputedStyle(yes).color, w148.getComputedStyle(no).color]));
 
+    /* S7 7.5 (his D14): the notice has no modes to press any more; Set and Clear are the system's ghosts, Set the lit one */
     const bull = frag(String(w148.eval("tabOrders()")));
-    w148.eval("BULL_MODE='change';bullPressed();");
-    const run = bull.querySelector('button[data-bmode="run"]'), chg = bull.querySelector('button[data-bmode="change"]');
-    ok(run.classList.contains("salt-ghost") && chg.classList.contains("salt-ghost") && chg.getAttribute("aria-pressed") === "true",
-      "the notice's Running and Changing are ghosts, pressed by the mode that is set");
-    ok(w148.getComputedStyle(chg).color === "var(--salt-salt)" && w148.getComputedStyle(run).color === "var(--salt-ghost-tone)",
-      "so the chosen one is drawn as chosen, by the recipe's own pressed state: " + JSON.stringify([w148.getComputedStyle(chg).color, w148.getComputedStyle(run).color]));
+    const run = bull.querySelector("#bullClear"), setB = bull.querySelector("#bullSet");
+    ok(run && setB && run.classList.contains("salt-ghost") && setB.classList.contains("salt-ghost--lit") && !bull.querySelector("[data-bmode]"),
+      "the notice's Set and Clear are the system's ghosts, Set the lit one, and no mode is offered");
     /* UX6: the danger ghost warms only under a pointer, which his phone has not got, so Decline, Cancel and Reject
        read as any quiet ghost; the layer binds the recipe's own tone to the alarm, and a plain ghost keeps mist */
     const toneOf = (b) => w148.getComputedStyle(b).getPropertyValue("--salt-ghost-tone").trim();
@@ -32272,6 +32275,269 @@ await (async () => {
     "and the old rule still refuses the book it always refused");
 })();
 
+section("S7 7.1: Home opens first, and the places sit on a bar under the thumb with the header saying whose account it is");
+await (async () => {
+  /* HIS D11 OF 24 SEP 2026 ("all recommended"). The three tabs and a fourth became places on the system's App bar (its rail
+     from 1080px): Home, Prices, Orders, Account, and Rewards for an associate. Home opens first and answers what they owe
+     (the sealed To pay now, with its one filled Pay), what needs them (a reply not yet shown) and what is coming up (an
+     order agreed and not handed over); a place has an address, a tap writes it and a sign-in opens the one it names; a
+     row on Home opens its order in Orders; a new account opens on Welcome; Log out is This device's, on Account.
+     Forced state: fixtures of each kind of order, owing RM 90 on the statement and RM 70 sealed as to pay now. */
+  const { landingPage: lp71 } = await import("../stmt/page.js");
+  const C71 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc71 } = await import("node:crypto");
+  const { JSDOM: JD71 } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-71", ck = await C71.contentKey("test-secret", u);
+  const part = { date: "2026-09-16", due: "2026-09-26", late: false, rm: 70, whole: 110, product: "salt", qty: 1, got: 1, gotOn: "2026-09-16", resale: false };
+  const pay = { term: 10, now: { rm: 70, due: "2026-09-26", parts: [part] }, overdue: { rm: 0, parts: [] }, coming: { rm: 150, parts: [] } };
+  const list = await C71.encryptWith(ck, JSON.stringify({ at: "2026-09-24T03:59:00Z", week: { monday: "2026-09-21", label: "21 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 110 }] }], soon: [] }));
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, total: 110, at: "2026-09-20T03:00:00Z", history: [], msgs: [] };
+  const withOrders = [
+    { ...base, id: "oR", status: "acknowledged", paid: 110, msgs: [{ by: "customer", text: "Is it in?", at: "2026-09-20T04:00:00Z" }, { by: "desk", text: "Ready Thursday.", at: "2026-09-21T02:00:00Z" }] },
+    { ...base, id: "oC", status: "acknowledged", qty: 2, total: 200, paid: 50, mode: "deliver", place: "Veloria" },
+    { ...base, id: "oP", status: "placed" },
+    { ...base, id: "oD", status: "done", paid: 110, moved: 1 }];
+  const open = async (opt) => {
+    const body = { ok: true, wrap: await C71.wrapKey(pass, ck), session: "sess-71", prices: list,
+      env: await C71.encryptWith(ck, JSON.stringify({ statements: opt.fresh ? [] : [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: opt.fresh ? null : await C71.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 90, pay })) };
+    const dom = new JD71(lp71(u, "n71", null), { url: "https://site.test/" + (opt.hash || ""), runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc71, configurable: true }); } catch (e) { win.crypto = wc71; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path) => { const p = String(path);
+        const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: opt.fresh ? [] : withOrders } : { ok: true };
+        return { ok: true, status: 200, json: async () => j }; };
+    } });
+    const W = dom.window, D = W.document;
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !(!D.getElementById("barw").hidden && D.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 25));
+    return { W, D };
+  };
+  const shown = (D) => ["pHome", "pPrices", "pOrder", "pStmt", "pCard"].filter((id) => !D.getElementById(id).hidden).join(",");
+  const current = (D) => [...D.querySelectorAll('#tabs button[aria-current="page"]')].map((b) => (b.closest(".salt-appbar") ? "bar:" : "rail:") + b.getAttribute("data-t")).sort().join(",");
+  const a = await open({});
+  try {
+    const { W, D } = a, head = () => D.getElementById("placeT").textContent;
+    ok(shown(D) === "pHome" && current(D) === "bar:home,rail:home" && /^Good (morning|afternoon|evening)$/.test(head())
+      && [...D.querySelectorAll("#tabs [data-who]")].map((x) => x.textContent).join(",") === u + "," + u,
+      "signed in, Home opens first, marked on the bar and the rail, greeted, with the username in the header and at the rail's foot: "
+      + JSON.stringify([shown(D), current(D), head()]));
+    const pay71 = D.getElementById("hPay").textContent, go = D.getElementById("hPayGo");
+    ok(/To pay nowRM 70/.test(pay71) && /you received/.test(pay71) && go && go.textContent === "Pay RM 70" && D.querySelectorAll("#pHome .salt-pill").length === 1,
+      "To pay now is the sealed RM 70, never the statement's RM 90, with what it is for and the one filled Pay: " + JSON.stringify(pay71.slice(0, 120)));
+    const rows = (id) => [...D.querySelectorAll("#" + id + " [data-row]")].map((r) => r.getAttribute("data-row")).join(",");
+    ok(rows("hNeeds") === "oR" && /A reply: Ready Thursday\./.test(D.getElementById("hNeeds").textContent)
+      && rows("hComing") === "oC,oP" && /RM 150 still to pay, now or when it arrives/.test(D.getElementById("hComing").textContent)
+      && /Waiting to be confirmed/.test(D.getElementById("hComing").textContent),
+      "Needs you holds the reply not yet shown, and Coming up the orders agreed or sent and not handed over, with what is still to pay: "
+      + JSON.stringify([rows("hNeeds"), rows("hComing")]));
+    ok([...D.querySelectorAll('#tabs [data-n="order"]')].map((c) => c.textContent).join(",") === "2,2" && !D.querySelector('#tabs [data-n="home"]').textContent,
+      "the Orders place counts the two orders that need them, as a numeral on the bar and the rail");
+    ok(D.getElementById("tCard").hidden && D.querySelector('nav.salt-appbar button[data-t="card"]').hidden
+      && D.querySelector("#pStmt #devSlot #lock") && D.getElementById("lock").textContent === "Log out" && !D.querySelector("#barw #lock"),
+      "Rewards is not offered to a customer, and Log out is This device's, on Account, not the bar's");
+    D.querySelector('nav.salt-appbar button[data-t="order"]').click();
+    ok(shown(D) === "pOrder" && current(D) === "bar:order,rail:order" && head() === "Orders" && W.location.hash === "#orders",
+      "a tap on Orders shows that place, marks it on both, names it in the header and writes its address: " + JSON.stringify([shown(D), current(D), head(), W.location.hash]));
+    D.querySelector('nav.salt-appbar button[data-t="home"]').click();
+    D.querySelector('#hNeeds [data-row="oR"]').click();
+    ok(shown(D) === "pOrder" && !!D.querySelector('#pOrder .oscreen[data-order="oR"]') && current(D) === "bar:order,rail:order",
+      "a row on Home opens its order, in Orders: " + JSON.stringify(shown(D)));
+  } finally { a.W.close(); }
+  const b = await open({ hash: "#prices" });
+  try {
+    ok(shown(b.D) === "pPrices" && b.D.getElementById("placeT").textContent === "Prices",
+      "an address naming a place opens that place at sign-in: " + JSON.stringify(shown(b.D)));
+  } finally { b.W.close(); }
+  const c = await open({ fresh: true });
+  try {
+    const { D } = c, home = D.getElementById("pHome").textContent;
+    ok(shown(D) === "pHome" && D.getElementById("placeT").textContent === "Welcome"
+      && /To payRM 0Nothing on your account yet\. Your orders will show here\./.test(home) && !D.getElementById("hPayGo"),
+      "a new account opens Home on Welcome and says there is nothing on it yet: " + JSON.stringify(home.slice(0, 120)));
+    D.getElementById("hPrices").click();
+    ok(shown(D) === "pPrices" && !!D.querySelector("#pPrices .szrow"), "and its one filled control opens Prices, where a size can be ordered");
+  } finally { c.W.close(); }
+})();
+
+section("S7 7.2: from 1080px the bar is the rail beside the page, each place takes two columns, and a sheet is a drawer");
+await (async () => {
+  /* The plan's f06w and f12w. The App bar recipe gives way to its rail at 1080px (the recipe's own switch, carried to the
+     site), and the page lays the rail beside a main column: Home in two columns, Account the statement beside This device,
+     Prices a book a column, Orders stage 5's list beside the open order, no longer breaking out of a 620px column. The
+     Sheet recipe is a drawer on the right from the same width. Geometry is the rig's (shots at 1280); this pins the rules
+     as served and the markup they lay out. */
+  const { landingPage: lp72 } = await import("../stmt/page.js");
+  const C72 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc72 } = await import("node:crypto");
+  const { JSDOM: JD72 } = await import("jsdom");
+  const page = lp72("", "n72", null);
+  const css = (page.match(/<style nonce="n72">([\s\S]*?)<\/style>/) || ["", ""])[1];
+  /* the page's own 1080px block for the places, read to its closing brace */
+  const from = css.indexOf("@media (min-width:1080px){", css.indexOf("S7 7.2"));
+  let depth = 0, to = from;
+  for (let i = from; i >= 0 && i < css.length; i++) { if (css[i] === "{") depth++; else if (css[i] === "}" && --depth === 0) { to = i; break; } }
+  const wide = from >= 0 ? css.slice(from, to + 1) : "";
+  ok(/\.cshell\{display:flex;/.test(wide) && /\.cmain\{flex:1 1 auto;min-width:0\}/.test(wide)
+    && /\.home\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\);/.test(wide)
+    && /\.acols\{display:grid;grid-template-columns:minmax\(0,620px\) minmax\(0,1fr\);/.test(wide)
+    && /\.pgrid\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\);/.test(wide),
+    "from 1080px the shell stands the rail beside the main column, and Home, Account and Prices take two columns: " + JSON.stringify(wide.slice(0, 160)));
+  ok(/@media \(min-width: 1080px\) \{\s*\.salt-appbar \{ display: none; \}/.test(css) && /@media \(max-width: 1079\.98px\) \{\s*\.salt-rail\.salt-appbar__rail \{ display: none; \}/.test(css)
+    && /@media \(min-width: 1080px\) \{\s*\.salt-sheet \{\s*top: 0;\s*left: auto;/.test(css),
+    "and the page carries the recipes' own switch: the bar below 1080px, the rail from it, and the sheet a drawer on the right");
+  ok(!/100vw - 64px/.test(css), "the orders place no longer breaks out of a 620px column to stand wide: the column is wide itself");
+  const D = new JD72(page, { url: "https://site.test/" }).window.document;
+  const kids = [...D.getElementById("tabs").children].map((n) => n.tagName.toLowerCase() + "." + n.className.split(" ")[0]).join(" ");
+  ok(kids === "nav.salt-rail div.cmain nav.salt-appbar" && D.querySelectorAll("#pHome > .hcol").length === 2 && D.querySelector("#pStmt > .acols > .devslot"),
+    "the markup it lays out: the rail, the main column and the bar; Home's two columns; This device beside the statement: " + kids);
+  /* Prices, driven: the books stand in their grid */
+  const u = "abcd-efgh", pass = "fixture-pass-72", ck = await C72.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C72.wrapKey(pass, ck), session: "",
+    env: await C72.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await C72.encryptWith(ck, JSON.stringify({ at: "2026-09-24T03:59:00Z", week: { monday: "2026-09-21", label: "21 Sep 2026" },
+      products: [{ product: "salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 110 }] }, { product: "oil", unit: "unit", basis: "board", sizes: [{ q: 10, price: 90 }] }], soon: [] })) };
+  const dom = new JD72(lp72(u, "n72b", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wc72, configurable: true }); } catch (e) { win.crypto = wc72; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path) => ({ ok: true, status: 200, json: async () => (String(path) === "/open" ? body : { ok: true, orders: [] }) });
+  } });
+  try {
+    const d = dom.window.document;
+    d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !d.querySelector("#pPrices .pane"); i++) await new Promise((r) => setTimeout(r, 25));
+    ok(d.querySelectorAll("#pPrices > .pgrid > .pane").length === 2 && !d.querySelector("#pPrices > .pane"),
+      "Prices draws its books inside the grid that lays them two across");
+  } finally { dom.window.close(); }
+})();
+
+section("S7 7.4: Order again opens the check at today's price with the same size, way and place");
+await (async () => {
+  /* HIS "ALL RECOMMENDED" OF 24 SEP 2026 (the plan's Ordering: "two taps"). A tile on Home for each size, way and place
+     they have ordered, newest first, while that size is on their list, priced off TODAY'S list; a tap opens the check with
+     them, and Place sends them. A declined or cancelled order is not offered, nor a size gone from the list; a new account
+     is offered the list's first sizes, which open the sheet at that size; nothing is offered over the line. Forced state:
+     orders placed at 180 and 95 that the list now prices at 200 and 110. */
+  const { landingPage: lp74 } = await import("../stmt/page.js");
+  const C74 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc74 } = await import("node:crypto");
+  const { JSDOM: JD74 } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-74", ck = await C74.contentKey("test-secret", u);
+  const list = await C74.encryptWith(ck, JSON.stringify({ at: "2026-09-24T03:59:00Z", digest: "d74", week: { monday: "2026-09-21", label: "21 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 110 }, { q: 2, price: 200 }, { q: 3, price: 290 }] }], soon: [] }));
+  const base = { product: "salt", mode: "collect", delivery: 0, moved: 0, history: [], msgs: [] };
+  const past = [
+    { ...base, id: "o6", status: "done", qty: 1, total: 95, paid: 95, moved: 1, mode: "deliver", place: "Marlow Row", at: "2026-09-21T03:00:00Z" },
+    { ...base, id: "o1", status: "done", qty: 2, total: 180, paid: 180, moved: 2, mode: "deliver", place: "Veloria", at: "2026-09-20T03:00:00Z", msgs: [{ by: "customer", text: "Side gate", at: "2026-09-20T03:00:00Z" }] },
+    { ...base, id: "o2", status: "done", qty: 1, total: 95, paid: 95, moved: 1, at: "2026-09-18T03:00:00Z" },
+    { ...base, id: "o3", status: "done", qty: 2, total: 180, paid: 180, moved: 2, mode: "deliver", place: "Veloria", at: "2026-09-10T03:00:00Z" },
+    { ...base, id: "o4", status: "cancelled", qty: 3, total: 270, at: "2026-09-19T03:00:00Z" },
+    { ...base, id: "o5", status: "done", qty: 5, total: 450, paid: 450, moved: 5, at: "2026-09-17T03:00:00Z" }];
+  const open = async (opt) => {
+    const posts = [];
+    const body = { ok: true, wrap: await C74.wrapKey(pass, ck), session: "sess-74", prices: list,
+      env: await C74.encryptWith(ck, JSON.stringify({ statements: opt.fresh ? [] : [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: opt.fresh ? null : await C74.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: opt.owed || 0 })) };
+    const dom = new JD74(lp74(u, "n74", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc74, configurable: true }); } catch (e) { win.crypto = wc74; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => { const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/orders" && m === "POST") { posts.push(JSON.parse(init.body)); return { ok: true, status: 200, json: async () => ({ ok: true, order: { id: "o9" } }) }; }
+        const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: opt.fresh ? [] : past } : { ok: true };
+        return { ok: true, status: 200, json: async () => j }; };
+    } });
+    const W = dom.window, D = W.document;
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !(!D.getElementById("barw").hidden && D.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 25));
+    return { W, D, posts };
+  };
+  const tiles = (D) => [...D.querySelectorAll("#hAgain button.htile")].map((b) => b.textContent);
+  const a = await open({});
+  try {
+    const { D, posts } = a;
+    ok(JSON.stringify(tiles(D)) === JSON.stringify(["1 unitCubeRM 110, delivered to Marlow Row", "2 unitsCubeRM 200, delivered to Veloria", "1 unitCubeRM 110, collected"])
+      && /Order again/.test(D.getElementById("hAgain").textContent),
+      "Home offers each size, way and place once, newest first, at today's price, and never a cancelled order or a size off the list: " + JSON.stringify(tiles(D)));
+    /* the second: its place is not the last order's, which is where a sheet would otherwise start */
+    D.querySelectorAll("#hAgain button.htile")[1].click();
+    const sheet = () => (D.getElementById("osheet") || { textContent: "" }).textContent;
+    ok(/Check your order/.test(sheet()) && /What2 units/.test(sheet()) && /PriceRM 200/.test(sheet()) && /HowDelivered to Veloria/.test(sheet())
+      && !/Side gate/.test(sheet()) && D.getElementById("oPlace") && D.getElementById("oPlace").textContent === "Place order",
+      "a tap opens the check with the same size, way and place at today's price, and not the old order's note: " + JSON.stringify(sheet().slice(0, 140)));
+    D.getElementById("oPlace").click();
+    /* waited to Order sent, so nothing the answer draws lands on a closed window */
+    for (let i = 0; i < 200 && !/Order sent/.test(sheet()); i++) await new Promise((r) => setTimeout(r, 20));
+    const pb = posts[0] || {};
+    ok(posts.length === 1 && pb.product === "salt" && pb.qty === 2 && pb.mode === "deliver" && pb.place === "Veloria" && pb.total === 200 && pb.digest === "d74",
+      "and the second tap places it, as the check showed it: " + JSON.stringify(pb));
+  } finally { a.W.close(); }
+  const b = await open({ fresh: true });
+  try {
+    const { D } = b;
+    ok(JSON.stringify(tiles(D)) === JSON.stringify(["1 unitCubeRM 110", "2 unitsCubeRM 200"]) && /Start your first order/.test(D.getElementById("hAgain").textContent),
+      "a new account is offered its list's first sizes: " + JSON.stringify(tiles(D)));
+    D.querySelectorAll("#hAgain button.htile")[1].click();
+    const on = D.querySelector('#osheet input[name="osize"]:checked');
+    ok(on && on.value === "2" && D.getElementById("oGo") && !D.getElementById("oPlace"), "and a tap opens the sheet at that size, to choose the way");
+  } finally { b.W.close(); }
+  const c = await open({ owed: 250 });
+  try {
+    ok(tiles(c.D).length === 0, "over the line nothing is offered to order again");
+  } finally { c.W.close(); }
+})();
+
+section("S7 7.5: a Set on the desk asks before it wakes every phone, and the notice is Home's still card");
+await (async () => {
+  /* HIS D14 OF 24 SEP 2026 ("all recommended"): "A still card on Home, with no running or changing band. A Set asks before
+     it wakes every phone." Every Set woke every phone on the site (v761), with nothing said at the tap. The desk's card
+     now asks, and a No sends nothing; Clear wakes nobody, so it asks nothing. On the page the notice heads Home. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    const box = w.document.createElement("div"); box.innerHTML = String(w.eval("tabOrders()")); w.document.body.appendChild(box);
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    const sent = [], asked = [], posts = () => sent.filter((x) => x.method === "POST");
+    w.fetch = async (path, init) => { sent.push({ method: init && init.method, body: init && init.body ? JSON.parse(init.body) : null });
+      return { ok: true, status: 200, json: async () => ({ ok: true, lines: [] }) }; };
+    const msg = () => w.document.getElementById("bullMsg").textContent;
+    w.confirm = (q) => { asked.push(q); return false; };
+    w.document.getElementById("bullText").value = "Closed Friday";
+    await w.eval("bullPost(false)");
+    ok(asked.length === 1 && /wakes every phone/.test(asked[0]) && posts().length === 0 && /Not posted/.test(msg()),
+      "a Set asks first, saying it wakes every phone, and a No sends nothing: " + JSON.stringify([asked, msg()]));
+    w.confirm = (q) => { asked.push(q); return true; };
+    await w.eval("bullPost(false)");
+    ok(asked.length === 2 && posts().length === 1 && JSON.stringify(posts()[0].body.lines) === '["Closed Friday"]' && /Posted\./.test(msg()),
+      "and a Yes sets it");
+    asked.length = 0; sent.length = 0;
+    await w.eval("bullPost(true)");
+    ok(asked.length === 0 && posts().length === 1 && posts()[0].body.lines.length === 0 && /Cleared\./.test(msg()),
+      "Clear wakes nobody, so it asks nothing: " + JSON.stringify(asked));
+    ok(/A still card on Home/.test(box.textContent) && /wakes every phone/.test(box.textContent),
+      "and the card says where the notice shows and what a Set does");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w.close(); } catch (e) { /* best effort */ } }
+  const { landingPage: lp75 } = await import("../stmt/page.js");
+  const { JSDOM: JD75 } = await import("jsdom");
+  const dom = new JD75(lp75("", "n75", null, { lines: ["Closed Friday"] }), { url: "https://site.test/" });
+  try {
+    const D = dom.window.document, bull = D.getElementById("bull"), col = D.querySelector("#pHome > .hcol");
+    ok(bull && bull.parentNode === col && col.firstElementChild === bull && !!bull.closest("#tabs[hidden]") && D.body.firstElementChild.id !== "bull",
+      "on the page the notice heads Home, inside the places the door keeps hidden, and no longer heads every page: "
+      + JSON.stringify([bull && bull.parentNode && bull.parentNode.className, D.body.firstElementChild.id]));
+  } finally { dom.window.close(); }
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read
@@ -32349,8 +32615,11 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => d.querySelectorAll("#pOrder [data-row]").length === 2);
-    ok(d.querySelectorAll("#pOrder [data-row]").length === 2 && !d.getElementById("pOrder").hidden && d.getElementById("tOrder").textContent === "Pay",
-      "the fixture opens on the payment page with its two orders below");
+    /* S7 7.1: Home opens first, and its Pay goes to Orders, where the payment page is */
+    d.getElementById("hPayGo").click();
+    const payPage = () => !d.getElementById("pOrder").hidden && /Payment due/.test((d.querySelector("#pOrder h2") || {}).textContent || "");
+    ok(d.querySelectorAll("#pOrder [data-row]").length === 2 && payPage(),
+      "the fixture's Pay on Home opens the payment page with its two orders below");
 
     openO("oA");
     d.getElementById("pd-oA").click();
@@ -32383,7 +32652,7 @@ await (async () => {
     openO("oA");
     d.getElementById("pd-oA").click();
     await until(() => lapseOn());
-    ok(!lapseBefore && lapseOn() && d.getElementById("tOrder").textContent === "Pay",
+    ok(!lapseBefore && lapseOn() && payPage(),
       "and a 401 after a tap on the payment page is said on screen, in the bar: " + lapseBefore + " then " + lapseOn());
 
     st.ordersDown = false; st.payOk = true;
@@ -32677,7 +32946,7 @@ await (async () => {
   } finally { process.off("unhandledRejection", onRej); w.close(); }
 })();
 
-section("24 Sep 2026: the Counter's tab strip is the system's wrapping container, so four tabs fit a narrow phone");
+section("24 Sep 2026: the Counter's places are the system's App bar and rail, so five fit a narrow phone");
 await (async () => {
   /* M31 of the Counter study: .tabs restated the container as a flex row that never wraps, so an associate's four
      tabs (363 to 387px) ran off a 360 screen and Card could not be reached. The strip is .salt-tabs now, which
@@ -32688,13 +32957,15 @@ await (async () => {
   try {
     /* whether it still hides at the door is not asked here: jsdom answers display none for [hidden] whatever the
        author rules say, so that check stayed green with the page's [hidden] rule removed (tried, 24 Sep 2026) */
-    const tabs = dom.window.document.getElementById("tabs");
-    ok(tabs.classList.contains("salt-tabs") && tabs.getAttribute("role") === "tablist",
-      "the strip carries the system's container class");
-    tabs.hidden = false;
-    const on = dom.window.getComputedStyle(tabs);
-    ok(on.display === "flex" && on.flexWrap === "wrap" && tabs.querySelectorAll("button.salt-tabs__pill").length === 4,
-      "shown, it is a flex row that wraps, so the fourth tab moves to a second line instead of off the screen: " + on.display + " " + on.flexWrap);
+    /* S7 7.1: THE TABS ARE PLACES NOW, on the system's App bar, a grid whose five columns share the width (the recipe
+       sizes each word to its column, measured at 320 and 150%), and on its rail from 1080px */
+    const D = dom.window.document, bar = D.querySelector("#tabs nav.salt-appbar"), rail = D.querySelector("#tabs nav.salt-rail.salt-appbar__rail");
+    const ids = (n) => n ? [...n.querySelectorAll("button[data-t]")].map((b) => b.getAttribute("data-t")).join(",") : "";
+    ok(bar && rail && ids(bar) === "home,prices,order,stmt,card" && ids(rail) === ids(bar)
+      && bar.querySelectorAll("button.salt-appbar__item").length === 5 && rail.querySelectorAll("button.salt-rail__tab").length === 5,
+      "the places are the system's App bar and its rail, the same five on each: " + ids(bar) + " | " + ids(rail));
+    ok(bar.querySelector('button[data-t="card"]').hidden && rail.querySelector('button[data-t="card"]').hidden && !bar.querySelector('button[data-t="stmt"]').hidden,
+      "and Rewards is hidden until an associate's account opens");
   } finally { dom.window.close(); }
 })();
 
@@ -32813,7 +33084,7 @@ await (async () => {
   } finally { w.close(); }
 })();
 
-section("24 Sep 2026: a changing bulletin stands still under reduced motion and is announced once");
+section("S7 7.5: the notice stands still for everyone, and is no live region");
 await (async () => {
   /* L51 of the Counter study: the changing bulletin swapped its line every four seconds whatever the reader had asked
      for, inside a role=status live region, so a screen reader was read a new line every four seconds for as long as
@@ -32833,17 +33104,15 @@ await (async () => {
   };
   const still = open(true), moving = open(false);
   try {
-    const trS = still.d.getElementById("bullTrack");
-    ok(still.timers.length === 0 && lines.every((l) => trS.textContent.includes(l)) && !trS.hasAttribute("aria-hidden"),
-      "under reduced motion no four-second timer is set and every line stands still in the band: " + JSON.stringify([still.timers.length, trS.textContent]));
-    const trM = moving.d.getElementById("bullTrack"), live = moving.d.getElementById("bull");
-    const told = () => [...live.childNodes].filter((n) => !(n.getAttribute && n.getAttribute("aria-hidden") === "true")).map((n) => n.textContent).join("");
-    const before = told();
-    ok(moving.timers.length === 1 && trM.textContent === "Closed Friday" && live.getAttribute("role") === "status",
-      "without it the lines still change, one at a time, in the live region: " + JSON.stringify([moving.timers.length, trM.textContent]));
-    moving.timers[0]();
-    ok(trM.textContent === "Open Saturday" && trM.getAttribute("aria-hidden") === "true" && told() === before && lines.every((l) => before.includes(l)),
-      "and what the live region is told is every line, once, and does not change when the line on screen does: " + JSON.stringify(before));
+    /* S7 7.5, HIS D14 OF 24 SEP 2026: a still card for everyone, reduced motion or not, set in changing mode or not; it
+       is part of Home, read where it stands, so it is no live region to be read again on every poll */
+    const shown = (g) => [...g.d.querySelectorAll("#bull > p")].map((x) => x.textContent);
+    for (const g of [still, moving]) {
+      const box = g.d.getElementById("bull");
+      ok(g.timers.length === 0 && JSON.stringify(shown(g)) === JSON.stringify(lines) && !box.hidden && !box.hasAttribute("role") && !box.hasAttribute("aria-live"),
+        (g === still ? "under reduced motion" : "without it") + ", no four-second timer is set and every line stands still, in no live region: "
+        + JSON.stringify([g.timers.length, shown(g), box.getAttribute("role")]));
+    }
   } finally { still.dom.window.close(); moving.dom.window.close(); }
 })();
 
@@ -32894,19 +33163,21 @@ await (async () => {
       d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
       for (let i = 0; i < 150 && !d.getElementById("pOrder").textContent; i++) await new Promise((r) => setTimeout(r, 100));
       return { order: d.getElementById("pOrder").textContent, orderShown: !d.getElementById("pOrder").hidden,
-        stmtShown: !d.getElementById("pStmt").hidden, orderTab: d.getElementById("tOrder").textContent,
+        stmtShown: !d.getElementById("pStmt").hidden, home: !d.getElementById("pHome").hidden, homeText: d.getElementById("pHome").textContent,
         pricesTab: !d.getElementById("tPrices").hidden, stmtTab: !d.querySelector('button[data-t="stmt"]').hidden,
         payLinks: d.querySelectorAll("#pOrder a.lnk").length, form: !!d.querySelector("#pOrder select") };
     } finally { dom.window.close(); }
   };
   const held = await openWith(250.5), under = await openWith(100), none = await openWith(undefined);
-  ok(held.orderShown && !held.stmtShown && held.orderTab === "Pay" && !held.pricesTab && held.stmtTab
+  /* S7 7.1: HOME OPENS FIRST, over the line too, and leads with the overdue amount and Pay; Orders is the payment page */
+  ok(held.home && !held.orderShown && !held.stmtShown && !held.pricesTab && held.stmtTab
+    && /Please pay the overdue amount of RM 250\.5 before placing another order/.test(held.homeText) && /Pay RM 250\.5/.test(held.homeText)
     && /Please pay the overdue amount of RM 250\.5 before placing another order/.test(held.order) && held.payLinks > 0 && !held.form,
-    "owing RM 250.50, the account opens on Pay, says to pay the overdue amount first, offers the ways to pay, and neither the price list nor an order form: "
-    + JSON.stringify({ ...held, order: held.order.slice(0, 90) }));
-  ok(!under.orderShown && under.stmtShown && under.orderTab === "Order" && under.pricesTab && !/overdue/.test(under.order)
-    && !none.orderShown && none.orderTab === "Order" && none.pricesTab,
-    "at RM 100 exactly, and with no figure at all, the account opens as it always has");
+    "owing RM 250.50, Home says to pay the overdue amount first with its Pay, Orders offers the ways to pay, and neither the price list nor an order form: "
+    + JSON.stringify({ ...held, order: held.order.slice(0, 90), homeText: held.homeText.slice(0, 90) }));
+  ok(under.home && !under.orderShown && under.pricesTab && !/overdue/.test(under.order + under.homeText)
+    && none.home && !none.orderShown && none.pricesTab && !/overdue/.test(none.homeText),
+    "at RM 100 exactly, and with no figure at all, Home opens with Prices beside it and no overdue line");
 })();
 
 section("S1 1.28: Still to collect is one line a book, never units of different books added");
@@ -33207,8 +33478,10 @@ await (async () => {
     "both pages the Worker serves carry the recipes between the tokens and the page's own layer");
   ok(/<button class="btn salt-pill salt-pill--md" id="go" type="submit">/.test(pgY) && /<input class="fld salt-field__input salt-field__input--mono" id="rq"/.test(pgY),
     "the door's field is the system's field, in mono for a code, and Log in is the system's pill");
-  ok(/class="salt-tabs__pill on" role="tab" aria-selected="true" data-t="stmt"/.test(pgY) && /bs\[i\]\.setAttribute\('aria-selected',on\?'true':'false'\)/.test(pgY),
-    "the tabs are the system's, and a tap moves aria-selected with the open one");
+  /* S7 7.1: the tabs are places on the system's App bar and rail, and the open one carries aria-current, which both draw */
+  ok(/'<button type="button" class="salt-appbar__item"' \+ placeAttrs\(t\)/.test(pgY) && /class="salt-rail__tab salt-rail__tab--solo"' \+ placeAttrs\(t, true\)/.test(pgY)
+    && /b\.setAttribute\('aria-current','page'\); else b\.removeAttribute\('aria-current'\)/.test(pgY),
+    "the places are the system's, and a tap moves aria-current with the open one");
   /* S5 5.3: the chip is drawn in one place, stateChip, its word the customer's and its tone read off the order */
   ok(/\+'salt-status salt-status--'\+tone,stateWord\(o\)\)/.test(pgY) && /tone=s==='placed'\?'steel salt-status--dashed':/.test(pgY) && /h\.appendChild\(stateChip\(o,'state'\)\)/.test(pgY),
     "an order's state is the system's chip, in its tone");

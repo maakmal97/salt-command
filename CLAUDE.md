@@ -302,11 +302,12 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   English and Malay off the lists in `src/orders.js` and the desk's `siteSafe` mirrors them by hand;
   the suite pins the lists to the book's names and `TIER_NAMES` and drives every word through both:
   a new book or level goes on both, its Malay word by hand.
-- **Over RM 100 owed (`HOLD_RM`) the account opens as a payment page**: the page's gate, not the
-  Worker's. Beside `owed` the live document seals `pay` (`payDue`): to pay now (`txAdvance`),
-  overdue and coming up (`txPendRM`), each part due at its order date plus the desk's
+- **Over RM 100 owed (`HOLD_RM`) Home leads with the overdue amount and Pay, and Prices and the order
+  form are withheld**: the page's gate, not the Worker's. Beside `owed` the live document seals `pay`
+  (`payDue`): to pay now (`txAdvance`), overdue and coming up (`txPendRM`), each part due at its order date plus the desk's
   `RULES.creditDays`, read from the master, and overdue only after that day. **The bulletin** is KV
-  `bulletin`, set through the desk's keyed `/bulletin` and checked by `siteWords`.
+  `bulletin`, set through the desk's keyed `/bulletin` and checked by `siteWords`: a still card on Home
+  (his D14; no running or changing mode), and a Set asks before it wakes every phone.
 - **An associate is asked who an order is for, first (Me / A friend)**: a friend's books to their `-R` bucket
   through the engine's `bookR2`, and the `orderKey` is built on the bucket. **A bucket is not its
   own person**: `ownsCode` reads the code and the bucket together; a bucket has no statement and no
