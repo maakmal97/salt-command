@@ -76,12 +76,14 @@ class KV {
     return type === "json" ? JSON.parse(raw) : raw;
   }
   async delete(k) { this.m.delete(k); }
-  /* a key written with a lapse lists its `expiration`, as real KV's listing does, so a route that
-     reads the listing to find such keys is driven by what real KV would tell it */
+  /* a key written with a lapse lists its `expiration`, and one written with metadata its `metadata`, as real KV's
+     listing does, so a route that reads the listing to find such keys is driven by what real KV would tell it */
   async list({ prefix = "" } = {}) {
     return { keys: [...this.m.keys()].filter(k => k.startsWith(prefix)).map(name => {
-      const o = this.opts.get(name);
-      return o && o.expirationTtl ? { name, expiration: Math.floor(Date.now() / 1000) + o.expirationTtl } : { name };
+      const o = this.opts.get(name), key = { name };
+      if (o && o.expirationTtl) key.expiration = Math.floor(Date.now() / 1000) + o.expirationTtl;
+      if (o && o.metadata !== undefined) key.metadata = o.metadata;
+      return key;
     }), list_complete: true };
   }
 }
@@ -15253,9 +15255,12 @@ await (async () => {
         return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
     } }).window;
     const D = win.document;
-    D.querySelector('button[data-m="review"]').click();
-    ok(await until(() => [...D.querySelectorAll("#rlist button")].some((b) => b.textContent.includes("CX0-AA"))), "Review lists the account");
+    D.querySelector('button[data-m="accounts"]').click();
+    ok(await until(() => [...D.querySelectorAll("#rlist button")].some((b) => b.textContent.includes("CX0-AA"))), "Accounts lists the account");
+    /* S9 9.2: a row opens the account's card, and the card opens the account */
     [...D.querySelectorAll("#rlist button")].find((b) => b.textContent.includes("CX0-AA")).click();
+    ok(await until(() => [...D.querySelectorAll("#aopen button")].some((b) => b.textContent === "View as them")), "the row opens its card");
+    [...D.querySelectorAll("#aopen button")].find((b) => b.textContent === "View as them").click();
     const pOrder = D.getElementById("pOrder");
     ok(await until(() => pOrder.querySelector("[data-row]")),
       "the account opens and its order is listed from his route, not None yet: " + JSON.stringify(pOrder.textContent.slice(0, 160)));
@@ -15323,30 +15328,26 @@ await (async () => {
         return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
     } }).window;
     const D = win.document;
-    /* ---- Send: the four controls on the card with no account ---- */
-    D.querySelector('button[data-m="send"]').click();
-    const cardOf = (u) => [...D.querySelectorAll("#slist .scard")].find((x) => x.textContent.includes(u));
-    ok(await until(() => cardOf(uA) && cardOf(uB)), "Send draws a card for both usernames");
-    const btn = (u, t) => [...cardOf(u).querySelectorAll("button")].find((b) => b.textContent === t);
-    const four = ["Share", "Copy message", "Sign-in link", "Open account"];
-    ok(four.every((t) => btn(uB, t) && btn(uB, t).disabled && /No account/.test(btn(uB, t).title)) && /Made at the next laptop update./.test(cardOf(uB).textContent),
-      "on the card with no account, Share, Copy message, Sign-in link and Open account are all off, each saying why: "
-        + JSON.stringify(four.map((t) => [t, btn(uB, t) && btn(uB, t).disabled])));
-    ok(four.every((t) => btn(uA, t) && !btn(uA, t).disabled), "and on a card with an account all four stay on");
-    /* UX9: the code opens the same address Share sends, under a caption offering the Sign-in link that is off */
-    ok(!cardOf(uB).querySelector(".qrw") && !/Sign-in link sends one/.test(cardOf(uB).textContent)
-      && !!cardOf(uA).querySelector(".qrw canvas") && /Sign-in link sends one/.test(cardOf(uA).textContent),
-      "the card with no account draws no code and no caption offering a link, while a card with an account keeps both");
-    /* ---- Review: the row with no account takes no tap ---- */
-    D.querySelector("button[data-back]").click();
-    D.querySelector('button[data-m="review"]').click();
+    /* ---- S9 9.2: Accounts, a row opening each account's card; the four controls on the one with no account ---- */
+    D.querySelector('button[data-m="accounts"]').click();
     const rowOf = (u) => [...D.querySelectorAll("#rlist button")].find((b) => b.textContent.includes(u));
-    ok(await until(() => rowOf(uB) && /Made at the next laptop update./.test(rowOf(uB).textContent)), "Review says the username has no account");
+    ok(await until(() => rowOf(uB) && /No account/.test(rowOf(uB).textContent) && rowOf(uA)), "Accounts lists both usernames, and says the one has no account");
+    const cardOf = (u) => { rowOf(u).click(); return [...D.querySelectorAll("#aopen .scard")].find((x) => x.textContent.includes(u)); };
+    const btn = (card, t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
+    const four = ["Share", "Copy message", "Sign-in link", "View as them"];
     const before = hits.length;
-    rowOf(uB).click();
+    const cB = cardOf(uB);
     await new Promise((r) => setTimeout(r, 60));
-    ok(rowOf(uB).disabled && !hits.slice(before).some((x) => /\/open$/.test(x)),
-      "and a tap on its row posts nothing: " + JSON.stringify(hits.slice(before)));
+    ok(!!cB && four.every((t) => btn(cB, t) && btn(cB, t).disabled && /No account/.test(btn(cB, t).title)) && /Made at the next laptop update./.test(cB.textContent),
+      "on the card with no account, Share, Copy message, Sign-in link and View as them are all off, each saying why: "
+        + JSON.stringify(four.map((t) => [t, cB && btn(cB, t) && btn(cB, t).disabled])));
+    ok(!hits.slice(before).some((x) => /\/open$/.test(x)), "and opening its card posts nothing: " + JSON.stringify(hits.slice(before)));
+    /* UX9: the code opens the same address Share sends, under a caption offering the Sign-in link that is off */
+    ok(!cB.querySelector(".qrw") && !/Sign-in link sends one/.test(cB.textContent),
+      "the card with no account draws no code and no caption offering a link");
+    const cA = cardOf(uA);
+    ok(!!cA && four.every((t) => btn(cA, t) && !btn(cA, t).disabled), "and on a card with an account all four stay on");
+    ok(!!cA.querySelector(".qrw canvas") && /Sign-in link sends one/.test(cA.textContent), "with the code and its caption");
 
     /* ---- the Worker: his correct master on a username with no account is never a miss ---- */
     const from = { "content-type": "application/json", "CF-Connecting-IP": "203.0.113.22" };
@@ -15567,9 +15568,12 @@ await (async () => {
       w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
     } }).window;
     const D = win.document;
-    D.querySelector('button[data-m="send"]').click();
-    const btnOf = (t) => [...D.querySelectorAll("#slist .scard button")].find((b) => b.textContent === t);
-    ok(await until(() => btnOf("Copy message")), "Send draws the card");
+    /* S9 9.2: the card is the account's, opened from its row on Accounts */
+    D.querySelector('button[data-m="accounts"]').click();
+    ok(await until(() => D.querySelector("#rlist [data-u]")), "Accounts lists the account");
+    D.querySelector("#rlist [data-u]").click();
+    const btnOf = (t) => [...D.querySelectorAll("#aopen .scard button")].find((b) => b.textContent === t);
+    ok(await until(() => btnOf("Copy message")), "its row opens the card");
     const cm = btnOf("Copy message"); cm.click();
     ok(await until(() => cm.textContent !== "Copy message") && cm.textContent === "Copy failed",
       "Copy message on a clipboard that refuses says Copy failed, not Copied: " + cm.textContent);
@@ -15580,7 +15584,6 @@ await (async () => {
       "Sign-in link with the share sheet closed does not say Could not make one: the link is made, copied instead, and says so: "
         + JSON.stringify({ label: sl.textContent, copied: clip.got.length }));
     clip.ok = false;
-    D.querySelector("button[data-back]").click();
     D.querySelector('button[data-m="links"]').click();
     ok(await until(() => [...D.querySelectorAll("#glist button")].filter((b) => b.textContent === "Copy link").length >= 2), "Links draws a card a tier");
     const [l1, l2] = [...D.querySelectorAll("#glist button")].filter((b) => b.textContent === "Copy link");
@@ -15592,7 +15595,7 @@ await (async () => {
       "and on one that takes it, Copied, with the link on the clipboard: " + l2.textContent);
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
-section("S1 1.36: ticking Sent on a card moves the sent count at the top of Send");
+section("S1 1.36: ticking Sent on a card moves the sent count at the top of Accounts");
 await (async () => {
   /* 24 SEP 2026 (L39): "N of M sent" was counted when the panel drew and never again, so it sat on its
      first figure while he ticked his way down the list. Driven on his page against the real Worker. */
@@ -15631,11 +15634,14 @@ await (async () => {
         finally { setTimeout(() => inflight--, 0); } };
     } }).window;
     const D = win.document;
-    D.querySelector('button[data-m="send"]').click();
+    D.querySelector('button[data-m="accounts"]').click();
     const head = () => (D.getElementById("scount") || {}).textContent;
     await until(() => inflight === 0);
-    const box = (u) => { const c = [...D.querySelectorAll("#slist .scard")].find((x) => x.textContent.includes(u)); return c && c.querySelector(".tick input"); };
-    ok(await until(() => box(uA) && box(uB)) && head() === "0 of 2 sent", "Send opens on nothing sent: " + head());
+    /* S9 9.2: the tick is on the account's own card, opened from its row */
+    const box = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (!r) return null;
+      if (!D.querySelector("#aopen .scard") || !D.querySelector("#aopen .scard").textContent.includes(u)) r.click();
+      const c = D.querySelector("#aopen .scard"); return c && c.querySelector(".tick input"); };
+    ok(await until(() => box(uA)) && head() === "0 of 2 sent", "Accounts opens on nothing sent: " + head());
     box(uA).checked = true; box(uA).dispatchEvent(new win.Event("change", { bubbles: true }));
     ok(await until(async () => !!(await kv.get("sent:2026-09-01:" + uA))) && await until(() => head() === "1 of 2 sent"),
       "a tick is kept and the count moves with it: " + head());
@@ -15814,8 +15820,8 @@ await (async () => {
     "the owner's script is on his page and on no customer's: " + JSON.stringify(OWNERISH.filter((t) => cust87.includes(t))));
   ok(!cust87.includes("__OWNER_JS__") && !own87.includes("__OWNER_JS__") && !cust87.includes("mp87"),
     "the splice leaves no marker on either page, and no master on the customer's");
-  ok(/id="mHome"/.test(own87) && own87.includes('data-m="review"') && own87.includes('data-m="links"') && own87.includes("data-back"),
-    "and the master page opens on its items, each with a way back");
+  ok(/id="mHome"/.test(own87) && own87.includes('data-m="accounts"') && own87.includes('data-m="links"') && own87.includes('data-m="needs"'),
+    "and the master page opens on its home, with its places beside it (S9 9.2)");
 
   /* ONE RULE FOR WHERE AN ACCOUNT STANDS (v687): the review sheet, the send sheet and the publish read it. */
   const { reviewFlag, accountTotals, partyTotals, klToday } = await import("../tools/make_statements.mjs");
@@ -15910,19 +15916,1174 @@ await (async () => {
       ? { ok: true, status: 200, json: async () => js87 }
       : { ok: false, status: 404, json: async () => ({ ok: false, error: "no" }) });
     try {
-      ok(D87.getElementById("mHome").hidden === false && D87.getElementById("oReview").hidden === true,
-        "the master page opens on its items, with Review closed");
-      D87.querySelector('button[data-m="review"]').dispatchEvent(new W87.Event("click", { bubbles: true }));
+      ok(D87.getElementById("mHome").hidden === false && D87.getElementById("oAccts").hidden === true,
+        "the master page opens on its home, with Accounts closed");
+      D87.querySelector('button[data-m="accounts"]').dispatchEvent(new W87.Event("click", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 60));
       const list87 = D87.getElementById("rlist").textContent;
-      ok(D87.getElementById("oReview").hidden === false && D87.getElementById("mHome").hidden === true
-        && /CX0-AA/.test(list87) && /Owes RM 272/.test(list87) && /Opened 14 Sep 2026/.test(list87),
-        "a tap on Review draws every account with its word and its last open: " + list87.replace(/\s+/g, " ").slice(0, 120));
-      D87.querySelector("button[data-back]").dispatchEvent(new W87.Event("click", { bubbles: true }));
-      ok(D87.getElementById("mHome").hidden === false && D87.getElementById("oReview").hidden === true,
-        "and Back returns to the items");
+      ok(D87.getElementById("oAccts").hidden === false && D87.getElementById("mHome").hidden === true
+        && /CX0-AA/.test(list87) && /Owes RM 272/.test(list87) && /Opened 14 Sep/.test(list87),
+        "a tap on Accounts draws every account with its word and its last open: " + list87.replace(/\s+/g, " ").slice(0, 120));
+      D87.querySelector('button[data-m="needs"]').dispatchEvent(new W87.Event("click", { bubbles: true }));
+      ok(D87.getElementById("mHome").hidden === false && D87.getElementById("oAccts").hidden === true,
+        "and Needs you takes him home");
     } finally { try { W87.close(); } catch (e) { /* best effort */ } }
   } finally { globalThis.fetch = realFetch87; }
+})();
+section("S9 9.1: Salt Admin opens on Needs you, a card a thing with its one action on it");
+await (async () => {
+  /* THE PLAN'S SECTION 5 (his "all recommended" of 24 Sep 2026): his home is what waits on him, each card
+     carrying the action it needs. Driven end to end on his rendered page against the real Worker: an
+     associate's link waiting, a customer locked out by ten misses from one address, a code with no account,
+     and an account nobody has been sent. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s9-1", HANDOVER = "s9-1-handover";
+  const uL = C.newUsername(), uA = C.newUsername(), uF = C.newUsername(), uN = C.newUsername(), pw = C.newPassword();
+  const rec = async (u, extra) => { const ck = await C.contentKey("s9-1", u);
+    return JSON.stringify(Object.assign({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+      wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }, extra || {})); };
+  await kv.put("u:" + uL, await rec(uL)); await kv.put("u:" + uA, await rec(uA, { assoc: true })); await kv.put("u:" + uF, await rec(uF));
+  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+  await kv.put("roster", JSON.stringify([{ code: "CX0-LK", username: uL }, { code: "CX1-AS", username: uA }, { code: "CX2-FR", username: uF }, { code: "CX3-NO", username: uN }]));
+  await kv.put("issue", "2026-09-01");
+  const row = (code, username) => ({ code, username, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" });
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01", accounts: [row("CX0-LK", uL), row("CX1-AS", uA), row("CX2-FR", uF)] }));
+  /* the associate has been sent and has opened; the locked customer got in once, by link; CX2-FR has neither */
+  await kv.put("sent:2026-09-01:" + uA, JSON.stringify({ at: "2026-09-02T01:00:00Z" }));
+  await kv.put("seen:" + uA, JSON.stringify({ first: "2026-09-02T01:00:00Z", last: "2026-09-03T01:00:00Z", opens: 2, how: "password" }));
+  await kv.put("seen:" + uL, JSON.stringify({ first: "2026-09-02T10:02:00Z", last: "2026-09-02T10:02:00Z", opens: 1, how: "link" }));
+  const TEAM = "maakmal", AUD = "aud-s9-1", KID = "kid-s9-1";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, STMT_HANDOVER_KEY: HANDOVER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 200 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  const shared = [];
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sess = (await (await site("/open", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ u: uA, password: pw }) })).json()).session;
+    const lid = (await (await site("/my/refs", { method: "POST", headers: { "X-Stmt-Session": sess, "content-type": "application/json" }, body: "{}" })).json()).ref.id;
+    /* ten misses on CX0-LK from one address, as handleOpen counts them */
+    const from = { "content-type": "application/json", "CF-Connecting-IP": "198.51.100.91" };
+    for (let i = 0; i < 10; i++) await site("/open", { method: "POST", headers: from, body: JSON.stringify({ u: uL, password: "zzzz-zzzz-zzzz-zzzz" }) });
+
+    /* ---- the Worker: who is locked out, and never from where ---- */
+    const sj = await (await site("/all/sheet", { headers: { "cf-access-jwt-assertion": tok } })).json();
+    const lk = sj.accounts.find((a) => a.username === uL), fr = sj.accounts.find((a) => a.username === uF);
+    ok(lk && lk.locked && lk.locked.from === 1 && Date.parse(lk.locked.until) > Date.now() && fr && fr.locked === null,
+      "the account list says who is locked out, by how many addresses and until when, and nobody else: " + JSON.stringify({ lk: lk && lk.locked, fr: fr && fr.locked }));
+    ok(!JSON.stringify(sj).includes("198.51.100"), "and the address that locked it never leaves the Worker");
+
+    /* ---- the page ---- */
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      Object.defineProperty(w.navigator, "share", { value: async (d) => { shared.push(d.text); }, configurable: true });
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const cards = () => [...D.querySelectorAll("#nlist [data-need]")];
+    const card = (key) => D.querySelector('#nlist [data-need="' + key + '"]');
+    const btn = (c, t) => c && [...c.querySelectorAll("button")].find((b) => b.textContent === t);
+    ok(D.getElementById("mHome").hidden === false && /Needs you/.test(D.querySelector("#mHome h1").textContent),
+      "his page opens on Needs you");
+    ok(await until(() => /4 things/.test(D.getElementById("nCount").textContent)),
+      "four things wait on him, and the line says so: " + D.getElementById("nCount").textContent);
+    ok(cards().map((x) => x.getAttribute("data-need")).join(",") === ["l:" + lid, "k:" + uL, "n:" + uN, "s"].join(","),
+      "a card each, in the order link, locked out, no account, to send: " + JSON.stringify(cards().map((x) => x.getAttribute("data-need"))));
+    ok(cards().every((x) => x.classList.contains("salt-approve") && x.querySelector(".salt-approve__head .salt-approve__party")),
+      "each drawn with the system's Approve card");
+
+    /* the waiting link: Approve on the card moves it, and the card says so where he tapped */
+    const lc = card("l:" + lid);
+    ok(/CX1-AS/.test(lc.textContent) && lc.querySelector("select") && btn(lc, "Approve") && btn(lc, "Decline"),
+      "the link's card names the associate by code and carries the tier it quotes, Approve and Decline");
+    btn(lc, "Approve").click();
+    ok(await until(async () => JSON.parse(await kv.get("g:" + lid)).approved === true) && await until(() => /Approved[.] It opens now/.test((card("l:" + lid) || {}).textContent || ""))
+      && await until(() => /3 things/.test(D.getElementById("nCount").textContent)),
+      "Approve on the card opens the link, the card says so and the count drops: " + JSON.stringify([(card("l:" + lid) || {}).textContent, D.getElementById("nCount").textContent]));
+
+    /* the account refused at an address: why, and a link in two taps, so the share never waits on the making */
+    const kc = card("k:" + uL);
+    ok(/refused at one address/.test(kc.querySelector(".salt-approve__entry").textContent) && !/locked/i.test(kc.textContent)
+      && /Ten wrong passwords from one address, refused there until \d\d:\d\d[.] If it was them, a sign-in link lets them in[.] Last got in by link, 2 Sep[.]/.test(kc.textContent),
+      "the card says an address is refused, never that the customer is locked out, with when it opens and how they last got in: " + kc.textContent);
+    const sl = btn(kc, "Send a sign-in link");
+    sl.click();
+    ok(await until(() => sl.textContent === "Share the link") && shared.length === 0 && (await kv.list({ prefix: "ot:" })).keys.length === 1,
+      "the first tap makes the link and shares nothing: " + JSON.stringify({ label: sl.textContent, shared: shared.length }));
+    sl.click();
+    ok(await until(() => shared.length === 1) && /[/]s[/]/.test(shared[0]) && /Sent/.test(kc.textContent),
+      "the second tap shares it, and the card says it went: " + JSON.stringify(shared));
+    /* and stage 3's Show a code, in person: its Sheet mints a hand-over for this account and shows the code */
+    const hc = btn(card("k:" + uL), "Show a code");
+    if (hc) hc.click();
+    ok(!!hc && await until(() => D.getElementById("hoC") && D.getElementById("hoC").value.length === 9)
+      && /For /.test((D.querySelector(".salt-sheet .ho-for") || {}).textContent || "") && D.querySelector(".salt-sheet .ho-for").textContent.includes(uL),
+      "the refused card carries Show a code, whose Sheet shows a code for that account: " + JSON.stringify(D.getElementById("hoC") && D.getElementById("hoC").value));
+    const hx = D.querySelector(".salt-sheet__close");
+    if (hx) hx.click();
+
+    /* the code with no account: Send is off, and the stranger's link is there to show */
+    const nc = card("n:" + uN);
+    ok(/Made at the next laptop update[.] Until then, show the Silver link[.]/.test(nc.textContent) && btn(nc, "Send, after the update").disabled,
+      "an ID with no account says when it is made, offers the Silver link and has Send switched off");
+    btn(nc, "Show the Silver link").click();
+    const silver = JSON.parse((await kv.list({ prefix: "g:" })).keys.map((k) => kv.m.get(k.name)).find((v) => /"level":"Silver"/.test(v) && /"standing":true/.test(v)));
+    ok(await until(() => nc.querySelector(".glink .gu") && nc.querySelector(".glink .gu").textContent.endsWith("/g/" + silver.id)),
+      "and Show the Silver link draws the standing Silver link on the card");
+
+    /* the accounts nobody has been sent */
+    const sc = card("s");
+    ok(/^1 to send/.test(sc.textContent) && /CX2-FR has an account and no sign-in yet[.]/.test(sc.textContent) && !/CX1-AS|CX0-LK/.test(sc.textContent),
+      "the to-send card names only the account with no tick and no open: " + sc.textContent);
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 9.2: Accounts is one list for Send and Review, found by a word, narrowed by a filter, a row opening its card, among four places");
+await (async () => {
+  /* THE PLAN'S SECTION 5: Accounts replaces Send and Review with one list, chips for how and when each was
+     opened, alerts, owes, locked and no account, a search and filters above it, and a row opening the account.
+     Salt Admin's places are the App bar's on a phone and the Desk rail's on a desk. Driven on his rendered page
+     against the real Worker. */
+  const W = (await import("../stmt/worker.js")).default;
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const uO = "abcd-efgh", uL = "cdef-ghjk", uN = "defg-hjkm", uF = "efgh-jkmn";
+  await kv.put("roster", JSON.stringify([{ code: "CX0-OW", username: uO }, { code: "CX1-LK", username: uL }, { code: "CX2-NO", username: uN }, { code: "CX3-FR", username: uF }]));
+  await kv.put("issue", "2026-09-01");
+  const row = (code, username, flag, t) => ({ code, username, issued: "2026-09-01", t: Object.assign({ n: 2, total: 300, owed: 0, toGet: 0, refund: 0, pend: 0 }, t || {}), flag });
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: [row("CX0-OW", uO, "owes", { owed: 272 }), row("CX1-LK", uL, "clear"), row("CX3-FR", uF, "clear")] }));
+  await kv.put("sent:2026-09-01:" + uO, JSON.stringify({ at: "2026-09-03T01:00:00Z" }));
+  await kv.put("seen:" + uO, JSON.stringify({ first: "2026-09-04T01:00:00Z", last: "2026-09-14T09:00:00Z", opens: 3, how: "link" }));
+  await kv.put("push:" + uO + ":aa11", JSON.stringify({ endpoint: "https://push.example/a" }));
+  await kv.put("push:" + uO + ":bb22", JSON.stringify({ endpoint: "https://push.example/b" }));
+  await kv.put("fail:203.0.113.7:" + uL, "10", { expirationTtl: 900, metadata: { n: 10 } });
+  const TEAM = "maakmal", AUD = "aud-s9-2", KID = "kid-s9-2";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: "mp-s9-2", ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 200 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sj = await (await site("/all/sheet", { headers: { "cf-access-jwt-assertion": tok } })).json();
+    const by = (u) => sj.accounts.find((a) => a.username === u);
+    ok(by(uO).alerts === 2 && by(uF).alerts === 0, "the account list counts the phones taking each account's alerts: " + JSON.stringify([by(uO).alerts, by(uF).alerts]));
+
+    const html = await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text();
+    ok(!/id="oSend"|id="oReview"|data-m="send"|data-m="review"/.test(html), "Send and Review are gone from his page");
+    const cust = await (await site("/")).text();
+    ok(!/salt admin|data-m="needs"|data-count=/i.test(cust), "and none of his places reaches a customer's page, not even a comment naming his app");
+    win = new JSDOM(html, { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const places = (sel) => [...D.querySelectorAll(sel + " .place[data-m]")].map((b) => b.getAttribute("data-m")).join(",");
+    ok(places(".salt-appbar") === "needs,accounts,links,more" && places(".salt-rail") === "needs,accounts,links,more",
+      "four places, in the App bar and in the Desk rail the bar gives way to: " + JSON.stringify([places(".salt-appbar"), places(".salt-rail")]));
+    const current = () => [...new Set([...D.querySelectorAll(".place[aria-current='page']")].map((b) => b.getAttribute("data-m")))].join(",");
+    ok(current() === "needs", "Needs you is the place he opens on: " + current());
+    ok(await until(() => [...D.querySelectorAll('[data-count="needs"]')].every((x) => x.textContent === "3")),
+      "and it carries the count of what waits there on both bars: " + JSON.stringify([...D.querySelectorAll('[data-count="needs"]')].map((x) => x.textContent)));
+
+    D.querySelector('.salt-appbar button[data-m="accounts"]').click();
+    const rows = () => [...D.querySelectorAll("#rlist [data-u]")];
+    const rowOf = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
+    ok(D.getElementById("oAccts").hidden === false && D.getElementById("mHome").hidden === true && current() === "accounts",
+      "a tap on Accounts opens it and marks it the current place");
+    ok(await until(() => rows().length === 4) && rows().every((r) => r.classList.contains("salt-inbox-row")),
+      "every roster account is a row, drawn with the system's Inbox row");
+    const chips = (u) => [...rowOf(u).querySelectorAll(".salt-status")].map((x) => x.textContent);
+    ok(chips(uO).includes("Owes RM 272") && chips(uO).includes("Opened 14 Sep by link") && chips(uO).includes("Alerts on") && chips(uO).includes("Sent 3 Sep"),
+      "a row's chips say what it owes, how and when it was last opened, that alerts are on and when it was sent: " + JSON.stringify(chips(uO)));
+    ok(chips(uL).some((t) => /^Refused at 1 address till \d\d:\d\d$/.test(t)) && chips(uN).join() === "No account" && chips(uF).includes("Not opened"),
+      "an account refused at an address, one with no account and one never opened each say so: " + JSON.stringify([chips(uL), chips(uN), chips(uF)]));
+
+    /* a word, then each filter */
+    const rq = D.getElementById("rq");
+    rq.value = "cx1"; rq.dispatchEvent(new win.Event("input", { bubbles: true }));
+    ok(rows().map((r) => r.getAttribute("data-u")).join() === uL, "a word narrows the list to the accounts it matches");
+    rq.value = ""; rq.dispatchEvent(new win.Event("input", { bubbles: true }));
+    const shown = (f) => { D.querySelector('#afil button[data-f="' + f + '"]').click(); return rows().map((r) => r.getAttribute("data-u")).sort().join(); };
+    const want = { owes: [uO], locked: [uL], none: [uN], unsent: [uL, uF], unopened: [uL, uF], all: [uO, uL, uN, uF] };
+    const got = Object.fromEntries(Object.keys(want).map((f) => [f, shown(f)]));
+    ok(Object.keys(want).every((f) => got[f] === want[f].slice().sort().join()), "each filter shows what it names and nothing else: " + JSON.stringify(got));
+    shown("owes");
+    ok(D.querySelector('#afil button[data-f="owes"]').getAttribute("aria-pressed") === "true"
+      && [...D.querySelectorAll("#afil button[data-f]")].filter((b) => b.getAttribute("aria-pressed") === "true").length === 1,
+      "and the filter in force is the one pressed");
+    shown("all");
+
+    /* a row opens the account, and the way back closes it */
+    rowOf(uO).click();
+    ok(D.getElementById("oAccts").classList.contains("open") && !D.getElementById("aopen").hidden
+      && /CX0-OW/.test(D.querySelector("#aopen .scard").textContent) && rowOf(uO).getAttribute("aria-current") === "true",
+      "a row opens its account's card and is marked the open one");
+    D.querySelector('#aopen button[data-back="accounts"]').click();
+    ok(!D.getElementById("oAccts").classList.contains("open") && D.getElementById("aopen").hidden && !rowOf(uO).hasAttribute("aria-current"),
+      "and the way back closes it");
+    D.querySelector('.salt-rail button[data-m="more"]').click();
+    ok(D.getElementById("oMore").hidden === false && current() === "more" && !!D.querySelector('#oMore button[data-m="cards"]') && !!D.getElementById("mTest"),
+      "More holds the report card and the test account");
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 9.5: View as them opens the customer's page read only, under a banner naming whose it is, and Back to accounts returns to that account");
+await (async () => {
+  /* THE PLAN'S SECTION 5: View as them, read only, with their orders. His bar says "Viewing as <username>,
+     read only" and its one control is Back to accounts, which lands on Accounts with that account open, never
+     on a "Signed out" line about an account he never signed into. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s9-5";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9-5", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX0-VW", username: u }]));
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX0-VW", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9-5", KID = "kid-s9-5";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 200 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  const hits = [];
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const cust = await (await site("/")).text();
+    ok(!/Viewing as|Back to accounts|id="vas"/.test(cust) && /id="lock">Log out</.test(cust), "the customer's bar is unchanged: Log out, and no banner");
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    D.querySelector('button[data-m="accounts"]').click();
+    ok(await until(() => D.querySelector('#rlist [data-u="' + u + '"]')), "the account is on Accounts");
+    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    const view = [...D.querySelectorAll("#aopen button")].find((b) => b.textContent === "View as them");
+    ok(!!view && !view.disabled, "its card offers View as them");
+    view.click();
+    ok(await until(() => !D.getElementById("tabs").hidden && !D.getElementById("barw").hidden),
+      "View as them opens their own page");
+    const bar = D.querySelector("#barw .bar");
+    ok(D.getElementById("vas").textContent === "Viewing as " + u + ", read only" && D.getElementById("roster").hidden,
+      "under a banner naming the username and saying read only: " + JSON.stringify(D.getElementById("vas").textContent));
+    const lockB = D.getElementById("lock");
+    ok(lockB.textContent === "Back to accounts" && ![...bar.querySelectorAll("button")].some((b) => /Log out/.test(b.textContent)),
+      "and the bar's one control is Back to accounts, never Log out");
+    ok(hits.includes("GET /all/orders/" + u) && !hits.some((x) => /^POST \/(orders|push|my\/refs)|^GET \/(orders|my\/refs)$/.test(x)),
+      "it reads their orders through his own route, and never through a customer's session: " + JSON.stringify(hits));
+    lockB.click();
+    ok(await until(() => !D.getElementById("roster").hidden) && D.getElementById("barw").hidden && D.getElementById("tabs").hidden,
+      "Back to accounts leaves their page");
+    ok(D.getElementById("oAccts").hidden === false && !D.getElementById("aopen").hidden
+      && /CX0-VW/.test(D.querySelector("#aopen .scard").textContent)
+      && D.querySelector('#rlist [data-u="' + u + '"]').getAttribute("aria-current") === "true",
+      "and lands on Accounts with that account open, where he was");
+    ok(!/Signed out/.test(D.getElementById("rmsg").textContent),
+      "with no word about signing out of an account he never signed into: " + JSON.stringify(D.getElementById("rmsg").textContent));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 9.6: Send them in turn makes each account's link as its turn opens, shares it on a tap of its own and ticks it sent before the next");
+await (async () => {
+  /* THE PLAN'S SECTION 5: accounts not yet sent are sent in turn, ticked by themselves. The share sheet never
+     waits on the making (the plan's must-not-ship list), a dismissed share ticks nothing, and Skip leaves one
+     for later. Driven on his rendered page against the real Worker. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s9-6";
+  const us = [C.newUsername(), C.newUsername(), C.newUsername()], codes = ["CX0-A1", "CX1-B2", "CX2-C3"], pw = C.newPassword();
+  for (const u of us) { const ck = await C.contentKey("s9-6", u);
+    await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+      wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) })); }
+  await kv.put("roster", JSON.stringify(us.map((u, k) => ({ code: codes[k], username: u }))));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: us.map((u, k) => ({ code: codes[k], username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" })) }));
+  const TEAM = "maakmal", AUD = "aud-s9-6", KID = "kid-s9-6";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 250 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  const shared = [], share = { refuse: false };
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      Object.defineProperty(w.navigator, "share", { value: async (d) => {
+        if (share.refuse) throw Object.assign(new Error("Share canceled"), { name: "AbortError" }); shared.push(d.text); }, configurable: true });
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const card = () => D.querySelector('#nlist [data-need="s"]');
+    const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t);
+    const ticked = async (u) => !!(await kv.get("sent:2026-09-01:" + u));
+    const minted = async () => (await kv.list({ prefix: "ot:" })).keys.length;
+    ok(await until(() => btn("Send them in turn")) && /^3 to send/.test(card().textContent), "three accounts wait to be sent, and the card offers Send them in turn");
+    btn("Send them in turn").click();
+    ok(await until(() => btn("Share") && !btn("Share").disabled) && /^1 of 3/.test(card().textContent) && /CX0-A1: their link is made/.test(card().textContent)
+      && (await minted()) === 1 && shared.length === 0,
+      "the first turn opens with its link already made and nothing shared: " + JSON.stringify({ text: card().textContent.slice(0, 120), minted: await minted() }));
+    ok(btn("Share").classList.contains("salt-pill") && card().querySelectorAll(".salt-pill").length === 1, "Share is the one filled control");
+    btn("Share").click();
+    ok(await until(async () => (await ticked(us[0])) && /^2 of 3/.test(card().textContent)) && shared.length === 1 && /[/]s[/]/.test(shared[0]),
+      "Share hands over their sign-in link and ticks them sent before the next turn opens");
+    ok([...card().querySelectorAll(".salt-status")].some((x) => x.textContent === "CX0-A1, sent"), "and the card shows them ticked");
+    await until(() => btn("Share") && !btn("Share").disabled);
+    share.refuse = true;
+    btn("Share").click();
+    ok(await until(() => /Not shared/.test(card().textContent)) && !(await ticked(us[1])) && /^2 of 3/.test(card().textContent),
+      "a share he closes ticks nothing and keeps the turn: " + card().textContent.slice(0, 160));
+    share.refuse = false;
+    btn("Skip").click();
+    ok(await until(() => /^3 of 3/.test(card().textContent) && btn("Share") && !btn("Share").disabled), "Skip moves to the next with its own link made");
+    btn("Share").click();
+    ok(await until(() => /^All done/.test(card().textContent)) && await ticked(us[2]) && !(await ticked(us[1])) && /2 of 3 sent/.test(card().textContent),
+      "the last is shared and ticked, the skipped one is not, and the card says so: " + card().textContent.slice(0, 160));
+    ok((D.getElementById("scount") || {}).textContent === "2 of 3 sent", "Accounts counts the ticks as they land: " + (D.getElementById("scount") || {}).textContent);
+    btn("Done").click();
+    ok(await until(() => /^1 to send/.test(card().textContent) && /CX1-B2 has an account/.test(card().textContent)),
+      "and Done leaves the skipped one waiting on Needs you");
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 9.7: Salt Admin has its own icon, the ring with a keyhole, and an ended Access session gives way to Sign in again");
+await (async () => {
+  /* HIS D13 OF 24 SEP 2026 (answered with "all recommended"): Salt Admin gets its own icon, drawn like the
+     Counter's and naming nothing, and when the Access session behind it lapses the page says so and offers
+     Sign in again, where every tap read "Failed to fetch". */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { inflateSync } = await import("node:zlib");
+  const { JSDOM } = await import("jsdom");
+  const { moduleText } = await import("../tools/stmt-icon.mjs");
+  ok(moduleText() === readFileSync(join(REPO, "stmt", "icons.js"), "utf8") && /export const ADMIN_ICON_PNG_B64 = "/.test(moduleText()),
+    "stmt/icons.js is the generator's own bytes, Salt Admin's icon included");
+  const kv = new KV();
+  const MASTER = "mp-s9-7";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9-7", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX0-KY", username: u }]));
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX0-KY", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9-7", KID = "kid-s9-7";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 200 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  /* a PNG read back: its size, and the colour at a point, from the bytes the Worker serves */
+  const png = (buf) => {
+    const w = buf.readUInt32BE(16), h = buf.readUInt32BE(20);
+    let at = 8; const idat = [];
+    while (at < buf.length) { const len = buf.readUInt32BE(at), type = buf.toString("ascii", at + 4, at + 8);
+      if (type === "IDAT") idat.push(buf.subarray(at + 8, at + 8 + len)); at += 12 + len; }
+    const raw = inflateSync(Buffer.concat(idat)), row = w * 3 + 1;
+    return { w, h, depth: buf[24], kind: buf[25], flat: [...Array(h).keys()].every((y) => raw[y * row] === 0),
+      at: (x, y) => [0, 1, 2].map((i) => raw[y * row + 1 + x * 3 + i]).join(",") };
+  };
+  const wins = [];
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const acc = { headers: { "cf-access-jwt-assertion": tok } };
+
+    /* ---- the icon ---- */
+    const kr = await site("/icon-key.png"), cr = await site("/icon.png");
+    ok(kr.status === 200 && /image[/]png/.test(kr.headers.get("content-type")), "Salt Admin's icon is served as a PNG, with no Access needed, as a home screen fetches it");
+    const K = png(Buffer.from(await kr.arrayBuffer())), P = png(Buffer.from(await cr.arrayBuffer()));
+    const S = K.w, mid = (S - 1) / 2, BRASS = "197,160,89", OBS = "5,8,10";
+    const stem = [Math.round(mid), Math.round(mid + S * 0.09)], ring = [Math.round(mid + S * 0.29), Math.round(mid)], corner = [8, 8];
+    ok(K.w === 512 && K.h === 512 && K.depth === 8 && K.kind === 2 && K.flat, "a 512px truecolour tile, as the Counter's is");
+    ok(K.at(...stem) === BRASS && P.at(...stem) === OBS,
+      "with a keyhole's stem below the centre where the Counter's has only its dot: " + JSON.stringify([K.at(...stem), P.at(...stem)]));
+    ok(K.at(...ring) === P.at(...ring) && K.at(...ring) !== OBS && K.at(...corner) === OBS && P.at(...corner) === OBS,
+      "on the Counter's own ring and tile: " + JSON.stringify([K.at(...ring), P.at(...ring)]));
+    const mf = await (await site("/all/manifest.webmanifest", acc)).json();
+    ok(mf.name === "Salt Admin" && mf.icons.length === 1 && mf.icons[0].src === "/icon-key.png", "his manifest names it: " + JSON.stringify(mf.icons));
+    const ownHtml = await (await site("/all", acc)).text(), custHtml = await (await site("/")).text();
+    ok(/<link rel="apple-touch-icon" href="[/]icon-key[.]png">/.test(ownHtml) && /<link rel="apple-touch-icon" href="[/]icon[.]png">/.test(custHtml) && !custHtml.includes("icon-key"),
+      "his page's iPhone icon is his, and the customer's page keeps the Counter's and never names his");
+
+    /* ---- an ended Access session ---- */
+    /* what a browser does with Access's redirect to its login: followed, a cross-origin page a fetch cannot read,
+       so it throws; not followed, an opaque redirect */
+    const OPAQUE = (o) => { if (o.redirect !== "manual") throw new TypeError("Failed to fetch");
+      return { type: "opaqueredirect", status: 0, ok: false, json: async () => { throw new Error("opaque"); } }; };
+    const page = (answer) => { const w = new JSDOM(ownHtml, { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      win.fetch = async (q, o) => { o = o || {}; const a = answer(String(q), o); if (a) return a;
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, acc.headers), body: o.body }); };
+    } }).window; wins.push(w); return w; };
+    const shown = (w, id) => w.getComputedStyle(w.document.getElementById(id)).display !== "none" && !w.document.getElementById(id).hidden;
+    const asked = [];
+    const W1 = page((q, o) => { if (q.startsWith("/all/")) { asked.push(o.redirect); return OPAQUE(o); } return null; });
+    ok(await until(() => shown(W1, "aEnded")) && !shown(W1, "roster") && W1.document.body.classList.contains("ended"),
+      "a request Access answers with its login gives way to the sign-in page, and nothing else is left on it");
+    const e1 = W1.document.getElementById("aEnded"), a1 = e1.querySelector("a");
+    ok(/Your admin sign-in has ended/.test(e1.textContent) && a1 && a1.textContent === "Sign in again" && a1.getAttribute("href") === "/all",
+      "which says his sign-in has ended and offers Sign in again, back through Access: " + JSON.stringify(e1.textContent));
+    ok(asked.length > 0 && asked.every((r) => r === "manual") && !/Failed to fetch/.test(W1.document.getElementById("rmsg").textContent + e1.textContent),
+      "every request asks not to follow a redirect, so the lapse is read rather than failing: " + JSON.stringify(asked));
+    const W2 = page((q) => (q === "/all/sheet" ? new Response(JSON.stringify({ ok: false, error: "Access required" }), { status: 401 }) : null));
+    ok(await until(() => shown(W2, "aEnded")), "and so does the Worker's own 401 under /all");
+    const W3 = page((q) => { if (q.startsWith("/all/")) throw new TypeError("Failed to fetch"); return null; });
+    await until(() => /Not sent/.test(W3.document.getElementById("rmsg").textContent));
+    ok(!shown(W3, "aEnded") && /Not sent[.] Check the connection/.test(W3.document.getElementById("rmsg").textContent),
+      "while a request that never went out says so, and leaves the page: " + JSON.stringify(W3.document.getElementById("rmsg").textContent));
+    /* the account he is viewing reads its orders through the same road */
+    const W4 = page((q, o) => (q.startsWith("/all/orders/") ? OPAQUE(o) : null));
+    const D4 = W4.document;
+    D4.querySelector('button[data-m="accounts"]').click();
+    await until(() => D4.querySelector('#rlist [data-u="' + u + '"]'));
+    D4.querySelector('#rlist [data-u="' + u + '"]').click();
+    [...D4.querySelectorAll("#aopen button")].find((b) => b.textContent === "View as them").click();
+    ok(await until(() => shown(W4, "aEnded")), "and an account opened under View as them meets the ended session the same way");
+  } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
+})();
+section("S9 9.8: Salt Admin counts the orders waiting on the desk and the desk counts the links waiting in Salt Admin, each a figure with no link and no name");
+await (async () => {
+  /* THE PLAN'S SECTION 5: two owner apps remain, and each counts the other's waiting items. The desk tells the
+     site its own count (the one its banner reads) as a mark, recounting only when an order moved; the site
+     hands the desk's page the count of associate links waiting on his word. Driven through both real Workers. */
+  const W = (await import("../stmt/worker.js")).default;
+  const skv = new KV(), dkv = new KV();
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key-s98", STMT_MASTER: "mp-s9-8", ACCESS_TEAM: "maakmal", ACCESS_AUD: "aud-s9-8" };
+  const siteCalls = [];
+  const denv = { ...mkEnv(dkv), STMT_DESK_KEY: "desk-key-s98",
+    STMT_SITE: { fetch: (url, init) => { siteCalls.push(new URL(url).pathname); return W.fetch(new Request(url, init), senv); } } };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), senv);
+  const desk = { "X-Stmt-Desk": "desk-key-s98" };
+  const u = "abcd-efgh", at = "2026-09-24T01:00:00Z";
+  const order = (id, status, msgs) => ({ id, u, at, status, product: "salt", qty: 1, total: 150, delivery: 0, mode: "collect", paid: 0, payments: [],
+    moved: status === "done" ? 1 : 0, movedOn: null, msgs: msgs || [], history: [{ at, status: "placed", by: "customer" }] });
+  const ids = ["20260924010000-aaaa", "20260924010100-bbbb", "20260924010200-cccc", "20260924010300-dddd"];
+  /* S9 fix: what waits is the desk's own reading (ordWaiting): placed, or a question of theirs unanswered. An agreed
+     order is a row already, so the answered one and the one ready do not wait. */
+  const ask = { at, by: "customer", text: "can it come on Friday" }, answer = { at, by: "desk", text: "yes" };
+  [["placed"], ["acknowledged", [ask]], ["acknowledged", [ask, answer]], ["done"]].forEach(([st, m], k) => skv.m.set("order:" + u + ":" + ids[k], JSON.stringify(order(ids[k], st, m))));
+  /* the links: two waiting, one approved, one declined, one withdrawn while waiting, a standing one and an older one */
+  const link = (id, o) => skv.m.set("g:" + id, JSON.stringify(Object.assign({ id, made: at, by: u, tier: 2 }, o)));
+  link("wait-aaaa", { approved: false }); link("wait-bbbb", { approved: false });
+  link("appr-cccc", { approved: true }); link("decl-dddd", { approved: false, declined: true });
+  link("revk-eeee", { approved: false, revoked: true }); link("stnd-ffff", { standing: true, level: "Silver" });
+  link("oldl-gggg", {});   /* an older link carries no approved field at all, and is open */
+
+  /* ---- the site's half: the desk's figure, taken on the desk key and shown on Salt Admin ---- */
+  const post = (body, h) => site("/desk/waiting", { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(body) });
+  const refused = [(await post({ n: 3 }, {})).status, (await post({ n: -1 }, desk)).status, (await post({ n: 2.5 }, desk)).status, (await post({ n: "3" }, desk)).status,
+    (await site("/desk/waiting", { headers: desk })).status];
+  ok(refused.join() === "401,400,400,400,405" && !skv.m.has("desk-waiting"),
+    "the site takes the figure only on the desk key, only as a whole number, and only as a POST: " + refused.join());
+  const lj = await (await site("/desk/orders?links=1", { headers: desk })).json(), plain = await (await site("/desk/orders", { headers: desk })).json();
+  ok(lj.ok && lj.links === 2 && !("links" in plain), "the desk's page is told the two links that wait on his word, and only when it asks: " + JSON.stringify([lj.links, "links" in plain]));
+
+  /* ---- the desk's half: the cron tells the site its count, and a quiet minute costs one read ---- */
+  const ctx = () => ({ ps: [], waitUntil(p) { this.ps.push(p); } });
+  const tick = async () => { const c = ctx(); await worker.scheduled({ cron: "* * * * *", scheduledTime: Date.parse("2026-09-24T02:07:00Z") }, denv, c); await Promise.all(c.ps); };
+  await tick();
+  const mark = () => JSON.parse(skv.m.get("desk-waiting") || "null");
+  ok(mark() && mark().n === 2, "the every-minute cron tells the site the two things that wait on the desk, the order placed and the question unanswered, as the desk counts them: " + JSON.stringify(mark()));
+  const { tellWaiting } = await import("../src/orders.js");
+  siteCalls.length = 0;
+  const quiet = await tellWaiting(denv);
+  ok(quiet.ok && quiet.told === false && siteCalls.join() === "/desk/orders/last",
+    "a minute with nothing moved reads the marks and nothing else: " + JSON.stringify(siteCalls));
+  const moved = await site("/desk/orders/" + u + "/" + ids[0], { method: "POST", headers: Object.assign({ "content-type": "application/json" }, desk), body: JSON.stringify({ status: "acknowledged" }) });
+  ok(moved.status === 200, "he agrees the placed order");
+  const told = await tellWaiting(denv);
+  ok(told.ok && told.told === true && told.n === 1 && mark().n === 1, "and the next pass tells the site one waits now: " + JSON.stringify([told, mark()]));
+
+  /* ---- Salt Admin's line ---- */
+  const TEAM = "maakmal", AUD = "aud-s9-8", KID = "kid-s9-8";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const { JSDOM } = await import("jsdom");
+  const until = async (f) => { for (let i = 0; i < 200 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sj = await (await site("/all/sheet", { headers: { "cf-access-jwt-assertion": tok } })).json();
+    ok(sj.desk && sj.desk.n === 1 && Object.keys(sj.desk).sort().join() === "at,n", "his account list carries the desk's figure and its moment, nothing else: " + JSON.stringify(sj.desk));
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const line = win.document.getElementById("nDesk");
+    ok(await until(() => !line.hidden && line.textContent === "1 thing waits on the desk.") && !line.querySelector("a") && !/Salt Command|[A-Z]{2}\d-[A-Z]{2,4}/.test(line.textContent),
+      "Needs you says one thing waits on the desk, with no link and no name: " + JSON.stringify(line.textContent));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+
+  /* ---- the desk's page: the relay carries the count, and the rail's foot says it ---- */
+  const kvd = await worker.fetch(new Request("https://salt-command.example/orders", { headers: { "X-Salt-Key": "k98" } }), Object.assign({}, denv, { SALT_WRITE_KEY: "k98" }));
+  const rj = await kvd.json();
+  ok(kvd.status === 200 && rj.links === 2, "the desk's own read of the orders carries the links waiting in Salt Admin: " + JSON.stringify(rj.links));
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    const holder = w.document.createElement("div"); holder.innerHTML = String(w.eval("tabOrders()")); w.document.body.appendChild(holder);
+    const foot = () => w.document.querySelector(".rail .railfoot").textContent.trim();
+    let answer = { ok: true, orders: [], links: 2 };
+    w.fetch = async () => ({ ok: true, status: 200, json: async () => answer });
+    await w.eval("ordLoad(true)");
+    ok(foot() === "2 links wait in Salt Admin" && !w.document.querySelector(".rail .railfoot a"), "the rail's foot counts them, with no link: " + JSON.stringify(foot()));
+    answer = { ok: true, orders: [], links: 1 }; await w.eval("ordLoad(true)");
+    ok(foot() === "1 link waits in Salt Admin", "one is one: " + JSON.stringify(foot()));
+    answer = { ok: true, orders: [], links: 0 }; await w.eval("ordLoad(true)");
+    ok(foot() === "", "and none says nothing: " + JSON.stringify(foot()));
+    /* S9 fix: one definition. The desk's own reading of the same open orders is the figure Salt Admin was told. */
+    const { listOrders } = await import("../src/orders.js");
+    answer = { ok: true, orders: (await listOrders(denv, false)).orders, links: 0 }; await w.eval("ordLoad(true)");
+    const deskN = w.eval("(()=>{const x=ordWaiting();return new Set(x.placed.concat(x.asked).map(o=>o.id)).size;})()");
+    ok(deskN === 1 && mark().n === deskN, "and the desk's own count of those orders is the figure Salt Admin was told: " + JSON.stringify([deskN, mark().n]));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix R1: Send them in turn takes one Share at a time, so a second tap while the tick is in flight never skips the next account");
+await (async () => {
+  /* The tick is awaited after the share, and a second tap in that window shared the same link again and stepped
+     twice: the next account was never shared or ticked, and the end said all three were sent. Driven on his page
+     against the real Worker, with the tick held in flight to reach the window. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s9-r1";
+  const us = [C.newUsername(), C.newUsername(), C.newUsername()], codes = ["CX0-A1", "CX1-B2", "CX2-C3"], pw = C.newPassword();
+  for (const u of us) { const ck = await C.contentKey("s9-r1", u);
+    await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+      wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) })); }
+  await kv.put("roster", JSON.stringify(us.map((u, k) => ({ code: codes[k], username: u }))));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: us.map((u, k) => ({ code: codes[k], username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" })) }));
+  const TEAM = "maakmal", AUD = "aud-s9-r1", KID = "kid-s9-r1";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 250 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  const shared = [], hold = { gate: null, open: null };
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      Object.defineProperty(w.navigator, "share", { value: async (d) => { shared.push(d.text); }, configurable: true });
+      w.fetch = async (q, o) => { o = o || {};
+        if (hold.gate && /^[/]all[/]sent[/]/.test(String(q))) await hold.gate;
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const card = () => D.querySelector('#nlist [data-need="s"]');
+    const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t);
+    const ticked = async (u) => !!(await kv.get("sent:2026-09-01:" + u));
+    ok(await until(() => btn("Send them in turn")), "three accounts wait to be sent");
+    btn("Send them in turn").click();
+    ok(await until(() => btn("Share") && !btn("Share").disabled), "the first turn opens with its link made");
+    /* two taps back to back on the one button */
+    const s1 = btn("Share"); s1.click(); s1.click();
+    ok(await until(async () => (await ticked(us[0])) && /^2 of 3/.test(card().textContent) && btn("Share") && !btn("Share").disabled)
+      && shared.length === 1 && /CX1-B2: their link is made/.test(card().textContent),
+      "two taps on Share share the first account once and open the second: " + JSON.stringify({ shared: shared.length, text: card().textContent.slice(0, 100) }));
+    /* the tick held in flight: the buttons drawn then are off, and taps on the ones drawn before do nothing */
+    hold.gate = new Promise((r) => { hold.open = r; });
+    const s2 = btn("Share"), k2 = btn("Skip");
+    s2.click();
+    ok(await until(() => shared.length === 2 && btn("Share") && btn("Share").disabled && btn("Skip").disabled),
+      "while the tick is in flight, Share and Skip are drawn off");
+    s2.click(); k2.click();
+    await new Promise((r) => setTimeout(r, 60));
+    hold.open(); hold.gate = null;
+    ok(await until(async () => (await ticked(us[1])) && /^3 of 3/.test(card().textContent) && btn("Share") && !btn("Share").disabled)
+      && shared.length === 2 && /CX2-C3: their link is made/.test(card().textContent),
+      "and once it lands the second is ticked and the third opens, none shared twice and none skipped: " + JSON.stringify({ shared: shared.length, text: card().textContent.slice(0, 100) }));
+    btn("Share").click();
+    ok(await until(() => /^All done/.test(card().textContent)) && await ticked(us[2]) && /3 of 3 sent/.test(card().textContent)
+      && /Each has their link, and each is ticked sent[.]/.test(card().textContent) && shared.length === 3,
+      "the end says all three are sent only because all three are ticked: " + card().textContent.slice(0, 160));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix R3: a share whose sent tick is refused says so on the next turn's card, naming the account");
+await (async () => {
+  /* The failure was written, then cleared by the step to the next account before anything drew it, so a refused
+     tick was silent. The site's issue is moved past the sheet's, so /all/sent answers 409. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s9-r3";
+  const us = [C.newUsername(), C.newUsername()], codes = ["CX0-A1", "CX1-B2"], pw = C.newPassword();
+  for (const u of us) { const ck = await C.contentKey("s9-r3", u);
+    await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+      wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) })); }
+  await kv.put("roster", JSON.stringify(us.map((u, k) => ({ code: codes[k], username: u }))));
+  await kv.put("issue", "2026-09-02");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: us.map((u, k) => ({ code: codes[k], username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" })) }));
+  const TEAM = "maakmal", AUD = "aud-s9-r3", KID = "kid-s9-r3";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 250 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  const shared = [];
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      Object.defineProperty(w.navigator, "share", { value: async (d) => { shared.push(d.text); }, configurable: true });
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const card = () => D.querySelector('#nlist [data-need="s"]');
+    const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t);
+    ok(await until(() => btn("Send them in turn")), "two accounts wait to be sent");
+    btn("Send them in turn").click();
+    ok(await until(() => btn("Share") && !btn("Share").disabled), "the first turn opens with its link made");
+    btn("Share").click();
+    const note = () => (card().querySelector(".nnote") || {}).textContent || "";
+    ok(await until(() => /^2 of 2/.test(card().textContent) && btn("Share") && !btn("Share").disabled) && shared.length === 1
+      && /^CX0-A1 was shared, but the tick did not save: that is not this issue/.test(note()) && /0 of 2 sent/.test(card().textContent),
+      "the next turn's card says which account was shared without a tick, and why: " + JSON.stringify(note()));
+    btn("Skip").click();
+    ok(await until(() => /^All done/.test(card().textContent)) && note() === "", "and a step of his own clears it");
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix R7: with no share sheet, Send them in turn copies the message and ticks the account only on his Sent it");
+await (async () => {
+  /* A browser with no Web Share copied the message and ticked the account sent at once, so the tick both his
+     devices read said Sent for a message still on the clipboard, which the next turn's copy then overwrote. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s9-r7";
+  const us = [C.newUsername(), C.newUsername()], codes = ["CX0-A1", "CX1-B2"], pw = C.newPassword();
+  for (const u of us) { const ck = await C.contentKey("s9-r7", u);
+    await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+      wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) })); }
+  await kv.put("roster", JSON.stringify(us.map((u, k) => ({ code: codes[k], username: u }))));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: us.map((u, k) => ({ code: codes[k], username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" })) }));
+  const TEAM = "maakmal", AUD = "aud-s9-r7", KID = "kid-s9-r7";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 250 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  const copied = [];
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      /* no navigator.share: a desktop browser without Web Share */
+      Object.defineProperty(w.navigator, "clipboard", { value: { writeText: async (t) => { copied.push(t); } }, configurable: true });
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const card = () => D.querySelector('#nlist [data-need="s"]');
+    const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t);
+    const ticked = async (u) => !!(await kv.get("sent:2026-09-01:" + u));
+    ok(typeof win.navigator.share === "undefined" && await until(() => btn("Send them in turn")), "a page with no share sheet, and two accounts to send");
+    btn("Send them in turn").click();
+    ok(await until(() => btn("Share") && !btn("Share").disabled), "the first turn opens with its link made");
+    btn("Share").click();
+    ok(await until(() => btn("Sent it") && !btn("Sent it").disabled) && copied.length === 1 && /[/]s[/]/.test(copied[0])
+      && !(await ticked(us[0])) && /^1 of 2/.test(card().textContent) && /CX0-A1: their message is copied[.]/.test(card().textContent)
+      && /then tap Sent it/.test(card().querySelector(".nnote").textContent),
+      "Share copies the message, ticks nothing and keeps the turn, offering Sent it: " + card().textContent.slice(0, 160));
+    btn("Sent it").click();
+    ok(await until(async () => (await ticked(us[0])) && /^2 of 2/.test(card().textContent) && btn("Share") && !btn("Share").disabled) && copied.length === 1,
+      "his Sent it ticks the account and opens the next turn on Share: " + card().textContent.slice(0, 120));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix R4: a sign-in link made on a Needs you card, and the Silver link shown on one, outlive a redraw of Needs you");
+await (async () => {
+  /* Needs you is drawn afresh by every move, tick and read. The made link lived in the button and the Silver link
+     in the card, so Approve on another card put Send a sign-in link back (the next tap minting a second link) and
+     took the Silver code off the screen. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s9-r4";
+  const uL = C.newUsername(), uM = C.newUsername(), uA = C.newUsername(), uN = C.newUsername(), pw = C.newPassword();
+  const rec = async (u, extra) => { const ck = await C.contentKey("s9-r4", u);
+    return JSON.stringify(Object.assign({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+      wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }, extra || {})); };
+  await kv.put("u:" + uL, await rec(uL)); await kv.put("u:" + uM, await rec(uM)); await kv.put("u:" + uA, await rec(uA, { assoc: true }));
+  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+  await kv.put("roster", JSON.stringify([{ code: "CX0-LK", username: uL }, { code: "CX2-LM", username: uM }, { code: "CX1-AS", username: uA }, { code: "CX3-NO", username: uN }]));
+  await kv.put("issue", "2026-09-01");
+  const row = (code, username) => ({ code, username, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" });
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01", accounts: [row("CX0-LK", uL), row("CX2-LM", uM), row("CX1-AS", uA)] }));
+  for (const u of [uA, uL, uM]) await kv.put("sent:2026-09-01:" + u, JSON.stringify({ at: "2026-09-02T01:00:00Z" }));
+  const TEAM = "maakmal", AUD = "aud-s9-r4", KID = "kid-s9-r4";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 250 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  const shared = [];
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sess = (await (await site("/open", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ u: uA, password: pw }) })).json()).session;
+    const lid = (await (await site("/my/refs", { method: "POST", headers: { "X-Stmt-Session": sess, "content-type": "application/json" }, body: "{}" })).json()).ref.id;
+    const from = { "content-type": "application/json", "CF-Connecting-IP": "198.51.100.94" };
+    for (const u of [uL, uM]) for (let i = 0; i < 10; i++) await site("/open", { method: "POST", headers: from, body: JSON.stringify({ u, password: "zzzz-zzzz-zzzz-zzzz" }) });
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      Object.defineProperty(w.navigator, "share", { value: async (d) => { shared.push(d.text); }, configurable: true });
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const card = (key) => D.querySelector('#nlist [data-need="' + key + '"]');
+    const btn = (key, t) => card(key) && [...card(key).querySelectorAll("button")].find((b) => b.textContent === t);
+    const ots = async () => (await kv.list({ prefix: "ot:" })).keys.length;
+    ok(await until(() => btn("k:" + uL, "Send a sign-in link") && btn("l:" + lid, "Approve") && btn("n:" + uN, "Show the Silver link")),
+      "Needs you carries the locked card, the link card and the card with no account");
+    btn("k:" + uL, "Send a sign-in link").click();
+    ok(await until(() => btn("k:" + uL, "Share the link")) && (await ots()) === 1, "the first tap makes one link");
+    btn("n:" + uN, "Show the Silver link").click();
+    ok(await until(() => card("n:" + uN).querySelector(".glink")), "and Show the Silver link draws it");
+    btn("l:" + lid, "Approve").click();
+    ok(await until(() => /Approved[.]/.test(card("l:" + lid).textContent)), "Approve on the link card redraws Needs you");
+    ok(!!btn("k:" + uL, "Share the link") && /Made[.] It signs CX0-LK in once[.]/.test(card("k:" + uL).textContent),
+      "the locked card still holds the link it made, and says so: " + card("k:" + uL).textContent.slice(0, 160));
+    ok(!!card("n:" + uN).querySelector(".glink .gu"), "and the Silver link is still on its card");
+    btn("k:" + uL, "Share the link").click();
+    ok(await until(() => shared.length === 1) && (await ots()) === 1 && /Sent[.]/.test(card("k:" + uL).textContent),
+      "Share the link shares the one it made, and mints no second: " + JSON.stringify({ shared: shared.length, ots: await ots() }));
+    /* a redraw while one is being made: the card drawn in its place waits, then shares, and one link is made */
+    btn("k:" + uM, "Send a sign-in link").click();
+    D.querySelector('.salt-appbar button[data-m="needs"]').click();
+    ok(!!btn("k:" + uM, "Making it...") && btn("k:" + uM, "Making it...").disabled, "a redraw while one is made draws its button waiting");
+    ok(await until(() => btn("k:" + uM, "Share the link")) && (await ots()) === 2, "and once made the redrawn card offers Share the link, one link made for it, not two");
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix UX-R2: a move on a link that fails, and a tier pinned, are answered on the card tapped, in Needs you and in Links");
+await (async () => {
+  /* Approve, Decline and the tier pin answered a failure only in the page's own line, under every card and off a
+     phone's screen, so a tap that failed changed nothing he could see. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s9-ux2";
+  const uA = C.newUsername(), pw = C.newPassword();
+  const ck = await C.contentKey("s9-ux2", uA);
+  await kv.put("u:" + uA, JSON.stringify({ u: uA, issued: "2026-09-01", assoc: true, verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+  await kv.put("roster", JSON.stringify([{ code: "CX1-AS", username: uA }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX1-AS", username: uA, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  await kv.put("sent:2026-09-01:" + uA, JSON.stringify({ at: "2026-09-02T01:00:00Z" }));
+  const TEAM = "maakmal", AUD = "aud-s9-ux2", KID = "kid-s9-ux2";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 250 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  const cut = { on: false };
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sess = (await (await site("/open", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ u: uA, password: pw }) })).json()).session;
+    const lid = (await (await site("/my/refs", { method: "POST", headers: { "X-Stmt-Session": sess, "content-type": "application/json" }, body: "{}" })).json()).ref.id;
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      w.fetch = async (q, o) => { o = o || {};
+        if (cut.on && /^[/]all[/]refs[/][^/]+[/]/.test(String(q))) throw new TypeError("Failed to fetch");
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const card = () => D.querySelector('#nlist [data-need="l:' + lid + '"]');
+    const btn = (c, t) => c && [...c.querySelectorAll("button")].find((b) => b.textContent === t);
+    const note = (c) => ((c && c.querySelector(".nnote")) || {}).textContent || "";
+    ok(await until(() => btn(card(), "Approve")), "the associate's link waits on Needs you");
+    cut.on = true;
+    btn(card(), "Approve").click();
+    ok(await until(() => /Not sent[.] Check the connection and try again[.]/.test(note(card())))
+      && card().querySelector(".nnote").classList.contains("bad") && !!btn(card(), "Approve") && !!btn(card(), "Decline")
+      && !JSON.parse(await kv.get("g:" + lid)).approved,
+      "Approve that never went out says so on the card, which keeps its buttons: " + JSON.stringify(note(card())));
+    cut.on = false;
+    const sel = card().querySelector("select");
+    sel.value = "Gold"; sel.dispatchEvent(new win.Event("change", { bubbles: true }));
+    ok(await until(() => /That link now quotes Gold[.]/.test(note(card()))) && JSON.parse(await kv.get("g:" + lid)).level === "Gold",
+      "a tier pinned on the card is answered on the card: " + JSON.stringify(note(card())));
+    /* the same in Links */
+    D.querySelector('.salt-appbar button[data-m="links"]').click();
+    const lcard = () => D.querySelector('#glist [data-link="' + lid + '"]');
+    ok(await until(() => btn(lcard(), "Approve")), "Links lists the link with its Approve");
+    cut.on = true;
+    btn(lcard(), "Approve").click();
+    ok(await until(() => [...lcard().querySelectorAll(".msg")].some((m) => /Not sent[.] Check the connection/.test(m.textContent) && m.classList.contains("bad"))),
+      "and in Links the failure is on the link's card too: " + lcard().textContent.slice(-120));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix R5: an open by a scanned or a typed code says so, an unknown road says no road, and only an open with none reads as the password");
+await (async () => {
+  /* Stage 3 records a hand-over open as key or code. The page knew three roads and called anything else the
+     password, so a customer who last got in by a code read as getting in by password. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s9-r5";
+  const us = [C.newUsername(), C.newUsername(), C.newUsername(), C.newUsername()], codes = ["CX0-KY", "CX1-CD", "CX2-OL", "CX3-ZZ"], pw = C.newPassword();
+  for (const u of us) { const ck = await C.contentKey("s9-r5", u);
+    await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+      wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+    await kv.put("sent:2026-09-01:" + u, JSON.stringify({ at: "2026-09-02T01:00:00Z" })); }
+  await kv.put("roster", JSON.stringify(us.map((u, k) => ({ code: codes[k], username: u }))));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: us.map((u, k) => ({ code: codes[k], username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" })) }));
+  const seen = (how) => JSON.stringify(Object.assign({ first: "2026-09-02T01:00:00Z", last: "2026-09-03T01:00:00Z", opens: 1 }, how ? { how } : {}));
+  await kv.put("seen:" + us[0], seen("key")); await kv.put("seen:" + us[1], seen("code"));
+  await kv.put("seen:" + us[2], seen(null)); await kv.put("seen:" + us[3], seen("zzz"));
+  const TEAM = "maakmal", AUD = "aud-s9-r5", KID = "kid-s9-r5";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 250 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const from = { "content-type": "application/json", "CF-Connecting-IP": "198.51.100.95" };
+    for (let i = 0; i < 10; i++) await site("/open", { method: "POST", headers: from, body: JSON.stringify({ u: us[1], password: "zzzz-zzzz-zzzz-zzzz" }) });
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const kc = () => D.querySelector('#nlist [data-need="k:' + us[1] + '"]');
+    ok(await until(() => kc() && /Last got in by a typed code, 3 Sep[.]/.test(kc().textContent)),
+      "a customer who last got in by typing a code reads so on their Needs you card: " + (kc() || {}).textContent);
+    D.querySelector('.salt-appbar button[data-m="accounts"]').click();
+    const chips = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); return r ? [...r.querySelectorAll(".salt-status")].map((x) => x.textContent) : []; };
+    ok(await until(() => chips(us[0]).includes("Opened 3 Sep by a scanned code")) && chips(us[1]).includes("Opened 3 Sep by a typed code"),
+      "Accounts says an open by a scanned code and one by a typed code: " + JSON.stringify([chips(us[0]), chips(us[1])]));
+    ok(chips(us[2]).includes("Opened 3 Sep by password") && chips(us[3]).includes("Opened 3 Sep"),
+      "an open with no road recorded is the password's, and a road it does not know says none: " + JSON.stringify([chips(us[2]), chips(us[3])]));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix SEC-1: who is shut out is read off the brake's listing, so fail: keys a stranger mints never cost /all/sheet a read each");
+await (async () => {
+  /* Anyone can mint a fail: key for any well-shaped username from each address they hold, and lockedOut read every
+     one, one at a time, on every open of his page: enough of them took /all/sheet past the Workers' limit on
+     operations in one request, and Needs you and Accounts down with it. The count now rides on the key's metadata. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const kv = new KV();
+  const uL = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9-sec1", uL);
+  await kv.put("u:" + uL, JSON.stringify({ u: uL, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey("mp-s9-sec1", ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX0-LK", username: uL }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX0-LK", username: uL, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9-sec1", KID = "kid-s9-sec1";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: "mp-s9-sec1", ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    /* ten misses on CX0-LK from one address, through the Worker's own brake */
+    const from = { "content-type": "application/json", "CF-Connecting-IP": "198.51.100.96" };
+    for (let i = 0; i < 10; i++) await site("/open", { method: "POST", headers: from, body: JSON.stringify({ u: uL, password: "zzzz-zzzz-zzzz-zzzz" }) });
+    const fk = "fail:198.51.100.96:" + uL;
+    ok(JSON.stringify(kv.opts.get(fk)) === JSON.stringify({ expirationTtl: 900, metadata: { n: 10 } }),
+      "the brake writes its count onto the key's metadata as well as its value: " + JSON.stringify(kv.opts.get(fk)));
+    /* a stranger's misses on made-up usernames from many addresses, as the brake writes them */
+    for (let i = 0; i < 400; i++) await kv.put("fail:203.0.113." + (i % 250) + ":zz" + String(i).padStart(2, "0") + "-zzzz", "1", { expirationTtl: 900, metadata: { n: 1 } });
+    const gets = [], get = kv.get.bind(kv);
+    kv.get = async (k, t) => { gets.push(k); return get(k, t); };
+    const sj = await (await site("/all/sheet", { headers: { "cf-access-jwt-assertion": tok } })).json();
+    kv.get = get;
+    const lk = sj.accounts.find((a) => a.username === uL);
+    ok(sj.ok && lk && lk.locked && lk.locked.from === 1, "the account refused at one address is still found: " + JSON.stringify(lk && lk.locked));
+    ok(!gets.some((k) => k.startsWith("fail:")) && gets.length < 20,
+      "and /all/sheet reads no fail: key, so four hundred of them cost it nothing: " + JSON.stringify({ reads: gets.length, fail: gets.filter((k) => k.startsWith("fail:")).length }));
+  } finally { globalThis.fetch = realFetch; }
+})();
+section("S9 fix R2: an ID with no account reads the stranger's level off the sheet, on Needs you and on its Accounts row, whether or not the links have loaded");
+await (async () => {
+  /* Needs you named the level off /all/refs while stage 14 names it off /all/sheet: two sources, and until the links
+     landed (or if they never did) the card said "the stranger's link". The sheet is the one source now, and the
+     Accounts row that replaced Review's carries the same line Review's did. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s9-r2";
+  const uF = C.newUsername(), uN = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9-r2", uF);
+  await kv.put("u:" + uF, JSON.stringify({ u: uF, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+  await kv.put("roster", JSON.stringify([{ code: "CX2-FR", username: uF }, { code: "CX3-NO", username: uN }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX2-FR", username: uF, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9-r2", KID = "kid-s9-r2";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 250 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sj = await (await site("/all/sheet", { headers: { "cf-access-jwt-assertion": tok } })).json();
+    ok(sj.ok && sj.stranger === "Silver", "the account list names the stranger's level off the book's names: " + JSON.stringify(sj.stranger));
+    /* the links never load: only the sheet does */
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      w.fetch = async (q, o) => { o = o || {};
+        if (/^[/]all[/]refs/.test(String(q))) return new Response(JSON.stringify({ ok: false, error: "no" }), { status: 404 });
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const nc = () => D.querySelector('#nlist [data-need="n:' + uN + '"]');
+    ok(await until(() => nc() && /Made at the next laptop update[.] Until then, show the Silver link[.]/.test(nc().textContent)
+      && [...nc().querySelectorAll("button")].some((b) => b.textContent === "Show the Silver link")),
+      "Needs you names the Silver link with only the sheet read: " + (nc() || {}).textContent);
+    D.querySelector('.salt-appbar button[data-m="accounts"]').click();
+    const row = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
+    ok(await until(() => row(uN) && row(uN).textContent.startsWith("CX3-NO")
+      && row(uN).textContent.includes("Made at the next laptop update. Until then, show the Silver link.")
+      && row(uF) && !row(uF).textContent.includes("laptop update")),
+      "and its Accounts row says the same, where an account with one does not: " + JSON.stringify([(row(uN) || {}).textContent, (row(uF) || {}).textContent]));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix UX-R3: from 1080px Needs you stands beside the account a card is about, and on a phone a card's code opens it on Accounts");
+await (async () => {
+  /* The brief's f13w: the list beside the open card. Needs you was one 600px column with nothing on a card opening
+     its account, so he went to Accounts and found the code there. The width is the page's own matchMedia. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s9-ux3";
+  const uL = C.newUsername(), uA = C.newUsername(), uN = C.newUsername(), pw = C.newPassword();
+  const rec = async (u, extra) => { const ck = await C.contentKey("s9-ux3", u);
+    return JSON.stringify(Object.assign({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+      wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }, extra || {})); };
+  await kv.put("u:" + uL, await rec(uL)); await kv.put("u:" + uA, await rec(uA, { assoc: true }));
+  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+  await kv.put("roster", JSON.stringify([{ code: "CX0-LK", username: uL }, { code: "CX1-AS", username: uA }, { code: "CX3-NO", username: uN }]));
+  await kv.put("issue", "2026-09-01");
+  const row = (code, username) => ({ code, username, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" });
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01", accounts: [row("CX0-LK", uL), row("CX1-AS", uA)] }));
+  for (const u of [uA, uL]) await kv.put("sent:2026-09-01:" + u, JSON.stringify({ at: "2026-09-02T01:00:00Z" }));
+  const TEAM = "maakmal", AUD = "aud-s9-ux3", KID = "kid-s9-ux3";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 250 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  const view = { wide: true };
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sess = (await (await site("/open", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ u: uA, password: pw }) })).json()).session;
+    const lid = (await (await site("/my/refs", { method: "POST", headers: { "X-Stmt-Session": sess, "content-type": "application/json" }, body: "{}" })).json()).ref.id;
+    const from = { "content-type": "application/json", "CF-Connecting-IP": "198.51.100.97" };
+    for (let i = 0; i < 10; i++) await site("/open", { method: "POST", headers: from, body: JSON.stringify({ u: uL, password: "zzzz-zzzz-zzzz-zzzz" }) });
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      w.matchMedia = (q) => ({ media: q, matches: /min-width:\s*1080px/.test(q) && view.wide, addListener() {}, removeListener() {} });
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document, pane = D.getElementById("nopen");
+    const card = (key) => D.querySelector('#nlist [data-need="' + key + '"]');
+    const party = (key) => card(key) && card(key).querySelector(".salt-approve__head .salt-approve__party");
+    ok(await until(() => card("l:" + lid) && card("k:" + uL) && card("n:" + uN) && !pane.hidden),
+      "on a desk, Needs you opens with an account open beside it");
+    ok(D.getElementById("mHome").classList.contains("open") && /CX0-LK/.test((pane.querySelector(".scard .srow") || {}).textContent || "")
+      && card("k:" + uL).getAttribute("aria-current") === "true",
+      "the first card about an account, and that card is marked the open one: " + ((pane.querySelector(".scard .srow") || {}).textContent));
+    ok(party("k:" + uL).tagName === "BUTTON" && party("n:" + uN).tagName === "BUTTON" && party("l:" + lid).tagName === "SPAN",
+      "a card about an account carries its code as a button; the link card's associate does not");
+    party("n:" + uN).click();
+    ok(/CX3-NO/.test(pane.querySelector(".scard .srow").textContent) && /Made at the next laptop update/.test(pane.textContent)
+      && card("n:" + uN).getAttribute("aria-current") === "true" && !card("k:" + uL).hasAttribute("aria-current"),
+      "a tap on another card's code opens that account beside the list instead: " + pane.querySelector(".scard .srow").textContent);
+    const open = pane.querySelector(".scard");
+    [...card("l:" + lid).querySelectorAll("button")].find((b) => b.textContent === "Approve").click();
+    ok(await until(() => /Approved[.]/.test(card("l:" + lid).textContent)) && pane.querySelector(".scard") === open,
+      "a redraw of the list leaves the open account as it was, so a tap in flight on it is never lost");
+    /* on a phone the pane is not shown, and a card's code opens the account on Accounts */
+    view.wide = false;
+    party("k:" + uL).click();
+    ok(D.getElementById("mHome").hidden && !D.getElementById("oAccts").hidden && !D.getElementById("aopen").hidden
+      && /CX0-LK/.test(D.querySelector("#aopen .scard .srow").textContent) && !!D.querySelector('#aopen button[data-back="accounts"]'),
+      "on a phone a card's code opens that account on Accounts, with the way back");
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
@@ -16076,20 +17237,24 @@ await (async () => {
         : { ok: true, status: 200, json: async () => ({ ok: true, sent: "2026-09-18T03:00:00Z" }) });
       let copied = null;
       W88.navigator.clipboard = { writeText: async (t) => { copied = t; } };
-      D88.querySelector('button[data-m="send"]').dispatchEvent(new W88.Event("click", { bubbles: true }));
+      /* S9 9.2: Send is Accounts now, and an account's card opens from its row */
+      D88.querySelector('button[data-m="accounts"]').dispatchEvent(new W88.Event("click", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 80));
-      const cardEl = D88.querySelector("#slist .scard");
-      ok(!!cardEl && /CX0-AA/.test(cardEl.textContent) && /3 orders, RM 420.00/.test(cardEl.textContent) && !!cardEl.querySelector("canvas"),
-        "the Send panel draws a card an account, with its totals and its code");
+      const open88 = (code) => { const r = [...D88.querySelectorAll("#rlist [data-u]")].find((x) => x.textContent.includes(code));
+        if (r) r.dispatchEvent(new W88.Event("click", { bubbles: true })); return D88.querySelector("#aopen .scard"); };
+      const bare = open88("CX0-BB");
+      const bareLink = bare && [...bare.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
       /* HIS QUESTION OF 23 SEP 2026: the account is one live document, so nothing on this panel may
          speak of an issue, and a username with nothing behind it says so and offers no sign-in link */
-      const bare = [...D88.querySelectorAll("#slist .scard")].find((c) => /CX0-BB/.test(c.textContent));
-      const bareLink = bare && [...bare.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
+      ok(!!bare && /Made at the next laptop update./.test(bare.textContent) && !!bareLink && bareLink.disabled,
+        "a code with no account says it cannot sign in, and its sign-in link is shut");
+      ok(!/issue/i.test(D88.getElementById("oAccts").textContent),
+        "and Accounts never says issue: " + JSON.stringify((D88.getElementById("oAccts").textContent.match(/.{0,30}issue.{0,30}/i) || [""])[0]));
+      const cardEl = open88("CX0-AA");
+      ok(!!cardEl && /CX0-AA/.test(cardEl.textContent) && /3 orders, RM 420.00/.test(cardEl.textContent) && !!cardEl.querySelector("canvas"),
+        "an account's card carries its totals and its code");
       const liveLink = [...cardEl.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
-      ok(!!bare && /Made at the next laptop update./.test(bare.textContent) && !!bareLink && bareLink.disabled && !!liveLink && !liveLink.disabled,
-        "a code with no account says it cannot sign in, and only its sign-in link is shut");
-      ok(!/issue/i.test(D88.getElementById("oSend").textContent),
-        "and the Send panel never says issue: " + JSON.stringify((D88.getElementById("oSend").textContent.match(/.{0,30}issue.{0,30}/i) || [""])[0]));
+      ok(!!liveLink && !liveLink.disabled, "and an account's sign-in link is on");
       const buttons = [...cardEl.querySelectorAll("button")];
       const msgBtn = buttons.find((b) => b.textContent === "Copy message"), pwBtn = buttons.find((b) => b.textContent === "Copy password");
       msgBtn.dispatchEvent(new W88.Event("click", { bubbles: true }));
@@ -17210,7 +18375,7 @@ await (async () => {
     ok(mQ.status === 200 && (await mQ.json()).url === "https://k7m3p2.example/app#qr." + kQ && (await post("/handover/open", { token: kQ, tab: true })).status === 200,
       "his mint answers the QR's own form, /app#qr.<key>, and the browser tab a camera opens on it spends it");
 
-    /* the page: Send statement, the account's card, Show a code */
+    /* the page: Accounts, the account's card, Show a code */
     const html = await (await site("/all", { headers: { "cf-access-jwt-assertion": jwt } })).text();
     const seen = { handover: null, copied: 0, shared: 0 };
     win = new JSDOM(html, { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
@@ -17226,8 +18391,11 @@ await (async () => {
     } }).window;
     const D = win.document;
     const until = async (f) => { for (let i = 0; i < 300 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
-    D.querySelector('button[data-m="send"]').click();
-    const cardOf = (x) => [...D.querySelectorAll("#slist .scard")].find((k) => k.textContent.includes(x));
+    /* S9 9.2: Send is Accounts now, and an account's card opens from its row, once the sheet is read so no second read redraws it */
+    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    D.querySelector('button[data-m="accounts"]').click();
+    const cardOf = (x) => { const r = D.querySelector('#rlist [data-u="' + x + '"]'); if (!r) return null; r.click();
+      return [...D.querySelectorAll("#aopen .scard")].find((k) => k.textContent.includes(x)); };
     const btnOf = (x) => { const k = cardOf(x); return k && [...k.querySelectorAll("button")].find((b) => b.textContent === "Show a code"); };
     ok(await until(() => !!btnOf(u) && !!btnOf(ghost)) && btnOf(ghost).disabled && !btnOf(u).disabled,
       "each account's card carries Show a code, switched off where no account stands behind the username");
@@ -19522,13 +20690,18 @@ await (async () => {
     const Wd = dom.window, D = Wd.document;
     Wd.fetch = async (path) => (String(path) === "/all/sheet" ? { ok: true, status: 200, json: async () => sheetJ } : { ok: false, status: 404, json: async () => ({ ok: false, error: "no" }) });
     try {
-      D.querySelector('button[data-m="review"]').dispatchEvent(new Wd.Event("click", { bubbles: true }));
+      /* S9 9.2: Review is Accounts now: its row, and the card the row opens */
+      D.querySelector('button[data-m="accounts"]').dispatchEvent(new Wd.Event("click", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 60));
       const rows = [...D.querySelectorAll("#rlist button")].map((b) => b.textContent);
       const ltrRow = rows.find((t) => t.startsWith("CZ9-LTR")) || "", wlkRow = rows.find((t) => t.startsWith("CZ9-WLK")) || "";
-      ok(ltrRow.includes("Made at the next laptop update. Until then, show the Silver link.") && !!wlkRow && !wlkRow.includes("laptop update"),
-        "Salt Admin says the waiting one is made at the next laptop update, and to show the Silver link until then; the bound one does not: "
-        + JSON.stringify({ ltrRow, wlkRow }));
+      const cardText = (code) => { const r = [...D.querySelectorAll("#rlist [data-u]")].find((b) => b.textContent.startsWith(code)); if (!r) return "";
+        r.dispatchEvent(new Wd.Event("click", { bubbles: true })); return (D.querySelector("#aopen .scard") || {}).textContent || ""; };
+      const ltrCard = cardText("CZ9-LTR"), wlkCard = cardText("CZ9-WLK");
+      ok(ltrRow.includes("Made at the next laptop update. Until then, show the Silver link.") && !!wlkRow && !wlkRow.includes("laptop update")
+        && ltrCard.includes("Made at the next laptop update. Until then, show the Silver link.") && wlkCard.includes("CZ9-WLK") && !wlkCard.includes("laptop update"),
+        "Salt Admin says the waiting one is made at the next laptop update, and to show the Silver link until then, on its row and its card; the bound one does not: "
+        + JSON.stringify({ ltrRow, wlkRow, ltrCard: ltrCard.slice(0, 120), wlkCard: wlkCard.slice(0, 120) }));
     } finally { try { Wd.close(); } catch (e) { /* best effort */ } }
   } finally {
     globalThis.fetch = realFetch143;
@@ -22148,8 +23321,12 @@ await (async () => {
     } }).window;
     const D = win.document;
     const until = async (f) => { for (let i = 0; i < 300 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
-    D.querySelector('button[data-m="send"]').click();
-    const btn = () => { const k = [...D.querySelectorAll("#slist .scard")].find((x) => x.textContent.includes(u)); return k && [...k.querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again|Signing out|Signed out|Nothing was|Could not sign out/.test(b.textContent)); };
+    /* S9 9.2: Send is Accounts now, and the card opens from its row once, after the sheet is read, so no redraw drops a tap */
+    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    D.querySelector('button[data-m="accounts"]').click();
+    const card = () => [...D.querySelectorAll("#aopen .scard")].find((x) => x.textContent.includes(u));
+    const btn = () => { let k = card(); if (!k) { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (r) r.click(); k = card(); }
+      return k && [...k.querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again|Signing out|Signed out|Nothing was|Could not sign out/.test(b.textContent)); };
     ok(await until(() => !!btn()) && btn().textContent === "Sign out everywhere", "each account's card carries Sign out everywhere");
     btn().click();
     await new Promise((r) => setTimeout(r, 40));

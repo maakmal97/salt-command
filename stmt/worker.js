@@ -42,11 +42,11 @@ import { landingPage, boardPage, shutPage } from "./page.js";
 import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
-import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, MAX_PER_ASSOC } from "./refs.js";
+import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, linkWaiting, MAX_PER_ASSOC } from "./refs.js";
 import { SIGNIN_RE, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover, dropHandover, sessKey } from "./signin.js";
 import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
-import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
+import { ICON_PNG_B64, ICON_SIZE, ADMIN_ICON_PNG_B64 } from "./icons.js";
 import { FONTS } from "./fonts.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
@@ -209,7 +209,8 @@ async function handleOpen(request, env) {
      thing the secrecy rests on. */
   const who = String(request.headers.get("CF-Connecting-IP") || "local");
   const readN = async (k) => parseInt(await env.STMT.get(k) || "0", 10) || 0;
-  const bump = async (k, n) => env.STMT.put(k, String(n + 1), { expirationTtl: FAIL_TTL });
+  /* the count rides on the key's metadata as well, so lockedOut reads it off the listing (S9 fix) */
+  const bump = async (k, n) => env.STMT.put(k, String(n + 1), { expirationTtl: FAIL_TTL, metadata: { n: n + 1 } });
   const uKey = FKEY(who + ":" + u), ipKey = IPKEY(who), mKey = MKEY(who);
   const tooMany = () => json({ ok: false, error: "Too many attempts. Try again in fifteen minutes." }, 429);
 
@@ -601,6 +602,7 @@ function checkBulletin(body) {
     .map((s) => s.replace(/\s+/g, " ").trim().slice(0, 120)).filter(Boolean).slice(0, 8);
   return { lines, mode: body.mode === "change" ? "change" : "run" };
 }
+const DESK_WAITING = "desk-waiting";
 async function handleDesk(request, env, p, m) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   if (!deskOk(request, env)) return json({ ok: false, error: "desk key required" }, 401);
@@ -625,7 +627,19 @@ async function handleDesk(request, env, p, m) {
     /* v694: the orders with a stage the ledger has not been told about, whatever state they are
        in. A completed order still owes its last entries, so this is not the open list. */
     if (q.get("work") === "1") return json({ ok: true, orders: await ordersOwing(env) });
-    return json({ ok: true, orders: await allOrders(env, q.get("all") === "1") });
+    /* S9 9.8: and, when the desk's page asks, how many associate links wait in Salt Admin: a count, no link, no name */
+    const links = q.get("links") === "1" ? { links: (await listRefs(env)).filter(linkWaiting).length } : {};
+    return json(Object.assign({ ok: true, orders: await allOrders(env, q.get("all") === "1") }, links));
+  }
+  /* S9 9.8: WHAT WAITS ON THE DESK, told by the desk (src/orders.js tellWaiting) as one figure, for Salt Admin's
+     line. A count and its moment, nothing else: no order, no code and no way to the desk. */
+  if (p === "/desk/waiting") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const b = await readJson(request);
+    const n = b && b.n;
+    if (!Number.isInteger(n) || n < 0 || n > 9999) return json({ ok: false, error: "send the count as a whole number" }, 400);
+    await env.STMT.put(DESK_WAITING, JSON.stringify({ n, at: new Date().toISOString() }));
+    return json({ ok: true, n });
   }
   /* the moment of the newest placement, one read: the desk asks this every minute (16 Sep 2026),
      and since v694 the moment of the newest change of any kind beside it, so the reconcile lists
@@ -740,6 +754,40 @@ async function readRem(env, tok) {
  * WHAT REVIEW READS is `sheet`, written by tools/stmt-publish.mjs from each statement's own rows,
  * merged here with `seen:<username>`, which this Worker has written on every customer open since
  * v499 and nothing has ever read. Codes, never names. */
+/* S9 9.1: WHO IS LOCKED OUT, read off the brake itself. fail:<address>:<username> counts the misses from
+   one address and lapses fifteen minutes after the last; at MAX_FAILS that address is refused. The address
+   never leaves here: Needs you is told how many places are shut out and when the last one opens again.
+   S9 fix: THE COUNT IS READ OFF THE LISTING, from the metadata bump writes: one operation a thousand keys, never
+   a read a key. Anyone can mint fail: keys for any well-shaped username, and a read each took /all/sheet past the
+   Workers' limit on operations in one request. A key from before this carries none and lapses within fifteen
+   minutes. */
+async function lockedOut(env) {
+  const out = new Map();
+  let cursor;
+  do {
+    const page = await env.STMT.list({ prefix: "fail:", cursor });
+    for (const k of page.keys) {
+      if (!(k.metadata && +k.metadata.n >= MAX_FAILS)) continue;
+      const u = k.name.slice(k.name.lastIndexOf(":") + 1);
+      const until = k.expiration ? new Date(k.expiration * 1000).toISOString() : null;
+      const was = out.get(u) || { from: 0, until: null };
+      out.set(u, { from: was.from + 1, until: String(until || "") > String(was.until || "") ? until : was.until });
+    }
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+  return out;
+}
+/* S9 9.2: how many phones take each account's alerts, off the push records' own keys (push:<username>:<id>) */
+async function alertsOn(env) {
+  const out = new Map();
+  let cursor;
+  do {
+    const page = await env.STMT.list({ prefix: "push:", cursor });
+    for (const k of page.keys) { const u = k.name.split(":")[1]; out.set(u, (out.get(u) || 0) + 1); }
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+  return out;
+}
 async function ownerSheet(env, origin) {
   const sheet = await env.STMT.get("sheet", "json");
   const rows = sheet && Array.isArray(sheet.accounts) ? sheet.accounts : [];
@@ -747,6 +795,7 @@ async function ownerSheet(env, origin) {
   const issue = sheet ? sheet.issue || null : null;
   const month = monthNameOf(issue);
   await keepTicks(env);
+  const locks = await lockedOut(env), alerts = await alertsOn(env);
   const out = [];
   for (const a of await roster(env)) {
     const s = byUser.get(a.username) || null;
@@ -771,14 +820,17 @@ async function ownerSheet(env, origin) {
       qr: QR.qrMatrix(url).map((line) => line.join("")),
       pwMaster: s ? s.pwMaster || null : null,
       seen: seen ? { first: seen.first || null, last: seen.last || null, opens: +seen.opens || 0, how: seen.how || null } : null,
-      sent: sent ? sent.at || null : null
+      sent: sent ? sent.at || null : null, locked: locks.get(a.username) || null, alerts: alerts.get(a.username) || 0
     });
   }
+  /* S9 9.8: the desk's own count of what waits there, as it last told this site */
+  const desk = await env.STMT.get(DESK_WAITING, "json");
   /* D15: the level a stranger is quoted, the ladder's last, so the card of an ID still waiting for its
      account can say which standing link to show. Named by the book through the publish, never here. */
   const names = await env.STMT.get("tiers", "json");
   const stranger = Array.isArray(names) && names.length ? String(names[names.length - 1]) : null;
-  return { ok: true, at: sheet ? sheet.at || null : null, issue, month, accounts: out, stranger };
+  return { ok: true, at: sheet ? sheet.at || null : null, issue, month, accounts: out, stranger,
+    desk: desk ? { n: +desk.n || 0, at: desk.at || null } : null };
 }
 
 /* A TICK IS THE SITE'S, NOT ONE BROWSER'S (v688). The laptop sheet keeps its ticks in that
@@ -1093,7 +1145,7 @@ export default {
         if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
         const own = { name: "Salt Admin", short_name: "Salt Admin", start_url: "/all", scope: "/all",
           display: "standalone", orientation: "portrait", background_color: "#05080a", theme_color: "#05080a",
-          icons: [{ src: "/icon.png", sizes: ICON_SIZE + "x" + ICON_SIZE, type: "image/png", purpose: "any maskable" }] };
+          icons: [{ src: "/icon-key.png", sizes: ICON_SIZE + "x" + ICON_SIZE, type: "image/png", purpose: "any maskable" }] };
         return new Response(JSON.stringify(own), { headers: Object.assign({}, HEADERS, {
           "content-type": "application/manifest+json; charset=utf-8", "cache-control": "no-store" }) });
       }
@@ -1221,9 +1273,11 @@ export default {
       return new Response(bytes, { headers: Object.assign({}, HEADERS, {
         "content-type": "font/woff2", "cache-control": "public, max-age=31536000, immutable" }) });
     }
-    if (p === "/icon.png") {
+    /* S9 9.7: Salt Admin's own icon, the ring with a keyhole (his D13). Outside /all on purpose: a home screen
+       fetches an icon without the Access cookie, and a ring names nothing. */
+    if (p === "/icon.png" || p === "/icon-key.png") {
       if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
-      const bytes = Uint8Array.from(atob(ICON_PNG_B64), (c) => c.charCodeAt(0));
+      const bytes = Uint8Array.from(atob(p === "/icon.png" ? ICON_PNG_B64 : ADMIN_ICON_PNG_B64), (c) => c.charCodeAt(0));
       return new Response(bytes, { headers: Object.assign({}, HEADERS, {
         "content-type": "image/png", "cache-control": "public, max-age=86400" }) });
     }
@@ -1263,7 +1317,7 @@ export default {
     if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account") return handleCustomer(request, env, p, m);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
-    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin") return handleDesk(request, env, p, m);
+    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/waiting") return handleDesk(request, env, p, m);
     /* the notice, in the clear, for the page's poll; anything past it is still the site's 404 */
     if (p === "/bulletin") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);

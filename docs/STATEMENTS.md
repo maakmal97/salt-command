@@ -109,7 +109,7 @@ committed, so the same passwords went into git anyway. One place, and that place
 repository. The suite asserts that no generated page contains one.
 
 **Sealed under the master, they also ride with the record** (v688, his decision of 18 Sep 2026),
-as `pwMaster`, so Send statement on his master account can hand one over from his phone. That is
+as `pwMaster`, so an account's card on Salt Admin can hand one over from his phone. That is
 ciphertext under the passphrase that already unwraps every account, the publish keeps it out of
 the record a customer fetches, and his page decrypts it in the browser straight to the clipboard.
 `node tools/stmt-seal.mjs statements/<YYYY-MM> [--check]` sealed the issue that went out before
@@ -289,7 +289,7 @@ of `tools/make_statements.mjs`) changed to match before the next issue, since th
 guest links, produce exactly 5 links, for the five tier pricing"). The five levels a guest may be
 quoted are Titanium, Platinum, Gold, Silver and Bronze; Ambassador is the floor and never a guest's.
 A standing link carries its `level` and `standing: true`, and `ensureStanding` in `stmt/refs.js`
-makes the missing ones on the first open of the Links panel: **ensured, not minted on a tap**, so
+makes the missing ones on Salt Admin's first read of its links (Needs you or Links): **ensured, not minted on a tap**, so
 the answer to "what are my links" is always exactly five and there is nothing to remember. It is
 idempotent, and a level that already has one keeps the id it was given, because an id handed to a
 stranger must never change what it opens. The level names travel from the book to the Worker as the
@@ -300,7 +300,7 @@ with the level pinned, so there is one definition of what a board is.
 **A STANDING LINK READS ITS LEVEL'S BOARD, NOT ONE WRITTEN UNDER ITS OWN ID** (v699). The publish
 writes `tboard:1` to `tboard:5` on every run, and `handleGuest` resolves a standing link's level
 against the `tiers` names and reads that key. v699 closed a hole v696 left in its own shape: the
-five are minted the first time he opens the Links panel, so any minted since the last publish had no
+five are minted the first time his page reads the links, so any minted since the last publish had no
 board of its own and fell back to `board:2`, which is the LAST level; four of the five would have
 quoted Bronze until the next deploy. A level's board does not depend on which link points at it, so
 nothing is published per standing link and minting one can never be wrong. `tboard:` and not
@@ -827,8 +827,42 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
 
 - **No brand** (his instruction, 10 Sep 2026): nothing a customer holds may point at the
   ledger, and an eyebrow carrying the name undid that.
-- **The master account** (v687, his instruction of 18 Sep 2026) opens on what it can do: Review
-  statement, and the links below it. Review lists every account with where it stands, in one word
+- **Salt Admin opens on Needs you** (S9 9.1, the plan's section 5): one Approve card a thing that waits
+  on him, its action on the card, the tap answered there. A card about an account carries its code as a
+  button that opens it: from 1080px beside the list (the first such card's account until he picks one, the
+  pane drawn again only when its account changes or the sheet is read), on a phone on Accounts. An associate's waiting link (Approve, the tier
+  it quotes, Decline); an account refused at an address after ten wrong passwords, which may be anybody holding
+  the username and never says the customer is shut out, read off the `fail:` brake by `lockedOut` (how
+  many addresses and when it opens, never an address; the count off each key's listing metadata, which the
+  brake writes, never a read a key, since anyone can mint `fail:` keys) with Send a sign-in link in two taps, one to make
+  it and one to share it, so the share sheet never waits on the derivation; an ID with no account, which the
+  fold leaves only when no spare was free (the stranger's standing link, its level the sheet's `stranger`, the one source, and its Accounts row saying the
+  same; Send off until the laptop mints it); and the accounts neither ticked sent
+  nor ever opened, with **Send them in turn** (S9 9.6): each account's sign-in link is made as its turn
+  opens, Share is a tap of its own, and a share that goes through ticks the account sent (the `sent:` tick
+  both his devices read) before the next turn; a closed share ticks nothing and Skip leaves one for later. With
+  no share sheet, Share copies the message and only his Sent it ticks. The refused card also carries stage 3's Show a
+  code (`showHandover`), and every link a card or a turn makes is minted on `keyFor`, the one road Show a code takes too.
+- **Each owner app counts the other's waiting items** (S9 9.8), a figure with no link and no name. The
+  desk's every-minute cron (`tellWaiting` in `src/orders.js`) tells the site what waits on the desk, the
+  count its own Today and rail show (`ordersWaiting`'s `desk`, the master's `ordWaiting`: placed, or its last
+  line the customer's; an agreed order is a row, not a wait), through the keyed `POST /desk/waiting` into the clear key
+  `desk-waiting` `{n, at}`; it recounts only when an order's `touched` mark has moved and writes only on a
+  change. Needs you says "N things wait on the desk." The desk's page reads its orders with the count of
+  associate links waiting on his word (`/desk/orders?links=1`, `linkWaiting` in `stmt/refs.js`, the
+  `approved === false` test), and its rail's foot says "N links wait in Salt Admin".
+- **His places** (S9 9.2): Needs you, Accounts, Links and More (the report card and the test account), the
+  system's App bar on a phone and its Desk rail from 1080px, a count beside a place that has something waiting.
+- **Accounts** (S9 9.2) is one list for what Send and Review were: the system's Inbox row an account, chips
+  for where it stands, when and how it was last opened, alerts on (the `push:` keys, counted by
+  `alertsOn`), refused at an address and no account; a search and filters (Not sent, Not opened, Owes, Refused, No
+  account) above it; a row opens the account's card (Send's, with stage 3's Show a code and Sign out everywhere
+  beside View as them), beside the list from 1080px.
+- **View as them** (S9 9.5) opens the account's own page under the master, read only: its orders and an
+  associate's links come from `GET /all/orders/<username>` behind the prefix's Access check, and nothing on it
+  places, pays or sends. The bar says "Viewing as <username>, read only" and its one control is Back to
+  accounts, which returns to that account's card, never to a line about signing out.
+- **The master account** (v687, his instruction of 18 Sep 2026): the list shows every account with where it stands, in one word
   from `reviewFlag`, and when it was last opened, from the `seen:` keys this Worker has written
   since v499 and nothing read until now. The list comes from `GET /all/sheet`, which merges those
   opens into `sheet`, written by `tools/stmt-publish.mjs` from each statement's own rows through
@@ -838,8 +872,14 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   fills the username and `STMT_MASTER` into that form and submits it, so everything past the
   door is the customer's own code. His decision: the gated route hands the master to the page,
   so nothing is typed, and the trade is that an Access session there reads every account. The
-  Access application is "Salt statements owner" (`67280e0b-…`, one-time PIN, his address,
-  24h). `stmt/access.js` reads the header or the `CF_Authorization` cookie. `roster` (codes
+  Access application is "Salt statements owner" (`67280e0b-…`, one-time PIN, his address, a
+  week's session, 168h, by his D13 of 24 Sep 2026; it was 24h). **When the session lapses, Salt Admin
+  says so** (S9 9.7): every request under `/all` is sent with `redirect: 'manual'`, so Access's redirect
+  to its login reads as an opaque redirect rather than "Failed to fetch", and that or the Worker's own
+  401 turns the page into "Your admin sign-in has ended" with Sign in again, a link to `/all`. A request
+  that never went out says so and leaves the page. **Its own icon** (S9 9.7) is the Counter's ring with a
+  keyhole for the dot, `ADMIN_ICON_PNG_B64` from `tools/stmt-icon.mjs`, served at `/icon-key.png` outside
+  `/all`, since a home screen fetches an icon without the Access cookie. `stmt/access.js` reads the header or the `CF_Authorization` cookie. `roster` (codes
   beside usernames, never names) is written by the publish.
 - **Access on a `workers.dev` path, and how to prove it.** Zero Trust gates one path of a Worker
   with no custom domain; the precedent is QR Command's application, and the verifier to copy is
@@ -851,7 +891,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   `/accounts/{id}/access/apps`. A team rename moves the issuer: `ACCESS_TEAM` in
   `wrangler.stmt.jsonc` is a config edit plus a hand deploy, and every device signs in again.
 - **SIGN-IN LINK, ON EACH ACCOUNT'S CARD** (v710). It is minted ON A TAP and never on a draw: drawing
-  the Send panel would file a record per account on every page load and burn links nobody sent. His
+  Accounts would file a record per account on every page load and burn links nobody sent. His
   page opens the account under the master, wraps the content key under a fresh token, and posts the
   token and the wrap to `POST /all/signin/<username>`, which refuses a username the roster does not
   carry and refuses to hand back a link it could not file. What comes back is the finished message

@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="cc35976b65e1a830";
+var SALT_BUILD_ID="bc3cc35e34c500a7";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -8400,7 +8400,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v841","d":"25 Sep 2026","t":"WHAT IS DUE, AND WHEN, SEALED WITH THE STATEMENT","n":["<b>STAGE 6, THE FIRST PART</b> (his answers D8, as he amended it, and D9 of 24 Sep 2026). The live statement now carries what is owed as the engine reads it: To pay now, each part due on its order date plus the desk's own credit term, soonest first; Overdue, the parts whose due day has passed; and Coming up, orders agreed but not yet handed over. Rows entered on the desk count as well as site orders; gifts, write-offs and cancelled orders count in none. Nothing draws them yet.","<b>A PAY LINK THAT OPENS AT THE RAIL AND THE AMOUNT.</b> stmt/pay.js gains payHref, which builds QR Command's #account/rail/amount/reference link for the two ways, Transfer and Scan a code, and never carries a number; QR Command (shipped first) opens that rail with the amount and the reference beside the code."]}];
+const evolution=[{"v":"v843","d":"25 Sep 2026","t":"SALT ADMIN OPENS ON WHAT NEEDS HIM","n":["<b>STAGE 9, THE FIRST PART</b> (his answer D13 of 24 Sep 2026). Salt Admin opens on Needs you, one card a thing with its action on the card: an associate's waiting link (Approve, the tier pin, Decline), a customer locked out with the cause and Send a sign-in link or Show a code, an ID with no account and the Silver link, and the accounts not yet sent with Send them in turn, each ticked as its share goes.","<b>ONE LIST OF ACCOUNTS.</b> Accounts replaces Send and Review: search, filters, and chips for owes, locked, no account, opened how and when, alerts on and sent; a row opens the account's card beside the list on a laptop. View as them opens their page read only with Back to accounts. His places are the App bar on a phone and the Desk rail from 1080px.","<b>ITS OWN APP.</b> Salt Admin has its own icon, the ring with a keyhole, and when Access lapses it says the sign-in has ended with a way to sign in again, instead of Failed to fetch; the Access session is now a week. Each owner app counts what waits in the other, with no link and no name."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8515,7 +8515,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Sep 2026, 01:23 KL';
+const LAST_UPDATED='25 Sep 2026, 02:11 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -19094,6 +19094,8 @@ async function ordLoad(quiet){
     ordNeedKey=(r.status===401); let j=null; try{j=await r.json();}catch(e){}
     ordUnread=r.ok?'':(r.status===401?'':(j&&j.error)||'the Worker answered http '+r.status);
     ORD_OPEN=(r.ok&&j&&j.orders)||[];
+    /* S9 9.8: the rail's foot counts the associate links waiting in Salt Admin: a count, no link and no name */
+    {const f=document.querySelector('.rail .railfoot'),n=r.ok&&j?+j.links||0:null;if(f&&n!==null)f.textContent=n?n+(n===1?' link waits':' links wait')+' in Salt Admin':'';}
     if(r.ok)ORD_PV_GEN++;   /* S11 11.2: every read of the orders drafts the open card's row afresh */
   }catch(e){ ordUnread=(e&&e.message)||'the request did not complete'; ORD_OPEN=[]; }
   ordDraw();
@@ -19382,11 +19384,15 @@ function ordWhyBlock(o){const w=ORD_WHY[o.id];if(!w)return '';
 /* S11 11.5 (24 Sep 2026): WHAT THE CUSTOMER WAS TOLD. His card says what their own page says of this order,
    in its own words, so he answers what they are reading. The words are the page's (stmt/page.js, the state
    chip and the first line under it) and the suite holds the two copies together: a word changed on one side
-   and not the other goes red. */
+   and not the other goes red. Since the Counter's stage 5 (S5 5.3) they are the customer's own words: Sent,
+   Confirmed, Ready to collect or to deliver, Collected or Delivered once the goods are all with them, Complete,
+   Not taken, and Cancelled by you or by us. */
 function ordTold(o){
-  const T={placed:['Placed','waiting to be acknowledged'],acknowledged:['Acknowledged','being prepared'],
-    ready:['Ready',o.mode==='deliver'?'ready to be delivered':'ready to collect'],done:['Completed','complete'],
-    declined:['Not taken',''],cancelled:['Withdrawn','withdrawn']}[o.status]||[o.status,''];
+  const d=o.mode==='deliver',mv=+o.moved||0;
+  const T={placed:['Sent','waiting to be confirmed'],acknowledged:['Confirmed','being prepared'],
+    ready:[d?'Ready to deliver':'Ready to collect',''],done:['Complete',''],
+    declined:['Not taken',''],cancelled:['Cancelled by you','']}[o.status]||[o.status,''];
+  if((o.status==='acknowledged'||o.status==='ready')&&mv>0&&mv>=(+o.qty||0)-0.0004){T[0]=d?'Delivered':'Collected';T[1]='';}
   /* S11 11.7: an end of his is said with its reason, and a cancellation of his is Cancelled by us */
   if(o.status==='declined'||o.status==='cancelled'){const e=(o.history||[]).filter(x=>x&&x.status===o.status).slice(-1)[0];
     if(e&&e.by==='desk'){if(o.status==='cancelled')T[0]='Cancelled by us';T[1]=e.note||'';}}
@@ -19699,9 +19705,9 @@ async function ordAct(b){
       :j.warn?j.warn
       :st==='handover'?(b.dataset.close?'Closed at '+units(JSON.parse(body).qty)+'. They see it closed there. '
         :'Recorded: '+units(JSON.parse(body).qty)+' handed over. ')+says+told
-      :st==='acknowledged'?(j.approved?'Accepted. They see Acknowledged, and the row you saw is approved. '+told
-        :j.differs?'Accepted, but the row came out other than you saw, so it waits under Approve, marked, and they still see Placed until you approve it there.'
-        :'Accepted. The row is being drafted; it is approved as it lands if it is the one you saw, and they see Acknowledged then.')
+      :st==='acknowledged'?(j.approved?'Accepted. They see Confirmed, and the row you saw is approved. '+told
+        :j.differs?'Accepted, but the row came out other than you saw, so it waits under Approve, marked, and they still see Sent until you approve it there.'
+        :'Accepted. The row is being drafted; it is approved as it lands if it is the one you saw, and they see Confirmed then.')
       :st==='say'?'Sent. '+told
       :st==='again'?'Offered again under a fresh entry. '+says
       :st==='cash'?'Recorded: '+fmt(ordDue(ORD_OPEN.find(x=>x&&x.id===id)||{}))+' in cash. They see it paid and the chase stops. '+says+told

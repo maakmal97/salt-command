@@ -113,14 +113,17 @@ export async function usersMap(env) {
   try { return (await env.SALT_QUEUE.get("stmt-users", "json")) || {}; } catch { return {}; }
 }
 
-/** Every open order (or all with `all`), each with the desk code the username maps to. */
-export async function listOrders(env, all) {
-  const r = await site(env, "/desk/orders" + (all ? "?all=1" : ""));
+/** Every open order (or all with `all`), each with the desk code the username maps to; with `links`, how many
+ *  associate links wait in Salt Admin as well (S9 9.8), a count the desk's page shows and nothing more. */
+export async function listOrders(env, all, links) {
+  const q = [all ? "all=1" : "", links ? "links=1" : ""].filter(Boolean).join("&");
+  const r = await site(env, "/desk/orders" + (q ? "?" + q : ""));
   if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
   const b = await r.json().catch(() => ({}));
   if (!r.ok || !b.ok) return { ok: false, error: b.error || ("the statements site answered http " + r.status) };
   const users = await usersMap(env);
-  return { ok: true, orders: (b.orders || []).map((o) => Object.assign({ code: users[o.u] || null }, o)) };
+  return Object.assign({ ok: true, orders: (b.orders || []).map((o) => Object.assign({ code: users[o.u] || null }, o)) },
+    links && Number.isInteger(b.links) ? { links: b.links } : {});
 }
 
 /** One order, closed or open, with its code: the routes below act on an order by its id alone. */
@@ -1050,12 +1053,40 @@ export async function tellSite(env) {
 }
 
 /** How many customer orders are waiting on him: placed, and acknowledged but not yet ready; and of
- *  those, how many are still to be acknowledged, which is all his banner may ask him to acknowledge. */
+ *  those, how many are still to be acknowledged, which is all his banner may ask him to acknowledge.
+ *  `desk` is what the desk's own Today and rail count (the master's ordWaiting): placed, or its last line the
+ *  customer's. An acknowledged order is a row already, so counting it there would say the same money twice. */
 export async function ordersWaiting(env) {
   const r = await listOrders(env, false);
-  if (!r.ok) return { waiting: 0, placed: 0 };
-  return { waiting: r.orders.filter((o) => o.status === "placed" || o.status === "acknowledged").length,
-    placed: r.orders.filter((o) => o.status === "placed").length };
+  if (!r.ok) return { ok: false, waiting: 0, placed: 0, desk: 0 };
+  const asked = (o) => { const m = o.msgs || []; return m.length > 0 && m[m.length - 1].by === "customer"; };
+  return { ok: true, waiting: r.orders.filter((o) => o.status === "placed" || o.status === "acknowledged").length,
+    placed: r.orders.filter((o) => o.status === "placed").length,
+    desk: r.orders.filter((o) => o.status === "placed" || asked(o)).length };
+}
+
+/* S9 9.8: SALT ADMIN IS TOLD WHAT WAITS HERE, as one figure with no link and no name: the count the desk's own
+   Today and rail show (ordersWaiting's `desk`; S9 fix, it was the banner's, which counts agreed orders too, so the
+   two apps disagreed), written onto the site as a mark. Recounted only on a minute the site's order marks
+   moved (every move of an order moves `touched`), so a quiet minute costs one read; written only when the count
+   changes, and the mark here moves only once the site has taken it. */
+const WAIT_TOLD = "orders:waiting-told";
+export async function tellWaiting(env) {
+  const r = await site(env, "/desk/orders/last");
+  if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const m = await r.json().catch(() => ({}));
+  if (!r.ok || !m.ok) return { ok: false, error: m.error || ("the statements site answered http " + r.status) };
+  const key = [m.last, m.touched].join("|");
+  const was = (await env.SALT_QUEUE.get(WAIT_TOLD, "json")) || {};
+  if (was.key === key) return { ok: true, told: false };
+  const w = await ordersWaiting(env);
+  if (!w.ok) return { ok: false, error: "the orders could not be read" };
+  if (w.desk !== was.n) {
+    const t = await site(env, "/desk/waiting", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ n: w.desk }) });
+    if (!t || !t.ok) return { ok: false, error: "the site would not take the count" + (t ? " (http " + t.status + ")" : "") };
+  }
+  await env.SALT_QUEUE.put(WAIT_TOLD, JSON.stringify({ key, n: w.desk }));
+  return { ok: true, told: w.desk !== was.n, n: w.desk };
 }
 
 /* THE NUDGE, every minute (16 Sep 2026; it was the drafter's quarter-hour, and nothing had

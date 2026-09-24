@@ -278,21 +278,57 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .rlist button:hover{border-color:var(--salt-brass)}
 .rlist button span{color:var(--salt-mist);font-size:var(--salt-text-xs);letter-spacing:.06em}
 .rnone{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:14px 0 0}
-/* THE MASTER ACCOUNT (v687). Its items are the roster's own rows, so the page has one shape; an
-   account's row wraps to two lines, the code and username on the first and where it stands on the
-   second, because the flag is the thing he is reading the list for. The five words take the
-   colours the desk gives the same states: owed in ember, goods in steel, a refund in brass. */
+/* THE MASTER ACCOUNT (v687). An item on More wraps to two lines, its name and what it is for. */
 .rlist button[data-m]{flex-wrap:wrap}
 .rlist button[data-m] span{flex:1 0 100%;margin-top:4px;color:var(--salt-text-muted)}
-#rlist button{flex-wrap:wrap}
-#rlist button .fl{flex:1 0 100%;margin-top:5px;letter-spacing:.04em}
-#rlist button .op{flex:1 0 100%;color:var(--salt-text-muted)}
-#rlist button .f-owes{color:var(--salt-ember)}
-#rlist button .f-goods{color:var(--salt-steel)}
-#rlist button .f-refund{color:var(--salt-brass)}
-#rlist button .f-pend{color:var(--salt-copper)}
-#rlist button .f-clear,#rlist button .f-none{color:var(--salt-mist)}
-#mHome h1,#oReview h1,#oLinks h1{margin-top:0}
+#mHome h1,#oAccts h1,#oLinks h1,#oMore h1{margin-top:0}
+/* S9 9.7: an ended admin sign-in leaves nothing on the page but the way back in */
+body.ended>*:not(#aEnded){display:none}
+/* S9 9.2: HIS OWN PAGE'S SHELL. The App bar and the Desk rail are the system's, and which one shows is the
+   system's switch at 1080px; this page decides the column, the room kept clear above the bar, and where the
+   open account stands: beside the list on a desk, in its place on a phone, with a way back. */
+.gate.adm{max-width:600px;margin-top:32px;padding-bottom:calc(var(--salt-bar-h) + 32px + env(safe-area-inset-bottom))}
+.adm .salt-eyebrow{margin:0 0 6px}
+.aring{display:flex;width:36px;height:36px;align-items:center;justify-content:center;color:var(--salt-brass);
+  border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-well)}
+.aring svg{width:22px;height:22px}
+.salt-rail__tab .salt-appbar__place{color:inherit}
+#mFoot:empty{display:none}
+.afind{display:flex;flex-direction:column;gap:12px;margin:0 0 16px}
+.afil{display:flex;flex-wrap:wrap;gap:8px}
+.alist{display:flex;flex-direction:column;gap:8px}
+.alist .salt-inbox-row__title{gap:6px}
+#aopen .scard{margin:0}
+.achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+@media (min-width:1080px){
+  .gate.adm{max-width:1180px;margin-top:24px;display:flex;gap:28px;align-items:flex-start;padding-bottom:48px}
+  .adm .amain{flex:1 1 auto;min-width:0}
+  #mHome,#oLinks,#oMore,#oCards{max-width:600px}
+  #oAccts.open .asplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:20px;align-items:start}
+  #aopen{position:sticky;top:24px}
+  #aopen .aback{display:none}
+  /* S9 fix: Needs you beside the account a card is about (the plan's f13w) */
+  #mHome.open{max-width:none}
+  #mHome.open .nsplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:20px;align-items:start}
+  #nopen{position:sticky;top:24px}
+}
+@media (max-width:1079.98px){
+  #oAccts.open .afind,#oAccts.open .alist,#oAccts.open #scount{display:none}
+  #nopen{display:none}
+}
+/* a card's party opens its account: a quiet link at the full tap, its hit area kept off the card's rhythm */
+button.salt-approve__party{display:inline-flex;align-items:center;min-height:var(--salt-tap);min-width:var(--salt-tap);
+  margin:-12px 0;padding:0;background:none;border:0;cursor:pointer;text-align:left;text-decoration:underline;text-underline-offset:3px}
+/* S9 9.1: NEEDS YOU, the system's Approve card a thing; this page decides only the gaps between them and
+   the line a tap is answered on, which sits on the card it answers */
+#mHome .salt-eyebrow{margin:0 0 6px}
+.nlist{display:flex;flex-direction:column;gap:12px;margin:0 0 24px}
+.nlist .glink{margin:0}
+.nnote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.nnote:empty{display:none}
+.nnote.bad{color:var(--salt-ember)}
+.nwait{display:flex;align-items:center;gap:8px;margin:-8px 0 24px;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.nwait svg{width:16px;height:16px;flex:0 0 auto;color:var(--salt-brass)}
 /* THE ASSOCIATES REPORT CARD (v691): three figures across, then what they have earned in units
    with a bar for the part-unit. The bar is the only chart on this site and it is a rule and a
    fill, because a percentage of a unit is a proportion and nothing more. */
@@ -616,6 +652,20 @@ function bulletinBand(b) {
     /* 24 Sep 2026: what a screen reader is told while the lines change, once, instead of a new line every four seconds */
     + '<span class="sr" id="bullSr"></span></div>';
 }
+/* S9 9.2: SALT ADMIN'S PLACES AND ITS FILTERS. The icons are drawn here, stroked like the product marks,
+   and loaded from nowhere; the key is the ring with a keyhole its home-screen icon carries (9.7). */
+const ADMIN_PLACES = [["needs", "Needs you"], ["accounts", "Accounts"], ["links", "Links"], ["more", "More"]];
+const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "Owes"], ["locked", "Refused"], ["none", "No account"]];
+const ADMIN_ICONS = {
+  needs: '<path d="M3.8 13 L6.5 5 H17.5 L20.2 13 V19.5 H3.8 Z M3.8 13 H8.6 L9.9 15.6 H14.1 L15.4 13 H20.2"/>',
+  accounts: '<circle cx="9" cy="8.6" r="3.2"/><path d="M3.4 19.6 C4.2 16.4 6.4 14.8 9 14.8 C11.6 14.8 13.8 16.4 14.6 19.6 M15.2 5.6 A3 3 0 0 1 15.4 11.6 M17.4 14.9 C19 15.6 20.1 17.2 20.6 19.6"/>',
+  links: '<path d="M10.2 13.8 L13.8 10.2 M8.6 11.4 L6.7 13.3 A3.3 3.3 0 0 0 11.4 18 L13.3 16.1 M10.7 7.9 L12.6 6 A3.3 3.3 0 0 1 17.3 10.7 L15.4 12.6"/>',
+  more: '<circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/>',
+  desk: '<rect x="3.4" y="5" width="17.2" height="11.6" rx="1.6"/><path d="M9 19.6 H15 M12 16.6 V19.6"/>',
+  key: '<circle cx="12" cy="12" r="7.4"/><circle cx="12" cy="10.6" r="1.7"/><path d="M11.3 12.1 L10.8 15.2 H13.2 L12.7 12.1"/>'
+};
+const aico = (n) => '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" '
+  + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + ADMIN_ICONS[n] + "</svg>";
 export function landingPage(user, nonce, owner, bulletin) {
   const u = esc(user || "");
   return DOC_OPEN
@@ -634,7 +684,7 @@ export function landingPage(user, nonce, owner, bulletin) {
        his route alone; the customer's manifest is public and its link is left as it was. */
     + (owner ? '<link rel="manifest" href="/all/manifest.webmanifest" crossorigin="use-credentials">'
       : '<link rel="manifest" href="/manifest.webmanifest">')
-    + '<link rel="apple-touch-icon" href="/icon.png">'
+    + '<link rel="apple-touch-icon" href="' + (owner ? "/icon-key.png" : "/icon.png") + '">'
     + '<meta name="theme-color" content="#05080a">'
     + '<meta name="apple-mobile-web-app-capable" content="yes">'
     + '<meta name="mobile-web-app-capable" content="yes">'
@@ -645,48 +695,43 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
     + bulletinBand(bulletin)
     + (owner
-      ? '<div id="roster" class="gate">'
-        /* v687: the master account opens on what it can do, not on a list. An item is added here
-           only once it works, so nothing on this page is a promise. */
+      ? '<div id="roster" class="gate adm">'
+        /* S9 9.2: HIS PLACES, the phone's App bar and, from 1080px, the Desk rail the bar gives way to (the
+           system's own switch): Needs you, Accounts, Links, More. A count beside a place is what waits there. */
+        + '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Admin">'
+        + '<div class="salt-rail__brand"><span class="aring">' + aico("key") + '</span><b class="salt-title">Salt Admin</b></div>'
+        + '<div class="salt-rail__group">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-rail__tab salt-rail__tab--solo place" data-m="' + m + '">'
+          + '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico(m) + "</span><span>" + w + "</span></span>"
+          + '<span class="salt-rail__count" data-count="' + m + '"></span></button>').join("") + "</div>"
+        + '<div class="salt-rail__foot" id="mFoot"></div></nav>'
+        + '<div class="amain">'
+        /* S9 9.1: his home is Needs you, one card a thing with its action on it (stmt/owner.js) */
         + '<div id="mHome">'
-        + "<h1>Master account</h1>"
-        + '<p class="lead" id="mCount">' + owner.accounts.filter((a) => !a.test).length + " accounts on the site.</p>"
-        + '<div class="rlist" id="mItems">'
-        + '<button type="button" data-m="send">Send statement'
-        + "<span>one card an account: the message, the code and the password</span></button>"
-        + '<button type="button" data-m="review">Review statement'
-        + "<span>where every account stands, and when it was last opened</span></button>"
-        + '<button type="button" data-m="cards">Associates report card'
-        + "<span>what each has brought you, and what they have earned</span></button>"
-        + '<button type="button" data-m="links">Links'
-        + "<span>guest price lists, made and withdrawn</span></button>"
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Admin</p>'
+        + "<h1>Needs you</h1>"
+        + '<p class="lead" id="nCount">Reading what needs you.</p>'
+        /* S9 fix: from 1080px the list stands beside the account a card is about, as Accounts does */
+        + '<div class="nsplit"><div>'
+        + '<div id="nlist" class="nlist"></div>'
+        /* S9 9.8: what waits on the desk, as the desk last told this site: a count, no link and no name */
+        + '<p class="nwait" id="nDesk" hidden>' + aico("desk") + '<span id="nDeskT"></span></p>'
+        + '</div><div id="nopen" hidden></div></div>'
         + "</div>"
-        + '<div id="mTest" class="mtest"></div>'
-        + "</div>"
-        + '<div id="oReview" hidden>'
-        + '<button type="button" data-back>' + "← Back" + "</button>"
-        + "<h1>Review statement</h1>"
-        + '<p class="lead">Tap an account to open it exactly as its own page.</p>'
-        + '<input class="fld salt-field__input salt-field__input--mono" id="rq" type="text" autocapitalize="none" autocorrect="off" '
-        + 'spellcheck="false" placeholder="filter" aria-label="Filter accounts">'
-        + '<div id="rlist" class="rlist"></div>'
-        + "</div>"
-        + '<div id="oSend" hidden>'
-        + '<button type="button" data-back>' + "← Back" + "</button>"
-        + "<h1>Send statement</h1>"
+        /* S9 9.2: ACCOUNTS, one list for what Send and Review were: found by a word, narrowed by a filter, and a
+           row opens the account beside the list from 1080px, in its place below it on a phone */
+        + '<div id="oAccts" hidden>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Admin</p>'
+        + "<h1>Accounts</h1>"
         + '<p class="lead" id="scount"></p>'
-        + '<input class="fld salt-field__input salt-field__input--mono" id="sq" type="text" autocapitalize="none" autocorrect="off" '
-        + 'spellcheck="false" placeholder="filter" aria-label="Filter accounts">'
-        + '<div id="slist"></div>'
+        + '<div class="afind">'
+        + '<input class="fld salt-field__input salt-field__input--mono" id="rq" type="search" autocapitalize="none" autocorrect="off" '
+        + 'spellcheck="false" placeholder="A code or a username" aria-label="Find an account">'
+        + '<div class="afil" id="afil" role="group" aria-label="Show only">' + ADMIN_FILTERS.map(([f, w], k) =>
+          '<button type="button" class="salt-ghost" data-f="' + f + '" aria-pressed="' + (k ? "false" : "true") + '">' + w + "</button>").join("") + "</div>"
         + "</div>"
-        + '<div id="oCards" hidden>'
-        + '<button type="button" data-back>' + "← Back" + "</button>"
-        + "<h1>Associates report card</h1>"
-        + '<p class="lead" id="ccount"></p>'
-        + '<div id="clist"></div>'
+        + '<div class="asplit"><div id="rlist" class="alist"></div><div id="aopen" hidden></div></div>'
         + "</div>"
         + '<div id="oLinks" hidden>'
-        + '<button type="button" data-back>' + "← Back" + "</button>"
         + "<h1>Guest links</h1>"
         + '<p class="lead">A link shows one board and nothing else: no statement, no '
         + "order, no account. The id in the link is what opens it, so it is the key.</p>"
@@ -702,7 +747,31 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<button class="btn salt-pill salt-pill--md" type="button" id="gmake">Make a link</button>'
         + '<div id="glist"></div>'
         + "</div>"
+        + '<div id="oMore" hidden>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Admin</p>'
+        + "<h1>More</h1>"
+        + '<p class="lead" id="mCount">' + owner.accounts.filter((a) => !a.test).length + " accounts on the site.</p>"
+        + '<div class="rlist" id="mItems">'
+        + '<button type="button" data-m="cards">Associates report card'
+        + "<span>what each has brought you, and what they have earned</span></button>"
+        + "</div>"
+        + '<div id="mTest" class="mtest"></div>'
+        + "</div>"
+        + '<div id="oCards" hidden>'
+        + '<button type="button" data-back="more">' + "← More" + "</button>"
+        + "<h1>Associates report card</h1>"
+        + '<p class="lead" id="ccount"></p>'
+        + '<div id="clist"></div>'
+        + "</div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
+        + '<nav class="salt-appbar" aria-label="Salt Admin">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-appbar__item place" data-m="' + m + '">'
+          + '<span class="salt-appbar__icon">' + aico(m) + '</span><span class="salt-appbar__label">' + w + "</span>"
+          + '<span class="salt-appbar__count" data-count="' + m + '"></span></button>').join("") + "</nav>"
+        + "</div>"
+        /* S9 9.7, his D13: what his page becomes when the Access session behind it has ended */
+        + '<div id="aEnded" class="gate" hidden><h1>Your admin sign-in has ended</h1>'
+        + '<p class="lead">Sign in again to carry on.</p>'
+        + '<a class="salt-pill salt-pill--md btn" href="/all">Sign in again</a></div>'
       : "")
     + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
     + "<h1>Sign in</h1>"
@@ -735,8 +804,10 @@ export function landingPage(user, nonce, owner, bulletin) {
     + "</div></div>"
     + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + keepSheet())
     + '<div id="barw" hidden><div class="bar">'
-    + '<span><b id="whoacct"></b><span id="cd"></span></span>'
-    + '<button type="button" id="lock">Log out</button>'
+    /* S9 9.5: on his page an account is viewed, never signed into, so the bar says whose it is and that it is
+       read only, and its one control takes him back to that account on Accounts */
+    + '<span><b id="whoacct"></b><span id="cd"></span>' + (owner ? '<span id="vas">Viewing as <b id="vasU"></b>, read only</span>' : "") + "</span>"
+    + '<button type="button" id="lock">' + (owner ? "Back to accounts" : "Log out") + "</button>"
     /* S1 1.5: a lapsed session says so where the reader is, with the one way back: a second row of the bar */
     + '<div id="lapse" class="lapse" role="alert" hidden><span id="lapseT"></span><button type="button" id="lapseGo">Continue</button></div>'
     + "</div></div>"

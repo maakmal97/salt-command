@@ -170,6 +170,10 @@ export async function listRefs(env) {
   return out.sort((a, b) => String(b.made).localeCompare(String(a.made)));
 }
 
+/** S9 9.8: a link an associate made that still waits on his word: not a standing one, not approved, not
+ *  declined and not withdrawn. The test is `approved === false`, never `!approved` (v709). */
+export const linkWaiting = (r) => !r.standing && r.approved === false && r.declined !== true && !r.revoked;
+
 /** Every link one username minted, newest first. Their own and nobody else's. */
 export async function refsBy(env, username) {
   const u = String(username || "").toLowerCase();

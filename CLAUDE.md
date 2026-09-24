@@ -314,7 +314,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **`/all` IS THE MASTER ACCOUNT, behind Access with two locks, neither trusted alone**: the Access
   application and `stmt/access.js` verifying the JWT again (RS256, issuer, audience, expiry). Empty
   `ACCESS_TEAM` or `ACCESS_AUD` closes `/all`. **`stmt/owner.js` travels only there.**
-- **Send statement hands over the password from his phone** (`pwMaster` under `STMT_MASTER`, in
+- **An account's card on Salt Admin hands over the password from his phone** (`pwMaster` under `STMT_MASTER`, in
   `sheet` behind Access, decrypted to the clipboard). The plain password stays laptop-only in
   `_passwords.json`, and no message ever carries it.
 - **The shared link signs them in, once, and keeps the phone signed in** (his D1: the door's split key,
@@ -345,7 +345,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   (`POST /handover/open`), and the app is remembered. A key in the address (`/app#<key>`) is spent by the saved app
   alone; a browser tab spends only Salt Admin's QR (`/app#qr.<key>`), as `{token, tab: true}`, which the Worker
   opens only for a key his `/all/handover` minted; an app's own browser spends nothing.
-  Salt Admin links its own manifest with credentials and is titled Salt Admin.
+  Salt Admin links its own manifest with credentials, is titled Salt Admin, has its own icon (the ring
+  with a keyhole, `/icon-key.png`) and turns into Sign in again when Access lapses.
 - **A customer's banner names the kind of news, never an amount, a product, an order or a name**:
   `{k, o}` sealed for the one phone (`sealFor`, RFC 8291) under the keys its subscription filed, the
   words `NEWS` in `stmt/sw.js`; a record with no keys gets the payload-free wake and the old words. A
@@ -368,8 +369,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **Guest links `/g/<id>`**: one board, `script-src 'none'`. **The id IS the credential**
   (rejection sampling, never `byte % 30`) and boards are NOT sealed. Every shut id (unknown,
   malformed, withdrawn, declined, waiting), and any longer path under `/g/`, answers ONE styled 404
-  page, `shutPage`, the same words for all; a board ends with how to order. **One standing link per tier**, ensured on the first open of
-  the Links panel and kept for good; Ambassador is never a guest's; Bronze's old link opens the
+  page, `shutPage`, the same words for all; a board ends with how to order. **One standing link per tier**, ensured on Salt Admin's first
+  read of its links and kept for good; Ambassador is never a guest's; Bronze's old link opens the
   stranger's board. A standing link reads `tboard:<n>`, never `board:`. **An associate may mint
   their own, shut until he approves: the test is `approved === false`, NEVER `!approved`.** Decline
   is its own state, `declined`: shut like a withdrawn link, and Not approved to the associate. A link
