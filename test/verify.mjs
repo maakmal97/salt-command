@@ -18388,6 +18388,76 @@ await (async () => {
       "and on a computer nothing says phone");
   } finally { desk.W.close(); }
 })();
+section("S3 3.8: signing in as another account over a remembered one asks Replace first, beside the control, and Keep leaves the phone's own account remembered");
+await (async () => {
+  /* S3 3.8, 24 SEP 2026. A shop with two accounts, or a phone handed over: the second sign-in overwrote the first
+     phone's memory in silence. */
+  const { landingPage: lp38 } = await import("../stmt/page.js");
+  const C38 = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JD38 } = await import("jsdom");
+  const uA = "aaaa-kkkk", uB = "bbbb-mmmm", passB = "2345-6789-abcd-efgh", tokL = "L".repeat(32), ckB = await C38.contentKey("4".repeat(64), uB);
+  const envB = await C38.encryptWith(ckB, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>B</p>" }] }));
+  const oldA = JSON.stringify({ t: "a".repeat(32), k: Buffer.from("k".repeat(32)).toString("base64"), u: uA });
+  const drive = async (path, stored, road, answer) => {
+    const st = { posts: [] };
+    const store = new Map(stored ? [["salt-stmt-remember", stored]] : []);
+    const dom = new JD38(lp38(road === "door" ? uB : "", "n38", null), { url: "https://site.test" + path, runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) Mobile/15E148 Safari/604.1", configurable: true });
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (p, init) => {
+          const body = init && init.body ? JSON.parse(init.body) : null;
+          st.posts.push({ path: String(p), body });
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/remember/open") return ans(500, { ok: false, error: "fault" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C38.wrapKey(passB, ckB), env: envB, live: null, prices: null, session: "sess38b0000000000000000000000" });
+          if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
+            : ans(200, { ok: true, u: uB, wrap: await C38.wrapKey(tokL, ckB), env: envB, live: null, prices: null, session: "sess38l0000000000000000000000" });
+          if (p === "/remember") return ans(200, { ok: true, token: "b".repeat(32), days: 30 });
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    if (road === "door") {
+      await until(() => /could not be opened/.test(D.getElementById("msg").textContent));
+      D.getElementById("pw").value = passB;
+      D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    } else {
+      await until(() => !D.getElementById("linkGo").disabled);
+      D.getElementById("linkGo").click();
+    }
+    const asked = await until(() => !D.getElementById("askRep").hidden || !D.getElementById("barw").hidden);
+    const ask = D.getElementById("askRep");
+    const q = { shown: !ask.hidden, text: ask.textContent, beside: ask.previousElementSibling && ask.previousElementSibling.id,
+      anchorHidden: road === "door" ? D.getElementById("go").hidden : D.getElementById("linkGo").hidden, noLabel: D.getElementById("askNo").textContent };
+    if (!ask.hidden) (answer ? D.getElementById("askYes") : D.getElementById("askNo")).click();
+    await until(() => !D.getElementById("barw").hidden);
+    await new Promise((r) => setTimeout(r, 80));
+    const kept = JSON.parse(store.get("salt-stmt-remember") || "null");
+    W.close();
+    return { q, kept, posts: st.posts };
+  };
+
+  const d1 = await drive("/", oldA, "door", true);
+  ok(d1.q.shown && d1.q.text.startsWith("Replace " + uA + " on this phone? It will open " + uB + " instead.") && d1.q.beside === "go" && d1.q.anchorHidden
+    && d1.q.noLabel === "Keep " + uA,
+    "signing in at the door over a remembered account asks first, where Sign in was: " + JSON.stringify(d1.q.text));
+  ok(d1.kept && d1.kept.u === uB && d1.posts.some((x) => x.path === "/logout" && x.body && x.body.token === "a".repeat(32)),
+    "Replace keeps the new account and drops the old one's wrap on the site");
+  const d2 = await drive("/", oldA, "door", false);
+  ok(d2.q.shown && d2.kept && d2.kept.u === uA && !d2.posts.some((x) => x.path === "/remember" || x.path === "/logout"),
+    "Keep opens the new account for this visit and leaves the phone's own remembered, untouched");
+  const l1 = await drive("/s/" + tokL, oldA, "link", true);
+  ok(l1.q.shown && l1.q.beside === "linkGo" && /Replace aaaa-kkkk on this phone/.test(l1.q.text) && l1.kept && l1.kept.u === uB,
+    "a sign-in link over another remembered account asks the same, beside Continue, and Replace keeps it");
+  const same = await drive("/s/" + tokL, JSON.stringify({ t: "c".repeat(32), k: "x", u: uB }), "link", true);
+  ok(!same.q.shown && same.kept && same.kept.u === uB, "the same account is not asked about");
+})();
 section("v710: the shared link signs them in once, so no message carries a password");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "when sharing the link, QR to the user, the site pre-fills their

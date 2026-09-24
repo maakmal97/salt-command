@@ -66,6 +66,9 @@ const PAGE_CSS = `
 .gate .salt-ledger__row:last-child{border-bottom:0}
 .gate .salt-insight .glyph{vertical-align:-0.3em}
 .center{text-align:center}
+/* S3 3.8: the question sits where the tapped control was */
+.ask .lead{margin:18px 0 0}
+.ask .nocase{text-transform:none}
 /* a username or a code inside a sentence is a figure, and figures are mono (decision 3) */
 .mono{font-family:var(--salt-font-mono);color:var(--salt-text)}
 .lbl{display:block;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
@@ -390,6 +393,15 @@ function signedOutSheet() {
     + "</div>";
 }
 
+/* S3 3.8: ONE PHONE, ONE REMEMBERED ACCOUNT. Signing in as another account over a remembered one asks first,
+   beside the control that was tapped, which moves here when asked. */
+function replaceAsk() {
+  return '<div id="askRep" class="ask" role="group" aria-labelledby="askRepT" hidden>'
+    + '<p class="lead" id="askRepT"></p>'
+    + '<button class="btn salt-pill salt-pill--md" id="askYes" type="button">Replace</button>'
+    + '<button class="btn salt-ghost" id="askNo" type="button"></button></div>';
+}
+
 /* S3 3.3: THE LINK PAGE. A link opens here and spends nothing until Continue: it says which account it opens
    and what is inside, and an app's own browser is sent to Safari or Chrome first. */
 function linkScreen() {
@@ -590,7 +602,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + "<li>Open it from that icon after this and sign in there with Keep me signed in ticked. It can tell you when an order moves.</li></ol>"
     + "</div>"
     + "</div>"
-    + (owner ? "" : linkScreen() + signedOutSheet())
+    + (owner ? "" : linkScreen() + signedOutSheet() + replaceAsk())
     + '<div id="barw" hidden><div class="bar">'
     + '<span><b id="whoacct"></b><span id="cd"></span></span>'
     + '<button type="button" id="lock">Log out</button>'
@@ -864,8 +876,37 @@ const CLIENT_JS = `
       var r=await fetch('/remember', {method:'POST',
         headers:{'content-type':'application/json','X-Stmt-Session':session}, body:JSON.stringify({wrap:wrap})});
       var j=await r.json();
-      if(r.ok&&j.ok&&j.token) remSet({t:j.token, k:b64e(key), u:u});
+      if(r.ok&&j.ok&&j.token){
+        var was=remGet();
+        remSet({t:j.token, k:b64e(key), u:u});
+        /* S3 3.8: what this phone remembered before is gone from it, so its wrap goes from the site as well */
+        if(was&&was.t&&was.t!==j.token) fetch('/logout',{method:'POST', headers:{'content-type':'application/json'},
+          body:JSON.stringify({token:was.t})}).catch(function(){});
+      }
     }catch(e){ /* not remembered; the password still opens it */ }
+  }
+  /* ---- REPLACE ANOTHER ACCOUNT ON THIS PHONE? (S3 3.8) ------------------------------------------------
+     Keeping a second account would overwrite the one this phone remembers, so it is asked, beside the control
+     that was tapped, before anything is kept: Replace keeps the new one and forgets the old; Keep leaves the old
+     one remembered and opens the new one for this visit only. Nothing is asked when nothing else is kept. */
+  function askReplace(anchor, u){
+    var was=remGet();
+    if(OWNER||!was||!was.u||was.u===u) return Promise.resolve(true);
+    var box=document.getElementById('askRep'), yes=document.getElementById('askYes'), no=document.getElementById('askNo'),
+        t=document.getElementById('askRepT');
+    t.textContent='';
+    t.appendChild(document.createTextNode('Replace ')); t.appendChild(el('span','mono',was.u));
+    t.appendChild(document.createTextNode(' on this '+DEV+'? It will open '));
+    t.appendChild(u?el('span','mono',u):document.createTextNode('this account'));
+    t.appendChild(document.createTextNode(' instead.'));
+    no.textContent='Keep '; no.appendChild(el('span','nocase',was.u));
+    anchor.parentNode.insertBefore(box, anchor.nextSibling);
+    anchor.hidden=true; box.hidden=false;
+    try{ yes.focus(); }catch(e){}
+    return new Promise(function(done){
+      var pick=function(v){ return function(){ yes.onclick=null; no.onclick=null; box.hidden=true; anchor.hidden=false; done(v); }; };
+      yes.onclick=pick(true); no.onclick=pick(false);
+    });
   }
 
   function lock(){
@@ -879,6 +920,7 @@ const CLIENT_JS = `
     pPrices.textContent=''; pOrder.textContent='';
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
+    var ask=document.getElementById('askRep'); if(ask&&!ask.hidden){ ask.hidden=true; document.getElementById('askNo').click(); }
     /* the owner goes back to his list, never to a password field he has no password for */
     if(OWNER){ roster.hidden=false; gate.hidden=true; if(whoacct) whoacct.textContent=''; }
     else gate.hidden=false;
@@ -1850,13 +1892,16 @@ const CLIENT_JS = `
     if(!b||!b.statements){ done(); say('The statement could not be read. Ask for it to be re-issued.','bad'); return; }
     var x=await unseal(body, ck, b);
     if(stale()) return;
+    /* v692: remembered only on a customer's own sign-in, and only when asked. The owner's route
+       opens accounts with the master and must leave nothing behind on his phone. S3 3.8: over another
+       remembered account, only when that is said yes to. */
+    var rem=document.getElementById('rem');
+    var keep=!OWNER&&!!rem&&rem.checked&&(await askReplace(go, u));
+    if(stale()) return;
     done();
     enter(u, body, b, x, ck, !!(outSheet&&!outSheet.hidden));
     if(!(await follow(stale))) return;
-    /* v692: remembered only on a customer's own sign-in, and only when asked. The owner's route
-       opens accounts with the master and must leave nothing behind on his phone. */
-    var rem=document.getElementById('rem');
-    if(!OWNER && rem && rem.checked) await remember(u, ck);
+    if(keep) await remember(u, ck);
     askPush();
   });
 
@@ -2075,10 +2120,12 @@ const CLIENT_JS = `
       var x=await unseal(body, ck, b);
       if(stale()) return;
       lsay('');
+      var keep=await askReplace(linkGo, body.u);   /* S3 3.8 */
+      if(stale()) return;
       enter(body.u, body, b, x, ck);
       if(!(await follow(stale))) return;
       /* S3 3.4 (his D1): the link keeps this phone signed in, with the same split key the door's tick makes */
-      await remember(body.u, ck);
+      if(keep) await remember(body.u, ck);
       askPush();
     });
   }
