@@ -43,7 +43,7 @@ import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, MAX_PER_ASSOC } from "./refs.js";
-import { SIGNIN_RE, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover, dropHandover } from "./signin.js";
+import { SIGNIN_RE, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover, dropHandover, sessKey } from "./signin.js";
 import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
@@ -171,7 +171,7 @@ async function markSeen(env, u, rec, how) {
 async function openSession(env, u, how) {
   const session = await mintSession(env, u);
   const now = new Date().toISOString();
-  try { await pointAt(env, u, "sess:" + session, { how, at: now, last: now }, SESSION_TTL); } catch (e) { /* it lapses on its own */ }
+  try { await pointAt(env, u, await sessKey(session), { how, at: now, last: now }, SESSION_TTL); } catch (e) { /* it lapses on its own */ }
   return session;
 }
 
@@ -369,7 +369,7 @@ async function logOut(request, env, m, su) {
   const { key, rec, raw } = tok ? await readRem(env, tok) : {};
   if (rec && (!su || rec.u === su)) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); await unpoint(env, rec.u, key); }
   const stok = String(request.headers.get("X-Stmt-Session") || "");
-  if (su && stok) await unpoint(env, su, "sess:" + stok);
+  if (su && stok) await unpoint(env, su, await sessKey(stok));
   const u = su || (rec && rec.u) || "";
   const ep = b && typeof b.endpoint === "string" && /^https:\/\//.test(b.endpoint) ? b.endpoint : null;
   if (u && ep) await env.STMT.delete("push:" + u + ":" + await endpointId(ep));

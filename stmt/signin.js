@@ -65,6 +65,9 @@ export async function mintSignin(env, u, token, wrap) {
  * can be shown and signed out (stage 9) without a scan. A pointer opens nothing: it names a record, and
  * the record still needs what only the phone holds. It lives as long as what it names. */
 export const devPrefix = (u) => "dev:" + u + ":";
+/* S3 FIX, 24 SEP 2026: A SESSION IS FILED UNDER ITS TOKEN'S HASH TOO, as a remembered phone is (3.1), so its pointer,
+ * and a copy of the store, name a key no browser can present: the pointer to a session held the live token itself. */
+export const sessKey = async (token) => "sess:" + (await idOf(token));
 export async function pointAt(env, u, key, fields, ttl) {
   await env.STMT.put(devPrefix(u) + (await idOf(key)), JSON.stringify(Object.assign({ key }, fields)), { expirationTtl: ttl });
 }

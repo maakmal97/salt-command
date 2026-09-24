@@ -46,11 +46,12 @@
  * ledger row's note, because a note reaches the committed book and free text a customer typed is
  * the one thing here that could carry a street.
  *
- * A SESSION IS THE PASSWORD, ONCE. /open mints a token on a correct password (sess:<token>, fifteen
+ * A SESSION IS THE PASSWORD, ONCE. /open mints a token on a correct password (sess:<sha256(token)>, fifteen
  * minutes, the page drops it when it locks); the order routes take the token and nothing else.
  */
 import { PAY_ACCOUNTS } from "./pay.js";
 import { wakeCustomer } from "./push.js";
+import { sessKey } from "./signin.js";
 
 export const SESSION_TTL = 900;
 export const OPEN_STATES = ["placed", "acknowledged", "ready"];
@@ -121,13 +122,13 @@ const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
    to forget its token and the record sat in the store for the rest of its fifteen minutes. */
 export async function dropSession(env, token) {
   if (!token || !env.STMT) return false;
-  await env.STMT.delete("sess:" + token);
+  await env.STMT.delete(await sessKey(token));
   return true;
 }
 
 export async function mintSession(env, u) {
   const tok = b64url(crypto.getRandomValues(new Uint8Array(24)));
-  await env.STMT.put("sess:" + tok, JSON.stringify({ u, at: new Date().toISOString() }), { expirationTtl: SESSION_TTL });
+  await env.STMT.put(await sessKey(tok), JSON.stringify({ u, at: new Date().toISOString() }), { expirationTtl: SESSION_TTL });
   return tok;
 }
 
@@ -135,7 +136,7 @@ export async function mintSession(env, u) {
 export async function sessionUser(request, env) {
   const tok = String(request.headers.get("X-Stmt-Session") || "");
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(tok)) return "";
-  const s = await env.STMT.get("sess:" + tok, "json");
+  const s = await env.STMT.get(await sessKey(tok), "json");
   return (s && typeof s.u === "string") ? s.u : "";
 }
 

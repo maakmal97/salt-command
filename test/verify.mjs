@@ -15679,7 +15679,7 @@ await (async () => {
   };
   /* another account's live session cannot forget this one's memory or its phone */
   await seed();
-  await kv.put("sess:" + "o".repeat(24), JSON.stringify({ u: other, at: new Date().toISOString() }));
+  await kv.put("sess:" + createHash("sha256").update("o".repeat(24)).digest("hex"), JSON.stringify({ u: other, at: new Date().toISOString() }));
   await post({ token: tok, endpoint: ep }, "o".repeat(24));
   ok(!!(await kv.get("rem:" + tok)) && !!(await kv.get(pushKey)), "another account's session forgets neither this account's wrap nor its push record");
   /* sixteen minutes on: the session this page holds has lapsed, so the store no longer carries it */
@@ -15688,9 +15688,9 @@ await (async () => {
     "a Log out after the session lapsed drops the remembered wrap and the push record for that phone: " + r.status);
   /* and with a live session the phone's record goes as well */
   await seed();
-  await kv.put("sess:" + "s".repeat(24), JSON.stringify({ u: uI, at: new Date().toISOString() }));
+  await kv.put("sess:" + createHash("sha256").update("s".repeat(24)).digest("hex"), JSON.stringify({ u: uI, at: new Date().toISOString() }));
   await post({ token: tok, endpoint: ep }, "s".repeat(24));
-  ok(!(await kv.get("rem:" + tok)) && !(await kv.get(pushKey)) && !(await kv.get("sess:" + "s".repeat(24))),
+  ok(!(await kv.get("rem:" + tok)) && !(await kv.get(pushKey)) && !(await kv.get("sess:" + createHash("sha256").update("s".repeat(24)).digest("hex"))),
     "a Log out inside the session drops the session, the wrap and the phone's push record together");
 
   /* the page's half: the subscription is dropped on the phone and named to the site */
@@ -15797,7 +15797,7 @@ await (async () => {
      /remember/open for a session. Filed under the hash, the copy names nothing a phone can present. */
   const kv = new KV(), env = { STMT: kv }, u = "aaaa-rrrr", sess = "sess31" + "a".repeat(22);
   await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", env: { v: 2, iv: "aXY=", ct: "Y3Q=" } }));
-  await kv.put("sess:" + sess, JSON.stringify({ u, at: new Date().toISOString() }));
+  await kv.put("sess:" + createHash("sha256").update(sess).digest("hex"), JSON.stringify({ u, at: new Date().toISOString() }));
   const post = (path, body, headers) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
     headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }), env);
   const sha = (s) => createHash("sha256").update(s).digest("hex");
@@ -15847,8 +15847,9 @@ await (async () => {
   await S.mintSignin(env, u, tok, await C.wrapKey(tok, ck));
   const byLink = await post("/open-link", { token: tok });
   const all = await ptrs();
-  const sessOf = (s, how) => { const p = all["dev:" + u + ":" + sha("sess:" + s)]; return !!p && p.key === "sess:" + s && p.how === how
-    && (kv.opts.get("dev:" + u + ":" + sha("sess:" + s)) || {}).expirationTtl === 900; };
+  /* S3 fix: a session is filed under its token's hash, so its pointer names that and never the token */
+  const sessOf = (s, how) => { const p = all["dev:" + u + ":" + sha("sess:" + sha(s))]; return !!p && p.key === "sess:" + sha(s) && p.how === how
+    && !JSON.stringify(p).includes(s) && (kv.opts.get("dev:" + u + ":" + sha("sess:" + sha(s))) || {}).expirationTtl === 900; };
   ok(Object.keys(all).length === 4 && sessOf(byPw.j.session, "password") && sessOf(byRem.j.session, "remembered") && sessOf(byLink.j.session, "link"),
     "a password, a remembered phone and a one-time link each leave a pointer naming the session they opened, listed by the prefix: "
     + JSON.stringify(Object.values(all).map((p) => p.how)));
@@ -15864,8 +15865,8 @@ await (async () => {
   /* Log out takes its own phone's pointer and its session's, and nobody else's */
   await post("/logout", { token: made.j.token }, { "X-Stmt-Session": byRem.j.session });
   const left = await ptrs();
-  ok(!left["dev:" + u + ":" + sha(remK)] && !left["dev:" + u + ":" + sha("sess:" + byRem.j.session)]
-    && !!left["dev:" + u + ":" + sha("sess:" + byLink.j.session)] && !!left["dev:" + u + ":" + sha("rem:" + sha(old))],
+  ok(!left["dev:" + u + ":" + sha(remK)] && !left["dev:" + u + ":" + sha("sess:" + sha(byRem.j.session))]
+    && !!left["dev:" + u + ":" + sha("sess:" + sha(byLink.j.session))] && !!left["dev:" + u + ":" + sha("rem:" + sha(old))],
     "Log out takes this phone's pointer and its session's, and leaves the others: " + Object.keys(left).length);
 
   /* the test account goes with everything it signed in */
@@ -15888,7 +15889,7 @@ await (async () => {
     const tr = await post("/remember", { wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" } }, { "X-Stmt-Session": t.j.session });
     const had = (await kv.list({ prefix: "dev:0000-0000:" })).keys.length;
     await post("/all/test", { make: false }, { "cf-access-jwt-assertion": jwt });
-    ok(had === 2 && (await kv.list({ prefix: "dev:0000-0000:" })).keys.length === 0 && !(await kv.get("sess:" + t.j.session))
+    ok(had === 2 && (await kv.list({ prefix: "dev:0000-0000:" })).keys.length === 0 && !(await kv.get("sess:" + sha(t.j.session)))
       && !(await kv.get("rem:" + sha(tr.j.token))) && Object.keys(await ptrs()).length === Object.keys(left).length,
       "unmaking the test account takes its pointers, its session and its remembered phone, and nobody else's: " + had);
   } finally { globalThis.fetch = realFetch; }
@@ -15978,7 +15979,7 @@ await (async () => {
     "the code opens what a one-time link opens, and the wrap unwraps under the key in the answer to the account's own key");
   ok(ho.every((k) => !kv.m.has(k)) && (await call("/handover/open", { token: h1.token })).j.error === REFUSED,
     "and it is burnt, both names at once: its key, used after its code, gets the door's one refusal");
-  const ptr = [...kv.m.keys()].find((k) => k.startsWith("dev:" + u + ":") && JSON.parse(kv.m.get(k)).key === "sess:" + o1.j.session);
+  const ptr = [...kv.m.keys()].find((k) => k.startsWith("dev:" + u + ":") && JSON.parse(kv.m.get(k)).key === "sess:" + createHash("sha256").update(o1.j.session).digest("hex"));
   ok(!!ptr && JSON.parse(kv.m.get(ptr)).how === "code" && JSON.parse(await kv.get("seen:" + u)).how === "code",
     "a code open is an open: its session leaves a pointer and the opened mark says how");
 
@@ -16135,7 +16136,7 @@ await (async () => {
   /* the Worker's own half: a session mints a token, the token brings the wrap back, logging out ends both */
   const kv92 = new KV();
   await kv92.put("u:" + u92, JSON.stringify({ u: u92, issued: "2026-09-01", issues: ["2026-09-01"], env: openBody.env }));
-  await kv92.put("sess:sess92aaaaaaaaaaaaaaaaaaaaaa", JSON.stringify({ u: u92, at: new Date().toISOString() }));
+  await kv92.put("sess:" + createHash("sha256").update("sess92aaaaaaaaaaaaaaaaaaaaaa").digest("hex"), JSON.stringify({ u: u92, at: new Date().toISOString() }));
   const env92 = { STMT: kv92 };
   const post92 = (path, body, headers) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path,
     { method: "POST", headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }), env92);
@@ -16154,12 +16155,12 @@ await (async () => {
   const bad92 = await post92("/remember/open", { token: "z".repeat(24) });
   ok(bad92.status === 401 && (await bad92.json()).error === "That username and password were not accepted.",
     "and an unknown token is refused in the door's own words, saying nothing about what exists");
-  await kv92.put("sess:other0000000000000000000000", JSON.stringify({ u: "cccc-dddd", at: new Date().toISOString() }));
+  await kv92.put("sess:" + createHash("sha256").update("other0000000000000000000000").digest("hex"), JSON.stringify({ u: "cccc-dddd", at: new Date().toISOString() }));
   await post92("/logout", { token: remOut.token }, { "X-Stmt-Session": "other0000000000000000000000" });
-  ok(!!(await kv92.get(remKey)) && !(await kv92.get("sess:other0000000000000000000000")),
+  ok(!!(await kv92.get(remKey)) && !(await kv92.get("sess:" + createHash("sha256").update("other0000000000000000000000").digest("hex"))),
     "another account's log out drops its own session and leaves this one's memory alone");
   await post92("/logout", { token: remOut.token }, { "X-Stmt-Session": back.session });
-  ok(!(await kv92.get(remKey)) && !(await kv92.get("sess:" + back.session)),
+  ok(!(await kv92.get(remKey)) && !(await kv92.get("sess:" + createHash("sha256").update(back.session).digest("hex"))),
     "its own log out drops the session and the remembered wrap together");
 
   /* the page's half, end to end: sign in once with the box ticked, then open a second page with no password */
@@ -18497,7 +18498,7 @@ await (async () => {
   /* ---- the Worker's half: the documents again on a session, never a wrap ---- */
   const kv = new KV();
   await kv.put("u:" + u35, JSON.stringify({ u: u35, issued: "2026-09-24", issues: ["2026-09-24"], env: first, prices: list, wrap: { v: 1 }, wrapMaster: { v: 1 } }));
-  await kv.put("sess:sess35live0000000000000000", JSON.stringify({ u: u35, at: new Date().toISOString() }));
+  await kv.put("sess:" + createHash("sha256").update("sess35live0000000000000000").digest("hex"), JSON.stringify({ u: u35, at: new Date().toISOString() }));
   const acct = async (s) => { const r = await W35.fetch(new Request("https://k7m3p2.example/account", { headers: s ? { "X-Stmt-Session": s } : {} }), { STMT: kv }); return { status: r.status, j: await r.json().catch(() => ({})) }; };
   const got = await acct("sess35live0000000000000000"), none = await acct("");
   ok(got.status === 200 && got.j.ok && got.j.u === u35 && JSON.stringify(got.j.env) === JSON.stringify(first) && !!got.j.prices
@@ -20140,6 +20141,37 @@ await (async () => {
   await kv.put(fk, JSON.stringify({ u, wrap, at }), { expirationTtl: day });
   await post({ token: fresh });
   ok(ttl(fk) === 30 * day, "the control: a record filed under its hash is kept thirty days from this open");
+})();
+section("S3 fix: a session is filed under its token's hash, so neither its pointer nor a copy of the store holds a live session");
+await (async () => {
+  /* S3-SEC-8 (24 Sep 2026). The pointer to a session stored {key: "sess:<token>"}, the live token itself, while the docs
+     said a pointer opens nothing; a listing of an account's phones (stage 9) returning pointers as stored would have
+     handed out every other device's session, and every session sat in the store under its token. */
+  const O = await import("../stmt/orders.js");
+  const kv = new KV(), env = { STMT: kv }, u = "aaaa-jjjj";
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", env: { v: 2, iv: "aXY=", ct: "Y3Q=" } }));
+  const tok = await O.mintSession(env, u);
+  const req = (s) => new Request("https://k7m3p2.example/orders", { headers: { "X-Stmt-Session": s } });
+  ok(await O.sessionUser(req(tok), env) === u, "the fixture: the token the page holds names its account");
+  ok(![...kv.m.keys()].some((k) => k.includes(tok)) && ![...kv.m.values()].some((v) => String(v).includes(tok)),
+    "the token is nowhere in the store, as a key or in a value");
+  const key = [...kv.m.keys()].find((k) => k.startsWith("sess:"));
+  ok(!!key && await O.sessionUser(req(key.slice(5)), env) === "" && await O.sessionUser(req(key.slice(5, 37)), env) === "",
+    "and the name it is filed under, whole or cut to a token's length, opens nothing: " + String(key).slice(0, 12));
+
+  /* the pointer an open leaves */
+  const C = await import("../tools/stmt-crypto.mjs");
+  const pw = C.newPassword(), ck = await C.contentKey("s3-sess", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck), env: { v: 2, iv: "aXY=", ct: "Y3Q=" } }));
+  const r = await stmtWorker.fetch(new Request("https://k7m3p2.example/open", { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ u, password: pw }) }), env);
+  const s = (await r.json()).session;
+  const ptrs = [...kv.m.entries()].filter(([k]) => k.startsWith("dev:" + u + ":")).map(([, v]) => JSON.parse(v));
+  const mine = ptrs.find((p) => p.how === "password");
+  ok(!!s && !!mine && /^sess:[0-9a-f]{64}$/.test(mine.key) && !JSON.stringify(ptrs).includes(s) && await O.sessionUser(req(mine.key.slice(5)), env) === "",
+    "the pointer a password open leaves names its session's hash, never the session, and what it names opens nothing: " + JSON.stringify(mine && mine.key.slice(0, 12)));
+  await kv.delete(mine.key);
+  ok(await O.sessionUser(req(s), env) === "", "and deleting what it names ends that session, which is what signing an account out everywhere needs");
 })();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {
