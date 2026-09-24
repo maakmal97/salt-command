@@ -189,17 +189,6 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .pay{margin-top:12px;display:flex;flex-direction:column;gap:8px}
 .pay label{display:flex;gap:10px;align-items:center;min-height:var(--salt-tap);padding:0 6px;font-size:var(--salt-text-sm);cursor:pointer}
 .pay input[type=radio]{width:18px;height:18px;accent-color:var(--salt-brass)}
-.hist{margin:10px 0 0;padding:0;list-style:none;font-size:var(--salt-text-xs);color:var(--salt-text-muted);font-family:var(--salt-font-mono);line-height:1.8}
-/* v751: the thread on an order. Theirs sits left and his right, which is the one convention every
-   reader of a phone already knows, so no label has to say whose line it is. */
-.thread{margin:12px 0 0;padding:0;list-style:none}
-.thread li{margin:0 0 7px;max-width:82%;padding:7px 10px;border-radius:10px;font-size:var(--salt-text-sm);line-height:1.5}
-.thread li.me{margin-left:auto;background:var(--salt-well);border:1px solid var(--salt-line)}
-.thread li.them{margin-right:auto;background:var(--salt-glass);border:1px solid var(--salt-brass)}
-.thread .when{display:block;font-size:var(--salt-text-xs);color:var(--salt-text-muted);font-family:var(--salt-font-mono);margin-bottom:2px}
-.thread .said{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
-.sayw{display:flex;gap:7px;align-items:center;margin-top:10px}
-.sayw .fld{flex:1 1 auto;margin:0}
 /* S5, 24 SEP 2026: THE ORDERS PLACE. Needs you, then Open, then the earlier orders folded and not drawn. A row
    is the system's Inbox row and opens the order's own screen: the goods on Steps, the money on the plain Ledger
    list, one filled Pay, the thread on Bubble and thread, what happened on Plan, folded. The look is the
@@ -1673,43 +1662,86 @@ const CLIENT_JS = `
     if(tp.k==='pay'&&tp.t) a.appendChild(statusLine(tp.t));
     return a;
   }
-  /* v751: THE THREAD, oldest first, theirs and his, on any order at any stage */
+  /* ---- S5 5.4 (24 Sep 2026): THE MESSAGES, on the system's Bubble and thread. Their lines stand right with where
+     each one is: Sending, Sent (stored, never read: there are no read receipts), or Not sent with Tap to try again,
+     which carries the line's own id, so a line that did arrive is not recorded twice. His stand left, marked New
+     until this device has shown them. The composer is a form, so Return sends; the line typed is kept per order
+     until it goes, and the box is emptied the moment it does, the line then living in its bubble. ---- */
+  function oOut(id){ var q=(draft.oOut=draft.oOut||{}); return q[id]||(q[id]=[]); }
+  function oPut(v){ for(var i=0;i<orders.length;i++) if(orders[i].id===v.id){ orders[i]=v; return; } }
+  function bubble(side,text,meta,state,isNew){
+    var b=el('div','salt-bubble salt-bubble--'+side+(state==='failed'?' salt-bubble--failed':''));
+    b.appendChild(el('p','salt-bubble__text',text));
+    var m=el('p','salt-bubble__meta'); m.appendChild(el('span',null,meta));
+    if(isNew) m.appendChild(el('span','salt-bubble__new','New'));
+    if(state) m.appendChild(el('span','salt-bubble__state salt-bubble__state--'+state,{sending:'Sending',sent:'Sent',failed:'Not sent'}[state]));
+    b.appendChild(m);
+    return b;
+  }
   function oThread(o){
-    var w=el('div'), msgs=o.msgs||[];
-    if(!msgs.length) return w;
-    var th=el('ul','thread');
+    var w=el('div','omsgs'), msgs=o.msgs||[], out=oOut(o.id), n=msgs.length+out.length, since=(draft.oSince||{})[o.id];
+    if(view&&!n) return el('div');
+    var h=el('h3','salt-eyebrow salt-eyebrow--copper olab'); h.appendChild(el('span',null,'Messages')); if(n) h.appendChild(el('span',null,String(n)));
+    var th=el('div','salt-thread'), ls=el('div','salt-thread__lines');
+    ls.setAttribute('role','log'); ls.setAttribute('aria-label','Messages on this order');
     msgs.forEach(function(m){
-      var li=el('li',m.by==='desk'?'them':'me');
-      li.appendChild(el('span','when',(m.by==='desk'?'Reply, ':'You, ')+stamp(m.at)));
-      li.appendChild(el('p','said',m.text||''));
-      th.appendChild(li); });
-    w.appendChild(th); return w;
+      var his=m.by==='desk';
+      ls.appendChild(bubble(his?'theirs':'mine',m.text||'',(his?'Reply, ':'You, ')+stamp(m.at),his?'':'sent',his&&typeof since==='string'&&String(m.at)>since));
+    });
+    out.forEach(function(x){
+      var b=bubble('mine',x.t,'You, '+stamp(x.at),x.state,false);
+      if(x.state==='failed'){
+        if(x.why){ var y=el('p','salt-bubble__meta',x.why); y.setAttribute('role','status'); b.appendChild(y); }
+        var r=el('button','salt-ghost salt-ghost--lit salt-bubble__retry','Tap to try again'); r.type='button';
+        r.addEventListener('click',function(){ oSend(o.id,x); });
+        b.appendChild(r);
+      }
+      ls.appendChild(b);
+    });
+    th.appendChild(ls); w.appendChild(h); w.appendChild(th);
+    return w;
   }
   /* his read-only view writes nothing; he answers on the desk */
   function oSay(o){
-    var w=el('div'), tp=oTap(o);
+    var w=el('div');
     if(view) return w;
-    var sayw=el('div','sayw'), msgs=o.msgs||[];
-    var si=el('input','fld salt-field__input'); si.type='text'; si.maxLength=200;
-    si.placeholder=msgs.length?'Add to this':'Ask about this order';
-    si.setAttribute('aria-label','Write about this order');
+    var f=el('form','salt-composer'), si=el('input','salt-field__input salt-composer__field');
+    si.type='text'; si.maxLength=200; si.autocomplete='off'; si.setAttribute('enterkeyhint','send');
+    si.placeholder='Write about this order'; si.setAttribute('aria-label','Write about this order');
     si.setAttribute('data-say',o.id); si.value=(draft.says||{})[o.id]||'';
     si.addEventListener('input',function(){ (draft.says=draft.says||{})[o.id]=si.value; });
-    var sg=el('button','btn quiet salt-ghost','Send'); sg.type='button';
-    sg.addEventListener('click', async function(){
+    var sg=el('button','salt-ghost salt-ghost--lit salt-composer__send','Send'); sg.type='submit';
+    f.appendChild(si); f.appendChild(sg);
+    f.addEventListener('submit',function(ev){
+      ev.preventDefault();
       var t=String(si.value||'').trim();
-      if(!t||sg.disabled) return;
-      sg.disabled=true; var mine=ticket;
-      var r=await api('/orders/'+o.id+'/say',{text:t,rid:ridFor(o.id+':say',t)});
-      if(mine!==ticket) return;
-      sg.disabled=false;
-      if(!r.body.ok) tapSaid(o,'say',r.body.error||'It was not sent.');
-      else { ridDone(o.id+':say'); tapSaid(o,'say',''); if(draft.says) delete draft.says[o.id]; await loadOrders(); if(mine!==ticket) return; }
-      drawOrder();
+      if(!t) return;
+      var x={t:t, at:new Date().toISOString(), state:'sending', rid:mintRid(), why:''};
+      oOut(o.id).push(x);
+      si.value=''; if(draft.says) delete draft.says[o.id];
+      oSend(o.id,x);
     });
-    sayw.appendChild(si); sayw.appendChild(sg); w.appendChild(sayw);
-    if(tp.k==='say'&&tp.t) w.appendChild(statusLine(tp.t));
+    w.appendChild(f);
     return w;
+  }
+  /* one part of the open screen drawn again, and nothing else on it */
+  function oPart(id,k){
+    var s=pOrder.querySelector('.oscreen[data-order="'+id+'"]'), o=oFind(id); if(!s||!o) return;
+    var was=[].filter.call(s.children,function(c){ return c.getAttribute('data-part')===k; })[0]; if(!was) return;
+    var n=OPARTS[k](o); n.setAttribute('data-part',k); n.hidden=!n.childNodes.length; was.replaceWith(n);
+  }
+  async function oSend(id,x){
+    var mine=ticket; x.state='sending'; x.why=''; oPart(id,'thread');
+    var r=await api('/orders/'+encodeURIComponent(id)+'/say',{text:x.t,rid:x.rid});
+    if(mine!==ticket) return;
+    if(r.body&&r.body.ok){
+      if(r.body.order&&r.body.order.id===id) oPut(r.body.order); else { await loadOrders(); if(mine!==ticket) return; }
+      var q=oOut(id), i=q.indexOf(x); if(i>=0) q.splice(i,1);
+      oPart(id,'thread');
+    } else {
+      var e=String((r.body&&r.body.error)||'').replace(/^Not sent[.] */,'');
+      x.state='failed'; x.why=e&&e.charAt(0).toUpperCase()+e.slice(1); oPart(id,'thread');
+    }
   }
   /* WHAT HAPPENED, STEP BY STEP, folded: the record, under the thread a reader came back for */
   function oHist(o){
@@ -1719,7 +1751,7 @@ const CLIENT_JS = `
     dt.addEventListener('toggle',function(){ (draft.oHist=draft.oHist||{})[o.id]=dt.open; });
     var sm=el('summary'); sm.appendChild(el('span','salt-plan__id',String(h.length))); sm.appendChild(el('span','salt-plan__title','What happened, step by step'));
     dt.appendChild(sm);
-    var b=el('div','salt-plan__body'), ul=el('ul','hist');
+    var b=el('div','salt-plan__body'), ul=el('ul');
     h.forEach(function(x){ ul.appendChild(el('li',null,stamp(x.at)+'  '+histLine(x,o))); });
     b.appendChild(ul); dt.appendChild(b); w.appendChild(dt);
     return w;
@@ -1762,10 +1794,15 @@ const CLIENT_JS = `
     pOrder.classList.toggle('o-open',open);
     var col=el('div','olistcol'); col.appendChild(el('h2',null,'Your orders')); col.appendChild(oList(id));
     place.appendChild(col);
+    /* New is read against what this device had seen when the order was opened, and stays until it is left */
+    if(draft.oShown!==id){ draft.oShown=id; draft.oSince={}; }
+    if(o&&!(id in draft.oSince)) draft.oSince[id]=seenMark(o);
     if(o){ place.appendChild(oScreen(o)); seeIt(o); }
     return place;
   }
   function oDraw(){ var was=document.getElementById('oPlace'); if(was) was.replaceWith(oPlace()); }
+  /* an order drawn open while the tab was elsewhere is seen when the tab is turned to */
+  tabs.addEventListener('click',function(){ var o=tab==='order'&&oFind(draft.oShown||''); if(o) seeIt(o); });
   function oOpen(id){ draft.oOpen=id; oDraw(); scrollClear(pOrder.querySelector('.oscreen')); }
   /* clear of the sticky bar, which would otherwise sit over what was opened */
   function scrollClear(n){

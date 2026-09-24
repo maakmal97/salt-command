@@ -21069,6 +21069,97 @@ await (async () => {
     "the goods are already with you, so this cannot be cancelled here", "payment is chosen once the order is confirmed", "payment is recorded once the order is confirmed"]),
     "every refusal of a customer's move says it in their words, never the state's name: " + JSON.stringify(said));
 })();
+section("S5 5.4: a line on an order shows where it is, Return sends it, and his lines are New until seen");
+await (async () => {
+  /* 24 SEP 2026, the Counter redesign's stage 5. A line was sent from a box beside a Send that went grey, and
+     nothing on the thread said whether it had gone: a dropped request put Not sent under the box and the line was
+     lost with the next draw. His answers looked like every other line. Driven through the served page. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s54", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s54",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const A = "20260924090000-aaaa", B = "20260923090000-bbbb";
+  const o = (id, x) => Object.assign({ id, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 90,
+    moved: 0, status: "acknowledged", history: [], msgs: [] }, x);
+  const ordA = o(A, { msgs: [{ at: "2026-09-23T02:00:00Z", by: "customer", text: "Before noon please" }, { at: "2026-09-23T03:00:00Z", by: "desk", text: "Noted, Thursday morning." }] });
+  const orders = [ordA, o(B)];
+  const said = [];
+  let mode = "hold", release = null;
+  const dom = new JSDOM(landingPage(u, "n54", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
+      if (p === "/open") return { ok: true, status: 200, json: async () => body };
+      if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders }) };
+      if (p === "/orders/" + A + "/say") {
+        said.push(j);
+        if (mode === "fail") throw new TypeError("Failed to fetch");
+        if (mode === "hold") await new Promise((r) => { release = r; });
+        ordA.msgs = ordA.msgs.concat([{ at: "2026-09-24T02:00:00Z", by: "customer", text: j.text }]);
+        return { ok: true, status: 200, json: async () => ({ ok: true, order: JSON.parse(JSON.stringify(ordA)) }) };
+      }
+      return { ok: true, status: 200, json: async () => ({ ok: true }) };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const scr = () => d.querySelector("#pOrder .oscreen");
+  const open = (id) => { const b = d.querySelector("#pOrder .oback"); if (b && scr()) b.click(); d.querySelector('#pOrder [data-row="' + id + '"]').click(); };
+  const bubbles = () => [...scr().querySelectorAll(".salt-thread__lines .salt-bubble")].map((b) => ({
+    side: b.classList.contains("salt-bubble--mine") ? "mine" : b.classList.contains("salt-bubble--theirs") ? "theirs" : "?",
+    text: b.querySelector(".salt-bubble__text").textContent, state: (b.querySelector(".salt-bubble__state") || {}).textContent || "",
+    isNew: !!b.querySelector(".salt-bubble__new"), failed: b.classList.contains("salt-bubble--failed"),
+    retry: [...b.querySelectorAll("button")].filter((x) => x.textContent === "Tap to try again" && x.classList.contains("salt-ghost")).length }));
+  const box = () => scr().querySelector('input[aria-label="Write about this order"]');
+  const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const send = (t) => { box().value = t; box().dispatchEvent(new w.Event("input", { bubbles: true })); if (box().form) box().form.requestSubmit(); };
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => d.querySelector("#pOrder [data-olist]"));
+    d.querySelector('#tabs button[data-t="order"]').click();
+    open(A);
+    const b0 = bubbles();
+    ok(JSON.stringify(b0) === JSON.stringify([{ side: "mine", text: "Before noon please", state: "Sent", isNew: false, failed: false, retry: 0 },
+      { side: "theirs", text: "Noted, Thursday morning.", state: "", isNew: true, failed: false, retry: 0 }])
+      && !/[Rr]ead|[Ss]een/.test(scr().querySelector(".salt-thread").textContent),
+      "their line stands right and says Sent, his stands left marked New, and nothing says read: " + JSON.stringify(b0));
+    open(B); open(A);
+    ok(bubbles()[1].isNew === false, "once shown, his line is no longer New when the order is opened again: " + JSON.stringify(bubbles()[1]));
+
+    ok(!!box().form && box().form.classList.contains("salt-composer") && box().getAttribute("enterkeyhint") === "send" && box().form.querySelector('button[type="submit"]').textContent === "Send",
+      "the composer is a form, so Return sends it, and the key says so");
+    send("Thursday is fine");
+    await until(() => said.length === 1);
+    const b1 = bubbles().pop();
+    ok(b1.text === "Thursday is fine" && b1.state === "Sending" && box().value === "",
+      "a line in flight stands in the thread as Sending, and the box is empty for the next: " + JSON.stringify(b1));
+    if (release) release();
+    await until(() => bubbles().length === 3 && bubbles()[2].state === "Sent");
+    ok(JSON.stringify(bubbles().map((b) => b.state)) === JSON.stringify(["Sent", "", "Sent"]), "stored, it says Sent: " + JSON.stringify(bubbles()));
+
+    mode = "fail";
+    send("Someone will be in after eleven");
+    await until(() => bubbles().some((b) => b.failed));
+    const b2 = bubbles().pop();
+    ok(b2.failed && b2.state === "Not sent" && b2.retry === 1 && b2.text === "Someone will be in after eleven",
+      "a line that could not go says Not sent, keeps its words, and offers Tap to try again: " + JSON.stringify(b2));
+    mode = "ok";
+    const again = [...scr().querySelectorAll("button")].find((x) => x.textContent === "Tap to try again"); if (again) again.click();
+    await until(() => said.length === 3 && !bubbles().some((b) => b.failed || b.state === "Sending"));
+    ok(said.length === 3 && said[2].rid === said[1].rid && said[1].rid !== said[0].rid && said[2].text === said[1].text,
+      "tried again, it carries the same id, so a line that did arrive is not recorded twice: " + JSON.stringify(said.map((x) => x.rid)));
+
+    box().value = "Half a thought"; box().dispatchEvent(new w.Event("input", { bubbles: true }));
+    open(B);
+    const other = box().value;
+    open(A);
+    ok(other === "" && box().value === "Half a thought", "what is typed is kept for its own order, and only there: " + JSON.stringify([other, box().value]));
+  } finally { if (release) release(); w.close(); }
+})();
 section("v753: he answers on the order, and the words are checked on the desk before they leave it");
 await (async () => {
   /* the other half of v751. His answer is a move of his like any other, so it wakes them and changes
