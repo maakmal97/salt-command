@@ -15475,17 +15475,16 @@ await (async () => {
     try {
       D.getElementById("pw").value = passE;
       D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-      for (let i = 0; i < 200 && !(pane() && pane().querySelector("button")); i++) await new Promise((r) => setTimeout(r, 25));
-      const nb = pane() && [...pane().querySelectorAll("button")].find((b) => /Notify me/.test(b.textContent));
-      if (nb) nb.click();
+      /* with the answer already yes, the sign-in subscribes by itself (F4, R2), through the same subscribePush
+         that Notify me runs, so no tap is needed to prove the wait */
       for (let i = 0; i < 200 && !(pane() && (/^Notifications\s*On\./.test(pane().textContent) || pane().querySelector(".msg"))); i++) await new Promise((r) => setTimeout(r, 25));
       const p = pane();
-      return { clicked: !!nb, posted: st.posted, text: p ? p.textContent : "", note: p && p.querySelector(".msg") ? p.querySelector(".msg").textContent : null };
+      return { posted: st.posted, text: p ? p.textContent : "", note: p && p.querySelector(".msg") ? p.querySelector(".msg").textContent : null };
     } finally { try { W.close(); } catch (e) { /* best effort */ } }
   };
   const good = await drive(false);
-  ok(good.clicked && good.posted.length === 1 && good.posted[0].endpoint === "https://push.example/ep-e" && good.note === null && /On\. You will be told/.test(good.text),
-    "Notify me subscribes once the worker is ready, posts the endpoint and says On, with no note: " + JSON.stringify({ posted: good.posted.length, note: good.note }));
+  ok(good.posted.length === 1 && good.posted[0].endpoint === "https://push.example/ep-e" && good.note === null && /On\. You will be told/.test(good.text),
+    "the subscription is made once the worker is ready, posts the endpoint and says On, with no note: " + JSON.stringify({ posted: good.posted.length, note: good.note }));
   const bad = await drive(true);
   ok(bad.posted.length === 0 && bad.note === "Notifications could not be switched on here. Try again later." && !/Subscription failed|Service Worker/.test(bad.text),
     "and a phone that still cannot subscribe is told so in plain words, never the browser's own error: " + JSON.stringify(bad.note));
@@ -15659,14 +15658,21 @@ await (async () => {
 section("S1 1.43: the Notifications pane shows this phone's real state on a reopen");
 await (async () => {
   /* L47, 24 SEP 2026. The pane said On only from this page's own memory, which every sign-in empties, so a
-     phone that was subscribed was offered Notify me again on every reopen. It is read off the phone now. */
+     phone that was subscribed was offered Notify me again on every reopen. It is read off the phone now.
+     F4 and R2, the same day: ON IS WHAT THE SITE HOLDS, NOT WHAT THE PHONE HOLDS. A phone that logged out has
+     no subscription while the answer is still yes, so nothing asked again and it never woke; and a phone
+     whose subscription the site never recorded said On with no Notify me left to put it right. A sign-in
+     with the answer already yes subscribes again, which asks nothing, and says On only once the site
+     has taken it. */
   const { landingPage: lpJ } = await import("../stmt/page.js");
   const CJ = await import("../tools/stmt-crypto.mjs");
   const { JSDOM: JDJ } = await import("jsdom");
   const { webcrypto: wcJ } = await import("node:crypto");
   const uJ = "aaaa-jjjj", devJ = "j".repeat(32), ckJ = await CJ.contentKey("2".repeat(64), uJ);
   const envJ = await CJ.encryptWith(ckJ, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] }));
-  const drive = async (subscribed) => {
+  const vapid = Buffer.from("k".repeat(65)).toString("base64url");
+  const drive = async (subscribed, saves) => {
+    const st = { posted: [], subscribed: 0, asked: 0 };
     const dom = new JDJ(lpJ("", "nJ", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
       beforeParse(win) {
         try { Object.defineProperty(win, "crypto", { value: wcJ, configurable: true }); } catch (e) { win.crypto = wcJ; }
@@ -15676,26 +15682,39 @@ await (async () => {
           removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
         win.scrollTo = () => {};
         win.PushManager = function () {};
-        win.Notification = { permission: "granted", requestPermission: async () => "granted" };
+        win.Notification = { permission: "granted", requestPermission: async () => { st.asked++; return "granted"; } };
+        /* a real phone: pushManager.subscribe hands back the subscription it already holds, or makes one */
+        let sub = subscribed ? { endpoint: "https://push.example/ep-j" } : null;
+        const reg = { pushManager: { getSubscription: async () => sub,
+          subscribe: async () => { st.subscribed++; sub = sub || { endpoint: "https://push.example/ep-j-new" }; return sub; } } };
         Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
-          register: async () => { throw new Error("not in this test"); },
-          getRegistration: async () => ({ pushManager: { getSubscription: async () => (subscribed ? { endpoint: "https://push.example/ep-j" } : null) } }) } });
-        win.fetch = async (path) => String(path) === "/remember/open"
-          ? { ok: true, status: 200, json: async () => ({ ok: true, u: uJ, remembered: true, wrap: await CJ.wrapKey(devJ, ckJ), env: envJ, live: null, prices: null, session: "sessJaaaaaaaaaaaaaaaaaaaaaaa" }) }
-          : { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+          register: async () => reg, ready: Promise.resolve(reg), getRegistration: async () => reg } });
+        win.fetch = async (path, init) => {
+          const p = String(path);
+          if (p === "/remember/open") return { ok: true, status: 200, json: async () => ({ ok: true, u: uJ, remembered: true, wrap: await CJ.wrapKey(devJ, ckJ), env: envJ, live: null, prices: null, session: "sessJaaaaaaaaaaaaaaaaaaaaaaa" }) };
+          if (p === "/push/key") return { ok: true, status: 200, json: async () => ({ key: vapid, configured: true }) };
+          if (p === "/push/subscribe") { st.posted.push(JSON.parse(init.body).endpoint);
+            return saves ? { ok: true, status: 200, json: async () => ({ ok: true }) } : { ok: false, status: 500, json: async () => ({ ok: false, error: "The subscription was not recorded." }) }; }
+          return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+        };
       } });
     const D = dom.window.document;
     const pane = () => [...D.querySelectorAll("#pOrder .pane")].find((x) => /Notifications/.test(x.textContent));
     try {
       for (let i = 0; i < 200 && !pane(); i++) await new Promise((r) => setTimeout(r, 25));
+      for (let i = 0; i < 200 && !st.posted.length; i++) await new Promise((r) => setTimeout(r, 25));
       for (let i = 0; i < 8; i++) await new Promise((r) => setTimeout(r, 25));
       const p = pane();
-      return { on: !!p && /On\. You will be told/.test(p.textContent), offer: !!p && [...p.querySelectorAll("button")].some((b) => /Notify me/.test(b.textContent)) };
+      return { on: !!p && /On\. You will be told/.test(p.textContent), offer: !!p && [...p.querySelectorAll("button")].some((b) => /Notify me/.test(b.textContent)),
+        posted: st.posted, subscribed: st.subscribed };
     } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
   };
-  const yes = await drive(true), no = await drive(false);
-  ok(yes.on && !yes.offer, "a reopen on a phone with a live subscription says On and offers nothing: " + JSON.stringify(yes));
-  ok(!no.on && no.offer, "and one without a subscription still offers Notify me: " + JSON.stringify(no));
+  const yes = await drive(true, true), gone = await drive(false, true), lost = await drive(true, false);
+  ok(yes.on && !yes.offer && JSON.stringify(yes.posted) === JSON.stringify(["https://push.example/ep-j"]),
+    "a reopen on a subscribed phone names its subscription to the site again, then says On and offers nothing: " + JSON.stringify(yes));
+  ok(gone.on && gone.subscribed === 1 && JSON.stringify(gone.posted) === JSON.stringify(["https://push.example/ep-j-new"]),
+    "a phone that logged out, signing in with the answer still yes, is subscribed and recorded again, not left silent: " + JSON.stringify(gone));
+  ok(!lost.on && lost.offer, "and a subscription the site will not take is not called On: Notify me stays offered: " + JSON.stringify(lost));
 })();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {

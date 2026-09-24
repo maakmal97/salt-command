@@ -1753,11 +1753,11 @@ const CLIENT_JS = `
     try{
       var can=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
       if(!can) return;
-      if(Notification.permission==='default'){ subscribePush(); return; }
-      /* S1 1.43, 24 SEP 2026: a phone already subscribed says On. The pane read this page's own memory, which
-         every sign-in empties, so a subscribed phone was offered Notify me again. */
-      var mine=ticket;
-      if(Notification.permission==='granted') phoneSub().then(function(sub){ if(sub&&mine===ticket){ draft.pushed=true; drawOrder(); } }).catch(function(){});
+      /* S1 1.43, 24 SEP 2026: a phone already subscribed says On, where the pane read this page's own memory,
+         which every sign-in empties. ON IS WHAT THE SITE HOLDS: with the answer already yes this subscribes again,
+         which asks nothing and hands back the phone's own subscription, and names it to the site, so a phone that
+         logged out is woken again and a record the site lost is put back; On is said only once the site has it. */
+      if(Notification.permission==='default'||Notification.permission==='granted') subscribePush();
     }catch(e){ /* a browser that refuses to be asked is not a fault */ }
   }
 
