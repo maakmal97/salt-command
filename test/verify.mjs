@@ -14108,7 +14108,7 @@ await (async () => {
   await kv.put("roster", JSON.stringify([{ code: "CX0-AA", username: u }]));
   const oid = "20260921010000-abcd", at = "2026-09-21T01:00:00Z";
   await kv.put("order:" + u + ":" + oid, JSON.stringify({ id: oid, u, at, status: "acknowledged", product: "salt", qty: 1, total: 150, delivery: 0,
-    mode: "collect", paid: 0, payments: [], moved: 0, movedOn: null, msgs: [{ at, by: "customer", text: "When can I collect" }],
+    mode: "collect", paid: 0, payments: [], moved: 0, movedOn: null, msgs: [{ at, by: "customer", text: "When can I collect" }, { at: "2026-09-21T02:00:00Z", by: "desk", text: "After six is fine" }],
     history: [{ at, status: "placed", by: "customer" }, { at, status: "acknowledged", by: "desk" }] }));
   const TEAM = "maakmal", AUD = "aud-s1-21", KID = "kid-s1-21";
   const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
@@ -14166,6 +14166,9 @@ await (async () => {
     ok(!pOrder.querySelector("input, select, textarea") && !words.some((t) => /Review this order|Place|Notify me|Confirm|I have paid|Pay RM|Cancel|Withdraw|Send/.test(t))
       && ![...pOrder.querySelectorAll("h3")].some((x) => /Notifications/.test(x.textContent)),
       "and it is read only: no order form, no Notify me, no pay, withdraw or message control: " + JSON.stringify(words));
+    ok(!win.localStorage.getItem("salt-stmt-seen") && !pOrder.querySelector(".salt-bubble__new") && /After six is fine/.test(scr.textContent)
+      && !/reply for you/i.test(pOrder.querySelector("[data-row]").textContent),
+      "and it marks nothing seen or New: what their phone has shown is not on his, and his route leaves nothing on his phone (S5 5.4)");
     ok(hits.includes("GET /all/orders/" + u) && !hits.some((x) => /^POST \/(orders|push|my\/refs)|^GET \/(orders|my\/refs)$/.test(x)),
       "it read through his route and never through the customer's session routes: " + JSON.stringify(hits));
     D.getElementById("tCard").click();
@@ -24280,7 +24283,7 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 60 && !thrown.length && !/Your orders/.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
     const po = d.getElementById("pOrder"), sizes = [...po.querySelectorAll("select option")].map((o) => o.value);
-    ok(!thrown.length && /Notifications/.test(po.textContent) && /Your orders/.test(po.textContent) && po.querySelectorAll(".state").length === 1
+    ok(!thrown.length && /Notifications/.test(po.textContent) && /Your orders/.test(po.textContent) && po.querySelectorAll("[data-row] .salt-status").length === 1
       && sizes.join() === "1" && !po.querySelector(".seg button[aria-label]"),
       "the Order tab draws: the form offers the one product with a price, and Notifications and their order are there: " + JSON.stringify({ sizes, thrown }));
     const pp = d.getElementById("pPrices");
@@ -24815,7 +24818,8 @@ await (async () => {
     "the door's field is the system's field, in mono for a code, and Log in is the system's pill");
   ok(/class="salt-tabs__pill on" role="tab" aria-selected="true" data-t="stmt"/.test(pgY) && /bs\[i\]\.setAttribute\('aria-selected',on\?'true':'false'\)/.test(pgY),
     "the tabs are the system's, and a tap moves aria-selected with the open one");
-  ok(/'state salt-status salt-status--'\+\(STATE_TONE\[o\.status\]\|\|'mist'\)/.test(pgY) && /var STATE_TONE=\{placed:'steel',acknowledged:'steel',ready:'brass',done:'verdigris'\}/.test(pgY),
+  /* S5 5.3: the chip is drawn in one place, stateChip, its word the customer's and its tone read off the order */
+  ok(/\+'salt-status salt-status--'\+tone,stateWord\(o\)\)/.test(pgY) && /tone=s==='placed'\?'steel salt-status--dashed':/.test(pgY) && /h\.appendChild\(stateChip\(o,'state'\)\)/.test(pgY),
     "an order's state is the system's chip, in its tone");
   const pcssY = pgY.slice(pgY.indexOf("const PAGE_CSS = " + String.fromCharCode(96)), pgY.indexOf(String.fromCharCode(96) + ";", pgY.indexOf("const PAGE_CSS = ")));
   ok(!/\.btn\{[^}]*background/.test(pcssY) && !/\.tabs button\.on\{/.test(pcssY) && !/\n\.state\{/.test(pcssY) && !/\n\.fld\{[^}]*background/.test(pcssY) && /\.btn\{margin-top:18px;width:100%\}/.test(pcssY),

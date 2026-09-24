@@ -209,6 +209,7 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .omsgs{margin-top:22px}
 .omsgs .olab{display:flex;justify-content:space-between;margin:0 0 10px}
 .omsgs .salt-bubble__text{white-space:pre-wrap}
+.osay{margin-top:var(--salt-space-3)}
 .ohist,.ofoot{margin-top:18px}
 .ohist ul{margin:0;padding:0;list-style:none}
 .ofoot .salt-ghost{width:100%}
@@ -1518,18 +1519,20 @@ const CLIENT_JS = `
   /* A REPLY WAITS until this device has shown it: the moment of his last line seen, per order, kept here and
      nowhere else, because there are no read receipts. The store's first moment stands for everything a closed
      order said before this device ever looked, or the first open after this shipped put every old thank-you
-     under Needs you. Order ids only, never the username; where the browser keeps nothing, it lasts the visit. */
+     under Needs you. Order ids only, never the username; where the browser keeps nothing, it lasts the visit.
+     HIS READ-ONLY VIEW READS NOTHING AS NEW AND WRITES NOTHING HERE: what their phone has shown is not on his, and
+     his route leaves nothing behind on his phone. */
   var SEEN='salt-stmt-seen', seenMem=null;
   function seenGet(){
     var s=null; try{ s=JSON.parse(localStorage.getItem(SEEN)||'null'); }catch(e){ s=null; }
     if(s&&typeof s.t==='string'&&s.o&&typeof s.o==='object') return s;
-    if(!seenMem){ seenMem={t:new Date().toISOString(),o:{}}; seenPut(seenMem); }
+    if(!seenMem){ seenMem={t:new Date().toISOString(),o:{}}; if(!OWNER) seenPut(seenMem); }
     return seenMem;
   }
   function seenPut(s){ seenMem=s; try{ localStorage.setItem(SEEN,JSON.stringify(s)); }catch(e){ /* kept for this visit only */ } }
   function hisLast(o){ var m=(o.msgs||[]).filter(function(x){ return x.by==='desk'; }); return m.length?String(m[m.length-1].at||''):''; }
   function seenMark(o){ var s=seenGet(); return s.o[o.id]||(oClosed(o)?s.t:''); }
-  function replyWaiting(o){ var l=hisLast(o); return !!l&&l>seenMark(o); }
+  function replyWaiting(o){ var l=hisLast(o); return !view&&!!l&&l>seenMark(o); }
   /* shown means drawn open on a tab that is showing; his read-only view marks nothing */
   function seeIt(o){ if(view||!o||pOrder.hidden) return; var l=hisLast(o); if(!l) return; var s=seenGet(); if((s.o[o.id]||'')>=l) return; s.o[o.id]=l; seenPut(s); }
   function oNeeds(o){ return oOwes(o)||replyWaiting(o); }
@@ -1699,7 +1702,7 @@ const CLIENT_JS = `
     ls.setAttribute('role','log'); ls.setAttribute('aria-label','Messages on this order');
     msgs.forEach(function(m){
       var his=m.by==='desk';
-      ls.appendChild(bubble(his?'theirs':'mine',m.text||'',(his?'Reply, ':'You, ')+stamp(m.at),his?'':'sent',his&&typeof since==='string'&&String(m.at)>since));
+      ls.appendChild(bubble(his?'theirs':'mine',m.text||'',(his?'Reply, ':'You, ')+stamp(m.at),his?'':'sent',his&&!view&&typeof since==='string'&&String(m.at)>since));
     });
     out.forEach(function(x){
       var b=bubble('mine',x.t,'You, '+stamp(x.at),x.state,false);
@@ -1716,7 +1719,7 @@ const CLIENT_JS = `
   }
   /* his read-only view writes nothing; he answers on the desk */
   function oSay(o){
-    var w=el('div');
+    var w=el('div','osay');
     if(view) return w;
     var f=el('form','salt-composer'), si=el('input','salt-field__input salt-composer__field');
     si.type='text'; si.maxLength=200; si.autocomplete='off'; si.setAttribute('enterkeyhint','send');
