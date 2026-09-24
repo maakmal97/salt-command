@@ -578,7 +578,8 @@ const CLIENT_JS = `
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
   var session='', user='', prices=null, orders=[], poll=null, tab='stmt', draft={}, pick={};
   /* v706: the associate's own card, opened from their record like the price list */
-  var card=null, cardMonth='';
+  /* cardMonth: null opens on the newest month, '' is All (24 Sep 2026: '' was both, so All showed the newest) */
+  var card=null, cardMonth=null;
   /* v702: whether this account may order on behalf of a friend. It draws one tick and nothing
      else; where a row books is the desk's decision, and it checks it against its own roster. */
   var assoc=false;
@@ -770,7 +771,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; prices=null; orders=[]; draft={}; pick={}; assoc=false; card=null; cardMonth=''; myLinks=null; myMax=0;
+    bundle=null; session=''; prices=null; orders=[]; draft={}; pick={}; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0;
     owedNow=0; hold=false; tPrices.hidden=false; tOrder.textContent='Order';
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
@@ -951,7 +952,7 @@ const CLIENT_JS = `
         }
       }
       /* the lines, with their own month strip */
-      var months=cardMonths(p), pick=cardMonth||months[0]||'';
+      var months=cardMonths(p), pick=cardMonth==null?(months[0]||''):cardMonth;
       if(months.length>1){
         var strip=el('div','mos mfil');
         months.concat(['']).forEach(function(m){

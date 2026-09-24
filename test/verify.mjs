@@ -16065,7 +16065,7 @@ await (async () => {
   ok(/data-t="card" id="tCard" hidden/.test(page6) && /tCard\.hidden=!\(assoc&&card&&card\.products&&card\.products\.length\)/.test(page6),
     "the tab starts hidden and is shown only where the record that opened actually carries a card, so it can never lead to an empty panel");
   ok(/pCard\.hidden=\(t!=='card'\)/.test(page6), "and the panel is switched with the other three");
-  ok(/card=null; cardMonth='';/.test(page6), "logging out forgets it, as it forgets the price list");
+  ok(/card=null; cardMonth=null;/.test(page6), "logging out forgets it, as it forgets the price list");
   /* the month pill was 29px tall since v690, on a strip whose whole purpose is to be tapped */
   ok(/min-height:var\(--salt-tap\);display:inline-flex/.test(page6) && !/cursor:pointer;min-height:auto/.test(page6),
     "and every month pill is a real tap target now, swept across the class rather than fixed on the one new strip");
@@ -19634,6 +19634,44 @@ await (async () => {
     ok(on.display === "flex" && on.flexWrap === "wrap" && tabs.querySelectorAll("button.salt-tabs__pill").length === 4,
       "shown, it is a flex row that wraps, so the fourth tab moves to a second line instead of off the screen: " + on.display + " " + on.flexWrap);
   } finally { dom.window.close(); }
+})();
+
+section("24 Sep 2026: the Card tab's All shows every month");
+await (async () => {
+  /* L41 of the Counter study: cardMonth started as '' and '' was also what All set, and the pick read '' as "the
+     newest month", so tapping All redrew the newest month and never the whole card. null is the opening month now,
+     '' is All. */
+  const { landingPage: lpC } = await import("../stmt/page.js");
+  const CC = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcC } = await import("node:crypto");
+  const { JSDOM: JDC } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-l41", ck = await CC.contentKey("test-secret", u);
+  const card = { products: [{ product: "salt", unit: "unit", summary: { bought: 390 }, lines: [
+    { date: "2026-09-02", kind: "own", qty: 1, rm: 100 }, { date: "2026-08-10", kind: "own", qty: 2, rm: 200 }, { date: "2026-07-05", kind: "through", qty: 1, rm: 90 }] }] };
+  const body = { ok: true, wrap: await CC.wrapKey(pass, ck), session: "", assoc: true,
+    env: await CC.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    card: await CC.encryptWith(ck, JSON.stringify(card)) };
+  const dom = new JDC(lpC(u, "nl41", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcC, configurable: true }); } catch (e) { win.crypto = wcC; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path) => { const j = String(path) === "/open" ? body : null; return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } }; };
+  } });
+  const w = dom.window, d = w.document;
+  const rows = () => d.querySelectorAll("#pCard tbody tr").length;
+  const pill = (t) => [...d.querySelectorAll("#pCard .mos button")].find((b) => b.textContent === t);
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 60 && !pill("All"); i++) await new Promise((r) => setTimeout(r, 50));
+    const opened = rows(), openedOn = (d.querySelector("#pCard .mos button.on") || {}).textContent;
+    pill("All").click();
+    ok(opened === 1 && openedOn === "September 2026" && rows() === 3 && pill("All").className === "on",
+      "the card opens on the newest month, and All shows every line from the start: " + JSON.stringify({ opened, openedOn, all: rows() }));
+    pill("August 2026").click();
+    ok(rows() === 1 && pill("August 2026").className === "on", "and a month is still one tap: " + rows());
+  } finally { w.close(); }
 })();
 
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
