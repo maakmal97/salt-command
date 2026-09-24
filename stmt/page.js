@@ -96,7 +96,7 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .conf .v{color:var(--salt-text);text-align:right}
 /* S4, 24 SEP 2026: ORDERING, IN TODAY'S PLACES (stage 4 of the Counter's redesign). The look is the system's: the
    Sheet, Option tiles, pressed ghosts, the plain ledger, the insight and the glass card. What is here is where those
-   pieces sit inside the sheet; no colour of its own. */
+   pieces sit inside the osh; no colour of its own. */
 .osheet .salt-sheet__title{flex:1 1 auto}
 .osheet .salt-sheet__close{margin-left:auto}
 .osheet .salt-sheet__body > * + *{margin-top:18px}
@@ -188,7 +188,7 @@ h3.pmark{margin:0 0 4px;line-height:1}
 /* THE DOCUMENT KEEPS THE GEOMETRY IT WAS PROOFED IN. What is injected is the INSIDE of the
    statement's own .w wrapper, so without this the page rendered the tables full-bleed to the
    window while the lock bar and the issue strip stayed pinned at 620px above them: on a laptop
-   the sheet the customer opens and the sheet he was sent were different documents. */
+   the osh the customer opens and the osh he was sent were different documents. */
 #out{max-width:620px;margin:0 auto}
 /* a pane is white 3% with a brass hairline */
 .pane{border:1px solid var(--salt-line);border-radius:var(--salt-radius-md);background:var(--salt-glass);
@@ -1233,7 +1233,7 @@ const CLIENT_JS = `
         var row=el(tapTo?'button':'div','salt-ledger__row szrow'), line=el('span','salt-ledger__line');
         line.appendChild(el('span','salt-ledger__label',unitsOf(r.q,p.unit)));
         var v=el('span','salt-ledger__value',rm(r.price)); line.appendChild(v); row.appendChild(line);
-        if(tapTo){ row.type='button'; row.setAttribute('data-q',String(r.q)); v.appendChild(glyph('next','ochev'));
+        if(tapTo){ row.type='button'; row.setAttribute('data-q',String(r.q)); v.appendChild(oGlyph('next','ochev'));
           row.addEventListener('click',function(){ sheetOpen(p.product,r.q,row); }); }
         L.appendChild(row);
       });
@@ -1295,11 +1295,12 @@ const CLIENT_JS = `
      Place sends. Built from the page's own nodes at the root of the body, because a fixed element inside a glass card
      is held by the card's blur; Escape, the scrim and the close control all close it, and focus goes back to what
      opened it. */
-  var sheet=null;
+  /* the open sheet, or null. Not "sheet": the owner's script, spliced into this closure on his route, keeps its account list under that name */
+  var osh=null;
   var OMAX=__MAX_OPEN__, OPEN_ST=__OPEN_STATES__, DELIVERY=__DELIVERY__;
-  function openOrders(){ return orders.filter(function(o){ return OPEN_ST.indexOf(o.status)>=0; }); }
+  function oOpen(){ return orders.filter(function(o){ return OPEN_ST.indexOf(o.status)>=0; }); }
   var GLYPH={close:'M4 4 L12 12 M12 4 L4 12', back:'M10 3.5 L5.5 8 L10 12.5', next:'M6 3.5 L10.5 8 L6 12.5', tick:'M3 8.5 L6.5 12 L13 4.5'};
-  function glyph(k,cls,px){
+  function oGlyph(k,cls,px){
     var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg');
     s.setAttribute('viewBox','0 0 16 16'); s.setAttribute('width',px||16); s.setAttribute('height',px||16);
     s.setAttribute('aria-hidden','true'); s.setAttribute('focusable','false'); if(cls) s.setAttribute('class',cls);
@@ -1308,7 +1309,7 @@ const CLIENT_JS = `
     s.appendChild(d); return s;
   }
   /* the size they order most, read off their own orders on this page; the later order breaks a tie */
-  function usual(){
+  function oUsual(){
     var n={}, best=null;
     orders.slice().sort(function(a,b){ return String(a.at).localeCompare(String(b.at)); }).forEach(function(o){
       var k=o.product+'|'+o.qty; n[k]=(n[k]||0)+1; if(!best||n[k]>=n[best]) best=k;
@@ -1316,19 +1317,19 @@ const CLIENT_JS = `
     if(!best) return null;
     var i=best.indexOf('|'); return {product:best.slice(0,i), q:best.slice(i+1)};
   }
-  function latest(pick){ var l=null; orders.forEach(function(o){ if(pick(o)&&(!l||String(o.at)>String(l.at))) l=o; }); return l; }
-  function soldHas(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0];
+  function oLatest(pick){ var l=null; orders.forEach(function(o){ if(pick(o)&&(!l||String(o.at)>String(l.at))) l=o; }); return l; }
+  function oSoldHas(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0];
     return !!P&&(q==null||P.sizes.some(function(s){ return String(s.q)===String(q); })); }
   function sheetOpen(product,q,opener){
     if(view||hold||!sold().length) return;
-    var U=usual();
-    if(product&&soldHas(product,q)){ draft.product=product; draft.q=String(q); }
-    else if(!draft.product&&U&&soldHas(U.product,U.q)){ draft.product=U.product; draft.q=String(U.q); }
+    var U=oUsual();
+    if(product&&oSoldHas(product,q)){ draft.product=product; draft.q=String(q); }
+    else if(!draft.product&&U&&oSoldHas(U.product,U.q)){ draft.product=U.product; draft.q=String(U.q); }
     /* the way and the place are the last order's, and the hint says so while the place is still that one */
-    if(draft.mode==null){ var L=latest(function(){ return true; }); draft.mode=L&&L.mode==='deliver'?'deliver':'collect'; }
-    if(draft.place==null){ var W=latest(function(o){ return !!o.place; }); draft.place=W?W.place:''; draft.placeWas=draft.place; }
-    draft.step=openOrders().length>=OMAX?'limit':'form'; draft.snote=''; draft.check=null;
-    if(!sheet){
+    if(draft.mode==null){ var L=oLatest(function(){ return true; }); draft.mode=L&&L.mode==='deliver'?'deliver':'collect'; }
+    if(draft.place==null){ var W=oLatest(function(o){ return !!o.place; }); draft.place=W?W.place:''; draft.placeWas=draft.place; }
+    draft.step=oOpen().length>=OMAX?'limit':'form'; draft.snote=''; draft.check=null;
+    if(!osh){
       var wrap=el('div'); wrap.id='osheet';
       var scrim=el('div','salt-sheet-scrim'); scrim.setAttribute('aria-hidden','true'); scrim.addEventListener('click',sheetClose);
       var box=el('div','salt-sheet osheet'); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
@@ -1338,53 +1339,53 @@ const CLIENT_JS = `
       box.appendChild(grab); box.appendChild(head); box.appendChild(body); box.appendChild(foot);
       box.addEventListener('keydown',sheetKeys);
       wrap.appendChild(scrim); wrap.appendChild(box); document.body.appendChild(wrap);
-      sheet={wrap:wrap, box:box, head:head, body:body, foot:foot, opener:opener||document.activeElement};
+      osh={wrap:wrap, box:box, head:head, body:body, foot:foot, opener:opener||document.activeElement};
       try{ box.focus({preventScroll:true}); }catch(e){}
     }
     sheetDraw();
   }
   function sheetClose(){
-    if(!sheet) return;
-    var s=sheet; sheet=null; draft.step=''; draft.check=null;
+    if(!osh) return;
+    var s=osh; osh=null; draft.step=''; draft.check=null;
     s.wrap.parentNode.removeChild(s.wrap);
     try{ if(s.opener&&s.opener.isConnected) s.opener.focus({preventScroll:true}); }catch(e){}
   }
   /* the sheet keeps focus while it is open: Escape closes it, and Tab wraps at its own first and last controls */
   function sheetKeys(ev){
     if(ev.key==='Escape'){ ev.stopPropagation(); sheetClose(); return; }
-    if(ev.key!=='Tab'||!sheet) return;
-    var all=[].filter.call(sheet.box.querySelectorAll('button:not([disabled]),input:not([disabled]),a[href]'),function(x){
-      if(x.type==='radio'&&x.name){ var g=[].filter.call(sheet.box.querySelectorAll('input[type=radio]'),function(r){ return r.name===x.name; });
+    if(ev.key!=='Tab'||!osh) return;
+    var all=[].filter.call(osh.box.querySelectorAll('button:not([disabled]),input:not([disabled]),a[href]'),function(x){
+      if(x.type==='radio'&&x.name){ var g=[].filter.call(osh.box.querySelectorAll('input[type=radio]'),function(r){ return r.name===x.name; });
         if(x!==(g.filter(function(r){ return r.checked; })[0]||g[0])) return false; }
       return x.getClientRects().length>0; });
     if(!all.length) return;
     var at=document.activeElement;
-    if(ev.shiftKey&&(at===all[0]||at===sheet.box)){ ev.preventDefault(); all[all.length-1].focus(); }
+    if(ev.shiftKey&&(at===all[0]||at===osh.box)){ ev.preventDefault(); all[all.length-1].focus(); }
     else if(!ev.shiftKey&&at===all[all.length-1]){ ev.preventDefault(); all[0].focus(); }
   }
   /* one draw for every step; the control that had focus gets it back, found by its data-k */
   function sheetDraw(){
-    if(!sheet) return;
-    var fo=document.activeElement, inside=!!fo&&sheet.box.contains(fo), fk=inside?fo.getAttribute('data-k'):null;
-    sheet.head.textContent=''; sheet.body.textContent=''; sheet.foot.textContent='';
-    if(draft.step==='limit'&&openOrders().length<OMAX) draft.step='form';
+    if(!osh) return;
+    var fo=document.activeElement, inside=!!fo&&osh.box.contains(fo), fk=inside?fo.getAttribute('data-k'):null;
+    osh.head.textContent=''; osh.body.textContent=''; osh.foot.textContent='';
+    if(draft.step==='limit'&&oOpen().length<OMAX) draft.step='form';
     if(draft.step==='check') drawCheck(); else if(draft.step==='sent') drawSent(); else if(draft.step==='limit') drawLimit(); else drawForm();
-    sheet.foot.hidden=!sheet.foot.firstChild;
-    if(fk){ var back=[].filter.call(sheet.box.querySelectorAll('[data-k]'),function(x){ return x.getAttribute('data-k')===fk; })[0];
+    osh.foot.hidden=!osh.foot.firstChild;
+    if(fk){ var back=[].filter.call(osh.box.querySelectorAll('[data-k]'),function(x){ return x.getAttribute('data-k')===fk; })[0];
       if(back) try{ back.focus({preventScroll:true}); }catch(e){} }
     /* a redraw that took the focused control away (Place, once it is answered) leaves focus on the sheet itself, never on
        the page behind it, so Escape and Tab still reach the sheet */
-    if(inside&&!sheet.box.contains(document.activeElement)) try{ sheet.box.focus({preventScroll:true}); }catch(e){}
+    if(inside&&!osh.box.contains(document.activeElement)) try{ osh.box.focus({preventScroll:true}); }catch(e){}
   }
   function sheetHead(title,back){
     if(back){ var b=el('button','salt-orb'); b.type='button'; b.setAttribute('aria-label','Change'); b.setAttribute('data-k','back');
-      b.appendChild(glyph('back')); b.addEventListener('click',back); sheet.head.appendChild(b); }
-    if(title!=null){ var h=el('h2','salt-sheet__title',title); h.id='oshT'; sheet.head.appendChild(h); }
+      b.appendChild(oGlyph('back')); b.addEventListener('click',back); osh.head.appendChild(b); }
+    if(title!=null){ var h=el('h2','salt-sheet__title',title); h.id='oshT'; osh.head.appendChild(h); }
     var x=el('button','salt-orb salt-sheet__close'); x.type='button'; x.setAttribute('aria-label','Close'); x.setAttribute('data-k','close');
-    x.appendChild(glyph('close')); x.addEventListener('click',sheetClose); sheet.head.appendChild(x);
+    x.appendChild(oGlyph('close')); x.addEventListener('click',sheetClose); osh.head.appendChild(x);
   }
   /* a question answered by pressed ghosts: the system's Option group holds them, and the chosen one is pressed, never filled */
-  function choice(legend,opts,cur,key,pick){
+  function oChoice(legend,opts,cur,key,pick){
     var fs=el('fieldset','salt-options');
     if(legend) fs.appendChild(el('legend','salt-options__legend',legend));
     var g=el('div','salt-options__grid salt-options__grid--2');
@@ -1408,20 +1409,20 @@ const CLIENT_JS = `
   }
   function drawForm(){
     sheetHead('New order');
-    var S=sold(), P=S.filter(function(x){ return x.product===draft.product; })[0]||S[0], B=sheet.body;
+    var S=sold(), P=S.filter(function(x){ return x.product===draft.product; })[0]||S[0], B=osh.body;
     draft.product=P.product;
     if(!P.sizes.some(function(x){ return String(x.q)===String(draft.q); })) draft.q=String(P.sizes[0].q);
     /* S4 4.7: AN ASSOCIATE IS ASKED WHO IT IS FOR, FIRST (v702's tick, which was the last field and easy to pass). Nothing is
        chosen for them: Review waits for the answer, and every order asks again. Nobody else is asked. */
-    if(assoc) B.appendChild(choice('Who is it for?',[['me','Me'],['friend','A friend']],draft.forFriend==null?'':(draft.forFriend?'friend':'me'),'for',
+    if(assoc) B.appendChild(oChoice('Who is it for?',[['me','Me'],['friend','A friend']],draft.forFriend==null?'':(draft.forFriend?'friend':'me'),'for',
       function(v){ draft.forFriend=(v==='friend'); sheetDraw(); }));
     /* v695: a product is a mark named by its shape; with one on the list the tiles say which by their legend */
-    if(S.length>1) B.appendChild(choice('',S.map(function(x){ return [x.product,psym(x.product,24),pshape(x.product)]; }),draft.product,'prod',
-      function(v){ draft.product=v; draft.q=null; var U=usual(); if(U&&U.product===v&&soldHas(v,U.q)) draft.q=String(U.q); sheetDraw(); }));
+    if(S.length>1) B.appendChild(oChoice('',S.map(function(x){ return [x.product,psym(x.product,24),pshape(x.product)]; }),draft.product,'prod',
+      function(v){ draft.product=v; draft.q=null; var U=oUsual(); if(U&&U.product===v&&oSoldHas(v,U.q)) draft.q=String(U.q); sheetDraw(); }));
     var fs=el('fieldset','salt-options');
     if(S.length>1) fs.setAttribute('aria-label','Size');
     else { var lg=el('legend','salt-options__legend'); lg.appendChild(withMark(P.product,'',22)); fs.appendChild(lg); }
-    var grid=el('div','salt-options__grid salt-options__grid--2'), U=usual();
+    var grid=el('div','salt-options__grid salt-options__grid--2'), U=oUsual();
     P.sizes.forEach(function(x){
       var lab=el('label','salt-option'), r=el('input','salt-option__input');
       r.type='radio'; r.name='osize'; r.value=String(x.q); r.checked=String(x.q)===String(draft.q); r.setAttribute('data-k','size:'+x.q);
@@ -1432,7 +1433,7 @@ const CLIENT_JS = `
       face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); grid.appendChild(lab);
     });
     fs.appendChild(grid); B.appendChild(fs);
-    B.appendChild(choice('How it reaches you',[['collect','I will collect'],['deliver','Deliver to me']],draft.mode,'mode',
+    B.appendChild(oChoice('How it reaches you',[['collect','I will collect'],['deliver','Deliver to me']],draft.mode,'mode',
       function(v){ draft.mode=v; sheetDraw(); }));
     /* v694: a delivery says roughly where it is going, in his words a general location; never an address */
     if(draft.mode==='deliver'){
@@ -1459,18 +1460,18 @@ const CLIENT_JS = `
   }
   /* the foot alone, so typing a place never redraws the field under the thumb */
   function formFoot(){
-    var F=sheet.foot; F.textContent='';
+    var F=osh.foot; F.textContent='';
     var qt=quoteFor(), why=formWhy(), t=el('div','ototal');
     t.appendChild(el('b','salt-kpi__value',qt?rm(qt.total):''));
     t.appendChild(el('span','sub2',why||(draft.mode==='deliver'?'and delivery, set when we confirm':'to collect')));
     F.appendChild(t);
     var go=el('button','salt-pill salt-pill--md','Review'); go.type='button'; go.id='oGo'; go.disabled=!!why; go.setAttribute('data-k','review');
-    go.addEventListener('click',review);
+    go.addEventListener('click',reviewSheet);
     F.appendChild(go); F.hidden=false;
   }
   /* REVIEW FREEZES THE ORDER. The check draws from this copy and Place sends this copy, so what is placed is what
      was shown; the request id is minted with it, and a retry of Place is the same order under the same id */
-  function review(){
+  function reviewSheet(){
     var qt=quoteFor(); if(!qt||formWhy()) return;
     draft.check={product:qt.p.product, unit:qt.p.unit||'unit', q:qt.q, mode:draft.mode,
       place:draft.mode==='deliver'?String(draft.place||'').trim():'', say:String(draft.say||'').trim(),
@@ -1507,7 +1508,7 @@ const CLIENT_JS = `
   function limitLine(n){ return 'You have '+n+' orders open, the most at one time. Cancel one, or wait for one to finish, and you can order again.'; }
   function drawLimit(){
     sheetHead('New order');
-    var B=sheet.body, open=openOrders();
+    var B=osh.body, open=oOpen();
     var say=el('p','salt-insight salt-insight--copper',limitLine(open.length)); say.setAttribute('role','status'); B.appendChild(say);
     var L=el('div','salt-ledger salt-ledger--plain');
     open.forEach(function(o){
@@ -1538,7 +1539,7 @@ const CLIENT_JS = `
   }
   function toForm(){ draft.step='form'; draft.check=null; draft.snote=''; sheetDraw(); }
   function drawCheck(){
-    var c=draft.check, B=sheet.body;
+    var c=draft.check, B=osh.body;
     sheetHead('Check your order',toForm);
     var L=el('div','salt-ledger salt-ledger--plain');
     function row(k,v){ var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), val=el('span','salt-ledger__value');
@@ -1559,16 +1560,16 @@ const CLIENT_JS = `
       gn.setAttribute('role','status'); B.appendChild(gn); }
     /* S4 4.9: a delivery is checked beside the one sentence that says how its charge is set */
     if(c.mode==='deliver') B.appendChild(el('p','salt-insight',DELIVERY));
-    var F=sheet.foot;
+    var F=osh.foot;
     var bk=el('button','salt-ghost','Change'); bk.type='button'; bk.id='oBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','change');
     bk.addEventListener('click',toForm); F.appendChild(bk);
     var pl=el('button','salt-pill salt-pill--md',c.was!=null?'Place at '+rm(c.total):'Place order'); pl.type='button'; pl.id='oPlace';
     pl.disabled=!!draft.busy||!!c.gone; pl.setAttribute('data-k','place');
-    pl.addEventListener('click',place); F.appendChild(pl);
+    pl.addEventListener('click',oPlaceIt); F.appendChild(pl);
     /* the answer is drawn beside Place, which is what was tapped */
     if(draft.snote) F.appendChild(statusLine(draft.snote));
   }
-  async function place(){
+  async function oPlaceIt(){
     var c=draft.check; if(!c||draft.busy) return;
     draft.busy=true; draft.snote=''; sheetDraw();
     var mine=ticket;
@@ -1581,7 +1582,7 @@ const CLIENT_JS = `
       draft.snote=r.body.error||'The order was not placed.';
       /* S4 4.6: a refusal that the open orders explain (placed from another phone meanwhile) turns to the limit itself */
       if(r.status===400){ await loadOrders(); if(mine!==ticket) return; drawOrder();
-        if(openOrders().length>=OMAX){ draft.step='limit'; draft.check=null; draft.snote=''; } }
+        if(oOpen().length>=OMAX){ draft.step='limit'; draft.check=null; draft.snote=''; } }
       sheetDraw(); return;
     }
     /* S4 4.5: Sent answers in the sheet; the Order tab behind it is drawn again with the order in it */
@@ -1597,8 +1598,8 @@ const CLIENT_JS = `
      See the order closes the sheet on the order itself. */
   function drawSent(){
     sheetHead(null);
-    var B=sheet.body, top=el('div','osent');
-    top.appendChild(glyph('tick','otick',40));
+    var B=osh.body, top=el('div','osent');
+    top.appendChild(oGlyph('tick','otick',40));
     var h=el('h2','salt-sheet__title','Order sent'); h.id='oshT'; top.appendChild(h);
     top.appendChild(el('p',null,'It is under Your orders now. We confirm it there, and you pay once it is confirmed.'));
     B.appendChild(top);
@@ -1666,14 +1667,14 @@ const CLIENT_JS = `
     } else {
       /* S4 4.3: the form is a sheet now, laid over the page from here */
       pOrder.appendChild(el('p','lead','Pick a size and check it over before you place it. Once we confirm it you can pay, and you are told when the goods are on their way.'));
-      var full=openOrders().length>=OMAX;
-      if(full){ var lim=el('p','salt-insight salt-insight--copper',limitLine(openOrders().length)); lim.id='oLimit'; pOrder.appendChild(lim); }
+      var full=oOpen().length>=OMAX;
+      if(full){ var lim=el('p','salt-insight salt-insight--copper',limitLine(oOpen().length)); lim.id='oLimit'; pOrder.appendChild(lim); }
       else {
         var nb=el('button','btn salt-pill salt-pill--md','New order'); nb.type='button'; nb.id='oNew';
         nb.addEventListener('click',function(){ sheetOpen(null,null,nb); });
         pOrder.appendChild(nb);
       }
-      if(sheet&&draft.step==='limit') sheetDraw();
+      if(osh&&draft.step==='limit') sheetDraw();
     }
     /* notifications: a wake on the phone when the order moves, so the page need not stay open.
        Not on his read-only view: those are not his phones. */

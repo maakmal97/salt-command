@@ -13579,6 +13579,28 @@ await (async () => {
     ok(!d.getElementById("osheet"), "so Escape closes it");
   } finally { w.close(); }
 })();
+section("S4 4.3 fix: the order sheet's names never meet the owner's script, so his route still changes tabs");
+await (async () => {
+  /* Found by the whole suite on 24 Sep 2026: stmt/owner.js is spliced into the page's own closure on his route and keeps
+     its account list as `sheet`, the name the order sheet's state took; every tab change then closed a "sheet" that was a
+     list, and threw. The sheet's state is `osh` and its functions carry the sheet's own names. */
+  const { landingPage: lpO } = await import("../stmt/page.js");
+  const { JSDOM: JDO } = await import("jsdom");
+  const errs = [];
+  const dom = new JDO(lpO("", "nso", { master: "m".repeat(20), accounts: [] }), { url: "https://site.test/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    win.scrollTo = () => {};
+    win.addEventListener("error", (e) => errs.push(String(e.message || e.error)));
+    win.fetch = async () => ({ ok: true, status: 200, json: async () => ({ ok: true, rows: [], accounts: [] }) });
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    await new Promise((r) => setTimeout(r, 100));
+    d.querySelector('#tabs button[data-t="prices"]').click();
+    d.querySelector('#tabs button[data-t="order"]').click();
+    ok(!errs.length && d.getElementById("pPrices").hidden && !d.getElementById("pOrder").hidden,
+      "on his route a tab changes with nothing thrown: " + JSON.stringify(errs));
+  } finally { w.close(); }
+})();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {
   /* HIS INSTRUCTION OF 16 SEP 2026: "The label to them is a very subtle tier level, in symbol and colour (for each tier),
@@ -17790,7 +17812,7 @@ await (async () => {
   /* ---- the page draws the tick only for an associate ---- */
   const page2 = await (await stmtW2.fetch(new Request("https://k7m3p2.example/"), { STMT: kv2 })).text();
   /* S4 4.7: the tick became the sheet's first question, Who is it for? Me / A friend, asked of an associate alone */
-  ok(page2.includes("'Who is it for?'") && page2.includes("['friend','A friend']") && page2.includes("if(assoc) B.appendChild(choice('Who is it for?'"),
+  ok(page2.includes("'Who is it for?'") && page2.includes("['friend','A friend']") && page2.includes("if(assoc) B.appendChild(oChoice('Who is it for?'"),
     "the question is on the page and behind the mark, so nobody else is asked it");
   ok(/forFriend:!!\(assoc&&c\.forFriend\)/.test(page2),
     "and the placement cannot send the tick unless the account carries the mark");
