@@ -24654,6 +24654,58 @@ await (async () => {
     "a yes for 2 units is never spent on the row for 1, and books the row for 2: " + JSON.stringify({ hB, pres: pres(B.o.id) }));
 })();
 
+section("S11 fix: a second cash tap before the first row lands books both, a yes carrying its own entry never voided");
+await (async () => {
+  /* Found in review: two Cash received taps on one order before its first row landed each raised what the site counts as
+     paid, and the second yes voided the first while its Fulfilment was still unqueued, so only one reached the book. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the cash was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { deskPass } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  const OPEN = { byKey: {}, position: {} };
+  setState("roster", [C1]); setState("OPEN", OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const land = (draftId) => { const row = Object.assign(JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(draftId).row), { rid: "s99" + seq });
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN); };
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const send = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); while (tails.length) await tails.shift(); return { status: r.status, j };
+  };
+  const o = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, week: "" })).order;
+  const pv = await send("/orders/" + o.id + "/preview", {});
+  const a = await send("/orders/" + o.id + "/accept", { hash: pv.j.hash });
+  const c1 = await send("/orders/" + o.id + "/cash", { amount: 60 }), c2 = await send("/orders/" + o.id + "/cash", { amount: 60 });
+  land(a.j.draft);
+  await deskPass(denv, new Date()); await runDrafter(denv);
+  const pays = db.prepare("SELECT status,entry FROM draft").all().filter((d) => JSON.parse(d.entry).orderId === o.id && JSON.parse(d.entry).status === "Payment")
+    .map((d) => [JSON.parse(d.entry).payload.cash, d.status]);
+  ok(c1.j.preapproval && c1.j.preapproval.waits === true && c2.j.preapproval && c2.j.preapproval.waits === true
+    && pays.length === 2 && pays.every((p) => p[0] === 60 && p[1] === "approved"),
+    "both cash taps are booked once the first row lands, as the site counts both: " + JSON.stringify({ c1: c1.status, c2: c2.status, pays }));
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one
