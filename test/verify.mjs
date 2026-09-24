@@ -24338,6 +24338,119 @@ await (async () => {
   }
 })();
 
+section("S11 merge: a move whose row he rejected is offered again from its own card, under a fresh entry booked only if equal");
+await (async () => {
+  /* HIS DECISION D6: rejecting a site-made draft writes back to the order and offers the move again. The Worker offers
+     it (11.13: `again` on GET /orders, the stage's own tap, POST /orders/<id>/again) and the card drew none of it, so a
+     rejected row could only be read about. The card now offers each: a later move by its own ghost, and a pending row
+     on an order already agreed by Accept again, against its preview, at the charge they were told. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the offer was not driven against the Worker"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, deskPass } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  const OPEN = { byKey: {}, position: {} };
+  setState("roster", [C1]); setState("OPEN", OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 } }, inputs: null, sizes: [1, 2] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const land = (draftId, over) => { const row = Object.assign(JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(draftId).row), { rid: "s99" + seq }, over || {});
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN);
+    db.prepare("UPDATE draft SET committed_at=? WHERE id=?").run(new Date().toISOString(), draftId); return row; };
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const settle0 = async () => { while (tails.length) await tails.shift(); };
+  const send = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); await settle0(); return { status: r.status, j };
+  };
+  const draftsOf = (id, status) => db.prepare("SELECT id,status,decided_by,entry FROM draft").all()
+    .filter((d) => JSON.parse(d.entry).orderId === id && JSON.parse(d.entry).status === status);
+
+  /* A. A HANDOVER THAT LANDED OTHER THAN SHOWN, REJECTED */
+  const oA = (await O.placeOrder(senv, U1, { product: "salt", qty: 2, mode: "collect", unit: 105, total: 210, week: "" })).order;
+  const pvA = await send("/orders/" + oA.id + "/preview", {});
+  const aA = await send("/orders/" + oA.id + "/accept", { hash: pvA.j.hash });
+  await send("/orders/" + oA.id + "/handed", { qty: 2 });
+  land(aA.j.draft, { cash: 50 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const hA = draftsOf(oA.id, "Handover");
+  if (hA.length) await send("/drafts/" + encodeURIComponent(hA[0].id) + "/reject", { by: "fixture" });
+  /* B. A PENDING ROW QUEUED BY THE OLD ROAD (the site moved first), REJECTED */
+  const oB = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  await O.deskMove(senv, U1, oB.id, { status: "acknowledged", mode: "collect" });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const pB = draftsOf(oB.id, "Pending");
+  if (pB.length) await send("/drafts/" + encodeURIComponent(pB[0].id) + "/reject", { by: "fixture" });
+
+  const { openMaster: omF } = await import("../tools/payload.mjs");
+  const { w } = await omF();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 99; w.clearInterval = () => {};
+    w.fetch = async (path, init) => {
+      const r = await deskW.fetch(new Request("https://salt-command.example/" + String(path), { method: (init && init.method) || "GET",
+        headers: (init && init.headers) || {}, body: init && init.body ? init.body : undefined }), denv, ctx);
+      await settle0();
+      const text = await r.text();
+      return { ok: r.ok, status: r.status, json: async () => JSON.parse(text) };
+    };
+    const settle = () => new Promise((r) => setTimeout(r, 60));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const card = (id) => D.querySelector('.ordcard[data-id="' + id + '"]');
+    const msg = (id) => ((D.querySelector('[data-msg="' + id + '"]') || {}).textContent || "");
+
+    w.eval("ORD_SEL=" + JSON.stringify(oA.id) + ";ordDraw();");
+    const offer = card(oA.id) && card(oA.id).querySelector('button[data-ord="again"][data-stage="move"]');
+    ok(hA.length === 1 && offer && offer.textContent === "Offer the handover again" && offer.classList.contains("salt-ghost"),
+      "a handover whose row he rejected is offered again on its card: " + JSON.stringify({ rejected: hA.length, btn: offer && offer.textContent }));
+    if (offer) {
+      offer.click();
+      for (let i = 0; i < 40 && !/Offered again/.test(msg(oA.id)); i++) await settle();
+      await deskPass(denv, new Date()); await runDrafter(denv);
+      const fresh = draftsOf(oA.id, "Handover").filter((d) => d.id !== hA[0].id);
+      ok(/^Offered again under a fresh entry\. Booked as it is drafted, if it is the row you saw\./.test(msg(oA.id)) && fresh.length === 1 && fresh[0].status === "approved",
+        "one tap offers it under a fresh entry, which is booked as drafted: " + JSON.stringify({ msg: msg(oA.id), fresh: fresh.map((d) => d.status) }));
+    }
+
+    w.eval("ORD_SEL=" + JSON.stringify(oB.id) + ";ordDraw();");
+    for (let i = 0; i < 40 && !(card(oB.id) && card(oB.id).querySelector(".ordpv .salt-kpi")); i++) await settle();
+    const again = card(oB.id) && card(oB.id).querySelector('.ordfoot button[data-ord="acknowledged"]');
+    ok(pB.length === 1 && again && again.textContent === "Accept again, RM 100" && !again.disabled && card(oB.id).querySelector(".ordpv .salt-kpi"),
+      "a pending row he rejected on an agreed order is drawn again and offered by Accept again at the charge they were told: " + JSON.stringify({ rejected: pB.length, btn: again && [again.textContent, again.disabled] }));
+    if (again) {
+      again.click();
+      for (let i = 0; i < 40 && !/Accepted/.test(msg(oB.id)); i++) await settle();
+      const freshB = draftsOf(oB.id, "Pending").filter((d) => d.id !== pB[0].id);
+      ok(freshB.length === 1 && freshB[0].status === "approved" && /^Accepted\./.test(msg(oB.id)),
+        "and Accept again books the fresh pending row as drafted: " + JSON.stringify({ fresh: freshB.map((d) => d.status), msg: msg(oB.id) }));
+    }
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one
