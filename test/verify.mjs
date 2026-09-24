@@ -12864,6 +12864,7 @@ await (async () => {
     await setList("d-one");
     const same = await place(order({ digest: "d-one", rid: rid("s1") }));
     const stale = await place(order({ digest: "d-old", rid: rid("s2") }));
+    const empty = await place(order({ digest: "", rid: rid("s6") }));
     const bare = await place(order({ rid: rid("s3") }));
     const n1 = await count();
     await setList("d-two");
@@ -12871,21 +12872,27 @@ await (async () => {
     const own = await place(order({ digest: "d-old", mode: "fly", rid: rid("s4") }));
     await setList(null);
     const unstamped = await place(order({ rid: rid("s5") }));
-    return { same, stale, bare, n1, retry, own, unstamped, n2: await count() };
+    return { same, stale, empty, bare, n1, retry, own, unstamped, n2: await count() };
   };
   for (const store of [null, "object", "object+kv"]) {
     const nm = store || "kv", R = await run42(store);
     ok(R.same.status === 200 && R.same.b.ok === true && R.same.b.order && R.same.b.order.total === 120,
       nm + ": a placement carrying the stamp on the account's list now is placed: " + JSON.stringify([R.same.status, R.same.b.error]));
     ok(R.stale.status === 409 && R.stale.b.ok === false && R.stale.b.error === "prices moved" && JSON.stringify(R.stale.b.prices) === JSON.stringify(sealed42("d-one"))
-      && R.bare.status === 409 && R.bare.b.error === "prices moved" && R.n1 === 1,
-      nm + ": a placement carrying an older stamp, or none, is refused 409 with the account's list as it stands, sealed, and places nothing: "
-        + JSON.stringify([R.stale.status, R.stale.b, R.bare.status, R.n1]));
+      && R.empty.status === 409 && R.empty.b.error === "prices moved" && JSON.stringify(R.empty.b.prices) === JSON.stringify(sealed42("d-one")),
+      nm + ": a placement carrying an older stamp, or an empty one, is refused 409 with the account's list as it stands, sealed, and places nothing: "
+        + JSON.stringify([R.stale.status, R.stale.b, R.empty.status, R.empty.b.error]));
+    /* S4 fix (S4R-1): a Counter loaded before the stamp sends no stamp field at all and has no way to re-quote, so a
+       refusal held it until a reload nothing tells it to make; it places as it did, and the desk's acknowledgement is
+       the check behind its total. The page since S4 always sends the field (S4 fix section below). */
+    ok(R.bare.status === 200 && R.bare.b.ok === true && R.n1 === 2,
+      nm + ": a page from before the stamp, whose Place carries no stamp field at all, places as it did against a stamped list: "
+        + JSON.stringify([R.bare.status, R.bare.b.error, R.n1]));
     ok(R.retry.status === 200 && R.retry.b.ok === true && R.same.b.order && R.retry.b.order && R.retry.b.order.id === R.same.b.order.id,
       nm + ": a retry of a placement that landed is answered with its order after the list has moved, never refused: " + JSON.stringify([R.retry.status, R.retry.b.error]));
     ok(R.own.status === 400 && R.own.b.ok === false && R.own.b.error && R.own.b.error !== "prices moved" && !("prices" in R.own.b),
       nm + ": an order refused on its own terms says so, and not that the price moved: " + JSON.stringify([R.own.status, R.own.b.error]));
-    ok(R.unstamped.status === 200 && R.unstamped.b.ok === true && R.n2 === 2,
+    ok(R.unstamped.status === 200 && R.unstamped.b.ok === true && R.n2 === 3,
       nm + ": a list published before the stamp, and a page sending none, still place: " + JSON.stringify([R.unstamped.status, R.unstamped.b.error, R.n2]));
   }
 })();
@@ -13704,6 +13711,44 @@ await (async () => {
     ok(!errs.length && d.getElementById("pPrices").hidden && !d.getElementById("pOrder").hidden,
       "on his route a tab changes with nothing thrown: " + JSON.stringify(errs));
   } finally { w.close(); }
+})();
+section("S4 fix: the page's Place always carries the stamp field, empty included, so only a page from before the stamp skips the check");
+await (async () => {
+  /* S4R-1: the Worker lets a Place with no stamp field through, because only a Counter loaded before the stamp existed
+     sends none and it cannot re-quote. That holds only while this page sends the field on every Place: here from a list
+     sealed with no stamp, where the field is empty and still there. */
+  const { landingPage: lpF1 } = await import("../stmt/page.js");
+  const CF1 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcF1 } = await import("node:crypto");
+  const { JSDOM: JDF1 } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-sf1", ck = await CF1.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] }] };
+  const posted = [];
+  const body = { ok: true, wrap: await CF1.wrapKey(pass, ck), session: "sess-sf1", prices: await CF1.encryptWith(ck, JSON.stringify(prices)),
+    env: await CF1.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const dom = new JDF1(lpF1(u, "nsf1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcF1, configurable: true }); } catch (e) { win.crypto = wcF1; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      if (p === "/open") return { ok: true, status: 200, json: async () => body };
+      if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      if (p === "/orders" && m === "POST") { posted.push(JSON.parse(init.body));
+        return { ok: true, status: 200, json: async () => ({ ok: true, order: { id: "20260924040000-sf1a", product: "salt", qty: 1, status: "placed", at: "2026-09-24T04:00:00Z", total: 100, history: [], msgs: [] } }) }; }
+      return { ok: false, status: 404, json: async () => ({ ok: false }) };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click(); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !posted.length; i++) await new Promise((r) => setTimeout(r, 30));
+    ok(posted.length === 1 && Object.prototype.hasOwnProperty.call(posted[0], "digest") && posted[0].digest === "",
+      "Place from a list sealed with no stamp still carries the stamp field, empty: " + JSON.stringify(posted.map((x) => Object.keys(x))));
+  } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
 })();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {

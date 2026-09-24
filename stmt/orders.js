@@ -449,14 +449,17 @@ export const mintOrderId = (at) => at.replace(/[-:.TZ]/g, "").slice(0, 14) + "-"
 
 /* S4 4.2: THE LIST MOVED. Place carries the stamp of the list the page quoted from, and `digest` is the stamp on the
    account's record now (tools/pricelist.mjs priceDigest): two strings compared, and nothing here reads a price. It is
-   checked after the order's own checks, so a 409 says the price and nothing else is in the way. */
+   checked after the order's own checks, so a 409 says the price and nothing else is in the way. A body with no stamp at
+   all is a page loaded before the stamp existed (the Counter's page sends one on every Place since S4, empty included): it has nothing to re-quote
+   with, so a refusal would hold it until a reload it has no way to ask for, and it places as it did, the desk's
+   acknowledgement the check behind its total, as for every quoted total. */
 export const PRICES_MOVED = "prices moved";
 
 /** A placement, checked against the customer's open orders and the account's list now. Returns { ev } or { error }. */
 export function decidePlace(u, body, open, at, digest) {
   const c = checkPlacement(body, open);
   if (c.error) return { error: c.error };
-  if (String(body.digest || "") !== String(digest || "")) return { error: PRICES_MOVED };
+  if (body.digest !== undefined && String(body.digest || "") !== String(digest || "")) return { error: PRICES_MOVED };
   const order = Object.assign({ id: mintOrderId(at), u, at, status: "placed", paid: 0, payments: [], moved: 0, movedOn: null,
     msgs: c.note ? [{ at, by: "customer", text: c.note }] : [],   /* v751: the line they typed with the order is its first message */
     history: [{ at, status: "placed", by: "customer" }] }, c.order);

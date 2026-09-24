@@ -349,7 +349,9 @@ a customer sees. `--no-prices` on the publish leaves the list out.
 `priceDigest` in `tools/pricelist.mjs`, keyed under `STMT_KEY` over the username and each product's sizes and
 prices, sealed inside the list and in the clear beside it as `prices.digest`. **Place carries the stamp of the
 list the page opened** (4.2): one that differs from the record's is answered 409 `prices moved` with the record's
-sealed list, after the request id and the order's own checks, on both roads. The site compares stamps; it prices nothing.
+sealed list, after the request id and the order's own checks, on both roads. The page sends the field on every Place,
+empty included; a body with none is a page loaded before the stamp, which cannot re-quote, and places as it did. The
+site compares stamps; it prices nothing.
 
 **The order lives on the site, in its one Durable Object** (`stmt/orderbook.js`; S10, his answer
 to D10 of 24 Sep 2026): every move an event appended under its id, the order the fold of its
