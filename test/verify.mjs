@@ -15425,7 +15425,7 @@ await (async () => {
       && !one.D.getElementById("barw").hidden && one.D.getElementById("gate").hidden,
       "with no tap, a remembered phone signs itself back in through the device, and nothing is said: " + JSON.stringify({ reopened: st1.reopened - before }));
     ok(!/lock and sign in/.test(one.D.documentElement.outerHTML), "and the old note telling them to lock is gone from the page");
-  } finally { try { one.W.close(); } catch (e) { /* best effort */ } }
+  } finally { await new Promise((r) => setTimeout(r, 600)); try { one.W.close(); } catch (e) { /* best effort */ } }
 
   /* opened by a one-time link whose remembering the site did not take, so nothing is remembered and nothing was
      typed: the Sheet carries the door with the username in it */
@@ -15444,7 +15444,7 @@ await (async () => {
     const boxes = two.D.getElementById("un").value;
     ok(!two.D.getElementById("outSheet").hidden && two.D.getElementById("outSheet").contains(two.D.getElementById("f")) && boxes === uD && st2.reopened === 0,
       "and a Sheet carries the door with the username in it, asking nothing of a device it does not have: " + JSON.stringify({ boxes, reopened: st2.reopened }));
-  } finally { try { two.W.close(); } catch (e) { /* best effort */ } }
+  } finally { await new Promise((r) => setTimeout(r, 600)); try { two.W.close(); } catch (e) { /* best effort */ } }
 })();
 section("S1 fix UX5: one lapse is said once, in the bar, and a tapped control points to its Continue");
 await (async () => {
