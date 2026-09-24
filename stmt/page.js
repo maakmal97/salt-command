@@ -193,7 +193,7 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .payhead{max-width:620px;margin:0 auto 22px}
 .payhead[hidden]{display:none}
 .payhead .btn{margin-top:12px}
-.payhead .salt-ledger__value{white-space:nowrap}
+.salt-ledger--plain .salt-ledger__value{white-space:nowrap}
 /* S6 6.4: the pay sheet. The look is the recipes' (Sheet, KPI tile, Ghost, Option, Field, Ledger, Pill); this lays them out */
 .payseg{display:flex;gap:8px;margin-top:12px}
 .payseg .salt-ghost{flex:1 1 0;min-width:0}
@@ -203,7 +203,7 @@ h3.pmark{margin:0 0 4px;line-height:1}
 #payFoot .salt-pill{flex:1 1 auto}
 /* S6 6.5: the one question on return, centred as the mockup draws it */
 .paycheck{text-align:center;padding-top:6px}
-.paycheck h3{margin:14px 0 4px;font-family:var(--salt-font-display);font-size:var(--salt-text-xl);font-weight:600;letter-spacing:0}
+.paycheck h3{margin:14px 0 4px;font-family:var(--salt-font-display);font-size:var(--salt-text-xl);font-weight:600;letter-spacing:0;color:var(--salt-salt)}
 .payring{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;border:1px solid var(--salt-steel);color:var(--salt-steel)}
 .payring .psym{color:inherit}
 .payagain{width:100%;margin-top:16px}
