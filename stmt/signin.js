@@ -129,8 +129,9 @@ export async function burnSignin(env, token, nonce) {
  *
  * WHY KEYED AND SEALED. Eight symbols of thirty are about 39 bits, few enough to try every one offline against
  * a plain hash in a copy of the store. With the secret on the Worker and not in the store, a copy holds names
- * nobody can compute and bodies nobody can open; online, the brakes in stmt/worker.js make the walk hopeless
- * inside fifteen minutes.
+ * nobody can compute and bodies nobody can open; online, fifteen minutes is too short to walk thirty to the eighth at
+ * any rate the site answers, and the brakes in stmt/worker.js slow it further (their real bound, which is time and not
+ * guesses: docs/STATEMENTS.md).
  *
  * THE SAME TWO LIMITS AS THE LINK: inside its fifteen minutes it is a bearer credential, and single use is best
  * effort on KV. With the secret unset every hand-over route answers 503 and nothing else changes.

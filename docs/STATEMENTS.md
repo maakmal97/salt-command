@@ -327,6 +327,12 @@ signed in (or Salt Admin, for a customer at his counter) hands the sign-in acros
   hundred), fifteen minutes each. A miss is any refused code; a success clears nothing. A key is neither braked nor
   counted (192 bits, as a link's token is), so a flood shuts code sign-in for everyone for fifteen minutes and no other
   door, the key included (S3 fix). JSON only, as `/open`.
+- **What the brakes are worth: they bound time, not guesses.** Each count is a KV read then a write, not atomic, and KV
+  takes one write to a key a second (a refused put is swallowed), so under a flood the site count rises about once a
+  second and cannot trip for the first 100 to 160 seconds; the per-address count lags the same way. The safety is the
+  space: 30 to the eighth is 6.6e11 codes (39 bits), so the 1.6e5 guesses 1,000 a second makes before the brake can
+  trip find a given live code with odds of 2.4e-7, and 10,000 a second 2.4e-6. A code cannot be walked inside its
+  fifteen minutes. An atomic count waits for a Durable Object.
 - **Log out burns them**: `POST /logout` takes `handover`, the keys the page minted (ten at most), and deletes both
   records of each unopened, so a key left on a handed-on phone's clipboard or address opens nothing (S3 fix).
 - **A code open is an open**: `seen:` says `code` or `key`, and its session leaves a pointer (`dev:`).
