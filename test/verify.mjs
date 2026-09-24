@@ -32871,6 +32871,56 @@ await (async () => {
   } finally { d.W.close(); }
 })();
 
+section("S7 fix: Home carries no product word and no level's name, in its text or its attributes");
+await (async () => {
+  /* S7R-2 of the stage 7 review (25 Sep 2026). Each Order again tile carried its book's key in an attribute nothing read,
+     data-again="salt|2|deliver", so the word the site never shows a customer stood on Home; the sheet's own check did not
+     reach Home. Driven with two books, for an account with orders and for a new one. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s7f3", ck = await C.contentKey("test-secret", u);
+  const list = await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T03:59:00Z", digest: "ds7f3", week: { monday: "2026-09-21", label: "21 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", basis: "rate", sizes: [{ q: 1, price: 110 }, { q: 2, price: 200 }] },
+      { product: "oil", name: "Oil", unit: "unit", basis: "board", sizes: [{ q: 10, price: 45 }, { q: 20, price: 85 }] }], soon: [] }));
+  const base = { mode: "collect", delivery: 0, history: [], msgs: [] };
+  const past = [
+    { ...base, id: "20260921030000-aaaa", product: "salt", status: "done", qty: 2, total: 200, paid: 200, moved: 2, mode: "deliver", place: "Veloria", at: "2026-09-21T03:00:00Z" },
+    { ...base, id: "20260920030000-bbbb", product: "oil", status: "done", qty: 10, total: 45, paid: 45, moved: 10, at: "2026-09-20T03:00:00Z" },
+    { ...base, id: "20260922030000-cccc", product: "salt", status: "acknowledged", qty: 1, total: 110, paid: 0, moved: 0, at: "2026-09-22T03:00:00Z",
+      msgs: [{ by: "desk", text: "Thursday.", at: "2026-09-22T04:00:00Z" }] }];
+  const open = async (fresh) => {
+    const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f3", prices: list,
+      env: await C.encryptWith(ck, JSON.stringify({ statements: fresh ? [] : [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: fresh ? null : await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+    const dom = new JSDOM(landingPage(u, "ns7f3", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+      win.fetch = async (path) => { const p = String(path);
+        const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: fresh ? [] : past } : { ok: true };
+        return { ok: true, status: 200, json: async () => j }; };
+    } });
+    const W = dom.window, D = W.document;
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !D.querySelectorAll("#hAgain button").length; i++) await new Promise((r) => setTimeout(r, 25));
+    return { W, D };
+  };
+  /* the system's class names and the app's own name are not the book's word */
+  const bare = (D) => D.getElementById("pHome").outerHTML.replace(/salt-[a-z_-]+/g, "").replace(/Salt Counter/g, "");
+  const words = /salt|oil|Gold|Silver|Platinum|Titanium|Ambassador/i;
+  for (const fresh of [false, true]) {
+    const { W, D } = await open(fresh);
+    try {
+      const n = D.querySelectorAll("#hAgain button").length, marks = D.querySelectorAll("#hAgain svg").length;
+      ok(n >= 2 && marks >= n && !words.test(bare(D)),
+        (fresh ? "a new account's" : "an account with orders:") + " Home draws its tiles with their marks, and no product word or level's name is in its text or its attributes: "
+        + JSON.stringify([n, marks, (bare(D).match(words) || []).length]));
+    } finally { W.close(); }
+  }
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read

@@ -3187,7 +3187,8 @@ const CLIENT_JS = `
     list.slice(0,4).forEach(function(a){
       var P=sold().filter(function(x){ return x.product===a.product; })[0], z=P.sizes.filter(function(x){ return String(x.q)===String(a.q); })[0];
       var b=el('button','salt-option__face htile'), t=el('span','salt-option__text'), l=el('span','salt-option__label');
-      b.type='button'; b.setAttribute('data-again',a.product+'|'+a.q+(a.start?'':'|'+a.mode));
+      /* nothing of the book in an attribute: the tap reads the tile from its own closure (S7R-2 of the stage 7 review) */
+      b.type='button';
       l.appendChild(psym(a.product,18)); l.appendChild(document.createTextNode(unitsOf(a.q,P.unit))); l.appendChild(el('span','sr',pshape(a.product)));
       t.appendChild(l);
       t.appendChild(el('span','salt-option__detail',rm(z.price)+(a.start?'':', '+(a.mode==='deliver'?'delivered to '+a.place:'collected')+(a.forFriend?', for a friend':''))));
