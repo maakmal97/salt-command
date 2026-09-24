@@ -2268,8 +2268,7 @@ const CLIENT_JS = `
     if(busy) return;
     again(false); say('');
     if(opening){ gate.hidden=true; opening.hidden=false; }
-    var inNow=await openRemembered();
-    if(inNow||session) return;
+    if((await openRemembered())||session) return;
     if(opening) opening.hidden=true;
     gate.hidden=false;
   });
