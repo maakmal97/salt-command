@@ -492,6 +492,7 @@ a stage cannot be queued twice by two roads racing (Accept's pending row is the 
 | Acknowledged | a `new` SELL, delivery inside the total, `cash` 0 and `kg` 0 | the row appears as **Pending**, which is the truth |
 | A payment | an `amend` **Fulfilment**, the INCREMENT since the last one | a Fulfilment accumulates cash and units |
 | A handover | an `amend` **Correction** stating the running total, `deliveredOn` and `handover` | only a Correction may set when and by whom, and it states rather than adds |
+| Closed at what was handed over (S11 11.9) | an `amend` **Correction** stating size, total, `deliveredQty`, `deliveredOn` and `handover`; `ledgerKey` then moves to the key the new total makes (`closedKey`) | one entry states the handover and the restated row together |
 | Cancelled or declined | an `amend` **Cancellation** | the fold raises any refund itself |
 
 **Which row a later stage amends.** A `rid` is minted at fold time and there is no route from the
@@ -524,7 +525,8 @@ queues itself, because the row must exist before the order moves; `deskPass`, be
 follows it up each minute.
 
 **The later stages are one tap too** (S11 11.12): **Collected or Delivered** (`/handed {qty, close}`,
-the running total, in the order's own mode), **Received** (`/received {amount}`, their recorded payment
+the running total, in the order's own mode; `close` under the size is 11.9's close, previewed as the one
+Correction it makes, `closeEntry`, and offered again as Collected's), **Received** (`/received {amount}`, their recorded payment
 in his bank; the site already counts it) and **Cash received** (`/cash {amount}`, money taken at the
 counter: the site's `cash` event marks the order paid at once, in cash and as his, which stops the chase,
 and moves the ledger's mark of the money by the same figure, because the Fulfilment is the desk's own

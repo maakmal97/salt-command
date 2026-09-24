@@ -1609,8 +1609,9 @@ async function sha(s) {
   const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
   return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
-/** Which stage of a site order an entry is, by the status the reconcile gives it (src/orders.js). */
-export const STAGE_OF = { Pending: "ack", Payment: "pay", Handover: "move", Cancellation: "cancel" };
+/** Which stage of a site order an entry is, by the status the reconcile gives it (src/orders.js). A close restates
+ *  what was handed over (S11 11.9), so Collected's yes answers it. */
+export const STAGE_OF = { Pending: "ack", Payment: "pay", Handover: "move", Close: "move", Cancellation: "cancel" };
 /** The pricing version a row was drafted against: the snapshot's own version, and a digest of the rest of it. */
 export async function pricingOf(book) {
   const p = book && book.pricing;

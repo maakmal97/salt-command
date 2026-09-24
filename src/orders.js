@@ -324,16 +324,24 @@ export async function handedOrder(env, id, body, by, now) {
   return stageTap(env, id, body, by, now, "move", (o, at) => {
     const qty = body && body.qty;
     if (typeof qty !== "number" || !Number.isFinite(qty) || qty < 0 || qty > +o.qty + 0.004) return { error: "the units handed over have to be a figure from zero to the " + o.qty + " ordered" };
-    if (Math.abs(qty - (+o.moved || 0)) < 0.0004) {
+    /* S11 11.9: CLOSE AT WHAT WAS HANDED OVER is a close only under the size, as the site decides it; its row is the
+       one Correction restating size and total (closeEntry), so that is the row his yes is the digest of, and a close
+       at what is already out is a tap of its own, never "that is what the order already says" */
+    const closing = body.close === true && qty < +o.qty - 0.004;
+    if (closing && !(qty > 0)) return { error: "nothing was handed over, so there is nothing to close at: cancel it instead" };
+    if (!closing && Math.abs(qty - (+o.moved || 0)) < 0.0004) {
       if (rej && Math.abs(qty - (+((rej.entry.payload.fields || {}).deliveredQty) || 0)) < 0.0004) return { again: "move" };
       return { status: 409, error: "that is what the order already says was handed over" };
     }
     /* stamped as the site stamps it: the Kuala Lumpur day of the tap, the handover's own day */
-    const entry = handoverEntry(Object.assign({}, o, { movedOn: klDate(at), moved: qty }), o.code, qty, at);
+    const handed = Object.assign({}, o, { movedOn: klDate(at), moved: qty });
+    const entry = closing
+      ? closeEntry(Object.assign(handed, { qty, total: +((+o.total) * qty / (+o.qty)).toFixed(2), closed: { at: at.toISOString(), qty: o.qty, total: o.total } }), o.code, at)
+      : handoverEntry(handed, o.code, qty, at);
     entry.orderId = o.id;
     const handover = { units: qty, mode: o.mode };
-    if (body.close === true) handover.close = true;   /* closing short is the site's to learn (S11 11.9); it is passed as asked */
-    return { entry, site: { handover }, shown: { units: qty, how: o.mode === "deliver" ? "delivered" : "collected" } };
+    if (closing) handover.close = true;
+    return { entry, site: { handover }, shown: { units: qty, how: o.mode === "deliver" ? "delivered" : "collected", close: closing } };
   });
 }
 
@@ -400,7 +408,9 @@ async function draftsOfOrders(db, ids) {   /* one order's, in practice: ids hold
   return (rs.results || []).map((r) => { try { return Object.assign({}, r, { entry: JSON.parse(r.entry) }); } catch (e) { return null; } })
     .filter((r) => r && r.entry && want.has(r.entry.orderId));
 }
-const ofStage = (r, stage) => r.entry.status === STATUS_OF_STAGE[stage] && (stage === "pay" ? !r.entry.counter : stage === "cash" ? !!r.entry.counter : true);
+/* a close (S11 11.9) is Collected's too: its row restates what was handed over */
+const ofStage = (r, stage) => (stage === "move" ? ["Handover", "Close"].includes(r.entry.status) : r.entry.status === STATUS_OF_STAGE[stage])
+  && (stage === "pay" ? !r.entry.counter : stage === "cash" ? !!r.entry.counter : true);
 /* he rejected it: a withdrawal's drop (11.10) is filed rejected too, and is not his */
 const rejectedByHim = (d) => !!d && d.status === "rejected" && d.decided_by !== "withdrawn";
 /** The newest draft of a stage for an order, when it is one he rejected; else null. */
