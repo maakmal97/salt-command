@@ -1036,7 +1036,8 @@ const CLIENT_JS = `
     myLinks.forEach(function(r){
       var row=el('div','glink'+(r.state==='withdrawn'?' off':''));
       row.appendChild(el('p','gt', r.state==='waiting'?'Waiting to be approved':(r.state==='withdrawn'?'Withdrawn':'Open')));
-      row.appendChild(el('code','gu', r.state==='open'?r.url:'\u2014'));
+      /* S1 1.39: words, not a dash (an em-dash reached the page); a withdrawn link says so above and needs no line here */
+      if(r.state!=='withdrawn') row.appendChild(el('code','gu', r.state==='open'?r.url:'No address yet'));
       row.appendChild(el('p','gs', r.opens
         ? 'opened '+r.opens+' time'+(r.opens===1?'':'s')
         : (r.state==='open'?'never opened yet':'nothing can open it')));

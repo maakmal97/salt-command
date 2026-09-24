@@ -14750,6 +14750,52 @@ await (async () => {
       "the wrapper is the sticky element, pinned to the top, and the bar inside it is not: " + JSON.stringify({ wrapper: cs.position, top: cs.top, bar: inner.position }));
   } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
 })();
+section("S1 1.39: no em-dash reaches the served page, and a waiting link says No address yet");
+await (async () => {
+  /* L43, 24 SEP 2026. The links pane wrote an em-dash where a waiting or withdrawn link has no address:
+     an escape inside CLIENT_JS, which the template literal turns into the character itself. The house
+     writes no em-dash. The character is built here from its code, so this file carries none either. */
+  const DASH = String.fromCharCode(0x2014);
+  const { landingPage: lpG } = await import("../stmt/page.js");
+  const env = { STMT: new KV() };
+  const served = await (await stmtWorker.fetch(new Request("https://k7m3p2.example/"), env)).text();
+  ok(served.length > 1000 && !served.includes(DASH) && !lpG("", "nG", { master: "m", accounts: [] }).includes(DASH),
+    "neither the customer's page nor the owner's carries an em-dash");
+  const CG = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDG } = await import("jsdom");
+  const { webcrypto: wcG } = await import("node:crypto");
+  const uG = "aaaa-gggg", passG = "2345-6789-abcd-efgh";
+  const ckG = await CG.contentKey("4".repeat(64), uG);
+  const openG = { ok: true, byMaster: false, wrap: await CG.wrapKey(passG, ckG), wrapMaster: null, live: null, prices: null, assoc: true,
+    session: "sessGaaaaaaaaaaaaaaaaaaaaaaa",
+    env: await CG.encryptWith(ckG, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] })),
+    card: await CG.encryptWith(ckG, JSON.stringify({ products: [{ product: "salt", unit: "unit", summary: {}, lines: [] }] })) };
+  const refs = [{ id: "w1", state: "waiting", opens: 0 }, { id: "x1", state: "withdrawn", opens: 2 }];
+  const dom = new JDG(lpG(uG, "nG", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcG, configurable: true }); } catch (e) { win.crypto = wcG; }
+      win.scrollTo = () => {};
+      win.fetch = async (path) => {
+        const p = String(path);
+        if (p === "/open") return { ok: true, status: 200, json: async () => openG };
+        if (p === "/my/refs") return { ok: true, status: 200, json: async () => ({ ok: true, refs, max: 3 }) };
+        return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      };
+    } });
+  const W = dom.window, D = W.document;
+  try {
+    D.getElementById("pw").value = passG;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && D.getElementById("tCard").hidden; i++) await new Promise((r) => setTimeout(r, 25));
+    D.getElementById("tCard").click();
+    for (let i = 0; i < 200 && D.querySelectorAll("#pCard .glink").length < 2; i++) await new Promise((r) => setTimeout(r, 25));
+    const rows = [...D.querySelectorAll("#pCard .glink")];
+    const txt = D.getElementById("pCard").textContent;
+    ok(rows.length === 2 && !txt.includes(DASH) && rows[0].querySelector("code.gu").textContent === "No address yet" && !rows[1].querySelector("code.gu"),
+      "the drawn links carry no em-dash: a waiting one says No address yet, and a withdrawn one needs no line: "
+      + JSON.stringify(rows.map((r) => r.textContent.slice(0, 50))));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } }
+})();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: no three-minute lock, Remember me, and a Log out. The two halves of
