@@ -115,8 +115,10 @@ export const OWNER_JS = `
     });
     var copy=el('button',null,'Copy message'); copy.type='button';
     if(noAcct){ copy.disabled=true; copy.title=why; }
-    copy.addEventListener('click', function(){
-      try{ navigator.clipboard.writeText(a.msg); copy.textContent='Copied'; }catch(e){ copy.textContent='Copy failed'; }
+    /* 24 SEP 2026: THE WRITE IS AWAITED. writeText answers with a promise, so a refusal never reached
+       the catch and the button said Copied over an empty clipboard. */
+    copy.addEventListener('click', async function(){
+      try{ await navigator.clipboard.writeText(a.msg); copy.textContent='Copied'; }catch(e){ copy.textContent='Copy failed'; }
       setTimeout(function(){ copy.textContent='Copy message'; }, 1600);
     });
     var pwb=el('button','pw','Copy password'); pwb.type='button';
@@ -142,6 +144,7 @@ export const OWNER_JS = `
     slb.addEventListener('click', async function(){
       if(a.account===false || (!a.pwMaster && !a.username)) return;
       slb.disabled=true; slb.textContent='Making it...';
+      var made=false;
       try{
         var o=await (await fetch('/open', {method:'POST', headers:{'content-type':'application/json'},
           body:JSON.stringify({u:a.username, password:OWNER.master, master:OWNER.master})})).json();
@@ -153,11 +156,15 @@ export const OWNER_JS = `
         var tok=btoa(String.fromCharCode.apply(null, raw)).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/[=]+$/,'');
         var wrap=await wrapUnder(new TextEncoder().encode(tok), ck);
         var j=await refs('/all/signin/'+encodeURIComponent(a.username), {token:tok, wrap:wrap});
-        tok=null; ck=null;
-        if(navigator.share) await navigator.share({text:j.msg});
-        else await navigator.clipboard.writeText(j.msg);
-        slb.textContent='Link sent';
-      }catch(e){ slb.textContent='Could not make one'; }
+        tok=null; ck=null; made=true;
+        /* 24 SEP 2026: ONCE IT IS MADE, A FAILURE IS NOT "COULD NOT MAKE ONE". A share sheet he closed
+           rejects too, and the link was already minted; it goes to the clipboard instead, and the
+           button says which of the three happened. */
+        var sent=false;
+        if(navigator.share){ try{ await navigator.share({text:j.msg}); sent=true; }catch(e){ sent=false; } }
+        if(sent) slb.textContent='Link sent';
+        else { await navigator.clipboard.writeText(j.msg); slb.textContent='Link made and copied'; }
+      }catch(e){ slb.textContent=made?'Link made, not copied':'Could not make one'; }
       setTimeout(function(){ slb.textContent='Sign-in link'; slb.disabled=false; }, 2200);
     });
     var open=el('button',null,'Open account'); open.type='button';
@@ -297,8 +304,8 @@ export const OWNER_JS = `
       card.appendChild(img);
       var row=el('div','grow');
       var copy=el('button',null,'Copy link'); copy.type='button';
-      copy.addEventListener('click', function(){
-        try{ navigator.clipboard.writeText(r.url); copy.textContent='Copied'; }
+      copy.addEventListener('click', async function(){
+        try{ await navigator.clipboard.writeText(r.url); copy.textContent='Copied'; }
         catch(e){ copy.textContent='Copy failed'; }
         setTimeout(function(){ copy.textContent='Copy link'; }, 1500);
       });

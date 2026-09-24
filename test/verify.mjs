@@ -14368,6 +14368,79 @@ await (async () => {
       "and it carries no Approve or Decline, Restore being the way back: " + JSON.stringify(cardOf(gone) && [...cardOf(gone).querySelectorAll("button")].map((b) => b.textContent)));
   } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
 })();
+section("S1 1.35: Salt Admin's Copy and Sign-in link say what really happened when the clipboard or the share sheet refuses");
+await (async () => {
+  /* 24 SEP 2026 (L38, L40): Copy message and Copy link called writeText without awaiting it, so a refused
+     clipboard never reached the catch and the button said Copied over nothing; and Sign-in link read
+     "Could not make one" when he only closed the share sheet, the link having been minted already.
+     Driven on his page against the real Worker, with the browser's clipboard and share sheet stood in. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s1-35";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s1-35", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, "{}") }));
+  await kv.put("roster", JSON.stringify([{ code: "CX0-AA", username: u }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX0-AA", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+  const TEAM = "maakmal", AUD = "aud-s1-35", KID = "kid-s1-35";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 150 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  const clip = { ok: false, got: [] };
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      /* a clipboard that refuses until told otherwise, and a share sheet he closes */
+      Object.defineProperty(w.navigator, "clipboard", { value: { writeText: (t) => clip.ok ? (clip.got.push(t), Promise.resolve()) : Promise.reject(new Error("NotAllowedError")) }, configurable: true });
+      Object.defineProperty(w.navigator, "share", { value: () => Promise.reject(Object.assign(new Error("Share canceled"), { name: "AbortError" })), configurable: true });
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    D.querySelector('button[data-m="send"]').click();
+    const btnOf = (t) => [...D.querySelectorAll("#slist .scard button")].find((b) => b.textContent === t);
+    ok(await until(() => btnOf("Copy message")), "Send draws the card");
+    const cm = btnOf("Copy message"); cm.click();
+    ok(await until(() => cm.textContent !== "Copy message") && cm.textContent === "Copy failed",
+      "Copy message on a clipboard that refuses says Copy failed, not Copied: " + cm.textContent);
+    clip.ok = true;
+    const sl = btnOf("Sign-in link"); sl.click();
+    ok(await until(() => !/Sign-in link|Making it/.test(sl.textContent)) && sl.textContent !== "Could not make one" && /made/.test(sl.textContent)
+      && clip.got.some((t) => t.includes("/s/")) && (await kv.list({ prefix: "ot:" })).keys.length === 1,
+      "Sign-in link with the share sheet closed does not say Could not make one: the link is made, copied instead, and says so: "
+        + JSON.stringify({ label: sl.textContent, copied: clip.got.length }));
+    clip.ok = false;
+    D.querySelector("button[data-back]").click();
+    D.querySelector('button[data-m="links"]').click();
+    ok(await until(() => [...D.querySelectorAll("#glist button")].filter((b) => b.textContent === "Copy link").length >= 2), "Links draws a card a tier");
+    const [l1, l2] = [...D.querySelectorAll("#glist button")].filter((b) => b.textContent === "Copy link");
+    l1.click();
+    ok(await until(() => l1.textContent !== "Copy link") && l1.textContent === "Copy failed",
+      "Copy link on a clipboard that refuses says Copy failed: " + l1.textContent);
+    clip.ok = true; l2.click();
+    ok(await until(() => l2.textContent !== "Copy link") && l2.textContent === "Copied" && clip.got.some((t) => /[/]g[/]/.test(t)),
+      "and on one that takes it, Copied, with the link on the clipboard: " + l2.textContent);
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v687: the master account opens on its own page, and the owner's script travels only there");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: a master account that opens on what it can do. /all is that account,
