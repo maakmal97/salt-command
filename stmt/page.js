@@ -116,12 +116,17 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .msg.bad{color:var(--salt-ember)}
 .msg.wait{color:var(--salt-text-muted)}
 /* a veil is obsidian 86%, decision 4 */
-.bar{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;
+/* S1 1.32: THE WRAPPER STICKS, NOT THE BAR. #barw is exactly the bar's height, so a sticky bar inside it
+   had nowhere to stick and scrolled away with Log out; the wrapper sticks to the page and carries both lines */
+#barw{position:sticky;top:0;z-index:5}
+.bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;
   gap:12px;padding:11px 16px;margin:0 auto 14px;max-width:620px;
   background:var(--salt-veil);border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);
   backdrop-filter:blur(10px);font-size:var(--salt-text-sm);color:var(--salt-text-muted);
   font-family:var(--salt-font-mono)}
 .bar b{color:var(--salt-text);font-variant-numeric:tabular-nums}
+.lapse{flex-basis:100%;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.lapse[hidden]{display:none}
 .bar button{font:inherit;color:var(--salt-brass);background:none;border:0;cursor:pointer;
   padding:0;text-decoration:underline;min-height:auto}
 /* THE THREE TABS: statements, prices, order. The same pill vocabulary as the issue strip, one
@@ -492,10 +497,9 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<div id="barw" hidden><div class="bar">'
     + '<span><b id="whoacct"></b><span id="cd"></span></span>'
     + '<button type="button" id="lock">Log out</button>'
-    + "</div>"
-    /* S1 1.5: a lapsed session says so where the reader is, with the one way back */
-    + '<div id="lapse" class="bar" role="alert" hidden><span id="lapseT"></span><button type="button" id="lapseGo">Continue</button></div>'
-    + "</div>"
+    /* S1 1.5: a lapsed session says so where the reader is, with the one way back: a second row of the bar */
+    + '<div id="lapse" class="lapse" role="alert" hidden><span id="lapseT"></span><button type="button" id="lapseGo">Continue</button></div>'
+    + "</div></div>"
     + '<div id="tabs" class="tabs" role="tablist" hidden>'
     + '<button type="button" class="salt-tabs__pill on" role="tab" aria-selected="true" data-t="stmt">Statements</button>'
     + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="prices" id="tPrices">Prices</button>'

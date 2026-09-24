@@ -14734,6 +14734,22 @@ await (async () => {
   ok(bad.posted.length === 0 && bad.note === "Notifications could not be switched on here. Try again later." && !/Subscription failed|Service Worker/.test(bad.text),
     "and a phone that still cannot subscribe is told so in plain words, never the browser's own error: " + JSON.stringify(bad.note));
 })();
+section("S1 1.32: the bar with Log out is held by a sticky wrapper, so it stays in view");
+await (async () => {
+  /* M33, 24 SEP 2026. .bar was sticky inside #barw, which is exactly its height, so it had nowhere to stick
+     and scrolled away with Log out (and, since 1.5, the lapsed line). The geometry is proved in the rig;
+     this pins the rule the page is served with. */
+  const { landingPage: lpF } = await import("../stmt/page.js");
+  const { JSDOM: JDF } = await import("jsdom");
+  const dom = new JDF(lpF("", "nF", null), { url: "https://site.test/", pretendToBeVisual: true });
+  try {
+    const W = dom.window, D = W.document, barw = D.getElementById("barw");
+    barw.hidden = false;
+    const cs = W.getComputedStyle(barw), inner = W.getComputedStyle(barw.querySelector(".bar"));
+    ok(cs.position === "sticky" && cs.top === "0px" && inner.position !== "sticky",
+      "the wrapper is the sticky element, pinned to the top, and the bar inside it is not: " + JSON.stringify({ wrapper: cs.position, top: cs.top, bar: inner.position }));
+  } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
+})();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: no three-minute lock, Remember me, and a Log out. The two halves of
