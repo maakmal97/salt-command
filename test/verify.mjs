@@ -14399,20 +14399,19 @@ await (async () => {
     ok(await until(() => rowOf(uB) && /No account/.test(rowOf(uB).textContent) && rowOf(uA)), "Accounts lists both usernames, and says the one has no account");
     const cardOf = (u) => { rowOf(u).click(); return [...D.querySelectorAll("#aopen .scard")].find((x) => x.textContent.includes(u)); };
     const btn = (card, t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
-    const four = ["Share", "Copy message", "Sign-in link", "View as them"];
+    /* S9 9.3: the account's screen, its one filled Send a sign-in link and the four other ways beside it */
+    const five = ["Send a sign-in link", "Show a code, in person", "View as them", "Copy password", "Sign out everywhere"];
     const before = hits.length;
     const cB = cardOf(uB);
     await new Promise((r) => setTimeout(r, 60));
-    ok(!!cB && four.every((t) => btn(cB, t) && btn(cB, t).disabled && /No account/.test(btn(cB, t).title)) && /Made at the next laptop update./.test(cB.textContent),
-      "on the card with no account, Share, Copy message, Sign-in link and View as them are all off, each saying why: "
-        + JSON.stringify(four.map((t) => [t, cB && btn(cB, t) && btn(cB, t).disabled])));
-    ok(!hits.slice(before).some((x) => /\/open$/.test(x)), "and opening its card posts nothing: " + JSON.stringify(hits.slice(before)));
-    /* UX9: the code opens the same address Share sends, under a caption offering the Sign-in link that is off */
-    ok(!cB.querySelector(".qrw") && !/Sign-in link sends one/.test(cB.textContent),
-      "the card with no account draws no code and no caption offering a link");
+    ok(!!cB && five.every((t) => btn(cB, t) && btn(cB, t).disabled && /No account/.test(btn(cB, t).title)) && /Made at the next laptop update./.test(cB.textContent),
+      "on the card with no account, Send a sign-in link and the four other ways are all off, each saying why: "
+        + JSON.stringify(five.map((t) => [t, cB && btn(cB, t) && btn(cB, t).disabled])));
+    ok(!hits.slice(before).some((x) => /[/]open$|[/]all[/](signin|account)[/]/.test(x)), "and opening its card makes nothing and posts nothing: " + JSON.stringify(hits.slice(before)));
+    ok(!cB.querySelector("[data-story]"), "the card with no account reads no story of how they got in");
     const cA = cardOf(uA);
-    ok(!!cA && four.every((t) => btn(cA, t) && !btn(cA, t).disabled), "and on a card with an account all four stay on");
-    ok(!!cA.querySelector(".qrw canvas") && /Sign-in link sends one/.test(cA.textContent), "with the code and its caption");
+    ok(!!cA && await until(() => btn(cA, five[0]) && !btn(cA, five[0]).disabled) && ["Show a code, in person", "View as them", "Sign out everywhere"].every((t) => btn(cA, t) && !btn(cA, t).disabled),
+      "and on a card with an account they stay on, its link made as it opens: " + JSON.stringify(five.map((t) => [t, cA && btn(cA, t) && btn(cA, t).disabled])));
 
     /* ---- the Worker: his correct master on a username with no account is never a miss ---- */
     const from = { "content-type": "application/json", "CF-Connecting-IP": "203.0.113.22" };
@@ -14638,16 +14637,21 @@ await (async () => {
     ok(await until(() => D.querySelector("#rlist [data-u]")), "Accounts lists the account");
     D.querySelector("#rlist [data-u]").click();
     const btnOf = (t) => [...D.querySelectorAll("#aopen .scard button")].find((b) => b.textContent === t);
-    ok(await until(() => btnOf("Copy message")), "its row opens the card");
-    const cm = btnOf("Copy message"); cm.click();
-    ok(await until(() => cm.textContent !== "Copy message") && cm.textContent === "Copy failed",
-      "Copy message on a clipboard that refuses says Copy failed, not Copied: " + cm.textContent);
-    clip.ok = true;
-    const sl = btnOf("Sign-in link"); sl.click();
-    ok(await until(() => !/Sign-in link|Making it/.test(sl.textContent)) && sl.textContent !== "Could not make one" && /made/.test(sl.textContent)
-      && clip.got.some((t) => t.includes("/s/")) && (await kv.list({ prefix: "ot:" })).keys.length === 1,
-      "Sign-in link with the share sheet closed does not say Could not make one: the link is made, copied instead, and says so: "
-        + JSON.stringify({ label: sl.textContent, copied: clip.got.length }));
+    /* S9 9.3: Copy message left with the Send card. The account's one Send a sign-in link is made as it opens, so a
+       share sheet he closes leaves that link made and says so, and a browser with no share sheet copies it, or says not */
+    const pill = () => D.querySelector("#aopen .scard .apill");
+    const note = () => ((D.querySelector("#aopen .scard .anote") || {}).textContent || "");
+    for (let i = 0; i < 400 && !(pill() && !pill().disabled); i++) await new Promise((r) => setTimeout(r, 25));
+    ok(pill() && !pill().disabled, "its row opens the account, its link made: " + note() + " " + (pill() ? pill().textContent : "no pill"));
+    pill().click();
+    ok(await until(() => /Not shared/.test(note())) && !pill().disabled && (await kv.list({ prefix: "ot:" })).keys.length === 1,
+      "a share sheet he closes says Not shared and keeps the one link made, never making a second: " + note());
+    Object.defineProperty(win.navigator, "share", { value: undefined, configurable: true });
+    pill().click();
+    ok(await until(() => /Not copied/.test(note())), "with no share sheet and a clipboard that refuses, it says Not copied: " + note());
+    clip.ok = true; pill().click();
+    ok(await until(() => /^Copied[.]/.test(note())) && clip.got.some((t) => t.includes("/s/")) && (await kv.list({ prefix: "ot:" })).keys.length === 1,
+      "and with one that takes it, Copied, with that same link on the clipboard: " + JSON.stringify({ note: note(), copied: clip.got.length }));
     clip.ok = false;
     D.querySelector('button[data-m="links"]').click();
     ok(await until(() => [...D.querySelectorAll("#glist button")].filter((b) => b.textContent === "Copy link").length >= 2), "Links draws a card a tier");
@@ -16148,6 +16152,123 @@ await (async () => {
       "on a phone a card's code opens that account on Accounts, with the way back");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S9 9.3: an account opens with its sign-in link made, so Send shares inside the tap, and says how they got in and on what kind of device, never an address");
+await (async () => {
+  /* THE PLAN'S f13 AND ITS MUST-NOT-SHIP LIST: one filled Send a sign-in link, its key made as the account opens, so the
+     share sheet is the tap's first act and never waits on a key derivation and a fetch; and How they got in, each link,
+     code and password open with its moment and the kind of device, from the browser's own description at the time. */
+  const W = (await import("../stmt/worker.js")).default;
+  const S = await import("../stmt/signin.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const PIXEL = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36";
+  const EDGE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0";
+  const labels = [IPHONE, PIXEL, EDGE, "curl/8.4.0", ""].map((x) => S.deviceOf(x));
+  ok(JSON.stringify(labels.map((d) => d.label)) === JSON.stringify(["iPhone, Safari", "Android phone, Chrome", "Windows computer, Edge", "A computer", "A computer"])
+    && JSON.stringify(labels.map((d) => d.kind)) === JSON.stringify(["phone", "phone", "computer", "computer", "computer"]),
+    "a device is named in the site's own words, a kind and a browser, and nothing is copied from its description: " + JSON.stringify(labels));
+
+  const kv = new KV();
+  const MASTER = "mp-s9-3", IP = "203.0.113.77";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9-3", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX9-HW", username: u }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-25T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX9-HW", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9-3", KID = "kid-s9-3";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const from = (ua) => ({ "content-type": "application/json", "user-agent": ua, "CF-Connecting-IP": IP });
+  const seen = async () => JSON.parse((await kv.get("seen:" + u)) || "null");
+
+  /* ---- the Worker: each way in is kept with its moment and the kind of device; a remembered phone coming back is not one ---- */
+  const tok = S.newSignin();
+  await S.mintSignin(env, u, tok, { salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" });
+  const lr = await site("/open-link", { method: "POST", headers: from(IPHONE), body: JSON.stringify({ token: tok }) });
+  const s1 = await seen();
+  ok(lr.status === 200 && s1 && s1.log.length === 1 && s1.log[0].how === "link" && s1.log[0].where === "iPhone, Safari" && s1.log[0].kind === "phone",
+    "a link opened on an iPhone is kept as a link, on an iPhone, Safari: " + JSON.stringify(s1 && s1.log));
+  const rtok = S.newSignin();
+  await kv.put("rem:" + (await S.idOf(rtok)), JSON.stringify({ u, wrap: { salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" }, at: new Date().toISOString() }));
+  const rr = await site("/remember/open", { method: "POST", headers: from(PIXEL), body: JSON.stringify({ token: rtok }) });
+  const s2 = await seen();
+  ok(rr.status === 200 && s2.opens === 2 && s2.how === "remembered" && s2.log.length === 1,
+    "a remembered phone coming back counts as an open and is not a way in: " + JSON.stringify(s2));
+  const pr = await site("/open", { method: "POST", headers: from(EDGE), body: JSON.stringify({ u, password: pw }) });
+  const s3 = await seen();
+  ok(pr.status === 200 && s3.log.length === 2 && s3.log[0].how === "password" && s3.log[0].where === "Windows computer, Edge" && s3.log[1].how === "link",
+    "a password open goes on top, newest first: " + JSON.stringify(s3.log.map((x) => x.how)));
+  ok(!JSON.stringify(s3).includes(IP) && !JSON.stringify(s3).includes("Mozilla") && !JSON.stringify(s3).includes("17_5"),
+    "and neither the address nor anything of the browser's own description is kept");
+  await kv.put("seen:" + u, JSON.stringify(Object.assign({}, s3, { log: Array.from({ length: 10 }, (_, i) => ({ how: "code", at: "2026-09-0" + (i % 9 + 1) + "T01:00:00Z", where: "iPhone", kind: "phone" })) })));
+  await site("/open", { method: "POST", headers: from(EDGE), body: JSON.stringify({ u, password: pw }) });
+  const s4 = await seen();
+  ok(s4.log.length === 10 && s4.log[0].how === "password", "ten ways in are kept, the oldest dropping off: " + s4.log.length);
+  await kv.put("seen:" + u, JSON.stringify(s3));
+
+  /* ---- the account's own read, behind Access ---- */
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+  let win = null;
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const jwt = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    ok((await site("/all/account/" + u)).status === 401, "an account's story is behind Access");
+    const aj = await (await site("/all/account/" + u, { headers: { "cf-access-jwt-assertion": jwt } })).json();
+    ok(aj.ok && aj.log.length === 2 && aj.log.every((x) => Object.keys(x).sort().join() === "at,how,kind,where"),
+      "and it hands over each way in, its moment and the device, nothing else: " + JSON.stringify(aj.log[0]));
+
+    /* ---- the page: the link is made as the account opens, and the tap shares it before anything waits ---- */
+    const hits = [], shared = [];
+    let inTap = null;
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": jwt } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      Object.defineProperty(w.navigator, "share", { value: (d) => { shared.push(d.text); return Promise.resolve(); }, configurable: true });
+      w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": jwt }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    D.querySelector('button[data-m="accounts"]').click();
+    ok(await until(() => D.querySelector('#rlist [data-u="' + u + '"]')), "Accounts lists the account");
+    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
+    const pill = () => card() && card().querySelector(".apill");
+    /* the links not yet used: the one opened above stays two minutes, spent, for the page that spent it */
+    const links = async () => { let n = 0; for (const k of (await kv.list({ prefix: "ot:" })).keys) if (!JSON.parse(await kv.get(k.name)).spent) n++; return n; };
+    ok(await until(() => pill() && !pill().disabled) && await links() === 1 && hits.some((x) => x === "POST /all/signin/" + u),
+      "the account opens with its sign-in link already made, before any tap: " + JSON.stringify(hits.filter((x) => /signin|open$/.test(x))));
+    ok(pill().textContent === "Send a sign-in link" && pill().classList.contains("salt-pill") && card().querySelectorAll(".salt-pill").length === 1,
+      "Send a sign-in link is the account's one filled control");
+    const before = hits.length;
+    pill().click();
+    inTap = shared.length;
+    ok(inTap === 1 && /[/]s[/]/.test(shared[0]) && hits.length === before,
+      "the tap shares the link as its first act, with no fetch before it: " + JSON.stringify({ inTap, fetched: hits.slice(before) }));
+    ok(await until(() => hits.includes("POST /all/sent/" + u)) && await until(async () => (await links()) === 2)
+      && await until(() => /Sent[.] It signs them in once/.test(card().textContent) && card().querySelector(".tick input").checked),
+      "a share that goes through ticks the account sent and makes a fresh link for the next: " + JSON.stringify({ links: await links(), text: card() && card().querySelector(".anote").textContent }));
+    /* ---- how they got in, drawn ---- */
+    const story = () => ((card() && card().querySelector("[data-story]")) || {}).textContent || "";
+    ok(await until(() => /How they got in/.test(story()) && /Password/.test(story()) && /Sign-in link/.test(story()) && /on iPhone, Safari/.test(story())
+      && /on Windows computer, Edge/.test(story())) && !story().includes(IP),
+      "How they got in lists each way in with the device it was used on, and no address: " + JSON.stringify(story()));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password
@@ -16306,7 +16427,7 @@ await (async () => {
       const open88 = (code) => { const r = [...D88.querySelectorAll("#rlist [data-u]")].find((x) => x.textContent.includes(code));
         if (r) r.dispatchEvent(new W88.Event("click", { bubbles: true })); return D88.querySelector("#aopen .scard"); };
       const bare = open88("CX0-BB");
-      const bareLink = bare && [...bare.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
+      const bareLink = bare && [...bare.querySelectorAll("button")].find((b) => b.textContent === "Send a sign-in link");
       /* HIS QUESTION OF 23 SEP 2026: the account is one live document, so nothing on this panel may
          speak of an issue, and a username with nothing behind it says so and offers no sign-in link */
       ok(!!bare && /Made at the next laptop update./.test(bare.textContent) && !!bareLink && bareLink.disabled,
@@ -16314,15 +16435,14 @@ await (async () => {
       ok(!/issue/i.test(D88.getElementById("oAccts").textContent),
         "and Accounts never says issue: " + JSON.stringify((D88.getElementById("oAccts").textContent.match(/.{0,30}issue.{0,30}/i) || [""])[0]));
       const cardEl = open88("CX0-AA");
-      ok(!!cardEl && /CX0-AA/.test(cardEl.textContent) && /3 orders, RM 420.00/.test(cardEl.textContent) && !!cardEl.querySelector("canvas"),
+      ok(!!cardEl && /CX0-AA/.test(cardEl.textContent) && /3 orders, RM 420.00/.test(cardEl.textContent),
         "an account's card carries its totals and its code");
-      const liveLink = [...cardEl.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
-      ok(!!liveLink && !liveLink.disabled, "and an account's sign-in link is on");
+      /* S9 9.3: Copy message left with the Send card; the account's one filled control is Send a sign-in link */
+      const liveLink = [...cardEl.querySelectorAll("button")].find((b) => b.textContent === "Send a sign-in link");
+      ok(!!liveLink && liveLink.classList.contains("salt-pill") && cardEl.querySelectorAll(".salt-pill").length === 1,
+        "and an account's Send a sign-in link is its one filled control");
       const buttons = [...cardEl.querySelectorAll("button")];
-      const msgBtn = buttons.find((b) => b.textContent === "Copy message"), pwBtn = buttons.find((b) => b.textContent === "Copy password");
-      msgBtn.dispatchEvent(new W88.Event("click", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 20));
-      ok(copied === card.msg && !copied.includes(PW88), "Copy message copies the message, which carries no password");
+      const pwBtn = buttons.find((b) => b.textContent === "Copy password");
       pwBtn.dispatchEvent(new W88.Event("click", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 900));
       ok(copied === PW88, "Copy password opens the sealed password with the master and copies it: " + (copied === PW88));
@@ -17454,7 +17574,7 @@ await (async () => {
     D.querySelector('button[data-m="accounts"]').click();
     const cardOf = (x) => { const r = D.querySelector('#rlist [data-u="' + x + '"]'); if (!r) return null; r.click();
       return [...D.querySelectorAll("#aopen .scard")].find((k) => k.textContent.includes(x)); };
-    const btnOf = (x) => { const k = cardOf(x); return k && [...k.querySelectorAll("button")].find((b) => b.textContent === "Show a code"); };
+    const btnOf = (x) => { const k = cardOf(x); return k && [...k.querySelectorAll("button")].find((b) => /^Show a code/.test(b.textContent)); };
     ok(await until(() => !!btnOf(u) && !!btnOf(ghost)) && btnOf(ghost).disabled && !btnOf(u).disabled,
       "each account's card carries Show a code, switched off where no account stands behind the username");
     const btn = btnOf(u);
@@ -22363,7 +22483,7 @@ await (async () => {
     await new Promise((r) => setTimeout(r, 40));
     ok(seen.length === 0 && /Tap again/.test(btn().textContent), "one tap only asks, on the button itself, and sends nothing");
     btn().click();
-    ok(await until(() => seen.length === 1) && seen[0].u === u && await until(() => /Signed out everywhere|Nothing was signed in/.test(btn().textContent)),
+    ok(await until(() => seen.length === 1) && seen[0].u === u && await until(() => /Signed out everywhere|Nothing was signed in/.test(card().textContent)),
       "and the second signs the account out everywhere: " + JSON.stringify(seen));
   } finally { globalThis.fetch = realFetch; if (win) { try { win.close(); } catch (e) { /* best effort */ } } }
 })();

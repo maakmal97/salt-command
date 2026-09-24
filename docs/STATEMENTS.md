@@ -825,8 +825,16 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
 - **Accounts** (S9 9.2) is one list for what Send and Review were: the system's Inbox row an account, chips
   for where it stands, when and how it was last opened, alerts on (the `push:` keys, counted by
   `alertsOn`), refused at an address and no account; a search and filters (Not sent, Not opened, Owes, Refused, No
-  account) above it; a row opens the account's card (Send's, with stage 3's Show a code and Sign out everywhere
-  beside View as them), beside the list from 1080px.
+  account) above it; a row opens the account, beside the list from 1080px.
+- **An account** (S9 9.3, the plan's f13): its code, username, chips and totals; ONE filled **Send a sign-in link**,
+  its link made as the account opens (`makeLink`, kept by username in `madeLink` with Needs you's), so the tap's first
+  act is the share sheet (or, with none, the clipboard) and no derivation or fetch sits before it; a share that goes
+  through ticks the account sent and makes a fresh link. Beside it Show a code, in person; View as them; Copy password;
+  Sign out everywhere, on a second tap. Then **How they got in** (`GET /all/account/<username>`): the last ten ways in
+  (link, code scanned or typed, password), each with its moment and the device in the site's own words (`deviceOf`
+  in `stmt/signin.js`, from the browser's description at that open: "iPhone, Safari", never an address or a version),
+  kept by `markSeen` in `seen:<username>`'s `log`; a remembered phone coming back is not a way in. Share and Copy
+  message, and the QR of the username's address, left with the Send card.
 - **View as them** (S9 9.5) opens the account's own page under the master, read only: its orders and an
   associate's links come from `GET /all/orders/<username>` behind the prefix's Access check, and nothing on it
   places, pays or sends. The bar says "Viewing as <username>, read only" and its one control is Back to

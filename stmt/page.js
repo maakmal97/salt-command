@@ -277,7 +277,6 @@ body.ended>*:not(#aEnded){display:none}
 .afil{display:flex;flex-wrap:wrap;gap:8px}
 .alist{display:flex;flex-direction:column;gap:8px}
 .alist .salt-inbox-row__title{gap:6px}
-#aopen .scard{margin:0}
 .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 @media (min-width:1080px){
   .gate.adm{max-width:1180px;margin-top:24px;display:flex;gap:28px;align-items:flex-start;padding-bottom:48px}
@@ -333,27 +332,25 @@ button.salt-approve__party{display:inline-flex;align-items:center;min-height:var
 .mtest{margin-top:18px;padding-top:14px;border-top:1px solid var(--salt-line)}
 .mtest p.lead{margin:0 0 10px;color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.7}
 .mtest .btn{margin-top:0}
-/* SEND STATEMENT (v688): a card an account, in the same material as a guest link's card. The
-   password's button is the ember one, because it is the one thing on the page that must not be
-   tapped by accident, and a card that has gone out fades rather than leaving the list. */
-.scard{border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-glass);
-  padding:14px 16px;margin:12px 0 0}
-.scard.done{opacity:.55}
-.scard .srow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
-  font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text)}
-.scard .srow .un{color:var(--salt-brass);letter-spacing:.08em;font-size:var(--salt-text-xs)}
-.scard .tot,.scard .op{margin:6px 0 0;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);
-  color:var(--salt-text-muted);letter-spacing:.04em}
-.scard .qrw{display:flex;gap:12px;align-items:center;margin:12px 0 0}
-.scard .qrw canvas{border-radius:var(--salt-radius-sm);flex:0 0 auto;image-rendering:pixelated}
-.scard .qrn{margin:0;font-size:var(--salt-text-xs);color:var(--salt-text-muted);line-height:1.6}
-.scard .grow{flex-wrap:wrap}
-.scard .grow button{flex:1 0 46%}
-.scard .grow button.pw{border-color:rgba(212,105,76,.45);color:var(--salt-ember)}
-.scard .grow button[disabled]{opacity:.45;cursor:default}
-.scard .tick{display:flex;align-items:center;gap:8px;margin-top:12px;min-height:var(--salt-tap);
+/* S9 9.3: AN ACCOUNT, as a row opens it (the plan's f13): the code large and the username under it, the chips, the one
+   filled Send a sign-in link across the column with its answer under it, the other ways two by two with theirs, the
+   Sent tick, then how they got in. The two quiet ways that must not be tapped by accident are the system's danger ghost. */
+.acct{display:flex;flex-direction:column;gap:12px}
+.acct .ahead h2{margin:0;font-size:var(--salt-text-2xl);line-height:1.15;overflow-wrap:anywhere}
+.acct .ahead .un{display:block;margin-top:4px;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
+  letter-spacing:.06em;color:var(--salt-text-muted)}
+.acct .achips{margin:0}
+.acct .atot{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.acct .apill{width:100%;margin-top:4px}
+.agrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.agrid .salt-ghost{width:100%;text-align:center}
+.anote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.anote:empty{display:none}
+.anote.bad{color:var(--salt-ember)}
+.acct .tick{display:flex;align-items:center;gap:8px;align-self:flex-start;min-height:var(--salt-tap);min-width:var(--salt-tap);
   font-size:var(--salt-text-sm);color:var(--salt-text-muted);cursor:pointer}
-.scard .tick input{width:18px;height:18px;accent-color:var(--salt-verdigris)}
+.acct .tick input{width:18px;height:18px;accent-color:var(--salt-verdigris)}
+.astory{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 /* the way back is a quiet line, not a second filled control: the page has one of those and it is
    the one that opens an account */
 button[data-back]{display:inline-flex;align-items:center;min-height:var(--salt-tap);margin:0;padding:0;

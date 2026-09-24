@@ -73,6 +73,27 @@ export async function pointAt(env, u, key, fields, ttl) {
 }
 export const unpoint = async (env, u, key) => env.STMT.delete(devPrefix(u) + (await idOf(key)));
 
+/* S9 9.3: WHAT A DEVICE IS CALLED, read off its browser's own description at the moment it opened, in the site's own
+ * words: a kind of device and a browser, "iPhone, Safari", "Android phone, Chrome", "Windows computer, Edge". Nothing
+ * is copied from the description, so no version, address or anything typed is ever kept, and a description this does
+ * not know is "A phone" or "A computer". `kind` is phone, tablet or computer, for the mark drawn beside it. */
+export function deviceOf(ua) {
+  const s = String(ua || "");
+  let dev, kind = "computer";
+  if (/iPhone|iPod/.test(s)) { dev = "iPhone"; kind = "phone"; }
+  else if (/iPad/.test(s) || (/Macintosh/.test(s) && /Mobile[/]/.test(s))) { dev = "iPad"; kind = "tablet"; }
+  else if (/Android/.test(s)) { kind = /Mobile/.test(s) ? "phone" : "tablet"; dev = "Android " + kind; }
+  else if (/CrOS/.test(s)) dev = "Chromebook";
+  else if (/Windows/.test(s)) dev = "Windows computer";
+  else if (/Macintosh|Mac OS X/.test(s)) dev = "Mac";
+  else if (/Linux/.test(s)) dev = "Linux computer";
+  else if (/Mobi/.test(s)) { dev = "A phone"; kind = "phone"; }
+  else dev = "A computer";
+  const app = /SamsungBrowser/.test(s) ? "Samsung Internet" : /Edg(e|A|iOS)?[/]/.test(s) ? "Edge"
+    : /Firefox[/]|FxiOS/.test(s) ? "Firefox" : /Chrome[/]|CriOS/.test(s) ? "Chrome" : /Safari[/]/.test(s) ? "Safari" : "";
+  return { label: dev + (app ? ", " + app : ""), kind };
+}
+
 /* S3 3.3, 24 SEP 2026: NOTHING IS SPENT UNTIL CONTINUE, AND A LOST ANSWER IS NOT A LOST LINK. The page
  * asks first which account a link opens (peekSignin), which spends nothing, so a preview or an in-app
  * view that runs the page cannot use it up; only the Continue tap burns it. The page carries a nonce it

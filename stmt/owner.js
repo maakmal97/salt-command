@@ -92,15 +92,6 @@ export const OWNER_JS = `
     var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(e.iv)}, key, b64d(e.ct));
     return new TextDecoder().decode(pt);
   }
-  function qrCanvas(rows){
-    var n=rows.length, box=4, pad=4, size=(n+pad*2)*box;
-    var c=document.createElement('canvas'); c.width=size; c.height=size;
-    c.style.width='104px'; c.style.height='104px';
-    var x=c.getContext('2d');
-    if(x){ x.fillStyle='#f2f4f5'; x.fillRect(0,0,size,size); x.fillStyle='#05080a';
-      for(var r=0;r<n;r++) for(var k=0;k<n;k++) if(rows[r][k]==='1') x.fillRect((k+pad)*box,(r+pad)*box,box,box); }
-    return c;
-  }
   /* THE ACCOUNT'S KEY, WRAPPED UNDER A FRESH ONE, for a link or a hand-over: opened HERE under the master and
      wrapped under a key minted here, so the Worker sees a wrap and a key and never the account's own key.
      CHARACTER CLASSES, NOT ESCAPES: this file is spliced into a template literal, where a backslash before
@@ -202,46 +193,120 @@ export const OWNER_JS = `
       wait.className='salt-code__error'; wait.textContent='Could not make a code: '+e.message;
     }
   }
-  function sendCard(a){
-    var card=el('div','scard'+(a.sent?' done':''));
-    var head=el('div','srow');
-    head.appendChild(el('b',null,a.test?'Test account':(a.code||a.username)));
-    head.appendChild(el('span','un',a.username));
-    card.appendChild(head);
-    card.appendChild(el('p','tot',a.test?'Counts nowhere; nothing on the book is behind it.':(a.account===false?waitLine():a.tot)));
-    card.appendChild(el('p','op',openedLine(a)+(a.sent?' \\u00b7 sent '+stampDay(a.sent):'')));
-    /* 24 SEP 2026: A USERNAME WITH NO ACCOUNT BEHIND IT has nothing to share, copy or open: the
-       message would say "Your account is ready to use" over an account that is not there, and Open
-       could only be refused. All four go off together, each saying why; the card's line says how to mend it.
-       UX9: and it draws no code, which opens the address Share would have sent, under a caption offering
-       the Sign-in link that is off */
-    var noAcct=a.account===false, why='No account behind this username yet';
-    if(!noAcct){
-      var qw=el('div','qrw'); qw.appendChild(qrCanvas(a.qr||[]));
-      qw.appendChild(el('p','qrn','The code opens their page with the username filled in. Sign-in link sends one that opens it outright, once.'));
-      card.appendChild(qw);
-    }
-    var row=el('div','grow');
-    var share=el('button',null,'Share'); share.type='button';
-    if(noAcct){ share.disabled=true; share.title=why; }
-    share.addEventListener('click', async function(){
-      try{
-        if(navigator.share) await navigator.share({text:a.msg});
-        else { await navigator.clipboard.writeText(a.msg); share.textContent='Message copied'; }
-      }catch(e){ /* a share the reader dismissed is not a fault */ }
-      setTimeout(function(){ share.textContent='Share'; }, 1600);
+  /* ---- AN ACCOUNT (S9 9.3, the plan's f13) ----------------------------------------------------------
+     What a row opens: its code and username, the chips, ONE filled Send a sign-in link with its answer under it, and
+     beside it the other ways, Show a code in person, View as them, Copy password and Sign out everywhere; then how
+     they got in. THE LINK IS MADE AS THE ACCOUNT OPENS (the plan's must-not-ship list: never a key derivation and a
+     fetch inside the share's tap), so the tap shares and does nothing before it. It is kept by username with Needs
+     you's (madeLink), so a redraw, or the same account's card on Needs you, never makes a second; a share that goes
+     through ticks the account sent and makes a fresh one for the next. A username with no account makes nothing and
+     posts nothing, and every control says why it is off. The password is opened on its own tap, straight to the
+     clipboard, never into the page. */
+  var story={};
+  /* the link moved: every Send a sign-in link drawn for that account is painted from madeLink, including one a redraw
+     put in the place of the button that asked (a sheet read lands while the link is being made), and Needs you with it */
+  function paintPill(b){
+    var m=madeLink[b.getAttribute('data-pill')]||{};
+    b.disabled=b.getAttribute('data-none')==='1'||!m.j;
+    b.textContent=m.busy?'Making the link...':'Send a sign-in link';
+    if(b.note){ b.note.textContent=m.note||''; b.note.className='anote'+(m.bad?' bad':''); }
+  }
+  function paintPills(u){ [].slice.call(document.querySelectorAll('[data-pill]')).forEach(function(b){ if(b.getAttribute('data-pill')===u) paintPill(b); }); }
+  function linkMoved(u){ paintPills(u); if(!mHome.hidden) drawNeeds(); }
+  function makeLink(a){
+    var u=a.username, m=madeLink[u]||(madeLink[u]={});
+    if(m.j||m.busy||a.account===false) return;
+    m.busy=true; m.bad=false;
+    mintLink(a).then(function(j){ m.j=j; m.busy=false; linkMoved(u); },
+      function(e){ m.busy=false; m.bad=true; m.note='Could not make a link: '+e.message; linkMoved(u); });
+  }
+  function sendPill(a, note, onSent){
+    var u=a.username, b=el('button','salt-pill salt-pill--md apill','Send a sign-in link'); b.type='button';
+    b.setAttribute('data-pill', u); b.note=note;
+    if(a.account===false){ b.setAttribute('data-none','1'); b.title='No account behind this username yet'; }
+    paintPill(b); makeLink(a);
+    b.addEventListener('click', function(){
+      var m=madeLink[u];
+      if(!m||!m.j) return;
+      var msg=m.j.msg, p;
+      /* the tap's first act, before anything that waits: the share sheet, or with none the clipboard */
+      try{ p=navigator.share?navigator.share({text:msg}).then(function(){ return 'sent'; })
+        :navigator.clipboard.writeText(msg).then(function(){ return 'copied'; }); }
+      catch(e){ p=Promise.reject(e); }
+      p.then(async function(how){
+        if(how==='copied'){ m.note='Copied. Paste it into a message to them, then tick Sent.'; m.bad=false; linkMoved(u); return; }
+        var said=madeLink[u]={note:'Sent. It signs them in once; the next tap sends a new one.'};
+        linkMoved(u);
+        try{ var r=await refs('/all/sent/'+u, {issue:sheetIssue, sent:true}); a.sent=r.sent; countSent(); drawRoster(); onSent(); }
+        catch(e){ said.note='Sent, but the tick did not save: '+e.message; said.bad=true; }
+        makeLink(a); linkMoved(u);
+      }, function(){ m.note=navigator.share?'Not shared. Tap Send a sign-in link again.':'Not copied: this browser refused the clipboard.'; m.bad=true; linkMoved(u); });
     });
-    var copy=el('button',null,'Copy message'); copy.type='button';
-    if(noAcct){ copy.disabled=true; copy.title=why; }
-    /* 24 SEP 2026: THE WRITE IS AWAITED. writeText answers with a promise, so a refusal never reached
-       the catch and the button said Copied over an empty clipboard. */
-    copy.addEventListener('click', async function(){
-      try{ await navigator.clipboard.writeText(a.msg); copy.textContent='Copied'; }catch(e){ copy.textContent='Copy failed'; }
-      setTimeout(function(){ copy.textContent='Copy message'; }, 1600);
+    return b;
+  }
+  /* HOW THEY GOT IN (/all/account/<u>): each way in, newest first, with its moment and the kind of device it was used
+     on, as the browser described itself then, never an address; a password refused at an address stands above them */
+  var HOWW={link:'Sign-in link', key:'Code, scanned', code:'Code, typed', password:'Password'};
+  function lineRow(label, value, flag){
+    var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), v=el('span','salt-ledger__value');
+    l.appendChild(el('span','salt-ledger__label',label));
+    if(value) v.appendChild(value);
+    l.appendChild(v); r.appendChild(l);
+    if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
+    return r;
+  }
+  function onWhat(where){ return where?' on '+String(where).replace(/^A /,'a '):''; }
+  function drawStory(box, a){
+    var s=story[a.username];
+    box.textContent='';
+    box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','How they got in'));
+    var list=el('div','salt-ledger salt-ledger--plain'), L=a.locked;
+    if(L) list.appendChild(lineRow('Password', chip('alarm','Refused'),
+      'Ten wrong '+(L.from>1?'from each of '+L.from+' addresses':'from one address')+(L.until?', shut there till '+hm(L.until):'')+'.'));
+    var log=(s&&s.log)||[];
+    log.forEach(function(x){
+      list.appendChild(lineRow(HOWW[x.how]||'Signed in', x.how==='password'?null:chip('verdigris','Used'), dayMon(x.at)+', '+hm(x.at)+onWhat(x.where)));
     });
-    var pwb=el('button','pw','Copy password'); pwb.type='button';
-    if(!a.pwMaster){ pwb.disabled=true; pwb.title='Not sealed yet: run tools/stmt-seal.mjs on the laptop'; }
-    else pwb.addEventListener('click', async function(){
+    if(!s) list.appendChild(lineRow('Reading how they got in.', null, ''));
+    else if(s.err) list.appendChild(lineRow('Not read', null, s.err));
+    else if(!log.length) list.appendChild(a.seen&&a.seen.opens
+      ?lineRow('Last opened', null, dayMon(a.seen.last)+(howOf(a.seen)?', '+howOf(a.seen):'')+'. The ways in before 25 Sep were not kept.')
+      :lineRow('Not opened yet', null, a.sent?'Sent '+dayMon(a.sent)+'.':''));
+    box.appendChild(list);
+  }
+  async function loadStory(a){
+    var u=a.username, j=null, err='';
+    try{ j=await refs('/all/account/'+encodeURIComponent(u)); }catch(e){ err=e.message; }
+    story[u]=j?{log:j.log||[]}:{err:err};
+    [].slice.call(document.querySelectorAll('[data-story]')).forEach(function(b){ if(b.getAttribute('data-story')===u) drawStory(b, a); });
+  }
+  function acctCard(a){
+    var u=a.username, none=a.account===false, why='No account behind this username yet';
+    var c=el('section','acct scard'); c.setAttribute('data-acct', u);
+    var h=el('div','ahead srow');
+    h.appendChild(el('h2',null,a.test?'Test account':(a.code||u)));
+    h.appendChild(el('span','un',u));
+    c.appendChild(h);
+    var cs=el('div','achips');
+    function chips(){ cs.textContent=''; if(sheet) chipsOf(a).forEach(function(x){ cs.appendChild(x); }); }
+    chips(); c.appendChild(cs);
+    if(a.test) c.appendChild(el('p','atot','Counts nowhere; nothing on the book is behind it.'));
+    else if(none) c.appendChild(el('p','atot',waitLine()));
+    else if(a.tot) c.appendChild(el('p','atot',a.tot));
+    var box=document.createElement('input');
+    var pn=el('p','anote'); pn.setAttribute('role','status');
+    c.appendChild(sendPill(a, pn, function(){ box.checked=!!a.sent; chips(); }));
+    c.appendChild(pn);
+    var grid=el('div','agrid'), gn=el('p','anote'); gn.setAttribute('role','status');
+    var hob=ghost('Show a code, in person'), open=ghost('View as them'), pwb=ghost('Copy password'), sob=ghost('Sign out everywhere');
+    pwb.classList.add('salt-ghost--danger'); sob.classList.add('salt-ghost--danger');
+    [hob, open, pwb, sob].forEach(function(b){ if(none){ b.disabled=true; b.title=why; } grid.appendChild(b); });
+    if(!none&&!a.pwMaster){ pwb.disabled=true; pwb.title='Not sealed yet: run tools/stmt-seal.mjs on the laptop'; }
+    hob.addEventListener('click', function(){ if(!none) showHandover(a, hob); });
+    /* S9 9.5: View as them, their own page, read only */
+    open.addEventListener('click', function(){ openAcct(a); });
+    pwb.addEventListener('click', async function(){
+      if(none||!a.pwMaster) return;
       pwb.disabled=true; pwb.textContent='Opening...';
       try{
         var pw=await unseal(OWNER.master, a.pwMaster);
@@ -251,66 +316,33 @@ export const OWNER_JS = `
       }catch(e){ pwb.textContent='Could not open it'; }
       setTimeout(function(){ pwb.textContent='Copy password'; pwb.disabled=false; }, 2200);
     });
-    /* v710: A LINK THAT SIGNS THEM IN, so no message carries a password at all (his instruction of
-       18 Sep 2026). The content key is opened HERE, under the master, wrapped under a token minted
-       here, and only the token's hash and that wrap reach the Worker; the finished words come back
-       from the one copy of them. MINTED ON A TAP, never on a draw: drawing the panel would write a
-       record per account on every page load and burn links nobody sent. */
-    var slb=el('button','pw','Sign-in link'); slb.type='button';
-    /* no record means nothing to open under the master, so the link could only fail (23 Sep 2026) */
-    if(noAcct){ slb.disabled=true; slb.title=why; }
-    slb.addEventListener('click', async function(){
-      if(a.account===false || (!a.pwMaster && !a.username)) return;
-      slb.disabled=true; slb.textContent='Making it...';
-      var made=false;
-      try{
-        var j=await mintLink(a);
-        made=true;
-        /* 24 SEP 2026: ONCE IT IS MADE, A FAILURE IS NOT "COULD NOT MAKE ONE". A share sheet he closed
-           rejects too, and the link was already minted; it goes to the clipboard instead, and the
-           button says which of the three happened. */
-        var sent=false;
-        if(navigator.share){ try{ await navigator.share({text:j.msg}); sent=true; }catch(e){ sent=false; } }
-        if(sent) slb.textContent='Link sent';
-        else { await navigator.clipboard.writeText(j.msg); slb.textContent='Link made and copied'; }
-      }catch(e){ slb.textContent=made?'Link made, not copied':'Could not make one'; }
-      setTimeout(function(){ slb.textContent='Sign-in link'; slb.disabled=false; }, 2200);
-    });
-    var hob=el('button',null,'Show a code'); hob.type='button';
-    if(noAcct){ hob.disabled=true; hob.title=why; }
-    hob.addEventListener('click', function(){ if(a.account!==false) showHandover(a, hob); });
-    /* S3 FIX, 24 SEP 2026: SIGN OUT EVERYWHERE (fold 9.4's server half). A forwarded link or a lost phone stays signed
-       in while it is used, so this ends every phone and session on the account; a second tap within four seconds says
-       yes, and a new link or a code then signs them back in */
-    var sob=el('button',null,'Sign out everywhere'); sob.type='button';
-    if(noAcct){ sob.disabled=true; sob.title=why; }
+    /* SIGN OUT EVERYWHERE, on a second tap within four seconds: a forwarded link or a lost phone stays signed in while
+       it is used, so this ends every phone and session on the account, and a new link or a code signs them back in */
     var soArmed=null;
     sob.addEventListener('click', async function(){
-      if(a.account===false) return;
+      if(none) return;
       if(!soArmed){ sob.textContent='Tap again to sign them out'; soArmed=setTimeout(function(){ soArmed=null; sob.textContent='Sign out everywhere'; }, 4000); return; }
       clearTimeout(soArmed); soArmed=null; sob.disabled=true; sob.textContent='Signing out...';
-      try{ var j=await refs('/all/signout', {u:a.username}); sob.textContent=j.ended?'Signed out everywhere':'Nothing was signed in'; }
-      catch(e){ sob.textContent='Could not sign out'; }
-      setTimeout(function(){ sob.textContent='Sign out everywhere'; sob.disabled=false; }, 2200);
+      try{ var j=await refs('/all/signout', {u:u}); gn.textContent=j.ended?'Signed out everywhere: '+j.ended+' ended.':'Nothing was signed in.'; gn.className='anote'; }
+      catch(e){ gn.textContent='Could not sign out: '+e.message; gn.className='anote bad'; }
+      sob.textContent='Sign out everywhere'; sob.disabled=false;
+      loadStory(a);
     });
-    /* S9 9.5: View as them, their own page, read only */
-    var open=el('button',null,'View as them'); open.type='button';
-    if(noAcct){ open.disabled=true; open.title=why; }
-    open.addEventListener('click', function(){ openAcct(a); });
-    row.appendChild(share); row.appendChild(copy); row.appendChild(slb); row.appendChild(hob); row.appendChild(pwb); row.appendChild(sob); row.appendChild(open);
-    card.appendChild(row);
+    c.appendChild(grid); c.appendChild(gn);
     var tick=el('label','tick');
-    var box=document.createElement('input'); box.type='checkbox'; box.checked=!!a.sent;
+    box.type='checkbox'; box.checked=!!a.sent; box.disabled=none;
     box.addEventListener('change', async function(){
       var want=box.checked;
       try{
-        var j=await refs('/all/sent/'+a.username, {issue:sheetIssue, sent:want});
-        a.sent=j.sent; card.className='scard'+(a.sent?' done':''); say(''); countSent(); drawRoster(); drawNeeds();
+        var j=await refs('/all/sent/'+u, {issue:sheetIssue, sent:want});
+        a.sent=j.sent; chips(); say(''); countSent(); drawRoster(); drawNeeds();
       }catch(e){ box.checked=!want; say(e.message,'bad'); }
     });
     tick.appendChild(box); tick.appendChild(el('span',null,'Sent'));
-    card.appendChild(tick);
-    return card;
+    c.appendChild(tick);
+    var st=el('div','astory'); st.setAttribute('data-story', u);
+    if(!none){ c.appendChild(st); drawStory(st, a); loadStory(a); }
+    return c;
   }
   /* the test account is not part of a send, so it is out of both halves of the count (v689). A tick
      recounts as well as a draw (24 Sep 2026): the header sat on its first figure while he ticked. */
@@ -427,11 +459,8 @@ export const OWNER_JS = `
     acctPane(aopen, a);
     try{ window.scrollTo(0,0); }catch(e){}
   }
-  /* an account as it opens: its chips, then Send's card */
-  function acctPane(box, a){
-    if(sheet){ var cs=el('div','achips'); chipsOf(a).forEach(function(c){ cs.appendChild(c); }); box.appendChild(cs); }
-    box.appendChild(sendCard(a));
-  }
+  /* an account as it opens (S9 9.3) */
+  function acctPane(box, a){ box.appendChild(acctCard(a)); }
   function setCount(m, n){ [].slice.call(document.querySelectorAll('[data-count="'+m+'"]')).forEach(function(c){ c.textContent=n?String(n):''; }); }
   /* ---- THE GUEST LINKS, on the same gated route -------------------------------------------
      Minted, listed and revoked over /all/refs; the Worker draws the QR and returns it as a data
@@ -650,7 +679,7 @@ export const OWNER_JS = `
       b.disabled=!!m.busy; b.textContent=m.busy?'Making it...':m.j?'Share the link':'Send a sign-in link'; note.textContent=m.note||'';
     }
     /* answered on this button, or on the one a redraw put in its place */
-    function after(){ if(b.isConnected) paint(); else drawNeeds(); }
+    function after(){ paintPills(u); if(b.isConnected) paint(); else drawNeeds(); }
     paint();
     b.addEventListener('click', async function(){
       var m=madeLink[u]||(madeLink[u]={});

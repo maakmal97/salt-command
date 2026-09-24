@@ -43,7 +43,7 @@ import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, linkWaiting, MAX_PER_ASSOC } from "./refs.js";
-import { SIGNIN_RE, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover, dropHandover, sessKey } from "./signin.js";
+import { SIGNIN_RE, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover, dropHandover, sessKey, deviceOf } from "./signin.js";
 import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE, ADMIN_ICON_PNG_B64 } from "./icons.js";
@@ -156,14 +156,21 @@ const REFUSED = "That username and password were not accepted.";
    under the master are not the customer's and are never counted. BEST EFFORT: the count gates nothing,
    and KV refuses a second write to one key inside a second, so a put that throws must never fail an
    open; on the link road the token is already burnt by then. */
-async function markSeen(env, u, rec, how) {
+/* S9 9.3: AND HOW THEY GOT IN, the last ten ways in (a link, a code, a password), each with its moment and the kind of
+   device it was used on, called from the browser's description at that moment (deviceOf) and never an address. A
+   remembered phone coming back is not a way in: it is on the account's list of phones and computers, with its last use. */
+const LOG_MAX = 10;
+async function markSeen(env, u, rec, how, request) {
   try {
     const seen = await env.STMT.get(SKEY(u), "json");
     const now = new Date().toISOString();
+    const log = Array.isArray(seen && seen.log) ? seen.log : [];
+    const d = deviceOf(request && request.headers.get("user-agent"));
     await env.STMT.put(SKEY(u), JSON.stringify({
       first: (seen && seen.first) || now, last: now,
       opens: ((seen && seen.opens) || 0) + 1,
-      how, issued: (rec && rec.issued) || null
+      how, issued: (rec && rec.issued) || null,
+      log: how === "remembered" ? log : [{ how, at: now, where: d.label, kind: d.kind }].concat(log).slice(0, LOG_MAX)
     }));
   } catch (e) { /* the next open counts */ }
 }
@@ -269,7 +276,7 @@ async function handleOpen(request, env) {
 
   /* Recorded so he can tell whether a statement was ever opened, which is the question he
      actually asks after sending thirty-seven of them. It gates nothing. */
-  if (!byMaster) await markSeen(env, u, rec, "password");
+  if (!byMaster) await markSeen(env, u, rec, "password", request);
 
   /* ONLY THE WRAP THAT MATCHED TRAVELS BACK, and the reason is the sharpest finding of the 04 Sep
      audit. This returned BOTH wraps to everyone. wrapMaster is the customer's content key sealed
@@ -450,7 +457,7 @@ async function handleRemember(request, env) {
   if (!rec || !rec.u) return json({ ok: false, error: REFUSED }, 401);
   const acct = await env.STMT.get("u:" + rec.u, "json");
   if (!acct) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); await unpoint(env, rec.u, key); return json({ ok: false, error: REFUSED }, 401); }
-  await markSeen(env, rec.u, acct, "remembered");
+  await markSeen(env, rec.u, acct, "remembered", request);
   /* S3 3.6, HIS DECISION D1 OF 24 SEP 2026: KEEP ME SIGNED IN RUNS THIRTY DAYS FROM THE LAST OPEN, not from the tick,
      so a customer who uses the page is never signed out by a calendar. Every open files the record again for thirty
      days, which is also the put that moves a record filed the old way under its hash (3.1). Best effort: a put that
@@ -501,7 +508,7 @@ async function handleSignin(request, env) {
   if (!rec) return json({ ok: false, error: REFUSED }, 401);
   const acct = await env.STMT.get("u:" + rec.u, "json");
   if (!acct) return json({ ok: false, error: REFUSED }, 401);
-  await markSeen(env, rec.u, acct, "link");
+  await markSeen(env, rec.u, acct, "link", request);
   const session = await openSession(env, rec.u, "link");
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
@@ -563,7 +570,7 @@ async function handleHandover(request, env, p, m) {
     try { await env.STMT.put(HO_SITE, String(siteN + 1), { expirationTtl: FAIL_TTL }); } catch (e) { /* the next miss counts */ }
     return json({ ok: false, error: REFUSED }, 401);
   }
-  await markSeen(env, rec.u, acct, rec.by);
+  await markSeen(env, rec.u, acct, rec.by, request);
   const session = await openSession(env, rec.u, rec.by);
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap, token: rec.token,
@@ -1203,6 +1210,18 @@ export default {
         if (!acct) return notFound();
         const refs = acct.assoc === true ? (await refsBy(env, u)).map((r) => mineOut(url.origin, r)) : [];
         return json({ ok: true, orders: await ordersOf(env, u), refs, max: MAX_PER_ASSOC });
+      }
+      /* S9 9.3: AN ACCOUNT'S OWN SCREEN, read as it opens: how they got in, each way in with its moment and the kind
+         of device, off the account's seen: record. Reading only. */
+      const acm = /^\/all\/account\/([^/]+)$/.exec(p);
+      if (acm) {
+        if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+        const u = normUser(acm[1]);
+        if (!u) return notFound();
+        const seen = await env.STMT.get(SKEY(u), "json");
+        const log = (seen && Array.isArray(seen.log) ? seen.log : [])
+          .map((x) => ({ how: String(x.how || ""), at: x.at || null, where: x.where || null, kind: x.kind || null }));
+        return json({ ok: true, log });
       }
       /* the associates' report card, written by the publish and read only here (v691) */
       if (p === "/all/assoc") {
