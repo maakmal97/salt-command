@@ -587,6 +587,8 @@ export function decideDesk(order, body, at) {
     const p = (order.payments || []).find((x) => x && x.claim === "waiting" && x.at === v.claim);
     if (!p) return { error: "no claim of theirs waits under that name", status: 409 };
     if (!isNum(v.amount) || Math.abs(v.amount - p.amount) > 0.004) return { error: "that claim is " + p.amount.toFixed(2) + ", not " + (isNum(v.amount) ? v.amount.toFixed(2) : "a figure"), status: 409 };
+    /* money he recorded another way since (the return leg, his cash) may already cover it: received, it would count twice */
+    if (v.kind === "received" && p.amount > dueOf(order) + 0.004) return { error: "only " + Math.max(0, dueOf(order)).toFixed(2) + " is owed on this order now, less than this claim: answer it not found", status: 409 };
     return { ev: { kind: "verdict", at, verdict: v.kind, claim: p.at, amount: p.amount } };
   }
   /* S11 11.6: NO REPLY NEEDED. A "thanks" had to be answered to leave his card. This answers it without a

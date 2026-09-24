@@ -27091,6 +27091,14 @@ await (async () => {
     && pays[1].claimOf === at2 && r3.queued.paid === 50 && O.orderWork(r3).length === 0,
     "received before it was queued, it is told by its own entry and never as a payment beside it, and that entry's mark moves the ledger's figure: "
     + JSON.stringify({ work: O.orderWork(r2), rc3, pays: pays.map((e) => e.payload.cash), q: r3.queued }));
+  /* money he recorded another way since (the return leg) covers what is owed: a claim received on top would count twice */
+  await O.customerMove(senv, U, o.id, "pay", { amount: 40 });
+  const at4 = (await O.allOrders(senv, true)).find((x) => x.id === o.id).payments.slice(-1)[0].at;
+  await O.deskMove(senv, U, o.id, { ledger: { paid: 100 } });
+  const twice = await O.deskMove(senv, U, o.id, { verdict: { kind: "received", claim: at4, amount: 40 } });
+  const r4 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
+  ok(twice.status === 409 && /answer it not found/.test(twice.error) && r4.paid === 100 && r4.claimed === 40,
+    "and a claim that money recorded since already covers is not received on top of it: " + JSON.stringify({ err: twice.error, paid: r4.paid, claimed: r4.claimed }));
 })();
 
 section("S6 6.6: a claim against the account, for money owed on rows he entered on the desk, is its own record, never an order, and reaches the desk");
