@@ -12128,6 +12128,7 @@ await (async () => {
       + "rules:boundaryScan().filter(function(x){return x.who==='CZ9-WO';}).map(function(x){return x.rule;}),"
       + "acts:actions().map(function(a){return a.title+' '+a.why;}).filter(function(t){return t.indexOf('CZ9-WO')>=0;}),"
       + "plans:observations().all.filter(function(o){return JSON.stringify(o).indexOf('CZ9-WO')>=0;}).map(function(o){return o.id;}),"
+      + "split:(function(){var S=approachSplit();return {chase:S.chase.map(function(x){return x.id;}),past:S.dueNow.concat(S.lapsing).map(function(x){return x.id;})};})(),"
       + "approach:phonePayloadBuild().people.approach.map(function(a){return a.id;}).indexOf('CZ9-WO')>=0,owedToYou:phonePayloadBuild().position.salt.owedToYou,"
       + "sig:sig?sig.read:null,op:F.opProfit,ecl:F.ecl,wOff:F.wOff,bad:R.badDebtRM,provJun:mo?+mo[1].provAR.toFixed(2):null,"
       + "party:pxParty('CZ9-WO').rows.map(function(r){return r.k+' '+r.v+' '+r.read;}),"
@@ -12148,8 +12149,12 @@ await (async () => {
       "it no longer holds the party's credit or breaks a credit rule: " + JSON.stringify([A.rules, B.rules]));
     ok(A.acts.some((t) => /^Chase CZ9-WO/.test(t)) && B.acts.length === 0 && A.claims === 1 && B.claims === 0,
       "Today chases it before and names the party nowhere after, and the Order book's claims drop it: " + JSON.stringify(B.acts));
-    ok(A.approach && !B.approach && A.plans.includes("promo:revive") && !B.plans.includes("promo:revive"),
-      "a party with a write-off is not put up for an approach on the phone or a message on Plans: " + JSON.stringify([A.plans, B.plans]));
+    /* v824: the Whiteboard's messages read approachSplit, so the party owing in A is a chase there, never a message; the
+       claim is that once written off it is nowhere in the split and on no message, which the split's approachable filter
+       decides. Until v824 the Whiteboard kept its own rule and A carried promo:revive for it. */
+    ok(A.approach && !B.approach && A.split.chase.includes("CZ9-WO")
+      && !B.split.chase.concat(B.split.past).includes("CZ9-WO") && !B.plans.some((id) => /^(cust:cadence|promo:revive)/.test(id)),
+      "a party with a write-off is not put up for an approach on the phone or a message on Plans: " + JSON.stringify([A.split, B.split, A.plans, B.plans]));
     ok(apprA.some((x) => x.indexOf("CZ9-WO") === 0) && apprB.length > 3 && !apprB.some((x) => x.indexOf("CZ9-WO") >= 0),
       "nor on the Customers page's board of who to approach next: " + apprA.length + " cards before, " + apprB.length + " after");
     ok(A.op === B.op && A.bad === B.bad && A.provJun === B.provJun && A.provJun >= 300 && !!A.sig && A.sig === B.sig,
@@ -20092,6 +20097,96 @@ await (async () => {
   const mon = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const call = books.filter((p) => { const d = new Date(v[p].plan.date); return v[p].plan.days >= 1 && v[p].callDry && v[p].callDry.indexOf("on " + d.getUTCDate() + " " + mon[d.getUTCMonth()] + ".") < 0; });
   ok(call.length === 0, "and Stock's call runs dry on that date, written as the card writes it: " + JSON.stringify(call.map((p) => [p, v[p].plan.date, String(v[p].callDry).slice(-60)])));
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
+section("v825: who is past their own habit is one split, and every page that asks reads it");
+await (async () => {
+  /* HIS REPORT OF 24 SEP 2026: the same question answered four ways (the board, the Clients tile and read, To do's row, the
+     Whiteboard) and two different names under "Chase first". Each reader is compared with approachSplit on every live book,
+     so the rule is pinned and not a day's figures. Each assertion was proved red by its own mutation, one at a time. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  function probe() {
+    const t = (e) => e ? (e.innerText || e.textContent).replace(/\s+/g, " ").trim() : "";
+    const obs = observations().all;
+    const c0 = obClaims()[0] || null;
+    return eachBook(function (p) {
+      const S = approachSplit(), past = S.dueNow.concat(S.lapsing);
+      switchTab("concentration");
+      const sec = document.querySelector(".sec.on");
+      const kpi = [].find.call(sec.querySelectorAll(".kpi"), (k) => t(k.querySelector(".l")) === "Due now");
+      const heads = [].map.call(sec.querySelectorAll(".aprh"), t);
+      const chip = sec.querySelector(".aprh.apch + .aprail .apchip");
+      const act = actions().find((a) => a.kind === "reconnect") || null;
+      const cad = obs.find((o) => o.id === "cust:cadence:" + p) || null;
+      const order = []; saleClaims(arList).sort(chaseOrder).forEach((c) => { const o = POSITION_ENGINE.ownerCode(c.who); if (order.indexOf(o) < 0) order.push(o); });
+      const recv = (consoOrderBlock().replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").match(/Chase first (\S+)/) || [])[1] || null;
+      return {
+        n: past.length, due: S.dueNow.length, lapse: S.lapsing.length, owe: S.chase.length,
+        dueRM: fmt0(S.dueRM), lapseRM: fmt0(S.lapseRM), rm: +(S.dueRM + S.lapseRM).toFixed(2),
+        far: past.filter((x) => { const pl = placeOf(x.id); return !!pl && !inMetro(pl); }).map((x) => ID(x.id)),
+        tileV: kpi ? t(kpi.querySelector(".v")) : null, tileN: kpi ? t(kpi.querySelector(".n")) : null,
+        read: t(sec.querySelector(".insight")), heads,
+        act: act ? { title: act.title, rm: act.rm, why: act.why } : null,
+        cad: cad ? { title: cad.title, rm: cad.rm } : null,
+        chase: S.chase.map((x) => x.id), order: order.filter((o) => S.chase.some((x) => x.id === o)),
+        chip: chip ? chip.firstChild.textContent.trim() : null,
+        recv: recv ? POSITION_ENGINE.ownerCode(recv) : null,
+        recvHere: !!c0 && arList.some((s) => s.customer === c0.who && dAge(s.date) === c0.d && +txAdvance(s).toFixed(2) === c0.g)
+      };
+    });
+  }
+  const v = JSON.parse(w.eval("JSON.stringify((" + probe.toString() + ")())"));
+  const books = Object.keys(v), live = books.filter((p) => v[p].n > 0);
+  ok(live.indexOf("salt") >= 0, "salt has names past their own habit, or this proves little: " + JSON.stringify(books.map((p) => [p, v[p].n])));
+  const tileOff = books.filter((p) => v[p].tileV !== String(v[p].due)
+    || (v[p].due && v[p].tileN.indexOf(v[p].dueRM + " of profit waiting") < 0)
+    || (v[p].lapse && v[p].tileN.indexOf(v[p].lapse + " lapsing") < 0) || (v[p].owe && v[p].tileN.indexOf(v[p].owe + " owe first") < 0));
+  ok(tileOff.length === 0, "the Clients tile is the split's due now, with its profit, the lapsing and the owing: " + JSON.stringify(tileOff.map((p) => [p, v[p].tileV, v[p].tileN, v[p].due, v[p].lapse, v[p].owe])));
+  const readOff = live.filter((p) => { const r = v[p].read;
+    return (v[p].due && (r.indexOf(v[p].due + (v[p].due === 1 ? " buyer is" : " buyers are") + " due now") !== 0 || r.indexOf(v[p].dueRM) < 0))
+      || (v[p].lapse && (r.indexOf(v[p].lapse + (v[p].due ? " lapsing" : (v[p].lapse === 1 ? " buyer is" : " buyers are") + " lapsing")) < 0 || r.indexOf(v[p].lapseRM) < 0)); });
+  ok(readOff.length === 0, "the Clients read states the same due now and lapsing, each with its RM: " + JSON.stringify(readOff.map((p) => [p, v[p].read])));
+  const row = (p, k, n, rm) => v[p].heads.some((h) => h.indexOf(k) === 0 && h.indexOf(" " + n + " name") > 0 && h.indexOf(rm) > 0);
+  const boardOff = live.filter((p) => (v[p].due && !row(p, "Due now", v[p].due, v[p].dueRM)) || (v[p].lapse && !row(p, "Lapsing", v[p].lapse, v[p].lapseRM)));
+  ok(boardOff.length === 0, "and the board's rows are the split's: " + JSON.stringify(boardOff.map((p) => [p, v[p].heads])));
+  const todoOff = live.filter((p) => !v[p].act || v[p].act.title.indexOf(v[p].n + " customer") !== 0 || v[p].act.rm !== v[p].rm);
+  ok(todoOff.length === 0 && books.every((p) => v[p].n || !v[p].act),
+    "To do's row counts the split's due now plus lapsing, never an owing name, worth their profit: " + JSON.stringify(books.map((p) => [p, v[p].n, v[p].rm, v[p].act && [v[p].act.title, v[p].act.rm]])));
+  const farBooks = live.filter((p) => v[p].far.length);
+  ok(farBooks.length >= 1 && farBooks.every((p) => v[p].act.why.indexOf(v[p].far.length + " of them out of area: " + v[p].far.join(", ")) >= 0),
+    "an out-of-area name is counted, as the board counts it, and named in the row's why: " + JSON.stringify(farBooks.map((p) => [p, v[p].far, v[p].act.why])));
+  const cadOff = live.filter((p) => !v[p].cad || v[p].cad.title.indexOf(v[p].n + (v[p].n === 1 ? " customer is" : " customers are")) !== 0 || v[p].cad.rm !== v[p].rm);
+  ok(cadOff.length === 0 && books.every((p) => v[p].n || !v[p].cad),
+    "the Whiteboard's item a book is the same count and RM: " + JSON.stringify(books.map((p) => [p, v[p].n, v[p].rm, v[p].cad])));
+  const chaseOff = books.filter((p) => JSON.stringify(v[p].chase) !== JSON.stringify(v[p].order) || (v[p].chase.length && v[p].chip !== v[p].chase[0]));
+  const here = books.filter((p) => v[p].recvHere && v[p].chase.indexOf(v[p].recv) >= 0);
+  ok(chaseOff.length === 0 && here.length >= 1 && here.every((p) => v[p].chip === v[p].recv),
+    "the board's Chase first runs in Receivables' order, so its first chip is the name Receivables' Chase first gives: " + JSON.stringify(books.map((p) => [p, v[p].chip, v[p].recv, v[p].chase, v[p].order])));
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
+section("v825: the restock plan's named dues are the board's, and a lot may mix tiers");
+await (async () => {
+  /* the named dues were a second list (lapsed at one gap, buckets apart); now the board's split. And a lot was one tier's
+     multiples only, so oil was offered 6 x 10 unit at RM 600 where 50 + 10 is RM 480. */
+  const { default: X } = await import("../engine/position.mjs");
+  const T = new Date("2026-09-24"), DAY = 86400000;
+  const rows = [];
+  for (let a = 1; a <= 60; a++) rows.push({ date: new Date(T.getTime() - a * DAY).toISOString().slice(0, 10), qty: 2.3 });
+  const plan = X.restockPlan({ rows, today: T, free: -24, tiers: [{ qty: 10, total: 100 }, { qty: 50, total: 380 }], leakPct: 0,
+    leadDays: 1, reviewDays: 9, dues: [] });
+  ok(plan.lot && plan.lot.qty < 100 && plan.lot.total < plan.lot.qty * 10 && (plan.lot.mix || []).length === 2 && plan.lot.won === undefined,
+    "a need between two tiers is met by a mix of them, cheaper than the small tier alone: " + JSON.stringify(plan.lot));
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const v = JSON.parse(w.eval("JSON.stringify(eachBook(function(p){var S=approachSplit(),r=restockFor(p);"
+    + "var want=[].concat(S.chase.filter(function(x){return x.dd&&!x.lapse;}),S.dueNow,S.soon,S.beyond).filter(function(x){return x.q>0;}).map(function(x){return x.id;}).sort();"
+    + "return {want:want,got:(r&&!r.empty?r.dues:[]).map(function(d){return d.id;}).sort(),lapse:S.lapsing.map(function(x){return x.id;})};}))"));
+  const bad = Object.keys(v).filter((p) => { const inH = v[p].got; return inH.some((id) => v[p].want.indexOf(id) < 0) || inH.some((id) => v[p].lapse.indexOf(id) >= 0); });
+  ok(Object.keys(v).some((p) => v[p].got.length > 0) && bad.length === 0,
+    "every name the plan counts as due is one the board has as owing, due or coming, never lapsing: " + JSON.stringify(bad.map((p) => [p, v[p]])));
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 

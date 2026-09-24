@@ -448,6 +448,19 @@ function restockPlan(S){
   const tiers=(S.tiers||[]).filter(t=>t&&+t.qty>0&&+t.total>0).map(t=>({qty:+t.qty,total:+t.total})).sort((a,b)=>a.qty-b.qty);
   const cands=[];
   tiers.forEach(t=>{for(let k=1;k<=1000;k++){const q=k*t.qty;if(q>d28.use+1e-9)break;if(q>=need-1e-9)cands.push(price(q,t));}});
+  /* v825: A LOT MAY MIX TIERS. Oil needed 53 unit under a 90 unit cap and was offered 6 x 10 unit for RM 600 when 50 + 10 is
+     RM 480: one tier's multiples were the only candidates. Every mix of two or more tiers inside the cap is scored the same way,
+     at its blended rate; `mix` lists it, largest tier first, and `tier` is the largest. */
+  if(tiers.length>1){
+    const cnt=new Array(tiers.length).fill(0);let seen=0;
+    const walkMix=(i,q,tot)=>{if(++seen>50000)return;
+      if(i===tiers.length){if(q>=need-1e-9&&cnt.filter(n=>n>0).length>1){const cov=div(q,perDay),rate=tot/q;
+          cands.push({qty:r2(q),total:r2(tot),rate:r2(rate),lots:cnt.reduce((a,n)=>a+n,0),tier:tiers[cnt.map((n,k)=>n>0?k:-1).filter(k=>k>=0).pop()].qty,
+            mix:tiers.map((t,k)=>({tier:t.qty,n:cnt[k]})).filter(x=>x.n>0).reverse(),cover:cov==null?null:+cov.toFixed(1),
+            score:+(rate*(1+leakDay*(cov==null?0:cov/2))).toFixed(4)});}return;}
+      for(let n=0;q+n*tiers[i].qty<=d28.use+1e-9;n++){cnt[i]=n;walkMix(i+1,q+n*tiers[i].qty,tot+n*tiers[i].total);}cnt[i]=0;};
+    walkMix(0,0,0);
+  }
   const best=l=>l.slice().sort((a,b)=>a.score-b.score||a.qty-b.qty)[0]||null;
   const smallest=t=>price(Math.max(1,Math.ceil((need-1e-9)/t.qty))*t.qty,t);
   let lot=best(cands);
@@ -459,11 +472,11 @@ function restockPlan(S){
   if(lot){
     const cheaper=tiers.filter(t=>t.total/t.qty<lot.rate-0.005).sort((a,b)=>b.total/b.qty-a.total/a.qty)[0];
     if(cheaper){
-      const alt=best(cands.filter(c=>c.tier===cheaper.qty))||smallest(cheaper);
+      const alt=best(cands.filter(c=>c.tier===cheaper.qty&&!c.mix))||smallest(cheaper);
       next=Object.assign(alt,{won:false,why:alt.qty>d28.use+1e-9?'overstock':'leak'});
     }else{
       const pricier=tiers.filter(t=>t.total/t.qty>lot.rate+0.005).sort((a,b)=>a.total/a.qty-b.total/b.qty)[0];
-      if(pricier){const alt=best(cands.filter(c=>c.tier===pricier.qty))||smallest(pricier);
+      if(pricier){const alt=best(cands.filter(c=>c.tier===pricier.qty&&!c.mix))||smallest(pricier);
         next=Object.assign({},lot,{won:true,why:'rate',over:alt});}
     }
   }
