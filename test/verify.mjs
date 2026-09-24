@@ -13554,7 +13554,7 @@ await (async () => {
   const wake = async (summary) => { const sw = runSw(summary), waits = []; sw.L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits); return sw.shown[0]; };
   const bOrd = await wake({ ok: true, pending: 2, refused: 0, countDue: [], orders: 1, placed: 1 });
   const bRow = await wake({ ok: true, pending: 2, refused: 0, countDue: [], orders: 0 });
-  ok(bOrd && bOrd.t === "New customer order" && /acknowledge/.test(bOrd.opt.body) && bOrd.opt.data.url === "./desk#orders"
+  ok(bOrd && bOrd.t === "New customer order" && /acknowledge/.test(bOrd.opt.body) && bOrd.opt.data.url === "./desk#orders/newest"
     && bRow && bRow.t === "Salt Command" && /2 rows waiting/.test(bRow.opt.body) && bRow.opt.data.url === "./",
     "an order waiting is the banner's title and opens Orders; without one the banner is as it was: " + JSON.stringify({ bOrd, bRow }));
   {
@@ -21920,7 +21920,7 @@ await (async () => {
   const bNews = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, news: "A customer says they paid" });
   const bPlain = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, placed: 2 });
   ok(bNews && bNews.t === "A customer says they paid" && /2 orders waiting on you/.test(bNews.opt.body)
-    && /1 row waiting for approval/.test(bNews.opt.body) && bNews.opt.data.url === "./desk#orders",
+    && /1 row waiting for approval/.test(bNews.opt.body) && bNews.opt.data.url === "./desk#orders/newest",
     "the banner leads with what they just did, and still carries what is waiting: " + JSON.stringify(bNews && bNews.opt.body));
   ok(bPlain && bPlain.t === "2 customer orders waiting",
     "and with no news it is the count, as it was: " + (bPlain && bPlain.t));
@@ -23268,7 +23268,7 @@ await (async () => {
     fetch: async () => ({ ok: true, json: async () => summ }) };
   vm.createContext(ctx); vm.runInContext(swSrc, ctx);
   const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits);
-  ok(shown[0] && shown[0].t === "A customer wrote" && shown[0].opt.data.url === "./desk#orders",
+  ok(shown[0] && shown[0].t === "A customer wrote" && shown[0].opt.data.url === "./desk#orders/newest",
     "so the banner says a customer wrote, and opens the card where he answers: " + JSON.stringify(shown[0] && shown[0].t));
 
   /* A PLACEMENT WITH A NOTE IS A NEW ORDER, whose first line is the note typed with it */
