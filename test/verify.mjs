@@ -19461,19 +19461,22 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => ticks.length > 0);
     d.querySelector('button[data-t="order"]').click();
-    await until(() => d.querySelectorAll("#pOrder .sayw input").length === 2);
-    const box = d.querySelectorAll("#pOrder .sayw input")[0];
+    /* S5 5.5: the order open, its thread part and its box held; a poll patches only a part that changed */
+    await until(() => d.querySelector('#pOrder [data-row="' + second + '"]'));
+    d.querySelector('#pOrder [data-row="' + second + '"]').click();
+    const box = d.querySelector('#pOrder input[data-say="' + second + '"]');
+    const thread = () => d.querySelector('#pOrder .oscreen [data-part="thread"]'), thread0 = thread();
     box.focus(); box.value = "half typed";
     await call("/desk/orders/" + un + "/" + second, { mark: { ledgerKey: "CX1-AB|2026-09-24|130", ack: "2026-09-24T02:00:00.000Z",
       sync: { state: "waiting", why: "the row is not on the book yet", at: "2026-09-24T02:00:00.000Z" } } }, D);
     const poll = ticks[ticks.length - 1];
     await poll();
-    ok(ticks.length > 0 && d.contains(box) && d.activeElement === box && box.value === "half typed",
-      "a mark the desk wrote on their order leaves the page alone: the thread box keeps its line and the cursor");
+    ok(ticks.length > 0 && d.contains(box) && d.activeElement === box && box.value === "half typed" && thread() === thread0,
+      "a mark the desk wrote on their order leaves the page alone: the thread is not drawn again, and the box keeps its line and the cursor");
     await call("/desk/orders/" + un + "/" + second, { message: "it is ready" }, D);
     await poll();
-    ok(!d.contains(box) && /it is ready/.test(d.getElementById("pOrder").textContent),
-      "while a change they can see, his answer, still redraws it, so the check above could have failed");
+    ok(thread() !== thread0 && /it is ready/.test(thread().textContent) && d.contains(box) && box.value === "half typed",
+      "while a change they can see, his answer, draws the thread again, so the check above could have failed, and the box is still left alone");
   } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
 })();
 
@@ -21182,6 +21185,75 @@ await (async () => {
     open(A);
     ok(other === "" && box().value === "Half a thought", "what is typed is kept for its own order, and only there: " + JSON.stringify([other, box().value]));
   } finally { if (release) release(); w.close(); }
+})();
+section("S5 5.5: the poll patches the order that changed, and never draws again what is being typed");
+await (async () => {
+  /* 24 SEP 2026, the Counter redesign's stage 5. A poll bringing any change to any order drew the whole tab again:
+     the order form, every order, and the box a line was being typed in, which v827 then refilled and refocused as
+     a new element. Driven by the page's own poll, shortened in the served HTML. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s55", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s55",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await C.encryptWith(ck, JSON.stringify({ week: { label: "21 Sep to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+      products: [{ product: "salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 90 }] }] })) };
+  const A = "20260924090000-aaaa", B = "20260923090000-bbbb", Cc = "20260901090000-cccc", D = "20260922090000-dddd";
+  const o = (id, x) => Object.assign({ id, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 90,
+    moved: 0, status: "acknowledged", history: [], msgs: [] }, x);
+  let phase = 0;
+  const list = () => [
+    o(A, { msgs: [{ at: "2026-09-23T02:00:00Z", by: "customer", text: "Before noon please" }].concat(phase ? [{ at: "2026-09-24T03:00:00Z", by: "desk", text: "It goes out Thursday." }] : []) }),
+    o(B, { status: phase ? "ready" : "acknowledged" }),
+    o(D, { total: 150, paid: phase > 1 ? 30 : 0, method: "transfer", account: "maybank" }),
+    o(Cc, { status: "done", moved: 1 })];
+  const html = landingPage(u, "n55", null), fast = html.replace(/var POLL_MS=[0-9]+/, "var POLL_MS=120");
+  const dom = new JSDOM(fast, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: list() } : { ok: true };
+      return { ok: true, status: 200, json: async () => j };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const row = (id) => d.querySelector('#pOrder [data-row="' + id + '"]');
+  const scr = () => d.querySelector("#pOrder .oscreen");
+  const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 30)); return f(); };
+  try {
+    ok(fast !== html, "the served page's poll is shortened, or this proves nothing about a poll");
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => row(A) && d.getElementById("oGo"));
+    d.querySelector('#tabs button[data-t="order"]').click();
+    d.querySelector("#pOrder .olater").click();
+    row(A).click();
+    const box = d.querySelector('#pOrder input[data-say="' + A + '"]'), form = d.getElementById("oGo"), rowC = row(Cc), rowA = row(A), head = d.querySelector('#pOrder .oscreen [data-part="head"]');
+    box.focus(); box.value = "Could it"; box.dispatchEvent(new w.Event("input", { bubbles: true })); box.setSelectionRange(5, 5);
+    phase = 1;
+    await until(() => /It goes out Thursday/.test(scr().textContent));
+    const line = [...d.querySelectorAll("#pOrder .oscreen .salt-bubble--theirs")].pop();
+    ok(!!line && /It goes out Thursday/.test(line.textContent) && !!line.querySelector(".salt-bubble__new") && /Ready to collect/.test(row(B).textContent),
+      "the poll brought his answer into the open order's thread, marked New, and the other order's new state onto its row");
+    ok(d.contains(box) && d.activeElement === box && box.value === "Could it" && box.selectionStart === 5,
+      "the box being typed in is the same box, with its words and its caret where they were");
+    ok(d.contains(form) && d.contains(rowC) && d.contains(rowA) && d.contains(head),
+      "and nothing that did not change was drawn again: the order form, a row that did not move and a part that reads the same");
+
+    /* a part that DOES change while its field has the focus: the amount being typed on an order whose payment moved */
+    d.querySelector("#pOrder .oback").click();
+    row(D).click();
+    const pay = [...scr().querySelectorAll(".oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
+    const amt = scr().querySelector('.oact input[type="number"]');
+    if (amt) { amt.focus(); amt.value = "40"; amt.dispatchEvent(new w.Event("input", { bubbles: true })); }
+    phase = 2;
+    await until(() => /Paid/.test((scr().querySelector('[data-part="money"]') || {}).textContent || ""));
+    ok(!!amt && /RM 30/.test(scr().querySelector('[data-part="money"]').textContent) && d.contains(amt) && d.activeElement === amt && amt.value === "40",
+      "the money moved and its lines say so, while the amount being typed keeps its field, its focus and its figure");
+  } finally { w.close(); }
 })();
 section("v753: he answers on the order, and the words are checked on the desk before they leave it");
 await (async () => {
@@ -23980,21 +24052,24 @@ await (async () => {
     };
   } });
   const w = dom.window, d = w.document;
-  const boxOf = (i) => [...d.querySelectorAll("#pOrder .pane")].filter((p) => p.querySelector(".state"))[i].querySelector(".sayw input");
+  const boxOf = (i) => d.querySelector('#pOrder input[data-say="' + ["oA", "oB"][i] + '"]');
   try {
     ok(fast !== html, "the served page's poll is shortened, or this proves nothing about a poll");
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 100 && !(d.querySelectorAll("#pOrder .sayw input").length === 2); i++) await new Promise((r) => setTimeout(r, 50));
+    /* S5 5.5: the order is opened on its own screen; the poll then patches it and never draws the box again */
+    for (let i = 0; i < 100 && !d.querySelector('#pOrder [data-row="oB"]'); i++) await new Promise((r) => setTimeout(r, 50));
+    d.querySelector('#pOrder [data-row="oB"]').click();
     const typed = boxOf(1);
     typed.focus(); typed.value = "Could it come on Fri"; typed.dispatchEvent(new w.Event("input", { bubbles: true }));
     typed.setSelectionRange(9, 9);
-    for (let i = 0; i < 100 && !/Fixture reply/.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+    const replied = () => /A reply for you/.test((d.querySelector('#pOrder [data-row="oA"]') || {}).textContent || "");
+    for (let i = 0; i < 100 && !replied(); i++) await new Promise((r) => setTimeout(r, 50));
     const now = boxOf(1);
-    ok(/Fixture reply/.test(d.getElementById("pOrder").textContent) && now !== typed,
-      "a poll brought a changed order and the orders were drawn again, so the box is a new element");
-    ok(now.value === "Could it come on Fri" && boxOf(0).value === "",
-      "the half-typed line is still in its own order's box, and only there: " + JSON.stringify([boxOf(0).value, now.value]));
+    ok(replied() && now === typed,
+      "a poll brought a changed order onto the list, and the box being typed in is the same element");
+    ok(now.value === "Could it come on Fri",
+      "the half-typed line is still in its own order's box: " + JSON.stringify(now.value));
     ok(d.activeElement === now && now.selectionStart === 9,
       "and the caret is back where it was, in that box: " + (d.activeElement && d.activeElement.getAttribute("data-say")) + " at " + now.selectionStart);
   } finally { w.close(); }

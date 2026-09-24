@@ -1792,17 +1792,48 @@ const CLIENT_JS = `
     var id=oShownId(), o=oFind(id), open=!!(draft.oOpen&&o), place=el('div','oplace'+(open?' o-open':''));
     place.id='oPlace';
     pOrder.classList.toggle('o-open',open);
-    var col=el('div','olistcol'); col.appendChild(el('h2',null,'Your orders')); col.appendChild(oList(id));
-    place.appendChild(col);
-    /* New is read against what this device had seen when the order was opened, and stays until it is left */
+    /* New is read against what this device had seen when the order was opened, and stays until it is left; the
+       list is drawn after the open order is seen, so its row does not call a reply on screen waiting */
     if(draft.oShown!==id){ draft.oShown=id; draft.oSince={}; }
     if(o&&!(id in draft.oSince)) draft.oSince[id]=seenMark(o);
-    if(o){ place.appendChild(oScreen(o)); seeIt(o); }
+    if(o) seeIt(o);
+    var col=el('div','olistcol'); col.appendChild(el('h2',null,'Your orders')); col.appendChild(oList(id));
+    place.appendChild(col);
+    if(o) place.appendChild(oScreen(o));
     return place;
   }
   function oDraw(){ var was=document.getElementById('oPlace'); if(was) was.replaceWith(oPlace()); }
+  /* S5 5.5: the orders that changed, patched where they stand. The list keeps every row that did not change and
+     whatever has the focus; the open order keeps any part holding the focus, and a part that reads the same is left
+     as it is, which is always the composer. Only an order opened or gone draws the place again. */
+  function oShape(list){ return [].map.call(list.children,function(x){ return x.getAttribute('data-row')||x.textContent; }).join('|'); }
+  function oSync(ids){
+    var place=document.getElementById('oPlace'); if(!place) return;
+    var shown=oShownId(), scr=place.querySelector('.oscreen'), sid=scr?scr.getAttribute('data-order'):'';
+    if(sid!==shown){ oDraw(); return; }
+    var ae=document.activeElement;
+    if(scr&&ids.indexOf(sid)>=0){
+      var o=oFind(sid);
+      seeIt(o);
+      Object.keys(OPARTS).forEach(function(k){
+        var p=[].filter.call(scr.children,function(c){ return c.getAttribute('data-part')===k; })[0];
+        if(!p||p.contains(ae)) return;
+        var n=OPARTS[k](o); n.setAttribute('data-part',k); n.hidden=!n.childNodes.length;
+        if(n.outerHTML!==p.outerHTML) p.replaceWith(n);
+      });
+    }
+    var was=place.querySelector('[data-olist]'), nl=oList(shown);
+    if(was&&oShape(was)!==oShape(nl)){
+      var fr=ae&&was.contains(ae)?ae.getAttribute('data-row'):null;
+      was.replaceWith(nl);
+      var fb=fr&&nl.querySelector('[data-row="'+fr+'"]'); if(fb) try{ fb.focus({preventScroll:true}); }catch(e){}
+    } else if(was) ids.forEach(function(id){
+      var r=was.querySelector('[data-row="'+id+'"]'), n=nl.querySelector('[data-row="'+id+'"]');
+      if(r&&n&&!r.contains(ae)&&r.outerHTML!==n.outerHTML) r.replaceWith(n);
+    });
+  }
   /* an order drawn open while the tab was elsewhere is seen when the tab is turned to */
-  tabs.addEventListener('click',function(){ var o=tab==='order'&&oFind(draft.oShown||''); if(o) seeIt(o); });
+  tabs.addEventListener('click',function(){ var o=tab==='order'&&oFind(draft.oShown||''); if(o){ seeIt(o); oSync([o.id]); } });
   function oOpen(id){ draft.oOpen=id; oDraw(); scrollClear(pOrder.querySelector('.oscreen')); }
   /* clear of the sticky bar, which would otherwise sit over what was opened */
   function scrollClear(n){
@@ -1918,10 +1949,19 @@ const CLIENT_JS = `
     if(r.status===401) return;   /* api() has said so in the bar */
     if(r.body.ok) orders=r.body.orders||[];
   }
-  async function refresh(){
-    var before=JSON.stringify(orders);
+  /* S5 5.5 (24 Sep 2026): A RE-READ PATCHES WHAT CHANGED AND NOTHING ELSE. It drew the whole tab again, the order
+     form and every order with it, so a poll bringing any change to any order took the box being typed in and the
+     caret with it (v827 put the words back; the element was still new). Now the orders are compared one by one,
+     and only the rows and the parts of the open order that changed are drawn again. */
+  async function oReread(){
+    var before={}; orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
     await loadOrders();
-    if(JSON.stringify(orders)!==before) drawOrder();
+    var changed=orders.filter(function(o){ return before[o.id]!==JSON.stringify(o); }).map(function(o){ return o.id; }),
+        gone=Object.keys(before).some(function(id){ return !oFind(id); });
+    if(changed.length||gone) oSync(changed);
+  }
+  async function refresh(){
+    await oReread();
     if(++bullN%6===0) await bullRead();   /* the bulletin, once a minute on an open page */
   }
 
@@ -1950,9 +1990,9 @@ const CLIENT_JS = `
         wantOrder=orderIn('#o='+(d.order||''));
         if(!session) return;   /* at the door: it opens once they are in */
         var mine=ticket;
-        await loadOrders();
+        await oReread();
         if(mine!==ticket) return;
-        drawOrder();
+        openWanted();
       });
   }catch(e){ /* a browser that will not listen still opens the page */ }
 
