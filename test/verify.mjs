@@ -14568,6 +14568,8 @@ await (async () => {
 })();
 section("S1 1.40: an associate with no sealed card yet still reaches their links");
 await (async () => {
+  /* S3 fix: a session is filed under its hash, so the page's own orders read is a digest away, and the jsdom this
+     laptop runs drops a closed window's document: each page is let finish that read before it is closed */
   /* 24 SEP 2026 (L44): the Card tab waited on a sealed card as well as the associate mark, and the links
      live inside it, so an associate the publish had not yet written a card for could never make or see
      a link, though v709 gates the links on the mark alone. Driven on their page against the real Worker. */
@@ -14614,7 +14616,7 @@ await (async () => {
     const DB = await signIn(B);
     ok(!DB.getElementById("tabs").hidden && DB.getElementById("tCard").hidden,
       "while a customer who is not an associate is still shown no Card tab at all");
-  } finally { for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
+  } finally { await new Promise((r) => setTimeout(r, 300)); for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
 })();
 section("S1 1.35 page: the associate's Copy link says Copy failed when the clipboard refuses");
 await (async () => {
@@ -18278,6 +18280,8 @@ await (async () => {
 })();
 section("S3 3.3: the link page spends nothing until Continue, names its account, sends an app's own browser to Safari or Chrome, and a lost answer is tried again for two minutes");
 await (async () => {
+  /* S3 fix: a session is filed under its hash, so the page's own orders read is a digest away, and the jsdom this
+     laptop runs drops a closed window's document: each page is let finish that read before it is closed */
   /* S3 3.3, 24 SEP 2026. The link burnt on load, so a preview that ran the page, an app's own browser or a
      dropped connection used it up and stranded a customer who had nothing else (the study's A8). */
   const W33 = (await import("../stmt/worker.js")).default;
@@ -18364,7 +18368,7 @@ await (async () => {
     ok(!plain.D.getElementById("tabs").hidden && plain.W.location.pathname === "/"
       && JSON.parse(await kv33.get("ot:" + (await S33.idOf(plain.t)))).spent,
       "Continue signs them in, spends the link and rewrites the address");
-  } finally { plain.W.close(); }
+  } finally { await new Promise((r) => setTimeout(r, 300)); plain.W.close(); }
 
   const wa = await drive("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 WhatsApp/2.24.1");
   const ig = await drive("Mozilla/5.0 (Linux; Android 14; SM-S911B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36 Instagram 330.0");
@@ -18391,10 +18395,12 @@ await (async () => {
     const spends = lost.posts.filter((p) => p.path === "/open-link" && !p.peek);
     ok(!lost.D.getElementById("tabs").hidden && spends.length === 2 && spends[0].nonce && spends[0].nonce === spends[1].nonce,
       "and Continue again opens it, the page asking with the nonce it spent it with");
-  } finally { lost.W.close(); }
+  } finally { await new Promise((r) => setTimeout(r, 300)); lost.W.close(); }
 })();
 section("S3 3.4: the sign-in link keeps the phone signed in with the door's own split key, lives three days, and its message says so with the username");
 await (async () => {
+  /* S3 fix: a session is filed under its hash, so the page's own orders read is a digest away, and the jsdom this
+     laptop runs drops a closed window's document: each page is let finish that read before it is closed */
   /* HIS D1 OF 24 SEP 2026. The link opened one visit and kept nothing, so a reload, a closed tab or a saved app
      stranded a customer who had no password in hand. It now remembers the phone exactly as the door's tick does:
      a device key in the browser, the content key wrapped under it on the site, neither opening anything alone. */
@@ -18464,7 +18470,7 @@ await (async () => {
     } catch (e) { opened34 = null; }
     ok(back.ok && back.u === u34 && !!opened34 && opened34.statements.length === 1,
       "and the site hands back a wrap that only the key this phone kept opens, to the account's own statement");
-  } finally { one.window.close(); }
+  } finally { await new Promise((r) => setTimeout(r, 300)); one.window.close(); }
   posts.length = 0;
   const two = await page("https://site.test/");
   try {
@@ -18473,7 +18479,7 @@ await (async () => {
     ok(!D.getElementById("barw").hidden && D.getElementById("gate").hidden && posts.some((x) => x.path === "/remember/open")
       && !posts.some((x) => x.path === "/open" || x.path === "/open-link"),
       "so the next visit opens with no link and no password: the remembered phone, as the door's tick leaves it");
-  } finally { two.window.close(); }
+  } finally { await new Promise((r) => setTimeout(r, 300)); two.window.close(); }
 
   /* ---- the words ---- */
   const msg = SEND34.signInMessage({ url: "https://site.test/s/" + t34, user: u34 });
@@ -19434,7 +19440,7 @@ await (async () => {
     await tap(reload);
     ok(!reload.D.getElementById("tabs").hidden && reload.st.posts.filter((p) => p.path === "/open-link").every((p) => p.nonce === kept),
       "and Continue there opens the account, every question carrying the tab's nonce");
-  } finally { reload.W.close(); }
+  } finally { await new Promise((r) => setTimeout(r, 300)); reload.W.close(); }
   const stranger = await open(t2, "nonceZZZZZZZZZZZZZZZZZZZ", false);
   try {
     ok(stranger.D.getElementById("link").hidden && /used already/.test(stranger.D.getElementById("msg").textContent),
