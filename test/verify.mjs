@@ -13540,6 +13540,45 @@ await (async () => {
     ok(![...d.querySelectorAll("#osheet .salt-insight")].some((x) => x.textContent === ONE), "and a collection's check does not, having no charge to explain");
   } finally { w.close(); }
 })();
+section("S4 4.5 fix: a redraw that takes away the tapped control keeps focus in the sheet, so Escape still closes it");
+await (async () => {
+  /* Found by the rig on 24 Sep 2026: Place order is gone once Sent draws, focus fell to the page behind the sheet, and
+     Escape, which the sheet listens for, closed nothing. Focus is put on the sheet itself when its control goes. */
+  const { landingPage: lpK } = await import("../stmt/page.js");
+  const CK = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcK } = await import("node:crypto");
+  const { JSDOM: JDK } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s45k", ck = await CK.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] }] };
+  const body = { ok: true, wrap: await CK.wrapKey(pass, ck), session: "sess-s45k", prices: await CK.encryptWith(ck, JSON.stringify(prices)),
+    env: await CK.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const dom = new JDK(lpK(u, "ns45k", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcK, configurable: true }); } catch (e) { win.crypto = wcK; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      if (p === "/open") return { ok: true, status: 200, json: async () => body };
+      if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      if (p === "/orders" && m === "POST") return { ok: true, status: 200, json: async () => ({ ok: true, order: { id: "20260924040000-s45k", product: "salt", qty: 1, status: "placed", at: "2026-09-24T04:00:00Z", total: 100, history: [], msgs: [] } }) };
+      return { ok: false, status: 404, json: async () => ({ ok: false }) };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click(); d.getElementById("oGo").click();
+    const pl = d.getElementById("oPlace"); pl.focus(); pl.click();
+    for (let i = 0; i < 100 && !/Order sent/.test((d.getElementById("osheet") || {}).textContent || ""); i++) await new Promise((r) => setTimeout(r, 30));
+    await new Promise((r) => setTimeout(r, 60));
+    const at = d.activeElement;
+    ok(!!d.getElementById("osheet") && d.getElementById("osheet").contains(at), "with Place gone, focus is on the sheet and not the page behind it: " + (at && at.tagName));
+    at.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    ok(!d.getElementById("osheet"), "so Escape closes it");
+  } finally { w.close(); }
+})();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {
   /* HIS INSTRUCTION OF 16 SEP 2026: "The label to them is a very subtle tier level, in symbol and colour (for each tier),

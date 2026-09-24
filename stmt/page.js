@@ -1365,13 +1365,16 @@ const CLIENT_JS = `
   /* one draw for every step; the control that had focus gets it back, found by its data-k */
   function sheetDraw(){
     if(!sheet) return;
-    var fo=document.activeElement, fk=fo&&sheet.box.contains(fo)?fo.getAttribute('data-k'):null;
+    var fo=document.activeElement, inside=!!fo&&sheet.box.contains(fo), fk=inside?fo.getAttribute('data-k'):null;
     sheet.head.textContent=''; sheet.body.textContent=''; sheet.foot.textContent='';
     if(draft.step==='limit'&&openOrders().length<OMAX) draft.step='form';
     if(draft.step==='check') drawCheck(); else if(draft.step==='sent') drawSent(); else if(draft.step==='limit') drawLimit(); else drawForm();
     sheet.foot.hidden=!sheet.foot.firstChild;
     if(fk){ var back=[].filter.call(sheet.box.querySelectorAll('[data-k]'),function(x){ return x.getAttribute('data-k')===fk; })[0];
       if(back) try{ back.focus({preventScroll:true}); }catch(e){} }
+    /* a redraw that took the focused control away (Place, once it is answered) leaves focus on the sheet itself, never on
+       the page behind it, so Escape and Tab still reach the sheet */
+    if(inside&&!sheet.box.contains(document.activeElement)) try{ sheet.box.focus({preventScroll:true}); }catch(e){}
   }
   function sheetHead(title,back){
     if(back){ var b=el('button','salt-orb'); b.type='button'; b.setAttribute('aria-label','Change'); b.setAttribute('data-k','back');
