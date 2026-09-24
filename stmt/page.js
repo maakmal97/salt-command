@@ -355,6 +355,10 @@ export const PSHAPE = { salt: "Cube", oil: "Droplet", candy: "Lozenge", rice: "C
 /* THE SHORT MONTHS, NAMED ONCE (24 Sep 2026). Node and every browser write "Sept" for September in en-GB, and
    the house writes Sep: the page, his page, the statement and the price list all read the month from here. */
 export const MON3 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/* S4 4.9, 24 SEP 2026: ONE DELIVERY SENTENCE, wherever the charge is explained (the plan's words, his "all recommended"):
+   Prices, the check before Place, and a guest's board. It replaces three wordings, one of which ("quoted when you order")
+   was never true: the charge is set when he confirms the order, and only then. */
+export const DELIVERY = "Delivery is charged by area. We tell you the charge when we confirm, before you pay, and you can cancel then at no cost.";
 /** The mark for a product, as SVG source. `px` is the drawn size; the stroke stays hairline. */
 export function psymSvg(product, px) {
   const d = PSYM[String(product || "").toLowerCase()] || RING;
@@ -387,7 +391,7 @@ export function boardPage(guest, nonce) {
     + '<div class="panel">'
     + "<h2>Price list</h2>"
     + '<p class="lead">' + (week ? "For the week of " + esc(week) + ". " : "")
-    + "The price is for the goods. Delivery is charged separately and quoted when you order. "
+    + "The price is for the goods. " + DELIVERY + " "
     + "Ask about any size that is not listed.</p>"
     + body
     + "</div></body></html>";
@@ -560,6 +564,7 @@ export function landingPage(user, nonce, owner, bulletin) {
       .replace("__PSHAPE__", JSON.stringify(PSHAPE)).replace("__MON3__", JSON.stringify(MON3))
       /* S4 4.6: the open-order limit the Worker refuses at, so the page can say it before the form */
       .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES))
+      .replace("__DELIVERY__", () => JSON.stringify(DELIVERY))
       /* "<" is escaped because this one carries the master passphrase, and a "</script>" inside a
          string literal ends the block wherever it appears: the browser closes the tag first and
          reads the rest of the passphrase as page text. */
@@ -1215,7 +1220,7 @@ const CLIENT_JS = `
     var tapTo=!view&&!hold;
     pPrices.appendChild(el('p','lead',(prices.at&&pricesAt(prices.at)?'Prices as at '+pricesAt(prices.at)+'.':'For the week of '+(prices.week&&prices.week.label||'')+'.')
       +(tapTo?' Tap a size to order it.':'')));
-    pPrices.appendChild(el('p','lead','The price is for the goods; if you ask for delivery, the charge is set when your order is acknowledged, and you see it then. The list is written from your own history and changes weekly.'));
+    pPrices.appendChild(el('p','lead','The price is for the goods. '+DELIVERY+' The list is written from your own history and changes weekly.'));
     if(prices.since) pPrices.appendChild(el('p','sub2','Buying with us since '+monthOf(prices.since)+'.'));
     sold().forEach(function(p){
       var pane=el('div','pane');
@@ -1309,7 +1314,7 @@ const CLIENT_JS = `
      is held by the card's blur; Escape, the scrim and the close control all close it, and focus goes back to what
      opened it. */
   var sheet=null;
-  var OMAX=__MAX_OPEN__, OPEN_ST=__OPEN_STATES__;
+  var OMAX=__MAX_OPEN__, OPEN_ST=__OPEN_STATES__, DELIVERY=__DELIVERY__;
   function openOrders(){ return orders.filter(function(o){ return OPEN_ST.indexOf(o.status)>=0; }); }
   var GLYPH={close:'M4 4 L12 12 M12 4 L4 12', back:'M10 3.5 L5.5 8 L10 12.5', next:'M6 3.5 L10.5 8 L6 12.5', tick:'M3 8.5 L6.5 12 L13 4.5'};
   function glyph(k,cls,px){
@@ -1472,7 +1477,7 @@ const CLIENT_JS = `
     var F=sheet.foot; F.textContent='';
     var qt=quoteFor(), why=formWhy(), t=el('div','ototal');
     t.appendChild(el('b','salt-kpi__value',qt?rm(qt.total):''));
-    t.appendChild(el('span','sub2',why||(draft.mode==='deliver'?'and delivery, set when it is acknowledged':'to collect')));
+    t.appendChild(el('span','sub2',why||(draft.mode==='deliver'?'and delivery, set when we confirm':'to collect')));
     F.appendChild(t);
     var go=el('button','salt-pill salt-pill--md','Review'); go.type='button'; go.id='oGo'; go.disabled=!!why; go.setAttribute('data-k','review');
     go.addEventListener('click',review);
@@ -1558,7 +1563,7 @@ const CLIENT_JS = `
     row('What',withMark(c.product,unitsOf(c.q,c.unit)+' ',16));
     row('Price',rm(c.total));
     row('How',c.mode==='deliver'?'Delivered to '+c.place:'You collect it');
-    if(c.mode==='deliver') row('Delivery','Set when it is acknowledged');
+    if(c.mode==='deliver') row('Delivery','Set when we confirm');
     if(c.say) row('Note',c.say);
     B.appendChild(L);
     /* S4 4.4: a list re-struck since it was opened is said here, before anything is placed, and Place names the new figure */
@@ -1567,6 +1572,8 @@ const CLIENT_JS = `
       mv.appendChild(document.createTextNode(' (was '+rm(c.was)+'). Place at '+rm(c.total)+'?')); B.appendChild(mv); }
     if(c.gone){ var gn=el('p','salt-insight salt-insight--copper','This size is no longer on your list. Change it to pick another.');
       gn.setAttribute('role','status'); B.appendChild(gn); }
+    /* S4 4.9: a delivery is checked beside the one sentence that says how its charge is set */
+    if(c.mode==='deliver') B.appendChild(el('p','salt-insight',DELIVERY));
     var F=sheet.foot;
     var bk=el('button','salt-ghost','Change'); bk.type='button'; bk.id='oBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','change');
     bk.addEventListener('click',toForm); F.appendChild(bk);
@@ -1673,7 +1680,7 @@ const CLIENT_JS = `
       pOrder.appendChild(el('p','lead',prices&&(prices.soon&&prices.soon.length||prices.products&&prices.products.length)?'Ordering opens once your prices are set.':'Ordering opens once your price list is written, with the next update.'));
     } else {
       /* S4 4.3: the form is a sheet now, laid over the page from here */
-      pOrder.appendChild(el('p','lead','Pick a size and check it over before you place it. Once it is acknowledged you can pay, and you are told when the goods are on their way.'));
+      pOrder.appendChild(el('p','lead','Pick a size and check it over before you place it. Once we confirm it you can pay, and you are told when the goods are on their way.'));
       var full=openOrders().length>=OMAX;
       if(full){ var lim=el('p','salt-insight salt-insight--copper',limitLine(openOrders().length)); lim.id='oLimit'; pOrder.appendChild(lim); }
       else {

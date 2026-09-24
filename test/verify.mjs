@@ -13492,6 +13492,54 @@ await (async () => {
   try { ok(E.lead.includes("For the week of 21 to 27 Sep 2026. Tap a size to order it."), "a list sealed with no moment keeps its week: " + JSON.stringify(E.lead[1])); }
   finally { E.w.close(); }
 })();
+section("S4 4.9: one delivery sentence, on Prices, in the check before Place and on a guest's board");
+await (async () => {
+  /* HIS "ALL RECOMMENDED" OF 24 SEP 2026. Three wordings of the delivery charge stood on the site, and a guest's board
+     said it was "quoted when you order", which it never was: it is set when he confirms. One sentence now, one copy of it
+     (DELIVERY in stmt/page.js), wherever the charge is explained. */
+  const PG = await import("../stmt/page.js");
+  const C9 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc9 } = await import("node:crypto");
+  const { JSDOM: JD9 } = await import("jsdom");
+  const ONE = "Delivery is charged by area. We tell you the charge when we confirm, before you pay, and you can cancel then at no cost.";
+  ok(PG.DELIVERY === ONE, "the sentence is the plan's, word for word");
+  const board = PG.boardPage({ prices: { week: { label: "21 to 27 Sep 2026" }, products: [{ product: "salt", unit: "unit", sizes: [{ q: 1, price: 150 }] }] } }, "n49");
+  ok(board.includes(ONE) && !/quoted when you order|charged separately/.test(board), "a guest's board says it, and no longer says the charge is quoted when they order");
+  const u = "abcd-efgh", pass = "fixture-pass-s49", ck = await C9.contentKey("test-secret", u);
+  const prices = { at: "2026-09-24T03:59:00Z", week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] }] };
+  const body = { ok: true, wrap: await C9.wrapKey(pass, ck), session: "sess-s49", prices: await C9.encryptWith(ck, JSON.stringify(prices)),
+    env: await C9.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const dom = new JD9(PG.landingPage(u, "n49", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wc9, configurable: true }); } catch (e) { win.crypto = wc9; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: [] } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    const lead = [...d.querySelectorAll("#pPrices p.lead")].map((p) => p.textContent);
+    ok(lead.some((t) => t.includes(ONE)) && !lead.some((t) => /acknowledged/.test(t)), "Prices says it, in the customer's word for the step: " + JSON.stringify(lead.find((t) => /Delivery/.test(t))));
+    d.getElementById("oNew").click();
+    [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Deliver to me").click();
+    const wh = d.getElementById("oWhere"); wh.value = "Old market"; wh.dispatchEvent(new w.Event("input", { bubbles: true }));
+    d.getElementById("oGo").click();
+    const says = [...d.querySelectorAll("#osheet .salt-insight")].map((x) => x.textContent);
+    const row = [...d.querySelectorAll("#osheet .salt-ledger__row")].find((r) => r.querySelector(".salt-ledger__label").textContent === "Delivery");
+    ok(says.includes(ONE) && row && row.querySelector(".salt-ledger__value").textContent === "Set when we confirm",
+      "the check of a delivery says it beside the order, and its Delivery line says when: " + JSON.stringify(says));
+    [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Change").click();
+    [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "I will collect").click();
+    d.getElementById("oGo").click();
+    ok(![...d.querySelectorAll("#osheet .salt-insight")].some((x) => x.textContent === ONE), "and a collection's check does not, having no charge to explain");
+  } finally { w.close(); }
+})();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {
   /* HIS INSTRUCTION OF 16 SEP 2026: "The label to them is a very subtle tier level, in symbol and colour (for each tier),
@@ -24302,9 +24350,11 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 60 && !d.querySelector("#pPrices p.lead + p.lead"); i++) await new Promise((r) => setTimeout(r, 50));
-    const lead = [...d.querySelectorAll("#pPrices p.lead")].map((p) => p.textContent).find((t) => /delivery/.test(t)) || "";
-    ok(/the charge is set when your order is acknowledged/.test(lead) && !/marked ready|confirm/.test(lead),
-      "the Prices lead puts the delivery charge at the acknowledgement, where v694 moved it, in the page's own word: " + lead.slice(0, 160));
+    const lead = [...d.querySelectorAll("#pPrices p.lead")].map((p) => p.textContent).find((t) => /delivery/i.test(t)) || "";
+    /* S4 4.9 and D11 (his "all recommended" of 24 Sep 2026): the one delivery sentence, in the customer's word for that step,
+       confirm, which D11 gives them for acknowledged; still never "marked ready" */
+    ok(/We tell you the charge when we confirm, before you pay/.test(lead) && !/marked ready|acknowledged/.test(lead),
+      "the Prices lead puts the delivery charge at the confirmation, where v694 moved it, in the customer's word: " + lead.slice(0, 160));
   } finally { w.close(); }
 })();
 
