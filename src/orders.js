@@ -452,11 +452,13 @@ export async function tellSite(env) {
   return Object.assign({ ok: true, told, v }, failed.length ? { failed } : {});
 }
 
-/** How many customer orders are waiting on him: placed, and acknowledged but not yet ready. */
+/** How many customer orders are waiting on him: placed, and acknowledged but not yet ready; and of
+ *  those, how many are still to be acknowledged, which is all his banner may ask him to acknowledge. */
 export async function ordersWaiting(env) {
   const r = await listOrders(env, false);
-  if (!r.ok) return 0;
-  return r.orders.filter((o) => o.status === "placed" || o.status === "acknowledged").length;
+  if (!r.ok) return { waiting: 0, placed: 0 };
+  return { waiting: r.orders.filter((o) => o.status === "placed" || o.status === "acknowledged").length,
+    placed: r.orders.filter((o) => o.status === "placed").length };
 }
 
 /* THE NUDGE, every minute (16 Sep 2026; it was the drafter's quarter-hour, and nothing had

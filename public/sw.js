@@ -166,10 +166,15 @@ async function banner() {
      is the title, and a tap opens the Orders card where it is acknowledged. IT NO LONGER HIDES THE
      REST (v759): this returned before the list was built, so while any order was waiting the wake
      said nothing about a row owed a decision, a refund, or a shelf not counted. */
-  if (s.orders) {
+  /* 24 Sep 2026: ONLY A PLACED ORDER IS HIS TO ACKNOWLEDGE. `orders` counts the acknowledged ones as
+     well, which are rows (v766), so "New customer order ... acknowledge it" was said of orders he had
+     acknowledged already. Those still wait on him, and are named as the news banner names them. */
+  const placed = s.placed || 0, rest = (s.orders || 0) - placed;
+  if (rest > 0) bits.unshift(rest === 1 ? "1 order waiting on you" : rest + " orders waiting on you");
+  if (placed) {
     return {
-      title: s.orders === 1 ? "New customer order" : s.orders + " customer orders waiting",
-      body: "Open the desk to acknowledge it." + (bits.length ? " Also " + bits.join(" \u00b7 ") + "." : ""),
+      title: placed === 1 ? "New customer order" : placed + " customer orders waiting",
+      body: "Open the desk to acknowledge " + (placed === 1 ? "it" : "them") + "." + (bits.length ? " Also " + bits.join(" \u00b7 ") + "." : ""),
       tag: "salt",
       url: "./desk#orders",
     };
@@ -179,6 +184,7 @@ async function banner() {
     title: bits.length ? "Salt Command" : "Salt Command is square",
     body: bits.length ? bits.join(" \u00b7 ") : "Nothing waiting. Nothing owed a decision.",
     tag: "salt",
+    url: rest > 0 ? "./desk#orders" : undefined,
   };
 }
 

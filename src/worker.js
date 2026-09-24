@@ -896,7 +896,10 @@ export default {
             for (const k of Object.keys(on)) if (on[k] !== today) out.countDue.push(k);
           }
         }
-        out.orders = await ordersWaiting(env);
+        /* 24 Sep 2026: `placed` apart, because only those are his to acknowledge; an acknowledged
+           order is a row (v766) and the banner no longer asks him to acknowledge it */
+        const ow = await ordersWaiting(env);
+        out.orders = ow.waiting; out.placed = ow.placed;
         /* v760: and the last thing a customer DID, while it is fresh. The banner is built from this
            summary and from nothing else, so without it a wake sent because somebody paid reads as
            "an order waiting", which is the wrong sentence about the right order. */

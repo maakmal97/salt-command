@@ -8090,7 +8090,7 @@ await (async () => {
   ok(b.ok && /no desk code/.test(b.warn || "") && rc1.ok && rc1.queued === 0 && JSON.stringify(rc1.unmapped) === JSON.stringify([o3.id])
     && JSON.parse(await dkv.get("q:orders")).queue.length === 1,
     "an order for a username the map does not carry queues nothing, is named as unmapped, and is said so on the tap");
-  ok((await ordersWaiting(denv)) === 0, "and nothing is left waiting");
+  ok((await ordersWaiting(denv)).waiting === 0, "and nothing is left waiting");
 
   /* THE DEPLOY SEALS THE LIST INTO THE RECORD, beside the live statement, under the same key. */
   {
@@ -13548,7 +13548,7 @@ await (async () => {
     return { L, shown, opened };
   };
   const wake = async (summary) => { const sw = runSw(summary), waits = []; sw.L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits); return sw.shown[0]; };
-  const bOrd = await wake({ ok: true, pending: 2, refused: 0, countDue: [], orders: 1 });
+  const bOrd = await wake({ ok: true, pending: 2, refused: 0, countDue: [], orders: 1, placed: 1 });
   const bRow = await wake({ ok: true, pending: 2, refused: 0, countDue: [], orders: 0 });
   ok(bOrd && bOrd.t === "New customer order" && /acknowledge/.test(bOrd.opt.body) && bOrd.opt.data.url === "./desk#orders"
     && bRow && bRow.t === "Salt Command" && /2 rows waiting/.test(bRow.opt.body) && bRow.opt.data.url === "./",
@@ -18131,7 +18131,7 @@ await (async () => {
     return shown[0];
   };
   const bRefund = await wake9({ ok: true, pending: 0, refused: 0, refunds: 1, countDue: [], orders: 0 });
-  const bBoth = await wake9({ ok: true, pending: 2, refused: 0, refunds: 1, countDue: ["salt"], orders: 1 });
+  const bBoth = await wake9({ ok: true, pending: 2, refused: 0, refunds: 1, countDue: ["salt"], orders: 1, placed: 1 });
   const bQuiet = await wake9({ ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 0 });
   ok(bRefund && /1 refund to pay back/.test(bRefund.opt.body),
     "the morning round names a refund still owed, which it never did: " + (bRefund && bRefund.opt.body));
@@ -18251,7 +18251,7 @@ await (async () => {
     return shown[0];
   };
   const bNews = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, news: "A customer has paid" });
-  const bPlain = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2 });
+  const bPlain = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, placed: 2 });
   ok(bNews && bNews.t === "A customer has paid" && /2 orders waiting on you/.test(bNews.opt.body)
     && /1 row waiting for approval/.test(bNews.opt.body) && bNews.opt.data.url === "./desk#orders",
     "the banner leads with what they just did, and still carries what is waiting: " + JSON.stringify(bNews && bNews.opt.body));
@@ -18985,6 +18985,51 @@ await (async () => {
     await new Promise((r) => setTimeout(r, 200));
     try { w148.close(); } catch (e) { /* best effort */ }
   }
+})();
+
+section("S1 1.49: his banner asks him to acknowledge only an order not yet acknowledged");
+await (async () => {
+  /* 24 Sep 2026 (L53). The summary's `orders` counts placed AND acknowledged orders, and the banner
+     titled every one of them "New customer order" and said "Open the desk to acknowledge it": about
+     orders he had acknowledged already, which are rows since v766. */
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const deskW = (await import("../src/worker.js")).default;
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const d1 = { prepare: (q) => { const first = async () => (/COUNT\(\*\)/.test(q) ? { n: 0 } : null);
+    const all = async () => ({ results: [] }); return { bind: () => ({ all, first, run: async () => ({}) }), all, first, run: async () => ({}) }; } };
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: d1, REQUIRE_ACCESS: "0", STMT_DESK_KEY: "desk-key",
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const summary = async () => (await deskW.fetch(new Request("https://salt-command.example/push/summary"), denv)).json();
+  const vm = await import("node:vm");
+  const swSrc = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const wake = async (s) => {
+    const L = {}, shown = [];
+    const ctx = { URL, console, caches: {},
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" },
+        registration: { scope: "https://salt-command.example/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
+      clients: { matchAll: async () => [], openWindow: async () => {} }, fetch: async () => ({ ok: true, json: async () => s }) };
+    vm.createContext(ctx); vm.runInContext(swSrc, ctx);
+    const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits);
+    return shown[0];
+  };
+  const u = "abcd-efgh";
+  const place = async () => (await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  const a = await place();
+  await O.deskMove(senv, u, a.id, { status: "acknowledged", mode: "collect" });
+  const s1 = await summary();
+  ok(s1.orders === 1 && s1.placed === 0, "the summary tells an order he has agreed from one still to agree: " + JSON.stringify({ orders: s1.orders, placed: s1.placed }));
+  const b1 = await wake(s1);
+  ok(b1 && b1.t !== "New customer order" && !/acknowledge/i.test(b1.opt.body) && /1 order waiting on you/.test(b1.opt.body) && b1.opt.data.url === "./desk#orders",
+    "an acknowledged order is still named as waiting on him, and never asked to be acknowledged again: " + JSON.stringify(b1 && [b1.t, b1.opt.body]));
+  await place();
+  const b2 = await wake(await summary());
+  ok(b2 && b2.t === "New customer order" && /acknowledge it\./.test(b2.opt.body) && /1 order waiting on you/.test(b2.opt.body),
+    "a new one beside it is the title, and the one already agreed rides in the body: " + JSON.stringify(b2 && [b2.t, b2.opt.body]));
+  await place();
+  const b3 = await wake(await summary());
+  ok(b3 && b3.t === "2 customer orders waiting" && /acknowledge them\./.test(b3.opt.body),
+    "two to agree are them, not it: " + JSON.stringify(b3 && [b3.t, b3.opt.body]));
 })();
 
 section("v766: what is waiting on the site is on Today, ranked against everything else");
