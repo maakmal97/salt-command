@@ -15296,10 +15296,13 @@ await (async () => {
   const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), senv);
   const desk = { "X-Stmt-Desk": "desk-key-s98" };
   const u = "abcd-efgh", at = "2026-09-24T01:00:00Z";
-  const order = (id, status) => ({ id, u, at, status, product: "salt", qty: 1, total: 150, delivery: 0, mode: "collect", paid: 0, payments: [],
-    moved: status === "done" ? 1 : 0, movedOn: null, msgs: [], history: [{ at, status: "placed", by: "customer" }] });
+  const order = (id, status, msgs) => ({ id, u, at, status, product: "salt", qty: 1, total: 150, delivery: 0, mode: "collect", paid: 0, payments: [],
+    moved: status === "done" ? 1 : 0, movedOn: null, msgs: msgs || [], history: [{ at, status: "placed", by: "customer" }] });
   const ids = ["20260924010000-aaaa", "20260924010100-bbbb", "20260924010200-cccc", "20260924010300-dddd"];
-  [["placed"], ["acknowledged"], ["ready"], ["done"]].forEach(([st], k) => skv.m.set("order:" + u + ":" + ids[k], JSON.stringify(order(ids[k], st))));
+  /* S9 fix: what waits is the desk's own reading (ordWaiting): placed, or a question of theirs unanswered. An agreed
+     order is a row already, so the answered one and the one ready do not wait. */
+  const ask = { at, by: "customer", text: "can it come on Friday" }, answer = { at, by: "desk", text: "yes" };
+  [["placed"], ["acknowledged", [ask]], ["acknowledged", [ask, answer]], ["done"]].forEach(([st, m], k) => skv.m.set("order:" + u + ":" + ids[k], JSON.stringify(order(ids[k], st, m))));
   /* the links: two waiting, one approved, one declined, one withdrawn while waiting, a standing one and an older one */
   const link = (id, o) => skv.m.set("g:" + id, JSON.stringify(Object.assign({ id, made: at, by: u, tier: 2 }, o)));
   link("wait-aaaa", { approved: false }); link("wait-bbbb", { approved: false });
@@ -15321,14 +15324,14 @@ await (async () => {
   const tick = async () => { const c = ctx(); await worker.scheduled({ cron: "* * * * *", scheduledTime: Date.parse("2026-09-24T02:07:00Z") }, denv, c); await Promise.all(c.ps); };
   await tick();
   const mark = () => JSON.parse(skv.m.get("desk-waiting") || "null");
-  ok(mark() && mark().n === 2, "the every-minute cron tells the site the two orders that wait on the desk, placed and agreed: " + JSON.stringify(mark()));
+  ok(mark() && mark().n === 2, "the every-minute cron tells the site the two things that wait on the desk, the order placed and the question unanswered, as the desk counts them: " + JSON.stringify(mark()));
   const { tellWaiting } = await import("../src/orders.js");
   siteCalls.length = 0;
   const quiet = await tellWaiting(denv);
   ok(quiet.ok && quiet.told === false && siteCalls.join() === "/desk/orders/last",
     "a minute with nothing moved reads the marks and nothing else: " + JSON.stringify(siteCalls));
-  const moved = await site("/desk/orders/" + u + "/" + ids[1], { method: "POST", headers: Object.assign({ "content-type": "application/json" }, desk), body: JSON.stringify({ status: "ready" }) });
-  ok(moved.status === 200, "he marks the agreed order ready");
+  const moved = await site("/desk/orders/" + u + "/" + ids[0], { method: "POST", headers: Object.assign({ "content-type": "application/json" }, desk), body: JSON.stringify({ status: "acknowledged" }) });
+  ok(moved.status === 200, "he agrees the placed order");
   const told = await tellWaiting(denv);
   ok(told.ok && told.told === true && told.n === 1 && mark().n === 1, "and the next pass tells the site one waits now: " + JSON.stringify([told, mark()]));
 
@@ -15377,6 +15380,11 @@ await (async () => {
     ok(foot() === "1 link waits in Salt Admin", "one is one: " + JSON.stringify(foot()));
     answer = { ok: true, orders: [], links: 0 }; await w.eval("ordLoad(true)");
     ok(foot() === "", "and none says nothing: " + JSON.stringify(foot()));
+    /* S9 fix: one definition. The desk's own reading of the same open orders is the figure Salt Admin was told. */
+    const { listOrders } = await import("../src/orders.js");
+    answer = { ok: true, orders: (await listOrders(denv, false)).orders, links: 0 }; await w.eval("ordLoad(true)");
+    const deskN = w.eval("(()=>{const x=ordWaiting();return new Set(x.placed.concat(x.asked).map(o=>o.id)).size;})()");
+    ok(deskN === 1 && mark().n === deskN, "and the desk's own count of those orders is the figure Salt Admin was told: " + JSON.stringify([deskN, mark().n]));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 section("S9 fix R1: Send them in turn takes one Share at a time, so a second tap while the tick is in flight never skips the next account");

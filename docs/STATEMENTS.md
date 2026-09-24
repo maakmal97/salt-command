@@ -656,7 +656,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   no share sheet, Share copies the message and only his Sent it ticks. Stage 3's Show a code joins the refused card where `showHandover` is on the page.
 - **Each owner app counts the other's waiting items** (S9 9.8), a figure with no link and no name. The
   desk's every-minute cron (`tellWaiting` in `src/orders.js`) tells the site what waits on the desk, the
-  count its own banner reads (`ordersWaiting`), through the keyed `POST /desk/waiting` into the clear key
+  count its own Today and rail show (`ordersWaiting`'s `desk`, the master's `ordWaiting`: placed, or its last
+  line the customer's; an agreed order is a row, not a wait), through the keyed `POST /desk/waiting` into the clear key
   `desk-waiting` `{n, at}`; it recounts only when an order's `touched` mark has moved and writes only on a
   change. Needs you says "N things wait on the desk." The desk's page reads its orders with the count of
   associate links waiting on his word (`/desk/orders?links=1`, `linkWaiting` in `stmt/refs.js`, the
