@@ -192,7 +192,8 @@ the footer's figure, and `pay` from `payDue` in `tools/make_statements.mjs`: `{t
 parts}, overdue: {rm, parts}, coming: {rm, parts}}`. **To pay now** is the desk's receivable,
 `txAdvance`, row by row: goods handed over and not paid for, each part due at its order date plus
 `term`, the desk's `RULES.creditDays` read out of the master (a master stating none stops the
-publish); `now.due` is the soonest. A part is `late`, and listed in **overdue**, only once its due
+publish); `now.due` is the soonest. `due` counts from `date`, never `gotOn`, as the desk's Credit age
+does, so goods handed over after that day are late the day they go. A part is `late`, and listed in **overdue**, only once its due
 day has passed, the desk's `buyerProfile` reading of late; an undated part is never overdue. The
 desk's Credit age breach and its chase flag the same part a day earlier, on the due day itself.
 **Coming up** is `txPendRM`: agreed, not handed over, money still to pay, an undated order dated by

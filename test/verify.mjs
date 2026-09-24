@@ -5043,7 +5043,8 @@ await (async () => {
   const at = new Date("2026-09-24T04:00:00Z"), P = "CX7-PY";
   const fx = (rid, date, extra) => Object.assign({ rid, date, customer: P, product: "salt", qty: 1, total: 100, cost: 44 }, extra || {});
   const rows = [
-    fx("sp01", "2026-09-01", { deliveredQty: 1 }),                                             // due 11 Sep: overdue
+    fx("sp01", "2026-09-01", { deliveredQty: 1,                                                // due 11 Sep, collected 12 Sep: overdue
+      amend: [{ kind: "Fulfilment", kg: 1, date: "2026-09-12" }] }),
     fx("sp02", "2026-09-16", { qty: 2.5, total: 225, delivery: 10, cash: 165, deliveredQty: 2.5 }), // the rest, RM 70, due 26 Sep
     fx("sp03", "2026-09-14", { total: 50, deliveredQty: 1 }),                                  // due today: not yet overdue
     fx("sp04", "2026-09-22", { qty: 2.5, total: 250, delivery: 15 }),                          // agreed, nothing moved: coming up
@@ -5089,6 +5090,11 @@ await (async () => {
     const p2 = pay && pay.now.parts.find((x) => x.date === "2026-09-16");
     ok(p2 && p2.rm === 70 && p2.whole === 235 && p2.qty === 2.5 && p2.got === 2.5 && p2.gotOn === "2026-09-16" && p2.product === "salt" && p2.late === false,
       "a part says what it is for: the rest, RM 70 of the RM 235 owed on 2.5 units collected 16 Sep, due by 26 Sep: " + JSON.stringify(p2));
+    /* THE TERM RUNS FROM THE ORDER'S DATE, the desk's rule (its Credit age reads the same), never from the
+       handover: on the book an order of 7 Sep finished going on 19 Sep and fell due on 17 Sep */
+    const p1 = pay && pay.now.parts.find((x) => x.date === "2026-09-01");
+    ok(p1 && p1.gotOn === "2026-09-12" && p1.due === "2026-09-11" && p1.late === true,
+      "a part falls due at its order's date plus the term even when the goods went later, and is late the day they go: " + JSON.stringify(p1));
     const p5 = pay && pay.now.parts.find((x) => x.date === "2026-09-20");
     ok(p5 && p5.got === 1 && p5.qty === 2 && p5.gotOn === "2026-09-21",
       "a part handed over in stages still says when the goods went, the day of its last handover: " + JSON.stringify(p5));
