@@ -99,7 +99,8 @@ h3.pmark{margin:0 0 4px;line-height:1}
 /* the one filled control is the system's .salt-pill and the quiet ones its .salt-ghost (22 Sep 2026);
    this page decides only that they run the width of the form */
 .btn{margin-top:18px;width:100%}
-.btn.lnk{display:block;text-align:center;text-decoration:none;line-height:1.4}
+/* a pay link is a .salt-ghost too (24 Sep 2026); a long account name wraps, and its lines centre */
+.btn.lnk{text-align:center;line-height:1.4}
 /* KEEP IT ON YOUR PHONE (v693): the quietest block on the door, under everything, and gone the
    moment the page is running as an app. */
 .inst{margin-top:26px;padding-top:16px;border-top:1px solid var(--salt-line)}
@@ -175,7 +176,7 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .seg button.on{color:var(--salt-obsidian);background:var(--salt-brass);border-color:var(--salt-brass);font-weight:700}
 .pay{margin-top:12px;display:flex;flex-direction:column;gap:8px}
 .pay label{display:flex;gap:10px;align-items:center;min-height:var(--salt-tap);padding:0 6px;font-size:var(--salt-text-sm);cursor:pointer}
-.pay input{width:18px;height:18px;accent-color:var(--salt-brass)}
+.pay input[type=radio]{width:18px;height:18px;accent-color:var(--salt-brass)}
 .hist{margin:10px 0 0;padding:0;list-style:none;font-size:var(--salt-text-xs);color:var(--salt-text-muted);font-family:var(--salt-font-mono);line-height:1.8}
 /* v751: the thread on an order. Theirs sits left and his right, which is the one convention every
    reader of a phone already knows, so no label has to say whose line it is. */
@@ -1155,7 +1156,7 @@ const CLIENT_JS = `
       if(ways.length){
         dueBox.appendChild(el('span','lbl','Ways to pay'));
         ways.forEach(function(a){
-          var l=el('a','btn lnk','Open '+a.name+' in QR Command');
+          var l=el('a','btn lnk salt-ghost','Open '+a.name+' in QR Command');
           l.href=PAY_SITE+'/#'+encodeURIComponent(a.key); l.target='_blank'; l.rel='noopener';
           dueBox.appendChild(l);
         });
@@ -1453,12 +1454,12 @@ const CLIENT_JS = `
     var box=payLink(o), due=dueOf(o), cur=pick[o.id]||{};
     var row=el('div','amt');
     row.appendChild(el('span','cur','RM'));
-    var inp=el('input','fld'); inp.type='number'; inp.min='0'; inp.step='0.01'; inp.inputMode='decimal';
+    var inp=el('input','fld salt-field__input salt-field__input--mono'); inp.type='number'; inp.min='0'; inp.step='0.01'; inp.inputMode='decimal';
     inp.value=(cur.amount!==undefined&&cur.amount!==null)?cur.amount:due.toFixed(2);
     inp.setAttribute('aria-label','What you paid, in ringgit');
     inp.addEventListener('input',function(){ pick[o.id]=Object.assign({},pick[o.id],{amount:inp.value}); var b=document.getElementById('pd-'+o.id); if(b)b.disabled=!(parseFloat(inp.value)>0); });
     row.appendChild(inp); box.appendChild(row);
-    var pb=el('button','btn',"I have paid"); pb.type='button'; pb.id='pd-'+o.id;
+    var pb=el('button','btn salt-pill salt-pill--md',"I have paid"); pb.type='button'; pb.id='pd-'+o.id;
     pb.disabled=!(parseFloat(inp.value)>0);
     pb.addEventListener('click', async function(){
       var amt=parseFloat(inp.value);
@@ -1472,7 +1473,7 @@ const CLIENT_JS = `
     });
     box.appendChild(pb);
     box.appendChild(el('p','sub2','Tell us once it has left your side. '+rm(due)+' is outstanding; a part payment is fine and the rest stays here.'));
-    var ch=el('button','btn quiet','Pay another way'); ch.type='button';
+    var ch=el('button','btn quiet salt-ghost','Pay another way'); ch.type='button';
     ch.addEventListener('click',function(){ pick[o.id]={again:true}; drawOrder(); });
     box.appendChild(ch);
     return box;
@@ -1487,7 +1488,7 @@ const CLIENT_JS = `
       tngbiz:'Pay '+rm(due)+" by scanning the Touch 'n Go Business code on the page that opens, or save it and scan it from the Touch 'n Go app."}[o.method]||'';
     box.appendChild(el('p','sub2','Paying by '+methodWord(o.method,o.account)+'. '+word));
     if(o.method!=='cod'&&o.account){
-      var l=el('a','btn lnk','Open '+(a?a.name:'the account')+' in QR Command');
+      var l=el('a','btn lnk salt-ghost','Open '+(a?a.name:'the account')+' in QR Command');
       l.href=PAY_SITE+'/#'+encodeURIComponent(o.account); l.target='_blank'; l.rel='noopener';
       box.appendChild(l);
     }

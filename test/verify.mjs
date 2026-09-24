@@ -19352,6 +19352,54 @@ await (async () => {
   } finally { w.close(); }
 })();
 
+section("24 Sep 2026: the payment controls are the system's pill, ghost and field, one filled control an order");
+await (async () => {
+  /* H07 of the Counter study: I have paid and Pay another way were 21px system buttons, the pay links default-blue
+     text, and the amount a white box squeezed to 18px by the radio buttons' own rule. The page's comment says the
+     filled control is .salt-pill and the quiet ones .salt-ghost; now they are, and the amount is the field. */
+  const { landingPage: lpJ } = await import("../stmt/page.js");
+  const CJ = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcJ } = await import("node:crypto");
+  const { JSDOM: JDJ } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-h07", ck = await CJ.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await CJ.wrapKey(pass, ck), session: "sess-h07",
+    env: await CJ.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await CJ.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280 })) };
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z", history: [], msgs: [], status: "acknowledged" };
+  const orders = [{ ...base, id: "oA", total: 150, method: "transfer", account: "maybank" }, { ...base, id: "oC", total: 60 }];
+  const dom = new JDJ(lpJ(u, "nh07", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcJ, configurable: true }); } catch (e) { win.crypto = wcJ; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("pd-oA"); i++) await new Promise((r) => setTimeout(r, 50));
+    const hold = d.querySelector("#pOrder .pane");
+    const scope = [hold, ...d.querySelectorAll("#pOrder .pay")];
+    const ctrls = scope.flatMap((s) => [...s.querySelectorAll("button, a, select, input")]).filter((x) => x.type !== "radio");
+    const bare = ctrls.filter((x) => !/(^| )salt-(pill|ghost|field__input)( |$)/.test(x.className));
+    ok(d.getElementById("pd-oA") && d.querySelectorAll("#pOrder .pay").length === 2 && ctrls.length >= 8 && !bare.length,
+      "every button, link and field on the payment pane and in every order's payment box is a recipe ("
+      + ctrls.length + " controls): " + bare.map((x) => x.tagName + " " + (x.textContent || x.getAttribute("aria-label"))).join(", "));
+    const orderPanes = [...d.querySelectorAll("#pOrder .pane")].filter((p) => p.querySelector(".state"));
+    const pills = orderPanes.map((p) => p.querySelectorAll(".salt-pill").length);
+    ok(pills.join() === "1,1" && d.getElementById("pd-oA").classList.contains("salt-pill") && !hold.querySelector(".salt-pill"),
+      "one filled control an order, I have paid on the one with a rail chosen, and the payment pane's ways to pay all quiet: " + pills.join());
+    const amt = orderPanes[0].querySelector('input[type="number"]'), cs = w.getComputedStyle(amt);
+    ok(amt.classList.contains("salt-field__input") && amt.inputMode === "decimal" && cs.width !== "18px" && cs.height !== "18px",
+      "the amount is the field, typed on a decimal keypad, and no longer squeezed by the radio buttons' size: " + cs.width + " x " + cs.height);
+  } finally { w.close(); }
+})();
+
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead
