@@ -287,8 +287,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   any stage; theirs capped, his uncapped. **It never rides into a ledger note.** His answer is
   checked by `siteWords` on the desk; every line is escaped on both surfaces.
 - **Over RM 100 owed (`HOLD_RM`) the account opens as a payment page**: the page's gate, not the
-  Worker's. **The bulletin** is KV `bulletin`, set through the desk's keyed `/bulletin` and checked
-  by `siteWords`.
+  Worker's. Beside `owed` the live document seals `pay` (`payDue`): to pay now (`txAdvance`),
+  overdue and coming up (`txPendRM`), each part due at its order date plus the desk's
+  `RULES.creditDays`, read from the master, and overdue only after that day. **The bulletin** is KV
+  `bulletin`, set through the desk's keyed `/bulletin` and checked by `siteWords`.
 - **An associate may tick an order as on behalf of a friend**: it books to their `-R` bucket
   through the engine's `bookR2`, and the `orderKey` is built on the bucket. **A bucket is not its
   own person**: `ownsCode` reads the code and the bucket together; a bucket has no statement and no

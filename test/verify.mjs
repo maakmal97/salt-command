@@ -5032,6 +5032,112 @@ await (async () => {
 })();
 
 
+section("S6 6.1: the publish seals what is to pay now, what is overdue and what is coming up");
+await (async () => {
+  /* HIS DECISION D9 OF 24 SEP 2026: the hold counts only what is past its 10-day term, with each part's
+     due date, so the live statement carries, beside `owed`, TO PAY NOW (the desk's receivable, each part
+     due at its order date plus the term), OVERDUE (a part once that day has passed) and COMING UP (an
+     order agreed and not handed over, with money still to pay on it). The engine computes them; the
+     site only draws them. Fixture rows under invented codes, on a copy of the book, on 24 Sep. */
+  const { pathToFileURL: pu } = await import("node:url");
+  const at = new Date("2026-09-24T04:00:00Z"), P = "CX7-PY";
+  const fx = (rid, date, extra) => Object.assign({ rid, date, customer: P, product: "salt", qty: 1, total: 100, cost: 44 }, extra || {});
+  const rows = [
+    fx("sp01", "2026-09-01", { deliveredQty: 1 }),                                             // due 11 Sep: overdue
+    fx("sp02", "2026-09-16", { qty: 2.5, total: 225, delivery: 10, cash: 165, deliveredQty: 2.5 }), // the rest, RM 70, due 26 Sep
+    fx("sp03", "2026-09-14", { total: 50, deliveredQty: 1 }),                                  // due today: not yet overdue
+    fx("sp04", "2026-09-22", { qty: 2.5, total: 250, delivery: 15 }),                          // agreed, nothing moved: coming up
+    fx("sp05", "2026-09-20", { qty: 2, total: 200, deliveredQty: 1 }),                         // half collected: RM 100 each way
+    fx("sp06", "2026-09-10", { total: 90, cancelled: true, cancelledOn: "2026-09-11" }),       // cancelled: nowhere
+    fx("sp07", "2026-09-02", { goodwill: true, rebate: true, deliveredQty: 1 }),               // a gift: nowhere
+    fx("sp08", "2026-09-03", { qty: 2, total: 240, deliveredQty: 1, defaulted: true }),       // written off, half handed over: nowhere
+    fx("sp09", "2026-09-05", { customer: P + "-R", total: 80, deliveredQty: 1, rev: "R2" }),   // their bucket: theirs, overdue
+    fx("sp10", "2026-09-06", { customer: "CX8-QZ", total: 60, deliveredQty: 1 }),              // somebody else's
+    fx("sp11", "2026-09-07", { cash: 100, deliveredQty: 1 }),                                  // paid and collected
+    fx("sp12", "2026-09-21", { qty: 2, total: 200, cash: 200 }),                               // paid ahead: nothing to pay
+    fx("sp13", null, { total: 40, deliveredQty: 1 }),                                          // undated: never overdue
+    fx("sp14", null, { total: 90, agreedOn: "2026-09-23" })                                    // undated and agreed: dated by agreement
+  ];
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  book.sales = rows; book.customerRefunds = [];
+  const tmp = join(REPO, "test", "tmp", "s6pay-" + Date.now());
+  mkdirSync(tmp, { recursive: true });
+  const bookFile = join(tmp, "book.json");
+  writeFileSync(bookFile, JSON.stringify(book));
+  /* a fresh copy of the tool on the fixture book, and on a master whose term is 7 (an unset variable is deleted) */
+  const load = async (tag, master) => {
+    const keep = [process.env.SALT_BOOK, process.env.SALT_MASTER];
+    process.env.SALT_BOOK = bookFile;
+    if (master) process.env.SALT_MASTER = master; else delete process.env.SALT_MASTER;
+    try { return await import(pu(join(REPO, "tools", "make_statements.mjs")).href + "?" + tag); }
+    finally {
+      if (keep[0] === undefined) delete process.env.SALT_BOOK; else process.env.SALT_BOOK = keep[0];
+      if (keep[1] === undefined) delete process.env.SALT_MASTER; else process.env.SALT_MASTER = keep[1];
+    }
+  };
+  try {
+    const M = await load("s6pay");
+    const doc = M.liveStatement(P, at), pay = doc && doc.pay;
+    const brief = (a) => (a || []).map((x) => (x.date || "undated") + ":" + x.rm + ":" + (x.due || "-")).join(" ");
+    ok(pay && pay.term === 10 && pay.now.rm === 440 && pay.now.due === "2026-09-11"
+      && brief(pay.now.parts) === "2026-09-01:100:2026-09-11 2026-09-05:80:2026-09-15 2026-09-14:50:2026-09-24 2026-09-16:70:2026-09-26 2026-09-20:100:2026-09-30 undated:40:-",
+      "to pay now is the goods handed over and not paid for, their bucket's included, soonest due first, and no gift, write-off, "
+      + "cancelled, settled or other party's row: " + JSON.stringify(pay && { term: pay.term, rm: pay.now.rm, due: pay.now.due, parts: brief(pay.now.parts) }));
+    const p2 = pay && pay.now.parts.find((x) => x.date === "2026-09-16");
+    ok(p2 && p2.rm === 70 && p2.whole === 235 && p2.qty === 2.5 && p2.got === 2.5 && p2.gotOn === "2026-09-16" && p2.product === "salt" && p2.late === false,
+      "a part says what it is for: the rest, RM 70 of the RM 235 owed on 2.5 units collected 16 Sep, due by 26 Sep: " + JSON.stringify(p2));
+    const p3 = pay && pay.now.parts.find((x) => x.date === "2026-09-14"), p13 = pay && pay.now.parts.find((x) => !x.date);
+    ok(pay && pay.overdue.rm === 180 && brief(pay.overdue.parts) === "2026-09-01:100:2026-09-11 2026-09-05:80:2026-09-15"
+      && pay.overdue.parts[1].resale === true && p3 && p3.due === "2026-09-24" && p3.late === false && p13 && p13.due === null && p13.late === false,
+      "overdue is a part once its due day has passed, each with the day it fell due: not on the due day itself, and never an undated one: "
+      + JSON.stringify(pay && { rm: pay.overdue.rm, parts: brief(pay.overdue.parts), today: p3 && p3.late, undated: p13 && p13.late }));
+    const cm = pay ? pay.coming.parts.map((x) => x.date + ":" + x.rm + ":" + x.toCome).join(" ") : "";
+    ok(pay && pay.coming.rm === 455 && cm === "2026-09-20:100:1 2026-09-22:265:2.5 2026-09-23:90:1",
+      "coming up is what is agreed and not handed over with money still to pay, delivery included, an undated one by the day it was agreed, and not an order paid ahead: " + cm);
+    /* the three add up to the statement's own owed: the pending orders it leaves out, the write-off it keeps in */
+    ok(doc && doc.owed === 780 && +(pay.now.rm + pay.coming.rm - 355 + 240).toFixed(2) === doc.owed,
+      "and they reconcile to the statement's owed, less the agreed orders it counts nowhere and plus the write-off it still prints: "
+      + JSON.stringify(doc && { owed: doc.owed, now: pay.now.rm, coming: pay.coming.rm }));
+    ok(JSON.stringify(M.payDue(P, "2026-09-24")) === JSON.stringify(pay) && JSON.stringify(M.payDue("CX8-QZ", "2026-09-24").now.parts.map((x) => x.rm)) === "[60]",
+      "the live statement seals exactly the engine's reading, party by party");
+
+    /* THE TERM IS THE DESK'S, read out of the master: a copy at 7 days moves every due date, and a master that states none stops the publish */
+    const src = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    const seven = src.replace(/(const RULES=\{[^;]*?\bcreditDays:)10\b/, (all, head) => head + "7");
+    ok(seven !== src, "the fixture master carries a 7-day term");
+    writeFileSync(join(tmp, "m7.html"), seven);
+    writeFileSync(join(tmp, "m0.html"), src.replace(/(const RULES=\{[^;]*?\b)creditDays:10\b/, (all, head) => head + "creditWeeks:2"));
+    const M7 = await load("s6pay7", join(tmp, "m7.html"));
+    const pay7 = M7.liveStatement(P, at).pay, q2 = pay7.now.parts.find((x) => x.date === "2026-09-16");
+    ok(pay7.term === 7 && q2.due === "2026-09-23" && q2.late === true && pay7.overdue.rm === 300,
+      "the term is the desk's RULES.creditDays: at 7 days the rest of the 16 Sep order falls due on 23 Sep and is overdue: "
+      + JSON.stringify({ term: pay7.term, due: q2.due, late: q2.late, overdue: pay7.overdue.rm }));
+    const M0 = await load("s6pay0", join(tmp, "m0.html"));
+    let threw = "";
+    try { M0.liveStatement(P, at); } catch (e) { threw = String(e && e.message); }
+    ok(/creditDays/.test(threw), "and a master that states no term stops the publish rather than guessing a due date: " + JSON.stringify(threw));
+  } finally { rmSync(tmp, { recursive: true, force: true }); }
+
+  /* over the real book, the rule and never a day's figures: every live statement's three reconcile to its own owed */
+  const M = await import("../tools/make_statements.mjs");
+  const POS = (await import("../engine/position.mjs")).default;
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const parties = [...new Set(bk.sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
+  const off = [];
+  let n = 0;
+  for (const p of parties) {
+    const d = M.liveStatement(p, at);
+    if (!d) continue;
+    n++;
+    const own = bk.sales.filter((s) => POS.ownsCode(p, s.customer));
+    const pend = own.filter((s) => !s.goodwill && !s.defaulted && POS.txStat(s).order === "Pending").reduce((a, s) => a + POS.txOwed(s), 0);
+    const lost = own.filter((s) => s.defaulted).reduce((a, s) => a + Math.max(0, POS.txOwed(s) - POS.txPaid(s)), 0);
+    if (!d.pay || Math.abs(d.pay.now.rm + d.pay.coming.rm - pend + lost - d.owed) > 0.011) off.push(p);
+  }
+  ok(n > 10 && !off.length, "on the book, every live statement's to pay now and coming up reconcile to its owed: " + n + " statements"
+    + (off.length ? "; differ: " + off.slice(0, 3).join(", ") : ""));
+})();
+
 section("v432: the money on a statement is the money on the book");
 await (async () => {
   /* ROUND TEN. The statements section beside this one holds eight assertions and NOT ONE reads a
