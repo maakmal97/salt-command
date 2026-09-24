@@ -88,6 +88,99 @@ export const OWNER_JS = `
       for(var r=0;r<n;r++) for(var k=0;k<n;k++) if(rows[r][k]==='1') x.fillRect((k+pad)*box,(r+pad)*box,box,box); }
     return c;
   }
+  /* THE ACCOUNT'S KEY, WRAPPED UNDER A FRESH ONE, for a link or a hand-over: opened HERE under the master and
+     wrapped under a key minted here, so the Worker sees a wrap and a key and never the account's own key.
+     CHARACTER CLASSES, NOT ESCAPES: this file is spliced into a template literal, where a backslash before
+     + or / is eaten and /+/ is not a regular expression at all. */
+  async function keyFor(a){
+    var o=await (await fetch('/open', {method:'POST', headers:{'content-type':'application/json'},
+      body:JSON.stringify({u:a.username, password:OWNER.master, master:OWNER.master})})).json();
+    if(!o.ok||!o.wrapMaster) throw new Error('that account did not open under the master');
+    var ck=await unwrap(OWNER.master, o.wrapMaster);
+    var raw=crypto.getRandomValues(new Uint8Array(24));
+    var tok=btoa(String.fromCharCode.apply(null, raw)).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/[=]+$/,'');
+    return {token:tok, wrap:await wrapUnder(new TextEncoder().encode(tok), ck)};
+  }
+  /* ---- SHOW A CODE, IN PERSON (S3 3.13, his decision D2 of 24 Sep 2026) -------------------------------
+     A customer at his counter signs in on their own phone without a message: a QR their camera opens, signed
+     in, and eight symbols to type where Salt Counter asks for one (the saved iPhone app keeps its own storage,
+     so a camera's browser does not sign it in). MINTED AS THE SHEET OPENS and only shown: nothing here copies
+     or shares, so no clipboard or share sheet ever waits on the derivation and the fetch. One use, fifteen
+     minutes; closing the sheet does not spend it. The recipes are the system's: Sheet, Orb, QR panel and Code
+     field. */
+  var hoSheet=null;
+  function closeHo(){
+    if(!hoSheet) return;
+    var from=hoSheet.from;
+    hoSheet.scrim.remove(); hoSheet.box.remove(); hoSheet=null;
+    try{ if(from) from.focus(); }catch(e){}
+  }
+  function svgEl(tag, attrs){
+    var e=document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for(var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  /* rectangles, one a run of dark modules, as engine/qr.mjs's qrRectSvg draws them: a stroked path does not scan */
+  function qrRects(rows){
+    var n=rows.length, q=4, span=n+q*2;
+    var svg=svgEl('svg', {viewBox:'0 0 '+span+' '+span, role:'img', 'aria-label':'A code their camera opens, signed in'});
+    var g=svgEl('g', {}); g.style.fill='var(--salt-slate)';
+    for(var r=0;r<n;r++){
+      for(var c=0;c<n;){
+        if(rows[r][c]!=='1'){ c++; continue; }
+        var w=1; while(c+w<n&&rows[r][c+w]==='1') w++;
+        g.appendChild(svgEl('rect', {x:c+q, y:r+q, width:w, height:1}));
+        c+=w;
+      }
+    }
+    svg.appendChild(g);
+    return svg;
+  }
+  async function showHandover(a, from){
+    closeHo();
+    var scrim=el('div','salt-sheet-scrim'); scrim.setAttribute('aria-hidden','true');
+    var box=el('div','salt-sheet ho'); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
+    box.setAttribute('aria-labelledby','hoT'); box.tabIndex=-1;
+    box.appendChild(el('div','salt-sheet__grab'));
+    var head=el('div','salt-sheet__head'), title=el('h2','salt-sheet__title','Sign in on their phone'); title.id='hoT';
+    var x=el('button','salt-orb salt-sheet__close'); x.type='button'; x.setAttribute('aria-label','Close');
+    var xg=svgEl('svg', {width:16, height:16, viewBox:'0 0 16 16', fill:'none', stroke:'currentColor', 'stroke-width':'1.5', 'stroke-linecap':'round', 'aria-hidden':'true'});
+    xg.appendChild(svgEl('path', {d:'M3.5 3.5l9 9M12.5 3.5l-9 9'})); x.appendChild(xg);
+    head.appendChild(title); head.appendChild(x); box.appendChild(head);
+    var body=el('div','salt-sheet__body'); box.appendChild(body);
+    body.appendChild(el('p','ho-for','For '+a.username+'.'));
+    var wait=el('p','ho-wait','Making a code...'); body.appendChild(wait);
+    document.body.appendChild(scrim); document.body.appendChild(box);
+    var me=hoSheet={scrim:scrim, box:box, from:from};
+    scrim.addEventListener('click', closeHo); x.addEventListener('click', closeHo);
+    box.addEventListener('keydown', function(e){ if(e.key==='Escape'){ e.stopPropagation(); closeHo(); } });
+    try{ box.focus(); }catch(e){}
+    try{
+      var k=await keyFor(a);
+      var j=await refs('/all/handover', {u:a.username, token:k.token, wrap:k.wrap});
+      k=null;
+      if(hoSheet!==me) return;
+      wait.remove();
+      /* the panel's width is the component's own prop, and its place in the sheet is this page's: set from the
+         script, which the page's style policy allows where a style attribute is refused */
+      var qr=el('div','salt-qr'); qr.style.width='min(280px, 100%)'; qr.style.margin='4px auto 20px';
+      var qc=el('div','salt-qr__code'); qc.appendChild(qrRects(j.qr||[])); qr.appendChild(qc);
+      var qm=el('div','salt-qr__meta'); qm.appendChild(el('span','salt-qr__caption','Their camera opens it, signed in')); qr.appendChild(qm);
+      body.appendChild(qr);
+      var p=klBits(j.exp);
+      var cf=el('div','salt-field salt-code');
+      var lab=el('label','salt-code__label','Or type this code where Salt Counter asks for one'); lab.htmlFor='hoC';
+      var inp=el('input','salt-field__input salt-field__input--code'); inp.id='hoC'; inp.readOnly=true;
+      inp.setAttribute('autocomplete','off'); inp.setAttribute('spellcheck','false');
+      inp.value=String(j.code||'').replace('-',' ');
+      cf.appendChild(lab); cf.appendChild(inp);
+      cf.appendChild(el('p','salt-code__hint','Works once, until '+p.hour+':'+p.minute+'.'));
+      body.appendChild(cf);
+    }catch(e){
+      if(hoSheet!==me) return;
+      wait.className='salt-code__error'; wait.textContent='Could not make a code: '+e.message;
+    }
+  }
   function sendCard(a){
     var card=el('div','scard'+(a.sent?' done':''));
     var head=el('div','srow');
@@ -150,17 +243,9 @@ export const OWNER_JS = `
       slb.disabled=true; slb.textContent='Making it...';
       var made=false;
       try{
-        var o=await (await fetch('/open', {method:'POST', headers:{'content-type':'application/json'},
-          body:JSON.stringify({u:a.username, password:OWNER.master, master:OWNER.master})})).json();
-        if(!o.ok||!o.wrapMaster) throw new Error('that account did not open under the master');
-        var ck=await unwrap(OWNER.master, o.wrapMaster);
-        var raw=crypto.getRandomValues(new Uint8Array(24));
-        /* CHARACTER CLASSES, NOT ESCAPES: this file is spliced into a template literal, where a
-           backslash before + or / is eaten and /+/ is not a regular expression at all. */
-        var tok=btoa(String.fromCharCode.apply(null, raw)).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/[=]+$/,'');
-        var wrap=await wrapUnder(new TextEncoder().encode(tok), ck);
-        var j=await refs('/all/signin/'+encodeURIComponent(a.username), {token:tok, wrap:wrap});
-        tok=null; ck=null; made=true;
+        var k=await keyFor(a);
+        var j=await refs('/all/signin/'+encodeURIComponent(a.username), {token:k.token, wrap:k.wrap});
+        k=null; made=true;
         /* 24 SEP 2026: ONCE IT IS MADE, A FAILURE IS NOT "COULD NOT MAKE ONE". A share sheet he closed
            rejects too, and the link was already minted; it goes to the clipboard instead, and the
            button says which of the three happened. */
@@ -171,10 +256,27 @@ export const OWNER_JS = `
       }catch(e){ slb.textContent=made?'Link made, not copied':'Could not make one'; }
       setTimeout(function(){ slb.textContent='Sign-in link'; slb.disabled=false; }, 2200);
     });
+    var hob=el('button',null,'Show a code'); hob.type='button';
+    if(noAcct){ hob.disabled=true; hob.title=why; }
+    hob.addEventListener('click', function(){ if(a.account!==false) showHandover(a, hob); });
+    /* S3 FIX, 24 SEP 2026: SIGN OUT EVERYWHERE (fold 9.4's server half). A forwarded link or a lost phone stays signed
+       in while it is used, so this ends every phone and session on the account; a second tap within four seconds says
+       yes, and a new link or a code then signs them back in */
+    var sob=el('button',null,'Sign out everywhere'); sob.type='button';
+    if(noAcct){ sob.disabled=true; sob.title=why; }
+    var soArmed=null;
+    sob.addEventListener('click', async function(){
+      if(a.account===false) return;
+      if(!soArmed){ sob.textContent='Tap again to sign them out'; soArmed=setTimeout(function(){ soArmed=null; sob.textContent='Sign out everywhere'; }, 4000); return; }
+      clearTimeout(soArmed); soArmed=null; sob.disabled=true; sob.textContent='Signing out...';
+      try{ var j=await refs('/all/signout', {u:a.username}); sob.textContent=j.ended?'Signed out everywhere':'Nothing was signed in'; }
+      catch(e){ sob.textContent='Could not sign out'; }
+      setTimeout(function(){ sob.textContent='Sign out everywhere'; sob.disabled=false; }, 2200);
+    });
     var open=el('button',null,'Open account'); open.type='button';
     if(noAcct){ open.disabled=true; open.title=why; }
     open.addEventListener('click', function(){ openAcct(a); });
-    row.appendChild(share); row.appendChild(copy); row.appendChild(slb); row.appendChild(pwb); row.appendChild(open);
+    row.appendChild(share); row.appendChild(copy); row.appendChild(slb); row.appendChild(hob); row.appendChild(pwb); row.appendChild(sob); row.appendChild(open);
     card.appendChild(row);
     var tick=el('label','tick');
     var box=document.createElement('input'); box.type='checkbox'; box.checked=!!a.sent;

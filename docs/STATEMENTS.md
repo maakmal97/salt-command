@@ -178,7 +178,7 @@ Each statement carries a QR code and prints the customer's **username**. The QR 
 `https://k7m3p2.qyts8mh72kyg.workers.dev/?u=<username>`, one landing page for every account,
 with the username filled in; the password goes by a different channel. The page checks the
 pair, decrypts in his own browser, and shows a strip: **"Now"**, then every issue by its date,
-newest first. It stays signed in on that device while Remember me is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
+newest first. It stays signed in on that device while Keep me signed in is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
 he likes.
 
 **"Now" is live (his instruction, 03 Sep 2026): every entry from the start to the minute it was
@@ -205,9 +205,9 @@ has lost his asks for it again, and it is read back from `_passwords.json`.
    for byte as a wrong password does, so the list cannot be walked.
 4. `STMT_MASTER`, a secret on the statements Worker, is his override. It opens any account,
    because each issue carries a second wrap of the key under it, made from the same passphrase in
-   `_secrets.json`. Since 16 Sep 2026 the door takes the username in two boxes and the password in
-   four, four symbols each, so the master can no longer be typed there: the owner's list at `/all`
-   fills it in for him.
+   `_secrets.json`. The door is one field for each secret since S3 3.7 (his D3; two boxes and four
+   from 16 Sep until then), and only the owner's page sends what is typed as a master, so the master
+   still cannot be typed at a customer's door: the owner's list at `/all` fills it in for him.
 
 ### The secrets, and where each one lives
 
@@ -216,7 +216,11 @@ has lost his asks for it again, and it is read back from `_passwords.json`.
 | `STMT_KEY` | `statements\_secrets.json`, `"key"` | GitHub Actions secret `STMT_KEY` | Derives every customer's content key. The same string in both places. **Lose it and every account is re-issued.** |
 | `STMT_MASTER` | `statements\_secrets.json`, `"master"` | Cloudflare secret on the site | His override. The Worker compares it; the laptop wraps the key under it at issue time. |
 | the passwords | `statements\<YYYY-MM>\_passwords.json` | sealed under `STMT_MASTER` as `pwMaster`, served only behind Access | One per customer, one live month. In the clear on the laptop alone (v688), and since v710 no message carries one at all. |
-| a sign-in link | nowhere | KV `ot:<sha256(token)>`, 7 days, one use | The content key wrapped under a token his page mints (v710). The token is stored nowhere, so the record opens only for whoever holds the link. |
+| a sign-in link | nowhere | KV `ot:<sha256(token)>`, 3 days (7 until his D1), one use | The content key wrapped under a token his page mints (v710). The token is stored nowhere, so the record opens only for whoever holds the link. Its page asks which account first (`peek`, spending nothing) and spends it on Continue; spent, the record answers the nonce of the page that spent it for two minutes (`RETRY_TTL`), its peek included, so a lost answer is tried again, from a reload of that tab too, and a second device is refused (S3 3.3). Continue also remembers the phone with the door's own split key, and the message says so and names the username (S3 3.4, his D1). |
+| a remembered phone | nowhere | KV `rem:<sha256(token)>`, 30 days from the last open (S3 3.6; from the tick until then) | The content key wrapped under a key that never leaves that browser (v692). Filed under the token's hash since S3 3.1, so a copy of the store names no token; a record filed the old way is re-filed on its next open, keeping the end it had, thirty days from its tick, and never sliding, so a copy taken before then dies on time (S3 fix). |
+| where an account is signed in | nowhere | KV `dev:<username>:<sha256(key)>`, as long as what it names | A pointer per remembered phone (`rem:`) and per session an open mints (`sess:<sha256(token)>`, a session being filed under its token's hash since an S3 fix, as a phone is), with `how` it came, `at` and `last` (S3 3.2). Listed by the prefix, it is what shows an account's phones and signs them all out (`POST /all/signout {u}`, Salt Admin's Sign out everywhere on each card, which also drops the account's alerts); it names hashes, so it opens nothing. |
+| `STMT_HANDOVER_KEY` | nowhere | Cloudflare secret on the site, set by hand (S3 3.9) | Keys the hash a hand-over's code and key are filed under and seals the wrap beside them. Unset, the hand-over routes answer 503. Changing it only strands the codes alive at that moment. |
+| a hand-over | nowhere | KV `ho:<HMAC(STMT_HANDOVER_KEY, code or key)>`, 15 minutes, one use | The content key wrapped under a key the signed-in page mints, filed under the code and the key, sealed. The contract is below. |
 
 `_secrets.json` is gitignored and looks like
 `{"key": "<64 hex characters>", "master": "<the passphrase>"}`. An environment variable of
@@ -292,8 +296,8 @@ form's product dropdown became a **segment of marks**, because an `<option>` car
 drawing. A control holding only a mark is named by its **shape** (`PSHAPE`: Cube, Droplet, Ring) and
 never by its product, so a screen reader is told what is drawn rather than what it is.
 
-**The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title and the
-install tutorial all say **Salt Counter** (v704, his instruction of 18 Sep 2026; it went Order Salt,
+**The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title, the
+sign-in link's page and the Keep it on your Home Screen card all say **Salt Counter** (v704, his instruction of 18 Sep 2026; it went Order Salt,
 then The Counter, then his own name for it). The icon on a customer's home screen has to say
 something: it is the ONE place on this site where something is called something, and the product
 word is his to spend there. Inside the page a product is still a mark and never a word. What never
@@ -301,6 +305,39 @@ appears is the DESK's name. Twelve characters exactly, which is what iOS gives a
 place Salt Command appeared on a customer's page, is gone: `brand` is null for the live statement
 and every new issue, and a statement with no brand carries no eyebrow rather than an empty one.
 Issues already sealed keep the letterhead they were issued with until they are re-issued.
+
+### The hand-over: a key and an eight-symbol code (S3 3.9, his decision D2 of 24 Sep 2026)
+
+An iPhone's Home Screen app keeps its own storage, so what Safari remembers never reaches it. A page already
+signed in (or Salt Admin, for a customer at his counter) hands the sign-in across: a long KEY for Paste and for
+`/app#<key>`, and an eight-symbol CODE to type. Mechanism: `stmt/signin.js`; the door: `handleHandover` in
+`stmt/worker.js`. **The contract the Counter codes to:**
+
+| Route | Takes | Answers |
+|---|---|---|
+| `POST /handover` | a live session (`X-Stmt-Session`) and JSON `{token, wrap}`: `token` a key the page mints (24 random bytes, base64url, the shape of a sign-in link's), `wrap` its content key wrapped under it exactly as `wrapUnder(new TextEncoder().encode(token), ck)` wraps | `{ok, code, token, exp}`: `code` eight symbols of the username alphabet as `xxxx-xxxx`, `token` the key sent, `exp` ISO, fifteen minutes on. 401 with `session:false` with no session; 400 without a key of that shape and a wrap |
+| `POST /handover/open` | JSON `{token}` or `{code}` (case, spaces and hyphens forgiven; `token` wins where both are sent); `tab: true` beside a token a browser tab found in its address, which opens only a key his `/all/handover` minted and refuses any other unspent | exactly what `POST /open-link` answers (`u`, `wrap`, `session`, `env`, `live`, `prices`, `card`, `assoc`, `issued`, `issues`, `remembered: true`) **plus `token`**: the page unwraps `wrap` under `token`, the one in the answer, whichever it typed. Both names are burnt. Every refusal is the door's one (401); a brake is the door's (429) |
+| `POST /all/handover` | behind Access, JSON `{u, token, wrap}`: his page opens the account under the master and wraps as above | `{ok, code, token, exp, url, qr}`: `url` is `<site>/app#qr.<token>`, the QR's own form, `qr` its rows of `0` and `1`; the record is marked his |
+
+- **Mint when the sheet opens, copy in a tap of its own**: the derivation and the fetch are never in the tap that
+  copies or shares (the judges' must-not-ship list).
+- **Keyed and sealed**: filed as `ho:<HMAC(STMT_HANDOVER_KEY, "code:" + code)>` and `ho:<HMAC(..., "key:" + token)>`,
+  each holding the other's name, `exp`, and the username, key and wrap sealed under AES-GCM keyed from the same
+  secret. Eight symbols are 39 bits: never a plain hash.
+- **A code is braked** per address (`hofail:<address>`, a v6 address by its /64, ten misses) and site-wide (`hofail`, a
+  hundred), fifteen minutes each. A miss is any refused code; a success clears nothing. A key is neither braked nor
+  counted (192 bits, as a link's token is), so a flood shuts code sign-in for everyone for fifteen minutes and no other
+  door, the key included (S3 fix). JSON only, as `/open`.
+- **What the brakes are worth: they bound time, not guesses.** Each count is a KV read then a write, not atomic, and KV
+  takes one write to a key a second (a refused put is swallowed), so under a flood the site count rises about once a
+  second and cannot trip for the first 100 to 160 seconds; the per-address count lags the same way. The safety is the
+  space: 30 to the eighth is 6.6e11 codes (39 bits), so the 1.6e5 guesses 1,000 a second makes before the brake can
+  trip find a given live code with odds of 2.4e-7, and 10,000 a second 2.4e-6. A code cannot be walked inside its
+  fifteen minutes. An atomic count waits for a Durable Object.
+- **Log out burns them**: `POST /logout` takes `handover`, the keys the page minted (ten at most), and deletes both
+  records of each unopened, so a key left on a handed-on phone's clipboard or address opens nothing (S3 fix).
+- **A code open is an open**: `seen:` says `code` or `key`, and its session leaves a pointer (`dev:`).
+- The same two limits as the link: a bearer credential inside its fifteen minutes, and one use best effort on KV.
 
 ## The price list and the order book (06 Sep 2026, his instruction)
 
@@ -636,7 +673,7 @@ not taken, cancelled. **Never an amount, a product, an order or a name**; the su
 One banner an order: the notification's tag and a sealed wake's push `Topic` are per order (the topic a
 digest of the id), so news of one order never replaces another's on the lock screen or at the push service.
 A tap opens the Counter at `#o=<id>`; a page already open is sent a message instead, re-reads its
-orders and opens that one, or, its session lapsed, keeps it for the sign-in after Continue. A subscription filed before its keys gets a payload-free wake and the
+orders and opens that one, or, its session lapsed, keeps it until the phone is back in (reopened from its memory, S3 3.5, or signed in on the Sheet). A subscription filed before its keys gets a payload-free wake and the
 old fixed words, so nothing already subscribed went dark; the page re-files the keys at the next
 sign-in. A notice keeps its own road: its wake carries no payload, and the service worker reads
 the public `bulletin` (v761). On an
@@ -732,6 +769,14 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   carry and refuses to hand back a link it could not file. What comes back is the finished message
   from `stmt/send.js`, the one copy of those words, plus the QR; it goes to the share sheet, or to
   the clipboard where there is none. **The token is dropped from the page as soon as it is sent.**
+- **SHOW A CODE, IN PERSON** (S3 3.13, his decision D2). For a customer at his counter: the card's Show a code opens
+  the system's Sheet and, as it opens, mints a hand-over through `POST /all/handover` (his page opens the account
+  under the master and wraps as the Sign-in link does). It shows a QR of `<site>/app#qr.<key>`, drawn in rectangles,
+  and the eight symbols in the Code field with when they stop working. It copies and shares nothing, so no
+  clipboard waits on the derivation and the fetch. Closing it does not spend the code. The camera opens the QR in
+  a browser tab, which spends that form alone and marks it a tab's (`tab: true`), and the Worker opens a tab's key only
+  where his route minted it, before the phone's memory, so Replace asks over another account. The plain `/app#<key>` a customer's own Keep Sheet writes is spent by the saved app alone,
+  so an address one customer sends another signs nobody in (S3 fix). An app's own browser spends nothing.
 - **Guest links `/g/<id>`** (v566) are minted inside `/all` and labelled: a board is what he prints
   and hands to strangers, and the link exists to say WHICH stranger. `stmt/refs.js` mints, lists,
   revokes and counts opens; it prices nothing, and neither does `tools/pricelist.mjs`, which reads

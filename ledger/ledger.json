@@ -1,6 +1,6 @@
 {
- "v": "v830",
- "stamped": "24 Sep 2026, 20:56 KL",
+ "v": "v836",
+ "stamped": "24 Sep 2026, 23:44 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -73,7 +73,7 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 35
+    "stated": 50
    },
    "candy": {
     "qty": 0,
@@ -83,7 +83,7 @@
    "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": null
+    "stated": 94
    },
    "spare": {
     "qty": 0,
@@ -94,9 +94,9 @@
   "STATED_STOCK": 16.5,
   "COUNT_ON": {
    "salt": "2026-09-23",
-   "oil": "2026-09-19",
+   "oil": "2026-09-24",
    "candy": null,
-   "rice": null,
+   "rice": "2026-09-24",
    "spare": null
   },
   "COUNTS": [
@@ -200,6 +200,20 @@
     "date": "2026-09-23",
     "qty": 25,
     "was": 26,
+    "drift": -1
+   },
+   {
+    "product": "oil",
+    "date": "2026-09-24",
+    "qty": 0,
+    "was": 35,
+    "drift": -35
+   },
+   {
+    "product": "rice",
+    "date": "2026-09-24",
+    "qty": 94,
+    "was": 95,
     "drift": -1
    }
   ],
@@ -662,6 +676,34 @@
      }
     ],
     "paidOn": "2026-09-22"
+   },
+   {
+    "qty": 50,
+    "total": 400,
+    "cash": 400,
+    "supplier": "SP7-PUD",
+    "status": "paid",
+    "product": "oil",
+    "date": "2026-09-24",
+    "receivedOn": "2026-09-24",
+    "receivedQty": 50,
+    "paidOn": "2026-09-24",
+    "note": "<b>OIL PURCHASE DATED 24 SEP, PAID AND RECEIVED IN FULL THE SAME DAY.</b> BUY from SP7-PUD, 50 unit for RM400, RM8 a unit on the drafter's working, RM400 cash out and 50 unit received on 24 Sep, with no delivery and no freight, so nothing on this row stays open. His word of 23 Sep 2026 quotes 50 unit at RM380, RM7.60 a unit, and names that tier and the 10 unit tier at RM100 alone, so this total is RM20 above the quote. Across 5 orders his median rate is RM7.53 with a range of RM7 to RM7.67, nothing outstanding, none defaulted, no unit on credit. On the roster, not an associate. No flag was raised, and the dossier gives no reason for the gap to the quote.",
+    "rid": "p030"
+   },
+   {
+    "qty": 15,
+    "total": 630,
+    "cash": 630,
+    "supplier": "SM4-KEP",
+    "status": "paid",
+    "product": "candy",
+    "date": "2026-09-24",
+    "receivedOn": "2026-09-24",
+    "receivedQty": 15,
+    "paidOn": "2026-09-24",
+    "note": "<b>CANDY PURCHASE DATED 24 SEP, PAID AND RECEIVED IN FULL THE SAME DAY.</b> BUY from SM4-KEP, 15 unit for RM630, RM42 a unit on the drafter's working, RM630 cash out and 15 unit received on 24 Sep, with no delivery and no freight, so nothing stays open. His word of 23 Sep 2026 quotes 10 unit at RM55 and 20 unit at RM47, then 30 unit at RM38 and 50 unit at RM30; 15 unit falls between tiers, so no quoted rate answers this size. Across 3 orders his median rate is RM7.67 with a range of RM3.20 to RM38, nothing outstanding, none defaulted, no unit on credit. On the roster, not an associate. No flag was raised.",
+    "rid": "p031"
    }
   ],
   "sales": [
@@ -4790,14 +4832,15 @@
     "rid": "s183",
     "deliveredOn": "2026-09-19",
     "handover": "delivered",
-    "mod": "corrected on 2026-09-19: deliveredQty 0 to 5; deliveredOn (unset) to 2026-09-19; handover (unset) to delivered, then corrected on 2026-09-20: paidOn 2026-09-19 to (cleared)",
+    "mod": "corrected on 2026-09-19: deliveredQty 0 to 5; deliveredOn (unset) to 2026-09-19; handover (unset) to delivered, then corrected on 2026-09-20: paidOn 2026-09-19 to (cleared), then corrected on 2026-09-24: cost (unset) to 240",
     "amend": [
      {
       "date": "2026-09-19",
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 5,
-      "note": "as booked"
+      "note": "as booked",
+      "cost": 240
      },
      {
       "date": "2026-09-19",
@@ -4826,10 +4869,18 @@
       "cash": 15,
       "kg": 0,
       "note": "<b>FULFILMENT ON s183 DATED 20 SEP: THE RM15 OF DELIVERY IS PAID AND THE ORDER CLOSES.</b> CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM435 owed, was delivered in full and paid RM420 on the day, and the v738 correction held the carriage open. RM15 cash moves on 20 Sep against RM15 outstanding, leaving RM0 and 0 unit, which answers the drafter's settlement flag. The party has 15 orders, a median of RM96.67 and a range of RM6 to RM120, with RM15 outstanding before this and nothing defaulted. Nothing else on the row moves."
+     },
+     {
+      "date": "2026-09-24",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s183 DATED 24 SEP: COST SET TO RM240, 5 UNIT AT RM48.</b> The order went out by a correction raising the delivered quantity, which moved no units through the fold, so the shelf's cost was never written although the note of the day stated RM48 a unit. Without it the gross margin across every book read blank. Nothing else on the row moves."
      }
     ],
     "rev": "R2",
-    "paidOn": "2026-09-20"
+    "paidOn": "2026-09-20",
+    "cost": 240
    },
    {
     "customer": "CZ5-TM",
@@ -5018,11 +5069,28 @@
     "handover": "collected",
     "product": "rice",
     "date": "2026-09-23",
-    "deliveredQty": 10,
+    "deliveredQty": 1,
     "deliveredOn": "2026-09-23",
     "paidOn": "2026-09-23",
-    "note": "<b>RICE SELL DATED 23 SEP, COLLECTED AND PAID IN FULL ON THE SAME VISIT AS THE SALT.</b> CM3-OUG took 10 unit for RM50, RM5 a unit, RM50 cash in and 10 unit collected on 23 Sep on his word, so nothing stays open. Costed at RM3.20 a unit from the desk's own inventory cost, RM32 on the goods, RM18 at 36%. The RM50 clears the floor of RM34 and sits under the ask of RM60, with the ceiling at RM102. Flagged: CM3-OUG has no committed rice order on the book, so there is no rate of theirs to compare; the figures do not answer it. CM3-OUG: 3 orders, median RM52, range RM48 to RM65, nothing outstanding, none on credit against a cap of 1.",
-    "rid": "s195"
+    "note": "<b>CORRECTION DATED 24 SEP ON S195, DELIVERED QUANTITY CUT FROM 10 TO 1.</b> The target is CM4-TO's rice sell of 23 Sep 2026, 10 unit for RM50 at RM5 a unit, RM50 cash in and paid on the day. The correction moves no cash: it rolls 9 unit back from CM4-TO, the difference it states, and leaves 1 unit handed over. Across 5 orders their median rate is RM52 with a range of RM5 to RM65, nothing outstanding, none defaulted and no unit on credit. On the roster, not an associate. No flag was raised. The 9.5 unit of salt owed out on s194 stays open. <b>RICE SELL DATED 23 SEP, COLLECTED AND PAID IN FULL ON THE SAME VISIT AS THE SALT.</b> CM3-OUG took 10 unit for RM50, RM5 a unit, RM50 cash in and 10 unit collected on 23 Sep on his word, so nothing stays open. Costed at RM3.20 a unit from the desk's own inventory cost, RM32 on the goods, RM18 at 36%. The RM50 clears the floor of RM34 and sits under the ask of RM60, with the ceiling at RM102. Flagged: CM3-OUG has no committed rice order on the book, so there is no rate of theirs to compare; the figures do not answer it. CM3-OUG: 3 orders, median RM52, range RM48 to RM65, nothing outstanding, none on credit against a cap of 1.",
+    "rid": "s195",
+    "mod": "corrected on 2026-09-24: deliveredQty 10 to 1",
+    "amend": [
+     {
+      "date": "2026-09-23",
+      "kind": "Fulfilment",
+      "cash": 50,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-24",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION DATED 24 SEP ON S195, DELIVERED QUANTITY CUT FROM 10 TO 1.</b> The target is CM4-TO's rice sell of 23 Sep 2026, 10 unit for RM50 at RM5 a unit, RM50 cash in and paid on the day. The correction moves no cash: it rolls 9 unit back from CM4-TO, the difference it states, and leaves 1 unit handed over. Across 5 orders their median rate is RM52 with a range of RM5 to RM65, nothing outstanding, none defaulted and no unit on credit. On the roster, not an associate. No flag was raised. The 9.5 unit of salt owed out on s194 stays open."
+     }
+    ]
    },
    {
     "customer": "CS6-PER",
@@ -5068,14 +5136,22 @@
       "cash": 30,
       "kg": 0,
       "note": "<b>FULFILMENT DATED 24 SEP ON S196: RM30 CASH, THE ORDER NOW SETTLED IN FULL.</b> Against CS6-PER's order of 2 unit for RM200 dated 23 Sep 2026, RM30 and 0 unit move on 24 Sep 2026 against RM30 and 0 unit outstanding, leaving RM0 and 0 unit open. The order already shows RM70 cash, 2 unit collected and a correction recording RM100 settled in kind by reward, 1 unit. No goods move, so the row carries no cost of its own. Flagged as settling the order in full and the figures answer it. CS6-PER: 8 orders, median rate RM70.4, range RM11 to RM100, nothing outstanding before, none on credit, an associate and on the roster."
+     },
+     {
+      "date": "2026-09-24",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s196 DATED 24 SEP: COST SET TO RM96, 2 UNIT AT RM48.</b> The order went out by a correction raising the delivered quantity, which moved no units through the fold, so the shelf's cost was never written although the note of the day stated RM48 a unit. Without it the gross margin across every book read blank. Nothing else on the row moves."
      }
     ],
     "deliveredOn": "2026-09-24",
     "handover": "collected",
-    "mod": "corrected on 2026-09-24: deliveredQty 0 to 2; deliveredOn (unset) to 2026-09-24; handover (unset) to collected, then corrected on 2026-09-24: settledRM (unset) to 100; rebateKg (unset) to 1; rebate (unset) to true",
+    "mod": "corrected on 2026-09-24: deliveredQty 0 to 2; deliveredOn (unset) to 2026-09-24; handover (unset) to collected, then corrected on 2026-09-24: settledRM (unset) to 100; rebateKg (unset) to 1; rebate (unset) to true, then corrected on 2026-09-24: cost (unset) to 96",
     "settledRM": 100,
     "rebateKg": 1,
-    "rebate": true
+    "rebate": true,
+    "cost": 96
    },
    {
     "customer": "CA6-CYB",
@@ -5107,6 +5183,36 @@
     "paidOn": "2026-09-24",
     "note": "<b>RICE SELL DATED 24 SEP, PAID AND COLLECTED IN FULL: NOTHING LEFT OPEN.</b> Booked to CC5-OKR, 4 unit for RM20, RM20 cash received on 24 Sep 2026 and 4 unit handed over the same day, no delivery or freight. Costed at RM3.2 a unit from the desk's own inventory cost, RM12.8 on the goods, though the drafter's working reads RM7.2 at 36%. The RM20 clears the floor of RM13.6 and sits under the ask of RM32, with the ceiling at RM41. Flagged: CC5-OKR has no committed rice order, so there is no rate of theirs to compare, and the figures do not answer it. Across 10 orders their median rate is RM90 with a range of RM48 to RM90, RM138 outstanding, none defaulted, and 2 unit on credit against a cap of 1. On the roster, not an associate.",
     "rid": "s198"
+   },
+   {
+    "customer": "CC5-OKR",
+    "qty": 10,
+    "total": 130,
+    "cost": 76,
+    "cash": 130,
+    "handover": "collected",
+    "product": "oil",
+    "date": "2026-09-24",
+    "deliveredQty": 10,
+    "deliveredOn": "2026-09-24",
+    "paidOn": "2026-09-24",
+    "note": "<b>OIL SELL DATED 24 SEP, PAID AND COLLECTED IN FULL: NOTHING LEFT OPEN.</b> Booked to CC5-OKR, 10 unit for RM130, RM130 cash in and 10 unit handed over on 24 Sep 2026, no delivery or freight. Costed at RM7.6 a unit from the desk's own inventory cost, RM76 on the goods, though the drafter's working reads RM54 at 41.5%. The RM130 clears the floor of RM78.24 and sits exactly at the ask for 10 unit, with the ceiling at RM240. Flagged: CC5-OKR has no committed oil order, so there is no rate of theirs to compare, and the figures do not answer it. Across 11 orders their median rate is RM90 with a range of RM5 to RM90, RM138 outstanding, none defaulted, and 2 unit on credit against a cap of 10. On the roster, not an associate.",
+    "rid": "s199"
+   },
+   {
+    "customer": "CZ4-MK",
+    "qty": 4,
+    "total": 200,
+    "cost": 152,
+    "cash": 200,
+    "handover": "collected",
+    "product": "candy",
+    "date": "2026-09-24",
+    "deliveredQty": 4,
+    "deliveredOn": "2026-09-24",
+    "paidOn": "2026-09-24",
+    "note": "<b>CANDY SELL DATED 24 SEP, COLLECTED AND PAID IN FULL ON THE DAY.</b> Booked to CZ4-MK, 4 unit for RM200, RM50 a unit, RM200 cash in and 4 unit moved on 24 Sep 2026, with no delivery or freight, so nothing stays open. Costed at RM38 a unit from the desk's own inventory cost, RM152 on the goods, though the drafter's working reads RM48 at 24%. The RM200 sits on the floor's right side at RM152 and RM40 under the ask of RM240 for 4 unit, ceiling RM456. No flag was raised. Across 5 orders their median rate is RM84 with a range of RM13 to RM92, nothing outstanding, none defaulted, and no unit on credit against a cap of 1. On the roster, not an associate.",
+    "rid": "s200"
    }
   ],
   "contacts": [
@@ -5844,9 +5950,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-24T12:19:36.471Z",
+  "QUEUE_COMMITTED": "2026-09-24T15:43:57.801Z",
   "PRICING": {
-   "takenAt": "2026-09-24T12:56:04.015Z",
+   "takenAt": "2026-09-24T15:45:01.583Z",
    "sizes": [
     0.5,
     1,
@@ -5935,6 +6041,13 @@
     "CJ2-KUC": {
      "salt": "Silver"
     },
+    "CC5-OKR": {
+     "salt": {
+      "small": "Titanium",
+      "mid": "Titanium",
+      "big": "Platinum"
+     }
+    },
     "CG5-SB": {
      "salt": "Titanium"
     },
@@ -5946,13 +6059,6 @@
     },
     "CA7-AMP": {
      "salt": "Gold"
-    },
-    "CC5-OKR": {
-     "salt": {
-      "small": "Titanium",
-      "mid": "Titanium",
-      "big": "Platinum"
-     }
     },
     "CH4-KS": {
      "salt": "Titanium"
@@ -6238,15 +6344,15 @@
       "lateTwice": false
      },
      "candy": {
-      "name": "one-off",
-      "orders": 1,
+      "name": "large and regular",
+      "orders": 2,
       "tenureDays": 3,
-      "sinceLastDays": 3,
-      "perMonth": 1.01,
+      "sinceLastDays": 0,
+      "perMonth": 2.03,
       "smallShare": 0,
       "bigShare": 1,
       "late": 0,
-      "frequent": false,
+      "frequent": true,
       "small": false,
       "bigger": true,
       "loyal": false,
@@ -6398,6 +6504,56 @@
       "lateTwice": false
      }
     },
+    "CC5-OKR": {
+     "salt": {
+      "name": "small and often",
+      "orders": 6,
+      "tenureDays": 77,
+      "sinceLastDays": 7,
+      "perMonth": 2.37,
+      "smallShare": 1,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": true,
+      "small": true,
+      "bigger": false,
+      "loyal": true,
+      "rare": false,
+      "lateTwice": false
+     },
+     "oil": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 0,
+      "sinceLastDays": 0,
+      "perMonth": 1.01,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     },
+     "rice": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 0,
+      "sinceLastDays": 0,
+      "perMonth": 1.01,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
     "CG5-SB": {
      "salt": {
       "name": "rare and large",
@@ -6479,40 +6635,6 @@
       "bigShare": 1,
       "late": 0,
       "frequent": true,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": false,
-      "lateTwice": false
-     }
-    },
-    "CC5-OKR": {
-     "salt": {
-      "name": "small and often",
-      "orders": 6,
-      "tenureDays": 77,
-      "sinceLastDays": 7,
-      "perMonth": 2.37,
-      "smallShare": 1,
-      "bigShare": 0,
-      "late": 0,
-      "frequent": true,
-      "small": true,
-      "bigger": false,
-      "loyal": true,
-      "rare": false,
-      "lateTwice": false
-     },
-     "rice": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 0,
-      "sinceLastDays": 0,
-      "perMonth": 1.01,
-      "smallShare": 0,
-      "bigShare": 1,
-      "late": 0,
-      "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
@@ -7268,23 +7390,23 @@
      ]
     },
     "oil": {
-     "stockCost": 7.6,
-     "replCost": 7.58,
+     "stockCost": 8,
+     "replCost": 7.68,
      "floors": {
       "10": {
-       "floor": 78.24
+       "floor": 78.65
       },
       "20": {
-       "floor": 156.47
+       "floor": 157.29
       },
       "30": {
-       "floor": 234.71
+       "floor": 235.94
       },
       "40": {
-       "floor": 312.95
+       "floor": 314.58
       },
       "50": {
-       "floor": 391.19
+       "floor": 393.23
       }
      },
      "inputs": {
@@ -7315,9 +7437,9 @@
         },
         "cur": {
          "qty": 50,
-         "total": 380,
-         "rate": 7.6,
-         "date": "2026-09-18",
+         "total": 400,
+         "rate": 8,
+         "date": "2026-09-24",
          "sup": "SP7-PUD"
         },
         "days": 49,
@@ -7349,22 +7471,22 @@
        },
        "lot": {
         "qty": 50,
-        "total": 380,
-        "rate": 7.6,
-        "date": "2026-09-18",
+        "total": 400,
+        "rate": 8,
+        "date": "2026-09-24",
         "sup": "SP7-PUD"
        },
-       "meanLot": 48.333333333333336,
+       "meanLot": 48.57142857142857,
        "quoteRate": 10,
-       "repl": 7.58,
-       "freightRate": 0.2437,
+       "repl": 7.68,
+       "freightRate": 0.1846,
        "leak": {
-        "ratio": 0.3182,
-        "leak": 35,
-        "sold": 110,
-        "cycles": 2,
+        "ratio": 0.5833,
+        "leak": 70,
+        "sold": 120,
+        "cycles": 3,
         "from": "2026-08-23",
-        "to": "2026-09-19"
+        "to": "2026-09-24"
        },
        "costRule": {
         "kind": "landed",
@@ -7378,15 +7500,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.5
+         "v": 0.42857142857142855
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.17559322033898303,
+       "shrinkRate": 0.2226086956521739,
        "avgDel": {
-        "n": 13,
-        "kg": 181,
-        "mean": 13.9231
+        "n": 14,
+        "kg": 191,
+        "mean": 13.6429
        }
       },
       "policy": {
@@ -7504,23 +7626,23 @@
      ]
     },
     "candy": {
-     "stockCost": 38,
-     "replCost": 38,
+     "stockCost": 39.3333,
+     "replCost": 39.33,
      "floors": {
       "1": {
-       "floor": 38
+       "floor": 39.33
       },
       "5": {
-       "floor": 190
+       "floor": 196.65
       },
       "10": {
-       "floor": 380
+       "floor": 393.3
       },
       "20": {
-       "floor": 760
+       "floor": 786.6
       },
       "30": {
-       "floor": 1140
+       "floor": 1179.9
       }
      },
      "inputs": {
@@ -7531,10 +7653,10 @@
         "state": "none",
         "lock": null,
         "cur": {
-         "qty": 30,
-         "total": 1140,
-         "rate": 38,
-         "date": "2026-09-21",
+         "qty": 15,
+         "total": 630,
+         "rate": 42,
+         "date": "2026-09-24",
          "sup": "SM4-KEP"
         }
        },
@@ -7544,15 +7666,15 @@
         "shrink": null
        },
        "lot": {
-        "qty": 30,
-        "total": 1140,
-        "rate": 38,
-        "date": "2026-09-21",
+        "qty": 15,
+        "total": 630,
+        "rate": 42,
+        "date": "2026-09-24",
         "sup": "SM4-KEP"
        },
-       "meanLot": 30,
+       "meanLot": 22.5,
        "quoteRate": 55,
-       "repl": 38,
+       "repl": 39.33,
        "freightRate": 0,
        "leak": null,
        "costRule": {
@@ -7573,9 +7695,9 @@
        "attrib": 1,
        "shrinkRate": 0,
        "avgDel": {
-        "n": 2,
-        "kg": 26,
-        "mean": 13
+        "n": 3,
+        "kg": 30,
+        "mean": 10
        }
       },
       "policy": {
@@ -7659,7 +7781,7 @@
       {
        "q": 1,
        "prices": [
-        38,
+        40,
         60
        ],
        "fixed": true
@@ -7667,7 +7789,7 @@
       {
        "q": 5,
        "prices": [
-        190,
+        197,
         300
        ],
        "fixed": true
@@ -7675,7 +7797,7 @@
       {
        "q": 10,
        "prices": [
-        380,
+        394,
         550
        ],
        "fixed": true
@@ -7683,7 +7805,7 @@
       {
        "q": 20,
        "prices": [
-        760,
+        787,
         1100
        ],
        "fixed": true
@@ -7691,7 +7813,7 @@
       {
        "q": 30,
        "prices": [
-        1140,
+        1180,
         1500
        ],
        "fixed": true
@@ -7703,13 +7825,13 @@
      "replCost": 3.2,
      "floors": {
       "1": {
-       "floor": 3.4
+       "floor": 4.08
       },
       "5": {
-       "floor": 17
+       "floor": 20.4
       },
       "10": {
-       "floor": 34
+       "floor": 40.8
       }
      },
      "inputs": {
@@ -7743,7 +7865,14 @@
        "quoteRate": 3.2,
        "repl": 3.2,
        "freightRate": 0.2,
-       "leak": null,
+       "leak": {
+        "ratio": 0.2,
+        "leak": 1,
+        "sold": 5,
+        "cycles": 1,
+        "from": null,
+        "to": "2026-09-24"
+       },
        "costRule": {
         "kind": "stack",
         "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
@@ -7760,11 +7889,11 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0,
+       "shrinkRate": 0.01,
        "avgDel": {
         "n": 2,
-        "kg": 14,
-        "mean": 7
+        "kg": 5,
+        "mean": 2.5
        }
       },
       "policy": {
@@ -7829,7 +7958,7 @@
       {
        "q": 1,
        "prices": [
-        4,
+        5,
         8
        ],
        "fixed": true
@@ -7837,7 +7966,7 @@
       {
        "q": 5,
        "prices": [
-        17,
+        21,
         35
        ],
        "fixed": true
@@ -7845,7 +7974,7 @@
       {
        "q": 10,
        "prices": [
-        34,
+        41,
         60
        ],
        "fixed": true
@@ -7998,11 +8127,11 @@
      "ladder": []
     }
    },
-   "v": "v830"
+   "v": "v836"
   },
   "OPEN": {
-   "at": "2026-09-24T12:56:04.304Z",
-   "count": 8,
+   "at": "2026-09-24T15:45:01.853Z",
+   "count": 9,
    "byKey": {
     "CM4-TO|2026-09-23|750": {
      "d": "2026-09-23",
@@ -8019,6 +8148,23 @@
      "deliveredOn": "2026-09-23",
      "handover": "collected",
      "key": "CM4-TO|2026-09-23|750"
+    },
+    "CM4-TO|2026-09-23|50": {
+     "d": "2026-09-23",
+     "p": "CM4-TO",
+     "dir": "S",
+     "q": 10,
+     "t": 50,
+     "cash": 50,
+     "mv": 1,
+     "st": "oweStock",
+     "oweUnits": 9,
+     "pr": "rice",
+     "rid": "s195",
+     "paidOn": "2026-09-23",
+     "deliveredOn": "2026-09-23",
+     "handover": "collected",
+     "key": "CM4-TO|2026-09-23|50"
     },
     "CR3-DAM|2026-09-22|90": {
      "d": "2026-09-22",
@@ -8149,35 +8295,35 @@
     },
     "oil": {
      "name": "Oil",
-     "onHand": 35,
-     "free": 35,
+     "onHand": 50,
+     "free": 50,
      "owedOut": 0,
-     "coverDays": 11.1,
-     "rate": 3.35,
+     "coverDays": 14.3,
+     "rate": 3.88,
      "owedToYou": 0,
      "promised": 0,
      "short": 0
     },
     "candy": {
      "name": "Candy",
-     "onHand": 4,
-     "free": 4,
+     "onHand": 15,
+     "free": 15,
      "owedOut": 0,
-     "coverDays": 2.7,
-     "rate": 1.49,
+     "coverDays": 8.6,
+     "rate": 1.75,
      "owedToYou": 0,
      "promised": 0,
      "short": 0
     },
     "rice": {
      "name": "Rice",
-     "onHand": 86,
-     "free": 86,
-     "owedOut": 0,
-     "coverDays": 98.9,
+     "onHand": 94,
+     "free": 85,
+     "owedOut": 9,
+     "coverDays": 97.7,
      "rate": 0.87,
      "owedToYou": 0,
-     "promised": 0,
+     "promised": 9,
      "short": 0
     },
     "spare": {
@@ -8194,12 +8340,12 @@
    },
    "countedOn": {
     "salt": "2026-09-23",
-    "oil": "2026-09-19",
+    "oil": "2026-09-24",
     "candy": null,
-    "rice": null,
+    "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v830"
+   "v": "v836"
   }
  }
 }
