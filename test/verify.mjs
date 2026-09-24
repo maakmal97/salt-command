@@ -32071,6 +32071,75 @@ await (async () => {
   } finally { w.close(); }
 })();
 
+section("S6 fix: To pay now and an order never ask for the same money twice, whichever of them it was sent on");
+await (async () => {
+  /* HIS D7 AND D8: money sent waits for his answer and is not asked for again. To pay now is the book's rows as they
+     stood at publish, and an order's row is one of them once its goods have gone, so a claim on the order left To pay
+     now asking for it, and a claim against the account left the order asking. The order's view carries the day its
+     row is on the book as (rowOn, off the key, which never travels), and the page tells its part by that day and the
+     whole figure. Forced state: a sealed pay in the publish's shape, and orders as the customer's view hands them. */
+  const O = await import("../stmt/orders.js");
+  const view = O.customerView({ id: "v1", status: "ready", ledgerKey: "CX1-AB|2026-09-10|180", queued: { ack: "x" }, total: 180 });
+  ok(view.rowOn === "2026-09-10" && !("ledgerKey" in view) && !JSON.stringify(view).includes("CX1-AB") && O.CUSTOMER_FIELDS.includes("rowOn"),
+    "the customer's view of an order carries the day its row is on the book as, and never the key: " + JSON.stringify(view));
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const Cr = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const U = "abcd-efgh", pass = "fixture-pass-r3", ck = await Cr.contentKey("test-secret", U);
+  const now = new Date(), iso = (h) => new Date(now.getTime() + h * 3600e3).toISOString();
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const part = (date, rm) => ({ date, due: null, late: false, rm, whole: rm, product: "salt", qty: 1, got: 1, gotOn: date, resale: false });
+  const pay = { term: 10, now: { rm: 300, due: null, parts: [part("2026-09-10", 180), part("2026-09-12", 120)] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+  const read = async (list, claims) => {
+    const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-r3",
+      env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: 300, pay })) };
+    const dom = new JD(lp(U, "nr3", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {}; win.open = () => null;
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
+        if (p === "/open") return res(200, body);
+        if (p === "/orders" && m === "GET") return res(200, { ok: true, orders: list, claims });
+        return res(404, { ok: false });
+      };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = U; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      await until(() => !d.getElementById("tabs").hidden);
+      await until(() => d.getElementById("payNow") || /sent/.test(t(d.getElementById("payHead"))));
+      const out = { payNow: t(d.getElementById("payNow")) };
+      d.querySelector('button[data-t="order"]').click();
+      await until(() => d.querySelector('#pOrder [data-row="oX"]'));
+      d.querySelector('#pOrder [data-row="oX"]').click();
+      await until(() => d.querySelector("#pOrder .oscreen"));
+      const scr = d.querySelector("#pOrder .oscreen");
+      out.orderPay = [...scr.querySelectorAll(".oact button")].map(t).join();
+      out.lines = [...scr.querySelectorAll(".salt-ledger__row")].map(t);
+      return out;
+    } finally { dom.window.close(); }
+  };
+  const order = (extra) => Object.assign({ id: "oX", product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 1, movedOn: "2026-09-10", at: iso(-400), status: "ready",
+    total: 180, paid: 0, claimed: 0, payments: [], msgs: [], history: [{ at: iso(-400), status: "acknowledged", by: "desk" }] }, extra);
+  const sent = { claimed: 180, payments: [{ at: iso(-1), amount: 180, method: "transfer", account: "maybank", claim: "waiting" }] };
+  const onOrder = await read([order(Object.assign({ rowOn: "2026-09-10" }, sent))], []);
+  const elsewhere = await read([order(Object.assign({ rowOn: "2026-09-20", total: 90 }, sent, { claimed: 90, payments: [Object.assign({}, sent.payments[0], { amount: 90 })] }))], []);
+  ok(onOrder.payNow === "Pay RM 120" && elsewhere.payNow === "Pay RM 300",
+    "RM 180 sent on an order whose row is part of To pay now is not asked for again there; sent on an order that is no part of it, To pay now is unchanged: "
+    + JSON.stringify({ onOrder: onOrder.payNow, elsewhere: elsewhere.payNow }));
+  const acct = await read([order({ rowOn: "2026-09-10" })], [{ id: "a1", u: U, kind: "account", at: iso(-1), amount: 180, method: "transfer", account: "maybank", state: "waiting" }]);
+  ok(acct.orderPay === "" && acct.lines.some((l) => /^Sent against your account ?RM 180 ?Waiting for us to confirm$/.test(l)) && acct.lines.some((l) => /^Still to pay ?RM 0/.test(l))
+    && acct.payNow === "Pay RM 120",
+    "and RM 180 sent against the account, which reaches that order's row first, is not asked for again on the order: " + JSON.stringify(acct));
+})();
+
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead

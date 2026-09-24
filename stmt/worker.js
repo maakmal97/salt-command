@@ -1172,7 +1172,8 @@ export default {
         const acct = await env.STMT.get("u:" + u, "json");
         if (!acct) return notFound();
         const refs = acct.assoc === true ? (await refsBy(env, u)).map((r) => mineOut(url.origin, r)) : [];
-        return json({ ok: true, orders: await ordersOf(env, u), claims: (await claimsOf(env, u)).map(claimView), refs, max: MAX_PER_ASSOC });   /* S6 6.6 */
+        /* S6 fix: their orders as their page is handed them, so his view nets what theirs nets */
+        return json({ ok: true, orders: (await ordersOf(env, u)).map(customerView), claims: (await claimsOf(env, u)).map(claimView), refs, max: MAX_PER_ASSOC });   /* S6 6.6 */
       }
       /* the associates' report card, written by the publish and read only here (v691) */
       if (p === "/all/assoc") {

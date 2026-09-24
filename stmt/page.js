@@ -2009,7 +2009,8 @@ const CLIENT_JS = `
   function oClaimed(o){ var c=+o.claimed; return c>0?c:0; }
   /* S6 6.5: his Not found, each one a payments[] entry that keeps its answer */
   function oLost(o){ return (o.payments||[]).filter(function(x){ return x&&x.claim==='notfound'; }); }
-  function oToPay(o){ return Math.max(0,+(dueOf(o)-oClaimed(o)).toFixed(2)); }
+  /* S6 fix: less what they sent against the account that reaches this order's row (nowOf) */
+  function oToPay(o){ return Math.max(0,+(dueOf(o)-oClaimed(o)-oAcct(o)).toFixed(2)); }
   function oOwes(o){ return oPayable(o)&&oToPay(o)>0.004; }
   function oDay(iso){ try{ var p=klBits(iso); return p.day+' '+MON3[+p.month-1]; }catch(e){ return ''; } }
   /* A REPLY WAITS until this device has shown it: the moment of his last line seen, per order, kept here and
@@ -2168,13 +2169,15 @@ const CLIENT_JS = `
     if(d) L.appendChild(o.status==='placed'?lrow('Delivery','',(where?where+'. ':'')+'Set when we confirm the order'):lrow('Delivery',rm(o.delivery||0),where));
     if(paid>0) L.appendChild(lrow('Paid',rm(paid)));
     if(claimed>0) L.appendChild(lrow('Sent by you',rm(claimed),'Waiting for us to confirm'));
+    var ac=oPayable(o)?oAcct(o):0;
+    if(ac>0.004) L.appendChild(lrow('Sent against your account',rm(ac),acctWaiting()>0.004?'Waiting for us to confirm':'Received. Your statement shows it at its next update'));
     /* S6 6.5: a payment he could not find, while the order is still to pay */
     if(oPayable(o)) oLost(o).forEach(function(x){ L.appendChild(lrow('Not found yet',rm(x.amount),'Check it left your bank, then pay it again','odue')); });
     if(oPayable(o)){
       var tp=oToPay(o), mv=+o.moved||0;
       L.appendChild(tp>0.004
         ?lrow('Still to pay',rm(tp),mv>0?(movedAll(o)?'The goods are with you':'Part of the goods is with you'):o.method==='cod'?(d?'In cash when it arrives':'In cash when you collect'):(d?'Now, or when it arrives':'Now, or when you collect'),'odue')
-        :lrow('Still to pay',rm(0),claimed>0?'Sent, waiting for us to confirm':'Paid in full'));
+        :lrow('Still to pay',rm(0),claimed>0||ac>0.004&&acctWaiting()>0.004?'Sent, waiting for us to confirm':'Paid in full'));
     }
     return L;
   }
@@ -2462,7 +2465,30 @@ const CLIENT_JS = `
   function sumOf(list){ return +list.reduce(function(n,c){ return n+(+c.amount||0); },0).toFixed(2); }
   function acctWaiting(){ return sumOf(claims.filter(function(c){ return c&&c.state==='waiting'; })); }
   function acctSince(){ return claims.filter(function(c){ return c&&c.state==='received'&&String(c.answered||'')>liveAt; }); }
-  function acctToPay(){ var n=payDue&&payDue.now; return n?Math.max(0,+(n.rm-acctWaiting()-sumOf(acctSince())).toFixed(2)):0; }
+  /* ---- S6 fix: THE SAME MONEY IS NEVER ASKED FOR TWICE, from To pay now and from an order. A part of To pay now is a row
+     on the book as it stood at publish, and an order's row is one of them once its goods have gone: the part whose day is
+     the one its key names (rowOn) and whose whole figure, goods and delivery, is the order's, on the friend's bucket or not.
+     To pay now nets what was sent on such an order, waiting or received since the statement was written; the order nets
+     what was sent against the account that reaches its row, walking the parts in the order they are sealed, oldest first,
+     which is the order the desk's allocation takes them in (claimAlloc). ---- */
+  function oSince(o){ return (o.payments||[]).filter(function(x){ return x&&x.claim==='received'&&String(x.answered||'')>liveAt; }); }
+  function nowOf(){
+    var out=((payDue&&payDue.now&&payDue.now.parts)||[]).map(function(p){ return {p:p, o:null, own:0, acct:0}; });
+    orders.forEach(function(o){
+      if(!o.rowOn||['cancelled','declined'].indexOf(o.status)>=0) return;
+      var w=+((+o.total||0)+(+o.delivery||0)).toFixed(2);
+      for(var i=0;i<out.length;i++){ var p=out[i].p;
+        if(!out[i].o&&p.date===o.rowOn&&Math.abs((+p.whole||0)-w)<0.005&&!!p.resale===!!o.forFriend){
+          out[i].o=o; out[i].own=Math.min(+p.rm||0,+(oClaimed(o)+sumOf(oSince(o))).toFixed(2)); break; } }
+    });
+    var left=+(acctWaiting()+sumOf(acctSince())).toFixed(2);
+    out.forEach(function(x){ var t=+Math.max(0,Math.min(left,(+x.p.rm||0)-x.own)).toFixed(2); x.acct=t; left=+(left-t).toFixed(2); });
+    return out;
+  }
+  function oAcct(o){ var x=nowOf().filter(function(y){ return y.o===o; })[0]; return x?x.acct:0; }
+  function acctToPay(){ var n=payDue&&payDue.now; if(!n) return 0;
+    var own=nowOf().reduce(function(t,x){ return t+x.own; },0);
+    return Math.max(0,+(n.rm-acctWaiting()-sumOf(acctSince())-own).toFixed(2)); }
   function sentWaiting(){ return +(acctWaiting()+orders.reduce(function(n,o){ return n+(['cancelled','declined'].indexOf(o.status)>=0?0:oClaimed(o)); },0)).toFixed(2); }
   /* the lines under To pay now: what waits on him, and his answers since the statement was written, or in the last fortnight */
   function claimLines(){

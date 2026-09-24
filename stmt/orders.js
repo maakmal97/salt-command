@@ -253,10 +253,14 @@ export async function checkStores(env) {
    carry this view instead. A WHITELIST, so a field the desk adds later stays on the desk until it is
    named here; and a desk mark, which changes none of these, no longer redraws their page. */
 export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "week",
-  "total", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed"];
+  "total", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn"];
 export const customerView = (o) => {
   const v = {};
   for (const k of CUSTOMER_FIELDS) if (o && o[k] !== undefined) v[k] = o[k];
+  /* S6 fix: the day its row is on the book as, read off the key, so the page can tell which part of To pay now is this
+     order's and never asks for its money twice. The key itself names a roster code and never travels. */
+  const day = o && typeof o.ledgerKey === "string" ? o.ledgerKey.split("|")[1] : "";
+  if (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(day || "")) v.rowOn = day;
   /* S6: a claim's `queued` names the desk's entry for it, which is the desk's bookkeeping */
   if (Array.isArray(v.payments)) v.payments = v.payments.map((p) => { if (!p || !p.queued) return p; const c = Object.assign({}, p); delete c.queued; return c; });
   return v;

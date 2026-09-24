@@ -490,7 +490,8 @@ takes in. The result is kept at KV `orderbook:check` with `cleanSince`, the star
 with `repaired`, `kvAhead`, `kvOnly` and `bookOnly` all empty. **Seven days after `cleanSince` is a clean week**: then `ORDER_STORE` goes to `object` (10.5,
 whose deletion of the old keys is not built).
 **The customer is handed a view, not the record**: their order list and every answer to a move of
-theirs carry `customerView` (`CUSTOMER_FIELDS`, a whitelist), never `ledgerKey`, `queued` or `sync`.
+theirs carry `customerView` (`CUSTOMER_FIELDS`, a whitelist), never `ledgerKey`, `queued` or `sync`; `rowOn`, the day the
+key names, is read off it so the page can tell which part of To pay now is the order's.
 
 **A DELIVERY SAYS ROUGHLY WHERE IT IS GOING** (v694, his instruction of 18 Sep 2026): `place`, one
 line of at most sixty characters, a neighbourhood and not an address, refused empty on a delivery and
@@ -559,7 +560,9 @@ number, or Show the code, hands over one link into QR Command, which the Counter
 a number of. **On return the sheet asks once** (S6 6.5, his D7): "Did you send RM 70?", with Not yet, never a tap
 beside the number; Yes posts a CLAIM (an order's to `/orders/<id>/pay`, To pay now's to `/account/claim`), which
 reads "sent, waiting for us to confirm" on the order, its row and To pay now until his Received or Not found, each
-shown when it comes; Pay then asks only for what no claim covers. The accounts it may name are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
+shown when it comes; Pay then asks only for what no claim covers, **never the same money twice**: To pay now nets what was
+sent on an order whose row is one of its parts (matched by `rowOn` and the whole figure), and the order nets what was sent
+against the account that reaches its row, the parts walked oldest first as `claimAlloc` takes them. The accounts it may name are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
 number, payload or reference shipped. **`payHref` in it is the one link builder** (D8, 24 Sep
 2026): `#<key>/<rail>/<amount>/<reference>`, Transfer or Scan a code, the figure to the sen, the
 username as the reference, and "" for anything QR Command would not open. It reads only `PAY_SITE`
