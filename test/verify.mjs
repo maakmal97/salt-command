@@ -13303,6 +13303,75 @@ await (async () => {
       "a browser with no push is told how to become one that can, with nothing to tap: " + JSON.stringify(bx && bx.textContent.slice(0, 80)));
   } finally { await new Promise((r) => setTimeout(r, 100)); E.w.close(); }
 })();
+section("S4 4.6: the open-order limit is said before the form, naming the open orders, with Cancel on each that can be");
+await (async () => {
+  /* HIS "ALL RECOMMENDED" OF 24 SEP 2026. The Worker refuses a sixth open order (MAX_OPEN in stmt/orders.js), and the
+     refusal came after the form was filled and checked, lower case under a live Place. The page carries the Worker's own
+     figure and says it first: on the Order tab in place of New order, and in the sheet, which lists the open orders with
+     Cancel on each whose goods have not moved and goes on to the form once one is gone. */
+  const { landingPage: lpL } = await import("../stmt/page.js");
+  const OL = await import("../stmt/orders.js");
+  const CL = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcL } = await import("node:crypto");
+  const { JSDOM: JDL } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s46", ck = await CL.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }, { q: 2, price: 190 }] }] };
+  const ord = (n, status, extra) => Object.assign({ id: "2026092" + n + "010000-l46" + n, product: "salt", qty: 1, mode: "collect", place: "",
+    at: "2026-09-2" + n + "T01:00:00Z", status, total: 100, paid: 0, moved: 0, delivery: 0, history: [], msgs: [] }, extra || {});
+  const five = [ord(1, "placed"), ord(2, "placed"), ord(3, "acknowledged"), ord(4, "acknowledged", { mode: "deliver", place: "Old market", delivery: 10 }),
+    ord(5, "ready", { moved: 1 }), ord(0, "done", { paid: 100, moved: 1 })];
+  const drive = async (start) => {
+    const st = { orders: start.slice(), cancels: [], placed: 0 };
+    const body = { ok: true, wrap: await CL.wrapKey(pass, ck), session: "sess-s46", prices: await CL.encryptWith(ck, JSON.stringify(prices)),
+      env: await CL.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+    const dom = new JDL(lpL(u, "ns46", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcL, configurable: true }); } catch (e) { win.crypto = wcL; }
+      win.scrollTo = () => {}; win.confirm = () => true;
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/open") return { ok: true, status: 200, json: async () => body };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: st.orders }) };
+        if (p === "/orders" && m === "POST") { st.placed++; st.orders = five.slice();   /* another phone filled the fifth place meanwhile */
+          return { ok: false, status: 400, json: async () => ({ ok: false, error: "you already have 5 orders open; wait for one to be completed" }) }; }
+        const c = /^[/]orders[/]([^/]+)[/]cancel$/.exec(p);
+        if (c) { st.cancels.push(c[1]); st.orders = st.orders.map((o) => (o.id === c[1] ? Object.assign({}, o, { status: "cancelled" }) : o));
+          return { ok: true, status: 200, json: async () => ({ ok: true }) }; }
+        return { ok: false, status: 404, json: async () => ({ ok: false }) };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !/Your orders/.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 30));
+    return { w, d, st };
+  };
+  ok(OL.MAX_OPEN === 5 && five.filter((o) => OL.OPEN_STATES.includes(o.status)).length === OL.MAX_OPEN, "the fixture holds exactly the Worker's limit open");
+  const A = await drive(five);
+  try {
+    const lim = A.d.getElementById("oLimit");
+    ok(!!lim && lim.textContent === "You have 5 orders open, the most at one time. Cancel one, or wait for one to finish, and you can order again." && !A.d.getElementById("oNew"),
+      "at the limit the Order tab says so, in place of New order: " + JSON.stringify(lim && lim.textContent));
+  } finally { A.w.close(); }
+  /* one short of it, then refused because the fifth was filled from another phone */
+  const B = await drive(five.filter((o) => o.id !== five[1].id));
+  try {
+    const { w, d, st } = B;
+    ok(!!d.getElementById("oNew") && !d.getElementById("oLimit"), "one short of the limit, New order is offered");
+    d.getElementById("oNew").click(); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !d.querySelector("#osheet .olim"); i++) await new Promise((r) => setTimeout(r, 30));
+    const rows = [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => ({ t: r.querySelector(".salt-ledger__label").textContent, cancel: !!r.querySelector("button") }));
+    ok(st.placed === 1 && /You have 5 orders open/.test((d.querySelector("#osheet .salt-insight") || {}).textContent || "") && !d.getElementById("oPlace") && rows.length === 5
+      && JSON.stringify(rows.map((r) => r.cancel)) === "[true,true,true,true,false]"
+      && rows.map((r) => r.t.replace(/^1 unit Cube, /, "")).join("|") === "Sent|Sent|Confirmed|Confirmed|Ready to collect",
+      "a refusal the open orders explain turns the sheet to the limit, naming each open order with Cancel where the goods have not moved: " + JSON.stringify(rows));
+    const cb = d.querySelector("#osheet .olim button"); if (cb) cb.click();
+    for (let i = 0; i < 100 && !d.getElementById("oGo"); i++) await new Promise((r) => setTimeout(r, 30));
+    ok(st.cancels.length === 1 && st.cancels[0] === five[0].id && !!d.getElementById("oGo") && !d.querySelector("#osheet .olim"),
+      "Cancel withdraws that order, and the sheet goes on to the form of its own accord: " + JSON.stringify(st.cancels));
+    void w;
+  } finally { await new Promise((r) => setTimeout(r, 100)); B.w.close(); }
+})();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {
   /* HIS INSTRUCTION OF 16 SEP 2026: "The label to them is a very subtle tier level, in symbol and colour (for each tier),

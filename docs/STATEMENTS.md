@@ -372,7 +372,10 @@ which the page opens with the key it already holds (`openList` keeps it on the l
 check: "This size is now RM X (was RM Y). Place at RM X?", one tap, a new request id. The page reads the figure off
 the list; it compares and prices nothing. **Sent answers in the sheet** (S4 4.5) and asks "A buzz when it is
 confirmed?", put only by the tap on Turn on notifications (the ask on the way in, v693, stays); See the order
-closes the sheet on the order.
+closes the sheet on the order. **Five open orders are said before the form** (S4 4.6; `MAX_OPEN` is exported from
+`stmt/orders.js` and carried into the page, the Worker still the one that refuses): the Order tab says so in place of
+New order, and the sheet opens on the open orders, Cancel on each whose goods have not moved, going on to the form once
+one is gone; a refusal those orders explain turns the sheet to the same list.
 
 **A RETRY LANDS ONCE** (24 Sep 2026). Every move the page sends carries a request id it mints per
 tap (per review, per payment, per line, per withdrawal, per rail; S10 10.4), kept with that move until

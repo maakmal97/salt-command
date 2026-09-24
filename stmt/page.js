@@ -35,6 +35,7 @@
 import { STATEMENT_CSS, SITE_RECIPES, FONT_FACE_CSS } from "./statement-css.js";
 import { PAY_SITE, PAY_ACCOUNTS } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
+import { MAX_OPEN, OPEN_STATES } from "./orders.js";
 
 /* v692: THE THREE-MINUTE LOCK IS GONE (his instruction, 18 Sep 2026). It was a privacy lock for a
    phone left on a table; he asked for a page that stays signed in and a button that leaves. What
@@ -110,6 +111,8 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .otick{display:block;margin:4px auto 10px;color:var(--salt-verdigris)}
 .obuzz > * + *{margin-top:10px}
 .obuzz .salt-pill,.obuzz .salt-ghost{width:100%}
+.olim{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-top:6px}
+.olim .salt-ghost{flex:0 0 auto}
 /* the one filled control is the system's .salt-pill and the quiet ones its .salt-ghost (22 Sep 2026);
    this page decides only that they run the width of the form */
 .btn{margin-top:18px;width:100%}
@@ -550,6 +553,8 @@ export function landingPage(user, nonce, owner, bulletin) {
       /* v695: the product marks, so the page can draw one wherever it would have written a name */
       .replace("__PSYM__", JSON.stringify(Object.assign({ _: RING }, PSYM)))
       .replace("__PSHAPE__", JSON.stringify(PSHAPE)).replace("__MON3__", JSON.stringify(MON3))
+      /* S4 4.6: the open-order limit the Worker refuses at, so the page can say it before the form */
+      .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES))
       /* "<" is escaped because this one carries the master passphrase, and a "</script>" inside a
          string literal ends the block wherever it appears: the browser closes the tag first and
          reads the rest of the passphrase as page text. */
@@ -1288,6 +1293,8 @@ const CLIENT_JS = `
      is held by the card's blur; Escape, the scrim and the close control all close it, and focus goes back to what
      opened it. */
   var sheet=null;
+  var OMAX=__MAX_OPEN__, OPEN_ST=__OPEN_STATES__;
+  function openOrders(){ return orders.filter(function(o){ return OPEN_ST.indexOf(o.status)>=0; }); }
   var GLYPH={close:'M4 4 L12 12 M12 4 L4 12', back:'M10 3.5 L5.5 8 L10 12.5', next:'M6 3.5 L10.5 8 L6 12.5', tick:'M3 8.5 L6.5 12 L13 4.5'};
   function glyph(k,cls,px){
     var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg');
@@ -1317,7 +1324,7 @@ const CLIENT_JS = `
     /* the way and the place are the last order's, and the hint says so while the place is still that one */
     if(draft.mode==null){ var L=latest(function(){ return true; }); draft.mode=L&&L.mode==='deliver'?'deliver':'collect'; }
     if(draft.place==null){ var W=latest(function(o){ return !!o.place; }); draft.place=W?W.place:''; draft.placeWas=draft.place; }
-    draft.step='form'; draft.snote=''; draft.check=null;
+    draft.step=openOrders().length>=OMAX?'limit':'form'; draft.snote=''; draft.check=null;
     if(!sheet){
       var wrap=el('div'); wrap.id='osheet';
       var scrim=el('div','salt-sheet-scrim'); scrim.setAttribute('aria-hidden','true'); scrim.addEventListener('click',sheetClose);
@@ -1357,7 +1364,8 @@ const CLIENT_JS = `
     if(!sheet) return;
     var fo=document.activeElement, fk=fo&&sheet.box.contains(fo)?fo.getAttribute('data-k'):null;
     sheet.head.textContent=''; sheet.body.textContent=''; sheet.foot.textContent='';
-    if(draft.step==='check') drawCheck(); else if(draft.step==='sent') drawSent(); else drawForm();
+    if(draft.step==='limit'&&openOrders().length<OMAX) draft.step='form';
+    if(draft.step==='check') drawCheck(); else if(draft.step==='sent') drawSent(); else if(draft.step==='limit') drawLimit(); else drawForm();
     sheet.foot.hidden=!sheet.foot.firstChild;
     if(fk){ var back=[].filter.call(sheet.box.querySelectorAll('[data-k]'),function(x){ return x.getAttribute('data-k')===fk; })[0];
       if(back) try{ back.focus({preventScroll:true}); }catch(e){} }
@@ -1486,6 +1494,43 @@ const CLIENT_JS = `
     else draft.snote='Your prices were updated just now. This size is still '+rm(c.total)+'.';
     c.was=Math.abs(c.total-c.shown)>0.004?c.shown:null;
   }
+  /* S4 4.6: FIVE OPEN ORDERS ARE SAID BEFORE THE FORM, not after it. The Worker refuses a sixth (MAX_OPEN in
+     stmt/orders.js, carried here), and the refusal used to come after the form was filled and checked. With five open the
+     sheet opens on the limit instead, naming the open orders, each with Cancel where the goods have not moved, and moves on
+     to the form of its own accord once one is cancelled or finishes. */
+  var LIMIT_WORD={placed:'Sent', acknowledged:'Confirmed'};
+  function limitLine(n){ return 'You have '+n+' orders open, the most at one time. Cancel one, or wait for one to finish, and you can order again.'; }
+  function drawLimit(){
+    sheetHead('New order');
+    var B=sheet.body, open=openOrders();
+    var say=el('p','salt-insight salt-insight--copper',limitLine(open.length)); say.setAttribute('role','status'); B.appendChild(say);
+    var L=el('div','salt-ledger salt-ledger--plain');
+    open.forEach(function(o){
+      var P=prices&&prices.products&&prices.products.filter(function(x){ return x.product===o.product; })[0];
+      var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label');
+      lab.appendChild(withMark(o.product,unitsOf(o.qty,P?P.unit:'unit')+' ',16));
+      lab.appendChild(document.createTextNode(', '+(LIMIT_WORD[o.status]||(o.mode==='deliver'?'Ready to deliver':'Ready to collect'))));
+      l.appendChild(lab); l.appendChild(el('span','salt-ledger__value',rm(o.total+(+o.delivery||0)))); r.appendChild(l);
+      if(!(+o.moved>0)){
+        var row=el('div','olim'); row.appendChild(el('span','salt-ledger__flag','Placed '+stamp(o.at)));
+        var cb=el('button','salt-ghost','Cancel this order'); cb.type='button'; cb.setAttribute('data-k','cancel:'+o.id);
+        cb.addEventListener('click',function(){ limitCancel(o); }); row.appendChild(cb); r.appendChild(row);
+      } else r.appendChild(el('span','salt-ledger__flag','The goods are with you, so this one finishes when it is paid.'));
+      if(draft.limTap&&draft.limTap.id===o.id) r.appendChild(statusLine(draft.limTap.t));
+      L.appendChild(r);
+    });
+    B.appendChild(L);
+  }
+  async function limitCancel(o){
+    var paid=+o.paid||0;
+    if(!confirm(paid>0?'Cancel this order? The '+rm(paid)+' you paid is refunded.':'Cancel this order?')) return;
+    var mine=ticket, r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel','')});
+    if(mine!==ticket) return;
+    if(r.body.ok) ridDone(o.id+':cancel');
+    draft.limTap=r.body.ok?null:{id:o.id, t:r.body.error||'It could not be cancelled.'};
+    await loadOrders(); if(mine!==ticket) return;
+    drawOrder(); sheetDraw();
+  }
   function toForm(){ draft.step='form'; draft.check=null; draft.snote=''; sheetDraw(); }
   function drawCheck(){
     var c=draft.check, B=sheet.body;
@@ -1525,7 +1570,13 @@ const CLIENT_JS = `
     if(mine!==ticket) return;
     draft.busy=false;
     if(r.status===409&&r.body.error==='prices moved'){ await pricesMoved(r.body.prices); if(mine!==ticket) return; sheetDraw(); return; }
-    if(!r.body.ok){ draft.snote=r.body.error||'The order was not placed.'; sheetDraw(); return; }
+    if(!r.body.ok){
+      draft.snote=r.body.error||'The order was not placed.';
+      /* S4 4.6: a refusal that the open orders explain (placed from another phone meanwhile) turns to the limit itself */
+      if(r.status===400){ await loadOrders(); if(mine!==ticket) return; drawOrder();
+        if(openOrders().length>=OMAX){ draft.step='limit'; draft.check=null; draft.snote=''; } }
+      sheetDraw(); return;
+    }
     /* S4 4.5: Sent answers in the sheet; the Order tab behind it is drawn again with the order in it */
     var o=r.body.order;
     draft.sent=(o&&o.id)||''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.buzzNo=false;
@@ -1608,9 +1659,14 @@ const CLIENT_JS = `
     } else {
       /* S4 4.3: the form is a sheet now, laid over the page from here */
       pOrder.appendChild(el('p','lead','Pick a size and check it over before you place it. Once it is acknowledged you can pay, and you are told when the goods are on their way.'));
-      var nb=el('button','btn salt-pill salt-pill--md','New order'); nb.type='button'; nb.id='oNew';
-      nb.addEventListener('click',function(){ sheetOpen(null,null,nb); });
-      pOrder.appendChild(nb);
+      var full=openOrders().length>=OMAX;
+      if(full){ var lim=el('p','salt-insight salt-insight--copper',limitLine(openOrders().length)); lim.id='oLimit'; pOrder.appendChild(lim); }
+      else {
+        var nb=el('button','btn salt-pill salt-pill--md','New order'); nb.type='button'; nb.id='oNew';
+        nb.addEventListener('click',function(){ sheetOpen(null,null,nb); });
+        pOrder.appendChild(nb);
+      }
+      if(sheet&&draft.step==='limit') sheetDraw();
     }
     /* notifications: a wake on the phone when the order moves, so the page need not stay open.
        Not on his read-only view: those are not his phones. */
