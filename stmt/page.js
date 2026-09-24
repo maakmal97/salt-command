@@ -201,6 +201,14 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .payref .salt-ledger__value{display:inline-flex;align-items:center;gap:10px}
 .paycap{margin:0;flex-basis:100%;font-size:var(--salt-text-sm);line-height:1.5;color:var(--salt-prose)}
 #payFoot .salt-pill{flex:1 1 auto}
+/* S6 6.5: the one question on return, centred as the mockup draws it */
+.paycheck{text-align:center;padding-top:6px}
+.paycheck h3{margin:14px 0 4px;font-family:var(--salt-font-display);font-size:var(--salt-text-xl);font-weight:600;letter-spacing:0}
+.payring{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;border:1px solid var(--salt-steel);color:var(--salt-steel)}
+.payring .psym{color:inherit}
+.payagain{width:100%;margin-top:16px}
+.paysaid{flex-basis:100%;margin:0}
+.payhead .msg{margin:10px 0 0}
 /* THE DOCUMENT KEEPS THE GEOMETRY IT WAS PROOFED IN. What is injected is the INSIDE of the
    statement's own .w wrapper, so without this the page rendered the tables full-bleed to the
    window while the lock bar and the issue strip stayed pinned at 620px above them: on a laptop
@@ -823,6 +831,8 @@ const CLIENT_JS = `
   bullDraw(BULL);
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
   var session='', user='', prices=null, orders=[], poll=null, tab='stmt', draft={};
+  /* S6 6.5: the account's own claims, money said to be sent on To pay now rather than on an order (GET /orders) */
+  var claims=[];
   /* S3 3.5: the content key the account was opened with, so a return re-reads it without asking for anything */
   var curCk=null;
   /* v706: the associate's own card, opened from their record like the price list */
@@ -1245,7 +1255,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
+    bundle=null; session=''; view=false; prices=null; orders=[]; claims=[]; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
     owedNow=0; hold=false; tPrices.hidden=false; tOrder.textContent='Order';
     payDue=null; liveAt=''; drawPayHead();
     out.textContent=''; mos.textContent=''; mos.hidden=true;
@@ -1953,6 +1963,10 @@ const CLIENT_JS = `
   function histLine(x,o){
     var n=String(x.note||''), m, how=x.method?' by '+methodWord(x.method,x.account):'';
     if((m=/^paid ([0-9.]+)$/.exec(n))) return 'You paid '+rm(+m[1])+how;
+    /* S6 6.5 (D7): what they said they sent is a claim until his answer, which is a line of its own */
+    if((m=/^sent ([0-9.]+)$/.exec(n))) return 'You sent '+rm(+m[1])+how+', waiting for us to confirm it';
+    if((m=/^received ([0-9.]+)$/.exec(n))) return 'We received '+rm(+m[1]);
+    if((m=/^not found ([0-9.]+)$/.exec(n))) return 'We have not found '+rm(+m[1])+' yet';
     if((m=/^payment of ([0-9.]+) recorded$/.exec(n))) return 'We recorded a payment of '+rm(+m[1]);
     /* S11 11.8 and 11.9: cash he took at the handover, and a short order closed at what was handed over */
     if((m=/^paid ([0-9.]+) in cash$/.exec(n))) return 'We received '+rm(+m[1])+' in cash';
@@ -1985,6 +1999,8 @@ const CLIENT_JS = `
   /* STAGE 6 PLUGS IN HERE: claimed is what they have said they sent above what he has confirmed, a field the
      order does not carry yet. Until it does it reads nothing, and what is still to pay is what is owed. */
   function oClaimed(o){ var c=+o.claimed; return c>0?c:0; }
+  /* S6 6.5: his Not found, each one a payments[] entry that keeps its answer */
+  function oLost(o){ return (o.payments||[]).filter(function(x){ return x&&x.claim==='notfound'; }); }
   function oToPay(o){ return Math.max(0,+(dueOf(o)-oClaimed(o)).toFixed(2)); }
   function oOwes(o){ return oPayable(o)&&oToPay(o)>0.004; }
   function oDay(iso){ try{ var p=klBits(iso); return p.day+' '+MON3[+p.month-1]; }catch(e){ return ''; } }
@@ -2015,6 +2031,8 @@ const CLIENT_JS = `
   function oWhy(o){
     var b=[];
     if(oOwes(o)) b.push(rm(oToPay(o))+' to pay');
+    if(oClaimed(o)>0) b.push(rm(oClaimed(o))+' sent, waiting for us to confirm');
+    if(oPayable(o)&&oLost(o).length) b.push('a payment we have not found');
     if(replyWaiting(o)) b.push('a reply for you');
     if(!b.length&&o.status==='placed') b.push('waiting to be confirmed');
     var t=b.join(', '); return t&&t.charAt(0).toUpperCase()+t.slice(1);
@@ -2141,12 +2159,14 @@ const CLIENT_JS = `
     L.appendChild(lrow('Goods',rm(o.total),o.closed&&o.closed.qty?unitsOf(o.qty,oUnit(o))+' handed over of the '+o.closed.qty+' ordered':''));
     if(d) L.appendChild(o.status==='placed'?lrow('Delivery','',(where?where+'. ':'')+'Set when we confirm the order'):lrow('Delivery',rm(o.delivery||0),where));
     if(paid>0) L.appendChild(lrow('Paid',rm(paid)));
-    if(claimed>0) L.appendChild(lrow('Sent by you',rm(claimed),'Waiting for us to confirm it arrived'));
+    if(claimed>0) L.appendChild(lrow('Sent by you',rm(claimed),'Waiting for us to confirm'));
+    /* S6 6.5: a payment he could not find, while the order is still to pay */
+    if(oPayable(o)) oLost(o).forEach(function(x){ L.appendChild(lrow('Not found yet',rm(x.amount),'Check it left your bank, then pay it again','odue')); });
     if(oPayable(o)){
       var tp=oToPay(o), mv=+o.moved||0;
       L.appendChild(tp>0.004
         ?lrow('Still to pay',rm(tp),mv>0?(movedAll(o)?'The goods are with you':'Part of the goods is with you'):(d?'Now, or when it arrives':'Now, or when you collect'),'odue')
-        :lrow('Still to pay',rm(0),'Paid in full'));
+        :lrow('Still to pay',rm(0),claimed>0?'Sent, waiting for us to confirm':'Paid in full'));
     }
     return L;
   }
@@ -2416,19 +2436,41 @@ const CLIENT_JS = `
     else n.appendChild(document.createTextNode(ps.length+' orders you have received. '+dueWords(now.due,true)));
     return n;
   }
+  /* ---- S6 6.5 (his D7): A CLAIM IS NEVER PAID UNTIL HE SAYS SO. What they said they sent on To pay now (the account's
+     claims) and on an order (claimed) reads "sent, waiting for us to confirm" until his Received or Not found, each
+     shown when it comes. To pay now is the sealed figure; Pay asks only for what no claim waits on, and for nothing he
+     has received since the statement was written, so money already sent is not asked for twice. */
+  function sumOf(list){ return +list.reduce(function(n,c){ return n+(+c.amount||0); },0).toFixed(2); }
+  function acctWaiting(){ return sumOf(claims.filter(function(c){ return c&&c.state==='waiting'; })); }
+  function acctSince(){ return claims.filter(function(c){ return c&&c.state==='received'&&String(c.answered||'')>liveAt; }); }
+  function acctToPay(){ var n=payDue&&payDue.now; return n?Math.max(0,+(n.rm-acctWaiting()-sumOf(acctSince())).toFixed(2)):0; }
+  function sentWaiting(){ return +(acctWaiting()+orders.reduce(function(n,o){ return n+oClaimed(o); },0)).toFixed(2); }
+  /* the lines under To pay now: what waits on him, and his answers since the statement was written, or in the last fortnight */
+  function claimLines(){
+    var out=[], sw=sentWaiting();
+    if(sw>0.004) out.push(rm(sw)+' sent, waiting for us to confirm.');
+    acctSince().forEach(function(c){ out.push(rm(c.amount)+' received on '+oDay(c.answered)+'. Your statement shows it at its next update.'); });
+    claims.filter(function(c){ return c&&c.state==='notfound'&&Date.now()-Date.parse(c.answered||c.at)<14*864e5; })
+      .forEach(function(c){ out.push('We have not found the '+rm(c.amount)+' you sent on '+oDay(c.at)+'. Check it left your bank, then pay it again.'); });
+    return out;
+  }
   function drawPayHead(){
     var box=document.getElementById('payHead'); if(!box) return;
     box.textContent='';
-    var P=payDue||{}, now=P.now||{rm:0,parts:[]}, od=P.overdue||{rm:0,parts:[]}, cm=P.coming||{rm:0,parts:[]};
-    box.hidden=!(now.rm>0.004||cm.rm>0.004);
+    var P=payDue||{}, now=P.now||{rm:0,parts:[]}, od=P.overdue||{rm:0,parts:[]}, cm=P.coming||{rm:0,parts:[]}, said=claimLines();
+    box.hidden=!(now.rm>0.004||cm.rm>0.004||said.length);
     if(box.hidden) return;
     if(now.rm>0.004){
       box.appendChild(kpiTile('ember','To pay now',rm(now.rm),nowNote(now)));
-      if(!view){
-        var pb=el('button','btn salt-pill salt-pill--md','Pay '+rm(now.rm)); pb.type='button'; pb.id='payNow';
+      var left=acctToPay();
+      if(!view&&left>0.004){
+        var pb=el('button','btn salt-pill salt-pill--md','Pay '+rm(left)); pb.type='button'; pb.id='payNow';
         pb.addEventListener('click',function(){ openPay(acctCtx()); });
         box.appendChild(pb);
       }
+    }
+    said.forEach(function(t){ box.appendChild(statusLine(t)); });
+    if(now.rm>0.004){
       /* each overdue part with the day it fell due; one part says so in the line above */
       if(od.rm>0.004&&(now.parts||[]).length>1){
         box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab','Overdue'));
@@ -2460,7 +2502,7 @@ const CLIENT_JS = `
   function glyph(name,px){ var s=psym('_',px); s.setAttribute('class','psym glyph'); s.firstChild.setAttribute('d',GL[name]); return s; }
   /*__PAYHREF__*/
   function payInto(rail,amt){ return PAY.filter(function(a){ return !!payHref(a.key,rail,amt,user); }); }
-  function acctCtx(){ var n=payDue&&payDue.now; return {kind:'acct', fig:n?n.rm:0, label:'To pay now', note:function(){ return nowNote(n); }}; }
+  function acctCtx(){ var n=payDue&&payDue.now; return {kind:'acct', fig:acctToPay(), label:'To pay now', note:function(){ return nowNote(n); }}; }
   function orderCtx(id){
     var o=oFind(id);
     return {kind:'order', id:id, fig:o?oToPay(o):0, label:'Still to pay', note:function(){
@@ -2470,7 +2512,7 @@ const CLIENT_JS = `
   }
   function openPay(ctx){
     if(!paySh||view||!(ctx.fig>0.004)) return;
-    PS={ctx:ctx, part:false, amt:'', rail:'', acct:'', said:''};
+    PS={ctx:ctx, part:false, amt:'', rail:'', acct:'', said:'', step:'pay', away:null, busy:false};
     payScr.hidden=false; paySh.hidden=false; drawPay();
     try{ paySh.focus(); }catch(e){}
   }
@@ -2485,6 +2527,7 @@ const CLIENT_JS = `
   function payTitle(){ document.getElementById('payT').textContent='Pay '+rm(payAmt()||PS.ctx.fig); }
   var HOW=[{v:'transfer', label:'Transfer to an account', g:'bank'}, {v:'qr', label:'Scan a code', g:'qr', detail:'DuitNow QR, any bank or e-wallet'}];
   function drawPay(){
+    if(PS.step==='check'){ drawCheck(); return; }
     var body=document.getElementById('payBody'), c=PS.ctx;
     body.textContent=''; payTitle();
     body.appendChild(kpiTile('ember',c.label,rm(c.fig),c.note()));
@@ -2543,9 +2586,56 @@ const CLIENT_JS = `
     foot.appendChild(el('p','paycap',href?'Opens our payment page with the '+(qr?'code':'account number')+'. Come back here after paying.'
       :!a?'Say how much you are paying, up to '+rm(PS.ctx.fig)+'.':!PS.rail?'Choose how you are paying.':'Choose which of our accounts to pay into.'));
     var go;
-    if(href){ go=el('a','salt-pill salt-pill--md',word); go.href=href; go.target='_blank'; go.rel='noopener'; }
+    if(href){ go=el('a','salt-pill salt-pill--md',word); go.href=href; go.target='_blank'; go.rel='noopener';
+      go.addEventListener('click',function(){ PS.away={amt:a, rail:PS.rail, acct:PS.acct, gone:false}; }); }
     else { go=el('button','salt-pill salt-pill--md',word); go.type='button'; go.disabled=true; }
     go.id='payGo'; foot.appendChild(go);
+  }
+  /* ---- S6 6.5 (his D7): ON RETURN THE SHEET ASKS ONCE. Leaving for the pay page (the page hidden, or the window left)
+     and coming back turns the sheet to one question, never a tap beside the account number: Not yet goes back and asks
+     nothing more until the pay page is opened again; Yes records a CLAIM, which stays "sent, waiting" until he answers. */
+  function payGone(){ if(PS&&PS.away) PS.away.gone=true; }
+  function payBack(){ if(PS&&PS.away&&PS.away.gone&&PS.step==='pay'){ PS.step='check'; PS.said=''; drawPay(); } }
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden') payGone(); else payBack(); });
+  window.addEventListener('blur',payGone); window.addEventListener('focus',payBack);
+  function drawCheck(){
+    var body=document.getElementById('payBody'), foot=document.getElementById('payFoot'), w=PS.away, a=acct(w.acct), qr=w.rail==='qr';
+    body.textContent=''; foot.textContent='';
+    document.getElementById('payT').textContent='Pay '+rm(w.amt);
+    var box=el('div','paycheck'), ring=el('span','payring'); ring.appendChild(glyph(qr?'qr':'bank',30)); box.appendChild(ring);
+    box.appendChild(el('h3',null,'Did you send '+rm(w.amt)+'?'));
+    box.appendChild(el('p','sub2',(qr?'By scanning the '+a.name+' code':'By transfer to '+a.name)+', reference '+user+'.'));
+    body.appendChild(box);
+    var ins=el('p','salt-insight');
+    ins.appendChild(document.createTextNode('Tell us only once it has gone from your bank. It shows as ')); ins.appendChild(el('b',null,'sent, waiting'));
+    ins.appendChild(document.createTextNode(' until we confirm it arrived, and we tell you either way.'));
+    body.appendChild(ins);
+    var again=el('a','salt-ghost payagain',qr?'Show the code again':'Show the account number again');
+    again.href=payHref(w.acct,w.rail,w.amt,user); again.target='_blank'; again.rel='noopener';
+    again.addEventListener('click',function(){ if(PS&&PS.away) PS.away.gone=false; });
+    body.appendChild(again);
+    var no=el('button','salt-ghost','Not yet'); no.type='button';
+    no.addEventListener('click',function(){ PS.step='pay'; PS.away=null; PS.said=''; drawPay(); });
+    var yes=el('button','salt-pill salt-pill--md','Yes, I sent '+rm(w.amt)); yes.type='button'; yes.id='paySent'; yes.disabled=!!PS.busy;
+    yes.addEventListener('click',claimSend);
+    foot.appendChild(no); foot.appendChild(yes);
+    if(PS.said){ var l=statusLine(PS.said); l.className+=' paysaid'; foot.appendChild(l); }
+  }
+  /* the claim: on the order, or on the account for To pay now (rows he entered on the desk as well). The id stays with
+     the figure, the way and the account it was minted for, so a retry is recorded once. Its answer is beside Yes. */
+  async function claimSend(){
+    if(!PS||PS.busy) return;
+    var ps=PS, c=ps.ctx, w=ps.away, fig=w.amt.toFixed(2), key=(c.kind==='order'?c.id:'account')+':claim', mine=ticket;
+    var body={amount:+fig, method:w.rail, account:w.acct, rid:ridFor(key,fig+' '+w.rail+' '+w.acct)};
+    ps.busy=true; ps.said=''; drawPay();
+    var r=await api(c.kind==='order'?'/orders/'+encodeURIComponent(c.id)+'/pay':'/account/claim', body);
+    if(mine!==ticket||PS!==ps) return;
+    ps.busy=false;
+    if(!(r.body&&r.body.ok)){ ps.said=(r.body&&r.body.error)||'That was not recorded. Try again.'; drawPay(); return; }
+    ridDone(key); closePay();
+    if(c.kind==='order'){ var o=oFind(c.id); if(o) tapSaid(o,'pay','Sent, waiting for us to confirm. We tell you when it arrives.'); }
+    await loadOrders(); if(mine!==ticket) return;
+    drawOrder(); drawPayHead();
   }
 
   async function loadOrders(){
@@ -2554,7 +2644,7 @@ const CLIENT_JS = `
     var r=await api('/orders');
     if(mine!==ticket) return;
     if(r.status===401) return;   /* api() has said so in the bar */
-    if(r.body.ok) orders=r.body.orders||[];
+    if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; }
   }
   /* S5 5.5 (24 Sep 2026): A RE-READ PATCHES WHAT CHANGED AND NOTHING ELSE. It drew the whole tab again, the order
      form and every order with it, so a poll bringing any change to any order took the box being typed in and the
@@ -2562,9 +2652,10 @@ const CLIENT_JS = `
      and only the rows and the parts of the open order that changed are drawn again. A return to the page and a lapse
      reopened (S3 3.5) come this way too; only an account that now draws the form above differently draws the tab. */
   async function oReread(){
-    var before={}, mine=ticket; orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
+    var before={}, mine=ticket, was=JSON.stringify([claims,orders.map(oClaimed)]); orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
     await loadOrders();
     if(mine!==ticket) return;
+    if(JSON.stringify([claims,orders.map(oClaimed)])!==was) drawPayHead();
     if(document.getElementById('oPlace')&&formSig()!==drawnSig){ drawOrder(); return; }
     var changed=orders.filter(function(o){ return before[o.id]!==JSON.stringify(o); }).map(function(o){ return o.id; }),
         gone=Object.keys(before).some(function(id){ return !oFind(id); });
@@ -2806,7 +2897,7 @@ const CLIENT_JS = `
     var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
     prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
     user=u; session=body.session||'';
-    if(!same){ orders=[]; draft={}; closePay(); }
+    if(!same){ orders=[]; claims=[]; draft={}; closePay(); }
     view=!!(OWNER&&body.byMaster);
     if(linkBox) linkBox.hidden=true;
     if(opening) opening.hidden=true;
@@ -2823,7 +2914,7 @@ const CLIENT_JS = `
   async function follow(stale){
     if(session){ await loadOrders(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
     else if(view){ await loadView(user); if(stale()) return false; }   /* stmt/owner.js: his route alone carries it */
-    drawOrder();
+    drawOrder(); drawPayHead();   /* S6 6.5: the claims come with the orders */
     return true;
   }
 

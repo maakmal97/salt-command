@@ -22525,24 +22525,35 @@ await (async () => {
     ok(sz.length === 2 && sz[0][1] === 1 && sz[1][1] === 2 && O.RID_RE.test(sz[1][0] || "") && sz[1][0] !== sz[0][0],
       "a size changed after 'not placed' goes under a new id, never as a repeat of the order before: " + JSON.stringify(sz));
     placeOk = true;
-    /* S5 5.2: the ways to pay open from the order's own screen, behind its one Pay */
+    /* S5 5.2: the ways to pay open from the order's own screen, behind its one Pay; S6 6.5: in the pay sheet, which
+       asks on return, and Yes, I sent is the claim */
     await until(() => d.querySelector('#pOrder [data-row="' + ord.id + '"]'));
     d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
     const payNow = () => [...d.querySelectorAll("#pOrder button")].find((b) => /^Pay RM/.test(b.textContent));
     await until(payNow); if (payNow()) payNow().click();
-    const payTap = async (n) => { await until(() => d.getElementById("pd-" + ord.id) && !d.getElementById("pd-" + ord.id).disabled);
-      d.getElementById("pd-" + ord.id).click(); await until(() => sent.pay.length === n); };
+    const win = dom.window;
+    const fire = (e, k) => { if (e) e.dispatchEvent(new win.Event(k, { bubbles: true })); };
+    const way = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); if (way) { way.checked = true; fire(way, "change"); }
+    const into = d.getElementById("payInto"); if (into) { into.value = "maybank"; fire(into, "change"); }
+    const toCheck = () => { const g = d.getElementById("payGo"); if (g) g.click(); fire(win, "blur"); fire(win, "focus"); };
+    const payTap = async (n) => { await until(() => d.getElementById("paySent") && !d.getElementById("paySent").disabled);
+      d.getElementById("paySent").click(); await until(() => sent.pay.length === n); };
+    toCheck();
     await payTap(1); await payTap(2);
-    const amt = d.querySelector("#pOrder .payamt input");   /* the pay row is .payamt since S1 1.8 */
-    amt.value = "40"; amt.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+    await until(() => d.getElementById("paySent") && !d.getElementById("paySent").disabled);
+    const back = [...d.querySelectorAll("#payFoot button")].find((b) => b.textContent === "Not yet"); if (back) back.click();
+    const part = [...d.querySelectorAll("#payBody .payseg button")].find((b) => b.textContent === "Part of it"); if (part) part.click();
+    const amt = d.getElementById("payAmt");   /* the pay row is .payamt since S1 1.8, in the pay sheet since S6 6.4 */
+    if (amt) { amt.value = "40"; fire(amt, "input"); }
+    toCheck();
     await payTap(3); await payTap(4);
     /* the last tap's handler redraws once its answer lands: let it, or it draws into a closed window
        and the rejection takes down whichever section is running then */
-    await until(() => d.getElementById("pd-" + ord.id) && !d.getElementById("pd-" + ord.id).disabled);
+    await until(() => d.getElementById("paySent") && !d.getElementById("paySent").disabled);
     const yr = sent.pay.map((x) => x && x.rid), ya = sent.pay.map((x) => x && x.amount);
     ok(yr.length === 4 && O.RID_RE.test(yr[0] || "") && yr[1] === yr[0] && yr[2] !== yr[0] && yr[3] === yr[2]
       && JSON.stringify(ya) === "[100,100,40,40]",
-      "and one a payment: I have paid tapped again carries the same id, and a different figure is a new payment with a new one: "
+      "and one a claim: Yes, I sent tapped again carries the same id, and a different figure is a new claim with a new one: "
       + JSON.stringify({ yr, ya }));
   } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
 })();
@@ -24240,7 +24251,7 @@ await (async () => {
 
     ok(open(UP) && pills().length === 0 && JSON.stringify(lines().pop()) === JSON.stringify(["Still to pay", "RM 0", "Paid in full"]),
       "an order paid up has nothing filled on it: " + JSON.stringify(pills()));
-    ok(open(CLAIM) && JSON.stringify(lines().slice(1)) === JSON.stringify([["Sent by you", "RM 50", "Waiting for us to confirm it arrived"], ["Still to pay", "RM 40", "Now, or when you collect"]])
+    ok(open(CLAIM) && JSON.stringify(lines().slice(1)) === JSON.stringify([["Sent by you", "RM 50", "Waiting for us to confirm"], ["Still to pay", "RM 40", "Now, or when you collect"]])
       && JSON.stringify(pills()) === JSON.stringify(["Pay RM 40"]),
       "what they have sent and is waiting is its own line, read from claimed, and not asked for again: " + JSON.stringify(lines()));
     ok(open(DONE) && pills().length === 0 && !part("foot").childNodes.length
@@ -30142,30 +30153,34 @@ await (async () => {
   /* H06 of the Counter study: every answer went to the order form's one note, and the payment page never draws
      the form, so I have paid, Withdraw and Send answered nothing at all there. The answer is now a role=status
      line in the order that was tapped, beside the control; where the answer took the control away (paid in
-     full), under the order's state. */
+     full), under the order's state. S6 6.5: a payment is a claim made in the pay sheet, so its refusal stands
+     beside Yes, I sent, in the sheet. */
   const { landingPage: lpH } = await import("../stmt/page.js");
   const CH = await import("../tools/stmt-crypto.mjs");
   const { webcrypto: wcH } = await import("node:crypto");
   const { JSDOM: JDH } = await import("jsdom");
   const u = "abcd-efgh", pass = "fixture-pass-h06", ck = await CH.contentKey("test-secret", u);
+  const late = { date: "2026-08-31", due: "2026-09-10", late: true, rm: 280, whole: 280, product: "salt", qty: 2.5, got: 2.5, gotOn: "2026-08-31", resale: false };
   const body = { ok: true, wrap: await CH.wrapKey(pass, ck), session: "sess-h06",
     env: await CH.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CH.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280 })) };
+    live: await CH.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280,
+      pay: { term: 10, now: { rm: 280, due: "2026-09-10", parts: [late] }, overdue: { rm: 280, parts: [late] }, coming: { rm: 0, parts: [] } } })) };
   const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: "2026-09-20T03:00:00Z", history: [], msgs: [] };
-  const st = { paid: 0, payOk: false, ordersDown: false };
-  const list = () => [{ ...base, id: "oA", status: "acknowledged", total: 150, paid: st.paid, method: "transfer", account: "maybank" },
+  const st = { claimed: 0, payOk: false, ordersDown: false };
+  const list = () => [{ ...base, id: "oA", status: "acknowledged", total: 150, paid: 0, claimed: st.claimed, method: "transfer", account: "maybank",
+    payments: st.claimed ? [{ at: "2026-09-24T02:00:00Z", amount: 150, method: "transfer", account: "maybank", claim: "waiting" }] : [] },
     { ...base, id: "oB", status: "placed", total: 90, paid: 0 }];
   const res = (status, j) => ({ ok: status === 200, status, json: async () => j });
   const dom = new JDH(lpH(u, "nh06", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: wcH, configurable: true }); } catch (e) { win.crypto = wcH; }
     if (!win.TextEncoder) win.TextEncoder = TextEncoder;
     if (!win.TextDecoder) win.TextDecoder = TextDecoder;
-    win.scrollTo = () => {}; win.confirm = () => true;
+    win.scrollTo = () => {}; win.confirm = () => true; win.open = () => null;
     win.fetch = async (path, init) => {
       const p = String(path), m = (init && init.method) || "GET";
       if (p === "/open") return res(200, body);
       if (p === "/orders" && m === "GET") return st.ordersDown ? res(401, { ok: false }) : res(200, { ok: true, orders: list() });
-      if (p === "/orders/oA/pay") { if (!st.payOk) return res(200, { ok: false, error: "Refused by the fixture: pay" }); st.paid = 150; return res(200, { ok: true }); }
+      if (p === "/orders/oA/pay") { if (!st.payOk) return res(200, { ok: false, error: "Refused by the fixture: pay" }); st.claimed = 150; return res(200, { ok: true }); }
       if (p === "/orders/oB/cancel") return res(200, { ok: false, error: "Refused by the fixture: withdraw" });
       if (p === "/orders/oB/say") return res(200, { ok: false, error: "Refused by the fixture: say" });
       return res(404, { ok: false });
@@ -30173,12 +30188,19 @@ await (async () => {
   } });
   const w = dom.window, d = w.document;
   const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
-  /* S5: an order is a row that opens its own screen; its ways to pay open behind its one Pay */
+  /* S5: an order is a row that opens its own screen; S6: its Pay opens the pay sheet, which asks on return */
   const scr = () => d.querySelector("#pOrder .oscreen");
   const openO = (id) => { const b = d.querySelector("#pOrder .oback"); if (b && scr()) b.click();
     const r = d.querySelector('#pOrder [data-row="' + id + '"]'); if (r) r.click();
-    const pay = scr() && [...scr().querySelectorAll(".oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
     return scr() || d; };
+  const claim = () => {
+    const pay = scr() && [...scr().querySelectorAll(".oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
+    const r = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); if (r) { r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); }
+    const s = d.getElementById("payInto"); if (s) { s.value = "maybank"; s.dispatchEvent(new w.Event("change", { bubbles: true })); }
+    const g = d.getElementById("payGo"); if (g) g.click();
+    w.dispatchEvent(new w.Event("blur")); w.dispatchEvent(new w.Event("focus"));
+    const y = d.getElementById("paySent"); if (y) y.click();
+  };
   const said = (root, words) => [...root.querySelectorAll('[role="status"]')].find((x) => x.textContent.includes(words) && !x.closest("[hidden]"));
   const after = (a, b) => !!(a && b && (a.compareDocumentPosition(b) & w.Node.DOCUMENT_POSITION_FOLLOWING));
   try {
@@ -30188,12 +30210,12 @@ await (async () => {
     ok(d.querySelectorAll("#pOrder [data-row]").length === 2 && !d.getElementById("pOrder").hidden && d.getElementById("tOrder").textContent === "Pay",
       "the fixture opens on the payment page with its two orders below");
 
-    openO("oA");
-    d.getElementById("pd-oA").click();
+    openO("oA"); claim();
     await until(() => said(d, "Refused by the fixture: pay"));
-    const payLine = said(scr(), "Refused by the fixture: pay");
-    ok(payLine && after(d.getElementById("pd-oA"), payLine),
-      "I have paid refused: the words are on screen in a role=status line in that order, after the button");
+    const payLine = said(d.getElementById("paySheet"), "Refused by the fixture: pay");
+    ok(payLine && after(d.getElementById("paySent"), payLine),
+      "Yes, I sent refused: the words are on screen in a role=status line in the pay sheet, after the button");
+    d.getElementById("payX").click();
 
     openO("oB");
     [...scr().querySelectorAll("button")].find((b) => b.textContent === "Cancel this order").click();
@@ -30210,24 +30232,25 @@ await (async () => {
     ok(sayLine && sayLine.closest('[data-part="say"]') && after(box, sayLine) && box.value === "Is it ready?" && !scr().querySelector(".salt-bubble--failed"),
       "Send refused: the words are back in that order's box, and the answer stands under it");
 
+    st.payOk = true;
+    openO("oA"); claim();
+    await until(() => said(d, "Sent, waiting for us to confirm."));
+    const rec = said(scr(), "Sent, waiting for us to confirm.");
+    ok(rec && d.getElementById("paySheet").hidden && !scr().querySelector(".oact button") && /Sent, waiting for us to confirm/.test(scr().querySelector('[data-part="money"]').textContent)
+      && !/Paid in full/.test(scr().textContent) && after(scr().querySelector(".salt-insight"), rec),
+      "sent in full, Pay is gone, nothing says paid, and the answer stands under the order's state instead of vanishing with it");
+
     /* the order list answering 401 after a tap wrote the form's note, which the payment page never drew. Since
        S1 1.5 a 401 on a live session is said at once in the bar, role=alert, which the payment page shows too */
     const lapseOn = () => { const l = d.getElementById("lapse"); return !!l && !l.closest("[hidden]") && l.getAttribute("role") === "alert"
       && /signed out on this (phone|computer)/.test(l.textContent); };
     const lapseBefore = lapseOn();
     st.ordersDown = true;
-    openO("oA");
-    d.getElementById("pd-oA").click();
+    openO("oB");
+    [...scr().querySelectorAll("button")].find((b) => b.textContent === "Cancel this order").click();
     await until(() => lapseOn());
-    ok(!lapseBefore && lapseOn() && d.getElementById("tOrder").textContent === "Pay",
+    ok(!lapseBefore && lapseOn(),
       "and a 401 after a tap on the payment page is said on screen, in the bar: " + lapseBefore + " then " + lapseOn());
-
-    st.ordersDown = false; st.payOk = true;
-    d.getElementById("pd-oA").click();
-    await until(() => said(d, "Recorded."));
-    const rec = said(scr(), "Recorded.");
-    ok(rec && !d.getElementById("pd-oA") && /Paid in full/.test(scr().textContent) && after(scr().querySelector(".salt-insight"), rec),
-      "paid in full, the pay box is gone and the answer stands under the order's state instead of vanishing with it");
   } finally { w.close(); }
 })();
 
@@ -30841,6 +30864,152 @@ await (async () => {
       && !d.querySelector("#payBody input[name=payHow]:checked") && !d.querySelector("#pOrder .oact .pay"),
       "Escape closes it, and an order's Pay opens the same sheet for what is still to pay on that order, nothing chosen and nothing drawn in the order itself");
   } finally { w.close(); }
+})();
+
+section("S6 6.5: on return the pay sheet asks once, Did you send it; a claim reads sent, waiting for us to confirm, never paid, and his answer shows when it comes");
+await (async () => {
+  /* STAGE 6 OF THE COUNTER REDESIGN, his D7 of 24 Sep 2026. No one-tap "I have paid" beside the account number: the
+     question comes only after they have been to the pay page and back, with Not yet, and it is asked once. What Yes
+     records is a CLAIM (stmt/orders.js decides), which reads "sent, waiting for us to confirm" on the order, its row and
+     To pay now until his Received or Not found. Forced state: fixtures in the shapes the store writes (claimed,
+     payments[].claim, the notes sent/received/not found; the account's claims[] with state and answered). */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const { payHref } = await import("../stmt/pay.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s65", ck = await C.contentKey("test-secret", u);
+  const now = new Date(), iso = (h) => new Date(now.getTime() + h * 3600e3).toISOString();
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const page = async (nowRm, list, claims, post) => {
+    const pay = { term: 10, now: { rm: nowRm, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+    const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s65",
+      env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await C.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: nowRm, pay })) };
+    const dom = new JD(lp(u, "ns65", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {}; win.open = () => null;
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
+        const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
+        if (p === "/open") return res(200, body);
+        if (p === "/orders" && m === "GET") return res(200, { ok: true, orders: list(), claims: claims() });
+        if (m === "POST" && /^[/](orders[/][^/]+[/]pay|account[/]claim)$/.test(p)) return res(200, post(p, j));
+        return res(404, { ok: false });
+      };
+    } });
+    const d = dom.window.document;
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !d.getElementById("tabs").hidden);
+    return dom;
+  };
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: iso(-30), status: "acknowledged", msgs: [] };
+
+  /* ---- an order's claim: the question on return, Not yet, then Yes refused, then Yes recorded ---- */
+  const st = { claimed: 0, sent: [], refuse: true };
+  const orderA = () => [{ ...base, id: "oA", total: 150, paid: 0, claimed: st.claimed,
+    payments: st.claimed ? [{ at: iso(0), amount: 150, method: "transfer", account: "maybank", claim: "waiting" }] : [],
+    history: [{ at: iso(-30), status: "acknowledged", by: "desk" }].concat(st.claimed ? [{ at: iso(0), status: "acknowledged", by: "customer", method: "transfer", account: "maybank", note: "sent 150.00" }] : []) }];
+  const dom = await page(0, orderA, () => [], (p, j) => {
+    st.sent.push([p, j]);
+    if (st.refuse) { st.refuse = false; return { ok: false, error: "Refused by the fixture" }; }
+    st.claimed = j.amount; return { ok: true };
+  });
+  const w = dom.window, d = w.document;
+  try {
+    const scr = () => d.querySelector("#pOrder .oscreen");
+    const sh = d.getElementById("paySheet");
+    const away = () => { w.dispatchEvent(new w.Event("blur")); w.dispatchEvent(new w.Event("focus")); };
+    const asked = () => !!d.getElementById("paySent");
+    const tap = (id) => { const b = d.getElementById(id); if (b) b.click(); };
+    d.querySelector('button[data-t="order"]').click();
+    await until(() => d.querySelector('#pOrder [data-row="oA"]'));
+    d.querySelector('#pOrder [data-row="oA"]').click();
+    [...scr().querySelectorAll(".oact button")].find((b) => /^Pay RM/.test(t(b))).click();
+    const r = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true }));
+    const s = d.getElementById("payInto"); s.value = "maybank"; s.dispatchEvent(new w.Event("change", { bubbles: true }));
+    const besideCode = asked() || /Did you send|I have paid|I sent/i.test(t(sh));
+    away();
+    const unasked = asked();
+    tap("payGo");
+    const stillThere = !asked();
+    away();
+    const check = { title: t(d.getElementById("payT")), q: t(d.querySelector("#payBody .paycheck h3")), how: t(d.querySelector("#payBody .paycheck .sub2")),
+      ins: t(d.querySelector("#payBody .salt-insight")), again: (d.querySelector("#payBody a.payagain") || { getAttribute: () => "" }).getAttribute("href"),
+      foot: [...d.querySelectorAll("#payFoot button")].map((b) => t(b) + ":" + b.className.split(" ")[0]) };
+    ok(!besideCode && !unasked && stillThere && check.title === "Pay RM 150" && check.q === "Did you send RM 150?"
+      && check.how === "By transfer to Maybank, reference " + u + "." && /^Tell us only once it has gone from your bank\. It shows as sent, waiting until we confirm it arrived/.test(check.ins)
+      && check.again === payHref("maybank", "transfer", 150, u) && check.foot.join() === "Not yet:salt-ghost,Yes, I sent RM 150:salt-pill" && !st.sent.length,
+      "nothing beside the account number says it was sent; only once they have been to the pay page and back does the sheet ask, Did you send RM 150, with Not yet: "
+      + JSON.stringify({ besideCode, unasked, stillThere, check }));
+    const notYet = [...d.querySelectorAll("#payFoot button")].find((b) => t(b) === "Not yet"); if (notYet) notYet.click();
+    away();
+    const once = !asked() && !!d.getElementById("payGo") && !st.sent.length;
+    tap("payGo"); away();
+    tap("paySent");
+    await until(() => st.sent.length === 1 && d.querySelector("#payFoot .paysaid"));
+    const refused = { open: !sh.hidden, said: t(d.querySelector("#payFoot .paysaid")), yes: !!d.getElementById("paySent") };
+    tap("paySent");
+    await until(() => st.sent.length === 2 && sh.hidden && scr() && /sent, waiting/.test(t(scr())));
+    ok(once && refused.open && refused.said === "Refused by the fixture" && refused.yes
+      && st.sent.every((x) => x[0] === "/orders/oA/pay") && st.sent[0][1].rid && st.sent[1][1].rid === st.sent[0][1].rid
+      && JSON.stringify(Object.assign({}, st.sent[1][1], { rid: 1 })) === JSON.stringify({ amount: 150, method: "transfer", account: "maybank", rid: 1 }),
+      "Not yet asks nothing more until the pay page is opened again; a refused Yes answers beside itself and a retry carries the same id: "
+      + JSON.stringify({ once, refused, sent: st.sent }));
+    const lines = [...scr().querySelectorAll(".salt-ledger__row")].map((x) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((q) => t(x.querySelector(q))).join("|"));
+    const hist = [...scr().querySelectorAll('[data-part="hist"] li')].map(t);
+    const row = t(d.querySelector('#pOrder [data-row="oA"] .salt-inbox-row__what'));
+    ok(lines.includes("Sent by you|RM 150|Waiting for us to confirm") && lines.includes("Still to pay|RM 0|Sent, waiting for us to confirm")
+      && !/Paid in full|You paid|Pay RM/.test(t(scr())) && hist.some((x) => / You sent RM 150 by DuitNow Transfer to Maybank, waiting for us to confirm it$/.test(x))
+      && /Sent, waiting for us to confirm\. We tell you when it arrives\./.test(t(scr())) && row === "RM 150 sent, waiting for us to confirm",
+      "the claim reads sent, waiting for us to confirm on the order's money, its history and its row, and nothing calls it paid: " + JSON.stringify({ lines, hist, row }));
+  } finally { w.close(); }
+
+  /* ---- his answers, and a claim on the account for To pay now ---- */
+  const sentB = [];
+  const listB = () => [
+    { ...base, id: "oB", total: 50, paid: 0, claimed: 0, payments: [{ at: iso(-5), amount: 50, method: "qr", account: "tng", claim: "notfound", answered: iso(-1) }],
+      history: [{ at: iso(-5), status: "acknowledged", by: "customer", method: "qr", account: "tng", note: "sent 50.00" }, { at: iso(-1), status: "acknowledged", by: "desk", note: "not found 50.00" }] },
+    { ...base, id: "oC", total: 40, paid: 0, claimed: 40, payments: [{ at: iso(-3), amount: 40, method: "transfer", account: "maybank", claim: "waiting" }], history: [] }];
+  const claimsB = () => [{ id: "c1", at: iso(-4), amount: 70, method: "transfer", account: "maybank", state: "waiting" },
+    { id: "c2", at: iso(-9), amount: 30, method: "transfer", account: "maybank", state: "received", answered: iso(-1) },
+    { id: "c3", at: iso(-20), amount: 20, method: "qr", account: "tng", state: "notfound", answered: iso(-6) }];
+  const domB = await page(120, listB, claimsB, (p, j) => { sentB.push([p, j]); return { ok: true }; });
+  const wB = domB.window, dB = wB.document;
+  try {
+    await until(() => dB.querySelectorAll("#payHead .msg").length === 3);
+    const said = [...dB.querySelectorAll("#payHead .msg")].map(t), pill = t(dB.getElementById("payNow"));
+    const day = (x) => { const k = new Date(new Date(x).getTime() + 8 * 3600e3); return String(k.getUTCDate()).padStart(2, "0") + " " + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][k.getUTCMonth()]; };
+    ok(JSON.stringify(said) === JSON.stringify(["RM 110 sent, waiting for us to confirm.", "RM 30 received on " + day(iso(-1)) + ". Your statement shows it at its next update.",
+      "We have not found the RM 20 you sent on " + day(iso(-20)) + ". Check it left your bank, then pay it again."]) && pill === "Pay RM 20",
+      "under To pay now: what waits on him (the account's claim and an order's), what he received since the statement was written, and what he has not found; Pay asks only for the rest: "
+      + JSON.stringify({ said, pill }));
+    dB.querySelector('button[data-t="order"]').click();
+    await until(() => dB.querySelector('#pOrder [data-row="oB"]'));
+    const why = t(dB.querySelector('#pOrder [data-row="oB"] .salt-inbox-row__what'));
+    dB.querySelector('#pOrder [data-row="oB"]').click();
+    const scrB = dB.querySelector("#pOrder .oscreen");
+    const lost = [...scrB.querySelectorAll(".salt-ledger__row")].map((x) => t(x.querySelector(".salt-ledger__label")) + "|" + t(x.querySelector(".salt-ledger__value")));
+    const histB = [...scrB.querySelectorAll('[data-part="hist"] li')].map(t);
+    ok(/a payment we have not found/.test(why) && lost.includes("Not found yet|RM 50") && histB.some((x) => x.endsWith(" We have not found RM 50 yet"))
+      && !!scrB.querySelector(".oact .salt-pill"),
+      "his Not found on an order shows on its row, on its money and in its history, and Pay is back: " + JSON.stringify({ why, lost, histB }));
+    dB.querySelector('#tabs button[data-t="stmt"]').click();
+    dB.getElementById("payNow").click();
+    const r = dB.querySelector('#payBody input[name="payHow"][value="transfer"]'); r.checked = true; r.dispatchEvent(new wB.Event("change", { bubbles: true }));
+    const s = dB.getElementById("payInto"); s.value = "maybank"; s.dispatchEvent(new wB.Event("change", { bubbles: true }));
+    const tapB = (id) => { const b = dB.getElementById(id); if (b) b.click(); };
+    tapB("payGo"); wB.dispatchEvent(new wB.Event("blur")); wB.dispatchEvent(new wB.Event("focus"));
+    tapB("paySent");
+    await until(() => sentB.length === 1 && dB.getElementById("paySheet").hidden);
+    ok(sentB.length === 1 && sentB[0][0] === "/account/claim" && sentB[0][1].amount === 20 && sentB[0][1].method === "transfer" && sentB[0][1].account === "maybank"
+      && !!sentB[0][1].rid && dB.getElementById("paySheet").hidden,
+      "To pay now's claim goes to the account, not to an order, for what is left to pay: " + JSON.stringify(sentB));
+  } finally { wB.close(); }
 })();
 
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");

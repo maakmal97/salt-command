@@ -556,7 +556,10 @@ S6 6.4, his D8 as amended): the figure and what it is for, All or Part, then two
 a code, **with no account chosen for them**: they choose which of his accounts to pay into from those
 `payHref` links, a suspended one never offered, and their username is the reference. Show the account
 number, or Show the code, hands over one link into QR Command, which the Counter never names or carries
-a number of. The accounts it may name are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
+a number of. **On return the sheet asks once** (S6 6.5, his D7): "Did you send RM 70?", with Not yet, never a tap
+beside the number; Yes posts a CLAIM (an order's to `/orders/<id>/pay`, To pay now's to `/account/claim`), which
+reads "sent, waiting for us to confirm" on the order, its row and To pay now until his Received or Not found, each
+shown when it comes; Pay then asks only for what no claim covers. The accounts it may name are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
 number, payload or reference shipped. **`payHref` in it is the one link builder** (D8, 24 Sep
 2026): `#<key>/<rail>/<amount>/<reference>`, Transfer or Scan a code, the figure to the sen, the
 username as the reference, and "" for anything QR Command would not open. It reads only `PAY_SITE`
