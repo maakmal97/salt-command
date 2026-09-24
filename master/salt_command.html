@@ -19302,11 +19302,17 @@ function ordCard(o){
   const feeNow=o.status==='placed'?(o.mode==='deliver'?ordFeeNow(o):0):null,pv=ORD_PV[o.id];
   const pvFor=pv&&feeNow!=null&&pv.d===feeNow&&pv.st!=='wait';
   const sum=+((+o.total||0)+(feeNow||0)).toFixed(2);
+  /* S11 11.8: CASH TO RECORD. Goods out and nothing paid: one tap marks the order paid in cash at once, so
+     their page says paid and the chase stops, and records the Fulfilment's approval for when its row is drafted
+     (POST orders/<id>/cash, the contract of 11.12). It is the card's one filled control; Ready is a ghost. */
+  const cashNow=['acknowledged','ready'].includes(o.status)&&moved>0.0004&&paid<=0.004&&ordDue(o)>0.004;
+  const ghostBtn=(st,label,mode)=>`<button class="salt-ghost" data-ord="${st}" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${mode?` data-mode="${mode}"`:''}>${label}</button>`;
   const whyOpen=ORD_WHY[o.id];
   const goWhy=st=>`<button class="salt-ghost salt-ghost--danger" data-ord="${st}" data-go="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${ORD_WHY[o.id].pick?'':' disabled'}>${st==='declined'?'Decline and tell them':'Cancel and tell them'}</button><button class="salt-ghost" data-whyoff="${esc(o.id)}">Keep the order</button>`;
   if(whyOpen&&(o.status==='placed'||(rowed&&o.status!=='done'&&!(moved>0))))acts=goWhy(whyOpen.st);
   else if(o.status==='placed')acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvFor?'':' disabled'}>Accept, ${fmt(sum)}</button>`+btn('declined','Decline',true);
-  else if(rowed&&o.status!=='done')acts=(o.status==='acknowledged'?btn('ready','Ready to collect',false,'collect')+btn('ready','Ready to deliver',false,'deliver'):'')
+  else if(rowed&&o.status!=='done')acts=(cashNow?`<button class="vbtn salt-pill salt-pill--sm" data-ord="cash" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Cash received, ${fmt(ordDue(o))}</button>`:'')
+    +(o.status==='acknowledged'?ghostBtn('ready','Ready to collect','collect')+ghostBtn('ready','Ready to deliver','deliver'):'')
     +(moved>0?'':btn('cancelled','Cancel',true));
   /* S11 11.3: the delivery charge is chosen where the order is agreed, because that is where it becomes a
      row: RM 0, 10, 15 or a figure of his own, and NONE is chosen until he chooses, so a delivery is never
@@ -19337,6 +19343,7 @@ function ordCard(o){
     ${fee}${thread}${reply}
     ${hand}${ordWhyBlock(o)}
     <div class="${acts?'ordfoot':'ordnofoot'}">${acts?`<div class="salt-approve__actions">${acts}</div>`:''}
+      ${cashNow?`<p class="salt-approve__reason">${o.mode==='deliver'?'Delivered':'Collected'} ${units(moved)}, nothing paid. Cash received marks it paid in cash at once, so the chase stops, and books the payment when its row is drafted, if it is this one.</p>`:''}
       ${o.status==='placed'?`<p class="salt-approve__reason">${feeNow==null?'Choose the delivery charge first.'
         :!pvFor?'Drafting the row first.'
         :pv.st==='err'?'Accept tells them '+fmt(sum)+'. The row could not be drafted here, so it waits under Approve.'
@@ -19456,6 +19463,10 @@ async function ordAct(b){
     const chk=siteSafe(why);
     if(chk.refuse)return refuse(chk.refuse+' Nothing moved.');
     body=JSON.stringify({status:st,note:why});
+  }else if(st==='cash'){
+    const o=ORD_OPEN.find(x=>x&&x.id===id)||{};
+    body=JSON.stringify({amount:ordDue(o)});
+    url='orders/'+encodeURIComponent(id)+'/cash';
   }else if(st==='noreply'){
     body=JSON.stringify({noReply:true});
   }else if(st==='say'){
@@ -19480,6 +19491,7 @@ async function ordAct(b){
       :st==='handover'?'Recorded. The correction is queued within the minute; approve it under Approve. '+told
       :st==='acknowledged'?'Accepted. They see Acknowledged. The row is approved as it is drafted if it is the one you saw; if not, it waits under Approve, marked. '+told
       :st==='say'?'Sent. '+told
+      :st==='cash'?'Recorded: '+fmt(ordDue(ORD_OPEN.find(x=>x&&x.id===id)||{}))+' in cash. They see it paid and the chase stops; the payment is booked as its row is drafted, if it is this one. '+told
       :st==='noreply'?'Marked as needing no reply. Nothing was sent to them.'
       :st==='declined'?'Declined. They read Not taken: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+'. '+told
       :st==='cancelled'?'Cancelled. They read Cancelled by us: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+'. Any payment taken is refunded on the row. '+told

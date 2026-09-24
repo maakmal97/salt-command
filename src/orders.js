@@ -185,20 +185,23 @@ export function pendingEntry(order, code, now) {
   };
 }
 
-/** What a customer paid, as a Fulfilment against the row the acknowledgement made. */
+/** What a customer paid, as a Fulfilment against the row the acknowledgement made. S11 11.8: or cash he took
+ *  at the handover and recorded from the desk, said as his and marked `by: "desk"`, so the desk never reads it
+ *  as a payment of theirs waiting on him. The newest payment on the order says whose this one is. */
 export function payEntry(order, code, amount, now) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
   const date = klDate(at);
   const cash = +(+amount).toFixed(2);
   const books = partyOnBook(order, code);
-  const method = order.method ? (order.method + (order.account ? " via " + order.account : "")) : "not stated";
+  const last = (order.payments || []).slice(-1)[0], his = !!(last && last.by === "desk");
+  const method = his ? "cash, recorded on the desk" : order.method ? (order.method + (order.account ? " via " + order.account : "")) : "not stated";
   return {
-    at: at.toISOString(), type: "SELL", party: books, qty: 0, total: cash, status: "Payment",
+    at: at.toISOString(), type: "SELL", party: books, qty: 0, total: cash, status: "Payment", by: his ? "desk" : "customer",
     raw: "Payment of RM " + cash + " on " + books + ", order " + order.id + ", by " + method,
     payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: books, rid: null,
       orderKey: order.ledgerKey || null, orderCode: null, linkTo: null, assoc: null, downstream: null,
       date, qty: 0, total: 0, cash, kg: 0,
-      note: "Paid on the statements site, order " + order.id + ", by " + method + "." }
+      note: (his ? "Cash received at the handover, recorded on the desk, order " + order.id : "Paid on the statements site, order " + order.id + ", by " + method) + "." }
   };
 }
 

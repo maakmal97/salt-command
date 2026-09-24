@@ -23212,6 +23212,79 @@ await (async () => {
   }
 })();
 
+section("S11 11.8: a handover with nothing paid is a Cash to record row, and Cash received marks the order paid in cash at once, so the chase stops");
+await (async () => {
+  /* 24 Sep 2026 (PLAN 5; the study: taking cash at the counter was about seven taps and typing on the Workbench,
+     then Approve, the hourly chase running meanwhile). Goods out and nothing paid is a row of its own on Waiting on
+     you; its one tap posts the cash to the desk Worker (POST orders/<id>/cash, the contract of 11.12), which moves
+     the order as a cash event: paid at once, the chase stopped, and a Fulfilment queued like theirs but said as his. */
+  const O = await import("../stmt/orders.js");
+  const { payEntry } = await import("../src/orders.js");
+  const kv = new KV(), env = { STMT: kv };
+  const u = "abcd-efgh";
+  const o = (await O.placeOrder(env, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  await O.deskMove(env, u, o.id, { status: "acknowledged", mode: "collect" });
+  await O.deskMove(env, u, o.id, { handover: { units: 1 } });
+  const later = new Date(Date.now() + 2 * 86400e3);
+  later.setUTCHours(2, 0, 0, 0);   /* 10:00 in Kuala Lumpur, a chase slot, two days on */
+  const held = JSON.parse(await kv.get("order:" + u + ":" + o.id));
+  ok(O.isAdvance(held) && (await O.toChase(env, later)).some((c) => c.u === u), "the fixture holds goods out, nothing paid, and chased");
+  const over = await O.deskMove(env, u, o.id, { cash: { amount: 150 } });
+  ok(over.error && over.status === 400 && /more than the 100\.00 outstanding/.test(over.error), "cash over what is owed is refused: " + over.error);
+  const r = await O.deskMove(env, u, o.id, { cash: { amount: 100 } });
+  const paid = JSON.parse(await kv.get("order:" + u + ":" + o.id));
+  const p = paid.payments.slice(-1)[0];
+  ok(paid.paid === 100 && paid.status === "done" && p.by === "desk" && p.method === "cod" && !O.isAdvance(paid)
+    && !(await O.toChase(env, later)).some((c) => c.u === u) && !O.claimWaits(paid),
+    "Cash received pays it at once in cash, marked as his, the order completes and the chase stops: " + JSON.stringify({ paid: paid.paid, st: paid.status, p }));
+  ok(O.wakes({ kind: "cash", at: "x" }, paid, true).k === "complete" && O.marksOf({ kind: "cash", at: "x" }, paid).every(([k]) => k !== O.LAST_THEIRS),
+    "they are told it is complete, and his cash never marks a move of theirs");
+  const placed = (await O.placeOrder(env, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  ok((await O.deskMove(env, u, placed.id, { cash: { amount: 50 } })).status === 409, "and an order not yet agreed takes no cash");
+  const his = payEntry(paid, "CC5-OKR", 100, new Date("2026-09-24T03:00:00Z"));
+  const theirs = payEntry(Object.assign({}, paid, { method: "transfer", account: "maybank", payments: [{ at: "x", amount: 100, method: "transfer" }] }), "CC5-OKR", 100, new Date("2026-09-24T03:00:00Z"));
+  ok(his.by === "desk" && /Cash received at the handover, recorded on the desk/.test(his.payload.note) && theirs.by === "customer" && /Paid on the statements site/.test(theirs.payload.note),
+    "the Fulfilment the reconcile queues says whose money it is: " + JSON.stringify([his.by, his.payload.note, theirs.by]));
+
+  const { openMaster: om118 } = await import("../tools/payload.mjs");
+  const { w } = await om118();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 96; w.clearInterval = () => {};
+    const base = { u, code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const orders = [Object.assign({ id: "c1", status: "ready", at: "2026-09-20T02:00:00.000Z", moved: 1, paid: 0, movedAt: "2026-09-24T01:00:00.000Z" }, base),
+      Object.assign({ id: "d1", status: "acknowledged", at: "2026-09-21T02:00:00.000Z", moved: 1, paid: 40,
+        payments: [{ at: "2026-09-24T02:00:00.000Z", amount: 40, method: "cod", by: "desk" }] }, base)];
+    const calls = [];
+    w.fetch = async (path, init) => {
+      const pp = String(path), post = !!(init && init.method === "POST");
+      calls.push({ p: pp, body: init && init.body ? JSON.parse(init.body) : null });
+      return { ok: true, status: 200, json: async () => (pp === "orders" && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)) } : { ok: true }) };
+    };
+    w.eval("AP_DRAFTS=[{id:'dd1',status:'pending',collection:'sales',row:{},entry:{orderId:'d1',status:'Payment',by:'desk'}}];");
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const kinds = JSON.parse(String(w.eval("JSON.stringify(ordActs().map(function(a){return a.kind+':'+a.o.id;}))")));
+    ok(kinds.join(",") === "cash:c1", "goods out with nothing paid is a Cash row, and his own cash waiting under Approve is no Paid? row: " + kinds.join(","));
+    const card = D.querySelector('.ordcard[data-id="c1"]');
+    const pill = card.querySelector('.ordfoot button[data-ord="cash"]');
+    const filled = [...card.querySelectorAll("button.salt-pill")];
+    ok(pill && pill.textContent === "Cash received, RM 100" && filled.length === 1 && filled[0] === pill,
+      "its card leads with Cash received and the sum, the card's one filled control: " + JSON.stringify(filled.map((b) => b.textContent)));
+    pill.click();
+    await new Promise((r2) => setTimeout(r2, 30));
+    const post = calls.filter((c) => /\/cash$/.test(c.p));
+    ok(post.length === 1 && post[0].p === "orders/c1/cash" && JSON.stringify(post[0].body) === '{"amount":100}'
+      && /Recorded: RM 100 in cash\. They see it paid and the chase stops/.test(D.querySelector('[data-msg="c1"]').textContent),
+      "one tap posts the cash to the desk Worker's cash route and says what it did: " + JSON.stringify(post));
+  } finally {
+    await new Promise((r2) => setTimeout(r2, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one

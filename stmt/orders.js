@@ -444,7 +444,7 @@ const fileRid = (env, u, rid, id) => (rid ? putSoft(env, RID_KEY(u, rid), JSON.s
  * of its events however often they are replayed. Both roads run exactly these: the KV road reads the
  * record, applies and writes it back whole, as it always did; the order book appends the event under its
  * id and folds it in, in one step no other writer can come between.
- * The kinds: place, status, method, pay, say, mark, ledger, handover, and copy (an order moved in). */
+ * The kinds: place, status, method, pay, say, mark, ledger, handover, cash (S11 11.8), and copy (an order moved in). */
 export const mintOrderId = (at) => at.replace(/[-:.TZ]/g, "").slice(0, 14) + "-"
   + b64url(crypto.getRandomValues(new Uint8Array(4))).toLowerCase().replace(/[^a-z0-9]/g, "x");
 
@@ -558,6 +558,17 @@ export function decideDesk(order, body, at) {
     if (!text) return { error: "write something first", status: 400 };
     return { ev: { kind: "say", at, by: "desk", text } };
   }
+  /* S11 11.8: CASH HE TOOK AT THE HANDOVER, recorded from the desk's Cash to record row. It is a payment like
+     theirs, adding to what is paid, so the reconcile queues its Fulfilment as it queues theirs and the chase
+     stops the moment it is paid; it is his, so it never marks theirs and is kept `by: "desk"`. */
+  if (body && body.cash) {
+    if (!PAYABLE.includes(order.status)) return { error: "cash is recorded on an agreed order, not one that is " + order.status, status: 409 };
+    const a = body.cash.amount;
+    if (!isNum(a) || a <= 0) return { error: "say how much was received", status: 400 };
+    const due = dueOf(order);
+    if (a > due + 0.004) return { error: "that is more than the " + due.toFixed(2) + " outstanding on this order", status: 400 };
+    return { ev: { kind: "cash", at, amount: +a.toFixed(2) } };
+  }
   /* v694: what he handed over, in units, whichever way it went. It is its own step and its own
      entry, because goods and money move apart: he may deliver before a ringgit arrives. */
   if (body && body.handover) {
@@ -607,6 +618,12 @@ export function applyEvent(order, ev) {
     order.paid = +((+order.paid || 0) + ev.amount).toFixed(2); order.method = ev.method; order.account = ev.account;
     order.payments = (order.payments || []).concat([{ at, amount: +ev.amount.toFixed(2), method: ev.method, account: ev.account }]);
     order.history.push({ at, status: order.status, by: "customer", method: ev.method, account: ev.account, note: "paid " + ev.amount.toFixed(2) });
+    done = settle(order, at);
+  } else if (ev.kind === "cash") {
+    order.paid = +((+order.paid || 0) + ev.amount).toFixed(2);
+    if (!order.method) order.method = "cod";
+    order.payments = (order.payments || []).concat([{ at, amount: ev.amount, method: "cod", account: null, by: "desk" }]);
+    order.history.push({ at, status: order.status, by: "desk", method: "cod", note: "paid " + ev.amount.toFixed(2) + " in cash" });
     done = settle(order, at);
   } else if (ev.kind === "say") {
     order.msgs = ((order.msgs) || []).concat([{ at, by: ev.by, text: ev.text }]);
@@ -675,6 +692,7 @@ export function wakes(ev, order, done) {
   if (ev.kind === "status" && ev.by === "desk") return { k: STATUS_NEWS[ev.status], o };
   if (ev.kind === "say" && ev.by === "desk") return { k: "reply", o };
   if (ev.kind === "pay" && done) return { k: "complete", o };
+  if (ev.kind === "cash") return { k: done ? "complete" : "paid", o };   /* S11 11.8: his cash is their payment received */
   return null;
 }
 
