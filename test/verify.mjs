@@ -21255,6 +21255,96 @@ await (async () => {
       "the money moved and its lines say so, while the amount being typed keeps its field, its focus and its figure");
   } finally { w.close(); }
 })();
+section("S5 5.6: a banner's tap opens its order on the Counter's own page, a stale page re-reads without losing a line, and a desk shows the list beside the open order");
+await (async () => {
+  /* 24 SEP 2026, the Counter redesign's stage 5, over stage 12's tap. The service worker told the first window under
+     its scope, which a guest board or Salt Admin in another tab also is, and neither can open an order. A page
+     already open re-read and drew every order again, the line being typed with it. And on a desk the orders were
+     one column under the form, where the plan (f12w) stands the list beside the open order, its thread in view. */
+  const { SW_JS } = await import("../stmt/sw.js");
+  const vm = await import("node:vm");
+  const id = "20260924101500-ab12cd34";
+  const tap = async (clients) => {
+    const L = {}, opened = [];
+    const ctx = { URL, Date, console, fetch: async () => ({ ok: false }),
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { href: "https://site.test/sw.js?u=abcd-efgh" },
+        registration: { scope: "https://site.test/", showNotification: async () => {} },
+        clients: { matchAll: async () => clients, openWindow: async (u) => { opened.push(u); } } } };
+    ctx.clients = ctx.self.clients;
+    vm.createContext(ctx); vm.runInContext(SW_JS, ctx);
+    const waits = [];
+    L.notificationclick({ notification: { data: { url: "./?u=abcd-efgh#o=" + id, order: id }, close() {} }, waitUntil: (p) => waits.push(p) });
+    await Promise.all(waits);
+    return opened;
+  };
+  const win = (url) => { const w = { url, told: [], focused: 0 }; w.postMessage = (m) => w.told.push(m); w.focus = async () => { w.focused++; }; return w; };
+  const guest = win("https://site.test/g/k7m2p9qr4s"), admin = win("https://site.test/all"), counter = win("https://site.test/?u=abcd-efgh");
+  const o1 = await tap([guest, admin, counter]);
+  ok(counter.told.length === 1 && counter.told[0].order === id && counter.focused === 1 && !guest.told.length && !admin.told.length && !o1.length,
+    "the tap goes to the Counter's own page, past a guest board and Salt Admin open in other tabs: " + JSON.stringify({ counter: counter.told, guest: guest.told.length, admin: admin.told.length }));
+  const g2 = win("https://site.test/g/k7m2p9qr4s"), o2 = await tap([g2]);
+  ok(!g2.told.length && JSON.stringify(o2) === JSON.stringify(["./?u=abcd-efgh#o=" + id]), "and with only a guest board open, the Counter opens at the order: " + JSON.stringify(o2));
+
+  /* ---- the page ---- */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s56", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s56",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const P = "20260924090000-pppp", O = "20260923090000-oooo", D = "20260901090000-dddd";
+  const o = (oid, x) => Object.assign({ id: oid, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 0,
+    moved: 0, status: "acknowledged", history: [], msgs: [] }, x);
+  const drive = async (wide, go) => {
+    let answered = false, reads = 0;
+    const list = () => [o(P, { status: "placed" }), o(O, { msgs: answered ? [{ at: "2026-09-24T05:00:00Z", by: "desk", text: "Ready on Friday." }] : [] }),
+      o(D, { status: "done", paid: 90, moved: 1 })];
+    const st = { listen: null };
+    const dom = new JSDOM(landingPage(u, "n56", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
+      w.matchMedia = (q) => ({ matches: wide && /min-width: *1080px/.test(q), media: q, addEventListener() {}, removeEventListener() {} });
+      Object.defineProperty(w.navigator, "serviceWorker", { configurable: true, value: {
+        addEventListener: (t, f) => { if (t === "message") st.listen = f; }, getRegistration: async () => undefined } });
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? (reads++, { ok: true, orders: list() }) : { ok: true };
+        return { ok: true, status: 200, json: async () => j };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 30));
+      d.querySelector('#tabs button[data-t="order"]').click();
+      await go(w, d, st, { answer: () => { answered = true; }, reads: () => reads });
+    } finally { w.close(); }
+  };
+  const shownOf = (d) => { const s = d.querySelector("#pOrder .oscreen"); return s && s.getAttribute("data-order"); };
+  const current = (d) => [...d.querySelectorAll("#pOrder [data-row][aria-current=true]")].map((b) => b.getAttribute("data-row"));
+  await drive(true, async (w, d) => {
+    ok(shownOf(d) === O && JSON.stringify(current(d)) === JSON.stringify([O]) && !!d.querySelector('#pOrder [data-row="' + P + '"]'),
+      "on a desk the list stands beside an open order without a tap, what needs them first, its row marked: " + JSON.stringify({ shown: shownOf(d), current: current(d) }));
+    d.querySelector('#pOrder [data-row="' + P + '"]').click();
+    ok(shownOf(d) === P && JSON.stringify(current(d)) === JSON.stringify([P]) && !!d.querySelector('#pOrder [data-row="' + O + '"]'),
+      "and a tap on another row opens that one beside the same list: " + JSON.stringify({ shown: shownOf(d), current: current(d) }));
+  });
+  await drive(false, async (w, d, st, fx) => {
+    ok(!shownOf(d), "on a phone nothing is open until it is tapped");
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    const box = d.querySelector('#pOrder input[data-say="' + O + '"]');
+    box.focus(); box.value = "Is Friday"; box.dispatchEvent(new w.Event("input", { bubbles: true }));
+    fx.answer();
+    const before = fx.reads();
+    await st.listen({ data: { salt: "news", order: O } });
+    ok(fx.reads() === before + 1 && /Ready on Friday/.test(d.querySelector("#pOrder .oscreen").textContent)
+      && d.contains(box) && d.activeElement === box && box.value === "Is Friday",
+      "a banner about the order being written on re-reads it and shows his answer, and the line being typed keeps its box: "
+      + JSON.stringify({ reads: fx.reads() - before, kept: d.contains(box), value: box.value }));
+  });
+})();
 section("v753: he answers on the order, and the words are checked on the desk before they leave it");
 await (async () => {
   /* the other half of v751. His answer is a move of his like any other, so it wakes them and changes

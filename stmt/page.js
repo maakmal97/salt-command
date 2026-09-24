@@ -217,6 +217,8 @@ h3.pmark{margin:0 0 4px;line-height:1}
   .oplace{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px;align-items:start;
     width:min(1120px,100vw - 64px);margin-left:calc((100% - min(1120px,100vw - 64px))/2)}
   .oback{display:none}
+  /* the open order stands under the bar while the list scrolls beside it, its thread in reach inside it */
+  .oscreen{position:sticky;top:84px;max-height:calc(100vh - 100px);overflow-y:auto}
 }
 
 @media print{.bar,.mos,.tabs{display:none}}
@@ -1572,7 +1574,18 @@ const CLIENT_JS = `
     }
     return box;
   }
-  function oShownId(){ if(draft.oOpen&&!oFind(draft.oOpen)) draft.oOpen=''; return draft.oOpen||''; }
+  /* S5 5.6 (f12w): FROM 1080PX THE LIST STANDS BESIDE AN OPEN ORDER, so one is always open there: what needs them
+     first, else the newest. It is then the one open, so it stays put while the list moves under a poll. */
+  function oWide(){ try{ return !!(window.matchMedia&&window.matchMedia('(min-width: 1080px)').matches); }catch(e){ return false; } }
+  function oShownId(){
+    if(draft.oOpen&&!oFind(draft.oOpen)) draft.oOpen='';
+    if(!draft.oOpen&&orders.length&&oWide()){ var B=oBuckets(); draft.oOpen=(B.needs[0]||B.open[0]||B.past[0]).id; }
+    return draft.oOpen||'';
+  }
+  try{
+    var oMq=window.matchMedia&&window.matchMedia('(min-width: 1080px)');
+    if(oMq&&oMq.addEventListener) oMq.addEventListener('change',function(){ if(document.getElementById('oPlace')) oDraw(); });
+  }catch(e){ /* a browser that cannot say keeps the phone's one column */ }
   /* ---- S5 5.2 (24 Sep 2026): AN ORDER'S OWN SCREEN. The goods on their own track (Sent, Confirmed, Ready, then
      Collected or Delivered), so Paid can never run ahead of Delivered; the money on its own lines; ONE next action,
      the filled Pay while something is due and nothing filled when nothing is; the thread; what happened, folded;
@@ -1834,7 +1847,11 @@ const CLIENT_JS = `
   }
   /* an order drawn open while the tab was elsewhere is seen when the tab is turned to */
   tabs.addEventListener('click',function(){ var o=tab==='order'&&oFind(draft.oShown||''); if(o){ seeIt(o); oSync([o.id]); } });
-  function oOpen(id){ draft.oOpen=id; oDraw(); scrollClear(pOrder.querySelector('.oscreen')); }
+  /* the order already open is only brought into view: drawn again, it would lose what is being typed in it */
+  function oOpen(id){
+    if(draft.oOpen!==id||!pOrder.querySelector('.oscreen[data-order="'+id+'"]')){ draft.oOpen=id; oDraw(); }
+    scrollClear(pOrder.querySelector('.oscreen'));
+  }
   /* clear of the sticky bar, which would otherwise sit over what was opened */
   function scrollClear(n){
     if(!n) return; var bw=document.getElementById('barw');
