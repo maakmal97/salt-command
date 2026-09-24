@@ -95,9 +95,13 @@ export async function moveOrder(env, u, id, body) {
      that never names this desk, a roster code or a level, and a slip of the thumb is how one gets
      there. Checked HERE and not on the site, because the site holds no roster and would not know a
      code if it saw one; a product's name is his to spend, as it is in the bulletin. */
-  if (body && typeof body.message === "string") {
-    const why = siteWords(body.message);
-    if (why) return { ok: false, status: 400, error: "that message says something " + why };
+  /* 24 Sep 2026: AND SO DOES A STATUS NOTE. The site files `note` on the order's history, which the
+     customer's page reads; nothing sends one today, and the first decline to carry a reason would have
+     reached the page unchecked. Every free-text field his moves can carry goes through this one lock,
+     on the one road they take to the site. */
+  for (const k of ["message", "note"]) {
+    const why = body && typeof body[k] === "string" ? siteWords(body[k]) : "";
+    if (why) return { ok: false, status: 400, error: "that " + k + " says something " + why };
   }
   const r = await site(env, "/desk/orders/" + encodeURIComponent(u) + "/" + encodeURIComponent(id), {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body || {})

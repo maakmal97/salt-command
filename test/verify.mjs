@@ -19032,6 +19032,48 @@ await (async () => {
     "two to agree are them, not it: " + JSON.stringify(b3 && [b3.t, b3.opt.body]));
 })();
 
+section("S1 1.50: a status note passes siteWords on the desk's relay exactly as a message does");
+await (async () => {
+  /* 24 Sep 2026 (L54). The site files a status move's `note` on the order's history, which the
+     customer's page reads, and the desk's relay checked only `message`. Latent while nothing sends a
+     note; live the moment a decline carries a reason. Driven through the desk's own route, which is
+     the one road his moves take to the site. */
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const deskW = (await import("../src/worker.js")).default;
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const u = "abcd-efgh";
+  await dkv.put("stmt-users", JSON.stringify({ [u]: "CC5-OKR" }));
+  const denv = { SALT_QUEUE: dkv, SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", STMT_DESK_KEY: "desk-key",
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const ctx = { waitUntil: (p) => { Promise.resolve(p).catch(() => {}); } };
+  const move = async (id, body) => {
+    const log = console.log; console.log = () => {};   /* the tap's own reconcile logs its pass; not this section's business */
+    try { return await move0(id, body); } finally { await new Promise((r) => setTimeout(r, 20)); console.log = log; }
+  };
+  const move0 = async (id, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example/orders/" + u + "/" + id, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body) }), denv, ctx);
+    return { status: r.status, j: await r.json() };
+  };
+  const rec = async (id) => JSON.parse(await skv.get("order:" + u + ":" + id));
+  const o = (await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  const bad = await move(o.id, { status: "declined", note: "your Gold price is not available this week" });
+  const after = await rec(o.id);
+  ok(bad.status === 400 && /note says something that names a level/.test(bad.j.error)
+    && after.status === "placed" && !after.history.some((h) => /Gold/.test(h.note || "")),
+    "a decline whose note names a level is refused on the desk, and the order is untouched: " + JSON.stringify({ status: bad.status, error: bad.j.error, st: after.status }));
+  const code = await move(o.id, { status: "declined", note: "held for CC5-OKR" });
+  ok(code.status === 400 && /roster code/.test(code.j.error), "and so is one carrying a roster code: " + JSON.stringify(code.j.error));
+  const fine = await move(o.id, { status: "declined", note: "out of stock until Monday" });
+  const done = await rec(o.id);
+  ok(fine.status === 200 && done.status === "declined" && done.history.some((h) => h.note === "out of stock until Monday"),
+    "a note that says none of those goes through as it always did: " + JSON.stringify({ status: fine.status, st: done.status }));
+  const said = await move(o.id, { message: "your Silver rate again next time" });
+  ok(said.status === 400 && /message says something that names a level/.test(said.j.error),
+    "and the message it always checked is checked as before: " + JSON.stringify(said.j.error));
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one
