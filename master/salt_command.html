@@ -19362,13 +19362,14 @@ function clmCard(c){
     :pv.st==='err'?`<p class="salt-approve__reason">The rows could not be drawn: ${esc(pv.err)}. Received opens once they can, your yes being to the rows drawn here.</p>`
     :`<div class="salt-ledger salt-ledger--plain clmrows">${rows.map(r=>`<div class="salt-ledger__row"><div class="salt-ledger__line"><span class="salt-ledger__label">${esc(r.date||'no date')}, owes ${fmt(+r.owed||0)}</span><span class="salt-ledger__value">${fmt(+r.rm||0)}</span></div>${(r.flags||[]).length?`<span class="salt-ledger__flag">${(r.flags||[]).map(esc).join(' ')}</span>`:''}</div>`).join('')}
       ${left>0.004?`<div class="salt-ledger__row"><div class="salt-ledger__line"><span class="salt-ledger__label">More than the rows owe</span><span class="salt-ledger__value">${fmt(left)}</span></div></div>`:''}</div>`;
-  const can=!!j&&rows.length>0&&left<=0.004;
+  /* S6 fix: once Received has booked its rows, the card draws those rows, and Received only tells the site again */
+  const booked=!!(j&&j.booked),can=!!j&&(booked||rows.length>0&&left<=0.004);
   return `<div class="salt-approve ordcard" data-id="${esc(c.id)}">
     <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">Sent against the account, ${ordWhen(c.at)}</span></div>
     <p class="ordline">They say they sent ${fmt(sum)}${c.method?' by '+esc(c.method)+(c.account?' to '+esc(c.account):''):''}, reference ${esc(c.u)}. Oldest first, it settles:</p>
     ${body}
     <div class="ordfoot"><div class="salt-approve__actions"><button class="vbtn salt-pill salt-pill--sm" data-ord="creceived" data-id="${esc(c.id)}" data-u="${esc(c.u)}"${can?'':' disabled'}>Received, ${fmt(sum)}</button><button class="salt-ghost salt-ghost--danger" data-ord="cnotfound" data-amt="${sum}" data-id="${esc(c.id)}" data-u="${esc(c.u)}">Not found</button></div>
-      <p class="salt-approve__reason">${!j?'Received approves the rows drawn here, and only those.':left>0.004?'It is more than their rows owe by '+fmt(left)+', so Received is not a tap here: record it by hand, or answer Not found.':'Received approves exactly these rows and they see it received; Not found tells them it has not arrived. They see it as sent, waiting for us to confirm, until then.'}</p>
+      <p class="salt-approve__reason">${!j?'Received approves the rows drawn here, and only those.':booked?'These rows are booked already, but they were not told. Received tells them, and books nothing more.':left>0.004?'It is more than their rows owe by '+fmt(left)+', so Received is not a tap here: record it by hand, or answer Not found.':'Received approves exactly these rows and they see it received; Not found tells them it has not arrived. They see it as sent, waiting for us to confirm, until then.'}</p>
       <p class="dsc ordsaid" role="status" data-msg="${esc(c.id)}">${ORD_SAID&&ORD_SAID.id===c.id?esc(ORD_SAID.t):''}</p></div>
   </div>`;
 }
@@ -19706,7 +19707,8 @@ async function ordAct(b){
       :st==='say'?'Sent. '+told
       :st==='again'?'Offered again under a fresh entry. '+says
       :st==='received'?'Received: '+fmt(+b.dataset.amt||0)+'. They see it paid. '+says+told
-      :st==='creceived'?(j.approved&&j.rows&&j.approved.length===j.rows.length?'Received, and the '+j.rows.length+' row'+(j.rows.length===1?' is':'s are')+' approved as drawn. They see it received. '
+      :st==='creceived'?(j.again?'Received. Its rows were booked already, and now they see it received. '
+        :j.approved&&j.rows&&j.approved.length===j.rows.length?'Received, and the '+j.rows.length+' row'+(j.rows.length===1?' is':'s are')+' approved as drawn. They see it received. '
         :'Received. A row that came out other than drawn waits under Approve, marked. They see it received. ')+told
       :st==='cnotfound'?'Not found. They are told it has not arrived yet. '+told
       :st==='notfound'?'Not found: '+fmt(+b.dataset.amt||0)+'. Its row is filed as not found, and they are told it has not arrived yet. '+told

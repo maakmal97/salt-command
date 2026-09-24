@@ -27637,6 +27637,66 @@ await (async () => {
   }
 })();
 
+section("S6 fix: a claim against the account whose Received booked its rows but the site did not hear books nothing more when tapped again");
+await (async () => {
+  /* HIS D6: his yes books exactly the rows drawn. Received books the rows first and tells the site second; when the site
+     does not hear (a move-in's freeze, a relay error) the claim still waits there and the card offers Received again. The
+     retry re-allocated against the mirror, and after the fold had landed the first rows it booked the next ones as well:
+     more than the claim, on rows the card never drew. Once any row of the claim carries his yes, a retry tells the site
+     and queues nothing. Driven through both Workers over the real schema. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the retried claim was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const C = "CX1-AB", U = "abcd-efgh";
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  const sale = (rid, date, total, cash) => ({ rid, customer: C, date, qty: 1, total, cash, deliveredQty: 1, deliveredOn: date });
+  [sale("s20", "2026-09-02", 80, 0), sale("s21", "2026-09-10", 60, 0), sale("s22", "2026-09-12", 100, 0)]
+    .forEach((r, i) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", i, "h" + i, JSON.stringify(r)));
+  setState("roster", [C]); setState("OPEN", { byKey: {}, position: {} });
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 30, floors: { "1": { floor: 40 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const realSite = { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) };
+  /* the site's claims route answers 503 while its book is frozen for a move-in */
+  const frozen = { fetch: async (url, init) => (/\/desk\/claims\//.test(new URL(url).pathname) && init && init.method === "POST"
+    ? new Response(JSON.stringify({ ok: false, error: "the order book is moving in" }), { status: 503, headers: { "content-type": "application/json" } }) : realSite.fetch(url, init)) };
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets, STMT_SITE: realSite };
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil: () => {} });
+    return { status: r.status, j: await r.json() };
+  };
+  const approved = (id) => db.prepare("SELECT status,entry FROM draft").all().filter((d) => d.status === "approved" && JSON.parse(d.entry).claimId === id)
+    .map((d) => [JSON.parse(d.entry).payload.rid, JSON.parse(d.entry).payload.cash]);
+  const c1 = (await O.claimAccount(senv, U, { amount: 80, method: "transfer", account: "wise" })).claim;
+  const pv = await call("/claims/" + c1.id + "/preview", {});
+  denv.STMT_SITE = frozen;
+  const down = await call("/claims/" + c1.id + "/received", { hash: pv.j.hash });
+  denv.STMT_SITE = realSite;
+  ok(down.status === 503 && JSON.stringify(approved(c1.id)) === '[["s20",80]]' && (await O.claimsOf(senv, U)).find((x) => x.id === c1.id).state === "waiting",
+    "the fixture: Received booked the one row drawn, and the site, frozen, did not hear it: " + JSON.stringify({ status: down.status, approved: approved(c1.id) }));
+  /* the fold lands that row: the allocation would now fall on the next rows */
+  db.prepare("UPDATE entry SET doc=? WHERE json_extract(doc,'$.rid')='s20'").run(JSON.stringify(sale("s20", "2026-09-02", 80, 80)));
+  const pv2 = await call("/claims/" + c1.id + "/preview", {});
+  const again = await call("/claims/" + c1.id + "/received", { hash: pv2.j.hash });
+  ok(pv2.j.booked === true && JSON.stringify(pv2.j.rows.map((r) => [r.rm, r.state])) === '[[80,"applied"]]'
+    && again.status === 200 && again.j.again === true && JSON.stringify(approved(c1.id)) === '[["s20",80]]'
+    && (await O.claimsOf(senv, U)).find((x) => x.id === c1.id).state === "received",
+    "tapped again after the fold, the card is handed the rows he booked, and Received tells the site and books nothing more: "
+    + JSON.stringify({ booked: pv2.j.booked, rows: pv2.j.rows && pv2.j.rows.map((r) => [r.rid || r.key, r.rm]), status: again.status, approved: approved(c1.id) }));
+})();
+
 section("v764: what he records on the desk reaches the customer's order, and the chase stops");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026. Every road built since v694 runs from the site to the book. A

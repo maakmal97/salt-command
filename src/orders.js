@@ -528,7 +528,20 @@ function claimRows(book, c) {
       assoc: null, downstream: null, date, qty: 0, total: 0, cash: r.rm, kg: 0, note: "Paid on the statements site against the account, by " + method + "." } }));
   return { alloc, entries };
 }
-/** POST /claims/<id>/preview: the rows the claim settles, drafted, stored nowhere. */
+/* S6 fix: WHAT HIS RECEIVED ALREADY BOOKED FOR A CLAIM. A yes of his on file for any of its rows (queued, drafted, marked
+   or spent), or a row of it approved, means Received was given and those rows are the ones he said yes to. A retry after
+   the site did not hear tells the site again and queues nothing, however the allocation now falls: a fold since may have
+   moved it, and a fresh one booked rows the card never drew, and more than the claim. */
+async function claimBooked(db, id) {
+  let pres = [];
+  try { pres = (await db.prepare("SELECT shown,status FROM preapproval WHERE order_id=?1 AND stage='pay' AND status IN ('waiting','differs','applied') ORDER BY at").bind(id).all()).results || []; }
+  catch (e) { pres = []; }   /* a store before migrations/0011 */
+  const appr = (await db.prepare("SELECT id FROM draft WHERE status='approved' AND entry LIKE ?1").bind('%"claimId":"' + id + '"%').all()).results || [];
+  if (!pres.length && !appr.length) return null;
+  return pres.map((p) => { let sh = {}; try { sh = JSON.parse(p.shown || "{}") || {}; } catch (e) { sh = {}; }
+    return { key: sh.row || null, date: sh.date || null, owed: sh.owed != null ? sh.owed : null, rm: +((sh.figures || {}).amount) || 0, flags: sh.flags || [], state: p.status }; });
+}
+/** POST /claims/<id>/preview: the rows the claim settles, drafted, stored nowhere; or, once Received booked them, those rows. */
 export async function claimPreview(env, id) {
   const f = await findClaim(env, id);
   if (!f.ok) return f;
@@ -536,6 +549,8 @@ export async function claimPreview(env, id) {
   if (!c.code) return { ok: false, status: 409, error: "no desk code is mapped to this account yet: publish the statements again" };
   if (!db) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
   if (c.state !== "waiting") return { ok: false, status: 409, error: "that claim is answered already" };
+  const booked = await claimBooked(db, c.id);
+  if (booked) return { ok: true, claim: c, rows: booked, left: 0, booked: true, own: [] };
   const book = await readBook(db);
   const { alloc, entries } = claimRows(book, c);
   const rows = [], own = [];
@@ -556,6 +571,12 @@ export async function claimReceived(env, id, body, by, now) {
   if (!pv.ok) return pv;
   const own = pv.own, db = env.SALT_LEDGER;
   delete pv.own;
+  /* booked already: the site is told again, and nothing more is queued or approved */
+  if (pv.booked) {
+    const r = await moveClaim(env, pv.claim.u, id, { verdict: { kind: "received", amount: pv.claim.amount } });
+    return Object.assign({ ok: r.ok, again: true, rows: [], approved: [] },
+      r.ok ? { claim: r.claim, push: r.push } : { status: r.status, error: "the rows are booked, but the site was not told: " + r.error });
+  }
   if (!body || typeof body.hash !== "string") return { ok: false, status: 400, error: "Received answers the rows drawn: send the digest the preview gave" };
   if (pv.hash !== body.hash) return { ok: false, status: 409, differs: true, error: "the rows have changed since the card drew them: look at them again", preview: pv };
   if (pv.left > 0.004) return { ok: false, status: 409, error: "RM " + pv.left.toFixed(2) + " of it is more than their rows owe, so it is not approved on a tap: record it by hand, or answer Not found" };
@@ -564,10 +585,9 @@ export async function claimReceived(env, id, body, by, now) {
   for (let i = 0; i < own.length; i++) {
     const e = own[i].entry;
     const was = await db.prepare("SELECT status FROM draft WHERE id=?1").bind(e.at).first();
-    if (was && was.status === "approved") continue;   /* a tap retried after the site did not hear: that row is booked */
     if (was && was.status === "rejected") return { ok: false, status: 409, error: "the row of " + (pv.rows[i].date || "no date") + " was rejected: answer it under Approve" };
     const preId = await recordPre(db, { order_id: id, u: pv.claim.u, stage: "pay", hash: own[i].digest, entry: e, by,
-      at: new Date(at.getTime() + i).toISOString(), shown: { claim: id, figures: { amount: e.payload.cash }, row: pv.rows[i].key, flags: own[i].flags } });
+      at: new Date(at.getTime() + i).toISOString(), shown: { claim: id, figures: { amount: e.payload.cash }, row: pv.rows[i].key, date: pv.rows[i].date || null, owed: pv.rows[i].owed, flags: own[i].flags } });
     if (!was) await queueSale(env, e);
     await db.prepare("UPDATE preapproval SET entry_at=?1, entry=?2 WHERE id=?3").bind(e.at, JSON.stringify(e), preId).run();
     pres.push(preId);
