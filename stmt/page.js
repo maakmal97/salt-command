@@ -1578,16 +1578,21 @@ const CLIENT_JS = `
     return box;
   }
   /* S5 5.6 (f12w): FROM 1080PX THE LIST STANDS BESIDE AN OPEN ORDER, so one is always open there: what needs them
-     first, else the newest. It is then the one open, so it stays put while the list moves under a poll. */
+     first, else the newest. It is then the one open, so it stays put while the list moves under a poll. An order
+     opened this way is marked oAuto, and goes when the width drops below 1080px: on a phone nothing is open until
+     it is tapped. */
   function oWide(){ try{ return !!(window.matchMedia&&window.matchMedia('(min-width: 1080px)').matches); }catch(e){ return false; } }
   function oShownId(){
     if(draft.oOpen&&!oFind(draft.oOpen)) draft.oOpen='';
-    if(!draft.oOpen&&orders.length&&oWide()){ var B=oBuckets(); draft.oOpen=(B.needs[0]||B.open[0]||B.past[0]).id; }
+    if(!draft.oOpen&&orders.length&&oWide()){ var B=oBuckets(); draft.oOpen=(B.needs[0]||B.open[0]||B.past[0]).id; draft.oAuto=true; }
     return draft.oOpen||'';
   }
   try{
     var oMq=window.matchMedia&&window.matchMedia('(min-width: 1080px)');
-    if(oMq&&oMq.addEventListener) oMq.addEventListener('change',function(){ if(document.getElementById('oPlace')) oDraw(); });
+    if(oMq&&oMq.addEventListener) oMq.addEventListener('change',function(){
+      if(!oWide()&&draft.oAuto){ draft.oOpen=''; draft.oAuto=false; }
+      if(document.getElementById('oPlace')) oDraw();
+    });
   }catch(e){ /* a browser that cannot say keeps the phone's one column */ }
   /* ---- S5 5.2 (24 Sep 2026): AN ORDER'S OWN SCREEN. The goods on their own track (Sent, Confirmed, Ready, then
      Collected or Delivered), so Paid can never run ahead of Delivered; the money on its own lines; ONE next action,
@@ -1852,6 +1857,7 @@ const CLIENT_JS = `
   tabs.addEventListener('click',function(){ var o=tab==='order'&&oFind(draft.oShown||''); if(o){ seeIt(o); oSync([o.id]); } });
   /* the order already open is only brought into view: drawn again, it would lose what is being typed in it */
   function oOpen(id){
+    draft.oAuto=false;
     if(draft.oOpen!==id||!pOrder.querySelector('.oscreen[data-order="'+id+'"]')){ draft.oOpen=id; oDraw(); }
     scrollClear(pOrder.querySelector('.oscreen'));
   }

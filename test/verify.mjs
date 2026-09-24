@@ -21348,6 +21348,58 @@ await (async () => {
       + JSON.stringify({ reads: fx.reads() - before, kept: d.contains(box), value: box.value }));
   });
 })();
+section("S5 fix: an order a desk opened by itself is not a tapped one");
+await (async () => {
+  /* 25 SEP 2026, the stage 5 review. From 1080px an order opens beside the list without a tap, and it was then held
+     as if tapped: turned to portrait, the phone layout filled the tab with it. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-f1", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f1",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const P = "20260924090000-pppp", O = "20260923090000-oooo", D = "20260901090000-dddd";
+  const o = (oid, x) => Object.assign({ id: oid, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 0,
+    moved: 0, status: "acknowledged", history: [], msgs: [] }, x);
+  const drive = async (wide, go) => {
+    const mq = { wide, fns: [] };
+    const list = () => [o(P, { status: "placed" }), o(O), o(D, { status: "done", paid: 90, moved: 1 })];
+    const dom = new JSDOM(landingPage(u, "nf1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
+      w.matchMedia = (q) => ({ get matches() { return mq.wide && /min-width: *1080px/.test(q); }, media: q,
+        addEventListener(t, f) { if (t === "change") mq.fns.push(f); }, removeEventListener() {} });
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: list() } : { ok: true };
+        return { ok: true, status: 200, json: async () => j };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    const turn = (on) => { mq.wide = on; mq.fns.forEach((f) => f({ matches: on })); };
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 30));
+      d.querySelector('#tabs button[data-t="order"]').click();
+      await go(w, d, turn);
+    } finally { w.close(); }
+  };
+  const shownOf = (d) => { const s = d.querySelector("#pOrder .oscreen"); return s && s.getAttribute("data-order"); };
+  await drive(true, async (w, d, turn) => {
+    const wideShown = shownOf(d);
+    turn(false);
+    ok(wideShown === O && !shownOf(d) && !d.getElementById("pOrder").classList.contains("o-open") && !!d.querySelector('#pOrder [data-row="' + O + '"]'),
+      "an order the desk opened by itself goes when the width drops below 1080px, and the list is back: " + JSON.stringify({ wide: wideShown, narrow: shownOf(d) }));
+  });
+  await drive(true, async (w, d, turn) => {
+    d.querySelector('#pOrder [data-row="' + P + '"]').click();
+    turn(false);
+    ok(shownOf(d) === P && d.getElementById("pOrder").classList.contains("o-open"),
+      "and an order they tapped stays open when the width drops: " + JSON.stringify({ narrow: shownOf(d) }));
+  });
+})();
 section("v753: he answers on the order, and the words are checked on the desk before they leave it");
 await (async () => {
   /* the other half of v751. His answer is a move of his like any other, so it wakes them and changes
