@@ -216,6 +216,10 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .badge{color:var(--salt-obsidian);background:var(--salt-brass);border-radius:999px;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;}
 .warnpill{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;background:transparent;
   border:1px solid rgba(212,105,76,.55);color:var(--salt-ember);border-radius:999px;}
+/* UX6, 24 Sep 2026: A GHOST THAT ENDS SOMETHING SAYS SO AT REST. Decline, Cancel and Reject were the alarm until
+   S1 1.48 made them the system's danger ghost, which warms only under a pointer, so on his phone they read as any
+   quiet ghost. The recipe's own tone is bound to the alarm, as a tile's tone is bound; nothing is restated. */
+.salt-ghost--danger{--salt-ghost-tone:var(--salt-alarm);}
 
 /* v604: THE ENTER FORM'S MESSAGES ARE A LIST, NOT A ROW OF PILLS. They borrowed `.warnpill`,
    which this layer sets in uppercase with letter-spacing, so a sentence of plain English came

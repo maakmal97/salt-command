@@ -20788,6 +20788,13 @@ await (async () => {
       "the notice's Running and Changing are ghosts, pressed by the mode that is set");
     ok(w148.getComputedStyle(chg).color === "var(--salt-salt)" && w148.getComputedStyle(run).color === "var(--salt-ghost-tone)",
       "so the chosen one is drawn as chosen, by the recipe's own pressed state: " + JSON.stringify([w148.getComputedStyle(chg).color, w148.getComputedStyle(run).color]));
+    /* UX6: the danger ghost warms only under a pointer, which his phone has not got, so Decline, Cancel and Reject
+       read as any quiet ghost; the layer binds the recipe's own tone to the alarm, and a plain ghost keeps mist */
+    const toneOf = (b) => w148.getComputedStyle(b).getPropertyValue("--salt-ghost-tone").trim();
+    ok([dec, can, no].every((b) => toneOf(b) === "var(--salt-alarm)" && w148.getComputedStyle(b).color === "var(--salt-ghost-tone)")
+      && toneOf(run) === "var(--salt-mist)",
+      "Decline, Cancel and Reject rest in the alarm through the recipe's own tone, and a plain ghost is untouched: "
+      + JSON.stringify([toneOf(dec), toneOf(can), toneOf(no), toneOf(run)]));
   } finally {
     await new Promise((r) => setTimeout(r, 200));
     try { w148.close(); } catch (e) { /* best effort */ }
