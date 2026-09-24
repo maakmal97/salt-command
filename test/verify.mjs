@@ -22100,8 +22100,20 @@ await (async () => {
     + (bare.length ? "; bare: " + bare.slice(0, 4).join(", ") : ""));
   if (!kinds.has("rft")) skipData("no live statement carries a Refunds table, so its box went unchecked");
   if (!kinds.has("mini")) skipData("no live statement carries a reconciliation, so its box went unchecked");
-  ok(/\.tblw\{overflow-x:auto/.test((await import("../stmt/statement-css.js")).STATEMENT_CSS),
+  const SCSS = (await import("../stmt/statement-css.js")).STATEMENT_CSS;
+  ok(/\.tblw\{overflow-x:auto/.test(SCSS),
     "and the box scrolls sideways inside itself, in the stylesheet the page carries");
+  /* UX1: the box is the net, not the answer. Held at 340px inside a phone's column of 280 to 335, the
+     Status column was cut mid-word (measured in the rig at 320, 360 and 375: 71, 31 and 16px cut; 0 after),
+     The cascade is read in jsdom, a sealed table beside a live one. */
+  const { JSDOM: JD29 } = await import("jsdom");
+  const d29 = new JD29("<style>" + SCSS + "</style><div class=\"tblw\"><table><tr><td>a</td></tr></table></div><table><tr><td>b</td></tr></table>").window;
+  const [live29, sealed29] = d29.document.querySelectorAll("table");
+  ok(d29.getComputedStyle(live29).minWidth === "0px" && d29.getComputedStyle(sealed29).minWidth === "340px",
+    "a live table takes the column's width while a sealed one keeps the 340px it was issued with: "
+    + JSON.stringify([d29.getComputedStyle(live29).minWidth, d29.getComputedStyle(sealed29).minWidth]));
+  d29.close();
+  ok(/\.tblw \.owedunits\{white-space:normal\}/.test(SCSS), "and the long status line wraps inside a live table, so no status word is cut");
   /* an archive is left as it was issued */
   const who = parties.find((p) => M.liveStatement(p, at));
   const o = { from: null, to: "2026-09-24", completed: true, open: true, pending: true, dates: true, issued: "24 Sep 2026", archive: true };

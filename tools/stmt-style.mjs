@@ -125,6 +125,12 @@ h1{margin:0;font-size:var(--salt-text-2xl);font-weight:600;letter-spacing:-.01em
 
 .tblw{overflow-x:auto;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse;min-width:340px}
+/* UX1, 24 Sep 2026: A LIVE TABLE FITS THE PHONE'S COLUMN. Held at 340px inside a box of 280 to 335, the
+   Status column was cut mid-word with nothing to say the box scrolls; the long status line wraps instead,
+   and the box stays only as the net. .tblw is on live documents alone, so a sealed issue keeps the look it
+   was issued with. */
+.tblw table{min-width:0}
+.tblw .owedunits{white-space:normal}
 table.rft{margin-top:10px}
 th{font-size:var(--salt-text-xs);letter-spacing:.16em;text-transform:uppercase;
   color:var(--salt-text-muted);font-weight:700;padding:0 0 10px;text-align:right;white-space:nowrap}
