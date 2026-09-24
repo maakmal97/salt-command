@@ -22401,9 +22401,11 @@ await (async () => {
   /* the system itself, read with its comments stripped: the root's own comment names what it no longer does */
   const sXcode = sX.replace(/\/\*[\s\S]*?\*\//g, "");
   ok(!/\.salt-root \{[^}]*overflow: hidden/.test(sXcode), "the system's root no longer clips, so a sticky bar inside it can stick (measured 22 Sep 2026)");
-  ok(!/font-size: (9|9\.5|10|10\.5)px/.test(sXcode), "and nothing in the system is set under the smallest type token");
-  ok(/\.salt-field__input \{[^}]*background: var\(--salt-well\);/.test(sXcode) && /\.salt-field__input \{[^}]*font-size: 16px;/.test(sXcode) && /\.salt-field__input \{[^}]*min-height: var\(--salt-tap\);/.test(sXcode),
-    "a field is a well, 16px so a phone never zooms, and 44px tall, as principles 4 and 7 say and the recipe did not");
+  /* S2 fix (S2R-2, U5), 24 Sep 2026: the recipes set their type in rem, so the floor is read in either unit */
+  const sizesX = [...sXcode.matchAll(/font-size: ([0-9.]+)(px|rem)/g)].map((m) => Number(m[1]) * (m[2] === "rem" ? 16 : 1));
+  ok(sizesX.length > 30 && sizesX.every((v) => v >= 11), "and nothing in the system is set under the smallest type token, in px or in rem (" + sizesX.filter((v) => v < 11).join(", ") + ")");
+  ok(/\.salt-field__input \{[^}]*background: var\(--salt-well\);/.test(sXcode) && /\.salt-field__input \{[^}]*font-size: max\(16px, 1rem\);/.test(sXcode) && /\.salt-field__input \{[^}]*min-height: var\(--salt-tap\);/.test(sXcode),
+    "a field is a well, never under 16px so a phone never zooms, and 44px tall, as principles 4 and 7 say and the recipe did not");
 })();
 
 section("22 Sep 2026: the Counter draws its field, pill, quiet button, tabs and state chip from the system's recipes");
@@ -22453,6 +22455,11 @@ await (async () => {
   ok(at(".salt-ledger {") >= 0 && at(".salt-ledger {") < at(".salt-ledger--plain") && at(".salt-field__input {") >= 0 && at(".salt-field__input {") < at(".salt-field__input--code"),
     "in the system's own order, so the plain ledger list and the code field come after the rules they modify");
   ok(!/\/\*|\*\//.test(R) && !/Salt Admin|Salt Command/.test(R), "and with no comment, so no note of the system's reaches a customer's page");
+  /* S2 fixes of 24 Sep 2026, each proved red by mutation on its own */
+  ok(!/font-size: [0-9.]+px/.test(R) && /\.salt-pill--md \{[^}]*font-size: 0\.875rem/.test(R),
+    "every recipe it carries sets its type in rem, so the pill, the field and the tabs grow with the prose beside them (S2R-2, U5)");
+  ok(/\n\.salt-field__input:focus-visible \{[^}]*outline: 2px solid var\(--salt-brass\);[^}]*outline-offset: 2px;/.test(R) && !/--salt-focus-ring/.test(R),
+    "and a focused field wears a 2px brass ring clear of its edge, a change of 3:1 (U1)");
 })();
 
 section("22 Sep 2026: the brand faces reach every surface, self-hosted");
