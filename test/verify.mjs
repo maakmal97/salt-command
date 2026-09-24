@@ -15938,6 +15938,93 @@ await (async () => {
     ok(again.status === 200 && !!(await again.json()).session, "and a slide KV refuses still lets the phone in: " + again.status);
   } finally { kv.put = realPut; }
 })();
+section("S3 3.9: the hand-over: a key and an eight-symbol code minted on a session, filed under a keyed hash with the wrap sealed, one use in fifteen minutes, braked per address and site-wide");
+await (async () => {
+  /* HIS DECISION D2 OF 24 SEP 2026. The saved iPhone app keeps its own storage, so a signed-in page hands its
+     sign-in across: a key for Paste and /app#<key>, eight symbols to type. A code is 39 bits: never a plain hash. */
+  const C = await import("../tools/stmt-crypto.mjs");
+  const kv = new KV(), SECRET = "s3-39-handover-secret", env = { STMT: kv, STMT_HANDOVER_KEY: SECRET };
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s3-39", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, "{}"), live: { at: "2026-09-24T01:00:00Z", iv: "aXY=", ct: "Y3Q=" } }));
+  const call = async (path, body, headers, e = env, ip = "203.0.113.9") => {
+    const r = await stmtWorker.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+      headers: Object.assign({ "content-type": "application/json", "CF-Connecting-IP": ip }, headers || {}),
+      body: typeof body === "string" ? body : JSON.stringify(body) }), e);
+    let j = {}; try { j = await r.json(); } catch (x) { j = {}; }
+    return { status: r.status, j };
+  };
+  const sha = (x) => createHash("sha256").update(x).digest("hex");
+  const newKey = () => Buffer.from(crypto.getRandomValues(new Uint8Array(24))).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const REFUSED = "That username and password were not accepted.";
+
+  /* with the secret unset, the routes are off and the door is not */
+  const off = { STMT: kv };
+  ok((await call("/handover", {}, {}, off)).status === 503 && (await call("/handover/open", { code: "abcd-efgh" }, {}, off)).status === 503
+    && (await call("/open", { u, password: pw }, {}, off)).status === 200,
+    "with STMT_HANDOVER_KEY unset the hand-over answers 503 and the password still opens");
+
+  const sess = (await call("/open", { u, password: pw })).j.session;
+  const mint = async () => {
+    const token = newKey(), wrap = await C.wrapKey(token, ck);
+    return Object.assign((await call("/handover", { token, wrap }, { "X-Stmt-Session": sess })).j, { wrap });
+  };
+  ok((await call("/handover", { token: newKey(), wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" } })).status === 401
+    && (await call("/handover", { token: newKey() }, { "X-Stmt-Session": sess })).status === 400,
+    "minting needs a live session, and the key with its wrap");
+  const before = new Set(kv.m.keys());
+  const h1 = await mint();
+  const ho = [...kv.m.keys()].filter((k) => !before.has(k) && k.startsWith("ho:"));
+  const exp = Date.parse(h1.exp) - Date.now();
+  ok(h1.ok && /^[23456789abcdefghjkmnpqrstvwxyz]{4}-[23456789abcdefghjkmnpqrstvwxyz]{4}$/.test(h1.code) && typeof h1.token === "string" && h1.token.length >= 20
+    && exp > 14 * 60e3 && exp <= 15 * 60e3,
+    "a session mints { code, token, exp }: eight symbols of the username alphabet, the key back, fifteen minutes: " + JSON.stringify({ code: h1.code, exp }));
+  const plain = [h1.code, h1.code.replace("-", ""), h1.token, sha(h1.code), sha(h1.code.replace("-", "")), sha(h1.token), u, h1.wrap.ct];
+  ok(ho.length === 2 && ho.every((k) => (kv.opts.get(k) || {}).expirationTtl === 900)
+    && !ho.some((k) => plain.some((x) => k.includes(x))) && !ho.some((k) => plain.some((x) => String(kv.m.get(k)).includes(x))),
+    "it is filed twice for fifteen minutes, under names no plain hash of the code or the key computes, and neither record holds the code, the key, the username or the wrap");
+
+  /* opened by the code, typed any way: the answer is a link's, with the key to unwrap under */
+  const o1 = await call("/handover/open", { code: " " + h1.code.toUpperCase().replace("-", " ") + " " });
+  const ck1 = o1.j.wrap && o1.j.token ? await C.unwrapKey(o1.j.token, o1.j.wrap).catch(() => null) : null;
+  ok(o1.status === 200 && o1.j.ok && o1.j.u === u && o1.j.remembered === true && !!o1.j.session && !!o1.j.env && !!o1.j.live
+    && o1.j.token === h1.token && !!ck1 && Buffer.from(ck1).equals(Buffer.from(ck)),
+    "the code opens what a one-time link opens, and the wrap unwraps under the key in the answer to the account's own key");
+  ok(ho.every((k) => !kv.m.has(k)) && (await call("/handover/open", { token: h1.token })).j.error === REFUSED,
+    "and it is burnt, both names at once: its key, used after its code, gets the door's one refusal");
+  const ptr = [...kv.m.keys()].find((k) => k.startsWith("dev:" + u + ":") && JSON.parse(kv.m.get(k)).key === "sess:" + o1.j.session);
+  ok(!!ptr && JSON.parse(kv.m.get(ptr)).how === "code" && JSON.parse(await kv.get("seen:" + u)).how === "code",
+    "a code open is an open: its session leaves a pointer and the opened mark says how");
+
+  /* opened by the key, as Paste and /app#<key> do */
+  const h2 = await mint();
+  const o2 = await call("/handover/open", { token: h2.token });
+  ok(o2.status === 200 && o2.j.u === u && o2.j.token === h2.token && (await call("/handover/open", { code: h2.code })).status === 401,
+    "the key opens it too, and burns the code with it");
+  /* a record past its fifteen minutes that KV has not yet dropped is refused */
+  const h3 = await mint();
+  for (const k of [...kv.m.keys()].filter((k) => k.startsWith("ho:"))) {
+    const r = JSON.parse(kv.m.get(k)); r.exp = new Date(Date.now() - 1000).toISOString(); kv.m.set(k, JSON.stringify(r));
+  }
+  ok((await call("/handover/open", { code: h3.code })).status === 401, "a hand-over past its fifteen minutes opens nothing");
+  /* only JSON reaches it, so another site's page cannot spend an allowance */
+  const was = kv.m.get("hofail:203.0.113.9");
+  ok((await call("/handover/open", "code=abcd-efgh", { "content-type": "text/plain" })).status === 401 && !!was && kv.m.get("hofail:203.0.113.9") === was,
+    "a form post is refused and counts nothing");
+
+  /* the brakes: ten misses from one address shut it, a hundred across the site shut every address */
+  const h4 = await mint();
+  for (let i = 0; i < 10; i++) await call("/handover/open", { code: "2222-222" + "23456789ab"[i] }, {}, env, "198.51.100.1");
+  const shut = await call("/handover/open", { code: h4.code }, {}, env, "198.51.100.1");
+  ok(shut.status === 429 && [...kv.m.keys()].filter((k) => k.startsWith("ho:")).length === 2,
+    "ten misses from one address shut it, even to a real code, and the code is not spent: " + shut.status);
+  ok((await call("/handover/open", { code: h4.code }, {}, env, "198.51.100.2")).status === 200, "while another address still opens");
+  const h5 = await mint();
+  for (let i = 0; i < 100; i++) await call("/handover/open", { code: "3333-" + String(2000 + i).replace(/[01]/g, "z") }, {}, env, "192.0.2." + (i % 90));
+  ok((await call("/handover/open", { code: h5.code }, {}, env, "203.0.113.200")).status === 429,
+    "a hundred misses across the site shut code sign-in everywhere, a fresh address included");
+  ok((await call("/open", { u, password: pw }, {}, env, "203.0.113.200")).status === 200, "and the password door is untouched by it");
+})();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: no three-minute lock, Remember me, and a Log out. The two halves of

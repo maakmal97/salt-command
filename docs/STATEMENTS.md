@@ -218,6 +218,8 @@ has lost his asks for it again, and it is read back from `_passwords.json`.
 | a sign-in link | nowhere | KV `ot:<sha256(token)>`, 7 days, one use | The content key wrapped under a token his page mints (v710). The token is stored nowhere, so the record opens only for whoever holds the link. |
 | a remembered phone | nowhere | KV `rem:<sha256(token)>`, 30 days from the last open (S3 3.6; from the tick until then) | The content key wrapped under a key that never leaves that browser (v692). Filed under the token's hash since S3 3.1, so a copy of the store names no token; a record filed the old way is re-filed on its next open. |
 | where an account is signed in | nowhere | KV `dev:<username>:<sha256(key)>`, as long as what it names | A pointer per remembered phone (`rem:`) and per session an open mints (`sess:`), with `how` it came, `at` and `last` (S3 3.2). Listed by the prefix, it is what shows an account's phones and signs them all out; it opens nothing. |
+| `STMT_HANDOVER_KEY` | nowhere | Cloudflare secret on the site, set by hand (S3 3.9) | Keys the hash a hand-over's code and key are filed under and seals the wrap beside them. Unset, the hand-over routes answer 503. Changing it only strands the codes alive at that moment. |
+| a hand-over | nowhere | KV `ho:<HMAC(STMT_HANDOVER_KEY, code or key)>`, 15 minutes, one use | The content key wrapped under a key the signed-in page mints, filed under the code and the key, sealed. The contract is below. |
 
 `_secrets.json` is gitignored and looks like
 `{"key": "<64 hex characters>", "master": "<the passphrase>"}`. An environment variable of
@@ -302,6 +304,29 @@ appears is the DESK's name. Twelve characters exactly, which is what iOS gives a
 place Salt Command appeared on a customer's page, is gone: `brand` is null for the live statement
 and every new issue, and a statement with no brand carries no eyebrow rather than an empty one.
 Issues already sealed keep the letterhead they were issued with until they are re-issued.
+
+### The hand-over: a key and an eight-symbol code (S3 3.9, his decision D2 of 24 Sep 2026)
+
+An iPhone's Home Screen app keeps its own storage, so what Safari remembers never reaches it. A page already
+signed in (or Salt Admin, for a customer at his counter) hands the sign-in across: a long KEY for Paste and for
+`/app#<key>`, and an eight-symbol CODE to type. Mechanism: `stmt/signin.js`; the door: `handleHandover` in
+`stmt/worker.js`. **The contract the Counter codes to:**
+
+| Route | Takes | Answers |
+|---|---|---|
+| `POST /handover` | a live session (`X-Stmt-Session`) and JSON `{token, wrap}`: `token` a key the page mints (24 random bytes, base64url, the shape of a sign-in link's), `wrap` its content key wrapped under it exactly as `wrapUnder(new TextEncoder().encode(token), ck)` wraps | `{ok, code, token, exp}`: `code` eight symbols of the username alphabet as `xxxx-xxxx`, `token` the key sent, `exp` ISO, fifteen minutes on. 401 with `session:false` with no session; 400 without a key of that shape and a wrap |
+| `POST /handover/open` | JSON `{token}` or `{code}` (case, spaces and hyphens forgiven; `token` wins where both are sent) | exactly what `POST /open-link` answers (`u`, `wrap`, `session`, `env`, `live`, `prices`, `card`, `assoc`, `issued`, `issues`, `remembered: true`) **plus `token`**: the page unwraps `wrap` under `token`, the one in the answer, whichever it typed. Both names are burnt. Every refusal is the door's one (401); a brake is the door's (429) |
+
+- **Mint when the sheet opens, copy in a tap of its own**: the derivation and the fetch are never in the tap that
+  copies or shares (the judges' must-not-ship list).
+- **Keyed and sealed**: filed as `ho:<HMAC(STMT_HANDOVER_KEY, "code:" + code)>` and `ho:<HMAC(..., "key:" + token)>`,
+  each holding the other's name, `exp`, and the username, key and wrap sealed under AES-GCM keyed from the same
+  secret. Eight symbols are 39 bits: never a plain hash.
+- **Braked** per address (`hofail:<address>`, ten misses) and site-wide (`hofail`, a hundred), fifteen minutes each.
+  A miss is any refusal; a success clears nothing. A flood shuts code sign-in for everyone for fifteen minutes and
+  touches no other door. JSON only, as `/open`.
+- **A code open is an open**: `seen:` says `code` or `key`, and its session leaves a pointer (`dev:`).
+- The same two limits as the link: a bearer credential inside its fifteen minutes, and one use best effort on KV.
 
 ## The price list and the order book (06 Sep 2026, his instruction)
 

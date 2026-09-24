@@ -43,7 +43,7 @@ import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, MAX_PER_ASSOC } from "./refs.js";
-import { SIGNIN_RE, mintSignin, burnSignin, idOf, pointAt, unpoint, devPrefix } from "./signin.js";
+import { SIGNIN_RE, mintSignin, burnSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover } from "./signin.js";
 import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
@@ -473,6 +473,56 @@ async function handleSignin(request, env) {
   const session = await openSession(env, rec.u, "link");
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
+    issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
+    env: acct.env, live: acct.live || null, prices: acct.prices || null, session
+  });
+}
+
+/* ---- THE HAND-OVER, MINTED AND OPENED (S3 3.9, his decision D2 of 24 Sep 2026) --------------------------------
+ * POST /handover on a live session takes { token, wrap }, the key the page minted and the content key wrapped under
+ * it as a link is wrapped, and answers { ok, code, token, exp }. POST /handover/open takes { token } or { code } and
+ * answers what a one-time link's open answers, with `token` beside the wrap to unwrap it under. The mechanism is in
+ * stmt/signin.js; what is here is the door.
+ *
+ * BRAKED PER ADDRESS AND SITE-WIDE. Thirty to the eighth is too many codes to walk from one address at ten misses
+ * a quarter-hour, and many addresses together meet the site's hundred: the site-wide brake is what makes a botnet
+ * pointless, at the price that a flood shuts code sign-in for everyone for fifteen minutes. The link, the password
+ * and a remembered phone are untouched by it. A miss is any refusal; a success resets nothing, or an account could
+ * mint its own code to clear its address between guesses. JSON only, as /open, so another site's page cannot spend a
+ * customer's allowance from their browser. The refusal is the door's one; a brake answers the door's brake. */
+const HO_FAIL = (ip) => "hofail:" + ip, HO_SITE = "hofail";
+const MAX_HO_FAILS = 10, MAX_HO_SITE = 100;
+const noHandover = () => json({ ok: false, error: "Signing in with a code is not switched on here." }, 503);
+async function handleHandover(request, env, p, m) {
+  if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
+  if (!env.STMT_HANDOVER_KEY) return noHandover();
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  if (p === "/handover") {
+    const u = await sessionUser(request, env);
+    if (!u) return json({ ok: false, error: "Sign in again to make a code.", session: false }, 401);
+    const b = await readJson(request);
+    const made = await mintHandover(env, u, b && b.token, b && b.wrap);
+    return made ? json(Object.assign({ ok: true }, made)) : json({ ok: false, error: "send the key and the wrap" }, 400);
+  }
+  const b = await readJson(request);
+  if (!b) return json({ ok: false, error: REFUSED }, 401);
+  const who = String(request.headers.get("CF-Connecting-IP") || "local");
+  const readN = async (k) => parseInt(await env.STMT.get(k) || "0", 10) || 0;
+  const ipN = await readN(HO_FAIL(who)), siteN = await readN(HO_SITE);
+  if (ipN >= MAX_HO_FAILS || siteN >= MAX_HO_SITE) return json({ ok: false, error: "Too many attempts. Try again in fifteen minutes." }, 429);
+  const rec = await burnHandover(env, b);
+  const acct = rec ? await env.STMT.get("u:" + rec.u, "json") : null;
+  if (!acct) {
+    /* KV takes one write to a key a second, and the site-wide count is one key: a put it refuses is a brake that
+       lags, never an open that fails */
+    try { await env.STMT.put(HO_FAIL(who), String(ipN + 1), { expirationTtl: FAIL_TTL }); } catch (e) { /* the next miss counts */ }
+    try { await env.STMT.put(HO_SITE, String(siteN + 1), { expirationTtl: FAIL_TTL }); } catch (e) { /* the next miss counts */ }
+    return json({ ok: false, error: REFUSED }, 401);
+  }
+  await markSeen(env, rec.u, acct, rec.by);
+  const session = await openSession(env, rec.u, rec.by);
+  return json({
+    ok: true, u: rec.u, remembered: true, wrap: rec.wrap, token: rec.token,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
     env: acct.env, live: acct.live || null, prices: acct.prices || null, session
   });
@@ -1101,6 +1151,8 @@ export default {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       return handleSignin(request, env);
     }
+    /* S3 3.9: the hand-over, minted on a session and opened by its key or its code */
+    if (p === "/handover" || p === "/handover/open") return handleHandover(request, env, p, m);
     if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout") return handleCustomer(request, env, p, m);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
