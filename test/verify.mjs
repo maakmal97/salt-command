@@ -20085,9 +20085,9 @@ await (async () => {
     const kvList = (await call(kenv, tA, "/orders")).b, obList = (await call(env, tA, "/orders")).b;
     ok(obList.ok && JSON.stringify(obList) === JSON.stringify(kvList) && obList.orders.length === 1,
       "the first request moves the book in, and the customer's list is answered from the copy exactly as KV had it");
-    const copied = bk.db.prepare("SELECT kind FROM ev").all().map((r) => r.kind);
-    ok(copied.length === 2 && copied.every((k) => k === "copy") && bk.state.alarmAt() === T0 + 65000,
-      "every KV order came in as one copy event, and the alarm is set for the end of the minute, past the cache life with its margin: " + JSON.stringify({ copied, alarm: bk.state.alarmAt() }));
+    const copied = bk.db.prepare("SELECT kind FROM ev").all().map((r) => r.kind), n1 = copied.length;
+    ok(copied.filter((k) => k === "copy").length === 2 && copied.filter((k) => k === "rid").length === 2 && n1 === 4 && bk.state.alarmAt() === T0 + 65000,
+      "every KV order came in as one copy event, the one live payment id under both ids a repeat is looked for by (S10 fix DS4), and the alarm is set for the end of the minute, past the cache life with its margin: " + JSON.stringify({ copied, alarm: bk.state.alarmAt() }));
 
     /* ---- inside the minute: every move refused in words, the reads answered, KV untouched ---- */
     clock.set(T0 + 20000);
@@ -20095,7 +20095,7 @@ await (async () => {
       await call(env, tB, "/orders", place),
       await call(env, "desk", "/desk/orders/" + un2 + "/" + b1, { status: "acknowledged" }),
       await call(env, "desk", "/desk/orders/" + un + "/" + a1, { mark: { paid: 20 } })];
-    ok(refused.every((r) => r.status === 503 && r.b.error === O.FROZEN) && /try again in a minute/i.test(O.FROZEN) && evCount() === 2,
+    ok(refused.every((r) => r.status === 503 && r.b.error === O.FROZEN) && /try again in a minute/i.test(O.FROZEN) && evCount() === n1,
       "inside the minute a line, a placement, his move and the reconcile's mark are each refused with '" + O.FROZEN + "', and nothing is appended: "
       + JSON.stringify(refused.map((r) => r.status)));
     const work = (await call(env, "desk", "/desk/orders?work=1")).b, workKv = (await call(kenv, "desk", "/desk/orders?work=1")).b;
@@ -20108,7 +20108,7 @@ await (async () => {
     /* ---- an object restarted inside the minute runs nothing twice ---- */
     bk.restart();
     await call(env, tA, "/orders");
-    ok(evCount() === 2 && (bk.db.prepare("SELECT v FROM meta WHERE k = 'movein:1'").get() || {}).v === String(T0 + 65000),
+    ok(evCount() === n1 && (bk.db.prepare("SELECT v FROM meta WHERE k = 'movein:1'").get() || {}).v === String(T0 + 65000),
       "an object restarted inside the minute copies nothing again and keeps its deadline");
 
     /* ---- a Worker still on the old code writes KV during the rollout: the end of the minute takes it ---- */
@@ -20601,6 +20601,73 @@ await (async () => {
     ok(JSON.stringify(c.bookOnly) === "[]" && JSON.stringify(c.repaired) === "[]" && !!c.cleanSince
       && (await W.at("KUL").list({ prefix: "order:" + TU + ":" })).keys.length === 0,
       "so the hourly check is clean and writes no test order back into KV: " + JSON.stringify({ bookOnly: c.bookOnly, repaired: c.repaired, cleanSince: c.cleanSince }));
+  } finally { clock.uninstall(); console.log = realLog; }
+})();
+
+section("S10 fix DS4: a Place or I have paid retried across the switch lands once, into the book and back to the kv road");
+await (async () => {
+  /* The KV road finds a repeat by rid:<username>:<id>, filed for a day; the book by its own event ids. The move-in
+     carried the orders and the marks but not those keys, and the book filed none, so a tap whose answer was lost
+     just before the switch, retried by the same open page after it, was taken twice: a second order, or a payment
+     counted twice; and the same after a flip back (review of 24 Sep 2026, DS4). Every username is invented. */
+  const H = await import("../test/orderbook-harness.mjs");
+  const SW = (await import("../stmt/worker.js")).default;
+  const O = await import("../stmt/orders.js");
+  const { clock } = await import("../test/kvsim.mjs");
+  const T0 = Date.UTC(2026, 8, 24, 2, 0, 0), u = "w4x5-y6z7";
+  const kv = new KV();
+  const old = { STMT: kv, STMT_DESK_KEY: "desk-key" };
+  const call = async (e, tok, path, body) => {
+    const h = tok === "desk" ? { "X-Stmt-Desk": "desk-key" } : { "X-Stmt-Session": tok };
+    const r = await SW.fetch(new Request("https://k7m3p2.example" + path, body === undefined ? { headers: h }
+      : { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(body) }), e);
+    return { status: r.status, b: await r.json() };
+  };
+  const place = { product: "salt", qty: 2, mode: "collect", unit: 110, total: 220, week: "" };
+  const R = (s) => s.repeat(16);
+  const logs = [], realLog = console.log;
+  clock.install(); console.log = (...x) => { const l = x.join(" "); if (/^(orders?(book)?|chase)[: ]/.test(l)) logs.push(l); else realLog(...x); };
+  try {
+    clock.set(T0 - 600000);
+    const tok = await O.mintSession(old, u);
+    /* ---- the KV road: a placement and a payment, each under its own id ---- */
+    const a = (await call(old, tok, "/orders", Object.assign({ rid: R("a1") }, place))).b.order.id;
+    clock.add(5000); await call(old, "desk", "/desk/orders/" + u + "/" + a, { status: "acknowledged" });
+    clock.add(5000); await call(old, tok, "/orders/" + a + "/method", { method: "tngbiz" });
+    clock.add(5000); await call(old, tok, "/orders/" + a + "/pay", { amount: 50, rid: R("b2") });
+
+    /* ---- the switch: the book moves in, and the minute ends ---- */
+    clock.set(T0);
+    const bk = H.orderBook({ STMT: kv, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" }, { movedIn: false });
+    const env = { STMT: kv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" };
+    const advance = async (ms) => {
+      const target = clock.now() + ms;
+      while (bk.state.alarmAt() != null && bk.state.alarmAt() <= target) { clock.set(Math.max(clock.now(), bk.state.alarmAt())); await bk.fire(); }
+      if (clock.now() < target) clock.set(target);
+    };
+    await call(env, "desk", "/desk/orders/last");
+    await advance(70000);
+    const againPlace = await call(env, tok, "/orders", Object.assign({ rid: R("a1") }, place));
+    const againPay = await call(env, tok, "/orders/" + a + "/pay", { amount: 50, rid: R("b2") });
+    const mine = (await call(env, tok, "/orders")).b.orders;
+    ok(againPlace.status === 200 && againPlace.b.order.id === a && againPay.status === 200 && mine.length === 1 && mine[0].paid === 50 && mine[0].payments.length === 1,
+      "a Place and an I have paid made on the KV road, retried under the same ids after the book moved in, each land once: "
+      + JSON.stringify({ orders: mine.length, paid: mine[0] && mine[0].paid, payments: mine[0] && mine[0].payments.length }));
+
+    /* ---- the other way: made in the book, retried on the kv road after a flip back ---- */
+    const b = (await call(env, tok, "/orders", Object.assign({ rid: R("c3") }, place))).b.order.id;
+    await advance(5000); await call(env, "desk", "/desk/orders/" + u + "/" + b, { status: "acknowledged" });
+    await advance(5000); await call(env, tok, "/orders/" + b + "/method", { method: "tngbiz", rid: R("d4") });
+    await advance(5000); await call(env, tok, "/orders/" + b + "/pay", { amount: 30, rid: R("e5") });
+    await advance(5000);
+    const kvRoad = Object.assign({}, env, { ORDER_STORE: "kv" });
+    const backPlace = await call(kvRoad, tok, "/orders", Object.assign({ rid: R("c3") }, place));
+    const backPay = await call(kvRoad, tok, "/orders/" + b + "/pay", { amount: 30, rid: R("e5") });
+    const onKv = (await call(kvRoad, tok, "/orders")).b.orders;
+    const ob = onKv.find((o) => o.id === b);
+    ok(backPlace.status === 200 && backPlace.b.order.id === b && backPay.status === 200 && onKv.length === 2 && ob.paid === 30 && ob.payments.length === 1,
+      "and a Place and an I have paid made in the book, retried under the same ids after a flip back to kv, each land once too: "
+      + JSON.stringify({ orders: onKv.length, paid: ob && ob.paid, payments: ob && ob.payments.length }));
   } finally { clock.uninstall(); console.log = realLog; }
 })();
 

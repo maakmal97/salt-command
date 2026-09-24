@@ -241,6 +241,19 @@ export class OrderBook {
     for (const key of Object.values(MARKS)) { const v = await kv.get(key), b = this.meta(key); if (v != null && (b == null || v > b)) this.setMeta(key, v); }
     const ch = await kv.list({ prefix: "chased:" });
     for (const k of ch.keys) { const v = await kv.get(k.name), b = this.meta(k.name); if (v != null && (b == null || +v > +b)) this.setMeta(k.name, v); }
+    /* A RETRY ACROSS THE SWITCH LANDS ONCE (S10 fix DS4): the KV road files the id of a placement or a payment at
+       rid:<username>:<id> for a day, and a page keeps its id through a lost answer, so each live one is filed here
+       under both ids a repeat is looked for by, an event that folds to nothing */
+    const rids = await kv.list({ prefix: "rid:" });
+    for (const k of rids.keys) {
+      const [, u, rid] = k.name.split(":");
+      let seen = null;
+      try { seen = JSON.parse(await kv.get(k.name)); } catch (e) { seen = null; }
+      if (!u || !rid || !seen || !seen.id || this.doc(u, seen.id) == null) continue;
+      const body = JSON.stringify({ kind: "rid", at: new Date().toISOString() });
+      for (const eid of ["c:" + u + ":place:" + rid, "c:" + u + ":" + seen.id + ":" + rid])
+        this.state.storage.sql.exec("INSERT OR IGNORE INTO ev (eid, u, oid, kind, at, body) VALUES (?, ?, ?, 'rid', ?, ?)", eid, u, seen.id, new Date().toISOString(), body);
+    }
     return { orders, took };
   }
   takeIn(o, eid) {

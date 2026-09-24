@@ -366,7 +366,9 @@ tap (per review, per payment, per line, per withdrawal, per rail; S10 10.4), kep
 it is recorded. On the KV road Place and I have paid are the ids honoured: the site files
 `rid:<username>:<rid>` for a day naming the order and answers a repeat with that order, changing
 nothing, best effort. On the object road every move is an event filed under its id for good
-(`stmt/orderbook.js`), so any repeat is found for certain.
+(`stmt/orderbook.js`), so any repeat is found for certain. **Across the switch too**: the move-in files every
+live `rid:` key in the book, and in the week of reading both a placement's and a payment's id is filed at
+`rid:` as well, so a retry lands once whichever road it meets.
 **The order's own put decides the answer** on the KV road: what is written after it (the shared marks
 `last-placed`, `last-touched`, `last-said`, `last-theirs`, and the request id) is best effort, logged
 when KV refuses it, so a stored move never answers as a failure. A lost mark costs a wake, not a stage.

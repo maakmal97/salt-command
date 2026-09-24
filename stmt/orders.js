@@ -403,7 +403,9 @@ export const hasUnpaidAdvance = (orders) => (orders || []).some(
    stands and changes nothing. KV is eventually consistent, so a repeat at another edge inside its
    first minute may not see the key: best effort, as the one-time link is. No id, taken as before.
    ON THE OBJECT ROAD EVERY MOVE CARRIES ONE (S10 10.4), and it is the event's own id, unique in the
-   book for good: a repeat is found for certain, and answered with the order as it stands. */
+   book for good: a repeat is found for certain, and answered with the order as it stands. ACROSS THE SWITCH
+   (S10 fix DS4) the move-in files every live rid: key in the book, and in the week of reading both a
+   placement's and a payment's id is filed at rid: as well, so a retry either way lands once. */
 export const RID_RE = /^[A-Za-z0-9_-]{16,64}$/;
 export const RID_TTL = 86400;
 export const RID_KEY = (u, rid) => "rid:" + u + ":" + rid;
@@ -655,8 +657,11 @@ export async function dropOrders(env, u) {
 
 export async function placeOrder(env, u, body) {
   if (onBook(env)) {
-    const r = await bookMove(env, "place", { u, body, rid: ridOf(body) });
-    return r.error ? r : { order: r.order };
+    const rid = ridOf(body), r = await bookMove(env, "place", { u, body, rid });
+    if (r.error) return r;
+    /* in the week of reading both the id is filed for the KV road too, so a retry after a flip back lands once (S10 fix DS4) */
+    if (readsBoth(env) && !r.again) await fileRid(env, u, rid, r.order.id);
+    return { order: r.order };
   }
   const rid = ridOf(body), again = await repeatOf(env, u, rid);
   if (again) return again;
@@ -676,6 +681,7 @@ export async function customerMove(env, u, id, action, body) {
   if (onBook(env)) {
     const r = await bookMove(env, "customer", { u, id, action, body, rid: ridOf(body) });
     if (r.error) return r;
+    if (readsBoth(env) && action === "pay" && !r.again) await fileRid(env, u, ridOf(body), id);
     /* v700: a payment that completes the order is the one customer move worth waking the phone for,
        because it is the only one whose answer arrives after they have put the phone down. Every
        other move of theirs happens with the page in front of them. */
