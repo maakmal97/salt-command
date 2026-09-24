@@ -14315,7 +14315,12 @@ await (async () => {
       w.PushManager = function () {}; w.Notification = { permission: "default", requestPermission: async () => "default" };
       Object.defineProperty(w.navigator, "serviceWorker", { value: { register: async () => ({}) }, configurable: true });
       w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
-        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+        const r = await site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body });
+        /* S6 6.6: his route carries the account's claims (the claims fold); one waiting is added to that answer here */
+        if (!/^[/]all[/]orders[/]/.test(String(q)) || r.status !== 200) return r;
+        const j = await r.json();
+        j.claims = [{ id: "c1", at: new Date().toISOString(), amount: 40, method: "transfer", account: "maybank", state: "waiting", claim: "waiting" }];
+        return new Response(JSON.stringify(j), { status: 200, headers: { "content-type": "application/json" } }); };
     } }).window;
     const D = win.document;
     D.querySelector('button[data-m="review"]').click();
@@ -14338,6 +14343,9 @@ await (async () => {
       "and it marks nothing seen or New: what their phone has shown is not on his, and his route leaves nothing on his phone (S5 5.4)");
     ok(hits.includes("GET /all/orders/" + u) && !hits.some((x) => /^POST \/(orders|push|my\/refs)|^GET \/(orders|my\/refs)$/.test(x)),
       "it read through his route and never through the customer's session routes: " + JSON.stringify(hits));
+    const said = [...D.querySelectorAll("#payHead .msg")].map((x) => x.textContent);
+    ok(said.includes("RM 40 sent, waiting for us to confirm.") && !D.getElementById("payNow"),
+      "and the account's claims come with his route, so his view says what was sent and is waiting, as theirs does, with no Pay: " + JSON.stringify(said));
     D.getElementById("tCard").click();
     const pCard = D.getElementById("pCard");
     ok(await until(() => pCard.querySelectorAll(".glink").length === 1) && /Waiting to be approved/.test(pCard.textContent)
