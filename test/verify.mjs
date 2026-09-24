@@ -24060,8 +24060,9 @@ await (async () => {
     const box = card("a1").querySelector('input[data-hand="a1"]');
     const close = card("a1").querySelector('button[data-ord="handover"][data-close="1"]');
     ok(!card("a1").querySelector(".ordpart").hidden && box.value === "4" && close && close.textContent === "Close at 4 unit"
-      && /Close at 4 unit ends the order there: RM 400 for the goods at the rate they agreed, nothing more owed on the rest\. They have paid RM 500, so RM 100 would be theirs to refund\./.test(card("a1").textContent),
-      "Delivered part steps down in halves and says what a close there would mean, a refund included: " + JSON.stringify({ v: box.value, c: close && close.textContent }));
+      && /Close at 4 unit ends the order there: RM 400 for the goods at the rate they agreed, nothing more owed on the rest\. They have paid RM 500, RM 100 more than that, so a close there waits under Approve: the book carries no refund for it\./.test(card("a1").textContent)
+      && !/would be theirs to refund/.test(card("a1").textContent),
+      "Delivered part steps down in halves and says what a close there would mean, and never promises a refund the book does not carry: " + JSON.stringify({ v: box.value, c: close && close.textContent }));
     close.click();
     await settle();
     ok(JSON.stringify(handed().slice(-1)[0].body) === '{"qty":4,"close":true}' && /Closed at 4 unit\. They see it closed there/.test(card("a1").querySelector('[data-msg="a1"]').textContent),
@@ -24486,6 +24487,91 @@ await (async () => {
     ok(said && /^Recorded: RM 100 in cash\. They see it paid and the chase stops\. Booked as it is drafted/.test(said.textContent) && w.eval("ORD_OPENED") === false
       && !D.querySelector('.ordcard[data-id="c1"]'),
       "the order it closed has left the list, and its answer heads the list, the phone back on it: " + JSON.stringify({ said: said && said.textContent, opened: w.eval("ORD_OPENED") }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 fix: a close that leaves more paid than it comes to is never approved on the tap, and waits under Approve");
+await (async () => {
+  /* Found in review: an order paid RM 300 and closed at 1 unit of 3 had its Correction approved at the tap, with the
+     drafter's own overpaid flags on it, and nothing booked the RM 200 as money owed back (the fold raises a refund only
+     for a cancelled row). Such a close now waits under Approve, and the tap says why. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the close was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, deskPass } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  const OPEN = { byKey: {}, position: {} };
+  setState("roster", [C1]); setState("OPEN", OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 3] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const land = (draftId, over) => { const row = Object.assign(JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(draftId).row), { rid: "s99" + seq }, over || {});
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN);
+    db.prepare("UPDATE draft SET committed_at=? WHERE id=?").run(new Date().toISOString(), draftId); return row; };
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const send = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); while (tails.length) await tails.shift(); return { status: r.status, j };
+  };
+  const draftsOf = (id, status) => db.prepare("SELECT id,status,decided_by,entry FROM draft").all()
+    .filter((d) => JSON.parse(d.entry).orderId === id && JSON.parse(d.entry).status === status);
+
+  const o = (await O.placeOrder(senv, U1, { product: "salt", qty: 3, mode: "collect", unit: 100, total: 300, week: "" })).order;
+  const pv = await send("/orders/" + o.id + "/preview", {});
+  const a = await send("/orders/" + o.id + "/accept", { hash: pv.j.hash });
+  land(a.j.draft);
+  await send("/orders/" + o.id + "/cash", { amount: 300 });
+  await deskPass(denv, new Date()); await runDrafter(denv);
+  const cash = draftsOf(o.id, "Payment");
+  const c = await send("/orders/" + o.id + "/handed", { qty: 1, close: true });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const cl = draftsOf(o.id, "Close");
+  ok(cash.length === 1 && cash[0].status === "approved" && c.status === 200 && c.j.preapproval && c.j.preapproval.held === true
+    && /^It waits under Approve: they have paid RM 300, RM 200 more than it now comes to, and the book carries no refund for that$/.test(c.j.preapproval.says)
+    && cl.length === 1 && cl[0].status === "pending" && !db.prepare("SELECT id FROM preapproval WHERE order_id=? AND stage='move'").all(o.id).length,
+    "a close under what they paid is said to wait, carries no yes, and its Correction waits under Approve: "
+    + JSON.stringify({ cash: cash.map((d) => d.status), st: c.status, pre: c.j.preapproval, close: cl.map((d) => [d.status, d.decided_by]) }));
+
+  /* and the card says it in those words, never "if it is the row you saw" of a row no yes is waiting for */
+  const { openMaster: omHd } = await import("../tools/payload.mjs");
+  const { w } = await omHd();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 96; w.clearInterval = () => {};
+    const ord = { id: "h1", u: U1, code: C1, product: "salt", qty: 3, total: 300, delivery: 0, paid: 300, moved: 1, mode: "collect", status: "ready",
+      at: "2026-09-20T02:00:00.000Z", history: [], msgs: [], payments: [], queued: { ack: "x", paid: 300, moved: 1 } };
+    w.fetch = async (path, init) => { const p = String(path), post = !!(init && init.method === "POST");
+      return { ok: true, status: 200, json: async () => (p === "orders" && !post ? { ok: true, orders: [ord] } : /\/handed$/.test(p) ? c.j : { ok: true }) }; };
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    D.querySelector('.ordcard[data-id="h1"] button[data-ord="handover"][data-close="1"]').click();
+    for (let i = 0; i < 30 && !/Closed/.test((D.querySelector('[data-msg="h1"]') || {}).textContent || ""); i++) await new Promise((r) => setTimeout(r, 30));
+    const said = (D.querySelector('[data-msg="h1"]') || {}).textContent || "";
+    ok(/^Closed at 1 unit\. They see it closed there\. It waits under Approve: they have paid RM 300, RM 200 more than it now comes to, and the book carries no refund for that\. The customer is told/.test(said)
+      && !/row you saw/.test(said), "the card says the close waits, and why: " + said);
   } finally {
     await new Promise((r) => setTimeout(r, 200));
     try { w.close(); } catch (x) { /* best effort */ }

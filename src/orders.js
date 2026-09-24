@@ -128,6 +128,7 @@ export function toldOf(o) {
  * order that is on no queue. Back come the row and the drafter's own flags, the cost, margin and floor
  * the drafter reads, the customer's usual and their card, what their page says, the pricing version,
  * and the digest an Accept sends back to prove it answered this row. */
+const rm = (n) => "RM " + (Math.abs(n - Math.round(n)) < 0.005 ? String(Math.round(n)) : n.toFixed(2));
 const chargeOf = (b) => (b && typeof b.delivery === "number" && Number.isFinite(b.delivery) && b.delivery >= 0 ? +b.delivery.toFixed(2) : null);
 /* their card at this size: the desk's own cardQuote, carried in the pricing snapshot (tools/book.mjs), read and never worked out */
 function cardAt(pricing, code, product, qty) {
@@ -298,6 +299,12 @@ async function stageTap(env, id, body, by, now, stage, build) {
   if (b.error) return { ok: false, status: b.status || 400, error: b.error };
   const pv = await stagePreview(env, o, stage, b.entry);
   if (!pv.ok) return pv;
+  /* a row that leaves money owed back is never approved on a tap: it waits under Approve with the drafter's own flags */
+  if (b.hold) {
+    const r = b.site ? await moveOrder(env, o.u, id, b.site) : { ok: true, order: o };
+    if (!r.ok) return r;
+    return { ok: true, order: r.order, preapproval: { stage, waits: pv.waits, held: true, says: "It waits under Approve: " + b.hold, flags: pv.d.flags } };
+  }
   const preId = await recordPre(db, { order_id: id, u: o.u, stage, hash: pv.hash, entry: b.queueIt ? b.entry : null, at: at.toISOString(), by,
     shown: { from: o.status, figures: b.shown, flags: pv.d.flags, waits: pv.waits } });
   if (b.pin) await db.prepare("UPDATE preapproval SET entry_at=?1 WHERE id=?2").bind(b.pin, preId).run();
@@ -341,7 +348,11 @@ export async function handedOrder(env, id, body, by, now) {
     entry.orderId = o.id;
     const handover = { units: qty, mode: o.mode };
     if (closing) handover.close = true;
-    return { entry, site: { handover }, shown: { units: qty, how: o.mode === "deliver" ? "delivered" : "collected", close: closing } };
+    /* A CLOSE UNDER WHAT THEY HAVE PAID leaves money he holds that is theirs, and nothing books that as a refund yet (the
+       fold raises one only for a cancelled row): so no tap approves it, and it waits under Approve for him */
+    const over = closing ? +((+o.paid || 0) - (+entry.total + (+o.delivery || 0))).toFixed(2) : 0;
+    const hold = over > 0.004 ? "they have paid " + rm(+o.paid || 0) + ", " + rm(over) + " more than it now comes to, and the book carries no refund for that" : "";
+    return { entry, hold, site: { handover }, shown: { units: qty, how: o.mode === "deliver" ? "delivered" : "collected", close: closing } };
   });
 }
 

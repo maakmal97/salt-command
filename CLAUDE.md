@@ -171,7 +171,8 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   (his decision D6)**: the order card's yes is recorded in `preapproval` and spent by the drafter only
   if the draft equals what he was shown, every field, flag and (for Accept) pricing version; else it
   waits under Approve, marked. Accept moves the order only once its row is approved; a later stage
-  tapped before the first row lands is booked when it lands, and the answer says so.
+  tapped before the first row lands is booked when it lands, and the answer says so. A close under what they paid
+  is never approved on a tap: nothing books the difference as a refund yet.
 - **What the drafter refuses, the phone does not let you type**: `entryFault` answers both entry
   forms. **An R2 row books to the associate's `-R` bucket whether or not the end buyer is named**,
   through the engine's `bookR2`, which every road calls; a named buyer is `downstream` and credited

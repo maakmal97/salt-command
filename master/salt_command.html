@@ -19368,7 +19368,7 @@ function ordCard(o){
         <div class="ordstep"><button type="button" class="salt-ghost" data-step="-0.5" data-for="${esc(o.id)}" aria-label="Half a unit less">&minus;</button>
           <input type="number" inputmode="decimal" min="0" step="0.5" max="${o.qty}" value="${esc(String(moved>0?moved:o.qty))}" data-hand="${esc(o.id)}" class="salt-field__input salt-field__input--mono" aria-label="Units ${how.toLowerCase()} so far">
           <button type="button" class="salt-ghost" data-step="0.5" data-for="${esc(o.id)}" aria-label="Half a unit more">+</button></div>
-        <p class="salt-approve__reason">${partN>0&&partN<o.qty-0.004?`Record keeps the other ${units(+(o.qty-partN).toFixed(3))} owed. Close at ${units(partN)} ends the order there: ${fmt(shortT(partN))} for the goods at the rate they agreed${+o.delivery>0?', and the '+fmt(+o.delivery)+' delivery':''}, nothing more owed on the rest.${over>0.004?' They have paid '+fmt(paid)+', so '+fmt(over)+' would be theirs to refund.':''}`
+        <p class="salt-approve__reason">${partN>0&&partN<o.qty-0.004?`Record keeps the other ${units(+(o.qty-partN).toFixed(3))} owed. Close at ${units(partN)} ends the order there: ${fmt(shortT(partN))} for the goods at the rate they agreed${+o.delivery>0?', and the '+fmt(+o.delivery)+' delivery':''}, nothing more owed on the rest.${over>0.004?' They have paid '+fmt(paid)+', '+fmt(over)+' more than that, so a close there waits under Approve: the book carries no refund for it.':''}`
           :'Step to what went. Record keeps the rest owed; Close ends the order there.'}</p></div>` : '';
   /* S11 11.2: the system's Approve card, because deciding a site order is deciding a row. A new order
      leads with the row the preview drafted; one already agreed with the two tracks as before. */
@@ -19544,7 +19544,7 @@ async function ordAct(b){
     const told='The customer is told'+(j.push&&j.push.sent?' on the phone':' on the page')+'.';
     /* S11 (D6): what the desk Worker did with the yes, in its own words: booked as it is drafted, or when the
        first row lands, never a stage waiting silently; and whether Accept's row was the one he saw */
-    const says=j.preapproval&&j.preapproval.says?j.preapproval.says+', if it is the row you saw. ':'';
+    const says=!(j.preapproval&&j.preapproval.says)?'':j.preapproval.held?j.preapproval.says+'. ':j.preapproval.says+', if it is the row you saw. ';
     const said=r.status===401?'That write key was refused. The order is unchanged.'
       :!r.ok?'The Worker refused the move: '+(j.error||'http '+r.status)+'. The order is unchanged.'
       :j.warn?j.warn
