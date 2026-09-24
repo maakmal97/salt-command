@@ -122,12 +122,20 @@ const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
   .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
 /* ---- THE ROAD (S10, D10) ----------------------------------------------------------------------
- * ORDER_STORE in wrangler.stmt.jsonc, with the ORDERBOOK binding present:
- *   unset, or "kv"   the KV road: every order a record under order:, read and written back whole
- *   "object..."      the object road: every order in the one Durable Object, as appended events
+ * ORDER_STORE in wrangler.stmt.jsonc, with the ORDERBOOK binding present, is THE SWITCH:
+ *   unset, or "kv"   the KV road: every order a record under order:, read and written back whole. Also
+ *                    the way back: KV is kept current behind the object, so this is a rollback.
+ *   "object+kv"      THE WEEK OF READING BOTH (10.3): every order in the one Durable Object, as appended
+ *                    events; every order it changes written to its KV key behind it; a read the object
+ *                    cannot answer read from KV; and the site's hourly cron compares the two (checkStores).
+ *   "object"         after a clean week (10.5): KV order keys no longer written or read. Flipping it is the
+ *                    whole of what is built of 10.5; deleting the old keys is not.
  * The object is one name for the whole site, BOOK_NAME, so every request reaches the same one. */
 export const BOOK_NAME = "site";
 export const onBook = (env) => !!(env && env.ORDERBOOK) && /^object/.test(String(env.ORDER_STORE || ""));
+export const readsBoth = (env) => onBook(env) && env.ORDER_STORE === "object+kv";
+/* the words while the book is moving in (stmt/orderbook.js): a minute, once, at the deploy that moves it */
+export const FROZEN = "Orders are being moved and are paused for a minute. Try again in a minute.";
 /* the object's own words for a store it cannot reach, and nothing else: a move is never answered as
    stored when it was not, and never retried here, because a retry is the page's, carrying its own id */
 export const BOOK_BUSY = "Orders could not be reached just now. Try again in a minute.";
@@ -137,13 +145,24 @@ async function book(env, op, a) {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(a || {}) });
   return r.json();
 }
-/* a move on the object road: its answer, or the store's refusal as the route's own */
+/* a move on the object road: its answer, or the store's refusal as the route's own. In the week of reading
+   both, the order it changed is written to its KV key behind it, best effort: the object's answer stands. */
 async function bookMove(env, op, a) {
   let r;
   try { r = await book(env, op, a); }
   catch (e) { console.log("orders: the order book did not answer " + op + ": " + String((e && e.message) || e)); return { error: BOOK_BUSY, status: 503 }; }
   if (!r || !r.ok) return { error: (r && r.error) || BOOK_BUSY, status: (r && r.status) || 503 };
+  if (readsBoth(env) && r.order && !r.again && !r.none) await putSoft(env, OKEY(r.order.u, r.order.id), JSON.stringify(r.order));
   return r;
+}
+/* a read on the object road; in the week of reading both, KV answers when the object cannot */
+async function bookRead(env, op, a, fromKv) {
+  try { return await book(env, op, a); }
+  catch (e) {
+    if (!readsBoth(env)) throw e;
+    console.log("orders: the order book did not answer " + op + "; read from KV: " + String((e && e.message) || e));
+    return fromKv();
+  }
 }
 
 /** A fresh session for `u`: the token is the only thing the page holds after the password. */
@@ -184,13 +203,41 @@ async function listOrders(env, prefix) {
 }
 /* every order on the site, newest first, from whichever store the road names */
 async function everyOrder(env) {
-  if (onBook(env)) return (await book(env, "orders", {})).orders || [];
+  if (onBook(env)) return (await bookRead(env, "orders", {}, async () => ({ orders: await listOrders(env, "order:") }))).orders || [];
   return listOrders(env, "order:");
 }
 
 /** The customer's own orders, newest first. */
-export const ordersOf = async (env, u) => (onBook(env) ? (await book(env, "orders", { u })).orders || []
+export const ordersOf = async (env, u) => (onBook(env)
+  ? (await bookRead(env, "orders", { u }, async () => ({ orders: await listOrders(env, "order:" + u + ":") }))).orders || []
   : listOrders(env, "order:" + u + ":"));
+
+/* ---- THE WEEK OF READING BOTH (S10 10.3) -------------------------------------------------------
+ * Hourly, from the site's cron: every order in the object against its KV key. A KV record that differs (a
+ * write behind that failed) is written again from the object, which is the truth; a KV order the object
+ * does not hold is named and left alone, because nothing should be writing one. The answer is logged and
+ * kept at CHECK_KEY with `cleanSince`, the first of an unbroken run of clean hours (none repaired, none
+ * KV's alone), so a week is read with one command: seven days after `cleanSince`, ORDER_STORE can go to
+ * "object" (10.5). An hour that is not clean empties it. */
+export const CHECK_KEY = "orderbook:check";
+export async function checkStores(env) {
+  const inBook = (await book(env, "orders", {})).orders || [];
+  const kvBy = new Map((await listOrders(env, "order:")).map((o) => [o.u + ":" + o.id, o]));
+  let same = 0; const repaired = [];
+  for (const o of inBook) {
+    const k = o.u + ":" + o.id, v = kvBy.get(k);
+    kvBy.delete(k);
+    if (v && JSON.stringify(v) === JSON.stringify(o)) { same++; continue; }
+    repaired.push(o.id);
+    await putSoft(env, OKEY(o.u, o.id), JSON.stringify(o));
+  }
+  const out = { at: new Date().toISOString(), orders: inBook.length, same, repaired, kvOnly: [...kvBy.values()].map((o) => o.id) };
+  let was = null;
+  try { was = await env.STMT.get(CHECK_KEY, "json"); } catch (e) { was = null; }
+  out.cleanSince = repaired.length || out.kvOnly.length ? null : ((was && was.cleanSince) || out.at);
+  await putSoft(env, CHECK_KEY, JSON.stringify(out));
+  return out;
+}
 
 /* WHAT A CUSTOMER'S OWN PAGE IS HANDED (24 Sep 2026). The record also carries the desk's
    bookkeeping: `ledgerKey`, which names a roster code when this file says nothing here says which
@@ -575,9 +622,11 @@ export const wakes = (ev, done) => ev.kind === "ledger" || ev.kind === "handover
 
 /** The marks as the desk reads them, one question a minute (/desk/orders/last). */
 export async function orderMarks(env) {
-  if (onBook(env)) { const r = await book(env, "last", {}); return { last: r.last, touched: r.touched, said: r.said, theirs: r.theirs }; }
-  return { last: await env.STMT.get(LAST_PLACED), touched: await env.STMT.get(LAST_TOUCHED),
-    said: await env.STMT.get(LAST_SAID), theirs: await env.STMT.get(LAST_THEIRS) };
+  const fromKv = async () => ({ last: await env.STMT.get(LAST_PLACED), touched: await env.STMT.get(LAST_TOUCHED),
+    said: await env.STMT.get(LAST_SAID), theirs: await env.STMT.get(LAST_THEIRS) });
+  if (!onBook(env)) return fromKv();
+  const r = await bookRead(env, "last", {}, fromKv);
+  return { last: r.last, touched: r.touched, said: r.said, theirs: r.theirs };
 }
 /** Every order of one account gone from the book (his test account, unmade). The KV road's keys are the caller's. */
 export async function dropOrders(env, u) {

@@ -51,7 +51,7 @@ import { FONTS } from "./fonts.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
-import { mintSession, dropSession, sessionUser, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, markChased, hourOf } from "./orders.js";
+import { mintSession, dropSession, sessionUser, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, markChased, hourOf, readsBoth, checkStores } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -1108,6 +1108,11 @@ export default {
     ctx.waitUntil((async () => {
       try {
         if (!env.STMT) return;
+        /* S10 10.3: THE WEEK OF READING BOTH, hourly, before the chase and apart from it (checkStores) */
+        if (readsBoth(env)) {
+          try { console.log("orderbook check: " + JSON.stringify(await checkStores(env))); }
+          catch (e) { console.log("orderbook check FAILED: " + String((e && e.stack) || e)); }
+        }
         const now = new Date(event && event.scheduledTime ? event.scheduledTime : Date.now());
         const hour = hourOf(now);
         let woke = 0, held = 0, quiet = 0;

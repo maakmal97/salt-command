@@ -19719,11 +19719,12 @@ await (async () => {
     await go("desk", "/desk/orders?work=1");
     return JSON.stringify(out).replace(/\d{14}-[a-z0-9]{1,8}/g, "ID").replace(/"\d{4}-\d{2}-\d{2}T[\d:.]+Z"/g, '"T"').replace(/"\d{4}-\d{2}-\d{2}"/g, '"D"');
   };
-  const onKv = await script(road(null)), onObj = await script(road("object"));
+  const onKv = await script(road(null)), onObj = await script(road("object")), onBoth = await script(road("object+kv"));
   let at = 0; while (at < onKv.length && onKv[at] === onObj[at]) at++;
   ok(onKv.length > 2000 && onKv === onObj,
     "twenty-three calls, refusals and repeats among them, answer the same on the KV road and the object road"
     + (onKv === onObj ? "" : ": first difference at " + at + ": kv " + onKv.slice(at - 60, at + 80) + " | object " + onObj.slice(at - 60, at + 80)));
+  ok(onBoth === onKv, "and the same again in the week of reading both, the value the switch ships with (S10 10.3)");
 
   /* ---- the page sends an id with Withdraw, Send and Confirm; a retry carries it, a recorded move drops it ---- */
   const { JSDOM: JD } = await import("jsdom");
@@ -20034,6 +20035,166 @@ await (async () => {
     const o2 = orderOf(A, id);
     ok(ts.ok && ts.told === 1 && o2.paid === 230 && o2.status === "done" && o2.queued.paid === 230 && SO.orderWork(o2).length === 0,
       "and the return leg raises the order in the book to what the row holds, completing it, with nothing owed to the ledger: " + JSON.stringify({ ts, paid: o2.paid, status: o2.status, work: SO.orderWork(o2) }));
+  } finally { clock.uninstall(); }
+})();
+
+section("S10 10.3: the order book moves in by a one-minute freeze and a copy, once, then reads come from it with KV written behind");
+await (async () => {
+  /* D10: moved in by a one-minute FREEZE (moves refused, "try again in a minute", while the copy runs), a COPY of
+     every KV order in as events, and a WEEK OF READING BOTH (reads from the object, KV written behind it as the
+     fallback). Once on the live store, idempotent if run twice, and reversible: KV is never changed by the copy.
+     The store here is built by the KV road itself, so it has the live shape. */
+  const SIM = await import("../test/kvsim.mjs");
+  const H = await import("../test/orderbook-harness.mjs");
+  const SW = (await import("../stmt/worker.js")).default;
+  const O = await import("../stmt/orders.js");
+  const { clock } = SIM;
+  const T0 = Date.UTC(2026, 8, 24, 2, 0, 0), un = "p3q4-r5s6", un2 = "t7v8-w9x2";
+  const kv = new KV();
+  const kenv = { STMT: kv, STMT_DESK_KEY: "desk-key" };
+  const call = async (env, tok, path, body) => {
+    const h = tok === "desk" ? { "X-Stmt-Desk": "desk-key" } : { "X-Stmt-Session": tok };
+    try {
+      const r = await SW.fetch(new Request("https://k7m3p2.example" + path, body === undefined ? { headers: h }
+        : { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(body) }), env);
+      return { status: r.status, b: await r.json() };
+    } catch (e) { return { status: 500, b: { threw: String(e && e.message) } }; }   /* a Worker that throws answers 500 */
+  };
+  const place = { product: "salt", qty: 2, mode: "collect", unit: 110, total: 220, week: "2026-09-21" };
+  const kvOrders = () => [...kv.m.keys()].filter((k) => k.startsWith("order:")).sort().map((k) => kv.m.get(k));
+  clock.install();
+  try {
+    /* ---- a live-shaped store, built by the KV road ---- */
+    clock.set(T0 - 3600000);
+    const tA = await O.mintSession(kenv, un), tB = await O.mintSession(kenv, un2);
+    const a1 = (await call(kenv, tA, "/orders", Object.assign({ note: "for Friday" }, place))).b.order.id;
+    await call(kenv, "desk", "/desk/orders/" + un + "/" + a1, { status: "acknowledged" });
+    await call(kenv, "desk", "/desk/orders/" + un + "/" + a1, { mark: { ack: "2026-09-24T01:00:00.000Z", ledgerKey: "ZZ8-TST|2026-09-24|220" } });
+    await call(kenv, tA, "/orders/" + a1 + "/pay", { amount: 20, method: "tngbiz", rid: "a9".repeat(16) });
+    await call(kenv, "desk", "/desk/orders/" + un + "/" + a1, { handover: { units: 2 } });
+    const b1 = (await call(kenv, tB, "/orders", place)).b.order.id;
+    await O.markChased(kenv, un, O.hourOf(new Date(T0 - 1800000).toISOString()));
+    const snap = new Map(kv.m);
+
+    /* ---- the switch: ORDER_STORE "object+kv", generation 1, and the first request ---- */
+    clock.set(T0);
+    const objEnv = { STMT: kv, ORDER_MOVE_IN: "1" };
+    const bk = H.orderBook(objEnv, { movedIn: false });
+    const env = { STMT: kv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" };
+    const evCount = () => bk.db.prepare("SELECT COUNT(*) AS n FROM ev").get().n;
+    const kvList = (await call(kenv, tA, "/orders")).b, obList = (await call(env, tA, "/orders")).b;
+    ok(obList.ok && JSON.stringify(obList) === JSON.stringify(kvList) && obList.orders.length === 1,
+      "the first request moves the book in, and the customer's list is answered from the copy exactly as KV had it");
+    const copied = bk.db.prepare("SELECT kind FROM ev").all().map((r) => r.kind);
+    ok(copied.length === 2 && copied.every((k) => k === "copy") && bk.state.alarmAt() === T0 + 60000,
+      "every KV order came in as one copy event, and the alarm is set for the end of the minute: " + JSON.stringify({ copied, alarm: bk.state.alarmAt() }));
+
+    /* ---- inside the minute: every move refused in words, the reads answered, KV untouched ---- */
+    clock.set(T0 + 20000);
+    const refused = [await call(env, tA, "/orders/" + a1 + "/say", { text: "hello", rid: "b8".repeat(16) }),
+      await call(env, tB, "/orders", place),
+      await call(env, "desk", "/desk/orders/" + un2 + "/" + b1, { status: "acknowledged" }),
+      await call(env, "desk", "/desk/orders/" + un + "/" + a1, { mark: { paid: 20 } })];
+    ok(refused.every((r) => r.status === 503 && r.b.error === O.FROZEN) && /try again in a minute/i.test(O.FROZEN) && evCount() === 2,
+      "inside the minute a line, a placement, his move and the reconcile's mark are each refused with '" + O.FROZEN + "', and nothing is appended: "
+      + JSON.stringify(refused.map((r) => r.status)));
+    const work = (await call(env, "desk", "/desk/orders?work=1")).b, workKv = (await call(kenv, "desk", "/desk/orders?work=1")).b;
+    const last = (await call(env, "desk", "/desk/orders/last")).b, lastKv = (await call(kenv, "desk", "/desk/orders/last")).b;
+    ok(JSON.stringify(work) === JSON.stringify(workKv) && JSON.stringify(last) === JSON.stringify(lastKv) && !!last.last,
+      "and the desk's reads are answered from the copy as KV answers them: its work list and the shared marks");
+    const sameKv = () => kv.m.size === snap.size && [...snap].every(([k, v]) => kv.m.get(k) === v);
+    ok(sameKv(), "the copy changed nothing in KV: every key and value is what it was before the switch");
+
+    /* ---- an object restarted inside the minute runs nothing twice ---- */
+    bk.restart();
+    await call(env, tA, "/orders");
+    ok(evCount() === 2 && (bk.db.prepare("SELECT v FROM meta WHERE k = 'movein:1'").get() || {}).v === String(T0 + 60000),
+      "an object restarted inside the minute copies nothing again and keeps its deadline");
+
+    /* ---- a Worker still on the old code writes KV during the rollout: the end of the minute takes it ---- */
+    clock.set(T0 + 30000);
+    await call(kenv, tA, "/orders/" + a1 + "/say", { text: "sent RM 50 as well" });
+    const late = (await call(kenv, tB, "/orders", Object.assign({}, place, { qty: 1, total: 110 }))).b.order.id;
+    clock.set(T0 + 61000);
+    await bk.book.alarm();
+    const inBook = Object.fromEntries(bk.db.prepare("SELECT u, oid, doc FROM ord").all().map((r) => [r.u + ":" + r.oid, r.doc]));
+    const kvNow = Object.fromEntries([...kv.m.keys()].filter((k) => k.startsWith("order:")).map((k) => [k.slice(6), kv.m.get(k)]));
+    ok(Object.keys(kvNow).length === 3 && Object.keys(kvNow).every((k) => inBook[k] === kvNow[k]) && !!inBook[un2 + ":" + late],
+      "at the end of the minute every order is copied again as KV holds it, the old road's line and its late placement included");
+    const moved = await call(env, tA, "/orders/" + a1 + "/say", { text: "thanks", rid: "c7".repeat(16) });
+    ok(moved.status === 200 && moved.b.ok && (bk.db.prepare("SELECT v FROM meta WHERE k = 'movein:done'").get() || {}).v === "1",
+      "and the book is moved in: moves are taken again");
+
+    /* ---- once: a restart after it, and both copy passes run again, append nothing ---- */
+    const n0 = evCount();
+    bk.restart();
+    await call(env, tA, "/orders");
+    await bk.book.copy("1", "start"); await bk.book.copy("1", "end");
+    ok(evCount() === n0, "the move-in runs once: a restarted object moves nothing, and either pass run again appends nothing: " + n0 + " to " + evCount());
+    const drift = bk.db.prepare("SELECT u, oid, doc FROM ord").all().filter((r) => {
+      let o = null;
+      for (const e of bk.db.prepare("SELECT body FROM ev WHERE u = ? AND oid = ? ORDER BY seq").all(r.u, r.oid)) o = O.applyEvent(o, JSON.parse(e.body)).order;
+      return JSON.stringify(o) !== r.doc;
+    });
+    ok(drift.length === 0, "and every order is still the fold of its events, its copies included");
+    ok((bk.db.prepare("SELECT v FROM meta WHERE k = ?").get(O.CHASE_KEY(un)) || {}).v === kv.m.get(O.CHASE_KEY(un)),
+      "the chase mark came in with the orders, so nobody is chased twice in the hour of the switch");
+
+    /* ---- the week of reading both: every change written behind, and KV answers when the object cannot ---- */
+    const ackB = await call(env, "desk", "/desk/orders/" + un2 + "/" + b1, { status: "acknowledged" });
+    const behind = [un + ":" + a1, un2 + ":" + b1].every((k) => kv.m.get("order:" + k) === (bk.db.prepare("SELECT doc FROM ord WHERE u || ':' || oid = ?").get(k) || {}).doc);
+    ok(ackB.status === 200 && behind, "every order the object changes is written to its KV key behind it, as the object holds it");
+    const down = { idFromName: () => ({}), get: () => ({ fetch: async () => { throw new Error("the object is unreachable"); } }) };
+    const denv = Object.assign({}, env, { ORDERBOOK: down });
+    const kvHeld = kv.m.get("order:" + un + ":" + a1);
+    const rd = await call(denv, tA, "/orders"), mv = await call(denv, tA, "/orders/" + a1 + "/say", { text: "anyone?", rid: "d6".repeat(16) });
+    ok(rd.status === 200 && JSON.stringify(rd.b) === JSON.stringify((await call(env, tA, "/orders")).b) && mv.status === 503 && mv.b.error === O.BOOK_BUSY
+      && kv.m.get("order:" + un + ":" + a1) === kvHeld,
+      "with the object unreachable their list is read from KV and is the same, and a move is refused rather than written anywhere: " + JSON.stringify([rd.status, mv.status]));
+
+    /* ---- the hourly check: a KV record a write behind missed is written again, and a clean hour says so ---- */
+    kv.m.set("order:" + un2 + ":" + b1, snap.get("order:" + un2 + ":" + b1));
+    const logs = [], realLog = console.log;
+    const tick = async (iso) => { const ws = []; await SW.scheduled({ scheduledTime: Date.parse(iso) }, env, { waitUntil: (p) => ws.push(p) }); await Promise.all(ws); };
+    console.log = (...x) => logs.push(x.join(" "));
+    let c1, c2, c3;
+    try {
+      const read = () => { try { return JSON.parse(kv.m.get(O.CHECK_KEY)); } catch (e) { return { repaired: null, kvOnly: null }; } };
+      await tick("2026-09-24T03:00:00Z"); c1 = read(); kv.m.set(O.CHECK_KEY, "{}");
+      await tick("2026-09-24T04:00:00Z"); c2 = read();
+      clock.add(3600000); await tick("2026-09-24T05:00:00Z"); c3 = read();
+    } finally { console.log = realLog; }
+    ok(JSON.stringify(c1.repaired) === JSON.stringify([b1]) && c1.orders === 3 && c1.same === 2 && JSON.stringify(c1.kvOnly) === "[]"
+      && kv.m.get("order:" + un2 + ":" + b1) === bk.db.prepare("SELECT doc FROM ord WHERE u = ? AND oid = ?").get(un2, b1).doc,
+      "the hourly check writes a stale KV record again from the object and names it: " + JSON.stringify(c1));
+    ok(JSON.stringify(c2.repaired) === "[]" && JSON.stringify(c2.kvOnly) === "[]" && c2.same === 3 && logs.filter((l) => /^orderbook check: /.test(l)).length === 3,
+      "and the next hour is clean, logged and kept under " + O.CHECK_KEY + ": " + JSON.stringify(c2));
+    ok(c1.cleanSince === null && c2.cleanSince === c2.at && c3.cleanSince === c2.at && c3.at > c2.at,
+      "a dirty hour empties cleanSince, and a clean run keeps the moment it began, so a clean week is one read: " + JSON.stringify([c1.cleanSince, c2.cleanSince, c3.cleanSince]));
+
+    /* ---- reversible: back to "kv", the old road reads a current store ---- */
+    const renv = Object.assign({}, env, { ORDER_STORE: "kv" });
+    const back = (await call(renv, tA, "/orders")).b, here = (await call(env, tA, "/orders")).b;
+    ok(JSON.stringify(back) === JSON.stringify(here) && JSON.stringify((await call(renv, "desk", "/desk/orders?all=1")).b.orders.map((o) => o.id).sort())
+      === JSON.stringify((await call(env, "desk", "/desk/orders?all=1")).b.orders.map((o) => o.id).sort()),
+      "set back to kv, the old road reads every order as the object held it");
+    /* and coming back after a rollback is the next generation, which takes KV as the truth */
+    await call(renv, tA, "/orders/" + a1 + "/say", { text: "written on the old road" });
+    objEnv.ORDER_MOVE_IN = "2"; bk.restart();
+    const env2 = Object.assign({}, env, { ORDER_MOVE_IN: "2" });
+    clock.set(T0 + 7200000);
+    const f2 = await call(env2, tA, "/orders/" + a1 + "/say", { text: "too soon", rid: "e5".repeat(16) });
+    clock.set(T0 + 7200000 + 61000);
+    const l2 = (await call(env2, tA, "/orders")).b.orders.find((o) => o.id === a1);
+    ok(f2.status === 503 && f2.b.error === O.FROZEN && l2.msgs.map((m) => m.text).includes("written on the old road")
+      && (bk.db.prepare("SELECT v FROM meta WHERE k = 'movein:done'").get() || {}).v === "2",
+      "raising ORDER_MOVE_IN freezes and copies again, taking what the old road wrote in the meantime");
+
+    /* ---- the switch as it ships ---- */
+    const cfgText = readFileSync(join(REPO, "wrangler.stmt.jsonc"), "utf8").replace(/\r/g, "").split("\n").filter((l) => !/^\s*\/\//.test(l)).join("\n");
+    let cfg = null; try { cfg = JSON.parse(cfgText); } catch (e) { cfg = null; }
+    ok(!!cfg && cfg.vars.ORDER_STORE === "object+kv" && cfg.vars.ORDER_MOVE_IN === "1",
+      "wrangler.stmt.jsonc ships the week of reading both: ORDER_STORE object+kv, generation 1: " + JSON.stringify(cfg && { s: cfg.vars.ORDER_STORE, g: cfg.vars.ORDER_MOVE_IN }));
   } finally { clock.uninstall(); }
 })();
 

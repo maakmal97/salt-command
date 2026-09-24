@@ -24,15 +24,32 @@
  * <id> (c:<username>:place:<id> for a placement). A move with no id (his desk's, which the relay does not
  * change) is given one here, s:<random>, and is simply not a retry. The ids are kept for good.
  *
+ * MOVING IN (S10 10.3): A ONE-MINUTE FREEZE, A COPY, AND KV KEPT BEHIND. The first request after a deploy
+ * that names this object (ORDER_STORE) finds it not yet moved in for ORDER_MOVE_IN's generation, and:
+ *   1. copies every KV order in as a `copy` event, and the shared and chase marks beside them;
+ *   2. refuses every move for a minute with FROZEN, reads answered from the copy, so a Worker still
+ *      running the old code during the rollout is the only writer, and it writes KV;
+ *   3. at the end of the minute (the alarm, or the first request after it) copies again whatever the KV
+ *      record says that the copy does not, and is moved in. Moves are taken from then on.
+ * ONCE A GENERATION: the generation is stored when it is done, so a second deploy does nothing. IDEMPOTENT:
+ * a copy's id names the generation, the pass and the order, and an order already the same is skipped, so a
+ * pass run twice (the object restarted halfway) appends nothing new. REVERSIBLE: KV is only read, and the
+ * Worker writes every order it changes back to its KV key behind it (ORDER_STORE "object+kv"), so setting
+ * ORDER_STORE to "kv" is the old road with a current store. Coming back after one is ORDER_MOVE_IN raised by
+ * one: the move-in then runs again and takes KV as the truth.
+ *
  * A PLAIN CLASS WITH fetch(), not an RPC class: that would extend `cloudflare:workers`, which is not a
  * sibling file, and nothing under stmt/ imports anything else (the suite checks). It is also what lets the
  * suite drive it in Node, over node:sqlite, whose statements run synchronously exactly as the object's do.
  */
-import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, decidePlace, decideCustomer, decideDesk, applyEvent,
+import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, FROZEN, decidePlace, decideCustomer, decideDesk, applyEvent,
   marksOf, wakes } from "./orders.js";
 
 export { BOOK_NAME };
 const MARKS = { last: LAST_PLACED, touched: LAST_TOUCHED, said: LAST_SAID, theirs: LAST_THEIRS };
+export const FREEZE_MS = 60000;
+/* what writes: refused while the book is moving in */
+const WRITES = ["place", "customer", "desk", "chase", "drop"];
 
 export class OrderBook {
   constructor(state, env) {
@@ -48,12 +65,69 @@ export class OrderBook {
     const op = new URL(request.url).pathname.slice(1);
     let a = null;
     try { a = await request.json(); } catch (e) { a = null; }
+    await this.moveIn();
     return Response.json(this.run(op, a && typeof a === "object" ? a : {}));
+  }
+  /* the end of the minute, with or without a request to notice it */
+  async alarm() { await this.moveIn(); }
+
+  /* ---- moving in (S10 10.3) ---- */
+  gen() { return String((this.env && this.env.ORDER_MOVE_IN) || "1"); }
+  frozen() { return this.meta("movein:done") !== this.gen(); }
+  async moveIn() {
+    if (!this.frozen()) return;
+    /* one run at a time: a request arriving while a pass reads KV waits for the same pass */
+    if (!this.moving) this.moving = this.movePass().finally(() => { this.moving = null; });
+    return this.moving;
+  }
+  async movePass() {
+    const gen = this.gen(), until = +(this.meta("movein:" + gen) || 0), now = Date.now();
+    if (!until) {
+      const c = await this.copy(gen, "start");
+      this.setMeta("movein:" + gen, String(now + FREEZE_MS));
+      await this.state.storage.setAlarm(now + FREEZE_MS);
+      console.log("orderbook: moving in, generation " + gen + ", frozen for a minute: " + JSON.stringify(c));
+    } else if (now >= until) {
+      const c = await this.copy(gen, "end");
+      this.setMeta("movein:done", gen);
+      console.log("orderbook: moved in, generation " + gen + ": " + JSON.stringify(c));
+    }
+  }
+  /* every KV order in, as an event of its own; at the start the shared and chase marks too, where none is here */
+  async copy(gen, pass) {
+    const kv = this.env && this.env.STMT;
+    if (!kv) return { orders: 0, took: 0 };
+    let cursor, orders = 0, took = 0;
+    do {
+      const page = await kv.list({ prefix: "order:", cursor });
+      for (const k of page.keys) {
+        let o = null;
+        try { o = JSON.parse(await kv.get(k.name)); } catch (e) { o = null; }
+        if (!o || !o.id || !o.u) continue;
+        orders++;
+        if (this.takeIn(o, "copy:" + gen + ":" + pass + ":" + o.u + ":" + o.id)) took++;
+      }
+      cursor = page.list_complete ? null : page.cursor;
+    } while (cursor);
+    if (pass === "start") {
+      for (const key of Object.values(MARKS)) { const v = await kv.get(key); if (v != null && this.meta(key) == null) this.setMeta(key, v); }
+      const ch = await kv.list({ prefix: "chased:" });
+      for (const k of ch.keys) { const v = await kv.get(k.name); if (v != null && this.meta(k.name) == null) this.setMeta(k.name, v); }
+    }
+    return { orders, took };
+  }
+  takeIn(o, eid) {
+    const cur = this.order(o.u, o.id);
+    if (cur && JSON.stringify(cur) === JSON.stringify(o)) return false;
+    if (this.event(eid)) return false;
+    this.append(eid, o.u, o.id, { kind: "copy", at: new Date().toISOString(), order: o }, cur);
+    return true;
   }
 
   /* every answer is { ok, ... } or { ok: false, error, status }, and nothing here awaits */
   run(op, a) {
     const at = new Date().toISOString();
+    if (WRITES.includes(op) && this.frozen()) return { ok: false, error: FROZEN, status: 503, frozen: true };
     if (op === "orders") return { ok: true, orders: a.u ? this.ordersOf(String(a.u)) : this.all() };
     if (op === "last") {
       const out = { ok: true };
@@ -81,7 +155,7 @@ export class OrderBook {
       const order = this.order(u, id);
       const d = decideDesk(order, a.body, at);
       if (d.error) return { ok: false, error: d.error, status: d.status || 400 };
-      if (d.none) return { ok: true, order };
+      if (d.none) return { ok: true, order, none: true };
       return this.append(null, u, id, d.ev, order);
     }
     /* THE CHASE MARK lives here with the orders it follows: true when this hour's wake is still to be
