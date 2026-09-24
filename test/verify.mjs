@@ -25086,6 +25086,38 @@ await (async () => {
   }
 })();
 
+section("S11 fix: a part typed into Delivered part is said as it is typed, and the box's change never redraws the card under a tap");
+await (async () => {
+  /* Found on the rig: with 3 typed into the units box the buttons still read "Close at 5 unit", and tapping Close fired the
+     box's change first, which redrew the card and replaced the button under the finger, so the tap was lost unsaid. The
+     labels and the line under the stepper now follow each keystroke on the nodes drawn, and a change redraws nothing. */
+  const { openMaster: omO6 } = await import("../tools/payload.mjs");
+  const { w } = await omO6();
+  try {
+    w.SALT_CLOUD = true;
+    w.setInterval = () => 92; w.clearInterval = () => {};
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 5, total: 500, delivery: 0, paid: 0, moved: 0, mode: "deliver", history: [], msgs: [], payments: [] };
+    w.eval("ORD_OPEN=" + JSON.stringify([Object.assign({}, base, { id: "d1", status: "acknowledged", at: "2026-09-20T02:00:00.000Z" })]) + ";ORD_SEL='d1';ordDraw();");
+    D.querySelector('button[data-partopen="d1"]').click();
+    const card = () => D.querySelector('.ordcard[data-id="d1"]');
+    const box = card().querySelector('input[data-hand="d1"]');
+    const close = card().querySelector('button[data-ord="handover"][data-close="1"]');
+    box.value = "3";
+    box.dispatchEvent(new w.Event("input", { bubbles: true }));
+    const labels = [...card().querySelectorAll("button[data-partlab]")].map((b) => b.textContent);
+    const cap = (card().querySelector("[data-partcap]") || {}).textContent || "";
+    box.dispatchEvent(new w.Event("change", { bubbles: true }));   /* what a tap on Close fires first, as the box loses focus */
+    ok(JSON.stringify(labels) === '["Record 3 unit","Close at 3 unit"]' && /^Record keeps the other 2 unit owed\. Close at 3 unit ends the order there: RM 300/.test(cap)
+      && close.isConnected && close.textContent === "Close at 3 unit",
+      "the labels follow the typed figure, and the button under the finger survives the box's change: " + JSON.stringify({ labels, cap: cap.slice(0, 80), connected: close.isConnected }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 100));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one
