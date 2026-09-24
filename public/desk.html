@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="20381c87bb066636";
+var SALT_BUILD_ID="b3bd500898a9703b";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -8400,7 +8400,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v838","d":"25 Sep 2026","t":"ONE CARD, ONE TAP A STAGE, THE ROW SHOWN BEFORE THE YES","n":["<b>STAGE 11 OF THE REDESIGN</b> (his answer D6 of 24 Sep 2026). Site orders opens on Waiting on you: one row per customer act, oldest first, filtered New, Paid?, Cash and Asked, the notice folded below; Today and the Enter badge count the same rows from a cold open, and on the laptop the card sits beside the list.","<b>FIGURES BEFORE THE YES.</b> A new order's card drafts the row it would make and shows it first: their card today against the quote, the margin, the floor, their usual, the drafter's flags, and what the customer was told. The delivery charge is a chip with none chosen for a delivery.","<b>ONE TAP A STAGE.</b> Accept, Collected, Cash received and Received approve the row they make in the desk Worker only when the drafted row equals what he was shown in every field, flag and pricing version; anything different waits under Approve, marked. A stage before the first row lands is a pre-approval spent when its row is drafted (migration 0011). A rejection writes back and the move can be offered again under a fresh entry; their withdrawal drops only a still-pending acknowledgement.","<b>AT THE COUNTER.</b> A handover with nothing paid raises Cash to record, whose tap stops the chase; Delivered part takes a stepper and Close at what was handed over; Decline and Cancel take a reason the customer reads as by us; saved quick replies and No reply needed. His wakes name the kind of act and never a code or an amount."]}];
+const evolution=[{"v":"v839","d":"25 Sep 2026","t":"A WALK-IN CAN SIGN IN ON DAY ONE","n":["<b>STAGE 14 OF THE REDESIGN</b> (his answer D15 of 24 Sep 2026). The laptop mints a pool of spare accounts (node tools/stmt-account.mjs --pool, ten by default, refusing without the master): each a username, a record with an empty bundle and its password sealed under the master, marked spare in the clear. The publish writes a spare like any account, never retires one and lists none as a customer; the door treats a spare as no account at all.","<b>BOUND AT ADD ID.</b> The fold binds the next free spare to a new code where the username is minted today, so the binding lives in the repo and needs no key in CI; the next publish seals the customer's statement and prices into it and the account opens by password and by link. With no spare free it falls back to today's road, and Salt Admin says: Made at the next laptop update; until then, show the Silver link. The gate refuses two codes on one username, and the pool mint proves the content key as well as the master."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8515,7 +8515,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Sep 2026, 00:14 KL';
+const LAST_UPDATED='25 Sep 2026, 00:40 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

@@ -1,5 +1,14 @@
 [
  {
+  "v": "v839",
+  "d": "25 Sep 2026",
+  "t": "A WALK-IN CAN SIGN IN ON DAY ONE",
+  "n": [
+   "<b>STAGE 14 OF THE REDESIGN</b> (his answer D15 of 24 Sep 2026). The laptop mints a pool of spare accounts (node tools/stmt-account.mjs --pool, ten by default, refusing without the master): each a username, a record with an empty bundle and its password sealed under the master, marked spare in the clear. The publish writes a spare like any account, never retires one and lists none as a customer; the door treats a spare as no account at all.",
+   "<b>BOUND AT ADD ID.</b> The fold binds the next free spare to a new code where the username is minted today, so the binding lives in the repo and needs no key in CI; the next publish seals the customer's statement and prices into it and the account opens by password and by link. With no spare free it falls back to today's road, and Salt Admin says: Made at the next laptop update; until then, show the Silver link. The gate refuses two codes on one username, and the pool mint proves the content key as well as the master."
+  ]
+ },
+ {
   "v": "v838",
   "d": "25 Sep 2026",
   "t": "ONE CARD, ONE TAP A STAGE, THE ROW SHOWN BEFORE THE YES",
