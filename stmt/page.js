@@ -1202,7 +1202,9 @@ const CLIENT_JS = `
   }
 
   function el(tag,cls,text){ var e=document.createElement(tag); if(cls)e.className=cls; if(text!=null)e.textContent=text; return e; }
-  /* S9: whether the page is still there, for work that lands after a wait (a closed window has no document) */
+  /* S9: whether the page is still there, for work that lands after a wait (a closed window has no document). S7 merge:
+     drawOrder, drawHome and drawDevice ask it too, since every flow that waits ends in one of them (a sign-in's
+     notifications filed, a claim, a cash choice, a re-read), and one landing on a page that has gone threw */
   function docLive(){ try{ return !!document&&!!document.body; }catch(e){ return false; } }
   function rm(n){ return 'RM '+Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2}); }
   /* D11 (S4, 24 Sep 2026): units above one, unit at one and under */
@@ -1888,7 +1890,7 @@ const CLIENT_JS = `
   }
   function devBtn(t,go){ var b=el('button','salt-ghost',t); b.type='button'; b.disabled=devBusy===ticket; b.addEventListener('click',go); return b; }
   function drawDevice(){
-    if(!devEl) return;
+    if(!devEl||!docLive()) return;
     devEl.hidden=!session||view||OWNER;
     if(devEl.hidden) return;
     devRows.textContent='';
@@ -2621,6 +2623,7 @@ const CLIENT_JS = `
   var drawnSig='';
   function formSig(){ return JSON.stringify([hold,odLeft(),view,assoc,prices,oLive().length>=OMAX]); }
   function drawOrder(){
+    if(!docLive()) return;
     var sc=window.scrollY;
     drawnSig=formSig();
     /* 24 Sep 2026: a redraw (a poll, another order's tap) rebuilt the thread box empty and took the caret away
@@ -3542,6 +3545,7 @@ const CLIENT_JS = `
      nothing on it yet, and Prices and ordering work from here. Each part is drawn afresh and put on the page only
      where it reads differently, so a poll moves nothing that has not changed. A row opens its order in Orders. */
   function drawHome(){
+    if(!docLive()) return;
     var parts={hNeeds:homeNeeds(), hComing:homeComing(), hAgain:homeAgain()};
     Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
     drawPayHead();

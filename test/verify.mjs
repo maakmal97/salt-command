@@ -35384,6 +35384,52 @@ await (async () => {
   } finally { if (release) release(); await new Promise((r) => setTimeout(r, 50)); W.close(); }
 })();
 
+section("S7 merge: a sign-in's notifications still being filed when its page goes draw nothing after it");
+await (async () => {
+  /* A closed window has no document, and every flow that waits ends in drawOrder, drawHome or drawDevice: the way in's
+     filing of this phone (askPush) landed after the page had gone and threw, which in the suite took a whole shard down
+     from another section's time. Those draws ask docLive first, as stage 9's list does. Forced state: the site's answer to
+     the filing held back until the page has closed. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s7m2", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7m2",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const st = { asked: false, release: null, errs: [] };
+  const onErr = (e) => st.errs.push(String((e && e.message) || e));
+  process.on("unhandledRejection", onErr); process.on("uncaughtException", onErr);
+  const dom = new JSDOM(landingPage(u, "ns7m2", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {};
+    win.Notification = { permission: "granted", requestPermission: async () => "granted" };
+    win.PushManager = function () {};
+    const sub = { endpoint: "https://push.test/s7m2", toJSON: () => ({ keys: { p256dh: "p", auth: "a" } }), unsubscribe: async () => true };
+    const reg = { pushManager: { subscribe: async () => sub, getSubscription: async () => null } };
+    Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: { register: async () => reg, ready: Promise.resolve(reg), getRegistration: async () => reg } });
+    win.fetch = async (path) => { const p = String(path);
+      if (p === "/push/subscribe") { st.asked = true; await new Promise((r) => { st.release = r; }); }
+      const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: [] } : p === "/push/key" ? { ok: true, key: "AAAA", configured: true } : { ok: true };
+      return { ok: true, status: 200, json: async () => j }; };
+  } });
+  const W = dom.window, D = W.document;
+  try {
+    D.getElementById("un").value = u; D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 400 && !st.asked; i++) await new Promise((r) => setTimeout(r, 20));
+    ok(st.asked, "signed in, the way in files this phone with the site");
+    W.close();
+    st.release();
+    await new Promise((r) => setTimeout(r, 300));
+    ok(!st.errs.length, "and the page closed before the site answered draws nothing and throws nothing after it: " + JSON.stringify(st.errs));
+  } finally {
+    if (st.release) st.release();
+    try { W.close(); } catch (e) { /* closed above */ }
+    process.off("unhandledRejection", onErr); process.off("uncaughtException", onErr);
+  }
+})();
+
 section("S7 fix: on a statement's totals line only the figure keeps to one line, so the cancelled note wraps and a small phone never pans");
 await (async () => {
   /* S7-R4 of the stage 7 review (25 Sep 2026). ".tr span:last-child{white-space:nowrap}" was meant for the figure, but the
