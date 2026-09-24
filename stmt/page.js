@@ -212,17 +212,38 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .pay{margin-top:12px;display:flex;flex-direction:column;gap:8px}
 .pay label{display:flex;gap:10px;align-items:center;min-height:var(--salt-tap);padding:0 6px;font-size:var(--salt-text-sm);cursor:pointer}
 .pay input[type=radio]{width:18px;height:18px;accent-color:var(--salt-brass)}
-.hist{margin:10px 0 0;padding:0;list-style:none;font-size:var(--salt-text-xs);color:var(--salt-text-muted);font-family:var(--salt-font-mono);line-height:1.8}
-/* v751: the thread on an order. Theirs sits left and his right, which is the one convention every
-   reader of a phone already knows, so no label has to say whose line it is. */
-.thread{margin:12px 0 0;padding:0;list-style:none}
-.thread li{margin:0 0 7px;max-width:82%;padding:7px 10px;border-radius:10px;font-size:var(--salt-text-sm);line-height:1.5}
-.thread li.me{margin-left:auto;background:var(--salt-well);border:1px solid var(--salt-line)}
-.thread li.them{margin-right:auto;background:var(--salt-glass);border:1px solid var(--salt-brass)}
-.thread .when{display:block;font-size:var(--salt-text-xs);color:var(--salt-text-muted);font-family:var(--salt-font-mono);margin-bottom:2px}
-.thread .said{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
-.sayw{display:flex;gap:7px;align-items:center;margin-top:10px}
-.sayw .fld{flex:1 1 auto;margin:0}
+/* S5, 24 SEP 2026: THE ORDERS PLACE. Needs you, then Open, then the earlier orders folded and not drawn. A row
+   is the system's Inbox row and opens the order's own screen: the goods on Steps, the money on the plain Ledger
+   list, one filled Pay, the thread on Bubble and thread, what happened on Plan, folded. The look is the
+   recipes'; this block lays them out and nothing else. On a phone the open order is the whole tab; from 1080px
+   the list stands beside it with its messages in view, wider than the reading column. */
+.oplace{margin-top:18px}
+.olab{margin:18px 0 8px}
+.olist .olab:first-child{margin-top:4px}
+.olist .salt-inbox-row{margin:0 0 8px}
+.olater{width:100%;margin-top:10px}
+.oback{margin:0 0 12px}
+.ohead{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;margin:0 0 16px}
+.ohead h3{margin:0;font-family:var(--salt-font-display);font-size:var(--salt-text-xl);letter-spacing:0}
+.ohead .state{margin-left:auto}
+.ohead .sub2{flex-basis:100%;margin:0}
+.odue{color:var(--salt-ember)}
+.oact .salt-pill,.oact>.salt-ghost{width:100%;margin-top:16px}
+.omsgs{margin-top:22px}
+.omsgs .olab{display:flex;justify-content:space-between;margin:0 0 10px}
+.omsgs .salt-bubble__text{white-space:pre-wrap}
+.osay{margin-top:var(--salt-space-3)}
+.ohist,.ofoot{margin-top:18px}
+.ohist ul{margin:0;padding:0;list-style:none}
+.ofoot .salt-ghost{width:100%}
+@media (max-width:1079px){#pOrder.o-open>:not(.oplace){display:none}.oplace.o-open>.olistcol{display:none}.oplace.o-open{margin-top:0}}
+@media (min-width:1080px){
+  .oplace{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px;align-items:start;
+    width:min(1120px,100vw - 64px);margin-left:calc((100% - min(1120px,100vw - 64px))/2)}
+  .oback{display:none}
+  /* the open order stands under the bar while the list scrolls beside it, its thread in reach inside it */
+  .oscreen{position:sticky;top:84px;max-height:calc(100vh - 100px);overflow-y:auto}
+}
 
 @media print{.bar,.mos,.tabs{display:none}}
 /* THE OWNER'S ROSTER, in the gate's own geometry so the door looks like the door. One row per
@@ -973,7 +994,8 @@ const CLIENT_JS = `
 
   function el(tag,cls,text){ var e=document.createElement(tag); if(cls)e.className=cls; if(text!=null)e.textContent=text; return e; }
   function rm(n){ return 'RM '+Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2}); }
-  function unitsOf(q,u){ return q+' '+(u||'unit'); }
+  /* S5 5.3 (D11): "units" above one, "unit" at one and under */
+  function unitsOf(q,u){ u=u||'unit'; return q+' '+(u==='unit'&&+q>1?'units':u); }
 
   /* THE PASSWORD UNWRAPS A KEY, AND THE KEY OPENS EVERYTHING. The same derivation the vault
      uses, PBKDF2-SHA256 x150000 into AES-GCM-256, but over the wrap rather than the content:
@@ -1262,7 +1284,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
+    bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
     owedNow=0; hold=false; tPrices.hidden=false; tOrder.textContent='Order';
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
@@ -1287,10 +1309,11 @@ const CLIENT_JS = `
      the site as well as everything this page holds, so a phone handed on is a phone signed out. */
   async function logOut(){
     /* S3 fix, 24 Sep 2026: an account open for a visit over one this phone keeps (Keep at the Replace question) signs
-       out alone: the kept account stays remembered here and on the site, and so do its alerts on this phone */
+       out alone: the kept account stays remembered here and on the site, and so do its alerts on this phone, and so
+       does the record of what this phone has seen (S5), which is the kept account's as well */
     var rec=remGet(), other=!!rec&&rec.u!==user, tok=!other&&rec?rec.t||null:null, s=session, ep=null, ho=keepMinted;
     keepMinted=[];
-    if(!other) remClear();
+    if(!other){ remClear(); try{ localStorage.removeItem(SEEN); }catch(e){} }
     lock();
     /* S1 1.42: this phone's alerts go too, here and on the site, and the site is told even when the session
        has lapsed, so the remembered wrap does not outlive the Log out */
@@ -1364,7 +1387,7 @@ const CLIENT_JS = `
     if(!keptMine()){ openSignedOut(); return; }
     /* the line stays until the phone is back in: enter() takes it away; a refusal forgets the phone, so it is redrawn */
     if(!(await reopen())){ lapse.hidden=true; lapsed(); return; }
-    await loadOrders(); drawOrder();
+    await oReread();
   });
 
   /* ---- the tabs: three for everyone, a fourth for an associate ---- */
@@ -1759,8 +1782,13 @@ const CLIENT_JS = `
     var total=r.price;
     return {p:p, q:r.q, total:total, unit:+(total/r.q).toFixed(2)};
   }
+  /* what the tab above the orders is drawn off: the Pay page or the order form. A re-read of the account (a return to
+     the page, a lapse reopened, S3 3.5) that changes it draws the tab again; otherwise the orders are patched (S5 5.5) */
+  var drawnSig='';
+  function formSig(){ return JSON.stringify([hold,owedNow,view,assoc,prices]); }
   function drawOrder(){
     var sc=window.scrollY;
+    drawnSig=formSig();
     /* 24 Sep 2026: a redraw (a poll, another order's tap) rebuilt the thread box empty and took the caret away
        mid-sentence; the line is kept per order in draft.says, and the box that had the caret gets it back */
     var fo=document.activeElement, keep=fo&&fo.getAttribute&&pOrder.contains(fo)?fo.getAttribute('data-say'):null,
@@ -1932,23 +1960,46 @@ const CLIENT_JS = `
       if(draft.pushNote) np.appendChild(el('p','msg',draft.pushNote));
     }
     if(!view) pOrder.appendChild(np);
-    var h=el('h2',null,'Your orders'); h.style.marginTop='18px'; pOrder.appendChild(h);
-    if(!orders.length) pOrder.appendChild(el('p','lead','None yet.'));
-    orders.forEach(function(o){ pOrder.appendChild(orderPane(o)); });
+    pOrder.appendChild(oPlace());
     if(keep){ var kbox=[].filter.call(pOrder.querySelectorAll('input[data-say]'),function(x){ return x.getAttribute('data-say')===keep; })[0];
       if(kbox){ try{ kbox.focus({preventScroll:true}); kbox.setSelectionRange(sel[0],sel[1]); }catch(e){} } }
     window.scrollTo(0,sc);
     openWanted();
   }
 
-  /* the chip's tone by state: pending is steel, ready is brass, done is verdigris, anything closed is mist */
-  var STATE_TONE={placed:'steel',acknowledged:'steel',ready:'brass',done:'verdigris'};
-  var STATE_WORDS={placed:'Placed', acknowledged:'Acknowledged', ready:'Ready', done:'Completed', declined:'Not taken', cancelled:'Withdrawn'};
-  /* S11 11.7: an order he ended says so with his reason: Not taken, or Cancelled by us. One withdrawn by
-     them stays Withdrawn. The reason is the note on the event that ended it. */
-  function endOf(o){ var h=(o.history||[]).filter(function(x){return x&&x.status===o.status;}); return h.length?h[h.length-1]:null; }
-  function evWord(h){ return h.status==='cancelled'&&h.by==='desk'?'Cancelled by us':(STATE_WORDS[h.status]||h.status); }
-  function stateWord(o){ var e=endOf(o); return o.status==='cancelled'&&e&&e.by==='desk'?'Cancelled by us':(STATE_WORDS[o.status]||o.status); }
+  /* S5 5.3 (D11, his answer of 24 Sep 2026): WHERE AN ORDER IS, IN THE CUSTOMER'S WORDS. The record's states are the
+     desk's; they read Sent, Confirmed, Ready to collect or to deliver, Collected or Delivered once the goods are all
+     with them, Complete, Not taken, and Cancelled by you or by us, read off who cancelled it. Never Acknowledged,
+     Withdrawn or handed over. The tone follows the word: steel and dashed while it waits on us, brass ready,
+     verdigris confirmed or moved, mist closed. */
+  function oWord(st,o,by){
+    var d=o.mode==='deliver';
+    return {placed:'Sent', acknowledged:'Confirmed', ready:d?'Ready to deliver':'Ready to collect', done:'Complete', declined:'Not taken',
+      cancelled:by==='desk'?'Cancelled by us':'Cancelled by you'}[st]||st;
+  }
+  /* S11 11.7: the event that ended an order, whose note is his reason for a decline or a cancellation of his */
+  function endOf(o){ var h=(o.history||[]).filter(function(x){ return x&&x.status===o.status; }); return h.length?h[h.length-1]:null; }
+  function stateWord(o){
+    if(oPayable(o)&&movedAll(o)) return o.mode==='deliver'?'Delivered':'Collected';
+    var e=endOf(o);
+    return oWord(o.status,o,e?e.by:'');
+  }
+  function stateChip(o,cls){
+    var s=o.status, tone=s==='placed'?'steel salt-status--dashed':s==='ready'&&!movedAll(o)?'brass':(s==='acknowledged'||s==='done'||oPayable(o))?'verdigris':'mist';
+    return el('span',(cls?cls+' ':'')+'salt-status salt-status--'+tone,stateWord(o));
+  }
+  /* what happened, a step a line, in the same words: the record's notes are the desk's shorthand */
+  function histLine(x,o){
+    var n=String(x.note||''), m, how=x.method?' by '+methodWord(x.method,x.account):'';
+    if((m=/^paid ([0-9.]+)$/.exec(n))) return 'You paid '+rm(+m[1])+how;
+    if((m=/^payment of ([0-9.]+) recorded$/.exec(n))) return 'We recorded a payment of '+rm(+m[1]);
+    /* S11 11.8 and 11.9: cash he took at the handover, and a short order closed at what was handed over */
+    if((m=/^paid ([0-9.]+) in cash$/.exec(n))) return 'We received '+rm(+m[1])+' in cash';
+    if((m=/^closed at ([0-9.]+) unit of the ([0-9.]+) ordered$/.exec(n))) return 'Closed at '+unitsOf(+m[1],oUnit(o))+' of the '+m[2]+' ordered';
+    if((m=/^([0-9.]+) unit (delivered|collected)$/.exec(n))) return unitsOf(+m[1],oUnit(o))+' '+m[2];
+    if(x.method) return 'You chose to pay'+how;
+    return oWord(x.status,o,x.by)+(n?': '+n:'');
+  }
   /* v694: money and goods are two tracks, so what is still owed and what is still to come are read
      off the order, never off a single word of state. Both figures are the ones the desk holds. */
   function dueOf(o){ return +((o.total+(+o.delivery||0))-(+o.paid||0)).toFixed(2); }
@@ -1963,93 +2014,410 @@ const CLIENT_JS = `
      goes under the order's state, which is where the change shows. */
   function statusLine(t){ var p=el('p','msg',t); p.setAttribute('role','status'); return p; }
   function tapSaid(o,k,t){ draft.tap=t?{id:o.id,k:k,t:t}:null; }
-  function orderPane(o){
-    var pane=el('div','pane');
-    pane.setAttribute('data-order',o.id);
-    var P=prices&&prices.products&&prices.products.filter(function(x){return x.product===o.product;})[0];
-    var unit=P?P.unit:'unit';
-    var due=dueOf(o), moved=+o.moved||0, paid=+o.paid||0, payable=['acknowledged','ready'].indexOf(o.status)>=0;
-    var tap=(draft.tap&&draft.tap.id===o.id)?draft.tap:null, tk=tap&&tap.k;
-    if(tk==='pay'&&!(payable&&due>0.004) || tk==='withdraw'&&!((payable||o.status==='placed')&&!(moved>0))) tk='state';
-    pane.appendChild(el('div','state salt-status salt-status--'+(STATE_TONE[o.status]||'mist'), stateWord(o)));
-    pane.appendChild(el('div','quote', rm(o.total+(o.delivery||0))));
-    if(o.delivery>0) pane.appendChild(el('div','sub2', rm(o.total)+' for the goods and '+rm(o.delivery)+' delivery'));
-    var line2=el('div','sub2');
-    line2.appendChild(withMark(o.product,unitsOf(o.qty,unit)+' ',18));
-    line2.appendChild(document.createTextNode(', '+(o.mode==='deliver'?'to be delivered':'to collect')
-      +(o.place?' to '+o.place:'')+(o.forFriend?', on behalf of a friend':'')+', placed '+stamp(o.at)));
-    pane.appendChild(line2);
-    var line='';
-    if(o.status==='placed') line='Waiting to be acknowledged. You will see it change here.';
-    else if(payable) line=(o.status==='ready'?(o.mode==='deliver'?'Ready to be delivered. ':'Ready to collect. '):'Acknowledged, and being prepared. ')
-      +(paid>0?(due>0.004?rm(paid)+' of '+rm(o.total+(o.delivery||0))+' paid, '+rm(due)+' to go.':'Paid in full.'):'Nothing paid yet.')
-      +(moved>0?(moved<o.qty-0.004?' '+unitsOf(moved,unit)+' of '+unitsOf(o.qty,unit)+' handed over.':' Handed over in full.'):'');
-    else if(o.status==='done') line='Your order is now complete. Thank you for your loyalty.';
-    /* S11 11.9: an order he closed at what was handed over says so, the size it was and the size it is */
-    if(o.closed&&o.closed.qty) line+=' Closed at '+unitsOf(o.qty,unit)+' of the '+o.closed.qty+' ordered, '+rm(o.total)+' for the goods.';
-    else if(o.status==='declined'){ var dn=endOf(o); line='Not taken'+(dn&&dn.note?': '+dn.note:'')+'. Nothing is owed.'; }
-    else if(o.status==='cancelled'&&endOf(o)&&endOf(o).by==='desk'){ var cn=endOf(o); line='Cancelled by us'+(cn.note?': '+cn.note:'')+'. '+(paid>0?'The '+rm(paid)+' you paid is refunded.':'Nothing is owed.'); }
-    else if(o.status==='cancelled') line=paid>0?'Withdrawn. The '+rm(paid)+' you paid is refunded.':'Withdrawn before anything moved. Nothing is owed.';
-    pane.appendChild(el('p','sub2',line));
-    if(tk==='state') pane.appendChild(statusLine(tap.t));
-    if(!view&&payable&&due>0.004) pane.appendChild((o.method&&!(pick[o.id]||{}).again)?payBox(o):payChooser(o));
-    if(tk==='pay') pane.appendChild(statusLine(tap.t));
-    /* v694: either side may withdraw at any stage until the goods move (his rule, 18 Sep 2026) */
-    if(!view&&(payable||o.status==='placed')){
-      if(moved>0) pane.appendChild(el('p','sub2','The goods are with you, so this can no longer be withdrawn here.'));
+  /* ---- S5 5.1 (24 Sep 2026): THE ORDERS, AS ROWS. What needs them first (something to pay, a reply not yet
+     read), then what is open, then the earlier orders under one fold that draws nothing until it is opened: a
+     customer with sixty orders had sixty panes built on every poll. A row is one tap onto that order. ---- */
+  function oFind(id){ return orders.filter(function(o){ return o.id===id; })[0]||null; }
+  function oUnit(o){ var P=prices&&prices.products&&prices.products.filter(function(x){ return x.product===o.product; })[0]; return P?P.unit:'unit'; }
+  function oClosed(o){ return ['done','declined','cancelled'].indexOf(o.status)>=0; }
+  function oPayable(o){ return ['acknowledged','ready'].indexOf(o.status)>=0; }
+  /* STAGE 6 PLUGS IN HERE: claimed is what they have said they sent above what he has confirmed, a field the
+     order does not carry yet. Until it does it reads nothing, and what is still to pay is what is owed. */
+  function oClaimed(o){ var c=+o.claimed; return c>0?c:0; }
+  function oToPay(o){ return Math.max(0,+(dueOf(o)-oClaimed(o)).toFixed(2)); }
+  function oOwes(o){ return oPayable(o)&&oToPay(o)>0.004; }
+  function oDay(iso){ try{ var p=klBits(iso); return p.day+' '+MON3[+p.month-1]; }catch(e){ return ''; } }
+  /* A REPLY WAITS until this device has shown it: the moment of his last line seen, per order, kept here and
+     nowhere else, because there are no read receipts. The store's first moment stands for everything a closed
+     order said before this device ever looked, or the first open after this shipped put every old thank-you
+     under Needs you. Order ids only, never the username; where the browser keeps nothing, it lasts the visit. Log out
+     takes it with the rest, so the next account on this phone starts its own; an account open for a visit over one
+     the phone keeps (S3) leaves it, being the kept account's too.
+     HIS READ-ONLY VIEW READS NOTHING AS NEW AND WRITES NOTHING HERE: what their phone has shown is not on his, and
+     his route leaves nothing behind on his phone. */
+  var SEEN='salt-stmt-seen', seenMem=null;
+  function seenGet(){
+    var s=null; try{ s=JSON.parse(localStorage.getItem(SEEN)||'null'); }catch(e){ s=null; }
+    if(s&&typeof s.t==='string'&&s.o&&typeof s.o==='object') return s;
+    if(!seenMem){ seenMem={t:new Date().toISOString(),o:{}}; if(!OWNER) seenPut(seenMem); }
+    return seenMem;
+  }
+  function seenPut(s){ seenMem=s; try{ localStorage.setItem(SEEN,JSON.stringify(s)); }catch(e){ /* kept for this visit only */ } }
+  function hisLast(o){ var m=(o.msgs||[]).filter(function(x){ return x.by==='desk'; }); return m.length?String(m[m.length-1].at||''):''; }
+  function seenMark(o){ var s=seenGet(); return s.o[o.id]||(oClosed(o)?s.t:''); }
+  function replyWaiting(o){ var l=hisLast(o); return !view&&!!l&&l>seenMark(o); }
+  /* shown means drawn open on a tab that is showing, by a tap on its row or a banner; his read-only view marks
+     nothing. An order a desk opened by itself is not shown in this sense: the order form stands above it, so its
+     thread can be a screen below the fold, and a tap on its row marks it. */
+  function seeIt(o){ if(view||!o||pOrder.hidden||draft.oAuto) return; var l=hisLast(o); if(!l) return; var s=seenGet(); if((s.o[o.id]||'')>=l) return; s.o[o.id]=l; seenPut(s); }
+  function oNeeds(o){ return oOwes(o)||replyWaiting(o); }
+  function oWhy(o){
+    var b=[];
+    if(oOwes(o)) b.push(rm(oToPay(o))+' to pay');
+    if(replyWaiting(o)) b.push('a reply for you');
+    if(!b.length&&o.status==='placed') b.push('waiting to be confirmed');
+    var t=b.join(', '); return t&&t.charAt(0).toUpperCase()+t.slice(1);
+  }
+  /* one line: the mark and the size with the state, why it is here, then the day and the figure */
+  function oRow(o,shown){
+    var b=el('button','salt-inbox-row orow'); b.type='button'; b.setAttribute('data-row',o.id);
+    if(o.id===shown) b.setAttribute('aria-current','true');
+    var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
+    t.appendChild(withMark(o.product,unitsOf(o.qty,oUnit(o)),18));
+    t.appendChild(stateChip(o));
+    main.appendChild(t);
+    var why=oWhy(o); if(why) main.appendChild(el('span','salt-inbox-row__what',why));
+    b.appendChild(main);
+    var side=el('span','salt-inbox-row__side');
+    side.appendChild(el('span','salt-inbox-row__age',oDay(o.at)));
+    side.appendChild(el('span','salt-inbox-row__action',rm(o.total+(+o.delivery||0))));
+    b.appendChild(side);
+    b.addEventListener('click',function(){ oOpen(o.id); });
+    return b;
+  }
+  function oBuckets(){ var n=[],p=[],e=[]; orders.forEach(function(o){ (oNeeds(o)?n:oClosed(o)?e:p).push(o); }); return {needs:n,open:p,past:e}; }
+  function oList(shown){
+    var box=el('div','olist'); box.setAttribute('data-olist','');
+    if(!orders.length){ box.appendChild(el('p','lead','None yet.')); return box; }
+    var B=oBuckets();
+    function sec(t,list){ box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab',t)); list.forEach(function(o){ box.appendChild(oRow(o,shown)); }); }
+    if(B.needs.length) sec('Needs you',B.needs);
+    if(B.open.length) sec('Open',B.open);
+    if(B.past.length){
+      var eb=el('button','salt-ghost olater',B.past.length+' earlier order'+(B.past.length===1?'':'s')); eb.type='button';
+      eb.setAttribute('aria-expanded',draft.oEarlier?'true':'false');
+      eb.addEventListener('click',function(){ draft.oEarlier=!draft.oEarlier; oDraw(); });
+      box.appendChild(eb);
+      if(draft.oEarlier) B.past.forEach(function(o){ box.appendChild(oRow(o,shown)); });
+    }
+    return box;
+  }
+  /* S5 5.6 (f12w): FROM 1080PX THE LIST STANDS BESIDE AN OPEN ORDER, so one is always open there: what needs them
+     first, else the newest. It is then the one open, so it stays put while the list moves under a poll. An order
+     opened this way is marked oAuto, and goes when the width drops below 1080px: on a phone nothing is open until
+     it is tapped. */
+  function oWide(){ try{ return !!(window.matchMedia&&window.matchMedia('(min-width: 1080px)').matches); }catch(e){ return false; } }
+  function oShownId(){
+    if(draft.oOpen&&!oFind(draft.oOpen)) draft.oOpen='';
+    if(!draft.oOpen&&orders.length&&oWide()){ var B=oBuckets(); draft.oOpen=(B.needs[0]||B.open[0]||B.past[0]).id; draft.oAuto=true; }
+    return draft.oOpen||'';
+  }
+  try{
+    var oMq=window.matchMedia&&window.matchMedia('(min-width: 1080px)');
+    if(oMq&&oMq.addEventListener) oMq.addEventListener('change',function(){
+      if(!oWide()&&draft.oAuto){ draft.oOpen=''; draft.oAuto=false; }
+      if(document.getElementById('oPlace')) oDraw();
+    });
+  }catch(e){ /* a browser that cannot say keeps the phone's one column */ }
+  /* ---- S5 5.2 (24 Sep 2026): AN ORDER'S OWN SCREEN. The goods on their own track (Sent, Confirmed, Ready, then
+     Collected or Delivered), so Paid can never run ahead of Delivered; the money on its own lines; ONE next action,
+     the filled Pay while something is due and nothing filled when nothing is; the thread; what happened, folded;
+     and Cancel at the foot while the goods have not moved. Built in named parts, each rebuilt on its own. ---- */
+  function movedAll(o){ var m=+o.moved||0; return m>0&&m>=(+o.qty||0)-0.0004; }
+  function firstAt(o,st){ var h=(o.history||[]).filter(function(x){ return x.status===st; })[0]; return h?h.at:''; }
+  function ymdDay(s){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?m[3]+' '+MON3[+m[2]-1]:''; }
+  /* what the last tap on this order said, beside the control it came from; where the answer took the control away
+     (paid in full, cancelled), under the order's state, which is where the change shows */
+  function oTap(o){
+    var tap=(draft.tap&&draft.tap.id===o.id)?draft.tap:null, k=tap&&tap.k;
+    if(k==='pay'&&!oOwes(o) || k==='withdraw'&&!((oPayable(o)||o.status==='placed')&&!(+o.moved>0))) k='state';
+    return {k:k, t:tap?tap.t:''};
+  }
+  function oHead(o){
+    var h=el('div','ohead'), t=el('h3');
+    t.appendChild(psym(o.product,26)); t.appendChild(document.createTextNode(' '+unitsOf(o.qty,oUnit(o)))); t.appendChild(el('span','sr',pshape(o.product)));
+    h.appendChild(t);
+    h.appendChild(stateChip(o,'state'));
+    h.appendChild(el('p','sub2','Ordered '+stamp(o.at)+(o.mode==='deliver'?', to be delivered'+(o.place?' to '+o.place:''):', to collect')
+      +(o.forFriend?', on behalf of a friend':'')));
+    return h;
+  }
+  /* GOODS ONLY: a declined or cancelled order has no track to show */
+  function oSteps(o){
+    var w=el('div');
+    if(o.status==='declined'||o.status==='cancelled') return w;
+    var names=['Sent','Confirmed','Ready',o.mode==='deliver'?'Delivered':'Collected'];
+    var cur=o.status==='done'?4:movedAll(o)?3:(o.status==='ready'||(+o.moved||0)>0)?2:o.status==='acknowledged'?1:0;
+    var ol=el('ol','salt-steps'); ol.setAttribute('aria-label','Where the goods are');
+    names.forEach(function(n,i){
+      var li=el('li','salt-steps__step'+(i<cur?' salt-steps__step--done':i===cur?' salt-steps__step--now':''),n);
+      if(i===cur) li.setAttribute('aria-current','step');
+      ol.appendChild(li);
+    });
+    w.appendChild(ol); return w;
+  }
+  /* where it stands and when, in one sentence, off the record's own moments. S11 11.7: an order he ended says so
+     with his reason; S11 11.9: one he closed at what was handed over says the size it was and the size it is. */
+  function oWhen(o){
+    var w=el('div'), p=el('p','salt-insight'), d=o.mode==='deliver', mv=+o.moved||0, paid=+o.paid||0, s=o.status, e=endOf(o),
+        why=e&&e.note?': '+e.note:'', back=paid>0?'The '+rm(paid)+' you paid is refunded.':'Nothing is owed.';
+    function put(a,b,c){ p.appendChild(document.createTextNode(a)); if(b){ p.appendChild(el('b',null,b)); p.appendChild(document.createTextNode(c||'')); } }
+    if(s==='placed') put('Waiting to be confirmed. You will see it change here.');
+    else if(s==='done') put('Your order is now complete. Thank you for your loyalty.');
+    else if(s==='declined') put('Not taken'+why+'. '+back);
+    else if(s==='cancelled'&&e&&e.by==='desk') put('Cancelled by us'+why+'. '+back);
+    else if(s==='cancelled') put(paid>0?'Cancelled. The '+rm(paid)+' you paid is refunded.':'Cancelled before anything moved. Nothing is owed.');
+    else if(movedAll(o)) put(d?'Delivered on ':'Collected on ',ymdDay(o.movedOn)||'the day it went','.');
+    else if(mv>0) put(unitsOf(mv,oUnit(o))+' of '+unitsOf(o.qty,oUnit(o))+(d?' delivered on ':' collected on '),ymdDay(o.movedOn)||'the day it went','.');
+    else if(s==='ready') put(d?'Ready to deliver, since ':'Ready to collect, since ',oDay(firstAt(o,'ready')),'.');
+    else put('Confirmed on ',oDay(firstAt(o,'acknowledged')),', and being prepared.');
+    if(o.closed&&o.closed.qty) put(' Closed at '+unitsOf(o.qty,oUnit(o))+' of the '+o.closed.qty+' ordered, '+rm(o.total)+' for the goods.');
+    w.appendChild(p);
+    var tp=oTap(o); if(tp.k==='state'&&tp.t) w.appendChild(statusLine(tp.t));
+    return w;
+  }
+  function lrow(label,value,flag,cls){
+    var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line');
+    l.appendChild(el('span','salt-ledger__label',label)); l.appendChild(el('span','salt-ledger__value'+(cls?' '+cls:''),value));
+    r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
+    return r;
+  }
+  /* THE MONEY ON ITS OWN LINES: the goods, the delivery, what is paid, what they have sent and is waiting, and what
+     is still to pay, with when it may be paid */
+  function oMoney(o){
+    var L=el('div','salt-ledger salt-ledger--plain'), paid=+o.paid||0, claimed=oClaimed(o), d=o.mode==='deliver', where=o.place?'To '+o.place:'';
+    /* S11 11.9: a short order closed at what was handed over is billed for that, and its Goods line says so */
+    L.appendChild(lrow('Goods',rm(o.total),o.closed&&o.closed.qty?unitsOf(o.qty,oUnit(o))+' handed over of the '+o.closed.qty+' ordered':''));
+    if(d) L.appendChild(o.status==='placed'?lrow('Delivery','',(where?where+'. ':'')+'Set when we confirm the order'):lrow('Delivery',rm(o.delivery||0),where));
+    if(paid>0) L.appendChild(lrow('Paid',rm(paid)));
+    if(claimed>0) L.appendChild(lrow('Sent by you',rm(claimed),'Waiting for us to confirm it arrived'));
+    if(oPayable(o)){
+      var tp=oToPay(o), mv=+o.moved||0;
+      L.appendChild(tp>0.004
+        ?lrow('Still to pay',rm(tp),mv>0?(movedAll(o)?'The goods are with you':'Part of the goods is with you'):(d?'Now, or when it arrives':'Now, or when you collect'),'odue')
+        :lrow('Still to pay',rm(0),'Paid in full'));
+    }
+    return L;
+  }
+  /* ONE NEXT ACTION. Pay opens the ways to pay in its place, and theirs is then the one filled control. On a desk the
+     order form's own filled control stands beside the open order until the form moves into a sheet (stage 4), and
+     while one does, Pay is the lit ghost: one filled control a screen. On a phone the open order is the whole tab. */
+  function oFormPill(){ return oWide()&&[].some.call(pOrder.querySelectorAll('.salt-pill'),function(p){ return !p.closest('.oplace'); }); }
+  function oAct(o){
+    var a=el('div','oact'), tp=oTap(o);
+    if(!view&&oOwes(o)){
+      if((draft.oPay||{})[o.id]) a.appendChild((o.method&&!(pick[o.id]||{}).again)?payBox(o):payChooser(o));
       else {
-        var wb=el('button','btn quiet salt-ghost','Withdraw this order'); wb.type='button';
-        wb.addEventListener('click', async function(){
-          if(!confirm(paid>0?'Withdraw this order? The '+rm(paid)+' you paid is refunded.':'Withdraw this order?')) return;
-          var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel','')});
-          if(mine!==ticket) return;
-          if(r.body.ok) ridDone(o.id+':cancel');
-          tapSaid(o,'withdraw',r.body.ok?'':(r.body.error||'It could not be withdrawn.'));
-          await loadOrders(); if(mine!==ticket) return; drawOrder();
-        });
-        pane.appendChild(wb);
-        if(tk==='withdraw') pane.appendChild(statusLine(tap.t));
+        var pb=el('button',oFormPill()?'salt-ghost salt-ghost--lit':'salt-pill salt-pill--md','Pay '+rm(oToPay(o))); pb.type='button';
+        pb.addEventListener('click',function(){ (draft.oPay=draft.oPay||{})[o.id]=true; oDraw(); });
+        a.appendChild(pb);
       }
     }
-    /* v751: THE THREAD, oldest first, theirs and his. It sits above the history because it is the
-       part a reader came back for; the history is the record underneath it. */
-    var msgs=(o.msgs||[]);
-    if(msgs.length){
-      var th=el('ul','thread');
-      msgs.forEach(function(m){
-        var li=el('li',m.by==='desk'?'them':'me');
-        li.appendChild(el('span','when',(m.by==='desk'?'Reply, ':'You, ')+stamp(m.at)));
-        li.appendChild(el('p','said',m.text||''));
-        th.appendChild(li); });
-      pane.appendChild(th);
-    }
-    /* ON ANY ORDER, AT ANY STAGE: a question about a withdrawn order is still about that order.
-       His read-only view writes nothing; he answers on the desk. */
-    var sayw=el('div','sayw');
-    var si=el('input','fld salt-field__input'); si.type='text'; si.maxLength=200;
-    si.placeholder=msgs.length?'Add to this':'Ask about this order';
-    si.setAttribute('aria-label','Write about this order');
+    if(tp.k==='pay'&&tp.t) a.appendChild(statusLine(tp.t));
+    return a;
+  }
+  /* ---- S5 5.4 (24 Sep 2026): THE MESSAGES, on the system's Bubble and thread. Their lines stand right with where
+     each one is: Sending, Sent (stored, never read: there are no read receipts), or, lost on the way, Not sent with
+     Tap to try again, which carries the line's own id, so a line that did arrive is not recorded twice. His stand left, marked New
+     until this device has shown them. The composer is a form, so Return sends; the line typed is kept per order
+     until it goes, and the box is emptied the moment it does, the line then living in its bubble. ---- */
+  function oOut(id){ var q=(draft.oOut=draft.oOut||{}); return q[id]||(q[id]=[]); }
+  /* A LINE STORED WHOSE ANSWER WAS LOST stood twice, Sent from the thread and Not sent from here. An out line also
+     goes once the thread holds more of their lines in its words than it did when it was sent (n), so a line said
+     twice on purpose is still two. The words are compared as the site keeps them, spaces run together. */
+  function oWords(s){ return String(s||'').split(' ').filter(Boolean).join(' ').slice(0,200); }
+  function oSame(o,w){ return (o.msgs||[]).filter(function(m){ return m.by==='customer'&&oWords(m.text)===w; }).length; }
+  function oLanded(o){ var q=oOut(o.id); for(var i=q.length-1;i>=0;i--) if(oSame(o,q[i].w)>q[i].n) q.splice(i,1); return q; }
+  function oPut(v){ for(var i=0;i<orders.length;i++) if(orders[i].id===v.id){ orders[i]=v; return; } }
+  function bubble(side,text,meta,state,isNew){
+    var b=el('div','salt-bubble salt-bubble--'+side+(state==='failed'?' salt-bubble--failed':''));
+    b.appendChild(el('p','salt-bubble__text',text));
+    var m=el('p','salt-bubble__meta'); m.appendChild(el('span',null,meta));
+    if(isNew) m.appendChild(el('span','salt-bubble__new','New'));
+    if(state) m.appendChild(el('span','salt-bubble__state salt-bubble__state--'+state,{sending:'Sending',sent:'Sent',failed:'Not sent'}[state]));
+    b.appendChild(m);
+    return b;
+  }
+  function oThread(o){
+    var w=el('div','omsgs'), msgs=o.msgs||[], out=oLanded(o), n=msgs.length+out.length, since=(draft.oSince||{})[o.id];
+    if(view&&!n) return el('div');
+    var h=el('h3','salt-eyebrow salt-eyebrow--copper olab'); h.appendChild(el('span',null,'Messages')); if(n) h.appendChild(el('span',null,String(n)));
+    var th=el('div','salt-thread'), ls=el('div','salt-thread__lines');
+    ls.setAttribute('role','log'); ls.setAttribute('aria-label','Messages on this order');
+    msgs.forEach(function(m){
+      var his=m.by==='desk';
+      ls.appendChild(bubble(his?'theirs':'mine',m.text||'',(his?'Reply, ':'You, ')+stamp(m.at),his?'':'sent',his&&!view&&typeof since==='string'&&String(m.at)>since));
+    });
+    out.forEach(function(x){
+      var b=bubble('mine',x.t,'You, '+stamp(x.at),x.state,false);
+      if(x.state==='failed'){
+        if(x.why){ var y=el('p','salt-bubble__meta',x.why); y.setAttribute('role','status'); b.appendChild(y); }
+        var r=el('button','salt-ghost salt-ghost--lit salt-bubble__retry','Tap to try again'); r.type='button';
+        r.addEventListener('click',function(){ oSend(o.id,x); });
+        b.appendChild(r);
+      }
+      ls.appendChild(b);
+    });
+    th.appendChild(ls); w.appendChild(h); w.appendChild(th);
+    return w;
+  }
+  /* his read-only view writes nothing; he answers on the desk */
+  function oSay(o){
+    var w=el('div','osay');
+    if(view) return w;
+    var f=el('form','salt-composer'), si=el('input','salt-field__input salt-composer__field');
+    si.type='text'; si.maxLength=200; si.autocomplete='off'; si.setAttribute('enterkeyhint','send');
+    si.placeholder='Write about this order'; si.setAttribute('aria-label','Write about this order');
     si.setAttribute('data-say',o.id); si.value=(draft.says||{})[o.id]||'';
     si.addEventListener('input',function(){ (draft.says=draft.says||{})[o.id]=si.value; });
-    var sg=el('button','btn quiet salt-ghost','Send'); sg.type='button';
-    sg.addEventListener('click', async function(){
+    var sg=el('button','salt-ghost salt-ghost--lit salt-composer__send','Send'); sg.type='submit';
+    f.appendChild(si); f.appendChild(sg);
+    var tp=oTap(o), said=statusLine(tp.k==='say'?tp.t:''); said.setAttribute('data-said',''); said.hidden=!said.textContent;
+    f.addEventListener('submit',function(ev){
+      ev.preventDefault();
       var t=String(si.value||'').trim();
-      if(!t||sg.disabled) return;
-      sg.disabled=true; var mine=ticket;
-      var r=await api('/orders/'+o.id+'/say',{text:t,rid:ridFor(o.id+':say',t)});
-      if(mine!==ticket) return;
-      sg.disabled=false;
-      if(!r.body.ok) tapSaid(o,'say',r.body.error||'It was not sent.');
-      else { ridDone(o.id+':say'); tapSaid(o,'say',''); if(draft.says) delete draft.says[o.id]; await loadOrders(); if(mine!==ticket) return; }
-      drawOrder();
+      if(!t) return;
+      if(oTap(o).k==='say') tapSaid(o,'say','');
+      said.textContent=''; said.hidden=true;
+      var wd=oWords(t), q=oOut(o.id);
+      var x={t:t, w:wd, n:oSame(oFind(o.id)||o,wd)+q.filter(function(y){ return y.w===wd; }).length, at:new Date().toISOString(), state:'sending', rid:mintRid(), why:''};
+      q.push(x);
+      si.value=''; if(draft.says) delete draft.says[o.id];
+      oSend(o.id,x);
     });
-    sayw.appendChild(si); sayw.appendChild(sg);
-    if(!view) pane.appendChild(sayw);
-    if(tk==='say') pane.appendChild(statusLine(tap.t));
-    var hist=el('ul','hist');
-    (o.history||[]).forEach(function(h){ var li=el('li',null,stamp(h.at)+'  '+evWord(h)+(h.method?', paying by '+methodWord(h.method,h.account):'')+(h.note?': '+h.note:'')); hist.appendChild(li); });
-    pane.appendChild(hist);
-    return pane;
+    w.appendChild(f); w.appendChild(said);
+    return w;
+  }
+  /* REFUSED, IT WILL BE REFUSED AGAIN (their twenty lines, a lapsed session): the words go back in the box, ahead of
+     anything typed since, and the reason stands under it. Only a line the network lost is offered again. */
+  function oRefused(id,x,why){
+    var q=oOut(id), i=q.indexOf(x); if(i>=0) q.splice(i,1);
+    var says=(draft.says=draft.says||{}); says[id]=says[id]?x.t+' '+says[id]:x.t;
+    tapSaid({id:id},'say',why||'It was not sent.');
+    var s=pOrder.querySelector('.oscreen[data-order="'+id+'"]'), inp=s&&s.querySelector('input[data-say]'), st=s&&s.querySelector('[data-said]');
+    if(inp) inp.value=says[id];
+    if(st){ st.textContent=draft.tap.t; st.hidden=false; }
+    oPart(id,'thread');
+  }
+  /* one part of the open screen drawn again, and nothing else on it */
+  function oPart(id,k){
+    var s=pOrder.querySelector('.oscreen[data-order="'+id+'"]'), o=oFind(id); if(!s||!o) return;
+    var was=[].filter.call(s.children,function(c){ return c.getAttribute('data-part')===k; })[0]; if(!was) return;
+    var n=OPARTS[k](o); n.setAttribute('data-part',k); n.hidden=!n.childNodes.length; was.replaceWith(n);
+  }
+  async function oSend(id,x){
+    var mine=ticket; x.state='sending'; x.why=''; oPart(id,'thread');
+    var r=await api('/orders/'+encodeURIComponent(id)+'/say',{text:x.t,rid:x.rid});
+    if(mine!==ticket) return;
+    if(r.body&&r.body.ok){
+      if(r.body.order&&r.body.order.id===id) oPut(r.body.order); else { await loadOrders(); if(mine!==ticket) return; }
+      var q=oOut(id), i=q.indexOf(x); if(i>=0) q.splice(i,1);
+      oPart(id,'thread');
+    } else {
+      var e=String((r.body&&r.body.error)||'').replace(/^Not sent[.] */,''), why=e&&e.charAt(0).toUpperCase()+e.slice(1);
+      if(r.status&&r.status<500){ oRefused(id,x,why); return; }
+      x.state='failed'; x.why=why; oPart(id,'thread');
+    }
+  }
+  /* WHAT HAPPENED, STEP BY STEP, folded: the record, under the thread a reader came back for */
+  function oHist(o){
+    var w=el('div','ohist'), h=o.history||[];
+    if(!h.length) return w;
+    var dt=el('details','salt-plan'); dt.open=!!(draft.oHist||{})[o.id];
+    dt.addEventListener('toggle',function(){ (draft.oHist=draft.oHist||{})[o.id]=dt.open; });
+    var sm=el('summary'); sm.appendChild(el('span','salt-plan__id',String(h.length))); sm.appendChild(el('span','salt-plan__title','What happened, step by step'));
+    dt.appendChild(sm);
+    var b=el('div','salt-plan__body'), ul=el('ul');
+    h.forEach(function(x){ ul.appendChild(el('li',null,stamp(x.at)+'  '+histLine(x,o))); });
+    b.appendChild(ul); dt.appendChild(b); w.appendChild(dt);
+    return w;
+  }
+  /* v694: either side may cancel at any stage until the goods move (his rule, 18 Sep 2026) */
+  function oFoot(o){
+    var f=el('div','ofoot'), tp=oTap(o);
+    if(view||!(oPayable(o)||o.status==='placed')) return f;
+    if(+o.moved>0) f.appendChild(el('p','sub2','The goods are with you, so this can no longer be cancelled here.'));
+    else {
+      var wb=el('button','salt-ghost salt-ghost--danger','Cancel this order'); wb.type='button';
+      wb.addEventListener('click', async function(){
+        var cur=oFind(o.id)||o, paid=+cur.paid||0;
+        if(!confirm(paid>0?'Cancel this order? The '+rm(paid)+' you paid is refunded.':'Cancel this order?')) return;
+        var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel','')});
+        if(mine!==ticket) return;
+        if(r.body.ok) ridDone(o.id+':cancel');
+        tapSaid(o,'withdraw',r.body.ok?'':(r.body.error||'It could not be cancelled.'));
+        await loadOrders(); if(mine!==ticket) return; oDraw();
+      });
+      f.appendChild(wb);
+      if(tp.k==='withdraw'&&tp.t) f.appendChild(statusLine(tp.t));
+    }
+    return f;
+  }
+  var OPARTS={head:oHead, steps:oSteps, when:oWhen, money:oMoney, act:oAct, thread:oThread, say:oSay, hist:oHist, foot:oFoot};
+  function oScreen(o){
+    var s=el('section','oscreen salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm'); s.setAttribute('data-order',o.id);
+    s.setAttribute('aria-label','Your order of '+unitsOf(o.qty,oUnit(o))+', '+oDay(o.at));
+    var back=el('button','salt-ghost salt-ghost--tight oback','Your orders'); back.type='button';
+    back.addEventListener('click',function(){ var id=draft.oOpen; draft.oOpen=''; oDraw(); scrollClear(pOrder.querySelector('[data-row="'+id+'"]')); });
+    s.appendChild(back);
+    Object.keys(OPARTS).forEach(function(k){ var p=OPARTS[k](o); p.setAttribute('data-part',k); p.hidden=!p.childNodes.length; s.appendChild(p); });
+    return s;
+  }
+  /* on a phone the open order is the whole tab, with the way back at its head */
+  function oPlace(){
+    var id=oShownId(), o=oFind(id), open=!!(draft.oOpen&&o), place=el('div','oplace'+(open?' o-open':''));
+    place.id='oPlace';
+    pOrder.classList.toggle('o-open',open);
+    /* New is read against what this device had seen when the order was opened, and stays until it is left; the
+       list is drawn after the open order is seen, so its row does not call a reply on screen waiting */
+    if(draft.oShown!==id){ draft.oShown=id; draft.oSince={}; }
+    draft.oStale='';
+    if(o&&!(id in draft.oSince)) draft.oSince[id]=seenMark(o);
+    if(o) seeIt(o);
+    var col=el('div','olistcol'); col.appendChild(el('h2',null,'Your orders')); col.appendChild(oList(id));
+    place.appendChild(col);
+    if(o) place.appendChild(oScreen(o));
+    return place;
+  }
+  function oDraw(){ var was=document.getElementById('oPlace'); if(was) was.replaceWith(oPlace()); }
+  /* S5 5.5: the orders that changed, patched where they stand. The list keeps every row that did not change; a row
+     that did is drawn again and keeps the focus, holding nothing typed. The open order keeps any part holding the
+     focus, and draft.oStale has the next poll draw it once the focus has left; a part that reads the same is left
+     as it is, which is always the composer. Only an order opened or gone draws the place again. */
+  function oShape(list){ return [].map.call(list.children,function(x){ return x.getAttribute('data-row')||x.textContent; }).join('|'); }
+  function oSync(ids){
+    var place=document.getElementById('oPlace'); if(!place) return;
+    var shown=oShownId(), scr=place.querySelector('.oscreen'), sid=scr?scr.getAttribute('data-order'):'';
+    if(sid!==shown){ oDraw(); return; }
+    var ae=document.activeElement;
+    if(scr&&ids.indexOf(sid)>=0){
+      var o=oFind(sid);
+      seeIt(o);
+      draft.oStale='';
+      Object.keys(OPARTS).forEach(function(k){
+        var p=[].filter.call(scr.children,function(c){ return c.getAttribute('data-part')===k; })[0];
+        if(!p) return;
+        var n=OPARTS[k](o); n.setAttribute('data-part',k); n.hidden=!n.childNodes.length;
+        if(n.outerHTML===p.outerHTML) return;
+        if(p.contains(ae)) draft.oStale=sid; else p.replaceWith(n);
+      });
+    }
+    var was=place.querySelector('[data-olist]'), nl=oList(shown);
+    if(was&&oShape(was)!==oShape(nl)){
+      var fr=ae&&was.contains(ae)?ae.getAttribute('data-row'):null;
+      was.replaceWith(nl);
+      var fb=fr&&nl.querySelector('[data-row="'+fr+'"]'); if(fb) try{ fb.focus({preventScroll:true}); }catch(e){}
+    } else if(was) ids.forEach(function(id){
+      var r=was.querySelector('[data-row="'+id+'"]'), n=nl.querySelector('[data-row="'+id+'"]');
+      if(!r||!n||r.outerHTML===n.outerHTML) return;
+      var had=r.contains(ae); r.replaceWith(n);
+      if(had) try{ n.focus({preventScroll:true}); }catch(e){}
+    });
+  }
+  /* an order drawn open while the tab was elsewhere is seen when the tab is turned to */
+  tabs.addEventListener('click',function(){ var o=tab==='order'&&oFind(draft.oShown||''); if(o){ seeIt(o); oSync([o.id]); } });
+  /* the order already open is brought into view and seen, and its row patched: drawn again, it would lose what is
+     being typed in it. A banner's tap comes here too, on an order the desk opened by itself or one left open. */
+  function oOpen(id){
+    draft.oAuto=false;
+    if(draft.oOpen!==id||!pOrder.querySelector('.oscreen[data-order="'+id+'"]')){ draft.oOpen=id; oDraw(); }
+    else { seeIt(oFind(id)); oSync([id]); }
+    scrollClear(pOrder.querySelector('.oscreen'));
+  }
+  /* clear of the sticky bar, which would otherwise sit over what was opened */
+  function scrollClear(n){
+    if(!n) return; var bw=document.getElementById('barw');
+    try{ n.style.scrollMarginTop=Math.ceil((bw&&!bw.hidden?bw.getBoundingClientRect().bottom:0)+12)+'px'; n.scrollIntoView({block:'start'}); }catch(e){}
   }
   var METHOD_WORDS={cod:'cash on handover', transfer:'DuitNow Transfer', qr:'DuitNow QR', jompay:'JomPAY', tngbiz:"Touch 'n Go Business"};
   function acct(key){ return PAY.filter(function(a){return a.key===key;})[0]; }
@@ -2160,10 +2528,23 @@ const CLIENT_JS = `
     if(r.status===401) return;   /* api() has said so in the bar */
     if(r.body.ok) orders=r.body.orders||[];
   }
-  async function refresh(){
-    var before=JSON.stringify(orders);
+  /* S5 5.5 (24 Sep 2026): A RE-READ PATCHES WHAT CHANGED AND NOTHING ELSE. It drew the whole tab again, the order
+     form and every order with it, so a poll bringing any change to any order took the box being typed in and the
+     caret with it (v827 put the words back; the element was still new). Now the orders are compared one by one,
+     and only the rows and the parts of the open order that changed are drawn again. A return to the page and a lapse
+     reopened (S3 3.5) come this way too; only an account that now draws the form above differently draws the tab. */
+  async function oReread(){
+    var before={}, mine=ticket; orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
     await loadOrders();
-    if(JSON.stringify(orders)!==before) drawOrder();
+    if(mine!==ticket) return;
+    if(document.getElementById('oPlace')&&formSig()!==drawnSig){ drawOrder(); return; }
+    var changed=orders.filter(function(o){ return before[o.id]!==JSON.stringify(o); }).map(function(o){ return o.id; }),
+        gone=Object.keys(before).some(function(id){ return !oFind(id); });
+    if(draft.oStale&&changed.indexOf(draft.oStale)<0) changed.push(draft.oStale);
+    if(changed.length||gone) oSync(changed);
+  }
+  async function refresh(){
+    await oReread();
     if(++bullN%6===0) await bullRead();   /* the bulletin, once a minute on an open page */
   }
 
@@ -2177,14 +2558,12 @@ const CLIENT_JS = `
     /* a lapsed session keeps the order for the sign-in after Continue: a banner comes hours after the fifteen
        minutes, and spending it on the list drawn last showed the order stale, then lost it at the door */
     if(!wantOrder||view||!session||!lapse.hidden) return;
-    var id=wantOrder, pane=[].filter.call(pOrder.querySelectorAll('[data-order]'),function(x){ return x.getAttribute('data-order')===id; })[0];
+    var id=wantOrder;
     wantOrder='';
     try{ if(location.hash) history.replaceState(null,'',location.pathname+location.search); }catch(e){}
-    if(!pane) return;
+    if(!oFind(id)) return;
     showTab('order');
-    /* clear of the sticky bar, which would otherwise sit over the order's state */
-    var bw=document.getElementById('barw');
-    try{ pane.style.scrollMarginTop=Math.ceil((bw&&!bw.hidden?bw.getBoundingClientRect().bottom:0)+12)+'px'; pane.scrollIntoView({block:'start'}); }catch(e){}
+    oOpen(id);
   }
   try{
     if(!OWNER&&'serviceWorker' in navigator&&navigator.serviceWorker.addEventListener)
@@ -2194,9 +2573,9 @@ const CLIENT_JS = `
         wantOrder=orderIn('#o='+(d.order||''));
         if(!session) return;   /* at the door: it opens once they are in */
         var mine=ticket;
-        await loadOrders();
+        await oReread();
         if(mine!==ticket) return;
-        drawOrder();
+        openWanted();
       });
   }catch(e){ /* a browser that will not listen still opens the page */ }
 
@@ -2361,9 +2740,8 @@ const CLIENT_JS = `
       var x=await openBeside(r.body, ck, b);
       if(mine!==ticket) return;
       enter(user, {session:session}, b, x, ck, true);
-      await loadOrders();
-      if(mine!==ticket) return;
-      drawOrder();
+      /* S5 5.5: patched, so the order open and a line half typed in it survive the return */
+      await oReread();
     }catch(e){ /* what is on screen stays, and the next return tries again */ }
     finally{ rereading=false; }
   }

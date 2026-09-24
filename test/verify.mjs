@@ -14277,7 +14277,7 @@ await (async () => {
   await kv.put("roster", JSON.stringify([{ code: "CX0-AA", username: u }]));
   const oid = "20260921010000-abcd", at = "2026-09-21T01:00:00Z";
   await kv.put("order:" + u + ":" + oid, JSON.stringify({ id: oid, u, at, status: "acknowledged", product: "salt", qty: 1, total: 150, delivery: 0,
-    mode: "collect", paid: 0, payments: [], moved: 0, movedOn: null, msgs: [{ at, by: "customer", text: "When can I collect" }],
+    mode: "collect", paid: 0, payments: [], moved: 0, movedOn: null, msgs: [{ at, by: "customer", text: "When can I collect" }, { at: "2026-09-21T02:00:00Z", by: "desk", text: "After six is fine" }],
     history: [{ at, status: "placed", by: "customer" }, { at, status: "acknowledged", by: "desk" }] }));
   const TEAM = "maakmal", AUD = "aud-s1-21", KID = "kid-s1-21";
   const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
@@ -14327,14 +14327,20 @@ await (async () => {
     ok(await until(() => [...D.querySelectorAll("#aopen button")].some((b) => b.textContent === "View as them")), "the row opens its card");
     [...D.querySelectorAll("#aopen button")].find((b) => b.textContent === "View as them").click();
     const pOrder = D.getElementById("pOrder");
-    ok(await until(() => pOrder.querySelectorAll(".pane .quote").length >= 1),
-      "the account opens and its order is drawn from his route, not None yet: " + JSON.stringify(pOrder.textContent.slice(0, 160)));
-    const words = [...pOrder.querySelectorAll("button, a")].map((b) => b.textContent);
-    ok(/RM\s*150/.test(pOrder.textContent) && /When can I collect/.test(pOrder.textContent) && /Acknowledged/.test(pOrder.textContent) && !/None yet/.test(pOrder.textContent),
-      "the order reads as their page shows it, with its thread and its state: " + JSON.stringify(pOrder.textContent.replace(/\s+/g, " ").slice(0, 200)));
-    ok(!pOrder.querySelector("input, select, textarea") && !words.some((t) => /Review this order|Place|Notify me|Confirm|I have paid|Withdraw|Send/.test(t))
+    ok(await until(() => pOrder.querySelector("[data-row]")),
+      "the account opens and its order is listed from his route, not None yet: " + JSON.stringify(pOrder.textContent.slice(0, 160)));
+    /* S5: an order is a row that opens its own screen, on his view as on theirs */
+    pOrder.querySelector("[data-row]").click();
+    const scr = pOrder.querySelector(".oscreen") || pOrder;
+    const words = [...pOrder.querySelectorAll("button, a")].filter((b) => !b.hasAttribute("data-row") && !b.classList.contains("oback") && !b.classList.contains("olater")).map((b) => b.textContent);
+    ok(/RM\s*150/.test(scr.textContent) && /When can I collect/.test(scr.textContent) && /Confirmed/.test(scr.textContent) && !/None yet/.test(pOrder.textContent),
+      "the order reads as their page shows it, with its thread and its state: " + JSON.stringify(scr.textContent.replace(/\s+/g, " ").slice(0, 200)));
+    ok(!pOrder.querySelector("input, select, textarea") && !words.some((t) => /Review this order|Place|Notify me|Confirm|I have paid|Pay RM|Cancel|Withdraw|Send/.test(t))
       && ![...pOrder.querySelectorAll("h3")].some((x) => /Notifications/.test(x.textContent)),
       "and it is read only: no order form, no Notify me, no pay, withdraw or message control: " + JSON.stringify(words));
+    ok(!win.localStorage.getItem("salt-stmt-seen") && !pOrder.querySelector(".salt-bubble__new") && /After six is fine/.test(scr.textContent)
+      && !/reply for you/i.test(pOrder.querySelector("[data-row]").textContent),
+      "and it marks nothing seen or New: what their phone has shown is not on his, and his route leaves nothing on his phone (S5 5.4)");
     ok(hits.includes("GET /all/orders/" + u) && !hits.some((x) => /^POST \/(orders|push|my\/refs)|^GET \/(orders|my\/refs)$/.test(x)),
       "it read through his route and never through the customer's session routes: " + JSON.stringify(hits));
     D.getElementById("tCard").click();
@@ -16706,7 +16712,7 @@ await (async () => {
   try {
     D.getElementById("pw").value = passC;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-    await wait(() => btn("Review this order") && btn("Send"));
+    await wait(() => btn("Review this order") && D.querySelector("#pOrder [data-row]"));
     btn("Review this order").click();
     await wait(() => btn("Place this order"));
     btn("Place this order").click();
@@ -16716,14 +16722,16 @@ await (async () => {
     ok(!!place && !place.disabled && !!change && !change.disabled && !!noteNear(place),
       "Place this order is given back after a dropped request, and Not sent is said beside it: "
       + JSON.stringify({ place: place && place.disabled, change: change && change.disabled, note: !!(place && noteNear(place)) }));
-    const pane = btn("Send").closest(".pane");
-    pane.querySelector("input[aria-label='Write about this order']").value = "is it ready";
-    btn("Send").click();
-    await wait(() => [...D.querySelectorAll("#pOrder .pane")].some((x) => x.querySelector("p.msg") && x.contains(btn("Send")) && x.textContent.includes(NS)));
-    const send = btn("Send"), near = send && noteNear(send);
-    ok(!!send && !send.disabled && !!near && near.closest(".pane") === send.closest(".pane") && near.previousElementSibling && near.previousElementSibling.contains(send),
-      "Send on an order is given back too, and Not sent is said beside it, in that order's own pane: "
-      + JSON.stringify({ send: send && send.disabled, near: !!near }));
+    /* S5 5.4: a line is sent from the order's own screen, and a dropped one stands in its thread as Not sent */
+    D.querySelector('#pOrder [data-row="' + oid + '"]').click();
+    const scr = D.querySelector("#pOrder .oscreen"), box = scr && scr.querySelector("input[aria-label='Write about this order']");
+    if (box) { box.value = "is it ready"; box.form.requestSubmit(); }
+    await wait(() => scr && scr.querySelector(".salt-bubble--failed"));
+    const send = btn("Send"), failed = scr && scr.querySelector(".salt-bubble--failed");
+    ok(!!send && !send.disabled && !!failed && /Not sent/.test(failed.textContent) && /Check your connection/.test(failed.textContent)
+      && !!failed.querySelector("button.salt-bubble__retry") && failed.closest(".oscreen") === send.closest(".oscreen"),
+      "Send on an order is given back too, and Not sent is said on the line itself, in that order's own thread: "
+      + JSON.stringify({ send: send && send.disabled, failed: failed && failed.textContent }));
     ok(!errs.length, "and nothing is left unhandled: " + JSON.stringify(errs));
   } finally { try { W.close(); } catch (e) { /* best effort */ } process.off("unhandledRejection", onRej); }
 })();
@@ -16851,17 +16859,20 @@ await (async () => {
     await until(() => btn("Place this order")); btn("Place this order").click();
     await until(() => lapseOn() && said().length);
     const placed = said();
-    ok(lapseOn() && placed.some((t) => /^Not sent: you were signed out on this (phone|computer)[.] Sign in to carry on[.]$/.test(t)) && !placed.some((t) => /Sign in again|session has ended/.test(t)),
+    const lapsedLine = (t) => /^Not sent: you were signed out on this (phone|computer)[.] Sign in to carry on[.]$/.test(t);
+    ok(lapseOn() && placed.some(lapsedLine) && !placed.some((t) => /Sign in again|session has ended/.test(t)),
       "Place answered 401 with nothing remembered: the Sheet and the bar say it, and beside Place a pointer to them, never a second wording: " + JSON.stringify(placed));
+    /* S5 5.4: the line is sent from the order's own screen; refused, its words go back in the box and the answer
+       stands under it (the stage 5 review: a refusal is not offered again) */
+    D.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
     const box = D.querySelector('#pOrder input[data-say="' + ord.id + '"]');
-    box.value = "is it ready"; box.dispatchEvent(new W.Event("input", { bubbles: true }));
-    const send = [...D.querySelectorAll("#pOrder button")].find((b) => b.textContent === "Send");
-    send.click();
-    const pointers = () => said().filter((t) => /^Not sent: you were signed out on this (phone|computer)[.] Sign in to carry on[.]$/.test(t)).length;
-    await until(() => pointers() >= 2);
+    if (box) { box.value = "is it ready"; box.dispatchEvent(new W.Event("input", { bubbles: true })); box.form.requestSubmit(); }
+    const underBox = () => [...D.querySelectorAll('#pOrder .oscreen [data-part="say"] [role=status]')].filter((x) => !x.hidden).map((x) => x.textContent);
+    await until(() => underBox().length);
     const sent = said();
-    ok(pointers() === 2 && !sent.some((t) => /Sign in again|session has ended/.test(t)),
-      "and so does Send: " + JSON.stringify(sent));
+    ok(underBox().length === 1 && lapsedLine(underBox()[0]) && sent.filter(lapsedLine).length === 2 && !!box && box.value === "is it ready"
+      && !D.querySelector("#pOrder .salt-bubble--failed") && !sent.some((t) => /Sign in again|session has ended/.test(t)),
+      "and so does Send, under the box its words are back in: " + JSON.stringify(sent));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
 section("S1 1.9: Notify me waits for the service worker to be ready, and a failure is said in plain words");
@@ -17915,9 +17926,10 @@ await (async () => {
   try {
     D.getElementById("pw").value = passS;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 200 && !/placed 20 /.test(D.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 25));
+    for (let i = 0; i < 200 && !D.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 25));
+    const row = D.querySelector("#pOrder [data-row]"); if (row) row.click();   /* S5: the order's own screen carries its stamps */
     const txt = D.getElementById("pOrder").textContent;
-    ok(txt.includes("placed 20 Sep, 09:02") && txt.includes("21 Sep, 01:30") && !FOUR.test(txt),
+    ok(txt.includes("Ordered 20 Sep, 09:02") && txt.includes("21 Sep, 01:30") && !FOUR.test(txt),
       "the customer's page stamps an order and its history with Sep, in Kuala Lumpur time: " + JSON.stringify((txt.match(/\d\d Sep[a-z]*, \d\d:\d\d/g) || [])));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 
@@ -18060,11 +18072,14 @@ await (async () => {
       && /Price coming soon\./.test(soon95[0].textContent),
       "a product with no price yet is a mark as well, and one with no mark of its own falls back to the ring");
     /* and the card that reports an order, where the product used to be written twice */
-    for (let i = 0; i < 60 && !d95.querySelector("#pOrder .pane .state"); i++) await new Promise((r) => setTimeout(r, 50));
-    const card95 = d95.querySelector("#pOrder .pane .state") && d95.querySelector("#pOrder .pane .state").closest(".pane");
-    ok(card95 && card95.querySelector(".pwith svg.psym") && /Droplet/.test(card95.textContent)
-      && !/\b(salt|oil)\b/i.test(card95.textContent),
-      "an order's own card carries the mark of what was ordered and never its name: " + JSON.stringify(card95 && card95.textContent.slice(0, 60)));
+    for (let i = 0; i < 60 && !d95.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 50));
+    /* S5: the order is a row, and the row opens the order's own screen: both carry the mark */
+    const row95 = d95.querySelector("#pOrder [data-row]");
+    if (row95) row95.click();
+    const card95 = d95.querySelector("#pOrder .oscreen");
+    ok(row95 && row95.querySelector(".pwith svg.psym") && /Droplet/.test(row95.textContent) && card95 && card95.querySelector("h3 svg.psym") && /Droplet/.test(card95.textContent)
+      && !/\b(salt|oil)\b/i.test(card95.textContent + " " + row95.textContent),
+      "an order's row and its own screen carry the mark of what was ordered and never its name: " + JSON.stringify(card95 && card95.textContent.slice(0, 60)));
     /* text node by text node (25 Sep 2026): textContent runs a heading into the next line, and "GaramGood" hides a word */
     const nodes95 = (el) => { const tw = d95.createTreeWalker(el, 4), s = []; while (tw.nextNode()) s.push(tw.currentNode.nodeValue); return s.join(" "); };
     const words95 = nodes95(d95.getElementById("pPrices")) + " " + nodes95(d95.getElementById("pOrder"));
@@ -21400,9 +21415,11 @@ await (async () => {
   const envOf = (ck, t) => CV.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>" + t + "</p>" }] }));
   const envA = await envOf(ckA, "A"), envB = await envOf(ckB, "B");
   const recOf = (u, dev) => JSON.stringify({ t: u[0].repeat(32), k: Buffer.from(dev).toString("base64"), u });
+  /* S5 over S3 (the merge of 25 Sep 2026): what this phone has seen, which the kept account's orders are in */
+  const SEEN0 = JSON.stringify({ t: "2026-09-20T00:00:00.000Z", o: { "20260920000000-aaaa": "2026-09-21T00:00:00.000Z" } });
   const drive = async (path, rec, answer) => {
     const st = { posted: null, unsubscribed: false };
-    const store = new Map([["salt-stmt-remember", rec]]);
+    const store = new Map([["salt-stmt-remember", rec], ["salt-stmt-seen", SEEN0]]);
     const dom = new JDV(lpV("", "nV", null), { url: "https://site.test" + path, runScripts: "dangerously", pretendToBeVisual: true,
       beforeParse(win) {
         try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
@@ -21442,9 +21459,9 @@ await (async () => {
     D.getElementById("lock").click();
     await until(() => st.posted);
     await new Promise((r) => setTimeout(r, 40));
-    const kept = store.get("salt-stmt-remember") || null;
+    const kept = store.get("salt-stmt-remember") || null, seen = store.get("salt-stmt-seen") || null;
     W.close();
-    return { st, kept, onScreen };
+    return { st, kept, onScreen, seen };
   };
 
   const v = await drive("/s/" + tokL, recOf(uA, devA), "askNo");
@@ -21454,10 +21471,12 @@ await (async () => {
     "and names no remembered token to the site, so A's wrap stays there, dropping only B's session: " + JSON.stringify(v.st.posted));
   ok(!v.st.unsubscribed && v.st.posted.body.endpoint === ep,
     "and keeps this phone subscribed for A, naming the endpoint so the site drops B's record alone");
+  ok(v.seen === SEEN0, "and keeps the record of what this phone has seen, which is A's as well (S5): " + v.seen);
 
   const own = await drive("/", recOf(uB, devB), null);
   ok(own.onScreen === "B" && own.kept === null && own.st.posted.body.token === "b".repeat(32) && own.st.unsubscribed,
     "the control: Log out of the account the phone remembers forgets it, drops its wrap on the site and unsubscribes: " + JSON.stringify({ kept: own.kept, posted: own.st.posted.body }));
+  ok(own.seen === null, "and takes the record of what this phone has seen with it, so the next account starts its own (S5): " + own.seen);
 })();
 section("S3 fix: a link whose answer was lost still opens after a reload of the same tab, its peek carrying the tab's nonce");
 await (async () => {
@@ -23683,7 +23702,11 @@ await (async () => {
     ok(sz.length === 2 && sz[0][1] === 1 && sz[1][1] === 2 && O.RID_RE.test(sz[1][0] || "") && sz[1][0] !== sz[0][0],
       "a size changed after 'not placed' goes under a new id, never as a repeat of the order before: " + JSON.stringify(sz));
     placeOk = true;
-
+    /* S5 5.2: the ways to pay open from the order's own screen, behind its one Pay */
+    await until(() => d.querySelector('#pOrder [data-row="' + ord.id + '"]'));
+    d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
+    const payNow = () => [...d.querySelectorAll("#pOrder button")].find((b) => /^Pay RM/.test(b.textContent));
+    await until(payNow); if (payNow()) payNow().click();
     const payTap = async (n) => { await until(() => d.getElementById("pd-" + ord.id) && !d.getElementById("pd-" + ord.id).disabled);
       d.getElementById("pd-" + ord.id).click(); await until(() => sent.pay.length === n); };
     await payTap(1); await payTap(2);
@@ -23843,19 +23866,22 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => ticks.length > 0);
     d.querySelector('button[data-t="order"]').click();
-    await until(() => d.querySelectorAll("#pOrder .sayw input").length === 2);
-    const box = d.querySelectorAll("#pOrder .sayw input")[0];
+    /* S5 5.5: the order open, its thread part and its box held; a poll patches only a part that changed */
+    await until(() => d.querySelector('#pOrder [data-row="' + second + '"]'));
+    d.querySelector('#pOrder [data-row="' + second + '"]').click();
+    const box = d.querySelector('#pOrder input[data-say="' + second + '"]');
+    const thread = () => d.querySelector('#pOrder .oscreen [data-part="thread"]'), thread0 = thread();
     box.focus(); box.value = "half typed";
     await call("/desk/orders/" + un + "/" + second, { mark: { ledgerKey: "CX1-AB|2026-09-24|130", ack: "2026-09-24T02:00:00.000Z",
       sync: { state: "waiting", why: "the row is not on the book yet", at: "2026-09-24T02:00:00.000Z" } } }, D);
     const poll = ticks[ticks.length - 1];
     await poll();
-    ok(ticks.length > 0 && d.contains(box) && d.activeElement === box && box.value === "half typed",
-      "a mark the desk wrote on their order leaves the page alone: the thread box keeps its line and the cursor");
+    ok(ticks.length > 0 && d.contains(box) && d.activeElement === box && box.value === "half typed" && thread() === thread0,
+      "a mark the desk wrote on their order leaves the page alone: the thread is not drawn again, and the box keeps its line and the cursor");
     await call("/desk/orders/" + un + "/" + second, { message: "it is ready" }, D);
     await poll();
-    ok(!d.contains(box) && /it is ready/.test(d.getElementById("pOrder").textContent),
-      "while a change they can see, his answer, still redraws it, so the check above could have failed");
+    ok(thread() !== thread0 && /it is ready/.test(thread().textContent) && d.contains(box) && box.value === "half typed",
+      "while a change they can see, his answer, draws the thread again, so the check above could have failed, and the box is still left alone");
   } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
 })();
 
@@ -23938,6 +23964,10 @@ await (async () => {
       d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
       for (let i = 0; i < 150 && !d.querySelector('button[data-t="order"]'); i++) await new Promise((r) => setTimeout(r, 20));
       d.querySelector('button[data-t="order"]').click();
+      /* S5 5.2: the ways to pay open from the order's own screen, behind its one Pay */
+      for (let i = 0; i < 150 && !d.querySelector('#pOrder [data-row="' + o.id + '"]'); i++) await new Promise((r) => setTimeout(r, 20));
+      const row = d.querySelector('#pOrder [data-row="' + o.id + '"]'); if (row) row.click();
+      const pay = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
       for (let i = 0; i < 150 && !d.querySelector('#pOrder input[name="pm-' + o.id + '"]'); i++) await new Promise((r) => setTimeout(r, 20));
       return [...d.querySelectorAll('#pOrder input[name="pm-' + o.id + '"]')].map((r) => r.value);
     } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
@@ -24173,26 +24203,32 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => d.querySelector('button[data-t="order"]'));
     d.querySelector('button[data-t="order"]').click();
+    /* S5: the order's own screen, and its ways to pay behind its one Pay */
+    await until(() => d.querySelector('#pOrder [data-row="' + ord.id + '"]'));
+    d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
+    const payNow = () => [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent));
+    await until(payNow); if (payNow()) payNow().click();
     await until(() => d.querySelector('#pOrder input[name="pm-' + ord.id + '"][value="tngbiz"]'));
     const r = d.querySelector('#pOrder input[name="pm-' + ord.id + '"][value="tngbiz"]');
     r.checked = true; r.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
     await tap("Confirm", "method", 1); await tap("Confirm", "method", 2);
     const say = () => d.querySelector('#pOrder input[data-say="' + ord.id + '"]');
     const type = async (t) => { await until(say); say().value = t; say().dispatchEvent(new dom.window.Event("input", { bubbles: true })); };
-    await type("is it ready?"); await tap("Send", "say", 1); await type("is it ready?"); await tap("Send", "say", 2);
+    /* S5 5.4: a line that did not go stands in the thread, and Tap to try again sends it again under its own id */
+    await type("is it ready?"); await tap("Send", "say", 1); await tap("Tap to try again", "say", 2);
     await type("is it ready now?"); await tap("Send", "say", 3);
-    await tap("Withdraw this order", "cancel", 1); await tap("Withdraw this order", "cancel", 2);
+    await tap("Cancel this order", "cancel", 1); await tap("Cancel this order", "cancel", 2);
     pass = true;
-    await tap("Withdraw this order", "cancel", 3); await tap("Withdraw this order", "cancel", 4);
+    await tap("Cancel this order", "cancel", 3); await tap("Cancel this order", "cancel", 4);
     await type("thanks"); await tap("Send", "say", 4); await type("thanks"); await tap("Send", "say", 5);
     const ids = (k) => sent[k].map((x) => x && x.rid);
     const good = (a) => a.every((x) => O.RID_RE.test(x || ""));
     const mi = ids("method"), si = ids("say"), ci = ids("cancel");
     ok(good(mi) && mi.length === 2 && mi[1] === mi[0], "Confirm sends an id, and tapped again after it failed, the same one: " + JSON.stringify(mi));
     ok(good(si) && si.length === 5 && si[1] === si[0] && si[2] !== si[0] && si[4] !== si[3],
-      "Send sends an id per line: the same line again carries it, another line a new one, and a line once recorded never lends its id to the next: " + JSON.stringify(si));
+      "Send sends an id per line: the same line tried again carries it, another line a new one, and a line once recorded never lends its id to the next: " + JSON.stringify(si));
     ok(good(ci) && ci.length === 4 && ci[1] === ci[0] && ci[2] === ci[0] && ci[3] !== ci[0],
-      "Withdraw sends an id, carries it through every retry, and drops it once recorded: " + JSON.stringify(ci));
+      "Cancel sends an id, carries it through every retry, and drops it once recorded: " + JSON.stringify(ci));
   } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
 })();
 
@@ -25238,6 +25274,902 @@ await (async () => {
   ok(!/On this order/.test(quiet), "and an order nobody wrote on draws no thread at all");
 })();
 
+section("S5 5.1: the orders are rows, what needs them first, and the earlier ones folded and not drawn until opened");
+await (async () => {
+  /* 24 SEP 2026, the Counter redesign's stage 5. Every order was a pane with its whole thread, its pay controls
+     and its history, drawn in the order it was placed and drawn again on every poll: a customer with sixty
+     orders built sixty panes to find the one that needed them. Driven through the served page. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s51", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s51",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const o = (id, at, x) => Object.assign({ id, at, product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 0, moved: 0,
+    status: "placed", history: [{ at, status: "placed", by: "customer" }], msgs: [] }, x);
+  const OPEN = "20260924090000-open", OWES = "20260923090000-owes", SAID = "20260922090000-said", DONE = "20260901090000-done", GONE = "20260902090000-gone";
+  const orders = [o(OPEN, "2026-09-24T01:00:00Z"), o(OWES, "2026-09-23T01:00:00Z", { status: "acknowledged" }),
+    o(SAID, "2026-09-22T01:00:00Z", { status: "acknowledged", paid: 90, msgs: [{ at: "2026-09-22T02:00:00Z", by: "desk", text: "Ready on Friday." }] }),
+    o(DONE, "2026-09-01T01:00:00Z", { status: "done", paid: 90, moved: 1 }), o(GONE, "2026-09-02T01:00:00Z", { status: "cancelled" })];
+  const dom = new JSDOM(landingPage(u, "n51", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : { ok: true };
+      return { ok: true, status: 200, json: async () => j };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const list = () => d.querySelector("#pOrder [data-olist]");
+  const seq = () => [...list().children].map((x) => x.getAttribute("data-row") || x.textContent);
+  const row = (id) => d.querySelector('#pOrder [data-row="' + id + '"]');
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !list(); i++) await new Promise((r) => setTimeout(r, 50));
+    d.querySelector('#tabs button[data-t="order"]').click();
+    const s0 = seq();
+    ok(s0[0] === "Needs you" && s0[1] === OWES && s0[2] === SAID && s0[3] === "Open" && s0[4] === OPEN
+      && /RM 90 to pay/.test(row(OWES).textContent) && /A reply for you/.test(row(SAID).textContent),
+      "Needs you comes first, with the order that has money to pay and the one with a reply not yet read, then Open: " + JSON.stringify(s0));
+    const fold = list().querySelector("button.olater");
+    ok(!!fold && fold.textContent === "2 earlier orders" && fold.getAttribute("aria-expanded") === "false"
+      && !row(DONE) && !row(GONE) && s0.length === 6 && s0[5] === "2 earlier orders",
+      "the two closed orders are one fold at the foot, and nothing of them is drawn: " + JSON.stringify(s0));
+    fold.click();
+    const f2 = list().querySelector("button.olater");
+    ok(f2 && f2.getAttribute("aria-expanded") === "true" && !!row(DONE) && !!row(GONE),
+      "opening the fold draws them under it: " + JSON.stringify(seq()));
+    const r = row(OWES);
+    ok(r.tagName === "BUTTON" && r.classList.contains("salt-inbox-row") && !!r.querySelector("svg.psym") && /1 unit/.test(r.textContent)
+      && !!r.querySelector(".salt-status") && /23 Sep/.test((r.querySelector(".salt-inbox-row__age") || {}).textContent)
+      && (r.querySelector(".salt-inbox-row__action") || {}).textContent === "RM 90" && !r.querySelector("input, textarea, select, .salt-thread, .hist"),
+      "a row is one tap: the mark and the size with the state, the day and the figure, and nothing of the order's own screen: " + JSON.stringify(r.textContent));
+    r.click();
+    const scr = d.querySelector("#pOrder .oscreen");
+    ok(!!scr && scr.getAttribute("data-order") === OWES && d.getElementById("oPlace").classList.contains("o-open") && d.getElementById("pOrder").classList.contains("o-open"),
+      "a tap opens that order's own screen, and on a phone the place says it is open, so the list and the form stand aside");
+    const back = d.querySelector("#pOrder .oback"); if (back) back.click();
+    ok(!!back && !d.querySelector("#pOrder .oscreen") && !d.getElementById("oPlace").classList.contains("o-open") && !!row(OWES),
+      "the way back is the list again");
+  } finally { w.close(); }
+})();
+section("S5 5.2: an order opens its own screen, the goods on their own steps, the money on its own lines, one next action and Cancel at the foot");
+await (async () => {
+  /* 24 SEP 2026, the Counter redesign's stage 5. A pane said "Ready. Handed over in full. Nothing paid yet." in one
+     line, so Paid could be read as a stage of the goods; the pay controls stood open on every order owing, beside
+     Withdraw, with the history in full under them. Driven through the served page, one order opened at a time. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s52", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s52",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const o = (id, at, x) => Object.assign({ id, at, product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 0, moved: 0,
+    status: "acknowledged", history: [{ at, status: "placed", by: "customer" }, { at, status: "acknowledged", by: "desk" }], msgs: [] }, x);
+  const ADV = "20260924090000-adv", PART = "20260923090000-part", UP = "20260922090000-paidup", CLAIM = "20260921090000-claim", DONE = "20260901090000-done";
+  const orders = [
+    o(ADV, "2026-09-24T01:00:00Z", { status: "ready", mode: "deliver", place: "Taman Contoh", delivery: 10, moved: 1, movedOn: "2026-09-24" }),
+    o(PART, "2026-09-23T01:00:00Z", { qty: 5, total: 390, paid: 200, method: "transfer", account: "maybank" }),
+    o(UP, "2026-09-22T01:00:00Z", { paid: 90 }),
+    o(CLAIM, "2026-09-21T01:00:00Z", { claimed: 50 }),
+    o(DONE, "2026-09-01T01:00:00Z", { status: "done", paid: 90, moved: 1, movedOn: "2026-09-02" })];
+  const dom = new JSDOM(landingPage(u, "n52", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : { ok: true };
+      return { ok: true, status: 200, json: async () => j };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const scr = () => d.querySelector("#pOrder .oscreen");
+  const part = (k) => scr() && scr().querySelector('[data-part="' + k + '"]');
+  const open = (id) => {
+    const back = d.querySelector("#pOrder .oback"); if (back && scr()) back.click();
+    if (!d.querySelector('#pOrder [data-row="' + id + '"]')) { const f = d.querySelector("#pOrder .olater"); if (f) f.click(); }
+    const r = d.querySelector('#pOrder [data-row="' + id + '"]'); if (r) r.click();
+    return scr() && scr().getAttribute("data-order") === id;
+  };
+  const lines = () => [...scr().querySelectorAll(".salt-ledger__row")].map((r) => [r.querySelector(".salt-ledger__label").textContent,
+    r.querySelector(".salt-ledger__value").textContent, (r.querySelector(".salt-ledger__flag") || {}).textContent || ""]);
+  const pills = () => [...scr().querySelectorAll(".salt-pill")].filter((b) => !b.closest("[hidden]")).map((b) => b.textContent);
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-olist]"); i++) await new Promise((r) => setTimeout(r, 50));
+    d.querySelector('#tabs button[data-t="order"]').click();
+
+    ok(open(ADV), "the delivered, unpaid order opens");
+    const steps = [...scr().querySelectorAll("ol.salt-steps > li")];
+    ok(steps.map((s) => s.textContent).join("|") === "Sent|Confirmed|Ready|Delivered"
+      && steps.slice(0, 3).every((s) => s.classList.contains("salt-steps__step--done")) && steps[3].getAttribute("aria-current") === "step"
+      && !/pa(y|id)/i.test(part("steps").textContent),
+      "the goods are on their own track, at Delivered, with nothing about money on it: " + JSON.stringify(steps.map((s) => s.className)));
+    const L1 = lines();
+    ok(JSON.stringify(L1) === JSON.stringify([["Goods", "RM 90", ""], ["Delivery", "RM 10", "To Taman Contoh"], ["Still to pay", "RM 100", "The goods are with you"]]),
+      "the money has its own lines, what is still to pay among them: " + JSON.stringify(L1));
+    ok(JSON.stringify(pills()) === JSON.stringify(["Pay RM 100"]) && !scr().querySelector(".oact input"),
+      "one next action, the filled Pay for what is still to pay, and no pay controls until it is tapped: " + JSON.stringify(pills()));
+    ok(!scr().querySelector('[data-part="foot"] button') && /can no longer be cancelled/.test(part("foot").textContent),
+      "with the goods already with them, the foot offers no Cancel and says why");
+
+    ok(open(PART), "the part-paid order opens");
+    ok(JSON.stringify(lines()) === JSON.stringify([["Goods", "RM 390", ""], ["Paid", "RM 200", ""], ["Still to pay", "RM 190", "Now, or when you collect"]]),
+      "what is paid is a line of its own and what is left is the rest: " + JSON.stringify(lines()));
+    const foot = part("foot"), cancel = foot && [...foot.querySelectorAll("button")].find((b) => b.textContent === "Cancel this order");
+    ok(!!cancel && scr().lastElementChild === foot, "Cancel this order stands at the foot while nothing has moved");
+    const pay = [...scr().querySelectorAll("button")].find((b) => b.textContent === "Pay RM 190");
+    if (pay) pay.click();
+    ok(!!pay && !!scr().querySelector(".oact .pay") && JSON.stringify(pills()) === JSON.stringify(["I have paid"]),
+      "Pay opens the ways to pay in its place, and theirs is then the one filled control: " + JSON.stringify(pills()));
+    const hist = part("hist").querySelector("details.salt-plan");
+    ok(!!hist && !hist.open && /What happened, step by step/.test(hist.querySelector("summary").textContent),
+      "what happened is folded under its own line");
+
+    ok(open(UP) && pills().length === 0 && JSON.stringify(lines().pop()) === JSON.stringify(["Still to pay", "RM 0", "Paid in full"]),
+      "an order paid up has nothing filled on it: " + JSON.stringify(pills()));
+    ok(open(CLAIM) && JSON.stringify(lines().slice(1)) === JSON.stringify([["Sent by you", "RM 50", "Waiting for us to confirm it arrived"], ["Still to pay", "RM 40", "Now, or when you collect"]])
+      && JSON.stringify(pills()) === JSON.stringify(["Pay RM 40"]),
+      "what they have sent and is waiting is its own line, read from claimed, and not asked for again: " + JSON.stringify(lines()));
+    ok(open(DONE) && pills().length === 0 && !part("foot").childNodes.length
+      && [...scr().querySelectorAll("ol.salt-steps > li")].every((s) => s.classList.contains("salt-steps__step--done")),
+      "a complete order has every step done, nothing filled and nothing to cancel");
+  } finally { w.close(); }
+})();
+section("S5 5.3: an order's state is said in the customer's words, on the page and in every refusal the site hands it");
+await (async () => {
+  /* 24 SEP 2026, his answer to D11. The page read the desk's states to the customer: Acknowledged, Withdrawn,
+     Declined, "handed over", and a refusal said "an order that is done". Their words are Sent, Confirmed, Ready to
+     collect or deliver, Collected or Delivered, Complete, Not taken, Cancelled by you or by us, and units above
+     one. Driven through the served page, then the site's own state machine. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const O = await import("../stmt/orders.js");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s53", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s53",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const h = (at, status, by, x) => Object.assign({ at, status, by }, x || {});
+  const o = (id, x) => Object.assign({ id, at: "2026-09-2" + id.slice(-1) + "T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0,
+    mode: "collect", paid: 0, moved: 0, status: "placed", history: [h("2026-09-20T01:00:00Z", "placed", "customer")], msgs: [] }, x);
+  const orders = [
+    o("20260929000000-a1", { qty: 0.5 }),
+    o("20260928000000-a2", { status: "acknowledged", paid: 90 }),
+    o("20260927000000-a3", { status: "ready", qty: 2.5, total: 225, paid: 225 }),
+    o("20260926000000-a4", { status: "ready", mode: "deliver", paid: 90 }),
+    o("20260925000000-a5", { status: "ready", mode: "deliver", moved: 1, movedOn: "2026-09-25" }),
+    o("20260924000000-a6", { status: "done", paid: 90, moved: 1, history: [h("2026-09-20T01:00:00Z", "placed", "customer"),
+      h("2026-09-20T02:00:00Z", "acknowledged", "desk"), h("2026-09-20T03:00:00Z", "acknowledged", "customer", { method: "cod" }),
+      h("2026-09-20T04:00:00Z", "acknowledged", "customer", { method: "cod", note: "paid 70.00" }),
+      h("2026-09-20T05:00:00Z", "acknowledged", "desk", { note: "payment of 20.00 recorded" }),
+      h("2026-09-20T06:00:00Z", "acknowledged", "desk", { note: "1 unit collected" }), h("2026-09-20T06:00:00Z", "done", "site")] }),
+    o("20260923000000-a7", { status: "declined", history: [h("2026-09-20T01:00:00Z", "placed", "customer"), h("2026-09-20T02:00:00Z", "declined", "desk", { note: "None this week" })] }),
+    o("20260922000000-a8", { status: "cancelled", history: [h("2026-09-20T01:00:00Z", "placed", "customer"), h("2026-09-20T02:00:00Z", "cancelled", "customer")] }),
+    o("20260921000000-a9", { status: "cancelled", history: [h("2026-09-20T01:00:00Z", "placed", "customer"), h("2026-09-20T02:00:00Z", "cancelled", "desk")] })];
+  const dom = new JSDOM(landingPage(u, "n53", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : { ok: true };
+      return { ok: true, status: 200, json: async () => j };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const row = (id) => d.querySelector('#pOrder [data-row="' + id + '"]');
+  const chip = (id) => { const r = row(id), c = r && r.querySelector(".salt-status"); return c ? c.textContent : null; };
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-olist]"); i++) await new Promise((r) => setTimeout(r, 50));
+    d.querySelector('#tabs button[data-t="order"]').click();
+    const fold = d.querySelector("#pOrder .olater"); if (fold) fold.click();
+    const words = orders.map((x) => chip(x.id));
+    ok(JSON.stringify(words) === JSON.stringify(["Sent", "Confirmed", "Ready to collect", "Ready to deliver", "Delivered", "Complete", "Not taken", "Cancelled by you", "Cancelled by us"]),
+      "each state reads in their words, the goods all with them reading Delivered and a cancellation saying whose it was: " + JSON.stringify(words));
+    ok(!/Acknowledged|Withdrawn|Declined|Completed|Placed|handed over/i.test(d.querySelector("#pOrder [data-olist]").textContent),
+      "and none of the desk's words is left on the list");
+    ok(/0[.]5 unit(?!s)/.test(row("20260929000000-a1").textContent) && /2[.]5 units/.test(row("20260927000000-a3").textContent) && /1 unit(?!s)/.test(row("20260928000000-a2").textContent),
+      "units above one, unit at one and under: " + JSON.stringify([row("20260929000000-a1").textContent, row("20260927000000-a3").textContent]));
+    row("20260924000000-a6").click();
+    const hist = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
+    ok(JSON.stringify(hist) === JSON.stringify(["Sent", "Confirmed", "You chose to pay by cash on handover", "You paid RM 70 by cash on handover",
+      "We recorded a payment of RM 20", "1 unit collected", "Complete"]),
+      "what happened reads a step a line in their words, the desk's shorthand turned into sentences: " + JSON.stringify(hist));
+    d.querySelector("#pOrder .oback").click();
+    row("20260923000000-a7").click();
+    const h7 = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
+    ok(h7[1] === "Not taken: None this week", "his reason stays with the step it came with: " + JSON.stringify(h7));
+  } finally { w.close(); }
+
+  /* ---- the refusals the site hands the page ---- */
+  const at = "2026-09-24T01:00:00Z";
+  const said = [
+    O.decideCustomer({ status: "done", moved: 1, qty: 1 }, "cancel", {}, [], at).error,
+    O.decideCustomer({ status: "declined", moved: 0, qty: 1 }, "cancel", {}, [], at).error,
+    O.decideCustomer({ status: "acknowledged", moved: 1, qty: 1 }, "cancel", {}, [], at).error,
+    O.decideCustomer({ status: "placed", moved: 0, qty: 1, total: 90 }, "method", { method: "cod" }, [], at).error,
+    O.decideCustomer({ status: "placed", moved: 0, qty: 1, total: 90 }, "pay", { amount: 10 }, [], at).error];
+  ok(JSON.stringify(said) === JSON.stringify(["this order is complete, so it cannot be cancelled here", "this order is not taken, so it cannot be cancelled here",
+    "the goods are already with you, so this cannot be cancelled here", "payment is chosen once the order is confirmed", "payment is recorded once the order is confirmed"]),
+    "every refusal of a customer's move says it in their words, never the state's name: " + JSON.stringify(said));
+})();
+section("S5 5.4: a line on an order shows where it is, Return sends it, and his lines are New until seen");
+await (async () => {
+  /* 24 SEP 2026, the Counter redesign's stage 5. A line was sent from a box beside a Send that went grey, and
+     nothing on the thread said whether it had gone: a dropped request put Not sent under the box and the line was
+     lost with the next draw. His answers looked like every other line. Driven through the served page. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s54", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s54",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const A = "20260924090000-aaaa", B = "20260923090000-bbbb";
+  const o = (id, x) => Object.assign({ id, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 90,
+    moved: 0, status: "acknowledged", history: [], msgs: [] }, x);
+  const ordA = o(A, { msgs: [{ at: "2026-09-23T02:00:00Z", by: "customer", text: "Before noon please" }, { at: "2026-09-23T03:00:00Z", by: "desk", text: "Noted, Thursday morning." }] });
+  const orders = [ordA, o(B)];
+  const said = [];
+  let mode = "hold", release = null;
+  const dom = new JSDOM(landingPage(u, "n54", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
+      if (p === "/open") return { ok: true, status: 200, json: async () => body };
+      if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders }) };
+      if (p === "/orders/" + A + "/say") {
+        said.push(j);
+        if (mode === "fail") throw new TypeError("Failed to fetch");
+        if (mode === "hold") await new Promise((r) => { release = r; });
+        ordA.msgs = ordA.msgs.concat([{ at: "2026-09-24T02:00:00Z", by: "customer", text: j.text }]);
+        return { ok: true, status: 200, json: async () => ({ ok: true, order: JSON.parse(JSON.stringify(ordA)) }) };
+      }
+      return { ok: true, status: 200, json: async () => ({ ok: true }) };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const scr = () => d.querySelector("#pOrder .oscreen");
+  const open = (id) => { const b = d.querySelector("#pOrder .oback"); if (b && scr()) b.click(); d.querySelector('#pOrder [data-row="' + id + '"]').click(); };
+  const bubbles = () => [...scr().querySelectorAll(".salt-thread__lines .salt-bubble")].map((b) => ({
+    side: b.classList.contains("salt-bubble--mine") ? "mine" : b.classList.contains("salt-bubble--theirs") ? "theirs" : "?",
+    text: b.querySelector(".salt-bubble__text").textContent, state: (b.querySelector(".salt-bubble__state") || {}).textContent || "",
+    isNew: !!b.querySelector(".salt-bubble__new"), failed: b.classList.contains("salt-bubble--failed"),
+    retry: [...b.querySelectorAll("button")].filter((x) => x.textContent === "Tap to try again" && x.classList.contains("salt-ghost")).length }));
+  const box = () => scr().querySelector('input[aria-label="Write about this order"]');
+  const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const send = (t) => { box().value = t; box().dispatchEvent(new w.Event("input", { bubbles: true })); if (box().form) box().form.requestSubmit(); };
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => d.querySelector("#pOrder [data-olist]"));
+    d.querySelector('#tabs button[data-t="order"]').click();
+    open(A);
+    const b0 = bubbles();
+    ok(JSON.stringify(b0) === JSON.stringify([{ side: "mine", text: "Before noon please", state: "Sent", isNew: false, failed: false, retry: 0 },
+      { side: "theirs", text: "Noted, Thursday morning.", state: "", isNew: true, failed: false, retry: 0 }])
+      && !/[Rr]ead|[Ss]een/.test(scr().querySelector(".salt-thread").textContent),
+      "their line stands right and says Sent, his stands left marked New, and nothing says read: " + JSON.stringify(b0));
+    open(B); open(A);
+    ok(bubbles()[1].isNew === false, "once shown, his line is no longer New when the order is opened again: " + JSON.stringify(bubbles()[1]));
+
+    ok(!!box().form && box().form.classList.contains("salt-composer") && box().getAttribute("enterkeyhint") === "send" && box().form.querySelector('button[type="submit"]').textContent === "Send",
+      "the composer is a form, so Return sends it, and the key says so");
+    send("Thursday is fine");
+    await until(() => said.length === 1);
+    const b1 = bubbles().pop();
+    ok(b1.text === "Thursday is fine" && b1.state === "Sending" && box().value === "",
+      "a line in flight stands in the thread as Sending, and the box is empty for the next: " + JSON.stringify(b1));
+    if (release) release();
+    await until(() => bubbles().length === 3 && bubbles()[2].state === "Sent");
+    ok(JSON.stringify(bubbles().map((b) => b.state)) === JSON.stringify(["Sent", "", "Sent"]), "stored, it says Sent: " + JSON.stringify(bubbles()));
+
+    mode = "fail";
+    send("Someone will be in after eleven");
+    await until(() => bubbles().some((b) => b.failed));
+    const b2 = bubbles().pop();
+    ok(b2.failed && b2.state === "Not sent" && b2.retry === 1 && b2.text === "Someone will be in after eleven",
+      "a line that could not go says Not sent, keeps its words, and offers Tap to try again: " + JSON.stringify(b2));
+    mode = "ok";
+    const again = [...scr().querySelectorAll("button")].find((x) => x.textContent === "Tap to try again"); if (again) again.click();
+    await until(() => said.length === 3 && !bubbles().some((b) => b.failed || b.state === "Sending"));
+    ok(said.length === 3 && said[2].rid === said[1].rid && said[1].rid !== said[0].rid && said[2].text === said[1].text,
+      "tried again, it carries the same id, so a line that did arrive is not recorded twice: " + JSON.stringify(said.map((x) => x.rid)));
+
+    box().value = "Half a thought"; box().dispatchEvent(new w.Event("input", { bubbles: true }));
+    open(B);
+    const other = box().value;
+    open(A);
+    ok(other === "" && box().value === "Half a thought", "what is typed is kept for its own order, and only there: " + JSON.stringify([other, box().value]));
+  } finally { if (release) release(); w.close(); }
+})();
+section("S5 5.5: the poll patches the order that changed, and never draws again what is being typed");
+await (async () => {
+  /* 24 SEP 2026, the Counter redesign's stage 5. A poll bringing any change to any order drew the whole tab again:
+     the order form, every order, and the box a line was being typed in, which v827 then refilled and refocused as
+     a new element. Driven by the page's own poll, shortened in the served HTML. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s55", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s55",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await C.encryptWith(ck, JSON.stringify({ week: { label: "21 Sep to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+      products: [{ product: "salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 90 }] }] })) };
+  const A = "20260924090000-aaaa", B = "20260923090000-bbbb", Cc = "20260901090000-cccc", D = "20260922090000-dddd";
+  const o = (id, x) => Object.assign({ id, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 90,
+    moved: 0, status: "acknowledged", history: [], msgs: [] }, x);
+  let phase = 0;
+  const list = () => [
+    o(A, { msgs: [{ at: "2026-09-23T02:00:00Z", by: "customer", text: "Before noon please" }].concat(phase ? [{ at: "2026-09-24T03:00:00Z", by: "desk", text: "It goes out Thursday." }] : []) }),
+    o(B, { status: phase ? "ready" : "acknowledged" }),
+    o(D, { total: 150, paid: phase > 1 ? 30 : 0, method: "transfer", account: "maybank" }),
+    o(Cc, { status: "done", moved: 1 })];
+  const html = landingPage(u, "n55", null), fast = html.replace(/var POLL_MS=[0-9]+/, "var POLL_MS=120");
+  const dom = new JSDOM(fast, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: list() } : { ok: true };
+      return { ok: true, status: 200, json: async () => j };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const row = (id) => d.querySelector('#pOrder [data-row="' + id + '"]');
+  const scr = () => d.querySelector("#pOrder .oscreen");
+  const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 30)); return f(); };
+  try {
+    ok(fast !== html, "the served page's poll is shortened, or this proves nothing about a poll");
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => row(A) && d.getElementById("oGo"));
+    d.querySelector('#tabs button[data-t="order"]').click();
+    d.querySelector("#pOrder .olater").click();
+    row(A).click();
+    const box = d.querySelector('#pOrder input[data-say="' + A + '"]'), form = d.getElementById("oGo"), rowC = row(Cc), rowA = row(A), head = d.querySelector('#pOrder .oscreen [data-part="head"]');
+    box.focus(); box.value = "Could it"; box.dispatchEvent(new w.Event("input", { bubbles: true })); box.setSelectionRange(5, 5);
+    phase = 1;
+    await until(() => /It goes out Thursday/.test(scr().textContent));
+    const line = [...d.querySelectorAll("#pOrder .oscreen .salt-bubble--theirs")].pop();
+    ok(!!line && /It goes out Thursday/.test(line.textContent) && !!line.querySelector(".salt-bubble__new") && /Ready to collect/.test(row(B).textContent),
+      "the poll brought his answer into the open order's thread, marked New, and the other order's new state onto its row");
+    ok(d.contains(box) && d.activeElement === box && box.value === "Could it" && box.selectionStart === 5,
+      "the box being typed in is the same box, with its words and its caret where they were");
+    ok(d.contains(form) && d.contains(rowC) && d.contains(rowA) && d.contains(head),
+      "and nothing that did not change was drawn again: the order form, a row that did not move and a part that reads the same");
+
+    /* a part that DOES change while its field has the focus: the amount being typed on an order whose payment moved */
+    d.querySelector("#pOrder .oback").click();
+    row(D).click();
+    const pay = [...scr().querySelectorAll(".oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
+    const amt = scr().querySelector('.oact input[type="number"]');
+    if (amt) { amt.focus(); amt.value = "40"; amt.dispatchEvent(new w.Event("input", { bubbles: true })); }
+    phase = 2;
+    await until(() => /Paid/.test((scr().querySelector('[data-part="money"]') || {}).textContent || ""));
+    ok(!!amt && /RM 30/.test(scr().querySelector('[data-part="money"]').textContent) && d.contains(amt) && d.activeElement === amt && amt.value === "40",
+      "the money moved and its lines say so, while the amount being typed keeps its field, its focus and its figure");
+  } finally { w.close(); }
+})();
+section("S5 5.6: a banner's tap opens its order on the Counter's own page, a stale page re-reads without losing a line, and a desk shows the list beside the open order");
+await (async () => {
+  /* 24 SEP 2026, the Counter redesign's stage 5, over stage 12's tap. The service worker told the first window under
+     its scope, which a guest board or Salt Admin in another tab also is, and neither can open an order. A page
+     already open re-read and drew every order again, the line being typed with it. And on a desk the orders were
+     one column under the form, where the plan (f12w) stands the list beside the open order, its thread in view. */
+  const { SW_JS } = await import("../stmt/sw.js");
+  const vm = await import("node:vm");
+  const id = "20260924101500-ab12cd34";
+  const tap = async (clients) => {
+    const L = {}, opened = [];
+    const ctx = { URL, Date, console, fetch: async () => ({ ok: false }),
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { href: "https://site.test/sw.js?u=abcd-efgh" },
+        registration: { scope: "https://site.test/", showNotification: async () => {} },
+        clients: { matchAll: async () => clients, openWindow: async (u) => { opened.push(u); } } } };
+    ctx.clients = ctx.self.clients;
+    vm.createContext(ctx); vm.runInContext(SW_JS, ctx);
+    const waits = [];
+    L.notificationclick({ notification: { data: { url: "./?u=abcd-efgh#o=" + id, order: id }, close() {} }, waitUntil: (p) => waits.push(p) });
+    await Promise.all(waits);
+    return opened;
+  };
+  const win = (url) => { const w = { url, told: [], focused: 0 }; w.postMessage = (m) => w.told.push(m); w.focus = async () => { w.focused++; }; return w; };
+  const guest = win("https://site.test/g/k7m2p9qr4s"), admin = win("https://site.test/all"), counter = win("https://site.test/?u=abcd-efgh");
+  const o1 = await tap([guest, admin, counter]);
+  ok(counter.told.length === 1 && counter.told[0].order === id && counter.focused === 1 && !guest.told.length && !admin.told.length && !o1.length,
+    "the tap goes to the Counter's own page, past a guest board and Salt Admin open in other tabs: " + JSON.stringify({ counter: counter.told, guest: guest.told.length, admin: admin.told.length }));
+  const g2 = win("https://site.test/g/k7m2p9qr4s"), o2 = await tap([g2]);
+  ok(!g2.told.length && JSON.stringify(o2) === JSON.stringify(["./?u=abcd-efgh#o=" + id]), "and with only a guest board open, the Counter opens at the order: " + JSON.stringify(o2));
+
+  /* ---- the page ---- */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s56", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s56",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const P = "20260924090000-pppp", O = "20260923090000-oooo", D = "20260901090000-dddd";
+  const o = (oid, x) => Object.assign({ id: oid, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 0,
+    moved: 0, status: "acknowledged", history: [], msgs: [] }, x);
+  const drive = async (wide, go) => {
+    let answered = false, reads = 0;
+    const list = () => [o(P, { status: "placed" }), o(O, { msgs: answered ? [{ at: "2026-09-24T05:00:00Z", by: "desk", text: "Ready on Friday." }] : [] }),
+      o(D, { status: "done", paid: 90, moved: 1 })];
+    const st = { listen: null };
+    const dom = new JSDOM(landingPage(u, "n56", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
+      w.matchMedia = (q) => ({ matches: wide && /min-width: *1080px/.test(q), media: q, addEventListener() {}, removeEventListener() {} });
+      Object.defineProperty(w.navigator, "serviceWorker", { configurable: true, value: {
+        addEventListener: (t, f) => { if (t === "message") st.listen = f; }, getRegistration: async () => undefined } });
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? (reads++, { ok: true, orders: list() }) : { ok: true };
+        return { ok: true, status: 200, json: async () => j };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 30));
+      d.querySelector('#tabs button[data-t="order"]').click();
+      await go(w, d, st, { answer: () => { answered = true; }, reads: () => reads });
+    } finally { w.close(); }
+  };
+  const shownOf = (d) => { const s = d.querySelector("#pOrder .oscreen"); return s && s.getAttribute("data-order"); };
+  const current = (d) => [...d.querySelectorAll("#pOrder [data-row][aria-current=true]")].map((b) => b.getAttribute("data-row"));
+  await drive(true, async (w, d) => {
+    ok(shownOf(d) === O && JSON.stringify(current(d)) === JSON.stringify([O]) && !!d.querySelector('#pOrder [data-row="' + P + '"]'),
+      "on a desk the list stands beside an open order without a tap, what needs them first, its row marked: " + JSON.stringify({ shown: shownOf(d), current: current(d) }));
+    d.querySelector('#pOrder [data-row="' + P + '"]').click();
+    ok(shownOf(d) === P && JSON.stringify(current(d)) === JSON.stringify([P]) && !!d.querySelector('#pOrder [data-row="' + O + '"]'),
+      "and a tap on another row opens that one beside the same list: " + JSON.stringify({ shown: shownOf(d), current: current(d) }));
+  });
+  await drive(false, async (w, d, st, fx) => {
+    ok(!shownOf(d), "on a phone nothing is open until it is tapped");
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    const box = d.querySelector('#pOrder input[data-say="' + O + '"]');
+    box.focus(); box.value = "Is Friday"; box.dispatchEvent(new w.Event("input", { bubbles: true }));
+    fx.answer();
+    const before = fx.reads();
+    await st.listen({ data: { salt: "news", order: O } });
+    ok(fx.reads() === before + 1 && /Ready on Friday/.test(d.querySelector("#pOrder .oscreen").textContent)
+      && d.contains(box) && d.activeElement === box && box.value === "Is Friday",
+      "a banner about the order being written on re-reads it and shows his answer, and the line being typed keeps its box: "
+      + JSON.stringify({ reads: fx.reads() - before, kept: d.contains(box), value: box.value }));
+  });
+})();
+section("S3 x S5: a return to the page and a lapse reopened patch the orders, so the open order and a half-typed line survive, and only a form the account changed draws the tab");
+await (async () => {
+  /* 25 Sep 2026, the merge of stage 3 (sign-in) into stage 5 (an order and its messages). Stage 3 re-read the account
+     on every return and after a lapse, then drew the whole order tab again, the box being typed in with it; stage 5's
+     poll patches only what changed. Both roads now patch; an account whose form above the orders reads differently
+     (here, over RM 100 owed, the Pay page) draws the tab, the line kept in its box. */
+  const { landingPage: lpM } = await import("../stmt/page.js");
+  const CM = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDM } = await import("jsdom");
+  const uM = "aaaa-mmmm", devM = "m".repeat(32), ckM = await CM.contentKey("5".repeat(64), uM);
+  const env = await CM.encryptWith(ckM, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] }));
+  const list = await CM.encryptWith(ckM, JSON.stringify({ at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] }));
+  const owing = await CM.encryptWith(ckM, JSON.stringify({ at: "2026-09-25T01:00:00Z", body: "<p>Live</p>", owed: 150 }));
+  const A = "20260924090000-aaaa";
+  const st = { dead: new Set(), n: 0, last: "", reopened: 0, remFail: false, accounts: 0, lines: 0, live: null };
+  const said = (k) => ({ at: "2026-09-25T0" + k + ":00:00Z", by: "desk", text: "Answer " + k });
+  const orders = () => [{ id: A, at: "2026-09-24T01:00:00Z", product: "salt", qty: 1, unit: 130, total: 130, delivery: 0, mode: "collect", paid: 130,
+    moved: 0, status: "acknowledged", history: [], msgs: [{ at: "2026-09-24T02:00:00Z", by: "customer", text: "Before noon please" }]
+      .concat([1, 2, 3].slice(0, st.lines).map(said)) }];
+  const dom = new JDM(lpM("", "nM", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      const store = new Map([["salt-stmt-remember", JSON.stringify({ t: "t".repeat(32), k: Buffer.from(devM).toString("base64"), u: uM })]]);
+      Object.defineProperty(win, "localStorage", { configurable: true, value: {
+        getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+        removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+      win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET", h = (init && init.headers) || {}, s = h["X-Stmt-Session"] || "";
+        const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+        if (p === "/remember/open") {
+          if (st.remFail) throw new TypeError("Failed to fetch");
+          st.reopened++;
+          return ans(200, { ok: true, u: uM, remembered: true, wrap: await CM.wrapKey(devM, ckM), env, prices: list, live: st.live, session: (st.last = "sessMn" + (++st.n) + "0000000000000000000") });
+        }
+        if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
+        if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: uM, env, prices: list, live: st.live }); }
+        if (p === "/orders" && m === "GET") return ans(200, { ok: true, orders: orders() });
+        return ans(200, { ok: true });
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  const box = () => D.querySelector('#pOrder input[data-say="' + A + '"]');
+  const thread = () => (D.querySelector('#pOrder .oscreen[data-order="' + A + '"] [data-part="thread"]') || {}).textContent || "";
+  try {
+    await until(() => !D.getElementById("barw").hidden);
+    D.querySelector('button[data-t="order"]').click();
+    await until(() => D.querySelector('#pOrder [data-row="' + A + '"]'));
+    D.querySelector('#pOrder [data-row="' + A + '"]').click();
+    const b0 = box(), form0 = D.getElementById("oGo");
+    b0.focus(); b0.value = "Could it"; b0.dispatchEvent(new W.Event("input", { bubbles: true })); b0.setSelectionRange(5, 5);
+
+    /* a return to the page, on a live session */
+    st.lines = 1;
+    const reads = st.accounts;
+    Object.defineProperty(D, "visibilityState", { value: "visible", configurable: true });
+    D.dispatchEvent(new W.Event("visibilitychange"));
+    await until(() => /Answer 1/.test(thread()));
+    ok(st.accounts === reads + 1 && /Answer 1/.test(thread()) && box() === b0 && D.activeElement === b0 && b0.value === "Could it" && b0.selectionStart === 5
+      && D.getElementById("oGo") === form0,
+      "a return re-reads the account and patches the open order: his new line is in, the box being typed in is the same box, words and caret kept, and the form was not drawn again");
+
+    /* a return that meets a lapse: api() reopens from the remembered phone and the re-read goes on, patching */
+    st.dead.add(st.last); st.lines = 2;
+    const n0 = st.reopened;
+    const ev = new W.Event("pageshow"); Object.defineProperty(ev, "persisted", { value: true });
+    W.dispatchEvent(ev);
+    await until(() => /Answer 2/.test(thread()));
+    ok(st.reopened === n0 + 1 && /Answer 2/.test(thread()) && box() === b0 && b0.value === "Could it" && D.getElementById("oGo") === form0,
+      "a lapse met on the way reopens the phone once and the orders are still patched, the box and the form untouched");
+
+    /* the phone cannot reopen, the bar offers Try again, and Try again patches too */
+    st.dead.add(st.last); st.remFail = true;
+    D.dispatchEvent(new W.Event("visibilitychange"));
+    await until(() => !D.getElementById("lapse").hidden);
+    st.remFail = false; st.lines = 3;
+    D.getElementById("lapseGo").click();
+    await until(() => /Answer 3/.test(thread()));
+    ok(!!D.getElementById("lapse").hidden && /Answer 3/.test(thread()) && box() === b0 && b0.value === "Could it" && D.getElementById("oGo") === form0,
+      "and Try again reopens it and patches the same way: " + JSON.stringify({ lapse: D.getElementById("lapse").hidden, box: box() === b0 }));
+
+    /* the account now owes over RM 100: the form above the orders is the Pay page, so the tab is drawn again */
+    st.live = owing;
+    D.dispatchEvent(new W.Event("visibilitychange"));
+    await until(() => /Payment due/.test((D.querySelector("#pOrder h2") || {}).textContent || ""));
+    ok(/Payment due/.test(D.querySelector("#pOrder h2").textContent) && !D.getElementById("oGo") && !!D.querySelector('#pOrder .oscreen[data-order="' + A + '"]')
+      && !!box() && box().value === "Could it",
+      "a re-read that changes the form draws the tab: the Pay page stands where the form was, the order is still open and the line still in its box");
+  } finally { await new Promise((r) => setTimeout(r, 100)); W.close(); }
+})();
+section("S5 fix: an order a desk opened by itself is not a tapped one");
+await (async () => {
+  /* 25 SEP 2026, the stage 5 review. From 1080px an order opens beside the list without a tap, and it was then held
+     as if tapped: turned to portrait, the phone layout filled the tab with it. And a banner's tap on an order already
+     open only scrolled to it, so his reply stayed unseen: New again on the next visit, its row still waiting. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-f1", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f1",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const P = "20260924090000-pppp", O = "20260923090000-oooo", D = "20260901090000-dddd";
+  const o = (oid, x) => Object.assign({ id: oid, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 0,
+    moved: 0, status: "acknowledged", history: [], msgs: [] }, x);
+  const drive = async (wide, go, opt = {}) => {
+    const mq = { wide, fns: [] }, sw = { listen: null }, fx = { answered: !opt.later };
+    const list = () => [o(P, { status: "placed" }), o(O, { msgs: fx.answered ? [{ at: "2026-09-24T05:00:00Z", by: "desk", text: "Ready on Friday." }] : [] }),
+      o(D, { status: "done", paid: 90, moved: 1 })];
+    const dom = new JSDOM(landingPage(u, "nf1", null), { url: "https://site.test/" + (opt.hash || ""), runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
+      Object.defineProperty(w.navigator, "serviceWorker", { configurable: true, value: {
+        addEventListener: (t, f) => { if (t === "message") sw.listen = f; }, getRegistration: async () => undefined } });
+      w.matchMedia = (q) => ({ get matches() { return mq.wide && /min-width: *1080px/.test(q); }, media: q,
+        addEventListener(t, f) { if (t === "change") mq.fns.push(f); }, removeEventListener() {} });
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: list() } : { ok: true };
+        return { ok: true, status: 200, json: async () => j };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    const turn = (on) => { mq.wide = on; mq.fns.forEach((f) => f({ matches: on })); };
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 30));
+      if (!opt.hash) d.querySelector('#tabs button[data-t="order"]').click();   /* a banner's address turns the tab itself */
+      await go(w, d, turn, sw, fx);
+    } finally { w.close(); }
+  };
+  const shownOf = (d) => { const s = d.querySelector("#pOrder .oscreen"); return s && s.getAttribute("data-order"); };
+  await drive(true, async (w, d, turn) => {
+    const wideShown = shownOf(d);
+    turn(false);
+    ok(wideShown === O && !shownOf(d) && !d.getElementById("pOrder").classList.contains("o-open") && !!d.querySelector('#pOrder [data-row="' + O + '"]'),
+      "an order the desk opened by itself goes when the width drops below 1080px, and the list is back: " + JSON.stringify({ wide: wideShown, narrow: shownOf(d) }));
+  });
+  await drive(true, async (w, d, turn) => {
+    d.querySelector('#pOrder [data-row="' + P + '"]').click();
+    turn(false);
+    ok(shownOf(d) === P && d.getElementById("pOrder").classList.contains("o-open"),
+      "and an order they tapped stays open when the width drops: " + JSON.stringify({ narrow: shownOf(d) }));
+  });
+  /* his reply on the order a desk opened by itself: the order form stands above it, so it may be off screen */
+  const seen = (w) => { try { return (JSON.parse(w.localStorage.getItem("salt-stmt-seen") || "null") || { o: {} }).o; } catch (e) { return {}; } };
+  const rowText = (d, id) => (d.querySelector('#pOrder [data-row="' + id + '"]') || {}).textContent || "";
+  await drive(true, async (w, d) => {
+    ok(shownOf(d) === O && !!d.querySelector("#pOrder .oscreen .salt-bubble__new") && !seen(w)[O] && /a reply for you/.test(rowText(d, O)),
+      "an order a desk opened by itself marks nothing seen: his line is New and its row still says a reply is waiting: " + JSON.stringify({ seen: seen(w), row: rowText(d, O) }));
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    ok(seen(w)[O] === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)) && !!d.querySelector("#pOrder .oscreen .salt-bubble__new"),
+      "a tap on its row, already open, marks it seen and clears its row, his line staying New while it is open: " + JSON.stringify({ seen: seen(w), row: rowText(d, O) }));
+  });
+  /* a banner's tap: on a desk, for the order it opened by itself at sign-in; on a phone, for one left open under another tab */
+  await drive(true, async (w, d) => {
+    const tab = d.querySelector('#tabs button[data-t="order"]').getAttribute("aria-selected");
+    ok(tab === "true" && shownOf(d) === O && seen(w)[O] === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)),
+      "a desk opened at a banner's address for the order it opens by itself turns to it and marks his reply seen: " + JSON.stringify({ tab, shown: shownOf(d), seen: seen(w), row: rowText(d, O) }));
+  }, { hash: "#o=" + O });
+  await drive(false, async (w, d, turn, sw, fx) => {
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    d.querySelector('#tabs button[data-t="stmt"]').click();
+    fx.answered = true;
+    await sw.listen({ data: { salt: "news", order: O } });
+    const marked = seen(w)[O], back = d.querySelector("#pOrder .oback"); if (back) back.click();
+    ok(shownOf(d) === null && marked === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)),
+      "a phone told of his reply on the order it left open under another tab turns to it and marks it seen: " + JSON.stringify({ seen: marked, row: rowText(d, O) }));
+  }, { later: true });
+})();
+section("S5 fix: Log out takes the record of what this phone has seen with it");
+await (async () => {
+  /* 25 SEP 2026, the stage 5 review. The seen record outlived Log out, which v692 says drops everything the page
+     holds: the next account on the phone inherited the last one's order ids and its first moment. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-f2", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f2",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const O = "20260923090000-oooo";
+  const list = [{ id: O, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 90, moved: 0,
+    status: "acknowledged", history: [], msgs: [{ at: "2026-09-24T05:00:00Z", by: "desk", text: "Ready on Friday." }] }];
+  const drive = async (keepsNothing, go) => {
+    const dom = new JSDOM(landingPage(u, "nf2", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
+      if (keepsNothing) Object.defineProperty(w, "localStorage", { configurable: true, get() { throw new Error("a private window"); } });
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: JSON.parse(JSON.stringify(list)) } : { ok: true };
+        return { ok: true, status: 200, json: async () => j };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    const signIn = async () => {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 30));
+      d.querySelector('#tabs button[data-t="order"]').click();
+    };
+    try { await go(w, d, signIn); } finally { w.close(); }
+  };
+  const rowText = (d) => (d.querySelector('#pOrder [data-row="' + O + '"]') || {}).textContent || "";
+  const logOut = async (d) => { d.getElementById("lock").click(); for (let i = 0; i < 20; i++) await new Promise((r) => setTimeout(r, 10)); };
+  await drive(false, async (w, d, signIn) => {
+    await signIn();
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    const had = /20260923090000-oooo/.test(w.localStorage.getItem("salt-stmt-seen") || "");
+    await logOut(d);
+    ok(had && w.localStorage.getItem("salt-stmt-seen") === null,
+      "Log out takes the seen record off the phone, as it takes the remembered device: " + JSON.stringify({ had, after: w.localStorage.getItem("salt-stmt-seen") }));
+  });
+  await drive(true, async (w, d, signIn) => {
+    await signIn();
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    d.querySelector("#pOrder .oback").click();
+    const before = rowText(d);
+    await logOut(d);
+    await signIn();
+    ok(!/a reply for you/i.test(before) && /a reply for you/i.test(rowText(d)),
+      "and where the browser keeps nothing, Log out forgets what this visit had seen: " + JSON.stringify({ before, after: rowText(d) }));
+  });
+})();
+section("S5 fix: a part or a row passed over for its focus is caught up");
+await (async () => {
+  /* 25 SEP 2026, the stage 5 review. The poll never draws what holds the focus, and nothing drew it later: a desk
+     browser leaves the focus on a clicked button, so Cancel stayed offered after the goods had moved, and the history
+     missed the handover, until the order changed again. Driven by the page's own poll, shortened in the served HTML. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-f3", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f3",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const A = "20260924090000-aaaa", B = "20260923090000-bbbb";
+  const o = (id, x) => Object.assign({ id, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 90,
+    moved: 0, status: "acknowledged", history: [{ at: "2026-09-23T01:00:00Z", status: "placed", by: "customer" }, { at: "2026-09-23T02:00:00Z", status: "acknowledged", by: "desk" }], msgs: [] }, x);
+  const drive = async (go) => {
+    const st = { a: o(A), b: o(B) };
+    const html = landingPage(u, "nf3", null), fast = html.replace(/var POLL_MS=[0-9]+/, "var POLL_MS=120");
+    const dom = new JSDOM(fast, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {}; w.confirm = () => false;
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: JSON.parse(JSON.stringify([st.a, st.b])) } : { ok: true };
+        return { ok: true, status: 200, json: async () => j };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    try {
+      ok(fast !== html, "the served page's poll is shortened, or this proves nothing about a poll");
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 30));
+      d.querySelector('#tabs button[data-t="order"]').click();
+      await go(w, d, st);
+    } finally { w.close(); }
+  };
+  const until = async (f) => { for (let i = 0; i < 60 && !f(); i++) await new Promise((r) => setTimeout(r, 30)); return f(); };
+  const scr = (d) => d.querySelector("#pOrder .oscreen");
+  const part = (d, k) => (scr(d).querySelector('[data-part="' + k + '"]') || {}).textContent || "";
+  const hand = (st) => { st.a.moved = 1; st.a.movedOn = "2026-09-24"; st.a.history = st.a.history.concat([{ at: "2026-09-24T03:00:00Z", status: "acknowledged", by: "desk", note: "1 unit collected" }]); };
+  await drive(async (w, d, st) => {
+    d.querySelector('#pOrder [data-row="' + A + '"]').click();
+    const c = [...scr(d).querySelectorAll("button")].find((b) => b.textContent === "Cancel this order");
+    c.focus(); c.click();   /* the confirm answers no, and the focus stays on the button */
+    hand(st);
+    await until(() => /Collected on/.test(part(d, "when")));
+    const held = d.contains(c) && d.activeElement === c;
+    c.blur();
+    await until(() => !/Cancel this order/.test(part(d, "foot")));
+    ok(held && /no longer be cancelled/.test(part(d, "foot")) && ![...scr(d).querySelectorAll("button")].some((b) => b.textContent === "Cancel this order"),
+      "Cancel keeps its focus while the goods move, and once the focus leaves the next poll takes it away: " + JSON.stringify({ held, foot: part(d, "foot") }));
+  });
+  await drive(async (w, d, st) => {
+    d.querySelector('#pOrder [data-row="' + A + '"]').click();
+    const sm = scr(d).querySelector('[data-part="hist"] summary');
+    sm.focus();
+    hand(st);
+    await until(() => /Collected on/.test(part(d, "when")));
+    const held = d.contains(sm) && d.activeElement === sm && !/collected/.test(part(d, "hist"));
+    sm.blur();
+    await until(() => /collected/.test(part(d, "hist")));
+    ok(held && /1 unit collected/.test(part(d, "hist")), "and the history held back for its focused summary is drawn once the focus leaves: " + JSON.stringify({ held, hist: part(d, "hist") }));
+  });
+  await drive(async (w, d, st) => {
+    const r = d.querySelector('#pOrder [data-row="' + B + '"]');
+    r.focus();
+    st.b.status = "ready";
+    await until(() => /Ready/.test((d.querySelector('#pOrder [data-row="' + B + '"]') || {}).textContent || ""));
+    const n = d.querySelector('#pOrder [data-row="' + B + '"]');
+    ok(/Ready/.test(n.textContent) && d.activeElement === n,
+      "a row that changes while it holds the focus is drawn again at once and keeps the focus: " + JSON.stringify({ row: n.textContent, focus: d.activeElement && d.activeElement.getAttribute("data-row") }));
+  });
+})();
+section("S5 fix: a line on an order says where it is once, and truly");
+await (async () => {
+  /* 25 SEP 2026, the stage 5 review. A line stored whose answer was lost stood twice, Sent from the thread and Not sent
+     with Tap to try again from the page's own copy. And a line the site refused, which it would refuse again, was
+     offered again for good, its words out of the box. Driven by the page's own poll, shortened in the served HTML. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-f4", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f4",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const A = "20260924090000-aaaa";
+  const drive = async (mode, earlier, go) => {
+    const st = { mode, order: { id: A, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 90, moved: 0,
+      status: "acknowledged", history: [], msgs: earlier.map((t, i) => ({ at: "2026-09-23T0" + (2 + i) + ":00:00Z", by: "customer", text: t })) } };
+    const html = landingPage(u, "nf4", null), fast = html.replace(/var POLL_MS=[0-9]+/, "var POLL_MS=120");
+    const dom = new JSDOM(fast, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
+        if (p === "/open") return { ok: true, status: 200, json: async () => body };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [JSON.parse(JSON.stringify(st.order))] }) };
+        if (p === "/orders/" + A + "/say") {
+          if (st.mode === "lost") { st.order.msgs = st.order.msgs.concat([{ at: "2026-09-24T02:00:00Z", by: "customer", text: j.text.replace(/ +/g, " ") }]); throw new TypeError("Failed to fetch"); }
+          if (st.mode === "drop") throw new TypeError("Failed to fetch");
+          if (st.mode === "refuse") return { ok: false, status: 409, json: async () => ({ ok: false, error: "there are already 20 of your messages on this order" }) };
+        }
+        return { ok: true, status: 200, json: async () => ({ ok: true }) };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    try {
+      ok(fast !== html, "the served page's poll is shortened, or this proves nothing about a poll");
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 30));
+      d.querySelector('#tabs button[data-t="order"]').click();
+      d.querySelector('#pOrder [data-row="' + A + '"]').click();
+      await go(w, d, st);
+    } finally { w.close(); }
+  };
+  const scr = (d) => d.querySelector("#pOrder .oscreen");
+  const lines = (d) => [...scr(d).querySelectorAll(".salt-bubble")].map((b) => b.querySelector(".salt-bubble__text").textContent + " | " + ((b.querySelector(".salt-bubble__state") || {}).textContent || "")
+    + ([...b.querySelectorAll("button")].some((x) => x.textContent === "Tap to try again") ? " | retry" : ""));
+  const send = (w, d, t) => { const b = scr(d).querySelector("input[data-say]"); b.value = t; b.dispatchEvent(new w.Event("input", { bubbles: true })); b.form.requestSubmit(); };
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  await drive("lost", [], async (w, d) => {
+    send(w, d, "Is it  ready");
+    await wait(600);
+    ok(JSON.stringify(lines(d)) === JSON.stringify(["Is it ready | Sent"]),
+      "a line stored whose answer was lost stands once, as Sent, once the thread shows it: " + JSON.stringify(lines(d)));
+  });
+  await drive("drop", ["Is it ready"], async (w, d) => {
+    send(w, d, "Is it ready");
+    await wait(600);
+    ok(JSON.stringify(lines(d)) === JSON.stringify(["Is it ready | Sent", "Is it ready | Not sent | retry"]),
+      "and a line that did not go stays Not sent, though the same words went earlier: " + JSON.stringify(lines(d)));
+  });
+  await drive("refuse", ["One", "Two"], async (w, d) => {
+    send(w, d, "And a third");
+    await wait(300);
+    const box = scr(d).querySelector("input[data-say]"), said = scr(d).querySelector('[data-part="say"] [role="status"]');
+    ok(JSON.stringify(lines(d)) === JSON.stringify(["One | Sent", "Two | Sent"]) && box.value === "And a third"
+      && !!said && !said.hidden && /^There are already 20 of your messages/.test(said.textContent),
+      "a line the site refuses goes back in the box with the reason under it, and is not offered again: " + JSON.stringify({ lines: lines(d), box: box.value, said: said && said.textContent }));
+  });
+})();
+section("S5 fix: a desk with the order form beside the open order shows one filled control");
+await (async () => {
+  /* 25 SEP 2026, the stage 5 review. From 1080px an order is always open beside the list, and the order form still
+     stands on the same tab until stage 4 moves it into a sheet: its Review and the order's Pay were both filled. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-f5", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f5",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await C.encryptWith(ck, JSON.stringify({ week: { label: "21 Sep to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+      products: [{ product: "salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 90 }] }] })) };
+  const O = "20260923090000-oooo";
+  const list = [{ id: O, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 0, moved: 0,
+    status: "acknowledged", history: [], msgs: [] }];
+  const drive = async (wide, go) => {
+    const dom = new JSDOM(landingPage(u, "nf5", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
+      w.matchMedia = (q) => ({ matches: wide && /min-width: *1080px/.test(q), media: q, addEventListener() {}, removeEventListener() {} });
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: JSON.parse(JSON.stringify(list)) } : { ok: true };
+        return { ok: true, status: 200, json: async () => j };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !(d.querySelector("#pOrder [data-row]") && d.getElementById("oGo")); i++) await new Promise((r) => setTimeout(r, 30));
+      d.querySelector('#tabs button[data-t="order"]').click();
+      await go(w, d);
+    } finally { w.close(); }
+  };
+  const payOf = (d) => [...d.querySelectorAll('#pOrder .oscreen [data-part="act"] button')].find((b) => /^Pay RM/.test(b.textContent));
+  const filled = (d) => [...d.querySelectorAll("#pOrder .salt-pill")].map((b) => b.textContent);
+  await drive(true, async (w, d) => {
+    const pay = payOf(d);
+    ok(!!d.getElementById("oGo") && !!pay && !pay.classList.contains("salt-pill") && pay.classList.contains("salt-ghost") && JSON.stringify(filled(d)) === JSON.stringify(["Review this order"]),
+      "on a desk, with the order form's Review beside the open order, its Pay is the lit ghost and Review the one filled control: " + JSON.stringify({ pay: pay && pay.className, filled: filled(d) }));
+  });
+  await drive(false, async (w, d) => {
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    const pay = payOf(d);
+    ok(!!pay && pay.classList.contains("salt-pill"), "on a phone the open order is the whole tab, and Pay is its filled control: " + JSON.stringify(pay && pay.className));
+  });
+})();
 section("v753: he answers on the order, and the words are checked on the desk before they leave it");
 await (async () => {
   /* the other half of v751. His answer is a move of his like any other, so it wakes them and changes
@@ -26541,7 +27473,7 @@ await (async () => {
   if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the preview was not driven against the real schema"); return; }
   const O = await import("../stmt/orders.js");
   const { runDrafter } = await import("../src/drafter.js");
-  const { reconcileOrders, CUSTOMER_SEES } = await import("../src/orders.js");
+  const { reconcileOrders, CUSTOMER_SEES, toldOf } = await import("../src/orders.js");
   const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
   const db = new DatabaseSync(":memory:");
   for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
@@ -26587,7 +27519,7 @@ await (async () => {
     "their usual, with which way this order sits from it and whether it is as far as the flag's line: " + JSON.stringify(j.usual));
   ok(j.card === 190 && /^Gold at 2 unit$/.test(j.cardNote),
     "their card at this size, the desk's own cardQuote carried in the snapshot, beside the RM 160 their page quoted: " + JSON.stringify({ card: j.card, note: j.cardNote }));
-  ok(j.told === "They see Placed: Waiting to be acknowledged." && j.pricing && j.pricing.v === "v900" && /^[0-9a-f]{16}$/.test(j.pricing.digest)
+  ok(j.told === "They see Sent: Waiting to be confirmed." && j.pricing && j.pricing.v === "v900" && /^[0-9a-f]{16}$/.test(j.pricing.digest)
     && /^[0-9a-f]{64}$/.test(j.hash) && !("entry" in j),
     "what their page says, the pricing version and the digest an Accept sends back: " + JSON.stringify({ told: j.told, pricing: j.pricing, hash: j.hash }));
 
@@ -26626,13 +27558,18 @@ await (async () => {
   ok(p6.j.ok && p6.j.card === null && /3 unit is not a size on their board/.test(p6.j.cardNote) && p6.j.row.delivery === undefined && p6.j.chargeChosen === true,
     "a size their card does not carry has no card, and says so; a collection carries no charge: " + JSON.stringify({ card: p6.j.card, note: p6.j.cardNote }));
 
-  /* THE WORDS ARE THE PAGE'S OWN, held together here so the day the page's words change this follows */
+  /* THE WORDS ARE THE PAGE'S OWN, held together here so the day the page's words change this follows. Since the
+     Counter's stage 5 the chip is the page's oWord, by state, mode and whose the cancellation was: it is run here
+     off the page's own source, and every sentence the desk quotes must open a string the page writes. */
   const page = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
-  const words = /var STATE_WORDS=(\{[^}]*\})/.exec(page);
-  const W = words ? Function("return " + words[1])() : {};
-  const lines = Object.values(CUSTOMER_SEES).flatMap((x) => x.slice(1));
-  ok(words && Object.keys(CUSTOMER_SEES).every((k) => W[k] === CUSTOMER_SEES[k][0]) && lines.every((l) => page.includes("'" + l)),
-    "what the card says they see is the page's own state words and lines: " + JSON.stringify({ page: W, missing: lines.filter((l) => !page.includes("'" + l)) }));
+  const fnW = /function oWord\(st,o,by\)\{[\s\S]*?\n  \}/.exec(page);
+  const oWordP = fnW ? Function("return " + fnW[0])() : null;
+  const cases = [["placed", "collect", "customer"], ["acknowledged", "collect", "desk"], ["ready", "collect", "desk"], ["ready", "deliver", "desk"],
+    ["done", "collect", "site"], ["declined", "collect", "desk"], ["cancelled", "collect", "customer"], ["cancelled", "deliver", "desk"]];
+  const W = cases.map(([s, mode, by]) => [s, mode, by, oWordP ? oWordP(s, { mode }, by) : null, (/^They see (.+?)(?::|[.]$)/.exec(toldOf({ status: s, mode, history: [{ status: s, by }] })) || [])[1]]);
+  const lines = Object.values(CUSTOMER_SEES).flatMap((x) => x.filter((_, i) => i % 2 === 1));
+  ok(!!oWordP && W.every((x) => x[3] && x[3] === x[4]) && Object.keys(CUSTOMER_SEES).length === 6 && lines.every((l) => page.includes("'" + l)),
+    "what the card says they see is the page's own state words and lines: " + JSON.stringify({ off: W.filter((x) => x[3] !== x[4]), missing: lines.filter((l) => !page.includes("'" + l)) }));
 
   /* THE CARDS THE PREVIEW READS ARE THE DESK'S OWN, BOOK BY BOOK: the extract takes each product's with that
      product in view, as every other per-product figure in the snapshot is taken (v407) */
@@ -27982,19 +28919,59 @@ await (async () => {
     const card = (x) => { const d = w.document.createElement("div"); d.innerHTML = String(w.eval("ordCard(" + JSON.stringify(Object.assign({}, base, x)) + ")"));
       const t = d.querySelector(".ordtold"); return t ? t.textContent.replace(/\s+/g, " ").trim() : ""; };
     const placed = card({ id: "a", status: "placed", mode: "collect", at: "2026-09-24T02:00:00.000Z", history: [{ at: "2026-09-24T02:00:00.000Z", status: "placed", by: "customer" }] });
-    ok(placed === "They see Placed, waiting to be acknowledged, since 24 Sep, 10:00.", "a new order: what their page says, and since when: " + placed);
+    ok(placed === "They see Sent, waiting to be confirmed, since 24 Sep, 10:00.", "a new order: what their page says, and since when: " + placed);
     const acked = card({ id: "b", status: "ready", mode: "deliver", at: "2026-09-20T02:00:00.000Z",
       history: [{ at: "2026-09-20T02:00:00.000Z", status: "placed", by: "customer" }, { at: "2026-09-23T03:30:00.000Z", status: "acknowledged", by: "desk" },
         { at: "2026-09-24T03:30:00.000Z", status: "ready", by: "desk" }] });
-    ok(acked === "They see Ready, ready to be delivered, since 24 Sep, 11:30.",
+    ok(acked === "They see Ready to deliver, since 24 Sep, 11:30.",
       "a later state is dated from when it began, in the order's own mode: " + acked);
-    const src = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
-    const m = /var STATE_WORDS=(\{[^}]*\})/.exec(src);
-    const page = m ? Function("return " + m[1])() : {};
-    const desk = JSON.parse(String(w.eval("JSON.stringify(['placed','acknowledged','ready','done','declined','cancelled'].map(function(s){return [s,ordTold({status:s,mode:'collect',history:[]}).word];}))")));
-    const off = desk.filter(([s, word]) => page[s] !== word);
-    ok(m && desk.length === 6 && off.length === 0,
-      "the desk's words are the page's own chip words, state by state: " + JSON.stringify({ off, page }));
+    /* THE TWO COPIES HELD TOGETHER. Since the Counter's stage 5 the page's words are its chip (by state, mode, whose
+       the cancellation was, and the goods all with them) and the sentence under it, so the page itself is drawn over
+       an order in every state and read back, and the desk's word must be its chip and the desk's line inside its sentence. */
+    const { landingPage: lp115 } = await import("../stmt/page.js");
+    const C115 = await import("../tools/stmt-crypto.mjs");
+    const { webcrypto: wc115 } = await import("node:crypto");
+    const { JSDOM: JD115 } = await import("jsdom");
+    const u115 = "abcd-efgh", pass115 = "fixture-pass-115", ck115 = await C115.contentKey("test-secret", u115);
+    const open115 = { ok: true, wrap: await C115.wrapKey(pass115, ck115), session: "sess-115",
+      env: await C115.encryptWith(ck115, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+    const ev = (status, by, x) => Object.assign({ at: "2026-09-23T03:30:00.000Z", status, by }, x || {});
+    const mk = (n, x) => Object.assign({}, base, { id: "2026092" + n + "000000-a" + n, at: "2026-09-20T02:00:00.000Z", mode: "collect", status: "placed",
+      history: [ev("placed", "customer")] }, x);
+    const list = [mk(1, {}), mk(2, { status: "acknowledged", history: [ev("acknowledged", "desk")] }), mk(3, { status: "ready", history: [ev("ready", "desk")] }),
+      mk(4, { status: "ready", mode: "deliver", history: [ev("ready", "desk")] }),
+      mk(5, { status: "ready", mode: "deliver", moved: 1, movedOn: "2026-09-23", history: [ev("ready", "desk")] }),
+      mk(6, { status: "done", moved: 1, paid: 100, history: [ev("done", "site")] }),
+      mk(7, { status: "declined", history: [ev("declined", "desk", { note: "None this week" })] }),
+      mk(8, { status: "cancelled", history: [ev("cancelled", "customer")] }),
+      mk(9, { status: "cancelled", history: [ev("cancelled", "desk", { note: "Prices have changed" })] })];
+    const dom115 = new JD115(lp115(u115, "n115", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc115, configurable: true }); } catch (e) { win.crypto = wc115; }
+      win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? open115 : (p === "/orders" && m === "GET") ? { ok: true, orders: list } : { ok: true };
+        return { ok: true, status: 200, json: async () => j };
+      };
+    } });
+    const pd = dom115.window.document;
+    const seen = [];
+    try {
+      pd.getElementById("un").value = u115; pd.getElementById("pw").value = pass115;
+      pd.getElementById("f").dispatchEvent(new dom115.window.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !pd.querySelector("#pOrder [data-olist]"); i++) await new Promise((r) => setTimeout(r, 50));
+      pd.querySelector('#tabs button[data-t="order"]').click();
+      const fold = pd.querySelector("#pOrder .olater"); if (fold) fold.click();
+      for (const o of list) {
+        const r = pd.querySelector('#pOrder [data-row="' + o.id + '"]'); if (r) r.click();
+        const s = pd.querySelector('#pOrder .oscreen[data-order="' + o.id + '"]');
+        const t = JSON.parse(String(w.eval("JSON.stringify(ordTold(" + JSON.stringify(o) + "))")));
+        seen.push({ id: o.id.slice(-2), chip: s ? s.querySelector(".state").textContent : null, when: s ? s.querySelector('[data-part="when"] .salt-insight').textContent : "", word: t.word, line: t.line });
+      }
+    } finally { dom115.window.close(); }
+    const off = seen.filter((x) => x.chip !== x.word || (x.line && !x.when.toLowerCase().includes(x.line.toLowerCase())));
+    ok(seen.length === 9 && seen.every((x) => x.chip) && off.length === 0,
+      "the desk's words are the page's own chip words, state by state, and its line is in the page's sentence: " + JSON.stringify(off.length ? off : seen.map((x) => x.word)));
   } finally {
     await new Promise((r) => setTimeout(r, 100));
     try { w.close(); } catch (e) { /* best effort */ }
@@ -28161,7 +29138,7 @@ section("S11 11.7: Decline and Cancel take a reason, checked on the desk, which 
 await (async () => {
   /* 24 Sep 2026 (PLAN 5; the study's F13: one tap, no reason, and the card vanished). The first tap opens the
      reasons; a second, once one is chosen, moves the order with it as the event's note. Their page says Not taken
-     or Cancelled by us with that reason; one they withdrew stays Withdrawn. The reason is his and never reaches
+     or Cancelled by us with that reason; one they withdrew reads Cancelled by you (S5 5.3). The reason is his and never reaches
      a ledger note: the entry the reconcile queues is built from fixed words. */
   const O = await import("../stmt/orders.js");
   const stmtW = (await import("../stmt/worker.js")).default;
@@ -28220,15 +29197,23 @@ await (async () => {
   try {
     pd.getElementById("un").value = u; pd.getElementById("pw").value = pass;
     pd.getElementById("f").dispatchEvent(new pw.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 100 && pd.querySelectorAll("#pOrder .pane .state").length < 3; i++) await new Promise((r) => setTimeout(r, 50));
-    const pane = (id) => pd.querySelector('#pOrder .pane[data-order="' + id + '"]');
-    const said = (id) => { const p = pane(id); return p ? [p.querySelector(".state").textContent, [...p.querySelectorAll("p.sub2")].map((x) => x.textContent).join(" | ")] : null; };
-    ok(JSON.stringify(said(dec.id)) === JSON.stringify(["Not taken", "Not taken: Out of stock this week. Nothing is owed."]),
-      "a decline reads Not taken, with his reason: " + JSON.stringify(said(dec.id)));
-    ok(JSON.stringify(said(can.id)) === JSON.stringify(["Cancelled by us", "Cancelled by us: Prices have changed. Nothing is owed."]),
-      "a cancellation of his reads Cancelled by us, with his reason: " + JSON.stringify(said(can.id)));
-    ok(said(wd.id) && said(wd.id)[0] === "Withdrawn" && /^Withdrawn before anything moved/.test(said(wd.id)[1]),
-      "and one they withdrew still reads Withdrawn: " + JSON.stringify(said(wd.id)));
+    /* S5: an ended order is a row under the earlier fold, and its own screen says where it stands (the chip, the
+       sentence under the steps) and what happened, a step a line */
+    for (let i = 0; i < 100 && !pd.querySelector("#pOrder .olater"); i++) await new Promise((r) => setTimeout(r, 50));
+    pd.querySelector("#pOrder .olater").click();
+    const said = (id) => {
+      const r = pd.querySelector('#pOrder [data-row="' + id + '"]'); if (!r) return null;
+      r.click();
+      const s = pd.querySelector('#pOrder .oscreen[data-order="' + id + '"]'); if (!s) return null;
+      const h = [...s.querySelectorAll('[data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
+      return [s.querySelector(".state").textContent, s.querySelector('[data-part="when"] .salt-insight').textContent, h[h.length - 1]];
+    };
+    ok(JSON.stringify(said(dec.id)) === JSON.stringify(["Not taken", "Not taken: Out of stock this week. Nothing is owed.", "Not taken: Out of stock this week"]),
+      "a decline reads Not taken, with his reason, on the order and in what happened: " + JSON.stringify(said(dec.id)));
+    ok(JSON.stringify(said(can.id)) === JSON.stringify(["Cancelled by us", "Cancelled by us: Prices have changed. Nothing is owed.", "Cancelled by us: Prices have changed"]),
+      "a cancellation of his reads Cancelled by us, with his reason, on the order and in what happened: " + JSON.stringify(said(can.id)));
+    ok(said(wd.id) && said(wd.id)[0] === "Cancelled by you" && /^Cancelled before anything moved/.test(said(wd.id)[1]) && said(wd.id)[2] === "Cancelled by you",
+      "and one they withdrew reads Cancelled by you, in their words (S5 5.3), with no reason of his: " + JSON.stringify(said(wd.id)));
   } finally { pw.close(); }
 
   /* ---- THE DESK: two taps, a reason between them ---- */
@@ -28424,9 +29409,19 @@ await (async () => {
   try {
     pd.getElementById("un").value = u; pd.getElementById("pw").value = pass;
     pd.getElementById("f").dispatchEvent(new pw.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 100 && !pd.querySelector("#pOrder .pane .state"); i++) await new Promise((r) => setTimeout(r, 50));
-    const line = [...pd.querySelectorAll("#pOrder .pane p.sub2")].map((x) => x.textContent).join(" | ");
-    ok(/Closed at 2 unit of the 5 ordered, RM 200 for the goods\./.test(line), "their page says it was closed there, and at what: " + line);
+    /* S5: the order is a row, and its own screen carries the goods on steps and the money on its lines */
+    for (let i = 0; i < 100 && !pd.querySelector('#pOrder [data-row="' + o.id + '"]'); i++) await new Promise((r) => setTimeout(r, 50));
+    pd.querySelector('#pOrder [data-row="' + o.id + '"]').click();
+    const scr = pd.querySelector('#pOrder .oscreen[data-order="' + o.id + '"]');
+    const line = scr ? scr.querySelector('[data-part="when"] .salt-insight').textContent : "";
+    ok(/ Closed at 2 units of the 5 ordered, RM 200 for the goods\.$/.test(line), "their page says it was closed there, and at what: " + line);
+    const steps = scr ? [...scr.querySelectorAll(".salt-steps__step")].map((x) => x.textContent + (x.getAttribute("aria-current") ? "*" : "")) : [];
+    const goods = scr ? [...scr.querySelectorAll('[data-part="money"] .salt-ledger__row')].map((x) => x.textContent) : [];
+    ok(JSON.stringify(steps) === JSON.stringify(["Sent", "Confirmed", "Ready", "Collected*"]) && scr.querySelector(".state").textContent === "Collected"
+      && goods[0] === "GoodsRM 2002 units handed over of the 5 ordered" && goods.some((g) => /^Still to payRM 200The goods are with you$/.test(g)),
+      "its goods stand at Collected, all of what was kept being with them, and the money is billed for the 2 units, saying so: " + JSON.stringify({ steps, goods }));
+    const h = [...scr.querySelectorAll('[data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
+    ok(h[h.length - 1] === "Closed at 2 units of the 5 ordered", "and what happened says it in their words: " + JSON.stringify(h));
   } finally { pw.close(); }
 
   /* ---- THE DESK ---- */
@@ -28694,7 +29689,7 @@ await (async () => {
     const pend = db.prepare("SELECT status FROM draft").all().map((d) => d.status);
     const site1 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
     const msg1 = (D.querySelector('[data-msg="' + o.id + '"]') || {}).textContent || "";
-    ok(pend.join() === "approved" && site1.status === "acknowledged" && /^Accepted\. They see Acknowledged, and the row you saw is approved\./.test(msg1),
+    ok(pend.join() === "approved" && site1.status === "acknowledged" && /^Accepted\. They see Confirmed, and the row you saw is approved\./.test(msg1),
       "Accept approves the row it drew, moves the order, and says so: " + JSON.stringify({ pend, st: site1.status, msg1 }));
 
     const coll = card().querySelector('button[data-ord="handover"][data-full="1"]');
@@ -28713,8 +29708,8 @@ await (async () => {
     D.querySelector('.ordcard[data-id="' + o2.id + '"] .ordfoot button[data-ord="acknowledged"]').click();
     for (let i = 0; i < 40 && !/Accepted/.test((D.querySelector('[data-msg="' + o2.id + '"]') || {}).textContent || ""); i++) await settle();
     const msg3 = (D.querySelector('[data-msg="' + o2.id + '"]') || {}).textContent || "";
-    ok(/waits under Approve, marked, and they still see Placed/.test(msg3) && !/They see Acknowledged/.test(msg3),
-      "a row that came out other than shown is said as waiting under Approve, the customer still reading Placed: " + msg3);
+    ok(/waits under Approve, marked, and they still see Sent/.test(msg3) && !/They see Confirmed/.test(msg3),
+      "a row that came out other than shown is said as waiting under Approve, the customer still reading Sent: " + msg3);
   } finally {
     await new Promise((r) => setTimeout(r, 200));
     try { w.close(); } catch (x) { /* best effort */ }
@@ -30351,34 +31346,42 @@ await (async () => {
   } });
   const w = dom.window, d = w.document;
   const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
-  const panes = () => [...d.querySelectorAll("#pOrder .pane")].filter((p) => p.querySelector(".state"));
+  /* S5: an order is a row that opens its own screen; its ways to pay open behind its one Pay */
+  const scr = () => d.querySelector("#pOrder .oscreen");
+  const openO = (id) => { const b = d.querySelector("#pOrder .oback"); if (b && scr()) b.click();
+    const r = d.querySelector('#pOrder [data-row="' + id + '"]'); if (r) r.click();
+    const pay = scr() && [...scr().querySelectorAll(".oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
+    return scr() || d; };
   const said = (root, words) => [...root.querySelectorAll('[role="status"]')].find((x) => x.textContent.includes(words) && !x.closest("[hidden]"));
   const after = (a, b) => !!(a && b && (a.compareDocumentPosition(b) & w.Node.DOCUMENT_POSITION_FOLLOWING));
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    await until(() => panes().length === 2);
-    ok(panes().length === 2 && !d.getElementById("pOrder").hidden && d.getElementById("tOrder").textContent === "Pay",
+    await until(() => d.querySelectorAll("#pOrder [data-row]").length === 2);
+    ok(d.querySelectorAll("#pOrder [data-row]").length === 2 && !d.getElementById("pOrder").hidden && d.getElementById("tOrder").textContent === "Pay",
       "the fixture opens on the payment page with its two orders below");
 
+    openO("oA");
     d.getElementById("pd-oA").click();
     await until(() => said(d, "Refused by the fixture: pay"));
-    const payLine = said(panes()[0], "Refused by the fixture: pay");
+    const payLine = said(scr(), "Refused by the fixture: pay");
     ok(payLine && after(d.getElementById("pd-oA"), payLine),
       "I have paid refused: the words are on screen in a role=status line in that order, after the button");
 
-    [...panes()[1].querySelectorAll("button")].find((b) => b.textContent === "Withdraw this order").click();
+    openO("oB");
+    [...scr().querySelectorAll("button")].find((b) => b.textContent === "Cancel this order").click();
     await until(() => said(d, "Refused by the fixture: withdraw"));
-    const wdBtn = [...panes()[1].querySelectorAll("button")].find((b) => b.textContent === "Withdraw this order");
-    const wdLine = said(panes()[1], "Refused by the fixture: withdraw");
+    const wdBtn = [...scr().querySelectorAll("button")].find((b) => b.textContent === "Cancel this order");
+    const wdLine = said(scr(), "Refused by the fixture: withdraw");
     ok(wdLine && after(wdBtn, wdLine) && !said(d, "Refused by the fixture: pay"),
-      "Withdraw refused: the words sit beside Withdraw on that order, and the earlier answer has gone");
+      "Cancel refused: the words sit beside Cancel on that order, and the earlier answer has gone");
 
-    const box = panes()[1].querySelector(".sayw input"); box.value = "Is it ready?";
-    [...panes()[1].querySelectorAll("button")].find((b) => b.textContent === "Send").click();
+    const box = scr().querySelector("form.salt-composer input"); box.value = "Is it ready?";
+    [...scr().querySelectorAll("button")].find((b) => b.textContent === "Send").click();
     await until(() => said(d, "Refused by the fixture: say"));
-    const sayLine = said(panes()[1], "Refused by the fixture: say");
-    ok(sayLine && after(panes()[1].querySelector(".sayw"), sayLine), "Send refused: the words sit under the box that was sent from");
+    const sayLine = said(scr(), "Refused by the fixture: say");
+    ok(sayLine && sayLine.closest('[data-part="say"]') && after(box, sayLine) && box.value === "Is it ready?" && !scr().querySelector(".salt-bubble--failed"),
+      "Send refused: the words are back in that order's box, and the answer stands under it");
 
     /* the order list answering 401 after a tap wrote the form's note, which the payment page never drew. Since
        S1 1.5 a 401 on a live session is said at once in the bar, role=alert, which the payment page shows too */
@@ -30386,6 +31389,7 @@ await (async () => {
       && /signed out on this (phone|computer)/.test(l.textContent); };
     const lapseBefore = lapseOn();
     st.ordersDown = true;
+    openO("oA");
     d.getElementById("pd-oA").click();
     await until(() => lapseOn());
     ok(!lapseBefore && lapseOn() && d.getElementById("tOrder").textContent === "Pay",
@@ -30394,8 +31398,8 @@ await (async () => {
     st.ordersDown = false; st.payOk = true;
     d.getElementById("pd-oA").click();
     await until(() => said(d, "Recorded."));
-    const rec = said(panes()[0], "Recorded.");
-    ok(rec && !d.getElementById("pd-oA") && /Paid in full/.test(panes()[0].textContent) && after(panes()[0].querySelector(".quote"), rec),
+    const rec = said(scr(), "Recorded.");
+    ok(rec && !d.getElementById("pd-oA") && /Paid in full/.test(scr().textContent) && after(scr().querySelector(".salt-insight"), rec),
       "paid in full, the pay box is gone and the answer stands under the order's state instead of vanishing with it");
   } finally { w.close(); }
 })();
@@ -30430,19 +31434,25 @@ await (async () => {
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 100 && !d.getElementById("pd-oA"); i++) await new Promise((r) => setTimeout(r, 50));
+    /* S5 5.2: each order's payment box is in its own screen, behind its one Pay: opened one at a time */
+    for (let i = 0; i < 100 && !d.querySelector('#pOrder [data-row="oA"]'); i++) await new Promise((r) => setTimeout(r, 50));
     const hold = d.querySelector("#pOrder .pane");
-    const scope = [hold, ...d.querySelectorAll("#pOrder .pay")];
-    const ctrls = scope.flatMap((s) => [...s.querySelectorAll("button, a, select, input")]).filter((x) => x.type !== "radio");
+    const openPay = (id) => { const b = d.querySelector("#pOrder .oback"); if (b && d.querySelector("#pOrder .oscreen")) b.click();
+      d.querySelector('#pOrder [data-row="' + id + '"]').click();
+      const pay = [...d.querySelectorAll("#pOrder .oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
+      return d.querySelector("#pOrder .oscreen"); };
+    const scrC = openPay("oC"), boxC = scrC.querySelector(".oact .pay"), pillsC = scrC.querySelectorAll(".salt-pill").length;
+    const ctrlsC = boxC ? [...boxC.querySelectorAll("button, a, select, input")] : [];
+    const scrA = openPay("oA"), boxA = scrA.querySelector(".oact .pay"), pillsA = scrA.querySelectorAll(".salt-pill").length;
+    const ctrls = [hold, boxA].filter(Boolean).flatMap((s) => [...s.querySelectorAll("button, a, select, input")]).concat(ctrlsC).filter((x) => x.type !== "radio");
     const bare = ctrls.filter((x) => !/(^| )salt-(pill|ghost|field__input)( |$)/.test(x.className));
-    ok(d.getElementById("pd-oA") && d.querySelectorAll("#pOrder .pay").length === 2 && ctrls.length >= 8 && !bare.length,
+    ok(d.getElementById("pd-oA") && !!boxA && !!boxC && ctrls.length >= 8 && !bare.length,
       "every button, link and field on the payment pane and in every order's payment box is a recipe ("
       + ctrls.length + " controls): " + bare.map((x) => x.tagName + " " + (x.textContent || x.getAttribute("aria-label"))).join(", "));
-    const orderPanes = [...d.querySelectorAll("#pOrder .pane")].filter((p) => p.querySelector(".state"));
-    const pills = orderPanes.map((p) => p.querySelectorAll(".salt-pill").length);
+    const pills = [pillsA, pillsC];
     ok(pills.join() === "1,1" && d.getElementById("pd-oA").classList.contains("salt-pill") && !hold.querySelector(".salt-pill"),
       "one filled control an order, I have paid on the one with a rail chosen, and the payment pane's ways to pay all quiet: " + pills.join());
-    const amt = orderPanes[0].querySelector('input[type="number"]'), cs = w.getComputedStyle(amt);
+    const amt = scrA.querySelector('input[type="number"]'), cs = w.getComputedStyle(amt);
     ok(amt.classList.contains("salt-field__input") && amt.inputMode === "decimal" && cs.width !== "18px" && cs.height !== "18px",
       "the amount is the field, typed on a decimal keypad, and no longer squeezed by the radio buttons' size: " + cs.width + " x " + cs.height);
   } finally { w.close(); }
@@ -30480,6 +31490,10 @@ await (async () => {
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    /* S5 5.2: the pay row is in the order's own screen, behind its one Pay */
+    for (let i = 0; i < 100 && !d.querySelector('#pOrder [data-row="oA"]'); i++) await new Promise((r) => setTimeout(r, 50));
+    const rowA = d.querySelector('#pOrder [data-row="oA"]'); if (rowA) rowA.click();
+    const payA = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (payA) payA.click();
     for (let i = 0; i < 100 && !d.getElementById("pd-oA"); i++) await new Promise((r) => setTimeout(r, 50));
     const cells = [...d.querySelectorAll("#out td.amt, #out th.amt")].map((x) => w.getComputedStyle(x));
     ok(cells.length === 2 && cells.every((c) => c.display !== "flex" && c.marginTop !== "10px"),
@@ -30519,21 +31533,24 @@ await (async () => {
     };
   } });
   const w = dom.window, d = w.document;
-  const boxOf = (i) => [...d.querySelectorAll("#pOrder .pane")].filter((p) => p.querySelector(".state"))[i].querySelector(".sayw input");
+  const boxOf = (i) => d.querySelector('#pOrder input[data-say="' + ["oA", "oB"][i] + '"]');
   try {
     ok(fast !== html, "the served page's poll is shortened, or this proves nothing about a poll");
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 100 && !(d.querySelectorAll("#pOrder .sayw input").length === 2); i++) await new Promise((r) => setTimeout(r, 50));
+    /* S5 5.5: the order is opened on its own screen; the poll then patches it and never draws the box again */
+    for (let i = 0; i < 100 && !d.querySelector('#pOrder [data-row="oB"]'); i++) await new Promise((r) => setTimeout(r, 50));
+    d.querySelector('#pOrder [data-row="oB"]').click();
     const typed = boxOf(1);
     typed.focus(); typed.value = "Could it come on Fri"; typed.dispatchEvent(new w.Event("input", { bubbles: true }));
     typed.setSelectionRange(9, 9);
-    for (let i = 0; i < 100 && !/Fixture reply/.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+    const replied = () => /A reply for you/.test((d.querySelector('#pOrder [data-row="oA"]') || {}).textContent || "");
+    for (let i = 0; i < 100 && !replied(); i++) await new Promise((r) => setTimeout(r, 50));
     const now = boxOf(1);
-    ok(/Fixture reply/.test(d.getElementById("pOrder").textContent) && now !== typed,
-      "a poll brought a changed order and the orders were drawn again, so the box is a new element");
-    ok(now.value === "Could it come on Fri" && boxOf(0).value === "",
-      "the half-typed line is still in its own order's box, and only there: " + JSON.stringify([boxOf(0).value, now.value]));
+    ok(replied() && now === typed,
+      "a poll brought a changed order onto the list, and the box being typed in is the same element");
+    ok(now.value === "Could it come on Fri",
+      "the half-typed line is still in its own order's box: " + JSON.stringify(now.value));
     ok(d.activeElement === now && now.selectionStart === 9,
       "and the caret is back where it was, in that box: " + (d.activeElement && d.activeElement.getAttribute("data-say")) + " at " + now.selectionStart);
   } finally { w.close(); }
@@ -30654,7 +31671,7 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 60 && !thrown.length && !/Your orders/.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
     const po = d.getElementById("pOrder"), sizes = [...po.querySelectorAll("select option")].map((o) => o.value);
-    ok(!thrown.length && /Notifications/.test(po.textContent) && /Your orders/.test(po.textContent) && po.querySelectorAll(".state").length === 1
+    ok(!thrown.length && /Notifications/.test(po.textContent) && /Your orders/.test(po.textContent) && po.querySelectorAll("[data-row] .salt-status").length === 1
       && sizes.join() === "1" && !po.querySelector(".seg button[aria-label]"),
       "the Order tab draws: the form offers the one product with a price, and Notifications and their order are there: " + JSON.stringify({ sizes, thrown }));
     const pp = d.getElementById("pPrices");
@@ -31191,7 +32208,8 @@ await (async () => {
     "the door's field is the system's field, in mono for a code, and Log in is the system's pill");
   ok(/class="salt-tabs__pill on" role="tab" aria-selected="true" data-t="stmt"/.test(pgY) && /bs\[i\]\.setAttribute\('aria-selected',on\?'true':'false'\)/.test(pgY),
     "the tabs are the system's, and a tap moves aria-selected with the open one");
-  ok(/'state salt-status salt-status--'\+\(STATE_TONE\[o\.status\]\|\|'mist'\)/.test(pgY) && /var STATE_TONE=\{placed:'steel',acknowledged:'steel',ready:'brass',done:'verdigris'\}/.test(pgY),
+  /* S5 5.3: the chip is drawn in one place, stateChip, its word the customer's and its tone read off the order */
+  ok(/\+'salt-status salt-status--'\+tone,stateWord\(o\)\)/.test(pgY) && /tone=s==='placed'\?'steel salt-status--dashed':/.test(pgY) && /h\.appendChild\(stateChip\(o,'state'\)\)/.test(pgY),
     "an order's state is the system's chip, in its tone");
   const pcssY = pgY.slice(pgY.indexOf("const PAGE_CSS = " + String.fromCharCode(96)), pgY.indexOf(String.fromCharCode(96) + ";", pgY.indexOf("const PAGE_CSS = ")));
   ok(!/\.btn\{[^}]*background/.test(pcssY) && !/\.tabs button\.on\{/.test(pcssY) && !/\n\.state\{/.test(pcssY) && !/\n\.fld\{[^}]*background/.test(pcssY) && /\.btn\{margin-top:18px;width:100%\}/.test(pcssY),

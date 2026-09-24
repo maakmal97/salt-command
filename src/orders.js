@@ -136,22 +136,27 @@ export async function findOrder(env, id) {
 
 /* ---- WHAT THE CUSTOMER'S PAGE SAYS OF EACH STATE (S11 11.1) ------------------------------------
  * The card says what the customer is looking at before his yes. These are the page's own words, the state
- * (STATE_WORDS) and the line under it, in stmt/page.js's CLIENT_JS: copied, because they live inside a
- * template literal the desk cannot import, and HELD TOGETHER by the suite, so the day the page's words
- * change this turns it red until it follows. No figure: the card draws the figures. */
+ * chip (oWord) and the start of the sentence under it (oWhen), in stmt/page.js's CLIENT_JS: copied, because
+ * they live inside a template literal the desk cannot import, and HELD TOGETHER by the suite, so the day the
+ * page's words change this turns it red until it follows. Since the Counter's stage 5 (S5 5.3) they are the
+ * customer's own words. Each is [chip, sentence], and where the chip reads by the mode or by whose the
+ * cancellation was, [collect or theirs, sentence, deliver or his, sentence]. No figure: the card draws the figures. */
 export const CUSTOMER_SEES = {
-  placed: ["Placed", "Waiting to be acknowledged"],
-  acknowledged: ["Acknowledged", "Acknowledged, and being prepared"],
-  ready: ["Ready", "Ready to collect", "Ready to be delivered"],
-  done: ["Completed", "Your order is now complete"],
+  placed: ["Sent", "Waiting to be confirmed"],
+  acknowledged: ["Confirmed", "Confirmed on"],
+  ready: ["Ready to collect", "Ready to collect, since", "Ready to deliver", "Ready to deliver, since"],
+  done: ["Complete", "Your order is now complete"],
   declined: ["Not taken", "Not taken"],   /* S11 11.7: his reason and "Nothing is owed" follow on the page */
-  cancelled: ["Withdrawn", "Withdrawn before anything moved", "Withdrawn"]
+  cancelled: ["Cancelled by you", "Cancelled before anything moved", "Cancelled by us", "Cancelled by us"]
 };
 export function toldOf(o) {
   const w = CUSTOMER_SEES[o && o.status];
   if (!w) return "";
-  const line = o.status === "ready" ? w[o.mode === "deliver" ? 2 : 1] : o.status === "cancelled" ? w[(+o.paid || 0) > 0 ? 2 : 1] : w[1];
-  return "They see " + w[0] + (line !== w[0] ? ": " + line : "") + ".";
+  const end = (o.history || []).filter((x) => x && x.status === o.status).slice(-1)[0];
+  const alt = o.status === "ready" ? o.mode === "deliver" : o.status === "cancelled" && !!end && end.by === "desk";
+  /* their own cancellation with money paid opens on the refund, which is a figure */
+  const word = w[alt ? 2 : 0], line = o.status === "cancelled" && !alt && (+o.paid || 0) > 0 ? word : w[alt ? 3 : 1];
+  return "They see " + word + (line.indexOf(word) === 0 ? "" : ": " + line) + ".";   /* a sentence opening on the chip adds nothing */
 }
 
 /* ---- THE ROW BEFORE HIS YES (S11 11.1, his decision D6 of 24 Sep 2026) ---------------------------

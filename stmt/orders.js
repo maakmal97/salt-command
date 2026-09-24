@@ -463,6 +463,7 @@ export function decidePlace(u, body, open, at) {
   return { ev: { kind: "place", at, order } };
 }
 
+const SAID_AS = { done: "complete", cancelled: "cancelled", declined: "not taken" };
 /** The customer's own moves: a rail, a payment, a line, or a withdrawal before anything is on the road.
  *  `mine` is their orders, which the cash rule reads. Returns { ev } or { error, status }. */
 export function decideCustomer(order, action, body, mine, at) {
@@ -470,12 +471,13 @@ export function decideCustomer(order, action, body, mine, at) {
   if (action === "cancel") {
     /* v694: either side may withdraw at any stage UNTIL THE GOODS MOVE (his rule, 18 Sep 2026).
        What was paid is refunded, which the ledger raises when the cancellation folds. */
-    if (["done", "cancelled", "declined"].includes(order.status)) return { error: "an order that is " + order.status + " cannot be withdrawn from here", status: 409 };
-    if ((+order.moved || 0) > 0) return { error: "the goods are already with you, so this cannot be withdrawn here", status: 409 };
+    /* S5 5.3 (D11): the refusals the page shows are in the customer's words, never the desk's states */
+    if (["done", "cancelled", "declined"].includes(order.status)) return { error: "this order is " + SAID_AS[order.status] + ", so it cannot be cancelled here", status: 409 };
+    if ((+order.moved || 0) > 0) return { error: "the goods are already with you, so this cannot be cancelled here", status: 409 };
     return { ev: { kind: "status", at, status: "cancelled", by: "customer" } };
   }
   if (action === "method") {
-    if (!PAYABLE.includes(order.status)) return { error: "payment is chosen once the order is acknowledged", status: 409 };
+    if (!PAYABLE.includes(order.status)) return { error: "payment is chosen once the order is confirmed", status: 409 };
     const r = pickRail(order, body, mine);
     if (r.error) return r;
     return { ev: { kind: "method", at, method: r.method, account: r.account } };
@@ -485,7 +487,7 @@ export function decideCustomer(order, action, body, mine, at) {
        money and no rail tells it anything, so what is recorded is their word; the figure is
        checked against the fold, and he sees the running total on his card. It accumulates, so a
        part payment is a part payment and two of them are two. */
-    if (!PAYABLE.includes(order.status)) return { error: "payment is recorded once the order is acknowledged", status: 409 };
+    if (!PAYABLE.includes(order.status)) return { error: "payment is recorded once the order is confirmed", status: 409 };
     const amount = body && body.amount;
     if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { error: "say how much you paid", status: 400 };
     const due = dueOf(order);

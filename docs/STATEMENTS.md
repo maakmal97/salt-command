@@ -444,6 +444,11 @@ complete), declined (the owner), cancelled (either side, at any stage until the 
 order he closes at what was handed over** (S11 11.9) is restated there: the size becomes the units handed
 over, the goods' total follows at the agreed rate, the old figures kept as `closed`, and its row is a
 Correction whose new total renames it.
+**The customer reads them in their own words** (S5 5.3, his answer to D11): Sent, Confirmed, Ready to
+collect or deliver, Collected or Delivered once the goods are all with them, Complete, Not taken,
+Cancelled by you or by us; "units" above one; and every refusal of a move of theirs says it so. His
+reason for a decline or a cancellation (S11 11.7) follows its word, on the order and in its history; a
+close short says on the order and on its Goods line what was handed over of what was ordered.
 
 **A RETRY LANDS ONCE** (24 Sep 2026). Every move the page sends carries a request id it mints per
 tap (per review, per payment, per line, per withdrawal, per rail; S10 10.4), kept with that move until
@@ -720,8 +725,12 @@ reply, payment received, a payment is due, delivered or collected (in part or in
 not taken, cancelled. **Never an amount, a product, an order or a name**; the suite reads every word.
 One banner an order: the notification's tag and a sealed wake's push `Topic` are per order (the topic a
 digest of the id), so news of one order never replaces another's on the lock screen or at the push service.
-A tap opens the Counter at `#o=<id>`; a page already open is sent a message instead, re-reads its
-orders and opens that one, or, its session lapsed, keeps it until the phone is back in (reopened from its memory, S3 3.5, or signed in on the Sheet). A subscription filed before its keys gets a payload-free wake and the
+A tap opens the Counter at `#o=<id>`; a Counter page already open (never a guest board or Salt Admin in
+another tab) is sent a message instead, re-reads its orders, patching only what changed, and opens that one,
+or, its session lapsed, keeps it until the phone is back in (reopened from its memory, S3 3.5, or signed in
+on the Sheet). A return to the page (S3 3.5) and a lapse reopened patch the orders the same way, so an open
+order and a half-typed line survive; only an order form the account now draws differently (the prices, the
+payment page) draws the tab again. A subscription filed before its keys gets a payload-free wake and the
 old fixed words, so nothing already subscribed went dark; the page re-files the keys at the next
 sign-in. A notice keeps its own road: its wake carries no payload, and the service worker reads
 the public `bulletin` (v761). On an
