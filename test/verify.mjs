@@ -20173,6 +20173,84 @@ await (async () => {
   await kv.delete(mine.key);
   ok(await O.sessionUser(req(s), env) === "", "and deleting what it names ends that session, which is what signing an account out everywhere needs");
 })();
+section("S3 fix: Sign out everywhere ends every remembered phone, session and alert on one account, behind Access, from Salt Admin's card");
+await (async () => {
+  /* S3-SEC-2 (24 Sep 2026). Every link now remembers the phone and every open slides it thirty days, so a forwarded
+     link or a lost phone stayed signed in for as long as it was used, and the plan's answer, Sign out everywhere (9.4),
+     was not built: the pointers were written and nothing read them but the test account's unmaking. */
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { endpointId } = await import("../stmt/push.js");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const kv = new KV(), MASTER = "mp-s3-so";
+  const u = C.newUsername(), other = C.newUsername(), pw = C.newPassword(), pw2 = C.newPassword(), ck = await C.contentKey("s3-so", u), ck2 = await C.contentKey("s3-so", other);
+  const rec = async (x, p, k) => JSON.stringify({ u: x, issued: "2026-09-01", verifier: await C.makeVerifier(p), wrap: await C.wrapKey(p, k),
+    wrapMaster: await C.wrapKey(MASTER, k), env: await C.encryptWith(k, JSON.stringify({ statements: [] })) });
+  await kv.put("u:" + u, await rec(u, pw, ck)); await kv.put("u:" + other, await rec(other, pw2, ck2));
+  await kv.put("roster", JSON.stringify([{ code: "CX1-SO", username: u }, { code: "CX2-SO", username: other }]));
+  await kv.put("sheet", JSON.stringify({ issue: "2026-09-01", accounts: [{ username: u, issued: "2026-09-01", flag: "clear", t: { owed: 0 } }] }));
+  const TEAM = "maakmal", AUD = "aud-s3-so", KID = "kid-s3-so";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const jwt = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const post = async (path, body, headers) => { const r = await site(path, { method: "POST", headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) });
+    return { status: r.status, j: await r.json().catch(() => ({})) }; };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  let win = null;
+  try {
+    /* the account signed in twice, one of them remembered, with an alert; another account alike */
+    const signIn = async (x, p) => (await post("/open", { u: x, password: p })).j.session;
+    const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" };
+    const s1 = await signIn(u, pw), s2 = await signIn(u, pw), s3 = await signIn(other, pw2);
+    const t1 = (await post("/remember", { wrap }, { "X-Stmt-Session": s1 })).j.token, t3 = (await post("/remember", { wrap }, { "X-Stmt-Session": s3 })).j.token;
+    await post("/push/subscribe", { endpoint: "https://push.example/so-1" }, { "X-Stmt-Session": s2 });
+    await post("/push/subscribe", { endpoint: "https://push.example/so-3" }, { "X-Stmt-Session": s3 });
+    const orders = async (s) => (await site("/orders", { headers: { "X-Stmt-Session": s } })).status;
+    ok(await orders(s1) === 200 && await orders(s2) === 200 && (await post("/remember/open", { token: t1 })).status === 200,
+      "the fixture: the account is signed in on its phones, one of them remembered");
+
+    ok((await post("/all/signout", { u })).status === 401, "Sign out everywhere is behind Access");
+    const out = await post("/all/signout", { u }, { "cf-access-jwt-assertion": jwt });
+    ok(out.status === 200 && out.j.ok && out.j.ended >= 3, "with Access it ends the account's phones and sessions and says how many: " + JSON.stringify(out.j));
+    ok(await orders(s1) === 401 && await orders(s2) === 401 && (await post("/remember/open", { token: t1 })).status === 401
+      && ![...kv.m.keys()].some((k) => k.startsWith("dev:" + u + ":") || k.startsWith("push:" + u + ":")),
+      "every session is refused, the remembered phone is the door's refusal, and no pointer or alert is left for it");
+    ok(await orders(s3) === 200 && (await post("/remember/open", { token: t3 })).status === 200 && !!(await kv.get("push:" + other + ":" + (await endpointId("https://push.example/so-3")))),
+      "and another account's phones, sessions and alerts are untouched");
+
+    /* his card: a second tap says yes */
+    const html = await (await site("/all", { headers: { "cf-access-jwt-assertion": jwt } })).text();
+    const seen = [];
+    win = new JSDOM(html, { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.fetch = async (path, o) => {
+        o = o || {};
+        if (String(path) === "/all/signout") seen.push(JSON.parse(o.body));
+        return site(String(path), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": jwt }), body: o.body });
+      };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 300 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    D.querySelector('button[data-m="send"]').click();
+    const btn = () => { const k = [...D.querySelectorAll("#slist .scard")].find((x) => x.textContent.includes(u)); return k && [...k.querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again|Signing out|Signed out|Nothing was|Could not sign out/.test(b.textContent)); };
+    ok(await until(() => !!btn()) && btn().textContent === "Sign out everywhere", "each account's card carries Sign out everywhere");
+    btn().click();
+    await new Promise((r) => setTimeout(r, 40));
+    ok(seen.length === 0 && /Tap again/.test(btn().textContent), "one tap only asks, on the button itself, and sends nothing");
+    btn().click();
+    ok(await until(() => seen.length === 1) && seen[0].u === u && await until(() => /Signed out everywhere|Nothing was signed in/.test(btn().textContent)),
+      "and the second signs the account out everywhere: " + JSON.stringify(seen));
+  } finally { globalThis.fetch = realFetch; if (win) { try { win.close(); } catch (e) { /* best effort */ } } }
+})();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {
   /* S3, 24 SEP 2026. The door's one way in named its opener unseal, which stmt/owner.js already declared: spliced in

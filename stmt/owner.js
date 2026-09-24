@@ -259,10 +259,24 @@ export const OWNER_JS = `
     var hob=el('button',null,'Show a code'); hob.type='button';
     if(noAcct){ hob.disabled=true; hob.title=why; }
     hob.addEventListener('click', function(){ if(a.account!==false) showHandover(a, hob); });
+    /* S3 FIX, 24 SEP 2026: SIGN OUT EVERYWHERE (fold 9.4's server half). A forwarded link or a lost phone stays signed
+       in while it is used, so this ends every phone and session on the account; a second tap within four seconds says
+       yes, and a new link or a code then signs them back in */
+    var sob=el('button',null,'Sign out everywhere'); sob.type='button';
+    if(noAcct){ sob.disabled=true; sob.title=why; }
+    var soArmed=null;
+    sob.addEventListener('click', async function(){
+      if(a.account===false) return;
+      if(!soArmed){ sob.textContent='Tap again to sign them out'; soArmed=setTimeout(function(){ soArmed=null; sob.textContent='Sign out everywhere'; }, 4000); return; }
+      clearTimeout(soArmed); soArmed=null; sob.disabled=true; sob.textContent='Signing out...';
+      try{ var j=await refs('/all/signout', {u:a.username}); sob.textContent=j.ended?'Signed out everywhere':'Nothing was signed in'; }
+      catch(e){ sob.textContent='Could not sign out'; }
+      setTimeout(function(){ sob.textContent='Sign out everywhere'; sob.disabled=false; }, 2200);
+    });
     var open=el('button',null,'Open account'); open.type='button';
     if(noAcct){ open.disabled=true; open.title=why; }
     open.addEventListener('click', function(){ openAcct(a); });
-    row.appendChild(share); row.appendChild(copy); row.appendChild(slb); row.appendChild(hob); row.appendChild(pwb); row.appendChild(open);
+    row.appendChild(share); row.appendChild(copy); row.appendChild(slb); row.appendChild(hob); row.appendChild(pwb); row.appendChild(sob); row.appendChild(open);
     card.appendChild(row);
     var tick=el('label','tick');
     var box=document.createElement('input'); box.type='checkbox'; box.checked=!!a.sent;

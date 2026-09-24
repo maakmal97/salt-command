@@ -309,7 +309,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   one refusal; only his page sends a master, so it cannot be typed at a customer's door. Keep me signed
   in (a device key in the browser, the wrapped content key at `rem:<sha256(token)>`, neither opening anything
   alone, thirty days from the last open), log out, which also drops that wrap, this phone's
-  notifications and every hand-over the page minted. Nothing says phone on a computer. **A lapsed session reopens itself from the remembered
+  notifications and every hand-over the page minted. Salt Admin's **Sign out everywhere** (`POST /all/signout`) ends
+  every phone, session and alert on an account: the answer to a forwarded link or a lost phone. Nothing says phone on a computer. **A lapsed session reopens itself from the remembered
   phone and repeats the request once** (his D1), **only when the phone remembers the account on screen**;
   otherwise a Sheet says so over the page, carrying the door and keeping the draft. The page re-reads on every return (`GET /account` on its session, never a
   wrap), and a remembered phone draws "Opening your account", never the door. Kept as an app:

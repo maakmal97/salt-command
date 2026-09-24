@@ -868,6 +868,28 @@ async function unmakeTest(env) {
   return gone.length;
 }
 
+/* S3 FIX, 24 SEP 2026: SIGN OUT EVERYWHERE, fold 9.4's server half, shipped with the sign-in that no longer ages out
+   (3.4 to 3.6), which is what it answers: a forwarded link, a lost or sold phone. Every pointer under the account names
+   a remembered phone or a session, and each goes with its pointer; so do the account's push records, since a phone
+   signed out stops waking (v692). A phone remembered before pointers and not opened since has none, and ends thirty
+   days from its tick (handleRemember). Returns how many phones and sessions it ended. */
+async function signOutEverywhere(env, u) {
+  let n = 0;
+  for (const pre of [devPrefix(u), "push:" + u + ":"]) {
+    let cursor;
+    do {
+      const page = await env.STMT.list({ prefix: pre, cursor });
+      for (const k of page.keys) {
+        const at = pre.startsWith("dev:") ? await env.STMT.get(k.name, "json") : null;
+        if (at && /^(rem|sess):/.test(String(at.key))) { await env.STMT.delete(at.key); n++; }
+        await env.STMT.delete(k.name);
+      }
+      cursor = page.list_complete ? null : page.cursor;
+    } while (cursor);
+  }
+  return n;
+}
+
 async function handleRefs(request, env, p, m, origin) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   if (!(await identity(request, env))) return json({ ok: false, error: "Access required" }, 401);
@@ -1117,6 +1139,14 @@ export default {
         return json({ ok: true, at: a ? a.at || null : null, products: a ? a.products || [] : [] });
       }
       /* the test account: made and unmade with one tap, and counted nowhere (v689) */
+      /* S3 fix: Sign out everywhere, for one account */
+      if (p === "/all/signout") {
+        if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+        const b = await readJson(request);
+        const u = normUser(b && b.u);
+        if (!u) return json({ ok: false, error: "send the username" }, 400);
+        return json({ ok: true, ended: await signOutEverywhere(env, u) });
+      }
       if (p === "/all/test") {
         if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
         const b = await readJson(request);
