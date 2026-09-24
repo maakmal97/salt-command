@@ -48,7 +48,7 @@ import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
 import { FONTS } from "./fonts.js";
-import { mintSession, dropSession, sessionUser, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, toChase, CHASE_KEY, hourOf } from "./orders.js";
+import { mintSession, dropSession, sessionUser, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, toChase, CHASE_KEY, chaseSlot } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -1081,21 +1081,18 @@ export default {
     return pageResponse(normUser(url.searchParams.get("u")), null);
   },
 
-  /* ---- THE HOURLY CHASE (v700, his instruction of 18 Sep 2026) --------------------------------
-   * "The customer will be notified every hour to pay if it is an advanced order." An advance is
-   * the book's own word for goods out ahead of the money (isAdvance, as the engine reads it), and
-   * this is the first clock this Worker has ever had: until now it woke a phone only as a side
-   * effect of the desk touching an order.
+  /* ---- THE CHASE (v700; S12 12.3, his decision D5 of 24 Sep 2026) ------------------------------
+   * The first clock this Worker ever had. An advance is the book's own word for goods out ahead of
+   * the money (isAdvance, as the engine reads it). TWICE A DAY, at 10:00 and 18:00 in Kuala Lumpur
+   * (chaseSlot: the cron stays hourly and this decides), from the day after the handover, paused
+   * while a claim waits and stopped when what was received is paid: toChase in stmt/orders.js. One
+   * wake a slot per CUSTOMER, not per order: two unpaid advances are one person's problem and one
+   * banner, in its own words, "A payment is due", and a tap opens the oldest order it is about.
    *
-   * DAY AND NIGHT, HIS WORD, and until it is paid. One wake an hour per CUSTOMER, not per order:
-   * two unpaid advances are one person's problem and one banner, and the banner names no amount
-   * and no order anyway (stmt/sw.js holds the only words, and a push here carries no payload at
-   * all, so it could not name one if it wanted to).
-   *
-   * THE MARK IS THE HOUR ITSELF, not a timestamp to subtract from: `chased:<username>` holds the
-   * hour bucket it was last woken in, so a tick that fires twice inside one hour, or fires late,
-   * cannot wake the same person twice. It expires on its own after two hours, so a customer who
-   * settles up leaves nothing behind.
+   * THE MARK IS THE SLOT'S HOUR ITSELF, not a timestamp to subtract from: `chased:<username>` holds
+   * the hour bucket it was last woken in, so a tick that fires twice inside one hour cannot wake the
+   * same person twice. It expires on its own after two hours, so a customer who settles up leaves
+   * nothing behind.
    *
    * IT IS SILENT ON FAILURE BY DESIGN, like every other push path here, so the counts are LOGGED:
    * a wake that reaches nobody and a wake that was not needed look identical from outside.
@@ -1105,18 +1102,19 @@ export default {
       try {
         if (!env.STMT) return;
         const now = new Date(event && event.scheduledTime ? event.scheduledTime : Date.now());
-        const hour = hourOf(now);
+        const slot = chaseSlot(now);
+        if (slot === null) return;
         let woke = 0, held = 0, quiet = 0;
-        for (const { u } of await toChase(env)) {
+        for (const { u, orders } of await toChase(env, now)) {
           /* his own test account is counted nowhere, and that includes being chased */
           if (u === TEST_USER) continue;
           const mark = await env.STMT.get(CHASE_KEY(u));
-          if (mark && Number(mark) === hour) { held++; continue; }
-          const r = await wakeCustomer(env, u);
-          await env.STMT.put(CHASE_KEY(u), String(hour), { expirationTtl: 2 * 3600 });
+          if (mark && Number(mark) === slot) { held++; continue; }
+          const r = await wakeCustomer(env, u, { k: "due", o: orders[orders.length - 1].id });
+          await env.STMT.put(CHASE_KEY(u), String(slot), { expirationTtl: 2 * 3600 });
           if (r.sent) woke++; else quiet++;
         }
-        if (woke || held || quiet) console.log("chase: " + JSON.stringify({ hour, woke, held, quiet }));
+        if (woke || held || quiet) console.log("chase: " + JSON.stringify({ slot, woke, held, quiet }));
       } catch (e) {
         console.log("chase FAILED: " + String((e && e.stack) || e));
       }

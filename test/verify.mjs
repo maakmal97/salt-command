@@ -16571,19 +16571,21 @@ await (async () => {
     "the retirement is behind a flag the hourly run clears");
   ok(planPublish.length === 8, "planPublish takes the options object that carries it");
 })();
-section("v700: a customer holding an unpaid advance is chased every hour, day and night, until it is paid");
+section("v700: a customer holding an unpaid advance is chased until it is paid, at its slots since S12 12.3");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "the customer will be notified every hour to pay if it is an
      advanced order." An advance is the book's own word for goods out with money owed, so that is
      the test. This is the first clock the statements Worker has ever had: until now it woke a phone
      only as a side effect of the desk touching an order. Driven through scheduled() against a
-     stubbed push service, so what is proved is the wake, not the source that would send it. */
+     stubbed push service, so what is proved is the wake, not the source that would send it. Every hour,
+     day and night, until S12 12.3 (his decision D5 of 24 Sep 2026): 10:00 and 18:00 in Kuala Lumpur,
+     from the day after the handover, so the ticks below are 02:00 and 10:00 UTC. */
   const stmtW7 = (await import("../stmt/worker.js")).default;
   const O7 = await import("../stmt/orders.js");
 
   /* ---- the predicate, on records alone ---- */
   const ord = (over) => Object.assign({ id: "o", u: "aaaa-bbbb", status: "acknowledged", qty: 2, total: 200,
-    delivery: 0, paid: 0, moved: 0 }, over);
+    delivery: 0, paid: 0, moved: 0, movedOn: "2026-09-17" }, over);
   /* 24 Sep 2026 (stage 1, fold 1.25): half the goods and half the money is not ahead, so it moved to a quarter paid */
   ok(O7.isAdvance(ord({ moved: 2, paid: 0 })) && O7.isAdvance(ord({ moved: 1, paid: 50 })),
     "goods out ahead of the money is an advance, in part as well as in whole");
@@ -16612,7 +16614,7 @@ await (async () => {
   for (const u of ["aaaa-bbbb", "cccc-dddd", "eeee-ffff", "0000-0000"])
     await put("push:" + u + ":aa11", { endpoint: "https://push.example/" + u, at: "2026-09-18T00:00:00Z" });
 
-  const owed = (await O7.toChase(env7)).map((x) => x.u).sort();
+  const owed = (await O7.toChase(env7, "2026-09-18T02:00:00Z")).map((x) => x.u).sort();
   ok(JSON.stringify(owed) === '["0000-0000","aaaa-bbbb"]',
     "only those holding an unpaid advance are owed a chase, one entry per CUSTOMER: " + JSON.stringify(owed));
 
@@ -16630,29 +16632,29 @@ await (async () => {
     finally { console.log = realLog; }
   };
   try {
-    await tick("2026-09-18T05:00:00Z");
+    await tick("2026-09-18T02:00:00Z");
     ok(hit.length === 1 && hit[0].url === "https://push.example/aaaa-bbbb",
       "the tick wakes the one customer holding an unpaid advance and nobody else: " + JSON.stringify(hit.map((h) => h.url)));
     ok(!hit.some((h) => h.url.includes("0000-0000")),
       "his test account is counted nowhere, and that includes being chased");
     ok(hit[0].body === undefined && hit[0].topic === "salt-order" && hit[0].urgency === "high",
-      "the wake carries no payload at all, so it could not name an amount or an order if it wanted to");
-    await tick("2026-09-18T05:40:00Z");
-    ok(hit.length === 1, "a second tick in the same hour chases nobody: one wake an hour per customer, not per tick");
-    await tick("2026-09-18T06:00:00Z");
+      "a phone filed without its keys is woken with nothing in it, so the wake names no amount and no order");
+    await tick("2026-09-18T02:40:00Z");
+    ok(hit.length === 1, "a second tick in the same slot chases nobody: one wake a slot per customer, not per tick");
+    await tick("2026-09-18T10:00:00Z");
     ok(hit.length === 2 && hit[1].url === "https://push.example/aaaa-bbbb",
-      "and the next hour chases again, because it is still unpaid: day and night, until it is paid");
-    ok(Number(await kv7.get(O7.CHASE_KEY("aaaa-bbbb"))) === O7.hourOf("2026-09-18T06:00:00Z")
+      "and the next slot chases again, because it is still unpaid, until it is paid");
+    ok(Number(await kv7.get(O7.CHASE_KEY("aaaa-bbbb"))) === O7.hourOf("2026-09-18T10:00:00Z")
       && (kv7.opts.get(O7.CHASE_KEY("aaaa-bbbb")) || {}).expirationTtl === 7200,
       "the mark is the hour, and it expires on its own so a customer who settles up leaves nothing behind");
     /* paid in full: the chase stops of its own accord */
     await put("order:aaaa-bbbb:20260918000000-a1", ord({ id: "20260918000000-a1", u: "aaaa-bbbb", moved: 2, paid: 200 }));
-    await tick("2026-09-18T07:00:00Z");
+    await tick("2026-09-19T02:00:00Z");
     ok(hit.length === 2, "and once it is paid the chase stops, with nothing to turn off");
     ok(logs.some((l) => /^chase: /.test(l)), "every tick that did anything says so in the log, because a silent push path is a silent failure");
     /* a Worker with no push key wakes nobody and does not throw */
     await put("order:aaaa-bbbb:20260918000000-a2", ord({ id: "20260918000000-a2", u: "aaaa-bbbb", moved: 2, paid: 0 }));
-    await tick("2026-09-18T08:00:00Z", { STMT: kv7 });
+    await tick("2026-09-19T10:00:00Z", { STMT: kv7 });
     ok(hit.length === 2, "a Worker with no push key configured wakes nobody, and the tick does not throw");
   } finally { globalThis.fetch = realFetch7; }
 
@@ -19465,7 +19467,7 @@ await (async () => {
   const stmtW = (await import("../stmt/worker.js")).default;
   const C = await import("../tools/stmt-crypto.mjs");
   const ord = (over) => Object.assign({ id: "20260924000000-aa11", u: "aaaa-bbbb", status: "acknowledged", product: "salt", qty: 5, total: 500,
-    delivery: 0, paid: 0, moved: 0, mode: "collect", at: "2026-09-24T01:00:00Z", history: [], msgs: [] }, over);
+    delivery: 0, paid: 0, moved: 0, movedOn: "2026-09-24", mode: "collect", at: "2026-09-24T01:00:00Z", history: [], msgs: [] }, over);
   const inStep = ord({ moved: 2, paid: 200 }), ahead = ord({ moved: 2, paid: 100 });
   ok(!O.isAdvance(inStep) && O.isAdvance(ahead),
     "2 of 5 handed over and 200 of 500 paid is not an advance; 100 paid is: " + JSON.stringify([O.isAdvance(inStep), O.isAdvance(ahead)]));
@@ -19481,8 +19483,8 @@ await (async () => {
   const kv = new KV();
   await kv.put("order:aaaa-bbbb:" + inStep.id, JSON.stringify(inStep));
   await kv.put("order:cccc-dddd:" + inStep.id, JSON.stringify(Object.assign({}, ahead, { u: "cccc-dddd" })));
-  const chased = (await O.toChase({ STMT: kv })).map((x) => x.u);
-  ok(JSON.stringify(chased) === '["cccc-dddd"]', "the hourly chase asks only the customer whose goods are ahead of their money: " + JSON.stringify(chased));
+  const chased = (await O.toChase({ STMT: kv }, "2026-09-25T02:00:00Z")).map((x) => x.u);
+  ok(JSON.stringify(chased) === '["cccc-dddd"]', "the chase asks only the customer whose goods are ahead of their money: " + JSON.stringify(chased));
 
   /* ---- cash on handover, at the Worker ---- */
   const un = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("test-secret", un);
@@ -20255,6 +20257,99 @@ await (async () => {
     ok(!onOrder() && st.scrolled.length === n && st.reads === before + 2,
       "an order that is not theirs moves nothing, and a message that is not the banner's is not read at all: " + JSON.stringify({ scrolled: st.scrolled, reads: st.reads - before }));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
+})();
+section("S12 12.3: the chase runs at 10:00 and 18:00 from the day after the handover, only for goods received, paused on a claim, in its own words");
+await (async () => {
+  /* 24 SEP 2026, his decision D5. v700 chased every hour, day and night, from the first top of the hour
+     after the handover, with "Your order has an update" when nothing had updated: a customer paying cash at
+     the counter was asked again within minutes, and every hour of the night after. Driven through
+     scheduled() against a stubbed push service, and the kind read back off the phone's own side. */
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const { NEWS } = await import("../stmt/sw.js");
+
+  /* ---- the clock and the calendar, on their own ---- */
+  const day = Array.from({ length: 24 }, (_, h) => new Date(Date.UTC(2026, 8, 18, h)).toISOString());
+  const slots = day.filter((t) => O.chaseSlot(t) !== null);
+  ok(JSON.stringify(slots) === '["2026-09-18T02:00:00.000Z","2026-09-18T10:00:00.000Z"]'
+    && O.chaseSlot("2026-09-18T02:59:00Z") === O.hourOf("2026-09-18T02:00:00Z"),
+    "of the day's twenty-four ticks two are slots, 10:00 and 18:00 in Kuala Lumpur, and a late tick inside the hour is the same slot: " + JSON.stringify(slots));
+  ok(!O.graceOver({ movedOn: "2026-09-18" }, "2026-09-18T15:59:59Z") && O.graceOver({ movedOn: "2026-09-18" }, "2026-09-18T16:00:00Z")
+    && !O.graceOver({}, "2026-09-30T02:00:00Z"),
+    "the grace ends at midnight in Kuala Lumpur after the handover day, and an order with no handover day is never past it");
+  ok(O.claimWaits({ paid: 0, payments: [{ amount: 100 }] }) && !O.claimWaits({ paid: 100, payments: [{ amount: 100 }] })
+    && !O.claimWaits({ paid: 150, payments: [{ amount: 100 }] }) && !O.claimWaits({ paid: 0 }),
+    "a claim waits while what they say they sent is more than the order counts as paid; their word raising paid, as today, leaves none waiting");
+
+  /* ---- the tick, driven ---- */
+  const b64u = (a) => Buffer.from(a).toString("base64url");
+  const cat = (...a) => { const o = new Uint8Array(a.reduce((n, x) => n + x.length, 0)); let i = 0; for (const x of a) { o.set(x, i); i += x.length; } return o; };
+  const hk = async (salt, ikm, info, n) => new Uint8Array(await crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info },
+    await crypto.subtle.importKey("raw", ikm, "HKDF", false, ["deriveBits"]), n * 8));
+  const te = new TextEncoder();
+  const phone = async () => {
+    const kp = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+    const pub = new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey)), auth = crypto.getRandomValues(new Uint8Array(16));
+    const read = async (msg) => {
+      const salt = msg.slice(0, 16), asPub = msg.slice(21, 21 + msg[20]), ct = msg.slice(21 + msg[20]);
+      const secret = new Uint8Array(await crypto.subtle.deriveBits({ name: "ECDH",
+        public: await crypto.subtle.importKey("raw", asPub, { name: "ECDH", namedCurve: "P-256" }, false, []) }, kp.privateKey, 256));
+      const ikm = await hk(auth, secret, cat(te.encode("WebPush: info"), [0], pub, asPub), 32);
+      const pt = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: await hk(salt, ikm, cat(te.encode("Content-Encoding: nonce"), [0]), 12) },
+        await crypto.subtle.importKey("raw", await hk(salt, ikm, cat(te.encode("Content-Encoding: aes128gcm"), [0]), 16), "AES-GCM", false, ["decrypt"]), ct));
+      return JSON.parse(new TextDecoder().decode(pt.slice(0, pt.lastIndexOf(2))));
+    };
+    return { keys: { p256dh: b64u(pub), auth: b64u(auth) }, read };
+  };
+  const kv = new KV();
+  const vp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const env = { STMT: kv, STMT_VAPID_PUBLIC_KEY: "pub", STMT_VAPID_SUBJECT: "mailto:a@b.test",
+    STMT_VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", vp.privateKey)) };
+  const ord = (u, id, at, over) => Object.assign({ id, u, at, status: "ready", product: "salt", qty: 2, unit: 100, total: 200,
+    delivery: 0, mode: "collect", paid: 0, payments: [], moved: 2, movedOn: "2026-09-17", history: [], msgs: [] }, over);
+  const put = (o) => kv.put("order:" + o.u + ":" + o.id, JSON.stringify(o));
+  /* held since the day before, two orders; handed over today; a claim waiting; paid for the share held; his test account */
+  const A1 = ord("aaaa-1111", "20260915010000-aaa1", "2026-09-15T01:00:00Z"), A2 = ord("aaaa-1111", "20260916010000-aaa2", "2026-09-16T01:00:00Z");
+  await put(A1); await put(A2);
+  await put(ord("bbbb-2222", "20260918010000-bbb1", "2026-09-18T01:00:00Z", { movedOn: "2026-09-18" }));
+  await put(ord("cccc-3333", "20260915010000-ccc1", "2026-09-15T01:00:00Z", { payments: [{ at: "2026-09-17T09:00:00Z", amount: 50, method: "transfer" }] }));
+  await put(ord("dddd-4444", "20260915010000-ddd1", "2026-09-15T01:00:00Z", { qty: 5, total: 500, moved: 2, paid: 200, payments: [{ amount: 200 }] }));
+  await put(ord("0000-0000", "20260915010000-ttt1", "2026-09-15T01:00:00Z"));
+  const phones = {};
+  for (const u of ["aaaa-1111", "bbbb-2222", "cccc-3333", "dddd-4444", "0000-0000"]) {
+    phones[u] = await phone();
+    await kv.put("push:" + u + ":p1", JSON.stringify({ endpoint: "https://push.example/" + u, at: "2026-09-10T00:00:00Z", keys: phones[u].keys }));
+  }
+  const realF = globalThis.fetch;
+  const tick = async (iso) => {
+    const hit = [], w = [], realLog = console.log;
+    globalThis.fetch = async (url, init) => { hit.push({ u: String(url).split("/").pop(), body: init.body }); return new Response("", { status: 201 }); };
+    console.log = () => {};
+    try { await stmtW.scheduled({ cron: "0 * * * *", scheduledTime: Date.parse(iso) }, env, { waitUntil: (p) => w.push(p) }); await Promise.all(w); }
+    finally { globalThis.fetch = realF; console.log = realLog; }
+    return hit;
+  };
+  const who = (hit) => hit.map((h) => h.u).sort().join();
+  try {
+    const nine = await tick("2026-09-18T01:00:00Z"), ten = await tick("2026-09-18T02:00:00Z");
+    ok(nine.length === 0 && who(ten) === "aaaa-1111",
+      "09:00 wakes nobody; 10:00 wakes the one customer holding goods unpaid since before today, and nobody handed goods today, "
+      + "nobody with a claim waiting, nobody paid for what they hold, and not his test account: " + JSON.stringify([who(nine), who(ten)]));
+    const news = ten[0] && ten[0].body ? await phones["aaaa-1111"].read(ten[0].body) : null;
+    ok(news && news.k === "due" && NEWS[news.k] === "A payment is due" && news.o === A1.id,
+      "in its own words, A payment is due, never 'Your order has an update', and a tap opens the oldest order it is about: " + JSON.stringify(news));
+    const again = await tick("2026-09-18T02:40:00Z"), noon = await tick("2026-09-18T05:00:00Z"), eve = await tick("2026-09-18T10:00:00Z");
+    const night = [];
+    for (const h of ["2026-09-18T13:00:00Z", "2026-09-18T16:00:00Z", "2026-09-18T19:00:00Z", "2026-09-18T22:00:00Z"]) night.push(...(await tick(h)));
+    ok(again.length === 0 && noon.length === 0 && who(eve) === "aaaa-1111" && night.length === 0,
+      "the same slot twice wakes nobody, 13:00 wakes nobody, 18:00 wakes them again, and the night is quiet: "
+      + JSON.stringify([again.length, noon.length, who(eve), night.length]));
+    const next = await tick("2026-09-19T02:00:00Z");
+    ok(who(next) === "aaaa-1111,bbbb-2222", "the morning after a handover, the day's grace is over and they are chased too: " + who(next));
+    await put(Object.assign({}, A1, { paid: 200, payments: [{ amount: 200 }] })); await put(Object.assign({}, A2, { paid: 200 }));
+    const paid = await tick("2026-09-19T10:00:00Z");
+    ok(who(paid) === "bbbb-2222", "and once what was received is paid, that customer is chased no more, with nothing to turn off: " + who(paid));
+  } finally { globalThis.fetch = realF; }
 })();
 section("v760: a customer paying or taking an order back wakes him, and the banner says which");
 await (async () => {

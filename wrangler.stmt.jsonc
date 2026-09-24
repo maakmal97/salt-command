@@ -60,11 +60,11 @@
 		"STMT_VAPID_PUBLIC_KEY": "BDIvD4Y6s-Ucr6twgOkmcYPZiUhGLaXMNzAqFrBKhdNCNy-Iyr9xYl7iWLTEAfL1rtQOJJg7g-m8ZeokZqM493c",
 		"STMT_VAPID_SUBJECT": "mailto:maakmal97@icloud.com"
 	},
-	// THE HOURLY CHASE (v700, his instruction of 18 Sep 2026): "the customer will be notified every
-	// hour to pay if it is an advanced order", day and night, until it is paid. This Worker had no
-	// clock at all until now; it woke a phone only as a side effect of the desk touching an order.
-	// On the hour, every hour, and stmt/worker.js's scheduled() caps it at one wake an hour per
-	// customer through the chased:<username> mark, so a tick that fires twice cannot chase twice.
+	// THE CHASE (v700, his instruction of 18 Sep 2026; twice a day since S12 12.3, his decision D5 of
+	// 24 Sep 2026). This Worker had no clock at all until v700; it woke a phone only as a side effect
+	// of the desk touching an order. The cron stays on the hour, every hour, and stmt/worker.js's
+	// scheduled() decides: it chases only at 10:00 and 18:00 in Kuala Lumpur (chaseSlot), one wake a
+	// slot per customer through the chased:<username> mark, so a tick that fires twice cannot chase twice.
 	//
 	// A CRON HERE REACHES PRODUCTION ONLY THROUGH A DEPLOY OF THIS CONFIG, and public/rev.json's id
 	// does not cover this file, so tools/update.mjs will report the phone current and deploy nothing.

@@ -469,8 +469,8 @@ The username-to-code map the relay needs is written to the DESK's
 KV as `stmt-users` by every publish; the site never holds it, and an order whose username the map
 does not carry is reported as `unmapped` and waits rather than being guessed at.
 
-**THE HOURLY CHASE** (v700, his instruction of 18 Sep 2026: "the customer will be notified every
-hour to pay if it is an advanced order"). This is the **first clock the statements Worker has ever
+**THE CHASE** (v700, his instruction of 18 Sep 2026; **twice a day since S12 12.3**, his decision
+D5 of 24 Sep 2026). This is the **first clock the statements Worker has ever
 had**: until v700 it woke a phone only as a side effect of the desk touching an order.
 `wrangler.stmt.jsonc` carries `"triggers": {"crons": ["0 * * * *"]}` and `stmt/worker.js` exports a
 `scheduled()` handler beside `fetch`.
@@ -479,18 +479,30 @@ had**: until v700 it woke a phone only as a side effect of the desk touching an 
 ahead of its money as the engine reads Open · Advance (24 Sep 2026): the share handed over above the
 share of what is owed that is paid, the delivery charge in what is owed because that is what the
 customer is asked for. The same test (`aheadOnGoods`) withholds cash on handover. A customer who has paid nothing on an order he has not touched yet is not
-chased, because nothing of his is in their hands. `toChase(env)` groups them by CUSTOMER.
+chased, because nothing of his is in their hands: **only goods received are chased**. `toChase(env, at)`
+groups them by CUSTOMER, and leaves out an order inside its day's grace or with a claim waiting.
 
-**How often.** One wake an hour per customer, not per order: two unpaid advances are one person's
-problem and one banner. The cap is `chased:<username>`, holding the **hour bucket** (`hourOf`, whole
-hours since the epoch) it was last woken in, so a tick that fires twice inside one hour, or fires
-late, cannot chase twice. It carries a two-hour TTL, so a customer who settles up leaves nothing
-behind and there is nothing to turn off. The test account `0000-0000` is skipped, because it is
-counted nowhere. Day and night, his word, until it is paid.
+**When.** **At 10:00 and 18:00 in Kuala Lumpur** (`chaseSlot`, `CHASE_HOURS`): the cron stays hourly
+and the code decides, so every other tick returns before it lists anything. **From the day after the
+handover** (`graceOver`): `movedOn`, the Kuala Lumpur day of the last handover, must be before today,
+so a customer paying cash at the counter is not asked again that evening; an order with no `movedOn`
+is not chased. **Paused while a claim waits** (`claimWaits`): what they say they sent (`payments`)
+above what the order counts as `paid`. Today none waits, their "I have paid" raising `paid` on
+their word, so this is where stage 6's claim plugs in; a Not found that lowers `paid` must take its
+claim out with it. **Stopped** when what was received is paid, which is `isAdvance` going false,
+his cash included once the return leg (v764) carries it to the order, and stage 11's Cash received when it lands.
 
-**What it sends.** `wakeCustomer`, the same payload-free VAPID wake the desk's moves trigger, so the
-banner is `stmt/sw.js`'s one fixed string and names no amount and no order. It cannot name one: a
-push here carries no body at all. The handler logs its counts (`chase: {hour, woke, held, quiet}`)
+**How often.** One wake a slot per customer, not per order: two unpaid advances are one person's
+problem and one banner. The cap is `chased:<username>`, holding the slot's **hour bucket** (`hourOf`,
+whole hours since the epoch), so a tick that fires twice inside one hour cannot chase twice. It carries
+a two-hour TTL, so a customer who settles up leaves nothing behind and there is nothing to turn off.
+The test account `0000-0000` is skipped, because it is counted nowhere. Until S12 12.3 it was every
+hour, day and night, from the first top of the hour after the handover.
+
+**What it sends.** `wakeCustomer` with its own kind, `due`: the banner reads **A payment is due**,
+never "Your order has an update", and a tap opens the oldest order it is about. A phone filed before
+its keys still gets the payload-free wake and the old fixed words (Notifications, below). The handler
+logs its counts (`chase: {slot, woke, held, quiet}`)
 because every push path on this site swallows its own failures, and a wake that reached nobody and a
 wake that was not needed look identical from outside.
 

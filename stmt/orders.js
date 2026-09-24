@@ -205,18 +205,19 @@ export function orderWork(o) {
   return jobs;
 }
 
-/* ---- WHO IS CHASED, AND HOW OFTEN (v700, his instruction of 18 Sep 2026) ---------------------
- * "The customer will be notified every hour to pay if it is an advanced order." An advance is the
- * book's own word for goods out ahead of the money, so that is the test, READ AS THE ENGINE READS IT
- * (24 Sep 2026): the share of the goods handed over above the share of what is owed that is paid
- * (engine/position.mjs, txStat's Open · Advance). It read "anything moved and anything due" until
- * then, which chased a customer who had paid for the 2 of 5 units they held, every hour, for the 3
- * not yet handed over. A customer who has paid nothing on an order he has not touched yet is not
- * chased, because nothing of his is in their hands.
+/* ---- WHO IS CHASED, AND WHEN (v700; S12 12.3, his decision D5 of 24 Sep 2026) ------------------
+ * An advance is the book's own word for goods out ahead of the money, so that is the test, READ AS
+ * THE ENGINE READS IT (24 Sep 2026): the share of the goods handed over above the share of what is
+ * owed that is paid (engine/position.mjs, txStat's Open · Advance). So only GOODS RECEIVED are chased:
+ * a customer who has paid for the 2 of 5 units they hold is not asked about the 3 still to come, and
+ * one who has been handed nothing is not chased at all.
  *
- * DAY AND NIGHT, HIS WORD, and until it is paid. The cap is one wake an hour per CUSTOMER, not per
- * order: two unpaid advances are one person's problem and one banner, and the banner names no
- * amount and no order anyway.
+ * TWICE A DAY, NOT EVERY HOUR (D5): at 10:00 and 18:00 in Kuala Lumpur, from THE DAY AFTER the goods
+ * moved, PAUSED while a claim of theirs waits, and STOPPED when what they received is paid, which is
+ * the same test going false (his cash, recorded on the desk, comes back through the return leg). v700
+ * chased every hour, day and night, from the first top of the hour after the handover, so a customer
+ * paying cash at the counter was asked again within minutes and every hour of the night. The cap is
+ * one wake a slot per CUSTOMER, not per order, and its words are its own ("A payment is due").
  */
 export const aheadOnGoods = (o) => {
   const owed = +o.total + (+o.delivery || 0), paidF = owed > 0 ? (+o.paid || 0) / owed : 0;
@@ -227,12 +228,27 @@ export const isAdvance = (o) => !!o && ROWED.includes(o.status) && aheadOnGoods(
 export const CHASE_KEY = (u) => "chased:" + u;
 /** An hour in whole hours since the epoch: the same hour twice is the same bucket, and no clock is read twice. */
 export const hourOf = (at) => Math.floor(new Date(at).getTime() / 3600000);
+/* The two hours, Kuala Lumpur's (UTC+8, no summer time). The cron stays hourly and this decides: a slot
+   is its hour's bucket, or null for every other hour. */
+export const CHASE_HOURS = [10, 18];
+export const chaseSlot = (at) => {
+  const t = new Date(at).getTime();
+  return CHASE_HOURS.includes(new Date(t + 8 * 3600000).getUTCHours()) ? hourOf(t) : null;
+};
+/* A DAY'S GRACE: chased from the day after the last handover (movedOn, a Kuala Lumpur date), never the
+   day the goods moved; an order that carries no such day is not chased. */
+export const graceOver = (o, at) => !!o.movedOn && o.movedOn < klDay(at);
+/* PAUSED WHILE A CLAIM WAITS: a figure they say they sent that the order does not yet count as paid.
+   Today none waits, because their "I have paid" raises `paid` on their word (v694); a claim that stays
+   a claim until his Received, which is stage 6's, pauses the chase through this one name. A Not found
+   that lowers `paid` has to take its claim out of `payments` with it, or the pause never lifts. */
+export const claimWaits = (o) => (o.payments || []).reduce((n, p) => n + (+(p && p.amount) || 0), 0) > (+o.paid || 0) + 0.004;
 
-/** Every customer holding an unpaid advance, with the orders that make it, newest order first. */
-export async function toChase(env) {
+/** Every customer owed a chase at this moment, with the orders that make it, newest order first. */
+export async function toChase(env, at = new Date()) {
   const by = new Map();
   for (const o of await listOrders(env, "order:")) {
-    if (!isAdvance(o)) continue;
+    if (!isAdvance(o) || !graceOver(o, at) || claimWaits(o)) continue;
     if (!by.has(o.u)) by.set(o.u, []);
     by.get(o.u).push(o);
   }
