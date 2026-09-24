@@ -82,8 +82,9 @@ username (`tools/stmt-pool.mjs`). The publish writes it like any record and so n
 marks it `spare` in the clear as it marks `assoc`, and lists it nowhere: no sheet row, no roster line,
 no count. The site's door answers a spare with its one refusal, his master included, until a code holds it.
 **The laptop mints them**, never CI: `node tools/stmt-account.mjs --pool` tops the pool up to ten free
-(`--count N` for another figure, `--check` to write nothing) and refuses without a master that unwraps
-a record. Each is sealed as an account is, around an empty bundle, its password under the master as
+(`--count N` for another figure, `--check` to write nothing) and, as `--mint` does, refuses without a
+master that unwraps a record and a key that opens one that is not a spare, `$env:STMT_KEY` winning over
+the file. Each is sealed as an account is, around an empty bundle, its password under the master as
 `pwMaster` and in the clear under its USERNAME in `_passwords.json`, a spare having no code yet.
 `tools/update.mjs` warns with that line when fewer than three are free.
 **The fold binds them, never Salt Admin**: at Add ID a registration takes the next free spare as its

@@ -23,7 +23,8 @@
  *   - mint for a bucket, which is not its own person (his ruling of 13 Sep 2026).
  *   - mint for a supplier: a statement is a customer's.
  *   - start unless the master it has unwraps an existing record, so a wrapMaster it writes can
- *     never be under a passphrase that opens nothing.
+ *     never be under a passphrase that opens nothing, and unless the key opens one (S14), so a
+ *     record it seals is under the key the publish holds.
  *
  *   node tools/stmt-account.mjs --check    say who has no account, write nothing
  *   node tools/stmt-account.mjs --mint     mint one for each of them
@@ -33,7 +34,7 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve, dirname, join, basename } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { contentKey, newPassword, newUsername, makeVerifier, wrapKey, unwrapKey, encryptText, encryptWith, userFor, usersJson, USERNAME_RE } from "./stmt-crypto.mjs";
+import { contentKey, newPassword, newUsername, makeVerifier, wrapKey, unwrapKey, encryptText, encryptWith, decryptWith, userFor, usersJson, USERNAME_RE } from "./stmt-crypto.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { newestIssue, freeSpares, POOL_SIZE, POOL_LOW } from "./stmt-pool.mjs";
 
@@ -173,6 +174,16 @@ async function openIssue(here) {
     try { await unwrapKey(master, rec.wrapMaster); proved = true; break; } catch (e) { /* try the next */ }
   }
   if (!proved) throw new Error("the master given does not unwrap any record in " + issue + ": nothing was written");
+  /* AND THE KEY, the same way, as the publish proves it: against a record that is not a spare. A stale
+     STMT_KEY in the shell wins over the file, and ten spares sealed under it would read as free and fine
+     until the fold bound one; the publish would then stop on every run and the account would open empty. */
+  let keyed = false;
+  for (const u of kvNames) {
+    const rec = JSON.parse(readFileSync(join(kvDir, u + ".json"), "utf8"));
+    if (rec.spare || !rec.env) continue;
+    try { JSON.parse(await decryptWith(await contentKey(secrets.key, rec.u), rec.env)); keyed = true; break; } catch (e) { /* try the next */ }
+  }
+  if (!keyed) throw new Error("the key given does not open any record in " + issue + ": nothing was written");
 
   /* THE ISSUE'S DATE IS NOT THE FOLDER'S NAME, and a record carries the DATE. newestIssue answers
      "2026-09", because that is what names the directory; every record make_statements writes

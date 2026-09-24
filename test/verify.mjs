@@ -17845,6 +17845,61 @@ await (async () => {
     rmSync(root, { recursive: true, force: true }); rmSync(fold, { recursive: true, force: true });
   }
 })();
+section("S14 fix SEC-2: the laptop's mint proves the content key before it seals a spare or an account, so a stale STMT_KEY in the shell writes nothing");
+await (async () => {
+  /* openIssue proved the master and never the key, and prefers $env:STMT_KEY to the file by design. Ten spares
+     sealed under a stale one read as free and fine until the fold bound one; the publish then found the key
+     wrong and stopped on every run, and the walk-in's account opened empty. */
+  const { mintPool, mintAccounts, accountSweep, sweepLines } = await import("../tools/stmt-account.mjs");
+  const C2 = await import("../tools/stmt-crypto.mjs");
+  const root = join(REPO, "test", "tmp", "poolsec2"), dir = join(root, "2026-09"), kv = join(dir, "_kv");
+  rmSync(root, { recursive: true, force: true });
+  mkdirSync(kv, { recursive: true });
+  const M = "master-sec2", K = "right-key-sec2", STALE = "a-stale-key-in-the-shell";
+  const seal = async (key, u, pw, extra) => {
+    const ck = await C2.contentKey(key, u);
+    return JSON.stringify(Object.assign({ u, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C2.makeVerifier(pw),
+      wrap: await C2.wrapKey(pw, ck), wrapMaster: await C2.wrapKey(M, ck), pwMaster: await C2.encryptText(M, pw),
+      env: await C2.encryptWith(ck, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [] })) }, extra || {})) + "\n";
+  };
+  /* an account under the right key, and a spare already sealed under the stale one, which a proof over any record would accept */
+  writeFileSync(join(kv, "aaaa-bbbb.json"), await seal(K, "aaaa-bbbb", "pw-old"));
+  writeFileSync(join(kv, "2bbb-cccc.json"), await seal(STALE, "2bbb-cccc", "pw-stale", { spare: true }));
+  writeFileSync(join(root, "_secrets.json"), JSON.stringify({ key: K, master: M }));
+  writeFileSync(join(root, "_users.json"), JSON.stringify({ "CZ9-OLD": "aaaa-bbbb", "CZ9-NEW": "2ccc-dddd" }));
+  const pwText = JSON.stringify({ "CZ9-OLD": "pw-old", "2bbb-cccc": "pw-stale" });
+  writeFileSync(join(dir, "_passwords.json"), pwText);
+  const files = () => readdirSync(kv).sort().join();
+  const before = files();
+  const wasKey = process.env.STMT_KEY, wasM = process.env.STMT_MASTER;
+  try {
+    delete process.env.STMT_MASTER;
+    process.env.STMT_KEY = STALE;
+    let poolWhy = "", mintWhy = "";
+    try { await mintPool(root, { count: 3 }); } catch (e) { poolWhy = String(e.message); }
+    try { await mintAccounts(root, { roster: ["CZ9-OLD", "CZ9-NEW"] }); } catch (e) { mintWhy = String(e.message); }
+    ok(/the key given does not open any record in 2026-09: nothing was written/.test(poolWhy) && /the key given does not open any record/.test(mintWhy)
+      && files() === before && readFileSync(join(dir, "_passwords.json"), "utf8") === pwText,
+      "with a stale STMT_KEY in the shell, --pool and --mint both refuse and write nothing: " + JSON.stringify({ poolWhy, mintWhy, files: files() }));
+    const said = sweepLines(await accountSweep(root, { roster: ["CZ9-OLD", "CZ9-NEW"] })).map((l) => l.level + ": " + l.text);
+    ok(/^warn: the account sweep stopped: the key given does not open any record/.test(said[0] || ""),
+      "and the laptop's update says so rather than minting: " + JSON.stringify(said[0]));
+
+    delete process.env.STMT_KEY;
+    const did = await mintPool(root, { count: 3 });
+    const opens = [];
+    for (const u of did.minted) {
+      const rec = JSON.parse(readFileSync(join(kv, u + ".json"), "utf8"));
+      try { opens.push(JSON.parse(await C2.decryptWith(await C2.contentKey(K, u), rec.env)).v === 1); } catch (e) { opens.push(false); }
+    }
+    ok(did.wrote === 2 && opens.length === 2 && opens.every(Boolean),
+      "with the file's key it mints, and every spare it seals opens under the key the publish holds: " + JSON.stringify({ wrote: did.wrote, opens }));
+  } finally {
+    if (wasKey === undefined) delete process.env.STMT_KEY; else process.env.STMT_KEY = wasKey;
+    if (wasM === undefined) delete process.env.STMT_MASTER; else process.env.STMT_MASTER = wasM;
+    rmSync(root, { recursive: true, force: true });
+  }
+})();
 section("v707: an ID with no account cannot sign in, and now something mints one and something says so");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "an add ID, or amend ID, is applicable to the accounts available
