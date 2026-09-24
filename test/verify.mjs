@@ -15517,15 +15517,17 @@ await (async () => {
     const placed = said();
     ok(lapseOn() && placed.includes("Signed out: tap Continue at the top.") && !placed.some((t) => /Sign in again|session has ended/.test(t)),
       "Place answered 401: the bar says it with Continue, and beside Place a pointer to that Continue, never a second wording: " + JSON.stringify(placed));
-    /* S5 5.4: the line is sent from the order's own screen, and what came back is said on the line itself */
+    /* S5 5.4: the line is sent from the order's own screen; refused, its words go back in the box and the answer
+       stands under it (the stage 5 review: a refusal is not offered again) */
     D.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
     const box = D.querySelector('#pOrder input[data-say="' + ord.id + '"]');
     if (box) { box.value = "is it ready"; box.dispatchEvent(new W.Event("input", { bubbles: true })); box.form.requestSubmit(); }
-    const onLine = () => [...D.querySelectorAll("#pOrder .salt-bubble--failed [role=status]")].map((x) => x.textContent);
-    await until(() => onLine().length);
-    const sent = said().concat(onLine());
-    ok(JSON.stringify(onLine()) === JSON.stringify(["Signed out: tap Continue at the top."]) && !sent.some((t) => /Sign in again|session has ended/.test(t)),
-      "and so does Send, on the line that did not go: " + JSON.stringify(sent));
+    const underBox = () => [...D.querySelectorAll('#pOrder .oscreen [data-part="say"] [role=status]')].filter((x) => !x.hidden).map((x) => x.textContent);
+    await until(() => underBox().length);
+    const sent = said().concat(underBox());
+    ok(JSON.stringify(underBox()) === JSON.stringify(["Signed out: tap Continue at the top."]) && !!box && box.value === "is it ready"
+      && !D.querySelector("#pOrder .salt-bubble--failed") && !sent.some((t) => /Sign in again|session has ended/.test(t)),
+      "and so does Send, under the box its words are back in: " + JSON.stringify(sent));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
 section("S1 1.9: Notify me waits for the service worker to be ready, and a failure is said in plain words");
@@ -24320,8 +24322,8 @@ await (async () => {
     [...scr().querySelectorAll("button")].find((b) => b.textContent === "Send").click();
     await until(() => said(d, "Refused by the fixture: say"));
     const sayLine = said(scr(), "Refused by the fixture: say");
-    ok(sayLine && sayLine.closest(".salt-bubble--failed") && /Is it ready[?]/.test(sayLine.closest(".salt-bubble--failed").textContent),
-      "Send refused: the words sit on the line that did not go, in that order's thread");
+    ok(sayLine && sayLine.closest('[data-part="say"]') && after(box, sayLine) && box.value === "Is it ready?" && !scr().querySelector(".salt-bubble--failed"),
+      "Send refused: the words are back in that order's box, and the answer stands under it");
 
     /* the order list answering 401 after a tap wrote the form's note, which the payment page never drew. Since
        S1 1.5 a 401 on a live session is said at once in the bar, role=alert, which the payment page shows too */
