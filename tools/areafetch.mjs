@@ -42,6 +42,12 @@ const seatsUrl = `https://raw.githubusercontent.com/Thevesh/paper-meco-maps/${SE
 const CORE = ["Selangor", "Kuala Lumpur", "Putrajaya", "Negeri Sembilan"];
 /* the states whose areas are their constituencies: MECo's state name, the survey's, and how many seats it must hold */
 const SEATED = [{ meco: "W.P. Kuala Lumpur", state: "Kuala Lumpur", seats: 11 }, { meco: "Selangor", state: "Selangor", seats: 22 }, { meco: "Negeri Sembilan", state: "Negeri Sembilan", seats: 8 }];
+/* PUTRAJAYA'S AREAS ARE ITS PRECINCTS (v826, his instruction of 24 Sep 2026: Putrajaya's details into the map, Add ID and
+   Amend ID). Its one federal seat, P.125, is the whole territory, so a tap on it said nothing; OpenStreetMap maps its twenty
+   precincts and Presint Diplomatik as place=quarter areas, ODbL as the basemap is. The query is live, not pinned: Overpass
+   serves today's map, so the count is checked and the date is fetchedOn's. A precinct in two ways is joined end to end. */
+const PRECINCT_Q = '[out:json][timeout:90];(way["place"="quarter"]["name"~"^Presint",i](2.85,101.64,3.0,101.74);relation["place"="quarter"]["name"~"^Presint",i](2.85,101.64,3.0,101.74););out geom;';
+const PRECINCTS = { state: "Putrajaya", file: "putrajaya_presint.json", count: 21, url: "https://overpass-api.de/api/interpreter" };
 const ISLANDS = ["Sabah", "Sarawak", "Labuan"];          // not Peninsular Malaysia
 const TOL = { core: 0.002, context: 0.006, area: 0.0012 }; // degrees; 0.001 is about 110 m
 const Q = 5e3;                                           // stored to 2e-4 degrees, about 22 m: finer than a pixel at any zoom the desk draws
@@ -133,6 +139,35 @@ function labelPoint(f) {
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 const [A1, A2, SEAT] = [await load("ADM1"), await load("ADM2"), await load("SEATS")];
+async function loadPrecincts() {
+  let els;
+  if (from) els = JSON.parse(readFileSync(join(from, PRECINCTS.file), "utf8")).elements;
+  else {
+    const r = await fetch(PRECINCTS.url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "salt-command-areafetch/1.0" }, body: "data=" + encodeURIComponent(PRECINCT_Q) });
+    if (!r.ok) { console.error(`  FAIL  ${r.status} from Overpass`); process.exit(1); }
+    els = (await r.json()).elements;
+  }
+  const pt = (g) => [g.lon, g.lat];
+  const join2 = (ways) => {                             // outer member ways joined end to end into closed rings
+    const left = ways.map((w) => w.map(pt)), out = [];
+    while (left.length) {
+      let ring = left.shift();
+      for (let moved = true; moved && (ring[0][0] !== ring[ring.length - 1][0] || ring[0][1] !== ring[ring.length - 1][1]);) {
+        moved = false;
+        for (let i = 0; i < left.length; i++) {
+          const w = left[i], end = ring[ring.length - 1], same = (p, q) => p[0] === q[0] && p[1] === q[1];
+          if (same(w[0], end)) ring = ring.concat(w.slice(1)); else if (same(w[w.length - 1], end)) ring = ring.concat(w.slice(0, -1).reverse()); else continue;
+          left.splice(i, 1); moved = true; break;
+        }
+      }
+      out.push(ring);
+    }
+    return out;
+  };
+  return els.map((e) => ({ properties: { name: e.tags.name }, geometry: e.type === "way"
+    ? { type: "Polygon", coordinates: [e.geometry.map(pt)] }
+    : { type: "MultiPolygon", coordinates: join2(e.members.filter((m) => m.role === "outer" && m.geometry).map((m) => m.geometry)).map((r) => [r]) } }));
+}
 const stateOf = (pt) => { const s = A1.find((f) => inPolys(pt, polys(f))); return s ? s.properties.shapeName : null; };
 const districts = [];
 for (const f of A2) {
@@ -141,6 +176,25 @@ for (const f of A2) {
   const core = CORE.some((x) => state.includes(x));
   districts.push({ id: slug(f.properties.shapeName), name: f.properties.shapeName, state, core, label: labelPoint(f),
     rings: rings(f, core ? TOL.core : TOL.context, core ? 0.004 : 0.02), _f: f });
+}
+/* PUTRAJAYA HAS NO DISTRICT IN ADM2 (v826, his instruction of 24 Sep 2026): the survey draws Sepang over the whole territory, so
+   a party in Putrajaya was counted in Sepang and the map had no Putrajaya to open. A core state the survey leaves without a
+   district of its own is made one from its state outline, and that outline is cut out of any district that covers it, as a
+   ring wound the other way: the desk fills and tests each district even-odd across its rings, so the ring is a hole. */
+const area2 = (r) => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += r[j][0] * r[i][1] - r[i][0] * r[j][1]; return a / 2; };
+for (const st of CORE) {
+  if (districts.some((d) => d.state.includes(st) && d.core)) continue;
+  const f = A1.find((x) => x.properties.shapeName.includes(st));
+  if (!f) { console.error(`  FAIL  ${st} is neither a district nor a state in the source`); process.exit(1); }
+  const own = { id: slug(st), name: st, state: f.properties.shapeName, core: true, label: labelPoint(f), rings: rings(f, TOL.core, 0.004), _f: f };
+  for (const d of districts) {
+    if (!inPolys(own.label, polys(d._f))) continue;
+    const outer = largestRing(polys(d._f)), sign = Math.sign(area2(outer));
+    for (const p of polys(f)) { const r = simplify(p[0], TOL.core); if (r.length < 4) continue;
+      d.rings.push(encodeRing(Math.sign(area2(r)) === sign ? r.slice().reverse() : r)); }
+    console.log(`  ok    ${st} cut out of ${d.name}`);
+  }
+  districts.push(own);
 }
 const ids = new Set(); for (const d of districts) { if (ids.has(d.id)) { console.error(`  FAIL  two districts slug to ${d.id}`); process.exit(1); } ids.add(d.id); }
 const areas = [];
@@ -156,13 +210,20 @@ for (const st of SEATED) {
     areas.push({ id: d.id + "/" + (areas.filter((a) => a.district === d.id).length + 1), short, kind: "", district: d.id, label: labelPoint(f), rings: rings(f, TOL.area, 0.0005) });
   }
 }
+{
+  const P = (await loadPrecincts()).sort((a, b) => (parseInt(a.properties.name.replace(/\D+/g, ""), 10) || 99) - (parseInt(b.properties.name.replace(/\D+/g, ""), 10) || 99));
+  if (P.length !== PRECINCTS.count) { console.error(`  FAIL  ${P.length} Putrajaya precincts from OpenStreetMap, not ${PRECINCTS.count}`); process.exit(1); }
+  const d = districts.find((x) => x.core && x.state.includes(PRECINCTS.state));
+  P.forEach((f, i) => areas.push({ id: d.id + "/" + (i + 1), short: f.properties.name, kind: "", district: d.id, label: labelPoint(f), rings: rings(f, TOL.area / 2, 0.0003) }));
+}
 for (const d of districts) delete d._f;
 
 const out = {
-  what: "The districts of Peninsular Malaysia, and the federal constituencies of Kuala Lumpur, Selangor and Negeri Sembilan, for the desk's Coverage page.",
+  what: "The districts of Peninsular Malaysia, and the federal constituencies of Kuala Lumpur, Selangor and Negeri Sembilan and the precincts of Putrajaya, for the desk's Coverage page.",
   sources: [
     { level: "district", source: "geoBoundaries gbOpen MYS ADM2, from citypopulation.de", url: url("ADM2"), licence: "CC BY 3.0", attribution: "Districts: geoBoundaries, citypopulation.de, CC BY 3.0" },
     { level: "area", source: "Malaysian Election Corpus, the 2018 federal delimitation, Kuala Lumpur, Selangor and Negeri Sembilan", url: seatsUrl, licence: "CC0 1.0", attribution: "Constituencies: MECo, Thevananthan and Chacko, CC0" },
+    { level: "area", source: "OpenStreetMap, the precincts of Putrajaya (place=quarter), by Overpass", url: PRECINCTS.url, licence: "ODbL 1.0", attribution: "Putrajaya precincts: © OpenStreetMap contributors, ODbL" },
   ],
   pinnedRelease: PIN,
   fetchedOn: new Date().toISOString().slice(0, 10),

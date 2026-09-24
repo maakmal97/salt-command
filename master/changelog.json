@@ -1,5 +1,15 @@
 [
  {
+  "v": "v826",
+  "d": "24 Sep 2026",
+  "t": "PUTRAJAYA ON COVERAGE, ITS PRECINCTS TO CHOOSE",
+  "n": [
+   "<b>PUTRAJAYA HAD NO DISTRICT</b> (his instruction of 24 Sep 2026). The district survey draws Sepang over the whole territory, so a party in Putrajaya was counted in Sepang and the map had no Putrajaya to open. It is now a core district made from its state outline, and that outline is cut out of Sepang as a hole; Cyberjaya and Dengkil stay Sepang's, so CA6-CYB still reads Cyberjaya, Sepang.",
+   "<b>ITS AREAS ARE ITS PRECINCTS.</b> Its one federal seat, P.125, is the whole territory, so a tap on it said nothing; the twenty precincts and Presint Diplomatik come from OpenStreetMap (ODbL, credited under the map), and each is a place to choose at Add ID and Amend ID, reading Presint 8, Putrajaya.",
+   "<b>A SMALL AREA NAMED BY THE LOCALITY DECIDES.</b> A party's point is kept to 0.01 degrees, about a kilometre, which a precinct can round out of: Presint 6's point read Sepang. Where the locality names an area under three kilometres across in the point's own district, that area is the reading; a seat is wide enough for the point, so Ampang in Kuala Lumpur never takes Selangor's Ampang seat."
+  ]
+ },
+ {
   "v": "v825",
   "d": "24 Sep 2026",
   "t": "WHO IS PAST THEIR HABIT IS ONE ANSWER",

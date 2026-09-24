@@ -11837,11 +11837,13 @@ await (async () => {
      name. Fixture parties are forced onto the book so the proof does not lean on today's trade. Proved red by mutation. */
   const A30 = JSON.parse(readFileSync(join(REPO, "geo", "areas.json"), "utf8"));
   const core30 = A30.districts.filter((d) => d.core).map((d) => d.id);
-  ok(core30.length === 17 && ["kuala-lumpur", "petaling", "seremban", "gombak"].every((x) => core30.includes(x)) && A30.districts.length === 91,
-    "the districts are Peninsular Malaysia's 91, 17 of them in the core states: " + core30.length + " core of " + A30.districts.length);
+  /* v826: Putrajaya is the 92nd and the 18th core, made from its state outline, the survey having none */
+  ok(core30.length === 18 && ["kuala-lumpur", "petaling", "seremban", "gombak", "putrajaya"].every((x) => core30.includes(x)) && A30.districts.length === 92,
+    "the districts are Peninsular Malaysia's 92, 18 of them in the core states: " + core30.length + " core of " + A30.districts.length);
   /* v681: the core states' areas are their 41 federal constituencies, 11 in Kuala Lumpur, 22 in Selangor and 8 in Negeri Sembilan */
-  ok(A30.areas.length === 41 && A30.areas.every((a) => core30.includes(a.district) && a.short && !a.kind && a.rings.length && Array.isArray(a.label)),
-    "every constituency nests under a core district, named, with a shape and a label point: " + A30.areas.length);
+  /* v826: and Putrajaya's 21 precincts, its one seat being the whole territory */
+  ok(A30.areas.length === 62 && A30.areas.every((a) => core30.includes(a.district) && a.short && !a.kind && a.rings.length && Array.isArray(a.label)),
+    "every area nests under a core district, named, with a shape and a label point: " + A30.areas.length);
   ok(A30.sources.some((s) => /CC BY 3\.0/.test(s.licence)) && A30.sources.some((s) => /CC0/.test(s.licence)), "each level carries its licence");
   const names30 = areaNameSet(A30);
   ok(names30.has("petaling") && names30.has("kuala lumpur") && names30.has("lembah pantai") && names30.has("rasah") && names30.size === new Set(A30.districts.map((d) => d.name.toLowerCase()).concat(A30.areas.map((a) => a.short.toLowerCase()))).size && !names30.has("zzz fixture heights"),
@@ -11867,7 +11869,7 @@ await (async () => {
     const top30 = rd30("(function(){var s=document.querySelector('.sec.on');var ps=[].map.call(s.querySelectorAll('path.marea'),function(p){return {t:(p.querySelector('title')||{}).textContent||'',f:p.getAttribute('fill')};});"
       + "return {n:ps.length,ser:(ps.find(function(p){return /^Seremban:/.test(p.t);})||{}),kl:(ps.find(function(p){return /^Kuala Lumpur:/.test(p.t);})||{}),labels:[].map.call(s.querySelectorAll('svg text'),function(t){return t.textContent;}),"
       + "row:[].map.call(s.querySelectorAll('details.obsec tbody tr'),function(r){return r.textContent.replace(/\\s+/g,' ');}).find(function(x){return /Seremban/.test(x);})||'',credit:s.textContent};})()");
-    ok(top30.n === 17 && top30.labels.includes("Kuala Lumpur") && top30.labels.includes("Seremban"), "the core view shades the 17 core districts and names them: " + top30.n);
+    ok(top30.n === 18 && top30.labels.includes("Kuala Lumpur") && top30.labels.includes("Seremban"), "the core view shades the 18 core districts and names them: " + top30.n);
     ok(top30.ser.f === "#d4694c" && top30.kl.f !== "#d4694c" && /RM 1,000,/.test(top30.ser.t), "the district carrying the most revenue takes the deepest step, and its tooltip gives the figure: " + JSON.stringify([top30.ser, top30.kl.f]));
     ok(/RM 1,000,/.test(top30.row), "an associate's resale account has no place of its own, so what it sells counts where the associate is: " + top30.row);
     ok(/CC BY 3\.0/.test(top30.credit) && /CC BY 4\.0/.test(top30.credit) && /ODbL/.test(top30.credit) && /and up/.test(top30.credit), "the credits for all three sources and the legend print under the map");
@@ -11889,8 +11891,8 @@ await (async () => {
     ok(bare30[0] > 10 && bare30[1] === 0, "every party in the district opened stands on an area drawn there, whichever district the area is filed under: " + bare30.join(" parties, ") + " on bare ground");
 
     w30.eval("mapZoom('*');");
-    ok(rd30("document.querySelectorAll('.sec.on path.marea').length") === 91 && rd30("(document.querySelector('.sec.on .viewsw button.on')||{}).textContent||''") === "Whole peninsula",
-      "the whole peninsula draws all 91 districts, and the switch says which view is on");
+    ok(rd30("document.querySelectorAll('.sec.on path.marea').length") === 92 && rd30("(document.querySelector('.sec.on .viewsw button.on')||{}).textContent||''") === "Whole peninsula",
+      "the whole peninsula draws all 92 districts, and the switch says which view is on");
     Object.defineProperty(w30, "innerWidth", { value: 375, configurable: true });
     w30.eval("mapZoom(null);");
     ok(rd30("document.querySelector('.sec.on svg').getAttribute('viewBox')") === "0 0 325 390", "on a phone the map is drawn at the width it is shown, taller than wide, so names keep their size");
@@ -13639,8 +13641,8 @@ await (async () => {
     ok(at.every((x) => x.got === x.seat && x.d === "kuala-lumpur"), "a point in a seat is named by that seat: " + JSON.stringify(at.filter((x) => x.got !== x.seat)));
     /* v681: every seat of the three states, including one filed under a neighbouring district, since a seat is filed by its centre */
     const all81 = rd78("AREAS.map(function(a){var r=areaOf(a.label[1],a.label[0]);return {seat:a.short,got:r.area?r.area.short:null,filed:a.district,d:r.district?r.district.id:null};})");
-    ok(all81.length === 41 && all81.every((x) => x.got === x.seat) && all81.some((x) => x.d !== x.filed),
-      "and so is every one of the 41, a seat whose point lies in a district other than the one it is filed under included: " + JSON.stringify(all81.filter((x) => x.got !== x.seat || x.d !== x.filed)));
+    ok(all81.length === 62 && all81.every((x) => x.got === x.seat) && all81.some((x) => x.d !== x.filed),   /* v826: 41 seats and Putrajaya's 21 precincts */
+      "and so is every one of the 62, a seat whose point lies in a district other than the one it is filed under included: " + JSON.stringify(all81.filter((x) => x.got !== x.seat || x.d !== x.filed)));
     w78.eval("switchTab('map');mapZoom('kuala-lumpur');");
     const drawn = rd78("(function(){var s=document.querySelector('.sec.on');var ps=[].map.call(s.querySelectorAll('path.marea'),function(p){return p.getAttribute('data-a');});"
       + "return {ids:ps,lead:(s.querySelector('.dsclead')||{}).textContent||'',text:s.textContent};})()");
@@ -13755,7 +13757,7 @@ await (async () => {
     const NS = ["Jelebu", "Jempol", "Seremban", "Kuala Pilah", "Rasah", "Rembau", "Port Dickson", "Tampin"];
     const by = rd81("(function(){var o={};AREAS.forEach(function(a){var d=DISTRICTS.find(function(x){return x.id===a.district;});(o[d.state]=o[d.state]||[]).push(a.short);});return o;})()");
     const same = (a, b) => JSON.stringify((a || []).slice().sort()) === JSON.stringify(b.slice().sort());
-    ok(same(by.Selangor, SEL) && same(by["Negeri Sembilan"], NS) && (by["Kuala Lumpur"] || []).length === 11 && Object.keys(by).length === 3,
+    ok(same(by.Selangor, SEL) && same(by["Negeri Sembilan"], NS) && (by["Kuala Lumpur"] || []).length === 11 && (by.Putrajaya || []).length === 21 && (by.Putrajaya || []).every((x) => /^Presint /.test(x)) && Object.keys(by).length === 4,   /* v826: and Putrajaya's precincts */
       "Selangor's 22 and Negeri Sembilan's 8 constituencies are their areas, beside Kuala Lumpur's 11, and nothing else is: " + JSON.stringify(Object.keys(by).map((k) => k + " " + by[k].length)));
     ok(rd81("AREAS.every(function(a){return !a.kind;})") && !/Mukim, bandar and pekan/.test(rd81("AREAS_META.attribution.join(' ')")),
       "no mukim, bandar or pekan is left, and neither is its credit");
@@ -20190,6 +20192,32 @@ await (async () => {
   const bad = Object.keys(v).filter((p) => { const inH = v[p].got; return inH.some((id) => v[p].want.indexOf(id) < 0) || inH.some((id) => v[p].lapse.indexOf(id) >= 0); });
   ok(Object.keys(v).some((p) => v[p].got.length > 0) && bad.length === 0,
     "every name the plan counts as due is one the board has as owing, due or coming, never lapsing: " + JSON.stringify(bad.map((p) => [p, v[p]])));
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
+section("v826: Putrajaya is a district of its own on Coverage, its twenty-one precincts its areas, each one a place to choose");
+await (async () => {
+  /* HIS INSTRUCTION OF 24 SEP 2026. The district survey drew Sepang over the whole territory, so Putrajaya had no district and
+     a party there counted in Sepang; its one seat covers it all, so its precincts are its areas, from OpenStreetMap. */
+  const A = JSON.parse(readFileSync(join(REPO, "geo", "areas.json"), "utf8"));
+  const pj = A.districts.find((d) => d.id === "putrajaya"), pa = A.areas.filter((a) => a.district === "putrajaya");
+  ok(!!pj && pj.core && pa.length === 21 && pa.every((a) => /^Presint /.test(a.short)),
+    "Putrajaya is a core district holding its twenty-one precincts: " + JSON.stringify([!!pj, pj && pj.core, pa.length]));
+  ok(A.sources.some((s) => /OpenStreetMap/.test(s.attribution) && /Putrajaya/.test(s.attribution)), "and OpenStreetMap is credited for them");
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const v = JSON.parse(w.eval(`JSON.stringify((function(){var at=function(lat,lng,loc){var r=areaOf(lat,lng,loc);return [r.district&&r.district.name,r.area&&r.area.short];};
+    var dip=AREAS.find(function(a){return a.short==='Presint Diplomatik';});
+    return {p8:at(2.9303,101.683),cyber:at(2.922,101.650),p6raw:at(2.90,101.66),p6:at(2.90,101.66,'Presint 6'),
+      dip:dip?at(dip.label[1],dip.label[0]):null,
+      picks:[...placePicks().keys()].filter(function(k){return /^Presint /.test(k);}),credit:AREAS_META.attribution};})())`));
+  ok(v.p8[0] === "Putrajaya" && v.p8[1] === "Presint 8" && v.cyber[0] === "Sepang",
+    "a point in Presint 8 is Putrajaya's, and Cyberjaya's is still Sepang's: Putrajaya is cut out of Sepang: " + JSON.stringify([v.p8, v.cyber]));
+  ok(v.p6raw[1] !== "Presint 6" && v.p6[0] === "Putrajaya" && v.p6[1] === "Presint 6",
+    "a precinct rounded to 0.01 degrees can leave itself, so a locality naming the area decides: " + JSON.stringify([v.p6raw, v.p6]));
+  ok(v.picks.length === 21 && v.picks.every((k) => /^Presint [^,]+, Putrajaya$/.test(k)),
+    "Add ID and Amend ID offer every precinct, each read as Putrajaya's: " + JSON.stringify(v.picks.filter((k) => !/^Presint [^,]+, Putrajaya$/.test(k))));
+  ok(v.credit.some((c) => /OpenStreetMap/.test(c) && /Putrajaya/.test(c)), "and the credit reaches the public map");
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 

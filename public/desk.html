@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="83485000e0464328";
+var SALT_BUILD_ID="8717f0c0f73c6115";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -7253,12 +7253,13 @@ const PLACEHOLDER={"TBC":"TBC is to be confirmed: nobody has recorded where this
    suffixes and are kept as a typed record rather than as overrides. */
 const LOCS={"CG5-SB":"SB","CJ4-OKR":"OKR","SF6-KLC":"KLC","CJ4-BJ":"BJ","CR3-DAM":"DAM","CN5-TAI":"TAI","CS6-PER":"PER","SA5-BTR":"BTR","CC5-OKR":"OKR","CA4-DAM":"DAM","CS6-BS":"BS","CM4-SK":"SK","CM6-HCM":"HCM","CM4-MK":"MK","CH5-KLC":"KLC","CE4-CHE":"CHE","CI4-OKR":"OKR","CN6-WM":"WM","CZ6-WM":"WM","CR4-PJ":"PJ","CD4-CS":"CS","CE4-AD":"AD","CA5-SEN":"SEN","SP7-PUD":"PUD","SM4-KEP":"KEP","CR3-PUD":"PUD","CH4-MAL":"MLR","CM6-PJ":"PJ","CA2-SEN":"SEN"};
 /* ============ THE AREAS (v630) ============
-   The districts of Peninsular Malaysia, and the federal constituencies of Kuala Lumpur, Selangor and Negeri Sembilan, for the desk's Coverage page.
+   The districts of Peninsular Malaysia, and the federal constituencies of Kuala Lumpur, Selangor and Negeri Sembilan and the precincts of Putrajaya, for the desk's Coverage page.
    geoBoundaries gbOpen MYS ADM2, from citypopulation.de, CC BY 3.0.
    Malaysian Election Corpus, the 2018 federal delimitation, Kuala Lumpur, Selangor and Negeri Sembilan, CC0 1.0.
-   Pinned at 9469f09, fetched 2026-09-16; each ring is an encoded polyline at 2e-4 degrees, longitude before latitude. Re-fetch with
+   OpenStreetMap, the precincts of Putrajaya (place=quarter), by Overpass, ODbL 1.0.
+   Pinned at 9469f09, fetched 2026-09-24; each ring is an encoded polyline at 2e-4 degrees, longitude before latitude. Re-fetch with
    `node tools/areafetch.mjs`, by hand; it is never run by CI or by the build. */
-const AREAS_META={"attribution":["Districts: geoBoundaries, citypopulation.de, CC BY 3.0","Constituencies: MECo, Thevananthan and Chacko, CC0"],"fetchedOn":"2026-09-16"};
+const AREAS_META={"attribution":["Districts: geoBoundaries, citypopulation.de, CC BY 3.0","Constituencies: MECo, Thevananthan and Chacko, CC0","Putrajaya precincts: © OpenStreetMap contributors, ODbL"],"fetchedOn":"2026-09-24"};
 const DISTRICTS=[
   {"id":"tumpat","name":"Tumpat","state":"Kelantan","core":false,"label":[102.1844,6.1632],"rings":["uje^qs{@lD{AxRx@jOiIzElMWzGuCpDaH\\}CjH_MtAm@zCyHvA_GwYdCkJ"]},
   {"id":"kota-bharu","name":"Kota Bharu","state":"Kelantan","core":false,"label":[102.2572,6.0124],"rings":["{fe^umz@OfEpDbEpPr@T|B{HrDgIfM~B~OsGnDaKn@yD_SqCBQmBkIoCmAeIfFgHoGwCBkC|JoHMiByGOt@}IkCmDpa@sLeCjJ~FnY"]},
@@ -7337,7 +7338,7 @@ const DISTRICTS=[
   {"id":"pontian","name":"Pontian","state":"Johor","core":false,"label":[103.4772,1.4722],"rings":["itn^izNo[~H}Y~OgZnbAoGbD{GjKsBDx@mF_AgF{GsFfBgRyDiUuGiDhAeAEaJxHh@{@gDjAQ`BjBrBg@dCoMfl@ag@fi@mPvHlTw@nSdDtA"]},
   {"id":"johor-bahru","name":"Johor Bahru","state":"Johor","core":false,"label":[103.926,1.5222],"rings":["gfr^o`Nz@fDyHi@D`JiAdAtGhDxDhUm@zKy@jE_Cf@aLrTkCuQkQia@aNcHsL|AmNkGoIvA_O`Lu_@r@yFyDlB{c@rJiKdAmJrRsJrH`Lx@`FzCvAlXgLdCeG~F[rCzB_CzDdDrIlDTjCyC?dBtGlE`O^vCvGzFW|DxD"]},
   {"id":"kota-tinggi","name":"Kota Tinggi","state":"Johor","core":false,"label":[103.8344,1.8508],"rings":["}as^coPkEpJiAWyBtFt@bAyNdTsC{B_GZeCdGmXfL{CwAmHiSsTxJeAlJoKzMqAha@mNf@sDjCmDlH`F~DgJfDeAjCsT`@{KsHs@tBuIoBnA{QeCa@g@wCxDcIVqEiBqCpGqJeA_GbBeEwAm@lDsFkAyF~N}XlLsb@x@y@dA~B~Bm@nGiID}Gy@yBiEUT}ArBoIdQqVbzCMeAx_@dDDHxIkT~U}DxJ"]},
-  {"id":"sepang","name":"Sepang","state":"Selangor","core":true,"label":[101.6878,2.9114],"rings":["w`a^}_[^}@zCkA\\eCfBiCjAcLp@cAdCYBuC_Bk@lAsC~@q@AvBbSvB|Ae@tVXyS`i@iCbDaAn@cA?cB|AtNhQFtG`JIOvXpAd@eCdAaEXgQpDmAlAIxAiEn@Es@hA{AwCsB_CLIs@`AaCsAyBiCaACs@hA}ACg@gEmHe@uEhCul@sKH"]},
+  {"id":"sepang","name":"Sepang","state":"Selangor","core":true,"label":[101.6878,2.9114],"rings":["w`a^}_[^}@zCkA\\eCfBiCjAcLp@cAdCYBuC_Bk@lAsC~@q@AvBbSvB|Ae@tVXyS`i@iCbDaAn@cA?cB|AtNhQFtG`JIOvXpAd@eCdAaEXgQpDmAlAIxAiEn@Es@hA{AwCsB_CLIs@`AaCsAyBiCaACs@hA}ACg@gEmHe@uEhCul@sKH","c~_^ec[t@GDl@^aAv@b@z@aEi@_By@OWu@EeAr@qAKoAd@q@cB[Bg@dBeALaAwAaA{DKqDeBjAzAFt@c@n@eAPm@WAtA{C@Q~FzF?@~CbA@?`@Z?_@~A`@J@j@zAVJdA~@j@"]},
   {"id":"klang","name":"Klang","state":"Selangor","core":true,"label":[101.2954,2.9666],"rings":["uy{]wl[[gB@cGr@yDbFzCF~Ee@lAB`DcFeA","qx|]of\\vHdDnE`GpFfMUJL|@~@`@wBfBcJoHgBx@qAzBuAOvBwEK[gBgAcBoCsDoJoCqAF]tIM","w}{]ym\\Ei@~Ar@hCApFpBv@jEtDfGDhAc@JaCw@_HmIkE{Cw@aC","um{]qj\\mKmCkD}Bg@iAbBgD`CUzE`Cd@|ArAv@`CpEk@z@o@Q","e`|]ip[iF}Ks@uDw@AY{@eFoBXcLa@uDfBqAbBMrB~@pFjPhD`H\\nE]dKiABs@k@","gi|]g|]kB~Nk@n@iA?{HtKf@hPuAbCeCMcCd@@lDfF`FXlDhA~CsBbDw@J{AkAQaFsDcEg@mCuA}@uADaC`BF|@rCbBeHQkUXuFiC?r@mCw@Ts@{BsAnAFpAq@`A}Bc@s@|@iAB{AiBDfAk@w@BNm@xEmC\\EvBrAdAyAnCKKu@bABAkDlBTp@sFjA_AbFM\\wDkBiAUuA`@wAyAwCaC}AtM}HbGC?x@vHJB~A|FB?zBjDXfBoA|A`@"]},
   {"id":"kuala-langat","name":"Kuala Langat","state":"Selangor","core":true,"label":[101.522,2.8352],"rings":["i~~]}a\\pD`BUr@lCv@?s@tFhCjUYdHPsCcBG}@`CaBtAEtA|@f@lCxB~Bv@bHt@rAxBZlEsD|@QyAtDVtBjBCpDkDfDhFbEbCsAlJmCx@mC@sJvDoLpAcAr@Xh@YdAoDjCsFdJuBdHsExEoE`ByDb@_C`BuMpCiAjAoAc@NwXaJHGuGuNiQbB}AbA?`Ao@hCcDxSai@"]},
   {"id":"petaling","name":"Petaling","state":"Selangor","core":true,"label":[101.5426,3.1244],"rings":["wn}]ud^uM|H`C|AxAvCa@vATtAjBhA]vDcFLkA~@q@rFmBU@jDcACJt@oCJeAxAwBsA]DyElCOl@v@CgAj@hBECzAw@r@\\hAaA|BqAp@{Zo@}Ad@cSwB|@cFuAqFp@AnBiDf@F^fAf@g@|@l@~@Ph@UbAd@l@[pEMCg@c@JIuAjASCqAd@m@sC{Cr@wFn@X`@qAt@Yk@_AbCu@z@TT{AvBiCg@iEAqFiA]]yAjBJtBzApCOxCcApD{EzAz@Tp@|DXFs@lAh@nBu@rALrA_ADlLj@gAdBE\\m@lBr@lJE"]},
@@ -7350,7 +7351,8 @@ const DISTRICTS=[
   {"id":"rompin","name":"Rompin","state":"Pahang","core":false,"label":[103.129,2.757],"rings":["ytu^ekYSxF_APFcB{AdB[kEbEaA","uix^eg[vD@xAjFsCbMpIpFpBlEs@rImLdHcNs@yAqM|D}C{AiDvDmHrBkL}@a@lCaD","k}i^ok_@ObN}FvC}B~HiIdD}ItItN~FzEaA~AnHaCn@cBcB]bDbB`D{E`KiFxAjGtQVds@oJhDmv@``Akv@bUuh@yO{TsCeRnIsHf@}F|Gwi@xSOiCaDhAsBeFpACxBoHs@wBbINw@oGwC{A_A`A\\gDjDz@cAmDuD?bBqAoCgB`CaCaBoBnBw@BaCtAE`@pDxBqDqCcD{DzAoB}@b@mBpZ}WvXa^vG}\\nSgD||@f@fDuGbFQrBwHfD}Al@aFjCeA{A_AhG_CgBcIsJwCvAcE_E}CKiEnAs@yBsFhNuQZoIxBkEfLpKxLlBzEkKnDx@hGvKjEqA~JmLzGoKc@qD|O~AtEcCbDl@f@vLvGbD"]},
   {"id":"mersing","name":"Mersing","state":"Johor","core":false,"label":[103.786,2.2114],"rings":["mfw^kyTjBl@sEjCLbE{DHtGgK","cpw^msUGlD_DfCyD|@sCsAbC_FpJ_A","qkv^m_WFjFkDjBq@e@tEqH","sv{^y_WrB}BdC|Ce@pCiG`D}BmGrDeA","gp{^oeWfB`AgEm@~AS","owy^yjXvBh@S`BaHjEc@iC`FmE","mqp^seVgYiD}T~Oy\\qJdAhCy@bYxDjChN|cAmzCL~Mq_@hPqRPgIyAuBqClBu@qAnIiLuBgEhN}JvSaYtBc@jDiRcFYYqAxC}DbBwK~OoMc@wEhAmB|BbDdKiAdKiFhMnAzD{AjBhAd@xAyBpDa@qDuADC`CoBv@`BnBaC`CjChA_BnB~En@X|BkD{@]fD~@aAvCzAv@nGsHa@b@hCyBnHqABrBdF`DiANhCvi@yS|F}GrHg@dRoItSjCw[|}@"]},
   {"id":"manjung","name":"Manjung","state":"Perak","core":false,"label":[100.692,4.3638],"rings":["}yt]cth@d@tA}Ap@~AnAqAhCrCZkGfDs@`EuD\\hByQzCCdCgD","swv]idk@pb@iAlCn_@tG`@a@hOfHtQsDWyBlDc@bK{K`BmHgDrFlH~LaByDjHtAvEoEpHwIgBuO`FsDrHsF|DeCbKl@lNkCjAkPgLvDkJfCf@hB_JtFeFiBaH^kEqEuFiA_Q_CoD{B?d@wTnD`A|AsF{BkALi^qCk@_BtAiAkBeCLyAiOh@oCrc@jH"]},
-  {"id":"bachok","name":"Bachok","state":"Kelantan","core":false,"label":[102.3838,5.9776],"rings":["mye^q~x@kSq@_ExG_KbH}ScI`^qbApGqIfC|Du@|IxGNLhB}JnHCjCnGvCgFfHlAdIjInCPlBpCCVhD"]}
+  {"id":"bachok","name":"Bachok","state":"Kelantan","core":false,"label":[102.3838,5.9776],"rings":["mye^q~x@kSq@_ExG_KbH}ScI`^qbApGqIfC|Du@|IxGNLhB}JnHCjCnGvCgFfHlAdIjInCPlBpCCVhD"]},
+  {"id":"putrajaya","name":"Putrajaya","state":"Putrajaya","core":true,"label":[101.6946,2.9446],"rings":["c~_^ec[_Ak@KeA{AWAk@a@K^_B[??a@cAAA_D{F?P_GzCA@uAl@VdAQb@o@Gu@kA{ApDdBzDJvA`AM`AeBdACf@bBZe@p@JnAs@pADdAVt@x@Nh@~A{@`Ew@c@_@`AEm@u@F"]}
 ];
 const AREAS=[
   {"id":"kuala-lumpur/1","short":"Kepong","kind":"","district":"kuala-lumpur","label":[101.65,3.213],"rings":["gn_^wi^sBdB?`BSHKYa@NQw@ODKU?c@_A?]jAa@UTu@k@}@`@_@HwCb@C?[pA@?Sv@BEg@x@Fh@h@_@t@\\|@VM@b@h@r@"]},
@@ -7393,7 +7395,28 @@ const AREAS=[
   {"id":"seremban/2","short":"Rasah","kind":"","district":"seremban","label":[101.819,2.7318],"rings":["_w`^arYwDBmC~LHtA_JABc@i@yBYACYV_@aABAQa@CBe@}CAsA`@Mh@PDPx@{A^c@z@@dAiCN?|@oBABa@aBm@mAVDz@Yd@u@OAy@wAKPi@qBABl@cDFFq@YY}@n@?YkDVGSOBBt@m@LWWRcAjA{ASi@SJSMxCsBHq@h@Hg@mC?O\\BC]r@BG`@l@Td@e@Ld@|@@D[|@Qf@k@MkAl@QH]NJCh@VDLZLSdAEVg@dAANk@Ki@|@EKkANWTLdCCGeAWA[aCsAIAe@~AM@T\\MJ\\xB?^]|@Gf@g@fDaA|@dDf@BlBk@XJIu@f@kAg@UbAeCzAb@AVP?nB{@LTtAOEW`ACC[f@EvDp@AVf@Do@lV"]},
   {"id":"rembau/1","short":"Rembau","kind":"","district":"rembau","label":[102.1088,2.541],"rings":["yyb^}nYf@lCi@IIp@yCrBRLRKRh@aBbCXr@l@MCu@NCFRjDW?X|@o@XXGp@bDGCm@pB@Qh@vAJ@x@t@NXe@E{@lAW`Bl@C`@nB@?}@hCOAeAb@{@zA_@Qy@QELi@rAa@|C@Cd@`@B@P`ACW^BXX@n@nCoAxDwB|@gAeGW?O\\w@AB^iAX@^WXy@BRfAV@r@~EsE?@\\eEA@fE}BAd@~@}ADV|GY?wAnAXdBVH?jAmAAMRCQkHCB{Ag@KFV}@Ap@{ChBo@wMJBrGaEA?jBV??d@W??xZqAv@Z^Fn@}@r@{ABS[^i@Uu@y@Y[J[UWy@BQb@RLS_@i@TWg@eAaEf@m@`AkI{CgEx@yIgLaDvAKd@sBh@i@mAV[EYSG?]k@UN{@vAk@jAqA@mCYy@q@]Bk@Z]Eu@V_@nAY|AgBCg@f@wASeArA_AfAkB]]b@c@v@f@p@K`@Rr@]j@qBf@g@l@D\\e@`AC\\kAZIIs@ToC\\c@g@WWcA@q@U}@]WWiCbAcAd@L~AQvADFPt@]ZZGPt@j@ZURV?pAj@`A`AC\\r@n@QRs@l@Ar@o@?wB_@SEmAc@w@@q@l@KTb@NGv@X`@Yh@F?M^Ar@Nd@l@hAPnA[R]dF[JTSBBlAb@@BRZK"]},
   {"id":"port-dickson/1","short":"Port Dickson","kind":"","district":"port-dickson","label":[101.9094,2.4858],"rings":["wh`^_jXsCRo@y@{@[_DS}EtBk@n@JV[lAs@Um@^i@|Br@jB]H]bBl@bAp@ZGdB[G_@X@Oc@Hy@YwBN{@l@iAnBi@Xk@jA@p@WBo@`AYbDHh@e@L[r@KlARb@ODU~AHxDRVTMTd@VCy@vAi@MPWa@g@Dc@}@e@_B@a@UmD^}@[UHD_@YKcAKCNa@IINW_@iBAyAt@m@bB[@iAbAqBF{@b@q@zAmAuA_BOsBiA{@O{C{D@{@]}@?yZV??e@W??kB`E@CsGvMKiBn@q@zC|@@GWf@JCzAjHBBPLSlA@?kAWIYeBvAoAX?W}G|AEe@_A|B@AgEdE@A]rE?s@_FWASgAx@CVYA_@hAYC_@v@@N]V?fAdGvB}@dAkD~I@IuAlC_MvDCC~Ez@Zh@`BMz@x@?dAtAIx@i@Z[|AxClAfAvBy@xBNfA\\e@f@I|D~B?l@kA^k@v@"]},
-  {"id":"tampin/1","short":"Tampin","kind":"","district":"tampin","label":[102.4878,2.57],"rings":["snf^ikXfFnGs@AFxE\\lB~CVdJa@f@RFUbCQnD?LLVa@jA|@EZPF`BiAT`@fBm@p@\\`@hBSp@Hj@kApAwAj@Oz@j@T?\\RFDXWZh@lAeG`DsMlAwKsEiMeB}NvCoDlAN|AmWfEqOvDsF^cA~@@eB`@K{@oIyB}BcAGAuAnAeFCyAkBqBrAsCC}Ce@w@lAmB_BsCeA]Oi@kAC{@aC@mAnBs@RyC{@gDlGUb@_@JT^@|BsBtC`AfCoCCW\\C?TNEA{Bhe@y@hXd["]}
+  {"id":"tampin/1","short":"Tampin","kind":"","district":"tampin","label":[102.4878,2.57],"rings":["snf^ikXfFnGs@AFxE\\lB~CVdJa@f@RFUbCQnD?LLVa@jA|@EZPF`BiAT`@fBm@p@\\`@hBSp@Hj@kApAwAj@Oz@j@T?\\RFDXWZh@lAeG`DsMlAwKsEiMeB}NvCoDlAN|AmWfEqOvDsF^cA~@@eB`@K{@oIyB}BcAGAuAnAeFCyAkBqBrAsCC}Ce@w@lAmB_BsCeA]Oi@kAC{@aC@mAnBs@RyC{@gDlGUb@_@JT^@|BsBtC`AfCoCCW\\C?TNEA{Bhe@y@hXd["]},
+  {"id":"putrajaya/1","short":"Presint 1","kind":"","district":"putrajaya","label":[101.7028,2.9436],"rings":["kh`^qv[@s@^GP]p@MXT`@@r@ZBl@`@jASTi@HWMa@@WWWJWYO@GIa@JKYH]"]},
+  {"id":"putrajaya/2","short":"Presint 2","kind":"","district":"putrajaya","label":[101.6902,2.927],"rings":["qc`^cq[`@Hr@^BV~@[?UOOG_@SWm@UWFKb@[`@"]},
+  {"id":"putrajaya/3","short":"Presint 3","kind":"","district":"putrajaya","label":[101.6832,2.9184],"rings":["c~_^sn[HOISOCcA\\Nd@bA["]},
+  {"id":"putrajaya/4","short":"Presint 4","kind":"","district":"putrajaya","label":[101.6808,2.9098],"rings":["c~_^qn[aAZJNWXh@b@Hn@HJR@ZQBU\\WCOQOAY]OK]"]},
+  {"id":"putrajaya/5","short":"Presint 5","kind":"","district":"putrajaya","label":[101.6778,2.893],"rings":["iy_^yh[JRTBMN_@DIA?M]BUTE\\FJm@Ja@Co@Wg@s@Vo@~@X@Mf@O^FL[PBl@d@"]},
+  {"id":"putrajaya/6","short":"Presint 6","kind":"","district":"putrajaya","label":[101.6626,2.8986],"rings":["gx_^ah[UCIWc@QGa@DIp@l@^?BLO\\"]},
+  {"id":"putrajaya/7","short":"Presint 7","kind":"","district":"putrajaya","label":[101.6736,2.9302],"rings":["mz_^{s[HVELeAp@QeAj@I?SZ@JH"]},
+  {"id":"putrajaya/8","short":"Presint 8","kind":"","district":"putrajaya","label":[101.6834,2.9342],"rings":["u``^av[z@?LRd@~AMJN`@En@I@c@m@Oq@e@g@GkA"]},
+  {"id":"putrajaya/9","short":"Presint 9","kind":"","district":"putrajaya","label":[101.6756,2.9406],"rings":["u{_^gt[ENk@B}@_CA_@JAr@^`AFDf@FDQv@K?"]},
+  {"id":"putrajaya/10","short":"Presint 10","kind":"","district":"putrajaya","label":[101.6888,2.9514],"rings":["__`^gv[u@?S}@a@SEMP_@n@I`@TEh@RhA"]},
+  {"id":"putrajaya/11","short":"Presint 11","kind":"","district":"putrajaya","label":[101.6754,2.9624],"rings":["g~_^mx[GODq@a@Dc@[q@JMKTm@^@?eBh@LnBIt@Vr@n@M~@mAn@YX?VI@?Lq@S"]},
+  {"id":"putrajaya/12","short":"Presint 12","kind":"","district":"putrajaya","label":[101.7104,2.9554],"rings":["sd`^w{[^`@BNKZWIKQSBq@VDNIJ_@FOgABq@`@B\\M`AP"]},
+  {"id":"putrajaya/13","short":"Presint 13","kind":"","district":"putrajaya","label":[101.6946,2.967],"rings":["y``^w_\\?dB_@AUl@LJf@CCHa@JQ^a@C?q@]_@e@KiB@?_@N@TTZA?Ot@A@a@`@MGm@gAcA?a@P^d@Xp@FpAl@"]},
+  {"id":"putrajaya/14","short":"Presint 14","kind":"","district":"putrajaya","label":[101.7186,2.9502],"rings":["sh`^mw[GTUAgAk@SSc@DUKA[HKbDAFzA"]},
+  {"id":"putrajaya/15","short":"Presint 15","kind":"","district":"putrajaya","label":[101.7268,2.9352],"rings":["kn`^as[?PzE?Oq@Ya@Ek@c@ESYM|@a@So@MK[Pc@OKG?A|D"]},
+  {"id":"putrajaya/16","short":"Presint 16","kind":"","district":"putrajaya","label":[101.7002,2.9296],"rings":["qd`^mq[OCa@a@_@Ic@w@^OFHNAX\\Z?`AX?\\]`@[G"]},
+  {"id":"putrajaya/17","short":"Presint 17","kind":"","district":"putrajaya","label":[101.7034,2.921],"rings":["qd`^gn[NPGFaAA?aDZf@RCb@JOXI~@"]},
+  {"id":"putrajaya/18","short":"Presint 18","kind":"","district":"putrajaya","label":[101.6944,2.9176],"rings":["sc`^_q[b@Fn@`@B^Zn@STi@Qc@Bc@c@@eANW"]},
+  {"id":"putrajaya/19","short":"Presint 19","kind":"","district":"putrajaya","label":[101.6886,2.9026],"rings":["i``^ii[S`@G_@[?h@eA`@JGVTDBJe@L"]},
+  {"id":"putrajaya/20","short":"Presint 20","kind":"","district":"putrajaya","label":[101.6672,2.8856],"rings":["m``^qf[l@d@|AFh@Q~@q@FBAJUVT\\a@`As@g@OTUQ[D@L_@Be@m@U?Iw@"]},
+  {"id":"putrajaya/21","short":"Presint Diplomatik","kind":"","district":"putrajaya","label":[101.7278,2.9456],"rings":["am`^yx[hAh@M|@a@So@MIO@[LSNE"]}
 ];
 /* ============ THE PLACE LIST (v633) ============
    Where a typed place is: GeoNames' populated places and localities in the core states, hashed, for Add ID and Amend ID.
@@ -7669,7 +7692,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v825","d":"24 Sep 2026","t":"WHO IS PAST THEIR HABIT IS ONE ANSWER","n":["<b>FOUR ANSWERS TO ONE QUESTION</b> (his report of 24 Sep 2026). Salt read Overdue on habit 7 and RM 783 on the Clients tile, 3 due now, 2 lapsing and 3 owing on the board, 8 and RM 893 on To do, and 4 and RM 1,172 on the Whiteboard. approachSplit is now the one reading: the board draws from it, the tile reads Due now 3 with RM 406, 2 lapsing and 3 owing first, the insight says the same, To do counts due now and lapsing (5, RM 624), naming an out-of-area name rather than dropping it, and the Whiteboard's item and its revive item are per book off the same split.","<b>CHASE FIRST IS ONE ORDER</b>: the board led with the largest debt, CN6-WM, while Receivables named the oldest, CJ4-BJ. Both read chaseOrder now, oldest claim first.","<b>THE RESTOCK PLAN COUNTS THE BOARD'S NAMES.</b> Its named dues were a second list, lapsed at one gap and buckets apart; they are the split's owing, due and coming names. CA7-AMP, eight days past a 50 unit oil habit, now counts, so oil's reorder point is 60 unit, and <b>A LOT MAY MIX TIERS</b>: oil's next lot is 50 + 10 unit for RM 480 where one tier's multiples offered 6 x 10 for RM 600, and candy's 30 + 10 for RM 1,690 against 2 x 20 for RM 1,880."]}];
+const evolution=[{"v":"v826","d":"24 Sep 2026","t":"PUTRAJAYA ON COVERAGE, ITS PRECINCTS TO CHOOSE","n":["<b>PUTRAJAYA HAD NO DISTRICT</b> (his instruction of 24 Sep 2026). The district survey draws Sepang over the whole territory, so a party in Putrajaya was counted in Sepang and the map had no Putrajaya to open. It is now a core district made from its state outline, and that outline is cut out of Sepang as a hole; Cyberjaya and Dengkil stay Sepang's, so CA6-CYB still reads Cyberjaya, Sepang.","<b>ITS AREAS ARE ITS PRECINCTS.</b> Its one federal seat, P.125, is the whole territory, so a tap on it said nothing; the twenty precincts and Presint Diplomatik come from OpenStreetMap (ODbL, credited under the map), and each is a place to choose at Add ID and Amend ID, reading Presint 8, Putrajaya.","<b>A SMALL AREA NAMED BY THE LOCALITY DECIDES.</b> A party's point is kept to 0.01 degrees, about a kilometre, which a precinct can round out of: Presint 6's point read Sepang. Where the locality names an area under three kilometres across in the point's own district, that area is the reading; a seat is wide enough for the point, so Ampang in Kuala Lumpur never takes Selangor's Ampang seat."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -7784,7 +7807,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='24 Sep 2026, 14:57 KL';
+const LAST_UPDATED='24 Sep 2026, 15:33 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -11305,8 +11328,14 @@ function inShape(pt,g){
    mukim Setapak under Gombak, yet 40% and 20% of them lie inside Kuala Lumpur, so a KL party used to be counted in a
    Selangor mukim ahead of any KL area. Its own district's area that holds it, then any area that does, then the
    nearest of its own district's. */
-function areaOf(lat,lng){
+/* v826: A SMALL AREA NAMED BY THE LOCALITY DECIDES. A party's point is kept to 0.01 degrees (the drafter's geoOf), about a
+   kilometre, and a Putrajaya precinct is about that wide, so a point picked as Presint 6 rounds out of it. The locality rides
+   with the point, so where it names an area under three kilometres across in the district the point stands in, that area is
+   the reading. Only a small one: "Ampang" in Kuala Lumpur also names a Selangor seat, and a seat is wide enough for the point. */
+function areaOf(lat,lng,loc){
   const pt=[lng,lat],district=DISTRICTS.find(d=>inShape(pt,areaShape(d)))||null;
+  const named=loc&&district?AREAS.find(a=>a.district===district.id&&a.short.toLowerCase()===String(loc).trim().toLowerCase()):null;
+  if(named){const b=areaShape(named).box;if(Math.max(b[2]-b[0],b[3]-b[1])<0.03)return {district:district,area:named};}
   if(!district||!district.core)return {district:district,area:null};
   const near=a=>Math.hypot(a.label[0]-lng,a.label[1]-lat),holds=a=>inShape(pt,areaShape(a));
   const own=AREAS.filter(a=>a.district===district.id);
@@ -11320,7 +11349,7 @@ const PLACE_WORDS={rd:'Road',jln:'Jalan',sg:'Sungai',bkt:'Bukit',bdr:'Bandar',tm
 const placeTidy=t=>String(t||'').replace(/\b([A-Za-z]+)\b\.?/g,(m,w)=>PLACE_WORDS[w.toLowerCase()]||m);
 function placeWords(loc,lat,lng){
   const parts=loc?[loc]:[];
-  if(lat!=null){const r=areaOf(lat,lng);if(r.area)parts.push(r.area.short);if(r.district)parts.push(r.district.name);}
+  if(lat!=null){const r=areaOf(lat,lng,loc);if(r.area)parts.push(r.area.short);if(r.district)parts.push(r.district.name);}
   return parts.filter((x,i)=>parts.findIndex(y=>y.toLowerCase()===x.toLowerCase())===i).join(', ');
 }
 function whereOf(id){const g=PLACED[id],pl=placeOf(id);return placeWords(g&&g[2]?placeTidy(g[2]):'',pl?pl.lat:null,pl?pl.lng:null);}
@@ -11330,7 +11359,7 @@ function whereOf(id){const g=PLACED[id],pl=placeOf(id);return placeWords(g&&g[2]
    listed keeps GeoNames' point over a party's older rounded one. Each carries its own point; sorted by what it reads. */
 function placePicks(){
   const m=new Map(),seen=new Set(),r2=v=>Math.round(v*100)/100;
-  const add=(n,lat,lng)=>{const d=areaOf(lat,lng).district,k=(n+'|'+(d?d.id:'')).toLowerCase();if(seen.has(k))return;seen.add(k);const l=placeWords(n,lat,lng);if(l&&!m.has(l))m.set(l,[lat,lng]);};
+  const add=(n,lat,lng)=>{const d=areaOf(lat,lng,n).district,k=(n+'|'+(d?d.id:'')).toLowerCase();if(seen.has(k))return;seen.add(k);const l=placeWords(n,lat,lng);if(l&&!m.has(l))m.set(l,[lat,lng]);};
   PLACE_LIST.forEach(x=>add(x.n,x.p[0],x.p[1]));
   Object.keys(PLACED).forEach(c=>{const g=PLACED[c];if(g&&g[2])add(placeTidy(g[2]),g[0],g[1]);});
   AREAS.forEach(a=>add(a.short,r2(a.label[1]),r2(a.label[0])));
@@ -11354,7 +11383,7 @@ function tabMap(){
   const mi=MAP_FROM?ms.indexOf(MAP_FROM.slice(0,7)):ms.length-1;
   const val=id=>mapVal(own,id);
   const word=MAP_METRICS[MAP_METRIC].toLowerCase(),empty=MAP_METRIC==='credit'?'nothing owed':'no trade';
-  const placed=pts.concat(far).map(p=>Object.assign({},p,{value:p.role==='supplier'?p.value:val(p.id)},areaOf(p.place.lat,p.place.lng)));
+  const placed=pts.concat(far).map(p=>Object.assign({},p,{value:p.role==='supplier'?p.value:val(p.id)},areaOf(p.place.lat,p.place.lng,PLACED[p.id]&&PLACED[p.id][2])));
   const onMap=placed.filter(p=>p.district),off=placed.filter(p=>!p.district);
   const unknown=miss.filter(m=>!NON_PLACE[m.id.split('-').pop()]);
   const tally=key=>{const t={};onMap.forEach(p=>{const a=p[key];if(!a||p.role==='supplier')return;const o=t[a.id]||(t[a.id]={v:0,n:0});o.v+=p.value||0;o.n++;});return t;};
