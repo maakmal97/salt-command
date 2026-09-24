@@ -23500,8 +23500,10 @@ await (async () => {
       status: "placed", history: [], msgs: [], payments: [] };
     const orders = [Object.assign({ id: "n1", mode: "collect", at: "2026-09-24T02:00:00.000Z" }, base),
       Object.assign({ id: "n2", mode: "deliver", place: "Taman Rekaan", at: "2026-09-24T03:00:00.000Z" }, base)];
-    let pv = { ok: true, row: { customer: "CC5-OKR", qty: 2.5, total: 250, delivery: 0 }, flags: [], cost: 140, margin: 110, floor: 152,
-      usual: 104, card: 250, cardNote: "", told: "x", pricing: "p1", hash: "h1" };
+    /* the preview's own shapes, as src/orders.js previewAck answers */
+    let pv = { ok: true, row: { customer: "CC5-OKR", qty: 2.5, total: 250, delivery: 0 }, flags: [], cost: { unit: 56, total: 140, source: "stockCost" },
+      margin: { rm: 110, pct: 44 }, floor: { rm: 152, at: 2.5, exact: true }, usual: { who: "CC5-OKR", rate: 104, orders: 3 }, card: 250, cardNote: "", told: "x",
+      pricing: { v: "p1", digest: "d1" }, hash: "h1" };
     const calls = [];
     w.fetch = async (path, init) => {
       const p = String(path), post = !!(init && init.method === "POST");
@@ -23528,7 +23530,7 @@ await (async () => {
       "their card today matches the quote, the margin on its cost, the floor cleared, and a rate under their usual toned by that direction: " + JSON.stringify(t1));
     ok(/drafted now and stored nowhere\. The drafter raises no flag\./.test(card("n1").textContent), "and it says the row is the drafter's, and that it flags nothing");
 
-    pv = Object.assign({}, pv, { card: 280, usual: 96, flags: ["a rate under their held tier"] });
+    pv = Object.assign({}, pv, { card: 280, usual: { who: "CC5-OKR", rate: 96, orders: 3 }, flags: ["a rate under their held tier"] });
     await w.eval("ordLoad(true)");
     await settle();
     const t2 = tiles();
@@ -23615,8 +23617,8 @@ await (async () => {
       calls.push({ p, body });
       const j = (b) => ({ ok: true, status: 200, json: async () => b });
       if (p === "orders" && !post) return j({ ok: true, orders: JSON.parse(JSON.stringify(orders)) });
-      if (/\/preview$/.test(p)) return j({ ok: true, row: { qty: 2.5, total: 250, delivery: body.delivery }, flags: [], cost: 140, margin: 110,
-        floor: 152, usual: 100, card: 250, hash: "h" + body.delivery });
+      if (/\/preview$/.test(p)) return j({ ok: true, row: { qty: 2.5, total: 250, delivery: body.delivery }, flags: [], cost: { unit: 56, total: 140 },
+        margin: { rm: 110, pct: 44 }, floor: { rm: 152 }, usual: { rate: 100 }, card: 250, hash: "h" + body.delivery });
       return j({ ok: true });
     };
     const settle = () => new Promise((r) => setTimeout(r, 30));
@@ -24217,6 +24219,99 @@ await (async () => {
   const fresh = draftsOf(B.o.id, "Close").filter((d) => d.id !== dB[0].id);
   ok(JSON.stringify(listed.again || []) === JSON.stringify(["move"]) && again.status === 200 && fresh.length === 1 && fresh[0].status === "approved",
     "a close he rejects is Collected's to offer again, and the fresh Correction is booked as drafted: " + JSON.stringify({ again: listed.again, st: again.status, err: again.j.error, fresh: fresh.map((d) => d.status) }));
+})();
+
+section("S11 merge: the card drives the real desk Worker, drawing the preview it answers and saying what each yes did");
+await (async () => {
+  /* The two halves of stage 11 were built apart: the card against a stand-in for the routes, the routes against no
+     card. Here the card's fetch is the desk Worker itself, over a real D1 schema and the real site. The preview's
+     cost, margin, floor and usual are objects, which the card read as bare figures, so it drew "no floor" on every
+     order; and the answer to a tap said "They see Acknowledged" and "booked as it is drafted" whatever the Worker had
+     done, so a row that differed, or a stage waiting on the first row, went unsaid. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the card was not driven against the Worker"); return; }
+  const O = await import("../stmt/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  setState("roster", [C1]); setState("OPEN", { byKey: {}, position: {} });
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 } }, inputs: null, sizes: [1, 2],
+    cards: { [C1]: [[1, 100], [2, 200]] } } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const o = (await O.placeOrder(senv, U1, { product: "salt", qty: 2, mode: "collect", unit: 100, total: 200, week: "" })).order;
+
+  const { openMaster: omM } = await import("../tools/payload.mjs");
+  const { w } = await omM();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 98; w.clearInterval = () => {};
+    let stub = null;
+    w.fetch = async (path, init) => {
+      if (stub) { const s = stub(String(path)); if (s) return s; }
+      const r = await deskW.fetch(new Request("https://salt-command.example/" + String(path), { method: (init && init.method) || "GET",
+        headers: (init && init.headers) || {}, body: init && init.body ? init.body : undefined }), denv, ctx);
+      while (tails.length) await tails.shift();
+      const text = await r.text();
+      return { ok: r.ok, status: r.status, json: async () => JSON.parse(text) };
+    };
+    const settle = () => new Promise((r) => setTimeout(r, 60));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    for (let i = 0; i < 40 && !D.querySelector('.ordcard[data-id="' + o.id + '"] .ordpv .salt-kpi'); i++) await settle();
+    const card = () => D.querySelector('.ordcard[data-id="' + o.id + '"]');
+    const tiles = [...card().querySelectorAll(".ordpv .salt-kpi")].map((t) => [...t.children].map((c) => c.textContent.replace(/\s+/g, " ").trim()).join(" "));
+    ok(tiles.length === 4 && /Their card today RM 200 matches the quote/.test(tiles[0]) && /Margin RM 88 on RM 112 cost/.test(tiles[1])
+      && /Floor RM 150 clear by RM 50/.test(tiles[2]) && /Their usual RM 100\/unit/.test(tiles[3]),
+      "the card draws the Worker's own preview: their card, the margin on the cost, the floor and their usual: " + JSON.stringify(tiles));
+
+    const acc = card().querySelector('.ordfoot button[data-ord="acknowledged"]');
+    acc.click();
+    for (let i = 0; i < 40 && !/Accepted/.test((D.querySelector('[data-msg="' + o.id + '"]') || {}).textContent || ""); i++) await settle();
+    const pend = db.prepare("SELECT status FROM draft").all().map((d) => d.status);
+    const site1 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
+    const msg1 = (D.querySelector('[data-msg="' + o.id + '"]') || {}).textContent || "";
+    ok(pend.join() === "approved" && site1.status === "acknowledged" && /^Accepted\. They see Acknowledged, and the row you saw is approved\./.test(msg1),
+      "Accept approves the row it drew, moves the order, and says so: " + JSON.stringify({ pend, st: site1.status, msg1 }));
+
+    const coll = card().querySelector('button[data-ord="handover"][data-full="1"]');
+    coll.click();
+    for (let i = 0; i < 40 && !/Recorded/.test((D.querySelector('[data-msg="' + o.id + '"]') || {}).textContent || ""); i++) await settle();
+    const msg2 = (D.querySelector('[data-msg="' + o.id + '"]') || {}).textContent || "";
+    ok(/Recorded: 2 unit handed over\. Booked when the first row lands, if it is the row you saw\./.test(msg2),
+      "Collected before the first row lands says it is booked when that row lands, never waiting silently: " + msg2);
+
+    /* an Accept whose row came out other than shown is said as that, and the order is said to stay Placed */
+    const o2 = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+    await w.eval("ordLoad(true)");
+    w.eval("ORD_SEL=" + JSON.stringify(o2.id) + ";ordDraw();");
+    for (let i = 0; i < 40 && !(D.querySelector('.ordcard[data-id="' + o2.id + '"] .ordfoot button[data-ord="acknowledged"]') || {}).disabled === false; i++) await settle();
+    stub = (p) => /\/accept$/.test(p) ? { ok: true, status: 200, json: async () => ({ ok: true, approved: false, differs: true, draft: "x" }) } : null;
+    D.querySelector('.ordcard[data-id="' + o2.id + '"] .ordfoot button[data-ord="acknowledged"]').click();
+    for (let i = 0; i < 40 && !/Accepted/.test((D.querySelector('[data-msg="' + o2.id + '"]') || {}).textContent || ""); i++) await settle();
+    const msg3 = (D.querySelector('[data-msg="' + o2.id + '"]') || {}).textContent || "";
+    ok(/waits under Approve, marked, and they still see Placed/.test(msg3) && !/They see Acknowledged/.test(msg3),
+      "a row that came out other than shown is said as waiting under Approve, the customer still reading Placed: " + msg3);
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
 })();
 
 section("v766: what is waiting on the site is on Today, ranked against everything else");

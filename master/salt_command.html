@@ -19193,9 +19193,10 @@ function ordPvBlock(o){
   if(pv.st==='err')return `<p class="salt-approve__reason ordpv" data-pv="${esc(o.id)}">The row could not be drafted: ${esc(pv.err)}. Nothing is approved on Accept until it can; the row then waits under Approve.</p>`;
   const j=pv.j||{},row=j.row||{},num=v=>(typeof v==='number'&&isFinite(v))?v:null;
   const goods=num(row.total)!=null?+row.total:+o.total||0,qty=num(row.qty)!=null&&row.qty>0?+row.qty:+o.qty||0;
-  const card=num(j.card),cost=num(j.cost)!=null?j.cost:num(row.cost),floor=num(j.floor);
-  const margin=num(j.margin)!=null?j.margin:(cost!=null?+(goods-cost).toFixed(2):null);
-  const usual=num(j.usual)!=null?j.usual:(o.code?ordUsual(o.code,o.product):null),rate=qty?goods/qty:null;
+  /* the preview's own shapes (src/orders.js previewAck): cost {unit,total}, margin {rm,pct}, floor {rm}, usual {rate} */
+  const card=num(j.card),cost=j.cost?num(j.cost.total):null,floor=j.floor?num(j.floor.rm):null;
+  const margin=j.margin?num(j.margin.rm):null;
+  const usual=j.usual?num(j.usual.rate):null,rate=qty?goods/qty:null;
   const tile=(k,v,note,tone)=>`<div class="kpi salt-kpi ${tone?'salt-kpi--'+tone:''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value">${v}</div><div class="salt-kpi__note">${note}</div></div>`;
   const q=+o.total||0,gap=card==null?null:+(q-card).toFixed(2);
   const cardT=card==null?tile('Their card today','&mdash;',esc(j.cardNote||'no card for this size'),'')
@@ -19517,14 +19518,19 @@ async function ordAct(b){
     if(r.status===401&&saltAskWriteKey())r=await fetch(url,{method:'POST',headers:qHeaders(),body});
     let j={};try{j=await r.json();}catch(e){}
     const told='The customer is told'+(j.push&&j.push.sent?' on the phone':' on the page')+'.';
+    /* S11 (D6): what the desk Worker did with the yes, in its own words: booked as it is drafted, or when the
+       first row lands, never a stage waiting silently; and whether Accept's row was the one he saw */
+    const says=j.preapproval&&j.preapproval.says?j.preapproval.says+', if it is the row you saw. ':'';
     const said=r.status===401?'That write key was refused. The order is unchanged.'
       :!r.ok?'The Worker refused the move: '+(j.error||'http '+r.status)+'. The order is unchanged.'
       :j.warn?j.warn
-      :st==='handover'?(b.dataset.close?'Closed at '+units(JSON.parse(body).qty)+'. They see it closed there; the row is restated as its correction is drafted, if it is this one. '
-        :'Recorded: '+units(JSON.parse(body).qty)+' handed over. The correction is booked as it is drafted, if it is this one. ')+told
-      :st==='acknowledged'?'Accepted. They see Acknowledged. The row is approved as it is drafted if it is the one you saw; if not, it waits under Approve, marked. '+told
+      :st==='handover'?(b.dataset.close?'Closed at '+units(JSON.parse(body).qty)+'. They see it closed there. '
+        :'Recorded: '+units(JSON.parse(body).qty)+' handed over. ')+says+told
+      :st==='acknowledged'?(j.approved?'Accepted. They see Acknowledged, and the row you saw is approved. '+told
+        :j.differs?'Accepted, but the row came out other than you saw, so it waits under Approve, marked, and they still see Placed until you approve it there.'
+        :'Accepted. The row is being drafted; it is approved as it lands if it is the one you saw, and they see Acknowledged then.')
       :st==='say'?'Sent. '+told
-      :st==='cash'?'Recorded: '+fmt(ordDue(ORD_OPEN.find(x=>x&&x.id===id)||{}))+' in cash. They see it paid and the chase stops; the payment is booked as its row is drafted, if it is this one. '+told
+      :st==='cash'?'Recorded: '+fmt(ordDue(ORD_OPEN.find(x=>x&&x.id===id)||{}))+' in cash. They see it paid and the chase stops. '+says+told
       :st==='noreply'?'Marked as needing no reply. Nothing was sent to them.'
       :st==='declined'?'Declined. They read Not taken: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+'. '+told
       :st==='cancelled'?'Cancelled. They read Cancelled by us: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+'. Any payment taken is refunded on the row. '+told
