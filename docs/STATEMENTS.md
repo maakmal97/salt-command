@@ -396,7 +396,10 @@ holds no key to seal it with. It carries a size, a quoted total and a state; no 
 locks), and the order routes take that and nothing else. The states: placed (the customer),
 acknowledged (the owner: agreed, the delivery charge set, and the row queued), ready to collect or
 deliver (the owner), done (**neither side's tap**: what the record reads once both tracks are
-complete), declined (the owner), cancelled (either side, at any stage until the goods move).
+complete), declined (the owner), cancelled (either side, at any stage until the goods move). **A short
+order he closes at what was handed over** (S11 11.9) is restated there: the size becomes the units handed
+over, the goods' total follows at the agreed rate, the old figures kept as `closed`, and its row is a
+Correction whose new total renames it.
 
 **A RETRY LANDS ONCE** (24 Sep 2026). Every move the page sends carries a request id it mints per
 tap (per review, per payment, per line, per withdrawal, per rail; S10 10.4), kept with that move until
@@ -517,14 +520,16 @@ Site orders card in Enter (cloud desk) is the taps.
 
 **AN ORDER REACHES THE BOOK IN STAGES, AND NO TAP WRITES** (v694, his instruction of 18 Sep 2026;
 it reached it once, at the end, as a sale paid and delivered in full on the day). **Site orders moves
-the ORDER; Approve lands the ROW.** The desk's every-minute cron runs `reconcileOrders`, and it is
-the ONE road that queues anything, so a stage cannot be queued twice by two roads racing:
+the ORDER; Approve lands the ROW** (since D6 a tap on the card can be that approval, below). The desk's
+every-minute cron runs `reconcileOrders`, and it is the ONE road that queues a stage the site makes, so
+a stage cannot be queued twice by two roads racing (Accept's pending row is the desk's own, below):
 
 | Stage | What is queued | Why that kind |
 |---|---|---|
 | Acknowledged | a `new` SELL, delivery inside the total, `cash` 0 and `kg` 0 | the row appears as **Pending**, which is the truth |
 | A payment | an `amend` **Fulfilment**, the INCREMENT since the last one | a Fulfilment accumulates cash and units |
 | A handover | an `amend` **Correction** stating the running total, `deliveredOn` and `handover` | only a Correction may set when and by whom, and it states rather than adds |
+| Closed at what was handed over (S11 11.9) | an `amend` **Correction** stating size, total (the engine's `closeGoods`, which the desk states and the site only range-checks; the rate awaits his word), `deliveredQty`, `deliveredOn` and `handover`; `ledgerKey` then moves to the key the new total makes (`closedKey`); rejected, the close gives it back, and offered again moves it once more | one entry states the handover and the restated row together |
 | Cancelled or declined | an `amend` **Cancellation** | the fold raises any refund itself |
 
 **Which row a later stage amends.** A `rid` is minted at fold time and there is no route from the
@@ -539,6 +544,57 @@ that is the one place a stage is decided owed.
 drafted, approved, folded, mirror re-seeded. Until `OPEN.byKey` carries the key, the reconcile holds
 the amendment rather than queueing one the drafter would refuse, so a customer paying early puts no
 refusal on his phone. A mirror that cannot be read holds everything.
+
+**ONE TAP A STAGE, ON AN EXACT MATCH** (S11, his decision D6 of 24 Sep 2026). The card's taps approve
+the row they make, in the desk Worker, and only if the real draft equals what he was shown. His yes is
+a row in `preapproval` (`migrations/0011`): the digest of what he saw (`stageDigest` in
+`src/drafter.js`), spent by the drafter the moment the row is drafted (`preFor`, `applyPre`): equal, the
+row is approved where it is drafted; different, it waits under Approve, marked "differs from what you
+saw" with what he was shown beside it (`GET /drafts` carries it as `preapproval`), and a yes is spent
+once. **Accept** (`POST /orders/<id>/accept {delivery, hash}`) answers a preview (`POST
+/orders/<id>/preview`, which drafts the row against the mirror and stores nothing): it drafts again,
+refuses with the fresh preview if the digest moved, records the yes, queues the pending row itself and
+runs the drafter; the digest covers every field of the row, every flag and the pricing version (the
+snapshot's `v` and a digest of the rest). **Only an approved row moves the order** (`ackOnApproval`:
+the key and moment marked first, then acknowledged with the charge), so a row that differs leaves the
+customer reading Placed, and his approval under Approve moves it then. That is the one stage the desk
+queues itself, because the row must exist before the order moves; `deskPass`, beside the reconcile,
+follows it up each minute: it spends a yes a fault left waiting on its drafted row, and tells an order
+its approved row again until `acked_at` says it was told. His approval under Approve spends any yes behind the row.
+
+**The later stages are one tap too** (S11 11.12): **Collected or Delivered** (`/handed {qty, close}`,
+the running total, in the order's own mode; `close` under the size is 11.9's close, previewed as the one
+Correction it makes, `closeEntry`, and offered again as Collected's; a close under what they have paid carries
+no yes and waits under Approve, since nothing books the difference as a refund yet), **Received** (`/received {amount}`, their recorded payment
+in his bank; the site already counts it) and **Cash received** (`/cash {amount}`, money taken at the
+counter: the site's `cash` event marks the order paid at once, in cash and as his, which stops the chase,
+and moves the ledger's mark of the money by the same figure, because the Fulfilment is the desk's own
+entry, `counter: true` and `by: "desk"`, queued by `deskPass` once the row is on the book; the bare move
+route refuses `cash`, and the tap is refused while a payment of theirs still waits to be queued). Each builds its
+entry as the reconcile will, drafts it now, or before the first row lands against the book as it will
+stand (`withPending`), and records that digest; the drafter spends it when the real row is drafted, only
+if the kind, party, target, date, figures and every flag are equal (no pricing version: the first row
+landing is itself a fold). **Such a stage never waits silently**: the answer carries `waits` and "Booked
+when the first row lands". A Received on a payment already drafted is tested at the tap.
+
+**A rejected row is offered again** (S11 11.13). His Reject on a site-made draft is written onto the
+order (`sync` rejected) and spends any yes waiting on it, and the move is offered again under a FRESH
+entry, a new moment and so a new draft id, the rejected id being refused for good: the stage's own tap
+(Accept on a pending row, against its preview and the charge the order already carries; Collected,
+Received or Cash received at the rejected figure) or `POST /orders/<id>/again {stage}` (pay, cash, move,
+cancel). The fresh entry keeps the move's figures and day, and is approved as it is drafted only if it
+equals what he was shown. Cash offered again never raises the order twice. `GET /orders` carries `again`,
+the stages each order has to offer, read off the drafts, and `yes` where his Accept is given and not yet spent
+(`waiting` or `differs`), when the card offers no second Accept and says where it waits; a row dropped because they withdrew (11.10) is
+not his rejection and offers nothing.
+
+**A withdrawal before the row is approved drops it** (S11 11.10). The customer withdraws while the
+pending row still waits under Approve, with nothing paid: `dropAck` rejects that draft as `withdrawn`
+(filing it rejected first if it is not drafted yet, so no drafter part-way through a pass can draft it
+after), takes it off every queue, and marks the withdrawal told, so no Cancellation waits behind a row
+that will never land. **An approved row is never dropped**: its Cancellation follows it as before. Money
+paid keeps the row too, the refund being the book's to carry, and a cancellation of his own keeps the old
+road.
 
 The username-to-code map the relay needs is written to the DESK's
 KV as `stmt-users` by every publish; the site never holds it, and an order whose username the map
@@ -597,8 +653,13 @@ store; the desk's every-minute cron reads it through `/desk/orders/last`, one re
 than `orders:nudged` wakes every desk subscription asking for `orders`, once. The switch is **Alert me
 to new orders** on the cloud desk's Orders card, per device: it subscribes with `topics: ["orders"]`,
 so a row he entered himself does not wake him, and hands the write key to the service worker, whose
-banner then reads New customer order and opens `/desk#orders`. A subscription with no topics hears
-everything, as at v321. On an iPhone the desk has to be opened from the Home Screen.
+banner then reads New customer order and opens `/desk#orders/newest`, the card of the newest act, which is the
+one that woke him (the address carries nothing else). A subscription with no topics hears
+everything, as at v321. On an iPhone the desk has to be opened from the Home Screen. **His wakes name
+the kind of act and never a code, a username or an amount** (S11 11.16): New customer order, A customer
+wrote, A customer says they paid (their word until he checks it), A customer cancelled (`NEWS_WORD` in
+`src/orders.js`, carried in the summary while fresh); a placement clears older news, so a new order is
+never titled by a payment's, and `public/sw.js` takes news as a title only in letters and spaces.
 
 **Notifications.** The page polls the customer's orders every ten seconds while it is open.
 For a closed page the site has its own Web Push pair. **The banner names the KIND of news** (S12

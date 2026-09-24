@@ -152,14 +152,16 @@ async function banner() {
 
   /* v760: WHAT A CUSTOMER JUST DID LEADS OVER WHAT IS MERELY WAITING. A payment or a withdrawal is
      minutes old and is why this wake was sent; the count of orders waiting was as true an hour ago.
-     It still opens Orders, because that is where the answer to it is. */
-  if (s.news) {
+     It still opens Orders, because that is where the answer to it is.
+     S11 11.16: THE NEWS NAMES THE KIND OF ACT AND NOTHING ELSE (src/orders.js NEWS_WORD), so it is taken
+     only in letters and spaces: a roster code or an amount carries a digit and never reaches the title. */
+  if (s.news && /^[A-Za-z ]{1,60}$/.test(String(s.news))) {
     return {
       title: s.news,
       body: (s.orders ? (s.orders === 1 ? "1 order waiting on you" : s.orders + " orders waiting on you") : "Open the desk to look")
         + (bits.length ? " \u00b7 " + bits.join(" \u00b7 ") : "") + ".",
       tag: "salt",
-      url: "./desk#orders",
+      url: "./desk#orders/newest",   /* the card of the newest act, which is what woke him (S11) */
     };
   }
   /* A CUSTOMER ORDER LEADS (16 Sep 2026): it is the one thing here a customer is waiting on, so it
@@ -176,7 +178,7 @@ async function banner() {
       title: placed === 1 ? "New customer order" : placed + " customer orders waiting",
       body: "Open the desk to acknowledge " + (placed === 1 ? "it" : "them") + "." + (bits.length ? " Also " + bits.join(" \u00b7 ") + "." : ""),
       tag: "salt",
-      url: "./desk#orders",
+      url: "./desk#orders/newest",
     };
   }
 

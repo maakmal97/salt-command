@@ -22,7 +22,7 @@
  *   --local                                    act on the local D1 rather than the remote one
  */
 import "./cloudflare.mjs";
-import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
+import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync, readdirSync } from "node:fs";
 import { DATA_DIR } from "./book.mjs";
 import { spawnSync } from "node:child_process";
 import { resolve, dirname, join } from "node:path";
@@ -77,10 +77,12 @@ const num = (v) => (typeof v === "number" && Number.isFinite(v)) ? String(v) : "
 const money = (v) => v == null ? "-" : "RM " + Number(v).toLocaleString("en-MY", { maximumFractionDigits: 2 });
 
 /* ---- schema -------------------------------------------------------------------------- */
+/* Every migration from 0002 in order, read off the folder (0001 is tools/d1.mjs's). A list written here by hand stopped at
+   0009 while 0010 and 0011 shipped, so a local D1 built by --schema had no preapproval table and the card's Accept failed. */
+export const schemaFiles = () => readdirSync(resolve(REPO, "migrations")).filter((n) => /^\d{4}_.*\.sql$/.test(n) && n >= "0002").sort();
 function schema() {
-  /* Both migrations, in order, and each is CREATE TABLE IF NOT EXISTS so re-running is safe. */
   /* v628: in order for a new database; a live one takes the newest alone (its own header says why) */
-  for (const name of ["0002_draft.sql", "0003_refused.sql", "0004_amend.sql", "0005_bookkeeping.sql", "0006_clock.sql", "0007_loan.sql", "0008_rename.sql", "0009_place.sql"]) {
+  for (const name of schemaFiles()) {
     if (!existsSync(resolve(REPO, "migrations", name))) { fail("migrations/" + name + " is not there"); continue; }
     const r = wrangler(["d1", "execute", DB, WHERE, "--file=migrations/" + name], { quiet: true });
     /* v519: 0006 is an ADD COLUMN, which SQLite refuses the second time; that refusal means applied */

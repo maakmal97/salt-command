@@ -239,7 +239,7 @@ export function pricingSnapshot(w) {
        is set, read, and put back. Restoring it matters: this runs inside the extract, and
        leaving the desk on the wrong book would silently change what is extracted next. */
     const before = call("PROD");
-    let floors = null, repl = null, stockCost = null, inputs = null, sizesHere = sizes, ladder = null;
+    let floors = null, repl = null, stockCost = null, inputs = null, sizesHere = sizes, ladder = null, cards = null;
     try {
       /* v407, round seven, MATERIAL: PROD was assigned bare and the walk was never re-run, so
          every walk-derived global stayed on the PREVIOUS book and all twenty-four oil floors came
@@ -262,13 +262,17 @@ export function pricingSnapshot(w) {
          one-price board from a tier index that had gone out of range and returned every oil size as
          unpriced. A signal that has to be looked up a second time is a signal that will disagree. */
       ladder = (call("typeof fiveTiersNow==='function'?fiveTiersNow():null") || []).map((r) => ({ q: r.q, prices: r.prices, fixed: !!r.fixed }));
+      /* S11 11.1: EVERY CUSTOMER'S CARD at every size the board shows, the desk's own cardQuote, so the order card's
+         preview can set a customer's card beside what their page quoted without the Worker pricing anything.
+         [size, price] pairs by code; a code the desk quotes nothing is left out. */
+      cards = call("(function(){if(typeof cardQuote!=='function'||typeof tierCustomers!=='function')return null;var o={};tierCustomers().forEach(function(id){var r=[];shownSizes(PROD).forEach(function(q){var x=cardQuote(id,q);if(x!=null&&isFinite(x))r.push([q,x]);});if(r.length)o[id]=r;});return o;})()");
       floors = {};
       for (const q of sizesHere) {
         floors[q] = { floor: numOrNull(call("floorTotal(" + q + ")")) };   // v502: one floor per size
       }
     } catch (e) { /* a product the desk cannot price yields nulls, which the drafter must handle */ }
     finally { if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { } } }
-    byProduct[p] = { stockCost, replCost: repl, floors, inputs, sizes: sizesHere, ladder };
+    byProduct[p] = { stockCost, replCost: repl, floors, inputs, sizes: sizesHere, ladder, cards };
   }
 
   return {

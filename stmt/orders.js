@@ -252,7 +252,7 @@ export async function checkStores(env) {
    carry this view instead. A WHITELIST, so a field the desk adds later stays on the desk until it is
    named here; and a desk mark, which changes none of these, no longer redraws their page. */
 export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "week",
-  "total", "delivery", "paid", "payments", "moved", "movedOn", "method", "account", "history", "msgs"];
+  "total", "delivery", "paid", "payments", "moved", "movedOn", "method", "account", "history", "msgs", "closed"];
 export const customerView = (o) => {
   const v = {};
   for (const k of CUSTOMER_FIELDS) if (o && o[k] !== undefined) v[k] = o[k];
@@ -264,9 +264,11 @@ export const customerView = (o) => {
    v751 lets a customer write on any order at any stage, so a question asked about one he has closed
    would have reached a record nothing on his desk draws. The test is the thread's LAST line: theirs,
    and it is waiting; his, and it is not. Answering is what takes a closed order off the card again. */
+/* S11 11.6: and a line he marked as needing no reply is answered: `quiet` holds the moment of the last line
+   of theirs he let stand, so a later one of theirs waits again. It is the desk's, never on the customer's page. */
 export const awaitingAnswer = (o) => {
-  const m = (o && o.msgs) || [];
-  return m.length > 0 && m[m.length - 1] && m[m.length - 1].by === "customer";
+  const m = (o && o.msgs) || [], l = m[m.length - 1];
+  return !!(l && l.by === "customer" && !(o.quiet && String(o.quiet) >= String(l.at)));
 };
 export async function allOrders(env, all) {
   const list = await everyOrder(env);
@@ -280,6 +282,7 @@ export async function allOrders(env, all) {
  *   ack     the pending row: the order is agreed and no row exists yet
  *   pay     the money ARRIVED SINCE, because a Fulfilment accumulates: the increment, not the total
  *   move    the goods handed over, as a RUNNING TOTAL, because a Correction states rather than adds
+ *   close   the row restated at what was handed over (S11 11.9), which states the goods moved as well
  *   cancel  the row withdrawn, and only where a row was made
  * A state that never reached `acknowledged` owes nothing: there is no row to amend. */
 export function orderWork(o) {
@@ -289,7 +292,10 @@ export function orderWork(o) {
   if (!q.ack && !ROWED.includes(o.status)) return jobs;
   if (!q.ack) jobs.push("ack");
   if (+(o.paid || 0) > +(q.paid || 0) + 0.004) jobs.push("pay");
-  if (Math.abs(+(o.moved || 0) - +(q.moved || 0)) > 0.0004) jobs.push("move");
+  /* S11 11.9: a close restates what was handed over with the size, so it is the one entry owed for both */
+  const closing = !!(o.closed && !q.close);
+  if (Math.abs(+(o.moved || 0) - +(q.moved || 0)) > 0.0004 && !closing) jobs.push("move");
+  if (closing) jobs.push("close");
   /* the money goes first, so the fold has a payment to refund when it reads the cancellation */
   if (["cancelled", "declined"].includes(o.status) && !q.cancel) jobs.push("cancel");
   return jobs;
@@ -443,7 +449,7 @@ const fileRid = (env, u, rid, id) => (rid ? putSoft(env, RID_KEY(u, rid), JSON.s
  * of its events however often they are replayed. Both roads run exactly these: the KV road reads the
  * record, applies and writes it back whole, as it always did; the order book appends the event under its
  * id and folds it in, in one step no other writer can come between.
- * The kinds: place, status, method, pay, say, mark, ledger, handover, and copy (an order moved in). */
+ * The kinds: place, status, method, pay, say, mark, ledger, handover, cash (S11 11.8), and copy (an order moved in). */
 export const mintOrderId = (at) => at.replace(/[-:.TZ]/g, "").slice(0, 14) + "-"
   + b64url(crypto.getRandomValues(new Uint8Array(4))).toLowerCase().replace(/[^a-z0-9]/g, "x");
 
@@ -517,7 +523,7 @@ export function decideDesk(order, body, at) {
   if (body && body.mark) {
     const m = body.mark, c = {};
     if (typeof m.ledgerKey === "string" && m.ledgerKey) c.ledgerKey = m.ledgerKey;
-    for (const k of ["ack", "cancel"]) if (m[k]) c[k] = String(m[k]).slice(0, 40);
+    for (const k of ["ack", "cancel", "close"]) if (m[k]) c[k] = String(m[k]).slice(0, 40);
     for (const k of ["paid", "moved"]) if (typeof m[k] === "number" && Number.isFinite(m[k])) c[k] = +m[k].toFixed(3);
     /* 20 Sep 2026: and what the desk made of its last pass over this order, so his card can say the
        truth: queued, waiting for its row, or failed, with the reason and when it was last written. The
@@ -541,6 +547,14 @@ export function decideDesk(order, body, at) {
     if (isNum(L.moved) && L.moved > (+order.moved || 0) + 0.0004) ev.moved = L.moved;
     return ev.paid === undefined && ev.moved === undefined ? { none: true } : { ev };
   }
+  /* S11 11.6: NO REPLY NEEDED. A "thanks" had to be answered to leave his card. This answers it without a
+     word: the moment of their last line is kept as `quiet`, bookkeeping like a mark, so it moves nothing, sends
+     nothing, wakes nobody and never reaches their page. With no line of theirs waiting there is nothing to mark. */
+  if (body && body.noReply === true) {
+    const m = order.msgs || [], l = m[m.length - 1];
+    if (!l || l.by !== "customer") return { none: true };
+    return { ev: { kind: "mark", at, mark: { quiet: String(l.at).slice(0, 40) } } };
+  }
   /* v753: HIS ANSWER ON THE ORDER. It is a move of his like any other, so it wakes them; it is not
      a state, so nothing about the order changes but the thread. There is no cap on his own lines: the
      cap v751 set counts theirs, and a man answering his own customers is not a thing to ration. */
@@ -548,6 +562,18 @@ export function decideDesk(order, body, at) {
     const text = cleanMsg(body.message, MSG_MAX);
     if (!text) return { error: "write something first", status: 400 };
     return { ev: { kind: "say", at, by: "desk", text } };
+  }
+  /* S11 11.8: CASH HE TOOK AT THE HANDOVER, recorded from the desk's Cash to record row. It is a payment like
+     theirs, adding to what is paid, so the chase stops the moment it is paid; it is his, so it never marks theirs
+     and is kept `by: "desk"`. Its Fulfilment is the desk's own (the Cash received tap books it, S11 11.12), so the
+     ledger's mark of the money moves with it, by the same figure, and the reconcile never queues it a second time. */
+  if (body && body.cash) {
+    if (!PAYABLE.includes(order.status)) return { error: "cash is recorded on an agreed order, not one that is " + order.status, status: 409 };
+    const a = body.cash.amount;
+    if (!isNum(a) || a <= 0) return { error: "say how much was received", status: 400 };
+    const due = dueOf(order);
+    if (a > due + 0.004) return { error: "that is more than the " + due.toFixed(2) + " outstanding on this order", status: 400 };
+    return { ev: { kind: "cash", at, amount: +a.toFixed(2) } };
   }
   /* v694: what he handed over, in units, whichever way it went. It is its own step and its own
      entry, because goods and money move apart: he may deliver before a ringgit arrives. */
@@ -558,6 +584,19 @@ export function decideDesk(order, body, at) {
       return { error: "the units handed over have to be a figure from zero to the " + order.qty + " ordered", status: 400 };
     const ev = { kind: "handover", at, units: n };
     if (MODES.includes(body.handover.mode)) ev.mode = body.handover.mode;
+    /* S11 11.9: CLOSE AT WHAT WAS HANDED OVER. A short delivery could never complete: nothing amended the
+       size, so it held an open slot and was chased for goods never sent. Closing restates the order at what
+       went: the size becomes the units handed over and the goods' total is the figure THE DESK STATES
+       (its engine's closeGoods), which this only checks lies between nothing and what was agreed: the
+       site prices nothing. The delivery charge stands. Its row is a Correction (src/orders.js). */
+    if (body.handover.close === true && n < order.qty - 0.004) {
+      if (!(n > 0)) return { error: "nothing was handed over, so there is nothing to close at: cancel it instead", status: 400 };
+      if (!PAYABLE.includes(order.status)) return { error: "an order that is " + order.status + " cannot be closed short", status: 409 };
+      const t = body.handover.total;
+      if (!isNum(t) || t < 0 || t > (+order.total) + 0.004) return { error: "a close states the goods' total, from nothing to the " + (+order.total).toFixed(2) + " agreed", status: 400 };
+      ev.close = true;
+      ev.total = +t.toFixed(2);
+    }
     return { ev };
   }
   const status = String((body && body.status) || "");
@@ -572,7 +611,9 @@ export function decideDesk(order, body, at) {
     const d = body && typeof body.delivery === "number" && Number.isFinite(body.delivery) && body.delivery >= 0 ? +body.delivery.toFixed(2) : 0;
     ev.delivery = (ev.mode || order.mode) === "deliver" ? d : 0;
   }
-  if (body && typeof body.note === "string" && body.note.trim()) ev.note = body.note.trim().slice(0, 200);
+  /* S11 11.7: a decline or a cancellation of his carries its reason, which their page reads beside Not taken or
+     Cancelled by us; one line, as every line they read is. The desk's relay has put it through siteWords. */
+  if (body && typeof body.note === "string" && cleanMsg(body.note, MSG_MAX)) ev.note = cleanMsg(body.note, MSG_MAX);
   return { ev };
 }
 
@@ -597,6 +638,14 @@ export function applyEvent(order, ev) {
     order.payments = (order.payments || []).concat([{ at, amount: +ev.amount.toFixed(2), method: ev.method, account: ev.account }]);
     order.history.push({ at, status: order.status, by: "customer", method: ev.method, account: ev.account, note: "paid " + ev.amount.toFixed(2) });
     done = settle(order, at);
+  } else if (ev.kind === "cash") {
+    order.paid = +((+order.paid || 0) + ev.amount).toFixed(2);
+    /* by the amount, not to what is paid: a claim of theirs not yet queued stays owed to the ledger as their own */
+    order.queued = Object.assign({}, order.queued || {}, { paid: +((+((order.queued || {}).paid) || 0) + ev.amount).toFixed(2) });
+    if (!order.method) order.method = "cod";
+    order.payments = (order.payments || []).concat([{ at, amount: ev.amount, method: "cod", account: null, by: "desk" }]);
+    order.history.push({ at, status: order.status, by: "desk", method: "cod", note: "paid " + ev.amount.toFixed(2) + " in cash" });
+    done = settle(order, at);
   } else if (ev.kind === "say") {
     order.msgs = ((order.msgs) || []).concat([{ at, by: ev.by, text: ev.text }]);
   } else if (ev.kind === "mark") {
@@ -605,8 +654,9 @@ export function applyEvent(order, ev) {
     /* WHAT THE LEDGER HAS BEEN TOLD OF THE MONEY ONLY RISES (S10 10.2): the reconcile marks what it read, and the
        return leg may have raised the order to the book's figure in the same minute; lowered, the next pass would
        queue the difference a second time. The goods are stated, not added, so their mark is set as read. */
-    for (const k of ["ack", "cancel", "paid", "moved"]) if (m[k] !== undefined) q[k] = k === "paid" ? Math.max(+q.paid || 0, m[k]) : m[k];
+    for (const k of ["ack", "cancel", "close", "paid", "moved"]) if (m[k] !== undefined) q[k] = k === "paid" ? Math.max(+q.paid || 0, m[k]) : m[k];
     if (m.sync) order.sync = m.sync;
+    if (m.quiet) order.quiet = m.quiet;   /* S11 11.6: a line he said needs no reply */
     order.queued = q;
   } else if (ev.kind === "ledger") {
     const q = Object.assign({}, order.queued || {});
@@ -628,6 +678,11 @@ export function applyEvent(order, ev) {
     order.movedAt = at;   /* the moment, for the desk to stamp the Correction with (20 Sep 2026) */
     if (ev.mode) order.mode = ev.mode;
     order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
+    if (ev.close) {   /* S11 11.9: the size and the goods' total restated at what went, the old ones kept */
+      order.closed = { at, qty: order.qty, total: order.total };
+      order.qty = order.moved; order.total = ev.total;
+      order.history.push({ at, status: order.status, by: "desk", note: "closed at " + order.qty + " unit of the " + order.closed.qty + " ordered" });
+    }
     done = settle(order, at);
   }
   return { order, done };
@@ -663,6 +718,7 @@ export function wakes(ev, order, done) {
   if (ev.kind === "status" && ev.by === "desk") return { k: STATUS_NEWS[ev.status], o };
   if (ev.kind === "say" && ev.by === "desk") return { k: "reply", o };
   if (ev.kind === "pay" && done) return { k: "complete", o };
+  if (ev.kind === "cash") return { k: done ? "complete" : "paid", o };   /* S11 11.8: his cash is their payment received */
   return null;
 }
 
