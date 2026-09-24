@@ -540,7 +540,15 @@ carry a street. **Nothing is placed on one tap**: the page reviews the order in 
 jsdom window the prices come from, so a card and a price can never be struck from different states of
 the book. `liveRecords` seals it as `rec.card` under the same content key as the statement, and only
 for an account the report card names; both doors hand it over, `/open` and `/remember/open`; the page
-carries a fourth tab that appears only where the record that opened actually has one.
+carries a fourth tab that appears only for an associate.
+
+**Rewards opens on the links** (S8 8.1, his "all recommended" of 24 Sep 2026), then the card, each book's
+reward first in units with the system's Meter. Each link says its state in a word in the system's chip
+(Waiting, Open, Not approved, Withdrawn), when it was made and what it has done; only an open one shows its
+address, **Share** and Show the QR. **Share is minted before the tap**: the address comes with the list
+(`GET /my/refs`), so the tap hands it to the share sheet as its first act, nothing fetched between; with no
+share sheet it is Copy link. Make a link says, before the tap, that the link stays shut until he approves it.
+`drawRewards(el)` draws the place into el.
 
 *It is a different document from his.* `associateSnapshot` is his view of EVERY associate and is
 served only at `/all/assoc`, behind Access. Two functions rather than one, deliberately: the two

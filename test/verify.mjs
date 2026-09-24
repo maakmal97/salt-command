@@ -15182,9 +15182,10 @@ await (async () => {
     DP.getElementById("tCard").click();
     ok(await until(() => DP.querySelectorAll("#pCard .glink").length >= 3),
       "their panel lists their links: " + DP.querySelectorAll("#pCard .glink").length);
-    const words = [...DP.querySelectorAll("#pCard .glink .gt")].map((x) => x.textContent);
-    ok(words.filter((w) => w === "Not approved").length === 1 && words.filter((w) => w === "Waiting to be approved").length === 2,
-      "the declined link reads Not approved and only the two still pending read Waiting to be approved: " + JSON.stringify(words));
+    /* S8 8.1: the state is a word in the system's chip, Waiting where it said Waiting to be approved */
+    const words = [...DP.querySelectorAll("#pCard .glink .gstate")].map((x) => x.textContent);
+    ok(words.filter((w) => w === "Not approved").length === 1 && words.filter((w) => w === "Waiting").length === 2,
+      "the declined link reads Not approved and only the two still pending read Waiting: " + JSON.stringify(words));
   } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
 })();
 section("S1 1.21: Salt Admin's Review opens an account read only, with its orders and links from his gated route and no form");
@@ -15280,7 +15281,7 @@ await (async () => {
       "it read through his route and never through the customer's session routes: " + JSON.stringify(hits));
     D.getElementById("tCard").click();
     const pCard = D.getElementById("pCard");
-    ok(await until(() => pCard.querySelectorAll(".glink").length === 1) && /Waiting to be approved/.test(pCard.textContent)
+    ok(await until(() => pCard.querySelectorAll(".glink").length === 1) && pCard.querySelector(".glink .gstate").textContent === "Waiting"
       && ![...pCard.querySelectorAll("button")].some((b) => /Make a link|Withdraw/.test(b.textContent)),
       "an associate's links are drawn as they see them, with nothing that mints or withdraws: " + JSON.stringify([...pCard.querySelectorAll("button")].map((b) => b.textContent)));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
@@ -17487,6 +17488,82 @@ await (async () => {
       "and once it is on again, the next sign-in files the phone as it always did: " + JSON.stringify([st.rem, st.subs, st.subbed]));
   } finally { await new Promise((r) => setTimeout(r, 100)); try { W.close(); } catch (e) { /* best effort */ } }
 })();
+section("S8 8.1: Rewards opens on the associate's links, each with its state in a word, Share minted before the tap and a QR");
+await (async () => {
+  /* THE PLAN'S SECTION 4, his "all recommended" of 24 Sep 2026: an associate's place opens on their links. Each says its
+     state in a word (Waiting, Open, Not approved, Withdrawn) and what it has done; an open one has Share, handed to the
+     phone's share sheet as the tap's first act with nothing fetched between, and a QR; Make a link says what happens
+     next; the reward follows, in units with its bar. Driven on the associate's own page with four links. */
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { landingPage } = await import("../stmt/page.js");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const u = "aaaa-cccc", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("8".repeat(64), u);
+  const card = { at: "2026-09-24T04:00:00Z", products: [{ product: "salt", unit: "unit",
+    summary: { bought: 770, soldFor: 390, onward: 2, introduced: 240, referred: 1 },
+    reward: { earned: 1.6, taken: 1, left: 0.6, next: 0.42, held: false },
+    lines: [{ date: "2026-09-12", kind: "resale", qty: 2.5, rm: 270 }] }] };
+  const answer = { ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01"], session: "s81s81s81s81s81s81s81s81",
+    assoc: true, wrap: await C.wrapKey(pass, ck), wrapMaster: null, prices: null, live: null,
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [{ issued: "2026-09-01", label: "1 September 2026", body: "<p>x</p>" }] })),
+    card: await C.encryptWith(ck, JSON.stringify(card)) };
+  const ref = (id, state, extra) => Object.assign({ id, url: "https://site.test/g/" + id, qr: "data:image/svg+xml,q" + id, made: "2026-09-12T02:00:00Z", opens: 0, last: null, state }, extra);
+  const refs = [ref("aaaa-bbbb", "open", { opens: 3, last: "2026-09-22T03:00:00Z" }), ref("cccc-dddd", "waiting"), ref("eeee-ffff", "declined"), ref("gggg-hhhh", "withdrawn")];
+  const st = { fetches: 0, shared: [] };
+  const dom = new JSDOM(landingPage(u, "n81", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {};
+      Object.defineProperty(win.navigator, "share", { configurable: true, value: (d) => { st.shared.push(d); return Promise.resolve(); } });
+      win.fetch = async (path) => {
+        st.fetches++;
+        const p = String(path), js = (b, s) => ({ ok: (s || 200) < 400, status: s || 200, json: async () => b });
+        if (p === "/open") return js(answer);
+        if (p === "/my/refs") return js({ ok: true, refs, max: 10 });
+        if (p === "/orders") return js({ ok: true, orders: [] });
+        return js({ ok: false }, 404);
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return !!f(); };
+  try {
+    D.getElementById("un").value = u; D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    const box = D.getElementById("pCard");
+    ok(await until(() => box.querySelectorAll(".glink").length === 4), "the associate's place draws their four links");
+    const kids = [...box.children];
+    ok(kids[0].classList.contains("rlinks") && /Your links/.test(kids[0].textContent)
+      && kids.findIndex((k) => /Your card/.test(k.textContent)) > 0 && kids.findIndex((k) => k.querySelector(".salt-meter")) > 0,
+      "it opens on the links, with the card and its reward after them: " + JSON.stringify(kids.map((k) => k.className || k.tagName)));
+    const rows = [...box.querySelectorAll(".glink")];
+    const words = rows.map((r) => r.querySelector(".gstate").textContent);
+    ok(words.join("|") === "Open|Waiting|Not approved|Withdrawn" && rows.every((r) => r.querySelector(".gstate").classList.contains("salt-status")),
+      "each link says its state in a word, in the system's chip: " + JSON.stringify(words));
+    ok(/Opened 3 times, last Tue 22 Sep[.]/.test(rows[0].textContent) && /Shut until we approve it/.test(rows[1].textContent)
+      && /did not approve/.test(rows[2].textContent) && /Withdrawn[.] Nothing opens it now/.test(rows[3].textContent),
+      "and what it has done, or why it is shut, in words: " + JSON.stringify(rows.map((r) => r.querySelector(".gs").textContent)));
+    const shares = [...box.querySelectorAll("button")].filter((b) => b.textContent === "Share");
+    ok(shares.length === 1 && rows[0].contains(shares[0]), "only the open link can be shared");
+    const before = st.fetches;
+    shares[0].click();
+    const sync = st.shared.length;
+    ok(sync === 1 && st.shared[0].url === "https://site.test/g/aaaa-bbbb" && st.fetches === before,
+      "Share hands the address to the share sheet as the tap's first act, with nothing fetched between: " + JSON.stringify([sync, st.shared[0], st.fetches - before]));
+    const img = rows[0].querySelector("img"), qb = [...rows[0].querySelectorAll("button")].find((b) => /the QR/.test(b.textContent));
+    ok(!!img && img.hidden && !!qb && qb.getAttribute("aria-expanded") === "false" && !rows[1].querySelector("img"),
+      "the open link's QR waits behind Show the QR, and a shut link has none");
+    qb.click();
+    ok(!img.hidden && qb.textContent === "Hide the QR" && qb.getAttribute("aria-expanded") === "true", "and one tap shows it");
+    const mk = [...box.querySelectorAll("button")].find((b) => b.textContent === "Make a link");
+    const next = mk && mk.previousElementSibling;
+    ok(!!mk && !!next && /stays shut until we approve it/.test(next.textContent) && /share it from here/.test(next.textContent),
+      "Make a link says what happens next, before it is tapped: " + JSON.stringify(next && next.textContent));
+    const mtr = box.querySelector(".salt-meter");
+    ok(!!mtr && mtr.style.getPropertyValue("--salt-fill") === "42" && /42%/.test(mtr.textContent)
+      && /Reward: 0[.]6 unit to take .*Ask on any order to take it[.]/.test(mtr.closest(".pane").textContent),
+      "the reward is in units with its bar, the system's Meter, and says how to take it: " + JSON.stringify(mtr && mtr.style.getPropertyValue("--salt-fill")));
+  } finally { await new Promise((r) => setTimeout(r, 100)); try { W.close(); } catch (e) { /* best effort */ } }
+})();
 section("v690: a customer's statement is not bound to a month; it shows everything, and a month is one tap (v769)");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: nothing customer-facing is time bound. The document already carried
@@ -18031,7 +18108,7 @@ await (async () => {
       "the bar's two buttons are 44px both ways and never shrink under it: " + JSON.stringify(barBtn));
   } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
 })();
-section("S1 1.39: no em-dash reaches the served page, and a waiting link says No address yet");
+section("S1 1.39: no em-dash reaches the served page, and a waiting link says it is shut");
 await (async () => {
   /* L43, 24 SEP 2026. The links pane wrote an em-dash where a waiting or withdrawn link has no address:
      an escape inside CLIENT_JS, which the template literal turns into the character itself. The house
@@ -18072,8 +18149,9 @@ await (async () => {
     for (let i = 0; i < 200 && D.querySelectorAll("#pCard .glink").length < 2; i++) await new Promise((r) => setTimeout(r, 25));
     const rows = [...D.querySelectorAll("#pCard .glink")];
     const txt = D.getElementById("pCard").textContent;
-    ok(rows.length === 2 && !txt.includes(DASH) && rows[0].querySelector("code.gu").textContent === "No address yet" && !rows[1].querySelector("code.gu"),
-      "the drawn links carry no em-dash: a waiting one says No address yet, and a withdrawn one needs no line: "
+    /* S8 8.1: a link shows its address only once it is open; a waiting one says in words that it is shut */
+    ok(rows.length === 2 && !txt.includes(DASH) && !rows[0].querySelector("code.gu") && /Shut until we approve it/.test(rows[0].textContent) && !rows[1].querySelector("code.gu"),
+      "the drawn links carry no em-dash: a waiting one says it is shut, and neither it nor a withdrawn one carries an address line: "
       + JSON.stringify(rows.map((r) => r.textContent.slice(0, 50))));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
@@ -21441,7 +21519,7 @@ await (async () => {
     d9.querySelector('button[data-t="card"]').click();
     for (let i = 0; i < 60 && !/Your links/.test(d9.getElementById("pCard").textContent); i++) await new Promise((r) => setTimeout(r, 50));
     const txt9 = () => d9.getElementById("pCard").textContent;
-    ok(/Your links/.test(txt9()) && /Waiting to be approved/.test(txt9()),
+    ok(/Your links/.test(txt9()) && [...d9.querySelectorAll("#pCard .glink .gstate")].some((x) => x.textContent === "Waiting"),
       "the panel loads their links and says the one waiting is waiting: " + JSON.stringify(txt9().slice(0, 60)));
     ok(!/https:\/\/site\.test\/g\/aaaa-bbbb/.test(txt9()),
       "and a link that is still waiting shows no address at all, because nothing can open it yet");
@@ -21455,14 +21533,15 @@ await (async () => {
   } finally { try { dom9.window.close(); } catch (e) { /* best effort */ } }
 
   /* ---- the page carries the panel, gated, and names no tier ---- */
-  ok(/function drawMyLinks\(\)/.test(page9) && /'\/my\/refs'/.test(page9),
+  ok(/function drawMyLinks\(into\)/.test(page9) && /'\/my\/refs'/.test(page9),
     "the panel travels in the page every customer gets, because the owner's script is his alone and the door is served before anybody signs in");
   /* SCOPED TO THE PANEL ITSELF. The page has named the five levels in a lookup since v659 so the
      MARK can be drawn, and a comment names the owner's file while saying a customer never gets it;
      neither is rendered. What matters is that THIS panel names no tier and draws none of his. */
-  const panel9 = page9.slice(page9.indexOf("function drawMyLinks()"), page9.indexOf("async function loadMyLinks()"));
+  /* S8 8.1: from the state words, which lead the panel, to the end of its drawing */
+  const panel9 = page9.slice(page9.indexOf("var LINK_STATE="), page9.indexOf("async function loadMyLinks()"));
   const WL9 = await import("../src/orders.js");
-  ok(/Waiting to be approved/.test(panel9) && !/Titanium|Platinum|Gold|Silver|Bronze|Ambassador/.test(panel9)
+  ok(page9.indexOf("var LINK_STATE=") > 0 && /'Waiting'/.test(panel9) && !/Titanium|Platinum|Gold|Silver|Bronze|Ambassador/.test(panel9)
     && WL9.wordsIn(panel9, WL9.LEVEL_WORDS_MS).length === 0,
     "it tells them it is waiting and names no tier, in English or Malay, which a customer's page never does");
   ok(!/drawLinks\(/.test(page9) && !/getElementById\('glist'\)/.test(page9) && !/\/all\/refs/.test(page9),

@@ -413,6 +413,18 @@ button[data-back]{display:inline-flex;align-items:center;min-height:var(--salt-t
 .glink .gs{margin:8px 0 0;font-size:var(--salt-text-xs);color:var(--salt-text-muted);
   font-family:var(--salt-font-mono);letter-spacing:.04em}
 .glink img{display:block;margin:12px auto 0;border-radius:var(--salt-radius-sm);width:180px;height:180px}
+/* S8 8.1: an associate's own links, in Rewards: when it was made, its state in a word (the system's chip), what it
+   has done, and the system's ghosts; the Meter is the reward's bar */
+.rlhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.rlcount{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.08em;color:var(--salt-text-muted)}
+.rlinks .gtop{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px 12px}
+.rlinks .gh{margin:0;font-family:var(--salt-font-mono);font-size:var(--salt-text-md);color:var(--salt-text)}
+.rlinks .gs{font-family:var(--salt-font-display);font-size:var(--salt-text-sm);letter-spacing:0;line-height:1.5}
+.racts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.racts .salt-ghost{flex:1 1 auto}
+.rlinks .msg:empty{display:none}
+.rlinks .rlnext{margin:16px 0 10px}
+.rmeter{margin:10px 0 14px}
 .grow{display:flex;gap:8px;margin-top:12px}
 .grow button{flex:1;min-height:var(--salt-tap);font-family:var(--salt-font-mono);
   font-size:var(--salt-text-xs);letter-spacing:.06em;color:var(--salt-text);background:none;
@@ -1677,15 +1689,41 @@ const CLIENT_JS = `
     (p.lines||[]).forEach(function(l){ var m=(l.date||'').slice(0,7); if(m&&!seen[m]){ seen[m]=1; ms.push(m); } });
     return ms.sort().reverse();
   }
+  /* ---- REWARDS (S8 8.1, the plan's section 4, his "all recommended" of 24 Sep 2026) ---------------------------------
+     An associate's place OPENS ON THEIR LINKS, then the reward in units with its bar, then the card by month.
+     drawRewards(el) is what a place calls: it draws into el from then on; drawCard redraws wherever that is. */
+  var rewardsEl=pCard;
+  function drawRewards(el){ if(el) rewardsEl=el; drawCard(); }
   function drawCard(){
-    pCard.textContent='';
-    if(!card||!card.products||!card.products.length){ pCard.appendChild(el('p','lead','Your card is written with the next update.')); drawMyLinks(); return; }
-    pCard.appendChild(el('h2',null,'Your card'));
-    pCard.appendChild(el('p','lead','What you have bought, what has gone out through you, and where your reward stands. Every month from the start; the newest opens.'));
+    var box=rewardsEl;
+    box.textContent='';
+    drawMyLinks(box);
+    if(!card||!card.products||!card.products.length){ box.appendChild(el('p','lead','Your card is written with the next update.')); return; }
+    box.appendChild(el('h2',null,'Your card'));
+    box.appendChild(el('p','lead','Your reward, what you have bought and what has gone out through you. Every month from the start; the newest opens.'));
     card.products.forEach(function(p){
       var pane=el('div','pane');
       var h3=el('h3','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
       pane.appendChild(h3);
+      /* THE REWARD IN UNITS, AND A BAR TO THE NEXT, first in the pane. No ringgit of margin anywhere near it. The bar is
+         the system's Meter, its fill set from this nonce'd script, which the page's style policy allows. */
+      if(p.reward){
+        var rw=p.reward;
+        pane.appendChild(el('p','sub2','Reward: '+unitsOf(rw.left,p.unit)+' to take'
+          +(rw.earned!==rw.left?' ('+unitsOf(rw.earned,p.unit)+' earned, '+unitsOf(rw.taken,p.unit)+' taken)':'')
+          +(rw.held?'. Held for now.':'.')
+          /* S8 8.3: and how to take it, which the line never said; only where there is some to take */
+          +(!rw.held&&rw.left>0?' Ask on any order to take it.':'')));
+        if(rw.next!=null){
+          var pc=Math.round(rw.next*100), mtr=el('div','salt-meter rmeter'), ln=el('div','salt-meter__line');
+          ln.appendChild(el('span',null,'To your next unit')); ln.appendChild(el('b',null,pc+'%'));
+          var tr=el('div','salt-meter__track'), fill=el('div','salt-meter__fill');
+          mtr.style.setProperty('--salt-fill',String(pc));
+          tr.appendChild(fill); mtr.appendChild(ln); mtr.appendChild(tr);
+          tr.setAttribute('role','img'); tr.setAttribute('aria-label',pc+'% of the way to your next unit');
+          pane.appendChild(mtr);
+        }
+      }
       var sm=p.summary||{};
       var ul=el('ul','conf');
       [['You bought',rm(sm.bought||0)],
@@ -1696,21 +1734,6 @@ const CLIENT_JS = `
         var li=el('li'); li.appendChild(el('span','k',r[0])); li.appendChild(el('span','v',r[1])); ul.appendChild(li);
       });
       pane.appendChild(ul);
-      /* THE REWARD IN UNITS, AND A BAR TO THE NEXT. No ringgit of margin anywhere near it. */
-      if(p.reward){
-        var rw=p.reward;
-        pane.appendChild(el('p','sub2','Reward: '+unitsOf(rw.left,p.unit)+' to take'
-          +(rw.earned!==rw.left?' ('+unitsOf(rw.earned,p.unit)+' earned, '+unitsOf(rw.taken,p.unit)+' taken)':'')
-          +(rw.held?'. Held for now.':'.')
-          /* S8 8.3: and how to take it, which the line never said; only where there is some to take */
-          +(!rw.held&&rw.left>0?' Ask on any order to take it.':'')));
-        if(rw.next!=null){
-          /* the fill is an <i>, which is what .pbar's own rule paints; a <span> drew an empty rule */
-          var bar=el('div','pbar'); var fill=el('i'); fill.style.width=Math.round(rw.next*100)+'%';
-          bar.appendChild(fill); pane.appendChild(bar);
-          pane.appendChild(el('p','sub2',Math.round(rw.next*100)+'% of the way to your next unit.'));
-        }
-      }
       /* the lines, with their own month strip */
       var months=cardMonths(p), pick=cardMonth==null?(months[0]||''):cardMonth;
       if(months.length>1){
@@ -1740,9 +1763,8 @@ const CLIENT_JS = `
         });
         t.appendChild(tb); pane.appendChild(t);
       }
-      pCard.appendChild(pane);
+      box.appendChild(pane);
     });
-    drawMyLinks();
   }
 
   /* ---- THEIR OWN REFERRAL LINKS (v709, his instruction of 18 Sep 2026) -------------------------
@@ -1752,42 +1774,73 @@ const CLIENT_JS = `
      owner's script is spliced only on his route and must never travel to a customer, and the
      landing page is served before anybody signs in, so there is nothing to splice per viewer.
      A LEVEL IS NEVER NAMED. What the link quotes is his to set; they are told it is open and no
-     more, because the level is never named on a customer's page. */
+     more, because the level is never named on a customer's page.
+     S8 8.1: EACH LINK SAYS ITS STATE IN A WORD (Waiting, Open, Not approved, Withdrawn), what it has done, and on an
+     open one Share and the QR. SHARE IS MINTED BEFORE THE TAP: the address came with the list, so the tap hands it to
+     the phone's share sheet as its first act, with no fetch in between (the judges' must-not-ship list); where the
+     browser has no share sheet it is Copy link. Make a link says what happens next before it is tapped. */
   /* the box keeps its own note (24 Sep 2026): it drew the order form's, so "Placed..." appeared under
      Your links, and a link that was not made said so under the order form as well */
   var myLinks=null, myMax=0, myNote='';
-  function drawMyLinks(){
-    var box=el('div','pane');
-    box.appendChild(el('h3',null,'Your links'));
-    box.appendChild(el('p','sub2','Make a link for somebody you want to bring in. It opens a price list and nothing else, and it stays shut until it is approved.'));
-    if(myLinks===null){ box.appendChild(el('p','sub2','Reading your links.')); pCard.appendChild(box); if(!view) loadMyLinks(); return; }
-    if(!myLinks.length) box.appendChild(el('p','sub2','None yet.'));
+  var LINK_STATE={open:['Open','verdigris'], waiting:['Waiting','steel salt-status--dashed'], declined:['Not approved','mist'], withdrawn:['Withdrawn','mist']};
+  var qrShown={};
+  function linkDay(iso){ try{ var p=klBits(iso); return DAY3[new Date(Date.UTC(+p.year,+p.month-1,+p.day)).getUTCDay()]+' '+(+p.day)+' '+MON3[+p.month-1]; }catch(e){ return ''; } }
+  function linkLine(r){
+    if(r.state==='waiting') return 'Shut until we approve it. Once it opens you can share it from here.';
+    if(r.state==='declined') return 'We did not approve this link, so it stays shut.';
+    if(r.state==='withdrawn') return 'Withdrawn. Nothing opens it now.';
+    return r.opens?'Opened '+r.opens+' time'+(r.opens===1?'':'s')+(r.last?', last '+linkDay(r.last):'')+'.':'Not opened yet.';
+  }
+  function drawMyLinks(into){
+    var box=el('div','pane rlinks');
+    var head=el('div','rlhead'); head.appendChild(el('h3',null,'Your links'));
+    var live=(myLinks||[]).filter(function(r){ return r.state!=='withdrawn'; }).length;
+    if(myLinks&&myMax) head.appendChild(el('span','rlcount',live+' of '+myMax));
+    box.appendChild(head);
+    if(myLinks===null){ box.appendChild(el('p','sub2','Reading your links.')); into.appendChild(box); if(!view) loadMyLinks(); return; }
+    if(!myLinks.length) box.appendChild(el('p','sub2','None yet. A link opens a price list for somebody you bring in, and nothing else.'));
     myLinks.forEach(function(r){
-      var row=el('div','glink'+(r.state==='withdrawn'||r.state==='declined'?' off':''));
+      var row=el('div','glink');
+      var top=el('div','gtop'), st=LINK_STATE[r.state]||LINK_STATE.open;
+      top.appendChild(el('p','gh',r.made?'Link made '+oDay(r.made):'Your link'));
       /* D13 (24 Sep 2026): a declined link is its own state, never "waiting" */
-      row.appendChild(el('p','gt', r.state==='waiting'?'Waiting to be approved':(r.state==='declined'?'Not approved':(r.state==='withdrawn'?'Withdrawn':'Open'))));
-      /* S1 1.39: words, not a dash (an em-dash reached the page); a withdrawn or declined link says so above and needs no line here */
-      if(r.state!=='withdrawn'&&r.state!=='declined') row.appendChild(el('code','gu', r.state==='open'?r.url:'No address yet'));
-      row.appendChild(el('p','gs', r.opens
-        ? 'opened '+r.opens+' time'+(r.opens===1?'':'s')
-        : (r.state==='open'?'never opened yet':'nothing can open it')));
+      top.appendChild(el('span','gstate salt-status salt-status--'+st[1],st[0]));
+      row.appendChild(top);
+      row.appendChild(el('p','gs',linkLine(r)));
       if(r.state==='open'){
+        row.appendChild(el('code','gu',r.url));
         var img=document.createElement('img');
         img.src=r.qr; img.alt='A code that opens the price list you are sharing'; img.width=160; img.height=160;
-        row.appendChild(img);
+        img.hidden=!qrShown[r.id]; row.appendChild(img);
       }
-      var acts=el('div','grow');
+      var acts=el('div','racts'), said=el('p','msg'); said.setAttribute('role','status');
       if(r.state==='open'){
-        var cp=el('button',null,'Copy link'); cp.type='button';
-        /* awaited (24 Sep 2026): writeText answers with a promise, so a refusal said Copied */
-        cp.addEventListener('click', async function(){
-          try{ await navigator.clipboard.writeText(r.url); cp.textContent='Copied'; }catch(e){ cp.textContent='Copy failed'; }
-          setTimeout(function(){ cp.textContent='Copy link'; },1500);
-        });
-        acts.appendChild(cp);
+        if(navigator.share){
+          var sh=el('button','salt-ghost','Share'); sh.type='button';
+          sh.addEventListener('click', function(){
+            /* the tap's first act: the address is already here, so nothing waits between the tap and the sheet */
+            var done; try{ done=navigator.share({url:r.url}); }catch(e){ done=Promise.reject(e); }
+            Promise.resolve(done).then(function(){ said.textContent=''; },
+              function(e){ said.textContent=e&&e.name==='AbortError'?'':'Not shared. Copy the address above instead.'; });
+          });
+          acts.appendChild(sh);
+        } else {
+          var cp=el('button','salt-ghost','Copy link'); cp.type='button';
+          /* awaited (24 Sep 2026): writeText answers with a promise, so a refusal said Copied */
+          cp.addEventListener('click', async function(){
+            try{ await navigator.clipboard.writeText(r.url); cp.textContent='Copied'; }catch(e){ cp.textContent='Copy failed'; }
+            setTimeout(function(){ cp.textContent='Copy link'; },1500);
+          });
+          acts.appendChild(cp);
+        }
+        var qb=el('button','salt-ghost',qrShown[r.id]?'Hide the QR':'Show the QR'); qb.type='button';
+        qb.setAttribute('aria-expanded',qrShown[r.id]?'true':'false');
+        qb.addEventListener('click', function(){ qrShown[r.id]=!qrShown[r.id]; img.hidden=!qrShown[r.id];
+          qb.textContent=qrShown[r.id]?'Hide the QR':'Show the QR'; qb.setAttribute('aria-expanded',qrShown[r.id]?'true':'false'); });
+        acts.appendChild(qb);
       }
       if(r.state!=='withdrawn'&&!view){
-        var wd=el('button',null,'Withdraw'); wd.type='button';
+        var wd=el('button','salt-ghost','Withdraw'); wd.type='button';
         wd.addEventListener('click', async function(){
           if(!confirm('Withdraw this link? Whoever holds it will not be able to open it.')) return;
           var mine=ticket; var rv=await api('/my/refs/'+encodeURIComponent(r.id)+'/revoke',{});
@@ -1795,13 +1848,14 @@ const CLIENT_JS = `
         });
         acts.appendChild(wd);
       }
-      row.appendChild(acts);
+      if(acts.firstChild) row.appendChild(acts);
+      if(r.state==='open') row.appendChild(said);
       box.appendChild(row);
     });
-    var live=myLinks.filter(function(r){ return r.state!=='withdrawn'; }).length;
     if(view){ /* his read-only view makes nothing */ }
     else if(live>=myMax) box.appendChild(el('p','sub2','You have '+live+' links. Withdraw one to make another.'));
     else {
+      box.appendChild(el('p','sub2 rlnext','A new link stays shut until we approve it. Once it is open it shows whoever you give it to a price list and nothing else, and you share it from here.'));
       var mk=el('button','btn salt-pill salt-pill--md','Make a link'); mk.type='button';
       mk.addEventListener('click', async function(){
         mk.disabled=true; var mine=ticket;
@@ -1813,7 +1867,7 @@ const CLIENT_JS = `
       box.appendChild(mk);
     }
     if(myNote) box.appendChild(el('p','msg',myNote));
-    pCard.appendChild(box);
+    into.appendChild(box);
   }
   async function loadMyLinks(){
     var mine=ticket;
