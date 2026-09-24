@@ -884,7 +884,7 @@ async function makeTest(env) {
 }
 async function unmakeTest(env) {
   const gone = [TEST_REC, "seen:" + TEST_USER];
-  for (const pre of ["order:" + TEST_USER + ":", "push:" + TEST_USER + ":", "sent:", devPrefix(TEST_USER)]) {
+  for (const pre of ["order:" + TEST_USER + ":", "aclaim:" + TEST_USER + ":", "push:" + TEST_USER + ":", "sent:", devPrefix(TEST_USER)]) {   /* S6: and its claims */
     let cursor;
     do {
       const page = await env.STMT.list({ prefix: pre, cursor });

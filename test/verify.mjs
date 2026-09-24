@@ -15244,13 +15244,16 @@ await (async () => {
     await kv89.put("sent:2026-09-01:0000-0000", JSON.stringify({ at: "2026-09-18T01:00:00Z" }));
     await kv89.put("order:aaaa-bbbb:20260918-bbbb", JSON.stringify({ id: "20260918-bbbb", u: "aaaa-bbbb" }));
     await kv89.put("sent:2026-09-01:aaaa-bbbb", JSON.stringify({ at: "2026-09-18T01:00:00Z" }));
+    await kv89.put("aclaim:0000-0000:a20260918000000-aaaa", JSON.stringify({ id: "a20260918000000-aaaa", u: TU89 }));   /* S6: a claim against the account */
+    await kv89.put("aclaim:aaaa-bbbb:a20260918000000-bbbb", JSON.stringify({ id: "a20260918000000-bbbb", u: "aaaa-bbbb" }));
     const gone = await (await post89("/all/test", { make: false })).json();
     ok(gone.ok && gone.made === false && gone.removed >= 5 && !(await kv89.get("u:0000-0000"))
       && !(await kv89.get("order:0000-0000:20260918-aaaa")) && !(await kv89.get("push:0000-0000:abc"))
       && !(await kv89.get("seen:0000-0000")) && !(await kv89.get("sent:2026-09-01:0000-0000"))
       && !!(await kv89.get("order:aaaa-bbbb:20260918-bbbb")) && !!(await kv89.get("u:aaaa-bbbb"))
-      && !!(await kv89.get("sent:2026-09-01:aaaa-bbbb")),
-      "one tap takes it away with its orders, its opens, its ticks and its phones, and touches no one else's");
+      && !!(await kv89.get("sent:2026-09-01:aaaa-bbbb"))
+      && !(await kv89.get("aclaim:0000-0000:a20260918000000-aaaa")) && !!(await kv89.get("aclaim:aaaa-bbbb:a20260918000000-bbbb")),
+      "one tap takes it away with its orders, its claims, its opens, its ticks and its phones, and touches no one else's");
     const after = await stmtWorker.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
       headers: { "content-type": "application/json" }, body: JSON.stringify({ u: TU89, password: TP89 }) }), env89);
     ok(after.status === 401, "and the zeros open nothing once it is gone");
