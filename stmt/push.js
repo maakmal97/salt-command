@@ -146,10 +146,12 @@ async function wake(env, u, topic, news) {
       if (!tokens.has(origin)) tokens.set(origin, await vapidToken(env, key, origin));
       const keys = text && pushKeys(s.keys);
       const headers = { TTL: "3600", Urgency: "high", Topic: topic, Authorization: `vapid t=${tokens.get(origin)}, k=${pub}` };
+      /* a phone whose keys are on file reads the kind; one without, or whose keys will not seal, is woken
+         with nothing, as before: a key the page's check passed but WebCrypto refuses must not cost the wake */
+      let body = null;
+      if (keys) { try { body = await sealFor(keys, text); } catch { body = null; } }
       let r;
       try {
-        /* a phone whose keys are on file reads the kind; one without is woken with nothing, as before */
-        const body = keys ? await sealFor(keys, text) : null;
         if (body) { Object.assign(headers, { "Content-Encoding": "aes128gcm", "Content-Type": "application/octet-stream" }); sealed++; }
         else headers["Content-Length"] = "0";
         r = await fetch(s.endpoint, body ? { method: "POST", headers, body } : { method: "POST", headers });

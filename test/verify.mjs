@@ -20351,6 +20351,38 @@ await (async () => {
     ok(who(paid) === "bbbb-2222", "and once what was received is paid, that customer is chased no more, with nothing to turn off: " + who(paid));
   } finally { globalThis.fetch = realF; }
 })();
+section("S12 fix: a key the shape check passed but WebCrypto refuses still wakes its phone, with nothing in it");
+await (async () => {
+  /* S12-ENC-1, 24 Sep 2026: pushKeys checks the shape of p256dh, never that the point is on the curve, and the
+     seal ran inside the try that guards the send, so a pair it passed and WebCrypto refused cost that phone its
+     wake, where before 12.1 the same record was woken with nothing in it. */
+  const P = await import("../stmt/push.js");
+  const b64u = (a) => Buffer.from(a).toString("base64url");
+  const kv = new KV();
+  const vp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const env = { STMT: kv, STMT_VAPID_PUBLIC_KEY: "pub", STMT_VAPID_SUBJECT: "mailto:a@b.test",
+    STMT_VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", vp.privateKey)) };
+  const u = "m3n5-q7s9";
+  const ua = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+  const good = { p256dh: b64u(new Uint8Array(await crypto.subtle.exportKey("raw", ua.publicKey))), auth: b64u(crypto.getRandomValues(new Uint8Array(16))) };
+  const off = new Uint8Array(65).fill(1); off[0] = 4;
+  const offKeys = { p256dh: b64u(off), auth: good.auth };
+  let refused = false;
+  try { await crypto.subtle.importKey("raw", off, { name: "ECDH", namedCurve: "P-256" }, false, []); } catch (e) { refused = true; }
+  ok(!!P.pushKeys(offKeys) && refused, "the fixture is the case: a point the shape check passes and WebCrypto refuses");
+  await kv.put("push:" + u + ":keyed", JSON.stringify({ endpoint: "https://push.example/keyed", keys: good }));
+  await kv.put("push:" + u + ":off", JSON.stringify({ endpoint: "https://push.example/off", keys: offKeys }));
+  const realF = globalThis.fetch, hit = [];
+  globalThis.fetch = async (url, init) => { hit.push({ u: String(url).split("/").pop(), h: init.headers, body: init.body }); return new Response("", { status: 201 }); };
+  let r;
+  try { r = await P.wakeCustomer(env, u, { k: "ready", o: "20260924101500-ab12cd34" }); } finally { globalThis.fetch = realF; }
+  const offHit = hit.find((x) => x.u === "off"), keyedHit = hit.find((x) => x.u === "keyed");
+  ok(r.sent === 2 && r.failed === 0 && r.sealed === 1 && offHit && offHit.body === undefined && offHit.h["Content-Length"] === "0"
+    && !offHit.h["Content-Encoding"] && keyedHit && keyedHit.body && keyedHit.h["Content-Encoding"] === "aes128gcm",
+    "that phone is woken with nothing in it, as a phone with no keys is, and the phone beside it still reads its kind: "
+    + JSON.stringify({ r, hit: hit.map((x) => x.u) }));
+})();
+
 section("v760: a customer paying or taking an order back wakes him, and the banner says which");
 await (async () => {
   /* MEASURED 21 SEP 2026: the site has written the moment of every change since v694, the desk asked

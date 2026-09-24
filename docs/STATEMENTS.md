@@ -538,7 +538,8 @@ sign-in. A notice keeps its own road: its wake carries no payload, and the servi
 the public `bulletin` (v761). On an
 iPhone the page has to be on the Home Screen first; the copy says so. A subscription is filed at
 `push:<username>:<endpoint hash>` with the phone's two keys, `p256dh` and `auth`, when the page sends
-them (`pushKeys` in `stmt/push.js`); a pair that is not one is dropped and the record kept without it.
+them (`pushKeys` in `stmt/push.js`); a pair that is not one is dropped and the record kept without it,
+and a pair that passes the shape check but will not seal gets the payload-free wake.
 
 **Setup, once:** `node tools/stmt-setup.mjs` mints `STMT_DESK_KEY` onto both Workers and the
 site's push pair (`STMT_VAPID_PRIVATE_JWK` as a secret, the public key written into
