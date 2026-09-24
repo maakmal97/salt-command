@@ -8173,6 +8173,49 @@ await (async () => {
   ok(/--refused-note/.test(readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8")), "drafts.mjs can record a refusal the fold made");
 })();
 
+section("Statements: the pay link opens QR Command at the account, the rail and the amount (S6)");
+await (async () => {
+  /* THE ONE LINK INTO THE PAY PAGE (the owner's D8, 24 Sep 2026): stmt/pay.js builds QR Command's
+     #<key>/<rail>/<amount>/<reference> and carries nothing that pays. Driven on a rendered fixture,
+     so the live store's accounts can neither pass it nor fail it. */
+  const { shipAccounts, renderPayJs, QR_REPO } = await import("../tools/paysync.mjs");
+  const src = renderPayJs("https://q.example", shipAccounts({ accounts: [
+    { key: "m", name: "M", bank: "M Bank", payload: "p", acct: "a" },
+    { key: "w", name: "W", bank: "W Bank", acct: "a" },
+    { key: "s", name: "S", bank: "S Bank", payload: "p", acct: "a", maintenance: true },
+    { key: "j", name: "J", biller: "b", ref1: "r" }] }));
+  const { payHref } = await import("data:text/javascript," + encodeURIComponent(src));
+  const u = "k7m2-p9qr";
+  ok(payHref("m", "transfer", 70, u) === "https://q.example/#m/transfer/70.00/k7m2-p9qr"
+    && payHref("m", "qr", "215.5", "0000-0000") === "https://q.example/#m/qr/215.50/0000-0000"
+    && payHref("m", "qr", 999999.99, u) === "https://q.example/#m/qr/999999.99/k7m2-p9qr",
+    "the link names the account, the way, the figure to the sen and the username as the reference");
+  const wrongly = [["w", "qr", 70, u], ["s", "transfer", 70, u], ["j", "jompay", 70, u], ["x", "qr", 70, u], ["m", "cash", 70, u],
+    ["m", "qr", 0, u], ["m", "qr", -5, u], ["m", "qr", "abc", u], ["m", "qr", 1e6, u],
+    ["m", "qr", 70, ""], ["m", "qr", 70, "a b"], ["m", "qr", 70, "a/b"], ["m", "qr", 70, "a".repeat(21)]]
+    .filter((c) => payHref(...c) !== "");
+  ok(wrongly.length === 0,
+    "and it answers nothing for an account, a way, a figure or a reference the page could not open: " + JSON.stringify(wrongly));
+  ok(!/[\\`]|=>|\blet\b|\bconst\b/.test(payHref.toString()),
+    "its source is ES5 with no backslash or backtick, so the page can carry it inside its template literal as it is");
+
+  /* THE TWO REPOS AGREE ON THE FORMAT. QR Command's parser, lifted out of the app.js it ships, reads
+     every part back; where QR Command is not on the machine (CI) this stands down. */
+  const qrApp = join(QR_REPO, "public", "app.js");
+  if (existsSync(qrApp)) {
+    const app = readFileSync(qrApp, "utf8");
+    const at = app.indexOf("function linkOf(");
+    let d = 0, j = at < 0 ? -1 : app.indexOf("{", at);
+    for (; j >= 0 && j < app.length; j++) { if (app[j] === "{") d++; else if (app[j] === "}" && --d === 0) break; }
+    const rails = (/var RAILS = \[[\s\S]*?\n  \];/.exec(app) || [""])[0];
+    const linkOf = at < 0 ? () => ({}) : new Function(rails + "\n" + app.slice(at, j + 1) + "\nreturn linkOf;")();
+    const cases = [["m", "transfer", 70, u], ["m", "qr", "215.5", "0000-0000"], ["m", "qr", 999999.99, u]];
+    const back = cases.map((c) => linkOf(payHref(...c).slice("https://q.example/".length)));
+    ok(back.every((L, n) => L.key === cases[n][0] && L.rail === cases[n][1] && Number(L.amount) === Number(cases[n][2]) && L.ref === cases[n][3]),
+      "and QR Command's own parser, as it ships, reads every part back, so the Counter never links to what the page cannot open: " + JSON.stringify(back));
+  } else okOff(true, "QR Command is not on this machine, so the link goes unread by its parser");
+})();
+
 section("Statements — the QR, the sort and the Salt identity");
 await (async () => {
   const { statementCss, saltTokens } = await import("../tools/stmt-style.mjs");
