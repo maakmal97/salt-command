@@ -334,7 +334,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 | `stmt/send.js` | The one copy of the words a customer is sent |
 | `stmt/signin.js` | The one-time link; the two limits it cannot promise away are in its header |
 | `tools/stmt-seal.mjs` | Laptop only: seals an issue's passwords under the master, proving each; pairs a re-keyed code by proof |
-| `tools/stmt-account.mjs` | Laptop only: mints the account for a roster code with a username and no record; never touches an existing one |
+| `tools/stmt-account.mjs` | Laptop only: mints the account for a roster code with a username and no record, never touching an existing one; `--pool` tops up the spare accounts (`tools/stmt-pool.mjs`) |
 | `tools/foldnotes.mjs` | The fold's prose with no model: same notes object, same `checkNotes`, no judgement; `scrub` makes the API error safe |
 | `tools/preflight.mjs` | `aheadVerdict`: level, warn or STOP; outside `update.mjs` so the suite can drive it |
 | `tools/rid.mjs` | Stable `rid` per ledger row; `nextRid` is the one minting place |

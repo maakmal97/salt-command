@@ -81,6 +81,11 @@ in the newest issue's `_kv` marked `spare: true`, free while no code in `_users.
 username (`tools/stmt-pool.mjs`). The publish writes it like any record and so never retires it,
 marks it `spare` in the clear as it marks `assoc`, and lists it nowhere: no sheet row, no roster line,
 no count. The site's door answers a spare with its one refusal, his master included, until a code holds it.
+**The laptop mints them**, never CI: `node tools/stmt-account.mjs --pool` tops the pool up to ten free
+(`--count N` for another figure, `--check` to write nothing) and refuses without a master that unwraps
+a record. Each is sealed as an account is, around an empty bundle, its password under the master as
+`pwMaster` and in the clear under its USERNAME in `_passwords.json`, a spare having no code yet.
+`tools/update.mjs` warns with that line when fewer than three are free.
 
 One per customer with anything to show, named by code so the folder sorts alphabetically, plus
 a review sheet stitching every account together. **The review sheet is not for sending.** It puts

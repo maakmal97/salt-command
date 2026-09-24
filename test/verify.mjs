@@ -17550,6 +17550,99 @@ await (async () => {
     ok(bound.status === 200 && !!bound.seen, "and the same password now opens it, which is what makes the refusal above the mark's and not the password's: " + bound.status);
   } finally { rmSync(root141, { recursive: true, force: true }); }
 })();
+section("S14 14.2: the laptop mints the pool of spare accounts, tops it up to a count, refuses without the master, and says when it runs low");
+await (async () => {
+  /* D15: the pool is minted on the laptop only, where the content key and the master are, so no key
+     ever reaches CI. One line, the same every time: it tops the pool up rather than adding to it. */
+  const { mintPool, accountSweep, sweepLines } = await import("../tools/stmt-account.mjs");
+  const { freeSpares } = await import("../tools/stmt-pool.mjs");
+  const C142 = await import("../tools/stmt-crypto.mjs");
+  const root142 = join(REPO, "test", "tmp", "pool142"), dir142 = join(root142, "2026-09");
+  rmSync(root142, { recursive: true, force: true });
+  mkdirSync(join(dir142, "_kv"), { recursive: true });
+  const M142 = "master-142", K142 = "key-142";
+  /* one account already there, for the master to be proved against, cut on the 15th so a spare must
+     take its date off its neighbours rather than assume the first of the month */
+  const uHave = "aaaa-bbbb", pwHave = "pw-have-142", ckHave = await C142.contentKey(K142, uHave);
+  writeFileSync(join(dir142, "_kv", uHave + ".json"), JSON.stringify({ u: uHave, issued: "2026-09-15", issues: ["2026-09-15"],
+    verifier: await C142.makeVerifier(pwHave), wrap: await C142.wrapKey(pwHave, ckHave),
+    wrapMaster: await C142.wrapKey(M142, ckHave), env: await C142.encryptWith(ckHave, "{}") }) + "\n");
+  writeFileSync(join(root142, "_secrets.json"), JSON.stringify({ key: K142 }));
+  const usersText = JSON.stringify({ "CZ9-OLD": uHave });
+  writeFileSync(join(root142, "_users.json"), usersText);
+  writeFileSync(join(dir142, "_passwords.json"), JSON.stringify({ "CZ9-OLD": pwHave }));
+  const kvCount = () => readdirSync(join(dir142, "_kv")).length;
+  const was142 = process.env.STMT_MASTER;
+  try {
+    delete process.env.STMT_MASTER;
+    let noMaster = false;
+    try { await mintPool(root142, { count: 3 }); } catch (e) { noMaster = /master passphrase/.test(String(e.message)); }
+    ok(noMaster && kvCount() === 1, "with no master it refuses and writes nothing: a password nobody can hand over is not an account");
+    process.env.STMT_MASTER = "not-the-master";
+    let wrongMaster = false;
+    try { await mintPool(root142, { count: 3 }); } catch (e) { wrongMaster = /does not unwrap/.test(String(e.message)); }
+    ok(wrongMaster && kvCount() === 1, "and a master that unwraps no record is refused before a byte is written");
+
+    process.env.STMT_MASTER = M142;
+    const dry = await mintPool(root142, { count: 3, check: true });
+    ok(dry.minted.length === 3 && dry.wrote === 0 && kvCount() === 1, "a check says it would mint three and writes nothing: " + JSON.stringify(dry));
+    const did = await mintPool(root142, { count: 3 });
+    ok(did.wrote === 3 && did.free === 3 && kvCount() === 4 && freeSpares(root142, JSON.parse(usersText)).length === 3,
+      "the mint writes three spares into the newest issue, and all three read as free: " + JSON.stringify({ wrote: did.wrote, free: did.free }));
+
+    /* EACH ONE IS A WHOLE ACCOUNT, and opens as one */
+    const pws = JSON.parse(readFileSync(join(dir142, "_passwords.json"), "utf8"));
+    const whole = [];
+    for (const u of did.minted) {
+      try {
+        const rec = JSON.parse(readFileSync(join(dir142, "_kv", u + ".json"), "utf8"));
+        const pw = pws[u];
+        const bundle = JSON.parse(await C142.decryptWith(await C142.unwrapKey(pw, rec.wrap), rec.env));
+        whole.push(rec.spare === true && rec.u === u && C142.USERNAME_RE.test(u) && u !== uHave
+          && await C142.checkVerifier(pw, rec.verifier) && (await C142.decryptText(M142, rec.pwMaster)) === pw
+          && !!(await C142.unwrapKey(M142, rec.wrapMaster)) && bundle.v === 1 && bundle.statements.length === 0
+          && rec.issued === "2026-09-15" && rec.issues.join() === "2026-09-15" && bundle.issued === "2026-09-15");
+      } catch (e) { whole.push("threw " + e.message); }
+    }
+    ok(whole.length === 3 && whole.every((x) => x === true),
+      "each is marked spare, its password filed under its username answers its verifier and unwraps its key, the same password is "
+      + "sealed under the master for Send, its bundle is empty, and it carries its neighbours' issue date: " + JSON.stringify(whole));
+    ok(pws["CZ9-OLD"] === pwHave && readFileSync(join(root142, "_users.json"), "utf8") === usersText,
+      "a customer's password is left alone and _users.json is untouched, a spare having no code until the fold gives it one");
+
+    const again = await mintPool(root142, { count: 3 });
+    ok(again.wrote === 0 && again.free === 3 && kvCount() === 4, "the same line again mints nothing, the pool being full: " + JSON.stringify(again));
+    const more = await mintPool(root142, { count: 5 });
+    ok(more.wrote === 2 && more.free === 5 && kvCount() === 6, "and a larger count tops it up by the difference: " + JSON.stringify({ wrote: more.wrote, free: more.free }));
+
+    /* A DRY PUBLISH CARRIES THEM, apart from the accounts */
+    const out142 = join(root142, "out");
+    let said = "";
+    try {
+      said = execFileSync(process.execPath, [join(REPO, "tools", "stmt-publish.mjs"), "--dry", out142],
+        { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, SALT_STATEMENTS_DIR: root142, STMT_KEY: K142 } });
+    } catch (e) { said = String(e.stdout || "") + String(e.stderr || ""); }
+    const put142 = existsSync(join(out142, "put.json")) ? JSON.parse(readFileSync(join(out142, "put.json"), "utf8")) : [];
+    ok(/would publish 6 records from 2026-09.*5 of them spare account\(s\) free for the next Add ID/.test(said)
+      && put142.filter((x) => x.key.startsWith("u:") && JSON.parse(x.value).spare === true).length === 5,
+      "and a publish over the pool carries all five, marked, and counts them apart: " + (said.match(/would publish[^\n]*/) || [said.slice(-200)])[0]);
+
+    /* THE CHAIN SAYS WHEN IT RUNS LOW, with the one line */
+    const sw = await accountSweep(root142, { roster: ["CZ9-OLD"] });
+    ok(sw.ran === true && sw.pool === 5, "the laptop's sweep counts the free spares: " + JSON.stringify({ ran: sw.ran, pool: sw.pool }));
+    const say = (s) => sweepLines(s).map((l) => l.level + ": " + l.text);
+    const low = say({ ran: true, minted: [], named: [], failed: [], wrote: 0, pool: 2 });
+    const none = say({ ran: false, why: "no master", minted: [], stuck: [], pool: 0 });
+    const fine = say({ ran: true, minted: [], named: [], failed: [], wrote: 0, pool: 3 });
+    ok(low.length === 2 && /^warn: only 2 spare accounts free/.test(low[1]) && /node tools\/stmt-account\.mjs --pool$/.test(low[1])
+      && /^warn: no spare accounts free/.test(none[1]) && fine.length === 1,
+      "under three free it warns with the one line that tops it up, with or without the master; at three it says nothing: "
+      + JSON.stringify({ low, none, fine }));
+  } finally {
+    if (was142 === undefined) delete process.env.STMT_MASTER; else process.env.STMT_MASTER = was142;
+    rmSync(root142, { recursive: true, force: true });
+  }
+})();
 section("v707: an ID with no account cannot sign in, and now something mints one and something says so");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "an add ID, or amend ID, is applicable to the accounts available
