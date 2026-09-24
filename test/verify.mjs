@@ -22880,6 +22880,10 @@ await (async () => {
 
     D.querySelector('button[data-row="n2"]').click();
     await settle();
+    /* since 11.3 the charge is an option; Other takes a figure of his own */
+    const oth = D.querySelector('input[type="radio"][data-chip="n2"][value="other"]');
+    oth.checked = true; oth.dispatchEvent(new w.Event("change", { bubbles: true }));
+    await settle();
     const fee = D.querySelector('input[data-fee="n2"]');
     fee.value = "15"; fee.dispatchEvent(new w.Event("change", { bubbles: true }));
     await settle();
@@ -22925,6 +22929,86 @@ await (async () => {
       "the desk's words are the page's own chip words, state by state: " + JSON.stringify({ off, page }));
   } finally {
     await new Promise((r) => setTimeout(r, 100));
+    try { w.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
+section("S11 11.3: a delivery's charge is chosen from RM 0, 10, 15 or Other with none chosen, and Accept, RM <total> sends it with the row's hash from a footer in reach");
+await (async () => {
+  /* 24 Sep 2026 (PLAN 5, the study's F-list: a charge typed as 15 went back to 0 under the poll, and 0 was
+     the default nobody chose). The charge is one of four options, none chosen until he chooses; Accept names
+     the whole sum and is open only once the row it approves has been drafted at that charge, and it posts the
+     charge with that row's hash to the desk Worker's accept route (the contract of 11.11). */
+  const { openMaster: om113 } = await import("../tools/payload.mjs");
+  const { w } = await om113();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 93; w.clearInterval = () => {};
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2.5, total: 250, delivery: 0, paid: 0, moved: 0,
+      status: "placed", history: [], msgs: [], payments: [] };
+    const orders = [Object.assign({ id: "n2", mode: "deliver", place: "Taman Rekaan", at: "2026-09-24T02:00:00.000Z" }, base),
+      Object.assign({ id: "n1", mode: "collect", at: "2026-09-24T03:00:00.000Z" }, base)];
+    const calls = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST"), body = init && init.body ? JSON.parse(init.body) : null;
+      calls.push({ p, body });
+      const j = (b) => ({ ok: true, status: 200, json: async () => b });
+      if (p === "orders" && !post) return j({ ok: true, orders: JSON.parse(JSON.stringify(orders)) });
+      if (/\/preview$/.test(p)) return j({ ok: true, row: { qty: 2.5, total: 250, delivery: body.delivery }, flags: [], cost: 140, margin: 110,
+        floor: 152, usual: 100, card: 250, hash: "h" + body.delivery });
+      return j({ ok: true });
+    };
+    const settle = () => new Promise((r) => setTimeout(r, 30));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    await settle();
+    const card = (id) => D.querySelector('.ordcard[data-id="' + id + '"]');
+    const radios = () => [...card("n2").querySelectorAll('input[type="radio"][data-chip="n2"]')];
+    const accept = () => card("n2").querySelector('.ordfoot button[data-ord="acknowledged"]');
+    ok(radios().map((r) => r.value).join(",") === "0,10,15,other" && radios().every((r) => !r.checked && r.classList.contains("salt-option__input"))
+      && accept() && accept().disabled && /Choose the delivery charge first/.test(card("n2").textContent),
+      "a delivery offers RM 0, 10, 15 and Other as the system's options with none chosen, and Accept waits for one: "
+      + JSON.stringify({ r: radios().map((r) => r.value + (r.checked ? "*" : "")), acc: accept() && [accept().textContent, accept().disabled] }));
+
+    const pick = (v) => { const r = radios().find((x) => x.value === v); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); };
+    pick("15");
+    await settle();
+    const pv15 = calls.filter((c) => /n2\/preview$/.test(c.p)).slice(-1)[0];
+    ok(pv15 && pv15.body.delivery === 15 && accept() && !accept().disabled && accept().textContent === "Accept, RM 265"
+      && /Accept tells them RM 265 and approves this row\. If the real row differs, it waits under Approve, marked\./.test(card("n2").textContent),
+      "choosing RM 15 drafts the row at RM 15, and Accept names the whole sum and what it does: " + JSON.stringify({ body: pv15 && pv15.body, acc: accept() && accept().textContent }));
+
+    await w.eval("ordLoad(true)");
+    await settle();
+    ok(radios().find((x) => x.value === "15").checked && accept().textContent === "Accept, RM 265",
+      "the choice survives the poll: " + JSON.stringify(radios().map((r) => r.value + (r.checked ? "*" : ""))));
+
+    accept().click();
+    await settle();
+    const acc = calls.filter((c) => /\/accept$/.test(c.p));
+    ok(acc.length === 1 && acc[0].p === "orders/n2/accept" && JSON.stringify(acc[0].body) === '{"delivery":15,"hash":"h15"}'
+      && !calls.some((c) => c.p === "orders/abcd-efgh/n2"),
+      "Accept posts the charge and the hash of the row he was shown to the accept route, and not the bare move: " + JSON.stringify(acc));
+
+    pick("other");
+    await settle();
+    const other = card("n2").querySelector('input[data-fee="n2"]');
+    ok(other && !other.closest("label").hidden && accept().disabled,
+      "Other opens a field of its own, and Accept waits for its figure");
+    other.value = "12"; other.dispatchEvent(new w.Event("change", { bubbles: true }));
+    await settle();
+    ok(calls.filter((c) => /n2\/preview$/.test(c.p)).slice(-1)[0].body.delivery === 12 && accept().textContent === "Accept, RM 262" && !accept().disabled,
+      "and a figure typed there is drafted and named on Accept: " + accept().textContent);
+
+    D.querySelector('button[data-row="n1"]').click();
+    await settle();
+    const a1 = card("n1").querySelector('.ordfoot button[data-ord="acknowledged"]');
+    ok(!card("n1").querySelector('input[type="radio"]') && a1 && !a1.disabled && a1.textContent === "Accept, RM 250",
+      "a collection has no charge to choose, and Accept opens on its drafted row: " + (a1 && a1.textContent));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
     try { w.close(); } catch (e) { /* best effort */ }
   }
 })();
