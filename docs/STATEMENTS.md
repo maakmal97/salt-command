@@ -183,10 +183,20 @@ month and the tool refuses. Do not talk it out of that.
 ## How a customer reads it (03 Sep 2026, his instruction)
 
 **Not bound to a month** (v690, his instruction of 18 Sep 2026). The live statement has always
-carried every order from the start; the page now filters it. Each dated row is tagged with its
-month in `stmtDoc`, the strip above the table is built from the months that account has, the
-newest opens, and All is one tap. Undated rows show whatever is chosen, and the account's own
-position under the table does not move with the filter.
+carried every order from the start; the page filters it. Each dated row is tagged with its
+month in `stmtDoc`, and ONE filter (S7 7.3) sits on the list it filters: All first and chosen (v769),
+then the months the account has, newest first. Undated rows show whatever is chosen, and the account's
+own position under the list does not move with the filter.
+
+**Account** (S7 7.3, his "all recommended" of 24 Sep 2026). The live document's orders and refunds are
+the system's Statement lines (`.salt-lines`, stacked on a phone, a table from about 600px of the list's
+own width), "units" above one; an issue is a standalone file and keeps its table. The earlier statements
+sit at the foot, each by its date and never "latest issue", and one opens in the statement's place with
+Back to your statement above it. **This device** follows (beside it from 1080px): notifications on or
+off, saving it as an app (the Keep card's own steps and Sheet), a slot for the account's other devices,
+and Sign out. **Off is kept on the device** (`salt-push-off`): the subscription is dropped there, the site
+forgets it at the next wake it cannot deliver (404 or 410), and a sign-in files the phone again only once a
+Turn on has cleared it. `drawAccount(el)` moves Account into a place and draws it.
 
 **The statements live on their own site, away from the desk.** Until 03 Sep they were a route
 on `salt-command` itself, which put the one address a customer ever holds one path segment from
@@ -204,8 +214,7 @@ opened statement to a translation service.
 Each statement carries a QR code and prints the customer's **username**. The QR opens
 `https://k7m3p2.qyts8mh72kyg.workers.dev/?u=<username>`, one landing page for every account,
 with the username filled in; the password goes by a different channel. The page checks the
-pair, decrypts in his own browser, and shows a strip: **"Now"**, then every issue by its date,
-newest first. It stays signed in on that device while Keep me signed in is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
+pair, decrypts in his own browser, and opens on **"Now"**, with every issue by its date at the foot. It stays signed in on that device while Keep me signed in is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
 he likes.
 
 **"Now" is live (his instruction, 03 Sep 2026): every entry from the start to the minute it was

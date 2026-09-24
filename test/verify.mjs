@@ -8494,7 +8494,7 @@ await (async () => {
     const bookL = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
     const afterIssue = bookL.sales.find(s => s.date && s.date > "2026-09-01" && !s.cancelled);
     if (afterIssue) {
-      const nRows = h => (h.match(/<td class="l dt">/g) || []).length;
+      const nRows = h => (h.match(/<td class="l dt">|<div class="salt-lines__date" role="cell">/g) || []).length;   // S7 7.3: a live row is a Statement line
       const issuedDoc = sep.sheets.find(s => s.who === afterIssue.customer);
       const lvA = liveStatement(afterIssue.customer, now);
       ok(issuedDoc && lvA && nRows(lvA.body) > nRows(issuedDoc.html),
@@ -17358,6 +17358,135 @@ await (async () => {
     ok(after.status === 401, "and the zeros open nothing once it is gone");
   } finally { globalThis.fetch = realFetch89; }
 })();
+section("S7 7.3: Account shows the statement as stacked lines, one month filter with All first, the earlier statements at its foot, and This device");
+await (async () => {
+  /* THE PLAN'S SECTION 4, his "all recommended" of 24 Sep 2026: the live statement's rows are the system's Statement
+     lines, the one month filter opens on All and sits on the list it filters, the issues move to the foot (never "latest
+     issue"), and This device holds the notifications, saving it as an app and signing out. The document is read off the
+     real book; the page is driven as a customer drives it, with the live document sealed beside two issues. */
+  const M = await import("../tools/make_statements.mjs");
+  const POS = (await import("../engine/position.mjs")).default;
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const at = new Date("2026-09-24T04:00:00Z");
+  const parties = [...new Set(bk.sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
+  let docs = 0, tabled = 0, untagged = 0, plural = 0, wrongWord = [];
+  for (const p of parties) {
+    const d = M.liveStatement(p, at, "abcd-efgh");
+    if (!d || !/salt-lines__row|<tr/.test(d.body)) continue;
+    docs++;
+    if (!/<div class="salt-lines" role="table" aria-label="Your orders">/.test(d.body) || /<th class="l">Date<\/th><th>Quantity<\/th>/.test(d.body)) tabled++;
+    const rows = [...d.body.split('aria-label="Refunds"')[0].matchAll(/<div class="salt-lines__row[^"]*" role="row"( data-m="\d{4}-\d{2}")?><div class="salt-lines__date" role="cell">(\d\d [A-Z][a-z]{2} \d{4})?/g)];
+    untagged += rows.filter((m) => !!m[2] !== !!m[1]).length;
+    for (const m of d.body.matchAll(/<div class="salt-lines__what" role="cell"><span class="salt-lines__mark">[\s\S]*?<\/span><\/span>([\d.,]+) (units?)</g)) {
+      const q = +m[1].replace(/,/g, "");
+      if ((q > 1) !== (m[2] === "units")) wrongWord.push(p + " " + m[1] + " " + m[2]); else if (q > 1) plural++;
+    }
+  }
+  ok(docs > 10 && !tabled, "every live statement lists its orders as Statement lines, not a table: " + docs + " statements, " + tabled + " still a table");
+  ok(docs > 10 && !untagged, "and every dated line carries its month, an undated one none: " + untagged + " out of step");
+  ok(plural > 0 && !wrongWord.length, "a quantity above one reads units, one or less unit (D11): " + plural + " plural" + (wrongWord.length ? "; wrong: " + wrongWord.slice(0, 3).join(", ") : ""));
+
+  /* the page: a party whose live document spans two months, and two issues kept as they were sent */
+  const who = parties.find((p) => { const d = M.liveStatement(p, at, "abcd-efgh"); return d && new Set([...d.body.matchAll(/data-m="(\d{4}-\d{2})"/g)].map((m) => m[1])).size > 1; });
+  if (!who) { skipData("no live statement spans two months, so the page's filter went unchecked"); return; }
+  const live = M.liveStatement(who, at, "abcd-efgh");
+  const oI = { from: null, to: "2026-09-01", completed: true, open: true, pending: true, dates: true, issued: "01 Sep 2026" };
+  const rowsI = M.stmtRows(who, oI); oI.refunds = []; oI.recon = [];
+  const docI = M.stmtDoc(who, rowsI, oI), issueBody = docI.slice(docI.indexOf("<body>") + 6, docI.indexOf("</body>"));
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { landingPage } = await import("../stmt/page.js");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const u = "aaaa-bbbb", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("7".repeat(64), u);
+  const answer = {
+    ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01", "2026-08-01"], session: "s73s73s73s73s73s73s73s73",
+    wrap: await C.wrapKey(pass, ck), wrapMaster: null, prices: null,
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [
+      { issued: "2026-09-01", label: "1 September 2026", body: issueBody + "<p>ISSUE ONE</p>" },
+      { issued: "2026-08-01", label: "1 August 2026", body: issueBody + "<p>ISSUE TWO</p>" }] })),
+    live: Object.assign({ at: live.at }, await C.encryptWith(ck, JSON.stringify(live)))
+  };
+  const st = { key: 0, subs: 0, unsub: 0, subbed: false, logout: 0, rem: 0 };
+  const dom = new JSDOM(landingPage(u, "n73", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {};
+      /* a browser that takes notifications and already said yes, so the way in files this phone again (askPush) */
+      win.Notification = { permission: "granted", requestPermission: async () => "granted" };
+      win.PushManager = function () {};
+      const sub = { endpoint: "https://push.test/e73", toJSON: () => ({ keys: { p256dh: "p", auth: "a" } }), unsubscribe: async () => { st.unsub++; st.subbed = false; return true; } };
+      const reg = { pushManager: { subscribe: async () => { st.subbed = true; return sub; }, getSubscription: async () => (st.subbed ? sub : null) } };
+      Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: { register: async () => reg, ready: Promise.resolve(reg), getRegistration: async () => reg } });
+      win.fetch = async (path, o) => {
+        const p = String(path);
+        const js = (b, s) => ({ ok: (s || 200) < 400, status: s || 200, json: async () => b });
+        if (p === "/open") return js(answer);
+        if (p === "/push/key") { st.key++; return js({ ok: true, key: "AAAA", configured: true }); }
+        if (p === "/push/subscribe") { st.subs++; return js({ ok: true }); }
+        if (p === "/orders") return js({ ok: true, orders: [] });
+        if (p === "/logout") { st.logout++; return js({ ok: true }); }
+        if (p === "/remember") st.rem++;   /* the sign-in's last step before it files the phone (askPush) */
+        return js({ ok: false }, 404);
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return !!f(); };
+  const signIn = async () => {
+    D.getElementById("un").value = u; D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    return until(() => !!D.querySelector("#out .salt-lines"));
+  };
+  try {
+    ok(await signIn(), "the account opens on the live statement's lines");
+    const strip = D.getElementById("mfil"), note = D.getElementById("mfnote"), list = D.querySelector("#out .salt-lines");
+    const pills = [...strip.querySelectorAll("button")];
+    const shown = () => [...D.querySelectorAll("#out .salt-lines__row[data-m]")].filter((r) => r.style.display !== "none").map((r) => r.getAttribute("data-m"));
+    const months = [...new Set(shown())];
+    ok(!strip.hidden && pills[0].textContent === "All" && pills[0].getAttribute("aria-pressed") === "true" && pills.length === months.length + 1
+      && strip.nextElementSibling === note && note.nextElementSibling === list && !D.getElementById("mos"),
+      "one filter, All first and chosen, on the list it filters: " + JSON.stringify(pills.map((b) => b.textContent)));
+    pills[pills.length - 1].click();
+    const one = pills[pills.length - 1].getAttribute("data-mf");
+    ok(shown().length > 0 && shown().every((m) => m === one) && pills[pills.length - 1].getAttribute("aria-pressed") === "true",
+      "a month tapped shows that month's lines alone: " + JSON.stringify([one, shown()]));
+    pills[0].click();
+    ok(new Set(shown()).size === months.length, "and All brings every line back");
+    /* the issues are at the foot, never called the latest */
+    const foot = D.getElementById("stmtFoot"), back = D.getElementById("stmtBack");
+    const issueBtns = [...foot.querySelectorAll("button")];
+    ok(!foot.hidden && issueBtns.map((b) => b.textContent).join("|") === "1 September 2026|1 August 2026" && back.hidden
+      && !/latest issue/i.test(D.getElementById("pStmt").textContent) && foot.compareDocumentPosition(D.getElementById("out")) === W.Node.DOCUMENT_POSITION_PRECEDING,
+      "the earlier statements sit under the statement, each by its date, and none is the latest issue: " + JSON.stringify(issueBtns.map((b) => b.textContent)));
+    issueBtns[1].click();
+    ok(/ISSUE TWO/.test(D.getElementById("out").textContent) && !back.hidden && /1 August 2026/.test(back.textContent),
+      "an issue opens in its place, with the way back above it: " + JSON.stringify(back.textContent));
+    D.getElementById("stmtBackGo").click();
+    ok(!/ISSUE/.test(D.getElementById("out").textContent) && !!D.querySelector("#out .salt-lines") && back.hidden,
+      "and Back to your statement brings the live lines back");
+    /* This device: the phone was filed again on the way in, and Turn off drops it and keeps it off */
+    const dev = D.getElementById("thisDevice");
+    const row = (label) => [...dev.querySelectorAll(".salt-ledger__row")].find((r) => r.querySelector(".salt-ledger__label").textContent === label);
+    const btnOf = (label) => row(label) && row(label).querySelector("button");
+    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").textContent === "Turn off") && !dev.hidden && st.subs === 1,
+      "This device says the notifications are on, with Turn off beside them: " + JSON.stringify([st.subs, dev.textContent.slice(0, 120)]));
+    btnOf("Notifications").click();
+    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").textContent === "Turn on") && st.unsub === 1 && !st.subbed
+      && /Off[.]/.test(row("Notifications").textContent),
+      "Turn off drops this phone's subscription and says Off on the row tapped: " + JSON.stringify(row("Notifications").textContent));
+    /* signing out is on the card, and signing in again does not turn them back on by itself */
+    D.getElementById("devOut").click();
+    ok(await until(() => !D.getElementById("gate").hidden) && dev.hidden, "Sign out of this device signs out, and the card goes with the account");
+    ok(await signIn() && await until(() => st.rem === 2) && await new Promise((r) => setTimeout(() => r(true), 150))
+      && btnOf("Notifications").textContent === "Turn on" && st.key === 1 && st.subs === 1 && !st.subbed,
+      "and the next sign-in, run to its end, leaves them off, where the way in used to file the phone again: " + JSON.stringify([st.rem, st.key, st.subs, st.subbed]));
+    btnOf("Notifications").click();
+    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").textContent === "Turn off") && st.subs === 2 && st.subbed,
+      "and Turn on files it again: " + JSON.stringify([st.subs, st.subbed]));
+    D.getElementById("devOut").click();
+    ok(await until(() => !D.getElementById("gate").hidden) && await signIn() && await until(() => st.subs === 3) && st.subbed,
+      "and once it is on again, the next sign-in files the phone as it always did: " + JSON.stringify([st.rem, st.subs, st.subbed]));
+  } finally { await new Promise((r) => setTimeout(r, 100)); try { W.close(); } catch (e) { /* best effort */ } }
+})();
 section("v690: a customer's statement is not bound to a month; it shows everything, and a month is one tap (v769)");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: nothing customer-facing is time bound. The document already carried
@@ -17410,10 +17539,13 @@ await (async () => {
        newest month because a monthly statement was what a reader had come for; there are no monthly
        statements any more, just one live document, so a month is a filter a reader chooses and never
        where they land. `newest` is still read, to prove the opening view is NOT it. */
-    ok(!strip.hidden && pills.length === new Set(tagged).size + 1 && pills[pills.length - 1] === "All"
+    /* S7 7.3: ONE filter, All FIRST, then the months newest first */
+    const months90 = [...strip.querySelectorAll("button")].map((b) => b.getAttribute("data-mf"));
+    ok(!strip.hidden && pills.length === new Set(tagged).size + 1 && pills[0] === "All"
+      && months90.slice(1).join() === [...new Set(tagged)].sort().reverse().join()
       && shown().length === tagged.length && new Set(shown()).size > 1
       && /every order from the start/.test(note.textContent),
-      "the strip is the months the account has plus All, and it opens on the whole account: " + pills.join(", "));
+      "the strip is All first, then the months the account has, newest first, and it opens on the whole account: " + pills.join(", "));
     const older = [...new Set(tagged)].sort()[0];
     ok(older !== newest, "the fixture has two months, so opening on everything is not opening on one");
     strip.querySelector('button[data-mf="' + older + '"]').dispatchEvent(new W90.Event("click", { bubbles: true }));
@@ -18896,7 +19028,8 @@ await (async () => {
   for (const p of parties) {
     const doc = M.liveStatement(p, new Date("2026-09-24T04:00:00Z"));
     if (!doc) continue;
-    const cells = [...doc.body.matchAll(/<td class="l dt">([\s\S]*?)<\/td>/g)].map((x) => x[1]);
+    /* S7 7.3: a live statement's date cells are Statement lines */
+    const cells = [...doc.body.matchAll(/<div class="salt-lines__date" role="cell">([\s\S]*?)<\/div>/g)].map((x) => x[1]);
     sep += cells.filter((c) => /\d\d Sep 2026/.test(c)).length;
     four += cells.filter((c) => FOUR.test(c)).length + (FOUR.test(doc.body) ? 1 : 0);
   }
@@ -32290,8 +32423,9 @@ await (async () => {
   for (const p of parties) {
     const doc = M.liveStatement(p, at);
     if (!doc) continue;
-    /* the orders table alone: the Refunds table below it prints its own dates in the same cell class */
-    const days = [...doc.body.split('<table class="rft"')[0].matchAll(/<td class="l dt">([\s\S]*?)<\/td>/g)].map((x) => iso(x[1].replace(/<[^>]+>/g, " "))).filter(Boolean);
+    /* the orders alone: the Refunds list below them prints its own dates in the same cell class (S7 7.3: both are
+       Statement lines on a live statement) */
+    const days = [...doc.body.split('aria-label="Refunds"')[0].matchAll(/<div class="salt-lines__date" role="cell">([\s\S]*?)<\/div>/g)].map((x) => iso(x[1].replace(/<[^>]+>/g, " "))).filter(Boolean);
     checked++;
     if (new Set(days).size > 1) multi++;
     for (let i = 1; i < days.length; i++) if (days[i] > days[i - 1]) { wrong.push(p + " " + days[i - 1] + " then " + days[i]); break; }
@@ -32932,8 +33066,8 @@ await (async () => {
   const lines = block.split('<p class="owedv">').slice(1);
   const txt = (h) => h.replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   ok(i >= 0 && lines.length === 2, "the block has one line a book: " + lines.length + " lines");
-  ok(lines.length === 2 && /class="pm"/.test(lines[0]) && /Cube/.test(lines[0]) && txt(lines[0]).endsWith("2 unit")
-    && /class="pm"/.test(lines[1]) && /Droplet/.test(lines[1]) && txt(lines[1]).endsWith("1.5 unit"),
+  ok(lines.length === 2 && /class="pm"/.test(lines[0]) && /Cube/.test(lines[0]) && txt(lines[0]).endsWith("2 units")
+    && /class="pm"/.test(lines[1]) && /Droplet/.test(lines[1]) && txt(lines[1]).endsWith("1.5 units"),
     "each line carries its book's mark and its own figure, salt first: " + lines.map(txt).join(" | "));
   ok(i >= 0 && !/3\.5/.test(txt(block)), "and the sum of two books, 3.5, is nowhere in it: " + txt(block));
   /* an archive keeps the one figure it was issued with, a dated record not being corrected in place */
@@ -32967,10 +33101,11 @@ await (async () => {
       if (!d.body.slice(Math.max(0, m.index - 19), m.index).endsWith('<div class="tblw">')) bare.push(p + " " + (m[2] || "orders"));
     }
   }
-  ok(docs > 10 && tables >= docs && kinds.has("orders") && !bare.length,
+  /* S7 7.3: the orders and the refunds are Statement lines on a live statement, which stack rather than scroll; the
+     reconciliation's tables are what is left, and each still opens in its box */
+  ok(docs > 10 && !kinds.has("orders") && !kinds.has("rft") && !bare.length,
     "every table on " + docs + " live statements (" + tables + " tables: " + [...kinds].join(", ") + ") opens inside div.tblw"
     + (bare.length ? "; bare: " + bare.slice(0, 4).join(", ") : ""));
-  if (!kinds.has("rft")) skipData("no live statement carries a Refunds table, so its box went unchecked");
   if (!kinds.has("mini")) skipData("no live statement carries a reconciliation, so its box went unchecked");
   const SCSS = (await import("../stmt/statement-css.js")).STATEMENT_CSS;
   ok(/\.tblw\{overflow-x:auto/.test(SCSS),
