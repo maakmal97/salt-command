@@ -14796,6 +14796,42 @@ await (async () => {
       + JSON.stringify(rows.map((r) => r.textContent.slice(0, 50))));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
+section("S1 1.41: only a refusal forgets a remembered phone; a server fault or a dropped connection keeps it and says so");
+await (async () => {
+  /* L45, 24 SEP 2026. Any answer but ok cleared the device's key, so one 500 from the site signed a returning
+     phone out for good, and a dropped connection said nothing at all. */
+  const { landingPage: lpH } = await import("../stmt/page.js");
+  const { JSDOM: JDH } = await import("jsdom");
+  const rec = JSON.stringify({ t: "r".repeat(32), k: Buffer.from("h".repeat(32)).toString("base64"), u: "aaaa-hhhh" });
+  const drive = async (answer) => {
+    const store = new Map([["salt-stmt-remember", rec]]);
+    const dom = new JDH(lpH("", "nH", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (path) => {
+          if (String(path) !== "/remember/open") return { ok: false, status: 404, json: async () => ({ ok: false }) };
+          if (answer === "drop") throw new TypeError("Failed to fetch");
+          return { ok: false, status: answer, json: async () => ({ ok: false, error: answer === 401 ? "That username and password were not accepted." : "no KV binding" }) };
+        };
+      } });
+    try {
+      const m = () => dom.window.document.getElementById("msg").textContent;
+      for (let i = 0; i < 100 && (i < 2 || /Opening/.test(m())); i++) await new Promise((r) => setTimeout(r, 25));
+      return { kept: store.has("salt-stmt-remember"), msg: dom.window.document.getElementById("msg").textContent, gate: !dom.window.document.getElementById("gate").hidden };
+    } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
+  };
+  const said = /could not be opened just now\. This phone is still remembered/;
+  for (const a of [500, "drop"]) {
+    const r = await drive(a);
+    ok(r.kept && r.gate && said.test(r.msg), (a === "drop" ? "a dropped connection" : "a server fault (" + a + ")")
+      + " keeps the phone remembered and says so on the door: " + JSON.stringify(r));
+  }
+  const r401 = await drive(401);
+  ok(!r401.kept && r401.gate && !said.test(r401.msg), "and the door's own refusal still forgets it: " + JSON.stringify(r401));
+})();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: no three-minute lock, Remember me, and a Log out. The two halves of

@@ -1662,6 +1662,7 @@ const CLIENT_JS = `
   /* ---- OPENING A REMEMBERED DEVICE (v692) -----------------------------------------------------
      The token names the record and brings back the wrap; the key beside it in this browser opens
      it. A refusal, a stale token or a record that has gone simply falls through to the door. */
+  var KEPT='Your account could not be opened just now. This phone is still remembered: try again in a moment.';
   async function openRemembered(){
     var rec=remGet();
     if(!rec||!rec.t||!rec.k||OWNER) return false;
@@ -1672,9 +1673,13 @@ const CLIENT_JS = `
       r=await fetch('/remember/open', {method:'POST', headers:{'content-type':'application/json'},
         body:JSON.stringify({token:rec.t})});
       body=await r.json();
-    }catch(e){ say(''); return false; }
+    }catch(e){ if(!stale()) say(KEPT,'bad'); return false; }
     if(stale()) return false;
-    if(!r.ok||!body.ok){ remClear(); say(''); return false; }
+    /* S1 1.41, 24 SEP 2026: ONLY THE DOOR'S REFUSAL FORGETS THIS PHONE. A server fault forgot it too, so one
+       bad minute on the site signed every returning phone out for good; that, and a dropped connection,
+       now keep it and say so. */
+    if(r.status===401){ remClear(); say(''); return false; }
+    if(!r.ok||!body.ok){ say(KEPT,'bad'); return false; }
     var ck, b;
     try{
       ck=await unwrapUnder(b64d(rec.k), body.wrap);
