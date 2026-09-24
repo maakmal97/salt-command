@@ -18621,6 +18621,76 @@ await (async () => {
   }
 })();
 
+section("S1 1.11: Site orders keeps a typed charge, handover figure and answer across its poll and a refusal");
+await (async () => {
+  /* 24 Sep 2026 (H11). The card's thirty-second poll guarded a hidden page and a move in flight and
+     nothing else, and ordDraw rewrites the whole box: a delivery charge he had typed went back to 0,
+     a half-written answer vanished, and a refused answer (siteSafe) took its own text with it. */
+  const { openMaster: om111 } = await import("../tools/payload.mjs");
+  const { w: w111 } = await om111();
+  try {
+    w111.SALT_CLOUD = true;
+    w111.localStorage.setItem("saltWriteKey", "k-fixture");
+    let tick = null;
+    w111.setInterval = (fn) => { tick = fn; return 91; };
+    w111.clearInterval = () => { tick = null; };
+    const orders = [{ id: "p1", u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0,
+      status: "placed", mode: "deliver", at: "2026-09-24T02:00:00.000Z", history: [], msgs: [] },
+    { id: "a1", u: "wxyz-1234", code: "CE4-CHE", product: "salt", qty: 3, total: 300, delivery: 0, paid: 0, moved: 0,
+      status: "acknowledged", mode: "collect", at: "2026-09-23T02:00:00.000Z", history: [], msgs: [], queued: { ack: "x" } }];
+    const reads = [], posts = [];
+    w111.fetch = async (path, init) => {
+      const post = !!(init && init.method === "POST");
+      (post ? posts : reads).push(String(path));
+      return { ok: true, status: 200, json: async () => (post ? { ok: true } : { ok: true, orders: JSON.parse(JSON.stringify(orders)) }) };
+    };
+    w111.document.body.innerHTML = String(w111.eval("tabOrders()"));
+    await w111.eval("ordLoad(true)");
+    const q = (sel) => w111.document.querySelector(sel);
+    const fee = () => q('input[data-fee="p1"]'), hand = () => q('input[data-hand="a1"]'), say = () => q('input[data-say="p1"]');
+    ok(!!(fee() && hand() && say()), "the card draws the three boxes he types in");
+    fee().value = "15"; hand().value = "1.5"; say().value = "on its way this after";
+    say().focus();
+
+    /* THE POLL STANDS DOWN while a box on the card has the focus */
+    const r0 = reads.length;
+    await tick();
+    ok(reads.length === r0, "a tick with his thumb in a box reads nothing: " + (reads.length - r0));
+
+    /* A REDRAW THAT DOES HAPPEN CARRIES WHAT HE TYPED, and the focus with it */
+    await w111.eval("ordLoad(true)");
+    ok(reads.length === r0 + 1 && fee().value === "15" && hand().value === "1.5" && say().value === "on its way this after",
+      "the charge, the handover figure and the half-written answer outlive the redraw: "
+      + JSON.stringify({ fee: fee().value, hand: hand().value, say: say().value }));
+    ok(w111.document.activeElement === say(), "and the answer box keeps the focus: " + (w111.document.activeElement && w111.document.activeElement.outerHTML.slice(0, 60)));
+
+    /* A REFUSED ANSWER KEEPS ITS TEXT, so he can correct it rather than type it again */
+    say().value = "the Gold one is ready";
+    q('button[data-ord="say"][data-id="p1"]').click();
+    await new Promise((r) => setTimeout(r, 30));
+    ok(say().value === "the Gold one is ready" && fee().value === "15" && posts.length === 0
+      && /names a level/.test(q("#ordMsg").textContent),
+      "a refusal says why and leaves the answer and the charge where they were: " + JSON.stringify({ say: say().value, fee: fee().value, msg: q("#ordMsg").textContent }));
+
+    /* AND WHAT WENT THROUGH IS NOT CARRIED, or the next tap would send it twice */
+    say().value = "on its way this afternoon";
+    q('button[data-ord="say"][data-id="p1"]').click();
+    await new Promise((r) => setTimeout(r, 30));
+    ok(posts.length === 1 && say().value === "" && fee().value === "15",
+      "a line that was sent leaves an empty box, and the charge typed beside it stays: " + JSON.stringify({ posts: posts.length, say: say().value, fee: fee().value }));
+
+    /* with the focus gone the card follows the site again */
+    say().blur();
+    const r1 = reads.length;
+    await tick();
+    ok(reads.length === r1 + 1, "and with nothing in hand the poll reads again: " + (reads.length - r1));
+  } finally {
+    try { w111.eval("if(typeof ordTimer!=='undefined'&&ordTimer){clearInterval(ordTimer);ordTimer=null;}"); } catch (e) { /* best effort */ }
+    await new Promise((r) => setTimeout(r, 200));
+    try { w111.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one

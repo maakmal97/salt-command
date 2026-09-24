@@ -18285,6 +18285,7 @@ async function ordLoad(quiet){
   if(!ordTimer)ordTimer=setInterval(()=>{const b=document.getElementById('ordBox');
     if(!b){clearInterval(ordTimer);ordTimer=null;return;}
     if(document.hidden||Object.keys(ordBusy).length)return;
+    if(b.contains(document.activeElement)&&document.activeElement.tagName==='INPUT')return;   /* nor under a thumb mid-word */
     ordLoad(true);},CARD_POLL);
 }
 /* ---- THE BULLETIN (20 Sep 2026, his instruction): a notice board across the top of Salt Counter, set here
@@ -18480,13 +18481,23 @@ function ordCard(o){
     ${acts?`<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">${acts}</div>`:''}
   </div>`;
 }
+/* 24 Sep 2026: WHAT HE HAS TYPED ON A CARD OUTLIVES THE REDRAW. The poll and every refusal rewrite
+   the box, which put a typed delivery charge back to 0 and emptied a half-written answer. Each box is
+   named by what it holds and the order it is on; only a figure that differs from the card's own is
+   carried, so a move that went through clears its box by putting the default back first. */
+function ordField(i){return ['fee','hand','say'].map(k=>i.dataset[k]!=null?k+':'+i.dataset[k]:'').join('');}
 function ordDraw(){
   apBadge();
   const box=document.getElementById('ordBox');if(!box)return;
+  const typed={};let focused='';
+  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say]').forEach(i=>{
+    if(i.value!==i.defaultValue)typed[ordField(i)]=i.value;if(i===document.activeElement)focused=ordField(i);});
   if(ordNeedKey)box.innerHTML='<div class="warnpill" style="display:block">The write key is needed to read the orders and it was not accepted. Reload to be asked again. <b>This is not an empty book: orders may be waiting.</b></div>';
   else if(ordUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The orders could not be read: '+esc(ordUnread)+'. <b>This is not an empty book.</b></div>';
   else if(!ORD_OPEN.length)box.innerHTML='<div class="card"><div class="dsc">'+(ordAll?'This site has taken no orders at all yet.':'No open orders. A customer\'s order lands here the moment it is placed.')+'</div></div>';
   else box.innerHTML=ORD_OPEN.map(ordCard).join('');
+  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say]').forEach(i=>{const k=ordField(i);
+    if(k in typed)i.value=typed[k];if(k===focused)i.focus();});
   box.querySelectorAll('button[data-ord]').forEach(b=>{b.onclick=()=>ordAct(b);});
   /* v766: the rail's Today count now includes what is waiting on the site, so it is recounted when
      THAT changes and not on every draw: actions() walks the whole forecast to answer. */
@@ -18539,6 +18550,8 @@ async function ordAct(b){
       :st==='declined'?'Declined. The customer sees it.'
       :st==='cancelled'?'Cancelled. Any payment taken is refunded on the row. '+told
       :ORD_WORD[st]+'. '+told;
+    const used=r.ok&&document.querySelector('input[data-'+({say:'say',handover:'hand',acknowledged:'fee'}[st]||'none')+'="'+id+'"]');
+    if(used)used.value=used.defaultValue;   /* what went through is not carried into the redraw */
   }catch(e){ ordMsg='No connection, so nothing moved.'; }
   delete ordBusy[id];await ordLoad(true);
   const m=document.getElementById('ordMsg');if(m)m.textContent=ordMsg;
