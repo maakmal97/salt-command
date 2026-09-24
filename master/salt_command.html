@@ -8314,7 +8314,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v841","d":"25 Sep 2026","t":"WHAT IS DUE, AND WHEN, SEALED WITH THE STATEMENT","n":["<b>STAGE 6, THE FIRST PART</b> (his answers D8, as he amended it, and D9 of 24 Sep 2026). The live statement now carries what is owed as the engine reads it: To pay now, each part due on its order date plus the desk's own credit term, soonest first; Overdue, the parts whose due day has passed; and Coming up, orders agreed but not yet handed over. Rows entered on the desk count as well as site orders; gifts, write-offs and cancelled orders count in none. Nothing draws them yet.","<b>A PAY LINK THAT OPENS AT THE RAIL AND THE AMOUNT.</b> stmt/pay.js gains payHref, which builds QR Command's #account/rail/amount/reference link for the two ways, Transfer and Scan a code, and never carries a number; QR Command (shipped first) opens that rail with the amount and the reference beside the code."]}];
+const evolution=[{"v":"v842","d":"25 Sep 2026","t":"EVERY ORDER HAS ITS OWN SCREEN, AND NO LINE IS LOST","n":["<b>STAGE 5 OF THE REDESIGN</b> (his answer D11 of 24 Sep 2026). The orders list is rows: Needs you first, then Open, then the earlier orders folded and not drawn until opened. A row opens the order's own screen: the goods on the Steps recipe, the money on its own lines, his when line, one filled Pay while something is due, Cancel at the foot while the goods have not moved, and what happened folded. On a desk the list sits beside the open order.","<b>THE CUSTOMER'S WORDS.</b> Sent, Confirmed, Ready to collect or deliver, Collected or Delivered, Complete, Not taken and Cancelled by you or by us, with his reason where he gave one; a short delivery closed says so; units above one.","<b>MESSAGES THAT KEEP EVERY LINE.</b> Their lines show Sending, Sent, or Not sent with Tap to try again under the line's own request id; his lines are marked New until seen; Return sends; a half-typed line is kept. The poll patches only the order that changed and never redraws what is being typed, and a return, a lapse reopened or a notification tap goes the same way."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8429,7 +8429,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Sep 2026, 01:23 KL';
+const LAST_UPDATED='25 Sep 2026, 02:01 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

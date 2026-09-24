@@ -1,5 +1,15 @@
 [
  {
+  "v": "v842",
+  "d": "25 Sep 2026",
+  "t": "EVERY ORDER HAS ITS OWN SCREEN, AND NO LINE IS LOST",
+  "n": [
+   "<b>STAGE 5 OF THE REDESIGN</b> (his answer D11 of 24 Sep 2026). The orders list is rows: Needs you first, then Open, then the earlier orders folded and not drawn until opened. A row opens the order's own screen: the goods on the Steps recipe, the money on its own lines, his when line, one filled Pay while something is due, Cancel at the foot while the goods have not moved, and what happened folded. On a desk the list sits beside the open order.",
+   "<b>THE CUSTOMER'S WORDS.</b> Sent, Confirmed, Ready to collect or deliver, Collected or Delivered, Complete, Not taken and Cancelled by you or by us, with his reason where he gave one; a short delivery closed says so; units above one.",
+   "<b>MESSAGES THAT KEEP EVERY LINE.</b> Their lines show Sending, Sent, or Not sent with Tap to try again under the line's own request id; his lines are marked New until seen; Return sends; a half-typed line is kept. The poll patches only the order that changed and never redraws what is being typed, and a return, a lapse reopened or a notification tap goes the same way."
+  ]
+ },
+ {
   "v": "v841",
   "d": "25 Sep 2026",
   "t": "WHAT IS DUE, AND WHEN, SEALED WITH THE STATEMENT",
