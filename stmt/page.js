@@ -1206,12 +1206,16 @@ const CLIENT_JS = `
         b.addEventListener('click',function(){ draft.mode=m[0]; drawOrder(); }); seg.appendChild(b);
       });
       form.appendChild(seg);
+      /* 24 Sep 2026: WHILE CHECK THIS OVER IS OPEN, THE PLACE AND THE LINE ARE WHAT IT SHOWS. Typing in either drew
+         nothing, so the list said one place and Place sent another (v694: the first tap shows what is about to be
+         ordered). They are read-only until Change it; the size and the mode redraw the list, so they stay live. */
+      var locked=!!draft.confirm&&!!quoteFor()&&(draft.mode!=='deliver'||String(draft.place||'').trim().length>=2);
       /* v694: a delivery says roughly where it is going, in his words a general location. It tells
          him which way to drive and what to charge; it is not an address and is not asked for one. */
       if(draft.mode==='deliver'){
         form.appendChild(el('span','lbl','Where to'));
         var pl=el('input','fld salt-field__input'); pl.type='text'; pl.maxLength=60; pl.value=draft.place||'';
-        pl.placeholder='a neighbourhood or a landmark'; pl.setAttribute('aria-label','Roughly where it is going');
+        pl.placeholder='a neighbourhood or a landmark'; pl.setAttribute('aria-label','Roughly where it is going'); pl.readOnly=locked;
         pl.addEventListener('input',function(){ draft.place=pl.value; var b=document.getElementById('oGo'); if(b)b.disabled=!quoteFor()||!!draft.busy||pl.value.trim().length<2; });
         form.appendChild(pl);
         form.appendChild(el('div','sub2','A neighbourhood is enough. The delivery charge is set when the order is acknowledged, and you see it here before you pay.'));
@@ -1220,7 +1224,7 @@ const CLIENT_JS = `
          order's thread rather than sitting in a field of its own, so there is one place to read. */
       form.appendChild(el('span','lbl','Anything to add'));
       var sy=el('input','fld salt-field__input'); sy.type='text'; sy.maxLength=140; sy.value=draft.say||'';
-      sy.placeholder='optional, a line about this order'; sy.setAttribute('aria-label','Anything to add about this order');
+      sy.placeholder='optional, a line about this order'; sy.setAttribute('aria-label','Anything to add about this order'); sy.readOnly=locked;
       sy.addEventListener('input',function(){ draft.say=sy.value; });
       form.appendChild(sy);
       /* v702, HIS INSTRUCTION OF 18 SEP 2026: an associate's own order and one placed for somebody

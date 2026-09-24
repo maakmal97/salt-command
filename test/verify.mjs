@@ -19491,6 +19491,68 @@ await (async () => {
   } finally { w.close(); }
 })();
 
+section("24 Sep 2026: Check this over locks the place and the line it shows, so Place sends what was shown");
+await (async () => {
+  /* M20 of the Counter study: with the check-over open, Where to and Anything to add still took typing, drew nothing,
+     and Place sent the new words, so the list said one place and the order carried another. The two fields are
+     read-only while it is open; Change it is the way back. The typing below is a reader's: it lands only where the
+     field takes it. */
+  const { landingPage: lpN } = await import("../stmt/page.js");
+  const CN = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcN } = await import("node:crypto");
+  const { JSDOM: JDN } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-m20", ck = await CN.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 120 }, { q: 2, price: 230 }] }] };
+  const body = { ok: true, wrap: await CN.wrapKey(pass, ck), session: "sess-m20",
+    env: await CN.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await CN.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })),
+    prices: await CN.encryptWith(ck, JSON.stringify(prices)) };
+  const posted = [];
+  const dom = new JDN(lpN(u, "nm20", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcN, configurable: true }); } catch (e) { win.crypto = wcN; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      if (p === "/orders" && m === "POST") posted.push(JSON.parse(init.body));
+      const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: [] } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const field = (label) => d.querySelector('#pOrder input[aria-label="' + label + '"]');
+  const type = (f, t) => { if (f && !f.readOnly) { f.value = t; f.dispatchEvent(new w.Event("input", { bubbles: true })); } };
+  const button = (t) => [...d.querySelectorAll("#pOrder button")].find((b) => b.textContent === t);
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !button("Deliver to me"); i++) await new Promise((r) => setTimeout(r, 50));
+    button("Deliver to me").click();
+    type(field("Roughly where it is going"), "Old market");
+    type(field("Anything to add about this order"), "Ring the bell");
+    d.getElementById("oGo").click();
+    const where = () => { const li = [...d.querySelectorAll("#pOrder .conf li")].find((x) => x.querySelector(".k").textContent === "Where"); return li && li.querySelector(".v").textContent; };
+    const locked = field("Roughly where it is going").readOnly && field("Anything to add about this order").readOnly;
+    type(field("Roughly where it is going"), "Somewhere else");
+    type(field("Anything to add about this order"), "Changed my mind");
+    ok(locked && where() === "Old market" && field("Roughly where it is going").value === "Old market",
+      "with the check-over open both fields are read-only, and the list and the field still say the same place: " + where());
+    button("Place this order").click();
+    for (let i = 0; i < 100 && !/Placed\./.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+    ok(posted.length === 1 && posted[0].place === "Old market" && posted[0].note === "Ring the bell",
+      "Place sends exactly the place and the line the check-over showed: " + JSON.stringify(posted.map((x) => [x.place, x.note])));
+    /* and the way back opens them again */
+    button("Deliver to me").click();
+    type(field("Roughly where it is going"), "Old market");
+    d.getElementById("oGo").click();
+    button("Change it").click();
+    ok(!field("Roughly where it is going").readOnly && !field("Anything to add about this order").readOnly,
+      "Change it closes the list and both fields take typing again");
+  } finally { w.close(); }
+})();
+
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead
