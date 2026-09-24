@@ -19400,6 +19400,48 @@ await (async () => {
   } finally { w.close(); }
 })();
 
+section("24 Sep 2026: the pay row's class is its own, so the statement's Amount column is a column again");
+await (async () => {
+  /* H08 of the Counter study: the page's .amt{display:flex;margin-top:10px}, meant for the pay row, also matched
+     every td.amt the statement prints (tools/make_statements.mjs), so each Amount cell was laid out as a flex row
+     10px down from its neighbours. The pay row is .payamt now. */
+  const { landingPage: lpK } = await import("../stmt/page.js");
+  const CK = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcK } = await import("node:crypto");
+  const { JSDOM: JDK } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-h08", ck = await CK.contentKey("test-secret", u);
+  const stmtBody = '<div class="tblw"><table><thead><tr><th class="dt">Date</th><th class="amt">Amount</th></tr></thead><tbody>'
+    + '<tr data-m="2026-09"><td class="dt">20 Sep</td><td class="amt">RM 150.00</td></tr></tbody></table></div>';
+  const body = { ok: true, wrap: await CK.wrapKey(pass, ck), session: "sess-h08",
+    env: await CK.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await CK.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: stmtBody, owed: 40 })) };
+  const orders = [{ id: "oA", product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z",
+    history: [], msgs: [], status: "acknowledged", total: 150, method: "transfer", account: "maybank" }];
+  const dom = new JDK(lpK(u, "nh08", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcK, configurable: true }); } catch (e) { win.crypto = wcK; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("pd-oA"); i++) await new Promise((r) => setTimeout(r, 50));
+    const cells = [...d.querySelectorAll("#out td.amt, #out th.amt")].map((x) => w.getComputedStyle(x));
+    ok(cells.length === 2 && cells.every((c) => c.display !== "flex" && c.marginTop !== "10px"),
+      "the statement's Amount cells are table cells, not flex rows pushed 10px down: " + cells.map((c) => c.display + " " + c.marginTop).join(", "));
+    const row = d.querySelector('#pOrder input[type="number"]') && d.querySelector('#pOrder input[type="number"]').parentNode;
+    ok(row && w.getComputedStyle(row).display === "flex" && !row.classList.contains("amt"),
+      "and the pay row keeps its own flex layout under its own name: " + (row && row.className));
+  } finally { w.close(); }
+})();
+
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead

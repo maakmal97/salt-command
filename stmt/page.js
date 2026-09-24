@@ -86,10 +86,11 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .pwith{display:inline-flex;align-items:center;gap:7px}
 /* read aloud, never drawn: the shape's word, so a mark in a sentence is not a hole */
 .sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-/* v694: the order's own figures, typed in the same well as everything else */
-.amt{display:flex;gap:8px;align-items:center;margin-top:10px}
-.amt .fld{flex:1 1 0;min-width:0;text-align:right}
-.amt .cur{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist)}
+/* v694: the order's own figures, typed in the same well as everything else. payamt, not amt (24 Sep 2026):
+   the statement's own Amount cells are td.amt, and a bare .amt laid every one of them out as a flex row */
+.payamt{display:flex;gap:8px;align-items:center;margin-top:10px}
+.payamt .fld{flex:1 1 0;min-width:0;text-align:right}
+.payamt .cur{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist)}
 /* the confirmation, one plain list of what is about to be ordered */
 .conf{margin:10px 0 0;padding:0;list-style:none;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .conf li{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--salt-line)}
@@ -1452,7 +1453,7 @@ const CLIENT_JS = `
      against the fold. It accumulates, so a part payment is a part payment. */
   function payBox(o){
     var box=payLink(o), due=dueOf(o), cur=pick[o.id]||{};
-    var row=el('div','amt');
+    var row=el('div','payamt');
     row.appendChild(el('span','cur','RM'));
     var inp=el('input','fld salt-field__input salt-field__input--mono'); inp.type='number'; inp.min='0'; inp.step='0.01'; inp.inputMode='decimal';
     inp.value=(cur.amount!==undefined&&cur.amount!==null)?cur.amount:due.toFixed(2);
