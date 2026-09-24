@@ -19196,7 +19196,7 @@ function ordPvBlock(o){
   const card=num(j.card),cost=num(j.cost)!=null?j.cost:num(row.cost),floor=num(j.floor);
   const margin=num(j.margin)!=null?j.margin:(cost!=null?+(goods-cost).toFixed(2):null);
   const usual=num(j.usual)!=null?j.usual:(o.code?ordUsual(o.code,o.product):null),rate=qty?goods/qty:null;
-  const tile=(k,v,note,tone)=>`<div class="kpi salt-kpi${tone?' salt-kpi--'+tone:''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value">${v}</div><div class="salt-kpi__note">${note}</div></div>`;
+  const tile=(k,v,note,tone)=>`<div class="kpi salt-kpi ${tone?'salt-kpi--'+tone:''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value">${v}</div><div class="salt-kpi__note">${note}</div></div>`;
   const q=+o.total||0,gap=card==null?null:+(q-card).toFixed(2);
   const cardT=card==null?tile('Their card today','&mdash;',esc(j.cardNote||'no card for this size'),'')
     :tile('Their card today',fmt(card),(Math.abs(gap)<0.005?'':'the quote is ')+`<span class="salt-status salt-status--${Math.abs(gap)<0.005?'verdigris':gap<0?'copper':'steel'}">${Math.abs(gap)<0.005?'matches':fmt(Math.abs(gap))+(gap<0?' under':' over')}</span>`+(Math.abs(gap)<0.005?' the quote':'')+(j.cardNote?' '+esc(j.cardNote):''),Math.abs(gap)<0.005?'verdigris':gap<0?'copper':'steel');
