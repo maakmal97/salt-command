@@ -14555,6 +14555,56 @@ await (async () => {
       "a link refused at the cap says so under Your links, and nothing of it reaches the order form: " + JSON.stringify(box() && box().textContent.slice(-90)));
   } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S1 1.40: an associate with no sealed card yet still reaches their links");
+await (async () => {
+  /* 24 SEP 2026 (L44): the Card tab waited on a sealed card as well as the associate mark, and the links
+     live inside it, so an associate the publish had not yet written a card for could never make or see
+     a link, though v709 gates the links on the mark alone. Driven on their page against the real Worker. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const RF = await import("../stmt/refs.js");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const mk = async (assoc) => {
+    const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s1-40", u);
+    await kv.put("u:" + u, JSON.stringify({ u, assoc, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+      env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })) }));
+    return { u, pw };
+  };
+  const A = await mk(true), B = await mk(false);
+  const env = { STMT: kv };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const until = async (f) => { for (let i = 0; i < 200 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  const wins = [];
+  const signIn = async (who) => {
+    const w = new JSDOM(await (await site("/")).text(), { url: "https://k7m3p2.example/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(x) {
+      try { Object.defineProperty(x, "crypto", { value: crypto, configurable: true }); } catch (e) { x.crypto = crypto; }
+      x.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: o.headers, body: o.body }); };
+    } }).window;
+    wins.push(w);
+    const D = w.document;
+    D.getElementById("un").value = who.u; D.getElementById("pw").value = who.pw;
+    D.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !D.getElementById("tabs").hidden);
+    return D;
+  };
+  try {
+    const DA = await signIn(A);
+    ok(!DA.getElementById("tabs").hidden && !DA.getElementById("tCard").hidden,
+      "an associate with no card is shown the Card tab");
+    DA.getElementById("tCard").click();
+    const pCard = DA.getElementById("pCard");
+    const make = () => [...pCard.querySelectorAll("button")].find((b) => b.textContent === "Make a link");
+    ok(await until(() => make()) && /written with the next update/.test(pCard.textContent),
+      "it says the card comes with the next update, and Make a link is there: " + JSON.stringify(pCard.textContent.slice(0, 120)));
+    if (make()) make().click();
+    ok(await until(async () => (await RF.refsBy(env, A.u)).length === 1) && await until(() => pCard.querySelectorAll(".glink").length === 1),
+      "and a tap mints their link and lists it");
+    const DB = await signIn(B);
+    ok(!DB.getElementById("tabs").hidden && DB.getElementById("tCard").hidden,
+      "while a customer who is not an associate is still shown no Card tab at all");
+  } finally { for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
+})();
 section("v687: the master account opens on its own page, and the owner's script travels only there");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: a master account that opens on what it can do. /all is that account,
@@ -16709,8 +16759,10 @@ await (async () => {
 
   /* ---- the page: a fourth tab, behind the mark AND behind having one ---- */
   const page6 = await (await stmtW6.fetch(new Request("https://k7m3p2.example/"), { STMT: kv6 })).text();
-  ok(/data-t="card" id="tCard" hidden/.test(page6) && /tCard\.hidden=!\(assoc&&card&&card\.products&&card\.products\.length\)/.test(page6),
-    "the tab starts hidden and is shown only where the record that opened actually carries a card, so it can never lead to an empty panel");
+  /* 24 Sep 2026: the tab follows the mark alone, so an associate with no card yet still reaches their
+     links; a panel with no card says when it comes and carries the links (behaviour: "S1 1.40") */
+  ok(/data-t="card" id="tCard" hidden/.test(page6) && /tCard\.hidden=!assoc;/.test(page6),
+    "the tab starts hidden and is shown to an associate alone");
   ok(/pCard\.hidden=\(t!=='card'\)/.test(page6), "and the panel is switched with the other three");
   ok(/card=null; cardMonth='';/.test(page6), "logging out forgets it, as it forgets the price list");
   /* the month pill was 29px tall since v690, on a strip whose whole purpose is to be tapped */

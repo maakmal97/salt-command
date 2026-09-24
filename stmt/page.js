@@ -898,9 +898,11 @@ const CLIENT_JS = `
     }
     gate.hidden=true; if(roster) roster.hidden=true;
     barw.hidden=false; tabs.hidden=false;
-    /* v706: the fourth tab appears only where the record that opened actually carries a card, so
-       it can never lead to an empty panel and nobody else is shown one at all */
-    tCard.hidden=!(assoc&&card&&card.products&&card.products.length);
+    /* v706: the fourth tab is an associate's alone, and nobody else is shown one at all. It waited on
+       a sealed card as well, so an associate the publish had not yet written one for had no way to
+       their links (v709 gates those on the mark, not the card); since 24 Sep 2026 the mark alone opens
+       it, and a panel with no card says when it comes and still carries the links. */
+    tCard.hidden=!assoc;
     if(!tCard.hidden) drawCard();
     var lv=b.statements.filter(function(s){ return s.live; })[0];
     owedNow=lv&&isFinite(+lv.owed)?+lv.owed:0;
@@ -925,7 +927,7 @@ const CLIENT_JS = `
   }
   function drawCard(){
     pCard.textContent='';
-    if(!card||!card.products||!card.products.length){ pCard.appendChild(el('p','lead','Your card is written with the next update.')); return; }
+    if(!card||!card.products||!card.products.length){ pCard.appendChild(el('p','lead','Your card is written with the next update.')); drawMyLinks(); return; }
     pCard.appendChild(el('h2',null,'Your card'));
     pCard.appendChild(el('p','lead','What you have bought, what has gone out through you, and where your reward stands. Every month from the start; the newest opens.'));
     card.products.forEach(function(p){
