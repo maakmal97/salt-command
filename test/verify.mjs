@@ -19674,6 +19674,38 @@ await (async () => {
   } finally { w.close(); }
 })();
 
+section("24 Sep 2026: Prices says the delivery charge is set when the order is confirmed");
+await (async () => {
+  /* L48 of the Counter study: the Prices lead said the delivery charge is added "when the order is marked ready",
+     which v694 moved to the acknowledgement. Said in the customer's words: when we confirm your order. */
+  const { landingPage: lpP } = await import("../stmt/page.js");
+  const CP = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcP } = await import("node:crypto");
+  const { JSDOM: JDP } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-l48", ck = await CP.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 120 }] }] };
+  const body = { ok: true, wrap: await CP.wrapKey(pass, ck), session: "",
+    env: await CP.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await CP.encryptWith(ck, JSON.stringify(prices)) };
+  const dom = new JDP(lpP(u, "nl48", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcP, configurable: true }); } catch (e) { win.crypto = wcP; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path) => { const j = String(path) === "/open" ? body : null; return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } }; };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 60 && !d.querySelector("#pPrices p.lead + p.lead"); i++) await new Promise((r) => setTimeout(r, 50));
+    const lead = [...d.querySelectorAll("#pPrices p.lead")].map((p) => p.textContent).find((t) => /delivery/.test(t)) || "";
+    ok(/the charge is set when we confirm your order/.test(lead) && !/marked ready/.test(lead),
+      "the Prices lead puts the delivery charge at the confirmation, where v694 moved it: " + lead.slice(0, 160));
+  } finally { w.close(); }
+})();
+
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead
