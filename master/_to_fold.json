@@ -1,0 +1,122 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-09-24T14:59:36.924Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CC5-OKR",
+    "qty": 10,
+    "total": 130,
+    "cost": 76,
+    "cash": 130,
+    "handover": "collected",
+    "product": "oil",
+    "date": "2026-09-24",
+    "deliveredQty": 10,
+    "deliveredOn": "2026-09-24",
+    "paidOn": "2026-09-24"
+   },
+   "reasoning": "Sold 10 unit of oil to CC5-OKR for RM 130, RM 13/unit. Costed at RM 7.6/unit from the desk's own inventory cost, so RM 54 on the goods at 41.5%. Paid in full and delivered in full on 2026-09-24. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CC5-OKR has no committed oil order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-24T14:59:36.924Z",
+    "type": "SELL",
+    "party": "CC5-OKR",
+    "qty": 10,
+    "total": 130,
+    "status": "paid",
+    "raw": "Sell 10 unit to CC5-OKR for RM 130 on 2026-09-24, collected, RM 130 cash, 10 unit moved → Completed",
+    "payload": {
+     "mode": "new",
+     "product": "oil",
+     "direction": "SELL",
+     "party": "CC5-OKR",
+     "newId": null,
+     "date": "2026-09-24",
+     "qty": 10,
+     "total": 130,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 130,
+     "kg": 10,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    }
+   },
+   "decidedAt": "2026-09-24T15:00:46.297Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-24T15:00:19.598Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CZ4-MK",
+    "qty": 4,
+    "total": 200,
+    "cost": 152,
+    "cash": 200,
+    "handover": "collected",
+    "product": "candy",
+    "date": "2026-09-24",
+    "deliveredQty": 4,
+    "deliveredOn": "2026-09-24",
+    "paidOn": "2026-09-24"
+   },
+   "reasoning": "Sold 4 unit of candy to CZ4-MK for RM 200, RM 50/unit. Costed at RM 38/unit from the desk's own inventory cost, so RM 48 on the goods at 24%. Paid in full and delivered in full on 2026-09-24. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-24T15:00:19.598Z",
+    "type": "SELL",
+    "party": "CZ4-MK",
+    "qty": 4,
+    "total": 200,
+    "status": "paid",
+    "raw": "Sell 4 unit to CZ4-MK for RM 200 on 2026-09-24, collected, RM 200 cash, 4 unit moved → Completed",
+    "payload": {
+     "mode": "new",
+     "product": "candy",
+     "direction": "SELL",
+     "party": "CZ4-MK",
+     "newId": null,
+     "date": "2026-09-24",
+     "qty": 4,
+     "total": 200,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 200,
+     "kg": 4,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    }
+   },
+   "decidedAt": "2026-09-24T15:00:51.813Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
