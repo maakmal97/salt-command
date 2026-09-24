@@ -1863,10 +1863,12 @@ const CLIENT_JS = `
   }
   /* an order drawn open while the tab was elsewhere is seen when the tab is turned to */
   tabs.addEventListener('click',function(){ var o=tab==='order'&&oFind(draft.oShown||''); if(o){ seeIt(o); oSync([o.id]); } });
-  /* the order already open is only brought into view: drawn again, it would lose what is being typed in it */
+  /* the order already open is brought into view and seen, and its row patched: drawn again, it would lose what is
+     being typed in it. A banner's tap comes here too, on an order the desk opened by itself or one left open. */
   function oOpen(id){
     draft.oAuto=false;
     if(draft.oOpen!==id||!pOrder.querySelector('.oscreen[data-order="'+id+'"]')){ draft.oOpen=id; oDraw(); }
+    else { seeIt(oFind(id)); oSync([id]); }
     scrollClear(pOrder.querySelector('.oscreen'));
   }
   /* clear of the sticky bar, which would otherwise sit over what was opened */

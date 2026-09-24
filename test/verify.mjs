@@ -21351,7 +21351,8 @@ await (async () => {
 section("S5 fix: an order a desk opened by itself is not a tapped one");
 await (async () => {
   /* 25 SEP 2026, the stage 5 review. From 1080px an order opens beside the list without a tap, and it was then held
-     as if tapped: turned to portrait, the phone layout filled the tab with it. */
+     as if tapped: turned to portrait, the phone layout filled the tab with it. And a banner's tap on an order already
+     open only scrolled to it, so his reply stayed unseen: New again on the next visit, its row still waiting. */
   const { landingPage } = await import("../stmt/page.js");
   const C = await import("../tools/stmt-crypto.mjs");
   const { webcrypto } = await import("node:crypto");
@@ -21362,13 +21363,15 @@ await (async () => {
   const P = "20260924090000-pppp", O = "20260923090000-oooo", D = "20260901090000-dddd";
   const o = (oid, x) => Object.assign({ id: oid, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 0,
     moved: 0, status: "acknowledged", history: [], msgs: [] }, x);
-  const drive = async (wide, go) => {
-    const mq = { wide, fns: [] };
-    const list = () => [o(P, { status: "placed" }), o(O, { msgs: [{ at: "2026-09-24T05:00:00Z", by: "desk", text: "Ready on Friday." }] }),
+  const drive = async (wide, go, opt = {}) => {
+    const mq = { wide, fns: [] }, sw = { listen: null }, fx = { answered: !opt.later };
+    const list = () => [o(P, { status: "placed" }), o(O, { msgs: fx.answered ? [{ at: "2026-09-24T05:00:00Z", by: "desk", text: "Ready on Friday." }] : [] }),
       o(D, { status: "done", paid: 90, moved: 1 })];
-    const dom = new JSDOM(landingPage(u, "nf1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+    const dom = new JSDOM(landingPage(u, "nf1", null), { url: "https://site.test/" + (opt.hash || ""), runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
       w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
+      Object.defineProperty(w.navigator, "serviceWorker", { configurable: true, value: {
+        addEventListener: (t, f) => { if (t === "message") sw.listen = f; }, getRegistration: async () => undefined } });
       w.matchMedia = (q) => ({ get matches() { return mq.wide && /min-width: *1080px/.test(q); }, media: q,
         addEventListener(t, f) { if (t === "change") mq.fns.push(f); }, removeEventListener() {} });
       w.fetch = async (path, init) => {
@@ -21383,8 +21386,8 @@ await (async () => {
       d.getElementById("un").value = u; d.getElementById("pw").value = pass;
       d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
       for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 30));
-      d.querySelector('#tabs button[data-t="order"]').click();
-      await go(w, d, turn);
+      if (!opt.hash) d.querySelector('#tabs button[data-t="order"]').click();   /* a banner's address turns the tab itself */
+      await go(w, d, turn, sw, fx);
     } finally { w.close(); }
   };
   const shownOf = (d) => { const s = d.querySelector("#pOrder .oscreen"); return s && s.getAttribute("data-order"); };
@@ -21406,7 +21409,25 @@ await (async () => {
   await drive(true, async (w, d) => {
     ok(shownOf(d) === O && !!d.querySelector("#pOrder .oscreen .salt-bubble__new") && !seen(w)[O] && /a reply for you/.test(rowText(d, O)),
       "an order a desk opened by itself marks nothing seen: his line is New and its row still says a reply is waiting: " + JSON.stringify({ seen: seen(w), row: rowText(d, O) }));
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    ok(seen(w)[O] === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)) && !!d.querySelector("#pOrder .oscreen .salt-bubble__new"),
+      "a tap on its row, already open, marks it seen and clears its row, his line staying New while it is open: " + JSON.stringify({ seen: seen(w), row: rowText(d, O) }));
   });
+  /* a banner's tap: on a desk, for the order it opened by itself at sign-in; on a phone, for one left open under another tab */
+  await drive(true, async (w, d) => {
+    const tab = d.querySelector('#tabs button[data-t="order"]').getAttribute("aria-selected");
+    ok(tab === "true" && shownOf(d) === O && seen(w)[O] === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)),
+      "a desk opened at a banner's address for the order it opens by itself turns to it and marks his reply seen: " + JSON.stringify({ tab, shown: shownOf(d), seen: seen(w), row: rowText(d, O) }));
+  }, { hash: "#o=" + O });
+  await drive(false, async (w, d, turn, sw, fx) => {
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
+    d.querySelector('#tabs button[data-t="stmt"]').click();
+    fx.answered = true;
+    await sw.listen({ data: { salt: "news", order: O } });
+    const marked = seen(w)[O], back = d.querySelector("#pOrder .oback"); if (back) back.click();
+    ok(shownOf(d) === null && marked === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)),
+      "a phone told of his reply on the order it left open under another tab turns to it and marks it seen: " + JSON.stringify({ seen: marked, row: rowText(d, O) }));
+  }, { later: true });
 })();
 section("S5 fix: a part or a row passed over for its focus is caught up");
 await (async () => {
