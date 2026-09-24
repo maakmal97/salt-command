@@ -183,10 +183,20 @@ month and the tool refuses. Do not talk it out of that.
 ## How a customer reads it (03 Sep 2026, his instruction)
 
 **Not bound to a month** (v690, his instruction of 18 Sep 2026). The live statement has always
-carried every order from the start; the page now filters it. Each dated row is tagged with its
-month in `stmtDoc`, the strip above the table is built from the months that account has, the
-newest opens, and All is one tap. Undated rows show whatever is chosen, and the account's own
-position under the table does not move with the filter.
+carried every order from the start; the page filters it. Each dated row is tagged with its
+month in `stmtDoc`, and ONE filter (S7 7.3) sits on the list it filters: All first and chosen (v769),
+then the months the account has, newest first. Undated rows show whatever is chosen, and the account's
+own position under the list does not move with the filter.
+
+**Account** (S7 7.3, his "all recommended" of 24 Sep 2026). The live document's orders and refunds are
+the system's Statement lines (`.salt-lines`, stacked on a phone, a table from about 600px of the list's
+own width), "units" above one; an issue is a standalone file and keeps its table. The earlier statements
+sit at the foot, each by its date and never "latest issue", and one opens in the statement's place with
+Back to your statement above it. **This device** follows (beside it from 1080px): notifications on or
+off, saving it as an app (the Keep card's own steps and Sheet), a slot for the account's other devices,
+and Sign out. **Off is kept on the device** (`salt-push-off`): the subscription is dropped there, the site
+forgets it at the next wake it cannot deliver (404 or 410), and a sign-in files the phone again only once a
+Turn on has cleared it. `drawAccount(el)` moves Account into a place and draws it.
 
 **The statements live on their own site, away from the desk.** Until 03 Sep they were a route
 on `salt-command` itself, which put the one address a customer ever holds one path segment from
@@ -204,8 +214,7 @@ opened statement to a translation service.
 Each statement carries a QR code and prints the customer's **username**. The QR opens
 `https://k7m3p2.qyts8mh72kyg.workers.dev/?u=<username>`, one landing page for every account,
 with the username filled in; the password goes by a different channel. The page checks the
-pair, decrypts in his own browser, and shows a strip: **"Now"**, then every issue by its date,
-newest first. It stays signed in on that device while Keep me signed in is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
+pair, decrypts in his own browser, and opens on **"Now"**, with every issue by its date at the foot. It stays signed in on that device while Keep me signed in is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
 he likes.
 
 **"Now" is live (his instruction, 03 Sep 2026): every entry from the start to the minute it was
@@ -388,7 +397,7 @@ signed in (or Salt Admin, for a customer at his counter) hands the sign-in acros
 Three things sit behind the one password since v499: the statements, a **price list** for
 the week, and an **order**. The page shows them in PLACES once the password has opened the record (S7 7.1, his
 D11 of 24 Sep 2026; three tabs and a fourth until then): **Home**, which opens first, **Prices**, **Orders**, **Account**
-(the statement and This device, where Log out is) and **Rewards** for an associate. They sit on the system's App bar
+(the statement and This device, whose Sign out is the one Log out) and **Rewards** for an associate. They sit on the system's App bar
 at the foot of a phone and on its rail from 1080px. A place keeps its tab's id (`stmt`, `order`, `card`) and has an
 address (`#home`, `#prices`, `#orders`, `#account`, `#rewards`): a tap writes it, over an empty address or a place's
 and never over a key, and a sign-in opens the place it names once. `placeShow` is the one road between them; a
@@ -541,7 +550,15 @@ carry a street. **Nothing is placed on one tap**: the page reviews the order in 
 jsdom window the prices come from, so a card and a price can never be struck from different states of
 the book. `liveRecords` seals it as `rec.card` under the same content key as the statement, and only
 for an account the report card names; both doors hand it over, `/open` and `/remember/open`; the page
-carries a fourth tab that appears only where the record that opened actually has one.
+carries a fourth tab that appears only for an associate.
+
+**Rewards opens on the links** (S8 8.1, his "all recommended" of 24 Sep 2026), then the card, each book's
+reward first in units with the system's Meter. Each link says its state in a word in the system's chip
+(Waiting, Open, Not approved, Withdrawn), when it was made and what it has done; only an open one shows its
+address, **Share** and Show the QR. **Share is minted before the tap**: the address comes with the list
+(`GET /my/refs`), so the tap hands it to the share sheet as its first act, nothing fetched between; with no
+share sheet it is Copy link. Make a link says, before the tap, that the link stays shut until he approves it.
+`drawRewards(el)` draws the place into el.
 
 *It is a different document from his.* `associateSnapshot` is his view of EVERY associate and is
 served only at `/all/assoc`, behind Access. Two functions rather than one, deliberately: the two

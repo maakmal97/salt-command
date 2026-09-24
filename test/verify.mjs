@@ -8494,7 +8494,7 @@ await (async () => {
     const bookL = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
     const afterIssue = bookL.sales.find(s => s.date && s.date > "2026-09-01" && !s.cancelled);
     if (afterIssue) {
-      const nRows = h => (h.match(/<td class="l dt">/g) || []).length;
+      const nRows = h => (h.match(/<td class="l dt">|<div class="salt-lines__date" role="cell">/g) || []).length;   // S7 7.3: a live row is a Statement line
       const issuedDoc = sep.sheets.find(s => s.who === afterIssue.customer);
       const lvA = liveStatement(afterIssue.customer, now);
       ok(issuedDoc && lvA && nRows(lvA.body) > nRows(issuedDoc.html),
@@ -15185,9 +15185,10 @@ await (async () => {
     DP.getElementById("tCard").click();
     ok(await until(() => DP.querySelectorAll("#pCard .glink").length >= 3),
       "their panel lists their links: " + DP.querySelectorAll("#pCard .glink").length);
-    const words = [...DP.querySelectorAll("#pCard .glink .gt")].map((x) => x.textContent);
-    ok(words.filter((w) => w === "Not approved").length === 1 && words.filter((w) => w === "Waiting to be approved").length === 2,
-      "the declined link reads Not approved and only the two still pending read Waiting to be approved: " + JSON.stringify(words));
+    /* S8 8.1: the state is a word in the system's chip, Waiting where it said Waiting to be approved */
+    const words = [...DP.querySelectorAll("#pCard .glink .gstate")].map((x) => x.textContent);
+    ok(words.filter((w) => w === "Not approved").length === 1 && words.filter((w) => w === "Waiting").length === 2,
+      "the declined link reads Not approved and only the two still pending read Waiting: " + JSON.stringify(words));
   } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
 })();
 section("S1 1.21: Salt Admin's Review opens an account read only, with its orders and links from his gated route and no form");
@@ -15283,7 +15284,7 @@ await (async () => {
       "it read through his route and never through the customer's session routes: " + JSON.stringify(hits));
     D.getElementById("tCard").click();
     const pCard = D.getElementById("pCard");
-    ok(await until(() => pCard.querySelectorAll(".glink").length === 1) && /Waiting to be approved/.test(pCard.textContent)
+    ok(await until(() => pCard.querySelectorAll(".glink").length === 1) && pCard.querySelector(".glink .gstate").textContent === "Waiting"
       && ![...pCard.querySelectorAll("button")].some((b) => /Make a link|Withdraw/.test(b.textContent)),
       "an associate's links are drawn as they see them, with nothing that mints or withdraws: " + JSON.stringify([...pCard.querySelectorAll("button")].map((b) => b.textContent)));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
@@ -15765,8 +15766,8 @@ await (async () => {
     ok(await until(async () => (await RF.refsBy(env, A.u)).length === 1) && await until(() => pCard.querySelectorAll(".glink").length === 1),
       "and a tap mints their link and lists it");
     const DB = await signIn(B);
-    ok(!DB.getElementById("tabs").hidden && DB.getElementById("tCard").hidden,
-      "while a customer who is not an associate is still shown no Card tab at all");
+    ok(!DB.getElementById("tabs").hidden && DB.getElementById("tCard").hidden && !DB.getElementById("pCard").children.length,
+      "while a customer who is not an associate is still shown no Card tab at all, and Rewards draws nothing for them (S8 8.1)");
   } finally { await new Promise((r) => setTimeout(r, 300)); for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
 })();
 section("S1 1.35 page: the associate's Copy link says Copy failed when the clipboard refuses");
@@ -16191,7 +16192,7 @@ await (async () => {
     const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
     const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
     const cust = await (await site("/")).text();
-    ok(!/Viewing as|Back to accounts|id="vas"/.test(cust) && /id="lock">Log out</.test(cust), "the customer's bar is unchanged: Log out, and no banner");
+    ok(!/Viewing as|Back to accounts|id="vas"/.test(cust) && /id="lock">Sign out of this </.test(cust), "the customer's page carries no banner, and its one Log out is This device's Sign out");
     win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
       w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
@@ -17361,6 +17362,211 @@ await (async () => {
     ok(after.status === 401, "and the zeros open nothing once it is gone");
   } finally { globalThis.fetch = realFetch89; }
 })();
+section("S7 7.3: Account shows the statement as stacked lines, one month filter with All first, the earlier statements at its foot, and This device");
+await (async () => {
+  /* THE PLAN'S SECTION 4, his "all recommended" of 24 Sep 2026: the live statement's rows are the system's Statement
+     lines, the one month filter opens on All and sits on the list it filters, the issues move to the foot (never "latest
+     issue"), and This device holds the notifications, saving it as an app and signing out. The document is read off the
+     real book; the page is driven as a customer drives it, with the live document sealed beside two issues. */
+  const M = await import("../tools/make_statements.mjs");
+  const POS = (await import("../engine/position.mjs")).default;
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const at = new Date("2026-09-24T04:00:00Z");
+  const parties = [...new Set(bk.sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
+  let docs = 0, tabled = 0, untagged = 0, plural = 0, wrongWord = [];
+  for (const p of parties) {
+    const d = M.liveStatement(p, at, "abcd-efgh");
+    if (!d || !/salt-lines__row|<tr/.test(d.body)) continue;
+    docs++;
+    if (!/<div class="salt-lines" role="table" aria-label="Your orders">/.test(d.body) || /<th class="l">Date<\/th><th>Quantity<\/th>/.test(d.body)) tabled++;
+    const rows = [...d.body.split('aria-label="Refunds"')[0].matchAll(/<div class="salt-lines__row[^"]*" role="row"( data-m="\d{4}-\d{2}")?><div class="salt-lines__date" role="cell">(\d\d [A-Z][a-z]{2} \d{4})?/g)];
+    untagged += rows.filter((m) => !!m[2] !== !!m[1]).length;
+    for (const m of d.body.matchAll(/<div class="salt-lines__what" role="cell"><span class="salt-lines__mark">[\s\S]*?<\/span><\/span>([\d.,]+) (units?)</g)) {
+      const q = +m[1].replace(/,/g, "");
+      if ((q > 1) !== (m[2] === "units")) wrongWord.push(p + " " + m[1] + " " + m[2]); else if (q > 1) plural++;
+    }
+  }
+  ok(docs > 10 && !tabled, "every live statement lists its orders as Statement lines, not a table: " + docs + " statements, " + tabled + " still a table");
+  ok(docs > 10 && !untagged, "and every dated line carries its month, an undated one none: " + untagged + " out of step");
+  ok(plural > 0 && !wrongWord.length, "a quantity above one reads units, one or less unit (D11): " + plural + " plural" + (wrongWord.length ? "; wrong: " + wrongWord.slice(0, 3).join(", ") : ""));
+
+  /* the page: a party whose live document spans two months, and two issues kept as they were sent */
+  const who = parties.find((p) => { const d = M.liveStatement(p, at, "abcd-efgh"); return d && new Set([...d.body.matchAll(/data-m="(\d{4}-\d{2})"/g)].map((m) => m[1])).size > 1; });
+  if (!who) { skipData("no live statement spans two months, so the page's filter went unchecked"); return; }
+  const live = M.liveStatement(who, at, "abcd-efgh");
+  const oI = { from: null, to: "2026-09-01", completed: true, open: true, pending: true, dates: true, issued: "01 Sep 2026" };
+  const rowsI = M.stmtRows(who, oI); oI.refunds = []; oI.recon = [];
+  const docI = M.stmtDoc(who, rowsI, oI), issueBody = docI.slice(docI.indexOf("<body>") + 6, docI.indexOf("</body>"));
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { landingPage } = await import("../stmt/page.js");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const u = "aaaa-bbbb", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("7".repeat(64), u);
+  const answer = {
+    ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01", "2026-08-01"], session: "s73s73s73s73s73s73s73s73",
+    wrap: await C.wrapKey(pass, ck), wrapMaster: null, prices: null,
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [
+      { issued: "2026-09-01", label: "1 September 2026", body: issueBody + "<p>ISSUE ONE</p>" },
+      { issued: "2026-08-01", label: "1 August 2026", body: issueBody + "<p>ISSUE TWO</p>" }] })),
+    live: Object.assign({ at: live.at }, await C.encryptWith(ck, JSON.stringify(live)))
+  };
+  const st = { key: 0, subs: 0, unsub: 0, subbed: false, logout: 0, rem: 0 };
+  const dom = new JSDOM(landingPage(u, "n73", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {};
+      /* a browser that takes notifications and already said yes, so the way in files this phone again (askPush) */
+      win.Notification = { permission: "granted", requestPermission: async () => "granted" };
+      win.PushManager = function () {};
+      const sub = { endpoint: "https://push.test/e73", toJSON: () => ({ keys: { p256dh: "p", auth: "a" } }), unsubscribe: async () => { st.unsub++; st.subbed = false; return true; } };
+      const reg = { pushManager: { subscribe: async () => { st.subbed = true; return sub; }, getSubscription: async () => (st.subbed ? sub : null) } };
+      Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: { register: async () => reg, ready: Promise.resolve(reg), getRegistration: async () => reg } });
+      win.fetch = async (path, o) => {
+        const p = String(path);
+        const js = (b, s) => ({ ok: (s || 200) < 400, status: s || 200, json: async () => b });
+        if (p === "/open") return js(answer);
+        if (p === "/push/key") { st.key++; return js({ ok: true, key: "AAAA", configured: true }); }
+        if (p === "/push/subscribe") { st.subs++; return js({ ok: true }); }
+        if (p === "/orders") return js({ ok: true, orders: [] });
+        if (p === "/logout") { st.logout++; return js({ ok: true }); }
+        if (p === "/remember") st.rem++;   /* the sign-in's last step before it files the phone (askPush) */
+        return js({ ok: false }, 404);
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return !!f(); };
+  const signIn = async () => {
+    D.getElementById("un").value = u; D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    return until(() => !!D.querySelector("#out .salt-lines"));
+  };
+  try {
+    ok(await signIn(), "the account opens on the live statement's lines");
+    const strip = D.getElementById("mfil"), note = D.getElementById("mfnote"), list = D.querySelector("#out .salt-lines");
+    const pills = [...strip.querySelectorAll("button")];
+    const shown = () => [...D.querySelectorAll("#out .salt-lines__row[data-m]")].filter((r) => r.style.display !== "none").map((r) => r.getAttribute("data-m"));
+    const months = [...new Set(shown())];
+    ok(!strip.hidden && pills[0].textContent === "All" && pills[0].getAttribute("aria-pressed") === "true" && pills.length === months.length + 1
+      && strip.nextElementSibling === note && note.nextElementSibling === list && !D.getElementById("mos"),
+      "one filter, All first and chosen, on the list it filters: " + JSON.stringify(pills.map((b) => b.textContent)));
+    pills[pills.length - 1].click();
+    const one = pills[pills.length - 1].getAttribute("data-mf");
+    ok(shown().length > 0 && shown().every((m) => m === one) && pills[pills.length - 1].getAttribute("aria-pressed") === "true",
+      "a month tapped shows that month's lines alone: " + JSON.stringify([one, shown()]));
+    pills[0].click();
+    ok(new Set(shown()).size === months.length, "and All brings every line back");
+    /* the issues are at the foot, never called the latest */
+    const foot = D.getElementById("stmtFoot"), back = D.getElementById("stmtBack");
+    const issueBtns = [...foot.querySelectorAll("button")];
+    ok(!foot.hidden && issueBtns.map((b) => b.textContent).join("|") === "1 September 2026|1 August 2026" && back.hidden
+      && !/latest issue/i.test(D.getElementById("pStmt").textContent) && foot.compareDocumentPosition(D.getElementById("out")) === W.Node.DOCUMENT_POSITION_PRECEDING,
+      "the earlier statements sit under the statement, each by its date, and none is the latest issue: " + JSON.stringify(issueBtns.map((b) => b.textContent)));
+    issueBtns[1].click();
+    ok(/ISSUE TWO/.test(D.getElementById("out").textContent) && !back.hidden && /1 August 2026/.test(back.textContent),
+      "an issue opens in its place, with the way back above it: " + JSON.stringify(back.textContent));
+    D.getElementById("stmtBackGo").click();
+    ok(!/ISSUE/.test(D.getElementById("out").textContent) && !!D.querySelector("#out .salt-lines") && back.hidden,
+      "and Back to your statement brings the live lines back");
+    /* This device: the phone was filed again on the way in, and Turn off drops it and keeps it off */
+    const dev = D.getElementById("thisDevice");
+    const row = (label) => [...dev.querySelectorAll(".salt-ledger__row")].find((r) => r.querySelector(".salt-ledger__label").textContent === label);
+    const btnOf = (label) => row(label) && row(label).querySelector("button");
+    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").textContent === "Turn off") && !dev.hidden && st.subs === 1,
+      "This device says the notifications are on, with Turn off beside them: " + JSON.stringify([st.subs, dev.textContent.slice(0, 120)]));
+    btnOf("Notifications").click();
+    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").textContent === "Turn on") && st.unsub === 1 && !st.subbed
+      && /Off[.]/.test(row("Notifications").textContent),
+      "Turn off drops this phone's subscription and says Off on the row tapped: " + JSON.stringify(row("Notifications").textContent));
+    /* signing out is on the card, and signing in again does not turn them back on by itself */
+    D.getElementById("lock").click();
+    ok(await until(() => !D.getElementById("gate").hidden) && dev.hidden, "Sign out of this device signs out, and the card goes with the account");
+    ok(await signIn() && await until(() => st.rem === 2) && await new Promise((r) => setTimeout(() => r(true), 150))
+      && btnOf("Notifications").textContent === "Turn on" && st.key === 1 && st.subs === 1 && !st.subbed,
+      "and the next sign-in, run to its end, leaves them off, where the way in used to file the phone again: " + JSON.stringify([st.rem, st.key, st.subs, st.subbed]));
+    btnOf("Notifications").click();
+    ok(await until(() => btnOf("Notifications") && btnOf("Notifications").textContent === "Turn off") && st.subs === 2 && st.subbed,
+      "and Turn on files it again: " + JSON.stringify([st.subs, st.subbed]));
+    D.getElementById("lock").click();
+    ok(await until(() => !D.getElementById("gate").hidden) && await signIn() && await until(() => st.subs === 3) && st.subbed,
+      "and once it is on again, the next sign-in files the phone as it always did: " + JSON.stringify([st.rem, st.subs, st.subbed]));
+  } finally { await new Promise((r) => setTimeout(r, 100)); try { W.close(); } catch (e) { /* best effort */ } }
+})();
+section("S8 8.1: Rewards opens on the associate's links, each with its state in a word, Share minted before the tap and a QR");
+await (async () => {
+  /* THE PLAN'S SECTION 4, his "all recommended" of 24 Sep 2026: an associate's place opens on their links. Each says its
+     state in a word (Waiting, Open, Not approved, Withdrawn) and what it has done; an open one has Share, handed to the
+     phone's share sheet as the tap's first act with nothing fetched between, and a QR; Make a link says what happens
+     next; the reward follows, in units with its bar. Driven on the associate's own page with four links. */
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { landingPage } = await import("../stmt/page.js");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const u = "aaaa-cccc", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("8".repeat(64), u);
+  const card = { at: "2026-09-24T04:00:00Z", products: [{ product: "salt", unit: "unit",
+    summary: { bought: 770, soldFor: 390, onward: 2, introduced: 240, referred: 1 },
+    reward: { earned: 1.6, taken: 1, left: 0.6, next: 0.42, held: false },
+    lines: [{ date: "2026-09-12", kind: "resale", qty: 2.5, rm: 270 }] }] };
+  const answer = { ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01"], session: "s81s81s81s81s81s81s81s81",
+    assoc: true, wrap: await C.wrapKey(pass, ck), wrapMaster: null, prices: null, live: null,
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [{ issued: "2026-09-01", label: "1 September 2026", body: "<p>x</p>" }] })),
+    card: await C.encryptWith(ck, JSON.stringify(card)) };
+  const ref = (id, state, extra) => Object.assign({ id, url: "https://site.test/g/" + id, qr: "data:image/svg+xml,q" + id, made: "2026-09-12T02:00:00Z", opens: 0, last: null, state }, extra);
+  const refs = [ref("aaaa-bbbb", "open", { opens: 3, last: "2026-09-22T03:00:00Z" }), ref("cccc-dddd", "waiting"), ref("eeee-ffff", "declined"), ref("gggg-hhhh", "withdrawn")];
+  const st = { fetches: 0, shared: [] };
+  const dom = new JSDOM(landingPage(u, "n81", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {};
+      Object.defineProperty(win.navigator, "share", { configurable: true, value: (d) => { st.shared.push(d); return Promise.resolve(); } });
+      win.fetch = async (path) => {
+        st.fetches++;
+        const p = String(path), js = (b, s) => ({ ok: (s || 200) < 400, status: s || 200, json: async () => b });
+        if (p === "/open") return js(answer);
+        if (p === "/my/refs") return js({ ok: true, refs, max: 10 });
+        if (p === "/orders") return js({ ok: true, orders: [] });
+        return js({ ok: false }, 404);
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return !!f(); };
+  try {
+    D.getElementById("un").value = u; D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    const box = D.getElementById("pCard");
+    ok(await until(() => box.querySelectorAll(".glink").length === 4), "the associate's place draws their four links");
+    const kids = [...box.children];
+    ok(kids[0].classList.contains("rlinks") && /Your links/.test(kids[0].textContent)
+      && kids.findIndex((k) => /Your card/.test(k.textContent)) > 0 && kids.findIndex((k) => k.querySelector(".salt-meter")) > 0,
+      "it opens on the links, with the card and its reward after them: " + JSON.stringify(kids.map((k) => k.className || k.tagName)));
+    const rows = [...box.querySelectorAll(".glink")];
+    const words = rows.map((r) => r.querySelector(".gstate").textContent);
+    ok(words.join("|") === "Open|Waiting|Not approved|Withdrawn" && rows.every((r) => r.querySelector(".gstate").classList.contains("salt-status")),
+      "each link says its state in a word, in the system's chip: " + JSON.stringify(words));
+    ok(/Opened 3 times, last Tue 22 Sep[.]/.test(rows[0].textContent) && /Shut until we approve it/.test(rows[1].textContent)
+      && /did not approve/.test(rows[2].textContent) && /Withdrawn[.] Nothing opens it now/.test(rows[3].textContent),
+      "and what it has done, or why it is shut, in words: " + JSON.stringify(rows.map((r) => r.querySelector(".gs").textContent)));
+    const shares = [...box.querySelectorAll("button")].filter((b) => b.textContent === "Share");
+    ok(shares.length === 1 && rows[0].contains(shares[0]), "only the open link can be shared");
+    const before = st.fetches;
+    shares[0].click();
+    const sync = st.shared.length;
+    ok(sync === 1 && st.shared[0].url === "https://site.test/g/aaaa-bbbb" && st.fetches === before,
+      "Share hands the address to the share sheet as the tap's first act, with nothing fetched between: " + JSON.stringify([sync, st.shared[0], st.fetches - before]));
+    const img = rows[0].querySelector("img"), qb = [...rows[0].querySelectorAll("button")].find((b) => /the QR/.test(b.textContent));
+    ok(!!img && img.hidden && !!qb && qb.getAttribute("aria-expanded") === "false" && !rows[1].querySelector("img"),
+      "the open link's QR waits behind Show the QR, and a shut link has none");
+    qb.click();
+    ok(!img.hidden && qb.textContent === "Hide the QR" && qb.getAttribute("aria-expanded") === "true", "and one tap shows it");
+    const mk = [...box.querySelectorAll("button")].find((b) => b.textContent === "Make a link");
+    const next = mk && mk.previousElementSibling;
+    ok(!!mk && !!next && /stays shut until we approve it/.test(next.textContent) && /share it from here/.test(next.textContent),
+      "Make a link says what happens next, before it is tapped: " + JSON.stringify(next && next.textContent));
+    const mtr = box.querySelector(".salt-meter");
+    ok(!!mtr && mtr.style.getPropertyValue("--salt-fill") === "42" && /42%/.test(mtr.textContent)
+      && /Reward: 0[.]6 unit to take .*Ask on any order to take it[.]/.test(mtr.closest(".pane").textContent),
+      "the reward is in units with its bar, the system's Meter, and says how to take it: " + JSON.stringify(mtr && mtr.style.getPropertyValue("--salt-fill")));
+  } finally { await new Promise((r) => setTimeout(r, 100)); try { W.close(); } catch (e) { /* best effort */ } }
+})();
 section("v690: a customer's statement is not bound to a month; it shows everything, and a month is one tap (v769)");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: nothing customer-facing is time bound. The document already carried
@@ -17413,10 +17619,13 @@ await (async () => {
        newest month because a monthly statement was what a reader had come for; there are no monthly
        statements any more, just one live document, so a month is a filter a reader chooses and never
        where they land. `newest` is still read, to prove the opening view is NOT it. */
-    ok(!strip.hidden && pills.length === new Set(tagged).size + 1 && pills[pills.length - 1] === "All"
+    /* S7 7.3: ONE filter, All FIRST, then the months newest first */
+    const months90 = [...strip.querySelectorAll("button")].map((b) => b.getAttribute("data-mf"));
+    ok(!strip.hidden && pills.length === new Set(tagged).size + 1 && pills[0] === "All"
+      && months90.slice(1).join() === [...new Set(tagged)].sort().reverse().join()
       && shown().length === tagged.length && new Set(shown()).size > 1
       && /every order from the start/.test(note.textContent),
-      "the strip is the months the account has plus All, and it opens on the whole account: " + pills.join(", "));
+      "the strip is All first, then the months the account has, newest first, and it opens on the whole account: " + pills.join(", "));
     const older = [...new Set(tagged)].sort()[0];
     ok(older !== newest, "the fixture has two months, so opening on everything is not opening on one");
     strip.querySelector('button[data-mf="' + older + '"]').dispatchEvent(new W90.Event("click", { bubbles: true }));
@@ -17902,7 +18111,7 @@ await (async () => {
       "the bar's two buttons are 44px both ways and never shrink under it: " + JSON.stringify(barBtn));
   } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
 })();
-section("S1 1.39: no em-dash reaches the served page, and a waiting link says No address yet");
+section("S1 1.39: no em-dash reaches the served page, and a waiting link says it is shut");
 await (async () => {
   /* L43, 24 SEP 2026. The links pane wrote an em-dash where a waiting or withdrawn link has no address:
      an escape inside CLIENT_JS, which the template literal turns into the character itself. The house
@@ -17943,8 +18152,9 @@ await (async () => {
     for (let i = 0; i < 200 && D.querySelectorAll("#pCard .glink").length < 2; i++) await new Promise((r) => setTimeout(r, 25));
     const rows = [...D.querySelectorAll("#pCard .glink")];
     const txt = D.getElementById("pCard").textContent;
-    ok(rows.length === 2 && !txt.includes(DASH) && rows[0].querySelector("code.gu").textContent === "No address yet" && !rows[1].querySelector("code.gu"),
-      "the drawn links carry no em-dash: a waiting one says No address yet, and a withdrawn one needs no line: "
+    /* S8 8.1: a link shows its address only once it is open; a waiting one says in words that it is shut */
+    ok(rows.length === 2 && !txt.includes(DASH) && !rows[0].querySelector("code.gu") && /Shut until we approve it/.test(rows[0].textContent) && !rows[1].querySelector("code.gu"),
+      "the drawn links carry no em-dash: a waiting one says it is shut, and neither it nor a withdrawn one carries an address line: "
       + JSON.stringify(rows.map((r) => r.textContent.slice(0, 50))));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
@@ -18445,7 +18655,7 @@ await (async () => {
   const { landingPage: lp92 } = await import("../stmt/page.js");
   const C92 = await import("../tools/stmt-crypto.mjs");
   const door92 = lp92("", "n92", null);
-  ok(door92.includes("Keep me signed in on this") && door92.includes('type="submit">Sign in</button>') && door92.includes(">Log out<")
+  ok(door92.includes("Keep me signed in on this") && door92.includes('type="submit">Sign in</button>') && door92.includes('id="lock">Sign out of this ')
     && !door92.includes("three minutes") && !door92.includes("Locks in") && !/WINDOW_MS/.test(door92),
     "the door offers to keep them signed in, signs in and logs out, and nothing counts down (v692; S3 3.7's words)");
 
@@ -18899,7 +19109,8 @@ await (async () => {
   for (const p of parties) {
     const doc = M.liveStatement(p, new Date("2026-09-24T04:00:00Z"));
     if (!doc) continue;
-    const cells = [...doc.body.matchAll(/<td class="l dt">([\s\S]*?)<\/td>/g)].map((x) => x[1]);
+    /* S7 7.3: a live statement's date cells are Statement lines */
+    const cells = [...doc.body.matchAll(/<div class="salt-lines__date" role="cell">([\s\S]*?)<\/div>/g)].map((x) => x[1]);
     sep += cells.filter((c) => /\d\d Sep 2026/.test(c)).length;
     four += cells.filter((c) => FOUR.test(c)).length + (FOUR.test(doc.body) ? 1 : 0);
   }
@@ -21311,7 +21522,7 @@ await (async () => {
     d9.querySelector('button[data-t="card"]').click();
     for (let i = 0; i < 60 && !/Your links/.test(d9.getElementById("pCard").textContent); i++) await new Promise((r) => setTimeout(r, 50));
     const txt9 = () => d9.getElementById("pCard").textContent;
-    ok(/Your links/.test(txt9()) && /Waiting to be approved/.test(txt9()),
+    ok(/Your links/.test(txt9()) && [...d9.querySelectorAll("#pCard .glink .gstate")].some((x) => x.textContent === "Waiting"),
       "the panel loads their links and says the one waiting is waiting: " + JSON.stringify(txt9().slice(0, 60)));
     ok(!/https:\/\/site\.test\/g\/aaaa-bbbb/.test(txt9()),
       "and a link that is still waiting shows no address at all, because nothing can open it yet");
@@ -21325,14 +21536,15 @@ await (async () => {
   } finally { try { dom9.window.close(); } catch (e) { /* best effort */ } }
 
   /* ---- the page carries the panel, gated, and names no tier ---- */
-  ok(/function drawMyLinks\(\)/.test(page9) && /'\/my\/refs'/.test(page9),
+  ok(/function drawMyLinks\(into\)/.test(page9) && /'\/my\/refs'/.test(page9),
     "the panel travels in the page every customer gets, because the owner's script is his alone and the door is served before anybody signs in");
   /* SCOPED TO THE PANEL ITSELF. The page has named the five levels in a lookup since v659 so the
      MARK can be drawn, and a comment names the owner's file while saying a customer never gets it;
      neither is rendered. What matters is that THIS panel names no tier and draws none of his. */
-  const panel9 = page9.slice(page9.indexOf("function drawMyLinks()"), page9.indexOf("async function loadMyLinks()"));
+  /* S8 8.1: from the state words, which lead the panel, to the end of its drawing */
+  const panel9 = page9.slice(page9.indexOf("var LINK_STATE="), page9.indexOf("async function loadMyLinks()"));
   const WL9 = await import("../src/orders.js");
-  ok(/Waiting to be approved/.test(panel9) && !/Titanium|Platinum|Gold|Silver|Bronze|Ambassador/.test(panel9)
+  ok(page9.indexOf("var LINK_STATE=") > 0 && /'Waiting'/.test(panel9) && !/Titanium|Platinum|Gold|Silver|Bronze|Ambassador/.test(panel9)
     && WL9.wordsIn(panel9, WL9.LEVEL_WORDS_MS).length === 0,
     "it tells them it is waiting and names no tier, in English or Malay, which a customer's page never does");
   ok(!/drawLinks\(/.test(page9) && !/getElementById\('glist'\)/.test(page9) && !/\/all\/refs/.test(page9),
@@ -32338,7 +32550,7 @@ await (async () => {
     ok([...D.querySelectorAll('#tabs [data-n="order"]')].map((c) => c.textContent).join(",") === "2,2" && !D.querySelector('#tabs [data-n="home"]').textContent,
       "the Orders place counts the two orders that need them, as a numeral on the bar and the rail");
     ok(D.getElementById("tCard").hidden && D.querySelector('nav.salt-appbar button[data-t="card"]').hidden
-      && D.querySelector("#pStmt #devSlot #lock") && D.getElementById("lock").textContent === "Log out" && !D.querySelector("#barw #lock"),
+      && D.querySelector("#pStmt #thisDevice #lock") && /^Sign out of this /.test(D.getElementById("lock").textContent) && !D.querySelector("#barw #lock"),
       "Rewards is not offered to a customer, and Log out is This device's, on Account, not the bar's");
     D.querySelector('nav.salt-appbar button[data-t="order"]').click();
     ok(shown(D) === "pOrder" && current(D) === "bar:order,rail:order" && head() === "Orders" && W.location.hash === "#orders",
@@ -32384,7 +32596,7 @@ await (async () => {
   const wide = from >= 0 ? css.slice(from, to + 1) : "";
   ok(/\.cshell\{display:flex;/.test(wide) && /\.cmain\{flex:1 1 auto;min-width:0\}/.test(wide)
     && /\.home\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\);/.test(wide)
-    && /\.acols\{display:grid;grid-template-columns:minmax\(0,620px\) minmax\(0,1fr\);/.test(wide)
+    && /@media \(min-width:1080px\)\{\s*\.acct\{max-width:1060px;display:grid;grid-template-columns:minmax\(0,620px\) minmax\(300px,1fr\);/.test(css)
     && /\.pgrid\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\);/.test(wide),
     "from 1080px the shell stands the rail beside the main column, and Home, Account and Prices take two columns: " + JSON.stringify(wide.slice(0, 160)));
   ok(/@media \(min-width: 1080px\) \{\s*\.salt-appbar \{ display: none; \}/.test(css) && /@media \(max-width: 1079\.98px\) \{\s*\.salt-rail\.salt-appbar__rail \{ display: none; \}/.test(css)
@@ -32393,7 +32605,7 @@ await (async () => {
   ok(!/100vw - 64px/.test(css), "the orders place no longer breaks out of a 620px column to stand wide: the column is wide itself");
   const D = new JD72(page, { url: "https://site.test/" }).window.document;
   const kids = [...D.getElementById("tabs").children].map((n) => n.tagName.toLowerCase() + "." + n.className.split(" ")[0]).join(" ");
-  ok(kids === "nav.salt-rail div.cmain nav.salt-appbar" && D.querySelectorAll("#pHome > .hcol").length === 2 && D.querySelector("#pStmt > .acols > .devslot"),
+  ok(kids === "nav.salt-rail div.cmain nav.salt-appbar" && D.querySelectorAll("#pHome > .hcol").length === 2 && D.querySelector("#pStmt > .acct > .devcard"),
     "the markup it lays out: the rail, the main column and the bar; Home's two columns; This device beside the statement: " + kids);
   /* Prices, driven: the books stand in their grid */
   const u = "abcd-efgh", pass = "fixture-pass-72", ck = await C72.contentKey("test-secret", u);
@@ -32556,8 +32768,9 @@ await (async () => {
   for (const p of parties) {
     const doc = M.liveStatement(p, at);
     if (!doc) continue;
-    /* the orders table alone: the Refunds table below it prints its own dates in the same cell class */
-    const days = [...doc.body.split('<table class="rft"')[0].matchAll(/<td class="l dt">([\s\S]*?)<\/td>/g)].map((x) => iso(x[1].replace(/<[^>]+>/g, " "))).filter(Boolean);
+    /* the orders alone: the Refunds list below them prints its own dates in the same cell class (S7 7.3: both are
+       Statement lines on a live statement) */
+    const days = [...doc.body.split('aria-label="Refunds"')[0].matchAll(/<div class="salt-lines__date" role="cell">([\s\S]*?)<\/div>/g)].map((x) => iso(x[1].replace(/<[^>]+>/g, " "))).filter(Boolean);
     checked++;
     if (new Set(days).size > 1) multi++;
     for (let i = 1; i < days.length; i++) if (days[i] > days[i - 1]) { wrong.push(p + " " + days[i - 1] + " then " + days[i]); break; }
@@ -33072,15 +33285,17 @@ await (async () => {
     for (let i = 0; i < 60 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 50));
     d.getElementById("oNew").click();
     /* S4 4.3: the way is chosen in the order sheet, by the system's pressed ghost */
-    const chosen = [d.querySelector("#mfil button.on"), [...d.querySelectorAll('#osheet button[aria-pressed="true"]')].find((b) => /collect|Deliver/.test(b.textContent))];
+    /* S7 7.3: the month filter is the system's tab strip, the chosen pill read off aria-pressed */
+    const chosen = [d.querySelector('#mfil button[aria-pressed="true"]'), [...d.querySelectorAll('#osheet button[aria-pressed="true"]')].find((b) => /collect|Deliver/.test(b.textContent))];
     const look = chosen.map((b) => { const c = b && w.getComputedStyle(b);
       return c ? { fill: [c.background, c.backgroundColor, c.backgroundImage].join(" "), ink: c.color } : null; });
     ok(chosen.every(Boolean) && chosen[0].textContent === "All" && chosen[1].textContent === "I will collect",
       "the fixture draws a chosen month (All) and a chosen way (I will collect) to measure");
     ok(look.every((x) => x && !/brass/.test(x.fill)), "neither chosen control is filled brass: " + JSON.stringify(look.map((x) => x && x.fill)));
     /* the hairline itself is the rig's to see: jsdom reads a border drawn in a token as transparent */
-    ok(look[0] && /--salt-brass/.test(look[0].ink) && chosen[1].classList.contains("salt-ghost") && chosen[1].getAttribute("aria-pressed") === "true",
-      "and each is still told apart: the month in brass ink, the way as the system's ghost, pressed: " + JSON.stringify(look.map((x) => x && x.ink)));
+    ok(look[0] && /--salt-salt/.test(look[0].ink) && chosen[0].classList.contains("salt-tabs__pill--active")
+      && chosen[1].classList.contains("salt-ghost") && chosen[1].getAttribute("aria-pressed") === "true",
+      "and each is still told apart: the month as the system's tab pill, active, the way as the system's ghost, pressed: " + JSON.stringify(look.map((x) => x && x.ink)));
   } finally { w.close(); }
 })();
 
@@ -33203,8 +33418,8 @@ await (async () => {
   const lines = block.split('<p class="owedv">').slice(1);
   const txt = (h) => h.replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   ok(i >= 0 && lines.length === 2, "the block has one line a book: " + lines.length + " lines");
-  ok(lines.length === 2 && /class="pm"/.test(lines[0]) && /Cube/.test(lines[0]) && txt(lines[0]).endsWith("2 unit")
-    && /class="pm"/.test(lines[1]) && /Droplet/.test(lines[1]) && txt(lines[1]).endsWith("1.5 unit"),
+  ok(lines.length === 2 && /class="pm"/.test(lines[0]) && /Cube/.test(lines[0]) && txt(lines[0]).endsWith("2 units")
+    && /class="pm"/.test(lines[1]) && /Droplet/.test(lines[1]) && txt(lines[1]).endsWith("1.5 units"),
     "each line carries its book's mark and its own figure, salt first: " + lines.map(txt).join(" | "));
   ok(i >= 0 && !/3\.5/.test(txt(block)), "and the sum of two books, 3.5, is nowhere in it: " + txt(block));
   /* an archive keeps the one figure it was issued with, a dated record not being corrected in place */
@@ -33238,10 +33453,11 @@ await (async () => {
       if (!d.body.slice(Math.max(0, m.index - 19), m.index).endsWith('<div class="tblw">')) bare.push(p + " " + (m[2] || "orders"));
     }
   }
-  ok(docs > 10 && tables >= docs && kinds.has("orders") && !bare.length,
+  /* S7 7.3: the orders and the refunds are Statement lines on a live statement, which stack rather than scroll; the
+     reconciliation's tables are what is left, and each still opens in its box */
+  ok(docs > 10 && !kinds.has("orders") && !kinds.has("rft") && !bare.length,
     "every table on " + docs + " live statements (" + tables + " tables: " + [...kinds].join(", ") + ") opens inside div.tblw"
     + (bare.length ? "; bare: " + bare.slice(0, 4).join(", ") : ""));
-  if (!kinds.has("rft")) skipData("no live statement carries a Refunds table, so its box went unchecked");
   if (!kinds.has("mini")) skipData("no live statement carries a reconciliation, so its box went unchecked");
   const SCSS = (await import("../stmt/statement-css.js")).STATEMENT_CSS;
   ok(/\.tblw\{overflow-x:auto/.test(SCSS),

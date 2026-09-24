@@ -336,6 +336,12 @@ function stmtDoc(party,rows,o){
      sideways; .tblw was in the stylesheet for it and never emitted. An archive is left as it was issued. */
   const box=t=>marked?'<div class="tblw">'+t+'</div>':t;
   const e=esc, n2=v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:2});
+  /* S7 7.3: the live document's lists are Statement lines, read aloud as a table at every width; "units" above one (D11) */
+  const lines=!!o.live;
+  const units=q=>n2(q)+' '+(+q>1?'units':'unit');
+  const lineMark=p=>'<span class="salt-lines__mark">'+psymSvg(p,13)+'<span class="sr">'+esc(PSHAPE[String(p||'').toLowerCase()]||PSHAPE._)+'</span></span>';
+  const lineList=(label,heads,rowsHtml)=>'<div class="salt-lines" role="table" aria-label="'+label+'"><div class="salt-lines__head" role="row">'
+    +['date','what','amount','state'].map((c,i)=>'<div class="salt-lines__'+c+'" role="columnheader">'+heads[i]+'</div>').join('')+'</div>'+rowsHtml+'</div>';
   const money=v=>Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
   const refundOwed=(o.refunds||[]).filter(r=>!r.paidOn).reduce((a,r)=>a+(+r.amount||0),0);   // v454
   /* AN UNDATED ROW PRINTS AN EMPTY CELL, NOT "Invalid Date" (29 Aug 2026, the one
@@ -398,7 +404,8 @@ function stmtDoc(party,rows,o){
   });
   const body=printed.map(r=>{
     const due=r.owed>0.009;
-    const when=(o.dates&&r.paidOn&&r.paidOn!==r.date)?'<div class="sub2">paid '+e(dLong(r.paidOn))+'</div>':'';
+    const paidLater=!!(o.dates&&r.paidOn&&r.paidOn!==r.date);
+    const when=paidLater?'<div class="sub2">paid '+e(dLong(r.paidOn))+'</div>':'';
     /* THE DATE CELL OF AN UNDATED ROW CARRIES THE DATE THE ROW DOES HAVE (his ruling,
        1 Sep 2026). Three rows on the book carry no `date`: two cancelled, one agreed and
        not yet actioned. Until 29 Aug that cell printed "Invalid Date" on a document sent
@@ -433,6 +440,26 @@ function stmtDoc(party,rows,o){
     else if(due)stat='<span class="due">'+money(r.owed)+' due</span>';
     else if(owedUnits)stat='<span class="ok">paid in full</span><div class="owedunits">'+n2(r.toGet)+' unit still to collect</div>';
     else stat='<span class="ok">settled</span>';
+    /* S7 7.3 (24 Sep 2026): THE LIVE DOCUMENT'S ROWS ARE THE SYSTEM'S STATEMENT LINES, the same cells in the same
+       words, stacked on a phone and a table from about 600px of the list's own width. Only the live document: it is
+       read inside the Counter, which carries the recipe, while an issue is a standalone file and keeps its table. */
+    if(lines){
+      const sub=t=>t?'<span class="salt-lines__sub">'+t+'</span>':'';
+      const [word,tone,subs]=r.cancelled?['cancelled','',[(r.cancelledOn&&!moved)?e(dLong(r.cancelledOn)):'',
+          (r.paidCash+r.inKind)>0.009?'RM '+money(r.paidCash+r.inKind)+' paid, see Refunds':'']]
+        :r.gift?['no charge','',[]]
+        :r.pendingOrder?['ordered','steel',['to be collected and paid']]
+        :due?['RM '+money(r.owed)+' due','ember',[]]
+        :owedUnits?['paid in full','verdigris',[units(r.toGet)+' still to collect']]
+        :['settled','verdigris',[]];
+      return '<div class="salt-lines__row'+(r.cancelled?' salt-lines__row--cancelled':'')+'" role="row"'
+        +(r.date?' data-m="'+e(r.date.slice(0,7))+'"':'')+'>'
+        +'<div class="salt-lines__date" role="cell">'+(r.date?e(dLong(r.date)):moved)+sub(paidLater?'paid '+e(dLong(r.paidOn)):'')+'</div>'
+        +'<div class="salt-lines__what" role="cell">'+lineMark(r.product)+units(r.qty)+sub(r.resale?'on behalf of a friend':'')
+          +sub(r.inKindUnits>0.009?units(r.inKindUnits)+' applied '+(noLegDates.has(r.date)?'by agreement':'to an earlier balance'):'')+'</div>'
+        +'<div class="salt-lines__amount" role="cell">'+(r.gift?'nil':'RM '+money(r.total))+sub(r.delivery>0.009?'plus delivery RM '+money(r.delivery):'')+'</div>'
+        +'<div class="salt-lines__state'+(tone?' salt-lines__state--'+tone:'')+'" role="cell">'+word+subs.map(sub).join('')+'</div></div>';
+    }
     /* v690, HIS INSTRUCTION OF 18 SEP 2026: NOTHING A CUSTOMER SEES IS BOUND TO A MONTH. The
        document carries every order from the start, and the page filters it, so the month each row
        belongs to travels with the row. An undated row belongs to no month and is always shown. */
@@ -501,10 +528,18 @@ function stmtDoc(party,rows,o){
    who?'<p class="whol gap1">Account</p>':'',
    who?'<div class="who">'+e(who)+'</div>':'',
    '<div class="rule"></div>',
-   rows.length?box('<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead>'
-     +'<tbody>'+body+'</tbody></table>')
+   rows.length?(lines?lineList('Your orders',['Date','Quantity','Amount','Status'],body)
+     :box('<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead>'
+     +'<tbody>'+body+'</tbody></table>'))
      :'<p class="meta">No orders in this period.</p>',
-   ((o.refunds||[]).length?'<p class="whol gap2">Refunds</p>'
+   ((o.refunds||[]).length&&lines?'<p class="whol gap2">Refunds</p>'
+     +lineList('Refunds',['Date','Reason','Amount','Status'],o.refunds.slice().reverse().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).map(r=>
+       '<div class="salt-lines__row" role="row"><div class="salt-lines__date" role="cell">'+e(dLong(r.date))+'</div>'
+       +'<div class="salt-lines__what" role="cell">'+(r.cancelled?'Cancelled order, money returned to you':'Overpayment returned to you')+'</div>'
+       +'<div class="salt-lines__amount" role="cell">RM '+money(r.amount)+'</div>'
+       +(r.paidOn?'<div class="salt-lines__state salt-lines__state--verdigris" role="cell">paid '+e(dLong(r.paidOn))+'</div>'
+                 :'<div class="salt-lines__state salt-lines__state--steel" role="cell">owed to you</div>')+'</div>').join('')):''),
+   ((o.refunds||[]).length&&!lines?'<p class="whol gap2">Refunds</p>'
      +box('<table class="rft"><thead><tr><th class="l">Date</th><th class="l">Reason</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody>'
      +(o.archive?o.refunds:o.refunds.slice().reverse().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))).map(r=>'<tr><td class="l dt">'+e(dLong(r.date))+'</td>'
        +'<td class="l rsn">'+(r.cancelled?'Cancelled order, money returned to you':'Overpayment returned to you')+'</td>'
@@ -522,7 +557,7 @@ function stmtDoc(party,rows,o){
         the BOOK's own PROD_ORDER and not alphabetically, which put oil first on the first draft of
         this line. A book the order does not name sorts last rather than being dropped. */
      +', '+(marked
-        ? bookOrder(Object.keys(T.qtyBy)).map(p=>markOf(p)+n2(T.qtyBy[p])+' unit').join(' &middot; ')
+        ? bookOrder(Object.keys(T.qtyBy)).map(p=>markOf(p)+(lines?units(T.qtyBy[p]):n2(T.qtyBy[p])+' unit')).join(' &middot; ')
         : n2(T.qty)+' unit')
      +(T.cxN?'<span class="cxn"> &middot; '+T.cxN+' cancelled, not counted</span>':'')
      +'</span><span>'+money(T.total)+'</span></div>',
@@ -545,7 +580,7 @@ function stmtDoc(party,rows,o){
    (T.toGet>0.009?'<div class="owed"><p class="owedl">Still to collect</p>'
      +(marked
        ? bookOrder(Object.keys(T.toGetBy).filter(p=>T.toGetBy[p]>0.009))
-           .map(p=>'<p class="owedv">'+markOf(p,20)+n2(T.toGetBy[p])+' <span>unit</span></p>').join('')
+           .map(p=>'<p class="owedv">'+markOf(p,20)+n2(T.toGetBy[p])+' <span>'+(lines&&T.toGetBy[p]>1?'units':'unit')+'</span></p>').join('')
        : '<p class="owedv">'+n2(T.toGet)+' <span>unit</span></p>')
      +'</div>':''),
    /* THE WORKINGS, step by step, so nothing has to be taken on trust */

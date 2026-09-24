@@ -201,18 +201,15 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .hagain{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .htile{font:inherit;text-align:left;cursor:pointer}
 .htile:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
-.devslot{max-width:620px;margin:28px auto 0;padding-top:18px;border-top:1px solid var(--salt-line-faint)}
-.devslot .salt-ghost{width:100%;margin-top:12px}
 /* S7 7.2: FROM 1080PX THE BAR IS THE RAIL, beside the page (the recipe's own switch), and each place takes two columns:
-   Home its money and what needs them beside what is coming, Account the statement beside This device, Prices a book a
-   column; Orders keeps stage 5's list beside the open order. A sheet is the recipe's drawer on the right. */
+   Home its money and what needs them beside what is coming, Account the statement beside This device (S7 7.3's .acct,
+   below), Prices a book a column; Orders keeps stage 5's list beside the open order. A sheet is the recipe's drawer on
+   the right. */
 @media (min-width:1080px){
   .cshell{display:flex;gap:28px;align-items:flex-start;max-width:1240px;margin:0 auto;padding-bottom:48px}
   .cmain{flex:1 1 auto;min-width:0}
   .cmain .bar,.chead,.home,.cmain .panel{max-width:none}
   .home{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
-  .acols{display:grid;grid-template-columns:minmax(0,620px) minmax(0,1fr);gap:28px;align-items:start}
-  .acols .devslot{margin:0;padding-top:0;border-top:0}
   .pgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 20px;align-items:start}
   /* what stands above the orders (New order, the limit, Notifications) keeps to the list's column */
   #pOrder>:not(.oplace){max-width:calc((100% - 28px)*5/11)}
@@ -240,6 +237,25 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .mfnote{max-width:620px;margin:0 auto 18px;font-size:var(--salt-text-xs);color:var(--salt-text-muted);
   font-family:var(--salt-font-mono);letter-spacing:.04em;line-height:1.6}
 .mfnote:empty{display:none}
+/* S7 7.3: ACCOUNT. The month filter is the system's tab strip, every pill a 44px tap, placed on the list it filters;
+   the earlier statements close the statement; This device follows it, and stands beside it from 1080px */
+.acct{max-width:620px;margin:0 auto}
+.mfil .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
+.stmtback{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 18px}
+.stmtback p{flex:1 1 220px;margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.stmtfoot{margin:30px 0 0;padding-top:18px;border-top:1px solid var(--salt-line)}
+.stmtfoot .sub2{margin:6px 0 12px}
+.stmtissues{display:flex;flex-wrap:wrap;gap:8px}
+.devcard{margin:30px 0 0}
+.devcard .salt-ledger{margin-top:6px}
+.devcard .salt-ledger__row:last-child{border-bottom:0}
+.devcard .salt-ledger__label{flex:1 1 auto}
+.devcard .salt-ledger__flag .glyph{vertical-align:-0.3em;margin:0 3px}
+.devout{width:100%;margin-top:14px}
+@media (min-width:1080px){
+  .acct{max-width:1060px;display:grid;grid-template-columns:minmax(0,620px) minmax(300px,1fr);column-gap:40px;align-items:start}
+  .devcard{margin:0}
+}
 /* THE DOCUMENT KEEPS THE GEOMETRY IT WAS PROOFED IN. What is injected is the INSIDE of the
    statement's own .w wrapper, so without this the page rendered the tables full-bleed to the
    window while the lock bar and the issue strip stayed pinned at 620px above them: on a laptop
@@ -420,6 +436,18 @@ button[data-back]{display:inline-flex;align-items:center;min-height:var(--salt-t
 .glink .gs{margin:8px 0 0;font-size:var(--salt-text-xs);color:var(--salt-text-muted);
   font-family:var(--salt-font-mono);letter-spacing:.04em}
 .glink img{display:block;margin:12px auto 0;border-radius:var(--salt-radius-sm);width:180px;height:180px}
+/* S8 8.1: an associate's own links, in Rewards: when it was made, its state in a word (the system's chip), what it
+   has done, and the system's ghosts; the Meter is the reward's bar */
+.rlhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.rlcount{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.08em;color:var(--salt-text-muted)}
+.rlinks .gtop{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px 12px}
+.rlinks .gh{margin:0;font-family:var(--salt-font-mono);font-size:var(--salt-text-md);color:var(--salt-text)}
+.rlinks .gs{font-family:var(--salt-font-display);font-size:var(--salt-text-sm);letter-spacing:0;line-height:1.5}
+.racts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.racts .salt-ghost{flex:1 1 auto}
+.rlinks .msg:empty{display:none}
+.rlinks .rlnext{margin:16px 0 10px}
+.rmeter{margin:10px 0 14px}
 .grow{display:flex;gap:8px;margin-top:12px}
 .grow button{flex:1;min-height:var(--salt-tap);font-family:var(--salt-font-mono);
   font-size:var(--salt-text-xs);letter-spacing:.06em;color:var(--salt-text);background:none;
@@ -542,6 +570,17 @@ function keepCard() {
     + '<p class="kline" id="keepDroid" hidden>Tap ' + glyphSvg("vdots", 22) + " then Install app or Add to Home screen.</p>"
     + '<button class="btn salt-ghost salt-ghost--lit" id="keepGo" type="button">Show me how</button>'
     + '<button class="btn salt-ghost salt-ghost--lit" id="keepInstall" type="button" hidden>Install Salt Counter</button></div>';
+}
+/* S7 7.3: THIS DEVICE, in Account: its notifications and saving it as an app (rows drawn by drawDevice), a slot for
+   the account's other devices (stage 9: sign in another device, sign out the others), and signing out of this one,
+   the customer's one Log out (#lock, S7 7.1: it left the bar) */
+function thisDevice() {
+  return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devT" hidden>'
+    + '<h2 class="salt-eyebrow salt-eyebrow--copper" id="devT">This device</h2>'
+    + '<div id="devRows" class="salt-ledger salt-ledger--plain"></div>'
+    + '<div id="devSlot"></div>'
+    + '<button type="button" class="salt-ghost devout" id="lock">Sign out of this <span class="dev">phone</span></button>'
+    + "</section>";
 }
 function keepSheet() {
   return '<div id="keepScrim" class="salt-sheet-scrim" hidden></div>'
@@ -717,12 +756,6 @@ function placesBar() {
     + '<span class="salt-appbar__icon">' + aico(t) + '</span><span class="salt-appbar__label">' + w + "</span>"
     + '<span class="salt-appbar__count" data-n="' + t + '"></span></button>').join("") + "</nav>";
 }
-/* S7 7.1: THIS DEVICE, Account's slot for what belongs to the phone in the hand rather than the account: Log out today;
-   notifications, saving it as an app and the other devices draw into it as their folds land */
-function devSlot() {
-  return '<section class="devslot" id="devSlot" aria-labelledby="devT"><h2 class="salt-eyebrow salt-eyebrow--copper" id="devT">This device</h2>'
-    + '<button type="button" class="salt-ghost" id="lock">Log out</button></section>';
-}
 export function landingPage(user, nonce, owner, bulletin) {
   const u = esc(user || "");
   return DOC_OPEN
@@ -879,11 +912,16 @@ export function landingPage(user, nonce, owner, bulletin) {
        which stage 3 put first on the page. Two columns from 1080px (S7 7.2) */
     + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin) + (owner ? "" : keepCard()) + '<div id="hPay"></div><div id="hNeeds"></div></div>'
     + '<div class="hcol"><div id="hComing"></div><div id="hAgain"></div></div></div>'
-    /* ACCOUNT: the statement, and This device beside it */
-    + '<div id="pStmt" hidden><div class="acols"><div class="acol">'
-    + '<div id="mos" class="mos" hidden></div>'
-    + '<div id="mfil" class="mos mfil" hidden></div><p class="mfnote" id="mfnote"></p>'
-    + '<div id="out"></div></div>' + (owner ? "" : devSlot()) + "</div></div>"
+    /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place: the statement with its one month filter (placed
+       beside the list it filters), the earlier statements at its foot, and This device beside it from 1080px */
+    + '<div id="pStmt" hidden><div id="acct" class="acct"><div class="acct__main">'
+    + '<div id="stmtBack" class="stmtback" hidden><p id="stmtBackT"></p>'
+    + '<button type="button" class="salt-ghost" id="stmtBackGo">Back to your statement</button></div>'
+    + '<div id="mfil" class="salt-tabs mfil" role="group" aria-label="Show one month" hidden></div><p class="mfnote" id="mfnote" role="status"></p>'
+    + '<div id="out"></div>'
+    + '<div id="stmtFoot" class="stmtfoot" hidden></div></div>'
+    + (owner ? "" : thisDevice())
+    + "</div></div>"
     + '<div id="pPrices" class="panel" hidden></div>'
     + '<div id="pOrder" class="panel" hidden></div>'
     /* v706: the associate's own card, Rewards since S7 7.1. Its place is hidden for everybody else */
@@ -978,7 +1016,8 @@ const CLIENT_JS = `
       msg=document.getElementById('msg'), pw=document.getElementById('pw'),
       un=document.getElementById('un'), go=document.getElementById('go'),
       barw=document.getElementById('barw'), cd=document.getElementById('cd'),
-      mos=document.getElementById('mos'), mfil=document.getElementById('mfil'),
+      acctEl=document.getElementById('acct'), mfil=document.getElementById('mfil'), mfnote=document.getElementById('mfnote'),
+      stmtFoot=document.getElementById('stmtFoot'), stmtBack=document.getElementById('stmtBack'),
       tabs=document.getElementById('tabs'),
       pStmt=document.getElementById('pStmt'), pPrices=document.getElementById('pPrices'),
       pOrder=document.getElementById('pOrder'), pCard=document.getElementById('pCard'),
@@ -1205,8 +1244,8 @@ const CLIENT_JS = `
     document.getElementById('keepDesk').hidden=mode!=='desk';
     document.getElementById('keepDroid').hidden=mode!=='droid';
   }
-  window.addEventListener('beforeinstallprompt', function(ev){ ev.preventDefault(); bip=ev; drawKeep(); });
-  window.addEventListener('appinstalled', function(){ bip=null; if(keepCardEl) keepCardEl.hidden=true; });
+  window.addEventListener('beforeinstallprompt', function(ev){ ev.preventDefault(); bip=ev; drawKeep(); drawDevice(); });
+  window.addEventListener('appinstalled', function(){ bip=null; if(keepCardEl) keepCardEl.hidden=true; drawDevice(); });
   function ksay(t,cls){ keepMsg.textContent=t||''; keepMsg.className='msg'+(cls?' '+cls:''); }
   async function mintKeep(){
     var n=++keepN;
@@ -1226,8 +1265,10 @@ const CLIENT_JS = `
   /* S3 fix, 24 Sep 2026: EVERY OPENING MINTS AFRESH. A code the saved app had already spent was shown and copied again
      for up to fourteen minutes, while the app said to make a new one; closing forgets it here (a copy already made
      still works in the app for its fifteen minutes) */
-  function openKeep(){
+  var keepFrom=null;   /* S7: the control that opened it, the card's or This device's, takes the focus back */
+  function openKeep(from){
     if(!keepSheetEl||!curCk) return;
+    keepFrom=from&&from.nodeType===1?from:null;
     keepScrim.hidden=false; keepSheetEl.hidden=false;
     try{ keepSheetEl.focus(); }catch(e){}
     mintKeep();
@@ -1236,17 +1277,18 @@ const CLIENT_JS = `
     if(!keepSheetEl||keepSheetEl.hidden) return;
     keepSheetEl.hidden=true; keepScrim.hidden=true; keepN++;
     keepTok=''; keepCode.value=''; keepCopy.disabled=true; ksay('');
-    try{ document.getElementById('keepGo').focus(); }catch(e){}
+    try{ (keepFrom||document.getElementById('keepGo')).focus(); }catch(e){}
+  }
+  /* the browser's own question, asked inside the tap; it can be asked once, so the event is spent here */
+  function keepInstallGo(){
+    if(!bip) return;
+    var e=bip; bip=null;
+    try{ e.prompt(); }catch(x){ drawKeep(); drawDevice(); return; }
+    Promise.resolve(e.userChoice).then(function(c){ if(c&&c.outcome==='accepted') keepCardEl.hidden=true; else drawKeep(); drawDevice(); }, function(){ drawKeep(); drawDevice(); });
   }
   if(keepSheetEl){
-    document.getElementById('keepGo').addEventListener('click', openKeep);
-    document.getElementById('keepInstall').addEventListener('click', function(){
-      if(!bip) return;
-      /* the browser's own question, asked inside the tap; it can be asked once, so the event is spent here */
-      var e=bip; bip=null;
-      try{ e.prompt(); }catch(x){ drawKeep(); return; }
-      Promise.resolve(e.userChoice).then(function(c){ if(c&&c.outcome==='accepted') keepCardEl.hidden=true; else drawKeep(); }, function(){ drawKeep(); });
-    });
+    document.getElementById('keepGo').addEventListener('click', function(){ openKeep(); });
+    document.getElementById('keepInstall').addEventListener('click', keepInstallGo);
     document.getElementById('keepX').addEventListener('click', closeKeep);
     keepScrim.addEventListener('click', closeKeep);
     document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') closeKeep(); });
@@ -1383,9 +1425,8 @@ const CLIENT_JS = `
     if(poll){ clearInterval(poll); poll=null; }
     bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
     owedNow=0; hold=false; placeHide('prices',false); payDue=null; liveAt='';
-    out.textContent=''; mos.textContent=''; mos.hidden=true;
-    mfil.textContent=''; mfil.hidden=true; mfPick=null;
-    var mfn=document.getElementById('mfnote'); if(mfn) mfn.textContent='';
+    parkMonths(); out.textContent=''; at=0; drawFoot(); devNote=''; drawDevice();
+    mfil.textContent=''; mfil.hidden=true; mfPick=null; mfnote.textContent='';
     pPrices.textContent=''; pOrder.textContent=''; drawHome();
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
@@ -1527,95 +1568,163 @@ const CLIENT_JS = `
   /* an account with nothing on it yet: no statement, and no order */
   function fresh(){ return !!bundle&&!bundle.statements.length&&!orders.length; }
 
+  /* ---- ACCOUNT (S7 7.3, the plan's section 4, his "all recommended" of 24 Sep 2026) -------------------------------
+     The statement as stacked lines, ONE month filter with All first, the earlier statements at its foot, and This device.
+     drawAccount(el) is what a place calls: it moves the Account's parts into el (moved, never copied, so every id stays
+     one element) and draws what the page holds. The statement itself is drawn by pickStmt, on every open and re-read. */
+  function drawAccount(el){
+    if(el&&acctEl&&acctEl.parentNode!==el) el.appendChild(acctEl);
+    if(bundle&&!out.firstChild) pickStmt(at);
+    drawDevice();
+  }
+  /* the filter and its note sit beside the list they filter, inside the document once it is drawn: parked back
+     above it before the document is replaced, so replacing it never takes them with it */
+  function parkMonths(){ if(acctEl&&mfil.parentNode!==out.parentNode){ out.parentNode.insertBefore(mfil,out); out.parentNode.insertBefore(mfnote,out); } }
   function pickStmt(i){
     if(!bundle) return;
     at=i;
+    parkMonths();
     /* AN ACCOUNT WITH NO ROWS HAS NO STATEMENT AT ALL (tools/stmt-account.mjs mints it so): it says so,
        and Prices and Order are still drawn after it. Reading a body that is not there threw here, and
        the page stopped on a blank tab. */
     var s=bundle.statements[i];
     if(!s){
       out.textContent=''; var e=el('div','panel'); e.appendChild(el('p','lead','Nothing on your account yet. Your orders will show here.')); out.appendChild(e);
-      mfil.hidden=true; var mfn=document.getElementById('mfnote'); if(mfn) mfn.textContent='';
+      mfil.hidden=true; mfnote.textContent=''; drawFoot();
       return;
     }
     out.innerHTML=s.body;
-    var bs=mos.querySelectorAll('button');
-    for(var k=0;k<bs.length;k++) bs[k].className=(k===i?'on':'');
     drawMonths();
+    drawFoot();
     window.scrollTo(0,0);
   }
+  /* EARLIER STATEMENTS AT THE FOOT (S7 7.3). The first statement is the account as it stands, the live document where
+     there is one; every issue after it is kept as it was sent, and opens in its place with the way back above it. It
+     is never called the latest issue: there are no monthly statements, just one live document (v769, v772). */
+  function drawFoot(){
+    stmtFoot.textContent='';
+    var list=bundle?bundle.statements:[], s0=list[0];
+    stmtBack.hidden=!(at>0&&list[at]);
+    if(!stmtBack.hidden) document.getElementById('stmtBackT').textContent='The statement issued '+(list[at].label||list[at].issued)+', kept as it was sent.';
+    stmtFoot.hidden=list.length<2;
+    if(stmtFoot.hidden) return;
+    stmtFoot.appendChild(el('h2','salt-eyebrow salt-eyebrow--copper','Earlier statements'));
+    stmtFoot.appendChild(el('p','sub2',s0&&s0.live?'Kept as they were sent. Your statement above keeps up with every order.':'Kept as they were sent.'));
+    var g=el('div','stmtissues');
+    list.forEach(function(s,j){
+      if(!j) return;
+      var b=el('button','salt-ghost',s.label||s.issued); b.type='button'; b.setAttribute('aria-pressed',j===at?'true':'false');
+      b.addEventListener('click', function(){ pickStmt(j); });
+      g.appendChild(b);
+    });
+    stmtFoot.appendChild(g);
+  }
+  document.getElementById('stmtBackGo').addEventListener('click', function(){ pickStmt(0); });
 
   /* ---- THE MONTH FILTER (v690, his instruction of 18 Sep 2026) -------------------------------
      THE STATEMENT IS NOT BOUND TO A MONTH ANY MORE: it carries every order from the start, and
      this filters it. Each row says which month it belongs to; an undated row belongs to none and
      shows whatever is chosen. What the account stands at is the account's, so the totals under the
-     table do not move with the filter, and the line above says so.
-     v769, HIS INSTRUCTION OF 21 SEP 2026: IT OPENS ON THE WHOLE ACCOUNT. v690 opened on the newest
-     month, because a monthly statement was what a reader had come for. There are no monthly
-     statements any more, just one live document that keeps up with the orders, so opening on a month
-     hid the rest of somebody's own account behind a tap they had no reason to take. A month is still
-     one tap, for a reader who wants to look at one. */
+     list do not move with the filter, and the line above says so.
+     v769, HIS INSTRUCTION OF 21 SEP 2026: IT OPENS ON THE WHOLE ACCOUNT, and since S7 7.3 All is the first pill,
+     then the months newest first, a short month where they share a year. A row is a table row in an issue and a
+     Statement line in the live document; either carries data-m. */
   var mfPick=null;
   function monthLabel(m){
     var y=m.slice(0,4), mm=+m.slice(5,7);
     return ['January','February','March','April','May','June','July','August','September','October','November','December'][mm-1]+' '+y;
   }
   function applyMonths(){
-    var rows=out.querySelectorAll('tbody tr[data-m]');
+    var rows=out.querySelectorAll('[data-m]');
     for(var i=0;i<rows.length;i++){
       var m=rows[i].getAttribute('data-m');
       rows[i].style.display=(!mfPick||m===mfPick)?'':'none';
     }
     var bs=mfil.querySelectorAll('button');
-    for(var k=0;k<bs.length;k++) bs[k].className=(bs[k].getAttribute('data-mf')===(mfPick||'')?'on':'');
-    var note=document.getElementById('mfnote');
-    if(note) note.textContent=mfPick
+    for(var k=0;k<bs.length;k++){ var on=bs[k].getAttribute('data-mf')===(mfPick||''); bs[k].className='salt-tabs__pill'+(on?' salt-tabs__pill--active':''); bs[k].setAttribute('aria-pressed',on?'true':'false'); }
+    mfnote.textContent=mfPick
       ? 'Showing '+monthLabel(mfPick)+'. What the account stands at, below, is the whole account.'
       : 'Showing every order from the start.';
   }
   function drawMonths(){
     mfil.textContent='';
-    var rows=out.querySelectorAll('tbody tr[data-m]'), seen={}, months=[];
+    var rows=out.querySelectorAll('[data-m]'), seen={}, months=[], years={};
     for(var i=0;i<rows.length;i++){
       var m=rows[i].getAttribute('data-m');
-      if(m&&!seen[m]){ seen[m]=1; months.push(m); }
+      if(m&&!seen[m]){ seen[m]=1; months.push(m); years[m.slice(0,4)]=1; }
     }
     months.sort().reverse();
-    if(months.length<2){ mfil.hidden=true; mfPick=null; applyMonths(); return; }
     mfPick=null;   /* v769: the whole account, and a month is one tap */
-    months.forEach(function(m){
+    if(months.length<2){ mfil.hidden=true; mfnote.textContent=''; return; }
+    var oneYear=Object.keys(years).length<2;
+    [''].concat(months).forEach(function(m){
       var b=document.createElement('button'); b.type='button'; b.setAttribute('data-mf',m);
-      b.textContent=monthLabel(m);
-      b.addEventListener('click', function(){ mfPick=m; applyMonths(); });
+      b.textContent=m?MON3[+m.slice(5,7)-1]+(oneYear?'':' '+m.slice(0,4)):'All';
+      if(m) b.setAttribute('aria-label',monthLabel(m));
+      b.addEventListener('click', function(){ mfPick=m||null; applyMonths(); });
       mfil.appendChild(b);
     });
-    var all=document.createElement('button'); all.type='button'; all.setAttribute('data-mf','');
-    all.textContent='All';
-    all.addEventListener('click', function(){ mfPick=null; applyMonths(); });
-    mfil.appendChild(all);
+    /* beside the list it filters, not above the document's heading */
+    var first=out.querySelector('[data-m]'), list=first&&first.closest('.salt-lines, .tblw, table');
+    if(list&&list.parentNode){ list.parentNode.insertBefore(mfil,list); list.parentNode.insertBefore(mfnote,list); }
     mfil.hidden=false;
     applyMonths();
   }
 
-  /* THE STRIP: the live document first, as "Now" with the minute it was written, then every
-     issue by its date, newest first. One statement shows at a time. */
+  /* ---- THIS DEVICE (S7 7.3) -------------------------------------------------------------------------------------
+     What this browser does for the account: its notifications on or off, saving it as an app, and signing out of it,
+     each answer written on the row that was tapped. Stage 9 draws the account's other devices into #devSlot. Not on
+     his read-only view: those are not his phones. OFF IS KEPT ON THIS DEVICE: the subscription is dropped here, the
+     site forgets it at the next wake it cannot deliver (stmt/push.js), and the automatic re-filing on the way in
+     (askPush) waits for a Turn on. */
+  var devEl=document.getElementById('thisDevice'), devRows=document.getElementById('devRows'), devBusy=false, devNote='';
+  var PUSH_OFF='salt-push-off';
+  function pushOff(){ try{ return localStorage.getItem(PUSH_OFF)==='1'; }catch(e){ return false; } }
+  function pushOffSet(on){ try{ if(on) localStorage.setItem(PUSH_OFF,'1'); else localStorage.removeItem(PUSH_OFF); }catch(e){ /* for this visit only */ } }
+  function pushCan(){ return ('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window); }
+  function devRow(label,flag,btn){
+    var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line');
+    l.appendChild(el('span','salt-ledger__label',label));
+    if(btn){ var v=el('span','salt-ledger__value'); v.appendChild(btn); l.appendChild(v); }
+    r.appendChild(l);
+    var f=el('span','salt-ledger__flag'); if(typeof flag==='string') f.textContent=flag; else f.appendChild(flag);
+    f.setAttribute('role','status'); r.appendChild(f);
+    return r;
+  }
+  function devBtn(t,go){ var b=el('button','salt-ghost',t); b.type='button'; b.disabled=devBusy; b.addEventListener('click',go); return b; }
+  function drawDevice(){
+    if(!devEl) return;
+    devEl.hidden=!session||view||OWNER;
+    if(devEl.hidden) return;
+    devRows.textContent='';
+    var on=!!draft.pushed||(pushCan()&&Notification.permission==='granted'&&!!draft.pushDone), said=devNote||draft.pushNote||'';
+    if(!pushCan()) devRows.appendChild(devRow('Notifications',IOS&&!STANDALONE
+      ?'Not in this browser. On an iPhone they come to the app saved on your Home Screen.':'This browser cannot receive them.'));
+    else if(on) devRows.appendChild(devRow('Notifications',said||'On. You will be told when your order changes, when there is a reply, and at 10:00 and 18:00 when a payment is due.',devBtn('Turn off',devPushOff)));
+    else devRows.appendChild(devRow('Notifications',said||'Off. Nothing is sent to this '+DEV+'.',devBtn('Turn on',devPushOn)));
+    var mode=keepMode(), steps=document.getElementById({samsung:'keepSam',desk:'keepDesk',droid:'keepDroid'}[mode]||'-');
+    if(STANDALONE) devRows.appendChild(devRow('Saved as an app','You are in it now.'));
+    else if(mode==='ios'||mode==='install') devRows.appendChild(devRow('Save as an app','One tap to open, and it stays signed in.',
+      mode==='ios'?devBtn('Show me how',function(ev){ openKeep(ev.currentTarget); }):devBtn('Install',keepInstallGo)));
+    else if(steps){ var sp=el('span'); [].forEach.call(steps.childNodes,function(n){ sp.appendChild(n.cloneNode(true)); }); devRows.appendChild(devRow('Save as an app',sp)); }
+  }
+  async function devPushOn(){
+    devBusy=true; devNote=''; draft.pushNote=''; drawDevice();
+    await subscribePush();
+    devBusy=false; drawDevice();
+  }
+  async function devPushOff(){
+    var mine=ticket;
+    devBusy=true; devNote=''; drawDevice();
+    try{ var sub=await phoneSub(); if(sub) await sub.unsubscribe(); pushOffSet(true); draft.pushed=false; draft.pushDone=false; draft.pushNote=''; }
+    catch(e){ devNote='They could not be turned off just now. Try again.'; }
+    if(mine!==ticket) return;
+    devBusy=false; drawDevice(); drawOrder();
+  }
+
+  /* the statements a customer has: the first opens, the rest are at the foot */
   function show(b){
-    bundle=b; mos.textContent='';
-    if(b.statements.length>1){
-      var firstIssue=true;
-      for(var i=0;i<b.statements.length;i++){
-        var s=b.statements[i], bt=document.createElement('button'); bt.type='button';
-        bt.textContent=s.label||s.issued;
-        var sm=document.createElement('small');
-        if(s.live){ sm.textContent='live, '+stamp(s.at); }
-        else if(firstIssue){ sm.textContent='latest issue'; firstIssue=false; }
-        if(sm.textContent) bt.appendChild(sm);
-        (function(j){ bt.addEventListener('click', function(){ pickStmt(j); }); })(i);
-        mos.appendChild(bt);
-      }
-      mos.hidden=false;
-    }
+    bundle=b;
     gate.hidden=true; if(roster) roster.hidden=true;
     barw.hidden=false; tabs.hidden=false;
     /* S7 7.1: whose account this is, in the header and at the foot of the rail; on his read-only view the bar says it */
@@ -1626,12 +1735,13 @@ const CLIENT_JS = `
        their links (v709 gates those on the mark, not the card); since 24 Sep 2026 the mark alone opens
        it, and a panel with no card says when it comes and still carries the links. */
     placeHide('card',!assoc);
-    if(assoc) drawRewards(pCard);
+    drawRewards(pCard);
     var lv=b.statements.filter(function(s){ return s.live; })[0];
     owedNow=lv&&isFinite(+lv.owed)?+lv.owed:0;
     payDue=lv&&lv.pay&&lv.pay.now?lv.pay:null; liveAt=lv&&lv.at||'';
     hold=owedNow>HOLD_RM+0.004;
     placeHide('prices',hold);
+    pickStmt(0);
     drawAccount(pStmt);
     drawHome();
   }
@@ -1649,15 +1759,42 @@ const CLIENT_JS = `
     (p.lines||[]).forEach(function(l){ var m=(l.date||'').slice(0,7); if(m&&!seen[m]){ seen[m]=1; ms.push(m); } });
     return ms.sort().reverse();
   }
+  /* ---- REWARDS (S8 8.1, the plan's section 4, his "all recommended" of 24 Sep 2026) ---------------------------------
+     An associate's place OPENS ON THEIR LINKS, then the reward in units with its bar, then the card by month.
+     drawRewards(el) is what a place calls: it draws into el from then on; drawCard redraws wherever that is. */
+  var rewardsEl=pCard;
+  /* an associate's alone: a place built before anybody signs in reads nothing (the links read needs a session) */
+  function drawRewards(el){ if(el) rewardsEl=el; if(assoc) drawCard(); }
   function drawCard(){
-    pCard.textContent='';
-    if(!card||!card.products||!card.products.length){ pCard.appendChild(el('p','lead','Your card is written with the next update.')); drawMyLinks(); return; }
-    pCard.appendChild(el('h2',null,'Your card'));
-    pCard.appendChild(el('p','lead','What you have bought, what has gone out through you, and where your reward stands. Every month from the start; the newest opens.'));
+    var box=rewardsEl;
+    box.textContent='';
+    drawMyLinks(box);
+    if(!card||!card.products||!card.products.length){ box.appendChild(el('p','lead','Your card is written with the next update.')); return; }
+    box.appendChild(el('h2',null,'Your card'));
+    box.appendChild(el('p','lead','Your reward, what you have bought and what has gone out through you. Every month from the start; the newest opens.'));
     card.products.forEach(function(p){
       var pane=el('div','pane');
       var h3=el('h3','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
       pane.appendChild(h3);
+      /* THE REWARD IN UNITS, AND A BAR TO THE NEXT, first in the pane. No ringgit of margin anywhere near it. The bar is
+         the system's Meter, its fill set from this nonce'd script, which the page's style policy allows. */
+      if(p.reward){
+        var rw=p.reward;
+        pane.appendChild(el('p','sub2','Reward: '+unitsOf(rw.left,p.unit)+' to take'
+          +(rw.earned!==rw.left?' ('+unitsOf(rw.earned,p.unit)+' earned, '+unitsOf(rw.taken,p.unit)+' taken)':'')
+          +(rw.held?'. Held for now.':'.')
+          /* S8 8.3: and how to take it, which the line never said; only where there is some to take */
+          +(!rw.held&&rw.left>0?' Ask on any order to take it.':'')));
+        if(rw.next!=null){
+          var pc=Math.round(rw.next*100), mtr=el('div','salt-meter rmeter'), ln=el('div','salt-meter__line');
+          ln.appendChild(el('span',null,'To your next unit')); ln.appendChild(el('b',null,pc+'%'));
+          var tr=el('div','salt-meter__track'), fill=el('div','salt-meter__fill');
+          mtr.style.setProperty('--salt-fill',String(pc));
+          tr.appendChild(fill); mtr.appendChild(ln); mtr.appendChild(tr);
+          tr.setAttribute('role','img'); tr.setAttribute('aria-label',pc+'% of the way to your next unit');
+          pane.appendChild(mtr);
+        }
+      }
       var sm=p.summary||{};
       var ul=el('ul','conf');
       [['You bought',rm(sm.bought||0)],
@@ -1668,21 +1805,6 @@ const CLIENT_JS = `
         var li=el('li'); li.appendChild(el('span','k',r[0])); li.appendChild(el('span','v',r[1])); ul.appendChild(li);
       });
       pane.appendChild(ul);
-      /* THE REWARD IN UNITS, AND A BAR TO THE NEXT. No ringgit of margin anywhere near it. */
-      if(p.reward){
-        var rw=p.reward;
-        pane.appendChild(el('p','sub2','Reward: '+unitsOf(rw.left,p.unit)+' to take'
-          +(rw.earned!==rw.left?' ('+unitsOf(rw.earned,p.unit)+' earned, '+unitsOf(rw.taken,p.unit)+' taken)':'')
-          +(rw.held?'. Held for now.':'.')
-          /* S8 8.3: and how to take it, which the line never said; only where there is some to take */
-          +(!rw.held&&rw.left>0?' Ask on any order to take it.':'')));
-        if(rw.next!=null){
-          /* the fill is an <i>, which is what .pbar's own rule paints; a <span> drew an empty rule */
-          var bar=el('div','pbar'); var fill=el('i'); fill.style.width=Math.round(rw.next*100)+'%';
-          bar.appendChild(fill); pane.appendChild(bar);
-          pane.appendChild(el('p','sub2',Math.round(rw.next*100)+'% of the way to your next unit.'));
-        }
-      }
       /* the lines, with their own month strip */
       var months=cardMonths(p), pick=cardMonth==null?(months[0]||''):cardMonth;
       if(months.length>1){
@@ -1712,9 +1834,8 @@ const CLIENT_JS = `
         });
         t.appendChild(tb); pane.appendChild(t);
       }
-      pCard.appendChild(pane);
+      box.appendChild(pane);
     });
-    drawMyLinks();
   }
 
   /* ---- THEIR OWN REFERRAL LINKS (v709, his instruction of 18 Sep 2026) -------------------------
@@ -1724,42 +1845,73 @@ const CLIENT_JS = `
      owner's script is spliced only on his route and must never travel to a customer, and the
      landing page is served before anybody signs in, so there is nothing to splice per viewer.
      A LEVEL IS NEVER NAMED. What the link quotes is his to set; they are told it is open and no
-     more, because the level is never named on a customer's page. */
+     more, because the level is never named on a customer's page.
+     S8 8.1: EACH LINK SAYS ITS STATE IN A WORD (Waiting, Open, Not approved, Withdrawn), what it has done, and on an
+     open one Share and the QR. SHARE IS MINTED BEFORE THE TAP: the address came with the list, so the tap hands it to
+     the phone's share sheet as its first act, with no fetch in between (the judges' must-not-ship list); where the
+     browser has no share sheet it is Copy link. Make a link says what happens next before it is tapped. */
   /* the box keeps its own note (24 Sep 2026): it drew the order form's, so "Placed..." appeared under
      Your links, and a link that was not made said so under the order form as well */
   var myLinks=null, myMax=0, myNote='';
-  function drawMyLinks(){
-    var box=el('div','pane');
-    box.appendChild(el('h3',null,'Your links'));
-    box.appendChild(el('p','sub2','Make a link for somebody you want to bring in. It opens a price list and nothing else, and it stays shut until it is approved.'));
-    if(myLinks===null){ box.appendChild(el('p','sub2','Reading your links.')); pCard.appendChild(box); if(!view) loadMyLinks(); return; }
-    if(!myLinks.length) box.appendChild(el('p','sub2','None yet.'));
+  var LINK_STATE={open:['Open','verdigris'], waiting:['Waiting','steel salt-status--dashed'], declined:['Not approved','mist'], withdrawn:['Withdrawn','mist']};
+  var qrShown={};
+  function linkDay(iso){ try{ var p=klBits(iso); return DAY3[new Date(Date.UTC(+p.year,+p.month-1,+p.day)).getUTCDay()]+' '+(+p.day)+' '+MON3[+p.month-1]; }catch(e){ return ''; } }
+  function linkLine(r){
+    if(r.state==='waiting') return 'Shut until we approve it. Once it opens you can share it from here.';
+    if(r.state==='declined') return 'We did not approve this link, so it stays shut.';
+    if(r.state==='withdrawn') return 'Withdrawn. Nothing opens it now.';
+    return r.opens?'Opened '+r.opens+' time'+(r.opens===1?'':'s')+(r.last?', last '+linkDay(r.last):'')+'.':'Not opened yet.';
+  }
+  function drawMyLinks(into){
+    var box=el('div','pane rlinks');
+    var head=el('div','rlhead'); head.appendChild(el('h3',null,'Your links'));
+    var live=(myLinks||[]).filter(function(r){ return r.state!=='withdrawn'; }).length;
+    if(myLinks&&myMax) head.appendChild(el('span','rlcount',live+' of '+myMax));
+    box.appendChild(head);
+    if(myLinks===null){ box.appendChild(el('p','sub2','Reading your links.')); into.appendChild(box); if(!view) loadMyLinks(); return; }
+    if(!myLinks.length) box.appendChild(el('p','sub2','None yet. A link opens a price list for somebody you bring in, and nothing else.'));
     myLinks.forEach(function(r){
-      var row=el('div','glink'+(r.state==='withdrawn'||r.state==='declined'?' off':''));
+      var row=el('div','glink');
+      var top=el('div','gtop'), st=LINK_STATE[r.state]||LINK_STATE.open;
+      top.appendChild(el('p','gh',r.made?'Link made '+oDay(r.made):'Your link'));
       /* D13 (24 Sep 2026): a declined link is its own state, never "waiting" */
-      row.appendChild(el('p','gt', r.state==='waiting'?'Waiting to be approved':(r.state==='declined'?'Not approved':(r.state==='withdrawn'?'Withdrawn':'Open'))));
-      /* S1 1.39: words, not a dash (an em-dash reached the page); a withdrawn or declined link says so above and needs no line here */
-      if(r.state!=='withdrawn'&&r.state!=='declined') row.appendChild(el('code','gu', r.state==='open'?r.url:'No address yet'));
-      row.appendChild(el('p','gs', r.opens
-        ? 'opened '+r.opens+' time'+(r.opens===1?'':'s')
-        : (r.state==='open'?'never opened yet':'nothing can open it')));
+      top.appendChild(el('span','gstate salt-status salt-status--'+st[1],st[0]));
+      row.appendChild(top);
+      row.appendChild(el('p','gs',linkLine(r)));
       if(r.state==='open'){
+        row.appendChild(el('code','gu',r.url));
         var img=document.createElement('img');
         img.src=r.qr; img.alt='A code that opens the price list you are sharing'; img.width=160; img.height=160;
-        row.appendChild(img);
+        img.hidden=!qrShown[r.id]; row.appendChild(img);
       }
-      var acts=el('div','grow');
+      var acts=el('div','racts'), said=el('p','msg'); said.setAttribute('role','status');
       if(r.state==='open'){
-        var cp=el('button',null,'Copy link'); cp.type='button';
-        /* awaited (24 Sep 2026): writeText answers with a promise, so a refusal said Copied */
-        cp.addEventListener('click', async function(){
-          try{ await navigator.clipboard.writeText(r.url); cp.textContent='Copied'; }catch(e){ cp.textContent='Copy failed'; }
-          setTimeout(function(){ cp.textContent='Copy link'; },1500);
-        });
-        acts.appendChild(cp);
+        if(navigator.share){
+          var sh=el('button','salt-ghost','Share'); sh.type='button';
+          sh.addEventListener('click', function(){
+            /* the tap's first act: the address is already here, so nothing waits between the tap and the sheet */
+            var done; try{ done=navigator.share({url:r.url}); }catch(e){ done=Promise.reject(e); }
+            Promise.resolve(done).then(function(){ said.textContent=''; },
+              function(e){ said.textContent=e&&e.name==='AbortError'?'':'Not shared. Copy the address above instead.'; });
+          });
+          acts.appendChild(sh);
+        } else {
+          var cp=el('button','salt-ghost','Copy link'); cp.type='button';
+          /* awaited (24 Sep 2026): writeText answers with a promise, so a refusal said Copied */
+          cp.addEventListener('click', async function(){
+            try{ await navigator.clipboard.writeText(r.url); cp.textContent='Copied'; }catch(e){ cp.textContent='Copy failed'; }
+            setTimeout(function(){ cp.textContent='Copy link'; },1500);
+          });
+          acts.appendChild(cp);
+        }
+        var qb=el('button','salt-ghost',qrShown[r.id]?'Hide the QR':'Show the QR'); qb.type='button';
+        qb.setAttribute('aria-expanded',qrShown[r.id]?'true':'false');
+        qb.addEventListener('click', function(){ qrShown[r.id]=!qrShown[r.id]; img.hidden=!qrShown[r.id];
+          qb.textContent=qrShown[r.id]?'Hide the QR':'Show the QR'; qb.setAttribute('aria-expanded',qrShown[r.id]?'true':'false'); });
+        acts.appendChild(qb);
       }
       if(r.state!=='withdrawn'&&!view){
-        var wd=el('button',null,'Withdraw'); wd.type='button';
+        var wd=el('button','salt-ghost','Withdraw'); wd.type='button';
         wd.addEventListener('click', async function(){
           if(!confirm('Withdraw this link? Whoever holds it will not be able to open it.')) return;
           var mine=ticket; var rv=await api('/my/refs/'+encodeURIComponent(r.id)+'/revoke',{});
@@ -1767,13 +1919,14 @@ const CLIENT_JS = `
         });
         acts.appendChild(wd);
       }
-      row.appendChild(acts);
+      if(acts.firstChild) row.appendChild(acts);
+      if(r.state==='open') row.appendChild(said);
       box.appendChild(row);
     });
-    var live=myLinks.filter(function(r){ return r.state!=='withdrawn'; }).length;
     if(view){ /* his read-only view makes nothing */ }
     else if(live>=myMax) box.appendChild(el('p','sub2','You have '+live+' links. Withdraw one to make another.'));
     else {
+      box.appendChild(el('p','sub2 rlnext','A new link stays shut until we approve it. Once it is open it shows whoever you give it to a price list and nothing else, and you share it from here.'));
       var mk=el('button','btn salt-pill salt-pill--md','Make a link'); mk.type='button';
       mk.addEventListener('click', async function(){
         mk.disabled=true; var mine=ticket;
@@ -1785,7 +1938,7 @@ const CLIENT_JS = `
       box.appendChild(mk);
     }
     if(myNote) box.appendChild(el('p','msg',myNote));
-    pCard.appendChild(box);
+    into.appendChild(box);
   }
   async function loadMyLinks(){
     var mine=ticket;
@@ -3043,11 +3196,6 @@ const CLIENT_JS = `
     var n=orders.filter(oNeeds).length;
     [].forEach.call(tabs.querySelectorAll('[data-n]'),function(c){ c.textContent=c.getAttribute('data-n')==='order'&&n?String(n):''; });
   }
-  /* ---- ACCOUNT AND REWARDS: what goes inside them is drawn here (the places area, S7 7.3 and S8 8.1); the shell calls
-     these two when the account opens ---- */
-  function drawAccount(box){ pickStmt(0); }
-  function drawRewards(box){ drawCard(); }
-
   async function loadOrders(){
     if(!session) return;
     var mine=ticket;
@@ -3129,7 +3277,7 @@ const CLIENT_JS = `
       var j=sub.toJSON?sub.toJSON():null;
       var r=await api('/push/subscribe',{endpoint:sub.endpoint, keys:j&&j.keys?{p256dh:j.keys.p256dh, auth:j.keys.auth}:null});
       if(mine!==ticket) return;
-      if(r.body.ok){ draft.pushed=true; draft.pushDone=true; } else draft.pushNote=r.body.error||'The subscription was not recorded.';
+      if(r.body.ok){ draft.pushed=true; draft.pushDone=true; pushOffSet(false); } else draft.pushNote=r.body.error||'The subscription was not recorded.';
     }catch(e){ draft.pushNote='Notifications could not be switched on here. Try again later.'; }
     drawOrder();
   }
@@ -3205,7 +3353,8 @@ const CLIENT_JS = `
          which every sign-in empties. ON IS WHAT THE SITE HOLDS: with the answer already yes this subscribes again,
          which asks nothing and hands back the phone's own subscription, and names it to the site, so a phone that
          logged out is woken again and a record the site lost is put back; On is said only once the site has it. */
-      if(Notification.permission==='granted') subscribePush();
+      /* S7 7.3: unless this device was turned off in Account, which a Turn on undoes */
+      if(Notification.permission==='granted'&&!pushOff()) subscribePush().then(drawDevice);
     }catch(e){ /* a browser that refuses to be asked is not a fault */ }
   }
 
