@@ -16786,6 +16786,52 @@ await (async () => {
       "and signing one computer out stops its alerts alone: " + JSON.stringify({ answer: r2.j, left }));
   } finally { globalThis.fetch = realFetch; }
 })();
+section("S9 fix S9R-8: Sign out everywhere ends the sessions a remembered phone names, where their own pointers are missing");
+await (async () => {
+  /* A session's pointer is written best effort, and a list may not yet show one written a moment ago. His one-device
+     Sign out ended the sessions a remembered phone names; Sign out everywhere deleted the phone and not them, so a
+     session its last open minted went on reading the orders for up to fifteen minutes. */
+  const W = (await import("../stmt/worker.js")).default;
+  const S = await import("../stmt/signin.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const kv = new KV(), MASTER = "mp-s9r8";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r8", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX8-SE", username: u }]));
+  const TEAM = "maakmal", AUD = "aud-s9r8", KID = "kid-s9r8";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const post = async (path, body, headers) => { const r = await site(path, { method: "POST", headers: Object.assign({ "content-type": "application/json", "user-agent": IPHONE }, headers || {}), body: JSON.stringify(body) });
+    return { status: r.status, j: await r.json().catch(() => ({})) }; };
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const A = { "cf-access-jwt-assertion": h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c)))) };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  try {
+    const orders = async (s) => (await site("/orders", { headers: { "X-Stmt-Session": s } })).status;
+    const s1 = (await post("/open", { u, password: pw })).j.session;
+    const t1 = (await post("/remember", { wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" } }, { "X-Stmt-Session": s1 })).j.token;
+    const s2 = (await post("/remember/open", { token: t1 })).j.session;
+    /* the session the reopen minted, its own pointer gone */
+    const own = "dev:" + u + ":" + (await S.idOf(await S.sessKey(s2)));
+    const had = kv.m.has(own);
+    await kv.delete(own);
+    ok(had && await orders(s2) === 200, "the fixture: the phone's newest session reads the orders, and its own pointer is missing");
+    const all = await post("/all/signout", { u }, A);
+    ok(all.status === 200 && all.j.devices === 1 && (await post("/remember/open", { token: t1 })).status === 401,
+      "Sign out everywhere ends the phone: " + JSON.stringify(all.j));
+    ok(await orders(s2) === 401 && await orders(s1) === 401, "and the sessions it names, the newest included, read nothing after");
+  } finally { globalThis.fetch = realFetch; }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password

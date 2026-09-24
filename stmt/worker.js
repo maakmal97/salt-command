@@ -1057,9 +1057,11 @@ async function dropPhones(env, u, keepId) {
    has none, and ends thirty days from its tick (handleRemember). Returns how many devices, links and phones it ended. */
 async function signOutEverywhere(env, u, keep) {
   const ptrs = await pointersOf(env, u), devs = devicesIn(ptrs);
-  let links = 0;
+  let links = 0, phones = 0;
   for (const p of ptrs) {
-    if (/^(rem|sess):/.test(p.key)) { await env.STMT.delete(p.key); await env.STMT.delete(p.name); continue; }
+    /* S9 fix: a device ends as his one-device Sign out ends it, a remembered phone taking the sessions it names, whose
+       own pointers may be missing (written best effort, or not yet in the list) */
+    if (/^(rem|sess):/.test(p.key)) { phones += await endDevice(env, u, p); continue; }
     if (keep && p.key === "ot:" + keep) continue;
     const live = await env.STMT.get(p.key, "json");
     if (live && !live.spent) links++;
@@ -1067,7 +1069,7 @@ async function signOutEverywhere(env, u, keep) {
     if (p.pair) await env.STMT.delete(p.pair);
     await env.STMT.delete(p.name);
   }
-  const phones = await dropPhones(env, u, null);
+  phones += await dropPhones(env, u, null);
   return { devices: devs.length, links, phones, ended: devs.length + links + phones };
 }
 
