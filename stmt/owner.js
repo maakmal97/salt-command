@@ -494,20 +494,34 @@ export const OWNER_JS = `
     return links.filter(function(r){ return r.standing&&r.level===s&&!r.revoked; })[0]||null;
   }
   /* A LINK SIGNS THEM IN IN TWO TAPS: the first makes it, the second shares it, so the share sheet never
-     waits on a key derivation and a round trip inside one tap (the plan's must-not-ship list). */
+     waits on a key derivation and a round trip inside one tap (the plan's must-not-ship list).
+     S9 fix: WHAT A CARD HAS MADE OUTLIVES A REDRAW. Needs you is drawn afresh on every move, tick and read, and
+     the made link and the open Silver link lived in the card, so a redraw put the button back to Send a sign-in
+     link (the next tap minting a second) and took the code off the screen. They are kept here by username. */
+  var madeLink={}, silverOpen={};
   function linkButton(a, note){
-    var b=ghost('Send a sign-in link', true), j=null;
+    var u=a.username, b=ghost('', true);
+    function show(){
+      var m=madeLink[u]||{};
+      b.disabled=!!m.busy; b.textContent=m.busy?'Making it...':m.j?'Share the link':'Send a sign-in link'; note.textContent=m.note||'';
+    }
+    /* answered on this button, or on the one a redraw put in its place */
+    function after(){ if(b.isConnected) show(); else drawNeeds(); }
+    show();
     b.addEventListener('click', async function(){
-      if(!j){
-        b.disabled=true; b.textContent='Making it...';
-        try{ j=await mintLink(a); b.textContent='Share the link'; note.textContent='Made. It signs '+(a.code||a.username)+' in once.'; }
-        catch(e){ b.textContent='Send a sign-in link'; note.textContent='Could not make one: '+e.message; }
-        b.disabled=false; return;
+      var m=madeLink[u]||(madeLink[u]={});
+      if(m.busy) return;
+      if(!m.j){
+        m.busy=true; m.note=''; show();
+        try{ m.j=await mintLink(a); m.note='Made. It signs '+(a.code||a.username)+' in once.'; }
+        catch(e){ m.note='Could not make one: '+e.message; }
+        m.busy=false; after(); return;
       }
       try{
-        if(navigator.share){ await navigator.share({text:j.msg}); note.textContent='Sent.'; }
-        else { await navigator.clipboard.writeText(j.msg); note.textContent='Copied. Paste it into a message to them.'; }
-      }catch(e){ note.textContent='Not shared. Tap Share the link again.'; }
+        if(navigator.share){ await navigator.share({text:m.j.msg}); m.note='Sent.'; }
+        else { await navigator.clipboard.writeText(m.j.msg); m.note='Copied. Paste it into a message to them.'; }
+      }catch(e){ m.note='Not shared. Tap Share the link again.'; }
+      after();
     });
     return b;
   }
@@ -551,9 +565,10 @@ export const OWNER_JS = `
     off.disabled=true; off.title='No account behind this username yet';
     row.appendChild(sh); row.appendChild(off); c.appendChild(row);
     var note=noteOf(c);
-    sh.addEventListener('click', function(){
+    function open(){
       var r=strangerLink();
       if(!r){ note.textContent='The '+lv+' link is not made yet. Open Links once, then try again.'; return; }
+      silverOpen[a.username]=true;
       var box=el('div','glink'), img=document.createElement('img'), cp=ghost('Copy link');
       box.appendChild(el('code','gu',r.url));
       img.src=r.qr; img.alt='QR to the '+lv+' guest price list'; img.width=180; img.height=180; box.appendChild(img);
@@ -562,7 +577,9 @@ export const OWNER_JS = `
       });
       box.appendChild(cp);
       c.insertBefore(box, row); sh.disabled=true;
-    });
+    }
+    sh.addEventListener('click', open);
+    if(silverOpen[a.username]) open();
     return c;
   }
   function sendNeed(rows){
