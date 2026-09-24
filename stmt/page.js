@@ -2436,7 +2436,7 @@ const CLIENT_JS = `
       if(await showLink()) return;
       /* S3 3.11: the saved app. A key in the address is the one Safari's Keep it on your Home Screen wrote there, and
          only the saved app spends it. S3 FIX, 24 SEP 2026: A BROWSER TAB SPENDS ONLY HIS COUNTER'S QR, /app#qr.<key>,
-         which the customer's camera opens (3.13), and the Worker opens it for a tab only if his /all/handover minted it,
+         which the customer's camera opens (3.13), and the Worker opens it for a tab only if his own page minted it,
          so an address one customer sends another never signs the other in; an app's own browser spends nothing */
       var qm=/^qr[.]([A-Za-z0-9_-]{20,64})$/.exec(hk);
       var key=!APP?'':STANDALONE?(qm?qm[1]:TOK_RE.test(hk)?hk:''):(qm&&!INAPP?qm[1]:'');
