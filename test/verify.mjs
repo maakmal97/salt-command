@@ -14061,6 +14061,95 @@ await (async () => {
       "the declined link reads Not approved and only the two still pending read Waiting to be approved: " + JSON.stringify(words));
   } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
 })();
+section("S1 1.21: Salt Admin's Review opens an account read only, with its orders and links from his gated route and no form");
+await (async () => {
+  /* 24 SEP 2026 (M22): an account he opens under the master has no session, because the owner does not
+     order, so the page read no orders and drew "None yet." under a live order form and Notify me for
+     every account, though Review says it opens the account as its own page. Driven end to end: his
+     rendered roster, the real Worker, a sealed account with an order and an associate's link. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s1-21";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s1-21", u);
+  const day = "2026-09-21";
+  const priceDoc = { at: day + "T00:00:00Z", week: { monday: day, sunday: day, label: "this week" }, since: day,
+    products: [{ product: "salt", name: "Salt", unit: "unit", basis: "tier", tier: "Silver", levels: 4, rate: null, orders: 0, sizes: [{ q: 1, price: 150 }, { q: 2, price: 290 }] }], soon: [] };
+  const cardDoc = { at: day + "T00:00:00Z", products: [{ product: "salt", name: "Salt", unit: "unit",
+    summary: { bought: 150, soldFor: 0, onward: 0, introduced: 0, referred: 0 }, reward: null, lines: [{ date: day, kind: "own", qty: 1, rm: 150 }] }] };
+  await kv.put("u:" + u, JSON.stringify({ u, assoc: true, issued: "2026-09-01", verifier: await C.makeVerifier(pw),
+    wrap: await C.wrapKey(pw, ck), wrapMaster: await C.wrapKey(MASTER, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })),
+    prices: Object.assign({ at: priceDoc.at, week: day }, await C.encryptWith(ck, JSON.stringify(priceDoc))),
+    card: Object.assign({ at: cardDoc.at }, await C.encryptWith(ck, JSON.stringify(cardDoc))) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX0-AA", username: u }]));
+  const oid = "20260921010000-abcd", at = "2026-09-21T01:00:00Z";
+  await kv.put("order:" + u + ":" + oid, JSON.stringify({ id: oid, u, at, status: "acknowledged", product: "salt", qty: 1, total: 150, delivery: 0,
+    mode: "collect", paid: 0, payments: [], moved: 0, movedOn: null, msgs: [{ at, by: "customer", text: "When can I collect" }],
+    history: [{ at, status: "placed", by: "customer" }, { at, status: "acknowledged", by: "desk" }] }));
+  const TEAM = "maakmal", AUD = "aud-s1-21", KID = "kid-s1-21";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 200 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  const hits = [];
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sess = (await (await site("/open", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ u, password: pw }) })).json()).session;
+    const lid = (await (await site("/my/refs", { method: "POST", headers: { "X-Stmt-Session": sess, "content-type": "application/json" }, body: "{}" })).json()).ref.id;
+
+    /* ---- the route: behind the prefix's one check, reading and never writing ---- */
+    ok((await site("/all/orders/" + u)).status === 401, "his read of an account's orders is behind Access like everything under /all");
+    const rj = await (await site("/all/orders/" + u, { headers: { "cf-access-jwt-assertion": tok } })).json().catch(() => ({}));
+    ok(rj.ok && rj.orders.length === 1 && rj.orders[0].id === oid && rj.refs.length === 1 && rj.refs[0].id === lid && rj.refs[0].state === "waiting" && !("label" in rj.refs[0]),
+      "with Access it answers their orders and their links, projected as their own page reads them: " + JSON.stringify({ n: rj.orders && rj.orders.length, refs: rj.refs }));
+    ok((await site("/all/orders/" + u, { method: "POST", headers: { "cf-access-jwt-assertion": tok, "content-type": "application/json" }, body: "{}" })).status === 405
+      && (await site("/all/orders/zzzz-zzzz", { headers: { "cf-access-jwt-assertion": tok } })).status === 404,
+      "it moves nothing, and an account that does not exist is the site's 404");
+
+    /* ---- the page: Review, a tap on the account ---- */
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      /* a browser that CAN take notifications, so Notify me would be drawn if the view let it */
+      w.PushManager = function () {}; w.Notification = { permission: "default", requestPermission: async () => "default" };
+      Object.defineProperty(w.navigator, "serviceWorker", { value: { register: async () => ({}) }, configurable: true });
+      w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    D.querySelector('button[data-m="review"]').click();
+    ok(await until(() => [...D.querySelectorAll("#rlist button")].some((b) => b.textContent.includes("CX0-AA"))), "Review lists the account");
+    [...D.querySelectorAll("#rlist button")].find((b) => b.textContent.includes("CX0-AA")).click();
+    const pOrder = D.getElementById("pOrder");
+    ok(await until(() => pOrder.querySelectorAll(".pane .quote").length >= 1),
+      "the account opens and its order is drawn from his route, not None yet: " + JSON.stringify(pOrder.textContent.slice(0, 160)));
+    const words = [...pOrder.querySelectorAll("button, a")].map((b) => b.textContent);
+    ok(/RM\s*150/.test(pOrder.textContent) && /When can I collect/.test(pOrder.textContent) && /Acknowledged/.test(pOrder.textContent) && !/None yet/.test(pOrder.textContent),
+      "the order reads as their page shows it, with its thread and its state: " + JSON.stringify(pOrder.textContent.replace(/\s+/g, " ").slice(0, 200)));
+    ok(!pOrder.querySelector("input, select, textarea") && !words.some((t) => /Review this order|Place|Notify me|Confirm|I have paid|Withdraw|Send/.test(t))
+      && ![...pOrder.querySelectorAll("h3")].some((x) => /Notifications/.test(x.textContent)),
+      "and it is read only: no order form, no Notify me, no pay, withdraw or message control: " + JSON.stringify(words));
+    ok(hits.includes("GET /all/orders/" + u) && !hits.some((x) => /^POST \/(orders|push|my\/refs)|^GET \/(orders|my\/refs)$/.test(x)),
+      "it read through his route and never through the customer's session routes: " + JSON.stringify(hits));
+    D.getElementById("tCard").click();
+    const pCard = D.getElementById("pCard");
+    ok(await until(() => pCard.querySelectorAll(".glink").length === 1) && /Waiting to be approved/.test(pCard.textContent)
+      && ![...pCard.querySelectorAll("button")].some((b) => /Make a link|Withdraw/.test(b.textContent)),
+      "an associate's links are drawn as they see them, with nothing that mints or withdraws: " + JSON.stringify([...pCard.querySelectorAll("button")].map((b) => b.textContent)));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v687: the master account opens on its own page, and the owner's script travels only there");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: a master account that opens on what it can do. /all is that account,

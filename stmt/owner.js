@@ -201,6 +201,18 @@ export const OWNER_JS = `
     if(f.requestSubmit) f.requestSubmit();
     else f.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
   }
+  /* 24 SEP 2026 (M22): AN ACCOUNT HE OPENS IS READ ONLY, and it draws what their own page draws. It
+     has no session, the owner does not order, so the orders and an associate's own links come from
+     /all/orders/<u>, behind the prefix's one Access check. The page calls this when view is set. */
+  async function loadView(u){
+    var mine=ticket;
+    var r=await api('/all/orders/'+encodeURIComponent(u));
+    if(mine!==ticket) return;
+    orders=(r.body&&r.body.ok&&r.body.orders)||[];
+    myLinks=(r.body&&r.body.ok&&r.body.refs)||[]; myMax=(r.body&&r.body.max)||0;
+    if(!r.body||!r.body.ok) say('Their orders could not be read: '+((r.body&&r.body.error)||'try again'),'bad');
+    if(!tCard.hidden) drawCard();
+  }
   function drawRoster(){
     if(!OWNER) return;
     var q=(rq.value||'').toLowerCase().replace(/\\s+/g,'');

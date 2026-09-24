@@ -586,6 +586,9 @@ const CLIENT_JS = `
   var assoc=false;
   /* null for a customer; {master,accounts} for the owner, on the Access-gated route only */
   var OWNER=__OWNER__;
+  /* 24 Sep 2026 (M22): an account he opened under the master is READ ONLY. It has no session, so its
+     orders and links come from his own gated route, and nothing on it places, pays, sends or withdraws. */
+  var view=false;
   var roster=document.getElementById('roster'), rq=document.getElementById('rq'),
       rlist=document.getElementById('rlist'), rmsg=document.getElementById('rmsg'),
       whoacct=document.getElementById('whoacct');
@@ -772,7 +775,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; prices=null; orders=[]; draft={}; pick={}; assoc=false; card=null; cardMonth=''; myLinks=null; myMax=0;
+    bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; assoc=false; card=null; cardMonth=''; myLinks=null; myMax=0;
     owedNow=0; hold=false; tPrices.hidden=false; tOrder.textContent='Order';
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
@@ -999,7 +1002,7 @@ const CLIENT_JS = `
     var box=el('div','pane');
     box.appendChild(el('h3',null,'Your links'));
     box.appendChild(el('p','sub2','Make a link for somebody you want to bring in. It opens a price list and nothing else, and it stays shut until it is approved.'));
-    if(myLinks===null){ box.appendChild(el('p','sub2','Reading your links.')); pCard.appendChild(box); loadMyLinks(); return; }
+    if(myLinks===null){ box.appendChild(el('p','sub2','Reading your links.')); pCard.appendChild(box); if(!view) loadMyLinks(); return; }
     if(!myLinks.length) box.appendChild(el('p','sub2','None yet.'));
     myLinks.forEach(function(r){
       var row=el('div','glink'+(r.state==='withdrawn'||r.state==='declined'?' off':''));
@@ -1023,7 +1026,7 @@ const CLIENT_JS = `
         });
         acts.appendChild(cp);
       }
-      if(r.state!=='withdrawn'){
+      if(r.state!=='withdrawn'&&!view){
         var wd=el('button',null,'Withdraw'); wd.type='button';
         wd.addEventListener('click', async function(){
           if(!confirm('Withdraw this link? Whoever holds it will not be able to open it.')) return;
@@ -1036,7 +1039,8 @@ const CLIENT_JS = `
       box.appendChild(row);
     });
     var live=myLinks.filter(function(r){ return r.state!=='withdrawn'; }).length;
-    if(live>=myMax) box.appendChild(el('p','sub2','You have '+live+' links. Withdraw one to make another.'));
+    if(view){ /* his read-only view makes nothing */ }
+    else if(live>=myMax) box.appendChild(el('p','sub2','You have '+live+' links. Withdraw one to make another.'));
     else {
       var mk=el('button','btn salt-pill salt-pill--md','Make a link'); mk.type='button';
       mk.addEventListener('click', async function(){
@@ -1152,6 +1156,7 @@ const CLIENT_JS = `
     var sc=window.scrollY;
     pOrder.textContent='';
     pOrder.appendChild(el('h2',null,hold?'Payment due':'Order'));
+    if(view) pOrder.appendChild(el('p','lead','Read only: their orders as their own page shows them. Nothing here is placed, paid or sent.'));
     if(hold){
       var dueBox=el('div','pane');
       dueBox.appendChild(el('div','quote',rm(owedNow)));
@@ -1171,6 +1176,8 @@ const CLIENT_JS = `
       sv.addEventListener('click',function(){ showTab('stmt'); });
       dueBox.appendChild(sv);
       pOrder.appendChild(dueBox);
+    } else if(view){
+      /* no order form on his read-only view */
     } else if(!prices||!prices.products||!prices.products.length){
       pOrder.appendChild(el('p','lead',prices&&prices.soon&&prices.soon.length?'Ordering opens once your prices are set.':'Ordering opens once your price list is written, with the next update.'));
     } else {
@@ -1285,7 +1292,8 @@ const CLIENT_JS = `
       if(draft.note) form.appendChild(el('p','msg',draft.note));
       pOrder.appendChild(form);
     }
-    /* notifications: a wake on the phone when the order moves, so the page need not stay open */
+    /* notifications: a wake on the phone when the order moves, so the page need not stay open.
+       Not on his read-only view: those are not his phones. */
     var np=el('div','pane');
     np.appendChild(el('h3',null,'Notifications'));
     var canPush=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
@@ -1299,7 +1307,7 @@ const CLIENT_JS = `
       nb.addEventListener('click', subscribePush); np.appendChild(nb);
       if(draft.pushNote) np.appendChild(el('p','msg',draft.pushNote));
     }
-    pOrder.appendChild(np);
+    if(!view) pOrder.appendChild(np);
     var h=el('h2',null,'Your orders'); h.style.marginTop='18px'; pOrder.appendChild(h);
     if(!orders.length) pOrder.appendChild(el('p','lead','None yet.'));
     orders.forEach(function(o){ pOrder.appendChild(orderPane(o)); });
@@ -1335,9 +1343,9 @@ const CLIENT_JS = `
     else if(o.status==='declined') line='This order could not be taken. Nothing is owed.';
     else if(o.status==='cancelled') line=paid>0?'Withdrawn. The '+rm(paid)+' you paid is refunded.':'Withdrawn before anything moved. Nothing is owed.';
     pane.appendChild(el('p','sub2',line));
-    if(payable&&due>0.004) pane.appendChild((o.method&&!(pick[o.id]||{}).again)?payBox(o):payChooser(o));
+    if(!view&&payable&&due>0.004) pane.appendChild((o.method&&!(pick[o.id]||{}).again)?payBox(o):payChooser(o));
     /* v694: either side may withdraw at any stage until the goods move (his rule, 18 Sep 2026) */
-    if(payable||o.status==='placed'){
+    if(!view&&(payable||o.status==='placed')){
       if(moved>0) pane.appendChild(el('p','sub2','The goods are with you, so this can no longer be withdrawn here.'));
       else {
         var wb=el('button','btn quiet salt-ghost','Withdraw this order'); wb.type='button';
@@ -1363,7 +1371,8 @@ const CLIENT_JS = `
         th.appendChild(li); });
       pane.appendChild(th);
     }
-    /* ON ANY ORDER, AT ANY STAGE: a question about a withdrawn order is still about that order. */
+    /* ON ANY ORDER, AT ANY STAGE: a question about a withdrawn order is still about that order.
+       His read-only view writes nothing; he answers on the desk. */
     var sayw=el('div','sayw');
     var si=el('input','fld salt-field__input'); si.type='text'; si.maxLength=200;
     si.placeholder=msgs.length?'Add to this':'Ask about this order';
@@ -1382,7 +1391,7 @@ const CLIENT_JS = `
       drawOrder();
     });
     sayw.appendChild(si); sayw.appendChild(sg);
-    pane.appendChild(sayw);
+    if(!view) pane.appendChild(sayw);
     var hist=el('ul','hist');
     (o.history||[]).forEach(function(h){ var li=el('li',null,stamp(h.at)+'  '+(STATE_WORDS[h.status]||h.status)+(h.method?', paying by '+methodWord(h.method,h.account):'')+(h.note?': '+h.note:'')); hist.appendChild(li); });
     pane.appendChild(hist);
@@ -1581,9 +1590,11 @@ const CLIENT_JS = `
     done();
     say('');
     user=u; session=body.session||''; orders=[]; draft={}; pick={};
+    view=!!(OWNER&&body.byMaster);
     show(b);
     drawPrices();
     if(session){ await loadOrders(); if(stale()) return; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
+    else if(view){ await loadView(u); if(stale()) return; }   /* stmt/owner.js: his route alone carries it */
     drawOrder();
     /* v692: remembered only on a customer's own sign-in, and only when asked. The owner's route
        opens accounts with the master and must leave nothing behind on his phone. */

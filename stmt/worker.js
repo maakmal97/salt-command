@@ -338,6 +338,13 @@ async function handleCustomer(request, env, p, m) {
  * introducer, and who minted it. Reusing it here would show one associate another's notes, and
  * their own link's level would name a tier on a customer's page, which the page never does.
  */
+/* what an associate may see of their own link: where it points, whether it is open yet, and how
+   often it has been used. Not his label, not the level, not who else holds one. His read-only view
+   of their page (/all/orders/<u>) hands over exactly this, so it draws what they see. */
+const mineOut = (origin, r) => ({ id: r.id, url: refUrl(origin, r.id), qr: refQr(origin, r.id),
+  made: r.made || null, opens: r.opens || 0, last: r.last || null,
+  state: r.revoked ? "withdrawn" : (r.declined === true ? "declined" : (r.approved === false ? "waiting" : "open")) });
+
 async function handleMyRefs(request, env, p, m, origin) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   const u = await sessionUser(request, env);
@@ -346,14 +353,8 @@ async function handleMyRefs(request, env, p, m, origin) {
   try { acct = await env.STMT.get("u:" + u, "json"); } catch (e) { acct = null; }
   if (!acct || acct.assoc !== true) return notFound();
 
-  /* what an associate may see of their own link: where it points, whether it is open yet, and how
-     often it has been used. Not his label, not the level, not who else holds one. */
-  const mineOut = (r) => ({ id: r.id, url: refUrl(origin, r.id), qr: refQr(origin, r.id),
-    made: r.made || null, opens: r.opens || 0, last: r.last || null,
-    state: r.revoked ? "withdrawn" : (r.declined === true ? "declined" : (r.approved === false ? "waiting" : "open")) });
-
   if (p === "/my/refs") {
-    if (m === "GET") return json({ ok: true, refs: (await refsBy(env, u)).map(mineOut), max: MAX_PER_ASSOC });
+    if (m === "GET") return json({ ok: true, refs: (await refsBy(env, u)).map((r) => mineOut(origin, r)), max: MAX_PER_ASSOC });
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const mine = await refsBy(env, u);
     /* the same shape as the open-order cap: a count, a plain refusal, and a reason */
@@ -363,7 +364,7 @@ async function handleMyRefs(request, env, p, m, origin) {
        put into this store, and a label is his note. He can write one when he approves it. */
     const rec = await mintRef(env, { introducer: u, by: u, label: "" });
     if (!rec) return json({ ok: false, error: "could not mint an unused id; try again" }, 500);
-    return json({ ok: true, ref: mineOut(rec) });
+    return json({ ok: true, ref: mineOut(origin, rec) });
   }
   const mm = /^\/my\/refs\/([^/]+)\/(revoke)$/.exec(p);
   if (!mm) return notFound();
@@ -374,7 +375,7 @@ async function handleMyRefs(request, env, p, m, origin) {
   /* a link only ever forgets its own minter's, so one associate cannot withdraw another's */
   if (!rec || String(rec.by || "").toLowerCase() !== u) return notFound();
   const out = await revokeRef(env, id, true);
-  return json({ ok: true, ref: mineOut(out) });
+  return json({ ok: true, ref: mineOut(origin, out) });
 }
 
 /* The remembered opening: the token names the record and carries the wrap back, and the device key
@@ -914,6 +915,21 @@ export default {
         const issue = await env.STMT.get("issue");
         return json({ ok: true, url: link, msg: signInMessage({ url: link, user: u }),
           qr: QR.qrMatrix(link) });
+      }
+      /* 24 SEP 2026 (M22): REVIEW OPENS AN ACCOUNT AS ITS OWN PAGE, READ ONLY. An account opened under
+         the master has no session, because the owner does not order, so the page read no orders and
+         drew "None yet." under a live order form for every account. What their page reads on a
+         session, their orders and an associate's own links, is read here instead, behind the one
+         Access check at the door of the prefix. Reading only: nothing under this route moves. */
+      const om = /^\/all\/orders\/([^/]+)$/.exec(p);
+      if (om) {
+        if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+        const u = normUser(om[1]);
+        if (!u) return notFound();
+        const acct = await env.STMT.get("u:" + u, "json");
+        if (!acct) return notFound();
+        const refs = acct.assoc === true ? (await refsBy(env, u)).map((r) => mineOut(url.origin, r)) : [];
+        return json({ ok: true, orders: await ordersOf(env, u), refs, max: MAX_PER_ASSOC });
       }
       /* the associates' report card, written by the publish and read only here (v691) */
       if (p === "/all/assoc") {
