@@ -2000,7 +2000,9 @@ await (async () => {
        exactly as the desk's coverStats() wrapper does */
     const cv = X.coverStats({ pricedSales: mine.pricedSales, currentStock: mine.currentStock, defUnits: mine.defUnits, today: new Date(read("TODAY")), reorderUnits: read("reorderFor(PROD)") });
     const dcv = read("coverStats()");
-    ok(cv.rate === dcv.rate && cv.free === dcv.free && cv.days === dcv.days && cv.shortBy === dcv.shortBy, `${p}: cover agrees`);
+    /* v824: the engine supplies free and the trigger's shortfall; the rate and the cover are the book's restock plan's */
+    const rp = read("restockFor(PROD)");
+    ok(cv.free === dcv.free && cv.shortBy === dcv.shortBy && dcv.rate === rp.base && dcv.days === rp.coverDays, `${p}: cover agrees`);
     const c2 = X.commitments(read("pSales(PROD)"), mine.currentStock), f = read("forecast()");
     ok(c2.commitUnits === f.commitUnits && c2.shortUnits === f.shortUnits && c2.owedUnits === f.owedUnits && c2.promUnits === f.promUnits, `${p}: the commitments agree with the forecast`);
   }
@@ -20066,6 +20068,30 @@ await (async () => {
   const off = rows.filter((p) => v[p].row.rm !== v[p].lot.total || v[p].row.why.indexOf(v[p].lot.qty) < 0);
   ok(off.length === 0, "each row's money and quantity are the card's lot: " + JSON.stringify(off.map((p) => [p, v[p].row.rm, v[p].lot])));
   ok(rows.every((p) => v[p].row.tab === "inventory"), "and the row opens On hand, where that lot is sized");
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
+section("v824: one rate, one cover and one run-out date on every page, the restock plan's");
+await (async () => {
+  /* HIS REPORT OF 24 SEP 2026: To do, Stock and Sourcing said 5.96 unit a day, 1.2 days and dry on 25 Sep while the restock
+     card said 5.68, 1.3 days and 26 Sep. Each live book's readers are compared with that book's own restockFor. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const v = JSON.parse(w.eval("JSON.stringify(eachBook(function(p){var r=restockFor(p),cv=coverStats(),L=currentLot(),a=actions().filter(function(x){return x.kind==='buy';})[0];"
+    + "var fr=+(currentStock-defUnits).toFixed(2),call=shelfCall(cv,fr<0,fr);"
+    + "return {plan:r&&!r.empty?{base:r.base,days:r.coverDays,date:r.coverDate}:null,rate:cv.rate,days:cv.days,"
+    + "lotDry:L?L.dry:null,row:a?a.title:null,call:call?call.f:null,callDry:call?call.w:null};}))"));
+  const books = Object.keys(v).filter((p) => v[p].plan && v[p].plan.base > 0 && v[p].plan.days != null);
+  ok(books.length >= 2, "at least two books have a plan with a cover to compare: " + JSON.stringify(books));
+  const off = books.filter((p) => v[p].rate !== v[p].plan.base || v[p].days !== v[p].plan.days);
+  ok(off.length === 0, "coverStats reads the plan's rate and cover on every book: " + JSON.stringify(off.map((p) => [p, v[p].rate, v[p].days, v[p].plan])));
+  const lot = books.filter((p) => v[p].lotDry != null && v[p].lotDry !== v[p].plan.date);
+  ok(lot.length === 0, "Sourcing's current lot runs dry on the plan's date: " + JSON.stringify(lot.map((p) => [p, v[p].lotDry, v[p].plan.date])));
+  const row = books.filter((p) => v[p].row && v[p].row.indexOf(v[p].plan.days + " days cover") < 0);
+  ok(row.length === 0, "To do's buy row states the plan's cover: " + JSON.stringify(row.map((p) => [p, v[p].row, v[p].plan.days])));
+  const mon = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const call = books.filter((p) => { const d = new Date(v[p].plan.date); return v[p].plan.days >= 1 && v[p].callDry && v[p].callDry.indexOf("on " + d.getUTCDate() + " " + mon[d.getUTCMonth()] + ".") < 0; });
+  ok(call.length === 0, "and Stock's call runs dry on that date, written as the card writes it: " + JSON.stringify(call.map((p) => [p, v[p].plan.date, String(v[p].callDry).slice(-60)])));
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 

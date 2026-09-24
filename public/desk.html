@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="e394c82e4110084e";
+var SALT_BUILD_ID="e47ba8f269aeca3d";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -7490,12 +7490,12 @@ function currentLot(L){
   /* two rates, as before and for the same reason. The fortnight rate is what the inventory
      faces now; the four-week rate is the sceptical read, and on this book it is the FASTER of
      the two, so it shortens every date rather than flattering it. */
-  const dryD  =rate>0?+(free/rate).toFixed(1):null;
+  const dryD  =cv.days!=null&&rate>0?cv.days:null;   // v824: the desk's one cover, coverStats'
   const dryD28=r28>0?+(free/r28).toFixed(1):null;
-  const dry   =dryD!=null?iso(new Date(TODAY.getTime()+dryD*MS)):null;
+  const dry   =dryD!=null&&cv.zero?iso(cv.zero):null;
   const dry28 =dryD28!=null?iso(new Date(TODAY.getTime()+dryD28*MS)):null;
   const mark=reorderFor(PROD);
-  const reD =rate>0?+((free-mark)/rate).toFixed(1):null;
+  const reD =cv.reach!=null?cv.reach:(rate>0?+((free-mark)/rate).toFixed(1):null);   // v824: the plan's day the point is reached
   const reorder=reD!=null?iso(new Date(TODAY.getTime()+Math.max(0,reD)*MS)):null;
   /* v549: AN EMPTY BOOK DOES NOT GET A DATE. free is the inventory less what is already owed
      out, so on Oil it is -35 unit, and dividing that by the sell rate projected the inventory
@@ -7656,7 +7656,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v823","d":"24 Sep 2026","t":"TO DO BUYS THE LOT THE RESTOCK CARD SIZES","n":["<b>TWO ANSWERS TO ONE QUESTION</b> (his report of 24 Sep 2026). To do's buy row sized the refill to climb back to the reorder point and nothing more, while the restock card on On hand sized the next lot on the optimiser: salt read 37.5 unit for RM 2,100 against 62.5 unit for RM 3,500, oil 10 unit for RM 100 against 50 unit for RM 380, candy 20 unit for RM 940 against 40 unit for RM 1,880.","<b>THE ROW IS NOW THE CARD'S LOT</b>, read from restockFor, with how long it lasts, and it opens On hand where the lot is sized rather than Sourcing. The old smallest-tier rule stands only where a book has no plan or the lot would not cover what is already promised. The suite reads every live book's row against its own card."]}];
+const evolution=[{"v":"v824","d":"24 Sep 2026","t":"ONE RATE, ONE COVER, ONE RUN-OUT DATE","n":["<b>THE DESK READ TWO RATES</b> (his report of 24 Sep 2026: check every page for the same mismatch). To do, the Stock call, Sourcing's current lot and Next 30 days read the flat fortnight's shipping, salt 5.96 unit a day, 1.2 days of cover and dry on 25 Sep, while the restock card read the measured forecast, 5.68 unit a day, 1.3 days and out on 26 Sep. Oil and candy parted the same way.","<b>THE PLAN IS NOW THE ONE READING.</b> coverStats takes its rate, cover and run-out date from restockFor, so every reader follows: To do's row, the Stock call, the Cover tile, Sourcing's dry and reorder dates, Next 30 days' walk, the lot table's days, the phone's payload and the Whiteboard's fourteen-day signal, which now measures against the desk's rate. The four-week second opinion under the Stock call went with the fortnight rate. The 14 and 28 day tiles stay, as units shipped. A date is written 26 Sep everywhere; the Stock call wrote 26 Sept. The suite reads every live book's readers against its plan."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -7771,7 +7771,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='24 Sep 2026, 14:30 KL';
+const LAST_UPDATED='24 Sep 2026, 14:44 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -10026,7 +10026,22 @@ function cashFlow(){
    The trailing fortnight leads because it is what the inventory faces now; the four-week
    read sits beside it so one big lot cannot pass itself off as a trend. Physical
    units only, since a set-off moves no salt. */
-function coverStats(){return POSITION_ENGINE.coverStats({pricedSales:pricedSales,currentStock:currentStock,defUnits:defUnits,today:TODAY,reorderUnits:reorderFor(PROD)});}
+/* v824, HIS REPORT OF 24 SEP 2026: ONE RATE, ONE COVER AND ONE RUN-OUT DATE FOR THE DESK. To do, the Stock headline, Sourcing
+   and Next 30 days read the flat fortnight's shipping (salt 5.96 unit a day, 1.2 days, dry 25 Sep) while the restock card read
+   the measured forecast (5.68 unit a day, 1.3 days, out 26 Sep). The book's plan now supplies the rate, the cover and the date;
+   the engine's flat fortnight stands only for a book with no demand to plan on. rate14, rate28 and the unit counts stay as the
+   facts they are. */
+function coverStats(){
+  const cv=POSITION_ENGINE.coverStats({pricedSales:pricedSales,currentStock:currentStock,defUnits:defUnits,today:TODAY,reorderUnits:reorderFor(PROD)});
+  const r=restockFor(PROD);
+  if(r&&!r.empty&&r.base>0){
+    cv.rate=r.base;
+    cv.days=r.coverDays!=null?r.coverDays:+(Math.max(0,cv.free)/r.base).toFixed(1);
+    cv.zero=r.coverDate?new Date(r.coverDate):new Date(TODAY.getTime()+cv.days*86400000);
+    cv.reach=r.reachDays;
+  }
+  return cv;
+}
 const dbet=d=>Math.floor((TODAY-new Date(d))/86400000+1e-9);  // floor: ageing stepsonly on a full day
 /* ONE RULE FOR A DAY COUNT (v407, round seven). A date ahead of the clock is either a mistyped
    row or a clock stepped back. v406 floored four surfaces and left four, so the SAME money read
@@ -10396,7 +10411,7 @@ function tabForward(){
   const bookRows=ids.map(p=>{const g=A.per[p].f;return `<tr><td class="l">${tag(p)}</td><td class="mono">${units(g.rate)}</td><td class="mono">${emptyCell(g)}</td><td class="mono">${g.commitUnits>0.009?units(g.commitUnits):'&mdash;'}</td></tr>`;}).join('');
   return `<h1>Next 30 days</h1>
   <div class="pscope"><span class="pbadge">Every book</span></div>
-  <div class="dsc dsclead" style="margin-bottom:11px">Each book's inventory and the cash, day by day, at the rate that book has actually been shipping; an order not yet placed is in none of it.</div>
+  <div class="dsc dsclead" style="margin-bottom:11px">Each book's inventory and the cash, day by day, at the daily rate its restock plan measures; an order not yet placed is in none of it.</div>
   <div style="display:flex;flex-wrap:wrap;gap:9px;align-items:center">
     <span class="viewsw" id="fwdSw">${sw}</span>
     ${buys.length?`<button class="vbtn salt-pill salt-pill--sm" style="${fwdBuy?'':'opacity:.55'}" onclick="fwdToggle('buy')">${fwdBuy?'&#10003; ':''}Include the agreed ${buyWord}</button>`:''}
@@ -10816,7 +10831,7 @@ function tabSourcing(){
       /* the engine's own cost of serving 12.5 unit at this rate, read back rather than rebuilt */
       return {q:t.qty,cash:t.total,rate:rr,leak:rr/Math.max(0.01,1-c.shrink),
               profit:+(rev-(qt.total-qt.profit)).toFixed(2)};});
-    return hd('')+`<div class="card">${stkCols('tier')}<div class="stkwrap"><table><thead><tr><th class="l">Tier</th><th>Rate</th><th>Cash</th><th class="stkx">After leak</th><th class="stkx">Usable unit</th><th class="stkx">Cover<div style="font-size:10px;color:var(--dim);font-weight:400">${cv.rate>0?`at ${units(cv.rate)}/day, the fortnight${coverSpread(cv,cv.free).split?`; ${units(cv.rate28)} over four weeks`:''}`:'no rate'}</div></th><th>Profit<div style="font-size:10px;color:var(--dim);font-weight:400">on a ${units(12.5)} resale</div></th></tr></thead><tbody>
+    return hd('')+`<div class="card">${stkCols('tier')}<div class="stkwrap"><table><thead><tr><th class="l">Tier</th><th>Rate</th><th>Cash</th><th class="stkx">After leak</th><th class="stkx">Usable unit</th><th class="stkx">Cover<div style="font-size:10px;color:var(--dim);font-weight:400">${cv.rate>0?`at ${units(cv.rate)}/day, the measured rate`:'no rate'}</div></th><th>Profit<div style="font-size:10px;color:var(--dim);font-weight:400">on a ${units(12.5)} resale</div></th></tr></thead><tbody>
     ${rows.map(r=>`<tr><td class="l">${units(r.q)}</td><td>${fmt(r.rate)}</td><td>${fmt0(r.cash)}</td><td class="stkx">${fmt(r.leak)}</td>
         <td class="stkx">${units(r.q*(1-c.shrink))}</td><td class="stkx">${cv.rate>0?(r.q*(1-c.shrink)/cv.rate).toFixed(1)+'d':'&mdash;'}</td>
         <td><b>${fmt0(r.profit)}</b></td></tr>`).join('')}
@@ -11485,11 +11500,6 @@ function tabMap(){
    inventory again. Scoped at the call site rather than in loanDrawUnits, which stockHistory and
    recompute also use and which is not this view's to change. */
 function pLoans(){return (typeof loans!=='undefined'?loans:[]).filter(l=>(l.product||DEFAULT_PROD)===PROD);}
-/* the inventory's life read off both windows coverStats returns. Called by the inventory call and by
-   the insight under the cover strip, which is why it is a function and not two locals. */
-function coverSpread(cv,free){
-  const d14=cv.rate14>0?free/cv.rate14:null, d28=cv.rate28>0?free/cv.rate28:null;
-  return {d14:d14,d28:d28,split:!!(d14>0&&d28>0&&Math.max(d14,d28)>=1.5*Math.min(d14,d28))};}
 /* ============ THE INVENTORY CALL (v385) ============
    THE ONE THING THIS VIEW EXISTS TO ANSWER IS WHETHER TO BUY, AND IT WAS THE HARDEST THING
    ON IT TO FIND. Cover sat as the first tile of the SECOND KPI strip, the reorder mark as the
@@ -11509,7 +11519,7 @@ function coverSpread(cv,free){
    books' tables together. */
 const stkCols=id=>`<input type="checkbox" class="stkcols" id="stkc-${PROD}-${id}"><label class="stkcolsl" for="stkc-${PROD}-${id}">All columns</label>`;
 function shelfCall(cv,oversold,free){
-  const dry=cv.zero?cv.zero.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):null;
+  const dry=cv.zero?cv.zero.getUTCDate()+' '+MAP_MON[cv.zero.getUTCMonth()]:null;   // v824: 26 Sep, as the restock card writes it; en-GB gives Sept
   /* v385: COVER IS ONE READING OF TWO, AND ON 27 Aug THE TWO DISAGREE BY 3.7x ON OIL.
      cv.rate is the FORTNIGHT rate. Oil sold 11 unit in those fourteen days and TEN of them
      went out on one day, the 26th, the day the lot landed; the inventory had been counted at
@@ -11517,8 +11527,7 @@ function shelfCall(cv,oversold,free){
      about, and it returns 23.5 days and a green Clear where the four-week rate returns 6.4.
      Nothing here recomputes cover: coverStats returns both rates and this only says so when
      they part company. Salt's two readings are within 2% of each other and it stays silent. */
-  const S=coverSpread(cv,free);
-  const split=S.split?` On the four-week rate it is ${S.d28.toFixed(1)} days, not ${cv.days}.`:'';
+  /* v824: the four-week second opinion went with the fortnight rate: the plan's recency-weighted rate is the one reading */
   if(oversold)return {sev:'var(--crim)',k:'Oversold',f:units(-free),
     t:`You owe ${units(-free)} more than is on the inventory`,
     w:`${units(defUnits)} owed out against ${units(currentStock)} on hand. Nothing more can be promised until a lot lands.`};
@@ -11530,14 +11539,14 @@ function shelfCall(cv,oversold,free){
     w:`${units(free)} free to sell, and no rate to measure it against, so cover cannot be stated.`};
   if(cv.below)return {sev:cv.days<3?'var(--crim)':'var(--gold)',k:'Buy',f:cv.days+' d',
     t:`Buying is overdue by ${units(cv.shortBy)}`,
-    w:`${units(free)} free to sell at ${units(cv.rate)} a day, already under the ${units(cv.reorderAt)} mark. The inventory runs dry ${cv.days<1?'today':'on '+dry}.${split}`};
+    w:`${units(free)} free to sell at ${units(cv.rate)} a day, already under the ${units(cv.reorderAt)} mark. The inventory runs dry ${cv.days<1?'today':'on '+dry}.`};
   /* round 5: at EXACTLY the mark, shortBy is 0 and units(-0) printed "Clear by -0 unit
      above the reorder mark" while "comes first" promised a future the inventory was already
      at. The engine keeps the boundary on the not-below side; the words now match it. */
   const at=Math.abs(cv.shortBy)<0.005;
   return {sev:'var(--grn)',k:'Clear',f:cv.days+' d',
     t:at?'Exactly at the reorder mark':`Clear by ${units(-cv.shortBy)} above the reorder mark`,
-    w:`${units(free)} free to sell at ${units(cv.rate)} a day. ${at?`The next sale puts it under the ${units(cv.reorderAt)} mark`:`The ${units(cv.reorderAt)} mark comes first`}; the inventory runs dry on ${dry}.${split}`};
+    w:`${units(free)} free to sell at ${units(cv.rate)} a day. ${at?`The next sale puts it under the ${units(cv.reorderAt)} mark`:`The ${units(cv.reorderAt)} mark comes first`}; the inventory runs dry on ${dry}.`};
 }
 /* ============ BUY SIZE AND RESTOCK (his instruction of 24 Sep 2026) ============
    "What is the typical buy size, so I can plan to restock properly, as inefficient inventory is also
@@ -11666,9 +11675,9 @@ function tabInventory(){
 
   <h2 style="margin-top:18px">How long the inventory lasts <span class="rule"></span></h2>
   <div class="kpis k4">
-    <div class="kpi salt-kpi ${cv.days!=null&&cv.days<3?'r':'gold'}"><div class="l salt-kpi__label">Cover</div><div class="v salt-kpi__value">${cv.days==null?'&mdash;':cv.days+' d'}</div><div class="n salt-kpi__note">${cv.rate>0?`at ${units(cv.rate)}/day, the fortnight rate`:'no recent trade to rate against'}</div></div>
-    <div class="kpi salt-kpi"><div class="l salt-kpi__label">Sold last 14 days</div><div class="v salt-kpi__value">${units(cv.units14)}</div><div class="n salt-kpi__note">${units(cv.rate14)}/day &middot; the rate the inventory faces now</div></div>
-    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Sold last 28 days</div><div class="v salt-kpi__value">${units(cv.units28)}</div><div class="n salt-kpi__note">${units(cv.rate28)}/day &middot; the steadier read</div></div>
+    <div class="kpi salt-kpi ${cv.days!=null&&cv.days<3?'r':'gold'}"><div class="l salt-kpi__label">Cover</div><div class="v salt-kpi__value">${cv.days==null?'&mdash;':cv.days+' d'}</div><div class="n salt-kpi__note">${cv.rate>0?`at ${units(cv.rate)}/day, the measured rate`:'no recent trade to rate against'}</div></div>
+    <div class="kpi salt-kpi"><div class="l salt-kpi__label">Sold last 14 days</div><div class="v salt-kpi__value">${units(cv.units14)}</div><div class="n salt-kpi__note">${units(cv.rate14)}/day shipped</div></div>
+    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Sold last 28 days</div><div class="v salt-kpi__value">${units(cv.units28)}</div><div class="n salt-kpi__note">${units(cv.rate28)}/day shipped</div></div>
     ${''/* round 5: a inventory sitting EXACTLY on its trigger has shortBy 0, and units(-0)
        prints "-0 unit", so oil at 20 on a 20 mark read "clear by -0 unit". The engine
        places the boundary case on the not-below side; the copy now says so in words. */}
@@ -14456,13 +14465,16 @@ function observations(){
             `2027 carries statutory fixed dates only; the lunar and Islamic festivals are left out rather than guessed`,
             F.pastTable?'the forward window now runs past the verified table, so treat the far end as unchecked':'the forward window sits inside the verified table']});
     }
-    /* THE SIGNAL ITSELF */
+    /* THE SIGNAL ITSELF. v824: measured against the desk's one rate, the restock plan's base, and its fourteen-day forecast */
+    const RP=restockFor(DEFAULT_PROD);
+    if(F&&RP&&!RP.empty&&RP.base>0){F.flat=RP.base;F.flatExpect=RP.base*14;F.expect=RP.forecast.d14.run;F.delta=F.expect-F.flatExpect;
+      F.index=+(F.expect/F.flatExpect).toFixed(3);F.pct=obsPct(F.delta,F.flatExpect);}
     if(F){
       const pct=F.pct==null?0:F.pct, big=Math.abs(pct)>=8;
       add({id:'rhythm:restock:'+DEFAULT_PROD,fam:'rhythm',sev:big?'watch':'note',conf:confDay,rm:null,tab:'inventory',
-        title:big?`Buy about ${Math.abs(pct).toFixed(0)}% ${pct>0?'more':'less'} than the flat rate implies`
-                 :'The next fortnight looks ordinary, so buy at the flat rate',
-        why:`The flat run rate is ${units(F.flat)} a day, which over fourteen days is ${units(F.flatExpect)}. Weighting each of the next fourteen days by its own weekday and pay-window factor gives ${units(F.expect)}, an index of ${F.index.toFixed(2)}${big?`, so ${units(Math.abs(F.delta))} ${pct>0?'more':'less'} than the flat rate would have you hold`:'. That is inside the noise, so the flat rate is the better instruction'}. ${(function(){const inPay=F.days.filter(d=>d.pay).length;
+        title:big?`Buy about ${Math.abs(pct).toFixed(0)}% ${pct>0?'more':'less'} than the desk's rate implies`
+                 :"The next fortnight looks ordinary, so buy at the desk's rate",
+        why:`The desk's rate is ${units(F.flat)} a day, which over fourteen days is ${units(F.flatExpect)}. Weighting each of the next fourteen days by its own weekday and pay-window factor gives ${units(F.expect)}, an index of ${F.index.toFixed(2)}${big?`, so ${units(Math.abs(F.delta))} ${pct>0?'more':'less'} than the flat rate would have you hold`:'. That is inside the noise, so the flat rate is the better instruction'}. ${(function(){const inPay=F.days.filter(d=>d.pay).length;
           if(inPay===0)return `The whole window sits outside the pay window, and on this book the 8th to the 24th is the busier half, which is where the movement comes from.`;
           if(inPay===F.days.length)return `Every day of it sits inside the pay window, so the pay-window factor moves the whole fortnight in one direction.`;
           return `${inPay} of the fourteen days sit inside the pay window and ${F.days.length-inPay} outside, so the two halves partly cancel.`;})()} Both factors are shrunk towards no effect for sample size, and the holiday factor is pinned at 1.00 because nothing in this book measures one.`,
