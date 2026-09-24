@@ -357,7 +357,7 @@ async function logOut(request, env, m, su) {
   const b = await readJson(request);
   await dropSession(env, String(request.headers.get("X-Stmt-Session") || ""));
   const tok = b && typeof b.token === "string" && REM_RE.test(b.token) ? b.token : null;
-  const { key, rec, raw } = tok ? await readRem(env, tok, false) : {};
+  const { key, rec, raw } = tok ? await readRem(env, tok) : {};
   if (rec && (!su || rec.u === su)) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); await unpoint(env, rec.u, key); }
   const stok = String(request.headers.get("X-Stmt-Session") || "");
   if (su && stok) await unpoint(env, su, "sess:" + stok);
@@ -427,14 +427,23 @@ async function handleRemember(request, env) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   const b = await readJson(request);
   const tok = b && typeof b.token === "string" && REM_RE.test(b.token) ? b.token : null;
-  const { key, rec } = tok ? await readRem(env, tok, true) : {};
+  const { key, rec, raw } = tok ? await readRem(env, tok) : {};
   if (!rec || !rec.u) return json({ ok: false, error: REFUSED }, 401);
   const acct = await env.STMT.get("u:" + rec.u, "json");
-  if (!acct) { await env.STMT.delete(key); await unpoint(env, rec.u, key); return json({ ok: false, error: REFUSED }, 401); }
+  if (!acct) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); await unpoint(env, rec.u, key); return json({ ok: false, error: REFUSED }, 401); }
   await markSeen(env, rec.u, acct, "remembered");
-  /* S3 3.2: the phone's own pointer says when it was last used, and one filed before pointers is given its first */
+  /* S3 3.6, HIS DECISION D1 OF 24 SEP 2026: KEEP ME SIGNED IN RUNS THIRTY DAYS FROM THE LAST OPEN, not from the tick,
+     so a customer who uses the page is never signed out by a calendar. Every open files the record again for thirty
+     days, which is also the put that moves a record filed the old way under its hash (3.1). Best effort: a put that
+     throws (KV takes one write to a key a second) never fails the open, and the record keeps the days it had.
+     S3 3.2: the phone's own pointer says when it was last used, lives as long, and one filed before pointers is
+     given its first. */
   const now = new Date().toISOString();
-  try { await pointAt(env, rec.u, key, { how: "remember", at: rec.at || now, last: now }, remLeft(rec)); } catch (e) { /* the next open writes it */ }
+  try {
+    await env.STMT.put(key, JSON.stringify(rec), { expirationTtl: REM_TTL });
+    if (raw) await env.STMT.delete(raw);
+  } catch (e) { /* it opens either way, and slides on the next */ }
+  try { await pointAt(env, rec.u, key, { how: "remember", at: rec.at || now, last: now }, REM_TTL); } catch (e) { /* the next open writes it */ }
   const session = await openSession(env, rec.u, "remembered");
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
@@ -603,7 +612,7 @@ const refOut = (origin, r) => Object.assign({}, r, { url: refUrl(origin, r.id), 
  *
  * REMEMBERING IS A CUSTOMER'S OWN: it is minted on a session, which only a correct password mints.
  * Logging out drops the session and the remembered wrap, so a phone handed on is a phone signed
- * out. Thirty days, his figure, and the record expires on its own after that. */
+ * out. Thirty days, his figure, counted from the last open since S3 3.6, and the record expires on its own after that. */
 const REM_TTL = 30 * 24 * 3600;
 const REM_RE = /^[A-Za-z0-9_-]{20,64}$/;
 
@@ -611,22 +620,17 @@ const REM_RE = /^[A-Za-z0-9_-]{20,64}$/;
    v710. The key WAS the token, so anybody holding a copy of this store could post one to /remember/open and be
    handed a session, which places orders, without the device key that opens the wrap; and a sign-in that keeps
    itself alive (3.4 to 3.6) would have made that copy worth more. A record filed the old way is re-filed under
-   its hash on its next open, keeping the time it had left. ONLY A TOKEN OF THE OLD MINTING'S OWN SHAPE is looked up
-   raw (24 bytes, 32 characters): a hash read off a copy is 64, so it can never name a record by itself. */
+   its hash on its next open (handleRemember). ONLY A TOKEN OF THE OLD MINTING'S OWN SHAPE is looked up raw (24
+   bytes, 32 characters): a hash read off a copy is 64, so it can never name a record by itself. */
 const REM_RAW_RE = /^[A-Za-z0-9_-]{32}$/;
-const remLeft = (rec) => Math.max(60, Math.round(REM_TTL - (Date.now() - (Date.parse(rec.at) || Date.now())) / 1000));
 const remKey = async (tok) => "rem:" + (await idOf(tok));
-async function readRem(env, tok, refile) {
+/* the record a token names, where it is filed, and the old raw key it still sits under, if it does */
+async function readRem(env, tok) {
   const key = await remKey(tok);
   const rec = await env.STMT.get(key, "json");
   if (rec || !REM_RAW_RE.test(tok)) return { key, rec, raw: null };
   const raw = "rem:" + tok, old = await env.STMT.get(raw, "json");
-  if (!old || !refile) return { key, rec: old, raw: old ? raw : null };
-  try {
-    await env.STMT.put(key, JSON.stringify(old), { expirationTtl: remLeft(old) });
-    await env.STMT.delete(raw);
-  } catch (e) { /* it opens either way, and is re-filed on the next */ }
-  return { key, rec: old, raw: null };
+  return { key, rec: old, raw: old ? raw : null };
 }
 
 /* ---- THE MASTER ACCOUNT (v687, his instruction of 18 Sep 2026) --------------------------------

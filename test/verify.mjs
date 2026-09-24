@@ -15830,10 +15830,8 @@ await (async () => {
   const old = "old31" + "b".repeat(27), at = new Date(Date.now() - 10 * 86400e3).toISOString();
   await kv.put("rem:" + old, JSON.stringify({ u, wrap, at }), { expirationTtl: 20 * 86400 });
   const back = await post("/remember/open", { token: old });
-  const ttl = (kv.opts.get("rem:" + sha(old)) || {}).expirationTtl || 0;
-  ok(back.status === 200 && !(await kv.get("rem:" + old)) && JSON.parse((await kv.get("rem:" + sha(old))) || "{}").u === u
-    && Math.abs(ttl - 20 * 86400) < 60,
-    "an old raw record opens, and is re-filed under its hash with the time it had left: " + JSON.stringify({ status: back.status, ttl }));
+  ok(back.status === 200 && !(await kv.get("rem:" + old)) && JSON.parse((await kv.get("rem:" + sha(old))) || "{}").u === u,
+    "an old raw record opens, and is re-filed under its hash: " + back.status);
   ok((await post("/remember/open", { token: old })).status === 200, "and it opens again from where it now lives");
 })();
 section("S3 3.2: every remember and every open leaves a pointer under the username, listable by prefix, and Log out takes its own");
@@ -15908,6 +15906,37 @@ await (async () => {
       && !(await kv.get("rem:" + sha(tr.j.token))) && Object.keys(await ptrs()).length === Object.keys(left).length,
       "unmaking the test account takes its pointers, its session and its remembered phone, and nobody else's: " + had);
   } finally { globalThis.fetch = realFetch; }
+})();
+section("S3 3.6: Keep me signed in runs thirty days from the last open, not from the tick");
+await (async () => {
+  /* HIS DECISION D1 OF 24 SEP 2026. Thirty days from the tick signed out a customer who opened the page every day, on
+     the thirty-first, silently. Every open now files the record, and its pointer, again for thirty days. */
+  const kv = new KV(), env = { STMT: kv }, u = "aaaa-ssss";
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", env: { v: 2, iv: "aXY=", ct: "Y3Q=" } }));
+  const post = (path, body) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env);
+  const sha = (s) => createHash("sha256").update(s).digest("hex");
+  const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" }, at = new Date(Date.now() - 25 * 86400e3).toISOString();
+  const tok = "new36" + "d".repeat(27), key = "rem:" + sha(tok), ptr = "dev:" + u + ":" + sha(key);
+  await kv.put(key, JSON.stringify({ u, wrap, at }), { expirationTtl: 5 * 86400 });
+  const r = await post("/remember/open", { token: tok });
+  const ttl = (k) => (kv.opts.get(k) || {}).expirationTtl || 0;
+  ok(r.status === 200 && ttl(key) === 30 * 24 * 3600 && ttl(ptr) === 30 * 24 * 3600 && JSON.parse(await kv.get(key)).at === at,
+    "a phone ticked twenty-five days ago and opened today is kept thirty days from today, its pointer with it, and still says when it was ticked: "
+    + JSON.stringify({ rec: ttl(key), ptr: ttl(ptr) }));
+  /* one filed the old way slides as it moves */
+  const old = "old36" + "e".repeat(27);
+  await kv.put("rem:" + old, JSON.stringify({ u, wrap, at }), { expirationTtl: 5 * 86400 });
+  await post("/remember/open", { token: old });
+  ok(ttl("rem:" + sha(old)) === 30 * 24 * 3600 && !(await kv.get("rem:" + old)),
+    "and one filed the old way is moved under its hash for thirty days from today: " + ttl("rem:" + sha(old)));
+  /* a put that cannot be made never fails the open */
+  const realPut = kv.put.bind(kv);
+  kv.put = async (k, v, o) => { if (String(k) === key) throw new Error("KV PUT failed: 429 Too Many Requests"); return realPut(k, v, o); };
+  try {
+    const again = await post("/remember/open", { token: tok });
+    ok(again.status === 200 && !!(await again.json()).session, "and a slide KV refuses still lets the phone in: " + again.status);
+  } finally { kv.put = realPut; }
 })();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {
