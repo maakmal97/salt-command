@@ -205,10 +205,11 @@ export const OWNER_JS = `
   var story={};
   /* the link moved: every Send a sign-in link drawn for that account is painted from madeLink, including one a redraw
      put in the place of the button that asked (a sheet read lands while the link is being made), and Needs you with it */
+  /* S9 fix: a link that could not be made leaves the pill on, as Try again, whose tap makes it again and shares nothing */
   function paintPill(b){
-    var m=madeLink[b.getAttribute('data-pill')]||{};
-    b.disabled=b.getAttribute('data-none')==='1'||!m.j;
-    b.textContent=m.busy?'Making the link...':'Send a sign-in link';
+    var m=madeLink[b.getAttribute('data-pill')]||{}, again=!m.j&&!m.busy&&!!m.fail;
+    b.disabled=b.getAttribute('data-none')==='1'||(!m.j&&!again);
+    b.textContent=m.busy?'Making the link...':again?'Try again':'Send a sign-in link';
     if(b.note){ b.note.textContent=m.note||''; b.note.className='anote'+(m.bad?' bad':''); }
   }
   function paintPills(u){ [].slice.call(document.querySelectorAll('[data-pill]')).forEach(function(b){ if(b.getAttribute('data-pill')===u) paintPill(b); }); }
@@ -216,9 +217,10 @@ export const OWNER_JS = `
   function makeLink(a){
     var u=a.username, m=madeLink[u]||(madeLink[u]={});
     if(m.j||m.busy||a.account===false) return;
-    m.busy=true; m.bad=false;
+    if(m.fail){ m.fail=false; m.bad=false; m.note=''; }
+    m.busy=true;
     mintLink(a).then(function(j){ m.j=j; m.busy=false; linkMoved(u); },
-      function(e){ m.busy=false; m.bad=true; m.note='Could not make a link: '+e.message; linkMoved(u); });
+      function(e){ m.busy=false; m.fail=m.bad=true; m.note='Could not make a link: '+e.message; linkMoved(u); });
   }
   function sendPill(a, note, onSent){
     var u=a.username, b=el('button','salt-pill salt-pill--md apill','Send a sign-in link'); b.type='button';
@@ -227,7 +229,7 @@ export const OWNER_JS = `
     paintPill(b); makeLink(a);
     b.addEventListener('click', function(){
       var m=madeLink[u];
-      if(!m||!m.j) return;
+      if(!m||!m.j){ if(m&&m.fail&&!m.busy){ makeLink(a); linkMoved(u); } return; }
       var msg=m.j.msg, p;
       /* the tap's first act, before anything that waits: the share sheet, or with none the clipboard */
       try{ p=navigator.share?navigator.share({text:msg}).then(function(){ return 'sent'; })

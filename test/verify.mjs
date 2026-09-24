@@ -16665,6 +16665,67 @@ await (async () => {
       "and Sign out everywhere on it ends the link Needs you handed out, which the page no longer holds");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S9 fix S9R-6: a sign-in link that could not be made as the account opened is made again from the pill, as Try again");
+await (async () => {
+  /* The link is made as the account opens. When that failed the pill stayed off under the error, and only reopening the
+     account made it again; before 9.3 a second tap retried. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV(), MASTER = "mp-s9r6";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r6", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX6-RT", username: u }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-25T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX6-RT", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9r6", KID = "kid-s9r6";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const A = { "cf-access-jwt-assertion": h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c)))) };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+  const tries = [], shared = [];
+  let win = null;
+  try {
+    win = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      Object.defineProperty(w.navigator, "share", { value: (d) => { shared.push(d.text); return Promise.resolve(); }, configurable: true });
+      /* the first making of the link meets a site that does not answer; the next goes through */
+      w.fetch = async (q, o) => { o = o || {};
+        if (/^[/]all[/]signin[/]/.test(String(q)) && tries.push(q) === 1) return new Response(JSON.stringify({ ok: false, error: "the site did not answer" }), { status: 503, headers: { "content-type": "application/json" } });
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    D.querySelector('button[data-m="accounts"]').click();
+    await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
+    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
+    const pill = () => card() && card().querySelector(".apill");
+    const note = () => ((card() && card().querySelector(".apill + .anote")) || {}).textContent || "";
+    ok(await until(() => tries.length === 1 && /Could not make a link/.test(note())), "the link could not be made as the account opened: " + note());
+    ok(pill().textContent === "Try again" && !pill().disabled, "and the pill stays on, as Try again: " + JSON.stringify([pill().textContent, pill().disabled]));
+    pill().click();
+    ok(await until(() => tries.length === 2) && shared.length === 0, "its tap makes the link again and shares nothing: " + JSON.stringify({ tries: tries.length, shared: shared.length }));
+    ok(await until(() => pill().textContent === "Send a sign-in link" && !pill().disabled && note() === ""),
+      "once made, it is Send a sign-in link again and the error has gone: " + JSON.stringify([pill().textContent, note()]));
+    pill().click();
+    ok(await until(() => shared.length === 1 && /[/]s[/]/.test(shared[0])), "and the next tap sends it");
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password
