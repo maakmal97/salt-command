@@ -19429,20 +19429,23 @@ function ordDraw(){
     if(i.value!==i.defaultValue)typed[ordField(i)]=i.value;if(i===document.activeElement)focused=ordField(i);});
   let selO=null;
   const lead=document.getElementById('ordLead');
+  /* a tap that closed its order (Cash received taking the last of what was owed) takes its card off the open list,
+     and the answer with it: that answer is said at the head of the list instead, and the phone goes back to the list */
+  const gone=ORD_SAID&&!ORD_OPEN.some(o=>o&&o.id===ORD_SAID.id)?`<p class="dsc ordsaid" role="status" data-msg="${esc(ORD_SAID.id)}">${esc(ORD_SAID.t)}</p>`:'';
   if(lead&&!ordNeedKey&&!ordUnread)lead.textContent=acts.length?acts.length+', oldest first.':'Nothing waiting on you.';
   if(ordNeedKey)box.innerHTML='<div class="warnpill" style="display:block">The write key is needed to read the orders and it was not accepted. Reload to be asked again. <b>This is not an empty book: orders may be waiting.</b></div>';
   else if(ordUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The orders could not be read: '+esc(ordUnread)+'. <b>This is not an empty book.</b></div>';
-  else if(!ORD_OPEN.length)box.innerHTML='<div class="card"><div class="dsc">'+(ordAll?'This site has taken no orders at all yet.':'No open orders. A customer\'s order lands here the moment it is placed.')+'</div></div>';
+  else if(!ORD_OPEN.length)box.innerHTML=gone+'<div class="card"><div class="dsc">'+(ordAll?'This site has taken no orders at all yet.':'No open orders. A customer\'s order lands here the moment it is placed.')+'</div></div>';
   else{
     const shown=acts.filter(a=>ORD_FILTER==='all'||a.kind===ORD_FILTER);
     const inActs=new Set(acts.map(a=>a.o.id));
     const rest=ORD_OPEN.filter(o=>o&&!inActs.has(o.id)).map(o=>({kind:'other',o,at:o.at||''}));
-    if(!ORD_OPEN.some(o=>o&&o.id===ORD_SEL))ORD_SEL='';
+    if(!ORD_OPEN.some(o=>o&&o.id===ORD_SEL)){ORD_SEL='';if(gone)ORD_OPENED=false;}
     const sel=ORD_SEL||(shown[0]&&shown[0].o.id)||(acts[0]&&acts[0].o.id)||(rest[0]&&rest[0].o.id)||'';
     const cnt=k=>k==='all'?acts.length:acts.filter(a=>a.kind===k).length;
     const tab=(k,w)=>`<button type="button" class="salt-tabs__pill ordtab" role="tab" data-of="${k}" aria-selected="${ORD_FILTER===k}">${w}${cnt(k)?` <span class="salt-tabs__count">${cnt(k)}</span>`:''}</button>`;
     box.classList.toggle('ord-open',!!ORD_OPENED);
-    box.innerHTML=`<div class="ordlist">
+    box.innerHTML=`<div class="ordlist">${gone}
       <div class="salt-tabs ordtabs" role="tablist" aria-label="Show">${tab('all','All')+tab('new','New')+tab('paid','Paid?')+tab('cash','Cash')+tab('asked','Asked')}</div>
       <div class="ordrows">${shown.length?shown.map(a=>ordRow(a,a.o.id===sel)).join(''):`<div class="dsc">${acts.length?'None of this kind.':'Nothing waiting on you.'}</div>`}</div>
       ${rest.length?`<div class="salt-eyebrow ordrest">${ordAll?'Every other order':'Other open orders'}</div><div class="ordrows">${rest.map(a=>ordRow(a,a.o.id===sel)).join('')}</div>`:''}

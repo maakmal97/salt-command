@@ -24451,6 +24451,45 @@ await (async () => {
   }
 })();
 
+section("S11 merge: a tap that closes its order keeps its answer, said at the head of the list once the card has left it");
+await (async () => {
+  /* Found by the rig on the merge: Cash received on goods all handed over pays the last of what is owed, the order
+     completes and leaves the open list, and the card that carried the answer (S11 11.4: the answer beside the control)
+     left with it, so "Recorded ... Booked as it is drafted" was never drawn. The answer now stands at the head of the
+     list, and the phone goes back to the list to show it. */
+  const { openMaster: omG } = await import("../tools/payload.mjs");
+  const { w } = await omG();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 97; w.clearInterval = () => {};
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const c1 = Object.assign({ id: "c1", status: "ready", at: "2026-09-20T02:00:00.000Z", moved: 1, paid: 0, movedAt: "2026-09-24T01:00:00.000Z" }, base);
+    const n1 = Object.assign({ id: "n1", status: "acknowledged", at: "2026-09-21T02:00:00.000Z", moved: 0, paid: 0 }, base);
+    let orders = [c1, n1];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      const body = p === "orders" && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)) }
+        : /\/cash$/.test(p) ? { ok: true, preapproval: { stage: "cash", waits: false, says: "Booked as it is drafted" } } : { ok: true };
+      if (/\/cash$/.test(p)) orders = orders.filter((o) => o.id !== "c1");
+      return { ok: true, status: 200, json: async () => body };
+    };
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    w.eval("ORD_SEL='c1';ORD_OPENED=true;ordDraw();");
+    D.querySelector('.ordcard[data-id="c1"] button[data-ord="cash"]').click();
+    for (let i = 0; i < 30 && !D.querySelector('.ordlist [data-msg="c1"]'); i++) await new Promise((r) => setTimeout(r, 30));
+    const said = D.querySelector('.ordlist [data-msg="c1"]');
+    ok(said && /^Recorded: RM 100 in cash\. They see it paid and the chase stops\. Booked as it is drafted/.test(said.textContent) && w.eval("ORD_OPENED") === false
+      && !D.querySelector('.ordcard[data-id="c1"]'),
+      "the order it closed has left the list, and its answer heads the list, the phone back on it: " + JSON.stringify({ said: said && said.textContent, opened: w.eval("ORD_OPENED") }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one
