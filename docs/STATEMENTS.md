@@ -532,7 +532,7 @@ the service worker at `/sw.js` shows the kind's words from its own `NEWS` table:
 reply, payment received, a payment is due, delivered or collected (in part or in full), complete,
 not taken, cancelled. **Never an amount, a product, an order or a name**; the suite reads every word.
 A tap opens the Counter at `#o=<id>`; a page already open is sent a message instead, re-reads its
-orders and opens that one. A subscription filed before its keys gets a payload-free wake and the
+orders and opens that one, or, its session lapsed, keeps it for the sign-in after Continue. A subscription filed before its keys gets a payload-free wake and the
 old fixed words, so nothing already subscribed went dark; the page re-files the keys at the next
 sign-in. A notice keeps its own road: its wake carries no payload, and the service worker reads
 the public `bulletin` (v761). On an

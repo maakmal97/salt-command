@@ -20411,6 +20411,67 @@ await (async () => {
     + JSON.stringify({ movedOn: after.movedOn, day, eve, morning }));
 })();
 
+section("S12 fix: a banner tapped on a page whose session has lapsed opens that order after Continue, never the list drawn last");
+await (async () => {
+  /* S12-R2, 24 Sep 2026: a session is a flat fifteen minutes and a banner comes hours later, so the tap's re-read
+     usually met a 401. The page then opened the order off the list it drew last, spent the target doing so, and
+     after Continue and the sign-in landed on Statements with nothing opened. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("8".repeat(64), un);
+  const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, live: null, prices: null, session: "sessMaaaaaaaaaaaaaaaaaaaaaaa",
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 Sep 2026", body: "<p>Statement</p>" }] })) };
+  const ord = (oid, at) => ({ id: oid, u: un, at, status: "acknowledged", product: "salt", qty: 1, unit: 100, mode: "collect", total: 100,
+    delivery: 0, paid: 0, payments: [], moved: 0, history: [{ at, status: "placed", by: "customer" }], msgs: [] });
+  const A = "20260920090000-aaaa1111", B = "20260921090000-bbbb2222";
+  const orders = [ord(B, "2026-09-21T01:00:00Z"), ord(A, "2026-09-20T01:00:00Z")];
+  const st = { listen: null, scrolled: [], lapsed: false, reads: 0, refused: 0 };
+  const dom = new JSDOM(landingPage(un, "nM", null), { url: "https://site.test/?u=" + un, runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {};
+      win.HTMLElement.prototype.scrollIntoView = function () { st.scrolled.push(this.getAttribute("data-order")); };
+      Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+        addEventListener: (t, f) => { if (t === "message") st.listen = f; }, getRegistration: async () => undefined } });
+      win.fetch = async (path) => {
+        const p = String(path);
+        if (p === "/open") { st.lapsed = false; return { ok: true, status: 200, json: async () => openB }; }
+        if (p === "/orders") {
+          if (st.lapsed) { st.refused++; return { ok: false, status: 401, json: async () => ({ ok: false, session: false }) }; }
+          st.reads++; return { ok: true, status: 200, json: async () => ({ ok: true, orders }) };
+        }
+        return { ok: true, status: 200, json: async () => ({ ok: true }) };
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const wait = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); };
+  const onOrder = () => !D.getElementById("pOrder").hidden && D.getElementById("pStmt").hidden;
+  const signIn = async () => {
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await wait(() => D.getElementById("pOrder").querySelector("[data-order]"));
+  };
+  try {
+    await signIn();
+    D.querySelector('#tabs button[data-t="stmt"]').click();
+    st.lapsed = true;
+    await st.listen({ data: { salt: "news", order: A } });
+    ok(st.refused === 1 && !D.getElementById("lapse").hidden && !onOrder() && st.scrolled.length === 0,
+      "the tap's re-read meets the lapse: the bar says so and nothing is opened off the list drawn last: "
+      + JSON.stringify({ refused: st.refused, onOrder: onOrder(), scrolled: st.scrolled }));
+    D.getElementById("lapseGo").click();
+    await new Promise((r) => setTimeout(r, 50));
+    const reads = st.reads;
+    await signIn();
+    await wait(() => st.scrolled.length);
+    ok(st.reads > reads && onOrder() && JSON.stringify(st.scrolled) === JSON.stringify([A]),
+      "after Continue and the sign-in, the orders are read afresh and the one the banner was about is opened: "
+      + JSON.stringify({ reads: st.reads - reads, onOrder: onOrder(), scrolled: st.scrolled }));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } }
+})();
+
 section("v760: a customer paying or taking an order back wakes him, and the banner says which");
 await (async () => {
   /* MEASURED 21 SEP 2026: the site has written the moment of every change since v694, the desk asked

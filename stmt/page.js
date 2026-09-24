@@ -1659,7 +1659,9 @@ const CLIENT_JS = `
   function orderIn(h){ var m=/^#o=([0-9]{14}-[a-z0-9]{1,8})$/.exec(h||''); return m?m[1]:''; }
   var wantOrder=orderIn(location.hash);
   function openWanted(){
-    if(!wantOrder||view||!session) return;
+    /* a lapsed session keeps the order for the sign-in after Continue: a banner comes hours after the fifteen
+       minutes, and spending it on the list drawn last showed the order stale, then lost it at the door */
+    if(!wantOrder||view||!session||!lapse.hidden) return;
     var id=wantOrder, pane=[].filter.call(pOrder.querySelectorAll('[data-order]'),function(x){ return x.getAttribute('data-order')===id; })[0];
     wantOrder='';
     try{ if(location.hash) history.replaceState(null,'',location.pathname+location.search); }catch(e){}
