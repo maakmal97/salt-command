@@ -17003,6 +17003,60 @@ await (async () => {
       "and How they got in names each road: " + JSON.stringify(rows()));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S9 fix S9R-9: an account whose ways in and devices come from before the list began says so with no date in it");
+await (async () => {
+  /* The two lines named the day the stage was built, 25 Sep, but the records begin at the deploy, which is later. */
+  const W = (await import("../stmt/worker.js")).default;
+  const S = await import("../stmt/signin.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV(), MASTER = "mp-s9r9";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r9", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX9-OL", username: u }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-25T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX9-OL", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  /* opened before the log was kept, on a phone remembered before its pointer named the device */
+  await kv.put("seen:" + u, JSON.stringify({ first: "2026-09-20T01:00:00Z", last: "2026-09-26T01:00:00Z", opens: 3, how: "password" }));
+  const rem = "rem:" + (await S.idOf("s9r9-phone"));
+  await kv.put(rem, JSON.stringify({ u, wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" }, at: "2026-09-26T01:00:00Z" }));
+  await S.pointAt({ STMT: kv }, u, rem, { how: "remember", at: "2026-09-26T01:00:00Z", last: "2026-09-26T01:00:00Z" }, 3600);
+  const TEAM = "maakmal", AUD = "aud-s9r9", KID = "kid-s9r9";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const A = { "cf-access-jwt-assertion": h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c)))) };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  let win = null;
+  try {
+    win = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    D.querySelector('button[data-m="accounts"]').click();
+    await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
+    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    const story = () => ((D.querySelector('#aopen [data-story="' + u + '"]')) || {}).textContent || "";
+    ok(await until(() => /Last opened26 Sep, by password[.] Earlier ways in were not kept[.]/.test(story()) && /A device named before this list beganSign out/.test(story()))
+      && !/25 Sep/.test(story()),
+      "the last open and the device from before the list began are said with no date of the build in them: " + JSON.stringify(story()));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password

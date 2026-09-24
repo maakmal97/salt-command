@@ -273,7 +273,7 @@ export const OWNER_JS = `
     if(!s) list.appendChild(lineRow('Reading how they got in.', null, ''));
     else if(s.err) list.appendChild(lineRow('Not read', null, s.err));
     else if(!log.length) list.appendChild(a.seen&&a.seen.opens
-      ?lineRow('Last opened', null, dayMon(a.seen.last)+(howOf(a.seen)?', '+howOf(a.seen):'')+'. The ways in before 25 Sep were not kept.')
+      ?lineRow('Last opened', null, dayMon(a.seen.last)+(howOf(a.seen)?', '+howOf(a.seen):'')+'. Earlier ways in were not kept.')
       :lineRow('Not opened yet', null, a.sent?'Sent '+dayMon(a.sent)+'.':''));
     box.appendChild(list);
     /* S9 9.4: PHONES AND COMPUTERS, off the account's own pointers: each device named as its browser described itself when
@@ -285,7 +285,7 @@ export const OWNER_JS = `
     devs.forEach(function(d){
       var so=ghost('Sign out');
       so.addEventListener('click', function(){ endOne(a, d, so); });
-      dl.appendChild(lineRow(d.label||'A device named before 25 Sep', so, d.kept
+      dl.appendChild(lineRow(d.label||'A device named before this list began', so, d.kept
         ?'Kept signed in since '+dayMon(d.at)+', last used '+when(d.last)+'.'
         :'Signed in '+when(d.at)+' for this visit, not kept.'));
     });
