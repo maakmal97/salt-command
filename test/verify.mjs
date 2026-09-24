@@ -19269,6 +19269,89 @@ await (async () => {
     + (wrong.length ? "; out of order: " + wrong.slice(0, 3).join(", ") : ""));
 })();
 
+section("24 Sep 2026: on the payment page over RM 100, every tap on an order answers beside what was tapped");
+await (async () => {
+  /* H06 of the Counter study: every answer went to the order form's one note, and the payment page never draws
+     the form, so I have paid, Withdraw and Send answered nothing at all there. The answer is now a role=status
+     line in the order that was tapped, beside the control; where the answer took the control away (paid in
+     full), under the order's state. */
+  const { landingPage: lpH } = await import("../stmt/page.js");
+  const CH = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcH } = await import("node:crypto");
+  const { JSDOM: JDH } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-h06", ck = await CH.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await CH.wrapKey(pass, ck), session: "sess-h06",
+    env: await CH.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await CH.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280 })) };
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: "2026-09-20T03:00:00Z", history: [], msgs: [] };
+  const st = { paid: 0, payOk: false, ordersDown: false };
+  const list = () => [{ ...base, id: "oA", status: "acknowledged", total: 150, paid: st.paid, method: "transfer", account: "maybank" },
+    { ...base, id: "oB", status: "placed", total: 90, paid: 0 }];
+  const res = (status, j) => ({ ok: status === 200, status, json: async () => j });
+  const dom = new JDH(lpH(u, "nh06", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcH, configurable: true }); } catch (e) { win.crypto = wcH; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {}; win.confirm = () => true;
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      if (p === "/open") return res(200, body);
+      if (p === "/orders" && m === "GET") return st.ordersDown ? res(401, { ok: false }) : res(200, { ok: true, orders: list() });
+      if (p === "/orders/oA/pay") { if (!st.payOk) return res(200, { ok: false, error: "Refused by the fixture: pay" }); st.paid = 150; return res(200, { ok: true }); }
+      if (p === "/orders/oB/cancel") return res(200, { ok: false, error: "Refused by the fixture: withdraw" });
+      if (p === "/orders/oB/say") return res(200, { ok: false, error: "Refused by the fixture: say" });
+      return res(404, { ok: false });
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
+  const panes = () => [...d.querySelectorAll("#pOrder .pane")].filter((p) => p.querySelector(".state"));
+  const said = (root, words) => [...root.querySelectorAll('[role="status"]')].find((x) => x.textContent.includes(words) && !x.closest("[hidden]"));
+  const after = (a, b) => !!(a && b && (a.compareDocumentPosition(b) & w.Node.DOCUMENT_POSITION_FOLLOWING));
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => panes().length === 2);
+    ok(panes().length === 2 && !d.getElementById("pOrder").hidden && d.getElementById("tOrder").textContent === "Pay",
+      "the fixture opens on the payment page with its two orders below");
+
+    d.getElementById("pd-oA").click();
+    await until(() => said(d, "Refused by the fixture: pay"));
+    const payLine = said(panes()[0], "Refused by the fixture: pay");
+    ok(payLine && after(d.getElementById("pd-oA"), payLine),
+      "I have paid refused: the words are on screen in a role=status line in that order, after the button");
+
+    [...panes()[1].querySelectorAll("button")].find((b) => b.textContent === "Withdraw this order").click();
+    await until(() => said(d, "Refused by the fixture: withdraw"));
+    const wdBtn = [...panes()[1].querySelectorAll("button")].find((b) => b.textContent === "Withdraw this order");
+    const wdLine = said(panes()[1], "Refused by the fixture: withdraw");
+    ok(wdLine && after(wdBtn, wdLine) && !said(d, "Refused by the fixture: pay"),
+      "Withdraw refused: the words sit beside Withdraw on that order, and the earlier answer has gone");
+
+    const box = panes()[1].querySelector(".sayw input"); box.value = "Is it ready?";
+    [...panes()[1].querySelectorAll("button")].find((b) => b.textContent === "Send").click();
+    await until(() => said(d, "Refused by the fixture: say"));
+    const sayLine = said(panes()[1], "Refused by the fixture: say");
+    ok(sayLine && after(panes()[1].querySelector(".sayw"), sayLine), "Send refused: the words sit under the box that was sent from");
+
+    /* the order list answering 401 after a tap writes the form's note, which the payment page now draws too */
+    const holdSaid = () => [...d.querySelector("#pOrder .pane").querySelectorAll('[role="status"]')].filter((x) => x.textContent.trim()).length;
+    const holdBefore = holdSaid();
+    st.ordersDown = true;
+    d.getElementById("pd-oA").click();
+    await until(() => holdSaid() > 0);
+    ok(holdBefore === 0 && holdSaid() > 0 && !d.querySelector("#pOrder .pane").querySelector(".state"),
+      "and a note the form would have carried is drawn in the payment pane itself: " + holdBefore + " then " + holdSaid());
+
+    st.ordersDown = false; st.payOk = true;
+    d.getElementById("pd-oA").click();
+    await until(() => said(d, "Recorded."));
+    const rec = said(panes()[0], "Recorded.");
+    ok(rec && !d.getElementById("pd-oA") && /Paid in full/.test(panes()[0].textContent) && after(panes()[0].querySelector(".quote"), rec),
+      "paid in full, the pay box is gone and the answer stands under the order's state instead of vanishing with it");
+  } finally { w.close(); }
+})();
+
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead

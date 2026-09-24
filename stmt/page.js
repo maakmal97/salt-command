@@ -1164,6 +1164,8 @@ const CLIENT_JS = `
       var sv=el('button','btn quiet salt-ghost','See your statement'); sv.type='button';
       sv.addEventListener('click',function(){ showTab('stmt'); });
       dueBox.appendChild(sv);
+      /* 24 Sep 2026: the note was drawn in the order form alone, which this page never shows */
+      if(draft.note) dueBox.appendChild(statusLine(draft.note));
       pOrder.appendChild(dueBox);
     } else if(!prices||!prices.products||!prices.products.length){
       pOrder.appendChild(el('p','lead',prices&&prices.soon&&prices.soon.length?'Ordering opens once your prices are set.':'Ordering opens once your price list is written, with the next update.'));
@@ -1307,11 +1309,21 @@ const CLIENT_JS = `
      off the order, never off a single word of state. Both figures are the ones the desk holds. */
   function dueOf(o){ return +((o.total+(+o.delivery||0))-(+o.paid||0)).toFixed(2); }
   function heldUnpaid(exceptId){ return orders.some(function(o){ return o.id!==exceptId&&['cancelled','declined'].indexOf(o.status)<0&&(+o.moved||0)>0&&dueOf(o)>0.004; }); }
+  /* THE ANSWER TO A TAP ON AN ORDER IS DRAWN BESIDE WHAT WAS TAPPED (24 Sep 2026). Every answer went
+     to the form's one note, which the payment page over RM 100 never draws, so I have paid, Confirm,
+     Withdraw and Send answered nothing there, and on the order page the answer sat above the form, a
+     screen away. It lives in draft, so signing out and signing in forget it as they forget the rest.
+     k names the control; where the answer took the control away (paid in full, withdrawn), the line
+     goes under the order's state, which is where the change shows. */
+  function statusLine(t){ var p=el('p','msg',t); p.setAttribute('role','status'); return p; }
+  function tapSaid(o,k,t){ draft.tap=t?{id:o.id,k:k,t:t}:null; }
   function orderPane(o){
     var pane=el('div','pane');
     var P=prices&&prices.products&&prices.products.filter(function(x){return x.product===o.product;})[0];
     var unit=P?P.unit:'unit';
     var due=dueOf(o), moved=+o.moved||0, paid=+o.paid||0, payable=['acknowledged','ready'].indexOf(o.status)>=0;
+    var tap=(draft.tap&&draft.tap.id===o.id)?draft.tap:null, tk=tap&&tap.k;
+    if(tk==='pay'&&!(payable&&due>0.004) || tk==='withdraw'&&!((payable||o.status==='placed')&&!(moved>0))) tk='state';
     pane.appendChild(el('div','state salt-status salt-status--'+(STATE_TONE[o.status]||'mist'), STATE_WORDS[o.status]||o.status));
     pane.appendChild(el('div','quote', rm(o.total+(o.delivery||0))));
     if(o.delivery>0) pane.appendChild(el('div','sub2', rm(o.total)+' for the goods and '+rm(o.delivery)+' delivery'));
@@ -1329,7 +1341,9 @@ const CLIENT_JS = `
     else if(o.status==='declined') line='This order could not be taken. Nothing is owed.';
     else if(o.status==='cancelled') line=paid>0?'Withdrawn. The '+rm(paid)+' you paid is refunded.':'Withdrawn before anything moved. Nothing is owed.';
     pane.appendChild(el('p','sub2',line));
+    if(tk==='state') pane.appendChild(statusLine(tap.t));
     if(payable&&due>0.004) pane.appendChild((o.method&&!(pick[o.id]||{}).again)?payBox(o):payChooser(o));
+    if(tk==='pay') pane.appendChild(statusLine(tap.t));
     /* v694: either side may withdraw at any stage until the goods move (his rule, 18 Sep 2026) */
     if(payable||o.status==='placed'){
       if(moved>0) pane.appendChild(el('p','sub2','The goods are with you, so this can no longer be withdrawn here.'));
@@ -1339,10 +1353,11 @@ const CLIENT_JS = `
           if(!confirm(paid>0?'Withdraw this order? The '+rm(paid)+' you paid is refunded.':'Withdraw this order?')) return;
           var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{});
           if(mine!==ticket) return;
-          if(!r.body.ok) draft.note=r.body.error||'It could not be withdrawn.';
+          tapSaid(o,'withdraw',r.body.ok?'':(r.body.error||'It could not be withdrawn.'));
           await loadOrders(); if(mine!==ticket) return; drawOrder();
         });
         pane.appendChild(wb);
+        if(tk==='withdraw') pane.appendChild(statusLine(tap.t));
       }
     }
     /* v751: THE THREAD, oldest first, theirs and his. It sits above the history because it is the
@@ -1370,13 +1385,14 @@ const CLIENT_JS = `
       var r=await api('/orders/'+o.id+'/say',{text:t});
       if(mine!==ticket) return;
       sg.disabled=false;
-      if(r.status===401) draft.note='Your session has ended. Sign in again.';
-      else if(!r.body.ok) draft.note=r.body.error||'It was not sent.';
-      else { draft.note=''; await loadOrders(); if(mine!==ticket) return; }
+      if(r.status===401) tapSaid(o,'say','Your session has ended. Sign in again.');
+      else if(!r.body.ok) tapSaid(o,'say',r.body.error||'It was not sent.');
+      else { tapSaid(o,'say',''); await loadOrders(); if(mine!==ticket) return; }
       drawOrder();
     });
     sayw.appendChild(si); sayw.appendChild(sg);
     pane.appendChild(sayw);
+    if(tk==='say') pane.appendChild(statusLine(tap.t));
     var hist=el('ul','hist');
     (o.history||[]).forEach(function(h){ var li=el('li',null,stamp(h.at)+'  '+(STATE_WORDS[h.status]||h.status)+(h.method?', paying by '+methodWord(h.method,h.account):'')+(h.note?': '+h.note:'')); hist.appendChild(li); });
     pane.appendChild(hist);
@@ -1422,7 +1438,7 @@ const CLIENT_JS = `
       if(!ok) return; var mine=ticket;
       var r=await api('/orders/'+encodeURIComponent(o.id)+'/method',{method:cur.method,account:cur.account||undefined});
       if(mine!==ticket) return;
-      if(!r.body.ok) draft.note=r.body.error||'The choice was not recorded.'; else delete pick[o.id];
+      if(!r.body.ok) tapSaid(o,'pay',r.body.error||'The choice was not recorded.'); else { tapSaid(o,'pay',''); delete pick[o.id]; }
       await loadOrders(); if(mine!==ticket) return; drawOrder();
     });
     box.appendChild(cb);
@@ -1450,7 +1466,7 @@ const CLIENT_JS = `
       pb.disabled=true; var mine=ticket;
       var r=await api('/orders/'+encodeURIComponent(o.id)+'/pay',{amount:+amt.toFixed(2)});
       if(mine!==ticket) return;
-      draft.note=r.body&&r.body.ok?'Recorded. It shows on your statement once it is folded into the book.':((r.body&&r.body.error)||'That payment was not recorded.');
+      tapSaid(o,'pay',r.body&&r.body.ok?'Recorded. It shows on your statement once it is folded into the book.':((r.body&&r.body.error)||'That payment was not recorded.'));
       delete pick[o.id];
       await loadOrders(); if(mine!==ticket) return; drawOrder();
     });
