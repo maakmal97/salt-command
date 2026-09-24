@@ -1628,6 +1628,50 @@ export async function stageDigest(stage, entry, d, pricing) {
         amendKind: d.amendKind || null, flags: d.flags || [] };
   return sha(canon(shown));
 }
+/* ---- HIS YES BEFORE THE ROW EXISTED (S11 11.11 and 11.12, migrations/0011) -------------------------
+ * A tap on the order card records a PRE-APPROVAL: the digest of what he was shown. It is spent here, the moment
+ * the row it answers is drafted, and only on an exact match: equal, the row is approved where it is drafted;
+ * different, it waits under Approve, marked. A pre-approval's yes is spent once, on the first draft of its order
+ * and stage, equal or not. */
+/* The pre-approval a draft answers: the one whose entry the desk queued itself (Accept, Cash received, a move offered
+   again), else the newest waiting one of its stage whose entry the site's own stage makes (Collected, Received). */
+export async function preFor(db, at, entry) {
+  const id = entry && entry.orderId, stage = entry && STAGE_OF[entry.status];
+  if (!id || !stage) return null;
+  let rows = [];
+  /* a store before migrations/0011 has no pre-approvals, and every row waits under Approve as it did before D6 */
+  try { rows = (await db.prepare("SELECT * FROM preapproval WHERE order_id=?1 AND status='waiting' ORDER BY at DESC").bind(id).all()).results || []; }
+  catch (e) { return null; }
+  return rows.find((r) => r.entry_at === at) || rows.find((r) => !r.entry && r.stage === stage) || null;
+}
+/** Approve the draft if it equals what he was shown, else mark it. "applied", "differs", or null if he decided it first. */
+export async function applyPre(db, pre, draft, book, now) {
+  const at = now || new Date().toISOString();
+  const got = await stageDigest(pre.stage, draft.entry, draft, pre.stage === "ack" ? await pricingOf(book) : null);
+  if (got !== pre.hash) {
+    await db.prepare("UPDATE preapproval SET status='differs', draft_id=?1, decided_at=?2 WHERE id=?3").bind(draft.id, at, pre.id).run();
+    return "differs";
+  }
+  const u = await db.prepare("UPDATE draft SET status='approved', decided_at=?1, decided_by=?2 WHERE id=?3 AND status='pending'")
+    .bind(at, "preapproved" + (pre.tapped_by ? " by " + pre.tapped_by : ""), draft.id).run();
+  if (!(u && u.meta && u.meta.changes)) return null;
+  await db.prepare("UPDATE preapproval SET status='applied', draft_id=?1, decided_at=?2 WHERE id=?3").bind(draft.id, at, pre.id).run();
+  return "applied";
+}
+/** A pre-approval whose draft already exists when it is tested (drafted in the moment between the queue and the
+ *  pre-approval learning its id, or a payment drafted a minute before his Received): the same test, on the draft as
+ *  it is stored. What applyPre returns, or null with no draft to test. */
+export async function settlePre(db, pre, book, now) {
+  const rs = await db.prepare("SELECT id,entry,row,flags,collection,amend_kind FROM draft WHERE status='pending' AND entry LIKE ?1 ORDER BY id DESC")
+    .bind('%"orderId":"' + pre.order_id + '"%').all();
+  const want = Object.keys(STAGE_OF).find((k) => STAGE_OF[k] === (pre.stage === "cash" ? "pay" : pre.stage));
+  const parse = (s, f) => { try { return JSON.parse(s); } catch (e) { return f; } };
+  const rows = (rs.results || []).map((r) => ({ id: r.id, entry: parse(r.entry, {}), row: parse(r.row, {}), flags: parse(r.flags, []), collection: r.collection, amendKind: r.amend_kind || null }))
+    .filter((r) => r.entry && r.entry.orderId === pre.order_id && r.entry.status === want);
+  const draft = rows.find((r) => r.id === pre.entry_at) || (pre.entry ? null : rows[0]);
+  return draft ? applyPre(db, pre, draft, book, now) : null;
+}
+
 /* ---- the run ------------------------------------------------------------------------ */
 /* Idempotent by construction: a draft's id IS the entry's own `at`, and the insert is
  * INSERT OR IGNORE, so a cron that fires while the last one is still finishing cannot double
@@ -1670,7 +1714,7 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
   if (lastCommit && lastCommit.t)
     await env.SALT_LEDGER.prepare("DELETE FROM refused WHERE (id LIKE 'fold:%' OR id LIKE 'suite:%') AND seen_at<?1").bind(lastCommit.t).run();
 
-  const out = { ok: true, at: now(), considered: 0, drafted: 0, skipped: [], already: 0, committed: 0 };
+  const out = { ok: true, at: now(), considered: 0, drafted: 0, skipped: [], already: 0, committed: 0, approved: [], differs: [] };
   for (const at of [...byAt.keys()].sort()) {
     const entry = byAt.get(at);
     if (mark && at <= mark && already.has(at)) { out.committed++; continue; }
@@ -1687,7 +1731,7 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
         (entry && entry.party) || null, "cloud-drafter", now()).run();
       continue;
     }
-    await env.SALT_LEDGER.prepare(
+    const made = await env.SALT_LEDGER.prepare(
       `INSERT OR IGNORE INTO draft
          (id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,
           amends,amend_kind,drafter,drafted_at)
@@ -1706,6 +1750,17 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
        moment the row exists. Clearing it here keeps one entry from appearing in both lists. */
     await env.SALT_LEDGER.prepare("DELETE FROM refused WHERE id=?1").bind(at).run();
     out.drafted++;
+    /* S11 (D6): A ROW A SITE ORDER MADE MAY ALREADY HAVE HIS YES, given on the order card before it existed. It is
+       spent here, where the row is made, only by the pass that made it and only on an exact match; a fault
+       leaves the row pending, as every row was before. */
+    if (entry && entry.orderId && made && made.meta && made.meta.changes) {
+      try {
+        const pre = await preFor(env.SALT_LEDGER, at, entry);
+        const r = pre ? await applyPre(env.SALT_LEDGER, pre, { id: at, entry, collection: d.collection, row: d.row, flags: d.flags, amendKind: d.amendKind || null }, book, now()) : null;
+        if (r === "applied") out.approved.push(at);
+        else if (r === "differs") out.differs.push(at);
+      } catch (e) { console.log("drafter: the pre-approval for " + at + " was not applied: " + String((e && e.message) || e)); }
+    }
   }
   return out;
 }

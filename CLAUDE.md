@@ -167,7 +167,10 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   version. Re-landing after origin moved: `docs/WORKING.md`.
 - **What is approved is the ROW, not the entry.** The phone leads with cost and margin read from
   the draft and computes nothing; the drafter's flags do the measuring, and a purchase is never
-  measured with a seller's ruler. A card's flags freeze at drafting.
+  measured with a seller's ruler. A card's flags freeze at drafting. **One tap a stage on a site order
+  (his decision D6)**: the order card's yes is recorded in `preapproval` and spent by the drafter only
+  if the draft equals what he was shown, every field, flag and (for Accept) pricing version; else it
+  waits under Approve, marked. Accept moves the order only once its row is approved.
 - **What the drafter refuses, the phone does not let you type**: `entryFault` answers both entry
   forms. **An R2 row books to the associate's `-R` bucket whether or not the end buyer is named**,
   through the engine's `bookR2`, which every road calls; a named buyer is `downstream` and credited
@@ -198,7 +201,8 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   the dry run), all keyed. Nothing writes to `entry`. **The `draft` table's CHECK lists every
   collection by name**: a collection the drafter newly returns needs a migration rebuilding it,
   applied to the live D1 BEFORE the deploy and as that file alone (`wrangler d1 execute salt_ledger
-  --remote --file=...`); re-running an older one drops rows. Newest: `migrations/0010`.
+  --remote --file=...`); re-running an older one drops rows. Newest rebuild: `migrations/0010`;
+  `0011` adds `preapproval`, applied alone the same way.
 - **Cowork:** Salt left Cowork on 20 Aug 2026. `salt-daily-price-brief` and
   `salt-monthly-statements` may still fire from Cowork's registry (`Scheduled\README.md`), which
   Code cannot see: retiring them is his.
@@ -270,10 +274,11 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   characters, which is what iOS gives a home screen; the desk's name never appears. **A customer's
   level is a mark, never named**; no name is used because none exists there (rule 2).
 - **AN ORDER REACHES THE BOOK IN STAGES, AND SITE ORDERS WRITES NOTHING.** The desk's every-minute
-  `reconcileOrders` is the one road that queues: the acknowledgement a **Pending** row (delivery
-  beside its total), a payment a **Fulfilment**, a handover a **Correction** stating the running
-  total (rolling the shelf by the difference), a withdrawal a **Cancellation** (theirs, nothing paid,
-  while the pending row is unapproved: the row dropped instead; an approved row never). The row is named by
+  `reconcileOrders` is the one road that queues what the site makes (Accept queues its own row):
+  the acknowledgement a **Pending** row (delivery beside its total), a payment a **Fulfilment**, a
+  handover a **Correction** stating the running total (rolling the shelf by the difference), a
+  withdrawal a **Cancellation** (theirs, nothing paid, while the pending row is unapproved: the row
+  dropped instead; an approved row never). The row is named by
   `ledgerKey`, **the engine's `ovKey` to the character**; an amendment waits until `OPEN.byKey`
   carries that key. Each entry is stamped with its stage's own moment (`stageAt`). A move of his
   runs the reconcile at once; the return leg carries what he records on the desk back to the order

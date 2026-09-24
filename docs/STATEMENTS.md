@@ -480,8 +480,9 @@ Site orders card in Enter (cloud desk) is the taps.
 
 **AN ORDER REACHES THE BOOK IN STAGES, AND NO TAP WRITES** (v694, his instruction of 18 Sep 2026;
 it reached it once, at the end, as a sale paid and delivered in full on the day). **Site orders moves
-the ORDER; Approve lands the ROW.** The desk's every-minute cron runs `reconcileOrders`, and it is
-the ONE road that queues anything, so a stage cannot be queued twice by two roads racing:
+the ORDER; Approve lands the ROW** (since D6 a tap on the card can be that approval, below). The desk's
+every-minute cron runs `reconcileOrders`, and it is the ONE road that queues a stage the site makes, so
+a stage cannot be queued twice by two roads racing (Accept's pending row is the desk's own, below):
 
 | Stage | What is queued | Why that kind |
 |---|---|---|
@@ -502,6 +503,22 @@ that is the one place a stage is decided owed.
 drafted, approved, folded, mirror re-seeded. Until `OPEN.byKey` carries the key, the reconcile holds
 the amendment rather than queueing one the drafter would refuse, so a customer paying early puts no
 refusal on his phone. A mirror that cannot be read holds everything.
+
+**ONE TAP A STAGE, ON AN EXACT MATCH** (S11, his decision D6 of 24 Sep 2026). The card's taps approve
+the row they make, in the desk Worker, and only if the real draft equals what he was shown. His yes is
+a row in `preapproval` (`migrations/0011`): the digest of what he saw (`stageDigest` in
+`src/drafter.js`), spent by the drafter the moment the row is drafted (`preFor`, `applyPre`): equal, the
+row is approved where it is drafted; different, it waits under Approve, marked "differs from what you
+saw" with what he was shown beside it (`GET /drafts` carries it as `preapproval`), and a yes is spent
+once. **Accept** (`POST /orders/<id>/accept {delivery, hash}`) answers a preview (`POST
+/orders/<id>/preview`, which drafts the row against the mirror and stores nothing): it drafts again,
+refuses with the fresh preview if the digest moved, records the yes, queues the pending row itself and
+runs the drafter; the digest covers every field of the row, every flag and the pricing version (the
+snapshot's `v` and a digest of the rest). **Only an approved row moves the order** (`ackOnApproval`:
+the key and moment marked first, then acknowledged with the charge), so a row that differs leaves the
+customer reading Placed, and his approval under Approve moves it then. That is the one stage the desk
+queues itself, because the row must exist before the order moves; `deskPass`, beside the reconcile,
+follows it up each minute.
 
 **A withdrawal before the row is approved drops it** (S11 11.10). The customer withdraws while the
 pending row still waits under Approve, with nothing paid: `dropAck` rejects that draft as `withdrawn`
