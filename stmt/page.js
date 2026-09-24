@@ -124,15 +124,18 @@ h3.pmark{margin:0 0 4px;line-height:1}
    top:0 a saved iPhone app held Log out behind the clock, as the desk's bar was until v392 */
 #barw{position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
 .bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;
-  gap:12px;padding:11px 16px;margin:0 auto 14px;max-width:620px;
+  gap:12px;padding:0 16px;margin:0 auto 14px;max-width:620px;
   background:var(--salt-veil);border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);
   backdrop-filter:blur(10px);font-size:var(--salt-text-sm);color:var(--salt-text-muted);
   font-family:var(--salt-font-mono)}
 .bar b{color:var(--salt-text);font-variant-numeric:tabular-nums}
 .lapse{flex-basis:100%;display:flex;justify-content:space-between;align-items:center;gap:12px}
 .lapse[hidden]{display:none}
+/* UX4, 24 Sep 2026: Log out and Continue are taps like any other, 44px both ways (they were 55 and 62 by 21,
+   and Continue is the one way back after a lapse); the bar gives up its own padding, so it is no taller */
 .bar button{font:inherit;color:var(--salt-brass);background:none;border:0;cursor:pointer;
-  padding:0;text-decoration:underline;min-height:auto}
+  padding:0;text-decoration:underline;min-height:var(--salt-tap);min-width:var(--salt-tap);
+  display:inline-flex;align-items:center;justify-content:center;flex:none}
 /* THE THREE TABS: statements, prices, order. The same pill vocabulary as the issue strip, one
    step larger because these are destinations rather than dates. The strip is the system's .salt-tabs
    (24 Sep 2026), which wraps: an associate's four tabs need 363 to 387px and ran off a 360 screen. */

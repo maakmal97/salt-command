@@ -15510,6 +15510,11 @@ await (async () => {
     const served = D.documentElement.outerHTML;
     ok(/#barw\{position:sticky;top:env\(safe-area-inset-top,0px\);/.test(served) && /viewport-fit=cover/.test(served),
       "and it sticks at the safe-area inset, not at top:0 behind the clock, on a page drawn under the status bar");
+    /* UX4: Log out and Continue were 55 and 62 by 21. Measured by a hit test in the rig at 320, 360 and 390: 55 and
+       62 by 44 after, the bar 46px tall as it was about 45 before. The rule is read as served: jsdom resolves no var() */
+    const barBtn = (/\.bar button\{([^}]*)\}/.exec(served) || ["", ""])[1];
+    ok(/min-height:var\(--salt-tap\)/.test(barBtn) && /min-width:var\(--salt-tap\)/.test(barBtn) && /flex:none/.test(barBtn) && !/min-height:auto/.test(barBtn),
+      "the bar's two buttons are 44px both ways and never shrink under it: " + JSON.stringify(barBtn));
   } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
 })();
 section("S1 1.39: no em-dash reaches the served page, and a waiting link says No address yet");
