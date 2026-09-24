@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder } from "./orders.js";
+import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -835,11 +835,16 @@ export default {
     if (p === "/orders") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
       const r = await listOrders(env, url.searchParams.get("all") === "1");
+      /* S11 11.13: and what each has to offer again, a row he rejected, read off the drafts; the desk's alone */
+      if (r.ok && env.SALT_LEDGER) {
+        const again = await againOf(env.SALT_LEDGER, r.orders.map((o) => o.id));
+        for (const o of r.orders) if (again[o.id]) o.again = again[o.id];
+      }
       return json(r, r.ok ? 200 : 503);
     }
     /* S11: THE CARD'S OWN ROUTES, by the order's id alone. An order id is minted digits and letters with a
        dash (mintOrderId) and is never one of these words, so they are read before a move `/orders/<u>/<id>`. */
-    const cm = /^\/orders\/([^/]+)\/(preview|accept|handed|cash|received)$/.exec(p);
+    const cm = /^\/orders\/([^/]+)\/(preview|accept|handed|cash|received|again)$/.exec(p);
     if (cm) {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       let b = {};
@@ -859,7 +864,7 @@ export default {
         } else {
           /* S11 11.12: Collected, Cash received and Received record his yes, then the site hears the move and the
              ledger is told in the request's tail, as any move of his is (v762) */
-          r = await ({ handed: handedOrder, cash: cashOrder, received: receivedOrder })[cm[2]](env, id, b, by);
+          r = await ({ handed: handedOrder, cash: cashOrder, received: receivedOrder, again: againOrder })[cm[2]](env, id, b, by);
           if (r.ok && r.preapproval && r.preapproval.spent === "applied") await afterApproval(env, ctx, [r.preapproval.draft]);
           if (r.ok) reconcileOnTap(env, ctx);
         }

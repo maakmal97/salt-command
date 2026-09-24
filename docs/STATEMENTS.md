@@ -532,6 +532,16 @@ if the kind, party, target, date, figures and every flag are equal (no pricing v
 landing is itself a fold). **Such a stage never waits silently**: the answer carries `waits` and "Booked
 when the first row lands". A Received on a payment already drafted is tested at the tap.
 
+**A rejected row is offered again** (S11 11.13). His Reject on a site-made draft is written onto the
+order (`sync` rejected) and spends any yes waiting on it, and the move is offered again under a FRESH
+entry, a new moment and so a new draft id, the rejected id being refused for good: the stage's own tap
+(Accept on a pending row, against its preview and the charge the order already carries; Collected,
+Received or Cash received at the rejected figure) or `POST /orders/<id>/again {stage}` (pay, cash, move,
+cancel). The fresh entry keeps the move's figures and day, and is approved as it is drafted only if it
+equals what he was shown. Cash offered again never raises the order twice. `GET /orders` carries `again`,
+the stages each order has to offer, read off the drafts; a row dropped because they withdrew (11.10) is
+not his rejection and offers nothing.
+
 **A withdrawal before the row is approved drops it** (S11 11.10). The customer withdraws while the
 pending row still waits under Approve, with nothing paid: `dropAck` rejects that draft as `withdrawn`
 (filing it rejected first if it is not drafted yet, so no drafter part-way through a pass can draft it

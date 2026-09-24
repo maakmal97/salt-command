@@ -166,11 +166,13 @@ export async function previewOrder(env, id, body, now) {
   if (!f.ok) return f;
   const o = f.order;
   if (!o.code) return { ok: false, status: 409, error: "no desk code is mapped to this account yet: publish the statements again" };
-  if (o.status !== "placed") return { ok: false, status: 409, error: "this order is " + o.status + ", so its pending row is not Accept's to make" };
-  const p = await previewAck(env, o, o.code, chargeOf(body), now || new Date());
+  const again = o.status !== "placed" && ROWED_ON_SITE.includes(o.status) && !!(await rejectedOf(env.SALT_LEDGER, id, "ack"));
+  if (o.status !== "placed" && !again) return { ok: false, status: 409, error: "this order is " + o.status + ", so its pending row is not Accept's to make" };
+  /* offered again (11.13), the charge is the one already on the order: the customer was told it */
+  const p = await previewAck(env, o, o.code, again ? (+o.delivery || 0) : chargeOf(body), now || new Date());
   if (!p.ok) return p;
   delete p.entry;   /* what Accept will queue is Accept's to build again; the card holds the digest */
-  return Object.assign(p, { chargeChosen: o.mode !== "deliver" || chargeOf(body) != null });
+  return Object.assign(p, { again, chargeChosen: again || o.mode !== "deliver" || chargeOf(body) != null });
 }
 
 /* ---- ACCEPT: HIS YES IS THE ROW'S APPROVAL, ONLY ON AN EXACT MATCH (S11 11.11, his decision D6) --------
@@ -227,8 +229,9 @@ export async function acceptOrder(env, id, body, by, now) {
     ? Object.assign({ approved: true, again: true, draft: live.draft_id }, await ackOnApproval(env, live))   /* its move failed before: again */
     : { ok: true, approved: true, again: true, draft: live.draft_id, order: o };
   if (live) return { ok: false, status: 409, error: live.status === "differs" ? "its row differs from what you saw and waits under Approve" : "its row is being drafted: look again in a moment" };
-  if (o.status !== "placed") return { ok: false, status: 409, error: "this order is " + o.status + ", so there is nothing to accept" };
-  const delivery = chargeOf(body);
+  const again = o.status !== "placed" && ROWED_ON_SITE.includes(o.status) && !!(await rejectedOf(db, id, "ack"));
+  if (o.status !== "placed" && !again) return { ok: false, status: 409, error: "this order is " + o.status + ", so there is nothing to accept" };
+  const delivery = again ? (+o.delivery || 0) : chargeOf(body);
   if (o.mode === "deliver" && delivery == null) return { ok: false, status: 400, error: "choose the delivery charge first" };
   const pv = await previewAck(env, o, o.code, delivery, at);
   if (!pv.ok) return pv;
@@ -288,6 +291,7 @@ async function stageTap(env, id, body, by, now, stage, build) {
   if (!ROWED_ON_SITE.includes(o.status)) return { ok: false, status: 409, error: "this order is " + o.status + ", so there is nothing to record against it" };
   if (!o.ledgerKey) return { ok: false, status: 409, error: "its pending row is not queued yet: accept it first" };
   const b = build(o, at);
+  if (b.again) return againOrder(env, id, { stage: b.again }, by, now);
   if (b.error) return { ok: false, status: b.status || 400, error: b.error };
   const pv = await stagePreview(env, o, stage, b.entry);
   if (!pv.ok) return pv;
@@ -312,11 +316,15 @@ async function stageTap(env, id, body, by, now, stage, build) {
 const ROWED_ON_SITE = ["acknowledged", "ready", "done"];
 
 /** POST /orders/<id>/handed {qty, close}: Collected or Delivered, in the order's own mode, the running total handed over. */
-export function handedOrder(env, id, body, by, now) {
+export async function handedOrder(env, id, body, by, now) {
+  const rej = await rejectedOf(env.SALT_LEDGER, id, "move");
   return stageTap(env, id, body, by, now, "move", (o, at) => {
     const qty = body && body.qty;
     if (typeof qty !== "number" || !Number.isFinite(qty) || qty < 0 || qty > +o.qty + 0.004) return { error: "the units handed over have to be a figure from zero to the " + o.qty + " ordered" };
-    if (Math.abs(qty - (+o.moved || 0)) < 0.0004) return { status: 409, error: "that is what the order already says was handed over" };
+    if (Math.abs(qty - (+o.moved || 0)) < 0.0004) {
+      if (rej && Math.abs(qty - (+((rej.entry.payload.fields || {}).deliveredQty) || 0)) < 0.0004) return { again: "move" };
+      return { status: 409, error: "that is what the order already says was handed over" };
+    }
     /* stamped as the site stamps it: the Kuala Lumpur day of the tap, the handover's own day */
     const entry = handoverEntry(Object.assign({}, o, { movedOn: klDate(at), moved: qty }), o.code, qty, at);
     entry.orderId = o.id;
@@ -328,6 +336,7 @@ export function handedOrder(env, id, body, by, now) {
 
 /** POST /orders/<id>/received {amount}: the payment they recorded is in his bank. The site already counts it. */
 export async function receivedOrder(env, id, body, by, now) {
+  const rej = await rejectedOf(env.SALT_LEDGER, id, "pay");
   /* their payment may be drafted already (the reconcile queues it within the minute once the row is on the book),
      and then that draft's own entry is the one his yes answers */
   let queued = [];
@@ -342,6 +351,7 @@ export async function receivedOrder(env, id, body, by, now) {
     const drafted = queued.find((e) => Math.abs(+e.payload.cash - amount) < 0.005);
     if (drafted) return { entry: drafted, pin: drafted.at, shown: { amount: +drafted.payload.cash } };
     const inc = +((+o.paid || 0) - (+((o.queued || {}).paid) || 0)).toFixed(2);
+    if (!(inc > 0.004) && rej && Math.abs(+rej.entry.payload.cash - amount) < 0.005) return { again: "pay" };
     if (!(inc > 0.004)) return { status: 409, error: "nothing they recorded is waiting to be received here" };
     if (Math.abs(inc - amount) > 0.004) return { status: 409, error: "RM " + inc.toFixed(2) + " they recorded is waiting to be received, not RM " + amount.toFixed(2) };
     /* the Fulfilment the reconcile will queue for it: the increment, stamped with their last payment */
@@ -353,10 +363,13 @@ export async function receivedOrder(env, id, body, by, now) {
 
 /** POST /orders/<id>/cash {amount}: cash taken at the counter. The order is marked paid at once, which stops the chase,
  *  and the Fulfilment is the desk's own entry, queued when the first row is on the book (deskPass). */
-export function cashOrder(env, id, body, by, now) {
+export async function cashOrder(env, id, body, by, now) {
+  const rej = await rejectedOf(env.SALT_LEDGER, id, "cash");
   return stageTap(env, id, body, by, now, "cash", (o, at) => {
     const amount = body && body.amount;
     if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { error: "say how much cash was taken" };
+    /* the order already counts that cash: raising it again would count it twice */
+    if (rej && Math.abs(+rej.entry.payload.cash - amount) < 0.005) return { again: "cash" };
     const due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2);
     if (amount > due + 0.004) return { error: "that is more than the RM " + due.toFixed(2) + " still owed on this order" };
     /* a payment of theirs not yet queued would be swallowed by the mark the cash moves (orderWork reads paid against it) */
@@ -365,6 +378,66 @@ export function cashOrder(env, id, body, by, now) {
     entry.orderId = o.id; entry.counter = true;   /* the desk's own, which a Received never answers */
     return { entry, queueIt: true, site: { ledger: { paid: +((+o.paid || 0) + amount).toFixed(2) } }, shown: { amount: +amount.toFixed(2), cash: true } };
   });
+}
+
+/* ---- OFFERED AGAIN (S11 11.13, D6) ----------------------------------------------------------------
+ * A row he rejects under Approve is written back onto its order (rejectedOnOrder), and the move that made it
+ * is OFFERED AGAIN: the card's own tap for that stage (Accept, Collected, Received, Cash received) or
+ * `/again {stage}` queues the same move under a FRESH ENTRY, a new moment and so a new draft id, because the
+ * rejected id is refused for good. It is his yes like any other tap, spent only if the fresh row equals what
+ * he was shown. The rejected entry is the move: its figures and its day are kept, and only its moment is new.
+ * GET /orders says which stages an order has to offer again (`again`), read off the drafts. */
+const STATUS_OF_STAGE = { ack: "Pending", pay: "Payment", cash: "Payment", move: "Handover", cancel: "Cancellation" };
+const STAGE_WORD = { ack: "pending row", pay: "payment", cash: "cash payment", move: "handover", cancel: "cancellation" };
+async function draftsOfOrders(db, ids) {
+  const rs = await db.prepare("SELECT id,status,decided_by,entry FROM draft WHERE entry LIKE ?1 ORDER BY id DESC").bind(ids.length === 1 ? '%"orderId":"' + ids[0] + '"%' : '%"orderId":"%').all();
+  const want = new Set(ids);
+  return (rs.results || []).map((r) => { try { return Object.assign({}, r, { entry: JSON.parse(r.entry) }); } catch (e) { return null; } })
+    .filter((r) => r && r.entry && want.has(r.entry.orderId));
+}
+const ofStage = (r, stage) => r.entry.status === STATUS_OF_STAGE[stage] && (stage === "pay" ? !r.entry.counter : stage === "cash" ? !!r.entry.counter : true);
+/* he rejected it: a withdrawal's drop (11.10) is filed rejected too, and is not his */
+const rejectedByHim = (d) => !!d && d.status === "rejected" && d.decided_by !== "withdrawn";
+/** The newest draft of a stage for an order, when it is one he rejected; else null. */
+export async function rejectedOf(db, id, stage) {
+  if (!db) return null;
+  try { const d = (await draftsOfOrders(db, [id])).find((r) => ofStage(r, stage)); return rejectedByHim(d) ? d : null; }
+  catch (e) { return null; }
+}
+/** Which stages each order has to offer again, for the card: { <order id>: [stage, ...] }. */
+export async function againOf(db, ids) {
+  const out = {};
+  if (!db || !ids.length) return out;
+  let all = [];
+  try { all = await draftsOfOrders(db, ids); } catch (e) { return out; }
+  for (const id of ids) for (const st of Object.keys(STATUS_OF_STAGE)) {
+    if (rejectedByHim(all.find((r) => r.entry.orderId === id && ofStage(r, st)))) (out[id] = out[id] || []).push(st);
+  }
+  return out;
+}
+/** POST /orders/<id>/again {stage}: a payment, cash payment, handover or cancellation he rejected, offered again. */
+export async function againOrder(env, id, body, by, now) {
+  const at = now || new Date();
+  const stage = String((body && body.stage) || "");
+  if (!["pay", "cash", "move", "cancel"].includes(stage)) return { ok: false, status: 400, error: "offer again a pay, cash, move or cancel; a pending row is offered again by Accept, against its preview" };
+  const f = await findOrder(env, id);
+  if (!f.ok) return f;
+  const o = f.order, db = env.SALT_LEDGER;
+  if (!o.code) return { ok: false, status: 409, error: "no desk code is mapped to this account yet: publish the statements again" };
+  if (!db) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
+  const rej = await rejectedOf(db, id, stage);
+  if (!rej) return { ok: false, status: 409, error: "there is no rejected " + STAGE_WORD[stage] + " on this order to offer again" };
+  const live = await livePre(db, id, stage);
+  if (live && live.status === "waiting" && live.entry) return { ok: false, status: 409, error: "that " + STAGE_WORD[stage] + " is offered again already and is being drafted" };
+  if (stage === "move" && Math.abs((+o.moved || 0) - (+((rej.entry.payload.fields || {}).deliveredQty) || 0)) > 0.0004)
+    return { ok: false, status: 409, error: "the order has moved on since that handover: record the handover as it stands" };
+  const entry = Object.assign({}, rej.entry, { at: at.toISOString() });
+  const pv = await stagePreview(env, o, stage, entry);
+  if (!pv.ok) return pv;
+  await recordPre(db, { order_id: id, u: o.u, stage, hash: pv.hash, entry, at: at.toISOString(), by,
+    shown: { from: o.status, again: rej.id, flags: pv.d.flags, waits: pv.waits } });
+  /* queued by the desk's own pass, which the request's tail runs: the row it amends is on the book, the rejected one having been drafted against it */
+  return { ok: true, order: o, preapproval: { stage, waits: pv.waits, says: yesWords(pv.waits), flags: pv.d.flags, again: rej.id } };
 }
 
 /* ---- THE DESK'S OWN PASS, EVERY MINUTE (S11) ------------------------------------------------------

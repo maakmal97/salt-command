@@ -199,7 +199,7 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   laptop (approve last), are in `docs/CLOUD_FOLD.md`. A ledger row edit queues as a Correction.
 - Endpoints: `GET /drafts?status=…`, `POST /drafts/<id>/approve|reject|committed`, `POST
   /draft-now?dry=1`, `POST /orders/<id>/preview` (the row an Accept would make, stored nowhere, never
-  the dry run) and `/accept|handed|cash|received` (the card's taps), all keyed. Nothing writes to
+  the dry run) and `/accept|handed|cash|received|again` (the card's taps), all keyed. Nothing writes to
   `entry`. **The `draft` table's CHECK lists every collection by name**: a collection the drafter
   newly returns needs a migration rebuilding it, applied to the live D1 BEFORE the deploy and as
   that file alone (`wrangler d1 execute salt_ledger
@@ -291,7 +291,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   `ORDER_STORE` is the switch (`object+kv` the week of reading both, `kv` the way back, `object` after a
   clean week of KV `orderbook:check`). **Coming back from `kv`, raise `ORDER_MOVE_IN`**; forgotten, the `kv`
   road's mark (`orderbook:road`) moves the book in again on its first request.
-  Rejecting a draft a site order made is asked first and written onto that order.
+  Rejecting a draft a site order made is asked first and written onto that order, and its move is
+  offered again under a fresh entry (the stage's own tap, or `/again`; `again` on `GET /orders`).
 - **A customer writes on an order, and he answers**: one `msgs[]` thread per order, on any order at
   any stage; theirs capped, his uncapped. **It never rides into a ledger note.** His answer is
   checked by `siteWords` on the desk; every line is escaped on both surfaces.
