@@ -24314,6 +24314,30 @@ await (async () => {
   }
 })();
 
+section("S11 merge: a row other than he said yes to waits under Approve marked, with what he was shown beside it");
+await (async () => {
+  /* HIS DECISION D6: anything different from the preview waits under Approve, marked "differs from what you saw". The
+     Worker carries the mark on GET /drafts as `preapproval` (11.11); neither half drew it, so the row waited unmarked
+     and he could not tell it from any other. The card now says so where the eye lands, with what he said yes to. */
+  const { openMaster: omH } = await import("../tools/payload.mjs");
+  const { w } = await omH();
+  try {
+    const card = (d) => { const x = w.document.createElement("div"); x.innerHTML = String(w.eval("apCard(" + JSON.stringify(d) + ")")); return x.textContent.replace(/\s+/g, " ").trim(); };
+    const base = { id: "2026-09-24T01:00:00.000Z", status: "pending", collection: "sales", party: "CX1-AB", flags: [], reasoning: "" };
+    const pend = Object.assign({}, base, { row: { customer: "CX1-AB", qty: 2, total: 190, date: "2026-09-24" },
+      preapproval: { state: "differs", says: "differs from what you saw", stage: "ack", at: "x", shown: { from: "placed", row: { qty: 2, total: 200 }, flags: [] } } });
+    const hand = Object.assign({}, base, { amends: true, amendKind: "Correction", row: { customer: "CX1-AB", qty: 2, total: 200, changes: [] },
+      preapproval: { state: "differs", says: "differs from what you saw", stage: "move", at: "x", shown: { from: "acknowledged", figures: { units: 2, how: "collected" }, flags: ["one"] } } });
+    const plain = Object.assign({}, base, { row: { customer: "CX1-AB", qty: 2, total: 200, date: "2026-09-24" } });
+    const a = card(pend), b = card(hand), c = card(plain);
+    ok(/Differs from what you saw On the order card you said yes to 2 unit for RM 200, with no flag\./.test(a)
+      && /Differs from what you saw On the order card you said yes to 2 unit collected, with 1 flag\./.test(b) && !/Differs from what you saw/.test(c),
+      "a row that differs is marked in the Worker's words with what he said yes to, and a row with no yes behind it is not: " + JSON.stringify([a.slice(0, 160), b.slice(0, 160), c.slice(0, 80)]));
+  } finally {
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one

@@ -18857,8 +18857,16 @@ function apCard(d){
      a roster draft, where a code the book does not hold is the whole point of the row. */
   const apGone=(col==='sales'||col==='purchases')&&d.party&&roster.indexOf(d.party)<0
     ?`<div class="warnpill" style="display:block;margin:8px 0 0;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)"><b>Read here, not from the draft.</b> ${esc(codeOf(d.party))} is not on the roster this book holds. The row was drafted ${esc((d.draftedAt||'').slice(0,10)||'earlier')} and the code has been retired or renamed since. Do not approve it against a code the book no longer has.</div>`:'';
+  /* S11 (D6): A ROW OTHER THAN HE SAID YES TO ON THE ORDER CARD waits here, marked in the Worker's words, with what he
+     was shown beside it (GET /drafts carries it as `preapproval`), so he compares before he approves */
+  const pa=d.preapproval&&d.preapproval.state==='differs'?d.preapproval:null,sh=(pa&&pa.shown)||{},fg=sh.figures||{};
+  const saw=!pa?'':sh.row?units(+sh.row.qty||0)+' for '+fmt(+sh.row.total||0)
+    :fg.close?'closing it at '+units(+fg.units||0):fg.units!=null?units(+fg.units||0)+' '+esc(fg.how||'handed over')
+    :fg.amount!=null?fmt(+fg.amount||0)+(fg.cash?' in cash':' received'):'this move';
+  const nf=pa&&Array.isArray(sh.flags)?sh.flags.length:null;
+  const apDiffers=pa?`<p class="dsc" style="margin-top:8px"><span class="salt-status salt-status--ember">${esc(String(pa.says||'differs from what you saw').replace(/^./,c=>c.toUpperCase()))}</span> On the order card you said yes to ${saw}${nf==null?'':nf?', with '+nf+' flag'+(nf===1?'':'s'):', with no flag'}. This row came out otherwise, so it waits for you here.</p>`:'';
   return `<div class="card" style="margin-top:10px" data-id="${esc(d.id)}">
-    <div style="font-size:14px">${head}</div>
+    <div style="font-size:14px">${head}</div>${apDiffers}
     <div class="kpis k4" style="margin-top:10px">${grid}</div>
     ${(d.flags||[]).map(f=>`<div class="warnpill" style="display:block;margin:8px 0 0;background:rgba(184,115,51,.14);border-color:var(--amber);color:var(--gold)">&#9888; ${esc(f)}</div>`).join('')}
     ${apGone}
