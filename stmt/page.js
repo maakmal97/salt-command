@@ -376,8 +376,14 @@ export function shutPage(nonce) {
   return guestPage("<h2>This link is not open</h2>"
     + '<p class="lead">Ask the person who sent it to you.</p>', nonce);
 }
+/* S13 13.1, HIS DECISION D12 OF 24 SEP 2026: EVERY PAGE OF THE COUNTER IS KEPT OUT OF THE TRANSLATOR. On a phone set
+   to Malay or Chinese, Chrome offers to translate a page, and accepting sends what is on it, an opened statement
+   included, to a translation service. translate="no" on the root and Google's notranslate say no for every page:
+   the customer's, a guest board, a shut link and Salt Admin. */
+const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no"><head><meta charset="utf-8">'
+  + '<meta name="google" content="notranslate">';
 function guestPage(inner, nonce) {
-  return '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8">'
+  return DOC_OPEN
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'
@@ -408,7 +414,7 @@ function bulletinBand(b) {
 }
 export function landingPage(user, nonce, owner, bulletin) {
   const u = esc(user || "");
-  return '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8">'
+  return DOC_OPEN
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'

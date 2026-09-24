@@ -174,6 +174,11 @@ orders (`stmt/orderbook.js`, S10), and no access to the queue,
 the vault, D1 or the desk. Nothing a customer holds points at the desk's address, and the suite
 checks that no statement does either.
 
+**Never offered to a translator** (his decision D12, 24 Sep 2026): every page the site serves, a
+guest's and Salt Admin's included, opens `<html lang="en" translate="no">` with Google's
+`notranslate` meta (`DOC_OPEN` in `stmt/page.js`), because accepting Chrome's offer sends an
+opened statement to a translation service.
+
 Each statement carries a QR code and prints the customer's **username**. The QR opens
 `https://k7m3p2.qyts8mh72kyg.workers.dev/?u=<username>`, one landing page for every account,
 with the username filled in; the password goes by a different channel. The page checks the

@@ -16490,6 +16490,24 @@ await (async () => {
       "and a held reward, or one with nothing left, never invites an ask: " + JSON.stringify([lineOf("Droplet"), lineOf("Lozenge")]));
   } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S13 13.1: every page of the Counter is kept out of the translator, Salt Admin's and a guest's included");
+await (async () => {
+  /* 24 SEP 2026, his decision D12: on a Malay or Chinese phone Chrome offers to translate the page, and accepting
+     sends an opened statement to a translation service. Each page as it is served, and his own as the route builds it. */
+  const W = (await import("../stmt/worker.js")).default;
+  const P = await import("../stmt/page.js");
+  const RF = await import("../stmt/refs.js");
+  const env = { STMT: new KV() };
+  const get = async (p) => (await W.fetch(new Request("https://k7m3p2.example" + p), env)).text();
+  const open = await RF.mintRef(env, { label: "open" });
+  const pages = [["the door", await get("/")], ["the door with a username", await get("/?u=abcd-efgh")],
+    ["a sign-in link", await get("/s/" + "a".repeat(24))], ["a guest board", await get("/g/" + open.id)],
+    ["a shut link", await get("/g/zzzz-zzzz")], ["Salt Admin", P.landingPage("", "n131", { master: "m131", accounts: [] })]];
+  const root = /^<!DOCTYPE html>\n<html lang="en" translate="no"><head><meta charset="utf-8"><meta name="google" content="notranslate">/;
+  const off = pages.filter(([, h]) => !root.test(h)).map(([w, h]) => w + ": " + h.slice(0, 80));
+  ok(pages.every(([, h]) => h.length > 1000) && !off.length,
+    "every page says translate=no on its root and carries Google's notranslate, before anything else: " + JSON.stringify(off));
+})();
 section("v696: the guest links are five, one for each tier, and each one is a level and nothing else");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "for the guest links, produce exactly 5 links, for the five
