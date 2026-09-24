@@ -81,15 +81,16 @@ select.fld option{background:var(--salt-well);color:var(--salt-text)}
 /* v695: a product is a mark. Brass, hairline, and it sits on the baseline of whatever it is beside. */
 .psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}
 h3.pmark{margin:0 0 4px;line-height:1}
-/* on a brass button the mark takes the button's own ink: a brass cube on brass is no cube at all */
+/* on a button the mark takes the button's own ink, brass on the chosen one and muted on the rest */
 .seg button .psym{vertical-align:-0.28em;color:inherit}
 .pwith{display:inline-flex;align-items:center;gap:7px}
 /* read aloud, never drawn: the shape's word, so a mark in a sentence is not a hole */
 .sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-/* v694: the order's own figures, typed in the same well as everything else */
-.amt{display:flex;gap:8px;align-items:center;margin-top:10px}
-.amt .fld{flex:1 1 0;min-width:0;text-align:right}
-.amt .cur{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist)}
+/* v694: the order's own figures, typed in the same well as everything else. payamt, not amt (24 Sep 2026):
+   the statement's own Amount cells are td.amt, and a bare .amt laid every one of them out as a flex row */
+.payamt{display:flex;gap:8px;align-items:center;margin-top:10px}
+.payamt .fld{flex:1 1 0;min-width:0;text-align:right}
+.payamt .cur{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist)}
 /* the confirmation, one plain list of what is about to be ordered */
 .conf{margin:10px 0 0;padding:0;list-style:none;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .conf li{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--salt-line)}
@@ -99,7 +100,8 @@ h3.pmark{margin:0 0 4px;line-height:1}
 /* the one filled control is the system's .salt-pill and the quiet ones its .salt-ghost (22 Sep 2026);
    this page decides only that they run the width of the form */
 .btn{margin-top:18px;width:100%}
-.btn.lnk{display:block;text-align:center;text-decoration:none;line-height:1.4}
+/* a pay link is a .salt-ghost too (24 Sep 2026); a long account name wraps, and its lines centre */
+.btn.lnk{text-align:center;line-height:1.4}
 /* KEEP IT ON YOUR PHONE (v693): the quietest block on the door, under everything, and gone the
    moment the page is running as an app. */
 .inst{margin-top:26px;padding-top:16px;border-top:1px solid var(--salt-line)}
@@ -130,8 +132,9 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .bar button{font:inherit;color:var(--salt-brass);background:none;border:0;cursor:pointer;
   padding:0;text-decoration:underline;min-height:auto}
 /* THE THREE TABS: statements, prices, order. The same pill vocabulary as the issue strip, one
-   step larger because these are destinations rather than dates. */
-.tabs{max-width:620px;margin:0 auto 18px;display:flex;gap:8px}
+   step larger because these are destinations rather than dates. The strip is the system's .salt-tabs
+   (24 Sep 2026), which wraps: an associate's four tabs need 363 to 387px and ran off a 360 screen. */
+.tabs{max-width:620px;margin:0 auto 18px}
 /* the tabs are the system's .salt-tabs__pill (22 Sep 2026): the open one is read off aria-selected and
    set in glass with a hairline, not a filled badge, which decision 5 reserves for the one button */
 .tabs button{flex:1;min-height:var(--salt-tap)}
@@ -148,8 +151,8 @@ h3.pmark{margin:0 0 4px;line-height:1}
      v690, on a strip whose whole purpose is to be tapped on a phone. His bar is 44px in BOTH
      dimensions, measured; swept across the class rather than fixed on the one new strip. */
   min-height:var(--salt-tap);display:inline-flex;align-items:center}
-.mos button.on{color:var(--salt-obsidian);background:var(--salt-brass);border-color:var(--salt-brass);
-  font-weight:700}
+/* 24 Sep 2026: the chosen pill is what this comment always said, brass on a brass hairline; it was filled */
+.mos button.on{color:var(--salt-brass);border-color:var(--salt-brass);font-weight:700}
 .mos button small{margin-left:6px;font-weight:400;letter-spacing:.02em;text-transform:uppercase}
 /* THE MONTH FILTER (v690): the same pill vocabulary as the issue strip, a step quieter, because it
    sits inside a statement rather than choosing between statements. The note under it says what the
@@ -177,10 +180,10 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .seg{display:flex;gap:8px;margin-top:6px}
 .seg button{flex:1;min-height:var(--salt-tap);font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
   color:var(--salt-text-muted);background:none;border:1px solid var(--salt-line);border-radius:var(--salt-radius-pill);cursor:pointer}
-.seg button.on{color:var(--salt-obsidian);background:var(--salt-brass);border-color:var(--salt-brass);font-weight:700}
+.seg button.on{color:var(--salt-brass);border-color:var(--salt-brass);font-weight:700}
 .pay{margin-top:12px;display:flex;flex-direction:column;gap:8px}
 .pay label{display:flex;gap:10px;align-items:center;min-height:var(--salt-tap);padding:0 6px;font-size:var(--salt-text-sm);cursor:pointer}
-.pay input{width:18px;height:18px;accent-color:var(--salt-brass)}
+.pay input[type=radio]{width:18px;height:18px;accent-color:var(--salt-brass)}
 .hist{margin:10px 0 0;padding:0;list-style:none;font-size:var(--salt-text-xs);color:var(--salt-text-muted);font-family:var(--salt-font-mono);line-height:1.8}
 /* v751: the thread on an order. Theirs sits left and his right, which is the one convention every
    reader of a phone already knows, so no label has to say whose line it is. */
@@ -380,7 +383,9 @@ function bulletinBand(b) {
   const lines = (b && Array.isArray(b.lines)) ? b.lines : [];
   const mode = (b && b.mode === "change") ? "change" : "run";
   return '<div id="bull" class="bull" data-mode="' + mode + '"' + (lines.length ? "" : " hidden") + ' role="status" aria-live="polite">'
-    + '<div class="track" id="bullTrack">' + esc(mode === "run" ? lines.join("  ·  ") : (lines[0] || "")) + "</div></div>";
+    + '<div class="track" id="bullTrack">' + esc(mode === "run" ? lines.join("  ·  ") : (lines[0] || "")) + "</div>"
+    /* 24 Sep 2026: what a screen reader is told while the lines change, once, instead of a new line every four seconds */
+    + '<span class="sr" id="bullSr"></span></div>';
 }
 export function landingPage(user, nonce, owner, bulletin) {
   const u = esc(user || "");
@@ -505,7 +510,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     /* S1 1.5: a lapsed session says so where the reader is, with the one way back: a second row of the bar */
     + '<div id="lapse" class="lapse" role="alert" hidden><span id="lapseT"></span><button type="button" id="lapseGo">Continue</button></div>'
     + "</div></div>"
-    + '<div id="tabs" class="tabs" role="tablist" hidden>'
+    + '<div id="tabs" class="tabs salt-tabs" role="tablist" hidden>'
     + '<button type="button" class="salt-tabs__pill on" role="tab" aria-selected="true" data-t="stmt">Statements</button>'
     + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="prices" id="tPrices">Prices</button>'
     + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="order" id="tOrder">Order</button>'
@@ -564,18 +569,27 @@ const CLIENT_JS = `
   var BULL=__BULL__, bullI=0, bullTimer=null, bullN=0;
   function bullDraw(b){
     BULL=b||{lines:[],mode:'run'};
-    var box=document.getElementById('bull'), tr=document.getElementById('bullTrack'); if(!box||!tr) return;
+    var box=document.getElementById('bull'), tr=document.getElementById('bullTrack'), sr=document.getElementById('bullSr'); if(!box||!tr||!sr) return;
     var lines=BULL.lines||[]; box.hidden=!lines.length; box.setAttribute('data-mode',BULL.mode==='change'?'change':'run');
     if(bullTimer){ clearInterval(bullTimer); bullTimer=null; }
+    tr.removeAttribute('aria-hidden'); sr.textContent='';
     if(!lines.length){ tr.textContent=''; return; }
     if(BULL.mode==='change'){
-      bullI=0; tr.textContent=lines[0];
-      if(lines.length>1) bullTimer=setInterval(function(){ bullI=(bullI+1)%lines.length; tr.textContent=lines[bullI]; }, 4000);
+      /* 24 Sep 2026: UNDER REDUCED MOTION THE LINES STAND STILL, all of them at once, as running does. And while they
+         change, the changing line is hidden from the live region and every line is told to it once, so a screen
+         reader is not read a new line every four seconds. */
+      var still=lines.length<2||stillMotion();
+      bullI=0; tr.textContent=still?lines.join('  ·  '):lines[0];
+      if(!still){
+        tr.setAttribute('aria-hidden','true'); sr.textContent=lines.join('  ·  ');
+        bullTimer=setInterval(function(){ bullI=(bullI+1)%lines.length; tr.textContent=lines[bullI]; }, 4000);
+      }
     } else {
       var t=lines.join('  ·  '); tr.textContent=t;
       tr.style.animationDuration=Math.max(12, Math.round(t.length/6))+'s';
     }
   }
+  function stillMotion(){ try{ return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return false; } }
   async function bullRead(){
     try{
       var r=await fetch('/bulletin',{cache:'no-store'}); var j=await r.json();
@@ -589,7 +603,8 @@ const CLIENT_JS = `
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
   var session='', user='', prices=null, orders=[], poll=null, tab='stmt', draft={}, pick={};
   /* v706: the associate's own card, opened from their record like the price list */
-  var card=null, cardMonth='';
+  /* cardMonth: null opens on the newest month, '' is All (24 Sep 2026: '' was both, so All showed the newest) */
+  var card=null, cardMonth=null;
   /* v702: whether this account may order on behalf of a friend. It draws one tick and nothing
      else; where a row books is the desk's decision, and it checks it against its own roster. */
   var assoc=false;
@@ -784,7 +799,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; oNote={}; assoc=false; card=null; cardMonth=''; myLinks=null; myMax=0; myNote='';
+    bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
     owedNow=0; hold=false; tPrices.hidden=false; tOrder.textContent='Order';
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
@@ -1004,7 +1019,7 @@ const CLIENT_JS = `
         }
       }
       /* the lines, with their own month strip */
-      var months=cardMonths(p), pick=cardMonth||months[0]||'';
+      var months=cardMonths(p), pick=cardMonth==null?(months[0]||''):cardMonth;
       if(months.length>1){
         var strip=el('div','mos mfil');
         months.concat(['']).forEach(function(m){
@@ -1139,14 +1154,14 @@ const CLIENT_JS = `
     pPrices.textContent='';
     var h=el('h2',null,'Your prices'); pPrices.appendChild(h);
     var g=el('p','lead',hail()); g.style.marginTop='0'; pPrices.appendChild(g);
-    var soon=(prices&&prices.soon)||[];
+    var soon=((prices&&prices.soon)||[]).concat(((prices&&prices.products)||[]).filter(function(x){ return !(x.sizes&&x.sizes.length); }));
     if(!prices||((!prices.products||!prices.products.length)&&!soon.length)){
       pPrices.appendChild(el('p','lead','No price list has been written for your account yet. It is written with the next update and changes weekly.'));
       return;
     }
-    pPrices.appendChild(el('p','lead','For the week of '+(prices.week&&prices.week.label||'')+'. The price is for the goods; if you ask for delivery, the charge is added when the order is marked ready and you see it then. The list is written from your own history and changes weekly.'));
+    pPrices.appendChild(el('p','lead','For the week of '+(prices.week&&prices.week.label||'')+'. The price is for the goods; if you ask for delivery, the charge is set when we confirm your order and you see it then. The list is written from your own history and changes weekly.'));
     if(prices.since) pPrices.appendChild(el('p','sub2','Buying with us since '+monthOf(prices.since)+'.'));
-    prices.products.forEach(function(p){
+    sold().forEach(function(p){
       var pane=el('div','pane');
       var h3=el('h3','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
       /* ============ HIS INSTRUCTION, 16 SEP 2026: THE LABEL IS A VERY SUBTLE MARK ============
@@ -1195,6 +1210,9 @@ const CLIENT_JS = `
      busy and Send stayed grey for good; now every caller clears its busy state and shows this beside the
      control it came from. */
   var NOT_SENT='Not sent. Check your connection and try again.';
+  /* 24 Sep 2026: what can be ordered is a product with a priced size. The list sends none without one now, and an
+     older sealed list still can: its first size was read unguarded, and the throw blanked the whole tab. */
+  function sold(){ return ((prices&&prices.products)||[]).filter(function(x){ return x.sizes&&x.sizes.length; }); }
   async function api(path, body, method){
     var r;
     try{
@@ -1208,9 +1226,6 @@ const CLIENT_JS = `
   }
   /* one id a review and one a payment, sent with the tap, so a retry of that tap is recorded once */
   function mintRid(){ var a=crypto.getRandomValues(new Uint8Array(16)), s=''; for(var i=0;i<a.length;i++) s+=(a[i]<16?'0':'')+a[i].toString(16); return s; }
-  /* the answer to a tap on an order, drawn beside the control that was tapped: 'pay', 'wd' or 'say' */
-  var oNote={};
-  function noteAt(pane,id,at){ var n=oNote[id]; if(n&&n.at===at){ var p=el('p','msg',n.t); p.setAttribute('role','status'); pane.appendChild(p); } }
   function quoteFor(){
     var p=prices&&prices.products&&prices.products.filter(function(x){return x.product===draft.product;})[0];
     if(!p) return null;
@@ -1221,6 +1236,10 @@ const CLIENT_JS = `
   }
   function drawOrder(){
     var sc=window.scrollY;
+    /* 24 Sep 2026: a redraw (a poll, another order's tap) rebuilt the thread box empty and took the caret away
+       mid-sentence; the line is kept per order in draft.says, and the box that had the caret gets it back */
+    var fo=document.activeElement, keep=fo&&fo.getAttribute&&pOrder.contains(fo)?fo.getAttribute('data-say'):null,
+        sel=keep?[fo.selectionStart,fo.selectionEnd]:null;
     pOrder.textContent='';
     pOrder.appendChild(el('h2',null,hold?'Payment due':'Order'));
     if(view) pOrder.appendChild(el('p','lead','Read only: their orders as their own page shows them. Nothing here is placed, paid or sent.'));
@@ -1233,7 +1252,7 @@ const CLIENT_JS = `
       if(ways.length){
         dueBox.appendChild(el('span','lbl','Ways to pay'));
         ways.forEach(function(a){
-          var l=el('a','btn lnk','Open '+a.name+' in QR Command');
+          var l=el('a','btn lnk salt-ghost','Open '+a.name+' in QR Command');
           l.href=PAY_SITE+'/#'+encodeURIComponent(a.key); l.target='_blank'; l.rel='noopener';
           dueBox.appendChild(l);
         });
@@ -1242,23 +1261,27 @@ const CLIENT_JS = `
       var sv=el('button','btn quiet salt-ghost','See your statement'); sv.type='button';
       sv.addEventListener('click',function(){ showTab('stmt'); });
       dueBox.appendChild(sv);
+      /* 24 Sep 2026: the note was drawn in the order form alone, which this page never shows */
+      if(draft.note) dueBox.appendChild(statusLine(draft.note));
       pOrder.appendChild(dueBox);
     } else if(view){
       /* no order form on his read-only view */
-    } else if(!prices||!prices.products||!prices.products.length){
-      pOrder.appendChild(el('p','lead',prices&&prices.soon&&prices.soon.length?'Ordering opens once your prices are set.':'Ordering opens once your price list is written, with the next update.'));
+    } else if(!sold().length){
+      pOrder.appendChild(el('p','lead',prices&&(prices.soon&&prices.soon.length||prices.products&&prices.products.length)?'Ordering opens once your prices are set.':'Ordering opens once your price list is written, with the next update.'));
     } else {
       pOrder.appendChild(el('p','lead','Pick a size off your list and check it over before you place it. Once it is acknowledged you can pay, and you are told when the goods are on their way.'));
       var form=el('div','pane');
-      if(!draft.product) draft.product=prices.products[0].product;
-      var P=prices.products.filter(function(x){return x.product===draft.product;})[0]||prices.products[0];
+      var S=sold();
+      if(!draft.product) draft.product=S[0].product;
+      var P=S.filter(function(x){return x.product===draft.product;})[0]||S[0];
+      draft.product=P.product;
       if(!draft.q||!P.sizes.some(function(x){return String(x.q)===String(draft.q);})) draft.q=P.sizes[0].q;
       if(!draft.mode) draft.mode='collect';
       /* v695: the product was a dropdown, and an option carries text and nothing else, so a mark
          could not go in one. Two products are a segment anyway, which is one tap rather than two. */
-      if(prices.products.length>1){
+      if(S.length>1){
         var pseg=el('div','seg');
-        prices.products.forEach(function(x){
+        S.forEach(function(x){
           var b=el('button',x.product===draft.product?'on':''); b.type='button';
           b.setAttribute('aria-label',pshape(x.product));
           b.setAttribute('aria-pressed',x.product===draft.product?'true':'false');
@@ -1278,12 +1301,16 @@ const CLIENT_JS = `
         b.addEventListener('click',function(){ draft.mode=m[0]; drawOrder(); }); seg.appendChild(b);
       });
       form.appendChild(seg);
+      /* 24 Sep 2026: WHILE CHECK THIS OVER IS OPEN, THE PLACE AND THE LINE ARE WHAT IT SHOWS. Typing in either drew
+         nothing, so the list said one place and Place sent another (v694: the first tap shows what is about to be
+         ordered). They are read-only until Change it; the size and the mode redraw the list, so they stay live. */
+      var locked=!!draft.confirm&&!!quoteFor()&&(draft.mode!=='deliver'||String(draft.place||'').trim().length>=2);
       /* v694: a delivery says roughly where it is going, in his words a general location. It tells
          him which way to drive and what to charge; it is not an address and is not asked for one. */
       if(draft.mode==='deliver'){
         form.appendChild(el('span','lbl','Where to'));
         var pl=el('input','fld salt-field__input'); pl.type='text'; pl.maxLength=60; pl.value=draft.place||'';
-        pl.placeholder='a neighbourhood or a landmark'; pl.setAttribute('aria-label','Roughly where it is going');
+        pl.placeholder='a neighbourhood or a landmark'; pl.setAttribute('aria-label','Roughly where it is going'); pl.readOnly=locked;
         pl.addEventListener('input',function(){ draft.place=pl.value; var b=document.getElementById('oGo'); if(b)b.disabled=!quoteFor()||!!draft.busy||pl.value.trim().length<2; });
         form.appendChild(pl);
         form.appendChild(el('div','sub2','A neighbourhood is enough. The delivery charge is set when the order is acknowledged, and you see it here before you pay.'));
@@ -1292,7 +1319,7 @@ const CLIENT_JS = `
          order's thread rather than sitting in a field of its own, so there is one place to read. */
       form.appendChild(el('span','lbl','Anything to add'));
       var sy=el('input','fld salt-field__input'); sy.type='text'; sy.maxLength=140; sy.value=draft.say||'';
-      sy.placeholder='optional, a line about this order'; sy.setAttribute('aria-label','Anything to add about this order');
+      sy.placeholder='optional, a line about this order'; sy.setAttribute('aria-label','Anything to add about this order'); sy.readOnly=locked;
       sy.addEventListener('input',function(){ draft.say=sy.value; });
       form.appendChild(sy);
       /* v702, HIS INSTRUCTION OF 18 SEP 2026: an associate's own order and one placed for somebody
@@ -1378,6 +1405,8 @@ const CLIENT_JS = `
     var h=el('h2',null,'Your orders'); h.style.marginTop='18px'; pOrder.appendChild(h);
     if(!orders.length) pOrder.appendChild(el('p','lead','None yet.'));
     orders.forEach(function(o){ pOrder.appendChild(orderPane(o)); });
+    if(keep){ var kbox=[].filter.call(pOrder.querySelectorAll('input[data-say]'),function(x){ return x.getAttribute('data-say')===keep; })[0];
+      if(kbox){ try{ kbox.focus({preventScroll:true}); kbox.setSelectionRange(sel[0],sel[1]); }catch(e){} } }
     window.scrollTo(0,sc);
   }
 
@@ -1390,11 +1419,21 @@ const CLIENT_JS = `
   /* an advance as the engine reads it: the share of the goods handed over above the share paid */
   function aheadOnGoods(o){ var owed=o.total+(+o.delivery||0), pf=owed>0?(+o.paid||0)/owed:0, mf=o.qty>0?(+o.moved||0)/o.qty:0; return mf>pf+1e-9&&dueOf(o)>0.004; }
   function heldUnpaid(){ return orders.some(function(o){ return ['cancelled','declined'].indexOf(o.status)<0&&aheadOnGoods(o); }); }
+  /* THE ANSWER TO A TAP ON AN ORDER IS DRAWN BESIDE WHAT WAS TAPPED (24 Sep 2026). Every answer went
+     to the form's one note, which the payment page over RM 100 never draws, so I have paid, Confirm,
+     Withdraw and Send answered nothing there, and on the order page the answer sat above the form, a
+     screen away. It lives in draft, so signing out and signing in forget it as they forget the rest.
+     k names the control; where the answer took the control away (paid in full, withdrawn), the line
+     goes under the order's state, which is where the change shows. */
+  function statusLine(t){ var p=el('p','msg',t); p.setAttribute('role','status'); return p; }
+  function tapSaid(o,k,t){ draft.tap=t?{id:o.id,k:k,t:t}:null; }
   function orderPane(o){
     var pane=el('div','pane');
     var P=prices&&prices.products&&prices.products.filter(function(x){return x.product===o.product;})[0];
     var unit=P?P.unit:'unit';
     var due=dueOf(o), moved=+o.moved||0, paid=+o.paid||0, payable=['acknowledged','ready'].indexOf(o.status)>=0;
+    var tap=(draft.tap&&draft.tap.id===o.id)?draft.tap:null, tk=tap&&tap.k;
+    if(tk==='pay'&&!(payable&&due>0.004) || tk==='withdraw'&&!((payable||o.status==='placed')&&!(moved>0))) tk='state';
     pane.appendChild(el('div','state salt-status salt-status--'+(STATE_TONE[o.status]||'mist'), STATE_WORDS[o.status]||o.status));
     pane.appendChild(el('div','quote', rm(o.total+(o.delivery||0))));
     if(o.delivery>0) pane.appendChild(el('div','sub2', rm(o.total)+' for the goods and '+rm(o.delivery)+' delivery'));
@@ -1412,8 +1451,9 @@ const CLIENT_JS = `
     else if(o.status==='declined') line='This order could not be taken. Nothing is owed.';
     else if(o.status==='cancelled') line=paid>0?'Withdrawn. The '+rm(paid)+' you paid is refunded.':'Withdrawn before anything moved. Nothing is owed.';
     pane.appendChild(el('p','sub2',line));
+    if(tk==='state') pane.appendChild(statusLine(tap.t));
     if(!view&&payable&&due>0.004) pane.appendChild((o.method&&!(pick[o.id]||{}).again)?payBox(o):payChooser(o));
-    noteAt(pane,o.id,'pay');
+    if(tk==='pay') pane.appendChild(statusLine(tap.t));
     /* v694: either side may withdraw at any stage until the goods move (his rule, 18 Sep 2026) */
     if(!view&&(payable||o.status==='placed')){
       if(moved>0) pane.appendChild(el('p','sub2','The goods are with you, so this can no longer be withdrawn here.'));
@@ -1423,12 +1463,12 @@ const CLIENT_JS = `
           if(!confirm(paid>0?'Withdraw this order? The '+rm(paid)+' you paid is refunded.':'Withdraw this order?')) return;
           var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{});
           if(mine!==ticket) return;
-          oNote[o.id]=r.body.ok?null:{at:'wd',t:r.body.error||'It could not be withdrawn.'};
+          tapSaid(o,'withdraw',r.body.ok?'':(r.body.error||'It could not be withdrawn.'));
           await loadOrders(); if(mine!==ticket) return; drawOrder();
         });
         pane.appendChild(wb);
+        if(tk==='withdraw') pane.appendChild(statusLine(tap.t));
       }
-      noteAt(pane,o.id,'wd');
     }
     /* v751: THE THREAD, oldest first, theirs and his. It sits above the history because it is the
        part a reader came back for; the history is the record underneath it. */
@@ -1448,6 +1488,8 @@ const CLIENT_JS = `
     var si=el('input','fld salt-field__input'); si.type='text'; si.maxLength=200;
     si.placeholder=msgs.length?'Add to this':'Ask about this order';
     si.setAttribute('aria-label','Write about this order');
+    si.setAttribute('data-say',o.id); si.value=(draft.says||{})[o.id]||'';
+    si.addEventListener('input',function(){ (draft.says=draft.says||{})[o.id]=si.value; });
     var sg=el('button','btn quiet salt-ghost','Send'); sg.type='button';
     sg.addEventListener('click', async function(){
       var t=String(si.value||'').trim();
@@ -1456,14 +1498,14 @@ const CLIENT_JS = `
       var r=await api('/orders/'+o.id+'/say',{text:t});
       if(mine!==ticket) return;
       sg.disabled=false;
-      if(r.status===401) oNote[o.id]={at:'say',t:'Your session has ended. Sign in again.'};
-      else if(!r.body.ok) oNote[o.id]={at:'say',t:r.body.error||'It was not sent.'};
-      else { delete oNote[o.id]; await loadOrders(); if(mine!==ticket) return; }
+      if(r.status===401) tapSaid(o,'say','Your session has ended. Sign in again.');
+      else if(!r.body.ok) tapSaid(o,'say',r.body.error||'It was not sent.');
+      else { tapSaid(o,'say',''); if(draft.says) delete draft.says[o.id]; await loadOrders(); if(mine!==ticket) return; }
       drawOrder();
     });
     sayw.appendChild(si); sayw.appendChild(sg);
     if(!view) pane.appendChild(sayw);
-    noteAt(pane,o.id,'say');
+    if(tk==='say') pane.appendChild(statusLine(tap.t));
     var hist=el('ul','hist');
     (o.history||[]).forEach(function(h){ var li=el('li',null,stamp(h.at)+'  '+(STATE_WORDS[h.status]||h.status)+(h.method?', paying by '+methodWord(h.method,h.account):'')+(h.note?': '+h.note:'')); hist.appendChild(li); });
     pane.appendChild(hist);
@@ -1509,7 +1551,7 @@ const CLIENT_JS = `
       if(!ok) return; var mine=ticket;
       var r=await api('/orders/'+encodeURIComponent(o.id)+'/method',{method:cur.method,account:cur.account||undefined});
       if(mine!==ticket) return;
-      if(!r.body.ok) oNote[o.id]={at:'pay',t:r.body.error||'The choice was not recorded.'}; else { delete pick[o.id]; delete oNote[o.id]; }
+      if(!r.body.ok) tapSaid(o,'pay',r.body.error||'The choice was not recorded.'); else { tapSaid(o,'pay',''); delete pick[o.id]; }
       await loadOrders(); if(mine!==ticket) return; drawOrder();
     });
     box.appendChild(cb);
@@ -1522,14 +1564,14 @@ const CLIENT_JS = `
      against the fold. It accumulates, so a part payment is a part payment. */
   function payBox(o){
     var box=payLink(o), due=dueOf(o), cur=pick[o.id]||{};
-    var row=el('div','amt');
+    var row=el('div','payamt');
     row.appendChild(el('span','cur','RM'));
-    var inp=el('input','fld'); inp.type='number'; inp.min='0'; inp.step='0.01'; inp.inputMode='decimal';
+    var inp=el('input','fld salt-field__input salt-field__input--mono'); inp.type='number'; inp.min='0'; inp.step='0.01'; inp.inputMode='decimal';
     inp.value=(cur.amount!==undefined&&cur.amount!==null)?cur.amount:due.toFixed(2);
     inp.setAttribute('aria-label','What you paid, in ringgit');
     inp.addEventListener('input',function(){ pick[o.id]=Object.assign({},pick[o.id],{amount:inp.value}); var b=document.getElementById('pd-'+o.id); if(b)b.disabled=!(parseFloat(inp.value)>0); });
     row.appendChild(inp); box.appendChild(row);
-    var pb=el('button','btn',"I have paid"); pb.type='button'; pb.id='pd-'+o.id;
+    var pb=el('button','btn salt-pill salt-pill--md',"I have paid"); pb.type='button'; pb.id='pd-'+o.id;
     pb.disabled=!(parseFloat(inp.value)>0);
     pb.addEventListener('click', async function(){
       var amt=parseFloat(inp.value);
@@ -1542,13 +1584,13 @@ const CLIENT_JS = `
       var r=await api('/orders/'+encodeURIComponent(o.id)+'/pay',{amount:+fig,rid:pick[o.id].rid});
       if(mine!==ticket) return;
       var took=!!(r.body&&r.body.ok);
-      oNote[o.id]={at:'pay',t:took?'Recorded. It shows on your statement once it is folded into the book.':((r.body&&r.body.error)||'That payment was not recorded.')};
+      tapSaid(o,'pay',took?'Recorded. It shows on your statement once it is folded into the book.':((r.body&&r.body.error)||'That payment was not recorded.'));
       if(took) delete pick[o.id];
       await loadOrders(); if(mine!==ticket) return; drawOrder();
     });
     box.appendChild(pb);
     box.appendChild(el('p','sub2','Tell us once it has left your side. '+rm(due)+' is outstanding; a part payment is fine and the rest stays here.'));
-    var ch=el('button','btn quiet','Pay another way'); ch.type='button';
+    var ch=el('button','btn quiet salt-ghost','Pay another way'); ch.type='button';
     ch.addEventListener('click',function(){ pick[o.id]={again:true}; drawOrder(); });
     box.appendChild(ch);
     return box;
@@ -1563,7 +1605,7 @@ const CLIENT_JS = `
       tngbiz:'Pay '+rm(due)+" by scanning the Touch 'n Go Business code on the page that opens, or save it and scan it from the Touch 'n Go app."}[o.method]||'';
     box.appendChild(el('p','sub2','Paying by '+methodWord(o.method,o.account)+'. '+word));
     if(o.method!=='cod'&&o.account){
-      var l=el('a','btn lnk','Open '+(a?a.name:'the account')+' in QR Command');
+      var l=el('a','btn lnk salt-ghost','Open '+(a?a.name:'the account')+' in QR Command');
       l.href=PAY_SITE+'/#'+encodeURIComponent(o.account); l.target='_blank'; l.rel='noopener';
       box.appendChild(l);
     }

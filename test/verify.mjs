@@ -17286,7 +17286,7 @@ await (async () => {
   ok(/data-t="card" id="tCard" hidden/.test(page6) && /tCard\.hidden=!assoc;/.test(page6),
     "the tab starts hidden and is shown to an associate alone");
   ok(/pCard\.hidden=\(t!=='card'\)/.test(page6), "and the panel is switched with the other three");
-  ok(/card=null; cardMonth='';/.test(page6), "logging out forgets it, as it forgets the price list");
+  ok(/card=null; cardMonth=null;/.test(page6), "logging out forgets it, as it forgets the price list");
   /* the month pill was 29px tall since v690, on a strip whose whole purpose is to be tapped */
   ok(/min-height:var\(--salt-tap\);display:inline-flex/.test(page6) && !/cursor:pointer;min-height:auto/.test(page6),
     "and every month pill is a real tap target now, swept across the class rather than fixed on the one new strip");
@@ -21322,6 +21322,517 @@ await (async () => {
   ok(checked > 10 && multi > 5 && !wrong.length,
     "every live statement prints its rows newest first: " + checked + " statements, " + multi + " with more than one day"
     + (wrong.length ? "; out of order: " + wrong.slice(0, 3).join(", ") : ""));
+})();
+
+section("24 Sep 2026: on the payment page over RM 100, every tap on an order answers beside what was tapped");
+await (async () => {
+  /* H06 of the Counter study: every answer went to the order form's one note, and the payment page never draws
+     the form, so I have paid, Withdraw and Send answered nothing at all there. The answer is now a role=status
+     line in the order that was tapped, beside the control; where the answer took the control away (paid in
+     full), under the order's state. */
+  const { landingPage: lpH } = await import("../stmt/page.js");
+  const CH = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcH } = await import("node:crypto");
+  const { JSDOM: JDH } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-h06", ck = await CH.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await CH.wrapKey(pass, ck), session: "sess-h06",
+    env: await CH.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await CH.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280 })) };
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: "2026-09-20T03:00:00Z", history: [], msgs: [] };
+  const st = { paid: 0, payOk: false, ordersDown: false };
+  const list = () => [{ ...base, id: "oA", status: "acknowledged", total: 150, paid: st.paid, method: "transfer", account: "maybank" },
+    { ...base, id: "oB", status: "placed", total: 90, paid: 0 }];
+  const res = (status, j) => ({ ok: status === 200, status, json: async () => j });
+  const dom = new JDH(lpH(u, "nh06", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcH, configurable: true }); } catch (e) { win.crypto = wcH; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {}; win.confirm = () => true;
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      if (p === "/open") return res(200, body);
+      if (p === "/orders" && m === "GET") return st.ordersDown ? res(401, { ok: false }) : res(200, { ok: true, orders: list() });
+      if (p === "/orders/oA/pay") { if (!st.payOk) return res(200, { ok: false, error: "Refused by the fixture: pay" }); st.paid = 150; return res(200, { ok: true }); }
+      if (p === "/orders/oB/cancel") return res(200, { ok: false, error: "Refused by the fixture: withdraw" });
+      if (p === "/orders/oB/say") return res(200, { ok: false, error: "Refused by the fixture: say" });
+      return res(404, { ok: false });
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
+  const panes = () => [...d.querySelectorAll("#pOrder .pane")].filter((p) => p.querySelector(".state"));
+  const said = (root, words) => [...root.querySelectorAll('[role="status"]')].find((x) => x.textContent.includes(words) && !x.closest("[hidden]"));
+  const after = (a, b) => !!(a && b && (a.compareDocumentPosition(b) & w.Node.DOCUMENT_POSITION_FOLLOWING));
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => panes().length === 2);
+    ok(panes().length === 2 && !d.getElementById("pOrder").hidden && d.getElementById("tOrder").textContent === "Pay",
+      "the fixture opens on the payment page with its two orders below");
+
+    d.getElementById("pd-oA").click();
+    await until(() => said(d, "Refused by the fixture: pay"));
+    const payLine = said(panes()[0], "Refused by the fixture: pay");
+    ok(payLine && after(d.getElementById("pd-oA"), payLine),
+      "I have paid refused: the words are on screen in a role=status line in that order, after the button");
+
+    [...panes()[1].querySelectorAll("button")].find((b) => b.textContent === "Withdraw this order").click();
+    await until(() => said(d, "Refused by the fixture: withdraw"));
+    const wdBtn = [...panes()[1].querySelectorAll("button")].find((b) => b.textContent === "Withdraw this order");
+    const wdLine = said(panes()[1], "Refused by the fixture: withdraw");
+    ok(wdLine && after(wdBtn, wdLine) && !said(d, "Refused by the fixture: pay"),
+      "Withdraw refused: the words sit beside Withdraw on that order, and the earlier answer has gone");
+
+    const box = panes()[1].querySelector(".sayw input"); box.value = "Is it ready?";
+    [...panes()[1].querySelectorAll("button")].find((b) => b.textContent === "Send").click();
+    await until(() => said(d, "Refused by the fixture: say"));
+    const sayLine = said(panes()[1], "Refused by the fixture: say");
+    ok(sayLine && after(panes()[1].querySelector(".sayw"), sayLine), "Send refused: the words sit under the box that was sent from");
+
+    /* the order list answering 401 after a tap writes the form's note, which the payment page now draws too */
+    const holdSaid = () => [...d.querySelector("#pOrder .pane").querySelectorAll('[role="status"]')].filter((x) => x.textContent.trim()).length;
+    const holdBefore = holdSaid();
+    st.ordersDown = true;
+    d.getElementById("pd-oA").click();
+    await until(() => holdSaid() > 0);
+    ok(holdBefore === 0 && holdSaid() > 0 && !d.querySelector("#pOrder .pane").querySelector(".state"),
+      "and a note the form would have carried is drawn in the payment pane itself: " + holdBefore + " then " + holdSaid());
+
+    st.ordersDown = false; st.payOk = true;
+    d.getElementById("pd-oA").click();
+    await until(() => said(d, "Recorded."));
+    const rec = said(panes()[0], "Recorded.");
+    ok(rec && !d.getElementById("pd-oA") && /Paid in full/.test(panes()[0].textContent) && after(panes()[0].querySelector(".quote"), rec),
+      "paid in full, the pay box is gone and the answer stands under the order's state instead of vanishing with it");
+  } finally { w.close(); }
+})();
+
+section("24 Sep 2026: the payment controls are the system's pill, ghost and field, one filled control an order");
+await (async () => {
+  /* H07 of the Counter study: I have paid and Pay another way were 21px system buttons, the pay links default-blue
+     text, and the amount a white box squeezed to 18px by the radio buttons' own rule. The page's comment says the
+     filled control is .salt-pill and the quiet ones .salt-ghost; now they are, and the amount is the field. */
+  const { landingPage: lpJ } = await import("../stmt/page.js");
+  const CJ = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcJ } = await import("node:crypto");
+  const { JSDOM: JDJ } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-h07", ck = await CJ.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await CJ.wrapKey(pass, ck), session: "sess-h07",
+    env: await CJ.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await CJ.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280 })) };
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z", history: [], msgs: [], status: "acknowledged" };
+  const orders = [{ ...base, id: "oA", total: 150, method: "transfer", account: "maybank" }, { ...base, id: "oC", total: 60 }];
+  const dom = new JDJ(lpJ(u, "nh07", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcJ, configurable: true }); } catch (e) { win.crypto = wcJ; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("pd-oA"); i++) await new Promise((r) => setTimeout(r, 50));
+    const hold = d.querySelector("#pOrder .pane");
+    const scope = [hold, ...d.querySelectorAll("#pOrder .pay")];
+    const ctrls = scope.flatMap((s) => [...s.querySelectorAll("button, a, select, input")]).filter((x) => x.type !== "radio");
+    const bare = ctrls.filter((x) => !/(^| )salt-(pill|ghost|field__input)( |$)/.test(x.className));
+    ok(d.getElementById("pd-oA") && d.querySelectorAll("#pOrder .pay").length === 2 && ctrls.length >= 8 && !bare.length,
+      "every button, link and field on the payment pane and in every order's payment box is a recipe ("
+      + ctrls.length + " controls): " + bare.map((x) => x.tagName + " " + (x.textContent || x.getAttribute("aria-label"))).join(", "));
+    const orderPanes = [...d.querySelectorAll("#pOrder .pane")].filter((p) => p.querySelector(".state"));
+    const pills = orderPanes.map((p) => p.querySelectorAll(".salt-pill").length);
+    ok(pills.join() === "1,1" && d.getElementById("pd-oA").classList.contains("salt-pill") && !hold.querySelector(".salt-pill"),
+      "one filled control an order, I have paid on the one with a rail chosen, and the payment pane's ways to pay all quiet: " + pills.join());
+    const amt = orderPanes[0].querySelector('input[type="number"]'), cs = w.getComputedStyle(amt);
+    ok(amt.classList.contains("salt-field__input") && amt.inputMode === "decimal" && cs.width !== "18px" && cs.height !== "18px",
+      "the amount is the field, typed on a decimal keypad, and no longer squeezed by the radio buttons' size: " + cs.width + " x " + cs.height);
+  } finally { w.close(); }
+})();
+
+section("24 Sep 2026: the pay row's class is its own, so the statement's Amount column is a column again");
+await (async () => {
+  /* H08 of the Counter study: the page's .amt{display:flex;margin-top:10px}, meant for the pay row, also matched
+     every td.amt the statement prints (tools/make_statements.mjs), so each Amount cell was laid out as a flex row
+     10px down from its neighbours. The pay row is .payamt now. */
+  const { landingPage: lpK } = await import("../stmt/page.js");
+  const CK = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcK } = await import("node:crypto");
+  const { JSDOM: JDK } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-h08", ck = await CK.contentKey("test-secret", u);
+  const stmtBody = '<div class="tblw"><table><thead><tr><th class="dt">Date</th><th class="amt">Amount</th></tr></thead><tbody>'
+    + '<tr data-m="2026-09"><td class="dt">20 Sep</td><td class="amt">RM 150.00</td></tr></tbody></table></div>';
+  const body = { ok: true, wrap: await CK.wrapKey(pass, ck), session: "sess-h08",
+    env: await CK.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await CK.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: stmtBody, owed: 40 })) };
+  const orders = [{ id: "oA", product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z",
+    history: [], msgs: [], status: "acknowledged", total: 150, method: "transfer", account: "maybank" }];
+  const dom = new JDK(lpK(u, "nh08", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcK, configurable: true }); } catch (e) { win.crypto = wcK; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("pd-oA"); i++) await new Promise((r) => setTimeout(r, 50));
+    const cells = [...d.querySelectorAll("#out td.amt, #out th.amt")].map((x) => w.getComputedStyle(x));
+    ok(cells.length === 2 && cells.every((c) => c.display !== "flex" && c.marginTop !== "10px"),
+      "the statement's Amount cells are table cells, not flex rows pushed 10px down: " + cells.map((c) => c.display + " " + c.marginTop).join(", "));
+    const row = d.querySelector('#pOrder input[type="number"]') && d.querySelector('#pOrder input[type="number"]').parentNode;
+    ok(row && w.getComputedStyle(row).display === "flex" && !row.classList.contains("amt"),
+      "and the pay row keeps its own flex layout under its own name: " + (row && row.className));
+  } finally { w.close(); }
+})();
+
+section("24 Sep 2026: a half-typed line on an order survives a redraw, text and caret");
+await (async () => {
+  /* M19 of the Counter study: the thread box kept its value nowhere, so the ten-second poll bringing any change to
+     any order rebuilt it empty and dropped the caret mid-sentence. The line is kept per order and the box that had
+     the caret gets it back. Driven by the page's own poll, shortened in the served HTML. */
+  const { landingPage: lpM } = await import("../stmt/page.js");
+  const CM = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcM } = await import("node:crypto");
+  const { JSDOM: JDM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-m19", ck = await CM.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await CM.wrapKey(pass, ck), session: "sess-m19",
+    env: await CM.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await CM.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z", history: [], status: "placed", total: 90 };
+  let reads = 0;
+  const list = () => [{ ...base, id: "oA", msgs: reads > 2 ? [{ at: "2026-09-24T02:00:00Z", by: "desk", text: "Fixture reply" }] : [] }, { ...base, id: "oB", msgs: [] }];
+  const html = lpM(u, "nm19", null), fast = html.replace(/var POLL_MS=\d+/, "var POLL_MS=120");
+  const dom = new JDM(fast, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcM, configurable: true }); } catch (e) { win.crypto = wcM; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? (reads++, { ok: true, orders: list() }) : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const boxOf = (i) => [...d.querySelectorAll("#pOrder .pane")].filter((p) => p.querySelector(".state"))[i].querySelector(".sayw input");
+  try {
+    ok(fast !== html, "the served page's poll is shortened, or this proves nothing about a poll");
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !(d.querySelectorAll("#pOrder .sayw input").length === 2); i++) await new Promise((r) => setTimeout(r, 50));
+    const typed = boxOf(1);
+    typed.focus(); typed.value = "Could it come on Fri"; typed.dispatchEvent(new w.Event("input", { bubbles: true }));
+    typed.setSelectionRange(9, 9);
+    for (let i = 0; i < 100 && !/Fixture reply/.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+    const now = boxOf(1);
+    ok(/Fixture reply/.test(d.getElementById("pOrder").textContent) && now !== typed,
+      "a poll brought a changed order and the orders were drawn again, so the box is a new element");
+    ok(now.value === "Could it come on Fri" && boxOf(0).value === "",
+      "the half-typed line is still in its own order's box, and only there: " + JSON.stringify([boxOf(0).value, now.value]));
+    ok(d.activeElement === now && now.selectionStart === 9,
+      "and the caret is back where it was, in that box: " + (d.activeElement && d.activeElement.getAttribute("data-say")) + " at " + now.selectionStart);
+  } finally { w.close(); }
+})();
+
+section("24 Sep 2026: Check this over locks the place and the line it shows, so Place sends what was shown");
+await (async () => {
+  /* M20 of the Counter study: with the check-over open, Where to and Anything to add still took typing, drew nothing,
+     and Place sent the new words, so the list said one place and the order carried another. The two fields are
+     read-only while it is open; Change it is the way back. The typing below is a reader's: it lands only where the
+     field takes it. */
+  const { landingPage: lpN } = await import("../stmt/page.js");
+  const CN = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcN } = await import("node:crypto");
+  const { JSDOM: JDN } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-m20", ck = await CN.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 120 }, { q: 2, price: 230 }] }] };
+  const body = { ok: true, wrap: await CN.wrapKey(pass, ck), session: "sess-m20",
+    env: await CN.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await CN.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })),
+    prices: await CN.encryptWith(ck, JSON.stringify(prices)) };
+  const posted = [];
+  const dom = new JDN(lpN(u, "nm20", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcN, configurable: true }); } catch (e) { win.crypto = wcN; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      if (p === "/orders" && m === "POST") posted.push(JSON.parse(init.body));
+      const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: [] } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const field = (label) => d.querySelector('#pOrder input[aria-label="' + label + '"]');
+  const type = (f, t) => { if (f && !f.readOnly) { f.value = t; f.dispatchEvent(new w.Event("input", { bubbles: true })); } };
+  const button = (t) => [...d.querySelectorAll("#pOrder button")].find((b) => b.textContent === t);
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !button("Deliver to me"); i++) await new Promise((r) => setTimeout(r, 50));
+    button("Deliver to me").click();
+    type(field("Roughly where it is going"), "Old market");
+    type(field("Anything to add about this order"), "Ring the bell");
+    d.getElementById("oGo").click();
+    const where = () => { const li = [...d.querySelectorAll("#pOrder .conf li")].find((x) => x.querySelector(".k").textContent === "Where"); return li && li.querySelector(".v").textContent; };
+    const locked = field("Roughly where it is going").readOnly && field("Anything to add about this order").readOnly;
+    type(field("Roughly where it is going"), "Somewhere else");
+    type(field("Anything to add about this order"), "Changed my mind");
+    ok(locked && where() === "Old market" && field("Roughly where it is going").value === "Old market",
+      "with the check-over open both fields are read-only, and the list and the field still say the same place: " + where());
+    button("Place this order").click();
+    for (let i = 0; i < 100 && !/Placed\./.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+    ok(posted.length === 1 && posted[0].place === "Old market" && posted[0].note === "Ring the bell",
+      "Place sends exactly the place and the line the check-over showed: " + JSON.stringify(posted.map((x) => [x.place, x.note])));
+    /* and the way back opens them again */
+    button("Deliver to me").click();
+    type(field("Roughly where it is going"), "Old market");
+    d.getElementById("oGo").click();
+    button("Change it").click();
+    ok(!field("Roughly where it is going").readOnly && !field("Anything to add about this order").readOnly,
+      "Change it closes the list and both fields take typing again");
+  } finally { w.close(); }
+})();
+
+section("24 Sep 2026: a product with no priced size is coming soon, and the Order tab still draws");
+await (async () => {
+  /* M21 of the Counter study: a level the board has no column for drops every size, and priceList still pushed the
+     product with sizes: []. The page read sizes[0] to set up the form, threw, and the Order tab went blank, the
+     customer's orders and Notifications with it. The list sends it to soon now, and the page guards an older list. */
+  const PLr = await import("../tools/pricelist.mjs");
+  const cost = { repl: 50, freightRate: 0, shrinkRate: 0, avgDel: { n: 0, mean: 0 }, attrib: {},
+    costBasis: { txnPerDelivery: { rm: 0 }, freightPerTrip: { rm: 0 }, deliveredShare: { v: 0 } } };
+  const pricingFor = (cols) => ({ sizes: [1, 2], tierNames: ["Ambassador", "Titanium", "Silver"], tierOf: { "CX0-NC": { salt: "Silver" } },
+    byProduct: { salt: { sizes: [1, 2], inputs: { cost, policy: {} }, ladder: [{ q: 1, prices: [80, 90, 100].slice(0, cols) }, { q: 2, prices: [150, 170, 190].slice(0, cols) }] } } });
+  const bookR = { PRODUCTS: { salt: { name: "Salt", unit: "unit" } }, PROD_ORDER: ["salt"], sales: [] };
+  const at = new Date("2026-09-03T06:00:00Z");
+  const full = PLr.priceList("CX0-NC", bookR, pricingFor(3), at), short = PLr.priceList("CX0-NC", bookR, pricingFor(1), at);
+  ok(full.products.length === 1 && full.products[0].sizes.length === 2,
+    "the fixture prices when the board has the level's column, so the case below is the missing column and nothing else");
+  ok(!short.products.length && short.soon.length === 1 && short.soon[0].product === "salt",
+    "with no column for their level every size drops out, and the product is coming soon rather than a list with no sizes: "
+    + JSON.stringify({ products: short.products.map((p) => [p.product, p.sizes.length]), soon: short.soon.map((p) => p.product) }));
+
+  const { landingPage: lpR } = await import("../stmt/page.js");
+  const CR = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcR } = await import("node:crypto");
+  const { JSDOM: JDR } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-m21", ck = await CR.contentKey("test-secret", u);
+  /* the shape a list sealed before this fix can still carry */
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [] }, { product: "oil", unit: "unit", basis: "board", tier: null, sizes: [{ q: 1, price: 50 }] }] };
+  const body = { ok: true, wrap: await CR.wrapKey(pass, ck), session: "sess-m21",
+    env: await CR.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await CR.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })),
+    prices: await CR.encryptWith(ck, JSON.stringify(prices)) };
+  const orders = [{ id: "oA", product: "oil", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z", history: [], msgs: [], status: "placed", total: 50 }];
+  const dom = new JDR(lpR(u, "nm21", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcR, configurable: true }); } catch (e) { win.crypto = wcR; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  /* the fault was a throw inside the sign-in's own async handler: caught here, so it reads as a red line and not as a
+     suite that stops dead */
+  const thrown = [], onRej = (e) => { thrown.push(String((e && e.message) || e)); };
+  process.on("unhandledRejection", onRej);
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 60 && !thrown.length && !/Your orders/.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+    const po = d.getElementById("pOrder"), sizes = [...po.querySelectorAll("select option")].map((o) => o.value);
+    ok(!thrown.length && /Notifications/.test(po.textContent) && /Your orders/.test(po.textContent) && po.querySelectorAll(".state").length === 1
+      && sizes.join() === "1" && !po.querySelector(".seg button[aria-label]"),
+      "the Order tab draws: the form offers the one product with a price, and Notifications and their order are there: " + JSON.stringify({ sizes, thrown }));
+    const pp = d.getElementById("pPrices");
+    ok(/Price coming soon\./.test(pp.textContent) && pp.querySelectorAll("table").length === 1,
+      "and Prices says coming soon for the one with no size rather than drawing an empty table");
+  } finally { process.off("unhandledRejection", onRej); w.close(); }
+})();
+
+section("24 Sep 2026: the Counter's tab strip is the system's wrapping container, so four tabs fit a narrow phone");
+await (async () => {
+  /* M31 of the Counter study: .tabs restated the container as a flex row that never wraps, so an associate's four
+     tabs (363 to 387px) ran off a 360 screen and Card could not be reached. The strip is .salt-tabs now, which
+     wraps; the page's own rule keeps only its width and margin (rule 6). Geometry is the rig's; this is the rule. */
+  const { landingPage: lpT } = await import("../stmt/page.js");
+  const { JSDOM: JDT } = await import("jsdom");
+  const dom = new JDT(lpT("", "nm31", null), { url: "https://site.test/", pretendToBeVisual: true });
+  try {
+    /* whether it still hides at the door is not asked here: jsdom answers display none for [hidden] whatever the
+       author rules say, so that check stayed green with the page's [hidden] rule removed (tried, 24 Sep 2026) */
+    const tabs = dom.window.document.getElementById("tabs");
+    ok(tabs.classList.contains("salt-tabs") && tabs.getAttribute("role") === "tablist",
+      "the strip carries the system's container class");
+    tabs.hidden = false;
+    const on = dom.window.getComputedStyle(tabs);
+    ok(on.display === "flex" && on.flexWrap === "wrap" && tabs.querySelectorAll("button.salt-tabs__pill").length === 4,
+      "shown, it is a flex row that wraps, so the fourth tab moves to a second line instead of off the screen: " + on.display + " " + on.flexWrap);
+  } finally { dom.window.close(); }
+})();
+
+section("24 Sep 2026: the Card tab's All shows every month");
+await (async () => {
+  /* L41 of the Counter study: cardMonth started as '' and '' was also what All set, and the pick read '' as "the
+     newest month", so tapping All redrew the newest month and never the whole card. null is the opening month now,
+     '' is All. */
+  const { landingPage: lpC } = await import("../stmt/page.js");
+  const CC = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcC } = await import("node:crypto");
+  const { JSDOM: JDC } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-l41", ck = await CC.contentKey("test-secret", u);
+  const card = { products: [{ product: "salt", unit: "unit", summary: { bought: 390 }, lines: [
+    { date: "2026-09-02", kind: "own", qty: 1, rm: 100 }, { date: "2026-08-10", kind: "own", qty: 2, rm: 200 }, { date: "2026-07-05", kind: "through", qty: 1, rm: 90 }] }] };
+  const body = { ok: true, wrap: await CC.wrapKey(pass, ck), session: "", assoc: true,
+    env: await CC.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    card: await CC.encryptWith(ck, JSON.stringify(card)) };
+  const dom = new JDC(lpC(u, "nl41", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcC, configurable: true }); } catch (e) { win.crypto = wcC; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path) => { const j = String(path) === "/open" ? body : null; return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } }; };
+  } });
+  const w = dom.window, d = w.document;
+  const rows = () => d.querySelectorAll("#pCard tbody tr").length;
+  const pill = (t) => [...d.querySelectorAll("#pCard .mos button")].find((b) => b.textContent === t);
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 60 && !pill("All"); i++) await new Promise((r) => setTimeout(r, 50));
+    const opened = rows(), openedOn = (d.querySelector("#pCard .mos button.on") || {}).textContent;
+    pill("All").click();
+    ok(opened === 1 && openedOn === "September 2026" && rows() === 3 && pill("All").className === "on",
+      "the card opens on the newest month, and All shows every line from the start: " + JSON.stringify({ opened, openedOn, all: rows() }));
+    pill("August 2026").click();
+    ok(rows() === 1 && pill("August 2026").className === "on", "and a month is still one tap: " + rows());
+  } finally { w.close(); }
+})();
+
+section("24 Sep 2026: Prices says the delivery charge is set when the order is confirmed");
+await (async () => {
+  /* L48 of the Counter study: the Prices lead said the delivery charge is added "when the order is marked ready",
+     which v694 moved to the acknowledgement. Said in the customer's words: when we confirm your order. */
+  const { landingPage: lpP } = await import("../stmt/page.js");
+  const CP = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcP } = await import("node:crypto");
+  const { JSDOM: JDP } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-l48", ck = await CP.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 120 }] }] };
+  const body = { ok: true, wrap: await CP.wrapKey(pass, ck), session: "",
+    env: await CP.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await CP.encryptWith(ck, JSON.stringify(prices)) };
+  const dom = new JDP(lpP(u, "nl48", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcP, configurable: true }); } catch (e) { win.crypto = wcP; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path) => { const j = String(path) === "/open" ? body : null; return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } }; };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 60 && !d.querySelector("#pPrices p.lead + p.lead"); i++) await new Promise((r) => setTimeout(r, 50));
+    const lead = [...d.querySelectorAll("#pPrices p.lead")].map((p) => p.textContent).find((t) => /delivery/.test(t)) || "";
+    ok(/the charge is set when we confirm your order/.test(lead) && !/marked ready/.test(lead),
+      "the Prices lead puts the delivery charge at the confirmation, where v694 moved it: " + lead.slice(0, 160));
+  } finally { w.close(); }
+})();
+
+section("24 Sep 2026: a chosen pill on the Counter is a brass hairline, not a filled badge");
+await (async () => {
+  /* L50 of the Counter study: the month strip's own comment says "the chosen one is brass: no filled badge", and
+     decision 5 keeps the fill for the one button that books; the chosen month and the chosen mode were filled brass.
+     Read off the real strips a signed-in page draws. jsdom does not resolve var(), so the token names are compared. */
+  const { landingPage: lpQ } = await import("../stmt/page.js");
+  const CQ = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcQ } = await import("node:crypto");
+  const { JSDOM: JDQ } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-l50", ck = await CQ.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 120 }] }] };
+  const stmtBody = "<table><tbody><tr data-m=\"2026-09\"><td>a</td></tr><tr data-m=\"2026-08\"><td>b</td></tr></tbody></table>";
+  const body = { ok: true, wrap: await CQ.wrapKey(pass, ck), session: "",
+    env: await CQ.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: stmtBody }] })),
+    prices: await CQ.encryptWith(ck, JSON.stringify(prices)) };
+  const dom = new JDQ(lpQ(u, "nl50", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcQ, configurable: true }); } catch (e) { win.crypto = wcQ; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path) => { const j = String(path) === "/open" ? body : null; return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } }; };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 60 && !d.querySelector("#pOrder .seg button.on"); i++) await new Promise((r) => setTimeout(r, 50));
+    const chosen = [d.querySelector("#mfil button.on"), d.querySelector("#pOrder .seg button.on")];
+    const look = chosen.map((b) => { const c = b && w.getComputedStyle(b);
+      return c ? { fill: [c.background, c.backgroundColor, c.backgroundImage].join(" "), ink: c.color } : null; });
+    ok(chosen.every(Boolean) && chosen[0].textContent === "All" && chosen[1].textContent === "I will collect",
+      "the fixture draws a chosen month (All) and a chosen mode (I will collect) to measure");
+    ok(look.every((x) => x && !/brass/.test(x.fill)), "neither chosen pill is filled brass: " + JSON.stringify(look.map((x) => x && x.fill)));
+    /* the hairline itself is the rig's to see: jsdom reads a border drawn in a token as transparent */
+    ok(look.every((x) => x && /--salt-brass/.test(x.ink)),
+      "and each is still told apart, in brass ink: " + JSON.stringify(look.map((x) => x && x.ink)));
+  } finally { w.close(); }
+})();
+
+section("24 Sep 2026: a changing bulletin stands still under reduced motion and is announced once");
+await (async () => {
+  /* L51 of the Counter study: the changing bulletin swapped its line every four seconds whatever the reader had asked
+     for, inside a role=status live region, so a screen reader was read a new line every four seconds for as long as
+     the page was open. Under prefers-reduced-motion the lines now stand still, all of them; otherwise the changing
+     line is hidden from the live region and every line is told to it once. The timer is captured, never waited for. */
+  const { landingPage: lpB } = await import("../stmt/page.js");
+  const { JSDOM: JDB } = await import("jsdom");
+  const lines = ["Closed Friday", "Open Saturday", "New sizes"];
+  const open = (reduce) => {
+    const timers = [];
+    const dom = new JDB(lpB("", "nl51", null, { lines, mode: "change" }), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      win.matchMedia = (q) => ({ matches: reduce && /prefers-reduced-motion:\s*reduce/.test(q), media: q, addListener() {}, removeListener() {} });
+      win.setInterval = (f, ms) => { if (ms === 4000) timers.push(f); return 900 + timers.length; };
+      win.fetch = async () => ({ ok: false, status: 404, json: async () => ({ ok: false }) });
+    } });
+    return { dom, d: dom.window.document, timers };
+  };
+  const still = open(true), moving = open(false);
+  try {
+    const trS = still.d.getElementById("bullTrack");
+    ok(still.timers.length === 0 && lines.every((l) => trS.textContent.includes(l)) && !trS.hasAttribute("aria-hidden"),
+      "under reduced motion no four-second timer is set and every line stands still in the band: " + JSON.stringify([still.timers.length, trS.textContent]));
+    const trM = moving.d.getElementById("bullTrack"), live = moving.d.getElementById("bull");
+    const told = () => [...live.childNodes].filter((n) => !(n.getAttribute && n.getAttribute("aria-hidden") === "true")).map((n) => n.textContent).join("");
+    const before = told();
+    ok(moving.timers.length === 1 && trM.textContent === "Closed Friday" && live.getAttribute("role") === "status",
+      "without it the lines still change, one at a time, in the live region: " + JSON.stringify([moving.timers.length, trM.textContent]));
+    moving.timers[0]();
+    ok(trM.textContent === "Open Saturday" && trM.getAttribute("aria-hidden") === "true" && told() === before && lines.every((l) => before.includes(l)),
+      "and what the live region is told is every line, once, and does not change when the line on screen does: " + JSON.stringify(before));
+  } finally { still.dom.window.close(); moving.dom.window.close(); }
 })();
 
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
