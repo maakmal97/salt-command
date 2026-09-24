@@ -20053,6 +20053,22 @@ await (async () => {
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
+section("v823: To do's buy row names the restock card's next lot, on every book");
+await (async () => {
+  /* HIS REPORT OF 24 SEP 2026: To do said 37.5 unit of salt for RM 2,100, the card on On hand 62.5 unit for RM 3,500. Each
+     live book's row is read against that book's own restockFor, so the two cannot name different lots again. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const v = JSON.parse(w.eval("JSON.stringify(eachBook(function(p){var a=actions().filter(function(x){return x.kind==='buy';})[0],r=restockFor(p);"
+    + "return {row:a?{rm:a.rm,why:a.why,tab:a.tab}:null,lot:r&&!r.empty&&r.lot?{qty:units(r.lot.qty),total:r.lot.total}:null};}))"));
+  const rows = Object.keys(v).filter((p) => v[p].row && v[p].lot);
+  ok(rows.length >= 2, "at least two books carry a buy row and a planned lot, or this proves little: " + JSON.stringify(rows));
+  const off = rows.filter((p) => v[p].row.rm !== v[p].lot.total || v[p].row.why.indexOf(v[p].lot.qty) < 0);
+  ok(off.length === 0, "each row's money and quantity are the card's lot: " + JSON.stringify(off.map((p) => [p, v[p].row.rm, v[p].lot])));
+  ok(rows.every((p) => v[p].row.tab === "inventory"), "and the row opens On hand, where that lot is sized");
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

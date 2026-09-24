@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="a8603ff582ec8d65";
+var SALT_BUILD_ID="e394c82e4110084e";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -7656,7 +7656,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v822","d":"24 Sep 2026","t":"A TIER SET FOR THIRTY FOUR SALT ACCOUNTS","n":["<b>FOLDED:</b> One row, a tier set covering thirty four salt accounts, taken from their proposals and decided by the desk on 24 Sep 2026. Titanium carries the bulk, with Platinum on CE4-CHE, CH6-SET, CA5-BAN, CF5-WM, CA5-SEN and CS6-DAM, Gold on CA7-AMP, Silver on CM6-HCM, CH5-KLC and CD4-CS, and banded sets on CR3-DAM, CA4-DAM and CC5-OKR reading small Titanium, mid Titanium, big Platinum.","<b>INVENTORY:</b> Nothing moved. No cash, no units and no lot, so stock stands at 16.5 unit at a cost of RM48 a unit, with replacement at RM49.43 and the reorder mark at RM34.45. Owed out stays at 9.5 unit and nothing is promised. The drafter raised no flag on this row, and until the quotes switch the set moves no price, so the floors and asks are unchanged."]}];
+const evolution=[{"v":"v823","d":"24 Sep 2026","t":"TO DO BUYS THE LOT THE RESTOCK CARD SIZES","n":["<b>TWO ANSWERS TO ONE QUESTION</b> (his report of 24 Sep 2026). To do's buy row sized the refill to climb back to the reorder point and nothing more, while the restock card on On hand sized the next lot on the optimiser: salt read 37.5 unit for RM 2,100 against 62.5 unit for RM 3,500, oil 10 unit for RM 100 against 50 unit for RM 380, candy 20 unit for RM 940 against 40 unit for RM 1,880.","<b>THE ROW IS NOW THE CARD'S LOT</b>, read from restockFor, with how long it lasts, and it opens On hand where the lot is sized rather than Sourcing. The old smallest-tier rule stands only where a book has no plan or the lot would not cover what is already promised. The suite reads every live book's row against its own card."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -7771,7 +7771,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='24 Sep 2026, 12:56 KL';
+const LAST_UPDATED='24 Sep 2026, 14:30 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -16511,7 +16511,12 @@ function actions(){
        lot that covers the need, because that is a price somebody will actually quote him.
        The old flat needUnits x effective-cost figure priced a lot nobody sells. */
     const needUnits=Math.max(cv.shortBy,f.shortUnits);
-    const rq=restockQuote(needUnits);
+    /* v823, HIS REPORT OF 24 SEP 2026: TO DO AND THE RESTOCK CARD NAMED TWO LOTS. This row sized the refill to climb back to
+       the reorder point (salt 37.5 unit) while the card sized the next lot on the optimiser (62.5 unit). The row now IS the
+       card's lot, restockFor's; the old smallest-tier rule stands only where there is no plan or the lot would not cover
+       what is already promised. */
+    const plan=restockFor(PROD), pl=plan&&!plan.empty&&plan.lot&&plan.lot.qty>=needUnits-0.009?plan.lot:null;
+    const rq=pl?{qty:pl.qty,total:pl.total,rate:pl.rate,lots:pl.lots,quoted:true,cover:pl.cover}:restockQuote(needUnits);
     const refill=rq?rq.total:+(needUnits*c.eff).toFixed(2);
     const title=short&&low?`Buy: ${units(f.shortUnits)} short on promises, ${units(cv.shortBy)} under trigger`
       :short?`Buy: ${units(f.shortUnits)} short of what is promised`
@@ -16524,10 +16529,11 @@ function actions(){
         +`${f.pendRows.map(r=>ID(r.id)+' '+units(r.kg)).join(', ')}${f.defRows.length?(f.pendRows.length?'; ':'')+'deferred '+f.defRows.map(r=>ID(r.id)+' '+units(r.kg)).join(', '):''}${f.pendRows.length||f.defRows.length?'. ':''}`:'')
       +(low?`${units(cv.shortBy)} under the ${units(cv.reorderAt)} trigger, ${units(cv.rate)}/day. `:'')
       /* v794: lots of one tier are said as lots, since salt's quote is one 12.5 unit tier bought in multiples (23 Sep 2026) */
-      +(rq&&rq.quoted?`Refill: ${rq.lots>1?`${rq.lots} lots of ${units(+(rq.qty/rq.lots).toFixed(2))}`:`the ${units(rq.qty)} tier`} covers the ${units(+needUnits.toFixed(2))} needed, ${fmt0(rq.total)} at ${fmt(rq.rate)}/unit quoted.`
+      +(pl?`Next lot, as On hand sizes it: ${rq.lots>1?`${rq.lots} lots of ${units(+(rq.qty/rq.lots).toFixed(2))}, ${units(rq.qty)}`:units(rq.qty)}, ${fmt0(rq.total)} at ${fmt(rq.rate)}/unit${rq.cover!=null?`, lasting ${rq.cover} days`:''}.`
+        :rq&&rq.quoted?`Refill: ${rq.lots>1?`${rq.lots} lots of ${units(+(rq.qty/rq.lots).toFixed(2))}`:`the ${units(rq.qty)} tier`} covers the ${units(+needUnits.toFixed(2))} needed, ${fmt0(rq.total)} at ${fmt(rq.rate)}/unit quoted.`
         :`Refill ${fmt0(refill)} at ${fmt(rq?rq.rate:c.eff)}/unit, no quote on this book.`)
       +(f.cashKnown?` ${fmt0(cashFlow().free)} free.`:'');
-    add(sev,'buy',title,Math.max(refill,short?f.promRM:0),why,'sourcing');
+    add(sev,'buy',title,Math.max(refill,short?f.promRM:0),why,'inventory');   /* v823: to the page whose card sized the lot */
   }
   /* 2b. v766: WHAT IS WAITING ON THE SITE. A customer who has ordered and not been answered is the
      one item on this list with somebody standing at the other end of it, so a placement is Now and
