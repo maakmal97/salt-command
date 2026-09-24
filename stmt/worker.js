@@ -48,6 +48,9 @@ import { endpointId, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
 import { FONTS } from "./fonts.js";
+/* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
+   wrangler.stmt.jsonc looks for its class */
+export { OrderBook } from "./orderbook.js";
 import { mintSession, dropSession, sessionUser, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, toChase, CHASE_KEY, hourOf } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;

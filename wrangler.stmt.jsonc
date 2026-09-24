@@ -33,6 +33,19 @@
 			"remote": true
 		}
 	],
+	// THE ORDER BOOK (S10, D10, his answer of 24 Sep 2026): ONE Durable Object for the whole site's
+	// orders, stmt/orderbook.js, SQLite-backed (the kind the free plan offers). The migration makes the
+	// class on the first deploy of this file; a deploy is how it reaches production, and the push job
+	// deploys this site on every run that deploys. Never rename the class or re-tag the migration: a
+	// tag already applied is a record, and a new class is a new tag after it.
+	"durable_objects": {
+		"bindings": [
+			{ "name": "ORDERBOOK", "class_name": "OrderBook" }
+		]
+	},
+	"migrations": [
+		{ "tag": "v1", "new_sqlite_classes": ["OrderBook"] }
+	],
 	// The owner's override lives in the STMT_MASTER secret:
 	//   npx wrangler secret put STMT_MASTER -c wrangler.stmt.jsonc
 	// Unset, the override is simply off and every open needs the customer's own password.

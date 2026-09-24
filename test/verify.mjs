@@ -19542,6 +19542,61 @@ await (async () => {
     "the chooser on an order moved and unpaid offers no cash, and on one paid for what it holds it does: " + JSON.stringify({ railsAhead, railsInStep }));
 })();
 
+section("S10 10.1: one Durable Object for the site's orders is bound, SQLite-backed, and idle");
+await (async () => {
+  /* D10, his answer of 24 Sep 2026: a single object for the whole site. This fold binds it and calls it from
+     nowhere; the class has to be exported from the Worker's main module under the name the binding carries, or
+     the deploy that makes it fails. */
+  const SW = await import("../stmt/worker.js");
+  const OB = await import("../stmt/orderbook.js");
+  const H = await import("../test/orderbook-harness.mjs");
+  ok(typeof SW.OrderBook === "function" && SW.OrderBook === OB.OrderBook,
+    "the statements Worker's main module exports OrderBook, the class stmt/orderbook.js defines");
+
+  /* the config, read as wrangler reads it: whole-line comments out, then JSON */
+  const cfgText = readFileSync(join(REPO, "wrangler.stmt.jsonc"), "utf8").replace(/\r/g, "").split("\n")
+    .filter((l) => !/^\s*\/\//.test(l)).join("\n");
+  let cfg = null; try { cfg = JSON.parse(cfgText); } catch (e) { cfg = null; }
+  ok(!!cfg, "wrangler.stmt.jsonc parses once its comments are out");
+  const binds = (cfg && cfg.durable_objects && cfg.durable_objects.bindings) || [];
+  const migs = (cfg && cfg.migrations) || [];
+  ok(binds.length === 1 && binds[0].name === "ORDERBOOK" && binds[0].class_name === "OrderBook",
+    "one Durable Object binding, ORDERBOOK, on the class OrderBook: " + JSON.stringify(binds));
+  ok(migs.some((m) => (m.new_sqlite_classes || []).includes("OrderBook")) && !migs.some((m) => (m.new_classes || []).includes("OrderBook")),
+    "and a migration makes it SQLite-backed (new_sqlite_classes), the kind the free plan offers: " + JSON.stringify(migs));
+  /* a misspelt key deploys green and binds nothing, so every key is checked against wrangler's own schema */
+  const schema = JSON.parse(readFileSync(join(REPO, "node_modules", "wrangler", "config-schema.json"), "utf8"));
+  const defs = schema.definitions || schema.$defs || {};
+  const migKeys = Object.keys((defs.DurableObjectMigration || {}).properties || {});
+  const bindKeys = Object.keys((((defs.DurableObjectBindings || {}).items) || {}).properties || {});
+  const stray = [].concat(...migs.map((m) => Object.keys(m).filter((k) => !migKeys.includes(k))),
+    ...binds.map((b) => Object.keys(b).filter((k) => !bindKeys.includes(k))));
+  ok(migKeys.length > 0 && bindKeys.length > 0 && stray.length === 0,
+    "every key in the binding and the migration is one wrangler's schema knows: " + JSON.stringify({ stray, migKeys: migKeys.length, bindKeys: bindKeys.length }));
+
+  /* it runs: its tables are made on construction, and a read of an empty book is an empty list */
+  const b = H.orderBook({});
+  const tables = b.db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all().map((r) => r.name);
+  ok(["ev", "meta", "ord"].every((t) => tables.includes(t)), "the object makes its three tables on construction: " + JSON.stringify(tables));
+  const r0 = await (await b.ns.get(b.ns.idFromName(OB.BOOK_NAME)).fetch("https://orderbook/orders", { method: "POST", body: "{}" })).json();
+  ok(r0.ok === true && Array.isArray(r0.orders) && r0.orders.length === 0, "and an empty book reads as no orders: " + JSON.stringify(r0));
+
+  /* IDLE: with the binding present and no switch set, nothing on the site calls it */
+  const kv = new KV(), idle = H.orderBook({});
+  const env = { STMT: kv, STMT_DESK_KEY: "desk-key", ORDERBOOK: idle.ns };
+  const O = await import("../stmt/orders.js");
+  const tok = await O.mintSession(env, "a2b3-c4d5");
+  const sj = (p, body, h) => new Request("https://k7m3p2.example" + p, body === undefined ? { headers: h }
+    : { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(body) });
+  const placed = await (await SW.default.fetch(sj("/orders", { product: "salt", qty: 1, mode: "collect", unit: 120, total: 120 }, { "X-Stmt-Session": tok }), env)).json();
+  await SW.default.fetch(sj("/orders", undefined, { "X-Stmt-Session": tok }), env);
+  await SW.default.fetch(sj("/desk/orders", undefined, { "X-Stmt-Desk": "desk-key" }), env);
+  await SW.default.fetch(sj("/desk/orders/last", undefined, { "X-Stmt-Desk": "desk-key" }), env);
+  await SW.default.fetch(sj("/desk/orders/a2b3-c4d5/" + placed.order.id, { status: "acknowledged" }, { "X-Stmt-Desk": "desk-key" }), env);
+  ok(placed.ok === true && idle.calls() === 0 && kv.m.has("order:a2b3-c4d5:" + placed.order.id),
+    "with the binding and no switch, a placement, both lists, the marks and a move all stay on KV and the object is called " + idle.calls() + " times");
+})();
+
 section("v751: a customer may write a line on an order, at placement and after, and it never reaches a ledger note");
 await (async () => {
   /* his instruction of 20 Sep 2026, and the last part of what he asked at the start of this work:
