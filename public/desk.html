@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="f8bbe0d33fd39e21";
+var SALT_BUILD_ID="2c1d9b310c6a1db1";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -8352,7 +8352,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v836","d":"24 Sep 2026","t":"A COUNT WINS AND THE FLOORS LIFT","n":["<b>FOLDED: ONE RICE COUNT, DATED 24 SEP 2026.</b> Ninety four unit counted by hand against 95 on the book, a drift of -1. On his word the count stands over the ledger, so the stated rice inventory is set to 94 and COUNT_ON for rice moves to 24 Sep 2026. No party, no cash and no goods movement sit against this row, and no order cost is carried, so nothing books to the inventory's own rate.","<b>UNUSUAL: THE DRAFTER RAISED TWO FLAGS AND THE FIGURES ANSWER ONLY ONE.</b> The missing unit books as shrinkage across every unit sold, and the floors lift with it: floor1 from RM3.40 to RM4.08, floor2 from RM6.80 to RM8.16, floor125 from RM42.50 to RM51, with the ask at RM8 for 1 unit unchanged and self use moving from 0 to 1. The second flag, 9 unit owed out and already paid for, is left outstanding: the dossier says no more."]}];
+const evolution=[{"v":"v837","d":"25 Sep 2026","t":"NOBODY IS STRANDED: THE LINK KEEPS THE PHONE, A LAPSE REOPENS ITSELF","n":["<b>STAGE 3 OF THE REDESIGN</b> (his answers D1, D2 and D3 of 24 Sep 2026). The sign-in link opens on a page that names the account and spends nothing until Continue, so a WhatsApp preview cannot use it up; an in-app browser is told to open it in Safari or Chrome; Continue keeps the phone signed in with the same split key as the tick, and the link now lives three days. Its message carries the username.","<b>STAYING IN.</b> Remembered phones are filed under a hash of their token; Keep me signed in runs thirty days from the last open; a lapsed session reopens itself and repeats the tap once; the page re-reads whenever it comes back. Only with nothing remembered does a sheet say you were signed out, keeping what was typed.","<b>THE DOOR.</b> One username field and one password field that a password manager can save and fill, Show, a paste of the whole message that keeps only the password, and a line on how to ask for a new link. Signing in over another account asks first.","<b>THE SAVED APP.</b> On an iPhone, Keep it on your Home Screen draws the phone's own buttons and a one-use eight-symbol code minted when the sheet opens; the saved app starts at /app and takes the code by Paste or typing. Android and desktops get an Install button where the browser offers one. Salt Admin can show a customer at the counter a code and a QR. The hand-over answers 'not switched on yet' until its secret is set."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8467,7 +8467,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='24 Sep 2026, 23:44 KL';
+const LAST_UPDATED='25 Sep 2026, 00:04 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

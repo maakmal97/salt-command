@@ -1,5 +1,16 @@
 [
  {
+  "v": "v837",
+  "d": "25 Sep 2026",
+  "t": "NOBODY IS STRANDED: THE LINK KEEPS THE PHONE, A LAPSE REOPENS ITSELF",
+  "n": [
+   "<b>STAGE 3 OF THE REDESIGN</b> (his answers D1, D2 and D3 of 24 Sep 2026). The sign-in link opens on a page that names the account and spends nothing until Continue, so a WhatsApp preview cannot use it up; an in-app browser is told to open it in Safari or Chrome; Continue keeps the phone signed in with the same split key as the tick, and the link now lives three days. Its message carries the username.",
+   "<b>STAYING IN.</b> Remembered phones are filed under a hash of their token; Keep me signed in runs thirty days from the last open; a lapsed session reopens itself and repeats the tap once; the page re-reads whenever it comes back. Only with nothing remembered does a sheet say you were signed out, keeping what was typed.",
+   "<b>THE DOOR.</b> One username field and one password field that a password manager can save and fill, Show, a paste of the whole message that keeps only the password, and a line on how to ask for a new link. Signing in over another account asks first.",
+   "<b>THE SAVED APP.</b> On an iPhone, Keep it on your Home Screen draws the phone's own buttons and a one-use eight-symbol code minted when the sheet opens; the saved app starts at /app and takes the code by Paste or typing. Android and desktops get an Install button where the browser offers one. Salt Admin can show a customer at the counter a code and a QR. The hand-over answers 'not switched on yet' until its secret is set."
+  ]
+ },
+ {
   "v": "v836",
   "d": "24 Sep 2026",
   "t": "A COUNT WINS AND THE FLOORS LIFT",
