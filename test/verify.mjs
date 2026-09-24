@@ -15805,6 +15805,322 @@ await (async () => {
     "a phone that logged out, signing in with the answer still yes, is subscribed and recorded again, not left silent: " + JSON.stringify(gone));
   ok(!lost.on && lost.offer, "and a subscription the site will not take is not called On: Notify me stays offered: " + JSON.stringify(lost));
 })();
+section("S3 3.1: a remembered device is filed under the hash of its token, and an old raw key is re-filed on its next open");
+await (async () => {
+  /* The key was the token, so a copy of the store was a list of tokens any browser could post to
+     /remember/open for a session. Filed under the hash, the copy names nothing a phone can present. */
+  const kv = new KV(), env = { STMT: kv }, u = "aaaa-rrrr", sess = "sess31" + "a".repeat(22);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", env: { v: 2, iv: "aXY=", ct: "Y3Q=" } }));
+  await kv.put("sess:" + sess, JSON.stringify({ u, at: new Date().toISOString() }));
+  const post = (path, body, headers) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }), env);
+  const sha = (s) => createHash("sha256").update(s).digest("hex");
+  const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" };
+  const made = await (await post("/remember", { wrap }, { "X-Stmt-Session": sess })).json();
+  const rems = (await kv.list({ prefix: "rem:" })).keys.map((k) => k.name);
+  ok(made.ok && rems.length === 1 && rems[0] === "rem:" + sha(made.token)
+    && ![...kv.m.keys()].some((k) => k.includes(made.token)) && ![...kv.m.values()].some((v) => String(v).includes(made.token)),
+    "a remembered device is filed under its token's hash, and the token is nowhere in the store: " + JSON.stringify(rems));
+  ok((await post("/remember/open", { token: made.token })).status === 200, "and the token still opens it");
+  const stolen = rems[0].slice(4);
+  ok((await post("/remember/open", { token: stolen })).status === 401 && (await post("/remember/open", { token: stolen.slice(0, 32) })).status === 401,
+    "a hash read off a copy of the store opens nothing, whole or cut to a token's length");
+
+  /* a record filed before this fold: the raw token as the key, ten days into its thirty */
+  const old = "old31" + "b".repeat(27), at = new Date(Date.now() - 10 * 86400e3).toISOString();
+  await kv.put("rem:" + old, JSON.stringify({ u, wrap, at }), { expirationTtl: 20 * 86400 });
+  const back = await post("/remember/open", { token: old });
+  ok(back.status === 200 && !(await kv.get("rem:" + old)) && JSON.parse((await kv.get("rem:" + sha(old))) || "{}").u === u,
+    "an old raw record opens, and is re-filed under its hash: " + back.status);
+  ok((await post("/remember/open", { token: old })).status === 200, "and it opens again from where it now lives");
+})();
+section("S3 3.2: every remember and every open leaves a pointer under the username, listable by prefix, and Log out takes its own");
+await (async () => {
+  /* Stage 9 lists an account's phones and signs them all out. The credentials are filed under tokens or their
+     hashes, so without a pointer under the username that meant reading every record in the store. */
+  const C = await import("../tools/stmt-crypto.mjs"), S = await import("../stmt/signin.js");
+  const kv = new KV(), MASTER = "mp-s3-32", env = { STMT: kv, STMT_MASTER: MASTER };
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s3-32", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, "{}") }));
+  const post = async (path, body, headers) => { const r = await stmtWorker.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }), env); return { status: r.status, j: await r.json() }; };
+  const sha = (s) => createHash("sha256").update(s).digest("hex");
+  const ptrs = async () => { const out = {}; for (const k of (await kv.list({ prefix: "dev:" + u + ":" })).keys) out[k.name] = JSON.parse(await kv.get(k.name)); return out; };
+
+  const byPw = await post("/open", { u, password: pw });
+  const made = await post("/remember", { wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" } }, { "X-Stmt-Session": byPw.j.session });
+  const remK = "rem:" + sha(made.j.token);
+  const dev = (await ptrs())["dev:" + u + ":" + sha(remK)];
+  ok(!!dev && dev.key === remK && dev.how === "remember" && !!(await kv.get(remK))
+    && (kv.opts.get("dev:" + u + ":" + sha(remK)) || {}).expirationTtl === 30 * 24 * 3600 && !JSON.stringify(dev).includes(made.j.token),
+    "remembering a phone files a pointer under the username naming its record, living as long as it, and holding no token: " + JSON.stringify(dev));
+
+  const byRem = await post("/remember/open", { token: made.j.token });
+  const tok = S.newSignin();
+  await S.mintSignin(env, u, tok, await C.wrapKey(tok, ck));
+  const byLink = await post("/open-link", { token: tok });
+  const all = await ptrs();
+  const sessOf = (s, how) => { const p = all["dev:" + u + ":" + sha("sess:" + s)]; return !!p && p.key === "sess:" + s && p.how === how
+    && (kv.opts.get("dev:" + u + ":" + sha("sess:" + s)) || {}).expirationTtl === 900; };
+  ok(Object.keys(all).length === 4 && sessOf(byPw.j.session, "password") && sessOf(byRem.j.session, "remembered") && sessOf(byLink.j.session, "link"),
+    "a password, a remembered phone and a one-time link each leave a pointer naming the session they opened, listed by the prefix: "
+    + JSON.stringify(Object.values(all).map((p) => p.how)));
+
+  /* a phone remembered before pointers: its first open gives it one, dated when it was remembered */
+  const old = "old32" + "c".repeat(27), at = new Date(Date.now() - 5 * 86400e3).toISOString();
+  await kv.put("rem:" + old, JSON.stringify({ u, wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" }, at }));
+  await post("/remember/open", { token: old });
+  const od = (await ptrs())["dev:" + u + ":" + sha("rem:" + sha(old))];
+  ok(!!od && od.key === "rem:" + sha(old) && od.at === at && od.last > at,
+    "a phone remembered before pointers is given one on its next open, dated when it was remembered: " + JSON.stringify(od));
+
+  /* Log out takes its own phone's pointer and its session's, and nobody else's */
+  await post("/logout", { token: made.j.token }, { "X-Stmt-Session": byRem.j.session });
+  const left = await ptrs();
+  ok(!left["dev:" + u + ":" + sha(remK)] && !left["dev:" + u + ":" + sha("sess:" + byRem.j.session)]
+    && !!left["dev:" + u + ":" + sha("sess:" + byLink.j.session)] && !!left["dev:" + u + ":" + sha("rem:" + sha(old))],
+    "Log out takes this phone's pointer and its session's, and leaves the others: " + Object.keys(left).length);
+
+  /* the test account goes with everything it signed in */
+  const TEAM = "maakmal", AUD = "aud-s3-32", KID = "kid-s3-32";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const jwt = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+  Object.assign(env, { ACCESS_TEAM: TEAM, ACCESS_AUD: AUD });
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  try {
+    await post("/all/test", { make: true }, { "cf-access-jwt-assertion": jwt });
+    const t = await post("/open", { u: "0000-0000", password: "0000-0000-0000-0000" });
+    const tr = await post("/remember", { wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" } }, { "X-Stmt-Session": t.j.session });
+    const had = (await kv.list({ prefix: "dev:0000-0000:" })).keys.length;
+    await post("/all/test", { make: false }, { "cf-access-jwt-assertion": jwt });
+    ok(had === 2 && (await kv.list({ prefix: "dev:0000-0000:" })).keys.length === 0 && !(await kv.get("sess:" + t.j.session))
+      && !(await kv.get("rem:" + sha(tr.j.token))) && Object.keys(await ptrs()).length === Object.keys(left).length,
+      "unmaking the test account takes its pointers, its session and its remembered phone, and nobody else's: " + had);
+  } finally { globalThis.fetch = realFetch; }
+})();
+section("S3 3.6: Keep me signed in runs thirty days from the last open, not from the tick");
+await (async () => {
+  /* HIS DECISION D1 OF 24 SEP 2026. Thirty days from the tick signed out a customer who opened the page every day, on
+     the thirty-first, silently. Every open now files the record, and its pointer, again for thirty days. */
+  const kv = new KV(), env = { STMT: kv }, u = "aaaa-ssss";
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", env: { v: 2, iv: "aXY=", ct: "Y3Q=" } }));
+  const post = (path, body) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env);
+  const sha = (s) => createHash("sha256").update(s).digest("hex");
+  const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" }, at = new Date(Date.now() - 25 * 86400e3).toISOString();
+  const tok = "new36" + "d".repeat(27), key = "rem:" + sha(tok), ptr = "dev:" + u + ":" + sha(key);
+  await kv.put(key, JSON.stringify({ u, wrap, at }), { expirationTtl: 5 * 86400 });
+  const r = await post("/remember/open", { token: tok });
+  const ttl = (k) => (kv.opts.get(k) || {}).expirationTtl || 0;
+  ok(r.status === 200 && ttl(key) === 30 * 24 * 3600 && ttl(ptr) === 30 * 24 * 3600 && JSON.parse(await kv.get(key)).at === at,
+    "a phone ticked twenty-five days ago and opened today is kept thirty days from today, its pointer with it, and still says when it was ticked: "
+    + JSON.stringify({ rec: ttl(key), ptr: ttl(ptr) }));
+  /* one filed the old way slides as it moves */
+  const old = "old36" + "e".repeat(27);
+  await kv.put("rem:" + old, JSON.stringify({ u, wrap, at }), { expirationTtl: 5 * 86400 });
+  await post("/remember/open", { token: old });
+  ok(ttl("rem:" + sha(old)) === 30 * 24 * 3600 && !(await kv.get("rem:" + old)),
+    "and one filed the old way is moved under its hash for thirty days from today: " + ttl("rem:" + sha(old)));
+  /* a put that cannot be made never fails the open */
+  const realPut = kv.put.bind(kv);
+  kv.put = async (k, v, o) => { if (String(k) === key) throw new Error("KV PUT failed: 429 Too Many Requests"); return realPut(k, v, o); };
+  try {
+    const again = await post("/remember/open", { token: tok });
+    ok(again.status === 200 && !!(await again.json()).session, "and a slide KV refuses still lets the phone in: " + again.status);
+  } finally { kv.put = realPut; }
+})();
+section("S3 3.9: the hand-over: a key and an eight-symbol code minted on a session, filed under a keyed hash with the wrap sealed, one use in fifteen minutes, braked per address and site-wide");
+await (async () => {
+  /* HIS DECISION D2 OF 24 SEP 2026. The saved iPhone app keeps its own storage, so a signed-in page hands its
+     sign-in across: a key for Paste and /app#<key>, eight symbols to type. A code is 39 bits: never a plain hash. */
+  const C = await import("../tools/stmt-crypto.mjs");
+  const kv = new KV(), SECRET = "s3-39-handover-secret", env = { STMT: kv, STMT_HANDOVER_KEY: SECRET };
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s3-39", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, "{}"), live: { at: "2026-09-24T01:00:00Z", iv: "aXY=", ct: "Y3Q=" } }));
+  const call = async (path, body, headers, e = env, ip = "203.0.113.9") => {
+    const r = await stmtWorker.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+      headers: Object.assign({ "content-type": "application/json", "CF-Connecting-IP": ip }, headers || {}),
+      body: typeof body === "string" ? body : JSON.stringify(body) }), e);
+    let j = {}; try { j = await r.json(); } catch (x) { j = {}; }
+    return { status: r.status, j };
+  };
+  const sha = (x) => createHash("sha256").update(x).digest("hex");
+  const newKey = () => Buffer.from(crypto.getRandomValues(new Uint8Array(24))).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const REFUSED = "That username and password were not accepted.";
+
+  /* with the secret unset, the routes are off and the door is not */
+  const off = { STMT: kv };
+  ok((await call("/handover", {}, {}, off)).status === 503 && (await call("/handover/open", { code: "abcd-efgh" }, {}, off)).status === 503
+    && (await call("/open", { u, password: pw }, {}, off)).status === 200,
+    "with STMT_HANDOVER_KEY unset the hand-over answers 503 and the password still opens");
+
+  const sess = (await call("/open", { u, password: pw })).j.session;
+  const mint = async () => {
+    const token = newKey(), wrap = await C.wrapKey(token, ck);
+    return Object.assign((await call("/handover", { token, wrap }, { "X-Stmt-Session": sess })).j, { wrap });
+  };
+  ok((await call("/handover", { token: newKey(), wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" } })).status === 401
+    && (await call("/handover", { token: newKey() }, { "X-Stmt-Session": sess })).status === 400,
+    "minting needs a live session, and the key with its wrap");
+  const before = new Set(kv.m.keys());
+  const h1 = await mint();
+  const ho = [...kv.m.keys()].filter((k) => !before.has(k) && k.startsWith("ho:"));
+  const exp = Date.parse(h1.exp) - Date.now();
+  ok(h1.ok && /^[23456789abcdefghjkmnpqrstvwxyz]{4}-[23456789abcdefghjkmnpqrstvwxyz]{4}$/.test(h1.code) && typeof h1.token === "string" && h1.token.length >= 20
+    && exp > 14 * 60e3 && exp <= 15 * 60e3,
+    "a session mints { code, token, exp }: eight symbols of the username alphabet, the key back, fifteen minutes: " + JSON.stringify({ code: h1.code, exp }));
+  const plain = [h1.code, h1.code.replace("-", ""), h1.token, sha(h1.code), sha(h1.code.replace("-", "")), sha(h1.token), u, h1.wrap.ct];
+  ok(ho.length === 2 && ho.every((k) => (kv.opts.get(k) || {}).expirationTtl === 900)
+    && !ho.some((k) => plain.some((x) => k.includes(x))) && !ho.some((k) => plain.some((x) => String(kv.m.get(k)).includes(x))),
+    "it is filed twice for fifteen minutes, under names no plain hash of the code or the key computes, and neither record holds the code, the key, the username or the wrap");
+
+  /* opened by the code, typed any way: the answer is a link's, with the key to unwrap under */
+  const o1 = await call("/handover/open", { code: " " + h1.code.toUpperCase().replace("-", " ") + " " });
+  const ck1 = o1.j.wrap && o1.j.token ? await C.unwrapKey(o1.j.token, o1.j.wrap).catch(() => null) : null;
+  ok(o1.status === 200 && o1.j.ok && o1.j.u === u && o1.j.remembered === true && !!o1.j.session && !!o1.j.env && !!o1.j.live
+    && o1.j.token === h1.token && !!ck1 && Buffer.from(ck1).equals(Buffer.from(ck)),
+    "the code opens what a one-time link opens, and the wrap unwraps under the key in the answer to the account's own key");
+  ok(ho.every((k) => !kv.m.has(k)) && (await call("/handover/open", { token: h1.token })).j.error === REFUSED,
+    "and it is burnt, both names at once: its key, used after its code, gets the door's one refusal");
+  const ptr = [...kv.m.keys()].find((k) => k.startsWith("dev:" + u + ":") && JSON.parse(kv.m.get(k)).key === "sess:" + o1.j.session);
+  ok(!!ptr && JSON.parse(kv.m.get(ptr)).how === "code" && JSON.parse(await kv.get("seen:" + u)).how === "code",
+    "a code open is an open: its session leaves a pointer and the opened mark says how");
+
+  /* opened by the key, as Paste and /app#<key> do */
+  const h2 = await mint();
+  const o2 = await call("/handover/open", { token: h2.token });
+  ok(o2.status === 200 && o2.j.u === u && o2.j.token === h2.token && (await call("/handover/open", { code: h2.code })).status === 401,
+    "the key opens it too, and burns the code with it");
+  /* a record past its fifteen minutes that KV has not yet dropped is refused */
+  const h3 = await mint();
+  for (const k of [...kv.m.keys()].filter((k) => k.startsWith("ho:"))) {
+    const r = JSON.parse(kv.m.get(k)); r.exp = new Date(Date.now() - 1000).toISOString(); kv.m.set(k, JSON.stringify(r));
+  }
+  ok((await call("/handover/open", { code: h3.code })).status === 401, "a hand-over past its fifteen minutes opens nothing");
+  /* only JSON reaches it, so another site's page cannot spend an allowance */
+  const was = kv.m.get("hofail:203.0.113.9");
+  ok((await call("/handover/open", "code=abcd-efgh", { "content-type": "text/plain" })).status === 401 && !!was && kv.m.get("hofail:203.0.113.9") === was,
+    "a form post is refused and counts nothing");
+
+  /* the brakes: ten misses from one address shut it, a hundred across the site shut every address */
+  const h4 = await mint();
+  for (let i = 0; i < 10; i++) await call("/handover/open", { code: "2222-222" + "23456789ab"[i] }, {}, env, "198.51.100.1");
+  const shut = await call("/handover/open", { code: h4.code }, {}, env, "198.51.100.1");
+  ok(shut.status === 429 && [...kv.m.keys()].filter((k) => k.startsWith("ho:")).length === 2,
+    "ten misses from one address shut it, even to a real code, and the code is not spent: " + shut.status);
+  ok((await call("/handover/open", { code: h4.code }, {}, env, "198.51.100.2")).status === 200, "while another address still opens");
+  const h5 = await mint();
+  for (let i = 0; i < 100; i++) await call("/handover/open", { code: "3333-" + String(2000 + i).replace(/[01]/g, "z") }, {}, env, "192.0.2." + (i % 90));
+  ok((await call("/handover/open", { code: h5.code }, {}, env, "203.0.113.200")).status === 429,
+    "a hundred misses across the site shut code sign-in everywhere, a fresh address included");
+  ok((await call("/open", { u, password: pw }, {}, env, "203.0.113.200")).status === 200, "and the password door is untouched by it");
+})();
+section("S3 3.13: Salt Admin shows a customer at the counter a QR and the eight symbols, minted as the sheet opens and never copied or shared");
+await (async () => {
+  /* HIS DECISION D2 OF 24 SEP 2026. At the counter the customer's own phone signs in from his screen: a QR their
+     camera opens and eight symbols to type in the saved app. The judges: a copy or a share never waits on a key
+     derivation and a fetch in the same tap, so this one is minted as the sheet opens and only shown. */
+  const C = await import("../tools/stmt-crypto.mjs");
+  const QR = (await import("../stmt/qr.js")).default;
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const kv = new KV(), MASTER = "mp-s3-313", SECRET = "s3-313-secret";
+  const u = C.newUsername(), ghost = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s3-313", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX1-AA", username: u }, { code: "CX2-BB", username: ghost }]));
+  await kv.put("sheet", JSON.stringify({ issue: "2026-09-01", accounts: [{ username: u, issued: "2026-09-01", flag: "clear", t: { owed: 0 } }] }));
+  const TEAM = "maakmal", AUD = "aud-s3-313", KID = "kid-s3-313";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const jwt = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+  const env = { STMT: kv, STMT_MASTER: MASTER, STMT_HANDOVER_KEY: SECRET, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o, e = env) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path, o), e);
+  const post = (path, body, headers, e = env) => site(path, { method: "POST", headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }, e);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  let win = null;
+  try {
+    /* the route: behind Access, off without the secret, and only for an account on the roster */
+    const wrap0 = await C.wrapKey("k".repeat(32), ck);
+    const noSecret = Object.assign({}, env); delete noSecret.STMT_HANDOVER_KEY;
+    ok((await post("/all/handover", { u, token: "k".repeat(32), wrap: wrap0 })).status === 401
+      && (await post("/all/handover", { u, token: "k".repeat(32), wrap: wrap0 }, { "cf-access-jwt-assertion": jwt }, noSecret)).status === 503
+      && (await post("/all/handover", { u: C.newUsername(), token: "k".repeat(32), wrap: wrap0 }, { "cf-access-jwt-assertion": jwt })).status === 400,
+      "his mint needs Access, answers 503 without STMT_HANDOVER_KEY, and refuses a username the roster does not carry");
+
+    /* the page: Send statement, the account's card, Show a code */
+    const html = await (await site("/all", { headers: { "cf-access-jwt-assertion": jwt } })).text();
+    const seen = { handover: null, copied: 0, shared: 0 };
+    win = new JSDOM(html, { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      Object.defineProperty(w.navigator, "clipboard", { configurable: true, value: { writeText: async () => { seen.copied++; } } });
+      w.navigator.share = async () => { seen.shared++; };
+      w.fetch = async (path, o) => {
+        o = o || {};
+        const r = await site(String(path), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": jwt }), body: o.body });
+        if (String(path) === "/all/handover") seen.handover = await r.clone().json();
+        return r;
+      };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 300 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    D.querySelector('button[data-m="send"]').click();
+    const cardOf = (x) => [...D.querySelectorAll("#slist .scard")].find((k) => k.textContent.includes(x));
+    const btnOf = (x) => { const k = cardOf(x); return k && [...k.querySelectorAll("button")].find((b) => b.textContent === "Show a code"); };
+    ok(await until(() => !!btnOf(u) && !!btnOf(ghost)) && btnOf(ghost).disabled && !btnOf(u).disabled,
+      "each account's card carries Show a code, switched off where no account stands behind the username");
+    const btn = btnOf(u);
+    btn.click();
+    const sheet = () => D.querySelector(".salt-sheet[role=dialog]");
+    ok(!!sheet() && sheet().getAttribute("aria-modal") === "true" && D.getElementById(sheet().getAttribute("aria-labelledby")).textContent === "Sign in on their phone"
+      && !!D.querySelector(".salt-sheet-scrim") && !!sheet().querySelector(".salt-orb.salt-sheet__close[aria-label=Close]")
+      && /Making a code/.test(sheet().textContent) && D.activeElement === sheet(),
+      "the tap opens the system's Sheet at once, saying a code is being made, with focus inside it");
+    ok(await until(() => !!D.getElementById("hoC")), "and the code is drawn once it is made");
+    const inp = D.getElementById("hoC"), code = inp.value;
+    ok(inp.readOnly && inp.classList.contains("salt-field__input--code") && inp.closest(".salt-code") && /^[a-z2-9]{4} [a-z2-9]{4}$/.test(code)
+      && seen.handover && code === seen.handover.code.replace("-", " ") && /Works once, until [0-9]{2}:[0-9]{2}[.]/.test(sheet().textContent),
+      "the eight symbols are shown in the Code field, grouped four and four, with when they stop working: " + code);
+    /* the QR is rectangles drawing the matrix of <site>/app#<key>, the saved app's own page */
+    const rects = [...sheet().querySelectorAll(".salt-qr .salt-qr__code svg rect")];
+    const want = QR.qrMatrix(seen.handover.url);
+    const drawn = want.map((row) => row.map(() => 0));
+    let off = false;
+    for (const r of rects) for (let i = 0; i < +r.getAttribute("width"); i++) {
+      const y = +r.getAttribute("y") - 4, x = +r.getAttribute("x") - 4 + i;
+      if (!drawn[y] || x < 0 || x >= drawn.length) off = true; else drawn[y][x] = 1;
+    }
+    ok(/^https:[/][/]k7m3p2[.]example[/]app#[A-Za-z0-9_-]{32}$/.test(seen.handover.url) && rects.length > 20 && !off
+      && JSON.stringify(drawn) === JSON.stringify(want),
+      "the QR is drawn in rectangles, module for module the matrix of the saved app's page with the key after the #: " + rects.length + " runs");
+    ok(seen.copied === 0 && seen.shared === 0, "nothing was copied or shared: the sheet only shows");
+    /* what he showed opens their account, once */
+    const opened = await (await post("/handover/open", { code })).json();
+    const ck2 = opened.wrap ? await C.unwrapKey(opened.token, opened.wrap).catch(() => null) : null;
+    ok(opened.ok && opened.u === u && !!ck2 && Buffer.from(ck2).equals(Buffer.from(ck)) && (await post("/handover/open", { code })).status === 401,
+      "the code on his screen opens their account on their phone, once");
+    /* Escape closes it and hands focus back */
+    sheet().dispatchEvent(new win.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    ok(!sheet() && !D.querySelector(".salt-sheet-scrim") && D.activeElement === btn, "Escape closes the sheet and focus returns to Show a code");
+  } finally { globalThis.fetch = realFetch; if (win) { try { win.close(); } catch (e) { /* best effort */ } } }
+})();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: no three-minute lock, Remember me, and a Log out. The two halves of
@@ -15836,7 +16152,8 @@ await (async () => {
   const fakeWrap = { v: 2, salt: "c2FsdA==", iv: "aXZpdml2aXZpdg==", ct: "Y3Q=" };
   ok((await post92("/remember", { wrap: fakeWrap })).status === 401, "remembering needs a session, which only a password mints");
   const remOut = await (await post92("/remember", { wrap: fakeWrap }, { "X-Stmt-Session": "sess92aaaaaaaaaaaaaaaaaaaaaa" })).json();
-  const remKey = "rem:" + remOut.token;
+  /* S3 3.1: filed under the token's hash, never the token */
+  const remKey = "rem:" + createHash("sha256").update(remOut.token).digest("hex");
   ok(remOut.ok && /^[A-Za-z0-9_-]{20,64}$/.test(remOut.token) && remOut.days === 30
     && (kv92.opts.get(remKey) || {}).expirationTtl === 30 * 24 * 3600
     && JSON.parse(await kv92.get(remKey)).u === u92 && !JSON.stringify(await kv92.get(remKey)).includes(pass92),

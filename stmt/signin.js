@@ -56,6 +56,19 @@ export async function mintSignin(env, u, token, wrap) {
   return true;
 }
 
+/* ---- WHERE AN ACCOUNT IS SIGNED IN (S3 3.2, 24 Sep 2026) ------------------------------------------
+ * Every credential an open hands out, a remembered phone's wrap or a session, leaves a POINTER under the
+ * account: `dev:<username>:<sha256 of the key it names>`, holding that key, how it came, when it came and
+ * when it was last used. The credentials are filed under their tokens or their hashes, so without this an
+ * account's phones could be found only by reading every record in the store; listed by the prefix, they
+ * can be shown and signed out (stage 9) without a scan. A pointer opens nothing: it names a record, and
+ * the record still needs what only the phone holds. It lives as long as what it names. */
+export const devPrefix = (u) => "dev:" + u + ":";
+export async function pointAt(env, u, key, fields, ttl) {
+  await env.STMT.put(devPrefix(u) + (await idOf(key)), JSON.stringify(Object.assign({ key }, fields)), { expirationTtl: ttl });
+}
+export const unpoint = async (env, u, key) => env.STMT.delete(devPrefix(u) + (await idOf(key)));
+
 /** Read it and delete it, in that order. Returns the record, or null for anything at all wrong. */
 export async function burnSignin(env, token) {
   if (!SIGNIN_RE.test(String(token || ""))) return null;
@@ -65,4 +78,85 @@ export async function burnSignin(env, token) {
   if (!rec || !rec.u || !rec.wrap) return null;
   try { await env.STMT.delete(key); } catch (e) { /* it expires on its own; the open still stands */ }
   return rec;
+}
+
+/* ---- THE HAND-OVER: A KEY AND AN EIGHT-SYMBOL CODE (S3 3.9, his decision D2 of 24 Sep 2026) ---------------
+ * "A signed-in page (or Salt Admin) mints a one-use key plus an eight-symbol code, alive 15 minutes. It is
+ * stored under a keyed hash with its wrap sealed by a Worker secret, and braked site-wide and per address."
+ *
+ * WHAT IT IS FOR. An iPhone's Home Screen app keeps its own storage, so what Safari remembers never reaches
+ * it; and a second phone has nothing at all. A page already signed in, or his own at the counter, hands the
+ * sign-in across: the KEY by Paste or in the address (/app#<key>), the CODE typed where a paste will not go.
+ *
+ * HOW. The page mints the key, a token of the link's own shape, wraps the content key under it exactly as a
+ * sign-in link is wrapped, and posts the two. This Worker mints the code and files ONE record twice, under a
+ * KEYED hash of each (HMAC under STMT_HANDOVER_KEY, never a plain hash), its body (the username, the key and
+ * the wrap) SEALED under a key derived from the same secret. Opened by either, both are burnt, and the answer
+ * carries the key, so the page unwraps under the key whichever it typed: a code is a short name for a key,
+ * never a key itself.
+ *
+ * WHY KEYED AND SEALED. Eight symbols of thirty are about 39 bits, few enough to try every one offline against
+ * a plain hash in a copy of the store. With the secret on the Worker and not in the store, a copy holds names
+ * nobody can compute and bodies nobody can open; online, the brakes in stmt/worker.js make the walk hopeless
+ * inside fifteen minutes.
+ *
+ * THE SAME TWO LIMITS AS THE LINK: inside its fifteen minutes it is a bearer credential, and single use is best
+ * effort on KV. With the secret unset every hand-over route answers 503 and nothing else changes.
+ */
+export const HANDOVER_TTL = 15 * 60;
+const CODE_ALPHA = "23456789abcdefghjkmnpqrstvwxyz";
+
+/** Eight symbols of the username alphabet as xxxx-xxxx. Rejection sampling: 240 is 8 x 30, so no symbol is likelier. */
+export function newCode() {
+  let s = "";
+  while (s.length < 8) for (const b of crypto.getRandomValues(new Uint8Array(16))) if (b < 240 && s.length < 8) s += CODE_ALPHA[b % 30];
+  return s.slice(0, 4) + "-" + s.slice(4);
+}
+/** Case, spaces and hyphens are forgiven; anything that is not eight symbols of the alphabet is "". */
+export function normCode(x) {
+  const t = String(x || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  return /^[23456789abcdefghjkmnpqrstvwxyz]{8}$/.test(t) ? t.slice(0, 4) + "-" + t.slice(4) : "";
+}
+
+const enc = (s) => new TextEncoder().encode(String(s));
+const hex = (buf) => [...new Uint8Array(buf)].map((x) => x.toString(16).padStart(2, "0")).join("");
+const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+const macKey = (secret) => crypto.subtle.importKey("raw", enc(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+const mac = async (secret, msg) => hex(await crypto.subtle.sign("HMAC", await macKey(secret), enc(msg)));
+const sealKey = async (secret) => crypto.subtle.importKey("raw",
+  await crypto.subtle.sign("HMAC", await macKey(secret), enc("salt-handover-seal")), { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+
+/** File the hand-over for `u`; returns { code, token, exp }, or null when the secret is unset or the key or wrap is not one. */
+export async function mintHandover(env, u, token, wrap) {
+  const secret = String(env.STMT_HANDOVER_KEY || "");
+  if (!secret || !u || !SIGNIN_RE.test(String(token || ""))) return null;
+  if (!wrap || typeof wrap !== "object" || !wrap.salt || !wrap.iv || !wrap.ct) return null;
+  const code = newCode();
+  const byCode = "ho:" + (await mac(secret, "code:" + code)), byKey = "ho:" + (await mac(secret, "key:" + token));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await sealKey(secret), enc(JSON.stringify({ u, token, wrap })));
+  const exp = new Date(Date.now() + HANDOVER_TTL * 1000).toISOString(), s = { iv: b64(iv), ct: b64(ct) };
+  await env.STMT.put(byCode, JSON.stringify({ pair: byKey, exp, s }), { expirationTtl: HANDOVER_TTL });
+  await env.STMT.put(byKey, JSON.stringify({ pair: byCode, exp, s }), { expirationTtl: HANDOVER_TTL });
+  return { code, token, exp };
+}
+
+/** Open by { token } or { code }: both records burnt, then { u, token, wrap, by }, or null for anything at all wrong. */
+export async function burnHandover(env, b) {
+  const secret = String(env.STMT_HANDOVER_KEY || "");
+  const token = b && typeof b.token === "string" && SIGNIN_RE.test(b.token) ? b.token : "";
+  const code = token ? "" : normCode(b && b.code);
+  if (!secret || (!token && !code)) return null;
+  const id = "ho:" + (await mac(secret, token ? "key:" + token : "code:" + code));
+  let rec = null;
+  try { rec = await env.STMT.get(id, "json"); } catch (e) { rec = null; }
+  if (!rec || !rec.s) return null;
+  try { await env.STMT.delete(id); if (rec.pair) await env.STMT.delete(rec.pair); } catch (e) { /* each expires on its own */ }
+  if (!(Date.parse(rec.exp) > Date.now())) return null;
+  try {
+    const body = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(rec.s.iv) },
+      await sealKey(secret), unb64(rec.s.ct))));
+    return body && body.u && body.token && body.wrap ? Object.assign(body, { by: token ? "key" : "code" }) : null;
+  } catch (e) { return null; }
 }

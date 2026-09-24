@@ -43,12 +43,12 @@ import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, MAX_PER_ASSOC } from "./refs.js";
-import { SIGNIN_RE, mintSignin, burnSignin } from "./signin.js";
+import { SIGNIN_RE, mintSignin, burnSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover } from "./signin.js";
 import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
 import { FONTS } from "./fonts.js";
-import { mintSession, dropSession, sessionUser, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, toChase, CHASE_KEY, chaseSlot } from "./orders.js";
+import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, toChase, CHASE_KEY, chaseSlot } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -165,6 +165,16 @@ async function markSeen(env, u, rec, how) {
   } catch (e) { /* the next open counts */ }
 }
 
+/* S3 3.2: EVERY SESSION AN OPEN MINTS LEAVES ITS POINTER under the account (stmt/signin.js), so signing an account
+   out everywhere reaches a session minted a minute ago as well as a remembered phone. Best effort, as markSeen is:
+   a pointer that cannot be written never fails an open, and the session lapses on its own in fifteen minutes. */
+async function openSession(env, u, how) {
+  const session = await mintSession(env, u);
+  const now = new Date().toISOString();
+  try { await pointAt(env, u, "sess:" + session, { how, at: now, last: now }, SESSION_TTL); } catch (e) { /* it lapses on its own */ }
+  return session;
+}
+
 async function handleOpen(request, env) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
 
@@ -267,7 +277,7 @@ async function handleOpen(request, env) {
   /* THE SESSION (06 Sep 2026): a token the order routes take in place of the password, minted here
      because this is the one place the password has just been proved. Fifteen minutes in the store;
      the page forgets it the moment it locks. The override gets none: the owner does not order. */
-  const session = byMaster ? null : await mintSession(env, u);
+  const session = byMaster ? null : await openSession(env, u, "password");
   return new Response(JSON.stringify({
     ok: true, byMaster, issued: rec.issued || null, issues: rec.issues || null,
     wrap: byMaster ? null : (rec.wrap || null),
@@ -325,7 +335,10 @@ async function handleCustomer(request, env, p, m) {
     const wrap = b && b.wrap;
     if (!wrap || typeof wrap !== "object" || !wrap.salt || !wrap.iv || !wrap.ct) return json({ ok: false, error: "send the wrap" }, 400);
     const tok = b64e(crypto.getRandomValues(new Uint8Array(24))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-    await env.STMT.put("rem:" + tok, JSON.stringify({ u, wrap, at: new Date().toISOString() }), { expirationTtl: REM_TTL });
+    const key = await remKey(tok), now = new Date().toISOString();
+    /* S3 3.2: the pointer first, so a phone is never remembered where it cannot be found again */
+    await pointAt(env, u, key, { how: "remember", at: now, last: now }, REM_TTL);
+    await env.STMT.put(key, JSON.stringify({ u, wrap, at: now }), { expirationTtl: REM_TTL });
     return json({ ok: true, token: tok, days: REM_TTL / 86400 });
   }
   const mm = /^\/orders\/([^/]+)\/(method|cancel|pay|say)$/.exec(p);   /* v751: say, a line on the order */
@@ -344,8 +357,10 @@ async function logOut(request, env, m, su) {
   const b = await readJson(request);
   await dropSession(env, String(request.headers.get("X-Stmt-Session") || ""));
   const tok = b && typeof b.token === "string" && REM_RE.test(b.token) ? b.token : null;
-  const rec = tok ? await env.STMT.get("rem:" + tok, "json") : null;
-  if (rec && (!su || rec.u === su)) await env.STMT.delete("rem:" + tok);
+  const { key, rec, raw } = tok ? await readRem(env, tok) : {};
+  if (rec && (!su || rec.u === su)) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); await unpoint(env, rec.u, key); }
+  const stok = String(request.headers.get("X-Stmt-Session") || "");
+  if (su && stok) await unpoint(env, su, "sess:" + stok);
   const u = su || (rec && rec.u) || "";
   const ep = b && typeof b.endpoint === "string" && /^https:\/\//.test(b.endpoint) ? b.endpoint : null;
   if (u && ep) await env.STMT.delete("push:" + u + ":" + await endpointId(ep));
@@ -412,12 +427,24 @@ async function handleRemember(request, env) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   const b = await readJson(request);
   const tok = b && typeof b.token === "string" && REM_RE.test(b.token) ? b.token : null;
-  const rec = tok ? await env.STMT.get("rem:" + tok, "json") : null;
+  const { key, rec, raw } = tok ? await readRem(env, tok) : {};
   if (!rec || !rec.u) return json({ ok: false, error: REFUSED }, 401);
   const acct = await env.STMT.get("u:" + rec.u, "json");
-  if (!acct) { await env.STMT.delete("rem:" + tok); return json({ ok: false, error: REFUSED }, 401); }
+  if (!acct) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); await unpoint(env, rec.u, key); return json({ ok: false, error: REFUSED }, 401); }
   await markSeen(env, rec.u, acct, "remembered");
-  const session = await mintSession(env, rec.u);
+  /* S3 3.6, HIS DECISION D1 OF 24 SEP 2026: KEEP ME SIGNED IN RUNS THIRTY DAYS FROM THE LAST OPEN, not from the tick,
+     so a customer who uses the page is never signed out by a calendar. Every open files the record again for thirty
+     days, which is also the put that moves a record filed the old way under its hash (3.1). Best effort: a put that
+     throws (KV takes one write to a key a second) never fails the open, and the record keeps the days it had.
+     S3 3.2: the phone's own pointer says when it was last used, lives as long, and one filed before pointers is
+     given its first. */
+  const now = new Date().toISOString();
+  try {
+    await env.STMT.put(key, JSON.stringify(rec), { expirationTtl: REM_TTL });
+    if (raw) await env.STMT.delete(raw);
+  } catch (e) { /* it opens either way, and slides on the next */ }
+  try { await pointAt(env, rec.u, key, { how: "remember", at: rec.at || now, last: now }, REM_TTL); } catch (e) { /* the next open writes it */ }
+  const session = await openSession(env, rec.u, "remembered");
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
@@ -443,9 +470,59 @@ async function handleSignin(request, env) {
   const acct = await env.STMT.get("u:" + rec.u, "json");
   if (!acct) return json({ ok: false, error: REFUSED }, 401);
   await markSeen(env, rec.u, acct, "link");
-  const session = await mintSession(env, rec.u);
+  const session = await openSession(env, rec.u, "link");
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
+    issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
+    env: acct.env, live: acct.live || null, prices: acct.prices || null, session
+  });
+}
+
+/* ---- THE HAND-OVER, MINTED AND OPENED (S3 3.9, his decision D2 of 24 Sep 2026) --------------------------------
+ * POST /handover on a live session takes { token, wrap }, the key the page minted and the content key wrapped under
+ * it as a link is wrapped, and answers { ok, code, token, exp }. POST /handover/open takes { token } or { code } and
+ * answers what a one-time link's open answers, with `token` beside the wrap to unwrap it under. The mechanism is in
+ * stmt/signin.js; what is here is the door.
+ *
+ * BRAKED PER ADDRESS AND SITE-WIDE. Thirty to the eighth is too many codes to walk from one address at ten misses
+ * a quarter-hour, and many addresses together meet the site's hundred: the site-wide brake is what makes a botnet
+ * pointless, at the price that a flood shuts code sign-in for everyone for fifteen minutes. The link, the password
+ * and a remembered phone are untouched by it. A miss is any refusal; a success resets nothing, or an account could
+ * mint its own code to clear its address between guesses. JSON only, as /open, so another site's page cannot spend a
+ * customer's allowance from their browser. The refusal is the door's one; a brake answers the door's brake. */
+const HO_FAIL = (ip) => "hofail:" + ip, HO_SITE = "hofail";
+const MAX_HO_FAILS = 10, MAX_HO_SITE = 100;
+const noHandover = () => json({ ok: false, error: "Signing in with a code is not switched on here." }, 503);
+async function handleHandover(request, env, p, m) {
+  if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
+  if (!env.STMT_HANDOVER_KEY) return noHandover();
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  if (p === "/handover") {
+    const u = await sessionUser(request, env);
+    if (!u) return json({ ok: false, error: "Sign in again to make a code.", session: false }, 401);
+    const b = await readJson(request);
+    const made = await mintHandover(env, u, b && b.token, b && b.wrap);
+    return made ? json(Object.assign({ ok: true }, made)) : json({ ok: false, error: "send the key and the wrap" }, 400);
+  }
+  const b = await readJson(request);
+  if (!b) return json({ ok: false, error: REFUSED }, 401);
+  const who = String(request.headers.get("CF-Connecting-IP") || "local");
+  const readN = async (k) => parseInt(await env.STMT.get(k) || "0", 10) || 0;
+  const ipN = await readN(HO_FAIL(who)), siteN = await readN(HO_SITE);
+  if (ipN >= MAX_HO_FAILS || siteN >= MAX_HO_SITE) return json({ ok: false, error: "Too many attempts. Try again in fifteen minutes." }, 429);
+  const rec = await burnHandover(env, b);
+  const acct = rec ? await env.STMT.get("u:" + rec.u, "json") : null;
+  if (!acct) {
+    /* KV takes one write to a key a second, and the site-wide count is one key: a put it refuses is a brake that
+       lags, never an open that fails */
+    try { await env.STMT.put(HO_FAIL(who), String(ipN + 1), { expirationTtl: FAIL_TTL }); } catch (e) { /* the next miss counts */ }
+    try { await env.STMT.put(HO_SITE, String(siteN + 1), { expirationTtl: FAIL_TTL }); } catch (e) { /* the next miss counts */ }
+    return json({ ok: false, error: REFUSED }, 401);
+  }
+  await markSeen(env, rec.u, acct, rec.by);
+  const session = await openSession(env, rec.u, rec.by);
+  return json({
+    ok: true, u: rec.u, remembered: true, wrap: rec.wrap, token: rec.token,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
     env: acct.env, live: acct.live || null, prices: acct.prices || null, session
   });
@@ -585,9 +662,26 @@ const refOut = (origin, r) => Object.assign({}, r, { url: refUrl(origin, r.id), 
  *
  * REMEMBERING IS A CUSTOMER'S OWN: it is minted on a session, which only a correct password mints.
  * Logging out drops the session and the remembered wrap, so a phone handed on is a phone signed
- * out. Thirty days, his figure, and the record expires on its own after that. */
+ * out. Thirty days, his figure, counted from the last open since S3 3.6, and the record expires on its own after that. */
 const REM_TTL = 30 * 24 * 3600;
 const REM_RE = /^[A-Za-z0-9_-]{20,64}$/;
+
+/* S3 3.1, 24 SEP 2026: A REMEMBERED DEVICE IS FILED UNDER THE HASH OF ITS TOKEN, as a one-time link has been since
+   v710. The key WAS the token, so anybody holding a copy of this store could post one to /remember/open and be
+   handed a session, which places orders, without the device key that opens the wrap; and a sign-in that keeps
+   itself alive (3.4 to 3.6) would have made that copy worth more. A record filed the old way is re-filed under
+   its hash on its next open (handleRemember). ONLY A TOKEN OF THE OLD MINTING'S OWN SHAPE is looked up raw (24
+   bytes, 32 characters): a hash read off a copy is 64, so it can never name a record by itself. */
+const REM_RAW_RE = /^[A-Za-z0-9_-]{32}$/;
+const remKey = async (tok) => "rem:" + (await idOf(tok));
+/* the record a token names, where it is filed, and the old raw key it still sits under, if it does */
+async function readRem(env, tok) {
+  const key = await remKey(tok);
+  const rec = await env.STMT.get(key, "json");
+  if (rec || !REM_RAW_RE.test(tok)) return { key, rec, raw: null };
+  const raw = "rem:" + tok, old = await env.STMT.get(raw, "json");
+  return { key, rec: old, raw: old ? raw : null };
+}
 
 /* ---- THE MASTER ACCOUNT (v687, his instruction of 18 Sep 2026) --------------------------------
  * /all is his account, and it opens on its own page: Review statement, and the links below it.
@@ -721,11 +815,16 @@ async function makeTest(env) {
 }
 async function unmakeTest(env) {
   const gone = [TEST_REC, "seen:" + TEST_USER];
-  for (const pre of ["order:" + TEST_USER + ":", "push:" + TEST_USER + ":", "sent:"]) {
+  for (const pre of ["order:" + TEST_USER + ":", "push:" + TEST_USER + ":", "sent:", devPrefix(TEST_USER)]) {
     let cursor;
     do {
       const page = await env.STMT.list({ prefix: pre, cursor });
       for (const k of page.keys) if (!pre.startsWith("sent:") || k.name.endsWith(":" + TEST_USER)) gone.push(k.name);
+      /* S3 3.2: its remembered phones and live sessions, found through their pointers */
+      if (pre.startsWith("dev:")) for (const k of page.keys) {
+        const at = await env.STMT.get(k.name, "json");
+        if (at && /^(rem|sess):/.test(String(at.key))) gone.push(at.key);
+      }
       cursor = page.list_complete ? null : page.cursor;
     } while (cursor);
   }
@@ -944,6 +1043,21 @@ export default {
         return json({ ok: true, url: link, msg: signInMessage({ url: link, user: u }),
           qr: QR.qrMatrix(link) });
       }
+      /* S3 3.9 AND 3.13: A HAND-OVER FOR A CUSTOMER STANDING AT HIS COUNTER. His page opens the account under the
+         master, wraps the content key under a key it mints, and posts { u, token, wrap }, as the Sign-in link does;
+         what comes back is the code to read out and the address of the saved app's own page with the key after the
+         #, drawn as a QR for their camera. The key never reaches a log: a fragment is never sent. */
+      if (p === "/all/handover") {
+        if (!env.STMT_HANDOVER_KEY) return noHandover();
+        if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+        const b = await readJson(request);
+        const u = normUser(b && b.u);
+        if (!u || !(await roster(env)).some((x) => x.username === u)) return json({ ok: false, error: "no account on the roster has that username" }, 400);
+        const made = await mintHandover(env, u, b.token, b.wrap);
+        if (!made) return json({ ok: false, error: "send the key and the wrap" }, 400);
+        const link = url.origin + "/app#" + made.token;
+        return json(Object.assign({ ok: true, url: link, qr: QR.qrMatrix(link).map((line) => line.join("")) }, made));
+      }
       /* 24 SEP 2026 (M22): REVIEW OPENS AN ACCOUNT AS ITS OWN PAGE, READ ONLY. An account opened under
          the master has no session, because the owner does not order, so the page read no orders and
          drew "None yet." under a live order form for every account. What their page reads on a
@@ -1052,6 +1166,8 @@ export default {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       return handleSignin(request, env);
     }
+    /* S3 3.9: the hand-over, minted on a session and opened by its key or its code */
+    if (p === "/handover" || p === "/handover/open") return handleHandover(request, env, p, m);
     if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout") return handleCustomer(request, env, p, m);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
