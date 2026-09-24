@@ -199,8 +199,8 @@ export const OWNER_JS = `
      they got in. THE LINK IS MADE AS THE ACCOUNT OPENS (the plan's must-not-ship list: never a key derivation and a
      fetch inside the share's tap), so the tap shares and does nothing before it. It is kept by username with Needs
      you's (madeLink), so a redraw, or the same account's card on Needs you, never makes a second; a share that goes
-     through ticks the account sent and makes a fresh one for the next. A username with no account makes nothing and
-     posts nothing, and every control says why it is off. The password is opened on its own tap, straight to the
+     through ticks the account sent, and a link shared or copied from any card is dropped and a fresh one made
+     (retire). A username with no account makes nothing and posts nothing, and every control says why it is off. The password is opened on its own tap, straight to the
      clipboard, never into the page. */
   var story={};
   /* the link moved: every Send a sign-in link drawn for that account is painted from madeLink, including one a redraw
@@ -234,7 +234,7 @@ export const OWNER_JS = `
         :navigator.clipboard.writeText(msg).then(function(){ return 'copied'; }); }
       catch(e){ p=Promise.reject(e); }
       p.then(async function(how){
-        if(how==='copied'){ m.note='Copied. Paste it into a message to them, then tick Sent.'; m.bad=false; linkMoved(u); return; }
+        if(how==='copied'){ retire(a, 'Copied. Paste it into a message to them, then tick Sent.'); linkMoved(u); return; }
         var said=madeLink[u]={note:'Sent. It signs them in once; the next tap sends a new one.'};
         linkMoved(u);
         try{ var r=await refs('/all/sent/'+u, {issue:sheetIssue, sent:true}); a.sent=r.sent; countSent(); drawRoster(); onSent(); }
@@ -709,6 +709,13 @@ export const OWNER_JS = `
      the made link and the open Silver link lived in the card, so a redraw put the button back to Send a sign-in
      link (the next tap minting a second) and took the code off the screen. They are kept here by username. */
   var madeLink={}, silverOpen={};
+  /* S9 fix: A LINK THAT HAS LEFT THE PAGE IS NEVER THE ONE KEPT. Sign out everywhere spares the link this page holds
+     (linkId), so a link shared or copied, from any card, is dropped here, and a fresh one made wherever a Send a
+     sign-in link is drawn for the account; a forwarded link is then ended with the rest. */
+  function retire(a, note){
+    var u=a.username; madeLink[u]={note:note};
+    if([].some.call(document.querySelectorAll('[data-pill]'), function(b){ return b.getAttribute('data-pill')===u; })) makeLink(a);
+  }
   function linkButton(a, note){
     var u=a.username, b=ghost('', true);
     function paint(){
@@ -728,8 +735,8 @@ export const OWNER_JS = `
         m.busy=false; after(); return;
       }
       try{
-        if(navigator.share){ await navigator.share({text:m.j.msg}); m.note='Sent.'; }
-        else { await navigator.clipboard.writeText(m.j.msg); m.note='Copied. Paste it into a message to them.'; }
+        if(navigator.share){ await navigator.share({text:m.j.msg}); retire(a, 'Sent.'); }
+        else { await navigator.clipboard.writeText(m.j.msg); retire(a, 'Copied. Paste it into a message to them.'); }
       }catch(e){ m.note='Not shared. Tap Share the link again.'; }
       after();
     });

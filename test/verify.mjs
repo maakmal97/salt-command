@@ -16579,6 +16579,92 @@ await (async () => {
     ok(errs.length === 0, "and a list that lands after the page has gone draws nothing and throws nothing: " + JSON.stringify(errs));
   } finally { process.off("unhandledRejection", onRej); }
 })();
+section("S9 fix S9R-1: a link copied or shared from any card is dropped from the page, so Sign out everywhere ends it with the rest");
+await (async () => {
+  /* Sign out everywhere spares the link his page holds, made as the account opened and not yet sent. A link copied on a
+     browser with no share sheet, or shared from a Needs you card, stayed the one held, so the forwarded link the button
+     answers was the one link it spared, and the next Send handed the same link out again. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV(), MASTER = "mp-s9r1";
+  const u = C.newUsername(), uL = C.newUsername(), pw = C.newPassword();
+  const rec = async (x) => { const ck = await C.contentKey("s9r1", x);
+    return JSON.stringify({ u: x, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+      wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }); };
+  await kv.put("u:" + u, await rec(u)); await kv.put("u:" + uL, await rec(uL));
+  await kv.put("roster", JSON.stringify([{ code: "CX7-CP", username: u }, { code: "CX8-LK", username: uL }]));
+  await kv.put("issue", "2026-09-01");
+  const row = (code, username) => ({ code, username, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" });
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-25T00:00:00Z", issue: "2026-09-01", accounts: [row("CX7-CP", u), row("CX8-LK", uL)] }));
+  const TEAM = "maakmal", AUD = "aud-s9r1", KID = "kid-s9r1";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const A = { "cf-access-jwt-assertion": h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c)))) };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  /* ten wrong passwords at one address put the second account on Needs you, with its own Send a sign-in link */
+  for (let i = 0; i < 10; i++) await site("/open", { method: "POST", headers: { "content-type": "application/json", "CF-Connecting-IP": "198.51.100.71" }, body: JSON.stringify({ u: uL, password: "zzzz-zzzz-zzzz-zzzz" }) });
+  const opens = async (msg) => (await site("/open-link", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: String(msg).split("/s/")[1].split(/\s/)[0] }) })).status;
+  const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+  const clip = [];
+  let win = null;
+  try {
+    /* a browser with no share sheet: Send copies the message */
+    win = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      Object.defineProperty(w.navigator, "clipboard", { configurable: true, value: { writeText: (t) => { clip.push(t); return Promise.resolve(); } } });
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    const openAcct = async (x) => { D.querySelector('button[data-m="accounts"]').click();
+      await until(() => D.querySelector('#rlist [data-u="' + x + '"]')); D.querySelector('#rlist [data-u="' + x + '"]').click(); };
+    const card = (x) => D.querySelector('#aopen [data-acct="' + x + '"]');
+    const pill = (x) => card(x) && card(x).querySelector(".apill");
+    const signOutAll = async (x) => {
+      const sob = () => [...card(x).querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again/.test(b.textContent));
+      sob().click(); sob().click();
+      return until(() => /Signed out|Nothing was signed in/.test((card(x).querySelector(".agrid + .anote") || {}).textContent || ""));
+    };
+
+    /* ---- the account's own Send, copied ---- */
+    await openAcct(u);
+    ok(await until(() => pill(u) && !pill(u).disabled), "the account opens with its link made");
+    pill(u).click();
+    ok(await until(() => clip.length === 1 && /Copied[.]/.test(card(u).textContent)), "Send copies the message: " + clip.length);
+    ok(await until(() => pill(u) && !pill(u).disabled), "and a fresh link is made for the next Send");
+    pill(u).click();
+    ok(await until(() => clip.length === 2) && clip[1].split("/s/")[1] !== clip[0].split("/s/")[1],
+      "the next Send copies a new link, never the one already copied");
+    ok(await signOutAll(u) && await opens(clip[0]) === 401 && await opens(clip[1]) === 401,
+      "Sign out everywhere ends both copied links, where it spared the one the page still held");
+
+    /* ---- Needs you's Share the link, on the locked account's card ---- */
+    D.querySelector('.salt-appbar button[data-m="needs"]').click();
+    const need = () => D.querySelector('#nlist [data-need="k:' + uL + '"]');
+    const nbtn = (t) => need() && [...need().querySelectorAll("button")].find((b) => b.textContent === t);
+    ok(await until(() => nbtn("Send a sign-in link")), "Needs you carries the refused account's card");
+    nbtn("Send a sign-in link").click();
+    ok(await until(() => nbtn("Share the link")), "its first tap makes the link");
+    nbtn("Share the link").click();
+    ok(await until(() => clip.length === 3), "and the second copies it");
+    await openAcct(uL);
+    ok(await until(() => pill(uL) && !pill(uL).disabled), "the account opened after it has a link to send");
+    ok(await signOutAll(uL) && await opens(clip[2]) === 401,
+      "and Sign out everywhere on it ends the link Needs you handed out, which the page no longer holds");
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password
