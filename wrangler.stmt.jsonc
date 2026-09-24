@@ -71,7 +71,7 @@
 	"vars": {
 		// application "Salt statements owner", 67280e0b-7a34-4789-ad63-697e292b7844,
 		// created 10 Sep 2026 on his instruction: self-hosted, one-time PIN, one Allow
-		// policy on his address, 24h session. Deleting it does not open /all: with this
+		// policy on his address, a week's session (168h since 25 Sep 2026, his D13). Deleting it does not open /all: with this
 		// value present and the application gone, no token verifies and the route is 401.
 		"ACCESS_TEAM": "maakmal",
 		"ACCESS_AUD": "14a921e2b5c1ba14ca75026b930208093644ef349993a4fc66015f689060fecf",
