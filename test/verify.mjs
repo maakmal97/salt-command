@@ -32808,6 +32808,69 @@ await (async () => {
   } finally { w.close(); }
 })();
 
+section("S7 fix: Home's Pay opens only a place that shows the figure it names, never the first order that owes");
+await (async () => {
+  /* S7-R1 and S7R-3 of the stage 7 review (25 Sep 2026). Home's Pay said the sealed To pay now, RM 70 for goods already
+     received, and opened the first site order with anything to pay: an order agreed and not yet handed over, whose own
+     Pay said RM 150. Until stage 6's pay sheet, it opens the one order handed over in full that still owes that figure,
+     or Account, whose statement lists what the figure is made of. Forced state: RM 70 sealed as to pay now. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s7f2", ck = await C.contentKey("test-secret", u);
+  const part = { date: "2026-09-16", due: "2026-09-26", late: false, rm: 70, whole: 110, product: "salt", qty: 1, got: 1, gotOn: "2026-09-16", resale: false };
+  const pay = { term: 10, now: { rm: 70, due: "2026-09-26", parts: [part] }, overdue: { rm: 0, parts: [] }, coming: { rm: 150, parts: [] } };
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, total: 110, at: "2026-09-20T03:00:00Z", history: [], msgs: [] };
+  const agreed = { ...base, id: "20260920030000-agrd", status: "acknowledged", qty: 2, total: 200, paid: 50, mode: "deliver", place: "Veloria" };
+  const withYou = (id, paid) => ({ ...base, id, status: "ready", moved: 1, paid, at: "2026-09-16T03:00:00Z" });
+  const open = async (orders) => {
+    const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f2",
+      env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 90, pay })) };
+    const dom = new JSDOM(landingPage(u, "ns7f2", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+      win.fetch = async (path) => { const p = String(path);
+        const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders } : { ok: true };
+        return { ok: true, status: 200, json: async () => j }; };
+    } });
+    const W = dom.window, D = W.document;
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !(D.getElementById("hPayGo") && D.querySelector("#pOrder [data-olist]")); i++) await new Promise((r) => setTimeout(r, 25));
+    return { W, D };
+  };
+  const shown = (D) => ["pHome", "pPrices", "pOrder", "pStmt", "pCard"].filter((id) => !D.getElementById(id).hidden).join(",");
+  const tap = (D) => { const g = D.getElementById("hPayGo"); const said = g ? g.textContent : ""; if (g) g.click(); return said; };
+  const payOf = (D) => { const s = D.querySelector("#pOrder .oscreen"); return s ? { id: s.getAttribute("data-order"), pays: [...s.querySelectorAll(".salt-pill, .salt-ghost")].map((b) => b.textContent).filter((t) => /^Pay RM/.test(t)) } : null; };
+
+  const a = await open([agreed]);
+  try {
+    const said = tap(a.D);
+    ok(said === "Pay RM 70" && shown(a.D) === "pStmt" && !payOf(a.D),
+      "with only an order not yet handed over owing RM 150, Pay RM 70 opens Account's statement, never that order: " + JSON.stringify([said, shown(a.D), payOf(a.D)]));
+  } finally { a.W.close(); }
+  const b = await open([agreed, withYou("20260916030000-with", 40)]);
+  try {
+    const said = tap(b.D), got = payOf(b.D);
+    ok(said === "Pay RM 70" && shown(b.D) === "pOrder" && got && got.id === "20260916030000-with" && got.pays.join() === "Pay RM 70",
+      "with the goods of one order all with them and RM 70 of it still to pay, Pay RM 70 opens that order, whose own Pay says RM 70: " + JSON.stringify([said, shown(b.D), got]));
+  } finally { b.W.close(); }
+  const c = await open([withYou("20260916030000-with", 80)]);
+  try {
+    tap(c.D);
+    ok(shown(c.D) === "pStmt" && !payOf(c.D),
+      "and an order handed over that owes another figure is not taken for it: " + JSON.stringify([shown(c.D), payOf(c.D)]));
+  } finally { c.W.close(); }
+  const d = await open([{ ...agreed, id: "20260920030000-same", qty: 1, total: 110, paid: 40, mode: "collect" }]);
+  try {
+    tap(d.D);
+    ok(shown(d.D) === "pStmt" && !payOf(d.D),
+      "nor is an order not yet handed over that happens to owe the same figure: " + JSON.stringify([shown(d.D), payOf(d.D)]));
+  } finally { d.W.close(); }
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read

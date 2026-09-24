@@ -3103,15 +3103,20 @@ const CLIENT_JS = `
     placeCounts();
     placeTitle();
   }
-  /* STAGE 6 FILLS THIS: Home's one Pay opens the pay sheet on what is to pay now. Until it does, Pay goes where paying
-     is today: the payment page over the line, else the order that owes, else the orders */
+  /* what Home's Pay says: over the line the overdue amount, else the sealed To pay now, else what is owed */
+  function payNowFig(){ return hold?owedNow:payDue?(+payDue.now.rm||0):owedNow; }
+  /* STAGE 6 FILLS THIS: Home's one Pay opens the pay sheet on what is to pay now. Until it does, Pay goes only where the
+     same figure is: over the line the payment page; else the one order whose goods are all with them and whose still to
+     pay is that figure, which its own Pay says; else Account, whose statement lists what the figure is made of. Never
+     the first order that owes: one not yet handed over carries another amount (S7-R1 of the stage 7 review) */
   function openPayNow(){
-    var o=hold?null:orders.filter(oOwes)[0];
-    if(o) oOpen(o.id); else placeShow('order',true);
+    if(hold){ placeShow('order',true); return; }
+    var fig=payNowFig(), m=orders.filter(function(o){ return movedAll(o)&&oOwes(o)&&Math.abs(oToPay(o)-fig)<0.005; });
+    if(m.length===1) oOpen(m[0].id); else placeShow('stmt',true);
   }
   function homePay(){
     var box=el('div'); if(!bundle) return box;
-    var now=payDue&&payDue.now, fig=hold?owedNow:payDue?(+now.rm||0):owedNow, due=fig>0.004, fr=fresh(), note=el('span');
+    var now=payDue&&payDue.now, fig=payNowFig(), due=fig>0.004, fr=fresh(), note=el('span');
     if(hold) note.textContent='Please pay the overdue amount of '+rm(owedNow)+' before placing another order.';
     else if(fr) note.textContent='Nothing on your account yet. Your orders will show here.';
     else if(due&&payDue&&(now.parts||[]).length) note=nowNote(now);
