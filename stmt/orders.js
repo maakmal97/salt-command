@@ -251,7 +251,7 @@ export async function checkStores(env) {
    carry this view instead. A WHITELIST, so a field the desk adds later stays on the desk until it is
    named here; and a desk mark, which changes none of these, no longer redraws their page. */
 export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "week",
-  "total", "delivery", "paid", "payments", "moved", "movedOn", "method", "account", "history", "msgs"];
+  "total", "delivery", "paid", "payments", "moved", "movedOn", "method", "account", "history", "msgs", "closed"];
 export const customerView = (o) => {
   const v = {};
   for (const k of CUSTOMER_FIELDS) if (o && o[k] !== undefined) v[k] = o[k];
@@ -281,6 +281,7 @@ export async function allOrders(env, all) {
  *   ack     the pending row: the order is agreed and no row exists yet
  *   pay     the money ARRIVED SINCE, because a Fulfilment accumulates: the increment, not the total
  *   move    the goods handed over, as a RUNNING TOTAL, because a Correction states rather than adds
+ *   close   the row restated at what was handed over (S11 11.9), which states the goods moved as well
  *   cancel  the row withdrawn, and only where a row was made
  * A state that never reached `acknowledged` owes nothing: there is no row to amend. */
 export function orderWork(o) {
@@ -290,7 +291,10 @@ export function orderWork(o) {
   if (!q.ack && !ROWED.includes(o.status)) return jobs;
   if (!q.ack) jobs.push("ack");
   if (+(o.paid || 0) > +(q.paid || 0) + 0.004) jobs.push("pay");
-  if (Math.abs(+(o.moved || 0) - +(q.moved || 0)) > 0.0004) jobs.push("move");
+  /* S11 11.9: a close restates what was handed over with the size, so it is the one entry owed for both */
+  const closing = !!(o.closed && !q.close);
+  if (Math.abs(+(o.moved || 0) - +(q.moved || 0)) > 0.0004 && !closing) jobs.push("move");
+  if (closing) jobs.push("close");
   /* the money goes first, so the fold has a payment to refund when it reads the cancellation */
   if (["cancelled", "declined"].includes(o.status) && !q.cancel) jobs.push("cancel");
   return jobs;
@@ -518,7 +522,7 @@ export function decideDesk(order, body, at) {
   if (body && body.mark) {
     const m = body.mark, c = {};
     if (typeof m.ledgerKey === "string" && m.ledgerKey) c.ledgerKey = m.ledgerKey;
-    for (const k of ["ack", "cancel"]) if (m[k]) c[k] = String(m[k]).slice(0, 40);
+    for (const k of ["ack", "cancel", "close"]) if (m[k]) c[k] = String(m[k]).slice(0, 40);
     for (const k of ["paid", "moved"]) if (typeof m[k] === "number" && Number.isFinite(m[k])) c[k] = +m[k].toFixed(3);
     /* 20 Sep 2026: and what the desk made of its last pass over this order, so his card can say the
        truth: queued, waiting for its row, or failed, with the reason and when it was last written. The
@@ -578,6 +582,16 @@ export function decideDesk(order, body, at) {
       return { error: "the units handed over have to be a figure from zero to the " + order.qty + " ordered", status: 400 };
     const ev = { kind: "handover", at, units: n };
     if (MODES.includes(body.handover.mode)) ev.mode = body.handover.mode;
+    /* S11 11.9: CLOSE AT WHAT WAS HANDED OVER. A short delivery could never complete: nothing amended the
+       size, so it held an open slot and was chased for goods never sent. Closing restates the order at what
+       went: the size becomes the units handed over and the goods' total follows at the rate they agreed,
+       resolved here into the event. The delivery charge stands. Its row is a Correction (src/orders.js). */
+    if (body.handover.close === true && n < order.qty - 0.004) {
+      if (!(n > 0)) return { error: "nothing was handed over, so there is nothing to close at: cancel it instead", status: 400 };
+      if (!PAYABLE.includes(order.status)) return { error: "an order that is " + order.status + " cannot be closed short", status: 409 };
+      ev.close = true;
+      ev.total = +((+order.total) * n / (+order.qty)).toFixed(2);
+    }
     return { ev };
   }
   const status = String((body && body.status) || "");
@@ -633,7 +647,7 @@ export function applyEvent(order, ev) {
     /* WHAT THE LEDGER HAS BEEN TOLD OF THE MONEY ONLY RISES (S10 10.2): the reconcile marks what it read, and the
        return leg may have raised the order to the book's figure in the same minute; lowered, the next pass would
        queue the difference a second time. The goods are stated, not added, so their mark is set as read. */
-    for (const k of ["ack", "cancel", "paid", "moved"]) if (m[k] !== undefined) q[k] = k === "paid" ? Math.max(+q.paid || 0, m[k]) : m[k];
+    for (const k of ["ack", "cancel", "close", "paid", "moved"]) if (m[k] !== undefined) q[k] = k === "paid" ? Math.max(+q.paid || 0, m[k]) : m[k];
     if (m.sync) order.sync = m.sync;
     if (m.quiet) order.quiet = m.quiet;   /* S11 11.6: a line he said needs no reply */
     order.queued = q;
@@ -657,6 +671,11 @@ export function applyEvent(order, ev) {
     order.movedAt = at;   /* the moment, for the desk to stamp the Correction with (20 Sep 2026) */
     if (ev.mode) order.mode = ev.mode;
     order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
+    if (ev.close) {   /* S11 11.9: the size and the goods' total restated at what went, the old ones kept */
+      order.closed = { at, qty: order.qty, total: order.total };
+      order.qty = order.moved; order.total = ev.total;
+      order.history.push({ at, status: order.status, by: "desk", note: "closed at " + order.qty + " unit of the " + order.closed.qty + " ordered" });
+    }
     done = settle(order, at);
   }
   return { order, done };

@@ -1485,6 +1485,8 @@ const CLIENT_JS = `
       +(paid>0?(due>0.004?rm(paid)+' of '+rm(o.total+(o.delivery||0))+' paid, '+rm(due)+' to go.':'Paid in full.'):'Nothing paid yet.')
       +(moved>0?(moved<o.qty-0.004?' '+unitsOf(moved,unit)+' of '+unitsOf(o.qty,unit)+' handed over.':' Handed over in full.'):'');
     else if(o.status==='done') line='Your order is now complete. Thank you for your loyalty.';
+    /* S11 11.9: an order he closed at what was handed over says so, the size it was and the size it is */
+    if(o.closed&&o.closed.qty) line+=' Closed at '+unitsOf(o.qty,unit)+' of the '+o.closed.qty+' ordered, '+rm(o.total)+' for the goods.';
     else if(o.status==='declined'){ var dn=endOf(o); line='Not taken'+(dn&&dn.note?': '+dn.note:'')+'. Nothing is owed.'; }
     else if(o.status==='cancelled'&&endOf(o)&&endOf(o).by==='desk'){ var cn=endOf(o); line='Cancelled by us'+(cn.note?': '+cn.note:'')+'. '+(paid>0?'The '+rm(paid)+' you paid is refunded.':'Nothing is owed.'); }
     else if(o.status==='cancelled') line=paid>0?'Withdrawn. The '+rm(paid)+' you paid is refunded.':'Withdrawn before anything moved. Nothing is owed.';

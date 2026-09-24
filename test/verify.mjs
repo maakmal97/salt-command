@@ -23285,6 +23285,134 @@ await (async () => {
   }
 })();
 
+section("S11 11.9: Delivered part steps to a part of the handover, and Close at what was handed over restates a short order as a Correction");
+await (async () => {
+  /* 24 Sep 2026 (PLAN 5; the study's short-shipment-stuck: once a unit moved neither side could cancel and nothing
+     amended the size, so a short delivery never completed, held an open slot and was chased for goods never
+     sent). A close is a handover event that restates the order at what went: the size is the units handed over,
+     the goods' total follows at the rate agreed, the old figures kept. The reconcile queues it as one Correction
+     stating the size, the total and what was handed over, and the row's name moves with its total. */
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const { reconcileOrders, closeEntry, closedKey } = await import("../src/orders.js");
+  const skv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const u = "abcd-efgh";
+  const o = (await O.placeOrder(senv, u, { product: "salt", qty: 5, mode: "collect", unit: 100, total: 500, week: "" })).order;
+  await O.deskMove(senv, u, o.id, { status: "acknowledged", mode: "collect" });
+  const K0 = "CC5-OKR|2026-09-24|500";
+  await O.deskMove(senv, u, o.id, { mark: { ledgerKey: K0, ack: "2026-09-24T01:00:00.000Z" } });
+  const zero = await O.deskMove(senv, u, o.id, { handover: { units: 0, close: true } });
+  ok(zero.status === 400 && /cancel it instead/.test(zero.error), "a close at nothing is refused: " + zero.error);
+  await O.deskMove(senv, u, o.id, { handover: { units: 2, close: true } });
+  const c = JSON.parse(await skv.get("order:" + u + ":" + o.id));
+  ok(c.qty === 2 && c.total === 200 && c.moved === 2 && c.closed && c.closed.qty === 5 && c.closed.total === 500 && c.status === "acknowledged"
+    && O.owedUnits(c) === 0 && O.dueOf(c) === 200 && /closed at 2 unit of the 5 ordered/.test(c.history.slice(-1)[0].note),
+    "closing at 2 of 5 makes it an order of 2 at the rate agreed, the old size and total kept: " + JSON.stringify({ qty: c.qty, total: c.total, closed: c.closed, due: O.dueOf(c) }));
+  ok(JSON.stringify(O.orderWork(c)) === '["close"]' && (O.customerView(c).closed || {}).qty === 5,
+    "the ledger is owed one close, which states the handover with it, and their page is handed the size it was: " + JSON.stringify(O.orderWork(c)));
+
+  /* ---- THE RECONCILE: one Correction against the row the acknowledgement made, then the row's new name ---- */
+  const dkv = new KV(); await dkv.put("stmt-users", JSON.stringify({ [u]: "CC5-OKR" }));
+  const STATE = { OPEN: { v: "v119", byKey: { [K0]: { rid: "s119" } } } }, D1 = {
+    prepare(q) {
+      const run = async () => ({});
+      return { bind: () => ({ all: async () => D1._all(q), first: async () => D1._first(q), run }), all: async () => D1._all(q), first: async () => D1._first(q), run };
+    },
+    async _all(q) { return /FROM state/.test(q) ? { results: Object.keys(STATE).map((k) => ({ key: k, doc: JSON.stringify(STATE[k]) })) } : { results: [] }; },
+    async _first(q) { return /FROM snapshot/.test(q) ? { v: "v119" } : null; }
+  };
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: (x, i) => stmtW.fetch(new Request(x, i), senv) } };
+  const rc = await reconcileOrders(denv);
+  const q = JSON.parse((await dkv.get("q:orders")) || '{"queue":[]}').queue;
+  const e = q[0] || {}, f = (e.payload && e.payload.fields) || {};
+  ok(rc.queued === 1 && q.length === 1 && e.status === "Close" && e.payload.kind === "Correction" && e.payload.orderKey === K0
+    && f.qty === 2 && f.total === 200 && f.deliveredQty === 2 && f.handover === "collected" && /^\d{4}-\d{2}-\d{2}$/.test(f.deliveredOn),
+    "the reconcile queues one Correction naming the row as it stands, stating the size, the total and the handover: " + JSON.stringify({ n: q.length, st: e.status, key: e.payload && e.payload.orderKey, f }));
+  const after = JSON.parse(await skv.get("order:" + u + ":" + o.id));
+  ok(after.ledgerKey === "CC5-OKR|2026-09-24|200" && closedKey(c) === after.ledgerKey && after.queued.close && after.queued.moved === 2
+    && (await reconcileOrders(denv)).queued === 0,
+    "the order then names the row by the total the close leaves, is marked told, and a second pass queues nothing: " + JSON.stringify({ key: after.ledgerKey, q: after.queued }));
+  ok(!/CC5-OKR\|/.test(closeEntry(c, "CC5-OKR", new Date()).payload.note), "and the note is fixed words and figures");
+
+  /* ---- THEIR PAGE ---- */
+  const { landingPage } = await import("../stmt/page.js");
+  const CR = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const pass = "fixture-pass-119", ck = await CR.contentKey("test-secret", u);
+  const openB = { ok: true, wrap: await CR.wrapKey(pass, ck), session: "sess-119",
+    env: await CR.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await CR.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+  const dom = new JSDOM(landingPage(u, "n119", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (x) { win.crypto = webcrypto; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? openB : (p === "/orders" && m === "GET") ? { ok: true, orders: [O.customerView(after)] } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const pw = dom.window, pd = pw.document;
+  try {
+    pd.getElementById("un").value = u; pd.getElementById("pw").value = pass;
+    pd.getElementById("f").dispatchEvent(new pw.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !pd.querySelector("#pOrder .pane .state"); i++) await new Promise((r) => setTimeout(r, 50));
+    const line = [...pd.querySelectorAll("#pOrder .pane p.sub2")].map((x) => x.textContent).join(" | ");
+    ok(/Closed at 2 unit of the 5 ordered, RM 200 for the goods\./.test(line), "their page says it was closed there, and at what: " + line);
+  } finally { pw.close(); }
+
+  /* ---- THE DESK ---- */
+  const { openMaster: om119 } = await import("../tools/payload.mjs");
+  const { w } = await om119();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 97; w.clearInterval = () => {};
+    const base = { u, code: "CC5-OKR", product: "salt", qty: 5, total: 500, delivery: 0, paid: 500, mode: "collect", history: [], msgs: [], payments: [] };
+    const orders = [Object.assign({}, base, { id: "a1", status: "acknowledged", at: "2026-09-20T02:00:00.000Z", moved: 0 }),
+      Object.assign({}, base, { id: "a2", status: "ready", at: "2026-09-21T02:00:00.000Z", moved: 2 })];
+    const calls = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      calls.push({ p, body: init && init.body ? JSON.parse(init.body) : null });
+      return { ok: true, status: 200, json: async () => (p === "orders" && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)) } : { ok: true }) };
+    };
+    const settle = () => new Promise((r) => setTimeout(r, 30));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const card = (id) => D.querySelector('.ordcard[data-id="' + id + '"]');
+    const handed = () => calls.filter((x) => /\/handed$/.test(x.p));
+    const full = card("a1").querySelector('button[data-ord="handover"][data-full="1"]');
+    ok(full && full.classList.contains("salt-pill") && full.textContent === "Collected, 5 unit" && card("a1").querySelector(".ordpart").hidden,
+      "a whole handover is one tap in the order's own mode, the part stepper shut: " + (full && full.textContent));
+    full.click();
+    await settle();
+    ok(handed().length === 1 && handed()[0].p === "orders/a1/handed" && JSON.stringify(handed()[0].body) === '{"qty":5,"close":false}',
+      "and it posts the whole to the desk Worker's handed route: " + JSON.stringify(handed()));
+    card("a1").querySelector('button[data-partopen="a1"]').click();
+    const less = () => card("a1").querySelector('button[data-step="-0.5"]');
+    less().click(); less().click();
+    const box = card("a1").querySelector('input[data-hand="a1"]');
+    const close = card("a1").querySelector('button[data-ord="handover"][data-close="1"]');
+    ok(!card("a1").querySelector(".ordpart").hidden && box.value === "4" && close && close.textContent === "Close at 4 unit"
+      && /Close at 4 unit ends the order there: RM 400 for the goods at the rate they agreed, nothing more owed on the rest\. They have paid RM 500, so RM 100 would be theirs to refund\./.test(card("a1").textContent),
+      "Delivered part steps down in halves and says what a close there would mean, a refund included: " + JSON.stringify({ v: box.value, c: close && close.textContent }));
+    close.click();
+    await settle();
+    ok(JSON.stringify(handed().slice(-1)[0].body) === '{"qty":4,"close":true}' && /Closed at 4 unit\. They see it closed there/.test(card("a1").querySelector('[data-msg="a1"]').textContent),
+      "Close posts that part as a close, and the card says what they see: " + JSON.stringify(handed().slice(-1)));
+    w.eval("ORD_SEL='a2';ordDraw();");
+    const direct = card("a2").querySelector('button[data-ord="handover"][data-close="1"][data-qty="2"]');
+    const rest = card("a2").querySelector('button[data-ord="handover"][data-full="1"]');
+    ok(direct && direct.textContent === "Close at 2 unit, RM 200" && rest && rest.textContent === "Collected the rest, 3 unit",
+      "with a part already out, closing at it is one tap beside the rest: " + JSON.stringify([direct && direct.textContent, rest && rest.textContent]));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one

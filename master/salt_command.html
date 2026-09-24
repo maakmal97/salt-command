@@ -4382,6 +4382,11 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .ordreply{margin-top:4px;}
 .ordquick{display:flex;flex-wrap:wrap;gap:6px;}
 .ordquick:empty{display:none;}
+/* S11 11.9: Delivered part's stepper, a half unit either side of the figure */
+.ordpart{display:flex;flex-direction:column;gap:8px;}
+.ordpart[hidden]{display:none;}
+.ordstep{display:flex;align-items:stretch;gap:8px;}
+.ordstep .salt-field__input{flex:0 1 140px;text-align:center;}
 /* ==== END DESIGN desk ==== */
 </style>
 </head>
@@ -19218,6 +19223,9 @@ function ordQuickKeep(id){
     else{try{localStorage.setItem(ORD_QUICK_KEY,JSON.stringify([t].concat(cur).slice(0,6)));said='Kept as a quick reply on this device.';}catch(e){said='This browser would not keep it.';}}}
   ORD_SAID={id,t:said};ordDraw();
 }
+/* S11 11.9: which cards have Delivered part open, and the units stepped to, read off the box as a charge is */
+let ORD_PART={};
+function ordPartNow(o){const i=document.querySelector('input[data-hand="'+o.id+'"]');const v=i?parseFloat(i.value):NaN;return v>=0?+v.toFixed(3):((+o.moved||0)>0?+o.moved:+o.qty||0);}
 /* S11 11.7 (24 Sep 2026): DECLINE AND CANCEL TAKE A REASON, which the customer reads with the words for it:
    Not taken, or Cancelled by us. The first tap opens the reasons; the second, once one is chosen, moves the
    order. Every reason is checked by siteSafe here and by siteWords on the Worker, as his answers are. */
@@ -19307,13 +19315,24 @@ function ordCard(o){
      (POST orders/<id>/cash, the contract of 11.12). It is the card's one filled control; Ready is a ghost. */
   const cashNow=['acknowledged','ready'].includes(o.status)&&moved>0.0004&&paid<=0.004&&ordDue(o)>0.004;
   const ghostBtn=(st,label,mode)=>`<button class="salt-ghost" data-ord="${st}" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${mode?` data-mode="${mode}"`:''}>${label}</button>`;
+  /* S11 11.9: DELIVERED PART. The handover is one tap in the order's own mode for the whole of it; a part is
+     stepped to in halves and recorded, keeping the rest owed, or closed at, which restates the order at what
+     went (the site's close event, its row a Correction). Both post to the desk Worker's handed route (11.12). */
+  const owedU=+(o.qty-moved).toFixed(3),handable=['acknowledged','ready'].includes(o.status)&&owedU>0.004;
+  const how=o.mode==='deliver'?'Delivered':'Collected',part=!!ORD_PART[o.id],partN=ordPartNow(o);
+  const shortT=n=>+((+o.total)*n/(+o.qty)).toFixed(2);
+  const handBtn=(label,extra)=>`<button class="salt-ghost" data-ord="handover" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${extra}>${label}</button>`;
   const whyOpen=ORD_WHY[o.id];
   const goWhy=st=>`<button class="salt-ghost salt-ghost--danger" data-ord="${st}" data-go="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${ORD_WHY[o.id].pick?'':' disabled'}>${st==='declined'?'Decline and tell them':'Cancel and tell them'}</button><button class="salt-ghost" data-whyoff="${esc(o.id)}">Keep the order</button>`;
   if(whyOpen&&(o.status==='placed'||(rowed&&o.status!=='done'&&!(moved>0))))acts=goWhy(whyOpen.st);
   else if(o.status==='placed')acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvFor?'':' disabled'}>Accept, ${fmt(sum)}</button>`+btn('declined','Decline',true);
   else if(rowed&&o.status!=='done')acts=(cashNow?`<button class="vbtn salt-pill salt-pill--sm" data-ord="cash" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Cash received, ${fmt(ordDue(o))}</button>`:'')
-    +(o.status==='acknowledged'?ghostBtn('ready','Ready to collect','collect')+ghostBtn('ready','Ready to deliver','deliver'):'')
-    +(moved>0?'':btn('cancelled','Cancel',true));
+    +(handable?(part?handBtn('Record '+units(partN),'')+handBtn('Close at '+units(partN),' data-close="1"')+`<button class="salt-ghost" data-partoff="${esc(o.id)}">Keep it whole</button>`
+      :`<button class="${cashNow?'salt-ghost':'vbtn salt-pill salt-pill--sm'}" data-ord="handover" data-full="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}">${how}${moved>0?' the rest, '+units(owedU):', '+units(o.qty)}</button>`
+        +`<button class="salt-ghost" data-partopen="${esc(o.id)}">${how} part</button>`
+        +(moved>0?handBtn('Close at '+units(moved)+', '+fmt(shortT(moved)),` data-close="1" data-qty="${moved}"`):'')):'')
+    +(!part&&o.status==='acknowledged'?ghostBtn('ready','Ready to collect','collect')+ghostBtn('ready','Ready to deliver','deliver'):'')
+    +(moved>0||part?'':btn('cancelled','Cancel',true));
   /* S11 11.3: the delivery charge is chosen where the order is agreed, because that is where it becomes a
      row: RM 0, 10, 15 or a figure of his own, and NONE is chosen until he chooses, so a delivery is never
      agreed at a charge nobody set. The choice is kept per order across every poll. */
@@ -19324,11 +19343,14 @@ function ordCard(o){
         <div class="salt-options__grid salt-options__grid--2">${opt('0','RM 0')+opt('10','RM 10')+opt('15','RM 15')+opt('other','Other')}</div>
         <label class="salt-field ordother"${chip==='other'?'':' hidden'}><span class="salt-field__label">Other, RM</span>
           <input type="number" inputmode="decimal" min="0" step="0.5" value="" class="salt-field__input salt-field__input--mono" data-fee="${esc(o.id)}"></label></fieldset>` : '';
-  const hand=(rowed&&o.status!=='done'&&moved<o.qty-0.004)
-    ? `<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
-        <label class="dsc" style="display:flex;gap:8px;align-items:center">${o.mode==='deliver'?'Delivered':'Collected'}, units
-        <input type="number" min="0" step="0.05" max="${o.qty}" value="${esc(String(o.qty))}" data-hand="${esc(o.id)}" style="width:96px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:6px"></label>
-        ${btn('handover','Record the handover')}</div>` : '';
+  const over=+(paid-shortT(partN)-(+o.delivery||0)).toFixed(2);
+  const hand=handable
+    ? `<div class="ordpart"${part?'':' hidden'}><span class="salt-field__label">${how} so far, units</span>
+        <div class="ordstep"><button type="button" class="salt-ghost" data-step="-0.5" data-for="${esc(o.id)}" aria-label="Half a unit less">&minus;</button>
+          <input type="number" inputmode="decimal" min="0" step="0.5" max="${o.qty}" value="${esc(String(moved>0?moved:o.qty))}" data-hand="${esc(o.id)}" class="salt-field__input salt-field__input--mono" aria-label="Units ${how.toLowerCase()} so far">
+          <button type="button" class="salt-ghost" data-step="0.5" data-for="${esc(o.id)}" aria-label="Half a unit more">+</button></div>
+        <p class="salt-approve__reason">${partN>0&&partN<o.qty-0.004?`Record keeps the other ${units(+(o.qty-partN).toFixed(3))} owed. Close at ${units(partN)} ends the order there: ${fmt(shortT(partN))} for the goods at the rate they agreed${+o.delivery>0?', and the '+fmt(+o.delivery)+' delivery':''}, nothing more owed on the rest.${over>0.004?' They have paid '+fmt(paid)+', so '+fmt(over)+' would be theirs to refund.':''}`
+          :'Step to what went. Record keeps the rest owed; Close ends the order there.'}</p></div>` : '';
   /* S11 11.2: the system's Approve card, because deciding a site order is deciding a row. A new order
      leads with the row the preview drafted; one already agreed with the two tracks as before. */
   return `<div class="salt-approve ordcard" data-id="${esc(o.id)}">
@@ -19422,6 +19444,11 @@ function ordDraw(){
   box.querySelectorAll('button[data-back]').forEach(b=>{b.onclick=()=>{ORD_OPENED=false;ordDraw();};});
   box.querySelectorAll('input[data-fee]').forEach(i=>{i.onchange=()=>{const o=ORD_OPEN.find(x=>x&&x.id===i.dataset.fee);if(o){ordDraw();ordPreview(o);}};});
   box.querySelectorAll('button[data-quick]').forEach(b=>{b.onclick=()=>{const i=box.querySelector('input[data-say="'+b.dataset.quick+'"]');if(i){i.value=b.dataset.text;i.focus();}};});
+  box.querySelectorAll('button[data-partopen]').forEach(b=>{b.onclick=()=>{ORD_PART[b.dataset.partopen]=1;ordDraw();};});
+  box.querySelectorAll('button[data-partoff]').forEach(b=>{b.onclick=()=>{delete ORD_PART[b.dataset.partoff];ordDraw();};});
+  box.querySelectorAll('button[data-step]').forEach(b=>{b.onclick=()=>{const i=box.querySelector('input[data-hand="'+b.dataset.for+'"]');if(!i)return;
+    const mx=parseFloat(i.max)||0,v=Math.min(mx,Math.max(0,(parseFloat(i.value)||0)+parseFloat(b.dataset.step)));i.value=String(+v.toFixed(3));ordDraw();};});
+  box.querySelectorAll('input[data-hand]').forEach(i=>{i.onchange=()=>ordDraw();});
   box.querySelectorAll('input[data-whypick]').forEach(i=>{i.onchange=()=>{const w=ORD_WHY[i.dataset.whypick];if(w){w.pick=i.value;ordDraw();}};});
   box.querySelectorAll('button[data-whyoff]').forEach(b=>{b.onclick=()=>{delete ORD_WHY[b.dataset.whyoff];ordDraw();};});
   box.querySelectorAll('button[data-keep]').forEach(b=>{b.onclick=()=>ordQuickKeep(b.dataset.keep);});
@@ -19442,9 +19469,14 @@ async function ordAct(b){
   const refuse=t=>{ORD_SAID={id,t};delete ordBusy[id];ordDraw();};
   let body,url='';
   if(st==='handover'){
-    const n=typed('hand');
-    if(!(n>=0))return refuse('That is not a figure of units; nothing moved.');
-    body=JSON.stringify({handover:{units:n}});
+    /* S11 11.9: the whole, a part, or a close at a part, to the desk Worker's handed route */
+    const o=ORD_OPEN.find(x=>x&&x.id===id)||{};
+    const n=b.dataset.full?+o.qty:b.dataset.qty!=null?+b.dataset.qty:typed('hand');
+    if(!(n>=0)||n>(+o.qty||0)+0.004)return refuse('That is not a figure of units from nothing to the '+units(+o.qty||0)+' ordered; nothing moved.');
+    const close=!!b.dataset.close;
+    if(close&&!(n>0&&n<(+o.qty||0)-0.004))return refuse('Close at a part: step to what went, above nothing and under the whole; nothing moved.');
+    body=JSON.stringify({qty:n,close});
+    url='orders/'+encodeURIComponent(id)+'/handed';
   }else if(st==='acknowledged'){
     /* S11 11.3: Accept sends the charge and the hash of the row he was shown; the desk Worker agrees the
        order and approves the pending row only if the real draft equals that one (11.11) */
@@ -19488,7 +19520,8 @@ async function ordAct(b){
     const said=r.status===401?'That write key was refused. The order is unchanged.'
       :!r.ok?'The Worker refused the move: '+(j.error||'http '+r.status)+'. The order is unchanged.'
       :j.warn?j.warn
-      :st==='handover'?'Recorded. The correction is queued within the minute; approve it under Approve. '+told
+      :st==='handover'?(b.dataset.close?'Closed at '+units(JSON.parse(body).qty)+'. They see it closed there; the row is restated as its correction is drafted, if it is this one. '
+        :'Recorded: '+units(JSON.parse(body).qty)+' handed over. The correction is booked as it is drafted, if it is this one. ')+told
       :st==='acknowledged'?'Accepted. They see Acknowledged. The row is approved as it is drafted if it is the one you saw; if not, it waits under Approve, marked. '+told
       :st==='say'?'Sent. '+told
       :st==='cash'?'Recorded: '+fmt(ordDue(ORD_OPEN.find(x=>x&&x.id===id)||{}))+' in cash. They see it paid and the chase stops; the payment is booked as its row is drafted, if it is this one. '+told
@@ -19498,6 +19531,7 @@ async function ordAct(b){
       :ORD_WORD[st]+'. '+told;
     ORD_SAID={id,t:said};
     if(r.ok&&(st==='declined'||st==='cancelled'))delete ORD_WHY[id];
+    if(r.ok&&st==='handover')delete ORD_PART[id];
     const used=r.ok&&document.querySelector('input[data-'+({say:'say',handover:'hand',acknowledged:'fee'}[st]||'none')+'="'+id+'"]');
     if(used)used.value=used.defaultValue;   /* what went through is not carried into the redraw */
   }catch(e){ ORD_SAID={id,t:'No connection, so nothing moved.'}; }

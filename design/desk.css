@@ -735,3 +735,8 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .ordreply{margin-top:4px;}
 .ordquick{display:flex;flex-wrap:wrap;gap:6px;}
 .ordquick:empty{display:none;}
+/* S11 11.9: Delivered part's stepper, a half unit either side of the figure */
+.ordpart{display:flex;flex-direction:column;gap:8px;}
+.ordpart[hidden]{display:none;}
+.ordstep{display:flex;align-items:stretch;gap:8px;}
+.ordstep .salt-field__input{flex:0 1 140px;text-align:center;}
