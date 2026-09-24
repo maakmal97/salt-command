@@ -18760,6 +18760,19 @@ await (async () => {
   const inApp = await drive(UA.android, { bip: true, standalone: true });
   try { ok(inApp.card.hidden, "and an installed app is not told to install itself"); } finally { inApp.W.close(); }
 })();
+section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
+await (async () => {
+  /* S3, 24 SEP 2026. The door's one way in named its opener unseal, which stmt/owner.js already declared: spliced in
+     after it, the owner's declaration won everywhere on his page, and Review opened no account at all. Found by the
+     suite (S1 1.21), whose shard died on the unhandled throw. */
+  const { landingPage: lpF } = await import("../stmt/page.js");
+  const all = lpF("", "nF", { master: "x", accounts: [] });
+  const js = all.slice(all.indexOf("<script"));
+  const names = [...js.matchAll(/(?:^|[^.\w])(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/g)].map((x) => x[1]);
+  const twice = [...new Set(names.filter((n, i) => names.indexOf(n) !== i))];
+  ok(names.length > 100 && names.includes("openBeside") && names.includes("loadView") && twice.length === 0,
+    "every function on his page is declared once, the Counter's and his own together: " + JSON.stringify(twice));
+})();
 section("v710: the shared link signs them in once, so no message carries a password");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "when sharing the link, QR to the user, the site pre-fills their

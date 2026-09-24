@@ -1063,7 +1063,7 @@ const CLIENT_JS = `
     try{ ck=await unwrapUnder(new TextEncoder().encode(body.token||what.token||''), body.wrap); b=JSON.parse(await open(ck, body.env)); }
     catch(e){ if(!stale()) csay('That code did not open anything. A code works once, for 15 minutes: make a new one and try again.','bad'); return false; }
     if(stale()) return false;
-    var x=await unseal(body, ck, b);
+    var x=await openBeside(body, ck, b);
     if(stale()) return false;
     try{ if(location.hash) history.replaceState(null,'','/app'); }catch(e){}
     var keep=await askReplace(document.getElementById('codePaste'), body.u);   /* S3 3.8 */
@@ -2108,7 +2108,7 @@ const CLIENT_JS = `
     if(stale()) return;
     /* an empty bundle is a new account, not a fault: pickStmt says so */
     if(!b||!b.statements){ done(); say('The statement could not be read. Ask for it to be re-issued.','bad'); return; }
-    var x=await unseal(body, ck, b);
+    var x=await openBeside(body, ck, b);
     if(stale()) return;
     /* v692: remembered only on a customer's own sign-in, and only when asked. The owner's route
        opens accounts with the master and must leave nothing behind on his phone. S3 3.8: over another
@@ -2169,7 +2169,7 @@ const CLIENT_JS = `
       b=JSON.parse(await open(ck, body.env));
     }catch(e){ remClear(); if(!keep) say(''); return false; }
     if(stale()) return false;
-    var x=await unseal(body, ck, b);
+    var x=await openBeside(body, ck, b);
     if(stale()) return false;
     enter(body.u, body, b, x, ck, keep);
     /* a reopen hands the session back to the request that met the lapse, which repeats itself; the poll resumes */
@@ -2192,7 +2192,7 @@ const CLIENT_JS = `
       var r=await api('/account');
       if(mine!==ticket||!r.body.ok||!r.body.env) return;
       var b=JSON.parse(await open(ck, r.body.env));
-      var x=await unseal(r.body, ck, b);
+      var x=await openBeside(r.body, ck, b);
       if(mine!==ticket) return;
       enter(user, {session:session}, b, x, ck, true);
       await loadOrders();
@@ -2205,9 +2205,10 @@ const CLIENT_JS = `
   window.addEventListener('pageshow', function(ev){ if(ev&&ev.persisted) reread(); });
   /* ---- ONE WAY IN (S3 3.3, 24 Sep 2026) ----------------------------------------------------------
      The password, a remembered phone and the link all hand back the same record: these open it with the
-     content key and put the account on screen, so the roads cannot drift apart. unseal opens what sits
+     content key and put the account on screen, so the roads cannot drift apart. openBeside opens what sits
      beside the statement, enter draws the account, and follow starts its orders. */
-  async function unseal(body, ck, b){
+  /* not "unseal": stmt/owner.js declares that name, and spliced in after this, its declaration would win here */
+  async function openBeside(body, ck, b){
     var x={assoc:body.assoc===true, card:null, prices:null};
     if(body.live){
       try{ var l=JSON.parse(await open(ck, body.live));
@@ -2336,7 +2337,7 @@ const CLIENT_JS = `
       try{ ck=await unwrapUnder(new TextEncoder().encode(tok), body.wrap); b=JSON.parse(await open(ck, body.env)); }
       catch(e){ if(!stale()){ lsay(''); linkSpent(); } return; }
       if(stale()) return;
-      var x=await unseal(body, ck, b);
+      var x=await openBeside(body, ck, b);
       if(stale()) return;
       lsay('');
       var keep=await askReplace(linkGo, body.u);   /* S3 3.8 */
