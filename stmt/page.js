@@ -369,6 +369,10 @@ export function psymSvg(product, px) {
     + '<path d="' + d + '" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>';
 }
 
+/** A size in words, units above one and unit at one (S4). The one copy: a guest's board calls it here, and the page's own
+ *  script is served its source, so the two cannot drift apart. */
+export function unitsOf(q, u) { u = u || "unit"; return q + " " + (+q > 1 && u.slice(-1) !== "s" ? u + "s" : u); }
+
 export function boardPage(guest, nonce) {
   const b = (guest && guest.prices) || {};
   const products = Array.isArray(b.products) ? b.products : [];
@@ -381,7 +385,7 @@ export function boardPage(guest, nonce) {
            carries no name since v787, and this line draws none, so a name that reaches it is not drawn either. */
         + (p.fellBack ? '<p class="sub2">The only price for this product</p>' : "")
         + '<div class="tblw"><table><thead><tr><th class="l">Size</th><th>Price</th></tr></thead><tbody>'
-        + p.sizes.map((r) => "<tr><td class=\"l\">" + esc(r.q) + " " + esc(p.unit || "unit")
+        + p.sizes.map((r) => "<tr><td class=\"l\">" + esc(unitsOf(r.q, p.unit))
             + "</td><td>" + esc(rm(r.price)) + "</td></tr>").join("")
         + "</tbody></table></div></div>").join("")
     : '<p class="lead">No price list has been written yet.</p>';
@@ -568,6 +572,8 @@ export function landingPage(user, nonce, owner, bulletin) {
       /* S4 4.6: the open-order limit the Worker refuses at, so the page can say it before the form */
       .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES))
       .replace("__DELIVERY__", () => JSON.stringify(DELIVERY))
+      /* S4: the size in words, the same function a guest's board calls */
+      .replace("/*__UNITS_OF__*/", () => String(unitsOf))
       /* "<" is escaped because this one carries the master passphrase, and a "</script>" inside a
          string literal ends the block wherever it appears: the browser closes the tag first and
          reads the rest of the passphrase as page text. */
@@ -770,7 +776,7 @@ const CLIENT_JS = `
   function el(tag,cls,text){ var e=document.createElement(tag); if(cls)e.className=cls; if(text!=null)e.textContent=text; return e; }
   function rm(n){ return 'RM '+Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2}); }
   /* D11 (S4, 24 Sep 2026): units above one, unit at one and under */
-  function unitsOf(q,u){ u=u||'unit'; return q+' '+(+q>1&&u.slice(-1)!=='s'?u+'s':u); }
+  /*__UNITS_OF__*/
 
   /* THE PASSWORD UNWRAPS A KEY, AND THE KEY OPENS EVERYTHING. The same derivation the vault
      uses, PBKDF2-SHA256 x150000 into AES-GCM-256, but over the wrap rather than the content:

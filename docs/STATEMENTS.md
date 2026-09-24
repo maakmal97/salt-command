@@ -371,7 +371,7 @@ over the page: the product as its mark, the sizes as Option tiles with their pri
 most tagged *your usual* (read off their own orders on the page), the way and the place as last time, a
 folded note, and the total with Review in the foot. **Review freezes one copy of the order** with its
 request id: the check draws that copy and Place sends it, and while the check is open the sheet holds no
-field, so nothing typed can reach the order unseen. Units above one, unit at one. A 409 `prices moved` (above;
+field, so nothing typed can reach the order unseen. Units above one, unit at one, a guest's board included (one `unitsOf`). A 409 `prices moved` (above;
 S4 4.4) brings the account's list as it stands, sealed, which the page opens with the key it already holds
 (`openList` keeps it on the list, unenumerable) and draws in the check: "This size is now RM X (was RM Y). Place at RM X?", one tap, a new request id; a list with nothing left to order, or none, is taken as a sign-in takes it, and the check says so with Place held. The page reads the figure off
 the list; it compares and prices nothing. **Sent answers in the sheet** (S4 4.5) and asks "A buzz when it is

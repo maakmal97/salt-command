@@ -13983,6 +13983,18 @@ await (async () => {
       "and the line under it says what is left, the money, the rest, or both: " + JSON.stringify(rows.slice(2).map((r) => r.flag)));
   } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
 })();
+section("S4 fix: a guest's board says units above one and unit at one, from the same function the page is served");
+await (async () => {
+  /* S4R-6: the page took "units above one" and the guest's board, edited in the same stage, still printed "2.5 unit".
+     One function now: the board calls it, and the page's own script is served its source. */
+  const PG = await import("../stmt/page.js");
+  const board = PG.boardPage({ prices: { week: { label: "21 to 27 Sep 2026" }, products: [{ product: "salt", unit: "unit",
+    sizes: [{ q: 0.5, price: 60 }, { q: 1, price: 110 }, { q: 2.5, price: 250 }] }] } }, "nf9");
+  const cells = [...board.matchAll(/<td class="l">([^<]*)<[/]td>/g)].map((m) => m[1]);
+  ok(cells.join("|") === "0.5 unit|1 unit|2.5 units", "a guest's board says units above one and unit at one: " + JSON.stringify(cells));
+  const page = PG.landingPage("abcd-efgh", "nf9", null);
+  ok(page.includes(String(PG.unitsOf)) && !page.includes("__UNITS_OF__"), "and the page's own script carries that same function");
+})();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {
   /* HIS INSTRUCTION OF 16 SEP 2026: "The label to them is a very subtle tier level, in symbol and colour (for each tier),
