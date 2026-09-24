@@ -347,6 +347,11 @@ engine prices: the publish opens the master in jsdom for the desk's PRICING inpu
 drafter reads), which carry each customer's tier and the ladder, and calls `floorTotal` and
 `cardPrice`. `node tools/pricelist.mjs --show <CODE>` prints what
 a customer sees. `--no-prices` on the publish leaves the list out.
+**The list's stamp is a digest of its figures** (S4 4.1), never `prices.at`, which the hourly publish moves:
+`priceDigest` in `tools/pricelist.mjs`, keyed under `STMT_KEY` over the username and each product's sizes and
+prices, sealed inside the list and in the clear beside it as `prices.digest`. **Place carries the stamp of the
+list the page opened** (4.2): one that differs from the record's is answered 409 `prices moved` with the record's
+sealed list, after the request id and the order's own checks, on both roads. The site compares stamps; it prices nothing.
 
 **The order lives on the site, in its one Durable Object** (`stmt/orderbook.js`; S10, his answer
 to D10 of 24 Sep 2026): every move an event appended under its id, the order the fold of its

@@ -310,7 +310,9 @@ async function handleCustomer(request, env, p, m) {
     if (m === "GET") return json({ ok: true, orders: (await ordersOf(env, u)).map(customerView) });
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const r = await placeOrder(env, u, await readJson(request));
-    return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, order: customerView(r.order) });
+    /* S4 4.2: a moved list answers 409 with the list as it stands, sealed; the page opens it with the key it holds */
+    if (r.error) return json(Object.assign({ ok: false, error: r.error }, "prices" in r ? { prices: r.prices } : {}), r.status || 400);
+    return json({ ok: true, order: customerView(r.order) });
   }
   if (p === "/push/subscribe") {
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);

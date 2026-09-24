@@ -280,7 +280,7 @@ export class OrderBook {
       const u = String(a.u || ""), eid = a.rid ? "c:" + u + ":place:" + a.rid : null;
       const seen = eid ? this.event(eid) : null;
       if (seen) return { ok: true, order: this.order(seen.u, seen.oid), again: true };
-      const d = decidePlace(u, a.body, this.ordersOf(u).filter((o) => OPEN_STATES.includes(o.status)), at);
+      const d = decidePlace(u, a.body, this.ordersOf(u).filter((o) => OPEN_STATES.includes(o.status)), at, a.digest);
       if (d.error) return { ok: false, error: d.error, status: 400 };
       return this.append(eid, u, d.ev.order.id, d.ev, null);
     }
