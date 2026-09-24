@@ -775,7 +775,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; assoc=false; card=null; cardMonth=''; myLinks=null; myMax=0;
+    bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; assoc=false; card=null; cardMonth=''; myLinks=null; myMax=0; myNote='';
     owedNow=0; hold=false; tPrices.hidden=false; tOrder.textContent='Order';
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
@@ -997,7 +997,9 @@ const CLIENT_JS = `
      landing page is served before anybody signs in, so there is nothing to splice per viewer.
      A LEVEL IS NEVER NAMED. What the link quotes is his to set; they are told it is open and no
      more, because the level is never named on a customer's page. */
-  var myLinks=null, myMax=0;
+  /* the box keeps its own note (24 Sep 2026): it drew the order form's, so "Placed..." appeared under
+     Your links, and a link that was not made said so under the order form as well */
+  var myLinks=null, myMax=0, myNote='';
   function drawMyLinks(){
     var box=el('div','pane');
     box.appendChild(el('h3',null,'Your links'));
@@ -1047,12 +1049,12 @@ const CLIENT_JS = `
         mk.disabled=true; var mine=ticket;
         var r=await api('/my/refs',{});
         if(mine!==ticket) return;
-        if(!r.body.ok) draft.note=r.body.error||'That link was not made.';
+        myNote=r.body.ok?'':(r.body.error||'That link was not made.');
         await loadMyLinks();
       });
       box.appendChild(mk);
     }
-    if(draft.note) box.appendChild(el('p','msg',draft.note));
+    if(myNote) box.appendChild(el('p','msg',myNote));
     pCard.appendChild(box);
   }
   async function loadMyLinks(){

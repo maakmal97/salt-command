@@ -14493,6 +14493,68 @@ await (async () => {
       "and taking it back moves it back: " + head());
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S1 1.38: the associate's links box keeps its own note, so an order's Placed never shows under Your links");
+await (async () => {
+  /* 24 SEP 2026 (L42): the links box drew the order form's note, so after a placement "Placed. You will see
+     it acknowledged below." sat under Your links, and a link that was not made wrote into the order
+     form's. Driven on the associate's own page against the real Worker. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const RF = await import("../stmt/refs.js");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s1-38", u);
+  const day = "2026-09-21";
+  const priceDoc = { at: day + "T00:00:00Z", week: { monday: day, sunday: day, label: "this week" }, since: day,
+    products: [{ product: "salt", name: "Salt", unit: "unit", basis: "tier", tier: "Silver", levels: 4, rate: null, orders: 0, sizes: [{ q: 1, price: 150 }] }], soon: [] };
+  const cardDoc = { at: day + "T00:00:00Z", products: [{ product: "salt", name: "Salt", unit: "unit",
+    summary: { bought: 150, soldFor: 0, onward: 0, introduced: 0, referred: 0 }, reward: null, lines: [{ date: day, kind: "own", qty: 1, rm: 150 }] }] };
+  await kv.put("u:" + u, JSON.stringify({ u, assoc: true, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })),
+    prices: Object.assign({ at: priceDoc.at, week: day }, await C.encryptWith(ck, JSON.stringify(priceDoc))),
+    card: Object.assign({ at: cardDoc.at }, await C.encryptWith(ck, JSON.stringify(cardDoc))) }));
+  const env = { STMT: kv };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const until = async (f) => { for (let i = 0; i < 200 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  /* one short of the cap, so the panel offers Make a link */
+  for (let i = 0; i < RF.MAX_PER_ASSOC - 1; i++) await RF.mintRef(env, { introducer: u, by: u, label: "" });
+  let win = null;
+  try {
+    win = new JSDOM(await (await site("/")).text(), { url: "https://k7m3p2.example/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: o.headers, body: o.body }); };
+    } }).window;
+    const D = win.document;
+    D.getElementById("un").value = u; D.getElementById("pw").value = pw;
+    D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+    const pOrder = D.getElementById("pOrder"), pCard = D.getElementById("pCard");
+    ok(await until(() => D.getElementById("oGo")), "the associate's page opens with an order form");
+    D.getElementById("oGo").click();
+    const place = () => [...pOrder.querySelectorAll("button")].find((b) => b.textContent === "Place this order");
+    ok(await until(() => place()), "Review this order shows Place this order");
+    place().click();
+    ok(await until(() => /Placed[.]/.test(pOrder.textContent)), "the order is placed and the form says so");
+    D.getElementById("tCard").click();
+    const box = () => [...pCard.querySelectorAll(".pane")].find((x) => /Your links/.test(x.textContent));
+    ok(await until(() => box() && box().querySelectorAll(".glink").length === RF.MAX_PER_ASSOC - 1),
+      "the card lists their links");
+    /* THE BOX IS REDRAWN AFTER THE PLACEMENT, by a withdrawal, or the check below would read the box
+       drawn before any order and pass whatever the box draws */
+    win.confirm = () => true;
+    const drawn = box();
+    const wd = [...box().querySelectorAll("button")].find((b) => b.textContent === "Withdraw");
+    if (wd) wd.click();
+    ok(!!wd && await until(() => box() && box() !== drawn && /Withdrawn/.test(box().textContent)), "a withdrawal redraws the box");
+    ok(!/Placed/.test(box().textContent), "and the order's Placed is nowhere under Your links: " + JSON.stringify(box().textContent.slice(-80)));
+    /* a link that is not made says so in its own box: the cap is reached from elsewhere before the tap */
+    await RF.mintRef(env, { introducer: u, by: u, label: "" });
+    await RF.mintRef(env, { introducer: u, by: u, label: "" });
+    const mk = [...box().querySelectorAll("button")].find((b) => b.textContent === "Make a link");
+    if (mk) mk.click();
+    ok(!!mk && await until(() => /withdraw one to make another/.test(box().textContent)) && !/withdraw one to make another/.test(pOrder.textContent),
+      "a link refused at the cap says so under Your links, and nothing of it reaches the order form: " + JSON.stringify(box() && box().textContent.slice(-90)));
+  } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v687: the master account opens on its own page, and the owner's script travels only there");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: a master account that opens on what it can do. /all is that account,
