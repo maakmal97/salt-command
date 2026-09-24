@@ -1077,14 +1077,14 @@ const CLIENT_JS = `
     pPrices.textContent='';
     var h=el('h2',null,'Your prices'); pPrices.appendChild(h);
     var g=el('p','lead',hail()); g.style.marginTop='0'; pPrices.appendChild(g);
-    var soon=(prices&&prices.soon)||[];
+    var soon=((prices&&prices.soon)||[]).concat(((prices&&prices.products)||[]).filter(function(x){ return !(x.sizes&&x.sizes.length); }));
     if(!prices||((!prices.products||!prices.products.length)&&!soon.length)){
       pPrices.appendChild(el('p','lead','No price list has been written for your account yet. It is written with the next update and changes weekly.'));
       return;
     }
     pPrices.appendChild(el('p','lead','For the week of '+(prices.week&&prices.week.label||'')+'. The price is for the goods; if you ask for delivery, the charge is added when the order is marked ready and you see it then. The list is written from your own history and changes weekly.'));
     if(prices.since) pPrices.appendChild(el('p','sub2','Buying with us since '+monthOf(prices.since)+'.'));
-    prices.products.forEach(function(p){
+    sold().forEach(function(p){
       var pane=el('div','pane');
       var h3=el('h3','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
       /* ============ HIS INSTRUCTION, 16 SEP 2026: THE LABEL IS A VERY SUBTLE MARK ============
@@ -1129,6 +1129,9 @@ const CLIENT_JS = `
   }
 
   /* ---- ORDER: the form, then every order and where it stands ---- */
+  /* 24 Sep 2026: what can be ordered is a product with a priced size. The list sends none without one now, and an
+     older sealed list still can: its first size was read unguarded, and the throw blanked the whole tab. */
+  function sold(){ return ((prices&&prices.products)||[]).filter(function(x){ return x.sizes&&x.sizes.length; }); }
   async function api(path, body, method){
     var r=await fetch(path,{method:method||(body?'POST':'GET'), cache:'no-store',
       headers:Object.assign({'X-Stmt-Session':session}, body?{'content-type':'application/json'}:{}),
@@ -1173,20 +1176,22 @@ const CLIENT_JS = `
       /* 24 Sep 2026: the note was drawn in the order form alone, which this page never shows */
       if(draft.note) dueBox.appendChild(statusLine(draft.note));
       pOrder.appendChild(dueBox);
-    } else if(!prices||!prices.products||!prices.products.length){
-      pOrder.appendChild(el('p','lead',prices&&prices.soon&&prices.soon.length?'Ordering opens once your prices are set.':'Ordering opens once your price list is written, with the next update.'));
+    } else if(!sold().length){
+      pOrder.appendChild(el('p','lead',prices&&(prices.soon&&prices.soon.length||prices.products&&prices.products.length)?'Ordering opens once your prices are set.':'Ordering opens once your price list is written, with the next update.'));
     } else {
       pOrder.appendChild(el('p','lead','Pick a size off your list and check it over before you place it. Once it is acknowledged you can pay, and you are told when the goods are on their way.'));
       var form=el('div','pane');
-      if(!draft.product) draft.product=prices.products[0].product;
-      var P=prices.products.filter(function(x){return x.product===draft.product;})[0]||prices.products[0];
+      var S=sold();
+      if(!draft.product) draft.product=S[0].product;
+      var P=S.filter(function(x){return x.product===draft.product;})[0]||S[0];
+      draft.product=P.product;
       if(!draft.q||!P.sizes.some(function(x){return String(x.q)===String(draft.q);})) draft.q=P.sizes[0].q;
       if(!draft.mode) draft.mode='collect';
       /* v695: the product was a dropdown, and an option carries text and nothing else, so a mark
          could not go in one. Two products are a segment anyway, which is one tap rather than two. */
-      if(prices.products.length>1){
+      if(S.length>1){
         var pseg=el('div','seg');
-        prices.products.forEach(function(x){
+        S.forEach(function(x){
           var b=el('button',x.product===draft.product?'on':''); b.type='button';
           b.setAttribute('aria-label',pshape(x.product));
           b.setAttribute('aria-pressed',x.product===draft.product?'true':'false');

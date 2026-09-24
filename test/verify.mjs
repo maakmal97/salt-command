@@ -19553,6 +19553,68 @@ await (async () => {
   } finally { w.close(); }
 })();
 
+section("24 Sep 2026: a product with no priced size is coming soon, and the Order tab still draws");
+await (async () => {
+  /* M21 of the Counter study: a level the board has no column for drops every size, and priceList still pushed the
+     product with sizes: []. The page read sizes[0] to set up the form, threw, and the Order tab went blank, the
+     customer's orders and Notifications with it. The list sends it to soon now, and the page guards an older list. */
+  const PLr = await import("../tools/pricelist.mjs");
+  const cost = { repl: 50, freightRate: 0, shrinkRate: 0, avgDel: { n: 0, mean: 0 }, attrib: {},
+    costBasis: { txnPerDelivery: { rm: 0 }, freightPerTrip: { rm: 0 }, deliveredShare: { v: 0 } } };
+  const pricingFor = (cols) => ({ sizes: [1, 2], tierNames: ["Ambassador", "Titanium", "Silver"], tierOf: { "CX0-NC": { salt: "Silver" } },
+    byProduct: { salt: { sizes: [1, 2], inputs: { cost, policy: {} }, ladder: [{ q: 1, prices: [80, 90, 100].slice(0, cols) }, { q: 2, prices: [150, 170, 190].slice(0, cols) }] } } });
+  const bookR = { PRODUCTS: { salt: { name: "Salt", unit: "unit" } }, PROD_ORDER: ["salt"], sales: [] };
+  const at = new Date("2026-09-03T06:00:00Z");
+  const full = PLr.priceList("CX0-NC", bookR, pricingFor(3), at), short = PLr.priceList("CX0-NC", bookR, pricingFor(1), at);
+  ok(full.products.length === 1 && full.products[0].sizes.length === 2,
+    "the fixture prices when the board has the level's column, so the case below is the missing column and nothing else");
+  ok(!short.products.length && short.soon.length === 1 && short.soon[0].product === "salt",
+    "with no column for their level every size drops out, and the product is coming soon rather than a list with no sizes: "
+    + JSON.stringify({ products: short.products.map((p) => [p.product, p.sizes.length]), soon: short.soon.map((p) => p.product) }));
+
+  const { landingPage: lpR } = await import("../stmt/page.js");
+  const CR = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcR } = await import("node:crypto");
+  const { JSDOM: JDR } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-m21", ck = await CR.contentKey("test-secret", u);
+  /* the shape a list sealed before this fix can still carry */
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [] }, { product: "oil", unit: "unit", basis: "board", tier: null, sizes: [{ q: 1, price: 50 }] }] };
+  const body = { ok: true, wrap: await CR.wrapKey(pass, ck), session: "sess-m21",
+    env: await CR.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await CR.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })),
+    prices: await CR.encryptWith(ck, JSON.stringify(prices)) };
+  const orders = [{ id: "oA", product: "oil", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z", history: [], msgs: [], status: "placed", total: 50 }];
+  const dom = new JDR(lpR(u, "nm21", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcR, configurable: true }); } catch (e) { win.crypto = wcR; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  /* the fault was a throw inside the sign-in's own async handler: caught here, so it reads as a red line and not as a
+     suite that stops dead */
+  const thrown = [], onRej = (e) => { thrown.push(String((e && e.message) || e)); };
+  process.on("unhandledRejection", onRej);
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 60 && !thrown.length && !/Your orders/.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+    const po = d.getElementById("pOrder"), sizes = [...po.querySelectorAll("select option")].map((o) => o.value);
+    ok(!thrown.length && /Notifications/.test(po.textContent) && /Your orders/.test(po.textContent) && po.querySelectorAll(".state").length === 1
+      && sizes.join() === "1" && !po.querySelector(".seg button[aria-label]"),
+      "the Order tab draws: the form offers the one product with a price, and Notifications and their order are there: " + JSON.stringify({ sizes, thrown }));
+    const pp = d.getElementById("pPrices");
+    ok(/Price coming soon\./.test(pp.textContent) && pp.querySelectorAll("table").length === 1,
+      "and Prices says coming soon for the one with no size rather than drawing an empty table");
+  } finally { process.off("unhandledRejection", onRej); w.close(); }
+})();
+
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead

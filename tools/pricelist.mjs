@@ -147,6 +147,10 @@ export function priceList(code, book, pricing, now) {
       if (price == null || !isFinite(price)) return null;
       return { q, price: +price.toFixed(2) };
     }).filter(Boolean);
+    /* 24 Sep 2026: A PRODUCT WITH NO PRICED SIZE IS COMING SOON, never a product with an empty list. Every size
+       dropping out above (a level the board has no column for) pushed sizes: [], and the page reads the first size
+       to set up the order form, so the Order tab went blank, orders and Notifications with it. */
+    if (!rows.length) { out.soon.push({ product: p, name }); continue; }
     out.products.push({
       product: p,
       name,
