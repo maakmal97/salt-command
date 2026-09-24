@@ -19192,7 +19192,9 @@ async function ordPreview(o){
   const d=ordPvDelivery(o);if(d==null)return;
   const cur=ORD_PV[o.id];
   if(cur&&cur.d===d&&cur.gen===ORD_PV_GEN)return;
-  const mine={d,gen:ORD_PV_GEN,st:'wait'};ORD_PV[o.id]=mine;
+  /* the row already drawn at this charge stays, its digest with it, while it is drafted again on a poll: Accept tapped in
+     between sends that digest, and the Worker's own recheck answers a row that moved with the fresh one */
+  const mine=cur&&cur.st==='ok'&&cur.d===d?Object.assign({},cur,{gen:ORD_PV_GEN}):{d,gen:ORD_PV_GEN,st:'wait'};ORD_PV[o.id]=mine;
   let st='err',j=null,err='';
   try{const r=await fetch('orders/'+encodeURIComponent(o.id)+'/preview',{method:'POST',headers:qHeaders(),body:JSON.stringify({delivery:d})});
     try{j=await r.json();}catch(e){}

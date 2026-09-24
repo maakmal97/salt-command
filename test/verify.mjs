@@ -24886,6 +24886,49 @@ await (async () => {
     "the one copy of the figure is the engine's: " + JSON.stringify([PE.closeGoods(500, 5, 2), PE.closeGoods(250, 3, 1)]));
 })();
 
+section("S11 fix: Accept tapped while a poll drafts the row again sends the digest of the row it drew");
+await (async () => {
+  /* Found in review: every read of the orders drafts the open card's row again, and while that was in flight the card
+     kept Accept open over a preview it had already thrown away, so a tap sent no digest and the Worker refused it. The
+     row drawn stays, digest and all, until the fresh one lands. */
+  const { openMaster: omO1 } = await import("../tools/payload.mjs");
+  const { w } = await omO1();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 95; w.clearInterval = () => {};
+    const ord = { id: "p1", u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect",
+      status: "placed", at: "2026-09-24T02:00:00.000Z", history: [], msgs: [], payments: [] };
+    let hold = null, n = 0;
+    const accepts = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      if (/\/preview$/.test(p)) { n++; if (n > 1) await new Promise((r) => { hold = r; });
+        return { ok: true, status: 200, json: async () => ({ ok: true, row: { qty: 1, total: 100 }, flags: [], hash: "digest-" + n, card: 100 }) }; }
+      if (/\/accept$/.test(p)) { accepts.push(JSON.parse(init.body)); return { ok: true, status: 200, json: async () => ({ ok: true, approved: true }) }; }
+      return { ok: true, status: 200, json: async () => (p === "orders" && !post ? { ok: true, orders: [ord] } : { ok: true }) };
+    };
+    const settle = () => new Promise((r) => setTimeout(r, 30));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    for (let i = 0; i < 20 && D.querySelector('.ordcard[data-id="p1"] .ordfoot button[data-ord="acknowledged"]').disabled; i++) await settle();
+    w.eval("ordLoad(true)");                                  /* the poll, whose preview does not come back yet */
+    for (let i = 0; i < 20 && !hold; i++) await settle();
+    const acc = D.querySelector('.ordcard[data-id="p1"] .ordfoot button[data-ord="acknowledged"]');
+    const open = acc && !acc.disabled;
+    if (acc) acc.click();
+    await settle();
+    if (hold) hold();
+    await settle();
+    ok(hold && open && accepts.length === 1 && accepts[0].hash === "digest-1",
+      "a tap while the row is drafted again sends the digest of the row on the card: " + JSON.stringify({ inFlight: !!hold, open, sent: accepts }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one
