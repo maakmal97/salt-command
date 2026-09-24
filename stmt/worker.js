@@ -147,6 +147,20 @@ const DUMMY_VERIFIER = { salt: "c2FsdC1jb21tYW5kLW51bGw=", hash: "AAAAAAAAAAAAAA
    nothing about which usernames exist can be read off the responses. */
 const REFUSED = "That username and password were not accepted.";
 
+/* EVERY OPEN IS AN OPEN (24 Sep 2026). `seen:` was written on a password open alone, so a customer who
+   signed in once from his link and then came back on a remembered phone read "Not opened" on his list,
+   or one open, for ever. All three roads write it now, with the road the last one took. His own opens
+   under the master are not the customer's and are never counted. */
+async function markSeen(env, u, rec, how) {
+  const seen = await env.STMT.get(SKEY(u), "json");
+  const now = new Date().toISOString();
+  await env.STMT.put(SKEY(u), JSON.stringify({
+    first: (seen && seen.first) || now, last: now,
+    opens: ((seen && seen.opens) || 0) + 1,
+    how, issued: (rec && rec.issued) || null
+  }));
+}
+
 async function handleOpen(request, env) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
 
@@ -233,15 +247,7 @@ async function handleOpen(request, env) {
 
   /* Recorded so he can tell whether a statement was ever opened, which is the question he
      actually asks after sending thirty-seven of them. It gates nothing. */
-  if (!byMaster) {
-    const seen = await env.STMT.get(SKEY(u), "json");
-    await env.STMT.put(SKEY(u), JSON.stringify({
-      first: (seen && seen.first) || new Date().toISOString(),
-      last: new Date().toISOString(),
-      opens: ((seen && seen.opens) || 0) + 1,
-      issued: rec.issued || null
-    }));
-  }
+  if (!byMaster) await markSeen(env, u, rec, "password");
 
   /* ONLY THE WRAP THAT MATCHED TRAVELS BACK, and the reason is the sharpest finding of the 04 Sep
      audit. This returned BOTH wraps to everyone. wrapMaster is the customer's content key sealed
@@ -398,6 +404,7 @@ async function handleRemember(request, env) {
   if (!rec || !rec.u) return json({ ok: false, error: REFUSED }, 401);
   const acct = await env.STMT.get("u:" + rec.u, "json");
   if (!acct) { await env.STMT.delete("rem:" + tok); return json({ ok: false, error: REFUSED }, 401); }
+  await markSeen(env, rec.u, acct, "remembered");
   const session = await mintSession(env, rec.u);
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
@@ -423,6 +430,7 @@ async function handleSignin(request, env) {
   if (!rec) return json({ ok: false, error: REFUSED }, 401);
   const acct = await env.STMT.get("u:" + rec.u, "json");
   if (!acct) return json({ ok: false, error: REFUSED }, 401);
+  await markSeen(env, rec.u, acct, "link");
   const session = await mintSession(env, rec.u);
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
@@ -611,7 +619,7 @@ async function ownerSheet(env, origin) {
       url, msg: linkMessage({ url, user: a.username }), tot: s ? totalsLine(s.t) : "",
       qr: QR.qrMatrix(url).map((line) => line.join("")),
       pwMaster: s ? s.pwMaster || null : null,
-      seen: seen ? { first: seen.first || null, last: seen.last || null, opens: +seen.opens || 0 } : null,
+      seen: seen ? { first: seen.first || null, last: seen.last || null, opens: +seen.opens || 0, how: seen.how || null } : null,
       sent: sent ? sent.at || null : null
     });
   }

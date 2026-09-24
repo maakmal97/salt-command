@@ -14260,6 +14260,43 @@ await (async () => {
   ok(r34.status !== 200 && j34.byMaster !== true && (await kv.get("mfail:203.0.113.34")) === "10",
     "while ten guesses at the master from one address still brake it there");
 })();
+section("S1 1.24: Opened counts every open, by password, remembered phone or one-time link, and records how");
+await (async () => {
+  /* 24 SEP 2026 (M25): seen:<username> was written on a password open alone, though his list reads it as
+     every open, so a customer who came in on the link he sent and then on a remembered phone read "Not
+     opened" for good. Each road is driven through the real Worker; his own open under the master is not
+     the customer's and stays uncounted. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const S = await import("../stmt/signin.js");
+  const kv = new KV();
+  const MASTER = "mp-s1-24";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s1-24", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, "{}") }));
+  const env = { STMT: kv, STMT_MASTER: MASTER };
+  const post = (path, body) => W.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env);
+  const seen = async () => JSON.parse((await kv.get("seen:" + u)) || "null");
+
+  ok((await post("/open", { u, password: MASTER, master: MASTER })).status === 200 && (await seen()) === null,
+    "his own open under the master is not the customer's and writes nothing");
+  ok((await post("/open", { u, password: pw })).status === 200 && (await seen()).opens === 1 && (await seen()).how === "password",
+    "a password open counts, as it always did, and says so: " + JSON.stringify(await seen()));
+  const rem = "rem" + "a".repeat(29);
+  await kv.put("rem:" + rem, JSON.stringify({ u, wrap: await C.wrapKey("device-key", ck), at: "2026-09-21T00:00:00Z" }));
+  const r1 = await post("/remember/open", { token: rem });
+  ok(r1.status === 200 && (await seen()).opens === 2 && (await seen()).how === "remembered",
+    "a remembered phone's open counts too: " + JSON.stringify(await seen()));
+  const tok = S.newSignin();
+  ok(await S.mintSignin(env, u, tok, await C.wrapKey(tok, ck)), "a one-time link is minted for the account");
+  const r2 = await post("/open-link", { token: tok });
+  ok(r2.status === 200 && (await seen()).opens === 3 && (await seen()).how === "link",
+    "and so does an open from the one-time link: " + JSON.stringify(await seen()));
+  ok((await post("/open-link", { token: tok })).status === 401 && (await post("/remember/open", { token: "rem" + "b".repeat(29) })).status === 401
+    && (await seen()).opens === 3,
+    "a spent link and an unknown device are refused and count nothing");
+})();
 section("v687: the master account opens on its own page, and the owner's script travels only there");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: a master account that opens on what it can do. /all is that account,
