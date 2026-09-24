@@ -119,8 +119,10 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .msg.wait{color:var(--salt-text-muted)}
 /* a veil is obsidian 86%, decision 4 */
 /* S1 1.32: THE WRAPPER STICKS, NOT THE BAR. #barw is exactly the bar's height, so a sticky bar inside it
-   had nowhere to stick and scrolled away with Log out; the wrapper sticks to the page and carries both lines */
-#barw{position:sticky;top:0;z-index:5}
+   had nowhere to stick and scrolled away with Log out; the wrapper sticks to the page and carries both lines.
+   UX2: IT STICKS UNDER THE STATUS BAR. The page draws under it (viewport-fit=cover, black-translucent), so at
+   top:0 a saved iPhone app held Log out behind the clock, as the desk's bar was until v392 */
+#barw{position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
 .bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;
   gap:12px;padding:11px 16px;margin:0 auto 14px;max-width:620px;
   background:var(--salt-veil);border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);

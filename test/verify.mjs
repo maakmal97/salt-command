@@ -15503,8 +15503,13 @@ await (async () => {
     const W = dom.window, D = W.document, barw = D.getElementById("barw");
     barw.hidden = false;
     const cs = W.getComputedStyle(barw), inner = W.getComputedStyle(barw.querySelector(".bar"));
-    ok(cs.position === "sticky" && cs.top === "0px" && inner.position !== "sticky",
-      "the wrapper is the sticky element, pinned to the top, and the bar inside it is not: " + JSON.stringify({ wrapper: cs.position, top: cs.top, bar: inner.position }));
+    ok(cs.position === "sticky" && inner.position !== "sticky",
+      "the wrapper is the sticky element and the bar inside it is not: " + JSON.stringify({ wrapper: cs.position, bar: inner.position }));
+    /* UX2: pinned under the status bar, which a saved iPhone app draws the page beneath. jsdom reads no env(),
+       so the rule is read off the page as served */
+    const served = D.documentElement.outerHTML;
+    ok(/#barw\{position:sticky;top:env\(safe-area-inset-top,0px\);/.test(served) && /viewport-fit=cover/.test(served),
+      "and it sticks at the safe-area inset, not at top:0 behind the clock, on a page drawn under the status bar");
   } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
 })();
 section("S1 1.39: no em-dash reaches the served page, and a waiting link says No address yet");
