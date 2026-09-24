@@ -234,9 +234,12 @@ after a re-key take out the retired codes it brings back. When a fold finds a ro
 directory lacks, ask him for the name and the location before the ID commits, then write both to
 `10_Data\salt_bio.json`, seed the vault, and commit the statement username in
 `statements/_users.json` (minted at registration, kept for life). The `-R` buckets are the
-exception. **An ID with a username but no account cannot sign in**: `tools/update.mjs` mints it
-(`tools/stmt-account.mjs --mint`, needing `STMT_MASTER`; without it the run names who is stuck and
-carries on). It cannot run in CI, by design. Amend ID needs nothing. His own route is the
+exception. **An account is ready on day one** (D15): the laptop mints a pool of spare accounts
+(`tools/stmt-account.mjs --pool`), the fold binds the next free one at Add ID in `_users.json`, and
+that run's publish opens it; a spare is marked in the clear, listed nowhere and opened by nobody
+until bound. **With none free, the ID has a username but no account and cannot sign in** until
+`tools/update.mjs` mints it (`--mint`, needing `STMT_MASTER`; without it the run names who is stuck
+and carries on). Minting cannot run in CI, by design. Amend ID needs nothing. His own route is the
 `update-names-id` skill, laptop only.
 
 ## Access, and why it is off; the write gate

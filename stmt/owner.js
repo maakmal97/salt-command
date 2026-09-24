@@ -40,10 +40,13 @@ export const OWNER_JS = `
   var FLAGW={owes:'Owes',goods:'Owes goods',refund:'Refund due',pend:'Agreed, not actioned',clear:'Clear'};
   /* 23 SEP 2026: THE ACCOUNT IS ONE LIVE DOCUMENT (v769), so there is no issue for an account to be
      missing from. A row with no totals is a username with nothing behind it, and that is what it
-     says, with the one command that mends it. */
-  var NOACCT='No account yet, so they cannot sign in. Mint it on the laptop: node tools/stmt-account.mjs --mint';
+     says. D15 (24 Sep 2026): the fold binds a spare account at Add ID and this run's publish opens it,
+     so a row reads this only when no spare was free, and the laptop's next update makes it. The level
+     is the stranger's, named by the book through the sheet, never here. */
+  var stranger=null;
+  function waitLine(){ return 'Made at the next laptop update.'+(stranger?' Until then, show the '+stranger+' link.':''); }
   function flagLine(a){
-    if(!a.t||!a.flag) return NOACCT;
+    if(!a.t||!a.flag) return waitLine();
     var t=a.t;
     if(a.flag==='owes') return FLAGW.owes+' '+rm(t.owed);
     if(a.flag==='goods') return FLAGW.goods+' '+unitsOf(Math.round(t.toGet*100)/100);
@@ -58,7 +61,7 @@ export const OWNER_JS = `
   async function loadSheet(){
     try{
       var j=await refs('/all/sheet');
-      sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null;
+      sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null; stranger=j.stranger||null;
       sheetRows.forEach(function(a){ sheet[a.username]=a; });
       drawRoster(); drawSend(); drawTest();
       var n=document.getElementById('mCount');
@@ -94,7 +97,7 @@ export const OWNER_JS = `
     head.appendChild(el('b',null,a.test?'Test account':(a.code||a.username)));
     head.appendChild(el('span','un',a.username));
     card.appendChild(head);
-    card.appendChild(el('p','tot',a.test?'Counts nowhere; nothing on the book is behind it.':(a.account===false?NOACCT:a.tot)));
+    card.appendChild(el('p','tot',a.test?'Counts nowhere; nothing on the book is behind it.':(a.account===false?waitLine():a.tot)));
     card.appendChild(el('p','op',openedLine(a)+(a.sent?' \\u00b7 sent '+stampDay(a.sent):'')));
     /* 24 SEP 2026: A USERNAME WITH NO ACCOUNT BEHIND IT has nothing to share, copy or open: the
        message would say "Your account is ready to use" over an account that is not there, and Open
@@ -215,7 +218,7 @@ export const OWNER_JS = `
      and the statement, the prices and the lock are the customer's own. */
   function openAcct(a){
     if(!OWNER) return;
-    if(sheet&&sheet[a.username]&&sheet[a.username].account===false){ say(NOACCT,'bad'); return; }
+    if(sheet&&sheet[a.username]&&sheet[a.username].account===false){ say(waitLine(),'bad'); return; }
     if(!OWNER.master){ say('No master passphrase is set on this Worker, so nothing can be opened. Set STMT_MASTER.','bad'); return; }
     if(busy) return;
     un.value=a.username; pw.value=OWNER.master;

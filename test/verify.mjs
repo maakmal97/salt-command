@@ -10560,9 +10560,10 @@ await (async () => {
   const ms = readFileSync(join(REPO, "tools", "make_statements.mjs"), "utf8");
   ok(/import \{[^}]*\buserFor\b[^}]*\busersJson\b[^}]*\} from "\.\/stmt-crypto\.mjs"/.test(ms) && !/function userFor\(/.test(ms),
     "the statements run mints and writes through the same two functions, with no copy of its own");
-  /* THE ONE STEP HERE NOT DRIVEN IN MEMORY: the suite never runs fold.mjs as a process, so its run is read */
+  /* the fold's run, read here; since D15 it is also driven as a process, pool and all, in "S14 14.3" */
   const fm = readFileSync(join(REPO, "tools", "fold.mjs"), "utf8");
-  ok(/mintUsernames\(users, staged, res\.folded\)/.test(fm) && /writeFileSync\(USERS, usersJson\(users\)\)/.test(fm),
+  ok(/registerAccounts\(STMTS, USERS, staged, res\.folded\)/.test(fm) && /mintUsernames\(users, staged, folded, spares\)/.test(fm)
+    && /writeFileSync\(usersFile, usersJson\(users\)\)/.test(fm),
     "and the fold's run mints after a fold that took, and writes the file in the one format");
 })();
 
@@ -14213,7 +14214,7 @@ await (async () => {
     ok(await until(() => cardOf(uA) && cardOf(uB)), "Send draws a card for both usernames");
     const btn = (u, t) => [...cardOf(u).querySelectorAll("button")].find((b) => b.textContent === t);
     const four = ["Share", "Copy message", "Sign-in link", "Open account"];
-    ok(four.every((t) => btn(uB, t) && btn(uB, t).disabled && /No account/.test(btn(uB, t).title)) && /No account yet/.test(cardOf(uB).textContent),
+    ok(four.every((t) => btn(uB, t) && btn(uB, t).disabled && /No account/.test(btn(uB, t).title)) && /Made at the next laptop update./.test(cardOf(uB).textContent),
       "on the card with no account, Share, Copy message, Sign-in link and Open account are all off, each saying why: "
         + JSON.stringify(four.map((t) => [t, btn(uB, t) && btn(uB, t).disabled])));
     ok(four.every((t) => btn(uA, t) && !btn(uA, t).disabled), "and on a card with an account all four stay on");
@@ -14225,7 +14226,7 @@ await (async () => {
     D.querySelector("button[data-back]").click();
     D.querySelector('button[data-m="review"]').click();
     const rowOf = (u) => [...D.querySelectorAll("#rlist button")].find((b) => b.textContent.includes(u));
-    ok(await until(() => rowOf(uB) && /No account yet/.test(rowOf(uB).textContent)), "Review says the username has no account");
+    ok(await until(() => rowOf(uB) && /Made at the next laptop update./.test(rowOf(uB).textContent)), "Review says the username has no account");
     const before = hits.length;
     rowOf(uB).click();
     await new Promise((r) => setTimeout(r, 60));
@@ -14966,7 +14967,7 @@ await (async () => {
       const bare = [...D88.querySelectorAll("#slist .scard")].find((c) => /CX0-BB/.test(c.textContent));
       const bareLink = bare && [...bare.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
       const liveLink = [...cardEl.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
-      ok(!!bare && /No account yet, so they cannot sign in/.test(bare.textContent) && !!bareLink && bareLink.disabled && !!liveLink && !liveLink.disabled,
+      ok(!!bare && /Made at the next laptop update./.test(bare.textContent) && !!bareLink && bareLink.disabled && !!liveLink && !liveLink.disabled,
         "a code with no account says it cannot sign in, and only its sign-in link is shut");
       ok(!/issue/i.test(D88.getElementById("oSend").textContent),
         "and the Send panel never says issue: " + JSON.stringify((D88.getElementById("oSend").textContent.match(/.{0,30}issue.{0,30}/i) || [""])[0]));
@@ -17641,6 +17642,138 @@ await (async () => {
   } finally {
     if (was142 === undefined) delete process.env.STMT_MASTER; else process.env.STMT_MASTER = was142;
     rmSync(root142, { recursive: true, force: true });
+  }
+})();
+section("S14 14.3: the fold binds the next spare account at Add ID, so a walk-in signs in at the same run's publish, by password and by link");
+await (async () => {
+  /* D15, the whole road on fixtures: the laptop mints a pool, the fold registers a new code and binds the
+     next spare in _users.json (no key in CI), the publish seals it, and the new customer's account opens
+     by password and by his sign-in link. A second code in the same batch finds no spare free, takes a
+     bare username as before, and Salt Admin says it is made at the next laptop update. */
+  const { mintPool } = await import("../tools/stmt-account.mjs");
+  const { planPublish: pp143 } = await import("../tools/stmt-publish.mjs");
+  const { mintUsernames: mu143 } = await import("../tools/fold.mjs");
+  const C143 = await import("../tools/stmt-crypto.mjs");
+  const S143 = await import("../stmt/signin.js");
+  const W143 = (await import("../stmt/worker.js")).default;
+  const stage143 = (rows) => ({ ok: true, count: rows.length, approved: rows.map(([id, code, kind]) => ({ id, collection: "roster",
+    row: { code, kind, parent: null, note: null }, entry: { at: id, payload: { mode: "addid", code, kind } } })) });
+
+  /* ---- in memory: the next spare first, in order, then a bare username; nobody else is touched ---- */
+  const mem = { "CZ9-OLD": "aaaa-bbbb" };
+  const got = mu143(mem, stage143([["b1", "CZ9-ONE", "customer"], ["b2", "SZ9-SUP", "supplier"], ["b3", "CZ9-TWO", "reseller"],
+    ["b4", "CZ9-THR", "customer"], ["b5", "CZ9-OLD", "customer"]]), ["b1", "b2", "b3", "b4", "b5"], ["2ccc-dddd", "3ddd-eeee"]);
+  ok(got.join() === "CZ9-ONE,CZ9-TWO,CZ9-THR" && mem["CZ9-ONE"] === "2ccc-dddd" && mem["CZ9-TWO"] === "3ddd-eeee"
+    && C143.USERNAME_RE.test(mem["CZ9-THR"] || "") && !["2ccc-dddd", "3ddd-eeee"].includes(mem["CZ9-THR"])
+    && mem["CZ9-OLD"] === "aaaa-bbbb" && !("SZ9-SUP" in mem),
+    "a registration takes the next free spare, in order; with none left it is minted a bare username as before; a supplier gets none and a username that exists is never replaced: " + JSON.stringify(mem));
+
+  /* ---- the fixture: one account already there, the laptop's secrets, and a pool of ONE ---- */
+  const root = join(REPO, "test", "tmp", "pool143"), dir = join(root, "2026-09");
+  rmSync(root, { recursive: true, force: true });
+  mkdirSync(join(dir, "_kv"), { recursive: true });
+  const M = "master-143", K = "key-143", uHave = "aaaa-bbbb", pwHave = "pw-have-143", ckHave = await C143.contentKey(K, uHave);
+  writeFileSync(join(dir, "_kv", uHave + ".json"), JSON.stringify({ u: uHave, issued: "2026-09-01", issues: ["2026-09-01"],
+    verifier: await C143.makeVerifier(pwHave), wrap: await C143.wrapKey(pwHave, ckHave), wrapMaster: await C143.wrapKey(M, ckHave),
+    pwMaster: await C143.encryptText(M, pwHave), env: await C143.encryptWith(ckHave, "{}") }) + "\n");
+  writeFileSync(join(root, "_secrets.json"), JSON.stringify({ key: K }));
+  writeFileSync(join(root, "_users.json"), JSON.stringify({ "CZ9-OLD": uHave }));
+  writeFileSync(join(dir, "_passwords.json"), JSON.stringify({ "CZ9-OLD": pwHave }));
+  const fold = join(REPO, "test", "tmp", "pool143fold"), f = (n) => join(fold, n);
+  rmSync(fold, { recursive: true, force: true });
+  mkdirSync(fold, { recursive: true });
+  const was143 = process.env.STMT_MASTER;
+  const realFetch143 = globalThis.fetch;
+  try {
+    process.env.STMT_MASTER = M;
+    const spare = (await mintPool(root, { count: 1 })).minted[0];
+    delete process.env.STMT_MASTER;
+
+    /* ---- THE FOLD, run as the cloud job runs it, with no key and no master anywhere in its environment ---- */
+    writeFileSync(f("book.json"), readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    writeFileSync(f("salt_command.html"), readFileSync(join(REPO, "master", "salt_command.html"), "utf8"));
+    writeFileSync(f("changelog.json"), readFileSync(join(REPO, "master", "changelog.json"), "utf8"));
+    writeFileSync(f("staged.json"), JSON.stringify(stage143([["2099-01-01T00:00:00.001Z", "CZ9-WLK", "customer"], ["2099-01-01T00:00:00.002Z", "CZ9-LTR", "customer"]])));
+    writeFileSync(f("notes.json"), JSON.stringify({ version: "v9998", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: {} }));
+    const envCI = { ...process.env };
+    delete envCI.STMT_MASTER; delete envCI.STMT_KEY;
+    const run = spawnSync(process.execPath, [join(REPO, "tools", "fold.mjs"), "--apply", "--book", f("book.json"), "--master", f("salt_command.html"),
+      "--staged", f("staged.json"), "--notes", f("notes.json"), "--folded", f("folded.json"), "--users", join(root, "_users.json"),
+      "--statements", root, "--today", "2099-01-01"], { encoding: "utf8", env: envCI });
+    const users = JSON.parse(readFileSync(join(root, "_users.json"), "utf8"));
+    ok(run.status === 0 && users["CZ9-WLK"] === spare && C143.USERNAME_RE.test(users["CZ9-LTR"] || "") && users["CZ9-LTR"] !== spare
+      && users["CZ9-OLD"] === uHave,
+      "the fold binds the pool's one spare to the first new code in _users.json, and the second finds none free and takes a bare username: "
+      + (run.status === 0 ? JSON.stringify(users) : (run.stdout + run.stderr).slice(-300)));
+    ok(/CZ9-WLK on a spare account, which opens at this run's publish/.test(run.stdout) && /no spare account was free for CZ9-LTR/.test(run.stdout),
+      "and says which is which: " + (run.stdout.match(/statement username[^\n]*\n[^\n]*/) || [""])[0]);
+
+    /* ---- THE PUBLISH seals it, with the deploy's key only ---- */
+    const plan = await pp143(root, K, new Date("2099-01-01T02:00:00Z"), ["u:" + uHave, "u:" + spare], "2026-09-01");
+    const put = plan.puts.find((x) => x.key === "u:" + spare), rec = put ? JSON.parse(put.value) : null;
+    const row = plan.sheet.find((a) => a.code === "CZ9-WLK");
+    const pw = JSON.parse(readFileSync(join(dir, "_passwords.json"), "utf8"))[spare];
+    ok(!!rec && !("spare" in rec) && !!row && row.username === spare && (await C143.decryptText(M, row.pwMaster)) === pw
+      && !plan.sheet.some((a) => a.code === "CZ9-LTR") && plan.users[users["CZ9-LTR"]] === "CZ9-LTR",
+      "the publish writes the bound spare as CZ9-WLK's account, on his sheet with the password Send hands over; CZ9-LTR is on the roster with no account: "
+      + JSON.stringify({ row: row && row.code, spareMark: rec && rec.spare }));
+
+    /* ---- THE CUSTOMER SIGNS IN, by password and by his sign-in link ---- */
+    const kv = new KV();
+    for (const p of plan.puts) await kv.put(p.key, p.value);
+    await kv.put("roster", JSON.stringify(Object.entries(plan.users).map(([username, code]) => ({ code, username }))));
+    await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+    const TEAM = "maakmal", AUD = "aud-143", KID = "kid-143";
+    const env = { STMT: kv, STMT_MASTER: M, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+    const post = async (path, body) => { const r = await W143.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+      headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env); return { status: r.status, j: await r.json() }; };
+    const opened = async (key, reply) => JSON.parse(await C143.decryptWith(await C143.unwrapKey(key, reply.j.wrap), reply.j.env));
+    const byPw = await post("/open", { u: spare, password: pw });
+    ok(byPw.status === 200 && !!byPw.j.session && (await opened(pw, byPw)).v === 1,
+      "by password: the door lets them in and their own password opens the account: " + byPw.status);
+    const his = await post("/open", { u: spare, password: M, master: M });
+    const ck = await C143.unwrapKey(M, his.j.wrapMaster), tok = S143.newSignin();
+    await S143.mintSignin(env, spare, tok, await C143.wrapKey(tok, ck));
+    const byLink = await post("/open-link", { token: tok });
+    ok(his.status === 200 && byLink.status === 200 && !!byLink.j.session && (await opened(tok, byLink)).v === 1,
+      "by link: his page opens it under the master, mints the one-time link, and the link signs them in: " + byLink.status);
+
+    /* ---- SALT ADMIN: the bound one is an account; the other says it is made at the next laptop update ---- */
+    const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+    globalThis.fetch = async (u) => {
+      if (String(u) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+      throw new Error("the Access gate reached for " + u);
+    };
+    const b64u = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+    const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+    const jwt = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sheetRes = await W143.fetch(new Request("https://k7m3p2.example/all/sheet", { headers: { "cf-access-jwt-assertion": jwt } }), env);
+    const sheetJ = await sheetRes.json();
+    const wlk = sheetJ.accounts.find((a) => a.code === "CZ9-WLK"), ltr = sheetJ.accounts.find((a) => a.code === "CZ9-LTR");
+    ok(sheetRes.status === 200 && wlk && wlk.account === true && ltr && ltr.account === false && sheetJ.stranger === "Silver",
+      "his list has the walk-in's account, the other code with none, and the stranger's level off the book's names: "
+      + JSON.stringify({ wlk: wlk && wlk.account, ltr: ltr && ltr.account, stranger: sheetJ.stranger }));
+    const { landingPage: lp143 } = await import("../stmt/page.js");
+    const { JSDOM: JD143 } = await import("jsdom");
+    const dom = new JD143(lp143("", "n143", { master: M, accounts: JSON.parse(await kv.get("roster")) }), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true });
+    const Wd = dom.window, D = Wd.document;
+    Wd.fetch = async (path) => (String(path) === "/all/sheet" ? { ok: true, status: 200, json: async () => sheetJ } : { ok: false, status: 404, json: async () => ({ ok: false, error: "no" }) });
+    try {
+      D.querySelector('button[data-m="review"]').dispatchEvent(new Wd.Event("click", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 60));
+      const rows = [...D.querySelectorAll("#rlist button")].map((b) => b.textContent);
+      const ltrRow = rows.find((t) => t.startsWith("CZ9-LTR")) || "", wlkRow = rows.find((t) => t.startsWith("CZ9-WLK")) || "";
+      ok(ltrRow.includes("Made at the next laptop update. Until then, show the Silver link.") && !!wlkRow && !wlkRow.includes("laptop update"),
+        "Salt Admin says the waiting one is made at the next laptop update, and to show the Silver link until then; the bound one does not: "
+        + JSON.stringify({ ltrRow, wlkRow }));
+    } finally { try { Wd.close(); } catch (e) { /* best effort */ } }
+  } finally {
+    globalThis.fetch = realFetch143;
+    if (was143 === undefined) delete process.env.STMT_MASTER; else process.env.STMT_MASTER = was143;
+    rmSync(root, { recursive: true, force: true });
+    rmSync(fold, { recursive: true, force: true });
   }
 })();
 section("v707: an ID with no account cannot sign in, and now something mints one and something says so");

@@ -639,7 +639,11 @@ async function ownerSheet(env, origin) {
       sent: sent ? sent.at || null : null
     });
   }
-  return { ok: true, at: sheet ? sheet.at || null : null, issue, month, accounts: out };
+  /* D15: the level a stranger is quoted, the ladder's last, so the card of an ID still waiting for its
+     account can say which standing link to show. Named by the book through the publish, never here. */
+  const names = await env.STMT.get("tiers", "json");
+  const stranger = Array.isArray(names) && names.length ? String(names[names.length - 1]) : null;
+  return { ok: true, at: sheet ? sheet.at || null : null, issue, month, accounts: out, stranger };
 }
 
 /* A TICK IS THE SITE'S, NOT ONE BROWSER'S (v688). The laptop sheet keeps its ticks in that

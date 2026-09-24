@@ -86,6 +86,12 @@ no count. The site's door answers a spare with its one refusal, his master inclu
 a record. Each is sealed as an account is, around an empty bundle, its password under the master as
 `pwMaster` and in the clear under its USERNAME in `_passwords.json`, a spare having no code yet.
 `tools/update.mjs` warns with that line when fewer than three are free.
+**The fold binds them, never Salt Admin**: at Add ID a registration takes the next free spare as its
+username (`registerAccounts` in `tools/fold.mjs`, one line in `_users.json`, no key needed), and the
+publish in the same run seals the live statement and price list into it, so a walk-in signs in within
+the fold's few minutes. With none free the fold mints a bare username as before; Salt Admin then reads
+"Made at the next laptop update. Until then, show the Silver link." (the level is the ladder's last,
+from `tiers`), and `update.mjs` mints the account.
 
 One per customer with anything to show, named by code so the folder sorts alphabetically, plus
 a review sheet stitching every account together. **The review sheet is not for sending.** It puts
