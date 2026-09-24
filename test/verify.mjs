@@ -12786,6 +12786,55 @@ await (async () => {
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w46.close(); } catch (e) { /* best effort */ } }
 })();
 
+section("S4 4.1: the publish seals a digest of each price list's figures, inside the list and in the clear beside it, and the clock never moves it");
+await (async () => {
+  /* The judges' must-not-ship: a stamp read from prices.at, which the hourly publish moves, so every order placed across
+     the hour would read as a moved price. The stamp is a digest of the figures alone, keyed per account. Each assertion
+     below was proved red by its own mutation. */
+  const { mkdirSync: mk41, writeFileSync: wf41, rmSync: rm41 } = await import("node:fs");
+  const { liveRecords: lr41 } = await import("../tools/make_statements.mjs");
+  const C41 = await import("../tools/stmt-crypto.mjs");
+  const cost41 = { repl: 50, freightRate: 0, shrinkRate: 0, avgDel: { n: 0, mean: 0 }, attrib: {},
+    costBasis: { txnPerDelivery: { rm: 0 }, freightPerTrip: { rm: 0 }, deliveredShare: { v: 0 } } };
+  const pricing41 = (p2) => ({ sizes: [1, 2], tierNames: ["Ambassador", "Titanium", "Silver"],
+    tierOf: { "CX0-DGA": { salt: "Silver" }, "CX0-DGB": { salt: "Silver" } },
+    byProduct: { salt: { sizes: [1, 2], inputs: { cost: cost41, policy: {} }, ladder: [{ q: 1, prices: [80, 90, 100] }, { q: 2, prices: [150, 170, p2] }] } } });
+  const users41 = { "CX0-DGA": "abcd-efgh", "CX0-DGB": "hjkm-npqr" };
+  const tmp41 = join(REPO, "test", "tmp", "s4-digest-" + Date.now());
+  try {
+    mk41(join(tmp41, "2026-09", "_kv"), { recursive: true });
+    wf41(join(tmp41, "_users.json"), JSON.stringify(users41));
+    const ck41 = {};
+    for (const u of Object.values(users41)) {
+      ck41[u] = await C41.contentKey("test-secret", u);
+      wf41(join(tmp41, "2026-09", "_kv", u + ".json"), JSON.stringify({ u, issued: "2026-09-01", issues: ["2026-09-01"],
+        verifier: await C41.makeVerifier("fixture-pass-41"), wrap: await C41.wrapKey("fixture-pass-41", ck41[u]),
+        env: await C41.encryptWith(ck41[u], JSON.stringify({ statements: [] })) }));
+    }
+    /* one publish: each account's clear stamp, its `at`, and the list as the customer opens it */
+    const strike41 = async (at, p2) => {
+      const lr = await lr41(tmp41, "test-secret", new Date(at), pricing41(p2)), out = {};
+      for (const rec of lr.records) out[rec.u] = { clear: rec.prices && rec.prices.digest, at: rec.prices && rec.prices.at,
+        sealed: JSON.parse(await C41.decryptWith(ck41[rec.u], rec.prices)) };
+      return out;
+    };
+    const now41 = await strike41("2026-09-24T02:00:00Z", 190), hour41 = await strike41("2026-09-24T03:00:00Z", 190),
+      week41 = await strike41("2026-10-01T02:00:00Z", 190), moved41 = await strike41("2026-09-24T03:00:00Z", 200);
+    const A41 = now41["abcd-efgh"], B41 = now41["hjkm-npqr"], figs41 = (x) => JSON.stringify(x.sealed.products.map((p) => [p.product, p.sizes]));
+    ok(/^[0-9a-f]{64}$/.test(A41.clear || "") && A41.sealed.digest === A41.clear && A41.sealed.products.length === 1 && A41.sealed.products[0].sizes.length === 2,
+      "the record carries the list's stamp in the clear, and the sealed list carries the same stamp: " + JSON.stringify([A41.clear, A41.sealed.digest]));
+    ok(hour41["abcd-efgh"].at !== A41.at && week41["abcd-efgh"].sealed.week.monday !== A41.sealed.week.monday
+      && figs41(hour41["abcd-efgh"]) === figs41(A41) && figs41(week41["abcd-efgh"]) === figs41(A41)
+      && hour41["abcd-efgh"].clear === A41.clear && week41["abcd-efgh"].clear === A41.clear,
+      "the next hour's publish and the next week's strike the same figures, and the stamp does not move with the clock: "
+        + JSON.stringify([A41.clear, hour41["abcd-efgh"].clear, week41["abcd-efgh"].clear]));
+    ok(figs41(moved41["abcd-efgh"]) !== figs41(A41) && moved41["abcd-efgh"].clear !== A41.clear && moved41["abcd-efgh"].sealed.digest === moved41["abcd-efgh"].clear,
+      "one price moved and the stamp moves with it: " + figs41(A41) + " to " + figs41(moved41["abcd-efgh"]));
+    ok(figs41(A41) === figs41(B41) && JSON.stringify(A41.sealed.products) === JSON.stringify(B41.sealed.products) && A41.clear !== B41.clear,
+      "two accounts quoted the same figures carry different stamps, so a copy of the store cannot tell which share a list");
+  } finally { rm41(tmp41, { recursive: true, force: true }); }
+})();
+
 section("v651: a customer's price is their tier for each product, and a product with no tier reads price coming soon and cannot be ordered");
 await (async () => {
   /* HIS DECISIONS OF 15 SEP 2026. The tier for the product is a ceiling: its price at each size, held or proposed, lowered by
