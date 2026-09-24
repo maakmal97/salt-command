@@ -51,7 +51,7 @@ import { FONTS } from "./fonts.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
-import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, markChased, chaseSlot, readsBoth, checkStores } from "./orders.js";
+import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, markChased, chaseSlot, readsBoth, checkStores, claimAccount, claimsOf, claimView, allClaims, deskClaim, CLAIM_ID_RE } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -329,8 +329,16 @@ async function handleCustomer(request, env, p, m) {
     return json({ ok: true, u, issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc,
       card: acct.card || null, env: acct.env, live: acct.live || null, prices: acct.prices || null });
   }
+  /* S6 6.6: their word that they sent a figure against the account, for money owed on rows he entered on the desk.
+     /claims is the same road under the name the page first asked for. */
+  if (p === "/account/claim" || p === "/claims") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const r = await claimAccount(env, u, await readJson(request));
+    return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, claim: claimView(r.claim) });
+  }
   if (p === "/orders") {
-    if (m === "GET") return json({ ok: true, orders: (await ordersOf(env, u)).map(customerView) });
+    /* S6 6.6: and their claims against the account beside the orders */
+    if (m === "GET") return json({ ok: true, orders: (await ordersOf(env, u)).map(customerView), claims: (await claimsOf(env, u)).map(claimView) });
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const r = await placeOrder(env, u, await readJson(request));
     return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, order: customerView(r.order) });
@@ -625,6 +633,20 @@ async function handleDesk(request, env, p, m) {
     if (q.get("work") === "1") return json({ ok: true, orders: await ordersOwing(env) });
     return json({ ok: true, orders: await allOrders(env, q.get("all") === "1") });
   }
+  /* S6 6.6: the claims against accounts, waiting (or all with ?all=1), for the desk's card; never an order */
+  if (p === "/desk/claims") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    return json({ ok: true, claims: await allClaims(env, new URL(request.url).searchParams.get("all") === "1") });
+  }
+  /* S6 11.14 and 11.15: his Received or Not found on one of them */
+  const cm = /^\/desk\/claims\/([^/]+)\/([^/]+)$/.exec(p);
+  if (cm) {
+    const u = normUser(cm[1]);
+    if (!u || !CLAIM_ID_RE.test(cm[2])) return notFound();
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const r = await deskClaim(env, u, cm[2], await readJson(request));
+    return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, claim: r.claim, push: r.push });
+  }
   /* the moment of the newest placement, one read: the desk asks this every minute (16 Sep 2026),
      and since v694 the moment of the newest change of any kind beside it, so the reconcile lists
      nothing on a quiet minute */
@@ -862,7 +884,7 @@ async function makeTest(env) {
 }
 async function unmakeTest(env) {
   const gone = [TEST_REC, "seen:" + TEST_USER];
-  for (const pre of ["order:" + TEST_USER + ":", "push:" + TEST_USER + ":", "sent:", devPrefix(TEST_USER)]) {
+  for (const pre of ["order:" + TEST_USER + ":", "aclaim:" + TEST_USER + ":", "push:" + TEST_USER + ":", "sent:", devPrefix(TEST_USER)]) {   /* S6: and its claims */
     let cursor;
     do {
       const page = await env.STMT.list({ prefix: pre, cursor });
@@ -1150,7 +1172,7 @@ export default {
         const acct = await env.STMT.get("u:" + u, "json");
         if (!acct) return notFound();
         const refs = acct.assoc === true ? (await refsBy(env, u)).map((r) => mineOut(url.origin, r)) : [];
-        return json({ ok: true, orders: await ordersOf(env, u), refs, max: MAX_PER_ASSOC });
+        return json({ ok: true, orders: await ordersOf(env, u), claims: (await claimsOf(env, u)).map(claimView), refs, max: MAX_PER_ASSOC });   /* S6 6.6 */
       }
       /* the associates' report card, written by the publish and read only here (v691) */
       if (p === "/all/assoc") {
@@ -1258,10 +1280,11 @@ export default {
     }
     /* S3 3.9: the hand-over, minted on a session and opened by its key or its code */
     if (p === "/handover" || p === "/handover/open") return handleHandover(request, env, p, m);
-    if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account") return handleCustomer(request, env, p, m);
+    if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account"
+      || p === "/account/claim" || p === "/claims") return handleCustomer(request, env, p, m);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
-    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin") return handleDesk(request, env, p, m);
+    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/claims" || p.startsWith("/desk/claims/")) return handleDesk(request, env, p, m);
     /* the notice, in the clear, for the page's poll; anything past it is still the site's 404 */
     if (p === "/bulletin") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);

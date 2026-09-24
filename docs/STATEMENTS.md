@@ -549,8 +549,8 @@ finds the row; built on the associate's own code they would all miss it. The sit
 here, holding no roster and knowing no codes: it records the claim and the desk decides, exactly as
 it does with the quoted total. An associate with no bucket on the roster is refused by the drafter.
 
-**MONEY AND GOODS ARE TWO TRACKS** (v694). `paid` and `payments[]` are what the customer says they
-have paid, `moved` and `movedOn` what he says he handed over, and either may lead. Payment is offered
+**MONEY AND GOODS ARE TWO TRACKS** (v694). `payments[]` is what the customer says they
+sent and `paid` what he has received (S6), `moved` and `movedOn` what he says he handed over, and either may lead. Payment is offered
 **from the acknowledgement**, in **one pay sheet for every Pay** (To pay now, an order, the held page;
 S6 6.4, his D8 as amended): the figure and what it is for, All or Part, then two ways, Transfer or Scan
 a code, **with no account chosen for them**: they choose which of his accounts to pay into from those
@@ -565,8 +565,27 @@ number, payload or reference shipped. **`payHref` in it is the one link builder*
 username as the reference, and "" for anything QR Command would not open. It reads only `PAY_SITE`
 and `PAY`, the names `CLIENT_JS` declares, so the page carries `payHref.toString()` as it is. The suite reads the link
 back through QR Command's own `linkOf`, so a format change ships there first. **The customer types
-what they paid** (the site takes no money and no rail tells it anything), part payments accumulate, and more than what is outstanding is
-refused. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
+what they sent, and it is a CLAIM** (S6 6.5, his D7; the site takes no money and no rail tells it anything): an entry on
+`payments[]` with `claim: "waiting"`, summed as `claimed`, never `paid`, until his Received (a `verdict` event naming the
+claim by its moment) makes it paid. Claims accumulate; together with what is paid they may not pass what is owed; a claim
+in cash is refused, cash being his to record. Each claim is queued as its own Fulfilment, flagged `claim` and stamped with the
+claim's moment (`claimsToQueue`, `claimEntry`), and Approve neither approves nor rejects it: it is answered on its card.
+**A claim against the ACCOUNT** (S6 6.6) is for money owed on rows he entered on the desk, which have no order to claim
+on: `POST /account/claim` (or `/claims`) `{amount, method, account, rid}` on their session, its own record and never an
+order (`acl` in the order book, `aclaim:<username>:<id>` on KV, written behind and moved in as an order is, id `a` and the
+moment), riding beside the orders on their `GET /orders` as `claims` (`claimView`: `state`, and `claim` holding the same
+word) and on the desk's as its own list (`GET /desk/claims`). A waiting one pauses the chase on every order of theirs.
+**His answer reaches them** (S6 11.14): Received wakes them "Payment received" (or complete); **Not found** files the
+claim's row rejected as `notfound` FIRST, under the id it has or will have, and drops it from every queue, then the site
+takes it as ONE event of the order book: the claim leaves `claimed` and its entry's name leaves the claim together, paid
+never having moved, and the wake says "Payment not found yet" (`notfound` in `NEWS`). **On the kv road Not found is
+refused** (`NOT_FOUND_ON_KV`), a figure that falls never being a read-modify-write. A claim not found is never offered again,
+and a Received on a claim whose row was filed not found is refused. **A claim against the account is received row by
+row** (S6 11.15, D6): the desk Worker drafts the engine's oldest-first allocation (`claimAlloc`: their rows and their
+bucket's with goods out and money owed, by date, each to what it owes) as one Fulfilment a row, against the mirror and
+stored nowhere (`POST /claims/<id>/preview`); the card draws it, and Received sends the digest of the rows drawn, which the
+Worker approves only if the rows still stand, each with a yes of its own spent by the drafter (`madeBy` reads `claimId`),
+then tells the site. More than the rows owe is never a tap. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
 order, the one being paid included: settling that at the door is how one advance becomes two. It is an
 order sheet's third way (S6 6.8), never To pay now's, shown dashed with that reason where withheld;
 choosing it sends no figure, because he records the cash when he takes it. The quote is the customer's claim
@@ -677,10 +696,7 @@ groups them by CUSTOMER, and leaves out an order inside its day's grace or with 
 and the code decides, so every other tick returns before it lists anything. **From the day after the
 handover** (`graceOver`): `movedOn`, the Kuala Lumpur day of the last handover, must be before today,
 so a customer paying cash at the counter is not asked again that evening; an order with no `movedOn`
-is not chased. **Paused while a claim waits** (`claimWaits`): what they say they sent (`payments`)
-above what the order counts as `paid`. Today none waits, their "I have paid" raising `paid` on
-their word, so this is where stage 6's claim plugs in; a Not found that lowers `paid` must take its
-claim out with it. **Stopped** when what was received is paid, which is `isAdvance` going false,
+is not chased. **Paused while a claim waits** (`claimWaits`): a claim of theirs he has not answered (S6). **Stopped** when what was received is paid, which is `isAdvance` going false,
 his cash included once the return leg (v764) carries it to the order, and stage 11's Cash received when it lands.
 
 **How often.** One wake a slot per customer, not per order: two unpaid advances are one person's
