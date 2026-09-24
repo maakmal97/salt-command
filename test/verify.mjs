@@ -13966,6 +13966,24 @@ await (async () => {
       "and a tap on Restore opens it again: " + JSON.stringify({ revoked: (await stored()).revoked, msg: D.getElementById("rmsg").textContent }));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S1 1.10: Salt Admin is named Salt Admin and its manifest is fetched with credentials; the customer's page is unchanged");
+await (async () => {
+  /* 24 SEP 2026 (H10): a manifest link without crossorigin is fetched with no cookies, so behind Access
+     his own manifest was refused and the phone saved /all with no name; and the page's two titles said
+     Salt Counter while the manifest says Salt Admin. His route only: the customer's page keeps both. */
+  const { landingPage } = await import("../stmt/page.js");
+  const own = landingPage("", "n110", { master: "mp110", accounts: [] });
+  const cust = landingPage("aaaa-bbbb", "n110", null);
+  const tags = (html) => ({ manifest: (/<link rel="manifest"[^>]*>/.exec(html) || [""])[0],
+    title: (/<title>([^<]*)<\/title>/.exec(html) || [])[1], apple: (/<meta name="apple-mobile-web-app-title" content="([^"]*)">/.exec(html) || [])[1] });
+  const o = tags(own), c = tags(cust);
+  ok(o.manifest === '<link rel="manifest" href="/all/manifest.webmanifest" crossorigin="use-credentials">',
+    "his page asks for its manifest with credentials, so the Access cookie goes with it: " + o.manifest);
+  ok(o.title === "Salt Admin" && o.apple === "Salt Admin", "his page is Salt Admin in the tab and on the iPhone: " + JSON.stringify(o));
+  ok(c.manifest === '<link rel="manifest" href="/manifest.webmanifest">' && c.title === "Salt Counter" && c.apple === "Salt Counter"
+    && !/crossorigin|Salt Admin/.test(cust),
+    "and the customer's page is unchanged: Salt Counter, its public manifest, no credentials asked: " + JSON.stringify(c));
+})();
 section("v687: the master account opens on its own page, and the owner's script travels only there");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: a master account that opens on what it can do. /all is that account,
@@ -16921,8 +16939,8 @@ await (async () => {
     /* ---- the page links the right one on each road ---- */
     const ownerPage = await (await get("/all", true)).text();
     const custPage = await (await get("/")).text();
-    ok(/<link rel="manifest" href="\/all\/manifest\.webmanifest">/.test(ownerPage),
-      "his page links his manifest");
+    ok(/<link rel="manifest" href="\/all\/manifest\.webmanifest" crossorigin="use-credentials">/.test(ownerPage),
+      "his page links his manifest, fetched with his Access cookie (24 Sep 2026)");
     ok(/<link rel="manifest" href="\/manifest\.webmanifest">/.test(custPage) && !/\/all\//.test(custPage),
       "and a customer's page links the customer's and says nothing of the prefix at all");
   } finally { globalThis.fetch = realFetch; }

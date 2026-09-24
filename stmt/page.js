@@ -390,14 +390,19 @@ export function landingPage(user, nonce, owner, bulletin) {
        the root opens at the root however he saved it: saving from /all would have given him the
        customer door under another name. His own page therefore links its own manifest, which lives
        behind Access with the rest of the prefix and opens where he saved it from. */
-    + '<link rel="manifest" href="' + (owner ? "/all/manifest.webmanifest" : "/manifest.webmanifest") + '">'
+    /* 24 SEP 2026: A MANIFEST IS FETCHED WITHOUT COOKIES unless the link asks for them, so behind
+       Access his own came back refused and the phone saved a page with no name. use-credentials on
+       his route alone; the customer's manifest is public and its link is left as it was. */
+    + (owner ? '<link rel="manifest" href="/all/manifest.webmanifest" crossorigin="use-credentials">'
+      : '<link rel="manifest" href="/manifest.webmanifest">')
     + '<link rel="apple-touch-icon" href="/icon.png">'
     + '<meta name="theme-color" content="#05080a">'
     + '<meta name="apple-mobile-web-app-capable" content="yes">'
     + '<meta name="mobile-web-app-capable" content="yes">'
     + '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'
-    + '<meta name="apple-mobile-web-app-title" content="Salt Counter">'
-    + "<title>Salt Counter</title>"
+    /* his page is Salt Admin, as its manifest says; the customer's is Salt Counter */
+    + '<meta name="apple-mobile-web-app-title" content="' + (owner ? "Salt Admin" : "Salt Counter") + '">'
+    + "<title>" + (owner ? "Salt Admin" : "Salt Counter") + "</title>"
     + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
     + bulletinBand(bulletin)
     + (owner
