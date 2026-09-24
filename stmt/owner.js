@@ -581,14 +581,16 @@ export const OWNER_JS = `
      site's tick both his devices read, before the next turn opens. Skip leaves one unticked. The run is state
      the card is drawn from, so a redraw of Needs you in the middle of it loses nothing. */
   var turn=null;
-  function turnStep(){
+  /* S9 fix: a note carried from the turn before (a share whose tick did not save) is drawn on the next turn's
+     card; it was cleared here before anything drew it */
+  function turnStep(note){
     var t=turn; if(!t) return;
-    t.j=null; t.why='';
+    t.j=null; t.why=note||'';
     drawNeeds();
     if(t.i>=t.rows.length) return;
     var at=t.i;
     mintLink(t.rows[at]).then(function(j){ if(turn===t&&t.i===at){ t.j=j; drawNeeds(); } },
-      function(e){ if(turn===t&&t.i===at){ t.why='Could not make their link: '+e.message; drawNeeds(); } });
+      function(e){ if(turn===t&&t.i===at){ t.why=(t.why?t.why+' ':'')+'Could not make their link: '+e.message; drawNeeds(); } });
   }
   /* S9 fix: ONE SHARE AT A TIME. The tick is awaited after the share, and a second tap in that window shared the
      same link again and stepped twice, so the next account was never shared or ticked and the end said all were
@@ -599,9 +601,10 @@ export const OWNER_JS = `
     t.busy=true; drawNeeds();
     try{ if(navigator.share) await navigator.share({text:t.j.msg}); else await navigator.clipboard.writeText(t.j.msg); }
     catch(e){ t.busy=false; t.why='Not shared. Tap Share again, or Skip.'; drawNeeds(); return; }
+    var note='';
     try{ var r=await refs('/all/sent/'+a.username, {issue:sheetIssue, sent:true}); a.sent=r.sent; t.sent.push(a.username); }
-    catch(e){ t.why='Shared, but the tick did not save: '+e.message; }
-    t.busy=false; t.i++; countSent(); drawRoster(); turnStep();
+    catch(e){ note=(a.code||a.username)+' was shared, but the tick did not save: '+e.message; }
+    t.busy=false; t.i++; countSent(); drawRoster(); turnStep(note);
   }
   function turnCard(){
     var t=turn, n=t.rows.length, fin=t.i>=n, a=t.rows[t.i];
