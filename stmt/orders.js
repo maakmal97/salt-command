@@ -135,6 +135,11 @@ const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
 export const BOOK_NAME = "site";
 export const onBook = (env) => !!(env && env.ORDERBOOK) && /^object/.test(String(env.ORDER_STORE || ""));
 export const readsBoth = (env) => onBook(env) && env.ORDER_STORE === "object+kv";
+/* THE KV ROAD'S MARK (S10 fix DS1): the moment it last wrote an order while the book is bound, that is after a
+   flip back to "kv". The book moves in again when it finds one later than its own move-in, so coming back with
+   ORDER_MOVE_IN left as it was cannot serve, or write behind, an older order than KV holds. */
+export const ROAD_KEY = "orderbook:road";
+const markRoad = (env) => (env.ORDERBOOK && !onBook(env) ? putSoft(env, ROAD_KEY, new Date().toISOString()) : null);
 /* the words while the book is moving in (stmt/orderbook.js): a minute, once, at the deploy that moves it */
 export const FROZEN = "Orders are being moved and are paused for a minute. Try again in a minute.";
 /* the object's own words for a store it cannot reach, and nothing else: a move is never answered as
@@ -637,6 +642,7 @@ export async function orderMarks(env) {
 /** Every order of one account gone from the book (his test account, unmade). The KV road's keys are the caller's. */
 export async function dropOrders(env, u) {
   if (onBook(env)) return (await book(env, "drop", { u })).dropped || 0;
+  await markRoad(env);
   return 0;
 }
 
@@ -652,6 +658,7 @@ export async function placeOrder(env, u, body) {
   if (d.error) return { error: d.error };
   const { order } = applyEvent(null, d.ev);
   await env.STMT.put(OKEY(u, order.id), JSON.stringify(order));
+  await markRoad(env);
   await fileRid(env, u, rid, order.id);
   for (const [k, v] of marksOf(d.ev, order)) await putSoft(env, k, v);
   return { order };
@@ -677,6 +684,7 @@ export async function customerMove(env, u, id, action, body) {
   if (d.error) return d;
   const { done } = applyEvent(order, d.ev);
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
+  await markRoad(env);
   await fileRid(env, u, rid, id);
   /* v751: and a mark the desk's own nudge can read, so a line waits for him rather than for a poll;
      v760: money in, or the order taken back, both things he has to act on and neither in front of him */
@@ -733,6 +741,7 @@ export async function deskMove(env, u, id, body) {
   if (d.none) return { order };
   const { done } = applyEvent(order, d.ev);
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
+  await markRoad(env);
   for (const [k, v] of marksOf(d.ev, order)) await putSoft(env, k, v);
   if (!wakes(d.ev, done)) return { order };
   const push = await wakeCustomer(env, u);

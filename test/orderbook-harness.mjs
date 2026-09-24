@@ -46,6 +46,7 @@ export function orderBook(env, opts) {
   if (!opts || opts.movedIn !== false) {
     new OrderBook(state, env);
     state.db.prepare("INSERT OR REPLACE INTO meta (k, v) VALUES ('movein:done', ?)").run(String(env.ORDER_MOVE_IN || "1"));
+    state.db.prepare("INSERT OR REPLACE INTO meta (k, v) VALUES ('movein:at', ?)").run(new Date().toISOString());
   }
   const h = { book: new OrderBook(state, env), state, db: state.db, names: [] };
   let calls = 0;

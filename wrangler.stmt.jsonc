@@ -79,7 +79,8 @@
 		// stops the KV writes, and deleting the old keys is a fold of its own.
 		"ORDER_STORE": "object+kv",
 		// The move-in's generation: a one-minute freeze and a copy of every KV order, once per value. Raise
-		// it by one only to come back from "kv", when KV has taken moves the object has not.
+		// it by one only to come back from "kv", when KV has taken moves the object has not; forgotten, the
+		// KV road's mark (orderbook:road) moves the book in again on its first request.
 		"ORDER_MOVE_IN": "1"
 	},
 	// THE HOURLY CHASE (v700, his instruction of 18 Sep 2026): "the customer will be notified every

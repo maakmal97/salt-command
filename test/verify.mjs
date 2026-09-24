@@ -20451,6 +20451,88 @@ await (async () => {
   } finally { clock.uninstall(); console.log = realLog; }
 })();
 
+section("S10 fix DS1: coming back from the kv road with ORDER_MOVE_IN left as it was, the book moves in again before it answers, and keeps its own order where KV is behind it");
+await (async () => {
+  /* A rollback is ORDER_STORE "kv", and the way back was ORDER_MOVE_IN raised by one, a step written in three places and
+     in none that every session loads. Forgotten, the book answered with the order as it stood before the rollback and
+     its hourly check wrote that over every order the KV road had changed (review of 24 Sep 2026, DS1). Now the KV road
+     marks orderbook:road whenever it writes an order with the book bound, and a book finding a mark later than its own
+     move-in moves in again. KV is test/kvsim.mjs: the book at SIN, the Workers at KUL; every username is invented. */
+  const SIM = await import("../test/kvsim.mjs");
+  const H = await import("../test/orderbook-harness.mjs");
+  const SW = (await import("../stmt/worker.js")).default;
+  const O = await import("../stmt/orders.js");
+  const { World, clock } = SIM;
+  const T0 = Date.UTC(2026, 8, 24, 2, 0, 0), u1 = "c3d4-f5g6", W = new World();
+  const call = async (e, tok, path, body) => {
+    const h = tok === "desk" ? { "X-Stmt-Desk": "desk-key" } : { "X-Stmt-Session": tok };
+    const r = await SW.fetch(new Request("https://k7m3p2.example" + path, body === undefined ? { headers: h }
+      : { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(body) }), e);
+    return { status: r.status, b: await r.json() };
+  };
+  const place = { product: "salt", qty: 2, mode: "collect", unit: 110, total: 220, week: "" };
+  const logs = [], realLog = console.log;
+  clock.install(); console.log = (...x) => { const l = x.join(" "); if (/^(orders?(book)?|chase)[: ]/.test(l)) logs.push(l); else realLog(...x); };
+  try {
+    clock.set(T0);
+    /* the book's KV, which can be made to refuse one order's writes, as KV refuses a write inside a second */
+    let refuse = null;
+    const sin = W.at("SIN"), objKv = { get: (k, t) => sin.get(k, t), list: (o) => sin.list(o), delete: (k) => sin.delete(k),
+      put: async (k, v, o) => { if (k === refuse) throw new Error("KV PUT failed: 429 Too Many Requests"); return sin.put(k, v, o); } };
+    const bk = H.orderBook({ STMT: objKv, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" });
+    const env = { STMT: W.at("KUL"), STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" };
+    const kvRoad = Object.assign({}, env, { ORDER_STORE: "kv" });
+    const advance = async (ms) => {
+      const target = clock.now() + ms;
+      while (bk.state.alarmAt() != null && bk.state.alarmAt() <= target) { clock.set(Math.max(clock.now(), bk.state.alarmAt())); await bk.fire(); }
+      if (clock.now() < target) clock.set(target);
+    };
+    const kvOf = (id) => W.raw("order:" + u1 + ":" + id), bookOf = (id) => JSON.parse(bk.db.prepare("SELECT doc FROM ord WHERE u = ? AND oid = ?").get(u1, id).doc);
+    W.rateLimit = false; const tok = await O.mintSession(env, u1); W.rateLimit = true;
+    /* ---- the week of reading both: A agreed with a rail chosen, B placed, both written behind ---- */
+    const a = (await call(env, tok, "/orders", place)).b.order.id;
+    await advance(5000); await call(env, "desk", "/desk/orders/" + u1 + "/" + a, { status: "acknowledged" });
+    await advance(5000); await call(env, tok, "/orders/" + a + "/method", { method: "tngbiz", rid: "p5".repeat(16) });
+    await advance(5000);
+    const b = (await call(env, tok, "/orders", Object.assign({ rid: "q6".repeat(16) }, place))).b.order.id;
+    await advance(5000);
+    /* his line on B, its write behind refused until after the flip back */
+    refuse = "order:" + u1 + ":" + b;
+    await call(env, "desk", "/desk/orders/" + u1 + "/" + b, { message: "on its way" });
+    await advance(5000);
+
+    /* ---- the rollback: the KV road takes a payment and a line on A ---- */
+    clock.set(T0 + 3600000);
+    const paid = await call(kvRoad, tok, "/orders/" + a + "/pay", { amount: 120 });
+    await advance(5000);
+    await call(kvRoad, tok, "/orders/" + a + "/say", { text: "Paid RM 120 by TNG" });
+    const mark = W.store.get(O.ROAD_KEY);
+
+    /* ---- back to object+kv with ORDER_MOVE_IN still "1": a deploy, so the object starts afresh ---- */
+    clock.set(T0 + 7200000);
+    refuse = null;
+    bk.restart();
+    const page = (await call(env, tok, "/orders")).b.orders.find((o) => o.id === a);
+    const tooSoon = await call(env, tok, "/orders/" + a + "/say", { text: "hello?", rid: "r7".repeat(16) });
+    ok(paid.status === 200 && !!mark && !!page && page.paid === 120 && page.msgs.length === 1 && tooSoon.status === 503 && tooSoon.b.error === O.FROZEN,
+      "the KV road marks what it wrote, and the first request back moves the book in again, so the page reads the RM 120 and the line: "
+      + JSON.stringify({ mark: !!mark, paid: page && page.paid, lines: page && page.msgs.length, move: tooSoon.status }));
+    await advance(70000);
+    const done = (bk.db.prepare("SELECT v FROM meta WHERE k = 'movein:done'").get() || {}).v;
+    ok(done === "1@" + mark && bookOf(a).paid === 120 && kvOf(a).paid === 120 && JSON.stringify(bookOf(b).msgs.map((m) => m.text)) === '["on its way"]'
+      && JSON.stringify(kvOf(b).msgs.map((m) => m.text)) === '["on its way"]',
+      "the round is the generation's own at the mark, A is taken from KV, and B, whose KV record the book had already held, keeps his line and is written behind: "
+      + JSON.stringify({ done, bookB: bookOf(b).msgs.length, kvB: kvOf(b).msgs.length }));
+    clock.set(Date.parse("2026-09-24T05:00:00Z"));
+    const ws = []; await SW.scheduled({ scheduledTime: clock.now() }, env, { waitUntil: (p) => ws.push(p) }); await Promise.all(ws);
+    const c = JSON.parse(W.store.get(O.CHECK_KEY) || "{}");
+    await advance(5000);
+    ok(JSON.stringify(c.repaired) === "[]" && JSON.stringify(c.kvAhead) === "[]" && c.same === 2 && kvOf(a).paid === 120 && kvOf(a).payments.length === 1 && kvOf(a).msgs.length === 1,
+      "and the next hourly check finds the two stores the same, the RM 120 and its line in both: " + JSON.stringify({ repaired: c.repaired, kvAhead: c.kvAhead, same: c.same }));
+    ok((await call(env, tok, "/orders/" + a + "/say", { text: "thanks", rid: "s8".repeat(16) })).status === 200, "and moves are taken again");
+  } finally { clock.uninstall(); console.log = realLog; }
+})();
+
 section("v751: a customer may write a line on an order, at placement and after, and it never reaches a ledger note");
 await (async () => {
   /* his instruction of 20 Sep 2026, and the last part of what he asked at the start of this work:

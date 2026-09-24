@@ -36,7 +36,11 @@
  * pass run twice (the object restarted halfway) appends nothing new. REVERSIBLE: the move-in only reads KV,
  * and this book writes every order it changes to its KV key behind it (below), so setting ORDER_STORE to "kv"
  * is the old road with a current store. Coming back after one is ORDER_MOVE_IN raised by one: the move-in
- * then runs again and takes KV as the truth.
+ * then runs again and takes what the KV road wrote. FORGETTING THAT IS SAFE (S10 fix DS1): every order the
+ * KV road writes while this book is bound marks KV orderbook:road (ROAD_KEY), and a book that finds a mark
+ * later than its own move-in moves in again before it answers, a round of the same generation, `<gen>@<mark>`.
+ * A KV record the book has already held is behind it, not ahead, so a return keeps the book's own and
+ * writes it behind rather than take the older one.
  *
  * WRITTEN BEHIND BY THE BOOK ALONE (S10 fixes R1, P1, DS2). On ORDER_STORE "object+kv" every order a move
  * changes is named in `behind`, and the alarm writes its CURRENT doc to its KV key a second and more later.
@@ -56,8 +60,8 @@
  * sibling file, and nothing under stmt/ imports anything else (the suite checks). It is also what lets the
  * suite drive it in Node, over node:sqlite, whose statements run synchronously exactly as the object's do.
  */
-import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, FROZEN, decidePlace, decideCustomer, decideDesk, applyEvent,
-  marksOf, wakes } from "./orders.js";
+import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, FROZEN, ROAD_KEY, decidePlace, decideCustomer, decideDesk,
+  applyEvent, marksOf, wakes } from "./orders.js";
 
 export { BOOK_NAME };
 const MARKS = { last: LAST_PLACED, touched: LAST_TOUCHED, said: LAST_SAID, theirs: LAST_THEIRS };
@@ -66,6 +70,9 @@ export const FREEZE_MS = 60000;
    served from this location's cache for a minute after THAT read, so an end inside the minute reads the start
    pass's own value back and misses what the old code wrote since */
 export const FREEZE_SPARE_MS = 5000;
+/* how often a moved-in book looks for the KV road's mark: once a minute, and at once in a new instance, which
+   is what a deploy (the flip back included) makes */
+const ROAD_MS = 60000;
 /* a write behind waits past KV's one write a second per key */
 export const BEHIND_MS = 1100;
 /* a KV record as this book would write it, or null */
@@ -88,7 +95,7 @@ export class OrderBook {
     const op = new URL(request.url).pathname.slice(1);
     let a = null;
     try { a = await request.json(); } catch (e) { a = null; }
-    await this.moveIn();
+    await this.moveIn(true);
     if (op === "check") return Response.json(await this.check());
     const out = this.run(op, a && typeof a === "object" ? a : {});
     if (out.ok && out.order && !out.again && !out.none && this.writesKv()) await this.arm();
@@ -96,9 +103,9 @@ export class OrderBook {
   }
   /* the end of the minute, with or without a request to notice it; once moved in, the writes behind */
   async alarm() {
-    await this.moveIn();
+    await this.moveIn(false);
     if (this.frozen()) {
-      const end = +(this.meta("movein:" + this.gen()) || 0);
+      const end = +(this.meta("movein:" + this.want()) || 0);
       if (end) await this.state.storage.setAlarm(end);
       return;
     }
@@ -177,15 +184,28 @@ export class OrderBook {
 
   /* ---- moving in (S10 10.3) ---- */
   gen() { return String((this.env && this.env.ORDER_MOVE_IN) || "1"); }
-  frozen() { return this.meta("movein:done") !== this.gen(); }
-  async moveIn() {
+  /* the round this book is to be moved in for: the generation, or a later round of it the KV road's mark asked for */
+  want() { const w = this.meta("movein:want"), g = this.gen(); return w && w.split("@")[0] === g ? w : g; }
+  frozen() { return this.meta("movein:done") !== this.want(); }
+  async roadCheck() {
+    const kv = this.env && this.env.STMT;
+    if (!kv || (this.roadAt && Date.now() - this.roadAt < ROAD_MS)) return;
+    this.roadAt = Date.now();
+    let road = null;
+    try { road = await kv.get(ROAD_KEY); } catch (e) { return; }
+    if (road && road > (this.meta("movein:at") || "")) this.setMeta("movein:want", this.gen() + "@" + road);
+  }
+  /* a request looks for the KV road's mark first; the alarm does not, so a write behind still retrying after a
+     flip to "kv" never starts a move-in the site is not using */
+  async moveIn(road) {
+    if (road && !this.frozen()) await this.roadCheck();
     if (!this.frozen()) return;
     /* one run at a time: a request arriving while a pass reads KV waits for the same pass */
     if (!this.moving) this.moving = this.movePass().finally(() => { this.moving = null; });
     return this.moving;
   }
   async movePass() {
-    const gen = this.gen(), until = +(this.meta("movein:" + gen) || 0);
+    const gen = this.want(), until = +(this.meta("movein:" + gen) || 0);
     if (!until) {
       const c = await this.copy(gen, "start");
       const end = Date.now() + FREEZE_MS + FREEZE_SPARE_MS;
@@ -195,6 +215,7 @@ export class OrderBook {
     } else if (Date.now() >= until) {
       const c = await this.copy(gen, "end");
       this.setMeta("movein:done", gen);
+      this.setMeta("movein:at", new Date().toISOString());
       console.log("orderbook: moved in, generation " + gen + ": " + JSON.stringify(c));
     }
   }
@@ -221,10 +242,12 @@ export class OrderBook {
     return { orders, took };
   }
   takeIn(o, eid) {
-    const cur = this.order(o.u, o.id);
-    if (cur && JSON.stringify(cur) === JSON.stringify(o)) return false;
+    const cur = this.doc(o.u, o.id), raw = JSON.stringify(o);
+    if (cur === raw) return false;
+    /* KV holds a state this book has held: KV is behind, so the book's stands and is written behind */
+    if (cur != null && this.held(o.u, o.id, raw)) { if (this.writesKv()) this.behind(o.u, o.id); return false; }
     if (this.event(eid)) return false;
-    this.append(eid, o.u, o.id, { kind: "copy", at: new Date().toISOString(), order: o }, cur);
+    this.append(eid, o.u, o.id, { kind: "copy", at: new Date().toISOString(), order: o }, null);
     return true;
   }
 

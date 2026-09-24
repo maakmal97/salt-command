@@ -280,7 +280,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   never `ledgerKey`, `queued` or `sync`. **Every move is an event in the site's one Durable Object**
   (`stmt/orderbook.js`) under a device-minted id, so a retry lands once and no writer erases another's;
   `ORDER_STORE` is the switch (`object+kv` the week of reading both, `kv` the way back, `object` after a
-  clean week of KV `orderbook:check`).
+  clean week of KV `orderbook:check`). **Coming back from `kv`, raise `ORDER_MOVE_IN`**; forgotten, the `kv`
+  road's mark (`orderbook:road`) moves the book in again on its first request.
   Rejecting a draft a site order made is asked first and written onto that order.
 - **A customer writes on an order, and he answers**: one `msgs[]` thread per order, on any order at
   any stage; theirs capped, his uncapped. **It never rides into a ledger note.** His answer is
