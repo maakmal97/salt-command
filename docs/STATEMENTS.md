@@ -288,8 +288,8 @@ for oil. `PSYM` in `stmt/page.js` holds both paths and `psymSvg` draws one; the 
 the table through `__PSYM__` and draws its own with `createElementNS`, so nothing is loaded and the
 mark takes the ink it sits in (on a brass button it is the button's own, or a brass cube on brass is
 no cube at all). A product with no mark of its own draws the **ring** rather than nothing. The order
-form's product dropdown became a **segment of marks**, because an `<option>` carries text and no
-drawing. A control holding only a mark is named by its **shape** (`PSHAPE`: Cube, Droplet, Ring) and
+form's product dropdown became a **segment of marks** (pressed ghosts in the order sheet since S4), because
+an `<option>` carries text and no drawing. A control holding only a mark is named by its **shape** (`PSHAPE`: Cube, Droplet, Ring) and
 never by its product, so a screen reader is told what is drawn rather than what it is.
 
 **The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title and the
@@ -337,7 +337,7 @@ tier held on the book or proposed from what they pay for it, never above that ra
 rounded DOWN to the ten and never up (v660), and lifted only to clear the floor: the engine's
 `cardPrice`, which the desk's printed board calls too, and the suite holds the two equal. The v510 draw toward the ask retired
 with it. **A product with no tier, held or proposed, is not priced**: the list carries it in `soon`,
-the page says its price is coming soon, and the order form does not offer it. One
+the page says its price is coming soon, and the order sheet does not offer it. One
 price per size, for the goods (v502): delivery is not on the list. It is a figure
 he types **when he acknowledges the order** (v694; it was at ready until then, and the order becomes
 a row at the acknowledgement, so the charge has to be settled there), the customer sees goods plus
@@ -360,6 +360,13 @@ locks), and the order routes take that and nothing else. The states: placed (the
 acknowledged (the owner: agreed, the delivery charge set, and the row queued), ready to collect or
 deliver (the owner), done (**neither side's tap**: what the record reads once both tracks are
 complete), declined (the owner), cancelled (either side, at any stage until the goods move).
+
+**THE ORDER IS A SHEET** (S4 4.3, his "all recommended" of 24 Sep 2026). New order lays the system's Sheet
+over the page: the product as its mark, the sizes as Option tiles with their prices, the size they order
+most tagged *your usual* (read off their own orders on the page), the way and the place as last time, a
+folded note, and the total with Review in the foot. **Review freezes one copy of the order** with its
+request id: the check draws that copy and Place sends it, and while the check is open the sheet holds no
+field, so nothing typed can reach the order unseen. Units above one, unit at one.
 
 **A RETRY LANDS ONCE** (24 Sep 2026). Every move the page sends carries a request id it mints per
 tap (per review, per payment, per line, per withdrawal, per rail; S10 10.4), kept with that move until

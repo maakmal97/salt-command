@@ -12872,11 +12872,14 @@ await (async () => {
       for (let i = 0; i < 150 && !d.getElementById("pPrices").textContent; i++) await new Promise((r) => setTimeout(r, 100));
       /* v695: the product is a mark, not a word, so it is read off the marks and the segment that
          holds them rather than off a dropdown of names, which is what this read until then. */
-      return { prices: d.getElementById("pPrices").textContent, order: d.getElementById("pOrder").textContent,
+      /* S4 4.3: the form is a sheet, opened from New order, and the product segment is inside it */
+      const nw = d.getElementById("oNew"); if (nw) nw.click();
+      const sh = d.getElementById("osheet");
+      return { prices: d.getElementById("pPrices").textContent, order: d.getElementById("pOrder").textContent + " " + (sh ? sh.textContent : ""),
         marks: [...d.querySelectorAll("#pPrices h3.pmark")].map((h) => h.getAttribute("aria-label")),
         priced: [...d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector("table")).length,
-        products: [...d.querySelectorAll("#pOrder .seg button[aria-pressed]")].map((b) => b.getAttribute("aria-label")),
-        orderable: !!d.querySelector("#pOrder .quote") };
+        products: [...d.querySelectorAll("#osheet button[aria-pressed][aria-label]")].map((b) => b.getAttribute("aria-label")),
+        orderable: !!nw && !!d.querySelector('#osheet input[name="osize"]') };
     } finally { dom.window.close(); }
   };
   /* 19 SEP 2026: OIL IS PRICED FOR EVERYBODY NOW, so a page with one product priced and one coming
@@ -13062,6 +13065,72 @@ await (async () => {
 })();
 
 
+section("S4 4.3: the order is a sheet, with size tiles and their prices, the usual size, the last way and place, and the total with Review in the foot");
+await (async () => {
+  /* STAGE 4 OF THE COUNTER'S REDESIGN, HIS "ALL RECOMMENDED" OF 24 SEP 2026. The form was a pane at the head of the Order
+     tab; it is the system's Sheet now, laid over the page from New order. Driven on the real page with the real crypto. */
+  const { landingPage: lpS } = await import("../stmt/page.js");
+  const CS = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcS } = await import("node:crypto");
+  const { JSDOM: JDS } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s43", ck = await CS.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 0.5, price: 60 }, { q: 1, price: 110 }, { q: 2.5, price: 250 }] },
+      { product: "oil", unit: "unit", basis: "board", tier: null, sizes: [{ q: 1, price: 45 }] }] };
+  /* two of 2.5 and one of 1, so 2.5 is the usual; the newest order is a delivery, and the newest place is Old market */
+  const orders = [
+    { id: "20260920010000-aaaa", product: "salt", qty: 2.5, mode: "collect", place: "", at: "2026-09-20T01:00:00Z", status: "done", total: 250, paid: 250, moved: 2.5, history: [], msgs: [] },
+    { id: "20260922010000-bbbb", product: "salt", qty: 2.5, mode: "deliver", place: "Old market", at: "2026-09-22T01:00:00Z", status: "acknowledged", total: 250, paid: 0, moved: 0, delivery: 10, history: [], msgs: [] },
+    { id: "20260910010000-cccc", product: "salt", qty: 1, mode: "deliver", place: "Hill top", at: "2026-09-10T01:00:00Z", status: "done", total: 110, paid: 110, moved: 1, history: [], msgs: [] }];
+  const body = { ok: true, wrap: await CS.wrapKey(pass, ck), session: "sess-s43",
+    env: await CS.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await CS.encryptWith(ck, JSON.stringify(prices)) };
+  const dom = new JDS(lpS(u, "ns43", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcS, configurable: true }); } catch (e) { win.crypto = wcS; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !(d.getElementById("oNew") && /Your orders/.test(d.getElementById("pOrder").textContent)); i++) await new Promise((r) => setTimeout(r, 30));
+    const formOnTab = [...d.querySelectorAll("#pOrder button")].filter((b) => /^(Review|I will collect|Deliver to me)$/.test(b.textContent)).length
+      + d.querySelectorAll("#pOrder select").length;
+    ok(!!d.getElementById("oNew") && formOnTab === 0 && !d.getElementById("osheet"),
+      "the Order tab offers New order and holds no form of its own: " + formOnTab);
+    d.getElementById("oNew").click();
+    const dlg = d.querySelector("#osheet .salt-sheet");
+    ok(!!dlg && d.getElementById("osheet").parentNode === d.body && dlg.getAttribute("role") === "dialog" && dlg.getAttribute("aria-modal") === "true"
+      && d.getElementById(dlg.getAttribute("aria-labelledby")).textContent === "New order" && !!d.querySelector("#osheet .salt-sheet-scrim"),
+      "New order lays the system's Sheet over the page, at the root of the body, as a named modal dialog");
+    const tiles = [...d.querySelectorAll('#osheet .salt-option input[type=radio][name="osize"]')].map((r) => ({ q: r.value, on: r.checked,
+      label: r.closest(".salt-option").querySelector(".salt-option__label").textContent, fig: r.closest(".salt-option").querySelector(".salt-option__figure").textContent }));
+    ok(tiles.length === 3 && tiles.map((t) => t.fig).join() === "RM 60,RM 110,RM 250" && tiles.map((t) => t.label.replace("your usual", "")).join() === "0.5 unit,1 unit,2.5 units",
+      "the sizes are Option tiles, each carrying its own price, units above one and unit at one: " + JSON.stringify(tiles));
+    ok(tiles.filter((t) => /your usual/.test(t.label)).map((t) => t.q).join() === "2.5" && tiles.filter((t) => t.on).map((t) => t.q).join() === "2.5",
+      "the size they order most is tagged your usual and chosen to begin with: " + JSON.stringify(tiles.map((t) => [t.q, t.on, /usual/.test(t.label)])));
+    const pressed = (t) => { const b = [...d.querySelectorAll("#osheet button.salt-ghost")].find((x) => x.textContent === t); return b && b.getAttribute("aria-pressed"); };
+    const where = d.getElementById("oWhere");
+    ok(pressed("Deliver to me") === "true" && pressed("I will collect") === "false" && where && where.value === "Old market"
+      && /^Same as last time[.]/.test(d.querySelector("#osheet .salt-field__hint").textContent),
+      "the way is the last order's and the place the last one given, and the hint says so: " + JSON.stringify({ where: where && where.value }));
+    const foot = d.querySelector("#osheet .salt-sheet__foot");
+    ok(foot && foot.contains(d.getElementById("oGo")) && d.getElementById("oGo").classList.contains("salt-pill") && /^RM 250/.test(foot.textContent) && !d.getElementById("oGo").disabled,
+      "the total and Review, the one filled control, sit in the sheet's foot: " + JSON.stringify(foot && foot.textContent));
+    const one = d.querySelector('#osheet input[name="osize"][value="1"]');
+    one.checked = true; one.dispatchEvent(new w.Event("change", { bubbles: true }));
+    ok(/^RM 110/.test(d.querySelector("#osheet .salt-sheet__foot").textContent), "a tap on another size moves the total with it");
+    ok(!/salt|oil|Gold/i.test(d.getElementById("osheet").outerHTML.replace(/salt-[a-z_-]+/g, "")),
+      "and the sheet carries no product word and no level's name, in its text or its attributes");
+    d.querySelector("#osheet .salt-sheet").dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    ok(!d.getElementById("osheet"), "Escape closes it");
+  } finally { w.close(); }
+})();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {
   /* HIS INSTRUCTION OF 16 SEP 2026: "The label to them is a very subtle tier level, in symbol and colour (for each tier),
@@ -14571,10 +14640,11 @@ await (async () => {
     D.getElementById("un").value = u; D.getElementById("pw").value = pw;
     D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
     const pOrder = D.getElementById("pOrder"), pCard = D.getElementById("pCard");
-    ok(await until(() => D.getElementById("oGo")), "the associate's page opens with an order form");
+    ok(await until(() => D.getElementById("oNew")), "the associate's page opens with New order");
+    D.getElementById("oNew").click();
     D.getElementById("oGo").click();
-    const place = () => [...pOrder.querySelectorAll("button")].find((b) => b.textContent === "Place this order");
-    ok(await until(() => place()), "Review this order shows Place this order");
+    const place = () => D.getElementById("oPlace");
+    ok(await until(() => place()), "Review shows Place order");
     place().click();
     ok(await until(() => /Placed[.]/.test(pOrder.textContent)), "the order is placed and the form says so");
     D.getElementById("tCard").click();
@@ -15291,7 +15361,7 @@ await (async () => {
       for (let i = 0; i < 200 && !D.querySelector("#pOrder .pane") && !errs.length && !D.getElementById("msg").textContent.includes("could not"); i++) await new Promise((r) => setTimeout(r, 50));
       await new Promise((r) => setTimeout(r, 50));
       return { errs: errs.slice(), out: D.getElementById("out").textContent, gate: D.getElementById("gate").hidden, msg: D.getElementById("msg").textContent,
-        prices: !!D.querySelector("#pPrices table"), review: [...D.querySelectorAll("#pOrder button")].some((b) => b.textContent === "Review this order") };
+        prices: !!D.querySelector("#pPrices table"), review: !!D.getElementById("oNew") };
     } finally { try { W.close(); } catch (e) { /* best effort */ } }
   };
   try {
@@ -15358,20 +15428,21 @@ await (async () => {
     } });
   const W = dom.window, D = W.document;
   const wait = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); };
-  const btn = (t) => [...D.querySelectorAll("#pOrder button")].find((b) => b.textContent === t);
-  const noteNear = (b) => [...D.querySelectorAll("#pOrder p.msg")].find((p) => p.textContent === NS && p.parentNode.contains(b));
+  const btn = (t) => [...D.querySelectorAll("#pOrder button, #osheet button")].find((b) => b.textContent === t);
+  const noteNear = (b) => [...D.querySelectorAll("#pOrder p.msg, #osheet p.msg")].find((p) => p.textContent === NS && p.parentNode.contains(b));
   try {
     D.getElementById("pw").value = passC;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-    await wait(() => btn("Review this order") && btn("Send"));
-    btn("Review this order").click();
-    await wait(() => btn("Place this order"));
-    btn("Place this order").click();
-    await wait(() => D.getElementById("pOrder").textContent.includes(NS));
+    await wait(() => D.getElementById("oNew") && btn("Send"));
+    D.getElementById("oNew").click();
+    btn("Review").click();
+    await wait(() => btn("Place order"));
+    btn("Place order").click();
+    await wait(() => D.getElementById("osheet").textContent.includes(NS));
     await new Promise((r) => setTimeout(r, 50));
-    const place = btn("Place this order"), change = btn("Change it");
+    const place = btn("Place order"), change = btn("Change");
     ok(!!place && !place.disabled && !!change && !change.disabled && !!noteNear(place),
-      "Place this order is given back after a dropped request, and Not sent is said beside it: "
+      "Place order is given back after a dropped request, and Not sent is said beside it, in the sheet's foot: "
       + JSON.stringify({ place: place && place.disabled, change: change && change.disabled, note: !!(place && noteNear(place)) }));
     const pane = btn("Send").closest(".pane");
     pane.querySelector("input[aria-label='Write about this order']").value = "is it ready";
@@ -15493,18 +15564,20 @@ await (async () => {
     } });
   const W = dom.window, D = W.document;
   const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
-  const btn = (t) => [...D.querySelectorAll("#pOrder button")].find((b) => b.textContent === t && !b.disabled);
-  const said = () => [...D.querySelectorAll("#pOrder .msg")].map((x) => x.textContent.trim()).filter(Boolean);
+  const btn = (t) => [...D.querySelectorAll("#pOrder button, #osheet button")].find((b) => b.textContent === t && !b.disabled);
+  const said = () => [...D.querySelectorAll("#pOrder .msg, #osheet .msg")].map((x) => x.textContent.trim()).filter(Boolean);
   const lapseOn = () => !D.getElementById("lapse").hidden && /signed out after a while/.test(D.getElementById("lapse").textContent);
   try {
     D.getElementById("pw").value = passX;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => D.getElementById("pPrices").textContent);
     D.querySelector('button[data-t="order"]').click();
+    await until(() => D.getElementById("oNew"));
+    D.getElementById("oNew").click();
     await until(() => D.getElementById("oGo") && !D.getElementById("oGo").disabled);
     st.lapsed = true;
     D.getElementById("oGo").click();
-    await until(() => btn("Place this order")); btn("Place this order").click();
+    await until(() => btn("Place order")); btn("Place order").click();
     await until(() => lapseOn() && said().length);
     const placed = said();
     ok(lapseOn() && placed.includes("Signed out: tap Continue at the top.") && !placed.some((t) => /Sign in again|session has ended/.test(t)),
@@ -16204,7 +16277,7 @@ await (async () => {
   ok(/select\.fld\{[^}]*color-scheme:dark/.test(page94) && /select\.fld option\{background:var\(--salt-well\)/.test(page94)
     && /select\.fld\{[^}]*linear-gradient\(45deg/.test(page94),
     "the open list is told the page is dark and the chevron is drawn on the page, which is the bizarre colour fixed");
-  ok(page94.includes("Review this order") && page94.includes("Check this over") && page94.includes("Place this order")
+  ok(page94.includes("'Review'") && page94.includes("'Check your order'") && page94.includes("'Place order'")
     && page94.includes("a neighbourhood or a landmark") && page94.includes("I have paid")
     && page94.includes("Your order is now complete. Thank you for your loyalty."),
     "the page reviews before it places, asks roughly where it is going, takes the amount paid, and says his closing words");
@@ -16372,13 +16445,17 @@ await (async () => {
     ok(JSON.stringify(marks95) === '["Cube","Droplet","Ring"]' && d95.querySelectorAll("#pPrices svg.psym").length === 3,
       "the price list heads each block with its mark, the one still waiting for a price included: " + JSON.stringify(marks95));
     d95.querySelector('button[data-t="order"]').click();
-    const seg95 = [...d95.querySelectorAll("#pOrder .seg button[aria-pressed]")];
+    /* S4 4.3: in the order sheet, which opens on the product they order most, so the tap below goes to the other one */
+    for (let i = 0; i < 60 && !d95.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 50));
+    d95.getElementById("oNew").click();
+    const segOf95 = () => [...d95.querySelectorAll("#osheet button[aria-pressed][aria-label]")];
+    const seg95 = segOf95(), on95 = seg95.findIndex((b) => b.getAttribute("aria-pressed") === "true");
     ok(seg95.length === 2 && seg95.map((b) => b.getAttribute("aria-label")).join(",") === "Cube,Droplet"
-      && seg95[0].getAttribute("aria-pressed") === "true" && seg95.every((b) => b.querySelector("svg.psym")),
+      && seg95.filter((b) => b.getAttribute("aria-pressed") === "true").length === 1 && seg95.every((b) => b.querySelector("svg.psym")),
       "the product is picked from a segment of marks, one tap, and the chosen one says so: it was a dropdown, and an option carries no drawing");
-    seg95[1].click();
-    ok(d95.querySelectorAll("#pOrder .seg button[aria-pressed=true]").length === 1
-      && d95.querySelector("#pOrder .seg button[aria-pressed=true]").getAttribute("aria-label") === "Droplet",
+    seg95[1 - on95].click();
+    ok(segOf95().filter((b) => b.getAttribute("aria-pressed") === "true").length === 1
+      && segOf95().find((b) => b.getAttribute("aria-pressed") === "true").getAttribute("aria-label") === ["Cube", "Droplet"][1 - on95],
       "and a tap moves it");
     /* a product waiting for its price is a mark too, not a name */
     const soon95 = [...d95.querySelectorAll("#pPrices .pane")].filter((x) => !x.querySelector("table"));
@@ -16392,7 +16469,7 @@ await (async () => {
     ok(card95 && card95.querySelector(".pwith svg.psym") && /Droplet/.test(card95.textContent)
       && !/\b(salt|oil)\b/i.test(card95.textContent),
       "an order's own card carries the mark of what was ordered and never its name: " + JSON.stringify(card95 && card95.textContent.slice(0, 60)));
-    const words95 = (d95.getElementById("pPrices").textContent + " " + d95.getElementById("pOrder").textContent);
+    const words95 = (d95.getElementById("pPrices").textContent + " " + d95.getElementById("pOrder").textContent + " " + d95.getElementById("osheet").textContent);
     ok(!/\b(salt|oil)\b/i.test(words95) && !/Salt Command/i.test(words95),
       "and no product is written as a word anywhere on the prices or the order: " + JSON.stringify((words95.match(/\b(salt|oil)\b/gi) || []).slice(0, 4)));
   } finally { try { dom95.window.close(); } catch (e) { /* best effort */ } }
@@ -17264,7 +17341,7 @@ await (async () => {
   const page2 = await (await stmtW2.fetch(new Request("https://k7m3p2.example/"), { STMT: kv2 })).text();
   ok(page2.includes("On behalf of a friend") && page2.includes("if(assoc){"),
     "the words are on the page and the tick is behind the mark, so nobody else is offered it");
-  ok(/forFriend:!!\(assoc&&draft\.forFriend\)/.test(page2),
+  ok(/forFriend:!!\(assoc&&c\.forFriend\)/.test(page2),
     "and the placement cannot send the tick unless the account carries the mark");
   /* EVERY DOOR READS IT, and the count is the check: a door added later that forgot the mark would
      take an associate's tick away from them on the way in, silently, and only on that one road.
@@ -19254,36 +19331,41 @@ await (async () => {
     } });
   const d = dom.window.document;
   const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
-  const btn = (t) => [...d.querySelectorAll("#pOrder button")].find((b) => b.textContent === t && !b.disabled);
+  const btn = (t) => [...d.querySelectorAll("#pOrder button, #osheet button")].find((b) => b.textContent === t && !b.disabled);
+  /* S4 4.3: a review is New order (unless the sheet is already on the form) and then Review */
+  const review = async () => { if (!d.getElementById("oGo")) { await until(() => d.getElementById("oNew")); d.getElementById("oNew").click(); }
+    await until(() => d.getElementById("oGo") && !d.getElementById("oGo").disabled); d.getElementById("oGo").click(); };
   try {
     d.getElementById("un").value = un; d.getElementById("pw").value = pw;
     d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => d.getElementById("pPrices").textContent);
     d.querySelector('button[data-t="order"]').click();
-    await until(() => d.getElementById("oGo") && !d.getElementById("oGo").disabled);
-    d.getElementById("oGo").click();
-    await until(() => btn("Place this order")); btn("Place this order").click();
-    await until(() => sent.place.length === 1 && btn("Place this order"));
+    await review();
+    await until(() => btn("Place order")); btn("Place order").click();
+    await until(() => sent.place.length === 1 && btn("Place order"));
     placeOk = true;
-    btn("Place this order").click();
-    await until(() => sent.place.length === 2 && d.getElementById("oGo") && !d.getElementById("oGo").disabled);
-    d.getElementById("oGo").click();
-    await until(() => btn("Place this order")); btn("Place this order").click();
+    btn("Place order").click();
+    await until(() => sent.place.length === 2 && !d.getElementById("oPlace"));
+    await review();
+    await until(() => btn("Place order")); btn("Place order").click();
     await until(() => sent.place.length === 3);
     const pr = sent.place.map((x) => x && x.rid);
     ok(pr.length === 3 && O.RID_RE.test(pr[0] || "") && pr[1] === pr[0] && pr[2] !== pr[0] && O.RID_RE.test(pr[2] || ""),
       "the page sends one id a review: Place tapped again after 'not placed' carries the same one, and the next review a new one: " + JSON.stringify(pr));
-    /* F3: a size changed while Check this over is open is a different order, so it is never sent under the id of
-       the one before: the Worker answers any repeat of an id with the order first stored under it */
+    /* F3: a size changed after "not placed" is a different order, so it is never sent under the id of the one
+       before: the Worker answers any repeat of an id with the order first stored under it. In the sheet the size is
+       changed by going back to the form (S4 4.3), and the next Review mints the next id */
     placeOk = false;
-    await until(() => d.getElementById("oGo") && !d.getElementById("oGo").disabled);
+    await until(() => sent.place.length === 3 && !d.getElementById("oPlace"));
+    await review();
+    await until(() => btn("Place order")); btn("Place order").click();
+    await until(() => sent.place.length === 4 && btn("Place order"));
+    btn("Change").click();
+    const size = d.querySelector('#osheet input[name="osize"][value="2"]');
+    size.checked = true; size.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
     d.getElementById("oGo").click();
-    await until(() => btn("Place this order")); btn("Place this order").click();
-    await until(() => sent.place.length === 4 && btn("Place this order"));
-    const size = d.querySelector('#pOrder select[aria-label="Size"]');
-    size.value = "2"; size.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    await until(() => btn("Place this order")); btn("Place this order").click();
-    await until(() => sent.place.length === 5 && btn("Place this order"));
+    await until(() => btn("Place order")); btn("Place order").click();
+    await until(() => sent.place.length === 5 && btn("Place order"));
     const sz = sent.place.slice(3).map((x) => x && [x.rid, x.qty]);
     ok(sz.length === 2 && sz[0][1] === 1 && sz[1][1] === 2 && O.RID_RE.test(sz[1][0] || "") && sz[1][0] !== sz[0][0],
       "a size changed after 'not placed' goes under a new id, never as a repeat of the order before: " + JSON.stringify(sz));
@@ -23672,34 +23754,38 @@ await (async () => {
     };
   } });
   const w = dom.window, d = w.document;
-  const field = (label) => d.querySelector('#pOrder input[aria-label="' + label + '"]');
+  /* S4 4.3: the check is a step of the order sheet now. Review freezes one copy of the order; the check draws it and
+     Place sends it, and while it is open the sheet holds no field at all, so nothing typed can reach the order */
   const type = (f, t) => { if (f && !f.readOnly) { f.value = t; f.dispatchEvent(new w.Event("input", { bubbles: true })); } };
-  const button = (t) => [...d.querySelectorAll("#pOrder button")].find((b) => b.textContent === t);
+  const button = (t) => [...d.querySelectorAll("#pOrder button, #osheet button")].find((b) => b.textContent === t);
+  const row = (k) => { const r = [...d.querySelectorAll("#osheet .salt-ledger__row")].find((x) => x.querySelector(".salt-ledger__label").textContent === k);
+    return r && r.querySelector(".salt-ledger__value").textContent; };
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 100 && !button("Deliver to me"); i++) await new Promise((r) => setTimeout(r, 50));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 50));
+    d.getElementById("oNew").click();
     button("Deliver to me").click();
-    type(field("Roughly where it is going"), "Old market");
-    type(field("Anything to add about this order"), "Ring the bell");
+    type(d.getElementById("oWhere"), "Old market");
+    d.getElementById("oAddNote").click();
+    type(d.getElementById("oSay"), "Ring the bell");
     d.getElementById("oGo").click();
-    const where = () => { const li = [...d.querySelectorAll("#pOrder .conf li")].find((x) => x.querySelector(".k").textContent === "Where"); return li && li.querySelector(".v").textContent; };
-    const locked = field("Roughly where it is going").readOnly && field("Anything to add about this order").readOnly;
-    type(field("Roughly where it is going"), "Somewhere else");
-    type(field("Anything to add about this order"), "Changed my mind");
-    ok(locked && where() === "Old market" && field("Roughly where it is going").value === "Old market",
-      "with the check-over open both fields are read-only, and the list and the field still say the same place: " + where());
-    button("Place this order").click();
-    for (let i = 0; i < 100 && !/Placed\./.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+    const typeable = [...d.querySelectorAll("#osheet input, #osheet textarea, #osheet select")].filter((x) => !x.readOnly && !x.disabled);
+    ok(typeable.length === 0 && row("How") === "Delivered to Old market" && row("Note") === "Ring the bell",
+      "with the check open the sheet holds nothing to type into, and it shows the place and the line: " + JSON.stringify({ how: row("How"), note: row("Note"), typeable: typeable.length }));
+    button("Place order").click();
+    for (let i = 0; i < 100 && !posted.length; i++) await new Promise((r) => setTimeout(r, 50));
     ok(posted.length === 1 && posted[0].place === "Old market" && posted[0].note === "Ring the bell",
-      "Place sends exactly the place and the line the check-over showed: " + JSON.stringify(posted.map((x) => [x.place, x.note])));
-    /* and the way back opens them again */
-    button("Deliver to me").click();
-    type(field("Roughly where it is going"), "Old market");
+      "Place sends exactly the place and the line the check showed: " + JSON.stringify(posted.map((x) => [x.place, x.note])));
+    /* and the way back opens the form again, holding what was typed; once the placement has answered */
+    for (let i = 0; i < 100 && d.getElementById("oPlace"); i++) await new Promise((r) => setTimeout(r, 50));
+    d.getElementById("oNew").click();
+    type(d.getElementById("oWhere"), "Old market");
     d.getElementById("oGo").click();
-    button("Change it").click();
-    ok(!field("Roughly where it is going").readOnly && !field("Anything to add about this order").readOnly,
-      "Change it closes the list and both fields take typing again");
+    button("Change").click();
+    const back = d.getElementById("oWhere");
+    ok(!!back && !back.readOnly && back.value === "Old market",
+      "Change goes back to the form, the place kept and taking typing again");
   } finally { w.close(); }
 })();
 
@@ -23755,10 +23841,12 @@ await (async () => {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 60 && !thrown.length && !/Your orders/.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
-    const po = d.getElementById("pOrder"), sizes = [...po.querySelectorAll("select option")].map((o) => o.value);
+    const po = d.getElementById("pOrder");
+    if (d.getElementById("oNew")) d.getElementById("oNew").click();
+    const sizes = [...d.querySelectorAll('#osheet input[name="osize"]')].map((o) => o.value);
     ok(!thrown.length && /Notifications/.test(po.textContent) && /Your orders/.test(po.textContent) && po.querySelectorAll(".state").length === 1
-      && sizes.join() === "1" && !po.querySelector(".seg button[aria-label]"),
-      "the Order tab draws: the form offers the one product with a price, and Notifications and their order are there: " + JSON.stringify({ sizes, thrown }));
+      && sizes.join() === "1" && !d.querySelector("#osheet button[aria-pressed][aria-label]"),
+      "the Order tab draws: the order sheet offers the one product with a price, and Notifications and their order are there: " + JSON.stringify({ sizes, thrown }));
     const pp = d.getElementById("pPrices");
     ok(/Price coming soon\./.test(pp.textContent) && pp.querySelectorAll("table").length === 1,
       "and Prices says coming soon for the one with no size rather than drawing an empty table");
@@ -23884,16 +23972,18 @@ await (async () => {
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 60 && !d.querySelector("#pOrder .seg button.on"); i++) await new Promise((r) => setTimeout(r, 50));
-    const chosen = [d.querySelector("#mfil button.on"), d.querySelector("#pOrder .seg button.on")];
+    for (let i = 0; i < 60 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 50));
+    d.getElementById("oNew").click();
+    /* S4 4.3: the way is chosen in the order sheet, by the system's pressed ghost */
+    const chosen = [d.querySelector("#mfil button.on"), [...d.querySelectorAll('#osheet button[aria-pressed="true"]')].find((b) => /collect|Deliver/.test(b.textContent))];
     const look = chosen.map((b) => { const c = b && w.getComputedStyle(b);
       return c ? { fill: [c.background, c.backgroundColor, c.backgroundImage].join(" "), ink: c.color } : null; });
     ok(chosen.every(Boolean) && chosen[0].textContent === "All" && chosen[1].textContent === "I will collect",
-      "the fixture draws a chosen month (All) and a chosen mode (I will collect) to measure");
-    ok(look.every((x) => x && !/brass/.test(x.fill)), "neither chosen pill is filled brass: " + JSON.stringify(look.map((x) => x && x.fill)));
+      "the fixture draws a chosen month (All) and a chosen way (I will collect) to measure");
+    ok(look.every((x) => x && !/brass/.test(x.fill)), "neither chosen control is filled brass: " + JSON.stringify(look.map((x) => x && x.fill)));
     /* the hairline itself is the rig's to see: jsdom reads a border drawn in a token as transparent */
-    ok(look.every((x) => x && /--salt-brass/.test(x.ink)),
-      "and each is still told apart, in brass ink: " + JSON.stringify(look.map((x) => x && x.ink)));
+    ok(look[0] && /--salt-brass/.test(look[0].ink) && chosen[1].classList.contains("salt-ghost") && chosen[1].getAttribute("aria-pressed") === "true",
+      "and each is still told apart: the month in brass ink, the way as the system's ghost, pressed: " + JSON.stringify(look.map((x) => x && x.ink)));
   } finally { w.close(); }
 })();
 

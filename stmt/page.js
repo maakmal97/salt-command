@@ -81,8 +81,6 @@ select.fld option{background:var(--salt-well);color:var(--salt-text)}
 /* v695: a product is a mark. Brass, hairline, and it sits on the baseline of whatever it is beside. */
 .psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}
 h3.pmark{margin:0 0 4px;line-height:1}
-/* on a button the mark takes the button's own ink, brass on the chosen one and muted on the rest */
-.seg button .psym{vertical-align:-0.28em;color:inherit}
 .pwith{display:inline-flex;align-items:center;gap:7px}
 /* read aloud, never drawn: the shape's word, so a mark in a sentence is not a hole */
 .sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
@@ -97,6 +95,16 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .conf li:last-child{border-bottom:0}
 .conf .k{color:var(--salt-mist)}
 .conf .v{color:var(--salt-text);text-align:right}
+/* S4, 24 SEP 2026: ORDERING, IN TODAY'S PLACES (stage 4 of the Counter's redesign). The look is the system's: the
+   Sheet, Option tiles, pressed ghosts, the plain ledger, the insight and the glass card. What is here is where those
+   pieces sit inside the sheet; no colour of its own. */
+.osheet .salt-sheet__title{flex:1 1 auto}
+.osheet .salt-sheet__body > * + *{margin-top:18px}
+.osheet .salt-options__grid .salt-ghost,.osheet .ofull{width:100%}
+.ototal{flex:1 1 0;min-width:0}
+.ototal .salt-kpi__value{margin-top:0}
+.ototal .sub2{display:block;margin-top:2px}
+.osheet .salt-sheet__foot .msg{flex:1 1 100%;margin:0}
 /* the one filled control is the system's .salt-pill and the quiet ones its .salt-ghost (22 Sep 2026);
    this page decides only that they run the width of the form */
 .btn{margin-top:18px;width:100%}
@@ -183,9 +191,6 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .row2{display:flex;gap:8px}
 .row2 .fld{flex:1}
 .seg{display:flex;gap:8px;margin-top:6px}
-.seg button{flex:1;min-height:var(--salt-tap);font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
-  color:var(--salt-text-muted);background:none;border:1px solid var(--salt-line);border-radius:var(--salt-radius-pill);cursor:pointer}
-.seg button.on{color:var(--salt-brass);border-color:var(--salt-brass);font-weight:700}
 .pay{margin-top:12px;display:flex;flex-direction:column;gap:8px}
 .pay label{display:flex;gap:10px;align-items:center;min-height:var(--salt-tap);padding:0 6px;font-size:var(--salt-text-sm);cursor:pointer}
 .pay input[type=radio]{width:18px;height:18px;accent-color:var(--salt-brass)}
@@ -741,7 +746,8 @@ const CLIENT_JS = `
   if(clean(un.value)) put(boxesOf('un'), 0, clean(un.value));
   function el(tag,cls,text){ var e=document.createElement(tag); if(cls)e.className=cls; if(text!=null)e.textContent=text; return e; }
   function rm(n){ return 'RM '+Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2}); }
-  function unitsOf(q,u){ return q+' '+(u||'unit'); }
+  /* D11 (S4, 24 Sep 2026): units above one, unit at one and under */
+  function unitsOf(q,u){ u=u||'unit'; return q+' '+(+q>1&&u.slice(-1)!=='s'?u+'s':u); }
 
   /* THE PASSWORD UNWRAPS A KEY, AND THE KEY OPENS EVERYTHING. The same derivation the vault
      uses, PBKDF2-SHA256 x150000 into AES-GCM-256, but over the wrap rather than the content:
@@ -873,6 +879,7 @@ const CLIENT_JS = `
 
   /* ---- the tabs: three for everyone, a fourth for an associate ---- */
   function showTab(t){
+    sheetClose();
     tab=t;
     var bs=tabs.querySelectorAll('button');
     for(var i=0;i<bs.length;i++){ var on=bs[i].getAttribute('data-t')===t; bs[i].className='salt-tabs__pill'+(on?' on':''); bs[i].setAttribute('aria-selected',on?'true':'false'); }
@@ -1259,6 +1266,229 @@ const CLIENT_JS = `
     var total=r.price;
     return {p:p, q:r.q, total:total, unit:+(total/r.q).toFixed(2)};
   }
+  /* ==== THE ORDER IS A SHEET (S4 4.3, 24 SEP 2026; the Counter's redesign, his "all recommended" of that day) ====
+     The order form was a pane at the head of the Order tab, filled field by field and reviewed in a second pane under
+     it. It is a task laid over the page now, the system's Sheet: the product as its mark, the sizes as Option tiles
+     carrying their prices with the size they order most tagged your usual, the way and the place as last time, a line
+     folded away until it is wanted, and the total with Review in the foot, in reach of the thumb. Review turns the
+     sheet into the check, which draws what will be sent from one frozen copy, so nothing on it can differ from what
+     Place sends. Built from the page's own nodes at the root of the body, because a fixed element inside a glass card
+     is held by the card's blur; Escape, the scrim and the close control all close it, and focus goes back to what
+     opened it. */
+  var sheet=null;
+  var GLYPH={close:'M4 4 L12 12 M12 4 L4 12', back:'M10 3.5 L5.5 8 L10 12.5', next:'M6 3.5 L10.5 8 L6 12.5', tick:'M3 8.5 L6.5 12 L13 4.5'};
+  function glyph(k,cls,px){
+    var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg');
+    s.setAttribute('viewBox','0 0 16 16'); s.setAttribute('width',px||16); s.setAttribute('height',px||16);
+    s.setAttribute('aria-hidden','true'); s.setAttribute('focusable','false'); if(cls) s.setAttribute('class',cls);
+    var d=document.createElementNS(NS,'path'); d.setAttribute('d',GLYPH[k]); d.setAttribute('fill','none'); d.setAttribute('stroke','currentColor');
+    d.setAttribute('stroke-width','1.5'); d.setAttribute('stroke-linecap','round'); d.setAttribute('stroke-linejoin','round');
+    s.appendChild(d); return s;
+  }
+  /* the size they order most, read off their own orders on this page; the later order breaks a tie */
+  function usual(){
+    var n={}, best=null;
+    orders.slice().sort(function(a,b){ return String(a.at).localeCompare(String(b.at)); }).forEach(function(o){
+      var k=o.product+'|'+o.qty; n[k]=(n[k]||0)+1; if(!best||n[k]>=n[best]) best=k;
+    });
+    if(!best) return null;
+    var i=best.indexOf('|'); return {product:best.slice(0,i), q:best.slice(i+1)};
+  }
+  function latest(pick){ var l=null; orders.forEach(function(o){ if(pick(o)&&(!l||String(o.at)>String(l.at))) l=o; }); return l; }
+  function soldHas(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0];
+    return !!P&&(q==null||P.sizes.some(function(s){ return String(s.q)===String(q); })); }
+  function sheetOpen(product,q,opener){
+    if(view||hold||!sold().length) return;
+    var U=usual();
+    if(product&&soldHas(product,q)){ draft.product=product; draft.q=String(q); }
+    else if(!draft.product&&U&&soldHas(U.product,U.q)){ draft.product=U.product; draft.q=String(U.q); }
+    /* the way and the place are the last order's, and the hint says so while the place is still that one */
+    if(draft.mode==null){ var L=latest(function(){ return true; }); draft.mode=L&&L.mode==='deliver'?'deliver':'collect'; }
+    if(draft.place==null){ var W=latest(function(o){ return !!o.place; }); draft.place=W?W.place:''; draft.placeWas=draft.place; }
+    draft.step='form'; draft.snote=''; draft.check=null;
+    if(!sheet){
+      var wrap=el('div'); wrap.id='osheet';
+      var scrim=el('div','salt-sheet-scrim'); scrim.setAttribute('aria-hidden','true'); scrim.addEventListener('click',sheetClose);
+      var box=el('div','salt-sheet osheet'); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
+      box.setAttribute('aria-labelledby','oshT'); box.tabIndex=-1;
+      var grab=el('div','salt-sheet__grab'); grab.setAttribute('aria-hidden','true');
+      var head=el('div','salt-sheet__head'), body=el('div','salt-sheet__body'), foot=el('div','salt-sheet__foot');
+      box.appendChild(grab); box.appendChild(head); box.appendChild(body); box.appendChild(foot);
+      box.addEventListener('keydown',sheetKeys);
+      wrap.appendChild(scrim); wrap.appendChild(box); document.body.appendChild(wrap);
+      sheet={wrap:wrap, box:box, head:head, body:body, foot:foot, opener:opener||document.activeElement};
+      try{ box.focus({preventScroll:true}); }catch(e){}
+    }
+    sheetDraw();
+  }
+  function sheetClose(){
+    if(!sheet) return;
+    var s=sheet; sheet=null; draft.step=''; draft.check=null;
+    s.wrap.parentNode.removeChild(s.wrap);
+    try{ if(s.opener&&s.opener.isConnected) s.opener.focus({preventScroll:true}); }catch(e){}
+  }
+  /* the sheet keeps focus while it is open: Escape closes it, and Tab wraps at its own first and last controls */
+  function sheetKeys(ev){
+    if(ev.key==='Escape'){ ev.stopPropagation(); sheetClose(); return; }
+    if(ev.key!=='Tab'||!sheet) return;
+    var all=[].filter.call(sheet.box.querySelectorAll('button:not([disabled]),input:not([disabled]),a[href]'),function(x){
+      if(x.type==='radio'&&x.name){ var g=[].filter.call(sheet.box.querySelectorAll('input[type=radio]'),function(r){ return r.name===x.name; });
+        if(x!==(g.filter(function(r){ return r.checked; })[0]||g[0])) return false; }
+      return x.getClientRects().length>0; });
+    if(!all.length) return;
+    var at=document.activeElement;
+    if(ev.shiftKey&&(at===all[0]||at===sheet.box)){ ev.preventDefault(); all[all.length-1].focus(); }
+    else if(!ev.shiftKey&&at===all[all.length-1]){ ev.preventDefault(); all[0].focus(); }
+  }
+  /* one draw for every step; the control that had focus gets it back, found by its data-k */
+  function sheetDraw(){
+    if(!sheet) return;
+    var fo=document.activeElement, fk=fo&&sheet.box.contains(fo)?fo.getAttribute('data-k'):null;
+    sheet.head.textContent=''; sheet.body.textContent=''; sheet.foot.textContent='';
+    if(draft.step==='check') drawCheck(); else drawForm();
+    sheet.foot.hidden=!sheet.foot.firstChild;
+    if(fk){ var back=[].filter.call(sheet.box.querySelectorAll('[data-k]'),function(x){ return x.getAttribute('data-k')===fk; })[0];
+      if(back) try{ back.focus({preventScroll:true}); }catch(e){} }
+  }
+  function sheetHead(title,back){
+    if(back){ var b=el('button','salt-orb'); b.type='button'; b.setAttribute('aria-label','Change'); b.setAttribute('data-k','back');
+      b.appendChild(glyph('back')); b.addEventListener('click',back); sheet.head.appendChild(b); }
+    if(title!=null){ var h=el('h2','salt-sheet__title',title); h.id='oshT'; sheet.head.appendChild(h); }
+    var x=el('button','salt-orb salt-sheet__close'); x.type='button'; x.setAttribute('aria-label','Close'); x.setAttribute('data-k','close');
+    x.appendChild(glyph('close')); x.addEventListener('click',sheetClose); sheet.head.appendChild(x);
+  }
+  /* a question answered by pressed ghosts: the system's Option group holds them, and the chosen one is pressed, never filled */
+  function choice(legend,opts,cur,key,pick){
+    var fs=el('fieldset','salt-options');
+    if(legend) fs.appendChild(el('legend','salt-options__legend',legend));
+    var g=el('div','salt-options__grid salt-options__grid--2');
+    /* data-k by position: a product's word never reaches the page, an attribute included */
+    opts.forEach(function(o,i){
+      var b=el('button','salt-ghost'); b.type='button'; b.setAttribute('data-k',key+':'+i); b.setAttribute('aria-pressed',o[0]===cur?'true':'false');
+      if(typeof o[1]==='string') b.textContent=o[1]; else { b.appendChild(o[1]); b.setAttribute('aria-label',o[2]); }
+      b.addEventListener('click',function(){ pick(o[0]); });
+      g.appendChild(b);
+    });
+    fs.appendChild(g); return fs;
+  }
+  function formWhy(){
+    if(!quoteFor()) return 'Pick a size.';
+    if(draft.mode==='deliver'&&String(draft.place||'').trim().length<2) return 'Say roughly where it is going.';
+    return '';
+  }
+  function whereHint(){
+    return (draft.placeWas&&String(draft.place||'').trim()===draft.placeWas?'Same as last time. ':'')+'An area, not an address.';
+  }
+  function drawForm(){
+    sheetHead('New order');
+    var S=sold(), P=S.filter(function(x){ return x.product===draft.product; })[0]||S[0], B=sheet.body;
+    draft.product=P.product;
+    if(!P.sizes.some(function(x){ return String(x.q)===String(draft.q); })) draft.q=String(P.sizes[0].q);
+    /* v695: a product is a mark named by its shape; with one on the list the tiles say which by their legend */
+    if(S.length>1) B.appendChild(choice('',S.map(function(x){ return [x.product,psym(x.product,24),pshape(x.product)]; }),draft.product,'prod',
+      function(v){ draft.product=v; draft.q=null; var U=usual(); if(U&&U.product===v&&soldHas(v,U.q)) draft.q=String(U.q); sheetDraw(); }));
+    var fs=el('fieldset','salt-options');
+    if(S.length>1) fs.setAttribute('aria-label','Size');
+    else { var lg=el('legend','salt-options__legend'); lg.appendChild(withMark(P.product,'',22)); fs.appendChild(lg); }
+    var grid=el('div','salt-options__grid salt-options__grid--2'), U=usual();
+    P.sizes.forEach(function(x){
+      var lab=el('label','salt-option'), r=el('input','salt-option__input');
+      r.type='radio'; r.name='osize'; r.value=String(x.q); r.checked=String(x.q)===String(draft.q); r.setAttribute('data-k','size:'+x.q);
+      r.addEventListener('change',function(){ draft.q=String(x.q); sheetDraw(); });
+      var face=el('span','salt-option__face'), tx=el('span','salt-option__text'), lb=el('span','salt-option__label',unitsOf(x.q,P.unit));
+      if(U&&U.product===P.product&&String(U.q)===String(x.q)) lb.appendChild(el('span','salt-status salt-status--brass','your usual'));
+      tx.appendChild(lb); tx.appendChild(el('span','salt-option__figure',rm(x.price)));
+      face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); grid.appendChild(lab);
+    });
+    fs.appendChild(grid); B.appendChild(fs);
+    B.appendChild(choice('How it reaches you',[['collect','I will collect'],['deliver','Deliver to me']],draft.mode,'mode',
+      function(v){ draft.mode=v; sheetDraw(); }));
+    /* v694: a delivery says roughly where it is going, in his words a general location; never an address */
+    if(draft.mode==='deliver'){
+      var wf=el('div','salt-field'), wl=el('label','salt-field__label','Where to'); wl.htmlFor='oWhere';
+      var wi=el('input','salt-field__input'); wi.id='oWhere'; wi.type='text'; wi.maxLength=60; wi.value=draft.place||''; wi.autocomplete='off';
+      wi.placeholder='a neighbourhood or a landmark'; wi.setAttribute('data-k','where');
+      var wh=el('span','salt-field__hint',whereHint());
+      wi.addEventListener('input',function(){ draft.place=wi.value; wh.textContent=whereHint(); formFoot(); });
+      wf.appendChild(wl); wf.appendChild(wi); wf.appendChild(wh); B.appendChild(wf);
+    }
+    /* v751: a line with it, never required; it opens the order's thread. Folded until it is wanted */
+    if(draft.noteOpen||String(draft.say||'').trim()){
+      var nf=el('div','salt-field'), nl=el('label','salt-field__label','Note'); nl.htmlFor='oSay';
+      var ni=el('input','salt-field__input'); ni.id='oSay'; ni.type='text'; ni.maxLength=140; ni.value=draft.say||''; ni.autocomplete='off';
+      ni.placeholder='optional, a line about this order'; ni.setAttribute('data-k','say');
+      ni.addEventListener('input',function(){ draft.say=ni.value; });
+      nf.appendChild(nl); nf.appendChild(ni); B.appendChild(nf);
+    } else {
+      var an=el('button','salt-ghost ofull','Add a note'); an.type='button'; an.id='oAddNote'; an.setAttribute('data-k','addnote');
+      an.addEventListener('click',function(){ draft.noteOpen=true; sheetDraw(); var f=document.getElementById('oSay'); if(f) try{ f.focus(); }catch(e){} });
+      B.appendChild(an);
+    }
+    /* v702: an associate's own order and one for somebody else are told apart by a tick; nobody else sees it */
+    if(assoc){
+      var fl=el('label','rem'), fb=el('input'); fb.type='checkbox'; fb.id='ofriend'; fb.checked=!!draft.forFriend; fb.setAttribute('data-k','friend');
+      fb.addEventListener('change',function(){ draft.forFriend=fb.checked; });
+      fl.appendChild(fb); fl.appendChild(el('span',null,'On behalf of a friend')); B.appendChild(fl);
+    }
+    formFoot();
+  }
+  /* the foot alone, so typing a place never redraws the field under the thumb */
+  function formFoot(){
+    var F=sheet.foot; F.textContent='';
+    var qt=quoteFor(), why=formWhy(), t=el('div','ototal');
+    t.appendChild(el('b','salt-kpi__value',qt?rm(qt.total):''));
+    t.appendChild(el('span','sub2',why||(draft.mode==='deliver'?'and delivery, set when it is acknowledged':'to collect')));
+    F.appendChild(t);
+    var go=el('button','salt-pill salt-pill--md','Review'); go.type='button'; go.id='oGo'; go.disabled=!!why; go.setAttribute('data-k','review');
+    go.addEventListener('click',review);
+    F.appendChild(go); F.hidden=false;
+  }
+  /* REVIEW FREEZES THE ORDER. The check draws from this copy and Place sends this copy, so what is placed is what
+     was shown; the request id is minted with it, and a retry of Place is the same order under the same id */
+  function review(){
+    var qt=quoteFor(); if(!qt||formWhy()) return;
+    draft.check={product:qt.p.product, unit:qt.p.unit||'unit', q:qt.q, mode:draft.mode,
+      place:draft.mode==='deliver'?String(draft.place||'').trim():'', say:String(draft.say||'').trim(),
+      forFriend:!!(assoc&&draft.forFriend), total:qt.total, rate:qt.unit, rid:mintRid()};
+    draft.step='check'; draft.snote=''; sheetDraw();
+  }
+  function toForm(){ draft.step='form'; draft.check=null; draft.snote=''; sheetDraw(); }
+  function drawCheck(){
+    var c=draft.check, B=sheet.body;
+    sheetHead('Check your order',toForm);
+    var L=el('div','salt-ledger salt-ledger--plain');
+    function row(k,v){ var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), val=el('span','salt-ledger__value');
+      l.appendChild(el('span','salt-ledger__label',k)); if(typeof v==='string') val.textContent=v; else val.appendChild(v);
+      l.appendChild(val); r.appendChild(l); L.appendChild(r); }
+    if(assoc) row('For',c.forFriend?'A friend':'Me');
+    row('What',withMark(c.product,unitsOf(c.q,c.unit)+' ',16));
+    row('Price',rm(c.total));
+    row('How',c.mode==='deliver'?'Delivered to '+c.place:'You collect it');
+    if(c.mode==='deliver') row('Delivery','Set when it is acknowledged');
+    if(c.say) row('Note',c.say);
+    B.appendChild(L);
+    var F=sheet.foot;
+    var bk=el('button','salt-ghost','Change'); bk.type='button'; bk.id='oBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','change');
+    bk.addEventListener('click',toForm); F.appendChild(bk);
+    var pl=el('button','salt-pill salt-pill--md','Place order'); pl.type='button'; pl.id='oPlace'; pl.disabled=!!draft.busy; pl.setAttribute('data-k','place');
+    pl.addEventListener('click',place); F.appendChild(pl);
+    /* the answer is drawn beside Place, which is what was tapped */
+    if(draft.snote) F.appendChild(statusLine(draft.snote));
+  }
+  async function place(){
+    var c=draft.check; if(!c||draft.busy) return;
+    draft.busy=true; draft.snote=''; sheetDraw();
+    var mine=ticket;
+    var r=await api('/orders',{product:c.product,qty:c.q,mode:c.mode,unit:c.rate,total:c.total,place:c.place,
+      forFriend:!!(assoc&&c.forFriend),note:c.say,rid:c.rid,week:(prices&&prices.week&&prices.week.monday)||''});
+    if(mine!==ticket) return;
+    draft.busy=false;
+    if(!r.body.ok){ draft.snote=r.body.error||'The order was not placed.'; sheetDraw(); return; }
+    sheetClose();
+    draft.note='Placed. You will see it acknowledged below.'; draft.say=''; draft.noteOpen=false;
+    await loadOrders(); if(mine!==ticket) return;
+    drawOrder();
+  }
   function drawOrder(){
     var sc=window.scrollY;
     /* 24 Sep 2026: a redraw (a poll, another order's tap) rebuilt the thread box empty and took the caret away
@@ -1294,127 +1524,12 @@ const CLIENT_JS = `
     } else if(!sold().length){
       pOrder.appendChild(el('p','lead',prices&&(prices.soon&&prices.soon.length||prices.products&&prices.products.length)?'Ordering opens once your prices are set.':'Ordering opens once your price list is written, with the next update.'));
     } else {
-      pOrder.appendChild(el('p','lead','Pick a size off your list and check it over before you place it. Once it is acknowledged you can pay, and you are told when the goods are on their way.'));
-      var form=el('div','pane');
-      var S=sold();
-      if(!draft.product) draft.product=S[0].product;
-      var P=S.filter(function(x){return x.product===draft.product;})[0]||S[0];
-      draft.product=P.product;
-      if(!draft.q||!P.sizes.some(function(x){return String(x.q)===String(draft.q);})) draft.q=P.sizes[0].q;
-      if(!draft.mode) draft.mode='collect';
-      /* v695: the product was a dropdown, and an option carries text and nothing else, so a mark
-         could not go in one. Two products are a segment anyway, which is one tap rather than two. */
-      if(S.length>1){
-        var pseg=el('div','seg');
-        S.forEach(function(x){
-          var b=el('button',x.product===draft.product?'on':''); b.type='button';
-          b.setAttribute('aria-label',pshape(x.product));
-          b.setAttribute('aria-pressed',x.product===draft.product?'true':'false');
-          b.appendChild(psym(x.product,22));
-          b.addEventListener('click',function(){ draft.product=x.product; draft.q=null; draft.confirm=false; drawOrder(); });
-          pseg.appendChild(b);
-        });
-        form.appendChild(pseg);
-      }
-      var sq=el('select','fld salt-field__input salt-field__input--mono'); sq.setAttribute('aria-label','Size');
-      P.sizes.forEach(function(x){ var o=el('option',null,unitsOf(x.q,P.unit)); o.value=String(x.q); if(String(x.q)===String(draft.q))o.selected=true; sq.appendChild(o); });
-      sq.addEventListener('change',function(){ draft.q=sq.value; drawOrder(); });
-      form.appendChild(sq);
-      var seg=el('div','seg');
-      [['collect','I will collect'],['deliver','Deliver to me']].forEach(function(m){
-        var b=el('button',draft.mode===m[0]?'on':'',m[1]); b.type='button';
-        b.addEventListener('click',function(){ draft.mode=m[0]; drawOrder(); }); seg.appendChild(b);
-      });
-      form.appendChild(seg);
-      /* 24 Sep 2026: WHILE CHECK THIS OVER IS OPEN, THE PLACE AND THE LINE ARE WHAT IT SHOWS. Typing in either drew
-         nothing, so the list said one place and Place sent another (v694: the first tap shows what is about to be
-         ordered). They are read-only until Change it; the size and the mode redraw the list, so they stay live. */
-      var locked=!!draft.confirm&&!!quoteFor()&&(draft.mode!=='deliver'||String(draft.place||'').trim().length>=2);
-      /* v694: a delivery says roughly where it is going, in his words a general location. It tells
-         him which way to drive and what to charge; it is not an address and is not asked for one. */
-      if(draft.mode==='deliver'){
-        form.appendChild(el('span','lbl','Where to'));
-        var pl=el('input','fld salt-field__input'); pl.type='text'; pl.maxLength=60; pl.value=draft.place||'';
-        pl.placeholder='a neighbourhood or a landmark'; pl.setAttribute('aria-label','Roughly where it is going'); pl.readOnly=locked;
-        pl.addEventListener('input',function(){ draft.place=pl.value; var b=document.getElementById('oGo'); if(b)b.disabled=!quoteFor()||!!draft.busy||pl.value.trim().length<2; });
-        form.appendChild(pl);
-        form.appendChild(el('div','sub2','A neighbourhood is enough. The delivery charge is set when the order is acknowledged, and you see it here before you pay.'));
-      }
-      /* v751: ANYTHING THEY WANT TO SAY WITH IT, on any order and never required. It opens the
-         order's thread rather than sitting in a field of its own, so there is one place to read. */
-      form.appendChild(el('span','lbl','Anything to add'));
-      var sy=el('input','fld salt-field__input'); sy.type='text'; sy.maxLength=140; sy.value=draft.say||'';
-      sy.placeholder='optional, a line about this order'; sy.setAttribute('aria-label','Anything to add about this order'); sy.readOnly=locked;
-      sy.addEventListener('input',function(){ draft.say=sy.value; });
-      form.appendChild(sy);
-      /* v702, HIS INSTRUCTION OF 18 SEP 2026: an associate's own order and one placed for somebody
-         else are no longer told apart by what they buy, so they tick it. "On behalf of a friend",
-         his words, and the words he replaced an earlier phrasing with. Nobody else sees the tick. */
-      if(assoc){
-        var fl=el('label','rem'); var fb=el('input'); fb.type='checkbox'; fb.id='ofriend'; fb.checked=!!draft.forFriend;
-        fb.addEventListener('change',function(){ draft.forFriend=fb.checked; draft.confirm=false; drawOrder(); });
-        fl.appendChild(fb); fl.appendChild(el('span',null,'On behalf of a friend'));
-        form.appendChild(fl);
-      }
-      var qt=quoteFor();
-      form.appendChild(el('div','quote',qt?rm(qt.total):''));
-      if(qt){
-        var sub=el('div','sub2');
-        sub.appendChild(withMark(P.product,unitsOf(qt.q,P.unit)+' ',18));
-        sub.appendChild(document.createTextNode(' at '+rm(qt.unit)+' per '+(P.unit||'unit')
-          +(draft.mode==='deliver'?'; delivery is added when the order is acknowledged':', to collect')));
-        form.appendChild(sub);
-      } else form.appendChild(el('div','sub2',''));
-      var ready=!!qt&&!draft.busy&&(draft.mode!=='deliver'||String(draft.place||'').trim().length>=2);
-      /* 24 Sep 2026: THE REQUEST ID IS FOR THIS ORDER. The size and the mode stay live while Check this over is open,
-         and the Worker answers any repeat of an id with the order first stored under it, so a changed order takes a
-         new id, as a changed payment figure does; a retry of the same one keeps it. */
-      var what=qt?[P.product,qt.q,draft.mode,qt.total].join('|'):'';
-      /* v694: NOTHING IS PLACED ON ONE TAP (his instruction, 18 Sep 2026). The first tap shows what
-         is about to be ordered, in words, and the second places it. Going back keeps the choices. */
-      if(draft.confirm&&ready){
-        var cf=el('div','pane'); cf.style.marginTop='14px';
-        cf.appendChild(el('h3',null,'Check this over'));
-        var ul=el('ul','conf');
-        var rows=[['What',withMark(P.product,unitsOf(qt.q,P.unit)+' ',18)],
-                  ['How',draft.mode==='deliver'?'Delivered to you':'You collect it'],
-                  ['Rate',rm(qt.unit)+' per '+(P.unit||'unit')],
-                  ['Goods',rm(qt.total)]];
-        if(draft.mode==='deliver'){ rows.splice(2,0,['Where',draft.place.trim()]); rows.push(['Delivery','set when it is acknowledged']); }
-        if(assoc) rows.splice(1,0,['For',draft.forFriend?'A friend':'Yourself']);
-        if(String(draft.say||'').trim()) rows.push(['You said',String(draft.say).trim()]);
-        rows.forEach(function(r){ var li=el('li'); li.appendChild(el('span','k',r[0]));
-          var v=el('span','v'); if(typeof r[1]==='string') v.textContent=r[1]; else v.appendChild(r[1]);
-          li.appendChild(v); ul.appendChild(li); });
-        cf.appendChild(ul);
-        var ok2=el('button','btn salt-pill salt-pill--md','Place this order'); ok2.type='button'; ok2.disabled=!!draft.busy;
-        ok2.addEventListener('click', async function(){
-          if(draft.busy) return; draft.busy=true;
-          if(draft.ridFor!==what){ draft.rid=mintRid(); draft.ridFor=what; }
-          drawOrder();
-          var mine=ticket;
-          var r=await api('/orders',{product:P.product,qty:qt.q,mode:draft.mode,unit:qt.unit,total:qt.total,
-            place:draft.mode==='deliver'?draft.place.trim():'',forFriend:!!(assoc&&draft.forFriend),
-            note:String(draft.say||'').trim(), rid:draft.rid,
-            week:(prices.week&&prices.week.monday)||''});
-          if(mine!==ticket) return;
-          draft.busy=false;
-          if(!r.body.ok){ draft.note=r.body.error||'The order was not placed.'; }
-          else { draft.note='Placed. You will see it acknowledged below.'; draft.confirm=false; draft.place=''; draft.say=''; await loadOrders(); if(mine!==ticket) return; }
-          drawOrder();
-        });
-        cf.appendChild(ok2);
-        var back=el('button','btn quiet salt-ghost','Change it'); back.type='button'; back.disabled=!!draft.busy;
-        back.addEventListener('click',function(){ draft.confirm=false; drawOrder(); });
-        cf.appendChild(back);
-        form.appendChild(cf);
-      } else {
-        var go2=el('button','btn salt-pill salt-pill--md','Review this order'); go2.type='button'; go2.id='oGo'; go2.disabled=!ready;
-        go2.addEventListener('click',function(){ draft.confirm=true; draft.note=''; draft.rid=mintRid(); draft.ridFor=what; drawOrder(); });
-        form.appendChild(go2);
-      }
-      if(draft.note) form.appendChild(el('p','msg',draft.note));
-      pOrder.appendChild(form);
+      /* S4 4.3: the form is a sheet now, laid over the page from here */
+      pOrder.appendChild(el('p','lead','Pick a size and check it over before you place it. Once it is acknowledged you can pay, and you are told when the goods are on their way.'));
+      var nb=el('button','btn salt-pill salt-pill--md','New order'); nb.type='button'; nb.id='oNew';
+      nb.addEventListener('click',function(){ sheetOpen(null,null,nb); });
+      pOrder.appendChild(nb);
+      if(draft.note) pOrder.appendChild(statusLine(draft.note));
     }
     /* notifications: a wake on the phone when the order moves, so the page need not stay open.
        Not on his read-only view: those are not his phones. */
