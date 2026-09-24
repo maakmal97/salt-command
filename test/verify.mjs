@@ -14155,8 +14155,8 @@ await (async () => {
     ok(await until(() => [...D.querySelectorAll("#rlist button")].some((b) => b.textContent.includes("CX0-AA"))), "Accounts lists the account");
     /* S9 9.2: a row opens the account's card, and the card opens the account */
     [...D.querySelectorAll("#rlist button")].find((b) => b.textContent.includes("CX0-AA")).click();
-    ok(await until(() => [...D.querySelectorAll("#aopen button")].some((b) => b.textContent === "Open account")), "the row opens its card");
-    [...D.querySelectorAll("#aopen button")].find((b) => b.textContent === "Open account").click();
+    ok(await until(() => [...D.querySelectorAll("#aopen button")].some((b) => b.textContent === "View as them")), "the row opens its card");
+    [...D.querySelectorAll("#aopen button")].find((b) => b.textContent === "View as them").click();
     const pOrder = D.getElementById("pOrder");
     ok(await until(() => pOrder.querySelectorAll(".pane .quote").length >= 1),
       "the account opens and its order is drawn from his route, not None yet: " + JSON.stringify(pOrder.textContent.slice(0, 160)));
@@ -14224,12 +14224,12 @@ await (async () => {
     ok(await until(() => rowOf(uB) && /No account/.test(rowOf(uB).textContent) && rowOf(uA)), "Accounts lists both usernames, and says the one has no account");
     const cardOf = (u) => { rowOf(u).click(); return [...D.querySelectorAll("#aopen .scard")].find((x) => x.textContent.includes(u)); };
     const btn = (card, t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
-    const four = ["Share", "Copy message", "Sign-in link", "Open account"];
+    const four = ["Share", "Copy message", "Sign-in link", "View as them"];
     const before = hits.length;
     const cB = cardOf(uB);
     await new Promise((r) => setTimeout(r, 60));
     ok(!!cB && four.every((t) => btn(cB, t) && btn(cB, t).disabled && /No account/.test(btn(cB, t).title)) && /No account yet/.test(cB.textContent),
-      "on the card with no account, Share, Copy message, Sign-in link and Open account are all off, each saying why: "
+      "on the card with no account, Share, Copy message, Sign-in link and View as them are all off, each saying why: "
         + JSON.stringify(four.map((t) => [t, cB && btn(cB, t) && btn(cB, t).disabled])));
     ok(!hits.slice(before).some((x) => /\/open$/.test(x)), "and opening its card posts nothing: " + JSON.stringify(hits.slice(before)));
     /* UX9: the code opens the same address Share sends, under a caption offering the Sign-in link that is off */
@@ -15025,6 +15025,76 @@ await (async () => {
     D.querySelector('.salt-rail button[data-m="more"]').click();
     ok(D.getElementById("oMore").hidden === false && current() === "more" && !!D.querySelector('#oMore button[data-m="cards"]') && !!D.getElementById("mTest"),
       "More holds the report card and the test account");
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 9.5: View as them opens the customer's page read only, under a banner naming whose it is, and Back to accounts returns to that account");
+await (async () => {
+  /* THE PLAN'S SECTION 5: View as them, read only, with their orders. His bar says "Viewing as <username>,
+     read only" and its one control is Back to accounts, which lands on Accounts with that account open, never
+     on a "Signed out" line about an account he never signed into. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s9-5";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9-5", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX0-VW", username: u }]));
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX0-VW", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9-5", KID = "kid-s9-5";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 200 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  const hits = [];
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const cust = await (await site("/")).text();
+    ok(!/Viewing as|Back to accounts|id="vas"/.test(cust) && /id="lock">Log out</.test(cust), "the customer's bar is unchanged: Log out, and no banner");
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    D.querySelector('button[data-m="accounts"]').click();
+    ok(await until(() => D.querySelector('#rlist [data-u="' + u + '"]')), "the account is on Accounts");
+    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    const view = [...D.querySelectorAll("#aopen button")].find((b) => b.textContent === "View as them");
+    ok(!!view && !view.disabled, "its card offers View as them");
+    view.click();
+    ok(await until(() => !D.getElementById("tabs").hidden && !D.getElementById("barw").hidden),
+      "View as them opens their own page");
+    const bar = D.querySelector("#barw .bar");
+    ok(D.getElementById("vas").textContent === "Viewing as " + u + ", read only" && D.getElementById("roster").hidden,
+      "under a banner naming the username and saying read only: " + JSON.stringify(D.getElementById("vas").textContent));
+    const lockB = D.getElementById("lock");
+    ok(lockB.textContent === "Back to accounts" && ![...bar.querySelectorAll("button")].some((b) => /Log out/.test(b.textContent)),
+      "and the bar's one control is Back to accounts, never Log out");
+    ok(hits.includes("GET /all/orders/" + u) && !hits.some((x) => /^POST \/(orders|push|my\/refs)|^GET \/(orders|my\/refs)$/.test(x)),
+      "it reads their orders through his own route, and never through a customer's session: " + JSON.stringify(hits));
+    lockB.click();
+    ok(await until(() => !D.getElementById("roster").hidden) && D.getElementById("barw").hidden && D.getElementById("tabs").hidden,
+      "Back to accounts leaves their page");
+    ok(D.getElementById("oAccts").hidden === false && !D.getElementById("aopen").hidden
+      && /CX0-VW/.test(D.querySelector("#aopen .scard").textContent)
+      && D.querySelector('#rlist [data-u="' + u + '"]').getAttribute("aria-current") === "true",
+      "and lands on Accounts with that account open, where he was");
+    ok(!/Signed out/.test(D.getElementById("rmsg").textContent),
+      "with no word about signing out of an account he never signed into: " + JSON.stringify(D.getElementById("rmsg").textContent));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");

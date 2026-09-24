@@ -559,8 +559,10 @@ export function landingPage(user, nonce, owner, bulletin) {
     + "</div>"
     + "</div>"
     + '<div id="barw" hidden><div class="bar">'
-    + '<span><b id="whoacct"></b><span id="cd"></span></span>'
-    + '<button type="button" id="lock">Log out</button>'
+    /* S9 9.5: on his page an account is viewed, never signed into, so the bar says whose it is and that it is
+       read only, and its one control takes him back to that account on Accounts */
+    + '<span><b id="whoacct"></b><span id="cd"></span>' + (owner ? '<span id="vas">Viewing as <b id="vasU"></b>, read only</span>' : "") + "</span>"
+    + '<button type="button" id="lock">' + (owner ? "Back to accounts" : "Log out") + "</button>"
     /* S1 1.5: a lapsed session says so where the reader is, with the one way back: a second row of the bar */
     + '<div id="lapse" class="lapse" role="alert" hidden><span id="lapseT"></span><button type="button" id="lapseGo">Continue</button></div>'
     + "</div></div>"

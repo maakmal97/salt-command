@@ -184,7 +184,8 @@ export const OWNER_JS = `
       }catch(e){ slb.textContent=made?'Link made, not copied':'Could not make one'; }
       setTimeout(function(){ slb.textContent='Sign-in link'; slb.disabled=false; }, 2200);
     });
-    var open=el('button',null,'Open account'); open.type='button';
+    /* S9 9.5: View as them, their own page, read only */
+    var open=el('button',null,'View as them'); open.type='button';
     if(noAcct){ open.disabled=true; open.title=why; }
     open.addEventListener('click', function(){ openAcct(a); });
     row.appendChild(share); row.appendChild(copy); row.appendChild(slb); row.appendChild(pwb); row.appendChild(open);
@@ -221,10 +222,14 @@ export const OWNER_JS = `
     if(busy) return;
     un.value=a.username; pw.value=OWNER.master;
     if(whoacct) whoacct.textContent=(a.code||a.username)+' \\u00b7 ';
+    document.getElementById('vasU').textContent=a.username;
     var f=document.getElementById('f');
     if(f.requestSubmit) f.requestSubmit();
     else f.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
   }
+  /* S9 9.5: BACK TO ACCOUNTS. The bar's one control on his page runs the page's own Log out first, which puts
+     his page back (lock); this then shows Accounts, where the account he was viewing is still open. */
+  document.getElementById('lock').addEventListener('click', function(){ panel('accounts'); });
   /* 24 SEP 2026 (M22): AN ACCOUNT HE OPENS IS READ ONLY, and it draws what their own page draws. It
      has no session, the owner does not order, so the orders and an associate's own links come from
      /all/orders/<u>, behind the prefix's one Access check. The page calls this when view is set. */

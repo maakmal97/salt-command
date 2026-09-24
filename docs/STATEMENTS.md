@@ -654,6 +654,10 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   for where it stands, when and how it was last opened, alerts on (the `push:` keys, counted by
   `alertsOn`), locked and no account; a search and filters (Not sent, Not opened, Owes, Locked, No
   account) above it; a row opens the account's card (Send's), beside the list from 1080px.
+- **View as them** (S9 9.5) opens the account's own page under the master, read only: its orders and an
+  associate's links come from `GET /all/orders/<username>` behind the prefix's Access check, and nothing on it
+  places, pays or sends. The bar says "Viewing as <username>, read only" and its one control is Back to
+  accounts, which returns to that account's card, never to a line about signing out.
 - **The master account** (v687, his instruction of 18 Sep 2026): the list shows every account with where it stands, in one word
   from `reviewFlag`, and when it was last opened, from the `seen:` keys this Worker has written
   since v499 and nothing read until now. The list comes from `GET /all/sheet`, which merges those
