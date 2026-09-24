@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, tellWaiting, bulletinRelay, rejectedOnOrder } from "./orders.js";
+import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -177,8 +177,29 @@ async function readQueuePost(request) {
    having a bad minute must never fail the queue write that triggered it. */
 async function pushIfDrafted(env, result) {
   try {
-    if (result && result.drafted > 0) await sendPush(env, { tag: "approve", urgency: "high" });
+    /* S11: a row his own yes approved as it was drafted waits on nobody, so it wakes nobody */
+    if (result && result.drafted - ((result.approved || []).length) > 0) await sendPush(env, { tag: "approve", urgency: "high" });
   } catch { /* a banner is not worth an error path */ }
+}
+
+/* S11 (D6): WHAT AN APPROVAL SETS GOING, whichever road approved it: the drafter spending his yes, or his tap
+   under Approve. The stage is rung once, as a tap rings it; and a pending row an Accept queued moves its order on
+   the site now (ackOnApproval), which is the moment D6 lets the customer be told. A fault is logged and the
+   approval stands: the order is moved again by the next Accept, which finds the row approved. */
+async function afterApproval(env, ctx, ids) {
+  if (!ids || !ids.length) return [];
+  stageOnApproval(env, ctx);
+  const moved = [];
+  for (const id of ids) {
+    try {
+      /* his approval spends the yes behind the row, whether it was marked as differing or never tested (a fault) */
+      await env.SALT_LEDGER.prepare("UPDATE preapproval SET status='applied' WHERE draft_id=?1 AND status='differs'").bind(id).run();
+      await env.SALT_LEDGER.prepare("UPDATE preapproval SET status='applied', draft_id=?1, decided_at=?2 WHERE entry_at=?1 AND status='waiting'").bind(id, new Date().toISOString()).run();
+      const pre = await env.SALT_LEDGER.prepare("SELECT * FROM preapproval WHERE entry_at=?1 AND stage='ack' AND status='applied'").bind(id).first();
+      if (pre) moved.push(Object.assign({ id }, await ackOnApproval(env, pre)));
+    } catch (e) { console.log("after approval of " + id + ": " + String((e && e.message) || e)); }
+  }
+  return moved;
 }
 
 /* v762: THE LEDGER IS TOLD ON THE TAP. The reconcile is the one road that queues a site order's
@@ -195,7 +216,10 @@ function reconcileOnTap(env, ctx) {
     try {
       const rc = await reconcileOrders(env);
       console.log("orders reconcile (on the tap): " + JSON.stringify(rc));
-      if (rc.queued && env.SALT_LEDGER) console.log("drafter (on the tap): " + JSON.stringify(await runDrafter(env)));
+      /* S11: and what the desk queues itself (cash taken at the counter), in the same tail */
+      const dp = await deskPass(env, new Date());
+      await afterApproval(env, ctx, dp.approved);
+      if ((rc.queued || dp.queued) && env.SALT_LEDGER) { const d = await runDrafter(env); console.log("drafter (on the tap): " + JSON.stringify(d)); await afterApproval(env, ctx, d.approved); }
     } catch (e) { console.log("orders reconcile (on the tap) FAILED: " + String((e && e.stack) || e)); }
   })());
 }
@@ -206,6 +230,7 @@ function draftOnArrival(env, ctx) {
     try {
       const r = await runDrafter(env);
       console.log("drafter (on arrival): " + JSON.stringify(r));
+      await afterApproval(env, ctx, r.approved);
       /* v759: AND NO BANNER. This road is a tap on the phone in his hand, and the desk draws the
          row under Approve while he is looking at it. The other two roads to the drafter, the
          orders reconcile and the quarter-hour net, are the ones that write a row he was not
@@ -236,29 +261,9 @@ async function handleQueuePost(request, env, ctx) {
   return json({ ok: true, entries: kept.length, device: payload.device, dropped: gone.size, droppedAts: [...gone] });
 }
 
-/* v525: REJECT MEANS DISCARD. A rejected entry used to sit in every device's queue until the
-   fold's watermark passed it, and a device that still held it re-posted it with its next tap.
-   The Worker now drops it from every q:* key on the rejection, and a queue POST drops any entry
-   whose draft was rejected, so no device can bring it back. The draft row stays, rejected: the
-   decision is the record. */
-async function dropQueued(env, ats) {
-  const want = new Set(ats.filter(Boolean));
-  if (!env.SALT_QUEUE || !want.size) return 0;
-  let dropped = 0, cursor;
-  do {
-    const list = await env.SALT_QUEUE.list({ prefix: "q:", cursor });
-    for (const k of list.keys) {
-      const raw = await env.SALT_QUEUE.get(k.name);
-      if (!raw) continue;
-      let v; try { v = JSON.parse(raw); } catch (e) { continue; }
-      const before = (v.queue || []).length;
-      v.queue = (v.queue || []).filter((e) => !(e && want.has(e.at)));
-      if (v.queue.length !== before) { dropped += before - v.queue.length; await env.SALT_QUEUE.put(k.name, JSON.stringify(v)); }
-    }
-    cursor = list.list_complete ? null : list.cursor;
-  } while (cursor);
-  return dropped;
-}
+/* v525: a rejected entry is dropped from every queue (dropQueued, src/orders.js, which a withdrawal
+   uses too since S11 11.10), and a queue POST drops any entry whose draft was rejected, so no device
+   can bring it back. */
 async function rejectedAmong(env, ats) {
   const out = new Set();
   if (!env.SALT_LEDGER) return out;
@@ -433,6 +438,16 @@ async function handleDraftsGet(env, url) {
   sql += " ORDER BY drafted_at";
   const rs = await env.SALT_LEDGER.prepare(sql).bind(...binds).all();
   const drafts = (rs.results || []).map(draftOut);
+  /* S11 (D6): A ROW THAT DIFFERS FROM WHAT HE SAID YES TO waits here marked, with what he was shown beside it */
+  try {
+    const pr = await env.SALT_LEDGER.prepare("SELECT draft_id,stage,shown,at FROM preapproval WHERE status='differs' AND draft_id IS NOT NULL").all();
+    const by = new Map((pr.results || []).map((r) => [r.draft_id, r]));
+    for (const d of drafts) {
+      const p = d.status === "pending" && by.get(d.id);
+      if (p) { let shown = null; try { shown = JSON.parse(p.shown); } catch (e) { shown = null; }
+        d.preapproval = { state: "differs", says: "differs from what you saw", stage: p.stage, at: p.at, shown }; }
+    }
+  } catch (e) { /* a store before migrations/0011 marks nothing */ }
 
   /* THE REFUSED LIST RIDES ALONG, and it is a separate key rather than a fourth status for
      the reason migrations/0003 gives: these carry no proposed row and can never be approved.
@@ -561,9 +576,15 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
     const now = await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(id).first();
     return json({ ok: false, error: "already " + ((now && now.status) || "decided"), status: now && now.status }, 409);
   }
-  if (decision === "approved") stageOnApproval(env, ctx);
+  /* S11: an approval sets going what any approval does; a rejection spends any yes that was waiting on this row */
+  let moved = [];
+  if (decision === "approved") moved = await afterApproval(env, ctx, [id]);
   let dropped = 0;
-  if (decision === "rejected") { try { dropped = await dropQueued(env, [id]); } catch (e) { /* the decision stands; the POST filter catches a re-post */ } }
+  if (decision === "rejected") {
+    try { dropped = await dropQueued(env, [id]); } catch (e) { /* the decision stands; the POST filter catches a re-post */ }
+    try { await env.SALT_LEDGER.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE (entry_at=?2 OR draft_id=?2) AND status IN ('waiting','differs')").bind(new Date().toISOString(), id).run(); }
+    catch (e) { /* a store before migrations/0011 has no yes to spend */ }
+  }
   const row = await env.SALT_LEDGER.prepare(`SELECT ${DRAFT_COLS} FROM draft WHERE id=?1`).bind(id).first();
   const d = row ? draftOut(row) : null;
   /* 24 Sep 2026: a row a site order made tells that order it was rejected, or its card goes on
@@ -572,7 +593,7 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
   if (decision === "rejected" && d && d.entry && d.entry.orderId) {
     try { order = await rejectedOnOrder(env, d.entry, new Date().toISOString()); } catch (e) { order = false; }
   }
-  return json(Object.assign({ ok: true, draft: d, dropped }, order === undefined ? {} : { order }));
+  return json(Object.assign({ ok: true, draft: d, dropped }, order === undefined ? {} : { order }, moved.length ? { moved } : {}));
 }
 
 /* Marked by the commit run once the row is actually in the master, so an approved row is not
@@ -675,8 +696,12 @@ export default {
           } catch (e) { console.log("orders return leg FAILED: " + String((e && e.stack) || e)); }
           const rc = await reconcileOrders(env);
           /* waiting is logged too (20 Sep 2026): a stage held for its row was invisible for as long as it waited */
-          if (!rc.ok || rc.queued || rc.unmapped || rc.waiting || rc.failed) console.log("orders reconcile: " + JSON.stringify(rc));
-          if (rc.queued) { const d = await runDrafter(env); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); }
+          if (!rc.ok || rc.queued || rc.unmapped || rc.waiting || rc.failed || rc.dropped) console.log("orders reconcile: " + JSON.stringify(rc));
+          /* S11: and what the desk queued itself, beside it */
+          const dp = await deskPass(env, new Date(event.scheduledTime || Date.now()));
+          if (dp.queued || dp.dropped || dp.approved) console.log("orders desk pass: " + JSON.stringify(dp));
+          await afterApproval(env, ctx, dp.approved);
+          if (rc.queued || dp.queued) { const d = await runDrafter(env); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); await afterApproval(env, ctx, d.approved); }
         } catch (e) { console.log("orders reconcile FAILED: " + String((e && e.stack) || e)); }
         /* S9 9.8: and Salt Admin is told what waits here, when it has changed */
         try {
@@ -688,6 +713,7 @@ export default {
           const r = await runDrafter(env);
           console.log("drafter: " + JSON.stringify(r));
           await pushIfDrafted(env, r);
+          await afterApproval(env, ctx, r.approved);
         }
       } catch (e) {
         console.log("scheduled FAILED: " + String((e && e.stack) || e));
@@ -819,13 +845,56 @@ export default {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
       /* S9 9.8: the page's own read carries the count of associate links waiting in Salt Admin */
       const r = await listOrders(env, url.searchParams.get("all") === "1", true);
+      /* S11 11.13: and what each has to offer again, a row he rejected, read off the drafts; the desk's alone */
+      if (r.ok && env.SALT_LEDGER) {
+        const again = await againOf(env.SALT_LEDGER, r.orders.map((o) => o.id));
+        for (const o of r.orders) if (again[o.id]) o.again = again[o.id];
+        /* and whether his Accept is given and not yet spent: its row being drafted (`waiting`), or waiting under Approve
+           because it came out other than he saw (`differs`); the card then offers no second Accept */
+        try {
+          const ys = await env.SALT_LEDGER.prepare("SELECT order_id,status FROM preapproval WHERE stage='ack' AND status IN ('waiting','differs')").all();
+          const yes = new Map((ys.results || []).map((y) => [y.order_id, y.status]));
+          for (const o of r.orders) if (yes.has(o.id)) o.yes = yes.get(o.id);
+        } catch (e) { /* a store before migrations/0011 has no yes to say */ }
+      }
       return json(r, r.ok ? 200 : 503);
+    }
+    /* S11: THE CARD'S OWN ROUTES, by the order's id alone. An order id is minted digits and letters with a
+       dash (mintOrderId) and is never one of these words, so they are read before a move `/orders/<u>/<id>`. */
+    const cm = /^\/orders\/([^/]+)\/(preview|accept|handed|cash|received|again)$/.exec(p);
+    if (cm) {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b = {};
+      try { b = await request.json(); } catch { b = {}; }
+      const id = decodeURIComponent(cm[1]);
+      let r;
+      const by = (b && typeof b.by === "string" && b.by.trim().slice(0, 40)) || "phone";
+      try {
+        if (cm[2] === "preview") r = await previewOrder(env, id, b);
+        else if (cm[2] === "accept") {
+          r = await acceptOrder(env, id, b, by);
+          /* the stage rung for the row his yes approved; any other row the same drafting pass approved is followed
+             as every approval is (its own order moved), this one having moved its order already */
+          const others = ((r.drafted && r.drafted.approved) || []).filter((x) => x !== r.draft);
+          if (others.length) await afterApproval(env, ctx, others);
+          else if (r.approved) stageOnApproval(env, ctx);
+        } else {
+          /* S11 11.12: Collected, Cash received and Received record his yes, then the site hears the move and the
+             ledger is told in the request's tail, as any move of his is (v762) */
+          r = await ({ handed: handedOrder, cash: cashOrder, received: receivedOrder, again: againOrder })[cm[2]](env, id, b, by);
+          if (r.ok && r.preapproval && r.preapproval.spent === "applied") await afterApproval(env, ctx, [r.preapproval.draft]);
+          if (r.ok) reconcileOnTap(env, ctx);
+        }
+      } catch (e) { r = { ok: false, status: 500, error: String((e && e.message) || e) }; }
+      return json(r, r.ok ? 200 : (r.status || 502));
     }
     const om = /^\/orders\/([^/]+)\/([^/]+)$/.exec(p);
     if (om) {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       let b = {};
       try { b = await request.json(); } catch { b = {}; }
+      /* S11: cash he took moves the ledger's mark with it, so only the cash route, which books its row, may send it */
+      if (b && b.cash) return json({ ok: false, error: "cash taken is recorded through orders/<id>/cash, which books its row" }, 400);
       const r = await moveOrder(env, om[1], om[2], b);
       if (!r.ok) return json({ ok: false, error: r.error }, r.status || 502);
       if (!r.order.code) r.warn = "no desk code is mapped to " + r.order.u + ", so nothing can be queued for the ledger: publish the statements again";
@@ -931,7 +1000,9 @@ export default {
       if (!writeOk(request, env)) return needsKey();
       try {
         if (url.searchParams.get("dry") === "1") return json(await dryRunDrafter(env));
-        return json(await runDrafter(env));
+        const r = await runDrafter(env);
+        await afterApproval(env, ctx, r.approved);   /* S11: a row his yes approved sets going what any approval does */
+        return json(r);
       } catch (e) {
         return json({ ok: false, error: String((e && e.message) || e) }, 500);
       }

@@ -315,7 +315,8 @@ export function sheetParty(code, users, passwords, statementHtml) {
   const user = users[code] || (/Your username is <code>([^<]+)<\/code>/.exec(statementHtml || "") || [])[1];
   if (!user) return null;
   const who = Object.keys(users).find((c) => users[c] === user) || code;
-  const pw = passwords[code] || passwords[who];
+  /* or under the username: a spare account the fold bound was filed there, having no code yet (S14) */
+  const pw = passwords[code] || passwords[who] || passwords[user];
   return pw ? { who, user, pw } : null;
 }
 

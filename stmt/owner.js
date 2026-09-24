@@ -46,9 +46,11 @@ export const OWNER_JS = `
   var FLAGW={owes:'Owes',goods:'Owes goods',refund:'Refund due',pend:'Agreed, not actioned',clear:'Clear'};
   /* 23 SEP 2026: THE ACCOUNT IS ONE LIVE DOCUMENT (v769), so there is no issue for an account to be
      missing from. A row with no totals is a username with nothing behind it, and that is what it
-     says: D15 (24 Sep 2026), the laptop's next update makes it. The level is the stranger's, named by the book
-     through the sheet, never here; S9 fix: the sheet is the one source, so Needs you, a row and a card say the
-     same level the moment the sheet lands, whether or not the links have. */
+     says. D15 (24 Sep 2026): the fold binds a spare account at Add ID and this run's publish opens it,
+     so a row reads this only when no spare was free, and the laptop's next update makes it. The level
+     is the stranger's, named by the book through the sheet, never here; S9 fix: the sheet is the one
+     source, so Needs you, a row and a card say the same level the moment the sheet lands, whether or not
+     the links have. */
   var stranger=null;
   function waitLine(){ return 'Made at the next laptop update.'+(stranger?' Until then, show the '+stranger+' link.':''); }
   function flagLine(a){
@@ -99,19 +101,106 @@ export const OWNER_JS = `
       for(var r=0;r<n;r++) for(var k=0;k<n;k++) if(rows[r][k]==='1') x.fillRect((k+pad)*box,(r+pad)*box,box,box); }
     return c;
   }
-  /* v710's one-time link, minted for one account: the content key is opened HERE under the master and wrapped
-     under a token minted here, and only the token's hash and that wrap reach the Worker, which answers with the
-     finished words. CHARACTER CLASSES, NOT ESCAPES: this file is spliced into a template literal, where a
-     backslash before + or / is eaten and /+/ is not a regular expression at all. */
-  async function mintLink(a){
+  /* THE ACCOUNT'S KEY, WRAPPED UNDER A FRESH ONE, for a link or a hand-over: opened HERE under the master and
+     wrapped under a key minted here, so the Worker sees a wrap and a key and never the account's own key.
+     CHARACTER CLASSES, NOT ESCAPES: this file is spliced into a template literal, where a backslash before
+     + or / is eaten and /+/ is not a regular expression at all. */
+  async function keyFor(a){
     var o=await (await fetch('/open', {method:'POST', headers:{'content-type':'application/json'},
       body:JSON.stringify({u:a.username, password:OWNER.master, master:OWNER.master})})).json();
     if(!o.ok||!o.wrapMaster) throw new Error('that account did not open under the master');
     var ck=await unwrap(OWNER.master, o.wrapMaster);
     var raw=crypto.getRandomValues(new Uint8Array(24));
     var tok=btoa(String.fromCharCode.apply(null, raw)).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/[=]+$/,'');
-    var wrap=await wrapUnder(new TextEncoder().encode(tok), ck);
-    return refs('/all/signin/'+encodeURIComponent(a.username), {token:tok, wrap:wrap});
+    return {token:tok, wrap:await wrapUnder(new TextEncoder().encode(tok), ck)};
+  }
+  /* v710's one-time link, minted for one account on keyFor: only the token's hash and the wrap reach the Worker,
+     which answers with the finished words. The card's Sign-in link, Needs you and Send them in turn all make it here. */
+  async function mintLink(a){
+    var k=await keyFor(a);
+    var j=await refs('/all/signin/'+encodeURIComponent(a.username), {token:k.token, wrap:k.wrap});
+    k=null;
+    return j;
+  }
+  /* ---- SHOW A CODE, IN PERSON (S3 3.13, his decision D2 of 24 Sep 2026) -------------------------------
+     A customer at his counter signs in on their own phone without a message: a QR their camera opens, signed
+     in, and eight symbols to type where Salt Counter asks for one (the saved iPhone app keeps its own storage,
+     so a camera's browser does not sign it in). MINTED AS THE SHEET OPENS and only shown: nothing here copies
+     or shares, so no clipboard or share sheet ever waits on the derivation and the fetch. One use, fifteen
+     minutes; closing the sheet does not spend it. The recipes are the system's: Sheet, Orb, QR panel and Code
+     field. */
+  var hoSheet=null;
+  function closeHo(){
+    if(!hoSheet) return;
+    var from=hoSheet.from;
+    hoSheet.scrim.remove(); hoSheet.box.remove(); hoSheet=null;
+    try{ if(from) from.focus(); }catch(e){}
+  }
+  function svgEl(tag, attrs){
+    var e=document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for(var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  /* rectangles, one a run of dark modules, as engine/qr.mjs's qrRectSvg draws them: a stroked path does not scan */
+  function qrRects(rows){
+    var n=rows.length, q=4, span=n+q*2;
+    var svg=svgEl('svg', {viewBox:'0 0 '+span+' '+span, role:'img', 'aria-label':'A code their camera opens, signed in'});
+    var g=svgEl('g', {}); g.style.fill='var(--salt-slate)';
+    for(var r=0;r<n;r++){
+      for(var c=0;c<n;){
+        if(rows[r][c]!=='1'){ c++; continue; }
+        var w=1; while(c+w<n&&rows[r][c+w]==='1') w++;
+        g.appendChild(svgEl('rect', {x:c+q, y:r+q, width:w, height:1}));
+        c+=w;
+      }
+    }
+    svg.appendChild(g);
+    return svg;
+  }
+  async function showHandover(a, from){
+    closeHo();
+    var scrim=el('div','salt-sheet-scrim'); scrim.setAttribute('aria-hidden','true');
+    var box=el('div','salt-sheet ho'); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
+    box.setAttribute('aria-labelledby','hoT'); box.tabIndex=-1;
+    box.appendChild(el('div','salt-sheet__grab'));
+    var head=el('div','salt-sheet__head'), title=el('h2','salt-sheet__title','Sign in on their phone'); title.id='hoT';
+    var x=el('button','salt-orb salt-sheet__close'); x.type='button'; x.setAttribute('aria-label','Close');
+    var xg=svgEl('svg', {width:16, height:16, viewBox:'0 0 16 16', fill:'none', stroke:'currentColor', 'stroke-width':'1.5', 'stroke-linecap':'round', 'aria-hidden':'true'});
+    xg.appendChild(svgEl('path', {d:'M3.5 3.5l9 9M12.5 3.5l-9 9'})); x.appendChild(xg);
+    head.appendChild(title); head.appendChild(x); box.appendChild(head);
+    var body=el('div','salt-sheet__body'); box.appendChild(body);
+    body.appendChild(el('p','ho-for','For '+a.username+'.'));
+    var wait=el('p','ho-wait','Making a code...'); body.appendChild(wait);
+    document.body.appendChild(scrim); document.body.appendChild(box);
+    var me=hoSheet={scrim:scrim, box:box, from:from};
+    scrim.addEventListener('click', closeHo); x.addEventListener('click', closeHo);
+    box.addEventListener('keydown', function(e){ if(e.key==='Escape'){ e.stopPropagation(); closeHo(); } });
+    try{ box.focus(); }catch(e){}
+    try{
+      var k=await keyFor(a);
+      var j=await refs('/all/handover', {u:a.username, token:k.token, wrap:k.wrap});
+      k=null;
+      if(hoSheet!==me) return;
+      wait.remove();
+      /* the panel's width is the component's own prop, and its place in the sheet is this page's: set from the
+         script, which the page's style policy allows where a style attribute is refused */
+      var qr=el('div','salt-qr'); qr.style.width='min(280px, 100%)'; qr.style.margin='4px auto 20px';
+      var qc=el('div','salt-qr__code'); qc.appendChild(qrRects(j.qr||[])); qr.appendChild(qc);
+      var qm=el('div','salt-qr__meta'); qm.appendChild(el('span','salt-qr__caption','Their camera opens it, signed in')); qr.appendChild(qm);
+      body.appendChild(qr);
+      var p=klBits(j.exp);
+      var cf=el('div','salt-field salt-code');
+      var lab=el('label','salt-code__label','Or type this code where Salt Counter asks for one'); lab.htmlFor='hoC';
+      var inp=el('input','salt-field__input salt-field__input--code'); inp.id='hoC'; inp.readOnly=true;
+      inp.setAttribute('autocomplete','off'); inp.setAttribute('spellcheck','false');
+      inp.value=String(j.code||'').replace('-',' ');
+      cf.appendChild(lab); cf.appendChild(inp);
+      cf.appendChild(el('p','salt-code__hint','Works once, until '+p.hour+':'+p.minute+'.'));
+      body.appendChild(cf);
+    }catch(e){
+      if(hoSheet!==me) return;
+      wait.className='salt-code__error'; wait.textContent='Could not make a code: '+e.message;
+    }
   }
   function sendCard(a){
     var card=el('div','scard'+(a.sent?' done':''));
@@ -187,11 +276,28 @@ export const OWNER_JS = `
       }catch(e){ slb.textContent=made?'Link made, not copied':'Could not make one'; }
       setTimeout(function(){ slb.textContent='Sign-in link'; slb.disabled=false; }, 2200);
     });
+    var hob=el('button',null,'Show a code'); hob.type='button';
+    if(noAcct){ hob.disabled=true; hob.title=why; }
+    hob.addEventListener('click', function(){ if(a.account!==false) showHandover(a, hob); });
+    /* S3 FIX, 24 SEP 2026: SIGN OUT EVERYWHERE (fold 9.4's server half). A forwarded link or a lost phone stays signed
+       in while it is used, so this ends every phone and session on the account; a second tap within four seconds says
+       yes, and a new link or a code then signs them back in */
+    var sob=el('button',null,'Sign out everywhere'); sob.type='button';
+    if(noAcct){ sob.disabled=true; sob.title=why; }
+    var soArmed=null;
+    sob.addEventListener('click', async function(){
+      if(a.account===false) return;
+      if(!soArmed){ sob.textContent='Tap again to sign them out'; soArmed=setTimeout(function(){ soArmed=null; sob.textContent='Sign out everywhere'; }, 4000); return; }
+      clearTimeout(soArmed); soArmed=null; sob.disabled=true; sob.textContent='Signing out...';
+      try{ var j=await refs('/all/signout', {u:a.username}); sob.textContent=j.ended?'Signed out everywhere':'Nothing was signed in'; }
+      catch(e){ sob.textContent='Could not sign out'; }
+      setTimeout(function(){ sob.textContent='Sign out everywhere'; sob.disabled=false; }, 2200);
+    });
     /* S9 9.5: View as them, their own page, read only */
     var open=el('button',null,'View as them'); open.type='button';
     if(noAcct){ open.disabled=true; open.title=why; }
     open.addEventListener('click', function(){ openAcct(a); });
-    row.appendChild(share); row.appendChild(copy); row.appendChild(slb); row.appendChild(pwb); row.appendChild(open);
+    row.appendChild(share); row.appendChild(copy); row.appendChild(slb); row.appendChild(hob); row.appendChild(pwb); row.appendChild(sob); row.appendChild(open);
     card.appendChild(row);
     var tick=el('label','tick');
     var box=document.createElement('input'); box.type='checkbox'; box.checked=!!a.sent;
@@ -490,7 +596,7 @@ export const OWNER_JS = `
      one, Send switched off); and the accounts nobody has been sent. Read off /all/sheet and /all/refs, the two
      reads the page makes anyway. A tap is answered on its own card. */
   var nlist=document.getElementById('nlist'), nCount=document.getElementById('nCount'), linksRead=false;
-  function codeOf(u){ var a=OWNER.accounts.filter(function(x){ return x.username===u; })[0]; return (a&&a.code)||u||'An associate'; }
+  function codeByUser(u){ var a=OWNER.accounts.filter(function(x){ return x.username===u; })[0]; return (a&&a.code)||u||'An associate'; }
   function hm(iso){ try{ var p=klBits(iso); return p.hour+':'+p.minute; }catch(e){ return ''; } }
   function dayMon(iso){ try{ var p=klBits(iso); return +p.day+' '+MON3[+p.month-1]; }catch(e){ return ''; } }
   /* a moment today is its time, any other its day */
@@ -539,18 +645,18 @@ export const OWNER_JS = `
   var madeLink={}, silverOpen={};
   function linkButton(a, note){
     var u=a.username, b=ghost('', true);
-    function show(){
+    function paint(){
       var m=madeLink[u]||{};
       b.disabled=!!m.busy; b.textContent=m.busy?'Making it...':m.j?'Share the link':'Send a sign-in link'; note.textContent=m.note||'';
     }
     /* answered on this button, or on the one a redraw put in its place */
-    function after(){ if(b.isConnected) show(); else drawNeeds(); }
-    show();
+    function after(){ if(b.isConnected) paint(); else drawNeeds(); }
+    paint();
     b.addEventListener('click', async function(){
       var m=madeLink[u]||(madeLink[u]={});
       if(m.busy) return;
       if(!m.j){
-        m.busy=true; m.note=''; show();
+        m.busy=true; m.note=''; paint();
         try{ m.j=await mintLink(a); m.note='Made. It signs '+(a.code||a.username)+' in once.'; }
         catch(e){ m.note='Could not make one: '+e.message; }
         m.busy=false; after(); return;
@@ -564,7 +670,7 @@ export const OWNER_JS = `
     return b;
   }
   function linkNeed(r){
-    var who=codeOf(r.by);
+    var who=codeByUser(r.by);
     var c=needCard('l:'+r.id, who, 'guest link, made '+when(r.made), 'A link for a friend. It opens nothing until you approve it.');
     if(moved&&moved.id===r.id){ noteOf(c).textContent=moved.t; return c; }
     if(tiers.length){
@@ -595,8 +701,8 @@ export const OWNER_JS = `
     var row=el('div','salt-approve__actions');
     c.appendChild(row);
     row.appendChild(linkButton(a, noteOf(c)));
-    /* Show a code, in person, is stage 3's (showHandover): the card takes it the moment it is on the page */
-    if(typeof showHandover==='function'){ var sc=ghost('Show a code'); sc.addEventListener('click', function(){ showHandover(a, sc); }); row.appendChild(sc); }
+    /* and Show a code, in person, stage 3's hand-over (showHandover), for a customer at his counter */
+    var sc=ghost('Show a code'); sc.addEventListener('click', function(){ showHandover(a, sc); }); row.appendChild(sc);
     return c;
   }
   function bareNeed(a){
@@ -606,7 +712,7 @@ export const OWNER_JS = `
     off.disabled=true; off.title='No account behind this username yet';
     row.appendChild(sh); row.appendChild(off); c.appendChild(row);
     var note=noteOf(c);
-    function open(){
+    function openSilver(){
       var r=strangerLink();
       if(!r){ note.textContent='The '+lv+' link is not made yet. Open Links once, then try again.'; return; }
       silverOpen[a.username]=true;
@@ -619,8 +725,8 @@ export const OWNER_JS = `
       box.appendChild(cp);
       c.insertBefore(box, row); sh.disabled=true;
     }
-    sh.addEventListener('click', open);
-    if(silverOpen[a.username]) open();
+    sh.addEventListener('click', openSilver);
+    if(silverOpen[a.username]) openSilver();
     return c;
   }
   function sendNeed(rows){

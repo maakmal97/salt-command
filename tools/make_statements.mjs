@@ -746,6 +746,55 @@ export function partyTotals(party, to) {
   return accountTotals(rows, stmtRefunds(party, o));
 }
 
+/* ---- WHAT IS TO PAY NOW, WHAT IS OVERDUE AND WHAT IS COMING UP (S6, his D9 of 24 Sep 2026) ----
+   The engine's own readings, so the customer reads what his Order book reads and the site prices
+   nothing. TO PAY NOW is the desk's receivable, `txAdvance`: goods handed over and not paid for,
+   each part due at its order date plus the term, the day his worked example gives ("collected
+   Wed 16 Sep, due by Sat 26 Sep"). OVERDUE is a part once that day has passed, which is the
+   desk's `buyerProfile` reading of late (more than the term since the order date). COMING UP is
+   `txPendRM`: an order agreed and not handed over, with money still to pay on it. A gift counts in
+   none of them, owing nothing on the statement, and nor does a written-off sale, which the desk's
+   own readings of what is owed leave out, or a row the statement's own window has not reached.
+   THE TERM IS THE DESK'S `RULES.creditDays`, READ OUT OF THE MASTER rather than restated, for the
+   reason siteBaseUrl reads wrangler.stmt.jsonc: two copies of a due date drift in silence. */
+const MASTER = process.env.SALT_MASTER || resolve(REPO, "master", "salt_command.html");
+let TERM = null;
+export function creditTerm() {
+  if (TERM != null) return TERM;
+  const rules = /const RULES=\{([^;]*)\};/.exec(readFileSync(MASTER, "utf8"));
+  const m = rules && /\bcreditDays:\s*(\d+)/.exec(rules[1]);
+  if (!m) throw new Error("the master states no RULES.creditDays, so no due date can be written");
+  return (TERM = +m[1]);
+}
+const dayPlus = (d, n) => new Date(new Date(d).getTime() + n * 864e5).toISOString().slice(0, 10);
+export function payDue(party, day) {
+  const term = creditTerm(), E = POSITION_ENGINE, now = [], coming = [];
+  const sum = a => +a.reduce((t, x) => t + x.rm, 0).toFixed(2);
+  /* the statement's own window (stmtRows): a row not Pending and dated after the day is not on it yet */
+  const onIt = s => txStat(s).order === 'Pending' || !(new Date(s.date) > new Date(day));
+  /* the day the goods were collected, txDates' own reading taken on the part handed over so far:
+     txDates names no day until the whole order has gone, and a part is often a handover in stages */
+  const gotOn = s => txDates(Object.assign({}, s, { qty: E.txEffDeliv(s) })).dOn || null;
+  sales.filter(s => E.ownsCode(party, s.customer) && !s.goodwill && !s.defaulted && onIt(s)).forEach(s => {
+    const product = s.product || "salt", resale = s.customer !== party;
+    const rm = +E.txAdvance(s).toFixed(2);
+    if (rm > 0.009) {
+      const due = s.date ? dayPlus(s.date, term) : null;
+      now.push({ date: s.date || null, due, late: !!due && day > due, rm, whole: +txOwed(s).toFixed(2),
+        product, qty: s.qty, got: +(s.deliveredQty || 0), gotOn: gotOn(s), resale });
+    }
+    const toPay = +E.txPendRM(s).toFixed(2);
+    if (toPay > 0.009) coming.push({ date: s.date || s.agreedOn || null, rm: toPay, product, qty: s.qty,
+      toCome: +(s.qty - E.txEffDeliv(s)).toFixed(4), resale });
+  });
+  const k = d => d || "9999";   /* an undated part sorts last */
+  now.sort((a, b) => k(a.due).localeCompare(k(b.due)));
+  coming.sort((a, b) => k(a.date).localeCompare(k(b.date)));
+  const late = now.filter(x => x.late);
+  return { term, now: { rm: sum(now), due: (now.find(x => x.due) || {}).due || null, parts: now },
+    overdue: { rm: sum(late), parts: late }, coming: { rm: sum(coming), parts: coming } };
+}
+
 /* ---- the live statement ------------------------------------------------------------
    EVERY ENTRY FROM THE START TO NOW (his instruction, 03 Sep 2026). The same rows, the same
    document and the same laws as an issue, with no cut-off: whatever the book holds when it is
@@ -767,7 +816,8 @@ export function liveStatement(party, now, user) {
      is over the line. It is SEALED with the document, never written beside the record in the clear:
      a figure owed is a fact about the book, and nothing about the book goes into the store unsealed. */
   const owed = +accountTotals(rows, o.refunds).owed.toFixed(2);
-  return { at: at.toISOString(), body: docBody(stmtDoc(party, rows, o)), owed };
+  /* S6: and beside it what is to pay now, overdue and coming up, sealed the same way */
+  return { at: at.toISOString(), body: docBody(stmtDoc(party, rows, o)), owed, pay: payDue(party, today) };
 }
 
 /* THE RECORDS AS THE DEPLOY PUBLISHES THEM: the newest issue's records, each with the live
@@ -940,7 +990,8 @@ export async function makeStatements(outDir, issue, opts) {
         + 'Tick Remember me and that device stays signed in; Log out ends it.<br>'
         + '<code>' + esc(url) + '</code></p></div>';
       html = baseDoc.replace('</div></body></html>', qrBlock + '\n</div></body></html>');
-      pw = priorPw[p] || newPassword();
+      /* a spare account bound by the fold has its password filed under the username, not the code (S14) */
+      pw = priorPw[p] || priorPw[u] || newPassword();
       passwords[p] = pw;
       const history = priorIssues(outDir, p, issue);
       const bundle = { v: 1, issued: issue, statements: [

@@ -18,6 +18,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { oneCodeEach } from "./stmt-pool.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const run = (args) => execFileSync(process.execPath, args.map((a) => a.startsWith("tools/") ? resolve(REPO, a) : a), { cwd: REPO, encoding: "utf8", stdio: "pipe" });
@@ -56,6 +57,13 @@ export function stampCheck() {
   return m[1];
 }
 
+/* S14: ONE USERNAME, ONE CODE (tools/stmt-pool.mjs). First, being a file read: a merge of two folds'
+   bindings can give one account to two codes, and the phone would then serve the wrong statement. */
+export function usersCheck() {
+  const file = resolve(process.env.SALT_STATEMENTS_DIR || resolve(REPO, "statements"), "_users.json");
+  return Object.keys(oneCodeEach(JSON.parse(readFileSync(file, "utf8")))).length;
+}
+
 export function buildMatches() {
   const revPath = resolve(REPO, "public", "rev.json");
   const before = JSON.parse(readFileSync(revPath, "utf8")).id;
@@ -72,7 +80,9 @@ const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv
 if (isMain) {
   const t0 = Date.now();
   let failed = false;
-  for (const [what, args] of CHECKS) {
+  try { console.log(`  ok    every statement username has one code (${usersCheck()} codes)`); }
+  catch (e) { failed = true; console.log(`  FAIL  ${e.message}`); }
+  for (const [what, args] of failed ? [] : CHECKS) {
     const t = Date.now();
     try { run(args); console.log(`  ok    ${what} (${((Date.now() - t) / 1000).toFixed(1)} s)`); }
     catch (e) { failed = true; console.log(`  FAIL  ${what}\n        ${String((e && e.stdout) || (e && e.message) || e).trim().split("\n").slice(-4).join("\n        ")}`); break; }
