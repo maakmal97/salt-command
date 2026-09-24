@@ -642,7 +642,9 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
 - **No brand** (his instruction, 10 Sep 2026): nothing a customer holds may point at the
   ledger, and an eyebrow carrying the name undid that.
 - **Salt Admin opens on Needs you** (S9 9.1, the plan's section 5): one Approve card a thing that waits
-  on him, its action on the card, the tap answered there. An associate's waiting link (Approve, the tier
+  on him, its action on the card, the tap answered there. A card about an account carries its code as a
+  button that opens it: from 1080px beside the list (the first such card's account until he picks one, the
+  pane drawn again only when its account changes or the sheet is read), on a phone on Accounts. An associate's waiting link (Approve, the tier
   it quotes, Decline); an account refused at an address after ten wrong passwords, which may be anybody holding
   the username and never says the customer is shut out, read off the `fail:` brake by `lockedOut` (how
   many addresses and when it opens, never an address; the count off each key's listing metadata, which the

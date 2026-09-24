@@ -242,10 +242,18 @@ body.ended>*:not(#aEnded){display:none}
   #oAccts.open .asplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:20px;align-items:start}
   #aopen{position:sticky;top:24px}
   #aopen .aback{display:none}
+  /* S9 fix: Needs you beside the account a card is about (the plan's f13w) */
+  #mHome.open{max-width:none}
+  #mHome.open .nsplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:20px;align-items:start}
+  #nopen{position:sticky;top:24px}
 }
 @media (max-width:1079.98px){
   #oAccts.open .afind,#oAccts.open .alist,#oAccts.open #scount{display:none}
+  #nopen{display:none}
 }
+/* a card's party opens its account: a quiet link at the full tap, its hit area kept off the card's rhythm */
+button.salt-approve__party{display:inline-flex;align-items:center;min-height:var(--salt-tap);min-width:var(--salt-tap);
+  margin:-12px 0;padding:0;background:none;border:0;cursor:pointer;text-align:left;text-decoration:underline;text-underline-offset:3px}
 /* S9 9.1: NEEDS YOU, the system's Approve card a thing; this page decides only the gaps between them and
    the line a tap is answered on, which sits on the card it answers */
 #mHome .salt-eyebrow{margin:0 0 6px}
@@ -481,9 +489,12 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Admin</p>'
         + "<h1>Needs you</h1>"
         + '<p class="lead" id="nCount">Reading what needs you.</p>'
+        /* S9 fix: from 1080px the list stands beside the account a card is about, as Accounts does */
+        + '<div class="nsplit"><div>'
         + '<div id="nlist" class="nlist"></div>'
         /* S9 9.8: what waits on the desk, as the desk last told this site: a count, no link and no name */
         + '<p class="nwait" id="nDesk" hidden>' + aico("desk") + '<span id="nDeskT"></span></p>'
+        + '</div><div id="nopen" hidden></div></div>'
         + "</div>"
         /* S9 9.2: ACCOUNTS, one list for what Send and Review were: found by a word, narrowed by a filter, and a
            row opens the account beside the list from 1080px, in its place below it on a phone */

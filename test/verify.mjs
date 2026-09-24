@@ -15892,6 +15892,79 @@ await (async () => {
       "and its Accounts row says the same, where an account with one does not: " + JSON.stringify([(row(uN) || {}).textContent, (row(uF) || {}).textContent]));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S9 fix UX-R3: from 1080px Needs you stands beside the account a card is about, and on a phone a card's code opens it on Accounts");
+await (async () => {
+  /* The brief's f13w: the list beside the open card. Needs you was one 600px column with nothing on a card opening
+     its account, so he went to Accounts and found the code there. The width is the page's own matchMedia. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s9-ux3";
+  const uL = C.newUsername(), uA = C.newUsername(), uN = C.newUsername(), pw = C.newPassword();
+  const rec = async (u, extra) => { const ck = await C.contentKey("s9-ux3", u);
+    return JSON.stringify(Object.assign({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+      wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }, extra || {})); };
+  await kv.put("u:" + uL, await rec(uL)); await kv.put("u:" + uA, await rec(uA, { assoc: true }));
+  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+  await kv.put("roster", JSON.stringify([{ code: "CX0-LK", username: uL }, { code: "CX1-AS", username: uA }, { code: "CX3-NO", username: uN }]));
+  await kv.put("issue", "2026-09-01");
+  const row = (code, username) => ({ code, username, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" });
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01", accounts: [row("CX0-LK", uL), row("CX1-AS", uA)] }));
+  for (const u of [uA, uL]) await kv.put("sent:2026-09-01:" + u, JSON.stringify({ at: "2026-09-02T01:00:00Z" }));
+  const TEAM = "maakmal", AUD = "aud-s9-ux3", KID = "kid-s9-ux3";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 250 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  const view = { wide: true };
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sess = (await (await site("/open", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ u: uA, password: pw }) })).json()).session;
+    const lid = (await (await site("/my/refs", { method: "POST", headers: { "X-Stmt-Session": sess, "content-type": "application/json" }, body: "{}" })).json()).ref.id;
+    const from = { "content-type": "application/json", "CF-Connecting-IP": "198.51.100.97" };
+    for (let i = 0; i < 10; i++) await site("/open", { method: "POST", headers: from, body: JSON.stringify({ u: uL, password: "zzzz-zzzz-zzzz-zzzz" }) });
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      w.matchMedia = (q) => ({ media: q, matches: /min-width:\s*1080px/.test(q) && view.wide, addListener() {}, removeListener() {} });
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document, pane = D.getElementById("nopen");
+    const card = (key) => D.querySelector('#nlist [data-need="' + key + '"]');
+    const party = (key) => card(key) && card(key).querySelector(".salt-approve__head .salt-approve__party");
+    ok(await until(() => card("l:" + lid) && card("k:" + uL) && card("n:" + uN) && !pane.hidden),
+      "on a desk, Needs you opens with an account open beside it");
+    ok(D.getElementById("mHome").classList.contains("open") && /CX0-LK/.test((pane.querySelector(".scard .srow") || {}).textContent || "")
+      && card("k:" + uL).getAttribute("aria-current") === "true",
+      "the first card about an account, and that card is marked the open one: " + ((pane.querySelector(".scard .srow") || {}).textContent));
+    ok(party("k:" + uL).tagName === "BUTTON" && party("n:" + uN).tagName === "BUTTON" && party("l:" + lid).tagName === "SPAN",
+      "a card about an account carries its code as a button; the link card's associate does not");
+    party("n:" + uN).click();
+    ok(/CX3-NO/.test(pane.querySelector(".scard .srow").textContent) && /Made at the next laptop update/.test(pane.textContent)
+      && card("n:" + uN).getAttribute("aria-current") === "true" && !card("k:" + uL).hasAttribute("aria-current"),
+      "a tap on another card's code opens that account beside the list instead: " + pane.querySelector(".scard .srow").textContent);
+    const open = pane.querySelector(".scard");
+    [...card("l:" + lid).querySelectorAll("button")].find((b) => b.textContent === "Approve").click();
+    ok(await until(() => /Approved[.]/.test(card("l:" + lid).textContent)) && pane.querySelector(".scard") === open,
+      "a redraw of the list leaves the open account as it was, so a tap in flight on it is never lost");
+    /* on a phone the pane is not shown, and a card's code opens the account on Accounts */
+    view.wide = false;
+    party("k:" + uL).click();
+    ok(D.getElementById("mHome").hidden && !D.getElementById("oAccts").hidden && !D.getElementById("aopen").hidden
+      && /CX0-LK/.test(D.querySelector("#aopen .scard .srow").textContent) && !!D.querySelector('#aopen button[data-back="accounts"]'),
+      "on a phone a card's code opens that account on Accounts, with the way back");
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password

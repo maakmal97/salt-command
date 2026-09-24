@@ -69,7 +69,7 @@ export const OWNER_JS = `
       var j=await refs('/all/sheet');
       sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null; deskWait=j.desk||null; stranger=j.stranger||null;
       sheetRows.forEach(function(a){ sheet[a.username]=a; });
-      drawRoster(); drawTest(); drawNeeds();
+      drawRoster(); drawTest(); drawNeeds(); drawNeedOpen(true);
       if(aOpen) openCard(aOpen);
       var n=document.getElementById('mCount'), real=sheetRows.filter(function(a){ return !a.test; }).length;
       /* the count is of accounts on the book: the test account is not one (v689) */
@@ -318,9 +318,13 @@ export const OWNER_JS = `
     if(!a) return;
     var back=el('button','aback','← Accounts'); back.type='button'; back.setAttribute('data-back','accounts');
     aopen.appendChild(back);
-    if(sheet){ var cs=el('div','achips'); chipsOf(a).forEach(function(c){ cs.appendChild(c); }); aopen.appendChild(cs); }
-    aopen.appendChild(sendCard(a));
+    acctPane(aopen, a);
     try{ window.scrollTo(0,0); }catch(e){}
+  }
+  /* an account as it opens: its chips, then Send's card */
+  function acctPane(box, a){
+    if(sheet){ var cs=el('div','achips'); chipsOf(a).forEach(function(c){ cs.appendChild(c); }); box.appendChild(cs); }
+    box.appendChild(sendCard(a));
   }
   function setCount(m, n){ [].slice.call(document.querySelectorAll('[data-count="'+m+'"]')).forEach(function(c){ c.textContent=n?String(n):''; }); }
   /* ---- THE GUEST LINKS, on the same gated route -------------------------------------------
@@ -493,15 +497,36 @@ export const OWNER_JS = `
   function when(iso){ var t=dayMon(iso); return t===dayMon(new Date().toISOString())?hm(iso):t; }
   function andList(xs){ return xs.length<2?xs.join(''):xs.slice(0,-1).join(', ')+' and '+xs[xs.length-1]; }
   function ghost(t, lit){ var b=el('button','salt-ghost'+(lit?' salt-ghost--lit':''),t); b.type='button'; return b; }
-  function needCard(key, party, entry, reason){
+  function needCard(key, party, entry, reason, u){
     var c=el('article','salt-approve need'); c.setAttribute('data-need', key);
     var h=el('div','salt-approve__head');
-    h.appendChild(el('span','salt-approve__party',party)); h.appendChild(el('span','salt-approve__entry',entry));
+    /* S9 fix: a card about an account opens it, beside the list from 1080px and on Accounts on a phone */
+    var p=el(u?'button':'span','salt-approve__party',party);
+    if(u){ p.type='button'; p.setAttribute('aria-label','Open '+party); c.setAttribute('data-u', u); p.addEventListener('click', function(){ openNeed(u); }); }
+    h.appendChild(p); h.appendChild(el('span','salt-approve__entry',entry));
     c.appendChild(h);
     if(reason) c.appendChild(el('p','salt-approve__reason',reason));
     return c;
   }
   function noteOf(c){ var m=el('p','nnote'); m.setAttribute('role','status'); c.appendChild(m); return m; }
+  /* S9 fix: FROM 1080PX NEEDS YOU STANDS BESIDE AN ACCOUNT (the plan's f13w), as Accounts does: the one he opened
+     from a card, else the first card's about an account. The pane is drawn again only when its account changes or
+     the sheet is read again, so a redraw of the list never takes a tap in flight off the open card. */
+  var nopen=document.getElementById('nopen'), nOpen=null;
+  function wide(){ return !!(window.matchMedia&&window.matchMedia('(min-width:1080px)').matches); }
+  function openNeed(u){
+    if(!wide()){ panel('accounts'); openCard(u); return; }
+    nOpen=u; drawNeedOpen(true);
+  }
+  function drawNeedOpen(force){
+    if(!nOpen&&wide()){ var first=nlist.querySelector('[data-u]'); nOpen=first?first.getAttribute('data-u'):null; }
+    var a=nOpen&&sheet&&sheet[nOpen];
+    [].slice.call(nlist.querySelectorAll('[data-u]')).forEach(function(c){
+      if(c.getAttribute('data-u')===nOpen) c.setAttribute('aria-current','true'); else c.removeAttribute('aria-current'); });
+    if(!force&&nopen.getAttribute('data-u')===(a?nOpen:'')) return;
+    mHome.classList.toggle('open', !!a); nopen.hidden=!a; nopen.textContent=''; nopen.setAttribute('data-u', a?nOpen:'');
+    if(a) acctPane(nopen, a);
+  }
   /* the stranger's standing link is what an ID with no account is shown */
   function strangerLink(){
     return links.filter(function(r){ return r.standing&&r.level===stranger&&!r.revoked; })[0]||null;
@@ -566,7 +591,7 @@ export const OWNER_JS = `
     var c=needCard('k:'+a.username, a.code||a.username, 'refused at '+at,
       'Ten wrong passwords '+(L.from>1?'each ':'')+'from '+at+', refused there'+(L.until?' until '+hm(L.until):'')+'.'
       +' If it was them, a sign-in link lets them in.'
-      +(s&&s.opens?' Last got in'+(howOf(s)?' '+howOf(s):'')+', '+dayMon(s.last)+'.':' Has never got in.'));
+      +(s&&s.opens?' Last got in'+(howOf(s)?' '+howOf(s):'')+', '+dayMon(s.last)+'.':' Has never got in.'), a.username);
     var row=el('div','salt-approve__actions');
     c.appendChild(row);
     row.appendChild(linkButton(a, noteOf(c)));
@@ -576,7 +601,7 @@ export const OWNER_JS = `
   }
   function bareNeed(a){
     var lv=stranger||"stranger's";
-    var c=needCard('n:'+a.username, a.code||a.username, 'no account yet', waitLine());
+    var c=needCard('n:'+a.username, a.code||a.username, 'no account yet', waitLine(), a.username);
     var row=el('div','salt-approve__actions'), sh=ghost('Show the '+lv+' link', true), off=ghost('Send, after the update');
     off.disabled=true; off.title='No account behind this username yet';
     row.appendChild(sh); row.appendChild(off); c.appendChild(row);
@@ -685,6 +710,7 @@ export const OWNER_JS = `
     document.getElementById('nDeskT').textContent=dn?dn+(dn===1?' thing waits':' things wait')+' on the desk.':'Nothing waits on the desk.';
     nCount.textContent=(!sheet||!linksRead)?'Reading what needs you.'
       :(n?n+(n===1?' thing':' things'):'Nothing needs you')+', as at '+hm(new Date().toISOString())+'.';
+    drawNeedOpen(false);
   }
   document.getElementById('gmake').addEventListener('click', async function(){
     var b=this, intro=document.getElementById('gintro').value,
