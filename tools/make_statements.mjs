@@ -36,7 +36,7 @@ import { priceList } from "./pricelist.mjs";
    what a book looks like. tools/ reading stmt/ is the safe direction and is what stmt-send.mjs
    already does; the ban is on stmt/ reaching OUT, because that Worker bundle must stay free of
    node builtins. */
-import { psymSvg, PSHAPE } from "../stmt/page.js";
+import { psymSvg, PSHAPE, MON3 } from "../stmt/page.js";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BOOK = process.env.SALT_BOOK || resolve(REPO, "ledger", "book.json");
@@ -75,6 +75,8 @@ const bookOrder = (ids) => {
 const customerRefunds = book.customerRefunds || [];
 const { txStat, txDates, txOwed } = POSITION_ENGINE;   /* v741: what they owe is the goods and the delivery together */
 const esc = x => ('' + (x == null ? '' : x)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+/* "03 Sep 2026" off a Date's own clock; the month from MON3, because en-GB writes Sept (24 Sep 2026) */
+const dmy = t => String(t.getDate()).padStart(2, '0') + ' ' + MON3[t.getMonth()] + ' ' + t.getFullYear();
 const codeOf = n => n; /* the desk's codeOf is newIds[n]||n and newIds is {} post-rekey: identity */
 
 /* ============ STATEMENT OF ACCOUNT (v183) ============
@@ -342,7 +344,8 @@ function stmtDoc(party,rows,o){
      formatter pushed "Invalid Date" onto a document meant for a customer. The state
      column already says what such a row is; the date cell stays quiet. Whether it
      should instead show the row's cancelledOn or agreedOn is his call, not made here. */
-  const dLong=d=>{try{const t=new Date(d);if(!d||isNaN(t))return '';return t.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(x){return d;}};
+  /* Sep, never en-GB's Sept (24 Sep 2026), except on an archive, which is rebuilt to say what was issued */
+  const dLong=d=>{try{const t=new Date(d);if(!d||isNaN(t))return '';return marked?dmy(t):t.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(x){return d;}};
   /* NEVER A NAME: the one substitution in this lifted block. The desk-era useName
      option read the laptop's plaintext directory, which never reaches this repo (hard
      rule 2), so the path is removed rather than parameterised: a statement built here
@@ -636,7 +639,14 @@ export { stmtRows, stmtRecon, stmtRefunds, stmtDoc };
    old one never changes. It is committed: a username is an address, not a secret, and the
    passwords beside it are what stay out of the repository. It sits beside the month folders,
    because it belongs to every issue rather than to one. */
-const longDate = iso => new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+/** A moment in Kuala Lumpur as "03 Sep 2026", and with `time` "03 Sep 2026, 14:20". */
+export function klShort(at, time) {
+  const p = {};
+  new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kuala_Lumpur', day: '2-digit', month: 'numeric', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(at).forEach((x) => { p[x.type] = x.value; });
+  return p.day + ' ' + MON3[+p.month - 1] + ' ' + p.year + (time ? ', ' + p.hour + ':' + p.minute : '');
+}
+const longDate = iso => dmy(new Date(iso + 'T00:00:00'));
 function usersFileFor(outDir) {
   if (process.env.SALT_USERS_FILE) return process.env.SALT_USERS_FILE;
   const here = resolve(outDir);
@@ -744,7 +754,7 @@ export function partyTotals(party, to) {
    and never has a QR: the QR on the issued statement already opens it. */
 export function liveStatement(party, now, user) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
-  const kl = at.toLocaleString('en-GB', { timeZone: 'Asia/Kuala_Lumpur', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+  const kl = klShort(at, true);
   const today = at.toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
   const o = { from: null, to: today, completed: true, open: true, pending: true,
               dates: true, brand: null, issued: kl.replace(',', ''), live: true, user: user || null };

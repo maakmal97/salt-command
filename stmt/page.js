@@ -329,6 +329,9 @@ const RING = 'M12 4.2 A7.8 7.8 0 1 1 11.99 4.2 Z';
    put the word back for exactly the readers who cannot see that it was taken away. The shape is
    what is on the screen, so saying it aloud gives away no more than looking does. */
 export const PSHAPE = { salt: "Cube", oil: "Droplet", candy: "Lozenge", rice: "Capsule", _: "Ring" };
+/* THE SHORT MONTHS, NAMED ONCE (24 Sep 2026). Node and every browser write "Sept" for September in en-GB, and
+   the house writes Sep: the page, his page, the statement and the price list all read the month from here. */
+export const MON3 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 /** The mark for a product, as SVG source. `px` is the drawn size; the stroke stays hairline. */
 export function psymSvg(product, px) {
   const d = PSYM[String(product || "").toLowerCase()] || RING;
@@ -531,7 +534,7 @@ export function landingPage(user, nonce, owner, bulletin) {
       .replace("__PAY_SITE__", JSON.stringify(PAY_SITE)).replace("__PAY_ACCOUNTS__", JSON.stringify(PAY_ACCOUNTS))
       /* v695: the product marks, so the page can draw one wherever it would have written a name */
       .replace("__PSYM__", JSON.stringify(Object.assign({ _: RING }, PSYM)))
-      .replace("__PSHAPE__", JSON.stringify(PSHAPE))
+      .replace("__PSHAPE__", JSON.stringify(PSHAPE)).replace("__MON3__", JSON.stringify(MON3))
       /* "<" is escaped because this one carries the master passphrase, and a "</script>" inside a
          string literal ends the block wherever it appears: the browser closes the tag first and
          reads the rest of the passphrase as page text. */
@@ -754,9 +757,16 @@ const CLIENT_JS = `
     var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(blob.iv)}, ck, b64d(blob.ct));
     return new TextDecoder().decode(pt);
   }
+  /* a moment in Kuala Lumpur, in parts: the month is read off MON3, never off en-GB's own short month */
+  var MON3=__MON3__;
+  function klBits(iso){
+    var p={};
+    new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',year:'numeric',
+      hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(function(x){ p[x.type]=x.value; });
+    return p;
+  }
   function stamp(iso){
-    try{ return new Date(iso).toLocaleString('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'short',
-      hour:'2-digit',minute:'2-digit',hour12:false}); }catch(e){ return ''; }
+    try{ var p=klBits(iso); return p.day+' '+MON3[+p.month-1]+', '+p.hour+':'+p.minute; }catch(e){ return ''; }
   }
 
   /* ---- REMEMBER ME (v692) --------------------------------------------------------------------

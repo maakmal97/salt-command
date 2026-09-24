@@ -13051,7 +13051,7 @@ function tabLedger(){
      So the month index is built from the rows that have one, and undated rows fall through
      to the bottom of the ledger where they already sort. */
   const months=[...new Set(all.filter(t=>t.date).map(t=>t.date.slice(0,7)))].sort();
-  const mLab=m=>new Date(m+'-01').toLocaleDateString('en-GB',{month:'short',year:'numeric'});
+  const mLab=m=>MAP_MON[+m.slice(5,7)-1]+' '+m.slice(0,4);   // Sep 2026; en-GB writes Sept
   const selOpt=(v,cur,lab)=>`<option value="${v}"${v===cur?' selected':''}>${lab}</option>`;
   /* v563: Clear is the ghost, not the pill. `.vbtn` is the button that books or produces, per
      the design layer's own rule at section 7, and it was the only filled element in the bar:
@@ -13307,7 +13307,7 @@ function drawFinCharts(){
        now, the table's own rows, and a year on the label whenever the months span more than one. */
     const rows=finRows(), keys=rows.map(r=>r[0]);
     const multi=new Set(keys.map(k=>k.slice(0,4))).size>1;
-    const lab=keys.map(k=>new Date(k+'-01').toLocaleString('en-GB',{month:'short'})+(multi?' '+k.slice(2,4):''));
+    const lab=keys.map(k=>MAP_MON[+k.slice(5,7)-1]+(multi?' '+k.slice(2,4):''));
     freshChart(el,{type:'bar',data:{labels:lab,datasets:[
       {label:'Revenue',data:rows.map(([,v])=>+v.rev.toFixed(2)),backgroundColor:'#e4e9ec',borderWidth:0,borderRadius:4},
       {label:'Gross margin',data:rows.map(([,v])=>+(v.rev-v.cogs).toFixed(2)),backgroundColor:'#c5a059',borderWidth:0,borderRadius:4}]},
@@ -15199,7 +15199,7 @@ function renderReveal(){
       ).filter(x=>x.d).sort((a,b)=>a.d<b.d?-1:1);
       if(ds.length){const fr=ds[0];
         hint='<div class="dsc" style="margin-top:4px;font-size:11px">first seen '
-          +new Date(fr.d).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})
+          +fr.d.slice(8,10)+' '+MAP_MON[+fr.d.slice(5,7)-1]
           +(fr.q!=null?' &middot; '+units(fr.q):'')+(fr.t!=null?' &middot; '+fmt0(fr.t):'')
           +(ds.length>1?' &middot; '+ds.length+' orders':'')+'</div>';}
     }
@@ -18423,7 +18423,8 @@ function ordWaiting(){
   return {placed,asked,rm:+placed.reduce((a,o)=>a+(+o.total||0)+(+o.delivery||0),0).toFixed(2)};
 }
 function ordCard(o){
-  const when=iso=>{try{return new Date(iso).toLocaleString('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false});}catch(e){return '';}};
+  /* 24 Sep 2026: the month off MAP_MON, because en-GB writes Sept */
+  const when=iso=>{try{const p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(x=>{p[x.type]=x.value;});return p.day+' '+MAP_MON[+p.month-1]+', '+p.hour+':'+p.minute;}catch(e){return '';}};
   const cell=(k,v,cls)=>`<div class="kpi salt-kpi ${cls||''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value" style="font-size:17px">${v}</div></div>`;
   const who=o.code?codeOf(o.code):'unmapped '+esc(o.u);
   const rate=o.qty?o.total/o.qty:null, usual=o.code?ordUsual(o.code,o.product):null;

@@ -261,8 +261,8 @@ export const OWNER_JS = `
      URI, so nothing here encodes anything and the page loads no library to do it. */
   var links=[];
   function stampDay(iso){
-    try{ return new Date(iso).toLocaleDateString('en-GB',{timeZone:'Asia/Kuala_Lumpur',
-      day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return ''; }
+    /* the page's klBits and MON3, so a day here is written exactly as the customer's page writes one */
+    try{ var p=klBits(iso); return p.day+' '+MON3[+p.month-1]+' '+p.year; }catch(e){ return ''; }
   }
   /* v696, his instruction of 18 Sep 2026: ONE LINK PER TIER. They stand at the top, in the ladder's
      own order, each named by its level; anything minted against a customer sits below them under its

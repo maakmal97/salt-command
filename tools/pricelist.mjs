@@ -38,6 +38,7 @@ import { dirname, resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
+import { MON3 } from "../stmt/page.js";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -64,7 +65,7 @@ export function weekOf(now) {
   const mon = new Date(kl); mon.setDate(kl.getDate() - day);
   const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
   const iso = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-  const say = (d) => d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+  const say = (d) => String(d.getDate()).padStart(2, "0") + " " + MON3[d.getMonth()];   /* Sep, never en-GB's Sept */
   return { monday: iso(mon), sunday: iso(sun),
            label: say(mon) + " to " + say(sun) + " " + sun.getFullYear() };
 }

@@ -210,9 +210,9 @@ export async function mintAccounts(root, opts = {}) {
   const pwFile = join(here, issue, "_passwords.json");
   const passwords = existsSync(pwFile) ? JSON.parse(readFileSync(pwFile, "utf8")) : {};
 
-  const { liveStatement } = await import("./make_statements.mjs");
+  const { liveStatement, klShort } = await import("./make_statements.mjs");
   const now = new Date();
-  const issued = now.toLocaleString("en-GB", { timeZone: "Asia/Kuala_Lumpur", day: "2-digit", month: "short", year: "numeric" });
+  const issued = klShort(now);
 
   for (const { code, u } of gaps.noAccount) {
     if (!USERNAME_RE.test(u)) { out.failed.push(code + ": " + u + " is not a username this site would mint"); continue; }

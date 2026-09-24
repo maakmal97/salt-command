@@ -8317,7 +8317,7 @@ await (async () => {
     const { planPublish } = await import("../tools/stmt-publish.mjs");
     const now = new Date("2026-09-03T06:20:00Z");
     const lv = liveStatement(both.who, now, u);
-    ok(lv && lv.at === now.toISOString() && /Live statement/.test(lv.body) && /as at 03 Sept? 2026 14:20/.test(lv.body)
+    ok(lv && lv.at === now.toISOString() && /Live statement/.test(lv.body) && /as at 03 Sep 2026 14:20/.test(lv.body)
       && /every entry from the beginning to today/.test(lv.body) && !/class="qrb"/.test(lv.body) && !/>Issued /.test(lv.body),
       "a live statement says it is one, to the minute in Kuala Lumpur time, covers everything, and carries no QR");
     ok(lv.body.includes('<div class="who">' + u + "</div>") && !lv.body.includes(both.who),
@@ -14762,7 +14762,7 @@ await (async () => {
       await new Promise((r) => setTimeout(r, 60));
       const list87 = D87.getElementById("rlist").textContent;
       ok(D87.getElementById("oReview").hidden === false && D87.getElementById("mHome").hidden === true
-        && /CX0-AA/.test(list87) && /Owes RM 272/.test(list87) && /Opened 14 Sept? 2026/.test(list87),
+        && /CX0-AA/.test(list87) && /Owes RM 272/.test(list87) && /Opened 14 Sep 2026/.test(list87),
         "a tap on Review draws every account with its word and its last open: " + list87.replace(/\s+/g, " ").slice(0, 120));
       D87.querySelector("button[data-back]").dispatchEvent(new W87.Event("click", { bubbles: true }));
       ok(D87.getElementById("mHome").hidden === false && D87.getElementById("oReview").hidden === true,
@@ -16076,6 +16076,78 @@ await (async () => {
     "the page reviews before it places, asks roughly where it is going, takes the amount paid, and says his closing words");
   ok(!/url\((?!\/fonts\/)/.test(page94), "and nothing on the page loads anything but its own two fonts, the chevron included");
 })();
+section("S1 1.45: every short date a customer or he reads says Sep, never en-GB's four letters");
+await (async () => {
+  /* L49 of the Counter study, 24 Sep 2026: Node and every browser write September's short month with four
+     letters in en-GB, and the house writes Sep. The month is read off one list (MON3 in stmt/page.js; MAP_MON
+     on the desk), and each surface is driven here, its output read, never its source. */
+  const FOUR = /Sept(?![a-z])/;
+  /* 1. the customer's page: an order's stamp and its history, the second an evening in UTC and the next morning in KL */
+  const { landingPage: lpS } = await import("../stmt/page.js");
+  const CS = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDS } = await import("jsdom");
+  const { webcrypto: wcS } = await import("node:crypto");
+  const uS = "aaaa-sssp", passS = "2345-6789-abcd-sepx", ckS = await CS.contentKey("9".repeat(64), uS);
+  const openS = { ok: true, byMaster: false, u: uS, issued: "2026-09-24", issues: ["2026-09-24"], live: null, session: "sessSepaaaaaaaaaaaaaaaaaaaa",
+    wrap: await CS.wrapKey(passS, ckS), wrapMaster: null,
+    env: await CS.encryptWith(ckS, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 Sep 2026", body: "<p>Statement</p>" }] })),
+    prices: await CS.encryptWith(ckS, JSON.stringify({ week: { label: "21 Sep to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+      products: [{ product: "salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 100 }] }] })) };
+  const order = { id: "20260920010200-sep1", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, status: "acknowledged", mode: "collect",
+    at: "2026-09-20T01:02:00Z", history: [{ at: "2026-09-20T01:02:00Z", status: "placed" }, { at: "2026-09-20T17:30:00Z", status: "acknowledged" }], msgs: [] };
+  const dom = new JDS(lpS(uS, "nSep", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcS, configurable: true }); } catch (e) { win.crypto = wcS; }
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/open") return { ok: true, status: 200, json: async () => openS };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [order] }) };
+        return { ok: true, status: 200, json: async () => ({ ok: true }) };
+      };
+    } });
+  const W = dom.window, D = W.document;
+  try {
+    D.getElementById("pw").value = passS;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !/placed 20 /.test(D.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 25));
+    const txt = D.getElementById("pOrder").textContent;
+    ok(txt.includes("placed 20 Sep, 09:02") && txt.includes("21 Sep, 01:30") && !FOUR.test(txt),
+      "the customer's page stamps an order and its history with Sep, in Kuala Lumpur time: " + JSON.stringify((txt.match(/\d\d Sep[a-z]*, \d\d:\d\d/g) || [])));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } }
+
+  /* 2. the statement: the live stamp, and every date cell on the real book's live statements */
+  const M = await import("../tools/make_statements.mjs");
+  ok(M.klShort(new Date("2026-09-03T06:20:00Z"), true) === "03 Sep 2026, 14:20" && M.klShort(new Date("2026-09-03T17:00:00Z")) === "04 Sep 2026",
+    "a moment is written 03 Sep 2026, 14:20 in Kuala Lumpur, where the evening of the 3rd in UTC is the 4th: "
+    + JSON.stringify([M.klShort(new Date("2026-09-03T06:20:00Z"), true), M.klShort(new Date("2026-09-03T17:00:00Z"))]));
+  const POS = (await import("../engine/position.mjs")).default;
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const sales = (bk.state && bk.state.sales) || bk.sales || [];
+  const parties = [...new Set(sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
+  let sep = 0, four = 0;
+  for (const p of parties) {
+    const doc = M.liveStatement(p, new Date("2026-09-24T04:00:00Z"));
+    if (!doc) continue;
+    const cells = [...doc.body.matchAll(/<td class="l dt">([\s\S]*?)<\/td>/g)].map((x) => x[1]);
+    sep += cells.filter((c) => /\d\d Sep 2026/.test(c)).length;
+    four += cells.filter((c) => FOUR.test(c)).length + (FOUR.test(doc.body) ? 1 : 0);
+  }
+  ok(sep > 0 && four === 0, "every live statement dates its September rows Sep, and none carries the four letters: " + JSON.stringify({ sep, four }));
+
+  /* 3. the price list's week */
+  const PL = await import("../tools/pricelist.mjs");
+  ok(PL.weekOf(new Date("2026-09-24T03:00:00Z")).label === "21 Sep to 27 Sep 2026",
+    "the price list's week reads 21 Sep to 27 Sep 2026: " + PL.weekOf(new Date("2026-09-24T03:00:00Z")).label);
+
+  /* 4. the desk: the order book's month filter */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const led = String(w.tabLedger());
+  const sel = (/<select id="ledMonth">([\s\S]*?)<\/select>/.exec(led) || [])[1] || "";
+  ok(/<option value="2026-09"[^>]*>Sep 2026<\/option>/.test(sel) && !FOUR.test(sel),
+    "the order book's month filter names September Sep 2026: " + JSON.stringify((sel.match(/value="2026-09"[^<]*/) || [""])[0]));
+})();
 section("v695 and v704: a product is a mark and never a word, and the app on his customers' phones is Salt Counter");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "The name Salt Command should never appear anywhere, and if
@@ -16755,7 +16827,7 @@ await (async () => {
   w.ORD_OPEN = [];
   const card = (extra) => String(w.ordCard(Object.assign({}, base, extra)));
   const waiting = card({ queued: { ack: "2026-09-20T01:00:00.000Z" }, sync: { state: "waiting", why: "the payment waits for the pending row to reach the book: approve it under Approve, and the fold lands it", at: "2026-09-20T01:02:00.000Z" } });
-  ok(/the payment waits for the pending row to reach the book/.test(waiting) && /waiting since 20 Sept?, 09:02/.test(waiting) && !/queued within the minute/.test(waiting),
+  ok(/the payment waits for the pending row to reach the book/.test(waiting) && /waiting since 20 Sep, 09:02/.test(waiting) && !/queued within the minute/.test(waiting),
     "an order whose payment waits says so, and since when, where it promised the entry was queued");
   const failed = card({ queued: { ack: "2026-09-20T01:00:00.000Z" }, sync: { state: "failed", why: "kv put refused", at: "2026-09-20T01:03:00.000Z" } });
   ok(/could not tell it: kv put refused/.test(failed) && /tries again every minute/.test(failed) && !/queued within the minute/.test(failed),
