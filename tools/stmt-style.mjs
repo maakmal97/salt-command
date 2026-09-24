@@ -49,9 +49,15 @@ export function saltTokens() {
 }
 
 /** The brand faces' @font-face rules, vendored as design/fonts.css (22 Sep 2026): the page carries
-    them first and the Worker serves the files they name from stmt/fonts.js. */
+    them first and the Worker serves the files they name from stmt/fonts.js.
+    THE ADDRESS IS MADE ABSOLUTE HERE (stage 1 of the Counter redesign, 24 Sep 2026). The vendored
+    rules say url(fonts/...), which is right beside the desk and wrong on this site: the page is also
+    served at /s/<token> and /g/<id>, where a relative url asks /s/fonts/ and /g/fonts/, and the Worker
+    serves the faces at /fonts/ alone. The desk's copy is untouched. */
 export function fontFaceCss() {
-  return readFileSync(join(REPO, "design", "fonts.css"), "utf8");
+  const css = readFileSync(join(REPO, "design", "fonts.css"), "utf8").split("url(fonts/").join("url(/fonts/");
+  if (/url\((?!\/fonts\/)/.test(css)) throw new Error("stmt-style: a face in design/fonts.css is not under fonts/, so the site would not serve it");
+  return css;
 }
 
 /* THE SYSTEM'S RECIPES THE SITE USES, VERBATIM (22 Sep 2026, his instruction that the Counter use
@@ -172,7 +178,7 @@ td.l{text-align:left}
   color:var(--salt-copper);font-weight:700}
 .owedv{margin:8px 0 0;font-size:var(--salt-text-2xl);font-weight:700;color:var(--salt-verdigris);
   letter-spacing:-.01em}
-.owedv span{font-size:var(--salt-text-md);font-weight:600;margin-left:6px;color:var(--salt-text-muted)}
+.owedv>span:last-child{font-size:var(--salt-text-md);font-weight:600;margin-left:6px;color:var(--salt-text-muted)}
 .owedn{margin:12px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.6}
 .rec{padding:22px 22px 8px}
 .recl{margin:0 0 18px;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;

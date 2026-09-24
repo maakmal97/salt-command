@@ -8316,11 +8316,12 @@ await (async () => {
     const { liveStatement, liveRecords } = await import("../tools/make_statements.mjs");
     const { planPublish } = await import("../tools/stmt-publish.mjs");
     const now = new Date("2026-09-03T06:20:00Z");
-    const lv = liveStatement(both.who, now);
+    const lv = liveStatement(both.who, now, u);
     ok(lv && lv.at === now.toISOString() && /Live statement/.test(lv.body) && /as at 03 Sept? 2026 14:20/.test(lv.body)
       && /every entry from the beginning to today/.test(lv.body) && !/class="qrb"/.test(lv.body) && !/>Issued /.test(lv.body),
       "a live statement says it is one, to the minute in Kuala Lumpur time, covers everything, and carries no QR");
-    ok(lv.body.includes(both.who), "and it is that customer's");
+    ok(lv.body.includes('<div class="who">' + u + "</div>") && !lv.body.includes(both.who),
+      "and it is that customer's, named by the username they sign in with and never the desk's code (S1 1.33)");
     const bookL = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
     const afterIssue = bookL.sales.find(s => s.date && s.date > "2026-09-01" && !s.cancelled);
     if (afterIssue) {
@@ -14856,7 +14857,7 @@ await (async () => {
     && page94.includes("a neighbourhood or a landmark") && page94.includes("I have paid")
     && page94.includes("Your order is now complete. Thank you for your loyalty."),
     "the page reviews before it places, asks roughly where it is going, takes the amount paid, and says his closing words");
-  ok(!/url\((?!fonts\/)/.test(page94), "and nothing on the page loads anything but its own two fonts, the chevron included");
+  ok(!/url\((?!\/fonts\/)/.test(page94), "and nothing on the page loads anything but its own two fonts, the chevron included");
 })();
 section("v695 and v704: a product is a mark and never a word, and the app on his customers' phones is Salt Counter");
 await (async () => {
@@ -16145,8 +16146,12 @@ await (async () => {
       "the password is sealed under the master too, so Send can hand it over from his phone without the laptop");
     const viaMaster = await C7.unwrapKey(MASTER7, made.wrapMaster);
     ok(!!viaMaster, "and the master unwraps the content key, so his override opens it as it opens every other account");
-    ok(JSON.parse(await C7.decryptWith(ckNew, made.env)).v === 1,
+    const bundle7 = JSON.parse(await C7.decryptWith(ckNew, made.env));
+    ok(bundle7.v === 1,
       "the bundle it sealed opens under that key and is the shape every other bundle is");
+    if (bundle7.statements.length) ok(bundle7.statements.every((s) => s.body.includes('<div class="who">27a4-gkgw</div>') && !s.body.includes("CF5-WM")),
+      "and its statement names the account by the username, never the desk's code (S1 1.33)");
+    else skipData("CF5-WM has no rows, so the minted statement's account line went unchecked");
 
     /* THE ISSUE IT STAMPS IS THE ISSUE'S DATE, NOT THE FOLDER IT LIVES IN, and this is the one
        field whose blast radius is the whole site rather than the one account. newestIssue answers
@@ -19331,6 +19336,137 @@ await (async () => {
     "at RM 100 exactly, and with no figure at all, the account opens as it always has");
 })();
 
+section("S1 1.28: Still to collect is one line a book, never units of different books added");
+await (async () => {
+  /* STAGE 1 OF THE COUNTER REDESIGN (M29, 24 Sep 2026): the footer kept the books apart since v782 and
+     the Still to collect block two lines below it still added them. Forced state: a fixture party owed
+     2 of one book and 1.5 of another, on a copy of the book, so nothing here waits on the live book. */
+  const fx = (rid, product, qty, total) => ({ rid, date: "2026-09-10", customer: "CX8-TG", product, qty, total, cost: 44, cash: total, deliveredQty: 1 });
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  bk.sales.push(fx("tg01", "salt", 3, 330), fx("tg02", "oil", 2.5, 250));
+  const tmp = join(REPO, "test", "tmp", "s1-128-" + Date.now());
+  mkdirSync(tmp, { recursive: true });
+  writeFileSync(join(tmp, "book.json"), JSON.stringify(bk));
+  const prev = process.env.SALT_BOOK; process.env.SALT_BOOK = join(tmp, "book.json");
+  let M;
+  const { pathToFileURL: pu } = await import("node:url");
+  try { M = await import(pu(join(REPO, "tools", "make_statements.mjs")).href + "?s1-128"); }
+  finally { if (prev === undefined) delete process.env.SALT_BOOK; else process.env.SALT_BOOK = prev; rmSync(tmp, { recursive: true, force: true }); }
+  const at = new Date("2026-09-22T00:00:00Z");
+  const doc = M.liveStatement("CX8-TG", at);
+  const body = String(doc && doc.body);
+  const i = body.indexOf('<div class="owed">'), block = i < 0 ? "" : body.slice(i, body.indexOf("</div>", i));
+  const lines = block.split('<p class="owedv">').slice(1);
+  const txt = (h) => h.replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  ok(i >= 0 && lines.length === 2, "the block has one line a book: " + lines.length + " lines");
+  ok(lines.length === 2 && /class="pm"/.test(lines[0]) && /Cube/.test(lines[0]) && txt(lines[0]).endsWith("2 unit")
+    && /class="pm"/.test(lines[1]) && /Droplet/.test(lines[1]) && txt(lines[1]).endsWith("1.5 unit"),
+    "each line carries its book's mark and its own figure, salt first: " + lines.map(txt).join(" | "));
+  ok(i >= 0 && !/3\.5/.test(txt(block)), "and the sum of two books, 3.5, is nowhere in it: " + txt(block));
+  /* an archive keeps the one figure it was issued with, a dated record not being corrected in place */
+  const o = { from: null, to: "2026-09-22", completed: true, open: true, pending: true, dates: true, issued: "22 Sep 2026", archive: true };
+  const arc = M.stmtDoc("CX8-TG", M.stmtRows("CX8-TG", o), o);
+  const ai = arc.indexOf('<div class="owed">'), ablock = ai < 0 ? "" : arc.slice(ai, arc.indexOf("</div>", ai));
+  ok(ai >= 0 && ablock.split('<p class="owedv">').length === 2 && /3\.5/.test(txt(ablock)) && !/<svg/.test(ablock),
+    "an archive still foots its one unmarked figure, as issued: " + txt(ablock));
+})();
+
+section("S1 1.29: every table on a live statement sits in its own scroll box");
+await (async () => {
+  /* STAGE 1 OF THE COUNTER REDESIGN (M30, 24 Sep 2026): the orders table is 340px at its narrowest and
+     wider with a long figure, and it was emitted bare, so at 320 and 360 the whole page scrolled
+     sideways. The stylesheet has carried .tblw for it all along. Read off every live statement on the
+     real book, tables of every kind the book holds. */
+  const M = await import("../tools/make_statements.mjs");
+  const POS = (await import("../engine/position.mjs")).default;
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const at = new Date("2026-09-24T00:00:00Z");
+  const parties = [...new Set(bk.sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
+  let docs = 0, tables = 0;
+  const kinds = new Set(), bare = [];
+  for (const p of parties) {
+    const d = M.liveStatement(p, at);
+    if (!d) continue;
+    docs++;
+    for (const m of d.body.matchAll(/<table( class="([^"]*)")?/g)) {
+      tables++;
+      kinds.add((m[2] || "orders").split(" ")[0]);
+      if (!d.body.slice(Math.max(0, m.index - 19), m.index).endsWith('<div class="tblw">')) bare.push(p + " " + (m[2] || "orders"));
+    }
+  }
+  ok(docs > 10 && tables >= docs && kinds.has("orders") && !bare.length,
+    "every table on " + docs + " live statements (" + tables + " tables: " + [...kinds].join(", ") + ") opens inside div.tblw"
+    + (bare.length ? "; bare: " + bare.slice(0, 4).join(", ") : ""));
+  if (!kinds.has("rft")) skipData("no live statement carries a Refunds table, so its box went unchecked");
+  if (!kinds.has("mini")) skipData("no live statement carries a reconciliation, so its box went unchecked");
+  ok(/\.tblw\{overflow-x:auto/.test((await import("../stmt/statement-css.js")).STATEMENT_CSS),
+    "and the box scrolls sideways inside itself, in the stylesheet the page carries");
+  /* an archive is left as it was issued */
+  const who = parties.find((p) => M.liveStatement(p, at));
+  const o = { from: null, to: "2026-09-24", completed: true, open: true, pending: true, dates: true, issued: "24 Sep 2026", archive: true };
+  const arc = M.stmtDoc(who, M.stmtRows(who, o), o);
+  ok(/<table/.test(arc) && !/class="tblw"/.test(arc), "an archive carries its tables as issued, with no box");
+})();
+
+section("S1 1.31: the brand faces load on a sign-in link and a guest board too");
+await (async () => {
+  /* STAGE 1 OF THE COUNTER REDESIGN (M32, 24 Sep 2026): the @font-face rules said url(fonts/...), so the
+     page served at /s/<token> asked /s/fonts/ and a guest board at /g/<id> asked /g/fonts/, and both
+     answered 404. Every url() in the style each page is SERVED with, resolved against the page's own
+     address, is fetched back through the Worker. */
+  const { mintRef } = await import("../stmt/refs.js");
+  const env = { STMT: new KV() };
+  const ref = await mintRef(env, { label: "Fonts check" });
+  const pages = ["/s/" + "a".repeat(24), "/g/" + (ref && ref.id), "/"];
+  const bad = [];
+  let fetched = 0;
+  for (const path of pages) {
+    const at = "https://site.test" + path;
+    const r = await stmtWorker.fetch(new Request(at), env);
+    const html = await r.text();
+    const css = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
+    const urls = [...css.matchAll(/url\(\s*['"]?([^'")\s]+)/g)].map((m) => m[1]);
+    if (r.status !== 200 || urls.length < 2) { bad.push(path + ": status " + r.status + ", " + urls.length + " urls"); continue; }
+    for (const u of urls) {
+      const f = await stmtWorker.fetch(new Request(new URL(u, at).href), env);
+      fetched++;
+      if (f.status !== 200 || f.headers.get("content-type") !== "font/woff2") bad.push(path + " asks " + new URL(u, at).pathname + ": " + f.status);
+    }
+  }
+  ok(!!ref && fetched >= 6 && !bad.length,
+    "every face named by the door at /s/, a guest board at /g/ and the root resolves to a font the Worker serves ("
+    + fetched + " fetched)" + (bad.length ? ": " + bad.join("; ") : ""));
+})();
+
+section("S1 1.33: the live statement names the account by its username, never the desk's code");
+await (async () => {
+  /* STAGE 1 OF THE COUNTER REDESIGN (M35, his choice of 24 Sep 2026): the live statement printed
+     "Account <roster code>" onto the customer's own page, which siteWords says never shows a code.
+     Read off every live statement on the real book, through siteWords itself. */
+  const M = await import("../tools/make_statements.mjs");
+  const POS = (await import("../engine/position.mjs")).default;
+  const { siteWords } = await import("../src/orders.js");
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const at = new Date("2026-09-24T00:00:00Z");
+  const text = (h) => h.replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+  const parties = [...new Set(bk.sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
+  let docs = 0;
+  const named = [], said = [], bare = [];
+  for (const p of parties) {
+    const d = M.liveStatement(p, at, "abcd-efgh");
+    if (!d) continue;
+    docs++;
+    if (!d.body.includes('<p class="whol gap1">Account</p>\n<div class="who">abcd-efgh</div>')) named.push(p);
+    const why = siteWords(text(d.body));
+    if (why) said.push(p + " " + why);
+    const d0 = M.liveStatement(p, at);
+    if (/class="who"|>Account</.test(d0.body) || d0.body.includes(p)) bare.push(p);
+  }
+  ok(docs > 10 && !named.length, "every live statement (" + docs + ") names its account by the username" + (named.length ? "; not: " + named.slice(0, 3).join(", ") : ""));
+  ok(docs > 10 && !said.length, "and none says anything a customer's page never shows" + (said.length ? ": " + said.slice(0, 3).join("; ") : ""));
+  ok(docs > 10 && !bare.length, "with no username to hand the line is left off, never filled with the code" + (bare.length ? ": " + bare.slice(0, 3).join(", ") : ""));
+})();
+
 section("v782: a statement says which book each row is, and units of different books do not add");
 await (async () => {
   /* stmtRows filters by PARTY and never by product, so a customer holding two books got one
@@ -19528,7 +19664,7 @@ await (async () => {
   ok(r404.status === 404, "and a face that is not there is the site's usual 404");
   const genF = await import("../stmt/statement-css.js");
   const pgF = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
-  ok(genF.FONT_FACE_CSS === fcss && (pgF.match(/FONT_FACE_CSS \+ STATEMENT_CSS \+ SITE_RECIPES \+ PAGE_CSS/g) || []).length === 2,
+  ok(genF.FONT_FACE_CSS === fcss.split("url(fonts/").join("url(/fonts/") && (pgF.match(/FONT_FACE_CSS \+ STATEMENT_CSS \+ SITE_RECIPES \+ PAGE_CSS/g) || []).length === 2,
     "the page carries the same @font-face rules, first, on both pages the Worker serves");
 })();
 

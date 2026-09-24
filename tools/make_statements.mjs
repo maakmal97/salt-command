@@ -9,8 +9,9 @@
  * lifted verbatim, with exactly two substitutions, each marked where it sits:
  *   - txStat and txDates come from engine/position.mjs, the same module the desk runs, so
  *     every figure on a statement is still the desk's own arithmetic and cannot drift;
- *   - the who-line is codes-only, because the desk-era useName option read the laptop's
- *     plaintext directory, which never reaches this repo.
+ *   - the who-line never carries a name (an issue prints the code, the live statement the
+ *     username), because the desk-era useName option read the laptop's plaintext directory,
+ *     which never reaches this repo.
  * What lives here alone is the statement's own law: what a customer may see and how the
  * document reads. Nothing else in the repo states it, so this is one copy, not a second.
  * IF THE DESK EVER REGAINS A STATEMENTS PANEL, inline this file the way tools/engine.mjs
@@ -326,8 +327,12 @@ function stmtDoc(party,rows,o){
      just as well. An issue that footed to one blended figure keeps it, exactly as issues sealed
      before v695 keep the letterhead they were sent with. The correction is for what is live. */
   const marked=!(o&&o.archive);
-  const markOf=p=>!marked?'':'<span class="pm">'+psymSvg(p,13)
+  const markOf=(p,px)=>!marked?'':'<span class="pm">'+psymSvg(p,px||13)
     +'<span class="sr">'+esc(PSHAPE[String(p||'').toLowerCase()]||PSHAPE._)+'</span></span>';
+  /* EVERY TABLE IN ITS OWN SCROLL BOX (stage 1 of the Counter redesign, 24 Sep 2026): the orders table is
+     340px at its narrowest and wider with a long figure, so at a phone's width the whole page scrolled
+     sideways; .tblw was in the stylesheet for it and never emitted. An archive is left as it was issued. */
+  const box=t=>marked?'<div class="tblw">'+t+'</div>':t;
   const e=esc, n2=v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:2});
   const money=v=>Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
   const refundOwed=(o.refunds||[]).filter(r=>!r.paidOn).reduce((a,r)=>a+(+r.amount||0),0);   // v454
@@ -338,12 +343,16 @@ function stmtDoc(party,rows,o){
      column already says what such a row is; the date cell stays quiet. Whether it
      should instead show the row's cancelledOn or agreedOn is his call, not made here. */
   const dLong=d=>{try{const t=new Date(d);if(!d||isNaN(t))return '';return t.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(x){return d;}};
-  /* CODES ONLY, ALWAYS: the one substitution in this lifted block. The desk-era useName
+  /* NEVER A NAME: the one substitution in this lifted block. The desk-era useName
      option read the laptop's plaintext directory, which never reaches this repo (hard
      rule 2), so the path is removed rather than parameterised: a statement built here
      cannot carry a real name because nothing here holds one. */
-  const who=codeOf(party);
-  const T={qty:0,total:0,paid:0,owed:0,qtyBy:{}};
+  /* THE LIVE STATEMENT NAMES THE ACCOUNT BY ITS USERNAME (stage 1 of the Counter redesign, his choice of
+     24 Sep 2026): a customer's page never shows the desk's roster code, and the username is what they sign
+     in with. With none to hand the line is left off rather than filled with the code. An issue keeps the
+     code it was issued with, a dated record not being corrected in place. */
+  const who=o.live?(o.user||''):codeOf(party);
+  const T={qty:0,total:0,paid:0,owed:0,qtyBy:{},toGetBy:{}};
   T.toGet=0;T.kindUnits=0;T.got=0;T.ordered=0;
   /* a GIFT is not a payment. Its in-kind value exists so the salt does not fall out of
      the ledger as shrinkage; counting it here made Paid exceed the total ordered, which
@@ -366,7 +375,7 @@ function stmtDoc(party,rows,o){
        and for every caller that already reads it. */
     T.qtyBy[r.product]=(T.qtyBy[r.product]||0)+r.qty;
     T.qty+=r.qty;T.total+=r.total;T.paid+=r.gift?0:(r.paidCash+r.inKind);T.owed+=r.owed;
-    T.toGet+=(r.toGet>0&&!r.pendingOrder)?r.toGet:0;T.kindUnits+=r.gift?0:r.inKindUnits;T.got+=r.got;T.ordered+=r.qty;});
+    const tg=(r.toGet>0&&!r.pendingOrder)?r.toGet:0;T.toGet+=tg;T.toGetBy[r.product]=(T.toGetBy[r.product]||0)+tg;T.kindUnits+=r.gift?0:r.inKindUnits;T.got+=r.got;T.ordered+=r.qty;});
   /* the row label has to agree with the walk printed below it. Where the offset went
      against a separate arrangement rather than an unpaid earlier order, calling it an
      "earlier balance" contradicts the explanation three inches further down the page. */
@@ -486,20 +495,20 @@ function stmtDoc(party,rows,o){
        : (o.from||o.to?' &middot; '+e(o.from?dLong(o.from):'from the beginning')+' to '+e(o.to?dLong(o.to):'today')
          +(T.pendN&&rows.some(r=>r.pendingOrder&&o.to&&new Date(r.date)>new Date(o.to))
             ?', plus any order agreed and not yet actioned':''):''))+'</p>'),
-   '<p class="whol gap1">Account</p>',
-   '<div class="who">'+e(who)+'</div>',
+   who?'<p class="whol gap1">Account</p>':'',
+   who?'<div class="who">'+e(who)+'</div>':'',
    '<div class="rule"></div>',
-   rows.length?('<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead>'
+   rows.length?box('<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead>'
      +'<tbody>'+body+'</tbody></table>')
      :'<p class="meta">No orders in this period.</p>',
    ((o.refunds||[]).length?'<p class="whol gap2">Refunds</p>'
-     +'<table class="rft"><thead><tr><th class="l">Date</th><th class="l">Reason</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody>'
+     +box('<table class="rft"><thead><tr><th class="l">Date</th><th class="l">Reason</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody>'
      +(o.archive?o.refunds:o.refunds.slice().reverse().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))).map(r=>'<tr><td class="l dt">'+e(dLong(r.date))+'</td>'
        +'<td class="l rsn">'+(r.cancelled?'Cancelled order, money returned to you':'Overpayment returned to you')+'</td>'
        +'<td class="amt">'+money(r.amount)+'</td>'
        +'<td class="r">'+(r.paidOn?'<span class="ok">paid '+e(dLong(r.paidOn))+'</span>'
                                   :'<span class="due">owed to you</span>')+'</td></tr>').join('')
-     +'</tbody></table>':''),
+     +'</tbody></table>'):''),
    '<div class="tot">',
    /* the count must match what was actually totalled, or the footer says three orders
       over a figure covering two, which is the first thing a careful reader checks */
@@ -527,8 +536,15 @@ function stmtDoc(party,rows,o){
    /* GOODS OWED GET THEIR OWN BLOCK. A statement whose only large figure is money can
       read as though nothing else is outstanding, which is exactly the misreading a
       dispute about undelivered salt would turn on. */
+   /* ONE LINE A BOOK, marked, and never a sum over two (v782's rule, which this block broke until
+      stage 1 of the Counter redesign, 24 Sep 2026): two of one book and one and a half of another
+      are not three and a half of anything. An archive keeps the one figure it was issued with. */
    (T.toGet>0.009?'<div class="owed"><p class="owedl">Still to collect</p>'
-     +'<p class="owedv">'+n2(T.toGet)+' <span>unit</span></p></div>':''),
+     +(marked
+       ? bookOrder(Object.keys(T.toGetBy).filter(p=>T.toGetBy[p]>0.009))
+           .map(p=>'<p class="owedv">'+markOf(p,20)+n2(T.toGetBy[p])+' <span>unit</span></p>').join('')
+       : '<p class="owedv">'+n2(T.toGet)+' <span>unit</span></p>')
+     +'</div>':''),
    /* THE WORKINGS, step by step, so nothing has to be taken on trust */
    (o.recon||[]).map(R=>{
      let st=0;
@@ -565,14 +581,14 @@ function stmtDoc(party,rows,o){
                +'changed hands on it.')
          +step(R.owed>0.009?'So the salt still due to you is what is left.'
                            :'So the balance of the order was collected in full.',
-               '<table class="mini calc"><tbody>'
+               box('<table class="mini calc"><tbody>'
                +'<tr><td class="l">Bought</td><td class="r">'+n2(R.order.qty)+' unit</td></tr>'
                +'<tr><td class="l">Less applied by agreement</td><td class="r">&minus; '+n2(gone)+' unit</td></tr>'
                +'<tr class="sub"><td class="l">Deliverable</td><td class="r">'+n2(R.deliverable)+' unit</td></tr>'
                +'<tr><td class="l">Less already collected</td><td class="r">&minus; '+n2(took)+' unit</td></tr>'
                +'<tr class="tot"><td class="l">'+(R.owed>0.009?'Still to collect':'Collected in full, nothing outstanding')
                +'</td><td class="r">'+n2(R.owed)+' unit</td></tr>'
-               +'</tbody></table>')
+               +'</tbody></table>'))
          +'<p class="recn">If your own record of that arrangement differs from this, say so '
          +'and it will be gone through line by line.</p></div>';
      }
@@ -580,9 +596,9 @@ function stmtDoc(party,rows,o){
         ?'How the '+n2(R.owed)+' unit is arrived at'
         :'How your '+e(dLong(R.order.date))+' order was settled')+'</p>'
        +step('Earlier orders were not paid in full.',
-             '<table class="mini"><thead><tr><th class="l">Order</th><th>Quantity</th><th>Billed</th><th>Paid in cash</th><th class="r">Short</th></tr></thead><tbody>'
+             box('<table class="mini"><thead><tr><th class="l">Order</th><th>Quantity</th><th>Billed</th><th>Paid in cash</th><th class="r">Short</th></tr></thead><tbody>'
              +legRows+'<tr class="tot"><td class="l" colspan="4">Carried forward</td><td class="r"><b class="short">'
-             +money(R.shortTot)+'</b></td></tr></tbody></table>')
+             +money(R.shortTot)+'</b></td></tr></tbody></table>'))
        +step('That '+money(R.shortTot)+' was settled out of your order of '+e(dLong(R.order.date))+', in salt rather than cash.',
              money(R.shortTot)+' at '+money(R.rate)+' a unit is <b>'+n2(R.unitsOff)+' unit</b>, withheld from that order by agreement. No money changed hands and that salt stayed on the shelf.')
        +step('The '+e(dLong(R.order.date))+' order itself is paid in full.',
@@ -590,13 +606,13 @@ function stmtDoc(party,rows,o){
        +step(R.owed>0.009
              ?'So the salt due to you is what you bought, less what settled the balance, less what you have taken.'
              :'So the salt due to you was what you bought, less what settled the balance, less what you had already taken. All of it has since been handed over.',
-             '<table class="mini calc"><tbody>'
+             box('<table class="mini calc"><tbody>'
              +'<tr><td class="l">Bought</td><td class="r">'+n2(R.order.qty)+' unit</td></tr>'
              +'<tr><td class="l">Less applied to the '+money(R.shortTot)+' balance</td><td class="r">&minus; '+n2(R.unitsOff)+' unit</td></tr>'
              +'<tr class="sub"><td class="l">Deliverable</td><td class="r">'+n2(R.deliverable)+' unit</td></tr>'
              +'<tr><td class="l">Less already collected</td><td class="r">&minus; '+n2(R.collected)+' unit</td></tr>'
              +'<tr class="tot"><td class="l">'+(R.owed>0.009?'Still to collect':'Collected in full, nothing outstanding')+'</td><td class="r">'+n2(R.owed)+' unit</td></tr>'
-             +'</tbody></table>')
+             +'</tbody></table>'))
        /* the one contradiction a careful reader would otherwise find, answered before he
           finds it: those orders read as settled above yet show short here */
        +'<p class="recn">'+R.legs.map(l=>e(dLong(l.date))).join(' and ')
@@ -726,12 +742,12 @@ export function partyTotals(party, to) {
    written. It is written by the deploy after every fold, so it changes as the book does, and
    its heading says so to the minute in Kuala Lumpur time. It is not written to disk anywhere
    and never has a QR: the QR on the issued statement already opens it. */
-export function liveStatement(party, now) {
+export function liveStatement(party, now, user) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
   const kl = at.toLocaleString('en-GB', { timeZone: 'Asia/Kuala_Lumpur', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
   const today = at.toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
   const o = { from: null, to: today, completed: true, open: true, pending: true,
-              dates: true, brand: null, issued: kl.replace(',', ''), live: true };
+              dates: true, brand: null, issued: kl.replace(',', ''), live: true, user: user || null };
   const rows = stmtRows(party, o);
   o.refunds = stmtRefunds(party, o);
   o.recon = stmtRecon(party, rows).filter(R => rows.some(x => x.date === R.order.date));
@@ -788,7 +804,7 @@ export async function liveRecords(root, key, now, pricing, cards) {
         JSON.parse(await decryptWith(ck, rec.env));
       } catch (e) { ck = null; }
       if (!ck) { wrongKey.push(rec.u); records.push(rec); continue; }
-      const doc = liveStatement(code, now);
+      const doc = liveStatement(code, now, rec.u);
       if (doc) {
         rec.live = Object.assign({ at: doc.at }, await encryptWith(ck, JSON.stringify(doc)));
         live++;
