@@ -86,6 +86,7 @@ const NOT_LEDGER = new Set([
      the queued line read what the dropdown says rather than the raw select value. */,
   "LOSS_LABEL", "LOST_LABEL", "CONTACT_HOW", "CONTACT_OUT", "TAB_LABEL", "OBS_FAM", "OBS_SEV",
   "ORD_WORD" /* v499: the Orders card's state words; the orders themselves live on the statements site */,
+  "ORD_KIND" /* S11 11.4: the kinds of act Waiting on you lists, their word, tone and action */,
   "OBS_CONF", "ACTSEV", "bSevTag", "WB_NO_PROD", "CHART_INK", "DIAMOND",
   "LOCS", "PLACES", "METRO", "NON_PLACE", "PLACEHOLDER", "BASEMAP", "BASEMAP_META", "DOW", "DOW3", "KL_HOLIDAYS", "HOL_MAP",
   "AREAS", "AREAS_META", "DISTRICTS", "MAPC" /* v630: the areas the map shades, and its steps; geography, not trade */,

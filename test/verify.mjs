@@ -17115,7 +17115,7 @@ await (async () => {
     const laptop = String(w.eval("tabOrders()"));
     ok(/id="bullText"/.test(cloud) && /data-bmode="run"/.test(cloud) && /data-bmode="change"/.test(cloud) && /id="bullSet"/.test(cloud) && /id="bullClear"/.test(cloud)
       && cloud.indexOf('id="bullCard"') < cloud.indexOf('id="ordAlert"') && !/bullText/.test(laptop),
-      "the cloud desk's Site orders page opens with the Bulletin card, and the laptop copy has none");
+      "the cloud desk's Site orders page carries the Bulletin card (folded below the list since S11 11.4), and the laptop copy has none");
     const g = (t) => w.eval("siteSafe(" + JSON.stringify(t) + ")");
     ok(g("Salt Command says hi").refuse && g("ask CS6-BS").refuse && g("see CN6-WM-R").refuse && g("Gold members").refuse
       && g("the salt is in").warn && !g("the salt is in").refuse && !g("Closed Friday").refuse && !g("Closed Friday").warn,
@@ -22334,8 +22334,8 @@ await (async () => {
     q('button[data-ord="say"][data-id="p1"]').click();
     await new Promise((r) => setTimeout(r, 30));
     ok(say().value === "the Gold one is ready" && fee().value === "15" && posts.length === 0
-      && /names a level/.test(q("#ordMsg").textContent),
-      "a refusal says why and leaves the answer and the charge where they were: " + JSON.stringify({ say: say().value, fee: fee().value, msg: q("#ordMsg").textContent }));
+      && /names a level/.test(q('[data-msg="p1"]').textContent),
+      "a refusal says why, on the card beside the control (S11 11.4), and leaves the answer and the charge where they were: " + JSON.stringify({ say: say().value, fee: fee().value, msg: q('[data-msg="p1"]').textContent }));
 
     /* AND WHAT WENT THROUGH IS NOT CARRIED, or the next tap would send it twice */
     say().value = "on its way this afternoon";
@@ -22757,6 +22757,72 @@ await (async () => {
     "and the message it always checked is checked as before: " + JSON.stringify(said.j.error));
 })();
 
+section("S11 11.4: Site orders opens on Waiting on you, one row a customer act, oldest first, counted the same on Today and the Enter badge");
+await (async () => {
+  /* 24 Sep 2026 (his answer "all recommended", PLAN 5). The card listed whole orders newest first with the notice
+     above them, Today counted placements and answers, and the Enter badge counted placements alone, so the three
+     disagreed about what was waiting. One reading, ordActs, lists each act: new, a payment said and waiting under
+     Approve, cash to record, a question; oldest first, filtered by kind, the notice folded below. */
+  const { openMaster: om114s } = await import("../tools/payload.mjs");
+  const { w } = await om114s();
+  try {
+    w.SALT_CLOUD = true;
+    const rd = (x) => JSON.parse(String(w.eval("JSON.stringify(" + x + ")")));
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const o = (x) => Object.assign({}, base, x);
+    const fixture = [
+      o({ id: "n1", status: "placed", at: "2026-09-24T02:00:00.000Z" }),
+      o({ id: "q1", status: "acknowledged", at: "2026-09-20T02:00:00.000Z", msgs: [{ at: "2026-09-24T01:00:00.000Z", by: "customer", text: "can I collect after six" }] }),
+      o({ id: "c1", status: "ready", at: "2026-09-19T02:00:00.000Z", moved: 2, movedAt: "2026-09-24T00:00:00.000Z" }),
+      o({ id: "p1", status: "acknowledged", at: "2026-09-18T02:00:00.000Z", paid: 50, payments: [{ at: "2026-09-24T03:00:00.000Z", amount: 50, method: "transfer" }] }),
+      o({ id: "x1", status: "acknowledged", at: "2026-09-17T02:00:00.000Z" }),
+      o({ id: "q2", status: "acknowledged", at: "2026-09-16T02:00:00.000Z", quiet: "2026-09-23T05:00:00.000Z",
+        msgs: [{ at: "2026-09-23T05:00:00.000Z", by: "customer", text: "thanks" }] }),
+    ];
+    w.eval("ORD_OPEN=" + JSON.stringify(fixture) + ";AP_DRAFTS=[{id:'d-p1',status:'pending',collection:'sales',row:{},entry:{orderId:'p1',status:'Payment'}},"
+      + "{id:'d-own',status:'pending',collection:'sales',row:{},entry:{status:'Pending'}}];queue=[];");
+    const seq = rd("ordActs().map(function(a){return a.kind+':'+a.o.id;})").join(",");
+    ok(seq === "cash:c1,asked:q1,new:n1,paid:p1",
+      "one row a customer act, oldest first, and a line he said needs no reply is not one: " + seq);
+
+    w.document.body.innerHTML = String(w.eval("tabOrders()"));
+    w.eval("ordDraw()");
+    const D = w.document, box = D.getElementById("ordBox");
+    const rows = (i) => { const g = box.querySelectorAll(".ordlist .ordrows")[i]; return g ? [...g.querySelectorAll("button[data-row]")].map((b) => b.getAttribute("data-row")) : []; };
+    ok(rows(0).join(",") === "c1,q1,n1,p1"
+      && rows(1).join(",") === "x1,q2",
+      "the list draws those rows in that order, and the orders waiting on nothing under them: " + rows(0).concat(rows(1)).join(","));
+    box.querySelector('button[data-of="cash"]').click();
+    ok(rows(0).join(",") === "c1"
+      && box.querySelector('button[data-of="cash"]').getAttribute("aria-selected") === "true",
+      "a filter shows its own kind and is drawn as chosen: " + rows(0).join(","));
+    box.querySelector('button[data-of="all"]').click();
+
+    const shown = [...box.querySelectorAll(".ordpane .card")].filter((c) => !c.hidden).map((c) => c.getAttribute("data-id"));
+    ok(shown.join(",") === "c1", "one card is open, the first row's, and every other is drawn hidden: " + shown.join(","));
+    box.querySelector('button[data-row="n1"]').click();
+    const open2 = [...box.querySelectorAll(".ordpane .card")].filter((c) => !c.hidden).map((c) => c.getAttribute("data-id"));
+    ok(open2.join(",") === "n1" && box.classList.contains("ord-open")
+      && box.querySelector('button[data-row="n1"]').getAttribute("aria-current") === "true",
+      "a tap on a row opens its card, marks the row, and on a phone puts the card in place of the list: " + open2.join(","));
+
+    ok(rd("enterCount()") === 5,
+      "the Enter badge is the four rows and his own draft, the payment's draft being its Paid? row and counted once: " + rd("enterCount()"));
+    const today = rd("actions().filter(function(a){return a.kind==='orders';})")[0];
+    ok(today && /Site orders: 4 waiting on you/.test(today.title) && /1 new, 1 say they paid, 1 cash to record, 1 waiting on an answer/.test(today.why),
+      "and Today counts the same four rows, by kind: " + JSON.stringify(today && [today.title, today.why]));
+
+    const html = String(w.eval("tabOrders()"));
+    const fold = /<details class="salt-plan ordnote" id="bullFold">/.exec(html);
+    ok(fold && html.indexOf('id="ordBox"') >= 0 && html.indexOf('id="bullFold"') > html.indexOf('id="ordBox"') && html.indexOf('id="bullText"') > html.indexOf('id="bullFold"'),
+      "the notice is folded below the list, shut, with its editor inside the fold");
+  } finally {
+    try { w.eval("if(typeof ordTimer!=='undefined'&&ordTimer){clearInterval(ordTimer);ordTimer=null;}"); } catch (e) { /* best effort */ }
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one
@@ -22776,8 +22842,8 @@ await (async () => {
       + "{id:'a2',u:'wxyz-1234',code:'CE4-CHE',product:'salt',qty:1,total:110,delivery:0,status:'placed',mode:'collect',at:'2026-09-21T02:05:00.000Z',history:[],msgs:[]},"
       + "{id:'a3',u:'wxyz-1234',code:'CE4-CHE',product:'salt',qty:1,total:110,delivery:0,status:'acknowledged',mode:'collect',at:'2026-09-20T02:00:00.000Z',history:[],msgs:[{at:'2026-09-21T03:00:00.000Z',by:'customer',text:'when can I collect'}]}];");
     const row = rd66("actions().filter(function(a){return a.kind==='orders';})")[0];
-    ok(row && row.sev === "now" && /2 waiting to be acknowledged/.test(row.title) && row.tab === "orders",
-      "two placed orders are ONE row, at Now, opening the card that answers it: " + JSON.stringify(row && { t: row.title, sev: row.sev, tab: row.tab }));
+    ok(row && row.sev === "now" && /3 waiting on you/.test(row.title) && /2 new/.test(row.why) && row.tab === "orders",
+      "two placed orders and a question are ONE row (S11 11.4: the rows Waiting on you lists), at Now, opening the card that answers it: " + JSON.stringify(row && { t: row.title, sev: row.sev, tab: row.tab }));
     ok(row && Math.abs(row.rm - 325) < 0.005,
       "ranked by what was ordered, goods and carriage together, which is what the pending row will carry: " + JSON.stringify(row && row.rm));
     ok(row && /waiting on an answer/.test(row.why),

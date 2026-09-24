@@ -696,3 +696,23 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   .fintab.pgrid.fg-ph .pm,.fintab.pgrid.fg-ph .pq,.fintab.pgrid .pold{display:none;}
   .fintab.pgrid th,.fintab.pgrid td{padding-left:4px;padding-right:4px;font-size:12px;}
 }
+
+/* S11 11.4 (24 Sep 2026): SITE ORDERS OPENS ON WAITING ON YOU. The rows are the system's Inbox row and the
+   filters its tab strip; this is only the geometry they sit in. On the laptop the list and the open card
+   stand side by side; under 1080px the list comes first and a row opens its card, with the way back at its
+   head. A filter pill is 44px tall, the strip's own being 33. */
+.ordgrid{display:grid;gap:16px;min-width:0;}
+.ordlist,.ordpane{min-width:0;}
+.ordrows{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+.ordtabs .ordtab{min-height:var(--salt-tap);}
+.ordrest{margin-top:18px;}
+.ordnote{margin-top:14px;}
+.ordsaid:empty{display:none;}
+@media (min-width:1080px){
+  .ordgrid{grid-template-columns:minmax(0,360px) minmax(0,1fr);align-items:start;}
+  .ordback{display:none;}
+}
+@media (max-width:1079px){
+  .ordgrid.ord-open .ordlist{display:none;}
+  .ordgrid:not(.ord-open) .ordpane{display:none;}
+}
