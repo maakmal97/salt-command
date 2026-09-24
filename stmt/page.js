@@ -957,7 +957,7 @@ const CLIENT_JS = `
   var keepCardEl=document.getElementById('keepCard'), keepSheetEl=document.getElementById('keepSheet'),
       keepScrim=document.getElementById('keepScrim'), keepCode=document.getElementById('keepCode'),
       keepCopy=document.getElementById('keepCopy'), keepMsg=document.getElementById('keepMsg');
-  var keepTok='', keepExp=0;
+  var keepTok='', keepN=0;
   /* S3 3.12: WHERE THE BROWSER OFFERS AN INSTALL, ONE BUTTON TAKES IT (beforeinstallprompt; the app it installs
      shares this browser's storage, so it opens signed in). Where it does not, Samsung Internet's own steps are drawn,
      and a computer's Chrome or Edge is pointed at the install mark in its address bar; nothing says phone there. */
@@ -982,26 +982,35 @@ const CLIENT_JS = `
   window.addEventListener('appinstalled', function(){ bip=null; if(keepCardEl) keepCardEl.hidden=true; });
   function ksay(t,cls){ keepMsg.textContent=t||''; keepMsg.className='msg'+(cls?' '+cls:''); }
   async function mintKeep(){
+    var n=++keepN;
     keepCopy.disabled=true; keepCode.value=''; ksay('Making your code...','wait');
     try{
       var tok=b64e(crypto.getRandomValues(new Uint8Array(24))).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/=+$/,'');
       var wrap=await wrapUnder(new TextEncoder().encode(tok), curCk);
       var r=await api('/handover',{token:tok, wrap:wrap});
-      if(keepSheetEl.hidden) return;
+      if(n!==keepN||keepSheetEl.hidden) return;
       if(r.status===503){ ksay('Saving it as an app is not switched on yet. Ask us, and sign in inside the new app meanwhile.','bad'); return; }
       if(!r.body.ok||!r.body.code){ ksay(r.status===401?r.body.error:'The code could not be made just now. Close this and open it again.','bad'); return; }
-      keepTok=r.body.token||tok; keepExp=Date.parse(r.body.exp)||(Date.now()+15*60000);
+      keepTok=r.body.token||tok;
       keepCode.value=String(r.body.code).toUpperCase().replace('-',' ');
       keepCopy.disabled=false; ksay('');
-    }catch(e){ ksay('The code could not be made just now. Close this and open it again.','bad'); }
+    }catch(e){ if(n===keepN) ksay('The code could not be made just now. Close this and open it again.','bad'); }
   }
+  /* S3 fix, 24 Sep 2026: EVERY OPENING MINTS AFRESH. A code the saved app had already spent was shown and copied again
+     for up to fourteen minutes, while the app said to make a new one; closing forgets it here (a copy already made
+     still works in the app for its fifteen minutes) */
   function openKeep(){
     if(!keepSheetEl||!curCk) return;
     keepScrim.hidden=false; keepSheetEl.hidden=false;
     try{ keepSheetEl.focus(); }catch(e){}
-    if(!keepTok||Date.now()>keepExp-60000) mintKeep();
+    mintKeep();
   }
-  function closeKeep(){ if(!keepSheetEl||keepSheetEl.hidden) return; keepSheetEl.hidden=true; keepScrim.hidden=true; try{ document.getElementById('keepGo').focus(); }catch(e){} }
+  function closeKeep(){
+    if(!keepSheetEl||keepSheetEl.hidden) return;
+    keepSheetEl.hidden=true; keepScrim.hidden=true; keepN++;
+    keepTok=''; keepCode.value=''; keepCopy.disabled=true; ksay('');
+    try{ document.getElementById('keepGo').focus(); }catch(e){}
+  }
   if(keepSheetEl){
     document.getElementById('keepGo').addEventListener('click', openKeep);
     document.getElementById('keepInstall').addEventListener('click', function(){
@@ -1143,7 +1152,7 @@ const CLIENT_JS = `
     pPrices.textContent=''; pOrder.textContent='';
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
-    closeKeep(); keepTok=''; keepExp=0; if(keepCardEl) keepCardEl.hidden=true; if(codeBox) codeBox.hidden=true;
+    closeKeep(); keepTok=''; if(keepCardEl) keepCardEl.hidden=true; if(codeBox) codeBox.hidden=true;
     var ask=document.getElementById('askRep'); if(ask&&!ask.hidden){ ask.hidden=true; document.getElementById('askNo').click(); }
     /* the owner goes back to his list, never to a password field he has no password for */
     if(OWNER){ roster.hidden=false; gate.hidden=true; if(whoacct) whoacct.textContent=''; }

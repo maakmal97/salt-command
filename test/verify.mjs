@@ -19502,6 +19502,57 @@ await (async () => {
   ok(r.status === 200 && !(await kv.get(pA)) && !!(await kv.get(pB)),
     "and on the site that drops the replaced account's alerts for this phone and leaves the new account's");
 })();
+section("S3 fix: every opening of Keep it on your Home Screen mints a fresh key and code, so a code the saved app spent is never shown or copied again");
+await (async () => {
+  /* F4, S3R-5 (24 Sep 2026). The Sheet minted once and showed the same key and code on every opening until a minute
+     before expiry, so a customer whose saved app had spent it (or burnt it and lost the answer) was handed the dead
+     code again, while the app told them to make a new one. */
+  const { landingPage: lpF } = await import("../stmt/page.js");
+  const CF = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDF } = await import("jsdom");
+  const uF = "aaaa-ffff", passF = "2345-6789-abcd-efgf", ckF = await CF.contentKey("2".repeat(64), uF);
+  const envF = await CF.encryptWith(ckF, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] }));
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const codes = ["h4tn-8xwc", "k2mp-9rsv"];
+  const st = { minted: [], clip: [] };
+  const dom = new JDF(lpF(uF, "nF", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      Object.defineProperty(win.navigator, "userAgent", { value: IPHONE, configurable: true });
+      Object.defineProperty(win.navigator, "clipboard", { configurable: true, value: { writeText: (t) => { st.clip.push(t); return Promise.resolve(); } } });
+      win.scrollTo = () => {};
+      win.fetch = async (p, init) => {
+        const body = init && init.body ? JSON.parse(init.body) : null;
+        const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CF.wrapKey(passF, ckF), env: envF, live: null, prices: null, session: "sessFa000000000000000000000000" });
+        if (p === "/handover") { st.minted.push(body.token); return ans(200, { ok: true, code: codes[st.minted.length - 1], token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() }); }
+        return ans(200, { ok: true, orders: [] });
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  try {
+    D.getElementById("pw").value = passF;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !D.getElementById("barw").hidden);
+    D.getElementById("keepGo").click();
+    await until(() => D.getElementById("keepCode").value);
+    D.getElementById("keepCopy").click();
+    await new Promise((r) => setTimeout(r, 30));
+    ok(st.minted.length === 1 && D.getElementById("keepCode").value === "H4TN 8XWC" && st.clip[0] === st.minted[0], "the fixture: the first opening mints and Copy copies that key");
+    D.getElementById("keepX").click();
+    ok(!D.getElementById("keepCode").value && D.getElementById("keepCopy").disabled && !/Copied/.test(D.getElementById("keepMsg").textContent),
+      "closing the Sheet forgets its code, and Copy has nothing to copy");
+    D.getElementById("keepGo").click();
+    await until(() => D.getElementById("keepCode").value);
+    ok(st.minted.length === 2 && st.minted[1] !== st.minted[0] && D.getElementById("keepCode").value === "K2MP 9RSV",
+      "opening it again mints a fresh key and shows its own code, never the one the saved app may have spent: " + JSON.stringify({ minted: st.minted.length, code: D.getElementById("keepCode").value }));
+    D.getElementById("keepCopy").click();
+    await new Promise((r) => setTimeout(r, 30));
+    ok(st.clip.length === 2 && st.clip[1] === st.minted[1] && W.location.hash === "#" + st.minted[1],
+      "and Copy then copies the fresh key, and the address carries it");
+  } finally { await new Promise((r) => setTimeout(r, 60)); W.close(); }
+})();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {
   /* S3, 24 SEP 2026. The door's one way in named its opener unseal, which stmt/owner.js already declared: spliced in
