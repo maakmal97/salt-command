@@ -316,6 +316,7 @@ signed in (or Salt Admin, for a customer at his counter) hands the sign-in acros
 |---|---|---|
 | `POST /handover` | a live session (`X-Stmt-Session`) and JSON `{token, wrap}`: `token` a key the page mints (24 random bytes, base64url, the shape of a sign-in link's), `wrap` its content key wrapped under it exactly as `wrapUnder(new TextEncoder().encode(token), ck)` wraps | `{ok, code, token, exp}`: `code` eight symbols of the username alphabet as `xxxx-xxxx`, `token` the key sent, `exp` ISO, fifteen minutes on. 401 with `session:false` with no session; 400 without a key of that shape and a wrap |
 | `POST /handover/open` | JSON `{token}` or `{code}` (case, spaces and hyphens forgiven; `token` wins where both are sent) | exactly what `POST /open-link` answers (`u`, `wrap`, `session`, `env`, `live`, `prices`, `card`, `assoc`, `issued`, `issues`, `remembered: true`) **plus `token`**: the page unwraps `wrap` under `token`, the one in the answer, whichever it typed. Both names are burnt. Every refusal is the door's one (401); a brake is the door's (429) |
+| `POST /all/handover` | behind Access, JSON `{u, token, wrap}`: his page opens the account under the master and wraps as above | `{ok, code, token, exp, url, qr}`: `url` is `<site>/app#<token>`, `qr` its rows of `0` and `1` |
 
 - **Mint when the sheet opens, copy in a tap of its own**: the derivation and the fetch are never in the tap that
   copies or shares (the judges' must-not-ship list).
@@ -657,6 +658,11 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   carry and refuses to hand back a link it could not file. What comes back is the finished message
   from `stmt/send.js`, the one copy of those words, plus the QR; it goes to the share sheet, or to
   the clipboard where there is none. **The token is dropped from the page as soon as it is sent.**
+- **SHOW A CODE, IN PERSON** (S3 3.13, his decision D2). For a customer at his counter: the card's Show a code opens
+  the system's Sheet and, as it opens, mints a hand-over through `POST /all/handover` (his page opens the account
+  under the master and wraps as the Sign-in link does). It shows a QR of `<site>/app#<key>`, drawn in rectangles,
+  and the eight symbols in the Code field with when they stop working. It copies and shares nothing, so no
+  clipboard waits on the derivation and the fetch. Closing it does not spend the code.
 - **Guest links `/g/<id>`** (v566) are minted inside `/all` and labelled: a board is what he prints
   and hands to strangers, and the link exists to say WHICH stranger. `stmt/refs.js` mints, lists,
   revokes and counts opens; it prices nothing, and neither does `tools/pricelist.mjs`, which reads

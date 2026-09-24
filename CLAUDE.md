@@ -298,6 +298,9 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **The shared link signs them in, once**: the link signs in, the password is never in it. A link
   inside its window is a bearer credential, and single use is best effort (KV). The `/s/` route is
   gated on the token's SHAPE, so a spent link and an invented one serve the same door.
+- **The hand-over** (his decision D2): a signed-in page, or Salt Admin's Show a code, hands the sign-in to
+  another app or phone as a key and an eight-symbol code, one use in fifteen minutes, filed under a hash keyed by
+  `STMT_HANDOVER_KEY` with the wrap sealed, braked per address and site-wide; unset, `/handover` answers 503.
 - **The door**: log in, remember me (a device key in the browser, the wrapped content key at
   `rem:<sha256(token)>`, neither opening anything alone, thirty days from the last open), log out, which also drops that wrap and this
   phone's notifications. A lapsed session says so in the bar, with Continue. Kept as an app:

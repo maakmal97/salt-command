@@ -16025,6 +16025,102 @@ await (async () => {
     "a hundred misses across the site shut code sign-in everywhere, a fresh address included");
   ok((await call("/open", { u, password: pw }, {}, env, "203.0.113.200")).status === 200, "and the password door is untouched by it");
 })();
+section("S3 3.13: Salt Admin shows a customer at the counter a QR and the eight symbols, minted as the sheet opens and never copied or shared");
+await (async () => {
+  /* HIS DECISION D2 OF 24 SEP 2026. At the counter the customer's own phone signs in from his screen: a QR their
+     camera opens and eight symbols to type in the saved app. The judges: a copy or a share never waits on a key
+     derivation and a fetch in the same tap, so this one is minted as the sheet opens and only shown. */
+  const C = await import("../tools/stmt-crypto.mjs");
+  const QR = (await import("../stmt/qr.js")).default;
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const kv = new KV(), MASTER = "mp-s3-313", SECRET = "s3-313-secret";
+  const u = C.newUsername(), ghost = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s3-313", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX1-AA", username: u }, { code: "CX2-BB", username: ghost }]));
+  await kv.put("sheet", JSON.stringify({ issue: "2026-09-01", accounts: [{ username: u, issued: "2026-09-01", flag: "clear", t: { owed: 0 } }] }));
+  const TEAM = "maakmal", AUD = "aud-s3-313", KID = "kid-s3-313";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const jwt = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+  const env = { STMT: kv, STMT_MASTER: MASTER, STMT_HANDOVER_KEY: SECRET, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o, e = env) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path, o), e);
+  const post = (path, body, headers, e = env) => site(path, { method: "POST", headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }, e);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  let win = null;
+  try {
+    /* the route: behind Access, off without the secret, and only for an account on the roster */
+    const wrap0 = await C.wrapKey("k".repeat(32), ck);
+    const noSecret = Object.assign({}, env); delete noSecret.STMT_HANDOVER_KEY;
+    ok((await post("/all/handover", { u, token: "k".repeat(32), wrap: wrap0 })).status === 401
+      && (await post("/all/handover", { u, token: "k".repeat(32), wrap: wrap0 }, { "cf-access-jwt-assertion": jwt }, noSecret)).status === 503
+      && (await post("/all/handover", { u: C.newUsername(), token: "k".repeat(32), wrap: wrap0 }, { "cf-access-jwt-assertion": jwt })).status === 400,
+      "his mint needs Access, answers 503 without STMT_HANDOVER_KEY, and refuses a username the roster does not carry");
+
+    /* the page: Send statement, the account's card, Show a code */
+    const html = await (await site("/all", { headers: { "cf-access-jwt-assertion": jwt } })).text();
+    const seen = { handover: null, copied: 0, shared: 0 };
+    win = new JSDOM(html, { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      Object.defineProperty(w.navigator, "clipboard", { configurable: true, value: { writeText: async () => { seen.copied++; } } });
+      w.navigator.share = async () => { seen.shared++; };
+      w.fetch = async (path, o) => {
+        o = o || {};
+        const r = await site(String(path), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": jwt }), body: o.body });
+        if (String(path) === "/all/handover") seen.handover = await r.clone().json();
+        return r;
+      };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 300 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    D.querySelector('button[data-m="send"]').click();
+    const cardOf = (x) => [...D.querySelectorAll("#slist .scard")].find((k) => k.textContent.includes(x));
+    const btnOf = (x) => { const k = cardOf(x); return k && [...k.querySelectorAll("button")].find((b) => b.textContent === "Show a code"); };
+    ok(await until(() => !!btnOf(u) && !!btnOf(ghost)) && btnOf(ghost).disabled && !btnOf(u).disabled,
+      "each account's card carries Show a code, switched off where no account stands behind the username");
+    const btn = btnOf(u);
+    btn.click();
+    const sheet = () => D.querySelector(".salt-sheet[role=dialog]");
+    ok(!!sheet() && sheet().getAttribute("aria-modal") === "true" && D.getElementById(sheet().getAttribute("aria-labelledby")).textContent === "Sign in on their phone"
+      && !!D.querySelector(".salt-sheet-scrim") && !!sheet().querySelector(".salt-orb.salt-sheet__close[aria-label=Close]")
+      && /Making a code/.test(sheet().textContent) && D.activeElement === sheet(),
+      "the tap opens the system's Sheet at once, saying a code is being made, with focus inside it");
+    ok(await until(() => !!D.getElementById("hoC")), "and the code is drawn once it is made");
+    const inp = D.getElementById("hoC"), code = inp.value;
+    ok(inp.readOnly && inp.classList.contains("salt-field__input--code") && inp.closest(".salt-code") && /^[a-z2-9]{4} [a-z2-9]{4}$/.test(code)
+      && seen.handover && code === seen.handover.code.replace("-", " ") && /Works once, until [0-9]{2}:[0-9]{2}[.]/.test(sheet().textContent),
+      "the eight symbols are shown in the Code field, grouped four and four, with when they stop working: " + code);
+    /* the QR is rectangles drawing the matrix of <site>/app#<key>, the saved app's own page */
+    const rects = [...sheet().querySelectorAll(".salt-qr .salt-qr__code svg rect")];
+    const want = QR.qrMatrix(seen.handover.url);
+    const drawn = want.map((row) => row.map(() => 0));
+    let off = false;
+    for (const r of rects) for (let i = 0; i < +r.getAttribute("width"); i++) {
+      const y = +r.getAttribute("y") - 4, x = +r.getAttribute("x") - 4 + i;
+      if (!drawn[y] || x < 0 || x >= drawn.length) off = true; else drawn[y][x] = 1;
+    }
+    ok(/^https:[/][/]k7m3p2[.]example[/]app#[A-Za-z0-9_-]{32}$/.test(seen.handover.url) && rects.length > 20 && !off
+      && JSON.stringify(drawn) === JSON.stringify(want),
+      "the QR is drawn in rectangles, module for module the matrix of the saved app's page with the key after the #: " + rects.length + " runs");
+    ok(seen.copied === 0 && seen.shared === 0, "nothing was copied or shared: the sheet only shows");
+    /* what he showed opens their account, once */
+    const opened = await (await post("/handover/open", { code })).json();
+    const ck2 = opened.wrap ? await C.unwrapKey(opened.token, opened.wrap).catch(() => null) : null;
+    ok(opened.ok && opened.u === u && !!ck2 && Buffer.from(ck2).equals(Buffer.from(ck)) && (await post("/handover/open", { code })).status === 401,
+      "the code on his screen opens their account on their phone, once");
+    /* Escape closes it and hands focus back */
+    sheet().dispatchEvent(new win.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    ok(!sheet() && !D.querySelector(".salt-sheet-scrim") && D.activeElement === btn, "Escape closes the sheet and focus returns to Show a code");
+  } finally { globalThis.fetch = realFetch; if (win) { try { win.close(); } catch (e) { /* best effort */ } } }
+})();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: no three-minute lock, Remember me, and a Log out. The two halves of

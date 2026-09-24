@@ -1043,6 +1043,21 @@ export default {
         return json({ ok: true, url: link, msg: signInMessage({ url: link, user: u }),
           qr: QR.qrMatrix(link) });
       }
+      /* S3 3.9 AND 3.13: A HAND-OVER FOR A CUSTOMER STANDING AT HIS COUNTER. His page opens the account under the
+         master, wraps the content key under a key it mints, and posts { u, token, wrap }, as the Sign-in link does;
+         what comes back is the code to read out and the address of the saved app's own page with the key after the
+         #, drawn as a QR for their camera. The key never reaches a log: a fragment is never sent. */
+      if (p === "/all/handover") {
+        if (!env.STMT_HANDOVER_KEY) return noHandover();
+        if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+        const b = await readJson(request);
+        const u = normUser(b && b.u);
+        if (!u || !(await roster(env)).some((x) => x.username === u)) return json({ ok: false, error: "no account on the roster has that username" }, 400);
+        const made = await mintHandover(env, u, b.token, b.wrap);
+        if (!made) return json({ ok: false, error: "send the key and the wrap" }, 400);
+        const link = url.origin + "/app#" + made.token;
+        return json(Object.assign({ ok: true, url: link, qr: QR.qrMatrix(link).map((line) => line.join("")) }, made));
+      }
       /* 24 SEP 2026 (M22): REVIEW OPENS AN ACCOUNT AS ITS OWN PAGE, READ ONLY. An account opened under
          the master has no session, because the owner does not order, so the page read no orders and
          drew "None yet." under a live order form for every account. What their page reads on a
