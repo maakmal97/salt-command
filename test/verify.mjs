@@ -32365,6 +32365,60 @@ await (async () => {
   } finally { c.W.close(); }
 })();
 
+section("S7 7.2: from 1080px the bar is the rail beside the page, each place takes two columns, and a sheet is a drawer");
+await (async () => {
+  /* The plan's f06w and f12w. The App bar recipe gives way to its rail at 1080px (the recipe's own switch, carried to the
+     site), and the page lays the rail beside a main column: Home in two columns, Account the statement beside This device,
+     Prices a book a column, Orders stage 5's list beside the open order, no longer breaking out of a 620px column. The
+     Sheet recipe is a drawer on the right from the same width. Geometry is the rig's (shots at 1280); this pins the rules
+     as served and the markup they lay out. */
+  const { landingPage: lp72 } = await import("../stmt/page.js");
+  const C72 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc72 } = await import("node:crypto");
+  const { JSDOM: JD72 } = await import("jsdom");
+  const page = lp72("", "n72", null);
+  const css = (page.match(/<style nonce="n72">([\s\S]*?)<\/style>/) || ["", ""])[1];
+  /* the page's own 1080px block for the places, read to its closing brace */
+  const from = css.indexOf("@media (min-width:1080px){", css.indexOf("S7 7.2"));
+  let depth = 0, to = from;
+  for (let i = from; i >= 0 && i < css.length; i++) { if (css[i] === "{") depth++; else if (css[i] === "}" && --depth === 0) { to = i; break; } }
+  const wide = from >= 0 ? css.slice(from, to + 1) : "";
+  ok(/\.cshell\{display:flex;/.test(wide) && /\.cmain\{flex:1 1 auto;min-width:0\}/.test(wide)
+    && /\.home\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\);/.test(wide)
+    && /\.acols\{display:grid;grid-template-columns:minmax\(0,620px\) minmax\(0,1fr\);/.test(wide)
+    && /\.pgrid\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\);/.test(wide),
+    "from 1080px the shell stands the rail beside the main column, and Home, Account and Prices take two columns: " + JSON.stringify(wide.slice(0, 160)));
+  ok(/@media \(min-width: 1080px\) \{\s*\.salt-appbar \{ display: none; \}/.test(css) && /@media \(max-width: 1079\.98px\) \{\s*\.salt-rail\.salt-appbar__rail \{ display: none; \}/.test(css)
+    && /@media \(min-width: 1080px\) \{\s*\.salt-sheet \{\s*top: 0;\s*left: auto;/.test(css),
+    "and the page carries the recipes' own switch: the bar below 1080px, the rail from it, and the sheet a drawer on the right");
+  ok(!/100vw - 64px/.test(css), "the orders place no longer breaks out of a 620px column to stand wide: the column is wide itself");
+  const D = new JD72(page, { url: "https://site.test/" }).window.document;
+  const kids = [...D.getElementById("tabs").children].map((n) => n.tagName.toLowerCase() + "." + n.className.split(" ")[0]).join(" ");
+  ok(kids === "nav.salt-rail div.cmain nav.salt-appbar" && D.querySelectorAll("#pHome > .hcol").length === 2 && D.querySelector("#pStmt > .acols > .devslot"),
+    "the markup it lays out: the rail, the main column and the bar; Home's two columns; This device beside the statement: " + kids);
+  /* Prices, driven: the books stand in their grid */
+  const u = "abcd-efgh", pass = "fixture-pass-72", ck = await C72.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C72.wrapKey(pass, ck), session: "",
+    env: await C72.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await C72.encryptWith(ck, JSON.stringify({ at: "2026-09-24T03:59:00Z", week: { monday: "2026-09-21", label: "21 Sep 2026" },
+      products: [{ product: "salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 110 }] }, { product: "oil", unit: "unit", basis: "board", sizes: [{ q: 10, price: 90 }] }], soon: [] })) };
+  const dom = new JD72(lp72(u, "n72b", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wc72, configurable: true }); } catch (e) { win.crypto = wc72; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path) => ({ ok: true, status: 200, json: async () => (String(path) === "/open" ? body : { ok: true, orders: [] }) });
+  } });
+  try {
+    const d = dom.window.document;
+    d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !d.querySelector("#pPrices .pane"); i++) await new Promise((r) => setTimeout(r, 25));
+    ok(d.querySelectorAll("#pPrices > .pgrid > .pane").length === 2 && !d.querySelector("#pPrices > .pane"),
+      "Prices draws its books inside the grid that lays them two across");
+  } finally { dom.window.close(); }
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read

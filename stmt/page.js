@@ -203,6 +203,20 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .home .salt-inbox-row{margin:0 0 8px}
 .devslot{max-width:620px;margin:28px auto 0;padding-top:18px;border-top:1px solid var(--salt-line-faint)}
 .devslot .salt-ghost{width:100%;margin-top:12px}
+/* S7 7.2: FROM 1080PX THE BAR IS THE RAIL, beside the page (the recipe's own switch), and each place takes two columns:
+   Home its money and what needs them beside what is coming, Account the statement beside This device, Prices a book a
+   column; Orders keeps stage 5's list beside the open order. A sheet is the recipe's drawer on the right. */
+@media (min-width:1080px){
+  .cshell{display:flex;gap:28px;align-items:flex-start;max-width:1240px;margin:0 auto;padding-bottom:48px}
+  .cmain{flex:1 1 auto;min-width:0}
+  .cmain .bar,.chead,.home,.cmain .panel{max-width:none}
+  .home{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+  .acols{display:grid;grid-template-columns:minmax(0,620px) minmax(0,1fr);gap:28px;align-items:start}
+  .acols .devslot{margin:0;padding-top:0;border-top:0}
+  .pgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 20px;align-items:start}
+  /* what stands above the orders (New order, the limit, Notifications) keeps to the list's column */
+  #pOrder>:not(.oplace){max-width:calc((100% - 28px)*5/11)}
+}
 .panel{max-width:620px;margin:0 auto}
 .panel h2{font-size:var(--salt-text-lg);margin:0 0 4px}
 .panel p.lead{color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.7;margin:0 0 18px}
@@ -272,11 +286,10 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .ofoot .salt-ghost{width:100%}
 @media (max-width:1079px){#pOrder.o-open>:not(.oplace){display:none}.oplace.o-open>.olistcol{display:none}.oplace.o-open{margin-top:0}}
 @media (min-width:1080px){
-  .oplace{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px;align-items:start;
-    width:min(1120px,100vw - 64px);margin-left:calc((100% - min(1120px,100vw - 64px))/2)}
+  .oplace{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px;align-items:start}
   .oback{display:none}
-  /* the open order stands under the bar while the list scrolls beside it, its thread in reach inside it */
-  .oscreen{position:sticky;top:84px;max-height:calc(100vh - 100px);overflow-y:auto}
+  /* the open order stands still while the list scrolls beside it, its thread in reach inside it */
+  .oscreen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
 }
 
 @media print{.bar,.mos,.salt-appbar,.salt-rail{display:none}}
@@ -1840,6 +1853,8 @@ const CLIENT_JS = `
       +(tapTo?' Tap a size to order it.':'')));
     pPrices.appendChild(el('p','lead','The price is for the goods. '+DELIVERY+' The list is written from your own history and changes weekly.'));
     if(prices.since) pPrices.appendChild(el('p','sub2','Buying with us since '+monthOf(prices.since)+'.'));
+    /* S7 7.2: the books stand in a grid, two across from 1080px */
+    var grid=el('div','pgrid'); pPrices.appendChild(grid);
     sold().forEach(function(p){
       var pane=el('div','pane');
       var h3=el('h3','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
@@ -1861,14 +1876,14 @@ const CLIENT_JS = `
           row.addEventListener('click',function(){ sheetOpen(p.product,r.q,row); }); }
         L.appendChild(row);
       });
-      pane.appendChild(L); pPrices.appendChild(pane);
+      pane.appendChild(L); grid.appendChild(pane);
     });
     /* his instruction of 15 Sep 2026: a product with no tier set is not priced, and says so */
     soon.forEach(function(p){
       var pane=el('div','pane');
       var sh=el('h3','pmark'); sh.setAttribute('aria-label',pshape(p.product)); sh.appendChild(psym(p.product,28)); pane.appendChild(sh);
       pane.appendChild(el('p','sub2','Price coming soon.'));
-      pPrices.appendChild(pane);
+      grid.appendChild(pane);
     });
   }
 
