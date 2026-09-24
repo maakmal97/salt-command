@@ -6,7 +6,7 @@
  *
  * WHAT AN ORDER IS. One record, order:<username>:<id>, in this site's own store:
  *   { id, u, product, qty, mode, unit, total, week, at, status, history[], method?, account?,
- *     paid, payments[], moved, movedOn, movedAt?, queued?, ledgerKey?, msgs[] }
+ *     paid, payments[], claimed, moved, movedOn, movedAt?, queued?, ledgerKey?, msgs[] }
  * Plaintext, unlike everything else here, and the reason is stated rather than hidden: the
  * record is written at runtime by the customer, and this Worker holds no key to seal it with.
  * It carries a size, a quoted total and a state; no name, no code, no address. The desk code
@@ -28,9 +28,10 @@
  *   cancelled     either side, at any stage until the goods move
  *
  * MONEY AND GOODS ARE TWO TRACKS, NOT ONE STATE (v694, his instruction of 18 Sep 2026). He may
- * deliver first or be paid first, and the order keeps both: `paid` and `payments[]` are what the
- * customer says they have paid, `moved` and `movedOn` are what he says he handed over. `done` is
- * neither side's tap: it is what the record reads when both are complete. The ledger says the
+ * deliver first or be paid first, and the order keeps both: `paid` is the money he has confirmed and
+ * `claimed` what the customer says they sent and he has not (S6, below), `moved` and `movedOn` are
+ * what he says he handed over. `done` is neither side's tap: it is what the record reads when both
+ * are complete. The ledger says the
  * same thing in its own words, Open · Advance for goods out and money owed, Open · Deferred for
  * money in and goods owed, and it says it because each step queued its own entry.
  *
@@ -252,10 +253,12 @@ export async function checkStores(env) {
    carry this view instead. A WHITELIST, so a field the desk adds later stays on the desk until it is
    named here; and a desk mark, which changes none of these, no longer redraws their page. */
 export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "week",
-  "total", "delivery", "paid", "payments", "moved", "movedOn", "method", "account", "history", "msgs", "closed"];
+  "total", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed"];
 export const customerView = (o) => {
   const v = {};
   for (const k of CUSTOMER_FIELDS) if (o && o[k] !== undefined) v[k] = o[k];
+  /* S6: a claim's `queued` names the desk's entry for it, which is the desk's bookkeeping */
+  if (Array.isArray(v.payments)) v.payments = v.payments.map((p) => { if (!p || !p.queued) return p; const c = Object.assign({}, p); delete c.queued; return c; });
   return v;
 };
 
@@ -275,12 +278,28 @@ export async function allOrders(env, all) {
   return all ? list : list.filter((o) => OPEN_STATES.includes(o.status) || awaitingAnswer(o));
 }
 
+/* ---- A CLAIM IS NOT A PAYMENT (S6 6.5, his decision D7 of 24 Sep 2026) --------------------------
+ * "I have sent it" is the customer's word and STAYS their word until his Received: an entry on the order's
+ * payments[] with `claim: "waiting"`, summed as `claimed`, and never added to `paid`. His verdict answers ONE
+ * claim, named by its moment: received adds it to paid, not found takes it off claimed, and the entry keeps
+ * the answer ("received", "notfound"). Each claim is queued for the ledger as its own Fulfilment, flagged as
+ * a claim for his check, and `queued` on the entry names that entry: so the ledger hears of the money once,
+ * by that entry, whether he answers before it is queued or after. */
+export const claimedOf = (o) => +(((o && o.payments) || []).filter((p) => p && p.claim === "waiting")
+  .reduce((n, p) => n + (+p.amount || 0), 0)).toFixed(2);
+/** Each claim the ledger has not been told of: waiting for his check, or received; never one not found. */
+export const claimsToQueue = (o) => ((o && o.payments) || []).filter((p) => p && (p.claim === "waiting" || p.claim === "received") && !p.queued);
+/** Money he confirmed that the ledger has not been told of, less a received claim, which its own entry tells. */
+export const paidUntold = (o) => +((+o.paid || 0) - (+((o.queued || {}).paid) || 0)
+  - claimsToQueue(o).filter((p) => p.claim === "received").reduce((n, p) => n + (+p.amount || 0), 0)).toFixed(2);
+
 /* ---- WHAT THE LEDGER HAS NOT BEEN TOLD (v694) -----------------------------------------------
  * The desk queues an entry per stage and writes back what it queued. This is the difference, read
  * off the record alone, and it is the ONE place that decides a stage is owed, so the desk's every
  * road reads the same list and a step cannot be queued twice by two of them.
  *   ack     the pending row: the order is agreed and no row exists yet
- *   pay     the money ARRIVED SINCE, because a Fulfilment accumulates: the increment, not the total
+ *   claim   each claim not yet queued, as a Fulfilment of its own for his check (S6 6.5)
+ *   pay     money he confirmed SINCE (paidUntold), because a Fulfilment accumulates: the increment, not the total
  *   move    the goods handed over, as a RUNNING TOTAL, because a Correction states rather than adds
  *   close   the row restated at what was handed over (S11 11.9), which states the goods moved as well
  *   cancel  the row withdrawn, and only where a row was made
@@ -291,7 +310,8 @@ export function orderWork(o) {
   /* nothing was ever told, and the order ended before it was agreed: there is nothing to undo */
   if (!q.ack && !ROWED.includes(o.status)) return jobs;
   if (!q.ack) jobs.push("ack");
-  if (+(o.paid || 0) > +(q.paid || 0) + 0.004) jobs.push("pay");
+  if (claimsToQueue(o).length) jobs.push("claim");
+  if (paidUntold(o) > 0.004) jobs.push("pay");
   /* S11 11.9: a close restates what was handed over with the size, so it is the one entry owed for both */
   const closing = !!(o.closed && !q.close);
   if (Math.abs(+(o.moved || 0) - +(q.moved || 0)) > 0.0004 && !closing) jobs.push("move");
@@ -334,11 +354,9 @@ export const chaseSlot = (at) => {
 /* A DAY'S GRACE: chased from the day after the last handover (movedOn, a Kuala Lumpur date), never the
    day the goods moved; an order that carries no such day is not chased. */
 export const graceOver = (o, at) => !!o.movedOn && o.movedOn < klDay(at);
-/* PAUSED WHILE A CLAIM WAITS: a figure they say they sent that the order does not yet count as paid.
-   Today none waits, because their "I have paid" raises `paid` on their word (v694); a claim that stays
-   a claim until his Received, which is stage 6's, pauses the chase through this one name. A Not found
-   that lowers `paid` has to take its claim out of `payments` with it, or the pause never lifts. */
-export const claimWaits = (o) => (o.payments || []).reduce((n, p) => n + (+(p && p.amount) || 0), 0) > (+o.paid || 0) + 0.004;
+/* PAUSED WHILE A CLAIM WAITS: a figure they say they sent that he has not answered (S6 6.5). His Received or
+   Not found answers it, and the chase runs again only if something is still owed. */
+export const claimWaits = (o) => claimedOf(o) > 0.004;
 
 /** Every customer owed a chase at this moment, with the orders that make it, newest order first. */
 export async function toChase(env, at = new Date()) {
@@ -369,7 +387,9 @@ export async function markChased(env, u, hour) {
 
 /** Every order with a stage the ledger has not been told about, each carrying what it owes. */
 export async function ordersOwing(env) {
-  return (await everyOrder(env)).map((o) => Object.assign({ work: orderWork(o) }, o))
+  /* S6 6.5: and what to tell of the money, read here by the one rule, so the desk never works it out twice */
+  return (await everyOrder(env)).map((o) => Object.assign({ work: orderWork(o), tell: { pay: paidUntold(o),
+    claims: claimsToQueue(o).map((p) => ({ at: p.at, amount: p.amount, method: p.method || null, account: p.account || null })) } }, o))
     .filter((o) => o.work.length > 0);
 }
 
@@ -449,7 +469,8 @@ const fileRid = (env, u, rid, id) => (rid ? putSoft(env, RID_KEY(u, rid), JSON.s
  * of its events however often they are replayed. Both roads run exactly these: the KV road reads the
  * record, applies and writes it back whole, as it always did; the order book appends the event under its
  * id and folds it in, in one step no other writer can come between.
- * The kinds: place, status, method, pay, say, mark, ledger, handover, cash (S11 11.8), and copy (an order moved in). */
+ * The kinds: place, status, method, pay (before S6), claim (S6 6.5), say, mark, ledger, handover, cash (S11 11.8), and copy
+ * (an order moved in). */
 export const mintOrderId = (at) => at.replace(/[-:.TZ]/g, "").slice(0, 14) + "-"
   + b64url(crypto.getRandomValues(new Uint8Array(4))).toLowerCase().replace(/[^a-z0-9]/g, "x");
 
@@ -483,14 +504,14 @@ export function decideCustomer(order, action, body, mine, at) {
     return { ev: { kind: "method", at, method: r.method, account: r.account } };
   }
   if (action === "pay") {
-    /* v694: THE CUSTOMER TYPES WHAT THEY PAID (his instruction, 18 Sep 2026). The site takes no
-       money and no rail tells it anything, so what is recorded is their word; the figure is
-       checked against the fold, and he sees the running total on his card. It accumulates, so a
-       part payment is a part payment and two of them are two. */
+    /* v694: THE CUSTOMER TYPES WHAT THEY SENT (his instruction, 18 Sep 2026). The site takes no money
+       and no rail tells it anything, so what is recorded is their word. S6 6.5 (D7): it is a CLAIM,
+       never paid, until his Received; claims accumulate, and together they may not pass what is owed. */
     if (!PAYABLE.includes(order.status)) return { error: "payment is recorded once the order is confirmed", status: 409 };
     const amount = body && body.amount;
     if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { error: "say how much you paid", status: 400 };
-    const due = dueOf(order);
+    const due = +(dueOf(order) - claimedOf(order)).toFixed(2);
+    if (due <= 0.004) return { error: "what is owed on this order is sent already and waiting for us to confirm it", status: 409 };
     if (amount > due + 0.004) return { error: "that is more than the " + due.toFixed(2) + " outstanding on this order", status: 400 };
     let method = order.method || null, account = order.account || null;
     if (body && body.method) {
@@ -499,7 +520,9 @@ export function decideCustomer(order, action, body, mine, at) {
       method = r.method; account = r.account;
     }
     if (!method) return { error: "choose how you are paying first", status: 400 };
-    return { ev: { kind: "pay", at, amount, method, account } };
+    /* cash is his to record when he takes it (S11 11.8), so it can never count twice */
+    if (method === "cod") return { error: "cash is recorded by us when we take it, so there is nothing to send here", status: 409 };
+    return { ev: { kind: "claim", at, amount: +amount.toFixed(2), method, account } };
   }
   if (action === "say") {
     /* v751: ON ANY ORDER, at any stage. A question about an order that has been withdrawn or
@@ -527,6 +550,9 @@ export function decideDesk(order, body, at) {
     if (typeof m.ledgerKey === "string" && m.ledgerKey) c.ledgerKey = m.ledgerKey;
     for (const k of ["ack", "cancel", "close"]) if (m[k]) c[k] = String(m[k]).slice(0, 40);
     for (const k of ["paid", "moved"]) if (typeof m[k] === "number" && Number.isFinite(m[k])) c[k] = +m[k].toFixed(3);
+    /* S6 6.5: each claim queued, by its moment, with the entry that tells the ledger of it */
+    if (Array.isArray(m.claims)) c.claims = m.claims.slice(0, 20).filter((x) => x && typeof x.at === "string" && typeof x.draft === "string")
+      .map((x) => ({ at: x.at.slice(0, 40), draft: x.draft.slice(0, 40) }));
     /* 20 Sep 2026: and what the desk made of its last pass over this order, so his card can say the
        truth: queued, waiting for its row, or failed, with the reason and when it was last written. The
        desk writes it only when it changes. It never reaches the customer's page, which reads history
@@ -548,6 +574,16 @@ export function decideDesk(order, body, at) {
     if (isNum(L.paid) && L.paid > (+order.paid || 0) + 0.004) ev.paid = L.paid;
     if (isNum(L.moved) && L.moved > (+order.moved || 0) + 0.0004) ev.moved = L.moved;
     return ev.paid === undefined && ev.moved === undefined ? { none: true } : { ev };
+  }
+  /* S6 6.5 (D7): HIS ANSWER TO ONE CLAIM, named by its moment. The desk sends the figure it showed him, and this
+     checks that it is that claim's and that it still waits; received makes it money he has confirmed. */
+  if (body && body.verdict) {
+    const v = body.verdict;
+    if (!["received"].includes(v.kind)) return { error: "a claim is answered received", status: 400 };
+    const p = (order.payments || []).find((x) => x && x.claim === "waiting" && x.at === v.claim);
+    if (!p) return { error: "no claim of theirs waits under that name", status: 409 };
+    if (!isNum(v.amount) || Math.abs(v.amount - p.amount) > 0.004) return { error: "that claim is " + p.amount.toFixed(2) + ", not " + (isNum(v.amount) ? v.amount.toFixed(2) : "a figure"), status: 409 };
+    return { ev: { kind: "verdict", at, verdict: v.kind, claim: p.at, amount: p.amount } };
   }
   /* S11 11.6: NO REPLY NEEDED. A "thanks" had to be answered to leave his card. This answers it without a
      word: the moment of their last line is kept as `quiet`, bookkeeping like a mark, so it moves nothing, sends
@@ -573,7 +609,7 @@ export function decideDesk(order, body, at) {
     if (!PAYABLE.includes(order.status)) return { error: "cash is recorded on an agreed order, not one that is " + order.status, status: 409 };
     const a = body.cash.amount;
     if (!isNum(a) || a <= 0) return { error: "say how much was received", status: 400 };
-    const due = dueOf(order);
+    const due = +(dueOf(order) - claimedOf(order)).toFixed(2);   /* S6: less what they say they sent, which he answers apart */
     if (a > due + 0.004) return { error: "that is more than the " + due.toFixed(2) + " outstanding on this order", status: 400 };
     return { ev: { kind: "cash", at, amount: +a.toFixed(2) } };
   }
@@ -640,6 +676,22 @@ export function applyEvent(order, ev) {
     order.payments = (order.payments || []).concat([{ at, amount: +ev.amount.toFixed(2), method: ev.method, account: ev.account }]);
     order.history.push({ at, status: order.status, by: "customer", method: ev.method, account: ev.account, note: "paid " + ev.amount.toFixed(2) });
     done = settle(order, at);
+  } else if (ev.kind === "claim") {   /* S6 6.5: their word, waiting for his; paid does not move */
+    order.method = ev.method; order.account = ev.account;
+    order.payments = (order.payments || []).concat([{ at, amount: ev.amount, method: ev.method, account: ev.account, claim: "waiting" }]);
+    order.claimed = claimedOf(order);
+    order.history.push({ at, status: order.status, by: "customer", method: ev.method, account: ev.account, note: "sent " + ev.amount.toFixed(2) });
+  } else if (ev.kind === "verdict") {   /* S6: his answer to one claim, which keeps its record */
+    const p = (order.payments || []).find((x) => x && x.claim === "waiting" && x.at === ev.claim);
+    if (p) {
+      order.payments = order.payments.map((x) => (x === p ? Object.assign({}, x, { claim: ev.verdict, answered: at }) : x));
+      order.claimed = claimedOf(order);
+      order.paid = +((+order.paid || 0) + p.amount).toFixed(2);
+      /* a claim already queued told the ledger by its own entry, so the ledger's mark of the money moves with it */
+      if (p.queued) order.queued = Object.assign({}, order.queued || {}, { paid: +((+((order.queued || {}).paid) || 0) + p.amount).toFixed(2) });
+      order.history.push({ at, status: order.status, by: "desk", note: "received " + p.amount.toFixed(2) });
+      done = settle(order, at);
+    }
   } else if (ev.kind === "cash") {
     order.paid = +((+order.paid || 0) + ev.amount).toFixed(2);
     /* by the amount, not to what is paid: a claim of theirs not yet queued stays owed to the ledger as their own */
@@ -659,6 +711,13 @@ export function applyEvent(order, ev) {
     for (const k of ["ack", "cancel", "close", "paid", "moved"]) if (m[k] !== undefined) q[k] = k === "paid" ? Math.max(+q.paid || 0, m[k]) : m[k];
     if (m.sync) order.sync = m.sync;
     if (m.quiet) order.quiet = m.quiet;   /* S11 11.6: a line he said needs no reply */
+    /* S6 6.5: a claim queued is named by its entry, once; one he has received by then is money the ledger is now told of */
+    for (const c of m.claims || []) {
+      const p = (order.payments || []).find((x) => x && x.claim && x.at === c.at && !x.queued);
+      if (!p) continue;
+      order.payments = order.payments.map((x) => (x === p ? Object.assign({}, x, { queued: c.draft }) : x));
+      if (p.claim === "received") q.paid = +((+q.paid || 0) + p.amount).toFixed(2);
+    }
     order.queued = q;
   } else if (ev.kind === "ledger") {
     const q = Object.assign({}, order.queued || {});
@@ -700,7 +759,7 @@ export function marksOf(ev, order) {
   if (ev.kind === "place") return [[LAST_PLACED, at], [LAST_TOUCHED, at]].concat(order && order.msgs && order.msgs.length ? [[LAST_SAID, at]] : []);
   const k = [[LAST_TOUCHED, at]];
   if (ev.kind === "say" && ev.by === "customer") k.push([LAST_SAID, at]);
-  if (ev.kind === "pay") k.push([LAST_THEIRS, at + "|pay"]);
+  if (ev.kind === "pay" || ev.kind === "claim") k.push([LAST_THEIRS, at + "|pay"]);
   if (ev.kind === "status" && ev.by === "customer") k.push([LAST_THEIRS, at + "|cancel"]);
   return k;
 }
@@ -721,6 +780,7 @@ export function wakes(ev, order, done) {
   if (ev.kind === "say" && ev.by === "desk") return { k: "reply", o };
   if (ev.kind === "pay" && done) return { k: "complete", o };
   if (ev.kind === "cash") return { k: done ? "complete" : "paid", o };   /* S11 11.8: his cash is their payment received */
+  if (ev.kind === "verdict") return { k: done ? "complete" : "paid", o };   /* S6: his Received */
   return null;
 }
 

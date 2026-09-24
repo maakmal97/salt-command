@@ -16612,8 +16612,8 @@ await (async () => {
   ok((await J(await post("/orders/" + id94 + "/pay", { amount: 400 }, S94))).status === 400,
     "a payment above what is outstanding is refused");
   r94 = await J(await post("/orders/" + id94 + "/pay", { amount: 100 }, S94));
-  ok(r94.b.ok && r94.b.order.paid === 100 && r94.b.order.payments.length === 1 && r94.b.order.status === "acknowledged",
-    "the customer types what they paid, and it accumulates on the order");
+  ok(r94.b.ok && !r94.b.order.paid && r94.b.order.claimed === 100 && r94.b.order.payments.length === 1 && r94.b.order.status === "acknowledged",
+    "the customer types what they sent, and it waits on the order as a claim until his Received (S6, D7)");
   const rcW = await reconcileOrders(denv94);
   ok(rcW.queued === 0 && JSON.stringify(rcW.waiting) === JSON.stringify([id94]) && (await Q()).length === 1,
     "the payment waits while the row is not on the book yet, rather than queueing an entry the drafter would refuse");
@@ -16644,6 +16644,9 @@ await (async () => {
 
   /* ---- 7. BOTH SIDES COMPLETE, AND NOBODY TAPS IT ---- */
   r94 = await J(await post("/orders/" + id94 + "/pay", { amount: 162 }, S94));
+  /* S6 (D7): each claim becomes money on his Received, one verdict a claim */
+  for (const c of r94.b.order.payments.filter((x) => x.claim === "waiting"))
+    r94 = await J(await post("/desk/orders/" + un94 + "/" + id94, { verdict: { kind: "received", claim: c.at, amount: c.amount } }, D94));
   ok(r94.b.order.paid === 312 && r94.b.order.status === "acknowledged",
     "paid in full is not complete while units are still owed");
   r94 = await J(await post("/desk/orders/" + un94 + "/" + id94, { handover: { units: 2.5 } }, D94));
@@ -17689,7 +17692,7 @@ await (async () => {
   await post("/orders/" + oA.id + "/pay", { amount: 30 }, S);
   const rcW = await reconcileOrders(denv);
   a = await rec(un, oA.id);
-  ok(JSON.stringify(rcW.waiting) === JSON.stringify([oA.id]) && a.sync.state === "waiting" && /^the payment waits for the pending row/.test(a.sync.why) && syncs.length === 2,
+  ok(JSON.stringify(rcW.waiting) === JSON.stringify([oA.id]) && a.sync.state === "waiting" && /^the payment they say they sent waits for the pending row/.test(a.sync.why) && syncs.length === 2,
     "a payment held for its row writes waiting, naming the stage and what he can do: " + JSON.stringify(a.sync));
   const since = a.sync.at;
   await reconcileOrders(denv); await reconcileOrders(denv);
@@ -17699,8 +17702,8 @@ await (async () => {
   STATE.OPEN = { byKey: { [PE.ovKey(rowA)]: Object.assign(PE.ledgerRow(rowA, "S", "salt"), { key: PE.ovKey(rowA) }) } };
   await reconcileOrders(denv);
   a = await rec(un, oA.id);
-  ok(a.sync.state === "queued" && a.queued.paid === 30 && syncs.length === 3,
-    "with the row on the book the payment queues and the record reads queued again");
+  ok(a.sync.state === "queued" && !!(a.payments.find((p) => p.claim === "waiting") || {}).queued && syncs.length === 3,
+    "with the row on the book the payment, a claim since S6, queues and the record reads queued again");
 
   /* ---- 2. FAILED, WITH THE REASON ---- */
   await post("/desk/orders/" + un + "/" + oA.id, { handover: { units: 1 } }, D);
@@ -22445,22 +22448,23 @@ await (async () => {
   const y1 = await call("/orders/" + id + "/pay", { amount: 30, method: "tngbiz", rid: ridB }, S);
   const y2 = await call("/orders/" + id + "/pay", { amount: 30, method: "tngbiz", rid: ridB }, S);
   const afterPay = await stored(id);
-  ok(y1.b.ok && y2.b.ok && +afterPay.paid === 30 && afterPay.payments.length === 1 && +y2.b.order.paid === 30,
-    "a payment sent twice under one request id is recorded once: " + JSON.stringify({ paid: afterPay.paid, payments: afterPay.payments.length, answer: y2.b.order && y2.b.order.paid }));
+  ok(y1.b.ok && y2.b.ok && +afterPay.claimed === 30 && afterPay.payments.length === 1 && +y2.b.order.claimed === 30,
+    "a payment (a claim since S6) sent twice under one request id is recorded once: " + JSON.stringify({ claimed: afterPay.claimed, payments: afterPay.payments.length, answer: y2.b.order && y2.b.order.claimed }));
   const y3 = await call("/orders/" + id + "/pay", { amount: 30, method: "tngbiz", rid: "c3".repeat(16) }, S);
-  ok(y3.b.ok && +(await stored(id)).paid === 60, "and a payment under a new id is a new payment: " + (await stored(id)).paid);
+  ok(y3.b.ok && +(await stored(id)).claimed === 60, "and a payment under a new id is a new payment: " + (await stored(id)).claimed);
   const other = orderKeys().map((k) => k.split(":")[2]).find((x) => x !== id);
   const y4 = await call("/orders/" + other + "/pay", { amount: 30, method: "tngbiz", rid: ridB }, S);
   ok(y4.status === 409 && !y4.b.ok && +(await stored(other)).paid === 0,
     "an id answers only for the order it was filed against: " + JSON.stringify({ status: y4.status, error: y4.b.error }));
 
-  /* ---- a payment that completes the order is repeated as the order, never as a refusal ---- */
+  /* ---- a payment that completes the order is repeated as the order, never as a refusal. S6: a claim completes nothing,
+     so the case is the claim that leaves nothing to claim, whose repeat would otherwise read "sent already" ---- */
   await call("/desk/orders/" + un + "/" + id, { handover: { units: 1 } }, D);
   const ridD = "d4".repeat(16);
   const z1 = await call("/orders/" + id + "/pay", { amount: 50, method: "tngbiz", rid: ridD }, S);
   const z2 = await call("/orders/" + id + "/pay", { amount: 50, method: "tngbiz", rid: ridD }, S);
-  ok(z1.b.ok && z1.b.order.status === "done" && z2.status === 200 && z2.b.ok && z2.b.order.status === "done" && +(await stored(id)).paid === 110,
-    "a payment that completed the order, sent again, reads as recorded and not as a refusal: " + JSON.stringify({ status: z2.status, error: z2.b.error }));
+  ok(z1.b.ok && +z1.b.order.claimed === 110 && z2.status === 200 && z2.b.ok && +z2.b.order.claimed === 110 && +(await stored(id)).claimed === 110,
+    "a payment that left nothing to claim, sent again, reads as recorded and not as a refusal: " + JSON.stringify({ status: z2.status, error: z2.b.error }));
 
   /* ---- the page mints the id per review and per payment, and a retry carries it ---- */
   const { JSDOM: JD } = await import("jsdom");
@@ -22595,9 +22599,9 @@ await (async () => {
   try { hand = await call("/desk/orders/" + un + "/" + id, { handover: { units: 1 } }, D); } catch (e) { hand = { status: "threw", b: {} }; }
   const after = await stored(id);
   ok(ack.status === 200 && pay.status === 200 && say.status === 200 && hand.status === 200
-    && after.status === "acknowledged" && +after.paid === 20 && after.msgs.length === 2 && +after.moved === 1,
-    "an acknowledgement, a payment, a line and a handover each answer 200 with what was stored, marks refusing throughout: "
-    + JSON.stringify({ ack: ack.status, pay: pay.status, say: say.status, hand: hand.status, paid: after.paid, moved: after.moved }));
+    && after.status === "acknowledged" && +after.claimed === 20 && after.msgs.length === 2 && +after.moved === 1,
+    "an acknowledgement, a payment (a claim since S6), a line and a handover each answer 200 with what was stored, marks refusing throughout: "
+    + JSON.stringify({ ack: ack.status, pay: pay.status, say: say.status, hand: hand.status, claimed: after.claimed, moved: after.moved }));
 
   /* ---- and with the store answering, the marks are still written: best effort, not skipped ---- */
   kv.busy = [];
@@ -22665,7 +22669,7 @@ await (async () => {
   answers.push((await call("/orders/" + id + "/say", { text: "on my way" }, S)).b.order);
   answers.push((await call("/orders/" + id + "/cancel", {}, S)).b.order);
   answers.push((await call("/orders", { product: "salt", qty: 1, mode: "collect", unit: 130, total: 130, week: "" }, S)).b.order);
-  ok(answers.length === 5 && answers.every(bare) && answers[1].paid === 20 && answers[0].method === "tngbiz",
+  ok(answers.length === 5 && answers.every(bare) && answers[1].claimed === 20 && !answers[1].paid && answers[0].method === "tngbiz",
     "and so does the answer to every move of theirs, a rail, a payment, a line, a withdrawal and a placement: "
     + JSON.stringify(answers.map((a) => a && DESK.filter((k) => k in a))));
 
@@ -22751,7 +22755,8 @@ await (async () => {
   const D = { "X-Stmt-Desk": "desk-key" };
   const one = (await call("/orders", { product: "salt", qty: 5, mode: "collect", unit: 100, total: 500, week: "" }, S)).b.order.id;
   await call("/desk/orders/" + un + "/" + one, { status: "acknowledged" }, D);
-  await call("/orders/" + one + "/pay", { amount: 200, method: "tngbiz" }, S);
+  const c1 = (await call("/orders/" + one + "/pay", { amount: 200, method: "tngbiz" }, S)).b.order.payments.slice(-1)[0];
+  await call("/desk/orders/" + un + "/" + one, { verdict: { kind: "received", claim: c1.at, amount: 200 } }, D);   /* S6: his Received makes it paid */
   await call("/desk/orders/" + un + "/" + one, { handover: { units: 2 } }, D);
   const inStepCod = await call("/orders/" + one + "/method", { method: "cod" }, S);
   ok(inStepCod.status === 200 && inStepCod.b.order.method === "cod",
@@ -22900,7 +22905,7 @@ await (async () => {
   ok(p2.b.ok && p2.b.order.id === id && m[1].b.ok && y[1].b.ok && s[1].b.ok && w[1].status === 200 && w[1].b.ok && w[1].b.order.status === "cancelled",
     "every retried tap is answered as recorded, a withdrawal included, which answered 409 of itself before: "
     + JSON.stringify([p2.status, m[1].status, y[1].status, s[1].status, w[1].status, w[1].b.error]));
-  ok(JSON.stringify(byKind) === JSON.stringify({ place: 2, status: 2, method: 1, pay: 2, say: 2, handover: 1, mark: 1, ledger: 1 }),
+  ok(JSON.stringify(byKind) === JSON.stringify({ place: 2, status: 2, method: 1, claim: 2, say: 2, handover: 1, mark: 1, ledger: 1 }),   /* S6: I have paid is a claim */
     "each tap is ONE event however often it is sent: " + JSON.stringify(byKind));
   ok(evs.filter((e) => e.eid.startsWith("c:" + un + ":")).length === 7 && evs.filter((e) => e.eid.startsWith("s:")).length === 5
     && evs.some((e) => e.eid === "c:" + un + ":" + id + ":" + rid("c3")),
@@ -23152,7 +23157,7 @@ await (async () => {
     await at(40, () => cust("KUL", tok, "POST", "/orders/" + id + "/pay", { amount: 60 }));
     await at(60, () => DO.reconcileOrders(deskEnv("CRON")));
     const o = orderOf(A, id);
-    return { paid: o.paid, moved: o.moved, lines: lines(o) };
+    return { paid: o.paid, claimed: o.claimed, moved: o.moved, lines: lines(o) };
   };
   /* B3: he acknowledges from another location, off a card 25 s old, after the customer withdrew */
   const b3 = async (store) => {
@@ -23188,9 +23193,10 @@ await (async () => {
     await at(30, () => cust("KUL", tok, "POST", "/orders/" + id + "/pay", { amount: 100 }));
     await at(60, () => DO.reconcileOrders(deskEnv("CRON")));
     await at(80, () => cust("KUL", tok, "POST", "/orders/" + id + "/pay", { amount: 30 }));
+    const mid = orderOf(A, id);   /* S6: right after the second claim, whether the first still carries the reconcile's mark */
     await at(120, () => DO.reconcileOrders(deskEnv("CRON")));
     await at(180, () => DO.reconcileOrders(deskEnv("CRON")));
-    return { told: told(), paid: orderOf(A, id).paid };
+    return { told: told(), claimed: orderOf(A, id).claimed, markKept: !!(((mid && mid.payments) || [])[0] || {}).queued };
   };
   /* B6: the return leg raises the order from a copy read before the customer recorded a transfer */
   const b6 = async (store) => {
@@ -23207,7 +23213,7 @@ await (async () => {
     schedule(0.6, () => cust("KUL", tok, "POST", "/orders/" + id + "/pay", { amount: 130 }));
     const ts = await at(0, () => DO.tellSite(env));
     const o = orderOf(A, id);
-    return { ts: ts.ok, paid: o.paid, payments: (o.payments || []).map((p) => p.amount) };
+    return { ts: ts.ok, paid: o.paid, claimed: o.claimed, payments: (o.payments || []).map((p) => p.amount) };
   };
   /* the book's own: the reconcile marks what it read (paid 100) after the return leg raised the order to the book's
      130 in the same pass; the mark must not lower what the ledger has been told, or the next pass queues 30 again */
@@ -23233,8 +23239,9 @@ await (async () => {
     }
     {
       const kv = await b2(null), ob = await b2("object");
-      ok(kv.paid === 100 && kv.moved === 0 && kv.lines.length === 0, "B2, the instrument: on KV a minute-old copy erases RM 60, his handover and a line: " + JSON.stringify(kv));
-      ok(ob.paid === 160 && ob.moved === 1 && JSON.stringify(ob.lines) === JSON.stringify(["Sent the first half"]),
+      /* S6: their payments are claims, so what is erased or kept is claimed, never paid */
+      ok(kv.claimed === 100 && kv.moved === 0 && kv.lines.length === 0, "B2, the instrument: on KV a minute-old copy erases RM 60, his handover and a line: " + JSON.stringify(kv));
+      ok(ob.claimed === 160 && !ob.paid && ob.moved === 1 && JSON.stringify(ob.lines) === JSON.stringify(["Sent the first half"]),
         "B2: in the order book nothing is written back from a copy, so the payments, the handover and the line all stand: " + JSON.stringify(ob));
     }
     {
@@ -23253,13 +23260,15 @@ await (async () => {
     }
     {
       const kv = await b5(null), ob = await b5("object");
-      ok(kv.told === 230, "B5, the instrument: on KV the ledger is told the first part twice, RM 230 on RM 130 paid: " + JSON.stringify(kv));
-      ok(ob.told === 130 && ob.paid === 130, "B5: in the order book the ledger is told RM 130 on RM 130 paid: " + JSON.stringify(ob));
+      /* S6: each claim is queued under its own moment, and a queue takes one entry a moment, so on KV the erased mark
+         no longer tells the ledger twice; the erasure itself is still there to see */
+      ok(!kv.markKept && kv.told === 130, "B5, the instrument: on KV the second claim, written from an old copy, erases the first's mark, and the ledger is still told each claim once, RM 130: " + JSON.stringify(kv));
+      ok(ob.markKept && ob.told === 130 && ob.claimed === 130, "B5: in the order book the mark stands and the ledger is told RM 130 on RM 130 claimed: " + JSON.stringify(ob));
     }
     {
       const kv = await b6(null), ob = await b6("object");
       ok(kv.paid === 100 && kv.payments.length === 0, "B6, the instrument: on KV the return leg writes RM 100 over a RM 130 transfer and its record: " + JSON.stringify(kv));
-      ok(ob.ts && ob.paid === 130 && JSON.stringify(ob.payments) === "[130]",
+      ok(ob.ts && ob.paid === 100 && ob.claimed === 130 && JSON.stringify(ob.payments) === "[130]",
         "B6: in the order book the return leg is weighed against the order as it stands, and the transfer and its record stand: " + JSON.stringify(ob));
     }
     {
@@ -23278,6 +23287,9 @@ await (async () => {
        fails, is marked failed, and the next pass queues it (the first is found already queued, by its moment) */
     await at(-480, () => DO.reconcileOrders(deskEnv("CRON")));
     const rc = await at(-420, () => DO.reconcileOrders(deskEnv("CRON")));
+    /* S6: their RM 50 is a claim until his Received, which makes it the advance's money */
+    const c50 = orderOf(A, id).payments.find((p) => p.claim === "waiting");
+    await at(-415, () => desk("KUL", P(A, id), { verdict: { kind: "received", claim: c50.at, amount: 50 } }));
     const q1 = deskQueue().map((e) => e.status), o1 = orderOf(A, id);
     ok(!!pend && pend.orderKey === o1.ledgerKey && rc.ok && JSON.stringify(q1) === '["Pending","Payment","Handover"]'
       && o1.queued.paid === 50 && o1.queued.moved === 2 && (o1.sync || {}).state === "queued" && SO.orderWork(o1).length === 0,
@@ -23518,8 +23530,8 @@ await (async () => {
     const done = (bk.db.prepare("SELECT v FROM meta WHERE k = 'movein:done'").get() || {}).v;
     ok(copied > T0 && bk.state.alarmAt() >= copied + CACHE_MS,
       "the end of the minute is set after the start copy has finished and a whole cache life past it: " + JSON.stringify({ copied: copied - T0, end: bk.state.alarmAt() - T0 }));
-    ok(paid.status === 200 && done === "1" && o.paid === 100 && o.payments.length === 1,
-      "and the old code's RM 100, written at another location five seconds into the freeze, is in the book once it has moved in: " + JSON.stringify({ paid: o.paid, done }));
+    ok(paid.status === 200 && done === "1" && o.claimed === 100 && o.payments.length === 1,
+      "and the old code's RM 100 (a claim since S6), written at another location five seconds into the freeze, is in the book once it has moved in: " + JSON.stringify({ claimed: o.claimed, done }));
   } finally { clock.uninstall(); console.log = realLog; }
 })();
 
@@ -23689,12 +23701,12 @@ await (async () => {
     await tick();
     const c2 = lastLog(/^orderbook check: /);
     ok(oldPay.status === 200 && !!c2 && JSON.stringify(c2.kvAhead) === JSON.stringify([o1]) && JSON.stringify(c2.repaired) === "[]" && c2.cleanSince === null
-      && kvOf(u1, o1).paid === 50,
-      "a KV record the book never held is named kvAhead, the hour is not clean, and the RM 50 in it is left where it is: " + JSON.stringify({ c2, kvPaid: kvOf(u1, o1).paid }));
+      && kvOf(u1, o1).claimed === 50,
+      "a KV record the book never held is named kvAhead, the hour is not clean, and the RM 50 in it is left where it is: " + JSON.stringify({ c2, kvClaimed: kvOf(u1, o1).claimed }));
     await call(env("SIN"), "desk", "/desk/orders/" + u1 + "/" + o1, { message: "noted" });
     await advance(5000);
-    ok(kvOf(u1, o1).paid === 50 && kvOf(u1, o1).payments.length === 1 && logs.some((l) => /never held/.test(l)),
-      "and the book's next write behind leaves it too, rather than write its own copy over the only record of that payment: " + JSON.stringify({ kvPaid: kvOf(u1, o1).paid }));
+    ok(kvOf(u1, o1).claimed === 50 && kvOf(u1, o1).payments.length === 1 && logs.some((l) => /never held/.test(l)),
+      "and the book's next write behind leaves it too, rather than write its own copy over the only record of that payment: " + JSON.stringify({ kvClaimed: kvOf(u1, o1).claimed }));
 
     /* ---- (3) a move landing while the check reads KV is not undone there ---- */
     await to("2026-09-24T04:10:00Z");
@@ -23706,8 +23718,8 @@ await (async () => {
     await tick();
     const c3 = lastLog(/^orderbook check: /);
     await advance(5000);
-    ok(!!c3 && !c3.repaired.includes(o2) && bookOf(u2, o2).paid === 40 && kvOf(u2, o2).paid === 40 && kvOf(u2, o2).payments.length === 1,
-      "a payment taken and written behind while the check was listing KV stays in KV: " + JSON.stringify({ repaired: c3 && c3.repaired, kvPaid: kvOf(u2, o2).paid }));
+    ok(!!c3 && !c3.repaired.includes(o2) && bookOf(u2, o2).claimed === 40 && kvOf(u2, o2).claimed === 40 && kvOf(u2, o2).payments.length === 1,
+      "a payment taken and written behind while the check was listing KV stays in KV: " + JSON.stringify({ repaired: c3 && c3.repaired, kvClaimed: kvOf(u2, o2).claimed }));
 
     /* ---- a book order whose KV key has gone is named, not written back ---- */
     await W.at("KUL").delete("order:" + u2 + ":" + o2);
@@ -23783,12 +23795,12 @@ await (async () => {
     bk.restart();
     const page = (await call(env, tok, "/orders")).b.orders.find((o) => o.id === a);
     const tooSoon = await call(env, tok, "/orders/" + a + "/say", { text: "hello?", rid: "r7".repeat(16) });
-    ok(paid.status === 200 && !!mark && !!page && page.paid === 120 && page.msgs.length === 1 && tooSoon.status === 503 && tooSoon.b.error === O.FROZEN,
-      "the KV road marks what it wrote, and the first request back moves the book in again, so the page reads the RM 120 and the line: "
-      + JSON.stringify({ mark: !!mark, paid: page && page.paid, lines: page && page.msgs.length, move: tooSoon.status }));
+    ok(paid.status === 200 && !!mark && !!page && page.claimed === 120 && page.msgs.length === 1 && tooSoon.status === 503 && tooSoon.b.error === O.FROZEN,
+      "the KV road marks what it wrote, and the first request back moves the book in again, so the page reads the RM 120 (a claim since S6) and the line: "
+      + JSON.stringify({ mark: !!mark, claimed: page && page.claimed, lines: page && page.msgs.length, move: tooSoon.status }));
     await advance(70000);
     const done = (bk.db.prepare("SELECT v FROM meta WHERE k = 'movein:done'").get() || {}).v;
-    ok(done === "1@" + mark && bookOf(a).paid === 120 && kvOf(a).paid === 120 && JSON.stringify(bookOf(b).msgs.map((m) => m.text)) === '["on its way"]'
+    ok(done === "1@" + mark && bookOf(a).claimed === 120 && kvOf(a).claimed === 120 && JSON.stringify(bookOf(b).msgs.map((m) => m.text)) === '["on its way"]'
       && JSON.stringify(kvOf(b).msgs.map((m) => m.text)) === '["on its way"]',
       "the round is the generation's own at the mark, A is taken from KV, and B, whose KV record the book had already held, keeps his line and is written behind: "
       + JSON.stringify({ done, bookB: bookOf(b).msgs.length, kvB: kvOf(b).msgs.length }));
@@ -23796,7 +23808,7 @@ await (async () => {
     const ws = []; await SW.scheduled({ scheduledTime: clock.now() }, env, { waitUntil: (p) => ws.push(p) }); await Promise.all(ws);
     const c = JSON.parse(W.store.get(O.CHECK_KEY) || "{}");
     await advance(5000);
-    ok(JSON.stringify(c.repaired) === "[]" && JSON.stringify(c.kvAhead) === "[]" && c.same === 2 && kvOf(a).paid === 120 && kvOf(a).payments.length === 1 && kvOf(a).msgs.length === 1,
+    ok(JSON.stringify(c.repaired) === "[]" && JSON.stringify(c.kvAhead) === "[]" && c.same === 2 && kvOf(a).claimed === 120 && kvOf(a).payments.length === 1 && kvOf(a).msgs.length === 1,
       "and the next hourly check finds the two stores the same, the RM 120 and its line in both: " + JSON.stringify({ repaired: c.repaired, kvAhead: c.kvAhead, same: c.same }));
     ok((await call(env, tok, "/orders/" + a + "/say", { text: "thanks", rid: "s8".repeat(16) })).status === 200, "and moves are taken again");
   } finally { clock.uninstall(); console.log = realLog; }
@@ -23919,9 +23931,9 @@ await (async () => {
     const againPlace = await call(env, tok, "/orders", Object.assign({ rid: R("a1") }, place));
     const againPay = await call(env, tok, "/orders/" + a + "/pay", { amount: 50, rid: R("b2") });
     const mine = (await call(env, tok, "/orders")).b.orders;
-    ok(againPlace.status === 200 && againPlace.b.order.id === a && againPay.status === 200 && mine.length === 1 && mine[0].paid === 50 && mine[0].payments.length === 1,
+    ok(againPlace.status === 200 && againPlace.b.order.id === a && againPay.status === 200 && mine.length === 1 && mine[0].claimed === 50 && mine[0].payments.length === 1,
       "a Place and an I have paid made on the KV road, retried under the same ids after the book moved in, each land once: "
-      + JSON.stringify({ orders: mine.length, paid: mine[0] && mine[0].paid, payments: mine[0] && mine[0].payments.length }));
+      + JSON.stringify({ orders: mine.length, claimed: mine[0] && mine[0].claimed, payments: mine[0] && mine[0].payments.length }));
 
     /* ---- the other way: made in the book, retried on the kv road after a flip back ---- */
     const b = (await call(env, tok, "/orders", Object.assign({ rid: R("c3") }, place))).b.order.id;
@@ -23934,9 +23946,9 @@ await (async () => {
     const backPay = await call(kvRoad, tok, "/orders/" + b + "/pay", { amount: 30, rid: R("e5") });
     const onKv = (await call(kvRoad, tok, "/orders")).b.orders;
     const ob = onKv.find((o) => o.id === b);
-    ok(backPlace.status === 200 && backPlace.b.order.id === b && backPay.status === 200 && onKv.length === 2 && ob.paid === 30 && ob.payments.length === 1,
+    ok(backPlace.status === 200 && backPlace.b.order.id === b && backPay.status === 200 && onKv.length === 2 && ob.claimed === 30 && ob.payments.length === 1,
       "and a Place and an I have paid made in the book, retried under the same ids after a flip back to kv, each land once too: "
-      + JSON.stringify({ orders: onKv.length, paid: ob && ob.paid, payments: ob && ob.payments.length }));
+      + JSON.stringify({ orders: onKv.length, claimed: ob && ob.claimed, payments: ob && ob.payments.length }));
   } finally { clock.uninstall(); console.log = realLog; }
 })();
 
@@ -25420,7 +25432,10 @@ await (async () => {
   const b = await place("deliver", 1);
   await say(() => O.deskMove(env, u, b.id, { status: "acknowledged", mode: "deliver", delivery: 10 }));
   await say(() => O.deskMove(env, u, b.id, { ledger: { moved: 1 } }));
-  await say(() => O.customerMove(env, u, b.id, "pay", { amount: 110, method: "transfer", account: "wise" }));
+  /* S6 (D7): their I have sent it is a claim and wakes nobody; his Received of it completes the order */
+  await O.customerMove(env, u, b.id, "pay", { amount: 110, method: "transfer", account: "wise" });
+  const cb = (await O.ordersOf(env, u)).find((x) => x.id === b.id).payments.slice(-1)[0];
+  await say(() => O.deskMove(env, u, b.id, { verdict: { kind: "received", claim: cb.at, amount: 110 } }));
   const c = await place("collect", 1);
   await say(() => O.deskMove(env, u, c.id, { status: "declined" }));
   const d = await place("collect", 1);
@@ -25429,7 +25444,7 @@ await (async () => {
   ok(JSON.stringify(kinds) === JSON.stringify(["confirmed", "ready", "reply", "part-collected", "collected", "paid",
     "confirmed", "delivered", "complete", "declined", "confirmed", "cancelled"]),
     "confirmed, ready, a reply, part and then all of it collected, a payment he recorded, a delivery the book carried back, "
-    + "a payment of theirs that completes it, not taken, and cancelled: " + JSON.stringify(kinds));
+    + "his Received of a claim of theirs that completes it, not taken, and cancelled: " + JSON.stringify(kinds));
   ok(ack.news && ack.news.o === a.id && JSON.stringify(about) === JSON.stringify([a.id, a.id, a.id, a.id, a.id, a.id, b.id, b.id, b.id, c.id, d.id, d.id]),
     "each names the order it is about, for the tap: " + JSON.stringify(about));
   ok(kinds.every((k) => Object.prototype.hasOwnProperty.call(NEWS, k)), "and every kind sent is one the service worker has words for");
@@ -25572,9 +25587,9 @@ await (async () => {
   ok(!O.graceOver({ movedOn: "2026-09-18" }, "2026-09-18T15:59:59Z") && O.graceOver({ movedOn: "2026-09-18" }, "2026-09-18T16:00:00Z")
     && !O.graceOver({}, "2026-09-30T02:00:00Z"),
     "the grace ends at midnight in Kuala Lumpur after the handover day, and an order with no handover day is never past it");
-  ok(O.claimWaits({ paid: 0, payments: [{ amount: 100 }] }) && !O.claimWaits({ paid: 100, payments: [{ amount: 100 }] })
-    && !O.claimWaits({ paid: 150, payments: [{ amount: 100 }] }) && !O.claimWaits({ paid: 0 }),
-    "a claim waits while what they say they sent is more than the order counts as paid; their word raising paid, as today, leaves none waiting");
+  ok(O.claimWaits({ paid: 0, payments: [{ amount: 100, claim: "waiting" }] }) && !O.claimWaits({ paid: 100, payments: [{ amount: 100, claim: "received" }] })
+    && !O.claimWaits({ paid: 0, payments: [{ amount: 100, claim: "notfound" }] }) && !O.claimWaits({ paid: 0, payments: [{ amount: 100 }] }) && !O.claimWaits({ paid: 0 }),
+    "a claim waits while he has not answered it (S6); one received or not found, and a payment from before claims, leave none waiting");
 
   /* ---- the tick, driven ---- */
   const b64u = (a) => Buffer.from(a).toString("base64url");
@@ -25607,7 +25622,7 @@ await (async () => {
   const A1 = ord("aaaa-1111", "20260915010000-aaa1", "2026-09-15T01:00:00Z"), A2 = ord("aaaa-1111", "20260916010000-aaa2", "2026-09-16T01:00:00Z");
   await put(A1); await put(A2);
   await put(ord("bbbb-2222", "20260918010000-bbb1", "2026-09-18T01:00:00Z", { movedOn: "2026-09-18" }));
-  await put(ord("cccc-3333", "20260915010000-ccc1", "2026-09-15T01:00:00Z", { payments: [{ at: "2026-09-17T09:00:00Z", amount: 50, method: "transfer" }] }));
+  await put(ord("cccc-3333", "20260915010000-ccc1", "2026-09-15T01:00:00Z", { payments: [{ at: "2026-09-17T09:00:00Z", amount: 50, method: "transfer", claim: "waiting" }], claimed: 50 }));
   await put(ord("dddd-4444", "20260915010000-ddd1", "2026-09-15T01:00:00Z", { qty: 5, total: 500, moved: 2, paid: 200, payments: [{ amount: 200 }] }));
   await put(ord("0000-0000", "20260915010000-ttt1", "2026-09-15T01:00:00Z"));
   const phones = {};
@@ -25932,6 +25947,9 @@ await (async () => {
     await say(() => O.customerMove(env, u, b, "pay", { amount: 50 }));
     await say(() => O.customerMove(env, u, b, "say", { text: "is it on its way?" }));
     await say(() => O.customerMove(env, u, b, "pay", { amount: 60 }));
+    /* S6 (D7): their claims wake nobody; his Received of each does, the second completing the order */
+    for (const p of (await O.ordersOf(env, u)).find((o) => o.id === b).payments.filter((x) => x.claim === "waiting"))
+      await say(() => O.deskMove(env, u, b, { verdict: { kind: "received", claim: p.at, amount: p.amount } }));
     const c = await place("collect", 1);
     await say(() => O.deskMove(env, u, c, { status: "declined" }));
     const d = await place("collect", 1);
@@ -25954,10 +25972,10 @@ await (async () => {
   };
   const kvRoad = await play(null), bookRoad = await play("object");
   const want = ["confirmed@0", "ready@0", "reply@0", "part-collected@0", "collected@0", "paid@0",
-    "confirmed@1", "delivered@1", "complete@1", "declined@2", "confirmed@3", "bare", "cancelled@3"];
+    "confirmed@1", "delivered@1", "paid@1", "complete@1", "declined@2", "confirmed@3", "bare", "cancelled@3"];
   ok(JSON.stringify(kvRoad.kinds) === JSON.stringify(want),
-    "on the KV road each move of his names its kind and its order; his mark, their rail, a part payment and their line wake nobody; "
-    + "the payment that completes it says complete; a handover of nothing still wakes, with no kind: " + JSON.stringify(kvRoad.kinds));
+    "on the KV road each move of his names its kind and its order; his mark, their rail, their claims and their line wake nobody; "
+    + "his Received of each claim says paid, and of the one that completes it complete; a handover of nothing still wakes, with no kind: " + JSON.stringify(kvRoad.kinds));
   ok(JSON.stringify(bookRoad.kinds) === JSON.stringify(want),
     "and in the order book every wake is the same kind for the same order, one state machine deriving it for both roads: " + JSON.stringify(bookRoad.kinds));
   ok(want.filter((k) => k !== "bare").every((k) => Object.prototype.hasOwnProperty.call(NEWS, k.split("@")[0])), "and every kind is one the service worker has words for");
@@ -26011,7 +26029,7 @@ await (async () => {
   ok(afterRail === null || afterRail === undefined,
     "choosing how to pay is not news either: " + JSON.stringify(afterRail));
 
-  await customerMove(senv6, u6, o6.id, "pay", { amount: 100, method: "cod" });
+  await customerMove(senv6, u6, o6.id, "pay", { amount: 100, method: "transfer", account: "wise" });   /* S6: a claim; cash is never theirs to declare */
   const mark6 = await skv6.get(LAST_THEIRS);
   ok(/^\d{4}-\d\d-\d\dT.+\|pay$/.test(String(mark6)),
     "a payment writes the moment AND the word, the moment first so it still compares as a string: " + mark6);
@@ -26487,7 +26505,7 @@ await (async () => {
   await O.customerMove(senv, U, d.id, "cancel", {});
   const rcD = await reconcileOrders(denv);
   ok(!(rcD.dropped || []).includes(d.id) && draftOf(d.queued.ack).status === "pending",
-    "with money paid the pending row is kept, since the refund is the book's to carry: " + JSON.stringify({ rc: rcD, draft: draftOf(d.queued.ack) }));
+    "with money paid, or said to be sent (a claim since S6), the pending row is kept, since the refund is the book's to carry: " + JSON.stringify({ rc: rcD, draft: draftOf(d.queued.ack) }));
 
   /* E. HIS OWN CANCEL IS NOT THEIR WITHDRAWAL: the rule he decided is for theirs, and his keeps its old road */
   const e = await agreed(true);
@@ -26694,7 +26712,8 @@ await (async () => {
   ok(draftsOf(B.o.id, "Payment").length === 1 && draftsOf(B.o.id, "Payment")[0].status === "pending", "their payment is drafted and waits: " + JSON.stringify(draftsOf(B.o.id, "Payment").map((d) => d.status)));
   const wrong = await call("/orders/" + B.o.id + "/received", { amount: 45 });
   const rB = await call("/orders/" + B.o.id + "/received", { amount: 40 });
-  ok(wrong.status === 409 && rB.status === 200 && rB.j.preapproval.spent === "applied" && rB.j.preapproval.waits === false && draftsOf(B.o.id, "Payment")[0].status === "approved",
+  ok(wrong.status === 409 && rB.status === 200 && rB.j.preapproval.spent === "applied" && rB.j.preapproval.waits === false && draftsOf(B.o.id, "Payment")[0].status === "approved"
+    && (await orderOf(B.o.id)).paid === 40 && (await orderOf(B.o.id)).claimed === 0,   /* S6: their payment was a claim, and his Received makes it paid on the site */
     "Received for another figure is refused; for the figure drafted it approves that draft at the tap: " + JSON.stringify({ wrong: wrong.j.error, pre: rB.j.preapproval }));
 
   /* C. RECEIVED BEFORE THE ROW LANDS: waits, and is spent when the Fulfilment is drafted */
@@ -26702,7 +26721,8 @@ await (async () => {
   await O.customerMove(senv, U1, C.o.id, "method", { method: "tngbiz", account: "tngbiz" });
   await O.customerMove(senv, U1, C.o.id, "pay", { amount: 30 });
   const rC = await call("/orders/" + C.o.id + "/received", { amount: 30 });
-  ok(rC.status === 200 && rC.j.preapproval.waits === true && preOf(C.o.id, "pay").status === "waiting" && !draftsOf(C.o.id, "Payment").length,
+  ok(rC.status === 200 && rC.j.preapproval.waits === true && preOf(C.o.id, "pay").status === "waiting" && !draftsOf(C.o.id, "Payment").length
+    && (await orderOf(C.o.id)).paid === 30 && (await orderOf(C.o.id)).claimed === 0,
     "Received before the first row lands waits for it, and says so: " + JSON.stringify(rC.j.preapproval));
   land(C.draft);
   await reconcileOrders(denv); await runDrafter(denv);
@@ -26726,8 +26746,16 @@ await (async () => {
   await O.customerMove(senv, U1, E.o.id, "method", { method: "tngbiz", account: "tngbiz" });
   await O.customerMove(senv, U1, E.o.id, "pay", { amount: 20 });
   const cE = await call("/orders/" + E.o.id + "/cash", { amount: 50 });
-  ok(cE.status === 409 && /receive that first/.test(cE.j.error) && (await orderOf(E.o.id)).paid === 20,
-    "cash is refused while a payment of theirs still waits to be queued, which its mark would swallow: " + JSON.stringify(cE.j));
+  const sE = await orderOf(E.o.id);
+  ok(cE.status === 200 && sE.paid === 50 && sE.claimed === 20 && O.orderWork(sE).includes("claim") && !O.orderWork(sE).includes("pay"),
+    "cash beside a claim of theirs is taken (S6): the claim is its own entry, so the mark the cash moves swallows nothing: " + JSON.stringify({ status: cE.status, error: cE.j.error, paid: sE.paid, claimed: sE.claimed }));
+  const overE = await call("/orders/" + E.o.id + "/cash", { amount: 70 });
+  ok(overE.status === 400 && /RM 60\.00 still owed on this order beside what they say they sent/.test(overE.j.error),
+    "and cash past what is owed less their claim is refused on the card, before anything is recorded: " + JSON.stringify(overE.j.error));
+  const rE = await call("/orders/" + E.o.id + "/received", { amount: 20 });
+  const cE2 = await call("/orders/" + E.o.id + "/cash", { amount: 10 });
+  ok(rE.status === 200 && cE2.status === 200 && (await orderOf(E.o.id)).paid === 80,
+    "and a claim he received before its row landed, still to be queued, does not hold cash back: it is told by its own entry: " + JSON.stringify({ r: rE.status, c: cE2.status, e: cE2.j.error }));
 
   /* F. DIFFERENT WHEN IT LANDS: a payment folded beside the row, so the advance it would flag is another figure */
   const F = await accepted(2, 210, U2);   /* five open orders is a customer's cap */
@@ -26835,18 +26863,20 @@ await (async () => {
     && JSON.stringify(JSON.parse(hs[1].entry).payload.fields) === JSON.stringify(JSON.parse(hOld.entry).payload.fields),
     "Collected again at the same figure queues that handover under a fresh entry, approved as drafted: " + JSON.stringify(hs.map((d) => d.status)));
 
-  /* D. THEIR PAYMENT, REJECTED: Received at that figure offers it again */
+  /* D. THEIR PAYMENT IS A CLAIM (S6, D7): its row is his check, answered on its card, so Approve neither rejects nor
+     approves it; Received answers it and approves that row */
   const d = await place(U2, 1, 104);
   const d1 = await accept(d); land(d1.j.draft);
   await O.customerMove(senv, U2, d.id, "method", { method: "tngbiz", account: "tngbiz" });
   await O.customerMove(senv, U2, d.id, "pay", { amount: 30 });
   await reconcileOrders(denv); await runDrafter(denv);
   const pOld = drafts(d.id, "Payment")[0];
-  await reject(pOld.id);
+  const rjD = await reject(pOld.id), apD = await call("/drafts/" + encodeURIComponent(pOld.id) + "/approve", { by: "desk" });
   const rD = await call("/orders/" + d.id + "/received", { amount: 30 });
   const ps = drafts(d.id, "Payment");
-  ok(rD.status === 200 && rD.j.preapproval.again === pOld.id && ps.length === 2 && ps[1].status === "approved" && JSON.parse(ps[1].entry).payload.cash === 30,
-    "Received at the figure of a payment he rejected offers that payment again: " + JSON.stringify(ps.map((x) => x.status)));
+  ok(rjD.status === 409 && apD.status === 409 && /answered on its order's card/.test(rjD.j.error) && rD.status === 200 && ps.length === 1 && ps[0].status === "approved"
+    && (await O.allOrders(senv, true)).find((x) => x.id === d.id).paid === 30,
+    "a claim's row is refused both ways under Approve, and his Received on the card approves it and makes it paid: " + JSON.stringify({ rj: rjD.status, ap: apD.status, ps: ps.map((x) => x.status) }));
 
   /* E. CASH, REJECTED: offered again, and the order is never told the cash twice */
   const e = await place(U2, 2, 210);
@@ -26950,6 +26980,116 @@ await (async () => {
     "news carrying a code or an amount never reaches the title: " + JSON.stringify(forged && forged.t));
 })();
 
+section("S6 6.5: a customer's word that they sent it is a claim, counted as claimed and never paid, and queued for his check");
+await (async () => {
+  /* HIS DECISION D7 OF 24 SEP 2026: "I have sent it" STAYS A CLAIM until his Received. Its own event, on both roads:
+     it raises `claimed` and never `paid`, pauses the chase, and the desk's reconcile queues it as a Fulfilment of its
+     own for his check, flagged as a claim, never as money in. Cash is his to record, so a customer never declares it. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the claim was not driven through the order book"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders } = await import("../src/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const U = "abcd-efgh", C = "CX1-AB";
+  for (const store of ["object", "kv"]) {
+    const kv = new KV(), bk = H.orderBook({});
+    const senv = Object.assign({ STMT: kv, STMT_DESK_KEY: "desk-key" }, store === "object" ? { ORDERBOOK: bk.ns, ORDER_STORE: "object" } : {});
+    const mine = async (id) => (await O.ordersOf(senv, U)).find((x) => x.id === id);
+    const o = (await O.placeOrder(senv, U, { product: "salt", qty: 2, mode: "collect", unit: 50, total: 100, week: "" })).order;
+    await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+    const cod = await O.customerMove(senv, U, o.id, "pay", { amount: 10, method: "cod" });   /* before any goods move, so the advance rule is silent */
+    await O.deskMove(senv, U, o.id, { handover: { units: 2 } });
+    const later = new Date(Date.now() + 2 * 864e5);
+    const chasedBefore = (await O.toChase(senv, later)).some((c) => c.u === U);
+
+    /* THE CLAIM: their word, on its own line, and paid does not move */
+    const r = await O.customerMove(senv, U, o.id, "pay", { amount: 60, method: "tngbiz", account: "tngbiz" });
+    const got = await mine(o.id);
+    const last = (got.payments || []).slice(-1)[0] || {};
+    ok(!r.error && +got.paid === 0 && got.claimed === 60 && last.claim === "waiting" && last.amount === 60 && got.status === "acknowledged"
+      && (got.history || []).slice(-1)[0].note === "sent 60.00",
+      store + " road: I have sent it is a claim, 60 claimed and nothing paid, the order not completed on their word: "
+      + JSON.stringify({ paid: got.paid, claimed: got.claimed, last, status: got.status, note: (got.history || []).slice(-1)[0].note }));
+    if (store === "object") ok(bk.db.prepare("SELECT kind FROM ev WHERE oid = ? ORDER BY seq").all(o.id).map((x) => x.kind).slice(-1)[0] === "claim",
+      "and in the order book it is its own event, a claim: " + JSON.stringify(bk.db.prepare("SELECT kind FROM ev WHERE oid = ?").all(o.id).map((x) => x.kind)));
+    ok(chasedBefore && O.claimWaits(got) && !(await O.toChase(senv, later)).some((c) => c.u === U),
+      store + " road: the chase that was due pauses while the claim waits: " + JSON.stringify({ chasedBefore, waits: O.claimWaits(got) }));
+    ok((await kv.get("last-theirs") || (store === "object" ? (bk.db.prepare("SELECT v FROM meta WHERE k = 'last-theirs'").get() || {}).v || "" : "")).endsWith("|pay"),
+      store + " road: and it marks a payment of theirs, which is what wakes him");
+
+    /* WHAT THEY MAY CLAIM: what is owed less what waits; cash never */
+    const over = await O.customerMove(senv, U, o.id, "pay", { amount: 50 });
+    const rest = await O.customerMove(senv, U, o.id, "pay", { amount: 40 });
+    const full = await O.customerMove(senv, U, o.id, "pay", { amount: 5 });
+    ok(over.status === 400 && /40\.00 outstanding/.test(over.error) && cod.status === 409 && /recorded by us/.test(cod.error)
+      && !rest.error && full.status === 409 && /sent already/.test(full.error) && (await mine(o.id)).claimed === 100,
+      store + " road: a claim may not pass what is owed less what already waits, and cash is never theirs to declare: "
+      + JSON.stringify({ over: over.error, cod: cod.error, rest: rest.error, full: full.error }));
+    const cashOver = await O.deskMove(senv, U, o.id, { cash: { amount: 10 } });
+    ok(cashOver.status === 400 && /outstanding/.test(cashOver.error), store + " road: and his cash is capped at what is owed less their claims, so the two never count twice: " + JSON.stringify(cashOver.error));
+    const seen = O.customerView(await mine(o.id));
+    ok(seen.claimed === 100 && +seen.paid === 0, store + " road: their page is handed claimed beside paid: " + JSON.stringify({ claimed: seen.claimed, paid: seen.paid }));
+  }
+
+  /* THE DESK'S RECONCILE queues each claim as its own Fulfilment, flagged as a claim, and names it on the claim */
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const kv = new KV(), dkv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: kv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+  const key = C + "|2026-09-25|100";
+  await O.deskMove(senv, U, o.id, { mark: { ledgerKey: key, ack: "2026-09-25T01:00:00.000Z" } });
+  db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run("OPEN", JSON.stringify({ byKey: { [key]: { key } }, position: {} }));
+  await O.customerMove(senv, U, o.id, "pay", { amount: 30, method: "tngbiz", account: "tngbiz" });
+  const claimAt = (await O.allOrders(senv, true)).find((x) => x.id === o.id).payments.slice(-1)[0].at;
+  const rc = await reconcileOrders(denv);
+  const q = ((await dkv.get("q:orders", "json")) || { queue: [] }).queue.filter((e) => e.orderId === o.id && e.status === "Payment");
+  const after = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
+  const pe = after.payments.slice(-1)[0];
+  ok(rc.queued === 1 && q.length === 1 && q[0].claim === true && q[0].claimOf === claimAt && q[0].payload.cash === 30
+    && q[0].payload.kind === "Fulfilment" && q[0].payload.orderKey === key && q[0].at === claimAt,
+    "the reconcile queues the claim as a Fulfilment of its own, flagged as a claim and stamped with its own moment: "
+    + JSON.stringify({ rc, q: q.map((e) => ({ at: e.at, claim: e.claim, claimOf: e.claimOf, cash: e.payload.cash })) }));
+  ok(pe.queued === q[0].at && +after.paid === 0 && !((+(after.queued || {}).paid || 0) > 0) && after.claimed === 30,
+    "and names that entry on the claim, telling the ledger of no money: " + JSON.stringify({ queued: pe.queued, paid: after.paid, q: after.queued, claimed: after.claimed }));
+  ok(!("queued" in (O.customerView(after).payments.slice(-1)[0])),
+    "the entry's name is the desk's bookkeeping and never reaches their page");
+  const rc2 = await reconcileOrders(denv);
+  ok(rc2.queued === 0 && O.orderWork(after).length === 0,
+    "a second pass queues nothing: the claim is named once: " + JSON.stringify({ rc2, work: O.orderWork(after) }));
+
+  /* HIS RECEIVED, ONE CLAIM BY ITS MOMENT: the store's verdict. Queued already, the ledger was told by its entry, so the
+     mark of the money moves with it; not queued yet, it is told by its own entry when queued, never as a second payment */
+  const wrong = await O.deskMove(senv, U, o.id, { verdict: { kind: "received", claim: claimAt, amount: 25 } });
+  const stray = await O.deskMove(senv, U, o.id, { verdict: { kind: "received", claim: "2026-01-01T00:00:00.000Z", amount: 30 } });
+  await O.deskMove(senv, U, o.id, { verdict: { kind: "received", claim: claimAt, amount: 30 } });
+  const r1 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
+  ok(wrong.status === 409 && stray.status === 409 && r1.paid === 30 && r1.claimed === 0 && r1.queued.paid === 30 && r1.payments[0].claim === "received"
+    && r1.history.slice(-1)[0].note === "received 30.00" && r1.history.slice(-1)[0].by === "desk" && O.orderWork(r1).length === 0,
+    "Received names one waiting claim at its own figure; it becomes paid, the claim keeps its record, and a claim already queued moves the ledger's mark with it: "
+    + JSON.stringify({ wrong: wrong.error, stray: stray.error, paid: r1.paid, claimed: r1.claimed, q: r1.queued, work: O.orderWork(r1) }));
+  await O.customerMove(senv, U, o.id, "pay", { amount: 20 });
+  const at2 = (await O.allOrders(senv, true)).find((x) => x.id === o.id).payments.slice(-1)[0].at;
+  await O.deskMove(senv, U, o.id, { verdict: { kind: "received", claim: at2, amount: 20 } });
+  const r2 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
+  const rc3 = await reconcileOrders(denv);
+  const r3 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
+  const pays = ((await dkv.get("q:orders", "json")) || { queue: [] }).queue.filter((e) => e.orderId === o.id && e.status === "Payment");
+  ok(r2.paid === 50 && JSON.stringify(O.orderWork(r2)) === '["claim"]' && rc3.queued === 1 && pays.length === 2 && pays[1].payload.cash === 20
+    && pays[1].claimOf === at2 && r3.queued.paid === 50 && O.orderWork(r3).length === 0,
+    "received before it was queued, it is told by its own entry and never as a payment beside it, and that entry's mark moves the ledger's figure: "
+    + JSON.stringify({ work: O.orderWork(r2), rc3, pays: pays.map((e) => e.payload.cash), q: r3.queued }));
+})();
+
 section("v764: what he records on the desk reaches the customer's order, and the chase stops");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026. Every road built since v694 runs from the site to the book. A
@@ -27019,11 +27159,12 @@ await (async () => {
     + "version a minute, and a full pass only when a fold has landed: " + JSON.stringify({ t2, calls }));
   ok((await dkv4.get("orders:told")) === "vA", "and the book it last told is remembered: " + (await dkv4.get("orders:told")));
 
-  /* IT ONLY EVER RAISES: a customer's own word is not erased by a row that has not caught up */
+  /* IT ONLY EVER RAISES: what the order already counts is not erased by a row that has not caught up. S6 (D7): a
+     customer's own word is a claim and never counted, so the figure here is his, cash he recorded on the card */
   const o5 = (await placeOrder(senv4, "abcd-efgh", { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
   await deskMove(senv4, "abcd-efgh", o5.id, { status: "acknowledged", mode: "collect" });
   await deskMove(senv4, "abcd-efgh", o5.id, { mark: { ledgerKey: "CC5-OKR|2026-09-22|100", ack: "2026-09-22T01:00:00.000Z" } });
-  await customerMove(senv4, "abcd-efgh", o5.id, "pay", { amount: 100, method: "cod" });
+  await deskMove(senv4, "abcd-efgh", o5.id, { cash: { amount: 100 } });
   SALE = { rid: "s901", customer: "CC5-OKR", date: "2026-09-22", qty: 1, total: 100, cash: 40, deliveredQty: 0 };
   VER = "vB";
   await spy(() => tellSite(denv4));
@@ -27035,7 +27176,7 @@ await (async () => {
   await deskMove(senv4, "abcd-efgh", o5.id, { ledger: { paid: 40, moved: 0 } });
   const low = await skv4.get("order:abcd-efgh:" + o5.id, "json");
   ok(+low.paid === 100 && (+low.moved || 0) === 0,
-    "and handed one directly, the site still refuses to lower a figure the customer gave: " + JSON.stringify({ paid: low.paid }));
+    "and handed one directly, the site still refuses to lower a figure it counts: " + JSON.stringify({ paid: low.paid }));
 
   /* A REFUSAL LEAVES THE MARK WHERE IT WAS, so it is tried again next minute and not next fold */
   VER = "vC";
@@ -28341,8 +28482,8 @@ await (async () => {
   await O.customerMove(senv, u, o.id, "pay", { amount: 30 });
   await O.deskMove(senv, u, o.id, { cash: { amount: 50 } });
   const got = JSON.parse(await kv.get("order:" + u + ":" + o.id));
-  ok(got.paid === 80 && got.queued && got.queued.paid === 50 && O.orderWork(got).includes("pay") && Math.abs(got.paid - got.queued.paid - 30) < 0.005,
-    "his cash moves the ledger's mark by the cash alone, so their RM 30 is still owed to the ledger as theirs and his RM 50 is never queued twice: "
+  ok(got.paid === 50 && got.claimed === 30 && got.queued && got.queued.paid === 50 && O.orderWork(got).includes("claim") && !O.orderWork(got).includes("pay"),
+    "his cash moves the ledger's mark by the cash alone, so their RM 30, a claim since S6, is still owed to the ledger as its own entry and his RM 50 is never queued twice: "
     + JSON.stringify({ paid: got.paid, queued: got.queued, work: O.orderWork(got) }));
 
   const dkv = new KV(); await dkv.put("stmt-users", JSON.stringify({ [u]: "CX1-AB" }));
@@ -28355,7 +28496,7 @@ await (async () => {
   const said = await bare({ message: "Thank you" });
   const cashed = await bare({ cash: { amount: 20 } });
   const after = JSON.parse(await kv.get("order:" + u + ":" + o.id));
-  ok(said === 200 && cashed === 400 && after.paid === 80 && after.queued.paid === 50,
+  ok(said === 200 && cashed === 400 && after.paid === 50 && after.queued.paid === 50,
     "the bare move route carries his line but refuses cash, which would move the mark with no row booked behind it: " + JSON.stringify({ said, cashed, paid: after.paid }));
 })();
 
@@ -29256,7 +29397,7 @@ await (async () => {
   await reconcileOrders(denv);
   const sb = ((await orderOf(b.id)).sync || {}).why || "";
   ok(sa === "the handover waits for the pending row to reach the book: it is approved, and the next fold lands it"
-    && /^the payment waits for the pending row to reach the book: approve it under Approve/.test(sb),
+    && /^the payment they say they sent waits for the pending row to reach the book: approve it under Approve/.test(sb),   /* S6: a claim */
     "a wait on a row his yes approved says the fold is left, and one on a row nobody approved says Approve: " + JSON.stringify({ sa, sb }));
 
   const { openMaster: omO3 } = await import("../tools/payload.mjs");

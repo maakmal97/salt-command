@@ -280,7 +280,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   level is a mark, never named**; no name is used because none exists there (rule 2).
 - **AN ORDER REACHES THE BOOK IN STAGES.** The desk's every-minute
   `reconcileOrders` is the one road that queues what the site makes (Accept and Cash received queue
-  their own): the acknowledgement a **Pending** row (delivery beside its total), a payment a **Fulfilment**, a
+  their own): the acknowledgement a **Pending** row (delivery beside its total), each claim of theirs ("I have sent it",
+  never paid until his Received, S6) a **Fulfilment** that Approve cannot decide, a
   handover a **Correction** stating the running total (rolling the shelf by the difference), a close at
   what was handed over a **Correction** restating size and total, a withdrawal a **Cancellation** (theirs,
   nothing paid, while the pending row is unapproved: the row dropped instead; an approved row never). The
@@ -352,8 +353,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   tap opens that order (`#o=<id>`), and a page already open re-reads first.
 - **The chase, twice a day** (his decision D5): the site's hourly cron (`wrangler.stmt.jsonc`) wakes a
   customer holding goods unpaid (`isAdvance`) only at 10:00 and 18:00 Kuala Lumpur (`chaseSlot`), from
-  the day after the handover (`graceOver`), paused while a claim waits (`claimWaits`, where stage 6's
-  claim plugs in), in its own words (`due`); one wake a slot per customer, capped by the chase
+  the day after the handover (`graceOver`), paused while a claim of theirs waits (`claimWaits`), in its own words (`due`); one wake a slot per customer, capped by the chase
   mark (`markChased`: in the order book, `chased:<username>` on the `kv` road); the test account is
   skipped. The config ships with the job's push paths; an unpushed laptop change needs `npx wrangler
   deploy -c wrangler.stmt.jsonc`.

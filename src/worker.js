@@ -559,12 +559,22 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
   if (!writeOk(request, env)) return needsKey();
   let by = "phone";
   try { const b = await request.json(); if (b && typeof b.by === "string" && b.by.trim()) by = b.by.trim(); } catch (e) { /* body is optional */ }
-  const cur = await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(id).first();
+  const cur = await env.SALT_LEDGER.prepare("SELECT status,entry FROM draft WHERE id=?1").bind(id).first();
   if (!cur) return json({ ok: false, error: "no such draft" }, 404);
   /* Only a pending draft may be decided. Deciding twice is reported rather than applied, so a
      double tap on a phone cannot flip an approval into a rejection. */
   if (cur.status !== "pending") {
     return json({ ok: false, error: "already " + cur.status, status: cur.status }, 409);
+  }
+  /* S6 6.5 (D7): A CLAIM'S OWN ENTRY IS HIS CHECK, answered on its order's card, never here: approved here it would book
+     money he has not confirmed, rejected here the claim would wait for ever. Once his Received has been given for it (a
+     yes that found the row other than he was shown), it is a row like any other, decided here. */
+  let claim = false;
+  try { claim = !!JSON.parse(cur.entry || "{}").claim; } catch (e) { claim = false; }
+  if (claim) {
+    let yes = null;
+    try { yes = await env.SALT_LEDGER.prepare("SELECT id FROM preapproval WHERE draft_id=?1").bind(id).first(); } catch (e) { yes = null; }
+    if (!yes) return json({ ok: false, error: "a payment they say they sent is answered on its order's card, Received or Not found" }, 409);
   }
   const upd = await env.SALT_LEDGER.prepare(
     "UPDATE draft SET status=?1, decided_at=?2, decided_by=?3 WHERE id=?4 AND status='pending'"
@@ -889,6 +899,8 @@ export default {
       try { b = await request.json(); } catch { b = {}; }
       /* S11: cash he took moves the ledger's mark with it, so only the cash route, which books its row, may send it */
       if (b && b.cash) return json({ ok: false, error: "cash taken is recorded through orders/<id>/cash, which books its row" }, 400);
+      /* S6: and a claim is answered only through orders/<id>/received, which books its row */
+      if (b && b.verdict) return json({ ok: false, error: "a claim is answered through orders/<id>/received, which books its row" }, 400);
       const r = await moveOrder(env, om[1], om[2], b);
       if (!r.ok) return json({ ok: false, error: r.error }, r.status || 502);
       if (!r.order.code) r.warn = "no desk code is mapped to " + r.order.u + ", so nothing can be queued for the ledger: publish the statements again";

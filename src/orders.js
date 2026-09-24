@@ -413,9 +413,23 @@ export async function receivedOrder(env, id, body, by, now) {
   return stageTap(env, id, body, by, now, "pay", (o, at) => {
     const amount = body && body.amount;
     if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { error: "say how much was received" };
-    const drafted = queued.find((e) => Math.abs(+e.payload.cash - amount) < 0.005);
+    /* S6 6.5 (D7): A CLAIM OF THEIRS, named by its moment (the oldest waiting when the tap names none). His yes is to
+       the claim's own entry, drafted or still to be, and the site hears it as one verdict: it becomes paid there */
+    const waiting = (o.payments || []).filter((p) => p && p.claim === "waiting");
+    if (waiting.length) {
+      const p = body.claim ? waiting.find((x) => x.at === body.claim) : waiting[0];
+      if (!p) return { status: 409, error: "that claim of theirs is not waiting any more: look again" };
+      if (Math.abs(p.amount - amount) > 0.004) return { status: 409, error: "RM " + p.amount.toFixed(2) + " they say they sent is waiting to be received here, not RM " + amount.toFixed(2) };
+      const site = { verdict: { kind: "received", claim: p.at, amount: p.amount } }, shown = { amount: p.amount, claim: p.at };
+      const own = queued.find((e) => e.at === p.queued) || claimEntry(o, p);
+      if (p.queued) { own.at = p.queued; return { entry: own, pin: p.queued, site, shown }; }
+      return { entry: own, site, shown };
+    }
+    const drafted = queued.find((e) => Math.abs(+e.payload.cash - amount) < 0.005 && !e.claim);
     if (drafted) return { entry: drafted, pin: drafted.at, shown: { amount: +drafted.payload.cash } };
-    const inc = +((+o.paid || 0) - (+((o.queued || {}).paid) || 0)).toFixed(2);
+    /* a claim he received and not yet queued is told by its own entry, as the site's paidUntold reads it */
+    const own = (o.payments || []).filter((p) => p && p.claim === "received" && !p.queued).reduce((n, p) => n + (+p.amount || 0), 0);
+    const inc = +((+o.paid || 0) - own - (+((o.queued || {}).paid) || 0)).toFixed(2);
     if (!(inc > 0.004) && rej && Math.abs(+rej.entry.payload.cash - amount) < 0.005) return { again: "pay" };
     if (!(inc > 0.004)) return { status: 409, error: "nothing they recorded is waiting to be received here" };
     if (Math.abs(inc - amount) > 0.004) return { status: 409, error: "RM " + inc.toFixed(2) + " they recorded is waiting to be received, not RM " + amount.toFixed(2) };
@@ -435,10 +449,12 @@ export async function cashOrder(env, id, body, by, now) {
     if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { error: "say how much cash was taken" };
     /* the order already counts that cash: raising it again would count it twice */
     if (rej && Math.abs(+rej.entry.payload.cash - amount) < 0.005) return { again: "cash" };
-    const due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2);
-    if (amount > due + 0.004) return { error: "that is more than the RM " + due.toFixed(2) + " still owed on this order" };
+    const due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0) - (+o.claimed || 0)).toFixed(2);   /* S6: less what they say they sent */
+    if (amount > due + 0.004) return { error: "that is more than the RM " + due.toFixed(2) + " still owed on this order" + ((+o.claimed || 0) > 0.004 ? " beside what they say they sent" : "") };
     /* a payment of theirs not yet queued would be swallowed by the mark the cash moves (orderWork reads paid against it) */
-    if ((+o.paid || 0) > (+((o.queued || {}).paid) || 0) + 0.004) return { status: 409, error: "a payment they recorded is still waiting for its row: receive that first" };
+    /* S6: a claim he received and not yet queued is told by its own entry, so it is left out, as the site's paidUntold leaves it */
+    const own = (o.payments || []).filter((p) => p && p.claim === "received" && !p.queued).reduce((n, p) => n + (+p.amount || 0), 0);
+    if ((+o.paid || 0) - own > (+((o.queued || {}).paid) || 0) + 0.004) return { status: 409, error: "a payment they recorded is still waiting for its row: receive that first" };
     const entry = payEntry(o, o.code, amount, at, true);
     entry.orderId = o.id; entry.counter = true;   /* the desk's own, which a Received never answers */
     /* the site's own cash event (S11 11.8): paid at once, kept as his in cash, and the ledger's mark of the money moved
@@ -562,7 +578,8 @@ export async function deskPass(env, now) {
     for (const p of all.ok ? acks : []) {
       const o = all.orders.find((x) => x.id === p.order_id);
       const ended = o && [...(o.history || [])].reverse().find((x) => x && (x.status === "cancelled" || x.status === "declined"));
-      if (!o || !ended || ended.by !== "customer" || (+o.paid || 0) > 0.004 || (o.queued && o.queued.ack)) continue;
+      /* S6: nor while they say they sent something, which may be money the book has to carry back */
+      if (!o || !ended || ended.by !== "customer" || (+o.paid || 0) > 0.004 || (+o.claimed || 0) > 0.004 || (o.queued && o.queued.ack)) continue;
       if ((await dropAck(env, p.entry_at, now)) !== "dropped") continue;
       await db.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE id=?2").bind((now || new Date()).toISOString(), p.id).run();
       dropped.push(o.id);
@@ -691,6 +708,14 @@ export function payEntry(order, code, amount, now, cash) {
   };
 }
 
+/** S6 6.5: a claim's own Fulfilment, flagged as a claim for his check and stamped with the claim's moment, the one
+ *  builder for the reconcile that queues it and the Received that answers it before it is queued. */
+export function claimEntry(order, p) {
+  const e = payEntry(Object.assign({}, order, { method: p.method || null, account: p.account || null }), order.code, p.amount, new Date(p.at));
+  e.orderId = order.id; e.claim = true; e.claimOf = p.at;
+  return e;
+}
+
 /** What was handed over, as a Correction: the running total, the day, and who moved it. */
 export function handoverEntry(order, code, units, now) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
@@ -767,7 +792,7 @@ export function stageAt(order, job, now) {
   const last = (test) => { for (let i = h.length - 1; i >= 0; i--) if (h[i] && test(h[i])) return h[i].at; return null; };
   let at = null;
   if (job === "ack") at = last((x) => x.status === "acknowledged" && x.by === "desk");
-  else if (job === "pay") { const p = (order && order.payments) || []; at = p.length ? p[p.length - 1].at : null; }
+  else if (job === "pay") { const p = ((order && order.payments) || []).filter((x) => x && !x.claim); at = p.length ? p[p.length - 1].at : null; }   /* a claim is stamped by its own moment (S6) */
   else if (job === "move") at = (order && order.movedAt) || last((x) => x.by === "desk" && / unit (delivered|collected)$/.test(String(x.note || "")));
   else if (job === "cancel") at = last((x) => x.status === "cancelled" || x.status === "declined");
   else if (job === "close") at = (order && order.closed && order.closed.at) || null;
@@ -834,7 +859,7 @@ export async function reconcileOrders(env) {
   const onBook = (book && book.state && book.state.OPEN && book.state.OPEN.byKey) || null;
   const now = new Date();
   let queued = 0; const unmapped = [], failed = [], waiting = [], dropped = [];
-  const STAGE_WORD = { pay: "payment", move: "handover", close: "close", cancel: "withdrawal" };
+  const STAGE_WORD = { claim: "payment they say they sent", pay: "payment", move: "handover", close: "close", cancel: "withdrawal" };
   for (const o of owing) {
     const code = users[o.u] || null;
     const q = o.queued || {}, mark = {}; const order = Object.assign({}, o);
@@ -853,7 +878,7 @@ export async function reconcileOrders(env) {
       /* S11 11.10: WITHDRAWN BY THEM WHILE ITS ROW WAITED UNDER APPROVE, nothing paid: the row is dropped (dropAck)
          and the withdrawal is spent with it, so no Cancellation waits behind a row that will never land */
       const ended = [...(order.history || [])].reverse().find((x) => x && (x.status === "cancelled" || x.status === "declined"));
-      if ((o.work || []).includes("cancel") && q.ack && ended && ended.by === "customer" && !((+order.paid || 0) > 0.004)
+      if ((o.work || []).includes("cancel") && q.ack && ended && ended.by === "customer" && !((+order.paid || 0) > 0.004 || (+order.claimed || 0) > 0.004)
         && !(onBook && onBook[order.ledgerKey]) && (await dropAck(env, q.ack, now)) === "dropped") {
         mark.cancel = stageAt(order, "cancel", now).toISOString();
         state = { state: "queued", why: "withdrawn by the customer while its pending row waited under Approve: the row was dropped, so nothing reaches the book" };
@@ -877,9 +902,24 @@ export async function reconcileOrders(env) {
           }
           break;
         }
+        /* S6 6.5 (D7): EACH CLAIM IS ITS OWN FULFILMENT, FOR HIS CHECK, NOT MONEY IN. Flagged `claim`, so no
+           Approve tap books it as money before his Received (src/worker.js); stamped with the claim's own moment
+           and marked on the site by that moment, so his answer finds the entry whichever came first */
+        if (job === "claim") {
+          for (const p of (o.tell && o.tell.claims) || []) {
+            const c = claimEntry(Object.assign({}, order, { code }), p);
+            while (used.has(c.at)) c.at = new Date(Date.parse(c.at) + 1).toISOString();
+            if (await queueSale(env, c)) queued++;
+            used.add(c.at);
+            (mark.claims = mark.claims || []).push({ at: p.at, draft: c.at });
+          }
+          if (!state) state = { state: "queued", why: "" };
+          continue;
+        }
         /* each entry is stamped with its stage's own moment (stageAt), never the pass's clock */
+        const told = o.tell ? +o.tell.pay : +((+order.paid || 0) - (+q.paid || 0)).toFixed(2);
         if (job === "ack") e = pendingEntry(order, code, stageAt(order, job, now));
-        else if (job === "pay") e = payEntry(order, code, +((+order.paid || 0) - (+q.paid || 0)).toFixed(2), stageAt(order, job, now));
+        else if (job === "pay") e = payEntry(order, code, told, stageAt(order, job, now));
         else if (job === "move") e = handoverEntry(order, code, +order.moved || 0, stageAt(order, job, now));
         else if (job === "close") e = closeEntry(order, code, stageAt(order, job, now));
         /* WHO ENDED IT is read off the event that ended it (24 Sep 2026): a cancellation of his own was
@@ -896,7 +936,7 @@ export async function reconcileOrders(env) {
         if (await queueSale(env, e)) queued++;
         used.add(e.at);
         if (job === "ack") { mark.ledgerKey = e.orderKey; order.ledgerKey = e.orderKey; mark.ack = e.at; }
-        else if (job === "pay") mark.paid = +(+order.paid || 0).toFixed(2);
+        else if (job === "pay") mark.paid = +((+q.paid || 0) + told).toFixed(2);
         else if (job === "move") mark.moved = +(+order.moved || 0).toFixed(3);
         else if (job === "close") {
           mark.close = e.at; mark.moved = +(+order.moved || 0).toFixed(3);

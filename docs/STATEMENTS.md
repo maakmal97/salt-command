@@ -560,8 +560,11 @@ number, payload or reference shipped. **`payHref` in it is the one link builder*
 username as the reference, and "" for anything QR Command would not open. It reads only `PAY_SITE`
 and `PAY`, the names `CLIENT_JS` declares, so the page carries `payHref.toString()` as it is. The suite reads the link
 back through QR Command's own `linkOf`, so a format change ships there first. **The customer types
-what they paid** (the site takes no money and no rail tells it anything), part payments accumulate, and more than what is outstanding is
-refused. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
+what they sent, and it is a CLAIM** (S6 6.5, his D7; the site takes no money and no rail tells it anything): an entry on
+`payments[]` with `claim: "waiting"`, summed as `claimed`, never `paid`, until his Received (a `verdict` event naming the
+claim by its moment) makes it paid. Claims accumulate; together with what is paid they may not pass what is owed; a claim
+in cash is refused, cash being his to record. Each claim is queued as its own Fulfilment, flagged `claim` and stamped with the
+claim's moment (`claimsToQueue`, `claimEntry`), and Approve neither approves nor rejects it: it is answered on its card. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
 order, the one being paid included: settling that at the door is how one advance becomes two. The quote is the customer's claim
 off his own list: the owner reads the rate against the party's usual on the phone before
 acknowledging, and the drafter flags it again when the row is queued.
@@ -670,10 +673,7 @@ groups them by CUSTOMER, and leaves out an order inside its day's grace or with 
 and the code decides, so every other tick returns before it lists anything. **From the day after the
 handover** (`graceOver`): `movedOn`, the Kuala Lumpur day of the last handover, must be before today,
 so a customer paying cash at the counter is not asked again that evening; an order with no `movedOn`
-is not chased. **Paused while a claim waits** (`claimWaits`): what they say they sent (`payments`)
-above what the order counts as `paid`. Today none waits, their "I have paid" raising `paid` on
-their word, so this is where stage 6's claim plugs in; a Not found that lowers `paid` must take its
-claim out with it. **Stopped** when what was received is paid, which is `isAdvance` going false,
+is not chased. **Paused while a claim waits** (`claimWaits`): a claim of theirs he has not answered (S6). **Stopped** when what was received is paid, which is `isAdvance` going false,
 his cash included once the return leg (v764) carries it to the order, and stage 11's Cash received when it lands.
 
 **How often.** One wake a slot per customer, not per order: two unpaid advances are one person's
