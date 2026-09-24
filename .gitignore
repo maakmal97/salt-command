@@ -95,3 +95,7 @@ test/_render/
 # version is being built and rewritten on every run. It reached the repo by a git add -A on 21 Sep
 # 2026 and rode ten commits before anybody looked; it is scratch and belongs on disk alone.
 test/_one.mjs
+
+# tools/suite-split.mjs: its shards and last run's timings, laptop only
+test/.shard-*.mjs
+test/.suite-times.json

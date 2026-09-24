@@ -344,6 +344,7 @@ npm install        # once
 npm run build      # master -> public/desk.html, after any master edit
 npm run dev        # build, then wrangler dev (live KV)
 npm test           # 2 to 7 minutes; 4 GB heap
+npm run test:fast  # the same suite in 8 processes, about 1 min 45 s; what CI runs is npm test
 npm run deploy     # build, then wrangler deploy
 node tools/update.mjs
 ```

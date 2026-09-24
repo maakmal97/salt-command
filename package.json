@@ -11,6 +11,7 @@
     "drain": "node tools/drain.mjs",
     "icons": "python tools/make_icons.py",
     "test": "node --max-old-space-size=4096 test/verify.mjs",
+    "test:fast": "node tools/suite-split.mjs",
     "payload": "node tools/payload.mjs"
   },
   "devDependencies": {

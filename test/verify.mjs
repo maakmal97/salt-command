@@ -9143,11 +9143,14 @@ await (async () => {
   try { w.close(); } catch (e) { }
 })();
 
+/* a shard of tools/suite-split.mjs runs part of the suite, so there the floor is the whole run's and the runner checks it */
+if (!process.env.SUITE_SHARD) {
 const FLOOR_ASSERTIONS = 1330, FLOOR_SECTIONS = 97;   /* stale records skipped: 1334 everywhere, 1335 here */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
   `the suite ran ${sections} sections, below its floor of ${FLOOR_SECTIONS}: a section has stopped running`);
+}
 
 /* ---- 08 Sep 2026: the audit, one assertion per fix, each proved red on the code it replaced ---- */
 section("08 Sep 2026: the audit fixes");
@@ -20193,7 +20196,7 @@ await (async () => {
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */
-  const lines = readFileSync(fileURLToPath(import.meta.url), "utf8").split("\n");
+  const lines = readFileSync(join(REPO, "test", "verify.mjs"), "utf8").split("\n");   /* the suite, not a shard of it (tools/suite-split.mjs) */
   const heads = lines.map((l, i) => [l, i]).filter(([l]) => l.startsWith("section("));
   const bare = heads.filter(([, i]) => (lines.slice(i + 1).find((l) => l.trim() !== "") || "") !== "await (async () => {").map(([l]) => l.slice(9, 70));
   ok(heads.length >= 186 && bare.length === 0 && !lines.some((l) => l === "{"),
