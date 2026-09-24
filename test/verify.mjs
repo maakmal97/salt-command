@@ -21561,7 +21561,8 @@ await (async () => {
 section("S5 fix: a line on an order says where it is once, and truly");
 await (async () => {
   /* 25 SEP 2026, the stage 5 review. A line stored whose answer was lost stood twice, Sent from the thread and Not sent
-     with Tap to try again from the page's own copy. Driven by the page's own poll, shortened in the served HTML. */
+     with Tap to try again from the page's own copy. And a line the site refused, which it would refuse again, was
+     offered again for good, its words out of the box. Driven by the page's own poll, shortened in the served HTML. */
   const { landingPage } = await import("../stmt/page.js");
   const C = await import("../tools/stmt-crypto.mjs");
   const { webcrypto } = await import("node:crypto");
@@ -21584,6 +21585,7 @@ await (async () => {
         if (p === "/orders/" + A + "/say") {
           if (st.mode === "lost") { st.order.msgs = st.order.msgs.concat([{ at: "2026-09-24T02:00:00Z", by: "customer", text: j.text.replace(/ +/g, " ") }]); throw new TypeError("Failed to fetch"); }
           if (st.mode === "drop") throw new TypeError("Failed to fetch");
+          if (st.mode === "refuse") return { ok: false, status: 409, json: async () => ({ ok: false, error: "there are already 20 of your messages on this order" }) };
         }
         return { ok: true, status: 200, json: async () => ({ ok: true }) };
       };
@@ -21615,6 +21617,14 @@ await (async () => {
     await wait(600);
     ok(JSON.stringify(lines(d)) === JSON.stringify(["Is it ready | Sent", "Is it ready | Not sent | retry"]),
       "and a line that did not go stays Not sent, though the same words went earlier: " + JSON.stringify(lines(d)));
+  });
+  await drive("refuse", ["One", "Two"], async (w, d) => {
+    send(w, d, "And a third");
+    await wait(300);
+    const box = scr(d).querySelector("input[data-say]"), said = scr(d).querySelector('[data-part="say"] [role="status"]');
+    ok(JSON.stringify(lines(d)) === JSON.stringify(["One | Sent", "Two | Sent"]) && box.value === "And a third"
+      && !!said && !said.hidden && /^There are already 20 of your messages/.test(said.textContent),
+      "a line the site refuses goes back in the box with the reason under it, and is not offered again: " + JSON.stringify({ lines: lines(d), box: box.value, said: said && said.textContent }));
   });
 })();
 section("v753: he answers on the order, and the words are checked on the desk before they leave it");

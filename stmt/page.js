@@ -1688,8 +1688,8 @@ const CLIENT_JS = `
     return a;
   }
   /* ---- S5 5.4 (24 Sep 2026): THE MESSAGES, on the system's Bubble and thread. Their lines stand right with where
-     each one is: Sending, Sent (stored, never read: there are no read receipts), or Not sent with Tap to try again,
-     which carries the line's own id, so a line that did arrive is not recorded twice. His stand left, marked New
+     each one is: Sending, Sent (stored, never read: there are no read receipts), or, lost on the way, Not sent with
+     Tap to try again, which carries the line's own id, so a line that did arrive is not recorded twice. His stand left, marked New
      until this device has shown them. The composer is a form, so Return sends; the line typed is kept per order
      until it goes, and the box is emptied the moment it does, the line then living in its bubble. ---- */
   function oOut(id){ var q=(draft.oOut=draft.oOut||{}); return q[id]||(q[id]=[]); }
@@ -1743,18 +1743,32 @@ const CLIENT_JS = `
     si.addEventListener('input',function(){ (draft.says=draft.says||{})[o.id]=si.value; });
     var sg=el('button','salt-ghost salt-ghost--lit salt-composer__send','Send'); sg.type='submit';
     f.appendChild(si); f.appendChild(sg);
+    var tp=oTap(o), said=statusLine(tp.k==='say'?tp.t:''); said.setAttribute('data-said',''); said.hidden=!said.textContent;
     f.addEventListener('submit',function(ev){
       ev.preventDefault();
       var t=String(si.value||'').trim();
       if(!t) return;
+      if(oTap(o).k==='say') tapSaid(o,'say','');
+      said.textContent=''; said.hidden=true;
       var wd=oWords(t), q=oOut(o.id);
       var x={t:t, w:wd, n:oSame(oFind(o.id)||o,wd)+q.filter(function(y){ return y.w===wd; }).length, at:new Date().toISOString(), state:'sending', rid:mintRid(), why:''};
       q.push(x);
       si.value=''; if(draft.says) delete draft.says[o.id];
       oSend(o.id,x);
     });
-    w.appendChild(f);
+    w.appendChild(f); w.appendChild(said);
     return w;
+  }
+  /* REFUSED, IT WILL BE REFUSED AGAIN (their twenty lines, a lapsed session): the words go back in the box, ahead of
+     anything typed since, and the reason stands under it. Only a line the network lost is offered again. */
+  function oRefused(id,x,why){
+    var q=oOut(id), i=q.indexOf(x); if(i>=0) q.splice(i,1);
+    var says=(draft.says=draft.says||{}); says[id]=says[id]?x.t+' '+says[id]:x.t;
+    tapSaid({id:id},'say',why||'It was not sent.');
+    var s=pOrder.querySelector('.oscreen[data-order="'+id+'"]'), inp=s&&s.querySelector('input[data-say]'), st=s&&s.querySelector('[data-said]');
+    if(inp) inp.value=says[id];
+    if(st){ st.textContent=draft.tap.t; st.hidden=false; }
+    oPart(id,'thread');
   }
   /* one part of the open screen drawn again, and nothing else on it */
   function oPart(id,k){
@@ -1771,8 +1785,9 @@ const CLIENT_JS = `
       var q=oOut(id), i=q.indexOf(x); if(i>=0) q.splice(i,1);
       oPart(id,'thread');
     } else {
-      var e=String((r.body&&r.body.error)||'').replace(/^Not sent[.] */,'');
-      x.state='failed'; x.why=e&&e.charAt(0).toUpperCase()+e.slice(1); oPart(id,'thread');
+      var e=String((r.body&&r.body.error)||'').replace(/^Not sent[.] */,''), why=e&&e.charAt(0).toUpperCase()+e.slice(1);
+      if(r.status&&r.status<500){ oRefused(id,x,why); return; }
+      x.state='failed'; x.why=why; oPart(id,'thread');
     }
   }
   /* WHAT HAPPENED, STEP BY STEP, folded: the record, under the thread a reader came back for */
