@@ -13131,6 +13131,93 @@ await (async () => {
     ok(!d.getElementById("osheet"), "Escape closes it");
   } finally { w.close(); }
 })();
+section("S4 4.4: Place carries the list's stamp, and a list moved since it was opened shows the new price in the check before anything is placed");
+await (async () => {
+  /* HIS "ALL RECOMMENDED" OF 24 SEP 2026, AND THE JUDGES' "NEVER prices.at". The publish seals a digest of the list's
+     figures inside it (tools/pricelist.mjs); Place carries the digest of the list the page opened, and the Worker answers
+     409 "prices moved" with the account's list as it stands, sealed. The page opens it with the key it already holds and
+     shows the new figure beside the one they were shown; nothing is placed until they tap. The Worker's side is the
+     digest fold's; this drives the page against the answer shape, with the real crypto. */
+  const { landingPage: lpM } = await import("../stmt/page.js");
+  const CM = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcM } = await import("node:crypto");
+  const { JSDOM: JDM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s44", ck = await CM.contentKey("test-secret", u);
+  const list = (digest, sizes) => ({ at: "2026-09-24T03:59:00Z", digest, week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes }] });
+  const sealed = async (l) => Object.assign({ at: l.at, week: l.week.monday, digest: l.digest }, await CM.encryptWith(ck, JSON.stringify(l)));
+  const first = list("d1", [{ q: 1, price: 100 }, { q: 2, price: 190 }]);
+  const drive = async (answers) => {
+    const posted = [];
+    const body = { ok: true, wrap: await CM.wrapKey(pass, ck), session: "sess-s44", prices: await sealed(first),
+      env: await CM.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+    const dom = new JDM(lpM(u, "ns44", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcM, configurable: true }); } catch (e) { win.crypto = wcM; }
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/open") return { ok: true, status: 200, json: async () => body };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+        if (p === "/orders" && m === "POST") {
+          const j = JSON.parse(init.body); posted.push(j);
+          const a = answers[posted.length - 1] || { status: 200, body: { ok: true, order: { id: "20260924040000-zzzz", product: "salt", qty: j.qty, status: "placed", at: "2026-09-24T04:00:00Z", total: j.total, history: [], msgs: [] } } };
+          return { ok: a.status === 200, status: a.status, json: async () => a.body };
+        }
+        return { ok: false, status: 404, json: async () => ({ ok: false }) };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click();
+    const one = d.querySelector('#osheet input[name="osize"][value="1"]');
+    one.checked = true; one.dispatchEvent(new w.Event("change", { bubbles: true }));
+    d.getElementById("oGo").click();
+    d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !(posted.length && d.getElementById("oBack") && !d.getElementById("oBack").disabled); i++) await new Promise((r) => setTimeout(r, 30));
+    await new Promise((r) => setTimeout(r, 60));
+    return { w, d, posted };
+  };
+  const moved = async (l) => ({ status: 409, body: { ok: false, error: "prices moved", prices: await sealed(l) } });
+
+  /* the size moved: RM 100 when the list was opened, RM 120 in the list that came back */
+  const A = await drive([await moved(list("d2", [{ q: 1, price: 120 }, { q: 2, price: 190 }]))]);
+  try {
+    const { d, posted } = A;
+    const say = (d.querySelector("#osheet .salt-insight") || {}).textContent || "";
+    ok(posted.length === 1 && posted[0].digest === "d1" && posted[0].total === 100,
+      "Place carries the stamp of the list the page opened, with the price it showed: " + JSON.stringify(posted.map((x) => [x.digest, x.total])));
+    ok(say === "This size is now RM 120 (was RM 100). Place at RM 120?" && d.getElementById("oPlace").textContent === "Place at RM 120",
+      "a 409 prices moved opens the list that came back and says the new price beside the one shown, and Place names it: " + JSON.stringify([say, d.getElementById("oPlace").textContent]));
+    ok(posted.length === 1 && /RM 120/.test(d.getElementById("pPrices").textContent) && !/RM 100/.test(d.getElementById("pPrices").textContent),
+      "nothing is placed until they tap, and Prices behind the sheet reads the new list: " + posted.length);
+    d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && posted.length < 2; i++) await new Promise((r) => setTimeout(r, 30));
+    ok(posted.length === 2 && posted[1].total === 120 && posted[1].unit === 120 && posted[1].qty === 1 && posted[1].digest === "d2"
+      && /^[0-9a-f]{32}$/.test(posted[1].rid || "") && posted[1].rid !== posted[0].rid,
+      "one tap places it at the new price, under the new list's stamp and a new request id: " + JSON.stringify(posted.map((x) => [x.total, x.digest, x.rid && x.rid.slice(0, 6)])));
+  } finally { await new Promise((r) => setTimeout(r, 100)); A.w.close(); }
+
+  /* the size left the list: said, and Place is not offered */
+  const B = await drive([await moved(list("d3", [{ q: 2, price: 190 }]))]);
+  try {
+    const say = (B.d.querySelector("#osheet .salt-insight") || {}).textContent || "";
+    ok(/no longer on your list/.test(say) && B.d.getElementById("oPlace").disabled && B.posted.length === 1,
+      "a size gone from the list is said, and Place is held: " + JSON.stringify(say));
+  } finally { B.w.close(); }
+
+  /* the list moved but this size did not: the check stays, under the new stamp */
+  const E = await drive([await moved(list("d4", [{ q: 1, price: 100 }, { q: 2, price: 200 }]))]);
+  try {
+    const { d, posted } = E;
+    ok(!d.querySelector("#osheet .salt-insight") && d.getElementById("oPlace").textContent === "Place order" && /still RM 100/.test(d.querySelector("#osheet .salt-sheet__foot").textContent),
+      "where this size did not move the check stays as it was and says so beside Place");
+    d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && posted.length < 2; i++) await new Promise((r) => setTimeout(r, 30));
+    ok(posted.length === 2 && posted[1].total === 100 && posted[1].digest === "d4", "and Place carries the new stamp: " + JSON.stringify(posted.map((x) => x.digest)));
+  } finally { await new Promise((r) => setTimeout(r, 100)); E.w.close(); }
+})();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {
   /* HIS INSTRUCTION OF 16 SEP 2026: "The label to them is a very subtle tier level, in symbol and colour (for each tier),

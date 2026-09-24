@@ -768,6 +768,13 @@ const CLIENT_JS = `
     var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(blob.iv)}, ck, b64d(blob.ct));
     return new TextDecoder().decode(pt);
   }
+  /* S4 4.4: THE PRICE LIST KEEPS THE KEY THAT OPENED IT, unenumerable, so a Place answered "prices moved" can open the
+     list that came back with it in the same breath; it goes with the list, so signing out forgets both */
+  async function openList(ck, blob){
+    var l=JSON.parse(await open(ck, blob));
+    if(l&&typeof l==='object') Object.defineProperty(l,'_k',{value:ck});
+    return l;
+  }
   /* a moment in Kuala Lumpur, in parts: the month is read off MON3, never off en-GB's own short month */
   var MON3=__MON3__;
   function klBits(iso){
@@ -1449,8 +1456,30 @@ const CLIENT_JS = `
     var qt=quoteFor(); if(!qt||formWhy()) return;
     draft.check={product:qt.p.product, unit:qt.p.unit||'unit', q:qt.q, mode:draft.mode,
       place:draft.mode==='deliver'?String(draft.place||'').trim():'', say:String(draft.say||'').trim(),
-      forFriend:!!(assoc&&draft.forFriend), total:qt.total, rate:qt.unit, rid:mintRid()};
+      forFriend:!!(assoc&&draft.forFriend), total:qt.total, rate:qt.unit, rid:mintRid(),
+      /* S4 4.4: the stamp of the list this price was read from, and the price as shown, for a moved list to be told against */
+      digest:(prices&&prices.digest)||'', shown:qt.total, was:null, gone:false};
     draft.step='check'; draft.snote=''; sheetDraw();
+  }
+  /* S4 4.4: THE LIST MOVED BETWEEN REVIEW AND PLACE. The Worker compares the stamp Place carried with the account's own
+     and, where they differ, answers 409 with the list as it stands, sealed; it is opened here with the key the page
+     already holds. The check then shows this size at the new figure beside the one they were shown, and Place becomes
+     Place at that figure, one tap; nothing is placed until it is tapped. The page compares nothing and prices nothing:
+     it reads the figure off the list. A price that did not move for this size keeps the check as it was, with the new
+     stamp. A new figure is a different order, so it takes a new request id. */
+  async function pricesMoved(envl){
+    var c=draft.check, k=prices&&prices._k, fresh=null;
+    try{ fresh=(k&&envl)?await openList(k,envl):null; }catch(e){ fresh=null; }
+    if(!c) return;
+    if(!fresh){ draft.snote='Your prices have changed. Close this and open your prices again.'; return; }
+    prices=fresh; drawPrices();
+    var P=(fresh.products||[]).filter(function(x){ return x.product===c.product&&x.sizes&&x.sizes.length; })[0];
+    var z=P&&P.sizes.filter(function(x){ return String(x.q)===String(c.q); })[0];
+    c.digest=fresh.digest||'';
+    if(!z){ c.gone=true; c.was=null; return; }
+    if(Math.abs(z.price-c.total)>0.004){ c.total=z.price; c.rate=+(z.price/z.q).toFixed(2); c.rid=mintRid(); }
+    else draft.snote='Your prices were updated just now. This size is still '+rm(c.total)+'.';
+    c.was=Math.abs(c.total-c.shown)>0.004?c.shown:null;
   }
   function toForm(){ draft.step='form'; draft.check=null; draft.snote=''; sheetDraw(); }
   function drawCheck(){
@@ -1467,10 +1496,17 @@ const CLIENT_JS = `
     if(c.mode==='deliver') row('Delivery','Set when it is acknowledged');
     if(c.say) row('Note',c.say);
     B.appendChild(L);
+    /* S4 4.4: a list re-struck since it was opened is said here, before anything is placed, and Place names the new figure */
+    if(c.was!=null){ var mv=el('p','salt-insight salt-insight--copper'); mv.setAttribute('role','status');
+      mv.appendChild(document.createTextNode('This size is now ')); mv.appendChild(el('b',null,rm(c.total)));
+      mv.appendChild(document.createTextNode(' (was '+rm(c.was)+'). Place at '+rm(c.total)+'?')); B.appendChild(mv); }
+    if(c.gone){ var gn=el('p','salt-insight salt-insight--copper','This size is no longer on your list. Change it to pick another.');
+      gn.setAttribute('role','status'); B.appendChild(gn); }
     var F=sheet.foot;
     var bk=el('button','salt-ghost','Change'); bk.type='button'; bk.id='oBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','change');
     bk.addEventListener('click',toForm); F.appendChild(bk);
-    var pl=el('button','salt-pill salt-pill--md','Place order'); pl.type='button'; pl.id='oPlace'; pl.disabled=!!draft.busy; pl.setAttribute('data-k','place');
+    var pl=el('button','salt-pill salt-pill--md',c.was!=null?'Place at '+rm(c.total):'Place order'); pl.type='button'; pl.id='oPlace';
+    pl.disabled=!!draft.busy||!!c.gone; pl.setAttribute('data-k','place');
     pl.addEventListener('click',place); F.appendChild(pl);
     /* the answer is drawn beside Place, which is what was tapped */
     if(draft.snote) F.appendChild(statusLine(draft.snote));
@@ -1480,9 +1516,10 @@ const CLIENT_JS = `
     draft.busy=true; draft.snote=''; sheetDraw();
     var mine=ticket;
     var r=await api('/orders',{product:c.product,qty:c.q,mode:c.mode,unit:c.rate,total:c.total,place:c.place,
-      forFriend:!!(assoc&&c.forFriend),note:c.say,rid:c.rid,week:(prices&&prices.week&&prices.week.monday)||''});
+      forFriend:!!(assoc&&c.forFriend),note:c.say,rid:c.rid,week:(prices&&prices.week&&prices.week.monday)||'',digest:c.digest});
     if(mine!==ticket) return;
     draft.busy=false;
+    if(r.status===409&&r.body.error==='prices moved'){ await pricesMoved(r.body.prices); if(mine!==ticket) return; sheetDraw(); return; }
     if(!r.body.ok){ draft.snote=r.body.error||'The order was not placed.'; sheetDraw(); return; }
     sheetClose();
     draft.note='Placed. You will see it acknowledged below.'; draft.say=''; draft.noteOpen=false;
@@ -1889,7 +1926,7 @@ const CLIENT_JS = `
       catch(e){ card=null; /* the statement still opens; the card is simply absent */ }
     }
     if(body.prices){
-      try{ prices=JSON.parse(await open(ck, body.prices)); if(stale()) return; }
+      try{ prices=await openList(ck, body.prices); if(stale()) return; }
       catch(e){ prices=null; /* the statements still open; the list is simply absent */ }
     }
     if(stale()) return;
@@ -1963,7 +2000,7 @@ const CLIENT_JS = `
     assoc=body.assoc===true;
     card=null;
     if(body.card){ try{ card=JSON.parse(await open(ck, body.card)); }catch(e){ card=null; } }
-    if(body.prices){ try{ prices=JSON.parse(await open(ck, body.prices)); }catch(e){ prices=null; } }
+    if(body.prices){ try{ prices=await openList(ck, body.prices); }catch(e){ prices=null; } }
     if(stale()) return false;
     say('');
     user=body.u; session=body.session||''; orders=[]; draft={}; pick={};
@@ -2018,7 +2055,7 @@ const CLIENT_JS = `
     assoc=body.assoc===true;
     card=null;
     if(body.card){ try{ card=JSON.parse(await open(ck, body.card)); }catch(e){ card=null; } }
-    if(body.prices){ try{ prices=JSON.parse(await open(ck, body.prices)); }catch(e){ prices=null; } }
+    if(body.prices){ try{ prices=await openList(ck, body.prices); }catch(e){ prices=null; } }
     if(stale()) return false;
     say('');
     user=body.u; session=body.session||''; orders=[]; draft={}; pick={};
