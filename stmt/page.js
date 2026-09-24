@@ -1024,8 +1024,9 @@ const CLIENT_JS = `
       var acts=el('div','grow');
       if(r.state==='open'){
         var cp=el('button',null,'Copy link'); cp.type='button';
-        cp.addEventListener('click', function(){
-          try{ navigator.clipboard.writeText(r.url); cp.textContent='Copied'; }catch(e){ cp.textContent='Copy failed'; }
+        /* awaited (24 Sep 2026): writeText answers with a promise, so a refusal said Copied */
+        cp.addEventListener('click', async function(){
+          try{ await navigator.clipboard.writeText(r.url); cp.textContent='Copied'; }catch(e){ cp.textContent='Copy failed'; }
           setTimeout(function(){ cp.textContent='Copy link'; },1500);
         });
         acts.appendChild(cp);

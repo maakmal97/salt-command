@@ -14605,6 +14605,46 @@ await (async () => {
       "while a customer who is not an associate is still shown no Card tab at all");
   } finally { for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
 })();
+section("S1 1.35 page: the associate's Copy link says Copy failed when the clipboard refuses");
+await (async () => {
+  /* 24 SEP 2026 (L38, the customer's page): Copy link under Your links called writeText without awaiting
+     it, so a refused clipboard said Copied. Driven on the associate's page against the real Worker. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const RF = await import("../stmt/refs.js");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s1-35p", u);
+  await kv.put("u:" + u, JSON.stringify({ u, assoc: true, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })) }));
+  const env = { STMT: kv };
+  for (let i = 0; i < 2; i++) { const r = await RF.mintRef(env, { introducer: u, by: u, label: "" }); await RF.setRef(env, r.id, { approved: true }); }
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const until = async (f) => { for (let i = 0; i < 200 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  const clip = { ok: false, got: [] };
+  let win = null;
+  try {
+    win = new JSDOM(await (await site("/")).text(), { url: "https://k7m3p2.example/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      Object.defineProperty(w.navigator, "clipboard", { value: { writeText: (t) => clip.ok ? (clip.got.push(t), Promise.resolve()) : Promise.reject(new Error("NotAllowedError")) }, configurable: true });
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: o.headers, body: o.body }); };
+    } }).window;
+    const D = win.document;
+    D.getElementById("un").value = u; D.getElementById("pw").value = pw;
+    D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !D.getElementById("tCard").hidden);
+    D.getElementById("tCard").click();
+    const copies = () => [...D.querySelectorAll("#pCard button")].filter((b) => b.textContent === "Copy link");
+    ok(await until(() => copies().length === 2), "their two open links each carry Copy link");
+    const [c1, c2] = copies();
+    c1.click();
+    ok(await until(() => c1.textContent !== "Copy link") && c1.textContent === "Copy failed",
+      "on a clipboard that refuses it says Copy failed, not Copied: " + c1.textContent);
+    clip.ok = true; c2.click();
+    ok(await until(() => c2.textContent !== "Copy link") && c2.textContent === "Copied" && clip.got.some((t) => /[/]g[/]/.test(t)),
+      "and on one that takes it, Copied, with the link on the clipboard: " + c2.textContent);
+  } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v687: the master account opens on its own page, and the owner's script travels only there");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: a master account that opens on what it can do. /all is that account,
