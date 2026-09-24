@@ -19787,6 +19787,256 @@ await (async () => {
   } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
 })();
 
+section("S10 10.2: the reconcile, the return leg and the chase run against the order book, and the study's six erasures do not happen there");
+await (async () => {
+  /* The concurrency study of 24 Sep 2026 played two writers on one order through the real code, over a KV with
+     locations (a copy up to a minute old wherever it was read) and one write a second per key, and six timelines
+     erased somebody's move: B1 to B6 in study/gap-concurrent-writes-and-flaky-network.md. Each is replayed here on
+     BOTH roads. On KV it must still erase, which is what proves the timeline can see an erasure; in the order
+     book it must not. A seventh is the book's own: a mark computed before a raise must not lower it. The desk's
+     side is the real src/orders.js over a stubbed D1 and binding; every code and username is invented. */
+  const SIM = await import("../test/kvsim.mjs");
+  const H = await import("../test/orderbook-harness.mjs");
+  const SW = (await import("../stmt/worker.js")).default;
+  const SO = await import("../stmt/orders.js");
+  const DO = await import("../src/orders.js");
+  const { clock, World } = SIM;
+  const KEY = "fixture-desk-key", A = "kx7m-p2qa", B = "tz4v-8rwd", CODES = { [A]: "ZX1-FIC", [B]: "ZX2-TST" };
+  const T0 = Date.UTC(2026, 8, 24, 2, 0, 0), s = (sec) => T0 + Math.round(sec * 1000);
+  let W, DESKQ, EVENTS, openByKey, BK, STORE;
+  const fresh = (store) => { STORE = store; W = new World(); DESKQ = new World(); EVENTS = []; openByKey = {}; BK = H.orderBook({}); clock.set(T0 - 600000); };
+  /* the event loop: a move scheduled inside the time a stubbed call spends is run at its moment */
+  const schedule = (sec, fn) => { EVENTS.push({ t: s(sec), fn }); EVENTS.sort((a, b) => a.t - b.t); };
+  const advance = async (ms) => {
+    const target = clock.now() + ms;
+    while (EVENTS.length && EVENTS[0].t <= target) { const e = EVENTS.shift(); clock.set(e.t); await e.fn(); }
+    if (clock.now() < target) clock.set(target);
+  };
+  const at = async (sec, fn) => { await advance(Math.max(0, s(sec) - clock.now())); return fn(); };
+  const senv = (loc) => Object.assign({ STMT: W.at(loc), STMT_DESK_KEY: KEY }, STORE ? { ORDERBOOK: BK.ns, ORDER_STORE: STORE } : {});
+  const call = async (loc, method, path, body, headers) => {
+    const req = new Request("https://site.example" + path, { method, body: body !== undefined ? JSON.stringify(body) : undefined,
+      headers: Object.assign(body !== undefined ? { "content-type": "application/json" } : {}, headers || {}) });
+    try {
+      const r = await SW.fetch(req, senv(loc)), text = await r.text();
+      let j = null; try { j = JSON.parse(text); } catch (e) { j = null; }
+      return { status: r.status, body: j, text };
+    } catch (e) { return { status: 500, body: null, text: "error 1101", threw: e.message }; }   /* what Cloudflare answers when a Worker throws */
+  };
+  /* the service binding runs in the caller's location, after the caller's latency */
+  const stmtSite = (loc, latency) => ({ fetch: async (url, init) => {
+    await advance(latency);
+    const u = new URL(typeof url === "string" ? url : url.url);
+    const r = await call(loc, (init && init.method) || "GET", u.pathname + u.search, init && init.body ? JSON.parse(init.body) : undefined, { "X-Stmt-Desk": KEY });
+    return new Response(r.text, { status: r.status, headers: { "content-type": r.body ? "application/json" : "text/html" } });
+  } });
+  const d1 = (latency) => ({ prepare: (sql) => {
+    const res = async () => { await advance(latency);
+      return /FROM state/.test(sql) ? { results: [{ key: "OPEN", doc: JSON.stringify({ byKey: openByKey }) }] } : { results: [] }; };
+    return { bind: () => ({ all: res }), all: res, first: async () => { await advance(latency); return null; } };
+  } });
+  const deskEnv = (loc) => ({ STMT_SITE: stmtSite(loc, 150), STMT_DESK_KEY: KEY, SALT_QUEUE: DESKQ.at(loc), SALT_LEDGER: d1(300) });
+  const seedDesk = async () => { DESKQ.rateLimit = false; await DESKQ.at("CRON").put("stmt-users", JSON.stringify(CODES)); DESKQ.rateLimit = true; };
+  const session = async (u) => { W.rateLimit = false; const t = await SO.mintSession({ STMT: W.at("KUL") }, u); W.rateLimit = true; return t; };
+  const cust = (loc, tok, method, path, body) => call(loc, method, path, body, { "X-Stmt-Session": tok });
+  const desk = (loc, path, body) => call(loc, body === undefined ? "GET" : "POST", path, body, { "X-Stmt-Desk": KEY });
+  const P = (u, id) => "/desk/orders/" + u + "/" + id;
+  /* THE TRUTH, read where it lives: the book's own row on the object road, else the global KV record */
+  const orderOf = (u, id) => {
+    const r = STORE ? BK.db.prepare("SELECT doc FROM ord WHERE u = ? AND oid = ?").get(u, id) : null;
+    return r ? JSON.parse(r.doc) : W.raw("order:" + u + ":" + id);
+  };
+  const place = (loc, tok, extra) => cust(loc, tok, "POST", "/orders", Object.assign({ product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, week: "" }, extra || {}));
+  const seen = async (loc, tok, id) => ((await cust(loc, tok, "GET", "/orders")).body.orders || []).find((x) => x.id === id) || null;
+  const ownerSees = async (loc, id) => ((await desk(loc, "/desk/orders?all=1")).body.orders || []).find((x) => x.id === id) || null;
+  const deskQueue = () => JSON.parse(DESKQ.store.get("q:orders") || '{"queue":[]}').queue;
+  const lines = (o) => ((o && o.msgs) || []).map((m) => m.text);
+  const told = () => deskQueue().filter((e) => e.status === "Payment").reduce((a, e) => a + +e.total, 0);
+  /* an order placed, acknowledged, its pending row queued and on the book, and a rail chosen */
+  const agreed = async (tok, extra, t) => {
+    let id;
+    await at(t, async () => { id = (await place("KUL", tok, extra)).body.order.id; });
+    await at(t + 10, () => desk("KUL", P(A, id), { status: "acknowledged" }));
+    await at(t + 11, () => DO.reconcileOrders(deskEnv("KUL")));
+    openByKey[orderOf(A, id).ledgerKey] = true;
+    await at(t + 20, () => cust("KUL", tok, "POST", "/orders/" + id + "/method", { method: "tngbiz" }));
+    return id;
+  };
+
+  /* B1: a line sent while the reconcile is between its read and its mark */
+  const b1 = async (store, lineAt) => {
+    fresh(store); await seedDesk();
+    const tok = await session(A), id = await agreed(tok, {}, -120);
+    await at(-40, () => cust("KUL", tok, "POST", "/orders/" + id + "/pay", { amount: 50 }));
+    schedule(lineAt, () => cust("KUL", tok, "POST", "/orders/" + id + "/say", { text: "Paid by transfer, ref 4471" }));
+    await at(0, () => DO.reconcileOrders(deskEnv("CRON")));
+    const page = lines(await at(70, () => seen("KUL", tok, id))), owner = lines(await at(70.5, () => ownerSees("KUL", id)));
+    return { store: lines(orderOf(A, id)), page, owner };
+  };
+  /* B2: a mark that failed, then a pass inside the minute writing back a copy a minute old */
+  const b2 = async (store) => {
+    fresh(store); await seedDesk();
+    const tok = await session(A), id = await agreed(tok, { qty: 2, total: 230, unit: 115 }, -200);
+    await at(-30, () => cust("KUL", tok, "POST", "/orders/" + id + "/pay", { amount: 100 }));
+    schedule(0.9, () => cust("KUL", tok, "POST", "/orders/" + id + "/say", { text: "Sent the first half" }));
+    await at(0.35, () => DO.reconcileOrders(deskEnv("CRON")));
+    await at(25, () => desk("KUL", P(A, id), { handover: { units: 1 } }));
+    await at(40, () => cust("KUL", tok, "POST", "/orders/" + id + "/pay", { amount: 60 }));
+    await at(60, () => DO.reconcileOrders(deskEnv("CRON")));
+    const o = orderOf(A, id);
+    return { paid: o.paid, moved: o.moved, lines: lines(o) };
+  };
+  /* B3: he acknowledges from another location, off a card 25 s old, after the customer withdrew */
+  const b3 = async (store) => {
+    fresh(store); await seedDesk();
+    const tok = await session(A); let id;
+    await at(0, async () => { id = (await place("KUL", tok, { mode: "deliver", place: "Taman Contoh" })).body.order.id; });
+    await at(10, () => ownerSees("SIN", id));
+    const wd = await at(25, () => cust("KUL", tok, "POST", "/orders/" + id + "/cancel", {}));
+    const ack = await at(35, () => desk("SIN", P(A, id), { status: "acknowledged", delivery: 8 }));
+    await at(36, () => DO.reconcileOrders(deskEnv("SIN")));
+    const page = await at(90, () => seen("KUL", tok, id));
+    return { wd: wd.status, ack: ack.status, status: orderOf(A, id).status, page: page && page.status, queued: deskQueue().map((e) => e.status) };
+  };
+  /* B4: the customer withdraws from a page that still said Placed, after his acknowledgement queued the row */
+  const b4 = async (store) => {
+    fresh(store); await seedDesk();
+    const tok = await session(A); let id;
+    await at(0, async () => { id = (await place("KUL", tok)).body.order.id; });
+    await at(5, () => seen("KUL", tok, id));
+    await at(30, () => desk("SIN", P(A, id), { status: "acknowledged" }));
+    await at(31, () => DO.reconcileOrders(deskEnv("SIN")));
+    openByKey[orderOf(A, id).ledgerKey] = true;
+    await at(45, () => seen("KUL", tok, id));
+    const wd = await at(48, () => cust("KUL", tok, "POST", "/orders/" + id + "/cancel", {}));
+    const o = orderOf(A, id), work = SO.orderWork(o);
+    await at(60, () => DO.reconcileOrders(deskEnv("CRON")));
+    return { wd: wd.status, status: o.status, ack: !!(o.queued && o.queued.ack), work, queued: deskQueue().map((e) => e.status) };
+  };
+  /* B5: two part payments inside a minute, the second written from a copy older than the reconcile's mark */
+  const b5 = async (store) => {
+    fresh(store); await seedDesk();
+    const tok = await session(A), id = await agreed(tok, { qty: 2, total: 230, unit: 115 }, -300);
+    await at(30, () => cust("KUL", tok, "POST", "/orders/" + id + "/pay", { amount: 100 }));
+    await at(60, () => DO.reconcileOrders(deskEnv("CRON")));
+    await at(80, () => cust("KUL", tok, "POST", "/orders/" + id + "/pay", { amount: 30 }));
+    await at(120, () => DO.reconcileOrders(deskEnv("CRON")));
+    await at(180, () => DO.reconcileOrders(deskEnv("CRON")));
+    return { told: told(), paid: orderOf(A, id).paid };
+  };
+  /* B6: the return leg raises the order from a copy read before the customer recorded a transfer */
+  const b6 = async (store) => {
+    fresh(store); await seedDesk();
+    const tok = await session(A), id = await agreed(tok, { qty: 2, total: 230, unit: 115 }, -300);
+    const lk = orderOf(A, id).ledgerKey, [code, date, total] = lk.split("|");
+    const row = { customer: code, date, total: +total, qty: 2, cash: 100, deliveredQty: 0, status: "Open" };
+    const env = deskEnv("CRON");
+    env.SALT_LEDGER = { prepare: (sql) => {
+      const res = async () => { await advance(300); return /FROM state/.test(sql) ? { results: [{ key: "OPEN", doc: JSON.stringify({ byKey: { [lk]: true } }) }] } : { results: [] }; };
+      return { bind: (c) => ({ all: async () => { await advance(300); return c === "sales" ? { results: [{ doc: JSON.stringify(row) }] } : { results: [] }; } }),
+        all: res, first: async () => { await advance(300); return { v: "v999", stamped: "x" }; } };
+    } };
+    schedule(0.6, () => cust("KUL", tok, "POST", "/orders/" + id + "/pay", { amount: 130 }));
+    const ts = await at(0, () => DO.tellSite(env));
+    const o = orderOf(A, id);
+    return { ts: ts.ok, paid: o.paid, payments: (o.payments || []).map((p) => p.amount) };
+  };
+  /* the book's own: the reconcile marks what it read (paid 100) after the return leg raised the order to the book's
+     130 in the same pass; the mark must not lower what the ledger has been told, or the next pass queues 30 again */
+  const b7 = async (store) => {
+    fresh(store); await seedDesk();
+    const tok = await session(A), id = await agreed(tok, { qty: 2, total: 230, unit: 115 }, -300);
+    await at(30, () => cust("KUL", tok, "POST", "/orders/" + id + "/pay", { amount: 100 }));
+    schedule(60.2, () => desk("KUL", P(A, id), { ledger: { paid: 130 } }));
+    await at(60, () => DO.reconcileOrders(deskEnv("CRON")));
+    await at(120, () => DO.reconcileOrders(deskEnv("CRON")));
+    const o = orderOf(A, id);
+    return { told: told(), paid: o.paid, q: o.queued && o.queued.paid };
+  };
+
+  clock.install();
+  try {
+    const line = "Paid by transfer, ref 4471";
+    for (const t of [0.3, 0.6]) {
+      const kv = await b1(null, t), ob = await b1("object", t);
+      ok(!kv.store.includes(line), "B1 at +" + t + " s, the instrument: on KV the reconcile's write-back erases the line: " + JSON.stringify(kv));
+      ok(ob.store.includes(line) && ob.page.includes(line) && ob.owner.includes(line),
+        "B1 at +" + t + " s: in the order book the line survives the reconcile, on the store, on their page and on his card: " + JSON.stringify(ob));
+    }
+    {
+      const kv = await b2(null), ob = await b2("object");
+      ok(kv.paid === 100 && kv.moved === 0 && kv.lines.length === 0, "B2, the instrument: on KV a minute-old copy erases RM 60, his handover and a line: " + JSON.stringify(kv));
+      ok(ob.paid === 160 && ob.moved === 1 && JSON.stringify(ob.lines) === JSON.stringify(["Sent the first half"]),
+        "B2: in the order book nothing is written back from a copy, so the payments, the handover and the line all stand: " + JSON.stringify(ob));
+    }
+    {
+      const kv = await b3(null), ob = await b3("object");
+      ok(kv.ack === 200 && kv.status === "acknowledged" && kv.queued.includes("Pending"),
+        "B3, the instrument: on KV his acknowledgement from a card 25 s old lands over the withdrawal and queues a row: " + JSON.stringify(kv));
+      ok(ob.wd === 200 && ob.ack === 409 && ob.status === "cancelled" && ob.page === "cancelled" && !ob.queued.includes("Pending"),
+        "B3: in the order book his acknowledgement is checked against the order as it stands, refused, and queues nothing: " + JSON.stringify(ob));
+    }
+    {
+      const kv = await b4(null), ob = await b4("object");
+      ok(!kv.ack && kv.work.length === 0 && JSON.stringify(kv.queued) === '["Pending"]',
+        "B4, the instrument: on KV a withdrawal from a stale page erases the acknowledgement and orphans the pending row: " + JSON.stringify(kv));
+      ok(ob.wd === 200 && ob.status === "cancelled" && ob.ack && JSON.stringify(ob.work) === '["cancel"]' && JSON.stringify(ob.queued) === '["Pending","Cancellation"]',
+        "B4: in the order book the withdrawal keeps what the ledger was told, so the pending row is cancelled: " + JSON.stringify(ob));
+    }
+    {
+      const kv = await b5(null), ob = await b5("object");
+      ok(kv.told === 230, "B5, the instrument: on KV the ledger is told the first part twice, RM 230 on RM 130 paid: " + JSON.stringify(kv));
+      ok(ob.told === 130 && ob.paid === 130, "B5: in the order book the ledger is told RM 130 on RM 130 paid: " + JSON.stringify(ob));
+    }
+    {
+      const kv = await b6(null), ob = await b6("object");
+      ok(kv.paid === 100 && kv.payments.length === 0, "B6, the instrument: on KV the return leg writes RM 100 over a RM 130 transfer and its record: " + JSON.stringify(kv));
+      ok(ob.ts && ob.paid === 130 && JSON.stringify(ob.payments) === "[130]",
+        "B6: in the order book the return leg is weighed against the order as it stands, and the transfer and its record stand: " + JSON.stringify(ob));
+    }
+    {
+      const ob = await b7("object");
+      ok(ob.paid === 130 && ob.q === 130 && ob.told === 100,
+        "a mark read before the return leg's raise does not lower what the ledger was told, so RM 30 is not queued twice: " + JSON.stringify(ob));
+    }
+
+    /* ---- the chain on the order book, end to end: a stage each, the return leg, a rejection, and the chase ---- */
+    fresh("object"); await seedDesk();
+    const tok = await session(A), id = await agreed(tok, { qty: 2, total: 230, unit: 115 }, -600);
+    const pend = deskQueue().find((e) => e.status === "Pending");
+    await at(-500, () => cust("KUL", tok, "POST", "/orders/" + id + "/pay", { amount: 50 }));
+    await at(-490, () => desk("KUL", P(A, id), { handover: { units: 2 } }));
+    /* two stages in one pass are two writes to the desk's own q:orders inside a second, and KV takes one: the second
+       fails, is marked failed, and the next pass queues it (the first is found already queued, by its moment) */
+    await at(-480, () => DO.reconcileOrders(deskEnv("CRON")));
+    const rc = await at(-420, () => DO.reconcileOrders(deskEnv("CRON")));
+    const q1 = deskQueue().map((e) => e.status), o1 = orderOf(A, id);
+    ok(!!pend && pend.orderKey === o1.ledgerKey && rc.ok && JSON.stringify(q1) === '["Pending","Payment","Handover"]'
+      && o1.queued.paid === 50 && o1.queued.moved === 2 && (o1.sync || {}).state === "queued" && SO.orderWork(o1).length === 0,
+      "each stage is queued once, and the marks the reconcile writes back are the object's: " + JSON.stringify({ q1, queued: o1.queued, sync: o1.sync }));
+    const rj = await at(-470, () => DO.rejectedOnOrder(deskEnv("KUL"), { orderId: id, status: "Payment" }, "2026-09-24T01:52:10.000Z"));
+    ok(rj && (orderOf(A, id).sync || {}).state === "rejected", "a row he rejects is written onto its order in the book");
+    /* two hours of the chase: an advance (all the goods out, RM 50 of 230 paid) is woken once an hour */
+    const logs = [], realLog = console.log;
+    const tick = async (sec) => { const ws = []; await at(sec, () => SW.scheduled({ scheduledTime: clock.now() }, senv("CRON"), { waitUntil: (p) => ws.push(p) })); await Promise.all(ws); };
+    console.log = (...x) => logs.push(x.join(" "));
+    try { await tick(300); await tick(1500); await tick(4000); } finally { console.log = realLog; }
+    const ch = logs.filter((l) => /^chase: /.test(l)).map((l) => JSON.parse(l.slice(7)));
+    ok(ch.length === 3 && ch[0].quiet === 1 && ch[1].held === 1 && ch[2].quiet === 1 && ![...W.store.keys()].some((k) => k.startsWith("chased:")),
+      "the chase reads the advance and its mark in the book: once in the first hour, held inside it, once in the next: " + JSON.stringify(ch));
+    /* the return leg: the book holds RM 230 cash on the row, and the site is raised to it */
+    const lk = orderOf(A, id).ledgerKey, [code, date, total] = lk.split("|");
+    const row = { customer: code, date, total: +total, qty: 2, cash: 230, deliveredQty: 2, status: "Open" };
+    const env = deskEnv("CRON");
+    env.SALT_LEDGER = { prepare: () => ({ bind: (c) => ({ all: async () => (c === "sales" ? { results: [{ doc: JSON.stringify(row) }] } : { results: [] }) }),
+      all: async () => ({ results: [] }), first: async () => ({ v: "v1000", stamped: "x" }) }) };
+    const ts = await at(4100, () => DO.tellSite(env));
+    const o2 = orderOf(A, id);
+    ok(ts.ok && ts.told === 1 && o2.paid === 230 && o2.status === "done" && o2.queued.paid === 230 && SO.orderWork(o2).length === 0,
+      "and the return leg raises the order in the book to what the row holds, completing it, with nothing owed to the ledger: " + JSON.stringify({ ts, paid: o2.paid, status: o2.status, work: SO.orderWork(o2) }));
+  } finally { clock.uninstall(); }
+})();
+
 section("v751: a customer may write a line on an order, at placement and after, and it never reaches a ledger note");
 await (async () => {
   /* his instruction of 20 Sep 2026, and the last part of what he asked at the start of this work:

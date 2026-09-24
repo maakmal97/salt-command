@@ -525,7 +525,10 @@ export function applyEvent(order, ev) {
   } else if (ev.kind === "mark") {
     const m = ev.mark, q = Object.assign({}, order.queued || {});
     if (m.ledgerKey) order.ledgerKey = m.ledgerKey;
-    for (const k of ["ack", "cancel", "paid", "moved"]) if (m[k] !== undefined) q[k] = m[k];
+    /* WHAT THE LEDGER HAS BEEN TOLD OF THE MONEY ONLY RISES (S10 10.2): the reconcile marks what it read, and the
+       return leg may have raised the order to the book's figure in the same minute; lowered, the next pass would
+       queue the difference a second time. The goods are stated, not added, so their mark is set as read. */
+    for (const k of ["ack", "cancel", "paid", "moved"]) if (m[k] !== undefined) q[k] = k === "paid" ? Math.max(+q.paid || 0, m[k]) : m[k];
     if (m.sync) order.sync = m.sync;
     order.queued = q;
   } else if (ev.kind === "ledger") {
