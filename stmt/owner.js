@@ -178,12 +178,20 @@ export const OWNER_JS = `
       var want=box.checked;
       try{
         var j=await refs('/all/sent/'+a.username, {issue:sheetIssue, sent:want});
-        a.sent=j.sent; card.className='scard'+(a.sent?' done':''); say('');
+        a.sent=j.sent; card.className='scard'+(a.sent?' done':''); say(''); countSent();
       }catch(e){ box.checked=!want; say(e.message,'bad'); }
     });
     tick.appendChild(box); tick.appendChild(el('span',null,'Sent'));
     card.appendChild(tick);
     return card;
+  }
+  /* the test account is not part of a send, so it is out of both halves of the count (v689). A tick
+     recounts as well as a draw (24 Sep 2026): the header sat on its first figure while he ticked. */
+  function countSent(){
+    var real=sheetRows.filter(function(a){ return !a.test; });
+    var done=real.filter(function(a){ return a.sent; }).length;
+    var head=document.getElementById('scount');
+    if(head) head.textContent=done+' of '+real.length+' sent';
   }
   function drawSend(){
     var wrap=document.getElementById('slist'); if(!wrap) return;
@@ -193,11 +201,7 @@ export const OWNER_JS = `
       if(!q) return true;
       return ((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0;
     });
-    /* the test account is not part of a send, so it is out of both halves of the count (v689) */
-    var real=sheetRows.filter(function(a){ return !a.test; });
-    var done=real.filter(function(a){ return a.sent; }).length;
-    var head=document.getElementById('scount');
-    if(head) head.textContent=done+' of '+real.length+' sent';
+    countSent();
     if(!hits.length){ wrap.appendChild(el('p','rnone','Nothing matches that.')); return; }
     hits.forEach(function(a){ wrap.appendChild(sendCard(a)); });
   }

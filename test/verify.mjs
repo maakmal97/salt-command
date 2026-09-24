@@ -14441,6 +14441,58 @@ await (async () => {
       "and on one that takes it, Copied, with the link on the clipboard: " + l2.textContent);
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S1 1.36: ticking Sent on a card moves the sent count at the top of Send");
+await (async () => {
+  /* 24 SEP 2026 (L39): "N of M sent" was counted when the panel drew and never again, so it sat on its
+     first figure while he ticked his way down the list. Driven on his page against the real Worker. */
+  const W = (await import("../stmt/worker.js")).default;
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const uA = "abcd-efgh", uB = "cdef-ghjk";
+  await kv.put("roster", JSON.stringify([{ code: "CX0-AA", username: uA }, { code: "CX1-BB", username: uB }]));
+  await kv.put("issue", "2026-09-01");
+  const row = (code, username) => ({ code, username, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" });
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01", accounts: [row("CX0-AA", uA), row("CX1-BB", uB)] }));
+  const TEAM = "maakmal", AUD = "aud-s1-36", KID = "kid-s1-36";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: "mp-s1-36", ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 150 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    /* the page loads the account list on its own and again when Send opens before that lands, so
+       every tick waits for the reads in flight to settle, or it would tick a card about to be redrawn */
+    let inflight = 0;
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      w.fetch = async (q, o) => { o = o || {}; inflight++;
+        try { return await site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); }
+        finally { setTimeout(() => inflight--, 0); } };
+    } }).window;
+    const D = win.document;
+    D.querySelector('button[data-m="send"]').click();
+    const head = () => (D.getElementById("scount") || {}).textContent;
+    await until(() => inflight === 0);
+    const box = (u) => { const c = [...D.querySelectorAll("#slist .scard")].find((x) => x.textContent.includes(u)); return c && c.querySelector(".tick input"); };
+    ok(await until(() => box(uA) && box(uB)) && head() === "0 of 2 sent", "Send opens on nothing sent: " + head());
+    box(uA).checked = true; box(uA).dispatchEvent(new win.Event("change", { bubbles: true }));
+    ok(await until(async () => !!(await kv.get("sent:2026-09-01:" + uA))) && await until(() => head() === "1 of 2 sent"),
+      "a tick is kept and the count moves with it: " + head());
+    box(uA).checked = false; box(uA).dispatchEvent(new win.Event("change", { bubbles: true }));
+    ok(await until(async () => !(await kv.get("sent:2026-09-01:" + uA))) && await until(() => head() === "0 of 2 sent"),
+      "and taking it back moves it back: " + head());
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v687: the master account opens on its own page, and the owner's script travels only there");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: a master account that opens on what it can do. /all is that account,
