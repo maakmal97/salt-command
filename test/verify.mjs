@@ -16397,6 +16397,55 @@ await (async () => {
       "and no product is written as a word anywhere on the prices or the order: " + JSON.stringify((words95.match(/\b(salt|oil)\b/gi) || []).slice(0, 4)));
   } finally { try { dom95.window.close(); } catch (e) { /* best effort */ } }
 })();
+section("S8 8.2: the guest board ends with a next step, and every shut link answers one styled page");
+await (async () => {
+  /* 24 SEP 2026, stage 8 of the Counter redesign. The board named no way to order, and a shut link answered the
+     site's bare "Not found" in the browser's own face. Every shut kind is made here as the store holds it and
+     opened through the real Worker. */
+  const W = (await import("../stmt/worker.js")).default;
+  const RF = await import("../stmt/refs.js");
+  const kv = new KV(), env = { STMT: kv };
+  const g = (id, e) => W.fetch(new Request("https://k7m3p2.example/g/" + id), e || env);
+  await kv.put("board:2", JSON.stringify({ week: { label: "21 Sep 2026" },
+    products: [{ product: "salt", unit: "unit", sizes: [{ q: 1, price: 150 }, { q: 2.5, price: 350 }] }] }));
+  const open = await RF.mintRef(env, { label: "open" });
+  const waiting = await RF.mintRef(env, { introducer: "abcd-efgh", by: "abcd-efgh" });
+  const declined = await RF.mintRef(env, { introducer: "abcd-efgh", by: "abcd-efgh" });
+  await RF.setRef(env, declined.id, { approved: false, declined: true });
+  const withdrawn = await RF.mintRef(env, { label: "gone" });
+  await RF.revokeRef(env, withdrawn.id, true);
+
+  /* ---- the board ENDS with the next step, after the last price ---- */
+  const r0 = await g(open.id), board = await r0.text();
+  const next = "To order, reply to the person who sent you this link.";
+  const at = board.indexOf(next), lastTable = board.lastIndexOf("</table>");
+  ok(r0.status === 200 && lastTable >= 0 && at > lastTable && board.slice(at + next.length) === "</p></div></body></html>",
+    "the guest board ends with what to do next, after the last price: " + JSON.stringify(board.slice(-90)));
+  const words0 = board.replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]*>/g, " ");
+  ok(!/salt command|\bsalt\b|counter/i.test(words0), "and the words carry no brand and no product");
+
+  /* ---- every shut kind: one page, the board's look, the same words ---- */
+  const kinds = [["an id nobody holds", "zzzz-zzzz", env], ["a malformed id", "nope", env], ["a withdrawn link", withdrawn.id, env],
+    ["a declined link", declined.id, env], ["a link waiting on him", waiting.id, env], ["a site with no store", open.id, {}]];
+  const got = [];
+  for (const [what, id, e] of kinds) {
+    const r = await g(id, e);
+    got.push({ what, status: r.status, type: r.headers.get("content-type") || "", csp: r.headers.get("content-security-policy") || "", body: await r.text() });
+  }
+  const nonceOf = (x) => (/<style nonce="([A-Za-z0-9]+)">/.exec(x.body) || [])[1] || "";
+  const bad = got.filter((x) => !(x.status === 404 && /^text\/html/.test(x.type) && /script-src 'none'/.test(x.csp)
+    && nonceOf(x) && x.csp.includes("'nonce-" + nonceOf(x) + "'")));
+  ok(!bad.length, "every shut kind is a 404 page styled under the board's own policy: "
+    + JSON.stringify(bad.map((x) => [x.what, x.status, x.type, x.body.slice(0, 20)])));
+  const bare = got.map((x) => x.body.split('nonce="' + (nonceOf(x) || "none") + '"').join(""));
+  ok(new Set(bare).size === 1 && bare[0].length > 1000,
+    "and it is ONE page, byte for byte but its nonce, so the door says nothing about which it was: "
+    + JSON.stringify(got.map((x, i) => [x.what, bare[i].length])));
+  ok(/This link is not open/.test(bare[0]) && /Ask the person who sent it to you[.]/.test(bare[0])
+    && /name="viewport"/.test(bare[0]) && /url[(][/]fonts[/]/.test(bare[0]) && !/Not found/.test(bare[0]),
+    "it says the link is not open and whom to ask, with a viewport and the brand faces, never the bare Not found");
+  ok(bare[0] !== board.split('nonce="' + nonceOf({ body: board }) + '"').join(""), "and an open link is still its board, the control");
+})();
 section("v696: the guest links are five, one for each tier, and each one is a level and nothing else");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "for the guest links, produce exactly 5 links, for the five

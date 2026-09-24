@@ -38,7 +38,7 @@
  * NO IMPORT FROM src/ OR tools/. The suite proves it: this Worker must bundle on its own, and
  * must never be able to reach the ledger's code even by accident.
  */
-import { landingPage, boardPage } from "./page.js";
+import { landingPage, boardPage, shutPage } from "./page.js";
 import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
@@ -817,10 +817,24 @@ async function handleRefs(request, env, p, m, origin) {
 }
 
 /* The guest's own door. An unknown id, a malformed id and a revoked one all answer with the same
-   404 the rest of this Worker gives, so the space cannot be walked and a withdrawn link cannot be
-   told from one that never existed. */
+   404, so the space cannot be walked and a withdrawn link cannot be told from one that never
+   existed. S8 8.2: that 404 is ONE STYLED PAGE, the board's look and the same words for all, not
+   the site's bare "Not found", which left a stranger holding a link with nothing to do. */
+const guestHtml = (html, nonce, status) => new Response(html, {
+  status,
+  headers: Object.assign({
+    "content-type": "text/html; charset=utf-8",
+    /* script-src 'none' OUTRIGHT, not a nonce: this page is numbers and there is nothing for a
+       script to do, so the strongest thing that can be said about it is free to say. */
+    "content-security-policy":
+      "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
+      + "img-src 'self' data:; font-src 'self'; style-src 'nonce-" + nonce + "'; script-src 'none'"
+  }, HEADERS)
+});
+const guestNonce = () => b64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
+const shut = () => { const n = guestNonce(); return guestHtml(shutPage(n), n, 404); };
 async function handleGuest(request, env, id) {
-  if (!env.STMT) return notFound();
+  if (!env.STMT) return shut();
   const rec = await readRef(env, id);
   /* v709: a link an associate minted is shut until he approves it, from the moment it exists,
      because the id IS the credential and they could hand it out the second they made it. The test
@@ -828,7 +842,7 @@ async function handleGuest(request, env, id) {
      link already in the store carries the field, so the loose test would shut every link he has
      ever handed out, and shut it silently, because a pending, a withdrawn and an unknown id all
      answer the same 404 by design. */
-  if (!rec || rec.revoked || rec.approved === false) return notFound();
+  if (!rec || rec.revoked || rec.approved === false) return shut();
   await markOpen(env, rec);
   /* v698: A STANDING LINK READS ITS LEVEL'S BOARD, not one written under its own id. The five are
      minted the first time he opens the Links panel, so one minted since the last publish would have
@@ -854,17 +868,8 @@ async function handleGuest(request, env, id) {
   const own = (await levelKey()) || ("gboard:" + rec.id);
   try { prices = await env.STMT.get(own, "json"); } catch (e) { prices = null; }
   if (!prices) { try { prices = await env.STMT.get("board:2", "json"); } catch (e) { prices = null; } }
-  const nonce = b64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
-  return new Response(boardPage({ tier: rec.tier, prices }, nonce), {
-    headers: Object.assign({
-      "content-type": "text/html; charset=utf-8",
-      /* script-src 'none' OUTRIGHT, not a nonce: this page is numbers and there is nothing for a
-         script to do, so the strongest thing that can be said about it is free to say. */
-      "content-security-policy":
-        "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
-        + "img-src 'self' data:; font-src 'self'; style-src 'nonce-" + nonce + "'; script-src 'none'"
-    }, HEADERS)
-  });
+  const nonce = guestNonce();
+  return guestHtml(boardPage({ tier: rec.tier, prices }, nonce), nonce, 200);
 }
 
 export default {

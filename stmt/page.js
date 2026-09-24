@@ -360,19 +360,30 @@ export function boardPage(guest, nonce) {
             + "</td><td>" + esc(rm(r.price)) + "</td></tr>").join("")
         + "</tbody></table></div></div>").join("")
     : '<p class="lead">No price list has been written yet.</p>';
+  return guestPage("<h2>Price list</h2>"
+    + '<p class="lead">' + (week ? "For the week of " + esc(week) + ". " : "")
+    + "The price is for the goods. Delivery is charged separately and quoted when you order. "
+    + "Ask about any size that is not listed.</p>"
+    + body
+    /* S8 8.2: A STRANGER IS TOLD WHAT TO DO NEXT, in words and with no brand. The board is all they
+       have, and it named no way to order. */
+    + '<p class="lead">To order, reply to the person who sent you this link.</p>', nonce);
+}
+/* S8 8.2: EVERY SHUT LINK ANSWERS THIS, WORD FOR WORD. Unknown, malformed, withdrawn, declined and
+   waiting ids all get it, in the board's own look, so the door tells a stranger nothing about which
+   it was and never leaves them on a bare "Not found". */
+export function shutPage(nonce) {
+  return guestPage("<h2>This link is not open</h2>"
+    + '<p class="lead">Ask the person who sent it to you.</p>', nonce);
+}
+function guestPage(inner, nonce) {
   return '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8">'
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'
     + "<title>Price list</title>"
     + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
-    + '<div class="panel">'
-    + "<h2>Price list</h2>"
-    + '<p class="lead">' + (week ? "For the week of " + esc(week) + ". " : "")
-    + "The price is for the goods. Delivery is charged separately and quoted when you order. "
-    + "Ask about any size that is not listed.</p>"
-    + body
-    + "</div></body></html>";
+    + '<div class="panel">' + inner + "</div></body></html>";
 }
 
 /** The landing page. `user` is the normalised username to prefill, or "". `nonce` ties the
