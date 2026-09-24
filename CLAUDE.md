@@ -255,7 +255,7 @@ carries on). It cannot run in CI, by design. Amend ID needs nothing. His own rou
 
 ## Statements site
 
-`stmt/worker.js` and `stmt/page.js`: a second Worker on its own cryptic address and KV store,
+`stmt/worker.js` and `stmt/page.js`: a second Worker on its own cryptic address, KV store and order book,
 config `wrangler.stmt.jsonc`, every command taking `-c`. Nothing under `stmt/` imports from `src/`,
 `tools/` or a node builtin; the suite checks. `statements/_secrets.json` is laptop only and
 gitignored; lose its key and every account is re-issued. `stmt/page.js` `CLIENT_JS`, `stmt/owner.js`
@@ -277,7 +277,11 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   runs the reconcile at once; the return leg carries what he records on the desk back to the order
   and only ever raises. Cash on handover is withheld while that customer holds an unpaid advance. A
   delivery's location never reaches a ledger note. The customer reads a whitelisted view of an order,
-  never `ledgerKey`, `queued` or `sync`; a request id makes a retried Place or payment land once.
+  never `ledgerKey`, `queued` or `sync`. **Every move is an event in the site's one Durable Object**
+  (`stmt/orderbook.js`) under a device-minted id, so a retry lands once and no writer erases another's;
+  `ORDER_STORE` is the switch (`object+kv` the week of reading both, `kv` the way back, `object` after a
+  clean week of KV `orderbook:check`). **Coming back from `kv`, raise `ORDER_MOVE_IN`**; forgotten, the `kv`
+  road's mark (`orderbook:road`) moves the book in again on its first request.
   Rejecting a draft a site order made is asked first and written onto that order.
 - **A customer writes on an order, and he answers**: one `msgs[]` thread per order, on any order at
   any stage; theirs capped, his uncapped. **It never rides into a ledger note.** His answer is
@@ -331,10 +335,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **The chase, twice a day** (his decision D5): the site's hourly cron (`wrangler.stmt.jsonc`) wakes a
   customer holding goods unpaid (`isAdvance`) only at 10:00 and 18:00 Kuala Lumpur (`chaseSlot`), from
   the day after the handover (`graceOver`), paused while a claim waits (`claimWaits`, where stage 6's
-  claim plugs in), in its own words (`due`); one wake a slot per customer, capped by
-  `chased:<username>`; the test account is skipped. The config
-  ships with the job's push paths; an unpushed laptop change needs `npx wrangler deploy -c
-  wrangler.stmt.jsonc`.
+  claim plugs in), in its own words (`due`); one wake a slot per customer, capped by the chase
+  mark (`markChased`: in the order book, `chased:<username>` on the `kv` road); the test account is
+  skipped. The config ships with the job's push paths; an unpushed laptop change needs `npx wrangler
+  deploy -c wrangler.stmt.jsonc`.
 - **An associate's own card** (`rec.card`): `share`, `stars` and `rank` never travel, and every
   figure adds up to the list under it. **The associates report card** (`/all/assoc`, whitelist
   `ASSOC_FIELDS`): no margin crosses.

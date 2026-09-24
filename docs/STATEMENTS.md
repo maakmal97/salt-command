@@ -169,7 +169,8 @@ position under the table does not move with the filter.
 **The statements live on their own site, away from the desk.** Until 03 Sep they were a route
 on `salt-command` itself, which put the one address a customer ever holds one path segment from
 an open ledger. They are a second Worker now, `stmt/worker.js` under `wrangler.stmt.jsonc`, with
-a cryptic name that says nothing about salt, a KV store of its own, and no access to the queue,
+a cryptic name that says nothing about salt, a KV store of its own, one Durable Object for its
+orders (`stmt/orderbook.js`, S10), and no access to the queue,
 the vault, D1 or the desk. Nothing a customer holds points at the desk's address, and the suite
 checks that no statement does either.
 
@@ -384,8 +385,12 @@ drafter reads), which carry each customer's tier and the ladder, and calls `floo
 `cardPrice`. `node tools/pricelist.mjs --show <CODE>` prints what
 a customer sees. `--no-prices` on the publish leaves the list out.
 
-**The order lives on the site, in its own store**, as `order:<username>:<id>`, plaintext, and
-the reason is stated in `stmt/orders.js`: it is written at runtime by the customer and the site
+**The order lives on the site, in its one Durable Object** (`stmt/orderbook.js`; S10, his answer
+to D10 of 24 Sep 2026): every move an event appended under its id, the order the fold of its
+events, and the shared and chase marks beside them, one transaction a move, so no writer can erase
+another's. It was `order:<username>:<id>` in KV, read and written back whole by three writers, and
+the study of 24 Sep played six erasures through that; the suite replays them on both roads. Plaintext,
+and the reason is stated in `stmt/orders.js`: it is written at runtime by the customer and the site
 holds no key to seal it with. It carries a size, a quoted total and a state; no name, no code.
 `/open` mints a **session** on a correct password (fifteen minutes; the page forgets it when it
 locks), and the order routes take that and nothing else. The states: placed (the customer),
@@ -393,12 +398,45 @@ acknowledged (the owner: agreed, the delivery charge set, and the row queued), r
 deliver (the owner), done (**neither side's tap**: what the record reads once both tracks are
 complete), declined (the owner), cancelled (either side, at any stage until the goods move).
 
-**A RETRY LANDS ONCE** (24 Sep 2026). Place and I have paid carry a request id the page mints per
-review and per payment; the site files `rid:<username>:<rid>` for a day naming the order and answers a
-repeat with that order, changing nothing. Best effort, KV being eventually consistent.
-**The order's own put decides the answer**: what is written after it (the shared marks
+**A RETRY LANDS ONCE** (24 Sep 2026). Every move the page sends carries a request id it mints per
+tap (per review, per payment, per line, per withdrawal, per rail; S10 10.4), kept with that move until
+it is recorded. On the KV road Place and I have paid are the ids honoured: the site files
+`rid:<username>:<rid>` for a day naming the order and answers a repeat with that order, changing
+nothing, best effort. On the object road every move is an event filed under its id for good
+(`stmt/orderbook.js`), so any repeat is found for certain. **Across the switch too**: the move-in files every
+live `rid:` key in the book, and in the week of reading both a placement's and a payment's id is filed at
+`rid:` as well, so a retry lands once whichever road it meets.
+**The order's own put decides the answer** on the KV road: what is written after it (the shared marks
 `last-placed`, `last-touched`, `last-said`, `last-theirs`, and the request id) is best effort, logged
 when KV refuses it, so a stored move never answers as a failure. A lost mark costs a wake, not a stage.
+In the order book the event, the order and the marks are one transaction.
+
+**THE SWITCH AND THE MOVE-IN (S10 10.3).** `ORDER_STORE` in `wrangler.stmt.jsonc`: `object+kv` is the
+week of reading both (the book holds the orders and is the one writer of their KV keys: its alarm writes
+each order it changes a second later, moves inside a second as one write, and a write KV refuses again a
+second after; a read the book cannot answer is read from KV; a move it cannot take answers 503 and is
+written nowhere); `kv` is the old road and the way back, KV a second or so behind the book, and the alarm
+still writes what is pending after the flip; `object` stops the KV writes. The first request after the deploy that sets it **moves the book in, once**: every KV
+order and the shared and chase marks copied in, then **a minute in which every move answers 503 "try
+again in a minute"** (reads from the copy), so a Worker still on the old code during the rollout is the
+only writer, then a second copy of whatever KV says differently, and moves are taken. KV is only read.
+A copy's id names `ORDER_MOVE_IN`'s generation, the pass and the order, so either pass run again appends
+nothing; raise the generation by one only to come back from `kv`, and it takes what the `kv` road wrote.
+**Forgetting that is safe**: every order the `kv` road writes while the book is bound marks KV
+`orderbook:road`, and the book's first request that finds a mark later than its own move-in moves in again,
+a round of the same generation (`<gen>@<mark>`). A KV record the book has already held is behind it, so the
+book keeps its own and writes it behind. Either pass takes the later of KV's and the book's shared and chase
+marks, and his test account unmade on the `kv` road is dropped from the book as well, so a return does not
+bring its orders back.
+**The hourly check** (the site's cron, `checkStores`) is the book's own: each KV order compared with what
+the book holds at that moment, and nothing written by the check. KV behind with the book's write on its way
+is `pending`; behind with nothing on its way is `repaired` (the write behind asked for again); **a record the
+book never held is `kvAhead` and left as it is**, the write behind leaving it too, since it is the only copy of
+somebody's move; `kvOnly` and `bookOnly` name an order one side lacks, and leave it. **While the book moves in
+the check stands down** and writes nothing, and a chase in that minute marks its slot on the KV road, which the end pass
+takes in. The result is kept at KV `orderbook:check` with `cleanSince`, the start of an unbroken run of hours
+with `repaired`, `kvAhead`, `kvOnly` and `bookOnly` all empty. **Seven days after `cleanSince` is a clean week**: then `ORDER_STORE` goes to `object` (10.5,
+whose deletion of the old keys is not built).
 **The customer is handed a view, not the record**: their order list and every answer to a move of
 theirs carry `customerView` (`CUSTOMER_FIELDS`, a whitelist), never `ledgerKey`, `queued` or `sync`.
 
@@ -530,9 +568,10 @@ claim out with it. **Stopped** when what was received is paid, which is `isAdvan
 his cash included once the return leg (v764) carries it to the order, and stage 11's Cash received when it lands.
 
 **How often.** One wake a slot per customer, not per order: two unpaid advances are one person's
-problem and one banner. The cap is `chased:<username>`, holding the slot's **hour bucket** (`hourOf`,
-whole hours since the epoch), so a tick that fires twice inside one hour cannot chase twice. It carries
-a two-hour TTL, so a customer who settles up leaves nothing behind and there is nothing to turn off.
+problem and one banner. The cap is the chase mark, `chased:<username>` in the order book (in KV on the
+`kv` road; `markChased` reads and writes it in one step), holding the slot's **hour bucket** (`hourOf`,
+whole hours since the epoch), so a tick that fires twice inside one hour cannot chase twice. It lapses
+after two hours, so a customer who settles up leaves nothing behind and there is nothing to turn off.
 The test account `0000-0000` is skipped, because it is counted nowhere. Until S12 12.3 it was every
 hour, day and night, from the first top of the hour after the handover.
 
@@ -563,7 +602,9 @@ everything, as at v321. On an iPhone the desk has to be opened from the Home Scr
 
 **Notifications.** The page polls the customer's orders every ten seconds while it is open.
 For a closed page the site has its own Web Push pair. **The banner names the KIND of news** (S12
-12.2, his decision D4 of 24 Sep 2026): each move sends `{k, o}`, a kind and the order's id, sealed
+12.2, his decision D4 of 24 Sep 2026): each move sends `{k, o}`, a kind and the order's id, derived
+by `wakes` in `stmt/orders.js` off the event and the order it folded into, so the KV road and the order
+book send the same kind for the same move, sealed
 for that one phone by `sealFor` in `stmt/push.js` (RFC 8291 aes128gcm, WebCrypto, one record), and
 the service worker at `/sw.js` shows the kind's words from its own `NEWS` table: confirmed, ready, a
 reply, payment received, a payment is due, delivered or collected (in part or in full), complete,

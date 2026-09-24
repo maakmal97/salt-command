@@ -48,7 +48,10 @@ import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
 import { FONTS } from "./fonts.js";
-import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, toChase, CHASE_KEY, chaseSlot } from "./orders.js";
+/* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
+   wrangler.stmt.jsonc looks for its class */
+export { OrderBook } from "./orderbook.js";
+import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, markChased, chaseSlot, readsBoth, checkStores } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -326,7 +329,7 @@ async function handleCustomer(request, env, p, m) {
     if (m === "GET") return json({ ok: true, orders: (await ordersOf(env, u)).map(customerView) });
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const r = await placeOrder(env, u, await readJson(request));
-    return r.error ? json({ ok: false, error: r.error }, 400) : json({ ok: true, order: customerView(r.order) });
+    return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, order: customerView(r.order) });
   }
   if (p === "/push/subscribe") {
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -623,9 +626,9 @@ async function handleDesk(request, env, p, m) {
      nothing on a quiet minute */
   if (p === "/desk/orders/last") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-    return json({ ok: true, last: await env.STMT.get(LAST_PLACED), touched: await env.STMT.get(LAST_TOUCHED),
-      said: await env.STMT.get(LAST_SAID),      /* v752: and when a customer last wrote on one */
-      theirs: await env.STMT.get(LAST_THEIRS) });   /* v760: and when one last paid or took one back */
+    /* v752: and when a customer last wrote on one; v760: and when one last paid or took one back.
+       S10: from wherever the orders live (orderMarks), the shared marks moving with them */
+    return json(Object.assign({ ok: true }, await orderMarks(env)));
   }
   const mm =/^\/desk\/orders\/([^/]+)\/([^/]+)$/.exec(p);
   if (!mm) return notFound();
@@ -865,7 +868,8 @@ async function unmakeTest(env) {
     } while (cursor);
   }
   for (const k of gone) await env.STMT.delete(k);
-  return gone.length;
+  /* S10: and its orders in the order book, where they live on the object road */
+  return gone.length + await dropOrders(env, TEST_USER);
 }
 
 /* S3 FIX, 24 SEP 2026: SIGN OUT EVERYWHERE, fold 9.4's server half, shipped with the sign-in that no longer ages out
@@ -1282,8 +1286,9 @@ export default {
    *
    * THE MARK IS THE SLOT'S HOUR ITSELF, not a timestamp to subtract from: `chased:<username>` holds
    * the hour bucket it was last woken in, so a tick that fires twice inside one hour cannot wake the
-   * same person twice. It expires on its own after two hours, so a customer who settles up leaves
-   * nothing behind.
+   * same person twice. It lapses after two hours, so a customer who settles up leaves nothing behind.
+   * S10: it lives where the orders live, in the order book on the object road and in KV on the KV
+   * road, read and written in one step by markChased.
    *
    * IT IS SILENT ON FAILURE BY DESIGN, like every other push path here, so the counts are LOGGED:
    * a wake that reaches nobody and a wake that was not needed look identical from outside.
@@ -1292,6 +1297,11 @@ export default {
     ctx.waitUntil((async () => {
       try {
         if (!env.STMT) return;
+        /* S10 10.3: THE WEEK OF READING BOTH, hourly, before the chase and apart from it (checkStores) */
+        if (readsBoth(env)) {
+          try { console.log("orderbook check: " + JSON.stringify(await checkStores(env))); }
+          catch (e) { console.log("orderbook check FAILED: " + String((e && e.stack) || e)); }
+        }
         const now = new Date(event && event.scheduledTime ? event.scheduledTime : Date.now());
         const slot = chaseSlot(now);
         if (slot === null) return;
@@ -1299,10 +1309,9 @@ export default {
         for (const { u, orders } of await toChase(env, now)) {
           /* his own test account is counted nowhere, and that includes being chased */
           if (u === TEST_USER) continue;
-          const mark = await env.STMT.get(CHASE_KEY(u));
-          if (mark && Number(mark) === slot) { held++; continue; }
+          /* S10: the mark is read and written in one step, where the orders live (markChased); S12: it is the slot's */
+          if (!(await markChased(env, u, slot))) { held++; continue; }
           const r = await wakeCustomer(env, u, { k: "due", o: orders[orders.length - 1].id });
-          await env.STMT.put(CHASE_KEY(u), String(slot), { expirationTtl: 2 * 3600 });
           if (r.sent) woke++; else quiet++;
         }
         if (woke || held || quiet) console.log("chase: " + JSON.stringify({ slot, woke, held, quiet }));
