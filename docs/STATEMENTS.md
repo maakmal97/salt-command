@@ -199,8 +199,8 @@ desk's Credit age breach and its chase flag the same part a day earlier, on the 
 `agreedOn`. A part carries `date`, `due`, `late`, `rm`, `whole` (goods and delivery), `product` (an
 id, drawn as a mark), `qty`, `got`, `gotOn` and `resale`; a coming part `date`, `rm`, `product`,
 `qty`, `toCome` and `resale`. A gift, a write-off and a row the statement has not reached (not agreed, and
-dated after the day) count in none of them, so now plus coming is `owed` less the
-agreed orders it leaves out and plus the write-off it still prints. The site draws them and
+dated after the day) count in none of them, so now plus coming is `owed` plus the
+agreed orders it leaves out, less the write-off it still prints. The site draws them and
 computes nothing.
 
 **One live password a month, and it cannot be changed.** Each issue mints a fresh password per
