@@ -32419,6 +32419,84 @@ await (async () => {
   } finally { dom.window.close(); }
 })();
 
+section("S7 7.4: Order again opens the check at today's price with the same size, way and place");
+await (async () => {
+  /* HIS "ALL RECOMMENDED" OF 24 SEP 2026 (the plan's Ordering: "two taps"). A tile on Home for each size, way and place
+     they have ordered, newest first, while that size is on their list, priced off TODAY'S list; a tap opens the check with
+     them, and Place sends them. A declined or cancelled order is not offered, nor a size gone from the list; a new account
+     is offered the list's first sizes, which open the sheet at that size; nothing is offered over the line. Forced state:
+     orders placed at 180 and 95 that the list now prices at 200 and 110. */
+  const { landingPage: lp74 } = await import("../stmt/page.js");
+  const C74 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc74 } = await import("node:crypto");
+  const { JSDOM: JD74 } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-74", ck = await C74.contentKey("test-secret", u);
+  const list = await C74.encryptWith(ck, JSON.stringify({ at: "2026-09-24T03:59:00Z", digest: "d74", week: { monday: "2026-09-21", label: "21 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 110 }, { q: 2, price: 200 }, { q: 3, price: 290 }] }], soon: [] }));
+  const base = { product: "salt", mode: "collect", delivery: 0, moved: 0, history: [], msgs: [] };
+  const past = [
+    { ...base, id: "o6", status: "done", qty: 1, total: 95, paid: 95, moved: 1, mode: "deliver", place: "Marlow Row", at: "2026-09-21T03:00:00Z" },
+    { ...base, id: "o1", status: "done", qty: 2, total: 180, paid: 180, moved: 2, mode: "deliver", place: "Veloria", at: "2026-09-20T03:00:00Z", msgs: [{ by: "customer", text: "Side gate", at: "2026-09-20T03:00:00Z" }] },
+    { ...base, id: "o2", status: "done", qty: 1, total: 95, paid: 95, moved: 1, at: "2026-09-18T03:00:00Z" },
+    { ...base, id: "o3", status: "done", qty: 2, total: 180, paid: 180, moved: 2, mode: "deliver", place: "Veloria", at: "2026-09-10T03:00:00Z" },
+    { ...base, id: "o4", status: "cancelled", qty: 3, total: 270, at: "2026-09-19T03:00:00Z" },
+    { ...base, id: "o5", status: "done", qty: 5, total: 450, paid: 450, moved: 5, at: "2026-09-17T03:00:00Z" }];
+  const open = async (opt) => {
+    const posts = [];
+    const body = { ok: true, wrap: await C74.wrapKey(pass, ck), session: "sess-74", prices: list,
+      env: await C74.encryptWith(ck, JSON.stringify({ statements: opt.fresh ? [] : [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: opt.fresh ? null : await C74.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: opt.owed || 0 })) };
+    const dom = new JD74(lp74(u, "n74", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc74, configurable: true }); } catch (e) { win.crypto = wc74; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => { const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/orders" && m === "POST") { posts.push(JSON.parse(init.body)); return { ok: true, status: 200, json: async () => ({ ok: true, order: { id: "o9" } }) }; }
+        const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: opt.fresh ? [] : past } : { ok: true };
+        return { ok: true, status: 200, json: async () => j }; };
+    } });
+    const W = dom.window, D = W.document;
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !(!D.getElementById("barw").hidden && D.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 25));
+    return { W, D, posts };
+  };
+  const tiles = (D) => [...D.querySelectorAll("#hAgain button.htile")].map((b) => b.textContent);
+  const a = await open({});
+  try {
+    const { D, posts } = a;
+    ok(JSON.stringify(tiles(D)) === JSON.stringify(["1 unitCubeRM 110, delivered to Marlow Row", "2 unitsCubeRM 200, delivered to Veloria", "1 unitCubeRM 110, collected"])
+      && /Order again/.test(D.getElementById("hAgain").textContent),
+      "Home offers each size, way and place once, newest first, at today's price, and never a cancelled order or a size off the list: " + JSON.stringify(tiles(D)));
+    /* the second: its place is not the last order's, which is where a sheet would otherwise start */
+    D.querySelectorAll("#hAgain button.htile")[1].click();
+    const sheet = () => (D.getElementById("osheet") || { textContent: "" }).textContent;
+    ok(/Check your order/.test(sheet()) && /What2 units/.test(sheet()) && /PriceRM 200/.test(sheet()) && /HowDelivered to Veloria/.test(sheet())
+      && !/Side gate/.test(sheet()) && D.getElementById("oPlace") && D.getElementById("oPlace").textContent === "Place order",
+      "a tap opens the check with the same size, way and place at today's price, and not the old order's note: " + JSON.stringify(sheet().slice(0, 140)));
+    D.getElementById("oPlace").click();
+    /* waited to Order sent, so nothing the answer draws lands on a closed window */
+    for (let i = 0; i < 200 && !/Order sent/.test(sheet()); i++) await new Promise((r) => setTimeout(r, 20));
+    const pb = posts[0] || {};
+    ok(posts.length === 1 && pb.product === "salt" && pb.qty === 2 && pb.mode === "deliver" && pb.place === "Veloria" && pb.total === 200 && pb.digest === "d74",
+      "and the second tap places it, as the check showed it: " + JSON.stringify(pb));
+  } finally { a.W.close(); }
+  const b = await open({ fresh: true });
+  try {
+    const { D } = b;
+    ok(JSON.stringify(tiles(D)) === JSON.stringify(["1 unitCubeRM 110", "2 unitsCubeRM 200"]) && /Start your first order/.test(D.getElementById("hAgain").textContent),
+      "a new account is offered its list's first sizes: " + JSON.stringify(tiles(D)));
+    D.querySelectorAll("#hAgain button.htile")[1].click();
+    const on = D.querySelector('#osheet input[name="osize"]:checked');
+    ok(on && on.value === "2" && D.getElementById("oGo") && !D.getElementById("oPlace"), "and a tap opens the sheet at that size, to choose the way");
+  } finally { b.W.close(); }
+  const c = await open({ owed: 250 });
+  try {
+    ok(tiles(c.D).length === 0, "over the line nothing is offered to order again");
+  } finally { c.W.close(); }
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read

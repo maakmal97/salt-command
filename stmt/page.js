@@ -201,6 +201,10 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .hfill{width:100%;margin-top:14px}
 .hlab{display:flex;justify-content:space-between;gap:12px;margin:0 0 10px}
 .home .salt-inbox-row{margin:0 0 8px}
+/* S7 7.4: Order again, the Option recipe's face a tile, two across */
+.hagain{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.htile{font:inherit;text-align:left;cursor:pointer}
+.htile:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
 .devslot{max-width:620px;margin:28px auto 0;padding-top:18px;border-top:1px solid var(--salt-line-faint)}
 .devslot .salt-ghost{width:100%;margin-top:12px}
 /* S7 7.2: FROM 1080PX THE BAR IS THE RAIL, beside the page (the recipe's own switch), and each place takes two columns:
@@ -2963,7 +2967,7 @@ const CLIENT_JS = `
      nothing on it yet, and Prices and ordering work from here. Each part is drawn afresh and put on the page only
      where it reads differently, so a poll moves nothing that has not changed. A row opens its order in Orders. */
   function drawHome(){
-    var parts={hPay:homePay(), hNeeds:homeNeeds(), hComing:homeComing()};
+    var parts={hPay:homePay(), hNeeds:homeNeeds(), hComing:homeComing(), hAgain:homeAgain()};
     Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
     placeCounts();
     placeTitle();
@@ -3015,6 +3019,47 @@ const CLIENT_JS = `
       var c=oClaimed(o), t=o.status==='placed'?'Waiting to be confirmed':oToPay(o)>0.004?rm(oToPay(o))+' still to pay, now or when it arrives':'Paid';
       box.appendChild(homeRow(o,t+(c>0?'. '+rm(c)+' sent, waiting for us to confirm':'')));
     });
+    return box;
+  }
+  /* S7 7.4: ORDER AGAIN. A tile for each thing they have ordered (a size, a way and a place), newest first, while that size
+     is still on their list, at TODAY'S price, read off the list: a tap opens the check with the same size, way and place,
+     so the second tap places it. The note is not carried: it was about that order. A declined or cancelled order is not
+     offered again. A new account, or one whose orders are all off the list, is offered the list's first sizes, which open
+     the sheet at that size. Nothing is offered over the line or on his read-only view. */
+  function againList(){
+    var seen={}, out=[];
+    orders.slice().sort(function(a,b){ return String(b.at).localeCompare(String(a.at)); }).forEach(function(o){
+      if(o.status==='declined'||o.status==='cancelled'||!oSoldHas(o.product,o.qty)) return;
+      var way=o.mode==='deliver'?'deliver':'collect', where=way==='deliver'?String(o.place||''):'', k=[o.product,o.qty,way,where,!!o.forFriend].join('|');
+      if(seen[k]) return; seen[k]=1;
+      out.push({product:o.product, q:o.qty, mode:way, place:where, forFriend:!!o.forFriend});
+    });
+    return out;
+  }
+  function againOpen(a,tile){
+    draft.mode=a.mode; draft.place=a.place; draft.placeWas=a.place; draft.say=''; draft.noteOpen=false;
+    if(assoc) draft.forFriend=a.forFriend;
+    sheetOpen(a.product,a.q,tile);
+    if(osh&&draft.step==='form'&&!formWhy()) reviewSheet();
+  }
+  function homeAgain(){
+    var box=el('div'); if(!bundle||view||hold||!sold().length) return box;
+    var list=againList(), start=!list.length;
+    if(start) sold().forEach(function(P){ P.sizes.slice(0,2).forEach(function(z){ list.push({product:P.product, q:z.q, start:true}); }); });
+    box.appendChild(hHead(!start?'Order again':fresh()?'Start your first order':'Start an order'));
+    var g=el('div','hagain');
+    list.slice(0,4).forEach(function(a){
+      var P=sold().filter(function(x){ return x.product===a.product; })[0], z=P.sizes.filter(function(x){ return String(x.q)===String(a.q); })[0];
+      var b=el('button','salt-option__face htile'), t=el('span','salt-option__text'), l=el('span','salt-option__label');
+      b.type='button'; b.setAttribute('data-again',a.product+'|'+a.q+(a.start?'':'|'+a.mode));
+      l.appendChild(psym(a.product,18)); l.appendChild(document.createTextNode(unitsOf(a.q,P.unit))); l.appendChild(el('span','sr',pshape(a.product)));
+      t.appendChild(l);
+      t.appendChild(el('span','salt-option__detail',rm(z.price)+(a.start?'':', '+(a.mode==='deliver'?'delivered to '+a.place:'collected')+(a.forFriend?', for a friend':''))));
+      b.appendChild(t);
+      b.addEventListener('click',function(){ if(a.start) sheetOpen(a.product,a.q,b); else againOpen(a,b); });
+      g.appendChild(b);
+    });
+    box.appendChild(g);
     return box;
   }
   /* a count beside a place is what waits there: the orders that need them */

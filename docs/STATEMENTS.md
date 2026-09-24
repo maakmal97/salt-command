@@ -394,8 +394,10 @@ address (`#home`, `#prices`, `#orders`, `#account`, `#rewards`): a tap writes it
 and never over a key, and a sign-in opens the place it names once. `placeShow` is the one road between them; a
 banner's `#o=<id>` still opens Orders at that order. **Home** reads the sealed To pay now with its one filled Pay (the
 overdue amount over the line), Needs you (a reply not yet shown on this device, goods ready to collect) and Coming up
-(an order agreed or sent and not handed over); a new account opens on Welcome and "Nothing on your account yet". Nothing
-about the statements changed.
+(an order agreed or sent and not handed over) and **Order again** (S7 7.4): a tile a size, way and place they have
+ordered, while the size is on their list, at today's price, whose tap opens the check with them, so the second tap places
+it; a new account is offered its list's first sizes, and nothing is offered over the line. A new account opens on Welcome
+and "Nothing on your account yet". Nothing about the statements changed.
 
 **THE CUSTOMER SEES NO LEVEL** (S4 4.10, his D11 of 24 Sep 2026, reversing v659's "a very subtle tier
 level, in symbol and colour"). Prices drew a glyph in the level's colour beside each product (`MARK`, v659
