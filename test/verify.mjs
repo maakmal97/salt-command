@@ -27697,6 +27697,91 @@ await (async () => {
     + JSON.stringify({ booked: pv2.j.booked, rows: pv2.j.rows && pv2.j.rows.map((r) => [r.rid || r.key, r.rm]), status: again.status, approved: approved(c1.id) }));
 })();
 
+section("S6 fix: Not found is refused on a claim against the account whose rows his Received has booked, and the card offers only Received");
+await (async () => {
+  /* HIS D7: Not found tells them it has not arrived and to pay again. Received books the rows first and tells the site
+     second, so a site that did not hear leaves the claim waiting there with its rows booked: Not found on it told them
+     to pay again for money the book carries. It is refused once any row of the claim carries his yes, and the card
+     draws Not found shut. Driven through both Workers over the real schema, then on the card. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so Not found on a booked claim was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const C = "CX1-AB", U = "abcd-efgh";
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", 0, "h0",
+    JSON.stringify({ rid: "s21", customer: C, date: "2026-09-10", qty: 1, total: 60, cash: 0, deliveredQty: 1, deliveredOn: "2026-09-10" }));
+  setState("roster", [C]); setState("OPEN", { byKey: {}, position: {} });
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 30, floors: { "1": { floor: 40 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const realSite = { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) };
+  const frozen = { fetch: async (url, init) => (/\/desk\/claims\//.test(new URL(url).pathname) && init && init.method === "POST"
+    ? new Response(JSON.stringify({ ok: false, error: "the order book is moving in" }), { status: 503, headers: { "content-type": "application/json" } }) : realSite.fetch(url, init)) };
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets, STMT_SITE: realSite };
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil: () => {} });
+    return { status: r.status, j: await r.json() };
+  };
+  const state = async (id) => (await O.claimsOf(senv, U)).find((x) => x.id === id).state;
+  const c = (await O.claimAccount(senv, U, { amount: 60, method: "transfer", account: "wise" })).claim;
+  const pv = await call("/claims/" + c.id + "/preview", {});
+  denv.STMT_SITE = frozen;
+  const down = await call("/claims/" + c.id + "/received", { hash: pv.j.hash });
+  denv.STMT_SITE = realSite;
+  const nf = await call("/claims/" + c.id + "/notfound", { amount: 60 });
+  const rows = db.prepare("SELECT status,entry FROM draft").all().filter((d) => JSON.parse(d.entry).claimId === c.id).map((d) => d.status);
+  ok(down.status === 503 && rows.join() === "approved" && nf.status === 409 && /booked/.test(nf.j.error) && (await state(c.id)) === "waiting",
+    "Not found on a claim whose rows Received booked, the site not having heard, is refused, and the claim still waits for Received: "
+    + JSON.stringify({ received: down.status, rows, notfound: nf.status, error: nf.j.error }));
+  /* the control: a claim nothing has booked is answered not found as before */
+  const c2 = (await O.claimAccount(senv, U, { amount: 30, method: "transfer", account: "wise" })).claim;
+  const nf2 = await call("/claims/" + c2.id + "/notfound", { amount: 30 });
+  ok(nf2.status === 200 && (await state(c2.id)) === "notfound", "and a claim nothing has booked is still answered not found: " + JSON.stringify(nf2.j.error || nf2.status));
+
+  /* THE CARD: rows booked, Received only tells them, and Not found is shut */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 96; w.clearInterval = () => {};
+    const claim = { id: "a20260925010000-abcd", u: U, code: C, kind: "account", at: "2026-09-25T01:00:00.000Z", amount: 60, method: "transfer", account: "maybank", state: "waiting" };
+    let BOOKED = true;
+    w.fetch = async (path, init) => {
+      const pp = String(path), post = !!(init && init.method === "POST");
+      const out = pp === "orders" && !post ? { ok: true, orders: [], claims: [claim] }
+        : /\/preview$/.test(pp) ? (BOOKED ? { ok: true, booked: true, rows: [{ key: "k", date: "2026-09-10", owed: 60, rm: 60, flags: [], state: "applied" }], left: 0 }
+          : { ok: true, rows: [{ rid: "s21", date: "2026-09-10", owed: 60, rm: 60, flags: [] }], left: 0, hash: "h" })
+        : { ok: true };
+      return { ok: true, status: 200, json: async () => out };
+    };
+    w.eval("AP_DRAFTS=[];");
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)"); await new Promise((r) => setTimeout(r, 30));
+    const read = () => { const card = D.querySelector('.ordcard[data-id="' + claim.id + '"]');
+      return { rcv: !card.querySelector('button[data-ord="creceived"]').disabled, nf: !card.querySelector('button[data-ord="cnotfound"]').disabled,
+        booked: /booked already/.test(card.textContent || "") }; };
+    const b = read();
+    BOOKED = false; w.eval("CLM_PV={};ORD_PV_GEN++;"); await w.eval("ordLoad(true)"); await new Promise((r) => setTimeout(r, 30));
+    const u = read();
+    ok(b.rcv && !b.nf && b.booked && u.rcv && u.nf && !u.booked,
+      "on the card a claim whose rows are booked says so, with Received open and Not found shut; one not booked offers both: " + JSON.stringify({ booked: b, not: u }));
+  } finally { w.close(); }
+})();
+
 section("v764: what he records on the desk reaches the customer's order, and the chase stops");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026. Every road built since v694 runs from the site to the book. A

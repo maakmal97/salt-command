@@ -507,6 +507,8 @@ export async function notFoundClaim(env, id, body) {
   const c = f.claim, amount = body && body.amount;
   if (typeof amount !== "number" || !Number.isFinite(amount) || Math.abs(amount - c.amount) > 0.004)
     return { ok: false, status: 409, error: "RM " + (+c.amount).toFixed(2) + " they say they sent is waiting here" + (typeof amount === "number" ? ", not RM " + amount.toFixed(2) : "") };
+  /* S6 fix: rows his Received booked for it, the site not having heard, are money the book carries: never not found */
+  if (env.SALT_LEDGER && (await claimBooked(env.SALT_LEDGER, id))) return { ok: false, status: 409, error: "its rows are booked: tap Received again so they are told" };
   return moveClaim(env, c.u, id, { verdict: { kind: "notfound", amount: c.amount } });
 }
 /* ---- A CLAIM AGAINST THE ACCOUNT, ROW BY ROW, AND ONE TAP (S6 11.15, his decisions D6 and D7) ---------------------------
