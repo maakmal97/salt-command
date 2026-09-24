@@ -716,3 +716,7 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   .ordgrid.ord-open .ordlist{display:none;}
   .ordgrid:not(.ord-open) .ordpane{display:none;}
 }
+/* S11 11.2: the order's card is the system's Approve card; its one line under the party is the entry as
+   ordered, in the figures' face */
+.ordline{margin:0;font-family:var(--salt-font-mono);font-size:14px;line-height:1.5;color:var(--salt-salt);}
+.ordpv .kpis{margin:0;}

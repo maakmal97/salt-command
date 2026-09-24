@@ -22306,7 +22306,8 @@ await (async () => {
     const reads = [], posts = [];
     w111.fetch = async (path, init) => {
       const post = !!(init && init.method === "POST");
-      (post ? posts : reads).push(String(path));
+      /* S11 11.2: the open card's own preview is a POST too, and not a move of his */
+      (post ? (/\/preview$/.test(String(path)) ? [] : posts) : reads).push(String(path));
       return { ok: true, status: 200, json: async () => (post ? { ok: true } : { ok: true, orders: JSON.parse(JSON.stringify(orders)) }) };
     };
     w111.document.body.innerHTML = String(w111.eval("tabOrders()"));
@@ -22798,10 +22799,10 @@ await (async () => {
       "a filter shows its own kind and is drawn as chosen: " + rows(0).join(","));
     box.querySelector('button[data-of="all"]').click();
 
-    const shown = [...box.querySelectorAll(".ordpane .card")].filter((c) => !c.hidden).map((c) => c.getAttribute("data-id"));
+    const shown = [...box.querySelectorAll(".ordpane .ordcard")].filter((c) => !c.hidden).map((c) => c.getAttribute("data-id"));
     ok(shown.join(",") === "c1", "one card is open, the first row's, and every other is drawn hidden: " + shown.join(","));
     box.querySelector('button[data-row="n1"]').click();
-    const open2 = [...box.querySelectorAll(".ordpane .card")].filter((c) => !c.hidden).map((c) => c.getAttribute("data-id"));
+    const open2 = [...box.querySelectorAll(".ordpane .ordcard")].filter((c) => !c.hidden).map((c) => c.getAttribute("data-id"));
     ok(open2.join(",") === "n1" && box.classList.contains("ord-open")
       && box.querySelector('button[data-row="n1"]').getAttribute("aria-current") === "true",
       "a tap on a row opens its card, marks the row, and on a phone puts the card in place of the list: " + open2.join(","));
@@ -22818,6 +22819,80 @@ await (async () => {
       "the notice is folded below the list, shut, with its editor inside the fold");
   } finally {
     try { w.eval("if(typeof ordTimer!=='undefined'&&ordTimer){clearInterval(ordTimer);ordTimer=null;}"); } catch (e) { /* best effort */ }
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
+section("S11 11.2: a new order's card draws the row the preview drafted before the yes: their card against the quote, margin, floor, usual and flags");
+await (async () => {
+  /* 24 Sep 2026 (PLAN 5, the judges' list). The card showed the customer's own rate and their usual and
+     nothing the drafter would say, so the price check came after the yes, under Approve. It now asks the
+     desk Worker for the pending row this one order would make (POST orders/<id>/preview, stored nowhere,
+     never /draft-now?dry=1, which drafts the whole queue) and draws that row's figures first. */
+  const { openMaster: om112 } = await import("../tools/payload.mjs");
+  const { w } = await om112();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 92; w.clearInterval = () => {};
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2.5, total: 250, delivery: 0, paid: 0, moved: 0,
+      status: "placed", history: [], msgs: [], payments: [] };
+    const orders = [Object.assign({ id: "n1", mode: "collect", at: "2026-09-24T02:00:00.000Z" }, base),
+      Object.assign({ id: "n2", mode: "deliver", place: "Taman Rekaan", at: "2026-09-24T03:00:00.000Z" }, base)];
+    let pv = { ok: true, row: { customer: "CC5-OKR", qty: 2.5, total: 250, delivery: 0 }, flags: [], cost: 140, margin: 110, floor: 152,
+      usual: 104, card: 250, cardNote: "", told: "x", pricing: "p1", hash: "h1" };
+    const calls = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      calls.push({ p, body: init && init.body ? JSON.parse(init.body) : null });
+      const j = (b, s) => ({ ok: (s || 200) < 400, status: s || 200, json: async () => b });
+      if (p === "orders" && !post) return j({ ok: true, orders: JSON.parse(JSON.stringify(orders)) });
+      if (/\/preview$/.test(p)) return pv.status ? j({ ok: false, error: pv.error }, pv.status) : j(JSON.parse(JSON.stringify(pv)));
+      return j({ ok: true });
+    };
+    const settle = () => new Promise((r) => setTimeout(r, 30));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    await settle();
+    const card = (id) => D.querySelector('.ordcard[data-id="' + id + '"]');
+    const pvs = () => calls.filter((c) => /\/preview$/.test(c.p));
+    ok(pvs().length === 1 && pvs()[0].p === "orders/n1/preview" && JSON.stringify(pvs()[0].body) === '{"delivery":0}'
+      && !calls.some((c) => /draft-now/.test(c.p)),
+      "the open card asks for its own order's row, at no delivery for a collection, and never drafts the queue: " + JSON.stringify(calls.map((c) => c.p)));
+    const tiles = () => [...card("n1").querySelectorAll(".ordpv .salt-kpi")].map((t) => t.className.replace(/.*salt-kpi--/, "") + "|" + [...t.children].map((c) => c.textContent.replace(/\s+/g, " ").trim()).join(" "));
+    const t1 = tiles();
+    ok(t1.length === 4 && /verdigris\|Their card today RM 250 matches the quote/.test(t1[0]) && /verdigris\|Margin RM 110 on RM 140 cost/.test(t1[1])
+      && /verdigris\|Floor RM 152 clear by RM 98/.test(t1[2]) && /copper\|Their usual RM 104\/unit this is RM 100\/unit/.test(t1[3]),
+      "their card today matches the quote, the margin on its cost, the floor cleared, and a rate under their usual toned by that direction: " + JSON.stringify(t1));
+    ok(/drafted now and stored nowhere\. The drafter raises no flag\./.test(card("n1").textContent), "and it says the row is the drafter's, and that it flags nothing");
+
+    pv = Object.assign({}, pv, { card: 280, usual: 96, flags: ["a rate under their held tier"] });
+    await w.eval("ordLoad(true)");
+    await settle();
+    const t2 = tiles();
+    ok(pvs().length === 2 && /copper\|Their card today RM 280 the quote is RM 30 under/.test(t2[0]) && /verdigris\|Their usual RM 96\/unit/.test(t2[3]),
+      "the next read drafts it again, and a quote under today's card says by how much, a rate above their usual toned the other way: " + JSON.stringify([pvs().length, t2[0], t2[3]]));
+    ok(/The drafter flags one thing:/.test(card("n1").textContent)
+      && [...card("n1").querySelectorAll(".salt-approve__flags .salt-status")].map((x) => x.textContent).join("|") === "a rate under their held tier",
+      "the drafter's flags are drawn as they came: " + card("n1").textContent.replace(/\s+/g, " ").slice(0, 200));
+
+    D.querySelector('button[data-row="n2"]').click();
+    await settle();
+    const fee = D.querySelector('input[data-fee="n2"]');
+    fee.value = "15"; fee.dispatchEvent(new w.Event("change", { bubbles: true }));
+    await settle();
+    ok(pvs().slice(-1)[0].p === "orders/n2/preview" && pvs().slice(-1)[0].body.delivery === 15,
+      "a delivery's card is drafted again at the charge he sets: " + JSON.stringify(pvs().slice(-2)));
+
+    pv = { status: 503, error: "the mirror could not be read" };
+    await w.eval("ordLoad(true)");
+    await settle();
+    ok(/could not be drafted: the mirror could not be read/.test(card("n2").textContent) && !card("n2").querySelector(".ordpv .salt-kpi"),
+      "a preview that fails says why and draws no figure it does not have");
+  } finally {
+    try { w.eval("if(typeof ordTimer!=='undefined'&&ordTimer){ordTimer=null;}"); } catch (e) { /* best effort */ }
     await new Promise((r) => setTimeout(r, 200));
     try { w.close(); } catch (e) { /* best effort */ }
   }

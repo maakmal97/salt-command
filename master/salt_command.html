@@ -4363,6 +4363,10 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   .ordgrid.ord-open .ordlist{display:none;}
   .ordgrid:not(.ord-open) .ordpane{display:none;}
 }
+/* S11 11.2: the order's card is the system's Approve card; its one line under the party is the entry as
+   ordered, in the figures' face */
+.ordline{margin:0;font-family:var(--salt-font-mono);font-size:14px;line-height:1.5;color:var(--salt-salt);}
+.ordpv .kpis{margin:0;}
 /* ==== END DESIGN desk ==== */
 </style>
 </head>
@@ -18962,6 +18966,7 @@ async function ordLoad(quiet){
     ordNeedKey=(r.status===401); let j=null; try{j=await r.json();}catch(e){}
     ordUnread=r.ok?'':(r.status===401?'':(j&&j.error)||'the Worker answered http '+r.status);
     ORD_OPEN=(r.ok&&j&&j.orders)||[];
+    if(r.ok)ORD_PV_GEN++;   /* S11 11.2: every read of the orders drafts the open card's row afresh */
   }catch(e){ ordUnread=(e&&e.message)||'the request did not complete'; ORD_OPEN=[]; }
   ordDraw();
   {const a=document.getElementById('ordAlert');if(a&&!a.dataset.drawn)ordAlertDraw();}
@@ -19132,6 +19137,54 @@ function ordWaiting(){
   const acts=ordActs(),placed=acts.filter(a=>a.kind==='new').map(a=>a.o),asked=acts.filter(a=>a.kind==='asked').map(a=>a.o);
   return {placed,asked,acts,rm:+placed.reduce((a,o)=>a+(+o.total||0)+(+o.delivery||0),0).toFixed(2)};
 }
+/* ---- S11 11.2 (24 Sep 2026): THE ROW BEFORE THE YES. A new order's card asks the desk Worker to draft
+   the pending row it would queue, against the mirror, storing nothing (POST orders/<id>/preview, the
+   contract of 11.1), and draws it first: their card today against the quote, the margin on the cost, the
+   floor, their usual toned by the way the rate moved, and the drafter's own flags. The desk computes no
+   price here: every figure is the preview's but the two differences it draws beside them. The preview is
+   asked again on every read of the orders and whenever the delivery charge changes, so what he sees is
+   what Accept will send; its hash rides with Accept (11.3), and the Worker approves only an exact match.
+   It is never /draft-now?dry=1, which drafts the whole queue and not this order. ---- */
+let ORD_PV={},ORD_PV_GEN=0;
+function ordFeeNow(o){const i=document.querySelector('input[data-fee="'+o.id+'"]');const v=i?parseFloat(i.value):0;return v>=0?+v.toFixed(2):null;}
+function ordPvDelivery(o){return o.mode==='deliver'?ordFeeNow(o):0;}
+async function ordPreview(o){
+  if(!o||o.status!=='placed'||!cloudMode())return;
+  const d=ordPvDelivery(o);if(d==null)return;
+  const cur=ORD_PV[o.id];
+  if(cur&&cur.d===d&&cur.gen===ORD_PV_GEN)return;
+  const mine={d,gen:ORD_PV_GEN,st:'wait'};ORD_PV[o.id]=mine;
+  let st='err',j=null,err='';
+  try{const r=await fetch('orders/'+encodeURIComponent(o.id)+'/preview',{method:'POST',headers:qHeaders(),body:JSON.stringify({delivery:d})});
+    try{j=await r.json();}catch(e){}
+    if(r.ok&&j&&j.ok)st='ok';else err=r.status===401?'the write key was refused':((j&&j.error)||'the Worker answered http '+r.status);
+  }catch(e){err='no connection';}
+  if(ORD_PV[o.id]!==mine)return;   /* a newer ask has taken its place */
+  ORD_PV[o.id]=Object.assign(mine,{st,j,err});
+  ordDraw();
+}
+function ordPvBlock(o){
+  const pv=ORD_PV[o.id];
+  if(!pv||pv.st==='wait')return `<p class="salt-approve__reason ordpv" data-pv="${esc(o.id)}">Drafting the row this order would make.</p>`;
+  if(pv.st==='err')return `<p class="salt-approve__reason ordpv" data-pv="${esc(o.id)}">The row could not be drafted: ${esc(pv.err)}. Nothing is approved on Accept until it can; the row then waits under Approve.</p>`;
+  const j=pv.j||{},row=j.row||{},num=v=>(typeof v==='number'&&isFinite(v))?v:null;
+  const goods=num(row.total)!=null?+row.total:+o.total||0,qty=num(row.qty)!=null&&row.qty>0?+row.qty:+o.qty||0;
+  const card=num(j.card),cost=num(j.cost)!=null?j.cost:num(row.cost),floor=num(j.floor);
+  const margin=num(j.margin)!=null?j.margin:(cost!=null?+(goods-cost).toFixed(2):null);
+  const usual=num(j.usual)!=null?j.usual:(o.code?ordUsual(o.code,o.product):null),rate=qty?goods/qty:null;
+  const tile=(k,v,note,tone)=>`<div class="kpi salt-kpi${tone?' salt-kpi--'+tone:''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value">${v}</div><div class="salt-kpi__note">${note}</div></div>`;
+  const q=+o.total||0,gap=card==null?null:+(q-card).toFixed(2);
+  const cardT=card==null?tile('Their card today','&mdash;',esc(j.cardNote||'no card for this size'),'')
+    :tile('Their card today',fmt(card),`<span class="salt-status salt-status--${Math.abs(gap)<0.005?'verdigris':gap<0?'copper':'steel'}">${Math.abs(gap)<0.005?'matches the quote':'the quote is '+fmt(Math.abs(gap))+(gap<0?' under':' over')}</span>${j.cardNote?' '+esc(j.cardNote):''}`,Math.abs(gap)<0.005?'verdigris':gap<0?'copper':'steel');
+  const marT=margin==null?tile('Margin','&mdash;','no cost on this book',''):tile('Margin',fmt(margin),cost!=null?'on '+fmt(cost)+' cost':'',margin>0.004?'verdigris':'ember');
+  const flT=floor==null?tile('Floor','&mdash;','no floor for this size',''):tile('Floor',fmt(floor),goods-floor>=-0.004?'clear by '+fmt(+(goods-floor).toFixed(2)):fmt(+(floor-goods).toFixed(2))+' under it',goods-floor>=-0.004?'verdigris':'ember');
+  const dir=(usual&&rate!=null)?(rate-usual)/usual:null;
+  const usT=usual==null?tile('Their usual','&mdash;','no priced order yet',''):tile('Their usual',fmt(usual)+'/unit',rate==null?'':'this is '+fmt(rate)+'/unit',dir==null||Math.abs(dir)<0.005?'steel':dir>0?'verdigris':'copper');
+  const flags=Array.isArray(j.flags)?j.flags:[];
+  return `<div class="ordpv" data-pv="${esc(o.id)}"><div class="kpis k4">${cardT+marT+flT+usT}</div>
+    <p class="salt-approve__reason" style="margin-top:8px">The pending row, drafted now and stored nowhere. ${flags.length?'The drafter flags '+(flags.length===1?'one thing':flags.length+' things')+':':'The drafter raises no flag.'}</p>
+    ${flags.length?`<div class="salt-approve__flags">${flags.map(f=>`<span class="salt-status salt-status--ember">${esc(f)}</span>`).join('')}</div>`:''}</div>`;
+}
 function ordCard(o){
   /* 24 Sep 2026: the month off MAP_MON, because en-GB writes Sept */
   const when=iso=>{try{const p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(x=>{p[x.type]=x.value;});return p.day+' '+MAP_MON[+p.month-1]+', '+p.hour+':'+p.minute;}catch(e){return '';}};
@@ -19189,14 +19242,16 @@ function ordCard(o){
         <label class="dsc" style="display:flex;gap:8px;align-items:center">${o.mode==='deliver'?'Delivered':'Collected'}, units
         <input type="number" min="0" step="0.05" max="${o.qty}" value="${esc(String(o.qty))}" data-hand="${esc(o.id)}" style="width:96px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:6px"></label>
         ${btn('handover','Record the handover')}</div>` : '';
-  return `<div class="card" style="margin-top:10px" data-id="${esc(o.id)}">
-    <div style="font-size:14px"><b>${who}</b> orders ${units(o.qty)} ${esc(o.product||'salt')} for <b>${fmt(o.total)}</b>${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?'delivered':'collected'} <span class="sub">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
-    ${o.mode==='deliver'&&o.place?`<div class="dsc" style="margin-top:6px">To ${esc(o.place)}</div>`:''}
-    <div class="kpis k4" style="margin-top:10px">${cell('Rate',rate==null?'&mdash;':fmt(rate)+'/unit')
+  /* S11 11.2: the system's Approve card, because deciding a site order is deciding a row. A new order
+     leads with the row the preview drafted; one already agreed with the two tracks as before. */
+  return `<div class="salt-approve ordcard" data-id="${esc(o.id)}">
+    <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
+    <p class="ordline">${units(o.qty)} ${esc(o.product||'salt')}, ${fmt(o.total)}${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?(o.place?'deliver to '+esc(o.place):'delivered'):'to collect'}</p>
+    ${o.status==='placed'?ordPvBlock(o):`<div class="kpis k4">${cell('Rate',rate==null?'&mdash;':fmt(rate)+'/unit')
       +cell('Their usual',usual==null?'&mdash;':fmt(usual)+'/unit',off==null?'':Math.abs(off)>=0.10?'r':'g')
       +cell('Paid',paid>0?fmt(paid)+(due>0.004?' of '+fmt(o.total+(+o.delivery||0)):''):'nothing yet',due<=0.004&&rowed?'g':'')
-      +cell('Handed over',moved>0?units(moved)+(moved<o.qty-0.004?' of '+units(o.qty):''):'nothing yet',moved>=o.qty-0.004&&rowed?'g':'')}</div>
-    <div class="dsc" style="margin-top:8px">Paying by ${esc(pay)}. The ledger reads <b>${ledger}</b>${told}.</div>
+      +cell('Handed over',moved>0?units(moved)+(moved<o.qty-0.004?' of '+units(o.qty):''):'nothing yet',moved>=o.qty-0.004&&rowed?'g':'')}</div>`}
+    <div class="dsc">Paying by ${esc(pay)}. The ledger reads <b>${ledger}</b>${told}.</div>
     ${thread}${reply}
     ${fee}${hand}
     ${acts?`<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">${acts}</div>`:''}
@@ -19239,6 +19294,7 @@ function ordDraw(){
   const typed={};let focused='';
   box.querySelectorAll('input[data-fee],input[data-hand],input[data-say]').forEach(i=>{
     if(i.value!==i.defaultValue)typed[ordField(i)]=i.value;if(i===document.activeElement)focused=ordField(i);});
+  let selO=null;
   const lead=document.getElementById('ordLead');
   if(lead&&!ordNeedKey&&!ordUnread)lead.textContent=acts.length?acts.length+', oldest first.':'Nothing waiting on you.';
   if(ordNeedKey)box.innerHTML='<div class="warnpill" style="display:block">The write key is needed to read the orders and it was not accepted. Reload to be asked again. <b>This is not an empty book: orders may be waiting.</b></div>';
@@ -19259,15 +19315,19 @@ function ordDraw(){
       ${rest.length?`<div class="salt-eyebrow ordrest">${ordAll?'Every other order':'Other open orders'}</div><div class="ordrows">${rest.map(a=>ordRow(a,a.o.id===sel)).join('')}</div>`:''}
     </div>
     <div class="ordpane"><button type="button" class="salt-ghost ordback" data-back="1">&lsaquo; Waiting on you, ${acts.length}</button>
-      ${ORD_OPEN.filter(Boolean).map(o=>{const c=ordCard(o);return o.id===sel?c:c.replace('<div class="card','<div hidden class="card');}).join('')}</div>`;
+      ${ORD_OPEN.filter(Boolean).map(o=>{const c=ordCard(o);return o.id===sel?c:c.replace('<div class="salt-approve ordcard"','<div hidden class="salt-approve ordcard"');}).join('')}</div>`;
+    selO=ORD_OPEN.find(o=>o&&o.id===sel)||null;
   }
   box.querySelectorAll('input[data-fee],input[data-hand],input[data-say]').forEach(i=>{const k=ordField(i);
     if(k in typed)i.value=typed[k];if(k===focused)i.focus();});
+  /* S11 11.2: the open card, if it is a new order, asks for its row, once what he typed is back in place */
+  if(selO)ordPreview(selO);
   box.querySelectorAll('button[data-ord]').forEach(b=>{b.onclick=()=>ordAct(b);});
   box.querySelectorAll('button[data-row]').forEach(b=>{b.onclick=()=>{ORD_SEL=b.dataset.row;ORD_OPENED=true;ordDraw();
     const c=box.querySelector('.ordpane');if(c&&c.scrollIntoView)try{c.scrollIntoView({block:'start'});}catch(e){}};});
   box.querySelectorAll('button[data-of]').forEach(b=>{b.onclick=()=>{ORD_FILTER=b.dataset.of;ORD_SEL='';ordDraw();};});
   box.querySelectorAll('button[data-back]').forEach(b=>{b.onclick=()=>{ORD_OPENED=false;ordDraw();};});
+  box.querySelectorAll('input[data-fee]').forEach(i=>{i.onchange=()=>{const o=ORD_OPEN.find(x=>x&&x.id===i.dataset.fee);if(o)ordPreview(o);};});
   const ab=document.getElementById('ordAllBtn');
   /* the switch lives outside the box this redraws, so it is re-enabled here: disabled on the tap
      and left that way, one tap would be all it ever took */
