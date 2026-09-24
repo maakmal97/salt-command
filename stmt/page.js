@@ -2313,6 +2313,8 @@ const CLIENT_JS = `
     var f=el('div','ofoot'), tp=oTap(o);
     if(view||!(oPayable(o)||o.status==='placed')) return f;
     if(+o.moved>0) f.appendChild(el('p','sub2','The goods are with you, so this can no longer be cancelled here.'));
+    /* S6 fix: not while what they sent waits on him, which a cancelled order would leave with nobody to answer it */
+    else if(oClaimed(o)>0.004) f.appendChild(el('p','sub2','We are checking the '+rm(oClaimed(o))+' you sent. You can cancel once we have answered it.'));
     else {
       var wb=el('button','salt-ghost salt-ghost--danger','Cancel this order'); wb.type='button';
       wb.addEventListener('click', async function(){
@@ -2461,7 +2463,7 @@ const CLIENT_JS = `
   function acctWaiting(){ return sumOf(claims.filter(function(c){ return c&&c.state==='waiting'; })); }
   function acctSince(){ return claims.filter(function(c){ return c&&c.state==='received'&&String(c.answered||'')>liveAt; }); }
   function acctToPay(){ var n=payDue&&payDue.now; return n?Math.max(0,+(n.rm-acctWaiting()-sumOf(acctSince())).toFixed(2)):0; }
-  function sentWaiting(){ return +(acctWaiting()+orders.reduce(function(n,o){ return n+oClaimed(o); },0)).toFixed(2); }
+  function sentWaiting(){ return +(acctWaiting()+orders.reduce(function(n,o){ return n+(['cancelled','declined'].indexOf(o.status)>=0?0:oClaimed(o)); },0)).toFixed(2); }
   /* the lines under To pay now: what waits on him, and his answers since the statement was written, or in the last fortnight */
   function claimLines(){
     var out=[], sw=sentWaiting();

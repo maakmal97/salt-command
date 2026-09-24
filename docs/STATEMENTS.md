@@ -440,7 +440,7 @@ holds no key to seal it with. It carries a size, a quoted total and a state; no 
 locks), and the order routes take that and nothing else. The states: placed (the customer),
 acknowledged (the owner: agreed, the delivery charge set, and the row queued), ready to collect or
 deliver (the owner), done (**neither side's tap**: what the record reads once both tracks are
-complete), declined (the owner), cancelled (either side, at any stage until the goods move). **A short
+complete), declined (the owner), cancelled (either side, at any stage until the goods move, and never while a claim of theirs waits on him). **A short
 order he closes at what was handed over** (S11 11.9) is restated there: the size becomes the units handed
 over, the goods' total follows at the agreed rate, the old figures kept as `closed`, and its row is a
 Correction whose new total renames it.

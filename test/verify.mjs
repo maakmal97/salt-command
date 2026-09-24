@@ -27782,6 +27782,115 @@ await (async () => {
   } finally { w.close(); }
 })();
 
+section("S6 fix: an order is not cancelled, by them or by him, while a claim of theirs on it waits");
+await (async () => {
+  /* HIS D7: a claim waits until his Received or Not found. A cancelled order leaves his card, and neither answer is
+     offered on it, so a claim on an order then cancelled could never be answered: their order said Nothing is owed
+     beside Sent by you, waiting, and the claim lifted their hold for good. Either side's cancel is refused while one
+     waits, the card draws no Cancel beside Received, their page says why in place of Cancel, and a claim on an order
+     that ended does not lift the hold. */
+  const O = await import("../stmt/orders.js");
+  const env = { STMT: new KV(), STMT_DESK_KEY: "desk-key" }, U = "abcd-efgh";
+  const agreed = async () => {
+    const o = (await O.placeOrder(env, U, { product: "salt", qty: 1, mode: "collect", unit: 90, total: 90, week: "" })).order;
+    await O.deskMove(env, U, o.id, { status: "acknowledged", mode: "collect" });
+    return o;
+  };
+  const a = await agreed();
+  await O.customerMove(env, U, a.id, "pay", { amount: 90, method: "transfer", account: "maybank" });
+  const theirs = await O.customerMove(env, U, a.id, "cancel", {});
+  const his = await O.deskMove(env, U, a.id, { status: "cancelled" });
+  const still = (await O.ordersOf(env, U)).find((x) => x.id === a.id);
+  const c = still.payments.find((p) => p.claim === "waiting");
+  await O.deskMove(env, U, a.id, { verdict: { kind: "received", claim: c.at, amount: 90 } });
+  const b = await agreed();
+  const plain = await O.customerMove(env, U, b.id, "cancel", {});
+  const after = await O.deskMove(env, U, a.id, { status: "cancelled" });
+  ok(theirs.status === 409 && /we are checking the RM 90\.00 you sent/.test(theirs.error) && his.status === 409 && /answer it first/.test(his.error)
+    && still.status === "acknowledged" && still.claimed === 90 && !plain.error && !after.error && after.order.status === "cancelled",
+    "while a claim waits neither their cancel nor his is taken, each saying why; with none waiting, or once it is answered, either is: "
+    + JSON.stringify({ theirs: theirs.error, his: his.error, status: still.status, plain: plain.error || "ok", after: after.error || after.order.status }));
+
+  /* THEIR PAGE: the line in place of Cancel, and a claim on an order that ended lifts no hold */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const Cr = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const pass = "fixture-pass-r1", ck = await Cr.contentKey("test-secret", U);
+  const now = new Date(), iso = (h) => new Date(now.getTime() + h * 3600e3).toISOString();
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const page = async (pay, list) => {
+    const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-r1",
+      env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: pay.now.rm, pay })) };
+    const dom = new JD(lp(U, "nr1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {}; win.open = () => null;
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
+        if (p === "/open") return res(200, body);
+        if (p === "/orders" && m === "GET") return res(200, { ok: true, orders: list, claims: [] });
+        return res(404, { ok: false });
+      };
+    } });
+    const d = dom.window.document;
+    d.getElementById("un").value = U; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !d.getElementById("tabs").hidden);
+    return dom;
+  };
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: iso(-30), msgs: [], total: 90, paid: 0 };
+  const waiting = { claimed: 90, payments: [{ at: iso(-1), amount: 90, method: "transfer", account: "maybank", claim: "waiting" }] };
+  const none = { rm: 0, parts: [] }, part = { date: "2026-09-01", due: "2026-09-11", late: true, rm: 300, whole: 300, product: "salt", qty: 3, got: 3, gotOn: "2026-09-01", resale: false };
+  const dom = await page({ term: 10, now: none, overdue: none, coming: none }, [
+    { ...base, ...waiting, id: "oW", status: "acknowledged", history: [{ at: iso(-30), status: "acknowledged", by: "desk" }] },
+    { ...base, id: "oP", status: "acknowledged", claimed: 0, payments: [], history: [{ at: iso(-30), status: "acknowledged", by: "desk" }] }]);
+  const foot = {};
+  try {
+    const d = dom.window.document;
+    d.querySelector('button[data-t="order"]').click();
+    for (const id of ["oW", "oP"]) {
+      await until(() => d.querySelector('#pOrder [data-row="' + id + '"]'));
+      d.querySelector('#pOrder [data-row="' + id + '"]').click();
+      await until(() => d.querySelector("#pOrder .oscreen .ofoot"));
+      const f = d.querySelector("#pOrder .oscreen .ofoot");
+      foot[id] = { cancel: [...f.querySelectorAll("button")].some((x) => t(x) === "Cancel this order"), line: t(f.querySelector(".sub2")) };
+      const back = [...d.querySelectorAll("#pOrder button")].find((x) => /^(Back|All orders|Your orders)/.test(t(x)));
+      if (back) back.click();
+    }
+  } finally { dom.window.close(); }
+  ok(!foot.oW.cancel && foot.oW.line === "We are checking the RM 90 you sent. You can cancel once we have answered it." && foot.oP.cancel,
+    "their order with a claim waiting says why in place of Cancel; one with none keeps Cancel: " + JSON.stringify(foot));
+  const held = await page({ term: 10, now: { rm: 300, due: "2026-09-11", parts: [part] }, overdue: { rm: 300, parts: [part] }, coming: none },
+    [{ ...base, ...waiting, id: "oC", status: "cancelled", history: [{ at: iso(-30), status: "cancelled", by: "customer" }] }]);
+  let tab = "";
+  try { tab = t(held.window.document.querySelector('button[data-t="order"]')); } finally { held.window.close(); }
+  ok(tab === "Pay", "and a claim on an order that has ended does not lift the RM 100 hold: " + JSON.stringify(tab));
+
+  /* HIS CARD: no Cancel beside Received while a claim waits */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 96; w.clearInterval = () => {};
+    const o = { u: U, code: "CX1-AB", product: "salt", qty: 1, total: 90, delivery: 0, mode: "collect", history: [], msgs: [], status: "acknowledged", at: "2026-09-20T02:00:00.000Z", moved: 0, paid: 0 };
+    const orders = [Object.assign({}, o, { id: "k1", ...waiting }), Object.assign({}, o, { id: "k2", claimed: 0, payments: [] })];
+    w.fetch = async (path, init) => ({ ok: true, status: 200, json: async () => (String(path) === "orders" && !(init && init.method === "POST") ? { ok: true, orders: JSON.parse(JSON.stringify(orders)), claims: [] } : { ok: true }) });
+    w.eval("AP_DRAFTS=[];");
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const has = (id, st) => !!D.querySelector('.ordcard[data-id="' + id + '"] button[data-ord="' + st + '"]');
+    ok(has("k1", "received") && !has("k1", "cancelled") && has("k2", "cancelled"),
+      "his card offers Received and no Cancel while a claim waits, and Cancel where none does: " + JSON.stringify({ k1: has("k1", "cancelled"), k2: has("k2", "cancelled") }));
+  } finally { w.close(); }
+})();
+
 section("v764: what he records on the desk reaches the customer's order, and the chase stops");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026. Every road built since v694 runs from the site to the book. A

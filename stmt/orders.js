@@ -498,6 +498,8 @@ export function decideCustomer(order, action, body, mine, at) {
     /* S5 5.3 (D11): the refusals the page shows are in the customer's words, never the desk's states */
     if (["done", "cancelled", "declined"].includes(order.status)) return { error: "this order is " + SAID_AS[order.status] + ", so it cannot be cancelled here", status: 409 };
     if ((+order.moved || 0) > 0) return { error: "the goods are already with you, so this cannot be cancelled here", status: 409 };
+    /* S6 fix: NOT WHILE A CLAIM WAITS. A cancelled order is off his card, so nothing could answer it and it waited for good */
+    if (claimWaits(order)) return { error: "we are checking the RM " + claimedOf(order).toFixed(2) + " you sent, so this can be cancelled once we have answered it", status: 409 };
     return { ev: { kind: "status", at, status: "cancelled", by: "customer" } };
   }
   if (action === "method") {
@@ -647,6 +649,7 @@ export function decideDesk(order, body, at) {
   if (!NEXT[status]) return { error: "not a state the desk sets", status: 400 };
   if (!NEXT[status].includes(order.status)) return { error: "an order that is " + order.status + " cannot become " + status, status: 409 };
   if (status === "cancelled" && (+order.moved || 0) > 0) return { error: "the goods are already out, so this cannot be cancelled", status: 409 };
+  if (status === "cancelled" && claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };
   const ev = { kind: "status", at, status, by: "desk" };
   if ((status === "ready" || status === "acknowledged") && body && MODES.includes(body.mode)) ev.mode = body.mode;
   /* v502: delivery is a figure the owner types; v694 moved it to the acknowledgement, because

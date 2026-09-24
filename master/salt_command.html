@@ -19458,14 +19458,14 @@ function ordCard(o){
   if(whyOpen&&(o.status==='placed'||(rowed&&o.status!=='done'&&!(moved>0))))acts=goWhy(whyOpen.st);
   else if(yes)acts='';
   else if(o.status==='placed')acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk?'':' disabled'}>Accept, ${fmt(sum)}</button>`+btn('declined','Decline',true);
-  else if(againAck)acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk?'':' disabled'}>Accept again, ${fmt(sum)}</button>`+(moved>0?'':btn('cancelled','Cancel',true));
+  else if(againAck)acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk?'':' disabled'}>Accept again, ${fmt(sum)}</button>`+(moved>0||c0?'':btn('cancelled','Cancel',true));
   else if(rowed&&o.status!=='done')acts=claimBtns+(cashNow?`<button class="vbtn salt-pill salt-pill--sm" data-ord="cash" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Cash received, ${fmt(ordDue(o))}</button>`:'')
     +(handable?(part?handBtn('Record '+units(partN),' data-partlab="rec"')+handBtn('Close at '+units(partN),' data-close="1" data-partlab="close"')+`<button class="salt-ghost" data-partoff="${esc(o.id)}">Keep it whole</button>`
       :`<button class="${cashNow||c0?'salt-ghost':'vbtn salt-pill salt-pill--sm'}" data-ord="handover" data-full="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}">${how}${moved>0?' the rest, '+units(owedU):', '+units(o.qty)}</button>`
         +`<button class="salt-ghost" data-partopen="${esc(o.id)}">${how} part</button>`
         +(moved>0?handBtn('Close at '+units(moved)+', '+fmt(shortT(moved)),` data-close="1" data-qty="${moved}"`):'')):'')
     +(!part&&o.status==='acknowledged'?ghostBtn('ready','Ready to collect','collect')+ghostBtn('ready','Ready to deliver','deliver'):'')
-    +(moved>0||part?'':btn('cancelled','Cancel',true));
+    +(moved>0||part||c0?'':btn('cancelled','Cancel',true));   /* S6 fix: not while a claim of theirs waits: answer it first */
   /* S11 11.13 (D6): A LATER MOVE WHOSE ROW HE REJECTED is offered again under a fresh entry (POST orders/<id>/again),
      booked only if the fresh row equals it; GET /orders says which (`again`) */
   const AGAIN={pay:'payment',cash:'cash',move:'handover',cancel:'cancellation'};
