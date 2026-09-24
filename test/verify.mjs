@@ -19615,6 +19615,27 @@ await (async () => {
   } finally { process.off("unhandledRejection", onRej); w.close(); }
 })();
 
+section("24 Sep 2026: the Counter's tab strip is the system's wrapping container, so four tabs fit a narrow phone");
+await (async () => {
+  /* M31 of the Counter study: .tabs restated the container as a flex row that never wraps, so an associate's four
+     tabs (363 to 387px) ran off a 360 screen and Card could not be reached. The strip is .salt-tabs now, which
+     wraps; the page's own rule keeps only its width and margin (rule 6). Geometry is the rig's; this is the rule. */
+  const { landingPage: lpT } = await import("../stmt/page.js");
+  const { JSDOM: JDT } = await import("jsdom");
+  const dom = new JDT(lpT("", "nm31", null), { url: "https://site.test/", pretendToBeVisual: true });
+  try {
+    /* whether it still hides at the door is not asked here: jsdom answers display none for [hidden] whatever the
+       author rules say, so that check stayed green with the page's [hidden] rule removed (tried, 24 Sep 2026) */
+    const tabs = dom.window.document.getElementById("tabs");
+    ok(tabs.classList.contains("salt-tabs") && tabs.getAttribute("role") === "tablist",
+      "the strip carries the system's container class");
+    tabs.hidden = false;
+    const on = dom.window.getComputedStyle(tabs);
+    ok(on.display === "flex" && on.flexWrap === "wrap" && tabs.querySelectorAll("button.salt-tabs__pill").length === 4,
+      "shown, it is a flex row that wraps, so the fourth tab moves to a second line instead of off the screen: " + on.display + " " + on.flexWrap);
+  } finally { dom.window.close(); }
+})();
+
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead

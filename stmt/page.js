@@ -127,8 +127,9 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .bar button{font:inherit;color:var(--salt-brass);background:none;border:0;cursor:pointer;
   padding:0;text-decoration:underline;min-height:auto}
 /* THE THREE TABS: statements, prices, order. The same pill vocabulary as the issue strip, one
-   step larger because these are destinations rather than dates. */
-.tabs{max-width:620px;margin:0 auto 18px;display:flex;gap:8px}
+   step larger because these are destinations rather than dates. The strip is the system's .salt-tabs
+   (24 Sep 2026), which wraps: an associate's four tabs need 363 to 387px and ran off a 360 screen. */
+.tabs{max-width:620px;margin:0 auto 18px}
 /* the tabs are the system's .salt-tabs__pill (22 Sep 2026): the open one is read off aria-selected and
    set in glass with a hairline, not a filled badge, which decision 5 reserves for the one button */
 .tabs button{flex:1;min-height:var(--salt-tap)}
@@ -493,7 +494,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<span><b id="whoacct"></b><span id="cd"></span></span>'
     + '<button type="button" id="lock">Log out</button>'
     + "</div></div>"
-    + '<div id="tabs" class="tabs" role="tablist" hidden>'
+    + '<div id="tabs" class="tabs salt-tabs" role="tablist" hidden>'
     + '<button type="button" class="salt-tabs__pill on" role="tab" aria-selected="true" data-t="stmt">Statements</button>'
     + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="prices" id="tPrices">Prices</button>'
     + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="order" id="tOrder">Order</button>'
