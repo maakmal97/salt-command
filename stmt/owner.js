@@ -299,7 +299,6 @@ export const OWNER_JS = `
       x.setAttribute('aria-pressed', x.getAttribute('data-f')===aFilter?'true':'false'); });
     drawRoster();
   }
-  function showAccounts(f){ panel('accounts'); filterBy(f); }
   /* the open account: its chips, then Send's card, and on a phone the way back to the list above it */
   function openCard(u){
     var a=u&&((sheet&&sheet[u])||OWNER.accounts.filter(function(x){ return x.username===u; })[0]);
@@ -561,9 +560,53 @@ export const OWNER_JS = `
     var named=codes.length>6?codes.slice(0,5).concat([(codes.length-5)+' more']):codes;
     var c=needCard('s', rows.length+' to send', first?'ready since '+dayMon(first):'',
       andList(named)+(rows.length===1?' has an account':' have accounts')+' and no sign-in yet.');
-    var row=el('div','salt-approve__actions'), go=ghost('Send them', true);
-    go.addEventListener('click', function(){ showAccounts('unsent'); });
+    var row=el('div','salt-approve__actions'), go=ghost('Send them in turn', true);
+    go.addEventListener('click', function(){ turn={rows:rows.slice(), i:0, sent:[], j:null, why:''}; turnStep(); });
     row.appendChild(go); c.appendChild(row);
+    return c;
+  }
+  /* ---- SEND THEM IN TURN (S9 9.6) --------------------------------------------------------------
+     One account at a time, in the card's own order: its sign-in link is made as its turn opens, Share is a tap
+     of its own (so the share sheet never waits on the making), and once shared the account is ticked sent, the
+     site's tick both his devices read, before the next turn opens. Skip leaves one unticked. The run is state
+     the card is drawn from, so a redraw of Needs you in the middle of it loses nothing. */
+  var turn=null;
+  function turnStep(){
+    var t=turn; if(!t) return;
+    t.j=null; t.why='';
+    drawNeeds();
+    if(t.i>=t.rows.length) return;
+    var at=t.i;
+    mintLink(t.rows[at]).then(function(j){ if(turn===t&&t.i===at){ t.j=j; drawNeeds(); } },
+      function(e){ if(turn===t&&t.i===at){ t.why='Could not make their link: '+e.message; drawNeeds(); } });
+  }
+  async function turnShare(){
+    var t=turn, a=t&&t.rows[t.i];
+    if(!a||!t.j) return;
+    try{ if(navigator.share) await navigator.share({text:t.j.msg}); else await navigator.clipboard.writeText(t.j.msg); }
+    catch(e){ t.why='Not shared. Tap Share again, or Skip.'; drawNeeds(); return; }
+    try{ var r=await refs('/all/sent/'+a.username, {issue:sheetIssue, sent:true}); a.sent=r.sent; t.sent.push(a.username); }
+    catch(e){ t.why='Shared, but the tick did not save: '+e.message; }
+    t.i++; countSent(); drawRoster(); turnStep();
+  }
+  function turnCard(){
+    var t=turn, n=t.rows.length, fin=t.i>=n, a=t.rows[t.i];
+    var c=needCard('s', fin?'All done':(t.i+1)+' of '+n, t.sent.length+' of '+n+' sent',
+      fin?(t.sent.length===n?'Each has their link, and each is ticked sent.':'The ones not ticked are still on Accounts, under Not sent.')
+        :(a.code||a.username)+(t.j?': their link is made. Share it and it is ticked sent.':': making their link.'));
+    var ticks=el('div','achips');
+    t.rows.forEach(function(x, k){ var did=t.sent.indexOf(x.username)>=0;
+      ticks.appendChild(chip(did?'verdigris':(k===t.i?'brass':'mist'), (x.code||x.username)+(did?', sent':''))); });
+    c.appendChild(ticks);
+    var row=el('div','salt-approve__actions');
+    if(fin){ var dn=ghost('Done', true); dn.addEventListener('click', function(){ turn=null; drawNeeds(); }); row.appendChild(dn); }
+    else {
+      var sh=el('button','salt-pill salt-pill--md','Share'); sh.type='button'; sh.disabled=!t.j; sh.addEventListener('click', turnShare);
+      var sk=ghost('Skip'); sk.addEventListener('click', function(){ turn.i++; turnStep(); });
+      row.appendChild(sh); row.appendChild(sk);
+    }
+    c.appendChild(row);
+    noteOf(c).textContent=t.why;
     return c;
   }
   function drawNeeds(){
@@ -577,7 +620,7 @@ export const OWNER_JS = `
     real.filter(function(a){ return a.account&&a.locked; }).forEach(function(a){ add(lockNeed(a), true); });
     real.filter(function(a){ return a.account===false; }).forEach(function(a){ add(bareNeed(a), true); });
     var fresh=real.filter(function(a){ return a.account&&!a.sent&&!(a.seen&&a.seen.opens); });
-    if(fresh.length) add(sendNeed(fresh), true);
+    if(turn||fresh.length) add(turn?turnCard():sendNeed(fresh), fresh.length>0);
     setCount('needs', n); setCount('links', links.filter(waitingLink).length);
     nCount.textContent=(!sheet||!linksRead)?'Reading what needs you.'
       :(n?n+(n===1?' thing':' things'):'Nothing needs you')+', as at '+hm(new Date().toISOString())+'.';

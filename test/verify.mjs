@@ -15097,6 +15097,83 @@ await (async () => {
       "with no word about signing out of an account he never signed into: " + JSON.stringify(D.getElementById("rmsg").textContent));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S9 9.6: Send them in turn makes each account's link as its turn opens, shares it on a tap of its own and ticks it sent before the next");
+await (async () => {
+  /* THE PLAN'S SECTION 5: accounts not yet sent are sent in turn, ticked by themselves. The share sheet never
+     waits on the making (the plan's must-not-ship list), a dismissed share ticks nothing, and Skip leaves one
+     for later. Driven on his rendered page against the real Worker. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s9-6";
+  const us = [C.newUsername(), C.newUsername(), C.newUsername()], codes = ["CX0-A1", "CX1-B2", "CX2-C3"], pw = C.newPassword();
+  for (const u of us) { const ck = await C.contentKey("s9-6", u);
+    await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+      wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) })); }
+  await kv.put("roster", JSON.stringify(us.map((u, k) => ({ code: codes[k], username: u }))));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: us.map((u, k) => ({ code: codes[k], username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" })) }));
+  const TEAM = "maakmal", AUD = "aud-s9-6", KID = "kid-s9-6";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 250 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  const shared = [], share = { refuse: false };
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      Object.defineProperty(w.navigator, "share", { value: async (d) => {
+        if (share.refuse) throw Object.assign(new Error("Share canceled"), { name: "AbortError" }); shared.push(d.text); }, configurable: true });
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const card = () => D.querySelector('#nlist [data-need="s"]');
+    const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t);
+    const ticked = async (u) => !!(await kv.get("sent:2026-09-01:" + u));
+    const minted = async () => (await kv.list({ prefix: "ot:" })).keys.length;
+    ok(await until(() => btn("Send them in turn")) && /^3 to send/.test(card().textContent), "three accounts wait to be sent, and the card offers Send them in turn");
+    btn("Send them in turn").click();
+    ok(await until(() => btn("Share") && !btn("Share").disabled) && /^1 of 3/.test(card().textContent) && /CX0-A1: their link is made/.test(card().textContent)
+      && (await minted()) === 1 && shared.length === 0,
+      "the first turn opens with its link already made and nothing shared: " + JSON.stringify({ text: card().textContent.slice(0, 120), minted: await minted() }));
+    ok(btn("Share").classList.contains("salt-pill") && card().querySelectorAll(".salt-pill").length === 1, "Share is the one filled control");
+    btn("Share").click();
+    ok(await until(async () => (await ticked(us[0])) && /^2 of 3/.test(card().textContent)) && shared.length === 1 && /[/]s[/]/.test(shared[0]),
+      "Share hands over their sign-in link and ticks them sent before the next turn opens");
+    ok([...card().querySelectorAll(".salt-status")].some((x) => x.textContent === "CX0-A1, sent"), "and the card shows them ticked");
+    await until(() => btn("Share") && !btn("Share").disabled);
+    share.refuse = true;
+    btn("Share").click();
+    ok(await until(() => /Not shared/.test(card().textContent)) && !(await ticked(us[1])) && /^2 of 3/.test(card().textContent),
+      "a share he closes ticks nothing and keeps the turn: " + card().textContent.slice(0, 160));
+    share.refuse = false;
+    btn("Skip").click();
+    ok(await until(() => /^3 of 3/.test(card().textContent) && btn("Share") && !btn("Share").disabled), "Skip moves to the next with its own link made");
+    btn("Share").click();
+    ok(await until(() => /^All done/.test(card().textContent)) && await ticked(us[2]) && !(await ticked(us[1])) && /2 of 3 sent/.test(card().textContent),
+      "the last is shared and ticked, the skipped one is not, and the card says so: " + card().textContent.slice(0, 160));
+    ok((D.getElementById("scount") || {}).textContent === "2 of 3 sent", "Accounts counts the ticks as they land: " + (D.getElementById("scount") || {}).textContent);
+    btn("Done").click();
+    ok(await until(() => /^1 to send/.test(card().textContent) && /CX1-B2 has an account/.test(card().textContent)),
+      "and Done leaves the skipped one waiting on Needs you");
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password
