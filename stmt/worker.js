@@ -43,7 +43,7 @@ import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, MAX_PER_ASSOC } from "./refs.js";
-import { SIGNIN_RE, mintSignin, burnSignin } from "./signin.js";
+import { SIGNIN_RE, mintSignin, burnSignin, idOf } from "./signin.js";
 import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
@@ -325,7 +325,7 @@ async function handleCustomer(request, env, p, m) {
     const wrap = b && b.wrap;
     if (!wrap || typeof wrap !== "object" || !wrap.salt || !wrap.iv || !wrap.ct) return json({ ok: false, error: "send the wrap" }, 400);
     const tok = b64e(crypto.getRandomValues(new Uint8Array(24))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-    await env.STMT.put("rem:" + tok, JSON.stringify({ u, wrap, at: new Date().toISOString() }), { expirationTtl: REM_TTL });
+    await env.STMT.put(await remKey(tok), JSON.stringify({ u, wrap, at: new Date().toISOString() }), { expirationTtl: REM_TTL });
     return json({ ok: true, token: tok, days: REM_TTL / 86400 });
   }
   const mm = /^\/orders\/([^/]+)\/(method|cancel|pay|say)$/.exec(p);   /* v751: say, a line on the order */
@@ -344,8 +344,8 @@ async function logOut(request, env, m, su) {
   const b = await readJson(request);
   await dropSession(env, String(request.headers.get("X-Stmt-Session") || ""));
   const tok = b && typeof b.token === "string" && REM_RE.test(b.token) ? b.token : null;
-  const rec = tok ? await env.STMT.get("rem:" + tok, "json") : null;
-  if (rec && (!su || rec.u === su)) await env.STMT.delete("rem:" + tok);
+  const { key, rec, raw } = tok ? await readRem(env, tok, false) : {};
+  if (rec && (!su || rec.u === su)) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); }
   const u = su || (rec && rec.u) || "";
   const ep = b && typeof b.endpoint === "string" && /^https:\/\//.test(b.endpoint) ? b.endpoint : null;
   if (u && ep) await env.STMT.delete("push:" + u + ":" + await endpointId(ep));
@@ -412,10 +412,10 @@ async function handleRemember(request, env) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   const b = await readJson(request);
   const tok = b && typeof b.token === "string" && REM_RE.test(b.token) ? b.token : null;
-  const rec = tok ? await env.STMT.get("rem:" + tok, "json") : null;
+  const { key, rec } = tok ? await readRem(env, tok, true) : {};
   if (!rec || !rec.u) return json({ ok: false, error: REFUSED }, 401);
   const acct = await env.STMT.get("u:" + rec.u, "json");
-  if (!acct) { await env.STMT.delete("rem:" + tok); return json({ ok: false, error: REFUSED }, 401); }
+  if (!acct) { await env.STMT.delete(key); return json({ ok: false, error: REFUSED }, 401); }
   await markSeen(env, rec.u, acct, "remembered");
   const session = await mintSession(env, rec.u);
   return json({
@@ -588,6 +588,28 @@ const refOut = (origin, r) => Object.assign({}, r, { url: refUrl(origin, r.id), 
  * out. Thirty days, his figure, and the record expires on its own after that. */
 const REM_TTL = 30 * 24 * 3600;
 const REM_RE = /^[A-Za-z0-9_-]{20,64}$/;
+
+/* S3 3.1, 24 SEP 2026: A REMEMBERED DEVICE IS FILED UNDER THE HASH OF ITS TOKEN, as a one-time link has been since
+   v710. The key WAS the token, so anybody holding a copy of this store could post one to /remember/open and be
+   handed a session, which places orders, without the device key that opens the wrap; and a sign-in that keeps
+   itself alive (3.4 to 3.6) would have made that copy worth more. A record filed the old way is re-filed under
+   its hash on its next open, keeping the time it had left. ONLY A TOKEN OF THE OLD MINTING'S OWN SHAPE is looked up
+   raw (24 bytes, 32 characters): a hash read off a copy is 64, so it can never name a record by itself. */
+const REM_RAW_RE = /^[A-Za-z0-9_-]{32}$/;
+const remKey = async (tok) => "rem:" + (await idOf(tok));
+async function readRem(env, tok, refile) {
+  const key = await remKey(tok);
+  const rec = await env.STMT.get(key, "json");
+  if (rec || !REM_RAW_RE.test(tok)) return { key, rec, raw: null };
+  const raw = "rem:" + tok, old = await env.STMT.get(raw, "json");
+  if (!old || !refile) return { key, rec: old, raw: old ? raw : null };
+  const left = Math.round(REM_TTL - (Date.now() - (Date.parse(old.at) || Date.now())) / 1000);
+  try {
+    await env.STMT.put(key, JSON.stringify(old), { expirationTtl: Math.max(60, left) });
+    await env.STMT.delete(raw);
+  } catch (e) { /* it opens either way, and is re-filed on the next */ }
+  return { key, rec: old, raw: null };
+}
 
 /* ---- THE MASTER ACCOUNT (v687, his instruction of 18 Sep 2026) --------------------------------
  * /all is his account, and it opens on its own page: Review statement, and the links below it.

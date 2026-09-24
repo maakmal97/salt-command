@@ -299,7 +299,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   inside its window is a bearer credential, and single use is best effort (KV). The `/s/` route is
   gated on the token's SHAPE, so a spent link and an invented one serve the same door.
 - **The door**: log in, remember me (a device key in the browser, the wrapped content key at
-  `rem:<token>`, neither opening anything alone), log out, which also drops that wrap and this
+  `rem:<sha256(token)>`, neither opening anything alone), log out, which also drops that wrap and this
   phone's notifications. A lapsed session says so in the bar, with Continue. Kept as an app:
   manifest and icon served by the Worker, no brand; every login asks about notifications once.
   Salt Admin links its own manifest with credentials and is titled Salt Admin.

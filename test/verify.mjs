@@ -15805,6 +15805,37 @@ await (async () => {
     "a phone that logged out, signing in with the answer still yes, is subscribed and recorded again, not left silent: " + JSON.stringify(gone));
   ok(!lost.on && lost.offer, "and a subscription the site will not take is not called On: Notify me stays offered: " + JSON.stringify(lost));
 })();
+section("S3 3.1: a remembered device is filed under the hash of its token, and an old raw key is re-filed on its next open");
+await (async () => {
+  /* The key was the token, so a copy of the store was a list of tokens any browser could post to
+     /remember/open for a session. Filed under the hash, the copy names nothing a phone can present. */
+  const kv = new KV(), env = { STMT: kv }, u = "aaaa-rrrr", sess = "sess31" + "a".repeat(22);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", env: { v: 2, iv: "aXY=", ct: "Y3Q=" } }));
+  await kv.put("sess:" + sess, JSON.stringify({ u, at: new Date().toISOString() }));
+  const post = (path, body, headers) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }), env);
+  const sha = (s) => createHash("sha256").update(s).digest("hex");
+  const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" };
+  const made = await (await post("/remember", { wrap }, { "X-Stmt-Session": sess })).json();
+  const rems = (await kv.list({ prefix: "rem:" })).keys.map((k) => k.name);
+  ok(made.ok && rems.length === 1 && rems[0] === "rem:" + sha(made.token)
+    && ![...kv.m.keys()].some((k) => k.includes(made.token)) && ![...kv.m.values()].some((v) => String(v).includes(made.token)),
+    "a remembered device is filed under its token's hash, and the token is nowhere in the store: " + JSON.stringify(rems));
+  ok((await post("/remember/open", { token: made.token })).status === 200, "and the token still opens it");
+  const stolen = rems[0].slice(4);
+  ok((await post("/remember/open", { token: stolen })).status === 401 && (await post("/remember/open", { token: stolen.slice(0, 32) })).status === 401,
+    "a hash read off a copy of the store opens nothing, whole or cut to a token's length");
+
+  /* a record filed before this fold: the raw token as the key, ten days into its thirty */
+  const old = "old31" + "b".repeat(27), at = new Date(Date.now() - 10 * 86400e3).toISOString();
+  await kv.put("rem:" + old, JSON.stringify({ u, wrap, at }), { expirationTtl: 20 * 86400 });
+  const back = await post("/remember/open", { token: old });
+  const ttl = (kv.opts.get("rem:" + sha(old)) || {}).expirationTtl || 0;
+  ok(back.status === 200 && !(await kv.get("rem:" + old)) && JSON.parse((await kv.get("rem:" + sha(old))) || "{}").u === u
+    && Math.abs(ttl - 20 * 86400) < 60,
+    "an old raw record opens, and is re-filed under its hash with the time it had left: " + JSON.stringify({ status: back.status, ttl }));
+  ok((await post("/remember/open", { token: old })).status === 200, "and it opens again from where it now lives");
+})();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: no three-minute lock, Remember me, and a Log out. The two halves of
@@ -15836,7 +15867,8 @@ await (async () => {
   const fakeWrap = { v: 2, salt: "c2FsdA==", iv: "aXZpdml2aXZpdg==", ct: "Y3Q=" };
   ok((await post92("/remember", { wrap: fakeWrap })).status === 401, "remembering needs a session, which only a password mints");
   const remOut = await (await post92("/remember", { wrap: fakeWrap }, { "X-Stmt-Session": "sess92aaaaaaaaaaaaaaaaaaaaaa" })).json();
-  const remKey = "rem:" + remOut.token;
+  /* S3 3.1: filed under the token's hash, never the token */
+  const remKey = "rem:" + createHash("sha256").update(remOut.token).digest("hex");
   ok(remOut.ok && /^[A-Za-z0-9_-]{20,64}$/.test(remOut.token) && remOut.days === 30
     && (kv92.opts.get(remKey) || {}).expirationTtl === 30 * 24 * 3600
     && JSON.parse(await kv92.get(remKey)).u === u92 && !JSON.stringify(await kv92.get(remKey)).includes(pass92),
