@@ -16954,7 +16954,7 @@ await (async () => {
       asked.length = 0; posted.length = 0; answer = yes;
       card.querySelector("input").value = t;
       await w.eval("ordAct(document.querySelector('button[data-ord=\"say\"]'))");
-      return { asked: asked.slice(), posted: posted.slice(), msg: String(w.eval("ordMsg")) };
+      return { asked: asked.slice(), posted: posted.slice(), msg: String(w.eval("(ORD_SAID&&ORD_SAID.t)||''")) };
     };
     const warned = "Emas dan Perak dibuka minggu ini.";
     const no = await send(warned, false);
