@@ -769,7 +769,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; prices=null; orders=[]; draft={}; pick={}; assoc=false; card=null; cardMonth=''; myLinks=null; myMax=0;
+    bundle=null; session=''; prices=null; orders=[]; draft={}; pick={}; oNote={}; assoc=false; card=null; cardMonth=''; myLinks=null; myMax=0;
     owedNow=0; hold=false; tPrices.hidden=false; tOrder.textContent='Order';
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
@@ -1033,8 +1033,8 @@ const CLIENT_JS = `
         var wd=el('button',null,'Withdraw'); wd.type='button';
         wd.addEventListener('click', async function(){
           if(!confirm('Withdraw this link? Whoever holds it will not be able to open it.')) return;
-          var mine=ticket; await api('/my/refs/'+encodeURIComponent(r.id)+'/revoke',{});
-          if(mine!==ticket) return; await loadMyLinks();
+          var mine=ticket; var rv=await api('/my/refs/'+encodeURIComponent(r.id)+'/revoke',{});
+          if(mine!==ticket) return; if(rv.status===0) draft.note=rv.body.error; await loadMyLinks();
         });
         acts.appendChild(wd);
       }
@@ -1061,6 +1061,8 @@ const CLIENT_JS = `
     var mine=ticket;
     var r=await api('/my/refs');
     if(mine!==ticket) return;
+    /* a dropped read keeps the list already drawn and redraws it, which gives back a button a tap disabled */
+    if(r.status===0){ if(myLinks!==null) drawCard(); return; }
     myLinks=(r.body&&r.body.refs)||[]; myMax=(r.body&&r.body.max)||0;
     drawCard();
   }
@@ -1139,13 +1141,23 @@ const CLIENT_JS = `
   }
 
   /* ---- ORDER: the form, then every order and where it stands ---- */
+  /* S1 1.4, 24 SEP 2026: A DROPPED REQUEST ANSWERS LIKE A REFUSAL, IN WORDS. It threw, so Place stayed
+     busy and Send stayed grey for good; now every caller clears its busy state and shows this beside the
+     control it came from. */
+  var NOT_SENT='Not sent. Check your connection and try again.';
   async function api(path, body, method){
-    var r=await fetch(path,{method:method||(body?'POST':'GET'), cache:'no-store',
-      headers:Object.assign({'X-Stmt-Session':session}, body?{'content-type':'application/json'}:{}),
-      body:body?JSON.stringify(body):undefined});
+    var r;
+    try{
+      r=await fetch(path,{method:method||(body?'POST':'GET'), cache:'no-store',
+        headers:Object.assign({'X-Stmt-Session':session}, body?{'content-type':'application/json'}:{}),
+        body:body?JSON.stringify(body):undefined});
+    }catch(e){ return {status:0, body:{ok:false, error:NOT_SENT}}; }
     var j=null; try{ j=await r.json(); }catch(e){}
     return {status:r.status, body:j||{}};
   }
+  /* the answer to a tap on an order, drawn beside the control that was tapped: 'pay', 'wd' or 'say' */
+  var oNote={};
+  function noteAt(pane,id,at){ var n=oNote[id]; if(n&&n.at===at){ var p=el('p','msg',n.t); p.setAttribute('role','status'); pane.appendChild(p); } }
   function quoteFor(){
     var p=prices&&prices.products&&prices.products.filter(function(x){return x.product===draft.product;})[0];
     if(!p) return null;
@@ -1342,6 +1354,7 @@ const CLIENT_JS = `
     else if(o.status==='cancelled') line=paid>0?'Withdrawn. The '+rm(paid)+' you paid is refunded.':'Withdrawn before anything moved. Nothing is owed.';
     pane.appendChild(el('p','sub2',line));
     if(payable&&due>0.004) pane.appendChild((o.method&&!(pick[o.id]||{}).again)?payBox(o):payChooser(o));
+    noteAt(pane,o.id,'pay');
     /* v694: either side may withdraw at any stage until the goods move (his rule, 18 Sep 2026) */
     if(payable||o.status==='placed'){
       if(moved>0) pane.appendChild(el('p','sub2','The goods are with you, so this can no longer be withdrawn here.'));
@@ -1351,11 +1364,12 @@ const CLIENT_JS = `
           if(!confirm(paid>0?'Withdraw this order? The '+rm(paid)+' you paid is refunded.':'Withdraw this order?')) return;
           var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{});
           if(mine!==ticket) return;
-          if(!r.body.ok) draft.note=r.body.error||'It could not be withdrawn.';
+          oNote[o.id]=r.body.ok?null:{at:'wd',t:r.body.error||'It could not be withdrawn.'};
           await loadOrders(); if(mine!==ticket) return; drawOrder();
         });
         pane.appendChild(wb);
       }
+      noteAt(pane,o.id,'wd');
     }
     /* v751: THE THREAD, oldest first, theirs and his. It sits above the history because it is the
        part a reader came back for; the history is the record underneath it. */
@@ -1382,13 +1396,14 @@ const CLIENT_JS = `
       var r=await api('/orders/'+o.id+'/say',{text:t});
       if(mine!==ticket) return;
       sg.disabled=false;
-      if(r.status===401) draft.note='Your session has ended. Sign in again.';
-      else if(!r.body.ok) draft.note=r.body.error||'It was not sent.';
-      else { draft.note=''; await loadOrders(); if(mine!==ticket) return; }
+      if(r.status===401) oNote[o.id]={at:'say',t:'Your session has ended. Sign in again.'};
+      else if(!r.body.ok) oNote[o.id]={at:'say',t:r.body.error||'It was not sent.'};
+      else { delete oNote[o.id]; await loadOrders(); if(mine!==ticket) return; }
       drawOrder();
     });
     sayw.appendChild(si); sayw.appendChild(sg);
     pane.appendChild(sayw);
+    noteAt(pane,o.id,'say');
     var hist=el('ul','hist');
     (o.history||[]).forEach(function(h){ var li=el('li',null,stamp(h.at)+'  '+(STATE_WORDS[h.status]||h.status)+(h.method?', paying by '+methodWord(h.method,h.account):'')+(h.note?': '+h.note:'')); hist.appendChild(li); });
     pane.appendChild(hist);
@@ -1434,7 +1449,7 @@ const CLIENT_JS = `
       if(!ok) return; var mine=ticket;
       var r=await api('/orders/'+encodeURIComponent(o.id)+'/method',{method:cur.method,account:cur.account||undefined});
       if(mine!==ticket) return;
-      if(!r.body.ok) draft.note=r.body.error||'The choice was not recorded.'; else delete pick[o.id];
+      if(!r.body.ok) oNote[o.id]={at:'pay',t:r.body.error||'The choice was not recorded.'}; else { delete pick[o.id]; delete oNote[o.id]; }
       await loadOrders(); if(mine!==ticket) return; drawOrder();
     });
     box.appendChild(cb);
@@ -1462,8 +1477,8 @@ const CLIENT_JS = `
       pb.disabled=true; var mine=ticket;
       var r=await api('/orders/'+encodeURIComponent(o.id)+'/pay',{amount:+amt.toFixed(2)});
       if(mine!==ticket) return;
-      draft.note=r.body&&r.body.ok?'Recorded. It shows on your statement once it is folded into the book.':((r.body&&r.body.error)||'That payment was not recorded.');
-      delete pick[o.id];
+      oNote[o.id]={at:'pay',t:r.body&&r.body.ok?'Recorded. It shows on your statement once it is folded into the book.':((r.body&&r.body.error)||'That payment was not recorded.')};
+      if(r.body.ok) delete pick[o.id];
       await loadOrders(); if(mine!==ticket) return; drawOrder();
     });
     box.appendChild(pb);

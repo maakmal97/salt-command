@@ -14541,6 +14541,67 @@ await (async () => {
   ok(/Open it from there and sign in with Remember me ticked/.test(link),
     "and the username road, which reaches the door, says the sign-in is made in the saved app");
 })();
+section("S1 1.4: a dropped request gives back its control and says Not sent beside it");
+await (async () => {
+  /* H04, 24 SEP 2026. api() had no catch: a request the phone could not send threw, so Place this order
+     stayed disabled with the order half-sent in the reader's mind, and Send on an order stayed grey for good.
+     The answer is now drawn beside the control that was tapped, not at the top of the tab. */
+  const { landingPage: lpC } = await import("../stmt/page.js");
+  const CC = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDC } = await import("jsdom");
+  const { webcrypto: wcC } = await import("node:crypto");
+  const uC = "aaaa-dddd", passC = "2345-6789-abcd-efgh", oid = "20260924120000-abcd";
+  const ckC = await CC.contentKey("8".repeat(64), uC);
+  const openC = { ok: true, byMaster: false, u: uC, issued: "2026-09-24", issues: ["2026-09-24"], live: null, session: "sessCaaaaaaaaaaaaaaaaaaaaaaa",
+    wrap: await CC.wrapKey(passC, ckC), wrapMaster: null,
+    env: await CC.encryptWith(ckC, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] })),
+    prices: await CC.encryptWith(ckC, JSON.stringify({ week: { label: "21 Sep 2026", monday: "2026-09-21" }, soon: [],
+      products: [{ product: "salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 100 }] }] })) };
+  const order = { id: oid, product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, status: "acknowledged", mode: "collect",
+    at: "2026-09-24T04:00:00Z", history: [], msgs: [] };
+  const NS = "Not sent. Check your connection and try again.";
+  const errs = [], onRej = (e) => errs.push(String((e && e.message) || e));
+  process.on("unhandledRejection", onRej);
+  const dom = new JDC(lpC(uC, "nC", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcC, configurable: true }); } catch (e) { win.crypto = wcC; }
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/open") return { ok: true, status: 200, json: async () => openC };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [order] }) };
+        if (m === "POST" && (p === "/orders" || p === "/orders/" + oid + "/say")) throw new TypeError("Failed to fetch");
+        return { ok: true, status: 200, json: async () => ({ ok: true }) };
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const wait = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); };
+  const btn = (t) => [...D.querySelectorAll("#pOrder button")].find((b) => b.textContent === t);
+  const noteNear = (b) => [...D.querySelectorAll("#pOrder p.msg")].find((p) => p.textContent === NS && p.parentNode.contains(b));
+  try {
+    D.getElementById("pw").value = passC;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await wait(() => btn("Review this order") && btn("Send"));
+    btn("Review this order").click();
+    await wait(() => btn("Place this order"));
+    btn("Place this order").click();
+    await wait(() => D.getElementById("pOrder").textContent.includes(NS));
+    await new Promise((r) => setTimeout(r, 50));
+    const place = btn("Place this order"), change = btn("Change it");
+    ok(!!place && !place.disabled && !!change && !change.disabled && !!noteNear(place),
+      "Place this order is given back after a dropped request, and Not sent is said beside it: "
+      + JSON.stringify({ place: place && place.disabled, change: change && change.disabled, note: !!(place && noteNear(place)) }));
+    const pane = btn("Send").closest(".pane");
+    pane.querySelector("input[aria-label='Write about this order']").value = "is it ready";
+    btn("Send").click();
+    await wait(() => [...D.querySelectorAll("#pOrder .pane")].some((x) => x.querySelector("p.msg") && x.contains(btn("Send")) && x.textContent.includes(NS)));
+    const send = btn("Send"), near = send && noteNear(send);
+    ok(!!send && !send.disabled && !!near && near.closest(".pane") === send.closest(".pane") && near.previousElementSibling && near.previousElementSibling.contains(send),
+      "Send on an order is given back too, and Not sent is said beside it, in that order's own pane: "
+      + JSON.stringify({ send: send && send.disabled, near: !!near }));
+    ok(!errs.length, "and nothing is left unhandled: " + JSON.stringify(errs));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } process.off("unhandledRejection", onRej); }
+})();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: no three-minute lock, Remember me, and a Log out. The two halves of
