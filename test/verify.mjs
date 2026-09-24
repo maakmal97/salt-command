@@ -15908,8 +15908,8 @@ await (async () => {
   const mres = await stmtWorker.fetch(new Request("https://k7m3p2.example/manifest.webmanifest"), env93);
   const mf = await mres.json();
   ok(mres.status === 200 && /application\/manifest\+json/.test(mres.headers.get("content-type"))
-    && mf.display === "standalone" && mf.start_url === "./" && mf.icons.length === 1 && mf.icons[0].src === "icon.png",
-    "the manifest is served, standalone, with one icon");
+    && mf.display === "standalone" && mf.start_url === "/app" && mf.icons.length === 1 && mf.icons[0].src === "icon.png",
+    "the manifest is served, standalone, with one icon, starting at /app (S3 3.11)");
   /* v704, HIS INSTRUCTION OF 18 SEP 2026: the user-facing name is Salt Counter. The app's name is
      the ONE place on this site where something has to be called something, and the product word is
      his to spend there; inside the page a product is still a mark and never a word (v695). What
@@ -18547,6 +18547,131 @@ await (async () => {
     ok(wa.D.getElementById("keepCard").hidden, "an app's own browser, which keeps nothing, is not offered it");
   } finally { wa.W.close(); }
 })();
+section("S3 3.11: the saved app starts at /app on One step to finish, takes the key by Paste or the eight symbols typed, gives the true help, and remembers the app");
+await (async () => {
+  /* HIS D2 OF 24 SEP 2026. The saved iPhone app keeps its own storage and opened on a door, which a customer who
+     came by a link had nothing to get past. */
+  const { landingPage: lp311 } = await import("../stmt/page.js");
+  const W311 = (await import("../stmt/worker.js")).default;
+  const C311 = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JD311 } = await import("jsdom");
+
+  /* ---- the Worker: /app is the Counter's own page, and the saved app starts there ---- */
+  const env311 = { STMT: new KV() };
+  const appPage = await W311.fetch(new Request("https://k7m3p2.example/app"), env311);
+  const rootPage = await W311.fetch(new Request("https://k7m3p2.example/"), env311);
+  const noNonce = (t) => t.replace(/nonce="[^"]*"/g, 'nonce="N"');
+  ok(appPage.status === 200 && noNonce(await appPage.text()) === noNonce(await rootPage.text())
+    && (await W311.fetch(new Request("https://k7m3p2.example/app", { method: "POST" }), env311)).status === 405,
+    "/app is the Counter's own page, the same bytes as the door bar the nonce");
+  const mf = await (await W311.fetch(new Request("https://k7m3p2.example/manifest.webmanifest"), env311)).json();
+  ok(mf.start_url === "/app" && mf.scope === "./", "and the saved app's manifest starts there: " + mf.start_url);
+
+  /* ---- the page ---- */
+  const u311 = "aaaa-pppp", tok311 = "K".repeat(32), ck311 = await C311.contentKey("7".repeat(64), u311);
+  const envDoc = await C311.encryptWith(ck311, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>App</p>" }] }));
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148";
+  const drive = async (url, opts) => {
+    const st = { posts: [], clip: opts.clip || "" };
+    const store = new Map();
+    const dom = new JD311(lp311("", "n311", null), { url, runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: opts.ua || IPHONE, configurable: true });
+        win.matchMedia = (q) => ({ matches: !!opts.standalone && /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+        Object.defineProperty(win.navigator, "clipboard", { configurable: true, value: { readText: async () => st.clip, writeText: async () => {} } });
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (p, init) => {
+          const body = init && init.body ? JSON.parse(init.body) : null;
+          st.posts.push({ path: String(p), body });
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/handover/open") {
+            const good = body && (body.token === tok311 || body.code === "h4tn-8xwc");
+            return good ? ans(200, { ok: true, u: u311, remembered: true, token: tok311, wrap: await C311.wrapKey(tok311, ck311), env: envDoc, live: null, prices: null, session: "sess311a00000000000000000000" })
+              : ans(401, { ok: false, error: "That username and password were not accepted." });
+          }
+          if (p === "/remember") return ans(200, { ok: true, token: "r".repeat(32), days: 30 });
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    await new Promise((r) => setTimeout(r, 60));
+    return { st, W, D, until, store };
+  };
+  const type = (g, text) => { const f = g.D.getElementById("codeIn"); f.value = text; f.dispatchEvent(new g.W.Event("input", { bubbles: true })); };
+
+  const g1 = await drive("https://site.test/app", { standalone: true });
+  try {
+    const box = g1.D.getElementById("codeBox"), text = box.textContent.replace(/\s+/g, " ");
+    ok(!box.hidden && g1.D.getElementById("gate").hidden && /One step to finish/.test(text)
+      && /Bring your sign-in across from Safari\. You do this once on this phone\./.test(text),
+      "the saved iPhone app with nothing remembered opens on One step to finish, never the door");
+    const paste = g1.D.getElementById("codePaste"), field = g1.D.getElementById("codeIn");
+    ok(/salt-pill/.test(paste.className) && /Paste the code/.test(paste.textContent) && box.querySelectorAll(".salt-pill").length === 1
+      && field.classList.contains("salt-field__input--code") && field.getAttribute("autocomplete") === "one-time-code",
+      "with one filled Paste the code, and the Code field to type eight symbols");
+    ok(g1.D.getElementById("codeHelp").textContent === "No code? Open your sign-in link in Safari, tap Keep it on your Home Screen, and copy the code shown there.",
+      "and the true help line: " + JSON.stringify(g1.D.getElementById("codeHelp").textContent));
+    type(g1, "h4tn8xw1");
+    await new Promise((r) => setTimeout(r, 40));
+    ok(field.getAttribute("aria-invalid") === "true" && /never uses 0, 1, I, L, O or U/.test(g1.D.getElementById("codeMsg").textContent)
+      && !g1.st.posts.some((x) => x.path === "/handover/open"),
+      "a symbol the alphabet never uses is caught on the phone and nothing is sent");
+    type(g1, "h4tn 8xwc");
+    await g1.until(() => !g1.D.getElementById("barw").hidden);
+    const sent = g1.st.posts.find((x) => x.path === "/handover/open");
+    ok(!g1.D.getElementById("barw").hidden && box.hidden && sent && sent.body.code === "h4tn-8xwc" && !sent.body.token,
+      "eight symbols typed open the account, sent as the code: " + JSON.stringify(sent && sent.body));
+    await g1.until(() => g1.store.has("salt-stmt-remember"));
+    ok(JSON.parse(g1.store.get("salt-stmt-remember") || "{}").u === u311, "and the saved app is remembered, so this is done once");
+  } finally { g1.W.close(); }
+
+  const g2 = await drive("https://site.test/app", { standalone: true, clip: tok311 });
+  try {
+    g2.D.getElementById("codePaste").click();
+    await g2.until(() => !g2.D.getElementById("barw").hidden);
+    const sent = g2.st.posts.find((x) => x.path === "/handover/open");
+    ok(!g2.D.getElementById("barw").hidden && sent && sent.body.token === tok311 && !sent.body.code,
+      "Paste the code takes the key Safari copied and opens the account with it");
+  } finally { g2.W.close(); }
+
+  const g3 = await drive("https://site.test/app#" + tok311, { standalone: true });
+  try {
+    await g3.until(() => !g3.D.getElementById("barw").hidden);
+    ok(!g3.D.getElementById("barw").hidden && g3.W.location.hash === "" && g3.st.posts.some((x) => x.path === "/handover/open" && x.body.token === tok311),
+      "a saved app that kept the address signs itself in with the key in it, and forgets the address");
+  } finally { g3.W.close(); }
+
+  const g4 = await drive("https://site.test/app#" + tok311, { standalone: false });
+  try {
+    ok(!g4.st.posts.some((x) => x.path === "/handover/open"), "a Safari tab reloaded at that address never spends the key meant for the saved app");
+  } finally { g4.W.close(); }
+
+  const g5 = await drive("https://site.test/app", { standalone: true, clip: "nothing useful" });
+  try {
+    type(g5, "zzzz zzzz");
+    await g5.until(() => /did not open/.test(g5.D.getElementById("codeMsg").textContent));
+    ok(/That code did not open anything\. A code works once, for 15 minutes/.test(g5.D.getElementById("codeMsg").textContent)
+      && !g5.D.getElementById("codeBox").hidden && !g5.store.has("salt-stmt-remember"),
+      "a refused code says so in the code's own words, beside it, and nothing is kept");
+    g5.D.getElementById("codePaste").click();
+    await g5.until(() => /no code on the clipboard/.test(g5.D.getElementById("codeMsg").textContent));
+    ok(/There is no code on the clipboard/.test(g5.D.getElementById("codeMsg").textContent), "and a clipboard with no code on it says so");
+  } finally { g5.W.close(); }
+
+  const g6 = await drive("https://site.test/", { ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0 Safari/537.36" });
+  try {
+    ok(!g6.D.getElementById("gate").hidden && g6.D.getElementById("codeBox").hidden, "a browser opens on the door");
+    g6.D.getElementById("toCode").click();
+    ok(!g6.D.getElementById("codeBox").hidden && /Sign in with a code/.test(g6.D.getElementById("codeH").textContent)
+      && g6.D.getElementById("codeHelp").hidden && !/Safari/.test(g6.D.getElementById("codeBox").textContent.replace(g6.D.getElementById("codeHelp").textContent, "")),
+      "where I have a sign-in code opens the same field, and says nothing about Safari off an iPhone");
+  } finally { g6.W.close(); }
+})();
 section("v710: the shared link signs them in once, so no message carries a password");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "when sharing the link, QR to the user, the site pre-fills their
@@ -18870,7 +18995,7 @@ await (async () => {
 
     /* ---- and the customer's own is untouched, still opening on the customer's door ---- */
     const cust = await (await get("/manifest.webmanifest")).json();
-    ok(cust.start_url === "./" && cust.name === "Salt Counter" && mf.name !== cust.name,
+    ok(cust.start_url === "/app" && cust.name === "Salt Counter" && mf.name !== cust.name,
       "the customer's manifest is untouched and the two are different apps: " + JSON.stringify([cust.name, mf.name]));
 
     /* ---- THE DESK'S NAME IS NOWHERE ON THIS SITE, which is the rule this change could most easily

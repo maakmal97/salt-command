@@ -66,6 +66,10 @@ const PAGE_CSS = `
 .gate .salt-ledger__row:last-child{border-bottom:0}
 .gate .salt-insight .glyph{vertical-align:-0.3em}
 .center{text-align:center}
+/* S3 3.11: the code screen, the system's Code field under the one filled Paste */
+#codeBox .salt-code{margin-top:22px;display:flex;flex-direction:column;gap:8px}
+#codePaste .glyph{margin-right:8px;color:inherit}
+#toCode,#codeDoor{margin-top:14px}
 /* S3 3.8: the question sits where the tapped control was */
 .ask .lead{margin:18px 0 0}
 .ask .nocase{text-transform:none}
@@ -437,6 +441,25 @@ function keepSheet() {
     + "</div>";
 }
 
+/* S3 3.11: ONE STEP TO FINISH. The saved app starts at /app with storage of its own: a key carried by Paste, or the
+   eight symbols typed, brings the sign-in across, and the help says the true way to get one. */
+function codeScreen() {
+  return '<div id="codeBox" class="gate" hidden>'
+    + '<span class="appmark">' + glyphSvg("ring", 40) + "</span>"
+    + '<h1 id="codeH">One step to finish</h1>'
+    + '<p class="lead" id="codeLead">Bring your sign-in across from Safari. You do this once on this <span class="dev">phone</span>.</p>'
+    + '<button class="btn salt-pill salt-pill--md" id="codePaste" type="button">' + glyphSvg("paste", 20) + " Paste the code</button>"
+    + '<div class="salt-code"><label class="salt-code__label" for="codeIn">Or type it</label>'
+    + '<input class="fld salt-field__input salt-field__input--code" id="codeIn" type="text" placeholder="XXXX XXXX" '
+    + 'autocomplete="one-time-code" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-describedby="codeHint">'
+    + '<span class="salt-code__hint" id="codeHint">Eight letters and numbers, as Safari showed them.</span></div>'
+    + '<p class="msg" id="codeMsg" role="status" aria-live="polite"></p>'
+    + '<button class="btn salt-ghost" id="codeDoor" type="button">Sign in with username and password</button>'
+    + '<p class="salt-insight" id="codeHelp">No code? Open your sign-in link in <b>Safari</b>, tap Keep it on your Home Screen, '
+    + "and copy the code shown there.</p>"
+    + "</div>";
+}
+
 /* S3 3.3: THE LINK PAGE. A link opens here and spends nothing until Continue: it says which account it opens
    and what is inside, and an app's own browser is sent to Safari or Chrome first. */
 function linkScreen() {
@@ -624,9 +647,11 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<button class="btn salt-pill salt-pill--md" id="go" type="submit">Sign in</button>'
     + "</form>"
     + '<p class="msg" id="msg" role="status" aria-live="polite"></p></div>'
+    /* S3 3.11: a code from another device, or from Salt Admin at the counter */
+    + (owner ? "" : '<button class="btn salt-ghost" id="toCode" type="button">I have a sign-in code</button>')
     + '<p class="salt-insight">Lost your password or your link? Ask us for a <b>new sign-in link</b>. It works straight away.</p>'
     + "</div>"
-    + (owner ? "" : linkScreen() + signedOutSheet() + replaceAsk() + keepSheet())
+    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + keepSheet())
     + '<div id="barw" hidden><div class="bar">'
     + '<span><b id="whoacct"></b><span id="cd"></span></span>'
     + '<button type="button" id="lock">Log out</button>'
@@ -964,6 +989,88 @@ const CLIENT_JS = `
     });
   }
 
+  /* ---- ONE STEP TO FINISH: THE SAVED APP TAKES THE SIGN-IN ACROSS (S3 3.11, his D2) -------------------------
+     /app is where the saved app starts, with storage of its own. A remembered phone opens as ever; otherwise the key
+     Safari copied comes by Paste (or in the address, where iOS kept it), or the eight symbols are typed, and
+     POST /handover/open answers what a sign-in link answers, the content key wrapped under the key. On success the
+     app is remembered, with the same split key as everywhere else, so this is done once. */
+  var APP=location.pathname==='/app';
+  var codeBox=document.getElementById('codeBox'), codeIn=document.getElementById('codeIn'), codeMsg=document.getElementById('codeMsg');
+  var TOK_RE=/^[A-Za-z0-9_-]{20,64}$/;
+  function csay(t,cls){ if(codeMsg){ codeMsg.textContent=t||''; codeMsg.className='msg'+(cls?' '+cls:''); } }
+  function showCode(fromDoor){
+    if(!codeBox) return;
+    gate.hidden=true; if(opening) opening.hidden=true; codeBox.hidden=false;
+    /* the words fit the road: the saved iPhone app is told the true way to get a code; a browser is not told about Safari */
+    var ios=IOS&&!fromDoor;
+    document.getElementById('codeH').textContent=ios?'One step to finish':'Sign in with a code';
+    document.getElementById('codeLead').textContent=ios?'Bring your sign-in across from Safari. You do this once on this '+DEV+'.'
+      :'Type the eight letters and numbers you were given. A code works once.';
+    document.getElementById('codeHint').textContent=ios?'Eight letters and numbers, as Safari showed them.':'Eight letters and numbers, in two groups of four.';
+    document.getElementById('codeHelp').hidden=!ios;
+    csay('');
+  }
+  async function openHandover(what){
+    var mine=++ticket, stale=function(){ return mine!==ticket; };
+    var paste=document.getElementById('codePaste');
+    busy=true; paste.disabled=true; codeIn.readOnly=true; csay('Opening...','wait');
+    var r, body;
+    var undo=function(){ if(!stale()){ busy=false; paste.disabled=false; codeIn.readOnly=false; } };
+    try{
+      r=await fetch('/handover/open', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(what)});
+      body=await r.json();
+    }catch(e){ if(stale()) return false; undo(); csay('Not opened: the connection dropped. Try again; if the code is then refused, make a new one.','bad'); return false; }
+    if(stale()) return false;
+    undo();
+    if(!r.ok||!body.ok){
+      csay(r.status===429||r.status===503?(body.error||'Try again later.')
+        :'That code did not open anything. A code works once, for 15 minutes: make a new one and try again.','bad');
+      if(what.code){ codeIn.setAttribute('aria-invalid','true'); }
+      return false;
+    }
+    var ck, b;
+    try{ ck=await unwrapUnder(new TextEncoder().encode(body.token||what.token||''), body.wrap); b=JSON.parse(await open(ck, body.env)); }
+    catch(e){ if(!stale()) csay('That code did not open anything. A code works once, for 15 minutes: make a new one and try again.','bad'); return false; }
+    if(stale()) return false;
+    var x=await unseal(body, ck, b);
+    if(stale()) return false;
+    try{ if(location.hash) history.replaceState(null,'','/app'); }catch(e){}
+    var keep=await askReplace(document.getElementById('codePaste'), body.u);   /* S3 3.8 */
+    if(stale()) return false;
+    csay(''); codeBox.hidden=true; codeIn.value='';
+    enter(body.u, body, b, x, ck);
+    if(!(await follow(stale))) return true;
+    if(keep) await remember(body.u, ck);
+    askPush();
+    return true;
+  }
+  /* a code as the site takes it, xxxx-xxxx, or '' */
+  function codeOf(t){ var raw=clean(t); return raw.length===8?raw.slice(0,4)+'-'+raw.slice(4):''; }
+  if(codeBox){
+    document.getElementById('toCode').addEventListener('click', function(){ showCode(true); try{ codeIn.focus(); }catch(e){} });
+    document.getElementById('codeDoor').addEventListener('click', function(){ codeBox.hidden=true; gate.hidden=false; try{ (un.value?pw:un).focus(); }catch(e){} });
+    codeIn.addEventListener('input', function(){
+      var v=codeIn.value.trim();
+      codeIn.removeAttribute('aria-invalid');
+      /* a key pasted into the field is a key, and goes as one */
+      if(TOK_RE.test(v)){ codeIn.value=''; openHandover({token:v}); return; }
+      var raw=clean(v).slice(0,8).toUpperCase();
+      codeIn.value=raw.length>4?raw.slice(0,4)+' '+raw.slice(4):raw;
+      if(raw.length<8) { csay(''); return; }
+      if(ALPHA.test(raw.toLowerCase())){ codeIn.setAttribute('aria-invalid','true'); csay('A code never uses 0, 1, I, L, O or U. Check the symbols you typed.','bad'); return; }
+      openHandover({code:codeOf(raw)});
+    });
+    document.getElementById('codePaste').addEventListener('click', async function(){
+      var t='';
+      try{ t=String(await navigator.clipboard.readText()||'').trim(); }
+      catch(e){ csay('Paste did not work here. Type the code below instead.','bad'); try{ codeIn.focus(); }catch(e2){} return; }
+      if(TOK_RE.test(t)){ openHandover({token:t}); return; }
+      var c=codeOf(t);
+      if(c&&!ALPHA.test(clean(c))){ codeIn.value=c.toUpperCase().replace('-',' '); openHandover({code:c}); return; }
+      csay('There is no code on the clipboard. Copy it in Safari, or type it below.','bad');
+    });
+  }
+
   /* ---- REPLACE ANOTHER ACCOUNT ON THIS PHONE? (S3 3.8) ------------------------------------------------
      Keeping a second account would overwrite the one this phone remembers, so it is asked, beside the control
      that was tapped, before anything is kept: Replace keeps the new one and forgets the old; Keep leaves the old
@@ -999,7 +1106,7 @@ const CLIENT_JS = `
     pPrices.textContent=''; pOrder.textContent='';
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
-    closeKeep(); keepTok=''; keepExp=0; if(keepCardEl) keepCardEl.hidden=true;
+    closeKeep(); keepTok=''; keepExp=0; if(keepCardEl) keepCardEl.hidden=true; if(codeBox) codeBox.hidden=true;
     var ask=document.getElementById('askRep'); if(ask&&!ask.hidden){ ask.hidden=true; document.getElementById('askNo').click(); }
     /* the owner goes back to his list, never to a password field he has no password for */
     if(OWNER){ roster.hidden=false; gate.hidden=true; if(whoacct) whoacct.textContent=''; }
@@ -2222,13 +2329,20 @@ const CLIENT_JS = `
     /* v710: a one-time link first, a remembered device second. A reader arriving on a link came to
        use it, and if it is spent the remembered device is still there behind it. S3 3.3: the link is a
        page of its own now, spent on Continue, so the page waits there. */
+    var hk=(location.hash||'').slice(1);   /* read before anything waits: a page closed meanwhile has no address */
     (async function(){
       if(await showLink()) return;
       /* S3 3.5: a remembered phone draws "Opening your account" while it opens, so nobody starts typing into a door
          that is about to vanish; the door comes back only if it does not open */
       if(remGet()&&opening){ gate.hidden=true; opening.hidden=false; }
       var inNow=await openRemembered();
-      if(!inNow&&!session){ if(opening) opening.hidden=true; gate.hidden=false; }
+      if(inNow||session) return;
+      if(opening) opening.hidden=true;
+      /* S3 3.11: the saved app. A key in the address is the one Safari's Keep it on your Home Screen wrote there, and
+         only the saved app itself spends it, never a Safari tab reloaded at that address */
+      var carried=APP&&STANDALONE&&TOK_RE.test(hk);
+      if(APP&&(IOS||carried)) showCode(false); else gate.hidden=false;
+      if(carried) await openHandover({token:hk});
     })();
   }
 })();

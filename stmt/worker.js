@@ -1050,7 +1050,8 @@ export default {
            still a mark and never a word (v695); this is the app's name, the one place on the site
            where something has to be called something. What never appears is the DESK's name, Salt
            Command, which is a different rule and still holds. */
-        name: "Salt Counter", short_name: "Salt Counter", start_url: "./", scope: "./",
+        /* S3 3.11 (his D2): the saved app starts at /app, the Counter's own page in app mode */
+        name: "Salt Counter", short_name: "Salt Counter", start_url: "/app", scope: "./",
         display: "standalone", orientation: "portrait", background_color: "#05080a", theme_color: "#05080a",
         icons: [{ src: "icon.png", sizes: ICON_SIZE + "x" + ICON_SIZE, type: "image/png", purpose: "any maskable" }]
       };
@@ -1085,6 +1086,11 @@ export default {
        been a link. The shape is no secret, being minted by the page this route serves. */
     const sLink = p.startsWith("/s/") && SIGNIN_RE.test(p.slice(3));
     if (sLink) {
+      if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
+      return pageResponse("", null);
+    }
+    /* S3 3.11: THE SAVED APP'S START, the Counter's own page; it knows it is the app by its own address */
+    if (p === "/app") {
       if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
       return pageResponse("", null);
     }

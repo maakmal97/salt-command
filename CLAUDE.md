@@ -312,7 +312,9 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   manifest and icon served by the Worker, no brand; every login asks about notifications once. How to
   keep it is a card once signed in, never on the door; on an iPhone its Sheet mints the hand-over as it
   opens and copies the key in a tap of its own, rewriting the address to `/app#<key>` (his D2), and never
-  says a link signs the saved app in.
+  says a link signs the saved app in. **The saved app starts at `/app`** (the manifest's `start_url`): with
+  nothing remembered, an iPhone opens on One step to finish, the key by Paste or the eight symbols typed
+  (`POST /handover/open`), and the app is remembered; only a standalone app spends a key in its address.
   Salt Admin links its own manifest with credentials and is titled Salt Admin.
 - **A customer's banner names the kind of news, never an amount, a product, an order or a name**:
   `{k, o}` sealed for the one phone (`sealFor`, RFC 8291) under the keys its subscription filed, the
