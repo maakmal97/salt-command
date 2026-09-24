@@ -688,7 +688,12 @@ async function handleDesk(request, env, p, m) {
     const b = await readJson(request);
     const n = b && b.n;
     if (!Number.isInteger(n) || n < 0 || n > 9999) return json({ ok: false, error: "send the count as a whole number" }, 400);
-    await env.STMT.put(DESK_WAITING, JSON.stringify({ n, at: new Date().toISOString() }));
+    /* S9 fix: stamped with the reading's own moment, `age` seconds before now, and never over a reading a minute newer
+       (another desk's), so a desk that has not read the orders for hours neither says it is fresh nor overwrites one */
+    const age = Number.isInteger(b.age) && b.age >= 0 && b.age <= 30 * 86400 ? b.age : 0;
+    const at = new Date(Date.now() - age * 1000).toISOString(), was = await env.STMT.get(DESK_WAITING, "json");
+    if (was && Date.parse(was.at) - Date.parse(at) > 60000) return json({ ok: true, n: +was.n || 0, kept: true });
+    await env.STMT.put(DESK_WAITING, JSON.stringify({ n, at }));
     return json({ ok: true, n });
   }
   /* the moment of the newest placement, one read: the desk asks this every minute (16 Sep 2026),

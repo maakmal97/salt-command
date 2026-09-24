@@ -1067,10 +1067,12 @@ export async function ordersWaiting(env) {
    it has read both it sends that figure here (POST /orders/waiting), which this relays to the site's desk-waiting mark.
    One reading, the desk's: this Worker's own recount every minute (placed, or their line last) missed cash and payments
    and ignored his No reply needed, so the two apps disagreed. The trade, stated: the figure is as fresh as the desk's
-   last read of its orders, and the mark carries its moment, which Salt Admin shows. */
-export async function tellWaiting(env, n) {
+   last read of its orders, and the mark carries its moment, which Salt Admin shows. S9 fix: the page sends how old its
+   reading is (`age`, whole seconds), passed through, and the site stamps the moment from it. */
+export async function tellWaiting(env, n, age) {
   if (!Number.isInteger(n) || n < 0 || n > 9999) return { ok: false, status: 400, error: "send the count as a whole number" };
-  const t = await site(env, "/desk/waiting", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ n }) });
+  const a = Number.isInteger(age) && age >= 0 && age <= 30 * 86400 ? age : 0;
+  const t = await site(env, "/desk/waiting", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ n, age: a }) });
   if (!t) return { ok: false, status: 503, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
   if (!t.ok) return { ok: false, status: 502, error: "the site would not take the count (http " + t.status + ")" };
   return { ok: true, n };

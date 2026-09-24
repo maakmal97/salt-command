@@ -859,7 +859,7 @@ export default {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       let b = {};
       try { b = await request.json(); } catch { b = {}; }
-      const r = await tellWaiting(env, b && b.n);
+      const r = await tellWaiting(env, b && b.n, b && b.age);
       return json(r, r.ok ? 200 : (r.status || 502));
     }
     /* S11: THE CARD'S OWN ROUTES, by the order's id alone. An order id is minted digits and letters with a

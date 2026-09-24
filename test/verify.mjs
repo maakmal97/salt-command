@@ -17212,6 +17212,70 @@ await (async () => {
     ok(D.getElementById("pStmt").firstElementChild !== keep, "nothing about keeping it stands at the head of the statement");
   } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S9 fix S9R-2: the desk's count reaches Salt Admin with its reading's own moment, and a stale desk never overwrites a newer reading");
+await (async () => {
+  /* Approve polls the drafts alone, and each poll that moved the count sent it over orders read hours before, which the
+     site stamped now: Salt Admin said a stale figure was fresh, and a desk left open on Approve overwrote another's. */
+  const S = (await import("../stmt/worker.js")).default;
+  const D = (await import("../src/worker.js")).default;
+  const skv = new KV();
+  const senv = { STMT: skv, STMT_DESK_KEY: "dk-s9r2" };
+  const site = (path, o) => S.fetch(new Request("https://k7m3p2.example" + path, o), senv);
+  const desk = { "X-Stmt-Desk": "dk-s9r2" };
+  const mark = () => JSON.parse(skv.m.get("desk-waiting") || "null");
+  const ago = (m) => (Date.now() - Date.parse(m.at)) / 1000;
+  const post = async (b) => (await site("/desk/waiting", { method: "POST", headers: Object.assign({ "content-type": "application/json" }, desk), body: JSON.stringify(b) })).json();
+
+  /* ---- the site: the moment is the reading's ---- */
+  await post({ n: 3, age: 7200 });
+  ok(mark().n === 3 && Math.abs(ago(mark()) - 7200) < 5, "a count read two hours ago is stamped two hours ago: " + JSON.stringify(mark()));
+  await post({ n: 5, age: 0 });
+  ok(mark().n === 5 && ago(mark()) < 5, "a fresh reading replaces it");
+  const kept = await post({ n: 1, age: 3600 });
+  ok(kept.kept === true && mark().n === 5 && ago(mark()) < 5, "and a reading an hour old never overwrites it: " + JSON.stringify([kept, mark()]));
+
+  /* ---- the relay passes the age through ---- */
+  const denv = { ...mkEnv(new KV()), SALT_WRITE_KEY: "k-s9r2", STMT_DESK_KEY: "dk-s9r2", STMT_SITE: { fetch: (url, init) => S.fetch(new Request(url, init), senv) } };
+  skv.m.delete("desk-waiting");
+  const rr = await D.fetch(new Request("https://salt-command.example/orders/waiting", { method: "POST",
+    headers: { "content-type": "application/json", "X-Salt-Key": "k-s9r2" }, body: JSON.stringify({ n: 2, age: 600 }) }), denv);
+  ok(rr.status === 200 && mark() && mark().n === 2 && Math.abs(ago(mark()) - 600) < 5, "the desk's Worker relays the reading's age: " + JSON.stringify([rr.status, mark()]));
+
+  /* ---- the desk's page: the age is the older read's, and a reading moved on sends the same figure again ---- */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    const at = "2026-09-24T01:00:00Z";
+    const o = (id, st) => ({ id, u: "abcd-efgh", at, status: st, product: "salt", qty: 1, total: 150, delivery: 0, mode: "collect", paid: 0, payments: [], moved: 0, msgs: [], history: [] });
+    const told = [];
+    const orders = [o("20260924010000-n001", "placed"), Object.assign(o("20260924010000-p002", "acknowledged"), { paid: 50, payments: [{ at, by: "customer", amount: 50 }] })];
+    let drafts = [];
+    w.fetch = async (q, init) => {
+      const path = String(q);
+      if (path === "orders/waiting") { told.push(JSON.parse(init.body)); return { ok: true, status: 200, json: async () => ({ ok: true }) }; }
+      if (path.startsWith("drafts")) return { ok: true, status: 200, json: async () => ({ ok: true, drafts, refused: [], clock: null }) };
+      return { ok: true, status: 200, json: async () => ({ ok: true, orders, links: 0 }) };
+    };
+    await w.eval("ordLoad(true)"); await w.eval("apLoad(true)");
+    ok(told.length === 1 && told[0].n === 1 && told[0].age <= 2, "the first count goes with a fresh age: " + JSON.stringify(told));
+    /* the orders were read two hours ago; Approve's own poll then finds the payment they say they made drafted */
+    w.eval("ORD_AT=Date.now()-7200000");
+    drafts = [{ id: "d-p002", entry: { orderId: "20260924010000-p002", status: "Payment", by: "customer" } }];
+    await w.eval("apLoad(true)");
+    ok(told.length === 2 && told[1].n === 2 && told[1].age >= 7190,
+      "a count Approve makes over orders read two hours ago goes as two hours old, never as fresh: " + JSON.stringify(told[1]));
+    await w.eval("apLoad(true)");
+    ok(told.length === 2, "the same figure over the same reading is not sent again");
+    await w.eval("ordLoad(true)");
+    ok(told.length === 3 && told[2].n === 2 && told[2].age <= 2, "a fresh read of the orders sends the same figure again, fresh: " + JSON.stringify(told[2]));
+    await w.eval("ordLoad(true)");
+    ok(told.length === 3, "and not again while the reading has moved on less than five minutes");
+    w.eval("ORD_TOLD_AT=Date.now()-600000");
+    await w.eval("ordLoad(true)");
+    ok(told.length === 4 && told[3].n === 2 && told[3].age <= 2, "once it has, the same figure goes again, so its moment moves: " + JSON.stringify(told.slice(3)));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password

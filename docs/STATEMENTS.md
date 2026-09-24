@@ -831,7 +831,10 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   neither read failed, it sends `ordActs().length`, the count its Today row and Enter badge show (a new order, a
   question not marked No reply needed, cash to record, a payment they say they made), to the desk Worker's keyed
   `POST /orders/waiting`, and `tellWaiting` in `src/orders.js` relays it through the site's `POST /desk/waiting` into
-  the clear key `desk-waiting` `{n, at}`; the first count of a load and every change after it. The cron no longer
+  the clear key `desk-waiting` `{n, at}`; the first count of a load, every change after it, and the same figure again
+  once its reading has moved on five minutes. `at` is the reading's own moment: the page sends its `age`, the older of
+  its two reads (Approve polls the drafts alone), the site stamps now less that, and a reading a minute older than the
+  one held never replaces it, so a desk left open elsewhere cannot overwrite a newer one. The cron no longer
   counts: its recount (placed, or their line last) missed cash and payments and ignored No reply needed. So the
   figure is as fresh as the desk's last read, and Needs you says when: "N things wait on the desk, as at 14:06." The
   desk's page reads its orders with the count of
