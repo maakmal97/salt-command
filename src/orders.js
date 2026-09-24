@@ -111,14 +111,14 @@ export const CUSTOMER_SEES = {
   acknowledged: ["Acknowledged", "Acknowledged, and being prepared"],
   ready: ["Ready", "Ready to collect", "Ready to be delivered"],
   done: ["Completed", "Your order is now complete"],
-  declined: ["Declined", "This order could not be taken"],
+  declined: ["Not taken", "Not taken"],   /* S11 11.7: his reason and "Nothing is owed" follow on the page */
   cancelled: ["Withdrawn", "Withdrawn before anything moved", "Withdrawn"]
 };
 export function toldOf(o) {
   const w = CUSTOMER_SEES[o && o.status];
   if (!w) return "";
   const line = o.status === "ready" ? w[o.mode === "deliver" ? 2 : 1] : o.status === "cancelled" ? w[(+o.paid || 0) > 0 ? 2 : 1] : w[1];
-  return "They see " + w[0] + ": " + line + ".";
+  return "They see " + w[0] + (line !== w[0] ? ": " + line : "") + ".";
 }
 
 /* ---- THE ROW BEFORE HIS YES (S11 11.1, his decision D6 of 24 Sep 2026) ---------------------------
