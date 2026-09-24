@@ -224,8 +224,9 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .panel h2{font-size:var(--salt-text-lg);margin:0 0 4px}
 .panel p.lead{color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.7;margin:0 0 18px}
 /* THE ISSUES, as a strip of dates. The current one leads; the rest are the record. A pill is
-   a word in mono with a hairline, and the chosen one is brass: no filled badge. */
-.mos{max-width:620px;margin:0 auto 22px;display:flex;flex-wrap:wrap;gap:8px}
+   a word in mono with a hairline, and the chosen one is brass: no filled badge. S7 polish: now only Rewards' months,
+   inside its card, so it starts at the card's edge: centred, it stood 170px in from everything else from 1080px */
+.mos{max-width:620px;margin:0 0 22px;display:flex;flex-wrap:wrap;gap:8px}
 .mos button{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.06em;
   color:var(--salt-text-muted);background:none;border:1px solid var(--salt-line);
   border-radius:var(--salt-radius-pill);padding:7px 14px;cursor:pointer;
