@@ -8338,14 +8338,19 @@ await (async () => {
   if (existsSync(qrApp)) {
     const app = readFileSync(qrApp, "utf8");
     const at = app.indexOf("function linkOf(");
-    let d = 0, j = at < 0 ? -1 : app.indexOf("{", at);
-    for (; j >= 0 && j < app.length; j++) { if (app[j] === "{") d++; else if (app[j] === "}" && --d === 0) break; }
-    const rails = (/var RAILS = \[[\s\S]*?\n  \];/.exec(app) || [""])[0];
-    const linkOf = at < 0 ? () => ({}) : new Function(rails + "\n" + app.slice(at, j + 1) + "\nreturn linkOf;")();
-    const cases = [["m", "transfer", 70, u], ["m", "qr", "215.5", "0000-0000"], ["m", "qr", 999999.99, u]];
-    const back = cases.map((c) => linkOf(payHref(...c).slice("https://q.example/".length)));
-    ok(back.every((L, n) => L.key === cases[n][0] && L.rail === cases[n][1] && Number(L.amount) === Number(cases[n][2]) && L.ref === cases[n][3]),
-      "and QR Command's own parser, as it ships, reads every part back, so the Counter never links to what the page cannot open: " + JSON.stringify(back));
+    /* the landing order, named where it bites: QR Command ships first, so a checkout without its parser is red with the cause */
+    if (at < 0) ok(false, "QR Command's checkout at " + QR_REPO + " has no linkOf, so nothing can read the link back: land QR Command's "
+      + "payer's link first and fast-forward that checkout, or point QR_REPO at one that has it. The landing order, not the change under test");
+    else {
+      let d = 0, j = app.indexOf("{", at);
+      for (; j >= 0 && j < app.length; j++) { if (app[j] === "{") d++; else if (app[j] === "}" && --d === 0) break; }
+      const rails = (/var RAILS = \[[\s\S]*?\n  \];/.exec(app) || [""])[0];
+      const linkOf = new Function(rails + "\n" + app.slice(at, j + 1) + "\nreturn linkOf;")();
+      const cases = [["m", "transfer", 70, u], ["m", "qr", "215.5", "0000-0000"], ["m", "qr", 999999.99, u]];
+      const back = cases.map((c) => linkOf(payHref(...c).slice("https://q.example/".length)));
+      ok(back.every((L, n) => L.key === cases[n][0] && L.rail === cases[n][1] && Number(L.amount) === Number(cases[n][2]) && L.ref === cases[n][3]),
+        "and QR Command's own parser, as it ships, reads every part back, so the Counter never links to what the page cannot open: " + JSON.stringify(back));
+    }
   } else okOff(true, "QR Command is not on this machine, so the link goes unread by its parser");
 })();
 
