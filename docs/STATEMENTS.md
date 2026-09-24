@@ -515,7 +515,9 @@ everything, as at v321. On an iPhone the desk has to be opened from the Home Scr
 **Notifications.** The page polls the customer's orders every ten seconds while it is open.
 For a closed page the site has its own Web Push pair: a payload-free wake, and the service
 worker the site serves at `/sw.js` shows a fixed banner naming no amount and no order. On an
-iPhone the page has to be on the Home Screen first; the copy says so.
+iPhone the page has to be on the Home Screen first; the copy says so. A subscription is filed at
+`push:<username>:<endpoint hash>` with the phone's two keys, `p256dh` and `auth`, when the page sends
+them (`pushKeys` in `stmt/push.js`); a pair that is not one is dropped and the record kept without it.
 
 **Setup, once:** `node tools/stmt-setup.mjs` mints `STMT_DESK_KEY` onto both Workers and the
 site's push pair (`STMT_VAPID_PRIVATE_JWK` as a secret, the public key written into

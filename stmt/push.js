@@ -44,6 +44,24 @@ async function vapidToken(env, key, origin) {
   return `${header}.${body}.${b64url(sig)}`;
 }
 
+const unb64url = (s) => {
+  const t = s.replace(/=+$/, "").replace(/-/g, "+").replace(/_/g, "/");
+  return Uint8Array.from(atob(t + "===".slice((t.length + 3) % 4)), (c) => c.charCodeAt(0));
+};
+
+/* S12 12.1 (24 Sep 2026): A SUBSCRIPTION KEEPS ITS ENCRYPTION KEYS. The phone hands them over with the
+   endpoint (RFC 8291): `p256dh`, its P-256 public key, and `auth`, sixteen secret bytes. Only with both can a
+   wake carry words the phone alone can read. Anything else is dropped, never refused: a record with no keys
+   still wakes the phone, as every record did before. */
+export function pushKeys(k) {
+  if (!k || typeof k.p256dh !== "string" || typeof k.auth !== "string") return null;
+  if (!/^[A-Za-z0-9_-]{16,120}=*$/.test(k.p256dh) || !/^[A-Za-z0-9_-]{16,40}=*$/.test(k.auth)) return null;
+  try {
+    const p = unb64url(k.p256dh), a = unb64url(k.auth);
+    return p.length === 65 && p[0] === 4 && a.length === 16 ? { p256dh: k.p256dh, auth: k.auth } : null;
+  } catch { return null; }
+}
+
 /** The hash that names a subscription: the first twelve bytes of SHA-256 over the endpoint, as hex. */
 export async function endpointId(endpoint) {
   const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(endpoint)));

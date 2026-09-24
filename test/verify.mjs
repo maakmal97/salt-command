@@ -19954,6 +19954,78 @@ await (async () => {
     "and with nothing owed it still says so: " + (bQuiet && bQuiet.opt.body));
 })();
 
+section("S12 12.1: a subscription keeps its two encryption keys, and a pair that is not one is dropped, never refused");
+await (async () => {
+  /* 24 SEP 2026, his decision D4: a banner may say what kind of news it is, encrypted so only the phone can
+     read it (RFC 8291). That needs the phone's p256dh and auth, which the page never sent and the Worker never
+     kept. A record without them still wakes the phone payload-free, so nothing already subscribed goes dark. */
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const O = await import("../stmt/orders.js");
+  const kv = new KV(), env = { STMT: kv };
+  const un = "k2m4-p6r8";
+  await kv.put("u:" + un, JSON.stringify({ v: 1, issued: "2026-09-01", env: { v: 1, salt: "s", iv: "i", ct: "c" } }));
+  const S = { "X-Stmt-Session": await O.mintSession(env, un) };
+  const b64u = (a) => Buffer.from(a).toString("base64url");
+  const ua = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+  const p256dh = b64u(new Uint8Array(await crypto.subtle.exportKey("raw", ua.publicKey)));
+  const auth = b64u(crypto.getRandomValues(new Uint8Array(16)));
+  const sub = async (endpoint, keys) => {
+    const r = await stmtW.fetch(new Request("https://site.test/push/subscribe", { method: "POST",
+      headers: Object.assign({ "content-type": "application/json" }, S), body: JSON.stringify({ endpoint, keys }) }), env);
+    const b = await r.json();
+    const rec = b.id ? JSON.parse(await kv.get("push:" + un + ":" + b.id)) : null;
+    return { status: r.status, b, rec };
+  };
+  const good = await sub("https://push.example/k1", { p256dh, auth });
+  ok(good.status === 200 && good.b.keys === true && good.rec && good.rec.endpoint === "https://push.example/k1"
+    && good.rec.keys && good.rec.keys.p256dh === p256dh && good.rec.keys.auth === auth,
+    "a subscription posted with its keys keeps both on push:<username>:<id>: " + JSON.stringify(good.rec));
+  const short = b64u(new Uint8Array(await crypto.subtle.exportKey("raw", ua.publicKey)).slice(0, 64));
+  const bad = [await sub("https://push.example/k2", { p256dh: short, auth }),
+    await sub("https://push.example/k3", { p256dh, auth: b64u(new Uint8Array(15)) }),
+    await sub("https://push.example/k4", { p256dh: 7, auth }),
+    await sub("https://push.example/k5", null)];
+  ok(bad.every((x) => x.status === 200 && x.b.ok && x.b.keys === false && x.rec && x.rec.endpoint && !("keys" in x.rec)),
+    "a point one byte short, an auth of fifteen bytes, a key that is not text and no keys at all are each filed without keys, never refused: "
+    + JSON.stringify(bad.map((x) => [x.status, x.b.keys, x.rec && Object.keys(x.rec)])));
+
+  /* ---- THE PAGE HANDS THEM OVER, off the subscription's own toJSON ---- */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const pass = "2345-6789-abcd-efgh", ck = await C.contentKey("6".repeat(64), un);
+  const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, live: null, prices: null, session: "sessKaaaaaaaaaaaaaaaaaaaaaaa",
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 Sep 2026", body: "<p>Statement</p>" }] })) };
+  const posted = [];
+  const reg = { pushManager: { subscribe: async () => ({ endpoint: "https://push.example/page-k",
+    toJSON: () => ({ endpoint: "https://push.example/page-k", expirationTime: null, keys: { p256dh, auth } }) }) } };
+  const dom = new JSDOM(landingPage(un, "nK", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {};
+      win.PushManager = function () {};
+      win.Notification = { permission: "granted", requestPermission: async () => "granted" };
+      Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+        register: async () => reg, ready: Promise.resolve(reg), getRegistration: async () => undefined, addEventListener() {} } });
+      win.fetch = async (path, init) => {
+        const p = String(path);
+        if (p === "/open") return { ok: true, status: 200, json: async () => openB };
+        if (p === "/push/key") return { ok: true, status: 200, json: async () => ({ ok: true, key: "BA", configured: true }) };
+        if (p === "/push/subscribe") { posted.push(JSON.parse(init.body)); return { ok: true, status: 200, json: async () => ({ ok: true, id: "x", keys: true }) }; }
+        return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      };
+    } });
+  const W = dom.window, D = W.document;
+  try {
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !posted.length; i++) await new Promise((r) => setTimeout(r, 25));
+    ok(posted.length === 1 && posted[0].endpoint === "https://push.example/page-k" && posted[0].keys
+      && posted[0].keys.p256dh === p256dh && posted[0].keys.auth === auth && Object.keys(posted[0].keys).length === 2,
+      "the page posts the endpoint with its two keys and nothing else of the subscription: " + JSON.stringify(posted));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } }
+})();
 section("v760: a customer paying or taking an order back wakes him, and the banner says which");
 await (async () => {
   /* MEASURED 21 SEP 2026: the site has written the moment of every change since v694, the desk asked

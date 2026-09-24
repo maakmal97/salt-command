@@ -44,7 +44,7 @@ import { identity } from "./access.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, MAX_PER_ASSOC } from "./refs.js";
 import { SIGNIN_RE, mintSignin, burnSignin } from "./signin.js";
-import { endpointId, wakeCustomer, wakeEveryone } from "./push.js";
+import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
 import { FONTS } from "./fonts.js";
@@ -314,9 +314,9 @@ async function handleCustomer(request, env, p, m) {
     const b = await readJson(request);
     const ep = b && b.endpoint;
     if (typeof ep !== "string" || !/^https:\/\//.test(ep)) return json({ ok: false, error: "a subscription needs an https endpoint" }, 400);
-    const id = await endpointId(ep);
-    await env.STMT.put("push:" + u + ":" + id, JSON.stringify({ endpoint: ep, at: new Date().toISOString() }));
-    return json({ ok: true, id });
+    const id = await endpointId(ep), keys = pushKeys(b.keys);   /* S12 12.1: kept, so a wake can carry its kind */
+    await env.STMT.put("push:" + u + ":" + id, JSON.stringify(Object.assign({ endpoint: ep, at: new Date().toISOString() }, keys ? { keys } : {})));
+    return json({ ok: true, id, keys: !!keys });
   }
   /* v692: remember this device, and log out of it */
   if (p === "/remember") {

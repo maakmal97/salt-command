@@ -1670,7 +1670,9 @@ const CLIENT_JS = `
       for(var i=0;i<raw.length;i++) key[i]=raw.charCodeAt(i);
       var sub=await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:key});
       if(mine!==ticket) return;
-      var r=await api('/push/subscribe',{endpoint:sub.endpoint});
+      /* S12 12.1: and its two keys, so a wake can say what kind of news it is in words only this phone can read */
+      var j=sub.toJSON?sub.toJSON():null;
+      var r=await api('/push/subscribe',{endpoint:sub.endpoint, keys:j&&j.keys?{p256dh:j.keys.p256dh, auth:j.keys.auth}:null});
       if(mine!==ticket) return;
       if(r.body.ok){ draft.pushed=true; draft.pushDone=true; } else draft.pushNote=r.body.error||'The subscription was not recorded.';
     }catch(e){ draft.pushNote='Notifications could not be switched on here. Try again later.'; }
