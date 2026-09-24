@@ -623,6 +623,17 @@ async function lockedOut(env) {
   } while (cursor);
   return out;
 }
+/* S9 9.2: how many phones take each account's alerts, off the push records' own keys (push:<username>:<id>) */
+async function alertsOn(env) {
+  const out = new Map();
+  let cursor;
+  do {
+    const page = await env.STMT.list({ prefix: "push:", cursor });
+    for (const k of page.keys) { const u = k.name.split(":")[1]; out.set(u, (out.get(u) || 0) + 1); }
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+  return out;
+}
 async function ownerSheet(env, origin) {
   const sheet = await env.STMT.get("sheet", "json");
   const rows = sheet && Array.isArray(sheet.accounts) ? sheet.accounts : [];
@@ -630,7 +641,7 @@ async function ownerSheet(env, origin) {
   const issue = sheet ? sheet.issue || null : null;
   const month = monthNameOf(issue);
   await keepTicks(env);
-  const locks = await lockedOut(env);
+  const locks = await lockedOut(env), alerts = await alertsOn(env);
   const out = [];
   for (const a of await roster(env)) {
     const s = byUser.get(a.username) || null;
@@ -655,7 +666,7 @@ async function ownerSheet(env, origin) {
       qr: QR.qrMatrix(url).map((line) => line.join("")),
       pwMaster: s ? s.pwMaster || null : null,
       seen: seen ? { first: seen.first || null, last: seen.last || null, opens: +seen.opens || 0, how: seen.how || null } : null,
-      sent: sent ? sent.at || null : null, locked: locks.get(a.username) || null
+      sent: sent ? sent.at || null : null, locked: locks.get(a.username) || null, alerts: alerts.get(a.username) || 0
     });
   }
   return { ok: true, at: sheet ? sheet.at || null : null, issue, month, accounts: out };

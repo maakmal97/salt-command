@@ -87,7 +87,7 @@ committed, so the same passwords went into git anyway. One place, and that place
 repository. The suite asserts that no generated page contains one.
 
 **Sealed under the master, they also ride with the record** (v688, his decision of 18 Sep 2026),
-as `pwMaster`, so Send statement on his master account can hand one over from his phone. That is
+as `pwMaster`, so an account's card on Salt Admin can hand one over from his phone. That is
 ciphertext under the passphrase that already unwraps every account, the publish keeps it out of
 the record a customer fetches, and his page decrypts it in the browser straight to the clipboard.
 `node tools/stmt-seal.mjs statements/<YYYY-MM> [--check]` sealed the issue that went out before
@@ -648,7 +648,13 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   it and one to share it, so the share sheet never waits on the derivation; an ID with no account (the
   stranger's standing link, Send off until the laptop mints it); and the accounts neither ticked sent
   nor ever opened. Stage 3's Show a code joins the locked card where `showHandover` is on the page.
-- **The master account** (v687, his instruction of 18 Sep 2026): Review lists every account with where it stands, in one word
+- **His places** (S9 9.2): Needs you, Accounts, Links and More (the report card and the test account), the
+  system's App bar on a phone and its Desk rail from 1080px, a count beside a place that has something waiting.
+- **Accounts** (S9 9.2) is one list for what Send and Review were: the system's Inbox row an account, chips
+  for where it stands, when and how it was last opened, alerts on (the `push:` keys, counted by
+  `alertsOn`), locked and no account; a search and filters (Not sent, Not opened, Owes, Locked, No
+  account) above it; a row opens the account's card (Send's), beside the list from 1080px.
+- **The master account** (v687, his instruction of 18 Sep 2026): the list shows every account with where it stands, in one word
   from `reviewFlag`, and when it was last opened, from the `seen:` keys this Worker has written
   since v499 and nothing read until now. The list comes from `GET /all/sheet`, which merges those
   opens into `sheet`, written by `tools/stmt-publish.mjs` from each statement's own rows through
@@ -671,7 +677,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   `/accounts/{id}/access/apps`. A team rename moves the issuer: `ACCESS_TEAM` in
   `wrangler.stmt.jsonc` is a config edit plus a hand deploy, and every device signs in again.
 - **SIGN-IN LINK, ON EACH ACCOUNT'S CARD** (v710). It is minted ON A TAP and never on a draw: drawing
-  the Send panel would file a record per account on every page load and burn links nobody sent. His
+  Accounts would file a record per account on every page load and burn links nobody sent. His
   page opens the account under the master, wraps the content key under a fresh token, and posts the
   token and the wrap to `POST /all/signin/<username>`, which refuses a username the roster does not
   carry and refuses to hand back a link it could not file. What comes back is the finished message

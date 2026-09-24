@@ -14151,9 +14151,12 @@ await (async () => {
         return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
     } }).window;
     const D = win.document;
-    D.querySelector('button[data-m="review"]').click();
-    ok(await until(() => [...D.querySelectorAll("#rlist button")].some((b) => b.textContent.includes("CX0-AA"))), "Review lists the account");
+    D.querySelector('button[data-m="accounts"]').click();
+    ok(await until(() => [...D.querySelectorAll("#rlist button")].some((b) => b.textContent.includes("CX0-AA"))), "Accounts lists the account");
+    /* S9 9.2: a row opens the account's card, and the card opens the account */
     [...D.querySelectorAll("#rlist button")].find((b) => b.textContent.includes("CX0-AA")).click();
+    ok(await until(() => [...D.querySelectorAll("#aopen button")].some((b) => b.textContent === "Open account")), "the row opens its card");
+    [...D.querySelectorAll("#aopen button")].find((b) => b.textContent === "Open account").click();
     const pOrder = D.getElementById("pOrder");
     ok(await until(() => pOrder.querySelectorAll(".pane .quote").length >= 1),
       "the account opens and its order is drawn from his route, not None yet: " + JSON.stringify(pOrder.textContent.slice(0, 160)));
@@ -14215,30 +14218,26 @@ await (async () => {
         return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
     } }).window;
     const D = win.document;
-    /* ---- Send: the four controls on the card with no account ---- */
-    D.querySelector('button[data-m="send"]').click();
-    const cardOf = (u) => [...D.querySelectorAll("#slist .scard")].find((x) => x.textContent.includes(u));
-    ok(await until(() => cardOf(uA) && cardOf(uB)), "Send draws a card for both usernames");
-    const btn = (u, t) => [...cardOf(u).querySelectorAll("button")].find((b) => b.textContent === t);
-    const four = ["Share", "Copy message", "Sign-in link", "Open account"];
-    ok(four.every((t) => btn(uB, t) && btn(uB, t).disabled && /No account/.test(btn(uB, t).title)) && /No account yet/.test(cardOf(uB).textContent),
-      "on the card with no account, Share, Copy message, Sign-in link and Open account are all off, each saying why: "
-        + JSON.stringify(four.map((t) => [t, btn(uB, t) && btn(uB, t).disabled])));
-    ok(four.every((t) => btn(uA, t) && !btn(uA, t).disabled), "and on a card with an account all four stay on");
-    /* UX9: the code opens the same address Share sends, under a caption offering the Sign-in link that is off */
-    ok(!cardOf(uB).querySelector(".qrw") && !/Sign-in link sends one/.test(cardOf(uB).textContent)
-      && !!cardOf(uA).querySelector(".qrw canvas") && /Sign-in link sends one/.test(cardOf(uA).textContent),
-      "the card with no account draws no code and no caption offering a link, while a card with an account keeps both");
-    /* ---- Review: the row with no account takes no tap ---- */
-    D.querySelector("button[data-back]").click();
-    D.querySelector('button[data-m="review"]').click();
+    /* ---- S9 9.2: Accounts, a row opening each account's card; the four controls on the one with no account ---- */
+    D.querySelector('button[data-m="accounts"]').click();
     const rowOf = (u) => [...D.querySelectorAll("#rlist button")].find((b) => b.textContent.includes(u));
-    ok(await until(() => rowOf(uB) && /No account yet/.test(rowOf(uB).textContent)), "Review says the username has no account");
+    ok(await until(() => rowOf(uB) && /No account/.test(rowOf(uB).textContent) && rowOf(uA)), "Accounts lists both usernames, and says the one has no account");
+    const cardOf = (u) => { rowOf(u).click(); return [...D.querySelectorAll("#aopen .scard")].find((x) => x.textContent.includes(u)); };
+    const btn = (card, t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
+    const four = ["Share", "Copy message", "Sign-in link", "Open account"];
     const before = hits.length;
-    rowOf(uB).click();
+    const cB = cardOf(uB);
     await new Promise((r) => setTimeout(r, 60));
-    ok(rowOf(uB).disabled && !hits.slice(before).some((x) => /\/open$/.test(x)),
-      "and a tap on its row posts nothing: " + JSON.stringify(hits.slice(before)));
+    ok(!!cB && four.every((t) => btn(cB, t) && btn(cB, t).disabled && /No account/.test(btn(cB, t).title)) && /No account yet/.test(cB.textContent),
+      "on the card with no account, Share, Copy message, Sign-in link and Open account are all off, each saying why: "
+        + JSON.stringify(four.map((t) => [t, cB && btn(cB, t) && btn(cB, t).disabled])));
+    ok(!hits.slice(before).some((x) => /\/open$/.test(x)), "and opening its card posts nothing: " + JSON.stringify(hits.slice(before)));
+    /* UX9: the code opens the same address Share sends, under a caption offering the Sign-in link that is off */
+    ok(!cB.querySelector(".qrw") && !/Sign-in link sends one/.test(cB.textContent),
+      "the card with no account draws no code and no caption offering a link");
+    const cA = cardOf(uA);
+    ok(!!cA && four.every((t) => btn(cA, t) && !btn(cA, t).disabled), "and on a card with an account all four stay on");
+    ok(!!cA.querySelector(".qrw canvas") && /Sign-in link sends one/.test(cA.textContent), "with the code and its caption");
 
     /* ---- the Worker: his correct master on a username with no account is never a miss ---- */
     const from = { "content-type": "application/json", "CF-Connecting-IP": "203.0.113.22" };
@@ -14459,9 +14458,12 @@ await (async () => {
       w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
     } }).window;
     const D = win.document;
-    D.querySelector('button[data-m="send"]').click();
-    const btnOf = (t) => [...D.querySelectorAll("#slist .scard button")].find((b) => b.textContent === t);
-    ok(await until(() => btnOf("Copy message")), "Send draws the card");
+    /* S9 9.2: the card is the account's, opened from its row on Accounts */
+    D.querySelector('button[data-m="accounts"]').click();
+    ok(await until(() => D.querySelector("#rlist [data-u]")), "Accounts lists the account");
+    D.querySelector("#rlist [data-u]").click();
+    const btnOf = (t) => [...D.querySelectorAll("#aopen .scard button")].find((b) => b.textContent === t);
+    ok(await until(() => btnOf("Copy message")), "its row opens the card");
     const cm = btnOf("Copy message"); cm.click();
     ok(await until(() => cm.textContent !== "Copy message") && cm.textContent === "Copy failed",
       "Copy message on a clipboard that refuses says Copy failed, not Copied: " + cm.textContent);
@@ -14472,7 +14474,6 @@ await (async () => {
       "Sign-in link with the share sheet closed does not say Could not make one: the link is made, copied instead, and says so: "
         + JSON.stringify({ label: sl.textContent, copied: clip.got.length }));
     clip.ok = false;
-    D.querySelector("button[data-back]").click();
     D.querySelector('button[data-m="links"]').click();
     ok(await until(() => [...D.querySelectorAll("#glist button")].filter((b) => b.textContent === "Copy link").length >= 2), "Links draws a card a tier");
     const [l1, l2] = [...D.querySelectorAll("#glist button")].filter((b) => b.textContent === "Copy link");
@@ -14484,7 +14485,7 @@ await (async () => {
       "and on one that takes it, Copied, with the link on the clipboard: " + l2.textContent);
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
-section("S1 1.36: ticking Sent on a card moves the sent count at the top of Send");
+section("S1 1.36: ticking Sent on a card moves the sent count at the top of Accounts");
 await (async () => {
   /* 24 SEP 2026 (L39): "N of M sent" was counted when the panel drew and never again, so it sat on its
      first figure while he ticked his way down the list. Driven on his page against the real Worker. */
@@ -14523,11 +14524,14 @@ await (async () => {
         finally { setTimeout(() => inflight--, 0); } };
     } }).window;
     const D = win.document;
-    D.querySelector('button[data-m="send"]').click();
+    D.querySelector('button[data-m="accounts"]').click();
     const head = () => (D.getElementById("scount") || {}).textContent;
     await until(() => inflight === 0);
-    const box = (u) => { const c = [...D.querySelectorAll("#slist .scard")].find((x) => x.textContent.includes(u)); return c && c.querySelector(".tick input"); };
-    ok(await until(() => box(uA) && box(uB)) && head() === "0 of 2 sent", "Send opens on nothing sent: " + head());
+    /* S9 9.2: the tick is on the account's own card, opened from its row */
+    const box = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (!r) return null;
+      if (!D.querySelector("#aopen .scard") || !D.querySelector("#aopen .scard").textContent.includes(u)) r.click();
+      const c = D.querySelector("#aopen .scard"); return c && c.querySelector(".tick input"); };
+    ok(await until(() => box(uA)) && head() === "0 of 2 sent", "Accounts opens on nothing sent: " + head());
     box(uA).checked = true; box(uA).dispatchEvent(new win.Event("change", { bubbles: true }));
     ok(await until(async () => !!(await kv.get("sent:2026-09-01:" + uA))) && await until(() => head() === "1 of 2 sent"),
       "a tick is kept and the count moves with it: " + head());
@@ -14702,8 +14706,8 @@ await (async () => {
     "the owner's script is on his page and on no customer's: " + JSON.stringify(OWNERISH.filter((t) => cust87.includes(t))));
   ok(!cust87.includes("__OWNER_JS__") && !own87.includes("__OWNER_JS__") && !cust87.includes("mp87"),
     "the splice leaves no marker on either page, and no master on the customer's");
-  ok(/id="mHome"/.test(own87) && own87.includes('data-m="review"') && own87.includes('data-m="links"') && own87.includes("data-back"),
-    "and the master page opens on its items, each with a way back");
+  ok(/id="mHome"/.test(own87) && own87.includes('data-m="accounts"') && own87.includes('data-m="links"') && own87.includes('data-m="needs"'),
+    "and the master page opens on its home, with its places beside it (S9 9.2)");
 
   /* ONE RULE FOR WHERE AN ACCOUNT STANDS (v687): the review sheet, the send sheet and the publish read it. */
   const { reviewFlag, accountTotals, partyTotals, klToday } = await import("../tools/make_statements.mjs");
@@ -14798,17 +14802,17 @@ await (async () => {
       ? { ok: true, status: 200, json: async () => js87 }
       : { ok: false, status: 404, json: async () => ({ ok: false, error: "no" }) });
     try {
-      ok(D87.getElementById("mHome").hidden === false && D87.getElementById("oReview").hidden === true,
-        "the master page opens on its items, with Review closed");
-      D87.querySelector('button[data-m="review"]').dispatchEvent(new W87.Event("click", { bubbles: true }));
+      ok(D87.getElementById("mHome").hidden === false && D87.getElementById("oAccts").hidden === true,
+        "the master page opens on its home, with Accounts closed");
+      D87.querySelector('button[data-m="accounts"]').dispatchEvent(new W87.Event("click", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 60));
       const list87 = D87.getElementById("rlist").textContent;
-      ok(D87.getElementById("oReview").hidden === false && D87.getElementById("mHome").hidden === true
-        && /CX0-AA/.test(list87) && /Owes RM 272/.test(list87) && /Opened 14 Sep 2026/.test(list87),
-        "a tap on Review draws every account with its word and its last open: " + list87.replace(/\s+/g, " ").slice(0, 120));
-      D87.querySelector("button[data-back]").dispatchEvent(new W87.Event("click", { bubbles: true }));
-      ok(D87.getElementById("mHome").hidden === false && D87.getElementById("oReview").hidden === true,
-        "and Back returns to the items");
+      ok(D87.getElementById("oAccts").hidden === false && D87.getElementById("mHome").hidden === true
+        && /CX0-AA/.test(list87) && /Owes RM 272/.test(list87) && /Opened 14 Sep/.test(list87),
+        "a tap on Accounts draws every account with its word and its last open: " + list87.replace(/\s+/g, " ").slice(0, 120));
+      D87.querySelector('button[data-m="needs"]').dispatchEvent(new W87.Event("click", { bubbles: true }));
+      ok(D87.getElementById("mHome").hidden === false && D87.getElementById("oAccts").hidden === true,
+        "and Needs you takes him home");
     } finally { try { W87.close(); } catch (e) { /* best effort */ } }
   } finally { globalThis.fetch = realFetch87; }
 })();
@@ -14924,6 +14928,103 @@ await (async () => {
     const sc = card("s");
     ok(/^1 to send/.test(sc.textContent) && /CX2-FR has an account and no sign-in yet[.]/.test(sc.textContent) && !/CX1-AS|CX0-LK/.test(sc.textContent),
       "the to-send card names only the account with no tick and no open: " + sc.textContent);
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 9.2: Accounts is one list for Send and Review, found by a word, narrowed by a filter, a row opening its card, among four places");
+await (async () => {
+  /* THE PLAN'S SECTION 5: Accounts replaces Send and Review with one list, chips for how and when each was
+     opened, alerts, owes, locked and no account, a search and filters above it, and a row opening the account.
+     Salt Admin's places are the App bar's on a phone and the Desk rail's on a desk. Driven on his rendered page
+     against the real Worker. */
+  const W = (await import("../stmt/worker.js")).default;
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const uO = "abcd-efgh", uL = "cdef-ghjk", uN = "defg-hjkm", uF = "efgh-jkmn";
+  await kv.put("roster", JSON.stringify([{ code: "CX0-OW", username: uO }, { code: "CX1-LK", username: uL }, { code: "CX2-NO", username: uN }, { code: "CX3-FR", username: uF }]));
+  await kv.put("issue", "2026-09-01");
+  const row = (code, username, flag, t) => ({ code, username, issued: "2026-09-01", t: Object.assign({ n: 2, total: 300, owed: 0, toGet: 0, refund: 0, pend: 0 }, t || {}), flag });
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: [row("CX0-OW", uO, "owes", { owed: 272 }), row("CX1-LK", uL, "clear"), row("CX3-FR", uF, "clear")] }));
+  await kv.put("sent:2026-09-01:" + uO, JSON.stringify({ at: "2026-09-03T01:00:00Z" }));
+  await kv.put("seen:" + uO, JSON.stringify({ first: "2026-09-04T01:00:00Z", last: "2026-09-14T09:00:00Z", opens: 3, how: "link" }));
+  await kv.put("push:" + uO + ":aa11", JSON.stringify({ endpoint: "https://push.example/a" }));
+  await kv.put("push:" + uO + ":bb22", JSON.stringify({ endpoint: "https://push.example/b" }));
+  await kv.put("fail:203.0.113.7:" + uL, "10", { expirationTtl: 900 });
+  const TEAM = "maakmal", AUD = "aud-s9-2", KID = "kid-s9-2";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: "mp-s9-2", ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 200 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sj = await (await site("/all/sheet", { headers: { "cf-access-jwt-assertion": tok } })).json();
+    const by = (u) => sj.accounts.find((a) => a.username === u);
+    ok(by(uO).alerts === 2 && by(uF).alerts === 0, "the account list counts the phones taking each account's alerts: " + JSON.stringify([by(uO).alerts, by(uF).alerts]));
+
+    const html = await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text();
+    ok(!/id="oSend"|id="oReview"|data-m="send"|data-m="review"/.test(html), "Send and Review are gone from his page");
+    win = new JSDOM(html, { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const places = (sel) => [...D.querySelectorAll(sel + " .place[data-m]")].map((b) => b.getAttribute("data-m")).join(",");
+    ok(places(".salt-appbar") === "needs,accounts,links,more" && places(".salt-rail") === "needs,accounts,links,more",
+      "four places, in the App bar and in the Desk rail the bar gives way to: " + JSON.stringify([places(".salt-appbar"), places(".salt-rail")]));
+    const current = () => [...new Set([...D.querySelectorAll(".place[aria-current='page']")].map((b) => b.getAttribute("data-m")))].join(",");
+    ok(current() === "needs", "Needs you is the place he opens on: " + current());
+    ok(await until(() => [...D.querySelectorAll('[data-count="needs"]')].every((x) => x.textContent === "3")),
+      "and it carries the count of what waits there on both bars: " + JSON.stringify([...D.querySelectorAll('[data-count="needs"]')].map((x) => x.textContent)));
+
+    D.querySelector('.salt-appbar button[data-m="accounts"]').click();
+    const rows = () => [...D.querySelectorAll("#rlist [data-u]")];
+    const rowOf = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
+    ok(D.getElementById("oAccts").hidden === false && D.getElementById("mHome").hidden === true && current() === "accounts",
+      "a tap on Accounts opens it and marks it the current place");
+    ok(await until(() => rows().length === 4) && rows().every((r) => r.classList.contains("salt-inbox-row")),
+      "every roster account is a row, drawn with the system's Inbox row");
+    const chips = (u) => [...rowOf(u).querySelectorAll(".salt-status")].map((x) => x.textContent);
+    ok(chips(uO).includes("Owes RM 272") && chips(uO).includes("Opened 14 Sep by link") && chips(uO).includes("Alerts on") && chips(uO).includes("Sent 3 Sep"),
+      "a row's chips say what it owes, how and when it was last opened, that alerts are on and when it was sent: " + JSON.stringify(chips(uO)));
+    ok(chips(uL).some((t) => /^Locked till \d\d:\d\d$/.test(t)) && chips(uN).join() === "No account" && chips(uF).includes("Not opened"),
+      "a locked account, one with no account and one never opened each say so: " + JSON.stringify([chips(uL), chips(uN), chips(uF)]));
+
+    /* a word, then each filter */
+    const rq = D.getElementById("rq");
+    rq.value = "cx1"; rq.dispatchEvent(new win.Event("input", { bubbles: true }));
+    ok(rows().map((r) => r.getAttribute("data-u")).join() === uL, "a word narrows the list to the accounts it matches");
+    rq.value = ""; rq.dispatchEvent(new win.Event("input", { bubbles: true }));
+    const shown = (f) => { D.querySelector('#afil button[data-f="' + f + '"]').click(); return rows().map((r) => r.getAttribute("data-u")).sort().join(); };
+    const want = { owes: [uO], locked: [uL], none: [uN], unsent: [uL, uF], unopened: [uL, uF], all: [uO, uL, uN, uF] };
+    const got = Object.fromEntries(Object.keys(want).map((f) => [f, shown(f)]));
+    ok(Object.keys(want).every((f) => got[f] === want[f].slice().sort().join()), "each filter shows what it names and nothing else: " + JSON.stringify(got));
+    shown("owes");
+    ok(D.querySelector('#afil button[data-f="owes"]').getAttribute("aria-pressed") === "true"
+      && [...D.querySelectorAll("#afil button[data-f]")].filter((b) => b.getAttribute("aria-pressed") === "true").length === 1,
+      "and the filter in force is the one pressed");
+    shown("all");
+
+    /* a row opens the account, and the way back closes it */
+    rowOf(uO).click();
+    ok(D.getElementById("oAccts").classList.contains("open") && !D.getElementById("aopen").hidden
+      && /CX0-OW/.test(D.querySelector("#aopen .scard").textContent) && rowOf(uO).getAttribute("aria-current") === "true",
+      "a row opens its account's card and is marked the open one");
+    D.querySelector('#aopen button[data-back="accounts"]').click();
+    ok(!D.getElementById("oAccts").classList.contains("open") && D.getElementById("aopen").hidden && !rowOf(uO).hasAttribute("aria-current"),
+      "and the way back closes it");
+    D.querySelector('.salt-rail button[data-m="more"]').click();
+    ok(D.getElementById("oMore").hidden === false && current() === "more" && !!D.querySelector('#oMore button[data-m="cards"]') && !!D.getElementById("mTest"),
+      "More holds the report card and the test account");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
@@ -15078,20 +15179,24 @@ await (async () => {
         : { ok: true, status: 200, json: async () => ({ ok: true, sent: "2026-09-18T03:00:00Z" }) });
       let copied = null;
       W88.navigator.clipboard = { writeText: async (t) => { copied = t; } };
-      D88.querySelector('button[data-m="send"]').dispatchEvent(new W88.Event("click", { bubbles: true }));
+      /* S9 9.2: Send is Accounts now, and an account's card opens from its row */
+      D88.querySelector('button[data-m="accounts"]').dispatchEvent(new W88.Event("click", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 80));
-      const cardEl = D88.querySelector("#slist .scard");
-      ok(!!cardEl && /CX0-AA/.test(cardEl.textContent) && /3 orders, RM 420.00/.test(cardEl.textContent) && !!cardEl.querySelector("canvas"),
-        "the Send panel draws a card an account, with its totals and its code");
+      const open88 = (code) => { const r = [...D88.querySelectorAll("#rlist [data-u]")].find((x) => x.textContent.includes(code));
+        if (r) r.dispatchEvent(new W88.Event("click", { bubbles: true })); return D88.querySelector("#aopen .scard"); };
+      const bare = open88("CX0-BB");
+      const bareLink = bare && [...bare.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
       /* HIS QUESTION OF 23 SEP 2026: the account is one live document, so nothing on this panel may
          speak of an issue, and a username with nothing behind it says so and offers no sign-in link */
-      const bare = [...D88.querySelectorAll("#slist .scard")].find((c) => /CX0-BB/.test(c.textContent));
-      const bareLink = bare && [...bare.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
+      ok(!!bare && /No account yet, so they cannot sign in/.test(bare.textContent) && !!bareLink && bareLink.disabled,
+        "a code with no account says it cannot sign in, and its sign-in link is shut");
+      ok(!/issue/i.test(D88.getElementById("oAccts").textContent),
+        "and Accounts never says issue: " + JSON.stringify((D88.getElementById("oAccts").textContent.match(/.{0,30}issue.{0,30}/i) || [""])[0]));
+      const cardEl = open88("CX0-AA");
+      ok(!!cardEl && /CX0-AA/.test(cardEl.textContent) && /3 orders, RM 420.00/.test(cardEl.textContent) && !!cardEl.querySelector("canvas"),
+        "an account's card carries its totals and its code");
       const liveLink = [...cardEl.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
-      ok(!!bare && /No account yet, so they cannot sign in/.test(bare.textContent) && !!bareLink && bareLink.disabled && !!liveLink && !liveLink.disabled,
-        "a code with no account says it cannot sign in, and only its sign-in link is shut");
-      ok(!/issue/i.test(D88.getElementById("oSend").textContent),
-        "and the Send panel never says issue: " + JSON.stringify((D88.getElementById("oSend").textContent.match(/.{0,30}issue.{0,30}/i) || [""])[0]));
+      ok(!!liveLink && !liveLink.disabled, "and an account's sign-in link is on");
       const buttons = [...cardEl.querySelectorAll("button")];
       const msgBtn = buttons.find((b) => b.textContent === "Copy message"), pwBtn = buttons.find((b) => b.textContent === "Copy password");
       msgBtn.dispatchEvent(new W88.Event("click", { bubbles: true }));

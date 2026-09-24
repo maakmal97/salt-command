@@ -296,7 +296,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **`/all` IS THE MASTER ACCOUNT, behind Access with two locks, neither trusted alone**: the Access
   application and `stmt/access.js` verifying the JWT again (RS256, issuer, audience, expiry). Empty
   `ACCESS_TEAM` or `ACCESS_AUD` closes `/all`. **`stmt/owner.js` travels only there.**
-- **Send statement hands over the password from his phone** (`pwMaster` under `STMT_MASTER`, in
+- **An account's card on Salt Admin hands over the password from his phone** (`pwMaster` under `STMT_MASTER`, in
   `sheet` behind Access, decrypted to the clipboard). The plain password stays laptop-only in
   `_passwords.json`, and no message ever carries it.
 - **The shared link signs them in, once**: the link signs in, the password is never in it. A link

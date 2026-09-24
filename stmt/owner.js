@@ -11,31 +11,36 @@
  * (so every backslash is doubled), and it runs inside CLIENT_JS's own function, which is where
  * say(), el(), stamp(), un, pw, whoacct, busy and OWNER live.
  *
- * WHAT IT DRAWS. Salt Admin opens on Needs you (S9 9.1): a card for each thing waiting on him, its
- * action on the card. Its items follow: Review statement, then the links. Review reads /all/sheet, which is the publish's account list merged with the opens this
- * Worker has recorded all along, so each account shows where it stands, in one word, and when it
- * was last opened. A tap still opens the account the customer's own way, through the form. */
+ * WHAT IT DRAWS. Four places (S9): Needs you, a card for each thing waiting on him with its action on
+ * it; Accounts, one list for what Send and Review were, read off /all/sheet, the publish's account
+ * list merged with the opens this Worker records, a row opening the account's card; Links; and More.
+ * View as them opens the account the customer's own way, through the form. */
 
 export const OWNER_JS = `
-  var mHome=document.getElementById('mHome'),
-      oReview=document.getElementById('oReview'), oLinks=document.getElementById('oLinks'),
-      oSend=document.getElementById('oSend'), oCards=document.getElementById('oCards'),
+  var mHome=document.getElementById('mHome'), oAccts=document.getElementById('oAccts'),
+      oLinks=document.getElementById('oLinks'), oMore=document.getElementById('oMore'),
+      oCards=document.getElementById('oCards'), aopen=document.getElementById('aopen'),
       sheet=null, sheetAt=null, sheetRows=[], sheetIssue=null, cards=null;
+  /* S9 9.2: FOUR PLACES, Needs you (null), Accounts, Links and More; the report card is a page of More */
+  var PLACE={accounts:'accounts', links:'links', more:'more', cards:'more'};
   function panel(which){
+    if(which==='needs') which=null;
     mHome.hidden=!!which;
-    oReview.hidden=(which!=='review');
+    oAccts.hidden=(which!=='accounts');
     oLinks.hidden=(which!=='links');
-    oSend.hidden=(which!=='send');
+    oMore.hidden=(which!=='more');
     oCards.hidden=(which!=='cards');
+    var here=which?PLACE[which]:'needs';
+    [].slice.call(document.querySelectorAll('.place[data-m]')).forEach(function(b){
+      if(b.getAttribute('data-m')===here) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
     say('');
     if(which==='links'){ if(!linksRead) loadLinks(); else drawLinks(); }
     if(!which) drawNeeds();
-    if(which==='review'){ drawRoster(); if(!sheet) loadSheet(); try{ rq.focus(); }catch(e){} }
-    if(which==='send'){ if(!sheet) loadSheet(); else drawSend(); }
+    if(which==='accounts'){ drawRoster(); if(!sheet) loadSheet(); }
     if(which==='cards'){ if(!cards) loadCards(); else drawCards(); }
     try{ window.scrollTo(0,0); }catch(e){}
   }
-  /* ---- REVIEW STATEMENT --------------------------------------------------------------------
+  /* ---- WHERE AN ACCOUNT STANDS ---------------------------------------------------------------
      The list is the roster, so a code with no account behind its username is still on it and
      says so. Everything else comes from /all/sheet. */
   var FLAGW={owes:'Owes',goods:'Owes goods',refund:'Refund due',pend:'Agreed, not actioned',clear:'Clear'};
@@ -61,10 +66,12 @@ export const OWNER_JS = `
       var j=await refs('/all/sheet');
       sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null;
       sheetRows.forEach(function(a){ sheet[a.username]=a; });
-      drawRoster(); drawSend(); drawTest(); drawNeeds();
-      var n=document.getElementById('mCount');
+      drawRoster(); drawTest(); drawNeeds();
+      if(aOpen) openCard(aOpen);
+      var n=document.getElementById('mCount'), real=sheetRows.filter(function(a){ return !a.test; }).length;
       /* the count is of accounts on the book: the test account is not one (v689) */
-      if(n) n.textContent=sheetRows.filter(function(a){ return !a.test; }).length+' accounts on the site.';
+      if(n) n.textContent=real+' accounts on the site.';
+      document.getElementById('mFoot').textContent=real+' accounts, as at '+hm(new Date().toISOString());
     }catch(e){ say(e.message,'bad'); }
   }
   /* ---- SEND STATEMENT (v688) ---------------------------------------------------------------
@@ -188,7 +195,7 @@ export const OWNER_JS = `
       var want=box.checked;
       try{
         var j=await refs('/all/sent/'+a.username, {issue:sheetIssue, sent:want});
-        a.sent=j.sent; card.className='scard'+(a.sent?' done':''); say(''); countSent();
+        a.sent=j.sent; card.className='scard'+(a.sent?' done':''); say(''); countSent(); drawRoster(); drawNeeds();
       }catch(e){ box.checked=!want; say(e.message,'bad'); }
     });
     tick.appendChild(box); tick.appendChild(el('span',null,'Sent'));
@@ -202,18 +209,6 @@ export const OWNER_JS = `
     var done=real.filter(function(a){ return a.sent; }).length;
     var head=document.getElementById('scount');
     if(head) head.textContent=done+' of '+real.length+' sent';
-  }
-  function drawSend(){
-    var wrap=document.getElementById('slist'); if(!wrap) return;
-    wrap.textContent='';
-    var q=((document.getElementById('sq')||{}).value||'').toLowerCase().replace(/\\s+/g,'');
-    var hits=sheetRows.filter(function(a){
-      if(!q) return true;
-      return ((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0;
-    });
-    countSent();
-    if(!hits.length){ wrap.appendChild(el('p','rnone','Nothing matches that.')); return; }
-    hits.forEach(function(a){ wrap.appendChild(sendCard(a)); });
   }
   /* ---- THE ROSTER (10 Sep 2026) ------------------------------------------------------------
      A tap fills the customer's own form with his username and the master, and submits it. Nothing
@@ -242,30 +237,80 @@ export const OWNER_JS = `
     if(!r.body||!r.body.ok) say('Their orders could not be read: '+((r.body&&r.body.error)||'try again'),'bad');
     if(!tCard.hidden) drawCard();
   }
+  /* ---- ACCOUNTS (S9 9.2) -----------------------------------------------------------------------
+     One list for what Send and Review were: the system's Inbox row an account, its code and chips for where it
+     stands and how it has been reached, found by a word and narrowed by a filter. A row opens the account's
+     card, beside the list from 1080px and in its place on a phone with a way back; the card is Send's. */
+  var aFilter='all', aOpen=null;
+  var FILTER={
+    all:function(){ return true; },
+    unsent:function(a){ return a.account!==false&&!a.test&&!a.sent; },
+    unopened:function(a){ return a.account!==false&&!a.test&&!(a.seen&&a.seen.opens); },
+    owes:function(a){ return a.flag==='owes'||a.flag==='goods'; },
+    locked:function(a){ return !!a.locked; },
+    none:function(a){ return a.account===false; }
+  };
+  var HOWW={password:'by password', link:'by link', remembered:'on a remembered phone'};
+  function chip(tone, t){ return el('span','salt-status salt-status--'+tone, t); }
+  function chipsOf(a){
+    if(a.test) return [chip('mist','Test, counts nowhere')];
+    if(a.account===false) return [chip('alarm','No account')];
+    var out=[];
+    if(a.locked) out.push(chip('alarm','Locked'+(a.locked.until?' till '+hm(a.locked.until):'')));
+    if(a.flag&&a.flag!=='clear') out.push(chip({owes:'ember', goods:'steel', refund:'brass', pend:'copper'}[a.flag]||'mist', flagLine(a)));
+    out.push(a.seen&&a.seen.opens?chip('mist','Opened '+dayMon(a.seen.last)+(HOWW[a.seen.how]?' '+HOWW[a.seen.how]:'')):chip('steel','Not opened'));
+    if(a.alerts) out.push(chip('verdigris','Alerts on'));
+    if(a.sent) out.push(chip('verdigris','Sent '+dayMon(a.sent)));
+    return out;
+  }
+  function rowOf(a){
+    var b=el('button','salt-inbox-row'); b.type='button'; b.setAttribute('data-u', a.username);
+    if(aOpen===a.username) b.setAttribute('aria-current','true');
+    var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
+    t.appendChild(el('span',null,a.test?'Test account':(a.code||a.username)));
+    if(sheet) chipsOf(a).forEach(function(c){ t.appendChild(c); });
+    main.appendChild(t);
+    main.appendChild(el('span','salt-inbox-row__what', a.username+(a.tot?', '+a.tot:'')));
+    b.appendChild(main);
+    var side=el('span','salt-inbox-row__side'); side.appendChild(el('span','salt-inbox-row__action','Open'));
+    b.appendChild(side);
+    b.addEventListener('click', function(){ openCard(a.username); });
+    return b;
+  }
   function drawRoster(){
     if(!OWNER) return;
-    var q=(rq.value||'').toLowerCase().replace(/\\s+/g,'');
+    var q=(rq.value||'').toLowerCase().replace(/\\s+/g,''), f=FILTER[aFilter]||FILTER.all;
     rlist.textContent='';
-    var hits=OWNER.accounts.filter(function(a){
-      if(!q) return true;
-      return ((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0;
+    var hits=(sheet?sheetRows:OWNER.accounts).filter(function(a){
+      return f(a)&&(!q||((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0);
     });
+    countSent();
     if(!hits.length){ rlist.appendChild(el('p','rnone','Nothing matches that.')); return; }
-    hits.forEach(function(a){
-      var s=(sheet&&sheet[a.username])||a;
-      var b=el('button',null,a.test?'Test account':(a.code||a.username)); b.type='button';
-      /* no account, nothing to open: the row says so and does not take a tap (24 Sep 2026) */
-      if(sheet&&s.account===false){ b.disabled=true; b.title='No account behind this username yet'; }
-      if(a.code) b.appendChild(el('span',null,a.username));
-      if(a.test) b.appendChild(el('span','fl f-none','Counts nowhere; open it to try the page.'));
-      else if(sheet){
-        b.appendChild(el('span','fl f-'+(s.flag||'none'),flagLine(s)));
-        b.appendChild(el('span','op',openedLine(s)));
-      }
-      b.addEventListener('click', function(){ openAcct(a); });
-      rlist.appendChild(b);
-    });
+    hits.forEach(function(a){ rlist.appendChild(rowOf(a)); });
   }
+  function filterBy(f){
+    aFilter=FILTER[f]?f:'all';
+    [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){
+      x.setAttribute('aria-pressed', x.getAttribute('data-f')===aFilter?'true':'false'); });
+    drawRoster();
+  }
+  function showAccounts(f){ panel('accounts'); filterBy(f); }
+  /* the open account: its chips, then Send's card, and on a phone the way back to the list above it */
+  function openCard(u){
+    var a=u&&((sheet&&sheet[u])||OWNER.accounts.filter(function(x){ return x.username===u; })[0]);
+    aOpen=a?u:null;
+    oAccts.classList.toggle('open', !!a);
+    aopen.hidden=!a; aopen.textContent='';
+    [].slice.call(rlist.querySelectorAll('[data-u]')).forEach(function(r){
+      if(r.getAttribute('data-u')===aOpen) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });
+    if(!a) return;
+    var back=el('button','aback','← Accounts'); back.type='button'; back.setAttribute('data-back','accounts');
+    aopen.appendChild(back);
+    if(sheet){ var cs=el('div','achips'); chipsOf(a).forEach(function(c){ cs.appendChild(c); }); aopen.appendChild(cs); }
+    aopen.appendChild(sendCard(a));
+    try{ window.scrollTo(0,0); }catch(e){}
+  }
+  function setCount(m, n){ [].slice.call(document.querySelectorAll('[data-count="'+m+'"]')).forEach(function(c){ c.textContent=n?String(n):''; }); }
   /* ---- THE GUEST LINKS, on the same gated route -------------------------------------------
      Minted, listed and revoked over /all/refs; the Worker draws the QR and returns it as a data
      URI, so nothing here encodes anything and the page loads no library to do it. */
@@ -512,7 +557,7 @@ export const OWNER_JS = `
     var c=needCard('s', rows.length+' to send', first?'ready since '+dayMon(first):'',
       andList(named)+(rows.length===1?' has an account':' have accounts')+' and no sign-in yet.');
     var row=el('div','salt-approve__actions'), go=ghost('Send them', true);
-    go.addEventListener('click', function(){ panel('send'); });
+    go.addEventListener('click', function(){ showAccounts('unsent'); });
     row.appendChild(go); c.appendChild(row);
     return c;
   }
@@ -528,6 +573,7 @@ export const OWNER_JS = `
     real.filter(function(a){ return a.account===false; }).forEach(function(a){ add(bareNeed(a), true); });
     var fresh=real.filter(function(a){ return a.account&&!a.sent&&!(a.seen&&a.seen.opens); });
     if(fresh.length) add(sendNeed(fresh), true);
+    setCount('needs', n); setCount('links', links.filter(waitingLink).length);
     nCount.textContent=(!sheet||!linksRead)?'Reading what needs you.'
       :(n?n+(n===1?' thing':' things'):'Nothing needs you')+', as at '+hm(new Date().toISOString())+'.';
   }
@@ -625,15 +671,16 @@ export const OWNER_JS = `
     });
     box.appendChild(b);
   }
-  mHome.addEventListener('click', function(ev){
-    var b=ev.target.closest('button[data-m]'); if(!b) return;
-    panel(b.getAttribute('data-m'));
+  /* a place, an item on More, or a way back: one listener for the whole of his page */
+  roster.addEventListener('click', function(ev){
+    var bk=ev.target.closest('button[data-back]');
+    if(bk){ if(bk.getAttribute('data-back')==='accounts') openCard(null); else panel(bk.getAttribute('data-back')||null); return; }
+    var b=ev.target.closest('button[data-m]'); if(b) panel(b.getAttribute('data-m'));
   });
-  [].slice.call(document.querySelectorAll('button[data-back]')).forEach(function(b){
-    b.addEventListener('click', function(){ panel(null); });
+  document.getElementById('afil').addEventListener('click', function(ev){
+    var b=ev.target.closest('button[data-f]'); if(b) filterBy(b.getAttribute('data-f'));
   });
   rq.addEventListener('input', drawRoster);
-  var sq=document.getElementById('sq'); if(sq) sq.addEventListener('input', drawSend);
   panel(null);
   /* the home itself needs the account list and the links: Needs you is read off both (S9 9.1) */
   loadSheet(); loadLinks();
