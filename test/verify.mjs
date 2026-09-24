@@ -24706,6 +24706,87 @@ await (async () => {
     "both cash taps are booked once the first row lands, as the site counts both: " + JSON.stringify({ c1: c1.status, c2: c2.status, pays }));
 })();
 
+section("S11 fix: an Accept whose yes a fault left unspent, or whose order was never told, is settled and told again");
+await (async () => {
+  /* Found in review: a D1 fault while his yes was being spent left it waiting for good. His approval under Approve then
+     moved nothing (only a yes marked "differs" was flipped), Accept answered "being drafted" for ever, and a withdrawal
+     after the row landed queued no Cancellation, the order never having been marked. Now his approval spends a waiting
+     yes too, the desk's pass spends one whose row was drafted without it, and tells an order its approved row again. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the faults were not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  let failApprove = 0, failEntryAt = 0, failMark = 0;
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() {
+        if (failApprove > 0 && /^UPDATE draft SET status='approved', decided_at=\?1, decided_by=\?2/.test(sql)) { failApprove--; throw new Error("D1 fault (fixture)"); }
+        if (failEntryAt > 0 && /^UPDATE preapproval SET entry_at=\?1, entry=\?2 WHERE id=\?3/.test(sql)) { failEntryAt--; throw new Error("D1 fault (fixture)"); }
+        const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  setState("roster", [C1]); setState("OPEN", { byKey: {}, position: {} });
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => {
+      if (failMark > 0 && init && /"ack":/.test(String(init.body || ""))) { failMark--; return Promise.resolve(new Response("{}", { status: 503 })); }
+      return stmtW.fetch(new Request(url, init), senv); } } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const settle = async () => { while (tails.length) await tails.shift(); };
+  const send = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); await settle(); return { status: r.status, j };
+  };
+  const minute = async () => { await deskW.scheduled({ cron: "* * * * *", scheduledTime: Date.parse("2026-09-24T03:01:00Z") }, denv, ctx); await settle(); };
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const pending = (id) => db.prepare("SELECT id,status FROM draft").all().filter((d) => d.id && JSON.parse(db.prepare("SELECT entry FROM draft WHERE id=?").get(d.id).entry).orderId === id);
+  const preOf = (id) => db.prepare("SELECT status FROM preapproval WHERE order_id=? AND stage='ack'").get(id) || {};
+  const place = async (unit) => { const o = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit, total: unit, week: "" })).order;
+    return { o, pv: await send("/orders/" + o.id + "/preview", {}) }; };
+
+  /* 1. the drafter's spend and Accept's own test each meet a fault; his approval under Approve moves the order */
+  const A = await place(101);
+  failApprove = 2;
+  const aA = await send("/orders/" + A.o.id + "/accept", { hash: A.pv.j.hash });
+  failApprove = 0;
+  const dA = pending(A.o.id);
+  const apA = dA.length ? await send("/drafts/" + encodeURIComponent(dA[0].id) + "/approve", { by: "fixture" }) : { status: 0 };
+  ok(aA.status === 500 && dA.length === 1 && dA[0].status === "pending" && apA.status === 200 && (await orderOf(A.o.id)).status === "acknowledged" && preOf(A.o.id).status === "applied",
+    "a yes a fault left waiting is spent by his approval, which moves the order: " + JSON.stringify({ accept: aA.status, drafts: dA, approve: apA.status, order: (await orderOf(A.o.id)).status, pre: preOf(A.o.id) }));
+
+  /* 2. Accept's own write fails after its entry is queued, and another pass drafts the row first: the next minute spends the yes */
+  const B = await place(102);
+  failEntryAt = 1;
+  const aB = await send("/orders/" + B.o.id + "/accept", { hash: B.pv.j.hash });
+  await runDrafter(denv);
+  await minute();
+  const dB = pending(B.o.id);
+  ok(aB.status === 500 && dB.length === 1 && dB[0].status === "approved" && (await orderOf(B.o.id)).status === "acknowledged",
+    "a row drafted before the yes knew its id is booked by the next minute's pass, and the order moved: " + JSON.stringify({ accept: aB.status, drafts: dB, order: (await orderOf(B.o.id)).status, pre: preOf(B.o.id) }));
+
+  /* 3. the row is approved but the order's mark fails: the next minute tells the order again */
+  const C = await place(103);
+  failMark = 1;
+  const aC = await send("/orders/" + C.o.id + "/accept", { hash: C.pv.j.hash });
+  const before = (await orderOf(C.o.id)).status;
+  await minute();
+  const sC = await orderOf(C.o.id);
+  ok(aC.j.approved === true && before === "placed" && sC.status === "acknowledged" && sC.queued && sC.queued.ack && sC.ledgerKey,
+    "an approved row whose order could not be told is told by the next minute's pass: " + JSON.stringify({ accept: aC.j, before, after: sC.status, q: sC.queued }));
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one

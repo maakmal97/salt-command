@@ -522,7 +522,8 @@ snapshot's `v` and a digest of the rest). **Only an approved row moves the order
 the key and moment marked first, then acknowledged with the charge), so a row that differs leaves the
 customer reading Placed, and his approval under Approve moves it then. That is the one stage the desk
 queues itself, because the row must exist before the order moves; `deskPass`, beside the reconcile,
-follows it up each minute.
+follows it up each minute: it spends a yes a fault left waiting on its drafted row, and tells an order
+its approved row again until `acked_at` says it was told. His approval under Approve spends any yes behind the row.
 
 **The later stages are one tap too** (S11 11.12): **Collected or Delivered** (`/handed {qty, close}`,
 the running total, in the order's own mode; `close` under the size is 11.9's close, previewed as the one

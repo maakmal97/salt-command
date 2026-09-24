@@ -207,7 +207,8 @@ const markOrder = (env, u, id, mark) => site(env, "/desk/orders/" + encodeURICom
   { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mark }) });
 
 /** An approved pending row the desk queued moves its order: the row's key and moment are marked first, so no pass
- *  of the reconcile can queue a second pending row, and then the order is acknowledged with the charge it carries. */
+ *  of the reconcile can queue a second pending row, and then the order is acknowledged with the charge it carries.
+ *  Until both are done the yes is not `acked_at`, and the desk's pass tells the order again every minute (deskPass). */
 export async function ackOnApproval(env, pre) {
   const entry = typeof pre.entry === "string" ? JSON.parse(pre.entry) : pre.entry;
   let shown = {};
@@ -216,8 +217,12 @@ export async function ackOnApproval(env, pre) {
   if (!m || !m.ok) return { ok: false, error: "the row is approved but its mark could not be written to the order" + (m ? " (http " + m.status + ")" : "") };
   /* an order already agreed (a row offered again) has nothing to move; one that ended meanwhile refuses the move,
      and its Cancellation then follows the approved row, as any withdrawal of an agreed order does */
-  if (shown.from !== "placed") return { ok: true };
-  return moveOrder(env, pre.u, pre.order_id, { status: "acknowledged", delivery: +(entry.payload && entry.payload.delivery) || 0 });
+  const r = shown.from !== "placed" ? { ok: true }
+    : await moveOrder(env, pre.u, pre.order_id, { status: "acknowledged", delivery: +(entry.payload && entry.payload.delivery) || 0 });
+  /* told once the move is made, or refused for good: the order ended, or was moved already */
+  if ((r.ok || r.status === 409) && env.SALT_LEDGER)
+    await env.SALT_LEDGER.prepare("UPDATE preapproval SET acked_at=?1 WHERE id=?2").bind(new Date().toISOString(), pre.id).run();
+  return r;
 }
 
 /** POST /orders/<id>/accept {delivery, hash}. Returns { ok, approved, differs?, waiting?, order?, draft, drafted? }. */
@@ -482,15 +487,22 @@ export async function againOrder(env, id, body, by, now) {
  *   at the counter (11.12) once the row it amends is on the book;
  *   a pending row an Accept queued, whose order the CUSTOMER then withdrew while the row was still not
  *   approved, is dropped as 11.10 drops one the reconcile queued. The site cannot say so here, because an order
- *   Accept has not moved yet owes the reconcile nothing and is never on its list. */
+ *   Accept has not moved yet owes the reconcile nothing and is never on its list;
+ *   a yes still waiting on a row that was drafted without spending it (a fault in the pass that drafted it, or a
+ *   pass that drafted it before the yes knew its id) is spent on that row now, and the approvals are returned for
+ *   the caller to follow (afterApproval);
+ *   an Accept whose row is approved but whose order was never told (the mark or the move failed) is told again. */
 export async function deskPass(env, now) {
   const db = env.SALT_LEDGER;
   if (!db) return { ok: true, queued: 0 };
-  let pres = [];
-  try { pres = (await db.prepare("SELECT * FROM preapproval WHERE status IN ('waiting','differs') AND entry IS NOT NULL ORDER BY at").all()).results || []; }
-  catch (e) { return { ok: true, queued: 0 }; }   /* before migrations/0011 */
+  let pres = [], untold = [];
+  try {
+    pres = (await db.prepare("SELECT * FROM preapproval WHERE status IN ('waiting','differs') AND entry IS NOT NULL ORDER BY at").all()).results || [];
+    untold = (await db.prepare("SELECT * FROM preapproval WHERE stage='ack' AND status='applied' AND acked_at IS NULL ORDER BY at").all()).results || [];
+  } catch (e) { return { ok: true, queued: 0 }; }   /* before migrations/0011 */
+  for (const p of untold) { try { await ackOnApproval(env, p); } catch (e) { /* the next minute tries again */ } }
   if (!pres.length) return { ok: true, queued: 0 };
-  let queued = 0; const dropped = []; let open = null;
+  let queued = 0; const dropped = [], approved = []; let open = null;
   for (const p of pres.filter((x) => !x.entry_at)) {
     const entry = JSON.parse(p.entry);
     /* an amendment the desk made itself (cash taken, 11.12) waits for its row exactly as a stage the site made does */
@@ -500,6 +512,7 @@ export async function deskPass(env, now) {
     }
     await queueSale(env, entry);
     await db.prepare("UPDATE preapproval SET entry_at=?1, entry=?2 WHERE id=?3").bind(entry.at, JSON.stringify(entry), p.id).run();
+    p.entry_at = entry.at;   /* a row already drafted from it is tested below, in this pass */
     queued++;
   }
   const acks = pres.filter((x) => x.stage === "ack" && x.entry_at);
@@ -514,7 +527,12 @@ export async function deskPass(env, now) {
       dropped.push(o.id);
     }
   }
-  return Object.assign({ ok: true, queued }, dropped.length ? { dropped } : {});
+  const unspent = pres.filter((x) => x.status === "waiting" && x.entry_at && !dropped.includes(x.order_id));
+  if (unspent.length) {
+    const book = await readBook(db);
+    for (const p of unspent) if ((await settlePre(db, p, book)) === "applied") approved.push(p.entry_at);
+  }
+  return Object.assign({ ok: true, queued }, dropped.length ? { dropped } : {}, approved.length ? { approved } : {});
 }
 
 /** Forward the owner's move. Returns the site's answer with the code joined. */

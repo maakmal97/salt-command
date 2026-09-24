@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS preapproval (
   draft_id    TEXT,               -- the draft it was spent on
   tapped_by   TEXT,
   at          TEXT NOT NULL,
-  decided_at  TEXT
+  decided_at  TEXT,
+  acked_at    TEXT                -- (Accept) when its order was marked and moved; until then the desk's pass tries again
 );
 
 CREATE INDEX IF NOT EXISTS preapproval_order ON preapproval (order_id, status);

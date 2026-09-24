@@ -192,7 +192,9 @@ async function afterApproval(env, ctx, ids) {
   const moved = [];
   for (const id of ids) {
     try {
+      /* his approval spends the yes behind the row, whether it was marked as differing or never tested (a fault) */
       await env.SALT_LEDGER.prepare("UPDATE preapproval SET status='applied' WHERE draft_id=?1 AND status='differs'").bind(id).run();
+      await env.SALT_LEDGER.prepare("UPDATE preapproval SET status='applied', draft_id=?1, decided_at=?2 WHERE entry_at=?1 AND status='waiting'").bind(id, new Date().toISOString()).run();
       const pre = await env.SALT_LEDGER.prepare("SELECT * FROM preapproval WHERE entry_at=?1 AND stage='ack' AND status='applied'").bind(id).first();
       if (pre) moved.push(Object.assign({ id }, await ackOnApproval(env, pre)));
     } catch (e) { console.log("after approval of " + id + ": " + String((e && e.message) || e)); }
@@ -216,6 +218,7 @@ function reconcileOnTap(env, ctx) {
       console.log("orders reconcile (on the tap): " + JSON.stringify(rc));
       /* S11: and what the desk queues itself (cash taken at the counter), in the same tail */
       const dp = await deskPass(env, new Date());
+      await afterApproval(env, ctx, dp.approved);
       if ((rc.queued || dp.queued) && env.SALT_LEDGER) { const d = await runDrafter(env); console.log("drafter (on the tap): " + JSON.stringify(d)); await afterApproval(env, ctx, d.approved); }
     } catch (e) { console.log("orders reconcile (on the tap) FAILED: " + String((e && e.stack) || e)); }
   })());
@@ -696,7 +699,8 @@ export default {
           if (!rc.ok || rc.queued || rc.unmapped || rc.waiting || rc.failed || rc.dropped) console.log("orders reconcile: " + JSON.stringify(rc));
           /* S11: and what the desk queued itself, beside it */
           const dp = await deskPass(env, new Date(event.scheduledTime || Date.now()));
-          if (dp.queued || dp.dropped) console.log("orders desk pass: " + JSON.stringify(dp));
+          if (dp.queued || dp.dropped || dp.approved) console.log("orders desk pass: " + JSON.stringify(dp));
+          await afterApproval(env, ctx, dp.approved);
           if (rc.queued || dp.queued) { const d = await runDrafter(env); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); await afterApproval(env, ctx, d.approved); }
         } catch (e) { console.log("orders reconcile FAILED: " + String((e && e.stack) || e)); }
         /* the drafter's net still runs on the quarter-hour, as it did when this schedule ran every fifteen minutes */
