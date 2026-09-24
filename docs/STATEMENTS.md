@@ -664,7 +664,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   and the eight symbols in the Code field with when they stop working. It copies and shares nothing, so no
   clipboard waits on the derivation and the fetch. Closing it does not spend the code. The camera opens the QR in
   a browser tab, which spends that form alone and marks it a tab's (`tab: true`), and the Worker opens a tab's key only
-  where his route minted it. The plain `/app#<key>` a customer's own Keep Sheet writes is spent by the saved app alone,
+  where his route minted it, before the phone's memory, so Replace asks over another account. The plain `/app#<key>` a customer's own Keep Sheet writes is spent by the saved app alone,
   so an address one customer sends another signs nobody in (S3 fix). An app's own browser spends nothing.
 - **Guest links `/g/<id>`** (v566) are minted inside `/all` and labelled: a board is what he prints
   and hands to strangers, and the link exists to say WHICH stranger. `stmt/refs.js` mints, lists,

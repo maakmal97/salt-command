@@ -2386,21 +2386,24 @@ const CLIENT_JS = `
     var hk=(location.hash||'').slice(1);   /* read before anything waits: a page closed meanwhile has no address */
     (async function(){
       if(await showLink()) return;
-      /* S3 3.5: a remembered phone draws "Opening your account" while it opens, so nobody starts typing into a door
-         that is about to vanish; the door comes back only if it does not open */
-      if(remGet()&&opening){ gate.hidden=true; opening.hidden=false; }
-      var inNow=await openRemembered();
-      if(inNow||session) return;
-      if(opening) opening.hidden=true;
       /* S3 3.11: the saved app. A key in the address is the one Safari's Keep it on your Home Screen wrote there, and
          only the saved app spends it. S3 FIX, 24 SEP 2026: A BROWSER TAB SPENDS ONLY HIS COUNTER'S QR, /app#qr.<key>,
          which the customer's camera opens (3.13), and the Worker opens it for a tab only if his /all/handover minted it,
          so an address one customer sends another never signs the other in; an app's own browser spends nothing */
       var qm=/^qr[.]([A-Za-z0-9_-]{20,64})$/.exec(hk);
       var key=!APP?'':STANDALONE?(qm?qm[1]:TOK_RE.test(hk)?hk:''):(qm&&!INAPP?qm[1]:'');
+      /* S3 fix: his QR in a tab comes before this phone's memory, as a link does, and Replace asks over another account;
+         the saved app's own start address may keep a spent key, so there its memory still comes first */
+      if(key&&!STANDALONE){ showCode(true); await openHandover({token:key, tab:true}); return; }
+      /* S3 3.5: a remembered phone draws "Opening your account" while it opens, so nobody starts typing into a door
+         that is about to vanish; the door comes back only if it does not open */
+      if(remGet()&&opening){ gate.hidden=true; opening.hidden=false; }
+      var inNow=await openRemembered();
+      if(inNow||session) return;
+      if(opening) opening.hidden=true;
       if(APP&&(IOS||key||qm)) showCode(!!qm&&!STANDALONE); else gate.hidden=false;
       if(APP&&qm&&INAPP&&!STANDALONE) csay(INAPP_KEY,'bad');
-      if(key) await openHandover(STANDALONE?{token:key}:{token:key, tab:true});
+      if(key) await openHandover({token:key});
     })();
   }
 })();

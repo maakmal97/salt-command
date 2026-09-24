@@ -19625,6 +19625,70 @@ await (async () => {
   ok(saved.posts.length === 1 && saved.posts[0].body.token === tokQ && !saved.posts[0].body.tab,
     "the saved app still spends the plain key its start address kept, as its own");
 })();
+section("S3 fix: his counter's QR in a browser tab is opened before the phone's memory, and Replace asks over another remembered account");
+await (async () => {
+  /* F5 (24 Sep 2026). The key in the address was tried only if the remembered phone failed, so a phone remembering A
+     that scanned the QR for B opened A in silence, left B's key unspent in the address and never asked Replace. */
+  const { landingPage: lpR } = await import("../stmt/page.js");
+  const CR = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDR } = await import("jsdom");
+  const uA = "aaaa-rrrr", uB = "bbbb-rrrr", tokB = "R".repeat(32), devA = "d".repeat(32);
+  const ckA = await CR.contentKey("5".repeat(64), uA), ckB = await CR.contentKey("6".repeat(64), uB);
+  const envOf = (ck, t) => CR.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>" + t + "</p>" }] }));
+  const envA = await envOf(ckA, "STATEMENT OF A"), envB = await envOf(ckB, "STATEMENT OF B");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const drive = async (url, standalone) => {
+    const st = { posts: [] };
+    const store = new Map([["salt-stmt-remember", JSON.stringify({ t: "a".repeat(32), k: Buffer.from(devA).toString("base64"), u: uA })]]);
+    const dom = new JDR(lpR("", "nR", null), { url, runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: IPHONE, configurable: true });
+        win.matchMedia = (q) => ({ matches: !!standalone && /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.fetch = async (p, init) => {
+          const body = init && init.body ? JSON.parse(init.body) : null;
+          st.posts.push(String(p));
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/remember/open") return ans(200, { ok: true, u: uA, remembered: true, wrap: await CR.wrapKey(devA, ckA), env: envA, live: null, prices: null, session: "sessRA0000000000000000000000" });
+          if (p === "/handover/open") return body.token === tokB
+            ? ans(200, { ok: true, u: uB, remembered: true, token: tokB, wrap: await CR.wrapKey(tokB, ckB), env: envB, live: null, prices: null, session: "sessRB0000000000000000000000" })
+            : ans(401, { ok: false, error: "That username and password were not accepted." });
+          if (p === "/remember") return ans(200, { ok: true, token: "b".repeat(32), days: 30 });
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    return { st, store, W, D, until };
+  };
+
+  const g = await drive("https://site.test/app#qr." + tokB, false);
+  try {
+    await g.until(() => !g.D.getElementById("askRep").hidden || !g.D.getElementById("barw").hidden);
+    const ask = g.D.getElementById("askRep");
+    ok(!ask.hidden && /^Replace aaaa-rrrr on this phone\? It will open bbbb-rrrr instead\./.test(ask.textContent) && ask.previousElementSibling.id === "codePaste"
+      && g.st.posts[0] === "/handover/open" && !g.st.posts.includes("/remember/open"),
+      "a phone remembering A that scans the QR for B opens B's key first and asks Replace, never opening A: " + JSON.stringify({ posts: g.st.posts, ask: ask.textContent }));
+    g.D.getElementById("askYes").click();
+    await g.until(() => !g.D.getElementById("barw").hidden);
+    await g.until(() => JSON.parse(g.store.get("salt-stmt-remember")).u === uB);
+    ok(/STATEMENT OF B/.test(g.D.getElementById("out").textContent) && JSON.parse(g.store.get("salt-stmt-remember")).u === uB && g.W.location.hash === "",
+      "and Replace opens B, keeps B on this phone and forgets the address");
+  } finally { await new Promise((r) => setTimeout(r, 40)); g.W.close(); }
+
+  /* the saved app: its start address may keep a key it spent long ago, so its memory still comes first */
+  const app = await drive("https://site.test/app#" + tokB, true);
+  try {
+    await app.until(() => !app.D.getElementById("barw").hidden);
+    await new Promise((r) => setTimeout(r, 60));
+    ok(/STATEMENT OF A/.test(app.D.getElementById("out").textContent) && app.st.posts[0] === "/remember/open" && !app.st.posts.includes("/handover/open"),
+      "the control: a remembered saved app opens its own account and never retries the key its start address kept: " + JSON.stringify(app.st.posts));
+  } finally { app.W.close(); }
+})();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {
   /* S3, 24 SEP 2026. The door's one way in named its opener unseal, which stmt/owner.js already declared: spliced in
