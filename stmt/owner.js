@@ -96,14 +96,18 @@ export const OWNER_JS = `
     card.appendChild(head);
     card.appendChild(el('p','tot',a.test?'Counts nowhere; nothing on the book is behind it.':(a.account===false?NOACCT:a.tot)));
     card.appendChild(el('p','op',openedLine(a)+(a.sent?' \\u00b7 sent '+stampDay(a.sent):'')));
-    var qw=el('div','qrw'); qw.appendChild(qrCanvas(a.qr||[]));
-    qw.appendChild(el('p','qrn','The code opens their page with the username filled in. Sign-in link sends one that opens it outright, once.'));
-    card.appendChild(qw);
-    var row=el('div','grow');
     /* 24 SEP 2026: A USERNAME WITH NO ACCOUNT BEHIND IT has nothing to share, copy or open: the
        message would say "Your account is ready to use" over an account that is not there, and Open
-       could only be refused. All four go off together, each saying why; the card's line says how to mend it. */
+       could only be refused. All four go off together, each saying why; the card's line says how to mend it.
+       UX9: and it draws no code, which opens the address Share would have sent, under a caption offering
+       the Sign-in link that is off */
     var noAcct=a.account===false, why='No account behind this username yet';
+    if(!noAcct){
+      var qw=el('div','qrw'); qw.appendChild(qrCanvas(a.qr||[]));
+      qw.appendChild(el('p','qrn','The code opens their page with the username filled in. Sign-in link sends one that opens it outright, once.'));
+      card.appendChild(qw);
+    }
+    var row=el('div','grow');
     var share=el('button',null,'Share'); share.type='button';
     if(noAcct){ share.disabled=true; share.title=why; }
     share.addEventListener('click', async function(){

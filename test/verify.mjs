@@ -14215,6 +14215,10 @@ await (async () => {
       "on the card with no account, Share, Copy message, Sign-in link and Open account are all off, each saying why: "
         + JSON.stringify(four.map((t) => [t, btn(uB, t) && btn(uB, t).disabled])));
     ok(four.every((t) => btn(uA, t) && !btn(uA, t).disabled), "and on a card with an account all four stay on");
+    /* UX9: the code opens the same address Share sends, under a caption offering the Sign-in link that is off */
+    ok(!cardOf(uB).querySelector(".qrw") && !/Sign-in link sends one/.test(cardOf(uB).textContent)
+      && !!cardOf(uA).querySelector(".qrw canvas") && /Sign-in link sends one/.test(cardOf(uA).textContent),
+      "the card with no account draws no code and no caption offering a link, while a card with an account keeps both");
     /* ---- Review: the row with no account takes no tap ---- */
     D.querySelector("button[data-back]").click();
     D.querySelector('button[data-m="review"]').click();
