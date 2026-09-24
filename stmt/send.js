@@ -47,6 +47,11 @@ const KEEPIT = "Keep it on your phone: on an iPhone tap Share, then Add to Home 
  * the saved app. The link's message does not carry this at all, because the link route never shows the
  * tick and nothing on it is remembered. */
 const REMEMBER = "Open it from there and sign in with Remember me ticked: it stays signed in, and Log out ends it.";
+/* F5, UX3, 24 SEP 2026: THE LINK'S MESSAGE SAYS WHAT THE LINK DOES AND STOPS (B03's fallback, keeping v710). It
+ * carried KEEPIT, so a link customer saved an icon that opens on the door, with no username or password to
+ * get past it: the link keeps nothing, and this message carries neither. */
+const ONCE = "It opens your account in this phone's browser and does not keep you signed in: to open it again, "
+  + "ask me for a new link.";
 
 /** The message a customer gets: the link and the username, and no secret. */
 export function linkMessage(row) {
@@ -66,7 +71,7 @@ export function signInMessage(row) {
     + INSIDE + "\n\n"
     + "Open it yourself and do not pass it on: anybody holding it can open your account until you "
     + "have used it. It stops working after a week.\n\n"
-    + KEEPIT;
+    + ONCE;
 }
 
 /** The second message: the password, and nothing that says which account it opens. */

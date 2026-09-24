@@ -15292,8 +15292,10 @@ await (async () => {
   ok(!/It signs you in/.test(door) && /sign in there with Remember me ticked/.test(door),
     "the door's install step no longer promises a sign-in, and says where to make it: in the saved app, with Remember me ticked");
   ok(!/It signs you in/.test(sign) && !/It signs you in/.test(link), "and neither message says it either");
-  ok(!/Remember me/.test(sign) && !/stays signed in/.test(sign) && /Add to Home Screen/.test(sign),
-    "the link's message promises no remembered phone, because the link route never shows the tick: " + JSON.stringify(sign.slice(-160)));
+  ok(!/Remember me/.test(sign) && !/stays signed in/.test(sign) && !/Add to Home Screen|Install app/.test(sign)
+    && /in this phone's browser and does not keep you signed in/.test(sign) && /ask me for a new link/.test(sign),
+    "the link's message promises no remembered phone and no saved app, which would open on a door it gives no way past, "
+    + "and says to ask for a new link: " + JSON.stringify(sign.slice(-160)));
   ok(/Open it from there and sign in with Remember me ticked/.test(link),
     "and the username road, which reaches the door, says the sign-in is made in the saved app");
 })();
@@ -21004,9 +21006,10 @@ await (async () => {
       + "thread lives and there is no other channel to promise");
     /* S1 1.3, 24 SEP 2026: the door's two switches only where the reader reaches the door. The link route
        never shows the tick, so the link's message promising it was false (B03). */
-    ok(/Add to Home Screen/.test(msg) && /Install app/.test(msg)
-      && (what === "the link" ? !/Remember me/.test(msg) : /Remember me/.test(msg) && /Log out/.test(msg)),
-      what + "'s message carries the home screen steps for both phones, and the two switches on the door only where the reader reaches the door");
+    /* F5, UX3: nor the home screen steps, which save an icon that opens on that door */
+    ok(what === "the link" ? !/Add to Home Screen|Install app|Remember me/.test(msg) && /ask me for a new link/.test(msg)
+      : /Add to Home Screen/.test(msg) && /Install app/.test(msg) && /Remember me/.test(msg) && /Log out/.test(msg),
+      what + "'s message carries the home screen steps and the door's two switches only where the reader reaches the door");
     ok(siteWords(msg) === "", what + "'s message passes the lock every word sent to a customer passes: " + siteWords(msg));
     ok(!msg.includes(row69.pw), what + "'s message carries no password, which is the rule that made the link");
   }
