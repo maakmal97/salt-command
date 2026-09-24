@@ -307,7 +307,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   a new book or level goes on both, its Malay word by hand.
 - **Over RM 100 past its term (`HOLD_RM` against `pay.overdue`, his D9) the account opens as a payment
   page**: the page's gate, not the Worker's. It shows each part's due date, Prices stays readable, and a
-  claim waiting on him reopens ordering, his acknowledgement still the check. Beside `owed` the live
+  claim waiting on him reopens ordering, his acknowledgement still the check; what he received since the
+  statement was written comes off the overdue figure. Beside `owed` the live
   document seals `pay` (`payDue`): to pay now (`txAdvance`), overdue and coming up (`txPendRM`), each
   part due at its order date plus the desk's `RULES.creditDays`, read from the master, and overdue only
   after that day. To pay now heads the statement tab; every Pay opens one sheet (D8: no account chosen

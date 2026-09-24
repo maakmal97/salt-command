@@ -1762,7 +1762,7 @@ const CLIENT_JS = `
   /* what the tab above the orders is drawn off: the Pay page or the order form. A re-read of the account (a return to
      the page, a lapse reopened, S3 3.5) that changes it draws the tab again; otherwise the orders are patched (S5 5.5) */
   var drawnSig='';
-  function formSig(){ return JSON.stringify([hold,odRm(),view,assoc,prices]); }
+  function formSig(){ return JSON.stringify([hold,odLeft(),view,assoc,prices]); }
   function drawOrder(){
     var sc=window.scrollY;
     drawnSig=formSig();
@@ -1775,9 +1775,9 @@ const CLIENT_JS = `
     if(view) pOrder.appendChild(el('p','lead','Read only: their orders as their own page shows them. Nothing here is placed, paid or sent.'));
     if(hold){
       /* S6 6.7: what is past its term, each part with the day it fell due, and one Pay for it */
-      var dueBox=el('div','pane'), od=payDue.overdue;
-      dueBox.appendChild(kpiTile('ember','Overdue',rm(od.rm),odNote(od)));
-      dueBox.appendChild(el('p','lead','Please pay the overdue amount of '+rm(od.rm)+' before placing another order.'));
+      var dueBox=el('div','pane'), od=payDue.overdue, left=odLeft();
+      dueBox.appendChild(kpiTile('ember','Overdue',rm(left),odNote(od)));
+      dueBox.appendChild(el('p','lead','Please pay the overdue amount of '+rm(left)+' before placing another order.'));
       if(od.parts.length>1){
         var L=el('div','salt-ledger salt-ledger--plain');
         od.parts.forEach(function(x){ L.appendChild(lrowN(partSpan(x),rm(x.rm),dueWords(x.due),'odue')); });
@@ -1785,8 +1785,8 @@ const CLIENT_JS = `
       }
       /* S6 6.4: one Pay, opening the pay sheet, where there were thirteen links naming the pay page */
       if(!view){
-        var hp=el('button','btn salt-pill salt-pill--md','Pay '+rm(od.rm)); hp.type='button';
-        hp.addEventListener('click',function(){ openPay({kind:'acct', fig:od.rm, label:'Overdue', note:function(){ return odNote(od); }}); });
+        var hp=el('button','btn salt-pill salt-pill--md','Pay '+rm(left)); hp.type='button';
+        hp.addEventListener('click',function(){ openPay({kind:'acct', fig:left, label:'Overdue', note:function(){ return odNote(od); }}); });
         dueBox.appendChild(hp);
       }
       dueBox.appendChild(el('p','sub2','Ordering opens again as soon as you tell us it is sent, and your prices stay open meanwhile. Each order the amount is made of is on your statement.'));
@@ -2444,7 +2444,14 @@ const CLIENT_JS = `
   }
   /* S6 6.7: the overdue figure, the line, and whether a claim waiting on him has lifted it. The owner's view holds too. */
   function odRm(){ return payDue&&payDue.overdue?+payDue.overdue.rm||0:0; }
-  function setHold(){ hold=odRm()>HOLD_RM+0.004&&!(sentWaiting()>0.004); if(tOrder) tOrder.textContent=hold?'Pay':'Order'; }
+  /* S6 fix: WHAT IS STILL OVERDUE, less the money he has received since the statement was written that reaches it: a claim
+     against the account, which the oldest parts, the overdue ones, take first, and an order's own claim on an overdue part
+     (nowOf). His Received used to bring the hold back until the next publish, asking again for what he had just confirmed.
+     A claim still waiting lifts the hold whatever its figure (his D9). */
+  function odLeft(){ var od=odRm(); if(!(od>0.004)) return 0;
+    var got=nowOf().filter(function(x){ return x.p.late; }).reduce(function(t,x){ return t+x.own+x.acct; },0);
+    return Math.max(0,+(od-got).toFixed(2)); }
+  function setHold(){ hold=odLeft()>HOLD_RM+0.004&&!(sentWaiting()>0.004); if(tOrder) tOrder.textContent=hold?'Pay':'Order'; }
   function odNote(od){
     var n=el('span'), ps=od.parts||[];
     if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0].due))); }

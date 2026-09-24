@@ -32215,6 +32215,68 @@ await (async () => {
     "and RM 180 sent against the account, which reaches that order's row first, is not asked for again on the order: " + JSON.stringify(acct));
 })();
 
+section("S6 fix: his Received does not bring the RM 100 hold back, and the held page asks only for what is still overdue");
+await (async () => {
+  /* HIS D7 AND D9: a claim waiting lifts the hold, and his acknowledgement is the check. His Received ended the waiting,
+     while the sealed overdue figure stood until the next publish, so the page held them again at once and asked for
+     the money he had just confirmed, woken with Payment received. What he received since the statement was written
+     now comes off what is overdue: a claim against the account (the oldest parts, the overdue ones, first) and an
+     order's own claim on an overdue part. Forced state: a sealed pay an hour old, and claims answered since. */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const Cr = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const U = "abcd-efgh", pass = "fixture-pass-m3", ck = await Cr.contentKey("test-secret", U);
+  const now = new Date(), iso = (h) => new Date(now.getTime() + h * 3600e3).toISOString();
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const part = (date, rm) => ({ date, due: "2026-09-05", late: true, rm, whole: rm, product: "salt", qty: 1, got: 1, gotOn: date, resale: false });
+  const late = [part("2026-08-20", 180), part("2026-08-25", 120)];
+  const pay = { term: 10, now: { rm: 300, due: "2026-08-30", parts: late }, overdue: { rm: 300, parts: late }, coming: { rm: 0, parts: [] } };
+  const read = async (list, claims) => {
+    const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-m3",
+      env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-1), body: "<p>Live</p>", owed: 300, pay })) };
+    const dom = new JD(lp(U, "nm3", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {}; win.open = () => null;
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
+        if (p === "/open") return res(200, body);
+        if (p === "/orders" && m === "GET") return res(200, { ok: true, orders: list, claims });
+        return res(404, { ok: false });
+      };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = U; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      await until(() => !d.getElementById("tabs").hidden);
+      await new Promise((r) => setTimeout(r, 60));
+      const tab = t(d.querySelector('button[data-t="order"]'));
+      d.querySelector('button[data-t="order"]').click();
+      await until(() => t(d.getElementById("pOrder")).length > 0);
+      const po = d.getElementById("pOrder");
+      return { tab, head: t(po.querySelector("h2")), pay: [...po.querySelectorAll("button.salt-pill")].map(t).join(), form: !!po.querySelector(".oplace, form") };
+    } finally { dom.window.close(); }
+  };
+  const acct = (amount, state, answered) => ({ id: "a-" + amount, u: U, kind: "account", at: iso(-3), amount, method: "transfer", account: "maybank", state, answered });
+  const control = await read([], []);
+  const all = await read([], [acct(300, "received", iso(0))]);
+  const some = await read([], [acct(100, "received", iso(0))]);
+  const order = { id: "oH", product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 1, movedOn: "2026-08-20", at: iso(-900), status: "ready", total: 180, paid: 180, claimed: 0,
+    rowOn: "2026-08-20", msgs: [], history: [{ at: iso(-900), status: "acknowledged", by: "desk" }],
+    payments: [{ at: iso(-3), amount: 180, method: "transfer", account: "maybank", claim: "received", answered: iso(0) }] };
+  const onOrder = await read([order], []);
+  ok(control.tab === "Pay" && control.pay === "Pay RM 300" && all.tab === "Order" && all.head === "Order"
+    && some.tab === "Pay" && some.pay === "Pay RM 200" && onOrder.tab === "Pay" && onOrder.pay === "Pay RM 120",
+    "RM 300 overdue holds them; received against the account since the statement it no longer does, received in part the held page asks for the rest, and an order's own claim received on an overdue part comes off it too: "
+    + JSON.stringify({ control, all, some, onOrder }));
+})();
+
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead
