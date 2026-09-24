@@ -18691,6 +18691,71 @@ await (async () => {
   }
 })();
 
+section("S1 1.12: a cold desk reads site orders and drafts once it knows it is the cloud, and Today counts them");
+await (async () => {
+  /* 24 Sep 2026 (H12). The read on load ran on a line where cloudMode() is always false: the BUILT desk
+     learns it is the cloud desk inside the ping's answer (tools/build.mjs P3), which lands after the
+     boot has finished. So a cold open read neither the orders nor the drafts, and a cold open on
+     desk#orders, which is where the banner sends him, drew the laptop's card. And ordDraw recounted
+     Today below its own early return, so a read with Site orders off screen never reached the rail.
+     DRIVEN ON THE BUILT FILE, because the master alone never becomes the cloud desk at all. */
+  const { JSDOM, VirtualConsole } = await import("jsdom");
+  const built112 = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+  const order112 = { id: "p1", u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0,
+    status: "placed", mode: "collect", at: "2026-09-24T02:00:00.000Z", history: [], msgs: [] };
+  const cold = async (hash, key) => {
+    const asked = [];
+    const dom = new JSDOM(built112, { url: "https://salt-command.example/desk#" + hash, runScripts: "dangerously", pretendToBeVisual: true,
+      virtualConsole: new VirtualConsole(),
+      beforeParse(w) {
+        const store = new Map(key ? [["saltWriteKey", key]] : []);
+        const stub = { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: (i) => [...store.keys()][i] ?? null, get length() { return store.size; } };
+        Object.defineProperty(w, "localStorage", { value: stub, configurable: true });
+        Object.defineProperty(w, "sessionStorage", { value: stub, configurable: true });
+        w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} });
+        w.scrollTo = () => {};
+        w.HTMLCanvasElement.prototype.getContext = () => null;
+        w.fetch = async (path) => {
+          const p = String(path); asked.push(p);
+          const j = (b) => ({ ok: true, status: 200, json: async () => b, text: async () => JSON.stringify(b) });
+          if (p.startsWith("queue/ping")) return j({ ok: true, cloud: true });
+          if (p === "orders") return j({ ok: true, orders: [order112] });
+          if (p.startsWith("drafts")) return j({ ok: true, drafts: [], refused: [], clock: null });
+          return { ok: false, status: 404, json: async () => ({ ok: false }), text: async () => "" };
+        };
+      } });
+    const w = dom.window;
+    for (let i = 0; i < 60 && !(w.SALT_CLOUD && (!key || asked.includes("orders"))); i++) await new Promise((r) => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, 100));
+    return { w, asked };
+  };
+  const badge = (w, s) => { const b = w.document.querySelector('.tab[data-s="' + s + '"] .navct'); return b ? b.textContent : ""; };
+  let open = [];
+  try {
+    const a = await cold("today", "k-fixture"); open.push(a.w);
+    ok(a.w.SALT_CLOUD === true && a.asked.includes("orders") && a.asked.includes("drafts?status=pending"),
+      "a cold open reads the orders and the drafts once the ping says it is the cloud desk: " + JSON.stringify(a.asked));
+    ok(badge(a.w, "enter") === "1", "the Enter badge counts the order placed on the site: " + JSON.stringify(badge(a.w, "enter")));
+    const now = Number(a.w.eval("allActions().filter(function(x){return x.sev==='now';}).length"));
+    const hasRow = a.w.eval("actions().some(function(x){return x.kind==='orders';})") === true;
+    ok(hasRow && badge(a.w, "today") === String(now),
+      "and Today's count, with Site orders not on screen, is the Now list that carries it: " + JSON.stringify({ badge: badge(a.w, "today"), now, hasRow }));
+
+    const b = await cold("orders", "k-fixture"); open.push(b.w);
+    const box = b.w.document.getElementById("ordBox");
+    ok(!!box && /data-id="p1"/.test(box.innerHTML) && !/this laptop copy has no relay/.test(b.w.document.querySelector(".sec.on").textContent),
+      "a cold open on desk#orders, where the banner sends him, draws the cloud's card with the order on it, not the laptop's");
+
+    const c = await cold("today", ""); open.push(c.w);
+    await new Promise((r) => setTimeout(r, 200));
+    ok(c.w.SALT_CLOUD === true && !c.asked.includes("orders") && !c.asked.some((p) => p.startsWith("drafts")),
+      "and with no write key stored nothing keyed is read, so a stranger with the address is served nothing new: " + JSON.stringify(c.asked));
+  } finally {
+    for (const w of open) { try { w.close(); } catch (e) { /* best effort */ } }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one

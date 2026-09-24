@@ -18488,6 +18488,12 @@ function ordCard(o){
 function ordField(i){return ['fee','hand','say'].map(k=>i.dataset[k]!=null?k+':'+i.dataset[k]:'').join('');}
 function ordDraw(){
   apBadge();
+  /* v766: the rail's Today count now includes what is waiting on the site, so it is recounted when
+     THAT changes and not on every draw: actions() walks the whole forecast to answer. BEFORE THE BOX
+     (24 Sep 2026): the read on load lands here with Site orders off screen, which is most loads, and
+     the recount sat below the return, so Today's count never heard of an order until the card was opened. */
+  {const w=ordWaiting();const n=w.placed.length+':'+w.asked.length;
+   if(n!==ordWaitWas){ordWaitWas=n;try{navCounts();}catch(e){}}}
   const box=document.getElementById('ordBox');if(!box)return;
   const typed={};let focused='';
   box.querySelectorAll('input[data-fee],input[data-hand],input[data-say]').forEach(i=>{
@@ -18499,10 +18505,6 @@ function ordDraw(){
   box.querySelectorAll('input[data-fee],input[data-hand],input[data-say]').forEach(i=>{const k=ordField(i);
     if(k in typed)i.value=typed[k];if(k===focused)i.focus();});
   box.querySelectorAll('button[data-ord]').forEach(b=>{b.onclick=()=>ordAct(b);});
-  /* v766: the rail's Today count now includes what is waiting on the site, so it is recounted when
-     THAT changes and not on every draw: actions() walks the whole forecast to answer. */
-  {const w=ordWaiting();const n=w.placed.length+':'+w.asked.length;
-   if(n!==ordWaitWas){ordWaitWas=n;try{navCounts();}catch(e){}}}
   const ab=document.getElementById('ordAllBtn');
   /* the switch lives outside the box this redraws, so it is re-enabled here: disabled on the tap
      and left that way, one tap would be all it ever took */
@@ -22413,18 +22415,23 @@ if(QUEUE_COMMITTED&&queue.length){
    entry was still sitting there. The screen was checked, which is the only reason this was
    caught: the flag was right and the notice was not. */
 queueStuck=qStuckCount(queue,refusedAts);
-try{qInit().then(()=>{if(queueCleared&&qSyncState==='server')qPost();});}catch(e){}   // ask the server for the queue route, then sync any self-clearing
+try{qInit().then(()=>{if(queueCleared&&qSyncState==='server')qPost();   // ask the server for the queue route, then sync any self-clearing
+  /* 24 Sep 2026: WHAT NEEDS THE CLOUD WAITS FOR THE CLOUD. The desk only learns it is the cloud desk in
+     the ping's answer, which lands after every line below has run, so the one read on load (v385, v766)
+     and a cold open on Site orders or Approve (the banner opens desk#orders) both took the laptop's road
+     and read nothing. They run here instead, once the answer is in; the part on screen is opened again
+     so it draws the cloud's card. */
+  if(!cloudMode())return;
+  if(curAddr==='orders'||curAddr==='approve')switchTab(curAddr);
+  /* v385: THE RAIL KNOWS BEFORE APPROVE IS OPENED. One read on load: cloud only, and only where a
+     write key is already stored, so a stranger with the URL is neither prompted nor served anything new. */
+  if(saltWriteKey()){apLoad(true);ordLoad(true);}});}catch(e){}
 applyOverlay();                            // uncommitted entries fold in before anything is drawn
 /* v281: a fresh open still lands on Today (v147: the desk opens on what to do), but an
    address that names a tab is honoured, which is what lets a reload resume in place. */
 recompute();
 (function(){const h=(location.hash||'').slice(1);switchTab(VIEW_OF[h]?h:'today');})();
-/* v385: THE RAIL KNOWS BEFORE APPROVE IS OPENED. A row is drafted within a second of an
-   entry landing, and until now nothing on this desk said so until you happened to open the
-   one part that fetches them, which is the wrong way round for a step that is not optional.
-   One read on load: cloud only, and only where a write key is already stored, so a stranger
-   with the URL is neither prompted nor served anything new. */
-try{if(cloudMode()&&saltWriteKey()){apLoad(true);ordLoad(true);}}catch(e){}
+/* the one read on load (v385) is in qInit's answer above: cloudMode() is false on every line here */
 window.addEventListener('hashchange',()=>{
   const h=(location.hash||'').slice(1);
   /* v365: was VIEW_OF[h]!==curTab, which only ever caught a jump between views. Two
