@@ -322,6 +322,10 @@ export const OWNER_JS = `
   /* UX8: the answer to the last move, drawn on the card it moved, since the card changes group and the page's
      own line sits at its foot */
   var moved=null;
+  /* S9 fix: AND A TAP THAT FAILS, or a tier pinned, is answered on the card it was tapped on as well, in Needs you
+     and in Links, where the page's own line sat under every card, off a phone's screen. The link keeps its buttons. */
+  var linkSaid=null;
+  function saidOn(r, node){ if(linkSaid&&linkSaid.id===r.id){ node.textContent=linkSaid.t; node.className+=linkSaid.bad?' bad':''; } }
   /* waiting means he still has to act on it: not declined (D13), and not withdrawn either */
   function waitingLink(r){ return !r.standing&&r.approved===false&&r.declined!==true&&!r.revoked; }
   function stampDay(iso){
@@ -411,6 +415,7 @@ export const OWNER_JS = `
       }
       card.appendChild(row);
       if(moved&&moved.id===r.id){ var mv=el('p','msg',moved.t); mv.setAttribute('role','status'); card.appendChild(mv); }
+      if(linkSaid&&linkSaid.id===r.id){ var ls=el('p','msg'); ls.setAttribute('role','status'); saidOn(r, ls); card.appendChild(ls); }
       glist.appendChild(card);
     });
     if(want.length&&made<want.length) glist.appendChild(el('p','rnone','Only '+made+' of the '+want.length+' are made. Publish the statements and open this again.'));
@@ -440,13 +445,16 @@ export const OWNER_JS = `
     catch(e){ say(e.message,'bad'); }
   }
   async function setLevel(r, level){
+    linkSaid=null;
     try{
       var j=await refs('/all/refs/'+r.id+'/level', {level: level||null});
       for(var i=0;i<links.length;i++) if(links[i].id===j.ref.id) links[i]=j.ref;
-      drawLinks(); drawNeeds(); say(level?('That link now quotes '+level+'.'):'That link follows the associate again.');
-    }catch(e){ say(e.message,'bad'); }
+      linkSaid={id:r.id, t:level?('That link now quotes '+level+'.'):'That link follows the associate again.'};
+    }catch(e){ linkSaid={id:r.id, t:e.message, bad:true}; }
+    drawLinks(); drawNeeds(); say('');
   }
   async function moveLink(r, how){
+    linkSaid=null;
     try{
       /* THE BODY IS WHAT MAKES IT A POST (24 Sep 2026): refs() sends a GET when it is given none,
          and every move on a link is a POST-only route, so Approve, Decline, Withdraw and Restore all
@@ -461,7 +469,7 @@ export const OWNER_JS = `
       drawLinks(); drawNeeds(); say('');
       var mc=document.querySelector('[data-link="'+j.ref.id+'"]');
       if(mc&&mc.scrollIntoView&&!oLinks.hidden) mc.scrollIntoView({block:'center'});
-    }catch(e){ say(e.message,'bad'); }
+    }catch(e){ linkSaid={id:r.id, t:e.message, bad:true}; drawLinks(); drawNeeds(); say(''); }
   }
   /* ---- NEEDS YOU (S9 9.1, the plan's section 5) -------------------------------------------------
      His home: one card a thing that waits on him, each with the one action it needs, in the system's Approve
@@ -542,6 +550,7 @@ export const OWNER_JS = `
     ap.addEventListener('click', function(){ moveLink(r,'approve'); });
     de.addEventListener('click', function(){ moveLink(r,'decline'); });
     row.appendChild(ap); row.appendChild(de); c.appendChild(row);
+    saidOn(r, noteOf(c));
     return c;
   }
   function lockNeed(a){

@@ -15647,6 +15647,78 @@ await (async () => {
     ok(await until(() => btn("k:" + uM, "Share the link")) && (await ots()) === 2, "and once made the redrawn card offers Share the link, one link made for it, not two");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S9 fix UX-R2: a move on a link that fails, and a tier pinned, are answered on the card tapped, in Needs you and in Links");
+await (async () => {
+  /* Approve, Decline and the tier pin answered a failure only in the page's own line, under every card and off a
+     phone's screen, so a tap that failed changed nothing he could see. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s9-ux2";
+  const uA = C.newUsername(), pw = C.newPassword();
+  const ck = await C.contentKey("s9-ux2", uA);
+  await kv.put("u:" + uA, JSON.stringify({ u: uA, issued: "2026-09-01", assoc: true, verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+  await kv.put("roster", JSON.stringify([{ code: "CX1-AS", username: uA }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX1-AS", username: uA, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  await kv.put("sent:2026-09-01:" + uA, JSON.stringify({ at: "2026-09-02T01:00:00Z" }));
+  const TEAM = "maakmal", AUD = "aud-s9-ux2", KID = "kid-s9-ux2";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 250 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  const cut = { on: false };
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sess = (await (await site("/open", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ u: uA, password: pw }) })).json()).session;
+    const lid = (await (await site("/my/refs", { method: "POST", headers: { "X-Stmt-Session": sess, "content-type": "application/json" }, body: "{}" })).json()).ref.id;
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      w.fetch = async (q, o) => { o = o || {};
+        if (cut.on && /^[/]all[/]refs[/][^/]+[/]/.test(String(q))) throw new TypeError("Failed to fetch");
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const card = () => D.querySelector('#nlist [data-need="l:' + lid + '"]');
+    const btn = (c, t) => c && [...c.querySelectorAll("button")].find((b) => b.textContent === t);
+    const note = (c) => ((c && c.querySelector(".nnote")) || {}).textContent || "";
+    ok(await until(() => btn(card(), "Approve")), "the associate's link waits on Needs you");
+    cut.on = true;
+    btn(card(), "Approve").click();
+    ok(await until(() => /Not sent[.] Check the connection and try again[.]/.test(note(card())))
+      && card().querySelector(".nnote").classList.contains("bad") && !!btn(card(), "Approve") && !!btn(card(), "Decline")
+      && !JSON.parse(await kv.get("g:" + lid)).approved,
+      "Approve that never went out says so on the card, which keeps its buttons: " + JSON.stringify(note(card())));
+    cut.on = false;
+    const sel = card().querySelector("select");
+    sel.value = "Gold"; sel.dispatchEvent(new win.Event("change", { bubbles: true }));
+    ok(await until(() => /That link now quotes Gold[.]/.test(note(card()))) && JSON.parse(await kv.get("g:" + lid)).level === "Gold",
+      "a tier pinned on the card is answered on the card: " + JSON.stringify(note(card())));
+    /* the same in Links */
+    D.querySelector('.salt-appbar button[data-m="links"]').click();
+    const lcard = () => D.querySelector('#glist [data-link="' + lid + '"]');
+    ok(await until(() => btn(lcard(), "Approve")), "Links lists the link with its Approve");
+    cut.on = true;
+    btn(lcard(), "Approve").click();
+    ok(await until(() => [...lcard().querySelectorAll(".msg")].some((m) => /Not sent[.] Check the connection/.test(m.textContent) && m.classList.contains("bad"))),
+      "and in Links the failure is on the link's card too: " + lcard().textContent.slice(-120));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password

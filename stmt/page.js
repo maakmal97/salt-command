@@ -253,6 +253,7 @@ body.ended>*:not(#aEnded){display:none}
 .nlist .glink{margin:0}
 .nnote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .nnote:empty{display:none}
+.nnote.bad{color:var(--salt-ember)}
 .nwait{display:flex;align-items:center;gap:8px;margin:-8px 0 24px;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .nwait svg{width:16px;height:16px;flex:0 0 auto;color:var(--salt-brass)}
 /* THE ASSOCIATES REPORT CARD (v691): three figures across, then what they have earned in units
