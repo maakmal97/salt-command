@@ -1971,9 +1971,8 @@ const CLIENT_JS = `
       var k=await (await fetch('/push/key',{cache:'no-store'})).json();
       if(!k.key||!k.configured){ draft.pushNote='Notifications are not switched on for this site yet.'; drawOrder(); return; }
       /* v693: THE ASK COMES FIRST. Registering a service worker before it meant a browser that
-         refuses the registration never got as far as the question, and since every login now asks,
-         that silence would be the ordinary case rather than the odd one. Nothing is installed on a
-         phone whose reader says no. */
+         refuses the registration never got as far as the question, which only a tap puts (S4), so
+         that silence would waste the one tap. Nothing is installed on a phone whose reader says no. */
       var perm=await Notification.requestPermission();
       if(perm!=='granted'){ draft.pushNote='Permission was not given, so nothing will be sent.'; drawOrder(); return; }
       await navigator.serviceWorker.register('/sw.js?u='+encodeURIComponent(user));
@@ -2067,11 +2066,11 @@ const CLIENT_JS = `
     askPush();
   });
 
-  /* ---- ASKED ON EVERY LOGIN (v693, his instruction of 18 Sep 2026) ----------------------------
-     The button in the order tab stays, for a reader who said no and changed their mind; this asks
-     on the way in, which is when the answer is worth having. A browser that has already been
-     answered is not asked again: permission is 'granted' or 'denied' by then, and only 'default'
-     can raise the dialog at all. The owner's route never asks: those are not his phones. */
+  /* ---- ON THE WAY IN, NOTHING IS ASKED (S4, 24 SEP 2026; v693 asked here) ----------------------
+     The plan he answered "all recommended" asks at the first order, from a tap: Sent's "A buzz when it is
+     confirmed?", and the Order tab's Notify me. Asked on the way in, a phone that answered never saw that
+     question, and a remembered phone was asked on load with nothing tapped. What stays is the phone already
+     on, filed again below. The owner's route never asks: those are not his phones. */
   function askPush(){
     if(OWNER||!session) return;
     try{
@@ -2081,7 +2080,7 @@ const CLIENT_JS = `
          which every sign-in empties. ON IS WHAT THE SITE HOLDS: with the answer already yes this subscribes again,
          which asks nothing and hands back the phone's own subscription, and names it to the site, so a phone that
          logged out is woken again and a record the site lost is put back; On is said only once the site has it. */
-      if(Notification.permission==='default'||Notification.permission==='granted') subscribePush();
+      if(Notification.permission==='granted') subscribePush();
     }catch(e){ /* a browser that refuses to be asked is not a fault */ }
   }
 

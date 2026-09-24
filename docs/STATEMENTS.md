@@ -375,7 +375,7 @@ field, so nothing typed can reach the order unseen. Units above one, unit at one
 S4 4.4) brings the account's list as it stands, sealed, which the page opens with the key it already holds
 (`openList` keeps it on the list, unenumerable) and draws in the check: "This size is now RM X (was RM Y). Place at RM X?", one tap, a new request id; a list with nothing left to order, or none, is taken as a sign-in takes it, and the check says so with Place held. The page reads the figure off
 the list; it compares and prices nothing. **Sent answers in the sheet** (S4 4.5) and asks "A buzz when it is
-confirmed?", put only by the tap on Turn on notifications (the ask on the way in, v693, stays); See the order
+confirmed?", put only by the tap on Turn on notifications (nothing is asked on the way in since S4, where v693 asked; a sign-in files a phone already on again); See the order
 closes the sheet on the order. **Five open orders are said before the form** (S4 4.6; `MAX_OPEN` is exported from
 `stmt/orders.js` and carried into the page, the Worker still the one that refuses): the Order tab says so in place of
 New order, and the sheet opens on the open orders, Cancel on each whose goods have not moved, going on to the form once

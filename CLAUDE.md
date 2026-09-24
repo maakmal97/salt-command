@@ -305,7 +305,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **The door**: log in, remember me (a device key in the browser, the wrapped content key at
   `rem:<token>`, neither opening anything alone), log out, which also drops that wrap and this
   phone's notifications. A lapsed session says so in the bar, with Continue. Kept as an app:
-  manifest and icon served by the Worker, no brand; every login asks about notifications once.
+  manifest and icon served by the Worker, no brand; notifications are asked only from a tap.
   Salt Admin links its own manifest with credentials and is titled Salt Admin.
 - **A customer's banner names the kind of news, never an amount, a product, an order or a name**:
   `{k, o}` sealed for the one phone (`sealFor`, RFC 8291) under the keys its subscription filed, the

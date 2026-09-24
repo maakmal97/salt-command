@@ -13352,10 +13352,9 @@ await (async () => {
       win.scrollTo = () => {};
       if (push) {
         win.PushManager = function () {};
-        /* a phone that has already answered no, so the ask on the way in (v693) stays quiet and every ask counted is Sent's */
-        let perm = "denied";
+        /* a phone not yet asked: nothing is asked on the way in (S4), so every ask counted is a tap's */
+        let perm = "default";
         win.Notification = { get permission() { return perm; }, requestPermission: async () => { st.asked++; perm = "granted"; return "granted"; } };
-        win.__allowAsk = () => { perm = "default"; };
         const reg = { pushManager: { getSubscription: async () => null, subscribe: async () => ({ endpoint: "https://push.example/ep-s45" }) } };
         Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
           register: async () => reg, ready: Promise.resolve(reg), getRegistration: async () => reg } });
@@ -13375,7 +13374,6 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
     await new Promise((r) => setTimeout(r, 100));
-    if (w.__allowAsk) w.__allowAsk();
     d.getElementById("oNew").click();
     d.getElementById("oGo").click();
     d.getElementById("oPlace").click();
@@ -16764,7 +16762,7 @@ await (async () => {
     } finally { try { second.W.close(); } catch (e) { /* best effort */ } }
   } finally { try { first.W.close(); } catch (e) { /* best effort */ } }
 })();
-section("v693: the site can be kept as an app, and every login asks about notifications");
+section("v693: the site can be kept as an app, and notifications are asked from a tap, never on the way in (S4)");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: a short tutorial for saving the page as an app, and an ask for
      notifications on every login. The site serves no assets, so the icon is bytes in a module and the
@@ -16837,8 +16835,16 @@ await (async () => {
     browser93.D.getElementById("un").value = u93;
     browser93.D.getElementById("pw").value = pass93;
     browser93.D.getElementById("f").dispatchEvent(new browser93.W.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 80 && browser93.asked.times === 0; i++) await new Promise((r) => setTimeout(r, 50));
-    ok(browser93.asked.times === 1, "and signing in asks about notifications once: " + browser93.asked.times);
+    /* S4 (S4R-4): v693 asked here; the plan asks at the first order, from a tap. The Order tab's Notify me is the
+       control: the counter moves for a tap, so its standing still through the sign-in is the sign-in asking nothing */
+    for (let i = 0; i < 80 && !/Your orders/.test(browser93.D.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, 400));
+    const signedIn93 = browser93.asked.times;
+    const notify93 = [...browser93.D.querySelectorAll("#pOrder button")].find((b) => b.textContent === "Notify me on this phone");
+    if (notify93) notify93.click();
+    for (let i = 0; i < 80 && browser93.asked.times === signedIn93; i++) await new Promise((r) => setTimeout(r, 50));
+    ok(signedIn93 === 0 && !!notify93 && browser93.asked.times === 1,
+      "signing in asks nothing about notifications, and the tap on Notify me asks once: " + JSON.stringify([signedIn93, !!notify93, browser93.asked.times]));
   } finally { try { browser93.W.close(); } catch (e) { /* best effort */ } }
   const app93 = drive93(true, "denied");
   try {
