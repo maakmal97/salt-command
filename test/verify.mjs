@@ -13372,6 +13372,70 @@ await (async () => {
     void w;
   } finally { await new Promise((r) => setTimeout(r, 100)); B.w.close(); }
 })();
+section("S4 4.7: an associate is asked Who is it for? first, and nothing is chosen for them");
+await (async () => {
+  /* HIS "ALL RECOMMENDED" OF 24 SEP 2026. v702's tick, "On behalf of a friend", was the last field of the form, easy to
+     pass with the order booked to the wrong party. An associate is asked first now, Me or A friend, with neither chosen:
+     Review waits for the answer, the check says it, Place carries it as forFriend, and the next order asks again. */
+  const { landingPage: lpF } = await import("../stmt/page.js");
+  const CF = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcF } = await import("node:crypto");
+  const { JSDOM: JDF } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s47", ck = await CF.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] }] };
+  const drive = async (assoc) => {
+    const st = { posted: [] };
+    const body = { ok: true, assoc, wrap: await CF.wrapKey(pass, ck), session: "sess-s47", prices: await CF.encryptWith(ck, JSON.stringify(prices)),
+      env: await CF.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+    const dom = new JDF(lpF(u, "ns47", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcF, configurable: true }); } catch (e) { win.crypto = wcF; }
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/open") return { ok: true, status: 200, json: async () => body };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+        if (p === "/orders" && m === "POST") { const j = JSON.parse(init.body); st.posted.push(j);
+          return { ok: true, status: 200, json: async () => ({ ok: true, order: { id: "20260924040000-s47" + st.posted.length, product: "salt", qty: 1, status: "placed", at: "2026-09-24T04:00:00Z", total: 100, history: [], msgs: [] } }) }; }
+        return { ok: false, status: 404, json: async () => ({ ok: false }) };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click();
+    return { w, d, st };
+  };
+  const who = (d) => { const fs = d.querySelector("#osheet .salt-sheet__body > fieldset");
+    return fs && /Who is it for[?]/.test(fs.textContent) ? [...fs.querySelectorAll("button")].map((b) => b.textContent + "=" + b.getAttribute("aria-pressed")) : null; };
+  const A = await drive(true);
+  try {
+    const { d, st } = A;
+    const why = () => d.querySelector("#osheet .ototal .sub2").textContent;
+    ok(JSON.stringify(who(d)) === '["Me=false","A friend=false"]' && d.getElementById("oGo").disabled && why() === "Say who it is for.",
+      "an associate's sheet opens on Who is it for?, neither chosen, and Review waits for the answer and says why: " + JSON.stringify([who(d), why()]));
+    [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "A friend").click();
+    ok(JSON.stringify(who(d)) === '["Me=false","A friend=true"]' && !d.getElementById("oGo").disabled, "a tap answers it and lets Review go");
+    d.getElementById("oGo").click();
+    const forRow = [...d.querySelectorAll("#osheet .salt-ledger__row")].find((r) => r.querySelector(".salt-ledger__label").textContent === "For");
+    ok(!!forRow && forRow.querySelector(".salt-ledger__value").textContent === "A friend", "the check says who it is for");
+    d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !(d.getElementById("osheet") && /Order sent/.test(d.getElementById("osheet").textContent)); i++) await new Promise((r) => setTimeout(r, 30));
+    ok(st.posted.length === 1 && st.posted[0].forFriend === true, "and Place carries it: " + JSON.stringify(st.posted.map((x) => x.forFriend)));
+    d.getElementById("oNew").click();
+    ok(JSON.stringify(who(d)) === '["Me=false","A friend=false"]' && d.getElementById("oGo").disabled, "the next order asks again: " + JSON.stringify(who(d)));
+    [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Me").click();
+    d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && st.posted.length < 2; i++) await new Promise((r) => setTimeout(r, 30));
+    ok(st.posted.length === 2 && st.posted[1].forFriend === false, "and Me places it as their own");
+  } finally { await new Promise((r) => setTimeout(r, 100)); A.w.close(); }
+  const B = await drive(false);
+  try {
+    ok(who(B.d) === null && !/Who is it for/.test(B.d.getElementById("osheet").textContent) && !B.d.getElementById("oGo").disabled,
+      "a customer who is not an associate is never asked");
+  } finally { B.w.close(); }
+})();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {
   /* HIS INSTRUCTION OF 16 SEP 2026: "The label to them is a very subtle tier level, in symbol and colour (for each tier),
@@ -14883,6 +14947,7 @@ await (async () => {
     const pOrder = D.getElementById("pOrder"), pCard = D.getElementById("pCard");
     ok(await until(() => D.getElementById("oNew")), "the associate's page opens with New order");
     D.getElementById("oNew").click();
+    [...D.querySelectorAll("#osheet button")].find((b) => b.textContent === "Me").click();   /* S4 4.7: asked who it is for, first */
     D.getElementById("oGo").click();
     const place = () => D.getElementById("oPlace");
     ok(await until(() => place()), "Review shows Place order");
@@ -17580,8 +17645,9 @@ await (async () => {
 
   /* ---- the page draws the tick only for an associate ---- */
   const page2 = await (await stmtW2.fetch(new Request("https://k7m3p2.example/"), { STMT: kv2 })).text();
-  ok(page2.includes("On behalf of a friend") && page2.includes("if(assoc){"),
-    "the words are on the page and the tick is behind the mark, so nobody else is offered it");
+  /* S4 4.7: the tick became the sheet's first question, Who is it for? Me / A friend, asked of an associate alone */
+  ok(page2.includes("'Who is it for?'") && page2.includes("['friend','A friend']") && page2.includes("if(assoc) B.appendChild(choice('Who is it for?'"),
+    "the question is on the page and behind the mark, so nobody else is asked it");
   ok(/forFriend:!!\(assoc&&c\.forFriend\)/.test(page2),
     "and the placement cannot send the tick unless the account carries the mark");
   /* EVERY DOOR READS IT, and the count is the check: a door added later that forgot the mark would

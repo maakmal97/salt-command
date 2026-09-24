@@ -289,7 +289,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **Over RM 100 owed (`HOLD_RM`) the account opens as a payment page**: the page's gate, not the
   Worker's. **The bulletin** is KV `bulletin`, set through the desk's keyed `/bulletin` and checked
   by `siteWords`.
-- **An associate may tick an order as on behalf of a friend**: it books to their `-R` bucket
+- **An associate is asked who an order is for, first (Me / A friend)**: a friend's books to their `-R` bucket
   through the engine's `bookR2`, and the `orderKey` is built on the bucket. **A bucket is not its
   own person**: `ownsCode` reads the code and the bucket together; a bucket has no statement and no
   published username.

@@ -457,7 +457,9 @@ be tapped.
 **AN ASSOCIATE TICKS AN ORDER AS ON BEHALF OF A FRIEND** (v703, his instruction of 18 Sep 2026).
 Their own orders and the ones they place for somebody else can no longer be told apart by what they
 buy, so they tick it; the words are his, and they replaced an earlier phrasing he rejected. The tick
-is drawn only for an associate, rides the placement as `forFriend`, and is stored on the order.
+is drawn only for an associate, rides the placement as `forFriend`, and is stored on the order. Since S4 4.7 it is the
+order sheet's first question, **Who is it for? Me / A friend**, neither chosen and asked on every order: Review waits
+for the answer.
 
 *Who is an associate* is the desk's own answer, never a second one: `planPublish` reads the report
 card snapshot's `products[].rows[].id` and marks that account's record `assoc: true`. The mark is

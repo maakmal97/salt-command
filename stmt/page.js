@@ -1392,6 +1392,7 @@ const CLIENT_JS = `
     fs.appendChild(g); return fs;
   }
   function formWhy(){
+    if(assoc&&draft.forFriend==null) return 'Say who it is for.';
     if(!quoteFor()) return 'Pick a size.';
     if(draft.mode==='deliver'&&String(draft.place||'').trim().length<2) return 'Say roughly where it is going.';
     return '';
@@ -1404,6 +1405,10 @@ const CLIENT_JS = `
     var S=sold(), P=S.filter(function(x){ return x.product===draft.product; })[0]||S[0], B=sheet.body;
     draft.product=P.product;
     if(!P.sizes.some(function(x){ return String(x.q)===String(draft.q); })) draft.q=String(P.sizes[0].q);
+    /* S4 4.7: AN ASSOCIATE IS ASKED WHO IT IS FOR, FIRST (v702's tick, which was the last field and easy to pass). Nothing is
+       chosen for them: Review waits for the answer, and every order asks again. Nobody else is asked. */
+    if(assoc) B.appendChild(choice('Who is it for?',[['me','Me'],['friend','A friend']],draft.forFriend==null?'':(draft.forFriend?'friend':'me'),'for',
+      function(v){ draft.forFriend=(v==='friend'); sheetDraw(); }));
     /* v695: a product is a mark named by its shape; with one on the list the tiles say which by their legend */
     if(S.length>1) B.appendChild(choice('',S.map(function(x){ return [x.product,psym(x.product,24),pshape(x.product)]; }),draft.product,'prod',
       function(v){ draft.product=v; draft.q=null; var U=usual(); if(U&&U.product===v&&soldHas(v,U.q)) draft.q=String(U.q); sheetDraw(); }));
@@ -1443,12 +1448,6 @@ const CLIENT_JS = `
       var an=el('button','salt-ghost ofull','Add a note'); an.type='button'; an.id='oAddNote'; an.setAttribute('data-k','addnote');
       an.addEventListener('click',function(){ draft.noteOpen=true; sheetDraw(); var f=document.getElementById('oSay'); if(f) try{ f.focus(); }catch(e){} });
       B.appendChild(an);
-    }
-    /* v702: an associate's own order and one for somebody else are told apart by a tick; nobody else sees it */
-    if(assoc){
-      var fl=el('label','rem'), fb=el('input'); fb.type='checkbox'; fb.id='ofriend'; fb.checked=!!draft.forFriend; fb.setAttribute('data-k','friend');
-      fb.addEventListener('change',function(){ draft.forFriend=fb.checked; });
-      fl.appendChild(fb); fl.appendChild(el('span',null,'On behalf of a friend')); B.appendChild(fl);
     }
     formFoot();
   }
@@ -1579,7 +1578,7 @@ const CLIENT_JS = `
     }
     /* S4 4.5: Sent answers in the sheet; the Order tab behind it is drawn again with the order in it */
     var o=r.body.order;
-    draft.sent=(o&&o.id)||''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.buzzNo=false;
+    draft.sent=(o&&o.id)||''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.buzzNo=false; draft.forFriend=null;
     sheetDraw();
     await loadOrders(); if(mine!==ticket) return;
     drawOrder();
