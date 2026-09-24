@@ -13750,6 +13750,54 @@ await (async () => {
       "Place from a list sealed with no stamp still carries the stamp field, empty: " + JSON.stringify(posted.map((x) => Object.keys(x))));
   } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
 })();
+section("S4 fix: while Place is on its way the sheet stays open, so its answer is drawn where it was tapped");
+await (async () => {
+  /* S4R-7: the scrim, Close, the back control and Escape all stayed live while Place was in flight; closed then, the
+     order landed with no word beside anything, a refusal was dropped, and the same order could be placed again under a
+     new request id. The ways out wait for the answer. */
+  const { landingPage: lpF2 } = await import("../stmt/page.js");
+  const CF2 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcF2 } = await import("node:crypto");
+  const { JSDOM: JDF2 } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-sf2", ck = await CF2.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] }] };
+  const st = { posted: 0, release: null };
+  const body = { ok: true, wrap: await CF2.wrapKey(pass, ck), session: "sess-sf2", prices: await CF2.encryptWith(ck, JSON.stringify(prices)),
+    env: await CF2.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const dom = new JDF2(lpF2(u, "nsf2", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcF2, configurable: true }); } catch (e) { win.crypto = wcF2; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      if (p === "/open") return { ok: true, status: 200, json: async () => body };
+      if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      if (p === "/orders" && m === "POST") { st.posted++; await new Promise((r) => { st.release = r; });
+        return { ok: true, status: 200, json: async () => ({ ok: true, order: { id: "20260924040000-sf2a", product: "salt", qty: 1, status: "placed", at: "2026-09-24T04:00:00Z", total: 100, history: [], msgs: [] } }) }; }
+      return { ok: false, status: 404, json: async () => ({ ok: false }) };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click(); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !st.release; i++) await new Promise((r) => setTimeout(r, 30));
+    const orbs = [...d.querySelectorAll("#osheet .salt-sheet__head button")].map((b) => [b.getAttribute("aria-label"), b.disabled]);
+    ok(st.posted === 1 && orbs.length === 2 && orbs.every((o) => o[1] === true),
+      "while Place is on its way, the sheet's own Close and Change controls are held: " + JSON.stringify(orbs));
+    const tap = (sel, ev) => { const x = d.querySelector(sel); if (x) (ev ? x.dispatchEvent(ev) : x.click()); return !!d.getElementById("osheet"); };
+    const held = [tap("#osheet .salt-sheet", new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true })),
+      tap("#osheet .salt-sheet-scrim"), tap("#osheet .salt-sheet__close")];
+    ok(held.join() === "true,true,true", "and Escape, the scrim and Close leave the sheet open: " + JSON.stringify(held));
+    st.release();
+    for (let i = 0; i < 100 && !/Order sent/.test((d.getElementById("osheet") || {}).textContent || ""); i++) await new Promise((r) => setTimeout(r, 30));
+    ok(/Order sent/.test((d.getElementById("osheet") || {}).textContent || ""), "so the answer is drawn in the sheet where Place was tapped");
+    d.querySelector("#osheet .salt-sheet").dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    ok(!d.getElementById("osheet"), "and once it is answered, Escape closes it again");
+  } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
+})();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {
   /* HIS INSTRUCTION OF 16 SEP 2026: "The label to them is a very subtle tier level, in symbol and colour (for each tier),

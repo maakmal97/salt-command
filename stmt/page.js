@@ -1293,8 +1293,8 @@ const CLIENT_JS = `
      folded away until it is wanted, and the total with Review in the foot, in reach of the thumb. Review turns the
      sheet into the check, which draws what will be sent from one frozen copy, so nothing on it can differ from what
      Place sends. Built from the page's own nodes at the root of the body, because a fixed element inside a glass card
-     is held by the card's blur; Escape, the scrim and the close control all close it, and focus goes back to what
-     opened it. */
+     is held by the card's blur; Escape, the scrim and the close control all close it, except while Place is on its way,
+     and focus goes back to what opened it. */
   /* the open sheet, or null. Not "sheet": the owner's script, spliced into this closure on his route, keeps its account list under that name */
   var osh=null;
   var OMAX=__MAX_OPEN__, OPEN_ST=__OPEN_STATES__, DELIVERY=__DELIVERY__;
@@ -1331,7 +1331,7 @@ const CLIENT_JS = `
     draft.step=oOpen().length>=OMAX?'limit':'form'; draft.snote=''; draft.check=null;
     if(!osh){
       var wrap=el('div'); wrap.id='osheet';
-      var scrim=el('div','salt-sheet-scrim'); scrim.setAttribute('aria-hidden','true'); scrim.addEventListener('click',sheetClose);
+      var scrim=el('div','salt-sheet-scrim'); scrim.setAttribute('aria-hidden','true'); scrim.addEventListener('click',sheetDismiss);
       var box=el('div','salt-sheet osheet'); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
       box.setAttribute('aria-labelledby','oshT'); box.tabIndex=-1;
       var grab=el('div','salt-sheet__grab'); grab.setAttribute('aria-hidden','true');
@@ -1350,9 +1350,12 @@ const CLIENT_JS = `
     s.wrap.parentNode.removeChild(s.wrap);
     try{ if(s.opener&&s.opener.isConnected) s.opener.focus({preventScroll:true}); }catch(e){}
   }
+  /* the customer's own ways out (the scrim, Close, Escape) wait while Place is on its way: closed then, the answer had
+     nowhere to be drawn, an order landed unsaid or a refusal was dropped, and the same order could be placed again */
+  function sheetDismiss(){ if(!draft.busy) sheetClose(); }
   /* the sheet keeps focus while it is open: Escape closes it, and Tab wraps at its own first and last controls */
   function sheetKeys(ev){
-    if(ev.key==='Escape'){ ev.stopPropagation(); sheetClose(); return; }
+    if(ev.key==='Escape'){ ev.stopPropagation(); sheetDismiss(); return; }
     if(ev.key!=='Tab'||!osh) return;
     var all=[].filter.call(osh.box.querySelectorAll('button:not([disabled]),input:not([disabled]),a[href]'),function(x){
       if(x.type==='radio'&&x.name){ var g=[].filter.call(osh.box.querySelectorAll('input[type=radio]'),function(r){ return r.name===x.name; });
@@ -1378,11 +1381,11 @@ const CLIENT_JS = `
     if(inside&&!osh.box.contains(document.activeElement)) try{ osh.box.focus({preventScroll:true}); }catch(e){}
   }
   function sheetHead(title,back){
-    if(back){ var b=el('button','salt-orb'); b.type='button'; b.setAttribute('aria-label','Change'); b.setAttribute('data-k','back');
+    if(back){ var b=el('button','salt-orb'); b.type='button'; b.setAttribute('aria-label','Change'); b.setAttribute('data-k','back'); b.disabled=!!draft.busy;
       b.appendChild(oGlyph('back')); b.addEventListener('click',back); osh.head.appendChild(b); }
     if(title!=null){ var h=el('h2','salt-sheet__title',title); h.id='oshT'; osh.head.appendChild(h); }
-    var x=el('button','salt-orb salt-sheet__close'); x.type='button'; x.setAttribute('aria-label','Close'); x.setAttribute('data-k','close');
-    x.appendChild(oGlyph('close')); x.addEventListener('click',sheetClose); osh.head.appendChild(x);
+    var x=el('button','salt-orb salt-sheet__close'); x.type='button'; x.setAttribute('aria-label','Close'); x.setAttribute('data-k','close'); x.disabled=!!draft.busy;
+    x.appendChild(oGlyph('close')); x.addEventListener('click',sheetDismiss); osh.head.appendChild(x);
   }
   /* a question answered by pressed ghosts: the system's Option group holds them, and the chosen one is pressed, never filled */
   function oChoice(legend,opts,cur,key,pick){
