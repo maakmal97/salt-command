@@ -350,10 +350,10 @@ async function handleCustomer(request, env, p, m) {
     const isHere = (d) => here.includes(d.key) || opened(d).some((s) => here.includes(s));
     const devs = devicesIn(await pointersOf(env, u));
     if (p === "/devices") return json({ ok: true, devices: devs.map((d) => Object.assign(deviceOut(d), { here: isHere(d) })) });
-    let devices = 0;
-    for (const d of devs) if (!isHere(d)) { await endDevice(env, u, d); devices++; }
+    let devices = 0, phones = 0;
+    for (const d of devs) if (!isHere(d)) { phones += await endDevice(env, u, d); devices++; }
     const ep = typeof b.endpoint === "string" && /^https:\/\//.test(b.endpoint) ? await endpointId(b.endpoint) : null;
-    return json({ ok: true, devices, phones: await dropPhones(env, u, ep) });
+    return json({ ok: true, devices, phones: phones + await dropPhones(env, u, ep) });
   }
   if (p === "/orders") {
     if (m === "GET") return json({ ok: true, orders: (await ordersOf(env, u)).map(customerView) });
@@ -367,7 +367,12 @@ async function handleCustomer(request, env, p, m) {
     const ep = b && b.endpoint;
     if (typeof ep !== "string" || !/^https:\/\//.test(ep)) return json({ ok: false, error: "a subscription needs an https endpoint" }, 400);
     const id = await endpointId(ep), keys = pushKeys(b.keys);   /* S12 12.1: kept, so a wake can carry its kind */
-    await env.STMT.put("push:" + u + ":" + id, JSON.stringify(Object.assign({ endpoint: ep, at: new Date().toISOString() }, keys ? { keys } : {})));
+    /* S9 fix: and the device it came from, the session and the remembered phone holding it, so signing that one device
+       out stops its alerts too (endDevice); a phone signed out stops waking (v692) */
+    const sess = await sessKey(String(request.headers.get("X-Stmt-Session") || ""));
+    const ph = (await pointersOf(env, u)).find((x) => opened(x).includes(sess));
+    await env.STMT.put("push:" + u + ":" + id, JSON.stringify(Object.assign({ endpoint: ep, at: new Date().toISOString(), sess },
+      ph ? { dev: ph.key } : {}, keys ? { keys } : {})));
     return json({ ok: true, id, keys: !!keys });
   }
   /* S9 9.9: notifications off on this phone, from its This device card: its own push record and no other */
@@ -1016,11 +1021,24 @@ function devicesIn(ptrs) {
     .sort((a, b) => String(b.last || b.at || "").localeCompare(String(a.last || a.at || "")));
 }
 const deviceOut = (p) => ({ label: p.label || null, kind: p.kind || null, at: p.at || null, last: p.last || p.at || null, kept: /^rem:/.test(p.key) });
-/* one device ended: its credential, the sessions a remembered phone opened, and the pointers to all of them */
+/* one device ended: its credential, the sessions a remembered phone opened, and the pointers to all of them; and, since
+   an S9 fix, the alerts filed from it (a push record names its session and the phone holding it), so a phone signed out
+   by its own row stops waking (v692). Returns how many alerts it stopped. */
 async function endDevice(env, u, p) {
   await env.STMT.delete(p.key);
   for (const s of opened(p)) { await env.STMT.delete(s); await unpoint(env, u, s); }
   await env.STMT.delete(p.name);
+  const mine = [p.key].concat(opened(p));
+  let n = 0, cursor;
+  do {
+    const page = await env.STMT.list({ prefix: "push:" + u + ":", cursor });
+    for (const k of page.keys) {
+      const r = await env.STMT.get(k.name, "json");
+      if (r && (mine.includes(r.dev) || mine.includes(r.sess))) { await env.STMT.delete(k.name); n++; }
+    }
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+  return n;
 }
 /* the account's push records, all but the one a phone keeping its sign-in names */
 async function dropPhones(env, u, keepId) {
@@ -1333,8 +1351,8 @@ export default {
         /* S9 9.4: one of its devices, by the id his list carries, or everything */
         if (b.id != null) {
           const d = devicesIn(await pointersOf(env, u)).find((x) => x.id === String(b.id));
-          if (d) await endDevice(env, u, d);
-          return json({ ok: true, devices: d ? 1 : 0, links: 0, phones: 0, ended: d ? 1 : 0 });
+          const phones = d ? await endDevice(env, u, d) : 0;
+          return json({ ok: true, devices: d ? 1 : 0, links: 0, phones, ended: (d ? 1 : 0) + phones });
         }
         const keep = typeof b.keep === "string" && /^[0-9a-f]{64}$/.test(b.keep) ? b.keep : "";
         return json(Object.assign({ ok: true }, await signOutEverywhere(env, u, keep)));

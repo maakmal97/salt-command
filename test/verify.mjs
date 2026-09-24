@@ -16726,6 +16726,66 @@ await (async () => {
     ok(await until(() => shared.length === 1 && /[/]s[/]/.test(shared[0])), "and the next tap sends it");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S9 fix S9R-3: signing one device out by its own row stops its alerts, a remembered phone's however often it has reopened");
+await (async () => {
+  /* His one-device Sign out ended the device's sign-in but not its push record, which named no device, so a lost phone
+     signed out by its own row kept waking for the account (v692: a phone signed out stops waking). */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { endpointId } = await import("../stmt/push.js");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const EDGE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0";
+  const kv = new KV(), MASTER = "mp-s9r3";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r3", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX3-PU", username: u }]));
+  const TEAM = "maakmal", AUD = "aud-s9r3", KID = "kid-s9r3";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const post = async (path, body, headers) => { const r = await site(path, { method: "POST", headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) });
+    return { status: r.status, j: await r.json().catch(() => ({})) }; };
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const A = { "cf-access-jwt-assertion": h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c)))) };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  try {
+    const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" };
+    const signIn = async (ua) => (await post("/open", { u, password: pw }, { "user-agent": ua })).j.session;
+    const E1 = "https://push.example/s9r3-iphone", E2 = "https://push.example/s9r3-windows", E3 = "https://push.example/s9r3-ipad";
+    const has = async (e) => !!(await kv.get("push:" + u + ":" + (await endpointId(e))));
+    /* an iPhone kept signed in, its alerts on, which then reopens six times as a remembered phone does */
+    const s1 = await signIn(IPHONE);
+    const t1 = (await post("/remember", { wrap }, { "X-Stmt-Session": s1, "user-agent": IPHONE })).j.token;
+    await post("/push/subscribe", { endpoint: E1 }, { "X-Stmt-Session": s1 });
+    for (let i = 0; i < 6; i++) await post("/remember/open", { token: t1 }, { "user-agent": IPHONE });
+    /* a computer for this visit, its alerts on; and a second computer's, which nothing here touches */
+    const s2 = await signIn(EDGE), s3 = await signIn(EDGE);
+    await post("/push/subscribe", { endpoint: E2 }, { "X-Stmt-Session": s2 });
+    await post("/push/subscribe", { endpoint: E3 }, { "X-Stmt-Session": s3 });
+    ok(await has(E1) && await has(E2) && await has(E3), "the fixture: three devices with their alerts on");
+    const devs = (await (await site("/all/account/" + u, { headers: A })).json()).devices;
+    /* sessions the phone opened before the last five lapse on their own, and are not the phone */
+    const iphone = devs.filter((d) => d.kept), isWin = (d) => d.label === "Windows computer, Edge";
+    ok(iphone.length === 1 && devs.filter(isWin).length === 2, "his list has the iPhone kept signed in once, and the two computers: " + JSON.stringify(devs.map((d) => d.label)));
+    const one = await post("/all/signout", { u, id: iphone[0].id }, A);
+    ok(one.j.devices === 1 && one.j.phones === 1 && !(await has(E1)) && await has(E2) && await has(E3)
+      && (await post("/remember/open", { token: t1 }, { "user-agent": IPHONE })).status === 401,
+      "his Sign out on the iPhone ends it and its alerts, however often it reopened, and no other device's: " + JSON.stringify(one.j));
+    /* one of the two computers, by its own row */
+    const d2 = (await (await site("/all/account/" + u, { headers: A })).json()).devices.filter(isWin);
+    const r2 = await post("/all/signout", { u, id: d2[0].id }, A), left = [await has(E2), await has(E3)];
+    ok(d2.length === 2 && r2.j.phones === 1 && left.filter((x) => !x).length === 1,
+      "and signing one computer out stops its alerts alone: " + JSON.stringify({ answer: r2.j, left }));
+  } finally { globalThis.fetch = realFetch; }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password
