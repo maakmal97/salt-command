@@ -257,7 +257,29 @@ export const owedUnits = (o) => +((+o.qty) - (+o.moved || 0)).toFixed(3);
 export const hasUnpaidAdvance = (orders, exceptId) => (orders || []).some(
   (o) => o.id !== exceptId && !["cancelled", "declined"].includes(o.status) && (+o.moved || 0) > 0 && dueOf(o) > 0.004);
 
+/* A RETRY LANDS ONCE (24 Sep 2026). Place and I have paid are the two taps that ADD: a second
+   placement is a second order and a second payment is paid twice. The page mints a request id per
+   review and per payment and sends it with the tap, so a retry of the same tap (an answer lost on the
+   way back, a second tap after "not placed") carries the same one. The first that lands files
+   rid:<username>:<rid> for a day naming its order, and a repeat is answered with that order as it
+   stands and changes nothing. KV is eventually consistent, so a repeat at another edge inside its
+   first minute may not see the key: best effort, as the one-time link is. No id, taken as before. */
+export const RID_RE = /^[A-Za-z0-9_-]{16,64}$/;
+export const RID_TTL = 86400;
+export const RID_KEY = (u, rid) => "rid:" + u + ":" + rid;
+const ridOf = (body) => (body && typeof body.rid === "string" && RID_RE.test(body.rid) ? body.rid : "");
+async function repeatOf(env, u, rid, id) {
+  if (!rid) return null;
+  const seen = await env.STMT.get(RID_KEY(u, rid), "json");
+  if (!seen || !seen.id || (id && seen.id !== id)) return null;
+  const order = await env.STMT.get(OKEY(u, seen.id), "json");
+  return order ? { order } : null;
+}
+const fileRid = (env, u, rid, id) => (rid ? env.STMT.put(RID_KEY(u, rid), JSON.stringify({ id }), { expirationTtl: RID_TTL }) : null);
+
 export async function placeOrder(env, u, body) {
+  const rid = ridOf(body), again = await repeatOf(env, u, rid);
+  if (again) return again;
   const open = (await ordersOf(env, u)).filter((o) => OPEN_STATES.includes(o.status));
   const c = checkPlacement(body, open);
   if (c.error) return { error: c.error };
@@ -267,6 +289,7 @@ export async function placeOrder(env, u, body) {
     msgs: c.note ? [{ at, by: "customer", text: c.note }] : [],   /* v751: the line they typed with the order is its first message */
     history: [{ at, status: "placed", by: "customer" }] }, c.order);
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
+  await fileRid(env, u, rid, id);
   await env.STMT.put(LAST_PLACED, at);
   await env.STMT.put(LAST_TOUCHED, at);
   if (c.note) await env.STMT.put(LAST_SAID, at);
@@ -275,6 +298,10 @@ export async function placeOrder(env, u, body) {
 
 /** The customer's own moves: a rail at ready, or a withdrawal before anything is on the road. */
 export async function customerMove(env, u, id, action, body) {
+  /* a payment already recorded under this id is answered before anything is checked, because the
+     first may have completed the order, and a repeat must not read as a refusal */
+  const rid = action === "pay" ? ridOf(body) : "", again = await repeatOf(env, u, rid, id);
+  if (again) return again;
   const order = await env.STMT.get(OKEY(u, id), "json");
   if (!order) return { error: "no such order", status: 404 };
   const at = new Date().toISOString();
@@ -325,6 +352,7 @@ export async function customerMove(env, u, id, action, body) {
     said = true;
   } else return { error: "not found", status: 404 };
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
+  await fileRid(env, u, rid, id);
   await env.STMT.put(LAST_TOUCHED, at);
   /* v751: and a mark the desk's own nudge can read, so a line waits for him rather than for a poll */
   if (said) await env.STMT.put(LAST_SAID, at);

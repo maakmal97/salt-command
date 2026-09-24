@@ -17730,6 +17730,130 @@ await (async () => {
     "and no roll in the trail is this version's: " + rolls.length + " note(s), none of them v750's");
 })();
 
+section("A retry lands once: Place and I have paid carry a request id, and a repeat is answered with the first result");
+await (async () => {
+  /* Stage 1 of the Counter redesign, fold 1.15. Place and I have paid are the two taps that ADD, and
+     neither carried anything to say it was the same tap again, so an answer lost on the way back and a
+     second tap placed a second order, or recorded the payment twice. */
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const un = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("test-secret", un);
+  const rec = { u: un, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) };
+  const kv = new KV(); await kv.put("u:" + un, JSON.stringify(rec));
+  const senv = { STMT: kv, STMT_DESK_KEY: "desk-key" };
+  const sj = (path, body, headers = {}) => new Request("https://k7m3p2.example" + path,
+    { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) });
+  const call = async (path, body, headers) => { const r = await stmtW.fetch(sj(path, body, headers), senv); return { status: r.status, b: await r.json() }; };
+  const S = { "X-Stmt-Session": (await call("/open", { u: un, password: pw })).b.session };
+  const D = { "X-Stmt-Desk": "desk-key" };
+  const orderKeys = () => [...kv.m.keys()].filter((k) => k.startsWith("order:" + un + ":"));
+  const place = (extra) => call("/orders", Object.assign({ product: "salt", qty: 1, mode: "collect", unit: 110, total: 110, week: "2026-09-14" }, extra), S);
+  const stored = async (id) => kv.get("order:" + un + ":" + id, "json");
+
+  /* ---- Place, twice with one id: one order, and the second answer is the first ---- */
+  const ridA = "a1".repeat(16);
+  const p1 = await place({ rid: ridA }), p2 = await place({ rid: ridA });
+  ok(p1.b.ok && p2.b.ok && p1.b.order && p2.b.order && p2.b.order.id === p1.b.order.id && orderKeys().length === 1,
+    "a placement sent twice under one request id stores one order and answers the second with the first: "
+    + JSON.stringify({ first: p1.b.order && p1.b.order.id, second: p2.b.order && p2.b.order.id, stored: orderKeys().length }));
+  const kept = kv.opts.get(O.RID_KEY(un, ridA));
+  ok(!!(await kv.get(O.RID_KEY(un, ridA))) && kept && kept.expirationTtl === 86400,
+    "the id is kept for a day and no longer: " + JSON.stringify(kept));
+  await place({}); await place({});
+  ok(orderKeys().length === 3, "and a placement with no id is taken as before, so two taps are two orders: " + orderKeys().length);
+
+  /* ---- I have paid, twice with one id: paid rises once ---- */
+  const id = p1.b.order.id;
+  await call("/desk/orders/" + un + "/" + id, { status: "acknowledged" }, D);
+  const ridB = "b2".repeat(16);
+  const y1 = await call("/orders/" + id + "/pay", { amount: 30, method: "tngbiz", rid: ridB }, S);
+  const y2 = await call("/orders/" + id + "/pay", { amount: 30, method: "tngbiz", rid: ridB }, S);
+  const afterPay = await stored(id);
+  ok(y1.b.ok && y2.b.ok && +afterPay.paid === 30 && afterPay.payments.length === 1 && +y2.b.order.paid === 30,
+    "a payment sent twice under one request id is recorded once: " + JSON.stringify({ paid: afterPay.paid, payments: afterPay.payments.length, answer: y2.b.order && y2.b.order.paid }));
+  const y3 = await call("/orders/" + id + "/pay", { amount: 30, method: "tngbiz", rid: "c3".repeat(16) }, S);
+  ok(y3.b.ok && +(await stored(id)).paid === 60, "and a payment under a new id is a new payment: " + (await stored(id)).paid);
+  const other = orderKeys().map((k) => k.split(":")[2]).find((x) => x !== id);
+  const y4 = await call("/orders/" + other + "/pay", { amount: 30, method: "tngbiz", rid: ridB }, S);
+  ok(y4.status === 409 && !y4.b.ok && +(await stored(other)).paid === 0,
+    "an id answers only for the order it was filed against: " + JSON.stringify({ status: y4.status, error: y4.b.error }));
+
+  /* ---- a payment that completes the order is repeated as the order, never as a refusal ---- */
+  await call("/desk/orders/" + un + "/" + id, { handover: { units: 1 } }, D);
+  const ridD = "d4".repeat(16);
+  const z1 = await call("/orders/" + id + "/pay", { amount: 50, method: "tngbiz", rid: ridD }, S);
+  const z2 = await call("/orders/" + id + "/pay", { amount: 50, method: "tngbiz", rid: ridD }, S);
+  ok(z1.b.ok && z1.b.order.status === "done" && z2.status === 200 && z2.b.ok && z2.b.order.status === "done" && +(await stored(id)).paid === 110,
+    "a payment that completed the order, sent again, reads as recorded and not as a refusal: " + JSON.stringify({ status: z2.status, error: z2.b.error }));
+
+  /* ---- the page mints the id per review and per payment, and a retry carries it ---- */
+  const { JSDOM: JD } = await import("jsdom");
+  const list = { at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] };
+  const ord = { id: "20260918000000-aa11", product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, at: "2026-09-18T01:00:00Z",
+    status: "acknowledged", paid: 0, moved: 0, delivery: 0, method: "tngbiz", account: "tngbiz", history: [], msgs: [] };
+  const body = { ok: true, wrap: await C.wrapKey(pw, ck), session: "fixture-session-token-rid-abcdefgh",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await C.encryptWith(ck, JSON.stringify(list)) };
+  const sent = { place: [], pay: [] };
+  let placeOk = false;
+  const answer = (status, j) => ({ ok: status === 200, status, json: async () => j });
+  const dom = new JD(await (await stmtW.fetch(new Request("https://k7m3p2.example/?u=" + un), senv)).text(),
+    { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
+        if (p === "/open") return answer(200, body);
+        if (p === "/orders" && m === "GET") return answer(200, { ok: true, orders: [ord] });
+        if (p === "/orders" && m === "POST") { sent.place.push(j); return placeOk ? answer(200, { ok: true, order: Object.assign({}, ord, { id: "20260918000000-bb22", status: "placed" }) }) : answer(500, { ok: false }); }
+        if (/[/]pay$/.test(p)) { sent.pay.push(j); return answer(500, { ok: false }); }
+        return answer(404, { ok: false });
+      };
+    } });
+  const d = dom.window.document;
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const btn = (t) => [...d.querySelectorAll("#pOrder button")].find((b) => b.textContent === t && !b.disabled);
+  try {
+    d.getElementById("un").value = un; d.getElementById("pw").value = pw;
+    d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => d.getElementById("pPrices").textContent);
+    d.querySelector('button[data-t="order"]').click();
+    await until(() => d.getElementById("oGo") && !d.getElementById("oGo").disabled);
+    d.getElementById("oGo").click();
+    await until(() => btn("Place this order")); btn("Place this order").click();
+    await until(() => sent.place.length === 1 && btn("Place this order"));
+    placeOk = true;
+    btn("Place this order").click();
+    await until(() => sent.place.length === 2 && d.getElementById("oGo") && !d.getElementById("oGo").disabled);
+    d.getElementById("oGo").click();
+    await until(() => btn("Place this order")); btn("Place this order").click();
+    await until(() => sent.place.length === 3);
+    const pr = sent.place.map((x) => x && x.rid);
+    ok(pr.length === 3 && O.RID_RE.test(pr[0] || "") && pr[1] === pr[0] && pr[2] !== pr[0] && O.RID_RE.test(pr[2] || ""),
+      "the page sends one id a review: Place tapped again after 'not placed' carries the same one, and the next review a new one: " + JSON.stringify(pr));
+
+    const payTap = async (n) => { await until(() => d.getElementById("pd-" + ord.id) && !d.getElementById("pd-" + ord.id).disabled);
+      d.getElementById("pd-" + ord.id).click(); await until(() => sent.pay.length === n); };
+    await payTap(1); await payTap(2);
+    const amt = d.querySelector("#pOrder .amt input");
+    amt.value = "40"; amt.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+    await payTap(3); await payTap(4);
+    /* the last tap's handler redraws once its answer lands: let it, or it draws into a closed window
+       and the rejection takes down whichever section is running then */
+    await until(() => d.getElementById("pd-" + ord.id) && !d.getElementById("pd-" + ord.id).disabled);
+    const yr = sent.pay.map((x) => x && x.rid), ya = sent.pay.map((x) => x && x.amount);
+    ok(yr.length === 4 && O.RID_RE.test(yr[0] || "") && yr[1] === yr[0] && yr[2] !== yr[0] && yr[3] === yr[2]
+      && JSON.stringify(ya) === "[100,100,40,40]",
+      "and one a payment: I have paid tapped again carries the same id, and a different figure is a new payment with a new one: "
+      + JSON.stringify({ yr, ya }));
+  } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
+})();
+
 section("v751: a customer may write a line on an order, at placement and after, and it never reaches a ledger note");
 await (async () => {
   /* his instruction of 20 Sep 2026, and the last part of what he asked at the start of this work:

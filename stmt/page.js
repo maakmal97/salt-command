@@ -1134,6 +1134,8 @@ const CLIENT_JS = `
     var j=null; try{ j=await r.json(); }catch(e){}
     return {status:r.status, body:j||{}};
   }
+  /* one id a review and one a payment, sent with the tap, so a retry of that tap is recorded once */
+  function mintRid(){ var a=crypto.getRandomValues(new Uint8Array(16)), s=''; for(var i=0;i<a.length;i++) s+=(a[i]<16?'0':'')+a[i].toString(16); return s; }
   function quoteFor(){
     var p=prices&&prices.products&&prices.products.filter(function(x){return x.product===draft.product;})[0];
     if(!p) return null;
@@ -1257,7 +1259,7 @@ const CLIENT_JS = `
           var mine=ticket;
           var r=await api('/orders',{product:P.product,qty:qt.q,mode:draft.mode,unit:qt.unit,total:qt.total,
             place:draft.mode==='deliver'?draft.place.trim():'',forFriend:!!(assoc&&draft.forFriend),
-            note:String(draft.say||'').trim(),
+            note:String(draft.say||'').trim(), rid:draft.rid,
             week:(prices.week&&prices.week.monday)||''});
           if(mine!==ticket) return;
           draft.busy=false;
@@ -1273,7 +1275,7 @@ const CLIENT_JS = `
         form.appendChild(cf);
       } else {
         var go2=el('button','btn salt-pill salt-pill--md','Review this order'); go2.type='button'; go2.id='oGo'; go2.disabled=!ready;
-        go2.addEventListener('click',function(){ draft.confirm=true; draft.note=''; drawOrder(); });
+        go2.addEventListener('click',function(){ draft.confirm=true; draft.note=''; draft.rid=mintRid(); drawOrder(); });
         form.appendChild(go2);
       }
       if(draft.note) form.appendChild(el('p','msg',draft.note));
@@ -1447,11 +1449,16 @@ const CLIENT_JS = `
     pb.addEventListener('click', async function(){
       var amt=parseFloat(inp.value);
       if(!(amt>0)) return;
+      /* the id stays with the figure it was minted for: a retry of this payment carries it, a
+         different figure is a different payment, and it is dropped once one is recorded */
+      var fig=amt.toFixed(2), was=pick[o.id]||{};
+      pick[o.id]=Object.assign({},was,{amount:inp.value},was.rid&&was.ridFor===fig?{}:{rid:mintRid(),ridFor:fig});
       pb.disabled=true; var mine=ticket;
-      var r=await api('/orders/'+encodeURIComponent(o.id)+'/pay',{amount:+amt.toFixed(2)});
+      var r=await api('/orders/'+encodeURIComponent(o.id)+'/pay',{amount:+fig,rid:pick[o.id].rid});
       if(mine!==ticket) return;
-      draft.note=r.body&&r.body.ok?'Recorded. It shows on your statement once it is folded into the book.':((r.body&&r.body.error)||'That payment was not recorded.');
-      delete pick[o.id];
+      var took=!!(r.body&&r.body.ok);
+      draft.note=took?'Recorded. It shows on your statement once it is folded into the book.':((r.body&&r.body.error)||'That payment was not recorded.');
+      if(took) delete pick[o.id];
       await loadOrders(); if(mine!==ticket) return; drawOrder();
     });
     box.appendChild(pb);

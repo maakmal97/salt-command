@@ -356,6 +356,10 @@ acknowledged (the owner: agreed, the delivery charge set, and the row queued), r
 deliver (the owner), done (**neither side's tap**: what the record reads once both tracks are
 complete), declined (the owner), cancelled (either side, at any stage until the goods move).
 
+**A RETRY LANDS ONCE** (24 Sep 2026). Place and I have paid carry a request id the page mints per
+review and per payment; the site files `rid:<username>:<rid>` for a day naming the order and answers a
+repeat with that order, changing nothing. Best effort, KV being eventually consistent.
+
 **A DELIVERY SAYS ROUGHLY WHERE IT IS GOING** (v694, his instruction of 18 Sep 2026): `place`, one
 line of at most sixty characters, a neighbourhood and not an address, refused empty on a delivery and
 dropped on a collection. It is shown on his card and **never rides into the ledger row's note**: a
