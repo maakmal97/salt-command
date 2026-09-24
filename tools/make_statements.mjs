@@ -328,6 +328,10 @@ function stmtDoc(party,rows,o){
   const marked=!(o&&o.archive);
   const markOf=(p,px)=>!marked?'':'<span class="pm">'+psymSvg(p,px||13)
     +'<span class="sr">'+esc(PSHAPE[String(p||'').toLowerCase()]||PSHAPE._)+'</span></span>';
+  /* EVERY TABLE IN ITS OWN SCROLL BOX (stage 1 of the Counter redesign, 24 Sep 2026): the orders table is
+     340px at its narrowest and wider with a long figure, so at a phone's width the whole page scrolled
+     sideways; .tblw was in the stylesheet for it and never emitted. An archive is left as it was issued. */
+  const box=t=>marked?'<div class="tblw">'+t+'</div>':t;
   const e=esc, n2=v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:2});
   const money=v=>Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
   const refundOwed=(o.refunds||[]).filter(r=>!r.paidOn).reduce((a,r)=>a+(+r.amount||0),0);   // v454
@@ -489,17 +493,17 @@ function stmtDoc(party,rows,o){
    '<p class="whol gap1">Account</p>',
    '<div class="who">'+e(who)+'</div>',
    '<div class="rule"></div>',
-   rows.length?('<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead>'
+   rows.length?box('<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead>'
      +'<tbody>'+body+'</tbody></table>')
      :'<p class="meta">No orders in this period.</p>',
    ((o.refunds||[]).length?'<p class="whol gap2">Refunds</p>'
-     +'<table class="rft"><thead><tr><th class="l">Date</th><th class="l">Reason</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody>'
+     +box('<table class="rft"><thead><tr><th class="l">Date</th><th class="l">Reason</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody>'
      +(o.archive?o.refunds:o.refunds.slice().reverse().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))).map(r=>'<tr><td class="l dt">'+e(dLong(r.date))+'</td>'
        +'<td class="l rsn">'+(r.cancelled?'Cancelled order, money returned to you':'Overpayment returned to you')+'</td>'
        +'<td class="amt">'+money(r.amount)+'</td>'
        +'<td class="r">'+(r.paidOn?'<span class="ok">paid '+e(dLong(r.paidOn))+'</span>'
                                   :'<span class="due">owed to you</span>')+'</td></tr>').join('')
-     +'</tbody></table>':''),
+     +'</tbody></table>'):''),
    '<div class="tot">',
    /* the count must match what was actually totalled, or the footer says three orders
       over a figure covering two, which is the first thing a careful reader checks */
@@ -572,14 +576,14 @@ function stmtDoc(party,rows,o){
                +'changed hands on it.')
          +step(R.owed>0.009?'So the salt still due to you is what is left.'
                            :'So the balance of the order was collected in full.',
-               '<table class="mini calc"><tbody>'
+               box('<table class="mini calc"><tbody>'
                +'<tr><td class="l">Bought</td><td class="r">'+n2(R.order.qty)+' unit</td></tr>'
                +'<tr><td class="l">Less applied by agreement</td><td class="r">&minus; '+n2(gone)+' unit</td></tr>'
                +'<tr class="sub"><td class="l">Deliverable</td><td class="r">'+n2(R.deliverable)+' unit</td></tr>'
                +'<tr><td class="l">Less already collected</td><td class="r">&minus; '+n2(took)+' unit</td></tr>'
                +'<tr class="tot"><td class="l">'+(R.owed>0.009?'Still to collect':'Collected in full, nothing outstanding')
                +'</td><td class="r">'+n2(R.owed)+' unit</td></tr>'
-               +'</tbody></table>')
+               +'</tbody></table>'))
          +'<p class="recn">If your own record of that arrangement differs from this, say so '
          +'and it will be gone through line by line.</p></div>';
      }
@@ -587,9 +591,9 @@ function stmtDoc(party,rows,o){
         ?'How the '+n2(R.owed)+' unit is arrived at'
         :'How your '+e(dLong(R.order.date))+' order was settled')+'</p>'
        +step('Earlier orders were not paid in full.',
-             '<table class="mini"><thead><tr><th class="l">Order</th><th>Quantity</th><th>Billed</th><th>Paid in cash</th><th class="r">Short</th></tr></thead><tbody>'
+             box('<table class="mini"><thead><tr><th class="l">Order</th><th>Quantity</th><th>Billed</th><th>Paid in cash</th><th class="r">Short</th></tr></thead><tbody>'
              +legRows+'<tr class="tot"><td class="l" colspan="4">Carried forward</td><td class="r"><b class="short">'
-             +money(R.shortTot)+'</b></td></tr></tbody></table>')
+             +money(R.shortTot)+'</b></td></tr></tbody></table>'))
        +step('That '+money(R.shortTot)+' was settled out of your order of '+e(dLong(R.order.date))+', in salt rather than cash.',
              money(R.shortTot)+' at '+money(R.rate)+' a unit is <b>'+n2(R.unitsOff)+' unit</b>, withheld from that order by agreement. No money changed hands and that salt stayed on the shelf.')
        +step('The '+e(dLong(R.order.date))+' order itself is paid in full.',
@@ -597,13 +601,13 @@ function stmtDoc(party,rows,o){
        +step(R.owed>0.009
              ?'So the salt due to you is what you bought, less what settled the balance, less what you have taken.'
              :'So the salt due to you was what you bought, less what settled the balance, less what you had already taken. All of it has since been handed over.',
-             '<table class="mini calc"><tbody>'
+             box('<table class="mini calc"><tbody>'
              +'<tr><td class="l">Bought</td><td class="r">'+n2(R.order.qty)+' unit</td></tr>'
              +'<tr><td class="l">Less applied to the '+money(R.shortTot)+' balance</td><td class="r">&minus; '+n2(R.unitsOff)+' unit</td></tr>'
              +'<tr class="sub"><td class="l">Deliverable</td><td class="r">'+n2(R.deliverable)+' unit</td></tr>'
              +'<tr><td class="l">Less already collected</td><td class="r">&minus; '+n2(R.collected)+' unit</td></tr>'
              +'<tr class="tot"><td class="l">'+(R.owed>0.009?'Still to collect':'Collected in full, nothing outstanding')+'</td><td class="r">'+n2(R.owed)+' unit</td></tr>'
-             +'</tbody></table>')
+             +'</tbody></table>'))
        /* the one contradiction a careful reader would otherwise find, answered before he
           finds it: those orders read as settled above yet show short here */
        +'<p class="recn">'+R.legs.map(l=>e(dLong(l.date))).join(' and ')

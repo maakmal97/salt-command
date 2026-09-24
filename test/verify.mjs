@@ -19366,6 +19366,43 @@ await (async () => {
     "an archive still foots its one unmarked figure, as issued: " + txt(ablock));
 })();
 
+section("S1 1.29: every table on a live statement sits in its own scroll box");
+await (async () => {
+  /* STAGE 1 OF THE COUNTER REDESIGN (M30, 24 Sep 2026): the orders table is 340px at its narrowest and
+     wider with a long figure, and it was emitted bare, so at 320 and 360 the whole page scrolled
+     sideways. The stylesheet has carried .tblw for it all along. Read off every live statement on the
+     real book, tables of every kind the book holds. */
+  const M = await import("../tools/make_statements.mjs");
+  const POS = (await import("../engine/position.mjs")).default;
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const at = new Date("2026-09-24T00:00:00Z");
+  const parties = [...new Set(bk.sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
+  let docs = 0, tables = 0;
+  const kinds = new Set(), bare = [];
+  for (const p of parties) {
+    const d = M.liveStatement(p, at);
+    if (!d) continue;
+    docs++;
+    for (const m of d.body.matchAll(/<table( class="([^"]*)")?/g)) {
+      tables++;
+      kinds.add((m[2] || "orders").split(" ")[0]);
+      if (!d.body.slice(Math.max(0, m.index - 19), m.index).endsWith('<div class="tblw">')) bare.push(p + " " + (m[2] || "orders"));
+    }
+  }
+  ok(docs > 10 && tables >= docs && kinds.has("orders") && !bare.length,
+    "every table on " + docs + " live statements (" + tables + " tables: " + [...kinds].join(", ") + ") opens inside div.tblw"
+    + (bare.length ? "; bare: " + bare.slice(0, 4).join(", ") : ""));
+  if (!kinds.has("rft")) skipData("no live statement carries a Refunds table, so its box went unchecked");
+  if (!kinds.has("mini")) skipData("no live statement carries a reconciliation, so its box went unchecked");
+  ok(/\.tblw\{overflow-x:auto/.test((await import("../stmt/statement-css.js")).STATEMENT_CSS),
+    "and the box scrolls sideways inside itself, in the stylesheet the page carries");
+  /* an archive is left as it was issued */
+  const who = parties.find((p) => M.liveStatement(p, at));
+  const o = { from: null, to: "2026-09-24", completed: true, open: true, pending: true, dates: true, issued: "24 Sep 2026", archive: true };
+  const arc = M.stmtDoc(who, M.stmtRows(who, o), o);
+  ok(/<table/.test(arc) && !/class="tblw"/.test(arc), "an archive carries its tables as issued, with no box");
+})();
+
 section("v782: a statement says which book each row is, and units of different books do not add");
 await (async () => {
   /* stmtRows filters by PARTY and never by product, so a customer holding two books got one
