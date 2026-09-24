@@ -32945,6 +32945,55 @@ await (async () => {
     "and his passphrase holding them leaves his page's script whole and is held as typed");
 })();
 
+section("S7 fix: goods handed over and not yet paid for are on Home's Needs you, and every order the Orders count counts is on Home");
+await (async () => {
+  /* S7-R6 and S7R-4 of the stage 7 review (25 Sep 2026). An order handed over in full and unpaid is counted on Orders from
+     the handover, but To pay now is sealed at the next publish: Coming up left it out as handed over, Needs you as not a
+     reply, and Home said nothing of it while the bar counted it. Forced state: a sealed To pay now of RM 0, one order
+     handed over and unpaid, one agreed and part paid, one with a reply. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s7f6", ck = await C.contentKey("test-secret", u);
+  const pay = { term: 10, now: { rm: 0, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, total: 110, history: [], msgs: [] };
+  const H = "20260922030000-hand", G = "20260921030000-agrd", R = "20260920030000-rply";
+  const orders = [
+    { ...base, id: H, status: "ready", mode: "deliver", place: "Veloria", moved: 1, at: "2026-09-22T03:00:00Z" },
+    { ...base, id: G, status: "acknowledged", paid: 30, at: "2026-09-21T03:00:00Z" },
+    { ...base, id: R, status: "acknowledged", paid: 110, at: "2026-09-20T03:00:00Z", msgs: [{ by: "desk", text: "Ready Thursday.", at: "2026-09-21T02:00:00Z" }] }];
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f6",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0, pay })) };
+  const dom = new JSDOM(landingPage(u, "ns7f6", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path) => { const p = String(path);
+      const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders } : { ok: true };
+      return { ok: true, status: 200, json: async () => j }; };
+  } });
+  const W = dom.window, D = W.document;
+  try {
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !D.querySelector("#pOrder [data-olist]"); i++) await new Promise((r) => setTimeout(r, 25));
+    const rows = (id) => [...D.querySelectorAll("#" + id + " [data-row]")].map((r) => r.getAttribute("data-row"));
+    const needs = D.getElementById("hNeeds").textContent;
+    ok(rows("hNeeds").includes(H) && /RM 110 to pay, the goods are with you/.test(needs) && !rows("hComing").includes(H),
+      "an order handed over in full and unpaid is on Home's Needs you, with what is to pay and that the goods are with them: " + JSON.stringify([rows("hNeeds"), rows("hComing"), needs]));
+    /* the Orders list's own Needs you: its rows between that heading and the next */
+    const onOrders = []; let inNeeds = false;
+    for (const c of D.querySelector("#pOrder [data-olist]").children) {
+      if (c.tagName === "H3") { inNeeds = c.textContent === "Needs you"; continue; }
+      if (inNeeds && c.getAttribute("data-row")) onOrders.push(c.getAttribute("data-row"));
+    }
+    const count = [...D.querySelectorAll('#tabs [data-n="order"]')].map((c) => c.textContent), home = rows("hNeeds").concat(rows("hComing"));
+    ok(onOrders.length === 3 && count.every((n) => n === String(onOrders.length)) && onOrders.every((id) => home.includes(id)),
+      "every order the Orders count counts, and Orders lists as needing them, is on Home: " + JSON.stringify({ onOrders, count, home }));
+  } finally { W.close(); }
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read

@@ -3101,7 +3101,8 @@ const CLIENT_JS = `
   /* ==== S7 7.1 (his D11 of 24 Sep 2026): HOME, THE PLACE THAT OPENS FIRST ====================================
      Three questions: what do I owe, what needs me, and what do I order again. TO PAY NOW is the sealed figure with
      its due date and the one filled Pay (over the line, the overdue amount, in the words the payment page says);
-     NEEDS YOU is an order with a reply not yet shown on this device, or goods ready to collect; COMING UP is an order
+     NEEDS YOU is an order with a reply not yet shown on this device, goods ready to collect, or goods all with them and
+     not yet paid for, which the sealed figure takes in only at the next publish (S7-R6); COMING UP is an order
      agreed and not yet handed over, with what is still to pay, now or when it arrives. A new account says there is
      nothing on it yet, and Prices and ordering work from here. Each part is drawn afresh and put on the page only
      where it reads differently, so a poll moves nothing that has not changed. A row opens its order in Orders. */
@@ -3145,13 +3146,16 @@ const CLIENT_JS = `
     if(!w){ w=el('span','salt-inbox-row__what'); r.querySelector('.salt-inbox-row__main').appendChild(w); }
     w.textContent=what; return r; }
   function toCollect(o){ return o.status==='ready'&&o.mode!=='deliver'&&!movedAll(o); }
+  /* handed over in full and still owing: counted on Orders from the handover, so Home says it too (S7-R6 and S7R-4) */
+  function withYouOwing(o){ return movedAll(o)&&oOwes(o); }
   function homeNeeds(){
-    var box=el('div'), list=orders.filter(function(o){ return replyWaiting(o)||toCollect(o); });
+    var box=el('div'), list=orders.filter(function(o){ return replyWaiting(o)||toCollect(o)||withYouOwing(o); });
     if(!list.length) return box;
     box.appendChild(hHead('Needs you',list.length));
     list.forEach(function(o){
       var m=(o.msgs||[]).filter(function(x){ return x.by==='desk'; }).pop(), t=m?String(m.text||''):'';
-      box.appendChild(homeRow(o,replyWaiting(o)?'A reply: '+(t.length>120?t.slice(0,117)+'...':t):'Ready to collect, since '+oDay(firstAt(o,'ready'))));
+      box.appendChild(homeRow(o,replyWaiting(o)?'A reply: '+(t.length>120?t.slice(0,117)+'...':t)
+        :withYouOwing(o)?rm(oToPay(o))+' to pay, the goods are with you':'Ready to collect, since '+oDay(firstAt(o,'ready'))));
     });
     return box;
   }
