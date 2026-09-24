@@ -563,8 +563,9 @@ export function decideDesk(order, body, at) {
     return { ev: { kind: "say", at, by: "desk", text } };
   }
   /* S11 11.8: CASH HE TOOK AT THE HANDOVER, recorded from the desk's Cash to record row. It is a payment like
-     theirs, adding to what is paid, so the reconcile queues its Fulfilment as it queues theirs and the chase
-     stops the moment it is paid; it is his, so it never marks theirs and is kept `by: "desk"`. */
+     theirs, adding to what is paid, so the chase stops the moment it is paid; it is his, so it never marks theirs
+     and is kept `by: "desk"`. Its Fulfilment is the desk's own (the Cash received tap books it, S11 11.12), so the
+     ledger's mark of the money moves with it, by the same figure, and the reconcile never queues it a second time. */
   if (body && body.cash) {
     if (!PAYABLE.includes(order.status)) return { error: "cash is recorded on an agreed order, not one that is " + order.status, status: 409 };
     const a = body.cash.amount;
@@ -635,6 +636,8 @@ export function applyEvent(order, ev) {
     done = settle(order, at);
   } else if (ev.kind === "cash") {
     order.paid = +((+order.paid || 0) + ev.amount).toFixed(2);
+    /* by the amount, not to what is paid: a claim of theirs not yet queued stays owed to the ledger as their own */
+    order.queued = Object.assign({}, order.queued || {}, { paid: +((+((order.queued || {}).paid) || 0) + ev.amount).toFixed(2) });
     if (!order.method) order.method = "cod";
     order.payments = (order.payments || []).concat([{ at, amount: ev.amount, method: "cod", account: null, by: "desk" }]);
     order.history.push({ at, status: order.status, by: "desk", method: "cod", note: "paid " + ev.amount.toFixed(2) + " in cash" });

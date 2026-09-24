@@ -364,8 +364,8 @@ export async function receivedOrder(env, id, body, by, now) {
   });
 }
 
-/** POST /orders/<id>/cash {amount}: cash taken at the counter. The order is marked paid at once, which stops the chase,
- *  and the Fulfilment is the desk's own entry, queued when the first row is on the book (deskPass). */
+/** POST /orders/<id>/cash {amount}: cash taken at the counter. The site's cash event marks the order paid at once, which
+ *  stops the chase, and the Fulfilment is the desk's own entry, queued when the first row is on the book (deskPass). */
 export async function cashOrder(env, id, body, by, now) {
   const rej = await rejectedOf(env.SALT_LEDGER, id, "cash");
   return stageTap(env, id, body, by, now, "cash", (o, at) => {
@@ -379,7 +379,9 @@ export async function cashOrder(env, id, body, by, now) {
     if ((+o.paid || 0) > (+((o.queued || {}).paid) || 0) + 0.004) return { status: 409, error: "a payment they recorded is still waiting for its row: receive that first" };
     const entry = payEntry(o, o.code, amount, at, true);
     entry.orderId = o.id; entry.counter = true;   /* the desk's own, which a Received never answers */
-    return { entry, queueIt: true, site: { ledger: { paid: +((+o.paid || 0) + amount).toFixed(2) } }, shown: { amount: +amount.toFixed(2), cash: true } };
+    /* the site's own cash event (S11 11.8): paid at once, kept as his in cash, and the ledger's mark of the money moved
+       by the same figure, because this Fulfilment is the desk's own and the reconcile must not queue it again */
+    return { entry, queueIt: true, site: { cash: { amount: +amount.toFixed(2) } }, shown: { amount: +amount.toFixed(2), cash: true } };
   });
 }
 

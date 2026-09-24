@@ -22550,8 +22550,9 @@ await (async () => {
   const cD = await call("/orders/" + D.o.id + "/cash", { amount: 120 });
   const sD = await orderOf(D.o.id);
   ok(cD.status === 200 && cD.j.preapproval.waits === true && sD.paid === 120 && sD.queued.paid === 120 && sD.status === "acknowledged"
+    && (sD.payments || []).slice(-1).some((p) => p.by === "desk" && p.method === "cod" && p.amount === 120)
     && !((await dkv.get("q:orders", "json")).queue.some((e) => e.orderId === D.o.id && e.status === "Payment")),
-    "Cash received marks the order paid at once, which is what stops the chase, and queues nothing before the row is there: " + JSON.stringify({ paid: sD.paid, queued: sD.queued }));
+    "Cash received marks the order paid at once, in cash as his (the site's cash event), which is what stops the chase, and queues nothing before the row is there: " + JSON.stringify({ paid: sD.paid, queued: sD.queued, payments: sD.payments }));
   land(D.draft);
   const dp = await deskPass(denv, new Date()); await runDrafter(denv);
   const pD = draftsOf(D.o.id, "Payment");
@@ -24093,6 +24094,42 @@ await (async () => {
     await new Promise((r) => setTimeout(r, 100));
     try { w.close(); } catch (e) { /* best effort */ }
   }
+})();
+
+section("S11 merge: Cash received is the site's own cash event, moving the ledger's mark by its figure, and no other road may send cash");
+await (async () => {
+  /* The two halves of stage 11 met here. The card's Cash received (11.8) was the site's cash event, whose Fulfilment the
+     reconcile would queue; the Worker's (11.12) booked the desk's own Fulfilment behind a mark it raised through the book's
+     ledger move. Merged, the site's cash event moves the ledger's mark BY THE AMOUNT: the desk's own entry is the one
+     Fulfilment for the cash, and a claim of theirs not yet queued stays theirs to queue. And because the cash moves the
+     mark, only the cash route, which books the row, may send it. */
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default, deskW = (await import("../src/worker.js")).default;
+  const kv = new KV(), senv = { STMT: kv, STMT_DESK_KEY: "desk-key" };
+  const u = "abcd-efgh";
+  const o = (await O.placeOrder(senv, u, { product: "salt", qty: 2, mode: "collect", unit: 100, total: 200, week: "" })).order;
+  await O.deskMove(senv, u, o.id, { status: "acknowledged", mode: "collect" });
+  await O.deskMove(senv, u, o.id, { mark: { ack: "2026-09-24T01:00:00.000Z", ledgerKey: "CX1-AB|2026-09-24|200" } });
+  await O.customerMove(senv, u, o.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, u, o.id, "pay", { amount: 30 });
+  await O.deskMove(senv, u, o.id, { cash: { amount: 50 } });
+  const got = JSON.parse(await kv.get("order:" + u + ":" + o.id));
+  ok(got.paid === 80 && got.queued && got.queued.paid === 50 && O.orderWork(got).includes("pay") && Math.abs(got.paid - got.queued.paid - 30) < 0.005,
+    "his cash moves the ledger's mark by the cash alone, so their RM 30 is still owed to the ledger as theirs and his RM 50 is never queued twice: "
+    + JSON.stringify({ paid: got.paid, queued: got.queued, work: O.orderWork(got) }));
+
+  const dkv = new KV(); await dkv.put("stmt-users", JSON.stringify({ [u]: "CX1-AB" }));
+  const denv = { SALT_QUEUE: dkv, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (x, i) => stmtW.fetch(new Request(x, i), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const bare = async (body) => { const r = await deskW.fetch(new Request("https://salt-command.example/orders/" + u + "/" + o.id, { method: "POST",
+    headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body) }), denv, ctx);
+    while (tails.length) await tails.shift(); return r.status; };
+  const said = await bare({ message: "Thank you" });
+  const cashed = await bare({ cash: { amount: 20 } });
+  const after = JSON.parse(await kv.get("order:" + u + ":" + o.id));
+  ok(said === 200 && cashed === 400 && after.paid === 80 && after.queued.paid === 50,
+    "the bare move route carries his line but refuses cash, which would move the mark with no row booked behind it: " + JSON.stringify({ said, cashed, paid: after.paid }));
 })();
 
 section("v766: what is waiting on the site is on Today, ranked against everything else");

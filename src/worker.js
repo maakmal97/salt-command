@@ -876,6 +876,8 @@ export default {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       let b = {};
       try { b = await request.json(); } catch { b = {}; }
+      /* S11: cash he took moves the ledger's mark with it, so only the cash route, which books its row, may send it */
+      if (b && b.cash) return json({ ok: false, error: "cash taken is recorded through orders/<id>/cash, which books its row" }, 400);
       const r = await moveOrder(env, om[1], om[2], b);
       if (!r.ok) return json({ ok: false, error: r.error }, r.status || 502);
       if (!r.order.code) r.warn = "no desk code is mapped to " + r.order.u + ", so nothing can be queued for the ledger: publish the statements again";

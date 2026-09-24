@@ -526,9 +526,10 @@ follows it up each minute.
 **The later stages are one tap too** (S11 11.12): **Collected or Delivered** (`/handed {qty, close}`,
 the running total, in the order's own mode), **Received** (`/received {amount}`, their recorded payment
 in his bank; the site already counts it) and **Cash received** (`/cash {amount}`, money taken at the
-counter: the order is marked paid at once through the `ledger` move, which stops the chase, and the
-Fulfilment is the desk's own entry, `counter: true`, queued by `deskPass` once the row is on the book;
-refused while a payment of theirs still waits to be queued, which the mark would swallow). Each builds its
+counter: the site's `cash` event marks the order paid at once, in cash and as his, which stops the chase,
+and moves the ledger's mark of the money by the same figure, because the Fulfilment is the desk's own
+entry, `counter: true` and `by: "desk"`, queued by `deskPass` once the row is on the book; the bare move
+route refuses `cash`, and the tap is refused while a payment of theirs still waits to be queued). Each builds its
 entry as the reconcile will, drafts it now, or before the first row lands against the book as it will
 stand (`withPending`), and records that digest; the drafter spends it when the real row is drafted, only
 if the kind, party, target, date, figures and every flag are equal (no pricing version: the first row
