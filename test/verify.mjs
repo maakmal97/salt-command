@@ -20026,6 +20026,236 @@ await (async () => {
       "the page posts the endpoint with its two keys and nothing else of the subscription: " + JSON.stringify(posted));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
+section("S12 12.2: a wake carries the kind of news, sealed for the one phone that can read it, and each move of his names its own kind");
+await (async () => {
+  /* 24 SEP 2026, his decision D4. Nine different events drew one sentence, "Your order has an update", and the
+     chase said it through the night. A kind now rides with the wake, encrypted per RFC 8291 (aes128gcm) under the
+     keys the phone filed (12.1), so the push service carries bytes it cannot read and the lock screen says what
+     kind of news it is, never an amount, a product, an order or a name. THE DECRYPTOR BELOW IS THE PHONE'S SIDE,
+     written from the RFC and proved on the RFC's own worked example before it is trusted on ours. */
+  const P = await import("../stmt/push.js");
+  const { NEWS } = await import("../stmt/sw.js");
+  const O = await import("../stmt/orders.js");
+  const d64 = (s) => Uint8Array.from(Buffer.from(s, "base64url"));
+  const b64u = (a) => Buffer.from(a).toString("base64url");
+  const cat = (...a) => { const o = new Uint8Array(a.reduce((n, x) => n + x.length, 0)); let i = 0; for (const x of a) { o.set(x, i); i += x.length; } return o; };
+  const hk = async (salt, ikm, info, n) => new Uint8Array(await crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info },
+    await crypto.subtle.importKey("raw", ikm, "HKDF", false, ["deriveBits"]), n * 8));
+  const te = new TextEncoder();
+  const open = async (msg, uaPub, uaPriv, auth) => {
+    const salt = msg.slice(0, 16), rs = new DataView(msg.buffer, msg.byteOffset).getUint32(16), idlen = msg[20];
+    const asPub = msg.slice(21, 21 + idlen), ct = msg.slice(21 + idlen);
+    const asKey = await crypto.subtle.importKey("raw", asPub, { name: "ECDH", namedCurve: "P-256" }, false, []);
+    const secret = new Uint8Array(await crypto.subtle.deriveBits({ name: "ECDH", public: asKey }, uaPriv, 256));
+    const ikm = await hk(auth, secret, cat(te.encode("WebPush: info"), [0], uaPub, asPub), 32);
+    const cek = await hk(salt, ikm, cat(te.encode("Content-Encoding: aes128gcm"), [0]), 16);
+    const nonce = await hk(salt, ikm, cat(te.encode("Content-Encoding: nonce"), [0]), 12);
+    const pt = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: nonce },
+      await crypto.subtle.importKey("raw", cek, "AES-GCM", false, ["decrypt"]), ct));
+    let end = pt.length - 1; while (end > 0 && pt[end] === 0) end--;
+    return { rs, idlen, delim: pt[end], text: new TextDecoder().decode(pt.slice(0, end)) };
+  };
+  /* RFC 8291 Appendix A, character for character */
+  const rfcPub = d64("BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4");
+  const rfcPriv = await crypto.subtle.importKey("jwk", { kty: "EC", crv: "P-256", x: b64u(rfcPub.slice(1, 33)), y: b64u(rfcPub.slice(33)),
+    d: "q1dXpw3UpT5VOmu_cf_v6ih07Aems3njxI-JWgLcM94" }, { name: "ECDH", namedCurve: "P-256" }, false, ["deriveBits"]);
+  const rfc = await open(d64("DGv6ra1nlYgDCS1FRnbzlwAAEABBBP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A_yl95bQpu6cVPTpK4Mqgkf1CXztLVBSt2Ks3oZwbuwXPXLWyouBWLVWGNWQexSgSxsj_Qulcy4a-fN"),
+    rfcPub, rfcPriv, d64("BTBZMqHH6r4Tts7J_aSIgg"));
+  ok(rfc.text === "When I grow up, I want to be a watermelon" && rfc.rs === 4096 && rfc.delim === 2,
+    "the phone's side, written here from the RFC, opens RFC 8291's own worked example: " + JSON.stringify(rfc));
+
+  /* ---- a phone of ours: its keys, as the page files them ---- */
+  const phone = async () => {
+    const kp = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+    const pub = new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey)), auth = crypto.getRandomValues(new Uint8Array(16));
+    return { keys: { p256dh: b64u(pub), auth: b64u(auth) }, read: (msg) => open(msg, pub, kp.privateKey, auth) };
+  };
+  const her = await phone(), other = await phone();
+  const sealed = await P.sealFor(her.keys, '{"k":"ready","o":""}');
+  const mine = await her.read(sealed);
+  ok(mine.text === '{"k":"ready","o":""}' && mine.rs === 4096 && mine.idlen === 65 && mine.delim === 2,
+    "what the Worker seals, her phone opens, byte for byte, one record of aes128gcm: " + JSON.stringify(mine));
+  let theirs = null; try { theirs = await other.read(sealed); } catch (e) { theirs = "refused"; }
+  ok(theirs === "refused", "and another phone cannot open it: " + JSON.stringify(theirs));
+  const again = await P.sealFor(her.keys, '{"k":"ready","o":""}');
+  ok(!Buffer.from(sealed).toString("latin1").includes("ready") && b64u(again.slice(0, 16)) !== b64u(sealed.slice(0, 16))
+    && b64u(again.slice(21, 86)) !== b64u(sealed.slice(21, 86)),
+    "the kind is not in the bytes the push service carries, and the same news sealed twice has a fresh salt and a fresh key");
+
+  /* ---- the wake: a keyed phone reads its kind, a phone filed before its keys is woken as before ---- */
+  const kv = new KV();
+  const vp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const env = { STMT: kv, STMT_VAPID_PUBLIC_KEY: "pub", STMT_VAPID_SUBJECT: "mailto:a@b.test",
+    STMT_VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", vp.privateKey)) };
+  const u = "m3n5-q7s9";
+  await kv.put("push:" + u + ":keyed", JSON.stringify({ endpoint: "https://push.example/keyed", at: "2026-09-24T00:00:00Z", keys: her.keys }));
+  await kv.put("push:" + u + ":bare", JSON.stringify({ endpoint: "https://push.example/bare", at: "2026-09-01T00:00:00Z" }));
+  const realF = globalThis.fetch;
+  const caught = async (fn) => {
+    const hit = [];
+    globalThis.fetch = async (url, init) => { hit.push({ url: String(url), h: init.headers, body: init.body }); return new Response("", { status: 201 }); };
+    let r; try { r = await fn(); } finally { globalThis.fetch = realF; }
+    const keyed = hit.find((x) => x.url.endsWith("/keyed")), bare = hit.find((x) => x.url.endsWith("/bare"));
+    const news = keyed && keyed.body ? JSON.parse((await her.read(keyed.body)).text) : null;
+    return { r, hit, keyed, bare, news };
+  };
+  const w = await caught(() => P.wakeCustomer(env, u, { k: "reply", o: "20260924101500-ab12cd34" }));
+  ok(w.r.sent === 2 && w.r.sealed === 1 && w.keyed && w.keyed.h["Content-Encoding"] === "aes128gcm"
+    && w.keyed.h["Content-Type"] === "application/octet-stream" && w.keyed.h.Topic === "salt-order" && /^vapid t=/.test(w.keyed.h.Authorization),
+    "the keyed phone is sent an aes128gcm body under the same VAPID wake: " + JSON.stringify(w.keyed && w.keyed.h));
+  ok(w.news && JSON.stringify(w.news) === '{"k":"reply","o":"20260924101500-ab12cd34"}',
+    "and what it reads is the kind and the order a tap opens, and nothing else: " + JSON.stringify(w.news));
+  ok(w.bare && w.bare.body === undefined && w.bare.h["Content-Length"] === "0" && !w.bare.h["Content-Encoding"],
+    "a phone filed before its keys is woken with nothing in it, as every phone was, so it does not go dark: " + JSON.stringify(w.bare && w.bare.h));
+  const odd = await caught(() => P.wakeCustomer(env, u, { k: "an amount of 45", o: "x" }));
+  const none = await caught(() => P.wakeCustomer(env, u));
+  ok(odd.hit.length === 2 && odd.hit.every((x) => x.body === undefined) && none.hit.every((x) => x.body === undefined),
+    "a kind the service worker has no words for, and a wake with no kind, carry nothing at all");
+
+  /* ---- every move names its own kind ---- */
+  const kinds = [], about = [];
+  const say = async (fn) => { const c = await caught(fn); kinds.push(c.news ? c.news.k : null); about.push(c.news ? c.news.o : null); return c; };
+  const place = async (mode, qty) => (await O.placeOrder(env, u, { product: "salt", qty, mode, unit: 100, total: 100 * qty, week: "", place: mode === "deliver" ? "Taman Contoh" : "" })).order;
+  const a = await place("collect", 2);
+  const ack = await say(() => O.deskMove(env, u, a.id, { status: "acknowledged", mode: "collect" }));
+  await say(() => O.deskMove(env, u, a.id, { status: "ready" }));
+  await say(() => O.deskMove(env, u, a.id, { message: "Come after five" }));
+  await say(() => O.deskMove(env, u, a.id, { handover: { units: 1 } }));
+  await say(() => O.deskMove(env, u, a.id, { handover: { units: 2 } }));
+  await say(() => O.deskMove(env, u, a.id, { ledger: { paid: 120 } }));
+  const b = await place("deliver", 1);
+  await say(() => O.deskMove(env, u, b.id, { status: "acknowledged", mode: "deliver", delivery: 10 }));
+  await say(() => O.deskMove(env, u, b.id, { ledger: { moved: 1 } }));
+  await say(() => O.customerMove(env, u, b.id, "pay", { amount: 110, method: "transfer", account: "wise" }));
+  const c = await place("collect", 1);
+  await say(() => O.deskMove(env, u, c.id, { status: "declined" }));
+  const d = await place("collect", 1);
+  await say(() => O.deskMove(env, u, d.id, { status: "acknowledged", mode: "collect" }));
+  await say(() => O.deskMove(env, u, d.id, { status: "cancelled" }));
+  ok(JSON.stringify(kinds) === JSON.stringify(["confirmed", "ready", "reply", "part-collected", "collected", "paid",
+    "confirmed", "delivered", "complete", "declined", "confirmed", "cancelled"]),
+    "confirmed, ready, a reply, part and then all of it collected, a payment he recorded, a delivery the book carried back, "
+    + "a payment of theirs that completes it, not taken, and cancelled: " + JSON.stringify(kinds));
+  ok(ack.news && ack.news.o === a.id && JSON.stringify(about) === JSON.stringify([a.id, a.id, a.id, a.id, a.id, a.id, b.id, b.id, b.id, c.id, d.id, d.id]),
+    "each names the order it is about, for the tap: " + JSON.stringify(about));
+  ok(kinds.every((k) => Object.prototype.hasOwnProperty.call(NEWS, k)), "and every kind sent is one the service worker has words for");
+
+  /* ---- THE WORDS: a kind, never an amount, a product, an order or a name ---- */
+  const words = Object.values(NEWS);
+  const banned = /salt|oil|candy|rice|garam|minyak|beras|titanium|platinum|gold|silver|bronze|ambassador|command|update/i;
+  const plain = (t) => /^[A-Z][a-z ]+$/.test(t) && !/[0-9]|RM/.test(t) && !banned.test(t);
+  ok(words.length >= 10 && words.every(plain) && !plain("Your salt is ready") && !plain("RM 45 is due") && !plain("Your order has an update"),
+    "every banner is plain words: no figure, no product, no level, no name, and never the old 'update': " + JSON.stringify(words.filter((t) => !plain(t))));
+  ok(NEWS.due === "A payment is due" && NEWS.ready === "Your order is ready" && NEWS.reply === "A reply on your order"
+    && NEWS.paid === "Payment received" && NEWS.confirmed === "Your order is confirmed",
+    "and the five he was asked about read as he was shown them");
+})();
+section("S12 12.2: the banner shows its kind's words, and a tap opens that order, telling a page already open to re-read");
+await (async () => {
+  /* 24 SEP 2026, his decision D4. The service worker as it ships, driven in a sandbox, then the page in jsdom. A
+     tap opened the Statements tab, where the first order sat a screen below; and on a page already open it only
+     focused, so a customer read whatever the page had last drawn. */
+  const { SW_JS, NEWS } = await import("../stmt/sw.js");
+  const vm = await import("node:vm");
+  const id = "20260924101500-ab12cd34";
+  const runSw = (clients) => {
+    const L = {}, shown = [], asked = [], opened = [];
+    const ctx = { URL, Date, console,
+      fetch: async (u) => { asked.push(String(u)); return { ok: true, json: async () => ({ ok: true, lines: [], at: null }) }; },
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { href: "https://site.test/sw.js?u=abcd-efgh" },
+        registration: { scope: "https://site.test/", showNotification: async (t, opt) => { shown.push({ t, opt }); } },
+        clients: { matchAll: async () => clients || [], openWindow: async (u) => { opened.push(u); } } } };
+    ctx.clients = ctx.self.clients;
+    vm.createContext(ctx); vm.runInContext(SW_JS, ctx);
+    return { L, shown, asked, opened };
+  };
+  const push = async (data) => {
+    const sw = runSw(), waits = [];
+    sw.L.push({ data, waitUntil: (p) => waits.push(p) });
+    await Promise.all(waits);
+    return { shown: sw.shown[0], asked: sw.asked };
+  };
+  const json = (v) => ({ json: () => v });
+  const ready = await push(json({ k: "ready", o: id }));
+  ok(ready.shown && ready.shown.t === NEWS.ready && ready.shown.t === "Your order is ready" && ready.shown.opt.body === "Tap to open it."
+    && ready.shown.opt.data.url === "./?u=abcd-efgh#o=" + id && ready.shown.opt.data.order === id && ready.asked.length === 0,
+    "a wake that carries a kind shows that kind's words and reads nothing, and its tap is addressed to the order: " + JSON.stringify(ready));
+  const due = await push(json({ k: "due", o: "../x" }));
+  ok(due.shown && due.shown.t === "A payment is due" && due.shown.opt.data.url === "./?u=abcd-efgh" && due.shown.opt.data.order === "",
+    "an order that is not an order's shape is dropped from the address, and the words still say what it is: " + JSON.stringify(due.shown && due.shown.opt.data));
+  const odd = await push(json({ k: "constructor", o: id }));
+  const junk = await push({ json: () => { throw new SyntaxError("not json"); } });
+  const bare = await push(undefined);
+  ok([odd, junk, bare].every((x) => x.shown && x.shown.t === "Your order" && /has an update/.test(x.shown.opt.body) && x.asked.length === 1),
+    "a kind it has no words for, a payload it cannot read and a wake with none all keep the old fixed words, after the notice check: "
+    + JSON.stringify([odd, junk, bare].map((x) => x.shown && x.shown.t)));
+
+  /* ---- the tap ---- */
+  const tap = async (clients, data) => {
+    const sw = runSw(clients), waits = [];
+    sw.L.notificationclick({ notification: { data, close() {} }, waitUntil: (p) => waits.push(p) });
+    await Promise.all(waits);
+    return sw;
+  };
+  const told = [], focused = [];
+  const page = { url: "https://site.test/?u=abcd-efgh", postMessage: (m) => told.push(m), focus: async () => { focused.push(1); } };
+  const t1 = await tap([page], { url: "./?u=abcd-efgh#o=" + id, order: id });
+  ok(told.length === 1 && told[0].salt === "news" && told[0].order === id && focused.length === 1 && t1.opened.length === 0,
+    "a page already open is told which order to re-read and open, then brought forward, never a second window: " + JSON.stringify(told));
+  const t2 = await tap([], { url: "./?u=abcd-efgh#o=" + id, order: id });
+  ok(t2.opened.length === 1 && t2.opened[0] === "./?u=abcd-efgh#o=" + id, "with none open, the Counter opens at that order: " + JSON.stringify(t2.opened));
+  ok(!SW_JS.includes(String.fromCharCode(92)) && SW_JS.indexOf("`") < 0, "the script carries no backslash and no backtick, being shipped in a template literal");
+
+  /* ---- the page: it opens at the order on the way in, and on a message from the service worker ---- */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("7".repeat(64), un);
+  const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, live: null, prices: null, session: "sessLaaaaaaaaaaaaaaaaaaaaaaa",
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 Sep 2026", body: "<p>Statement</p>" }] })) };
+  const ord = (oid, at) => ({ id: oid, u: un, at, status: "acknowledged", product: "salt", qty: 1, unit: 100, mode: "collect", total: 100,
+    delivery: 0, paid: 0, payments: [], moved: 0, history: [{ at, status: "placed", by: "customer" }], msgs: [] });
+  const A = "20260920090000-aaaa1111", B = "20260921090000-bbbb2222", Cc = "20260922090000-cccc3333";
+  const orders = [ord(Cc, "2026-09-22T01:00:00Z"), ord(B, "2026-09-21T01:00:00Z"), ord(A, "2026-09-20T01:00:00Z")];
+  const st = { reads: 0, listen: null, scrolled: [] };
+  const dom = new JSDOM(landingPage(un, "nL", null), { url: "https://site.test/?u=" + un + "#o=" + B, runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {};
+      win.HTMLElement.prototype.scrollIntoView = function () { st.scrolled.push(this.getAttribute("data-order")); };
+      Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+        addEventListener: (t, f) => { if (t === "message") st.listen = f; }, getRegistration: async () => undefined } });
+      win.fetch = async (path) => {
+        const p = String(path);
+        if (p === "/open") return { ok: true, status: 200, json: async () => openB };
+        if (p === "/orders") { st.reads++; return { ok: true, status: 200, json: async () => ({ ok: true, orders }) }; }
+        return { ok: true, status: 200, json: async () => ({ ok: true }) };
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const onOrder = () => !D.getElementById("pOrder").hidden && D.getElementById("pStmt").hidden;
+  try {
+    ok(typeof st.listen === "function", "the page listens for its service worker from the first moment");
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !st.scrolled.length; i++) await new Promise((r) => setTimeout(r, 25));
+    ok(onOrder() && JSON.stringify(st.scrolled) === JSON.stringify([B]) && W.location.hash === "" && /u=abcd-efgh/.test(W.location.search),
+      "opened at #o=<id>, the page signs in, turns to the orders and brings that one order into view, then drops the address: "
+      + JSON.stringify({ onOrder: onOrder(), scrolled: st.scrolled, hash: W.location.hash }));
+    D.querySelector('#tabs button[data-t="stmt"]').click();
+    const before = st.reads;
+    await st.listen({ data: { salt: "news", order: A } });
+    ok(st.reads === before + 1 && onOrder() && st.scrolled[st.scrolled.length - 1] === A,
+      "a tap with the page already open re-reads the orders, then opens the one the banner was about: " + JSON.stringify({ reads: st.reads - before, scrolled: st.scrolled }));
+    D.querySelector('#tabs button[data-t="stmt"]').click();
+    const n = st.scrolled.length;
+    await st.listen({ data: { salt: "news", order: "20260101000000-zzzz9999" } });
+    await st.listen({ data: { salt: "other", order: A } });
+    ok(!onOrder() && st.scrolled.length === n && st.reads === before + 2,
+      "an order that is not theirs moves nothing, and a message that is not the banner's is not read at all: " + JSON.stringify({ scrolled: st.scrolled, reads: st.reads - before }));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } }
+})();
 section("v760: a customer paying or taking an order back wakes him, and the banner says which");
 await (async () => {
   /* MEASURED 21 SEP 2026: the site has written the moment of every change since v694, the desk asked

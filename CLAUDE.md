@@ -303,6 +303,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   phone's notifications. A lapsed session says so in the bar, with Continue. Kept as an app:
   manifest and icon served by the Worker, no brand; every login asks about notifications once.
   Salt Admin links its own manifest with credentials and is titled Salt Admin.
+- **A customer's banner names the kind of news, never an amount, a product, an order or a name**:
+  `{k, o}` sealed for the one phone (`sealFor`, RFC 8291) under the keys its subscription filed, the
+  words `NEWS` in `stmt/sw.js`; a record with no keys gets the payload-free wake and the old words. A
+  tap opens that order (`#o=<id>`), and a page already open re-reads first.
 - **The hourly chase**: the site's own cron (`wrangler.stmt.jsonc`) wakes a customer holding an
   advance once an hour, capped by `chased:<username>`; the test account is skipped. The config
   ships with the job's push paths; an unpushed laptop change needs `npx wrangler deploy -c

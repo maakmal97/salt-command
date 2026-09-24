@@ -513,8 +513,17 @@ banner then reads New customer order and opens `/desk#orders`. A subscription wi
 everything, as at v321. On an iPhone the desk has to be opened from the Home Screen.
 
 **Notifications.** The page polls the customer's orders every ten seconds while it is open.
-For a closed page the site has its own Web Push pair: a payload-free wake, and the service
-worker the site serves at `/sw.js` shows a fixed banner naming no amount and no order. On an
+For a closed page the site has its own Web Push pair. **The banner names the KIND of news** (S12
+12.2, his decision D4 of 24 Sep 2026): each move sends `{k, o}`, a kind and the order's id, sealed
+for that one phone by `sealFor` in `stmt/push.js` (RFC 8291 aes128gcm, WebCrypto, one record), and
+the service worker at `/sw.js` shows the kind's words from its own `NEWS` table: confirmed, ready, a
+reply, payment received, a payment is due, delivered or collected (in part or in full), complete,
+not taken, cancelled. **Never an amount, a product, an order or a name**; the suite reads every word.
+A tap opens the Counter at `#o=<id>`; a page already open is sent a message instead, re-reads its
+orders and opens that one. A subscription filed before its keys gets a payload-free wake and the
+old fixed words, so nothing already subscribed went dark; the page re-files the keys at the next
+sign-in. A notice keeps its own road: its wake carries no payload, and the service worker reads
+the public `bulletin` (v761). On an
 iPhone the page has to be on the Home Screen first; the copy says so. A subscription is filed at
 `push:<username>:<endpoint hash>` with the phone's two keys, `p256dh` and `auth`, when the page sends
 them (`pushKeys` in `stmt/push.js`); a pair that is not one is dropped and the record kept without it.

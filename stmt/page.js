@@ -1420,7 +1420,7 @@ const CLIENT_JS = `
     } else if(draft.pushed||Notification.permission==='granted'&&draft.pushDone){
       np.appendChild(el('p','sub2','On. You will be told when your order is acknowledged, ready, or completed.'));
     } else {
-      np.appendChild(el('p','sub2','Be told on this phone when your order is acknowledged, ready for collection or delivery, and completed. The banner names no amount and no order; the page does.'));
+      np.appendChild(el('p','sub2','Be told on this phone when your order is acknowledged, ready for collection or delivery, and completed. The banner says only what kind of news it is, never an amount or which order, and a tap opens the order.'));
       var nb=el('button','btn quiet salt-ghost','Notify me on this phone'); nb.type='button';
       nb.addEventListener('click', subscribePush); np.appendChild(nb);
       if(draft.pushNote) np.appendChild(el('p','msg',draft.pushNote));
@@ -1432,6 +1432,7 @@ const CLIENT_JS = `
     if(keep){ var kbox=[].filter.call(pOrder.querySelectorAll('input[data-say]'),function(x){ return x.getAttribute('data-say')===keep; })[0];
       if(kbox){ try{ kbox.focus({preventScroll:true}); kbox.setSelectionRange(sel[0],sel[1]); }catch(e){} } }
     window.scrollTo(0,sc);
+    openWanted();
   }
 
   /* the chip's tone by state: pending is steel, ready is brass, done is verdigris, anything closed is mist */
@@ -1453,6 +1454,7 @@ const CLIENT_JS = `
   function tapSaid(o,k,t){ draft.tap=t?{id:o.id,k:k,t:t}:null; }
   function orderPane(o){
     var pane=el('div','pane');
+    pane.setAttribute('data-order',o.id);
     var P=prices&&prices.products&&prices.products.filter(function(x){return x.product===o.product;})[0];
     var unit=P?P.unit:'unit';
     var due=dueOf(o), moved=+o.moved||0, paid=+o.paid||0, payable=['acknowledged','ready'].indexOf(o.status)>=0;
@@ -1649,6 +1651,37 @@ const CLIENT_JS = `
     if(JSON.stringify(orders)!==before) drawOrder();
     if(++bullN%6===0) await bullRead();   /* the bulletin, once a minute on an open page */
   }
+
+  /* S12 12.2: A BANNER'S TAP OPENS ITS ORDER. The service worker opens the Counter at #o=<id>, or tells a
+     page already open, which re-reads first: focusing it alone showed whatever it drew last. The order opens
+     on the next draw that has it, which for a closed page is the one after signing in; one that is not
+     among their orders is let go. Never on his read-only view. */
+  function orderIn(h){ var m=/^#o=([0-9]{14}-[a-z0-9]{1,8})$/.exec(h||''); return m?m[1]:''; }
+  var wantOrder=orderIn(location.hash);
+  function openWanted(){
+    if(!wantOrder||view||!session) return;
+    var id=wantOrder, pane=[].filter.call(pOrder.querySelectorAll('[data-order]'),function(x){ return x.getAttribute('data-order')===id; })[0];
+    wantOrder='';
+    try{ if(location.hash) history.replaceState(null,'',location.pathname+location.search); }catch(e){}
+    if(!pane) return;
+    showTab('order');
+    /* clear of the sticky bar, which would otherwise sit over the order's state */
+    var bw=document.getElementById('barw');
+    try{ pane.style.scrollMarginTop=Math.ceil((bw&&!bw.hidden?bw.getBoundingClientRect().bottom:0)+12)+'px'; pane.scrollIntoView({block:'start'}); }catch(e){}
+  }
+  try{
+    if(!OWNER&&'serviceWorker' in navigator&&navigator.serviceWorker.addEventListener)
+      navigator.serviceWorker.addEventListener('message', async function(ev){
+        var d=ev&&ev.data;
+        if(!d||d.salt!=='news') return;
+        wantOrder=orderIn('#o='+(d.order||''));
+        if(!session) return;   /* at the door: it opens once they are in */
+        var mine=ticket;
+        await loadOrders();
+        if(mine!==ticket) return;
+        drawOrder();
+      });
+  }catch(e){ /* a browser that will not listen still opens the page */ }
 
   async function subscribePush(){
     var mine=ticket;

@@ -395,7 +395,7 @@ export async function customerMove(env, u, id, action, body) {
   /* v700: a payment that completes the order is the one customer move worth waking the phone for,
      because it is the only one whose answer arrives after they have put the phone down. Every
      other move of theirs happens with the page in front of them. */
-  if (done) await wakeCustomer(env, u);
+  if (done) await wakeCustomer(env, u, { k: "complete", o: id });
   return { order };
 }
 
@@ -428,6 +428,11 @@ function settle(order, at) {
   order.history.push({ at, status: "done", by: "site" });
   return true;
 }
+
+/* S12 12.2: WHAT KIND OF NEWS EACH MOVE OF HIS IS, for the banner, whose words are NEWS in stmt/sw.js.
+   A handover says delivered or collected by the order's own mode, and "part" while units are still to come. */
+const STATUS_NEWS = { acknowledged: "confirmed", ready: "ready", done: "complete", declined: "declined", cancelled: "cancelled" };
+const handedNews = (o) => (+o.moved > 0 ? (owedUnits(o) > 0.004 ? "part-" : "") + (o.mode === "deliver" ? "delivered" : "collected") : null);
 
 const NEXT = { acknowledged: ["placed"], ready: ["acknowledged", "placed"], done: ["ready", "acknowledged"],
   declined: OPEN_STATES, cancelled: OPEN_STATES };
@@ -465,10 +470,10 @@ export async function deskMove(env, u, id, body) {
    * a payment that is already on the row and count it twice. */
   if (body && body.ledger) {
     const L = body.ledger, q = Object.assign({}, order.queued || {});
-    let told = false;
+    let told = false, paidUp = false;
     if (typeof L.paid === "number" && Number.isFinite(L.paid) && L.paid > (+order.paid || 0) + 0.004) {
       const was = +order.paid || 0;
-      order.paid = +L.paid.toFixed(2); q.paid = order.paid; told = true;
+      order.paid = +L.paid.toFixed(2); q.paid = order.paid; told = true; paidUp = true;
       order.history.push({ at, status: order.status, by: "desk", note: "payment of " + (order.paid - was).toFixed(2) + " recorded" });
     }
     if (typeof L.moved === "number" && Number.isFinite(L.moved) && L.moved > (+order.moved || 0) + 0.0004) {
@@ -481,7 +486,7 @@ export async function deskMove(env, u, id, body) {
     settle(order, at);
     await env.STMT.put(OKEY(u, id), JSON.stringify(order));
     await putSoft(env, LAST_TOUCHED, at);
-    const push = await wakeCustomer(env, u);
+    const push = await wakeCustomer(env, u, { k: paidUp ? "paid" : handedNews(order), o: id });
     return { order, push };
   }
   /* v753: HIS ANSWER ON THE ORDER. It is a move of his like any other, so it wakes them; it is not
@@ -493,7 +498,7 @@ export async function deskMove(env, u, id, body) {
     order.msgs = ((order.msgs) || []).concat([{ at, by: "desk", text }]);
     await env.STMT.put(OKEY(u, id), JSON.stringify(order));
     await putSoft(env, LAST_TOUCHED, at);
-    const push = await wakeCustomer(env, u);
+    const push = await wakeCustomer(env, u, { k: "reply", o: id });
     return { order, push };
   }
   /* v694: what he handed over, in units, whichever way it went. It is its own step and its own
@@ -511,7 +516,7 @@ export async function deskMove(env, u, id, body) {
     settle(order, at);
     await env.STMT.put(OKEY(u, id), JSON.stringify(order));
     await putSoft(env, LAST_TOUCHED, at);
-    const push = await wakeCustomer(env, u);
+    const push = await wakeCustomer(env, u, { k: handedNews(order), o: id });
     return { order, push };
   }
   const status = String((body && body.status) || "");
@@ -532,7 +537,7 @@ export async function deskMove(env, u, id, body) {
   order.history.push(ev);
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
   await putSoft(env, LAST_TOUCHED, at);
-  const push = await wakeCustomer(env, u);
+  const push = await wakeCustomer(env, u, { k: STATUS_NEWS[status], o: id });
   return { order, push };
 }
 
