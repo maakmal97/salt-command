@@ -21862,7 +21862,7 @@ await (async () => {
     "the desk reads it in the same one call it already made, and only on the desk key: " + JSON.stringify(lastJ.theirs));
 
   const paid6 = await nudge();
-  ok(paid6.hit.length === 1 && paid6.hit[0] === "https://push.example/his-phone" && paid6.r.did === "A customer has paid",
+  ok(paid6.hit.length === 1 && paid6.hit[0] === "https://push.example/his-phone" && paid6.r.did === "A customer says they paid",
     "and that wakes him, which nothing did before: " + JSON.stringify({ hit: paid6.hit, did: paid6.r.did }));
   const again6 = await nudge();
   ok(again6.hit.length === 0, "the same payment does not wake him every minute after: " + JSON.stringify(again6.hit));
@@ -21871,7 +21871,7 @@ await (async () => {
   const o7 = await place6();
   await customerMove(senv6, u6, o7.id, "cancel", {});
   const both = await nudge();
-  ok(both.r.newest && both.r.did === "A customer has withdrawn an order" && both.hit.length === 1,
+  ok(both.r.newest && both.r.did === "A customer cancelled" && both.hit.length === 1,
     "a placement and a withdrawal inside one minute are both seen, and are one wake: " + JSON.stringify({ newest: !!both.r.newest, did: both.r.did }));
   ok((await dkv6.get("orders:theirs")) && (await dkv6.get("orders:nudged")),
     "each keeps its own mark, so the newer of them cannot make the other look old");
@@ -21885,7 +21885,7 @@ await (async () => {
   await dkv6.put("orders:theirs", tie + "|pay");
   await skv6.put(LAST_THEIRS, tie + "|cancel");
   const tied = await nudge();
-  ok(tied.r.did === "A customer has withdrawn an order" && tied.hit.length === 1,
+  ok(tied.r.did === "A customer cancelled" && tied.hit.length === 1,
     "a withdrawal in the same millisecond as a payment is still seen, whichever word sorts lower: "
     + JSON.stringify({ did: tied.r.did, hit: tied.hit.length }));
   const same = await nudge();
@@ -21893,14 +21893,14 @@ await (async () => {
 
   /* ---- THE BANNER IS WRITTEN FROM THE SUMMARY, so the summary carries it while it is fresh ---- */
   const news = await dkv6.get("orders:news", "json");
-  ok(news && news.what === "A customer has withdrawn an order", "the desk remembers what to say: " + JSON.stringify(news));
+  ok(news && news.what === "A customer cancelled", "the desk remembers what to say: " + JSON.stringify(news));
   const d1S6 = { prepare: (q) => { const first = async () => (/COUNT_ON/.test(q) ? { doc: JSON.stringify({ salt: "2026-09-21", oil: "2026-09-21" }) } : (/COUNT\(\*\)/.test(q) ? { n: 0 } : null));
     const all = async () => ({ results: [] }); return { bind: () => ({ all, first, run: async () => ({}) }), all, first, run: async () => ({}) }; } };
   const summ6 = async () => (await (await deskW6.fetch(new Request("https://salt-command.example/push/summary"),
     Object.assign({ SALT_LEDGER: d1S6, REQUIRE_ACCESS: "0" }, denv6))).json());
   const fresh = await summ6();
-  ok(fresh.news === "A customer has withdrawn an order", "the summary carries it: " + JSON.stringify(fresh.news));
-  await dkv6.put("orders:news", JSON.stringify({ what: "A customer has paid", at: "2026-09-21T00:00:00.000Z" }));
+  ok(fresh.news === "A customer cancelled", "the summary carries it: " + JSON.stringify(fresh.news));
+  await dkv6.put("orders:news", JSON.stringify({ what: "A customer says they paid", at: "2026-09-21T00:00:00.000Z" }));
   ok((await summ6()).news === undefined,
     "and drops it once it is stale, because a banner about a payment made this morning is a lie by lunchtime");
 
@@ -21917,9 +21917,9 @@ await (async () => {
     const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits);
     return shown[0];
   };
-  const bNews = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, news: "A customer has paid" });
+  const bNews = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, news: "A customer says they paid" });
   const bPlain = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, placed: 2 });
-  ok(bNews && bNews.t === "A customer has paid" && /2 orders waiting on you/.test(bNews.opt.body)
+  ok(bNews && bNews.t === "A customer says they paid" && /2 orders waiting on you/.test(bNews.opt.body)
     && /1 row waiting for approval/.test(bNews.opt.body) && bNews.opt.data.url === "./desk#orders",
     "the banner leads with what they just did, and still carries what is waiting: " + JSON.stringify(bNews && bNews.opt.body));
   ok(bPlain && bPlain.t === "2 customer orders waiting",
@@ -22722,6 +22722,68 @@ await (async () => {
     "a row dropped because they withdrew is not offered again: " + JSON.stringify({ draft: drafts(w.id, "Pending")[0].decided_by, again: await againOn(w.id) }));
 })();
 
+section("S11 11.16: his wakes name the kind of act and never a code or an amount, and a new order is never titled by older news");
+await (async () => {
+  /* HIS DECISION (PLAN section 5): "New customer order", "A customer wrote", "A customer says they paid", "A customer
+     cancelled", and never a code or an amount. A payment is what they SAY until he checks it. */
+  const O = await import("../stmt/orders.js");
+  const { nudgeOrders } = await import("../src/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default, deskW = (await import("../src/worker.js")).default;
+  const kp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const denv = { SALT_QUEUE: dkv, STMT_DESK_KEY: "desk-key", VAPID_PUBLIC_KEY: "pub", VAPID_SUBJECT: "mailto:a@b.test",
+    VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kp.privateKey)),
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  await dkv.put("push:his", JSON.stringify({ endpoint: "https://push.example/his-phone", topics: ["orders", "approve", "salt"] }));
+  const u = "abcd-efgh";
+  const nudge = async () => { const realF = globalThis.fetch;
+    globalThis.fetch = async () => new Response("", { status: 201 });
+    try { return await nudgeOrders(denv); } finally { globalThis.fetch = realF; } };
+  const d1 = { prepare: (q) => { const first = async () => (/COUNT\(\*\)/.test(q) ? { n: 0 } : null);
+    const all = async () => ({ results: [] }); return { bind: () => ({ all, first, run: async () => ({}) }), all, first, run: async () => ({}) }; } };
+  const summary = async () => (await (await deskW.fetch(new Request("https://salt-command.example/push/summary"), Object.assign({ SALT_LEDGER: d1, REQUIRE_ACCESS: "0" }, denv))).json());
+  const vm = await import("node:vm");
+  const sw = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const wake = async (s) => { const L = {}, shown = [];
+    const c = { URL, console, caches: {}, self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" },
+      registration: { scope: "https://salt-command.example/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
+      clients: { matchAll: async () => [], openWindow: async () => {} }, fetch: async () => ({ ok: true, json: async () => s }) };
+    vm.createContext(c); vm.runInContext(sw, c);
+    const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits); return shown[0]; };
+  const told = async () => { const b = await wake(await summary()); return b ? b.t + " | " + b.opt.body : ""; };
+  const noCodeNoMoney = (t) => !/\b[A-Z]{2}\d{1,2}-[A-Z]{2,4}\b/.test(t) && !/RM\s?\d/.test(t) && !/abcd-efgh/.test(t);
+
+  /* each act, its own words */
+  const o = (await O.placeOrder(senv, u, { product: "salt", qty: 2, mode: "collect", unit: 95, total: 190, week: "" })).order;
+  await nudge();
+  const tPlaced = await told();
+  await O.customerMove(senv, u, o.id, "say", { text: "can I collect on Friday" });
+  await nudge();
+  const tSaid = await told();
+  await O.deskMove(senv, u, o.id, { status: "acknowledged", mode: "collect" });
+  await O.customerMove(senv, u, o.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, u, o.id, "pay", { amount: 190 });
+  await nudge();
+  const tPaid = await told();
+  const o2 = (await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  await nudge();
+  const tPlaced2 = await told();
+  await O.customerMove(senv, u, o2.id, "cancel", {});
+  await nudge();
+  const tCancel = await told();
+  ok(/^New customer order \|/.test(tPlaced) && /^A customer wrote \|/.test(tSaid) && /^A customer says they paid \|/.test(tPaid) && /^A customer cancelled \|/.test(tCancel),
+    "each wake names the kind of act, in his words: " + JSON.stringify([tPlaced, tSaid, tPaid, tCancel].map((t) => t.split(" | ")[0])));
+  ok(/^New customer order \|/.test(tPlaced2),
+    "a new order minutes after a payment is titled a new order, not by the payment's news still fresh: " + JSON.stringify(tPlaced2.split(" | ")[0]));
+  ok([tPlaced, tSaid, tPaid, tPlaced2, tCancel].every(noCodeNoMoney),
+    "and no wake carries a code, a username or an amount: " + JSON.stringify([tPlaced, tSaid, tPaid, tPlaced2, tCancel]));
+
+  /* THE BANNER TAKES NEWS IN LETTERS AND SPACES ONLY, so nothing that could carry a code or a figure is ever its title */
+  const forged = await wake({ ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 1, placed: 0, news: "CX1-AB paid RM 190" });
+  ok(forged && forged.t !== "CX1-AB paid RM 190" && noCodeNoMoney(forged.t + " " + forged.opt.body),
+    "news carrying a code or an amount never reaches the title: " + JSON.stringify(forged && forged.t));
+})();
+
 section("v764: what he records on the desk reaches the customer's order, and the chase stops");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026. Every road built since v694 runs from the site to the book. A
@@ -23186,13 +23248,13 @@ await (async () => {
   await O.customerMove(senv, u, o.id, "say", { text: "is it ready yet" });
   const n1 = await nudgeOrders(denv);
   const news = await dkv.get("orders:news", "json");
-  ok(n1.said && news && news.what === "A customer wrote on an order" && news.at === n1.said,
+  ok(n1.said && news && news.what === "A customer wrote" && news.at === n1.said,
     "the line is the news, at the moment it was written: " + JSON.stringify({ said: n1.said, news }));
   const d1 = { prepare: (q) => { const first = async () => (/COUNT_ON/.test(q) ? null : (/COUNT\(\*\)/.test(q) ? { n: 0 } : null));
     const all = async () => ({ results: [] }); return { bind: () => ({ all, first, run: async () => ({}) }), all, first, run: async () => ({}) }; } };
   const summ = await (await deskW.fetch(new Request("https://salt-command.example/push/summary"),
     Object.assign({ SALT_LEDGER: d1, REQUIRE_ACCESS: "0" }, denv))).json();
-  ok(summ.news === "A customer wrote on an order", "the summary the banner is written from carries it: " + JSON.stringify(summ.news));
+  ok(summ.news === "A customer wrote", "the summary the banner is written from carries it: " + JSON.stringify(summ.news));
   const vm = await import("node:vm");
   const swSrc = readFileSync(join(REPO, "public", "sw.js"), "utf8");
   const L = {}, shown = [];
@@ -23203,7 +23265,7 @@ await (async () => {
     fetch: async () => ({ ok: true, json: async () => summ }) };
   vm.createContext(ctx); vm.runInContext(swSrc, ctx);
   const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits);
-  ok(shown[0] && shown[0].t === "A customer wrote on an order" && shown[0].opt.data.url === "./desk#orders",
+  ok(shown[0] && shown[0].t === "A customer wrote" && shown[0].opt.data.url === "./desk#orders",
     "so the banner says a customer wrote, and opens the card where he answers: " + JSON.stringify(shown[0] && shown[0].t));
 
   /* A PLACEMENT WITH A NOTE IS A NEW ORDER, whose first line is the note typed with it */

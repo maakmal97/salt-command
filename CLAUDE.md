@@ -199,12 +199,11 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   laptop (approve last), are in `docs/CLOUD_FOLD.md`. A ledger row edit queues as a Correction.
 - Endpoints: `GET /drafts?status=…`, `POST /drafts/<id>/approve|reject|committed`, `POST
   /draft-now?dry=1`, `POST /orders/<id>/preview` (the row an Accept would make, stored nowhere, never
-  the dry run) and `/accept|handed|cash|received|again` (the card's taps), all keyed. Nothing writes to
-  `entry`. **The `draft` table's CHECK lists every collection by name**: a collection the drafter
-  newly returns needs a migration rebuilding it, applied to the live D1 BEFORE the deploy and as
-  that file alone (`wrangler d1 execute salt_ledger
-  --remote --file=...`); re-running an older one drops rows. Newest rebuild: `migrations/0010`;
-  `0011` adds `preapproval`, applied alone the same way.
+  the dry run) and `/accept|handed|cash|received|again` (the card's taps), all keyed. Nothing writes
+  to `entry`. **The `draft` table's CHECK lists every collection by name**: a collection the drafter
+  newly returns needs a migration rebuilding it, applied to the live D1 BEFORE the deploy and as that
+  file alone (`wrangler d1 execute salt_ledger --remote --file=...`); re-running an older one drops
+  rows. Newest rebuild: `migrations/0010`; `0011` adds `preapproval`, applied alone the same way.
 - **Cowork:** Salt left Cowork on 20 Aug 2026. `salt-daily-price-brief` and
   `salt-monthly-statements` may still fire from Cowork's registry (`Scheduled\README.md`), which
   Code cannot see: retiring them is his.

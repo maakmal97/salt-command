@@ -35,7 +35,10 @@ const THEIRS_MARK = "orders:theirs";
 /* what the last of them was, for the banner to read. It expires, because a wake is delivered in
    seconds and a line about a payment made this morning would be a lie at lunchtime. */
 const NEWS_KEY = "orders:news";
-const NEWS_WORD = { pay: "A customer has paid", cancel: "A customer has withdrawn an order", said: "A customer wrote on an order" };
+/* S11 11.16: HIS WAKES NAME THE KIND OF ACT, and nothing else: never a code, a name or an amount. What
+   they did is their word until he checks it, so a payment is what they SAY. The banner (public/sw.js)
+   takes these as its title, and only in letters and spaces; a new order is its own title there. */
+const NEWS_WORD = { pay: "A customer says they paid", cancel: "A customer cancelled", said: "A customer wrote" };
 /* v764: the book the return leg last told the site about. A fold mints a new version and re-seeds
    the mirror, so comparing the version is one cheap read a minute and a full pass only when there
    is something new to say. It moves only when the whole pass got through. */
@@ -958,9 +961,14 @@ export async function nudgeOrders(env) {
   } else if (spoke && !placed) {
     /* 24 Sep 2026: A LINE IS NEWS OF ITS OWN. A wake sent because a customer wrote read "New customer
        order" or "is square", the wrong sentence v760 exists to stop. Not on a placement, whose first
-       line is the note typed with it: there the new order is the news, and the banner already says so. */
+       line is the note typed with it: there the new order is the news. */
     news = NEWS_WORD.said;
     await env.SALT_QUEUE.put(NEWS_KEY, JSON.stringify({ what: news, at: said }), { expirationTtl: 3600 });
+  } else if (placed) {
+    /* S11 11.16: A PLACEMENT CLEARS THE NEWS, so its wake reads as a new order (the banner's own title for one).
+       Left standing, the news of a payment minutes before titled the wake for a new order, and said a
+       customer had paid. */
+    await env.SALT_QUEUE.delete(NEWS_KEY);
   }
   const p = await sendPush(env, { tag: "orders", urgency: "high" });
   return { ok: true, sent: p.sent || 0, newest: placed ? newest : null, said: spoke ? said : null, did: did ? news : null };

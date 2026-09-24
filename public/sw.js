@@ -152,8 +152,10 @@ async function banner() {
 
   /* v760: WHAT A CUSTOMER JUST DID LEADS OVER WHAT IS MERELY WAITING. A payment or a withdrawal is
      minutes old and is why this wake was sent; the count of orders waiting was as true an hour ago.
-     It still opens Orders, because that is where the answer to it is. */
-  if (s.news) {
+     It still opens Orders, because that is where the answer to it is.
+     S11 11.16: THE NEWS NAMES THE KIND OF ACT AND NOTHING ELSE (src/orders.js NEWS_WORD), so it is taken
+     only in letters and spaces: a roster code or an amount carries a digit and never reaches the title. */
+  if (s.news && /^[A-Za-z ]{1,60}$/.test(String(s.news))) {
     return {
       title: s.news,
       body: (s.orders ? (s.orders === 1 ? "1 order waiting on you" : s.orders + " orders waiting on you") : "Open the desk to look")
