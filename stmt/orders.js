@@ -214,28 +214,28 @@ export const ordersOf = async (env, u) => (onBook(env)
   : listOrders(env, "order:" + u + ":"));
 
 /* ---- THE WEEK OF READING BOTH (S10 10.3) -------------------------------------------------------
- * Hourly, from the site's cron: every order in the object against its KV key. A KV record that differs (a
- * write behind that failed) is written again from the object, which is the truth; a KV order the object
- * does not hold is named and left alone, because nothing should be writing one. The answer is logged and
- * kept at CHECK_KEY with `cleanSince`, the first of an unbroken run of clean hours (none repaired, none
- * KV's alone), so a week is read with one command: seven days after `cleanSince`, ORDER_STORE can go to
- * "object" (10.5). An hour that is not clean empties it. */
+ * Hourly, from the site's cron: every order in the book against its KV key, compared BY THE BOOK
+ * (stmt/orderbook.js `check`), each KV record against what the book holds at that moment, and nothing
+ * written here (S10 fixes DS1, R2, P2, DS2, P1). The book names, and writes behind itself:
+ *   same      KV holds the book's order
+ *   pending   KV is behind with the book's write on its way (a count)
+ *   repaired  KV is behind with nothing on its way, so the write behind is asked for again
+ *   kvAhead   KV holds a state the book never held: written by something else, so LEFT AS IT IS
+ *   kvOnly    a KV order the book lacks; bookOnly, a book order KV lacks with nothing on its way; both left
+ * While the book is moving in it answers frozen and the check STANDS DOWN: nothing written, the clean run
+ * left as it was, because KV is then the old code's and the end pass has still to read it.
+ * The answer is logged and kept at CHECK_KEY with `cleanSince`, the first of an unbroken run of clean hours
+ * (repaired, kvAhead, kvOnly and bookOnly all empty), so a week is read with one command: seven days after
+ * `cleanSince`, ORDER_STORE can go to "object" (10.5). An hour that is not clean empties it. */
 export const CHECK_KEY = "orderbook:check";
 export async function checkStores(env) {
-  const inBook = (await book(env, "orders", {})).orders || [];
-  const kvBy = new Map((await listOrders(env, "order:")).map((o) => [o.u + ":" + o.id, o]));
-  let same = 0; const repaired = [];
-  for (const o of inBook) {
-    const k = o.u + ":" + o.id, v = kvBy.get(k);
-    kvBy.delete(k);
-    if (v && JSON.stringify(v) === JSON.stringify(o)) { same++; continue; }
-    repaired.push(o.id);
-    await putSoft(env, OKEY(o.u, o.id), JSON.stringify(o));
-  }
-  const out = { at: new Date().toISOString(), orders: inBook.length, same, repaired, kvOnly: [...kvBy.values()].map((o) => o.id) };
+  const at = new Date().toISOString(), r = await book(env, "check", {});
+  if (!r || !r.ok) return { at, stoodDown: (r && r.error) || "no answer", frozen: !!(r && r.frozen) };
+  const out = { at, orders: r.orders, same: r.same, pending: r.pending, repaired: r.repaired, kvAhead: r.kvAhead, kvOnly: r.kvOnly, bookOnly: r.bookOnly };
   let was = null;
   try { was = await env.STMT.get(CHECK_KEY, "json"); } catch (e) { was = null; }
-  out.cleanSince = repaired.length || out.kvOnly.length ? null : ((was && was.cleanSince) || out.at);
+  const dirty = [out.repaired, out.kvAhead, out.kvOnly, out.bookOnly].some((l) => !l || l.length);
+  out.cleanSince = dirty ? null : ((was && was.cleanSince) || out.at);
   await putSoft(env, CHECK_KEY, JSON.stringify(out));
   return out;
 }
@@ -327,7 +327,12 @@ export async function toChase(env) {
    order book beside the orders it follows; on the KV road it is chased:<username>, lapsing after two hours.
    True when this hour's wake is still to be sent, and the mark is then already written. */
 export async function markChased(env, u, hour) {
-  if (onBook(env)) return !!(await book(env, "chase", { u, hour })).fresh;
+  if (onBook(env)) {
+    const r = await book(env, "chase", { u, hour });
+    if (!r.frozen) return !!r.fresh;
+    /* the book is moving in: this hour's mark is the KV road's, which the old code shares, and the end pass
+       takes it into the book, so the minute of the switch neither skips the hour nor wakes anyone twice */
+  }
   const mark = await env.STMT.get(CHASE_KEY(u));
   if (mark && Number(mark) === hour) return false;
   await env.STMT.put(CHASE_KEY(u), String(hour), { expirationTtl: 2 * 3600 });

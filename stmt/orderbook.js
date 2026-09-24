@@ -45,6 +45,13 @@
  * refuses stays named and is tried again a second later, and no older copy can land after a newer one,
  * because the book is the one writer of order keys and always writes what it holds now.
  *
+ * KV IS NEVER WRITTEN OVER WITH WHAT THE BOOK HAS NOT HELD (S10 fixes DS1, R2, P2, DS2). A KV record the book
+ * never held was written by something else, the old code during the rollout or the KV road after a flip back,
+ * and it is the only copy of that move: a write behind leaves it, and the hourly check names it `kvAhead`. The
+ * check is the book's own (`check`), so each KV record is compared with what the book holds at that moment,
+ * and it writes nothing itself: a record KV holds behind the book is named for the write behind. While the
+ * book is moving in the check stands down, because KV is then the old code's and the end pass still to read.
+ *
  * A PLAIN CLASS WITH fetch(), not an RPC class: that would extend `cloudflare:workers`, which is not a
  * sibling file, and nothing under stmt/ imports anything else (the suite checks). It is also what lets the
  * suite drive it in Node, over node:sqlite, whose statements run synchronously exactly as the object's do.
@@ -61,6 +68,8 @@ export const FREEZE_MS = 60000;
 export const FREEZE_SPARE_MS = 5000;
 /* a write behind waits past KV's one write a second per key */
 export const BEHIND_MS = 1100;
+/* a KV record as this book would write it, or null */
+const norm = (raw) => { try { const o = JSON.parse(raw); return o && typeof o === "object" ? JSON.stringify(o) : null; } catch (e) { return null; } };
 /* what writes: refused while the book is moving in */
 const WRITES = ["place", "customer", "desk", "chase", "drop"];
 
@@ -80,6 +89,7 @@ export class OrderBook {
     let a = null;
     try { a = await request.json(); } catch (e) { a = null; }
     await this.moveIn();
+    if (op === "check") return Response.json(await this.check());
     const out = this.run(op, a && typeof a === "object" ? a : {});
     if (out.ok && out.order && !out.again && !out.none && this.writesKv()) await this.arm();
     return Response.json(out);
@@ -106,8 +116,17 @@ export class OrderBook {
     if (!kv) return;
     let left = 0;
     for (const { u, oid } of this.state.storage.sql.exec("SELECT u, oid FROM behind").toArray()) {
-      const key = "order:" + u + ":" + oid, doc = this.doc(u, oid);
-      if (doc == null) { this.unbehind(u, oid); continue; }
+      const key = "order:" + u + ":" + oid;
+      let raw, doc;
+      try { raw = norm(await kv.get(key)); }
+      catch (e) { left++; console.log("orderbook: " + key + " not read, tried again in a second: " + String((e && e.message) || e)); continue; }
+      doc = this.doc(u, oid);
+      if (doc == null || raw === doc) { this.unbehind(u, oid); continue; }
+      if (raw != null && !this.held(u, oid, raw)) {
+        this.unbehind(u, oid);
+        console.log("orderbook: " + key + " in KV is a state the book never held; left as it is");
+        continue;
+      }
       try { await kv.put(key, doc); }
       catch (e) { left++; console.log("orderbook: " + key + " not written behind, tried again in a second: " + String((e && e.message) || e)); continue; }
       /* a move taken while the put was on its way leaves the order named: the next pass writes it */
@@ -116,6 +135,45 @@ export class OrderBook {
     if (left) await this.arm();
   }
   unbehind(u, oid) { this.state.storage.sql.exec("DELETE FROM behind WHERE u = ? AND oid = ?", u, oid); }
+  behind(u, oid) { this.state.storage.sql.exec("INSERT OR IGNORE INTO behind (u, oid) VALUES (?, ?)", u, oid); }
+  isBehind(u, oid) { return this.state.storage.sql.exec("SELECT 1 FROM behind WHERE u = ? AND oid = ?", u, oid).toArray().length > 0; }
+  /* whether the order ever stood as `raw` in this book: its events folded one at a time, compared after each */
+  held(u, oid, raw) {
+    let o = null;
+    for (const r of this.state.storage.sql.exec("SELECT body FROM ev WHERE u = ? AND oid = ? ORDER BY seq", u, oid).toArray()) {
+      o = applyEvent(o, JSON.parse(r.body)).order;
+      if (JSON.stringify(o) === raw) return true;
+    }
+    return false;
+  }
+
+  /* ---- the hourly check (S10 10.3; fixes DS1, R2, P2, DS2, P1) ---- */
+  async check() {
+    if (this.frozen()) return { ok: false, frozen: true, error: FROZEN, status: 503 };
+    const kv = this.env && this.env.STMT;
+    if (!kv) return { ok: false, error: "no KV", status: 500 };
+    const seen = new Set(), repaired = [], kvAhead = [], kvOnly = [], bookOnly = [];
+    let same = 0, pending = 0, cursor;
+    do {
+      const page = await kv.list({ prefix: "order:", cursor });
+      for (const k of page.keys) {
+        const raw = norm(await kv.get(k.name)), o = raw && JSON.parse(raw);
+        if (!o || !o.id || !o.u) continue;
+        seen.add(o.u + ":" + o.id);
+        const doc = this.doc(o.u, o.id);   /* read after KV answered: a move taken meanwhile is in it */
+        if (doc == null) kvOnly.push(o.id);
+        else if (raw === doc) same++;
+        else if (!this.held(o.u, o.id, raw)) kvAhead.push(o.id);
+        else if (this.isBehind(o.u, o.id)) pending++;
+        else { this.behind(o.u, o.id); repaired.push(o.id); }
+      }
+      cursor = page.list_complete ? null : page.cursor;
+    } while (cursor);
+    const all = this.state.storage.sql.exec("SELECT u, oid FROM ord").toArray();
+    for (const r of all) if (!seen.has(r.u + ":" + r.oid)) { if (this.isBehind(r.u, r.oid)) pending++; else bookOnly.push(r.oid); }
+    if (repaired.length) await this.arm();
+    return { ok: true, orders: all.length, same, pending, repaired, kvAhead, kvOnly, bookOnly };
+  }
 
   /* ---- moving in (S10 10.3) ---- */
   gen() { return String((this.env && this.env.ORDER_MOVE_IN) || "1"); }
@@ -140,7 +198,8 @@ export class OrderBook {
       console.log("orderbook: moved in, generation " + gen + ": " + JSON.stringify(c));
     }
   }
-  /* every KV order in, as an event of its own; at the start the shared and chase marks too, where none is here */
+  /* every KV order in, as an event of its own, and the shared and chase marks beside them: at either pass the
+     later of KV's and the book's, so a chase the KV road marked while the book was frozen is not sent twice */
   async copy(gen, pass) {
     const kv = this.env && this.env.STMT;
     if (!kv) return { orders: 0, took: 0 };
@@ -156,11 +215,9 @@ export class OrderBook {
       }
       cursor = page.list_complete ? null : page.cursor;
     } while (cursor);
-    if (pass === "start") {
-      for (const key of Object.values(MARKS)) { const v = await kv.get(key); if (v != null && this.meta(key) == null) this.setMeta(key, v); }
-      const ch = await kv.list({ prefix: "chased:" });
-      for (const k of ch.keys) { const v = await kv.get(k.name); if (v != null && this.meta(k.name) == null) this.setMeta(k.name, v); }
-    }
+    for (const key of Object.values(MARKS)) { const v = await kv.get(key), b = this.meta(key); if (v != null && (b == null || v > b)) this.setMeta(key, v); }
+    const ch = await kv.list({ prefix: "chased:" });
+    for (const k of ch.keys) { const v = await kv.get(k.name), b = this.meta(k.name); if (v != null && (b == null || +v > +b)) this.setMeta(k.name, v); }
     return { orders, took };
   }
   takeIn(o, eid) {

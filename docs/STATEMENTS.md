@@ -383,10 +383,14 @@ again in a minute"** (reads from the copy), so a Worker still on the old code du
 only writer, then a second copy of whatever KV says differently, and moves are taken. KV is only read.
 A copy's id names `ORDER_MOVE_IN`'s generation, the pass and the order, so either pass run again appends
 nothing; raise the generation by one only to come back from `kv`, and it takes KV as the truth.
-**The hourly check** (the site's cron, `checkStores`) compares every order in the book with its KV key,
-writes a stale one again from the book, names a KV order the book lacks, and keeps the result at KV
-`orderbook:check` with `cleanSince`, the start of an unbroken run of hours with `repaired` and `kvOnly`
-both empty. **Seven days after `cleanSince` is a clean week**: then `ORDER_STORE` goes to `object` (10.5,
+**The hourly check** (the site's cron, `checkStores`) is the book's own: each KV order compared with what
+the book holds at that moment, and nothing written by the check. KV behind with the book's write on its way
+is `pending`; behind with nothing on its way is `repaired` (the write behind asked for again); **a record the
+book never held is `kvAhead` and left as it is**, the write behind leaving it too, since it is the only copy of
+somebody's move; `kvOnly` and `bookOnly` name an order one side lacks, and leave it. **While the book moves in
+the check stands down** and writes nothing, and the chase marks that hour on the KV road, which the end pass
+takes in. The result is kept at KV `orderbook:check` with `cleanSince`, the start of an unbroken run of hours
+with `repaired`, `kvAhead`, `kvOnly` and `bookOnly` all empty. **Seven days after `cleanSince` is a clean week**: then `ORDER_STORE` goes to `object` (10.5,
 whose deletion of the old keys is not built).
 **The customer is handed a view, not the record**: their order list and every answer to a move of
 theirs carry `customerView` (`CUSTOMER_FIELDS`, a whitelist), never `ledgerKey`, `queued` or `sync`.

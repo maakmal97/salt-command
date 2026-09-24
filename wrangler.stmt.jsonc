@@ -75,8 +75,8 @@
 		// S10 (D10): THE SWITCH for the site's orders (stmt/orders.js, onBook). "object+kv" is the week of
 		// reading both: the orders in the one Durable Object, every order it changes written to its KV key
 		// behind it, KV read when the object cannot answer, and an hourly check kept at KV orderbook:check.
-		// "kv" is the way back. "object" is 10.5, after seven days of that check with repaired and kvOnly
-		// both empty; it stops the KV writes, and deleting the old keys is a fold of its own.
+		// "kv" is the way back. "object" is 10.5, after seven days of that check clean (cleanSince); it
+		// stops the KV writes, and deleting the old keys is a fold of its own.
 		"ORDER_STORE": "object+kv",
 		// The move-in's generation: a one-minute freeze and a copy of every KV order, once per value. Raise
 		// it by one only to come back from "kv", when KV has taken moves the object has not.

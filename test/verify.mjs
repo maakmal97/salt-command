@@ -20162,12 +20162,13 @@ await (async () => {
     try {
       const read = () => { try { return JSON.parse(kv.m.get(O.CHECK_KEY)); } catch (e) { return { repaired: null, kvOnly: null }; } };
       await tick("2026-09-24T03:00:00Z"); c1 = read(); kv.m.set(O.CHECK_KEY, "{}");
+      clock.add(1100); await bk.fire();
       await tick("2026-09-24T04:00:00Z"); c2 = read();
       clock.add(3600000); await tick("2026-09-24T05:00:00Z"); c3 = read();
     } finally { console.log = realLog; }
     ok(JSON.stringify(c1.repaired) === JSON.stringify([b1]) && c1.orders === 3 && c1.same === 2 && JSON.stringify(c1.kvOnly) === "[]"
       && kv.m.get("order:" + un2 + ":" + b1) === bk.db.prepare("SELECT doc FROM ord WHERE u = ? AND oid = ?").get(un2, b1).doc,
-      "the hourly check writes a stale KV record again from the object and names it: " + JSON.stringify(c1));
+      "the hourly check names a stale KV record the book has held, and the book writes it again behind: " + JSON.stringify(c1));
     ok(JSON.stringify(c2.repaired) === "[]" && JSON.stringify(c2.kvOnly) === "[]" && c2.same === 3 && logs.filter((l) => /^orderbook check: /.test(l)).length === 3,
       "and the next hour is clean, logged and kept under " + O.CHECK_KEY + ": " + JSON.stringify(c2));
     ok(c1.cleanSince === null && c2.cleanSince === c2.at && c3.cleanSince === c2.at && c3.at > c2.at,
@@ -20338,6 +20339,115 @@ await (async () => {
     await advance(5000);
     ok(refused.length === 1 && afterRefusal !== bookDoc() && again != null && kvDoc() === bookDoc() && JSON.parse(kvDoc()).msgs.length === 1,
       "a write behind KV refuses is kept and tried again a second later, and lands: " + JSON.stringify({ refused: refused.length, retried: again != null, same: kvDoc() === bookDoc() }));
+  } finally { clock.uninstall(); console.log = realLog; }
+})();
+
+section("S10 fix DS1: the hourly check is the book's own, stands down while it moves in, and never writes over a KV record the book has not held");
+await (async () => {
+  /* Three erasures the reviews of 24 Sep 2026 found in the check as first built, which read the book, then KV, and
+     wrote the book's copy over any KV record that differed: (1) the cron landing inside the move-in minute wrote the
+     start copy over a line the old code had just written, so the end pass found nothing to take and the line was
+     gone from both stores (R2, P2); (2) a record KV held that the book never had, the KV road's after a flip back,
+     was overwritten as if stale (DS1); (3) a move landing between the book's read and KV's was undone in KV (DS2).
+     KV is test/kvsim.mjs with locations: the book at SIN, the cron at CRON, the old code and the customer at KUL. */
+  const SIM = await import("../test/kvsim.mjs");
+  const H = await import("../test/orderbook-harness.mjs");
+  const SW = (await import("../stmt/worker.js")).default;
+  const O = await import("../stmt/orders.js");
+  const { World, clock } = SIM;
+  const T0 = Date.UTC(2026, 8, 24, 2, 59, 30), u1 = "q2w3-e4r5", u2 = "t7v8-w9x2", W = new World();
+  let onList = null;
+  const hooked = (loc) => { const kv = W.at(loc); return { get: (k, t) => kv.get(k, t), put: (k, v, o) => kv.put(k, v, o), delete: (k) => kv.delete(k),
+    list: async (o) => { if (onList) { const f = onList; onList = null; await f(); } return kv.list(o); } }; };
+  const bk = H.orderBook({ STMT: hooked("SIN"), ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" }, { movedIn: false });
+  const oldEnv = { STMT: W.at("KUL"), STMT_DESK_KEY: "desk-key" };
+  const env = (loc) => ({ STMT: hooked(loc), STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" });
+  const call = async (e, tok, path, body) => {
+    const h = tok === "desk" ? { "X-Stmt-Desk": "desk-key" } : { "X-Stmt-Session": tok };
+    const r = await SW.fetch(new Request("https://k7m3p2.example" + path, body === undefined ? { headers: h }
+      : { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(body) }), e);
+    return { status: r.status, b: await r.json() };
+  };
+  /* the platform's alarm, run at its moment whenever the clock passes it */
+  const advance = async (ms) => {
+    const target = clock.now() + ms;
+    while (bk.state.alarmAt() != null && bk.state.alarmAt() <= target) { clock.set(Math.max(clock.now(), bk.state.alarmAt())); await bk.fire(); }
+    if (clock.now() < target) clock.set(target);
+  };
+  const to = (iso) => advance(Date.parse(iso) - clock.now());
+  const logs = [], realLog = console.log;
+  const tick = async () => { const ws = []; await SW.scheduled({ scheduledTime: clock.now() }, env("CRON"), { waitUntil: (p) => ws.push(p) }); await Promise.all(ws); };
+  const lastLog = (re) => { const l = logs.filter((x) => re.test(x)).pop(); try { return JSON.parse(l.slice(l.indexOf("{"))); } catch (e) { return null; } };
+  const kvOf = (u, id) => W.raw("order:" + u + ":" + id), bookOf = (u, id) => JSON.parse(bk.db.prepare("SELECT doc FROM ord WHERE u = ? AND oid = ?").get(u, id).doc);
+  const place = { product: "salt", qty: 2, mode: "collect", unit: 110, total: 220, week: "" };
+  clock.install(); console.log = (...x) => { const l = x.join(" "); if (/^(orders?(book)?|chase)[: ]/.test(l)) logs.push(l); else realLog(...x); };
+  try {
+    /* ---- the old road: an order acknowledged and handed over, nothing paid, so an advance the chase follows ---- */
+    clock.set(T0 - 600000);
+    W.rateLimit = false; const t1 = await O.mintSession(oldEnv, u1), t2 = await O.mintSession(oldEnv, u2); W.rateLimit = true;
+    const o1 = (await call(oldEnv, t1, "/orders", place)).b.order.id;
+    clock.add(5000); await call(oldEnv, "desk", "/desk/orders/" + u1 + "/" + o1, { status: "acknowledged" });
+    clock.add(5000); await call(oldEnv, "desk", "/desk/orders/" + u1 + "/" + o1, { handover: { units: 2 } });
+
+    /* ---- (1) the deploy at 10:59:30, the old code's line at 10:59:40, and the cron at 11:00, inside the minute ---- */
+    clock.set(T0);
+    await call(env("SIN"), "desk", "/desk/orders/last");
+    clock.set(T0 + 10000);
+    const said = await call(oldEnv, t1, "/orders/" + o1 + "/say", { text: "is it ready?" });
+    clock.set(Date.parse("2026-09-24T03:00:00Z"));
+    await tick();
+    const stood = lastLog(/^orderbook check: /), chase1 = lastLog(/^chase: /);
+    ok(said.status === 200 && !!stood && !!stood.stoodDown && stood.frozen === true && W.store.get(O.CHECK_KEY) === undefined
+      && JSON.stringify(kvOf(u1, o1).msgs.map((m) => m.text)) === '["is it ready?"]',
+      "the cron inside the move-in minute stands down: nothing written, the old code's line still in KV: " + JSON.stringify({ stood, kv: kvOf(u1, o1).msgs.length }));
+    ok(!!chase1 && chase1.held === 0 && chase1.quiet + chase1.woke === 1 && Number(W.store.get(O.CHASE_KEY(u1))) === O.hourOf(new Date(clock.now()).toISOString()),
+      "and the chase is not skipped for the hour: marked on the KV road, as the old code marks it: " + JSON.stringify(chase1));
+    await advance(70000);
+    const inBook1 = bookOf(u1, o1), hour = O.hourOf(new Date(clock.now()).toISOString());
+    ok((bk.db.prepare("SELECT v FROM meta WHERE k = 'movein:done'").get() || {}).v === "1" && JSON.stringify(inBook1.msgs.map((m) => m.text)) === '["is it ready?"]'
+      && JSON.stringify(kvOf(u1, o1).msgs.map((m) => m.text)) === '["is it ready?"]',
+      "the end of the minute then takes the line, and it is in both stores: " + JSON.stringify({ book: inBook1.msgs.length, kv: kvOf(u1, o1).msgs.length }));
+    await to("2026-09-24T03:30:00Z");
+    await tick();
+    const chase2 = lastLog(/^chase: /);
+    ok((bk.db.prepare("SELECT v FROM meta WHERE k = ?").get(O.CHASE_KEY(u1)) || {}).v === String(hour) && !!chase2 && chase2.held === 1 && chase2.quiet + chase2.woke === 0,
+      "the end pass took the chase mark in, so the same customer is not woken twice in that hour: " + JSON.stringify(chase2));
+
+    /* ---- (2) a record KV holds that the book never did is named, and left, by the check and by the write behind ---- */
+    await to("2026-09-24T03:40:00Z");
+    const oldPay = await call(oldEnv, t1, "/orders/" + o1 + "/pay", { amount: 50, method: "tngbiz" });
+    await to("2026-09-24T04:00:00Z");
+    await tick();
+    const c2 = lastLog(/^orderbook check: /);
+    ok(oldPay.status === 200 && !!c2 && JSON.stringify(c2.kvAhead) === JSON.stringify([o1]) && JSON.stringify(c2.repaired) === "[]" && c2.cleanSince === null
+      && kvOf(u1, o1).paid === 50,
+      "a KV record the book never held is named kvAhead, the hour is not clean, and the RM 50 in it is left where it is: " + JSON.stringify({ c2, kvPaid: kvOf(u1, o1).paid }));
+    await call(env("SIN"), "desk", "/desk/orders/" + u1 + "/" + o1, { message: "noted" });
+    await advance(5000);
+    ok(kvOf(u1, o1).paid === 50 && kvOf(u1, o1).payments.length === 1 && logs.some((l) => /never held/.test(l)),
+      "and the book's next write behind leaves it too, rather than write its own copy over the only record of that payment: " + JSON.stringify({ kvPaid: kvOf(u1, o1).paid }));
+
+    /* ---- (3) a move landing while the check reads KV is not undone there ---- */
+    await to("2026-09-24T04:10:00Z");
+    const o2 = (await call(env("KUL"), t2, "/orders", place)).b.order.id;
+    await advance(60000); await call(env("SIN"), "desk", "/desk/orders/" + u2 + "/" + o2, { status: "acknowledged" });
+    await advance(60000); await call(env("KUL"), t2, "/orders/" + o2 + "/method", { method: "tngbiz", rid: "m3".repeat(16) });
+    await to("2026-09-24T05:00:00Z");
+    onList = async () => { await call(env("KUL"), t2, "/orders/" + o2 + "/pay", { amount: 40, rid: "n4".repeat(16) }); await advance(1100); };
+    await tick();
+    const c3 = lastLog(/^orderbook check: /);
+    await advance(5000);
+    ok(!!c3 && !c3.repaired.includes(o2) && bookOf(u2, o2).paid === 40 && kvOf(u2, o2).paid === 40 && kvOf(u2, o2).payments.length === 1,
+      "a payment taken and written behind while the check was listing KV stays in KV: " + JSON.stringify({ repaired: c3 && c3.repaired, kvPaid: kvOf(u2, o2).paid }));
+
+    /* ---- a book order whose KV key has gone is named, not written back ---- */
+    await W.at("KUL").delete("order:" + u2 + ":" + o2);
+    await to("2026-09-24T06:00:00Z");
+    await tick();
+    const c4 = lastLog(/^orderbook check: /);
+    await advance(5000);
+    ok(!!c4 && JSON.stringify(c4.bookOnly) === JSON.stringify([o2]) && c4.cleanSince === null && kvOf(u2, o2) === null,
+      "a book order KV no longer holds, with nothing on its way, is named bookOnly and not written back: " + JSON.stringify({ bookOnly: c4 && c4.bookOnly }));
   } finally { clock.uninstall(); console.log = realLog; }
 })();
 
