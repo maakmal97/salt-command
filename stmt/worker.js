@@ -281,6 +281,9 @@ const OID_RE = /^[0-9]{14}-[a-z0-9]{1,8}$/;
 async function handleCustomer(request, env, p, m) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   const u = await sessionUser(request, env);
+  /* S1 1.42: Log out is answered with or without a live session. Behind the check, a phone logging out after
+     its fifteen minutes got a 401 and left its remembered wrap on the site for the rest of thirty days. */
+  if (p === "/logout") return logOut(request, env, m, u);
   if (!u) return json({ ok: false, error: "Sign in again to see your orders.", session: false }, 401);
   if (p === "/orders") {
     if (m === "GET") return json({ ok: true, orders: await ordersOf(env, u) });
@@ -307,23 +310,28 @@ async function handleCustomer(request, env, p, m) {
     await env.STMT.put("rem:" + tok, JSON.stringify({ u, wrap, at: new Date().toISOString() }), { expirationTtl: REM_TTL });
     return json({ ok: true, token: tok, days: REM_TTL / 86400 });
   }
-  if (p === "/logout") {
-    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
-    const b = await readJson(request);
-    await dropSession(env, String(request.headers.get("X-Stmt-Session") || ""));
-    const tok = b && typeof b.token === "string" && REM_RE.test(b.token) ? b.token : null;
-    if (tok) {
-      const rec = await env.STMT.get("rem:" + tok, "json");
-      /* a token only forgets its own account, so one device cannot sign another out */
-      if (rec && rec.u === u) await env.STMT.delete("rem:" + tok);
-    }
-    return json({ ok: true });
-  }
   const mm = /^\/orders\/([^/]+)\/(method|cancel|pay|say)$/.exec(p);   /* v751: say, a line on the order */
   if (!mm || !OID_RE.test(mm[1])) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   const r = await customerMove(env, u, mm[1], mm[2], await readJson(request));
   return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, order: r.order });
+}
+
+/* v692: LOGGING OUT IS A DEPARTURE. The session goes, the remembered wrap goes, and since S1 1.42 so does this
+   phone's push record, because a phone handed on is a phone signed out. A token only forgets its own account,
+   so one device cannot sign another out: with a live session it must be that session's account, and with none
+   the token is its own proof, since whoever holds it could open that account anyway. */
+async function logOut(request, env, m, su) {
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  const b = await readJson(request);
+  await dropSession(env, String(request.headers.get("X-Stmt-Session") || ""));
+  const tok = b && typeof b.token === "string" && REM_RE.test(b.token) ? b.token : null;
+  const rec = tok ? await env.STMT.get("rem:" + tok, "json") : null;
+  if (rec && (!su || rec.u === su)) await env.STMT.delete("rem:" + tok);
+  const u = su || (rec && rec.u) || "";
+  const ep = b && typeof b.endpoint === "string" && /^https:\/\//.test(b.endpoint) ? b.endpoint : null;
+  if (u && ep) await env.STMT.delete("push:" + u + ":" + await endpointId(ep));
+  return json({ ok: true });
 }
 
 /* ---- AN ASSOCIATE'S OWN LINKS (v709, his instruction of 18 Sep 2026) --------------------------

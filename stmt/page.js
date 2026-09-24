@@ -795,13 +795,22 @@ const CLIENT_JS = `
   /* v692: LOGGING OUT IS A DEPARTURE, NOT A TIMER. It drops the session and the remembered wrap on
      the site as well as everything this page holds, so a phone handed on is a phone signed out. */
   async function logOut(){
-    var tok=(remGet()||{}).t||null, s=session;
+    var tok=(remGet()||{}).t||null, s=session, ep=null;
     remClear();
     lock();
-    if(s){
+    /* S1 1.42: this phone's alerts go too, here and on the site, and the site is told even when the session
+       has lapsed, so the remembered wrap does not outlive the Log out */
+    if(!OWNER){ try{ var sub=await phoneSub(); if(sub){ ep=sub.endpoint; await sub.unsubscribe(); } }catch(e){} }
+    if(s||tok||ep){
       try{ await fetch('/logout', {method:'POST', headers:{'content-type':'application/json','X-Stmt-Session':s},
-        body:JSON.stringify({token:tok})}); }catch(e){ /* the page has forgotten it either way */ }
+        body:JSON.stringify({token:tok, endpoint:ep})}); }catch(e){ /* the page has forgotten it either way */ }
     }
+  }
+  /* this phone's push subscription, or null; asking never registers anything */
+  async function phoneSub(){
+    if(!('serviceWorker' in navigator)||!navigator.serviceWorker.getRegistration) return null;
+    var reg=await navigator.serviceWorker.getRegistration();
+    return reg&&reg.pushManager?await reg.pushManager.getSubscription():null;
   }
   document.getElementById('lock').addEventListener('click', logOut);
 

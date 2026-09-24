@@ -14832,6 +14832,74 @@ await (async () => {
   const r401 = await drive(401);
   ok(!r401.kept && r401.gate && !said.test(r401.msg), "and the door's own refusal still forgets it: " + JSON.stringify(r401));
 })();
+section("S1 1.42: Log out drops the remembered wrap even after the session lapsed, and this phone's push subscription with it");
+await (async () => {
+  /* L46, 24 SEP 2026. /logout sat behind the session check, so a phone logging out after its fifteen minutes
+     got a 401 and its wrap stayed on the site for the rest of thirty days; and the phone stayed subscribed,
+     so a phone handed on kept waking for the account it had signed out of (v692: it should not). */
+  const { endpointId } = await import("../stmt/push.js");
+  const kv = new KV(), env = { STMT: kv };
+  const uI = "aaaa-iiii", other = "cccc-iiii", tok = "t".repeat(32), ep = "https://push.example/ep-i";
+  const pushKey = "push:" + uI + ":" + (await endpointId(ep));
+  const post = (body, sess) => stmtWorker.fetch(new Request("https://k7m3p2.example/logout", { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, sess ? { "X-Stmt-Session": sess } : {}), body: JSON.stringify(body) }), env);
+  const seed = async () => {
+    await kv.put("rem:" + tok, JSON.stringify({ u: uI, wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" } }));
+    await kv.put(pushKey, JSON.stringify({ endpoint: ep }));
+  };
+  /* another account's live session cannot forget this one's memory or its phone */
+  await seed();
+  await kv.put("sess:" + "o".repeat(24), JSON.stringify({ u: other, at: new Date().toISOString() }));
+  await post({ token: tok, endpoint: ep }, "o".repeat(24));
+  ok(!!(await kv.get("rem:" + tok)) && !!(await kv.get(pushKey)), "another account's session forgets neither this account's wrap nor its push record");
+  /* sixteen minutes on: the session this page holds has lapsed, so the store no longer carries it */
+  const r = await post({ token: tok, endpoint: ep }, "l".repeat(24));
+  ok(r.status === 200 && !(await kv.get("rem:" + tok)) && !(await kv.get(pushKey)),
+    "a Log out after the session lapsed drops the remembered wrap and the push record for that phone: " + r.status);
+  /* and with a live session the phone's record goes as well */
+  await seed();
+  await kv.put("sess:" + "s".repeat(24), JSON.stringify({ u: uI, at: new Date().toISOString() }));
+  await post({ token: tok, endpoint: ep }, "s".repeat(24));
+  ok(!(await kv.get("rem:" + tok)) && !(await kv.get(pushKey)) && !(await kv.get("sess:" + "s".repeat(24))),
+    "a Log out inside the session drops the session, the wrap and the phone's push record together");
+
+  /* the page's half: the subscription is dropped on the phone and named to the site */
+  const { landingPage: lpI } = await import("../stmt/page.js");
+  const CI = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDI } = await import("jsdom");
+  const { webcrypto: wcI } = await import("node:crypto");
+  const devI = "i".repeat(32), ckI = await CI.contentKey("3".repeat(64), uI);
+  const st = { posted: null, unsubscribed: false };
+  const dom = new JDI(lpI("", "nI", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcI, configurable: true }); } catch (e) { win.crypto = wcI; }
+      const store = new Map([["salt-stmt-remember", JSON.stringify({ t: tok, k: Buffer.from(devI).toString("base64"), u: uI })]]);
+      Object.defineProperty(win, "localStorage", { configurable: true, value: {
+        getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+        removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+      win.scrollTo = () => {};
+      const sub = { endpoint: ep, unsubscribe: async () => { st.unsubscribed = true; return true; } };
+      Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+        register: async () => { throw new Error("not in this test"); },
+        getRegistration: async () => ({ pushManager: { getSubscription: async () => (st.unsubscribed ? null : sub) } }) } });
+      win.fetch = async (path, init) => {
+        const p = String(path);
+        if (p === "/remember/open") return { ok: true, status: 200, json: async () => ({ ok: true, u: uI, remembered: true, wrap: await CI.wrapKey(devI, ckI),
+          env: await CI.encryptWith(ckI, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] })),
+          live: null, prices: null, session: "sessIaaaaaaaaaaaaaaaaaaaaaaa" }) };
+        if (p === "/logout") { st.posted = JSON.parse(init.body); return { ok: true, status: 200, json: async () => ({ ok: true }) }; }
+        return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      };
+    } });
+  const W = dom.window, D = W.document;
+  try {
+    for (let i = 0; i < 200 && D.getElementById("barw").hidden; i++) await new Promise((r) => setTimeout(r, 25));
+    D.getElementById("lock").click();
+    for (let i = 0; i < 200 && !st.posted; i++) await new Promise((r) => setTimeout(r, 25));
+    ok(st.unsubscribed && !!st.posted && st.posted.token === tok && st.posted.endpoint === ep,
+      "Log out unsubscribes this phone and names its endpoint and token to the site: " + JSON.stringify({ unsubscribed: st.unsubscribed, posted: st.posted }));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } }
+})();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: no three-minute lock, Remember me, and a Log out. The two halves of
