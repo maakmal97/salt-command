@@ -18161,10 +18161,10 @@ function apCard(d){
   return `<div class="card" style="margin-top:10px" data-id="${esc(d.id)}">
     <div style="font-size:14px">${head}</div>
     <div class="kpis k4" style="margin-top:10px">${grid}</div>
-    ${(d.flags||[]).map(f=>`<div class="warnpill" style="display:block;margin:8px 0 0;background:rgba(184,115,51,.14);border-color:var(--amber);color:#d8c79c">&#9888; ${esc(f)}</div>`).join('')}
+    ${(d.flags||[]).map(f=>`<div class="warnpill" style="display:block;margin:8px 0 0;background:rgba(184,115,51,.14);border-color:var(--amber);color:var(--gold)">&#9888; ${esc(f)}</div>`).join('')}
     ${apGone}
     ${d.reasoning?`<div class="dsc" style="margin-top:8px">${esc(d.reasoning)}</div>`:''}
-    <div style="display:flex;gap:8px;margin-top:10px"><button class="vbtn salt-pill salt-pill--sm" data-ap="approve" data-id="${esc(d.id)}" style="background:linear-gradient(135deg,#6fae97,#4f8f7a);border-color:transparent;color:#05080a;box-shadow:none">Approve</button><button class="vbtn salt-pill salt-pill--sm" data-ap="reject" data-id="${esc(d.id)}" style="background:rgba(212,105,76,.16);border-color:var(--crim);color:var(--crim);box-shadow:none">Reject</button></div>
+    <div style="display:flex;gap:8px;margin-top:10px"><button class="vbtn salt-pill salt-pill--sm" data-ap="approve" data-id="${esc(d.id)}">Approve</button><button class="salt-ghost salt-ghost--danger" data-ap="reject" data-id="${esc(d.id)}">Reject</button></div>
   </div>`;
 }
 function apDraw(){
@@ -18264,7 +18264,7 @@ function tabOrders(){
   <div class="card" id="bullCard" style="margin-top:10px"><div class="cardh">Bulletin <span class="sub">across the top of Salt Counter, for everyone who opens it</span></div>
     <div class="dsc" id="bullNow" style="margin-top:6px">Reading it.</div>
     <textarea id="bullText" rows="3" placeholder="One line per item" style="width:100%;margin-top:8px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:6px;font:inherit"></textarea>
-    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="vbtn salt-pill salt-pill--sm" data-bmode="run">Running</button><button type="button" class="vbtn salt-pill salt-pill--sm" data-bmode="change">Changing</button><button type="button" class="vbtn salt-pill salt-pill--sm" id="bullSet">Set</button><button type="button" class="vbtn salt-pill salt-pill--sm" id="bullClear">Clear</button></div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="salt-ghost" data-bmode="run" aria-pressed="true">Running</button><button type="button" class="salt-ghost" data-bmode="change" aria-pressed="false">Changing</button><button type="button" class="vbtn salt-pill salt-pill--sm" id="bullSet">Set</button><button type="button" class="vbtn salt-pill salt-pill--sm" id="bullClear">Clear</button></div>
     <div class="dsc" id="bullMsg" style="margin-top:6px"></div></div>
   <div id="ordAlert" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--mut)"></div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--mut)"><button type="button" class="vbtn salt-pill salt-pill--sm" id="ordAllBtn">${ordAll?'Hide the closed ones':'Show the closed ones'}</button><span>${ordAll?'Every order this site has taken, newest first.':'Open orders, and any waiting on an answer from you.'}</span></div>
@@ -18430,9 +18430,9 @@ function ordCard(o){
   const off=(rate!=null&&usual)?(rate-usual)/usual:null;
   const pay=o.method?(o.method+(o.account?' via '+o.account:'')):'not chosen yet';
   const last=(o.history||[]).slice(-1)[0];
-  const red='background:transparent;color:var(--crim);border-color:var(--crim);box-shadow:none';
-  const green='background:linear-gradient(135deg,#6fae97,#4f8f7a);border-color:transparent;color:#05080a;box-shadow:none';
-  const btn=(st,label,style,mode)=>`<button class="vbtn salt-pill salt-pill--sm" data-ord="${st}" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${mode?` data-mode="${mode}"`:''} style="${style||''}">${label}</button>`;
+  /* 24 Sep 2026 (rule 6): the system's recipes, no colour of the card's own. The pill books or produces;
+     Decline and Cancel are the ghost that warms to ember under a pointer. */
+  const btn=(st,label,off,mode)=>`<button class="${off?'salt-ghost salt-ghost--danger':'vbtn salt-pill salt-pill--sm'}" data-ord="${st}" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${mode?` data-mode="${mode}"`:''}>${label}</button>`;
   /* v694: the two tracks, read off the order. What the ledger will say once the entries fold is
      stated here in the book's own words, so the card and the row never disagree. */
   const due=+((o.total+(+o.delivery||0))-(+o.paid||0)).toFixed(2), moved=+o.moved||0, paid=+o.paid||0;
@@ -18464,11 +18464,11 @@ function ordCard(o){
   const reply=`<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
     <input type="text" maxlength="200" placeholder="Answer them" aria-label="Answer this customer" data-say="${esc(o.id)}"
       style="flex:1 1 180px;min-width:150px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:8px">
-    ${btn('say','Send','')}</div>`;
+    ${btn('say','Send')}</div>`;
   let acts='';
-  if(o.status==='placed')acts=btn('acknowledged','Acknowledge this order',green)+btn('declined','Decline',red);
-  else if(rowed&&o.status!=='done')acts=(o.status==='acknowledged'?btn('ready','Ready to collect','','collect')+btn('ready','Ready to deliver','','deliver'):'')
-    +(moved>0?'':btn('cancelled','Cancel',red));
+  if(o.status==='placed')acts=btn('acknowledged','Acknowledge this order')+btn('declined','Decline',true);
+  else if(rowed&&o.status!=='done')acts=(o.status==='acknowledged'?btn('ready','Ready to collect',false,'collect')+btn('ready','Ready to deliver',false,'deliver'):'')
+    +(moved>0?'':btn('cancelled','Cancel',true));
   /* the delivery charge is typed where the order is agreed, because that is where it becomes a row */
   const fee=(o.status==='placed'&&o.mode==='deliver')
     ? `<label class="dsc" style="display:flex;gap:8px;align-items:center;margin-top:10px">Delivery charge, RM
@@ -18477,7 +18477,7 @@ function ordCard(o){
     ? `<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
         <label class="dsc" style="display:flex;gap:8px;align-items:center">${o.mode==='deliver'?'Delivered':'Collected'}, units
         <input type="number" min="0" step="0.05" max="${o.qty}" value="${esc(String(o.qty))}" data-hand="${esc(o.id)}" style="width:96px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:6px"></label>
-        ${btn('handover','Record the handover','')}</div>` : '';
+        ${btn('handover','Record the handover')}</div>` : '';
   return `<div class="card" style="margin-top:10px" data-id="${esc(o.id)}">
     <div style="font-size:14px"><b>${who}</b> orders ${units(o.qty)} ${esc(o.product||'salt')} for <b>${fmt(o.total)}</b>${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?'delivered':'collected'} <span class="sub">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
     ${o.mode==='deliver'&&o.place?`<div class="dsc" style="margin-top:6px">To ${esc(o.place)}</div>`:''}

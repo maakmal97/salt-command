@@ -18942,6 +18942,51 @@ await (async () => {
     "and a new order that carries a line wakes as a new order, not as a line: " + JSON.stringify(await dkv.get("orders:news")));
 })();
 
+section("S1 1.48: Acknowledge, Approve and the notice's mode buttons wear the system's recipes, with no colour of their own");
+await (async () => {
+  /* 24 Sep 2026 (L52, rule 6). Acknowledge and Approve were painted with a literal green gradient and
+     obsidian text in a style attribute, Reject, Decline and Cancel restated a crimson outline, and the
+     notice's Running and Changing were two filled pills whose aria-pressed nothing drew, so the chosen
+     mode could not be seen. The pill books or produces; everything else is a ghost. */
+  const { openMaster: om148 } = await import("../tools/payload.mjs");
+  const { w: w148 } = await om148();
+  try {
+    w148.SALT_CLOUD = true;
+    const frag = (html) => { const d = w148.document.createElement("div"); d.innerHTML = html; w148.document.body.appendChild(d); return d; };
+    const hexIn = (root) => [...root.querySelectorAll("[style]")].map((e) => e.getAttribute("style")).filter((s) => /#[0-9a-fA-F]{3,8}\b/.test(s));
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0, mode: "collect",
+      at: "2026-09-24T02:00:00.000Z", history: [], msgs: [] };
+    const cards = frag(String(w148.eval("ordCard(" + JSON.stringify(Object.assign({ id: "p1", status: "placed" }, base)) + ")"))
+      + String(w148.eval("ordCard(" + JSON.stringify(Object.assign({ id: "a1", status: "acknowledged", queued: { ack: "x" } }, base)) + ")")));
+    const ack = cards.querySelector('button[data-ord="acknowledged"]'), dec = cards.querySelector('button[data-ord="declined"]');
+    const can = cards.querySelector('button[data-ord="cancelled"]');
+    ok(hexIn(cards).length === 0, "the order cards carry no hex colour in a style attribute: " + JSON.stringify(hexIn(cards)));
+    ok(ack && ack.classList.contains("salt-pill") && !ack.hasAttribute("style")
+      && [dec, can].every((b) => b && b.classList.contains("salt-ghost") && b.classList.contains("salt-ghost--danger") && !b.classList.contains("salt-pill") && !b.hasAttribute("style")),
+      "Acknowledge is the system's pill as it stands, and Decline and Cancel its danger ghost: " + JSON.stringify([ack && ack.outerHTML.slice(0, 90), dec && dec.className, can && can.className]));
+
+    const ap = frag(String(w148.eval("apCard({id:'d1',collection:'sales',party:'CC5-OKR',flags:['a rate under the floor'],"
+      + "row:{customer:'CC5-OKR',product:'salt',qty:2,total:200,cost:120,cash:0,deliveredQty:0,date:'2026-09-24'}})")));
+    const yes = ap.querySelector('button[data-ap="approve"]'), no = ap.querySelector('button[data-ap="reject"]');
+    ok(hexIn(ap).length === 0 && yes && yes.classList.contains("salt-pill") && !yes.hasAttribute("style")
+      && no && no.classList.contains("salt-ghost") && !no.hasAttribute("style"),
+      "and so does Approve, its Reject and its caution line: " + JSON.stringify({ hex: hexIn(ap), yes: yes && yes.outerHTML.slice(0, 90), no: no && no.className }));
+    ok(w148.getComputedStyle(yes).color === "var(--salt-obsidian)" && w148.getComputedStyle(no).color === "var(--salt-ghost-tone)",
+      "and no older layer of the desk paints over either recipe: " + JSON.stringify([w148.getComputedStyle(yes).color, w148.getComputedStyle(no).color]));
+
+    const bull = frag(String(w148.eval("tabOrders()")));
+    w148.eval("BULL_MODE='change';bullPressed();");
+    const run = bull.querySelector('button[data-bmode="run"]'), chg = bull.querySelector('button[data-bmode="change"]');
+    ok(run.classList.contains("salt-ghost") && chg.classList.contains("salt-ghost") && chg.getAttribute("aria-pressed") === "true",
+      "the notice's Running and Changing are ghosts, pressed by the mode that is set");
+    ok(w148.getComputedStyle(chg).color === "var(--salt-salt)" && w148.getComputedStyle(run).color === "var(--salt-ghost-tone)",
+      "so the chosen one is drawn as chosen, by the recipe's own pressed state: " + JSON.stringify([w148.getComputedStyle(chg).color, w148.getComputedStyle(run).color]));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w148.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one
