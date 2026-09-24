@@ -22104,7 +22104,7 @@ await (async () => {
   ok(/\.tblw\{overflow-x:auto/.test(SCSS),
     "and the box scrolls sideways inside itself, in the stylesheet the page carries");
   /* UX1: the box is the net, not the answer. Held at 340px inside a phone's column of 280 to 335, the
-     Status column was cut mid-word (measured in the rig at 320, 360 and 375: 71, 31 and 16px cut; 0 after),
+     Status column was cut mid-word (measured in the rig at 320, 360 and 375: 71, 31 and 16px cut; 0 after).
      The cascade is read in jsdom, a sealed table beside a live one. */
   const { JSDOM: JD29 } = await import("jsdom");
   const d29 = new JD29("<style>" + SCSS + "</style><div class=\"tblw\"><table><tr><td>a</td></tr></table></div><table><tr><td>b</td></tr></table>").window;
@@ -22114,6 +22114,8 @@ await (async () => {
     + JSON.stringify([d29.getComputedStyle(live29).minWidth, d29.getComputedStyle(sealed29).minWidth]));
   d29.close();
   ok(/\.tblw \.owedunits\{white-space:normal\}/.test(SCSS), "and the long status line wraps inside a live table, so no status word is cut");
+  /* UX10: measured in the rig, the quantity's last glyph and the amount's first sat 0px apart; 10px after */
+  ok(/\.tblw td\+td,\.tblw th\+th\{padding-left:10px\}/.test(SCSS), "each column of a live table is set apart from the one before, where the quantity ran into the amount");
   /* an archive is left as it was issued */
   const who = parties.find((p) => M.liveStatement(p, at));
   const o = { from: null, to: "2026-09-24", completed: true, open: true, pending: true, dates: true, issued: "24 Sep 2026", archive: true };

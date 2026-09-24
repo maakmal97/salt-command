@@ -131,6 +131,8 @@ table{width:100%;border-collapse:collapse;min-width:340px}
    was issued with. */
 .tblw table{min-width:0}
 .tblw .owedunits{white-space:normal}
+/* UX10: each column is set apart from the one before, where the quantity and the amount read as one token */
+.tblw td+td,.tblw th+th{padding-left:10px}
 table.rft{margin-top:10px}
 th{font-size:var(--salt-text-xs);letter-spacing:.16em;text-transform:uppercase;
   color:var(--salt-text-muted);font-weight:700;padding:0 0 10px;text-align:right;white-space:nowrap}
