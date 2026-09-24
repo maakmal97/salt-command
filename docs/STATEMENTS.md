@@ -292,7 +292,7 @@ drawing. A control holding only a mark is named by its **shape** (`PSHAPE`: Cube
 never by its product, so a screen reader is told what is drawn rather than what it is.
 
 **The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title, the
-sign-in link's page and the install tutorial all say **Salt Counter** (v704, his instruction of 18 Sep 2026; it went Order Salt,
+sign-in link's page and the Keep it on your Home Screen card all say **Salt Counter** (v704, his instruction of 18 Sep 2026; it went Order Salt,
 then The Counter, then his own name for it). The icon on a customer's home screen has to say
 something: it is the ONE place on this site where something is called something, and the product
 word is his to spend there. Inside the page a product is still a mark and never a word. What never

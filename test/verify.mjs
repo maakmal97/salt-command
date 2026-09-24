@@ -15286,8 +15286,11 @@ await (async () => {
   const SB = await import("../stmt/send.js");
   const row = { url: "https://site.test/s/" + "t".repeat(32), user: "27a4-gkgw" };
   const door = lpB("", "nB", null), sign = SB.signInMessage(row), link = SB.linkMessage(row);
-  ok(!/It signs you in/.test(door) && /sign in there with Keep me signed in ticked/.test(door),
-    "the door's install step no longer promises a sign-in, and says where to make it: in the saved app, with the tick (S3 3.7's name for it)");
+  /* S3 3.10: the steps left the door for a Sheet that carries the sign-in across with a code; it says the saved app
+     asks once for it, and never that a link signs the app in (the judges' must-not-ship list) */
+  const keepText = door.slice(door.indexOf('id="keepSheet"'), door.indexOf('id="keepCopy"')).replace(/<[^>]*>/g, " ");
+  ok(!/It signs you in/.test(door) && /asks once for this code/.test(keepText) && !/link/i.test(keepText) && door.indexOf('id="keepSheet"') > 0,
+    "the saved app's steps promise no sign-in they do not make: the app asks once for a code, and no link is said to sign it in");
   ok(!/It signs you in/.test(sign) && !/It signs you in/.test(link), "and neither message says it either");
   /* S3 3.4 (his D1): the link keeps the phone signed in, and says so; it still promises no saved app */
   ok(!/Remember me|Keep me signed in/.test(sign) && !/Add to Home Screen|Install app/.test(sign)
@@ -15925,8 +15928,9 @@ await (async () => {
   ok(html93.includes('rel="manifest"') && html93.includes('rel="apple-touch-icon"') && html93.includes('name="theme-color"')
     && /manifest-src 'self'/.test(page93.headers.get("content-security-policy")),
     "the page links both and the policy admits its own manifest");
-  ok(/Add to Home Screen/.test(html93) && /Install app/.test(html93),
-    "and the door says how, on an iPhone and on an Android");
+  /* S3 3.10: how to keep it moved off the door to the signed-in page, a card and its Sheet */
+  ok(/id="keepCard"/.test(html93) && /id="keepSheet"/.test(html93) && !/id="inst"/.test(html93),
+    "and the page says how once they are in, on a card and a Sheet of its own, no longer on the door");
 
   /* the tutorial is for a browser, and the ask is for a login */
   const { landingPage: lp93 } = await import("../stmt/page.js");
@@ -15950,6 +15954,7 @@ await (async () => {
           getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
           removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
         win.matchMedia = (q) => ({ matches: standalone && /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+        Object.defineProperty(win.navigator, "userAgent", { value: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) Mobile/15E148 Safari/604.1", configurable: true });
         win.PushManager = function () {};
         win.Notification = { permission, requestPermission: async () => { asked.times++; return "denied"; } };
         Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: { register: async () => { throw new Error("no sw in jsdom"); } } });
@@ -15961,21 +15966,21 @@ await (async () => {
   };
   const browser93 = drive93(false, "default");
   try {
-    ok(browser93.D.getElementById("inst").hidden === false, "a page opened in a browser shows the tutorial");
     browser93.D.getElementById("un").value = u93;
     browser93.D.getElementById("pw").value = pass93;
     browser93.D.getElementById("f").dispatchEvent(new browser93.W.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 80 && browser93.asked.times === 0; i++) await new Promise((r) => setTimeout(r, 50));
     ok(browser93.asked.times === 1, "and signing in asks about notifications once: " + browser93.asked.times);
+    ok(browser93.D.getElementById("keepCard").hidden === false, "a page opened in a browser shows how to keep it, once they are in");
   } finally { try { browser93.W.close(); } catch (e) { /* best effort */ } }
   const app93 = drive93(true, "denied");
   try {
-    ok(app93.D.getElementById("inst").hidden === true, "a page already kept as an app does not teach how to keep it");
     app93.D.getElementById("un").value = u93;
     app93.D.getElementById("pw").value = pass93;
     app93.D.getElementById("f").dispatchEvent(new app93.W.Event("submit", { bubbles: true, cancelable: true }));
     await new Promise((r) => setTimeout(r, 400));
     ok(app93.asked.times === 0, "and a browser that has already refused is not asked again");
+    ok(app93.D.getElementById("keepCard").hidden === true, "a page already kept as an app does not teach how to keep it");
   } finally { try { app93.W.close(); } catch (e) { /* best effort */ } }
 })();
 section("v694: an order reaches the ledger in stages, and money and goods move apart");
@@ -18457,6 +18462,90 @@ await (async () => {
     "a sign-in link over another remembered account asks the same, beside Continue, and Replace keeps it");
   const same = await drive("/s/" + tokL, JSON.stringify({ t: "c".repeat(32), k: "x", u: uB }), "link", true);
   ok(!same.q.shown && same.kept && same.kept.u === uB, "the same account is not asked about");
+})();
+section("S3 3.10: Keep it on your Home Screen mints the hand-over as its Sheet opens, draws the phone's own marks, and copies the key in a tap of its own that also rewrites the address to /app#<key>");
+await (async () => {
+  /* HIS D2 OF 24 SEP 2026. A saved iPhone app keeps its own storage, so a customer who saved it opened a door
+     with nothing to get past it. The judges' must-not-ship list: no copy after a derivation and a fetch in the same
+     tap, and no help telling the saved app that a link signs it in. */
+  const { landingPage: lp310 } = await import("../stmt/page.js");
+  const C310 = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JD310 } = await import("jsdom");
+  const u310 = "aaaa-hhhh", pass310 = "2345-6789-abcd-efgh", ck310 = await C310.contentKey("5".repeat(64), u310);
+  const env310 = await C310.encryptWith(ck310, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] }));
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const drive = async (ua, handover) => {
+    const st = { posts: [], clip: [], inTap: false };
+    const dom = new JD310(lp310(u310, "n310", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: ua, configurable: true });
+        Object.defineProperty(win.navigator, "clipboard", { configurable: true, value: {
+          writeText: (t) => { st.clip.push({ t, inTap: st.inTap, posts: st.posts.length }); return Promise.resolve(); } } });
+        win.scrollTo = () => {};
+        win.fetch = async (p, init) => {
+          const body = init && init.body ? JSON.parse(init.body) : null;
+          st.posts.push({ path: String(p), body, session: ((init && init.headers) || {})["X-Stmt-Session"] || "" });
+          const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C310.wrapKey(pass310, ck310), env: env310, live: null, prices: null, session: "sess310a000000000000000000000" });
+          if (p === "/handover") return handover(body, ans);
+          return ans(200, { ok: true, orders: [] });
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+    D.getElementById("pw").value = pass310;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !D.getElementById("barw").hidden);
+    return { st, W, D, until };
+  };
+  const minted = (body, ans) => ans(200, { ok: true, code: "h4tn-8xwc", token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() });
+
+  const g = await drive(IPHONE, minted);
+  try {
+    const { D, st, until } = g;
+    ok(!D.getElementById("keepCard").hidden && /Keep it on your Home Screen/.test(D.getElementById("keepCard").textContent),
+      "an iPhone in Safari, signed in, is offered Keep it on your Home Screen");
+    const copy = D.getElementById("keepCopy");
+    const before = st.posts.length;
+    D.getElementById("keepGo").click();
+    ok(!D.getElementById("keepSheet").hidden && copy.disabled, "the Sheet opens with Copy held until there is something to copy");
+    await until(() => D.getElementById("keepCode").value);
+    const ho = st.posts.slice(before).find((x) => x.path === "/handover");
+    ok(!!ho && /^[A-Za-z0-9_-]{32}$/.test(ho.body.token) && !!ho.body.wrap && ho.session === "sess310a000000000000000000000",
+      "opening the Sheet mints the hand-over on the session: a key of the link's shape and a wrap");
+    let opened = null;
+    try { opened = JSON.parse(await C310.decryptWith(await C310.unwrapKey(ho.body.token, ho.body.wrap), env310)); } catch (e) { opened = null; }
+    ok(!!opened && opened.statements[0].body === "<p>Mine</p>", "and the key it mints unwraps this account's own content key, which opens the statement");
+    ok(D.getElementById("keepCode").value === "H4TN 8XWC" && !copy.disabled && D.getElementById("keepCode").closest(".salt-code")
+      && D.getElementById("keepCode").classList.contains("salt-field__input--code"),
+      "the code is shown in the system's Code field, four and four, and Copy is ready");
+    const sheetText = D.getElementById("keepSheet").textContent;
+    ok(D.getElementById("keepSheet").querySelectorAll(".keepsteps svg.glyph").length === 4 && /At the foot of Safari/.test(sheetText)
+      && /asks once for this code/.test(sheetText) && !/link/i.test(sheetText),
+      "its three steps draw the phone's own marks, and nothing in it says a link signs the saved app in");
+    const n = st.posts.length;
+    st.inTap = true; copy.click(); st.inTap = false;
+    await new Promise((r) => setTimeout(r, 40));
+    ok(st.clip.length === 1 && st.clip[0].inTap && st.clip[0].t === ho.body.token && st.clip[0].posts === n && st.posts.length === n,
+      "Copy puts the key on the clipboard inside the tap itself, with no fetch before it or after it");
+    ok(g.W.location.pathname === "/app" && g.W.location.hash === "#" + ho.body.token,
+      "and the same tap rewrites the address to /app#<key>, for a saved app that keeps it: " + g.W.location.pathname);
+    ok(/Copied/.test(D.getElementById("keepMsg").textContent), "and says it copied, beside the button");
+  } finally { g.W.close(); }
+
+  const off = await drive(IPHONE, (body, ans) => ans(503, { ok: false, error: "Signing in with a code is not switched on here." }));
+  try {
+    off.D.getElementById("keepGo").click();
+    await off.until(() => off.D.getElementById("keepMsg").textContent && !/Making/.test(off.D.getElementById("keepMsg").textContent));
+    ok(/not switched on/.test(off.D.getElementById("keepMsg").textContent) && off.D.getElementById("keepCopy").disabled && !off.D.getElementById("keepCode").value,
+      "with the site's hand-over switched off, the Sheet says so and there is nothing to copy");
+  } finally { off.W.close(); }
+
+  const wa = await drive("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 WhatsApp/2.24.1", minted);
+  try {
+    ok(wa.D.getElementById("keepCard").hidden, "an app's own browser, which keeps nothing, is not offered it");
+  } finally { wa.W.close(); }
 })();
 section("v710: the shared link signs them in once, so no message carries a password");
 await (async () => {

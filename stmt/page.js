@@ -117,13 +117,14 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .btn{margin-top:18px;width:100%}
 /* a pay link is a .salt-ghost too (24 Sep 2026); a long account name wraps, and its lines centre */
 .btn.lnk{text-align:center;line-height:1.4}
-/* KEEP IT ON YOUR PHONE (v693): the quietest block on the door, under everything, and gone the
-   moment the page is running as an app. */
-.inst{margin-top:26px;padding-top:16px;border-top:1px solid var(--salt-line)}
-.inst h2{margin:0 0 8px;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
-  color:var(--salt-copper);font-family:var(--salt-font-mono);font-weight:700}
-.inst ol{margin:0;padding-left:20px;color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.8}
-.inst b{color:var(--salt-text);font-weight:600}
+/* KEEP IT ON YOUR HOME SCREEN (v693; S3 3.10): a card on the account, once signed in, in a browser that is not
+   already the app; its steps sit in a Sheet and draw the phone's own marks */
+.keepcard{max-width:620px;margin:0 auto 18px}
+.keepcard .kline{margin:6px 0 10px;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.keepcard b{color:var(--salt-text);font-weight:600}
+.keepsteps{margin:14px 0;padding-left:22px;line-height:2.1}
+.keepsteps .glyph{vertical-align:-0.3em;margin:0 3px}
+.keepsteps .sub2{display:block;line-height:1.5;margin:0 0 6px}
 /* REMEMBER ME (v692): a checkbox on the door, at the tap size everything else here is */
 .rem{display:flex;align-items:center;gap:10px;margin-top:16px;min-height:var(--salt-tap);
   font-size:var(--salt-text-sm);color:var(--salt-text-muted);cursor:pointer}
@@ -370,6 +371,9 @@ const GLYPH = {
   orders: "M6.5 3.5 H17.5 V20.5 L15.3 19.2 L13.1 20.5 L10.9 19.2 L8.7 20.5 L6.5 19.2 Z M9.5 8 H14.5 M9.5 11.5 H14.5 M9.5 15 H12.5",
   dots: "M5.1 12 A1.4 1.4 0 1 0 7.9 12 A1.4 1.4 0 1 0 5.1 12 Z M10.6 12 A1.4 1.4 0 1 0 13.4 12 A1.4 1.4 0 1 0 10.6 12 Z M16.1 12 A1.4 1.4 0 1 0 18.9 12 A1.4 1.4 0 1 0 16.1 12 Z",
   close: "M6.5 6.5 L17.5 17.5 M17.5 6.5 L6.5 17.5",
+  share: "M12 3.6 V14.4 M8.3 7.2 L12 3.6 L15.7 7.2 M8.6 10.4 H6.6 V20.4 H17.4 V10.4 H15.4",
+  addsq: "M8.2 4.6 H15.8 A3.6 3.6 0 0 1 19.4 8.2 V15.8 A3.6 3.6 0 0 1 15.8 19.4 H8.2 A3.6 3.6 0 0 1 4.6 15.8 V8.2 A3.6 3.6 0 0 1 8.2 4.6 Z M12 8.4 V15.6 M8.4 12 H15.6",
+  paste: "M7.6 4.8 H16.4 A2 2 0 0 1 18.4 6.8 V18.4 A2 2 0 0 1 16.4 20.4 H7.6 A2 2 0 0 1 5.6 18.4 V6.8 A2 2 0 0 1 7.6 4.8 Z M9.2 4.8 V3.4 H14.8 V4.8 M9 10.2 H15 M9 13.6 H15 M9 17 H12.6",
   vdots: "M10.6 6.5 A1.4 1.4 0 1 0 13.4 6.5 A1.4 1.4 0 1 0 10.6 6.5 Z M10.6 12 A1.4 1.4 0 1 0 13.4 12 A1.4 1.4 0 1 0 10.6 12 Z M10.6 17.5 A1.4 1.4 0 1 0 13.4 17.5 A1.4 1.4 0 1 0 10.6 17.5 Z",
 };
 const FILLED = { dots: true, vdots: true };
@@ -400,6 +404,37 @@ function replaceAsk() {
     + '<p class="lead" id="askRepT"></p>'
     + '<button class="btn salt-pill salt-pill--md" id="askYes" type="button">Replace</button>'
     + '<button class="btn salt-ghost" id="askNo" type="button"></button></div>';
+}
+
+/* S3 3.10: KEEP IT ON YOUR HOME SCREEN. An iPhone's Home Screen app keeps its own storage, so what Safari
+   remembers never reaches it: the Sheet says so in one line and carries the sign-in across with a code. The code
+   and its key are minted as the Sheet opens, so Copy is a tap of its own (the judges' must-not-ship list), and
+   the steps draw the phone's own marks. Nothing here says a link signs the saved app in. */
+function keepCard() {
+  return '<div id="keepCard" class="keepcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" hidden>'
+    + '<p class="salt-eyebrow salt-eyebrow--brass" id="keepHead">Keep it on your Home Screen</p>'
+    + '<p class="kline" id="keepLine">One tap to open, and it stays signed in. It is saved as <b>Salt Counter</b>.</p>'
+    + '<button class="btn salt-ghost salt-ghost--lit" id="keepGo" type="button">Show me how</button></div>';
+}
+function keepSheet() {
+  return '<div id="keepScrim" class="salt-sheet-scrim" hidden></div>'
+    + '<div id="keepSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="keepT" tabindex="-1" hidden>'
+    + '<div class="salt-sheet__grab"></div>'
+    + '<div class="salt-sheet__head"><h2 class="salt-sheet__title" id="keepT">Keep it on your Home Screen</h2>'
+    + '<button type="button" class="salt-orb salt-sheet__close" id="keepX" aria-label="Close">' + glyphSvg("close", 20) + "</button></div>"
+    + '<div class="salt-sheet__body">'
+    + "<p>On iPhone the Home Screen app starts signed out, so it asks once for this code. Copy it now, and paste it there.</p>"
+    + '<ol class="keepsteps">'
+    + "<li>Tap " + glyphSvg("dots", 22) + " then " + glyphSvg("share", 22)
+    + '<span class="sub2">At the foot of Safari. On an older iPhone, just the second mark.</span></li>'
+    + "<li>Tap " + glyphSvg("addsq", 22) + " then Add</li>"
+    + "<li>Open the new icon and tap " + glyphSvg("paste", 22) + " Paste the code</li></ol>"
+    + '<div class="salt-code"><label class="salt-code__label" for="keepCode">Your code</label>'
+    + '<input class="fld salt-field__input salt-field__input--code" id="keepCode" type="text" readonly value="" aria-describedby="keepHint">'
+    + '<span class="salt-code__hint" id="keepHint">Works once, for 15 minutes.</span></div>'
+    + '<p class="msg" id="keepMsg" role="status" aria-live="polite"></p></div>'
+    + '<div class="salt-sheet__foot"><button class="btn salt-pill salt-pill--md" id="keepCopy" type="button">Copy the code</button></div>'
+    + "</div>";
 }
 
 /* S3 3.3: THE LINK PAGE. A link opens here and spends nothing until Continue: it says which account it opens
@@ -590,19 +625,8 @@ export function landingPage(user, nonce, owner, bulletin) {
     + "</form>"
     + '<p class="msg" id="msg" role="status" aria-live="polite"></p></div>'
     + '<p class="salt-insight">Lost your password or your link? Ask us for a <b>new sign-in link</b>. It works straight away.</p>'
-    /* v693: how to keep it as an app, on the door where a first-time reader is, and hidden once
-       the page is running as one. Three steps, the two phones, and nothing to tap. */
-    + '<div class="inst" id="inst" hidden>'
-    + "<h2>Keep it on your phone</h2>"
-    + '<p class="sub2">It is saved as <b>Salt Counter</b>, and opens straight here.</p>'
-    + '<ol><li><b>iPhone:</b> tap Share, then Add to Home Screen, then Add.</li>'
-    + "<li><b>Android:</b> tap the three dots, then Install app or Add to Home screen.</li>"
-    /* S1 1.3: a saved iPhone app keeps its own storage and is not signed in by this browser, so the
-       step says where the sign-in happens rather than promising one */
-    + "<li>Open it from that icon after this and sign in there with Keep me signed in ticked. It can tell you when an order moves.</li></ol>"
     + "</div>"
-    + "</div>"
-    + (owner ? "" : linkScreen() + signedOutSheet() + replaceAsk())
+    + (owner ? "" : linkScreen() + signedOutSheet() + replaceAsk() + keepSheet())
     + '<div id="barw" hidden><div class="bar">'
     + '<span><b id="whoacct"></b><span id="cd"></span></span>'
     + '<button type="button" id="lock">Log out</button>'
@@ -617,7 +641,8 @@ export function landingPage(user, nonce, owner, bulletin) {
        that opened actually carries one, so the tab can never lead to an empty panel. */
     + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="card" id="tCard" hidden>Card</button>'
     + "</div>"
-    + '<div id="pStmt"><div id="mos" class="mos" hidden></div>'
+    + '<div id="pStmt">' + (owner ? "" : keepCard())
+    + '<div id="mos" class="mos" hidden></div>'
     + '<div id="mfil" class="mos mfil" hidden></div><p class="mfnote" id="mfnote"></p>'
     + '<div id="out"></div></div>'
     + '<div id="pPrices" class="panel" hidden></div>'
@@ -706,6 +731,9 @@ const CLIENT_JS = `
   var UA=navigator.userAgent||'';
   var IOS=/iPhone|iPad|iPod/.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   var DEV=/Mobi|Android|iPhone|iPad|iPod/.test(UA)||IOS?'phone':'computer';
+  /* already kept as an app: nothing teaches how to keep it (v693) */
+  var STANDALONE=false;
+  try{ STANDALONE=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){}
   [].forEach.call(document.querySelectorAll('.dev'), function(x){ x.textContent=DEV; });
   /* 24 Sep 2026 (M22): an account he opened under the master is READ ONLY. It has no session, so its
      orders and links come from his own gated route, and nothing on it places, pays, sends or withdraws. */
@@ -885,6 +913,57 @@ const CLIENT_JS = `
       }
     }catch(e){ /* not remembered; the password still opens it */ }
   }
+  /* ---- KEEP IT ON YOUR HOME SCREEN (S3 3.10, his D2) ------------------------------------------------------
+     A signed-in iPhone mints a one-use key and its eight-symbol code as the Sheet opens (POST /handover, the
+     content key wrapped under the key), so the Copy tap copies and does nothing else: no derivation and no fetch
+     sits between the tap and the clipboard. The same tap rewrites the address to /app#<key>, so a saved app that
+     keeps the address signs itself in; one that does not takes the key by Paste, or the code typed. */
+  var keepCardEl=document.getElementById('keepCard'), keepSheetEl=document.getElementById('keepSheet'),
+      keepScrim=document.getElementById('keepScrim'), keepCode=document.getElementById('keepCode'),
+      keepCopy=document.getElementById('keepCopy'), keepMsg=document.getElementById('keepMsg');
+  var keepTok='', keepExp=0;
+  function drawKeep(){
+    if(!keepCardEl) return;
+    keepCardEl.hidden=!(IOS&&!INAPP&&!STANDALONE&&!OWNER&&!view&&!!session);
+  }
+  function ksay(t,cls){ keepMsg.textContent=t||''; keepMsg.className='msg'+(cls?' '+cls:''); }
+  async function mintKeep(){
+    keepCopy.disabled=true; keepCode.value=''; ksay('Making your code...','wait');
+    try{
+      var tok=b64e(crypto.getRandomValues(new Uint8Array(24))).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/=+$/,'');
+      var wrap=await wrapUnder(new TextEncoder().encode(tok), curCk);
+      var r=await api('/handover',{token:tok, wrap:wrap});
+      if(keepSheetEl.hidden) return;
+      if(r.status===503){ ksay('Saving it as an app is not switched on yet. Ask us, and sign in inside the new app meanwhile.','bad'); return; }
+      if(!r.body.ok||!r.body.code){ ksay(r.status===401?r.body.error:'The code could not be made just now. Close this and open it again.','bad'); return; }
+      keepTok=r.body.token||tok; keepExp=Date.parse(r.body.exp)||(Date.now()+15*60000);
+      keepCode.value=String(r.body.code).toUpperCase().replace('-',' ');
+      keepCopy.disabled=false; ksay('');
+    }catch(e){ ksay('The code could not be made just now. Close this and open it again.','bad'); }
+  }
+  function openKeep(){
+    if(!keepSheetEl||!curCk) return;
+    keepScrim.hidden=false; keepSheetEl.hidden=false;
+    try{ keepSheetEl.focus(); }catch(e){}
+    if(!keepTok||Date.now()>keepExp-60000) mintKeep();
+  }
+  function closeKeep(){ if(!keepSheetEl||keepSheetEl.hidden) return; keepSheetEl.hidden=true; keepScrim.hidden=true; try{ document.getElementById('keepGo').focus(); }catch(e){} }
+  if(keepSheetEl){
+    document.getElementById('keepGo').addEventListener('click', openKeep);
+    document.getElementById('keepX').addEventListener('click', closeKeep);
+    keepScrim.addEventListener('click', closeKeep);
+    document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') closeKeep(); });
+    keepCopy.addEventListener('click', function(){
+      if(!keepTok) return;
+      /* the tap's first act, before anything that waits: Safari allows a copy only inside the tap itself */
+      var done=null;
+      try{ done=navigator.clipboard.writeText(keepTok); }catch(e){ done=Promise.reject(e); }
+      try{ history.replaceState(null,'','/app#'+keepTok); }catch(e){}
+      Promise.resolve(done).then(function(){ ksay('Copied. Now tap the marks above, then open the new icon and paste.'); },
+        function(){ ksay('Copy failed. Type the code in the new app instead.','bad'); });
+    });
+  }
+
   /* ---- REPLACE ANOTHER ACCOUNT ON THIS PHONE? (S3 3.8) ------------------------------------------------
      Keeping a second account would overwrite the one this phone remembers, so it is asked, beside the control
      that was tapped, before anything is kept: Replace keeps the new one and forgets the old; Keep leaves the old
@@ -920,6 +999,7 @@ const CLIENT_JS = `
     pPrices.textContent=''; pOrder.textContent='';
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
+    closeKeep(); keepTok=''; keepExp=0; if(keepCardEl) keepCardEl.hidden=true;
     var ask=document.getElementById('askRep'); if(ask&&!ask.hidden){ ask.hidden=true; document.getElementById('askNo').click(); }
     /* the owner goes back to his list, never to a password field he has no password for */
     if(OWNER){ roster.hidden=false; gate.hidden=true; if(whoacct) whoacct.textContent=''; }
@@ -988,7 +1068,7 @@ const CLIENT_JS = `
   function closeSignedOut(){
     if(!outSheet||outSheet.hidden) return;
     outSheet.hidden=true; outScrim.hidden=true;
-    gate.insertBefore(doorBox, gate.querySelector('#inst'));
+    gate.insertBefore(doorBox, gate.querySelector('.salt-insight'));
   }
   if(outSheet){
     document.getElementById('outX').addEventListener('click', function(){ closeSignedOut(); try{ document.getElementById('lapseGo').focus(); }catch(e){} });
@@ -2014,6 +2094,7 @@ const CLIENT_JS = `
     lapse.hidden=true; closeSignedOut();
     show(b);
     drawPrices();
+    drawKeep();
     if(same){
       if(t!==tab&&!(hold&&t==='prices')&&!(t==='card'&&tCard.hidden)) showTab(t);
       if(mf&&mfil.querySelector('button[data-mf="'+mf+'"]')){ mfPick=mf; applyMonths(); }
@@ -2135,11 +2216,6 @@ const CLIENT_JS = `
   /*__OWNER_JS__*/
 
   if(!OWNER){
-    /* v693: the tutorial is for a page opened in a browser, not one already kept as an app */
-    var installed=false;
-    try{ installed=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){}
-    var inst=document.getElementById('inst');
-    if(inst&&!installed) inst.hidden=false;
     /* the cursor lands at once, and a remembered device opens over the top of it: a reader with no
        memory on this phone must never wait on a request to be able to type */
     try{ (un.value?pw:un).focus(); }catch(e){}
