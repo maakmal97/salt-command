@@ -1,5 +1,14 @@
 [
  {
+  "v": "v833",
+  "d": "24 Sep 2026",
+  "t": "A COUNT OF NOTHING, AND NINE UNIT BACK ON THE SHELF",
+  "n": [
+   "<b>TWO ROWS FOLDED, ONE COUNT AND ONE CORRECTION.</b> The oil count of 24 Sep 2026 read 0 unit against 35 on the book, a drift of -35 on the first count since 19 Sep 2026. A count wins over the ledger, so the stated oil inventory is set to 0 and COUNT_ON for oil moves to 24 Sep 2026. The dossier gives no reason for the gap and none is supplied here.",
+   "<b>THE SECOND ROW MOVED GOODS, NOT MONEY OF ITS OWN.</b> A correction on s195 for CM4-TO cuts deliveredQty from 10 to 1, so 9 unit of rice roll back to the shelf while the RM50 paid on 23 Sep 2026 stands untouched. On the oil side the desk's floors hold at RM7.82 for 1 unit, RM15.65 for 2 and RM97.80 for 12.5, ask RM10, with self use read at 104 after the count against 79 before."
+  ]
+ },
+ {
   "v": "v832",
   "d": "24 Sep 2026",
   "t": "TWO CASH ROWS, BOTH SHUT THE SAME DAY",

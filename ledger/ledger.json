@@ -1,6 +1,6 @@
 {
- "v": "v832",
- "stamped": "24 Sep 2026, 23:01 KL",
+ "v": "v833",
+ "stamped": "24 Sep 2026, 23:07 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -73,7 +73,7 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 25
+    "stated": 0
    },
    "candy": {
     "qty": 0,
@@ -94,7 +94,7 @@
   "STATED_STOCK": 16.5,
   "COUNT_ON": {
    "salt": "2026-09-23",
-   "oil": "2026-09-19",
+   "oil": "2026-09-24",
    "candy": null,
    "rice": null,
    "spare": null
@@ -201,6 +201,13 @@
     "qty": 25,
     "was": 26,
     "drift": -1
+   },
+   {
+    "product": "oil",
+    "date": "2026-09-24",
+    "qty": 0,
+    "was": 35,
+    "drift": -35
    }
   ],
   "purchases": [
@@ -5018,11 +5025,28 @@
     "handover": "collected",
     "product": "rice",
     "date": "2026-09-23",
-    "deliveredQty": 10,
+    "deliveredQty": 1,
     "deliveredOn": "2026-09-23",
     "paidOn": "2026-09-23",
-    "note": "<b>RICE SELL DATED 23 SEP, COLLECTED AND PAID IN FULL ON THE SAME VISIT AS THE SALT.</b> CM3-OUG took 10 unit for RM50, RM5 a unit, RM50 cash in and 10 unit collected on 23 Sep on his word, so nothing stays open. Costed at RM3.20 a unit from the desk's own inventory cost, RM32 on the goods, RM18 at 36%. The RM50 clears the floor of RM34 and sits under the ask of RM60, with the ceiling at RM102. Flagged: CM3-OUG has no committed rice order on the book, so there is no rate of theirs to compare; the figures do not answer it. CM3-OUG: 3 orders, median RM52, range RM48 to RM65, nothing outstanding, none on credit against a cap of 1.",
-    "rid": "s195"
+    "note": "<b>CORRECTION DATED 24 SEP ON S195, DELIVERED QUANTITY CUT FROM 10 TO 1.</b> The target is CM4-TO's rice sell of 23 Sep 2026, 10 unit for RM50 at RM5 a unit, RM50 cash in and paid on the day. The correction moves no cash: it rolls 9 unit back from CM4-TO, the difference it states, and leaves 1 unit handed over. Across 5 orders their median rate is RM52 with a range of RM5 to RM65, nothing outstanding, none defaulted and no unit on credit. On the roster, not an associate. No flag was raised. The 9.5 unit of salt owed out on s194 stays open. <b>RICE SELL DATED 23 SEP, COLLECTED AND PAID IN FULL ON THE SAME VISIT AS THE SALT.</b> CM3-OUG took 10 unit for RM50, RM5 a unit, RM50 cash in and 10 unit collected on 23 Sep on his word, so nothing stays open. Costed at RM3.20 a unit from the desk's own inventory cost, RM32 on the goods, RM18 at 36%. The RM50 clears the floor of RM34 and sits under the ask of RM60, with the ceiling at RM102. Flagged: CM3-OUG has no committed rice order on the book, so there is no rate of theirs to compare; the figures do not answer it. CM3-OUG: 3 orders, median RM52, range RM48 to RM65, nothing outstanding, none on credit against a cap of 1.",
+    "rid": "s195",
+    "mod": "corrected on 2026-09-24: deliveredQty 10 to 1",
+    "amend": [
+     {
+      "date": "2026-09-23",
+      "kind": "Fulfilment",
+      "cash": 50,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-24",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION DATED 24 SEP ON S195, DELIVERED QUANTITY CUT FROM 10 TO 1.</b> The target is CM4-TO's rice sell of 23 Sep 2026, 10 unit for RM50 at RM5 a unit, RM50 cash in and paid on the day. The correction moves no cash: it rolls 9 unit back from CM4-TO, the difference it states, and leaves 1 unit handed over. Across 5 orders their median rate is RM52 with a range of RM5 to RM65, nothing outstanding, none defaulted and no unit on credit. On the roster, not an associate. No flag was raised. The 9.5 unit of salt owed out on s194 stays open."
+     }
+    ]
    },
    {
     "customer": "CS6-PER",
@@ -5874,9 +5898,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-24T15:00:19.598Z",
+  "QUEUE_COMMITTED": "2026-09-24T15:05:51.848Z",
   "PRICING": {
-   "takenAt": "2026-09-24T15:01:37.695Z",
+   "takenAt": "2026-09-24T15:07:58.358Z",
    "sizes": [
     0.5,
     1,
@@ -7405,12 +7429,12 @@
        "repl": 7.58,
        "freightRate": 0.2437,
        "leak": {
-        "ratio": 0.3182,
-        "leak": 35,
-        "sold": 110,
-        "cycles": 2,
+        "ratio": 0.5833,
+        "leak": 70,
+        "sold": 120,
+        "cycles": 3,
         "from": "2026-08-23",
-        "to": "2026-09-19"
+        "to": "2026-09-24"
        },
        "costRule": {
         "kind": "landed",
@@ -7428,7 +7452,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.17559322033898303,
+       "shrinkRate": 0.26033898305084746,
        "avgDel": {
         "n": 14,
         "kg": 191,
@@ -7809,8 +7833,8 @@
        "shrinkRate": 0,
        "avgDel": {
         "n": 2,
-        "kg": 14,
-        "mean": 7
+        "kg": 5,
+        "mean": 2.5
        }
       },
       "policy": {
@@ -8044,11 +8068,11 @@
      "ladder": []
     }
    },
-   "v": "v832"
+   "v": "v833"
   },
   "OPEN": {
-   "at": "2026-09-24T15:01:37.994Z",
-   "count": 8,
+   "at": "2026-09-24T15:07:58.504Z",
+   "count": 9,
    "byKey": {
     "CM4-TO|2026-09-23|750": {
      "d": "2026-09-23",
@@ -8065,6 +8089,23 @@
      "deliveredOn": "2026-09-23",
      "handover": "collected",
      "key": "CM4-TO|2026-09-23|750"
+    },
+    "CM4-TO|2026-09-23|50": {
+     "d": "2026-09-23",
+     "p": "CM4-TO",
+     "dir": "S",
+     "q": 10,
+     "t": 50,
+     "cash": 50,
+     "mv": 1,
+     "st": "oweStock",
+     "oweUnits": 9,
+     "pr": "rice",
+     "rid": "s195",
+     "paidOn": "2026-09-23",
+     "deliveredOn": "2026-09-23",
+     "handover": "collected",
+     "key": "CM4-TO|2026-09-23|50"
     },
     "CR3-DAM|2026-09-22|90": {
      "d": "2026-09-22",
@@ -8195,10 +8236,10 @@
     },
     "oil": {
      "name": "Oil",
-     "onHand": 25,
-     "free": 25,
+     "onHand": 0,
+     "free": 0,
      "owedOut": 0,
-     "coverDays": 7.1,
+     "coverDays": 0,
      "rate": 3.88,
      "owedToYou": 0,
      "promised": 0,
@@ -8217,13 +8258,13 @@
     },
     "rice": {
      "name": "Rice",
-     "onHand": 86,
+     "onHand": 95,
      "free": 86,
-     "owedOut": 0,
+     "owedOut": 9,
      "coverDays": 98.9,
      "rate": 0.87,
      "owedToYou": 0,
-     "promised": 0,
+     "promised": 9,
      "short": 0
     },
     "spare": {
@@ -8240,12 +8281,12 @@
    },
    "countedOn": {
     "salt": "2026-09-23",
-    "oil": "2026-09-19",
+    "oil": "2026-09-24",
     "candy": null,
     "rice": null,
     "spare": null
    },
-   "v": "v832"
+   "v": "v833"
   }
  }
 }
