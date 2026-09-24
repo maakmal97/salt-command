@@ -265,7 +265,7 @@ export const OWNER_JS = `
     if(a.test) return [chip('mist','Test, counts nowhere')];
     if(a.account===false) return [chip('alarm','No account')];
     var out=[];
-    if(a.locked) out.push(chip('alarm','Locked'+(a.locked.until?' till '+hm(a.locked.until):'')));
+    if(a.locked) out.push(chip('alarm','Refused at '+(a.locked.from>1?a.locked.from+' addresses':'1 address')+(a.locked.until?' till '+hm(a.locked.until):'')));
     if(a.flag&&a.flag!=='clear') out.push(chip({owes:'ember', goods:'steel', refund:'brass', pend:'copper'}[a.flag]||'mist', flagLine(a)));
     out.push(a.seen&&a.seen.opens?chip('mist','Opened '+dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):'')):chip('steel','Not opened'));
     if(a.alerts) out.push(chip('verdigris','Alerts on'));
@@ -556,11 +556,14 @@ export const OWNER_JS = `
     saidOn(r, noteOf(c));
     return c;
   }
+  /* S9 fix: WHAT THE BRAKE KNOWS, NOT A LOCKED-OUT CUSTOMER. It refuses the address the misses came from, and
+     that may be anybody holding the username, so the card says an address is refused and offers the link that
+     lets the customer in if it was them, never that they are shut out. */
   function lockNeed(a){
-    var L=a.locked, s=a.seen;
-    var c=needCard('k:'+a.username, a.code||a.username, 'locked out',
-      'Ten wrong passwords from '+(L.from>1?L.from+' addresses':'one address')+'.'
-      +(L.until?' Opens again at '+hm(L.until)+'.':'')
+    var L=a.locked, s=a.seen, at=L.from>1?L.from+' addresses':'one address';
+    var c=needCard('k:'+a.username, a.code||a.username, 'refused at '+at,
+      'Ten wrong passwords '+(L.from>1?'each ':'')+'from '+at+', refused there'+(L.until?' until '+hm(L.until):'')+'.'
+      +' If it was them, a sign-in link lets them in.'
       +(s&&s.opens?' Last got in'+(howOf(s)?' '+howOf(s):'')+', '+dayMon(s.last)+'.':' Has never got in.'));
     var row=el('div','salt-approve__actions');
     c.appendChild(row);

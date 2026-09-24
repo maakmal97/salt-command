@@ -426,7 +426,7 @@ function bulletinBand(b) {
 /* S9 9.2: SALT ADMIN'S PLACES AND ITS FILTERS. The icons are drawn here, stroked like the product marks,
    and loaded from nowhere; the key is the ring with a keyhole its home-screen icon carries (9.7). */
 const ADMIN_PLACES = [["needs", "Needs you"], ["accounts", "Accounts"], ["links", "Links"], ["more", "More"]];
-const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "Owes"], ["locked", "Locked"], ["none", "No account"]];
+const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "Owes"], ["locked", "Refused"], ["none", "No account"]];
 const ADMIN_ICONS = {
   needs: '<path d="M3.8 13 L6.5 5 H17.5 L20.2 13 V19.5 H3.8 Z M3.8 13 H8.6 L9.9 15.6 H14.1 L15.4 13 H20.2"/>',
   accounts: '<circle cx="9" cy="8.6" r="3.2"/><path d="M3.4 19.6 C4.2 16.4 6.4 14.8 9 14.8 C11.6 14.8 13.8 16.4 14.6 19.6 M15.2 5.6 A3 3 0 0 1 15.4 11.6 M17.4 14.9 C19 15.6 20.1 17.2 20.6 19.6"/>',

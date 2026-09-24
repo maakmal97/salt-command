@@ -14905,10 +14905,11 @@ await (async () => {
       && await until(() => /3 things/.test(D.getElementById("nCount").textContent)),
       "Approve on the card opens the link, the card says so and the count drops: " + JSON.stringify([(card("l:" + lid) || {}).textContent, D.getElementById("nCount").textContent]));
 
-    /* the locked-out account: why, and a link in two taps, so the share never waits on the making */
+    /* the account refused at an address: why, and a link in two taps, so the share never waits on the making */
     const kc = card("k:" + uL);
-    ok(/Ten wrong passwords from one address[.] Opens again at \d\d:\d\d[.] Last got in by link, 2 Sep[.]/.test(kc.textContent),
-      "the locked card gives the cause, when it opens and how they last got in: " + kc.textContent);
+    ok(/refused at one address/.test(kc.querySelector(".salt-approve__entry").textContent) && !/locked/i.test(kc.textContent)
+      && /Ten wrong passwords from one address, refused there until \d\d:\d\d[.] If it was them, a sign-in link lets them in[.] Last got in by link, 2 Sep[.]/.test(kc.textContent),
+      "the card says an address is refused, never that the customer is locked out, with when it opens and how they last got in: " + kc.textContent);
     const sl = btn(kc, "Send a sign-in link");
     sl.click();
     ok(await until(() => sl.textContent === "Share the link") && shared.length === 0 && (await kv.list({ prefix: "ot:" })).keys.length === 1,
@@ -15000,8 +15001,8 @@ await (async () => {
     const chips = (u) => [...rowOf(u).querySelectorAll(".salt-status")].map((x) => x.textContent);
     ok(chips(uO).includes("Owes RM 272") && chips(uO).includes("Opened 14 Sep by link") && chips(uO).includes("Alerts on") && chips(uO).includes("Sent 3 Sep"),
       "a row's chips say what it owes, how and when it was last opened, that alerts are on and when it was sent: " + JSON.stringify(chips(uO)));
-    ok(chips(uL).some((t) => /^Locked till \d\d:\d\d$/.test(t)) && chips(uN).join() === "No account" && chips(uF).includes("Not opened"),
-      "a locked account, one with no account and one never opened each say so: " + JSON.stringify([chips(uL), chips(uN), chips(uF)]));
+    ok(chips(uL).some((t) => /^Refused at 1 address till \d\d:\d\d$/.test(t)) && chips(uN).join() === "No account" && chips(uF).includes("Not opened"),
+      "an account refused at an address, one with no account and one never opened each say so: " + JSON.stringify([chips(uL), chips(uN), chips(uF)]));
 
     /* a word, then each filter */
     const rq = D.getElementById("rq");

@@ -643,7 +643,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   ledger, and an eyebrow carrying the name undid that.
 - **Salt Admin opens on Needs you** (S9 9.1, the plan's section 5): one Approve card a thing that waits
   on him, its action on the card, the tap answered there. An associate's waiting link (Approve, the tier
-  it quotes, Decline); an account locked out, the cause read off the `fail:` brake by `lockedOut` (how
+  it quotes, Decline); an account refused at an address after ten wrong passwords, which may be anybody holding
+  the username and never says the customer is shut out, read off the `fail:` brake by `lockedOut` (how
   many addresses and when it opens, never an address; the count off each key's listing metadata, which the
   brake writes, never a read a key, since anyone can mint `fail:` keys) with Send a sign-in link in two taps, one to make
   it and one to share it, so the share sheet never waits on the derivation; an ID with no account (the
@@ -651,7 +652,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   nor ever opened, with **Send them in turn** (S9 9.6): each account's sign-in link is made as its turn
   opens, Share is a tap of its own, and a share that goes through ticks the account sent (the `sent:` tick
   both his devices read) before the next turn; a closed share ticks nothing and Skip leaves one for later. With
-  no share sheet, Share copies the message and only his Sent it ticks. Stage 3's Show a code joins the locked card where `showHandover` is on the page.
+  no share sheet, Share copies the message and only his Sent it ticks. Stage 3's Show a code joins the refused card where `showHandover` is on the page.
 - **Each owner app counts the other's waiting items** (S9 9.8), a figure with no link and no name. The
   desk's every-minute cron (`tellWaiting` in `src/orders.js`) tells the site what waits on the desk, the
   count its own banner reads (`ordersWaiting`), through the keyed `POST /desk/waiting` into the clear key
@@ -663,7 +664,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   system's App bar on a phone and its Desk rail from 1080px, a count beside a place that has something waiting.
 - **Accounts** (S9 9.2) is one list for what Send and Review were: the system's Inbox row an account, chips
   for where it stands, when and how it was last opened, alerts on (the `push:` keys, counted by
-  `alertsOn`), locked and no account; a search and filters (Not sent, Not opened, Owes, Locked, No
+  `alertsOn`), refused at an address and no account; a search and filters (Not sent, Not opened, Owes, Refused, No
   account) above it; a row opens the account's card (Send's), beside the list from 1080px.
 - **View as them** (S9 9.5) opens the account's own page under the master, read only: its orders and an
   associate's links come from `GET /all/orders/<username>` behind the prefix's Access check, and nothing on it
