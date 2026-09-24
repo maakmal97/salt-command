@@ -87,6 +87,13 @@ class KV {
     }), list_complete: true };
   }
 }
+/* THE CLOCK PAST A MOMENT (25 Sep 2026). The site stamps a move to the millisecond, and the desk's nudge wakes for a
+   placement or a line only on a moment LATER than the mark it holds, so a second one stamped in the first one's
+   millisecond reads as nothing new.
+   In memory a section's moves land a millisecond or less apart: S1 1.27 failed so on the Cloud commit job's runner
+   (run 36041951078) and passed in CI and on the laptop on the same commit. A section proving that a later move is
+   seen waits here first, so the state it proves is forced and never the runner's speed. */
+const clockPast = async (moment) => { while (new Date().toISOString() <= String(moment)) await new Promise((r) => setTimeout(r, 1)); };
 const assets = {
   async fetch(req) {
     const p = new URL(req.url).pathname;
@@ -28195,6 +28202,7 @@ await (async () => {
   ok(again6.hit.length === 0, "the same payment does not wake him every minute after: " + JSON.stringify(again6.hit));
 
   /* ---- THE THREE MARKS DO NOT BURY EACH OTHER ---- */
+  await clockPast(o6.at);   /* a second placement in the first one's millisecond would not move the mark at all */
   const o7 = await place6();
   await customerMove(senv6, u6, o7.id, "cancel", {});
   const both = await nudge();
@@ -29099,6 +29107,7 @@ await (async () => {
   await O.customerMove(senv, u, o.id, "pay", { amount: 190 });
   await nudge();
   const tPaid = await told();
+  await clockPast(o.at);   /* a second placement in the first one's millisecond would not move the mark, and the payment's news would stand */
   const o2 = (await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
   await nudge();
   const tPlaced2 = await told();
@@ -29603,12 +29612,15 @@ await (async () => {
   ok(shown[0] && shown[0].t === "A customer wrote" && shown[0].opt.data.url === "./desk#orders/newest",
     "so the banner says a customer wrote, and opens the card where he answers: " + JSON.stringify(shown[0] && shown[0].t));
 
-  /* A PLACEMENT WITH A NOTE IS A NEW ORDER, whose first line is the note typed with it */
+  /* A PLACEMENT WITH A NOTE IS A NEW ORDER, whose first line is the note typed with it. Both marks have to move for
+     this to prove which news wins, so the placement is stamped after the line (and so after the first placement) */
   await dkv.delete("orders:news");
+  await clockPast([o.at, n1.said].sort().pop());
   await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "", note: "call when ready" });
   const n2 = await nudgeOrders(denv);
   ok(n2.newest && n2.said && (await dkv.get("orders:news")) === null,
-    "and a new order that carries a line wakes as a new order, not as a line: " + JSON.stringify(await dkv.get("orders:news")));
+    "and a new order that carries a line wakes as a new order, not as a line: "
+      + JSON.stringify({ newest: !!n2.newest, said: !!n2.said, news: await dkv.get("orders:news") }));
 })();
 
 section("S1 1.48: Acknowledge, Approve and the notice's mode buttons wear the system's recipes, with no colour of their own");
