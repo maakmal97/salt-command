@@ -41,7 +41,12 @@ const INSIDE = "Inside you will find your statement of account, which keeps up w
   + "latest prices, and a form to place an order. If you have a question, write it on the order and I "
   + "will answer you there.";
 const KEEPIT = "Keep it on your phone: on an iPhone tap Share, then Add to Home Screen; on Android tap "
-  + "the three dots, then Install app. Tick Remember me and that device stays signed in; Log out ends it.";
+  + "the three dots, then Install app.";
+/* S1 1.3, 24 SEP 2026: ONLY WHERE THE READER REACHES THE DOOR, AND SAID WHERE IT HAPPENS. An iPhone's Home
+ * Screen app keeps its own storage, so what Safari remembered never reaches it: the sign-in is made inside
+ * the saved app. The link's message does not carry this at all, because the link route never shows the
+ * tick and nothing on it is remembered. */
+const REMEMBER = "Open it from there and sign in with Remember me ticked: it stays signed in, and Log out ends it.";
 
 /** The message a customer gets: the link and the username, and no secret. */
 export function linkMessage(row) {
@@ -49,7 +54,7 @@ export function linkMessage(row) {
     + "Open it here:\n" + row.url + "\n\n"
     + "Username: " + row.user + "\n"
     + "Your password is in a separate message.\n\n"
-    + INSIDE + "\n\n" + KEEPIT;
+    + INSIDE + "\n\n" + KEEPIT + " " + REMEMBER;
 }
 
 /** THE ONE-TIME LINK (v710, his instruction of 18 Sep 2026: the shared link signs them in). One

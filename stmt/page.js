@@ -484,7 +484,9 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<p class="sub2">It is saved as <b>Salt Counter</b>, and opens straight here.</p>'
     + '<ol><li><b>iPhone:</b> tap Share, then Add to Home Screen, then Add.</li>'
     + "<li><b>Android:</b> tap the three dots, then Install app or Add to Home screen.</li>"
-    + "<li>Open it from that icon after this. It signs you in and tells you when an order moves.</li></ol>"
+    /* S1 1.3: a saved iPhone app keeps its own storage and is not signed in by this browser, so the
+       step says where the sign-in happens rather than promising one */
+    + "<li>Open it from that icon after this and sign in there with Remember me ticked. It can tell you when an order moves.</li></ol>"
     + "</div>"
     + "</div>"
     + '<div id="barw" hidden><div class="bar">'

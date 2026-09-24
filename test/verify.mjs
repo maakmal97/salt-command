@@ -14523,6 +14523,24 @@ await (async () => {
     }
   } finally { process.off("unhandledRejection", onRej); }
 })();
+section("S1 1.3: no sentence promises a sign-in the phone does not keep");
+await (async () => {
+  /* B03 (the fallback that keeps v710) and M34, 24 SEP 2026. The door's install step said "It signs you in",
+     false on a saved iPhone app, which keeps its own storage, and false for a link customer; the one-time
+     link's message said "Tick Remember me and that device stays signed in", on a route that never shows the
+     tick. The link keeping the phone signed in is a later stage (his D1), so nothing here says "once" either. */
+  const { landingPage: lpB } = await import("../stmt/page.js");
+  const SB = await import("../stmt/send.js");
+  const row = { url: "https://site.test/s/" + "t".repeat(32), user: "27a4-gkgw" };
+  const door = lpB("", "nB", null), sign = SB.signInMessage(row), link = SB.linkMessage(row);
+  ok(!/It signs you in/.test(door) && /sign in there with Remember me ticked/.test(door),
+    "the door's install step no longer promises a sign-in, and says where to make it: in the saved app, with Remember me ticked");
+  ok(!/It signs you in/.test(sign) && !/It signs you in/.test(link), "and neither message says it either");
+  ok(!/Remember me/.test(sign) && !/stays signed in/.test(sign) && /Add to Home Screen/.test(sign),
+    "the link's message promises no remembered phone, because the link route never shows the tick: " + JSON.stringify(sign.slice(-160)));
+  ok(/Open it from there and sign in with Remember me ticked/.test(link),
+    "and the username road, which reaches the door, says the sign-in is made in the saved app");
+})();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: no three-minute lock, Remember me, and a Log out. The two halves of
@@ -18874,8 +18892,11 @@ await (async () => {
     ok(/write it on the order and I will answer you there/.test(msg),
       what + "'s message says where a question goes, which is ON AN ORDER, because that is where the "
       + "thread lives and there is no other channel to promise");
-    ok(/Add to Home Screen/.test(msg) && /Install app/.test(msg) && /Remember me/.test(msg) && /Log out/.test(msg),
-      what + "'s message carries the home screen steps for both phones, and the two switches on the door");
+    /* S1 1.3, 24 SEP 2026: the door's two switches only where the reader reaches the door. The link route
+       never shows the tick, so the link's message promising it was false (B03). */
+    ok(/Add to Home Screen/.test(msg) && /Install app/.test(msg)
+      && (what === "the link" ? !/Remember me/.test(msg) : /Remember me/.test(msg) && /Log out/.test(msg)),
+      what + "'s message carries the home screen steps for both phones, and the two switches on the door only where the reader reaches the door");
     ok(siteWords(msg) === "", what + "'s message passes the lock every word sent to a customer passes: " + siteWords(msg));
     ok(!msg.includes(row69.pw), what + "'s message carries no password, which is the rule that made the link");
   }
