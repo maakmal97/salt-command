@@ -102,6 +102,16 @@ export const saidBy = (o, who) => ((o && o.msgs) || []).filter((m) => m && m.by 
 
 const isNum = (v) => typeof v === "number" && Number.isFinite(v);
 const OKEY = (u, id) => "order:" + u + ":" + id;
+/* THE ORDER'S OWN PUT DECIDES THE ANSWER (24 Sep 2026). What is written after it (the shared marks,
+   which every move writes to the same few keys, and a request id) is best effort: KV refuses a
+   second write to one key inside a second and the put throws, which answered 500 on a move already
+   stored, and the page said "not placed" of an order that was. A put that fails here is logged and
+   the move answers with what was stored. A lost mark costs a wake, never a stage: the desk's
+   reconcile lists every minute whatever the marks say. */
+async function putSoft(env, key, value, opts) {
+  try { await env.STMT.put(key, value, opts); }
+  catch (e) { console.log("orders: " + key.split(":")[0] + " not written: " + String((e && e.message) || e)); }
+}
 
 const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
   .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -275,7 +285,7 @@ async function repeatOf(env, u, rid, id) {
   const order = await env.STMT.get(OKEY(u, seen.id), "json");
   return order ? { order } : null;
 }
-const fileRid = (env, u, rid, id) => (rid ? env.STMT.put(RID_KEY(u, rid), JSON.stringify({ id }), { expirationTtl: RID_TTL }) : null);
+const fileRid = (env, u, rid, id) => (rid ? putSoft(env, RID_KEY(u, rid), JSON.stringify({ id }), { expirationTtl: RID_TTL }) : null);
 
 export async function placeOrder(env, u, body) {
   const rid = ridOf(body), again = await repeatOf(env, u, rid);
@@ -290,9 +300,9 @@ export async function placeOrder(env, u, body) {
     history: [{ at, status: "placed", by: "customer" }] }, c.order);
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
   await fileRid(env, u, rid, id);
-  await env.STMT.put(LAST_PLACED, at);
-  await env.STMT.put(LAST_TOUCHED, at);
-  if (c.note) await env.STMT.put(LAST_SAID, at);
+  await putSoft(env, LAST_PLACED, at);
+  await putSoft(env, LAST_TOUCHED, at);
+  if (c.note) await putSoft(env, LAST_SAID, at);
   return { order };
 }
 
@@ -353,12 +363,12 @@ export async function customerMove(env, u, id, action, body) {
   } else return { error: "not found", status: 404 };
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
   await fileRid(env, u, rid, id);
-  await env.STMT.put(LAST_TOUCHED, at);
+  await putSoft(env, LAST_TOUCHED, at);
   /* v751: and a mark the desk's own nudge can read, so a line waits for him rather than for a poll */
-  if (said) await env.STMT.put(LAST_SAID, at);
+  if (said) await putSoft(env, LAST_SAID, at);
   /* v760: money in, or the order taken back. Both are things he has to act on and neither happens
      in front of him, so both wake him; choosing a rail does not. */
-  if (action === "pay" || action === "cancel") await env.STMT.put(LAST_THEIRS, at + "|" + action);
+  if (action === "pay" || action === "cancel") await putSoft(env, LAST_THEIRS, at + "|" + action);
   /* v700: a payment that completes the order is the one customer move worth waking the phone for,
      because it is the only one whose answer arrives after they have put the phone down. Every
      other move of theirs happens with the page in front of them. */
@@ -447,7 +457,7 @@ export async function deskMove(env, u, id, body) {
     order.queued = q;
     settle(order, at);
     await env.STMT.put(OKEY(u, id), JSON.stringify(order));
-    await env.STMT.put(LAST_TOUCHED, at);
+    await putSoft(env, LAST_TOUCHED, at);
     const push = await wakeCustomer(env, u);
     return { order, push };
   }
@@ -459,7 +469,7 @@ export async function deskMove(env, u, id, body) {
     if (!text) return { error: "write something first", status: 400 };
     order.msgs = ((order.msgs) || []).concat([{ at, by: "desk", text }]);
     await env.STMT.put(OKEY(u, id), JSON.stringify(order));
-    await env.STMT.put(LAST_TOUCHED, at);
+    await putSoft(env, LAST_TOUCHED, at);
     const push = await wakeCustomer(env, u);
     return { order, push };
   }
@@ -477,7 +487,7 @@ export async function deskMove(env, u, id, body) {
     order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
     settle(order, at);
     await env.STMT.put(OKEY(u, id), JSON.stringify(order));
-    await env.STMT.put(LAST_TOUCHED, at);
+    await putSoft(env, LAST_TOUCHED, at);
     const push = await wakeCustomer(env, u);
     return { order, push };
   }
@@ -498,7 +508,7 @@ export async function deskMove(env, u, id, body) {
   if (body && typeof body.note === "string" && body.note.trim()) ev.note = body.note.trim().slice(0, 200);
   order.history.push(ev);
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
-  await env.STMT.put(LAST_TOUCHED, at);
+  await putSoft(env, LAST_TOUCHED, at);
   const push = await wakeCustomer(env, u);
   return { order, push };
 }

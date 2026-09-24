@@ -17854,6 +17854,68 @@ await (async () => {
   } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
 })();
 
+section("A stored move answers as stored: the shared marks written after the order are best effort");
+await (async () => {
+  /* Stage 1 of the Counter redesign, fold 1.16. The order was put first and the shared marks after
+     it, and KV throws on a second write to one key inside a second, so a busy mark answered 500 on a
+     move already stored: the page said "The order was not placed." of an order that was, and the
+     customer placed it again. */
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  class Busy extends KV {
+    constructor() { super(); this.busy = []; }
+    async put(k, v, o) { if (this.busy.some((b) => k === b || k.startsWith(b))) throw new Error("KV PUT failed: 429 Too Many Requests"); return super.put(k, v, o); }
+  }
+  const un = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("test-secret", un);
+  const kv = new Busy();
+  await kv.put("u:" + un, JSON.stringify({ u: un, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C.makeVerifier(pw),
+    wrap: await C.wrapKey(pw, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  const senv = { STMT: kv, STMT_DESK_KEY: "desk-key" };
+  const call = async (path, body, headers) => {
+    const r = await stmtW.fetch(new Request("https://k7m3p2.example" + path,
+      { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) }), senv);
+    let b = {}; try { b = await r.json(); } catch (e) { /* a thrown Worker answers no JSON */ }
+    return { status: r.status, b };
+  };
+  const S = { "X-Stmt-Session": (await call("/open", { u: un, password: pw })).b.session };
+  const D = { "X-Stmt-Desk": "desk-key" };
+  const stored = async (id) => kv.get("order:" + un + ":" + id, "json");
+  const MARKS = [O.LAST_PLACED, O.LAST_TOUCHED, O.LAST_SAID, O.LAST_THEIRS, "rid:"];
+
+  /* ---- every mark busy: the placement still answers with the order it stored ---- */
+  kv.busy = MARKS;
+  let p = null;
+  try { p = await call("/orders", { product: "salt", qty: 2, mode: "collect", unit: 110, total: 220, week: "", note: "by noon", rid: "e5".repeat(16) }, S); }
+  catch (e) { p = { status: "threw", b: { error: String(e.message || e) } }; }
+  const placed = p.b.order ? await stored(p.b.order.id) : null;
+  ok(p.status === 200 && p.b.ok && placed && placed.status === "placed",
+    "with every shared mark refusing, a placement answers 200 with the order it stored: " + JSON.stringify({ status: p.status, error: p.b.error }));
+  if (!placed) return;
+  const id = placed.id;
+
+  /* ---- his moves, and theirs, the same ---- */
+  let ack = null, pay = null, say = null, hand = null;
+  try { ack = await call("/desk/orders/" + un + "/" + id, { status: "acknowledged" }, D); } catch (e) { ack = { status: "threw", b: {} }; }
+  try { pay = await call("/orders/" + id + "/pay", { amount: 20, method: "tngbiz", rid: "f6".repeat(16) }, S); } catch (e) { pay = { status: "threw", b: {} }; }
+  try { say = await call("/orders/" + id + "/say", { text: "thanks" }, S); } catch (e) { say = { status: "threw", b: {} }; }
+  try { hand = await call("/desk/orders/" + un + "/" + id, { handover: { units: 1 } }, D); } catch (e) { hand = { status: "threw", b: {} }; }
+  const after = await stored(id);
+  ok(ack.status === 200 && pay.status === 200 && say.status === 200 && hand.status === 200
+    && after.status === "acknowledged" && +after.paid === 20 && after.msgs.length === 2 && +after.moved === 1,
+    "an acknowledgement, a payment, a line and a handover each answer 200 with what was stored, marks refusing throughout: "
+    + JSON.stringify({ ack: ack.status, pay: pay.status, say: say.status, hand: hand.status, paid: after.paid, moved: after.moved }));
+
+  /* ---- and with the store answering, the marks are still written: best effort, not skipped ---- */
+  kv.busy = [];
+  const q = await call("/orders", { product: "salt", qty: 1, mode: "collect", unit: 110, total: 110, week: "", note: "later", rid: "a7".repeat(16) }, S);
+  const t = await call("/orders/" + id + "/pay", { amount: 10, rid: "b8".repeat(16) }, S);
+  ok(q.b.ok && (await kv.get(O.LAST_PLACED)) === q.b.order.at && (await kv.get(O.LAST_SAID)) === q.b.order.at
+    && !!(await kv.get(O.RID_KEY(un, "a7".repeat(16)))) && t.b.ok && /[|]pay$/.test(String(await kv.get(O.LAST_THEIRS))),
+    "and when the store takes them the marks and the request id are written as before: "
+    + JSON.stringify({ placed: await kv.get(O.LAST_PLACED), theirs: await kv.get(O.LAST_THEIRS) }));
+})();
+
 section("v751: a customer may write a line on an order, at placement and after, and it never reaches a ledger note");
 await (async () => {
   /* his instruction of 20 Sep 2026, and the last part of what he asked at the start of this work:
