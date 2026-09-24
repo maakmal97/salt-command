@@ -27,8 +27,9 @@
  * reference, so the pay page opens at that rail with that amount. It answers "" for anything the
  * page could not open: an unknown or suspended account, a rail it is not on or not one of the two,
  * a figure or a reference QR Command would drop. The amount and the reference are arguments,
- * never data in this file. Written in ES5 without a backslash, so the page may carry its source
- * as it is.
+ * never data in this file. Written in ES5 without a backslash, and reading only PAY_SITE and PAY,
+ * the names the page's own script gives the site and the list, so the page may carry its source
+ * (`payHref.toString()`, which leaves the `export` off) as it is.
  *
  *   node tools/paysync.mjs --sync     write stmt/pay.js from the master
  *   node tools/paysync.mjs --check    exit 1 if stmt/pay.js is not what the master produces
@@ -78,7 +79,7 @@ const PAY_HREF = [
   "/** QR Command at the account, the rail and the amount, with the username as the reference; \"\" when the page could not open it. */",
   "export function payHref(key, rail, amount, ref) {",
   "  var a = null, sen = Math.round(Number(amount) * 100);",
-  "  for (var i = 0; i < PAY_ACCOUNTS.length; i++) if (PAY_ACCOUNTS[i].key === key) a = PAY_ACCOUNTS[i];",
+  "  for (var i = 0; i < PAY.length; i++) if (PAY[i].key === key) a = PAY[i];",
   "  if (!a || a.maintenance || (rail !== \"qr\" && rail !== \"transfer\") || !a[rail]) return \"\";",
   "  if (!(sen > 0 && sen < 1e8) || !/^[A-Za-z0-9-]{1,20}$/.test(String(ref))) return \"\";",
   "  return PAY_SITE + \"/#\" + [a.key, rail, (sen / 100).toFixed(2), ref].map(encodeURIComponent).join(\"/\");",
@@ -95,6 +96,8 @@ export function renderPayJs(site, accounts) {
     + " */\n"
     + "export const PAY_SITE = " + JSON.stringify(site) + ";\n"
     + "export const PAY_ACCOUNTS = " + JSON.stringify(accounts, null, 1) + ";\n"
+    + "/* payHref reads the list as PAY, the name the page's own script gives it */\n"
+    + "const PAY = PAY_ACCOUNTS;\n"
     + PAY_HREF + "\n";
 }
 

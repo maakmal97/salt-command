@@ -134,10 +134,12 @@ export const PAY_ACCOUNTS = [
   "maintenance": false
  }
 ];
+/* payHref reads the list as PAY, the name the page's own script gives it */
+const PAY = PAY_ACCOUNTS;
 /** QR Command at the account, the rail and the amount, with the username as the reference; "" when the page could not open it. */
 export function payHref(key, rail, amount, ref) {
   var a = null, sen = Math.round(Number(amount) * 100);
-  for (var i = 0; i < PAY_ACCOUNTS.length; i++) if (PAY_ACCOUNTS[i].key === key) a = PAY_ACCOUNTS[i];
+  for (var i = 0; i < PAY.length; i++) if (PAY[i].key === key) a = PAY[i];
   if (!a || a.maintenance || (rail !== "qr" && rail !== "transfer") || !a[rail]) return "";
   if (!(sen > 0 && sen < 1e8) || !/^[A-Za-z0-9-]{1,20}$/.test(String(ref))) return "";
   return PAY_SITE + "/#" + [a.key, rail, (sen / 100).toFixed(2), ref].map(encodeURIComponent).join("/");

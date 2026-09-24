@@ -8300,11 +8300,12 @@ await (async () => {
      #<key>/<rail>/<amount>/<reference> and carries nothing that pays. Driven on a rendered fixture,
      so the live store's accounts can neither pass it nor fail it. */
   const { shipAccounts, renderPayJs, QR_REPO } = await import("../tools/paysync.mjs");
-  const src = renderPayJs("https://q.example", shipAccounts({ accounts: [
+  const accts = shipAccounts({ accounts: [
     { key: "m", name: "M", bank: "M Bank", payload: "p", acct: "a" },
     { key: "w", name: "W", bank: "W Bank", acct: "a" },
     { key: "s", name: "S", bank: "S Bank", payload: "p", acct: "a", maintenance: true },
-    { key: "j", name: "J", biller: "b", ref1: "r" }] }));
+    { key: "j", name: "J", biller: "b", ref1: "r" }] });
+  const src = renderPayJs("https://q.example", accts);
   const { payHref } = await import("data:text/javascript," + encodeURIComponent(src));
   const u = "k7m2-p9qr";
   ok(payHref("m", "transfer", 70, u) === "https://q.example/#m/transfer/70.00/k7m2-p9qr"
@@ -8317,8 +8318,19 @@ await (async () => {
     .filter((c) => payHref(...c) !== "");
   ok(wrongly.length === 0,
     "and it answers nothing for an account, a way, a figure or a reference the page could not open: " + JSON.stringify(wrongly));
-  ok(!/[\\`]|=>|\blet\b|\bconst\b/.test(payHref.toString()),
-    "its source is ES5 with no backslash or backtick, so the page can carry it inside its template literal as it is");
+  /* AS IT IS: its source, run as a classic script beside the page's own declaration of the site and the
+     list (CLIENT_JS calls the list PAY), writes the same links, so no name is missing there */
+  const decl = (/var [^;\n]*__PAY_ACCOUNTS__[^;\n]*;/.exec(readFileSync(join(REPO, "stmt", "page.js"), "utf8")) || [""])[0];
+  let paged;
+  try {
+    const f = new Function(decl.replace("__PAY_SITE__", JSON.stringify("https://q.example")).replace("__PAY_ACCOUNTS__", JSON.stringify(accts))
+      + "\n" + payHref.toString() + "\nreturn payHref;")();
+    paged = [f("m", "transfer", 70, u), f("w", "qr", 70, u)];
+  } catch (e) { paged = String(e && e.message); }
+  ok(!/[\\`]|=>|\blet\b|\bconst\b/.test(payHref.toString()) && decl.includes("__PAY_SITE__")
+    && JSON.stringify(paged) === JSON.stringify(["https://q.example/#m/transfer/70.00/k7m2-p9qr", ""]),
+    "its source is ES5 with no backslash or backtick and reads only what the page's own script declares, so the page can carry it "
+    + "inside its template literal as it is: " + JSON.stringify(paged));
 
   /* THE TWO REPOS AGREE ON THE FORMAT. QR Command's parser, lifted out of the app.js it ships, reads
      every part back; where QR Command is not on the machine (CI) this stands down. */
