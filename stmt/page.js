@@ -1533,8 +1533,10 @@ const CLIENT_JS = `
   function hisLast(o){ var m=(o.msgs||[]).filter(function(x){ return x.by==='desk'; }); return m.length?String(m[m.length-1].at||''):''; }
   function seenMark(o){ var s=seenGet(); return s.o[o.id]||(oClosed(o)?s.t:''); }
   function replyWaiting(o){ var l=hisLast(o); return !view&&!!l&&l>seenMark(o); }
-  /* shown means drawn open on a tab that is showing; his read-only view marks nothing */
-  function seeIt(o){ if(view||!o||pOrder.hidden) return; var l=hisLast(o); if(!l) return; var s=seenGet(); if((s.o[o.id]||'')>=l) return; s.o[o.id]=l; seenPut(s); }
+  /* shown means drawn open on a tab that is showing, by a tap on its row or a banner; his read-only view marks
+     nothing. An order a desk opened by itself is not shown in this sense: the order form stands above it, so its
+     thread can be a screen below the fold, and a tap on its row marks it. */
+  function seeIt(o){ if(view||!o||pOrder.hidden||draft.oAuto) return; var l=hisLast(o); if(!l) return; var s=seenGet(); if((s.o[o.id]||'')>=l) return; s.o[o.id]=l; seenPut(s); }
   function oNeeds(o){ return oOwes(o)||replyWaiting(o); }
   function oWhy(o){
     var b=[];

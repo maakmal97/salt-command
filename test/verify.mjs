@@ -21364,7 +21364,8 @@ await (async () => {
     moved: 0, status: "acknowledged", history: [], msgs: [] }, x);
   const drive = async (wide, go) => {
     const mq = { wide, fns: [] };
-    const list = () => [o(P, { status: "placed" }), o(O), o(D, { status: "done", paid: 90, moved: 1 })];
+    const list = () => [o(P, { status: "placed" }), o(O, { msgs: [{ at: "2026-09-24T05:00:00Z", by: "desk", text: "Ready on Friday." }] }),
+      o(D, { status: "done", paid: 90, moved: 1 })];
     const dom = new JSDOM(landingPage(u, "nf1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
       w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
@@ -21398,6 +21399,13 @@ await (async () => {
     turn(false);
     ok(shownOf(d) === P && d.getElementById("pOrder").classList.contains("o-open"),
       "and an order they tapped stays open when the width drops: " + JSON.stringify({ narrow: shownOf(d) }));
+  });
+  /* his reply on the order a desk opened by itself: the order form stands above it, so it may be off screen */
+  const seen = (w) => { try { return (JSON.parse(w.localStorage.getItem("salt-stmt-seen") || "null") || { o: {} }).o; } catch (e) { return {}; } };
+  const rowText = (d, id) => (d.querySelector('#pOrder [data-row="' + id + '"]') || {}).textContent || "";
+  await drive(true, async (w, d) => {
+    ok(shownOf(d) === O && !!d.querySelector("#pOrder .oscreen .salt-bubble__new") && !seen(w)[O] && /a reply for you/.test(rowText(d, O)),
+      "an order a desk opened by itself marks nothing seen: his line is New and its row still says a reply is waiting: " + JSON.stringify({ seen: seen(w), row: rowText(d, O) }));
   });
 })();
 section("v753: he answers on the order, and the words are checked on the desk before they leave it");
