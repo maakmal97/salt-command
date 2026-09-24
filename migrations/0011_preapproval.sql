@@ -8,7 +8,9 @@
 -- left pending under Approve and marked.
 --
 -- A NEW TABLE, NOT A REBUILD OF `draft`: the draft CHECK is untouched. Apply THIS FILE ALONE to the live D1, BEFORE
--- the deploy that reads it. A Worker reading a store without it answers as before D6: every row waits under Approve.
+-- the deploy that reads it. Without it the drafter spends no yes, but every tap on the order card that records one
+-- (Accept, Collected, Cash received, Received, a move offered again) answers 500 "no such table: preapproval", and
+-- Accept is the card's only road to acknowledge an order: so the deploy never goes out ahead of this file.
 
 CREATE TABLE IF NOT EXISTS preapproval (
   id          TEXT PRIMARY KEY,   -- <order id>|<stage>|<the tap's moment>
