@@ -199,7 +199,8 @@ async function handleOpen(request, env) {
      thing the secrecy rests on. */
   const who = String(request.headers.get("CF-Connecting-IP") || "local");
   const readN = async (k) => parseInt(await env.STMT.get(k) || "0", 10) || 0;
-  const bump = async (k, n) => env.STMT.put(k, String(n + 1), { expirationTtl: FAIL_TTL });
+  /* the count rides on the key's metadata as well, so lockedOut reads it off the listing (S9 fix) */
+  const bump = async (k, n) => env.STMT.put(k, String(n + 1), { expirationTtl: FAIL_TTL, metadata: { n: n + 1 } });
   const uKey = FKEY(who + ":" + u), ipKey = IPKEY(who), mKey = MKEY(who);
   const tooMany = () => json({ ok: false, error: "Too many attempts. Try again in fifteen minutes." }, 429);
 
@@ -619,14 +620,18 @@ const REM_RE = /^[A-Za-z0-9_-]{20,64}$/;
  * v499 and nothing has ever read. Codes, never names. */
 /* S9 9.1: WHO IS LOCKED OUT, read off the brake itself. fail:<address>:<username> counts the misses from
    one address and lapses fifteen minutes after the last; at MAX_FAILS that address is refused. The address
-   never leaves here: Needs you is told how many places are shut out and when the last one opens again. */
+   never leaves here: Needs you is told how many places are shut out and when the last one opens again.
+   S9 fix: THE COUNT IS READ OFF THE LISTING, from the metadata bump writes: one operation a thousand keys, never
+   a read a key. Anyone can mint fail: keys for any well-shaped username, and a read each took /all/sheet past the
+   Workers' limit on operations in one request. A key from before this carries none and lapses within fifteen
+   minutes. */
 async function lockedOut(env) {
   const out = new Map();
   let cursor;
   do {
     const page = await env.STMT.list({ prefix: "fail:", cursor });
     for (const k of page.keys) {
-      if ((parseInt(await env.STMT.get(k.name) || "0", 10) || 0) < MAX_FAILS) continue;
+      if (!(k.metadata && +k.metadata.n >= MAX_FAILS)) continue;
       const u = k.name.slice(k.name.lastIndexOf(":") + 1);
       const until = k.expiration ? new Date(k.expiration * 1000).toISOString() : null;
       const was = out.get(u) || { from: 0, until: null };

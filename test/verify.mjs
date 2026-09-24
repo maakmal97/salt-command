@@ -76,12 +76,14 @@ class KV {
     return type === "json" ? JSON.parse(raw) : raw;
   }
   async delete(k) { this.m.delete(k); }
-  /* a key written with a lapse lists its `expiration`, as real KV's listing does, so a route that
-     reads the listing to find such keys is driven by what real KV would tell it */
+  /* a key written with a lapse lists its `expiration`, and one written with metadata its `metadata`, as real KV's
+     listing does, so a route that reads the listing to find such keys is driven by what real KV would tell it */
   async list({ prefix = "" } = {}) {
     return { keys: [...this.m.keys()].filter(k => k.startsWith(prefix)).map(name => {
-      const o = this.opts.get(name);
-      return o && o.expirationTtl ? { name, expiration: Math.floor(Date.now() / 1000) + o.expirationTtl } : { name };
+      const o = this.opts.get(name), key = { name };
+      if (o && o.expirationTtl) key.expiration = Math.floor(Date.now() / 1000) + o.expirationTtl;
+      if (o && o.metadata !== undefined) key.metadata = o.metadata;
+      return key;
     }), list_complete: true };
   }
 }
@@ -14949,7 +14951,7 @@ await (async () => {
   await kv.put("seen:" + uO, JSON.stringify({ first: "2026-09-04T01:00:00Z", last: "2026-09-14T09:00:00Z", opens: 3, how: "link" }));
   await kv.put("push:" + uO + ":aa11", JSON.stringify({ endpoint: "https://push.example/a" }));
   await kv.put("push:" + uO + ":bb22", JSON.stringify({ endpoint: "https://push.example/b" }));
-  await kv.put("fail:203.0.113.7:" + uL, "10", { expirationTtl: 900 });
+  await kv.put("fail:203.0.113.7:" + uL, "10", { expirationTtl: 900, metadata: { n: 10 } });
   const TEAM = "maakmal", AUD = "aud-s9-2", KID = "kid-s9-2";
   const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
     publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
@@ -15774,6 +15776,55 @@ await (async () => {
     ok(chips(us[2]).includes("Opened 3 Sep by password") && chips(us[3]).includes("Opened 3 Sep"),
       "an open with no road recorded is the password's, and a road it does not know says none: " + JSON.stringify([chips(us[2]), chips(us[3])]));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix SEC-1: who is shut out is read off the brake's listing, so fail: keys a stranger mints never cost /all/sheet a read each");
+await (async () => {
+  /* Anyone can mint a fail: key for any well-shaped username from each address they hold, and lockedOut read every
+     one, one at a time, on every open of his page: enough of them took /all/sheet past the Workers' limit on
+     operations in one request, and Needs you and Accounts down with it. The count now rides on the key's metadata. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const kv = new KV();
+  const uL = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9-sec1", uL);
+  await kv.put("u:" + uL, JSON.stringify({ u: uL, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey("mp-s9-sec1", ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX0-LK", username: uL }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX0-LK", username: uL, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9-sec1", KID = "kid-s9-sec1";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: "mp-s9-sec1", ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    /* ten misses on CX0-LK from one address, through the Worker's own brake */
+    const from = { "content-type": "application/json", "CF-Connecting-IP": "198.51.100.96" };
+    for (let i = 0; i < 10; i++) await site("/open", { method: "POST", headers: from, body: JSON.stringify({ u: uL, password: "zzzz-zzzz-zzzz-zzzz" }) });
+    const fk = "fail:198.51.100.96:" + uL;
+    ok(JSON.stringify(kv.opts.get(fk)) === JSON.stringify({ expirationTtl: 900, metadata: { n: 10 } }),
+      "the brake writes its count onto the key's metadata as well as its value: " + JSON.stringify(kv.opts.get(fk)));
+    /* a stranger's misses on made-up usernames from many addresses, as the brake writes them */
+    for (let i = 0; i < 400; i++) await kv.put("fail:203.0.113." + (i % 250) + ":zz" + String(i).padStart(2, "0") + "-zzzz", "1", { expirationTtl: 900, metadata: { n: 1 } });
+    const gets = [], get = kv.get.bind(kv);
+    kv.get = async (k, t) => { gets.push(k); return get(k, t); };
+    const sj = await (await site("/all/sheet", { headers: { "cf-access-jwt-assertion": tok } })).json();
+    kv.get = get;
+    const lk = sj.accounts.find((a) => a.username === uL);
+    ok(sj.ok && lk && lk.locked && lk.locked.from === 1, "the account refused at one address is still found: " + JSON.stringify(lk && lk.locked));
+    ok(!gets.some((k) => k.startsWith("fail:")) && gets.length < 20,
+      "and /all/sheet reads no fail: key, so four hundred of them cost it nothing: " + JSON.stringify({ reads: gets.length, fail: gets.filter((k) => k.startsWith("fail:")).length }));
+  } finally { globalThis.fetch = realFetch; }
 })();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {

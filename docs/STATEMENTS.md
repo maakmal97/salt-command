@@ -644,7 +644,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
 - **Salt Admin opens on Needs you** (S9 9.1, the plan's section 5): one Approve card a thing that waits
   on him, its action on the card, the tap answered there. An associate's waiting link (Approve, the tier
   it quotes, Decline); an account locked out, the cause read off the `fail:` brake by `lockedOut` (how
-  many addresses and when it opens, never an address) with Send a sign-in link in two taps, one to make
+  many addresses and when it opens, never an address; the count off each key's listing metadata, which the
+  brake writes, never a read a key, since anyone can mint `fail:` keys) with Send a sign-in link in two taps, one to make
   it and one to share it, so the share sheet never waits on the derivation; an ID with no account (the
   stranger's standing link, Send off until the laptop mints it); and the accounts neither ticked sent
   nor ever opened, with **Send them in turn** (S9 9.6): each account's sign-in link is made as its turn
