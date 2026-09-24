@@ -14900,6 +14900,47 @@ await (async () => {
       "Log out unsubscribes this phone and names its endpoint and token to the site: " + JSON.stringify({ unsubscribed: st.unsubscribed, posted: st.posted }));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
+section("S1 1.43: the Notifications pane shows this phone's real state on a reopen");
+await (async () => {
+  /* L47, 24 SEP 2026. The pane said On only from this page's own memory, which every sign-in empties, so a
+     phone that was subscribed was offered Notify me again on every reopen. It is read off the phone now. */
+  const { landingPage: lpJ } = await import("../stmt/page.js");
+  const CJ = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDJ } = await import("jsdom");
+  const { webcrypto: wcJ } = await import("node:crypto");
+  const uJ = "aaaa-jjjj", devJ = "j".repeat(32), ckJ = await CJ.contentKey("2".repeat(64), uJ);
+  const envJ = await CJ.encryptWith(ckJ, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] }));
+  const drive = async (subscribed) => {
+    const dom = new JDJ(lpJ("", "nJ", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: wcJ, configurable: true }); } catch (e) { win.crypto = wcJ; }
+        const store = new Map([["salt-stmt-remember", JSON.stringify({ t: "r".repeat(32), k: Buffer.from(devJ).toString("base64"), u: uJ })]]);
+        Object.defineProperty(win, "localStorage", { configurable: true, value: {
+          getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+          removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.scrollTo = () => {};
+        win.PushManager = function () {};
+        win.Notification = { permission: "granted", requestPermission: async () => "granted" };
+        Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+          register: async () => { throw new Error("not in this test"); },
+          getRegistration: async () => ({ pushManager: { getSubscription: async () => (subscribed ? { endpoint: "https://push.example/ep-j" } : null) } }) } });
+        win.fetch = async (path) => String(path) === "/remember/open"
+          ? { ok: true, status: 200, json: async () => ({ ok: true, u: uJ, remembered: true, wrap: await CJ.wrapKey(devJ, ckJ), env: envJ, live: null, prices: null, session: "sessJaaaaaaaaaaaaaaaaaaaaaaa" }) }
+          : { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      } });
+    const D = dom.window.document;
+    const pane = () => [...D.querySelectorAll("#pOrder .pane")].find((x) => /Notifications/.test(x.textContent));
+    try {
+      for (let i = 0; i < 200 && !pane(); i++) await new Promise((r) => setTimeout(r, 25));
+      for (let i = 0; i < 8; i++) await new Promise((r) => setTimeout(r, 25));
+      const p = pane();
+      return { on: !!p && /On\. You will be told/.test(p.textContent), offer: !!p && [...p.querySelectorAll("button")].some((b) => /Notify me/.test(b.textContent)) };
+    } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
+  };
+  const yes = await drive(true), no = await drive(false);
+  ok(yes.on && !yes.offer, "a reopen on a phone with a live subscription says On and offers nothing: " + JSON.stringify(yes));
+  ok(!no.on && no.offer, "and one without a subscription still offers Notify me: " + JSON.stringify(no));
+})();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: no three-minute lock, Remember me, and a Log out. The two halves of

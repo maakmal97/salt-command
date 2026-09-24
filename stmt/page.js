@@ -1663,8 +1663,12 @@ const CLIENT_JS = `
     if(OWNER||!session) return;
     try{
       var can=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
-      if(!can||Notification.permission!=='default') return;
-      subscribePush();
+      if(!can) return;
+      if(Notification.permission==='default'){ subscribePush(); return; }
+      /* S1 1.43, 24 SEP 2026: a phone already subscribed says On. The pane read this page's own memory, which
+         every sign-in empties, so a subscribed phone was offered Notify me again. */
+      var mine=ticket;
+      if(Notification.permission==='granted') phoneSub().then(function(sub){ if(sub&&mine===ticket){ draft.pushed=true; drawOrder(); } }).catch(function(){});
     }catch(e){ /* a browser that refuses to be asked is not a fault */ }
   }
 
