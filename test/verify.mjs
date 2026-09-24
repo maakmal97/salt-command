@@ -19597,6 +19597,196 @@ await (async () => {
     "with the binding and no switch, a placement, both lists, the marks and a move all stay on KV and the object is called " + idle.calls() + " times");
 })();
 
+section("S10 10.4: on the object road every move is an appended event under its device's id, and the shared marks live inside");
+await (async () => {
+  /* D10: every move on an order is an appended event carrying a device-minted id, so a retry is recorded once and
+     no writer can erase another's move; the order is the fold of its events; the marks move inside the object. */
+  const O = await import("../stmt/orders.js");
+  const SW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const road = (store) => {
+    const kv = new KV(), b = H.orderBook({});
+    return { kv, b, env: Object.assign({ STMT: kv, STMT_DESK_KEY: "desk-key" }, store ? { ORDERBOOK: b.ns, ORDER_STORE: store } : {}) };
+  };
+  const A = road("object"), un = "e5f6-g7h8", un2 = "j2k3-m4n5";
+  const tokA = await O.mintSession(A.env, un), tokB = await O.mintSession(A.env, un2);
+  const call = async (env, tok, path, body) => {
+    const h = tok === "desk" ? { "X-Stmt-Desk": "desk-key" } : { "X-Stmt-Session": tok };
+    const r = await SW.fetch(new Request("https://k7m3p2.example" + path, body === undefined ? { headers: h }
+      : { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(body) }), env);
+    return { status: r.status, b: await r.json() };
+  };
+  const rid = (s) => s.repeat(16).slice(0, 32);
+  const rows = (sql, ...b) => A.b.db.prepare(sql).all(...b);
+
+  /* ---- a morning's moves, each tap sent twice under its own id ---- */
+  const place = { product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, week: "2026-09-21", note: "for Friday" };
+  const p1 = await call(A.env, tokA, "/orders", Object.assign({ rid: rid("a1") }, place));
+  const p2 = await call(A.env, tokA, "/orders", Object.assign({ rid: rid("a1") }, place));
+  const id = p1.b.order.id;
+  await call(A.env, "desk", "/desk/orders/" + un + "/" + id, { status: "acknowledged" });
+  const twice = async (path, body) => [await call(A.env, tokA, path, body), await call(A.env, tokA, path, body)];
+  const m = await twice("/orders/" + id + "/method", { method: "tngbiz", rid: rid("b2") });
+  const y = await twice("/orders/" + id + "/pay", { amount: 50, rid: rid("c3") });
+  await call(A.env, tokA, "/orders/" + id + "/pay", { amount: 30, rid: rid("d4") });
+  const s = await twice("/orders/" + id + "/say", { text: "is it ready?", rid: rid("e5") });
+  await call(A.env, "desk", "/desk/orders/" + un + "/" + id, { message: "Friday morning" });
+  await call(A.env, "desk", "/desk/orders/" + un + "/" + id, { handover: { units: 1 } });
+  await call(A.env, "desk", "/desk/orders/" + un + "/" + id, { mark: { ack: "2026-09-24T01:00:00.000Z", paid: 80, ledgerKey: "ZZ9-TST|2026-09-24|120" } });
+  const led = await call(A.env, "desk", "/desk/orders/" + un + "/" + id, { ledger: { paid: 120 } });
+  const q2 = await call(A.env, tokA, "/orders", Object.assign({ rid: rid("f6") }, place, { note: "" }));
+  const w = await twice("/orders/" + q2.b.order.id + "/cancel", { rid: rid("g7") });
+
+  const evs = rows("SELECT eid, kind, u, oid FROM ev ORDER BY seq");
+  const byKind = evs.reduce((a, e) => (a[e.kind] = (a[e.kind] || 0) + 1, a), {});
+  ok(p2.b.ok && p2.b.order.id === id && m[1].b.ok && y[1].b.ok && s[1].b.ok && w[1].status === 200 && w[1].b.ok && w[1].b.order.status === "cancelled",
+    "every retried tap is answered as recorded, a withdrawal included, which answered 409 of itself before: "
+    + JSON.stringify([p2.status, m[1].status, y[1].status, s[1].status, w[1].status, w[1].b.error]));
+  ok(JSON.stringify(byKind) === JSON.stringify({ place: 2, status: 2, method: 1, pay: 2, say: 2, handover: 1, mark: 1, ledger: 1 }),
+    "each tap is ONE event however often it is sent: " + JSON.stringify(byKind));
+  ok(evs.filter((e) => e.eid.startsWith("c:" + un + ":")).length === 7 && evs.filter((e) => e.eid.startsWith("s:")).length === 5
+    && evs.some((e) => e.eid === "c:" + un + ":" + id + ":" + rid("c3")),
+    "a customer's event is filed under the device's own id and a desk move under one the book mints: " + JSON.stringify(evs.map((e) => e.eid.slice(0, 2))));
+  const done = (await call(A.env, tokA, "/orders")).b.orders.find((o) => o.id === id);
+  ok(led.b.ok && done.status === "done" && +done.paid === 120 && done.payments.length === 2 && done.msgs.length === 3,
+    "and the order folds to what those taps mean: paid 120 in two payments and the book's figure, three lines, complete: "
+    + JSON.stringify({ status: done.status, paid: done.paid, payments: done.payments.length, msgs: done.msgs.length }));
+
+  /* ---- the order IS the fold of its events: replayed from nothing, every event in order, it is the stored order ---- */
+  const drift = rows("SELECT u, oid, doc FROM ord").filter((r) => {
+    let o = null;
+    for (const e of rows("SELECT body FROM ev WHERE u = ? AND oid = ? ORDER BY seq", r.u, r.oid)) o = O.applyEvent(o, JSON.parse(e.body)).order;
+    return JSON.stringify(o) !== r.doc;
+  });
+  ok(rows("SELECT oid FROM ord").length === 2 && drift.length === 0, "every stored order is the fold of its own events, replayed from nothing: " + JSON.stringify(drift.map((r) => r.oid)));
+
+  /* ---- the shared marks live inside, and the desk reads them where they are ---- */
+  const last = (await call(A.env, "desk", "/desk/orders/last")).b;
+  const meta = Object.fromEntries(rows("SELECT k, v FROM meta").map((r) => [r.k, r.v]));
+  ok(last.ok && last.last === meta["last-placed"] && last.touched === meta["last-touched"] && last.said === meta["last-said"]
+    && last.theirs === meta["last-theirs"] && /[|]cancel$/.test(last.theirs) && !!last.last && !!last.said,
+    "the marks the desk asks for every minute are the object's own: " + JSON.stringify({ last, meta }));
+  const stray = [...A.kv.m.keys()].filter((k) => /^(order:|rid:|last-|chased:)/.test(k));
+  ok(stray.length === 0, "and nothing of an order, a request id or a shared mark is written to KV on the object road: " + JSON.stringify(stray));
+
+  /* ---- the chase mark lives inside too: one wake an hour, the second tick held ---- */
+  const adv = await call(A.env, tokB, "/orders", { product: "salt", qty: 2, mode: "collect", unit: 110, total: 220, rid: rid("h8") });
+  await call(A.env, "desk", "/desk/orders/" + un2 + "/" + adv.b.order.id, { status: "acknowledged" });
+  await call(A.env, "desk", "/desk/orders/" + un2 + "/" + adv.b.order.id, { handover: { units: 2 } });
+  const logs = [], realLog = console.log;
+  const tick = async (iso) => { const ws = []; await SW.scheduled({ scheduledTime: Date.parse(iso) }, A.env, { waitUntil: (p) => ws.push(p) }); await Promise.all(ws); };
+  console.log = (...x) => logs.push(x.join(" "));
+  try { await tick("2026-09-24T03:05:00Z"); await tick("2026-09-24T03:40:00Z"); } finally { console.log = realLog; }
+  const hour = O.hourOf("2026-09-24T03:05:00Z");
+  const ch = logs.filter((l) => /^chase: /.test(l)).map((l) => JSON.parse(l.slice(7)));
+  ok(ch.length === 2 && ch[0].quiet + ch[0].woke === 1 && ch[1].held === 1 && (rows("SELECT v FROM meta WHERE k = ?", "chased:" + un2)[0] || {}).v === String(hour)
+    && !A.kv.m.has(O.CHASE_KEY(un2)),
+    "the chase reads its mark inside the object: woken once in the hour, held the second time, and no chased: key in KV: " + JSON.stringify(ch));
+
+  /* ---- his test account, unmade, takes its orders out of the book ---- */
+  const before = rows("SELECT oid FROM ord WHERE u = ?", un2).length;
+  const gone = await O.dropOrders(A.env, un2);
+  ok(before === 1 && gone === 1 && rows("SELECT oid FROM ord WHERE u = ?", un2).length === 0 && rows("SELECT eid FROM ev WHERE u = ?", un2).length === 0
+    && rows("SELECT oid FROM ord WHERE u = ?", un).length === 2, "dropping an account's orders takes them and their events, and nobody else's");
+
+  /* ---- THE SAME ANSWERS ON BOTH ROADS: the customer's routes and the relay keep their shape ---- */
+  const script = async (R) => {
+    const t = await O.mintSession(R.env, un), out = [];
+    const go = async (tok, path, body) => { const r = await call(R.env, tok, path, body); out.push([path.replace(/\d{14}-[a-z0-9]+/g, "ID"), r.status, r.b]); return r; };
+    const a = await go(t, "/orders", Object.assign({ rid: rid("p1") }, place));
+    await go(t, "/orders", Object.assign({ rid: rid("p1") }, place));
+    await go(t, "/orders", { product: "salt", qty: 0, mode: "collect", unit: 1, total: 1 });
+    const oid = a.b.order.id, P = "/desk/orders/" + un + "/" + oid;
+    await go(t, "/orders/" + oid + "/pay", { amount: 10, method: "tngbiz", rid: rid("p2") });
+    await go("desk", P, { status: "acknowledged", delivery: 5 });
+    await go("desk", P, { status: "placed" });
+    await go(t, "/orders/" + oid + "/method", { method: "cod" });
+    await go(t, "/orders/" + oid + "/method", { method: "transfer", account: "nope" });
+    await go(t, "/orders/" + oid + "/pay", { amount: 500, method: "tngbiz" });
+    await go(t, "/orders/" + oid + "/pay", { amount: 40, method: "tngbiz", rid: rid("p3") });
+    await go(t, "/orders/" + oid + "/pay", { amount: 40, method: "tngbiz", rid: rid("p3") });
+    await go(t, "/orders/" + oid + "/say", { text: "  hello   there " });
+    await go("desk", P, { message: "hi" });
+    await go("desk", P, { handover: { units: 2 } });
+    await go("desk", P, { handover: { units: 1, mode: "deliver" } });
+    await go("desk", P, { mark: { ack: "2026-09-24T01:00:00.000Z", sync: { state: "queued", why: "" } } });
+    await go("desk", P, { ledger: { paid: 10 } });
+    await go("desk", P, { ledger: { paid: 80 } });
+    await go(t, "/orders/" + oid + "/cancel", {});
+    await go("desk", "/desk/orders/" + un + "/20260101000000-zz", { status: "acknowledged" });
+    await go(t, "/orders");
+    await go("desk", "/desk/orders?all=1");
+    await go("desk", "/desk/orders?work=1");
+    return JSON.stringify(out).replace(/\d{14}-[a-z0-9]{1,8}/g, "ID").replace(/"\d{4}-\d{2}-\d{2}T[\d:.]+Z"/g, '"T"').replace(/"\d{4}-\d{2}-\d{2}"/g, '"D"');
+  };
+  const onKv = await script(road(null)), onObj = await script(road("object"));
+  let at = 0; while (at < onKv.length && onKv[at] === onObj[at]) at++;
+  ok(onKv.length > 2000 && onKv === onObj,
+    "twenty-three calls, refusals and repeats among them, answer the same on the KV road and the object road"
+    + (onKv === onObj ? "" : ": first difference at " + at + ": kv " + onKv.slice(at - 60, at + 80) + " | object " + onObj.slice(at - 60, at + 80)));
+
+  /* ---- the page sends an id with Withdraw, Send and Confirm; a retry carries it, a recorded move drops it ---- */
+  const { JSDOM: JD } = await import("jsdom");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const pw = C.newPassword(), ck = await C.contentKey("test-secret", un);
+  const ord = { id: "20260918000000-aa11", product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, at: "2026-09-18T01:00:00Z",
+    status: "acknowledged", paid: 0, moved: 0, delivery: 0, history: [], msgs: [] };
+  const body = { ok: true, wrap: await C.wrapKey(pw, ck), session: "fixture-session-token-s10-abcdefgh",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const sent = { cancel: [], say: [], method: [] };
+  let pass = false;
+  const answer = (status, j) => ({ ok: status === 200, status, json: async () => j });
+  const kvP = new KV();
+  const dom = new JD(await (await SW.fetch(new Request("https://k7m3p2.example/?u=" + un), { STMT: kvP })).text(),
+    { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {}; win.confirm = () => true;
+      win.fetch = async (path, init) => {
+        const p = String(path), mth = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
+        if (p === "/open") return answer(200, body);
+        if (p === "/orders" && mth === "GET") return answer(200, { ok: true, orders: [ord] });
+        const k = (/[/](cancel|say|method)$/.exec(p) || [])[1];
+        if (k) { sent[k].push(j); return pass ? answer(200, { ok: true, order: ord }) : answer(500, { ok: false }); }
+        return answer(404, { ok: false });
+      };
+    } });
+  const d = dom.window.document;
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const btn = (t) => [...d.querySelectorAll("#pOrder button")].find((b) => b.textContent === t && !b.disabled);
+  /* each tap waits for its answer to be drawn: Withdraw has no busy state, and a second tap while the first is in
+     flight is the same tap, rightly under the same id, which is not what this counts */
+  const tap = async (t, k, n) => { await until(() => btn(t)); btn(t).click(); await until(() => sent[k].length === n);
+    await new Promise((r) => setTimeout(r, 120)); await until(() => btn(t)); };
+  try {
+    d.getElementById("un").value = un; d.getElementById("pw").value = pw;
+    d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => d.querySelector('button[data-t="order"]'));
+    d.querySelector('button[data-t="order"]').click();
+    await until(() => d.querySelector('#pOrder input[name="pm-' + ord.id + '"][value="tngbiz"]'));
+    const r = d.querySelector('#pOrder input[name="pm-' + ord.id + '"][value="tngbiz"]');
+    r.checked = true; r.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+    await tap("Confirm", "method", 1); await tap("Confirm", "method", 2);
+    const say = () => d.querySelector('#pOrder input[data-say="' + ord.id + '"]');
+    const type = async (t) => { await until(say); say().value = t; say().dispatchEvent(new dom.window.Event("input", { bubbles: true })); };
+    await type("is it ready?"); await tap("Send", "say", 1); await type("is it ready?"); await tap("Send", "say", 2);
+    await type("is it ready now?"); await tap("Send", "say", 3);
+    await tap("Withdraw this order", "cancel", 1); await tap("Withdraw this order", "cancel", 2);
+    pass = true;
+    await tap("Withdraw this order", "cancel", 3); await tap("Withdraw this order", "cancel", 4);
+    await type("thanks"); await tap("Send", "say", 4); await type("thanks"); await tap("Send", "say", 5);
+    const ids = (k) => sent[k].map((x) => x && x.rid);
+    const good = (a) => a.every((x) => O.RID_RE.test(x || ""));
+    const mi = ids("method"), si = ids("say"), ci = ids("cancel");
+    ok(good(mi) && mi.length === 2 && mi[1] === mi[0], "Confirm sends an id, and tapped again after it failed, the same one: " + JSON.stringify(mi));
+    ok(good(si) && si.length === 5 && si[1] === si[0] && si[2] !== si[0] && si[4] !== si[3],
+      "Send sends an id per line: the same line again carries it, another line a new one, and a line once recorded never lends its id to the next: " + JSON.stringify(si));
+    ok(good(ci) && ci.length === 4 && ci[1] === ci[0] && ci[2] === ci[0] && ci[3] !== ci[0],
+      "Withdraw sends an id, carries it through every retry, and drops it once recorded: " + JSON.stringify(ci));
+  } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
+})();
+
 section("v751: a customer may write a line on an order, at placement and after, and it never reaches a ledger note");
 await (async () => {
   /* his instruction of 20 Sep 2026, and the last part of what he asked at the start of this work:

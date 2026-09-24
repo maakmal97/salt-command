@@ -356,9 +356,12 @@ acknowledged (the owner: agreed, the delivery charge set, and the row queued), r
 deliver (the owner), done (**neither side's tap**: what the record reads once both tracks are
 complete), declined (the owner), cancelled (either side, at any stage until the goods move).
 
-**A RETRY LANDS ONCE** (24 Sep 2026). Place and I have paid carry a request id the page mints per
-review and per payment; the site files `rid:<username>:<rid>` for a day naming the order and answers a
-repeat with that order, changing nothing. Best effort, KV being eventually consistent.
+**A RETRY LANDS ONCE** (24 Sep 2026). Every move the page sends carries a request id it mints per
+tap (per review, per payment, per line, per withdrawal, per rail; S10 10.4), kept with that move until
+it is recorded. On the KV road Place and I have paid are the ids honoured: the site files
+`rid:<username>:<rid>` for a day naming the order and answers a repeat with that order, changing
+nothing, best effort. On the object road every move is an event filed under its id for good
+(`stmt/orderbook.js`), so any repeat is found for certain.
 **The order's own put decides the answer**: what is written after it (the shared marks
 `last-placed`, `last-touched`, `last-said`, `last-theirs`, and the request id) is best effort, logged
 when KV refuses it, so a stored move never answers as a failure. A lost mark costs a wake, not a stage.

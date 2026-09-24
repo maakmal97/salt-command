@@ -1245,6 +1245,12 @@ const CLIENT_JS = `
   }
   /* one id a review and one a payment, sent with the tap, so a retry of that tap is recorded once */
   function mintRid(){ var a=crypto.getRandomValues(new Uint8Array(16)), s=''; for(var i=0;i<a.length;i++) s+=(a[i]<16?'0':'')+a[i].toString(16); return s; }
+  /* S10 10.4: AND ONE FOR EVERY OTHER MOVE, a withdrawal, a line and a rail. An id stays with the move it was
+     minted for (the same line, the same rail), so a retry of that tap is the same event and is recorded once;
+     it is dropped when the move is recorded, and anything else is a new move with a new id. */
+  var rids={};
+  function ridFor(key,what){ var r=rids[key]; if(!r||r.what!==what){ r=rids[key]={id:mintRid(),what:what}; } return r.id; }
+  function ridDone(key){ delete rids[key]; }
   function quoteFor(){
     var p=prices&&prices.products&&prices.products.filter(function(x){return x.product===draft.product;})[0];
     if(!p) return null;
@@ -1485,8 +1491,9 @@ const CLIENT_JS = `
         var wb=el('button','btn quiet salt-ghost','Withdraw this order'); wb.type='button';
         wb.addEventListener('click', async function(){
           if(!confirm(paid>0?'Withdraw this order? The '+rm(paid)+' you paid is refunded.':'Withdraw this order?')) return;
-          var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{});
+          var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel','')});
           if(mine!==ticket) return;
+          if(r.body.ok) ridDone(o.id+':cancel');
           tapSaid(o,'withdraw',r.body.ok?'':(r.body.error||'It could not be withdrawn.'));
           await loadOrders(); if(mine!==ticket) return; drawOrder();
         });
@@ -1519,11 +1526,11 @@ const CLIENT_JS = `
       var t=String(si.value||'').trim();
       if(!t||sg.disabled) return;
       sg.disabled=true; var mine=ticket;
-      var r=await api('/orders/'+o.id+'/say',{text:t});
+      var r=await api('/orders/'+o.id+'/say',{text:t,rid:ridFor(o.id+':say',t)});
       if(mine!==ticket) return;
       sg.disabled=false;
       if(!r.body.ok) tapSaid(o,'say',r.body.error||'It was not sent.');
-      else { tapSaid(o,'say',''); if(draft.says) delete draft.says[o.id]; await loadOrders(); if(mine!==ticket) return; }
+      else { ridDone(o.id+':say'); tapSaid(o,'say',''); if(draft.says) delete draft.says[o.id]; await loadOrders(); if(mine!==ticket) return; }
       drawOrder();
     });
     sayw.appendChild(si); sayw.appendChild(sg);
@@ -1572,9 +1579,9 @@ const CLIENT_JS = `
     var cb=el('button','btn salt-pill salt-pill--md','Confirm'); cb.type='button'; cb.disabled=!ok;
     cb.addEventListener('click', async function(){
       if(!ok) return; var mine=ticket;
-      var r=await api('/orders/'+encodeURIComponent(o.id)+'/method',{method:cur.method,account:cur.account||undefined});
+      var r=await api('/orders/'+encodeURIComponent(o.id)+'/method',{method:cur.method,account:cur.account||undefined,rid:ridFor(o.id+':method',cur.method+' '+(cur.account||''))});
       if(mine!==ticket) return;
-      if(!r.body.ok) tapSaid(o,'pay',r.body.error||'The choice was not recorded.'); else { tapSaid(o,'pay',''); delete pick[o.id]; }
+      if(!r.body.ok) tapSaid(o,'pay',r.body.error||'The choice was not recorded.'); else { ridDone(o.id+':method'); tapSaid(o,'pay',''); delete pick[o.id]; }
       await loadOrders(); if(mine!==ticket) return; drawOrder();
     });
     box.appendChild(cb);

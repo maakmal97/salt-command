@@ -13,6 +13,11 @@
  * that names the account is resolved on the ledger's own Worker from its own store, so nothing
  * here says which account on the book a username is.
  *
+ * WHERE IT LIVES (S10, D10, his answer of 24 Sep 2026). On the object road, in the site's one Durable
+ * Object (stmt/orderbook.js), as the fold of its events; on the KV road, the record above, read and
+ * written back whole. ORDER_STORE chooses (`onBook`). ONE STATE MACHINE FOR BOTH: every move is checked
+ * by a decide* function and folded by applyEvent, below, so the two roads cannot disagree about a rule.
+ *
  * THE STATES, AND WHO MOVES THEM:
  *   placed        the customer, on the page
  *   acknowledged  the owner, from the phone: agreed, the delivery charge set, and the moment the
@@ -116,6 +121,31 @@ async function putSoft(env, key, value, opts) {
 const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
   .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
+/* ---- THE ROAD (S10, D10) ----------------------------------------------------------------------
+ * ORDER_STORE in wrangler.stmt.jsonc, with the ORDERBOOK binding present:
+ *   unset, or "kv"   the KV road: every order a record under order:, read and written back whole
+ *   "object..."      the object road: every order in the one Durable Object, as appended events
+ * The object is one name for the whole site, BOOK_NAME, so every request reaches the same one. */
+export const BOOK_NAME = "site";
+export const onBook = (env) => !!(env && env.ORDERBOOK) && /^object/.test(String(env.ORDER_STORE || ""));
+/* the object's own words for a store it cannot reach, and nothing else: a move is never answered as
+   stored when it was not, and never retried here, because a retry is the page's, carrying its own id */
+export const BOOK_BUSY = "Orders could not be reached just now. Try again in a minute.";
+async function book(env, op, a) {
+  const stub = env.ORDERBOOK.get(env.ORDERBOOK.idFromName(BOOK_NAME));
+  const r = await stub.fetch("https://orderbook/" + op, {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(a || {}) });
+  return r.json();
+}
+/* a move on the object road: its answer, or the store's refusal as the route's own */
+async function bookMove(env, op, a) {
+  let r;
+  try { r = await book(env, op, a); }
+  catch (e) { console.log("orders: the order book did not answer " + op + ": " + String((e && e.message) || e)); return { error: BOOK_BUSY, status: 503 }; }
+  if (!r || !r.ok) return { error: (r && r.error) || BOOK_BUSY, status: (r && r.status) || 503 };
+  return r;
+}
+
 /** A fresh session for `u`: the token is the only thing the page holds after the password. */
 /* v692: the session is dropped when a reader logs out, rather than left to expire. The page used
    to forget its token and the record sat in the store for the rest of its fifteen minutes. */
@@ -152,9 +182,15 @@ async function listOrders(env, prefix) {
   } while (cursor);
   return out.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
 }
+/* every order on the site, newest first, from whichever store the road names */
+async function everyOrder(env) {
+  if (onBook(env)) return (await book(env, "orders", {})).orders || [];
+  return listOrders(env, "order:");
+}
 
 /** The customer's own orders, newest first. */
-export const ordersOf = (env, u) => listOrders(env, "order:" + u + ":");
+export const ordersOf = async (env, u) => (onBook(env) ? (await book(env, "orders", { u })).orders || []
+  : listOrders(env, "order:" + u + ":"));
 
 /* WHAT A CUSTOMER'S OWN PAGE IS HANDED (24 Sep 2026). The record also carries the desk's
    bookkeeping: `ledgerKey`, which names a roster code when this file says nothing here says which
@@ -179,7 +215,7 @@ export const awaitingAnswer = (o) => {
   return m.length > 0 && m[m.length - 1] && m[m.length - 1].by === "customer";
 };
 export async function allOrders(env, all) {
-  const list = await listOrders(env, "order:");
+  const list = await everyOrder(env);
   return all ? list : list.filter((o) => OPEN_STATES.includes(o.status) || awaitingAnswer(o));
 }
 
@@ -231,7 +267,7 @@ export const hourOf = (at) => Math.floor(new Date(at).getTime() / 3600000);
 /** Every customer holding an unpaid advance, with the orders that make it, newest order first. */
 export async function toChase(env) {
   const by = new Map();
-  for (const o of await listOrders(env, "order:")) {
+  for (const o of await everyOrder(env)) {
     if (!isAdvance(o)) continue;
     if (!by.has(o.u)) by.set(o.u, []);
     by.get(o.u).push(o);
@@ -239,9 +275,20 @@ export async function toChase(env) {
   return [...by.entries()].map(([u, orders]) => ({ u, orders }));
 }
 
+/* THE CHASE MARK (S10): the hour bucket a customer was last woken in. On the object road it lives in the
+   order book beside the orders it follows; on the KV road it is chased:<username>, lapsing after two hours.
+   True when this hour's wake is still to be sent, and the mark is then already written. */
+export async function markChased(env, u, hour) {
+  if (onBook(env)) return !!(await book(env, "chase", { u, hour })).fresh;
+  const mark = await env.STMT.get(CHASE_KEY(u));
+  if (mark && Number(mark) === hour) return false;
+  await env.STMT.put(CHASE_KEY(u), String(hour), { expirationTtl: 2 * 3600 });
+  return true;
+}
+
 /** Every order with a stage the ledger has not been told about, each carrying what it owes. */
 export async function ordersOwing(env) {
-  return (await listOrders(env, "order:")).map((o) => Object.assign({ work: orderWork(o) }, o))
+  return (await everyOrder(env)).map((o) => Object.assign({ work: orderWork(o) }, o))
     .filter((o) => o.work.length > 0);
 }
 
@@ -296,11 +343,13 @@ export const hasUnpaidAdvance = (orders) => (orders || []).some(
    way back, a second tap after "not placed") carries the same one. The first that lands files
    rid:<username>:<rid> for a day naming its order, and a repeat is answered with that order as it
    stands and changes nothing. KV is eventually consistent, so a repeat at another edge inside its
-   first minute may not see the key: best effort, as the one-time link is. No id, taken as before. */
+   first minute may not see the key: best effort, as the one-time link is. No id, taken as before.
+   ON THE OBJECT ROAD EVERY MOVE CARRIES ONE (S10 10.4), and it is the event's own id, unique in the
+   book for good: a repeat is found for certain, and answered with the order as it stands. */
 export const RID_RE = /^[A-Za-z0-9_-]{16,64}$/;
 export const RID_TTL = 86400;
 export const RID_KEY = (u, rid) => "rid:" + u + ":" + rid;
-const ridOf = (body) => (body && typeof body.rid === "string" && RID_RE.test(body.rid) ? body.rid : "");
+export const ridOf = (body) => (body && typeof body.rid === "string" && RID_RE.test(body.rid) ? body.rid : "");
 async function repeatOf(env, u, rid, id) {
   if (!rid) return null;
   const seen = await env.STMT.get(RID_KEY(u, rid), "json");
@@ -310,49 +359,45 @@ async function repeatOf(env, u, rid, id) {
 }
 const fileRid = (env, u, rid, id) => (rid ? putSoft(env, RID_KEY(u, rid), JSON.stringify({ id }), { expirationTtl: RID_TTL }) : null);
 
-export async function placeOrder(env, u, body) {
-  const rid = ridOf(body), again = await repeatOf(env, u, rid);
-  if (again) return again;
-  const open = (await ordersOf(env, u)).filter((o) => OPEN_STATES.includes(o.status));
+/* ---- A MOVE IS AN EVENT (S10 10.4, D10) --------------------------------------------------------
+ * Every move is checked against the order AS IT STANDS by a decide* function, and what passes is one
+ * EVENT carrying the move's resolved effect: the rail picked, the figure paid, the state reached, never
+ * the request. applyEvent folds one event into the order and reads nothing else, so an order is the fold
+ * of its events however often they are replayed. Both roads run exactly these: the KV road reads the
+ * record, applies and writes it back whole, as it always did; the order book appends the event under its
+ * id and folds it in, in one step no other writer can come between.
+ * The kinds: place, status, method, pay, say, mark, ledger, handover, and copy (an order moved in). */
+export const mintOrderId = (at) => at.replace(/[-:.TZ]/g, "").slice(0, 14) + "-"
+  + b64url(crypto.getRandomValues(new Uint8Array(4))).toLowerCase().replace(/[^a-z0-9]/g, "x");
+
+/** A placement, checked against the customer's open orders. Returns { ev } or { error }. */
+export function decidePlace(u, body, open, at) {
   const c = checkPlacement(body, open);
   if (c.error) return { error: c.error };
-  const at = new Date().toISOString();
-  const id = at.replace(/[-:.TZ]/g, "").slice(0, 14) + "-" + b64url(crypto.getRandomValues(new Uint8Array(4))).toLowerCase().replace(/[^a-z0-9]/g, "x");
-  const order = Object.assign({ id, u, at, status: "placed", paid: 0, payments: [], moved: 0, movedOn: null,
+  const order = Object.assign({ id: mintOrderId(at), u, at, status: "placed", paid: 0, payments: [], moved: 0, movedOn: null,
     msgs: c.note ? [{ at, by: "customer", text: c.note }] : [],   /* v751: the line they typed with the order is its first message */
     history: [{ at, status: "placed", by: "customer" }] }, c.order);
-  await env.STMT.put(OKEY(u, id), JSON.stringify(order));
-  await fileRid(env, u, rid, id);
-  await putSoft(env, LAST_PLACED, at);
-  await putSoft(env, LAST_TOUCHED, at);
-  if (c.note) await putSoft(env, LAST_SAID, at);
-  return { order };
+  return { ev: { kind: "place", at, order } };
 }
 
-/** The customer's own moves: a rail at ready, or a withdrawal before anything is on the road. */
-export async function customerMove(env, u, id, action, body) {
-  /* a payment already recorded under this id is answered before anything is checked, because the
-     first may have completed the order, and a repeat must not read as a refusal */
-  const rid = action === "pay" ? ridOf(body) : "", again = await repeatOf(env, u, rid, id);
-  if (again) return again;
-  const order = await env.STMT.get(OKEY(u, id), "json");
+/** The customer's own moves: a rail, a payment, a line, or a withdrawal before anything is on the road.
+ *  `mine` is their orders, which the cash rule reads. Returns { ev } or { error, status }. */
+export function decideCustomer(order, action, body, mine, at) {
   if (!order) return { error: "no such order", status: 404 };
-  const at = new Date().toISOString();
-  let done = false, said = false;
   if (action === "cancel") {
     /* v694: either side may withdraw at any stage UNTIL THE GOODS MOVE (his rule, 18 Sep 2026).
        What was paid is refunded, which the ledger raises when the cancellation folds. */
     if (["done", "cancelled", "declined"].includes(order.status)) return { error: "an order that is " + order.status + " cannot be withdrawn from here", status: 409 };
     if ((+order.moved || 0) > 0) return { error: "the goods are already with you, so this cannot be withdrawn here", status: 409 };
-    order.status = "cancelled";
-    order.history.push({ at, status: "cancelled", by: "customer" });
-  } else if (action === "method") {
+    return { ev: { kind: "status", at, status: "cancelled", by: "customer" } };
+  }
+  if (action === "method") {
     if (!PAYABLE.includes(order.status)) return { error: "payment is chosen once the order is acknowledged", status: 409 };
-    const r = pickRail(order, body, await ordersOf(env, u));
+    const r = pickRail(order, body, mine);
     if (r.error) return r;
-    order.method = r.method; order.account = r.account; order.methodAt = at;
-    order.history.push({ at, status: order.status, by: "customer", method: r.method, account: r.account });
-  } else if (action === "pay") {
+    return { ev: { kind: "method", at, method: r.method, account: r.account } };
+  }
+  if (action === "pay") {
     /* v694: THE CUSTOMER TYPES WHAT THEY PAID (his instruction, 18 Sep 2026). The site takes no
        money and no rail tells it anything, so what is recorded is their word; the figure is
        checked against the fold, and he sees the running total on his card. It accumulates, so a
@@ -364,37 +409,220 @@ export async function customerMove(env, u, id, action, body) {
     if (amount > due + 0.004) return { error: "that is more than the " + due.toFixed(2) + " outstanding on this order", status: 400 };
     let method = order.method || null, account = order.account || null;
     if (body && body.method) {
-      const r = pickRail(order, body, await ordersOf(env, u));
+      const r = pickRail(order, body, mine);
       if (r.error) return r;
       method = r.method; account = r.account;
     }
     if (!method) return { error: "choose how you are paying first", status: 400 };
-    const paid = +((+order.paid || 0) + amount).toFixed(2);
-    order.paid = paid; order.method = method; order.account = account;
-    order.payments = (order.payments || []).concat([{ at, amount: +amount.toFixed(2), method, account }]);
-    order.history.push({ at, status: order.status, by: "customer", method, account, note: "paid " + amount.toFixed(2) });
-    done = settle(order, at);
-  } else if (action === "say") {
+    return { ev: { kind: "pay", at, amount, method, account } };
+  }
+  if (action === "say") {
     /* v751: ON ANY ORDER, at any stage. A question about an order that has been withdrawn or
        completed is still a question about that order, and sending them somewhere else to ask it
        is how a conversation leaves the record it belongs to. */
     const text = cleanMsg(body && body.text, MSG_MAX);
     if (!text) return { error: "write something first", status: 400 };
     if (saidBy(order, "customer") >= MSG_CAP) return { error: "there are already " + MSG_CAP + " of your messages on this order", status: 409 };
-    order.msgs = ((order.msgs) || []).concat([{ at, by: "customer", text }]);
-    said = true;
-  } else return { error: "not found", status: 404 };
+    return { ev: { kind: "say", at, by: "customer", text } };
+  }
+  return { error: "not found", status: 404 };
+}
+/* the cash rule reads their other orders, and only a rail being picked asks it */
+const readsMine = (action, body) => action === "method" || (action === "pay" && !!(body && body.method));
+
+/** The owner's moves, from the phone through the desk's Worker. Returns { ev }, { none } when there is
+ *  nothing to record, or { error, status }. */
+export function decideDesk(order, body, at) {
+  if (!order) return { error: "no such order", status: 404 };
+  /* v694: the desk's own bookkeeping, not a move. It is what the ledger has been told, written
+     back by the reconcile the moment it queues a stage, and it is the only thing that stops a
+     stage being queued twice. It never moves the order and never wakes anybody. */
+  if (body && body.mark) {
+    const m = body.mark, c = {};
+    if (typeof m.ledgerKey === "string" && m.ledgerKey) c.ledgerKey = m.ledgerKey;
+    for (const k of ["ack", "cancel"]) if (m[k]) c[k] = String(m[k]).slice(0, 40);
+    for (const k of ["paid", "moved"]) if (typeof m[k] === "number" && Number.isFinite(m[k])) c[k] = +m[k].toFixed(3);
+    /* 20 Sep 2026: and what the desk made of its last pass over this order, so his card can say the
+       truth: queued, waiting for its row, or failed, with the reason and when it was last written. The
+       desk writes it only when it changes. It never reaches the customer's page, which reads history
+       and figures alone. `rejected` (24 Sep 2026) is his own Reject under Approve on a row this order made. */
+    if (m.sync && typeof m.sync === "object" && ["queued", "waiting", "failed", "rejected"].includes(m.sync.state))
+      c.sync = { state: m.sync.state, why: String(m.sync.why || "").slice(0, 200), at: String(m.sync.at || at).slice(0, 40) };
+    return { ev: { kind: "mark", at, mark: c } };
+  }
+  /* v764: WHAT THE BOOK ALREADY HOLDS, COMING BACK THE OTHER WAY (his instruction of 21 Sep 2026).
+   * Money and goods are two tracks and the site has only ever heard one end of each: the customer
+   * types what they paid, he types what he handed over HERE. When he takes the payment in cash and
+   * enters it on the desk instead, this order kept saying nothing was paid, the page told them so,
+   * and the hourly chase asked them again every hour for money he already had. It happened.
+   * IT ONLY EVER RAISES. A customer's own word is never erased by a row that has not caught up, and
+   * the figure comes with the MARK moved to match, or the desk's next pass would queue an entry for
+   * a payment that is already on the row and count it twice. */
+  if (body && body.ledger) {
+    const L = body.ledger, ev = { kind: "ledger", at };
+    if (isNum(L.paid) && L.paid > (+order.paid || 0) + 0.004) ev.paid = L.paid;
+    if (isNum(L.moved) && L.moved > (+order.moved || 0) + 0.0004) ev.moved = L.moved;
+    return ev.paid === undefined && ev.moved === undefined ? { none: true } : { ev };
+  }
+  /* v753: HIS ANSWER ON THE ORDER. It is a move of his like any other, so it wakes them; it is not
+     a state, so nothing about the order changes but the thread. There is no cap on his own lines: the
+     cap v751 set counts theirs, and a man answering his own customers is not a thing to ration. */
+  if (body && typeof body.message === "string") {
+    const text = cleanMsg(body.message, MSG_MAX);
+    if (!text) return { error: "write something first", status: 400 };
+    return { ev: { kind: "say", at, by: "desk", text } };
+  }
+  /* v694: what he handed over, in units, whichever way it went. It is its own step and its own
+     entry, because goods and money move apart: he may deliver before a ringgit arrives. */
+  if (body && body.handover) {
+    if (!ROWED.includes(order.status)) return { error: "nothing is handed over on an order that is " + order.status, status: 409 };
+    const n = body.handover.units;
+    if (typeof n !== "number" || !Number.isFinite(n) || n < 0 || n > order.qty + 0.004)
+      return { error: "the units handed over have to be a figure from zero to the " + order.qty + " ordered", status: 400 };
+    const ev = { kind: "handover", at, units: n };
+    if (MODES.includes(body.handover.mode)) ev.mode = body.handover.mode;
+    return { ev };
+  }
+  const status = String((body && body.status) || "");
+  if (!NEXT[status]) return { error: "not a state the desk sets", status: 400 };
+  if (!NEXT[status].includes(order.status)) return { error: "an order that is " + order.status + " cannot become " + status, status: 409 };
+  if (status === "cancelled" && (+order.moved || 0) > 0) return { error: "the goods are already out, so this cannot be cancelled", status: 409 };
+  const ev = { kind: "status", at, status, by: "desk" };
+  if ((status === "ready" || status === "acknowledged") && body && MODES.includes(body.mode)) ev.mode = body.mode;
+  /* v502: delivery is a figure the owner types; v694 moved it to the acknowledgement, because
+     that is where the order becomes a row and the row carries the charge inside its total. */
+  if (status === "acknowledged") {
+    const d = body && typeof body.delivery === "number" && Number.isFinite(body.delivery) && body.delivery >= 0 ? +body.delivery.toFixed(2) : 0;
+    ev.delivery = (ev.mode || order.mode) === "deliver" ? d : 0;
+  }
+  if (body && typeof body.note === "string" && body.note.trim()) ev.note = body.note.trim().slice(0, 200);
+  return { ev };
+}
+
+/** One event folded into the order (null before a placement). Returns { order, done }, `done` when this
+ *  event completed it. The order passed in is changed in place, except by a place or a copy. */
+export function applyEvent(order, ev) {
+  const at = ev.at;
+  let done = false;
+  if (ev.kind === "place" || ev.kind === "copy") return { order: JSON.parse(JSON.stringify(ev.order)), done };
+  if (ev.kind === "status") {
+    if (ev.mode) order.mode = ev.mode;
+    if (ev.delivery !== undefined) order.delivery = ev.delivery;
+    order.status = ev.status;
+    const h = { at, status: ev.status, by: ev.by };
+    if (ev.note) h.note = ev.note;
+    order.history.push(h);
+  } else if (ev.kind === "method") {
+    order.method = ev.method; order.account = ev.account; order.methodAt = at;
+    order.history.push({ at, status: order.status, by: "customer", method: ev.method, account: ev.account });
+  } else if (ev.kind === "pay") {
+    order.paid = +((+order.paid || 0) + ev.amount).toFixed(2); order.method = ev.method; order.account = ev.account;
+    order.payments = (order.payments || []).concat([{ at, amount: +ev.amount.toFixed(2), method: ev.method, account: ev.account }]);
+    order.history.push({ at, status: order.status, by: "customer", method: ev.method, account: ev.account, note: "paid " + ev.amount.toFixed(2) });
+    done = settle(order, at);
+  } else if (ev.kind === "say") {
+    order.msgs = ((order.msgs) || []).concat([{ at, by: ev.by, text: ev.text }]);
+  } else if (ev.kind === "mark") {
+    const m = ev.mark, q = Object.assign({}, order.queued || {});
+    if (m.ledgerKey) order.ledgerKey = m.ledgerKey;
+    for (const k of ["ack", "cancel", "paid", "moved"]) if (m[k] !== undefined) q[k] = m[k];
+    if (m.sync) order.sync = m.sync;
+    order.queued = q;
+  } else if (ev.kind === "ledger") {
+    const q = Object.assign({}, order.queued || {});
+    let told = false;
+    if (isNum(ev.paid) && ev.paid > (+order.paid || 0) + 0.004) {
+      const was = +order.paid || 0;
+      order.paid = +ev.paid.toFixed(2); q.paid = order.paid; told = true;
+      order.history.push({ at, status: order.status, by: "desk", note: "payment of " + (order.paid - was).toFixed(2) + " recorded" });
+    }
+    if (isNum(ev.moved) && ev.moved > (+order.moved || 0) + 0.0004) {
+      order.moved = +ev.moved.toFixed(3); q.moved = order.moved; told = true;
+      if (!order.movedOn) order.movedOn = klDay(at);
+      order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
+    }
+    if (told) { order.queued = q; done = settle(order, at); }
+  } else if (ev.kind === "handover") {
+    order.moved = +ev.units.toFixed(3);
+    order.movedOn = klDay(at);
+    order.movedAt = at;   /* the moment, for the desk to stamp the Correction with (20 Sep 2026) */
+    if (ev.mode) order.mode = ev.mode;
+    order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
+    done = settle(order, at);
+  }
+  return { order, done };
+}
+
+/* WHAT A MOVE TELLS THE REST OF THE SITE: the shared marks it moves, each [key, value] in the order they
+   are written, and whether it wakes the customer. A placement marks new business; every move but the
+   desk's own bookkeeping marks a change; a line of theirs marks `last-said`; money in and an order taken
+   back mark `last-theirs` (v760); his moves wake them, and of theirs only a payment that completes. */
+export function marksOf(ev, order) {
+  if (ev.kind === "mark" || ev.kind === "copy") return [];
+  const at = ev.at;
+  if (ev.kind === "place") return [[LAST_PLACED, at], [LAST_TOUCHED, at]].concat(order && order.msgs && order.msgs.length ? [[LAST_SAID, at]] : []);
+  const k = [[LAST_TOUCHED, at]];
+  if (ev.kind === "say" && ev.by === "customer") k.push([LAST_SAID, at]);
+  if (ev.kind === "pay") k.push([LAST_THEIRS, at + "|pay"]);
+  if (ev.kind === "status" && ev.by === "customer") k.push([LAST_THEIRS, at + "|cancel"]);
+  return k;
+}
+export const wakes = (ev, done) => ev.kind === "ledger" || ev.kind === "handover"
+  || ((ev.kind === "status" || ev.kind === "say") && ev.by === "desk") || (ev.kind === "pay" && done);
+
+/** The marks as the desk reads them, one question a minute (/desk/orders/last). */
+export async function orderMarks(env) {
+  if (onBook(env)) { const r = await book(env, "last", {}); return { last: r.last, touched: r.touched, said: r.said, theirs: r.theirs }; }
+  return { last: await env.STMT.get(LAST_PLACED), touched: await env.STMT.get(LAST_TOUCHED),
+    said: await env.STMT.get(LAST_SAID), theirs: await env.STMT.get(LAST_THEIRS) };
+}
+/** Every order of one account gone from the book (his test account, unmade). The KV road's keys are the caller's. */
+export async function dropOrders(env, u) {
+  if (onBook(env)) return (await book(env, "drop", { u })).dropped || 0;
+  return 0;
+}
+
+export async function placeOrder(env, u, body) {
+  if (onBook(env)) {
+    const r = await bookMove(env, "place", { u, body, rid: ridOf(body) });
+    return r.error ? r : { order: r.order };
+  }
+  const rid = ridOf(body), again = await repeatOf(env, u, rid);
+  if (again) return again;
+  const open = (await ordersOf(env, u)).filter((o) => OPEN_STATES.includes(o.status));
+  const d = decidePlace(u, body, open, new Date().toISOString());
+  if (d.error) return { error: d.error };
+  const { order } = applyEvent(null, d.ev);
+  await env.STMT.put(OKEY(u, order.id), JSON.stringify(order));
+  await fileRid(env, u, rid, order.id);
+  for (const [k, v] of marksOf(d.ev, order)) await putSoft(env, k, v);
+  return { order };
+}
+
+/** The customer's own moves: a rail at ready, or a withdrawal before anything is on the road. */
+export async function customerMove(env, u, id, action, body) {
+  if (onBook(env)) {
+    const r = await bookMove(env, "customer", { u, id, action, body, rid: ridOf(body) });
+    if (r.error) return r;
+    /* v700: a payment that completes the order is the one customer move worth waking the phone for,
+       because it is the only one whose answer arrives after they have put the phone down. Every
+       other move of theirs happens with the page in front of them. */
+    if (r.wake) await wakeCustomer(env, u);
+    return { order: r.order };
+  }
+  /* a payment already recorded under this id is answered before anything is checked, because the
+     first may have completed the order, and a repeat must not read as a refusal */
+  const rid = action === "pay" ? ridOf(body) : "", again = await repeatOf(env, u, rid, id);
+  if (again) return again;
+  const order = await env.STMT.get(OKEY(u, id), "json");
+  const d = decideCustomer(order, action, body, order && readsMine(action, body) ? await ordersOf(env, u) : [], new Date().toISOString());
+  if (d.error) return d;
+  const { done } = applyEvent(order, d.ev);
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
   await fileRid(env, u, rid, id);
-  await putSoft(env, LAST_TOUCHED, at);
-  /* v751: and a mark the desk's own nudge can read, so a line waits for him rather than for a poll */
-  if (said) await putSoft(env, LAST_SAID, at);
-  /* v760: money in, or the order taken back. Both are things he has to act on and neither happens
-     in front of him, so both wake him; choosing a rail does not. */
-  if (action === "pay" || action === "cancel") await putSoft(env, LAST_THEIRS, at + "|" + action);
-  /* v700: a payment that completes the order is the one customer move worth waking the phone for,
-     because it is the only one whose answer arrives after they have put the phone down. Every
-     other move of theirs happens with the page in front of them. */
+  /* v751: and a mark the desk's own nudge can read, so a line waits for him rather than for a poll;
+     v760: money in, or the order taken back, both things he has to act on and neither in front of him */
+  for (const [k, v] of marksOf(d.ev, order)) await putSoft(env, k, v);
   if (done) await wakeCustomer(env, u);
   return { order };
 }
@@ -434,104 +662,21 @@ const NEXT = { acknowledged: ["placed"], ready: ["acknowledged", "placed"], done
 
 /** The owner's moves, from the phone through the desk's Worker. Every change wakes the customer. */
 export async function deskMove(env, u, id, body) {
+  if (onBook(env)) {
+    const r = await bookMove(env, "desk", { u, id, body });
+    if (r.error) return r;
+    if (!r.wake) return { order: r.order };
+    const push = await wakeCustomer(env, u);
+    return { order: r.order, push };
+  }
   const order = await env.STMT.get(OKEY(u, id), "json");
-  if (!order) return { error: "no such order", status: 404 };
-  const at = new Date().toISOString();
-  /* v694: the desk's own bookkeeping, not a move. It is what the ledger has been told, written
-     back by the reconcile the moment it queues a stage, and it is the only thing that stops a
-     stage being queued twice. It never moves the order and never wakes anybody. */
-  if (body && body.mark) {
-    const m = body.mark, q = Object.assign({}, order.queued || {});
-    if (typeof m.ledgerKey === "string" && m.ledgerKey) order.ledgerKey = m.ledgerKey;
-    for (const k of ["ack", "cancel"]) if (m[k]) q[k] = String(m[k]).slice(0, 40);
-    for (const k of ["paid", "moved"]) if (typeof m[k] === "number" && Number.isFinite(m[k])) q[k] = +m[k].toFixed(3);
-    /* 20 Sep 2026: and what the desk made of its last pass over this order, so his card can say the
-       truth: queued, waiting for its row, or failed, with the reason and when it was last written. The
-       desk writes it only when it changes. It never reaches the customer's page, which reads history
-       and figures alone. `rejected` (24 Sep 2026) is his own Reject under Approve on a row this order made. */
-    if (m.sync && typeof m.sync === "object" && ["queued", "waiting", "failed", "rejected"].includes(m.sync.state))
-      order.sync = { state: m.sync.state, why: String(m.sync.why || "").slice(0, 200), at: String(m.sync.at || at).slice(0, 40) };
-    order.queued = q;
-    await env.STMT.put(OKEY(u, id), JSON.stringify(order));
-    return { order };
-  }
-  /* v764: WHAT THE BOOK ALREADY HOLDS, COMING BACK THE OTHER WAY (his instruction of 21 Sep 2026).
-   * Money and goods are two tracks and the site has only ever heard one end of each: the customer
-   * types what they paid, he types what he handed over HERE. When he takes the payment in cash and
-   * enters it on the desk instead, this order kept saying nothing was paid, the page told them so,
-   * and the hourly chase asked them again every hour for money he already had. It happened.
-   * IT ONLY EVER RAISES. A customer's own word is never erased by a row that has not caught up, and
-   * the figure comes with the MARK moved to match, or the desk's next pass would queue an entry for
-   * a payment that is already on the row and count it twice. */
-  if (body && body.ledger) {
-    const L = body.ledger, q = Object.assign({}, order.queued || {});
-    let told = false;
-    if (typeof L.paid === "number" && Number.isFinite(L.paid) && L.paid > (+order.paid || 0) + 0.004) {
-      const was = +order.paid || 0;
-      order.paid = +L.paid.toFixed(2); q.paid = order.paid; told = true;
-      order.history.push({ at, status: order.status, by: "desk", note: "payment of " + (order.paid - was).toFixed(2) + " recorded" });
-    }
-    if (typeof L.moved === "number" && Number.isFinite(L.moved) && L.moved > (+order.moved || 0) + 0.0004) {
-      order.moved = +L.moved.toFixed(3); q.moved = order.moved; told = true;
-      if (!order.movedOn) order.movedOn = klDay(at);
-      order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
-    }
-    if (!told) return { order };
-    order.queued = q;
-    settle(order, at);
-    await env.STMT.put(OKEY(u, id), JSON.stringify(order));
-    await putSoft(env, LAST_TOUCHED, at);
-    const push = await wakeCustomer(env, u);
-    return { order, push };
-  }
-  /* v753: HIS ANSWER ON THE ORDER. It is a move of his like any other, so it wakes them; it is not
-     a state, so nothing about the order changes but the thread. There is no cap on his own lines: the
-     cap v751 set counts theirs, and a man answering his own customers is not a thing to ration. */
-  if (body && typeof body.message === "string") {
-    const text = cleanMsg(body.message, MSG_MAX);
-    if (!text) return { error: "write something first", status: 400 };
-    order.msgs = ((order.msgs) || []).concat([{ at, by: "desk", text }]);
-    await env.STMT.put(OKEY(u, id), JSON.stringify(order));
-    await putSoft(env, LAST_TOUCHED, at);
-    const push = await wakeCustomer(env, u);
-    return { order, push };
-  }
-  /* v694: what he handed over, in units, whichever way it went. It is its own step and its own
-     entry, because goods and money move apart: he may deliver before a ringgit arrives. */
-  if (body && body.handover) {
-    if (!ROWED.includes(order.status)) return { error: "nothing is handed over on an order that is " + order.status, status: 409 };
-    const n = body.handover.units;
-    if (typeof n !== "number" || !Number.isFinite(n) || n < 0 || n > order.qty + 0.004)
-      return { error: "the units handed over have to be a figure from zero to the " + order.qty + " ordered", status: 400 };
-    order.moved = +n.toFixed(3);
-    order.movedOn = klDay(at);
-    order.movedAt = at;   /* the moment, for the desk to stamp the Correction with (20 Sep 2026) */
-    if (MODES.includes(body.handover.mode)) order.mode = body.handover.mode;
-    order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
-    settle(order, at);
-    await env.STMT.put(OKEY(u, id), JSON.stringify(order));
-    await putSoft(env, LAST_TOUCHED, at);
-    const push = await wakeCustomer(env, u);
-    return { order, push };
-  }
-  const status = String((body && body.status) || "");
-  if (!NEXT[status]) return { error: "not a state the desk sets", status: 400 };
-  if (!NEXT[status].includes(order.status)) return { error: "an order that is " + order.status + " cannot become " + status, status: 409 };
-  if (status === "cancelled" && (+order.moved || 0) > 0) return { error: "the goods are already out, so this cannot be cancelled", status: 409 };
-  if (status === "ready" && body && MODES.includes(body.mode)) order.mode = body.mode;
-  /* v502: delivery is a figure the owner types; v694 moved it to the acknowledgement, because
-     that is where the order becomes a row and the row carries the charge inside its total. */
-  if (status === "acknowledged") {
-    if (body && MODES.includes(body.mode)) order.mode = body.mode;
-    const d = body && typeof body.delivery === "number" && Number.isFinite(body.delivery) && body.delivery >= 0 ? +body.delivery.toFixed(2) : 0;
-    order.delivery = order.mode === "deliver" ? d : 0;
-  }
-  order.status = status;
-  const ev = { at, status, by: "desk" };
-  if (body && typeof body.note === "string" && body.note.trim()) ev.note = body.note.trim().slice(0, 200);
-  order.history.push(ev);
+  const d = decideDesk(order, body, new Date().toISOString());
+  if (d.error) return d;
+  if (d.none) return { order };
+  const { done } = applyEvent(order, d.ev);
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
-  await putSoft(env, LAST_TOUCHED, at);
+  for (const [k, v] of marksOf(d.ev, order)) await putSoft(env, k, v);
+  if (!wakes(d.ev, done)) return { order };
   const push = await wakeCustomer(env, u);
   return { order, push };
 }

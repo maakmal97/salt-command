@@ -51,7 +51,7 @@ import { FONTS } from "./fonts.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
-import { mintSession, dropSession, sessionUser, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, toChase, CHASE_KEY, hourOf } from "./orders.js";
+import { mintSession, dropSession, sessionUser, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, markChased, hourOf } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -310,7 +310,7 @@ async function handleCustomer(request, env, p, m) {
     if (m === "GET") return json({ ok: true, orders: (await ordersOf(env, u)).map(customerView) });
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const r = await placeOrder(env, u, await readJson(request));
-    return r.error ? json({ ok: false, error: r.error }, 400) : json({ ok: true, order: customerView(r.order) });
+    return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, order: customerView(r.order) });
   }
   if (p === "/push/subscribe") {
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -513,9 +513,9 @@ async function handleDesk(request, env, p, m) {
      nothing on a quiet minute */
   if (p === "/desk/orders/last") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-    return json({ ok: true, last: await env.STMT.get(LAST_PLACED), touched: await env.STMT.get(LAST_TOUCHED),
-      said: await env.STMT.get(LAST_SAID),      /* v752: and when a customer last wrote on one */
-      theirs: await env.STMT.get(LAST_THEIRS) });   /* v760: and when one last paid or took one back */
+    /* v752: and when a customer last wrote on one; v760: and when one last paid or took one back.
+       S10: from wherever the orders live (orderMarks), the shared marks moving with them */
+    return json(Object.assign({ ok: true }, await orderMarks(env)));
   }
   const mm =/^\/desk\/orders\/([^/]+)\/([^/]+)$/.exec(p);
   if (!mm) return notFound();
@@ -733,7 +733,8 @@ async function unmakeTest(env) {
     } while (cursor);
   }
   for (const k of gone) await env.STMT.delete(k);
-  return gone.length;
+  /* S10: and its orders in the order book, where they live on the object road */
+  return gone.length + await dropOrders(env, TEST_USER);
 }
 
 async function handleRefs(request, env, p, m, origin) {
@@ -1113,10 +1114,9 @@ export default {
         for (const { u } of await toChase(env)) {
           /* his own test account is counted nowhere, and that includes being chased */
           if (u === TEST_USER) continue;
-          const mark = await env.STMT.get(CHASE_KEY(u));
-          if (mark && Number(mark) === hour) { held++; continue; }
+          /* S10: the mark is read and written in one step, where the orders live (markChased) */
+          if (!(await markChased(env, u, hour))) { held++; continue; }
           const r = await wakeCustomer(env, u);
-          await env.STMT.put(CHASE_KEY(u), String(hour), { expirationTtl: 2 * 3600 });
           if (r.sent) woke++; else quiet++;
         }
         if (woke || held || quiet) console.log("chase: " + JSON.stringify({ hour, woke, held, quiet }));
