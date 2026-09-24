@@ -3198,13 +3198,14 @@ const CLIENT_JS = `
     return n<0?s+(first?'was due':'It was due')+' by '+d+'.':n===0?s+is+' today, '+d+'.':s+is+' by '+d+(n===1?', tomorrow.':', in '+n+' days.');
   }
   function unitFor(pr){ var P=prices&&prices.products&&prices.products.filter(function(x){ return x.product===pr; })[0]; return P?P.unit:'unit'; }
-  /* "The rest of [cube] 2.5 units you received Wed 16 Sep": the rest where part of the order is paid; a part to come says when it was ordered */
-  function partSpan(p,coming){
+  /* "The rest of [cube] 2.5 units you received Wed 16 Sep": the rest where part of the order is paid; a part not yet
+     received says when it was ordered. A part to come is Coming up's own row (partRow, S7 polish) */
+  function partSpan(p){
     var s=el('span');
-    if(!coming&&+p.whole>+p.rm+0.004) s.appendChild(document.createTextNode('The rest of '));
+    if(+p.whole>+p.rm+0.004) s.appendChild(document.createTextNode('The rest of '));
     s.appendChild(psym(p.product,15)); s.appendChild(el('span','sr',pshape(p.product)));
     s.appendChild(document.createTextNode(' '+unitsOf(p.qty,unitFor(p.product))+(p.resale?' on behalf of a friend':'')
-      +(!coming&&p.gotOn?' you received '+dayName(p.gotOn):(p.date?', ordered '+dayName(p.date):''))));
+      +(p.gotOn?' you received '+dayName(p.gotOn):(p.date?', ordered '+dayName(p.date):''))));
     return s;
   }
   function lrowN(node,value,flag,cls){ var r=lrow('',value,flag,cls); r.querySelector('.salt-ledger__label').appendChild(node); return r; }
@@ -3594,13 +3595,26 @@ const CLIENT_JS = `
       var c=oClaimed(o), t=o.status==='placed'?'Waiting to be confirmed':oToPay(o)>0.004?rm(oToPay(o))+' still to pay, '+payWhen(o,true):'Paid';
       box.appendChild(homeRow(o,t+(c>0?'. '+rm(c)+' sent, waiting for us to confirm':'')));
     });
-    if(more.length){
-      var C=el('div','salt-ledger salt-ledger--plain');
-      /* S6 fix: its due day, never an offer to pay now that Home has no control for */
-      more.forEach(function(p){ C.appendChild(lrowN(partSpan(p,true),rm(p.rm),'Due when you receive it')); });
-      box.appendChild(C);
-    }
+    more.forEach(function(p){ box.appendChild(partRow(p)); });
     return box;
+  }
+  /* S7 polish: ONE LIST, ONE ROW. A part no order of theirs accounts for (a row he entered on the desk) is a row of the
+     same Coming up, the system's Inbox row as every order above it is: its mark and size, then (S6 fix) its due day and
+     never an offer to pay now, which Home has no control for; the day and the figure at the side. There is no order to
+     open, so a tap opens Account, whose statement carries the row. It was stage 6's plain Ledger line under the orders. */
+  function partRow(p){
+    var b=el('button','salt-inbox-row hpart'); b.type='button';
+    var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
+    t.appendChild(withMark(p.product,unitsOf(p.qty,unitFor(p.product)),18));
+    main.appendChild(t);
+    main.appendChild(el('span','salt-inbox-row__what',(p.resale?'On behalf of a friend. ':'')+'Due when you receive it'));
+    b.appendChild(main);
+    var side=el('span','salt-inbox-row__side');
+    side.appendChild(el('span','salt-inbox-row__age',p.date?oDay(p.date):''));
+    side.appendChild(el('span','salt-inbox-row__action',rm(p.rm)));
+    b.appendChild(side);
+    b.addEventListener('click',function(){ placeShow('stmt',true); });
+    return b;
   }
   /* S7 7.4: ORDER AGAIN. A tile for each thing they have ordered (a size, a way and a place), newest first, while that size
      is still on their list, at TODAY'S price, read off the list: a tap opens the check with the same size, way and place,

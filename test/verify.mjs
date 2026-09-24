@@ -35738,6 +35738,62 @@ await (async () => {
     "below 1080px it is one column, This device under the statement: " + JSON.stringify(narrow));
 })();
 
+section("S7 polish: Home's Coming up is one list, a part he entered the same row as an order's");
+await (async () => {
+  /* After the three-way merge Coming up drew stage 7's orders as Inbox rows and then stage 6's part with no order of
+     theirs (a row he entered on the desk) as a bare Ledger line under them. homeComing owns Coming up; it now draws every
+     entry as the one Inbox row, a part that an order accounts for (its row's day, mark, size and bucket) is drawn once, as
+     that order, and a part's row opens Account, where the statement carries it. Forced state: two orders, one of them
+     the site's copy of a sealed part, and two parts with no order, one on behalf of a friend. */
+  const { landingPage, MON3 } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-pol1", ck = await C.contentKey("test-secret", u);
+  const coming = [{ date: "2026-09-16", rm: 250, product: "salt", qty: 2.5, toCome: 2.5, resale: false },
+    { date: "2026-09-17", rm: 120, product: "salt", qty: 1, toCome: 1, resale: true },
+    { date: "2026-09-18", rm: 110, product: "salt", qty: 1, toCome: 1, resale: false }];
+  const pay = { term: 10, now: { rm: 0, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 480, parts: coming } };
+  const list = await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T03:59:00Z", week: { monday: "2026-09-21", label: "21 Sep 2026" },
+    products: [{ product: "salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 110 }, { q: 2.5, price: 250 }] }], soon: [] }));
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, total: 110, history: [], msgs: [] };
+  const orders = [{ ...base, id: "oA", status: "acknowledged", at: "2026-09-18T03:00:00Z", rowOn: "2026-09-18" },
+    { ...base, id: "oP", status: "placed", at: "2026-09-23T03:00:00Z" }];
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-pol1", prices: list,
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 480, pay })) };
+  const dom = new JSDOM(landingPage(u, "npol1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path) => { const p = String(path);
+      const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders } : { ok: true };
+      return { ok: true, status: 200, json: async () => j }; };
+  } });
+  const W = dom.window, D = W.document, t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  try {
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !D.querySelector("#hComing [data-row]"); i++) await new Promise((r) => setTimeout(r, 25));
+    const box = D.getElementById("hComing"), kids = [...box.children];
+    const rows = kids.slice(1).map((r) => ({ tag: r.tagName, row: r.classList.contains("salt-inbox-row"), id: r.getAttribute("data-row") || "",
+      mark: !!r.querySelector(".salt-inbox-row__title svg.psym"), bits: ["title", "what", "age", "action"].map((s) => t(r.querySelector(".salt-inbox-row__" + s))) }));
+    ok(kids.length > 0 && t(kids[0]) === "Coming up" && kids[0].tagName === "H2" && box.querySelectorAll("h2, h3").length === 1 && !box.querySelector(".salt-ledger"),
+      "Coming up is one heading over one list, with no Ledger line beside the rows: " + JSON.stringify(kids.map((k) => k.tagName + "." + k.className.split(" ")[0])));
+    ok(rows.length === 4 && rows.every((r) => r.tag === "BUTTON" && r.row && r.mark && r.bits[0] && r.bits[2] && r.bits[3]),
+      "every entry is the system's Inbox row, a tap, with its mark and size, its day and its figure: " + JSON.stringify(rows));
+    ok(rows.map((r) => r.id).join(",") === "oA,oP,," && rows.filter((r) => r.bits[2] === "18 " + MON3[8]).length === 1,
+      "the part the site's order accounts for is drawn once, as that order; the two it does not follow the orders: " + JSON.stringify(rows.map((r) => [r.id, r.bits[2]])));
+    ok(JSON.stringify(rows.slice(2).map((r) => r.bits)) === JSON.stringify([["2.5 unitsCube", "Due when you receive it", "16 " + MON3[8], "RM 250"],
+      ["1 unitCube", "On behalf of a friend. Due when you receive it", "17 " + MON3[8], "RM 120"]]) && !/salt|Gold|Silver/i.test(t(box)),
+      "a part he entered says it is due when they receive it, never offers to pay now, and names no product: " + JSON.stringify(rows.slice(2).map((r) => r.bits)));
+    box.querySelectorAll(".salt-inbox-row")[2].click();
+    ok(!D.getElementById("pStmt").hidden && D.getElementById("pHome").hidden,
+      "a part's row opens Account, where the statement carries the row: " + ["pHome", "pStmt"].map((id) => id + ":" + D.getElementById(id).hidden).join(","));
+  } finally { W.close(); }
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read
@@ -36373,6 +36429,8 @@ await (async () => {
         tile: [".salt-kpi__label", ".salt-kpi__value", ".salt-kpi__note"].map((s) => t(h.querySelector(".salt-kpi--ember " + s))),
         pill: t(h.querySelector("button.salt-pill")), pills: h.querySelectorAll(".salt-pill").length, heads: [...h.querySelectorAll("h3"), ...c.querySelectorAll("h2")].map(t),
         rows: [...h.querySelectorAll(".salt-ledger__row"), ...c.querySelectorAll(".salt-ledger__row")].map((r) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((s) => t(r.querySelector(s)))),
+        /* S7 polish: Coming up's part is the Inbox row its orders are */
+        coming: [...c.querySelectorAll(".salt-inbox-row")].map((r) => ["title", "what", "age", "action"].map((s) => t(r.querySelector(".salt-inbox-row__" + s)))),
         marks: h.querySelectorAll("svg.psym").length + c.querySelectorAll("svg.psym").length, text: t(h) + " " + t(c) };
     } finally { dom.window.close(); }
   };
@@ -36386,11 +36444,12 @@ await (async () => {
     && one.pill === "Pay RM 70" && one.pills === 1,
     "To pay now heads Home: its figure, what it is for with the day it was received and the day it is due, and the one filled Pay: "
     + JSON.stringify([one.first, one.tile, one.pill]));
-  ok(one.heads.join() === "Coming up" && one.rows.length === 1
-    && one.rows[0].join("|") === "Cube 1 unit, ordered " + said(kl(-1)) + "|RM 110|Due when you receive it"
+  const age = (s) => s.slice(8) + " " + MON3[+s.slice(5, 7) - 1];
+  ok(one.heads.join() === "Coming up" && one.rows.length === 0 && one.coming.length === 1
+    && one.coming[0].join("|") === "1 unitCube|Due when you receive it|" + age(kl(-1)) + "|RM 110"
     && one.marks === 2 && !/salt|oil|Gold|Silver/i.test(one.text),
     "an order agreed and not yet handed over, with no order of theirs on the site for it, is Home's Coming up, drawn as a mark and never a word; one part says its due day in the line above, so no Overdue list: "
-    + JSON.stringify([one.heads, one.rows]));
+    + JSON.stringify([one.heads, one.rows, one.coming]));
   const two = await open({ term: 10,
     now: { rm: 300, due: kl(-10), parts: [part({ date: kl(-20), due: kl(-10), late: true, rm: 180, whole: 250, gotOn: kl(-20) }),
       part({ date: kl(-7), due: kl(3), rm: 120, qty: 1, got: 1, gotOn: kl(-7), resale: true })] },
