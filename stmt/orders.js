@@ -126,8 +126,9 @@ const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
  *   unset, or "kv"   the KV road: every order a record under order:, read and written back whole. Also
  *                    the way back: KV is kept current behind the object, so this is a rollback.
  *   "object+kv"      THE WEEK OF READING BOTH (10.3): every order in the one Durable Object, as appended
- *                    events; every order it changes written to its KV key behind it; a read the object
- *                    cannot answer read from KV; and the site's hourly cron compares the two (checkStores).
+ *                    events; every order it changes written to its KV key behind it, by the object; a read
+ *                    the object cannot answer read from KV; and the site's hourly cron compares the two
+ *                    (checkStores).
  *   "object"         after a clean week (10.5): KV order keys no longer written or read. Flipping it is the
  *                    whole of what is built of 10.5; deleting the old keys is not.
  * The object is one name for the whole site, BOOK_NAME, so every request reaches the same one. */
@@ -146,13 +147,13 @@ async function book(env, op, a) {
   return r.json();
 }
 /* a move on the object road: its answer, or the store's refusal as the route's own. In the week of reading
-   both, the order it changed is written to its KV key behind it, best effort: the object's answer stands. */
+   both the book itself writes the order it changed to its KV key behind it (stmt/orderbook.js): a put here,
+   a moment after the last, is the second write inside a second that KV refuses (S10 fixes R1, P1, DS2). */
 async function bookMove(env, op, a) {
   let r;
   try { r = await book(env, op, a); }
   catch (e) { console.log("orders: the order book did not answer " + op + ": " + String((e && e.message) || e)); return { error: BOOK_BUSY, status: 503 }; }
   if (!r || !r.ok) return { error: (r && r.error) || BOOK_BUSY, status: (r && r.status) || 503 };
-  if (readsBoth(env) && r.order && !r.again && !r.none) await putSoft(env, OKEY(r.order.u, r.order.id), JSON.stringify(r.order));
   return r;
 }
 /* a read on the object road; in the week of reading both, KV answers when the object cannot */

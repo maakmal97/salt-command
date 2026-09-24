@@ -33,7 +33,7 @@ export function objectState() {
     async getAlarm() { return alarm; },
     async deleteAlarm() { alarm = null; }
   };
-  return { storage, db, alarmAt: () => alarm };
+  return { storage, db, alarmAt: () => alarm, clearAlarm: () => { alarm = null; } };
 }
 
 /** An ORDERBOOK namespace over one fresh object. `env` is what the object is constructed with. The object
@@ -55,5 +55,7 @@ export function orderBook(env, opts) {
   };
   h.calls = () => calls;
   h.restart = () => { h.book = new OrderBook(state, env); return h.book; };
+  /* the alarm as the platform fires it: taken off, then run, so what the handler sets is the next one */
+  h.fire = async () => { state.clearAlarm(); await h.book.alarm(); };
   return h;
 }

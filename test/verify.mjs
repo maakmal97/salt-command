@@ -20078,7 +20078,7 @@ await (async () => {
 
     /* ---- the switch: ORDER_STORE "object+kv", generation 1, and the first request ---- */
     clock.set(T0);
-    const objEnv = { STMT: kv, ORDER_MOVE_IN: "1" };
+    const objEnv = { STMT: kv, ORDER_MOVE_IN: "1", ORDER_STORE: "object+kv" };
     const bk = H.orderBook(objEnv, { movedIn: false });
     const env = { STMT: kv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" };
     const evCount = () => bk.db.prepare("SELECT COUNT(*) AS n FROM ev").get().n;
@@ -20142,8 +20142,9 @@ await (async () => {
 
     /* ---- the week of reading both: every change written behind, and KV answers when the object cannot ---- */
     const ackB = await call(env, "desk", "/desk/orders/" + un2 + "/" + b1, { status: "acknowledged" });
+    clock.add(1100); await bk.fire();
     const behind = [un + ":" + a1, un2 + ":" + b1].every((k) => kv.m.get("order:" + k) === (bk.db.prepare("SELECT doc FROM ord WHERE u || ':' || oid = ?").get(k) || {}).doc);
-    ok(ackB.status === 200 && behind, "every order the object changes is written to its KV key behind it, as the object holds it");
+    ok(ackB.status === 200 && behind, "every order the object changes is written to its KV key behind it by the book's alarm, as the object holds it");
     const down = { idFromName: () => ({}), get: () => ({ fetch: async () => { throw new Error("the object is unreachable"); } }) };
     const denv = Object.assign({}, env, { ORDERBOOK: down });
     const kvHeld = kv.m.get("order:" + un + ":" + a1);
@@ -20250,6 +20251,93 @@ await (async () => {
       "the end of the minute is set after the start copy has finished and a whole cache life past it: " + JSON.stringify({ copied: copied - T0, end: bk.state.alarmAt() - T0 }));
     ok(paid.status === 200 && done === "1" && o.paid === 100 && o.payments.length === 1,
       "and the old code's RM 100, written at another location five seconds into the freeze, is in the book once it has moved in: " + JSON.stringify({ paid: o.paid, done }));
+  } finally { clock.uninstall(); console.log = realLog; }
+})();
+
+section("S10 fix R1: in the week of reading both the book writes KV behind itself, never twice inside a second, and a refused write is tried again, so an ordinary hour checks clean");
+await (async () => {
+  /* KV takes one write a second per key (test/kvsim.mjs, rate limit on). The desk's reconcile makes two moves on one
+     order back to back, the stage's mark and then its sync, and runs straight after his acknowledgement as well, so a
+     put after each answer met a 429 on the second and KV kept the older record until the hourly check, which named it
+     repaired and emptied cleanSince every hour an order was acknowledged. The desk's side is the real src/orders.js over
+     a stubbed D1 and binding, as in S10 10.2; every code and username is invented. */
+  const SIM = await import("../test/kvsim.mjs");
+  const H = await import("../test/orderbook-harness.mjs");
+  const SW = (await import("../stmt/worker.js")).default;
+  const SO = await import("../stmt/orders.js");
+  const DO = await import("../src/orders.js");
+  const { clock, World } = SIM;
+  const KEY = "fixture-desk-key", A = "kx7m-p2qa", CODES = { [A]: "ZX1-FIC" };
+  const T0 = Date.UTC(2026, 8, 24, 2, 0, 0);
+  const W = new World(), DESKQ = new World(), openByKey = {}, puts = [], refused = [];
+  /* the book's KV at its own location, counting the order puts it makes and refusing one when told to */
+  let refuseNext = false;
+  const bkv = W.at("SIN"), objKv = { get: (k, t) => bkv.get(k, t), list: (o) => bkv.list(o), delete: (k) => bkv.delete(k),
+    put: async (k, v, o) => {
+      if (k.startsWith("order:") && refuseNext) { refuseNext = false; refused.push(k); throw new Error("KV PUT failed: 429 Too Many Requests"); }
+      await bkv.put(k, v, o); if (k.startsWith("order:")) puts.push(k);
+    } };
+  const BK = H.orderBook({ STMT: objKv, ORDER_STORE: "object+kv" });
+  /* the platform's alarm, run at its moment whenever the clock passes it */
+  const advance = async (ms) => {
+    const target = clock.now() + ms;
+    while (BK.state.alarmAt() != null && BK.state.alarmAt() <= target) { clock.set(Math.max(clock.now(), BK.state.alarmAt())); await BK.fire(); }
+    if (clock.now() < target) clock.set(target);
+  };
+  const senv = (loc) => ({ STMT: W.at(loc), STMT_DESK_KEY: KEY, ORDERBOOK: BK.ns, ORDER_STORE: "object+kv" });
+  const call = async (loc, method, path, body, headers) => {
+    const req = new Request("https://site.example" + path, { method, body: body !== undefined ? JSON.stringify(body) : undefined,
+      headers: Object.assign(body !== undefined ? { "content-type": "application/json" } : {}, headers || {}) });
+    const r = await SW.fetch(req, senv(loc)), text = await r.text();
+    let j = null; try { j = JSON.parse(text); } catch (e) { j = null; }
+    return { status: r.status, body: j, text };
+  };
+  const stmtSite = (loc, latency) => ({ fetch: async (url, init) => {
+    await advance(latency);
+    const u = new URL(typeof url === "string" ? url : url.url);
+    const r = await call(loc, (init && init.method) || "GET", u.pathname + u.search, init && init.body ? JSON.parse(init.body) : undefined, { "X-Stmt-Desk": KEY });
+    return new Response(r.text, { status: r.status, headers: { "content-type": r.body ? "application/json" : "text/html" } });
+  } });
+  const d1 = (latency) => ({ prepare: (sql) => {
+    const res = async () => { await advance(latency);
+      return /FROM state/.test(sql) ? { results: [{ key: "OPEN", doc: JSON.stringify({ byKey: openByKey }) }] } : { results: [] }; };
+    return { bind: () => ({ all: res }), all: res, first: async () => { await advance(latency); return null; } };
+  } });
+  const deskEnv = (loc) => ({ STMT_SITE: stmtSite(loc, 150), STMT_DESK_KEY: KEY, SALT_QUEUE: DESKQ.at(loc), SALT_LEDGER: d1(300) });
+  const logs = [], realLog = console.log;
+  clock.install(); console.log = (...x) => { const l = x.join(" "); if (/^orders?(book)?:|^orderbook /.test(l)) logs.push(l); else realLog(...x); };
+  try {
+    clock.set(T0 - 600000);
+    DESKQ.rateLimit = false; await DESKQ.at("CRON").put("stmt-users", JSON.stringify(CODES)); DESKQ.rateLimit = true;
+    W.rateLimit = false; const tok = await SO.mintSession({ STMT: W.at("KUL") }, A); W.rateLimit = true;
+    const id = (await call("KUL", "POST", "/orders", { product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, week: "" }, { "X-Stmt-Session": tok })).body.order.id;
+    const bookDoc = () => BK.db.prepare("SELECT doc FROM ord WHERE u = ? AND oid = ?").get(A, id).doc;
+    const kvDoc = () => W.store.get("order:" + A + ":" + id);
+    await advance(10000);
+    /* his acknowledgement, the reconcile on his tap a tenth of a second later, and the next minute's pass */
+    const n0 = puts.length;
+    const ack = await call("KUL", "POST", "/desk/orders/" + A + "/" + id, { status: "acknowledged" }, { "X-Stmt-Desk": KEY });
+    await advance(100);
+    const rc = await DO.reconcileOrders(deskEnv("KUL"));
+    await advance(60000);
+    await DO.reconcileOrders(deskEnv("CRON"));
+    await advance(5000);
+    const b = JSON.parse(bookDoc());
+    ok(ack.status === 200 && rc.queued === 1 && b.queued && b.queued.ack && (b.sync || {}).state === "queued" && kvDoc() === bookDoc()
+      && puts.length - n0 >= 1 && !logs.some((l) => /not written/.test(l)),
+      "his acknowledgement and the reconcile's mark and sync inside a second are written behind with no put refused, and KV holds the book's order to the character: "
+      + JSON.stringify({ ack: ack.status, queued: rc.queued, writes: puts.length - n0, same: kvDoc() === bookDoc(), refused: logs.filter((l) => /not written/.test(l)).length }));
+    const c = await SO.checkStores(senv("CRON"));
+    ok(JSON.stringify(c.repaired) === "[]" && JSON.stringify(c.kvOnly) === "[]" && !!c.cleanSince,
+      "so the hourly check after an ordinary acknowledgement finds nothing to repair and the clean run starts: " + JSON.stringify({ repaired: c.repaired, cleanSince: c.cleanSince }));
+    /* a put KV refuses is named and tried again a second later, with what the book holds by then */
+    refuseNext = true;
+    await call("KUL", "POST", "/orders/" + id + "/say", { text: "is it ready?", rid: "k4".repeat(16) }, { "X-Stmt-Session": tok });
+    await advance(1100);
+    const afterRefusal = kvDoc(), again = BK.state.alarmAt();
+    await advance(5000);
+    ok(refused.length === 1 && afterRefusal !== bookDoc() && again != null && kvDoc() === bookDoc() && JSON.parse(kvDoc()).msgs.length === 1,
+      "a write behind KV refuses is kept and tried again a second later, and lands: " + JSON.stringify({ refused: refused.length, retried: again != null, same: kvDoc() === bookDoc() }));
   } finally { clock.uninstall(); console.log = realLog; }
 })();
 

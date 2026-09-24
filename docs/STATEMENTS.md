@@ -373,10 +373,11 @@ when KV refuses it, so a stored move never answers as a failure. A lost mark cos
 In the order book the event, the order and the marks are one transaction.
 
 **THE SWITCH AND THE MOVE-IN (S10 10.3).** `ORDER_STORE` in `wrangler.stmt.jsonc`: `object+kv` is the
-week of reading both (the book holds the orders; every order it changes is written to its KV key behind
-it; a read the book cannot answer is read from KV; a move it cannot take answers 503 and is written
-nowhere); `kv` is the old road and the way back, current because of the writes behind; `object` stops
-the KV writes. The first request after the deploy that sets it **moves the book in, once**: every KV
+week of reading both (the book holds the orders and is the one writer of their KV keys: its alarm writes
+each order it changes a second later, moves inside a second as one write, and a write KV refuses again a
+second after; a read the book cannot answer is read from KV; a move it cannot take answers 503 and is
+written nowhere); `kv` is the old road and the way back, KV a second or so behind the book, and the alarm
+still writes what is pending after the flip; `object` stops the KV writes. The first request after the deploy that sets it **moves the book in, once**: every KV
 order and the shared and chase marks copied in, then **a minute in which every move answers 503 "try
 again in a minute"** (reads from the copy), so a Worker still on the old code during the rollout is the
 only writer, then a second copy of whatever KV says differently, and moves are taken. KV is only read.

@@ -33,10 +33,17 @@
  *      record says that the copy does not, and is moved in. Moves are taken from then on.
  * ONCE A GENERATION: the generation is stored when it is done, so a second deploy does nothing. IDEMPOTENT:
  * a copy's id names the generation, the pass and the order, and an order already the same is skipped, so a
- * pass run twice (the object restarted halfway) appends nothing new. REVERSIBLE: KV is only read, and the
- * Worker writes every order it changes back to its KV key behind it (ORDER_STORE "object+kv"), so setting
- * ORDER_STORE to "kv" is the old road with a current store. Coming back after one is ORDER_MOVE_IN raised by
- * one: the move-in then runs again and takes KV as the truth.
+ * pass run twice (the object restarted halfway) appends nothing new. REVERSIBLE: the move-in only reads KV,
+ * and this book writes every order it changes to its KV key behind it (below), so setting ORDER_STORE to "kv"
+ * is the old road with a current store. Coming back after one is ORDER_MOVE_IN raised by one: the move-in
+ * then runs again and takes KV as the truth.
+ *
+ * WRITTEN BEHIND BY THE BOOK ALONE (S10 fixes R1, P1, DS2). On ORDER_STORE "object+kv" every order a move
+ * changes is named in `behind`, and the alarm writes its CURRENT doc to its KV key a second and more later.
+ * KV takes one write a second per key and the reconcile makes two moves on one order inside a second, so the
+ * Worker's own put after each answer lost the second; here moves inside a second are one write, a put KV
+ * refuses stays named and is tried again a second later, and no older copy can land after a newer one,
+ * because the book is the one writer of order keys and always writes what it holds now.
  *
  * A PLAIN CLASS WITH fetch(), not an RPC class: that would extend `cloudflare:workers`, which is not a
  * sibling file, and nothing under stmt/ imports anything else (the suite checks). It is also what lets the
@@ -52,6 +59,8 @@ export const FREEZE_MS = 60000;
    served from this location's cache for a minute after THAT read, so an end inside the minute reads the start
    pass's own value back and misses what the old code wrote since */
 export const FREEZE_SPARE_MS = 5000;
+/* a write behind waits past KV's one write a second per key */
+export const BEHIND_MS = 1100;
 /* what writes: refused while the book is moving in */
 const WRITES = ["place", "customer", "desk", "chase", "drop"];
 
@@ -63,6 +72,7 @@ export class OrderBook {
     sql.exec("CREATE TABLE IF NOT EXISTS ev (seq INTEGER PRIMARY KEY AUTOINCREMENT, eid TEXT NOT NULL UNIQUE, u TEXT NOT NULL, oid TEXT NOT NULL, kind TEXT NOT NULL, at TEXT NOT NULL, body TEXT NOT NULL)");
     sql.exec("CREATE TABLE IF NOT EXISTS ord (u TEXT NOT NULL, oid TEXT NOT NULL, at TEXT NOT NULL, doc TEXT NOT NULL, PRIMARY KEY (u, oid))");
     sql.exec("CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT NOT NULL)");
+    sql.exec("CREATE TABLE IF NOT EXISTS behind (u TEXT NOT NULL, oid TEXT NOT NULL, PRIMARY KEY (u, oid))");
   }
 
   async fetch(request) {
@@ -70,10 +80,42 @@ export class OrderBook {
     let a = null;
     try { a = await request.json(); } catch (e) { a = null; }
     await this.moveIn();
-    return Response.json(this.run(op, a && typeof a === "object" ? a : {}));
+    const out = this.run(op, a && typeof a === "object" ? a : {});
+    if (out.ok && out.order && !out.again && !out.none && this.writesKv()) await this.arm();
+    return Response.json(out);
   }
-  /* the end of the minute, with or without a request to notice it */
-  async alarm() { await this.moveIn(); }
+  /* the end of the minute, with or without a request to notice it; once moved in, the writes behind */
+  async alarm() {
+    await this.moveIn();
+    if (this.frozen()) {
+      const end = +(this.meta("movein:" + this.gen()) || 0);
+      if (end) await this.state.storage.setAlarm(end);
+      return;
+    }
+    await this.writeBehind();
+  }
+
+  /* ---- written behind (S10 fixes R1, P1, DS2) ---- */
+  writesKv() { return !!(this.env && this.env.STMT) && this.env.ORDER_STORE === "object+kv"; }
+  async arm() {
+    const t = Date.now() + BEHIND_MS, cur = await this.state.storage.getAlarm();
+    if (cur == null || cur <= Date.now() || cur > t) await this.state.storage.setAlarm(t);
+  }
+  async writeBehind() {
+    const kv = this.env && this.env.STMT;
+    if (!kv) return;
+    let left = 0;
+    for (const { u, oid } of this.state.storage.sql.exec("SELECT u, oid FROM behind").toArray()) {
+      const key = "order:" + u + ":" + oid, doc = this.doc(u, oid);
+      if (doc == null) { this.unbehind(u, oid); continue; }
+      try { await kv.put(key, doc); }
+      catch (e) { left++; console.log("orderbook: " + key + " not written behind, tried again in a second: " + String((e && e.message) || e)); continue; }
+      /* a move taken while the put was on its way leaves the order named: the next pass writes it */
+      if (this.doc(u, oid) === doc) this.unbehind(u, oid); else left++;
+    }
+    if (left) await this.arm();
+  }
+  unbehind(u, oid) { this.state.storage.sql.exec("DELETE FROM behind WHERE u = ? AND oid = ?", u, oid); }
 
   /* ---- moving in (S10 10.3) ---- */
   gen() { return String((this.env && this.env.ORDER_MOVE_IN) || "1"); }
@@ -182,6 +224,7 @@ export class OrderBook {
       this.state.storage.transactionSync(() => {
         this.state.storage.sql.exec("DELETE FROM ev WHERE u = ?", u);
         this.state.storage.sql.exec("DELETE FROM ord WHERE u = ?", u);
+        this.state.storage.sql.exec("DELETE FROM behind WHERE u = ?", u);
       });
       return { ok: true, dropped: n };
     }
@@ -198,16 +241,15 @@ export class OrderBook {
         eid || "s:" + crypto.randomUUID(), u, oid, ev.kind, ev.at, JSON.stringify(ev));
       sql.exec("INSERT OR REPLACE INTO ord (u, oid, at, doc) VALUES (?, ?, ?, ?)", u, oid, String(r.order.at || ev.at), JSON.stringify(r.order));
       for (const [k, v] of marksOf(ev, r.order)) this.setMeta(k, v);
+      if (ev.kind !== "copy" && this.writesKv()) sql.exec("INSERT OR IGNORE INTO behind (u, oid) VALUES (?, ?)", u, oid);
       out = { ok: true, order: r.order, wake: wakes(ev, r.done) };
     });
     return out;
   }
 
   event(eid) { return this.state.storage.sql.exec("SELECT u, oid FROM ev WHERE eid = ?", eid).toArray()[0] || null; }
-  order(u, oid) {
-    const r = this.state.storage.sql.exec("SELECT doc FROM ord WHERE u = ? AND oid = ?", u, oid).toArray()[0];
-    return r ? JSON.parse(r.doc) : null;
-  }
+  doc(u, oid) { const r = this.state.storage.sql.exec("SELECT doc FROM ord WHERE u = ? AND oid = ?", u, oid).toArray()[0]; return r ? r.doc : null; }
+  order(u, oid) { const d = this.doc(u, oid); return d == null ? null : JSON.parse(d); }
   ordersOf(u) { return this.state.storage.sql.exec("SELECT doc FROM ord WHERE u = ? ORDER BY at DESC", u).toArray().map((r) => JSON.parse(r.doc)); }
   all() { return this.state.storage.sql.exec("SELECT doc FROM ord ORDER BY at DESC").toArray().map((r) => JSON.parse(r.doc)); }
   meta(k) { const r = this.state.storage.sql.exec("SELECT v FROM meta WHERE k = ?", k).toArray()[0]; return r ? r.v : null; }
