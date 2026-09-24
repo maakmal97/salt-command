@@ -205,18 +205,19 @@ export function orderWork(o) {
   return jobs;
 }
 
-/* ---- WHO IS CHASED, AND HOW OFTEN (v700, his instruction of 18 Sep 2026) ---------------------
- * "The customer will be notified every hour to pay if it is an advanced order." An advance is the
- * book's own word for goods out ahead of the money, so that is the test, READ AS THE ENGINE READS IT
- * (24 Sep 2026): the share of the goods handed over above the share of what is owed that is paid
- * (engine/position.mjs, txStat's Open · Advance). It read "anything moved and anything due" until
- * then, which chased a customer who had paid for the 2 of 5 units they held, every hour, for the 3
- * not yet handed over. A customer who has paid nothing on an order he has not touched yet is not
- * chased, because nothing of his is in their hands.
+/* ---- WHO IS CHASED, AND WHEN (v700; S12 12.3, his decision D5 of 24 Sep 2026) ------------------
+ * An advance is the book's own word for goods out ahead of the money, so that is the test, READ AS
+ * THE ENGINE READS IT (24 Sep 2026): the share of the goods handed over above the share of what is
+ * owed that is paid (engine/position.mjs, txStat's Open · Advance). So only GOODS RECEIVED are chased:
+ * a customer who has paid for the 2 of 5 units they hold is not asked about the 3 still to come, and
+ * one who has been handed nothing is not chased at all.
  *
- * DAY AND NIGHT, HIS WORD, and until it is paid. The cap is one wake an hour per CUSTOMER, not per
- * order: two unpaid advances are one person's problem and one banner, and the banner names no
- * amount and no order anyway.
+ * TWICE A DAY, NOT EVERY HOUR (D5): at 10:00 and 18:00 in Kuala Lumpur, from THE DAY AFTER the goods
+ * moved, PAUSED while a claim of theirs waits, and STOPPED when what they received is paid, which is
+ * the same test going false (his cash, recorded on the desk, comes back through the return leg). v700
+ * chased every hour, day and night, from the first top of the hour after the handover, so a customer
+ * paying cash at the counter was asked again within minutes and every hour of the night. The cap is
+ * one wake a slot per CUSTOMER, not per order, and its words are its own ("A payment is due").
  */
 export const aheadOnGoods = (o) => {
   const owed = +o.total + (+o.delivery || 0), paidF = owed > 0 ? (+o.paid || 0) / owed : 0;
@@ -227,12 +228,27 @@ export const isAdvance = (o) => !!o && ROWED.includes(o.status) && aheadOnGoods(
 export const CHASE_KEY = (u) => "chased:" + u;
 /** An hour in whole hours since the epoch: the same hour twice is the same bucket, and no clock is read twice. */
 export const hourOf = (at) => Math.floor(new Date(at).getTime() / 3600000);
+/* The two hours, Kuala Lumpur's (UTC+8, no summer time). The cron stays hourly and this decides: a slot
+   is its hour's bucket, or null for every other hour. */
+export const CHASE_HOURS = [10, 18];
+export const chaseSlot = (at) => {
+  const t = new Date(at).getTime();
+  return CHASE_HOURS.includes(new Date(t + 8 * 3600000).getUTCHours()) ? hourOf(t) : null;
+};
+/* A DAY'S GRACE: chased from the day after the last handover (movedOn, a Kuala Lumpur date), never the
+   day the goods moved; an order that carries no such day is not chased. */
+export const graceOver = (o, at) => !!o.movedOn && o.movedOn < klDay(at);
+/* PAUSED WHILE A CLAIM WAITS: a figure they say they sent that the order does not yet count as paid.
+   Today none waits, because their "I have paid" raises `paid` on their word (v694); a claim that stays
+   a claim until his Received, which is stage 6's, pauses the chase through this one name. A Not found
+   that lowers `paid` has to take its claim out of `payments` with it, or the pause never lifts. */
+export const claimWaits = (o) => (o.payments || []).reduce((n, p) => n + (+(p && p.amount) || 0), 0) > (+o.paid || 0) + 0.004;
 
-/** Every customer holding an unpaid advance, with the orders that make it, newest order first. */
-export async function toChase(env) {
+/** Every customer owed a chase at this moment, with the orders that make it, newest order first. */
+export async function toChase(env, at = new Date()) {
   const by = new Map();
   for (const o of await listOrders(env, "order:")) {
-    if (!isAdvance(o)) continue;
+    if (!isAdvance(o) || !graceOver(o, at) || claimWaits(o)) continue;
     if (!by.has(o.u)) by.set(o.u, []);
     by.get(o.u).push(o);
   }
@@ -395,7 +411,7 @@ export async function customerMove(env, u, id, action, body) {
   /* v700: a payment that completes the order is the one customer move worth waking the phone for,
      because it is the only one whose answer arrives after they have put the phone down. Every
      other move of theirs happens with the page in front of them. */
-  if (done) await wakeCustomer(env, u);
+  if (done) await wakeCustomer(env, u, { k: "complete", o: id });
   return { order };
 }
 
@@ -428,6 +444,11 @@ function settle(order, at) {
   order.history.push({ at, status: "done", by: "site" });
   return true;
 }
+
+/* S12 12.2: WHAT KIND OF NEWS EACH MOVE OF HIS IS, for the banner, whose words are NEWS in stmt/sw.js.
+   A handover says delivered or collected by the order's own mode, and "part" while units are still to come. */
+const STATUS_NEWS = { acknowledged: "confirmed", ready: "ready", done: "complete", declined: "declined", cancelled: "cancelled" };
+const handedNews = (o) => (+o.moved > 0 ? (owedUnits(o) > 0.004 ? "part-" : "") + (o.mode === "deliver" ? "delivered" : "collected") : null);
 
 const NEXT = { acknowledged: ["placed"], ready: ["acknowledged", "placed"], done: ["ready", "acknowledged"],
   declined: OPEN_STATES, cancelled: OPEN_STATES };
@@ -465,15 +486,15 @@ export async function deskMove(env, u, id, body) {
    * a payment that is already on the row and count it twice. */
   if (body && body.ledger) {
     const L = body.ledger, q = Object.assign({}, order.queued || {});
-    let told = false;
+    let told = false, paidUp = false;
     if (typeof L.paid === "number" && Number.isFinite(L.paid) && L.paid > (+order.paid || 0) + 0.004) {
       const was = +order.paid || 0;
-      order.paid = +L.paid.toFixed(2); q.paid = order.paid; told = true;
+      order.paid = +L.paid.toFixed(2); q.paid = order.paid; told = true; paidUp = true;
       order.history.push({ at, status: order.status, by: "desk", note: "payment of " + (order.paid - was).toFixed(2) + " recorded" });
     }
     if (typeof L.moved === "number" && Number.isFinite(L.moved) && L.moved > (+order.moved || 0) + 0.0004) {
       order.moved = +L.moved.toFixed(3); q.moved = order.moved; told = true;
-      if (!order.movedOn) order.movedOn = klDay(at);
+      order.movedOn = klDay(at);   /* the day of the LAST handover, as Site orders writes it: the chase's grace runs from it */
       order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
     }
     if (!told) return { order };
@@ -481,7 +502,7 @@ export async function deskMove(env, u, id, body) {
     settle(order, at);
     await env.STMT.put(OKEY(u, id), JSON.stringify(order));
     await putSoft(env, LAST_TOUCHED, at);
-    const push = await wakeCustomer(env, u);
+    const push = await wakeCustomer(env, u, { k: paidUp ? "paid" : handedNews(order), o: id });
     return { order, push };
   }
   /* v753: HIS ANSWER ON THE ORDER. It is a move of his like any other, so it wakes them; it is not
@@ -493,7 +514,7 @@ export async function deskMove(env, u, id, body) {
     order.msgs = ((order.msgs) || []).concat([{ at, by: "desk", text }]);
     await env.STMT.put(OKEY(u, id), JSON.stringify(order));
     await putSoft(env, LAST_TOUCHED, at);
-    const push = await wakeCustomer(env, u);
+    const push = await wakeCustomer(env, u, { k: "reply", o: id });
     return { order, push };
   }
   /* v694: what he handed over, in units, whichever way it went. It is its own step and its own
@@ -511,7 +532,7 @@ export async function deskMove(env, u, id, body) {
     settle(order, at);
     await env.STMT.put(OKEY(u, id), JSON.stringify(order));
     await putSoft(env, LAST_TOUCHED, at);
-    const push = await wakeCustomer(env, u);
+    const push = await wakeCustomer(env, u, { k: handedNews(order), o: id });
     return { order, push };
   }
   const status = String((body && body.status) || "");
@@ -532,7 +553,7 @@ export async function deskMove(env, u, id, body) {
   order.history.push(ev);
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
   await putSoft(env, LAST_TOUCHED, at);
-  const push = await wakeCustomer(env, u);
+  const push = await wakeCustomer(env, u, { k: STATUS_NEWS[status], o: id });
   return { order, push };
 }
 

@@ -16571,19 +16571,21 @@ await (async () => {
     "the retirement is behind a flag the hourly run clears");
   ok(planPublish.length === 8, "planPublish takes the options object that carries it");
 })();
-section("v700: a customer holding an unpaid advance is chased every hour, day and night, until it is paid");
+section("v700: a customer holding an unpaid advance is chased until it is paid, at its slots since S12 12.3");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "the customer will be notified every hour to pay if it is an
      advanced order." An advance is the book's own word for goods out with money owed, so that is
      the test. This is the first clock the statements Worker has ever had: until now it woke a phone
      only as a side effect of the desk touching an order. Driven through scheduled() against a
-     stubbed push service, so what is proved is the wake, not the source that would send it. */
+     stubbed push service, so what is proved is the wake, not the source that would send it. Every hour,
+     day and night, until S12 12.3 (his decision D5 of 24 Sep 2026): 10:00 and 18:00 in Kuala Lumpur,
+     from the day after the handover, so the ticks below are 02:00 and 10:00 UTC. */
   const stmtW7 = (await import("../stmt/worker.js")).default;
   const O7 = await import("../stmt/orders.js");
 
   /* ---- the predicate, on records alone ---- */
   const ord = (over) => Object.assign({ id: "o", u: "aaaa-bbbb", status: "acknowledged", qty: 2, total: 200,
-    delivery: 0, paid: 0, moved: 0 }, over);
+    delivery: 0, paid: 0, moved: 0, movedOn: "2026-09-17" }, over);
   /* 24 Sep 2026 (stage 1, fold 1.25): half the goods and half the money is not ahead, so it moved to a quarter paid */
   ok(O7.isAdvance(ord({ moved: 2, paid: 0 })) && O7.isAdvance(ord({ moved: 1, paid: 50 })),
     "goods out ahead of the money is an advance, in part as well as in whole");
@@ -16612,7 +16614,7 @@ await (async () => {
   for (const u of ["aaaa-bbbb", "cccc-dddd", "eeee-ffff", "0000-0000"])
     await put("push:" + u + ":aa11", { endpoint: "https://push.example/" + u, at: "2026-09-18T00:00:00Z" });
 
-  const owed = (await O7.toChase(env7)).map((x) => x.u).sort();
+  const owed = (await O7.toChase(env7, "2026-09-18T02:00:00Z")).map((x) => x.u).sort();
   ok(JSON.stringify(owed) === '["0000-0000","aaaa-bbbb"]',
     "only those holding an unpaid advance are owed a chase, one entry per CUSTOMER: " + JSON.stringify(owed));
 
@@ -16630,29 +16632,29 @@ await (async () => {
     finally { console.log = realLog; }
   };
   try {
-    await tick("2026-09-18T05:00:00Z");
+    await tick("2026-09-18T02:00:00Z");
     ok(hit.length === 1 && hit[0].url === "https://push.example/aaaa-bbbb",
       "the tick wakes the one customer holding an unpaid advance and nobody else: " + JSON.stringify(hit.map((h) => h.url)));
     ok(!hit.some((h) => h.url.includes("0000-0000")),
       "his test account is counted nowhere, and that includes being chased");
     ok(hit[0].body === undefined && hit[0].topic === "salt-order" && hit[0].urgency === "high",
-      "the wake carries no payload at all, so it could not name an amount or an order if it wanted to");
-    await tick("2026-09-18T05:40:00Z");
-    ok(hit.length === 1, "a second tick in the same hour chases nobody: one wake an hour per customer, not per tick");
-    await tick("2026-09-18T06:00:00Z");
+      "a phone filed without its keys is woken with nothing in it, so the wake names no amount and no order");
+    await tick("2026-09-18T02:40:00Z");
+    ok(hit.length === 1, "a second tick in the same slot chases nobody: one wake a slot per customer, not per tick");
+    await tick("2026-09-18T10:00:00Z");
     ok(hit.length === 2 && hit[1].url === "https://push.example/aaaa-bbbb",
-      "and the next hour chases again, because it is still unpaid: day and night, until it is paid");
-    ok(Number(await kv7.get(O7.CHASE_KEY("aaaa-bbbb"))) === O7.hourOf("2026-09-18T06:00:00Z")
+      "and the next slot chases again, because it is still unpaid, until it is paid");
+    ok(Number(await kv7.get(O7.CHASE_KEY("aaaa-bbbb"))) === O7.hourOf("2026-09-18T10:00:00Z")
       && (kv7.opts.get(O7.CHASE_KEY("aaaa-bbbb")) || {}).expirationTtl === 7200,
       "the mark is the hour, and it expires on its own so a customer who settles up leaves nothing behind");
     /* paid in full: the chase stops of its own accord */
     await put("order:aaaa-bbbb:20260918000000-a1", ord({ id: "20260918000000-a1", u: "aaaa-bbbb", moved: 2, paid: 200 }));
-    await tick("2026-09-18T07:00:00Z");
+    await tick("2026-09-19T02:00:00Z");
     ok(hit.length === 2, "and once it is paid the chase stops, with nothing to turn off");
     ok(logs.some((l) => /^chase: /.test(l)), "every tick that did anything says so in the log, because a silent push path is a silent failure");
     /* a Worker with no push key wakes nobody and does not throw */
     await put("order:aaaa-bbbb:20260918000000-a2", ord({ id: "20260918000000-a2", u: "aaaa-bbbb", moved: 2, paid: 0 }));
-    await tick("2026-09-18T08:00:00Z", { STMT: kv7 });
+    await tick("2026-09-19T10:00:00Z", { STMT: kv7 });
     ok(hit.length === 2, "a Worker with no push key configured wakes nobody, and the tick does not throw");
   } finally { globalThis.fetch = realFetch7; }
 
@@ -19465,7 +19467,7 @@ await (async () => {
   const stmtW = (await import("../stmt/worker.js")).default;
   const C = await import("../tools/stmt-crypto.mjs");
   const ord = (over) => Object.assign({ id: "20260924000000-aa11", u: "aaaa-bbbb", status: "acknowledged", product: "salt", qty: 5, total: 500,
-    delivery: 0, paid: 0, moved: 0, mode: "collect", at: "2026-09-24T01:00:00Z", history: [], msgs: [] }, over);
+    delivery: 0, paid: 0, moved: 0, movedOn: "2026-09-24", mode: "collect", at: "2026-09-24T01:00:00Z", history: [], msgs: [] }, over);
   const inStep = ord({ moved: 2, paid: 200 }), ahead = ord({ moved: 2, paid: 100 });
   ok(!O.isAdvance(inStep) && O.isAdvance(ahead),
     "2 of 5 handed over and 200 of 500 paid is not an advance; 100 paid is: " + JSON.stringify([O.isAdvance(inStep), O.isAdvance(ahead)]));
@@ -19481,8 +19483,8 @@ await (async () => {
   const kv = new KV();
   await kv.put("order:aaaa-bbbb:" + inStep.id, JSON.stringify(inStep));
   await kv.put("order:cccc-dddd:" + inStep.id, JSON.stringify(Object.assign({}, ahead, { u: "cccc-dddd" })));
-  const chased = (await O.toChase({ STMT: kv })).map((x) => x.u);
-  ok(JSON.stringify(chased) === '["cccc-dddd"]', "the hourly chase asks only the customer whose goods are ahead of their money: " + JSON.stringify(chased));
+  const chased = (await O.toChase({ STMT: kv }, "2026-09-25T02:00:00Z")).map((x) => x.u);
+  ok(JSON.stringify(chased) === '["cccc-dddd"]', "the chase asks only the customer whose goods are ahead of their money: " + JSON.stringify(chased));
 
   /* ---- cash on handover, at the Worker ---- */
   const un = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("test-secret", un);
@@ -19952,6 +19954,622 @@ await (async () => {
     "an order still leads and no longer hides a refund, a row owed a decision or a shelf not counted: " + (bBoth && bBoth.opt.body));
   ok(bQuiet && /Nothing waiting/.test(bQuiet.opt.body) && bQuiet.t === "Salt Command is square",
     "and with nothing owed it still says so: " + (bQuiet && bQuiet.opt.body));
+})();
+
+section("S12 12.1: a subscription keeps its two encryption keys, and a pair that is not one is dropped, never refused");
+await (async () => {
+  /* 24 SEP 2026, his decision D4: a banner may say what kind of news it is, encrypted so only the phone can
+     read it (RFC 8291). That needs the phone's p256dh and auth, which the page never sent and the Worker never
+     kept. A record without them still wakes the phone payload-free, so nothing already subscribed goes dark. */
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const O = await import("../stmt/orders.js");
+  const kv = new KV(), env = { STMT: kv };
+  const un = "k2m4-p6r8";
+  await kv.put("u:" + un, JSON.stringify({ v: 1, issued: "2026-09-01", env: { v: 1, salt: "s", iv: "i", ct: "c" } }));
+  const S = { "X-Stmt-Session": await O.mintSession(env, un) };
+  const b64u = (a) => Buffer.from(a).toString("base64url");
+  const ua = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+  const p256dh = b64u(new Uint8Array(await crypto.subtle.exportKey("raw", ua.publicKey)));
+  const auth = b64u(crypto.getRandomValues(new Uint8Array(16)));
+  const sub = async (endpoint, keys) => {
+    const r = await stmtW.fetch(new Request("https://site.test/push/subscribe", { method: "POST",
+      headers: Object.assign({ "content-type": "application/json" }, S), body: JSON.stringify({ endpoint, keys }) }), env);
+    const b = await r.json();
+    const rec = b.id ? JSON.parse(await kv.get("push:" + un + ":" + b.id)) : null;
+    return { status: r.status, b, rec };
+  };
+  const good = await sub("https://push.example/k1", { p256dh, auth });
+  ok(good.status === 200 && good.b.keys === true && good.rec && good.rec.endpoint === "https://push.example/k1"
+    && good.rec.keys && good.rec.keys.p256dh === p256dh && good.rec.keys.auth === auth,
+    "a subscription posted with its keys keeps both on push:<username>:<id>: " + JSON.stringify(good.rec));
+  const short = b64u(new Uint8Array(await crypto.subtle.exportKey("raw", ua.publicKey)).slice(0, 64));
+  const bad = [await sub("https://push.example/k2", { p256dh: short, auth }),
+    await sub("https://push.example/k3", { p256dh, auth: b64u(new Uint8Array(15)) }),
+    await sub("https://push.example/k4", { p256dh: 7, auth }),
+    await sub("https://push.example/k5", null)];
+  ok(bad.every((x) => x.status === 200 && x.b.ok && x.b.keys === false && x.rec && x.rec.endpoint && !("keys" in x.rec)),
+    "a point one byte short, an auth of fifteen bytes, a key that is not text and no keys at all are each filed without keys, never refused: "
+    + JSON.stringify(bad.map((x) => [x.status, x.b.keys, x.rec && Object.keys(x.rec)])));
+
+  /* ---- THE PAGE HANDS THEM OVER, off the subscription's own toJSON ---- */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const pass = "2345-6789-abcd-efgh", ck = await C.contentKey("6".repeat(64), un);
+  const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, live: null, prices: null, session: "sessKaaaaaaaaaaaaaaaaaaaaaaa",
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 Sep 2026", body: "<p>Statement</p>" }] })) };
+  const posted = [];
+  const reg = { pushManager: { subscribe: async () => ({ endpoint: "https://push.example/page-k",
+    toJSON: () => ({ endpoint: "https://push.example/page-k", expirationTime: null, keys: { p256dh, auth } }) }) } };
+  const dom = new JSDOM(landingPage(un, "nK", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {};
+      win.PushManager = function () {};
+      win.Notification = { permission: "granted", requestPermission: async () => "granted" };
+      Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+        register: async () => reg, ready: Promise.resolve(reg), getRegistration: async () => undefined, addEventListener() {} } });
+      win.fetch = async (path, init) => {
+        const p = String(path);
+        if (p === "/open") return { ok: true, status: 200, json: async () => openB };
+        if (p === "/push/key") return { ok: true, status: 200, json: async () => ({ ok: true, key: "BA", configured: true }) };
+        if (p === "/push/subscribe") { posted.push(JSON.parse(init.body)); return { ok: true, status: 200, json: async () => ({ ok: true, id: "x", keys: true }) }; }
+        return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      };
+    } });
+  const W = dom.window, D = W.document;
+  try {
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !posted.length; i++) await new Promise((r) => setTimeout(r, 25));
+    ok(posted.length === 1 && posted[0].endpoint === "https://push.example/page-k" && posted[0].keys
+      && posted[0].keys.p256dh === p256dh && posted[0].keys.auth === auth && Object.keys(posted[0].keys).length === 2,
+      "the page posts the endpoint with its two keys and nothing else of the subscription: " + JSON.stringify(posted));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } }
+})();
+section("S12 12.2: a wake carries the kind of news, sealed for the one phone that can read it, and each move of his names its own kind");
+await (async () => {
+  /* 24 SEP 2026, his decision D4. Nine different events drew one sentence, "Your order has an update", and the
+     chase said it through the night. A kind now rides with the wake, encrypted per RFC 8291 (aes128gcm) under the
+     keys the phone filed (12.1), so the push service carries bytes it cannot read and the lock screen says what
+     kind of news it is, never an amount, a product, an order or a name. THE DECRYPTOR BELOW IS THE PHONE'S SIDE,
+     written from the RFC and proved on the RFC's own worked example before it is trusted on ours. */
+  const P = await import("../stmt/push.js");
+  const { NEWS } = await import("../stmt/sw.js");
+  const O = await import("../stmt/orders.js");
+  const d64 = (s) => Uint8Array.from(Buffer.from(s, "base64url"));
+  const b64u = (a) => Buffer.from(a).toString("base64url");
+  const cat = (...a) => { const o = new Uint8Array(a.reduce((n, x) => n + x.length, 0)); let i = 0; for (const x of a) { o.set(x, i); i += x.length; } return o; };
+  const hk = async (salt, ikm, info, n) => new Uint8Array(await crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info },
+    await crypto.subtle.importKey("raw", ikm, "HKDF", false, ["deriveBits"]), n * 8));
+  const te = new TextEncoder();
+  const open = async (msg, uaPub, uaPriv, auth) => {
+    const salt = msg.slice(0, 16), rs = new DataView(msg.buffer, msg.byteOffset).getUint32(16), idlen = msg[20];
+    const asPub = msg.slice(21, 21 + idlen), ct = msg.slice(21 + idlen);
+    const asKey = await crypto.subtle.importKey("raw", asPub, { name: "ECDH", namedCurve: "P-256" }, false, []);
+    const secret = new Uint8Array(await crypto.subtle.deriveBits({ name: "ECDH", public: asKey }, uaPriv, 256));
+    const ikm = await hk(auth, secret, cat(te.encode("WebPush: info"), [0], uaPub, asPub), 32);
+    const cek = await hk(salt, ikm, cat(te.encode("Content-Encoding: aes128gcm"), [0]), 16);
+    const nonce = await hk(salt, ikm, cat(te.encode("Content-Encoding: nonce"), [0]), 12);
+    const pt = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: nonce },
+      await crypto.subtle.importKey("raw", cek, "AES-GCM", false, ["decrypt"]), ct));
+    let end = pt.length - 1; while (end > 0 && pt[end] === 0) end--;
+    return { rs, idlen, delim: pt[end], text: new TextDecoder().decode(pt.slice(0, end)) };
+  };
+  /* RFC 8291 Appendix A, character for character */
+  const rfcPub = d64("BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4");
+  const rfcPriv = await crypto.subtle.importKey("jwk", { kty: "EC", crv: "P-256", x: b64u(rfcPub.slice(1, 33)), y: b64u(rfcPub.slice(33)),
+    d: "q1dXpw3UpT5VOmu_cf_v6ih07Aems3njxI-JWgLcM94" }, { name: "ECDH", namedCurve: "P-256" }, false, ["deriveBits"]);
+  const rfc = await open(d64("DGv6ra1nlYgDCS1FRnbzlwAAEABBBP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A_yl95bQpu6cVPTpK4Mqgkf1CXztLVBSt2Ks3oZwbuwXPXLWyouBWLVWGNWQexSgSxsj_Qulcy4a-fN"),
+    rfcPub, rfcPriv, d64("BTBZMqHH6r4Tts7J_aSIgg"));
+  ok(rfc.text === "When I grow up, I want to be a watermelon" && rfc.rs === 4096 && rfc.delim === 2,
+    "the phone's side, written here from the RFC, opens RFC 8291's own worked example: " + JSON.stringify(rfc));
+
+  /* ---- a phone of ours: its keys, as the page files them ---- */
+  const phone = async () => {
+    const kp = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+    const pub = new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey)), auth = crypto.getRandomValues(new Uint8Array(16));
+    return { keys: { p256dh: b64u(pub), auth: b64u(auth) }, read: (msg) => open(msg, pub, kp.privateKey, auth) };
+  };
+  const her = await phone(), other = await phone();
+  const sealed = await P.sealFor(her.keys, '{"k":"ready","o":""}');
+  const mine = await her.read(sealed);
+  ok(mine.text === '{"k":"ready","o":""}' && mine.rs === 4096 && mine.idlen === 65 && mine.delim === 2,
+    "what the Worker seals, her phone opens, byte for byte, one record of aes128gcm: " + JSON.stringify(mine));
+  let theirs = null; try { theirs = await other.read(sealed); } catch (e) { theirs = "refused"; }
+  ok(theirs === "refused", "and another phone cannot open it: " + JSON.stringify(theirs));
+  const again = await P.sealFor(her.keys, '{"k":"ready","o":""}');
+  ok(!Buffer.from(sealed).toString("latin1").includes("ready") && b64u(again.slice(0, 16)) !== b64u(sealed.slice(0, 16))
+    && b64u(again.slice(21, 86)) !== b64u(sealed.slice(21, 86)),
+    "the kind is not in the bytes the push service carries, and the same news sealed twice has a fresh salt and a fresh key");
+
+  /* ---- the wake: a keyed phone reads its kind, a phone filed before its keys is woken as before ---- */
+  const kv = new KV();
+  const vp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const env = { STMT: kv, STMT_VAPID_PUBLIC_KEY: "pub", STMT_VAPID_SUBJECT: "mailto:a@b.test",
+    STMT_VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", vp.privateKey)) };
+  const u = "m3n5-q7s9";
+  await kv.put("push:" + u + ":keyed", JSON.stringify({ endpoint: "https://push.example/keyed", at: "2026-09-24T00:00:00Z", keys: her.keys }));
+  await kv.put("push:" + u + ":bare", JSON.stringify({ endpoint: "https://push.example/bare", at: "2026-09-01T00:00:00Z" }));
+  const realF = globalThis.fetch;
+  const caught = async (fn) => {
+    const hit = [];
+    globalThis.fetch = async (url, init) => { hit.push({ url: String(url), h: init.headers, body: init.body }); return new Response("", { status: 201 }); };
+    let r; try { r = await fn(); } finally { globalThis.fetch = realF; }
+    const keyed = hit.find((x) => x.url.endsWith("/keyed")), bare = hit.find((x) => x.url.endsWith("/bare"));
+    const news = keyed && keyed.body ? JSON.parse((await her.read(keyed.body)).text) : null;
+    return { r, hit, keyed, bare, news };
+  };
+  const w = await caught(() => P.wakeCustomer(env, u, { k: "reply", o: "20260924101500-ab12cd34" }));
+  ok(w.r.sent === 2 && w.r.sealed === 1 && w.keyed && w.keyed.h["Content-Encoding"] === "aes128gcm"
+    && w.keyed.h["Content-Type"] === "application/octet-stream" && /^vapid t=/.test(w.keyed.h.Authorization),
+    "the keyed phone is sent an aes128gcm body under the same VAPID wake: " + JSON.stringify(w.keyed && w.keyed.h));
+  ok(w.news && JSON.stringify(w.news) === '{"k":"reply","o":"20260924101500-ab12cd34"}',
+    "and what it reads is the kind and the order a tap opens, and nothing else: " + JSON.stringify(w.news));
+  ok(w.bare && w.bare.body === undefined && w.bare.h["Content-Length"] === "0" && !w.bare.h["Content-Encoding"] && w.bare.h.Topic === "salt-order",
+    "a phone filed before its keys is woken with nothing in it, as every phone was, so it does not go dark: " + JSON.stringify(w.bare && w.bare.h));
+  const odd = await caught(() => P.wakeCustomer(env, u, { k: "an amount of 45", o: "x" }));
+  const none = await caught(() => P.wakeCustomer(env, u));
+  ok(odd.hit.length === 2 && odd.hit.every((x) => x.body === undefined) && none.hit.every((x) => x.body === undefined),
+    "a kind the service worker has no words for, and a wake with no kind, carry nothing at all");
+
+  /* ---- every move names its own kind ---- */
+  const kinds = [], about = [];
+  const say = async (fn) => { const c = await caught(fn); kinds.push(c.news ? c.news.k : null); about.push(c.news ? c.news.o : null); return c; };
+  const place = async (mode, qty) => (await O.placeOrder(env, u, { product: "salt", qty, mode, unit: 100, total: 100 * qty, week: "", place: mode === "deliver" ? "Taman Contoh" : "" })).order;
+  const a = await place("collect", 2);
+  const ack = await say(() => O.deskMove(env, u, a.id, { status: "acknowledged", mode: "collect" }));
+  await say(() => O.deskMove(env, u, a.id, { status: "ready" }));
+  await say(() => O.deskMove(env, u, a.id, { message: "Come after five" }));
+  await say(() => O.deskMove(env, u, a.id, { handover: { units: 1 } }));
+  await say(() => O.deskMove(env, u, a.id, { handover: { units: 2 } }));
+  await say(() => O.deskMove(env, u, a.id, { ledger: { paid: 120 } }));
+  const b = await place("deliver", 1);
+  await say(() => O.deskMove(env, u, b.id, { status: "acknowledged", mode: "deliver", delivery: 10 }));
+  await say(() => O.deskMove(env, u, b.id, { ledger: { moved: 1 } }));
+  await say(() => O.customerMove(env, u, b.id, "pay", { amount: 110, method: "transfer", account: "wise" }));
+  const c = await place("collect", 1);
+  await say(() => O.deskMove(env, u, c.id, { status: "declined" }));
+  const d = await place("collect", 1);
+  await say(() => O.deskMove(env, u, d.id, { status: "acknowledged", mode: "collect" }));
+  await say(() => O.deskMove(env, u, d.id, { status: "cancelled" }));
+  ok(JSON.stringify(kinds) === JSON.stringify(["confirmed", "ready", "reply", "part-collected", "collected", "paid",
+    "confirmed", "delivered", "complete", "declined", "confirmed", "cancelled"]),
+    "confirmed, ready, a reply, part and then all of it collected, a payment he recorded, a delivery the book carried back, "
+    + "a payment of theirs that completes it, not taken, and cancelled: " + JSON.stringify(kinds));
+  ok(ack.news && ack.news.o === a.id && JSON.stringify(about) === JSON.stringify([a.id, a.id, a.id, a.id, a.id, a.id, b.id, b.id, b.id, c.id, d.id, d.id]),
+    "each names the order it is about, for the tap: " + JSON.stringify(about));
+  ok(kinds.every((k) => Object.prototype.hasOwnProperty.call(NEWS, k)), "and every kind sent is one the service worker has words for");
+
+  /* ---- THE WORDS: a kind, never an amount, a product, an order or a name ---- */
+  const words = Object.values(NEWS);
+  const banned = /salt|oil|candy|rice|garam|minyak|beras|titanium|platinum|gold|silver|bronze|ambassador|command|update/i;
+  const plain = (t) => /^[A-Z][a-z ]+$/.test(t) && !/[0-9]|RM/.test(t) && !banned.test(t);
+  ok(words.length >= 10 && words.every(plain) && !plain("Your salt is ready") && !plain("RM 45 is due") && !plain("Your order has an update"),
+    "every banner is plain words: no figure, no product, no level, no name, and never the old 'update': " + JSON.stringify(words.filter((t) => !plain(t))));
+  ok(NEWS.due === "A payment is due" && NEWS.ready === "Your order is ready" && NEWS.reply === "A reply on your order"
+    && NEWS.paid === "Payment received" && NEWS.confirmed === "Your order is confirmed",
+    "and the five he was asked about read as he was shown them");
+})();
+section("S12 12.2: the banner shows its kind's words, and a tap opens that order, telling a page already open to re-read");
+await (async () => {
+  /* 24 SEP 2026, his decision D4. The service worker as it ships, driven in a sandbox, then the page in jsdom. A
+     tap opened the Statements tab, where the first order sat a screen below; and on a page already open it only
+     focused, so a customer read whatever the page had last drawn. */
+  const { SW_JS, NEWS } = await import("../stmt/sw.js");
+  const vm = await import("node:vm");
+  const id = "20260924101500-ab12cd34";
+  const runSw = (clients) => {
+    const L = {}, shown = [], asked = [], opened = [];
+    const ctx = { URL, Date, console,
+      fetch: async (u) => { asked.push(String(u)); return { ok: true, json: async () => ({ ok: true, lines: [], at: null }) }; },
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { href: "https://site.test/sw.js?u=abcd-efgh" },
+        registration: { scope: "https://site.test/", showNotification: async (t, opt) => { shown.push({ t, opt }); } },
+        clients: { matchAll: async () => clients || [], openWindow: async (u) => { opened.push(u); } } } };
+    ctx.clients = ctx.self.clients;
+    vm.createContext(ctx); vm.runInContext(SW_JS, ctx);
+    return { L, shown, asked, opened };
+  };
+  const push = async (data) => {
+    const sw = runSw(), waits = [];
+    sw.L.push({ data, waitUntil: (p) => waits.push(p) });
+    await Promise.all(waits);
+    return { shown: sw.shown[0], asked: sw.asked };
+  };
+  const json = (v) => ({ json: () => v });
+  const ready = await push(json({ k: "ready", o: id }));
+  ok(ready.shown && ready.shown.t === NEWS.ready && ready.shown.t === "Your order is ready" && ready.shown.opt.body === "Tap to open it."
+    && ready.shown.opt.data.url === "./?u=abcd-efgh#o=" + id && ready.shown.opt.data.order === id && ready.asked.length === 0,
+    "a wake that carries a kind shows that kind's words and reads nothing, and its tap is addressed to the order: " + JSON.stringify(ready));
+  const due = await push(json({ k: "due", o: "../x" }));
+  ok(due.shown && due.shown.t === "A payment is due" && due.shown.opt.data.url === "./?u=abcd-efgh" && due.shown.opt.data.order === "",
+    "an order that is not an order's shape is dropped from the address, and the words still say what it is: " + JSON.stringify(due.shown && due.shown.opt.data));
+  const odd = await push(json({ k: "constructor", o: id }));
+  const junk = await push({ json: () => { throw new SyntaxError("not json"); } });
+  const bare = await push(undefined);
+  ok([odd, junk, bare].every((x) => x.shown && x.shown.t === "Your order" && /has an update/.test(x.shown.opt.body) && x.asked.length === 1),
+    "a kind it has no words for, a payload it cannot read and a wake with none all keep the old fixed words, after the notice check: "
+    + JSON.stringify([odd, junk, bare].map((x) => x.shown && x.shown.t)));
+
+  /* ---- the tap ---- */
+  const tap = async (clients, data) => {
+    const sw = runSw(clients), waits = [];
+    sw.L.notificationclick({ notification: { data, close() {} }, waitUntil: (p) => waits.push(p) });
+    await Promise.all(waits);
+    return sw;
+  };
+  const told = [], focused = [];
+  const page = { url: "https://site.test/?u=abcd-efgh", postMessage: (m) => told.push(m), focus: async () => { focused.push(1); } };
+  const t1 = await tap([page], { url: "./?u=abcd-efgh#o=" + id, order: id });
+  ok(told.length === 1 && told[0].salt === "news" && told[0].order === id && focused.length === 1 && t1.opened.length === 0,
+    "a page already open is told which order to re-read and open, then brought forward, never a second window: " + JSON.stringify(told));
+  const t2 = await tap([], { url: "./?u=abcd-efgh#o=" + id, order: id });
+  ok(t2.opened.length === 1 && t2.opened[0] === "./?u=abcd-efgh#o=" + id, "with none open, the Counter opens at that order: " + JSON.stringify(t2.opened));
+  ok(!SW_JS.includes(String.fromCharCode(92)) && SW_JS.indexOf("`") < 0, "the script carries no backslash and no backtick, being shipped in a template literal");
+
+  /* ---- the page: it opens at the order on the way in, and on a message from the service worker ---- */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("7".repeat(64), un);
+  const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, live: null, prices: null, session: "sessLaaaaaaaaaaaaaaaaaaaaaaa",
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 Sep 2026", body: "<p>Statement</p>" }] })) };
+  const ord = (oid, at) => ({ id: oid, u: un, at, status: "acknowledged", product: "salt", qty: 1, unit: 100, mode: "collect", total: 100,
+    delivery: 0, paid: 0, payments: [], moved: 0, history: [{ at, status: "placed", by: "customer" }], msgs: [] });
+  const A = "20260920090000-aaaa1111", B = "20260921090000-bbbb2222", Cc = "20260922090000-cccc3333";
+  const orders = [ord(Cc, "2026-09-22T01:00:00Z"), ord(B, "2026-09-21T01:00:00Z"), ord(A, "2026-09-20T01:00:00Z")];
+  const st = { reads: 0, listen: null, scrolled: [] };
+  const dom = new JSDOM(landingPage(un, "nL", null), { url: "https://site.test/?u=" + un + "#o=" + B, runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {};
+      win.HTMLElement.prototype.scrollIntoView = function () { st.scrolled.push(this.getAttribute("data-order")); };
+      Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+        addEventListener: (t, f) => { if (t === "message") st.listen = f; }, getRegistration: async () => undefined } });
+      win.fetch = async (path) => {
+        const p = String(path);
+        if (p === "/open") return { ok: true, status: 200, json: async () => openB };
+        if (p === "/orders") { st.reads++; return { ok: true, status: 200, json: async () => ({ ok: true, orders }) }; }
+        return { ok: true, status: 200, json: async () => ({ ok: true }) };
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const onOrder = () => !D.getElementById("pOrder").hidden && D.getElementById("pStmt").hidden;
+  try {
+    ok(typeof st.listen === "function", "the page listens for its service worker from the first moment");
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !st.scrolled.length; i++) await new Promise((r) => setTimeout(r, 25));
+    ok(onOrder() && JSON.stringify(st.scrolled) === JSON.stringify([B]) && W.location.hash === "" && /u=abcd-efgh/.test(W.location.search),
+      "opened at #o=<id>, the page signs in, turns to the orders and brings that one order into view, then drops the address: "
+      + JSON.stringify({ onOrder: onOrder(), scrolled: st.scrolled, hash: W.location.hash }));
+    D.querySelector('#tabs button[data-t="stmt"]').click();
+    const before = st.reads;
+    await st.listen({ data: { salt: "news", order: A } });
+    ok(st.reads === before + 1 && onOrder() && st.scrolled[st.scrolled.length - 1] === A,
+      "a tap with the page already open re-reads the orders, then opens the one the banner was about: " + JSON.stringify({ reads: st.reads - before, scrolled: st.scrolled }));
+    D.querySelector('#tabs button[data-t="stmt"]').click();
+    const n = st.scrolled.length;
+    await st.listen({ data: { salt: "news", order: "20260101000000-zzzz9999" } });
+    await st.listen({ data: { salt: "other", order: A } });
+    ok(!onOrder() && st.scrolled.length === n && st.reads === before + 2,
+      "an order that is not theirs moves nothing, and a message that is not the banner's is not read at all: " + JSON.stringify({ scrolled: st.scrolled, reads: st.reads - before }));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } }
+})();
+section("S12 12.3: the chase runs at 10:00 and 18:00 from the day after the handover, only for goods received, paused on a claim, in its own words");
+await (async () => {
+  /* 24 SEP 2026, his decision D5. v700 chased every hour, day and night, from the first top of the hour
+     after the handover, with "Your order has an update" when nothing had updated: a customer paying cash at
+     the counter was asked again within minutes, and every hour of the night after. Driven through
+     scheduled() against a stubbed push service, and the kind read back off the phone's own side. */
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const { NEWS } = await import("../stmt/sw.js");
+
+  /* ---- the clock and the calendar, on their own ---- */
+  const day = Array.from({ length: 24 }, (_, h) => new Date(Date.UTC(2026, 8, 18, h)).toISOString());
+  const slots = day.filter((t) => O.chaseSlot(t) !== null);
+  ok(JSON.stringify(slots) === '["2026-09-18T02:00:00.000Z","2026-09-18T10:00:00.000Z"]'
+    && O.chaseSlot("2026-09-18T02:59:00Z") === O.hourOf("2026-09-18T02:00:00Z"),
+    "of the day's twenty-four ticks two are slots, 10:00 and 18:00 in Kuala Lumpur, and a late tick inside the hour is the same slot: " + JSON.stringify(slots));
+  ok(!O.graceOver({ movedOn: "2026-09-18" }, "2026-09-18T15:59:59Z") && O.graceOver({ movedOn: "2026-09-18" }, "2026-09-18T16:00:00Z")
+    && !O.graceOver({}, "2026-09-30T02:00:00Z"),
+    "the grace ends at midnight in Kuala Lumpur after the handover day, and an order with no handover day is never past it");
+  ok(O.claimWaits({ paid: 0, payments: [{ amount: 100 }] }) && !O.claimWaits({ paid: 100, payments: [{ amount: 100 }] })
+    && !O.claimWaits({ paid: 150, payments: [{ amount: 100 }] }) && !O.claimWaits({ paid: 0 }),
+    "a claim waits while what they say they sent is more than the order counts as paid; their word raising paid, as today, leaves none waiting");
+
+  /* ---- the tick, driven ---- */
+  const b64u = (a) => Buffer.from(a).toString("base64url");
+  const cat = (...a) => { const o = new Uint8Array(a.reduce((n, x) => n + x.length, 0)); let i = 0; for (const x of a) { o.set(x, i); i += x.length; } return o; };
+  const hk = async (salt, ikm, info, n) => new Uint8Array(await crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info },
+    await crypto.subtle.importKey("raw", ikm, "HKDF", false, ["deriveBits"]), n * 8));
+  const te = new TextEncoder();
+  const phone = async () => {
+    const kp = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+    const pub = new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey)), auth = crypto.getRandomValues(new Uint8Array(16));
+    const read = async (msg) => {
+      const salt = msg.slice(0, 16), asPub = msg.slice(21, 21 + msg[20]), ct = msg.slice(21 + msg[20]);
+      const secret = new Uint8Array(await crypto.subtle.deriveBits({ name: "ECDH",
+        public: await crypto.subtle.importKey("raw", asPub, { name: "ECDH", namedCurve: "P-256" }, false, []) }, kp.privateKey, 256));
+      const ikm = await hk(auth, secret, cat(te.encode("WebPush: info"), [0], pub, asPub), 32);
+      const pt = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: await hk(salt, ikm, cat(te.encode("Content-Encoding: nonce"), [0]), 12) },
+        await crypto.subtle.importKey("raw", await hk(salt, ikm, cat(te.encode("Content-Encoding: aes128gcm"), [0]), 16), "AES-GCM", false, ["decrypt"]), ct));
+      return JSON.parse(new TextDecoder().decode(pt.slice(0, pt.lastIndexOf(2))));
+    };
+    return { keys: { p256dh: b64u(pub), auth: b64u(auth) }, read };
+  };
+  const kv = new KV();
+  const vp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const env = { STMT: kv, STMT_VAPID_PUBLIC_KEY: "pub", STMT_VAPID_SUBJECT: "mailto:a@b.test",
+    STMT_VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", vp.privateKey)) };
+  const ord = (u, id, at, over) => Object.assign({ id, u, at, status: "ready", product: "salt", qty: 2, unit: 100, total: 200,
+    delivery: 0, mode: "collect", paid: 0, payments: [], moved: 2, movedOn: "2026-09-17", history: [], msgs: [] }, over);
+  const put = (o) => kv.put("order:" + o.u + ":" + o.id, JSON.stringify(o));
+  /* held since the day before, two orders; handed over today; a claim waiting; paid for the share held; his test account */
+  const A1 = ord("aaaa-1111", "20260915010000-aaa1", "2026-09-15T01:00:00Z"), A2 = ord("aaaa-1111", "20260916010000-aaa2", "2026-09-16T01:00:00Z");
+  await put(A1); await put(A2);
+  await put(ord("bbbb-2222", "20260918010000-bbb1", "2026-09-18T01:00:00Z", { movedOn: "2026-09-18" }));
+  await put(ord("cccc-3333", "20260915010000-ccc1", "2026-09-15T01:00:00Z", { payments: [{ at: "2026-09-17T09:00:00Z", amount: 50, method: "transfer" }] }));
+  await put(ord("dddd-4444", "20260915010000-ddd1", "2026-09-15T01:00:00Z", { qty: 5, total: 500, moved: 2, paid: 200, payments: [{ amount: 200 }] }));
+  await put(ord("0000-0000", "20260915010000-ttt1", "2026-09-15T01:00:00Z"));
+  const phones = {};
+  for (const u of ["aaaa-1111", "bbbb-2222", "cccc-3333", "dddd-4444", "0000-0000"]) {
+    phones[u] = await phone();
+    await kv.put("push:" + u + ":p1", JSON.stringify({ endpoint: "https://push.example/" + u, at: "2026-09-10T00:00:00Z", keys: phones[u].keys }));
+  }
+  const realF = globalThis.fetch;
+  const tick = async (iso) => {
+    const hit = [], w = [], realLog = console.log;
+    globalThis.fetch = async (url, init) => { hit.push({ u: String(url).split("/").pop(), body: init.body }); return new Response("", { status: 201 }); };
+    console.log = () => {};
+    try { await stmtW.scheduled({ cron: "0 * * * *", scheduledTime: Date.parse(iso) }, env, { waitUntil: (p) => w.push(p) }); await Promise.all(w); }
+    finally { globalThis.fetch = realF; console.log = realLog; }
+    return hit;
+  };
+  const who = (hit) => hit.map((h) => h.u).sort().join();
+  try {
+    const nine = await tick("2026-09-18T01:00:00Z"), ten = await tick("2026-09-18T02:00:00Z");
+    ok(nine.length === 0 && who(ten) === "aaaa-1111",
+      "09:00 wakes nobody; 10:00 wakes the one customer holding goods unpaid since before today, and nobody handed goods today, "
+      + "nobody with a claim waiting, nobody paid for what they hold, and not his test account: " + JSON.stringify([who(nine), who(ten)]));
+    const news = ten[0] && ten[0].body ? await phones["aaaa-1111"].read(ten[0].body) : null;
+    ok(news && news.k === "due" && NEWS[news.k] === "A payment is due" && news.o === A1.id,
+      "in its own words, A payment is due, never 'Your order has an update', and a tap opens the oldest order it is about: " + JSON.stringify(news));
+    const again = await tick("2026-09-18T02:40:00Z"), noon = await tick("2026-09-18T05:00:00Z"), eve = await tick("2026-09-18T10:00:00Z");
+    const night = [];
+    for (const h of ["2026-09-18T13:00:00Z", "2026-09-18T16:00:00Z", "2026-09-18T19:00:00Z", "2026-09-18T22:00:00Z"]) night.push(...(await tick(h)));
+    ok(again.length === 0 && noon.length === 0 && who(eve) === "aaaa-1111" && night.length === 0,
+      "the same slot twice wakes nobody, 13:00 wakes nobody, 18:00 wakes them again, and the night is quiet: "
+      + JSON.stringify([again.length, noon.length, who(eve), night.length]));
+    const next = await tick("2026-09-19T02:00:00Z");
+    ok(who(next) === "aaaa-1111,bbbb-2222", "the morning after a handover, the day's grace is over and they are chased too: " + who(next));
+    await put(Object.assign({}, A1, { paid: 200, payments: [{ amount: 200 }] })); await put(Object.assign({}, A2, { paid: 200 }));
+    const paid = await tick("2026-09-19T10:00:00Z");
+    ok(who(paid) === "bbbb-2222", "and once what was received is paid, that customer is chased no more, with nothing to turn off: " + who(paid));
+  } finally { globalThis.fetch = realF; }
+})();
+section("S12 fix: a key the shape check passed but WebCrypto refuses still wakes its phone, with nothing in it");
+await (async () => {
+  /* S12-ENC-1, 24 Sep 2026: pushKeys checks the shape of p256dh, never that the point is on the curve, and the
+     seal ran inside the try that guards the send, so a pair it passed and WebCrypto refused cost that phone its
+     wake, where before 12.1 the same record was woken with nothing in it. */
+  const P = await import("../stmt/push.js");
+  const b64u = (a) => Buffer.from(a).toString("base64url");
+  const kv = new KV();
+  const vp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const env = { STMT: kv, STMT_VAPID_PUBLIC_KEY: "pub", STMT_VAPID_SUBJECT: "mailto:a@b.test",
+    STMT_VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", vp.privateKey)) };
+  const u = "m3n5-q7s9";
+  const ua = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+  const good = { p256dh: b64u(new Uint8Array(await crypto.subtle.exportKey("raw", ua.publicKey))), auth: b64u(crypto.getRandomValues(new Uint8Array(16))) };
+  const off = new Uint8Array(65).fill(1); off[0] = 4;
+  const offKeys = { p256dh: b64u(off), auth: good.auth };
+  let refused = false;
+  try { await crypto.subtle.importKey("raw", off, { name: "ECDH", namedCurve: "P-256" }, false, []); } catch (e) { refused = true; }
+  ok(!!P.pushKeys(offKeys) && refused, "the fixture is the case: a point the shape check passes and WebCrypto refuses");
+  await kv.put("push:" + u + ":keyed", JSON.stringify({ endpoint: "https://push.example/keyed", keys: good }));
+  await kv.put("push:" + u + ":off", JSON.stringify({ endpoint: "https://push.example/off", keys: offKeys }));
+  const realF = globalThis.fetch, hit = [];
+  globalThis.fetch = async (url, init) => { hit.push({ u: String(url).split("/").pop(), h: init.headers, body: init.body }); return new Response("", { status: 201 }); };
+  let r;
+  try { r = await P.wakeCustomer(env, u, { k: "ready", o: "20260924101500-ab12cd34" }); } finally { globalThis.fetch = realF; }
+  const offHit = hit.find((x) => x.u === "off"), keyedHit = hit.find((x) => x.u === "keyed");
+  ok(r.sent === 2 && r.failed === 0 && r.sealed === 1 && offHit && offHit.body === undefined && offHit.h["Content-Length"] === "0"
+    && !offHit.h["Content-Encoding"] && keyedHit && keyedHit.body && keyedHit.h["Content-Encoding"] === "aes128gcm",
+    "that phone is woken with nothing in it, as a phone with no keys is, and the phone beside it still reads its kind: "
+    + JSON.stringify({ r, hit: hit.map((x) => x.u) }));
+})();
+
+section("S12 fix: a handover the return leg carries back starts the day's grace again, as one on Site orders does");
+await (async () => {
+  /* S12-R1 and S12-C1, 24 Sep 2026: the return leg wrote movedOn only when it was empty, so the rest of an order
+     taken at the counter and recorded on the desk kept the FIRST handover's day, and graceOver let the 18:00 chase
+     ask for it that same evening. Driven through deskMove { ledger }, the road tellSite takes, on the real clock. */
+  const O = await import("../stmt/orders.js");
+  const kv = new KV(), env = { STMT: kv };
+  const u = "aaaa-1111", id = "20260920010000-abcd1234", key = "order:" + u + ":" + id;
+  await kv.put(key, JSON.stringify({ id, u, at: "2026-09-20T01:00:00Z", status: "acknowledged", product: "salt", qty: 5, unit: 100,
+    total: 500, delivery: 0, mode: "collect", paid: 0, payments: [], moved: 0, movedOn: null, history: [], msgs: [] }));
+  /* two of five handed over and paid for, weeks ago */
+  await O.deskMove(env, u, id, { ledger: { paid: 200, moved: 2 } });
+  const first = JSON.parse(await kv.get(key));
+  first.movedOn = "2026-09-01";
+  await kv.put(key, JSON.stringify(first));
+  ok(!O.isAdvance(first) && (await O.toChase(env, "2026-09-02T02:00:00Z")).length === 0,
+    "paid for the share they hold, nobody is chased: " + JSON.stringify({ paid: first.paid, moved: first.moved }));
+  /* the rest goes out today, recorded on the desk, nothing more paid */
+  await O.deskMove(env, u, id, { ledger: { moved: 5 } });
+  const after = JSON.parse(await kv.get(key));
+  const day = new Date(after.history[after.history.length - 1].at).toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
+  const next = new Date(Date.parse(day + "T00:00:00Z") + 86400000).toISOString().slice(0, 10);
+  const eve = (await O.toChase(env, day + "T10:00:00Z")).map((x) => x.u), morning = (await O.toChase(env, next + "T02:00:00Z")).map((x) => x.u);
+  ok(O.isAdvance(after) && after.moved === 5 && after.movedOn === day && eve.length === 0 && JSON.stringify(morning) === JSON.stringify([u]),
+    "the order is now an advance, its handover day is today's, 18:00 today asks nothing and 10:00 tomorrow does: "
+    + JSON.stringify({ movedOn: after.movedOn, day, eve, morning }));
+})();
+
+section("S12 fix: a banner tapped on a page whose session has lapsed opens that order after Continue, never the list drawn last");
+await (async () => {
+  /* S12-R2, 24 Sep 2026: a session is a flat fifteen minutes and a banner comes hours later, so the tap's re-read
+     usually met a 401. The page then opened the order off the list it drew last, spent the target doing so, and
+     after Continue and the sign-in landed on Statements with nothing opened. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("8".repeat(64), un);
+  const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, live: null, prices: null, session: "sessMaaaaaaaaaaaaaaaaaaaaaaa",
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 Sep 2026", body: "<p>Statement</p>" }] })) };
+  const ord = (oid, at) => ({ id: oid, u: un, at, status: "acknowledged", product: "salt", qty: 1, unit: 100, mode: "collect", total: 100,
+    delivery: 0, paid: 0, payments: [], moved: 0, history: [{ at, status: "placed", by: "customer" }], msgs: [] });
+  const A = "20260920090000-aaaa1111", B = "20260921090000-bbbb2222";
+  const orders = [ord(B, "2026-09-21T01:00:00Z"), ord(A, "2026-09-20T01:00:00Z")];
+  const st = { listen: null, scrolled: [], lapsed: false, reads: 0, refused: 0 };
+  const dom = new JSDOM(landingPage(un, "nM", null), { url: "https://site.test/?u=" + un, runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {};
+      win.HTMLElement.prototype.scrollIntoView = function () { st.scrolled.push(this.getAttribute("data-order")); };
+      Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+        addEventListener: (t, f) => { if (t === "message") st.listen = f; }, getRegistration: async () => undefined } });
+      win.fetch = async (path) => {
+        const p = String(path);
+        if (p === "/open") { st.lapsed = false; return { ok: true, status: 200, json: async () => openB }; }
+        if (p === "/orders") {
+          if (st.lapsed) { st.refused++; return { ok: false, status: 401, json: async () => ({ ok: false, session: false }) }; }
+          st.reads++; return { ok: true, status: 200, json: async () => ({ ok: true, orders }) };
+        }
+        return { ok: true, status: 200, json: async () => ({ ok: true }) };
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const wait = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); };
+  const onOrder = () => !D.getElementById("pOrder").hidden && D.getElementById("pStmt").hidden;
+  const signIn = async () => {
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await wait(() => D.getElementById("pOrder").querySelector("[data-order]"));
+  };
+  try {
+    await signIn();
+    D.querySelector('#tabs button[data-t="stmt"]').click();
+    st.lapsed = true;
+    await st.listen({ data: { salt: "news", order: A } });
+    ok(st.refused === 1 && !D.getElementById("lapse").hidden && !onOrder() && st.scrolled.length === 0,
+      "the tap's re-read meets the lapse: the bar says so and nothing is opened off the list drawn last: "
+      + JSON.stringify({ refused: st.refused, onOrder: onOrder(), scrolled: st.scrolled }));
+    D.getElementById("lapseGo").click();
+    await new Promise((r) => setTimeout(r, 50));
+    const reads = st.reads;
+    await signIn();
+    await wait(() => st.scrolled.length);
+    ok(st.reads > reads && onOrder() && JSON.stringify(st.scrolled) === JSON.stringify([A]),
+      "after Continue and the sign-in, the orders are read afresh and the one the banner was about is opened: "
+      + JSON.stringify({ reads: st.reads - reads, onOrder: onOrder(), scrolled: st.scrolled }));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("S12 fix: news of one order never replaces another's, on the lock screen or at the push service");
+await (async () => {
+  /* S12-C3, 24 Sep 2026: every kind shared one tag and one push Topic. With one fixed sentence that lost nothing;
+     with the kind named, "Your order is ready" for one order was replaced by the 18:00 chase for another, on the
+     lock screen and, with the phone off, at the push service, and the tap then opened the other order. */
+  const { SW_JS } = await import("../stmt/sw.js");
+  const P = await import("../stmt/push.js");
+  const vm = await import("node:vm");
+  const A = "20260924175900-aaaa1111", B = "20260920120000-bbbb2222";
+  const shownBy = async (data) => {
+    const L = {}, shown = [], waits = [];
+    const ctx = { URL, Date, console, fetch: async () => ({ ok: true, json: async () => ({ ok: true, lines: [], at: null }) }),
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { href: "https://site.test/sw.js?u=abcd-efgh" },
+        registration: { scope: "https://site.test/", showNotification: async (t, opt) => { shown.push({ t, tag: opt.tag }); } },
+        clients: { matchAll: async () => [], openWindow: async () => {} } } };
+    vm.createContext(ctx); vm.runInContext(SW_JS, ctx);
+    L.push({ data, waitUntil: (p) => waits.push(p) });
+    await Promise.all(waits);
+    return shown[0];
+  };
+  const json = (v) => ({ json: () => v });
+  const ready = await shownBy(json({ k: "ready", o: A })), due = await shownBy(json({ k: "due", o: B })), readyAgain = await shownBy(json({ k: "paid", o: A }));
+  const loose = await shownBy(json({ k: "due", o: "" })), bare = await shownBy(undefined);
+  ok(ready.tag !== due.tag && ready.tag === readyAgain.tag && loose.tag === "order-update" && bare.tag === "order-update",
+    "a banner for one order and one for another sit side by side, a newer one for the same order replaces the older, "
+    + "and a banner naming no order keeps the one tag: " + JSON.stringify([ready.tag, due.tag, readyAgain.tag, loose.tag, bare.tag]));
+
+  const kv = new KV();
+  const vp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const env = { STMT: kv, STMT_VAPID_PUBLIC_KEY: "pub", STMT_VAPID_SUBJECT: "mailto:a@b.test",
+    STMT_VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", vp.privateKey)) };
+  const ua = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+  const keys = { p256dh: Buffer.from(new Uint8Array(await crypto.subtle.exportKey("raw", ua.publicKey))).toString("base64url"),
+    auth: Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString("base64url") };
+  const u = "m3n5-q7s9";
+  await kv.put("push:" + u + ":keyed", JSON.stringify({ endpoint: "https://push.example/keyed", keys }));
+  await kv.put("push:" + u + ":bare", JSON.stringify({ endpoint: "https://push.example/bare" }));
+  const realF = globalThis.fetch;
+  const topics = async (news) => {
+    const t = {};
+    globalThis.fetch = async (url, init) => { t[String(url).split("/").pop()] = init.headers.Topic; return new Response("", { status: 201 }); };
+    try { await P.wakeCustomer(env, u, news); } finally { globalThis.fetch = realF; }
+    return t;
+  };
+  const tA = await topics({ k: "ready", o: A }), tB = await topics({ k: "due", o: B }), tA2 = await topics({ k: "paid", o: A }), tNone = await topics({ k: "due", o: "" });
+  const fits = (x) => /^[A-Za-z0-9_-]{1,32}$/.test(x) && !x.includes("aaaa1111") && !x.includes("20260924");
+  ok(tA.keyed !== tB.keyed && tA.keyed === tA2.keyed && fits(tA.keyed) && fits(tB.keyed) && tNone.keyed === "salt-order",
+    "at the push service a sealed wake collapses per order, under a topic of the RFC's shape that does not carry the order's id: "
+    + JSON.stringify([tA.keyed, tB.keyed, tA2.keyed, tNone.keyed]));
+  ok([tA, tB, tA2, tNone].every((t) => t.bare === "salt-order"),
+    "and a phone with no keys, whose banners all say the same, keeps the one topic: " + JSON.stringify([tA.bare, tB.bare]));
+})();
+
+section("S12 fix: the Notifications pane says what the phone will hear, the reply and the payment due at 10:00 and 18:00 included");
+await (async () => {
+  /* S12-C4, 24 Sep 2026: both states promised "acknowledged, ready, or completed", while the phone is also woken
+     for a reply, a payment received, a handover and, twice a day, a payment due. Read off the pane as it draws. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), un);
+  const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, live: null, prices: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 Sep 2026", body: "<p>Statement</p>" }] })) };
+  const drive = async (permission) => {
+    const reg = { pushManager: { subscribe: async () => ({ endpoint: "https://push.example/c4", toJSON: () => ({ endpoint: "https://push.example/c4" }) }) } };
+    const dom = new JSDOM(landingPage(un, "nN", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+        win.scrollTo = () => {};
+        win.PushManager = function () {};
+        win.Notification = { permission, requestPermission: async () => permission };
+        Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+          register: async () => reg, ready: Promise.resolve(reg), getRegistration: async () => undefined, addEventListener() {} } });
+        win.fetch = async (path) => {
+          const p = String(path);
+          if (p === "/open") return { ok: true, status: 200, json: async () => openB };
+          if (p === "/push/key") return { ok: true, status: 200, json: async () => ({ ok: true, key: "BA", configured: true }) };
+          if (p === "/push/subscribe") return { ok: true, status: 200, json: async () => ({ ok: true, id: "x", keys: false }) };
+          return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+        };
+      } });
+    const W = dom.window, D = W.document;
+    const pane = () => [...D.querySelectorAll("#pOrder .pane")].find((x) => /Notifications/.test(x.textContent));
+    try {
+      D.getElementById("pw").value = pass;
+      D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+      const want = permission === "granted" ? /Notifications\s*On\./ : /Notify me/;
+      for (let i = 0; i < 200 && !(pane() && want.test(pane().textContent)); i++) await new Promise((r) => setTimeout(r, 25));
+      return pane() ? pane().textContent : "";
+    } finally { try { W.close(); } catch (e) { /* best effort */ } }
+  };
+  const on = await drive("granted"), off = await drive("denied");
+  const says = (t) => /a reply/.test(t) && /at 10:00 and 18:00 when a payment is due/.test(t) && /your order changes/.test(t)
+    && !/acknowledged, ready/.test(t);
+  ok(/On\. You will be told/.test(on) && says(on), "switched on, it says what the phone will hear, the payment due and its two hours included: " + on);
+  ok(/Notify me on this phone/.test(off) && says(off) && /only what kind of news it is/.test(off),
+    "and the offer says the same before the tap, and that the banner names only the kind: " + off);
 })();
 
 section("v760: a customer paying or taking an order back wakes him, and the banner says which");
