@@ -18853,6 +18853,49 @@ await (async () => {
   }
 })();
 
+section("S1 1.26: his own cancellation is noted in the ledger as his, and theirs as theirs");
+await (async () => {
+  /* 24 Sep 2026 (M27). The reconcile took only a DECLINE to be his, so an order he cancelled on the card
+     reached the committed book as "Withdrawn on the statements site by the customer". */
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders } = await import("../src/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const skv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const STATE = { OPEN: { byKey: {} } };
+  const D1 = { prepare(sql) {
+    const s = sql.replace(/\s+/g, " ").trim(); let b = [];
+    const api = { bind(...a) { b = a; return api; },
+      async first() { return null; },
+      async all() { return /FROM state/.test(s) ? { results: Object.keys(STATE).map((k) => ({ key: k, doc: JSON.stringify(STATE[k]) })) } : { results: [] }; },
+      async run() { return {}; } };
+    return api;
+  } };
+  const dkv = new KV(), u = "abcd-efgh";
+  await dkv.put("stmt-users", JSON.stringify({ [u]: "CC5-OKR" }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key",
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const last = async () => JSON.parse(await dkv.get("q:orders")).queue.slice(-1)[0];
+  /* each order is placed, agreed, its row put on the book, and then ended by one side */
+  const endedBy = async (total, end) => {
+    const o = (await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: total, total, week: "" })).order;
+    await O.deskMove(senv, u, o.id, { status: "acknowledged", mode: "collect" });
+    await reconcileOrders(denv);
+    STATE.OPEN.byKey[(await last()).orderKey] = { rid: "s" + total };
+    await end(o);
+    await reconcileOrders(denv);
+    return last();
+  };
+  const his = await endedBy(101, (o) => O.deskMove(senv, u, o.id, { status: "cancelled" }));
+  ok(his.status === "Cancellation" && /by the desk/.test(his.payload.note) && !/by the customer/.test(his.payload.note),
+    "a cancellation he made on the card is noted as his: " + his.payload.note);
+  const theirs = await endedBy(102, (o) => O.customerMove(senv, u, o.id, "cancel", {}));
+  ok(theirs.status === "Cancellation" && /by the customer/.test(theirs.payload.note),
+    "one the customer made is still noted as theirs: " + theirs.payload.note);
+  const declined = await endedBy(103, (o) => O.deskMove(senv, u, o.id, { status: "declined" }));
+  ok(declined.status === "Cancellation" && /by the desk/.test(declined.payload.note),
+    "and a decline is his, as it always was: " + declined.payload.note);
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one

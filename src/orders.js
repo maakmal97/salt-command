@@ -341,7 +341,12 @@ export async function reconcileOrders(env) {
         if (job === "ack") e = pendingEntry(order, code, stageAt(order, job, now));
         else if (job === "pay") e = payEntry(order, code, +((+order.paid || 0) - (+q.paid || 0)).toFixed(2), stageAt(order, job, now));
         else if (job === "move") e = handoverEntry(order, code, +order.moved || 0, stageAt(order, job, now));
-        else if (job === "cancel") e = cancelEntry(order, code, order.status === "declined" ? "desk" : "customer", stageAt(order, job, now));
+        /* WHO ENDED IT is read off the event that ended it (24 Sep 2026): a cancellation of his own was
+           noted in the committed row as the customer's, because only a decline was taken to be his */
+        else if (job === "cancel") {
+          const ended = [...(order.history || [])].reverse().find((x) => x && (x.status === "cancelled" || x.status === "declined"));
+          e = cancelEntry(order, code, ended && ended.by === "desk" ? "desk" : "customer", stageAt(order, job, now));
+        }
         if (!e) continue;
         e.orderId = o.id;   /* which order made it, so a rejection can be told to that order (rejectedOnOrder); never the username */
         while (used.has(e.at)) e.at = new Date(Date.parse(e.at) + 1).toISOString();
