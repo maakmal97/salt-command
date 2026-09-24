@@ -2237,7 +2237,7 @@ const CLIENT_JS = `
     B.appendChild(top);
     var can=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
     var on=!!draft.pushed||(can&&Notification.permission==='granted'&&!!draft.pushDone);
-    if(on){ if(draft.buzzAsked) B.appendChild(statusLine('On. This phone is told when it is confirmed.')); }
+    if(on){ if(draft.buzzAsked) B.appendChild(statusLine('On. This '+DEV+' is told when it is confirmed.')); }
     else if(!draft.buzzNo&&!(can&&Notification.permission==='denied')){
       var bx=el('div','salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm obuzz');
       bx.appendChild(el('p','salt-eyebrow salt-eyebrow--brass','A buzz when it is confirmed?'));
@@ -2328,8 +2328,9 @@ const CLIENT_JS = `
     } else if(draft.pushed||Notification.permission==='granted'&&draft.pushDone){
       np.appendChild(el('p','sub2','On. You will be told when your order changes, when there is a reply, and at 10:00 and 18:00 when a payment is due.'));
     } else {
-      np.appendChild(el('p','sub2','Be told on this phone when your order changes, when there is a reply, and at 10:00 and 18:00 when a payment is due. The banner says only what kind of news it is, never an amount or which order, and a tap opens the order.'));
-      var nb=el('button','btn quiet salt-ghost','Notify me on this phone'); nb.type='button';
+      np.appendChild(el('p','sub2','Be told on this '+DEV+' when your order changes, when there is a reply, and at 10:00 and 18:00 when a payment is due. The banner says only what kind of news it is, never an amount or which order, and a tap opens the order.'));
+      /* S7 7.2: nothing says phone on a computer */
+      var nb=el('button','btn quiet salt-ghost','Notify me on this '+DEV); nb.type='button';
       nb.addEventListener('click', subscribePush); np.appendChild(nb);
       if(draft.pushNote) np.appendChild(el('p','msg',draft.pushNote));
     }

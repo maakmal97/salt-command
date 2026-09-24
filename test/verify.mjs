@@ -13555,7 +13555,7 @@ await (async () => {
       "it asks A buzz when it is confirmed?, and drawing the question asks the browser nothing: " + st.asked);
     d.getElementById("oBuzz").click();
     for (let i = 0; i < 100 && !(st.subscribed.length && !box()); i++) await new Promise((r) => setTimeout(r, 30));
-    ok(st.asked === 1 && JSON.stringify(st.subscribed) === '["https://push.example/ep-s45"]' && !box() && /On[.] This phone is told/.test(sh().textContent),
+    ok(st.asked === 1 && JSON.stringify(st.subscribed) === '["https://push.example/ep-s45"]' && !box() && /On[.] This computer is told/.test(sh().textContent),   /* S7 7.2: jsdom's browser is a computer */
       "the tap asks once, the phone is subscribed, and the sheet says it is on where the question was: " + JSON.stringify({ asked: st.asked, subscribed: st.subscribed }));
     d.getElementById("oSee").click();
     const scr = d.querySelector("#pOrder .oscreen");
@@ -28034,8 +28034,9 @@ await (async () => {
   const says = (t) => /a reply/.test(t) && /at 10:00 and 18:00 when a payment is due/.test(t) && /your order changes/.test(t)
     && !/acknowledged, ready/.test(t);
   ok(/On\. You will be told/.test(on) && says(on), "switched on, it says what the phone will hear, the payment due and its two hours included: " + on);
-  ok(/Notify me on this phone/.test(off) && says(off) && /only what kind of news it is/.test(off),
-    "and the offer says the same before the tap, and that the banner names only the kind: " + off);
+  /* S7 7.2: nothing says phone on a computer, which is what jsdom's browser says it is */
+  ok(/Notify me on this computer/.test(off) && /Be told on this computer/.test(off) && !/phone/.test(off) && says(off) && /only what kind of news it is/.test(off),
+    "and the offer says the same before the tap, and that the banner names only the kind, naming the device it is on: " + off);
 })();
 
 section("S10 with S12: on both roads every wake carries its kind and its order, and the chase runs at its slots, one wake a slot");
