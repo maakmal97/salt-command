@@ -326,7 +326,7 @@ function stmtDoc(party,rows,o){
      just as well. An issue that footed to one blended figure keeps it, exactly as issues sealed
      before v695 keep the letterhead they were sent with. The correction is for what is live. */
   const marked=!(o&&o.archive);
-  const markOf=p=>!marked?'':'<span class="pm">'+psymSvg(p,13)
+  const markOf=(p,px)=>!marked?'':'<span class="pm">'+psymSvg(p,px||13)
     +'<span class="sr">'+esc(PSHAPE[String(p||'').toLowerCase()]||PSHAPE._)+'</span></span>';
   const e=esc, n2=v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:2});
   const money=v=>Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -343,7 +343,7 @@ function stmtDoc(party,rows,o){
      rule 2), so the path is removed rather than parameterised: a statement built here
      cannot carry a real name because nothing here holds one. */
   const who=codeOf(party);
-  const T={qty:0,total:0,paid:0,owed:0,qtyBy:{}};
+  const T={qty:0,total:0,paid:0,owed:0,qtyBy:{},toGetBy:{}};
   T.toGet=0;T.kindUnits=0;T.got=0;T.ordered=0;
   /* a GIFT is not a payment. Its in-kind value exists so the salt does not fall out of
      the ledger as shrinkage; counting it here made Paid exceed the total ordered, which
@@ -366,7 +366,7 @@ function stmtDoc(party,rows,o){
        and for every caller that already reads it. */
     T.qtyBy[r.product]=(T.qtyBy[r.product]||0)+r.qty;
     T.qty+=r.qty;T.total+=r.total;T.paid+=r.gift?0:(r.paidCash+r.inKind);T.owed+=r.owed;
-    T.toGet+=(r.toGet>0&&!r.pendingOrder)?r.toGet:0;T.kindUnits+=r.gift?0:r.inKindUnits;T.got+=r.got;T.ordered+=r.qty;});
+    const tg=(r.toGet>0&&!r.pendingOrder)?r.toGet:0;T.toGet+=tg;T.toGetBy[r.product]=(T.toGetBy[r.product]||0)+tg;T.kindUnits+=r.gift?0:r.inKindUnits;T.got+=r.got;T.ordered+=r.qty;});
   /* the row label has to agree with the walk printed below it. Where the offset went
      against a separate arrangement rather than an unpaid earlier order, calling it an
      "earlier balance" contradicts the explanation three inches further down the page. */
@@ -527,8 +527,15 @@ function stmtDoc(party,rows,o){
    /* GOODS OWED GET THEIR OWN BLOCK. A statement whose only large figure is money can
       read as though nothing else is outstanding, which is exactly the misreading a
       dispute about undelivered salt would turn on. */
+   /* ONE LINE A BOOK, marked, and never a sum over two (v782's rule, which this block broke until
+      stage 1 of the Counter redesign, 24 Sep 2026): two of one book and one and a half of another
+      are not three and a half of anything. An archive keeps the one figure it was issued with. */
    (T.toGet>0.009?'<div class="owed"><p class="owedl">Still to collect</p>'
-     +'<p class="owedv">'+n2(T.toGet)+' <span>unit</span></p></div>':''),
+     +(marked
+       ? bookOrder(Object.keys(T.toGetBy).filter(p=>T.toGetBy[p]>0.009))
+           .map(p=>'<p class="owedv">'+markOf(p,20)+n2(T.toGetBy[p])+' <span>unit</span></p>').join('')
+       : '<p class="owedv">'+n2(T.toGet)+' <span>unit</span></p>')
+     +'</div>':''),
    /* THE WORKINGS, step by step, so nothing has to be taken on trust */
    (o.recon||[]).map(R=>{
      let st=0;

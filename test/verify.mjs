@@ -19331,6 +19331,41 @@ await (async () => {
     "at RM 100 exactly, and with no figure at all, the account opens as it always has");
 })();
 
+section("S1 1.28: Still to collect is one line a book, never units of different books added");
+await (async () => {
+  /* STAGE 1 OF THE COUNTER REDESIGN (M29, 24 Sep 2026): the footer kept the books apart since v782 and
+     the Still to collect block two lines below it still added them. Forced state: a fixture party owed
+     2 of one book and 1.5 of another, on a copy of the book, so nothing here waits on the live book. */
+  const fx = (rid, product, qty, total) => ({ rid, date: "2026-09-10", customer: "CX8-TG", product, qty, total, cost: 44, cash: total, deliveredQty: 1 });
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  bk.sales.push(fx("tg01", "salt", 3, 330), fx("tg02", "oil", 2.5, 250));
+  const tmp = join(REPO, "test", "tmp", "s1-128-" + Date.now());
+  mkdirSync(tmp, { recursive: true });
+  writeFileSync(join(tmp, "book.json"), JSON.stringify(bk));
+  const prev = process.env.SALT_BOOK; process.env.SALT_BOOK = join(tmp, "book.json");
+  let M;
+  const { pathToFileURL: pu } = await import("node:url");
+  try { M = await import(pu(join(REPO, "tools", "make_statements.mjs")).href + "?s1-128"); }
+  finally { if (prev === undefined) delete process.env.SALT_BOOK; else process.env.SALT_BOOK = prev; rmSync(tmp, { recursive: true, force: true }); }
+  const at = new Date("2026-09-22T00:00:00Z");
+  const doc = M.liveStatement("CX8-TG", at);
+  const body = String(doc && doc.body);
+  const i = body.indexOf('<div class="owed">'), block = i < 0 ? "" : body.slice(i, body.indexOf("</div>", i));
+  const lines = block.split('<p class="owedv">').slice(1);
+  const txt = (h) => h.replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  ok(i >= 0 && lines.length === 2, "the block has one line a book: " + lines.length + " lines");
+  ok(lines.length === 2 && /class="pm"/.test(lines[0]) && /Cube/.test(lines[0]) && txt(lines[0]).endsWith("2 unit")
+    && /class="pm"/.test(lines[1]) && /Droplet/.test(lines[1]) && txt(lines[1]).endsWith("1.5 unit"),
+    "each line carries its book's mark and its own figure, salt first: " + lines.map(txt).join(" | "));
+  ok(i >= 0 && !/3\.5/.test(txt(block)), "and the sum of two books, 3.5, is nowhere in it: " + txt(block));
+  /* an archive keeps the one figure it was issued with, a dated record not being corrected in place */
+  const o = { from: null, to: "2026-09-22", completed: true, open: true, pending: true, dates: true, issued: "22 Sep 2026", archive: true };
+  const arc = M.stmtDoc("CX8-TG", M.stmtRows("CX8-TG", o), o);
+  const ai = arc.indexOf('<div class="owed">'), ablock = ai < 0 ? "" : arc.slice(ai, arc.indexOf("</div>", ai));
+  ok(ai >= 0 && ablock.split('<p class="owedv">').length === 2 && /3\.5/.test(txt(ablock)) && !/<svg/.test(ablock),
+    "an archive still foots its one unmarked figure, as issued: " + txt(ablock));
+})();
+
 section("v782: a statement says which book each row is, and units of different books do not add");
 await (async () => {
   /* stmtRows filters by PARTY and never by product, so a customer holding two books got one
