@@ -22455,6 +22455,18 @@ await (async () => {
   ok(at(".salt-ledger {") >= 0 && at(".salt-ledger {") < at(".salt-ledger--plain") && at(".salt-field__input {") >= 0 && at(".salt-field__input {") < at(".salt-field__input--code"),
     "in the system's own order, so the plain ledger list and the code field come after the rules they modify");
   ok(!/\/\*|\*\//.test(R) && !/Salt Admin|Salt Command/.test(R), "and with no comment, so no note of the system's reaches a customer's page");
+  /* WHOLE, read against the vendored stylesheet and not the tool that made R (S2-CODE-4, 24 Sep 2026): each carried
+     section is sliced here by its own head, its comments and the select's two rules (the page loads no data: image) are
+     taken out, and what is left must stand in R rule for rule, whitespace aside. A section cut short at a rule boundary
+     kept every earlier assertion green. */
+  const { RECIPE_HEADS: headsW } = await import("../tools/stmt-style.mjs");
+  const cssW = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8"), flat = (s) => s.replace(/\s+/g, " ").trim(), flatR = flat(R);
+  const shortW = headsW.filter((h) => {
+    const i = cssW.indexOf(h), j = cssW.indexOf("\n/* ---- ", i + h.length);
+    const sec = cssW.slice(i, j < 0 ? cssW.length : j).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\n[^\n{}]*salt-field__select[^{}]*\{[^}]*\}/g, "");
+    return i < 0 || !flatR.includes(flat(sec));
+  });
+  ok(headsW.length > 25 && !shortW.length, "and each of its " + headsW.length + " sections whole, every rule the system states in it (short: " + (shortW.join(" ") || "none") + ")");
   /* S2 fixes of 24 Sep 2026, each proved red by mutation on its own */
   ok(!/font-size: [0-9.]+px/.test(R) && /\.salt-pill--md \{[^}]*font-size: 0\.875rem/.test(R),
     "every recipe it carries sets its type in rem, so the pill, the field and the tabs grow with the prose beside them (S2R-2, U5)");

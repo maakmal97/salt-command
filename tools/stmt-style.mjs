@@ -65,7 +65,7 @@ export function fontFaceCss() {
    tab strip and the state chip, sliced by their headers out of the same vendored stylesheet as the
    tokens. The page carries them beside the tokens, so a recipe changed upstream reaches the
    customer at the next sync, and the page's own layer decides only geometry. */
-const RECIPE_HEADS = [
+export const RECIPE_HEADS = [
   "/* ---- Pill button ---- */", "/* ---- Fields ---- */", "/* ---- Tab strip ---- */",
   "/* ---- Status chip:", "/* ---- Ghost button:", "/* ---- Status chip, the added tones ---- */",
   /* STAGE 2 OF THE COUNTER REDESIGN (24 Sep 2026): the nine recipes the system gained for it, and
