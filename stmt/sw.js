@@ -27,6 +27,7 @@ export const NEWS = {
   ready: "Your order is ready",
   reply: "A reply on your order",
   paid: "Payment received",
+  notfound: "Payment not found yet",   /* S6 11.14: his Not found on what they say they sent */
   due: "A payment is due",
   delivered: "Your order was delivered",
   collected: "Your order was collected",

@@ -33,7 +33,7 @@
    with node:fs, and a Worker has no filesystem. `node tools/stmt-style.mjs --sync` writes
    this file and CI runs --check, so there is still one source. */
 import { STATEMENT_CSS, SITE_RECIPES, FONT_FACE_CSS } from "./statement-css.js";
-import { PAY_SITE, PAY_ACCOUNTS } from "./pay.js";
+import { PAY_SITE, PAY_ACCOUNTS, payHref } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 import { MAX_OPEN, OPEN_STATES } from "./orders.js";
 
@@ -144,14 +144,23 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .btn{margin-top:18px;width:100%}
 /* a pay link is a .salt-ghost too (24 Sep 2026); a long account name wraps, and its lines centre */
 .btn.lnk{text-align:center;line-height:1.4}
-/* KEEP IT ON YOUR HOME SCREEN (v693; S3 3.10): a card on the account, once signed in, in a browser that is not
-   already the app; its steps sit in a Sheet and draw the phone's own marks */
-.keepcard{max-width:620px;margin:0 auto 18px}
-.keepcard .kline{margin:6px 0 10px;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+/* KEEP IT ON YOUR HOME SCREEN (v693; S3 3.10): This device's first row (S9 fix), once signed in, in a browser that is
+   not already the app, and a card of its own leading a new account's Home (S7); its steps sit in a Sheet and draw the
+   phone's own marks */
+.keepcard .kline{margin:0}
 .keepcard b{color:var(--salt-text);font-weight:600}
+.home .keepcard .salt-ledger__row{border-bottom:0}
 .keepsteps{margin:14px 0;padding-left:22px;line-height:2.1}
 .keepsteps .glyph,.keepcard .glyph{vertical-align:-0.3em;margin:0 3px}
 .keepsteps .sub2{display:block;line-height:1.5;margin:0 0 6px}
+/* S9 9.9: in This device (S7 7.3, below), its phones and computers with this one marked, and the two quiet ways, each
+   answered on the line under them */
+.devcard .dacts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.devcard .dnote{margin:8px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.devcard .dnote:empty{display:none}
+.devcard .dnote.bad{color:var(--salt-ember)}
+#devQr{width:min(240px,100%);margin:4px auto 20px}
+#devQrImg{display:block;width:100%;height:auto}
 /* REMEMBER ME (v692): a checkbox on the door, at the tap size everything else here is */
 .rem{display:flex;align-items:center;gap:10px;margin-top:16px;min-height:var(--salt-tap);
   font-size:var(--salt-text-sm);color:var(--salt-text-muted);cursor:pointer}
@@ -253,6 +262,26 @@ h3.pmark{margin:0 0 4px;line-height:1}
   .acct{max-width:1060px;display:grid;grid-template-columns:minmax(0,620px) minmax(300px,1fr);column-gap:40px;align-items:start}
   .devcard{margin:0}
 }
+/* S6 6.2: To pay now, Home's first answer since S7 7.1, its parts on the plain Ledger list */
+.payhead[hidden]{display:none}
+.payhead .btn{margin-top:12px}
+.payhead .salt-insight{margin:12px 0 0}
+.salt-ledger--plain .salt-ledger__value{white-space:nowrap}
+/* S6 6.4: the pay sheet. The look is the recipes' (Sheet, KPI tile, Ghost, Option, Field, Ledger, Pill); this lays them out */
+.payseg{display:flex;gap:8px;margin-top:12px}
+.payseg .salt-ghost{flex:1 1 0;min-width:0}
+.payhow,.payinto,.payref{margin-top:18px}
+.payref .salt-ledger__value{display:inline-flex;align-items:center;gap:10px}
+.paycap{margin:0;flex-basis:100%;font-size:var(--salt-text-sm);line-height:1.5;color:var(--salt-prose)}
+#payFoot .salt-pill{flex:1 1 auto}
+/* S6 6.5: the one question on return, centred as the mockup draws it. S6 fix (rule 6): its heading is the Sheet's title
+   recipe, and the mockup's ring round the mark waits for a recipe in salt-ds, never restated here */
+.paycheck{text-align:center;padding-top:6px}
+.paycheck h3{margin:14px 0 4px}
+.paycheck .glyph{color:var(--salt-steel)}
+.payagain{width:100%;margin-top:16px}
+.paysaid{flex-basis:100%;margin:0}
+.payhead .msg{margin:10px 0 0}
 /* THE DOCUMENT KEEPS THE GEOMETRY IT WAS PROOFED IN. What is injected is the INSIDE of the
    statement's own .w wrapper, so without this the page rendered the tables full-bleed to the
    window while the lock bar and the issue strip stayed pinned at 620px above them: on a laptop
@@ -339,7 +368,6 @@ body.ended>*:not(#aEnded){display:none}
 .afil{display:flex;flex-wrap:wrap;gap:8px}
 .alist{display:flex;flex-direction:column;gap:8px}
 .alist .salt-inbox-row__title{gap:6px}
-#aopen .scard{margin:0}
 .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 @media (min-width:1080px){
   .gate.adm{max-width:1180px;margin-top:24px;display:flex;gap:28px;align-items:flex-start;padding-bottom:48px}
@@ -395,27 +423,28 @@ button.salt-approve__party{display:inline-flex;align-items:center;min-height:var
 .mtest{margin-top:18px;padding-top:14px;border-top:1px solid var(--salt-line)}
 .mtest p.lead{margin:0 0 10px;color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.7}
 .mtest .btn{margin-top:0}
-/* SEND STATEMENT (v688): a card an account, in the same material as a guest link's card. The
-   password's button is the ember one, because it is the one thing on the page that must not be
-   tapped by accident, and a card that has gone out fades rather than leaving the list. */
-.scard{border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-glass);
-  padding:14px 16px;margin:12px 0 0}
-.scard.done{opacity:.55}
-.scard .srow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
-  font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text)}
-.scard .srow .un{color:var(--salt-brass);letter-spacing:.08em;font-size:var(--salt-text-xs)}
-.scard .tot,.scard .op{margin:6px 0 0;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);
-  color:var(--salt-text-muted);letter-spacing:.04em}
-.scard .qrw{display:flex;gap:12px;align-items:center;margin:12px 0 0}
-.scard .qrw canvas{border-radius:var(--salt-radius-sm);flex:0 0 auto;image-rendering:pixelated}
-.scard .qrn{margin:0;font-size:var(--salt-text-xs);color:var(--salt-text-muted);line-height:1.6}
-.scard .grow{flex-wrap:wrap}
-.scard .grow button{flex:1 0 46%}
-.scard .grow button.pw{border-color:rgba(212,105,76,.45);color:var(--salt-ember)}
-.scard .grow button[disabled]{opacity:.45;cursor:default}
-.scard .tick{display:flex;align-items:center;gap:8px;margin-top:12px;min-height:var(--salt-tap);
+/* S9 9.3: AN ACCOUNT, as a row opens it (the plan's f13): the code large and the username under it, the chips, the one
+   filled Send a sign-in link across the column with its answer under it, the other ways two by two with theirs, the
+   Sent tick, then how they got in. The two quiet ways that must not be tapped by accident are the system's danger ghost. */
+.acct{display:flex;flex-direction:column;gap:12px}
+.acct .ahead h2{margin:0;font-size:var(--salt-text-2xl);line-height:1.15;overflow-wrap:anywhere}
+.acct .ahead .un{display:block;margin-top:4px;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
+  letter-spacing:.06em;color:var(--salt-text-muted)}
+.acct .achips{margin:0}
+.acct .atot{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.acct .apill{width:100%;margin-top:4px}
+.agrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.agrid .salt-ghost{width:100%;text-align:center}
+.anote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.anote:empty{display:none}
+.anote.bad{color:var(--salt-ember)}
+.acct .tick{display:flex;align-items:center;gap:8px;align-self:flex-start;min-height:var(--salt-tap);min-width:var(--salt-tap);
   font-size:var(--salt-text-sm);color:var(--salt-text-muted);cursor:pointer}
-.scard .tick input{width:18px;height:18px;accent-color:var(--salt-verdigris)}
+.acct .tick input{width:18px;height:18px;accent-color:var(--salt-verdigris)}
+.astory{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+/* S9 9.4: the phones and computers under their own head, the count at its end */
+.astory .dhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:14px}
+.astory .dcount{color:var(--salt-text-muted);letter-spacing:0}
 /* the way back is a quiet line, not a second filled control: the page has one of those and it is
    the one that opens an account */
 button[data-back]{display:inline-flex;align-items:center;min-height:var(--salt-tap);margin:0;padding:0;
@@ -522,6 +551,10 @@ const GLYPH = {
   install: "M12 4 V14.6 M8 10.8 L12 14.8 L16 10.8 M5 16.6 V19.6 H19 V16.6",
   menu: "M4.5 7 H19.5 M4.5 12 H19.5 M4.5 17 H19.5",
   paste: "M7.6 4.8 H16.4 A2 2 0 0 1 18.4 6.8 V18.4 A2 2 0 0 1 16.4 20.4 H7.6 A2 2 0 0 1 5.6 18.4 V6.8 A2 2 0 0 1 7.6 4.8 Z M9.2 4.8 V3.4 H14.8 V4.8 M9 10.2 H15 M9 13.6 H15 M9 17 H12.6",
+  bank: "M3.8 9.4 L12 4.6 L20.2 9.4 Z M5.8 10.6 V16.8 M9.9 10.6 V16.8 M14.1 10.6 V16.8 M18.2 10.6 V16.8 M3.8 19.4 H20.2",
+  qr: "M4.2 4.2 H10 V10 H4.2 Z M14 4.2 H19.8 V10 H14 Z M4.2 14 H10 V19.8 H4.2 Z M14 14 H16.4 V16.4 H14 Z M17.6 17.6 H19.8 V19.8 H17.6 Z M14 17.6 V19.8 M17.6 14 H19.8",
+  cash: "M3.6 7 H20.4 V17 H3.6 Z M12 9.6 A2.4 2.4 0 1 1 12 14.4 A2.4 2.4 0 1 1 12 9.6 Z M6.4 12 H7.4 M16.6 12 H17.6",
+  copy: "M10.6 8.6 H17.4 A2 2 0 0 1 19.4 10.6 V17.4 A2 2 0 0 1 17.4 19.4 H10.6 A2 2 0 0 1 8.6 17.4 V10.6 A2 2 0 0 1 10.6 8.6 Z M15.4 8.6 V6.6 A2 2 0 0 0 13.4 4.6 H6.6 A2 2 0 0 0 4.6 6.6 V13.4 A2 2 0 0 0 6.6 15.4 H8.6",
   vdots: "M10.6 6.5 A1.4 1.4 0 1 0 13.4 6.5 A1.4 1.4 0 1 0 10.6 6.5 Z M10.6 12 A1.4 1.4 0 1 0 13.4 12 A1.4 1.4 0 1 0 10.6 12 Z M10.6 17.5 A1.4 1.4 0 1 0 13.4 17.5 A1.4 1.4 0 1 0 10.6 17.5 Z",
 };
 const FILLED = { dots: true, vdots: true };
@@ -557,25 +590,29 @@ function replaceAsk() {
 /* S3 3.10: KEEP IT ON YOUR HOME SCREEN. An iPhone's Home Screen app keeps its own storage, so what Safari
    remembers never reaches it: the Sheet says so in one line and carries the sign-in across with a code. The code
    and its key are minted as the Sheet opens, so Copy is a tap of its own (the judges' must-not-ship list), and
-   the steps draw the phone's own marks. Nothing here says a link signs the saved app in. */
+   the steps draw the phone's own marks. Nothing here says a link signs the saved app in.
+   S9 fix: SAVING AS AN APP IS THIS DEVICE'S FIRST ROW (the plan's 9.9), where it was a card of its own at the head of
+   the statement: the Plain ledger's row, its way in the value and its words under it. */
 function keepCard() {
-  return '<div id="keepCard" class="keepcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" hidden>'
-    + '<p class="salt-eyebrow salt-eyebrow--brass" id="keepHead">Keep it on your Home Screen</p>'
-    + '<p class="kline" id="keepLine">One tap to open, and it stays signed in. It is saved as <b>Salt Counter</b>.</p>'
+  return '<div id="keepCard" class="keepcard salt-ledger salt-ledger--plain" hidden><div class="salt-ledger__row">'
+    + '<div class="salt-ledger__line"><span class="salt-ledger__label" id="keepHead">Keep it on your Home Screen</span>'
+    + '<span class="salt-ledger__value">'
+    + '<button class="btn salt-ghost salt-ghost--lit" id="keepGo" type="button">Show me how</button>'
+    + '<button class="btn salt-ghost salt-ghost--lit" id="keepInstall" type="button" hidden>Install Salt Counter</button></span></div>'
+    + '<div class="salt-ledger__flag"><p class="kline" id="keepLine">One tap to open, and it stays signed in. It is saved as <b>Salt Counter</b>.</p>'
     /* S3 3.12: the browser's own Install where it offers one; else that browser's own marks, drawn */
     + '<p class="kline" id="keepSam" hidden>Tap ' + glyphSvg("menu", 22) + " then Add page to, then Home screen.</p>"
     + '<p class="kline" id="keepDesk" hidden>Look for the install mark ' + glyphSvg("install", 22) + " at the end of the address bar.</p>"
     /* S3 fix: an Android browser that offers no install, or whose offer was turned down, is shown its own menu's mark */
-    + '<p class="kline" id="keepDroid" hidden>Tap ' + glyphSvg("vdots", 22) + " then Install app or Add to Home screen.</p>"
-    + '<button class="btn salt-ghost salt-ghost--lit" id="keepGo" type="button">Show me how</button>'
-    + '<button class="btn salt-ghost salt-ghost--lit" id="keepInstall" type="button" hidden>Install Salt Counter</button></div>';
+    + '<p class="kline" id="keepDroid" hidden>Tap ' + glyphSvg("vdots", 22) + " then Install app or Add to Home screen.</p></div></div></div>";
 }
-/* S7 7.3: THIS DEVICE, in Account: its notifications and saving it as an app (rows drawn by drawDevice), a slot for
-   the account's other devices (stage 9: sign in another device, sign out the others), and signing out of this one,
-   the customer's one Log out (#lock, S7 7.1: it left the bar) */
+/* S7 7.3: THIS DEVICE, in Account, ONE CARD: saving it as an app first (the keep card, S9 fix, which homeKeep moves to
+   lead a new account's Home instead), its notifications (drawDevice), the account's phones and computers with Sign in
+   another device and Sign out other devices in #devSlot (S9 9.9, drawDev), and signing out of this one, the
+   customer's one Log out (#lock, S7 7.1: it left the bar) */
 function thisDevice() {
-  return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devT" hidden>'
-    + '<h2 class="salt-eyebrow salt-eyebrow--copper" id="devT">This device</h2>'
+  return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
+    + '<h2 class="salt-eyebrow salt-eyebrow--copper" id="devH">This device</h2>'
     + '<div id="devRows" class="salt-ledger salt-ledger--plain"></div>'
     + '<div id="devSlot"></div>'
     + '<button type="button" class="salt-ghost devout" id="lock">Sign out of this <span class="dev">phone</span></button>'
@@ -599,6 +636,37 @@ function keepSheet() {
     + '<span class="salt-code__hint" id="keepHint">Works once, for 15 minutes.</span></div>'
     + '<p class="msg" id="keepMsg" role="status" aria-live="polite"></p></div>'
     + '<div class="salt-sheet__foot"><button class="btn salt-pill salt-pill--md" id="keepCopy" type="button">Copy the code</button></div>'
+    + "</div>";
+}
+
+/* S6 6.4: THE PAY SHEET (his D8 as amended). One Sheet for every Pay; the script fills its body and its foot. */
+function paySheet() {
+  return '<div id="payScrim" class="salt-sheet-scrim" hidden></div>'
+    + '<div id="paySheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="payT" tabindex="-1" hidden>'
+    + '<div class="salt-sheet__grab"></div>'
+    + '<div class="salt-sheet__head"><h2 class="salt-sheet__title" id="payT">Pay</h2>'
+    + '<button type="button" class="salt-orb salt-sheet__close" id="payX" aria-label="Close">' + glyphSvg("close", 20) + "</button></div>"
+    + '<div class="salt-sheet__body" id="payBody"></div><div class="salt-sheet__foot" id="payFoot"></div></div>';
+}
+/* S9 9.9, HIS D2: the Sheet that signs in another device from This device, its code minted as it opens so Copy is a tap
+   of its own, and a QR that opens Salt Counter on the other device's camera, where the code is typed. The QR carries the
+   address alone: a key in an address signs a browser tab in only when his counter minted it (S3), so an address one
+   customer sends another never signs the other in. */
+function devSheet() {
+  return '<div id="devScrim" class="salt-sheet-scrim" hidden></div>'
+    + '<div id="devSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="devT" tabindex="-1" hidden>'
+    + '<div class="salt-sheet__grab"></div>'
+    + '<div class="salt-sheet__head"><h2 class="salt-sheet__title" id="devT">Sign in another device</h2>'
+    + '<button type="button" class="salt-orb salt-sheet__close" id="devX" aria-label="Close">' + glyphSvg("close", 20) + "</button></div>"
+    + '<div class="salt-sheet__body">'
+    + "<p>On the other device, scan this with its camera to open Salt Counter, then type the code where it asks for one.</p>"
+    + '<div class="salt-qr" id="devQr" hidden><div class="salt-qr__code"><img id="devQrImg" alt="A code that opens Salt Counter" width="180" height="180"></div>'
+    + '<div class="salt-qr__meta"><span class="salt-qr__caption">Opens Salt Counter</span></div></div>'
+    + '<div class="salt-code"><label class="salt-code__label" for="devCode">The code</label>'
+    + '<input class="fld salt-field__input salt-field__input--code" id="devCode" type="text" readonly value="" aria-describedby="devHint">'
+    + '<span class="salt-code__hint" id="devHint">Works once, for 15 minutes.</span></div>'
+    + '<p class="msg" id="devMsg" role="status" aria-live="polite"></p></div>'
+    + '<div class="salt-sheet__foot"><button class="btn salt-pill salt-pill--md" id="devCopy" type="button" disabled>Copy the code</button></div>'
     + "</div>";
 }
 
@@ -890,7 +958,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + (owner ? "" : '<button class="btn salt-ghost" id="toCode" type="button">I have a sign-in code</button>')
     + '<p class="salt-insight">Lost your password or your link? Ask us for a <b>new sign-in link</b>. It works straight away.</p>'
     + "</div></div>"
-    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + keepSheet())
+    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + keepSheet() + paySheet() + devSheet())
     /* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES. Home opens first, and the places sit on the system's App bar under
        the thumb on a phone and on its rail beside the page from 1080px, the recipe's own switch. The bar of lines
        and the header live inside the shell, so what is hidden while signed out is hidden in one place. */
@@ -908,8 +976,10 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<header class="chead"><h1 id="placeT">Home</h1>'
     + '<p class="cwho" data-wholine>Signed in as <span class="mono" data-who></span><span id="cstay"></span></p></header>'
     /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5), then the keep card,
-       which homeKeep leaves first only on a new account and otherwise puts under Needs you. Two columns from 1080px (S7 7.2) */
-    + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin) + (owner ? "" : keepCard()) + '<div id="hPay"></div><div id="hNeeds"></div></div>'
+       which leads only a new account's Home and is otherwise This device's first row (homeKeep). What they owe is
+       stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
+    + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin) + (owner ? "" : keepCard())
+    + '<div id="payHead" class="payhead" hidden></div><div id="hNeeds"></div></div>'
     + '<div class="hcol"><div id="hComing"></div><div id="hAgain"></div></div></div>'
     /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place: the statement with its one month filter (placed
        beside the list it filters), the earlier statements at its foot, and This device beside it from 1080px */
@@ -936,6 +1006,9 @@ export function landingPage(user, nonce, owner, bulletin) {
       /* v695: the product marks, so the page can draw one wherever it would have written a name */
       .replace("__PSYM__", JSON.stringify(Object.assign({ _: RING }, PSYM)))
       .replace("__PSHAPE__", JSON.stringify(PSHAPE)).replace("__MON3__", JSON.stringify(MON3))
+      /* S6 6.4: the pay sheet's three marks, and the one link into the pay page, its source carried as it is */
+      .replace("__GLYPH__", JSON.stringify({ bank: GLYPH.bank, qr: GLYPH.qr, copy: GLYPH.copy, cash: GLYPH.cash }))
+      .replace("/*__PAYHREF__*/", () => payHref.toString())
       /* S4 4.6: the open-order limit the Worker refuses at, so the page can say it before the form */
       .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES))
       /* S7 7.1: the places, so the script names them as the markup does */
@@ -985,7 +1058,9 @@ const CLIENT_JS = `
   window.bullDraw=bullDraw; window.bullRead=bullRead;   /* reachable from outside the closure, which is how the suite drives them */
   bullDraw(BULL);
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
-  var session='', user='', prices=null, orders=[], poll=null, tab='home', draft={}, pick={};
+  var session='', user='', prices=null, orders=[], poll=null, tab='home', draft={};
+  /* S6 6.5: the account's own claims, money said to be sent on To pay now rather than on an order (GET /orders) */
+  var claims=[];
   /* S3 3.5: the content key the account was opened with, so a return re-reads it without asking for anything */
   var curCk=null;
   /* v706: the associate's own card, opened from their record like the price list */
@@ -1034,10 +1109,14 @@ const CLIENT_JS = `
      states: please pay the overdue amount before making another order." What they owe is sealed
      inside their own live statement (tools/make_statements.mjs), the same figure its footer reads,
      so nothing about the book is in the store in the clear to decide it with. Over the line, the
-     account opens on Pay, the order form and the price list are not offered, and the statement
-     stays one tap away, because a figure to pay is only fair beside the orders it is made of. It
-     lifts on its own: the next publish after the payment is recorded writes a smaller figure. */
-  var HOLD_RM=100, owedNow=0, hold=false;
+     account leads with what to pay, the order form is not offered, and the statement stays one tap away,
+     because a figure to pay is only fair beside the orders it is made of. It lifts on its own: the
+     next publish after the payment is recorded writes a smaller figure.
+     S6 6.7, HIS D9 OF 24 SEP 2026: THE LINE COUNTS ONLY WHAT IS PAST ITS TERM, the sealed pay.overdue, never
+     what is owed (a delivery made yesterday is owed, not overdue). The page shows each part with the day it
+     fell due, Prices stays readable, and a claim waiting on him reopens ordering: his acknowledgement of the
+     next order is still the check. */
+  var HOLD_RM=100, hold=false;
   /* S6: what the live statement seals beside owed (tools/make_statements.mjs payDue): to pay now, overdue and
      coming up, each part with its dates. Read, never priced here. */
   var payDue=null, liveAt='';
@@ -1123,6 +1202,8 @@ const CLIENT_JS = `
   }
 
   function el(tag,cls,text){ var e=document.createElement(tag); if(cls)e.className=cls; if(text!=null)e.textContent=text; return e; }
+  /* S9: whether the page is still there, for work that lands after a wait (a closed window has no document) */
+  function docLive(){ try{ return !!document&&!!document.body; }catch(e){ return false; } }
   function rm(n){ return 'RM '+Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2}); }
   /* D11 (S4, 24 Sep 2026): units above one, unit at one and under */
   /*__UNITS_OF__*/
@@ -1203,6 +1284,7 @@ const CLIENT_JS = `
       if(r.ok&&j.ok&&j.token){
         var was=remGet();
         remSet({t:j.token, k:b64e(key), u:u});
+        drawDev();   /* S9 9.9: this device is kept signed in now, and its card says so */
         /* S3 3.8: what this phone remembered before is gone from it, so its wrap goes from the site as well; S3 fix: and,
            for another account, this phone's alerts for it, or a phone handed over kept waking for the account it replaced */
         if(was&&was.t&&was.t!==j.token){
@@ -1236,6 +1318,7 @@ const CLIENT_JS = `
     if(!keepCardEl) return;
     var mode=keepMode();
     keepCardEl.hidden=!mode;
+    homeKeep();
     if(!mode) return;
     document.getElementById('keepHead').textContent=IOS||DEV==='phone'?'Keep it on your Home Screen':'Keep it as an app';
     document.getElementById('keepWhere').hidden=IPAD;
@@ -1301,6 +1384,111 @@ const CLIENT_JS = `
       try{ history.replaceState(null,'','/app#'+keepTok); }catch(e){}
       Promise.resolve(done).then(function(){ ksay('Copied. Now tap the marks above, then open the new icon and paste.'); },
         function(){ ksay('Copy failed. Type the code in the new app instead.','bad'); });
+    });
+  }
+
+  /* ---- THIS DEVICE'S OTHER DEVICES (S9 9.9, his D2), drawn into #devSlot of Account's This device (S7 7.3) ----------
+     The account's phones and computers (POST /devices on the session, this phone's own remembered token saying which is
+     this one), named in the site's words and never an address; Sign out other devices, on a second tap, sparing this one
+     and its alerts; and Sign in another device, whose Sheet mints the hand-over (POST /handover) as it opens, so Copy the
+     code is a tap of its own. Every answer is on the line under the controls. Notifications are drawDevice's row, above.
+     His read-only view has none of it: those are not his devices. */
+  var devSlot=document.getElementById('devSlot'), devN=0, devSaid={t:'',bad:false};
+  var devSheetEl=document.getElementById('devSheet'), devScrim=document.getElementById('devScrim'), devCode=document.getElementById('devCode'),
+      devCopy=document.getElementById('devCopy'), devMsg=document.getElementById('devMsg'), devQr=document.getElementById('devQr'), devHo='', devM=0;
+  /* a device's line: its name, This one beside it, and how it is signed in under it (devRow is drawDevice's) */
+  function devLine(label, value, flag){
+    var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), v=el('span','salt-ledger__value');
+    l.appendChild(el('span','salt-ledger__label',label));
+    if(value) v.appendChild(value);
+    l.appendChild(v); r.appendChild(l);
+    if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
+    return r;
+  }
+  function devDay(iso){ try{ var p=klBits(iso), q=klBits(new Date().toISOString()); return p.day===q.day&&p.month===q.month?p.hour+':'+p.minute:+p.day+' '+MON3[+p.month-1]; }catch(e){ return ''; } }
+  function devQuiet(t){ var b=el('button','btn salt-ghost',t); b.type='button'; return b; }
+  async function drawDev(){
+    if(!devSlot) return;
+    if(!session||view||OWNER){ devN++; devSlot.textContent=''; return; }
+    var n=++devN, rec=remGet(), tok=rec&&rec.u===user?rec.t||null:null, r={status:0, body:{ok:false, error:NOT_SENT}};
+    /* a read in the background, so a lapse it meets is left to the next thing they tap, which reopens the session (api) */
+    try{
+      var x=await fetch('/devices',{method:'POST', cache:'no-store', headers:{'content-type':'application/json','X-Stmt-Session':session}, body:JSON.stringify({token:tok})});
+      var j=null; try{ j=await x.json(); }catch(e){ j=null; }
+      r={status:x.status, body:j||{ok:false}};
+    }catch(e){ /* not sent: the card says so */ }
+    if(n!==devN||!session||!docLive()) return;
+    devSlot.textContent='';
+    var list=el('div','salt-ledger salt-ledger--plain');
+    var devs=(r.body&&r.body.devices)||[], others=devs.filter(function(d){ return !d.here; }).length;
+    devs.forEach(function(d){
+      list.appendChild(devLine(d.label||'A device', d.here?chipEl('verdigris','This one'):null,
+        d.kept?'Kept signed in since '+devDay(d.at)+', last used '+devDay(d.last)+'.':'Signed in '+devDay(d.at)+', for that visit.'));
+    });
+    if(!r.body.ok) list.appendChild(devLine('Your devices', null, r.status===401?'Sign in again to see them.':'They could not be read just now.'));
+    devSlot.appendChild(list);
+    var acts=el('div','dacts'), note=el('p','dnote'+(devSaid.bad?' bad':''),devSaid.t); note.setAttribute('role','status');
+    var another=devQuiet('Sign in another device'); another.addEventListener('click', function(){ openDevSheet(another); });
+    acts.appendChild(another);
+    if(others){
+      var so=devQuiet('Sign out other devices'), armed=null;
+      so.addEventListener('click', async function(){
+        if(!armed){ so.textContent='Tap again to sign them out'; armed=setTimeout(function(){ armed=null; so.textContent='Sign out other devices'; }, 4000); return; }
+        clearTimeout(armed); armed=null; so.disabled=true; so.textContent='Signing out...';
+        var s2=null; try{ s2=await phoneSub(); }catch(e){}
+        var rr=remGet(), x=await api('/devices/signout',{token:rr&&rr.u===user?rr.t||null:null, endpoint:s2?s2.endpoint:null});
+        devSaid=x.body.ok?{t:x.body.devices?'Signed out '+x.body.devices+(x.body.devices===1?' other device.':' other devices.'):'No other device was signed in.',bad:false}
+          :{t:x.body.error||NOT_SENT,bad:true};
+        drawDev();
+      });
+      acts.appendChild(so);
+    }
+    devSlot.appendChild(acts); devSlot.appendChild(note);
+    devSaid={t:'',bad:false};
+  }
+  function chipEl(tone, t){ return el('span','salt-status salt-status--'+tone,t); }
+  function dsay(t,cls){ devMsg.textContent=t||''; devMsg.className='msg'+(cls?' '+cls:''); }
+  async function mintDev(){
+    var n=++devM;
+    devCopy.disabled=true; devCode.value=''; devQr.hidden=true; devHo=''; dsay('Making a code...','wait');
+    try{
+      var tok=b64e(crypto.getRandomValues(new Uint8Array(24))).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/=+$/,'');
+      var wrap=await wrapUnder(new TextEncoder().encode(tok), curCk);
+      var r=await api('/handover',{token:tok, wrap:wrap});
+      if(n!==devM||!docLive()||devSheetEl.hidden) return;
+      if(r.status===503){ dsay('Signing in with a code is not switched on here yet. Ask us for a sign-in link instead.','bad'); return; }
+      if(!r.body.ok||!r.body.code){ dsay(r.status===401?r.body.error:'The code could not be made just now. Close this and open it again.','bad'); return; }
+      keepMinted=keepMinted.concat(r.body.token||tok).slice(-10);
+      devHo=String(r.body.code).toUpperCase().replace('-',' ');
+      devCode.value=devHo;
+      if(r.body.qr){ document.getElementById('devQrImg').src=r.body.qr; devQr.hidden=false; }
+      devCopy.disabled=false; dsay('');
+    }catch(e){ if(n===devM) dsay('The code could not be made just now. Close this and open it again.','bad'); }
+  }
+  var devFrom=null;
+  function openDevSheet(from){
+    if(!devSheetEl||!curCk) return;
+    devFrom=from; devScrim.hidden=false; devSheetEl.hidden=false;
+    try{ devSheetEl.focus(); }catch(e){}
+    mintDev();
+  }
+  function closeDevSheet(){
+    if(!devSheetEl||devSheetEl.hidden) return;
+    devSheetEl.hidden=true; devScrim.hidden=true; devM++; devHo=''; devCode.value=''; devCopy.disabled=true; dsay('');
+    try{ if(devFrom&&devFrom.isConnected) devFrom.focus(); }catch(e){}
+    drawDev();   /* S9 fix: the device the code signed in is on the list as the Sheet closes */
+  }
+  if(devSheetEl){
+    document.getElementById('devX').addEventListener('click', closeDevSheet);
+    devScrim.addEventListener('click', closeDevSheet);
+    document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') closeDevSheet(); });
+    devCopy.addEventListener('click', function(){
+      if(!devHo) return;
+      /* the tap's first act, before anything that waits: Safari allows a copy only inside the tap itself */
+      var done=null;
+      try{ done=navigator.clipboard.writeText(devHo); }catch(e){ done=Promise.reject(e); }
+      Promise.resolve(done).then(function(){ dsay('Copied. Type it on the other device, where Salt Counter asks for a code.'); },
+        function(){ dsay('Copy failed. Read the code across instead.','bad'); });
     });
   }
 
@@ -1424,14 +1612,15 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
-    owedNow=0; hold=false; placeHide('prices',false); payDue=null; liveAt='';
+    bundle=null; session=''; view=false; prices=null; orders=[]; claims=[]; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
+    hold=false; payDue=null; liveAt='';
     parkMonths(); out.textContent=''; at=0; drawFoot(); devNote=''; drawDevice();
     mfil.textContent=''; mfil.hidden=true; mfPick=null; mfnote.textContent='';
     pPrices.textContent=''; pOrder.textContent=''; drawHome();
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
-    closeKeep(); keepTok=''; if(keepCardEl) keepCardEl.hidden=true; if(codeBox) codeBox.hidden=true;
+    closeKeep(); closePay(); keepTok=''; if(keepCardEl) keepCardEl.hidden=true; if(codeBox) codeBox.hidden=true;
+    closeDevSheet(); devN++; if(devSlot) devSlot.textContent='';
     /* S3 fix: a key the Keep Sheet wrote into the address leaves it with the account */
     try{ if(location.hash) history.replaceState(null,'',location.pathname); }catch(e){}
     var ask=document.getElementById('askRep'); if(ask&&!ask.hidden){ ask.hidden=true; document.getElementById('askNo').click(); }
@@ -1452,7 +1641,7 @@ const CLIENT_JS = `
        does the record of what this phone has seen (S5), which is the kept account's as well */
     var rec=remGet(), other=!!rec&&rec.u!==user, tok=!other&&rec?rec.t||null:null, s=session, ep=null, ho=keepMinted;
     keepMinted=[];
-    if(!other){ remClear(); try{ localStorage.removeItem(SEEN); }catch(e){} }
+    if(!other){ remClear(); try{ localStorage.removeItem(SEEN); }catch(e){} payqDrop(); }
     lock();
     /* S1 1.42: this phone's alerts go too, here and on the site, and the site is told even when the session
        has lapsed, so the remembered wrap does not outlive the Log out */
@@ -1675,11 +1864,12 @@ const CLIENT_JS = `
   }
 
   /* ---- THIS DEVICE (S7 7.3) -------------------------------------------------------------------------------------
-     What this browser does for the account: its notifications on or off, saving it as an app, and signing out of it,
-     each answer written on the row that was tapped. Stage 9 draws the account's other devices into #devSlot. Not on
-     his read-only view: those are not his phones. OFF IS KEPT ON THIS DEVICE: the subscription is dropped here, the
-     site forgets it at the next wake it cannot deliver (stmt/push.js), and the automatic re-filing on the way in
-     (askPush) waits for a Turn on. */
+     What this browser does for the account: saving it as an app (the keep card, its first row), its notifications on
+     or off, and signing out of it, each answer written on the row that was tapped. drawDev draws the account's other
+     devices into #devSlot (S9 9.9). Not on his read-only view: those are not his phones. OFF IS KEPT ON THIS DEVICE:
+     the subscription is dropped here and the site told (POST /push/unsubscribe, S9 9.9; a site it could not tell
+     forgets it at the next wake it cannot deliver, stmt/push.js), and the automatic re-filing on the way in (askPush)
+     waits for a Turn on. */
   /* devBusy is the ticket of the account a tap is in flight for, so it shuts the buttons for that account alone: a sign-out
      while Turn off was still unsubscribing left them shut for the next account on the page (S7R-5 of the stage 7 review) */
   var devEl=document.getElementById('thisDevice'), devRows=document.getElementById('devRows'), devBusy=-1, devNote='';
@@ -1705,13 +1895,10 @@ const CLIENT_JS = `
     var on=!!draft.pushed||(pushCan()&&Notification.permission==='granted'&&!!draft.pushDone), said=devNote||draft.pushNote||'';
     if(!pushCan()) devRows.appendChild(devRow('Notifications',IOS&&!STANDALONE
       ?'Not in this browser. On an iPhone they come to the app saved on your Home Screen.':'This browser cannot receive them.'));
-    else if(on) devRows.appendChild(devRow('Notifications',said||'On. You will be told when your order changes, when there is a reply, and at 10:00 and 18:00 when a payment is due.',devBtn('Turn off',devPushOff)));
+    else if(on) devRows.appendChild(devRow('Notifications',said||'On. This '+DEV+' is told when an order changes. A reply comes too, and a payment due at 10:00 and 18:00.',devBtn('Turn off',devPushOff)));
     else devRows.appendChild(devRow('Notifications',said||'Off. Nothing is sent to this '+DEV+'.',devBtn('Turn on',devPushOn)));
-    var mode=keepMode(), steps=document.getElementById({samsung:'keepSam',desk:'keepDesk',droid:'keepDroid'}[mode]||'-');
+    /* saving it as an app is the keep card, This device's first row (homeKeep); once saved, this says so in its place */
     if(STANDALONE) devRows.appendChild(devRow('Saved as an app','You are in it now.'));
-    else if(mode==='ios'||mode==='install') devRows.appendChild(devRow('Save as an app','One tap to open, and it stays signed in.',
-      mode==='ios'?devBtn('Show me how',function(ev){ openKeep(ev.currentTarget); }):devBtn('Install',keepInstallGo)));
-    else if(steps){ var sp=el('span'); [].forEach.call(steps.childNodes,function(n){ sp.appendChild(n.cloneNode(true)); }); devRows.appendChild(devRow('Save as an app',sp)); }
   }
   async function devPushOn(){
     var mine=ticket;
@@ -1723,9 +1910,11 @@ const CLIENT_JS = `
   async function devPushOff(){
     var mine=ticket;
     devBusy=mine; devNote=''; drawDevice();
-    var failed=false;
-    try{ var sub=await phoneSub(); if(sub) await sub.unsubscribe(); pushOffSet(true); draft.pushed=false; draft.pushDone=false; draft.pushNote=''; }
+    var failed=false, ep=null;
+    try{ var sub=await phoneSub(); if(sub){ ep=sub.endpoint; await sub.unsubscribe(); } pushOffSet(true); draft.pushed=false; draft.pushDone=false; draft.pushNote=''; }
     catch(e){ failed=true; }
+    /* S9 9.9: the site drops this phone's own push record on its session, for the same account only */
+    if(!failed&&ep&&mine===ticket&&session){ try{ await api('/push/unsubscribe',{endpoint:ep}); }catch(e){} }
     if(devBusy===mine) devBusy=-1;
     if(mine!==ticket) return;
     if(failed) devNote='They could not be turned off just now. Try again.';
@@ -1747,10 +1936,8 @@ const CLIENT_JS = `
     placeHide('card',!assoc);
     drawRewards(pCard);
     var lv=b.statements.filter(function(s){ return s.live; })[0];
-    owedNow=lv&&isFinite(+lv.owed)?+lv.owed:0;
     payDue=lv&&lv.pay&&lv.pay.now?lv.pay:null; liveAt=lv&&lv.at||'';
-    hold=owedNow>HOLD_RM+0.004;
-    placeHide('prices',hold);
+    setHold();
     pickStmt(0);
     drawAccount(pStmt);
     drawHome();
@@ -2432,7 +2619,7 @@ const CLIENT_JS = `
      limit, draws the tab again; otherwise the orders are patched (S5 5.5). The order sheet is never drawn by either:
      it lives at the root of the body, and only the limit step, which holds nothing typed, follows the orders */
   var drawnSig='';
-  function formSig(){ return JSON.stringify([hold,owedNow,view,assoc,prices,oLive().length>=OMAX]); }
+  function formSig(){ return JSON.stringify([hold,odLeft(),view,assoc,prices,oLive().length>=OMAX]); }
   function drawOrder(){
     var sc=window.scrollY;
     drawnSig=formSig();
@@ -2448,20 +2635,22 @@ const CLIENT_JS = `
     if(hold) top.appendChild(el('h2',null,'Payment due'));
     if(view) top.appendChild(el('p','lead','Read only: their orders as their own page shows them. Nothing here is placed, paid or sent.'));
     if(hold){
-      var dueBox=el('div','pane');
-      dueBox.appendChild(el('div','quote',rm(owedNow)));
-      dueBox.appendChild(el('p','lead','Please pay the overdue amount of '+rm(owedNow)+' before placing another order.'));
-      dueBox.appendChild(el('p','sub2','Ordering opens again here once the payment is recorded on your account. Each order the amount is made of is on your statement.'));
-      var ways=PAY.filter(function(a){ return !a.maintenance&&(a.qr||a.transfer); });
-      if(ways.length){
-        dueBox.appendChild(el('span','lbl','Ways to pay'));
-        ways.forEach(function(a){
-          var l=el('a','btn lnk salt-ghost','Open '+a.name+' in QR Command');
-          l.href=PAY_SITE+'/#'+encodeURIComponent(a.key); l.target='_blank'; l.rel='noopener';
-          dueBox.appendChild(l);
-        });
+      /* S6 6.7: what is past its term, each part with the day it fell due, and one Pay for it */
+      var dueBox=el('div','pane'), od=payDue.overdue, left=odLeft();
+      dueBox.appendChild(kpiTile('ember','Overdue',rm(left),odNote(od)));
+      dueBox.appendChild(el('p','lead','Please pay the overdue amount of '+rm(left)+' before placing another order.'));
+      if(od.parts.length>1){
+        var L=el('div','salt-ledger salt-ledger--plain');
+        od.parts.forEach(function(x){ L.appendChild(lrowN(partSpan(x),rm(x.rm),dueWords(x.due),'odue')); });
+        dueBox.appendChild(L);
       }
-      dueBox.appendChild(el('p','sub2','Once it has left your side, say so on any of your orders below, or tell us directly, so it can be recorded.'));
+      /* S6 6.4: one Pay, opening the pay sheet, where there were thirteen links naming the pay page */
+      if(!view){
+        var hp=el('button','btn salt-pill salt-pill--md','Pay '+rm(left)); hp.type='button';
+        hp.addEventListener('click',function(){ openPay({kind:'acct', fig:left, label:'Overdue', note:function(){ return odNote(od); }}); });
+        dueBox.appendChild(hp);
+      }
+      dueBox.appendChild(el('p','sub2','Ordering opens again as soon as you tell us it is sent, and your prices stay open meanwhile. Each order the amount is made of is on your statement.'));
       var sv=el('button','btn quiet salt-ghost','See your statement'); sv.type='button';
       sv.addEventListener('click',function(){ placeShow('stmt'); });
       dueBox.appendChild(sv);
@@ -2534,6 +2723,10 @@ const CLIENT_JS = `
   function histLine(x,o){
     var n=String(x.note||''), m, how=x.method?' by '+methodWord(x.method,x.account):'';
     if((m=/^paid ([0-9.]+)$/.exec(n))) return 'You paid '+rm(+m[1])+how;
+    /* S6 6.5 (D7): what they said they sent is a claim until his answer, which is a line of its own */
+    if((m=/^sent ([0-9.]+)$/.exec(n))) return 'You sent '+rm(+m[1])+how+', waiting for us to confirm it';
+    if((m=/^received ([0-9.]+)$/.exec(n))) return 'We received '+rm(+m[1]);
+    if((m=/^not found ([0-9.]+)$/.exec(n))) return 'We have not found '+rm(+m[1])+' yet';
     if((m=/^payment of ([0-9.]+) recorded$/.exec(n))) return 'We recorded a payment of '+rm(+m[1]);
     /* S11 11.8 and 11.9: cash he took at the handover, and a short order closed at what was handed over */
     if((m=/^paid ([0-9.]+) in cash$/.exec(n))) return 'We received '+rm(+m[1])+' in cash';
@@ -2566,7 +2759,13 @@ const CLIENT_JS = `
   /* STAGE 6 PLUGS IN HERE: claimed is what they have said they sent above what he has confirmed, a field the
      order does not carry yet. Until it does it reads nothing, and what is still to pay is what is owed. */
   function oClaimed(o){ var c=+o.claimed; return c>0?c:0; }
-  function oToPay(o){ return Math.max(0,+(dueOf(o)-oClaimed(o)).toFixed(2)); }
+  /* S6 6.5: his Not found, each one a payments[] entry that keeps its answer */
+  /* S6 fix: only while it is the newest word on what they sent and something is still owed: sent again since, or paid in
+     full, it would tell them to pay again for money that has arrived */
+  function oLost(o){ var ps=(o.payments||[]).filter(function(x){ return x&&x.claim; });
+    return dueOf(o)>0.004?ps.filter(function(x){ return x.claim==='notfound'&&!ps.some(function(y){ return String(y.at)>String(x.answered||x.at); }); }):[]; }
+  /* S6 fix: less what they sent against the account that reaches this order's row (nowOf) */
+  function oToPay(o){ return Math.max(0,+(dueOf(o)-oClaimed(o)-oAcct(o)).toFixed(2)); }
   function oOwes(o){ return oPayable(o)&&oToPay(o)>0.004; }
   function oDay(iso){ try{ var p=klBits(iso); return p.day+' '+MON3[+p.month-1]; }catch(e){ return ''; } }
   /* A REPLY WAITS until this device has shown it: the moment of his last line seen, per order, kept here and
@@ -2596,6 +2795,8 @@ const CLIENT_JS = `
   function oWhy(o){
     var b=[];
     if(oOwes(o)) b.push(rm(oToPay(o))+' to pay');
+    if(oClaimed(o)>0) b.push(rm(oClaimed(o))+' sent, waiting for us to confirm');
+    if(oPayable(o)&&oLost(o).length) b.push('a payment we have not found');
     if(replyWaiting(o)) b.push('a reply for you');
     if(!b.length&&o.status==='placed') b.push('waiting to be confirmed');
     var t=b.join(', '); return t&&t.charAt(0).toUpperCase()+t.slice(1);
@@ -2718,7 +2919,9 @@ const CLIENT_JS = `
      said "when it arrives" of an order they collect (S7-R2 of the stage 7 review) */
   function payWhen(o,inline){
     var mv=+o.moved||0, w=mv>0?(movedAll(o)?'the goods are with you':'part of the goods is with you'):(o.mode==='deliver'?'when it arrives':'when you collect');
-    return mv>0?(inline?w:w.charAt(0).toUpperCase()+w.slice(1)):(inline?'now or ':'Now, or ')+w;
+    if(mv>0) return inline?w:w.charAt(0).toUpperCase()+w.slice(1);
+    /* S6 6.8: cash chosen for the handover is paid then, never now */
+    return o.method==='cod'?(inline?'in':'In')+' cash '+w:(inline?'now or ':'Now, or ')+w;
   }
   /* THE MONEY ON ITS OWN LINES: the goods, the delivery, what is paid, what they have sent and is waiting, and what
      is still to pay, with when it may be paid */
@@ -2728,30 +2931,31 @@ const CLIENT_JS = `
     L.appendChild(lrow('Goods',rm(o.total),o.closed&&o.closed.qty?unitsOf(o.qty,oUnit(o))+' handed over of the '+o.closed.qty+' ordered':''));
     if(d) L.appendChild(o.status==='placed'?lrow('Delivery','',(where?where+'. ':'')+'Set when we confirm the order'):lrow('Delivery',rm(o.delivery||0),where));
     if(paid>0) L.appendChild(lrow('Paid',rm(paid)));
-    if(claimed>0) L.appendChild(lrow('Sent by you',rm(claimed),'Waiting for us to confirm it arrived'));
+    if(claimed>0) L.appendChild(lrow('Sent by you',rm(claimed),'Waiting for us to confirm'));
+    var ac=oPayable(o)?oAcct(o):0;
+    if(ac>0.004) L.appendChild(lrow('Sent against your account',rm(ac),acctWaiting()>0.004?'Waiting for us to confirm':'Received. Your statement shows it at its next update'));
+    /* S6 6.5: a payment he could not find, while the order is still to pay */
+    if(oPayable(o)) oLost(o).forEach(function(x){ L.appendChild(lrow('Not found yet',rm(x.amount),'Check it left your bank, then pay it again','odue')); });
     if(oPayable(o)){
       var tp=oToPay(o);
       L.appendChild(tp>0.004
         ?lrow('Still to pay',rm(tp),payWhen(o),'odue')
-        :lrow('Still to pay',rm(0),'Paid in full'));
+        :lrow('Still to pay',rm(0),claimed>0||ac>0.004&&acctWaiting()>0.004?'Sent, waiting for us to confirm':'Paid in full'));
     }
     return L;
   }
-  /* ONE NEXT ACTION. Pay opens the ways to pay in its place, and theirs is then the one filled control. On a desk New
-     order (S4 4.3; the form itself is a sheet over the page) stands above the open order, and while it does, Pay is the
-     lit ghost: one filled control a screen. With the limit said in its place, or the Pay page, nothing else is filled and
-     Pay is. On a phone the open order is the whole tab. */
+  /* ONE NEXT ACTION. Pay opens the pay sheet for this order (S6 6.4). On a desk New order (S4 4.3; the form itself is a
+     sheet over the page) stands above the open order, and while it does, Pay is the lit ghost: one filled control a
+     screen. With the limit said in its place, or the Pay page, nothing else is filled and Pay is. On a phone the open
+     order is the whole tab. */
   var oTopEl=null;   /* the head of the list's column, drawn by drawOrder and carried by oPlace into each list it draws */
   function oFormPill(){ return oWide()&&!!oTopEl&&!!oTopEl.querySelector('.salt-pill'); }
   function oAct(o){
     var a=el('div','oact'), tp=oTap(o);
     if(!view&&oOwes(o)){
-      if((draft.oPay||{})[o.id]) a.appendChild((o.method&&!(pick[o.id]||{}).again)?payBox(o):payChooser(o));
-      else {
-        var pb=el('button',oFormPill()?'salt-ghost salt-ghost--lit':'salt-pill salt-pill--md','Pay '+rm(oToPay(o))); pb.type='button';
-        pb.addEventListener('click',function(){ (draft.oPay=draft.oPay||{})[o.id]=true; oDraw(); });
-        a.appendChild(pb);
-      }
+      var pb=el('button',oFormPill()?'salt-ghost salt-ghost--lit':'salt-pill salt-pill--md','Pay '+rm(oToPay(o))); pb.type='button';
+      pb.addEventListener('click',function(){ openPay(orderCtx(o.id)); });
+      a.appendChild(pb);
     }
     if(tp.k==='pay'&&tp.t) a.appendChild(statusLine(tp.t));
     return a;
@@ -2877,6 +3081,8 @@ const CLIENT_JS = `
     var f=el('div','ofoot'), tp=oTap(o);
     if(view||!(oPayable(o)||o.status==='placed')) return f;
     if(+o.moved>0) f.appendChild(el('p','sub2','The goods are with you, so this can no longer be cancelled here.'));
+    /* S6 fix: not while what they sent waits on him, which a cancelled order would leave with nobody to answer it */
+    else if(oClaimed(o)>0.004) f.appendChild(el('p','sub2','We are checking the '+rm(oClaimed(o))+' you sent. You can cancel once we have answered it.'));
     else {
       var wb=el('button','salt-ghost salt-ghost--danger','Cancel this order'); wb.type='button';
       wb.addEventListener('click', async function(){
@@ -2970,8 +3176,10 @@ const CLIENT_JS = `
     if(!n) return; var bw=document.getElementById('barw');
     try{ n.style.scrollMarginTop=Math.ceil((bw&&!bw.hidden?bw.getBoundingClientRect().bottom:0)+12)+'px'; n.scrollIntoView({block:'start'}); }catch(e){}
   }
-  /* ---- WHAT IS DUE, IN WORDS (the helpers stage 6's To pay now draws with; S7 7.1's Home reads them too). The figures
-     are the publish's, sealed with the statement (payDue) and read here, never worked out: the site prices nothing. */
+  /* ---- S6 6.2 (his D9 of 24 Sep 2026): TO PAY NOW, with its due date and Pay, and what is overdue beneath it, each
+     part with its own day: on Home since S7 7.1, where it headed the statement tab, and what is coming up is Home's
+     Coming up. The figures are the publish's, sealed with the statement (payDue) and read here, never worked out: the
+     site prices nothing. A part is a mark and a size. */
   var WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   function ymdAt(s){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?Date.UTC(+m[1],+m[2]-1,+m[3]):null; }
   function dayName(s){ var t=ymdAt(s); if(t==null) return ''; var d=new Date(t); return WD[d.getUTCDay()]+' '+d.getUTCDate()+' '+MON3[d.getUTCMonth()]; }
@@ -2994,11 +3202,29 @@ const CLIENT_JS = `
       +(!coming&&p.gotOn?' you received '+dayName(p.gotOn):(p.date?', ordered '+dayName(p.date):''))));
     return s;
   }
+  function lrowN(node,value,flag,cls){ var r=lrow('',value,flag,cls); r.querySelector('.salt-ledger__label').appendChild(node); return r; }
   function kpiTile(tone,label,value,note){
     var k=el('div','salt-kpi salt-kpi--'+tone);
     k.appendChild(el('span','salt-kpi__label',label)); k.appendChild(el('span','salt-kpi__value',value));
     if(note){ var n=el('span','salt-kpi__note'); n.appendChild(note); k.appendChild(n); }
     return k;
+  }
+  /* S6 6.7: the overdue figure, the line, and whether a claim waiting on him has lifted it. The owner's view holds too. */
+  function odRm(){ return payDue&&payDue.overdue?+payDue.overdue.rm||0:0; }
+  /* S6 fix: WHAT IS STILL OVERDUE, less the money he has received since the statement was written that reaches it: a claim
+     against the account, which the oldest parts, the overdue ones, take first, and an order's own claim on an overdue part
+     (nowOf). His Received used to bring the hold back until the next publish, asking again for what he had just confirmed.
+     A claim still waiting lifts the hold whatever its figure (his D9). */
+  function odLeft(){ var od=odRm(); if(!(od>0.004)) return 0;
+    var got=nowOf().filter(function(x){ return x.p.late; }).reduce(function(t,x){ return t+x.own+x.acct; },0);
+    return Math.max(0,+(od-got).toFixed(2)); }
+  /* S7 7.1: the places keep their names over the line; Home leads with what to pay, and Orders is the payment page */
+  function setHold(){ hold=odLeft()>HOLD_RM+0.004&&!(sentWaiting()>0.004); }
+  function odNote(od){
+    var n=el('span'), ps=od.parts||[];
+    if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0].due))); }
+    else n.appendChild(document.createTextNode(ps.length+' orders past the day they were due. '+dueWords(ps.length?ps[0].due:null,true)));
+    return n;
   }
   /* what To pay now is for, in one line under its figure */
   function nowNote(now){
@@ -3007,156 +3233,333 @@ const CLIENT_JS = `
     else n.appendChild(document.createTextNode(ps.length+' orders you have received. '+dueWords(now.due,true)));
     return n;
   }
+  /* ---- S6 6.5 (his D7): A CLAIM IS NEVER PAID UNTIL HE SAYS SO. What they said they sent on To pay now (the account's
+     claims) and on an order (claimed) reads "sent, waiting for us to confirm" until his Received or Not found, each
+     shown when it comes. To pay now is the sealed figure; Pay asks only for what no claim waits on, and for nothing he
+     has received since the statement was written, so money already sent is not asked for twice. */
+  function sumOf(list){ return +list.reduce(function(n,c){ return n+(+c.amount||0); },0).toFixed(2); }
+  function acctWaiting(){ return sumOf(claims.filter(function(c){ return c&&c.state==='waiting'; })); }
+  function acctSince(){ return claims.filter(function(c){ return c&&c.state==='received'&&String(c.answered||'')>liveAt; }); }
+  /* ---- S6 fix: THE SAME MONEY IS NEVER ASKED FOR TWICE, from To pay now and from an order. A part of To pay now is a row
+     on the book as it stood at publish, and an order's row is one of them once its goods have gone: the part whose day is
+     the one its key names (rowOn) and whose whole figure, goods and delivery, is the order's, on the friend's bucket or not.
+     To pay now nets what was sent on such an order, waiting or received since the statement was written; the order nets
+     what was sent against the account that reaches its row, walking the parts in the order they are sealed, oldest first,
+     which is the order the desk's allocation takes them in (claimAlloc). ---- */
+  function oSince(o){ return (o.payments||[]).filter(function(x){ return x&&x.claim==='received'&&String(x.answered||'')>liveAt; }); }
+  function nowOf(){
+    var out=((payDue&&payDue.now&&payDue.now.parts)||[]).map(function(p){ return {p:p, o:null, own:0, acct:0}; });
+    orders.forEach(function(o){
+      if(!o.rowOn||['cancelled','declined'].indexOf(o.status)>=0) return;
+      var w=+((+o.total||0)+(+o.delivery||0)).toFixed(2);
+      for(var i=0;i<out.length;i++){ var p=out[i].p;
+        if(!out[i].o&&p.date===o.rowOn&&Math.abs((+p.whole||0)-w)<0.005&&!!p.resale===!!o.forFriend){
+          out[i].o=o; out[i].own=Math.min(+p.rm||0,+(oClaimed(o)+sumOf(oSince(o))).toFixed(2)); break; } }
+    });
+    var left=+(acctWaiting()+sumOf(acctSince())).toFixed(2);
+    out.forEach(function(x){ var t=+Math.max(0,Math.min(left,(+x.p.rm||0)-x.own)).toFixed(2); x.acct=t; left=+(left-t).toFixed(2); });
+    return out;
+  }
+  function oAcct(o){ var x=nowOf().filter(function(y){ return y.o===o; })[0]; return x?x.acct:0; }
+  function acctToPay(){ var n=payDue&&payDue.now; if(!n) return 0;
+    var own=nowOf().reduce(function(t,x){ return t+x.own; },0);
+    return Math.max(0,+(n.rm-acctWaiting()-sumOf(acctSince())-own).toFixed(2)); }
+  function sentWaiting(){ return +(acctWaiting()+orders.reduce(function(n,o){ return n+(['cancelled','declined'].indexOf(o.status)>=0?0:oClaimed(o)); },0)).toFixed(2); }
+  /* the lines under To pay now: what waits on him, and his answers since the statement was written, or in the last fortnight */
+  function claimLines(){
+    var out=[], sw=sentWaiting();
+    if(sw>0.004) out.push(rm(sw)+' sent, waiting for us to confirm.');
+    acctSince().forEach(function(c){ out.push(rm(c.amount)+' received on '+oDay(c.answered)+'. Your statement shows it at its next update.'); });
+    /* S6 fix: likewise only while nothing was sent since and To pay now still asks for something */
+    claims.filter(function(c){ return c&&c.state==='notfound'&&Date.now()-Date.parse(c.answered||c.at)<14*864e5&&acctToPay()>0.004
+      &&!claims.some(function(y){ return y&&String(y.at)>String(c.answered||c.at); }); })
+      .forEach(function(c){ out.push('We have not found the '+rm(c.amount)+' you sent on '+oDay(c.at)+'. Check it left your bank, then pay it again.'); });
+    return out;
+  }
+  /* S7 7.1: TO PAY NOW IS HOME'S FIRST ANSWER, so it answers even when it is nothing: a new account says there is nothing
+     on it yet, and an account owing nothing now says so, with no Pay. Over the line (setHold) it says, in the payment
+     page's own words, to pay the overdue amount first; the payment page itself is Orders'. Built afresh and put on the
+     page only where it reads differently, so a poll never takes a tap's focus from its Pay. */
+  function payHeadNode(){
+    var box=el('div','payhead'); box.id='payHead';
+    var P=payDue||{}, now=P.now||{rm:0,parts:[]}, od=P.overdue||{rm:0,parts:[]}, said=bundle?claimLines():[], fr=fresh();
+    box.hidden=!bundle||!(fr||payDue||said.length);
+    if(box.hidden) return box;
+    if(now.rm>0.004){
+      box.appendChild(kpiTile('ember','To pay now',rm(now.rm),nowNote(now)));
+      if(hold) box.appendChild(el('p','salt-insight salt-insight--copper','Please pay the overdue amount of '+rm(odLeft())+' before placing another order.'));
+      var left=acctToPay();
+      if(!view&&left>0.004){
+        /* S6 6.4: it opens the pay sheet on what is to pay now, the one road for Home's Pay */
+        var pb=el('button','btn salt-pill salt-pill--md','Pay '+rm(left)); pb.type='button'; pb.id='payNow';
+        pb.addEventListener('click',function(){ openPay(acctCtx()); });
+        box.appendChild(pb);
+      }
+    }
+    else if(fr) box.appendChild(kpiTile('verdigris','To pay',rm(0),el('span',null,'Nothing on your account yet. Your orders will show here.')));
+    else if(payDue) box.appendChild(kpiTile('verdigris','To pay now',rm(0),el('span',null,'Nothing to pay now.')));
+    said.forEach(function(t){ box.appendChild(statusLine(t)); });
+    /* each overdue part with the day it fell due; one part says so in the line above */
+    if(now.rm>0.004&&od.rm>0.004&&(now.parts||[]).length>1){
+      box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab','Overdue'));
+      var L=el('div','salt-ledger salt-ledger--plain');
+      od.parts.forEach(function(p){ L.appendChild(lrowN(partSpan(p),rm(p.rm),dueWords(p.due),'odue')); });
+      box.appendChild(L);
+    }
+    return box;
+  }
+  function drawPayHead(){ var was=document.getElementById('payHead'), n=payHeadNode(); if(was&&was.outerHTML!==n.outerHTML) was.replaceWith(n); }
+  /* S6 6.2: WHAT IS COMING UP BEYOND THE ORDERS. Home's Coming up lists the site's orders agreed and not handed over; a
+     part the publish sealed that no order of theirs accounts for (a row he entered on the desk) stands under them, with
+     its due day and never a Pay. An order is its part when the part is on the day its row is (rowOn), of its mark and
+     size, and on the friend's bucket or not. */
+  function comingParts(){
+    var used={};
+    return ((payDue&&payDue.coming&&payDue.coming.parts)||[]).filter(function(p){
+      var o=orders.filter(function(x){ return !used[x.id]&&x.rowOn&&x.rowOn===p.date&&['cancelled','declined'].indexOf(x.status)<0
+        &&(x.product||'salt')===(p.product||'salt')&&Math.abs((+x.qty||0)-(+p.qty||0))<1e-9&&!!x.forFriend===!!p.resale; })[0];
+      if(o){ used[o.id]=1; return false; }
+      return true;
+    });
+  }
 
   var METHOD_WORDS={cod:'cash on handover', transfer:'DuitNow Transfer', qr:'DuitNow QR', jompay:'JomPAY', tngbiz:"Touch 'n Go Business"};
   function acct(key){ return PAY.filter(function(a){return a.key===key;})[0]; }
   function methodWord(m,a){ var x=acct(a); return (METHOD_WORDS[m]||m)+(x&&m!=='tngbiz'?' to '+x.name:''); }
-  function accountsFor(m){ return PAY.filter(function(a){ return !a.maintenance&&a[m]; }); }
-
-  /* THE CHOICE, OFFERED FROM THE ACKNOWLEDGEMENT (v694; it was at ready). Five rails; three of them
-     name an account off the list QR Command carries, and the page shows only those that run that
-     rail. CASH ON HANDOVER IS WITHHELD from anyone already holding goods they have not paid for
-     (his instruction, 18 Sep 2026): settling that at the door is how one advance becomes two. */
-  function payChooser(o){
-    var box=el('div','pay');
-    box.appendChild(el('p','sub2','How will you pay '+rm(dueOf(o))+'?'));
-    var cur=pick[o.id]||{}, noCod=heldUnpaid();
-    var opts=[['cod', o.mode==='deliver'?'Cash on delivery':'Cash when I collect'],
-              ['transfer','DuitNow Transfer, to an account number'],
-              ['qr','DuitNow QR, a code I save and scan'],
-              ['jompay','JomPAY'],
-              ['tngbiz',"DuitNow purchase, the Touch 'n Go Business code"]];
-    opts.forEach(function(m){
-      if(m[0]==='cod'&&noCod) return;
-      if(m[0]!=='cod'&&m[0]!=='tngbiz'&&!accountsFor(m[0]).length) return;
-      if(m[0]==='tngbiz'&&!(acct('tngbiz')&&acct('tngbiz').qr&&!acct('tngbiz').maintenance)) return;
-      var lab=el('label'); var r=el('input'); r.type='radio'; r.name='pm-'+o.id; r.value=m[0]; r.checked=(cur.method===m[0]);
-      r.addEventListener('change',function(){ pick[o.id]={method:m[0],account:'',again:cur.again}; drawOrder(); });
-      lab.appendChild(r); lab.appendChild(el('span',null,m[1])); box.appendChild(lab);
-    });
-    if(cur.method==='transfer'||cur.method==='qr'||cur.method==='jompay'){
-      var sel=el('select','fld salt-field__input salt-field__input--mono'); sel.setAttribute('aria-label','Account');
-      var o0=el('option',null,cur.method==='jompay'?'Choose the biller':'Choose the bank or e-wallet'); o0.value=''; sel.appendChild(o0);
-      accountsFor(cur.method).forEach(function(a){ var op=el('option',null,a.name+(a.bank&&a.bank!==a.name?' ('+a.bank+')':'')); op.value=a.key; if(cur.account===a.key)op.selected=true; sel.appendChild(op); });
-      sel.addEventListener('change',function(){ pick[o.id].account=sel.value; drawOrder(); });
-      box.appendChild(sel);
-    }
-    if(noCod) box.appendChild(el('p','sub2','Cash on handover is not offered while goods you already hold are unpaid. Settle those first and it comes back.'));
-    var ok=cur.method&&(cur.method==='cod'||cur.method==='tngbiz'||cur.account);
-    var cb=el('button','btn salt-pill salt-pill--md','Confirm'); cb.type='button'; cb.disabled=!ok;
-    cb.addEventListener('click', async function(){
-      if(!ok) return; var mine=ticket;
-      var r=await api('/orders/'+encodeURIComponent(o.id)+'/method',{method:cur.method,account:cur.account||undefined,rid:ridFor(o.id+':method',cur.method+' '+(cur.account||''))});
-      if(mine!==ticket) return;
-      if(!r.body.ok) tapSaid(o,'pay',r.body.error||'The choice was not recorded.'); else { ridDone(o.id+':method'); tapSaid(o,'pay',''); delete pick[o.id]; }
-      await loadOrders(); if(mine!==ticket) return; drawOrder();
-    });
-    box.appendChild(cb);
-    return box;
+  /* ---- S6 6.4: THE PAY SHEET (his D8 as he amended it, 24 Sep 2026) ------------------------------------------------
+     Every Pay opens it: To pay now's, an order's, the held page's. The figure and what it is for, All or Part of it,
+     then the two ways, Transfer or Scan a code, as the system's Option tiles. NO ACCOUNT IS CHOSEN FOR THEM: they
+     choose which of his accounts to pay into, from the accounts payHref will link, so a suspended one is never
+     offered. Their username is the reference, with Copy. Show the account number, or Show the code, opens the pay page
+     through payHref at that account, rail and figure; the Counter never carries a number and never names that page.
+     The figure is fixed as the sheet opens, so a poll landing while they pay cannot move it. */
+  var paySh=document.getElementById('paySheet'), payScr=document.getElementById('payScrim'), PS=null;
+  var GL=__GLYPH__;
+  function glyph(name,px){ var s=psym('_',px); s.setAttribute('class','psym glyph'); s.firstChild.setAttribute('d',GL[name]); return s; }
+  /*__PAYHREF__*/
+  function payInto(rail,amt){ return PAY.filter(function(a){ return !!payHref(a.key,rail,amt,user); }); }
+  function acctCtx(){ var n=payDue&&payDue.now; return {kind:'acct', fig:acctToPay(), label:'To pay now', note:function(){ return nowNote(n); }}; }
+  function orderCtx(id){
+    var o=oFind(id);
+    return {kind:'order', id:id, fig:o?oToPay(o):0, label:'Still to pay', note:function(){
+      var s=el('span'); s.appendChild(psym(o.product,15)); s.appendChild(el('span','sr',pshape(o.product)));
+      s.appendChild(document.createTextNode(' '+unitsOf(o.qty,oUnit(o))+', ordered '+oDay(o.at)+(movedAll(o)?'. The goods are with you.':'.')));
+      return s; }};
   }
-  /* ONE LINK, FOR THE RAIL CHOSEN, AND THEN WHAT WAS PAID. Everything that pays lives on that page:
-     the account number behind its Copy button, the code to save, the biller and reference. Nothing
-     here repeats it. THE FIGURE IS THEIRS (his instruction, 18 Sep 2026): the site takes no money
-     and no rail tells it anything, so the customer types what they paid and the desk reads it
-     against the fold. It accumulates, so a part payment is a part payment. */
-  function payBox(o){
-    var box=payLink(o), due=dueOf(o), cur=pick[o.id]||{};
-    var row=el('div','payamt');
-    row.appendChild(el('span','cur','RM'));
-    var inp=el('input','fld salt-field__input salt-field__input--mono'); inp.type='number'; inp.min='0'; inp.step='0.01'; inp.inputMode='decimal';
-    inp.value=(cur.amount!==undefined&&cur.amount!==null)?cur.amount:due.toFixed(2);
-    inp.setAttribute('aria-label','What you paid, in ringgit');
-    inp.addEventListener('input',function(){ pick[o.id]=Object.assign({},pick[o.id],{amount:inp.value}); var b=document.getElementById('pd-'+o.id); if(b)b.disabled=!(parseFloat(inp.value)>0); });
-    row.appendChild(inp); box.appendChild(row);
-    var pb=el('button','btn salt-pill salt-pill--md',"I have paid"); pb.type='button'; pb.id='pd-'+o.id;
-    pb.disabled=!(parseFloat(inp.value)>0);
-    pb.addEventListener('click', async function(){
-      var amt=parseFloat(inp.value);
-      if(!(amt>0)) return;
-      /* the id stays with the figure it was minted for: a retry of this payment carries it, a
-         different figure is a different payment, and it is dropped once one is recorded */
-      var fig=amt.toFixed(2), was=pick[o.id]||{};
-      pick[o.id]=Object.assign({},was,{amount:inp.value},was.rid&&was.ridFor===fig?{}:{rid:mintRid(),ridFor:fig});
-      pb.disabled=true; var mine=ticket;
-      var r=await api('/orders/'+encodeURIComponent(o.id)+'/pay',{amount:+fig,rid:pick[o.id].rid});
-      if(mine!==ticket) return;
-      var took=!!(r.body&&r.body.ok);
-      tapSaid(o,'pay',took?'Recorded. It shows on your statement once it is folded into the book.':((r.body&&r.body.error)||'That payment was not recorded.'));
-      if(took) delete pick[o.id];
-      await loadOrders(); if(mine!==ticket) return; drawOrder();
-    });
-    box.appendChild(pb);
-    box.appendChild(el('p','sub2','Tell us once it has left your side. '+rm(due)+' is outstanding; a part payment is fine and the rest stays here.'));
-    var ch=el('button','btn quiet salt-ghost','Pay another way'); ch.type='button';
-    ch.addEventListener('click',function(){ pick[o.id]={again:true}; drawOrder(); });
-    box.appendChild(ch);
-    return box;
+  function openPay(ctx){
+    if(!paySh||view||!(ctx.fig>0.004)) return;
+    /* S6 fix: Transfer is the way chosen as it opens, as the mockup draws it; the way is not the account, and no account is */
+    PS={ctx:ctx, part:false, amt:'', rail:'transfer', acct:'', said:'', step:'pay', away:null, busy:false};
+    payScr.hidden=false; paySh.hidden=false; drawPay();
+    try{ paySh.focus(); }catch(e){}
   }
-  function payLink(o){
-    var box=el('div','pay');
-    var a=acct(o.account), due=dueOf(o);
-    var word={cod:(o.mode==='deliver'?'Pay '+rm(due)+' in cash on delivery.':'Pay '+rm(due)+' in cash when you collect.'),
-      transfer:'Transfer '+rm(due)+' by DuitNow Transfer to '+(a?a.name:'the account')+'. The page that opens has the account number behind Copy account number; paste it into your banking app.',
-      qr:'Pay '+rm(due)+' by scanning the '+(a?a.name:'')+' code. On the page that opens, tap the code to save it as an image, then scan it from your banking app.',
-      jompay:'Pay '+rm(due)+' by JomPAY. The page that opens has the biller code and the reference behind Copy; enter them in your banking app under JomPAY.',
-      tngbiz:'Pay '+rm(due)+" by scanning the Touch 'n Go Business code on the page that opens, or save it and scan it from the Touch 'n Go app."}[o.method]||'';
-    box.appendChild(el('p','sub2','Paying by '+methodWord(o.method,o.account)+'. '+word));
-    if(o.method!=='cod'&&o.account){
-      var l=el('a','btn lnk salt-ghost','Open '+(a?a.name:'the account')+' in QR Command');
-      l.href=PAY_SITE+'/#'+encodeURIComponent(o.account); l.target='_blank'; l.rel='noopener';
-      box.appendChild(l);
+  function closePay(){ if(!paySh||paySh.hidden) return; paySh.hidden=true; payScr.hidden=true; PS=null; payqDrop(); }
+  if(paySh){
+    document.getElementById('payX').addEventListener('click',closePay);
+    payScr.addEventListener('click',closePay);
+    document.addEventListener('keydown',function(ev){ if(ev.key==='Escape') closePay(); });
+  }
+  /* the figure being paid: all of it, or the part typed, never above all of it */
+  function payAmt(){ if(!PS.part) return PS.ctx.fig; var v=parseFloat(PS.amt); return v>0&&v<=PS.ctx.fig+0.004?+v.toFixed(2):0; }
+  function payTitle(){ document.getElementById('payT').textContent='Pay '+rm(payAmt()||PS.ctx.fig); }
+  var HOW=[{v:'transfer', label:'Transfer to an account', g:'bank'}, {v:'qr', label:'Scan a code', g:'qr', detail:'DuitNow QR, any bank or e-wallet'}];
+  /* ---- S6 6.8: CASH WHEN IT ARRIVES, OFFERED ONLY WHERE THE RULE ALLOWS, AND SAYING WHY WHEN NOT. A third way on an
+     order's sheet, never on To pay now's, whose goods they already have. Withheld while goods they hold are unpaid, this
+     order's own included (v694): the tile stays, dashed, with the reason in place of its line. Choosing it tells him how
+     they will pay; the cash itself is his to record when he takes it, so the customer never declares it. */
+  function cashWay(){
+    var o=oFind(PS.ctx.id), d=o&&o.mode==='deliver', no=heldUnpaid();
+    return {v:'cod', label:d?'Cash when it arrives':'Cash when you collect', g:'cash', off:no,
+      detail:no?'Not offered while goods you already have are unpaid. Pay for those first and it comes back.':'Paid to us at the handover. We record it when we take it.'};
+  }
+  function cashWord(){ var o=oFind(PS.ctx.id); return o&&o.mode==='deliver'?'Pay in cash when it arrives':'Pay in cash when I collect'; }
+  async function cashSend(){
+    if(!PS||PS.busy) return;
+    var ps=PS, id=ps.ctx.id, mine=ticket;
+    ps.busy=true; ps.said=''; drawPayFoot();
+    var r=await api('/orders/'+encodeURIComponent(id)+'/method',{method:'cod', rid:ridFor(id+':method','cod')});
+    if(mine!==ticket||PS!==ps) return;
+    ps.busy=false;
+    if(!(r.body&&r.body.ok)){ ps.said=(r.body&&r.body.error)||'The choice was not recorded.'; drawPayFoot(); return; }
+    ridDone(id+':method'); closePay();
+    var o=oFind(id); if(o) tapSaid(o,'pay','You pay in cash '+(o.mode==='deliver'?'when it arrives':'when you collect')+'. We record it when we take it.');
+    await loadOrders(); if(mine!==ticket) return;
+    setHold(); drawOrder(); drawPayHead();
+  }
+  function drawPay(){
+    if(PS.step==='check'){ drawPayCheck(); return; }
+    var body=document.getElementById('payBody'), c=PS.ctx;
+    body.textContent=''; payTitle();
+    body.appendChild(kpiTile('ember',c.label,rm(c.fig),c.note()));
+    var cash=PS.rail==='cod';
+    var seg=el('div','payseg');
+    [[false,'All, '+rm(c.fig)],[true,'Part of it']].forEach(function(x){
+      var b=el('button','salt-ghost',x[1]); b.type='button'; b.setAttribute('aria-pressed',PS.part===x[0]?'true':'false');
+      b.addEventListener('click',function(){ PS.part=x[0]; drawPay(); var f=document.getElementById('payAmt'); if(f) try{ f.focus(); }catch(e){} });
+      seg.appendChild(b);
+    });
+    if(!cash) body.appendChild(seg);
+    if(PS.part&&!cash){
+      var row=el('div','payamt'); row.appendChild(el('span','cur','RM'));
+      var inp=el('input','fld salt-field__input salt-field__input--mono'); inp.id='payAmt'; inp.type='number'; inp.min='0'; inp.step='0.01'; inp.inputMode='decimal';
+      inp.value=PS.amt; inp.setAttribute('aria-label','How much you are paying, in ringgit');
+      inp.addEventListener('input',function(){ PS.amt=inp.value; payTitle(); drawPayFoot(); });
+      row.appendChild(inp); body.appendChild(row);
+      body.appendChild(el('p','sub2','Up to '+rm(c.fig)+'. The rest stays here to pay.'));
     }
-    return box;
+    var fs=el('fieldset','salt-options payhow'), g=el('div','salt-options__grid');
+    fs.appendChild(el('legend','salt-options__legend','How you pay'));
+    HOW.concat(c.kind==='order'?[cashWay()]:[]).forEach(function(w){
+      var lab=el('label','salt-option'), r=el('input','salt-option__input'), face=el('span','salt-option__face'),
+          ld=el('span','salt-option__lead'), tx=el('span','salt-option__text'), a=w.v==='transfer'&&PS.rail==='transfer'&&acct(PS.acct);
+      r.type='radio'; r.name='payHow'; r.value=w.v; r.checked=PS.rail===w.v; r.disabled=!!w.off;
+      r.addEventListener('change',function(){ PS.rail=w.v; if(!payInto(w.v,payAmt()||c.fig).some(function(x){ return x.key===PS.acct; })) PS.acct=''; drawPay(); });
+      ld.appendChild(glyph(w.g,22)); face.appendChild(ld);
+      tx.appendChild(el('span','salt-option__label',w.label));
+      tx.appendChild(el('span','salt-option__detail',w.detail||('From your banking app, to '+(a?a.name:'one of our accounts'))));
+      face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); g.appendChild(lab);
+    });
+    fs.appendChild(g); body.appendChild(fs);
+    if(PS.rail&&!cash){
+      /* S6 fix: his accounts as the system's Option tiles, one tap each where a select took two or three, and none chosen */
+      var fi=el('fieldset','salt-options payinto'), gi=el('div','salt-options__grid salt-options__grid--2');
+      fi.id='payInto'; fi.appendChild(el('legend','salt-options__legend','Pay into'));
+      payInto(PS.rail,payAmt()||c.fig).forEach(function(a){
+        var lab=el('label','salt-option'), r=el('input','salt-option__input'), face=el('span','salt-option__face'), tx=el('span','salt-option__text');
+        r.type='radio'; r.name='payInto'; r.value=a.key; r.checked=PS.acct===a.key;
+        r.addEventListener('change',function(){ PS.acct=a.key; drawPay(); });
+        tx.appendChild(el('span','salt-option__label',a.name)); face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); gi.appendChild(lab);
+      });
+      fi.appendChild(gi); body.appendChild(fi);
+    }
+    var L=el('div','salt-ledger salt-ledger--plain payref'), rr=lrow('Reference',user,'Put this in the reference, so we can match it.'),
+        cp=el('button','salt-ghost'); cp.type='button'; cp.setAttribute('aria-label','Copy the reference'); cp.appendChild(glyph('copy',18));
+    var said=statusLine(PS.said); said.hidden=!PS.said;
+    cp.addEventListener('click',async function(){
+      var t; try{ await navigator.clipboard.writeText(user); t='Copied.'; }catch(e){ t='Copy failed. Press and hold the reference instead.'; }
+      if(!PS) return; PS.said=t; said.textContent=t; said.hidden=false;
+    });
+    rr.querySelector('.salt-ledger__value').appendChild(cp);
+    L.appendChild(rr); if(!cash){ body.appendChild(L); body.appendChild(said); }
+    drawPayFoot();
+  }
+  /* the one filled control, and above it what it opens or what is still to choose */
+  function drawPayFoot(){
+    var foot=document.getElementById('payFoot'), a=payAmt(), qr=PS.rail==='qr', word=qr?'Show the code':'Show the account number',
+        href=PS.rail&&PS.acct&&a?payHref(PS.acct,PS.rail,a,user):'';
+    foot.textContent='';
+    if(PS.rail==='cod'){
+      foot.appendChild(el('p','paycap','We record it when we take it, so there is nothing to tell us afterwards.'));
+      var cb=el('button','salt-pill salt-pill--md',cashWord()); cb.type='button'; cb.id='payGo'; cb.disabled=!!PS.busy;
+      cb.addEventListener('click',cashSend); foot.appendChild(cb);
+      if(PS.said){ var l=statusLine(PS.said); l.className+=' paysaid'; foot.appendChild(l); }
+      return;
+    }
+    foot.appendChild(el('p','paycap',href?'Opens our payment page with the '+(qr?'code':'account number')+'. Come back here after paying.'
+      :!a?'Say how much you are paying, up to '+rm(PS.ctx.fig)+'.':!PS.rail?'Choose how you are paying.':'Choose which of our accounts to pay into.'));
+    var go;
+    if(href){ go=el('a','salt-pill salt-pill--md',word); go.href=href; go.target='_blank'; go.rel='noopener';
+      go.addEventListener('click',function(){ PS.away={amt:a, rail:PS.rail, acct:PS.acct, gone:false}; payqPut(); }); }
+    else { go=el('button','salt-pill salt-pill--md',word); go.type='button'; go.disabled=true; }
+    go.id='payGo'; foot.appendChild(go);
+  }
+  /* ---- S6 6.5 (his D7): ON RETURN THE SHEET ASKS ONCE. Leaving for the pay page (the page hidden, or the window left)
+     and coming back turns the sheet to one question, never a tap beside the account number: Not yet goes back and asks
+     nothing more until the pay page is opened again; Yes records a CLAIM, which stays "sent, waiting" until he answers. */
+  /* S6 fix: THE QUESTION OUTLIVES A RELOAD. A saved app is often reloaded or evicted while they are in their bank's app,
+     and the question lived in memory alone, so they came back to Pay with nothing asked. What Show opened is kept on this
+     device for two hours (the way, his account, the figure and the order it was for, with a short mark of the account,
+     never the username), and the next open asks it, if something is still to pay there. Yes, Not yet and closing the
+     sheet clear it; so does Log out. His read-only view keeps nothing. */
+  var PAYQ='salt-stmt-payq';
+  function payqWho(u){ var h=2166136261; for(var i=0;i<u.length;i++){ h^=u.charCodeAt(i); h=Math.imul(h,16777619)>>>0; } return h.toString(36); }
+  function payqPut(){ if(view||!PS||!PS.away) return;
+    try{ localStorage.setItem(PAYQ,JSON.stringify({who:payqWho(user), at:Date.now(), kind:PS.ctx.kind, id:PS.ctx.id||null,
+      away:{amt:PS.away.amt, rail:PS.away.rail, acct:PS.away.acct}})); }catch(e){ /* this visit only */ } }
+  function payqDrop(){ try{ localStorage.removeItem(PAYQ); }catch(e){} }
+  function payqBack(){
+    if(view||PS||!paySh) return;
+    var q=null; try{ q=JSON.parse(localStorage.getItem(PAYQ)||'null'); }catch(e){ q=null; }
+    if(!q) return;
+    var w=q.away||{}, ctx=q.kind==='order'?(oFind(q.id)?orderCtx(q.id):null):acctCtx();
+    if(q.who!==payqWho(user)||!(Date.now()-q.at<2*3600e3)||!ctx||!(ctx.fig>0.004)||!(w.amt>0)||!acct(w.acct)){ payqDrop(); return; }
+    PS={ctx:ctx, part:false, amt:'', rail:w.rail, acct:w.acct, said:'', step:'check', away:{amt:w.amt, rail:w.rail, acct:w.acct, gone:false}, busy:false};
+    payScr.hidden=false; paySh.hidden=false; drawPay();
+    try{ paySh.focus(); }catch(e){}
+  }
+  function payGone(){ if(PS&&PS.away) PS.away.gone=true; }
+  function payBack(){ if(PS&&PS.away&&PS.away.gone&&PS.step==='pay'){ PS.step='check'; PS.said=''; drawPay(); } }
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden') payGone(); else payBack(); });
+  window.addEventListener('blur',payGone); window.addEventListener('focus',payBack);
+  function drawPayCheck(){
+    var body=document.getElementById('payBody'), foot=document.getElementById('payFoot'), w=PS.away, a=acct(w.acct), qr=w.rail==='qr';
+    body.textContent=''; foot.textContent='';
+    document.getElementById('payT').textContent='Pay '+rm(w.amt);
+    var box=el('div','paycheck'); box.appendChild(glyph(qr?'qr':'bank',30));
+    box.appendChild(el('h3','salt-sheet__title','Did you send '+rm(w.amt)+'?'));
+    box.appendChild(el('p','sub2',(qr?'By scanning the '+a.name+' code':'By transfer to '+a.name)+', reference '+user+'.'));
+    body.appendChild(box);
+    var ins=el('p','salt-insight');
+    ins.appendChild(document.createTextNode('Tell us only once it has gone from your bank. It shows as ')); ins.appendChild(el('b',null,'sent, waiting'));
+    ins.appendChild(document.createTextNode(' until we confirm it arrived, and we tell you either way.'));
+    body.appendChild(ins);
+    var again=el('a','salt-ghost payagain',qr?'Show the code again':'Show the account number again');
+    again.href=payHref(w.acct,w.rail,w.amt,user); again.target='_blank'; again.rel='noopener';
+    again.addEventListener('click',function(){ if(PS&&PS.away) PS.away.gone=false; });
+    body.appendChild(again);
+    var no=el('button','salt-ghost','Not yet'); no.type='button';
+    no.addEventListener('click',function(){ PS.step='pay'; PS.away=null; PS.said=''; payqDrop(); drawPay(); });
+    var yes=el('button','salt-pill salt-pill--md','Yes, I sent '+rm(w.amt)); yes.type='button'; yes.id='paySent'; yes.disabled=!!PS.busy;
+    yes.addEventListener('click',claimSend);
+    foot.appendChild(no); foot.appendChild(yes);
+    if(PS.said){ var l=statusLine(PS.said); l.className+=' paysaid'; foot.appendChild(l); }
+  }
+  /* the claim: on the order, or on the account for To pay now (rows he entered on the desk as well). The id stays with
+     the figure, the way and the account it was minted for, so a retry is recorded once. Its answer is beside Yes. */
+  async function claimSend(){
+    if(!PS||PS.busy) return;
+    var ps=PS, c=ps.ctx, w=ps.away, fig=w.amt.toFixed(2), key=(c.kind==='order'?c.id:'account')+':claim', mine=ticket;
+    var body={amount:+fig, method:w.rail, account:w.acct, rid:ridFor(key,fig+' '+w.rail+' '+w.acct)};
+    ps.busy=true; ps.said=''; drawPay();
+    var r=await api(c.kind==='order'?'/orders/'+encodeURIComponent(c.id)+'/pay':'/account/claim', body);
+    if(mine!==ticket||PS!==ps) return;
+    ps.busy=false;
+    if(!(r.body&&r.body.ok)){ ps.said=(r.body&&r.body.error)||'That was not recorded. Try again.'; drawPay(); return; }
+    ridDone(key); closePay();
+    if(c.kind==='order'){ var o=oFind(c.id); if(o) tapSaid(o,'pay','Sent, waiting for us to confirm. We tell you when it arrives.'); }
+    await loadOrders(); if(mine!==ticket) return;
+    setHold(); drawOrder(); drawPayHead();
   }
 
   /* ==== S7 7.1 (his D11 of 24 Sep 2026): HOME, THE PLACE THAT OPENS FIRST ====================================
-     Three questions: what do I owe, what needs me, and what do I order again. TO PAY NOW is the sealed figure with
-     its due date and the one filled Pay (over the line, the overdue amount, in the words the payment page says);
+     Three questions: what do I owe, what needs me, and what do I order again. TO PAY NOW is stage 6's (drawPayHead):
+     the sealed figure with its due date and the one filled Pay, which opens the pay sheet (over the line, the overdue
+     amount first, in the words the payment page says);
      NEEDS YOU is an order with a reply not yet shown on this device, goods ready to collect, or goods all with them and
      not yet paid for, which the sealed figure takes in only at the next publish (S7-R6); COMING UP is an order
-     agreed and not yet handed over, with what is still to pay, now or when it arrives. A new account says there is
+     agreed and not yet handed over, with what is still to pay, now or when it arrives, then any part the publish sealed
+     that no order accounts for (comingParts). A new account says there is
      nothing on it yet, and Prices and ordering work from here. Each part is drawn afresh and put on the page only
      where it reads differently, so a poll moves nothing that has not changed. A row opens its order in Orders. */
   function drawHome(){
-    var parts={hPay:homePay(), hNeeds:homeNeeds(), hComing:homeComing(), hAgain:homeAgain()};
+    var parts={hNeeds:homeNeeds(), hComing:homeComing(), hAgain:homeAgain()};
     Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
+    drawPayHead();
     homeKeep();
     placeCounts();
     placeTitle();
   }
-  /* what Home's Pay says: over the line the overdue amount, else the sealed To pay now, else what is owed */
-  function payNowFig(){ return hold?owedNow:payDue?(+payDue.now.rm||0):owedNow; }
-  /* the keep card first on a new account's Home, as the plan's first Home draws it; for an account with anything on it,
-     under what they owe and what needs them, so a small phone answers those first (S7-R5 of the stage 7 review). Moved
-     only when that changes, so a poll never takes a tap's focus from it */
+  /* THE KEEP CARD IS ONE ELEMENT, moved and never copied: it leads a new account's Home, a card of its own as the plan's
+     first Home draws it (S7-R5 of the stage 7 review), and is otherwise This device's first row in Account (S9 fix), so a
+     small phone's Home answers the three questions first. Moved only when that changes, so a poll never takes a tap's
+     focus from it */
+  var KEEP_CARD=['salt-glass-card','salt-glass-card--radius-md','salt-glass-card--pad-sm'];
   function homeKeep(){
-    var k=document.getElementById('keepCard'), pay=document.getElementById('hPay'); if(!k||!pay) return;
-    var col=pay.parentNode;
-    if(fresh()){ if(k.nextElementSibling!==pay) col.insertBefore(k,pay); }
-    else if(col.lastElementChild!==k) col.appendChild(k);
-  }
-  /* STAGE 6 FILLS THIS: Home's one Pay opens the pay sheet on what is to pay now. Until it does, Pay goes only where the
-     same figure is: over the line the payment page; else the one order whose goods are all with them and whose still to
-     pay is that figure, which its own Pay says; else Account, whose statement lists what the figure is made of. Never
-     the first order that owes: one not yet handed over carries another amount (S7-R1 of the stage 7 review) */
-  function openPayNow(){
-    if(hold){ placeShow('order',true); return; }
-    var fig=payNowFig(), m=orders.filter(function(o){ return movedAll(o)&&oOwes(o)&&Math.abs(oToPay(o)-fig)<0.005; });
-    if(m.length===1) oOpen(m[0].id); else placeShow('stmt',true);
-  }
-  function homePay(){
-    var box=el('div'); if(!bundle) return box;
-    var now=payDue&&payDue.now, fig=payNowFig(), due=fig>0.004, fr=fresh(), note=el('span');
-    if(hold) note.textContent='Please pay the overdue amount of '+rm(owedNow)+' before placing another order.';
-    else if(fr) note.textContent='Nothing on your account yet. Your orders will show here.';
-    else if(due&&payDue&&(now.parts||[]).length) note=nowNote(now);
-    else if(!due) note.textContent='Nothing to pay now.';
-    else note=null;
-    box.appendChild(kpiTile(due?'ember':'verdigris',fr?'To pay':'To pay now',rm(fig),note));
-    if(view) return box;
-    if(due){ var pb=el('button','salt-pill salt-pill--md hfill','Pay '+rm(fig)); pb.type='button'; pb.id='hPayGo';
-      pb.addEventListener('click',openPayNow); box.appendChild(pb); }
-    return box;
+    var k=keepCardEl, pay=document.getElementById('payHead'), rows=document.getElementById('devRows'); if(!k||!pay||!rows) return;
+    var home=fresh();
+    if(home){ if(k.nextElementSibling!==pay) pay.parentNode.insertBefore(k,pay); }
+    else if(k.nextElementSibling!==rows) rows.parentNode.insertBefore(k,rows);
+    KEEP_CARD.forEach(function(c){ k.classList.toggle(c,home); });
   }
   function hHead(t,n){ var h=el('h2','salt-eyebrow salt-eyebrow--copper hlab',t); if(n) h.appendChild(el('span','hn',String(n))); return h; }
   /* the Orders row, with Home's own sentence for why it is here */
@@ -3178,13 +3581,19 @@ const CLIENT_JS = `
     return box;
   }
   function homeComing(){
-    var box=el('div'), list=orders.filter(function(o){ return OPEN_ST.indexOf(o.status)>=0&&!movedAll(o)&&!replyWaiting(o)&&!toCollect(o); });
-    if(!list.length) return box;
+    var box=el('div'), list=orders.filter(function(o){ return OPEN_ST.indexOf(o.status)>=0&&!movedAll(o)&&!replyWaiting(o)&&!toCollect(o); }), more=comingParts();
+    if(!list.length&&!more.length) return box;
     box.appendChild(hHead('Coming up'));
     list.forEach(function(o){
       var c=oClaimed(o), t=o.status==='placed'?'Waiting to be confirmed':oToPay(o)>0.004?rm(oToPay(o))+' still to pay, '+payWhen(o,true):'Paid';
       box.appendChild(homeRow(o,t+(c>0?'. '+rm(c)+' sent, waiting for us to confirm':'')));
     });
+    if(more.length){
+      var C=el('div','salt-ledger salt-ledger--plain');
+      /* S6 fix: its due day, never an offer to pay now that Home has no control for */
+      more.forEach(function(p){ C.appendChild(lrowN(partSpan(p,true),rm(p.rm),'Due when you receive it')); });
+      box.appendChild(C);
+    }
     return box;
   }
   /* S7 7.4: ORDER AGAIN. A tile for each thing they have ordered (a size, a way and a place), newest first, while that size
@@ -3246,7 +3655,7 @@ const CLIENT_JS = `
     var r=await api('/orders');
     if(mine!==ticket) return;
     if(r.status===401) return;   /* api() has said so in the bar */
-    if(r.body.ok) orders=r.body.orders||[];
+    if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; }
   }
   /* S5 5.5 (24 Sep 2026): A RE-READ PATCHES WHAT CHANGED AND NOTHING ELSE. It drew the whole tab again, the order
      form and every order with it, so a poll bringing any change to any order took the box being typed in and the
@@ -3254,9 +3663,10 @@ const CLIENT_JS = `
      and only the rows and the parts of the open order that changed are drawn again. A return to the page and a lapse
      reopened (S3 3.5) come this way too; only an account that now draws the form above differently draws the tab. */
   async function oReread(){
-    var before={}, mine=ticket; orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
+    var before={}, mine=ticket, was=JSON.stringify([claims,orders.map(oClaimed)]); orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
     await loadOrders();
     if(mine!==ticket) return;
+    if(JSON.stringify([claims,orders.map(oClaimed)])!==was){ setHold(); drawPayHead(); }
     if(document.getElementById('oArea')&&formSig()!==drawnSig){ drawOrder(); return; }
     var changed=orders.filter(function(o){ return before[o.id]!==JSON.stringify(o); }).map(function(o){ return o.id; }),
         gone=Object.keys(before).some(function(id){ return !oFind(id); });
@@ -3300,6 +3710,7 @@ const CLIENT_JS = `
 
   async function subscribePush(){
     var mine=ticket;
+    draft.pushNote='';   /* S9 fix: a refusal from before is not this try's */
     try{
       var k=await (await fetch('/push/key',{cache:'no-store'})).json();
       if(!k.key||!k.configured){ draft.pushNote='Notifications are not switched on for this site yet.'; drawOrder(); return; }
@@ -3497,7 +3908,7 @@ const CLIENT_JS = `
     var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
     prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
     user=u; session=body.session||'';
-    if(!same){ orders=[]; draft={}; pick={}; }
+    if(!same){ orders=[]; claims=[]; draft={}; closePay(); }
     view=!!(OWNER&&body.byMaster);
     if(linkBox) linkBox.hidden=true;
     if(opening) opening.hidden=true;
@@ -3505,9 +3916,10 @@ const CLIENT_JS = `
     show(b);
     drawPrices();
     drawKeep();
+    drawDev();
     /* HOME OPENS FIRST (S7 7.1), over the line too, where it leads with what to pay; an address naming a place opens
        that place once. The same account let in again stays where it was, the order sheet open over it included,
-       unless that place has gone (Prices, over the line) */
+       unless that place has gone (Rewards, for an account no longer an associate) */
     if(!same){ var w=wantPlace; wantPlace=''; placeShow(w||'home'); }
     else if(placeBtns(t)[0].hidden) placeShow(t);
     if(same){
@@ -3519,7 +3931,8 @@ const CLIENT_JS = `
   async function follow(stale){
     if(session){ await loadOrders(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
     else if(view){ await loadView(user); if(stale()) return false; }   /* stmt/owner.js: his route alone carries it */
-    drawOrder();
+    setHold(); drawOrder(); drawPayHead();   /* S6 6.5 and 6.7: the claims come with the orders, and may lift the hold */
+    if(session) payqBack();   /* S6 fix: a question the last open left unanswered */
     return true;
   }
 
@@ -3657,8 +4070,8 @@ const CLIENT_JS = `
       if(opening) opening.hidden=true;
       /* S3 fix: a phone still remembered, which the site could not open just now, says so on the door with Try again,
          never on the saved app's code screen, which would send a customer still signed in to Safari for a code */
-      var kept=!!remGet();
-      if(APP&&!kept&&(IOS||key||qm)) showCode(!!qm&&!STANDALONE); else gate.hidden=false;
+      var kept=!!remGet(), cm=hk==='code';   /* S9 fix: This device's QR (/app#code) opens on the code, in a browser's words */
+      if(APP&&!kept&&(IOS||key||qm||cm)) showCode((!!qm||cm)&&!STANDALONE); else gate.hidden=false;
       if(APP&&qm&&INAPP&&!STANDALONE) csay(INAPP_KEY,'bad');
       if(key&&!kept) await openHandover({token:key});
     })();

@@ -126,6 +126,17 @@ export async function listOrders(env, all, links) {
     links && Number.isInteger(b.links) ? { links: b.links } : {});
 }
 
+/** S6 6.6: every claim against an account still waiting (or all with `all`), each with the desk code its username maps
+ *  to. Never an order: it is read beside them and drawn on its own card. */
+export async function listClaims(env, all) {
+  const r = await site(env, "/desk/claims" + (all ? "?all=1" : ""));
+  if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.ok) return { ok: false, error: b.error || ("the statements site answered http " + r.status) };
+  const users = await usersMap(env);
+  return { ok: true, claims: (b.claims || []).map((c) => Object.assign({ code: users[c.u] || null }, c)) };
+}
+
 /** One order, closed or open, with its code: the routes below act on an order by its id alone. */
 export async function findOrder(env, id) {
   const r = await listOrders(env, true);
@@ -233,10 +244,12 @@ const livePre = async (db, orderId, stage) => {
 const preById = async (db, id) => db.prepare("SELECT * FROM preapproval WHERE id=?1").bind(id).first();
 /* a newer yes on the same order and stage replaces one still waiting for a row the SITE makes: the newest is what he
    last said. Never one carrying its own entry (cash taken, a move offered again): each of those is a row of its own,
-   and voided before it was queued it was never booked, the site already counting the cash. */
+   and voided before it was queued it was never booked, the site already counting the cash. S6 fix: nor a claim's.
+   Each claim is a row of its own and its yes answers that claim alone: a second claim's Received, given before the
+   first claim's row was drafted, voided the first yes, and that row could then never be booked. */
 async function recordPre(db, p) {
   const id = p.order_id + "|" + p.stage + "|" + p.at;
-  await db.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE order_id=?2 AND stage=?3 AND status='waiting' AND entry IS NULL").bind(p.at, p.order_id, p.stage).run();
+  await db.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE order_id=?2 AND stage=?3 AND status='waiting' AND entry IS NULL AND json_extract(shown,'$.figures.claim') IS NULL").bind(p.at, p.order_id, p.stage).run();
   await db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,tapped_by,at) VALUES (?1,?2,?3,?4,?5,?6,?7,'waiting',?8,?9)")
     .bind(id, p.order_id, p.u || null, p.stage, p.hash, JSON.stringify(p.shown || {}), p.entry ? JSON.stringify(p.entry) : null, p.by || null, p.at).run();
   return id;
@@ -354,8 +367,10 @@ async function stageTap(env, id, body, by, now, stage, build) {
     shown: { from: o.status, figures: b.shown, flags: pv.d.flags, waits: pv.waits } });
   if (b.pin) await db.prepare("UPDATE preapproval SET entry_at=?1 WHERE id=?2").bind(b.pin, preId).run();
   /* the site hears what he did (a handover, cash taken), after the yes is on file, so no pass can draft the row first */
+  let push = null;
   if (b.site) {
     const r = await moveOrder(env, o.u, id, b.site);
+    push = r.push || null;   /* S6: the wake it sent, so the card can say whether their phone heard */
     if (!r.ok) {
       await db.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE id=?2").bind(new Date().toISOString(), preId).run();
       return r;
@@ -366,7 +381,7 @@ async function stageTap(env, id, body, by, now, stage, build) {
      row: a stage the site makes is queued after this, so any row of its stage drafted before it is an older one */
   const pre = await preById(db, preId);
   const spent = pre.status === "waiting" && b.pin ? await settlePre(db, pre, await readBook(db)) : null;
-  return { ok: true, order: o, preapproval: { stage, waits: pv.waits, says: yesWords(pv.waits), flags: pv.d.flags, spent: spent || null,
+  return { ok: true, order: o, push, preapproval: { stage, waits: pv.waits, says: yesWords(pv.waits), flags: pv.d.flags, spent: spent || null,
     draft: spent ? (await preById(db, preId)).draft_id : null } };
 }
 const ROWED_ON_SITE = ["acknowledged", "ready", "done"];
@@ -404,21 +419,44 @@ export async function handedOrder(env, id, body, by, now) {
 
 /** POST /orders/<id>/received {amount}: the payment they recorded is in his bank. The site already counts it. */
 export async function receivedOrder(env, id, body, by, now) {
+  if (body && body.covered === true) return notFoundOrder(env, id, body, now, true);   /* S6 fix: on the book already */
   const rej = await rejectedOf(env.SALT_LEDGER, id, "pay");
   /* their payment may be drafted already (the reconcile queues it within the minute once the row is on the book),
      and then that draft's own entry is the one his yes answers */
-  let queued = [];
+  let queued = [], shut = new Set(), onRows = {};
   if (env.SALT_LEDGER) {
     const rs = await env.SALT_LEDGER.prepare("SELECT id,entry FROM draft WHERE status='pending' AND entry LIKE ?1 ORDER BY id DESC").bind('%"orderId":"' + id + '"%').all();
     queued = (rs.results || []).map((r) => { try { return JSON.parse(r.entry); } catch (e) { return null; } })
       .filter((e) => e && e.orderId === id && e.status === "Payment" && !e.counter);
+    /* S6 11.14: a claim's entry filed not found never lands, so that claim is not received after it */
+    const rj = await env.SALT_LEDGER.prepare("SELECT id FROM draft WHERE status='rejected' AND decided_by='notfound' AND entry LIKE ?1").bind('%"orderId":"' + id + '"%').all();
+    shut = new Set((rj.results || []).map((r) => r.id));
+    onRows = await acctInFlight(env.SALT_LEDGER, null);
   }
   return stageTap(env, id, body, by, now, "pay", (o, at) => {
     const amount = body && body.amount;
     if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { error: "say how much was received" };
-    const drafted = queued.find((e) => Math.abs(+e.payload.cash - amount) < 0.005);
+    /* S6 6.5 (D7): A CLAIM OF THEIRS, named by its moment (the oldest waiting when the tap names none). His yes is to
+       the claim's own entry, drafted or still to be, and the site hears it as one verdict: it becomes paid there */
+    const waiting = (o.payments || []).filter((p) => p && p.claim === "waiting");
+    if (waiting.length) {
+      const p = body.claim ? waiting.find((x) => x.at === body.claim) : waiting[0];
+      if (!p) return { status: 409, error: "that claim of theirs is not waiting any more: look again" };
+      if (Math.abs(p.amount - amount) > 0.004) return { status: 409, error: "RM " + p.amount.toFixed(2) + " they say they sent is waiting to be received here, not RM " + amount.toFixed(2) };
+      if (shut.has(p.queued || "") || shut.has(p.at)) return { status: 409, error: "that claim was filed not found, and its row with it: it cannot be received now" };
+      /* S6 fix: money sent against the account, booked on this order's row and not folded yet, may be this very money */
+      const onRow = onRows[o.ledgerKey] || 0, due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2);
+      if (onRow > 0.004 && p.amount > due - onRow + 0.004) return { status: 409, error: "RM " + onRow.toFixed(2) + " sent against their account is booked on this order's row and not folded yet, so this claim would pay it twice: answer it once the fold lands" };
+      const site = { verdict: { kind: "received", claim: p.at, amount: p.amount } }, shown = { amount: p.amount, claim: p.at };
+      const own = queued.find((e) => e.at === p.queued) || claimEntry(o, p);
+      if (p.queued) { own.at = p.queued; return { entry: own, pin: p.queued, site, shown }; }
+      return { entry: own, site, shown };
+    }
+    const drafted = queued.find((e) => Math.abs(+e.payload.cash - amount) < 0.005 && !e.claim);
     if (drafted) return { entry: drafted, pin: drafted.at, shown: { amount: +drafted.payload.cash } };
-    const inc = +((+o.paid || 0) - (+((o.queued || {}).paid) || 0)).toFixed(2);
+    /* a claim he received and not yet queued is told by its own entry, as the site's paidUntold reads it */
+    const own = (o.payments || []).filter((p) => p && p.claim === "received" && !p.queued).reduce((n, p) => n + (+p.amount || 0), 0);
+    const inc = +((+o.paid || 0) - own - (+((o.queued || {}).paid) || 0)).toFixed(2);
     if (!(inc > 0.004) && rej && Math.abs(+rej.entry.payload.cash - amount) < 0.005) return { again: "pay" };
     if (!(inc > 0.004)) return { status: 409, error: "nothing they recorded is waiting to be received here" };
     if (Math.abs(inc - amount) > 0.004) return { status: 409, error: "RM " + inc.toFixed(2) + " they recorded is waiting to be received, not RM " + amount.toFixed(2) };
@@ -427,6 +465,216 @@ export async function receivedOrder(env, id, body, by, now) {
     entry.orderId = o.id;
     return { entry, shown: { amount: inc } };
   });
+}
+
+/* ---- NOT FOUND (S6 11.14, his decision D7) ---------------------------------------------------------------------
+ * What they say they sent has not arrived. The claim's own entry is FILED REJECTED FIRST, under the id it has or will
+ * have (the claim's moment), and dropped from every queue, so no pass of the drafter can draft it after; only then is
+ * the site told, as one event that takes the claim off what they say they sent and its entry's name off the claim (the
+ * order book's; never on the kv road). The site wakes them with its kind. Paid never moved, so nothing lowers it. */
+const FILED = { notfound: "Not found: what they say they sent has not arrived, so nothing reaches the book.",
+  covered: "Received, on the book already: money he recorded another way carries it, so this entry never lands." };
+async function fileNotFound(env, at, entry, now, how) {
+  const db = env.SALT_LEDGER, when = (now instanceof Date ? now : new Date()).toISOString(), by = how || "notfound";
+  await db.prepare("INSERT OR IGNORE INTO draft (id,status,collection,entry,row,reasoning,flags,party,drafter,drafted_at,decided_at,decided_by) "
+    + "VALUES (?1,'rejected','sales',?2,'{}',?3,'[]',?4,'orders',?5,?5,?6)")
+    .bind(at, JSON.stringify(entry), FILED[by], entry.party || null, when, by).run();
+  await db.prepare("UPDATE draft SET status='rejected', decided_at=?1, decided_by=?3 WHERE id=?2 AND status='pending'").bind(when, at, by).run();
+  const cur = await db.prepare("SELECT status FROM draft WHERE id=?1").bind(at).first();
+  return !!cur && cur.status === "rejected";
+}
+/** POST /orders/<id>/notfound {claim, amount}: a claim of theirs on an order has not arrived. S6 fix: `covered` (from
+ *  /received) is Received, on the book already: money he recorded another way carries it, so its entry is filed the same
+ *  way and never lands, and the site hears Received, which it takes only where the claim is more than is still owed. */
+export async function notFoundOrder(env, id, body, now, covered) {
+  const f = await findOrder(env, id);
+  if (!f.ok) return f;
+  const o = f.order, db = env.SALT_LEDGER;
+  if (!db) return { ok: false, status: 503, error: "the desk has no ledger binding, so the claim's row cannot be filed" };
+  const amount = body && body.amount;
+  if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { ok: false, status: 400, error: "say which figure was not found" };
+  const waiting = (o.payments || []).filter((p) => p && p.claim === "waiting");
+  const p = body.claim ? waiting.find((x) => x.at === body.claim) : waiting[0];
+  if (!p) return { ok: false, status: 409, error: "that claim of theirs is not waiting any more: look again" };
+  if (Math.abs(p.amount - amount) > 0.004) return { ok: false, status: 409, error: "RM " + p.amount.toFixed(2) + " they say they sent is waiting here, not RM " + amount.toFixed(2) };
+  /* queued, its entry is named on the claim; not yet, the reconcile would give it the claim's own moment, unless another
+     stage's entry already holds that moment, which is then left alone */
+  let at = p.queued || p.at;
+  if (!p.queued) {
+    const d = await db.prepare("SELECT entry FROM draft WHERE id=?1").bind(at).first();
+    let q = null; try { q = ((await env.SALT_QUEUE.get("q:" + DEVICE, "json")) || { queue: [] }).queue.find((e) => e && e.at === at) || null; } catch (e) { q = null; }
+    const theirs = (e) => !e || e.claimOf === p.at;
+    let de = null; try { de = d ? JSON.parse(d.entry) : null; } catch (e) { de = {}; }
+    if (!theirs(de) || !theirs(q)) at = null;
+  }
+  /* the site's own test, asked first, so nothing is filed for a claim it would refuse */
+  if (covered && !(p.amount > +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2) + 0.004))
+    return { ok: false, status: 409, error: "the order still owes what this claim is: answer it Received" };
+  if (at && !(await fileNotFound(env, at, Object.assign(claimEntry(o, p), { at }), now, covered ? "covered" : "notfound")))
+    return { ok: false, status: 409, error: "its row is decided already, so it cannot be filed " + (covered ? "as on the book already" : "not found") };
+  if (at) await dropQueued(env, [at]);
+  return moveOrder(env, o.u, id, { verdict: covered ? { kind: "received", covered: true, claim: p.at, amount: p.amount } : { kind: "notfound", claim: p.at, amount: p.amount } });
+}
+/** POST /claims/<id>/notfound {amount}: a claim against the account has not arrived. Nothing was queued for it. */
+export async function notFoundClaim(env, id, body) {
+  const f = await findClaim(env, id);
+  if (!f.ok) return f;
+  const c = f.claim, amount = body && body.amount;
+  if (typeof amount !== "number" || !Number.isFinite(amount) || Math.abs(amount - c.amount) > 0.004)
+    return { ok: false, status: 409, error: "RM " + (+c.amount).toFixed(2) + " they say they sent is waiting here" + (typeof amount === "number" ? ", not RM " + amount.toFixed(2) : "") };
+  /* S6 fix: rows his Received booked for it, the site not having heard, are money the book carries: never not found */
+  if (env.SALT_LEDGER && (await claimBooked(env.SALT_LEDGER, id))) return { ok: false, status: 409, error: "its rows are booked: tap Received again so they are told" };
+  return moveClaim(env, c.u, id, { verdict: { kind: "notfound", amount: c.amount } });
+}
+/* ---- A CLAIM AGAINST THE ACCOUNT, ROW BY ROW, AND ONE TAP (S6 11.15, his decisions D6 and D7) ---------------------------
+ * What they say they sent against the account settles the rows they owe on, oldest first: the ENGINE'S allocation
+ * (claimAlloc in engine/position.mjs), drawn on his card row by row before his yes. Each row is a Fulfilment of its own,
+ * drafted here against the mirror exactly as it will be queued and stored nowhere, and the digest of all of them is
+ * what the card sends back. ONE TAP APPROVES EXACTLY THOSE ROWS by the stage 11 road: drafted again, and only if the
+ * digest is the one he was shown is each queued with a yes of its own carrying its entry, spent by the drafter only on
+ * an exact match; then the site hears Received. Different, the tap is refused with the rows as they now stand and
+ * nothing is queued. A figure more than the rows owe is never approved on a tap: the card says what is left over. */
+const hex = async (s) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)))].map((b) => b.toString(16).padStart(2, "0")).join("");
+/* S6 fix: MONEY ALREADY ON ITS WAY TO A ROW, by the row's key. What a claim against the account has booked on it, pending or
+   approved, that no fold has landed yet; and with the site's orders, what the site knows of an order beyond its row's
+   cash (a claim waiting, one received, cash he took: none of them folded yet). An account claim takes each row as owing
+   that much less, and an order claim's Received refuses money a claim against the account booked on its row, so the same
+   money is never booked on a row twice. */
+async function acctInFlight(db, except) {
+  const by = {};
+  const rs = await db.prepare("SELECT entry FROM draft WHERE (status='pending' OR (status='approved' AND committed_at IS NULL)) AND entry LIKE ?1").bind('%"claimId":"%').all();
+  for (const r of rs.results || []) {
+    let e = null; try { e = JSON.parse(r.entry); } catch (x) { e = null; }
+    const k = e && e.claimId && e.claimId !== except && e.payload && e.payload.orderKey;
+    if (k) by[k] = +((by[k] || 0) + (+e.payload.cash || 0)).toFixed(2);
+  }
+  return by;
+}
+async function inFlight(env, db, c, sales) {
+  const all = await listOrders(env, true);
+  if (!all.ok) return null;
+  const by = await acctInFlight(db, c.id), cash = {};
+  for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); cash[k] = (cash[k] || 0) + (+s.cash || 0); }
+  for (const o of all.orders) {
+    if (o.u !== c.u || !o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
+    const more = +((+o.paid || 0) + (+o.claimed || 0) - (cash[o.ledgerKey] || 0)).toFixed(2);
+    if (more > 0.004) by[o.ledgerKey] = +((by[o.ledgerKey] || 0) + more).toFixed(2);
+  }
+  return by;
+}
+function claimRows(book, c, fl) {
+  const sales = (book.sales || []).map((s) => { const on = fl && fl[POSITION_ENGINE.ovKey(s)];
+    return on ? Object.assign({}, s, { cash: +((+s.cash || 0) + on).toFixed(2) }) : s; });
+  const alloc = POSITION_ENGINE.claimAlloc(sales, c.code, +c.amount);
+  const date = klDate(new Date(c.at)), method = c.method + (c.account ? " via " + c.account : "");
+  const entries = alloc.rows.map((r, i) => ({ at: new Date(Date.parse(c.at) + i).toISOString(), type: "SELL", party: r.party, qty: 0, total: r.rm,
+    status: "Payment", by: "customer", claim: true, claimId: c.id,
+    raw: "Payment of RM " + r.rm + " on " + r.party + ", against the account (claim " + c.id + "), by " + method,
+    payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: r.party, rid: r.rid || null, orderKey: r.key, orderCode: null, linkTo: null,
+      assoc: null, downstream: null, date, qty: 0, total: 0, cash: r.rm, kg: 0, note: "Paid on the statements site against the account, by " + method + "." } }));
+  return { alloc, entries };
+}
+/* S6 fix: WHAT HIS RECEIVED ALREADY BOOKED FOR A CLAIM. A yes of his on file for any of its rows (queued, drafted, marked
+   or spent), or a row of it approved, means Received was given and those rows are the ones he said yes to. A retry after
+   the site did not hear tells the site again and queues nothing, however the allocation now falls: a fold since may have
+   moved it, and a fresh one booked rows the card never drew, and more than the claim. */
+async function claimBooked(db, id) {
+  let pres = [];
+  try { pres = (await db.prepare("SELECT shown,status FROM preapproval WHERE order_id=?1 AND stage='pay' AND status IN ('waiting','differs','applied') ORDER BY at").bind(id).all()).results || []; }
+  catch (e) { pres = []; }   /* a store before migrations/0011 */
+  const appr = (await db.prepare("SELECT id FROM draft WHERE status='approved' AND entry LIKE ?1").bind('%"claimId":"' + id + '"%').all()).results || [];
+  if (!pres.length && !appr.length) return null;
+  return pres.map((p) => { let sh = {}; try { sh = JSON.parse(p.shown || "{}") || {}; } catch (e) { sh = {}; }
+    return { key: sh.row || null, date: sh.date || null, owed: sh.owed != null ? sh.owed : null, rm: +((sh.figures || {}).amount) || 0, flags: sh.flags || [], state: p.status }; });
+}
+/** POST /claims/<id>/preview: the rows the claim settles, drafted, stored nowhere; or, once Received booked them, those rows. */
+export async function claimPreview(env, id) {
+  const f = await findClaim(env, id);
+  if (!f.ok) return f;
+  const c = f.claim, db = env.SALT_LEDGER;
+  if (!c.code) return { ok: false, status: 409, error: "no desk code is mapped to this account yet: publish the statements again" };
+  if (!db) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
+  if (c.state !== "waiting") return { ok: false, status: 409, error: "that claim is answered already" };
+  const booked = await claimBooked(db, c.id);
+  if (booked) return { ok: true, claim: c, rows: booked, left: 0, booked: true, own: [] };
+  const book = await readBook(db);
+  const fl = await inFlight(env, db, c, book.sales || []);
+  if (!fl) return { ok: false, status: 503, error: "the site's orders could not be read, so the rows it settles cannot be drawn" };
+  const { alloc, entries } = claimRows(book, c, fl);
+  const rows = [], own = [];
+  for (let i = 0; i < entries.length; i++) {
+    const d = draftRow(entries[i], book);
+    if (d.skip) return { ok: false, status: 409, error: "the row of " + (alloc.rows[i].date || "no date") + " would not draft: " + d.skip };
+    const digest = await stageDigest("pay", entries[i], d, null);
+    rows.push(Object.assign({}, alloc.rows[i], { flags: d.flags || [] }));
+    own.push({ entry: entries[i], digest, flags: d.flags || [] });
+  }
+  const hash = await hex(JSON.stringify({ claim: c.id, amount: +c.amount, left: alloc.left, rows: own.map((x) => x.digest) }));
+  return { ok: true, claim: c, rows, left: alloc.left, hash, own };
+}
+/** POST /claims/<id>/received {hash}: his one tap on the rows drawn. */
+export async function claimReceived(env, id, body, by, now) {
+  const at = now || new Date();
+  const pv = await claimPreview(env, id);
+  if (!pv.ok) return pv;
+  const own = pv.own, db = env.SALT_LEDGER;
+  delete pv.own;
+  /* booked already: the site is told again, and nothing more is queued or approved */
+  if (pv.booked) {
+    const r = await moveClaim(env, pv.claim.u, id, { verdict: { kind: "received", amount: pv.claim.amount } });
+    return Object.assign({ ok: r.ok, again: true, rows: [], approved: [] },
+      r.ok ? { claim: r.claim, push: r.push } : { status: r.status, error: "the rows are booked, but the site was not told: " + r.error });
+  }
+  /* S6 fix: RECEIVED, ON THE BOOK ALREADY: more than their rows owe, because he recorded it by hand, so it books nothing */
+  if (body && body.covered === true) {
+    if (!(pv.left > 0.004)) return { ok: false, status: 409, error: "their rows owe all of it: answer it Received" };
+    const r = await moveClaim(env, pv.claim.u, id, { verdict: { kind: "received", amount: pv.claim.amount, covered: true } });
+    return Object.assign({ ok: r.ok, covered: true, rows: [], approved: [] }, r.ok ? { claim: r.claim, push: r.push } : { status: r.status, error: r.error });
+  }
+  if (!body || typeof body.hash !== "string") return { ok: false, status: 400, error: "Received answers the rows drawn: send the digest the preview gave" };
+  if (pv.hash !== body.hash) return { ok: false, status: 409, differs: true, error: "the rows have changed since the card drew them: look at them again", preview: pv };
+  if (pv.left > 0.004) return { ok: false, status: 409, error: "RM " + pv.left.toFixed(2) + " of it is more than their rows owe, so it is not approved on a tap: answer Received, on the book already, if you recorded it by hand, or Not found" };
+  if (!own.length) return { ok: false, status: 409, error: "no row of theirs owes anything to settle" };
+  const pres = [];
+  for (let i = 0; i < own.length; i++) {
+    const e = own[i].entry;
+    const was = await db.prepare("SELECT status FROM draft WHERE id=?1").bind(e.at).first();
+    if (was && was.status === "rejected") return { ok: false, status: 409, error: "the row of " + (pv.rows[i].date || "no date") + " was rejected: answer it under Approve" };
+    const preId = await recordPre(db, { order_id: id, u: pv.claim.u, stage: "pay", hash: own[i].digest, entry: e, by,
+      at: new Date(at.getTime() + i).toISOString(), shown: { claim: id, figures: { amount: e.payload.cash }, row: pv.rows[i].key, date: pv.rows[i].date || null, owed: pv.rows[i].owed, flags: own[i].flags } });
+    if (!was) await queueSale(env, e);
+    await db.prepare("UPDATE preapproval SET entry_at=?1, entry=?2 WHERE id=?3").bind(e.at, JSON.stringify(e), preId).run();
+    pres.push(preId);
+  }
+  const drafted = pres.length ? await runDrafter(env) : null;
+  const book = pres.length ? await readBook(db) : null;
+  const rows = [];
+  for (const preId of pres) {
+    let pre = await preById(db, preId);
+    if (pre.status === "waiting") { await settlePre(db, pre, book); pre = await preById(db, preId); }
+    rows.push({ draft: pre.entry_at, state: pre.status });
+  }
+  const r = await moveClaim(env, pv.claim.u, id, { verdict: { kind: "received", amount: pv.claim.amount } });
+  return Object.assign({ ok: r.ok, rows, drafted, approved: rows.filter((x) => x.state === "applied").map((x) => x.draft) },
+    r.ok ? { claim: r.claim, push: r.push } : { status: r.status, error: "the rows are booked, but the site was not told: " + r.error });
+}
+
+/** One claim against an account, waiting or answered, with its code. */
+export async function findClaim(env, id) {
+  const r = await listClaims(env, true);
+  if (!r.ok) return { ok: false, status: 503, error: r.error };
+  const c = r.claims.find((x) => x.id === id);
+  return c ? { ok: true, claim: c } : { ok: false, status: 404, error: "no such claim" };
+}
+/** His answer on a claim against the account, relayed to the site, which wakes them. */
+export async function moveClaim(env, u, id, body) {
+  const r = await site(env, "/desk/claims/" + encodeURIComponent(u) + "/" + encodeURIComponent(id), {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body || {}) });
+  if (!r) return { ok: false, status: 503, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.ok) return { ok: false, status: r.status, error: b.error || ("the statements site answered http " + r.status) };
+  const users = await usersMap(env);
+  return { ok: true, claim: Object.assign({ code: users[b.claim.u] || null }, b.claim), push: b.push };
 }
 
 /** POST /orders/<id>/cash {amount}: cash taken at the counter. The site's cash event marks the order paid at once, which
@@ -438,10 +686,12 @@ export async function cashOrder(env, id, body, by, now) {
     if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { error: "say how much cash was taken" };
     /* the order already counts that cash: raising it again would count it twice */
     if (rej && Math.abs(+rej.entry.payload.cash - amount) < 0.005) return { again: "cash" };
-    const due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2);
-    if (amount > due + 0.004) return { error: "that is more than the RM " + due.toFixed(2) + " still owed on this order" };
+    const due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0) - (+o.claimed || 0)).toFixed(2);   /* S6: less what they say they sent */
+    if (amount > due + 0.004) return { error: "that is more than the RM " + due.toFixed(2) + " still owed on this order" + ((+o.claimed || 0) > 0.004 ? " beside what they say they sent" : "") };
     /* a payment of theirs not yet queued would be swallowed by the mark the cash moves (orderWork reads paid against it) */
-    if ((+o.paid || 0) > (+((o.queued || {}).paid) || 0) + 0.004) return { status: 409, error: "a payment they recorded is still waiting for its row: receive that first" };
+    /* S6: a claim he received and not yet queued is told by its own entry, so it is left out, as the site's paidUntold leaves it */
+    const own = (o.payments || []).filter((p) => p && p.claim === "received" && !p.queued).reduce((n, p) => n + (+p.amount || 0), 0);
+    if ((+o.paid || 0) - own > (+((o.queued || {}).paid) || 0) + 0.004) return { status: 409, error: "a payment they recorded is still waiting for its row: receive that first" };
     const entry = payEntry(o, o.code, amount, at, true);
     entry.orderId = o.id; entry.counter = true;   /* the desk's own, which a Received never answers */
     /* the site's own cash event (S11 11.8): paid at once, kept as his in cash, and the ledger's mark of the money moved
@@ -469,7 +719,7 @@ async function draftsOfOrders(db, ids) {   /* one order's, in practice: ids hold
 const ofStage = (r, stage) => (stage === "move" ? ["Handover", "Close"].includes(r.entry.status) : r.entry.status === STATUS_OF_STAGE[stage])
   && (stage === "pay" ? !r.entry.counter : stage === "cash" ? !!r.entry.counter : true);
 /* he rejected it: a withdrawal's drop (11.10) is filed rejected too, and is not his */
-const rejectedByHim = (d) => !!d && d.status === "rejected" && d.decided_by !== "withdrawn";
+const rejectedByHim = (d) => !!d && d.status === "rejected" && !["withdrawn", "notfound", "covered"].includes(d.decided_by);   /* S6: nor a claim not found, or on the book already */
 /** The newest draft of a stage for an order, when it is one he rejected; else null. */
 export async function rejectedOf(db, id, stage) {
   if (!db) return null;
@@ -565,7 +815,8 @@ export async function deskPass(env, now) {
     for (const p of all.ok ? acks : []) {
       const o = all.orders.find((x) => x.id === p.order_id);
       const ended = o && [...(o.history || [])].reverse().find((x) => x && (x.status === "cancelled" || x.status === "declined"));
-      if (!o || !ended || ended.by !== "customer" || (+o.paid || 0) > 0.004 || (o.queued && o.queued.ack)) continue;
+      /* S6: nor while they say they sent something, which may be money the book has to carry back */
+      if (!o || !ended || ended.by !== "customer" || (+o.paid || 0) > 0.004 || (+o.claimed || 0) > 0.004 || (o.queued && o.queued.ack)) continue;
       if ((await dropAck(env, p.entry_at, now)) !== "dropped") continue;
       await db.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE id=?2").bind((now || new Date()).toISOString(), p.id).run();
       dropped.push(o.id);
@@ -694,6 +945,14 @@ export function payEntry(order, code, amount, now, cash) {
   };
 }
 
+/** S6 6.5: a claim's own Fulfilment, flagged as a claim for his check and stamped with the claim's moment, the one
+ *  builder for the reconcile that queues it and the Received that answers it before it is queued. */
+export function claimEntry(order, p) {
+  const e = payEntry(Object.assign({}, order, { method: p.method || null, account: p.account || null }), order.code, p.amount, new Date(p.at));
+  e.orderId = order.id; e.claim = true; e.claimOf = p.at;
+  return e;
+}
+
 /** What was handed over, as a Correction: the running total, the day, and who moved it. */
 export function handoverEntry(order, code, units, now) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
@@ -770,7 +1029,7 @@ export function stageAt(order, job, now) {
   const last = (test) => { for (let i = h.length - 1; i >= 0; i--) if (h[i] && test(h[i])) return h[i].at; return null; };
   let at = null;
   if (job === "ack") at = last((x) => x.status === "acknowledged" && x.by === "desk");
-  else if (job === "pay") { const p = (order && order.payments) || []; at = p.length ? p[p.length - 1].at : null; }
+  else if (job === "pay") { const p = ((order && order.payments) || []).filter((x) => x && !x.claim); at = p.length ? p[p.length - 1].at : null; }   /* a claim is stamped by its own moment (S6) */
   else if (job === "move") at = (order && order.movedAt) || last((x) => x.by === "desk" && / unit (delivered|collected)$/.test(String(x.note || "")));
   else if (job === "cancel") at = last((x) => x.status === "cancelled" || x.status === "declined");
   else if (job === "close") at = (order && order.closed && order.closed.at) || null;
@@ -837,7 +1096,7 @@ export async function reconcileOrders(env) {
   const onBook = (book && book.state && book.state.OPEN && book.state.OPEN.byKey) || null;
   const now = new Date();
   let queued = 0; const unmapped = [], failed = [], waiting = [], dropped = [];
-  const STAGE_WORD = { pay: "payment", move: "handover", close: "close", cancel: "withdrawal" };
+  const STAGE_WORD = { claim: "payment they say they sent", pay: "payment", move: "handover", close: "close", cancel: "withdrawal" };
   for (const o of owing) {
     const code = users[o.u] || null;
     const q = o.queued || {}, mark = {}; const order = Object.assign({}, o);
@@ -856,7 +1115,7 @@ export async function reconcileOrders(env) {
       /* S11 11.10: WITHDRAWN BY THEM WHILE ITS ROW WAITED UNDER APPROVE, nothing paid: the row is dropped (dropAck)
          and the withdrawal is spent with it, so no Cancellation waits behind a row that will never land */
       const ended = [...(order.history || [])].reverse().find((x) => x && (x.status === "cancelled" || x.status === "declined"));
-      if ((o.work || []).includes("cancel") && q.ack && ended && ended.by === "customer" && !((+order.paid || 0) > 0.004)
+      if ((o.work || []).includes("cancel") && q.ack && ended && ended.by === "customer" && !((+order.paid || 0) > 0.004 || (+order.claimed || 0) > 0.004)
         && !(onBook && onBook[order.ledgerKey]) && (await dropAck(env, q.ack, now)) === "dropped") {
         mark.cancel = stageAt(order, "cancel", now).toISOString();
         state = { state: "queued", why: "withdrawn by the customer while its pending row waited under Approve: the row was dropped, so nothing reaches the book" };
@@ -880,9 +1139,24 @@ export async function reconcileOrders(env) {
           }
           break;
         }
+        /* S6 6.5 (D7): EACH CLAIM IS ITS OWN FULFILMENT, FOR HIS CHECK, NOT MONEY IN. Flagged `claim`, so no
+           Approve tap books it as money before his Received (src/worker.js); stamped with the claim's own moment
+           and marked on the site by that moment, so his answer finds the entry whichever came first */
+        if (job === "claim") {
+          for (const p of (o.tell && o.tell.claims) || []) {
+            const c = claimEntry(Object.assign({}, order, { code }), p);
+            while (used.has(c.at)) c.at = new Date(Date.parse(c.at) + 1).toISOString();
+            if (await queueSale(env, c)) queued++;
+            used.add(c.at);
+            (mark.claims = mark.claims || []).push({ at: p.at, draft: c.at });
+          }
+          if (!state) state = { state: "queued", why: "" };
+          continue;
+        }
         /* each entry is stamped with its stage's own moment (stageAt), never the pass's clock */
+        const told = o.tell ? +o.tell.pay : +((+order.paid || 0) - (+q.paid || 0)).toFixed(2);
         if (job === "ack") e = pendingEntry(order, code, stageAt(order, job, now));
-        else if (job === "pay") e = payEntry(order, code, +((+order.paid || 0) - (+q.paid || 0)).toFixed(2), stageAt(order, job, now));
+        else if (job === "pay") e = payEntry(order, code, told, stageAt(order, job, now));
         else if (job === "move") e = handoverEntry(order, code, +order.moved || 0, stageAt(order, job, now));
         else if (job === "close") e = closeEntry(order, code, stageAt(order, job, now));
         /* WHO ENDED IT is read off the event that ended it (24 Sep 2026): a cancellation of his own was
@@ -899,7 +1173,7 @@ export async function reconcileOrders(env) {
         if (await queueSale(env, e)) queued++;
         used.add(e.at);
         if (job === "ack") { mark.ledgerKey = e.orderKey; order.ledgerKey = e.orderKey; mark.ack = e.at; }
-        else if (job === "pay") mark.paid = +(+order.paid || 0).toFixed(2);
+        else if (job === "pay") mark.paid = +((+q.paid || 0) + told).toFixed(2);
         else if (job === "move") mark.moved = +(+order.moved || 0).toFixed(3);
         else if (job === "close") {
           mark.close = e.at; mark.moved = +(+order.moved || 0).toFixed(3);
@@ -1053,40 +1327,29 @@ export async function tellSite(env) {
 }
 
 /** How many customer orders are waiting on him: placed, and acknowledged but not yet ready; and of
- *  those, how many are still to be acknowledged, which is all his banner may ask him to acknowledge.
- *  `desk` is what the desk's own Today and rail count (the master's ordWaiting): placed, or its last line the
- *  customer's. An acknowledged order is a row already, so counting it there would say the same money twice. */
+ *  those, how many are still to be acknowledged, which is all his banner may ask him to acknowledge. */
 export async function ordersWaiting(env) {
   const r = await listOrders(env, false);
-  if (!r.ok) return { ok: false, waiting: 0, placed: 0, desk: 0 };
-  const asked = (o) => { const m = o.msgs || []; return m.length > 0 && m[m.length - 1].by === "customer"; };
+  if (!r.ok) return { ok: false, waiting: 0, placed: 0 };
   return { ok: true, waiting: r.orders.filter((o) => o.status === "placed" || o.status === "acknowledged").length,
-    placed: r.orders.filter((o) => o.status === "placed").length,
-    desk: r.orders.filter((o) => o.status === "placed" || asked(o)).length };
+    placed: r.orders.filter((o) => o.status === "placed").length };
 }
 
-/* S9 9.8: SALT ADMIN IS TOLD WHAT WAITS HERE, as one figure with no link and no name: the count the desk's own
-   Today and rail show (ordersWaiting's `desk`; S9 fix, it was the banner's, which counts agreed orders too, so the
-   two apps disagreed), written onto the site as a mark. Recounted only on a minute the site's order marks
-   moved (every move of an order moves `touched`), so a quiet minute costs one read; written only when the count
-   changes, and the mark here moves only once the site has taken it. */
-const WAIT_TOLD = "orders:waiting-told";
-export async function tellWaiting(env) {
-  const r = await site(env, "/desk/orders/last");
-  if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
-  const m = await r.json().catch(() => ({}));
-  if (!r.ok || !m.ok) return { ok: false, error: m.error || ("the statements site answered http " + r.status) };
-  const key = [m.last, m.touched].join("|");
-  const was = (await env.SALT_QUEUE.get(WAIT_TOLD, "json")) || {};
-  if (was.key === key) return { ok: true, told: false };
-  const w = await ordersWaiting(env);
-  if (!w.ok) return { ok: false, error: "the orders could not be read" };
-  if (w.desk !== was.n) {
-    const t = await site(env, "/desk/waiting", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ n: w.desk }) });
-    if (!t || !t.ok) return { ok: false, error: "the site would not take the count" + (t ? " (http " + t.status + ")" : "") };
-  }
-  await env.SALT_QUEUE.put(WAIT_TOLD, JSON.stringify({ key, n: w.desk }));
-  return { ok: true, told: w.desk !== was.n, n: w.desk };
+/* S9 9.8 FIX (25 Sep 2026): SALT ADMIN'S LINE IS THE DESK'S OWN COUNT. The desk's page counts Waiting on you (the
+   master's ordActs, over the orders and the drafts together: a new order not yet accepted, a question of theirs not
+   marked No reply needed, cash to record, a payment they say they made) for its Today row and its Enter badge, and once
+   it has read both it sends that figure here (POST /orders/waiting), which this relays to the site's desk-waiting mark.
+   One reading, the desk's: this Worker's own recount every minute (placed, or their line last) missed cash and payments
+   and ignored his No reply needed, so the two apps disagreed. The trade, stated: the figure is as fresh as the desk's
+   last read of its orders, and the mark carries its moment, which Salt Admin shows. S9 fix: the page sends how old its
+   reading is (`age`, whole seconds), passed through, and the site stamps the moment from it. */
+export async function tellWaiting(env, n, age) {
+  if (!Number.isInteger(n) || n < 0 || n > 9999) return { ok: false, status: 400, error: "send the count as a whole number" };
+  const a = Number.isInteger(age) && age >= 0 && age <= 30 * 86400 ? age : 0;
+  const t = await site(env, "/desk/waiting", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ n, age: a }) });
+  if (!t) return { ok: false, status: 503, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  if (!t.ok) return { ok: false, status: 502, error: "the site would not take the count (http " + t.status + ")" };
+  return { ok: true, n };
 }
 
 /* THE NUDGE, every minute (16 Sep 2026; it was the drafter's quarter-hour, and nothing had

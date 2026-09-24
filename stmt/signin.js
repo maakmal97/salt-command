@@ -52,8 +52,10 @@ export async function idOf(token) {
 export async function mintSignin(env, u, token, wrap) {
   if (!SIGNIN_RE.test(String(token || ""))) return false;
   if (!u || !wrap || typeof wrap !== "object" || !wrap.salt || !wrap.iv || !wrap.ct) return false;
-  await env.STMT.put("ot:" + (await idOf(token)), JSON.stringify({ u, wrap, at: new Date().toISOString() }),
-    { expirationTtl: SIGNIN_TTL });
+  const key = "ot:" + (await idOf(token)), at = new Date().toISOString();
+  /* S9 9.4: its pointer first, so Sign out everywhere reaches a link not yet opened */
+  await pointAt(env, u, key, { how: "link", at }, SIGNIN_TTL);
+  await env.STMT.put(key, JSON.stringify({ u, wrap, at }), { expirationTtl: SIGNIN_TTL });
   return true;
 }
 
@@ -72,6 +74,27 @@ export async function pointAt(env, u, key, fields, ttl) {
   await env.STMT.put(devPrefix(u) + (await idOf(key)), JSON.stringify(Object.assign({ key }, fields)), { expirationTtl: ttl });
 }
 export const unpoint = async (env, u, key) => env.STMT.delete(devPrefix(u) + (await idOf(key)));
+
+/* S9 9.3: WHAT A DEVICE IS CALLED, read off its browser's own description at the moment it opened, in the site's own
+ * words: a kind of device and a browser, "iPhone, Safari", "Android phone, Chrome", "Windows computer, Edge". Nothing
+ * is copied from the description, so no version, address or anything typed is ever kept, and a description this does
+ * not know is "A phone" or "A computer". `kind` is phone, tablet or computer, for the mark drawn beside it. */
+export function deviceOf(ua) {
+  const s = String(ua || "");
+  let dev, kind = "computer";
+  if (/iPhone|iPod/.test(s)) { dev = "iPhone"; kind = "phone"; }
+  else if (/iPad/.test(s) || (/Macintosh/.test(s) && /Mobile[/]/.test(s))) { dev = "iPad"; kind = "tablet"; }
+  else if (/Android/.test(s)) { kind = /Mobile/.test(s) ? "phone" : "tablet"; dev = "Android " + kind; }
+  else if (/CrOS/.test(s)) dev = "Chromebook";
+  else if (/Windows/.test(s)) dev = "Windows computer";
+  else if (/Macintosh|Mac OS X/.test(s)) dev = "Mac";
+  else if (/Linux/.test(s)) dev = "Linux computer";
+  else if (/Mobi/.test(s)) { dev = "A phone"; kind = "phone"; }
+  else dev = "A computer";
+  const app = /SamsungBrowser/.test(s) ? "Samsung Internet" : /Edg(e|A|iOS)?[/]/.test(s) ? "Edge"
+    : /Firefox[/]|FxiOS/.test(s) ? "Firefox" : /Chrome[/]|CriOS/.test(s) ? "Chrome" : /Safari[/]/.test(s) ? "Safari" : "";
+  return { label: dev + (app ? ", " + app : ""), kind };
+}
 
 /* S3 3.3, 24 SEP 2026: NOTHING IS SPENT UNTIL CONTINUE, AND A LOST ANSWER IS NOT A LOST LINK. The page
  * asks first which account a link opens (peekSignin), which spends nothing, so a preview or an in-app
@@ -111,6 +134,7 @@ export async function burnSignin(env, token, nonce) {
   try {
     await env.STMT.put(r.key, JSON.stringify({ u: r.rec.u, wrap: r.rec.wrap, spent: new Date().toISOString(), nonce: mine }),
       { expirationTtl: RETRY_TTL });
+    await unpoint(env, r.rec.u, r.key);   /* S9 9.4: a spent link is no longer one to sign out */
   } catch (e) { /* it expires on its own; the open still stands */ }
   return r.rec;
 }
@@ -175,6 +199,8 @@ export async function mintHandover(env, u, token, wrap, admin) {
   const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await sealKey(secret), enc(JSON.stringify({ u, token, wrap })));
   const exp = new Date(Date.now() + HANDOVER_TTL * 1000).toISOString(), s = { iv: b64(iv), ct: b64(ct) };
   const mark = admin === true ? { admin: true } : {};
+  /* S9 9.4: its pointer, under the key's name with the code's beside it, so Sign out everywhere reaches it unopened */
+  await pointAt(env, u, byKey, { how: "code", at: new Date().toISOString(), pair: byCode }, HANDOVER_TTL);
   await env.STMT.put(byCode, JSON.stringify(Object.assign({ pair: byKey, exp, s }, mark)), { expirationTtl: HANDOVER_TTL });
   await env.STMT.put(byKey, JSON.stringify(Object.assign({ pair: byCode, exp, s }, mark)), { expirationTtl: HANDOVER_TTL });
   return { code, token, exp };
@@ -195,6 +221,8 @@ export async function dropHandover(env, token) {
 }
 
 /** Open by { token } or { code }: both records burnt, then { u, token, wrap, by }, or null for anything at all wrong.
+ *  `by` is the road (S9 fix): qr, the key of one his counter minted, which only its QR carries; copy, a customer's own
+ *  key, pasted or carried in the saved app's address; code, the eight symbols typed.
  *  S3 FIX, 24 SEP 2026: A KEY A BROWSER TAB FOUND IN ITS ADDRESS ({ token, tab: true }) OPENS ONLY ONE HE MINTED, the QR
  *  at his counter, and anything else is refused unspent. Any customer can mint a key for their own account, and
  *  /app#<key> sent to somebody else signed that browser into the sender's account with no tap, and kept it. */
@@ -212,6 +240,8 @@ export async function burnHandover(env, b) {
   try {
     const body = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(rec.s.iv) },
       await sealKey(secret), unb64(rec.s.ct))));
-    return body && body.u && body.token && body.wrap ? Object.assign(body, { by: token ? "key" : "code" }) : null;
+    if (!(body && body.u && body.token && body.wrap)) return null;
+    try { await unpoint(env, body.u, token ? id : rec.pair); } catch (e) { /* the pointer lapses with it */ }
+    return Object.assign(body, { by: token ? (rec.admin === true ? "qr" : "copy") : "code" });
   } catch (e) { return null; }
 }

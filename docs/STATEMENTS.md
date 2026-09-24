@@ -192,11 +192,12 @@ own position under the list does not move with the filter.
 the system's Statement lines (`.salt-lines`, stacked on a phone, a table from about 600px of the list's
 own width), "units" above one; an issue is a standalone file and keeps its table. The earlier statements
 sit at the foot, each by its date and never "latest issue", and one opens in the statement's place with
-Back to your statement above it. **This device** follows (beside it from 1080px): notifications on or
-off, saving it as an app (the Keep card's own steps and Sheet), a slot for the account's other devices,
-and Sign out. **Off is kept on the device** (`salt-push-off`): the subscription is dropped there, the site
-forgets it at the next wake it cannot deliver (404 or 410), and a sign-in files the phone again only once a
-Turn on has cleared it. `drawAccount(el)` moves Account into a place and draws it.
+Back to your statement above it. **This device** follows (beside it from 1080px), ONE card: saving it as an app
+first (the keep card itself, which leads a new account's Home instead, moved and never copied), notifications on or
+off, the account's other devices (S9 9.9, below), and Sign out. **Off is kept on the device** (`salt-push-off`): the
+subscription is dropped there and the site told (`POST /push/unsubscribe`; a record it was not told of goes at the next
+wake it cannot deliver, 404 or 410), and a sign-in files the phone again only once a Turn on has cleared it.
+`drawAccount(el)` moves Account into a place and draws it.
 
 **The statements live on their own site, away from the desk.** Until 03 Sep they were a route
 on `salt-command` itself, which put the one address a customer ever holds one path segment from
@@ -271,7 +272,7 @@ has lost his asks for it again, and it is read back from `_passwords.json`.
 | the passwords | `statements\<YYYY-MM>\_passwords.json` | sealed under `STMT_MASTER` as `pwMaster`, served only behind Access | One per customer, one live month. In the clear on the laptop alone (v688), and since v710 no message carries one at all. |
 | a sign-in link | nowhere | KV `ot:<sha256(token)>`, 3 days (7 until his D1), one use | The content key wrapped under a token his page mints (v710). The token is stored nowhere, so the record opens only for whoever holds the link. Its page asks which account first (`peek`, spending nothing) and spends it on Continue; spent, the record answers the nonce of the page that spent it for two minutes (`RETRY_TTL`), its peek included, so a lost answer is tried again, from a reload of that tab too, and a second device is refused (S3 3.3). Continue also remembers the phone with the door's own split key, and the message says so and names the username (S3 3.4, his D1). |
 | a remembered phone | nowhere | KV `rem:<sha256(token)>`, 30 days from the last open (S3 3.6; from the tick until then) | The content key wrapped under a key that never leaves that browser (v692). Filed under the token's hash since S3 3.1, so a copy of the store names no token; a record filed the old way is re-filed on its next open, keeping the end it had, thirty days from its tick, and never sliding, so a copy taken before then dies on time (S3 fix). |
-| where an account is signed in | nowhere | KV `dev:<username>:<sha256(key)>`, as long as what it names | A pointer per remembered phone (`rem:`) and per session an open mints (`sess:<sha256(token)>`, a session being filed under its token's hash since an S3 fix, as a phone is), with `how` it came, `at` and `last` (S3 3.2). Listed by the prefix, it is what shows an account's phones and signs them all out (`POST /all/signout {u}`, Salt Admin's Sign out everywhere on each card, which also drops the account's alerts); it names hashes, so it opens nothing. |
+| where an account is signed in | nowhere | KV `dev:<username>:<sha256(key)>`, as long as what it names | A pointer per remembered phone (`rem:`) and per session an open mints (`sess:<sha256(token)>`, a session being filed under its token's hash since an S3 fix, as a phone is), with `how` it came, `at` and `last` (S3 3.2); since S9 9.4 also per sign-in link and hand-over not yet opened (`ot:`, `ho:` with its code's record as `pair`, dropped when spent), and a device's pointer carries its name in the site's words (`label`, `kind`, from `deviceOf`), a remembered phone's the sessions it opened (`sess`, `was`), so it is listed once. Listed by the prefix, it is an account's phones and computers (`devicesIn`) on his account screen and the customer's This device card (`POST /devices` on their session), and what signs them out: one (`POST /all/signout {u, id}`), its alerts with it, since a `push:` record names the session and the remembered phone it was filed from (`sess`, `dev`), the customer's others (`POST /devices/signout`, sparing this phone and its alerts), or everything (`{u, keep}`, which also burns every link and code not yet opened, bar the one his page made and still holds unsent, named by its hash, and drops every alert, answering how many devices, links and codes, and phones, a link counted only once his page has shared or copied it (`out`, set by `POST /all/out`), and never kept then; a link made before S9 9.4 carries no pointer and is not reached, lapsing within three days of that deploy), never the account's own `u:` record; it names hashes, so it opens nothing. |
 | `STMT_HANDOVER_KEY` | nowhere | Cloudflare secret on the site, set by hand (S3 3.9) | Keys the hash a hand-over's code and key are filed under and seals the wrap beside them. Unset, the hand-over routes answer 503. Changing it only strands the codes alive at that moment. |
 | a hand-over | nowhere | KV `ho:<HMAC(STMT_HANDOVER_KEY, code or key)>`, 15 minutes, one use | The content key wrapped under a key the signed-in page mints, filed under the code and the key, sealed. The contract is below. |
 
@@ -368,7 +369,7 @@ signed in (or Salt Admin, for a customer at his counter) hands the sign-in acros
 
 | Route | Takes | Answers |
 |---|---|---|
-| `POST /handover` | a live session (`X-Stmt-Session`) and JSON `{token, wrap}`: `token` a key the page mints (24 random bytes, base64url, the shape of a sign-in link's), `wrap` its content key wrapped under it exactly as `wrapUnder(new TextEncoder().encode(token), ck)` wraps | `{ok, code, token, exp}`: `code` eight symbols of the username alphabet as `xxxx-xxxx`, `token` the key sent, `exp` ISO, fifteen minutes on. 401 with `session:false` with no session; 400 without a key of that shape and a wrap |
+| `POST /handover` | a live session (`X-Stmt-Session`) and JSON `{token, wrap}`: `token` a key the page mints (24 random bytes, base64url, the shape of a sign-in link's), `wrap` its content key wrapped under it exactly as `wrapUnder(new TextEncoder().encode(token), ck)` wraps | `{ok, code, token, exp, qr}`: `code` eight symbols of the username alphabet as `xxxx-xxxx`, `token` the key sent, `exp` ISO, fifteen minutes on, `qr` a data URI of `<site>/app#code` alone (S9 9.9), which opens the code screen in a browser's own words on any device. 401 with `session:false` with no session; 400 without a key of that shape and a wrap |
 | `POST /handover/open` | JSON `{token}` or `{code}` (case, spaces and hyphens forgiven; `token` wins where both are sent); `tab: true` beside a token a browser tab found in its address, which opens only a key his `/all/handover` minted and refuses any other unspent | exactly what `POST /open-link` answers (`u`, `wrap`, `session`, `env`, `live`, `prices`, `card`, `assoc`, `issued`, `issues`, `remembered: true`) **plus `token`**: the page unwraps `wrap` under `token`, the one in the answer, whichever it typed. Both names are burnt. Every refusal is the door's one (401); a brake is the door's (429) |
 | `POST /all/handover` | behind Access, JSON `{u, token, wrap}`: his page opens the account under the master and wraps as above | `{ok, code, token, exp, url, qr}`: `url` is `<site>/app#qr.<token>`, the QR's own form, `qr` its rows of `0` and `1`; the record is marked his |
 
@@ -392,6 +393,20 @@ signed in (or Salt Admin, for a customer at his counter) hands the sign-in acros
 - **A code open is an open**: `seen:` says `code` or `key`, and its session leaves a pointer (`dev:`).
 - The same two limits as the link: a bearer credential inside its fifteen minutes, and one use best effort on KV.
 
+### This device (S9 9.9, his D2)
+
+Drawn by `drawDev` into Account's This device (`#devSlot`), once signed in and never on his read-only view; its
+Turn off (`drawDevice`) also sends `POST /push/unsubscribe {endpoint}`, which drops that phone's own record. Its
+phones and computers (`POST /devices {token}` on the session, `token` this phone's own
+remembered one, answering each device's name, `at`, `last`, `kept` and `here`, no id and no address), read in the background, so a lapse it meets
+says Sign in again on the card and leaves the reopen to the next tap, and drawn again once
+the phone is kept; **Sign out other devices** on a second tap (`POST /devices/signout {token, endpoint}`, sparing this
+one, its sessions and its alerts); and **Sign in another device**, a Sheet that mints the hand-over as it opens, Copy
+the code a tap of its own, and a QR of `<site>/app#code` for the other device's camera, which opens on the code screen in a browser's own words on any device; closing the Sheet reads the list again. **The QR never carries the key**: a
+key in an address signs a browser tab in only when his counter minted it (S3), so an address one customer sends
+another never signs the other in; the other device opens Salt Counter from the QR and the code is typed there. This device's
+first row is how to keep it as an app (S3 3.10), a Plain ledger row where it was a card at the head of the tab.
+
 ## The price list and the order book (06 Sep 2026, his instruction)
 
 Three things sit behind the one password since v499: the statements, a **price list** for
@@ -401,9 +416,11 @@ D11 of 24 Sep 2026; three tabs and a fourth until then): **Home**, which opens f
 at the foot of a phone and on its rail from 1080px. A place keeps its tab's id (`stmt`, `order`, `card`) and has an
 address (`#home`, `#prices`, `#orders`, `#account`, `#rewards`): a tap writes it, over an empty address or a place's
 and never over a key, and a sign-in opens the place it names once. `placeShow` is the one road between them; a
-banner's `#o=<id>` still opens Orders at that order. **Home** reads the sealed To pay now with its one filled Pay (the
-overdue amount over the line), Needs you (a reply not yet shown on this device, goods ready to collect) and Coming up
-(an order agreed or sent and not handed over) and **Order again** (S7 7.4): a tile a size, way and place they have
+banner's `#o=<id>` still opens Orders at that order. **Home** reads To pay now (S6 6.2, `drawPayHead`: the sealed
+figure, its one filled Pay opening the pay sheet, the claims waiting, each overdue part, and over the line the overdue
+amount first; Orders is then the payment page), Needs you (a reply not yet shown on this device, goods ready to
+collect, goods with them unpaid) and Coming up (an order agreed or sent and not handed over, then any sealed part no
+order accounts for, `comingParts`) and **Order again** (S7 7.4): a tile a size, way and place they have
 ordered, while the size is on their list, at today's price, whose tap opens the check with them, so the second tap places
 it; a new account is offered its list's first sizes, and nothing is offered over the line. A new account opens on Welcome
 and "Nothing on your account yet". Nothing about the statements changed.
@@ -464,7 +481,7 @@ holds no key to seal it with. It carries a size, a quoted total and a state; no 
 locks), and the order routes take that and nothing else. The states: placed (the customer),
 acknowledged (the owner: agreed, the delivery charge set, and the row queued), ready to collect or
 deliver (the owner), done (**neither side's tap**: what the record reads once both tracks are
-complete), declined (the owner), cancelled (either side, at any stage until the goods move). **A short
+complete), declined (the owner), cancelled (either side, at any stage until the goods move, and never while a claim of theirs waits on him). **A short
 order he closes at what was handed over** (S11 11.9) is restated there: the size becomes the units handed
 over, the goods' total follows at the agreed rate, the old figures kept as `closed`, and its row is a
 Correction whose new total renames it.
@@ -539,7 +556,8 @@ takes in. The result is kept at KV `orderbook:check` with `cleanSince`, the star
 with `repaired`, `kvAhead`, `kvOnly` and `bookOnly` all empty. **Seven days after `cleanSince` is a clean week**: then `ORDER_STORE` goes to `object` (10.5,
 whose deletion of the old keys is not built).
 **The customer is handed a view, not the record**: their order list and every answer to a move of
-theirs carry `customerView` (`CUSTOMER_FIELDS`, a whitelist), never `ledgerKey`, `queued` or `sync`.
+theirs carry `customerView` (`CUSTOMER_FIELDS`, a whitelist), never `ledgerKey`, `queued` or `sync`; `rowOn`, the day the
+key names, is read off it so the page can tell which part of To pay now is the order's.
 
 **A DELIVERY SAYS ROUGHLY WHERE IT IS GOING** (v694, his instruction of 18 Sep 2026): `place`, one
 line of at most sixty characters, a neighbourhood and not an address, refused empty on a delivery and
@@ -608,20 +626,54 @@ finds the row; built on the associate's own code they would all miss it. The sit
 here, holding no roster and knowing no codes: it records the claim and the desk decides, exactly as
 it does with the quoted total. An associate with no bucket on the roster is refused by the drafter.
 
-**MONEY AND GOODS ARE TWO TRACKS** (v694). `paid` and `payments[]` are what the customer says they
-have paid, `moved` and `movedOn` what he says he handed over, and either may lead. Payment is offered
-**from the acknowledgement**. Five rails: cash on collection or delivery, DuitNow
-Transfer to a named account, a DuitNow QR to save, JomPAY, and the Touch 'n Go Business code;
-the page hands over one link into QR Command for the rail chosen, and the accounts it may name
-are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
+**MONEY AND GOODS ARE TWO TRACKS** (v694). `payments[]` is what the customer says they
+sent and `paid` what he has received (S6), `moved` and `movedOn` what he says he handed over, and either may lead. Payment is offered
+**from the acknowledgement**, in **one pay sheet for every Pay** (To pay now, an order, the held page;
+S6 6.4, his D8 as amended): the figure and what it is for, All or Part, then two ways, Transfer or Scan
+a code, Transfer chosen as it opens (the way, never the account), **with no account chosen for them**: they choose,
+one Option tile a tap, which of his accounts to pay into from those
+`payHref` links, a suspended one never offered, and their username is the reference. Show the account
+number, or Show the code, hands over one link into QR Command, which the Counter never names or carries
+a number of. **On return the sheet asks once** (S6 6.5, his D7), and after a reload too (kept on the device two hours as
+`salt-stmt-payq`, never the username): "Did you send RM 70?", with Not yet, never a tap
+beside the number; Yes posts a CLAIM (an order's to `/orders/<id>/pay`, To pay now's to `/account/claim`), which
+reads "sent, waiting for us to confirm" on the order, its row and To pay now until his Received or Not found, each
+shown when it comes; Pay then asks only for what no claim covers, **never the same money twice**: To pay now nets what was
+sent on an order whose row is one of its parts (matched by `rowOn` and the whole figure), and the order nets what was sent
+against the account that reaches its row, the parts walked oldest first as `claimAlloc` takes them. The accounts it may name are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
 number, payload or reference shipped. **`payHref` in it is the one link builder** (D8, 24 Sep
 2026): `#<key>/<rail>/<amount>/<reference>`, Transfer or Scan a code, the figure to the sen, the
 username as the reference, and "" for anything QR Command would not open. It reads only `PAY_SITE`
 and `PAY`, the names `CLIENT_JS` declares, so the page carries `payHref.toString()` as it is. The suite reads the link
 back through QR Command's own `linkOf`, so a format change ships there first. **The customer types
-what they paid** (the site takes no money and no rail tells it anything), part payments accumulate, and more than what is outstanding is
-refused. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
-order, the one being paid included: settling that at the door is how one advance becomes two. The quote is the customer's claim
+what they sent, and it is a CLAIM** (S6 6.5, his D7; the site takes no money and no rail tells it anything): an entry on
+`payments[]` with `claim: "waiting"`, summed as `claimed`, never `paid`, until his Received (a `verdict` event naming the
+claim by its moment) makes it paid. Claims accumulate; together with what is paid they may not pass what is owed; a claim
+in cash is refused, cash being his to record. Each claim is queued as its own Fulfilment, flagged `claim` and stamped with the
+claim's moment (`claimsToQueue`, `claimEntry`), and Approve neither approves nor rejects it: it is answered on its card.
+**A claim against the ACCOUNT** (S6 6.6) is for money owed on rows he entered on the desk, which have no order to claim
+on: `POST /account/claim` (or `/claims`) `{amount, method, account, rid}` on their session, its own record and never an
+order (`acl` in the order book, `aclaim:<username>:<id>` on KV, written behind and moved in as an order is, id `a` and the
+moment), riding beside the orders on their `GET /orders` as `claims` (`claimView`: `state`, and `claim` holding the same
+word) and on the desk's as its own list (`GET /desk/claims`). A waiting one pauses the chase on every order of theirs.
+**His answer reaches them** (S6 11.14): Received wakes them "Payment received" (or complete); **Not found** files the
+claim's row rejected as `notfound` FIRST, under the id it has or will have, and drops it from every queue, then the site
+takes it as ONE event of the order book: the claim leaves `claimed` and its entry's name leaves the claim together, paid
+never having moved, and the wake says "Payment not found yet" (`notfound` in `NEWS`). **On the kv road Not found is
+refused** (`NOT_FOUND_ON_KV`), a figure that falls never being a read-modify-write. A claim not found is never offered again,
+and a Received on a claim whose row was filed not found is refused. **Received, on the book already** answers a claim
+that money he recorded another way covers (more than the order still owes, or than the account's rows owe): filed as
+`covered` the way Not found files it, one event, the claim received with paid unmoved, the wake Payment received. **A claim against the account is received row by
+row** (S6 11.15, D6): the desk Worker drafts the engine's oldest-first allocation (`claimAlloc`: their rows and their
+bucket's with goods out and money owed, by date, each to what it owes, less the money already on its way to it: a claim
+on its order waiting or received, cash not folded, another account claim's booked row) as one Fulfilment a row, against the mirror and
+stored nowhere (`POST /claims/<id>/preview`); the card draws it, and Received sends the digest of the rows drawn, which the
+Worker approves only if the rows still stand, each with a yes of its own spent by the drafter (`madeBy` reads `claimId`),
+then tells the site. More than the rows owe is never a tap. An order claim's Received is refused on a row an account claim
+booked and no fold has landed, so no money is booked on a row twice. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
+order, the one being paid included: settling that at the door is how one advance becomes two. It is an
+order sheet's third way (S6 6.8), never To pay now's, shown dashed with that reason where withheld;
+choosing it sends no figure, because he records the cash when he takes it. The quote is the customer's claim
 off his own list: the owner reads the rate against the party's usual on the phone before
 acknowledging, and the drafter flags it again when the row is queued.
 
@@ -729,10 +781,7 @@ groups them by CUSTOMER, and leaves out an order inside its day's grace or with 
 and the code decides, so every other tick returns before it lists anything. **From the day after the
 handover** (`graceOver`): `movedOn`, the Kuala Lumpur day of the last handover, must be before today,
 so a customer paying cash at the counter is not asked again that evening; an order with no `movedOn`
-is not chased. **Paused while a claim waits** (`claimWaits`): what they say they sent (`payments`)
-above what the order counts as `paid`. Today none waits, their "I have paid" raising `paid` on
-their word, so this is where stage 6's claim plugs in; a Not found that lowers `paid` must take its
-claim out with it. **Stopped** when what was received is paid, which is `isAdvance` going false,
+is not chased. **Paused while a claim waits** (`claimWaits`): a claim of theirs he has not answered (S6). **Stopped** when what was received is paid, which is `isAdvance` going false,
 his cash included once the return leg (v764) carries it to the order, and stage 11's Cash received when it lands.
 
 **How often.** One wake a slot per customer, not per order: two unpaid advances are one person's
@@ -872,12 +921,20 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   both his devices read) before the next turn; a closed share ticks nothing and Skip leaves one for later. With
   no share sheet, Share copies the message and only his Sent it ticks. The refused card also carries stage 3's Show a
   code (`showHandover`), and every link a card or a turn makes is minted on `keyFor`, the one road Show a code takes too.
-- **Each owner app counts the other's waiting items** (S9 9.8), a figure with no link and no name. The
-  desk's every-minute cron (`tellWaiting` in `src/orders.js`) tells the site what waits on the desk, the
-  count its own Today and rail show (`ordersWaiting`'s `desk`, the master's `ordWaiting`: placed, or its last
-  line the customer's; an agreed order is a row, not a wait), through the keyed `POST /desk/waiting` into the clear key
-  `desk-waiting` `{n, at}`; it recounts only when an order's `touched` mark has moved and writes only on a
-  change. Needs you says "N things wait on the desk." The desk's page reads its orders with the count of
+- **Each owner app counts the other's waiting items** (S9 9.8), a figure with no link and no name. **The figure
+  is the desk's own Waiting on you** (the S9 9.8 fix): once its page has read both the orders and the drafts, and
+  neither read failed, it sends `ordActs().length`, the count its Today row and Enter badge show (a new order, a
+  question not marked No reply needed, cash to record, a payment they say they made), to the desk Worker's keyed
+  `POST /orders/waiting`, and `tellWaiting` in `src/orders.js` relays it through the site's `POST /desk/waiting` into
+  the clear key `desk-waiting` `{n, at}`; the first count of a load, every change after it, and the same figure again
+  once its reading has moved on five minutes. `at` is the reading's own moment: the page sends its `age`, the older of
+  its two reads (Approve polls the drafts alone), the site stamps now less that, and a reading a minute older than the
+  one held never replaces it, so a desk left open elsewhere cannot overwrite a newer one. The cron no longer
+  counts: its recount (placed, or their line last) missed cash and payments and ignored No reply needed. So the
+  figure is as fresh as the desk's last read, and Needs you says when: "N things wait on the desk, as at 14:06." Once
+  an order has moved since that reading (the site's `touched` mark later than `at`, `moved` on the sheet's `desk`) it
+  says so in the past tense: "Nothing waited on the desk as at 09:00, and an order has moved since." The
+  desk's page reads its orders with the count of
   associate links waiting on his word (`/desk/orders?links=1`, `linkWaiting` in `stmt/refs.js`, the
   `approved === false` test), and its rail's foot says "N links wait in Salt Admin".
 - **His places** (S9 9.2): Needs you, Accounts, Links and More (the report card and the test account), the
@@ -885,8 +942,17 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
 - **Accounts** (S9 9.2) is one list for what Send and Review were: the system's Inbox row an account, chips
   for where it stands, when and how it was last opened, alerts on (the `push:` keys, counted by
   `alertsOn`), refused at an address and no account; a search and filters (Not sent, Not opened, Owes, Refused, No
-  account) above it; a row opens the account's card (Send's, with stage 3's Show a code and Sign out everywhere
-  beside View as them), beside the list from 1080px.
+  account) above it; a row opens the account, beside the list from 1080px.
+- **An account** (S9 9.3, the plan's f13): its code, username, chips and totals; ONE filled **Send a sign-in link**,
+  its link made as the account opens (`makeLink`, kept by username in `madeLink` with Needs you's), so the tap's first
+  act is the share sheet (or, with none, the clipboard) and no derivation or fetch sits before it; a share that goes
+  through ticks the account sent. A link shared or copied from any card is dropped from the page and a fresh one made
+  (`retire`), so the one Sign out everywhere spares has never left it. Beside it Show a code, in person; View as them; Copy password;
+  Sign out everywhere, on a second tap. Then **How they got in** (`GET /all/account/<username>`): the last ten ways in
+  (link; a code scanned from his counter's QR, `qr`, copied across from the customer's own Keep Sheet, `copy`, or typed, `code`; password), each with its moment and the device in the site's own words (`deviceOf`
+  in `stmt/signin.js`, from the browser's description at that open: "iPhone, Safari", never an address or a version),
+  kept by `markSeen` in `seen:<username>`'s `log`; a remembered phone coming back is not a way in. Share and Copy
+  message, and the QR of the username's address, left with the Send card.
 - **View as them** (S9 9.5) opens the account's own page under the master, read only: its orders and an
   associate's links come from `GET /all/orders/<username>` behind the prefix's Access check, and nothing on it
   places, pays or sends. The bar says "Viewing as <username>, read only" and its one control is Back to
@@ -919,8 +985,10 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   Applications, policies and `aud` tags are readable and writable through the Cloudflare API at
   `/accounts/{id}/access/apps`. A team rename moves the issuer: `ACCESS_TEAM` in
   `wrangler.stmt.jsonc` is a config edit plus a hand deploy, and every device signs in again.
-- **SIGN-IN LINK, ON EACH ACCOUNT'S CARD** (v710). It is minted ON A TAP and never on a draw: drawing
-  Accounts would file a record per account on every page load and burn links nobody sent. His
+- **SIGN-IN LINK, ON EACH ACCOUNT'S CARD** (v710). Since S9 9.3 it is made AS THE ACCOUNT OPENS, never on a
+  draw of the list, so the tap only shares (the plan's must-not-ship rule): each opening, and from 1080px the
+  account Needs you opens beside itself on every load, files a live three-day record and pointer that nobody may
+  ever be sent, lapsing on its own or burnt, uncounted, by Sign out everywhere. His
   page opens the account under the master, wraps the content key under a fresh token, and posts the
   token and the wrap to `POST /all/signin/<username>`, which refuses a username the roster does not
   carry and refuses to hand back a link it could not file. What comes back is the finished message

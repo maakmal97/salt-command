@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf } from "./orders.js";
+import { listOrders, listClaims, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -559,12 +559,22 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
   if (!writeOk(request, env)) return needsKey();
   let by = "phone";
   try { const b = await request.json(); if (b && typeof b.by === "string" && b.by.trim()) by = b.by.trim(); } catch (e) { /* body is optional */ }
-  const cur = await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(id).first();
+  const cur = await env.SALT_LEDGER.prepare("SELECT status,entry FROM draft WHERE id=?1").bind(id).first();
   if (!cur) return json({ ok: false, error: "no such draft" }, 404);
   /* Only a pending draft may be decided. Deciding twice is reported rather than applied, so a
      double tap on a phone cannot flip an approval into a rejection. */
   if (cur.status !== "pending") {
     return json({ ok: false, error: "already " + cur.status, status: cur.status }, 409);
+  }
+  /* S6 6.5 (D7): A CLAIM'S OWN ENTRY IS HIS CHECK, answered on its order's card, never here: approved here it would book
+     money he has not confirmed, rejected here the claim would wait for ever. Once his Received has been given for it (a
+     yes that found the row other than he was shown), it is a row like any other, decided here. */
+  let claim = false;
+  try { claim = !!JSON.parse(cur.entry || "{}").claim; } catch (e) { claim = false; }
+  if (claim) {
+    let yes = null;
+    try { yes = await env.SALT_LEDGER.prepare("SELECT id FROM preapproval WHERE draft_id=?1").bind(id).first(); } catch (e) { yes = null; }
+    if (!yes) return json({ ok: false, error: "a payment they say they sent is answered on its order's card, Received or Not found" }, 409);
   }
   const upd = await env.SALT_LEDGER.prepare(
     "UPDATE draft SET status=?1, decided_at=?2, decided_by=?3 WHERE id=?4 AND status='pending'"
@@ -703,11 +713,6 @@ export default {
           await afterApproval(env, ctx, dp.approved);
           if (rc.queued || dp.queued) { const d = await runDrafter(env); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); await afterApproval(env, ctx, d.approved); }
         } catch (e) { console.log("orders reconcile FAILED: " + String((e && e.stack) || e)); }
-        /* S9 9.8: and Salt Admin is told what waits here, when it has changed */
-        try {
-          const tw = await tellWaiting(env);
-          if (!tw.ok || tw.told) console.log("orders waiting, told: " + JSON.stringify(tw));
-        } catch (e) { console.log("orders waiting FAILED: " + String((e && e.stack) || e)); }
         /* the drafter's net still runs on the quarter-hour, as it did when this schedule ran every fifteen minutes */
         if (new Date(event.scheduledTime || Date.now()).getUTCMinutes() % 15 === 0) {
           const r = await runDrafter(env);
@@ -756,6 +761,7 @@ export default {
     if ((p === "/queue" || p === "/ledger" || p.startsWith("/ledger/")
       || p === "/drafts" || p.startsWith("/drafts/")
       || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users" || p === "/bulletin"
+      || p.startsWith("/claims/")   /* S6: a claim against an account, read and answered like an order */
       /* /push/key is the ONE push route left open, and only because the VAPID public
          key is public by definition: a browser cannot create a subscription without
          it, and it authorises nothing on its own. Everything else under /push either
@@ -845,6 +851,8 @@ export default {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
       /* S9 9.8: the page's own read carries the count of associate links waiting in Salt Admin */
       const r = await listOrders(env, url.searchParams.get("all") === "1", true);
+      /* S6 6.6: and the claims against accounts beside them, each on a card of its own; a site that cannot say leaves none */
+      if (r.ok) { const c = await listClaims(env, url.searchParams.get("all") === "1"); r.claims = c.ok ? c.claims : []; if (!c.ok) r.claimsUnread = c.error; }
       /* S11 11.13: and what each has to offer again, a row he rejected, read off the drafts; the desk's alone */
       if (r.ok && env.SALT_LEDGER) {
         const again = await againOf(env.SALT_LEDGER, r.orders.map((o) => o.id));
@@ -859,8 +867,44 @@ export default {
       }
       return json(r, r.ok ? 200 : 503);
     }
+    /* S9 9.8 FIX: the desk's page tells Salt Admin what waits here, its own Waiting on you count (tellWaiting) */
+    if (p === "/orders/waiting") {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b = {};
+      try { b = await request.json(); } catch { b = {}; }
+      const r = await tellWaiting(env, b && b.n, b && b.age);
+      return json(r, r.ok ? 200 : (r.status || 502));
+    }
     /* S11: THE CARD'S OWN ROUTES, by the order's id alone. An order id is minted digits and letters with a
        dash (mintOrderId) and is never one of these words, so they are read before a move `/orders/<u>/<id>`. */
+    /* S6 11.14: Not found, on a claim of theirs on an order, or against the account (the claim's id begins with `a`) */
+    const nf = /^\/(orders|claims)\/([^/]+)\/notfound$/.exec(p);
+    if (nf) {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b = {};
+      try { b = await request.json(); } catch { b = {}; }
+      let r;
+      try { r = nf[1] === "orders" ? await notFoundOrder(env, decodeURIComponent(nf[2]), b) : await notFoundClaim(env, decodeURIComponent(nf[2]), b); }
+      catch (e) { r = { ok: false, status: 500, error: String((e && e.message) || e) }; }
+      return json(r, r.ok ? 200 : (r.status || 502));
+    }
+    /* S6 11.15: a claim against the account, drawn row by row and received in one tap */
+    const cc = /^\/claims\/([^/]+)\/(preview|received)$/.exec(p);
+    if (cc) {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b = {};
+      try { b = await request.json(); } catch { b = {}; }
+      const by = (b && typeof b.by === "string" && b.by.trim().slice(0, 40)) || "phone";
+      let r;
+      try {
+        if (cc[2] === "preview") { r = await claimPreview(env, decodeURIComponent(cc[1])); if (r.ok) delete r.own; }
+        else {
+          r = await claimReceived(env, decodeURIComponent(cc[1]), b, by);
+          if (r.approved && r.approved.length) await afterApproval(env, ctx, r.approved);
+        }
+      } catch (e) { r = { ok: false, status: 500, error: String((e && e.message) || e) }; }
+      return json(r, r.ok ? 200 : (r.status || 502));
+    }
     const cm = /^\/orders\/([^/]+)\/(preview|accept|handed|cash|received|again)$/.exec(p);
     if (cm) {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -895,6 +939,8 @@ export default {
       try { b = await request.json(); } catch { b = {}; }
       /* S11: cash he took moves the ledger's mark with it, so only the cash route, which books its row, may send it */
       if (b && b.cash) return json({ ok: false, error: "cash taken is recorded through orders/<id>/cash, which books its row" }, 400);
+      /* S6: and a claim is answered only through orders/<id>/received, which books its row */
+      if (b && b.verdict) return json({ ok: false, error: "a claim is answered through orders/<id>/received, which books its row" }, 400);
       const r = await moveOrder(env, om[1], om[2], b);
       if (!r.ok) return json({ ok: false, error: r.error }, r.status || 502);
       if (!r.order.code) r.warn = "no desk code is mapped to " + r.order.u + ", so nothing can be queued for the ledger: publish the statements again";

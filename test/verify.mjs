@@ -87,6 +87,13 @@ class KV {
     }), list_complete: true };
   }
 }
+/* THE CLOCK PAST A MOMENT (25 Sep 2026). The site stamps a move to the millisecond, and the desk's nudge wakes for a
+   placement or a line only on a moment LATER than the mark it holds, so a second one stamped in the first one's
+   millisecond reads as nothing new.
+   In memory a section's moves land a millisecond or less apart: S1 1.27 failed so on the Cloud commit job's runner
+   (run 36041951078) and passed in CI and on the laptop on the same commit. A section proving that a later move is
+   seen waits here first, so the state it proves is forced and never the runner's speed. */
+const clockPast = async (moment) => { while (new Date().toISOString() <= String(moment)) await new Promise((r) => setTimeout(r, 1)); };
 const assets = {
   async fetch(req) {
     const p = new URL(req.url).pathname;
@@ -15256,7 +15263,12 @@ await (async () => {
       w.PushManager = function () {}; w.Notification = { permission: "default", requestPermission: async () => "default" };
       Object.defineProperty(w.navigator, "serviceWorker", { value: { register: async () => ({}) }, configurable: true });
       w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
-        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+        const r = await site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body });
+        /* S6 6.6: his route carries the account's claims (the claims fold); one waiting is added to that answer here */
+        if (!/^[/]all[/]orders[/]/.test(String(q)) || r.status !== 200) return r;
+        const j = await r.json();
+        j.claims = [{ id: "c1", at: new Date().toISOString(), amount: 40, method: "transfer", account: "maybank", state: "waiting", claim: "waiting" }];
+        return new Response(JSON.stringify(j), { status: 200, headers: { "content-type": "application/json" } }); };
     } }).window;
     const D = win.document;
     D.querySelector('button[data-m="accounts"]').click();
@@ -15282,6 +15294,9 @@ await (async () => {
       "and it marks nothing seen or New: what their phone has shown is not on his, and his route leaves nothing on his phone (S5 5.4)");
     ok(hits.includes("GET /all/orders/" + u) && !hits.some((x) => /^POST \/(orders|push|my\/refs)|^GET \/(orders|my\/refs)$/.test(x)),
       "it read through his route and never through the customer's session routes: " + JSON.stringify(hits));
+    const said = [...D.querySelectorAll("#payHead .msg")].map((x) => x.textContent);
+    ok(said.includes("RM 40 sent, waiting for us to confirm.") && !D.getElementById("payNow"),
+      "and the account's claims come with his route, so his view says what was sent and is waiting, as theirs does, with no Pay: " + JSON.stringify(said));
     D.getElementById("tCard").click();
     const pCard = D.getElementById("pCard");
     ok(await until(() => pCard.querySelectorAll(".glink").length === 1) && pCard.querySelector(".glink .gstate").textContent === "Waiting"
@@ -15338,20 +15353,19 @@ await (async () => {
     ok(await until(() => rowOf(uB) && /No account/.test(rowOf(uB).textContent) && rowOf(uA)), "Accounts lists both usernames, and says the one has no account");
     const cardOf = (u) => { rowOf(u).click(); return [...D.querySelectorAll("#aopen .scard")].find((x) => x.textContent.includes(u)); };
     const btn = (card, t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
-    const four = ["Share", "Copy message", "Sign-in link", "View as them"];
+    /* S9 9.3: the account's screen, its one filled Send a sign-in link and the four other ways beside it */
+    const five = ["Send a sign-in link", "Show a code, in person", "View as them", "Copy password", "Sign out everywhere"];
     const before = hits.length;
     const cB = cardOf(uB);
     await new Promise((r) => setTimeout(r, 60));
-    ok(!!cB && four.every((t) => btn(cB, t) && btn(cB, t).disabled && /No account/.test(btn(cB, t).title)) && /Made at the next laptop update./.test(cB.textContent),
-      "on the card with no account, Share, Copy message, Sign-in link and View as them are all off, each saying why: "
-        + JSON.stringify(four.map((t) => [t, cB && btn(cB, t) && btn(cB, t).disabled])));
-    ok(!hits.slice(before).some((x) => /\/open$/.test(x)), "and opening its card posts nothing: " + JSON.stringify(hits.slice(before)));
-    /* UX9: the code opens the same address Share sends, under a caption offering the Sign-in link that is off */
-    ok(!cB.querySelector(".qrw") && !/Sign-in link sends one/.test(cB.textContent),
-      "the card with no account draws no code and no caption offering a link");
+    ok(!!cB && five.every((t) => btn(cB, t) && btn(cB, t).disabled && /No account/.test(btn(cB, t).title)) && /Made at the next laptop update./.test(cB.textContent),
+      "on the card with no account, Send a sign-in link and the four other ways are all off, each saying why: "
+        + JSON.stringify(five.map((t) => [t, cB && btn(cB, t) && btn(cB, t).disabled])));
+    ok(!hits.slice(before).some((x) => /[/]open$|[/]all[/](signin|account)[/]/.test(x)), "and opening its card makes nothing and posts nothing: " + JSON.stringify(hits.slice(before)));
+    ok(!cB.querySelector("[data-story]"), "the card with no account reads no story of how they got in");
     const cA = cardOf(uA);
-    ok(!!cA && four.every((t) => btn(cA, t) && !btn(cA, t).disabled), "and on a card with an account all four stay on");
-    ok(!!cA.querySelector(".qrw canvas") && /Sign-in link sends one/.test(cA.textContent), "with the code and its caption");
+    ok(!!cA && await until(() => btn(cA, five[0]) && !btn(cA, five[0]).disabled) && ["Show a code, in person", "View as them", "Sign out everywhere"].every((t) => btn(cA, t) && !btn(cA, t).disabled),
+      "and on a card with an account they stay on, its link made as it opens: " + JSON.stringify(five.map((t) => [t, cA && btn(cA, t) && btn(cA, t).disabled])));
 
     /* ---- the Worker: his correct master on a username with no account is never a miss ---- */
     const from = { "content-type": "application/json", "CF-Connecting-IP": "203.0.113.22" };
@@ -15577,16 +15591,21 @@ await (async () => {
     ok(await until(() => D.querySelector("#rlist [data-u]")), "Accounts lists the account");
     D.querySelector("#rlist [data-u]").click();
     const btnOf = (t) => [...D.querySelectorAll("#aopen .scard button")].find((b) => b.textContent === t);
-    ok(await until(() => btnOf("Copy message")), "its row opens the card");
-    const cm = btnOf("Copy message"); cm.click();
-    ok(await until(() => cm.textContent !== "Copy message") && cm.textContent === "Copy failed",
-      "Copy message on a clipboard that refuses says Copy failed, not Copied: " + cm.textContent);
-    clip.ok = true;
-    const sl = btnOf("Sign-in link"); sl.click();
-    ok(await until(() => !/Sign-in link|Making it/.test(sl.textContent)) && sl.textContent !== "Could not make one" && /made/.test(sl.textContent)
-      && clip.got.some((t) => t.includes("/s/")) && (await kv.list({ prefix: "ot:" })).keys.length === 1,
-      "Sign-in link with the share sheet closed does not say Could not make one: the link is made, copied instead, and says so: "
-        + JSON.stringify({ label: sl.textContent, copied: clip.got.length }));
+    /* S9 9.3: Copy message left with the Send card. The account's one Send a sign-in link is made as it opens, so a
+       share sheet he closes leaves that link made and says so, and a browser with no share sheet copies it, or says not */
+    const pill = () => D.querySelector("#aopen .scard .apill");
+    const note = () => ((D.querySelector("#aopen .scard .anote") || {}).textContent || "");
+    for (let i = 0; i < 400 && !(pill() && !pill().disabled); i++) await new Promise((r) => setTimeout(r, 25));
+    ok(pill() && !pill().disabled, "its row opens the account, its link made: " + note() + " " + (pill() ? pill().textContent : "no pill"));
+    pill().click();
+    ok(await until(() => /Not shared/.test(note())) && !pill().disabled && (await kv.list({ prefix: "ot:" })).keys.length === 1,
+      "a share sheet he closes says Not shared and keeps the one link made, never making a second: " + note());
+    Object.defineProperty(win.navigator, "share", { value: undefined, configurable: true });
+    pill().click();
+    ok(await until(() => /Not copied/.test(note())), "with no share sheet and a clipboard that refuses, it says Not copied: " + note());
+    clip.ok = true; pill().click();
+    ok(await until(() => /^Copied[.]/.test(note())) && clip.got.some((t) => t.includes("/s/")) && (await kv.list({ prefix: "ot:" })).keys.length === 1,
+      "and with one that takes it, Copied, with that same link on the clipboard: " + JSON.stringify({ note: note(), copied: clip.got.length }));
     clip.ok = false;
     D.querySelector('button[data-m="links"]').click();
     ok(await until(() => [...D.querySelectorAll("#glist button")].filter((b) => b.textContent === "Copy link").length >= 2), "Links draws a card a tier");
@@ -16409,8 +16428,9 @@ await (async () => {
 section("S9 9.8: Salt Admin counts the orders waiting on the desk and the desk counts the links waiting in Salt Admin, each a figure with no link and no name");
 await (async () => {
   /* THE PLAN'S SECTION 5: two owner apps remain, and each counts the other's waiting items. The desk tells the
-     site its own count (the one its banner reads) as a mark, recounting only when an order moved; the site
-     hands the desk's page the count of associate links waiting on his word. Driven through both real Workers. */
+     site its own count as a mark: since the S9 9.8 fix the desk's PAGE sends the Waiting on you figure its Today row
+     and Enter badge count, and the Worker only relays it; the site hands the desk's page the count of associate links
+     waiting on his word. Driven through both real Workers and the desk's own page. */
   const W = (await import("../stmt/worker.js")).default;
   const skv = new KV(), dkv = new KV();
   const senv = { STMT: skv, STMT_DESK_KEY: "desk-key-s98", STMT_MASTER: "mp-s9-8", ACCESS_TEAM: "maakmal", ACCESS_AUD: "aud-s9-8" };
@@ -16443,21 +16463,19 @@ await (async () => {
   const lj = await (await site("/desk/orders?links=1", { headers: desk })).json(), plain = await (await site("/desk/orders", { headers: desk })).json();
   ok(lj.ok && lj.links === 2 && !("links" in plain), "the desk's page is told the two links that wait on his word, and only when it asks: " + JSON.stringify([lj.links, "links" in plain]));
 
-  /* ---- the desk's half: the cron tells the site its count, and a quiet minute costs one read ---- */
+  /* ---- the desk's half (S9 9.8 fix): the cron counts nothing of its own; the Worker relays the page's count, keyed ---- */
   const ctx = () => ({ ps: [], waitUntil(p) { this.ps.push(p); } });
   const tick = async () => { const c = ctx(); await worker.scheduled({ cron: "* * * * *", scheduledTime: Date.parse("2026-09-24T02:07:00Z") }, denv, c); await Promise.all(c.ps); };
   await tick();
   const mark = () => JSON.parse(skv.m.get("desk-waiting") || "null");
-  ok(mark() && mark().n === 2, "the every-minute cron tells the site the two things that wait on the desk, the order placed and the question unanswered, as the desk counts them: " + JSON.stringify(mark()));
-  const { tellWaiting } = await import("../src/orders.js");
-  siteCalls.length = 0;
-  const quiet = await tellWaiting(denv);
-  ok(quiet.ok && quiet.told === false && siteCalls.join() === "/desk/orders/last",
-    "a minute with nothing moved reads the marks and nothing else: " + JSON.stringify(siteCalls));
-  const moved = await site("/desk/orders/" + u + "/" + ids[0], { method: "POST", headers: Object.assign({ "content-type": "application/json" }, desk), body: JSON.stringify({ status: "acknowledged" }) });
-  ok(moved.status === 200, "he agrees the placed order");
-  const told = await tellWaiting(denv);
-  ok(told.ok && told.told === true && told.n === 1 && mark().n === 1, "and the next pass tells the site one waits now: " + JSON.stringify([told, mark()]));
+  ok(mark() === null, "the every-minute cron writes no count of its own, a second reading being how the two apps came to disagree: " + JSON.stringify(mark()));
+  const wenv = Object.assign({}, denv, { SALT_WRITE_KEY: "k98" });
+  const relay = (b, keyed) => worker.fetch(new Request("https://salt-command.example/orders/waiting", { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, keyed ? { "X-Salt-Key": "k98" } : {}), body: JSON.stringify(b) }), wenv);
+  const wr = [(await relay({ n: 1 }, false)).status, (await relay({ n: -1 }, true)).status, (await relay({ n: "1" }, true)).status];
+  ok(wr.join() === "401,400,400" && mark() === null, "the relay takes a count only on the write key and only as a whole number: " + wr.join());
+  const relayed = await relay({ n: 1 }, true);
+  ok(relayed.status === 200 && mark() && mark().n === 1 && !!mark().at, "and on the key it sets the site's mark, with its moment: " + JSON.stringify(mark()));
 
   /* ---- Salt Admin's line ---- */
   const TEAM = "maakmal", AUD = "aud-s9-8", KID = "kid-s9-8";
@@ -16477,13 +16495,13 @@ await (async () => {
     const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
     const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
     const sj = await (await site("/all/sheet", { headers: { "cf-access-jwt-assertion": tok } })).json();
-    ok(sj.desk && sj.desk.n === 1 && Object.keys(sj.desk).sort().join() === "at,n", "his account list carries the desk's figure and its moment, nothing else: " + JSON.stringify(sj.desk));
+    ok(sj.desk && sj.desk.n === 1 && Object.keys(sj.desk).sort().join() === "at,moved,n", "his account list carries the desk's figure, its moment and whether an order moved since, nothing else: " + JSON.stringify(sj.desk));
     win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
     } }).window;
     const line = win.document.getElementById("nDesk");
-    ok(await until(() => !line.hidden && line.textContent === "1 thing waits on the desk.") && !line.querySelector("a") && !/Salt Command|[A-Z]{2}\d-[A-Z]{2,4}/.test(line.textContent),
-      "Needs you says one thing waits on the desk, with no link and no name: " + JSON.stringify(line.textContent));
+    ok(await until(() => !line.hidden && /^1 thing waits on the desk, as at [0-9]{2}:[0-9]{2}[.]$/.test(line.textContent)) && !line.querySelector("a") && !/Salt Command|[A-Z]{2}\d-[A-Z]{2,4}/.test(line.textContent),
+      "Needs you says one thing waits on the desk and when the desk counted it, with no link and no name: " + JSON.stringify(line.textContent));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 
   /* ---- the desk's page: the relay carries the count, and the rail's foot says it ---- */
@@ -16504,11 +16522,36 @@ await (async () => {
     ok(foot() === "1 link waits in Salt Admin", "one is one: " + JSON.stringify(foot()));
     answer = { ok: true, orders: [], links: 0 }; await w.eval("ordLoad(true)");
     ok(foot() === "", "and none says nothing: " + JSON.stringify(foot()));
-    /* S9 fix: one definition. The desk's own reading of the same open orders is the figure Salt Admin was told. */
-    const { listOrders } = await import("../src/orders.js");
-    answer = { ok: true, orders: (await listOrders(denv, false)).orders, links: 0 }; await w.eval("ordLoad(true)");
-    const deskN = w.eval("(()=>{const x=ordWaiting();return new Set(x.placed.concat(x.asked).map(o=>o.id)).size;})()");
-    ok(deskN === 1 && mark().n === deskN, "and the desk's own count of those orders is the figure Salt Admin was told: " + JSON.stringify([deskN, mark().n]));
+    /* S9 9.8 FIX: ONE READING, THE DESK'S. Once the orders and the drafts have both been read, the page sends the Waiting
+       on you figure its Today row and Enter badge count: a new order, a question not marked No reply needed (and not one
+       he marked), cash to record and a payment they say they made, which the old recount (placed, or their line last)
+       got wrong three ways. A failed read sends nothing, and the same figure is not sent twice. */
+    const at = "2026-09-24T01:00:00Z", later = "2026-09-24T01:30:00Z", say = { at, by: "customer", text: "can it come on Friday" };
+    const o = (id, st, x) => Object.assign({ id, u, at, status: st, product: "salt", qty: 1, total: 150, delivery: 0, mode: "collect",
+      paid: 0, payments: [], moved: 0, msgs: [], history: [] }, x);
+    const five = [o("20260924010000-n001", "placed"), o("20260924010000-a002", "acknowledged", { msgs: [say] }),
+      o("20260924010000-q003", "acknowledged", { msgs: [say], quiet: later }), o("20260924010000-c004", "ready", { moved: 1, movedAt: at }),
+      o("20260924010000-p005", "acknowledged", { paid: 50, payments: [{ at, by: "customer", amount: 50 }] })];
+    const told = [];
+    let drafts = { status: 200, j: { ok: true, drafts: [{ id: "d-p005", entry: { orderId: "20260924010000-p005", status: "Payment", by: "customer" } }], refused: [], clock: null } };
+    answer = { ok: true, orders: five, links: 0 };
+    w.fetch = async (q, init) => {
+      const path = String(q);
+      if (path === "orders/waiting") { told.push(JSON.parse(init.body)); return { ok: true, status: 200, json: async () => ({ ok: true }) }; }
+      if (path.startsWith("drafts")) return { ok: drafts.status < 300, status: drafts.status, json: async () => drafts.j };
+      return { ok: true, status: 200, json: async () => answer };
+    };
+    await w.eval("ordLoad(true)");
+    ok(told.length === 0, "with the orders read and the drafts not yet, nothing is sent: " + JSON.stringify(told));
+    await w.eval("apLoad(true)");
+    const acts = w.eval("ordActs().map(a=>a.kind).sort().join()"), badge = w.eval("ordActs().length");
+    ok(acts === "asked,cash,new,paid" && told.length === 1 && told[0].n === 4 && told[0].n === badge,
+      "once both are read the desk sends its own Waiting on you figure, the new order, the question, the cash and the payment claimed: " + JSON.stringify([acts, told]));
+    await w.eval("ordLoad(true)");
+    ok(told.length === 1, "the same figure is not sent again");
+    drafts = { status: 500, j: { ok: false } };
+    await w.eval("apLoad(true)");
+    ok(told.length === 1, "and a read of the drafts that failed sends nothing, a figure it could not count being no figure: " + JSON.stringify(told));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 section("S9 fix R1: Send them in turn takes one Share at a time, so a second tap while the tick is in flight never skips the next account");
@@ -16873,7 +16916,7 @@ await (async () => {
   await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
     accounts: us.map((u, k) => ({ code: codes[k], username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" })) }));
   const seen = (how) => JSON.stringify(Object.assign({ first: "2026-09-02T01:00:00Z", last: "2026-09-03T01:00:00Z", opens: 1 }, how ? { how } : {}));
-  await kv.put("seen:" + us[0], seen("key")); await kv.put("seen:" + us[1], seen("code"));
+  await kv.put("seen:" + us[0], seen("qr")); await kv.put("seen:" + us[1], seen("code"));
   await kv.put("seen:" + us[2], seen(null)); await kv.put("seen:" + us[3], seen("zzz"));
   const TEAM = "maakmal", AUD = "aud-s9-r5", KID = "kid-s9-r5";
   const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
@@ -17089,6 +17132,1167 @@ await (async () => {
       "on a phone a card's code opens that account on Accounts, with the way back");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S9 9.3: an account opens with its sign-in link made, so Send shares inside the tap, and says how they got in and on what kind of device, never an address");
+await (async () => {
+  /* THE PLAN'S f13 AND ITS MUST-NOT-SHIP LIST: one filled Send a sign-in link, its key made as the account opens, so the
+     share sheet is the tap's first act and never waits on a key derivation and a fetch; and How they got in, each link,
+     code and password open with its moment and the kind of device, from the browser's own description at the time. */
+  const W = (await import("../stmt/worker.js")).default;
+  const S = await import("../stmt/signin.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const PIXEL = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36";
+  const EDGE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0";
+  const labels = [IPHONE, PIXEL, EDGE, "curl/8.4.0", ""].map((x) => S.deviceOf(x));
+  ok(JSON.stringify(labels.map((d) => d.label)) === JSON.stringify(["iPhone, Safari", "Android phone, Chrome", "Windows computer, Edge", "A computer", "A computer"])
+    && JSON.stringify(labels.map((d) => d.kind)) === JSON.stringify(["phone", "phone", "computer", "computer", "computer"]),
+    "a device is named in the site's own words, a kind and a browser, and nothing is copied from its description: " + JSON.stringify(labels));
+
+  const kv = new KV();
+  const MASTER = "mp-s9-3", IP = "203.0.113.77";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9-3", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX9-HW", username: u }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-25T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX9-HW", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9-3", KID = "kid-s9-3";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const from = (ua) => ({ "content-type": "application/json", "user-agent": ua, "CF-Connecting-IP": IP });
+  const seen = async () => JSON.parse((await kv.get("seen:" + u)) || "null");
+
+  /* ---- the Worker: each way in is kept with its moment and the kind of device; a remembered phone coming back is not one ---- */
+  const tok = S.newSignin();
+  await S.mintSignin(env, u, tok, { salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" });
+  const lr = await site("/open-link", { method: "POST", headers: from(IPHONE), body: JSON.stringify({ token: tok }) });
+  const s1 = await seen();
+  ok(lr.status === 200 && s1 && s1.log.length === 1 && s1.log[0].how === "link" && s1.log[0].where === "iPhone, Safari" && s1.log[0].kind === "phone",
+    "a link opened on an iPhone is kept as a link, on an iPhone, Safari: " + JSON.stringify(s1 && s1.log));
+  const rtok = S.newSignin();
+  await kv.put("rem:" + (await S.idOf(rtok)), JSON.stringify({ u, wrap: { salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" }, at: new Date().toISOString() }));
+  const rr = await site("/remember/open", { method: "POST", headers: from(PIXEL), body: JSON.stringify({ token: rtok }) });
+  const s2 = await seen();
+  ok(rr.status === 200 && s2.opens === 2 && s2.how === "remembered" && s2.log.length === 1,
+    "a remembered phone coming back counts as an open and is not a way in: " + JSON.stringify(s2));
+  const pr = await site("/open", { method: "POST", headers: from(EDGE), body: JSON.stringify({ u, password: pw }) });
+  const s3 = await seen();
+  ok(pr.status === 200 && s3.log.length === 2 && s3.log[0].how === "password" && s3.log[0].where === "Windows computer, Edge" && s3.log[1].how === "link",
+    "a password open goes on top, newest first: " + JSON.stringify(s3.log.map((x) => x.how)));
+  ok(!JSON.stringify(s3).includes(IP) && !JSON.stringify(s3).includes("Mozilla") && !JSON.stringify(s3).includes("17_5"),
+    "and neither the address nor anything of the browser's own description is kept");
+  await kv.put("seen:" + u, JSON.stringify(Object.assign({}, s3, { log: Array.from({ length: 10 }, (_, i) => ({ how: "code", at: "2026-09-0" + (i % 9 + 1) + "T01:00:00Z", where: "iPhone", kind: "phone" })) })));
+  await site("/open", { method: "POST", headers: from(EDGE), body: JSON.stringify({ u, password: pw }) });
+  const s4 = await seen();
+  ok(s4.log.length === 10 && s4.log[0].how === "password", "ten ways in are kept, the oldest dropping off: " + s4.log.length);
+  await kv.put("seen:" + u, JSON.stringify(s3));
+
+  /* ---- the account's own read, behind Access ---- */
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+  let win = null;
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const jwt = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    ok((await site("/all/account/" + u)).status === 401, "an account's story is behind Access");
+    const aj = await (await site("/all/account/" + u, { headers: { "cf-access-jwt-assertion": jwt } })).json();
+    ok(aj.ok && aj.log.length === 2 && aj.log.every((x) => Object.keys(x).sort().join() === "at,how,kind,where"),
+      "and it hands over each way in, its moment and the device, nothing else: " + JSON.stringify(aj.log[0]));
+
+    /* ---- the page: the link is made as the account opens, and the tap shares it before anything waits ---- */
+    const hits = [], shared = [];
+    let inTap = null;
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": jwt } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      Object.defineProperty(w.navigator, "share", { value: (d) => { shared.push(d.text); return Promise.resolve(); }, configurable: true });
+      w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": jwt }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    D.querySelector('button[data-m="accounts"]').click();
+    ok(await until(() => D.querySelector('#rlist [data-u="' + u + '"]')), "Accounts lists the account");
+    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
+    const pill = () => card() && card().querySelector(".apill");
+    /* the links not yet used: the one opened above stays two minutes, spent, for the page that spent it */
+    const links = async () => { let n = 0; for (const k of (await kv.list({ prefix: "ot:" })).keys) if (!JSON.parse(await kv.get(k.name)).spent) n++; return n; };
+    ok(await until(() => pill() && !pill().disabled) && await links() === 1 && hits.some((x) => x === "POST /all/signin/" + u),
+      "the account opens with its sign-in link already made, before any tap: " + JSON.stringify(hits.filter((x) => /signin|open$/.test(x))));
+    ok(pill().textContent === "Send a sign-in link" && pill().classList.contains("salt-pill") && card().querySelectorAll(".salt-pill").length === 1,
+      "Send a sign-in link is the account's one filled control");
+    const before = hits.length;
+    pill().click();
+    inTap = shared.length;
+    ok(inTap === 1 && /[/]s[/]/.test(shared[0]) && hits.length === before,
+      "the tap shares the link as its first act, with no fetch before it: " + JSON.stringify({ inTap, fetched: hits.slice(before) }));
+    ok(await until(() => hits.includes("POST /all/sent/" + u)) && await until(async () => (await links()) === 2)
+      && await until(() => /Sent[.] It signs them in once/.test(card().textContent) && card().querySelector(".tick input").checked),
+      "a share that goes through ticks the account sent and makes a fresh link for the next: " + JSON.stringify({ links: await links(), text: card() && card().querySelector(".anote").textContent }));
+    /* ---- how they got in, drawn ---- */
+    const story = () => ((card() && card().querySelector("[data-story]")) || {}).textContent || "";
+    ok(await until(() => /How they got in/.test(story()) && /Password/.test(story()) && /Sign-in link/.test(story()) && /on iPhone, Safari/.test(story())
+      && /on Windows computer, Edge/.test(story())) && !story().includes(IP),
+      "How they got in lists each way in with the device it was used on, and no address: " + JSON.stringify(story()));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 9.4: an account lists its phones and computers by the kind of device, and Sign out everywhere ends every device, unused link and code and alert, and says how many");
+await (async () => {
+  /* THE PLAN'S 9.4: the account's phones and computers from its dev: pointers, each named in the site's own words, added
+     and last used, never an address or anything typed; one signed out by his tap, or all of them, every link and code
+     not yet opened and every phone's alerts with them, counted, and never the account's own record, which the publish
+     owns. The customer's own list (9.9) is the same list on their session, with the others signed out and this one kept. */
+  const W = (await import("../stmt/worker.js")).default;
+  const S = await import("../stmt/signin.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { endpointId } = await import("../stmt/push.js");
+  const { JSDOM } = await import("jsdom");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const EDGE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0";
+  const kv = new KV(), MASTER = "mp-s9-4", IP = "198.51.100.44";
+  const u = C.newUsername(), other = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9-4", u);
+  const urec = JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) });
+  await kv.put("u:" + u, urec);
+  await kv.put("roster", JSON.stringify([{ code: "CX4-DV", username: u }, { code: "CX5-DV", username: other }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-25T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX4-DV", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9-4", KID = "kid-s9-4";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD, STMT_HANDOVER_KEY: "ho-secret-s9-4" };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const post = async (path, body, headers) => { const r = await site(path, { method: "POST", headers: Object.assign({ "content-type": "application/json", "CF-Connecting-IP": IP }, headers || {}), body: JSON.stringify(body) });
+    return { status: r.status, j: await r.json().catch(() => ({})) }; };
+  const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" };
+  const signIn = async (ua) => (await post("/open", { u, password: pw }, { "user-agent": ua })).j.session;
+  const orders = async (s) => (await site("/orders", { headers: { "X-Stmt-Session": s } })).status;
+  const E1 = "https://push.example/s94-iphone", E2 = "https://push.example/s94-windows";
+  const kb = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kb.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const jwt = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kb.privateKey, new TextEncoder().encode(h + "." + c))));
+  const A = { "cf-access-jwt-assertion": jwt };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  const ptrs = () => [...kv.m.keys()].filter((k) => k.startsWith("dev:" + u + ":"));
+  let win = null;
+  try {
+    /* ---- the fixture: an iPhone kept signed in, a Windows computer for this visit, each with alerts, and a hand-over made ---- */
+    const s1 = await signIn(IPHONE);
+    const t1 = (await post("/remember", { wrap }, { "X-Stmt-Session": s1, "user-agent": IPHONE })).j.token;
+    const s2 = await signIn(EDGE);
+    await post("/push/subscribe", { endpoint: E1 }, { "X-Stmt-Session": s1 });
+    await post("/push/subscribe", { endpoint: E2 }, { "X-Stmt-Session": s2 });
+    const hoTok = S.newSignin(), ho = await post("/handover", { token: hoTok, wrap }, { "X-Stmt-Session": s1 });
+    ok(!!t1 && ho.status === 200 && await orders(s1) === 200 && await orders(s2) === 200, "the fixture: two devices signed in, one kept, and a hand-over made");
+
+    /* ---- his list ---- */
+    const acct = async () => (await site("/all/account/" + u, { headers: A })).json();
+    const a1 = await acct();
+    ok(a1.devices.length === 2 && a1.devices.map((d) => d.label).sort().join("|") === "Windows computer, Edge|iPhone, Safari"
+      && a1.devices.find((d) => d.kept).label === "iPhone, Safari" && !a1.devices.find((d) => d.label === "Windows computer, Edge").kept,
+      "his account lists the iPhone once, kept signed in, and the computer for this visit: " + JSON.stringify(a1.devices));
+    ok(a1.devices.every((d) => Object.keys(d).sort().join() === "at,id,kept,kind,label,last") && !JSON.stringify(a1).includes(IP) && !JSON.stringify(a1).includes("Mozilla"),
+      "each device is its id, kind, name and moments, never an address or the browser's own description");
+
+    /* ---- theirs, on their session: the same list, this one marked, no id ---- */
+    const mine = await post("/devices", { token: t1 }, { "X-Stmt-Session": s1 });
+    ok(mine.status === 200 && mine.j.devices.length === 2 && mine.j.devices.every((d) => Object.keys(d).sort().join() === "at,here,kept,kind,label,last")
+      && mine.j.devices.filter((d) => d.here).map((d) => d.label).join() === "iPhone, Safari",
+      "the customer's own list is the same devices, this one marked and no id handed over: " + JSON.stringify(mine.j.devices));
+    ok((await post("/devices", {}, {})).status === 401, "and it needs their session");
+    const theirs = await post("/devices/signout", { token: t1, endpoint: E1 }, { "X-Stmt-Session": s1 });
+    ok(theirs.j.ok && theirs.j.devices === 1 && theirs.j.phones === 1 && await orders(s2) === 401 && await orders(s1) === 200
+      && !!(await kv.get("push:" + u + ":" + (await endpointId(E1)))) && !(await kv.get("push:" + u + ":" + (await endpointId(E2)))),
+      "Sign out other devices ends the computer and its alerts, and keeps this phone, its session and its alerts: " + JSON.stringify(theirs.j));
+    ok((await post("/remember/open", { token: t1 }, { "user-agent": IPHONE })).status === 200, "and this phone still opens as a remembered phone");
+
+    /* ---- his Sign out of one device, by its id ---- */
+    const s3 = await signIn(EDGE);
+    const win1 = (await acct()).devices.find((d) => !d.kept);
+    const one = await post("/all/signout", { u, id: win1.id }, A);
+    ok(one.j.devices === 1 && await orders(s3) === 401 && (await acct()).devices.map((d) => d.label).join() === "iPhone, Safari",
+      "his Sign out on one device ends that one alone: " + JSON.stringify(one.j));
+
+    /* ---- a link opened is no longer one to sign out ---- */
+    const spent = S.newSignin();
+    await S.mintSignin(env, u, spent, wrap);
+    const lp = "dev:" + u + ":" + (await S.idOf("ot:" + (await S.idOf(spent)))), had = kv.m.has(lp);
+    await post("/open-link", { token: spent }, { "user-agent": EDGE });
+    ok(had && !kv.m.has(lp), "a link opened takes its pointer with it, being no longer one to sign out");
+
+    /* ---- Sign out everywhere: every device, every link and code not yet opened, every phone's alerts, counted ---- */
+    const keepTok = S.newSignin(), sentTok = S.newSignin();
+    await S.mintSignin(env, u, keepTok, wrap); await S.mintSignin(env, u, sentTok, wrap);
+    await post("/all/out", { u, id: await S.idOf(sentTok) }, A);   /* sent, as his page marks a link it shares */
+    const all = await post("/all/signout", { u, keep: await S.idOf(keepTok) }, A);
+    ok(all.status === 200 && all.j.devices === 2 && all.j.links === 2 && all.j.phones === 1 && all.j.ended === 5,
+      "Sign out everywhere says it ended the phone and the computer the link opened on, the link sent and the hand-over not yet used, and the phone's alerts: " + JSON.stringify(all.j));
+    ok(await orders(s1) === 401 && (await post("/remember/open", { token: t1 })).status === 401
+      && (await post("/open-link", { token: sentTok })).status === 401 && (await post("/handover/open", { token: hoTok })).status === 401
+      && (await post("/handover/open", { code: ho.j.code })).status === 401 && ![...kv.m.keys()].some((k) => k.startsWith("push:" + u + ":")),
+      "and each of them is refused afterwards, the code as well as its key");
+    ok((await post("/open-link", { token: keepTok }, { "user-agent": IPHONE })).status === 200,
+      "while the one link his page made as the account opened, and named, still opens");
+    ok((await kv.get("u:" + u)) === urec, "and the account's own record is untouched");
+    await post("/all/signout", { u }, A);
+
+    /* ---- his page: the list drawn, one signed out by its own button, and everything by the second tap ---- */
+    const s4 = await signIn(IPHONE);
+    await post("/remember", { wrap }, { "X-Stmt-Session": s4, "user-agent": IPHONE });
+    await signIn(EDGE);
+    win = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    D.querySelector('button[data-m="accounts"]').click();
+    await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
+    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
+    const story = () => ((card() && card().querySelector("[data-story]")) || {}).textContent || "";
+    ok(await until(() => /Phones and computers2/.test(story()) && /iPhone, SafariSign outKept signed in since/.test(story()) && /Windows computer, EdgeSign outSigned in .* for this visit, not kept/.test(story())),
+      "the account lists its two devices under Phones and computers, each with its own Sign out: " + JSON.stringify(story()));
+    const outOf = (label) => [...card().querySelectorAll("[data-story] .salt-ledger__row")].find((r) => r.textContent.startsWith(label)).querySelector("button");
+    outOf("Windows computer, Edge").click();
+    ok(await until(() => /Phones and computers1/.test(story()) && !/Windows computer, Edge/.test(story().split("Phones and computers")[1])), "one tap on a device's Sign out ends it and the list follows: " + JSON.stringify(story()));
+    const pill = () => card().querySelector(".apill");
+    ok(await until(() => pill() && !pill().disabled), "the account's link is made as it opened");
+    const sob = () => [...card().querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again/.test(b.textContent));
+    sob().click(); sob().click();
+    ok(await until(() => /Signed out: 1 device[.]/.test(card().textContent) && /Phones and computers/.test(story()) && /None signed in/.test(story())) && !pill().disabled,
+      "Sign out everywhere says what it ended, the list empties, and Send a sign-in link still has its link: " + JSON.stringify((card().querySelector(".agrid + .anote") || {}).textContent));
+    /* ---- an account closed while its link and its story are still on their way lands on nothing ---- */
+    const errs = [], onRej = (e) => errs.push(String((e && e.message) || e));
+    process.on("unhandledRejection", onRej);
+    try {
+      const gate = { go: null };
+      const w3 = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+        try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+        if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+        if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+        w.fetch = async (q, o) => { o = o || {};
+          if (/^[/]all[/](account|signin)[/]/.test(String(q))) await new Promise((r) => { const was = gate.go; gate.go = () => { if (was) was(); r(); }; });
+          return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+      } }).window;
+      const D3 = w3.document;
+      await until(() => /as at/.test(D3.getElementById("mFoot").textContent));
+      D3.querySelector('button[data-m="accounts"]').click();
+      await until(() => D3.querySelector('#rlist [data-u="' + u + '"]'));
+      D3.querySelector('#rlist [data-u="' + u + '"]').click();
+      ok(await until(() => !!gate.go), "the account opened, its story is on its way");
+      w3.close();
+      await until(() => !!gate.go);
+      for (let i = 0; i < 40 && gate.go; i++) { const g = gate.go; gate.go = null; g(); await new Promise((r) => setTimeout(r, 50)); }
+      await new Promise((r) => setTimeout(r, 200));
+      ok(errs.length === 0, "and when it and the link land after the page has gone, nothing is drawn and nothing throws: " + JSON.stringify(errs));
+    } finally { process.off("unhandledRejection", onRej); }
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 9.9: the customer's This device card lists their devices with this one marked, signs the others out, and signs in another device by a code made as its Sheet opens");
+await (async () => {
+  /* HIS D2 AND THE PLAN'S 9.9: This device, at the foot of the statement until stage 7 moves it into Account. Driven on
+     the customer's own page against the real Worker. The QR carries the site's /app alone: a key in an address signs a
+     browser tab in only when his counter minted it (S3), so the code is typed on the other device. */
+  const W = (await import("../stmt/worker.js")).default;
+  const { landingPage } = await import("../stmt/page.js");
+  const QR = (await import("../stmt/qr.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const EDGE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0";
+  const kv = new KV();
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9-9", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] })) }));
+  const env = { STMT: kv, STMT_HANDOVER_KEY: "ho-secret-s9-9" };
+  const ORIGIN = "https://k7m3p2.example";
+  const site = (path, o) => W.fetch(new Request(ORIGIN + path, o), env);
+  const other = (await (await site("/open", { method: "POST", headers: { "content-type": "application/json", "user-agent": IPHONE }, body: JSON.stringify({ u, password: pw }) })).json()).session;
+  const orders = async (s) => (await site("/orders", { headers: { "X-Stmt-Session": s } })).status;
+  /* ---- Turn off, on the Worker: this phone's own push record and no other, on its session ---- */
+  const { endpointId } = await import("../stmt/push.js");
+  const P = (path, b, s) => site(path, { method: "POST", headers: { "content-type": "application/json", "X-Stmt-Session": s }, body: JSON.stringify(b) });
+  const E1 = "https://push.example/s99-a", E2 = "https://push.example/s99-b";
+  await P("/push/subscribe", { endpoint: E1 }, other); await P("/push/subscribe", { endpoint: E2 }, other);
+  const off = await P("/push/unsubscribe", { endpoint: E1 }, other);
+  ok(off.status === 200 && !(await kv.get("push:" + u + ":" + (await endpointId(E1)))) && !!(await kv.get("push:" + u + ":" + (await endpointId(E2))))
+    && (await P("/push/unsubscribe", { endpoint: E2 }, "")).status === 401,
+    "turning notifications off drops that phone's own push record and no other, and only on its session");
+  const posts = [], clip = [];
+  let win = null;
+  try {
+    win = new JSDOM(landingPage(u, "n99", null), { url: ORIGIN + "/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      Object.defineProperty(w.navigator, "userAgent", { value: EDGE, configurable: true });
+      Object.defineProperty(w.navigator, "clipboard", { configurable: true, value: { writeText: (t) => { clip.push(t); return Promise.resolve(); } } });
+      w.scrollTo = () => {};
+      w.fetch = async (q, o) => { o = o || {}; posts.push((o.method || "GET") + " " + String(q));
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({ "user-agent": EDGE }, o.headers), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    D.getElementById("pw").value = pw;
+    D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+    /* S7 merge: one This device card, Account's (#thisDevice), which stage 9's rows fill */
+    const card = D.getElementById("thisDevice"), body = () => card.textContent;
+    ok(await until(() => !card.hidden && /iPhone, Safari/.test(body()) && /Kept signed in/.test(body())) && D.getElementById("pStmt").contains(card),
+      "signed in, the statement ends on This device: " + JSON.stringify(body()));
+    const rows = () => [...card.querySelectorAll(".salt-ledger__row")].map((r) => r.textContent);
+    ok(rows().some((t) => /^Notifications/.test(t)) && rows().some((t) => /^Windows computer, EdgeThis oneKept signed in since/.test(t))
+      && rows().some((t) => /^iPhone, SafariSigned in .*, for that visit[.]$/.test(t)) && !body().includes("Mozilla"),
+      "it lists notifications, this computer marked This one and kept signed in, and the iPhone for that visit: " + JSON.stringify(rows()));
+    const btn = (t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
+
+    /* ---- Sign in another device: the code is made as the Sheet opens, and Copy is a tap of its own ---- */
+    btn("Sign in another device").click();
+    const sheet = D.getElementById("devSheet"), code = D.getElementById("devCode"), copy = D.getElementById("devCopy");
+    ok(!sheet.hidden && sheet.getAttribute("aria-modal") === "true" && copy.disabled, "the Sheet opens at once, Copy held until there is a code");
+    ok(await until(() => /^[A-Z2-9]{4} [A-Z2-9]{4}$/.test(code.value) && !copy.disabled) && posts.includes("POST /handover")
+      && (await kv.list({ prefix: "ho:" })).keys.length === 2,
+      "the hand-over is made as the Sheet opens, its eight symbols shown before any tap: " + code.value);
+    const qr = D.getElementById("devQrImg").getAttribute("src");
+    ok(!D.getElementById("devQr").hidden && qr === "data:image/svg+xml," + encodeURIComponent(QR.qrRectSvg(ORIGIN + "/app#code", { size: 180, dark: "#05080a", light: "#f2f4f5", label: "Salt Counter" })),
+      "and its QR is the site's /app#code for the other device's camera, the address alone and never the key");
+    const before = posts.length;
+    copy.click();
+    ok(clip.length === 1 && clip[0] === code.value && posts.length === before, "Copy the code copies it as the tap's first act, fetching nothing: " + JSON.stringify(clip));
+    D.getElementById("devX").click();
+    ok(sheet.hidden, "and the Sheet closes");
+
+    /* ---- Sign out other devices, on a second tap: the iPhone goes, this computer stays ---- */
+    btn("Sign out other devices").click();
+    ok(await orders(other) === 200 && !!btn("Tap again to sign them out"), "one tap only asks");
+    btn("Tap again to sign them out").click();
+    ok(await until(() => /Signed out 1 other device[.]/.test(body())) && await orders(other) === 401 && !/iPhone, Safari/.test(body()) && !btn("Sign out other devices"),
+      "the second signs the iPhone out, says so under the controls, and the list keeps this one alone: " + JSON.stringify(rows()));
+
+    /* ---- Log out burns the code the Sheet made, unused ---- */
+    D.getElementById("lock").click();
+    ok(await until(async () => (await kv.list({ prefix: "ho:" })).keys.length === 0) && card.hidden,
+      "logging out burns the code the Sheet made and takes the card away");
+    ok(!landingPage("", "n99o", { master: "x", accounts: [] }).includes('id="thisDevice"'), "and his own page carries no This device card");
+  } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
+
+  /* ---- the list is a read in the background: a lapse it meets is left to the next tap, and it lands on nothing once
+     the page has gone. Driven with the site stood in, the list's answer held until the test lets it go. ---- */
+  const wrap = await C.wrapKey(pw, ck), envSealed = JSON.parse(await kv.get("u:" + u)).env;
+  const drive = async (devices) => {
+    const st = { posts: [], release: null };
+    const w2 = new JSDOM(landingPage(u, "n99b", null), { url: ORIGIN + "/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      w.scrollTo = () => {};
+      w.fetch = async (q, o) => {
+        const path = String(q); st.posts.push(path);
+        const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+        if (path === "/open") return ans(200, { ok: true, byMaster: false, wrap, env: envSealed, live: null, prices: null, session: "sess99b0000000000000000000000" });
+        if (path === "/remember") return ans(200, { ok: true, token: "rem99b00000000000000000000000000", days: 30 });
+        if (path === "/devices") return devices(st, ans);
+        return ans(200, { ok: true, orders: [] });
+      };
+    } }).window;
+    const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    w2.document.getElementById("pw").value = pw;
+    w2.document.getElementById("f").dispatchEvent(new w2.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !w2.document.getElementById("barw").hidden);
+    return { st, w2, until };
+  };
+  const d1 = await drive((st, ans) => ans(401, { ok: false, error: "Sign in again to see your orders.", session: false }));
+  try {
+    const card2 = d1.w2.document.getElementById("thisDevice");
+    ok(await d1.until(() => !card2.hidden && /Sign in again to see them[.]/.test(card2.textContent)) && d1.w2.document.getElementById("lapse").hidden
+      && !d1.st.posts.includes("/remember/open"),
+      "a list that meets a lapsed session says so on the card, and neither reopens the session nor raises the lapse bar: " + JSON.stringify(d1.st.posts));
+  } finally { try { d1.w2.close(); } catch (e) { /* best effort */ } }
+  const errs = [], onRej = (e) => errs.push(String((e && e.message) || e));
+  process.on("unhandledRejection", onRej);
+  try {
+    const d2 = await drive((st, ans) => new Promise((r) => { st.release = () => r(ans(200, { ok: true, devices: [{ label: "iPhone, Safari", kind: "phone", at: null, last: null, kept: true, here: true }] })); }));
+    await d2.until(() => !!d2.st.release);
+    d2.w2.close();
+    d2.st.release();
+    await new Promise((r) => setTimeout(r, 150));
+    ok(errs.length === 0, "and a list that lands after the page has gone draws nothing and throws nothing: " + JSON.stringify(errs));
+  } finally { process.off("unhandledRejection", onRej); }
+})();
+section("S9 fix S9R-1: a link copied or shared from any card is dropped from the page, so Sign out everywhere ends it with the rest");
+await (async () => {
+  /* Sign out everywhere spares the link his page holds, made as the account opened and not yet sent. A link copied on a
+     browser with no share sheet, or shared from a Needs you card, stayed the one held, so the forwarded link the button
+     answers was the one link it spared, and the next Send handed the same link out again. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV(), MASTER = "mp-s9r1";
+  const u = C.newUsername(), uL = C.newUsername(), pw = C.newPassword();
+  const rec = async (x) => { const ck = await C.contentKey("s9r1", x);
+    return JSON.stringify({ u: x, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+      wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }); };
+  await kv.put("u:" + u, await rec(u)); await kv.put("u:" + uL, await rec(uL));
+  await kv.put("roster", JSON.stringify([{ code: "CX7-CP", username: u }, { code: "CX8-LK", username: uL }]));
+  await kv.put("issue", "2026-09-01");
+  const row = (code, username) => ({ code, username, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" });
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-25T00:00:00Z", issue: "2026-09-01", accounts: [row("CX7-CP", u), row("CX8-LK", uL)] }));
+  const TEAM = "maakmal", AUD = "aud-s9r1", KID = "kid-s9r1";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const A = { "cf-access-jwt-assertion": h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c)))) };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  /* ten wrong passwords at one address put the second account on Needs you, with its own Send a sign-in link */
+  for (let i = 0; i < 10; i++) await site("/open", { method: "POST", headers: { "content-type": "application/json", "CF-Connecting-IP": "198.51.100.71" }, body: JSON.stringify({ u: uL, password: "zzzz-zzzz-zzzz-zzzz" }) });
+  const opens = async (msg) => (await site("/open-link", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: String(msg).split("/s/")[1].split(/\s/)[0] }) })).status;
+  const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+  const clip = [];
+  let win = null;
+  try {
+    /* a browser with no share sheet: Send copies the message */
+    win = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      Object.defineProperty(w.navigator, "clipboard", { configurable: true, value: { writeText: (t) => { clip.push(t); return Promise.resolve(); } } });
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    const openAcct = async (x) => { D.querySelector('button[data-m="accounts"]').click();
+      await until(() => D.querySelector('#rlist [data-u="' + x + '"]')); D.querySelector('#rlist [data-u="' + x + '"]').click(); };
+    const card = (x) => D.querySelector('#aopen [data-acct="' + x + '"]');
+    const pill = (x) => card(x) && card(x).querySelector(".apill");
+    const signOutAll = async (x) => {
+      const sob = () => [...card(x).querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again/.test(b.textContent));
+      sob().click(); sob().click();
+      return until(() => /Signed out|Nothing was signed in/.test((card(x).querySelector(".agrid + .anote") || {}).textContent || ""));
+    };
+
+    /* ---- the account's own Send, copied ---- */
+    await openAcct(u);
+    ok(await until(() => pill(u) && !pill(u).disabled), "the account opens with its link made");
+    pill(u).click();
+    ok(await until(() => clip.length === 1 && /Copied[.]/.test(card(u).textContent)), "Send copies the message: " + clip.length);
+    ok(await until(() => pill(u) && !pill(u).disabled), "and a fresh link is made for the next Send");
+    pill(u).click();
+    ok(await until(() => clip.length === 2) && clip[1].split("/s/")[1] !== clip[0].split("/s/")[1],
+      "the next Send copies a new link, never the one already copied");
+    ok(await signOutAll(u) && await opens(clip[0]) === 401 && await opens(clip[1]) === 401,
+      "Sign out everywhere ends both copied links, where it spared the one the page still held");
+
+    /* ---- Needs you's Share the link, on the locked account's card ---- */
+    D.querySelector('.salt-appbar button[data-m="needs"]').click();
+    const need = () => D.querySelector('#nlist [data-need="k:' + uL + '"]');
+    const nbtn = (t) => need() && [...need().querySelectorAll("button")].find((b) => b.textContent === t);
+    ok(await until(() => nbtn("Send a sign-in link")), "Needs you carries the refused account's card");
+    nbtn("Send a sign-in link").click();
+    ok(await until(() => nbtn("Share the link")), "its first tap makes the link");
+    nbtn("Share the link").click();
+    ok(await until(() => clip.length === 3), "and the second copies it");
+    await openAcct(uL);
+    ok(await until(() => pill(uL) && !pill(uL).disabled), "the account opened after it has a link to send");
+    ok(await signOutAll(uL) && await opens(clip[2]) === 401,
+      "and Sign out everywhere on it ends the link Needs you handed out, which the page no longer holds");
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix S9R-6: a sign-in link that could not be made as the account opened is made again from the pill, as Try again");
+await (async () => {
+  /* The link is made as the account opens. When that failed the pill stayed off under the error, and only reopening the
+     account made it again; before 9.3 a second tap retried. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV(), MASTER = "mp-s9r6";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r6", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX6-RT", username: u }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-25T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX6-RT", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9r6", KID = "kid-s9r6";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const A = { "cf-access-jwt-assertion": h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c)))) };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+  const tries = [], shared = [];
+  let win = null;
+  try {
+    win = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      Object.defineProperty(w.navigator, "share", { value: (d) => { shared.push(d.text); return Promise.resolve(); }, configurable: true });
+      /* the first making of the link meets a site that does not answer; the next goes through */
+      w.fetch = async (q, o) => { o = o || {};
+        if (/^[/]all[/]signin[/]/.test(String(q)) && tries.push(q) === 1) return new Response(JSON.stringify({ ok: false, error: "the site did not answer" }), { status: 503, headers: { "content-type": "application/json" } });
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    D.querySelector('button[data-m="accounts"]').click();
+    await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
+    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
+    const pill = () => card() && card().querySelector(".apill");
+    const note = () => ((card() && card().querySelector(".apill + .anote")) || {}).textContent || "";
+    ok(await until(() => tries.length === 1 && /Could not make a link/.test(note())), "the link could not be made as the account opened: " + note());
+    ok(pill().textContent === "Try again" && !pill().disabled, "and the pill stays on, as Try again: " + JSON.stringify([pill().textContent, pill().disabled]));
+    pill().click();
+    ok(await until(() => tries.length === 2) && shared.length === 0, "its tap makes the link again and shares nothing: " + JSON.stringify({ tries: tries.length, shared: shared.length }));
+    ok(await until(() => pill().textContent === "Send a sign-in link" && !pill().disabled && note() === ""),
+      "once made, it is Send a sign-in link again and the error has gone: " + JSON.stringify([pill().textContent, note()]));
+    pill().click();
+    ok(await until(() => shared.length === 1 && /[/]s[/]/.test(shared[0])), "and the next tap sends it");
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix S9R-3: signing one device out by its own row stops its alerts, a remembered phone's however often it has reopened");
+await (async () => {
+  /* His one-device Sign out ended the device's sign-in but not its push record, which named no device, so a lost phone
+     signed out by its own row kept waking for the account (v692: a phone signed out stops waking). */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { endpointId } = await import("../stmt/push.js");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const EDGE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0";
+  const kv = new KV(), MASTER = "mp-s9r3";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r3", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX3-PU", username: u }]));
+  const TEAM = "maakmal", AUD = "aud-s9r3", KID = "kid-s9r3";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const post = async (path, body, headers) => { const r = await site(path, { method: "POST", headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) });
+    return { status: r.status, j: await r.json().catch(() => ({})) }; };
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const A = { "cf-access-jwt-assertion": h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c)))) };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  try {
+    const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" };
+    const signIn = async (ua) => (await post("/open", { u, password: pw }, { "user-agent": ua })).j.session;
+    const E1 = "https://push.example/s9r3-iphone", E2 = "https://push.example/s9r3-windows", E3 = "https://push.example/s9r3-ipad";
+    const has = async (e) => !!(await kv.get("push:" + u + ":" + (await endpointId(e))));
+    /* an iPhone kept signed in, its alerts on, which then reopens six times as a remembered phone does */
+    const s1 = await signIn(IPHONE);
+    const t1 = (await post("/remember", { wrap }, { "X-Stmt-Session": s1, "user-agent": IPHONE })).j.token;
+    await post("/push/subscribe", { endpoint: E1 }, { "X-Stmt-Session": s1 });
+    for (let i = 0; i < 6; i++) await post("/remember/open", { token: t1 }, { "user-agent": IPHONE });
+    /* a computer for this visit, its alerts on; and a second computer's, which nothing here touches */
+    const s2 = await signIn(EDGE), s3 = await signIn(EDGE);
+    await post("/push/subscribe", { endpoint: E2 }, { "X-Stmt-Session": s2 });
+    await post("/push/subscribe", { endpoint: E3 }, { "X-Stmt-Session": s3 });
+    ok(await has(E1) && await has(E2) && await has(E3), "the fixture: three devices with their alerts on");
+    const devs = (await (await site("/all/account/" + u, { headers: A })).json()).devices;
+    /* sessions the phone opened before the last five lapse on their own, and are not the phone */
+    const iphone = devs.filter((d) => d.kept), isWin = (d) => d.label === "Windows computer, Edge";
+    ok(iphone.length === 1 && devs.filter(isWin).length === 2, "his list has the iPhone kept signed in once, and the two computers: " + JSON.stringify(devs.map((d) => d.label)));
+    const one = await post("/all/signout", { u, id: iphone[0].id }, A);
+    ok(one.j.devices === 1 && one.j.phones === 1 && !(await has(E1)) && await has(E2) && await has(E3)
+      && (await post("/remember/open", { token: t1 }, { "user-agent": IPHONE })).status === 401,
+      "his Sign out on the iPhone ends it and its alerts, however often it reopened, and no other device's: " + JSON.stringify(one.j));
+    /* one of the two computers, by its own row */
+    const d2 = (await (await site("/all/account/" + u, { headers: A })).json()).devices.filter(isWin);
+    const r2 = await post("/all/signout", { u, id: d2[0].id }, A), left = [await has(E2), await has(E3)];
+    ok(d2.length === 2 && r2.j.phones === 1 && left.filter((x) => !x).length === 1,
+      "and signing one computer out stops its alerts alone: " + JSON.stringify({ answer: r2.j, left }));
+  } finally { globalThis.fetch = realFetch; }
+})();
+section("S9 fix S9R-8: Sign out everywhere ends the sessions a remembered phone names, where their own pointers are missing");
+await (async () => {
+  /* A session's pointer is written best effort, and a list may not yet show one written a moment ago. His one-device
+     Sign out ended the sessions a remembered phone names; Sign out everywhere deleted the phone and not them, so a
+     session its last open minted went on reading the orders for up to fifteen minutes. */
+  const W = (await import("../stmt/worker.js")).default;
+  const S = await import("../stmt/signin.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const kv = new KV(), MASTER = "mp-s9r8";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r8", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX8-SE", username: u }]));
+  const TEAM = "maakmal", AUD = "aud-s9r8", KID = "kid-s9r8";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const post = async (path, body, headers) => { const r = await site(path, { method: "POST", headers: Object.assign({ "content-type": "application/json", "user-agent": IPHONE }, headers || {}), body: JSON.stringify(body) });
+    return { status: r.status, j: await r.json().catch(() => ({})) }; };
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const A = { "cf-access-jwt-assertion": h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c)))) };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  try {
+    const orders = async (s) => (await site("/orders", { headers: { "X-Stmt-Session": s } })).status;
+    const s1 = (await post("/open", { u, password: pw })).j.session;
+    const t1 = (await post("/remember", { wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" } }, { "X-Stmt-Session": s1 })).j.token;
+    const s2 = (await post("/remember/open", { token: t1 })).j.session;
+    /* the session the reopen minted, its own pointer gone */
+    const own = "dev:" + u + ":" + (await S.idOf(await S.sessKey(s2)));
+    const had = kv.m.has(own);
+    await kv.delete(own);
+    ok(had && await orders(s2) === 200, "the fixture: the phone's newest session reads the orders, and its own pointer is missing");
+    const all = await post("/all/signout", { u }, A);
+    ok(all.status === 200 && all.j.devices === 1 && (await post("/remember/open", { token: t1 })).status === 401,
+      "Sign out everywhere ends the phone: " + JSON.stringify(all.j));
+    ok(await orders(s2) === 401 && await orders(s1) === 401, "and the sessions it names, the newest included, read nothing after");
+  } finally { globalThis.fetch = realFetch; }
+})();
+section("S9 fix S9R-4: Sign out everywhere counts the links that left a page, burns the ones made as an account opened uncounted, and never spares one sent");
+await (async () => {
+  /* Every opening of an account makes a live link, and from 1080px Salt Admin opens one by itself on each load, so the
+     answer's "links and codes not yet used" counted links nobody was ever sent, and read as links out in the world. */
+  const W = (await import("../stmt/worker.js")).default;
+  const S = await import("../stmt/signin.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV(), MASTER = "mp-s9r4";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r4", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX4-CT", username: u }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-25T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX4-CT", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9r4", KID = "kid-s9r4";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const post = async (path, body, headers) => { const r = await site(path, { method: "POST", headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) });
+    return { status: r.status, j: await r.json().catch(() => ({})) }; };
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const A = { "cf-access-jwt-assertion": h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c)))) };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  const opens = async (t) => (await post("/open-link", { token: t })).status;
+  const live = async () => { let n = 0; for (const k of (await kv.list({ prefix: "ot:" })).keys) if (!JSON.parse(await kv.get(k.name)).spent) n++; return n; };
+  const wins = [];
+  try {
+    /* ---- the Worker ---- */
+    const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" };
+    const made = S.newSignin(), sent = S.newSignin(), keep = S.newSignin();
+    for (const t of [made, sent, keep]) await S.mintSignin(env, u, t, wrap);
+    ok((await post("/all/out", { u, id: await S.idOf(sent) })).status === 401, "marking a link sent is behind Access");
+    const mk = await post("/all/out", { u, id: await S.idOf(sent) }, A);
+    ok(mk.j.out === true, "his page marks a link it has sent");
+    const r1 = await post("/all/signout", { u, keep: await S.idOf(keep) }, A);
+    ok(r1.j.links === 1 && await opens(made) === 401 && await opens(sent) === 401,
+      "Sign out everywhere burns the link made and never sent and the one sent, and counts the sent one alone: " + JSON.stringify(r1.j));
+    ok(await opens(keep) === 200, "while the one his page holds unsent still opens");
+    const k2 = S.newSignin();
+    await S.mintSignin(env, u, k2, wrap);
+    await post("/all/out", { u, id: await S.idOf(k2) }, A);
+    const r2 = await post("/all/signout", { u, keep: await S.idOf(k2) }, A);
+    ok(r2.j.links === 1 && await opens(k2) === 401, "and a link marked sent is never the one kept, whatever the page names: " + JSON.stringify(r2.j));
+
+    /* ---- the page: a link shared is marked; one made by an earlier load is burnt and not counted ---- */
+    const load = async () => {
+      const shared = [];
+      const w = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(x) {
+        try { Object.defineProperty(x, "crypto", { value: crypto, configurable: true }); } catch (e) { x.crypto = crypto; }
+        if (!x.TextEncoder) x.TextEncoder = TextEncoder;
+        if (!x.TextDecoder) x.TextDecoder = TextDecoder;
+        Object.defineProperty(x.navigator, "share", { value: (d) => { shared.push(d.text); return Promise.resolve(); }, configurable: true });
+        x.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+      } }).window;
+      wins.push(w);
+      const D = w.document;
+      const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+      await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+      D.querySelector('button[data-m="accounts"]').click();
+      await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
+      D.querySelector('#rlist [data-u="' + u + '"]').click();
+      const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
+      const pill = () => card() && card().querySelector(".apill");
+      await until(() => pill() && !pill().disabled);
+      const signOutAll = async () => {
+        const sob = () => [...card().querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again/.test(b.textContent));
+        sob().click(); sob().click();
+        await until(() => /Signed out|Nothing was signed in/.test((card().querySelector(".agrid + .anote") || {}).textContent || ""));
+        return (card().querySelector(".agrid + .anote") || {}).textContent || "";
+      };
+      return { shared, pill, until, signOutAll };
+    };
+    await post("/all/signout", { u }, A);
+    const p1 = await load();
+    p1.pill().click();
+    ok(await p1.until(() => p1.shared.length === 1 && !p1.pill().disabled), "the first page shares its link and makes a fresh one");
+    const ptr = async () => JSON.parse((await kv.get("dev:" + u + ":" + (await S.idOf("ot:" + (await S.idOf(p1.shared[0].split("/s/")[1].split(/\s/)[0])))))) || "{}");
+    ok(await p1.until(async () => (await ptr()).out === true), "and marks the one it shared as sent: " + JSON.stringify(await ptr()));
+    const said1 = await p1.signOutAll();
+    ok(said1 === "Signed out: 1 link or code not yet used.", "Sign out everywhere counts the link it shared, and not the fresh one it holds: " + said1);
+    wins.pop().close();
+    const p2 = await load();
+    const before = await live();
+    ok(before === 2, "a second load has made its own link, the first page's still live: " + before);
+    const said2 = await p2.signOutAll();
+    ok(said2 === "Nothing was signed in." && await live() === 1,
+      "and its Sign out everywhere burns the first page's link, never sent, without counting it: " + said2);
+  } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
+})();
+section("S9 fix S9R-4b: How they got in tells his counter's code, scanned, from a customer's own code copied across and a code typed");
+await (async () => {
+  /* Every open by a key was kept as "key" and drawn as a scanned code, but the customer's own road into the saved iPhone
+     app (the Keep Sheet copies the key, the app takes it by Paste or from its address) is a key as well, and nothing is
+     scanned on it. Only his counter's QR carries a key he minted. */
+  const W = (await import("../stmt/worker.js")).default;
+  const S = await import("../stmt/signin.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const kv = new KV(), MASTER = "mp-s9r4b";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r4b", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX4-HW", username: u }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-25T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX4-HW", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9r4b", KID = "kid-s9r4b";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD, STMT_HANDOVER_KEY: "ho-secret-s9r4b" };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const post = async (path, body, headers) => { const r = await site(path, { method: "POST", headers: Object.assign({ "content-type": "application/json", "user-agent": IPHONE }, headers || {}), body: JSON.stringify(body) });
+    return { status: r.status, j: await r.json().catch(() => ({})) }; };
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const A = { "cf-access-jwt-assertion": h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c)))) };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  let win = null;
+  try {
+    const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" };
+    const hows = async () => (JSON.parse((await kv.get("seen:" + u)) || "{}").log || []).map((x) => x.how);
+    /* his counter's QR, which a browser tab spends */
+    const k1 = S.newSignin();
+    await post("/all/handover", { u, token: k1, wrap }, A);
+    ok((await post("/handover/open", { token: k1, tab: true })).status === 200, "his counter's code opens in the camera's tab");
+    /* the customer's own key, the Keep Sheet's, which the saved app takes by Paste */
+    const s = (await post("/open", { u, password: pw })).j.session;
+    const k2 = S.newSignin();
+    await post("/handover", { token: k2, wrap }, { "X-Stmt-Session": s });
+    ok((await post("/handover/open", { token: k2 })).status === 200, "the customer's own key opens in the saved app");
+    /* and a code typed */
+    const k3 = S.newSignin(), ho = await post("/handover", { token: k3, wrap }, { "X-Stmt-Session": s });
+    ok((await post("/handover/open", { code: ho.j.code })).status === 200, "a code typed opens");
+    const got = await hows();
+    ok(JSON.stringify(got.slice(0, 4)) === JSON.stringify(["code", "copy", "password", "qr"]),
+      "each is kept by its road, his QR scanned, the customer's key copied across, the code typed: " + JSON.stringify(got));
+    win = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    D.querySelector('button[data-m="accounts"]').click();
+    await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
+    const chip = () => D.querySelector('#rlist [data-u="' + u + '"]').textContent;
+    ok(/by a typed code/.test(chip()), "Accounts says the last open was by a typed code: " + chip());
+    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    const rows = () => [...D.querySelectorAll('#aopen [data-story] .salt-ledger__label')].map((x) => x.textContent);
+    ok(await until(() => rows().includes("Code, typed")) && JSON.stringify(rows().slice(0, 4)) === JSON.stringify(["Code, typed", "Code, copied across", "Password", "Code, scanned"]),
+      "and How they got in names each road: " + JSON.stringify(rows()));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix S9R-9: an account whose ways in and devices come from before the list began says so with no date in it");
+await (async () => {
+  /* The two lines named the day the stage was built, 25 Sep, but the records begin at the deploy, which is later. */
+  const W = (await import("../stmt/worker.js")).default;
+  const S = await import("../stmt/signin.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV(), MASTER = "mp-s9r9";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r9", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX9-OL", username: u }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-25T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX9-OL", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  /* opened before the log was kept, on a phone remembered before its pointer named the device */
+  await kv.put("seen:" + u, JSON.stringify({ first: "2026-09-20T01:00:00Z", last: "2026-09-26T01:00:00Z", opens: 3, how: "password" }));
+  const rem = "rem:" + (await S.idOf("s9r9-phone"));
+  await kv.put(rem, JSON.stringify({ u, wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" }, at: "2026-09-26T01:00:00Z" }));
+  await S.pointAt({ STMT: kv }, u, rem, { how: "remember", at: "2026-09-26T01:00:00Z", last: "2026-09-26T01:00:00Z" }, 3600);
+  const TEAM = "maakmal", AUD = "aud-s9r9", KID = "kid-s9r9";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const A = { "cf-access-jwt-assertion": h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c)))) };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  let win = null;
+  try {
+    win = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    D.querySelector('button[data-m="accounts"]').click();
+    await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
+    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    const story = () => ((D.querySelector('#aopen [data-story="' + u + '"]')) || {}).textContent || "";
+    ok(await until(() => /Last opened26 Sep, by password[.] Earlier ways in were not kept[.]/.test(story()) && /A device named before this list beganSign out/.test(story()))
+      && !/25 Sep/.test(story()),
+      "the last open and the device from before the list began are said with no date of the build in them: " + JSON.stringify(story()));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix S9R-5: turning notifications on from This device after an earlier refusal says On, with no refusal left under it");
+await (async () => {
+  /* A refusal set the note and nothing cleared it on a later success, so a customer who refused the question once,
+     then turned them on from This device, read On with the old refusal in red beneath it. Since stage 4 the question
+     is asked only from a tap, so the refusal here comes from the card's own Turn on. */
+  const W = (await import("../stmt/worker.js")).default;
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const EDGE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0";
+  const kv = new KV();
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r5", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] })) }));
+  const env = { STMT: kv };
+  const ORIGIN = "https://k7m3p2.example";
+  const site = (path, o) => W.fetch(new Request(ORIGIN + path, o), env);
+  const st = { answer: "default", sub: null };
+  let win = null;
+  try {
+    win = new JSDOM(landingPage(u, "n9r5", null), { url: ORIGIN + "/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      Object.defineProperty(w.navigator, "userAgent", { value: EDGE, configurable: true });
+      w.scrollTo = () => {};
+      const reg = { pushManager: { subscribe: async () => (st.sub = { endpoint: "https://push.example/s9r5", toJSON: () => ({ keys: null }), unsubscribe: async () => true }),
+        getSubscription: async () => st.sub } };
+      w.PushManager = function () {};
+      w.Notification = { get permission() { return st.answer === "granted" ? "granted" : "default"; }, requestPermission: async () => st.answer };
+      Object.defineProperty(w.navigator, "serviceWorker", { configurable: true, value: {
+        register: async () => reg, ready: Promise.resolve(reg), getRegistration: async () => reg, addEventListener: () => {} } });
+      w.fetch = async (q, o) => { o = o || {}; const p = String(q);
+        if (p === "/push/key") return new Response(JSON.stringify({ ok: true, key: "BA", configured: true }), { headers: { "content-type": "application/json" } });
+        return site(p, { method: o.method || "GET", headers: Object.assign({ "user-agent": EDGE }, o.headers), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    D.getElementById("pw").value = pw;
+    D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+    const card = D.getElementById("thisDevice");
+    const btn = (t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
+    ok(await until(() => !card.hidden && !!btn("Turn on")), "signed in with the question dismissed, This device offers Turn on");
+    st.answer = "denied";
+    btn("Turn on").click();
+    ok(await until(() => /Permission was not given/.test(card.textContent + D.getElementById("pOrder").textContent) && !!btn("Turn on")),
+      "the first Turn on was refused, and the page said so: " + JSON.stringify(card.textContent));
+    st.answer = "granted";
+    btn("Turn on").click();
+    ok(await until(() => /On[.] This computer is told when an order changes[.]/.test(card.textContent) && !!btn("Turn off")),
+      "Turn on, allowed, says On: " + JSON.stringify(card.textContent));
+    ok(!/Permission was not given/.test(card.textContent) && !/Permission was not given/.test(D.getElementById("pOrder").textContent),
+      "and the earlier refusal is gone, from the card and the page: " + JSON.stringify((card.querySelector(".dnote") || {}).textContent));
+  } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix S9R-13: closing Sign in another device reads the list again, so the device the code signed in is on it");
+await (async () => {
+  /* The list was read when the card was drawn and on a return to the page; a computer beside the phone never left the
+     page, so the phone signed in with the code did not appear until a reload. */
+  const W = (await import("../stmt/worker.js")).default;
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const EDGE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0";
+  const kv = new KV();
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r13", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] })) }));
+  const env = { STMT: kv, STMT_HANDOVER_KEY: "ho-secret-s9r13" };
+  const ORIGIN = "https://k7m3p2.example";
+  const site = (path, o) => W.fetch(new Request(ORIGIN + path, o), env);
+  let win = null;
+  try {
+    win = new JSDOM(landingPage(u, "n9r13", null), { url: ORIGIN + "/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      Object.defineProperty(w.navigator, "userAgent", { value: EDGE, configurable: true });
+      w.scrollTo = () => {};
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({ "user-agent": EDGE }, o.headers), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    D.getElementById("pw").value = pw;
+    D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+    const card = D.getElementById("thisDevice");
+    const btn = (t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
+    ok(await until(() => !card.hidden && /Windows computer, Edge/.test(card.textContent) && !!btn("Sign in another device")) && !/iPhone/.test(card.textContent),
+      "This device lists this computer alone: " + JSON.stringify(card.textContent));
+    btn("Sign in another device").click();
+    const code = D.getElementById("devCode");
+    ok(await until(() => /^[A-Z2-9]{4} [A-Z2-9]{4}$/.test(code.value)), "the Sheet shows its code");
+    const r = await site("/handover/open", { method: "POST", headers: { "content-type": "application/json", "user-agent": IPHONE }, body: JSON.stringify({ code: code.value }) });
+    ok(r.status === 200, "the iPhone types it and is signed in");
+    D.getElementById("devX").click();
+    ok(await until(() => /iPhone, Safari/.test(card.textContent)), "closing the Sheet lists the iPhone, with no reload: " + JSON.stringify(card.textContent));
+  } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix S9R-7: This device's QR opens the code screen, in a browser's own words, on an Android phone, a computer and an iPhone");
+await (async () => {
+  /* The QR opened a bare /app in the camera's browser. There the code screen showed only on an iPhone, and in the saved
+     app's words (bring your sign-in across from Safari); an Android phone or a computer met the password door. */
+  const { landingPage } = await import("../stmt/page.js");
+  const { JSDOM } = await import("jsdom");
+  const UAS = {
+    iPhone: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+    Android: "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36",
+    Windows: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0" };
+  const seen = {};
+  for (const [name, ua] of Object.entries(UAS)) {
+    const dom = new JSDOM(landingPage("", "n9r7", null), { url: "https://k7m3p2.example/app#code", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      Object.defineProperty(w.navigator, "userAgent", { value: ua, configurable: true });
+      w.matchMedia = (q) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+      w.scrollTo = () => {};
+      w.fetch = async () => ({ ok: true, status: 200, json: async () => ({ ok: true }) });
+    } });
+    try {
+      const D = dom.window.document;
+      for (let i = 0; i < 80 && D.getElementById("codeBox").hidden; i++) await new Promise((r) => setTimeout(r, 25));
+      seen[name] = { code: !D.getElementById("codeBox").hidden, door: !D.getElementById("gate").hidden, head: D.getElementById("codeH").textContent,
+        help: !D.getElementById("codeHelp").hidden };
+    } finally { dom.window.close(); }
+  }
+  ok(Object.values(seen).every((x) => x.code && !x.door && x.head === "Sign in with a code" && !x.help),
+    "each opens on Sign in with a code, never the door, and never the saved app's help about Safari: " + JSON.stringify(seen));
+})();
+section("S9 fix S9R-10: saving as an app is This device's first row, where it was a card of its own at the head of the statement");
+await (async () => {
+  /* The plan's 9.9: This device carries notifications, save as an app, the other devices and signing in another. */
+  const W = (await import("../stmt/worker.js")).default;
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const EDGE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0";
+  const kv = new KV();
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r10", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] })) }));
+  const env = { STMT: kv };
+  const ORIGIN = "https://k7m3p2.example";
+  const site = (path, o) => W.fetch(new Request(ORIGIN + path, o), env);
+  let win = null;
+  try {
+    win = new JSDOM(landingPage(u, "n9r10", null), { url: ORIGIN + "/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      Object.defineProperty(w.navigator, "userAgent", { value: EDGE, configurable: true });
+      w.scrollTo = () => {};
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({ "user-agent": EDGE }, o.headers), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    D.getElementById("pw").value = pw;
+    D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+    const dev = D.getElementById("thisDevice"), keep = D.getElementById("keepCard"), body = D.getElementById("devSlot");
+    ok(await until(() => !dev.hidden && !keep.hidden), "signed in on a computer's browser, This device shows, with how to keep it");
+    ok(dev.contains(keep) && !!(keep.compareDocumentPosition(body) & win.Node.DOCUMENT_POSITION_FOLLOWING) && !keep.classList.contains("salt-glass-card")
+      && keep.querySelector(".salt-ledger__label").textContent === "Keep it as an app",
+      "and saving as an app is its first row, a row of the card and not a card of its own: " + JSON.stringify(dev.textContent.slice(0, 160)));
+    ok(D.getElementById("pStmt").firstElementChild !== keep, "nothing about keeping it stands at the head of the statement");
+  } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix S9R-2: the desk's count reaches Salt Admin with its reading's own moment, and a stale desk never overwrites a newer reading");
+await (async () => {
+  /* Approve polls the drafts alone, and each poll that moved the count sent it over orders read hours before, which the
+     site stamped now: Salt Admin said a stale figure was fresh, and a desk left open on Approve overwrote another's. */
+  const S = (await import("../stmt/worker.js")).default;
+  const D = (await import("../src/worker.js")).default;
+  const skv = new KV();
+  const senv = { STMT: skv, STMT_DESK_KEY: "dk-s9r2" };
+  const site = (path, o) => S.fetch(new Request("https://k7m3p2.example" + path, o), senv);
+  const desk = { "X-Stmt-Desk": "dk-s9r2" };
+  const mark = () => JSON.parse(skv.m.get("desk-waiting") || "null");
+  const ago = (m) => (Date.now() - Date.parse(m.at)) / 1000;
+  const post = async (b) => (await site("/desk/waiting", { method: "POST", headers: Object.assign({ "content-type": "application/json" }, desk), body: JSON.stringify(b) })).json();
+
+  /* ---- the site: the moment is the reading's ---- */
+  await post({ n: 3, age: 7200 });
+  ok(mark().n === 3 && Math.abs(ago(mark()) - 7200) < 5, "a count read two hours ago is stamped two hours ago: " + JSON.stringify(mark()));
+  await post({ n: 5, age: 0 });
+  ok(mark().n === 5 && ago(mark()) < 5, "a fresh reading replaces it");
+  const kept = await post({ n: 1, age: 3600 });
+  ok(kept.kept === true && mark().n === 5 && ago(mark()) < 5, "and a reading an hour old never overwrites it: " + JSON.stringify([kept, mark()]));
+
+  /* ---- the relay passes the age through ---- */
+  const denv = { ...mkEnv(new KV()), SALT_WRITE_KEY: "k-s9r2", STMT_DESK_KEY: "dk-s9r2", STMT_SITE: { fetch: (url, init) => S.fetch(new Request(url, init), senv) } };
+  skv.m.delete("desk-waiting");
+  const rr = await D.fetch(new Request("https://salt-command.example/orders/waiting", { method: "POST",
+    headers: { "content-type": "application/json", "X-Salt-Key": "k-s9r2" }, body: JSON.stringify({ n: 2, age: 600 }) }), denv);
+  ok(rr.status === 200 && mark() && mark().n === 2 && Math.abs(ago(mark()) - 600) < 5, "the desk's Worker relays the reading's age: " + JSON.stringify([rr.status, mark()]));
+
+  /* ---- the desk's page: the age is the older read's, and a reading moved on sends the same figure again ---- */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    const at = "2026-09-24T01:00:00Z";
+    const o = (id, st) => ({ id, u: "abcd-efgh", at, status: st, product: "salt", qty: 1, total: 150, delivery: 0, mode: "collect", paid: 0, payments: [], moved: 0, msgs: [], history: [] });
+    const told = [];
+    const orders = [o("20260924010000-n001", "placed"), Object.assign(o("20260924010000-p002", "acknowledged"), { paid: 50, payments: [{ at, by: "customer", amount: 50 }] })];
+    let drafts = [];
+    w.fetch = async (q, init) => {
+      const path = String(q);
+      if (path === "orders/waiting") { told.push(JSON.parse(init.body)); return { ok: true, status: 200, json: async () => ({ ok: true }) }; }
+      if (path.startsWith("drafts")) return { ok: true, status: 200, json: async () => ({ ok: true, drafts, refused: [], clock: null }) };
+      return { ok: true, status: 200, json: async () => ({ ok: true, orders, links: 0 }) };
+    };
+    await w.eval("ordLoad(true)"); await w.eval("apLoad(true)");
+    ok(told.length === 1 && told[0].n === 1 && told[0].age <= 2, "the first count goes with a fresh age: " + JSON.stringify(told));
+    /* the orders were read two hours ago; Approve's own poll then finds the payment they say they made drafted */
+    w.eval("ORD_AT=Date.now()-7200000");
+    drafts = [{ id: "d-p002", entry: { orderId: "20260924010000-p002", status: "Payment", by: "customer" } }];
+    await w.eval("apLoad(true)");
+    ok(told.length === 2 && told[1].n === 2 && told[1].age >= 7190,
+      "a count Approve makes over orders read two hours ago goes as two hours old, never as fresh: " + JSON.stringify(told[1]));
+    await w.eval("apLoad(true)");
+    ok(told.length === 2, "the same figure over the same reading is not sent again");
+    await w.eval("ordLoad(true)");
+    ok(told.length === 3 && told[2].n === 2 && told[2].age <= 2, "a fresh read of the orders sends the same figure again, fresh: " + JSON.stringify(told[2]));
+    await w.eval("ordLoad(true)");
+    ok(told.length === 3, "and not again while the reading has moved on less than five minutes");
+    w.eval("ORD_TOLD_AT=Date.now()-600000");
+    await w.eval("ordLoad(true)");
+    ok(told.length === 4 && told[3].n === 2 && told[3].age <= 2, "once it has, the same figure goes again, so its moment moves: " + JSON.stringify(told.slice(3)));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix S9R-2b: Salt Admin's desk line says an order has moved since the desk's reading, where it went on saying the old figure waits");
+await (async () => {
+  /* The desk's page is the one writer of the figure, and on his phone the desk and Salt Admin are never open together: an
+     order placed after the desk last looked left "Nothing waits on the desk, as at 09:00" standing as fact. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV(), MASTER = "mp-s9r2b";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r2b", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX2-DW", username: u }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-25T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX2-DW", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  await kv.put("sent:2026-09-01:" + u, JSON.stringify({ at: "2026-09-02T01:00:00Z" }));
+  const TEAM = "maakmal", AUD = "aud-s9r2b", KID = "kid-s9r2b";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD, STMT_DESK_KEY: "dk-s9r2b" };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const A = { "cf-access-jwt-assertion": h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c)))) };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  const tell = (n, age) => site("/desk/waiting", { method: "POST", headers: { "content-type": "application/json", "X-Stmt-Desk": "dk-s9r2b" }, body: JSON.stringify({ n, age }) });
+  const line = async () => {
+    const win = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+    } }).window;
+    try {
+      const el = win.document.getElementById("nDesk");
+      for (let i = 0; i < 200 && el.hidden; i++) await new Promise((r) => setTimeout(r, 20));
+      return el.textContent;
+    } finally { win.close(); }
+  };
+  try {
+    /* the desk looked two hours ago and nothing waited; an order has been placed since */
+    await tell(0, 7200);
+    await kv.put("last-touched", new Date(Date.now() - 3600000).toISOString());
+    const sj = await (await site("/all/sheet", { headers: A })).json();
+    ok(sj.desk && sj.desk.n === 0 && sj.desk.moved === true, "the sheet says an order has moved since the desk's reading: " + JSON.stringify(sj.desk));
+    const t1 = await line();
+    ok(/^Nothing waited on the desk as at ([0-9]{2}:[0-9]{2}|[0-9]{1,2} [A-Z][a-z]{2}), and an order has moved since[.]$/.test(t1) && !/Nothing waits/.test(t1),
+      "Needs you says nothing waited then, and that an order has moved since, never that nothing waits: " + JSON.stringify(t1));
+    /* the desk looks again */
+    await tell(1, 0);
+    const t2 = await line();
+    ok(/^1 thing waits on the desk, as at ([0-9]{2}:[0-9]{2}|[0-9]{1,2} [A-Z][a-z]{2})[.]$/.test(t2), "once the desk has read again, the figure stands as it did: " + JSON.stringify(t2));
+  } finally { globalThis.fetch = realFetch; }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password
@@ -17247,7 +18451,7 @@ await (async () => {
       const open88 = (code) => { const r = [...D88.querySelectorAll("#rlist [data-u]")].find((x) => x.textContent.includes(code));
         if (r) r.dispatchEvent(new W88.Event("click", { bubbles: true })); return D88.querySelector("#aopen .scard"); };
       const bare = open88("CX0-BB");
-      const bareLink = bare && [...bare.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
+      const bareLink = bare && [...bare.querySelectorAll("button")].find((b) => b.textContent === "Send a sign-in link");
       /* HIS QUESTION OF 23 SEP 2026: the account is one live document, so nothing on this panel may
          speak of an issue, and a username with nothing behind it says so and offers no sign-in link */
       ok(!!bare && /Made at the next laptop update./.test(bare.textContent) && !!bareLink && bareLink.disabled,
@@ -17255,15 +18459,14 @@ await (async () => {
       ok(!/issue/i.test(D88.getElementById("oAccts").textContent),
         "and Accounts never says issue: " + JSON.stringify((D88.getElementById("oAccts").textContent.match(/.{0,30}issue.{0,30}/i) || [""])[0]));
       const cardEl = open88("CX0-AA");
-      ok(!!cardEl && /CX0-AA/.test(cardEl.textContent) && /3 orders, RM 420.00/.test(cardEl.textContent) && !!cardEl.querySelector("canvas"),
+      ok(!!cardEl && /CX0-AA/.test(cardEl.textContent) && /3 orders, RM 420.00/.test(cardEl.textContent),
         "an account's card carries its totals and its code");
-      const liveLink = [...cardEl.querySelectorAll("button")].find((b) => b.textContent === "Sign-in link");
-      ok(!!liveLink && !liveLink.disabled, "and an account's sign-in link is on");
+      /* S9 9.3: Copy message left with the Send card; the account's one filled control is Send a sign-in link */
+      const liveLink = [...cardEl.querySelectorAll("button")].find((b) => b.textContent === "Send a sign-in link");
+      ok(!!liveLink && liveLink.classList.contains("salt-pill") && cardEl.querySelectorAll(".salt-pill").length === 1,
+        "and an account's Send a sign-in link is its one filled control");
       const buttons = [...cardEl.querySelectorAll("button")];
-      const msgBtn = buttons.find((b) => b.textContent === "Copy message"), pwBtn = buttons.find((b) => b.textContent === "Copy password");
-      msgBtn.dispatchEvent(new W88.Event("click", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 20));
-      ok(copied === card.msg && !copied.includes(PW88), "Copy message copies the message, which carries no password");
+      const pwBtn = buttons.find((b) => b.textContent === "Copy password");
       pwBtn.dispatchEvent(new W88.Event("click", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 900));
       ok(copied === PW88, "Copy password opens the sealed password with the master and copies it: " + (copied === PW88));
@@ -17350,13 +18553,16 @@ await (async () => {
     await kv89.put("sent:2026-09-01:0000-0000", JSON.stringify({ at: "2026-09-18T01:00:00Z" }));
     await kv89.put("order:aaaa-bbbb:20260918-bbbb", JSON.stringify({ id: "20260918-bbbb", u: "aaaa-bbbb" }));
     await kv89.put("sent:2026-09-01:aaaa-bbbb", JSON.stringify({ at: "2026-09-18T01:00:00Z" }));
+    await kv89.put("aclaim:0000-0000:a20260918000000-aaaa", JSON.stringify({ id: "a20260918000000-aaaa", u: TU89 }));   /* S6: a claim against the account */
+    await kv89.put("aclaim:aaaa-bbbb:a20260918000000-bbbb", JSON.stringify({ id: "a20260918000000-bbbb", u: "aaaa-bbbb" }));
     const gone = await (await post89("/all/test", { make: false })).json();
     ok(gone.ok && gone.made === false && gone.removed >= 5 && !(await kv89.get("u:0000-0000"))
       && !(await kv89.get("order:0000-0000:20260918-aaaa")) && !(await kv89.get("push:0000-0000:abc"))
       && !(await kv89.get("seen:0000-0000")) && !(await kv89.get("sent:2026-09-01:0000-0000"))
       && !!(await kv89.get("order:aaaa-bbbb:20260918-bbbb")) && !!(await kv89.get("u:aaaa-bbbb"))
-      && !!(await kv89.get("sent:2026-09-01:aaaa-bbbb")),
-      "one tap takes it away with its orders, its opens, its ticks and its phones, and touches no one else's");
+      && !!(await kv89.get("sent:2026-09-01:aaaa-bbbb"))
+      && !(await kv89.get("aclaim:0000-0000:a20260918000000-aaaa")) && !!(await kv89.get("aclaim:aaaa-bbbb:a20260918000000-bbbb")),
+      "one tap takes it away with its orders, its claims, its opens, its ticks and its phones, and touches no one else's");
     const after = await stmtWorker.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
       headers: { "content-type": "application/json" }, body: JSON.stringify({ u: TU89, password: TP89 }) }), env89);
     ok(after.status === 401, "and the zeros open nothing once it is gone");
@@ -18609,7 +19815,7 @@ await (async () => {
     D.querySelector('button[data-m="accounts"]').click();
     const cardOf = (x) => { const r = D.querySelector('#rlist [data-u="' + x + '"]'); if (!r) return null; r.click();
       return [...D.querySelectorAll("#aopen .scard")].find((k) => k.textContent.includes(x)); };
-    const btnOf = (x) => { const k = cardOf(x); return k && [...k.querySelectorAll("button")].find((b) => b.textContent === "Show a code"); };
+    const btnOf = (x) => { const k = cardOf(x); return k && [...k.querySelectorAll("button")].find((b) => /^Show a code/.test(b.textContent)); };
     ok(await until(() => !!btnOf(u) && !!btnOf(ghost)) && btnOf(ghost).disabled && !btnOf(u).disabled,
       "each account's card carries Show a code, switched off where no account stands behind the username");
     const btn = btnOf(u);
@@ -18943,8 +20149,8 @@ await (async () => {
   ok((await J(await post("/orders/" + id94 + "/pay", { amount: 400 }, S94))).status === 400,
     "a payment above what is outstanding is refused");
   r94 = await J(await post("/orders/" + id94 + "/pay", { amount: 100 }, S94));
-  ok(r94.b.ok && r94.b.order.paid === 100 && r94.b.order.payments.length === 1 && r94.b.order.status === "acknowledged",
-    "the customer types what they paid, and it accumulates on the order");
+  ok(r94.b.ok && !r94.b.order.paid && r94.b.order.claimed === 100 && r94.b.order.payments.length === 1 && r94.b.order.status === "acknowledged",
+    "the customer types what they sent, and it waits on the order as a claim until his Received (S6, D7)");
   const rcW = await reconcileOrders(denv94);
   ok(rcW.queued === 0 && JSON.stringify(rcW.waiting) === JSON.stringify([id94]) && (await Q()).length === 1,
     "the payment waits while the row is not on the book yet, rather than queueing an entry the drafter would refuse");
@@ -18975,6 +20181,9 @@ await (async () => {
 
   /* ---- 7. BOTH SIDES COMPLETE, AND NOBODY TAPS IT ---- */
   r94 = await J(await post("/orders/" + id94 + "/pay", { amount: 162 }, S94));
+  /* S6 (D7): each claim becomes money on his Received, one verdict a claim */
+  for (const c of r94.b.order.payments.filter((x) => x.claim === "waiting"))
+    r94 = await J(await post("/desk/orders/" + un94 + "/" + id94, { verdict: { kind: "received", claim: c.at, amount: c.amount } }, D94));
   ok(r94.b.order.paid === 312 && r94.b.order.status === "acknowledged",
     "paid in full is not complete while units are still owed");
   r94 = await J(await post("/desk/orders/" + un94 + "/" + id94, { handover: { units: 2.5 } }, D94));
@@ -19050,7 +20259,7 @@ await (async () => {
     && /select\.fld\{[^}]*linear-gradient\(45deg/.test(page94),
     "the open list is told the page is dark and the chevron is drawn on the page, which is the bizarre colour fixed");
   ok(page94.includes("'Review'") && page94.includes("'Check your order'") && page94.includes("'Place order'")
-    && page94.includes("a neighbourhood or a landmark") && page94.includes("I have paid")
+    && page94.includes("a neighbourhood or a landmark") && page94.includes("Part of it")
     && page94.includes("Your order is now complete. Thank you for your loyalty."),
     "the page reviews before it places, asks roughly where it is going, takes the amount paid, and says his closing words");
   ok(!/url\((?!\/fonts\/)/.test(page94), "and nothing on the page loads anything but its own two fonts, the chevron included");
@@ -20025,7 +21234,7 @@ await (async () => {
   await post("/orders/" + oA.id + "/pay", { amount: 30 }, S);
   const rcW = await reconcileOrders(denv);
   a = await rec(un, oA.id);
-  ok(JSON.stringify(rcW.waiting) === JSON.stringify([oA.id]) && a.sync.state === "waiting" && /^the payment waits for the pending row/.test(a.sync.why) && syncs.length === 2,
+  ok(JSON.stringify(rcW.waiting) === JSON.stringify([oA.id]) && a.sync.state === "waiting" && /^the payment they say they sent waits for the pending row/.test(a.sync.why) && syncs.length === 2,
     "a payment held for its row writes waiting, naming the stage and what he can do: " + JSON.stringify(a.sync));
   const since = a.sync.at;
   await reconcileOrders(denv); await reconcileOrders(denv);
@@ -20035,8 +21244,8 @@ await (async () => {
   STATE.OPEN = { byKey: { [PE.ovKey(rowA)]: Object.assign(PE.ledgerRow(rowA, "S", "salt"), { key: PE.ovKey(rowA) }) } };
   await reconcileOrders(denv);
   a = await rec(un, oA.id);
-  ok(a.sync.state === "queued" && a.queued.paid === 30 && syncs.length === 3,
-    "with the row on the book the payment queues and the record reads queued again");
+  ok(a.sync.state === "queued" && !!(a.payments.find((p) => p.claim === "waiting") || {}).queued && syncs.length === 3,
+    "with the row on the book the payment, a claim since S6, queues and the record reads queued again");
 
   /* ---- 2. FAILED, WITH THE REASON ---- */
   await post("/desk/orders/" + un + "/" + oA.id, { handover: { units: 1 } }, D);
@@ -23547,7 +24756,7 @@ await (async () => {
     await new Promise((r) => setTimeout(r, 40));
     ok(seen.length === 0 && /Tap again/.test(btn().textContent), "one tap only asks, on the button itself, and sends nothing");
     btn().click();
-    ok(await until(() => seen.length === 1) && seen[0].u === u && await until(() => /Signed out everywhere|Nothing was signed in/.test(btn().textContent)),
+    ok(await until(() => seen.length === 1) && seen[0].u === u && await until(() => /Signed out everywhere|Nothing was signed in/.test(card().textContent)),
       "and the second signs the account out everywhere: " + JSON.stringify(seen));
   } finally { globalThis.fetch = realFetch; if (win) { try { win.close(); } catch (e) { /* best effort */ } } }
 })();
@@ -24806,22 +26015,23 @@ await (async () => {
   const y1 = await call("/orders/" + id + "/pay", { amount: 30, method: "tngbiz", rid: ridB }, S);
   const y2 = await call("/orders/" + id + "/pay", { amount: 30, method: "tngbiz", rid: ridB }, S);
   const afterPay = await stored(id);
-  ok(y1.b.ok && y2.b.ok && +afterPay.paid === 30 && afterPay.payments.length === 1 && +y2.b.order.paid === 30,
-    "a payment sent twice under one request id is recorded once: " + JSON.stringify({ paid: afterPay.paid, payments: afterPay.payments.length, answer: y2.b.order && y2.b.order.paid }));
+  ok(y1.b.ok && y2.b.ok && +afterPay.claimed === 30 && afterPay.payments.length === 1 && +y2.b.order.claimed === 30,
+    "a payment (a claim since S6) sent twice under one request id is recorded once: " + JSON.stringify({ claimed: afterPay.claimed, payments: afterPay.payments.length, answer: y2.b.order && y2.b.order.claimed }));
   const y3 = await call("/orders/" + id + "/pay", { amount: 30, method: "tngbiz", rid: "c3".repeat(16) }, S);
-  ok(y3.b.ok && +(await stored(id)).paid === 60, "and a payment under a new id is a new payment: " + (await stored(id)).paid);
+  ok(y3.b.ok && +(await stored(id)).claimed === 60, "and a payment under a new id is a new payment: " + (await stored(id)).claimed);
   const other = orderKeys().map((k) => k.split(":")[2]).find((x) => x !== id);
   const y4 = await call("/orders/" + other + "/pay", { amount: 30, method: "tngbiz", rid: ridB }, S);
   ok(y4.status === 409 && !y4.b.ok && +(await stored(other)).paid === 0,
     "an id answers only for the order it was filed against: " + JSON.stringify({ status: y4.status, error: y4.b.error }));
 
-  /* ---- a payment that completes the order is repeated as the order, never as a refusal ---- */
+  /* ---- a payment that completes the order is repeated as the order, never as a refusal. S6: a claim completes nothing,
+     so the case is the claim that leaves nothing to claim, whose repeat would otherwise read "sent already" ---- */
   await call("/desk/orders/" + un + "/" + id, { handover: { units: 1 } }, D);
   const ridD = "d4".repeat(16);
   const z1 = await call("/orders/" + id + "/pay", { amount: 50, method: "tngbiz", rid: ridD }, S);
   const z2 = await call("/orders/" + id + "/pay", { amount: 50, method: "tngbiz", rid: ridD }, S);
-  ok(z1.b.ok && z1.b.order.status === "done" && z2.status === 200 && z2.b.ok && z2.b.order.status === "done" && +(await stored(id)).paid === 110,
-    "a payment that completed the order, sent again, reads as recorded and not as a refusal: " + JSON.stringify({ status: z2.status, error: z2.b.error }));
+  ok(z1.b.ok && +z1.b.order.claimed === 110 && z2.status === 200 && z2.b.ok && +z2.b.order.claimed === 110 && +(await stored(id)).claimed === 110,
+    "a payment that left nothing to claim, sent again, reads as recorded and not as a refusal: " + JSON.stringify({ status: z2.status, error: z2.b.error }));
 
   /* ---- the page mints the id per review and per payment, and a retry carries it ---- */
   const { JSDOM: JD } = await import("jsdom");
@@ -24891,24 +26101,35 @@ await (async () => {
     ok(sz.length === 2 && sz[0][1] === 1 && sz[1][1] === 2 && O.RID_RE.test(sz[1][0] || "") && sz[1][0] !== sz[0][0],
       "a size changed after 'not placed' goes under a new id, never as a repeat of the order before: " + JSON.stringify(sz));
     placeOk = true;
-    /* S5 5.2: the ways to pay open from the order's own screen, behind its one Pay */
+    /* S5 5.2: the ways to pay open from the order's own screen, behind its one Pay; S6 6.5: in the pay sheet, which
+       asks on return, and Yes, I sent is the claim */
     await until(() => d.querySelector('#pOrder [data-row="' + ord.id + '"]'));
     d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
     const payNow = () => [...d.querySelectorAll("#pOrder button")].find((b) => /^Pay RM/.test(b.textContent));
     await until(payNow); if (payNow()) payNow().click();
-    const payTap = async (n) => { await until(() => d.getElementById("pd-" + ord.id) && !d.getElementById("pd-" + ord.id).disabled);
-      d.getElementById("pd-" + ord.id).click(); await until(() => sent.pay.length === n); };
+    const win = dom.window;
+    const fire = (e, k) => { if (e) e.dispatchEvent(new win.Event(k, { bubbles: true })); };
+    const way = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); if (way) { way.checked = true; fire(way, "change"); }
+    const into = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); if (into) { into.checked = true; fire(into, "change"); }
+    const toCheck = () => { const g = d.getElementById("payGo"); if (g) g.click(); fire(win, "blur"); fire(win, "focus"); };
+    const payTap = async (n) => { await until(() => d.getElementById("paySent") && !d.getElementById("paySent").disabled);
+      d.getElementById("paySent").click(); await until(() => sent.pay.length === n); };
+    toCheck();
     await payTap(1); await payTap(2);
-    const amt = d.querySelector("#pOrder .payamt input");   /* the pay row is .payamt since S1 1.8 */
-    amt.value = "40"; amt.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+    await until(() => d.getElementById("paySent") && !d.getElementById("paySent").disabled);
+    const back = [...d.querySelectorAll("#payFoot button")].find((b) => b.textContent === "Not yet"); if (back) back.click();
+    const part = [...d.querySelectorAll("#payBody .payseg button")].find((b) => b.textContent === "Part of it"); if (part) part.click();
+    const amt = d.getElementById("payAmt");   /* the pay row is .payamt since S1 1.8, in the pay sheet since S6 6.4 */
+    if (amt) { amt.value = "40"; fire(amt, "input"); }
+    toCheck();
     await payTap(3); await payTap(4);
     /* the last tap's handler redraws once its answer lands: let it, or it draws into a closed window
        and the rejection takes down whichever section is running then */
-    await until(() => d.getElementById("pd-" + ord.id) && !d.getElementById("pd-" + ord.id).disabled);
+    await until(() => d.getElementById("paySent") && !d.getElementById("paySent").disabled);
     const yr = sent.pay.map((x) => x && x.rid), ya = sent.pay.map((x) => x && x.amount);
     ok(yr.length === 4 && O.RID_RE.test(yr[0] || "") && yr[1] === yr[0] && yr[2] !== yr[0] && yr[3] === yr[2]
       && JSON.stringify(ya) === "[100,100,40,40]",
-      "and one a payment: I have paid tapped again carries the same id, and a different figure is a new payment with a new one: "
+      "and one a claim: Yes, I sent tapped again carries the same id, and a different figure is a new claim with a new one: "
       + JSON.stringify({ yr, ya }));
   } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
 })();
@@ -24961,9 +26182,9 @@ await (async () => {
   try { hand = await call("/desk/orders/" + un + "/" + id, { handover: { units: 1 } }, D); } catch (e) { hand = { status: "threw", b: {} }; }
   const after = await stored(id);
   ok(ack.status === 200 && pay.status === 200 && say.status === 200 && hand.status === 200
-    && after.status === "acknowledged" && +after.paid === 20 && after.msgs.length === 2 && +after.moved === 1,
-    "an acknowledgement, a payment, a line and a handover each answer 200 with what was stored, marks refusing throughout: "
-    + JSON.stringify({ ack: ack.status, pay: pay.status, say: say.status, hand: hand.status, paid: after.paid, moved: after.moved }));
+    && after.status === "acknowledged" && +after.claimed === 20 && after.msgs.length === 2 && +after.moved === 1,
+    "an acknowledgement, a payment (a claim since S6), a line and a handover each answer 200 with what was stored, marks refusing throughout: "
+    + JSON.stringify({ ack: ack.status, pay: pay.status, say: say.status, hand: hand.status, claimed: after.claimed, moved: after.moved }));
 
   /* ---- and with the store answering, the marks are still written: best effort, not skipped ---- */
   kv.busy = [];
@@ -25029,9 +26250,11 @@ await (async () => {
   answers.push((await call("/orders/" + id + "/method", { method: "tngbiz" }, S)).b.order);
   answers.push((await call("/orders/" + id + "/pay", { amount: 20 }, S)).b.order);
   answers.push((await call("/orders/" + id + "/say", { text: "on my way" }, S)).b.order);
-  answers.push((await call("/orders/" + id + "/cancel", {}, S)).b.order);
+  /* S6 fix: the withdrawal is of an order of its own, the first carrying a claim of theirs, which holds a cancel until answered */
+  const gone = (await call("/orders", { product: "salt", qty: 1, mode: "collect", unit: 130, total: 130, week: "" }, S)).b.order;
+  answers.push((await call("/orders/" + (gone && gone.id) + "/cancel", {}, S)).b.order);
   answers.push((await call("/orders", { product: "salt", qty: 1, mode: "collect", unit: 130, total: 130, week: "" }, S)).b.order);
-  ok(answers.length === 5 && answers.every(bare) && answers[1].paid === 20 && answers[0].method === "tngbiz",
+  ok(answers.length === 5 && answers.every(bare) && answers[1].claimed === 20 && !answers[1].paid && answers[0].method === "tngbiz",
     "and so does the answer to every move of theirs, a rail, a payment, a line, a withdrawal and a placement: "
     + JSON.stringify(answers.map((a) => a && DESK.filter((k) => k in a))));
 
@@ -25117,7 +26340,8 @@ await (async () => {
   const D = { "X-Stmt-Desk": "desk-key" };
   const one = (await call("/orders", { product: "salt", qty: 5, mode: "collect", unit: 100, total: 500, week: "" }, S)).b.order.id;
   await call("/desk/orders/" + un + "/" + one, { status: "acknowledged" }, D);
-  await call("/orders/" + one + "/pay", { amount: 200, method: "tngbiz" }, S);
+  const c1 = (await call("/orders/" + one + "/pay", { amount: 200, method: "tngbiz" }, S)).b.order.payments.slice(-1)[0];
+  await call("/desk/orders/" + un + "/" + one, { verdict: { kind: "received", claim: c1.at, amount: 200 } }, D);   /* S6: his Received makes it paid */
   await call("/desk/orders/" + un + "/" + one, { handover: { units: 2 } }, D);
   const inStepCod = await call("/orders/" + one + "/method", { method: "cod" }, S);
   ok(inStepCod.status === 200 && inStepCod.b.order.method === "cod",
@@ -25157,13 +26381,15 @@ await (async () => {
       for (let i = 0; i < 150 && !d.querySelector('#pOrder [data-row="' + o.id + '"]'); i++) await new Promise((r) => setTimeout(r, 20));
       const row = d.querySelector('#pOrder [data-row="' + o.id + '"]'); if (row) row.click();
       const pay = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
-      for (let i = 0; i < 150 && !d.querySelector('#pOrder input[name="pm-' + o.id + '"]'); i++) await new Promise((r) => setTimeout(r, 20));
-      return [...d.querySelectorAll('#pOrder input[name="pm-' + o.id + '"]')].map((r) => r.value);
+      /* S6 6.8: the ways are the pay sheet's tiles; cash withheld is shown, dashed and off, with the reason as its line */
+      for (let i = 0; i < 150 && !d.querySelector('#payBody input[name="payHow"]'); i++) await new Promise((r) => setTimeout(r, 20));
+      return [...d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value + (r.disabled ? ":off " + r.nextSibling.querySelector(".salt-option__detail").textContent : ""));
     } finally { try { dom.window.close(); } catch (e) { /* closed */ } }
   };
   const railsAhead = await rails(ord({ moved: 2, paid: 0 })), railsInStep = await rails(ord({ moved: 2, paid: 200 }));
-  ok(railsAhead.length > 0 && !railsAhead.includes("cod") && railsInStep.includes("cod"),
-    "the chooser on an order moved and unpaid offers no cash, and on one paid for what it holds it does: " + JSON.stringify({ railsAhead, railsInStep }));
+  ok(railsAhead.length === 3 && railsAhead.includes("cod:off Not offered while goods you already have are unpaid. Pay for those first and it comes back.")
+    && !railsAhead.includes("cod") && railsInStep.includes("cod"),
+    "the pay sheet on an order moved and unpaid does not offer cash and says why, and on one paid for what it holds it offers it: " + JSON.stringify({ railsAhead, railsInStep }));
 })();
 
 section("S10 10.1: one Durable Object for the site's orders is bound, SQLite-backed, and idle");
@@ -25266,7 +26492,7 @@ await (async () => {
   ok(p2.b.ok && p2.b.order.id === id && m[1].b.ok && y[1].b.ok && s[1].b.ok && w[1].status === 200 && w[1].b.ok && w[1].b.order.status === "cancelled",
     "every retried tap is answered as recorded, a withdrawal included, which answered 409 of itself before: "
     + JSON.stringify([p2.status, m[1].status, y[1].status, s[1].status, w[1].status, w[1].b.error]));
-  ok(JSON.stringify(byKind) === JSON.stringify({ place: 2, status: 2, method: 1, pay: 2, say: 2, handover: 1, mark: 1, ledger: 1 }),
+  ok(JSON.stringify(byKind) === JSON.stringify({ place: 2, status: 2, method: 1, claim: 2, say: 2, handover: 1, mark: 1, ledger: 1 }),   /* S6: I have paid is a claim */
     "each tap is ONE event however often it is sent: " + JSON.stringify(byKind));
   ok(evs.filter((e) => e.eid.startsWith("c:" + un + ":")).length === 7 && evs.filter((e) => e.eid.startsWith("s:")).length === 5
     && evs.some((e) => e.eid === "c:" + un + ":" + id + ":" + rid("c3")),
@@ -25397,10 +26623,14 @@ await (async () => {
     d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
     const payNow = () => [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent));
     await until(payNow); if (payNow()) payNow().click();
-    await until(() => d.querySelector('#pOrder input[name="pm-' + ord.id + '"][value="tngbiz"]'));
-    const r = d.querySelector('#pOrder input[name="pm-' + ord.id + '"][value="tngbiz"]');
-    r.checked = true; r.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    await tap("Confirm", "method", 1); await tap("Confirm", "method", 2);
+    /* S6 6.8: the rail a customer chooses on the site is cash, in the pay sheet; its id is carried as Confirm's was */
+    await until(() => d.querySelector('#payBody input[name="payHow"][value="cod"]'));
+    const r = d.querySelector('#payBody input[name="payHow"][value="cod"]');
+    if (r) { r.checked = true; r.dispatchEvent(new dom.window.Event("change", { bubbles: true })); }
+    const cashTap = async (n) => { await until(() => d.getElementById("payGo") && !d.getElementById("payGo").disabled);
+      d.getElementById("payGo").click(); await until(() => sent.method.length === n); await new Promise((q) => setTimeout(q, 120)); };
+    await cashTap(1); await cashTap(2);
+    const x = d.getElementById("payX"); if (x) x.click();
     const say = () => d.querySelector('#pOrder input[data-say="' + ord.id + '"]');
     const type = async (t) => { await until(say); say().value = t; say().dispatchEvent(new dom.window.Event("input", { bubbles: true })); };
     /* S5 5.4: a line that did not go stands in the thread, and Tap to try again sends it again under its own id */
@@ -25413,7 +26643,8 @@ await (async () => {
     const ids = (k) => sent[k].map((x) => x && x.rid);
     const good = (a) => a.every((x) => O.RID_RE.test(x || ""));
     const mi = ids("method"), si = ids("say"), ci = ids("cancel");
-    ok(good(mi) && mi.length === 2 && mi[1] === mi[0], "Confirm sends an id, and tapped again after it failed, the same one: " + JSON.stringify(mi));
+    ok(good(mi) && mi.length === 2 && mi[1] === mi[0] && sent.method.every((m) => m && m.method === "cod"),
+      "Pay in cash sends an id, and tapped again after it failed, the same one: " + JSON.stringify(mi));
     ok(good(si) && si.length === 5 && si[1] === si[0] && si[2] !== si[0] && si[4] !== si[3],
       "Send sends an id per line: the same line tried again carries it, another line a new one, and a line once recorded never lends its id to the next: " + JSON.stringify(si));
     ok(good(ci) && ci.length === 4 && ci[1] === ci[0] && ci[2] === ci[0] && ci[3] !== ci[0],
@@ -25518,7 +26749,7 @@ await (async () => {
     await at(40, () => cust("KUL", tok, "POST", "/orders/" + id + "/pay", { amount: 60 }));
     await at(60, () => DO.reconcileOrders(deskEnv("CRON")));
     const o = orderOf(A, id);
-    return { paid: o.paid, moved: o.moved, lines: lines(o) };
+    return { paid: o.paid, claimed: o.claimed, moved: o.moved, lines: lines(o) };
   };
   /* B3: he acknowledges from another location, off a card 25 s old, after the customer withdrew */
   const b3 = async (store) => {
@@ -25554,9 +26785,10 @@ await (async () => {
     await at(30, () => cust("KUL", tok, "POST", "/orders/" + id + "/pay", { amount: 100 }));
     await at(60, () => DO.reconcileOrders(deskEnv("CRON")));
     await at(80, () => cust("KUL", tok, "POST", "/orders/" + id + "/pay", { amount: 30 }));
+    const mid = orderOf(A, id);   /* S6: right after the second claim, whether the first still carries the reconcile's mark */
     await at(120, () => DO.reconcileOrders(deskEnv("CRON")));
     await at(180, () => DO.reconcileOrders(deskEnv("CRON")));
-    return { told: told(), paid: orderOf(A, id).paid };
+    return { told: told(), claimed: orderOf(A, id).claimed, markKept: !!(((mid && mid.payments) || [])[0] || {}).queued };
   };
   /* B6: the return leg raises the order from a copy read before the customer recorded a transfer */
   const b6 = async (store) => {
@@ -25573,7 +26805,7 @@ await (async () => {
     schedule(0.6, () => cust("KUL", tok, "POST", "/orders/" + id + "/pay", { amount: 130 }));
     const ts = await at(0, () => DO.tellSite(env));
     const o = orderOf(A, id);
-    return { ts: ts.ok, paid: o.paid, payments: (o.payments || []).map((p) => p.amount) };
+    return { ts: ts.ok, paid: o.paid, claimed: o.claimed, payments: (o.payments || []).map((p) => p.amount) };
   };
   /* the book's own: the reconcile marks what it read (paid 100) after the return leg raised the order to the book's
      130 in the same pass; the mark must not lower what the ledger has been told, or the next pass queues 30 again */
@@ -25599,8 +26831,9 @@ await (async () => {
     }
     {
       const kv = await b2(null), ob = await b2("object");
-      ok(kv.paid === 100 && kv.moved === 0 && kv.lines.length === 0, "B2, the instrument: on KV a minute-old copy erases RM 60, his handover and a line: " + JSON.stringify(kv));
-      ok(ob.paid === 160 && ob.moved === 1 && JSON.stringify(ob.lines) === JSON.stringify(["Sent the first half"]),
+      /* S6: their payments are claims, so what is erased or kept is claimed, never paid */
+      ok(kv.claimed === 100 && kv.moved === 0 && kv.lines.length === 0, "B2, the instrument: on KV a minute-old copy erases RM 60, his handover and a line: " + JSON.stringify(kv));
+      ok(ob.claimed === 160 && !ob.paid && ob.moved === 1 && JSON.stringify(ob.lines) === JSON.stringify(["Sent the first half"]),
         "B2: in the order book nothing is written back from a copy, so the payments, the handover and the line all stand: " + JSON.stringify(ob));
     }
     {
@@ -25619,13 +26852,15 @@ await (async () => {
     }
     {
       const kv = await b5(null), ob = await b5("object");
-      ok(kv.told === 230, "B5, the instrument: on KV the ledger is told the first part twice, RM 230 on RM 130 paid: " + JSON.stringify(kv));
-      ok(ob.told === 130 && ob.paid === 130, "B5: in the order book the ledger is told RM 130 on RM 130 paid: " + JSON.stringify(ob));
+      /* S6: each claim is queued under its own moment, and a queue takes one entry a moment, so on KV the erased mark
+         no longer tells the ledger twice; the erasure itself is still there to see */
+      ok(!kv.markKept && kv.told === 130, "B5, the instrument: on KV the second claim, written from an old copy, erases the first's mark, and the ledger is still told each claim once, RM 130: " + JSON.stringify(kv));
+      ok(ob.markKept && ob.told === 130 && ob.claimed === 130, "B5: in the order book the mark stands and the ledger is told RM 130 on RM 130 claimed: " + JSON.stringify(ob));
     }
     {
       const kv = await b6(null), ob = await b6("object");
       ok(kv.paid === 100 && kv.payments.length === 0, "B6, the instrument: on KV the return leg writes RM 100 over a RM 130 transfer and its record: " + JSON.stringify(kv));
-      ok(ob.ts && ob.paid === 130 && JSON.stringify(ob.payments) === "[130]",
+      ok(ob.ts && ob.paid === 100 && ob.claimed === 130 && JSON.stringify(ob.payments) === "[130]",
         "B6: in the order book the return leg is weighed against the order as it stands, and the transfer and its record stand: " + JSON.stringify(ob));
     }
     {
@@ -25644,6 +26879,9 @@ await (async () => {
        fails, is marked failed, and the next pass queues it (the first is found already queued, by its moment) */
     await at(-480, () => DO.reconcileOrders(deskEnv("CRON")));
     const rc = await at(-420, () => DO.reconcileOrders(deskEnv("CRON")));
+    /* S6: their RM 50 is a claim until his Received, which makes it the advance's money */
+    const c50 = orderOf(A, id).payments.find((p) => p.claim === "waiting");
+    await at(-415, () => desk("KUL", P(A, id), { verdict: { kind: "received", claim: c50.at, amount: 50 } }));
     const q1 = deskQueue().map((e) => e.status), o1 = orderOf(A, id);
     ok(!!pend && pend.orderKey === o1.ledgerKey && rc.ok && JSON.stringify(q1) === '["Pending","Payment","Handover"]'
       && o1.queued.paid === 50 && o1.queued.moved === 2 && (o1.sync || {}).state === "queued" && SO.orderWork(o1).length === 0,
@@ -25884,8 +27122,8 @@ await (async () => {
     const done = (bk.db.prepare("SELECT v FROM meta WHERE k = 'movein:done'").get() || {}).v;
     ok(copied > T0 && bk.state.alarmAt() >= copied + CACHE_MS,
       "the end of the minute is set after the start copy has finished and a whole cache life past it: " + JSON.stringify({ copied: copied - T0, end: bk.state.alarmAt() - T0 }));
-    ok(paid.status === 200 && done === "1" && o.paid === 100 && o.payments.length === 1,
-      "and the old code's RM 100, written at another location five seconds into the freeze, is in the book once it has moved in: " + JSON.stringify({ paid: o.paid, done }));
+    ok(paid.status === 200 && done === "1" && o.claimed === 100 && o.payments.length === 1,
+      "and the old code's RM 100 (a claim since S6), written at another location five seconds into the freeze, is in the book once it has moved in: " + JSON.stringify({ claimed: o.claimed, done }));
   } finally { clock.uninstall(); console.log = realLog; }
 })();
 
@@ -26055,12 +27293,12 @@ await (async () => {
     await tick();
     const c2 = lastLog(/^orderbook check: /);
     ok(oldPay.status === 200 && !!c2 && JSON.stringify(c2.kvAhead) === JSON.stringify([o1]) && JSON.stringify(c2.repaired) === "[]" && c2.cleanSince === null
-      && kvOf(u1, o1).paid === 50,
-      "a KV record the book never held is named kvAhead, the hour is not clean, and the RM 50 in it is left where it is: " + JSON.stringify({ c2, kvPaid: kvOf(u1, o1).paid }));
+      && kvOf(u1, o1).claimed === 50,
+      "a KV record the book never held is named kvAhead, the hour is not clean, and the RM 50 in it is left where it is: " + JSON.stringify({ c2, kvClaimed: kvOf(u1, o1).claimed }));
     await call(env("SIN"), "desk", "/desk/orders/" + u1 + "/" + o1, { message: "noted" });
     await advance(5000);
-    ok(kvOf(u1, o1).paid === 50 && kvOf(u1, o1).payments.length === 1 && logs.some((l) => /never held/.test(l)),
-      "and the book's next write behind leaves it too, rather than write its own copy over the only record of that payment: " + JSON.stringify({ kvPaid: kvOf(u1, o1).paid }));
+    ok(kvOf(u1, o1).claimed === 50 && kvOf(u1, o1).payments.length === 1 && logs.some((l) => /never held/.test(l)),
+      "and the book's next write behind leaves it too, rather than write its own copy over the only record of that payment: " + JSON.stringify({ kvClaimed: kvOf(u1, o1).claimed }));
 
     /* ---- (3) a move landing while the check reads KV is not undone there ---- */
     await to("2026-09-24T04:10:00Z");
@@ -26072,8 +27310,8 @@ await (async () => {
     await tick();
     const c3 = lastLog(/^orderbook check: /);
     await advance(5000);
-    ok(!!c3 && !c3.repaired.includes(o2) && bookOf(u2, o2).paid === 40 && kvOf(u2, o2).paid === 40 && kvOf(u2, o2).payments.length === 1,
-      "a payment taken and written behind while the check was listing KV stays in KV: " + JSON.stringify({ repaired: c3 && c3.repaired, kvPaid: kvOf(u2, o2).paid }));
+    ok(!!c3 && !c3.repaired.includes(o2) && bookOf(u2, o2).claimed === 40 && kvOf(u2, o2).claimed === 40 && kvOf(u2, o2).payments.length === 1,
+      "a payment taken and written behind while the check was listing KV stays in KV: " + JSON.stringify({ repaired: c3 && c3.repaired, kvClaimed: kvOf(u2, o2).claimed }));
 
     /* ---- a book order whose KV key has gone is named, not written back ---- */
     await W.at("KUL").delete("order:" + u2 + ":" + o2);
@@ -26149,12 +27387,12 @@ await (async () => {
     bk.restart();
     const page = (await call(env, tok, "/orders")).b.orders.find((o) => o.id === a);
     const tooSoon = await call(env, tok, "/orders/" + a + "/say", { text: "hello?", rid: "r7".repeat(16) });
-    ok(paid.status === 200 && !!mark && !!page && page.paid === 120 && page.msgs.length === 1 && tooSoon.status === 503 && tooSoon.b.error === O.FROZEN,
-      "the KV road marks what it wrote, and the first request back moves the book in again, so the page reads the RM 120 and the line: "
-      + JSON.stringify({ mark: !!mark, paid: page && page.paid, lines: page && page.msgs.length, move: tooSoon.status }));
+    ok(paid.status === 200 && !!mark && !!page && page.claimed === 120 && page.msgs.length === 1 && tooSoon.status === 503 && tooSoon.b.error === O.FROZEN,
+      "the KV road marks what it wrote, and the first request back moves the book in again, so the page reads the RM 120 (a claim since S6) and the line: "
+      + JSON.stringify({ mark: !!mark, claimed: page && page.claimed, lines: page && page.msgs.length, move: tooSoon.status }));
     await advance(70000);
     const done = (bk.db.prepare("SELECT v FROM meta WHERE k = 'movein:done'").get() || {}).v;
-    ok(done === "1@" + mark && bookOf(a).paid === 120 && kvOf(a).paid === 120 && JSON.stringify(bookOf(b).msgs.map((m) => m.text)) === '["on its way"]'
+    ok(done === "1@" + mark && bookOf(a).claimed === 120 && kvOf(a).claimed === 120 && JSON.stringify(bookOf(b).msgs.map((m) => m.text)) === '["on its way"]'
       && JSON.stringify(kvOf(b).msgs.map((m) => m.text)) === '["on its way"]',
       "the round is the generation's own at the mark, A is taken from KV, and B, whose KV record the book had already held, keeps his line and is written behind: "
       + JSON.stringify({ done, bookB: bookOf(b).msgs.length, kvB: kvOf(b).msgs.length }));
@@ -26162,7 +27400,7 @@ await (async () => {
     const ws = []; await SW.scheduled({ scheduledTime: clock.now() }, env, { waitUntil: (p) => ws.push(p) }); await Promise.all(ws);
     const c = JSON.parse(W.store.get(O.CHECK_KEY) || "{}");
     await advance(5000);
-    ok(JSON.stringify(c.repaired) === "[]" && JSON.stringify(c.kvAhead) === "[]" && c.same === 2 && kvOf(a).paid === 120 && kvOf(a).payments.length === 1 && kvOf(a).msgs.length === 1,
+    ok(JSON.stringify(c.repaired) === "[]" && JSON.stringify(c.kvAhead) === "[]" && c.same === 2 && kvOf(a).claimed === 120 && kvOf(a).payments.length === 1 && kvOf(a).msgs.length === 1,
       "and the next hourly check finds the two stores the same, the RM 120 and its line in both: " + JSON.stringify({ repaired: c.repaired, kvAhead: c.kvAhead, same: c.same }));
     ok((await call(env, tok, "/orders/" + a + "/say", { text: "thanks", rid: "s8".repeat(16) })).status === 200, "and moves are taken again");
   } finally { clock.uninstall(); console.log = realLog; }
@@ -26285,9 +27523,9 @@ await (async () => {
     const againPlace = await call(env, tok, "/orders", Object.assign({ rid: R("a1") }, place));
     const againPay = await call(env, tok, "/orders/" + a + "/pay", { amount: 50, rid: R("b2") });
     const mine = (await call(env, tok, "/orders")).b.orders;
-    ok(againPlace.status === 200 && againPlace.b.order.id === a && againPay.status === 200 && mine.length === 1 && mine[0].paid === 50 && mine[0].payments.length === 1,
+    ok(againPlace.status === 200 && againPlace.b.order.id === a && againPay.status === 200 && mine.length === 1 && mine[0].claimed === 50 && mine[0].payments.length === 1,
       "a Place and an I have paid made on the KV road, retried under the same ids after the book moved in, each land once: "
-      + JSON.stringify({ orders: mine.length, paid: mine[0] && mine[0].paid, payments: mine[0] && mine[0].payments.length }));
+      + JSON.stringify({ orders: mine.length, claimed: mine[0] && mine[0].claimed, payments: mine[0] && mine[0].payments.length }));
 
     /* ---- the other way: made in the book, retried on the kv road after a flip back ---- */
     const b = (await call(env, tok, "/orders", Object.assign({ rid: R("c3") }, place))).b.order.id;
@@ -26300,9 +27538,9 @@ await (async () => {
     const backPay = await call(kvRoad, tok, "/orders/" + b + "/pay", { amount: 30, rid: R("e5") });
     const onKv = (await call(kvRoad, tok, "/orders")).b.orders;
     const ob = onKv.find((o) => o.id === b);
-    ok(backPlace.status === 200 && backPlace.b.order.id === b && backPay.status === 200 && onKv.length === 2 && ob.paid === 30 && ob.payments.length === 1,
+    ok(backPlace.status === 200 && backPlace.b.order.id === b && backPay.status === 200 && onKv.length === 2 && ob.claimed === 30 && ob.payments.length === 1,
       "and a Place and an I have paid made in the book, retried under the same ids after a flip back to kv, each land once too: "
-      + JSON.stringify({ orders: onKv.length, paid: ob && ob.paid, payments: ob && ob.payments.length }));
+      + JSON.stringify({ orders: onKv.length, claimed: ob && ob.claimed, payments: ob && ob.payments.length }));
   } finally { clock.uninstall(); console.log = realLog; }
 })();
 
@@ -26594,15 +27832,19 @@ await (async () => {
     ok(!!cancel && scr().lastElementChild === foot, "Cancel this order stands at the foot while nothing has moved");
     const pay = [...scr().querySelectorAll("button")].find((b) => b.textContent === "Pay RM 190");
     if (pay) pay.click();
-    ok(!!pay && !!scr().querySelector(".oact .pay") && JSON.stringify(pills()) === JSON.stringify(["I have paid"]),
-      "Pay opens the ways to pay in its place, and theirs is then the one filled control: " + JSON.stringify(pills()));
+    /* S6 6.4: Pay opens the pay sheet for this order, where the one filled control is the sheet's */
+    const shP = d.getElementById("paySheet");
+    ok(!!pay && !scr().querySelector(".oact .pay") && !!shP && !shP.hidden && d.getElementById("payT").textContent === "Pay RM 190"
+      && shP.querySelectorAll(".salt-pill").length === 1,
+      "Pay opens the pay sheet for what is still to pay on this order, and the one filled control is the sheet's: " + JSON.stringify(pills()));
+    if (shP) d.getElementById("payX").click();
     const hist = part("hist").querySelector("details.salt-plan");
     ok(!!hist && !hist.open && /What happened, step by step/.test(hist.querySelector("summary").textContent),
       "what happened is folded under its own line");
 
     ok(open(UP) && pills().length === 0 && JSON.stringify(lines().pop()) === JSON.stringify(["Still to pay", "RM 0", "Paid in full"]),
       "an order paid up has nothing filled on it: " + JSON.stringify(pills()));
-    ok(open(CLAIM) && JSON.stringify(lines().slice(1)) === JSON.stringify([["Sent by you", "RM 50", "Waiting for us to confirm it arrived"], ["Still to pay", "RM 40", "Now, or when you collect"]])
+    ok(open(CLAIM) && JSON.stringify(lines().slice(1)) === JSON.stringify([["Sent by you", "RM 50", "Waiting for us to confirm"], ["Still to pay", "RM 40", "Now, or when you collect"]])
       && JSON.stringify(pills()) === JSON.stringify(["Pay RM 40"]),
       "what they have sent and is waiting is its own line, read from claimed, and not asked for again: " + JSON.stringify(lines()));
     ok(open(DONE) && pills().length === 0 && !part("foot").childNodes.length
@@ -26837,11 +28079,13 @@ await (async () => {
     ok(d.contains(form) && d.contains(rowC) && d.contains(rowA) && d.contains(head),
       "and nothing that did not change was drawn again: New order (S4 4.3, where the order form stood), a row that did not move and a part that reads the same");
 
-    /* a part that DOES change while its field has the focus: the amount being typed on an order whose payment moved */
+    /* a part that DOES change while a field has the focus: the amount being typed, in the pay sheet since S6 6.4, on
+       an order whose payment moved */
     d.querySelector("#pOrder .oback").click();
     row(D).click();
     const pay = [...scr().querySelectorAll(".oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
-    const amt = scr().querySelector('.oact input[type="number"]');
+    const part = [...d.querySelectorAll("#payBody .payseg button")].find((b) => b.textContent === "Part of it"); if (part) part.click();
+    const amt = d.getElementById("payAmt");
     if (amt) { amt.focus(); amt.value = "40"; amt.dispatchEvent(new w.Event("input", { bubbles: true })); }
     phase = 2;
     await until(() => /Paid/.test((scr().querySelector('[data-part="money"]') || {}).textContent || ""));
@@ -26960,7 +28204,10 @@ await (async () => {
   const env = await CM.encryptWith(ckM, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] }));
   const list = await CM.encryptWith(ckM, JSON.stringify({ at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
     products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] }));
-  const owing = await CM.encryptWith(ckM, JSON.stringify({ at: "2026-09-25T01:00:00Z", body: "<p>Live</p>", owed: 150 }));
+  /* S6 6.7: the hold is what is past its term, sealed as pay.overdue */
+  const late = { date: "2026-09-01", due: "2026-09-11", late: true, rm: 150, whole: 150, product: "salt", qty: 1, got: 1, gotOn: "2026-09-01", resale: false };
+  const owing = await CM.encryptWith(ckM, JSON.stringify({ at: "2026-09-25T01:00:00Z", body: "<p>Live</p>", owed: 150,
+    pay: { term: 10, now: { rm: 150, due: "2026-09-11", parts: [late] }, overdue: { rm: 150, parts: [late] }, coming: { rm: 0, parts: [] } } }));
   const A = "20260924090000-aaaa";
   const st = { dead: new Set(), n: 0, last: "", reopened: 0, remFail: false, accounts: 0, lines: 0, live: null };
   const said = (k) => ({ at: "2026-09-25T0" + k + ":00:00Z", by: "desk", text: "Answer " + k });
@@ -27804,7 +29051,10 @@ await (async () => {
   const b = await place("deliver", 1);
   await say(() => O.deskMove(env, u, b.id, { status: "acknowledged", mode: "deliver", delivery: 10 }));
   await say(() => O.deskMove(env, u, b.id, { ledger: { moved: 1 } }));
-  await say(() => O.customerMove(env, u, b.id, "pay", { amount: 110, method: "transfer", account: "wise" }));
+  /* S6 (D7): their I have sent it is a claim and wakes nobody; his Received of it completes the order */
+  await O.customerMove(env, u, b.id, "pay", { amount: 110, method: "transfer", account: "wise" });
+  const cb = (await O.ordersOf(env, u)).find((x) => x.id === b.id).payments.slice(-1)[0];
+  await say(() => O.deskMove(env, u, b.id, { verdict: { kind: "received", claim: cb.at, amount: 110 } }));
   const c = await place("collect", 1);
   await say(() => O.deskMove(env, u, c.id, { status: "declined" }));
   const d = await place("collect", 1);
@@ -27813,7 +29063,7 @@ await (async () => {
   ok(JSON.stringify(kinds) === JSON.stringify(["confirmed", "ready", "reply", "part-collected", "collected", "paid",
     "confirmed", "delivered", "complete", "declined", "confirmed", "cancelled"]),
     "confirmed, ready, a reply, part and then all of it collected, a payment he recorded, a delivery the book carried back, "
-    + "a payment of theirs that completes it, not taken, and cancelled: " + JSON.stringify(kinds));
+    + "his Received of a claim of theirs that completes it, not taken, and cancelled: " + JSON.stringify(kinds));
   ok(ack.news && ack.news.o === a.id && JSON.stringify(about) === JSON.stringify([a.id, a.id, a.id, a.id, a.id, a.id, b.id, b.id, b.id, c.id, d.id, d.id]),
     "each names the order it is about, for the tap: " + JSON.stringify(about));
   ok(kinds.every((k) => Object.prototype.hasOwnProperty.call(NEWS, k)), "and every kind sent is one the service worker has words for");
@@ -27956,9 +29206,9 @@ await (async () => {
   ok(!O.graceOver({ movedOn: "2026-09-18" }, "2026-09-18T15:59:59Z") && O.graceOver({ movedOn: "2026-09-18" }, "2026-09-18T16:00:00Z")
     && !O.graceOver({}, "2026-09-30T02:00:00Z"),
     "the grace ends at midnight in Kuala Lumpur after the handover day, and an order with no handover day is never past it");
-  ok(O.claimWaits({ paid: 0, payments: [{ amount: 100 }] }) && !O.claimWaits({ paid: 100, payments: [{ amount: 100 }] })
-    && !O.claimWaits({ paid: 150, payments: [{ amount: 100 }] }) && !O.claimWaits({ paid: 0 }),
-    "a claim waits while what they say they sent is more than the order counts as paid; their word raising paid, as today, leaves none waiting");
+  ok(O.claimWaits({ paid: 0, payments: [{ amount: 100, claim: "waiting" }] }) && !O.claimWaits({ paid: 100, payments: [{ amount: 100, claim: "received" }] })
+    && !O.claimWaits({ paid: 0, payments: [{ amount: 100, claim: "notfound" }] }) && !O.claimWaits({ paid: 0, payments: [{ amount: 100 }] }) && !O.claimWaits({ paid: 0 }),
+    "a claim waits while he has not answered it (S6); one received or not found, and a payment from before claims, leave none waiting");
 
   /* ---- the tick, driven ---- */
   const b64u = (a) => Buffer.from(a).toString("base64url");
@@ -27991,7 +29241,7 @@ await (async () => {
   const A1 = ord("aaaa-1111", "20260915010000-aaa1", "2026-09-15T01:00:00Z"), A2 = ord("aaaa-1111", "20260916010000-aaa2", "2026-09-16T01:00:00Z");
   await put(A1); await put(A2);
   await put(ord("bbbb-2222", "20260918010000-bbb1", "2026-09-18T01:00:00Z", { movedOn: "2026-09-18" }));
-  await put(ord("cccc-3333", "20260915010000-ccc1", "2026-09-15T01:00:00Z", { payments: [{ at: "2026-09-17T09:00:00Z", amount: 50, method: "transfer" }] }));
+  await put(ord("cccc-3333", "20260915010000-ccc1", "2026-09-15T01:00:00Z", { payments: [{ at: "2026-09-17T09:00:00Z", amount: 50, method: "transfer", claim: "waiting" }], claimed: 50 }));
   await put(ord("dddd-4444", "20260915010000-ddd1", "2026-09-15T01:00:00Z", { qty: 5, total: 500, moved: 2, paid: 200, payments: [{ amount: 200 }] }));
   await put(ord("0000-0000", "20260915010000-ttt1", "2026-09-15T01:00:00Z"));
   const phones = {};
@@ -28317,6 +29567,9 @@ await (async () => {
     await say(() => O.customerMove(env, u, b, "pay", { amount: 50 }));
     await say(() => O.customerMove(env, u, b, "say", { text: "is it on its way?" }));
     await say(() => O.customerMove(env, u, b, "pay", { amount: 60 }));
+    /* S6 (D7): their claims wake nobody; his Received of each does, the second completing the order */
+    for (const p of (await O.ordersOf(env, u)).find((o) => o.id === b).payments.filter((x) => x.claim === "waiting"))
+      await say(() => O.deskMove(env, u, b, { verdict: { kind: "received", claim: p.at, amount: p.amount } }));
     const c = await place("collect", 1);
     await say(() => O.deskMove(env, u, c, { status: "declined" }));
     const d = await place("collect", 1);
@@ -28339,10 +29592,10 @@ await (async () => {
   };
   const kvRoad = await play(null), bookRoad = await play("object");
   const want = ["confirmed@0", "ready@0", "reply@0", "part-collected@0", "collected@0", "paid@0",
-    "confirmed@1", "delivered@1", "complete@1", "declined@2", "confirmed@3", "bare", "cancelled@3"];
+    "confirmed@1", "delivered@1", "paid@1", "complete@1", "declined@2", "confirmed@3", "bare", "cancelled@3"];
   ok(JSON.stringify(kvRoad.kinds) === JSON.stringify(want),
-    "on the KV road each move of his names its kind and its order; his mark, their rail, a part payment and their line wake nobody; "
-    + "the payment that completes it says complete; a handover of nothing still wakes, with no kind: " + JSON.stringify(kvRoad.kinds));
+    "on the KV road each move of his names its kind and its order; his mark, their rail, their claims and their line wake nobody; "
+    + "his Received of each claim says paid, and of the one that completes it complete; a handover of nothing still wakes, with no kind: " + JSON.stringify(kvRoad.kinds));
   ok(JSON.stringify(bookRoad.kinds) === JSON.stringify(want),
     "and in the order book every wake is the same kind for the same order, one state machine deriving it for both roads: " + JSON.stringify(bookRoad.kinds));
   ok(want.filter((k) => k !== "bare").every((k) => Object.prototype.hasOwnProperty.call(NEWS, k.split("@")[0])), "and every kind is one the service worker has words for");
@@ -28396,7 +29649,7 @@ await (async () => {
   ok(afterRail === null || afterRail === undefined,
     "choosing how to pay is not news either: " + JSON.stringify(afterRail));
 
-  await customerMove(senv6, u6, o6.id, "pay", { amount: 100, method: "cod" });
+  await customerMove(senv6, u6, o6.id, "pay", { amount: 100, method: "transfer", account: "wise" });   /* S6: a claim; cash is never theirs to declare */
   const mark6 = await skv6.get(LAST_THEIRS);
   ok(/^\d{4}-\d\d-\d\dT.+\|pay$/.test(String(mark6)),
     "a payment writes the moment AND the word, the moment first so it still compares as a string: " + mark6);
@@ -28412,6 +29665,7 @@ await (async () => {
   ok(again6.hit.length === 0, "the same payment does not wake him every minute after: " + JSON.stringify(again6.hit));
 
   /* ---- THE THREE MARKS DO NOT BURY EACH OTHER ---- */
+  await clockPast(o6.at);   /* a second placement in the first one's millisecond would not move the mark at all */
   const o7 = await place6();
   await customerMove(senv6, u6, o7.id, "cancel", {});
   const both = await nudge();
@@ -28872,7 +30126,7 @@ await (async () => {
   await O.customerMove(senv, U, d.id, "cancel", {});
   const rcD = await reconcileOrders(denv);
   ok(!(rcD.dropped || []).includes(d.id) && draftOf(d.queued.ack).status === "pending",
-    "with money paid the pending row is kept, since the refund is the book's to carry: " + JSON.stringify({ rc: rcD, draft: draftOf(d.queued.ack) }));
+    "with money paid, or said to be sent (a claim since S6), the pending row is kept, since the refund is the book's to carry: " + JSON.stringify({ rc: rcD, draft: draftOf(d.queued.ack) }));
 
   /* E. HIS OWN CANCEL IS NOT THEIR WITHDRAWAL: the rule he decided is for theirs, and his keeps its old road */
   const e = await agreed(true);
@@ -29079,7 +30333,8 @@ await (async () => {
   ok(draftsOf(B.o.id, "Payment").length === 1 && draftsOf(B.o.id, "Payment")[0].status === "pending", "their payment is drafted and waits: " + JSON.stringify(draftsOf(B.o.id, "Payment").map((d) => d.status)));
   const wrong = await call("/orders/" + B.o.id + "/received", { amount: 45 });
   const rB = await call("/orders/" + B.o.id + "/received", { amount: 40 });
-  ok(wrong.status === 409 && rB.status === 200 && rB.j.preapproval.spent === "applied" && rB.j.preapproval.waits === false && draftsOf(B.o.id, "Payment")[0].status === "approved",
+  ok(wrong.status === 409 && rB.status === 200 && rB.j.preapproval.spent === "applied" && rB.j.preapproval.waits === false && draftsOf(B.o.id, "Payment")[0].status === "approved"
+    && (await orderOf(B.o.id)).paid === 40 && (await orderOf(B.o.id)).claimed === 0,   /* S6: their payment was a claim, and his Received makes it paid on the site */
     "Received for another figure is refused; for the figure drafted it approves that draft at the tap: " + JSON.stringify({ wrong: wrong.j.error, pre: rB.j.preapproval }));
 
   /* C. RECEIVED BEFORE THE ROW LANDS: waits, and is spent when the Fulfilment is drafted */
@@ -29087,7 +30342,8 @@ await (async () => {
   await O.customerMove(senv, U1, C.o.id, "method", { method: "tngbiz", account: "tngbiz" });
   await O.customerMove(senv, U1, C.o.id, "pay", { amount: 30 });
   const rC = await call("/orders/" + C.o.id + "/received", { amount: 30 });
-  ok(rC.status === 200 && rC.j.preapproval.waits === true && preOf(C.o.id, "pay").status === "waiting" && !draftsOf(C.o.id, "Payment").length,
+  ok(rC.status === 200 && rC.j.preapproval.waits === true && preOf(C.o.id, "pay").status === "waiting" && !draftsOf(C.o.id, "Payment").length
+    && (await orderOf(C.o.id)).paid === 30 && (await orderOf(C.o.id)).claimed === 0,
     "Received before the first row lands waits for it, and says so: " + JSON.stringify(rC.j.preapproval));
   land(C.draft);
   await reconcileOrders(denv); await runDrafter(denv);
@@ -29111,8 +30367,16 @@ await (async () => {
   await O.customerMove(senv, U1, E.o.id, "method", { method: "tngbiz", account: "tngbiz" });
   await O.customerMove(senv, U1, E.o.id, "pay", { amount: 20 });
   const cE = await call("/orders/" + E.o.id + "/cash", { amount: 50 });
-  ok(cE.status === 409 && /receive that first/.test(cE.j.error) && (await orderOf(E.o.id)).paid === 20,
-    "cash is refused while a payment of theirs still waits to be queued, which its mark would swallow: " + JSON.stringify(cE.j));
+  const sE = await orderOf(E.o.id);
+  ok(cE.status === 200 && sE.paid === 50 && sE.claimed === 20 && O.orderWork(sE).includes("claim") && !O.orderWork(sE).includes("pay"),
+    "cash beside a claim of theirs is taken (S6): the claim is its own entry, so the mark the cash moves swallows nothing: " + JSON.stringify({ status: cE.status, error: cE.j.error, paid: sE.paid, claimed: sE.claimed }));
+  const overE = await call("/orders/" + E.o.id + "/cash", { amount: 70 });
+  ok(overE.status === 400 && /RM 60\.00 still owed on this order beside what they say they sent/.test(overE.j.error),
+    "and cash past what is owed less their claim is refused on the card, before anything is recorded: " + JSON.stringify(overE.j.error));
+  const rE = await call("/orders/" + E.o.id + "/received", { amount: 20 });
+  const cE2 = await call("/orders/" + E.o.id + "/cash", { amount: 10 });
+  ok(rE.status === 200 && cE2.status === 200 && (await orderOf(E.o.id)).paid === 80,
+    "and a claim he received before its row landed, still to be queued, does not hold cash back: it is told by its own entry: " + JSON.stringify({ r: rE.status, c: cE2.status, e: cE2.j.error }));
 
   /* F. DIFFERENT WHEN IT LANDS: a payment folded beside the row, so the advance it would flag is another figure */
   const F = await accepted(2, 210, U2);   /* five open orders is a customer's cap */
@@ -29220,18 +30484,20 @@ await (async () => {
     && JSON.stringify(JSON.parse(hs[1].entry).payload.fields) === JSON.stringify(JSON.parse(hOld.entry).payload.fields),
     "Collected again at the same figure queues that handover under a fresh entry, approved as drafted: " + JSON.stringify(hs.map((d) => d.status)));
 
-  /* D. THEIR PAYMENT, REJECTED: Received at that figure offers it again */
+  /* D. THEIR PAYMENT IS A CLAIM (S6, D7): its row is his check, answered on its card, so Approve neither rejects nor
+     approves it; Received answers it and approves that row */
   const d = await place(U2, 1, 104);
   const d1 = await accept(d); land(d1.j.draft);
   await O.customerMove(senv, U2, d.id, "method", { method: "tngbiz", account: "tngbiz" });
   await O.customerMove(senv, U2, d.id, "pay", { amount: 30 });
   await reconcileOrders(denv); await runDrafter(denv);
   const pOld = drafts(d.id, "Payment")[0];
-  await reject(pOld.id);
+  const rjD = await reject(pOld.id), apD = await call("/drafts/" + encodeURIComponent(pOld.id) + "/approve", { by: "desk" });
   const rD = await call("/orders/" + d.id + "/received", { amount: 30 });
   const ps = drafts(d.id, "Payment");
-  ok(rD.status === 200 && rD.j.preapproval.again === pOld.id && ps.length === 2 && ps[1].status === "approved" && JSON.parse(ps[1].entry).payload.cash === 30,
-    "Received at the figure of a payment he rejected offers that payment again: " + JSON.stringify(ps.map((x) => x.status)));
+  ok(rjD.status === 409 && apD.status === 409 && /answered on its order's card/.test(rjD.j.error) && rD.status === 200 && ps.length === 1 && ps[0].status === "approved"
+    && (await O.allOrders(senv, true)).find((x) => x.id === d.id).paid === 30,
+    "a claim's row is refused both ways under Approve, and his Received on the card approves it and makes it paid: " + JSON.stringify({ rj: rjD.status, ap: apD.status, ps: ps.map((x) => x.status) }));
 
   /* E. CASH, REJECTED: offered again, and the order is never told the cash twice */
   const e = await place(U2, 2, 210);
@@ -29316,6 +30582,7 @@ await (async () => {
   await O.customerMove(senv, u, o.id, "pay", { amount: 190 });
   await nudge();
   const tPaid = await told();
+  await clockPast(o.at);   /* a second placement in the first one's millisecond would not move the mark, and the payment's news would stand */
   const o2 = (await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
   await nudge();
   const tPlaced2 = await told();
@@ -29333,6 +30600,1074 @@ await (async () => {
   const forged = await wake({ ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 1, placed: 0, news: "CX1-AB paid RM 190" });
   ok(forged && forged.t !== "CX1-AB paid RM 190" && noCodeNoMoney(forged.t + " " + forged.opt.body),
     "news carrying a code or an amount never reaches the title: " + JSON.stringify(forged && forged.t));
+})();
+
+section("S6 6.5: a customer's word that they sent it is a claim, counted as claimed and never paid, and queued for his check");
+await (async () => {
+  /* HIS DECISION D7 OF 24 SEP 2026: "I have sent it" STAYS A CLAIM until his Received. Its own event, on both roads:
+     it raises `claimed` and never `paid`, pauses the chase, and the desk's reconcile queues it as a Fulfilment of its
+     own for his check, flagged as a claim, never as money in. Cash is his to record, so a customer never declares it. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the claim was not driven through the order book"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders } = await import("../src/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const U = "abcd-efgh", C = "CX1-AB";
+  for (const store of ["object", "kv"]) {
+    const kv = new KV(), bk = H.orderBook({});
+    const senv = Object.assign({ STMT: kv, STMT_DESK_KEY: "desk-key" }, store === "object" ? { ORDERBOOK: bk.ns, ORDER_STORE: "object" } : {});
+    const mine = async (id) => (await O.ordersOf(senv, U)).find((x) => x.id === id);
+    const o = (await O.placeOrder(senv, U, { product: "salt", qty: 2, mode: "collect", unit: 50, total: 100, week: "" })).order;
+    await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+    const cod = await O.customerMove(senv, U, o.id, "pay", { amount: 10, method: "cod" });   /* before any goods move, so the advance rule is silent */
+    await O.deskMove(senv, U, o.id, { handover: { units: 2 } });
+    const later = new Date(Date.now() + 2 * 864e5);
+    const chasedBefore = (await O.toChase(senv, later)).some((c) => c.u === U);
+
+    /* THE CLAIM: their word, on its own line, and paid does not move */
+    const r = await O.customerMove(senv, U, o.id, "pay", { amount: 60, method: "tngbiz", account: "tngbiz" });
+    const got = await mine(o.id);
+    const last = (got.payments || []).slice(-1)[0] || {};
+    ok(!r.error && +got.paid === 0 && got.claimed === 60 && last.claim === "waiting" && last.amount === 60 && got.status === "acknowledged"
+      && (got.history || []).slice(-1)[0].note === "sent 60.00",
+      store + " road: I have sent it is a claim, 60 claimed and nothing paid, the order not completed on their word: "
+      + JSON.stringify({ paid: got.paid, claimed: got.claimed, last, status: got.status, note: (got.history || []).slice(-1)[0].note }));
+    if (store === "object") ok(bk.db.prepare("SELECT kind FROM ev WHERE oid = ? ORDER BY seq").all(o.id).map((x) => x.kind).slice(-1)[0] === "claim",
+      "and in the order book it is its own event, a claim: " + JSON.stringify(bk.db.prepare("SELECT kind FROM ev WHERE oid = ?").all(o.id).map((x) => x.kind)));
+    ok(chasedBefore && O.claimWaits(got) && !(await O.toChase(senv, later)).some((c) => c.u === U),
+      store + " road: the chase that was due pauses while the claim waits: " + JSON.stringify({ chasedBefore, waits: O.claimWaits(got) }));
+    ok((await kv.get("last-theirs") || (store === "object" ? (bk.db.prepare("SELECT v FROM meta WHERE k = 'last-theirs'").get() || {}).v || "" : "")).endsWith("|pay"),
+      store + " road: and it marks a payment of theirs, which is what wakes him");
+
+    /* WHAT THEY MAY CLAIM: what is owed less what waits; cash never */
+    const over = await O.customerMove(senv, U, o.id, "pay", { amount: 50 });
+    const rest = await O.customerMove(senv, U, o.id, "pay", { amount: 40 });
+    const full = await O.customerMove(senv, U, o.id, "pay", { amount: 5 });
+    ok(over.status === 400 && /40\.00 outstanding/.test(over.error) && cod.status === 409 && /recorded by us/.test(cod.error)
+      && !rest.error && full.status === 409 && /sent already/.test(full.error) && (await mine(o.id)).claimed === 100,
+      store + " road: a claim may not pass what is owed less what already waits, and cash is never theirs to declare: "
+      + JSON.stringify({ over: over.error, cod: cod.error, rest: rest.error, full: full.error }));
+    const cashOver = await O.deskMove(senv, U, o.id, { cash: { amount: 10 } });
+    ok(cashOver.status === 400 && /outstanding/.test(cashOver.error), store + " road: and his cash is capped at what is owed less their claims, so the two never count twice: " + JSON.stringify(cashOver.error));
+    const seen = O.customerView(await mine(o.id));
+    ok(seen.claimed === 100 && +seen.paid === 0, store + " road: their page is handed claimed beside paid: " + JSON.stringify({ claimed: seen.claimed, paid: seen.paid }));
+  }
+
+  /* THE DESK'S RECONCILE queues each claim as its own Fulfilment, flagged as a claim, and names it on the claim */
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const kv = new KV(), dkv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: kv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+  const key = C + "|2026-09-25|100";
+  await O.deskMove(senv, U, o.id, { mark: { ledgerKey: key, ack: "2026-09-25T01:00:00.000Z" } });
+  db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run("OPEN", JSON.stringify({ byKey: { [key]: { key } }, position: {} }));
+  await O.customerMove(senv, U, o.id, "pay", { amount: 30, method: "tngbiz", account: "tngbiz" });
+  const claimAt = (await O.allOrders(senv, true)).find((x) => x.id === o.id).payments.slice(-1)[0].at;
+  const rc = await reconcileOrders(denv);
+  const q = ((await dkv.get("q:orders", "json")) || { queue: [] }).queue.filter((e) => e.orderId === o.id && e.status === "Payment");
+  const after = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
+  const pe = after.payments.slice(-1)[0];
+  ok(rc.queued === 1 && q.length === 1 && q[0].claim === true && q[0].claimOf === claimAt && q[0].payload.cash === 30
+    && q[0].payload.kind === "Fulfilment" && q[0].payload.orderKey === key && q[0].at === claimAt,
+    "the reconcile queues the claim as a Fulfilment of its own, flagged as a claim and stamped with its own moment: "
+    + JSON.stringify({ rc, q: q.map((e) => ({ at: e.at, claim: e.claim, claimOf: e.claimOf, cash: e.payload.cash })) }));
+  ok(pe.queued === q[0].at && +after.paid === 0 && !((+(after.queued || {}).paid || 0) > 0) && after.claimed === 30,
+    "and names that entry on the claim, telling the ledger of no money: " + JSON.stringify({ queued: pe.queued, paid: after.paid, q: after.queued, claimed: after.claimed }));
+  ok(!("queued" in (O.customerView(after).payments.slice(-1)[0])),
+    "the entry's name is the desk's bookkeeping and never reaches their page");
+  const rc2 = await reconcileOrders(denv);
+  ok(rc2.queued === 0 && O.orderWork(after).length === 0,
+    "a second pass queues nothing: the claim is named once: " + JSON.stringify({ rc2, work: O.orderWork(after) }));
+
+  /* HIS RECEIVED, ONE CLAIM BY ITS MOMENT: the store's verdict. Queued already, the ledger was told by its entry, so the
+     mark of the money moves with it; not queued yet, it is told by its own entry when queued, never as a second payment */
+  const wrong = await O.deskMove(senv, U, o.id, { verdict: { kind: "received", claim: claimAt, amount: 25 } });
+  const stray = await O.deskMove(senv, U, o.id, { verdict: { kind: "received", claim: "2026-01-01T00:00:00.000Z", amount: 30 } });
+  await O.deskMove(senv, U, o.id, { verdict: { kind: "received", claim: claimAt, amount: 30 } });
+  const r1 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
+  ok(wrong.status === 409 && stray.status === 409 && r1.paid === 30 && r1.claimed === 0 && r1.queued.paid === 30 && r1.payments[0].claim === "received"
+    && r1.history.slice(-1)[0].note === "received 30.00" && r1.history.slice(-1)[0].by === "desk" && O.orderWork(r1).length === 0,
+    "Received names one waiting claim at its own figure; it becomes paid, the claim keeps its record, and a claim already queued moves the ledger's mark with it: "
+    + JSON.stringify({ wrong: wrong.error, stray: stray.error, paid: r1.paid, claimed: r1.claimed, q: r1.queued, work: O.orderWork(r1) }));
+  await O.customerMove(senv, U, o.id, "pay", { amount: 20 });
+  const at2 = (await O.allOrders(senv, true)).find((x) => x.id === o.id).payments.slice(-1)[0].at;
+  await O.deskMove(senv, U, o.id, { verdict: { kind: "received", claim: at2, amount: 20 } });
+  const r2 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
+  const rc3 = await reconcileOrders(denv);
+  const r3 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
+  const pays = ((await dkv.get("q:orders", "json")) || { queue: [] }).queue.filter((e) => e.orderId === o.id && e.status === "Payment");
+  ok(r2.paid === 50 && JSON.stringify(O.orderWork(r2)) === '["claim"]' && rc3.queued === 1 && pays.length === 2 && pays[1].payload.cash === 20
+    && pays[1].claimOf === at2 && r3.queued.paid === 50 && O.orderWork(r3).length === 0,
+    "received before it was queued, it is told by its own entry and never as a payment beside it, and that entry's mark moves the ledger's figure: "
+    + JSON.stringify({ work: O.orderWork(r2), rc3, pays: pays.map((e) => e.payload.cash), q: r3.queued }));
+  /* money he recorded another way since (the return leg) covers what is owed: a claim received on top would count twice */
+  await O.customerMove(senv, U, o.id, "pay", { amount: 40 });
+  const at4 = (await O.allOrders(senv, true)).find((x) => x.id === o.id).payments.slice(-1)[0].at;
+  await O.deskMove(senv, U, o.id, { ledger: { paid: 100 } });
+  const twice = await O.deskMove(senv, U, o.id, { verdict: { kind: "received", claim: at4, amount: 40 } });
+  const r4 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
+  ok(twice.status === 409 && /answer it Received, on the book already, if you recorded it, or Not found/.test(twice.error) && r4.paid === 100 && r4.claimed === 40,
+    "and a claim that money recorded since already covers is not received on top of it: " + JSON.stringify({ err: twice.error, paid: r4.paid, claimed: r4.claimed }));
+})();
+
+section("S6 6.6: a claim against the account, for money owed on rows he entered on the desk, is its own record, never an order, and reaches the desk");
+await (async () => {
+  /* HIS DECISION D7 OF 24 SEP 2026: money owed on rows he entered on the desk has no order to claim it on, so "I have
+     sent it" is said against the ACCOUNT: a route on their session, its own record (never an order, never touching one),
+     its own event in the order book, paused chase, and read by the desk beside the orders. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the account claim was not driven through the order book"); return; }
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default, deskW = (await import("../src/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const U = "abcd-efgh", C = "CX1-AB";
+  const rid = (s) => s.repeat(16).slice(0, 32);
+  for (const store of ["object", "kv"]) {
+    const kv = new KV(), bk = H.orderBook({});
+    const senv = Object.assign({ STMT: kv, STMT_DESK_KEY: "desk-key" }, store === "object" ? { ORDERBOOK: bk.ns, ORDER_STORE: "object" } : {});
+    const tok = await O.mintSession(senv, U);
+    const call = async (path, body, h) => {
+      const r = await stmtW.fetch(new Request("https://k7m3p2.example" + path, body === undefined ? { headers: h || { "X-Stmt-Session": tok } }
+        : { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h || { "X-Stmt-Session": tok }), body: JSON.stringify(body) }), senv);
+      return { status: r.status, b: await r.json() };
+    };
+    /* an advance on an order of theirs, due its chase, before the claim */
+    const o = (await O.placeOrder(senv, U, { product: "salt", qty: 2, mode: "collect", unit: 50, total: 100, week: "" })).order;
+    await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+    await O.deskMove(senv, U, o.id, { handover: { units: 2 } });
+    const later = new Date(Date.now() + 2 * 864e5);
+    const chasedBefore = (await O.toChase(senv, later)).some((c) => c.u === U);
+
+    const c1 = await call("/account/claim", { amount: 70, method: "transfer", account: "wise", rid: rid("k1") });
+    const c2 = await call("/account/claim", { amount: 70, method: "transfer", account: "wise", rid: rid("k1") });
+    const cod = await call("/account/claim", { amount: 70, method: "cod", rid: rid("k2") });
+    const none = await call("/account/claim", { amount: 0, method: "transfer", account: "wise", rid: rid("k3") });
+    const alias = await call("/claims", { amount: 5, method: "tngbiz", account: "tngbiz", rid: rid("k4") });
+    const list = await call("/orders");
+    const cl = c1.b.claim || {};
+    ok(c1.status === 200 && O.isClaimId(cl.id) && cl.state === "waiting" && cl.claim === "waiting" && cl.amount === 70 && cl.method === "transfer"
+      && c2.status === 200 && c2.b.claim.id === cl.id && cod.status === 409 && /recorded by us/.test(cod.b.error) && none.status === 400
+      && alias.status === 200 && alias.b.claim.amount === 5,
+      store + " road: a claim against the account is taken on their session, once under its request id, never in cash, and /claims is the same road: "
+      + JSON.stringify({ c1: c1.b, c2: c2.b.claim && c2.b.claim.id, cod: cod.b.error, none: none.b.error, alias: alias.status }));
+    const ords = list.b.orders || [], cls = list.b.claims || [];
+    ok(ords.length === 1 && ords[0].id === o.id && !ords[0].claimed && cls.length === 2 && cls.some((x) => x.id === cl.id && x.state === "waiting")
+      && !("u" in cls[0]) && !("history" in cls[0]),
+      store + " road: their orders read the same, none made or touched, and their claims ride beside them, bare: " + JSON.stringify({ orders: ords.length, claims: cls }));
+    if (store === "object") {
+      ok(bk.db.prepare("SELECT COUNT(*) AS n FROM acl").get().n === 2 && bk.db.prepare("SELECT COUNT(*) AS n FROM ord").get().n === 1
+        && bk.db.prepare("SELECT kind FROM ev WHERE oid = ?").all(cl.id).map((x) => x.kind).join() === "aclaim",
+        "in the order book it is its own event and its own record, beside the orders and never among them: "
+        + JSON.stringify({ acl: bk.db.prepare("SELECT COUNT(*) AS n FROM acl").get().n, ord: bk.db.prepare("SELECT COUNT(*) AS n FROM ord").get().n }));
+    } else ok(!!(await kv.get("aclaim:" + U + ":" + cl.id)) && !(await kv.get("order:" + U + ":" + cl.id)), "on the KV road it is aclaim:<username>:<id>, never an order key");
+    ok(chasedBefore && !(await O.toChase(senv, later)).some((c) => c.u === U),
+      store + " road: the chase due on their order pauses while a claim against the account waits: " + JSON.stringify({ chasedBefore }));
+    const theirs = store === "object" ? ((bk.db.prepare("SELECT v FROM meta WHERE k = 'last-theirs'").get() || {}).v || "") : (await kv.get("last-theirs")) || "";
+    ok(theirs.endsWith("|pay"), store + " road: and it marks a payment of theirs, so his every-minute pass wakes him: " + theirs);
+    const d = await call("/desk/claims", undefined, { "X-Stmt-Desk": "desk-key" });
+    const dAnon = await call("/desk/claims", undefined, {});
+    ok(d.status === 200 && d.b.claims.length === 2 && d.b.claims.every((x) => x.u === U) && dAnon.status === 401,
+      store + " road: the desk reads the waiting claims on its key, and nobody else: " + JSON.stringify({ n: d.b.claims && d.b.claims.length, anon: dAnon.status }));
+
+    /* THE DESK'S READ: the card's GET /orders carries them, each with the code its username maps to */
+    if (store === "object") {
+      const dkv = new KV(); await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+      const denv = { SALT_QUEUE: dkv, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+        STMT_SITE: { fetch: (x, i) => stmtW.fetch(new Request(x, i), senv) } };
+      const r = await deskW.fetch(new Request("https://salt-command.example/orders", { headers: { "X-Salt-Key": "k-fixture" } }), denv, { waitUntil: () => {} });
+      const j = await r.json();
+      ok(r.status === 200 && (j.orders || []).length === 1 && (j.claims || []).length === 2 && j.claims.every((x) => x.code === C && x.kind === "account"),
+        "and the desk's orders read carries the claims beside the orders, each with its desk code: " + JSON.stringify({ orders: (j.orders || []).length, claims: (j.claims || []).map((x) => x.code) }));
+    }
+  }
+
+  /* WRITTEN BEHIND AND MOVED IN, as an order is: in the week of reading both the book writes the claim to aclaim:, and a
+     claim the KV road took is copied into the book when it moves in */
+  const kv = new KV(), bk = H.orderBook({ STMT: kv, ORDER_STORE: "object+kv" });
+  const senv = { STMT: kv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object+kv" };
+  const c = (await O.claimAccount(senv, U, { amount: 40, method: "tngbiz", account: "tngbiz" })).claim;
+  await bk.fire();
+  const behind = await kv.get("aclaim:" + U + ":" + c.id, "json");
+  ok(behind && behind.id === c.id && behind.state === "waiting" && !(await kv.get("order:" + U + ":" + c.id)),
+    "in the week of reading both the book writes the claim behind to its own KV key: " + JSON.stringify(behind && behind.id));
+  const kv2 = new KV();
+  const onKv = (await O.claimAccount({ STMT: kv2 }, U, { amount: 25, method: "tngbiz", account: "tngbiz" })).claim;
+  const bk2 = H.orderBook({ STMT: kv2, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" }, { movedIn: false });
+  const env2 = { STMT: kv2, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk2.ns, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" };
+  await O.allClaims(env2);
+  const moved = bk2.db.prepare("SELECT doc FROM acl WHERE oid = ?").get(onKv.id);
+  ok(!!moved && JSON.parse(moved.doc).amount === 25 && bk2.db.prepare("SELECT COUNT(*) AS n FROM ord").get().n === 0,
+    "and a claim the KV road took is in the book once it moves in, as an order is, and still not as an order: " + JSON.stringify(!!moved));
+})();
+
+section("S6 11.14: Received and Not found on his card reach the customer with their kind, and Not found files the claim's row and lowers the site's figure in one event");
+await (async () => {
+  /* HIS DECISION D7 OF 24 SEP 2026: a claim stays a claim until his Received; his Received or Not found reaches them
+     with a wake of its kind; Not found lowers the site's figure in ONE event of the order book (D10), the claim leaving
+     what they say they sent and its entry's name leaving the claim together, its row filed as not found first so no
+     drafter pass books it; never a read-modify-write on KV. The judges' list: no Not found that lowers a figure without
+     its queued mark. Driven through both Workers over the real schema, and read back off the customer's own phone. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so Not found was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, claimEntry, queueSale } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const { NEWS } = await import("../stmt/sw.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  /* the customer's phone, whose keys are on file, so a wake carries its kind (as in S12 12.3) */
+  const b64u = (a) => Buffer.from(a).toString("base64url");
+  const cat = (...a) => { const o = new Uint8Array(a.reduce((n, x) => n + x.length, 0)); let i = 0; for (const x of a) { o.set(x, i); i += x.length; } return o; };
+  const hk = async (salt, ikm, info, n) => new Uint8Array(await crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info },
+    await crypto.subtle.importKey("raw", ikm, "HKDF", false, ["deriveBits"]), n * 8));
+  const te = new TextEncoder();
+  const kp = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+  const pub = new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey)), auth = crypto.getRandomValues(new Uint8Array(16));
+  const read = async (msg) => {
+    const salt = msg.slice(0, 16), asPub = msg.slice(21, 21 + msg[20]), ct = msg.slice(21 + msg[20]);
+    const secret = new Uint8Array(await crypto.subtle.deriveBits({ name: "ECDH",
+      public: await crypto.subtle.importKey("raw", asPub, { name: "ECDH", namedCurve: "P-256" }, false, []) }, kp.privateKey, 256));
+    const ikm = await hk(auth, secret, cat(te.encode("WebPush: info"), [0], pub, asPub), 32);
+    const pt = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: await hk(salt, ikm, cat(te.encode("Content-Encoding: nonce"), [0]), 12) },
+      await crypto.subtle.importKey("raw", await hk(salt, ikm, cat(te.encode("Content-Encoding: aes128gcm"), [0]), 16), "AES-GCM", false, ["decrypt"]), ct));
+    return JSON.parse(new TextDecoder().decode(pt.slice(0, pt.lastIndexOf(2))));
+  };
+  const vp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const U = "abcd-efgh", C = "CX1-AB";
+  const skv = new KV(), dkv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object", STMT_VAPID_PUBLIC_KEY: "pub", STMT_VAPID_SUBJECT: "mailto:a@b.test",
+    STMT_VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", vp.privateKey)) };
+  await skv.put("push:" + U + ":p1", JSON.stringify({ endpoint: "https://push.example/p1", at: "2026-09-24T00:00:00Z", keys: { p256dh: b64u(pub), auth: b64u(auth) } }));
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const realF = globalThis.fetch;
+  /* a desk tap, with every wake it sends read back off the phone as its kind */
+  const tap = async (path, body, key) => {
+    const hit = [];
+    globalThis.fetch = async (url, init) => { if (String(url).startsWith("https://push.example/")) hit.push(init.body); return new Response("", { status: 201 }); };
+    let status, j;
+    try {
+      const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+        headers: Object.assign({ "content-type": "application/json" }, key === false ? {} : { "X-Salt-Key": "k-fixture" }), body: JSON.stringify(body || {}) }), denv, { waitUntil: () => {} });
+      status = r.status; j = await r.json();
+    } finally { globalThis.fetch = realF; }
+    const kinds = [];
+    for (const b of hit) kinds.push(b ? await read(b) : null);
+    return { status, j, kinds };
+  };
+  const mine = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const draft = (id) => db.prepare("SELECT id,status,decided_by FROM draft WHERE id = ?").get(id) || null;
+  const q = async () => ((await dkv.get("q:orders", "json")) || { queue: [] }).queue;
+  const agreed = async (total, key) => {
+    const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: total, total, week: "" })).order;
+    await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+    await O.deskMove(senv, U, o.id, { mark: { ledgerKey: key, ack: "2026-09-25T01:00:00.000Z" } });
+    await O.customerMove(senv, U, o.id, "method", { method: "tngbiz", account: "tngbiz" });
+    return o;
+  };
+  const keyA = C + "|2026-09-25|120", keyB = C + "|2026-09-25|130";
+  db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run("OPEN", JSON.stringify({ byKey: { [keyA]: { key: keyA } }, position: {} }));
+
+  /* A. NOT FOUND ON A CLAIM QUEUED AND DRAFTED */
+  const a = await agreed(120, keyA);
+  await O.customerMove(senv, U, a.id, "pay", { amount: 60 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const c = (await mine(a.id)).payments.slice(-1)[0];
+  const before = bk.db.prepare("SELECT COUNT(*) AS n FROM ev WHERE oid = ?").get(a.id).n;
+  ok(!!c.queued && (draft(c.queued) || {}).status === "pending", "the fixture: their claim is queued and its row drafted, waiting: " + JSON.stringify(draft(c.queued)));
+  const wrong = await tap("/orders/" + a.id + "/notfound", { claim: c.at, amount: 50 });
+  const anon = await tap("/orders/" + a.id + "/notfound", { claim: c.at, amount: 60 }, false);
+  const nf = await tap("/orders/" + a.id + "/notfound", { claim: c.at, amount: 60 });
+  const after = await mine(a.id), ca = after.payments.find((p) => p.at === c.at);
+  const evs = bk.db.prepare("SELECT kind, body FROM ev WHERE oid = ? ORDER BY seq").all(a.id);
+  ok(wrong.status === 409 && anon.status === 401 && nf.status === 200 && (draft(c.queued) || {}).status === "rejected" && draft(c.queued).decided_by === "notfound"
+    && !(await q()).some((e) => e.at === c.queued),
+    "Not found, at the claim's own figure and on the write key, files its row rejected as not found and takes it out of the queue: "
+    + JSON.stringify({ wrong: wrong.j.error, anon: anon.status, draft: draft(c.queued) }));
+  ok(evs.length === before + 1 && evs[evs.length - 1].kind === "verdict" && JSON.parse(evs[evs.length - 1].body).verdict === "notfound"
+    && after.claimed === 0 && ca.claim === "notfound" && !("queued" in ca) && !after.paid && after.history.slice(-1)[0].note === "not found 60.00",
+    "and the site hears it as ONE event, which takes the claim off what they say they sent and its entry's name off the claim together, paid untouched: "
+    + JSON.stringify({ events: evs.length - before, claimed: after.claimed, claim: ca, paid: after.paid }));
+  ok(JSON.stringify(nf.kinds) === JSON.stringify([{ k: "notfound", o: a.id }]) && NEWS.notfound === "Payment not found yet",
+    "their phone is woken with its kind, Payment not found yet, opening that order: " + JSON.stringify(nf.kinds));
+  const again = await tap("/orders/" + a.id + "/received", { claim: c.at, amount: 60 });
+  const rc = await reconcileOrders(denv);
+  const list = await (await deskW.fetch(new Request("https://salt-command.example/orders?all=1", { headers: { "X-Salt-Key": "k-fixture" } }), denv, { waitUntil: () => {} })).json();
+  ok(again.status === 409 && rc.queued === 0 && !O.claimWaits(after) && !((list.orders || []).find((x) => x.id === a.id) || {}).again,
+    "a claim not found is answered: Received on it is refused, nothing is queued again, the chase is free, and no payment is offered again: "
+    + JSON.stringify({ again: again.j.error, rc, offered: ((list.orders || []).find((x) => x.id === a.id) || {}).again }));
+
+  /* B. RECEIVED reaches them as Payment received */
+  await O.customerMove(senv, U, a.id, "pay", { amount: 60 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const c2 = (await mine(a.id)).payments.slice(-1)[0];
+  const rv = await tap("/orders/" + a.id + "/received", { claim: c2.at, amount: 60 });
+  ok(rv.status === 200 && (draft(c2.queued) || {}).status === "approved" && (await mine(a.id)).paid === 60 && JSON.stringify(rv.kinds) === JSON.stringify([{ k: "paid", o: a.id }]),
+    "Received approves the claim's row, makes it paid on their page, and wakes them with Payment received: " + JSON.stringify({ status: rv.status, kinds: rv.kinds, draft: draft(c2.queued) }));
+
+  /* C. NOT FOUND BEFORE IT WAS QUEUED: its row's id is filed first, so a queue written in the same minute books nothing */
+  const b = await agreed(130, keyB);   /* keyB is not on the book: the claim waits for the row, unqueued */
+  await O.customerMove(senv, U, b.id, "pay", { amount: 30 });
+  const cb = (await mine(b.id)).payments.slice(-1)[0];
+  const nfb = await tap("/orders/" + b.id + "/notfound", { claim: cb.at, amount: 30 });
+  await queueSale(denv, claimEntry(Object.assign({ code: C }, await mine(b.id)), cb));   /* a reconcile that read the claim just before */
+  const dr = await runDrafter(denv);
+  ok(nfb.status === 200 && (draft(cb.at) || {}).status === "rejected" && draft(cb.at).decided_by === "notfound" && !db.prepare("SELECT 1 FROM draft WHERE id = ? AND status = 'pending'").get(cb.at),
+    "not yet queued, the id its entry will carry is filed not found first, so an entry queued in the same minute is never drafted: " + JSON.stringify({ draft: draft(cb.at), drafted: dr.drafted }));
+
+  /* D. ON THE KV ROAD NOT FOUND IS REFUSED, being a read-modify-write there; Received is taken as every move is */
+  const kvenv = { STMT: new KV(), STMT_DESK_KEY: "desk-key" };
+  const k = (await O.placeOrder(kvenv, U, { product: "salt", qty: 1, mode: "collect", unit: 90, total: 90, week: "" })).order;
+  await O.deskMove(kvenv, U, k.id, { status: "acknowledged", mode: "collect" });
+  await O.customerMove(kvenv, U, k.id, "pay", { amount: 20, method: "tngbiz", account: "tngbiz" });
+  const kc = (await O.ordersOf(kvenv, U)).find((x) => x.id === k.id).payments.slice(-1)[0];
+  const knf = await O.deskMove(kvenv, U, k.id, { verdict: { kind: "notfound", claim: kc.at, amount: 20 } });
+  const krv = await O.deskMove(kvenv, U, k.id, { verdict: { kind: "received", claim: kc.at, amount: 20 } });
+  ok(knf.status === 503 && knf.error === O.NOT_FOUND_ON_KV && !krv.error && krv.order.paid === 20,
+    "on the KV road Not found is refused rather than written as a read-modify-write, and Received is taken: " + JSON.stringify({ knf: knf.error, paid: krv.order && krv.order.paid }));
+
+  /* E. A CLAIM AGAINST THE ACCOUNT, NOT FOUND: its own event, their phone told, the chase free again */
+  const ac = (await O.claimAccount(senv, U, { amount: 45, method: "tngbiz", account: "tngbiz" })).claim;
+  const anf0 = await tap("/claims/" + ac.id + "/notfound", { amount: 45 }, false);
+  const anfW = await tap("/claims/" + ac.id + "/notfound", { amount: 40 });
+  const anf = await tap("/claims/" + ac.id + "/notfound", { amount: 45 });
+  const acA = (await O.claimsOf(senv, U)).find((x) => x.id === ac.id);
+  const acEv = bk.db.prepare("SELECT kind FROM ev WHERE oid = ? ORDER BY seq").all(ac.id).map((x) => x.kind);
+  ok(anf0.status === 401 && anfW.status === 409 && anf.status === 200 && acA.state === "notfound" && !!acA.answered && acEv.join() === "aclaim,verdict"
+    && JSON.stringify(anf.kinds) === JSON.stringify([{ k: "notfound", o: "" }]) && !(await O.allClaims(senv)).some((x) => x.id === ac.id),
+    "Not found on a claim against the account is keyed, at its own figure, one event, and wakes them with its kind and no order to open: "
+    + JSON.stringify({ anon: anf0.status, wrong: anfW.j.error, state: acA.state, ev: acEv, kinds: anf.kinds }));
+
+  const ac2 = (await O.claimAccount(senv, U, { amount: 35, method: "tngbiz", account: "tngbiz" })).claim;
+  const siteWrong = await O.deskClaim(senv, U, ac2.id, { verdict: { kind: "notfound", amount: 30 } });
+  ok(siteWrong.status === 409 && (await O.claimsOf(senv, U)).find((x) => x.id === ac2.id).state === "waiting",
+    "and the site itself answers a claim only at its own figure: " + JSON.stringify(siteWrong.error));
+
+  /* A NOT FOUND WHOSE SITE MOVE FAILED leaves its row filed: Received on that claim is then refused, never booked into nothing */
+  await O.customerMove(senv, U, a.id, "pay", { amount: 20 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const c3 = (await mine(a.id)).payments.slice(-1)[0];
+  const realSite = denv.STMT_SITE;
+  denv.STMT_SITE = { fetch: async (url, init) => (/\/desk\/orders\/[^/]+\/[^/]+$/.test(new URL(url).pathname) && init && init.method === "POST" && /verdict/.test(String(init.body))
+    ? new Response(JSON.stringify({ ok: false, error: "no" }), { status: 500, headers: { "content-type": "application/json" } }) : realSite.fetch(url, init)) };
+  const nfBroken = await tap("/orders/" + a.id + "/notfound", { claim: c3.at, amount: 20 });
+  denv.STMT_SITE = realSite;
+  const rv3 = await tap("/orders/" + a.id + "/received", { claim: c3.at, amount: 20 });
+  ok(nfBroken.status !== 200 && (draft(c3.queued) || {}).status === "rejected" && (await mine(a.id)).claimed === 20 && rv3.status === 409 && /filed not found/.test(rv3.j.error),
+    "a Not found whose site move failed leaves the claim waiting with its row filed, and Received on it is refused rather than paid with no row: " + JSON.stringify({ nf: nfBroken.status, rv: rv3.j.error }));
+
+  /* F. THE CARD: a claim is a Paid? row whose card answers it, Received the one filled control, and Approve decides none */
+  const { openMaster: om1114 } = await import("../tools/payload.mjs");
+  const { w } = await om1114();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 96; w.clearInterval = () => {};
+    const base = { u: U, code: C, product: "salt", qty: 1, total: 100, delivery: 0, mode: "collect", history: [], msgs: [] };
+    const orders = [Object.assign({}, base, { id: "c1", status: "ready", at: "2026-09-20T02:00:00.000Z", qty: 2, total: 200, moved: 1, paid: 0, movedAt: "2026-09-24T01:00:00.000Z", claimed: 70,
+      payments: [{ at: "2026-09-24T05:00:00.000Z", amount: 70, method: "transfer", account: "maybank", claim: "waiting" }] })];
+    const calls = [];
+    w.fetch = async (path, init) => {
+      const pp = String(path), post = !!(init && init.method === "POST");
+      calls.push({ p: pp, body: init && init.body ? JSON.parse(init.body) : null });
+      return { ok: true, status: 200, json: async () => (pp === "orders" && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)), claims: [] } : { ok: true }) };
+    };
+    w.eval("AP_DRAFTS=[];");   /* the claim not drafted yet: the row is the claim's own, not a draft's */
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const kinds = JSON.parse(String(w.eval("JSON.stringify(ordActs().map(function(a){return a.kind+':'+a.o.id;}))")));
+    const card = D.querySelector('.ordcard[data-id="c1"]');
+    const filled = [...card.querySelectorAll("button.salt-pill")];
+    const rcv = card.querySelector('button[data-ord="received"]'), nfd = card.querySelector('button[data-ord="notfound"]');
+    const text = (card.textContent || "").replace(/\s+/g, " ");
+    ok(kinds.join(",") === "paid:c1" && filled.length === 1 && filled[0] === rcv && rcv.textContent === "Received, RM 70" && nfd && nfd.textContent === "Not found"
+      && nfd.classList.contains("salt-ghost") && !card.querySelector('button[data-ord="cash"]') && /They say they sent RM 70 by transfer to maybank, reference abcd-efgh/.test(text)
+      && !!card.querySelector('button[data-ord="handover"].salt-ghost'),
+      "a claim is one Paid? row, and its card draws what they say they sent, the account and the reference, with Received the one filled control and no cash to record: "
+      + JSON.stringify({ kinds, filled: filled.map((x) => x.textContent) }));
+    rcv.click(); await new Promise((r) => setTimeout(r, 30));
+    const sent = calls.find((x) => x.p === "orders/c1/received");
+    ok(sent && sent.body.claim === "2026-09-24T05:00:00.000Z" && sent.body.amount === 70,
+      "Received posts that claim, by its moment and at its figure, to the desk Worker's route: " + JSON.stringify(sent && sent.body));
+    const apHtml = String(w.eval("apCard({id:'dc1',status:'pending',collection:'sales',row:{},entry:{orderId:'c1',status:'Payment',by:'customer',claim:true}})"));
+    ok(/Answer it on Site orders/.test(apHtml) && !/data-ap="approve"/.test(apHtml) && !/data-ap="reject"/.test(apHtml),
+      "and under Approve a claim's row carries no Approve and no Reject, only where it is answered");
+  } finally { w.close(); }
+})();
+
+section("S6 11.15: a claim against the account is drawn as the engine's oldest-first allocation, row by row, and one tap approves exactly those rows");
+await (async () => {
+  /* HIS DECISIONS D6 AND D7 OF 24 SEP 2026: an account-level claim covers money owed on rows he entered on the desk. The
+     desk draws the ENGINE'S oldest-first allocation row by row, and ONE tap approves exactly those rows through the stage
+     11 exact-match road: the Worker approves only what was shown, and a figure more than the rows owe is never a tap. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the account claim was not driven against the real schema"); return; }
+  const PE = (await import("../engine/position.mjs")).default;
+  const O = await import("../stmt/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const C = "CX1-AB", U = "abcd-efgh";
+
+  /* A. THE ENGINE'S ALLOCATION: their rows and their bucket's, oldest first, each taking what it owes */
+  const book = [
+    { rid: "s1", customer: C, date: "2026-09-01", qty: 1, total: 50, cash: 0, deliveredQty: 1 },
+    { rid: "s2", customer: C, date: "2026-08-20", qty: 1, total: 30, cash: 0, deliveredQty: 1 },
+    { rid: "s3", customer: C + "-R", date: "2026-09-05", qty: 1, total: 40, cash: 0, deliveredQty: 1 },
+    { rid: "s4", customer: C, date: "2026-08-01", qty: 1, total: 90, cash: 90, deliveredQty: 1 },
+    { rid: "s5", customer: "CX9-ZZ", date: "2026-07-01", qty: 1, total: 70, cash: 0, deliveredQty: 1 },
+    { rid: "s6", customer: C, date: "2026-07-15", qty: 1, total: 20, cash: 0, deliveredQty: 1, goodwill: true },
+    { rid: "s7", customer: C, date: "2026-07-10", qty: 2, total: 100, cash: 0, deliveredQty: 0 }];
+  const a100 = PE.claimAlloc(book, C, 100), a200 = PE.claimAlloc(book, C, 200);
+  ok(JSON.stringify(a100.rows.map((r) => [r.rid, r.owed, r.rm])) === '[["s2",30,30],["s1",50,50],["s3",40,20]]' && a100.left === 0
+    && a200.rows.length === 3 && a200.left === 80 && a200.rows.every((r) => r.rm === r.owed) && a100.rows[0].key === PE.ovKey(book[1]),
+    "the engine settles what they sent against their rows and their bucket's, oldest first, each to what it owes, leaving a paid row, another party's, a gift and goods not yet out alone, and says what no row owes: "
+    + JSON.stringify({ a100: a100.rows.map((r) => [r.rid, r.rm]), left: a200.left }));
+
+  /* B. DRIVEN THROUGH BOTH WORKERS over the real schema */
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  putSale({ rid: "s21", customer: C, date: "2026-09-10", qty: 1, total: 60, cash: 0, deliveredQty: 1, deliveredOn: "2026-09-10" });
+  putSale({ rid: "s20", customer: C, date: "2026-09-02", qty: 1, total: 50, cash: 0, deliveredQty: 1, deliveredOn: "2026-09-02" });
+  setState("roster", [C]); setState("OPEN", { byKey: {}, position: {} });
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 30, floors: { "1": { floor: 40 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const call = async (path, body, key) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: Object.assign({ "content-type": "application/json" }, key === false ? {} : { "X-Salt-Key": "k-fixture" }), body: JSON.stringify(body || {}) }), denv, { waitUntil: () => {} });
+    return { status: r.status, j: await r.json() };
+  };
+  const q = async () => ((await dkv.get("q:orders", "json")) || { queue: [] }).queue;
+  const drafts = (id) => db.prepare("SELECT id,status,decided_by,entry FROM draft").all().filter((d) => JSON.parse(d.entry).claimId === id);
+
+  const c1 = (await O.claimAccount(senv, U, { amount: 80, method: "transfer", account: "wise" })).claim;
+  const anon = await call("/claims/" + c1.id + "/preview", {}, false);
+  const pv = await call("/claims/" + c1.id + "/preview", {});
+  ok(anon.status === 401 && pv.status === 200 && JSON.stringify(pv.j.rows.map((r) => [r.rid, r.owed, r.rm])) === '[["s20",50,50],["s21",60,30]]' && pv.j.left === 0
+    && typeof pv.j.hash === "string" && !pv.j.own && (await q()).length === 0 && drafts(c1.id).length === 0,
+    "on the write key the card is handed the rows it settles, oldest first, drafted and stored nowhere: " + JSON.stringify({ anon: anon.status, rows: pv.j.rows && pv.j.rows.map((r) => [r.rid, r.rm]), left: pv.j.left }));
+  const bad = await call("/claims/" + c1.id + "/received", { hash: "0".repeat(64) });
+  ok(bad.status === 409 && bad.j.differs === true && (await q()).length === 0 && drafts(c1.id).length === 0,
+    "a yes to rows other than those drawn is refused, and nothing is queued: " + JSON.stringify(bad.j.error));
+  const yes = await call("/claims/" + c1.id + "/received", { hash: pv.j.hash });
+  const ds = drafts(c1.id).sort((x, y) => (x.id < y.id ? -1 : 1));
+  const es = ds.map((d) => JSON.parse(d.entry));
+  const site = (await O.claimsOf(senv, U)).find((x) => x.id === c1.id);
+  ok(yes.status === 200 && yes.j.approved.length === 2 && ds.length === 2 && ds.every((d) => d.status === "approved" && /^preapproved/.test(d.decided_by))
+    && JSON.stringify(es.map((e) => [e.payload.rid, e.payload.cash, e.payload.kind])) === '[["s20",50,"Fulfilment"],["s21",30,"Fulfilment"]]' && es.every((e) => e.claim === true && !e.orderId)
+    && site.state === "received",
+    "ONE tap approves exactly the rows drawn, each its own Fulfilment spent by the drafter on an exact match, and the site hears Received: "
+    + JSON.stringify({ rows: ds.map((d) => [d.status, d.decided_by]), state: site.state }));
+  const twice = await call("/claims/" + c1.id + "/received", { hash: pv.j.hash });
+  ok(twice.status === 409 && drafts(c1.id).length === 2, "and a second tap on an answered claim books nothing more: " + JSON.stringify(twice.j.error));
+
+  /* the book moves between the card and the tap: refused, with the rows as they now stand */
+  const c2 = (await O.claimAccount(senv, U, { amount: 40, method: "tngbiz", account: "tngbiz" })).claim;
+  const pv2 = await call("/claims/" + c2.id + "/preview", {});
+  putSale({ rid: "s19", customer: C, date: "2026-08-25", qty: 1, total: 25, cash: 0, deliveredQty: 1, deliveredOn: "2026-08-25" });
+  const moved = await call("/claims/" + c2.id + "/received", { hash: pv2.j.hash });
+  ok(moved.status === 409 && moved.j.differs === true && moved.j.preview.rows[0].rid === "s19" && drafts(c2.id).length === 0
+    && (await O.claimsOf(senv, U)).find((x) => x.id === c2.id).state === "waiting",
+    "rows that moved since the card drew them are not approved: the tap is refused with the rows as they now stand, and the claim still waits: "
+    + JSON.stringify(moved.j.preview && moved.j.preview.rows.map((r) => r.rid)));
+
+  /* more than the rows owe is never a tap */
+  const c3 = (await O.claimAccount(senv, U, { amount: 500, method: "tngbiz", account: "tngbiz" })).claim;
+  const pv3 = await call("/claims/" + c3.id + "/preview", {});
+  const over = await call("/claims/" + c3.id + "/received", { hash: pv3.j.hash });
+  ok(pv3.j.left > 0 && over.status === 409 && /more than their rows owe/.test(over.j.error) && drafts(c3.id).length === 0,
+    "a claim for more than their rows owe says what is left over, and Received on it is refused: " + JSON.stringify({ left: pv3.j.left, err: over.j.error }));
+
+  /* C. THE CARD: the claim is a Paid? row whose card draws the rows, and Received sends the digest of what is drawn */
+  const { openMaster: om1115 } = await import("../tools/payload.mjs");
+  const { w } = await om1115();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 96; w.clearInterval = () => {};
+    const claim = { id: "a20260925010000-abcd", u: U, code: C, kind: "account", at: "2026-09-25T01:00:00.000Z", amount: 80, method: "transfer", account: "maybank", state: "waiting" };
+    let LEFT = 0;
+    const calls = [];
+    w.fetch = async (path, init) => {
+      const pp = String(path), post = !!(init && init.method === "POST");
+      calls.push({ p: pp, body: init && init.body ? JSON.parse(init.body) : null });
+      const out = pp === "orders" && !post ? { ok: true, orders: [], claims: [claim] }
+        : /\/preview$/.test(pp) ? { ok: true, rows: [{ rid: "s20", date: "2026-09-02", owed: 50, rm: 50, flags: [] }, { rid: "s21", date: "2026-09-10", owed: 60, rm: 30, flags: [] }], left: LEFT, hash: "h-drawn" }
+        : { ok: true, approved: ["x", "y"], rows: [{}, {}] };
+      return { ok: true, status: 200, json: async () => out };
+    };
+    w.eval("AP_DRAFTS=[];");
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    await new Promise((r) => setTimeout(r, 30));
+    const kinds = JSON.parse(String(w.eval("JSON.stringify(ordActs().map(function(a){return a.kind+':'+a.o.id;}))")));
+    const card = D.querySelector('.ordcard[data-id="' + claim.id + '"]');
+    const lines = card ? [...card.querySelectorAll(".clmrows .salt-ledger__row")].map((r) => (r.textContent || "").replace(/\s+/g, " ").trim()) : [];
+    const rcv = card && card.querySelector('button[data-ord="creceived"]'), filled = card ? [...card.querySelectorAll("button.salt-pill")] : [];
+    ok(kinds.join(",") === "paid:" + claim.id && lines.length === 2 && /2026-09-02, owes RM 50 ?RM 50/.test(lines[0]) && /2026-09-10, owes RM 60 ?RM 30/.test(lines[1])
+      && rcv && !rcv.disabled && rcv.textContent === "Received, RM 80" && filled.length === 1 && filled[0] === rcv && !!card.querySelector('button[data-ord="cnotfound"]'),
+      "a claim against the account is one Paid? row, and its card draws the rows it settles, oldest first, with Received the one filled control: " + JSON.stringify({ kinds, lines }));
+    rcv.click(); await new Promise((r) => setTimeout(r, 30));
+    const sent = calls.find((x) => x.p === "claims/" + claim.id + "/received");
+    ok(sent && sent.body.hash === "h-drawn", "Received sends the digest of the rows drawn, which the Worker approves only if they still stand: " + JSON.stringify(sent && sent.body));
+    LEFT = 20; w.eval("CLM_PV={};ORD_PV_GEN++;"); await w.eval("ordLoad(true)"); await new Promise((r) => setTimeout(r, 30));
+    const card2 = D.querySelector('.ordcard[data-id="' + claim.id + '"]');
+    const cov2 = card2.querySelector('button[data-ord="creceived"]');
+    ok(!cov2.disabled && cov2.dataset.covered === "1" && cov2.textContent === "Received, on the book already" && /More than the rows owe/.test(card2.textContent)
+      && /no row is booked on a tap/.test(card2.textContent),
+      "and with more sent than the rows owe the card says so, and its Received is the one that books no row, on the book already");
+  } finally { w.close(); }
+})();
+
+section("S6 fix: two claims on one order, received before either row is drafted, are each booked by their own yes");
+await (async () => {
+  /* HIS D6 AND D7: a claim's Received is his yes to that claim's own row. A second claim's Received, given before the
+     first claim's row was drafted (the order's row not on the book yet: Booked when the first row lands), voided the
+     first yes, so that row was drafted pending with no yes, and Approve and Reject both refuse a claim's row without
+     one: money they were told was received, never booked. Driven through both Workers over the real schema. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so two claims were not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders } = await import("../src/orders.js");
+  const { runDrafter, withPending } = await import("../src/drafter.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const U = "abcd-efgh", C = "CX1-AB", keyA = C + "|2026-09-25|120", ACK = "2026-09-25T01:00:00.000Z";
+  const ROW = { date: "2026-09-25", customer: C, product: "salt", qty: 1, total: 120, cash: 0, deliveredQty: 0, orderKey: keyA };
+  for (const [x, y] of [[50, 20], [50, 50]]) {
+    const db = new DatabaseSync(":memory:");
+    for (const f of readdirSync(join(REPO, "migrations")).filter((n) => /^\d+_.*\.sql$/.test(n)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+    const D1 = { prepare(sql) { const st = db.prepare(sql);
+      const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+        first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+      const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+    const skv = new KV(), dkv = new KV(), bk = H.orderBook({});
+    const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+    await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+    const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+      STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+    const tails = [], realF = globalThis.fetch;
+    const tap = async (path, body) => {
+      globalThis.fetch = async () => new Response("", { status: 201 });
+      try {
+        const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+          headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil: (p) => tails.push(p) });
+        const j = await r.json();
+        await Promise.allSettled(tails.splice(0));   /* each tap's tail done before the next: the order of a real phone */
+        return { status: r.status, j };
+      } finally { globalThis.fetch = realF; }
+    };
+    const mine = async (id) => (await O.allOrders(senv, true)).find((o) => o.id === id);
+    /* the order's pending row is approved and not folded yet: Received on a claim waits for it to land */
+    db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run("OPEN", JSON.stringify({ byKey: {}, position: {} }));
+    db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,flags,party,drafter,drafted_at,decided_at,decided_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
+      .run(ACK, "approved", "sales", "{}", JSON.stringify(ROW), "fixture", "[]", C, "orders", ACK, ACK, "preapproved");
+    const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, week: "" })).order;
+    await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+    await O.deskMove(senv, U, o.id, { mark: { ledgerKey: keyA, ack: ACK } });
+    await O.customerMove(senv, U, o.id, "method", { method: "tngbiz", account: "tngbiz" });
+    await O.customerMove(senv, U, o.id, "pay", { amount: x });
+    await new Promise((r) => setTimeout(r, 5));
+    await O.customerMove(senv, U, o.id, "pay", { amount: y });
+    const ps = (await mine(o.id)).payments;
+    const r1 = await tap("/orders/" + o.id + "/received", { claim: ps[0].at, amount: x });
+    const r2 = await tap("/orders/" + o.id + "/received", { claim: ps[1].at, amount: y });
+    const yes = db.prepare("SELECT status FROM preapproval WHERE order_id = ? AND stage = 'pay' ORDER BY at").all(o.id).map((p) => p.status);
+    /* the fold lands the row: on the mirror, and in the open-order snapshot in the engine's own shape */
+    db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", 0, "h0", JSON.stringify(ROW));
+    db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run("OPEN", JSON.stringify(withPending({ sales: [], state: { OPEN: { byKey: {}, position: {} } } }, ROW).state.OPEN));
+    await reconcileOrders(denv); await runDrafter(denv);
+    const after = await mine(o.id);
+    const rows = db.prepare("SELECT id,status,entry FROM draft WHERE id <> ?").all(ACK).filter((d) => JSON.parse(d.entry).claim);
+    const stuck = rows.find((d) => d.status === "pending");
+    const decide = stuck ? await tap("/drafts/" + encodeURIComponent(stuck.id) + "/approve", { by: "suite" }) : null;
+    ok(r1.status === 200 && r2.status === 200 && r1.j.preapproval.waits && yes.join() === "waiting,waiting"
+      && after.paid === x + y && after.claimed === 0 && rows.length === 2 && rows.every((d) => d.status === "approved")
+      && JSON.stringify(rows.map((d) => JSON.parse(d.entry).claimOf).sort()) === JSON.stringify([ps[0].at, ps[1].at].sort()),
+      "two claims of RM " + x + " and RM " + y + " received before the order's row lands keep a yes each, and each claim's own row is approved as it is drafted: "
+      + JSON.stringify({ yes, paid: after.paid, rows: rows.map((d) => d.status), stuck: decide && decide.j.error }));
+  }
+})();
+
+section("S6 fix: a claim against the account whose Received booked its rows but the site did not hear books nothing more when tapped again");
+await (async () => {
+  /* HIS D6: his yes books exactly the rows drawn. Received books the rows first and tells the site second; when the site
+     does not hear (a move-in's freeze, a relay error) the claim still waits there and the card offers Received again. The
+     retry re-allocated against the mirror, and after the fold had landed the first rows it booked the next ones as well:
+     more than the claim, on rows the card never drew. Once any row of the claim carries his yes, a retry tells the site
+     and queues nothing. Driven through both Workers over the real schema. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the retried claim was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const C = "CX1-AB", U = "abcd-efgh";
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  const sale = (rid, date, total, cash) => ({ rid, customer: C, date, qty: 1, total, cash, deliveredQty: 1, deliveredOn: date });
+  [sale("s20", "2026-09-02", 80, 0), sale("s21", "2026-09-10", 60, 0), sale("s22", "2026-09-12", 100, 0)]
+    .forEach((r, i) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", i, "h" + i, JSON.stringify(r)));
+  setState("roster", [C]); setState("OPEN", { byKey: {}, position: {} });
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 30, floors: { "1": { floor: 40 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const realSite = { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) };
+  /* the site's claims route answers 503 while its book is frozen for a move-in */
+  const frozen = { fetch: async (url, init) => (/\/desk\/claims\//.test(new URL(url).pathname) && init && init.method === "POST"
+    ? new Response(JSON.stringify({ ok: false, error: "the order book is moving in" }), { status: 503, headers: { "content-type": "application/json" } }) : realSite.fetch(url, init)) };
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets, STMT_SITE: realSite };
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil: () => {} });
+    return { status: r.status, j: await r.json() };
+  };
+  const approved = (id) => db.prepare("SELECT status,entry FROM draft").all().filter((d) => d.status === "approved" && JSON.parse(d.entry).claimId === id)
+    .map((d) => [JSON.parse(d.entry).payload.rid, JSON.parse(d.entry).payload.cash]);
+  const c1 = (await O.claimAccount(senv, U, { amount: 80, method: "transfer", account: "wise" })).claim;
+  const pv = await call("/claims/" + c1.id + "/preview", {});
+  denv.STMT_SITE = frozen;
+  const down = await call("/claims/" + c1.id + "/received", { hash: pv.j.hash });
+  denv.STMT_SITE = realSite;
+  ok(down.status === 503 && JSON.stringify(approved(c1.id)) === '[["s20",80]]' && (await O.claimsOf(senv, U)).find((x) => x.id === c1.id).state === "waiting",
+    "the fixture: Received booked the one row drawn, and the site, frozen, did not hear it: " + JSON.stringify({ status: down.status, approved: approved(c1.id) }));
+  /* the fold lands that row: the allocation would now fall on the next rows */
+  db.prepare("UPDATE entry SET doc=? WHERE json_extract(doc,'$.rid')='s20'").run(JSON.stringify(sale("s20", "2026-09-02", 80, 80)));
+  const pv2 = await call("/claims/" + c1.id + "/preview", {});
+  const again = await call("/claims/" + c1.id + "/received", { hash: pv2.j.hash });
+  ok(pv2.j.booked === true && JSON.stringify(pv2.j.rows.map((r) => [r.rm, r.state])) === '[[80,"applied"]]'
+    && again.status === 200 && again.j.again === true && JSON.stringify(approved(c1.id)) === '[["s20",80]]'
+    && (await O.claimsOf(senv, U)).find((x) => x.id === c1.id).state === "received",
+    "tapped again after the fold, the card is handed the rows he booked, and Received tells the site and books nothing more: "
+    + JSON.stringify({ booked: pv2.j.booked, rows: pv2.j.rows && pv2.j.rows.map((r) => [r.rid || r.key, r.rm]), status: again.status, approved: approved(c1.id) }));
+})();
+
+section("S6 fix: Not found is refused on a claim against the account whose rows his Received has booked, and the card offers only Received");
+await (async () => {
+  /* HIS D7: Not found tells them it has not arrived and to pay again. Received books the rows first and tells the site
+     second, so a site that did not hear leaves the claim waiting there with its rows booked: Not found on it told them
+     to pay again for money the book carries. It is refused once any row of the claim carries his yes, and the card
+     draws Not found shut. Driven through both Workers over the real schema, then on the card. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so Not found on a booked claim was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const C = "CX1-AB", U = "abcd-efgh";
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", 0, "h0",
+    JSON.stringify({ rid: "s21", customer: C, date: "2026-09-10", qty: 1, total: 60, cash: 0, deliveredQty: 1, deliveredOn: "2026-09-10" }));
+  setState("roster", [C]); setState("OPEN", { byKey: {}, position: {} });
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 30, floors: { "1": { floor: 40 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const realSite = { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) };
+  const frozen = { fetch: async (url, init) => (/\/desk\/claims\//.test(new URL(url).pathname) && init && init.method === "POST"
+    ? new Response(JSON.stringify({ ok: false, error: "the order book is moving in" }), { status: 503, headers: { "content-type": "application/json" } }) : realSite.fetch(url, init)) };
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets, STMT_SITE: realSite };
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil: () => {} });
+    return { status: r.status, j: await r.json() };
+  };
+  const state = async (id) => (await O.claimsOf(senv, U)).find((x) => x.id === id).state;
+  const c = (await O.claimAccount(senv, U, { amount: 60, method: "transfer", account: "wise" })).claim;
+  const pv = await call("/claims/" + c.id + "/preview", {});
+  denv.STMT_SITE = frozen;
+  const down = await call("/claims/" + c.id + "/received", { hash: pv.j.hash });
+  denv.STMT_SITE = realSite;
+  const nf = await call("/claims/" + c.id + "/notfound", { amount: 60 });
+  const rows = db.prepare("SELECT status,entry FROM draft").all().filter((d) => JSON.parse(d.entry).claimId === c.id).map((d) => d.status);
+  ok(down.status === 503 && rows.join() === "approved" && nf.status === 409 && /booked/.test(nf.j.error) && (await state(c.id)) === "waiting",
+    "Not found on a claim whose rows Received booked, the site not having heard, is refused, and the claim still waits for Received: "
+    + JSON.stringify({ received: down.status, rows, notfound: nf.status, error: nf.j.error }));
+  /* the control: a claim nothing has booked is answered not found as before */
+  const c2 = (await O.claimAccount(senv, U, { amount: 30, method: "transfer", account: "wise" })).claim;
+  const nf2 = await call("/claims/" + c2.id + "/notfound", { amount: 30 });
+  ok(nf2.status === 200 && (await state(c2.id)) === "notfound", "and a claim nothing has booked is still answered not found: " + JSON.stringify(nf2.j.error || nf2.status));
+
+  /* THE CARD: rows booked, Received only tells them, and Not found is shut */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 96; w.clearInterval = () => {};
+    const claim = { id: "a20260925010000-abcd", u: U, code: C, kind: "account", at: "2026-09-25T01:00:00.000Z", amount: 60, method: "transfer", account: "maybank", state: "waiting" };
+    let BOOKED = true;
+    w.fetch = async (path, init) => {
+      const pp = String(path), post = !!(init && init.method === "POST");
+      const out = pp === "orders" && !post ? { ok: true, orders: [], claims: [claim] }
+        : /\/preview$/.test(pp) ? (BOOKED ? { ok: true, booked: true, rows: [{ key: "k", date: "2026-09-10", owed: 60, rm: 60, flags: [], state: "applied" }], left: 0 }
+          : { ok: true, rows: [{ rid: "s21", date: "2026-09-10", owed: 60, rm: 60, flags: [] }], left: 0, hash: "h" })
+        : { ok: true };
+      return { ok: true, status: 200, json: async () => out };
+    };
+    w.eval("AP_DRAFTS=[];");
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)"); await new Promise((r) => setTimeout(r, 30));
+    const read = () => { const card = D.querySelector('.ordcard[data-id="' + claim.id + '"]');
+      return { rcv: !card.querySelector('button[data-ord="creceived"]').disabled, nf: !card.querySelector('button[data-ord="cnotfound"]').disabled,
+        booked: /booked already/.test(card.textContent || "") }; };
+    const b = read();
+    BOOKED = false; w.eval("CLM_PV={};ORD_PV_GEN++;"); await w.eval("ordLoad(true)"); await new Promise((r) => setTimeout(r, 30));
+    const u = read();
+    ok(b.rcv && !b.nf && b.booked && u.rcv && u.nf && !u.booked,
+      "on the card a claim whose rows are booked says so, with Received open and Not found shut; one not booked offers both: " + JSON.stringify({ booked: b, not: u }));
+  } finally { w.close(); }
+})();
+
+section("S6 fix: an order is not cancelled, by them or by him, while a claim of theirs on it waits");
+await (async () => {
+  /* HIS D7: a claim waits until his Received or Not found. A cancelled order leaves his card, and neither answer is
+     offered on it, so a claim on an order then cancelled could never be answered: their order said Nothing is owed
+     beside Sent by you, waiting, and the claim lifted their hold for good. Either side's cancel is refused while one
+     waits, the card draws no Cancel beside Received, their page says why in place of Cancel, and a claim on an order
+     that ended does not lift the hold. */
+  const O = await import("../stmt/orders.js");
+  const env = { STMT: new KV(), STMT_DESK_KEY: "desk-key" }, U = "abcd-efgh";
+  const agreed = async () => {
+    const o = (await O.placeOrder(env, U, { product: "salt", qty: 1, mode: "collect", unit: 90, total: 90, week: "" })).order;
+    await O.deskMove(env, U, o.id, { status: "acknowledged", mode: "collect" });
+    return o;
+  };
+  const a = await agreed();
+  await O.customerMove(env, U, a.id, "pay", { amount: 90, method: "transfer", account: "maybank" });
+  const theirs = await O.customerMove(env, U, a.id, "cancel", {});
+  const his = await O.deskMove(env, U, a.id, { status: "cancelled" });
+  const still = (await O.ordersOf(env, U)).find((x) => x.id === a.id);
+  const c = still.payments.find((p) => p.claim === "waiting");
+  await O.deskMove(env, U, a.id, { verdict: { kind: "received", claim: c.at, amount: 90 } });
+  const b = await agreed();
+  const plain = await O.customerMove(env, U, b.id, "cancel", {});
+  const after = await O.deskMove(env, U, a.id, { status: "cancelled" });
+  ok(theirs.status === 409 && /we are checking the RM 90\.00 you sent/.test(theirs.error) && his.status === 409 && /answer it first/.test(his.error)
+    && still.status === "acknowledged" && still.claimed === 90 && !plain.error && !after.error && after.order.status === "cancelled",
+    "while a claim waits neither their cancel nor his is taken, each saying why; with none waiting, or once it is answered, either is: "
+    + JSON.stringify({ theirs: theirs.error, his: his.error, status: still.status, plain: plain.error || "ok", after: after.error || after.order.status }));
+
+  /* THEIR PAGE: the line in place of Cancel, and a claim on an order that ended lifts no hold */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const Cr = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const pass = "fixture-pass-r1", ck = await Cr.contentKey("test-secret", U);
+  const now = new Date(), iso = (h) => new Date(now.getTime() + h * 3600e3).toISOString();
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const page = async (pay, list) => {
+    const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-r1",
+      env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: pay.now.rm, pay })) };
+    const dom = new JD(lp(U, "nr1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {}; win.open = () => null;
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
+        if (p === "/open") return res(200, body);
+        if (p === "/orders" && m === "GET") return res(200, { ok: true, orders: list, claims: [] });
+        return res(404, { ok: false });
+      };
+    } });
+    const d = dom.window.document;
+    d.getElementById("un").value = U; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !d.getElementById("tabs").hidden);
+    return dom;
+  };
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: iso(-30), msgs: [], total: 90, paid: 0 };
+  const waiting = { claimed: 90, payments: [{ at: iso(-1), amount: 90, method: "transfer", account: "maybank", claim: "waiting" }] };
+  const none = { rm: 0, parts: [] }, part = { date: "2026-09-01", due: "2026-09-11", late: true, rm: 300, whole: 300, product: "salt", qty: 3, got: 3, gotOn: "2026-09-01", resale: false };
+  const dom = await page({ term: 10, now: none, overdue: none, coming: none }, [
+    { ...base, ...waiting, id: "oW", status: "acknowledged", history: [{ at: iso(-30), status: "acknowledged", by: "desk" }] },
+    { ...base, id: "oP", status: "acknowledged", claimed: 0, payments: [], history: [{ at: iso(-30), status: "acknowledged", by: "desk" }] }]);
+  const foot = {};
+  try {
+    const d = dom.window.document;
+    d.querySelector('button[data-t="order"]').click();
+    for (const id of ["oW", "oP"]) {
+      await until(() => d.querySelector('#pOrder [data-row="' + id + '"]'));
+      d.querySelector('#pOrder [data-row="' + id + '"]').click();
+      await until(() => d.querySelector("#pOrder .oscreen .ofoot"));
+      const f = d.querySelector("#pOrder .oscreen .ofoot");
+      foot[id] = { cancel: [...f.querySelectorAll("button")].some((x) => t(x) === "Cancel this order"), line: t(f.querySelector(".sub2")) };
+      const back = [...d.querySelectorAll("#pOrder button")].find((x) => /^(Back|All orders|Your orders)/.test(t(x)));
+      if (back) back.click();
+    }
+  } finally { dom.window.close(); }
+  ok(!foot.oW.cancel && foot.oW.line === "We are checking the RM 90 you sent. You can cancel once we have answered it." && foot.oP.cancel,
+    "their order with a claim waiting says why in place of Cancel; one with none keeps Cancel: " + JSON.stringify(foot));
+  const held = await page({ term: 10, now: { rm: 300, due: "2026-09-11", parts: [part] }, overdue: { rm: 300, parts: [part] }, coming: none },
+    [{ ...base, ...waiting, id: "oC", status: "cancelled", history: [{ at: iso(-30), status: "cancelled", by: "customer" }] }]);
+  let tab = "";
+  try { tab = t(held.window.document.querySelector('button[data-t="order"]')); } finally { held.window.close(); }
+  ok(tab === "Pay", "and a claim on an order that has ended does not lift the RM 100 hold: " + JSON.stringify(tab));
+
+  /* HIS CARD: no Cancel beside Received while a claim waits */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 96; w.clearInterval = () => {};
+    const o = { u: U, code: "CX1-AB", product: "salt", qty: 1, total: 90, delivery: 0, mode: "collect", history: [], msgs: [], status: "acknowledged", at: "2026-09-20T02:00:00.000Z", moved: 0, paid: 0 };
+    const orders = [Object.assign({}, o, { id: "k1", ...waiting }), Object.assign({}, o, { id: "k2", claimed: 0, payments: [] })];
+    w.fetch = async (path, init) => ({ ok: true, status: 200, json: async () => (String(path) === "orders" && !(init && init.method === "POST") ? { ok: true, orders: JSON.parse(JSON.stringify(orders)), claims: [] } : { ok: true }) });
+    w.eval("AP_DRAFTS=[];");
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const has = (id, st) => !!D.querySelector('.ordcard[data-id="' + id + '"] button[data-ord="' + st + '"]');
+    ok(has("k1", "received") && !has("k1", "cancelled") && has("k2", "cancelled"),
+      "his card offers Received and no Cancel while a claim waits, and Cancel where none does: " + JSON.stringify({ k1: has("k1", "cancelled"), k2: has("k2", "cancelled") }));
+  } finally { w.close(); }
+})();
+
+section("S6 fix: the desk never books the same money on a row twice, once as a claim on its order and once against the account");
+await (async () => {
+  /* HIS D6 AND D7: one Received books exactly the rows drawn. The account claim's allocation read the mirror, which knows
+     nothing of an order claim waiting, received or of cash not yet folded, so it drew a row an order claim already
+     covered; and an order claim's Received booked a row a claim against the account had booked and no fold had landed.
+     Each row is now taken as owing less the money on its way to it. Driven through both Workers over the real schema. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so money on its way to a row was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { withPending } = await import("../src/drafter.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const C = "CX1-AB", U = "abcd-efgh";
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  const row = (rid, date, total) => ({ rid, customer: C, product: "salt", date, qty: 1, total, cash: 0, deliveredQty: 1, deliveredOn: date });
+  const rows = [row("s30", "2026-09-10", 180), row("s31", "2026-09-12", 120)];
+  rows.forEach((r, i) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", i, "h" + i, JSON.stringify(r)));
+  let book = { sales: [], state: { OPEN: { byKey: {}, position: {} } } };
+  for (const r of rows) book = withPending(book, r);
+  setState("roster", [C]); setState("OPEN", book.state.OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 30, floors: { "1": { floor: 40 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [];
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil: (p) => tails.push(p) });
+    const j = await r.json(); await Promise.allSettled(tails.splice(0));
+    return { status: r.status, j };
+  };
+  /* an order agreed and handed over, whose row is on the book */
+  const handed = async (total, key) => {
+    const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: total, total, week: "" })).order;
+    await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+    await O.deskMove(senv, U, o.id, { mark: { ledgerKey: key, ack: "2026-09-10T01:00:00.000Z" } });
+    await O.deskMove(senv, U, o.id, { handover: { units: 1, mode: "collect" } });
+    await O.customerMove(senv, U, o.id, "method", { method: "tngbiz", account: "tngbiz" });
+    return o;
+  };
+  const a = await handed(180, C + "|2026-09-10|180");
+  await O.customerMove(senv, U, a.id, "pay", { amount: 180 });   /* waiting on its card */
+  const c1 = (await O.claimAccount(senv, U, { amount: 180, method: "transfer", account: "wise" })).claim;
+  const pv = await call("/claims/" + c1.id + "/preview", {});
+  ok(pv.status === 200 && JSON.stringify(pv.j.rows.map((r) => [r.rid, r.rm])) === '[["s31",120]]' && pv.j.left === 60,
+    "a claim against the account passes over a row whose order has RM 180 sent on it and waiting, and says what no other row owes: "
+    + JSON.stringify({ rows: pv.j.rows && pv.j.rows.map((r) => [r.rid, r.rm]), left: pv.j.left }));
+
+  const c2 = (await O.claimAccount(senv, U, { amount: 120, method: "transfer", account: "wise" })).claim;
+  const pv2 = await call("/claims/" + c2.id + "/preview", {});
+  const yes = await call("/claims/" + c2.id + "/received", { hash: pv2.j.hash });
+  const c3 = (await O.claimAccount(senv, U, { amount: 100, method: "transfer", account: "wise" })).claim;
+  const pv3 = await call("/claims/" + c3.id + "/preview", {});
+  ok(pv3.status === 200 && pv3.j.rows.length === 0 && pv3.j.left === 100,
+    "nor does a second claim against the account draw a row the first one booked and no fold has landed: " + JSON.stringify({ rows: pv3.j.rows, left: pv3.j.left }));
+  const b = await handed(120, C + "|2026-09-12|120");
+  await O.customerMove(senv, U, b.id, "pay", { amount: 120 });
+  const cb = (await O.ordersOf(senv, U)).find((x) => x.id === b.id).payments.find((p) => p.claim === "waiting");
+  const twice = await call("/orders/" + b.id + "/received", { claim: cb.at, amount: 120 });
+  ok(yes.status === 200 && yes.j.approved.length === 1 && twice.status === 409 && /booked on this order's row and not folded yet/.test(twice.j.error)
+    && (await O.ordersOf(senv, U)).find((x) => x.id === b.id).claimed === 120,
+    "and an order claim's Received is refused on a row a claim against the account booked and no fold has landed, the claim still waiting: "
+    + JSON.stringify({ acct: yes.j.approved, order: twice.status, error: twice.j.error }));
+})();
+
+section("S6 fix: a claim that money he recorded another way already covers is answered Received, on the book already, never Not found");
+await (async () => {
+  /* HIS D7: his Received or Not found answers a claim. A claim that money he recorded another way already covers (a
+     transfer typed on the desk and carried back, or rows he paid by hand) was refused as Received, leaving only Not
+     found, which told them to pay again for money that had arrived, and until then it paused the chase. Received, on
+     the book already, closes it as received and books nothing: its entry is filed never to land, paid (which carries
+     the money) never moves, and they are woken Payment received. Both Workers over the real schema, then the card. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so a covered claim was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders } = await import("../src/orders.js");
+  const { runDrafter, withPending } = await import("../src/drafter.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const C = "CX1-AB", U = "abcd-efgh", key = C + "|2026-09-20|70";
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  /* his row, paid by hand (the transfer he typed on the desk), and a row of theirs he entered, paid by hand as well */
+  const rows = [{ rid: "s40", customer: C, product: "salt", date: "2026-09-20", qty: 1, total: 70, cash: 70, deliveredQty: 0, orderKey: key },
+    { rid: "s41", customer: C, product: "salt", date: "2026-09-02", qty: 1, total: 150, cash: 150, deliveredQty: 1, deliveredOn: "2026-09-02" }];
+  rows.forEach((r, i) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", i, "h" + i, JSON.stringify(r)));
+  setState("roster", [C]); setState("OPEN", withPending({ sales: [], state: { OPEN: { byKey: {}, position: {} } } }, rows[0]).state.OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 30, floors: { "1": { floor: 40 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [];
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil: (p) => tails.push(p) });
+    const j = await r.json(); await Promise.allSettled(tails.splice(0));
+    return { status: r.status, j };
+  };
+  const mine = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 70, total: 70, week: "" })).order;
+  await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+  await O.deskMove(senv, U, o.id, { mark: { ledgerKey: key, ack: "2026-09-20T01:00:00.000Z" } });
+  await O.customerMove(senv, U, o.id, "pay", { amount: 70, method: "transfer", account: "maybank" });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const c = (await mine(o.id)).payments.find((p) => p.claim === "waiting");
+  await O.deskMove(senv, U, o.id, { ledger: { paid: 70 } });   /* the return leg: the transfer he typed on the desk */
+  const plain = await call("/orders/" + o.id + "/received", { claim: c.at, amount: 70 });
+  const cov = await call("/orders/" + o.id + "/received", { claim: c.at, amount: 70, covered: true });
+  const after = await mine(o.id), ca = after.payments.find((p) => p.at === c.at);
+  const d = db.prepare("SELECT status,decided_by FROM draft WHERE id = ?").get(c.queued);
+  const rc = await reconcileOrders(denv);
+  const ev = bk.db.prepare("SELECT body FROM ev WHERE oid = ? AND kind = 'verdict'").all(o.id).map((x) => JSON.parse(x.body));
+  ok(plain.status === 409 && /on the book already/.test(plain.j.error) && cov.status === 200 && ca.claim === "received" && ca.covered === true && !("queued" in ca)
+    && after.claimed === 0 && after.paid === 70 && d && d.status === "rejected" && d.decided_by === "covered" && rc.queued === 0
+    && ev.length === 1 && ev[0].verdict === "received" && !O.claimWaits(after),
+    "a claim money he recorded by hand already covers is refused as a plain Received and taken as Received, on the book already: received, paid unmoved, its row filed never to land, nothing queued again, the chase free: "
+    + JSON.stringify({ plain: plain.j.error, cov: cov.status, claim: ca, paid: after.paid, draft: d, rc }));
+  /* not where the order still owes it: that is a Received like any other */
+  const o2 = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 70, total: 70, week: "" })).order;
+  await O.deskMove(senv, U, o2.id, { status: "acknowledged", mode: "collect" });
+  await O.customerMove(senv, U, o2.id, "pay", { amount: 70, method: "transfer", account: "maybank" });
+  const c2 = (await mine(o2.id)).payments.find((p) => p.claim === "waiting");
+  const owed = await O.deskMove(senv, U, o2.id, { verdict: { kind: "received", covered: true, claim: c2.at, amount: 70 } });
+  const kvenv = { STMT: new KV(), STMT_DESK_KEY: "desk-key" };
+  const k = (await O.placeOrder(kvenv, U, { product: "salt", qty: 1, mode: "collect", unit: 70, total: 70, week: "" })).order;
+  await O.deskMove(kvenv, U, k.id, { status: "acknowledged", mode: "collect" });
+  await O.customerMove(kvenv, U, k.id, "pay", { amount: 70, method: "transfer", account: "maybank" });
+  await O.deskMove(kvenv, U, k.id, { ledger: { paid: 70 } });
+  const kc = (await O.ordersOf(kvenv, U)).find((x) => x.id === k.id).payments.find((p) => p.claim === "waiting");
+  const onKv = await O.deskMove(kvenv, U, k.id, { verdict: { kind: "received", covered: true, claim: kc.at, amount: 70 } });
+  ok(owed.status === 409 && /answer it Received/.test(owed.error) && onKv.status === 503,
+    "on the book already is refused where the order still owes the claim, and on the kv road, as Not found is: " + JSON.stringify({ owed: owed.error, kv: onKv.error }));
+
+  /* A CLAIM AGAINST THE ACCOUNT whose rows he paid by hand: more than they owe, so it books no row */
+  const ac = (await O.claimAccount(senv, U, { amount: 150, method: "transfer", account: "wise" })).claim;
+  const pv = await call("/claims/" + ac.id + "/preview", {});
+  const acov = await call("/claims/" + ac.id + "/received", { covered: true });
+  const acA = (await O.claimsOf(senv, U)).find((x) => x.id === ac.id);
+  const booked = db.prepare("SELECT entry FROM draft").all().filter((x) => JSON.parse(x.entry).claimId === ac.id).length;
+  ok(pv.j.left === 150 && acov.status === 200 && acov.j.covered === true && acA.state === "received" && booked === 0,
+    "and a claim against the account that no row owes is answered Received, on the book already, booking no row: " + JSON.stringify({ left: pv.j.left, status: acov.status, state: acA.state, booked }));
+
+  /* THE CARD: a claim on an order his hand-typed money completed is still his to answer, and Received posts it covered */
+  const o3 = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 70, total: 70, week: "" })).order;
+  await O.deskMove(senv, U, o3.id, { status: "acknowledged", mode: "collect" });
+  await O.deskMove(senv, U, o3.id, { handover: { units: 1, mode: "collect" } });
+  await O.customerMove(senv, U, o3.id, "pay", { amount: 70, method: "transfer", account: "maybank" });
+  await O.deskMove(senv, U, o3.id, { ledger: { paid: 70 } });
+  const done3 = (await mine(o3.id)).status, listed = (await O.allOrders(senv, false)).some((x) => x.id === o3.id);
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 96; w.clearInterval = () => {};
+    const ord = { id: "d1", u: U, code: C, product: "salt", qty: 1, total: 70, delivery: 0, mode: "collect", history: [], msgs: [], status: "done", at: "2026-09-20T02:00:00.000Z",
+      moved: 1, paid: 70, claimed: 70, payments: [{ at: "2026-09-24T05:00:00.000Z", amount: 70, method: "transfer", account: "maybank", claim: "waiting" }] };
+    const calls = [];
+    w.fetch = async (path, init) => { const post = !!(init && init.method === "POST"); calls.push({ p: String(path), body: init && init.body ? JSON.parse(init.body) : null });
+      return { ok: true, status: 200, json: async () => (String(path) === "orders" && !post ? { ok: true, orders: [JSON.parse(JSON.stringify(ord))], claims: [] } : { ok: true }) }; };
+    w.eval("AP_DRAFTS=[];");
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const b = D.querySelector('.ordcard[data-id="d1"] button[data-ord="received"]');
+    const label = b ? b.textContent : null;
+    if (b) b.click();
+    await new Promise((r) => setTimeout(r, 30));
+    const sent = calls.find((x) => x.p === "orders/d1/received");
+    ok(done3 === "done" && listed && label === "Received, on the book already" && sent && sent.body.covered === true && sent.body.amount === 70,
+      "a claim on an order his recorded money completed stays on his card, and its Received is on the book already: " + JSON.stringify({ done3, listed, label, sent: sent && sent.body }));
+  } finally { w.close(); }
 })();
 
 section("v764: what he records on the desk reaches the customer's order, and the chase stops");
@@ -29404,11 +31739,12 @@ await (async () => {
     + "version a minute, and a full pass only when a fold has landed: " + JSON.stringify({ t2, calls }));
   ok((await dkv4.get("orders:told")) === "vA", "and the book it last told is remembered: " + (await dkv4.get("orders:told")));
 
-  /* IT ONLY EVER RAISES: a customer's own word is not erased by a row that has not caught up */
+  /* IT ONLY EVER RAISES: what the order already counts is not erased by a row that has not caught up. S6 (D7): a
+     customer's own word is a claim and never counted, so the figure here is his, cash he recorded on the card */
   const o5 = (await placeOrder(senv4, "abcd-efgh", { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
   await deskMove(senv4, "abcd-efgh", o5.id, { status: "acknowledged", mode: "collect" });
   await deskMove(senv4, "abcd-efgh", o5.id, { mark: { ledgerKey: "CC5-OKR|2026-09-22|100", ack: "2026-09-22T01:00:00.000Z" } });
-  await customerMove(senv4, "abcd-efgh", o5.id, "pay", { amount: 100, method: "cod" });
+  await deskMove(senv4, "abcd-efgh", o5.id, { cash: { amount: 100 } });
   SALE = { rid: "s901", customer: "CC5-OKR", date: "2026-09-22", qty: 1, total: 100, cash: 40, deliveredQty: 0 };
   VER = "vB";
   await spy(() => tellSite(denv4));
@@ -29420,7 +31756,7 @@ await (async () => {
   await deskMove(senv4, "abcd-efgh", o5.id, { ledger: { paid: 40, moved: 0 } });
   const low = await skv4.get("order:abcd-efgh:" + o5.id, "json");
   ok(+low.paid === 100 && (+low.moved || 0) === 0,
-    "and handed one directly, the site still refuses to lower a figure the customer gave: " + JSON.stringify({ paid: low.paid }));
+    "and handed one directly, the site still refuses to lower a figure it counts: " + JSON.stringify({ paid: low.paid }));
 
   /* A REFUSAL LEAVES THE MARK WHERE IT WAS, so it is tried again next minute and not next fold */
   VER = "vC";
@@ -29820,12 +32156,15 @@ await (async () => {
   ok(shown[0] && shown[0].t === "A customer wrote" && shown[0].opt.data.url === "./desk#orders/newest",
     "so the banner says a customer wrote, and opens the card where he answers: " + JSON.stringify(shown[0] && shown[0].t));
 
-  /* A PLACEMENT WITH A NOTE IS A NEW ORDER, whose first line is the note typed with it */
+  /* A PLACEMENT WITH A NOTE IS A NEW ORDER, whose first line is the note typed with it. Both marks have to move for
+     this to prove which news wins, so the placement is stamped after the line (and so after the first placement) */
   await dkv.delete("orders:news");
+  await clockPast([o.at, n1.said].sort().pop());
   await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "", note: "call when ready" });
   const n2 = await nudgeOrders(denv);
   ok(n2.newest && n2.said && (await dkv.get("orders:news")) === null,
-    "and a new order that carries a line wakes as a new order, not as a line: " + JSON.stringify(await dkv.get("orders:news")));
+    "and a new order that carries a line wakes as a new order, not as a line: "
+      + JSON.stringify({ newest: !!n2.newest, said: !!n2.said, news: await dkv.get("orders:news") }));
 })();
 
 section("S1 1.48: Acknowledge, Approve and the notice's buttons wear the system's recipes, with no colour of their own");
@@ -30724,8 +33063,8 @@ await (async () => {
   await O.customerMove(senv, u, o.id, "pay", { amount: 30 });
   await O.deskMove(senv, u, o.id, { cash: { amount: 50 } });
   const got = JSON.parse(await kv.get("order:" + u + ":" + o.id));
-  ok(got.paid === 80 && got.queued && got.queued.paid === 50 && O.orderWork(got).includes("pay") && Math.abs(got.paid - got.queued.paid - 30) < 0.005,
-    "his cash moves the ledger's mark by the cash alone, so their RM 30 is still owed to the ledger as theirs and his RM 50 is never queued twice: "
+  ok(got.paid === 50 && got.claimed === 30 && got.queued && got.queued.paid === 50 && O.orderWork(got).includes("claim") && !O.orderWork(got).includes("pay"),
+    "his cash moves the ledger's mark by the cash alone, so their RM 30, a claim since S6, is still owed to the ledger as its own entry and his RM 50 is never queued twice: "
     + JSON.stringify({ paid: got.paid, queued: got.queued, work: O.orderWork(got) }));
 
   const dkv = new KV(); await dkv.put("stmt-users", JSON.stringify({ [u]: "CX1-AB" }));
@@ -30738,7 +33077,7 @@ await (async () => {
   const said = await bare({ message: "Thank you" });
   const cashed = await bare({ cash: { amount: 20 } });
   const after = JSON.parse(await kv.get("order:" + u + ":" + o.id));
-  ok(said === 200 && cashed === 400 && after.paid === 80 && after.queued.paid === 50,
+  ok(said === 200 && cashed === 400 && after.paid === 50 && after.queued.paid === 50,
     "the bare move route carries his line but refuses cash, which would move the mark with no row booked behind it: " + JSON.stringify({ said, cashed, paid: after.paid }));
 })();
 
@@ -31639,7 +33978,7 @@ await (async () => {
   await reconcileOrders(denv);
   const sb = ((await orderOf(b.id)).sync || {}).why || "";
   ok(sa === "the handover waits for the pending row to reach the book: it is approved, and the next fold lands it"
-    && /^the payment waits for the pending row to reach the book: approve it under Approve/.test(sb),
+    && /^the payment they say they sent waits for the pending row to reach the book: approve it under Approve/.test(sb),   /* S6: a claim */
     "a wait on a row his yes approved says the fold is left, and one on a row nobody approved says Approve: " + JSON.stringify({ sa, sb }));
 
   const { openMaster: omO3 } = await import("../tools/payload.mjs");
@@ -32540,8 +34879,9 @@ await (async () => {
       && [...D.querySelectorAll("#tabs [data-who]")].map((x) => x.textContent).join(",") === u + "," + u,
       "signed in, Home opens first, marked on the bar and the rail, greeted, with the username in the header and at the rail's foot: "
       + JSON.stringify([shown(D), current(D), head()]));
-    const pay71 = D.getElementById("hPay").textContent, go = D.getElementById("hPayGo");
-    ok(/To pay nowRM 70/.test(pay71) && /you received/.test(pay71) && go && go.textContent === "Pay RM 70" && D.querySelectorAll("#pHome .salt-pill").length === 1,
+    /* S7 merge: Home's To pay now is stage 6's (#payHead), its Pay #payNow */
+    const pay71 = D.getElementById("payHead").textContent, go = D.getElementById("payNow");
+    ok(D.getElementById("pHome").contains(go) && /To pay nowRM 70/.test(pay71) && /you received/.test(pay71) && go && go.textContent === "Pay RM 70" && D.querySelectorAll("#pHome .salt-pill").length === 1,
       "To pay now is the sealed RM 70, never the statement's RM 90, with what it is for and the one filled Pay: " + JSON.stringify(pay71.slice(0, 120)));
     const rows = (id) => [...D.querySelectorAll("#" + id + " [data-row]")].map((r) => r.getAttribute("data-row")).join(",");
     ok(rows("hNeeds") === "oR" && /A reply: Ready Thursday\./.test(D.getElementById("hNeeds").textContent)
@@ -32572,7 +34912,7 @@ await (async () => {
   try {
     const { D } = c, home = D.getElementById("pHome").textContent;
     ok(shown(D) === "pHome" && D.getElementById("placeT").textContent === "Welcome"
-      && /To payRM 0Nothing on your account yet\. Your orders will show here\./.test(home) && !D.getElementById("hPayGo"),
+      && /To payRM 0Nothing on your account yet\. Your orders will show here\./.test(home) && !D.getElementById("payNow"),
       "a new account opens Home on Welcome and says there is nothing on it yet: " + JSON.stringify(home.slice(0, 120)));
     D.getElementById("hPrices").click();
     ok(shown(D) === "pPrices" && !!D.querySelector("#pPrices .szrow"), "and its one filled control opens Prices, where a size can be ordered");
@@ -32811,12 +35151,12 @@ await (async () => {
   } finally { w.close(); }
 })();
 
-section("S7 fix: Home's Pay opens only a place that shows the figure it names, never the first order that owes");
+section("S7 fix: Home's Pay opens the pay sheet on the figure it names, never the first order that owes");
 await (async () => {
   /* S7-R1 and S7R-3 of the stage 7 review (25 Sep 2026). Home's Pay said the sealed To pay now, RM 70 for goods already
      received, and opened the first site order with anything to pay: an order agreed and not yet handed over, whose own
-     Pay said RM 150. Until stage 6's pay sheet, it opens the one order handed over in full that still owes that figure,
-     or Account, whose statement lists what the figure is made of. Forced state: RM 70 sealed as to pay now. */
+     Pay said RM 150. S7 merge: stage 6's pay sheet replaces the interim road (the one order owing that figure, else
+     Account): Pay opens the sheet on To pay now's RM 70, over Home, and no order. Forced state: RM 70 sealed as to pay now. */
   const { landingPage } = await import("../stmt/page.js");
   const C = await import("../tools/stmt-crypto.mjs");
   const { webcrypto } = await import("node:crypto");
@@ -32841,36 +35181,37 @@ await (async () => {
     const W = dom.window, D = W.document;
     D.getElementById("pw").value = pass;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 200 && !(D.getElementById("hPayGo") && D.querySelector("#pOrder [data-olist]")); i++) await new Promise((r) => setTimeout(r, 25));
+    for (let i = 0; i < 200 && !(D.getElementById("payNow") && D.querySelector("#pOrder [data-olist]")); i++) await new Promise((r) => setTimeout(r, 25));
     return { W, D };
   };
   const shown = (D) => ["pHome", "pPrices", "pOrder", "pStmt", "pCard"].filter((id) => !D.getElementById(id).hidden).join(",");
-  const tap = (D) => { const g = D.getElementById("hPayGo"); const said = g ? g.textContent : ""; if (g) g.click(); return said; };
+  const tap = (D) => { const g = D.getElementById("payNow"); const said = g ? g.textContent : ""; if (g) g.click(); return said; };
   const payOf = (D) => { const s = D.querySelector("#pOrder .oscreen"); return s ? { id: s.getAttribute("data-order"), pays: [...s.querySelectorAll(".salt-pill, .salt-ghost")].map((b) => b.textContent).filter((t) => /^Pay RM/.test(t)) } : null; };
+  const sheet = (D) => { const s = D.getElementById("paySheet"); return s && !s.hidden ? (D.querySelector("#payBody .salt-kpi__label").textContent + " " + D.querySelector("#payBody .salt-kpi__value").textContent) : ""; };
 
   const a = await open([agreed]);
   try {
     const said = tap(a.D);
-    ok(said === "Pay RM 70" && shown(a.D) === "pStmt" && !payOf(a.D),
-      "with only an order not yet handed over owing RM 150, Pay RM 70 opens Account's statement, never that order: " + JSON.stringify([said, shown(a.D), payOf(a.D)]));
+    ok(said === "Pay RM 70" && sheet(a.D) === "To pay now RM 70" && shown(a.D) === "pHome" && !payOf(a.D),
+      "with only an order not yet handed over owing RM 150, Pay RM 70 opens the pay sheet on To pay now's RM 70, never that order: " + JSON.stringify([said, sheet(a.D), shown(a.D), payOf(a.D)]));
   } finally { a.W.close(); }
   const b = await open([agreed, withYou("20260916030000-with", 40)]);
   try {
-    const said = tap(b.D), got = payOf(b.D);
-    ok(said === "Pay RM 70" && shown(b.D) === "pOrder" && got && got.id === "20260916030000-with" && got.pays.join() === "Pay RM 70",
-      "with the goods of one order all with them and RM 70 of it still to pay, Pay RM 70 opens that order, whose own Pay says RM 70: " + JSON.stringify([said, shown(b.D), got]));
+    const said = tap(b.D);
+    ok(said === "Pay RM 70" && sheet(b.D) === "To pay now RM 70" && shown(b.D) === "pHome" && !payOf(b.D),
+      "with the goods of one order all with them and RM 70 of it still to pay, Pay RM 70 still opens the one sheet on To pay now: " + JSON.stringify([said, sheet(b.D), shown(b.D), payOf(b.D)]));
   } finally { b.W.close(); }
   const c = await open([withYou("20260916030000-with", 80)]);
   try {
     tap(c.D);
-    ok(shown(c.D) === "pStmt" && !payOf(c.D),
-      "and an order handed over that owes another figure is not taken for it: " + JSON.stringify([shown(c.D), payOf(c.D)]));
+    ok(sheet(c.D) === "To pay now RM 70" && shown(c.D) === "pHome" && !payOf(c.D),
+      "and an order handed over that owes another figure is not taken for it: " + JSON.stringify([sheet(c.D), shown(c.D), payOf(c.D)]));
   } finally { c.W.close(); }
   const d = await open([{ ...agreed, id: "20260920030000-same", qty: 1, total: 110, paid: 40, mode: "collect" }]);
   try {
     tap(d.D);
-    ok(shown(d.D) === "pStmt" && !payOf(d.D),
-      "nor is an order not yet handed over that happens to owe the same figure: " + JSON.stringify([shown(d.D), payOf(d.D)]));
+    ok(sheet(d.D) === "To pay now RM 70" && shown(d.D) === "pHome" && !payOf(d.D),
+      "nor is an order not yet handed over that happens to owe the same figure: " + JSON.stringify([sheet(d.D), shown(d.D), payOf(d.D)]));
   } finally { d.W.close(); }
 })();
 
@@ -33145,7 +35486,7 @@ await (async () => {
   } finally { W.close(); }
 })();
 
-section("S7 fix: the keep card leads only a new account's Home, under the three questions otherwise, and See all prices follows the first sizes");
+section("S7 fix: the keep card leads only a new account's Home, This device's first row otherwise, and See all prices follows the first sizes");
 await (async () => {
   /* S7-R5 of the stage 7 review (25 Sep 2026). In a browser tab the keep card stood above To pay now on every Home, so on a
      small phone Pay sat under the bar and Needs you, Coming up and Order again below the fold; the plan draws it first only
@@ -33177,23 +35518,27 @@ await (async () => {
     return { W, D };
   };
   /* the order Home's first column reads in, by id, and the order of See all prices and the tiles */
-  const col = (D) => [...D.getElementById("hPay").parentNode.children].map((x) => x.id || x.className.split(" ")[0]).join(",");
+  const col = (D) => [...D.getElementById("payHead").parentNode.children].map((x) => x.id || x.className.split(" ")[0]).join(",");
   const before = (D, a, b) => !!a && !!b && !!(a.compareDocumentPosition(b) & D.defaultView.Node.DOCUMENT_POSITION_FOLLOWING);
   const a = await open(true);
   try {
     const { D } = a, sp = D.getElementById("hPrices"), tiles = D.querySelector("#hAgain .salt-options__grid");
     const c = col(D).split(",");
-    ok(c.indexOf("keepCard") >= 0 && c.indexOf("hPay") === c.indexOf("keepCard") + 1,
+    ok(c.indexOf("keepCard") >= 0 && c.indexOf("payHead") === c.indexOf("keepCard") + 1 && D.getElementById("keepCard").classList.contains("salt-glass-card"),
       "a new account's Home leads with the keep card, above To pay: " + JSON.stringify(col(D)));
-    ok(!!sp && D.getElementById("hAgain").contains(sp) && before(D, tiles, sp) && !D.getElementById("hPay").querySelector(".salt-pill"),
+    ok(!!sp && D.getElementById("hAgain").contains(sp) && before(D, tiles, sp) && !D.getElementById("payHead").querySelector(".salt-pill"),
       "and its one filled control, See all prices, follows the sizes to start from: " + JSON.stringify(D.getElementById("hAgain").textContent.slice(0, 120)));
   } finally { a.W.close(); }
   const b = await open(false);
   try {
     const { D } = b, c = col(D).split(",");
-    ok(c.indexOf("hPay") >= 0 && c.indexOf("hNeeds") === c.indexOf("hPay") + 1 && c.indexOf("keepCard") === c.indexOf("hNeeds") + 1
-      && D.querySelector("#hNeeds [data-row]") && !D.getElementById("hPrices"),
-      "an account with an order has To pay and Needs you first and the keep card under them, and no See all prices: " + JSON.stringify(c));
+    /* S7 merge (rule 3): the keep card is one element, and on an account with anything on it it is This device's first
+       row, in Account, never a third copy under Needs you */
+    const k = D.getElementById("keepCard"), dev = D.getElementById("thisDevice");
+    ok(c.indexOf("payHead") >= 0 && c.indexOf("hNeeds") === c.indexOf("payHead") + 1 && c.indexOf("keepCard") < 0
+      && dev.contains(k) && k.previousElementSibling === D.getElementById("devH") && !k.classList.contains("salt-glass-card")
+      && D.querySelectorAll("#keepCard").length === 1 && D.querySelector("#hNeeds [data-row]") && !D.getElementById("hPrices"),
+      "an account with an order has To pay and Needs you first, the keep card is This device's first row, and no See all prices: " + JSON.stringify(c));
   } finally { b.W.close(); }
 })();
 
@@ -33287,30 +35632,34 @@ await (async () => {
   /* H06 of the Counter study: every answer went to the order form's one note, and the payment page never draws
      the form, so I have paid, Withdraw and Send answered nothing at all there. The answer is now a role=status
      line in the order that was tapped, beside the control; where the answer took the control away (paid in
-     full), under the order's state. */
+     full), under the order's state. S6 6.5: a payment is a claim made in the pay sheet, so its refusal stands
+     beside Yes, I sent, in the sheet. */
   const { landingPage: lpH } = await import("../stmt/page.js");
   const CH = await import("../tools/stmt-crypto.mjs");
   const { webcrypto: wcH } = await import("node:crypto");
   const { JSDOM: JDH } = await import("jsdom");
   const u = "abcd-efgh", pass = "fixture-pass-h06", ck = await CH.contentKey("test-secret", u);
+  const late = { date: "2026-08-31", due: "2026-09-10", late: true, rm: 280, whole: 280, product: "salt", qty: 2.5, got: 2.5, gotOn: "2026-08-31", resale: false };
   const body = { ok: true, wrap: await CH.wrapKey(pass, ck), session: "sess-h06",
     env: await CH.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CH.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280 })) };
+    live: await CH.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280,
+      pay: { term: 10, now: { rm: 280, due: "2026-09-10", parts: [late] }, overdue: { rm: 280, parts: [late] }, coming: { rm: 0, parts: [] } } })) };
   const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: "2026-09-20T03:00:00Z", history: [], msgs: [] };
-  const st = { paid: 0, payOk: false, ordersDown: false };
-  const list = () => [{ ...base, id: "oA", status: "acknowledged", total: 150, paid: st.paid, method: "transfer", account: "maybank" },
+  const st = { claimed: 0, payOk: false, ordersDown: false };
+  const list = () => [{ ...base, id: "oA", status: "acknowledged", total: 150, paid: 0, claimed: st.claimed, method: "transfer", account: "maybank",
+    payments: st.claimed ? [{ at: "2026-09-24T02:00:00Z", amount: 150, method: "transfer", account: "maybank", claim: "waiting" }] : [] },
     { ...base, id: "oB", status: "placed", total: 90, paid: 0 }];
   const res = (status, j) => ({ ok: status === 200, status, json: async () => j });
   const dom = new JDH(lpH(u, "nh06", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: wcH, configurable: true }); } catch (e) { win.crypto = wcH; }
     if (!win.TextEncoder) win.TextEncoder = TextEncoder;
     if (!win.TextDecoder) win.TextDecoder = TextDecoder;
-    win.scrollTo = () => {}; win.confirm = () => true;
+    win.scrollTo = () => {}; win.confirm = () => true; win.open = () => null;
     win.fetch = async (path, init) => {
       const p = String(path), m = (init && init.method) || "GET";
       if (p === "/open") return res(200, body);
       if (p === "/orders" && m === "GET") return st.ordersDown ? res(401, { ok: false }) : res(200, { ok: true, orders: list() });
-      if (p === "/orders/oA/pay") { if (!st.payOk) return res(200, { ok: false, error: "Refused by the fixture: pay" }); st.paid = 150; return res(200, { ok: true }); }
+      if (p === "/orders/oA/pay") { if (!st.payOk) return res(200, { ok: false, error: "Refused by the fixture: pay" }); st.claimed = 150; return res(200, { ok: true }); }
       if (p === "/orders/oB/cancel") return res(200, { ok: false, error: "Refused by the fixture: withdraw" });
       if (p === "/orders/oB/say") return res(200, { ok: false, error: "Refused by the fixture: say" });
       return res(404, { ok: false });
@@ -33318,30 +35667,37 @@ await (async () => {
   } });
   const w = dom.window, d = w.document;
   const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
-  /* S5: an order is a row that opens its own screen; its ways to pay open behind its one Pay */
+  /* S5: an order is a row that opens its own screen; S6: its Pay opens the pay sheet, which asks on return */
   const scr = () => d.querySelector("#pOrder .oscreen");
   const openO = (id) => { const b = d.querySelector("#pOrder .oback"); if (b && scr()) b.click();
     const r = d.querySelector('#pOrder [data-row="' + id + '"]'); if (r) r.click();
-    const pay = scr() && [...scr().querySelectorAll(".oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
     return scr() || d; };
+  const claim = () => {
+    const pay = scr() && [...scr().querySelectorAll(".oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
+    const r = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); if (r) { r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); }
+    const s = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); if (s) { s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true })); }
+    const g = d.getElementById("payGo"); if (g) g.click();
+    w.dispatchEvent(new w.Event("blur")); w.dispatchEvent(new w.Event("focus"));
+    const y = d.getElementById("paySent"); if (y) y.click();
+  };
   const said = (root, words) => [...root.querySelectorAll('[role="status"]')].find((x) => x.textContent.includes(words) && !x.closest("[hidden]"));
   const after = (a, b) => !!(a && b && (a.compareDocumentPosition(b) & w.Node.DOCUMENT_POSITION_FOLLOWING));
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => d.querySelectorAll("#pOrder [data-row]").length === 2);
-    /* S7 7.1: Home opens first, and its Pay goes to Orders, where the payment page is */
-    d.getElementById("hPayGo").click();
+    /* S7 7.1: Home opens first, and Orders is the payment page (S7 merge: Home's Pay opens the pay sheet, S6 6.4) */
+    d.querySelector('nav.salt-appbar button[data-t="order"]').click();
     const payPage = () => !d.getElementById("pOrder").hidden && /Payment due/.test((d.querySelector("#pOrder h2") || {}).textContent || "");
     ok(d.querySelectorAll("#pOrder [data-row]").length === 2 && payPage(),
-      "the fixture's Pay on Home opens the payment page with its two orders below");
+      "the fixture's Orders is the payment page, with its two orders below");
 
-    openO("oA");
-    d.getElementById("pd-oA").click();
+    openO("oA"); claim();
     await until(() => said(d, "Refused by the fixture: pay"));
-    const payLine = said(scr(), "Refused by the fixture: pay");
-    ok(payLine && after(d.getElementById("pd-oA"), payLine),
-      "I have paid refused: the words are on screen in a role=status line in that order, after the button");
+    const payLine = said(d.getElementById("paySheet"), "Refused by the fixture: pay");
+    ok(payLine && after(d.getElementById("paySent"), payLine),
+      "Yes, I sent refused: the words are on screen in a role=status line in the pay sheet, after the button");
+    d.getElementById("payX").click();
 
     openO("oB");
     [...scr().querySelectorAll("button")].find((b) => b.textContent === "Cancel this order").click();
@@ -33358,24 +35714,25 @@ await (async () => {
     ok(sayLine && sayLine.closest('[data-part="say"]') && after(box, sayLine) && box.value === "Is it ready?" && !scr().querySelector(".salt-bubble--failed"),
       "Send refused: the words are back in that order's box, and the answer stands under it");
 
+    st.payOk = true;
+    openO("oA"); claim();
+    await until(() => said(d, "Sent, waiting for us to confirm."));
+    const rec = said(scr(), "Sent, waiting for us to confirm.");
+    ok(rec && d.getElementById("paySheet").hidden && !scr().querySelector(".oact button") && /Sent, waiting for us to confirm/.test(scr().querySelector('[data-part="money"]').textContent)
+      && !/Paid in full/.test(scr().textContent) && after(scr().querySelector(".salt-insight"), rec),
+      "sent in full, Pay is gone, nothing says paid, and the answer stands under the order's state instead of vanishing with it");
+
     /* the order list answering 401 after a tap wrote the form's note, which the payment page never drew. Since
        S1 1.5 a 401 on a live session is said at once in the bar, role=alert, which the payment page shows too */
     const lapseOn = () => { const l = d.getElementById("lapse"); return !!l && !l.closest("[hidden]") && l.getAttribute("role") === "alert"
       && /signed out on this (phone|computer)/.test(l.textContent); };
     const lapseBefore = lapseOn();
     st.ordersDown = true;
-    openO("oA");
-    d.getElementById("pd-oA").click();
+    openO("oB");
+    [...scr().querySelectorAll("button")].find((b) => b.textContent === "Cancel this order").click();
     await until(() => lapseOn());
-    ok(!lapseBefore && lapseOn() && payPage(),
+    ok(!lapseBefore && lapseOn(),
       "and a 401 after a tap on the payment page is said on screen, in the bar: " + lapseBefore + " then " + lapseOn());
-
-    st.ordersDown = false; st.payOk = true;
-    d.getElementById("pd-oA").click();
-    await until(() => said(d, "Recorded."));
-    const rec = said(scr(), "Recorded.");
-    ok(rec && !d.getElementById("pd-oA") && /Paid in full/.test(scr().textContent) && after(scr().querySelector(".salt-insight"), rec),
-      "paid in full, the pay box is gone and the answer stands under the order's state instead of vanishing with it");
   } finally { w.close(); }
 })();
 
@@ -33391,7 +35748,10 @@ await (async () => {
   const u = "abcd-efgh", pass = "fixture-pass-h07", ck = await CJ.contentKey("test-secret", u);
   const body = { ok: true, wrap: await CJ.wrapKey(pass, ck), session: "sess-h07",
     env: await CJ.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CJ.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280 })) };
+    live: await CJ.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280, pay: { term: 10,
+      now: { rm: 280, due: "2026-09-10", parts: [{ date: "2026-08-31", due: "2026-09-10", late: true, rm: 280, whole: 280, product: "salt", qty: 2.5, got: 2.5, gotOn: "2026-08-31", resale: false }] },
+      overdue: { rm: 280, parts: [{ date: "2026-08-31", due: "2026-09-10", late: true, rm: 280, whole: 280, product: "salt", qty: 2.5, got: 2.5, gotOn: "2026-08-31", resale: false }] },
+      coming: { rm: 0, parts: [] } } })) };
   const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z", history: [], msgs: [], status: "acknowledged" };
   const orders = [{ ...base, id: "oA", total: 150, method: "transfer", account: "maybank" }, { ...base, id: "oC", total: 60 }];
   const dom = new JDJ(lpJ(u, "nh07", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -33409,25 +35769,28 @@ await (async () => {
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    /* S5 5.2: each order's payment box is in its own screen, behind its one Pay: opened one at a time */
     for (let i = 0; i < 100 && !d.querySelector('#pOrder [data-row="oA"]'); i++) await new Promise((r) => setTimeout(r, 50));
-    const hold = d.querySelector("#pOrder .pane");
-    const openPay = (id) => { const b = d.querySelector("#pOrder .oback"); if (b && d.querySelector("#pOrder .oscreen")) b.click();
-      d.querySelector('#pOrder [data-row="' + id + '"]').click();
-      const pay = [...d.querySelectorAll("#pOrder .oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
-      return d.querySelector("#pOrder .oscreen"); };
-    const scrC = openPay("oC"), boxC = scrC.querySelector(".oact .pay"), pillsC = scrC.querySelectorAll(".salt-pill").length;
-    const ctrlsC = boxC ? [...boxC.querySelectorAll("button, a, select, input")] : [];
-    const scrA = openPay("oA"), boxA = scrA.querySelector(".oact .pay"), pillsA = scrA.querySelectorAll(".salt-pill").length;
-    const ctrls = [hold, boxA].filter(Boolean).flatMap((s) => [...s.querySelectorAll("button, a, select, input")]).concat(ctrlsC).filter((x) => x.type !== "radio");
-    const bare = ctrls.filter((x) => !/(^| )salt-(pill|ghost|field__input)( |$)/.test(x.className));
-    ok(d.getElementById("pd-oA") && !!boxA && !!boxC && ctrls.length >= 8 && !bare.length,
-      "every button, link and field on the payment pane and in every order's payment box is a recipe ("
+    /* S6 6.4: every Pay opens the one pay sheet. The held page's own Pay first, then an order's, with a way, an
+       account and a part chosen, so every control the sheet can draw is on it */
+    const hold = d.querySelector("#pOrder .pane"), sh = d.getElementById("paySheet");
+    const holdPills = hold ? hold.querySelectorAll(".salt-pill").length : -1;
+    const hp = hold && [...hold.querySelectorAll("button")].find((x) => /^Pay RM/.test(x.textContent)); if (hp) hp.click();
+    const byHold = !!hp && !sh.hidden;
+    d.getElementById("payX").click();
+    d.querySelector('#pOrder [data-row="oA"]').click();
+    const pay = [...d.querySelectorAll("#pOrder .oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
+    const r = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true }));
+    const s = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true }));
+    [...d.querySelectorAll("#payBody .payseg button")].find((b) => b.textContent === "Part of it").click();
+    const ctrls = [hold, sh].filter(Boolean).flatMap((x) => [...x.querySelectorAll("button, a, select, input")]);
+    const bare = ctrls.filter((x) => !/(^| )salt-(pill|ghost|field__input|orb|option__input)( |$)/.test(x.className));
+    ok(byHold && !!pay && ctrls.length >= 10 && !bare.length,
+      "every button, link and field on the held page and in the pay sheet is a recipe ("
       + ctrls.length + " controls): " + bare.map((x) => x.tagName + " " + (x.textContent || x.getAttribute("aria-label"))).join(", "));
-    const pills = [pillsA, pillsC];
-    ok(pills.join() === "1,1" && d.getElementById("pd-oA").classList.contains("salt-pill") && !hold.querySelector(".salt-pill"),
-      "one filled control an order, I have paid on the one with a rail chosen, and the payment pane's ways to pay all quiet: " + pills.join());
-    const amt = scrA.querySelector('input[type="number"]'), cs = w.getComputedStyle(amt);
+    const inSheet = sh.querySelectorAll(".salt-pill").length;
+    ok(holdPills === 1 && inSheet === 1 && d.getElementById("payGo").classList.contains("salt-pill"),
+      "one filled control on the held page, its Pay, and one in the sheet, Show the account number: " + [holdPills, inSheet].join());
+    const amt = d.getElementById("payAmt"), cs = w.getComputedStyle(amt);
     ok(amt.classList.contains("salt-field__input") && amt.inputMode === "decimal" && cs.width !== "18px" && cs.height !== "18px",
       "the amount is the field, typed on a decimal keypad, and no longer squeezed by the radio buttons' size: " + cs.width + " x " + cs.height);
   } finally { w.close(); }
@@ -33469,11 +35832,12 @@ await (async () => {
     for (let i = 0; i < 100 && !d.querySelector('#pOrder [data-row="oA"]'); i++) await new Promise((r) => setTimeout(r, 50));
     const rowA = d.querySelector('#pOrder [data-row="oA"]'); if (rowA) rowA.click();
     const payA = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (payA) payA.click();
-    for (let i = 0; i < 100 && !d.getElementById("pd-oA"); i++) await new Promise((r) => setTimeout(r, 50));
+    /* S6 6.4: the pay row is the pay sheet's, under Part of it */
+    const partA = [...d.querySelectorAll("#payBody .payseg button")].find((b) => b.textContent === "Part of it"); if (partA) partA.click();
     const cells = [...d.querySelectorAll("#out td.amt, #out th.amt")].map((x) => w.getComputedStyle(x));
     ok(cells.length === 2 && cells.every((c) => c.display !== "flex" && c.marginTop !== "10px"),
       "the statement's Amount cells are table cells, not flex rows pushed 10px down: " + cells.map((c) => c.display + " " + c.marginTop).join(", "));
-    const row = d.querySelector('#pOrder input[type="number"]') && d.querySelector('#pOrder input[type="number"]').parentNode;
+    const row = d.querySelector('#payBody input[type="number"]') && d.querySelector('#payBody input[type="number"]').parentNode;
     ok(row && w.getComputedStyle(row).display === "flex" && !row.classList.contains("amt"),
       "and the pay row keeps its own flex layout under its own name: " + (row && row.className));
   } finally { w.close(); }
@@ -33833,6 +36197,779 @@ await (async () => {
   } finally { still.dom.window.close(); moving.dom.window.close(); }
 })();
 
+section("S6 6.2: To pay now heads Home, with its due date and Pay, Overdue beneath, and what is coming up in Home's Coming up");
+await (async () => {
+  /* STAGE 6 OF THE COUNTER REDESIGN (his D9 of 24 Sep 2026). The publish seals `pay` beside owed (v841) and the page
+     draws it, pricing nothing: at the head of the statement tab until the S7 merge put it on Home, its coming parts
+     under Home's Coming up. Forced state: a fixture live document whose days are
+     set against today in Kuala Lumpur, so what is proved is the page's reading of the calendar, not a day's figures. */
+  const { landingPage: lp, MON3 } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+  const said = (s) => { const t = new Date(s + "T00:00:00Z"); return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][t.getUTCDay()] + " " + t.getUTCDate() + " " + MON3[t.getUTCMonth()]; };
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const open = async (pay) => {
+    const u = "abcd-efgh", pass = "fixture-pass-s62", ck = await C.contentKey("test-secret", u);
+    const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "",
+      env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 0, pay })) };
+    const dom = new JD(lp(u, "ns62", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path) => { const o = String(path) === "/open"; return { ok: o, status: o ? 200 : 404, json: async () => (o ? body : { ok: false }) }; };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 150 && d.getElementById("tabs").hidden; i++) await new Promise((r) => setTimeout(r, 100));
+      const h = d.getElementById("payHead"), c = d.getElementById("hComing");
+      return { hidden: h.hidden, first: d.getElementById("pHome").contains(h) && !d.getElementById("pStmt").querySelector("#payHead"), shown: !d.getElementById("pHome").hidden,
+        tile: [".salt-kpi__label", ".salt-kpi__value", ".salt-kpi__note"].map((s) => t(h.querySelector(".salt-kpi--ember " + s))),
+        pill: t(h.querySelector("button.salt-pill")), pills: h.querySelectorAll(".salt-pill").length, heads: [...h.querySelectorAll("h3"), ...c.querySelectorAll("h2")].map(t),
+        rows: [...h.querySelectorAll(".salt-ledger__row"), ...c.querySelectorAll(".salt-ledger__row")].map((r) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((s) => t(r.querySelector(s)))),
+        marks: h.querySelectorAll("svg.psym").length + c.querySelectorAll("svg.psym").length, text: t(h) + " " + t(c) };
+    } finally { dom.window.close(); }
+  };
+  const part = (o) => Object.assign({ late: false, whole: o.rm, product: "salt", qty: 2.5, got: 2.5, resale: false }, o);
+  const one = await open({ term: 10,
+    now: { rm: 70, due: kl(2), parts: [part({ date: kl(-8), due: kl(2), rm: 70, whole: 120, gotOn: kl(-8) })] },
+    overdue: { rm: 0, parts: [] },
+    coming: { rm: 110, parts: [{ date: kl(-1), rm: 110, product: "salt", qty: 1, toCome: 1, resale: false }] } });
+  ok(one.shown && one.first && !one.hidden && one.tile[0] === "To pay now" && one.tile[1] === "RM 70"
+    && one.tile[2] === "The rest of Cube 2.5 units you received " + said(kl(-8)) + ". Due by " + said(kl(2)) + ", in 2 days."
+    && one.pill === "Pay RM 70" && one.pills === 1,
+    "To pay now heads Home: its figure, what it is for with the day it was received and the day it is due, and the one filled Pay: "
+    + JSON.stringify([one.first, one.tile, one.pill]));
+  ok(one.heads.join() === "Coming up" && one.rows.length === 1
+    && one.rows[0].join("|") === "Cube 1 unit, ordered " + said(kl(-1)) + "|RM 110|Due when you receive it"
+    && one.marks === 2 && !/salt|oil|Gold|Silver/i.test(one.text),
+    "an order agreed and not yet handed over, with no order of theirs on the site for it, is Home's Coming up, drawn as a mark and never a word; one part says its due day in the line above, so no Overdue list: "
+    + JSON.stringify([one.heads, one.rows]));
+  const two = await open({ term: 10,
+    now: { rm: 300, due: kl(-10), parts: [part({ date: kl(-20), due: kl(-10), late: true, rm: 180, whole: 250, gotOn: kl(-20) }),
+      part({ date: kl(-7), due: kl(3), rm: 120, qty: 1, got: 1, gotOn: kl(-7), resale: true })] },
+    overdue: { rm: 180, parts: [part({ date: kl(-20), due: kl(-10), late: true, rm: 180, whole: 250, gotOn: kl(-20) })] },
+    coming: { rm: 0, parts: [] } });
+  ok(two.tile[2] === "2 orders you have received. The first was due by " + said(kl(-10)) + "." && two.pill === "Pay RM 300"
+    && two.heads.join() === "Overdue" && two.rows.length === 1
+    && two.rows[0].join("|") === "The rest of Cube 2.5 units you received " + said(kl(-20)) + "|RM 180|It was due by " + said(kl(-10)) + ".",
+    "of several parts, the line says the first due day, and each overdue part stands beneath with the day it fell due: "
+    + JSON.stringify([two.tile[2], two.heads, two.rows]));
+  const none = await open({ term: 10, now: { rm: 0, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } });
+  const unsealed = await open(undefined);
+  ok(!none.hidden && /To pay nowRM 0 ?Nothing to pay now[.]/.test(none.text) && !none.pills && unsealed.hidden && unsealed.shown,
+    "with nothing to pay and nothing coming, Home says so with no Pay (S7 7.1), and for a live document sealed before v841 it draws nothing: " + JSON.stringify(none.text));
+})();
+
+section("S6 6.4: every Pay opens one sheet: the figure, All or Part, Transfer or Scan a code, his account chosen by them, the username as reference, and the pay page through payHref");
+await (async () => {
+  /* STAGE 6 OF THE COUNTER REDESIGN, his D8 as he amended it (24 Sep 2026): NO default account; they choose which of
+     his accounts to pay into, from those payHref will link; two ways up front; the username is the reference; Show the
+     account number or Show the code opens the pay page through payHref; the Counter carries no number and never names
+     the pay page. Forced state: a fixture live document owing RM 70 now and one confirmed order owing RM 200. */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const { payHref, PAY_ACCOUNTS } = await import("../stmt/pay.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s64", ck = await C.contentKey("test-secret", u);
+  const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+  const pay = { term: 10, now: { rm: 70, due: kl(2), parts: [{ date: kl(-8), due: kl(2), late: false, rm: 70, whole: 120, product: "salt", qty: 2.5, got: 2.5, gotOn: kl(-8), resale: false }] },
+    overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s64",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 70, pay })) };
+  const ord = { id: "20260920000000-s64a", product: "salt", qty: 2, mode: "collect", unit: 100, total: 200, delivery: 0, paid: 0, moved: 0,
+    at: "2026-09-20T03:00:00Z", status: "acknowledged", history: [], msgs: [] };
+  const dom = new JD(lp(u, "ns64", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: [ord] } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const sh = () => d.getElementById("paySheet");
+  const go = () => d.getElementById("payGo");
+  const cap = () => t(d.querySelector("#payFoot .paycap"));
+  const how = (v) => { const r = d.querySelector('#payBody input[name="payHow"][value="' + v + '"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); };
+  /* S6 fix: his accounts are Option tiles, one tap each */
+  const into = () => [...d.querySelectorAll('#payBody input[name="payInto"]')].map((o) => o.value);
+  const pickInto = (k) => { const s = d.querySelector('#payBody input[name="payInto"][value="' + k + '"]'); s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true })); };
+  const linked = (rail, amt) => PAY_ACCOUNTS.filter((a) => payHref(a.key, rail, amt, u)).map((a) => a.key);
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => d.getElementById("payNow"));
+    d.getElementById("payNow").click();
+    const first = { open: !sh().hidden, title: t(d.getElementById("payT")), tile: t(d.querySelector("#payBody .salt-kpi__label")) + " " + t(d.querySelector("#payBody .salt-kpi__value")),
+      seg: [...d.querySelectorAll("#payBody .payseg button")].map((b) => t(b) + ":" + b.getAttribute("aria-pressed")),
+      ways: [...d.querySelectorAll('#payBody input.salt-option__input[name="payHow"]')].map((r) => r.value + (r.checked ? "*" : "")),
+      labels: [...d.querySelectorAll("#payBody .payhow .salt-option__label")].map(t), select: !!d.querySelector('#payBody input[name="payInto"]'),
+      go: go().tagName + (go().disabled ? " disabled" : ""), cap: cap(), ref: t(d.querySelector("#payBody .payref .salt-ledger__value")),
+      copy: !!d.querySelector('#payBody .payref button[aria-label="Copy the reference"]'), pills: sh().querySelectorAll(".salt-pill").length };
+    ok(first.open && first.title === "Pay RM 70" && first.tile === "To pay now RM 70" && first.seg.join() === "All, RM 70:true,Part of it:false"
+      && first.ways.join() === "transfer*,qr" && first.labels.join() === "Transfer to an account,Scan a code" && first.select
+      && first.go === "BUTTON disabled" && first.cap === "Choose which of our accounts to pay into." && first.ref === u && first.copy && first.pills === 1,
+      "To pay now's Pay opens the sheet on the figure and what it is for, All chosen, the two ways with Transfer chosen as the mockup draws it and no account chosen for them, the username as the reference with Copy, and Show waiting: "
+      + JSON.stringify(first));
+    how("transfer");
+    const tIn = into(), tPicked = (d.querySelector('#payBody input[name="payInto"]:checked') || { value: "" }).value, tGo = go().tagName + (go().disabled ? " disabled" : ""), tCap = cap();
+    pickInto("maybank");
+    const a1 = go(), live = t(sh());
+    ok(JSON.stringify(tIn) === JSON.stringify(linked("transfer", 70)) && tIn.includes("wise") && !tIn.includes("spay") && tPicked === ""
+      && tGo === "BUTTON disabled" && tCap === "Choose which of our accounts to pay into."
+      && a1.tagName === "A" && a1.getAttribute("href") === payHref("maybank", "transfer", 70, u) && a1.target === "_blank" && t(a1) === "Show the account number"
+      && cap() === "Opens our payment page with the account number. Come back here after paying."
+      && /to Maybank$/.test(t(d.querySelectorAll("#payBody .salt-option__detail")[0])),
+      "Transfer offers every account payHref links and no suspended one, chooses none, and once they choose Maybank, Show opens the pay page at that account, rail and figure: "
+      + JSON.stringify({ tIn, tPicked, href: a1.getAttribute("href") }));
+    how("qr");
+    const qIn = into(), qGo = go();
+    [...d.querySelectorAll("#payBody .payseg button")].find((b) => t(b) === "Part of it").click();
+    const amt = d.getElementById("payAmt"); amt.value = "40"; amt.dispatchEvent(new w.Event("input", { bubbles: true }));
+    const part = { title: t(d.getElementById("payT")), href: go().getAttribute("href") };
+    amt.value = "90"; amt.dispatchEvent(new w.Event("input", { bubbles: true }));
+    const over = { go: go().tagName + (go().disabled ? " disabled" : ""), cap: cap() };
+    ok(JSON.stringify(qIn) === JSON.stringify(linked("qr", 70)) && !qIn.includes("wise") && qGo.getAttribute("href") === payHref("maybank", "qr", 70, u) && t(qGo) === "Show the code"
+      && part.title === "Pay RM 40" && part.href === payHref("maybank", "qr", 40, u) && over.go === "BUTTON disabled" && over.cap === "Say how much you are paying, up to RM 70.",
+      "Scan a code offers only the accounts with a code and keeps Maybank, Part of it sends the figure typed, and more than is owed opens nothing: "
+      + JSON.stringify({ qIn, part, over }));
+    const text = live + " " + t(sh());
+    ok(!/QR Command/i.test(text) && !/[0-9]{8,}/.test(text) && !/salt|oil/i.test(text),
+      "the sheet names no pay page, carries no account number and no product word: " + text.slice(0, 120));
+    d.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    const closed = sh().hidden;
+    d.querySelector('button[data-t="order"]').click();
+    await until(() => d.querySelector('#pOrder [data-row="' + ord.id + '"]'));
+    d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
+    const payO = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b)));
+    if (payO) payO.click();
+    ok(closed && !!payO && !sh().hidden && t(d.getElementById("payT")) === "Pay RM 200" && t(d.querySelector("#payBody .salt-kpi__label")) === "Still to pay"
+      && (d.querySelector("#payBody input[name=payHow]:checked") || {}).value === "transfer" && !d.querySelector("#payBody input[name=payInto]:checked") && !d.querySelector("#pOrder .oact .pay"),
+      "Escape closes it, and an order's Pay opens the same sheet for what is still to pay on that order, Transfer chosen and no account, and nothing drawn in the order itself");
+  } finally { w.close(); }
+})();
+
+section("S6 6.5: on return the pay sheet asks once, Did you send it; a claim reads sent, waiting for us to confirm, never paid, and his answer shows when it comes");
+await (async () => {
+  /* STAGE 6 OF THE COUNTER REDESIGN, his D7 of 24 Sep 2026. No one-tap "I have paid" beside the account number: the
+     question comes only after they have been to the pay page and back, with Not yet, and it is asked once. What Yes
+     records is a CLAIM (stmt/orders.js decides), which reads "sent, waiting for us to confirm" on the order, its row and
+     To pay now until his Received or Not found. Forced state: fixtures in the shapes the store writes (claimed,
+     payments[].claim, the notes sent/received/not found; the account's claims[] with state and answered). */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const { payHref } = await import("../stmt/pay.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s65", ck = await C.contentKey("test-secret", u);
+  const now = new Date(), iso = (h) => new Date(now.getTime() + h * 3600e3).toISOString();
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const page = async (nowRm, list, claims, post) => {
+    const pay = { term: 10, now: { rm: nowRm, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+    const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s65",
+      env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await C.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: nowRm, pay })) };
+    const dom = new JD(lp(u, "ns65", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {}; win.open = () => null;
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
+        const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
+        if (p === "/open") return res(200, body);
+        if (p === "/orders" && m === "GET") return res(200, { ok: true, orders: list(), claims: claims() });
+        if (m === "POST" && /^[/](orders[/][^/]+[/]pay|account[/]claim)$/.test(p)) return res(200, post(p, j));
+        return res(404, { ok: false });
+      };
+    } });
+    const d = dom.window.document;
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !d.getElementById("tabs").hidden);
+    return dom;
+  };
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: iso(-30), status: "acknowledged", msgs: [] };
+
+  /* ---- an order's claim: the question on return, Not yet, then Yes refused, then Yes recorded ---- */
+  const st = { claimed: 0, sent: [], refuse: true };
+  const orderA = () => [{ ...base, id: "oA", total: 150, paid: 0, claimed: st.claimed,
+    payments: st.claimed ? [{ at: iso(0), amount: 150, method: "transfer", account: "maybank", claim: "waiting" }] : [],
+    history: [{ at: iso(-30), status: "acknowledged", by: "desk" }].concat(st.claimed ? [{ at: iso(0), status: "acknowledged", by: "customer", method: "transfer", account: "maybank", note: "sent 150.00" }] : []) }];
+  const dom = await page(0, orderA, () => [], (p, j) => {
+    st.sent.push([p, j]);
+    if (st.refuse) { st.refuse = false; return { ok: false, error: "Refused by the fixture" }; }
+    st.claimed = j.amount; return { ok: true };
+  });
+  const w = dom.window, d = w.document;
+  try {
+    const scr = () => d.querySelector("#pOrder .oscreen");
+    const sh = d.getElementById("paySheet");
+    const away = () => { w.dispatchEvent(new w.Event("blur")); w.dispatchEvent(new w.Event("focus")); };
+    const asked = () => !!d.getElementById("paySent");
+    const tap = (id) => { const b = d.getElementById(id); if (b) b.click(); };
+    d.querySelector('button[data-t="order"]').click();
+    await until(() => d.querySelector('#pOrder [data-row="oA"]'));
+    d.querySelector('#pOrder [data-row="oA"]').click();
+    [...scr().querySelectorAll(".oact button")].find((b) => /^Pay RM/.test(t(b))).click();
+    const r = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true }));
+    const s = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true }));
+    const besideCode = asked() || /Did you send|I have paid|I sent/i.test(t(sh));
+    away();
+    const unasked = asked();
+    tap("payGo");
+    const stillThere = !asked();
+    away();
+    const check = { title: t(d.getElementById("payT")), q: t(d.querySelector("#payBody .paycheck h3")), how: t(d.querySelector("#payBody .paycheck .sub2")),
+      ins: t(d.querySelector("#payBody .salt-insight")), again: (d.querySelector("#payBody a.payagain") || { getAttribute: () => "" }).getAttribute("href"),
+      foot: [...d.querySelectorAll("#payFoot button")].map((b) => t(b) + ":" + b.className.split(" ")[0]) };
+    ok(!besideCode && !unasked && stillThere && check.title === "Pay RM 150" && check.q === "Did you send RM 150?"
+      && check.how === "By transfer to Maybank, reference " + u + "." && /^Tell us only once it has gone from your bank\. It shows as sent, waiting until we confirm it arrived/.test(check.ins)
+      && check.again === payHref("maybank", "transfer", 150, u) && check.foot.join() === "Not yet:salt-ghost,Yes, I sent RM 150:salt-pill" && !st.sent.length,
+      "nothing beside the account number says it was sent; only once they have been to the pay page and back does the sheet ask, Did you send RM 150, with Not yet: "
+      + JSON.stringify({ besideCode, unasked, stillThere, check }));
+    const notYet = [...d.querySelectorAll("#payFoot button")].find((b) => t(b) === "Not yet"); if (notYet) notYet.click();
+    away();
+    const once = !asked() && !!d.getElementById("payGo") && !st.sent.length;
+    tap("payGo"); away();
+    tap("paySent");
+    await until(() => st.sent.length === 1 && d.querySelector("#payFoot .paysaid"));
+    const refused = { open: !sh.hidden, said: t(d.querySelector("#payFoot .paysaid")), yes: !!d.getElementById("paySent") };
+    tap("paySent");
+    await until(() => st.sent.length === 2 && sh.hidden && scr() && /sent, waiting/.test(t(scr())));
+    ok(once && refused.open && refused.said === "Refused by the fixture" && refused.yes
+      && st.sent.every((x) => x[0] === "/orders/oA/pay") && st.sent[0][1].rid && st.sent[1][1].rid === st.sent[0][1].rid
+      && JSON.stringify(Object.assign({}, st.sent[1][1], { rid: 1 })) === JSON.stringify({ amount: 150, method: "transfer", account: "maybank", rid: 1 }),
+      "Not yet asks nothing more until the pay page is opened again; a refused Yes answers beside itself and a retry carries the same id: "
+      + JSON.stringify({ once, refused, sent: st.sent }));
+    const lines = [...scr().querySelectorAll(".salt-ledger__row")].map((x) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((q) => t(x.querySelector(q))).join("|"));
+    const hist = [...scr().querySelectorAll('[data-part="hist"] li')].map(t);
+    const row = t(d.querySelector('#pOrder [data-row="oA"] .salt-inbox-row__what'));
+    ok(lines.includes("Sent by you|RM 150|Waiting for us to confirm") && lines.includes("Still to pay|RM 0|Sent, waiting for us to confirm")
+      && !/Paid in full|You paid|Pay RM/.test(t(scr())) && hist.some((x) => / You sent RM 150 by DuitNow Transfer to Maybank, waiting for us to confirm it$/.test(x))
+      && /Sent, waiting for us to confirm\. We tell you when it arrives\./.test(t(scr())) && row === "RM 150 sent, waiting for us to confirm",
+      "the claim reads sent, waiting for us to confirm on the order's money, its history and its row, and nothing calls it paid: " + JSON.stringify({ lines, hist, row }));
+  } finally { w.close(); }
+
+  /* ---- his answers, and a claim on the account for To pay now ---- */
+  const sentB = [];
+  const listB = () => [
+    { ...base, id: "oB", total: 50, paid: 0, claimed: 0, payments: [{ at: iso(-5), amount: 50, method: "qr", account: "tng", claim: "notfound", answered: iso(-1) }],
+      history: [{ at: iso(-5), status: "acknowledged", by: "customer", method: "qr", account: "tng", note: "sent 50.00" }, { at: iso(-1), status: "acknowledged", by: "desk", note: "not found 50.00" }] },
+    { ...base, id: "oC", total: 40, paid: 0, claimed: 40, payments: [{ at: iso(-3), amount: 40, method: "transfer", account: "maybank", claim: "waiting" }], history: [] }];
+  const claimsB = () => [{ id: "c1", at: iso(-4), amount: 70, method: "transfer", account: "maybank", state: "waiting" },
+    { id: "c2", at: iso(-9), amount: 30, method: "transfer", account: "maybank", state: "received", answered: iso(-1) },
+    { id: "c3", at: iso(-2.5), amount: 20, method: "qr", account: "tng", state: "notfound", answered: iso(-0.5) }];   /* S6 fix: the newest word, so its line stands */
+  const domB = await page(120, listB, claimsB, (p, j) => { sentB.push([p, j]); return { ok: true }; });
+  const wB = domB.window, dB = wB.document;
+  try {
+    await until(() => dB.querySelectorAll("#payHead .msg").length === 3);
+    const said = [...dB.querySelectorAll("#payHead .msg")].map(t), pill = t(dB.getElementById("payNow"));
+    const day = (x) => { const k = new Date(new Date(x).getTime() + 8 * 3600e3); return String(k.getUTCDate()).padStart(2, "0") + " " + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][k.getUTCMonth()]; };
+    ok(JSON.stringify(said) === JSON.stringify(["RM 110 sent, waiting for us to confirm.", "RM 30 received on " + day(iso(-1)) + ". Your statement shows it at its next update.",
+      "We have not found the RM 20 you sent on " + day(iso(-2.5)) + ". Check it left your bank, then pay it again."]) && pill === "Pay RM 20",
+      "under To pay now: what waits on him (the account's claim and an order's), what he received since the statement was written, and what he has not found; Pay asks only for the rest: "
+      + JSON.stringify({ said, pill }));
+    dB.querySelector('button[data-t="order"]').click();
+    await until(() => dB.querySelector('#pOrder [data-row="oB"]'));
+    const why = t(dB.querySelector('#pOrder [data-row="oB"] .salt-inbox-row__what'));
+    dB.querySelector('#pOrder [data-row="oB"]').click();
+    const scrB = dB.querySelector("#pOrder .oscreen");
+    const lost = [...scrB.querySelectorAll(".salt-ledger__row")].map((x) => t(x.querySelector(".salt-ledger__label")) + "|" + t(x.querySelector(".salt-ledger__value")));
+    const histB = [...scrB.querySelectorAll('[data-part="hist"] li')].map(t);
+    ok(/a payment we have not found/.test(why) && lost.includes("Not found yet|RM 50") && histB.some((x) => x.endsWith(" We have not found RM 50 yet"))
+      && !!scrB.querySelector(".oact .salt-pill"),
+      "his Not found on an order shows on its row, on its money and in its history, and Pay is back: " + JSON.stringify({ why, lost, histB }));
+    dB.querySelector('#tabs button[data-t="stmt"]').click();
+    dB.getElementById("payNow").click();
+    const r = dB.querySelector('#payBody input[name="payHow"][value="transfer"]'); r.checked = true; r.dispatchEvent(new wB.Event("change", { bubbles: true }));
+    const s = dB.querySelector('#payBody input[name="payInto"][value="maybank"]'); s.checked = true; s.dispatchEvent(new wB.Event("change", { bubbles: true }));
+    const tapB = (id) => { const b = dB.getElementById(id); if (b) b.click(); };
+    tapB("payGo"); wB.dispatchEvent(new wB.Event("blur")); wB.dispatchEvent(new wB.Event("focus"));
+    tapB("paySent");
+    await until(() => sentB.length === 1 && dB.getElementById("paySheet").hidden);
+    ok(sentB.length === 1 && sentB[0][0] === "/account/claim" && sentB[0][1].amount === 20 && sentB[0][1].method === "transfer" && sentB[0][1].account === "maybank"
+      && !!sentB[0][1].rid && dB.getElementById("paySheet").hidden,
+      "To pay now's claim goes to the account, not to an order, for what is left to pay: " + JSON.stringify(sentB));
+  } finally { wB.close(); }
+})();
+
+section("S6 6.7: the hold counts only what is past its term, shows each part with the day it fell due, keeps Prices readable, and a claim waiting reopens ordering");
+await (async () => {
+  /* STAGE 6 OF THE COUNTER REDESIGN, his D9 of 24 Sep 2026. Forced state: a fixture live document with two overdue
+     parts (RM 300 past the term) and a price list, the order list answering with no claim, with one on the account,
+     or with one on an order. */
+  const { landingPage: lp, MON3 } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s67", ck = await C.contentKey("test-secret", u);
+  const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+  const said = (x) => { const d = new Date(x + "T00:00:00Z"); return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()] + " " + d.getUTCDate() + " " + MON3[d.getUTCMonth()]; };
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const part = (o) => Object.assign({ late: true, product: "salt", qty: 2, got: 2, resale: false }, o);
+  const parts = [part({ date: kl(-30), due: kl(-20), rm: 180, whole: 180, gotOn: kl(-30) }), part({ date: kl(-14), due: kl(-4), rm: 120, whole: 200, gotOn: kl(-14) })];
+  const pay = { term: 10, now: { rm: 300, due: kl(-20), parts }, overdue: { rm: 300, parts }, coming: { rm: 0, parts: [] } };
+  const list = { at: "2026-09-24T00:00:00Z", week: { monday: "2026-09-21", label: "21 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 100, orders: 4, basis: "yours", sizes: [{ q: 1, price: 100 }] }], soon: [] };
+  const open = async (orders, claims) => {
+    const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s67",
+      env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 300, pay })),
+      prices: await C.encryptWith(ck, JSON.stringify(list)) };
+    const dom = new JD(lp(u, "ns67", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders, claims } : null;
+        return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+      };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 150 && !d.getElementById("pOrder").textContent; i++) await new Promise((r) => setTimeout(r, 20));
+      await new Promise((r) => setTimeout(r, 200));
+      const pane = d.querySelector("#pOrder .pane");
+      const out = { tab: t(d.getElementById("tOrder")), onOrder: !d.getElementById("pOrder").hidden, home: !d.getElementById("pHome").hidden, head: t(d.querySelector("#pOrder h2")),
+        tile: pane ? [".salt-kpi__label", ".salt-kpi__value"].map((q) => t(pane.querySelector(q))).join(" ") : "",
+        rows: pane ? [...pane.querySelectorAll(".salt-ledger__row")].map((r) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((q) => t(r.querySelector(q))).join("|")) : [],
+        form: !!d.getElementById("oNew"), pricesTab: !d.getElementById("tPrices").hidden, claimLine: t(d.querySelector("#payHead .msg")) };
+      d.getElementById("tPrices").click();
+      out.prices = !d.getElementById("pPrices").hidden && /100/.test(t(d.getElementById("pPrices")));
+      return out;
+    } finally { dom.window.close(); }
+  };
+  const held = await open([], []);
+  /* S7 merge: Home opens first over the line too, and Orders keeps its name while it is the payment page (S7 7.1) */
+  ok(held.home && !held.onOrder && held.tab === "Orders" && held.head === "Payment due" && held.tile === "Overdue RM 300" && !held.form
+    && JSON.stringify(held.rows) === JSON.stringify(["Cube 2 units you received " + said(kl(-30)) + "|RM 180|It was due by " + said(kl(-20)) + ".",
+      "The rest of Cube 2 units you received " + said(kl(-14)) + "|RM 120|It was due by " + said(kl(-4)) + "."]),
+    "RM 300 past its term, Orders is the payment page with the overdue figure and each part with the day it fell due, and no order form: " + JSON.stringify(held));
+  ok(held.pricesTab && held.prices, "and the price list stays one tap away and readable while it is held");
+  const acct = await open([], [{ id: "c1", at: new Date().toISOString(), amount: 300, method: "transfer", account: "maybank", state: "waiting" }]);
+  const ord = await open([{ id: "oZ", product: "salt", qty: 1, mode: "collect", total: 20, delivery: 0, paid: 0, claimed: 20, moved: 0, at: "2026-09-20T03:00:00Z",
+    status: "acknowledged", history: [], msgs: [], payments: [{ at: "2026-09-24T01:00:00Z", amount: 20, method: "transfer", account: "maybank", claim: "waiting" }] }], []);
+  ok(acct.tab === "Orders" && acct.head !== "Payment due" && acct.form && acct.claimLine === "RM 300 sent, waiting for us to confirm."
+    && ord.tab === "Orders" && ord.head !== "Payment due" && ord.form,
+    "a claim waiting on him, on the account or on an order, reopens ordering, and To pay now says it was sent and is waiting: "
+    + JSON.stringify({ acct: [acct.tab, acct.head, acct.form, acct.claimLine], ord: [ord.tab, ord.head, ord.form] }));
+})();
+
+section("S6 6.8: cash when it arrives is an order's third way where the rule allows, says why where it does not, and is never declared as sent");
+await (async () => {
+  /* STAGE 6 OF THE COUNTER REDESIGN. Cash is his to record when he takes it (S11 11.8), so choosing it tells him how
+     they will pay and nothing more; it is never on To pay now's sheet, whose goods they already have. Where it is
+     withheld (goods held unpaid) the tile says why (the section above drives that). Forced state: an order confirmed
+     and not handed over, and RM 70 to pay now. */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s68", ck = await C.contentKey("test-secret", u);
+  const pay = { term: 10, now: { rm: 70, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s68",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 70, pay })) };
+  const st = { method: null, sent: [] };
+  const list = () => [{ id: "oA", product: "salt", qty: 1, mode: "collect", total: 110, delivery: 0, paid: 0, moved: 0, at: "2026-09-20T03:00:00Z",
+    status: "acknowledged", history: [], msgs: [], method: st.method }];
+  const dom = new JD(lp(u, "ns68", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
+      const res = (x) => ({ ok: !!x, status: x ? 200 : 404, json: async () => x || { ok: false } });
+      if (p === "/open") return res(body);
+      if (p === "/orders" && m === "GET") return res({ ok: true, orders: list(), claims: [] });
+      if (p === "/orders/oA/method") { st.sent.push(j); st.method = j.method; return res({ ok: true }); }
+      return res(null);
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const ways = () => [...d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value + (r.disabled ? ":off" : ""));
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => d.getElementById("payNow"));
+    d.getElementById("payNow").click();
+    const onAccount = ways();
+    d.getElementById("payX").click();
+    d.querySelector('button[data-t="order"]').click();
+    await until(() => d.querySelector('#pOrder [data-row="oA"]'));
+    d.querySelector('#pOrder [data-row="oA"]').click();
+    const payO = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b))); if (payO) payO.click();
+    const onOrder = ways(), label = t([...d.querySelectorAll("#payBody .payhow .salt-option__label")].pop());
+    const r = d.querySelector('#payBody input[name="payHow"][value="cod"]'); if (r) { r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); }
+    const chosen = { into: !!d.getElementById("payInto"), ref: !!d.querySelector("#payBody .payref"), part: !!d.querySelector("#payBody .payseg"),
+      go: t(d.getElementById("payGo")) + ":" + d.getElementById("payGo").tagName, cap: t(d.querySelector("#payFoot .paycap")) };
+    ok(JSON.stringify(onAccount) === '["transfer","qr"]' && JSON.stringify(onOrder) === '["transfer","qr","cod"]' && label === "Cash when you collect"
+      && !chosen.into && !chosen.ref && !chosen.part && chosen.go === "Pay in cash when I collect:BUTTON"
+      && chosen.cap === "We record it when we take it, so there is nothing to tell us afterwards.",
+      "To pay now's sheet has no cash; an order's has a third way, cash when you collect, which asks for no account, reference or figure: "
+      + JSON.stringify({ onAccount, onOrder, label, chosen }));
+    d.getElementById("payGo").click();
+    await until(() => st.sent.length === 1 && d.getElementById("paySheet").hidden && /In cash when you collect/.test(t(d.querySelector("#pOrder .oscreen"))));
+    const scr = d.querySelector("#pOrder .oscreen");
+    ok(st.sent.length === 1 && st.sent[0].method === "cod" && !("amount" in st.sent[0]) && !!st.sent[0].rid
+      && /You pay in cash when you collect\. We record it when we take it\./.test(t(scr)) && /Still to payRM 110In cash when you collect/.test(scr.querySelector('[data-part="money"]').textContent),
+      "choosing it sends the choice and no figure, and the order then says it is paid in cash at the handover, recorded by us: " + JSON.stringify(st.sent));
+  } finally { w.close(); }
+})();
+
+section("S6 fix: To pay now and an order never ask for the same money twice, whichever of them it was sent on");
+await (async () => {
+  /* HIS D7 AND D8: money sent waits for his answer and is not asked for again. To pay now is the book's rows as they
+     stood at publish, and an order's row is one of them once its goods have gone, so a claim on the order left To pay
+     now asking for it, and a claim against the account left the order asking. The order's view carries the day its
+     row is on the book as (rowOn, off the key, which never travels), and the page tells its part by that day and the
+     whole figure. Forced state: a sealed pay in the publish's shape, and orders as the customer's view hands them. */
+  const O = await import("../stmt/orders.js");
+  const view = O.customerView({ id: "v1", status: "ready", ledgerKey: "CX1-AB|2026-09-10|180", queued: { ack: "x" }, total: 180 });
+  ok(view.rowOn === "2026-09-10" && !("ledgerKey" in view) && !JSON.stringify(view).includes("CX1-AB") && O.CUSTOMER_FIELDS.includes("rowOn"),
+    "the customer's view of an order carries the day its row is on the book as, and never the key: " + JSON.stringify(view));
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const Cr = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const U = "abcd-efgh", pass = "fixture-pass-r3", ck = await Cr.contentKey("test-secret", U);
+  const now = new Date(), iso = (h) => new Date(now.getTime() + h * 3600e3).toISOString();
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const part = (date, rm) => ({ date, due: null, late: false, rm, whole: rm, product: "salt", qty: 1, got: 1, gotOn: date, resale: false });
+  const pay = { term: 10, now: { rm: 300, due: null, parts: [part("2026-09-10", 180), part("2026-09-12", 120)] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+  const read = async (list, claims) => {
+    const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-r3",
+      env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: 300, pay })) };
+    const dom = new JD(lp(U, "nr3", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {}; win.open = () => null;
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
+        if (p === "/open") return res(200, body);
+        if (p === "/orders" && m === "GET") return res(200, { ok: true, orders: list, claims });
+        return res(404, { ok: false });
+      };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = U; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      await until(() => !d.getElementById("tabs").hidden);
+      await until(() => d.getElementById("payNow") || /sent/.test(t(d.getElementById("payHead"))));
+      const out = { payNow: t(d.getElementById("payNow")) };
+      d.querySelector('button[data-t="order"]').click();
+      await until(() => d.querySelector('#pOrder [data-row="oX"]'));
+      d.querySelector('#pOrder [data-row="oX"]').click();
+      await until(() => d.querySelector("#pOrder .oscreen"));
+      const scr = d.querySelector("#pOrder .oscreen");
+      out.orderPay = [...scr.querySelectorAll(".oact button")].map(t).join();
+      out.lines = [...scr.querySelectorAll(".salt-ledger__row")].map(t);
+      return out;
+    } finally { dom.window.close(); }
+  };
+  const order = (extra) => Object.assign({ id: "oX", product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 1, movedOn: "2026-09-10", at: iso(-400), status: "ready",
+    total: 180, paid: 0, claimed: 0, payments: [], msgs: [], history: [{ at: iso(-400), status: "acknowledged", by: "desk" }] }, extra);
+  const sent = { claimed: 180, payments: [{ at: iso(-1), amount: 180, method: "transfer", account: "maybank", claim: "waiting" }] };
+  const onOrder = await read([order(Object.assign({ rowOn: "2026-09-10" }, sent))], []);
+  const elsewhere = await read([order(Object.assign({ rowOn: "2026-09-20", total: 90 }, sent, { claimed: 90, payments: [Object.assign({}, sent.payments[0], { amount: 90 })] }))], []);
+  ok(onOrder.payNow === "Pay RM 120" && elsewhere.payNow === "Pay RM 300",
+    "RM 180 sent on an order whose row is part of To pay now is not asked for again there; sent on an order that is no part of it, To pay now is unchanged: "
+    + JSON.stringify({ onOrder: onOrder.payNow, elsewhere: elsewhere.payNow }));
+  const acct = await read([order({ rowOn: "2026-09-10" })], [{ id: "a1", u: U, kind: "account", at: iso(-1), amount: 180, method: "transfer", account: "maybank", state: "waiting" }]);
+  ok(acct.orderPay === "" && acct.lines.some((l) => /^Sent against your account ?RM 180 ?Waiting for us to confirm$/.test(l)) && acct.lines.some((l) => /^Still to pay ?RM 0/.test(l))
+    && acct.payNow === "Pay RM 120",
+    "and RM 180 sent against the account, which reaches that order's row first, is not asked for again on the order: " + JSON.stringify(acct));
+})();
+
+section("S6 fix: his Received does not bring the RM 100 hold back, and the held page asks only for what is still overdue");
+await (async () => {
+  /* HIS D7 AND D9: a claim waiting lifts the hold, and his acknowledgement is the check. His Received ended the waiting,
+     while the sealed overdue figure stood until the next publish, so the page held them again at once and asked for
+     the money he had just confirmed, woken with Payment received. What he received since the statement was written
+     now comes off what is overdue: a claim against the account (the oldest parts, the overdue ones, first) and an
+     order's own claim on an overdue part. Forced state: a sealed pay an hour old, and claims answered since. */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const Cr = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const U = "abcd-efgh", pass = "fixture-pass-m3", ck = await Cr.contentKey("test-secret", U);
+  const now = new Date(), iso = (h) => new Date(now.getTime() + h * 3600e3).toISOString();
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const part = (date, rm) => ({ date, due: "2026-09-05", late: true, rm, whole: rm, product: "salt", qty: 1, got: 1, gotOn: date, resale: false });
+  const late = [part("2026-08-20", 180), part("2026-08-25", 120)];
+  const pay = { term: 10, now: { rm: 300, due: "2026-08-30", parts: late }, overdue: { rm: 300, parts: late }, coming: { rm: 0, parts: [] } };
+  const read = async (list, claims) => {
+    const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-m3",
+      env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-1), body: "<p>Live</p>", owed: 300, pay })) };
+    const dom = new JD(lp(U, "nm3", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {}; win.open = () => null;
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
+        if (p === "/open") return res(200, body);
+        if (p === "/orders" && m === "GET") return res(200, { ok: true, orders: list, claims });
+        return res(404, { ok: false });
+      };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = U; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      await until(() => !d.getElementById("tabs").hidden);
+      await new Promise((r) => setTimeout(r, 60));
+      const tab = t(d.querySelector('button[data-t="order"]'));
+      d.querySelector('button[data-t="order"]').click();
+      await until(() => t(d.getElementById("pOrder")).length > 0);
+      const po = d.getElementById("pOrder");
+      return { tab, head: t(po.querySelector("h2")), pay: [...po.querySelectorAll("button.salt-pill")].map(t).join(), form: !!po.querySelector(".oplace, form") };
+    } finally { dom.window.close(); }
+  };
+  const acct = (amount, state, answered) => ({ id: "a-" + amount, u: U, kind: "account", at: iso(-3), amount, method: "transfer", account: "maybank", state, answered });
+  const control = await read([], []);
+  const all = await read([], [acct(300, "received", iso(0))]);
+  const some = await read([], [acct(100, "received", iso(0))]);
+  const order = { id: "oH", product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 1, movedOn: "2026-08-20", at: iso(-900), status: "ready", total: 180, paid: 180, claimed: 0,
+    rowOn: "2026-08-20", msgs: [], history: [{ at: iso(-900), status: "acknowledged", by: "desk" }],
+    payments: [{ at: iso(-3), amount: 180, method: "transfer", account: "maybank", claim: "received", answered: iso(0) }] };
+  const onOrder = await read([order], []);
+  /* S7 merge: Orders keeps its name over the line (S7 7.1), so the held page is told by its head, Payment due */
+  ok(control.tab === "Orders" && control.head === "Payment due" && control.pay === "Pay RM 300" && all.tab === "Orders" && all.head !== "Payment due"
+    && some.head === "Payment due" && some.pay === "Pay RM 200" && onOrder.head === "Payment due" && onOrder.pay === "Pay RM 120",
+    "RM 300 overdue holds them; received against the account since the statement it no longer does, received in part the held page asks for the rest, and an order's own claim received on an overdue part comes off it too: "
+    + JSON.stringify({ control, all, some, onOrder }));
+})();
+
+section("S6 fix: a Not found stops asking them to pay again once they have sent it again or owe nothing");
+await (async () => {
+  /* HIS D7: Not found tells them to check their bank and pay again. It stayed on the order, and under To pay now for a
+     fortnight, beside Paid RM 70 after they paid again and he received it: telling someone paid in full to pay again. It
+     now stands only while it is the newest word on what they sent and something is still owed. Forced state in the
+     store's shapes: payments[] with their answers, and the account's claims. */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const Cr = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const U = "abcd-efgh", pass = "fixture-pass-m6", ck = await Cr.contentKey("test-secret", U);
+  const now = new Date(), iso = (h) => new Date(now.getTime() + h * 3600e3).toISOString();
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const read = async (nowRm, list, claims) => {
+    const pay = { term: 10, now: { rm: nowRm, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+    const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-m6",
+      env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-48), body: "<p>Live</p>", owed: nowRm, pay })) };
+    const dom = new JD(lp(U, "nm6", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {}; win.open = () => null;
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
+        if (p === "/open") return res(200, body);
+        if (p === "/orders" && m === "GET") return res(200, { ok: true, orders: list, claims });
+        return res(404, { ok: false });
+      };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = U; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      await until(() => !d.getElementById("tabs").hidden);
+      await new Promise((r) => setTimeout(r, 60));
+      const out = { head: [...d.querySelectorAll("#payHead .msg")].map(t) };
+      if (list.length) {
+        d.querySelector('button[data-t="order"]').click();
+        await until(() => d.querySelector('#pOrder [data-row="oN"]'));
+        out.row = t(d.querySelector('#pOrder [data-row="oN"]'));
+        d.querySelector('#pOrder [data-row="oN"]').click();
+        await until(() => d.querySelector("#pOrder .oscreen"));
+        out.lines = [...d.querySelectorAll("#pOrder .oscreen .salt-ledger__row")].map(t);
+      }
+      return out;
+    } finally { dom.window.close(); }
+  };
+  const order = (paid, payments, total) => ({ id: "oN", product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: iso(-60), status: "acknowledged", total: total || 70, paid, claimed: 0,
+    payments, msgs: [], history: [{ at: iso(-60), status: "acknowledged", by: "desk" }] });
+  const nf = { at: iso(-30), amount: 70, method: "transfer", account: "maybank", claim: "notfound", answered: iso(-20) };
+  /* each rule on its own: sent again with money still owed, and paid in full with nothing sent since */
+  const again = await read(0, [order(70, [nf, { at: iso(-10), amount: 70, method: "transfer", account: "maybank", claim: "received", answered: iso(-5) }], 140)], []);
+  const byHand = await read(0, [order(70, [nf])], []);
+  const alone = await read(0, [order(0, [nf])], []);
+  const lost = (x) => x.lines.some((l) => /^Not found yet/.test(l)) || /not found/.test(x.row);
+  ok(!lost(again) && again.lines.some((l) => /^Paid ?RM 70/.test(l)) && !lost(byHand) && lost(alone),
+    "on an order, a Not found goes once they sent it again, and once nothing is owed, and stands while it is the newest word and still owed: " + JSON.stringify({ again, byHand, alone }));
+  const acf = { id: "c9", at: iso(-30), amount: 20, method: "qr", account: "tng", state: "notfound", answered: iso(-20) };
+  const sentAgain = await read(40, [], [acf, { id: "c10", at: iso(-10), amount: 20, method: "qr", account: "tng", state: "received", answered: iso(-50) }]);
+  const paidUp = await read(0, [], [acf]);
+  const owing = await read(20, [], [acf]);
+  const nfl = (x) => x.head.some((l) => /^We have not found the RM 20/.test(l));
+  ok(!nfl(sentAgain) && !nfl(paidUp) && nfl(owing),
+    "and under To pay now it goes once they sent it again, and once nothing is owed, and stands while it is still owed: " + JSON.stringify({ sentAgain: sentAgain.head, paidUp: paidUp.head, owing: owing.head }));
+})();
+
+section("S6 fix: Did you send it is asked again after the page is reloaded while they were paying");
+await (async () => {
+  /* HIS D7: on return the sheet asks once. A saved app is often reloaded or evicted while they are in their bank's app,
+     and the question lived in memory alone, so they came back to Pay and no question: the chase and the hold stayed on
+     for money they had sent. What Show opened is kept on the device for two hours, never the username, and the next open
+     asks it; Not yet clears it, and it is never asked of another account or once it is old. */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const Cr = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const U = "abcd-efgh", pass = "fixture-pass-r4", ck = await Cr.contentKey("test-secret", U);
+  const now = new Date(), iso = (h) => new Date(now.getTime() + h * 3600e3).toISOString();
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const list = [{ id: "oR", product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: iso(-30), status: "acknowledged", total: 150, paid: 0, claimed: 0,
+    payments: [], msgs: [], history: [{ at: iso(-30), status: "acknowledged", by: "desk" }] }];
+  const open = async (stored) => {
+    const pay = { term: 10, now: { rm: 0, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+    const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-r4",
+      env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: 0, pay })) };
+    const dom = new JD(lp(U, "nr4", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {}; win.open = () => null;
+      if (stored) win.localStorage.setItem("salt-stmt-payq", stored);
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
+        if (p === "/open") return res(200, body);
+        if (p === "/orders" && m === "GET") return res(200, { ok: true, orders: list, claims: [] });
+        return res(404, { ok: false });
+      };
+    } });
+    const d = dom.window.document;
+    d.getElementById("un").value = U; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !d.getElementById("tabs").hidden);
+    await new Promise((r) => setTimeout(r, 60));
+    return dom;
+  };
+  const asked = (d) => !d.getElementById("paySheet").hidden && t(d.querySelector("#payBody .paycheck h3")) === "Did you send RM 150?" && !!d.getElementById("paySent");
+  /* they pay: the order's Pay, Maybank, Show the account number; then the page is reloaded */
+  const first = await open(null);
+  let kept = null, before = false;
+  try {
+    const d = first.window.document, w = first.window;
+    d.querySelector('button[data-t="order"]').click();
+    await until(() => d.querySelector('#pOrder [data-row="oR"]'));
+    d.querySelector('#pOrder [data-row="oR"]').click();
+    [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b))).click();
+    const s = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); s.checked = true; s.dispatchEvent(new w.Event("change", { bubbles: true }));
+    before = !!w.localStorage.getItem("salt-stmt-payq");
+    d.getElementById("payGo").click();
+    kept = w.localStorage.getItem("salt-stmt-payq");
+  } finally { first.window.close(); }
+  const again = await open(kept);
+  let back = false, name = false, cleared = false;
+  try {
+    const d = again.window.document, w = again.window;
+    back = asked(d);
+    name = !String(kept || "").includes(U);
+    const ny = [...d.querySelectorAll("#payFoot button")].find((b) => t(b) === "Not yet"); if (ny) ny.click();
+    cleared = !!ny && !w.localStorage.getItem("salt-stmt-payq") && !asked(d);
+  } finally { again.window.close(); }
+  ok(!before && !!kept && back && name && cleared,
+    "Show keeps the question on the device without the username, the page reloaded asks Did you send RM 150 at once, and Not yet clears it: "
+    + JSON.stringify({ before, kept, back, cleared }));
+  const q = JSON.parse(kept || "{}");
+  const other = await open(JSON.stringify(Object.assign({}, q, { who: "zz" })));
+  const old = await open(JSON.stringify(Object.assign({}, q, { at: Date.now() - 3 * 3600e3 })));
+  let nOther = true, nOld = true;
+  try { nOther = asked(other.window.document); nOld = asked(old.window.document); } finally { other.window.close(); old.window.close(); }
+  ok(!nOther && !nOld, "and it is never asked of another account, nor once it is two hours old: " + JSON.stringify({ other: nOther, old: nOld }));
+})();
+
+section("S6 fix: the question on return wears the Sheet's title recipe, and the page restates no ring the system lacks");
+await (async () => {
+  /* RULE 6: the recipes are used, not restated, and a look the system lacks goes into salt-ds first. The check screen drew
+     its heading with page rules copying the Sheet's title at another weight, and a ring round the mark that no recipe
+     has. The heading now carries salt-sheet__title and the page keeps only its spacing; the ring waits for a recipe. The
+     screen is opened as a reload opens it, from the question kept on the device. */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const Cr = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const U = "abcd-efgh", pass = "fixture-pass-rr", ck = await Cr.contentKey("test-secret", U);
+  const now = new Date(), iso = (h) => new Date(now.getTime() + h * 3600e3).toISOString();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const html = lp(U, "nrr", null);
+  const css = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
+  const pageRules = css.slice(css.indexOf(".paycheck{"));
+  const who = (u) => { let h = 2166136261; for (let i = 0; i < u.length; i++) { h ^= u.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(36); };
+  const list = [{ id: "oQ", product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: iso(-30), status: "acknowledged", total: 150, paid: 0, claimed: 0,
+    payments: [], msgs: [], history: [{ at: iso(-30), status: "acknowledged", by: "desk" }] }];
+  const pay = { term: 10, now: { rm: 0, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+  const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-rr",
+    env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: 0, pay })) };
+  const dom = new JD(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {}; win.open = () => null;
+    win.localStorage.setItem("salt-stmt-payq", JSON.stringify({ who: who(U), at: Date.now(), kind: "order", id: "oQ", away: { amt: 150, rail: "transfer", acct: "maybank" } }));
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
+      if (p === "/open") return res(200, body);
+      if (p === "/orders" && m === "GET") return res(200, { ok: true, orders: list, claims: [] });
+      return res(404, { ok: false });
+    };
+  } });
+  const d = dom.window.document;
+  let head = null, ring = true, mark = false;
+  try {
+    d.getElementById("un").value = U; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => d.querySelector("#payBody .paycheck h3"));
+    const h = d.querySelector("#payBody .paycheck h3");
+    head = h ? { cls: h.className, text: h.textContent } : null;
+    ring = !!d.querySelector("#payBody .payring");
+    mark = !!d.querySelector("#payBody .paycheck svg.glyph");
+  } finally { dom.window.close(); }
+  ok(head && head.cls === "salt-sheet__title" && head.text === "Did you send RM 150?" && !ring && mark
+    && !/\.payring/.test(css) && !/\.paycheck h3\{[^}]*(font|color|letter-spacing)/.test(pageRules) && /\.salt-sheet__title\s*\{/.test(css),
+    "the question's heading is the Sheet's own title recipe, the page keeping only its spacing, and no ring the system has no recipe for: " + JSON.stringify({ head, ring, mark }));
+})();
+
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead
@@ -33862,11 +36999,14 @@ await (async () => {
   const C = await import("../tools/stmt-crypto.mjs");
   const { webcrypto: wc } = await import("node:crypto");
   const { JSDOM: JD } = await import("jsdom");
-  const openWith = async (owed) => {
+  /* S6 6.7 (his D9): the line counts what is past its term, the sealed pay.overdue, and never what is owed */
+  const openWith = async (overdue, owed) => {
     const u = "abcd-efgh", pass = "fixture-pass-hold", ck = await C.contentKey("test-secret", u);
+    const part = { date: "2026-09-01", due: "2026-09-11", late: true, rm: overdue, whole: overdue, product: "salt", qty: 2, got: 2, gotOn: "2026-09-01", resale: false };
+    const pay = overdue === undefined ? undefined : { term: 10, now: { rm: owed || overdue, due: "2026-09-11", parts: [part] }, overdue: { rm: overdue, parts: overdue ? [part] : [] }, coming: { rm: 0, parts: [] } };
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "",
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: at.toISOString(), body: "<p>Live</p>", owed })) };
+      live: await C.encryptWith(ck, JSON.stringify({ at: at.toISOString(), body: "<p>Live</p>", owed: owed || overdue, pay })) };
     const dom = new JD(lp(u, "nhold", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -33882,19 +37022,21 @@ await (async () => {
       return { order: d.getElementById("pOrder").textContent, orderShown: !d.getElementById("pOrder").hidden,
         stmtShown: !d.getElementById("pStmt").hidden, home: !d.getElementById("pHome").hidden, homeText: d.getElementById("pHome").textContent,
         pricesTab: !d.getElementById("tPrices").hidden, stmtTab: !d.querySelector('button[data-t="stmt"]').hidden,
-        payLinks: d.querySelectorAll("#pOrder a.lnk").length, form: !!d.querySelector("#pOrder select") };
+        pay: [...d.querySelectorAll("#pOrder .pane button.salt-pill")].map((b) => b.textContent).join(), form: !!d.querySelector("#pOrder select") };
     } finally { dom.window.close(); }
   };
-  const held = await openWith(250.5), under = await openWith(100), none = await openWith(undefined);
-  /* S7 7.1: HOME OPENS FIRST, over the line too, and leads with the overdue amount and Pay; Orders is the payment page */
-  ok(held.home && !held.orderShown && !held.stmtShown && !held.pricesTab && held.stmtTab
+  const held = await openWith(250.5), under = await openWith(100), none = await openWith(undefined), owedOnly = await openWith(50, 300);
+  /* S7 7.1: HOME OPENS FIRST, over the line too, and leads with the overdue amount and its Pay; Orders is the payment
+     page (S6 6.7: what is past its term, Pay, no order form), and the price list stays readable */
+  ok(held.home && !held.orderShown && !held.stmtShown && held.pricesTab && held.stmtTab
     && /Please pay the overdue amount of RM 250\.5 before placing another order/.test(held.homeText) && /Pay RM 250\.5/.test(held.homeText)
-    && /Please pay the overdue amount of RM 250\.5 before placing another order/.test(held.order) && held.payLinks > 0 && !held.form,
-    "owing RM 250.50, Home says to pay the overdue amount first with its Pay, Orders offers the ways to pay, and neither the price list nor an order form: "
+    && /Please pay the overdue amount of RM 250\.5 before placing another order/.test(held.order) && held.pay === "Pay RM 250.5" && !held.form,
+    "RM 250.50 past its term, Home says to pay the overdue amount first with its Pay, Orders is the payment page with its Pay and no order form, and the price list stays readable: "
     + JSON.stringify({ ...held, order: held.order.slice(0, 90), homeText: held.homeText.slice(0, 90) }));
   ok(under.home && !under.orderShown && under.pricesTab && !/overdue/.test(under.order + under.homeText)
-    && none.home && !none.orderShown && none.pricesTab && !/overdue/.test(none.homeText),
-    "at RM 100 exactly, and with no figure at all, Home opens with Prices beside it and no overdue line");
+    && none.home && !none.orderShown && none.pricesTab && !/overdue/.test(none.order + none.homeText)
+    && owedOnly.home && !owedOnly.orderShown && owedOnly.pricesTab && !/overdue/.test(owedOnly.order + owedOnly.homeText),
+    "at RM 100 overdue exactly, with no figure at all, and owing RM 300 of which only RM 50 is past its term, Home opens with Prices beside it and no overdue line");
 })();
 
 section("S1 1.28: Still to collect is one line a book, never units of different books added");

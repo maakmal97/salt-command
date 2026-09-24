@@ -171,7 +171,8 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   (his decision D6)**: the order card's yes is recorded in `preapproval` and spent by the drafter only
   if the draft equals what he was shown, every field, flag and (for Accept) pricing version; else it
   waits under Approve, marked. Accept moves the order only once its row is approved; a later stage
-  tapped before the first row lands is booked when it lands, and the answer says so. A close under what they paid
+  tapped before the first row lands is booked when it lands, and the answer says so. A claim against the account (S6) is
+  drawn as the engine's oldest-first `claimAlloc`, each row less the money already on its way to it, and its one Received approves exactly those rows. A close under what they paid
   is never approved on a tap: nothing books the difference as a refund yet.
 - **What the drafter refuses, the phone does not let you type**: `entryFault` answers both entry
   forms. **An R2 row books to the associate's `-R` bucket whether or not the end buyer is named**,
@@ -200,7 +201,7 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   laptop (approve last), are in `docs/CLOUD_FOLD.md`. A ledger row edit queues as a Correction.
 - Endpoints: `GET /drafts?status=…`, `POST /drafts/<id>/approve|reject|committed`, `POST
   /draft-now?dry=1`, `POST /orders/<id>/preview` (the row an Accept would make, stored nowhere, never
-  the dry run) and `/accept|handed|cash|received|again` (the card's taps), all keyed. Nothing writes
+  the dry run) and `/accept|handed|cash|received|notfound|again` (the card's taps), and `/claims/<id>/preview|received|notfound`, all keyed. Nothing writes
   to `entry`. **The `draft` table's CHECK lists every collection by name**: a collection the drafter
   newly returns needs a migration rebuilding it, applied to the live D1 BEFORE the deploy and as that
   file alone (`wrangler d1 execute salt_ledger --remote --file=...`); re-running an older one drops
@@ -280,7 +281,9 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   sees a level**, named or marked (D11); no name is used because none exists there (rule 2).
 - **AN ORDER REACHES THE BOOK IN STAGES.** The desk's every-minute
   `reconcileOrders` is the one road that queues what the site makes (Accept and Cash received queue
-  their own): the acknowledgement a **Pending** row (delivery beside its total), a payment a **Fulfilment**, a
+  their own): the acknowledgement a **Pending** row (delivery beside its total), each claim of theirs ("I have sent it",
+  never paid until his Received, S6; one against the account, for desk rows, is its own record, never an order,
+  `acl` in the book and `aclaim:` on KV) a **Fulfilment** that Approve cannot decide, a
   handover a **Correction** stating the running total (rolling the shelf by the difference), a close at
   what was handed over a **Correction** restating size and total, a withdrawal a **Cancellation** (theirs,
   nothing paid, while the pending row is unapproved: the row dropped instead; an approved row never). The
@@ -302,12 +305,17 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   English and Malay off the lists in `src/orders.js` and the desk's `siteSafe` mirrors them by hand;
   the suite pins the lists to the book's names and `TIER_NAMES` and drives every word through both:
   a new book or level goes on both, its Malay word by hand.
-- **Over RM 100 owed (`HOLD_RM`) Home leads with the overdue amount and Pay, and Prices and the order
-  form are withheld**: the page's gate, not the Worker's. Beside `owed` the live document seals `pay`
-  (`payDue`): to pay now (`txAdvance`), overdue and coming up (`txPendRM`), each part due at its order date plus the desk's
-  `RULES.creditDays`, read from the master, and overdue only after that day. **The bulletin** is KV
-  `bulletin`, set through the desk's keyed `/bulletin` and checked by `siteWords`: a still card on Home
-  (his D14; no running or changing mode), and a Set asks before it wakes every phone.
+- **Over RM 100 past its term (`HOLD_RM` against `pay.overdue`, his D9) Home leads with the overdue amount and Orders
+  is the payment page**: the page's gate, not the Worker's. It shows each part's due date, Prices stays readable, and a
+  claim waiting on him reopens ordering, his acknowledgement still the check; what he received since the statement was
+  written comes off the overdue figure. Beside `owed` the live document seals `pay` (`payDue`): to pay now
+  (`txAdvance`), overdue and coming up (`txPendRM`), each part due at its order date plus the desk's
+  `RULES.creditDays`, read from the master, and overdue only after that day. To pay now heads Home, with one filled
+  Pay; every Pay opens one sheet (D8: no account chosen for them, the username the reference, QR
+  Command through `payHref`, never named), and on return it asks once, Did you send it: a claim reads "sent, waiting for
+  us to confirm" until his answer (D7). **The bulletin** is KV `bulletin`, set through the desk's keyed `/bulletin` and
+  checked by `siteWords`: a still card on Home (his D14; no running or changing mode), and a Set asks before it wakes
+  every phone.
 - **An associate is asked who an order is for, first (Me / A friend)**: a friend's books to their `-R` bucket
   through the engine's `bookR2`, and the `orderKey` is built on the bucket. **A bucket is not its
   own person**: `ownsCode` reads the code and the bucket together; a bucket has no statement and no
@@ -333,12 +341,13 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   in (a device key in the browser, the wrapped content key at `rem:<sha256(token)>`, neither opening anything
   alone, thirty days from the last open), log out, which also drops that wrap, this phone's
   notifications and every hand-over the page minted. Salt Admin's **Sign out everywhere** (`POST /all/signout`) ends
-  every phone, session and alert on an account: the answer to a forwarded link or a lost phone. Nothing says phone on a computer. **A lapsed session reopens itself from the remembered
+  every device, unused link and code, and alert on an account, never its `u:` record: the answer to a forwarded link or a
+  lost phone. An account's phones and computers are named from the browser (`deviceOf`), never an address. Nothing says phone on a computer. **A lapsed session reopens itself from the remembered
   phone and repeats the request once** (his D1), **only when the phone remembers the account on screen**;
   otherwise a Sheet says so over the page, carrying the door and keeping the draft. The page re-reads on every return (`GET /account` on its session, never a
   wrap), and a remembered phone draws "Opening your account", never the door. Kept as an app:
   manifest and icon served by the Worker, no brand; notifications are asked only from a tap. How to
-  keep it is a card once signed in, never on the door: an Install button wherever the browser offers one,
+  keep it is This device's first row once signed in (leading a new account's Home instead), never on the door: an Install button wherever the browser offers one,
   Samsung Internet's steps, a computer's address-bar mark or another Android browser's menu mark drawn elsewhere; on an iPhone its Sheet mints the hand-over as it
   opens and copies the key in a tap of its own, rewriting the address to `/app#<key>` (his D2), and never
   says a link signs the saved app in. **The saved app starts at `/app`** (the manifest's `start_url`): with
@@ -354,8 +363,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   tap opens that order (`#o=<id>`), and a page already open re-reads first.
 - **The chase, twice a day** (his decision D5): the site's hourly cron (`wrangler.stmt.jsonc`) wakes a
   customer holding goods unpaid (`isAdvance`) only at 10:00 and 18:00 Kuala Lumpur (`chaseSlot`), from
-  the day after the handover (`graceOver`), paused while a claim waits (`claimWaits`, where stage 6's
-  claim plugs in), in its own words (`due`); one wake a slot per customer, capped by the chase
+  the day after the handover (`graceOver`), paused while a claim of theirs waits (`claimWaits`), in its own words (`due`); one wake a slot per customer, capped by the chase
   mark (`markChased`: in the order book, `chased:<username>` on the `kv` road); the test account is
   skipped. The config ships with the job's push paths; an unpushed laptop change needs `npx wrangler
   deploy -c wrangler.stmt.jsonc`.

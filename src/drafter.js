@@ -1659,8 +1659,10 @@ function answers(pre, entry) {
   if (pre.stage === "pay") return Math.abs((+p.cash || 0) - (+f.amount || 0)) < 0.005;
   return false;
 }
+/* the site record that made an entry: a site order, or a claim against an account (S6 11.15), whose rows his yes answers too */
+export const madeBy = (e) => (e && (e.orderId || e.claimId)) || null;
 export async function preFor(db, at, entry) {
-  const id = entry && entry.orderId, stage = entry && STAGE_OF[entry.status];
+  const id = madeBy(entry), stage = entry && STAGE_OF[entry.status];
   if (!id || !stage) return null;
   let rows = [];
   /* a store before migrations/0011 has no pre-approvals, and every row waits under Approve as it did before D6 */
@@ -1686,12 +1688,12 @@ export async function applyPre(db, pre, draft, book, now) {
  *  pre-approval learning its id, or a payment drafted a minute before his Received): the same test, on the draft as
  *  it is stored, and only on the draft it names. What applyPre returns, or null with no draft to test. */
 export async function settlePre(db, pre, book, now) {
-  const rs = await db.prepare("SELECT id,entry,row,flags,collection,amend_kind FROM draft WHERE status='pending' AND entry LIKE ?1 ORDER BY id DESC")
-    .bind('%"orderId":"' + pre.order_id + '"%').all();
+  const rs = await db.prepare("SELECT id,entry,row,flags,collection,amend_kind FROM draft WHERE status='pending' AND (entry LIKE ?1 OR entry LIKE ?2) ORDER BY id DESC")
+    .bind('%"orderId":"' + pre.order_id + '"%', '%"claimId":"' + pre.order_id + '"%').all();
   const want = Object.keys(STAGE_OF).find((k) => STAGE_OF[k] === (pre.stage === "cash" ? "pay" : pre.stage));
   const parse = (s, f) => { try { return JSON.parse(s); } catch (e) { return f; } };
   const rows = (rs.results || []).map((r) => ({ id: r.id, entry: parse(r.entry, {}), row: parse(r.row, {}), flags: parse(r.flags, []), collection: r.collection, amendKind: r.amend_kind || null }))
-    .filter((r) => r.entry && r.entry.orderId === pre.order_id && r.entry.status === want);
+    .filter((r) => r.entry && madeBy(r.entry) === pre.order_id && r.entry.status === want);
   const draft = pre.entry_at ? rows.find((r) => r.id === pre.entry_at) : null;
   return draft ? applyPre(db, pre, draft, book, now) : null;
 }
@@ -1777,7 +1779,7 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
     /* S11 (D6): A ROW A SITE ORDER MADE MAY ALREADY HAVE HIS YES, given on the order card before it existed. It is
        spent here, where the row is made, only by the pass that made it and only on an exact match; a fault
        leaves the row pending, as every row was before. */
-    if (entry && entry.orderId && made && made.meta && made.meta.changes) {
+    if (madeBy(entry) && made && made.meta && made.meta.changes) {
       try {
         const pre = await preFor(env.SALT_LEDGER, at, entry);
         const r = pre ? await applyPre(env.SALT_LEDGER, pre, { id: at, entry, collection: d.collection, row: d.row, flags: d.flags, amendKind: d.amendKind || null }, book, now()) : null;
