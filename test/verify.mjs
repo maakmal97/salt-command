@@ -20086,8 +20086,8 @@ await (async () => {
     ok(obList.ok && JSON.stringify(obList) === JSON.stringify(kvList) && obList.orders.length === 1,
       "the first request moves the book in, and the customer's list is answered from the copy exactly as KV had it");
     const copied = bk.db.prepare("SELECT kind FROM ev").all().map((r) => r.kind);
-    ok(copied.length === 2 && copied.every((k) => k === "copy") && bk.state.alarmAt() === T0 + 60000,
-      "every KV order came in as one copy event, and the alarm is set for the end of the minute: " + JSON.stringify({ copied, alarm: bk.state.alarmAt() }));
+    ok(copied.length === 2 && copied.every((k) => k === "copy") && bk.state.alarmAt() === T0 + 65000,
+      "every KV order came in as one copy event, and the alarm is set for the end of the minute, past the cache life with its margin: " + JSON.stringify({ copied, alarm: bk.state.alarmAt() }));
 
     /* ---- inside the minute: every move refused in words, the reads answered, KV untouched ---- */
     clock.set(T0 + 20000);
@@ -20108,14 +20108,14 @@ await (async () => {
     /* ---- an object restarted inside the minute runs nothing twice ---- */
     bk.restart();
     await call(env, tA, "/orders");
-    ok(evCount() === 2 && (bk.db.prepare("SELECT v FROM meta WHERE k = 'movein:1'").get() || {}).v === String(T0 + 60000),
+    ok(evCount() === 2 && (bk.db.prepare("SELECT v FROM meta WHERE k = 'movein:1'").get() || {}).v === String(T0 + 65000),
       "an object restarted inside the minute copies nothing again and keeps its deadline");
 
     /* ---- a Worker still on the old code writes KV during the rollout: the end of the minute takes it ---- */
     clock.set(T0 + 30000);
     await call(kenv, tA, "/orders/" + a1 + "/say", { text: "sent RM 50 as well" });
     const late = (await call(kenv, tB, "/orders", Object.assign({}, place, { qty: 1, total: 110 }))).b.order.id;
-    clock.set(T0 + 61000);
+    clock.set(T0 + 66000);
     await bk.book.alarm();
     const inBook = Object.fromEntries(bk.db.prepare("SELECT u, oid, doc FROM ord").all().map((r) => [r.u + ":" + r.oid, r.doc]));
     const kvNow = Object.fromEntries([...kv.m.keys()].filter((k) => k.startsWith("order:")).map((k) => [k.slice(6), kv.m.get(k)]));
@@ -20184,7 +20184,7 @@ await (async () => {
     const env2 = Object.assign({}, env, { ORDER_MOVE_IN: "2" });
     clock.set(T0 + 7200000);
     const f2 = await call(env2, tA, "/orders/" + a1 + "/say", { text: "too soon", rid: "e5".repeat(16) });
-    clock.set(T0 + 7200000 + 61000);
+    clock.set(T0 + 7200000 + 66000);
     const l2 = (await call(env2, tA, "/orders")).b.orders.find((o) => o.id === a1);
     ok(f2.status === 503 && f2.b.error === O.FROZEN && l2.msgs.map((m) => m.text).includes("written on the old road")
       && (bk.db.prepare("SELECT v FROM meta WHERE k = 'movein:done'").get() || {}).v === "2",
@@ -20196,6 +20196,61 @@ await (async () => {
     ok(!!cfg && cfg.vars.ORDER_STORE === "object+kv" && cfg.vars.ORDER_MOVE_IN === "1",
       "wrangler.stmt.jsonc ships the week of reading both: ORDER_STORE object+kv, generation 1: " + JSON.stringify(cfg && { s: cfg.vars.ORDER_STORE, g: cfg.vars.ORDER_MOVE_IN }));
   } finally { clock.uninstall(); }
+})();
+
+section("S10 fix DS3: the end of the minute is counted from when the start copy finished, past KV's cache life, so the end pass reads what the old code wrote");
+await (async () => {
+  /* The end pass exists to take what a Worker still on the old code writes to KV inside the freeze. KV serves a key
+     from the location's cache for a minute after it was READ (test/kvsim.mjs), and the start pass fills that cache
+     key by key, each read later than the last. An end counted from before the copy lands inside that minute for the
+     keys read after it began, and the end pass reads the start pass's own values back. Here a read that misses the
+     cache costs 20 ms, as a real one costs something; the old code writes at another location. */
+  const SIM = await import("../test/kvsim.mjs");
+  const H = await import("../test/orderbook-harness.mjs");
+  const SW = (await import("../stmt/worker.js")).default;
+  const O = await import("../stmt/orders.js");
+  const { World, clock, CACHE_MS } = SIM;
+  const T0 = Date.UTC(2026, 8, 24, 2, 0, 0), un = "h3j4-k5m6", W = new World();
+  const slow = (loc) => {
+    const kv = W.at(loc);
+    return { get: async (k, t) => { const e = W.cache(loc).get(k); if (!(e && clock.now() - e.t < CACHE_MS)) clock.add(20); return kv.get(k, t); },
+      put: (k, v, o) => kv.put(k, v, o), delete: (k) => kv.delete(k), list: (o) => kv.list(o) };
+  };
+  const call = async (env, tok, path, body) => {
+    const h = tok === "desk" ? { "X-Stmt-Desk": "desk-key" } : { "X-Stmt-Session": tok };
+    const r = await SW.fetch(new Request("https://k7m3p2.example" + path, body === undefined ? { headers: h }
+      : { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(body) }), env);
+    return { status: r.status, b: await r.json() };
+  };
+  const place = { product: "salt", qty: 2, mode: "collect", unit: 110, total: 220, week: "" };
+  const realLog = console.log;
+  /* the book's own lines are kept out of the run's output; a failing assertion's line is not */
+  clock.install(); console.log = (...x) => { if (!/^orders?(book)?:/.test(String(x[0]))) realLog(...x); };
+  try {
+    const old = { STMT: W.at("KUL"), STMT_DESK_KEY: "desk-key" };
+    clock.set(T0 - 600000);
+    W.rateLimit = false; const tok = await O.mintSession(old, un); W.rateLimit = true;
+    for (let i = 0; i < 5; i++) { clock.add(2000); await call(old, tok, "/orders", place); }
+    /* the order the start pass reads FIRST, whose cache entry is the oldest and the one an early end still hits */
+    const first = (await W.at("KUL").list({ prefix: "order:" + un + ":" })).keys[0].name.split(":")[2];
+    clock.add(2000); await call(old, "desk", "/desk/orders/" + un + "/" + first, { status: "acknowledged" });
+    clock.add(2000); await call(old, tok, "/orders/" + first + "/method", { method: "tngbiz" });
+    clock.set(T0);
+    const bk = H.orderBook({ STMT: slow("SIN"), ORDER_MOVE_IN: "1" }, { movedIn: false });
+    const env = { STMT: W.at("SIN"), STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" };
+    await call(env, "desk", "/desk/orders/last");
+    const copied = clock.now();
+    clock.set(T0 + 5000);
+    const paid = await call(old, tok, "/orders/" + first + "/pay", { amount: 100 });
+    clock.set(bk.state.alarmAt());
+    await bk.book.alarm();
+    const o = JSON.parse(bk.db.prepare("SELECT doc FROM ord WHERE oid = ?").get(first).doc);
+    const done = (bk.db.prepare("SELECT v FROM meta WHERE k = 'movein:done'").get() || {}).v;
+    ok(copied > T0 && bk.state.alarmAt() >= copied + CACHE_MS,
+      "the end of the minute is set after the start copy has finished and a whole cache life past it: " + JSON.stringify({ copied: copied - T0, end: bk.state.alarmAt() - T0 }));
+    ok(paid.status === 200 && done === "1" && o.paid === 100 && o.payments.length === 1,
+      "and the old code's RM 100, written at another location five seconds into the freeze, is in the book once it has moved in: " + JSON.stringify({ paid: o.paid, done }));
+  } finally { clock.uninstall(); console.log = realLog; }
 })();
 
 section("v751: a customer may write a line on an order, at placement and after, and it never reaches a ledger note");

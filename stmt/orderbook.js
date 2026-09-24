@@ -48,6 +48,10 @@ import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEI
 export { BOOK_NAME };
 const MARKS = { last: LAST_PLACED, touched: LAST_TOUCHED, said: LAST_SAID, theirs: LAST_THEIRS };
 export const FREEZE_MS = 60000;
+/* past KV's cache life, counted from the END of the start copy (S10 fix DS3): a key the start pass read is
+   served from this location's cache for a minute after THAT read, so an end inside the minute reads the start
+   pass's own value back and misses what the old code wrote since */
+export const FREEZE_SPARE_MS = 5000;
 /* what writes: refused while the book is moving in */
 const WRITES = ["place", "customer", "desk", "chase", "drop"];
 
@@ -81,13 +85,14 @@ export class OrderBook {
     return this.moving;
   }
   async movePass() {
-    const gen = this.gen(), until = +(this.meta("movein:" + gen) || 0), now = Date.now();
+    const gen = this.gen(), until = +(this.meta("movein:" + gen) || 0);
     if (!until) {
       const c = await this.copy(gen, "start");
-      this.setMeta("movein:" + gen, String(now + FREEZE_MS));
-      await this.state.storage.setAlarm(now + FREEZE_MS);
+      const end = Date.now() + FREEZE_MS + FREEZE_SPARE_MS;
+      this.setMeta("movein:" + gen, String(end));
+      await this.state.storage.setAlarm(end);
       console.log("orderbook: moving in, generation " + gen + ", frozen for a minute: " + JSON.stringify(c));
-    } else if (now >= until) {
+    } else if (Date.now() >= until) {
       const c = await this.copy(gen, "end");
       this.setMeta("movein:done", gen);
       console.log("orderbook: moved in, generation " + gen + ": " + JSON.stringify(c));
