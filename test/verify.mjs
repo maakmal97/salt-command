@@ -14230,7 +14230,7 @@ await (async () => {
     const before = hits.length;
     const cB = cardOf(uB);
     await new Promise((r) => setTimeout(r, 60));
-    ok(!!cB && four.every((t) => btn(cB, t) && btn(cB, t).disabled && /No account/.test(btn(cB, t).title)) && /No account yet/.test(cB.textContent),
+    ok(!!cB && four.every((t) => btn(cB, t) && btn(cB, t).disabled && /No account/.test(btn(cB, t).title)) && /Made at the next laptop update./.test(cB.textContent),
       "on the card with no account, Share, Copy message, Sign-in link and View as them are all off, each saying why: "
         + JSON.stringify(four.map((t) => [t, cB && btn(cB, t) && btn(cB, t).disabled])));
     ok(!hits.slice(before).some((x) => /\/open$/.test(x)), "and opening its card posts nothing: " + JSON.stringify(hits.slice(before)));
