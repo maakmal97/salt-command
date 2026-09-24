@@ -14974,6 +14974,8 @@ await (async () => {
 
     const html = await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text();
     ok(!/id="oSend"|id="oReview"|data-m="send"|data-m="review"/.test(html), "Send and Review are gone from his page");
+    const cust = await (await site("/")).text();
+    ok(!/salt admin|data-m="needs"|data-count=/i.test(cust), "and none of his places reaches a customer's page, not even a comment naming his app");
     win = new JSDOM(html, { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
     } }).window;

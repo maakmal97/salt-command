@@ -219,7 +219,7 @@ h3.pmark{margin:0 0 4px;line-height:1}
 #mHome h1,#oAccts h1,#oLinks h1,#oMore h1{margin-top:0}
 /* S9 9.7: an ended admin sign-in leaves nothing on the page but the way back in */
 body.ended>*:not(#aEnded){display:none}
-/* S9 9.2: SALT ADMIN'S SHELL. The App bar and the Desk rail are the system's, and which one shows is the
+/* S9 9.2: HIS OWN PAGE'S SHELL. The App bar and the Desk rail are the system's, and which one shows is the
    system's switch at 1080px; this page decides the column, the room kept clear above the bar, and where the
    open account stands: beside the list on a desk, in its place on a phone, with a way back. */
 .gate.adm{max-width:600px;margin-top:32px;padding-bottom:calc(var(--salt-bar-h) + 32px + env(safe-area-inset-bottom))}
