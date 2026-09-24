@@ -7744,9 +7744,11 @@ await (async () => {
     const visible = (h) => h.replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]+>/g, " ");
     const handedName = visible(bp({ prices: { week: { label: "x" }, products: [{ product: "oil", name: "Oil", unit: "unit",
       tierName: "Bronze", fellBack: true, sizes: [{ q: 10, price: 130 }] }] } }, "n"));
-    ok(everyBoard.every((b) => levelWords.every((w) => !visible(bp({ prices: b }, "n")).includes(w)))
+    /* S13 13.2 (25 Sep 2026): nor in Malay. A board carries no place, so a bare perak on it is a level. */
+    const { wordsIn: wi87, LEVEL_WORDS_MS: ms87 } = await import("../src/orders.js");
+    ok(everyBoard.every((b) => { const v = visible(bp({ prices: b }, "n")); return levelWords.every((w) => !v.includes(w)) && wi87(v, ms87).length === 0; })
       && !handedName.includes("Bronze") && handedName.includes("The only price for this product"),
-      "and the page names no level on any pane, even when handed one: " + levelWords.join(", "));
+      "and the page names no level on any pane, even when handed one, in English or Malay: " + levelWords.concat(ms87).join(", "));
   }
 
   /* the vendored encoder is the one encoder, or the site draws a QR from code nobody is testing */
@@ -13091,8 +13093,11 @@ await (async () => {
       d.getElementById("un").value = u; d.getElementById("pw").value = pass;
       d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
       for (let i = 0; i < 150 && !d.getElementById("pPrices").textContent; i++) await new Promise((r) => setTimeout(r, 100));
+      const tw = d.createTreeWalker(d.getElementById("pPrices"), 4), nodes = [];
+      while (tw.nextNode()) nodes.push(tw.currentNode.nodeValue);
       return {
         text: d.getElementById("pPrices").textContent,
+        words: nodes.join(" "),   /* text node by text node: textContent runs a heading into the next line */
         marks: [...d.querySelectorAll("#pPrices .mark")].map((m) => ({ ch: m.textContent, colour: m.style.color, hidden: m.getAttribute("aria-hidden") })),
         heads: [...d.querySelectorAll("#pPrices h3")].map((h) => h.textContent)
       };
@@ -13112,8 +13117,10 @@ await (async () => {
   /* 2. AND THE LEVEL IS NEVER NAMED. This is the whole of "subtle": the name travels in the sealed list and stays out of
      the page's text, so two customers comparing pages cannot order themselves by it. */
   const names59 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
-  ok(names59.every((n) => a59.text.indexOf(n) < 0),
-    "and no level is named anywhere in the prices they read: " + JSON.stringify(a59.heads));
+  /* S13 13.2 (25 Sep 2026): nor in Malay. The page carries no place, so a bare perak here is a level. */
+  const WL59 = await import("../src/orders.js");
+  ok(names59.every((n) => a59.text.indexOf(n) < 0) && a59.words.length > 100 && WL59.wordsIn(a59.words, WL59.LEVEL_WORDS_MS).length === 0,
+    "and no level is named anywhere in the prices they read, in English or Malay: " + JSON.stringify(a59.heads));
   /* 3. THE SAME LEVEL ON BOTH PRODUCTS GIVES THE SAME MARK, which is what makes it a label and not a decoration. */
   const b59 = await open59(list59("Gold", "Gold", "2026-03-04"));
   ok(b59.marks.length === 2 && b59.marks[0].ch === b59.marks[1].ch && b59.marks[0].colour === b59.marks[1].colour
@@ -16394,7 +16401,9 @@ await (async () => {
     ok(card95 && card95.querySelector(".pwith svg.psym") && /Droplet/.test(card95.textContent)
       && !/\b(salt|oil)\b/i.test(card95.textContent),
       "an order's own card carries the mark of what was ordered and never its name: " + JSON.stringify(card95 && card95.textContent.slice(0, 60)));
-    const words95 = (d95.getElementById("pPrices").textContent + " " + d95.getElementById("pOrder").textContent);
+    /* text node by text node (25 Sep 2026): textContent runs a heading into the next line, and "GaramGood" hides a word */
+    const nodes95 = (el) => { const tw = d95.createTreeWalker(el, 4), s = []; while (tw.nextNode()) s.push(tw.currentNode.nodeValue); return s.join(" "); };
+    const words95 = nodes95(d95.getElementById("pPrices")) + " " + nodes95(d95.getElementById("pOrder"));
     ok(!/\b(salt|oil)\b/i.test(words95) && !WL95.wordsIn(words95, WL95.PRODUCT_WORDS).length && !/Salt Command/i.test(words95),
       "and no product is written as a word anywhere on the prices or the order: " + JSON.stringify((words95.match(/\b(salt|oil)\b/gi) || []).slice(0, 4)));
   } finally { try { dom95.window.close(); } catch (e) { /* best effort */ } }
@@ -18215,8 +18224,10 @@ await (async () => {
      MARK can be drawn, and a comment names the owner's file while saying a customer never gets it;
      neither is rendered. What matters is that THIS panel names no tier and draws none of his. */
   const panel9 = page9.slice(page9.indexOf("function drawMyLinks()"), page9.indexOf("async function loadMyLinks()"));
-  ok(/Waiting to be approved/.test(panel9) && !/Titanium|Platinum|Gold|Silver|Bronze|Ambassador/.test(panel9),
-    "it tells them it is waiting and names no tier, which a customer's page never does");
+  const WL9 = await import("../src/orders.js");
+  ok(/Waiting to be approved/.test(panel9) && !/Titanium|Platinum|Gold|Silver|Bronze|Ambassador/.test(panel9)
+    && WL9.wordsIn(panel9, WL9.LEVEL_WORDS_MS).length === 0,
+    "it tells them it is waiting and names no tier, in English or Malay, which a customer's page never does");
   ok(!/drawLinks\(/.test(page9) && !/getElementById\('glist'\)/.test(page9) && !/\/all\/refs/.test(page9),
     "and nothing of his links panel is in it: not the drawing, not its element, not his route");
 })();
