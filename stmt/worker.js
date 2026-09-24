@@ -758,9 +758,11 @@ function refQr(origin, id) {
   return "data:image/svg+xml," + encodeURIComponent(svg);
 }
 const refOut = (origin, r) => Object.assign({}, r, { url: refUrl(origin, r.id), qr: refQr(origin, r.id) });
-/* S9 9.9: the site's own /app, for a customer's other device to open; it carries nothing but the address */
+/* S9 9.9: the site's own /app, for a customer's other device to open; it carries nothing but the address, and #code,
+   which opens it on the code screen on any device (an S9 fix: a bare /app opened a browser tab on the door, or on an
+   iPhone on the saved app's words) */
 function appQr(origin) {
-  return "data:image/svg+xml," + encodeURIComponent(QR.qrRectSvg(origin + "/app", { size: 180, dark: "#05080a", light: "#f2f4f5", label: "Salt Counter" }));
+  return "data:image/svg+xml," + encodeURIComponent(QR.qrRectSvg(origin + "/app#code", { size: 180, dark: "#05080a", light: "#f2f4f5", label: "Salt Counter" }));
 }
 
 /* ---- REMEMBER ME, AND LOGGING OUT (v692, his instruction of 18 Sep 2026) ----------------------

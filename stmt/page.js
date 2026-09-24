@@ -3093,8 +3093,8 @@ const CLIENT_JS = `
       if(opening) opening.hidden=true;
       /* S3 fix: a phone still remembered, which the site could not open just now, says so on the door with Try again,
          never on the saved app's code screen, which would send a customer still signed in to Safari for a code */
-      var kept=!!remGet();
-      if(APP&&!kept&&(IOS||key||qm)) showCode(!!qm&&!STANDALONE); else gate.hidden=false;
+      var kept=!!remGet(), cm=hk==='code';   /* S9 fix: This device's QR (/app#code) opens on the code, in a browser's words */
+      if(APP&&!kept&&(IOS||key||qm||cm)) showCode((!!qm||cm)&&!STANDALONE); else gate.hidden=false;
       if(APP&&qm&&INAPP&&!STANDALONE) csay(INAPP_KEY,'bad');
       if(key&&!kept) await openHandover({token:key});
     })();

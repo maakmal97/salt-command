@@ -16517,8 +16517,8 @@ await (async () => {
       && (await kv.list({ prefix: "ho:" })).keys.length === 2,
       "the hand-over is made as the Sheet opens, its eight symbols shown before any tap: " + code.value);
     const qr = D.getElementById("devQrImg").getAttribute("src");
-    ok(!D.getElementById("devQr").hidden && qr === "data:image/svg+xml," + encodeURIComponent(QR.qrRectSvg(ORIGIN + "/app", { size: 180, dark: "#05080a", light: "#f2f4f5", label: "Salt Counter" })),
-      "and its QR is the site's /app for the other device's camera, the address alone and never the key");
+    ok(!D.getElementById("devQr").hidden && qr === "data:image/svg+xml," + encodeURIComponent(QR.qrRectSvg(ORIGIN + "/app#code", { size: 180, dark: "#05080a", light: "#f2f4f5", label: "Salt Counter" })),
+      "and its QR is the site's /app#code for the other device's camera, the address alone and never the key");
     const before = posts.length;
     copy.click();
     ok(clip.length === 1 && clip[0] === code.value && posts.length === before, "Copy the code copies it as the tap's first act, fetching nothing: " + JSON.stringify(clip));
@@ -17147,6 +17147,35 @@ await (async () => {
     D.getElementById("devX").click();
     ok(await until(() => /iPhone, Safari/.test(card.textContent)), "closing the Sheet lists the iPhone, with no reload: " + JSON.stringify(card.textContent));
   } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("S9 fix S9R-7: This device's QR opens the code screen, in a browser's own words, on an Android phone, a computer and an iPhone");
+await (async () => {
+  /* The QR opened a bare /app in the camera's browser. There the code screen showed only on an iPhone, and in the saved
+     app's words (bring your sign-in across from Safari); an Android phone or a computer met the password door. */
+  const { landingPage } = await import("../stmt/page.js");
+  const { JSDOM } = await import("jsdom");
+  const UAS = {
+    iPhone: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+    Android: "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36",
+    Windows: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0" };
+  const seen = {};
+  for (const [name, ua] of Object.entries(UAS)) {
+    const dom = new JSDOM(landingPage("", "n9r7", null), { url: "https://k7m3p2.example/app#code", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      Object.defineProperty(w.navigator, "userAgent", { value: ua, configurable: true });
+      w.matchMedia = (q) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+      w.scrollTo = () => {};
+      w.fetch = async () => ({ ok: true, status: 200, json: async () => ({ ok: true }) });
+    } });
+    try {
+      const D = dom.window.document;
+      for (let i = 0; i < 80 && D.getElementById("codeBox").hidden; i++) await new Promise((r) => setTimeout(r, 25));
+      seen[name] = { code: !D.getElementById("codeBox").hidden, door: !D.getElementById("gate").hidden, head: D.getElementById("codeH").textContent,
+        help: !D.getElementById("codeHelp").hidden };
+    } finally { dom.window.close(); }
+  }
+  ok(Object.values(seen).every((x) => x.code && !x.door && x.head === "Sign in with a code" && !x.help),
+    "each opens on Sign in with a code, never the door, and never the saved app's help about Safari: " + JSON.stringify(seen));
 })();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
