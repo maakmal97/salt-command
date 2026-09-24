@@ -17512,6 +17512,9 @@ await (async () => {
   const uOld = "aaaa-bbbb", pwOld = "pw-old-141", uSp = "2bbb-cccc", pwSp = "pw-spare-141";
   writeFileSync(join(kv141dir, uOld + ".json"), JSON.stringify(await make141(uOld, pwOld)) + "\n");
   writeFileSync(join(kv141dir, uSp + ".json"), JSON.stringify(await make141(uSp, pwSp, { spare: true })) + "\n");
+  /* S14-R2: an unbound record with NO spare mark, what a re-key gone wrong leaves behind with somebody's password and wraps */
+  const uOrph = "3ccc-dddd";
+  writeFileSync(join(kv141dir, uOrph + ".json"), JSON.stringify(await make141(uOrph, "pw-orphan-141")) + "\n");
   writeFileSync(join(root141, "_users.json"), JSON.stringify({ "CZ9-OLD": uOld }));
   const now141 = new Date("2026-09-24T02:00:00Z");
   try {
@@ -17527,6 +17530,12 @@ await (async () => {
       && JSON.stringify(plan.spares) === JSON.stringify([uSp]),
       "it is on no list: not his sheet, not the roster or the desk's map, not the unmatched warning; the plan counts it apart: "
       + JSON.stringify({ sheet: plan.sheet.map((a) => a.username), unmatched: plan.unmatched, spares: plan.spares }));
+    const { freeSpares: fs141 } = await import("../tools/stmt-pool.mjs");
+    const orph = putOf(plan, uOrph);
+    ok(!!orph && !("spare" in orph) && !plan.spares.includes(uOrph) && plan.unmatched.includes(uOrph)
+      && JSON.stringify(fs141(root141, { "CZ9-OLD": uOld })) === JSON.stringify([uSp]),
+      "only a record the laptop marked is a spare: an unbound one with no mark is not free to the fold, not marked, and still warned of as unmatched: "
+      + JSON.stringify({ free: fs141(root141, { "CZ9-OLD": uOld }), mark: orph && orph.spare, unmatched: plan.unmatched }));
 
     /* ---- the door opens a spare for nobody, his override included; the same record bound opens ---- */
     const door = async (puts, body) => {
