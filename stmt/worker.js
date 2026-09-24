@@ -147,6 +147,20 @@ const DUMMY_VERIFIER = { salt: "c2FsdC1jb21tYW5kLW51bGw=", hash: "AAAAAAAAAAAAAA
    nothing about which usernames exist can be read off the responses. */
 const REFUSED = "That username and password were not accepted.";
 
+/* EVERY OPEN IS AN OPEN (24 Sep 2026). `seen:` was written on a password open alone, so a customer who
+   signed in once from his link and then came back on a remembered phone read "Not opened" on his list,
+   or one open, for ever. All three roads write it now, with the road the last one took. His own opens
+   under the master are not the customer's and are never counted. */
+async function markSeen(env, u, rec, how) {
+  const seen = await env.STMT.get(SKEY(u), "json");
+  const now = new Date().toISOString();
+  await env.STMT.put(SKEY(u), JSON.stringify({
+    first: (seen && seen.first) || now, last: now,
+    opens: ((seen && seen.opens) || 0) + 1,
+    how, issued: (rec && rec.issued) || null
+  }));
+}
+
 async function handleOpen(request, env) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
 
@@ -216,7 +230,15 @@ async function handleOpen(request, env) {
        owner's override from that address for fifteen minutes: on his own phone, helping that
        customer, exactly when it is for. A value shaped like a statement password was never a
        master attempt. */
-    if (master && masterKey && !PASS_RE.test(String(master))) await bump(mKey, mFails);
+    /* AND HIS CORRECT MASTER IS NEVER A MISS (24 Sep 2026). On a username with no account behind it
+       the override has nothing to open, so it refuses, but that is the account's fault and not a wrong
+       passphrase: counted, ten taps on such a row locked his override on every account for fifteen
+       minutes. */
+    /* 24 SEP 2026: THE SHAPE IS READ AS normPass READS IT. The page sends what was typed in the four
+       boxes joined with hyphens, so the raw test never matched and every mistyped customer password
+       still counted here; the test password's sixteen zeros are a password's shape too. */
+    const shaped = String(master).toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (master && masterKey && !ctEq(master, masterKey) && !PASS_RE.test(shaped) && !/^0{16}$/.test(shaped)) await bump(mKey, mFails);
     return json({ ok: false, error: REFUSED }, 401);
   }
 
@@ -225,15 +247,7 @@ async function handleOpen(request, env) {
 
   /* Recorded so he can tell whether a statement was ever opened, which is the question he
      actually asks after sending thirty-seven of them. It gates nothing. */
-  if (!byMaster) {
-    const seen = await env.STMT.get(SKEY(u), "json");
-    await env.STMT.put(SKEY(u), JSON.stringify({
-      first: (seen && seen.first) || new Date().toISOString(),
-      last: new Date().toISOString(),
-      opens: ((seen && seen.opens) || 0) + 1,
-      issued: rec.issued || null
-    }));
-  }
+  if (!byMaster) await markSeen(env, u, rec, "password");
 
   /* ONLY THE WRAP THAT MATCHED TRAVELS BACK, and the reason is the sharpest finding of the 04 Sep
      audit. This returned BOTH wraps to everyone. wrapMaster is the customer's content key sealed
@@ -338,6 +352,13 @@ async function handleCustomer(request, env, p, m) {
  * introducer, and who minted it. Reusing it here would show one associate another's notes, and
  * their own link's level would name a tier on a customer's page, which the page never does.
  */
+/* what an associate may see of their own link: where it points, whether it is open yet, and how
+   often it has been used. Not his label, not the level, not who else holds one. His read-only view
+   of their page (/all/orders/<u>) hands over exactly this, so it draws what they see. */
+const mineOut = (origin, r) => ({ id: r.id, url: refUrl(origin, r.id), qr: refQr(origin, r.id),
+  made: r.made || null, opens: r.opens || 0, last: r.last || null,
+  state: r.revoked ? "withdrawn" : (r.declined === true ? "declined" : (r.approved === false ? "waiting" : "open")) });
+
 async function handleMyRefs(request, env, p, m, origin) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   const u = await sessionUser(request, env);
@@ -346,14 +367,8 @@ async function handleMyRefs(request, env, p, m, origin) {
   try { acct = await env.STMT.get("u:" + u, "json"); } catch (e) { acct = null; }
   if (!acct || acct.assoc !== true) return notFound();
 
-  /* what an associate may see of their own link: where it points, whether it is open yet, and how
-     often it has been used. Not his label, not the level, not who else holds one. */
-  const mineOut = (r) => ({ id: r.id, url: refUrl(origin, r.id), qr: refQr(origin, r.id),
-    made: r.made || null, opens: r.opens || 0, last: r.last || null,
-    state: r.revoked ? "withdrawn" : (r.approved === false ? "waiting" : "open") });
-
   if (p === "/my/refs") {
-    if (m === "GET") return json({ ok: true, refs: (await refsBy(env, u)).map(mineOut), max: MAX_PER_ASSOC });
+    if (m === "GET") return json({ ok: true, refs: (await refsBy(env, u)).map((r) => mineOut(origin, r)), max: MAX_PER_ASSOC });
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const mine = await refsBy(env, u);
     /* the same shape as the open-order cap: a count, a plain refusal, and a reason */
@@ -363,7 +378,7 @@ async function handleMyRefs(request, env, p, m, origin) {
        put into this store, and a label is his note. He can write one when he approves it. */
     const rec = await mintRef(env, { introducer: u, by: u, label: "" });
     if (!rec) return json({ ok: false, error: "could not mint an unused id; try again" }, 500);
-    return json({ ok: true, ref: mineOut(rec) });
+    return json({ ok: true, ref: mineOut(origin, rec) });
   }
   const mm = /^\/my\/refs\/([^/]+)\/(revoke)$/.exec(p);
   if (!mm) return notFound();
@@ -374,7 +389,7 @@ async function handleMyRefs(request, env, p, m, origin) {
   /* a link only ever forgets its own minter's, so one associate cannot withdraw another's */
   if (!rec || String(rec.by || "").toLowerCase() !== u) return notFound();
   const out = await revokeRef(env, id, true);
-  return json({ ok: true, ref: mineOut(out) });
+  return json({ ok: true, ref: mineOut(origin, out) });
 }
 
 /* The remembered opening: the token names the record and carries the wrap back, and the device key
@@ -389,6 +404,7 @@ async function handleRemember(request, env) {
   if (!rec || !rec.u) return json({ ok: false, error: REFUSED }, 401);
   const acct = await env.STMT.get("u:" + rec.u, "json");
   if (!acct) { await env.STMT.delete("rem:" + tok); return json({ ok: false, error: REFUSED }, 401); }
+  await markSeen(env, rec.u, acct, "remembered");
   const session = await mintSession(env, rec.u);
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
@@ -414,6 +430,7 @@ async function handleSignin(request, env) {
   if (!rec) return json({ ok: false, error: REFUSED }, 401);
   const acct = await env.STMT.get("u:" + rec.u, "json");
   if (!acct) return json({ ok: false, error: REFUSED }, 401);
+  await markSeen(env, rec.u, acct, "link");
   const session = await mintSession(env, rec.u);
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
@@ -602,7 +619,7 @@ async function ownerSheet(env, origin) {
       url, msg: linkMessage({ url, user: a.username }), tot: s ? totalsLine(s.t) : "",
       qr: QR.qrMatrix(url).map((line) => line.join("")),
       pwMaster: s ? s.pwMaster || null : null,
-      seen: seen ? { first: seen.first || null, last: seen.last || null, opens: +seen.opens || 0 } : null,
+      seen: seen ? { first: seen.first || null, last: seen.last || null, opens: +seen.opens || 0, how: seen.how || null } : null,
       sent: sent ? sent.at || null : null
     });
   }
@@ -756,8 +773,13 @@ async function handleRefs(request, env, p, m, origin) {
   /* v709: his word on a link an associate minted, and the tier he may change on it. A level he
      does not set leaves it on the v658 rule, where the associate is the introducer: "if need be"
      means it works without him. */
+  /* 24 SEP 2026, HIS DECISION D13: DECLINE IS ITS OWN STATE. It wrote approved:false, which IS the
+     pending state, so a declined link read "waiting" to the associate for ever and stayed in his queue.
+     It keeps approved:false, so the door and the publish, which test that alone, stay shut on it, and
+     adds `declined`, which every reader of "waiting" leaves out. Approving it clears the mark. */
   if (mm[2] === "approve" || mm[2] === "decline") {
-    const rec0 = await setRef(env, id, { approved: mm[2] === "approve" });
+    const yes = mm[2] === "approve";
+    const rec0 = await setRef(env, id, { approved: yes, declined: !yes });
     if (!rec0) return json({ ok: false, error: "no such link" }, 404);
     return json({ ok: true, ref: refOut(origin, rec0) });
   }
@@ -909,6 +931,21 @@ export default {
         const issue = await env.STMT.get("issue");
         return json({ ok: true, url: link, msg: signInMessage({ url: link, user: u }),
           qr: QR.qrMatrix(link) });
+      }
+      /* 24 SEP 2026 (M22): REVIEW OPENS AN ACCOUNT AS ITS OWN PAGE, READ ONLY. An account opened under
+         the master has no session, because the owner does not order, so the page read no orders and
+         drew "None yet." under a live order form for every account. What their page reads on a
+         session, their orders and an associate's own links, is read here instead, behind the one
+         Access check at the door of the prefix. Reading only: nothing under this route moves. */
+      const om = /^\/all\/orders\/([^/]+)$/.exec(p);
+      if (om) {
+        if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+        const u = normUser(om[1]);
+        if (!u) return notFound();
+        const acct = await env.STMT.get("u:" + u, "json");
+        if (!acct) return notFound();
+        const refs = acct.assoc === true ? (await refsBy(env, u)).map((r) => mineOut(url.origin, r)) : [];
+        return json({ ok: true, orders: await ordersOf(env, u), refs, max: MAX_PER_ASSOC });
       }
       /* the associates' report card, written by the publish and read only here (v691) */
       if (p === "/all/assoc") {

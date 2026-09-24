@@ -390,14 +390,19 @@ export function landingPage(user, nonce, owner, bulletin) {
        the root opens at the root however he saved it: saving from /all would have given him the
        customer door under another name. His own page therefore links its own manifest, which lives
        behind Access with the rest of the prefix and opens where he saved it from. */
-    + '<link rel="manifest" href="' + (owner ? "/all/manifest.webmanifest" : "/manifest.webmanifest") + '">'
+    /* 24 SEP 2026: A MANIFEST IS FETCHED WITHOUT COOKIES unless the link asks for them, so behind
+       Access his own came back refused and the phone saved a page with no name. use-credentials on
+       his route alone; the customer's manifest is public and its link is left as it was. */
+    + (owner ? '<link rel="manifest" href="/all/manifest.webmanifest" crossorigin="use-credentials">'
+      : '<link rel="manifest" href="/manifest.webmanifest">')
     + '<link rel="apple-touch-icon" href="/icon.png">'
     + '<meta name="theme-color" content="#05080a">'
     + '<meta name="apple-mobile-web-app-capable" content="yes">'
     + '<meta name="mobile-web-app-capable" content="yes">'
     + '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'
-    + '<meta name="apple-mobile-web-app-title" content="Salt Counter">'
-    + "<title>Salt Counter</title>"
+    /* his page is Salt Admin, as its manifest says; the customer's is Salt Counter */
+    + '<meta name="apple-mobile-web-app-title" content="' + (owner ? "Salt Admin" : "Salt Counter") + '">'
+    + "<title>" + (owner ? "Salt Admin" : "Salt Counter") + "</title>"
     + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
     + bulletinBand(bulletin)
     + (owner
@@ -581,6 +586,9 @@ const CLIENT_JS = `
   var assoc=false;
   /* null for a customer; {master,accounts} for the owner, on the Access-gated route only */
   var OWNER=__OWNER__;
+  /* 24 Sep 2026 (M22): an account he opened under the master is READ ONLY. It has no session, so its
+     orders and links come from his own gated route, and nothing on it places, pays, sends or withdraws. */
+  var view=false;
   var roster=document.getElementById('roster'), rq=document.getElementById('rq'),
       rlist=document.getElementById('rlist'), rmsg=document.getElementById('rmsg'),
       whoacct=document.getElementById('whoacct');
@@ -767,7 +775,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; prices=null; orders=[]; draft={}; pick={}; assoc=false; card=null; cardMonth=''; myLinks=null; myMax=0;
+    bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; assoc=false; card=null; cardMonth=''; myLinks=null; myMax=0; myNote='';
     owedNow=0; hold=false; tPrices.hidden=false; tOrder.textContent='Order';
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
@@ -890,9 +898,11 @@ const CLIENT_JS = `
     }
     gate.hidden=true; if(roster) roster.hidden=true;
     barw.hidden=false; tabs.hidden=false;
-    /* v706: the fourth tab appears only where the record that opened actually carries a card, so
-       it can never lead to an empty panel and nobody else is shown one at all */
-    tCard.hidden=!(assoc&&card&&card.products&&card.products.length);
+    /* v706: the fourth tab is an associate's alone, and nobody else is shown one at all. It waited on
+       a sealed card as well, so an associate the publish had not yet written one for had no way to
+       their links (v709 gates those on the mark, not the card); since 24 Sep 2026 the mark alone opens
+       it, and a panel with no card says when it comes and still carries the links. */
+    tCard.hidden=!assoc;
     if(!tCard.hidden) drawCard();
     var lv=b.statements.filter(function(s){ return s.live; })[0];
     owedNow=lv&&isFinite(+lv.owed)?+lv.owed:0;
@@ -917,7 +927,7 @@ const CLIENT_JS = `
   }
   function drawCard(){
     pCard.textContent='';
-    if(!card||!card.products||!card.products.length){ pCard.appendChild(el('p','lead','Your card is written with the next update.')); return; }
+    if(!card||!card.products||!card.products.length){ pCard.appendChild(el('p','lead','Your card is written with the next update.')); drawMyLinks(); return; }
     pCard.appendChild(el('h2',null,'Your card'));
     pCard.appendChild(el('p','lead','What you have bought, what has gone out through you, and where your reward stands. Every month from the start; the newest opens.'));
     card.products.forEach(function(p){
@@ -989,16 +999,19 @@ const CLIENT_JS = `
      landing page is served before anybody signs in, so there is nothing to splice per viewer.
      A LEVEL IS NEVER NAMED. What the link quotes is his to set; they are told it is open and no
      more, because the level is never named on a customer's page. */
-  var myLinks=null, myMax=0;
+  /* the box keeps its own note (24 Sep 2026): it drew the order form's, so "Placed..." appeared under
+     Your links, and a link that was not made said so under the order form as well */
+  var myLinks=null, myMax=0, myNote='';
   function drawMyLinks(){
     var box=el('div','pane');
     box.appendChild(el('h3',null,'Your links'));
     box.appendChild(el('p','sub2','Make a link for somebody you want to bring in. It opens a price list and nothing else, and it stays shut until it is approved.'));
-    if(myLinks===null){ box.appendChild(el('p','sub2','Reading your links.')); pCard.appendChild(box); loadMyLinks(); return; }
+    if(myLinks===null){ box.appendChild(el('p','sub2','Reading your links.')); pCard.appendChild(box); if(!view) loadMyLinks(); return; }
     if(!myLinks.length) box.appendChild(el('p','sub2','None yet.'));
     myLinks.forEach(function(r){
-      var row=el('div','glink'+(r.state==='withdrawn'?' off':''));
-      row.appendChild(el('p','gt', r.state==='waiting'?'Waiting to be approved':(r.state==='withdrawn'?'Withdrawn':'Open')));
+      var row=el('div','glink'+(r.state==='withdrawn'||r.state==='declined'?' off':''));
+      /* D13 (24 Sep 2026): a declined link is its own state, never "waiting" */
+      row.appendChild(el('p','gt', r.state==='waiting'?'Waiting to be approved':(r.state==='declined'?'Not approved':(r.state==='withdrawn'?'Withdrawn':'Open'))));
       row.appendChild(el('code','gu', r.state==='open'?r.url:'\u2014'));
       row.appendChild(el('p','gs', r.opens
         ? 'opened '+r.opens+' time'+(r.opens===1?'':'s')
@@ -1011,13 +1024,14 @@ const CLIENT_JS = `
       var acts=el('div','grow');
       if(r.state==='open'){
         var cp=el('button',null,'Copy link'); cp.type='button';
-        cp.addEventListener('click', function(){
-          try{ navigator.clipboard.writeText(r.url); cp.textContent='Copied'; }catch(e){ cp.textContent='Copy failed'; }
+        /* awaited (24 Sep 2026): writeText answers with a promise, so a refusal said Copied */
+        cp.addEventListener('click', async function(){
+          try{ await navigator.clipboard.writeText(r.url); cp.textContent='Copied'; }catch(e){ cp.textContent='Copy failed'; }
           setTimeout(function(){ cp.textContent='Copy link'; },1500);
         });
         acts.appendChild(cp);
       }
-      if(r.state!=='withdrawn'){
+      if(r.state!=='withdrawn'&&!view){
         var wd=el('button',null,'Withdraw'); wd.type='button';
         wd.addEventListener('click', async function(){
           if(!confirm('Withdraw this link? Whoever holds it will not be able to open it.')) return;
@@ -1030,19 +1044,20 @@ const CLIENT_JS = `
       box.appendChild(row);
     });
     var live=myLinks.filter(function(r){ return r.state!=='withdrawn'; }).length;
-    if(live>=myMax) box.appendChild(el('p','sub2','You have '+live+' links. Withdraw one to make another.'));
+    if(view){ /* his read-only view makes nothing */ }
+    else if(live>=myMax) box.appendChild(el('p','sub2','You have '+live+' links. Withdraw one to make another.'));
     else {
       var mk=el('button','btn salt-pill salt-pill--md','Make a link'); mk.type='button';
       mk.addEventListener('click', async function(){
         mk.disabled=true; var mine=ticket;
         var r=await api('/my/refs',{});
         if(mine!==ticket) return;
-        if(!r.body.ok) draft.note=r.body.error||'That link was not made.';
+        myNote=r.body.ok?'':(r.body.error||'That link was not made.');
         await loadMyLinks();
       });
       box.appendChild(mk);
     }
-    if(draft.note) box.appendChild(el('p','msg',draft.note));
+    if(myNote) box.appendChild(el('p','msg',myNote));
     pCard.appendChild(box);
   }
   async function loadMyLinks(){
@@ -1148,6 +1163,7 @@ const CLIENT_JS = `
     var sc=window.scrollY;
     pOrder.textContent='';
     pOrder.appendChild(el('h2',null,hold?'Payment due':'Order'));
+    if(view) pOrder.appendChild(el('p','lead','Read only: their orders as their own page shows them. Nothing here is placed, paid or sent.'));
     if(hold){
       var dueBox=el('div','pane');
       dueBox.appendChild(el('div','quote',rm(owedNow)));
@@ -1167,6 +1183,8 @@ const CLIENT_JS = `
       sv.addEventListener('click',function(){ showTab('stmt'); });
       dueBox.appendChild(sv);
       pOrder.appendChild(dueBox);
+    } else if(view){
+      /* no order form on his read-only view */
     } else if(!prices||!prices.products||!prices.products.length){
       pOrder.appendChild(el('p','lead',prices&&prices.soon&&prices.soon.length?'Ordering opens once your prices are set.':'Ordering opens once your price list is written, with the next update.'));
     } else {
@@ -1281,7 +1299,8 @@ const CLIENT_JS = `
       if(draft.note) form.appendChild(el('p','msg',draft.note));
       pOrder.appendChild(form);
     }
-    /* notifications: a wake on the phone when the order moves, so the page need not stay open */
+    /* notifications: a wake on the phone when the order moves, so the page need not stay open.
+       Not on his read-only view: those are not his phones. */
     var np=el('div','pane');
     np.appendChild(el('h3',null,'Notifications'));
     var canPush=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
@@ -1295,7 +1314,7 @@ const CLIENT_JS = `
       nb.addEventListener('click', subscribePush); np.appendChild(nb);
       if(draft.pushNote) np.appendChild(el('p','msg',draft.pushNote));
     }
-    pOrder.appendChild(np);
+    if(!view) pOrder.appendChild(np);
     var h=el('h2',null,'Your orders'); h.style.marginTop='18px'; pOrder.appendChild(h);
     if(!orders.length) pOrder.appendChild(el('p','lead','None yet.'));
     orders.forEach(function(o){ pOrder.appendChild(orderPane(o)); });
@@ -1333,9 +1352,9 @@ const CLIENT_JS = `
     else if(o.status==='declined') line='This order could not be taken. Nothing is owed.';
     else if(o.status==='cancelled') line=paid>0?'Withdrawn. The '+rm(paid)+' you paid is refunded.':'Withdrawn before anything moved. Nothing is owed.';
     pane.appendChild(el('p','sub2',line));
-    if(payable&&due>0.004) pane.appendChild((o.method&&!(pick[o.id]||{}).again)?payBox(o):payChooser(o));
+    if(!view&&payable&&due>0.004) pane.appendChild((o.method&&!(pick[o.id]||{}).again)?payBox(o):payChooser(o));
     /* v694: either side may withdraw at any stage until the goods move (his rule, 18 Sep 2026) */
-    if(payable||o.status==='placed'){
+    if(!view&&(payable||o.status==='placed')){
       if(moved>0) pane.appendChild(el('p','sub2','The goods are with you, so this can no longer be withdrawn here.'));
       else {
         var wb=el('button','btn quiet salt-ghost','Withdraw this order'); wb.type='button';
@@ -1361,7 +1380,8 @@ const CLIENT_JS = `
         th.appendChild(li); });
       pane.appendChild(th);
     }
-    /* ON ANY ORDER, AT ANY STAGE: a question about a withdrawn order is still about that order. */
+    /* ON ANY ORDER, AT ANY STAGE: a question about a withdrawn order is still about that order.
+       His read-only view writes nothing; he answers on the desk. */
     var sayw=el('div','sayw');
     var si=el('input','fld salt-field__input'); si.type='text'; si.maxLength=200;
     si.placeholder=msgs.length?'Add to this':'Ask about this order';
@@ -1380,7 +1400,7 @@ const CLIENT_JS = `
       drawOrder();
     });
     sayw.appendChild(si); sayw.appendChild(sg);
-    pane.appendChild(sayw);
+    if(!view) pane.appendChild(sayw);
     var hist=el('ul','hist');
     (o.history||[]).forEach(function(h){ var li=el('li',null,stamp(h.at)+'  '+(STATE_WORDS[h.status]||h.status)+(h.method?', paying by '+methodWord(h.method,h.account):'')+(h.note?': '+h.note:'')); hist.appendChild(li); });
     pane.appendChild(hist);
@@ -1584,9 +1604,11 @@ const CLIENT_JS = `
     done();
     say('');
     user=u; session=body.session||''; orders=[]; draft={}; pick={};
+    view=!!(OWNER&&body.byMaster);
     show(b);
     drawPrices();
     if(session){ await loadOrders(); if(stale()) return; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
+    else if(view){ await loadView(u); if(stale()) return; }   /* stmt/owner.js: his route alone carries it */
     drawOrder();
     /* v692: remembered only on a customer's own sign-in, and only when asked. The owner's route
        opens accounts with the master and must leave nothing behind on his phone. */

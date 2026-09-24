@@ -100,7 +100,12 @@ export const OWNER_JS = `
     qw.appendChild(el('p','qrn','The code opens their page with the username filled in. Sign-in link sends one that opens it outright, once.'));
     card.appendChild(qw);
     var row=el('div','grow');
+    /* 24 SEP 2026: A USERNAME WITH NO ACCOUNT BEHIND IT has nothing to share, copy or open: the
+       message would say "Your account is ready to use" over an account that is not there, and Open
+       could only be refused. All four go off together, each saying why; the card's line says how to mend it. */
+    var noAcct=a.account===false, why='No account behind this username yet';
     var share=el('button',null,'Share'); share.type='button';
+    if(noAcct){ share.disabled=true; share.title=why; }
     share.addEventListener('click', async function(){
       try{
         if(navigator.share) await navigator.share({text:a.msg});
@@ -109,8 +114,11 @@ export const OWNER_JS = `
       setTimeout(function(){ share.textContent='Share'; }, 1600);
     });
     var copy=el('button',null,'Copy message'); copy.type='button';
-    copy.addEventListener('click', function(){
-      try{ navigator.clipboard.writeText(a.msg); copy.textContent='Copied'; }catch(e){ copy.textContent='Copy failed'; }
+    if(noAcct){ copy.disabled=true; copy.title=why; }
+    /* 24 SEP 2026: THE WRITE IS AWAITED. writeText answers with a promise, so a refusal never reached
+       the catch and the button said Copied over an empty clipboard. */
+    copy.addEventListener('click', async function(){
+      try{ await navigator.clipboard.writeText(a.msg); copy.textContent='Copied'; }catch(e){ copy.textContent='Copy failed'; }
       setTimeout(function(){ copy.textContent='Copy message'; }, 1600);
     });
     var pwb=el('button','pw','Copy password'); pwb.type='button';
@@ -132,10 +140,11 @@ export const OWNER_JS = `
        record per account on every page load and burn links nobody sent. */
     var slb=el('button','pw','Sign-in link'); slb.type='button';
     /* no record means nothing to open under the master, so the link could only fail (23 Sep 2026) */
-    if(a.account===false){ slb.disabled=true; slb.title='No account behind this username yet'; }
+    if(noAcct){ slb.disabled=true; slb.title=why; }
     slb.addEventListener('click', async function(){
       if(a.account===false || (!a.pwMaster && !a.username)) return;
       slb.disabled=true; slb.textContent='Making it...';
+      var made=false;
       try{
         var o=await (await fetch('/open', {method:'POST', headers:{'content-type':'application/json'},
           body:JSON.stringify({u:a.username, password:OWNER.master, master:OWNER.master})})).json();
@@ -147,14 +156,19 @@ export const OWNER_JS = `
         var tok=btoa(String.fromCharCode.apply(null, raw)).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/[=]+$/,'');
         var wrap=await wrapUnder(new TextEncoder().encode(tok), ck);
         var j=await refs('/all/signin/'+encodeURIComponent(a.username), {token:tok, wrap:wrap});
-        tok=null; ck=null;
-        if(navigator.share) await navigator.share({text:j.msg});
-        else await navigator.clipboard.writeText(j.msg);
-        slb.textContent='Link sent';
-      }catch(e){ slb.textContent='Could not make one'; }
+        tok=null; ck=null; made=true;
+        /* 24 SEP 2026: ONCE IT IS MADE, A FAILURE IS NOT "COULD NOT MAKE ONE". A share sheet he closed
+           rejects too, and the link was already minted; it goes to the clipboard instead, and the
+           button says which of the three happened. */
+        var sent=false;
+        if(navigator.share){ try{ await navigator.share({text:j.msg}); sent=true; }catch(e){ sent=false; } }
+        if(sent) slb.textContent='Link sent';
+        else { await navigator.clipboard.writeText(j.msg); slb.textContent='Link made and copied'; }
+      }catch(e){ slb.textContent=made?'Link made, not copied':'Could not make one'; }
       setTimeout(function(){ slb.textContent='Sign-in link'; slb.disabled=false; }, 2200);
     });
     var open=el('button',null,'Open account'); open.type='button';
+    if(noAcct){ open.disabled=true; open.title=why; }
     open.addEventListener('click', function(){ openAcct(a); });
     row.appendChild(share); row.appendChild(copy); row.appendChild(slb); row.appendChild(pwb); row.appendChild(open);
     card.appendChild(row);
@@ -164,12 +178,20 @@ export const OWNER_JS = `
       var want=box.checked;
       try{
         var j=await refs('/all/sent/'+a.username, {issue:sheetIssue, sent:want});
-        a.sent=j.sent; card.className='scard'+(a.sent?' done':''); say('');
+        a.sent=j.sent; card.className='scard'+(a.sent?' done':''); say(''); countSent();
       }catch(e){ box.checked=!want; say(e.message,'bad'); }
     });
     tick.appendChild(box); tick.appendChild(el('span',null,'Sent'));
     card.appendChild(tick);
     return card;
+  }
+  /* the test account is not part of a send, so it is out of both halves of the count (v689). A tick
+     recounts as well as a draw (24 Sep 2026): the header sat on its first figure while he ticked. */
+  function countSent(){
+    var real=sheetRows.filter(function(a){ return !a.test; });
+    var done=real.filter(function(a){ return a.sent; }).length;
+    var head=document.getElementById('scount');
+    if(head) head.textContent=done+' of '+real.length+' sent';
   }
   function drawSend(){
     var wrap=document.getElementById('slist'); if(!wrap) return;
@@ -179,11 +201,7 @@ export const OWNER_JS = `
       if(!q) return true;
       return ((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0;
     });
-    /* the test account is not part of a send, so it is out of both halves of the count (v689) */
-    var real=sheetRows.filter(function(a){ return !a.test; });
-    var done=real.filter(function(a){ return a.sent; }).length;
-    var head=document.getElementById('scount');
-    if(head) head.textContent=done+' of '+real.length+' sent';
+    countSent();
     if(!hits.length){ wrap.appendChild(el('p','rnone','Nothing matches that.')); return; }
     hits.forEach(function(a){ wrap.appendChild(sendCard(a)); });
   }
@@ -193,6 +211,7 @@ export const OWNER_JS = `
      and the statement, the prices and the lock are the customer's own. */
   function openAcct(a){
     if(!OWNER) return;
+    if(sheet&&sheet[a.username]&&sheet[a.username].account===false){ say(NOACCT,'bad'); return; }
     if(!OWNER.master){ say('No master passphrase is set on this Worker, so nothing can be opened. Set STMT_MASTER.','bad'); return; }
     if(busy) return;
     un.value=a.username; pw.value=OWNER.master;
@@ -200,6 +219,18 @@ export const OWNER_JS = `
     var f=document.getElementById('f');
     if(f.requestSubmit) f.requestSubmit();
     else f.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+  }
+  /* 24 SEP 2026 (M22): AN ACCOUNT HE OPENS IS READ ONLY, and it draws what their own page draws. It
+     has no session, the owner does not order, so the orders and an associate's own links come from
+     /all/orders/<u>, behind the prefix's one Access check. The page calls this when view is set. */
+  async function loadView(u){
+    var mine=ticket;
+    var r=await api('/all/orders/'+encodeURIComponent(u));
+    if(mine!==ticket) return;
+    orders=(r.body&&r.body.ok&&r.body.orders)||[];
+    myLinks=(r.body&&r.body.ok&&r.body.refs)||[]; myMax=(r.body&&r.body.max)||0;
+    if(!r.body||!r.body.ok) say('Their orders could not be read: '+((r.body&&r.body.error)||'try again'),'bad');
+    if(!tCard.hidden) drawCard();
   }
   function drawRoster(){
     if(!OWNER) return;
@@ -213,6 +244,8 @@ export const OWNER_JS = `
     hits.forEach(function(a){
       var s=(sheet&&sheet[a.username])||a;
       var b=el('button',null,a.test?'Test account':(a.code||a.username)); b.type='button';
+      /* no account, nothing to open: the row says so and does not take a tap (24 Sep 2026) */
+      if(sheet&&s.account===false){ b.disabled=true; b.title='No account behind this username yet'; }
       if(a.code) b.appendChild(el('span',null,a.username));
       if(a.test) b.appendChild(el('span','fl f-none','Counts nowhere; open it to try the page.'));
       else if(sheet){
@@ -231,29 +264,40 @@ export const OWNER_JS = `
     try{ return new Date(iso).toLocaleDateString('en-GB',{timeZone:'Asia/Kuala_Lumpur',
       day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return ''; }
   }
-  /* v696, his instruction of 18 Sep 2026: FIVE LINKS, ONE PER TIER. The five stand at the top, in
-     the ladder's own order, each named by its level; anything minted against a customer sits below
-     them under its own heading, so "exactly five" is what the panel reads at a glance. */
+  /* v696, his instruction of 18 Sep 2026: ONE LINK PER TIER. They stand at the top, in the ladder's
+     own order, each named by its level; anything minted against a customer sits below them under its
+     own heading. HOW MANY IS THE BOOK'S (24 Sep 2026): the count is read off the tier list the route
+     sends, never written here, because "the five" outlived the fifth tier by a day. */
   function drawLinks(){
     var glist=document.getElementById('glist');
     glist.textContent='';
     if(!links.length){ glist.appendChild(el('p','rnone','No links yet.')); return; }
-    var order=(links.filter(function(r){return r.standing;}).map(function(r){return r.level;}));
+    /* the guest tiers are the list less Ambassador, the floor, which is never a guest's */
+    var want=tiers.slice(1);
+    var made=want.filter(function(t){ return links.some(function(r){ return r.standing&&r.level===t; }); }).length;
+    /* waiting means he still has to act on it: not declined (D13), and not withdrawn either */
+    var isWaiting=function(r){ return !r.standing&&r.approved===false&&r.declined!==true&&!r.revoked; };
     var standing=links.filter(function(r){return r.standing;}),
-        waiting=links.filter(function(r){return !r.standing&&r.approved===false;}),
-        older=links.filter(function(r){return !r.standing&&r.approved!==false;});
+        waiting=links.filter(isWaiting),
+        older=links.filter(function(r){return !r.standing&&!isWaiting(r);});
     /* v709: WHAT IS WAITING ON HIM COMES FIRST. An associate's link is shut until he approves it,
        so the one group he has to act on is the one at the top. */
     var seq=[], heads={};
     if(waiting.length){ heads[seq.length]='Waiting on you'; seq=seq.concat(waiting); }
-    if(standing.length){ heads[seq.length]='The five, one for each tier'; seq=seq.concat(standing); }
+    if(standing.length){ heads[seq.length]=want.length?'One for each of the '+want.length+' tiers':'One for each tier'; seq=seq.concat(standing); }
     if(older.length){ heads[seq.length]='Older links, made against a customer'; seq=seq.concat(older); }
     seq.forEach(function(r,i){
       if(heads[i]) glist.appendChild(el('p','ghead',heads[i]));
       var card=el('div','glink'+(r.revoked?' off':''));
-      card.appendChild(el('p','gt',(r.standing?r.level:(r.level?r.level:(r.approved===false?'Waiting on you':'Tier '+r.tier)))+(r.revoked?' \\u00b7 withdrawn':'')));
-      card.appendChild(el('h4',null,r.standing?'Hand this one to a stranger you would quote '+r.level
-        :(r.approved===false?('Minted by '+(r.by||'an associate')+', and shut until you approve it')
+      var declined=r.declined===true, pending=r.approved===false&&!declined;
+      /* a standing link whose level the book no longer names (Bronze, 23 Sep 2026) is kept because it
+         was handed out, and it opens the board a stranger sees, never the level it still carries */
+      var retired=r.standing&&want.length&&want.indexOf(r.level)<0;
+      card.appendChild(el('p','gt',(r.standing?r.level:(declined?'Not approved':(r.level?r.level:(pending?'Waiting on you':'Tier '+r.tier))))+(r.revoked?' \\u00b7 withdrawn':'')));
+      card.appendChild(el('h4',null,retired?'Kept because it was handed out. It opens the board a stranger sees'
+        :r.standing?'Hand this one to a stranger you would quote '+r.level
+        :declined?('Minted by '+(r.by||'an associate')+', and not approved, so it stays shut')
+        :(pending?('Minted by '+(r.by||'an associate')+', and shut until you approve it')
         :(r.label||'(no label)'))));
       card.appendChild(el('code','gu',r.url));
       card.appendChild(el('p','gs', r.opens
@@ -264,8 +308,8 @@ export const OWNER_JS = `
       card.appendChild(img);
       var row=el('div','grow');
       var copy=el('button',null,'Copy link'); copy.type='button';
-      copy.addEventListener('click', function(){
-        try{ navigator.clipboard.writeText(r.url); copy.textContent='Copied'; }
+      copy.addEventListener('click', async function(){
+        try{ await navigator.clipboard.writeText(r.url); copy.textContent='Copied'; }
         catch(e){ copy.textContent='Copy failed'; }
         setTimeout(function(){ copy.textContent='Copy link'; }, 1500);
       });
@@ -275,12 +319,17 @@ export const OWNER_JS = `
       /* v709: his word on one an associate minted, and the tier he may change on it. A tier he
          does not set leaves it following the associate, which is what "if need be" means. */
       if(!r.standing&&r.by){
-        if(r.approved===false){
+        if(r.approved===false&&!r.revoked){
+          /* a declined link keeps Approve, which is how a decline is taken back, and loses Decline;
+             a withdrawn one has neither, Restore being the way back */
           var ap=el('button',null,'Approve'); ap.type='button';
           ap.addEventListener('click', function(){ moveLink(r,'approve'); });
-          var de=el('button',null,'Decline'); de.type='button';
-          de.addEventListener('click', function(){ moveLink(r,'decline'); });
-          row.appendChild(ap); row.appendChild(de);
+          row.appendChild(ap);
+          if(!declined){
+            var de=el('button',null,'Decline'); de.type='button';
+            de.addEventListener('click', function(){ moveLink(r,'decline'); });
+            row.appendChild(de);
+          }
         }
         if(tiers.length){
           var sel=el('select','fld'); sel.setAttribute('aria-label','The tier this link quotes');
@@ -294,7 +343,7 @@ export const OWNER_JS = `
       card.appendChild(row);
       glist.appendChild(card);
     });
-    if(order.length&&order.length<5) glist.appendChild(el('p','rnone','Only '+order.length+' of the five are made. Publish the statements and open this again.'));
+    if(want.length&&made<want.length) glist.appendChild(el('p','rnone','Only '+made+' of the '+want.length+' are made. Publish the statements and open this again.'));
   }
   async function refs(path, body){
     var o = body ? {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)}
@@ -318,7 +367,10 @@ export const OWNER_JS = `
   }
   async function moveLink(r, how){
     try{
-      var j=await refs('/all/refs/'+r.id+'/'+how);
+      /* THE BODY IS WHAT MAKES IT A POST (24 Sep 2026): refs() sends a GET when it is given none,
+         and every move on a link is a POST-only route, so Approve, Decline, Withdraw and Restore all
+         came back 405 and nothing moved. */
+      var j=await refs('/all/refs/'+r.id+'/'+how, {});
       for(var i=0;i<links.length;i++) if(links[i].id===j.ref.id) links[i]=j.ref;
       drawLinks(); say('');
     }catch(e){ say(e.message,'bad'); }
