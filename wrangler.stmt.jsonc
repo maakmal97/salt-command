@@ -55,6 +55,11 @@
 	//                           those routes refuse everything
 	//   STMT_VAPID_PRIVATE_JWK  the site's own Web Push signing key, for waking a customer's
 	//                           phone when his order moves; the public half is the var below
+	// AND ONE SINCE S3 3.9 (24 Sep 2026), set by hand, any long random string:
+	//   npx wrangler secret put STMT_HANDOVER_KEY -c wrangler.stmt.jsonc
+	//   STMT_HANDOVER_KEY       keys the hash each hand-over code and key is filed under, and seals
+	//                           the wrap beside it (stmt/signin.js); unset, /handover, /handover/open
+	//                           and /all/handover answer 503 and nothing else changes
 	// THE OWNER'S ROUTE, /all, IS BEHIND CLOUDFLARE ACCESS (10 Sep 2026). These two name the
 	// application stmt/access.js verifies the token against, and they are not secrets: the audience
 	// tag is public, and holding it opens nothing. WITH EITHER EMPTY THE ROUTE ANSWERS 401 AND HANDS

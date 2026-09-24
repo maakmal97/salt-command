@@ -38,12 +38,12 @@
  * NO IMPORT FROM src/ OR tools/. The suite proves it: this Worker must bundle on its own, and
  * must never be able to reach the ledger's code even by accident.
  */
-import { landingPage, boardPage } from "./page.js";
+import { landingPage, boardPage, shutPage } from "./page.js";
 import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, MAX_PER_ASSOC } from "./refs.js";
-import { SIGNIN_RE, mintSignin, burnSignin } from "./signin.js";
+import { SIGNIN_RE, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover, dropHandover, sessKey } from "./signin.js";
 import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
@@ -51,7 +51,7 @@ import { FONTS } from "./fonts.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
-import { mintSession, dropSession, sessionUser, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, markChased, chaseSlot, readsBoth, checkStores } from "./orders.js";
+import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, markChased, chaseSlot, readsBoth, checkStores } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -168,6 +168,16 @@ async function markSeen(env, u, rec, how) {
   } catch (e) { /* the next open counts */ }
 }
 
+/* S3 3.2: EVERY SESSION AN OPEN MINTS LEAVES ITS POINTER under the account (stmt/signin.js), so signing an account
+   out everywhere reaches a session minted a minute ago as well as a remembered phone. Best effort, as markSeen is:
+   a pointer that cannot be written never fails an open, and the session lapses on its own in fifteen minutes. */
+async function openSession(env, u, how) {
+  const session = await mintSession(env, u);
+  const now = new Date().toISOString();
+  try { await pointAt(env, u, await sessKey(session), { how, at: now, last: now }, SESSION_TTL); } catch (e) { /* it lapses on its own */ }
+  return session;
+}
+
 async function handleOpen(request, env) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
 
@@ -207,7 +217,11 @@ async function handleOpen(request, env) {
   if (ipFails >= MAX_IP_FAILS) return tooMany();
   if (!u) { await bump(ipKey, ipFails); return json({ ok: false, error: REFUSED }, 401); }
 
-  const rec = await env.STMT.get(UKEY(u), "json");
+  /* D15: A SPARE ACCOUNT IS NOBODY'S YET. The publish marks one the laptop minted ahead of need and the
+     fold has not bound to a code, and the door treats it as no account at all, his override included:
+     nobody has been handed its password, and an open would be counted as a customer's. */
+  const got = await env.STMT.get(UKEY(u), "json");
+  const rec = got && got.spare === true ? null : got;
   const masterKey = String(env.STMT_MASTER || "");
 
   /* THE OVERRIDE IS WEIGHED BEFORE THE CUSTOMER'S LOCKOUT, on its own counter. It is the
@@ -270,7 +284,7 @@ async function handleOpen(request, env) {
   /* THE SESSION (06 Sep 2026): a token the order routes take in place of the password, minted here
      because this is the one place the password has just been proved. Fifteen minutes in the store;
      the page forgets it the moment it locks. The override gets none: the owner does not order. */
-  const session = byMaster ? null : await mintSession(env, u);
+  const session = byMaster ? null : await openSession(env, u, "password");
   return new Response(JSON.stringify({
     ok: true, byMaster, issued: rec.issued || null, issues: rec.issues || null,
     wrap: byMaster ? null : (rec.wrap || null),
@@ -306,6 +320,15 @@ async function handleCustomer(request, env, p, m) {
      its fifteen minutes got a 401 and left its remembered wrap on the site for the rest of thirty days. */
   if (p === "/logout") return logOut(request, env, m, u);
   if (!u) return json({ ok: false, error: "Sign in again to see your orders.", session: false }, 401);
+  /* S3 3.5: THE PAGE RE-READS ON EVERY RETURN, on its session: the sealed documents as an open hands them over,
+     and never a wrap, because the page still holds the key it opened them with */
+  if (p === "/account") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    const acct = await env.STMT.get("u:" + u, "json");
+    if (!acct) return json({ ok: false, error: "Sign in again to see your orders.", session: false }, 401);
+    return json({ ok: true, u, issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc,
+      card: acct.card || null, env: acct.env, live: acct.live || null, prices: acct.prices || null });
+  }
   if (p === "/orders") {
     if (m === "GET") return json({ ok: true, orders: (await ordersOf(env, u)).map(customerView) });
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -328,7 +351,10 @@ async function handleCustomer(request, env, p, m) {
     const wrap = b && b.wrap;
     if (!wrap || typeof wrap !== "object" || !wrap.salt || !wrap.iv || !wrap.ct) return json({ ok: false, error: "send the wrap" }, 400);
     const tok = b64e(crypto.getRandomValues(new Uint8Array(24))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-    await env.STMT.put("rem:" + tok, JSON.stringify({ u, wrap, at: new Date().toISOString() }), { expirationTtl: REM_TTL });
+    const key = await remKey(tok), now = new Date().toISOString();
+    /* S3 3.2: the pointer first, so a phone is never remembered where it cannot be found again */
+    await pointAt(env, u, key, { how: "remember", at: now, last: now }, REM_TTL);
+    await env.STMT.put(key, JSON.stringify({ u, wrap, at: now }), { expirationTtl: REM_TTL });
     return json({ ok: true, token: tok, days: REM_TTL / 86400 });
   }
   const mm = /^\/orders\/([^/]+)\/(method|cancel|pay|say)$/.exec(p);   /* v751: say, a line on the order */
@@ -347,11 +373,15 @@ async function logOut(request, env, m, su) {
   const b = await readJson(request);
   await dropSession(env, String(request.headers.get("X-Stmt-Session") || ""));
   const tok = b && typeof b.token === "string" && REM_RE.test(b.token) ? b.token : null;
-  const rec = tok ? await env.STMT.get("rem:" + tok, "json") : null;
-  if (rec && (!su || rec.u === su)) await env.STMT.delete("rem:" + tok);
+  const { key, rec, raw } = tok ? await readRem(env, tok) : {};
+  if (rec && (!su || rec.u === su)) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); await unpoint(env, rec.u, key); }
+  const stok = String(request.headers.get("X-Stmt-Session") || "");
+  if (su && stok) await unpoint(env, su, await sessKey(stok));
   const u = su || (rec && rec.u) || "";
   const ep = b && typeof b.endpoint === "string" && /^https:\/\//.test(b.endpoint) ? b.endpoint : null;
   if (u && ep) await env.STMT.delete("push:" + u + ":" + await endpointId(ep));
+  /* S3 fix: and the hand-overs this page minted, ten at most */
+  for (const k of (b && Array.isArray(b.handover) ? b.handover.slice(0, 10) : [])) await dropHandover(env, k);
   return json({ ok: true });
 }
 
@@ -415,12 +445,31 @@ async function handleRemember(request, env) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   const b = await readJson(request);
   const tok = b && typeof b.token === "string" && REM_RE.test(b.token) ? b.token : null;
-  const rec = tok ? await env.STMT.get("rem:" + tok, "json") : null;
+  const { key, rec, raw } = tok ? await readRem(env, tok) : {};
   if (!rec || !rec.u) return json({ ok: false, error: REFUSED }, 401);
   const acct = await env.STMT.get("u:" + rec.u, "json");
-  if (!acct) { await env.STMT.delete("rem:" + tok); return json({ ok: false, error: REFUSED }, 401); }
+  if (!acct) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); await unpoint(env, rec.u, key); return json({ ok: false, error: REFUSED }, 401); }
   await markSeen(env, rec.u, acct, "remembered");
-  const session = await mintSession(env, rec.u);
+  /* S3 3.6, HIS DECISION D1 OF 24 SEP 2026: KEEP ME SIGNED IN RUNS THIRTY DAYS FROM THE LAST OPEN, not from the tick,
+     so a customer who uses the page is never signed out by a calendar. Every open files the record again for thirty
+     days, which is also the put that moves a record filed the old way under its hash (3.1). Best effort: a put that
+     throws (KV takes one write to a key a second) never fails the open, and the record keeps the days it had.
+     S3 3.2: the phone's own pointer says when it was last used, lives as long, and one filed before pointers is
+     given its first. */
+  const now = new Date().toISOString();
+  /* S3 FIX, 24 SEP 2026: A RECORD FOUND UNDER ITS RAW TOKEN KEEPS THE END IT HAD, thirty days from its tick, and never
+     slides. A copy of the store taken before 3.1 names that token, and sliding would renew it for as long as it was
+     used; the phone signs in again at that end, and the record it then makes is filed under a hash and slides. */
+  if (raw && !rec.end) rec.end = new Date(Date.parse(rec.at || now) + REM_TTL * 1000).toISOString();
+  const left = rec.end ? Math.floor((Date.parse(rec.end) - Date.now()) / 1000) : REM_TTL;
+  if (!(left > 0)) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); await unpoint(env, rec.u, key); return json({ ok: false, error: REFUSED }, 401); }
+  const ttl = Math.max(60, left);
+  try {
+    await env.STMT.put(key, JSON.stringify(rec), { expirationTtl: ttl });
+    if (raw) await env.STMT.delete(raw);
+  } catch (e) { /* it opens either way, and slides on the next */ }
+  try { await pointAt(env, rec.u, key, { how: "remember", at: rec.at || now, last: now }, ttl); } catch (e) { /* the next open writes it */ }
+  const session = await openSession(env, rec.u, "remembered");
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
@@ -441,14 +490,82 @@ async function handleSignin(request, env) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   const b = await readJson(request);
   const tok = b && typeof b.token === "string" && SIGNIN_RE.test(b.token) ? b.token : null;
-  const rec = tok ? await burnSignin(env, tok) : null;
+  /* S3 3.3: the page asks which account first, and that spends nothing; a spent link is refused alike */
+  if (b && b.peek === true) {
+    const live = tok ? await peekSignin(env, tok, b.nonce) : null;
+    if (!live || !(await env.STMT.get("u:" + live.u))) return json({ ok: false, error: REFUSED }, 401);
+    return json({ ok: true, u: live.u });
+  }
+  const rec = tok ? await burnSignin(env, tok, b && b.nonce) : null;
   if (!rec) return json({ ok: false, error: REFUSED }, 401);
   const acct = await env.STMT.get("u:" + rec.u, "json");
   if (!acct) return json({ ok: false, error: REFUSED }, 401);
   await markSeen(env, rec.u, acct, "link");
-  const session = await mintSession(env, rec.u);
+  const session = await openSession(env, rec.u, "link");
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
+    issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
+    env: acct.env, live: acct.live || null, prices: acct.prices || null, session
+  });
+}
+
+/* ---- THE HAND-OVER, MINTED AND OPENED (S3 3.9, his decision D2 of 24 Sep 2026) --------------------------------
+ * POST /handover on a live session takes { token, wrap }, the key the page minted and the content key wrapped under
+ * it as a link is wrapped, and answers { ok, code, token, exp }. POST /handover/open takes { token } or { code } and
+ * answers what a one-time link's open answers, with `token` beside the wrap to unwrap it under. The mechanism is in
+ * stmt/signin.js; what is here is the door.
+ *
+ * A CODE IS BRAKED PER ADDRESS AND SITE-WIDE: ten misses from one address (a v6 network's /64, which one host holds
+ * whole) and a hundred across the site, each for a quarter-hour. The brakes slow a walk; they are not what stops it
+ * (docs/STATEMENTS.md states the real bound: a KV count can lag). A flood shuts CODE sign-in for everyone for fifteen
+ * minutes. S3 FIX, 24 SEP 2026: A KEY IS NEITHER BRAKED NOR COUNTED. It is 192 bits, as a sign-in link's token is; braked
+ * with the codes, a hundred bogus codes from ten addresses shut the saved app's Paste, /app#<key> and his counter's QR
+ * for every customer. A miss is any refused code; a success resets nothing, or an account could mint its own code to
+ * clear its address between guesses. JSON only, as /open, so another site's page cannot spend a customer's allowance
+ * from their browser. The refusal is the door's one; a brake answers the door's brake. */
+const HO_FAIL = (ip) => "hofail:" + ip, HO_SITE = "hofail";
+/* the address a code miss is counted against: a v4 address as it is, a v6 address's /64 */
+function netOf(ip) {
+  if (!ip.includes(":")) return ip;
+  const [h, t = ""] = ip.split("::");
+  const a = h ? h.split(":") : [], z = t ? t.split(":") : [];
+  const g = a.concat(Array(Math.max(0, 8 - a.length - z.length)).fill("0"), z);
+  return g.slice(0, 4).map((x) => (parseInt(x, 16) || 0).toString(16)).join(":") + "::/64";
+}
+const MAX_HO_FAILS = 10, MAX_HO_SITE = 100;
+const noHandover = () => json({ ok: false, error: "Signing in with a code is not switched on here." }, 503);
+async function handleHandover(request, env, p, m) {
+  if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
+  if (!env.STMT_HANDOVER_KEY) return noHandover();
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  if (p === "/handover") {
+    const u = await sessionUser(request, env);
+    if (!u) return json({ ok: false, error: "Sign in again to make a code.", session: false }, 401);
+    const b = await readJson(request);
+    const made = await mintHandover(env, u, b && b.token, b && b.wrap);
+    return made ? json(Object.assign({ ok: true }, made)) : json({ ok: false, error: "send the key and the wrap" }, 400);
+  }
+  const b = await readJson(request);
+  if (!b) return json({ ok: false, error: REFUSED }, 401);
+  const byKey = typeof b.token === "string" && SIGNIN_RE.test(b.token);
+  const who = netOf(String(request.headers.get("CF-Connecting-IP") || "local"));
+  const readN = async (k) => parseInt(await env.STMT.get(k) || "0", 10) || 0;
+  const ipN = byKey ? 0 : await readN(HO_FAIL(who)), siteN = byKey ? 0 : await readN(HO_SITE);
+  if (ipN >= MAX_HO_FAILS || siteN >= MAX_HO_SITE) return json({ ok: false, error: "Too many attempts. Try again in fifteen minutes." }, 429);
+  const rec = await burnHandover(env, b);
+  const acct = rec ? await env.STMT.get("u:" + rec.u, "json") : null;
+  if (!acct && byKey) return json({ ok: false, error: REFUSED }, 401);
+  if (!acct) {
+    /* KV takes one write to a key a second, and the site-wide count is one key: a put it refuses is a brake that
+       lags, never an open that fails */
+    try { await env.STMT.put(HO_FAIL(who), String(ipN + 1), { expirationTtl: FAIL_TTL }); } catch (e) { /* the next miss counts */ }
+    try { await env.STMT.put(HO_SITE, String(siteN + 1), { expirationTtl: FAIL_TTL }); } catch (e) { /* the next miss counts */ }
+    return json({ ok: false, error: REFUSED }, 401);
+  }
+  await markSeen(env, rec.u, acct, rec.by);
+  const session = await openSession(env, rec.u, rec.by);
+  return json({
+    ok: true, u: rec.u, remembered: true, wrap: rec.wrap, token: rec.token,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
     env: acct.env, live: acct.live || null, prices: acct.prices || null, session
   });
@@ -588,9 +705,26 @@ const refOut = (origin, r) => Object.assign({}, r, { url: refUrl(origin, r.id), 
  *
  * REMEMBERING IS A CUSTOMER'S OWN: it is minted on a session, which only a correct password mints.
  * Logging out drops the session and the remembered wrap, so a phone handed on is a phone signed
- * out. Thirty days, his figure, and the record expires on its own after that. */
+ * out. Thirty days, his figure, counted from the last open since S3 3.6, and the record expires on its own after that. */
 const REM_TTL = 30 * 24 * 3600;
 const REM_RE = /^[A-Za-z0-9_-]{20,64}$/;
+
+/* S3 3.1, 24 SEP 2026: A REMEMBERED DEVICE IS FILED UNDER THE HASH OF ITS TOKEN, as a one-time link has been since
+   v710. The key WAS the token, so anybody holding a copy of this store could post one to /remember/open and be
+   handed a session, which places orders, without the device key that opens the wrap; and a sign-in that keeps
+   itself alive (3.4 to 3.6) would have made that copy worth more. A record filed the old way is re-filed under
+   its hash on its next open (handleRemember). ONLY A TOKEN OF THE OLD MINTING'S OWN SHAPE is looked up raw (24
+   bytes, 32 characters): a hash read off a copy is 64, so it can never name a record by itself. */
+const REM_RAW_RE = /^[A-Za-z0-9_-]{32}$/;
+const remKey = async (tok) => "rem:" + (await idOf(tok));
+/* the record a token names, where it is filed, and the old raw key it still sits under, if it does */
+async function readRem(env, tok) {
+  const key = await remKey(tok);
+  const rec = await env.STMT.get(key, "json");
+  if (rec || !REM_RAW_RE.test(tok)) return { key, rec, raw: null };
+  const raw = "rem:" + tok, old = await env.STMT.get(raw, "json");
+  return { key, rec: old, raw: old ? raw : null };
+}
 
 /* ---- THE MASTER ACCOUNT (v687, his instruction of 18 Sep 2026) --------------------------------
  * /all is his account, and it opens on its own page: Review statement, and the links below it.
@@ -638,7 +772,11 @@ async function ownerSheet(env, origin) {
       sent: sent ? sent.at || null : null
     });
   }
-  return { ok: true, at: sheet ? sheet.at || null : null, issue, month, accounts: out };
+  /* D15: the level a stranger is quoted, the ladder's last, so the card of an ID still waiting for its
+     account can say which standing link to show. Named by the book through the publish, never here. */
+  const names = await env.STMT.get("tiers", "json");
+  const stranger = Array.isArray(names) && names.length ? String(names[names.length - 1]) : null;
+  return { ok: true, at: sheet ? sheet.at || null : null, issue, month, accounts: out, stranger };
 }
 
 /* A TICK IS THE SITE'S, NOT ONE BROWSER'S (v688). The laptop sheet keeps its ticks in that
@@ -724,17 +862,44 @@ async function makeTest(env) {
 }
 async function unmakeTest(env) {
   const gone = [TEST_REC, "seen:" + TEST_USER];
-  for (const pre of ["order:" + TEST_USER + ":", "push:" + TEST_USER + ":", "sent:"]) {
+  for (const pre of ["order:" + TEST_USER + ":", "push:" + TEST_USER + ":", "sent:", devPrefix(TEST_USER)]) {
     let cursor;
     do {
       const page = await env.STMT.list({ prefix: pre, cursor });
       for (const k of page.keys) if (!pre.startsWith("sent:") || k.name.endsWith(":" + TEST_USER)) gone.push(k.name);
+      /* S3 3.2: its remembered phones and live sessions, found through their pointers */
+      if (pre.startsWith("dev:")) for (const k of page.keys) {
+        const at = await env.STMT.get(k.name, "json");
+        if (at && /^(rem|sess):/.test(String(at.key))) gone.push(at.key);
+      }
       cursor = page.list_complete ? null : page.cursor;
     } while (cursor);
   }
   for (const k of gone) await env.STMT.delete(k);
   /* S10: and its orders in the order book, where they live on the object road */
   return gone.length + await dropOrders(env, TEST_USER);
+}
+
+/* S3 FIX, 24 SEP 2026: SIGN OUT EVERYWHERE, fold 9.4's server half, shipped with the sign-in that no longer ages out
+   (3.4 to 3.6), which is what it answers: a forwarded link, a lost or sold phone. Every pointer under the account names
+   a remembered phone or a session, and each goes with its pointer; so do the account's push records, since a phone
+   signed out stops waking (v692). A phone remembered before pointers and not opened since has none, and ends thirty
+   days from its tick (handleRemember). Returns how many phones and sessions it ended. */
+async function signOutEverywhere(env, u) {
+  let n = 0;
+  for (const pre of [devPrefix(u), "push:" + u + ":"]) {
+    let cursor;
+    do {
+      const page = await env.STMT.list({ prefix: pre, cursor });
+      for (const k of page.keys) {
+        const at = pre.startsWith("dev:") ? await env.STMT.get(k.name, "json") : null;
+        if (at && /^(rem|sess):/.test(String(at.key))) { await env.STMT.delete(at.key); n++; }
+        await env.STMT.delete(k.name);
+      }
+      cursor = page.list_complete ? null : page.cursor;
+    } while (cursor);
+  }
+  return n;
 }
 
 async function handleRefs(request, env, p, m, origin) {
@@ -817,10 +982,24 @@ async function handleRefs(request, env, p, m, origin) {
 }
 
 /* The guest's own door. An unknown id, a malformed id and a revoked one all answer with the same
-   404 the rest of this Worker gives, so the space cannot be walked and a withdrawn link cannot be
-   told from one that never existed. */
+   404, so the space cannot be walked and a withdrawn link cannot be told from one that never
+   existed. S8 8.2: that 404 is ONE STYLED PAGE, the board's look and the same words for all, not
+   the site's bare "Not found", which left a stranger holding a link with nothing to do. */
+const guestHtml = (html, nonce, status) => new Response(html, {
+  status,
+  headers: Object.assign({
+    "content-type": "text/html; charset=utf-8",
+    /* script-src 'none' OUTRIGHT, not a nonce: this page is numbers and there is nothing for a
+       script to do, so the strongest thing that can be said about it is free to say. */
+    "content-security-policy":
+      "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
+      + "img-src 'self' data:; font-src 'self'; style-src 'nonce-" + nonce + "'; script-src 'none'"
+  }, HEADERS)
+});
+const guestNonce = () => b64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
+const shut = () => { const n = guestNonce(); return guestHtml(shutPage(n), n, 404); };
 async function handleGuest(request, env, id) {
-  if (!env.STMT) return notFound();
+  if (!env.STMT) return shut();
   const rec = await readRef(env, id);
   /* v709: a link an associate minted is shut until he approves it, from the moment it exists,
      because the id IS the credential and they could hand it out the second they made it. The test
@@ -828,7 +1007,7 @@ async function handleGuest(request, env, id) {
      link already in the store carries the field, so the loose test would shut every link he has
      ever handed out, and shut it silently, because a pending, a withdrawn and an unknown id all
      answer the same 404 by design. */
-  if (!rec || rec.revoked || rec.approved === false) return notFound();
+  if (!rec || rec.revoked || rec.approved === false) return shut();
   await markOpen(env, rec);
   /* v698: A STANDING LINK READS ITS LEVEL'S BOARD, not one written under its own id. The five are
      minted the first time he opens the Links panel, so one minted since the last publish would have
@@ -854,17 +1033,8 @@ async function handleGuest(request, env, id) {
   const own = (await levelKey()) || ("gboard:" + rec.id);
   try { prices = await env.STMT.get(own, "json"); } catch (e) { prices = null; }
   if (!prices) { try { prices = await env.STMT.get("board:2", "json"); } catch (e) { prices = null; } }
-  const nonce = b64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
-  return new Response(boardPage({ tier: rec.tier, prices }, nonce), {
-    headers: Object.assign({
-      "content-type": "text/html; charset=utf-8",
-      /* script-src 'none' OUTRIGHT, not a nonce: this page is numbers and there is nothing for a
-         script to do, so the strongest thing that can be said about it is free to say. */
-      "content-security-policy":
-        "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
-        + "img-src 'self' data:; font-src 'self'; style-src 'nonce-" + nonce + "'; script-src 'none'"
-    }, HEADERS)
-  });
+  const nonce = guestNonce();
+  return guestHtml(boardPage({ tier: rec.tier, prices }, nonce), nonce, 200);
 }
 
 export default {
@@ -888,9 +1058,12 @@ export default {
       });
     };
 
-    /* the guest's board; the id in the path is the whole credential */
-    const g = /^\/g\/([^/]+)$/.exec(p);
-    if (g) return handleGuest(request, env, g[1]);
+    /* the guest's board; the id in the path is the whole credential. A path with more after the id is a
+       mangled link, and gets the same shut page as any other (S8, 25 Sep 2026). */
+    if (p.startsWith("/g/")) {
+      const g = /^\/g\/([^/]+)$/.exec(p);
+      return g ? handleGuest(request, env, g[1]) : shut();
+    }
 
     /* the master account: the page, the account list, and the links, all behind one check */
     if (p === "/all" || p.startsWith("/all/")) {
@@ -948,6 +1121,22 @@ export default {
         return json({ ok: true, url: link, msg: signInMessage({ url: link, user: u }),
           qr: QR.qrMatrix(link) });
       }
+      /* S3 3.9 AND 3.13: A HAND-OVER FOR A CUSTOMER STANDING AT HIS COUNTER. His page opens the account under the
+         master, wraps the content key under a key it mints, and posts { u, token, wrap }, as the Sign-in link does;
+         what comes back is the code to read out and the address of the saved app's own page with the key after the
+         #, drawn as a QR for their camera. The key never reaches a log: a fragment is never sent. */
+      if (p === "/all/handover") {
+        if (!env.STMT_HANDOVER_KEY) return noHandover();
+        if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+        const b = await readJson(request);
+        const u = normUser(b && b.u);
+        if (!u || !(await roster(env)).some((x) => x.username === u)) return json({ ok: false, error: "no account on the roster has that username" }, 400);
+        const made = await mintHandover(env, u, b.token, b.wrap, true);
+        if (!made) return json({ ok: false, error: "send the key and the wrap" }, 400);
+        /* S3 fix: the QR's own form, the one key a browser tab spends from its address (stmt/signin.js burnHandover) */
+        const link = url.origin + "/app#qr." + made.token;
+        return json(Object.assign({ ok: true, url: link, qr: QR.qrMatrix(link).map((line) => line.join("")) }, made));
+      }
       /* 24 SEP 2026 (M22): REVIEW OPENS AN ACCOUNT AS ITS OWN PAGE, READ ONLY. An account opened under
          the master has no session, because the owner does not order, so the page read no orders and
          drew "None yet." under a live order form for every account. What their page reads on a
@@ -970,6 +1159,14 @@ export default {
         return json({ ok: true, at: a ? a.at || null : null, products: a ? a.products || [] : [] });
       }
       /* the test account: made and unmade with one tap, and counted nowhere (v689) */
+      /* S3 fix: Sign out everywhere, for one account */
+      if (p === "/all/signout") {
+        if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+        const b = await readJson(request);
+        const u = normUser(b && b.u);
+        if (!u) return json({ ok: false, error: "send the username" }, 400);
+        return json({ ok: true, ended: await signOutEverywhere(env, u) });
+      }
       if (p === "/all/test") {
         if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
         const b = await readJson(request);
@@ -1039,7 +1236,10 @@ export default {
            still a mark and never a word (v695); this is the app's name, the one place on the site
            where something has to be called something. What never appears is the DESK's name, Salt
            Command, which is a different rule and still holds. */
-        name: "Salt Counter", short_name: "Salt Counter", start_url: "./", scope: "./",
+        /* S3 3.11 (his D2): the saved app starts at /app, the Counter's own page in app mode. S3 fix: `id` holds the
+           identity the old start_url gave every copy installed before (the site's root), or a browser would take the
+           moved start_url for a new app and stop updating those */
+        id: "/", name: "Salt Counter", short_name: "Salt Counter", start_url: "/app", scope: "./",
         display: "standalone", orientation: "portrait", background_color: "#05080a", theme_color: "#05080a",
         icons: [{ src: "icon.png", sizes: ICON_SIZE + "x" + ICON_SIZE, type: "image/png", purpose: "any maskable" }]
       };
@@ -1056,7 +1256,9 @@ export default {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       return handleSignin(request, env);
     }
-    if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout") return handleCustomer(request, env, p, m);
+    /* S3 3.9: the hand-over, minted on a session and opened by its key or its code */
+    if (p === "/handover" || p === "/handover/open") return handleHandover(request, env, p, m);
+    if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account") return handleCustomer(request, env, p, m);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
     if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin") return handleDesk(request, env, p, m);
@@ -1074,6 +1276,11 @@ export default {
        been a link. The shape is no secret, being minted by the page this route serves. */
     const sLink = p.startsWith("/s/") && SIGNIN_RE.test(p.slice(3));
     if (sLink) {
+      if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
+      return pageResponse("", null);
+    }
+    /* S3 3.11: THE SAVED APP'S START, the Counter's own page; it knows it is the app by its own address */
+    if (p === "/app") {
       if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
       return pageResponse("", null);
     }

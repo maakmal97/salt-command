@@ -4343,6 +4343,50 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   .fintab.pgrid.fg-ph .pm,.fintab.pgrid.fg-ph .pq,.fintab.pgrid .pold{display:none;}
   .fintab.pgrid th,.fintab.pgrid td{padding-left:4px;padding-right:4px;font-size:12px;}
 }
+
+/* S11 11.4 (24 Sep 2026): SITE ORDERS OPENS ON WAITING ON YOU. The rows are the system's Inbox row and the
+   filters its tab strip; this is only the geometry they sit in. On the laptop the list and the open card
+   stand side by side; under 1080px the list comes first and a row opens its card, with the way back at its
+   head. A filter pill is 44px tall, the strip's own being 33. */
+.ordgrid{display:grid;gap:16px;min-width:0;}
+.ordlist,.ordpane{min-width:0;}
+.ordrows{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+.ordtabs .ordtab{min-height:var(--salt-tap);}
+.ordrest{margin-top:18px;}
+.ordnote{margin-top:14px;}
+.ordsaid:empty{display:none;}
+@media (min-width:1080px){
+  .ordgrid{grid-template-columns:minmax(0,360px) minmax(0,1fr);align-items:start;}
+  .ordback{display:none;}
+}
+@media (max-width:1079px){
+  .ordgrid.ord-open .ordlist{display:none;}
+  .ordgrid:not(.ord-open) .ordpane{display:none;}
+}
+/* S11 11.2: the order's card is the system's Approve card; its one line under the party is the entry as
+   ordered, in the figures' face */
+.ordline{margin:0;font-family:var(--salt-font-mono);font-size:14px;line-height:1.5;color:var(--salt-salt);}
+.ordpv .kpis{margin:0;}
+/* S11 11.3: the card's actions sit in a footer that stays in reach while the card scrolls under a thumb,
+   drawn to the card's edges on the opaque panel so nothing reads through it */
+.ordcard .ordfoot{position:sticky;bottom:0;z-index:2;margin:0 -20px -18px;padding:12px 20px calc(14px + env(safe-area-inset-bottom,0px));
+  background:var(--salt-panel);border-top:1px solid var(--salt-line-faint);border-radius:0 0 var(--salt-radius-lg) var(--salt-radius-lg);
+  display:flex;flex-direction:column;gap:8px;}
+/* the Approve card and a field are flex boxes, and a flex box outranks the browser's own rule for a hidden
+   element: a card, the Other charge, his own words and the stepper stay shut until they are opened */
+.ordcard[hidden],.ordcard [hidden]{display:none;}
+/* on the phone the footer clears the desk's two floating buttons, so Accept sits above them */
+@media (max-width:860px){.ordcard .ordfoot{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px));}}
+.ordfee{margin:0;}
+.ordother{margin-top:10px;}
+/* S11 11.6: the answer box and his quick replies under it */
+.ordreply{margin-top:4px;}
+.ordquick{display:flex;flex-wrap:wrap;gap:6px;}
+.ordquick:empty{display:none;}
+/* S11 11.9: Delivered part's stepper, a half unit either side of the figure */
+.ordpart{display:flex;flex-direction:column;gap:8px;}
+.ordstep{display:flex;align-items:stretch;gap:8px;}
+.ordstep .salt-field__input{flex:0 1 140px;text-align:center;}
 /* ==== END DESIGN desk ==== */
 </style>
 </head>
@@ -4840,6 +4884,10 @@ function txPaid(s){return (s.cash||0)+(s.settledRM||0);}
    the convention changed, a bare `total` would have been right by luck in twelve places and wrong
    in the twelve that meant what they owe. */
 function txGoods(s){return +(s.total||0);}
+/* S11 11.9: WHAT AN ORDER CLOSED SHORT COMES TO, the goods at the rate agreed pro rata to the units that went, to the sen.
+   The ONE copy: the desk's card shows it and the desk Worker sends it to the site as a stated figure, the site pricing
+   nothing. Whether a short close charges this or their card at the size that went awaits his word (24 Sep 2026). */
+function closeGoods(total,qty,n){return qty>0?+((+total||0)*n/qty).toFixed(2):0;}
 function txDeliv(s){return (s.deliveredQty||0)+(s.settledKg||0);}
 /* ====== COST IS ABSOLUTE (v496, his instruction of 05 Sep 2026) ================
    A sale's `cost` is the cost of the order in RM, stored as a person states it, and the cost
@@ -5640,7 +5688,7 @@ function renameInBook(book,pairs){
 }
 
 return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,
-        txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
+        txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,refundOnCancel:refundOnCancel,
@@ -6387,6 +6435,7 @@ const opening={
   "qty": 4.9,
   "costPerKg": 64
 };
+/* COUNTED AT v836 on 2026-09-24: the rice inventory held 94 against 95 on the roll, a drift of -1. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-09-24. <b>RICE COUNT ON 24 SEP 2026: 94 UNIT ON HAND AGAINST 95 ON THE BOOK.</b> A drift of -1 unit, and on his word a count wins over the ledger, so the stated rice inventory becomes 94 and COUNT_ON for rice moves to 24 Sep 2026. No party, no rate and no cash attach, and the row carries no cost, so the inventory's own rate is untouched. The floors move with the count: floor1 RM3.40 to RM4.08, floor2 RM6.80 to RM8.16, floor125 RM42.50 to RM51, ask at RM8 for 1 unit held, self use 0 to 1. The drafter flagged the gap as shrinkage across every unit sold, and flagged that 9 unit of this inventory is owed out and already paid for. The figures cover the shrinkage; the 9 unit owed out stays outstanding. */
 /* ROLLED AT v834 (oil): 50 unit from SP7-PUD on 2026-09-24, so 0 plus 50 is 50. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* COUNTED AT v833 on 2026-09-24: the oil inventory held 0 against 35 on the roll, a drift of -35. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-09-24. <b>OIL COUNT DATED 24 SEP, NOTHING ON HAND AGAINST 35 ON THE BOOK.</b> Counted by hand at 0 unit on 24 Sep 2026, a drift of -35 against the book, with the previous count standing at 19 Sep 2026. A count wins over the ledger, so the stated oil inventory becomes 0 and COUNT_ON for oil moves to 24 Sep 2026. The drafter flagged the 35 unit as unaccounted for and booking as shrinkage across every unit sold; the dossier offers no cause and none is entered. Floors are unchanged at RM7.82 for 1 unit, RM15.65 for 2 unit and RM97.80 for 12.5 unit, ask RM10 for 1 unit, with self use moving from 79 to 104. No party, no cash, no cost on this row. */
 /* ROLLED AT v832 (oil): 10 unit to CC5-OKR on 2026-09-24, so 35 less 10 is 25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
@@ -6420,7 +6469,7 @@ const PROD_OPENING={
   "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": null
+    "stated": 94
   },
   "spare": {
     "qty": 0,
@@ -6500,7 +6549,7 @@ const COUNT_ON={
   "salt": "2026-09-23",
   "oil": "2026-09-24",
   "candy": null,
-  "rice": null,
+  "rice": "2026-09-24",
   "spare": null
 };
 /* EVERY COUNT, AS TAKEN (v504, 07 Sep 2026): product, date, the figure counted, what the roll said and the drift, negative when units are missing. The fold appends one line per count. A count with no drift bounds a cycle and charges nothing; the 24 Aug anchor is one. Seeded from the fold notes of v473 (02 Sep, 10.5 against 18.75), v489 (04 Sep, 9.8 entered net of a rolled sale, no drift) and v498 (06 Sep, 7 against 8.3); the oil count of 23 Aug has no recorded drift. The leak is charged from these: the units missing over the last three cycles, at landed, over the units sold in them. */
@@ -6519,7 +6568,8 @@ const COUNTS=[
   {"product":"oil","date":"2026-09-19","qty":40,"was":60,"drift":-20,"note":"Counted on his word of 19 Sep 2026: 40 unit of the 18 Sep lot remain. Oil is mostly for his own use, so the leak is high by design and is never costed into a sale."},
   {"product":"salt","date":"2026-09-21","qty":8,"was":11.15,"drift":-3.15},
   {"product":"salt","date":"2026-09-23","qty":25,"was":26,"drift":-1},
-  {"product":"oil","date":"2026-09-24","qty":0,"was":35,"drift":-35}
+  {"product":"oil","date":"2026-09-24","qty":0,"was":35,"drift":-35},
+  {"product":"rice","date":"2026-09-24","qty":94,"was":95,"drift":-1}
 ];
 const purchases=[
   {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -7272,7 +7322,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-09-24T15:10:07.576Z";
+const QUEUE_COMMITTED="2026-09-24T15:43:57.801Z";
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
@@ -8264,7 +8314,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v835","d":"24 Sep 2026","t":"THE GROSS MARGIN READS AGAIN","n":["<b>TWO SALT ROWS COSTED: s183 AT RM240 AND s196 AT RM96, RM48 A UNIT.</b> Both were booked pending and handed over by a correction raising the delivered quantity. That road moved no units through the fold, so the shelf cost was never written, although each note of the day stated RM48 a unit. One uncosted live row blanks the gross margin across every book; with both costed it reads RM16,504.","<b>THE FOLD NOW COSTS A SALE WHENEVER GOODS HAVE LEFT.</b> tools/fold.mjs filled the cost only on an amendment moving units; it now also fills it when the row carries a delivered quantity, so a correction handing over a pending order is costed like a fulfilment. The suite drives that correction on a copy of the book, proved red without the change.","<b>OIL SHELF COST RM7.60 TO RM8.00.</b> v834 received 50 unit of oil at RM8 a unit and left the stated basis at the older lot rate; the book rule is the newest received lot, so the basis follows it."]}];
+const evolution=[{"v":"v840","d":"25 Sep 2026","t":"A GUEST KNOWS WHAT TO DO NEXT, AND THE WORD CHECKS READ MALAY","n":["<b>STAGES 8 AND 13, THE FIRST PART</b> (his answers D12 and D13 of 24 Sep 2026). The guest board ends with its next step, To order, reply to the person who sent you this link, and every shut link, unknown, withdrawn, declined or waiting, answers one styled page with the same words, so the door gives nothing away. An associate's reward line says how to take it: Ask on any order to take it.","<b>KEPT OUT OF THE TRANSLATOR.</b> Every Counter page carries translate=\"no\", so Chrome never offers to send an opened statement to a translator.","<b>THE WORD CHECKS READ MALAY.</b> siteWords and the desk's siteSafe refuse a level's Malay name after a cue (tahap emas, ahli gangsa, Keahlian Emas) while ordinary Malay passes (Ipoh, Perak; peluang emas), warn on every book's name and its Malay word (garam, minyak, gula-gula, beras), and every scan in the suite reads the same lists. His answer on an order asks before sending a line that warns, as the bulletin does."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8379,7 +8429,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='24 Sep 2026, 23:22 KL';
+const LAST_UPDATED='25 Sep 2026, 01:06 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -17159,13 +17209,15 @@ function actions(){
      the money is what was ordered, goods and carriage together, which is what the pending row will
      carry. It is empty on the laptop desk and on a cold boot, and says nothing when it is. */
   {
-    const ow=(typeof ordWaiting==='function')?ordWaiting():{placed:[],asked:[],rm:0};
-    if(ow.placed.length||ow.asked.length){
-      const title=ow.placed.length
-        ?`Site orders: ${ow.placed.length} waiting to be acknowledged`
-        :`Site orders: ${ow.asked.length} waiting on an answer`;
-      const why=(ow.placed.length?`<b>${fmt0(ow.rm)}</b> ordered and not yet agreed. Acknowledging one queues its pending row, which you approve under Approve. `:'')
-        +(ow.asked.length?`${ow.asked.length===1?'One order is':ow.asked.length+' orders are'} waiting on an answer from you.`:'');
+    /* S11 11.4: the rows Site orders lists, counted here as they are counted there and on the Enter badge */
+    const ow=(typeof ordWaiting==='function')?ordWaiting():{placed:[],asked:[],acts:[],rm:0};
+    const acts=ow.acts||[];
+    if(acts.length){
+      const n=k=>acts.filter(a=>a.kind===k).length;
+      const title=`Site orders: ${acts.length} waiting on you`;
+      const why=(ow.placed.length?`<b>${fmt0(ow.rm)}</b> ordered and not yet agreed. `:'')
+        +[['new','new'],['paid','say they paid'],['cash','cash to record'],['asked','waiting on an answer']]
+          .filter(x=>n(x[0])).map(x=>n(x[0])+' '+x[1]).join(', ')+'. Oldest first on Site orders.';
       add(ow.placed.length?'now':'soon','orders',title,ow.rm,why,'orders');
     }
   }
@@ -17329,7 +17381,10 @@ const qTx=()=>queue.filter(q=>!(q.payload&&(q.payload.mode==='plan'||q.payload.m
    stage: drafted and waiting on a tap, approved and waiting to go live, or refused and waiting on him.
    Orders placed on the statements site are a separate thing until one is done and queued, so they
    stay a separate term. */
-const enterCount=()=>new Set(qTx().map(q=>q.at).concat(AP_DRAFTS.map(d=>d.id))).size+ORD_OPEN.filter(o=>o.status==='placed').length;
+/* S11 11.4: AND THE SITE'S TERM IS WAITING ON YOU, row for row. A payment's draft behind a Paid? row is
+   that row, so it is counted once, as the row. */
+const enterCount=()=>{const acts=ordActs(),behind=new Set();acts.forEach(a=>(a.drafts||[]).forEach(id=>behind.add(id)));
+  return new Set(qTx().map(q=>q.at).concat(AP_DRAFTS.map(d=>d.id).filter(id=>!behind.has(id)))).size+acts.length;};
 function apBadge(){try{const b=document.querySelector('.tab[data-s="enter"]');if(!b)return;
   let c=b.querySelector('.navct');const n=enterCount();
   /* v385: AND WHERE THE DRAFTS COULD NOT BE READ THE BADGE SAYS SO RATHER THAN COUNTING THEM
@@ -18816,8 +18871,16 @@ function apCard(d){
      a roster draft, where a code the book does not hold is the whole point of the row. */
   const apGone=(col==='sales'||col==='purchases')&&d.party&&roster.indexOf(d.party)<0
     ?`<div class="warnpill" style="display:block;margin:8px 0 0;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)"><b>Read here, not from the draft.</b> ${esc(codeOf(d.party))} is not on the roster this book holds. The row was drafted ${esc((d.draftedAt||'').slice(0,10)||'earlier')} and the code has been retired or renamed since. Do not approve it against a code the book no longer has.</div>`:'';
+  /* S11 (D6): A ROW OTHER THAN HE SAID YES TO ON THE ORDER CARD waits here, marked in the Worker's words, with what he
+     was shown beside it (GET /drafts carries it as `preapproval`), so he compares before he approves */
+  const pa=d.preapproval&&d.preapproval.state==='differs'?d.preapproval:null,sh=(pa&&pa.shown)||{},fg=sh.figures||{};
+  const saw=!pa?'':sh.row?units(+sh.row.qty||0)+' for '+fmt(+sh.row.total||0)
+    :fg.close?'closing it at '+units(+fg.units||0):fg.units!=null?units(+fg.units||0)+' '+esc(fg.how||'handed over')
+    :fg.amount!=null?fmt(+fg.amount||0)+(fg.cash?' in cash':' received'):'this move';
+  const nf=pa&&Array.isArray(sh.flags)?sh.flags.length:null;
+  const apDiffers=pa?`<p class="dsc" style="margin-top:8px"><span class="salt-status salt-status--ember">${esc(String(pa.says||'differs from what you saw').replace(/^./,c=>c.toUpperCase()))}</span> On the order card you said yes to ${saw}${nf==null?'':nf?', with '+nf+' flag'+(nf===1?'':'s'):', with no flag'}. This row came out otherwise, so it waits for you here.</p>`:'';
   return `<div class="card" style="margin-top:10px" data-id="${esc(d.id)}">
-    <div style="font-size:14px">${head}</div>
+    <div style="font-size:14px">${head}</div>${apDiffers}
     <div class="kpis k4" style="margin-top:10px">${grid}</div>
     ${(d.flags||[]).map(f=>`<div class="warnpill" style="display:block;margin:8px 0 0;background:rgba(184,115,51,.14);border-color:var(--amber);color:var(--gold)">&#9888; ${esc(f)}</div>`).join('')}
     ${apGone}
@@ -18916,18 +18979,21 @@ function tabOrders(){
     <div class="cardh">Where an order is decided <span class="sub">the phone, or /desk in the cloud</span></div>
     <div class="insight salt-insight">An order placed on the statements site lands on the cloud desk's Site orders card the moment it is placed. Acknowledge it there, with the delivery charge where there is one, and the pending row is queued for Approve. Payment and handover follow separately, each queueing its own amendment against that row.</div>
   </div>`;
-  return `<h1>Site orders</h1>
-  <div class="dsc dsclead">What customers ordered on the statements site, each priced off his own weekly list.</div>
-  <div class="insight salt-insight">Acknowledge the order, with the delivery charge where there is one: that queues the pending row within the minute, and you approve it under Approve. After that, money and goods move apart. The customer records what they paid; you record what you handed over. Both complete and the order completes itself. Every step queues its own amendment.</div>
-  <div class="card" id="bullCard" style="margin-top:10px"><div class="cardh">Bulletin <span class="sub">across the top of Salt Counter, for everyone who opens it</span></div>
+  /* S11 11.4 (24 Sep 2026): SITE ORDERS OPENS ON WAITING ON YOU. One row a customer act, oldest first,
+     with its card beside it on the laptop and behind a tap on the phone; the notice folds below, where it
+     is set once a week and not read every visit. The switch to the closed ones stays under the list. */
+  return `<h1>Waiting on you</h1>
+  <div class="dsc dsclead" id="ordLead">Every customer act on the site, oldest first: a new order, a payment they say they made, cash to record, a question.</div>
+  <div class="ordgrid" id="ordBox"><div style="font-size:12px;color:var(--dim)">Reading the orders.</div></div>
+  <div id="ordMsg" role="status" style="margin-top:8px;font-size:12px;color:var(--mut)">${esc(ordMsg)}</div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0;font-size:12px;color:var(--mut)"><button type="button" class="salt-ghost" id="ordAllBtn">${ordAll?'Hide the closed ones':'Show the closed ones'}</button><span>${ordAll?'Every order this site has taken, newest first.':'Open orders, and any waiting on an answer from you.'}</span></div>
+  <details class="salt-plan ordnote" id="bullFold"><summary><span class="salt-plan__id" id="bullN">&middot;</span><span class="salt-plan__title" id="bullHead">Notice</span></summary>
+  <div class="salt-plan__body" id="bullCard"><div class="dsc">Across the top of Salt Counter, for everyone who opens it.</div>
     <div class="dsc" id="bullNow" style="margin-top:6px">Reading it.</div>
     <textarea id="bullText" rows="3" placeholder="One line per item" style="width:100%;margin-top:8px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:6px;font:inherit"></textarea>
-    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="salt-ghost" data-bmode="run" aria-pressed="true">Running</button><button type="button" class="salt-ghost" data-bmode="change" aria-pressed="false">Changing</button><button type="button" class="vbtn salt-pill salt-pill--sm" id="bullSet">Set</button><button type="button" class="vbtn salt-pill salt-pill--sm" id="bullClear">Clear</button></div>
-    <div class="dsc" id="bullMsg" style="margin-top:6px"></div></div>
-  <div id="ordAlert" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--mut)"></div>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--mut)"><button type="button" class="vbtn salt-pill salt-pill--sm" id="ordAllBtn">${ordAll?'Hide the closed ones':'Show the closed ones'}</button><span>${ordAll?'Every order this site has taken, newest first.':'Open orders, and any waiting on an answer from you.'}</span></div>
-  <div id="ordBox"><div style="font-size:12px;color:var(--dim)">Reading the orders.</div></div>
-  <div id="ordMsg" style="margin-top:8px;font-size:12px;color:var(--mut)">${esc(ordMsg)}</div>`;
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="salt-ghost" data-bmode="run" aria-pressed="true">Running</button><button type="button" class="salt-ghost" data-bmode="change" aria-pressed="false">Changing</button><button type="button" class="salt-ghost salt-ghost--lit" id="bullSet">Set</button><button type="button" class="salt-ghost" id="bullClear">Clear</button></div>
+    <div class="dsc" id="bullMsg" style="margin-top:6px"></div></div></details>
+  <div id="ordAlert" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--mut)"></div>`;
 }
 /* v763, his instruction of 21 Sep 2026: a CLOSED order can be opened. The card has shown the open
    ones since v499 and, since v752, any whose last line is the customer's; a question about an order
@@ -18942,6 +19008,7 @@ async function ordLoad(quiet){
     ordNeedKey=(r.status===401); let j=null; try{j=await r.json();}catch(e){}
     ordUnread=r.ok?'':(r.status===401?'':(j&&j.error)||'the Worker answered http '+r.status);
     ORD_OPEN=(r.ok&&j&&j.orders)||[];
+    if(r.ok)ORD_PV_GEN++;   /* S11 11.2: every read of the orders drafts the open card's row afresh */
   }catch(e){ ordUnread=(e&&e.message)||'the request did not complete'; ORD_OPEN=[]; }
   ordDraw();
   {const a=document.getElementById('ordAlert');if(a&&!a.dataset.drawn)ordAlertDraw();}
@@ -18959,12 +19026,21 @@ async function ordLoad(quiet){
    being the one place that may hold its own name: a customer's page never names the desk, a roster code or a
    level, and a product is a mark there rather than a word, so a product's name warns and is his to allow. ---- */
 let BULL_MODE='run';
+/* S13 13.2 (his decision D12, 24 Sep 2026): the same words in Malay, mirroring siteWords in src/orders.js, whose
+   lists the suite pins against the book and TIER_NAMES. Emas, perak and gangsa are ordinary words (Perak is a state,
+   "peluang emas" a golden chance), so they are refused only after a word that says level, or member, customer, price,
+   reward, now or up to before emas or gangsa (pelanggan Perak is Perak's customers), a colon, dash or quote and a "your"
+   or "new" allowed between (Tahap: Emas, tahap anda: Perak), and warn anywhere else. Every book's name warns, and its Malay word with it. */
 function siteSafe(t){
   const s=String(t||'');
   if(/salt\s*command/i.test(s))return {refuse:'That names the desk, which a customer\'s page never does.',warn:''};
   if(/\b[A-Z]{2}\d{1,2}-[A-Z]{2,4}(-R)?\b/.test(s))return {refuse:'That carries a roster code, which a customer\'s page never shows.',warn:''};
-  if(/\b(ambassador|titanium|platinum|gold|silver|bronze)\b/i.test(s))return {refuse:'That names a level, which a customer\'s page never does.',warn:''};
-  if(/\b(salt|oil)\b/i.test(s))return {refuse:'',warn:'That names a product in words; the customer\'s page draws a mark instead.'};
+  if(/\b(ambassador|titanium|platinum|gold|silver|bronze)\b/i.test(s)
+    ||/\b(tahap|peringkat|taraf|pangkat|kategori|level|tier)([^a-z0-9.,;!?]{1,4}(anda|awak|kamu|baru))?[^a-z0-9.,;!?]{1,4}(emas|perak|gangsa)\b/i.test(s)
+    ||/\b(ahli|keahlian|pelanggan|harga|kad|kelas|status|pakej|ganjaran|kini|naik ke)([^a-z0-9.,;!?]{1,4}(anda|awak|kamu|baru))?[^a-z0-9.,;!?]{1,4}(emas|gangsa)\b/i.test(s))
+    return {refuse:'That names a level, which a customer\'s page never does.',warn:''};
+  if(/\b(emas|perak|gangsa)\b/i.test(s))return {refuse:'',warn:'That may name a level in Malay, which a customer\'s page never does; Perak the state is fine.'};
+  if(/\b(salt|oil|candy|rice|spare|garam|minyak|gula-gula|gula|beras)\b/i.test(s))return {refuse:'',warn:'That names a product in words; the customer\'s page draws a mark instead.'};
   return {refuse:'',warn:''};
 }
 function bullPressed(){document.querySelectorAll('button[data-bmode]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.bmode===BULL_MODE?'true':'false'));}
@@ -18973,9 +19049,13 @@ async function bullLoad(quiet){
   const go=()=>fetch('bulletin',{cache:'no-store',headers:qHeaders()});
   let j=null;
   try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go(); if(r.ok){try{j=await r.json();}catch(e){}} }catch(e){}
-  if(!j||!j.ok){now.textContent='The bulletin could not be read.';return;}
+  const head=document.getElementById('bullHead'),nl=document.getElementById('bullN');
+  if(!j||!j.ok){now.textContent='The bulletin could not be read.';if(head)head.textContent='Notice: could not be read';return;}
   BULL_MODE=j.mode==='change'?'change':'run';bullPressed();
   const lines=Array.isArray(j.lines)?j.lines:[];
+  /* S11 11.4: the fold says what is posted, so a closed notice is still read at a glance */
+  if(head)head.textContent=lines.length?'Notice: '+lines.length+(lines.length===1?' line':' lines')+', '+(BULL_MODE==='change'?'changing':'running'):'Notice: nothing posted';
+  if(nl)nl.textContent=String(lines.length);
   now.innerHTML=lines.length?'Showing now, '+(BULL_MODE==='change'?'changing':'running')+': '+esc(lines.join(' · ')):'Nothing posted. Type a line and tap Set.';
   if(ta&&document.activeElement!==ta)ta.value=lines.join('\n');
 }
@@ -19074,16 +19154,165 @@ function ordUsual(code,product){
    WHAT IS WAITING ON HIM: an order placed and not yet agreed, which is a yes he owes somebody, and
    an order whose last line is theirs (v752). An order already acknowledged is a ROW, and the book's
    own readings carry it from there; counting it here as well would say the same money twice. */
-function ordWaiting(){
+/* S11 11.4 (24 Sep 2026): WAITING ON YOU IS ONE ROW A CUSTOMER ACT, and this is the one reading of it:
+   the list on Site orders, Today's row and the Enter badge all count these, so none can disagree.
+     new    an order placed and not yet agreed
+     paid   a payment they say they made, its row waiting under Approve (the claim itself is stage 6's)
+     cash   goods handed over with nothing paid: cash to record
+     asked  their line is the last on the order, and he has not said it needs no reply
+   A placed order's own line is on its New card, so it is one act and not two. Oldest first, by the
+   moment of the act. */
+const ORD_KIND={new:{w:'New',tone:'steel',act:'Accept'},paid:{w:'Paid?',tone:'verdigris',act:'Check'},
+  cash:{w:'Cash',tone:'copper',act:'Record'},asked:{w:'Asked',tone:'brass',act:'Answer'}};
+const ordDue=o=>+((+o.total||0)+(+o.delivery||0)-(+o.paid||0)).toFixed(2);
+function ordAsked(o){const m=(o&&o.msgs)||[],l=m[m.length-1];return !!(l&&l.by==='customer'&&!(o.quiet&&String(o.quiet)>=String(l.at)));}
+function ordActs(){
   const open=(typeof ORD_OPEN!=='undefined'&&Array.isArray(ORD_OPEN))?ORD_OPEN:[];
-  const placed=open.filter(o=>o&&o.status==='placed');
-  const asked=open.filter(o=>o&&(o.msgs||[]).length&&o.msgs[o.msgs.length-1].by==='customer');
-  return {placed,asked,rm:+placed.reduce((a,o)=>a+(+o.total||0)+(+o.delivery||0),0).toFixed(2)};
+  const drafts=(typeof AP_DRAFTS!=='undefined'&&Array.isArray(AP_DRAFTS))?AP_DRAFTS:[];
+  const out=[];
+  open.forEach(o=>{if(!o)return;
+    const live=['acknowledged','ready'].includes(o.status);
+    if(o.status==='placed'&&!o.yes)out.push({kind:'new',o,at:o.at||''});   /* his yes already given waits under Approve, counted there */
+    else if(ordAsked(o))out.push({kind:'asked',o,at:o.msgs[o.msgs.length-1].at||''});
+    if(live&&(+o.moved||0)>0.0004&&(+o.paid||0)<=0.004&&ordDue(o)>0.004){
+      const h=(o.history||[]).filter(x=>x&&x.by==='desk'&&/ unit (delivered|collected)$/.test(String(x.note||'')));
+      out.push({kind:'cash',o,at:o.movedAt||(h.length?h[h.length-1].at:'')||o.at||''});}
+    const pd=drafts.filter(d=>d&&d.entry&&d.entry.orderId&&d.entry.orderId===o.id&&d.entry.status==='Payment'&&d.entry.by!=='desk');
+    if(pd.length&&!['cancelled','declined'].includes(o.status)){
+      const p=(o.payments||[]).filter(x=>x&&x.by!=='desk');
+      out.push({kind:'paid',o,at:(p.length?p[p.length-1].at:'')||o.at||'',drafts:pd.map(d=>d.id)});}
+  });
+  return out.sort((a,b)=>String(a.at)<String(b.at)?-1:String(a.at)>String(b.at)?1:0);
 }
+function ordWaiting(){
+  const acts=ordActs(),placed=acts.filter(a=>a.kind==='new').map(a=>a.o),asked=acts.filter(a=>a.kind==='asked').map(a=>a.o);
+  return {placed,asked,acts,rm:+placed.reduce((a,o)=>a+(+o.total||0)+(+o.delivery||0),0).toFixed(2)};
+}
+/* ---- S11 11.2 (24 Sep 2026): THE ROW BEFORE THE YES. A new order's card asks the desk Worker to draft
+   the pending row it would queue, against the mirror, storing nothing (POST orders/<id>/preview, the
+   contract of 11.1), and draws it first: their card today against the quote, the margin on the cost, the
+   floor, their usual toned by the way the rate moved, and the drafter's own flags. The desk computes no
+   price here: every figure is the preview's but the two differences it draws beside them. The preview is
+   asked again on every read of the orders and whenever the delivery charge changes, so what he sees is
+   what Accept will send; its hash rides with Accept (11.3), and the Worker approves only an exact match.
+   It is never /draft-now?dry=1, which drafts the whole queue and not this order. ---- */
+let ORD_PV={},ORD_PV_GEN=0;
+/* S11 11.3: the charge he chose, or null while none is chosen or Other holds no figure */
+let ORD_CHIP={};
+function ordFeeNow(o){const c=ORD_CHIP[o.id];if(!c)return null;if(c!=='other')return +c;
+  const i=document.querySelector('input[data-fee="'+o.id+'"]');const v=i?parseFloat(i.value):NaN;return v>=0?+v.toFixed(2):null;}
+/* S11 11.13 (D6): an agreed order whose pending row he rejected offers that row again, by Accept against its
+   preview, at the charge the order already carries (the customer was told it) */
+function ordAgainAck(o){return ['acknowledged','ready','done'].includes(o.status)&&(o.again||[]).includes('ack');}
+/* the row is drafted at the chosen charge, and at none until one is chosen, its figures being the goods' */
+function ordPvDelivery(o){if(ordAgainAck(o))return +o.delivery||0;if(o.mode!=='deliver')return 0;const d=ordFeeNow(o);return d==null?0:d;}
+async function ordPreview(o){
+  if(!o||o.yes||!(o.status==='placed'||ordAgainAck(o))||!cloudMode())return;
+  const d=ordPvDelivery(o);if(d==null)return;
+  const cur=ORD_PV[o.id];
+  if(cur&&cur.d===d&&cur.gen===ORD_PV_GEN)return;
+  /* the row already drawn at this charge stays, its digest with it, while it is drafted again on a poll: Accept tapped in
+     between sends that digest, and the Worker's own recheck answers a row that moved with the fresh one */
+  const mine=cur&&cur.st==='ok'&&cur.d===d?Object.assign({},cur,{gen:ORD_PV_GEN}):{d,gen:ORD_PV_GEN,st:'wait'};ORD_PV[o.id]=mine;
+  let st='err',j=null,err='';
+  try{const r=await fetch('orders/'+encodeURIComponent(o.id)+'/preview',{method:'POST',headers:qHeaders(),body:JSON.stringify({delivery:d})});
+    try{j=await r.json();}catch(e){}
+    if(r.ok&&j&&j.ok)st='ok';else err=r.status===401?'the write key was refused':((j&&j.error)||'the Worker answered http '+r.status);
+  }catch(e){err='no connection';}
+  if(ORD_PV[o.id]!==mine)return;   /* a newer ask has taken its place */
+  ORD_PV[o.id]=Object.assign(mine,{st,j,err});
+  ordDraw();
+}
+function ordPvBlock(o){
+  const pv=ORD_PV[o.id];
+  if(!pv||pv.st==='wait')return `<p class="salt-approve__reason ordpv" data-pv="${esc(o.id)}">Drafting the row this order would make.</p>`;
+  if(pv.st==='err')return `<p class="salt-approve__reason ordpv" data-pv="${esc(o.id)}">The row could not be drafted: ${esc(pv.err)}. Accept opens once it can, your yes being to the row drawn here.</p>`;
+  const j=pv.j||{},row=j.row||{},num=v=>(typeof v==='number'&&isFinite(v))?v:null;
+  const goods=num(row.total)!=null?+row.total:+o.total||0,qty=num(row.qty)!=null&&row.qty>0?+row.qty:+o.qty||0;
+  /* the preview's own shapes (src/orders.js previewAck): cost {unit,total}, margin {rm,pct}, floor {rm}, usual {rate} */
+  const card=num(j.card),cost=j.cost?num(j.cost.total):null,floor=j.floor?num(j.floor.rm):null;
+  const margin=j.margin?num(j.margin.rm):null;
+  const usual=j.usual?num(j.usual.rate):null,rate=qty?goods/qty:null;
+  const tile=(k,v,note,tone)=>`<div class="kpi salt-kpi ${tone?'salt-kpi--'+tone:''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value">${v}</div><div class="salt-kpi__note">${note}</div></div>`;
+  const q=+o.total||0,gap=card==null?null:+(q-card).toFixed(2);
+  const cardT=card==null?tile('Their card today','&mdash;',esc(j.cardNote||'no card for this size'),'')
+    :tile('Their card today',fmt(card),(Math.abs(gap)<0.005?'':'the quote is ')+`<span class="salt-status salt-status--${Math.abs(gap)<0.005?'verdigris':gap<0?'copper':'steel'}">${Math.abs(gap)<0.005?'matches':fmt(Math.abs(gap))+(gap<0?' under':' over')}</span>`+(Math.abs(gap)<0.005?' the quote':'')+(j.cardNote?' '+esc(j.cardNote):''),Math.abs(gap)<0.005?'verdigris':gap<0?'copper':'steel');
+  const marT=margin==null?tile('Margin','&mdash;','no cost on this book',''):tile('Margin',fmt(margin),cost!=null?'on '+fmt(cost)+' cost':'',margin>0.004?'verdigris':'ember');
+  const flT=floor==null?tile('Floor','&mdash;','no floor for this size',''):tile('Floor',fmt(floor),goods-floor>=-0.004?'clear by '+fmt(+(goods-floor).toFixed(2)):fmt(+(floor-goods).toFixed(2))+' under it',goods-floor>=-0.004?'verdigris':'ember');
+  const dir=(usual&&rate!=null)?(rate-usual)/usual:null;
+  /* S11 fix: the unit rides in the note, so a narrow tile breaks a figure at its space and never inside the word */
+  const usT=usual==null?tile('Their usual','&mdash;','no priced order yet',''):tile('Their usual',fmt(usual),'a unit'+(rate==null?'':'; this is '+fmt(rate)),dir==null||Math.abs(dir)<0.005?'steel':dir>0?'verdigris':'copper');
+  const flags=Array.isArray(j.flags)?j.flags:[];
+  return `<div class="ordpv" data-pv="${esc(o.id)}"><div class="kpis k2">${cardT+marT+flT+usT}</div>
+    <p class="salt-approve__reason" style="margin-top:8px">The pending row, drafted now and stored nowhere. ${flags.length?'The drafter flags '+(flags.length===1?'one thing':flags.length+' things')+':':'The drafter raises no flag.'}</p>
+    ${flags.length?`<div class="salt-approve__flags">${flags.map(f=>`<span class="salt-status salt-status--ember">${esc(f)}</span>`).join('')}</div>`:''}</div>`;
+}
+/* S11 11.6 (24 Sep 2026): HIS QUICK REPLIES live on this device, as the plan has it: lines he saves
+   himself, six at most, each put through siteSafe before it is kept and again when it is sent. */
+const ORD_QUICK_KEY='saltQuickReplies';
+function ordQuick(){try{const a=JSON.parse(localStorage.getItem(ORD_QUICK_KEY)||'[]');return Array.isArray(a)?a.filter(x=>typeof x==='string'&&x).slice(0,6):[];}catch(e){return [];}}
+function ordQuickKeep(id){
+  const si=document.querySelector('input[data-say="'+id+'"]'),t=si?String(si.value||'').trim().replace(/\s+/g,' ').slice(0,200):'';
+  const cur=ordQuick();let said;
+  if(!t)said='Type the line first, then keep it.';
+  else if(cur.includes(t)){try{localStorage.setItem(ORD_QUICK_KEY,JSON.stringify(cur.filter(x=>x!==t)));}catch(e){}said='Forgotten: it is no longer a quick reply.';}
+  else{const g=siteSafe(t);
+    if(g.refuse)said=g.refuse+' It was not kept.';
+    else{try{localStorage.setItem(ORD_QUICK_KEY,JSON.stringify([t].concat(cur).slice(0,6)));said='Kept as a quick reply on this device.';}catch(e){said='This browser would not keep it.';}}}
+  ORD_SAID={id,t:said};ordDraw();
+}
+/* S11 fix: the one button keeps a line or forgets one already kept, and says which, as the box changes */
+function ordKeepSay(id){const b=document.querySelector('button[data-keep="'+id+'"]'),i=document.querySelector('input[data-say="'+id+'"]');if(!b)return;
+  const t=i?String(i.value||'').trim().replace(/\s+/g,' ').slice(0,200):'';
+  b.textContent=t&&ordQuick().includes(t)?'Forget this quick reply':'Keep as a quick reply';}
+/* S11 11.9: which cards have Delivered part open, and the units stepped to, read off the box as a charge is */
+let ORD_PART={};
+function ordPartNow(o){const i=document.querySelector('input[data-hand="'+o.id+'"]');const v=i?parseFloat(i.value):NaN;return v>=0?+v.toFixed(3):((+o.moved||0)>0?+o.moved:+o.qty||0);}
+/* what a part of n units would mean, said under the stepper */
+function ordPartCap(o,n){const paid=+o.paid||0,st=POSITION_ENGINE.closeGoods(o.total,+o.qty,n),over=+(paid-st-(+o.delivery||0)).toFixed(2);
+  return n>0&&n<o.qty-0.004?`Record keeps the other ${units(+(o.qty-n).toFixed(3))} owed. Close at ${units(n)} ends the order there: ${fmt(st)} for the goods at the rate they agreed${+o.delivery>0?', and the '+fmt(+o.delivery)+' delivery':''}, nothing more owed on the rest.${over>0.004?' They have paid '+fmt(paid)+', '+fmt(over)+' more than that, so a close there waits under Approve: the book carries no refund for it.':''}`
+    :'Step to what went. Record keeps the rest owed; Close ends the order there.';}
+/* S11 fix: A FIGURE TYPED OR STEPPED IS SAID IN PLACE. The card was redrawn on the box's change, which a tap on Close
+   fires first, so the button under the finger was replaced and the tap was lost; the labels and the line under the
+   stepper now follow each keystroke on the nodes already drawn, and Record and Close read the box when tapped. */
+function ordPartSay(id){const o=ORD_OPEN.find(x=>x&&x.id===id),c=document.querySelector('.ordcard[data-id="'+id+'"]');if(!o||!c)return;
+  const n=ordPartNow(o);
+  c.querySelectorAll('button[data-partlab]').forEach(b=>{b.textContent=(b.dataset.partlab==='close'?'Close at ':'Record ')+units(n);});
+  const p=c.querySelector('[data-partcap]');if(p)p.innerHTML=ordPartCap(o,n);}
+/* S11 11.7 (24 Sep 2026): DECLINE AND CANCEL TAKE A REASON, which the customer reads with the words for it:
+   Not taken, or Cancelled by us. The first tap opens the reasons; the second, once one is chosen, moves the
+   order. Every reason is checked by siteSafe here and by siteWords on the Worker, as his answers are. */
+let ORD_WHY={};
+const ORD_WHY_PICK=[['stock','Out of stock this week'],['place','Cannot deliver there'],['price','Prices have changed'],['own','Other']];
+function ordWhyText(o){const w=ORD_WHY[o.id]||{};if(!w.pick)return '';if(w.pick!=='own'){const r=ORD_WHY_PICK.find(x=>x[0]===w.pick);return r?r[1]:'';}
+  const i=document.querySelector('input[data-why="'+o.id+'"]');return i?String(i.value||'').trim().replace(/\s+/g,' ').slice(0,140):'';}
+function ordWhyBlock(o){const w=ORD_WHY[o.id];if(!w)return '';
+  const opt=(k,t)=>`<label class="salt-option"><input type="radio" class="salt-option__input" name="why-${esc(o.id)}" value="${k}" data-whypick="${esc(o.id)}"${w.pick===k?' checked':''}><span class="salt-option__face"><span class="salt-option__label">${t}</span></span></label>`;
+  const picks=ORD_WHY_PICK.filter(x=>x[0]!=='place'||o.mode==='deliver');
+  return `<fieldset class="salt-options ordwhy"><legend class="salt-options__legend">${w.st==='declined'?'Why it is not taken':'Why it is cancelled'}, for them to read</legend>
+    <div class="salt-options__grid">${picks.map(x=>opt(x[0],x[1])).join('')}</div>
+    <label class="salt-field ordother"${w.pick==='own'?'':' hidden'}><span class="salt-field__label">In your words</span>
+      <input type="text" maxlength="140" value="" class="salt-field__input" data-why="${esc(o.id)}"></label></fieldset>`;}
+/* S11 11.5 (24 Sep 2026): WHAT THE CUSTOMER WAS TOLD. His card says what their own page says of this order,
+   in its own words, so he answers what they are reading. The words are the page's (stmt/page.js, the state
+   chip and the first line under it) and the suite holds the two copies together: a word changed on one side
+   and not the other goes red. */
+function ordTold(o){
+  const T={placed:['Placed','waiting to be acknowledged'],acknowledged:['Acknowledged','being prepared'],
+    ready:['Ready',o.mode==='deliver'?'ready to be delivered':'ready to collect'],done:['Completed','complete'],
+    declined:['Not taken',''],cancelled:['Withdrawn','withdrawn']}[o.status]||[o.status,''];
+  /* S11 11.7: an end of his is said with its reason, and a cancellation of his is Cancelled by us */
+  if(o.status==='declined'||o.status==='cancelled'){const e=(o.history||[]).filter(x=>x&&x.status===o.status).slice(-1)[0];
+    if(e&&e.by==='desk'){if(o.status==='cancelled')T[0]='Cancelled by us';T[1]=e.note||'';}}
+  const h=(o.history||[]).filter(x=>x&&x.status===o.status),since=h.length?h[h.length-1].at:o.at;
+  return {word:T[0],line:T[1],since};
+}
+function ordToldLine(o){const t=ordTold(o);
+  return `<p class="salt-approve__reason ordtold">They see <b>${esc(t.word)}</b>${t.line?', '+esc(t.line):''}${t.since?', since '+ordWhen(t.since):''}.</p>`;}
 function ordCard(o){
   /* 24 Sep 2026: the month off MAP_MON, because en-GB writes Sept */
   const when=iso=>{try{const p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(x=>{p[x.type]=x.value;});return p.day+' '+MAP_MON[+p.month-1]+', '+p.hour+':'+p.minute;}catch(e){return '';}};
-  const cell=(k,v,cls)=>`<div class="kpi salt-kpi ${cls||''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value" style="font-size:17px">${v}</div></div>`;
+  const cell=(k,v,cls,note)=>`<div class="kpi salt-kpi ${cls||''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value" style="font-size:17px">${v}</div>${note?`<div class="salt-kpi__note">${note}</div>`:''}</div>`;
   const who=o.code?codeOf(o.code):'unmapped '+esc(o.u);
   const rate=o.qty?o.total/o.qty:null, usual=o.code?ordUsual(o.code,o.product):null;
   const off=(rate!=null&&usual)?(rate-usual)/usual:null;
@@ -19099,8 +19328,8 @@ function ordCard(o){
   const ledger=!rowed?'no row yet':(o.status==='cancelled'||o.status==='declined')?'Cancelled'
     :(due<=0.004&&moved>=o.qty-0.004)?'Completed':(paid<=0.004&&moved<=0.004)?'Pending'
     :(moved/o.qty>paid/(o.total+(+o.delivery||0))+1e-9)?'Open · Advance':'Open · Deferred';
-  const q=o.queued||{}, owed=(!q.ack&&rowed)||paid>(+q.paid||0)+0.004||Math.abs(moved-(+q.moved||0))>0.0004
-    ||(['cancelled','declined'].includes(o.status)&&q.ack&&!q.cancel);
+  const q=o.queued||{}, theirs=(!q.ack&&rowed)||paid>(+q.paid||0)+0.004||(['cancelled','declined'].includes(o.status)&&q.ack&&!q.cancel);
+  const owed=theirs||Math.abs(moved-(+q.moved||0))>0.0004;
   /* 20 Sep 2026: what the desk made of its last pass, off the record (sync, written by the reconcile
      when it changes), where this promised the entry was queued within the minute whatever had happened */
   const sy=o.sync||null;
@@ -19110,70 +19339,201 @@ function ordCard(o){
     :!owed?(rowed?', on the row this order made':'')
     :(sy&&sy.state==='waiting')?', and '+esc(sy.why)+' (waiting since '+when(sy.at)+')'
     :(sy&&sy.state==='failed')?', but the desk could not tell it: '+esc(sy.why)+' (at '+when(sy.at)+'; it tries again every minute)'
-    :', and the entry for that is queued within the minute; approve it under Approve';
+    /* a handover of his own is a yes already (S11 D6): only what they did, or a withdrawal, waits for a tap under Approve */
+    :', and the entry for that is queued within the minute'+(theirs?'; approve it under Approve':', booked as it is drafted if it is the row you saw');
   /* v752: WHAT THE CUSTOMER WROTE ON THIS ORDER, oldest first. Their words are the only free text on
      this desk a stranger typed, so every line goes through esc and none of it is interpolated raw. */
   const msgs=(o.msgs||[]);
-  const waiting=msgs.length&&msgs[msgs.length-1].by==='customer';
+  const waiting=ordAsked(o);   /* S11 11.6: a line he let stand needs no answer */
   const thread=msgs.length?`<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px">
     <div class="l" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)">On this order${waiting?' &middot; waiting for an answer':''}</div>
     ${msgs.map(m=>`<div class="dsc" style="margin-top:6px"><b>${m.by==='desk'?'You':who}</b> <span style="color:var(--dim)">${when(m.at)}</span><br>${esc(m.text||'')}</div>`).join('')}
   </div>`:'';
   /* v753: and a line back. It sits under the thread because that is what it answers. */
-  const reply=`<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
-    <input type="text" maxlength="200" placeholder="Answer them" aria-label="Answer this customer" data-say="${esc(o.id)}"
-      style="flex:1 1 180px;min-width:150px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:8px">
-    ${btn('say','Send')}</div>`;
+  /* S11 11.6: the system's composer, and under it his saved quick replies, which fill the box and send
+     nothing until Send, and No reply needed where their line is the last. Send is a lit ghost: the one
+     filled control on the card is the move it exists for. */
+  const quick=ordQuick();
+  const reply=`<div class="salt-composer ordreply"><input type="text" maxlength="200" placeholder="Answer them" aria-label="Answer this customer" data-say="${esc(o.id)}" class="salt-field__input salt-composer__field">
+    <button class="salt-ghost salt-ghost--lit salt-composer__send" data-ord="say" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Send</button></div>
+    <div class="ordquick">${quick.map(t=>`<button type="button" class="salt-ghost salt-ghost--tight" data-quick="${esc(o.id)}" data-text="${esc(t)}">${esc(t)}</button>`).join('')}${waiting?btn('noreply','No reply needed',false).replace('vbtn salt-pill salt-pill--sm','salt-ghost salt-ghost--tight'):''}<button type="button" class="salt-ghost salt-ghost--tight" data-keep="${esc(o.id)}">Keep as a quick reply</button></div>`;
   let acts='';
-  if(o.status==='placed')acts=btn('acknowledged','Acknowledge this order')+btn('declined','Decline',true);
-  else if(rowed&&o.status!=='done')acts=(o.status==='acknowledged'?btn('ready','Ready to collect',false,'collect')+btn('ready','Ready to deliver',false,'deliver'):'')
-    +(moved>0?'':btn('cancelled','Cancel',true));
-  /* the delivery charge is typed where the order is agreed, because that is where it becomes a row */
+  /* S11 11.3: ACCEPT, RM <total>, the goods and the charge together, in a footer that stays in reach. It is
+     open only once the row it approves is on the card: a delivery needs its charge chosen, and the preview has
+     to be of that charge. With no row drawn there is nothing to say yes to, and the Worker refuses an Accept
+     without the preview's digest, so it stays shut until the preview comes back. */
+  const againAck=ordAgainAck(o);
+  /* S11 (D6): HIS YES ALREADY GIVEN (GET /orders carries `yes`): its row is being drafted, or came out other than he saw
+     and waits under Approve. The order still reads as it did, so the card says where the decision is, and offers no
+     second Accept, which the Worker would refuse. */
+  const yes=(o.status==='placed'||againAck)?(o.yes||''):'';
+  const feeNow=o.status==='placed'?(o.mode==='deliver'?ordFeeNow(o):0):againAck?(+o.delivery||0):null,pv=ORD_PV[o.id];
+  const pvFor=pv&&feeNow!=null&&pv.d===feeNow&&pv.st!=='wait',pvOk=pvFor&&pv.st==='ok';
+  const sum=+((+o.total||0)+(feeNow||0)).toFixed(2);
+  /* S11 11.8: CASH TO RECORD. Goods out and nothing paid: one tap marks the order paid in cash at once, so
+     their page says paid and the chase stops, and records the Fulfilment's approval for when its row is drafted
+     (POST orders/<id>/cash, the contract of 11.12). It is the card's one filled control; Ready is a ghost. */
+  const cashNow=['acknowledged','ready'].includes(o.status)&&moved>0.0004&&paid<=0.004&&ordDue(o)>0.004;
+  const ghostBtn=(st,label,mode)=>`<button class="salt-ghost" data-ord="${st}" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${mode?` data-mode="${mode}"`:''}>${label}</button>`;
+  /* S11 11.9: DELIVERED PART. The handover is one tap in the order's own mode for the whole of it; a part is
+     stepped to in halves and recorded, keeping the rest owed, or closed at, which restates the order at what
+     went (the site's close event, its row a Correction). Both post to the desk Worker's handed route (11.12). */
+  const owedU=+(o.qty-moved).toFixed(3),handable=['acknowledged','ready'].includes(o.status)&&owedU>0.004;
+  const how=o.mode==='deliver'?'Delivered':'Collected',part=!!ORD_PART[o.id],partN=ordPartNow(o);
+  const shortT=n=>POSITION_ENGINE.closeGoods(o.total,+o.qty,n);
+  const handBtn=(label,extra)=>`<button class="salt-ghost" data-ord="handover" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${extra}>${label}</button>`;
+  const whyOpen=ORD_WHY[o.id];
+  const goWhy=st=>`<button class="salt-ghost salt-ghost--danger" data-ord="${st}" data-go="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${ORD_WHY[o.id].pick?'':' disabled'}>${st==='declined'?'Decline and tell them':'Cancel and tell them'}</button><button class="salt-ghost" data-whyoff="${esc(o.id)}">Keep the order</button>`;
+  if(whyOpen&&(o.status==='placed'||(rowed&&o.status!=='done'&&!(moved>0))))acts=goWhy(whyOpen.st);
+  else if(yes)acts='';
+  else if(o.status==='placed')acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk?'':' disabled'}>Accept, ${fmt(sum)}</button>`+btn('declined','Decline',true);
+  else if(againAck)acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk?'':' disabled'}>Accept again, ${fmt(sum)}</button>`+(moved>0?'':btn('cancelled','Cancel',true));
+  else if(rowed&&o.status!=='done')acts=(cashNow?`<button class="vbtn salt-pill salt-pill--sm" data-ord="cash" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Cash received, ${fmt(ordDue(o))}</button>`:'')
+    +(handable?(part?handBtn('Record '+units(partN),' data-partlab="rec"')+handBtn('Close at '+units(partN),' data-close="1" data-partlab="close"')+`<button class="salt-ghost" data-partoff="${esc(o.id)}">Keep it whole</button>`
+      :`<button class="${cashNow?'salt-ghost':'vbtn salt-pill salt-pill--sm'}" data-ord="handover" data-full="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}">${how}${moved>0?' the rest, '+units(owedU):', '+units(o.qty)}</button>`
+        +`<button class="salt-ghost" data-partopen="${esc(o.id)}">${how} part</button>`
+        +(moved>0?handBtn('Close at '+units(moved)+', '+fmt(shortT(moved)),` data-close="1" data-qty="${moved}"`):'')):'')
+    +(!part&&o.status==='acknowledged'?ghostBtn('ready','Ready to collect','collect')+ghostBtn('ready','Ready to deliver','deliver'):'')
+    +(moved>0||part?'':btn('cancelled','Cancel',true));
+  /* S11 11.13 (D6): A LATER MOVE WHOSE ROW HE REJECTED is offered again under a fresh entry (POST orders/<id>/again),
+     booked only if the fresh row equals it; GET /orders says which (`again`) */
+  const AGAIN={pay:'payment',cash:'cash',move:'handover',cancel:'cancellation'};
+  if(!whyOpen)acts=(o.again||[]).filter(s=>AGAIN[s]).map(s=>`<button class="salt-ghost" data-ord="again" data-stage="${s}" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Offer the ${AGAIN[s]} again</button>`).join('')+acts;
+  /* S11 11.3: the delivery charge is chosen where the order is agreed, because that is where it becomes a
+     row: RM 0, 10, 15 or a figure of his own, and NONE is chosen until he chooses, so a delivery is never
+     agreed at a charge nobody set. The choice is kept per order across every poll. */
+  const chip=ORD_CHIP[o.id]||'';
+  const opt=(v,w)=>`<label class="salt-option"><input type="radio" class="salt-option__input" name="fee-${esc(o.id)}" value="${v}" data-chip="${esc(o.id)}"${chip===v?' checked':''}><span class="salt-option__face"><span class="salt-option__label">${w}</span></span></label>`;
   const fee=(o.status==='placed'&&o.mode==='deliver')
-    ? `<label class="dsc" style="display:flex;gap:8px;align-items:center;margin-top:10px">Delivery charge, RM
-        <input type="number" min="0" step="0.5" value="0" data-fee="${esc(o.id)}" style="width:96px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:6px"></label>` : '';
-  const hand=(rowed&&o.status!=='done'&&moved<o.qty-0.004)
-    ? `<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
-        <label class="dsc" style="display:flex;gap:8px;align-items:center">${o.mode==='deliver'?'Delivered':'Collected'}, units
-        <input type="number" min="0" step="0.05" max="${o.qty}" value="${esc(String(o.qty))}" data-hand="${esc(o.id)}" style="width:96px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:6px"></label>
-        ${btn('handover','Record the handover')}</div>` : '';
-  return `<div class="card" style="margin-top:10px" data-id="${esc(o.id)}">
-    <div style="font-size:14px"><b>${who}</b> orders ${units(o.qty)} ${esc(o.product||'salt')} for <b>${fmt(o.total)}</b>${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?'delivered':'collected'} <span class="sub">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
-    ${o.mode==='deliver'&&o.place?`<div class="dsc" style="margin-top:6px">To ${esc(o.place)}</div>`:''}
-    <div class="kpis k4" style="margin-top:10px">${cell('Rate',rate==null?'&mdash;':fmt(rate)+'/unit')
-      +cell('Their usual',usual==null?'&mdash;':fmt(usual)+'/unit',off==null?'':Math.abs(off)>=0.10?'r':'g')
+    ? `<fieldset class="salt-options ordfee"><legend class="salt-options__legend">Delivery charge</legend>
+        <div class="salt-options__grid salt-options__grid--2">${opt('0','RM 0')+opt('10','RM 10')+opt('15','RM 15')+opt('other','Other')}</div>
+        <label class="salt-field ordother"${chip==='other'?'':' hidden'}><span class="salt-field__label">Other, RM</span>
+          <input type="number" inputmode="decimal" min="0" step="0.5" value="" class="salt-field__input salt-field__input--mono" data-fee="${esc(o.id)}"></label></fieldset>` : '';
+  const hand=handable
+    ? `<div class="ordpart"${part?'':' hidden'}><span class="salt-field__label">${how} so far, units</span>
+        <div class="ordstep"><button type="button" class="salt-ghost" data-step="-0.5" data-for="${esc(o.id)}" aria-label="Half a unit less">&minus;</button>
+          <input type="number" inputmode="decimal" min="0" step="0.5" max="${o.qty}" value="${esc(String(moved>0?moved:o.qty))}" data-hand="${esc(o.id)}" class="salt-field__input salt-field__input--mono" aria-label="Units ${how.toLowerCase()} so far">
+          <button type="button" class="salt-ghost" data-step="0.5" data-for="${esc(o.id)}" aria-label="Half a unit more">+</button></div>
+        <p class="salt-approve__reason" data-partcap="${esc(o.id)}">${ordPartCap(o,partN)}</p></div>` : '';
+  /* S11 11.2: the system's Approve card, because deciding a site order is deciding a row. A new order
+     leads with the row the preview drafted; one already agreed with the two tracks as before. */
+  return `<div class="salt-approve ordcard" data-id="${esc(o.id)}">
+    <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
+    <p class="ordline">${units(o.qty)} ${esc(o.product||'salt')}, ${fmt(o.total)}${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?(o.place?'deliver to '+esc(o.place):'delivered'):'to collect'}</p>
+    ${yes?'':o.status==='placed'||againAck?ordPvBlock(o):`<div class="kpis k4">${cell('Rate',rate==null?'&mdash;':fmt(rate),'',rate==null?'':'a unit')
+      +cell('Their usual',usual==null?'&mdash;':fmt(usual),off==null?'':Math.abs(off)>=0.10?'r':'g',usual==null?'':'a unit')
       +cell('Paid',paid>0?fmt(paid)+(due>0.004?' of '+fmt(o.total+(+o.delivery||0)):''):'nothing yet',due<=0.004&&rowed?'g':'')
-      +cell('Handed over',moved>0?units(moved)+(moved<o.qty-0.004?' of '+units(o.qty):''):'nothing yet',moved>=o.qty-0.004&&rowed?'g':'')}</div>
-    <div class="dsc" style="margin-top:8px">Paying by ${esc(pay)}. The ledger reads <b>${ledger}</b>${told}.</div>
-    ${thread}${reply}
-    ${fee}${hand}
-    ${acts?`<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">${acts}</div>`:''}
+      +cell('Handed over',moved>0?units(moved)+(moved<o.qty-0.004?' of '+units(o.qty):''):'nothing yet',moved>=o.qty-0.004&&rowed?'g':'')}</div>`}
+    ${ordToldLine(o)}
+    ${o.status==='placed'?'':`<div class="dsc">Paying by ${esc(pay)}. The ledger reads <b>${ledger}</b>${told}.</div>`}
+    ${fee}${thread}${reply}
+    ${hand}${ordWhyBlock(o)}
+    <div class="${acts?'ordfoot':'ordnofoot'}">${acts?`<div class="salt-approve__actions">${acts}</div>`:''}
+      ${cashNow?`<p class="salt-approve__reason">${o.mode==='deliver'?'Delivered':'Collected'} ${units(moved)}, nothing paid. Cash received marks it paid in cash at once, so the chase stops, and books the payment when its row is drafted, if it is this one.</p>`:''}
+      ${yes?`<p class="salt-approve__reason ordyes">${yes==='differs'?'Your yes waits under Approve: the row came out other than you saw. Approve it there, or reject it there to decide again.'
+        :'Your yes is given, and its row is being drafted: it is booked as it lands if it is the row you saw.'}</p>`
+      :o.status==='placed'&&!whyOpen?`<p class="salt-approve__reason">${feeNow==null?'Choose the delivery charge first.'
+        :!pvFor?'Drafting the row first.'
+        :pv.st==='err'?'The row could not be drafted, so Accept waits until it can.'
+        :'Accept tells them '+fmt(sum)+' and approves this row. If the real row differs, it waits under Approve, marked.'}</p>`:''}
+      <p class="dsc ordsaid" role="status" data-msg="${esc(o.id)}">${ORD_SAID&&ORD_SAID.id===o.id?esc(ORD_SAID.t):''}</p></div>
   </div>`;
 }
 /* 24 Sep 2026: WHAT HE HAS TYPED ON A CARD OUTLIVES THE REDRAW. The poll and every refusal rewrite
    the box, which put a typed delivery charge back to 0 and emptied a half-written answer. Each box is
    named by what it holds and the order it is on; only a figure that differs from the card's own is
    carried, so a move that went through clears its box by putting the default back first. */
-function ordField(i){return ['fee','hand','say'].map(k=>i.dataset[k]!=null?k+':'+i.dataset[k]:'').join('');}
+function ordField(i){return ['fee','hand','say','why'].map(k=>i.dataset[k]!=null?k+':'+i.dataset[k]:'').join('');}
+/* S11 11.4: WHAT IS SELECTED, and whether the phone has opened it. On the laptop the list and the card
+   stand side by side and the card is the first row's until he picks another; on the phone the list comes
+   first and a row opens its card, with the way back at its head. Every card is drawn and the others are
+   hidden, so what he typed on one survives a poll while he reads another. */
+let ORD_SEL='',ORD_OPENED=false,ORD_FILTER='all',ORD_SAID=null,ORD_WAKE=false;
+/* S11 fix: A WAKE OPENS ITS CARD. His banner opens desk#orders/newest (public/sw.js): the address is Site orders, and the
+   newest act on it, the one that woke him, is opened on the first draw that has one. The wake carries nothing but that. */
+/* S11 fix: an order named as he would name it (its code, size and day, and what it comes to), for an answer said away from
+   its card: at the head of the list, once the tap that closed it has taken the card off the open list */
+function ordName(o){return (o.code||'unmapped')+', '+units(+o.qty||0)+' '+(o.product||'salt')+' of '+ordWhen(o.at).split(',')[0]+', '+fmt(+((+o.total||0)+(+o.delivery||0)).toFixed(2));}
+function ordWakeAddr(h){if(h==='orders/newest'){ORD_WAKE=true;return 'orders';}return h;}
+function ordWhen(iso){try{if(!iso)return '';const p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(x=>{p[x.type]=x.value;});return p.day+' '+MAP_MON[+p.month-1]+', '+p.hour+':'+p.minute;}catch(e){return '';}}
+function ordWhat(a){const o=a.o;
+  if(a.kind==='new')return units(+o.qty||0)+' '+esc(o.product||'salt')+', '+fmt(+o.total||0)+', '+(o.mode==='deliver'?'delivery':'collect');
+  if(a.kind==='cash')return (o.mode==='deliver'?'Delivered ':'Collected ')+units(+o.moved||0)+' '+esc(o.product||'salt')+', nothing paid. Cash to record.';
+  if(a.kind==='paid'){const p=(o.payments||[]).filter(x=>x&&x.by!=='desk'),l=p[p.length-1];
+    return 'Says '+fmt(l?+l.amount||0:+o.paid||0)+' paid'+(o.method?' by '+esc(o.method)+(o.account?' via '+esc(o.account):''):'')+'. Its row waits under Approve.';}
+  if(a.kind==='asked'){const t=String(o.msgs[o.msgs.length-1].text||'');return '&ldquo;'+esc(t.length>90?t.slice(0,90)+'...':t)+'&rdquo;';}
+  return units(+o.qty||0)+' '+esc(o.product||'salt')+', '+fmt(+o.total||0)+', '+esc(ORD_WORD[o.status]||o.status);}
+function ordRow(a,cur){const o=a.o,K=ORD_KIND[a.kind]||{w:ORD_WORD[o.status]||o.status,tone:'mist',act:'Open'};
+  return `<button type="button" class="salt-inbox-row" data-row="${esc(o.id)}" data-kind="${esc(a.kind)}" aria-current="${cur?'true':'false'}">
+    <span class="salt-inbox-row__main"><span class="salt-inbox-row__title">${o.code?codeOf(o.code):'unmapped'} <span class="salt-status salt-status--${K.tone}">${esc(K.w)}</span></span>
+      <span class="salt-inbox-row__what">${ordWhat(a)}</span></span>
+    <span class="salt-inbox-row__side"><span class="salt-inbox-row__age">${ordWhen(a.at)}</span><span class="salt-inbox-row__action">${K.act}</span></span></button>`;}
+/* S11 fix: the card opened lands BELOW the sticky desk bar, its way back and its head in sight: scrolled to its top
+   less the bar's own bottom edge, measured, since the bar's height is its content's */
+function ordToPane(){const c=document.querySelector('#ordBox .ordpane');if(!c)return;
+  try{const bar=document.querySelector('.salt-deskbar'),under=bar?Math.max(0,bar.getBoundingClientRect().bottom):0;
+    window.scrollTo({top:Math.max(0,Math.round(window.scrollY+c.getBoundingClientRect().top-under-8)),left:0,behavior:'auto'});}catch(e){}}
 function ordDraw(){
   apBadge();
   /* v766: the rail's Today count now includes what is waiting on the site, so it is recounted when
      THAT changes and not on every draw: actions() walks the whole forecast to answer. BEFORE THE BOX
      (24 Sep 2026): the read on load lands here with Site orders off screen, which is most loads, and
      the recount sat below the return, so Today's count never heard of an order until the card was opened. */
-  {const w=ordWaiting();const n=w.placed.length+':'+w.asked.length;
+  const acts=ordActs();
+  {const n=acts.map(a=>a.kind+':'+(a.o&&a.o.id)).join(',');
    if(n!==ordWaitWas){ordWaitWas=n;try{navCounts();}catch(e){}}}
   const box=document.getElementById('ordBox');if(!box)return;
   const typed={};let focused='';
-  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say]').forEach(i=>{
+  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say],input[data-why]').forEach(i=>{
     if(i.value!==i.defaultValue)typed[ordField(i)]=i.value;if(i===document.activeElement)focused=ordField(i);});
+  let selO=null;
+  const lead=document.getElementById('ordLead');
+  /* a tap that closed its order (Cash received taking the last of what was owed) takes its card off the open list,
+     and the answer with it: that answer is said at the head of the list instead, and the phone goes back to the list */
+  const gone=ORD_SAID&&!ORD_OPEN.some(o=>o&&o.id===ORD_SAID.id)?`<p class="dsc ordsaid" role="status" data-msg="${esc(ORD_SAID.id)}">${ORD_SAID.name?'<b>'+esc(ORD_SAID.name)+'.</b> ':''}${esc(ORD_SAID.t)}</p>`:'';
+  if(lead&&!ordNeedKey&&!ordUnread)lead.textContent=acts.length?acts.length+', oldest first.':'Nothing waiting on you.';
   if(ordNeedKey)box.innerHTML='<div class="warnpill" style="display:block">The write key is needed to read the orders and it was not accepted. Reload to be asked again. <b>This is not an empty book: orders may be waiting.</b></div>';
   else if(ordUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The orders could not be read: '+esc(ordUnread)+'. <b>This is not an empty book.</b></div>';
-  else if(!ORD_OPEN.length)box.innerHTML='<div class="card"><div class="dsc">'+(ordAll?'This site has taken no orders at all yet.':'No open orders. A customer\'s order lands here the moment it is placed.')+'</div></div>';
-  else box.innerHTML=ORD_OPEN.map(ordCard).join('');
-  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say]').forEach(i=>{const k=ordField(i);
+  else if(!ORD_OPEN.length)box.innerHTML=gone+'<div class="card"><div class="dsc">'+(ordAll?'This site has taken no orders at all yet.':'No open orders. A customer\'s order lands here the moment it is placed.')+'</div></div>';
+  else{
+    if(ORD_WAKE&&acts.length){ORD_SEL=acts[acts.length-1].o.id;ORD_OPENED=true;ORD_FILTER='all';ORD_WAKE=false;}
+    const shown=acts.filter(a=>ORD_FILTER==='all'||a.kind===ORD_FILTER);
+    const inActs=new Set(acts.map(a=>a.o.id));
+    const rest=ORD_OPEN.filter(o=>o&&!inActs.has(o.id)).map(o=>({kind:'other',o,at:o.at||''}));
+    if(!ORD_OPEN.some(o=>o&&o.id===ORD_SEL)){ORD_SEL='';if(gone)ORD_OPENED=false;}
+    const sel=ORD_SEL||(shown[0]&&shown[0].o.id)||(acts[0]&&acts[0].o.id)||(rest[0]&&rest[0].o.id)||'';
+    const cnt=k=>k==='all'?acts.length:acts.filter(a=>a.kind===k).length;
+    const tab=(k,w)=>`<button type="button" class="salt-tabs__pill ordtab" role="tab" data-of="${k}" aria-selected="${ORD_FILTER===k}">${w}${cnt(k)?` <span class="salt-tabs__count">${cnt(k)}</span>`:''}</button>`;
+    box.classList.toggle('ord-open',!!ORD_OPENED);
+    box.innerHTML=`<div class="ordlist">${gone}
+      <div class="salt-tabs ordtabs" role="tablist" aria-label="Show">${tab('all','All')+tab('new','New')+tab('paid','Paid?')+tab('cash','Cash')+tab('asked','Asked')}</div>
+      <div class="ordrows">${shown.length?shown.map(a=>ordRow(a,a.o.id===sel)).join(''):`<div class="dsc">${acts.length?'None of this kind.':'Nothing waiting on you.'}</div>`}</div>
+      ${rest.length?`<div class="salt-eyebrow ordrest">${ordAll?'Every other order':'Other open orders'}</div><div class="ordrows">${rest.map(a=>ordRow(a,a.o.id===sel)).join('')}</div>`:''}
+    </div>
+    <div class="ordpane"><button type="button" class="salt-ghost ordback" data-back="1">&lsaquo; Waiting on you, ${acts.length}</button>
+      ${ORD_OPEN.filter(Boolean).map(o=>{const c=ordCard(o);return o.id===sel?c:c.replace('<div class="salt-approve ordcard"','<div hidden class="salt-approve ordcard"');}).join('')}</div>`;
+    selO=ORD_OPEN.find(o=>o&&o.id===sel)||null;
+  }
+  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say],input[data-why]').forEach(i=>{const k=ordField(i);
     if(k in typed)i.value=typed[k];if(k===focused)i.focus();});
+  /* S11 11.2: the open card, if it is a new order, asks for its row, once what he typed is back in place */
+  if(selO)ordPreview(selO);
   box.querySelectorAll('button[data-ord]').forEach(b=>{b.onclick=()=>ordAct(b);});
+  box.querySelectorAll('button[data-row]').forEach(b=>{b.onclick=()=>{ORD_SEL=b.dataset.row;ORD_OPENED=true;ordDraw();ordToPane();};});
+  box.querySelectorAll('button[data-of]').forEach(b=>{b.onclick=()=>{ORD_FILTER=b.dataset.of;ORD_SEL='';ordDraw();};});
+  box.querySelectorAll('button[data-back]').forEach(b=>{b.onclick=()=>{ORD_OPENED=false;ordDraw();};});
+  box.querySelectorAll('input[data-fee]').forEach(i=>{i.onchange=()=>{const o=ORD_OPEN.find(x=>x&&x.id===i.dataset.fee);if(o){ordDraw();ordPreview(o);}};});
+  box.querySelectorAll('button[data-quick]').forEach(b=>{b.onclick=()=>{const i=box.querySelector('input[data-say="'+b.dataset.quick+'"]');if(i){i.value=b.dataset.text;i.focus();ordKeepSay(b.dataset.quick);}};});
+  box.querySelectorAll('input[data-say]').forEach(i=>{i.oninput=()=>ordKeepSay(i.dataset.say);ordKeepSay(i.dataset.say);});
+  box.querySelectorAll('button[data-partopen]').forEach(b=>{b.onclick=()=>{ORD_PART[b.dataset.partopen]=1;ordDraw();};});
+  box.querySelectorAll('button[data-partoff]').forEach(b=>{b.onclick=()=>{delete ORD_PART[b.dataset.partoff];ordDraw();};});
+  box.querySelectorAll('button[data-step]').forEach(b=>{b.onclick=()=>{const i=box.querySelector('input[data-hand="'+b.dataset.for+'"]');if(!i)return;
+    const mx=parseFloat(i.max)||0,v=Math.min(mx,Math.max(0,(parseFloat(i.value)||0)+parseFloat(b.dataset.step)));i.value=String(+v.toFixed(3));ordPartSay(b.dataset.for);};});
+  box.querySelectorAll('input[data-hand]').forEach(i=>{i.oninput=()=>ordPartSay(i.dataset.hand);});
+  box.querySelectorAll('input[data-whypick]').forEach(i=>{i.onchange=()=>{const w=ORD_WHY[i.dataset.whypick];if(w){w.pick=i.value;ordDraw();}};});
+  box.querySelectorAll('button[data-whyoff]').forEach(b=>{b.onclick=()=>{delete ORD_WHY[b.dataset.whyoff];ordDraw();};});
+  box.querySelectorAll('button[data-keep]').forEach(b=>{b.onclick=()=>ordQuickKeep(b.dataset.keep);});
+  box.querySelectorAll('input[data-chip]').forEach(i=>{i.onchange=()=>{ORD_CHIP[i.dataset.chip]=i.value;ordDraw();};});
   const ab=document.getElementById('ordAllBtn');
   /* the switch lives outside the box this redraws, so it is re-enabled here: disabled on the tap
      and left that way, one tap would be all it ever took */
@@ -19182,50 +19542,94 @@ function ordDraw(){
 }
 async function ordAct(b){
   const id=b.dataset.id,u=b.dataset.u,st=b.dataset.ord;if(!id||ordBusy[id])return;ordBusy[id]=1;
-  const card=b.closest('.card');if(card)card.querySelectorAll('button').forEach(x=>x.disabled=true);
   /* v694: the two figures he types are on the card, not in a browser prompt: a prompt cannot be
      styled, cannot be measured and is refused outright by an installed app on some phones. */
   const typed=what=>{const i=document.querySelector('input[data-'+what+'="'+id+'"]');return i?parseFloat(i.value):null;};
-  const refuse=t=>{ordMsg=t;delete ordBusy[id];ordDraw();const m0=document.getElementById('ordMsg');if(m0)m0.textContent=ordMsg;};
-  let body;
+  /* S11 11.4: the answer to a tap is written on the card that was tapped, beside its control */
+  const refuse=t=>{ORD_SAID={id,t};delete ordBusy[id];ordDraw();};
+  let body,url='';
   if(st==='handover'){
-    const n=typed('hand');
-    if(!(n>=0))return refuse('That is not a figure of units; nothing moved.');
-    body=JSON.stringify({handover:{units:n}});
+    /* S11 11.9: the whole, a part, or a close at a part, to the desk Worker's handed route */
+    const o=ORD_OPEN.find(x=>x&&x.id===id)||{};
+    const n=b.dataset.full?+o.qty:b.dataset.qty!=null?+b.dataset.qty:typed('hand');
+    if(!(n>=0)||n>(+o.qty||0)+0.004)return refuse('That is not a figure of units from nothing to the '+units(+o.qty||0)+' ordered; nothing moved.');
+    const close=!!b.dataset.close;
+    if(close&&!(n>0&&n<(+o.qty||0)-0.004))return refuse('Close at a part: step to what went, above nothing and under the whole; nothing moved.');
+    body=JSON.stringify({qty:n,close});
+    url='orders/'+encodeURIComponent(id)+'/handed';
   }else if(st==='acknowledged'){
-    const d=typed('fee');
-    if(d!==null&&!(d>=0))return refuse('That is not a delivery figure; nothing moved.');
-    body=JSON.stringify({status:st,delivery:d||0});
+    /* S11 11.3: Accept sends the charge and the hash of the row he was shown; the desk Worker agrees the
+       order and approves the pending row only if the real draft equals that one (11.11) */
+    const o=ORD_OPEN.find(x=>x&&x.id===id)||{};
+    const d=ordAgainAck(o)?(+o.delivery||0):o.mode==='deliver'?ordFeeNow(o):0;
+    if(d==null)return refuse('Choose the delivery charge first; nothing moved.');
+    const pv=ORD_PV[id];
+    body=JSON.stringify({delivery:d,hash:(pv&&pv.st==='ok'&&pv.d===d&&pv.j&&pv.j.hash)||null});
+    url='orders/'+encodeURIComponent(id)+'/accept';
+  }else if((st==='declined'||st==='cancelled')&&!b.dataset.go){
+    ORD_WHY[id]={st,pick:''};delete ordBusy[id];ORD_SAID=null;ordDraw();return;
+  }else if(st==='declined'||st==='cancelled'){
+    const o=ORD_OPEN.find(x=>x&&x.id===id)||{id};
+    const why=ordWhyText(o);
+    if(!why)return refuse('Choose a reason first; nothing moved.');
+    const chk=siteSafe(why);
+    if(chk.refuse)return refuse(chk.refuse+' Nothing moved.');
+    body=JSON.stringify({status:st,note:why});
+  }else if(st==='cash'){
+    const o=ORD_OPEN.find(x=>x&&x.id===id)||{};
+    body=JSON.stringify({amount:ordDue(o)});
+    url='orders/'+encodeURIComponent(id)+'/cash';
+  }else if(st==='again'){
+    body=JSON.stringify({stage:b.dataset.stage});
+    url='orders/'+encodeURIComponent(id)+'/again';
+  }else if(st==='noreply'){
+    body=JSON.stringify({noReply:true});
   }else if(st==='say'){
     /* v753: HIS ANSWER, CHECKED HERE AND AGAIN ON THE WORKER. This page can refuse it before it
        leaves, which is the kinder place to be told; the Worker refuses it whatever asks, which is
-       the place that has to hold. Same lock as the bulletin: a product's name warns and goes. */
+       the place that has to hold. Same lock as the bulletin, and the same ask (S8, 25 Sep 2026): a line
+       it warns on, a product's name or a bare emas, perak or gangsa, goes only once he says so. */
     const si=document.querySelector('input[data-say="'+id+'"]');
     const t=si?String(si.value||'').trim():'';
     if(!t)return refuse('Write something first; nothing was sent.');
     const chk=siteSafe(t);
     if(chk.refuse)return refuse(chk.refuse+' Nothing was sent.');
+    if(chk.warn&&!confirm(chk.warn+' Send it anyway?'))return refuse('Not sent.');
     body=JSON.stringify({message:t});
   }else body=JSON.stringify(Object.assign({status:st},b.dataset.mode?{mode:b.dataset.mode}:{}));
-  const url='orders/'+encodeURIComponent(u)+'/'+encodeURIComponent(id);
+  if(!url)url='orders/'+encodeURIComponent(u)+'/'+encodeURIComponent(id);
+  /* S11 fix: the tap in flight is seen on its card: its buttons shut and a line where the answer will be. The card is the
+     system's Approve card now, which carries no .card, so the old closest('.card') found nothing and shut nothing. */
+  {const card=b.closest('.ordcard');if(card){card.querySelectorAll('button').forEach(x=>x.disabled=true);const m=card.querySelector('[data-msg]');if(m)m.textContent='Sending.';}}
   try{ let r=await fetch(url,{method:'POST',headers:qHeaders(),body});
     if(r.status===401&&saltAskWriteKey())r=await fetch(url,{method:'POST',headers:qHeaders(),body});
     let j={};try{j=await r.json();}catch(e){}
     const told='The customer is told'+(j.push&&j.push.sent?' on the phone':' on the page')+'.';
-    ordMsg=r.status===401?'That write key was refused. The order is unchanged.'
+    /* S11 (D6): what the desk Worker did with the yes, in its own words: booked as it is drafted, or when the
+       first row lands, never a stage waiting silently; and whether Accept's row was the one he saw */
+    const says=!(j.preapproval&&j.preapproval.says)?'':j.preapproval.held?j.preapproval.says+'. ':j.preapproval.says+', if it is the row you saw. ';
+    const said=r.status===401?'That write key was refused. The order is unchanged.'
       :!r.ok?'The Worker refused the move: '+(j.error||'http '+r.status)+'. The order is unchanged.'
       :j.warn?j.warn
-      :st==='handover'?'Recorded. The correction is queued within the minute; approve it under Approve. '+told
-      :st==='acknowledged'?'Acknowledged. The pending row is queued within the minute; approve it under Approve. '+told
+      :st==='handover'?(b.dataset.close?'Closed at '+units(JSON.parse(body).qty)+'. They see it closed there. '
+        :'Recorded: '+units(JSON.parse(body).qty)+' handed over. ')+says+told
+      :st==='acknowledged'?(j.approved?'Accepted. They see Acknowledged, and the row you saw is approved. '+told
+        :j.differs?'Accepted, but the row came out other than you saw, so it waits under Approve, marked, and they still see Placed until you approve it there.'
+        :'Accepted. The row is being drafted; it is approved as it lands if it is the one you saw, and they see Acknowledged then.')
       :st==='say'?'Sent. '+told
-      :st==='declined'?'Declined. The customer sees it.'
-      :st==='cancelled'?'Cancelled. Any payment taken is refunded on the row. '+told
+      :st==='again'?'Offered again under a fresh entry. '+says
+      :st==='cash'?'Recorded: '+fmt(ordDue(ORD_OPEN.find(x=>x&&x.id===id)||{}))+' in cash. They see it paid and the chase stops. '+says+told
+      :st==='noreply'?'Marked as needing no reply. Nothing was sent to them.'
+      :st==='declined'?'Declined. They read Not taken: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+'. '+told
+      :st==='cancelled'?'Cancelled. They read Cancelled by us: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+'. Any payment taken is refunded on the row. '+told
       :ORD_WORD[st]+'. '+told;
+    {const o=ORD_OPEN.find(x=>x&&x.id===id);ORD_SAID={id,t:said,name:o?ordName(o):''};}
+    if(r.ok&&(st==='declined'||st==='cancelled'))delete ORD_WHY[id];
+    if(r.ok&&st==='handover')delete ORD_PART[id];
     const used=r.ok&&document.querySelector('input[data-'+({say:'say',handover:'hand',acknowledged:'fee'}[st]||'none')+'="'+id+'"]');
     if(used)used.value=used.defaultValue;   /* what went through is not carried into the redraw */
-  }catch(e){ ordMsg='No connection, so nothing moved.'; }
+  }catch(e){ ORD_SAID={id,t:'No connection, so nothing moved.'}; }
   delete ordBusy[id];await ordLoad(true);
-  const m=document.getElementById('ordMsg');if(m)m.textContent=ordMsg;
   if(st==='done')apLoad(true);
 }
 const wbEl=id=>document.getElementById(id);
@@ -23099,10 +23503,12 @@ applyOverlay();                            // uncommitted entries fold in before
 /* v281: a fresh open still lands on Today (v147: the desk opens on what to do), but an
    address that names a tab is honoured, which is what lets a reload resume in place. */
 recompute();
-(function(){const h=(location.hash||'').slice(1);switchTab(VIEW_OF[h]?h:'today');})();
+(function(){const h=ordWakeAddr((location.hash||'').slice(1));switchTab(VIEW_OF[h]?h:'today');})();
 /* the one read on load (v385) is in qInit's answer above: cloudMode() is false on every line here */
 window.addEventListener('hashchange',()=>{
-  const h=(location.hash||'').slice(1);
+  const h=ordWakeAddr((location.hash||'').slice(1));
+  /* a wake on a desk already showing Site orders reads the orders again, which opens the newest act */
+  if(ORD_WAKE&&h===curAddr){try{history.replaceState(null,'','#'+h);}catch(e){}ordLoad(true);return;}
   /* v365: was VIEW_OF[h]!==curTab, which only ever caught a jump between views. Two
      addresses in the SAME view (#inventory, #sourcing) both resolve to that one view id,
      so the guard was true and the part never redrew: the hash moved, the screen didn't.

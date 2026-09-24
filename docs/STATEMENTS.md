@@ -76,6 +76,28 @@ fold registers them (v588; before, the first month a statement was made for them
 customer keeps, so re-keying one would strand everything they were ever sent. It is committed,
 because an address is not a secret; the password beside it is, and that stays out.
 
+**Spare accounts** (D15, his answer of 24 Sep 2026: accounts ready on day one). A spare is a record
+in the newest issue's `_kv` marked `spare: true`, free while no code in `_users.json` holds its
+username (`tools/stmt-pool.mjs`). The publish writes it like any record and so never retires it,
+marks it `spare` in the clear as it marks `assoc`, and lists it nowhere: no sheet row, no roster line,
+no count. The site's door answers a spare with its one refusal, his master included, until a code holds it.
+**The laptop mints them**, never CI: `node tools/stmt-account.mjs --pool` tops the pool up to ten free
+(`--count N` for another figure, `--check` to write nothing) and, as `--mint` does, refuses without a
+master that unwraps a record and a key that opens one that is not a spare, `$env:STMT_KEY` winning over
+the file. Each is sealed as an account is, around an empty bundle, its password under the master as
+`pwMaster` and in the clear under its USERNAME in `_passwords.json`, a spare having no code yet; once
+bound it stays there, and a `make_statements` retry and Send look under the username after the code.
+`tools/update.mjs` warns with that line when fewer than three are free.
+**The fold binds them, never Salt Admin**: at Add ID a registration takes the next free spare as its
+username (`registerAccounts` in `tools/fold.mjs`, one line in `_users.json`, no key needed), and the
+publish in the same run seals the live statement and price list into it, so a walk-in signs in within
+the fold's few minutes. With none free the fold mints a bare username as before; Salt Admin then reads
+"Made at the next laptop update. Until then, show the Silver link." (the level is the ladder's last,
+from `tiers`), and `update.mjs` mints the account.
+**One username, one code**: the next spare is the same on every machine, so two folds from one base
+take the same one and git merges their lines cleanly. The fold, the gate and the publish each refuse a
+`_users.json` giving one username to two codes (`oneCodeEach`), before anything is written.
+
 One per customer with anything to show, named by code so the folder sorts alphabetically, plus
 a review sheet stitching every account together. **The review sheet is not for sending.** It puts
 every account beside every other, which is exactly what a statement must never do, and it exists
@@ -174,11 +196,16 @@ orders (`stmt/orderbook.js`, S10), and no access to the queue,
 the vault, D1 or the desk. Nothing a customer holds points at the desk's address, and the suite
 checks that no statement does either.
 
+**Never offered to a translator** (his decision D12, 24 Sep 2026): every page the site serves, a
+guest's and Salt Admin's included, opens `<html lang="en" translate="no">` with Google's
+`notranslate` meta (`DOC_OPEN` in `stmt/page.js`), because accepting Chrome's offer sends an
+opened statement to a translation service.
+
 Each statement carries a QR code and prints the customer's **username**. The QR opens
 `https://k7m3p2.qyts8mh72kyg.workers.dev/?u=<username>`, one landing page for every account,
 with the username filled in; the password goes by a different channel. The page checks the
 pair, decrypts in his own browser, and shows a strip: **"Now"**, then every issue by its date,
-newest first. It stays signed in on that device while Remember me is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
+newest first. It stays signed in on that device while Keep me signed in is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
 he likes.
 
 **"Now" is live (his instruction, 03 Sep 2026): every entry from the start to the minute it was
@@ -222,9 +249,9 @@ has lost his asks for it again, and it is read back from `_passwords.json`.
    for byte as a wrong password does, so the list cannot be walked.
 4. `STMT_MASTER`, a secret on the statements Worker, is his override. It opens any account,
    because each issue carries a second wrap of the key under it, made from the same passphrase in
-   `_secrets.json`. Since 16 Sep 2026 the door takes the username in two boxes and the password in
-   four, four symbols each, so the master can no longer be typed there: the owner's list at `/all`
-   fills it in for him.
+   `_secrets.json`. The door is one field for each secret since S3 3.7 (his D3; two boxes and four
+   from 16 Sep until then), and only the owner's page sends what is typed as a master, so the master
+   still cannot be typed at a customer's door: the owner's list at `/all` fills it in for him.
 
 ### The secrets, and where each one lives
 
@@ -233,7 +260,11 @@ has lost his asks for it again, and it is read back from `_passwords.json`.
 | `STMT_KEY` | `statements\_secrets.json`, `"key"` | GitHub Actions secret `STMT_KEY` | Derives every customer's content key. The same string in both places. **Lose it and every account is re-issued.** |
 | `STMT_MASTER` | `statements\_secrets.json`, `"master"` | Cloudflare secret on the site | His override. The Worker compares it; the laptop wraps the key under it at issue time. |
 | the passwords | `statements\<YYYY-MM>\_passwords.json` | sealed under `STMT_MASTER` as `pwMaster`, served only behind Access | One per customer, one live month. In the clear on the laptop alone (v688), and since v710 no message carries one at all. |
-| a sign-in link | nowhere | KV `ot:<sha256(token)>`, 7 days, one use | The content key wrapped under a token his page mints (v710). The token is stored nowhere, so the record opens only for whoever holds the link. |
+| a sign-in link | nowhere | KV `ot:<sha256(token)>`, 3 days (7 until his D1), one use | The content key wrapped under a token his page mints (v710). The token is stored nowhere, so the record opens only for whoever holds the link. Its page asks which account first (`peek`, spending nothing) and spends it on Continue; spent, the record answers the nonce of the page that spent it for two minutes (`RETRY_TTL`), its peek included, so a lost answer is tried again, from a reload of that tab too, and a second device is refused (S3 3.3). Continue also remembers the phone with the door's own split key, and the message says so and names the username (S3 3.4, his D1). |
+| a remembered phone | nowhere | KV `rem:<sha256(token)>`, 30 days from the last open (S3 3.6; from the tick until then) | The content key wrapped under a key that never leaves that browser (v692). Filed under the token's hash since S3 3.1, so a copy of the store names no token; a record filed the old way is re-filed on its next open, keeping the end it had, thirty days from its tick, and never sliding, so a copy taken before then dies on time (S3 fix). |
+| where an account is signed in | nowhere | KV `dev:<username>:<sha256(key)>`, as long as what it names | A pointer per remembered phone (`rem:`) and per session an open mints (`sess:<sha256(token)>`, a session being filed under its token's hash since an S3 fix, as a phone is), with `how` it came, `at` and `last` (S3 3.2). Listed by the prefix, it is what shows an account's phones and signs them all out (`POST /all/signout {u}`, Salt Admin's Sign out everywhere on each card, which also drops the account's alerts); it names hashes, so it opens nothing. |
+| `STMT_HANDOVER_KEY` | nowhere | Cloudflare secret on the site, set by hand (S3 3.9) | Keys the hash a hand-over's code and key are filed under and seals the wrap beside them. Unset, the hand-over routes answer 503. Changing it only strands the codes alive at that moment. |
+| a hand-over | nowhere | KV `ho:<HMAC(STMT_HANDOVER_KEY, code or key)>`, 15 minutes, one use | The content key wrapped under a key the signed-in page mints, filed under the code and the key, sealed. The contract is below. |
 
 `_secrets.json` is gitignored and looks like
 `{"key": "<64 hex characters>", "master": "<the passphrase>"}`. An environment variable of
@@ -309,8 +340,8 @@ form's product dropdown became a **segment of marks**, because an `<option>` car
 drawing. A control holding only a mark is named by its **shape** (`PSHAPE`: Cube, Droplet, Ring) and
 never by its product, so a screen reader is told what is drawn rather than what it is.
 
-**The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title and the
-install tutorial all say **Salt Counter** (v704, his instruction of 18 Sep 2026; it went Order Salt,
+**The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title, the
+sign-in link's page and the Keep it on your Home Screen card all say **Salt Counter** (v704, his instruction of 18 Sep 2026; it went Order Salt,
 then The Counter, then his own name for it). The icon on a customer's home screen has to say
 something: it is the ONE place on this site where something is called something, and the product
 word is his to spend there. Inside the page a product is still a mark and never a word. What never
@@ -318,6 +349,39 @@ appears is the DESK's name. Twelve characters exactly, which is what iOS gives a
 place Salt Command appeared on a customer's page, is gone: `brand` is null for the live statement
 and every new issue, and a statement with no brand carries no eyebrow rather than an empty one.
 Issues already sealed keep the letterhead they were issued with until they are re-issued.
+
+### The hand-over: a key and an eight-symbol code (S3 3.9, his decision D2 of 24 Sep 2026)
+
+An iPhone's Home Screen app keeps its own storage, so what Safari remembers never reaches it. A page already
+signed in (or Salt Admin, for a customer at his counter) hands the sign-in across: a long KEY for Paste and for
+`/app#<key>`, and an eight-symbol CODE to type. Mechanism: `stmt/signin.js`; the door: `handleHandover` in
+`stmt/worker.js`. **The contract the Counter codes to:**
+
+| Route | Takes | Answers |
+|---|---|---|
+| `POST /handover` | a live session (`X-Stmt-Session`) and JSON `{token, wrap}`: `token` a key the page mints (24 random bytes, base64url, the shape of a sign-in link's), `wrap` its content key wrapped under it exactly as `wrapUnder(new TextEncoder().encode(token), ck)` wraps | `{ok, code, token, exp}`: `code` eight symbols of the username alphabet as `xxxx-xxxx`, `token` the key sent, `exp` ISO, fifteen minutes on. 401 with `session:false` with no session; 400 without a key of that shape and a wrap |
+| `POST /handover/open` | JSON `{token}` or `{code}` (case, spaces and hyphens forgiven; `token` wins where both are sent); `tab: true` beside a token a browser tab found in its address, which opens only a key his `/all/handover` minted and refuses any other unspent | exactly what `POST /open-link` answers (`u`, `wrap`, `session`, `env`, `live`, `prices`, `card`, `assoc`, `issued`, `issues`, `remembered: true`) **plus `token`**: the page unwraps `wrap` under `token`, the one in the answer, whichever it typed. Both names are burnt. Every refusal is the door's one (401); a brake is the door's (429) |
+| `POST /all/handover` | behind Access, JSON `{u, token, wrap}`: his page opens the account under the master and wraps as above | `{ok, code, token, exp, url, qr}`: `url` is `<site>/app#qr.<token>`, the QR's own form, `qr` its rows of `0` and `1`; the record is marked his |
+
+- **Mint when the sheet opens, copy in a tap of its own**: the derivation and the fetch are never in the tap that
+  copies or shares (the judges' must-not-ship list).
+- **Keyed and sealed**: filed as `ho:<HMAC(STMT_HANDOVER_KEY, "code:" + code)>` and `ho:<HMAC(..., "key:" + token)>`,
+  each holding the other's name, `exp`, and the username, key and wrap sealed under AES-GCM keyed from the same
+  secret. Eight symbols are 39 bits: never a plain hash.
+- **A code is braked** per address (`hofail:<address>`, a v6 address by its /64, ten misses) and site-wide (`hofail`, a
+  hundred), fifteen minutes each. A miss is any refused code; a success clears nothing. A key is neither braked nor
+  counted (192 bits, as a link's token is), so a flood shuts code sign-in for everyone for fifteen minutes and no other
+  door, the key included (S3 fix). JSON only, as `/open`.
+- **What the brakes are worth: they bound time, not guesses.** Each count is a KV read then a write, not atomic, and KV
+  takes one write to a key a second (a refused put is swallowed), so under a flood the site count rises about once a
+  second and cannot trip for the first 100 to 160 seconds; the per-address count lags the same way. The safety is the
+  space: 30 to the eighth is 6.6e11 codes (39 bits), so the 1.6e5 guesses 1,000 a second makes before the brake can
+  trip find a given live code with odds of 2.4e-7, and 10,000 a second 2.4e-6. A code cannot be walked inside its
+  fifteen minutes. An atomic count waits for a Durable Object.
+- **Log out burns them**: `POST /logout` takes `handover`, the keys the page minted (ten at most), and deletes both
+  records of each unopened, so a key left on a handed-on phone's clipboard or address opens nothing (S3 fix).
+- **A code open is an open**: `seen:` says `code` or `key`, and its session leaves a pointer (`dev:`).
+- The same two limits as the link: a bearer credential inside its fifteen minutes, and one use best effort on KV.
 
 ## The price list and the order book (06 Sep 2026, his instruction)
 
@@ -376,7 +440,10 @@ holds no key to seal it with. It carries a size, a quoted total and a state; no 
 locks), and the order routes take that and nothing else. The states: placed (the customer),
 acknowledged (the owner: agreed, the delivery charge set, and the row queued), ready to collect or
 deliver (the owner), done (**neither side's tap**: what the record reads once both tracks are
-complete), declined (the owner), cancelled (either side, at any stage until the goods move).
+complete), declined (the owner), cancelled (either side, at any stage until the goods move). **A short
+order he closes at what was handed over** (S11 11.9) is restated there: the size becomes the units handed
+over, the goods' total follows at the agreed rate, the old figures kept as `closed`, and its row is a
+Correction whose new total renames it.
 
 **A RETRY LANDS ONCE** (24 Sep 2026). Every move the page sends carries a request id it mints per
 tap (per review, per payment, per line, per withdrawal, per rail; S10 10.4), kept with that move until
@@ -501,14 +568,16 @@ Site orders card in Enter (cloud desk) is the taps.
 
 **AN ORDER REACHES THE BOOK IN STAGES, AND NO TAP WRITES** (v694, his instruction of 18 Sep 2026;
 it reached it once, at the end, as a sale paid and delivered in full on the day). **Site orders moves
-the ORDER; Approve lands the ROW.** The desk's every-minute cron runs `reconcileOrders`, and it is
-the ONE road that queues anything, so a stage cannot be queued twice by two roads racing:
+the ORDER; Approve lands the ROW** (since D6 a tap on the card can be that approval, below). The desk's
+every-minute cron runs `reconcileOrders`, and it is the ONE road that queues a stage the site makes, so
+a stage cannot be queued twice by two roads racing (Accept's pending row is the desk's own, below):
 
 | Stage | What is queued | Why that kind |
 |---|---|---|
 | Acknowledged | a `new` SELL, delivery inside the total, `cash` 0 and `kg` 0 | the row appears as **Pending**, which is the truth |
 | A payment | an `amend` **Fulfilment**, the INCREMENT since the last one | a Fulfilment accumulates cash and units |
 | A handover | an `amend` **Correction** stating the running total, `deliveredOn` and `handover` | only a Correction may set when and by whom, and it states rather than adds |
+| Closed at what was handed over (S11 11.9) | an `amend` **Correction** stating size, total (the engine's `closeGoods`, which the desk states and the site only range-checks; the rate awaits his word), `deliveredQty`, `deliveredOn` and `handover`; `ledgerKey` then moves to the key the new total makes (`closedKey`); rejected, the close gives it back, and offered again moves it once more | one entry states the handover and the restated row together |
 | Cancelled or declined | an `amend` **Cancellation** | the fold raises any refund itself |
 
 **Which row a later stage amends.** A `rid` is minted at fold time and there is no route from the
@@ -523,6 +592,57 @@ that is the one place a stage is decided owed.
 drafted, approved, folded, mirror re-seeded. Until `OPEN.byKey` carries the key, the reconcile holds
 the amendment rather than queueing one the drafter would refuse, so a customer paying early puts no
 refusal on his phone. A mirror that cannot be read holds everything.
+
+**ONE TAP A STAGE, ON AN EXACT MATCH** (S11, his decision D6 of 24 Sep 2026). The card's taps approve
+the row they make, in the desk Worker, and only if the real draft equals what he was shown. His yes is
+a row in `preapproval` (`migrations/0011`): the digest of what he saw (`stageDigest` in
+`src/drafter.js`), spent by the drafter the moment the row is drafted (`preFor`, `applyPre`): equal, the
+row is approved where it is drafted; different, it waits under Approve, marked "differs from what you
+saw" with what he was shown beside it (`GET /drafts` carries it as `preapproval`), and a yes is spent
+once. **Accept** (`POST /orders/<id>/accept {delivery, hash}`) answers a preview (`POST
+/orders/<id>/preview`, which drafts the row against the mirror and stores nothing): it drafts again,
+refuses with the fresh preview if the digest moved, records the yes, queues the pending row itself and
+runs the drafter; the digest covers every field of the row, every flag and the pricing version (the
+snapshot's `v` and a digest of the rest). **Only an approved row moves the order** (`ackOnApproval`:
+the key and moment marked first, then acknowledged with the charge), so a row that differs leaves the
+customer reading Placed, and his approval under Approve moves it then. That is the one stage the desk
+queues itself, because the row must exist before the order moves; `deskPass`, beside the reconcile,
+follows it up each minute: it spends a yes a fault left waiting on its drafted row, and tells an order
+its approved row again until `acked_at` says it was told. His approval under Approve spends any yes behind the row.
+
+**The later stages are one tap too** (S11 11.12): **Collected or Delivered** (`/handed {qty, close}`,
+the running total, in the order's own mode; `close` under the size is 11.9's close, previewed as the one
+Correction it makes, `closeEntry`, and offered again as Collected's; a close under what they have paid carries
+no yes and waits under Approve, since nothing books the difference as a refund yet), **Received** (`/received {amount}`, their recorded payment
+in his bank; the site already counts it) and **Cash received** (`/cash {amount}`, money taken at the
+counter: the site's `cash` event marks the order paid at once, in cash and as his, which stops the chase,
+and moves the ledger's mark of the money by the same figure, because the Fulfilment is the desk's own
+entry, `counter: true` and `by: "desk"`, queued by `deskPass` once the row is on the book; the bare move
+route refuses `cash`, and the tap is refused while a payment of theirs still waits to be queued). Each builds its
+entry as the reconcile will, drafts it now, or before the first row lands against the book as it will
+stand (`withPending`), and records that digest; the drafter spends it when the real row is drafted, only
+if the kind, party, target, date, figures and every flag are equal (no pricing version: the first row
+landing is itself a fold). **Such a stage never waits silently**: the answer carries `waits` and "Booked
+when the first row lands". A Received on a payment already drafted is tested at the tap.
+
+**A rejected row is offered again** (S11 11.13). His Reject on a site-made draft is written onto the
+order (`sync` rejected) and spends any yes waiting on it, and the move is offered again under a FRESH
+entry, a new moment and so a new draft id, the rejected id being refused for good: the stage's own tap
+(Accept on a pending row, against its preview and the charge the order already carries; Collected,
+Received or Cash received at the rejected figure) or `POST /orders/<id>/again {stage}` (pay, cash, move,
+cancel). The fresh entry keeps the move's figures and day, and is approved as it is drafted only if it
+equals what he was shown. Cash offered again never raises the order twice. `GET /orders` carries `again`,
+the stages each order has to offer, read off the drafts, and `yes` where his Accept is given and not yet spent
+(`waiting` or `differs`), when the card offers no second Accept and says where it waits; a row dropped because they withdrew (11.10) is
+not his rejection and offers nothing.
+
+**A withdrawal before the row is approved drops it** (S11 11.10). The customer withdraws while the
+pending row still waits under Approve, with nothing paid: `dropAck` rejects that draft as `withdrawn`
+(filing it rejected first if it is not drafted yet, so no drafter part-way through a pass can draft it
+after), takes it off every queue, and marks the withdrawal told, so no Cancellation waits behind a row
+that will never land. **An approved row is never dropped**: its Cancellation follows it as before. Money
+paid keeps the row too, the refund being the book's to carry, and a cancellation of his own keeps the old
+road.
 
 The username-to-code map the relay needs is written to the DESK's
 KV as `stmt-users` by every publish; the site never holds it, and an order whose username the map
@@ -581,8 +701,13 @@ store; the desk's every-minute cron reads it through `/desk/orders/last`, one re
 than `orders:nudged` wakes every desk subscription asking for `orders`, once. The switch is **Alert me
 to new orders** on the cloud desk's Orders card, per device: it subscribes with `topics: ["orders"]`,
 so a row he entered himself does not wake him, and hands the write key to the service worker, whose
-banner then reads New customer order and opens `/desk#orders`. A subscription with no topics hears
-everything, as at v321. On an iPhone the desk has to be opened from the Home Screen.
+banner then reads New customer order and opens `/desk#orders/newest`, the card of the newest act, which is the
+one that woke him (the address carries nothing else). A subscription with no topics hears
+everything, as at v321. On an iPhone the desk has to be opened from the Home Screen. **His wakes name
+the kind of act and never a code, a username or an amount** (S11 11.16): New customer order, A customer
+wrote, A customer says they paid (their word until he checks it), A customer cancelled (`NEWS_WORD` in
+`src/orders.js`, carried in the summary while fresh); a placement clears older news, so a new order is
+never titled by a payment's, and `public/sw.js` takes news as a title only in letters and spaces.
 
 **Notifications.** The page polls the customer's orders every ten seconds while it is open.
 For a closed page the site has its own Web Push pair. **The banner names the KIND of news** (S12
@@ -596,7 +721,7 @@ not taken, cancelled. **Never an amount, a product, an order or a name**; the su
 One banner an order: the notification's tag and a sealed wake's push `Topic` are per order (the topic a
 digest of the id), so news of one order never replaces another's on the lock screen or at the push service.
 A tap opens the Counter at `#o=<id>`; a page already open is sent a message instead, re-reads its
-orders and opens that one, or, its session lapsed, keeps it for the sign-in after Continue. A subscription filed before its keys gets a payload-free wake and the
+orders and opens that one, or, its session lapsed, keeps it until the phone is back in (reopened from its memory, S3 3.5, or signed in on the Sheet). A subscription filed before its keys gets a payload-free wake and the
 old fixed words, so nothing already subscribed went dark; the page re-files the keys at the next
 sign-in. A notice keeps its own road: its wake carries no payload, and the service worker reads
 the public `bulletin` (v761). On an
@@ -692,6 +817,14 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   carry and refuses to hand back a link it could not file. What comes back is the finished message
   from `stmt/send.js`, the one copy of those words, plus the QR; it goes to the share sheet, or to
   the clipboard where there is none. **The token is dropped from the page as soon as it is sent.**
+- **SHOW A CODE, IN PERSON** (S3 3.13, his decision D2). For a customer at his counter: the card's Show a code opens
+  the system's Sheet and, as it opens, mints a hand-over through `POST /all/handover` (his page opens the account
+  under the master and wraps as the Sign-in link does). It shows a QR of `<site>/app#qr.<key>`, drawn in rectangles,
+  and the eight symbols in the Code field with when they stop working. It copies and shares nothing, so no
+  clipboard waits on the derivation and the fetch. Closing it does not spend the code. The camera opens the QR in
+  a browser tab, which spends that form alone and marks it a tab's (`tab: true`), and the Worker opens a tab's key only
+  where his route minted it, before the phone's memory, so Replace asks over another account. The plain `/app#<key>` a customer's own Keep Sheet writes is spent by the saved app alone,
+  so an address one customer sends another signs nobody in (S3 fix). An app's own browser spends nothing.
 - **Guest links `/g/<id>`** (v566) are minted inside `/all` and labelled: a board is what he prints
   and hands to strangers, and the link exists to say WHICH stranger. `stmt/refs.js` mints, lists,
   revokes and counts opens; it prices nothing, and neither does `tools/pricelist.mjs`, which reads

@@ -1,6 +1,6 @@
 {
- "v": "v834",
- "stamped": "24 Sep 2026, 23:12 KL",
+ "v": "v836",
+ "stamped": "24 Sep 2026, 23:44 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -83,7 +83,7 @@
    "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": null
+    "stated": 94
    },
    "spare": {
     "qty": 0,
@@ -96,7 +96,7 @@
    "salt": "2026-09-23",
    "oil": "2026-09-24",
    "candy": null,
-   "rice": null,
+   "rice": "2026-09-24",
    "spare": null
   },
   "COUNTS": [
@@ -208,6 +208,13 @@
     "qty": 0,
     "was": 35,
     "drift": -35
+   },
+   {
+    "product": "rice",
+    "date": "2026-09-24",
+    "qty": 94,
+    "was": 95,
+    "drift": -1
    }
   ],
   "purchases": [
@@ -5943,9 +5950,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-24T15:10:07.576Z",
+  "QUEUE_COMMITTED": "2026-09-24T15:43:57.801Z",
   "PRICING": {
-   "takenAt": "2026-09-24T15:18:16.272Z",
+   "takenAt": "2026-09-24T15:45:01.583Z",
    "sizes": [
     0.5,
     1,
@@ -7383,7 +7390,7 @@
      ]
     },
     "oil": {
-     "stockCost": 7.6,
+     "stockCost": 8,
      "replCost": 7.68,
      "floors": {
       "10": {
@@ -7818,13 +7825,13 @@
      "replCost": 3.2,
      "floors": {
       "1": {
-       "floor": 3.4
+       "floor": 4.08
       },
       "5": {
-       "floor": 17
+       "floor": 20.4
       },
       "10": {
-       "floor": 34
+       "floor": 40.8
       }
      },
      "inputs": {
@@ -7858,7 +7865,14 @@
        "quoteRate": 3.2,
        "repl": 3.2,
        "freightRate": 0.2,
-       "leak": null,
+       "leak": {
+        "ratio": 0.2,
+        "leak": 1,
+        "sold": 5,
+        "cycles": 1,
+        "from": null,
+        "to": "2026-09-24"
+       },
        "costRule": {
         "kind": "stack",
         "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
@@ -7875,7 +7889,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0,
+       "shrinkRate": 0.01,
        "avgDel": {
         "n": 2,
         "kg": 5,
@@ -7944,7 +7958,7 @@
       {
        "q": 1,
        "prices": [
-        4,
+        5,
         8
        ],
        "fixed": true
@@ -7952,7 +7966,7 @@
       {
        "q": 5,
        "prices": [
-        17,
+        21,
         35
        ],
        "fixed": true
@@ -7960,7 +7974,7 @@
       {
        "q": 10,
        "prices": [
-        34,
+        41,
         60
        ],
        "fixed": true
@@ -8113,10 +8127,10 @@
      "ladder": []
     }
    },
-   "v": "v834"
+   "v": "v836"
   },
   "OPEN": {
-   "at": "2026-09-24T15:18:16.427Z",
+   "at": "2026-09-24T15:45:01.853Z",
    "count": 9,
    "byKey": {
     "CM4-TO|2026-09-23|750": {
@@ -8303,10 +8317,10 @@
     },
     "rice": {
      "name": "Rice",
-     "onHand": 95,
-     "free": 86,
+     "onHand": 94,
+     "free": 85,
      "owedOut": 9,
-     "coverDays": 98.9,
+     "coverDays": 97.7,
      "rate": 0.87,
      "owedToYou": 0,
      "promised": 9,
@@ -8328,10 +8342,10 @@
     "salt": "2026-09-23",
     "oil": "2026-09-24",
     "candy": null,
-    "rice": null,
+    "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v834"
+   "v": "v836"
   }
  }
 }
