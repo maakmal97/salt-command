@@ -19442,6 +19442,55 @@ await (async () => {
   } finally { w.close(); }
 })();
 
+section("24 Sep 2026: a half-typed line on an order survives a redraw, text and caret");
+await (async () => {
+  /* M19 of the Counter study: the thread box kept its value nowhere, so the ten-second poll bringing any change to
+     any order rebuilt it empty and dropped the caret mid-sentence. The line is kept per order and the box that had
+     the caret gets it back. Driven by the page's own poll, shortened in the served HTML. */
+  const { landingPage: lpM } = await import("../stmt/page.js");
+  const CM = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcM } = await import("node:crypto");
+  const { JSDOM: JDM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-m19", ck = await CM.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await CM.wrapKey(pass, ck), session: "sess-m19",
+    env: await CM.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await CM.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z", history: [], status: "placed", total: 90 };
+  let reads = 0;
+  const list = () => [{ ...base, id: "oA", msgs: reads > 2 ? [{ at: "2026-09-24T02:00:00Z", by: "desk", text: "Fixture reply" }] : [] }, { ...base, id: "oB", msgs: [] }];
+  const html = lpM(u, "nm19", null), fast = html.replace(/var POLL_MS=\d+/, "var POLL_MS=120");
+  const dom = new JDM(fast, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcM, configurable: true }); } catch (e) { win.crypto = wcM; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? (reads++, { ok: true, orders: list() }) : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const boxOf = (i) => [...d.querySelectorAll("#pOrder .pane")].filter((p) => p.querySelector(".state"))[i].querySelector(".sayw input");
+  try {
+    ok(fast !== html, "the served page's poll is shortened, or this proves nothing about a poll");
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !(d.querySelectorAll("#pOrder .sayw input").length === 2); i++) await new Promise((r) => setTimeout(r, 50));
+    const typed = boxOf(1);
+    typed.focus(); typed.value = "Could it come on Fri"; typed.dispatchEvent(new w.Event("input", { bubbles: true }));
+    typed.setSelectionRange(9, 9);
+    for (let i = 0; i < 100 && !/Fixture reply/.test(d.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+    const now = boxOf(1);
+    ok(/Fixture reply/.test(d.getElementById("pOrder").textContent) && now !== typed,
+      "a poll brought a changed order and the orders were drawn again, so the box is a new element");
+    ok(now.value === "Could it come on Fri" && boxOf(0).value === "",
+      "the half-typed line is still in its own order's box, and only there: " + JSON.stringify([boxOf(0).value, now.value]));
+    ok(d.activeElement === now && now.selectionStart === 9,
+      "and the caret is back where it was, in that box: " + (d.activeElement && d.activeElement.getAttribute("data-say")) + " at " + now.selectionStart);
+  } finally { w.close(); }
+})();
+
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead

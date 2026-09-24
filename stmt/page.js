@@ -1146,6 +1146,10 @@ const CLIENT_JS = `
   }
   function drawOrder(){
     var sc=window.scrollY;
+    /* 24 Sep 2026: a redraw (a poll, another order's tap) rebuilt the thread box empty and took the caret away
+       mid-sentence; the line is kept per order in draft.says, and the box that had the caret gets it back */
+    var fo=document.activeElement, keep=fo&&fo.getAttribute&&pOrder.contains(fo)?fo.getAttribute('data-say'):null,
+        sel=keep?[fo.selectionStart,fo.selectionEnd]:null;
     pOrder.textContent='';
     pOrder.appendChild(el('h2',null,hold?'Payment due':'Order'));
     if(hold){
@@ -1301,6 +1305,8 @@ const CLIENT_JS = `
     var h=el('h2',null,'Your orders'); h.style.marginTop='18px'; pOrder.appendChild(h);
     if(!orders.length) pOrder.appendChild(el('p','lead','None yet.'));
     orders.forEach(function(o){ pOrder.appendChild(orderPane(o)); });
+    if(keep){ var kbox=[].filter.call(pOrder.querySelectorAll('input[data-say]'),function(x){ return x.getAttribute('data-say')===keep; })[0];
+      if(kbox){ try{ kbox.focus({preventScroll:true}); kbox.setSelectionRange(sel[0],sel[1]); }catch(e){} } }
     window.scrollTo(0,sc);
   }
 
@@ -1379,6 +1385,8 @@ const CLIENT_JS = `
     var si=el('input','fld salt-field__input'); si.type='text'; si.maxLength=200;
     si.placeholder=msgs.length?'Add to this':'Ask about this order';
     si.setAttribute('aria-label','Write about this order');
+    si.setAttribute('data-say',o.id); si.value=(draft.says||{})[o.id]||'';
+    si.addEventListener('input',function(){ (draft.says=draft.says||{})[o.id]=si.value; });
     var sg=el('button','btn quiet salt-ghost','Send'); sg.type='button';
     sg.addEventListener('click', async function(){
       var t=String(si.value||'').trim();
@@ -1389,7 +1397,7 @@ const CLIENT_JS = `
       sg.disabled=false;
       if(r.status===401) tapSaid(o,'say','Your session has ended. Sign in again.');
       else if(!r.body.ok) tapSaid(o,'say',r.body.error||'It was not sent.');
-      else { tapSaid(o,'say',''); await loadOrders(); if(mine!==ticket) return; }
+      else { tapSaid(o,'say',''); if(draft.says) delete draft.says[o.id]; await loadOrders(); if(mine!==ticket) return; }
       drawOrder();
     });
     sayw.appendChild(si); sayw.appendChild(sg);
