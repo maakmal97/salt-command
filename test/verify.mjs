@@ -27090,6 +27090,97 @@ await (async () => {
     + JSON.stringify({ work: O.orderWork(r2), rc3, pays: pays.map((e) => e.payload.cash), q: r3.queued }));
 })();
 
+section("S6 6.6: a claim against the account, for money owed on rows he entered on the desk, is its own record, never an order, and reaches the desk");
+await (async () => {
+  /* HIS DECISION D7 OF 24 SEP 2026: money owed on rows he entered on the desk has no order to claim it on, so "I have
+     sent it" is said against the ACCOUNT: a route on their session, its own record (never an order, never touching one),
+     its own event in the order book, paused chase, and read by the desk beside the orders. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the account claim was not driven through the order book"); return; }
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default, deskW = (await import("../src/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const U = "abcd-efgh", C = "CX1-AB";
+  const rid = (s) => s.repeat(16).slice(0, 32);
+  for (const store of ["object", "kv"]) {
+    const kv = new KV(), bk = H.orderBook({});
+    const senv = Object.assign({ STMT: kv, STMT_DESK_KEY: "desk-key" }, store === "object" ? { ORDERBOOK: bk.ns, ORDER_STORE: "object" } : {});
+    const tok = await O.mintSession(senv, U);
+    const call = async (path, body, h) => {
+      const r = await stmtW.fetch(new Request("https://k7m3p2.example" + path, body === undefined ? { headers: h || { "X-Stmt-Session": tok } }
+        : { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h || { "X-Stmt-Session": tok }), body: JSON.stringify(body) }), senv);
+      return { status: r.status, b: await r.json() };
+    };
+    /* an advance on an order of theirs, due its chase, before the claim */
+    const o = (await O.placeOrder(senv, U, { product: "salt", qty: 2, mode: "collect", unit: 50, total: 100, week: "" })).order;
+    await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+    await O.deskMove(senv, U, o.id, { handover: { units: 2 } });
+    const later = new Date(Date.now() + 2 * 864e5);
+    const chasedBefore = (await O.toChase(senv, later)).some((c) => c.u === U);
+
+    const c1 = await call("/account/claim", { amount: 70, method: "transfer", account: "wise", rid: rid("k1") });
+    const c2 = await call("/account/claim", { amount: 70, method: "transfer", account: "wise", rid: rid("k1") });
+    const cod = await call("/account/claim", { amount: 70, method: "cod", rid: rid("k2") });
+    const none = await call("/account/claim", { amount: 0, method: "transfer", account: "wise", rid: rid("k3") });
+    const alias = await call("/claims", { amount: 5, method: "tngbiz", account: "tngbiz", rid: rid("k4") });
+    const list = await call("/orders");
+    const cl = c1.b.claim || {};
+    ok(c1.status === 200 && O.isClaimId(cl.id) && cl.state === "waiting" && cl.claim === "waiting" && cl.amount === 70 && cl.method === "transfer"
+      && c2.status === 200 && c2.b.claim.id === cl.id && cod.status === 409 && /recorded by us/.test(cod.b.error) && none.status === 400
+      && alias.status === 200 && alias.b.claim.amount === 5,
+      store + " road: a claim against the account is taken on their session, once under its request id, never in cash, and /claims is the same road: "
+      + JSON.stringify({ c1: c1.b, c2: c2.b.claim && c2.b.claim.id, cod: cod.b.error, none: none.b.error, alias: alias.status }));
+    const ords = list.b.orders || [], cls = list.b.claims || [];
+    ok(ords.length === 1 && ords[0].id === o.id && !ords[0].claimed && cls.length === 2 && cls.some((x) => x.id === cl.id && x.state === "waiting")
+      && !("u" in cls[0]) && !("history" in cls[0]),
+      store + " road: their orders read the same, none made or touched, and their claims ride beside them, bare: " + JSON.stringify({ orders: ords.length, claims: cls }));
+    if (store === "object") {
+      ok(bk.db.prepare("SELECT COUNT(*) AS n FROM acl").get().n === 2 && bk.db.prepare("SELECT COUNT(*) AS n FROM ord").get().n === 1
+        && bk.db.prepare("SELECT kind FROM ev WHERE oid = ?").all(cl.id).map((x) => x.kind).join() === "aclaim",
+        "in the order book it is its own event and its own record, beside the orders and never among them: "
+        + JSON.stringify({ acl: bk.db.prepare("SELECT COUNT(*) AS n FROM acl").get().n, ord: bk.db.prepare("SELECT COUNT(*) AS n FROM ord").get().n }));
+    } else ok(!!(await kv.get("aclaim:" + U + ":" + cl.id)) && !(await kv.get("order:" + U + ":" + cl.id)), "on the KV road it is aclaim:<username>:<id>, never an order key");
+    ok(chasedBefore && !(await O.toChase(senv, later)).some((c) => c.u === U),
+      store + " road: the chase due on their order pauses while a claim against the account waits: " + JSON.stringify({ chasedBefore }));
+    const theirs = store === "object" ? ((bk.db.prepare("SELECT v FROM meta WHERE k = 'last-theirs'").get() || {}).v || "") : (await kv.get("last-theirs")) || "";
+    ok(theirs.endsWith("|pay"), store + " road: and it marks a payment of theirs, so his every-minute pass wakes him: " + theirs);
+    const d = await call("/desk/claims", undefined, { "X-Stmt-Desk": "desk-key" });
+    const dAnon = await call("/desk/claims", undefined, {});
+    ok(d.status === 200 && d.b.claims.length === 2 && d.b.claims.every((x) => x.u === U) && dAnon.status === 401,
+      store + " road: the desk reads the waiting claims on its key, and nobody else: " + JSON.stringify({ n: d.b.claims && d.b.claims.length, anon: dAnon.status }));
+
+    /* THE DESK'S READ: the card's GET /orders carries them, each with the code its username maps to */
+    if (store === "object") {
+      const dkv = new KV(); await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+      const denv = { SALT_QUEUE: dkv, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+        STMT_SITE: { fetch: (x, i) => stmtW.fetch(new Request(x, i), senv) } };
+      const r = await deskW.fetch(new Request("https://salt-command.example/orders", { headers: { "X-Salt-Key": "k-fixture" } }), denv, { waitUntil: () => {} });
+      const j = await r.json();
+      ok(r.status === 200 && (j.orders || []).length === 1 && (j.claims || []).length === 2 && j.claims.every((x) => x.code === C && x.kind === "account"),
+        "and the desk's orders read carries the claims beside the orders, each with its desk code: " + JSON.stringify({ orders: (j.orders || []).length, claims: (j.claims || []).map((x) => x.code) }));
+    }
+  }
+
+  /* WRITTEN BEHIND AND MOVED IN, as an order is: in the week of reading both the book writes the claim to aclaim:, and a
+     claim the KV road took is copied into the book when it moves in */
+  const kv = new KV(), bk = H.orderBook({ STMT: kv, ORDER_STORE: "object+kv" });
+  const senv = { STMT: kv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object+kv" };
+  const c = (await O.claimAccount(senv, U, { amount: 40, method: "tngbiz", account: "tngbiz" })).claim;
+  await bk.fire();
+  const behind = await kv.get("aclaim:" + U + ":" + c.id, "json");
+  ok(behind && behind.id === c.id && behind.state === "waiting" && !(await kv.get("order:" + U + ":" + c.id)),
+    "in the week of reading both the book writes the claim behind to its own KV key: " + JSON.stringify(behind && behind.id));
+  const kv2 = new KV();
+  const onKv = (await O.claimAccount({ STMT: kv2 }, U, { amount: 25, method: "tngbiz", account: "tngbiz" })).claim;
+  const bk2 = H.orderBook({ STMT: kv2, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" }, { movedIn: false });
+  const env2 = { STMT: kv2, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk2.ns, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" };
+  await O.allClaims(env2);
+  const moved = bk2.db.prepare("SELECT doc FROM acl WHERE oid = ?").get(onKv.id);
+  ok(!!moved && JSON.parse(moved.doc).amount === 25 && bk2.db.prepare("SELECT COUNT(*) AS n FROM ord").get().n === 0,
+    "and a claim the KV road took is in the book once it moves in, as an order is, and still not as an order: " + JSON.stringify(!!moved));
+})();
+
 section("v764: what he records on the desk reaches the customer's order, and the chase stops");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026. Every road built since v694 runs from the site to the book. A

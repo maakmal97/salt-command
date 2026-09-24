@@ -361,8 +361,10 @@ export const claimWaits = (o) => claimedOf(o) > 0.004;
 /** Every customer owed a chase at this moment, with the orders that make it, newest order first. */
 export async function toChase(env, at = new Date()) {
   const by = new Map();
+  /* S6 6.6: and a claim against the account, which may be this very money, pauses every order of theirs */
+  const sent = new Set((await allClaims(env)).map((c) => c.u));
   for (const o of await everyOrder(env)) {
-    if (!isAdvance(o) || !graceOver(o, at) || claimWaits(o)) continue;
+    if (!isAdvance(o) || !graceOver(o, at) || claimWaits(o) || sent.has(o.u)) continue;
     if (!by.has(o.u)) by.set(o.u, []);
     by.get(o.u).push(o);
   }
@@ -661,6 +663,7 @@ export function applyEvent(order, ev) {
   const at = ev.at;
   let done = false;
   if (ev.kind === "place" || ev.kind === "copy") return { order: JSON.parse(JSON.stringify(ev.order)), done };
+  if (ev.kind === "aclaim") return { order: JSON.parse(JSON.stringify(ev.claim)), done };   /* S6 6.6: an account claim, its own record */
   if (ev.kind === "status") {
     if (ev.mode) order.mode = ev.mode;
     if (ev.delivery !== undefined) order.delivery = ev.delivery;
@@ -759,7 +762,7 @@ export function marksOf(ev, order) {
   if (ev.kind === "place") return [[LAST_PLACED, at], [LAST_TOUCHED, at]].concat(order && order.msgs && order.msgs.length ? [[LAST_SAID, at]] : []);
   const k = [[LAST_TOUCHED, at]];
   if (ev.kind === "say" && ev.by === "customer") k.push([LAST_SAID, at]);
-  if (ev.kind === "pay" || ev.kind === "claim") k.push([LAST_THEIRS, at + "|pay"]);
+  if (ev.kind === "pay" || ev.kind === "claim" || ev.kind === "aclaim") k.push([LAST_THEIRS, at + "|pay"]);
   if (ev.kind === "status" && ev.by === "customer") k.push([LAST_THEIRS, at + "|cancel"]);
   return k;
 }
@@ -912,6 +915,64 @@ export async function deskMove(env, u, id, body) {
   if (!w) return { order };
   const push = await wakeCustomer(env, u, w);
   return { order, push };
+}
+
+/* ---- A CLAIM AGAINST THE ACCOUNT (S6 6.6, his decision D7 of 24 Sep 2026) ----------------------------
+ * What they owe on rows he entered on the desk has no order to claim it on, so "I have sent it" is also said
+ * against the ACCOUNT: its own record, NEVER AN ORDER and never touching one, aclaim:<username>:<id> on the KV road
+ * and its own table in the order book, where it is appended as its own event like every move. { id, u, kind:
+ * "account", at, amount, method, account, state, history }: waiting until his Received or Not found, which the desk
+ * draws against the engine's oldest-first allocation of the rows (S11 11.15). Cash is never theirs to declare. The
+ * site knows no book, so it cannot weigh the figure against what is owed: the desk does, row by row. */
+export const CLAIM_ID_RE = /^a[0-9]{14}-[a-z0-9]{1,8}$/;
+export const isClaimId = (id) => CLAIM_ID_RE.test(String(id || ""));
+const CKEY = (u, id) => "aclaim:" + u + ":" + id;
+const MAX_CLAIMS = 5;
+/** Their claim against the account, checked. `waiting` is their claims still waiting. Returns { ev } or { error, status }. */
+export function decideAccountClaim(u, body, waiting, at) {
+  const amount = body && body.amount;
+  if (!isNum(amount) || amount <= 0 || amount > 1000000) return { error: "say how much you sent", status: 400 };
+  if (String((body && body.method) || "") === "cod") return { error: "cash is recorded by us when we take it, so there is nothing to send here", status: 409 };
+  const r = pickRail(null, body, []);
+  if (r.error) return r;
+  if (waiting.length >= MAX_CLAIMS) return { error: "there are already " + waiting.length + " payments of yours waiting for us to confirm", status: 409 };
+  const claim = { id: "a" + mintOrderId(at), u, kind: "account", at, amount: +amount.toFixed(2), method: r.method, account: r.account,
+    state: "waiting", history: [{ at, by: "customer", note: "sent " + amount.toFixed(2) }] };
+  return { ev: { kind: "aclaim", at, claim } };
+}
+/* what their page is handed: `claim` carries the state again, the word an order's claim uses (agreed with the page) */
+export const claimView = (c) => ({ id: c.id, at: c.at, amount: c.amount, method: c.method, account: c.account, state: c.state, claim: c.state,
+  answered: c.answered || undefined });
+/** Their claims against the account, newest first. */
+export const claimsOf = async (env, u) => (onBook(env)
+  ? (await bookRead(env, "claims", { u }, async () => ({ claims: await listOrders(env, "aclaim:" + u + ":") }))).claims || []
+  : listOrders(env, "aclaim:" + u + ":"));
+/** Every account claim still waiting, or all of them with `all`: the desk's read. */
+export async function allClaims(env, all) {
+  const list = onBook(env) ? (await bookRead(env, "claims", {}, async () => ({ claims: await listOrders(env, "aclaim:") }))).claims || []
+    : await listOrders(env, "aclaim:");
+  return all ? list : list.filter((c) => c.state === "waiting");
+}
+/** POST /account/claim: their word that they sent a figure against the account. A retry under its id lands once. */
+export async function claimAccount(env, u, body) {
+  const rid = ridOf(body);
+  if (onBook(env)) {
+    const r = await bookMove(env, "aclaim", { u, body, rid });
+    return r.error ? r : { claim: r.order };
+  }
+  if (rid) {
+    const seen = await env.STMT.get(RID_KEY(u, rid), "json");
+    const c = seen && isClaimId(seen.id) ? await env.STMT.get(CKEY(u, seen.id), "json") : null;
+    if (c) return { claim: c };
+  }
+  const d = decideAccountClaim(u, body, (await claimsOf(env, u)).filter((c) => c.state === "waiting"), new Date().toISOString());
+  if (d.error) return d;
+  const claim = applyEvent(null, d.ev).order;
+  await env.STMT.put(CKEY(u, claim.id), JSON.stringify(claim));
+  await markRoad(env);
+  await fileRid(env, u, rid, claim.id);
+  for (const [k, v] of marksOf(d.ev, claim)) await putSoft(env, k, v);
+  return { claim };
 }
 
 const klDay = (iso) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });

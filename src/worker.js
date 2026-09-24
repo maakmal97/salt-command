@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf } from "./orders.js";
+import { listOrders, listClaims, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -849,6 +849,8 @@ export default {
     if (p === "/orders") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
       const r = await listOrders(env, url.searchParams.get("all") === "1");
+      /* S6 6.6: and the claims against accounts beside them, each on a card of its own; a site that cannot say leaves none */
+      if (r.ok) { const c = await listClaims(env, url.searchParams.get("all") === "1"); r.claims = c.ok ? c.claims : []; if (!c.ok) r.claimsUnread = c.error; }
       /* S11 11.13: and what each has to offer again, a row he rejected, read off the drafts; the desk's alone */
       if (r.ok && env.SALT_LEDGER) {
         const again = await againOf(env.SALT_LEDGER, r.orders.map((o) => o.id));

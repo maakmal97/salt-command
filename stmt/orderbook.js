@@ -13,6 +13,8 @@
  *   ev    every move, appended and never changed, under its id (below)
  *   ord   each order as the fold of its events, kept beside them so a read is one select
  *   meta  the site's shared marks: last-placed, last-touched, last-said, last-theirs, and chased:<username>
+ *   acl   each claim against an account (S6 6.6), the fold of its events as `ord` is an order's: never an order, so no
+ *         reader of orders sees one; named by an id no order takes (`a` and the moment), written behind to aclaim:
  *
  * A MOVE IS ONE STEP NOBODY CAN COME BETWEEN. It is checked against the order as it stands (decide* in
  * stmt/orders.js, the same functions the KV road runs), appended, folded and marked inside one synchronous
@@ -61,7 +63,7 @@
  * suite drive it in Node, over node:sqlite, whose statements run synchronously exactly as the object's do.
  */
 import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, FROZEN, ROAD_KEY, decidePlace, decideCustomer, decideDesk,
-  applyEvent, marksOf, wakes } from "./orders.js";
+  applyEvent, marksOf, wakes, isClaimId, decideAccountClaim } from "./orders.js";
 
 export { BOOK_NAME };
 const MARKS = { last: LAST_PLACED, touched: LAST_TOUCHED, said: LAST_SAID, theirs: LAST_THEIRS };
@@ -80,7 +82,10 @@ const norm = (raw) => { try { const o = JSON.parse(raw); return o && typeof o ==
 /* what writes: refused while the book is moving in. Not "drop": his test account unmade is gone from KV first,
    so no pass brings it back, and it reaches the book from the kv road too (S10 fix P3), where it must neither
    wait on a move-in nor start one */
-const WRITES = ["place", "customer", "desk", "chase"];
+const WRITES = ["place", "customer", "desk", "chase", "aclaim"];
+/* S6 6.6: an account claim lives beside the orders, in its own table and under its own KV prefix */
+const TABLE = (oid) => (isClaimId(oid) ? "acl" : "ord");
+const KVKEY = (u, oid) => (isClaimId(oid) ? "aclaim:" : "order:") + u + ":" + oid;
 
 export class OrderBook {
   constructor(state, env) {
@@ -91,6 +96,7 @@ export class OrderBook {
     sql.exec("CREATE TABLE IF NOT EXISTS ord (u TEXT NOT NULL, oid TEXT NOT NULL, at TEXT NOT NULL, doc TEXT NOT NULL, PRIMARY KEY (u, oid))");
     sql.exec("CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT NOT NULL)");
     sql.exec("CREATE TABLE IF NOT EXISTS behind (u TEXT NOT NULL, oid TEXT NOT NULL, PRIMARY KEY (u, oid))");
+    sql.exec("CREATE TABLE IF NOT EXISTS acl (u TEXT NOT NULL, oid TEXT NOT NULL, at TEXT NOT NULL, doc TEXT NOT NULL, PRIMARY KEY (u, oid))");
   }
 
   async fetch(request) {
@@ -125,7 +131,7 @@ export class OrderBook {
     if (!kv) return;
     let left = 0;
     for (const { u, oid } of this.state.storage.sql.exec("SELECT u, oid FROM behind").toArray()) {
-      const key = "order:" + u + ":" + oid;
+      const key = KVKEY(u, oid);
       let raw, doc;
       try { raw = norm(await kv.get(key)); }
       catch (e) { left++; console.log("orderbook: " + key + " not read, tried again in a second: " + String((e && e.message) || e)); continue; }
@@ -227,17 +233,20 @@ export class OrderBook {
     const kv = this.env && this.env.STMT;
     if (!kv) return { orders: 0, took: 0 };
     let cursor, orders = 0, took = 0;
-    do {
-      const page = await kv.list({ prefix: "order:", cursor });
-      for (const k of page.keys) {
-        let o = null;
-        try { o = JSON.parse(await kv.get(k.name)); } catch (e) { o = null; }
-        if (!o || !o.id || !o.u) continue;
-        orders++;
-        if (this.takeIn(o, "copy:" + gen + ":" + pass + ":" + o.u + ":" + o.id)) took++;
-      }
-      cursor = page.list_complete ? null : page.cursor;
-    } while (cursor);
+    for (const prefix of ["order:", "aclaim:"]) {   /* S6 6.6: and the account claims the KV road took */
+      cursor = undefined;
+      do {
+        const page = await kv.list({ prefix, cursor });
+        for (const k of page.keys) {
+          let o = null;
+          try { o = JSON.parse(await kv.get(k.name)); } catch (e) { o = null; }
+          if (!o || !o.id || !o.u || isClaimId(o.id) !== (prefix === "aclaim:")) continue;
+          orders++;
+          if (this.takeIn(o, "copy:" + gen + ":" + pass + ":" + o.u + ":" + o.id)) took++;
+        }
+        cursor = page.list_complete ? null : page.cursor;
+      } while (cursor);
+    }
     for (const key of Object.values(MARKS)) { const v = await kv.get(key), b = this.meta(key); if (v != null && (b == null || v > b)) this.setMeta(key, v); }
     const ch = await kv.list({ prefix: "chased:" });
     for (const k of ch.keys) { const v = await kv.get(k.name), b = this.meta(k.name); if (v != null && (b == null || +v > +b)) this.setMeta(k.name, v); }
@@ -271,6 +280,17 @@ export class OrderBook {
     const at = new Date().toISOString();
     if (WRITES.includes(op) && this.frozen()) return { ok: false, error: FROZEN, status: 503, frozen: true };
     if (op === "orders") return { ok: true, orders: a.u ? this.ordersOf(String(a.u)) : this.all() };
+    /* S6 6.6: the account claims, one customer's or all, newest first */
+    if (op === "claims") return { ok: true, claims: this.state.storage.sql.exec("SELECT doc FROM acl" + (a.u ? " WHERE u = ?" : "") + " ORDER BY at DESC", ...(a.u ? [String(a.u)] : [])).toArray().map((r) => JSON.parse(r.doc)) };
+    if (op === "aclaim") {
+      const u = String(a.u || ""), eid = a.rid ? "c:" + u + ":aclaim:" + a.rid : null;
+      const seen = eid ? this.event(eid) : null;
+      if (seen) return { ok: true, order: this.order(seen.u, seen.oid), again: true };
+      const waiting = this.state.storage.sql.exec("SELECT doc FROM acl WHERE u = ?", u).toArray().map((r) => JSON.parse(r.doc)).filter((c) => c.state === "waiting");
+      const d = decideAccountClaim(u, a.body, waiting, at);
+      if (d.error) return { ok: false, error: d.error, status: d.status || 400 };
+      return this.append(eid, u, d.ev.claim.id, d.ev, null);
+    }
     if (op === "last") {
       const out = { ok: true };
       for (const [k, key] of Object.entries(MARKS)) out[k] = this.meta(key);
@@ -319,6 +339,7 @@ export class OrderBook {
       this.state.storage.transactionSync(() => {
         this.state.storage.sql.exec("DELETE FROM ev WHERE u = ?", u);
         this.state.storage.sql.exec("DELETE FROM ord WHERE u = ?", u);
+        this.state.storage.sql.exec("DELETE FROM acl WHERE u = ?", u);
         this.state.storage.sql.exec("DELETE FROM behind WHERE u = ?", u);
       });
       return { ok: true, dropped: n };
@@ -334,7 +355,7 @@ export class OrderBook {
       const r = applyEvent(order, ev);
       sql.exec("INSERT INTO ev (eid, u, oid, kind, at, body) VALUES (?, ?, ?, ?, ?, ?)",
         eid || "s:" + crypto.randomUUID(), u, oid, ev.kind, ev.at, JSON.stringify(ev));
-      sql.exec("INSERT OR REPLACE INTO ord (u, oid, at, doc) VALUES (?, ?, ?, ?)", u, oid, String(r.order.at || ev.at), JSON.stringify(r.order));
+      sql.exec("INSERT OR REPLACE INTO " + TABLE(oid) + " (u, oid, at, doc) VALUES (?, ?, ?, ?)", u, oid, String(r.order.at || ev.at), JSON.stringify(r.order));
       for (const [k, v] of marksOf(ev, r.order)) this.setMeta(k, v);
       if (ev.kind !== "copy" && this.writesKv()) sql.exec("INSERT OR IGNORE INTO behind (u, oid) VALUES (?, ?)", u, oid);
       out = { ok: true, order: r.order, wake: wakes(ev, r.order, r.done) };   /* the wake and its S12 kind, or null */
@@ -343,7 +364,7 @@ export class OrderBook {
   }
 
   event(eid) { return this.state.storage.sql.exec("SELECT u, oid FROM ev WHERE eid = ?", eid).toArray()[0] || null; }
-  doc(u, oid) { const r = this.state.storage.sql.exec("SELECT doc FROM ord WHERE u = ? AND oid = ?", u, oid).toArray()[0]; return r ? r.doc : null; }
+  doc(u, oid) { const r = this.state.storage.sql.exec("SELECT doc FROM " + TABLE(oid) + " WHERE u = ? AND oid = ?", u, oid).toArray()[0]; return r ? r.doc : null; }
   order(u, oid) { const d = this.doc(u, oid); return d == null ? null : JSON.parse(d); }
   ordersOf(u) { return this.state.storage.sql.exec("SELECT doc FROM ord WHERE u = ? ORDER BY at DESC", u).toArray().map((r) => JSON.parse(r.doc)); }
   all() { return this.state.storage.sql.exec("SELECT doc FROM ord ORDER BY at DESC").toArray().map((r) => JSON.parse(r.doc)); }

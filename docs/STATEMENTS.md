@@ -564,7 +564,12 @@ what they sent, and it is a CLAIM** (S6 6.5, his D7; the site takes no money and
 `payments[]` with `claim: "waiting"`, summed as `claimed`, never `paid`, until his Received (a `verdict` event naming the
 claim by its moment) makes it paid. Claims accumulate; together with what is paid they may not pass what is owed; a claim
 in cash is refused, cash being his to record. Each claim is queued as its own Fulfilment, flagged `claim` and stamped with the
-claim's moment (`claimsToQueue`, `claimEntry`), and Approve neither approves nor rejects it: it is answered on its card. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
+claim's moment (`claimsToQueue`, `claimEntry`), and Approve neither approves nor rejects it: it is answered on its card.
+**A claim against the ACCOUNT** (S6 6.6) is for money owed on rows he entered on the desk, which have no order to claim
+on: `POST /account/claim` (or `/claims`) `{amount, method, account, rid}` on their session, its own record and never an
+order (`acl` in the order book, `aclaim:<username>:<id>` on KV, written behind and moved in as an order is, id `a` and the
+moment), riding beside the orders on their `GET /orders` as `claims` (`claimView`: `state`, and `claim` holding the same
+word) and on the desk's as its own list (`GET /desk/claims`). A waiting one pauses the chase on every order of theirs. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
 order, the one being paid included: settling that at the door is how one advance becomes two. The quote is the customer's claim
 off his own list: the owner reads the rate against the party's usual on the phone before
 acknowledging, and the drafter flags it again when the row is queued.

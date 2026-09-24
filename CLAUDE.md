@@ -281,7 +281,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **AN ORDER REACHES THE BOOK IN STAGES.** The desk's every-minute
   `reconcileOrders` is the one road that queues what the site makes (Accept and Cash received queue
   their own): the acknowledgement a **Pending** row (delivery beside its total), each claim of theirs ("I have sent it",
-  never paid until his Received, S6) a **Fulfilment** that Approve cannot decide, a
+  never paid until his Received, S6; one against the account, for desk rows, is its own record, never an order,
+  `acl` in the book and `aclaim:` on KV) a **Fulfilment** that Approve cannot decide, a
   handover a **Correction** stating the running total (rolling the shelf by the difference), a close at
   what was handed over a **Correction** restating size and total, a withdrawal a **Cancellation** (theirs,
   nothing paid, while the pending row is unapproved: the row dropped instead; an approved row never). The

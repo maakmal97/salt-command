@@ -123,6 +123,17 @@ export async function listOrders(env, all) {
   return { ok: true, orders: (b.orders || []).map((o) => Object.assign({ code: users[o.u] || null }, o)) };
 }
 
+/** S6 6.6: every claim against an account still waiting (or all with `all`), each with the desk code its username maps
+ *  to. Never an order: it is read beside them and drawn on its own card. */
+export async function listClaims(env, all) {
+  const r = await site(env, "/desk/claims" + (all ? "?all=1" : ""));
+  if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.ok) return { ok: false, error: b.error || ("the statements site answered http " + r.status) };
+  const users = await usersMap(env);
+  return { ok: true, claims: (b.claims || []).map((c) => Object.assign({ code: users[c.u] || null }, c)) };
+}
+
 /** One order, closed or open, with its code: the routes below act on an order by its id alone. */
 export async function findOrder(env, id) {
   const r = await listOrders(env, true);
