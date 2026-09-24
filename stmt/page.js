@@ -1666,7 +1666,7 @@ const CLIENT_JS = `
        their links (v709 gates those on the mark, not the card); since 24 Sep 2026 the mark alone opens
        it, and a panel with no card says when it comes and still carries the links. */
     tCard.hidden=!assoc;
-    if(!tCard.hidden) drawCard();
+    drawRewards(pCard);
     var lv=b.statements.filter(function(s){ return s.live; })[0];
     owedNow=lv&&isFinite(+lv.owed)?+lv.owed:0;
     hold=owedNow>HOLD_RM+0.004;

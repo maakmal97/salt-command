@@ -15763,8 +15763,8 @@ await (async () => {
     ok(await until(async () => (await RF.refsBy(env, A.u)).length === 1) && await until(() => pCard.querySelectorAll(".glink").length === 1),
       "and a tap mints their link and lists it");
     const DB = await signIn(B);
-    ok(!DB.getElementById("tabs").hidden && DB.getElementById("tCard").hidden,
-      "while a customer who is not an associate is still shown no Card tab at all");
+    ok(!DB.getElementById("tabs").hidden && DB.getElementById("tCard").hidden && !DB.getElementById("pCard").children.length,
+      "while a customer who is not an associate is still shown no Card tab at all, and Rewards draws nothing for them (S8 8.1)");
   } finally { await new Promise((r) => setTimeout(r, 300)); for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
 })();
 section("S1 1.35 page: the associate's Copy link says Copy failed when the clipboard refuses");
