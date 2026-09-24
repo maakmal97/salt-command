@@ -266,8 +266,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **No brand on the customer's page, and no product word either.** Nothing under `stmt/` names
   Salt Command. A product is a mark (`PSYM`), and a control holding only a mark is named by its shape
   (`PSHAPE`), never its product. **The one name on the site is the app's, `Salt Counter`**, twelve
-  characters, which is what iOS gives a home screen; the desk's name never appears. **A customer's
-  level is a mark, never named**; no name is used because none exists there (rule 2).
+  characters, which is what iOS gives a home screen; the desk's name never appears. **A customer never
+  sees a level**, named or marked (D11); no name is used because none exists there (rule 2).
 - **AN ORDER REACHES THE BOOK IN STAGES, AND SITE ORDERS WRITES NOTHING.** The desk's every-minute
   `reconcileOrders` is the one road that queues: the acknowledgement a **Pending** row (delivery
   beside its total), a payment a **Fulfilment**, a handover a **Correction** stating the running
@@ -289,7 +289,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **Over RM 100 owed (`HOLD_RM`) the account opens as a payment page**: the page's gate, not the
   Worker's. **The bulletin** is KV `bulletin`, set through the desk's keyed `/bulletin` and checked
   by `siteWords`.
-- **An associate may tick an order as on behalf of a friend**: it books to their `-R` bucket
+- **An associate is asked who an order is for, first (Me / A friend)**: a friend's books to their `-R` bucket
   through the engine's `bookR2`, and the `orderKey` is built on the bucket. **A bucket is not its
   own person**: `ownsCode` reads the code and the bucket together; a bucket has no statement and no
   published username.

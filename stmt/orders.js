@@ -61,7 +61,8 @@ export const SESSION_TTL = 900;
 export const OPEN_STATES = ["placed", "acknowledged", "ready"];
 export const MODES = ["collect", "deliver"];
 export const METHODS = ["cod", "transfer", "qr", "jompay", "tngbiz"];
-const MAX_OPEN = 5;
+/* exported for the page, which says the limit before the form (S4 4.6); this is still the one that refuses */
+export const MAX_OPEN = 5;
 /* v694: the states from which the ledger already holds a row, so a later step has something to
    amend, and the states in which money may be paid. Acknowledged is the line between them. */
 export const ROWED = ["acknowledged", "ready", "done"];
