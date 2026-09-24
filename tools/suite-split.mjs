@@ -13,7 +13,8 @@
  *
  * The totals are the sum of the shards', and a section count short of the headings in verify.mjs fails the run, which is what
  * the suite's own floor check does in one process; that check stands down in a shard (SUITE_SHARD) because a shard runs part.
- * `npm test` is unchanged and is still what CI runs; this is the laptop's fast road.
+ * It is `npm test` (his instruction of 24 Sep 2026), here and in CI, where half of a runner's cores is two shards;
+ * `npm run test:serial` is the one-process road.
  *
  *   node tools/suite-split.mjs            shards = half the cores, at most 10
  *   node tools/suite-split.mjs --jobs 12

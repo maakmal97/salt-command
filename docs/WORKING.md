@@ -76,8 +76,8 @@ measurement of the desk.
 
 ## 2. The suite
 
-- **Split.** `npm run test:fast` (`tools/suite-split.mjs`) runs the same sections in shards beside `test/verify.mjs`: the build and the `test/tmp` wipe first and alone, sections sharing a fixed `test/tmp` folder in one shard, the rest packed by last run's timings. About 1 min 45 s from 6 to 8 processes on this laptop; 12 is slower, the three heaviest sections (about 30 s each alone) stretching past 70 s under load. A section needing top-level state outside its own block would break it: keep every section self-contained.
-- **Shape.** `npm test` is `node --max-old-space-size=4096 test/verify.mjs`, 2 to 7 minutes. Each
+- **Split, the default** (24 Sep 2026, his instruction). `npm test` (`tools/suite-split.mjs`) runs the same sections in shards beside `test/verify.mjs`: the build and the `test/tmp` wipe first and alone, sections sharing a fixed `test/tmp` folder in one shard, the rest packed by last run's timings. About 1 min 45 s from 6 to 8 processes on this laptop; 12 is slower, the three heaviest sections (about 30 s each alone) stretching past 70 s under load. A section needing top-level state outside its own block would break it: keep every section self-contained.
+- **Shape.** `npm run test:serial` is `node --max-old-space-size=4096 test/verify.mjs`, 2 to 7 minutes, the one-process road. Each
   section body is `await (async () => { ... })();`, because a top-level block stays pinned for the
   whole run; `section()` closes every window in `payload.mjs`'s `opened` set synchronously, because
   the suite starves the event loop and a timer-based close never runs. A script using `openMaster`

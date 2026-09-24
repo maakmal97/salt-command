@@ -10,8 +10,8 @@
     "deploy": "npm run build && wrangler deploy && wrangler deploy -c wrangler.stmt.jsonc",
     "drain": "node tools/drain.mjs",
     "icons": "python tools/make_icons.py",
-    "test": "node --max-old-space-size=4096 test/verify.mjs",
-    "test:fast": "node tools/suite-split.mjs",
+    "test": "node tools/suite-split.mjs",
+    "test:serial": "node --max-old-space-size=4096 test/verify.mjs",
     "payload": "node tools/payload.mjs"
   },
   "devDependencies": {
