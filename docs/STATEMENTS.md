@@ -503,6 +503,14 @@ drafted, approved, folded, mirror re-seeded. Until `OPEN.byKey` carries the key,
 the amendment rather than queueing one the drafter would refuse, so a customer paying early puts no
 refusal on his phone. A mirror that cannot be read holds everything.
 
+**A withdrawal before the row is approved drops it** (S11 11.10). The customer withdraws while the
+pending row still waits under Approve, with nothing paid: `dropAck` rejects that draft as `withdrawn`
+(filing it rejected first if it is not drafted yet, so no drafter part-way through a pass can draft it
+after), takes it off every queue, and marks the withdrawal told, so no Cancellation waits behind a row
+that will never land. **An approved row is never dropped**: its Cancellation follows it as before. Money
+paid keeps the row too, the refund being the book's to carry, and a cancellation of his own keeps the old
+road.
+
 The username-to-code map the relay needs is written to the DESK's
 KV as `stmt-users` by every publish; the site never holds it, and an order whose username the map
 does not carry is reported as `unmapped` and waits rather than being guessed at.

@@ -401,7 +401,7 @@ export async function reconcileOrders(env) {
   const book = await readBook(env.SALT_LEDGER).catch(() => null);
   const onBook = (book && book.state && book.state.OPEN && book.state.OPEN.byKey) || null;
   const now = new Date();
-  let queued = 0; const unmapped = [], failed = [], waiting = [];
+  let queued = 0; const unmapped = [], failed = [], waiting = [], dropped = [];
   const STAGE_WORD = { pay: "payment", move: "handover", cancel: "withdrawal" };
   for (const o of owing) {
     const code = users[o.u] || null;
@@ -418,7 +418,16 @@ export async function reconcileOrders(env) {
        draft id, so the later one takes the next millisecond, and takes it again on a re-queue */
     const used = new Set([q.ack, q.cancel].filter(Boolean));
     try {
-      for (const job of o.work || []) {
+      /* S11 11.10: WITHDRAWN BY THEM WHILE ITS ROW WAITED UNDER APPROVE, nothing paid: the row is dropped (dropAck)
+         and the withdrawal is spent with it, so no Cancellation waits behind a row that will never land */
+      const ended = [...(order.history || [])].reverse().find((x) => x && (x.status === "cancelled" || x.status === "declined"));
+      if ((o.work || []).includes("cancel") && q.ack && ended && ended.by === "customer" && !((+order.paid || 0) > 0.004)
+        && !(onBook && onBook[order.ledgerKey]) && (await dropAck(env, q.ack, now)) === "dropped") {
+        mark.cancel = stageAt(order, "cancel", now).toISOString();
+        state = { state: "queued", why: "withdrawn by the customer while its pending row waited under Approve: the row was dropped, so nothing reaches the book" };
+        dropped.push(o.id);
+      }
+      for (const job of mark.cancel ? [] : (o.work || [])) {
         let e = null;
         if (job !== "ack" && !(onBook && onBook[order.ledgerKey])) {
           waiting.push(o.id);
@@ -470,7 +479,54 @@ export async function reconcileOrders(env) {
     }
   }
   return Object.assign({ ok: true, queued }, unmapped.length ? { unmapped } : {},
-    waiting.length ? { waiting } : {}, failed.length ? { failed } : {});
+    waiting.length ? { waiting } : {}, failed.length ? { failed } : {}, dropped.length ? { dropped } : {});
+}
+
+/* ---- A WITHDRAWAL BEFORE ITS ROW WAS APPROVED (S11 11.10) ---------------------------------------
+ * A customer who withdraws while the pending row still waits under Approve has taken back an order the book
+ * never held, so the queued acknowledgement is dropped: rejected as `withdrawn`, out of every queue, and
+ * nothing reaches the book. Before this he approved a row for a dead order, waited for the fold, and then
+ * approved its Cancellation. ONLY WHILE IT IS PENDING: an approved row is never dropped by a withdrawal (the
+ * judges' list), and its Cancellation follows the row as before. A row not yet drafted is filed rejected under
+ * its own id first, so a drafter part-way through a pass cannot draft it after. "dropped" or "kept". */
+export async function dropAck(env, at, now) {
+  const db = env.SALT_LEDGER;
+  if (!db || !at) return "kept";
+  const when = (now instanceof Date ? now : new Date()).toISOString();
+  let entry = null;
+  try { const q = await env.SALT_QUEUE.get("q:" + DEVICE, "json"); entry = ((q && q.queue) || []).find((e) => e && e.at === at) || null; } catch (e) { entry = null; }
+  await db.prepare("INSERT OR IGNORE INTO draft (id,status,collection,entry,row,reasoning,flags,party,drafter,drafted_at,decided_at,decided_by) "
+    + "VALUES (?1,'rejected','sales',?2,'{}',?3,'[]',?4,'orders',?5,?5,'withdrawn')")
+    .bind(at, JSON.stringify(entry || { at }), "Withdrawn by the customer before it was drafted, so nothing reaches the book.", (entry && entry.party) || null, when).run();
+  await db.prepare("UPDATE draft SET status='rejected', decided_at=?1, decided_by='withdrawn' WHERE id=?2 AND status='pending'").bind(when, at).run();
+  const cur = await db.prepare("SELECT status FROM draft WHERE id=?1").bind(at).first();
+  if (!cur || cur.status !== "rejected") return "kept";
+  await dropQueued(env, [at]);
+  return "dropped";
+}
+
+/* v525: REJECT MEANS DISCARD. A rejected entry used to sit in every device's queue until the
+   fold's watermark passed it, and a device that still held it re-posted it with its next tap.
+   The Worker now drops it from every q:* key on the rejection, and a queue POST drops any entry
+   whose draft was rejected, so no device can bring it back. The draft row stays, rejected: the
+   decision is the record. */
+export async function dropQueued(env, ats) {
+  const want = new Set(ats.filter(Boolean));
+  if (!env.SALT_QUEUE || !want.size) return 0;
+  let dropped = 0, cursor;
+  do {
+    const list = await env.SALT_QUEUE.list({ prefix: "q:", cursor });
+    for (const k of list.keys) {
+      const raw = await env.SALT_QUEUE.get(k.name);
+      if (!raw) continue;
+      let v; try { v = JSON.parse(raw); } catch (e) { continue; }
+      const before = (v.queue || []).length;
+      v.queue = (v.queue || []).filter((e) => !(e && want.has(e.at)));
+      if (v.queue.length !== before) { dropped += before - v.queue.length; await env.SALT_QUEUE.put(k.name, JSON.stringify(v)); }
+    }
+    cursor = list.list_complete ? null : list.cursor;
+  } while (cursor);
+  return dropped;
 }
 
 /* ---- A ROW HE REJECTED IS TOLD TO ITS ORDER (24 Sep 2026) -------------------------------------

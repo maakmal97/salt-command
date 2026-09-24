@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay, rejectedOnOrder, previewOrder } from "./orders.js";
+import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -236,29 +236,9 @@ async function handleQueuePost(request, env, ctx) {
   return json({ ok: true, entries: kept.length, device: payload.device, dropped: gone.size, droppedAts: [...gone] });
 }
 
-/* v525: REJECT MEANS DISCARD. A rejected entry used to sit in every device's queue until the
-   fold's watermark passed it, and a device that still held it re-posted it with its next tap.
-   The Worker now drops it from every q:* key on the rejection, and a queue POST drops any entry
-   whose draft was rejected, so no device can bring it back. The draft row stays, rejected: the
-   decision is the record. */
-async function dropQueued(env, ats) {
-  const want = new Set(ats.filter(Boolean));
-  if (!env.SALT_QUEUE || !want.size) return 0;
-  let dropped = 0, cursor;
-  do {
-    const list = await env.SALT_QUEUE.list({ prefix: "q:", cursor });
-    for (const k of list.keys) {
-      const raw = await env.SALT_QUEUE.get(k.name);
-      if (!raw) continue;
-      let v; try { v = JSON.parse(raw); } catch (e) { continue; }
-      const before = (v.queue || []).length;
-      v.queue = (v.queue || []).filter((e) => !(e && want.has(e.at)));
-      if (v.queue.length !== before) { dropped += before - v.queue.length; await env.SALT_QUEUE.put(k.name, JSON.stringify(v)); }
-    }
-    cursor = list.list_complete ? null : list.cursor;
-  } while (cursor);
-  return dropped;
-}
+/* v525: a rejected entry is dropped from every queue (dropQueued, src/orders.js, which a withdrawal
+   uses too since S11 11.10), and a queue POST drops any entry whose draft was rejected, so no device
+   can bring it back. */
 async function rejectedAmong(env, ats) {
   const out = new Set();
   if (!env.SALT_LEDGER) return out;

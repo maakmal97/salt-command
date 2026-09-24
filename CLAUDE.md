@@ -272,7 +272,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **AN ORDER REACHES THE BOOK IN STAGES, AND SITE ORDERS WRITES NOTHING.** The desk's every-minute
   `reconcileOrders` is the one road that queues: the acknowledgement a **Pending** row (delivery
   beside its total), a payment a **Fulfilment**, a handover a **Correction** stating the running
-  total (rolling the shelf by the difference), a withdrawal a **Cancellation**. The row is named by
+  total (rolling the shelf by the difference), a withdrawal a **Cancellation** (theirs, nothing paid,
+  while the pending row is unapproved: the row dropped instead; an approved row never). The row is named by
   `ledgerKey`, **the engine's `ovKey` to the character**; an amendment waits until `OPEN.byKey`
   carries that key. Each entry is stamped with its stage's own moment (`stageAt`). A move of his
   runs the reconcile at once; the return leg carries what he records on the desk back to the order

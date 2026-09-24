@@ -22244,6 +22244,93 @@ await (async () => {
     "every customer's card in the snapshot is the desk's cardQuote with that book in view, at that book's own sizes: " + JSON.stringify({ salt: sizesOf("salt"), oil: sizesOf("oil") }));
 })();
 
+section("S11 11.10: a customer's withdrawal drops the queued acknowledgement only while its row is pending, and nothing paid");
+await (async () => {
+  /* THE STUDY'S F12, and the judges' list: a withdrawal before the row folded cost him an approval of a row for a
+     dead order and then an approval of its Cancellation. It now drops the pending row, and ONLY a pending one: an
+     approved row is never dropped by a withdrawal. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the withdrawal was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const { reconcileOrders } = await import("../src/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const CODE = "CX1-AB", U = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  setState("roster", [CODE]); setState("OPEN", { byKey: {}, position: {} });
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: CODE }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const draftOf = (id) => db.prepare("SELECT status,decided_by FROM draft WHERE id=?").get(id) || null;
+  const queued = async () => ((await dkv.get("q:orders", "json")) || { queue: [] }).queue.map((e) => e.at);
+  /* an order agreed on the road the card has used, its pending row queued by the reconcile */
+  const agreed = async (draft) => {
+    const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+    await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+    await reconcileOrders(denv);
+    if (draft) await runDrafter(denv);
+    return (await orderOf(o.id));
+  };
+
+  /* A. DRAFTED AND PENDING: dropped, rejected as withdrawn, out of the queue, and the withdrawal spent with it */
+  const a = await agreed(true);
+  ok(draftOf(a.queued.ack) && draftOf(a.queued.ack).status === "pending" && (await queued()).includes(a.queued.ack), "the pending row is drafted and queued: " + JSON.stringify(draftOf(a.queued.ack)));
+  await O.customerMove(senv, U, a.id, "cancel", {});
+  const rcA = await reconcileOrders(denv), a2 = await orderOf(a.id);
+  ok(rcA.queued === 0 && (rcA.dropped || []).includes(a.id) && draftOf(a.queued.ack).status === "rejected" && draftOf(a.queued.ack).decided_by === "withdrawn"
+    && !(await queued()).includes(a.queued.ack),
+    "their withdrawal drops the pending row: rejected as withdrawn, out of the queue, and no Cancellation queued behind it: " + JSON.stringify({ rc: rcA, draft: draftOf(a.queued.ack) }));
+  ok(a2.queued.cancel && a2.sync && a2.sync.state === "queued" && /withdrawn by the customer while its pending row waited under Approve/.test(a2.sync.why)
+    && (await reconcileOrders(denv)).queued === 0 && !((await reconcileOrders(denv)).dropped),
+    "the order says so, and the withdrawal is spent, so the next pass has nothing to do: " + JSON.stringify({ queued: a2.queued, sync: a2.sync }));
+
+  /* B. QUEUED AND NOT YET DRAFTED: filed rejected first, so a drafter coming after cannot draft it */
+  const b = await agreed(false);
+  ok(!draftOf(b.queued.ack) && (await queued()).includes(b.queued.ack), "a pending row queued and not yet drafted: " + JSON.stringify(draftOf(b.queued.ack)));
+  await O.customerMove(senv, U, b.id, "cancel", {});
+  await reconcileOrders(denv);
+  const dr = await runDrafter(denv);
+  ok(draftOf(b.queued.ack) && draftOf(b.queued.ack).status === "rejected" && !(await queued()).includes(b.queued.ack) && dr.drafted === 0,
+    "is filed rejected under its own id and taken off the queue, so the drafter drafts nothing for it: " + JSON.stringify({ draft: draftOf(b.queued.ack), drafted: dr.drafted }));
+
+  /* C. APPROVED: NEVER DROPPED. Its Cancellation waits for the row, as it did */
+  const c = await agreed(true);
+  const ap = await deskW.fetch(new Request("https://salt-command.example/drafts/" + encodeURIComponent(c.queued.ack) + "/approve", { method: "POST",
+    headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: "{}" }), denv, { waitUntil() {} });
+  await O.customerMove(senv, U, c.id, "cancel", {});
+  const rcC = await reconcileOrders(denv), c2 = await orderOf(c.id);
+  ok(ap.status === 200 && draftOf(c.queued.ack).status === "approved" && !(rcC.dropped || []).includes(c.id) && !c2.queued.cancel
+    && c2.sync.state === "waiting" && /withdrawal waits for the pending row/.test(c2.sync.why),
+    "an APPROVED row is never dropped by a withdrawal: it stays approved and its Cancellation waits for it to land: " + JSON.stringify({ draft: draftOf(c.queued.ack), sync: c2.sync }));
+
+  /* D. MONEY PAID: kept, because what they paid is a refund the book has to carry */
+  const d = await agreed(true);
+  await O.customerMove(senv, U, d.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U, d.id, "pay", { amount: 40 });
+  await O.customerMove(senv, U, d.id, "cancel", {});
+  const rcD = await reconcileOrders(denv);
+  ok(!(rcD.dropped || []).includes(d.id) && draftOf(d.queued.ack).status === "pending",
+    "with money paid the pending row is kept, since the refund is the book's to carry: " + JSON.stringify({ rc: rcD, draft: draftOf(d.queued.ack) }));
+
+  /* E. HIS OWN CANCEL IS NOT THEIR WITHDRAWAL: the rule he decided is for theirs, and his keeps its old road */
+  const e = await agreed(true);
+  await O.deskMove(senv, U, e.id, { status: "cancelled" });
+  const rcE = await reconcileOrders(denv);
+  ok(!(rcE.dropped || []).includes(e.id) && draftOf(e.queued.ack).status === "pending",
+    "a cancellation of his own drops nothing: " + JSON.stringify({ rc: rcE, draft: draftOf(e.queued.ack) }));
+})();
+
 section("v764: what he records on the desk reaches the customer's order, and the chase stops");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026. Every road built since v694 runs from the site to the book. A
