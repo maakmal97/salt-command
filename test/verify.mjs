@@ -14856,7 +14856,7 @@ await (async () => {
     && page94.includes("a neighbourhood or a landmark") && page94.includes("I have paid")
     && page94.includes("Your order is now complete. Thank you for your loyalty."),
     "the page reviews before it places, asks roughly where it is going, takes the amount paid, and says his closing words");
-  ok(!/url\((?!fonts\/)/.test(page94), "and nothing on the page loads anything but its own two fonts, the chevron included");
+  ok(!/url\((?!\/fonts\/)/.test(page94), "and nothing on the page loads anything but its own two fonts, the chevron included");
 })();
 section("v695 and v704: a product is a mark and never a word, and the app on his customers' phones is Salt Counter");
 await (async () => {
@@ -19403,6 +19403,36 @@ await (async () => {
   ok(/<table/.test(arc) && !/class="tblw"/.test(arc), "an archive carries its tables as issued, with no box");
 })();
 
+section("S1 1.31: the brand faces load on a sign-in link and a guest board too");
+await (async () => {
+  /* STAGE 1 OF THE COUNTER REDESIGN (M32, 24 Sep 2026): the @font-face rules said url(fonts/...), so the
+     page served at /s/<token> asked /s/fonts/ and a guest board at /g/<id> asked /g/fonts/, and both
+     answered 404. Every url() in the style each page is SERVED with, resolved against the page's own
+     address, is fetched back through the Worker. */
+  const { mintRef } = await import("../stmt/refs.js");
+  const env = { STMT: new KV() };
+  const ref = await mintRef(env, { label: "Fonts check" });
+  const pages = ["/s/" + "a".repeat(24), "/g/" + (ref && ref.id), "/"];
+  const bad = [];
+  let fetched = 0;
+  for (const path of pages) {
+    const at = "https://site.test" + path;
+    const r = await stmtWorker.fetch(new Request(at), env);
+    const html = await r.text();
+    const css = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
+    const urls = [...css.matchAll(/url\(\s*['"]?([^'")\s]+)/g)].map((m) => m[1]);
+    if (r.status !== 200 || urls.length < 2) { bad.push(path + ": status " + r.status + ", " + urls.length + " urls"); continue; }
+    for (const u of urls) {
+      const f = await stmtWorker.fetch(new Request(new URL(u, at).href), env);
+      fetched++;
+      if (f.status !== 200 || f.headers.get("content-type") !== "font/woff2") bad.push(path + " asks " + new URL(u, at).pathname + ": " + f.status);
+    }
+  }
+  ok(!!ref && fetched >= 6 && !bad.length,
+    "every face named by the door at /s/, a guest board at /g/ and the root resolves to a font the Worker serves ("
+    + fetched + " fetched)" + (bad.length ? ": " + bad.join("; ") : ""));
+})();
+
 section("v782: a statement says which book each row is, and units of different books do not add");
 await (async () => {
   /* stmtRows filters by PARTY and never by product, so a customer holding two books got one
@@ -19600,7 +19630,7 @@ await (async () => {
   ok(r404.status === 404, "and a face that is not there is the site's usual 404");
   const genF = await import("../stmt/statement-css.js");
   const pgF = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
-  ok(genF.FONT_FACE_CSS === fcss && (pgF.match(/FONT_FACE_CSS \+ STATEMENT_CSS \+ SITE_RECIPES \+ PAGE_CSS/g) || []).length === 2,
+  ok(genF.FONT_FACE_CSS === fcss.split("url(fonts/").join("url(/fonts/") && (pgF.match(/FONT_FACE_CSS \+ STATEMENT_CSS \+ SITE_RECIPES \+ PAGE_CSS/g) || []).length === 2,
     "the page carries the same @font-face rules, first, on both pages the Worker serves");
 })();
 
