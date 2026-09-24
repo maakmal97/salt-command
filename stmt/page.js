@@ -890,6 +890,9 @@ const CLIENT_JS = `
   var lapse=document.getElementById('lapse');
   var LAPSED='Signed out: tap Continue at the top.';
   function lapsed(){
+    /* S4 fix: the order sheet lies over the bar, so a lapse closes it; Continue is then in reach, and the sheet will
+       not open again until it is tapped (sheetOpen) */
+    sheetClose();
     if(poll){ clearInterval(poll); poll=null; }
     if(!lapse.hidden) return;
     document.getElementById('lapseT').textContent='You were signed out after a while.';
@@ -1321,7 +1324,7 @@ const CLIENT_JS = `
   function oSoldHas(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0];
     return !!P&&(q==null||P.sizes.some(function(s){ return String(s.q)===String(q); })); }
   function sheetOpen(product,q,opener){
-    if(view||hold||!sold().length) return;
+    if(view||hold||!sold().length||!lapse.hidden) return;
     var U=oUsual();
     if(product&&oSoldHas(product,q)){ draft.product=product; draft.q=String(q); }
     else if(!draft.product&&U&&oSoldHas(U.product,U.q)){ draft.product=U.product; draft.q=String(U.q); }

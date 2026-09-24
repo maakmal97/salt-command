@@ -13798,6 +13798,47 @@ await (async () => {
     ok(!d.getElementById("osheet"), "and once it is answered, Escape closes it again");
   } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
 })();
+section("S4 fix: a session that lapses under the order sheet closes it, so Continue is in reach, and the sheet waits for it");
+await (async () => {
+  /* S4R-3: Place answered "Signed out: tap Continue at the top." while the sheet's scrim lay over the bar holding
+     Continue (under it at 390 wide, behind the drawer at 1280), and a size row or New order opened the sheet over a
+     lapse the bar was already showing. A lapse closes the sheet, and the sheet opens again once Continue is tapped. */
+  const { landingPage: lpF3 } = await import("../stmt/page.js");
+  const CF3 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcF3 } = await import("node:crypto");
+  const { JSDOM: JDF3 } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-sf3", ck = await CF3.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] }] };
+  const st = { posted: 0 };
+  const body = { ok: true, wrap: await CF3.wrapKey(pass, ck), session: "sess-sf3", prices: await CF3.encryptWith(ck, JSON.stringify(prices)),
+    env: await CF3.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const dom = new JDF3(lpF3(u, "nsf3", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcF3, configurable: true }); } catch (e) { win.crypto = wcF3; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      if (p === "/open") return { ok: true, status: 200, json: async () => body };
+      if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      if (p === "/orders" && m === "POST") { st.posted++; return { ok: false, status: 401, json: async () => ({ ok: false, error: "sign in again" }) }; }
+      return { ok: false, status: 404, json: async () => ({ ok: false }) };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click(); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && d.getElementById("lapse").hidden; i++) await new Promise((r) => setTimeout(r, 30));
+    await new Promise((r) => setTimeout(r, 60));
+    ok(st.posted === 1 && !d.getElementById("lapse").hidden && !d.getElementById("osheet"),
+      "a Place answered signed out closes the sheet, and the bar with Continue is what is left in view: " + JSON.stringify({ posted: st.posted, sheet: !!d.getElementById("osheet") }));
+    d.getElementById("oNew").click();
+    const row = d.querySelector("#pPrices .szrow"); if (row) row.click();
+    ok(!!row && !d.getElementById("osheet"), "and neither New order nor a size on Prices opens it again over the lapse");
+  } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
+})();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {
   /* HIS INSTRUCTION OF 16 SEP 2026: "The label to them is a very subtle tier level, in symbol and colour (for each tier),
@@ -16247,18 +16288,20 @@ await (async () => {
     st.lapsed = true;
     D.getElementById("oGo").click();
     await until(() => btn("Place order")); btn("Place order").click();
-    await until(() => lapseOn() && said().length);
+    /* S4 fix (S4R-3): Place is in the order sheet now, whose scrim lay over Continue, so a lapse closes the sheet and
+       the bar is the one voice; beside Place there is nothing left to point */
+    await until(() => lapseOn() && !D.getElementById("osheet"));
     const placed = said();
-    ok(lapseOn() && placed.includes("Signed out: tap Continue at the top.") && !placed.some((t) => /Sign in again|session has ended/.test(t)),
-      "Place answered 401: the bar says it with Continue, and beside Place a pointer to that Continue, never a second wording: " + JSON.stringify(placed));
+    ok(lapseOn() && !D.getElementById("osheet") && !placed.some((t) => /Sign in again|session has ended/.test(t)),
+      "Place answered 401: the bar says it with Continue, and the order sheet closes so that Continue is in reach, never a second wording: " + JSON.stringify(placed));
     const box = D.querySelector('#pOrder input[data-say="' + ord.id + '"]');
     box.value = "is it ready"; box.dispatchEvent(new W.Event("input", { bubbles: true }));
     const send = [...D.querySelectorAll("#pOrder button")].find((b) => b.textContent === "Send");
     send.click();
     const pointers = () => said().filter((t) => t === "Signed out: tap Continue at the top.").length;
-    await until(() => pointers() >= 2);
+    await until(() => pointers() >= 1);
     const sent = said();
-    ok(pointers() === 2 && !sent.some((t) => /Sign in again|session has ended/.test(t)),
+    ok(pointers() === 1 && !sent.some((t) => /Sign in again|session has ended/.test(t)),
       "and so does Send: " + JSON.stringify(sent));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
