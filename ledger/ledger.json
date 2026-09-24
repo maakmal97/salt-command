@@ -1,6 +1,6 @@
 {
- "v": "v816",
- "stamped": "24 Sep 2026, 02:13 KL",
+ "v": "v821",
+ "stamped": "24 Sep 2026, 12:49 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5028,7 +5028,7 @@
     "customer": "CS6-PER",
     "qty": 2,
     "total": 200,
-    "cash": 70,
+    "cash": 100,
     "date": "2026-09-23",
     "deliveredQty": 2,
     "note": "<b>CORRECTION ON S196: RM100 RECORDED SETTLED IN KIND BY REWARD, 1 UNIT.</b> Against CS6-PER's order of 2 unit for RM200 dated 23 Sep 2026, RM70 cash, collected. Sets settledRM from unset to RM100, rebate from false to true and rebateKg from unset to 1 unit. It moves no cash and no stock: it changes what the row says about itself. Flagged: CS6-PER pays about RM80 a unit across 8 orders and this reads RM100, 25% above; RM48 a unit is the inventory average across more than one lot rate, and the blend is not answered; the row is an advance with RM30 unpaid against the credit cap. CS6-PER shows a median rate of RM85.52, a range of RM11 to RM100, RM130 outstanding before this and 1.3 unit on credit, associate and on the roster, nothing defaulted. The RM30 stays open. <b>CORRECTION ON S196: 2 UNIT RECORDED COLLECTED ON 24 SEP.</b> Sets deliveredQty from 0 to 2, deliveredOn from unset to 24 Sep 2026 and handover from unset to collected, on the note that 2 unit was collected for order 20260923131530-semgxg. It moves no cash: it changes what the row says about itself, and the shelf rolls out by the 2 unit the correction states. Costed at RM48 a unit, the inventory's own average, with replacement at RM49.43. Flagged: RM100 a unit sits 25% above the roughly RM80 CS6-PER pays across 7 orders; RM48 is a blend across more than one lot rate; and this is an advance, 2 unit out with RM200 unpaid against a cap. The figures answer none of the three. <b>SALT SELL DATED 23 SEP, ACKNOWLEDGED AND PENDING: NOTHING PAID AND NOTHING HANDED OVER.</b> Booked to CS6-PER, 2 unit for RM200, RM100 a unit, from site order 20260923131530-semgxg, to collect, so the whole RM200 and the whole 2 unit stay open. Costed at RM48 a unit from the desk's own inventory cost, RM104 on the goods at 52%. The RM200 clears the floor of RM113.98 and sits under the ask of RM270, with the ceiling at RM310. Flagged: CS6-PER usually pays about RM80 a unit across 7 orders, 25% below this, and the RM48 is an inventory average across more than one lot rate; the figures do not answer the blend. CS6-PER: 7 orders, median RM70.40, range RM11 to RM100, nothing outstanding, none on credit against a cap of 2.",
@@ -5061,6 +5061,13 @@
       "cash": 0,
       "kg": 0,
       "note": "<b>CORRECTION ON S196: RM100 RECORDED SETTLED IN KIND BY REWARD, 1 UNIT.</b> Against CS6-PER's order of 2 unit for RM200 dated 23 Sep 2026, RM70 cash, collected. Sets settledRM from unset to RM100, rebate from false to true and rebateKg from unset to 1 unit. It moves no cash and no stock: it changes what the row says about itself. Flagged: CS6-PER pays about RM80 a unit across 8 orders and this reads RM100, 25% above; RM48 a unit is the inventory average across more than one lot rate, and the blend is not answered; the row is an advance with RM30 unpaid against the credit cap. CS6-PER shows a median rate of RM85.52, a range of RM11 to RM100, RM130 outstanding before this and 1.3 unit on credit, associate and on the roster, nothing defaulted. The RM30 stays open."
+     },
+     {
+      "date": "2026-09-24",
+      "kind": "Fulfilment",
+      "cash": 30,
+      "kg": 0,
+      "note": "<b>FULFILMENT DATED 24 SEP ON S196: RM30 CASH, THE ORDER NOW SETTLED IN FULL.</b> Against CS6-PER's order of 2 unit for RM200 dated 23 Sep 2026, RM30 and 0 unit move on 24 Sep 2026 against RM30 and 0 unit outstanding, leaving RM0 and 0 unit open. The order already shows RM70 cash, 2 unit collected and a correction recording RM100 settled in kind by reward, 1 unit. No goods move, so the row carries no cost of its own. Flagged as settling the order in full and the figures answer it. CS6-PER: 8 orders, median rate RM70.4, range RM11 to RM100, nothing outstanding before, none on credit, an associate and on the roster."
      }
     ],
     "deliveredOn": "2026-09-24",
@@ -5708,9 +5715,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-23T17:56:19.972Z",
+  "QUEUE_COMMITTED": "2026-09-24T04:48:51.484Z",
   "PRICING": {
-   "takenAt": "2026-09-23T18:13:29.187Z",
+   "takenAt": "2026-09-24T04:49:47.244Z",
    "sizes": [
     0.5,
     1,
@@ -7846,11 +7853,11 @@
      "ladder": []
     }
    },
-   "v": "v816"
+   "v": "v821"
   },
   "OPEN": {
-   "at": "2026-09-23T18:13:29.377Z",
-   "count": 9,
+   "at": "2026-09-24T04:49:47.454Z",
+   "count": 8,
    "byKey": {
     "CM4-TO|2026-09-23|750": {
      "d": "2026-09-23",
@@ -7867,27 +7874,6 @@
      "deliveredOn": "2026-09-23",
      "handover": "collected",
      "key": "CM4-TO|2026-09-23|750"
-    },
-    "CS6-PER|2026-09-23|200": {
-     "d": "2026-09-23",
-     "p": "CS6-PER",
-     "dir": "S",
-     "q": 2,
-     "t": 200,
-     "cash": 170,
-     "mv": 2,
-     "st": "dueMoney",
-     "oweRM": 30,
-     "rid": "s196",
-     "cashRaw": 70,
-     "deliveredOn": "2026-09-24",
-     "handover": "collected",
-     "rebate": true,
-     "settledRM": 100,
-     "rebateKg": 1,
-     "key": "CS6-PER|2026-09-23|200",
-     "age": 1,
-     "exp": 30
     },
     "CR3-DAM|2026-09-22|90": {
      "d": "2026-09-22",
@@ -8012,7 +7998,7 @@
      "owedOut": 9.5,
      "coverDays": 1.2,
      "rate": 5.96,
-     "owedToYou": 460,
+     "owedToYou": 430,
      "promised": 9.5,
      "short": 0
     },
@@ -8068,7 +8054,7 @@
     "rice": null,
     "spare": null
    },
-   "v": "v816"
+   "v": "v821"
   }
  }
 }

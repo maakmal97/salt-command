@@ -1,5 +1,14 @@
 [
  {
+  "v": "v821",
+  "d": "24 Sep 2026",
+  "t": "A FULFILMENT CLOSES S196 IN FULL",
+  "n": [
+   "<b>FOLDED:</b> one amendment only, a fulfilment of RM30 cash dated 24 Sep 2026 against s196, the CS6-PER order of 2 unit for RM200 agreed 23 Sep 2026. RM30 and 0 unit move against RM30 and 0 unit outstanding, leaving RM0 and 0 unit open. The row itself is not recomputed here: ovAmend in the master applies it, so a fulfilment has one definition rather than two.",
+   "<b>UNUSUAL:</b> s196 already carries a correction recording RM100 settled in kind by reward, 1 unit, alongside RM70 cash and goods collected, so this last RM30 is what the correction left behind. The drafter flagged the row as settling the order in full and the figures answer that flag. CS6-PER stood at nothing outstanding and none on credit before it. No goods moved and the inventory is untouched at 16.5 unit."
+  ]
+ },
+ {
   "v": "v820",
   "d": "24 Sep 2026",
   "t": "THE SCOPE PILL SITS UNDER THE HEADING",
