@@ -639,11 +639,18 @@ export async function orderMarks(env) {
   const r = await bookRead(env, "last", {}, fromKv);
   return { last: r.last, touched: r.touched, said: r.said, theirs: r.theirs };
 }
-/** Every order of one account gone from the book (his test account, unmade). The KV road's keys are the caller's. */
+/** Every order of one account gone from the book (his test account, unmade). The KV road's keys are the caller's.
+ *  ON THE KV ROAD WITH THE BOOK BOUND (after a flip back) the book is told as well, best effort (S10 fix P3):
+ *  this is the one place KV loses an order, and a book still holding them would bring them back on the return. */
 export async function dropOrders(env, u) {
   if (onBook(env)) return (await book(env, "drop", { u })).dropped || 0;
+  let n = 0;
+  if (env.ORDERBOOK) {
+    try { n = (await book(env, "drop", { u })).dropped || 0; }
+    catch (e) { console.log("orders: the order book did not answer drop: " + String((e && e.message) || e)); }
+  }
   await markRoad(env);
-  return 0;
+  return n;
 }
 
 export async function placeOrder(env, u, body) {

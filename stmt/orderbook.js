@@ -77,8 +77,10 @@ const ROAD_MS = 60000;
 export const BEHIND_MS = 1100;
 /* a KV record as this book would write it, or null */
 const norm = (raw) => { try { const o = JSON.parse(raw); return o && typeof o === "object" ? JSON.stringify(o) : null; } catch (e) { return null; } };
-/* what writes: refused while the book is moving in */
-const WRITES = ["place", "customer", "desk", "chase", "drop"];
+/* what writes: refused while the book is moving in. Not "drop": his test account unmade is gone from KV first,
+   so no pass brings it back, and it reaches the book from the kv road too (S10 fix P3), where it must neither
+   wait on a move-in nor start one */
+const WRITES = ["place", "customer", "desk", "chase"];
 
 export class OrderBook {
   constructor(state, env) {
@@ -95,7 +97,7 @@ export class OrderBook {
     const op = new URL(request.url).pathname.slice(1);
     let a = null;
     try { a = await request.json(); } catch (e) { a = null; }
-    await this.moveIn(true);
+    if (op !== "drop") await this.moveIn(true);
     if (op === "check") return Response.json(await this.check());
     const out = this.run(op, a && typeof a === "object" ? a : {});
     if (out.ok && out.order && !out.again && !out.none && this.writesKv()) await this.arm();

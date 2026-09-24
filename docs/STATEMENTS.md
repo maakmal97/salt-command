@@ -386,7 +386,9 @@ nothing; raise the generation by one only to come back from `kv`, and it takes w
 **Forgetting that is safe**: every order the `kv` road writes while the book is bound marks KV
 `orderbook:road`, and the book's first request that finds a mark later than its own move-in moves in again,
 a round of the same generation (`<gen>@<mark>`). A KV record the book has already held is behind it, so the
-book keeps its own and writes it behind.
+book keeps its own and writes it behind. Either pass takes the later of KV's and the book's shared and chase
+marks, and his test account unmade on the `kv` road is dropped from the book as well, so a return does not
+bring its orders back.
 **The hourly check** (the site's cron, `checkStores`) is the book's own: each KV order compared with what
 the book holds at that moment, and nothing written by the check. KV behind with the book's write on its way
 is `pending`; behind with nothing on its way is `repaired` (the write behind asked for again); **a record the

@@ -20533,6 +20533,77 @@ await (async () => {
   } finally { clock.uninstall(); console.log = realLog; }
 })();
 
+section("S10 fix P3: a return takes KV's later marks, and his test account unmade on the kv road is gone from the book as well");
+await (async () => {
+  /* Coming back after a rollback took KV's orders but not its word on what had gone: a copy only adds or replaces,
+     and the shared marks were taken only where the book had none, so the book's older ones won (review of 24 Sep
+     2026, P3). Unmaking his test account is the one place KV loses an order, and on the kv road it did not reach the
+     book, so its orders came back with the return and the hourly check wrote them into KV again. KV is
+     test/kvsim.mjs: the book at SIN, the Workers at KUL; every username is invented, the test account is his. */
+  const SIM = await import("../test/kvsim.mjs");
+  const H = await import("../test/orderbook-harness.mjs");
+  const SWM = await import("../stmt/worker.js");
+  const SW = SWM.default, TU = SWM.TEST_USER;
+  const O = await import("../stmt/orders.js");
+  const { World, clock } = SIM;
+  const T0 = Date.UTC(2026, 8, 24, 2, 0, 0), u = "g7h8-j9k2", W = new World();
+  const call = async (e, tok, path, body) => {
+    const h = tok === "desk" ? { "X-Stmt-Desk": "desk-key" } : { "X-Stmt-Session": tok };
+    const r = await SW.fetch(new Request("https://k7m3p2.example" + path, body === undefined ? { headers: h }
+      : { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(body) }), e);
+    return { status: r.status, b: await r.json() };
+  };
+  const place = { product: "salt", qty: 1, mode: "collect", unit: 110, total: 110, week: "" };
+  const logs = [], realLog = console.log;
+  clock.install(); console.log = (...x) => { const l = x.join(" "); if (/^(orders?(book)?|chase)[: ]/.test(l)) logs.push(l); else realLog(...x); };
+  try {
+    clock.set(T0);
+    const bk = H.orderBook({ STMT: W.at("SIN"), ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" });
+    const env = { STMT: W.at("KUL"), STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" };
+    const kvRoad = Object.assign({}, env, { ORDER_STORE: "kv" });
+    const advance = async (ms) => {
+      const target = clock.now() + ms;
+      while (bk.state.alarmAt() != null && bk.state.alarmAt() <= target) { clock.set(Math.max(clock.now(), bk.state.alarmAt())); await bk.fire(); }
+      if (clock.now() < target) clock.set(target);
+    };
+    W.rateLimit = false; const tt = await O.mintSession(env, TU), tu = await O.mintSession(env, u); W.rateLimit = true;
+    const t1 = (await call(env, tt, "/orders", place)).b.order.id;
+    await advance(5000);
+    const c1 = (await call(env, tu, "/orders", place)).b.order.id;
+    await advance(5000);
+
+    /* ---- the rollback: a placement on the kv road, which moves last-placed and marks the road, then his test
+       account unmade (its KV orders deleted, then dropOrders, as unmakeTest does) ---- */
+    clock.set(T0 + 3600000);
+    const c2 = (await call(kvRoad, tu, "/orders", place)).b.order.id;
+    const kvLast = W.store.get(O.LAST_PLACED);
+    await advance(120000);
+    for (const k of (await W.at("KUL").list({ prefix: "order:" + TU + ":" })).keys) await W.at("KUL").delete(k.name);
+    const dropped = await O.dropOrders(kvRoad, TU);
+
+    /* ---- back to object+kv; the first request moves the book in again, and the minute ends ---- */
+    clock.set(T0 + 7200000);
+    bk.restart();
+    await call(env, "desk", "/desk/orders/last");
+    await advance(70000);
+    const ids = (await call(env, "desk", "/desk/orders?all=1")).b.orders.map((o) => o.id).sort();
+    const bookTest = bk.db.prepare("SELECT COUNT(*) AS n FROM ord WHERE u = ?").get(TU).n + bk.db.prepare("SELECT COUNT(*) AS n FROM ev WHERE u = ?").get(TU).n;
+    ok(dropped === 1 && bookTest === 0 && JSON.stringify(ids) === JSON.stringify([c1, c2].sort()) && !ids.includes(t1),
+      "his test account unmade on the kv road is gone from the book too, events and all, so the return does not bring its order back: "
+      + JSON.stringify({ dropped, bookTest, desk: ids.length }));
+    const last = (await call(env, "desk", "/desk/orders/last")).b.last;
+    ok(!!kvLast && last === kvLast && (bk.db.prepare("SELECT v FROM meta WHERE k = ?").get(O.LAST_PLACED) || {}).v === kvLast,
+      "and the book takes KV's later last-placed, the kv road's placement, over its own older one: " + JSON.stringify({ kvLast, book: last }));
+    clock.set(Date.parse("2026-09-24T05:00:00Z"));
+    const ws = []; await SW.scheduled({ scheduledTime: clock.now() }, env, { waitUntil: (p) => ws.push(p) }); await Promise.all(ws);
+    await advance(5000);
+    const c = JSON.parse(W.store.get(O.CHECK_KEY) || "{}");
+    ok(JSON.stringify(c.bookOnly) === "[]" && JSON.stringify(c.repaired) === "[]" && !!c.cleanSince
+      && (await W.at("KUL").list({ prefix: "order:" + TU + ":" })).keys.length === 0,
+      "so the hourly check is clean and writes no test order back into KV: " + JSON.stringify({ bookOnly: c.bookOnly, repaired: c.repaired, cleanSince: c.cleanSince }));
+  } finally { clock.uninstall(); console.log = realLog; }
+})();
+
 section("v751: a customer may write a line on an order, at placement and after, and it never reaches a ledger note");
 await (async () => {
   /* his instruction of 20 Sep 2026, and the last part of what he asked at the start of this work:
