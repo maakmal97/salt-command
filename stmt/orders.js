@@ -294,18 +294,19 @@ export function orderWork(o) {
   return jobs;
 }
 
-/* ---- WHO IS CHASED, AND HOW OFTEN (v700, his instruction of 18 Sep 2026) ---------------------
- * "The customer will be notified every hour to pay if it is an advanced order." An advance is the
- * book's own word for goods out ahead of the money, so that is the test, READ AS THE ENGINE READS IT
- * (24 Sep 2026): the share of the goods handed over above the share of what is owed that is paid
- * (engine/position.mjs, txStat's Open · Advance). It read "anything moved and anything due" until
- * then, which chased a customer who had paid for the 2 of 5 units they held, every hour, for the 3
- * not yet handed over. A customer who has paid nothing on an order he has not touched yet is not
- * chased, because nothing of his is in their hands.
+/* ---- WHO IS CHASED, AND WHEN (v700; S12 12.3, his decision D5 of 24 Sep 2026) ------------------
+ * An advance is the book's own word for goods out ahead of the money, so that is the test, READ AS
+ * THE ENGINE READS IT (24 Sep 2026): the share of the goods handed over above the share of what is
+ * owed that is paid (engine/position.mjs, txStat's Open · Advance). So only GOODS RECEIVED are chased:
+ * a customer who has paid for the 2 of 5 units they hold is not asked about the 3 still to come, and
+ * one who has been handed nothing is not chased at all.
  *
- * DAY AND NIGHT, HIS WORD, and until it is paid. The cap is one wake an hour per CUSTOMER, not per
- * order: two unpaid advances are one person's problem and one banner, and the banner names no
- * amount and no order anyway.
+ * TWICE A DAY, NOT EVERY HOUR (D5): at 10:00 and 18:00 in Kuala Lumpur, from THE DAY AFTER the goods
+ * moved, PAUSED while a claim of theirs waits, and STOPPED when what they received is paid, which is
+ * the same test going false (his cash, recorded on the desk, comes back through the return leg). v700
+ * chased every hour, day and night, from the first top of the hour after the handover, so a customer
+ * paying cash at the counter was asked again within minutes and every hour of the night. The cap is
+ * one wake a slot per CUSTOMER, not per order, and its words are its own ("A payment is due").
  */
 export const aheadOnGoods = (o) => {
   const owed = +o.total + (+o.delivery || 0), paidF = owed > 0 ? (+o.paid || 0) / owed : 0;
@@ -316,21 +317,36 @@ export const isAdvance = (o) => !!o && ROWED.includes(o.status) && aheadOnGoods(
 export const CHASE_KEY = (u) => "chased:" + u;
 /** An hour in whole hours since the epoch: the same hour twice is the same bucket, and no clock is read twice. */
 export const hourOf = (at) => Math.floor(new Date(at).getTime() / 3600000);
+/* The two hours, Kuala Lumpur's (UTC+8, no summer time). The cron stays hourly and this decides: a slot
+   is its hour's bucket, or null for every other hour. */
+export const CHASE_HOURS = [10, 18];
+export const chaseSlot = (at) => {
+  const t = new Date(at).getTime();
+  return CHASE_HOURS.includes(new Date(t + 8 * 3600000).getUTCHours()) ? hourOf(t) : null;
+};
+/* A DAY'S GRACE: chased from the day after the last handover (movedOn, a Kuala Lumpur date), never the
+   day the goods moved; an order that carries no such day is not chased. */
+export const graceOver = (o, at) => !!o.movedOn && o.movedOn < klDay(at);
+/* PAUSED WHILE A CLAIM WAITS: a figure they say they sent that the order does not yet count as paid.
+   Today none waits, because their "I have paid" raises `paid` on their word (v694); a claim that stays
+   a claim until his Received, which is stage 6's, pauses the chase through this one name. A Not found
+   that lowers `paid` has to take its claim out of `payments` with it, or the pause never lifts. */
+export const claimWaits = (o) => (o.payments || []).reduce((n, p) => n + (+(p && p.amount) || 0), 0) > (+o.paid || 0) + 0.004;
 
-/** Every customer holding an unpaid advance, with the orders that make it, newest order first. */
-export async function toChase(env) {
+/** Every customer owed a chase at this moment, with the orders that make it, newest order first. */
+export async function toChase(env, at = new Date()) {
   const by = new Map();
   for (const o of await everyOrder(env)) {
-    if (!isAdvance(o)) continue;
+    if (!isAdvance(o) || !graceOver(o, at) || claimWaits(o)) continue;
     if (!by.has(o.u)) by.set(o.u, []);
     by.get(o.u).push(o);
   }
   return [...by.entries()].map(([u, orders]) => ({ u, orders }));
 }
 
-/* THE CHASE MARK (S10): the hour bucket a customer was last woken in. On the object road it lives in the
-   order book beside the orders it follows; on the KV road it is chased:<username>, lapsing after two hours.
-   True when this hour's wake is still to be sent, and the mark is then already written. */
+/* THE CHASE MARK (S10): the slot a customer was last woken in, its hour bucket (chaseSlot). On the object road it
+   lives in the order book beside the orders it follows; on the KV road it is chased:<username>, lapsing after two
+   hours. True when this slot's wake is still to be sent, and the mark is then already written. */
 export async function markChased(env, u, hour) {
   if (onBook(env)) {
     const r = await book(env, "chase", { u, hour });
@@ -601,7 +617,7 @@ export function applyEvent(order, ev) {
     }
     if (isNum(ev.moved) && ev.moved > (+order.moved || 0) + 0.0004) {
       order.moved = +ev.moved.toFixed(3); q.moved = order.moved; told = true;
-      if (!order.movedOn) order.movedOn = klDay(at);
+      order.movedOn = klDay(at);   /* the day of the LAST handover, as Site orders writes it: the chase's grace runs from it (S12-R1) */
       order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
     }
     if (told) { order.queued = q; done = settle(order, at); }
@@ -630,8 +646,24 @@ export function marksOf(ev, order) {
   if (ev.kind === "status" && ev.by === "customer") k.push([LAST_THEIRS, at + "|cancel"]);
   return k;
 }
-export const wakes = (ev, done) => ev.kind === "ledger" || ev.kind === "handover"
-  || ((ev.kind === "status" || ev.kind === "say") && ev.by === "desk") || (ev.kind === "pay" && done);
+/* S12 12.2: WHAT KIND OF NEWS EACH MOVE OF HIS IS, for the banner, whose words are NEWS in stmt/sw.js.
+   A handover says delivered or collected by the order's own mode, and "part" while units are still to come. */
+const STATUS_NEWS = { acknowledged: "confirmed", ready: "ready", done: "complete", declined: "declined", cancelled: "cancelled" };
+const handedNews = (o) => (+o.moved > 0 ? (owedUnits(o) > 0.004 ? "part-" : "") + (o.mode === "deliver" ? "delivered" : "collected") : null);
+
+/* THE WAKE A MOVE SENDS, { k, o }: its kind (S12 12.2) and the order a tap opens, or null for none. Read off the event
+   and the order it folded into, so both roads send the same kind: a payment the book carried back is "paid", else
+   the goods it carried back; a handover names what was handed over; his state, its news; his line, a reply; and a
+   payment of theirs that completes the order, complete. A handover of nothing still wakes, with no kind, as it did. */
+export function wakes(ev, order, done) {
+  const o = (order && order.id) || "";
+  if (ev.kind === "ledger") return { k: ev.paid !== undefined ? "paid" : handedNews(order), o };
+  if (ev.kind === "handover") return { k: handedNews(order), o };
+  if (ev.kind === "status" && ev.by === "desk") return { k: STATUS_NEWS[ev.status], o };
+  if (ev.kind === "say" && ev.by === "desk") return { k: "reply", o };
+  if (ev.kind === "pay" && done) return { k: "complete", o };
+  return null;
+}
 
 /** The marks as the desk reads them, one question a minute (/desk/orders/last). */
 export async function orderMarks(env) {
@@ -685,7 +717,7 @@ export async function customerMove(env, u, id, action, body) {
     /* v700: a payment that completes the order is the one customer move worth waking the phone for,
        because it is the only one whose answer arrives after they have put the phone down. Every
        other move of theirs happens with the page in front of them. */
-    if (r.wake) await wakeCustomer(env, u);
+    if (r.wake) await wakeCustomer(env, u, r.wake);
     return { order: r.order };
   }
   /* a payment already recorded under this id is answered before anything is checked, because the
@@ -702,7 +734,8 @@ export async function customerMove(env, u, id, action, body) {
   /* v751: and a mark the desk's own nudge can read, so a line waits for him rather than for a poll;
      v760: money in, or the order taken back, both things he has to act on and neither in front of him */
   for (const [k, v] of marksOf(d.ev, order)) await putSoft(env, k, v);
-  if (done) await wakeCustomer(env, u);
+  const w = wakes(d.ev, order, done);
+  if (w) await wakeCustomer(env, u, w);
   return { order };
 }
 
@@ -745,7 +778,7 @@ export async function deskMove(env, u, id, body) {
     const r = await bookMove(env, "desk", { u, id, body });
     if (r.error) return r;
     if (!r.wake) return { order: r.order };
-    const push = await wakeCustomer(env, u);
+    const push = await wakeCustomer(env, u, r.wake);
     return { order: r.order, push };
   }
   const order = await env.STMT.get(OKEY(u, id), "json");
@@ -756,8 +789,9 @@ export async function deskMove(env, u, id, body) {
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
   await markRoad(env);
   for (const [k, v] of marksOf(d.ev, order)) await putSoft(env, k, v);
-  if (!wakes(d.ev, done)) return { order };
-  const push = await wakeCustomer(env, u);
+  const w = wakes(d.ev, order, done);
+  if (!w) return { order };
+  const push = await wakeCustomer(env, u, w);
   return { order, push };
 }
 

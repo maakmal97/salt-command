@@ -1,5 +1,34 @@
 [
  {
+  "v": "v830",
+  "d": "24 Sep 2026",
+  "t": "A RICE ROW AGAINST A SALT HABIT",
+  "n": [
+   "<b>FOLDED: ONE RICE SELL, PAID AND COLLECTED ON THE DAY.</b> CC5-OKR took 4 unit of rice for RM20 on 24 Sep 2026, RM20 cash in and 4 unit out, so nothing on the row stays open. The RM20 clears the floor of RM13.6 for that size and sits well under the ask of RM32, with the ceiling at RM41. Costed at RM3.2 a unit from the desk's own inventory cost, RM12.8 on the goods.",
+   "<b>UNUSUAL: THE PARTY'S BOOK IS A SALT BOOK, AND IT IS STRETCHED.</b> The drafter flagged that CC5-OKR has no committed rice order, so there is no rate of theirs to set this against, and the figures do not answer it: their median rate of RM90 and range of RM48 to RM90 are salt figures across 10 orders. RM138 stands outstanding and 2 unit sit on credit against a cap of 1. The drafter's working reads RM7.2 at 36% where the row carries RM12.8.",
+   "<b>THE INVENTORY DID NOT MOVE.</b> The rice draw of 4 unit is recorded as not landed, so the salt position holds at 16.5 unit at RM48 a unit against a replacement cost of RM49.43, with the reorder mark at 32.2 and RM9.5 owed out. The last salt count stands at 23 Sep 2026 and the oil count at 19 Sep 2026; candy, rice and spare remain uncounted, which is where this row's product sits."
+  ]
+ },
+ {
+  "v": "v829",
+  "d": "24 Sep 2026",
+  "t": "THE DESIGN SYSTEM FIRST: NINE RECIPES, AND EDGES YOU CAN SEE",
+  "n": [
+   "<b>STAGE 2 OF THE REDESIGN</b> (rule 6: a look is a recipe in Code/salt-ds first). Salt-ds v1.3.0 adds the nine patterns the new Counter and Salt Admin are built from: Sheet, Option, App bar, Steps, Bubble and thread, Line, Code field, Inbox row, Plain ledger, and the Orb in its own section. The Counter now carries them and the recipes it will use from stage 3 on; nothing draws them yet.",
+   "<b>THE ONE VISIBLE CHANGE.</b> Field and ghost edges rise from about 1.1:1 to 3:1 or more, a focused field gets a 2px brass ring, placeholders and recipe prose move to mist-light, and type is set in rem, which maps today's pixels exactly. No page height moved in any of the rig's 332 shots."
+  ]
+ },
+ {
+  "v": "v828",
+  "d": "24 Sep 2026",
+  "t": "A BANNER SAYS WHAT KIND OF NEWS IT IS, AND THE CHASE IS FAIR",
+  "n": [
+   "<b>STAGE 12 OF THE REDESIGN</b> (his answers D4 and D5 of 24 Sep 2026). A customer's phone keeps its subscription's encryption keys, and a wake carries the kind of news sealed for that phone alone (RFC 8291 in the Worker's own WebCrypto): Your order is confirmed, Your order is ready, A reply on your order, Payment received, A payment is due, and the rest of an order's life. Never an amount, a product, an order or a name; a phone with no keys on file keeps today's wake and words until it next signs in.",
+   "<b>THE TAP OPENS THE ORDER.</b> The banner opens the Counter at the order it is about, and a window already open re-reads rather than only coming forward.",
+   "<b>THE CHASE, TWICE A DAY.</b> v700's hourly chase now wakes at 10:00 and 18:00 Kuala Lumpur, from the day after a handover, only for goods received and not yet paid, paused while a payment claim waits, one wake a slot, in its own words: A payment is due."
+  ]
+ },
+ {
   "v": "v827",
   "d": "24 Sep 2026",
   "t": "THE COUNTER AND SALT ADMIN DO WHAT THEY PROMISE",

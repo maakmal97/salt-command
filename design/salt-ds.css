@@ -13,6 +13,16 @@
   --salt-mist: #7a8690;       /* muted labels and captions */
   --salt-mist-light: #a6afb5; /* mist for running prose at 13px, where mist itself is too dark */
   --salt-mist-bright: #b4bcc2; /* prose on a figure surface, one step under salt: a tile's note, a finding's body */
+  /* Running prose, the sentences a person reads under a figure or a field (24 Sep 2026). Mist was
+     3.6:1 on a pane over the aurora at its brightest; mist-light is 6.0:1 there, 8.2:1 on the
+     panel and 9.0:1 on obsidian. A recipe's prose reads this and never mist. */
+  --salt-prose: var(--salt-mist-light);
+  /* THE EDGE OF A FIELD AND A GHOST (24 Sep 2026): brass at three quarters, so the hairline keeps the
+     identity's hue and still meets 3:1 (WCAG 1.4.11). The faint line it replaces was 1.1:1, so no box
+     was visible until it had focus. Measured: 3.2:1 on a pane over the aurora at its brightest (the
+     worst ground), 3.8:1 against the well it borders there, 4.4:1 on the panel, 4.8:1 on obsidian.
+     A state that lifts a control (hover, on, lit, focus) goes to full brass, above it. */
+  --salt-edge-field: #947843;
 
   /* The desk's semantic colours, added 02 Sep 2026. Direction and risk need hues the six
      brand colours do not carry, and each sits in the identity's temperature: verdigris is
@@ -47,7 +57,6 @@
   --salt-line-strong: rgba(197, 160, 89, 0.45); /* the hairline lifted: a chip's edge, a held or hovered control */
   --salt-glass-hover: rgba(255, 255, 255, 0.06); /* a ghost, a row or a tab under the pointer */
   --salt-highlight: rgba(255, 255, 255, 0.08);
-  --salt-focus-ring: 0 0 0 3px rgba(197, 160, 89, 0.18); /* the ring a focused control wears beside its brass hairline */
   --salt-shadow: 0 32px 64px rgba(0, 0, 0, 0.55);
   --salt-shadow-desk: 0 18px 40px rgba(0, 0, 0, 0.42); /* lighter, for a page of many panes */
   --salt-well: rgba(0, 0, 0, 0.28);      /* inset: fields and meter tracks */
@@ -59,6 +68,9 @@
                                              A veil at .86 passes 14% of whatever scrolls under it, and the
                                              only fill that cannot ghost is 1 (the desk's v567; here 22 Sep 2026) */
   --salt-tap: 44px;                      /* the least a control may measure, either way */
+  --salt-bar-h: 4rem;                    /* the phone's bar of places, above the safe area: 64px at the
+                                            default text size, and in rem so it grows with the words in it */
+  --salt-sheet-radius: var(--salt-radius-lg); /* the top corners of a sheet, the inner corners of a drawer */
 
   /* Gradients. Brass to copper for marks and fills; white to copper for titles. */
   --salt-gradient: linear-gradient(135deg, var(--salt-brass), var(--salt-copper));
@@ -74,15 +86,23 @@
   --salt-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
   --salt-font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, monospace;
 
-  --salt-text-xs: 11px;
-  --salt-text-sm: 13px;
-  --salt-text-md: 15px;
-  --salt-text-lg: 17px;
-  --salt-text-xl: 24px;
-  --salt-text-2xl: 34px;
-  --salt-text-3xl: 48px;
-  --salt-text-4xl: 64px;
-  --salt-text-5xl: 88px;
+  /* The type scale in rem since 24 Sep 2026: at the default 16px each is the pixel size it was
+     (11, 13, 15, 17, 24, 34, 48, 64, 88), and a browser's own default text size (a desktop browser's
+     setting) now reaches them. A PHONE'S DOES NOT, YET: an iPhone's Text Size reaches a page only through
+     the system font keywords (font: -apple-system-body, 17px at its default), and Android's only where
+     the page opts in (meta name="text-scale"). Nothing sets either: that is a decision still open.
+     Every screen recipe sets its type in rem the same day, a token where the size is one and its
+     exact rem where not (11.5px is 0.71875rem), so a control grows with the prose beside it. A slide,
+     the document page and the footnote keep px: they are frames of a fixed size. */
+  --salt-text-xs: 0.6875rem;
+  --salt-text-sm: 0.8125rem;
+  --salt-text-md: 0.9375rem;
+  --salt-text-lg: 1.0625rem;
+  --salt-text-xl: 1.5rem;
+  --salt-text-2xl: 2.125rem;
+  --salt-text-3xl: 3rem;
+  --salt-text-4xl: 4rem;
+  --salt-text-5xl: 5.5rem;
 
   /* Space, radius */
   --salt-space-1: 4px;
@@ -220,14 +240,14 @@
   margin: 0;
 }
 .salt-wordmark--sm .salt-wordmark__subtitle { font-size: var(--salt-text-xs); }
-.salt-wordmark--md .salt-wordmark__subtitle { font-size: 12px; }
-.salt-wordmark--lg .salt-wordmark__subtitle { font-size: 14px; letter-spacing: 0.28em; }
+.salt-wordmark--md .salt-wordmark__subtitle { font-size: 0.75rem; }
+.salt-wordmark--lg .salt-wordmark__subtitle { font-size: 0.875rem; letter-spacing: 0.28em; }
 
 /* ---- Eyebrow ---- */
 
 .salt-eyebrow {
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.24em;
   text-transform: uppercase;
@@ -251,7 +271,7 @@
 .salt-metrics__label {
   display: block;
   color: var(--salt-copper);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -330,7 +350,7 @@
   align-items: center;
   justify-content: center;
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--salt-mist);
 }
 .salt-qr__meta { text-align: center; }
@@ -370,8 +390,8 @@
   box-shadow: 0 8px 24px rgba(184, 115, 51, 0.3);
   transition: transform 0.2s, box-shadow 0.2s;
 }
-.salt-pill--md { padding: 16px 40px; font-size: 14px; }
-.salt-pill--sm { padding: 10px 20px; font-size: 11.5px; }
+.salt-pill--md { padding: 16px 40px; font-size: 0.875rem; }
+.salt-pill--sm { padding: 10px 20px; font-size: 0.71875rem; }
 .salt-pill:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(184, 115, 51, 0.4); }
 .salt-pill:active { transform: translateY(0); box-shadow: 0 8px 24px rgba(184, 115, 51, 0.3); }
 .salt-pill:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 3px; }
@@ -384,6 +404,264 @@
 @media (prefers-reduced-motion: reduce) {
   .salt-pill { transition: none; }
   .salt-pill:hover { transform: none; }
+}
+
+/* ---- Sheet: a task laid over the page (an order, a payment). Opaque slate, rounded at the top, with a
+   grabber; the body scrolls and the foot stays in reach of the thumb, holding the one filled action.
+   From 1080px it is a drawer on the right, full height. The scrim behind it is the page behind a
+   drawer. Moving focus in and closing on Escape are the component's; this is the look (24 Sep 2026). ---- */
+
+.salt-sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: var(--salt-scrim);
+  animation: salt-sheet-fade 0.2s ease-out;
+}
+.salt-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 71;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100% - var(--salt-space-6) - env(safe-area-inset-top));
+  background: var(--salt-slate);
+  color: var(--salt-salt);
+  border-top: 1px solid var(--salt-line);
+  border-radius: var(--salt-sheet-radius) var(--salt-sheet-radius) 0 0;
+  box-shadow: var(--salt-shadow), inset 0 1px 0 var(--salt-highlight);
+  font-family: var(--salt-font-display);
+  animation: salt-sheet-rise 0.24s ease-out;
+}
+.salt-sheet:focus { outline: none; } /* the dialog takes focus as it opens; its controls carry the ring */
+.salt-sheet__grab {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 4px;
+  margin: var(--salt-space-2) auto 0;
+  border-radius: 2px;
+  background: var(--salt-line-strong);
+}
+.salt-sheet__head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--salt-space-3);
+  padding: var(--salt-space-2) var(--salt-space-4) var(--salt-space-3);
+}
+.salt-sheet__title {
+  margin: 0;
+  min-width: 0;
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-xl);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--salt-salt);
+}
+.salt-sheet__close { flex: 0 0 auto; }
+.salt-sheet__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--salt-space-1) var(--salt-space-4) var(--salt-space-4);
+  font-size: var(--salt-text-md);
+  line-height: 1.55;
+  color: var(--salt-prose);
+}
+.salt-sheet__foot {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--salt-space-3);
+  padding: var(--salt-space-3) var(--salt-space-4) calc(var(--salt-space-3) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--salt-line-faint);
+}
+@media (min-width: 1080px) {
+  .salt-sheet {
+    top: 0;
+    left: auto;
+    width: min(460px, 100%);
+    max-height: none;
+    border-top: 0;
+    border-left: 1px solid var(--salt-line);
+    border-radius: var(--salt-sheet-radius) 0 0 var(--salt-sheet-radius);
+    animation-name: salt-sheet-slide;
+  }
+  .salt-sheet__grab { display: none; }
+  .salt-sheet__head { padding-top: var(--salt-space-5); }
+}
+@keyframes salt-sheet-fade { from { opacity: 0; } }
+@keyframes salt-sheet-rise { from { transform: translateY(100%); } }
+@keyframes salt-sheet-slide { from { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) {
+  .salt-sheet, .salt-sheet-scrim { animation: none; }
+}
+
+/* ---- App bar: the phone's places under the thumb. Opaque slate with one brass hairline, an icon and a
+   word for each place; the open one is read from aria-current and marked by a brass tick on the hairline;
+   a count is a copper numeral, never a filled badge. The bar is --salt-bar-h tall above the safe area,
+   which is what the page keeps clear at its foot. From 1080px the bar gives way to the Desk rail, which
+   the component draws from the same places, so the rail's recipe is used and not restated. Each place is
+   its own container, and its word and count are sized no larger than a fifth of it: a mono word of seven
+   letters then always fits its column, so five places never overprint each other however large the text
+   (measured 24 Sep 2026: Account and Rewards overlapped by 13px at 320 and 150%). The count is pulled
+   back inside its place when the place is too narrow for it beside the icon. ---- */
+
+.salt-appbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  padding: 0 var(--salt-space-2) env(safe-area-inset-bottom);
+  background: var(--salt-slate);
+  border-top: 1px solid var(--salt-line);
+}
+.salt-appbar__item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--salt-space-1);
+  min-width: var(--salt-tap);
+  min-height: calc(var(--salt-bar-h) - 1px);
+  padding: var(--salt-space-1) 2px;
+  background: none;
+  border: 0;
+  border-radius: var(--salt-radius-sm);
+  color: var(--salt-mist-light);
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  container-type: inline-size;
+}
+.salt-appbar__label, .salt-appbar__count { font-size: min(var(--salt-text-xs), 20cqi); }
+.salt-appbar__label { max-width: 100%; overflow-wrap: anywhere; } /* a word longer than seven letters breaks rather than spill */
+.salt-appbar__icon { display: flex; width: 24px; height: 24px; }
+.salt-appbar__icon svg { width: 100%; height: 100%; }
+.salt-appbar__item:hover, .salt-appbar__item[aria-current="page"] { color: var(--salt-salt); }
+.salt-appbar__item[aria-current="page"]::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 30%;
+  right: 30%;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: var(--salt-brass);
+}
+.salt-appbar__count {
+  position: absolute;
+  /* at the icon's upper right whatever the bar's height: the place centres an icon (24px), a 4px gap and one line
+     of its word, and 1em here is that word's size, so this is 4px at the default as it was */
+  top: calc(50% - 21px - 0.6em);
+  left: calc(50% + 12px);
+  translate: min(0px, calc(50cqi - 12px - 100%)) 0; /* back inside the place's right edge, never further left than it must */
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--salt-copper);
+}
+.salt-appbar__item:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: -2px; }
+/* the place as the rail draws it: the same icon, beside the word */
+.salt-appbar__place { display: inline-flex; align-items: center; gap: 10px; }
+.salt-appbar__place .salt-appbar__icon { width: 20px; height: 20px; flex: 0 0 auto; }
+@media (min-width: 1080px) {
+  .salt-appbar { display: none; }
+}
+@media (max-width: 1079.98px) {
+  .salt-rail.salt-appbar__rail { display: none; } /* two classes, so the rail's own display, later in the file, cannot outrank it */
+}
+
+/* ---- Inbox row: one waiting thing in a list beside its card (the desk's Waiting on you, Salt Admin's
+   Needs you). Who it concerns and its kind as a chip, what it is in one sentence, how long it has waited,
+   and the one action it leads to in brass. The whole row is one tap that opens its card; the row whose
+   card is open is read from aria-current and takes the brass rule down its left edge. The sentence keeps
+   10rem at least: where the row cannot give it that beside the age and the action (a narrow column, a
+   larger text size), those two go under it at the right, rather than the sentence falling to a letter a
+   line (measured 24 Sep 2026: 20px wide at 320 and 200%). ---- */
+
+.salt-inbox-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--salt-space-1) var(--salt-space-3);
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 14px;
+  text-align: left;
+  background: var(--salt-glass-faint);
+  border: 1px solid var(--salt-line);
+  border-radius: var(--salt-radius-md);
+  color: var(--salt-salt);
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.16s, border-color 0.16s;
+}
+.salt-inbox-row:hover { background: var(--salt-glass-hover); border-color: var(--salt-line-strong); }
+.salt-inbox-row[aria-current="true"] {
+  background: var(--salt-glass);
+  border-color: var(--salt-line-strong);
+  box-shadow: inset 2px 0 0 var(--salt-brass);
+}
+.salt-inbox-row:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+.salt-inbox-row__main { flex: 1 1 10rem; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+.salt-inbox-row__side { flex: 0 0 auto; margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.salt-inbox-row__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--salt-space-2);
+  min-width: 0;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-md);
+  font-weight: 500;
+  color: var(--salt-salt);
+}
+.salt-inbox-row__what {
+  min-width: 0;
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-sm);
+  line-height: 1.45;
+  color: var(--salt-prose);
+  overflow-wrap: anywhere;
+}
+.salt-inbox-row__age {
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--salt-prose);
+  white-space: nowrap;
+}
+.salt-inbox-row__action {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--salt-brass);
+  white-space: nowrap;
+}
+.salt-inbox-row__action svg { width: 16px; height: 16px; flex: 0 0 auto; }
+@media (prefers-reduced-motion: reduce) {
+  .salt-inbox-row { transition: none; }
 }
 
 /* ---- Voice line ---- */
@@ -414,7 +692,7 @@
 .salt-swatch__meta { padding: var(--salt-space-3) 14px 14px; }
 .salt-swatch__name {
   font-family: var(--salt-font-mono);
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -423,13 +701,13 @@
 }
 .salt-swatch__hex {
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--salt-mist);
 }
 .salt-swatch__role {
   font-family: var(--salt-font-display);
   font-size: var(--salt-text-sm);
-  color: var(--salt-mist);
+  color: var(--salt-prose);
   display: block;
   margin-top: 6px;
   line-height: 1.45;
@@ -438,7 +716,7 @@
 /* ---- Section header ---- */
 
 .salt-section-head { display: flex; flex-direction: column; gap: var(--salt-space-3); }
-.salt-section-head__lede { margin: 0; color: var(--salt-mist); max-width: 62ch; font-size: var(--salt-text-lg); }
+.salt-section-head__lede { margin: 0; color: var(--salt-prose); max-width: 62ch; font-size: var(--salt-text-lg); }
 
 /* ---- Ledger list ---- */
 
@@ -454,7 +732,7 @@
 .salt-ledger__flag {
   display: block;
   margin-top: 4px;
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--salt-mist);
@@ -505,31 +783,38 @@
 .salt-field__label,
 label.salt-field__label {
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--salt-copper);
 }
 .salt-field__input {
-  /* a well, not glass (principle 4), 16px so a phone never zooms on focus and 44px tall
-     (principle 7); the recipe said 15px on glass until 22 Sep 2026 */
+  /* a well, not glass (principle 4), never under 16px so a phone never zooms on focus, and 44px
+     tall (principle 7); the recipe said 15px on glass until 22 Sep 2026 */
   background: var(--salt-well);
-  border: 1px solid var(--salt-line-faint);
+  border: 1px solid var(--salt-edge-field);
   border-radius: var(--salt-radius-sm);
   padding: 12px 16px;
   min-height: var(--salt-tap);
   color: var(--salt-salt);
   font-family: var(--salt-font-display);
-  font-size: 16px;
+  font-size: max(16px, 1rem);
   line-height: 1.4;
   color-scheme: dark;
   width: 100%;
 }
-.salt-field__input::placeholder { color: var(--salt-mist); opacity: 0.7; }
-.salt-field__input:focus-visible { outline: none; border-color: var(--salt-brass); box-shadow: var(--salt-focus-ring); }
+/* a placeholder in mist at full strength, 5.3:1 in the well (24 Sep 2026): at 0.7 it was 3.1:1, and on the
+   thread's composer it is the only line saying what the field is for */
+.salt-field__input::placeholder { color: var(--salt-mist); opacity: 1; }
+/* FOCUS IS ITS OWN CHANGE OF 3:1 (24 Sep 2026): a 2px brass ring clear of the edge, as every other control in the
+   system has. Brass on the resting edge is 1.70:1 and the old 0.18 ring 1.29:1, so once the edge became
+   visible a focused field read as a resting one; the edge still lifts to brass beside the ring. */
+.salt-field__input:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; border-color: var(--salt-brass); }
 .salt-field__input--mono { font-family: var(--salt-font-mono); font-variant-numeric: tabular-nums; }
-.salt-field__input--error { border-color: rgba(184, 115, 51, 0.7); }
+/* a refused value DOUBLES the edge as well as recolouring it (24 Sep 2026): copper on the resting edge is 1.10:1,
+   so a hue alone told it from a valid field */
+.salt-field__input--error { border-color: var(--salt-copper); box-shadow: inset 0 0 0 1px var(--salt-copper); }
 .salt-field__input.salt-field__select {
   appearance: none;
   -webkit-appearance: none;
@@ -540,8 +825,243 @@ label.salt-field__label {
   padding-right: 40px;
 }
 .salt-field__select option { background: var(--salt-slate); color: var(--salt-salt); }
-.salt-field__hint { font-family: var(--salt-font-mono); font-size: 11px; color: var(--salt-mist); }
-.salt-field__error { font-family: var(--salt-font-mono); font-size: 11px; color: var(--salt-copper); }
+.salt-field__hint { font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); color: var(--salt-prose); }
+.salt-field__error { font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); color: var(--salt-copper); }
+
+/* ---- Option ---- */
+/* A choice that carries its figure: a size and its price, a way to pay (24 Sep 2026, the Counter's
+   redesign). It is a real radio, so the group is one tab stop, the arrows move the choice and a form
+   posts it with no script. The radio lies over its whole tile unseen, so the tile is the hit area
+   and never under 44px either way, and the face is the sibling after it, so the chosen state needs
+   no :has(). Glass faint on the field's own edge, 3:1; chosen, it is pressed with a brass edge twice
+   the hairline, and never filled: the one filled control on a screen is the pill that acts on the
+   choice. The legend is the customer's sentence case, not the desk's eyebrow. A tile a row by
+   default, two for sizes; a modifier, because the Counter's policy refuses a style attribute. */
+
+.salt-options { margin: 0; padding: 0; border: 0; min-width: 0; }
+.salt-options__legend {
+  padding: 0;
+  margin: 0 0 var(--salt-space-2);
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-md);
+  font-weight: 500;
+  color: var(--salt-prose);
+}
+.salt-options__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--salt-space-2); }
+.salt-options__grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.salt-option { position: relative; display: flex; min-width: 0; }
+.salt-option__input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.salt-option__face {
+  display: flex;
+  align-items: center;
+  gap: var(--salt-space-3);
+  width: 100%;
+  min-height: var(--salt-tap);
+  padding: var(--salt-space-3) var(--salt-space-4);
+  background: var(--salt-glass-faint);
+  border: 1px solid var(--salt-edge-field);
+  border-radius: var(--salt-radius-sm);
+  color: var(--salt-salt);
+  transition: border-color 0.16s, background 0.16s, box-shadow 0.16s;
+}
+.salt-option__lead { flex: 0 0 auto; display: inline-flex; color: var(--salt-brass); }
+.salt-option__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.salt-option__label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--salt-space-1) var(--salt-space-2);
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-md);
+  font-weight: 500;
+  line-height: 1.35;
+}
+.salt-option__figure { font-family: var(--salt-font-mono); font-size: var(--salt-text-md); font-variant-numeric: tabular-nums; line-height: 1.35; }
+.salt-option__detail { font-family: var(--salt-font-display); font-size: var(--salt-text-sm); line-height: 1.45; color: var(--salt-prose); }
+.salt-option__input:checked + .salt-option__face {
+  background: var(--salt-glass);
+  border-color: var(--salt-brass);
+  box-shadow: inset 0 0 0 1px var(--salt-brass);
+}
+.salt-option__input:focus-visible + .salt-option__face { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+/* not on offer: a dashed edge and the label stepped down to prose, never faded, so the line saying why
+   stays readable (a faded disabled control read 1.5:1 on the Counter, measured 23 Sep 2026) */
+.salt-option__input:disabled { cursor: not-allowed; }
+.salt-option__input:disabled + .salt-option__face { background: transparent; border-style: dashed; }
+.salt-option__input:disabled + .salt-option__face .salt-option__label,
+.salt-option__input:disabled + .salt-option__face .salt-option__figure { color: var(--salt-prose); font-weight: 400; }
+@media (hover: hover) {
+  .salt-option__input:not(:checked):not(:disabled):hover + .salt-option__face { background: var(--salt-glass-hover); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .salt-option__face { transition: none; }
+}
+
+/* ---- Code field ---- */
+/* An eight-symbol one-time code (24 Sep 2026, the Counter's redesign): a modifier on the field, so it
+   keeps the well, the 44px floor and the brass focus of the Fields recipe, which it needs beside it.
+   Large mono, grouped four and four by a real space the component writes, and centred: the tracking
+   after the last symbol is given back by the indent, or the code sits left of the centre. The size is
+   a multiple of a rem token, so a larger text size reaches it, and it is 30px at the default,
+   far above the 16px under which a phone zooms. It is also held to the field's width: the wrapper,
+   .salt-code, is a container, and eight symbols, their space, tracking and indent are 7.4em, so the size
+   never passes the width inside the padding over 7.5 and the last symbol is never cut (measured
+   24 Sep 2026: at 320 and 125% it was). The label, the hint and the refusal are the
+   customer's sentence case in the display face, never the desk's caps, and a refusal is alarm. */
+
+.salt-code { container-type: inline-size; }
+.salt-field__input--code {
+  min-height: 4rem;
+  border-color: var(--salt-edge-field);
+  font-family: var(--salt-font-mono);
+  font-size: max(16px, min(calc(var(--salt-text-xl) * 1.25), calc((100cqi - 2 * 16px - 2px) / 7.5)));
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  letter-spacing: 0.2em;
+  text-indent: 0.2em;
+  text-align: center;
+}
+.salt-field__input--code[aria-invalid="true"] { border-color: var(--salt-alarm); box-shadow: inset 0 0 0 1px var(--salt-alarm); }
+.salt-code__label { font-family: var(--salt-font-display); font-size: var(--salt-text-md); font-weight: 500; color: var(--salt-prose); }
+.salt-code__hint,
+.salt-code__error { font-family: var(--salt-font-display); font-size: var(--salt-text-sm); line-height: 1.45; color: var(--salt-prose); }
+.salt-code__error { color: var(--salt-alarm); }
+
+/* ---- Statement lines ---- */
+/* A statement row that stacks on a phone (24 Sep 2026, the Counter's redesign; the statement's table
+   was 340px at least and put the whole page sideways at 360). Stacked, the date and the state share a
+   line and the mark with its quantity and the amount share the next, in two equal halves, so a long
+   state wraps inside its half and a long note never widens the other side. From 37.5rem of the LIST'S
+   OWN width (a container query, so a narrow column on a desk still stacks, and a larger text size
+   stacks sooner) the same cells take one row of a table under heads that were until then read aloud
+   and not drawn. Mono with tabular figures; the state wraps and is never cut, clipped or ellipsed. A
+   cancelled line is struck through in prose rather than faded, which read 2:1 on the Counter. The
+   mark is brass and sized in em, so it follows the text. Its role is a table at every width. */
+
+.salt-lines { container: salt-lines / inline-size; font-family: var(--salt-font-mono); font-variant-numeric: tabular-nums; }
+.salt-lines__head {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.salt-lines__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: "date state" "what amount";
+  gap: var(--salt-space-1) var(--salt-space-4);
+  align-items: baseline;
+  padding: var(--salt-space-3) 0;
+  border-bottom: 1px solid var(--salt-line-faint);
+}
+.salt-lines__date { grid-area: date; font-size: var(--salt-text-sm); color: var(--salt-prose); }
+.salt-lines__what { grid-area: what; font-size: var(--salt-text-md); color: var(--salt-salt); }
+.salt-lines__amount { grid-area: amount; font-size: var(--salt-text-md); font-weight: 500; color: var(--salt-salt); text-align: right; }
+.salt-lines__state {
+  grid-area: state;
+  font-size: var(--salt-text-sm);
+  font-weight: 500;
+  color: var(--salt-prose);
+  text-align: right;
+  overflow-wrap: break-word;
+}
+.salt-lines__state--verdigris { color: var(--salt-verdigris); }
+.salt-lines__state--ember { color: var(--salt-ember); }
+.salt-lines__state--steel { color: var(--salt-steel); }
+.salt-lines__state--alarm { color: var(--salt-alarm); }
+.salt-lines__mark { display: inline-flex; vertical-align: -0.2em; margin-right: var(--salt-space-2); color: var(--salt-brass); }
+.salt-lines__mark svg { width: 1.2em; height: 1.2em; }
+.salt-lines__sub {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-sm);
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--salt-prose);
+}
+.salt-lines__row--cancelled .salt-lines__what,
+.salt-lines__row--cancelled .salt-lines__amount {
+  color: var(--salt-prose);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+@container salt-lines (min-width: 37.5rem) {
+  .salt-lines__head,
+  .salt-lines__row {
+    grid-template-columns: 7.5rem minmax(0, 1fr) 8rem minmax(0, 1fr);
+    grid-template-areas: "date what amount state";
+    column-gap: var(--salt-space-4);
+  }
+  .salt-lines__head {
+    position: static;
+    display: grid;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+    padding: 0 0 var(--salt-space-2);
+    border-bottom: 1px solid var(--salt-line);
+  }
+  .salt-lines__head > * {
+    font-family: var(--salt-font-display);
+    font-size: var(--salt-text-sm);
+    font-weight: 500;
+    color: var(--salt-prose);
+  }
+}
+
+/* ---- Ledger list, plain ---- */
+/* The customer's reading of the ledger list (24 Sep 2026, the Counter's redesign), a modifier that needs
+   the Ledger list recipe beside it. Letter-spaced capitals at 11 to 13px are the desk's and are hard on
+   older eyes, so the label is a sentence-case word in the display face at the reading size, in prose,
+   and the flag under a row is a quiet sentence rather than a caps line faded to .8. The value stays mono,
+   a step up to the reading size, set right, and lays out a mark or a Copy ghost beside its figure. */
+
+.salt-ledger--plain { font-size: var(--salt-text-md); }
+.salt-ledger--plain .salt-ledger__row { padding: var(--salt-space-3) 0; }
+/* centred, not on the baseline: a value that opens with a drawn mark takes its baseline from the mark's
+   foot, which set the label low (measured 24 Sep 2026), and a Copy ghost is 44px tall */
+.salt-ledger--plain .salt-ledger__line { align-items: center; }
+.salt-ledger--plain .salt-ledger__label {
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-md);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--salt-prose);
+}
+.salt-ledger--plain .salt-ledger__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--salt-space-2);
+  font-size: var(--salt-text-md);
+  text-align: right;
+}
+.salt-ledger--plain .salt-ledger__flag {
+  margin-top: var(--salt-space-1);
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-sm);
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--salt-prose);
+  opacity: 1;
+}
 
 /* ---- The material of a native control inside a scope (22 Sep 2026). A page that draws its own
    forms, with its own geometry and its figures in mono (the desk), puts .salt-fields on its body,
@@ -549,13 +1069,13 @@ label.salt-field__label {
    the option colours, and nothing else: size, face and padding stay the page's. ---- */
 .salt-fields :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
   background-color: var(--salt-well);
-  border: 1px solid var(--salt-line-faint);
+  border: 1px solid var(--salt-edge-field);
   border-radius: var(--salt-radius-sm);
   color: var(--salt-salt);
   font-weight: 400;
 }
-.salt-fields :is(input, select, textarea):focus { border-color: var(--salt-brass); box-shadow: var(--salt-focus-ring); }
-.salt-fields input::placeholder { color: var(--salt-mist); opacity: 0.7; }
+.salt-fields :is(input, select, textarea):focus { border-color: var(--salt-brass); outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+.salt-fields input::placeholder { color: var(--salt-mist); opacity: 1; }
 .salt-fields select:hover { background-color: var(--salt-well-hover); }
 .salt-fields option, .salt-fields optgroup { background-color: var(--salt-slate); color: var(--salt-salt); }
 .salt-fields option:checked { background-color: var(--salt-slate-light); }
@@ -626,7 +1146,7 @@ label.salt-field__label {
 .salt-nav__links { display: flex; gap: var(--salt-space-5); flex: 1; flex-wrap: wrap; }
 .salt-nav__link {
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -649,7 +1169,7 @@ label.salt-field__label {
 .salt-footer__column { display: flex; flex-direction: column; gap: var(--salt-space-2); }
 .salt-footer__title {
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--salt-copper);
@@ -657,7 +1177,7 @@ label.salt-field__label {
 }
 .salt-footer__link {
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--salt-mist);
@@ -666,7 +1186,7 @@ label.salt-field__label {
 .salt-footer__link:hover { color: var(--salt-brass); }
 .salt-footer__line {
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--salt-mist);
@@ -679,24 +1199,145 @@ label.salt-field__label {
 .salt-tabs { display: flex; gap: var(--salt-space-2); flex-wrap: wrap; }
 .salt-tabs__pill {
   font-family: var(--salt-font-mono);
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--salt-mist);
   background: transparent;
-  border: 1px solid var(--salt-line-faint);
+  border: 1px solid var(--salt-edge-field); /* a ghost's edge, 3:1, since 24 Sep 2026: the faint line was 1.1:1 */
   border-radius: var(--salt-radius-pill);
   padding: 8px 16px;
   cursor: pointer;
 }
-.salt-tabs__pill:hover { color: var(--salt-brass); border-color: var(--salt-line); }
+.salt-tabs__pill:hover { color: var(--salt-brass); border-color: var(--salt-brass); }
 /* The active pill is also read from ARIA, so a strip carrying role="tab" needs no second class and
    a consumer's older rule on its own state class cannot outrank it. */
-.salt-tabs__pill--active, .salt-tabs__pill[aria-selected="true"] { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-line); }
+.salt-tabs__pill--active, .salt-tabs__pill[aria-selected="true"] { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-brass); }
 .salt-tabs__pill--active:hover, .salt-tabs__pill[aria-selected="true"]:hover { color: var(--salt-salt); }
 .salt-tabs__pill:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
 .salt-tabs__count { color: var(--salt-copper); margin-left: 8px; }
+
+/* ---- Steps: where an order's GOODS are, and nothing else: Sent, Confirmed, Ready, then Collected or
+   Delivered. A bar a step: done in verdigris, now in brass, ahead a well with the field's edge. The step
+   now is read from aria-current="step" as well as its class. Money has its own lines and never rides
+   this track, so Paid can never run ahead of the goods. The names are words in sentence case, and the
+   track is its own container: where four names of nine letters no longer fit side by side (24em at the
+   names' own size, so a larger text size moves the break with it), the steps stack, each bar
+   standing to the left of its name. ---- */
+
+.salt-steps {
+  container: salt-steps / inline-size;
+  display: grid;
+  grid-template-columns: repeat(var(--salt-steps-n, 4), minmax(0, 1fr));
+  gap: 0 0.75em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-sm);
+  letter-spacing: 0;
+  line-height: 1.3;
+}
+.salt-steps__step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  min-width: 0;
+  color: var(--salt-mist-light);
+  overflow-wrap: anywhere;
+}
+.salt-steps__step::before {
+  content: '';
+  flex: none;
+  height: 4px;
+  border-radius: var(--salt-radius-pill);
+  background: var(--salt-well);
+  box-shadow: inset 0 0 0 1px var(--salt-edge-field);
+}
+.salt-steps__step--done::before { background: var(--salt-verdigris); box-shadow: none; }
+.salt-steps__step--now, .salt-steps__step[aria-current="step"] { color: var(--salt-salt); font-weight: 700; }
+.salt-steps__step--now::before, .salt-steps__step[aria-current="step"]::before { background: var(--salt-brass); box-shadow: none; }
+@container salt-steps (max-width: 24em) {
+  .salt-steps__step { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 0.75em; padding: 0.2em 0; }
+  .salt-steps__step::before { width: 4px; height: auto; align-self: stretch; margin: calc(1px - 0.2em) 0; }
+}
+
+/* ---- Bubble and thread: an order's thread, one line a bubble, and the composer under it. Mine stand
+   right on the lit slate, theirs left on glass with the brass hairline, so whoever reads the thread (the
+   customer on their page, he on the desk) reads their own lines as mine. Under a line of mine is where it
+   is, in words and a drawn mark: Sending, Sent (stored, never read: there are no read receipts), or Not
+   sent in alarm, with Tap to try again as a lit 44px ghost. A line of theirs not yet seen carries New, a
+   copper dot and the word. The composer is one row at the foot, the field and Send side by side and the
+   same height, Send at the thumb's end; it is a form, so Return sends. The sending mark turns, and stands
+   still under reduced motion. ---- */
+
+.salt-thread { display: flex; flex-direction: column; gap: var(--salt-space-3); min-width: 0; }
+.salt-thread__lines { display: flex; flex-direction: column; gap: var(--salt-space-2); }
+.salt-bubble {
+  max-width: 84%;
+  padding: 9px 13px 8px;
+  border: 1px solid var(--salt-line-faint);
+  border-radius: var(--salt-radius-md);
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-md);
+  line-height: 1.45;
+  color: var(--salt-salt);
+  overflow-wrap: anywhere;
+}
+.salt-bubble--mine { align-self: flex-end; background: var(--salt-slate-light); border-bottom-right-radius: 4px; }
+.salt-bubble--theirs { align-self: flex-start; background: var(--salt-glass); border-color: var(--salt-line); border-bottom-left-radius: 4px; }
+.salt-bubble--failed { border-color: var(--salt-alarm); }
+.salt-bubble__text { margin: 0; }
+.salt-bubble__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
+  margin: 3px 0 0;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  color: var(--salt-mist-light);
+}
+.salt-bubble__state { display: inline-flex; align-items: center; gap: 5px; }
+.salt-bubble__state::before { content: ''; flex: none; box-sizing: border-box; }
+.salt-bubble__state--sent::before {
+  width: 0.4em;
+  height: 0.75em;
+  margin: 0 0.2em 0.2em;
+  border: solid currentColor;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+.salt-bubble__state--sending::before {
+  width: 1em;
+  height: 1em;
+  border: 1.5px dotted currentColor;
+  border-radius: 50%;
+  animation: salt-bubble-turn 2.4s linear infinite;
+}
+.salt-bubble__state--failed { color: var(--salt-alarm); font-weight: 700; }
+.salt-bubble__state--failed::before {
+  width: 1.1em;
+  height: 1.1em;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  background:
+    linear-gradient(currentColor, currentColor) 50% 26% / 1.5px 36% no-repeat,
+    linear-gradient(currentColor, currentColor) 50% 76% / 1.5px 1.5px no-repeat;
+}
+.salt-bubble__new { display: inline-flex; align-items: center; gap: 6px; color: var(--salt-salt); letter-spacing: 0.14em; text-transform: uppercase; }
+.salt-bubble__new::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--salt-copper); box-shadow: 0 0 6px var(--salt-copper); }
+.salt-bubble__retry { margin-top: var(--salt-space-2); }
+.salt-composer { display: flex; align-items: stretch; gap: var(--salt-space-2); margin: 0; }
+.salt-composer__field { flex: 1 1 0; min-width: 0; }
+.salt-composer__send { flex: none; }
+@keyframes salt-bubble-turn { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) {
+  .salt-bubble__state--sending::before { animation: none; }
+}
 
 /* ---- Slides ---- */
 
@@ -805,7 +1446,7 @@ label.salt-field__label {
   font-family: var(--salt-font-display);
   font-size: 12.5px;
   line-height: 1.6;
-  color: var(--salt-mist);
+  color: var(--salt-prose);
   margin: 0;
   max-width: 62ch;
 }
@@ -855,7 +1496,7 @@ label.salt-field__label {
   min-width: var(--salt-tap);
   padding: 8px 16px;
   background: transparent;
-  border: 1px solid var(--salt-line-faint);
+  border: 1px solid var(--salt-edge-field);
   border-radius: var(--salt-radius-pill);
   color: var(--salt-ghost-tone);
   font-family: var(--salt-font-mono);
@@ -867,12 +1508,14 @@ label.salt-field__label {
   text-decoration: none;
   transition: color 0.16s, border-color 0.16s, background 0.16s;
 }
-.salt-ghost:hover { color: var(--salt-brass); border-color: var(--salt-line); background: transparent; transform: none; }
-.salt-ghost--on, .salt-ghost[aria-pressed="true"] { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-line); }
-.salt-ghost--lit { --salt-ghost-tone: var(--salt-brass); border-color: var(--salt-line-strong); }
+.salt-ghost:hover { color: var(--salt-brass); border-color: var(--salt-brass); background: transparent; transform: none; }
+.salt-ghost--on, .salt-ghost[aria-pressed="true"] { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-brass); }
+.salt-ghost--lit { --salt-ghost-tone: var(--salt-brass); border-color: var(--salt-brass); }
 .salt-ghost--tight { min-width: 0; padding: 3px 9px; }
 .salt-ghost--sm { min-height: 32px; padding: 4px 12px; font-size: var(--salt-text-xs); }
-.salt-ghost--danger:hover { color: var(--salt-ember); border-color: rgba(212, 105, 76, 0.55); background: rgba(212, 105, 76, 0.08); }
+/* the danger ghost under a pointer lifts to full ember, above the resting edge as every lift is (24 Sep 2026: its
+   0.55 ember ring had come to 2.39:1, under the 4.81:1 edge it rose from) */
+.salt-ghost--danger:hover { color: var(--salt-ember); border-color: var(--salt-ember); }
 .salt-ghost:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
 .salt-ghost:disabled { opacity: 0.45; cursor: not-allowed; }
 
@@ -918,7 +1561,7 @@ label.salt-field__label {
   display: block;
   margin-top: 6px;
   font-family: var(--salt-font-mono);
-  font-size: 24px;
+  font-size: var(--salt-text-xl);
   font-weight: 500;
   letter-spacing: 0;
   line-height: 1.1;
@@ -927,13 +1570,13 @@ label.salt-field__label {
   overflow-wrap: anywhere;
 }
 @media (max-width: 560px) {
-  .salt-kpi__value { font-size: 20px; }
+  .salt-kpi__value { font-size: 1.25rem; }
 }
 .salt-kpi__note {
   display: block;
   margin-top: 4px;
   font-family: var(--salt-font-display);
-  font-size: 13.5px;
+  font-size: 0.84375rem;
   line-height: 1.45;
   color: var(--salt-mist-bright);
 }
@@ -969,12 +1612,12 @@ label.salt-field__label {
   color: var(--salt-sev);
   padding-top: 3px;
 }
-.salt-action__title { font-family: var(--salt-font-display); font-size: 16px; font-weight: 400; line-height: 1.4; color: var(--salt-salt); }
-.salt-action__why { font-family: var(--salt-font-display); font-size: 13.5px; line-height: 1.55; color: var(--salt-mist-bright); margin-top: 4px; }
+.salt-action__title { font-family: var(--salt-font-display); font-size: 1rem; font-weight: 400; line-height: 1.4; color: var(--salt-salt); }
+.salt-action__why { font-family: var(--salt-font-display); font-size: 0.84375rem; line-height: 1.55; color: var(--salt-mist-bright); margin-top: 4px; }
 .salt-action__why b { color: var(--salt-salt); font-weight: 500; }
 .salt-action__money {
   font-family: var(--salt-font-mono);
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 500;
   color: var(--salt-salt);
   white-space: nowrap;
@@ -982,7 +1625,7 @@ label.salt-field__label {
   font-variant-numeric: tabular-nums;
   padding-top: 2px;
 }
-.salt-action__money--nil { color: var(--salt-mist); font-weight: 400; font-size: 13px; }
+.salt-action__money--nil { color: var(--salt-mist); font-weight: 400; font-size: var(--salt-text-sm); }
 .salt-action__body { min-width: 0; }
 .salt-action__chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; grid-column: 2 / 3; }
 .salt-action__bar {
@@ -1019,7 +1662,7 @@ label.salt-field__label {
   gap: 9px;
   margin: 0 0 10px;
   font-family: var(--salt-font-mono);
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1031,7 +1674,7 @@ label.salt-field__label {
 .salt-product--rice { --salt-hue: var(--salt-product-rice); }
 .salt-product--spare { --salt-hue: var(--salt-product-spare); }
 .salt-product__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--salt-hue); box-shadow: 0 0 8px -1px var(--salt-hue); flex: 0 0 auto; }
-.salt-product__sub { font-family: var(--salt-font-display); font-size: 11.5px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--salt-mist); }
+.salt-product__sub { font-family: var(--salt-font-display); font-size: 0.71875rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--salt-mist); }
 .salt-product__rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--salt-line), transparent); }
 
 /* ---- Product tag: the stamp on a row. The dot is an element and not a pseudo, because the desk
@@ -1067,7 +1710,7 @@ label.salt-field__label {
    for a threshold. The fill is set as --salt-fill on the element, 0 to 100. ---- */
 
 .salt-meter { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-.salt-meter__line { display: flex; justify-content: space-between; gap: 12px; font-family: var(--salt-font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--salt-mist); }
+.salt-meter__line { display: flex; justify-content: space-between; gap: 12px; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.1em; text-transform: uppercase; color: var(--salt-mist); }
 .salt-meter__line b { color: var(--salt-salt); font-weight: 500; }
 .salt-meter__track {
   position: relative;
@@ -1104,7 +1747,7 @@ label.salt-field__label {
 .salt-ageing__seg--1 { background: var(--salt-brass); }
 .salt-ageing__seg--2 { background: var(--salt-copper); }
 .salt-ageing__seg--3 { background: var(--salt-ember); }
-.salt-ageing__legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--salt-font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--salt-mist); font-variant-numeric: tabular-nums; }
+.salt-ageing__legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--salt-mist); font-variant-numeric: tabular-nums; }
 .salt-ageing__legend > span { display: inline-flex; align-items: center; gap: 7px; }
 .salt-ageing__legend b { color: var(--salt-salt); font-weight: 500; }
 .salt-ageing__swatch { width: 8px; height: 8px; border-radius: 2px; }
@@ -1124,10 +1767,10 @@ label.salt-field__label {
   gap: 14px;
 }
 .salt-approve__head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
-.salt-approve__party { font-family: var(--salt-font-mono); font-size: 15px; font-weight: 500; color: var(--salt-salt); }
-.salt-approve__entry { font-family: var(--salt-font-mono); font-size: 12px; color: var(--salt-mist); font-variant-numeric: tabular-nums; }
+.salt-approve__party { font-family: var(--salt-font-mono); font-size: var(--salt-text-md); font-weight: 500; color: var(--salt-salt); }
+.salt-approve__entry { font-family: var(--salt-font-mono); font-size: 0.75rem; color: var(--salt-mist); font-variant-numeric: tabular-nums; }
 .salt-approve__flags { display: flex; flex-wrap: wrap; gap: 6px; }
-.salt-approve__reason { font-family: var(--salt-font-display); font-size: 13px; line-height: 1.5; color: var(--salt-mist-light); margin: 0; }
+.salt-approve__reason { font-family: var(--salt-font-display); font-size: var(--salt-text-sm); line-height: 1.5; color: var(--salt-prose); margin: 0; }
 .salt-approve__actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .salt-approve--decided { opacity: 0.6; }
 
@@ -1135,7 +1778,7 @@ label.salt-field__label {
 
 .salt-insight {
   font-family: var(--salt-font-display);
-  font-size: 14.5px;
+  font-size: 0.90625rem;
   line-height: 1.6;
   color: var(--salt-salt);
   /* not a box: the material is stated in full, so an older rule underneath cannot give it one */
@@ -1162,7 +1805,7 @@ label.salt-field__label {
   align-items: center;
   gap: 7px;
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--salt-mist);
@@ -1224,24 +1867,24 @@ label.salt-field__label {
 .salt-plan > summary::marker { content: ''; }
 .salt-plan[open] > summary { border-bottom: 1px solid var(--salt-line-faint); }
 .salt-plan__id { font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.12em; color: var(--salt-mist); }
-.salt-plan__title { font-family: var(--salt-font-display); font-size: 14px; color: var(--salt-salt); }
-.salt-plan__money { grid-column: 3; font-family: var(--salt-font-mono); font-size: 12px; color: var(--salt-mist-light); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.salt-plan__title { font-family: var(--salt-font-display); font-size: 0.875rem; color: var(--salt-salt); }
+.salt-plan__money { grid-column: 3; font-family: var(--salt-font-mono); font-size: 0.75rem; color: var(--salt-mist-light); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .salt-plan__state { grid-column: 4; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.16em; text-transform: uppercase; color: var(--salt-mist); white-space: nowrap; }
 .salt-plan--late { border-color: var(--salt-line-strong); }
 .salt-plan--late .salt-plan__state { color: var(--salt-brass); }
 .salt-plan--done { opacity: 0.55; }
-.salt-plan__body { padding: 10px 14px 12px; font-family: var(--salt-font-display); font-size: 13px; line-height: 1.55; color: var(--salt-mist-light); }
+.salt-plan__body { padding: 10px 14px 12px; font-family: var(--salt-font-display); font-size: var(--salt-text-sm); line-height: 1.55; color: var(--salt-prose); }
 @media (max-width: 720px) { .salt-plan > summary { grid-template-columns: 40px minmax(0, 1fr); row-gap: 3px; } }
 
 /* ---- Journal entry: a dated note, linked to its row (synced to the desk 22 Sep 2026) ---- */
 
 .salt-journal { padding: 9px 2px; border-bottom: 1px solid var(--salt-line-faint); }
-.salt-journal__meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-family: var(--salt-font-mono); font-size: 11.5px; letter-spacing: 0.06em; color: var(--salt-mist); margin-bottom: 3px; }
+.salt-journal__meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-family: var(--salt-font-mono); font-size: 0.71875rem; letter-spacing: 0.06em; color: var(--salt-mist); margin-bottom: 3px; }
 .salt-journal__date { font-variant-numeric: tabular-nums; min-width: 78px; }
 .salt-journal__ref { color: var(--salt-brass); text-decoration: none; }
 a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2px; }
 .salt-journal__kind { margin-left: auto; text-transform: uppercase; letter-spacing: 0.14em; font-size: var(--salt-text-xs); font-weight: 500; }
-.salt-journal__text { font-family: var(--salt-font-display); font-size: 14.5px; line-height: 1.6; color: var(--salt-mist-bright); overflow-wrap: anywhere; }
+.salt-journal__text { font-family: var(--salt-font-display); font-size: 0.90625rem; line-height: 1.6; color: var(--salt-mist-bright); overflow-wrap: anywhere; }
 .salt-journal__text b { color: var(--salt-salt); font-weight: 500; }
 
 /* ---- Desk rail (synced to the desk 22 Sep 2026): the way between views. It stands beside the page
@@ -1271,7 +1914,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   .salt-rail { background: var(--salt-pane); }
 }
 .salt-rail__brand { display: flex; align-items: center; gap: 11px; margin: 0; padding: 0 4px 14px; border-bottom: 1px solid var(--salt-line-faint); }
-.salt-rail__brand .salt-title { font-size: 22px; letter-spacing: 0.04em; line-height: 1; }
+.salt-rail__brand .salt-title { font-size: 1.375rem; letter-spacing: 0.04em; line-height: 1; }
 .salt-rail__brand .salt-wordmark__subtitle { font-size: var(--salt-text-xs); letter-spacing: 0.24em; margin-top: 4px; }
 .salt-rail__group { display: flex; flex-direction: column; gap: 2px; margin: 0; }
 .salt-rail__label {
@@ -1297,7 +1940,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   background: none;
   color: var(--salt-mist-light);
   font-family: var(--salt-font-mono);
-  font-size: 13px;
+  font-size: var(--salt-text-sm);
   font-weight: 500;
   letter-spacing: 0.01em;
   text-transform: none;
@@ -1344,7 +1987,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   background: transparent;
   color: var(--salt-mist);
   font-family: var(--salt-font-mono);
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   font-weight: 500;
   letter-spacing: 0.01em;
   text-transform: none;
@@ -1355,7 +1998,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 .salt-rail__part--on, .salt-rail__part[aria-current="page"] { color: var(--salt-salt); background: rgba(255, 255, 255, 0.035); }
 .salt-rail__part--on::before, .salt-rail__part[aria-current="page"]::before { background: var(--salt-brass); }
 .salt-rail__foot { border-top: 1px solid var(--salt-line-faint); padding-top: 10px; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--salt-mist); }
-@media (max-width: 560px) { .salt-rail__tab { font-size: 13.5px; } }
+@media (max-width: 560px) { .salt-rail__tab { font-size: 0.84375rem; } }
 
 /* ---- Desk bar (synced to the desk 22 Sep 2026): one frame across the top in the rail's own
    material, glass with the hairline at the rail's offset, so the two read as one; the wordmark in
@@ -1385,7 +2028,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   align-self: flex-start;
   font-family: var(--salt-font-display);
   font-weight: 300;
-  font-size: 21px;
+  font-size: 1.3125rem;
   letter-spacing: 0.04em;
   line-height: 1;
   text-transform: none;
@@ -1417,7 +2060,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 @media (prefers-reduced-transparency: reduce) { .salt-deskbar { background: rgb(18, 15, 12); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 .salt-version {
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   font-weight: 500;
   letter-spacing: 0.14em;
   color: var(--salt-brass);
@@ -1430,9 +2073,11 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   white-space: nowrap;
   flex: 0 0 auto;
 }
-/* the orb: a 44px disc holding one glyph. Bare, as in the bar, it is a hairline on nothing; raised,
-   it floats over the page on the pane fill; lit, it is glass with a brass glow (back to top); on,
-   its ring is brass. */
+/* ---- Orb: a 44px disc holding one glyph, the desk bar's tools and the Sheet's close. Bare, as in the bar, it
+   is a hairline on nothing; raised, it floats over the page on the pane fill; lit, it is glass with a brass
+   glow (back to top); on, its ring is brass. Its own section since 24 Sep 2026, so a surface that carries
+   the Sheet carries its close without the Desk bar. ---- */
+
 .salt-orb {
   width: var(--salt-tap);
   height: var(--salt-tap);
@@ -1441,11 +2086,11 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   place-items: center;
   padding: 0;
   background: transparent;
-  border: 1px solid var(--salt-line-faint);
+  border: 1px solid var(--salt-edge-field); /* a ghost's edge, 3:1, since 24 Sep 2026: the faint line was 1.1:1 */
   color: var(--salt-brass);
   cursor: pointer;
 }
-.salt-orb:hover { background: var(--salt-glass-hover); border-color: var(--salt-line); }
+.salt-orb:hover { background: var(--salt-glass-hover); border-color: var(--salt-brass); }
 .salt-orb:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 3px; }
 .salt-orb--on { border-color: var(--salt-brass); box-shadow: 0 0 12px -4px var(--salt-brass); }
 .salt-orb--raised {

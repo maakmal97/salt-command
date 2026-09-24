@@ -307,10 +307,17 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   phone's notifications. A lapsed session says so in the bar, with Continue. Kept as an app:
   manifest and icon served by the Worker, no brand; every login asks about notifications once.
   Salt Admin links its own manifest with credentials and is titled Salt Admin.
-- **The hourly chase**: the site's own cron (`wrangler.stmt.jsonc`) wakes a customer holding an
-  advance once an hour, capped by a chase mark in the order book; the test account is skipped. The config
-  ships with the job's push paths; an unpushed laptop change needs `npx wrangler deploy -c
-  wrangler.stmt.jsonc`.
+- **A customer's banner names the kind of news, never an amount, a product, an order or a name**:
+  `{k, o}` sealed for the one phone (`sealFor`, RFC 8291) under the keys its subscription filed, the
+  words `NEWS` in `stmt/sw.js`; a record with no keys gets the payload-free wake and the old words. A
+  tap opens that order (`#o=<id>`), and a page already open re-reads first.
+- **The chase, twice a day** (his decision D5): the site's hourly cron (`wrangler.stmt.jsonc`) wakes a
+  customer holding goods unpaid (`isAdvance`) only at 10:00 and 18:00 Kuala Lumpur (`chaseSlot`), from
+  the day after the handover (`graceOver`), paused while a claim waits (`claimWaits`, where stage 6's
+  claim plugs in), in its own words (`due`); one wake a slot per customer, capped by the chase
+  mark (`markChased`: in the order book, `chased:<username>` on the `kv` road); the test account is
+  skipped. The config ships with the job's push paths; an unpushed laptop change needs `npx wrangler
+  deploy -c wrangler.stmt.jsonc`.
 - **An associate's own card** (`rec.card`): `share`, `stars` and `rank` never travel, and every
   figure adds up to the list under it. **The associates report card** (`/all/assoc`, whitelist
   `ASSOC_FIELDS`): no margin crosses.

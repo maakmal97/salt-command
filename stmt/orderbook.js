@@ -300,7 +300,7 @@ export class OrderBook {
       if (d.none) return { ok: true, order, none: true };
       return this.append(null, u, id, d.ev, order);
     }
-    /* THE CHASE MARK lives here with the orders it follows: true when this hour's wake is still to be
+    /* THE CHASE MARK lives here with the orders it follows: true when this slot's wake (S12 12.3) is still to be
        sent, and the mark is then written; a mark two hours old is dropped, as its KV lapse dropped it */
     if (op === "chase") {
       const u = String(a.u || ""), hour = Math.floor(+a.hour);
@@ -337,7 +337,7 @@ export class OrderBook {
       sql.exec("INSERT OR REPLACE INTO ord (u, oid, at, doc) VALUES (?, ?, ?, ?)", u, oid, String(r.order.at || ev.at), JSON.stringify(r.order));
       for (const [k, v] of marksOf(ev, r.order)) this.setMeta(k, v);
       if (ev.kind !== "copy" && this.writesKv()) sql.exec("INSERT OR IGNORE INTO behind (u, oid) VALUES (?, ?)", u, oid);
-      out = { ok: true, order: r.order, wake: wakes(ev, r.done) };
+      out = { ok: true, order: r.order, wake: wakes(ev, r.order, r.done) };   /* the wake and its S12 kind, or null */
     });
     return out;
   }

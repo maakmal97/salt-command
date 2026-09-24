@@ -1528,6 +1528,16 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   --salt-mist: #7a8690;       /* muted labels and captions */
   --salt-mist-light: #a6afb5; /* mist for running prose at 13px, where mist itself is too dark */
   --salt-mist-bright: #b4bcc2; /* prose on a figure surface, one step under salt: a tile's note, a finding's body */
+  /* Running prose, the sentences a person reads under a figure or a field (24 Sep 2026). Mist was
+     3.6:1 on a pane over the aurora at its brightest; mist-light is 6.0:1 there, 8.2:1 on the
+     panel and 9.0:1 on obsidian. A recipe's prose reads this and never mist. */
+  --salt-prose: var(--salt-mist-light);
+  /* THE EDGE OF A FIELD AND A GHOST (24 Sep 2026): brass at three quarters, so the hairline keeps the
+     identity's hue and still meets 3:1 (WCAG 1.4.11). The faint line it replaces was 1.1:1, so no box
+     was visible until it had focus. Measured: 3.2:1 on a pane over the aurora at its brightest (the
+     worst ground), 3.8:1 against the well it borders there, 4.4:1 on the panel, 4.8:1 on obsidian.
+     A state that lifts a control (hover, on, lit, focus) goes to full brass, above it. */
+  --salt-edge-field: #947843;
 
   /* The desk's semantic colours, added 02 Sep 2026. Direction and risk need hues the six
      brand colours do not carry, and each sits in the identity's temperature: verdigris is
@@ -1562,7 +1572,6 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   --salt-line-strong: rgba(197, 160, 89, 0.45); /* the hairline lifted: a chip's edge, a held or hovered control */
   --salt-glass-hover: rgba(255, 255, 255, 0.06); /* a ghost, a row or a tab under the pointer */
   --salt-highlight: rgba(255, 255, 255, 0.08);
-  --salt-focus-ring: 0 0 0 3px rgba(197, 160, 89, 0.18); /* the ring a focused control wears beside its brass hairline */
   --salt-shadow: 0 32px 64px rgba(0, 0, 0, 0.55);
   --salt-shadow-desk: 0 18px 40px rgba(0, 0, 0, 0.42); /* lighter, for a page of many panes */
   --salt-well: rgba(0, 0, 0, 0.28);      /* inset: fields and meter tracks */
@@ -1574,6 +1583,9 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
                                              A veil at .86 passes 14% of whatever scrolls under it, and the
                                              only fill that cannot ghost is 1 (the desk's v567; here 22 Sep 2026) */
   --salt-tap: 44px;                      /* the least a control may measure, either way */
+  --salt-bar-h: 4rem;                    /* the phone's bar of places, above the safe area: 64px at the
+                                            default text size, and in rem so it grows with the words in it */
+  --salt-sheet-radius: var(--salt-radius-lg); /* the top corners of a sheet, the inner corners of a drawer */
 
   /* Gradients. Brass to copper for marks and fills; white to copper for titles. */
   --salt-gradient: linear-gradient(135deg, var(--salt-brass), var(--salt-copper));
@@ -1589,15 +1601,23 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   --salt-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
   --salt-font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, monospace;
 
-  --salt-text-xs: 11px;
-  --salt-text-sm: 13px;
-  --salt-text-md: 15px;
-  --salt-text-lg: 17px;
-  --salt-text-xl: 24px;
-  --salt-text-2xl: 34px;
-  --salt-text-3xl: 48px;
-  --salt-text-4xl: 64px;
-  --salt-text-5xl: 88px;
+  /* The type scale in rem since 24 Sep 2026: at the default 16px each is the pixel size it was
+     (11, 13, 15, 17, 24, 34, 48, 64, 88), and a browser's own default text size (a desktop browser's
+     setting) now reaches them. A PHONE'S DOES NOT, YET: an iPhone's Text Size reaches a page only through
+     the system font keywords (font: -apple-system-body, 17px at its default), and Android's only where
+     the page opts in (meta name="text-scale"). Nothing sets either: that is a decision still open.
+     Every screen recipe sets its type in rem the same day, a token where the size is one and its
+     exact rem where not (11.5px is 0.71875rem), so a control grows with the prose beside it. A slide,
+     the document page and the footnote keep px: they are frames of a fixed size. */
+  --salt-text-xs: 0.6875rem;
+  --salt-text-sm: 0.8125rem;
+  --salt-text-md: 0.9375rem;
+  --salt-text-lg: 1.0625rem;
+  --salt-text-xl: 1.5rem;
+  --salt-text-2xl: 2.125rem;
+  --salt-text-3xl: 3rem;
+  --salt-text-4xl: 4rem;
+  --salt-text-5xl: 5.5rem;
 
   /* Space, radius */
   --salt-space-1: 4px;
@@ -1735,14 +1755,14 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   margin: 0;
 }
 .salt-wordmark--sm .salt-wordmark__subtitle { font-size: var(--salt-text-xs); }
-.salt-wordmark--md .salt-wordmark__subtitle { font-size: 12px; }
-.salt-wordmark--lg .salt-wordmark__subtitle { font-size: 14px; letter-spacing: 0.28em; }
+.salt-wordmark--md .salt-wordmark__subtitle { font-size: 0.75rem; }
+.salt-wordmark--lg .salt-wordmark__subtitle { font-size: 0.875rem; letter-spacing: 0.28em; }
 
 /* ---- Eyebrow ---- */
 
 .salt-eyebrow {
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.24em;
   text-transform: uppercase;
@@ -1766,7 +1786,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 .salt-metrics__label {
   display: block;
   color: var(--salt-copper);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1845,7 +1865,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   align-items: center;
   justify-content: center;
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--salt-mist);
 }
 .salt-qr__meta { text-align: center; }
@@ -1885,8 +1905,8 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   box-shadow: 0 8px 24px rgba(184, 115, 51, 0.3);
   transition: transform 0.2s, box-shadow 0.2s;
 }
-.salt-pill--md { padding: 16px 40px; font-size: 14px; }
-.salt-pill--sm { padding: 10px 20px; font-size: 11.5px; }
+.salt-pill--md { padding: 16px 40px; font-size: 0.875rem; }
+.salt-pill--sm { padding: 10px 20px; font-size: 0.71875rem; }
 .salt-pill:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(184, 115, 51, 0.4); }
 .salt-pill:active { transform: translateY(0); box-shadow: 0 8px 24px rgba(184, 115, 51, 0.3); }
 .salt-pill:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 3px; }
@@ -1899,6 +1919,264 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 @media (prefers-reduced-motion: reduce) {
   .salt-pill { transition: none; }
   .salt-pill:hover { transform: none; }
+}
+
+/* ---- Sheet: a task laid over the page (an order, a payment). Opaque slate, rounded at the top, with a
+   grabber; the body scrolls and the foot stays in reach of the thumb, holding the one filled action.
+   From 1080px it is a drawer on the right, full height. The scrim behind it is the page behind a
+   drawer. Moving focus in and closing on Escape are the component's; this is the look (24 Sep 2026). ---- */
+
+.salt-sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: var(--salt-scrim);
+  animation: salt-sheet-fade 0.2s ease-out;
+}
+.salt-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 71;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100% - var(--salt-space-6) - env(safe-area-inset-top));
+  background: var(--salt-slate);
+  color: var(--salt-salt);
+  border-top: 1px solid var(--salt-line);
+  border-radius: var(--salt-sheet-radius) var(--salt-sheet-radius) 0 0;
+  box-shadow: var(--salt-shadow), inset 0 1px 0 var(--salt-highlight);
+  font-family: var(--salt-font-display);
+  animation: salt-sheet-rise 0.24s ease-out;
+}
+.salt-sheet:focus { outline: none; } /* the dialog takes focus as it opens; its controls carry the ring */
+.salt-sheet__grab {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 4px;
+  margin: var(--salt-space-2) auto 0;
+  border-radius: 2px;
+  background: var(--salt-line-strong);
+}
+.salt-sheet__head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--salt-space-3);
+  padding: var(--salt-space-2) var(--salt-space-4) var(--salt-space-3);
+}
+.salt-sheet__title {
+  margin: 0;
+  min-width: 0;
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-xl);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--salt-salt);
+}
+.salt-sheet__close { flex: 0 0 auto; }
+.salt-sheet__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--salt-space-1) var(--salt-space-4) var(--salt-space-4);
+  font-size: var(--salt-text-md);
+  line-height: 1.55;
+  color: var(--salt-prose);
+}
+.salt-sheet__foot {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--salt-space-3);
+  padding: var(--salt-space-3) var(--salt-space-4) calc(var(--salt-space-3) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--salt-line-faint);
+}
+@media (min-width: 1080px) {
+  .salt-sheet {
+    top: 0;
+    left: auto;
+    width: min(460px, 100%);
+    max-height: none;
+    border-top: 0;
+    border-left: 1px solid var(--salt-line);
+    border-radius: var(--salt-sheet-radius) 0 0 var(--salt-sheet-radius);
+    animation-name: salt-sheet-slide;
+  }
+  .salt-sheet__grab { display: none; }
+  .salt-sheet__head { padding-top: var(--salt-space-5); }
+}
+@keyframes salt-sheet-fade { from { opacity: 0; } }
+@keyframes salt-sheet-rise { from { transform: translateY(100%); } }
+@keyframes salt-sheet-slide { from { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) {
+  .salt-sheet, .salt-sheet-scrim { animation: none; }
+}
+
+/* ---- App bar: the phone's places under the thumb. Opaque slate with one brass hairline, an icon and a
+   word for each place; the open one is read from aria-current and marked by a brass tick on the hairline;
+   a count is a copper numeral, never a filled badge. The bar is --salt-bar-h tall above the safe area,
+   which is what the page keeps clear at its foot. From 1080px the bar gives way to the Desk rail, which
+   the component draws from the same places, so the rail's recipe is used and not restated. Each place is
+   its own container, and its word and count are sized no larger than a fifth of it: a mono word of seven
+   letters then always fits its column, so five places never overprint each other however large the text
+   (measured 24 Sep 2026: Account and Rewards overlapped by 13px at 320 and 150%). The count is pulled
+   back inside its place when the place is too narrow for it beside the icon. ---- */
+
+.salt-appbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  padding: 0 var(--salt-space-2) env(safe-area-inset-bottom);
+  background: var(--salt-slate);
+  border-top: 1px solid var(--salt-line);
+}
+.salt-appbar__item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--salt-space-1);
+  min-width: var(--salt-tap);
+  min-height: calc(var(--salt-bar-h) - 1px);
+  padding: var(--salt-space-1) 2px;
+  background: none;
+  border: 0;
+  border-radius: var(--salt-radius-sm);
+  color: var(--salt-mist-light);
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  container-type: inline-size;
+}
+.salt-appbar__label, .salt-appbar__count { font-size: min(var(--salt-text-xs), 20cqi); }
+.salt-appbar__label { max-width: 100%; overflow-wrap: anywhere; } /* a word longer than seven letters breaks rather than spill */
+.salt-appbar__icon { display: flex; width: 24px; height: 24px; }
+.salt-appbar__icon svg { width: 100%; height: 100%; }
+.salt-appbar__item:hover, .salt-appbar__item[aria-current="page"] { color: var(--salt-salt); }
+.salt-appbar__item[aria-current="page"]::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 30%;
+  right: 30%;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: var(--salt-brass);
+}
+.salt-appbar__count {
+  position: absolute;
+  /* at the icon's upper right whatever the bar's height: the place centres an icon (24px), a 4px gap and one line
+     of its word, and 1em here is that word's size, so this is 4px at the default as it was */
+  top: calc(50% - 21px - 0.6em);
+  left: calc(50% + 12px);
+  translate: min(0px, calc(50cqi - 12px - 100%)) 0; /* back inside the place's right edge, never further left than it must */
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--salt-copper);
+}
+.salt-appbar__item:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: -2px; }
+/* the place as the rail draws it: the same icon, beside the word */
+.salt-appbar__place { display: inline-flex; align-items: center; gap: 10px; }
+.salt-appbar__place .salt-appbar__icon { width: 20px; height: 20px; flex: 0 0 auto; }
+@media (min-width: 1080px) {
+  .salt-appbar { display: none; }
+}
+@media (max-width: 1079.98px) {
+  .salt-rail.salt-appbar__rail { display: none; } /* two classes, so the rail's own display, later in the file, cannot outrank it */
+}
+
+/* ---- Inbox row: one waiting thing in a list beside its card (the desk's Waiting on you, Salt Admin's
+   Needs you). Who it concerns and its kind as a chip, what it is in one sentence, how long it has waited,
+   and the one action it leads to in brass. The whole row is one tap that opens its card; the row whose
+   card is open is read from aria-current and takes the brass rule down its left edge. The sentence keeps
+   10rem at least: where the row cannot give it that beside the age and the action (a narrow column, a
+   larger text size), those two go under it at the right, rather than the sentence falling to a letter a
+   line (measured 24 Sep 2026: 20px wide at 320 and 200%). ---- */
+
+.salt-inbox-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--salt-space-1) var(--salt-space-3);
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 14px;
+  text-align: left;
+  background: var(--salt-glass-faint);
+  border: 1px solid var(--salt-line);
+  border-radius: var(--salt-radius-md);
+  color: var(--salt-salt);
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.16s, border-color 0.16s;
+}
+.salt-inbox-row:hover { background: var(--salt-glass-hover); border-color: var(--salt-line-strong); }
+.salt-inbox-row[aria-current="true"] {
+  background: var(--salt-glass);
+  border-color: var(--salt-line-strong);
+  box-shadow: inset 2px 0 0 var(--salt-brass);
+}
+.salt-inbox-row:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+.salt-inbox-row__main { flex: 1 1 10rem; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+.salt-inbox-row__side { flex: 0 0 auto; margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.salt-inbox-row__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--salt-space-2);
+  min-width: 0;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-md);
+  font-weight: 500;
+  color: var(--salt-salt);
+}
+.salt-inbox-row__what {
+  min-width: 0;
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-sm);
+  line-height: 1.45;
+  color: var(--salt-prose);
+  overflow-wrap: anywhere;
+}
+.salt-inbox-row__age {
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--salt-prose);
+  white-space: nowrap;
+}
+.salt-inbox-row__action {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--salt-brass);
+  white-space: nowrap;
+}
+.salt-inbox-row__action svg { width: 16px; height: 16px; flex: 0 0 auto; }
+@media (prefers-reduced-motion: reduce) {
+  .salt-inbox-row { transition: none; }
 }
 
 /* ---- Voice line ---- */
@@ -1929,7 +2207,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 .salt-swatch__meta { padding: var(--salt-space-3) 14px 14px; }
 .salt-swatch__name {
   font-family: var(--salt-font-mono);
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1938,13 +2216,13 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 }
 .salt-swatch__hex {
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--salt-mist);
 }
 .salt-swatch__role {
   font-family: var(--salt-font-display);
   font-size: var(--salt-text-sm);
-  color: var(--salt-mist);
+  color: var(--salt-prose);
   display: block;
   margin-top: 6px;
   line-height: 1.45;
@@ -1953,7 +2231,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 /* ---- Section header ---- */
 
 .salt-section-head { display: flex; flex-direction: column; gap: var(--salt-space-3); }
-.salt-section-head__lede { margin: 0; color: var(--salt-mist); max-width: 62ch; font-size: var(--salt-text-lg); }
+.salt-section-head__lede { margin: 0; color: var(--salt-prose); max-width: 62ch; font-size: var(--salt-text-lg); }
 
 /* ---- Ledger list ---- */
 
@@ -1969,7 +2247,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 .salt-ledger__flag {
   display: block;
   margin-top: 4px;
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--salt-mist);
@@ -2020,31 +2298,38 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 .salt-field__label,
 label.salt-field__label {
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--salt-copper);
 }
 .salt-field__input {
-  /* a well, not glass (principle 4), 16px so a phone never zooms on focus and 44px tall
-     (principle 7); the recipe said 15px on glass until 22 Sep 2026 */
+  /* a well, not glass (principle 4), never under 16px so a phone never zooms on focus, and 44px
+     tall (principle 7); the recipe said 15px on glass until 22 Sep 2026 */
   background: var(--salt-well);
-  border: 1px solid var(--salt-line-faint);
+  border: 1px solid var(--salt-edge-field);
   border-radius: var(--salt-radius-sm);
   padding: 12px 16px;
   min-height: var(--salt-tap);
   color: var(--salt-salt);
   font-family: var(--salt-font-display);
-  font-size: 16px;
+  font-size: max(16px, 1rem);
   line-height: 1.4;
   color-scheme: dark;
   width: 100%;
 }
-.salt-field__input::placeholder { color: var(--salt-mist); opacity: 0.7; }
-.salt-field__input:focus-visible { outline: none; border-color: var(--salt-brass); box-shadow: var(--salt-focus-ring); }
+/* a placeholder in mist at full strength, 5.3:1 in the well (24 Sep 2026): at 0.7 it was 3.1:1, and on the
+   thread's composer it is the only line saying what the field is for */
+.salt-field__input::placeholder { color: var(--salt-mist); opacity: 1; }
+/* FOCUS IS ITS OWN CHANGE OF 3:1 (24 Sep 2026): a 2px brass ring clear of the edge, as every other control in the
+   system has. Brass on the resting edge is 1.70:1 and the old 0.18 ring 1.29:1, so once the edge became
+   visible a focused field read as a resting one; the edge still lifts to brass beside the ring. */
+.salt-field__input:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; border-color: var(--salt-brass); }
 .salt-field__input--mono { font-family: var(--salt-font-mono); font-variant-numeric: tabular-nums; }
-.salt-field__input--error { border-color: rgba(184, 115, 51, 0.7); }
+/* a refused value DOUBLES the edge as well as recolouring it (24 Sep 2026): copper on the resting edge is 1.10:1,
+   so a hue alone told it from a valid field */
+.salt-field__input--error { border-color: var(--salt-copper); box-shadow: inset 0 0 0 1px var(--salt-copper); }
 .salt-field__input.salt-field__select {
   appearance: none;
   -webkit-appearance: none;
@@ -2055,8 +2340,243 @@ label.salt-field__label {
   padding-right: 40px;
 }
 .salt-field__select option { background: var(--salt-slate); color: var(--salt-salt); }
-.salt-field__hint { font-family: var(--salt-font-mono); font-size: 11px; color: var(--salt-mist); }
-.salt-field__error { font-family: var(--salt-font-mono); font-size: 11px; color: var(--salt-copper); }
+.salt-field__hint { font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); color: var(--salt-prose); }
+.salt-field__error { font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); color: var(--salt-copper); }
+
+/* ---- Option ---- */
+/* A choice that carries its figure: a size and its price, a way to pay (24 Sep 2026, the Counter's
+   redesign). It is a real radio, so the group is one tab stop, the arrows move the choice and a form
+   posts it with no script. The radio lies over its whole tile unseen, so the tile is the hit area
+   and never under 44px either way, and the face is the sibling after it, so the chosen state needs
+   no :has(). Glass faint on the field's own edge, 3:1; chosen, it is pressed with a brass edge twice
+   the hairline, and never filled: the one filled control on a screen is the pill that acts on the
+   choice. The legend is the customer's sentence case, not the desk's eyebrow. A tile a row by
+   default, two for sizes; a modifier, because the Counter's policy refuses a style attribute. */
+
+.salt-options { margin: 0; padding: 0; border: 0; min-width: 0; }
+.salt-options__legend {
+  padding: 0;
+  margin: 0 0 var(--salt-space-2);
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-md);
+  font-weight: 500;
+  color: var(--salt-prose);
+}
+.salt-options__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--salt-space-2); }
+.salt-options__grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.salt-option { position: relative; display: flex; min-width: 0; }
+.salt-option__input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.salt-option__face {
+  display: flex;
+  align-items: center;
+  gap: var(--salt-space-3);
+  width: 100%;
+  min-height: var(--salt-tap);
+  padding: var(--salt-space-3) var(--salt-space-4);
+  background: var(--salt-glass-faint);
+  border: 1px solid var(--salt-edge-field);
+  border-radius: var(--salt-radius-sm);
+  color: var(--salt-salt);
+  transition: border-color 0.16s, background 0.16s, box-shadow 0.16s;
+}
+.salt-option__lead { flex: 0 0 auto; display: inline-flex; color: var(--salt-brass); }
+.salt-option__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.salt-option__label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--salt-space-1) var(--salt-space-2);
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-md);
+  font-weight: 500;
+  line-height: 1.35;
+}
+.salt-option__figure { font-family: var(--salt-font-mono); font-size: var(--salt-text-md); font-variant-numeric: tabular-nums; line-height: 1.35; }
+.salt-option__detail { font-family: var(--salt-font-display); font-size: var(--salt-text-sm); line-height: 1.45; color: var(--salt-prose); }
+.salt-option__input:checked + .salt-option__face {
+  background: var(--salt-glass);
+  border-color: var(--salt-brass);
+  box-shadow: inset 0 0 0 1px var(--salt-brass);
+}
+.salt-option__input:focus-visible + .salt-option__face { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+/* not on offer: a dashed edge and the label stepped down to prose, never faded, so the line saying why
+   stays readable (a faded disabled control read 1.5:1 on the Counter, measured 23 Sep 2026) */
+.salt-option__input:disabled { cursor: not-allowed; }
+.salt-option__input:disabled + .salt-option__face { background: transparent; border-style: dashed; }
+.salt-option__input:disabled + .salt-option__face .salt-option__label,
+.salt-option__input:disabled + .salt-option__face .salt-option__figure { color: var(--salt-prose); font-weight: 400; }
+@media (hover: hover) {
+  .salt-option__input:not(:checked):not(:disabled):hover + .salt-option__face { background: var(--salt-glass-hover); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .salt-option__face { transition: none; }
+}
+
+/* ---- Code field ---- */
+/* An eight-symbol one-time code (24 Sep 2026, the Counter's redesign): a modifier on the field, so it
+   keeps the well, the 44px floor and the brass focus of the Fields recipe, which it needs beside it.
+   Large mono, grouped four and four by a real space the component writes, and centred: the tracking
+   after the last symbol is given back by the indent, or the code sits left of the centre. The size is
+   a multiple of a rem token, so a larger text size reaches it, and it is 30px at the default,
+   far above the 16px under which a phone zooms. It is also held to the field's width: the wrapper,
+   .salt-code, is a container, and eight symbols, their space, tracking and indent are 7.4em, so the size
+   never passes the width inside the padding over 7.5 and the last symbol is never cut (measured
+   24 Sep 2026: at 320 and 125% it was). The label, the hint and the refusal are the
+   customer's sentence case in the display face, never the desk's caps, and a refusal is alarm. */
+
+.salt-code { container-type: inline-size; }
+.salt-field__input--code {
+  min-height: 4rem;
+  border-color: var(--salt-edge-field);
+  font-family: var(--salt-font-mono);
+  font-size: max(16px, min(calc(var(--salt-text-xl) * 1.25), calc((100cqi - 2 * 16px - 2px) / 7.5)));
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  letter-spacing: 0.2em;
+  text-indent: 0.2em;
+  text-align: center;
+}
+.salt-field__input--code[aria-invalid="true"] { border-color: var(--salt-alarm); box-shadow: inset 0 0 0 1px var(--salt-alarm); }
+.salt-code__label { font-family: var(--salt-font-display); font-size: var(--salt-text-md); font-weight: 500; color: var(--salt-prose); }
+.salt-code__hint,
+.salt-code__error { font-family: var(--salt-font-display); font-size: var(--salt-text-sm); line-height: 1.45; color: var(--salt-prose); }
+.salt-code__error { color: var(--salt-alarm); }
+
+/* ---- Statement lines ---- */
+/* A statement row that stacks on a phone (24 Sep 2026, the Counter's redesign; the statement's table
+   was 340px at least and put the whole page sideways at 360). Stacked, the date and the state share a
+   line and the mark with its quantity and the amount share the next, in two equal halves, so a long
+   state wraps inside its half and a long note never widens the other side. From 37.5rem of the LIST'S
+   OWN width (a container query, so a narrow column on a desk still stacks, and a larger text size
+   stacks sooner) the same cells take one row of a table under heads that were until then read aloud
+   and not drawn. Mono with tabular figures; the state wraps and is never cut, clipped or ellipsed. A
+   cancelled line is struck through in prose rather than faded, which read 2:1 on the Counter. The
+   mark is brass and sized in em, so it follows the text. Its role is a table at every width. */
+
+.salt-lines { container: salt-lines / inline-size; font-family: var(--salt-font-mono); font-variant-numeric: tabular-nums; }
+.salt-lines__head {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.salt-lines__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: "date state" "what amount";
+  gap: var(--salt-space-1) var(--salt-space-4);
+  align-items: baseline;
+  padding: var(--salt-space-3) 0;
+  border-bottom: 1px solid var(--salt-line-faint);
+}
+.salt-lines__date { grid-area: date; font-size: var(--salt-text-sm); color: var(--salt-prose); }
+.salt-lines__what { grid-area: what; font-size: var(--salt-text-md); color: var(--salt-salt); }
+.salt-lines__amount { grid-area: amount; font-size: var(--salt-text-md); font-weight: 500; color: var(--salt-salt); text-align: right; }
+.salt-lines__state {
+  grid-area: state;
+  font-size: var(--salt-text-sm);
+  font-weight: 500;
+  color: var(--salt-prose);
+  text-align: right;
+  overflow-wrap: break-word;
+}
+.salt-lines__state--verdigris { color: var(--salt-verdigris); }
+.salt-lines__state--ember { color: var(--salt-ember); }
+.salt-lines__state--steel { color: var(--salt-steel); }
+.salt-lines__state--alarm { color: var(--salt-alarm); }
+.salt-lines__mark { display: inline-flex; vertical-align: -0.2em; margin-right: var(--salt-space-2); color: var(--salt-brass); }
+.salt-lines__mark svg { width: 1.2em; height: 1.2em; }
+.salt-lines__sub {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-sm);
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--salt-prose);
+}
+.salt-lines__row--cancelled .salt-lines__what,
+.salt-lines__row--cancelled .salt-lines__amount {
+  color: var(--salt-prose);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+@container salt-lines (min-width: 37.5rem) {
+  .salt-lines__head,
+  .salt-lines__row {
+    grid-template-columns: 7.5rem minmax(0, 1fr) 8rem minmax(0, 1fr);
+    grid-template-areas: "date what amount state";
+    column-gap: var(--salt-space-4);
+  }
+  .salt-lines__head {
+    position: static;
+    display: grid;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+    padding: 0 0 var(--salt-space-2);
+    border-bottom: 1px solid var(--salt-line);
+  }
+  .salt-lines__head > * {
+    font-family: var(--salt-font-display);
+    font-size: var(--salt-text-sm);
+    font-weight: 500;
+    color: var(--salt-prose);
+  }
+}
+
+/* ---- Ledger list, plain ---- */
+/* The customer's reading of the ledger list (24 Sep 2026, the Counter's redesign), a modifier that needs
+   the Ledger list recipe beside it. Letter-spaced capitals at 11 to 13px are the desk's and are hard on
+   older eyes, so the label is a sentence-case word in the display face at the reading size, in prose,
+   and the flag under a row is a quiet sentence rather than a caps line faded to .8. The value stays mono,
+   a step up to the reading size, set right, and lays out a mark or a Copy ghost beside its figure. */
+
+.salt-ledger--plain { font-size: var(--salt-text-md); }
+.salt-ledger--plain .salt-ledger__row { padding: var(--salt-space-3) 0; }
+/* centred, not on the baseline: a value that opens with a drawn mark takes its baseline from the mark's
+   foot, which set the label low (measured 24 Sep 2026), and a Copy ghost is 44px tall */
+.salt-ledger--plain .salt-ledger__line { align-items: center; }
+.salt-ledger--plain .salt-ledger__label {
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-md);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--salt-prose);
+}
+.salt-ledger--plain .salt-ledger__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--salt-space-2);
+  font-size: var(--salt-text-md);
+  text-align: right;
+}
+.salt-ledger--plain .salt-ledger__flag {
+  margin-top: var(--salt-space-1);
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-sm);
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--salt-prose);
+  opacity: 1;
+}
 
 /* ---- The material of a native control inside a scope (22 Sep 2026). A page that draws its own
    forms, with its own geometry and its figures in mono (the desk), puts .salt-fields on its body,
@@ -2064,13 +2584,13 @@ label.salt-field__label {
    the option colours, and nothing else: size, face and padding stay the page's. ---- */
 .salt-fields :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
   background-color: var(--salt-well);
-  border: 1px solid var(--salt-line-faint);
+  border: 1px solid var(--salt-edge-field);
   border-radius: var(--salt-radius-sm);
   color: var(--salt-salt);
   font-weight: 400;
 }
-.salt-fields :is(input, select, textarea):focus { border-color: var(--salt-brass); box-shadow: var(--salt-focus-ring); }
-.salt-fields input::placeholder { color: var(--salt-mist); opacity: 0.7; }
+.salt-fields :is(input, select, textarea):focus { border-color: var(--salt-brass); outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+.salt-fields input::placeholder { color: var(--salt-mist); opacity: 1; }
 .salt-fields select:hover { background-color: var(--salt-well-hover); }
 .salt-fields option, .salt-fields optgroup { background-color: var(--salt-slate); color: var(--salt-salt); }
 .salt-fields option:checked { background-color: var(--salt-slate-light); }
@@ -2141,7 +2661,7 @@ label.salt-field__label {
 .salt-nav__links { display: flex; gap: var(--salt-space-5); flex: 1; flex-wrap: wrap; }
 .salt-nav__link {
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -2164,7 +2684,7 @@ label.salt-field__label {
 .salt-footer__column { display: flex; flex-direction: column; gap: var(--salt-space-2); }
 .salt-footer__title {
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--salt-copper);
@@ -2172,7 +2692,7 @@ label.salt-field__label {
 }
 .salt-footer__link {
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--salt-mist);
@@ -2181,7 +2701,7 @@ label.salt-field__label {
 .salt-footer__link:hover { color: var(--salt-brass); }
 .salt-footer__line {
   font-family: var(--salt-font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--salt-mist);
@@ -2194,24 +2714,145 @@ label.salt-field__label {
 .salt-tabs { display: flex; gap: var(--salt-space-2); flex-wrap: wrap; }
 .salt-tabs__pill {
   font-family: var(--salt-font-mono);
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--salt-mist);
   background: transparent;
-  border: 1px solid var(--salt-line-faint);
+  border: 1px solid var(--salt-edge-field); /* a ghost's edge, 3:1, since 24 Sep 2026: the faint line was 1.1:1 */
   border-radius: var(--salt-radius-pill);
   padding: 8px 16px;
   cursor: pointer;
 }
-.salt-tabs__pill:hover { color: var(--salt-brass); border-color: var(--salt-line); }
+.salt-tabs__pill:hover { color: var(--salt-brass); border-color: var(--salt-brass); }
 /* The active pill is also read from ARIA, so a strip carrying role="tab" needs no second class and
    a consumer's older rule on its own state class cannot outrank it. */
-.salt-tabs__pill--active, .salt-tabs__pill[aria-selected="true"] { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-line); }
+.salt-tabs__pill--active, .salt-tabs__pill[aria-selected="true"] { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-brass); }
 .salt-tabs__pill--active:hover, .salt-tabs__pill[aria-selected="true"]:hover { color: var(--salt-salt); }
 .salt-tabs__pill:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
 .salt-tabs__count { color: var(--salt-copper); margin-left: 8px; }
+
+/* ---- Steps: where an order's GOODS are, and nothing else: Sent, Confirmed, Ready, then Collected or
+   Delivered. A bar a step: done in verdigris, now in brass, ahead a well with the field's edge. The step
+   now is read from aria-current="step" as well as its class. Money has its own lines and never rides
+   this track, so Paid can never run ahead of the goods. The names are words in sentence case, and the
+   track is its own container: where four names of nine letters no longer fit side by side (24em at the
+   names' own size, so a larger text size moves the break with it), the steps stack, each bar
+   standing to the left of its name. ---- */
+
+.salt-steps {
+  container: salt-steps / inline-size;
+  display: grid;
+  grid-template-columns: repeat(var(--salt-steps-n, 4), minmax(0, 1fr));
+  gap: 0 0.75em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-sm);
+  letter-spacing: 0;
+  line-height: 1.3;
+}
+.salt-steps__step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  min-width: 0;
+  color: var(--salt-mist-light);
+  overflow-wrap: anywhere;
+}
+.salt-steps__step::before {
+  content: '';
+  flex: none;
+  height: 4px;
+  border-radius: var(--salt-radius-pill);
+  background: var(--salt-well);
+  box-shadow: inset 0 0 0 1px var(--salt-edge-field);
+}
+.salt-steps__step--done::before { background: var(--salt-verdigris); box-shadow: none; }
+.salt-steps__step--now, .salt-steps__step[aria-current="step"] { color: var(--salt-salt); font-weight: 700; }
+.salt-steps__step--now::before, .salt-steps__step[aria-current="step"]::before { background: var(--salt-brass); box-shadow: none; }
+@container salt-steps (max-width: 24em) {
+  .salt-steps__step { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 0.75em; padding: 0.2em 0; }
+  .salt-steps__step::before { width: 4px; height: auto; align-self: stretch; margin: calc(1px - 0.2em) 0; }
+}
+
+/* ---- Bubble and thread: an order's thread, one line a bubble, and the composer under it. Mine stand
+   right on the lit slate, theirs left on glass with the brass hairline, so whoever reads the thread (the
+   customer on their page, he on the desk) reads their own lines as mine. Under a line of mine is where it
+   is, in words and a drawn mark: Sending, Sent (stored, never read: there are no read receipts), or Not
+   sent in alarm, with Tap to try again as a lit 44px ghost. A line of theirs not yet seen carries New, a
+   copper dot and the word. The composer is one row at the foot, the field and Send side by side and the
+   same height, Send at the thumb's end; it is a form, so Return sends. The sending mark turns, and stands
+   still under reduced motion. ---- */
+
+.salt-thread { display: flex; flex-direction: column; gap: var(--salt-space-3); min-width: 0; }
+.salt-thread__lines { display: flex; flex-direction: column; gap: var(--salt-space-2); }
+.salt-bubble {
+  max-width: 84%;
+  padding: 9px 13px 8px;
+  border: 1px solid var(--salt-line-faint);
+  border-radius: var(--salt-radius-md);
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-md);
+  line-height: 1.45;
+  color: var(--salt-salt);
+  overflow-wrap: anywhere;
+}
+.salt-bubble--mine { align-self: flex-end; background: var(--salt-slate-light); border-bottom-right-radius: 4px; }
+.salt-bubble--theirs { align-self: flex-start; background: var(--salt-glass); border-color: var(--salt-line); border-bottom-left-radius: 4px; }
+.salt-bubble--failed { border-color: var(--salt-alarm); }
+.salt-bubble__text { margin: 0; }
+.salt-bubble__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
+  margin: 3px 0 0;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  color: var(--salt-mist-light);
+}
+.salt-bubble__state { display: inline-flex; align-items: center; gap: 5px; }
+.salt-bubble__state::before { content: ''; flex: none; box-sizing: border-box; }
+.salt-bubble__state--sent::before {
+  width: 0.4em;
+  height: 0.75em;
+  margin: 0 0.2em 0.2em;
+  border: solid currentColor;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+.salt-bubble__state--sending::before {
+  width: 1em;
+  height: 1em;
+  border: 1.5px dotted currentColor;
+  border-radius: 50%;
+  animation: salt-bubble-turn 2.4s linear infinite;
+}
+.salt-bubble__state--failed { color: var(--salt-alarm); font-weight: 700; }
+.salt-bubble__state--failed::before {
+  width: 1.1em;
+  height: 1.1em;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  background:
+    linear-gradient(currentColor, currentColor) 50% 26% / 1.5px 36% no-repeat,
+    linear-gradient(currentColor, currentColor) 50% 76% / 1.5px 1.5px no-repeat;
+}
+.salt-bubble__new { display: inline-flex; align-items: center; gap: 6px; color: var(--salt-salt); letter-spacing: 0.14em; text-transform: uppercase; }
+.salt-bubble__new::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--salt-copper); box-shadow: 0 0 6px var(--salt-copper); }
+.salt-bubble__retry { margin-top: var(--salt-space-2); }
+.salt-composer { display: flex; align-items: stretch; gap: var(--salt-space-2); margin: 0; }
+.salt-composer__field { flex: 1 1 0; min-width: 0; }
+.salt-composer__send { flex: none; }
+@keyframes salt-bubble-turn { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) {
+  .salt-bubble__state--sending::before { animation: none; }
+}
 
 /* ---- Slides ---- */
 
@@ -2320,7 +2961,7 @@ label.salt-field__label {
   font-family: var(--salt-font-display);
   font-size: 12.5px;
   line-height: 1.6;
-  color: var(--salt-mist);
+  color: var(--salt-prose);
   margin: 0;
   max-width: 62ch;
 }
@@ -2370,7 +3011,7 @@ label.salt-field__label {
   min-width: var(--salt-tap);
   padding: 8px 16px;
   background: transparent;
-  border: 1px solid var(--salt-line-faint);
+  border: 1px solid var(--salt-edge-field);
   border-radius: var(--salt-radius-pill);
   color: var(--salt-ghost-tone);
   font-family: var(--salt-font-mono);
@@ -2382,12 +3023,14 @@ label.salt-field__label {
   text-decoration: none;
   transition: color 0.16s, border-color 0.16s, background 0.16s;
 }
-.salt-ghost:hover { color: var(--salt-brass); border-color: var(--salt-line); background: transparent; transform: none; }
-.salt-ghost--on, .salt-ghost[aria-pressed="true"] { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-line); }
-.salt-ghost--lit { --salt-ghost-tone: var(--salt-brass); border-color: var(--salt-line-strong); }
+.salt-ghost:hover { color: var(--salt-brass); border-color: var(--salt-brass); background: transparent; transform: none; }
+.salt-ghost--on, .salt-ghost[aria-pressed="true"] { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-brass); }
+.salt-ghost--lit { --salt-ghost-tone: var(--salt-brass); border-color: var(--salt-brass); }
 .salt-ghost--tight { min-width: 0; padding: 3px 9px; }
 .salt-ghost--sm { min-height: 32px; padding: 4px 12px; font-size: var(--salt-text-xs); }
-.salt-ghost--danger:hover { color: var(--salt-ember); border-color: rgba(212, 105, 76, 0.55); background: rgba(212, 105, 76, 0.08); }
+/* the danger ghost under a pointer lifts to full ember, above the resting edge as every lift is (24 Sep 2026: its
+   0.55 ember ring had come to 2.39:1, under the 4.81:1 edge it rose from) */
+.salt-ghost--danger:hover { color: var(--salt-ember); border-color: var(--salt-ember); }
 .salt-ghost:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
 .salt-ghost:disabled { opacity: 0.45; cursor: not-allowed; }
 
@@ -2433,7 +3076,7 @@ label.salt-field__label {
   display: block;
   margin-top: 6px;
   font-family: var(--salt-font-mono);
-  font-size: 24px;
+  font-size: var(--salt-text-xl);
   font-weight: 500;
   letter-spacing: 0;
   line-height: 1.1;
@@ -2442,13 +3085,13 @@ label.salt-field__label {
   overflow-wrap: anywhere;
 }
 @media (max-width: 560px) {
-  .salt-kpi__value { font-size: 20px; }
+  .salt-kpi__value { font-size: 1.25rem; }
 }
 .salt-kpi__note {
   display: block;
   margin-top: 4px;
   font-family: var(--salt-font-display);
-  font-size: 13.5px;
+  font-size: 0.84375rem;
   line-height: 1.45;
   color: var(--salt-mist-bright);
 }
@@ -2484,12 +3127,12 @@ label.salt-field__label {
   color: var(--salt-sev);
   padding-top: 3px;
 }
-.salt-action__title { font-family: var(--salt-font-display); font-size: 16px; font-weight: 400; line-height: 1.4; color: var(--salt-salt); }
-.salt-action__why { font-family: var(--salt-font-display); font-size: 13.5px; line-height: 1.55; color: var(--salt-mist-bright); margin-top: 4px; }
+.salt-action__title { font-family: var(--salt-font-display); font-size: 1rem; font-weight: 400; line-height: 1.4; color: var(--salt-salt); }
+.salt-action__why { font-family: var(--salt-font-display); font-size: 0.84375rem; line-height: 1.55; color: var(--salt-mist-bright); margin-top: 4px; }
 .salt-action__why b { color: var(--salt-salt); font-weight: 500; }
 .salt-action__money {
   font-family: var(--salt-font-mono);
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 500;
   color: var(--salt-salt);
   white-space: nowrap;
@@ -2497,7 +3140,7 @@ label.salt-field__label {
   font-variant-numeric: tabular-nums;
   padding-top: 2px;
 }
-.salt-action__money--nil { color: var(--salt-mist); font-weight: 400; font-size: 13px; }
+.salt-action__money--nil { color: var(--salt-mist); font-weight: 400; font-size: var(--salt-text-sm); }
 .salt-action__body { min-width: 0; }
 .salt-action__chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; grid-column: 2 / 3; }
 .salt-action__bar {
@@ -2534,7 +3177,7 @@ label.salt-field__label {
   gap: 9px;
   margin: 0 0 10px;
   font-family: var(--salt-font-mono);
-  font-size: 12.5px;
+  font-size: 0.78125rem;
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -2546,7 +3189,7 @@ label.salt-field__label {
 .salt-product--rice { --salt-hue: var(--salt-product-rice); }
 .salt-product--spare { --salt-hue: var(--salt-product-spare); }
 .salt-product__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--salt-hue); box-shadow: 0 0 8px -1px var(--salt-hue); flex: 0 0 auto; }
-.salt-product__sub { font-family: var(--salt-font-display); font-size: 11.5px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--salt-mist); }
+.salt-product__sub { font-family: var(--salt-font-display); font-size: 0.71875rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--salt-mist); }
 .salt-product__rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--salt-line), transparent); }
 
 /* ---- Product tag: the stamp on a row. The dot is an element and not a pseudo, because the desk
@@ -2582,7 +3225,7 @@ label.salt-field__label {
    for a threshold. The fill is set as --salt-fill on the element, 0 to 100. ---- */
 
 .salt-meter { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-.salt-meter__line { display: flex; justify-content: space-between; gap: 12px; font-family: var(--salt-font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--salt-mist); }
+.salt-meter__line { display: flex; justify-content: space-between; gap: 12px; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.1em; text-transform: uppercase; color: var(--salt-mist); }
 .salt-meter__line b { color: var(--salt-salt); font-weight: 500; }
 .salt-meter__track {
   position: relative;
@@ -2619,7 +3262,7 @@ label.salt-field__label {
 .salt-ageing__seg--1 { background: var(--salt-brass); }
 .salt-ageing__seg--2 { background: var(--salt-copper); }
 .salt-ageing__seg--3 { background: var(--salt-ember); }
-.salt-ageing__legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--salt-font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--salt-mist); font-variant-numeric: tabular-nums; }
+.salt-ageing__legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--salt-mist); font-variant-numeric: tabular-nums; }
 .salt-ageing__legend > span { display: inline-flex; align-items: center; gap: 7px; }
 .salt-ageing__legend b { color: var(--salt-salt); font-weight: 500; }
 .salt-ageing__swatch { width: 8px; height: 8px; border-radius: 2px; }
@@ -2639,10 +3282,10 @@ label.salt-field__label {
   gap: 14px;
 }
 .salt-approve__head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
-.salt-approve__party { font-family: var(--salt-font-mono); font-size: 15px; font-weight: 500; color: var(--salt-salt); }
-.salt-approve__entry { font-family: var(--salt-font-mono); font-size: 12px; color: var(--salt-mist); font-variant-numeric: tabular-nums; }
+.salt-approve__party { font-family: var(--salt-font-mono); font-size: var(--salt-text-md); font-weight: 500; color: var(--salt-salt); }
+.salt-approve__entry { font-family: var(--salt-font-mono); font-size: 0.75rem; color: var(--salt-mist); font-variant-numeric: tabular-nums; }
 .salt-approve__flags { display: flex; flex-wrap: wrap; gap: 6px; }
-.salt-approve__reason { font-family: var(--salt-font-display); font-size: 13px; line-height: 1.5; color: var(--salt-mist-light); margin: 0; }
+.salt-approve__reason { font-family: var(--salt-font-display); font-size: var(--salt-text-sm); line-height: 1.5; color: var(--salt-prose); margin: 0; }
 .salt-approve__actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .salt-approve--decided { opacity: 0.6; }
 
@@ -2650,7 +3293,7 @@ label.salt-field__label {
 
 .salt-insight {
   font-family: var(--salt-font-display);
-  font-size: 14.5px;
+  font-size: 0.90625rem;
   line-height: 1.6;
   color: var(--salt-salt);
   /* not a box: the material is stated in full, so an older rule underneath cannot give it one */
@@ -2677,7 +3320,7 @@ label.salt-field__label {
   align-items: center;
   gap: 7px;
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--salt-mist);
@@ -2739,24 +3382,24 @@ label.salt-field__label {
 .salt-plan > summary::marker { content: ''; }
 .salt-plan[open] > summary { border-bottom: 1px solid var(--salt-line-faint); }
 .salt-plan__id { font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.12em; color: var(--salt-mist); }
-.salt-plan__title { font-family: var(--salt-font-display); font-size: 14px; color: var(--salt-salt); }
-.salt-plan__money { grid-column: 3; font-family: var(--salt-font-mono); font-size: 12px; color: var(--salt-mist-light); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.salt-plan__title { font-family: var(--salt-font-display); font-size: 0.875rem; color: var(--salt-salt); }
+.salt-plan__money { grid-column: 3; font-family: var(--salt-font-mono); font-size: 0.75rem; color: var(--salt-mist-light); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .salt-plan__state { grid-column: 4; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.16em; text-transform: uppercase; color: var(--salt-mist); white-space: nowrap; }
 .salt-plan--late { border-color: var(--salt-line-strong); }
 .salt-plan--late .salt-plan__state { color: var(--salt-brass); }
 .salt-plan--done { opacity: 0.55; }
-.salt-plan__body { padding: 10px 14px 12px; font-family: var(--salt-font-display); font-size: 13px; line-height: 1.55; color: var(--salt-mist-light); }
+.salt-plan__body { padding: 10px 14px 12px; font-family: var(--salt-font-display); font-size: var(--salt-text-sm); line-height: 1.55; color: var(--salt-prose); }
 @media (max-width: 720px) { .salt-plan > summary { grid-template-columns: 40px minmax(0, 1fr); row-gap: 3px; } }
 
 /* ---- Journal entry: a dated note, linked to its row (synced to the desk 22 Sep 2026) ---- */
 
 .salt-journal { padding: 9px 2px; border-bottom: 1px solid var(--salt-line-faint); }
-.salt-journal__meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-family: var(--salt-font-mono); font-size: 11.5px; letter-spacing: 0.06em; color: var(--salt-mist); margin-bottom: 3px; }
+.salt-journal__meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-family: var(--salt-font-mono); font-size: 0.71875rem; letter-spacing: 0.06em; color: var(--salt-mist); margin-bottom: 3px; }
 .salt-journal__date { font-variant-numeric: tabular-nums; min-width: 78px; }
 .salt-journal__ref { color: var(--salt-brass); text-decoration: none; }
 a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2px; }
 .salt-journal__kind { margin-left: auto; text-transform: uppercase; letter-spacing: 0.14em; font-size: var(--salt-text-xs); font-weight: 500; }
-.salt-journal__text { font-family: var(--salt-font-display); font-size: 14.5px; line-height: 1.6; color: var(--salt-mist-bright); overflow-wrap: anywhere; }
+.salt-journal__text { font-family: var(--salt-font-display); font-size: 0.90625rem; line-height: 1.6; color: var(--salt-mist-bright); overflow-wrap: anywhere; }
 .salt-journal__text b { color: var(--salt-salt); font-weight: 500; }
 
 /* ---- Desk rail (synced to the desk 22 Sep 2026): the way between views. It stands beside the page
@@ -2786,7 +3429,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   .salt-rail { background: var(--salt-pane); }
 }
 .salt-rail__brand { display: flex; align-items: center; gap: 11px; margin: 0; padding: 0 4px 14px; border-bottom: 1px solid var(--salt-line-faint); }
-.salt-rail__brand .salt-title { font-size: 22px; letter-spacing: 0.04em; line-height: 1; }
+.salt-rail__brand .salt-title { font-size: 1.375rem; letter-spacing: 0.04em; line-height: 1; }
 .salt-rail__brand .salt-wordmark__subtitle { font-size: var(--salt-text-xs); letter-spacing: 0.24em; margin-top: 4px; }
 .salt-rail__group { display: flex; flex-direction: column; gap: 2px; margin: 0; }
 .salt-rail__label {
@@ -2812,7 +3455,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   background: none;
   color: var(--salt-mist-light);
   font-family: var(--salt-font-mono);
-  font-size: 13px;
+  font-size: var(--salt-text-sm);
   font-weight: 500;
   letter-spacing: 0.01em;
   text-transform: none;
@@ -2859,7 +3502,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   background: transparent;
   color: var(--salt-mist);
   font-family: var(--salt-font-mono);
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   font-weight: 500;
   letter-spacing: 0.01em;
   text-transform: none;
@@ -2870,7 +3513,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 .salt-rail__part--on, .salt-rail__part[aria-current="page"] { color: var(--salt-salt); background: rgba(255, 255, 255, 0.035); }
 .salt-rail__part--on::before, .salt-rail__part[aria-current="page"]::before { background: var(--salt-brass); }
 .salt-rail__foot { border-top: 1px solid var(--salt-line-faint); padding-top: 10px; font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--salt-mist); }
-@media (max-width: 560px) { .salt-rail__tab { font-size: 13.5px; } }
+@media (max-width: 560px) { .salt-rail__tab { font-size: 0.84375rem; } }
 
 /* ---- Desk bar (synced to the desk 22 Sep 2026): one frame across the top in the rail's own
    material, glass with the hairline at the rail's offset, so the two read as one; the wordmark in
@@ -2900,7 +3543,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   align-self: flex-start;
   font-family: var(--salt-font-display);
   font-weight: 300;
-  font-size: 21px;
+  font-size: 1.3125rem;
   letter-spacing: 0.04em;
   line-height: 1;
   text-transform: none;
@@ -2932,7 +3575,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 @media (prefers-reduced-transparency: reduce) { .salt-deskbar { background: rgb(18, 15, 12); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 .salt-version {
   font-family: var(--salt-font-mono);
-  font-size: 11px;
+  font-size: var(--salt-text-xs);
   font-weight: 500;
   letter-spacing: 0.14em;
   color: var(--salt-brass);
@@ -2945,9 +3588,11 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   white-space: nowrap;
   flex: 0 0 auto;
 }
-/* the orb: a 44px disc holding one glyph. Bare, as in the bar, it is a hairline on nothing; raised,
-   it floats over the page on the pane fill; lit, it is glass with a brass glow (back to top); on,
-   its ring is brass. */
+/* ---- Orb: a 44px disc holding one glyph, the desk bar's tools and the Sheet's close. Bare, as in the bar, it
+   is a hairline on nothing; raised, it floats over the page on the pane fill; lit, it is glass with a brass
+   glow (back to top); on, its ring is brass. Its own section since 24 Sep 2026, so a surface that carries
+   the Sheet carries its close without the Desk bar. ---- */
+
 .salt-orb {
   width: var(--salt-tap);
   height: var(--salt-tap);
@@ -2956,11 +3601,11 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   place-items: center;
   padding: 0;
   background: transparent;
-  border: 1px solid var(--salt-line-faint);
+  border: 1px solid var(--salt-edge-field); /* a ghost's edge, 3:1, since 24 Sep 2026: the faint line was 1.1:1 */
   color: var(--salt-brass);
   cursor: pointer;
 }
-.salt-orb:hover { background: var(--salt-glass-hover); border-color: var(--salt-line); }
+.salt-orb:hover { background: var(--salt-glass-hover); border-color: var(--salt-brass); }
 .salt-orb:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 3px; }
 .salt-orb--on { border-color: var(--salt-brass); box-shadow: 0 0 12px -4px var(--salt-brass); }
 .salt-orb--raised {
@@ -6100,7 +6745,8 @@ const sales=[
   {"customer":"CM4-TO","qty":12.5,"total":750,"cost":600,"cash":750,"handover":"collected","date":"2026-09-23","deliveredQty":3,"deliveredOn":"2026-09-23","paidOn":"2026-09-23","note":"<b>SALT SELL DATED 23 SEP, PAID IN FULL, 3 OF 12.5 UNIT COLLECTED.</b> CM3-OUG bought 12.5 unit for RM750, RM60 a unit, RM750 cash in on 23 Sep with 3 unit collected on his word, so 9.5 unit remain to be handed over and no money is outstanding. Costed at RM48 a unit from the desk's own inventory cost, RM600 on the goods, RM150 at 20%. The RM750 clears the floor of RM718.68 and sits under the ask of RM1,090 and the ceiling of RM1,910. CM3-OUG: 3 orders, median RM52, range RM48 to RM65, nothing outstanding, none on credit against a cap of 1. Flagged: 15.4% above his median, answered by the figures; the RM48 blend is not.","rid":"s194"},
   {"customer":"CM4-TO","qty":10,"total":50,"cost":32,"cash":50,"handover":"collected","product":"rice","date":"2026-09-23","deliveredQty":10,"deliveredOn":"2026-09-23","paidOn":"2026-09-23","note":"<b>RICE SELL DATED 23 SEP, COLLECTED AND PAID IN FULL ON THE SAME VISIT AS THE SALT.</b> CM3-OUG took 10 unit for RM50, RM5 a unit, RM50 cash in and 10 unit collected on 23 Sep on his word, so nothing stays open. Costed at RM3.20 a unit from the desk's own inventory cost, RM32 on the goods, RM18 at 36%. The RM50 clears the floor of RM34 and sits under the ask of RM60, with the ceiling at RM102. Flagged: CM3-OUG has no committed rice order on the book, so there is no rate of theirs to compare; the figures do not answer it. CM3-OUG: 3 orders, median RM52, range RM48 to RM65, nothing outstanding, none on credit against a cap of 1.","rid":"s195"},
   {"customer":"CS6-PER","qty":2,"total":200,"cash":100,"date":"2026-09-23","deliveredQty":2,"note":"<b>CORRECTION ON S196: RM100 RECORDED SETTLED IN KIND BY REWARD, 1 UNIT.</b> Against CS6-PER's order of 2 unit for RM200 dated 23 Sep 2026, RM70 cash, collected. Sets settledRM from unset to RM100, rebate from false to true and rebateKg from unset to 1 unit. It moves no cash and no stock: it changes what the row says about itself. Flagged: CS6-PER pays about RM80 a unit across 8 orders and this reads RM100, 25% above; RM48 a unit is the inventory average across more than one lot rate, and the blend is not answered; the row is an advance with RM30 unpaid against the credit cap. CS6-PER shows a median rate of RM85.52, a range of RM11 to RM100, RM130 outstanding before this and 1.3 unit on credit, associate and on the roster, nothing defaulted. The RM30 stays open. <b>CORRECTION ON S196: 2 UNIT RECORDED COLLECTED ON 24 SEP.</b> Sets deliveredQty from 0 to 2, deliveredOn from unset to 24 Sep 2026 and handover from unset to collected, on the note that 2 unit was collected for order 20260923131530-semgxg. It moves no cash: it changes what the row says about itself, and the shelf rolls out by the 2 unit the correction states. Costed at RM48 a unit, the inventory's own average, with replacement at RM49.43. Flagged: RM100 a unit sits 25% above the roughly RM80 CS6-PER pays across 7 orders; RM48 is a blend across more than one lot rate; and this is an advance, 2 unit out with RM200 unpaid against a cap. The figures answer none of the three. <b>SALT SELL DATED 23 SEP, ACKNOWLEDGED AND PENDING: NOTHING PAID AND NOTHING HANDED OVER.</b> Booked to CS6-PER, 2 unit for RM200, RM100 a unit, from site order 20260923131530-semgxg, to collect, so the whole RM200 and the whole 2 unit stay open. Costed at RM48 a unit from the desk's own inventory cost, RM104 on the goods at 52%. The RM200 clears the floor of RM113.98 and sits under the ask of RM270, with the ceiling at RM310. Flagged: CS6-PER usually pays about RM80 a unit across 7 orders, 25% below this, and the RM48 is an inventory average across more than one lot rate; the figures do not answer the blend. CS6-PER: 7 orders, median RM70.40, range RM11 to RM100, nothing outstanding, none on credit against a cap of 2.","rid":"s196","amend":[{"date":"2026-09-23","kind":"Fulfilment","cash":0,"kg":0,"note":"as booked"},{"date":"2026-09-24","kind":"Fulfilment","cash":70,"kg":0,"note":"<b>FULFILMENT ON S196 DATED 24 SEP: RM70 IN, NO UNIT MOVED.</b> Against CS6-PER's order of 2 unit for RM200 agreed 23 Sep, RM70 arrives on 24 Sep, paid on the statements site, order 20260923131530-semgxg, by qr via ryt, against RM200 and 2 unit outstanding. That leaves RM130 and 2 unit open on the row. The row itself is not recomputed here: the master applies the fulfilment. CS6-PER is an associate and on the roster, 8 orders, median rate RM85.52, range RM11 to RM100, RM200 outstanding before this, none on credit and nothing defaulted. The drafter raised no flag on this one."},{"date":"2026-09-24","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON S196: 2 UNIT RECORDED COLLECTED ON 24 SEP.</b> Sets deliveredQty from 0 to 2, deliveredOn from unset to 24 Sep 2026 and handover from unset to collected, on the note that 2 unit was collected for order 20260923131530-semgxg. It moves no cash: it changes what the row says about itself, and the shelf rolls out by the 2 unit the correction states. Costed at RM48 a unit, the inventory's own average, with replacement at RM49.43. Flagged: RM100 a unit sits 25% above the roughly RM80 CS6-PER pays across 7 orders; RM48 is a blend across more than one lot rate; and this is an advance, 2 unit out with RM200 unpaid against a cap. The figures answer none of the three."},{"date":"2026-09-24","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON S196: RM100 RECORDED SETTLED IN KIND BY REWARD, 1 UNIT.</b> Against CS6-PER's order of 2 unit for RM200 dated 23 Sep 2026, RM70 cash, collected. Sets settledRM from unset to RM100, rebate from false to true and rebateKg from unset to 1 unit. It moves no cash and no stock: it changes what the row says about itself. Flagged: CS6-PER pays about RM80 a unit across 8 orders and this reads RM100, 25% above; RM48 a unit is the inventory average across more than one lot rate, and the blend is not answered; the row is an advance with RM30 unpaid against the credit cap. CS6-PER shows a median rate of RM85.52, a range of RM11 to RM100, RM130 outstanding before this and 1.3 unit on credit, associate and on the roster, nothing defaulted. The RM30 stays open."},{"date":"2026-09-24","kind":"Fulfilment","cash":30,"kg":0,"note":"<b>FULFILMENT DATED 24 SEP ON S196: RM30 CASH, THE ORDER NOW SETTLED IN FULL.</b> Against CS6-PER's order of 2 unit for RM200 dated 23 Sep 2026, RM30 and 0 unit move on 24 Sep 2026 against RM30 and 0 unit outstanding, leaving RM0 and 0 unit open. The order already shows RM70 cash, 2 unit collected and a correction recording RM100 settled in kind by reward, 1 unit. No goods move, so the row carries no cost of its own. Flagged as settling the order in full and the figures answer it. CS6-PER: 8 orders, median rate RM70.4, range RM11 to RM100, nothing outstanding before, none on credit, an associate and on the roster."}],"deliveredOn":"2026-09-24","handover":"collected","mod":"corrected on 2026-09-24: deliveredQty 0 to 2; deliveredOn (unset) to 2026-09-24; handover (unset) to collected, then corrected on 2026-09-24: settledRM (unset) to 100; rebateKg (unset) to 1; rebate (unset) to true","settledRM":100,"rebateKg":1,"rebate":true},
-  {"customer":"CA6-CYB","qty":2.5,"total":250,"cost":120,"cash":250,"handover":"collected","date":"2026-09-23","deliveredQty":2.5,"deliveredOn":"2026-09-23","paidOn":"2026-09-23","ref":"CM4-TO","refKg":2.5,"note":"<b>SALT SELL DATED 23 SEP, PAID AND COLLECTED IN FULL: NOTHING LEFT OPEN.</b> Booked to CA6-CYB, 2.5 unit for RM250, RM250 cash received on 23 Sep 2026 and 2.5 unit handed over the same day, referred by CM4-TO on stream R3. Costed at RM48 a unit from the desk's own inventory cost, RM120 on the goods, though the drafter's working reads RM130 at 52%. The RM250 clears the floor of RM142.48 and sits under the ask of RM330, with the ceiling at RM390. Flagged: the RM48 is an inventory average across more than one lot rate and the figures do not answer the blend; CM4-TO is on the roster but not listed as an associate; CA6-CYB has 0 orders, no median rate, no range, nothing outstanding and none on credit against a cap of 1.","rid":"s197"}
+  {"customer":"CA6-CYB","qty":2.5,"total":250,"cost":120,"cash":250,"handover":"collected","date":"2026-09-23","deliveredQty":2.5,"deliveredOn":"2026-09-23","paidOn":"2026-09-23","ref":"CM4-TO","refKg":2.5,"note":"<b>SALT SELL DATED 23 SEP, PAID AND COLLECTED IN FULL: NOTHING LEFT OPEN.</b> Booked to CA6-CYB, 2.5 unit for RM250, RM250 cash received on 23 Sep 2026 and 2.5 unit handed over the same day, referred by CM4-TO on stream R3. Costed at RM48 a unit from the desk's own inventory cost, RM120 on the goods, though the drafter's working reads RM130 at 52%. The RM250 clears the floor of RM142.48 and sits under the ask of RM330, with the ceiling at RM390. Flagged: the RM48 is an inventory average across more than one lot rate and the figures do not answer the blend; CM4-TO is on the roster but not listed as an associate; CA6-CYB has 0 orders, no median rate, no range, nothing outstanding and none on credit against a cap of 1.","rid":"s197"},
+  {"customer":"CC5-OKR","qty":4,"total":20,"cost":12.8,"cash":20,"handover":"collected","product":"rice","date":"2026-09-24","deliveredQty":4,"deliveredOn":"2026-09-24","paidOn":"2026-09-24","note":"<b>RICE SELL DATED 24 SEP, PAID AND COLLECTED IN FULL: NOTHING LEFT OPEN.</b> Booked to CC5-OKR, 4 unit for RM20, RM20 cash received on 24 Sep 2026 and 4 unit handed over the same day, no delivery or freight. Costed at RM3.2 a unit from the desk's own inventory cost, RM12.8 on the goods, though the drafter's working reads RM7.2 at 36%. The RM20 clears the floor of RM13.6 and sits under the ask of RM32, with the ceiling at RM41. Flagged: CC5-OKR has no committed rice order, so there is no rate of theirs to compare, and the figures do not answer it. Across 10 orders their median rate is RM90 with a range of RM48 to RM90, RM138 outstanding, none defaulted, and 2 unit on credit against a cap of 1. On the roster, not an associate.","rid":"s198"}
 ];
 const contacts=[
   {"date":"2026-08-06","party":"CM4-SK","how":"message","outcome":"noreply","next":null,"note":"said hello"},
@@ -6618,7 +7264,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-09-24T04:52:38.115Z";
+const QUEUE_COMMITTED="2026-09-24T12:19:36.471Z";
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
@@ -7610,7 +8256,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v827","d":"24 Sep 2026","t":"THE COUNTER AND SALT ADMIN DO WHAT THEY PROMISE","n":["<b>STAGE 1 OF THE REDESIGN</b> (his instruction of 24 Sep 2026: customers found the Counter hard to follow and hard to keep as an app; he answered all recommended to the plan's fifteen decisions). Fifty fixes that need none of those decisions, each its own commit with its own assertion, proved red first.","<b>GETTING IN.</b> A new account with no rows opens on Nothing on your account yet, with Prices and Order working, where it was a blank page or a refusal. A lapsed session says so in the bar with Continue; a dropped request says Not sent beside what was tapped; a server fault on a remembered reopen keeps the phone; Log out drops its wrap and this phone's notifications; notifications wait for the service worker and show this phone's real state.","<b>ORDERING AND PAYING.</b> The pay step takes the system's pill, ghost and field, one filled control a card, and the RM 100 page answers every tap. Check this over is exactly what Place sends; Place and I have paid carry a request id, so a retry lands once; a half-typed line survives a redraw; the Amount column lines up; the tab strip wraps at 320px; a product with no priced size reads coming soon.","<b>THE STATEMENT.</b> Its account line shows the username, never the roster code; its table sits in its own scroll box; Still to collect is one line a book; the faces load on the link and guest pages; every short date says Sep.","<b>SALT ADMIN.</b> Approve, Decline, Withdraw and Restore on a link now post, where every one had answered 405 since 10 Sep; Decline is its own state, Not approved to the associate. It saves as Salt Admin, its manifest fetched with credentials. Review reads the account's orders and offers no order form; a row with no account offers nothing to send; a customer's typo no longer brakes his override; Opened counts every open, and how.","<b>THE DESK.</b> Site orders keeps a typed charge and answer across its poll; Today counts site orders from a cold open; a customer's line wakes him as A customer wrote on an order; Approve asks before rejecting a row a site order made and writes the rejection onto the order; his cancellation is noted as his; a status note passes siteWords; the cards' buttons are the system's recipes.","<b>UNDER THE COUNTER.</b> The customer reads a whitelisted view of an order, never ledgerKey, queued or sync; a stored move never answers not placed when a shared mark fails; the chase and the cash rule read an advance as the engine does, goods moved beyond goods paid."]}];
+const evolution=[{"v":"v830","d":"24 Sep 2026","t":"A RICE ROW AGAINST A SALT HABIT","n":["<b>FOLDED: ONE RICE SELL, PAID AND COLLECTED ON THE DAY.</b> CC5-OKR took 4 unit of rice for RM20 on 24 Sep 2026, RM20 cash in and 4 unit out, so nothing on the row stays open. The RM20 clears the floor of RM13.6 for that size and sits well under the ask of RM32, with the ceiling at RM41. Costed at RM3.2 a unit from the desk's own inventory cost, RM12.8 on the goods.","<b>UNUSUAL: THE PARTY'S BOOK IS A SALT BOOK, AND IT IS STRETCHED.</b> The drafter flagged that CC5-OKR has no committed rice order, so there is no rate of theirs to set this against, and the figures do not answer it: their median rate of RM90 and range of RM48 to RM90 are salt figures across 10 orders. RM138 stands outstanding and 2 unit sit on credit against a cap of 1. The drafter's working reads RM7.2 at 36% where the row carries RM12.8.","<b>THE INVENTORY DID NOT MOVE.</b> The rice draw of 4 unit is recorded as not landed, so the salt position holds at 16.5 unit at RM48 a unit against a replacement cost of RM49.43, with the reorder mark at 32.2 and RM9.5 owed out. The last salt count stands at 23 Sep 2026 and the oil count at 19 Sep 2026; candy, rice and spare remain uncounted, which is where this row's product sits."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -7725,7 +8371,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='24 Sep 2026, 18:37 KL';
+const LAST_UPDATED='24 Sep 2026, 20:56 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
