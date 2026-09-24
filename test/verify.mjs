@@ -33069,6 +33069,43 @@ await (async () => {
   } finally { dom.window.close(); }
 })();
 
+section("S7 fix: the check's back orb keeps its 44px beside a title that wraps, as an Orb now does everywhere");
+await (async () => {
+  /* S7-R8 of the stage 7 review (25 Sep 2026). The check a tile on Home opens in one tap has a back orb beside a title that
+     grows: at 320px "Check your order" wrapped and the orb shrank to 40px wide, under the 44px rule, while the close held
+     only because the Sheet's own rule said so. The Orb recipe now never shrinks. Read through the served page's cascade. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s7f-eight", ck = await C.contentKey("test-secret", u);
+  const list = await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T03:59:00Z", digest: "ds7f8", week: { monday: "2026-09-21", label: "21 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 110 }, { q: 2, price: 200 }] }], soon: [] }));
+  const past = [{ id: "20260921030000-aaaa", product: "salt", status: "done", qty: 2, total: 200, paid: 200, moved: 2, mode: "deliver", place: "Veloria",
+    delivery: 0, at: "2026-09-21T03:00:00Z", history: [], msgs: [] }];
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f8", prices: list,
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+  const dom = new JSDOM(landingPage(u, "ns7f8", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path) => { const p = String(path);
+      const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: past } : { ok: true };
+      return { ok: true, status: 200, json: async () => j }; };
+  } });
+  const W = dom.window, D = W.document, cs = (e) => W.getComputedStyle(e);
+  try {
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !D.querySelector("#hAgain button"); i++) await new Promise((r) => setTimeout(r, 25));
+    D.querySelector("#hAgain button").click();
+    for (let i = 0; i < 100 && !D.querySelector('#osheet .salt-sheet__head button[data-k="back"]'); i++) await new Promise((r) => setTimeout(r, 20));
+    const back = D.querySelector('#osheet .salt-sheet__head button[data-k="back"]'), title = D.getElementById("oshT");
+    ok(!!back && !!title && /Check your order/.test(title.textContent) && back.classList.contains("salt-orb") && cs(title).flexShrink === "1" && cs(back).flexShrink === "0",
+      "the check a tile opens has its back orb beside a title that gives way, and the orb does not: " + JSON.stringify(back && [cs(back).flexShrink, cs(title).flexShrink]));
+  } finally { W.close(); }
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read

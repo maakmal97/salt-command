@@ -3594,6 +3594,9 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
    the Sheet carries its close without the Desk bar. ---- */
 
 .salt-orb {
+  /* never less than 44px in a row it shares: a Sheet head whose title wrapped at 320px squeezed a back orb to 40 wide
+     (25 Sep 2026); the Sheet's close held only because it said so itself */
+  flex: 0 0 auto;
   width: var(--salt-tap);
   height: var(--salt-tap);
   border-radius: 50%;
