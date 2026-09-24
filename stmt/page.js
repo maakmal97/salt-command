@@ -201,11 +201,11 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .payref .salt-ledger__value{display:inline-flex;align-items:center;gap:10px}
 .paycap{margin:0;flex-basis:100%;font-size:var(--salt-text-sm);line-height:1.5;color:var(--salt-prose)}
 #payFoot .salt-pill{flex:1 1 auto}
-/* S6 6.5: the one question on return, centred as the mockup draws it */
+/* S6 6.5: the one question on return, centred as the mockup draws it. S6 fix (rule 6): its heading is the Sheet's title
+   recipe, and the mockup's ring round the mark waits for a recipe in salt-ds, never restated here */
 .paycheck{text-align:center;padding-top:6px}
-.paycheck h3{margin:14px 0 4px;font-family:var(--salt-font-display);font-size:var(--salt-text-xl);font-weight:600;letter-spacing:0;color:var(--salt-salt)}
-.payring{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;border:1px solid var(--salt-steel);color:var(--salt-steel)}
-.payring .psym{color:inherit}
+.paycheck h3{margin:14px 0 4px}
+.paycheck .glyph{color:var(--salt-steel)}
 .payagain{width:100%;margin-top:16px}
 .paysaid{flex-basis:100%;margin:0}
 .payhead .msg{margin:10px 0 0}
@@ -2717,8 +2717,8 @@ const CLIENT_JS = `
     var body=document.getElementById('payBody'), foot=document.getElementById('payFoot'), w=PS.away, a=acct(w.acct), qr=w.rail==='qr';
     body.textContent=''; foot.textContent='';
     document.getElementById('payT').textContent='Pay '+rm(w.amt);
-    var box=el('div','paycheck'), ring=el('span','payring'); ring.appendChild(glyph(qr?'qr':'bank',30)); box.appendChild(ring);
-    box.appendChild(el('h3',null,'Did you send '+rm(w.amt)+'?'));
+    var box=el('div','paycheck'); box.appendChild(glyph(qr?'qr':'bank',30));
+    box.appendChild(el('h3','salt-sheet__title','Did you send '+rm(w.amt)+'?'));
     box.appendChild(el('p','sub2',(qr?'By scanning the '+a.name+' code':'By transfer to '+a.name)+', reference '+user+'.'));
     body.appendChild(box);
     var ins=el('p','salt-insight');

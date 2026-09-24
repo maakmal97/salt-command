@@ -32544,6 +32544,59 @@ await (async () => {
   ok(!nOther && !nOld, "and it is never asked of another account, nor once it is two hours old: " + JSON.stringify({ other: nOther, old: nOld }));
 })();
 
+section("S6 fix: the question on return wears the Sheet's title recipe, and the page restates no ring the system lacks");
+await (async () => {
+  /* RULE 6: the recipes are used, not restated, and a look the system lacks goes into salt-ds first. The check screen drew
+     its heading with page rules copying the Sheet's title at another weight, and a ring round the mark that no recipe
+     has. The heading now carries salt-sheet__title and the page keeps only its spacing; the ring waits for a recipe. The
+     screen is opened as a reload opens it, from the question kept on the device. */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const Cr = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const U = "abcd-efgh", pass = "fixture-pass-rr", ck = await Cr.contentKey("test-secret", U);
+  const now = new Date(), iso = (h) => new Date(now.getTime() + h * 3600e3).toISOString();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const html = lp(U, "nrr", null);
+  const css = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
+  const pageRules = css.slice(css.indexOf(".paycheck{"));
+  const who = (u) => { let h = 2166136261; for (let i = 0; i < u.length; i++) { h ^= u.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(36); };
+  const list = [{ id: "oQ", product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: iso(-30), status: "acknowledged", total: 150, paid: 0, claimed: 0,
+    payments: [], msgs: [], history: [{ at: iso(-30), status: "acknowledged", by: "desk" }] }];
+  const pay = { term: 10, now: { rm: 0, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+  const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-rr",
+    env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: 0, pay })) };
+  const dom = new JD(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {}; win.open = () => null;
+    win.localStorage.setItem("salt-stmt-payq", JSON.stringify({ who: who(U), at: Date.now(), kind: "order", id: "oQ", away: { amt: 150, rail: "transfer", acct: "maybank" } }));
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
+      if (p === "/open") return res(200, body);
+      if (p === "/orders" && m === "GET") return res(200, { ok: true, orders: list, claims: [] });
+      return res(404, { ok: false });
+    };
+  } });
+  const d = dom.window.document;
+  let head = null, ring = true, mark = false;
+  try {
+    d.getElementById("un").value = U; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => d.querySelector("#payBody .paycheck h3"));
+    const h = d.querySelector("#payBody .paycheck h3");
+    head = h ? { cls: h.className, text: h.textContent } : null;
+    ring = !!d.querySelector("#payBody .payring");
+    mark = !!d.querySelector("#payBody .paycheck svg.glyph");
+  } finally { dom.window.close(); }
+  ok(head && head.cls === "salt-sheet__title" && head.text === "Did you send RM 150?" && !ring && mark
+    && !/\.payring/.test(css) && !/\.paycheck h3\{[^}]*(font|color|letter-spacing)/.test(pageRules) && /\.salt-sheet__title\s*\{/.test(css),
+    "the question's heading is the Sheet's own title recipe, the page keeping only its spacing, and no ring the system has no recipe for: " + JSON.stringify({ head, ring, mark }));
+})();
+
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead
