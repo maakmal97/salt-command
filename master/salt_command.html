@@ -18988,10 +18988,10 @@ function tabOrders(){
   <div id="ordMsg" role="status" style="margin-top:8px;font-size:12px;color:var(--mut)">${esc(ordMsg)}</div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0;font-size:12px;color:var(--mut)"><button type="button" class="salt-ghost" id="ordAllBtn">${ordAll?'Hide the closed ones':'Show the closed ones'}</button><span>${ordAll?'Every order this site has taken, newest first.':'Open orders, and any waiting on an answer from you.'}</span></div>
   <details class="salt-plan ordnote" id="bullFold"><summary><span class="salt-plan__id" id="bullN">&middot;</span><span class="salt-plan__title" id="bullHead">Notice</span></summary>
-  <div class="salt-plan__body" id="bullCard"><div class="dsc">Across the top of Salt Counter, for everyone who opens it.</div>
+  <div class="salt-plan__body" id="bullCard"><div class="dsc">A still card on Home in Salt Counter, for everyone who opens it. Setting one wakes every phone on the site.</div>
     <div class="dsc" id="bullNow" style="margin-top:6px">Reading it.</div>
     <textarea id="bullText" rows="3" placeholder="One line per item" style="width:100%;margin-top:8px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:6px;font:inherit"></textarea>
-    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="salt-ghost" data-bmode="run" aria-pressed="true">Running</button><button type="button" class="salt-ghost" data-bmode="change" aria-pressed="false">Changing</button><button type="button" class="salt-ghost salt-ghost--lit" id="bullSet">Set</button><button type="button" class="salt-ghost" id="bullClear">Clear</button></div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="salt-ghost salt-ghost--lit" id="bullSet">Set</button><button type="button" class="salt-ghost" id="bullClear">Clear</button></div>
     <div class="dsc" id="bullMsg" style="margin-top:6px"></div></div></details>
   <div id="ordAlert" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--mut)"></div>`;
 }
@@ -19022,12 +19022,12 @@ async function ordLoad(quiet){
     if(b.contains(document.activeElement)&&document.activeElement.tagName==='INPUT')return;   /* nor under a thumb mid-word */
     ordLoad(true);},CARD_POLL);
 }
-/* ---- THE BULLETIN (20 Sep 2026, his instruction): a notice board across the top of Salt Counter, set here
-   and relayed through the desk's keyed /bulletin to the site's own store. Running scrolls the lines as one;
-   changing shows them one at a time. The words are checked here first, and again on the Worker, the desk
+/* ---- THE BULLETIN (20 Sep 2026, his instruction): a notice for everyone on Salt Counter, set here and relayed
+   through the desk's keyed /bulletin to the site's own store. S7 7.5, HIS D14 OF 24 SEP 2026: A STILL CARD ON HOME,
+   every line standing, so the Running and Changing modes are gone; and a Set wakes every phone on the site, so it
+   asks first. Clearing wakes nobody and asks nothing. The words are checked here first, and again on the Worker, the desk
    being the one place that may hold its own name: a customer's page never names the desk, a roster code or a
    level, and a product is a mark there rather than a word, so a product's name warns and is his to allow. ---- */
-let BULL_MODE='run';
 /* S13 13.2 (his decision D12, 24 Sep 2026): the same words in Malay, mirroring siteWords in src/orders.js, whose
    lists the suite pins against the book and TIER_NAMES. Emas, perak and gangsa are ordinary words (Perak is a state,
    "peluang emas" a golden chance), so they are refused only after a word that says level, or member, customer, price,
@@ -19045,7 +19045,6 @@ function siteSafe(t){
   if(/\b(salt|oil|candy|rice|spare|garam|minyak|gula-gula|gula|beras)\b/i.test(s))return {refuse:'',warn:'That names a product in words; the customer\'s page draws a mark instead.'};
   return {refuse:'',warn:''};
 }
-function bullPressed(){document.querySelectorAll('button[data-bmode]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.bmode===BULL_MODE?'true':'false'));}
 async function bullLoad(quiet){
   const now=document.getElementById('bullNow'),ta=document.getElementById('bullText');if(!now)return;
   const go=()=>fetch('bulletin',{cache:'no-store',headers:qHeaders()});
@@ -19053,16 +19052,14 @@ async function bullLoad(quiet){
   try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go(); if(r.ok){try{j=await r.json();}catch(e){}} }catch(e){}
   const head=document.getElementById('bullHead'),nl=document.getElementById('bullN');
   if(!j||!j.ok){now.textContent='The bulletin could not be read.';if(head)head.textContent='Notice: could not be read';return;}
-  BULL_MODE=j.mode==='change'?'change':'run';bullPressed();
   const lines=Array.isArray(j.lines)?j.lines:[];
   /* S11 11.4: the fold says what is posted, so a closed notice is still read at a glance */
-  if(head)head.textContent=lines.length?'Notice: '+lines.length+(lines.length===1?' line':' lines')+', '+(BULL_MODE==='change'?'changing':'running'):'Notice: nothing posted';
+  if(head)head.textContent=lines.length?'Notice: '+lines.length+(lines.length===1?' line':' lines'):'Notice: nothing posted';
   if(nl)nl.textContent=String(lines.length);
-  now.innerHTML=lines.length?'Showing now, '+(BULL_MODE==='change'?'changing':'running')+': '+esc(lines.join(' · ')):'Nothing posted. Type a line and tap Set.';
+  now.innerHTML=lines.length?'Showing now: '+esc(lines.join(' · ')):'Nothing posted. Type a line and tap Set.';
   if(ta&&document.activeElement!==ta)ta.value=lines.join('\n');
 }
 function bullWire(){
-  document.querySelectorAll('button[data-bmode]').forEach(b=>{b.onclick=()=>{BULL_MODE=b.dataset.bmode;bullPressed();};});
   const s=document.getElementById('bullSet'),c=document.getElementById('bullClear');
   if(s)s.onclick=()=>bullPost(false);if(c)c.onclick=()=>bullPost(true);
 }
@@ -19071,7 +19068,8 @@ async function bullPost(clear){
   const say=t=>{if(msg)msg.textContent=t;};
   const lines=clear?[]:String(ta?ta.value:'').split('\n').map(s=>s.trim()).filter(Boolean);
   for(const l of lines){const g=siteSafe(l);if(g.refuse)return say(g.refuse+' Nothing was posted.');if(g.warn&&!confirm(g.warn+' Post it anyway?'))return say('Not posted.');}
-  const body=JSON.stringify({lines,mode:BULL_MODE});
+  if(lines.length&&!confirm('Setting this notice wakes every phone on Salt Counter. Set it?'))return say('Not posted.');
+  const body=JSON.stringify({lines});
   const go=()=>fetch('bulletin',{method:'POST',headers:qHeaders(),body});
   try{ let r=await go(); if(r.status===401&&saltAskWriteKey())r=await go(); let j={};try{j=await r.json();}catch(e){}
     say(r.status===401?'That write key was refused. Nothing was posted.':!r.ok?'The Worker refused it: '+(j.error||'http '+r.status)+'.':clear?'Cleared. It goes within a minute on an open page, at once on the next open.':'Posted. It shows within a minute on an open page, at once on the next open.');

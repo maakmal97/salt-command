@@ -19901,7 +19901,7 @@ await (async () => {
   ok(/wr\(\["kv", "key", "put", name, "--path", file\]\)/.test(src) && !/"put", name, JSON\.stringify/.test(src),
     "the only KV put in drain.mjs goes through --path, never a JSON argument the shell can strip");
 })();
-section("v732: a bulletin runs or changes across the top of Salt Counter, set from Enter, and never names the desk, a code or a level");
+section("v732: a bulletin is set from Enter, stands on Salt Counter (a still card on Home since S7 7.5), and never names the desk, a code or a level");
 await (async () => {
   /* 20 Sep 2026, his instruction: at the top of Salt Counter, space for a running bulletin he sets from Enter on
      the desk, running or changing. One clear key on the site, set over the binding on the desk key, spliced into
@@ -19934,46 +19934,45 @@ await (async () => {
     "the public read is read only, anything past it is the site's 404, an unknown desk path is still a 404, the desk key still gates the orders, and a set with no JSON is refused");
   await req("/desk/bulletin", "POST", { lines: ["Closed Friday", "Back Monday"], mode: "change" }, D);
 
-  /* ---- 2. THE DOOR CARRIES IT AT FIRST PAINT, in the nonce'd style, with the script's copy spliced ---- */
+  /* ---- 2. THE PAGE CARRIES IT AT FIRST PAINT, with the script's copy spliced. S7 7.5 (his D14 of 24 Sep 2026): a still
+     card at the head of Home, every line standing, where it was a band across the top of the door and every page ---- */
   const door = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
   const bodyAt = door.indexOf("<body>");
-  ok(bodyAt > 0 && door.slice(bodyAt, bodyAt + 120).includes('<div id="bull" class="bull" data-mode="change" role="status"')
-    && /id="bullTrack">Closed Friday<\/div>/.test(door) && !/id="bull"[^>]*hidden/.test(door),
-    "the band is the first thing in the body, in change mode, showing the first line and not hidden");
-  ok(/@keyframes bullrun/.test(door) && /prefers-reduced-motion/.test(door) && !/<div id="bull"[^>]*style=/.test(door)
-    && /var BULL=\{"lines":\["Closed Friday","Back Monday"\],"mode":"change"/.test(door),
-    "the marquee and its reduced-motion stop are in the nonce'd style with no style attribute on the band, and the script is served its own copy");
+  ok(bodyAt > 0 && !door.slice(bodyAt, bodyAt + 120).includes('id="bull"')
+    && /<div id="pHome" class="home"><div class="hcol"><div id="bull" class="salt-insight hnote"><p>Closed Friday<\/p><p>Back Monday<\/p><\/div>/.test(door),
+    "the notice is no longer the first thing in the body: it is a still card at the head of Home, every line standing and not hidden");
+  ok(!/bullrun|data-mode|[.]bull[{[ ]/.test(door) && !/<div id="bull"[^>]*style=/.test(door)
+    && /var BULL=\{"lines":\["Closed Friday","Back Monday"\]\}/.test(door),
+    "nothing on the page runs or changes, the card carries no style attribute, and the script is served its own copy of the lines alone");
   await req("/desk/bulletin", "POST", { lines: ["Tuesday <b>3</b>"], mode: "run" }, D);
   const door2 = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
-  ok(/id="bullTrack">Tuesday &lt;b&gt;3&lt;\/b&gt;<\/div>/.test(door2) && /var BULL=\{"lines":\["Tuesday \\u003cb>3\\u003c\/b>"\]/.test(door2),
-    "a line is escaped on the band and in the script's copy");
+  ok(/<div id="bull" class="salt-insight hnote"><p>Tuesday &lt;b&gt;3&lt;\/b&gt;<\/p><\/div>/.test(door2) && /var BULL=\{"lines":\["Tuesday \\u003cb>3\\u003c\/b>"\]\}/.test(door2),
+    "a line is escaped on the card and in the script's copy");
   r = await J(await req("/desk/bulletin", "POST", { lines: [] }, D));
   const door3 = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
-  ok(r.b.ok && r.b.cleared === true && (await skv.get("bulletin")) === null && /<div id="bull" class="bull" data-mode="run" hidden/.test(door3) && !/Tuesday/.test(door3),
-    "an empty set clears the key, and the door then carries the band hidden with nothing in it");
+  ok(r.b.ok && r.b.cleared === true && (await skv.get("bulletin")) === null && /<div id="bull" class="salt-insight hnote" hidden><\/div>/.test(door3) && !/Tuesday/.test(door3),
+    "an empty set clears the key, and the page then carries the card hidden with nothing in it");
 
-  /* ---- 3. THE PAGE, DRIVEN: the band draws from the served copy, changes line by line, and follows the poll ---- */
+  /* ---- 3. THE PAGE, DRIVEN: the card draws from the served copy, stands still, and follows the poll ---- */
   await req("/desk/bulletin", "POST", { lines: ["First line", "Second line"], mode: "change" }, D);
   const { JSDOM } = await import("jsdom");
   const html = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
-  const served = [];
+  const served = [], ticks = [];
   const dom = new JSDOM(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    const si = win.setInterval.bind(win); win.setInterval = (f, ms) => { ticks.push(ms); return si(f, ms); };
     win.fetch = async (path) => { const p = String(path); served.push(p);
       if (p === "/bulletin") return { ok: true, status: 200, json: async () => ({ ok: true, lines: ["Only line"], mode: "run", at: "x" }) };
       return { ok: false, status: 404, json: async () => ({ ok: false }) }; };
   } });
   try {
-    const d = dom.window.document, tr = () => d.getElementById("bullTrack").textContent;
-    ok(tr() === "First line" && d.getElementById("bull").getAttribute("data-mode") === "change" && !d.getElementById("bull").hidden,
-      "the page draws the served bulletin on the first line");
-    await new Promise((res) => setTimeout(res, 4300));
-    ok(tr() === "Second line", "and four seconds later the second: " + JSON.stringify(tr()));
+    const d = dom.window.document, tr = () => [...d.querySelectorAll("#bull > p")].map((x) => x.textContent).join("|");
+    ok(tr() === "First line|Second line" && !d.getElementById("bull").hidden && !ticks.includes(4000),
+      "the page draws every line of the served notice, standing, with no timer to change it: " + JSON.stringify([tr(), ticks]));
     await dom.window.eval("bullRead()");
-    ok(tr() === "Only line" && d.getElementById("bull").getAttribute("data-mode") === "run" && served.includes("/bulletin")
-      && /^\d+s$/.test(d.getElementById("bullTrack").style.animationDuration),
-      "a read that finds a different bulletin redraws it, running, with a duration set from its length: " + JSON.stringify([tr(), d.getElementById("bullTrack").style.animationDuration]));
-    await dom.window.eval("bullDraw({lines:[],mode:'run'})");
-    ok(d.getElementById("bull").hidden && tr() === "", "and an empty bulletin hides the band");
+    ok(tr() === "Only line" && served.includes("/bulletin") && !d.querySelector("#bull [style]"),
+      "a read that finds a different notice redraws it, still: " + JSON.stringify(tr()));
+    await dom.window.eval("bullDraw({lines:[]})");
+    ok(d.getElementById("bull").hidden && tr() === "", "and an empty notice hides the card");
     ok(/if\(\+\+bullN%6===0\) await bullRead\(\);/.test(html), "the open page reads the bulletin again every sixth poll, once a minute");
   } finally { dom.window.close(); }
 
@@ -20018,7 +20017,7 @@ await (async () => {
     const cloud = String(w.eval("tabOrders()"));
     w.SALT_CLOUD = false;
     const laptop = String(w.eval("tabOrders()"));
-    ok(/id="bullText"/.test(cloud) && /data-bmode="run"/.test(cloud) && /data-bmode="change"/.test(cloud) && /id="bullSet"/.test(cloud) && /id="bullClear"/.test(cloud)
+    ok(/id="bullText"/.test(cloud) && !/data-bmode/.test(cloud) && /id="bullSet"/.test(cloud) && /id="bullClear"/.test(cloud)
       && cloud.indexOf('id="bullCard"') < cloud.indexOf('id="ordAlert"') && !/bullText/.test(laptop),
       "the cloud desk's Site orders page carries the Bulletin card (folded below the list since S11 11.4), and the laptop copy has none");
     const g = (t) => w.eval("siteSafe(" + JSON.stringify(t) + ")");
@@ -20031,17 +20030,17 @@ await (async () => {
     w.fetch = async (path, init) => { sent.push({ path: String(path), method: init && init.method, key: init && init.headers && init.headers["X-Salt-Key"], body: init && init.body ? JSON.parse(init.body) : null });
       return { ok: true, status: 200, json: async () => ({ ok: true, lines: ["Closed Friday", "Back Monday"], mode: "change" }) }; };
     await w.eval("bullLoad()");
-    ok(sent[0] && sent[0].path === "bulletin" && sent[0].key === "k-fixture" && /Showing now, changing: Closed Friday · Back Monday/.test(w.document.getElementById("bullNow").textContent)
-      && w.document.getElementById("bullText").value === "Closed Friday\nBack Monday" && w.eval("BULL_MODE") === "change",
+    ok(sent[0] && sent[0].path === "bulletin" && sent[0].key === "k-fixture" && /Showing now: Closed Friday · Back Monday/.test(w.document.getElementById("bullNow").textContent)
+      && w.document.getElementById("bullText").value === "Closed Friday\nBack Monday",
       "the card reads the bulletin keyed and shows what is running: " + JSON.stringify(sent[0]));
     w.eval("bullWire()");
     w.document.getElementById("bullText").value = "Closed Friday\n\n  Back Monday ";
-    w.document.querySelector('button[data-bmode="run"]').click();
+    w.confirm = () => true;   /* S7 7.5: a Set asks before it wakes every phone; the ask is the next section's */
     sent.length = 0;
     await w.eval("bullPost(false)");
     const post = sent.find((x) => x.method === "POST");
-    ok(post && post.key === "k-fixture" && JSON.stringify(post.body) === '{"lines":["Closed Friday","Back Monday"],"mode":"run"}' && /Posted\./.test(w.document.getElementById("bullMsg").textContent),
-      "Set posts the lines tidied, in the mode pressed, keyed, and says so: " + JSON.stringify(post));
+    ok(post && post.key === "k-fixture" && JSON.stringify(post.body) === '{"lines":["Closed Friday","Back Monday"]}' && /Posted\./.test(w.document.getElementById("bullMsg").textContent),
+      "Set posts the lines tidied, with no mode, keyed, and says so: " + JSON.stringify(post));
     sent.length = 0;
     await w.eval("bullPost(true)");
     ok(sent.some((x) => x.method === "POST" && Array.isArray(x.body.lines) && x.body.lines.length === 0) && /Cleared\./.test(w.document.getElementById("bullMsg").textContent),
@@ -29615,7 +29614,7 @@ await (async () => {
     "and a new order that carries a line wakes as a new order, not as a line: " + JSON.stringify(await dkv.get("orders:news")));
 })();
 
-section("S1 1.48: Acknowledge, Approve and the notice's mode buttons wear the system's recipes, with no colour of their own");
+section("S1 1.48: Acknowledge, Approve and the notice's buttons wear the system's recipes, with no colour of their own");
 await (async () => {
   /* 24 Sep 2026 (L52, rule 6). Acknowledge and Approve were painted with a literal green gradient and
      obsidian text in a style attribute, Reject, Decline and Cancel restated a crimson outline, and the
@@ -29647,13 +29646,11 @@ await (async () => {
     ok(w148.getComputedStyle(yes).color === "var(--salt-obsidian)" && w148.getComputedStyle(no).color === "var(--salt-ghost-tone)",
       "and no older layer of the desk paints over either recipe: " + JSON.stringify([w148.getComputedStyle(yes).color, w148.getComputedStyle(no).color]));
 
+    /* S7 7.5 (his D14): the notice has no modes to press any more; Set and Clear are the system's ghosts, Set the lit one */
     const bull = frag(String(w148.eval("tabOrders()")));
-    w148.eval("BULL_MODE='change';bullPressed();");
-    const run = bull.querySelector('button[data-bmode="run"]'), chg = bull.querySelector('button[data-bmode="change"]');
-    ok(run.classList.contains("salt-ghost") && chg.classList.contains("salt-ghost") && chg.getAttribute("aria-pressed") === "true",
-      "the notice's Running and Changing are ghosts, pressed by the mode that is set");
-    ok(w148.getComputedStyle(chg).color === "var(--salt-salt)" && w148.getComputedStyle(run).color === "var(--salt-ghost-tone)",
-      "so the chosen one is drawn as chosen, by the recipe's own pressed state: " + JSON.stringify([w148.getComputedStyle(chg).color, w148.getComputedStyle(run).color]));
+    const run = bull.querySelector("#bullClear"), setB = bull.querySelector("#bullSet");
+    ok(run && setB && run.classList.contains("salt-ghost") && setB.classList.contains("salt-ghost--lit") && !bull.querySelector("[data-bmode]"),
+      "the notice's Set and Clear are the system's ghosts, Set the lit one, and no mode is offered");
     /* UX6: the danger ghost warms only under a pointer, which his phone has not got, so Decline, Cancel and Reject
        read as any quiet ghost; the layer binds the recipe's own tone to the alarm, and a plain ghost keeps mist */
     const toneOf = (b) => w148.getComputedStyle(b).getPropertyValue("--salt-ghost-tone").trim();
@@ -32497,6 +32494,48 @@ await (async () => {
   } finally { c.W.close(); }
 })();
 
+section("S7 7.5: a Set on the desk asks before it wakes every phone, and the notice is Home's still card");
+await (async () => {
+  /* HIS D14 OF 24 SEP 2026 ("all recommended"): "A still card on Home, with no running or changing band. A Set asks before
+     it wakes every phone." Every Set woke every phone on the site (v761), with nothing said at the tap. The desk's card
+     now asks, and a No sends nothing; Clear wakes nobody, so it asks nothing. On the page the notice heads Home. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    const box = w.document.createElement("div"); box.innerHTML = String(w.eval("tabOrders()")); w.document.body.appendChild(box);
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    const sent = [], asked = [], posts = () => sent.filter((x) => x.method === "POST");
+    w.fetch = async (path, init) => { sent.push({ method: init && init.method, body: init && init.body ? JSON.parse(init.body) : null });
+      return { ok: true, status: 200, json: async () => ({ ok: true, lines: [] }) }; };
+    const msg = () => w.document.getElementById("bullMsg").textContent;
+    w.confirm = (q) => { asked.push(q); return false; };
+    w.document.getElementById("bullText").value = "Closed Friday";
+    await w.eval("bullPost(false)");
+    ok(asked.length === 1 && /wakes every phone/.test(asked[0]) && posts().length === 0 && /Not posted/.test(msg()),
+      "a Set asks first, saying it wakes every phone, and a No sends nothing: " + JSON.stringify([asked, msg()]));
+    w.confirm = (q) => { asked.push(q); return true; };
+    await w.eval("bullPost(false)");
+    ok(asked.length === 2 && posts().length === 1 && JSON.stringify(posts()[0].body.lines) === '["Closed Friday"]' && /Posted\./.test(msg()),
+      "and a Yes sets it");
+    asked.length = 0; sent.length = 0;
+    await w.eval("bullPost(true)");
+    ok(asked.length === 0 && posts().length === 1 && posts()[0].body.lines.length === 0 && /Cleared\./.test(msg()),
+      "Clear wakes nobody, so it asks nothing: " + JSON.stringify(asked));
+    ok(/A still card on Home/.test(box.textContent) && /wakes every phone/.test(box.textContent),
+      "and the card says where the notice shows and what a Set does");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w.close(); } catch (e) { /* best effort */ } }
+  const { landingPage: lp75 } = await import("../stmt/page.js");
+  const { JSDOM: JD75 } = await import("jsdom");
+  const dom = new JD75(lp75("", "n75", null, { lines: ["Closed Friday"] }), { url: "https://site.test/" });
+  try {
+    const D = dom.window.document, bull = D.getElementById("bull"), col = D.querySelector("#pHome > .hcol");
+    ok(bull && bull.parentNode === col && col.firstElementChild === bull && !!bull.closest("#tabs[hidden]") && D.body.firstElementChild.id !== "bull",
+      "on the page the notice heads Home, inside the places the door keeps hidden, and no longer heads every page: "
+      + JSON.stringify([bull && bull.parentNode && bull.parentNode.className, D.body.firstElementChild.id]));
+  } finally { dom.window.close(); }
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read
@@ -33043,7 +33082,7 @@ await (async () => {
   } finally { w.close(); }
 })();
 
-section("24 Sep 2026: a changing bulletin stands still under reduced motion and is announced once");
+section("S7 7.5: the notice stands still for everyone, and is no live region");
 await (async () => {
   /* L51 of the Counter study: the changing bulletin swapped its line every four seconds whatever the reader had asked
      for, inside a role=status live region, so a screen reader was read a new line every four seconds for as long as
@@ -33063,17 +33102,15 @@ await (async () => {
   };
   const still = open(true), moving = open(false);
   try {
-    const trS = still.d.getElementById("bullTrack");
-    ok(still.timers.length === 0 && lines.every((l) => trS.textContent.includes(l)) && !trS.hasAttribute("aria-hidden"),
-      "under reduced motion no four-second timer is set and every line stands still in the band: " + JSON.stringify([still.timers.length, trS.textContent]));
-    const trM = moving.d.getElementById("bullTrack"), live = moving.d.getElementById("bull");
-    const told = () => [...live.childNodes].filter((n) => !(n.getAttribute && n.getAttribute("aria-hidden") === "true")).map((n) => n.textContent).join("");
-    const before = told();
-    ok(moving.timers.length === 1 && trM.textContent === "Closed Friday" && live.getAttribute("role") === "status",
-      "without it the lines still change, one at a time, in the live region: " + JSON.stringify([moving.timers.length, trM.textContent]));
-    moving.timers[0]();
-    ok(trM.textContent === "Open Saturday" && trM.getAttribute("aria-hidden") === "true" && told() === before && lines.every((l) => before.includes(l)),
-      "and what the live region is told is every line, once, and does not change when the line on screen does: " + JSON.stringify(before));
+    /* S7 7.5, HIS D14 OF 24 SEP 2026: a still card for everyone, reduced motion or not, set in changing mode or not; it
+       is part of Home, read where it stands, so it is no live region to be read again on every poll */
+    const shown = (g) => [...g.d.querySelectorAll("#bull > p")].map((x) => x.textContent);
+    for (const g of [still, moving]) {
+      const box = g.d.getElementById("bull");
+      ok(g.timers.length === 0 && JSON.stringify(shown(g)) === JSON.stringify(lines) && !box.hidden && !box.hasAttribute("role") && !box.hasAttribute("aria-live"),
+        (g === still ? "under reduced motion" : "without it") + ", no four-second timer is set and every line stands still, in no live region: "
+        + JSON.stringify([g.timers.length, shown(g), box.getAttribute("role")]));
+    }
   } finally { still.dom.window.close(); moving.dom.window.close(); }
 })();
 

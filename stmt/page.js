@@ -45,13 +45,9 @@ export const POLL_MS = 10000;
 const PAGE_CSS = `
 /* hidden wins over every display rule below: the tab strip and the issue strip are flex */
 [hidden]{display:none!important}
-/* the bulletin, his notice board across the top (20 Sep 2026): a marquee when running, a line at a time when changing */
-.bull{max-width:620px;margin:12px auto 0;padding:9px 14px;border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);
-  background:var(--salt-well);font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text);overflow:hidden;white-space:nowrap}
-.bull[data-mode=run] .track{display:inline-block;padding-left:100%;animation:bullrun 24s linear infinite}
-@keyframes bullrun{to{transform:translateX(-100%)}}
-.bull[data-mode=change] .track{white-space:normal}
-@media (prefers-reduced-motion:reduce){.bull[data-mode=run] .track{animation:none;padding-left:0;white-space:normal}}
+/* S7 7.5 (his D14 of 24 Sep 2026): the notice is a still card on Home, the system's insight, a line a paragraph */
+.hnote p{margin:0}
+.hnote p+p{margin-top:6px}
 /* The gate, in the same material as the document behind it. One filled control, the
    brass-to-copper pill, because this is the one thing on the page that produces something;
    decision 5 of the identity. Everything else is a hairline or a word. */
@@ -672,15 +668,12 @@ function guestPage(inner, nonce, title) {
     statement, the prices, the lock -- is then the customer's own code, opened the customer's own
     way. Only the door changes. The route that serves this is behind Cloudflare Access and verifies
     the token itself; see stmt/access.js. */
-/* the bulletin band (20 Sep 2026): the first thing in the body, above the door and the bar alike, and
-   hidden until there is a line to show; running joins the lines as one track, changing starts on the first */
-function bulletinBand(b) {
+/* THE NOTICE (20 Sep 2026; S7 7.5, his D14 of 24 Sep 2026): a still card at the head of Home, every line standing, drawn at
+   first paint and hidden until there is a line to show. It was a band across the top of every page, running as one
+   track or changing a line every four seconds; the mode it was set in is no longer read. */
+function noticeCard(b) {
   const lines = (b && Array.isArray(b.lines)) ? b.lines : [];
-  const mode = (b && b.mode === "change") ? "change" : "run";
-  return '<div id="bull" class="bull" data-mode="' + mode + '"' + (lines.length ? "" : " hidden") + ' role="status" aria-live="polite">'
-    + '<div class="track" id="bullTrack">' + esc(mode === "run" ? lines.join("  ·  ") : (lines[0] || "")) + "</div>"
-    /* 24 Sep 2026: what a screen reader is told while the lines change, once, instead of a new line every four seconds */
-    + '<span class="sr" id="bullSr"></span></div>';
+  return '<div id="bull" class="salt-insight hnote"' + (lines.length ? "" : " hidden") + ">" + lines.map((l) => "<p>" + esc(l) + "</p>").join("") + "</div>";
 }
 /* S9 9.2: SALT ADMIN'S PLACES AND ITS FILTERS. The icons are drawn here, stroked like the product marks,
    and loaded from nowhere; the key is the ring with a keyhole its home-screen icon carries (9.7). */
@@ -757,7 +750,6 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<meta name="apple-mobile-web-app-title" content="' + (owner ? "Salt Admin" : "Salt Counter") + '">'
     + "<title>" + (owner ? "Salt Admin" : "Salt Counter") + "</title>"
     + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
-    + bulletinBand(bulletin)
     + (owner
       ? '<div id="roster" class="gate adm">'
         /* S9 9.2: HIS PLACES, the phone's App bar and, from 1080px, the Desk rail the bar gives way to (the
@@ -885,7 +877,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<p class="cwho" data-wholine>Signed in as <span class="mono" data-who></span><span id="cstay"></span></p></header>'
     /* HOME: what they owe, what needs them and what they order again; the keep card first, where stage 3 put it
        first on the page. Two columns from 1080px (S7 7.2) */
-    + '<div id="pHome" class="home"><div class="hcol">' + (owner ? "" : keepCard()) + '<div id="hPay"></div><div id="hNeeds"></div></div>'
+    + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin) + (owner ? "" : keepCard()) + '<div id="hPay"></div><div id="hNeeds"></div></div>'
     + '<div class="hcol"><div id="hComing"></div><div id="hAgain"></div></div></div>'
     /* ACCOUNT: the statement, and This device beside it */
     + '<div id="pStmt" hidden><div class="acols"><div class="acol">'
@@ -899,8 +891,8 @@ export function landingPage(user, nonce, owner, bulletin) {
     + "</div>" + placesBar() + "</div>"
     + '<script nonce="' + nonce + '">'
     + CLIENT_JS.replace(/__POLL__/g, String(POLL_MS))
-      /* the bulletin as the page was served, so the band is drawn with no request; the poll reads it again */
-      .replace("__BULL__", JSON.stringify(bulletin || { lines: [], mode: "run" }).replace(/</g, "\\u003c"))
+      /* the notice as the page was served, so the card is drawn with no request; the poll reads it again */
+      .replace("__BULL__", JSON.stringify({ lines: (bulletin && bulletin.lines) || [] }).replace(/</g, "\\u003c"))
       .replace("__PAY_SITE__", JSON.stringify(PAY_SITE)).replace("__PAY_ACCOUNTS__", JSON.stringify(PAY_ACCOUNTS))
       /* v695: the product marks, so the page can draw one wherever it would have written a name */
       .replace("__PSYM__", JSON.stringify(Object.assign({ _: RING }, PSYM)))
@@ -935,37 +927,20 @@ const CLIENT_JS = `
      happened through the natural three-minute expiry. Every await below is followed by a ticket
      check, and lock() bumps the ticket, so anything still in flight lands on nothing. */
   var POLL_MS=__POLL__, bundle=null, at=0, ticket=0, busy=false;
-  /* the bulletin (20 Sep 2026): drawn from what the page was served with, read again every sixth poll */
-  var BULL=__BULL__, bullI=0, bullTimer=null, bullN=0;
+  /* THE NOTICE (20 Sep 2026): drawn from what the page was served with, read again every sixth poll. S7 7.5, his D14:
+     a still card on Home, every line standing, so nothing runs, changes or is told again to a screen reader */
+  var BULL=__BULL__, bullN=0;
   function bullDraw(b){
-    BULL=b||{lines:[],mode:'run'};
-    var box=document.getElementById('bull'), tr=document.getElementById('bullTrack'), sr=document.getElementById('bullSr'); if(!box||!tr||!sr) return;
-    var lines=BULL.lines||[]; box.hidden=!lines.length; box.setAttribute('data-mode',BULL.mode==='change'?'change':'run');
-    if(bullTimer){ clearInterval(bullTimer); bullTimer=null; }
-    tr.removeAttribute('aria-hidden'); sr.textContent='';
-    if(!lines.length){ tr.textContent=''; return; }
-    if(BULL.mode==='change'){
-      /* 24 Sep 2026: UNDER REDUCED MOTION THE LINES STAND STILL, all of them at once, as running does. And while they
-         change, the changing line is hidden from the live region and every line is told to it once, so a screen
-         reader is not read a new line every four seconds. */
-      var still=lines.length<2||stillMotion();
-      bullI=0; tr.textContent=still?lines.join('  ·  '):lines[0];
-      if(!still){
-        tr.setAttribute('aria-hidden','true'); sr.textContent=lines.join('  ·  ');
-        bullTimer=setInterval(function(){ bullI=(bullI+1)%lines.length; tr.textContent=lines[bullI]; }, 4000);
-      }
-    } else {
-      var t=lines.join('  ·  '); tr.textContent=t;
-      tr.style.animationDuration=Math.max(12, Math.round(t.length/6))+'s';
-    }
+    BULL=b||{lines:[]};
+    var box=document.getElementById('bull'); if(!box) return;
+    var lines=BULL.lines||[]; box.hidden=!lines.length; box.textContent='';
+    lines.forEach(function(l){ var p=document.createElement('p'); p.textContent=l; box.appendChild(p); });
   }
-  function stillMotion(){ try{ return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return false; } }
   async function bullRead(){
     try{
       var r=await fetch('/bulletin',{cache:'no-store'}); var j=await r.json();
       if(!j||!j.ok) return;
-      var same=JSON.stringify(j.lines||[])===JSON.stringify(BULL.lines||[]) && (j.mode||'run')===(BULL.mode||'run');
-      if(!same) bullDraw({lines:j.lines||[], mode:j.mode||'run'});
+      if(JSON.stringify(j.lines||[])!==JSON.stringify(BULL.lines||[])) bullDraw({lines:j.lines||[]});
     }catch(e){}
   }
   window.bullDraw=bullDraw; window.bullRead=bullRead;   /* reachable from outside the closure, which is how the suite drives them */
