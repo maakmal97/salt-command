@@ -21558,6 +21558,65 @@ await (async () => {
       "a row that changes while it holds the focus is drawn again at once and keeps the focus: " + JSON.stringify({ row: n.textContent, focus: d.activeElement && d.activeElement.getAttribute("data-row") }));
   });
 })();
+section("S5 fix: a line on an order says where it is once, and truly");
+await (async () => {
+  /* 25 SEP 2026, the stage 5 review. A line stored whose answer was lost stood twice, Sent from the thread and Not sent
+     with Tap to try again from the page's own copy. Driven by the page's own poll, shortened in the served HTML. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-f4", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f4",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const A = "20260924090000-aaaa";
+  const drive = async (mode, earlier, go) => {
+    const st = { mode, order: { id: A, at: "2026-09-23T01:00:00Z", product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 90, moved: 0,
+      status: "acknowledged", history: [], msgs: earlier.map((t, i) => ({ at: "2026-09-23T0" + (2 + i) + ":00:00Z", by: "customer", text: t })) } };
+    const html = landingPage(u, "nf4", null), fast = html.replace(/var POLL_MS=[0-9]+/, "var POLL_MS=120");
+    const dom = new JSDOM(fast, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
+      w.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
+        if (p === "/open") return { ok: true, status: 200, json: async () => body };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [JSON.parse(JSON.stringify(st.order))] }) };
+        if (p === "/orders/" + A + "/say") {
+          if (st.mode === "lost") { st.order.msgs = st.order.msgs.concat([{ at: "2026-09-24T02:00:00Z", by: "customer", text: j.text.replace(/ +/g, " ") }]); throw new TypeError("Failed to fetch"); }
+          if (st.mode === "drop") throw new TypeError("Failed to fetch");
+        }
+        return { ok: true, status: 200, json: async () => ({ ok: true }) };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    try {
+      ok(fast !== html, "the served page's poll is shortened, or this proves nothing about a poll");
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 30));
+      d.querySelector('#tabs button[data-t="order"]').click();
+      d.querySelector('#pOrder [data-row="' + A + '"]').click();
+      await go(w, d, st);
+    } finally { w.close(); }
+  };
+  const scr = (d) => d.querySelector("#pOrder .oscreen");
+  const lines = (d) => [...scr(d).querySelectorAll(".salt-bubble")].map((b) => b.querySelector(".salt-bubble__text").textContent + " | " + ((b.querySelector(".salt-bubble__state") || {}).textContent || "")
+    + ([...b.querySelectorAll("button")].some((x) => x.textContent === "Tap to try again") ? " | retry" : ""));
+  const send = (w, d, t) => { const b = scr(d).querySelector("input[data-say]"); b.value = t; b.dispatchEvent(new w.Event("input", { bubbles: true })); b.form.requestSubmit(); };
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  await drive("lost", [], async (w, d) => {
+    send(w, d, "Is it  ready");
+    await wait(600);
+    ok(JSON.stringify(lines(d)) === JSON.stringify(["Is it ready | Sent"]),
+      "a line stored whose answer was lost stands once, as Sent, once the thread shows it: " + JSON.stringify(lines(d)));
+  });
+  await drive("drop", ["Is it ready"], async (w, d) => {
+    send(w, d, "Is it ready");
+    await wait(600);
+    ok(JSON.stringify(lines(d)) === JSON.stringify(["Is it ready | Sent", "Is it ready | Not sent | retry"]),
+      "and a line that did not go stays Not sent, though the same words went earlier: " + JSON.stringify(lines(d)));
+  });
+})();
 section("v753: he answers on the order, and the words are checked on the desk before they leave it");
 await (async () => {
   /* the other half of v751. His answer is a move of his like any other, so it wakes them and changes

@@ -1693,6 +1693,12 @@ const CLIENT_JS = `
      until this device has shown them. The composer is a form, so Return sends; the line typed is kept per order
      until it goes, and the box is emptied the moment it does, the line then living in its bubble. ---- */
   function oOut(id){ var q=(draft.oOut=draft.oOut||{}); return q[id]||(q[id]=[]); }
+  /* A LINE STORED WHOSE ANSWER WAS LOST stood twice, Sent from the thread and Not sent from here. An out line also
+     goes once the thread holds more of their lines in its words than it did when it was sent (n), so a line said
+     twice on purpose is still two. The words are compared as the site keeps them, spaces run together. */
+  function oWords(s){ return String(s||'').split(' ').filter(Boolean).join(' ').slice(0,200); }
+  function oSame(o,w){ return (o.msgs||[]).filter(function(m){ return m.by==='customer'&&oWords(m.text)===w; }).length; }
+  function oLanded(o){ var q=oOut(o.id); for(var i=q.length-1;i>=0;i--) if(oSame(o,q[i].w)>q[i].n) q.splice(i,1); return q; }
   function oPut(v){ for(var i=0;i<orders.length;i++) if(orders[i].id===v.id){ orders[i]=v; return; } }
   function bubble(side,text,meta,state,isNew){
     var b=el('div','salt-bubble salt-bubble--'+side+(state==='failed'?' salt-bubble--failed':''));
@@ -1704,7 +1710,7 @@ const CLIENT_JS = `
     return b;
   }
   function oThread(o){
-    var w=el('div','omsgs'), msgs=o.msgs||[], out=oOut(o.id), n=msgs.length+out.length, since=(draft.oSince||{})[o.id];
+    var w=el('div','omsgs'), msgs=o.msgs||[], out=oLanded(o), n=msgs.length+out.length, since=(draft.oSince||{})[o.id];
     if(view&&!n) return el('div');
     var h=el('h3','salt-eyebrow salt-eyebrow--copper olab'); h.appendChild(el('span',null,'Messages')); if(n) h.appendChild(el('span',null,String(n)));
     var th=el('div','salt-thread'), ls=el('div','salt-thread__lines');
@@ -1741,8 +1747,9 @@ const CLIENT_JS = `
       ev.preventDefault();
       var t=String(si.value||'').trim();
       if(!t) return;
-      var x={t:t, at:new Date().toISOString(), state:'sending', rid:mintRid(), why:''};
-      oOut(o.id).push(x);
+      var wd=oWords(t), q=oOut(o.id);
+      var x={t:t, w:wd, n:oSame(oFind(o.id)||o,wd)+q.filter(function(y){ return y.w===wd; }).length, at:new Date().toISOString(), state:'sending', rid:mintRid(), why:''};
+      q.push(x);
       si.value=''; if(draft.says) delete draft.says[o.id];
       oSend(o.id,x);
     });
