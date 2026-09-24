@@ -1223,8 +1223,10 @@ const CLIENT_JS = `
     lapse.hidden=false;
     if(!kept) openSignedOut();
   }
+  var doorNext=null;
   function openSignedOut(){
     if(OWNER||!outSheet||!outSheet.hidden) return;
+    doorNext=doorBox.nextSibling;
     document.getElementById('outForm').appendChild(doorBox);
     if(user) un.value=user;
     say('');
@@ -1234,7 +1236,8 @@ const CLIENT_JS = `
   function closeSignedOut(){
     if(!outSheet||outSheet.hidden) return;
     outSheet.hidden=true; outScrim.hidden=true;
-    gate.insertBefore(doorBox, gate.querySelector('.salt-insight'));
+    /* S3 fix: back where it came from, above I have a sign-in code, which stayed on the door */
+    gate.insertBefore(doorBox, doorNext);
   }
   if(outSheet){
     document.getElementById('outX').addEventListener('click', function(){ closeSignedOut(); try{ document.getElementById('lapseGo').focus(); }catch(e){} });

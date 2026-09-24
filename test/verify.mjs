@@ -19818,6 +19818,48 @@ await (async () => {
       "the control: a saved app with nothing remembered still opens on One step to finish, with no Try again");
   } finally { fresh.W.close(); }
 })();
+section("S3 fix: the door's form goes back where it came from when the signed-out Sheet closes, above I have a sign-in code");
+await (async () => {
+  /* F7 (24 Sep 2026). closeSignedOut put the form back before the help line, after I have a sign-in code, so once a
+     lapse had happened the code button stood above the username field until a reload. */
+  const { landingPage: lpO } = await import("../stmt/page.js");
+  const CO = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDO } = await import("jsdom");
+  const uO = "aaaa-wwww", passO = "2345-6789-abcd-efgw", ckO = await CO.contentKey("3".repeat(64), uO);
+  const envO = await CO.encryptWith(ckO, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] }));
+  const st = { dead: new Set(), n: 0, last: "" };
+  const dom = new JDO(lpO(uO, "nO", null).replace("var POLL_MS=10000", "var POLL_MS=40"), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      win.scrollTo = () => {};
+      win.fetch = async (p, init) => {
+        const s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
+        const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CO.wrapKey(passO, ckO), env: envO, live: null, prices: null, session: (st.last = "sessO" + (++st.n) + "0000000000000000000000") });
+        if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
+        return ans(200, { ok: true, orders: [] });
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  const order = () => [...D.getElementById("gate").children].map((e) => e.id || e.tagName.toLowerCase() + (e.className ? "." + e.className.split(" ")[0] : "")).join(" | ");
+  try {
+    const before = order();
+    ok(/doorBox \| toCode \| p\.salt-insight$/.test(before), "the fixture: the door's form, then I have a sign-in code, then the help line: " + before);
+    const signIn = async () => { D.getElementById("rem").checked = false; D.getElementById("pw").value = passO;
+      D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true })); };
+    await signIn();
+    await until(() => !D.getElementById("barw").hidden);
+    st.dead.add(st.last);
+    await until(() => !D.getElementById("outSheet").hidden);
+    ok(D.getElementById("outSheet").contains(D.getElementById("doorBox")), "the fixture: a lapse with nothing remembered carries the form into the Sheet");
+    await signIn();
+    await until(() => D.getElementById("outSheet").hidden);
+    D.getElementById("lock").click();
+    await until(() => !D.getElementById("gate").hidden);
+    ok(order() === before, "after the Sheet and a Log out the door stands as it did, the form above I have a sign-in code: " + order());
+  } finally { await new Promise((r) => setTimeout(r, 60)); W.close(); }
+})();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {
   /* S3, 24 SEP 2026. The door's one way in named its opener unseal, which stmt/owner.js already declared: spliced in
