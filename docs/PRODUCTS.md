@@ -111,7 +111,8 @@ hues, and it is generated, so a new hue is added upstream and synced.
 - **`src/worker.js` and `src/orders.js`**: the reconcile, the nudge, `queueSale`, `ledgerKey`
   and `ovKey` (which key on code, date and total, never on product), the order thread and the
   bulletin all pass a product through opaquely. `siteWords` refuses the desk's name, a roster
-  code's shape and a level's name, and deliberately does not refuse a product's name.
+  code's shape and a level's name, in English and Malay, and deliberately does not refuse a
+  product's name; the desk's `siteSafe` warns on one.
 - **Push topics.** `ALERT_TOPICS` is `orders`, `approve` and `salt`, where that last one names
   the morning round, not the product. No topic is per-product.
 - **D1.** `product` is unconstrained `TEXT` on both `entry` and `draft`, and no `CHECK`
@@ -160,6 +161,8 @@ but a purchase defaults to null.
    `stmt/statement-css.js`. Miss that last one and the product's statement rows silently lose
    their accent, because an undefined `var()` with no fallback resolves to nothing.
 9. A `PSYM` path and a `PSHAPE` word, or accept the Ring.
+10. Its name and its Malay word in `PRODUCT_WORDS` (`src/orders.js`) and the desk's `siteSafe`;
+    the suite fails until both carry them.
 
 **Then** `booksync --sync`, build, and read the Whiteboard: see section 8.
 

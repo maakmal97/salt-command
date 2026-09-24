@@ -16317,7 +16317,9 @@ await (async () => {
   /* the WORDS on it, not its source: every design token is named --salt-something, which is a
      variable a reader never sees and not a name the page writes */
   const boardText = board95.replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]*>/g, " ");
-  ok(!/\b(salt|oil)\b/i.test(boardText) && (board95.match(/class="psym"/g) || []).length === 2,
+  /* S13 13.2: nor in Malay, off the lock's own list */
+  const WL95 = await import("../src/orders.js");
+  ok(!/\b(salt|oil)\b/i.test(boardText) && !WL95.wordsIn(boardText, WL95.PRODUCT_WORDS).length && (board95.match(/class="psym"/g) || []).length === 2,
     "the guest board draws two marks and writes neither name: " + JSON.stringify((boardText.match(/\b(salt|oil)\b/gi) || []).slice(0, 4)));
   ok(/aria-label="Cube"/.test(board95) && /aria-label="Droplet"/.test(board95), "and each heading is named by its shape");
 
@@ -16393,7 +16395,7 @@ await (async () => {
       && !/\b(salt|oil)\b/i.test(card95.textContent),
       "an order's own card carries the mark of what was ordered and never its name: " + JSON.stringify(card95 && card95.textContent.slice(0, 60)));
     const words95 = (d95.getElementById("pPrices").textContent + " " + d95.getElementById("pOrder").textContent);
-    ok(!/\b(salt|oil)\b/i.test(words95) && !/Salt Command/i.test(words95),
+    ok(!/\b(salt|oil)\b/i.test(words95) && !WL95.wordsIn(words95, WL95.PRODUCT_WORDS).length && !/Salt Command/i.test(words95),
       "and no product is written as a word anywhere on the prices or the order: " + JSON.stringify((words95.match(/\b(salt|oil)\b/gi) || []).slice(0, 4)));
   } finally { try { dom95.window.close(); } catch (e) { /* best effort */ } }
 })();
@@ -16507,6 +16509,65 @@ await (async () => {
   const off = pages.filter(([, h]) => !root.test(h)).map(([w, h]) => w + ": " + h.slice(0, 80));
   ok(pages.every(([, h]) => h.length > 1000) && !off.length,
     "every page says translate=no on its root and carries Google's notranslate, before anything else: " + JSON.stringify(off));
+})();
+section("S13 13.2: the word checks know the Malay level and product words, and ordinary Malay still passes");
+await (async () => {
+  /* 24 SEP 2026, his decision D12: no Malay ships before siteWords, the desk's siteSafe, the leak scan and the
+     banned-word scan know it. The lists are pinned against the book's names and the master's TIER_NAMES, so a new
+     book or level cannot slip past them. */
+  const WL = await import("../src/orders.js");
+  const { siteWords, wordsIn } = WL;
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const tierNames = JSON.parse((/const TIER_NAMES=(\[[^\]]*\]);/.exec(msrc) || [, "[]"])[1].replace(/'/g, '"'));
+  const names = Object.values(book.PRODUCTS || {}).map((p) => String(p.name).toLowerCase());
+  const MS_PRODUCTS = ["garam", "minyak", "gula-gula", "gula", "beras"];
+
+  /* ---- the lists ---- */
+  ok(tierNames.length >= 4 && tierNames.every((n) => WL.LEVEL_WORDS.includes(n.toLowerCase())) && WL.LEVEL_WORDS.includes("bronze"),
+    "every level the master names is on the lock's list, Bronze's old name kept: " + JSON.stringify(tierNames));
+  ok(JSON.stringify(WL.LEVEL_WORDS_MS) === '["emas","perak","gangsa"]' && ["platinum", "titanium"].every((w) => WL.LEVEL_WORDS.includes(w)),
+    "and the ladder in Malay: emas, perak and gangsa, platinum and titanium being the same word in both");
+  ok(names.length >= 5 && names.concat(MS_PRODUCTS).every((w) => WL.PRODUCT_WORDS.includes(w)),
+    "every book's name and its Malay word are on the product list: " + JSON.stringify(names.concat(MS_PRODUCTS).filter((w) => !WL.PRODUCT_WORDS.includes(w))));
+  const all = WL.LEVEL_WORDS.concat(WL.LEVEL_WORDS_MS, WL.PRODUCT_WORDS);
+  ok(all.every((w) => /[a-z]/.test(w) || w.length >= 2), "and no word in another script is a single character");
+
+  /* ---- the Worker's lock ---- */
+  const refused = ["Harga tahap emas minggu ini RM 150", "Ahli perak dapat harga istimewa", "Pelanggan gangsa: RM 170",
+    "HARGA EMAS naik", "Peringkat Platinum dibuka", "Kad titanium untuk anda"];
+  const passes = ["Penghantaran ke Ipoh, Perak setiap Selasa.", "Peluang emas: stok baru tiba minggu ini.",
+    "Kedai tutup hari Jumaat, buka semula Isnin.", "Pesanan anda sudah sampai di Taiping, Perak.",
+    "Garam baru tiba, minyak minggu depan.", "Terima kasih, sila bayar sebelum Jumaat.",
+    "\u8BF7\u5728\u94F6\u884C\u8F6C\u8D26\u540E\u544A\u8BC9\u6211\u91D1\u989D\u3002"];
+  ok(refused.every((t) => /names a level/.test(siteWords(t))),
+    "a level named in Malay is refused, after a word that says level or price: " + JSON.stringify(refused.filter((t) => !siteWords(t))));
+  ok(passes.every((t) => siteWords(t) === ""),
+    "and ordinary Malay passes: Perak the state, a golden chance, a product's word, and a Chinese line holding amount and bank: "
+    + JSON.stringify(passes.filter((t) => siteWords(t))));
+
+  /* ---- another script is found by substring, where \b is blind ---- */
+  const zh = "\u91D1\u7EA7", line = "\u8FD9\u662F" + zh + "\u4EF7\u683C";
+  ok(!new RegExp("\\b" + zh + "\\b").test(line) && JSON.stringify(wordsIn(line, [zh])) === JSON.stringify([zh])
+    && wordsIn("golden", ["gold"]).length === 0 && wordsIn("Gold price", ["gold"]).length === 1,
+    "a word in another script is found inside a line where a word boundary cannot see it, and a Latin word is still whole");
+  ok(wordsIn(passes[passes.length - 1], all).length === 0, "and nothing on the lists breaks the words for amount and bank");
+
+  /* ---- the desk's siteSafe says the same ---- */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    const g = (t) => JSON.parse(String(w.eval("JSON.stringify(siteSafe(" + JSON.stringify(t) + "))")));
+    ok(refused.every((t) => g(t).refuse) && passes.every((t) => !g(t).refuse),
+      "the desk refuses the same Malay lines and lets the same ordinary ones through: "
+      + JSON.stringify(refused.filter((t) => !g(t).refuse).concat(passes.filter((t) => g(t).refuse))));
+    ok(/level in Malay/.test(g("Penghantaran ke Ipoh, Perak setiap Selasa.").warn) && /level in Malay/.test(g("Emas RM 150").warn),
+      "and a bare emas or perak warns, so he sees it before it goes");
+    const prod = names.concat(MS_PRODUCTS).filter((p) => !/product in words/.test(g("Stok " + p + " baru tiba").warn) || g("Stok " + p + " baru tiba").refuse);
+    ok(!prod.length, "every book's name and its Malay word warn on the desk and none is refused: " + JSON.stringify(prod));
+    ok(!g("Kedai tutup hari Jumaat, buka semula Isnin.").warn && !g(passes[passes.length - 1]).warn,
+      "and a line with none of them passes clean");
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 section("v696: the guest links are five, one for each tier, and each one is a level and nothing else");
 await (async () => {
@@ -21398,7 +21459,10 @@ await (async () => {
   /* ---- THE WORDS: a kind, never an amount, a product, an order or a name ---- */
   const words = Object.values(NEWS);
   const banned = /salt|oil|candy|rice|garam|minyak|beras|titanium|platinum|gold|silver|bronze|ambassador|command|update/i;
-  const plain = (t) => /^[A-Z][a-z ]+$/.test(t) && !/[0-9]|RM/.test(t) && !banned.test(t);
+  /* S13 13.2: and every word the site's lock knows, in both languages, off its own lists */
+  const WL = await import("../src/orders.js");
+  const plain = (t) => /^[A-Z][a-z ]+$/.test(t) && !/[0-9]|RM/.test(t) && !banned.test(t)
+    && !WL.wordsIn(t, WL.LEVEL_WORDS.concat(WL.LEVEL_WORDS_MS, WL.PRODUCT_WORDS)).length;
   ok(words.length >= 10 && words.every(plain) && !plain("Your salt is ready") && !plain("RM 45 is due") && !plain("Your order has an update"),
     "every banner is plain words: no figure, no product, no level, no name, and never the old 'update': " + JSON.stringify(words.filter((t) => !plain(t))));
   ok(NEWS.due === "A payment is due" && NEWS.ready === "Your order is ready" && NEWS.reply === "A reply on your order"
@@ -23361,7 +23425,8 @@ await (async () => {
     "a book with no mark draws the Ring rather than a blank, which would read as a fault");
   ok(psymSvg("SALT", 24) === psymSvg("salt", 24), "a mark is found whatever the case of the id");
   const words = Object.values(PSHAPE).join(" ").toLowerCase();
-  ok(!ids.some((id) => words.includes(id)) && !/\b(salt|oil|candy|rice|spare)\b/.test(words),
+  const WLs = await import("../src/orders.js");
+  ok(!ids.some((id) => words.includes(id)) && !/\b(salt|oil|candy|rice|spare)\b/.test(words) && !WLs.wordsIn(words, WLs.PRODUCT_WORDS).length,
     "and no shape word is a product's name: the mark is the thing, never the word for it");
 })();
 
@@ -24299,8 +24364,10 @@ await (async () => {
   /* A PRODUCT IS A MARK, NOT A WORD, which is the oldest rule on this site. Read the TEXT, not
      the source: the inlined stylesheet carries --salt-product-salt and a raw search would fail on
      a token name rather than on anything a customer can read. */
-  ok(!/\b(salt|oil|candy|rice|spare)\b/i.test(t),
-    "and no product is named in words anywhere a customer reads: " + (t.match(/\b(salt|oil|candy|rice|spare)\b/i) || [""])[0]);
+  /* S13 13.2: in either language, off the site lock's own list */
+  const WL82 = await import("../src/orders.js");
+  ok(!/\b(salt|oil|candy|rice|spare)\b/i.test(t) && !WL82.wordsIn(t, WL82.PRODUCT_WORDS).length,
+    "and no product is named in words anywhere a customer reads: " + (t.match(/\b(salt|oil|candy|rice|spare)\b/i) || WL82.wordsIn(t, WL82.PRODUCT_WORDS))[0]);
   ok(/Cube/.test(b) && /Droplet/.test(b),
     "the marks carry their SHAPE as the accessible name, so a screen reader is told what is drawn and not what it is");
   ok(!/<img|src=/i.test(b.replace(/<svg[\s\S]*?<\/svg>/g, "")),
