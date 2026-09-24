@@ -24787,6 +24787,71 @@ await (async () => {
     "an approved row whose order could not be told is told by the next minute's pass: " + JSON.stringify({ accept: aC.j, before, after: sC.status, q: sC.queued }));
 })();
 
+section("S11 fix: a close he rejects gives the row back its name, and offered again moves it once more");
+await (async () => {
+  /* Found in review: the order took the name its close would leave when the close was QUEUED. Rejected, the close never
+     landed, so every later stage waited for a row that would never exist, and the return leg could not find the row.
+     A rejected close now gives the order back the key the row still carries; offered again, it moves it once more. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the close was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, closedKey } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  const OPEN = { byKey: {}, position: {} };
+  setState("roster", [C1]); setState("OPEN", OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 3] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const land = (draftId, over) => { const row = Object.assign(JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(draftId).row), { rid: "s99" + seq }, over || {});
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN); return key; };
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const send = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); while (tails.length) await tails.shift(); return { status: r.status, j };
+  };
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const draftsOf = (id, status) => db.prepare("SELECT id,status,entry FROM draft").all().filter((d) => JSON.parse(d.entry).orderId === id && JSON.parse(d.entry).status === status);
+
+  const o = (await O.placeOrder(senv, U1, { product: "salt", qty: 3, mode: "collect", unit: 100, total: 300, week: "" })).order;
+  const pv = await send("/orders/" + o.id + "/preview", {});
+  const a = await send("/orders/" + o.id + "/accept", { hash: pv.j.hash });
+  await send("/orders/" + o.id + "/handed", { qty: 1, close: true });   /* before the row lands */
+  const key = land(a.j.draft, { cash: 50 });                            /* it lands other than shown, so the close waits */
+  await reconcileOrders(denv); await runDrafter(denv);
+  const cl = draftsOf(o.id, "Close");
+  if (cl.length) await send("/drafts/" + encodeURIComponent(cl[0].id) + "/reject", { by: "fixture" });
+  const back = await orderOf(o.id);
+  await O.customerMove(senv, U1, o.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U1, o.id, "pay", { amount: 20 });
+  const rc = await reconcileOrders(denv); await runDrafter(denv);
+  const pay = draftsOf(o.id, "Payment");
+  ok(cl.length === 1 && cl[0].status === "pending" && back.ledgerKey === key && rc.queued === 1 && pay.length === 1 && JSON.parse(pay[0].entry).payload.orderKey === key,
+    "a rejected close gives the order back the key the row carries, so a later payment amends that row: " + JSON.stringify({ close: cl.map((d) => d.status), key, order: back.ledgerKey, rc, pay: pay.map((d) => JSON.parse(d.entry).payload.orderKey) }));
+
+  const again = await send("/orders/" + o.id + "/again", { stage: "move" });
+  const moved = await orderOf(o.id);
+  ok(again.status === 200 && moved.ledgerKey === closedKey(moved) && moved.ledgerKey !== key,
+    "offered again, the close moves the name once more, so later stages wait for it to land: " + JSON.stringify({ st: again.status, err: again.j.error, key: moved.ledgerKey }));
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one

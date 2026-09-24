@@ -492,7 +492,7 @@ a stage cannot be queued twice by two roads racing (Accept's pending row is the 
 | Acknowledged | a `new` SELL, delivery inside the total, `cash` 0 and `kg` 0 | the row appears as **Pending**, which is the truth |
 | A payment | an `amend` **Fulfilment**, the INCREMENT since the last one | a Fulfilment accumulates cash and units |
 | A handover | an `amend` **Correction** stating the running total, `deliveredOn` and `handover` | only a Correction may set when and by whom, and it states rather than adds |
-| Closed at what was handed over (S11 11.9) | an `amend` **Correction** stating size, total, `deliveredQty`, `deliveredOn` and `handover`; `ledgerKey` then moves to the key the new total makes (`closedKey`) | one entry states the handover and the restated row together |
+| Closed at what was handed over (S11 11.9) | an `amend` **Correction** stating size, total, `deliveredQty`, `deliveredOn` and `handover`; `ledgerKey` then moves to the key the new total makes (`closedKey`); rejected, the close gives it back, and offered again moves it once more | one entry states the handover and the restated row together |
 | Cancelled or declined | an `amend` **Cancellation** | the fold raises any refund itself |
 
 **Which row a later stage amends.** A `rid` is minted at fold time and there is no route from the

@@ -475,6 +475,12 @@ export async function againOrder(env, id, body, by, now) {
   const entry = Object.assign({}, rej.entry, { at: at.toISOString() });
   const pv = await stagePreview(env, o, stage, entry);
   if (!pv.ok) return pv;
+  /* a close offered again restates the row once more, so later stages wait for it under the name it will leave, as the
+     reconcile had them wait when it first queued it */
+  if (entry.status === "Close") {
+    const m = await markOrder(env, o.u, id, { ledgerKey: closedKey(o) });
+    if (!m || !m.ok) return { ok: false, status: 502, error: "the order could not be marked for the close offered again" + (m ? " (http " + m.status + ")" : "") };
+  }
   await recordPre(db, { order_id: id, u: o.u, stage, hash: pv.hash, entry, at: at.toISOString(), by,
     shown: { from: o.status, again: rej.id, flags: pv.d.flags, waits: pv.waits } });
   /* queued by the desk's own pass, which the request's tail runs: the row it amends is on the book, the rejected one having been drafted against it */
@@ -942,8 +948,13 @@ export async function rejectedOnOrder(env, entry, at) {
   const o = all.ok && all.orders.find((x) => x.id === id);
   if (!o) return false;
   const why = "its " + (REJECTED_WHAT[entry.status] || "entry") + " was rejected under Approve, so the book does not carry it";
+  const mark = { sync: { state: "rejected", why, at } };
+  /* A CLOSE HE REJECTS NEVER LANDS, so the row keeps the name it had: the order names it by that key again, and every
+     later stage, the return leg and the card's taps find the row the book still carries (offered again, the close
+     moves the name once more, againOrder) */
+  if (entry.status === "Close" && entry.payload && entry.payload.orderKey) mark.ledgerKey = entry.payload.orderKey;
   const r = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
-    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mark: { sync: { state: "rejected", why, at } } })
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mark })
   });
   return !!(r && r.ok);
 }
