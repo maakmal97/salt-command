@@ -23526,7 +23526,7 @@ await (async () => {
     const tiles = () => [...card("n1").querySelectorAll(".ordpv .salt-kpi")].map((t) => t.className.replace(/.*salt-kpi--/, "") + "|" + [...t.children].map((c) => c.textContent.replace(/\s+/g, " ").trim()).join(" "));
     const t1 = tiles();
     ok(t1.length === 4 && /verdigris\|Their card today RM 250 matches the quote/.test(t1[0]) && /verdigris\|Margin RM 110 on RM 140 cost/.test(t1[1])
-      && /verdigris\|Floor RM 152 clear by RM 98/.test(t1[2]) && /copper\|Their usual RM 104\/unit this is RM 100\/unit/.test(t1[3]),
+      && /verdigris\|Floor RM 152 clear by RM 98/.test(t1[2]) && /copper\|Their usual RM 104 a unit; this is RM 100$/.test(t1[3]),
       "their card today matches the quote, the margin on its cost, the floor cleared, and a rate under their usual toned by that direction: " + JSON.stringify(t1));
     ok(/drafted now and stored nowhere\. The drafter raises no flag\./.test(card("n1").textContent), "and it says the row is the drafter's, and that it flags nothing");
 
@@ -23534,7 +23534,7 @@ await (async () => {
     await w.eval("ordLoad(true)");
     await settle();
     const t2 = tiles();
-    ok(pvs().length === 2 && /copper\|Their card today RM 280 the quote is RM 30 under/.test(t2[0]) && /verdigris\|Their usual RM 96\/unit/.test(t2[3]),
+    ok(pvs().length === 2 && /copper\|Their card today RM 280 the quote is RM 30 under/.test(t2[0]) && /verdigris\|Their usual RM 96 a unit/.test(t2[3]),
       "the next read drafts it again, and a quote under today's card says by how much, a rate above their usual toned the other way: " + JSON.stringify([pvs().length, t2[0], t2[3]]));
     ok(/The drafter flags one thing:/.test(card("n1").textContent)
       && [...card("n1").querySelectorAll(".salt-approve__flags .salt-status")].map((x) => x.textContent).join("|") === "a rate under their held tier",
@@ -24281,7 +24281,7 @@ await (async () => {
     const card = () => D.querySelector('.ordcard[data-id="' + o.id + '"]');
     const tiles = [...card().querySelectorAll(".ordpv .salt-kpi")].map((t) => [...t.children].map((c) => c.textContent.replace(/\s+/g, " ").trim()).join(" "));
     ok(tiles.length === 4 && /Their card today RM 200 matches the quote/.test(tiles[0]) && /Margin RM 88 on RM 112 cost/.test(tiles[1])
-      && /Floor RM 150 clear by RM 50/.test(tiles[2]) && /Their usual RM 100\/unit/.test(tiles[3]),
+      && /Floor RM 150 clear by RM 50/.test(tiles[2]) && /Their usual RM 100 a unit/.test(tiles[3]),
       "the card draws the Worker's own preview: their card, the margin on the cost, the floor and their usual: " + JSON.stringify(tiles));
 
     const acc = card().querySelector('.ordfoot button[data-ord="acknowledged"]');
@@ -25150,6 +25150,31 @@ await (async () => {
     ok(release && shut && said === "Sending.", "while Accept is in flight its card's buttons are shut and it says so: " + JSON.stringify({ inFlight: !!release, shut, said }));
   } finally {
     await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
+section("S11 fix: an order card's rate tiles carry the figure alone, the unit in the note, so a narrow tile never breaks inside a word");
+await (async () => {
+  /* Found on the rig: "RM 93.60/unit" in the preview's tile at 375, and "RM 100/unit" in the agreed card's tiles beside the
+     list at 1280, broke inside "unit" (the tile's value breaks anywhere), leaving a lone "t". The unit rides in the note. */
+  const { openMaster: omO8 } = await import("../tools/payload.mjs");
+  const { w } = await omO8();
+  try {
+    w.SALT_CLOUD = true;
+    const D = w.document;
+    const html = (js) => { const x = D.createElement("div"); x.innerHTML = String(w.eval(js)); return x; };
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    w.eval("ORD_PV.p1={d:0,gen:0,st:'ok',j:{ok:true,row:{qty:2,total:200},flags:[],card:200,usual:{rate:93.6}}}");
+    const pv = html("ordPvBlock(" + JSON.stringify(Object.assign({}, base, { id: "p1", status: "placed" })) + ")");
+    const ag = html("ordCard(" + JSON.stringify(Object.assign({}, base, { id: "a1", status: "acknowledged", at: "2026-09-24T01:00:00.000Z" })) + ")");
+    const vals = [...pv.querySelectorAll(".salt-kpi__value"), ...ag.querySelectorAll(".salt-kpi__value")].map((e) => e.textContent);
+    const tile = (root, k) => [...root.querySelectorAll(".salt-kpi")].find((t) => (t.querySelector(".salt-kpi__label") || {}).textContent === k);
+    const us = tile(pv, "Their usual"), rate = tile(ag, "Rate");
+    ok(vals.length >= 8 && !vals.some((v) => /unit/.test(v)) && us && us.querySelector(".salt-kpi__value").textContent === "RM 93.60"
+      && /^a unit; this is RM 100$/.test(us.querySelector(".salt-kpi__note").textContent) && rate && rate.querySelector(".salt-kpi__note").textContent === "a unit",
+      "no tile value carries the unit, which is said in its note: " + JSON.stringify({ vals, usual: us && us.textContent, rate: rate && rate.textContent }));
+  } finally {
     try { w.close(); } catch (x) { /* best effort */ }
   }
 })();

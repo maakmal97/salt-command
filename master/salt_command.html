@@ -19221,7 +19221,8 @@ function ordPvBlock(o){
   const marT=margin==null?tile('Margin','&mdash;','no cost on this book',''):tile('Margin',fmt(margin),cost!=null?'on '+fmt(cost)+' cost':'',margin>0.004?'verdigris':'ember');
   const flT=floor==null?tile('Floor','&mdash;','no floor for this size',''):tile('Floor',fmt(floor),goods-floor>=-0.004?'clear by '+fmt(+(goods-floor).toFixed(2)):fmt(+(floor-goods).toFixed(2))+' under it',goods-floor>=-0.004?'verdigris':'ember');
   const dir=(usual&&rate!=null)?(rate-usual)/usual:null;
-  const usT=usual==null?tile('Their usual','&mdash;','no priced order yet',''):tile('Their usual',fmt(usual)+'/unit',rate==null?'':'this is '+fmt(rate)+'/unit',dir==null||Math.abs(dir)<0.005?'steel':dir>0?'verdigris':'copper');
+  /* S11 fix: the unit rides in the note, so a narrow tile breaks a figure at its space and never inside the word */
+  const usT=usual==null?tile('Their usual','&mdash;','no priced order yet',''):tile('Their usual',fmt(usual),'a unit'+(rate==null?'':'; this is '+fmt(rate)),dir==null||Math.abs(dir)<0.005?'steel':dir>0?'verdigris':'copper');
   const flags=Array.isArray(j.flags)?j.flags:[];
   return `<div class="ordpv" data-pv="${esc(o.id)}"><div class="kpis k2">${cardT+marT+flT+usT}</div>
     <p class="salt-approve__reason" style="margin-top:8px">The pending row, drafted now and stored nowhere. ${flags.length?'The drafter flags '+(flags.length===1?'one thing':flags.length+' things')+':':'The drafter raises no flag.'}</p>
@@ -19288,7 +19289,7 @@ function ordToldLine(o){const t=ordTold(o);
 function ordCard(o){
   /* 24 Sep 2026: the month off MAP_MON, because en-GB writes Sept */
   const when=iso=>{try{const p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(x=>{p[x.type]=x.value;});return p.day+' '+MAP_MON[+p.month-1]+', '+p.hour+':'+p.minute;}catch(e){return '';}};
-  const cell=(k,v,cls)=>`<div class="kpi salt-kpi ${cls||''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value" style="font-size:17px">${v}</div></div>`;
+  const cell=(k,v,cls,note)=>`<div class="kpi salt-kpi ${cls||''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value" style="font-size:17px">${v}</div>${note?`<div class="salt-kpi__note">${note}</div>`:''}</div>`;
   const who=o.code?codeOf(o.code):'unmapped '+esc(o.u);
   const rate=o.qty?o.total/o.qty:null, usual=o.code?ordUsual(o.code,o.product):null;
   const off=(rate!=null&&usual)?(rate-usual)/usual:null;
@@ -19396,8 +19397,8 @@ function ordCard(o){
   return `<div class="salt-approve ordcard" data-id="${esc(o.id)}">
     <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
     <p class="ordline">${units(o.qty)} ${esc(o.product||'salt')}, ${fmt(o.total)}${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?(o.place?'deliver to '+esc(o.place):'delivered'):'to collect'}</p>
-    ${yes?'':o.status==='placed'||againAck?ordPvBlock(o):`<div class="kpis k4">${cell('Rate',rate==null?'&mdash;':fmt(rate)+'/unit')
-      +cell('Their usual',usual==null?'&mdash;':fmt(usual)+'/unit',off==null?'':Math.abs(off)>=0.10?'r':'g')
+    ${yes?'':o.status==='placed'||againAck?ordPvBlock(o):`<div class="kpis k4">${cell('Rate',rate==null?'&mdash;':fmt(rate),'',rate==null?'':'a unit')
+      +cell('Their usual',usual==null?'&mdash;':fmt(usual),off==null?'':Math.abs(off)>=0.10?'r':'g',usual==null?'':'a unit')
       +cell('Paid',paid>0?fmt(paid)+(due>0.004?' of '+fmt(o.total+(+o.delivery||0)):''):'nothing yet',due<=0.004&&rowed?'g':'')
       +cell('Handed over',moved>0?units(moved)+(moved<o.qty-0.004?' of '+units(o.qty):''):'nothing yet',moved>=o.qty-0.004&&rowed?'g':'')}</div>`}
     ${ordToldLine(o)}
