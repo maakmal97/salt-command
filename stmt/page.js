@@ -1305,6 +1305,7 @@ const CLIENT_JS = `
     if(!devSheetEl||devSheetEl.hidden) return;
     devSheetEl.hidden=true; devScrim.hidden=true; devM++; devHo=''; devCode.value=''; devCopy.disabled=true; dsay('');
     try{ if(devFrom&&devFrom.isConnected) devFrom.focus(); }catch(e){}
+    drawDev();   /* S9 fix: the device the code signed in is on the list as the Sheet closes */
   }
   if(devSheetEl){
     document.getElementById('devX').addEventListener('click', closeDevSheet);

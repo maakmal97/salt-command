@@ -17106,6 +17106,48 @@ await (async () => {
       "and the refusal from sign-in is gone, from the card and the page: " + JSON.stringify((card.querySelector(".dnote") || {}).textContent));
   } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S9 fix S9R-13: closing Sign in another device reads the list again, so the device the code signed in is on it");
+await (async () => {
+  /* The list was read when the card was drawn and on a return to the page; a computer beside the phone never left the
+     page, so the phone signed in with the code did not appear until a reload. */
+  const W = (await import("../stmt/worker.js")).default;
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const EDGE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0";
+  const kv = new KV();
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r13", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] })) }));
+  const env = { STMT: kv, STMT_HANDOVER_KEY: "ho-secret-s9r13" };
+  const ORIGIN = "https://k7m3p2.example";
+  const site = (path, o) => W.fetch(new Request(ORIGIN + path, o), env);
+  let win = null;
+  try {
+    win = new JSDOM(landingPage(u, "n9r13", null), { url: ORIGIN + "/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      Object.defineProperty(w.navigator, "userAgent", { value: EDGE, configurable: true });
+      w.scrollTo = () => {};
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({ "user-agent": EDGE }, o.headers), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    D.getElementById("pw").value = pw;
+    D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+    const card = D.getElementById("devCard");
+    const btn = (t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
+    ok(await until(() => !card.hidden && /Windows computer, Edge/.test(card.textContent) && !!btn("Sign in another device")) && !/iPhone/.test(card.textContent),
+      "This device lists this computer alone: " + JSON.stringify(card.textContent));
+    btn("Sign in another device").click();
+    const code = D.getElementById("devCode");
+    ok(await until(() => /^[A-Z2-9]{4} [A-Z2-9]{4}$/.test(code.value)), "the Sheet shows its code");
+    const r = await site("/handover/open", { method: "POST", headers: { "content-type": "application/json", "user-agent": IPHONE }, body: JSON.stringify({ code: code.value }) });
+    ok(r.status === 200, "the iPhone types it and is signed in");
+    D.getElementById("devX").click();
+    ok(await until(() => /iPhone, Safari/.test(card.textContent)), "closing the Sheet lists the iPhone, with no reload: " + JSON.stringify(card.textContent));
+  } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password
