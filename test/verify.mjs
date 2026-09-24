@@ -18003,8 +18003,9 @@ await (async () => {
 })();
 section("S9 fix S9R-5: turning notifications on from This device after an earlier refusal says On, with no refusal left under it");
 await (async () => {
-  /* A refusal set the note and nothing cleared it on a later success, so a customer who dismissed the question at
-     sign-in, then turned them on from This device, read On with the old refusal in red beneath it. */
+  /* A refusal set the note and nothing cleared it on a later success, so a customer who refused the question once,
+     then turned them on from This device, read On with the old refusal in red beneath it. Since stage 4 the question
+     is asked only from a tap, so the refusal here comes from the card's own Turn on. */
   const W = (await import("../stmt/worker.js")).default;
   const { landingPage } = await import("../stmt/page.js");
   const C = await import("../tools/stmt-crypto.mjs");
@@ -18041,13 +18042,16 @@ await (async () => {
     const card = D.getElementById("devCard");
     const btn = (t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
     ok(await until(() => !card.hidden && !!btn("Turn on")), "signed in with the question dismissed, This device offers Turn on");
-    ok(await until(() => /Permission was not given/.test(D.getElementById("pOrder").textContent)), "the question at sign-in was dismissed, and the page said so");
+    st.answer = "denied";
+    btn("Turn on").click();
+    ok(await until(() => /Permission was not given/.test(card.textContent + D.getElementById("pOrder").textContent) && !!btn("Turn on")),
+      "the first Turn on was refused, and the page said so: " + JSON.stringify(card.textContent));
     st.answer = "granted";
     btn("Turn on").click();
     ok(await until(() => /On[.] This computer is told when an order changes[.]/.test(card.textContent) && !!btn("Turn off")),
       "Turn on, allowed, says On: " + JSON.stringify(card.textContent));
     ok(!/Permission was not given/.test(card.textContent) && !/Permission was not given/.test(D.getElementById("pOrder").textContent),
-      "and the refusal from sign-in is gone, from the card and the page: " + JSON.stringify((card.querySelector(".dnote") || {}).textContent));
+      "and the earlier refusal is gone, from the card and the page: " + JSON.stringify((card.querySelector(".dnote") || {}).textContent));
   } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("S9 fix S9R-13: closing Sign in another device reads the list again, so the device the code signed in is on it");
