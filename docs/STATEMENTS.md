@@ -670,8 +670,14 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   fills the username and `STMT_MASTER` into that form and submits it, so everything past the
   door is the customer's own code. His decision: the gated route hands the master to the page,
   so nothing is typed, and the trade is that an Access session there reads every account. The
-  Access application is "Salt statements owner" (`67280e0b-…`, one-time PIN, his address,
-  24h). `stmt/access.js` reads the header or the `CF_Authorization` cookie. `roster` (codes
+  Access application is "Salt statements owner" (`67280e0b-…`, one-time PIN, his address, a
+  week's session, 168h, by his D13 of 24 Sep 2026; it was 24h). **When the session lapses, Salt Admin
+  says so** (S9 9.7): every request under `/all` is sent with `redirect: 'manual'`, so Access's redirect
+  to its login reads as an opaque redirect rather than "Failed to fetch", and that or the Worker's own
+  401 turns the page into "Your admin sign-in has ended" with Sign in again, a link to `/all`. A request
+  that never went out says so and leaves the page. **Its own icon** (S9 9.7) is the Counter's ring with a
+  keyhole for the dot, `ADMIN_ICON_PNG_B64` from `tools/stmt-icon.mjs`, served at `/icon-key.png` outside
+  `/all`, since a home screen fetches an icon without the Access cookie. `stmt/access.js` reads the header or the `CF_Authorization` cookie. `roster` (codes
   beside usernames, never names) is written by the publish.
 - **Access on a `workers.dev` path, and how to prove it.** Zero Trust gates one path of a Worker
   with no custom domain; the precedent is QR Command's application, and the verifier to copy is

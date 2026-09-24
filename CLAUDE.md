@@ -306,7 +306,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   `rem:<token>`, neither opening anything alone), log out, which also drops that wrap and this
   phone's notifications. A lapsed session says so in the bar, with Continue. Kept as an app:
   manifest and icon served by the Worker, no brand; every login asks about notifications once.
-  Salt Admin links its own manifest with credentials and is titled Salt Admin.
+  Salt Admin links its own manifest with credentials, is titled Salt Admin, has its own icon (the ring
+  with a keyhole, `/icon-key.png`) and turns into Sign in again when Access lapses.
 - **A customer's banner names the kind of news, never an amount, a product, an order or a name**:
   `{k, o}` sealed for the one phone (`sealFor`, RFC 8291) under the keys its subscription filed, the
   words `NEWS` in `stmt/sw.js`; a record with no keys gets the payload-free wake and the old words. A

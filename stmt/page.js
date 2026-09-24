@@ -217,6 +217,8 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .rlist button[data-m]{flex-wrap:wrap}
 .rlist button[data-m] span{flex:1 0 100%;margin-top:4px;color:var(--salt-text-muted)}
 #mHome h1,#oAccts h1,#oLinks h1,#oMore h1{margin-top:0}
+/* S9 9.7: an ended admin sign-in leaves nothing on the page but the way back in */
+body.ended>*:not(#aEnded){display:none}
 /* S9 9.2: SALT ADMIN'S SHELL. The App bar and the Desk rail are the system's, and which one shows is the
    system's switch at 1080px; this page decides the column, the room kept clear above the bar, and where the
    open account stands: beside the list on a desk, in its place on a phone, with a way back. */
@@ -449,7 +451,7 @@ export function landingPage(user, nonce, owner, bulletin) {
        his route alone; the customer's manifest is public and its link is left as it was. */
     + (owner ? '<link rel="manifest" href="/all/manifest.webmanifest" crossorigin="use-credentials">'
       : '<link rel="manifest" href="/manifest.webmanifest">')
-    + '<link rel="apple-touch-icon" href="/icon.png">'
+    + '<link rel="apple-touch-icon" href="' + (owner ? "/icon-key.png" : "/icon.png") + '">'
     + '<meta name="theme-color" content="#05080a">'
     + '<meta name="apple-mobile-web-app-capable" content="yes">'
     + '<meta name="mobile-web-app-capable" content="yes">'
@@ -528,6 +530,10 @@ export function landingPage(user, nonce, owner, bulletin) {
           + '<span class="salt-appbar__icon">' + aico(m) + '</span><span class="salt-appbar__label">' + w + "</span>"
           + '<span class="salt-appbar__count" data-count="' + m + '"></span></button>').join("") + "</nav>"
         + "</div>"
+        /* S9 9.7, his D13: what his page becomes when the Access session behind it has ended */
+        + '<div id="aEnded" class="gate" hidden><h1>Your admin sign-in has ended</h1>'
+        + '<p class="lead">Sign in again to carry on.</p>'
+        + '<a class="salt-pill salt-pill--md btn" href="/all">Sign in again</a></div>'
       : "")
     + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
     + "<h1>Statement of account</h1>"

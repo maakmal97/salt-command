@@ -10,6 +10,9 @@
  * it: a PNG encoded by hand, because nothing here draws on a canvas and pulling in an image library
  * for two circles would be a dependency for nothing.
  *
+ * SALT ADMIN HAS ITS OWN (S9 9.7, his D13 of 24 Sep 2026): the same tile and ring with a keyhole at its
+ * centre in place of the dot, so his two apps are told apart on one home screen and neither names anything.
+ *
  *   node tools/stmt-icon.mjs --sync     write stmt/icons.js
  *   node tools/stmt-icon.mjs --check    exit 1 if it would differ (CI and the gate)
  */
@@ -25,14 +28,22 @@ const SIZE = 512;
 /* the identity's own two colours, and nothing that spells anything */
 const OBSIDIAN = [5, 8, 10], BRASS = [197, 160, 89], COPPER = [184, 115, 51];
 
-function pixels() {
+/* the keyhole: a round head a little above the centre and a stem widening below it */
+function keyhole(x, y, c) {
+  const head = SIZE * 0.06, top = c - SIZE * 0.035, bottom = c + SIZE * 0.11;
+  if (Math.hypot(x - c, y - top) <= head) return true;
+  if (y < top || y > bottom) return false;
+  const half = SIZE * (0.025 + 0.025 * (y - top) / (bottom - top));
+  return Math.abs(x - c) <= half;
+}
+function pixels(admin) {
   const px = Buffer.alloc(SIZE * SIZE * 3);
   const c = (SIZE - 1) / 2, rOuter = SIZE * 0.34, rInner = SIZE * 0.24, rDot = SIZE * 0.07;
   for (let y = 0; y < SIZE; y++) {
     for (let x = 0; x < SIZE; x++) {
       const d = Math.hypot(x - c, y - c);
       let rgb = OBSIDIAN;
-      if (d <= rDot) rgb = BRASS;
+      if (admin ? keyhole(x, y, c) : d <= rDot) rgb = BRASS;
       else if (d >= rInner && d <= rOuter) {
         /* the ring fades from brass to copper across itself, the identity's one gradient */
         const t = (d - rInner) / (rOuter - rInner);
@@ -65,8 +76,8 @@ function chunk(type, data) {
   const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(td));
   return Buffer.concat([len, td, crc]);
 }
-export function iconPng() {
-  const px = pixels();
+export function iconPng(admin) {
+  const px = pixels(admin);
   /* one filter byte a row, filter 0: the image is flat colour and the deflate does the work */
   const raw = Buffer.alloc(SIZE * (SIZE * 3 + 1));
   for (let y = 0; y < SIZE; y++) {
@@ -88,7 +99,9 @@ export function moduleText() {
     + "   check it against the generator. A neutral tile, obsidian with a brass ring: nothing a\n"
     + "   customer puts on a home screen may name the business. */\n"
     + "export const ICON_PNG_B64 = \"" + b64 + "\";\n"
-    + "export const ICON_SIZE = " + SIZE + ";\n";
+    + "export const ICON_SIZE = " + SIZE + ";\n"
+    + "/* Salt Admin's own (S9 9.7): the same ring with a keyhole at its centre */\n"
+    + "export const ADMIN_ICON_PNG_B64 = \"" + iconPng(true).toString("base64") + "\";\n";
 }
 
 function main() {

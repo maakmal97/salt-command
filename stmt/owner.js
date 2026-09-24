@@ -234,12 +234,12 @@ export const OWNER_JS = `
      has no session, the owner does not order, so the orders and an associate's own links come from
      /all/orders/<u>, behind the prefix's one Access check. The page calls this when view is set. */
   async function loadView(u){
-    var mine=ticket;
-    var r=await api('/all/orders/'+encodeURIComponent(u));
+    var mine=ticket, j=null;
+    /* through refs, so a lapsed Access session reads as one (S9 9.7) */
+    try{ j=await refs('/all/orders/'+encodeURIComponent(u)); }
+    catch(e){ if(mine===ticket) say('Their orders could not be read: '+e.message,'bad'); }
     if(mine!==ticket) return;
-    orders=(r.body&&r.body.ok&&r.body.orders)||[];
-    myLinks=(r.body&&r.body.ok&&r.body.refs)||[]; myMax=(r.body&&r.body.max)||0;
-    if(!r.body||!r.body.ok) say('Their orders could not be read: '+((r.body&&r.body.error)||'try again'),'bad');
+    orders=(j&&j.orders)||[]; myLinks=(j&&j.refs)||[]; myMax=(j&&j.max)||0;
     if(!tCard.hidden) drawCard();
   }
   /* ---- ACCOUNTS (S9 9.2) -----------------------------------------------------------------------
@@ -415,10 +415,20 @@ export const OWNER_JS = `
     });
     if(want.length&&made<want.length) glist.appendChild(el('p','rnone','Only '+made+' of the '+want.length+' are made. Publish the statements and open this again.'));
   }
+  /* S9 9.7, HIS D13: WHEN ACCESS LAPSES, SAY SO. A request under /all after the Access session has ended is
+     sent to the Access login, a redirect a fetch cannot follow, and every tap read "Failed to fetch". Asked not
+     to follow it, the fetch answers an opaque redirect, and that or the Worker's own 401 is the sign-in ending:
+     the page gives way to Sign in again, which loads /all and so the Access login. A fetch that throws is the
+     connection, and says so. */
+  var ENDED='Your admin sign-in has ended.';
+  function ended(){ document.getElementById('aEnded').hidden=false; document.body.classList.add('ended'); }
   async function refs(path, body){
     var o = body ? {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)}
                  : {};
-    var r = await fetch(path, o);
+    o.redirect='manual';
+    var r;
+    try{ r = await fetch(path, o); }catch(e){ throw new Error('Not sent. Check the connection and try again.'); }
+    if(r.type==='opaqueredirect'||r.status===401){ ended(); throw new Error(ENDED); }
     var j = await r.json().catch(function(){ return {}; });
     if(!r.ok||!j.ok) throw new Error(j.error||'that did not work');
     return j;

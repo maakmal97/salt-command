@@ -15174,6 +15174,109 @@ await (async () => {
       "and Done leaves the skipped one waiting on Needs you");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S9 9.7: Salt Admin has its own icon, the ring with a keyhole, and an ended Access session gives way to Sign in again");
+await (async () => {
+  /* HIS D13 OF 24 SEP 2026 (answered with "all recommended"): Salt Admin gets its own icon, drawn like the
+     Counter's and naming nothing, and when the Access session behind it lapses the page says so and offers
+     Sign in again, where every tap read "Failed to fetch". */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { inflateSync } = await import("node:zlib");
+  const { JSDOM } = await import("jsdom");
+  const { moduleText } = await import("../tools/stmt-icon.mjs");
+  ok(moduleText() === readFileSync(join(REPO, "stmt", "icons.js"), "utf8") && /export const ADMIN_ICON_PNG_B64 = "/.test(moduleText()),
+    "stmt/icons.js is the generator's own bytes, Salt Admin's icon included");
+  const kv = new KV();
+  const MASTER = "mp-s9-7";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9-7", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX0-KY", username: u }]));
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX0-KY", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9-7", KID = "kid-s9-7";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 200 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  /* a PNG read back: its size, and the colour at a point, from the bytes the Worker serves */
+  const png = (buf) => {
+    const w = buf.readUInt32BE(16), h = buf.readUInt32BE(20);
+    let at = 8; const idat = [];
+    while (at < buf.length) { const len = buf.readUInt32BE(at), type = buf.toString("ascii", at + 4, at + 8);
+      if (type === "IDAT") idat.push(buf.subarray(at + 8, at + 8 + len)); at += 12 + len; }
+    const raw = inflateSync(Buffer.concat(idat)), row = w * 3 + 1;
+    return { w, h, depth: buf[24], kind: buf[25], flat: [...Array(h).keys()].every((y) => raw[y * row] === 0),
+      at: (x, y) => [0, 1, 2].map((i) => raw[y * row + 1 + x * 3 + i]).join(",") };
+  };
+  const wins = [];
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const acc = { headers: { "cf-access-jwt-assertion": tok } };
+
+    /* ---- the icon ---- */
+    const kr = await site("/icon-key.png"), cr = await site("/icon.png");
+    ok(kr.status === 200 && /image[/]png/.test(kr.headers.get("content-type")), "Salt Admin's icon is served as a PNG, with no Access needed, as a home screen fetches it");
+    const K = png(Buffer.from(await kr.arrayBuffer())), P = png(Buffer.from(await cr.arrayBuffer()));
+    const S = K.w, mid = (S - 1) / 2, BRASS = "197,160,89", OBS = "5,8,10";
+    const stem = [Math.round(mid), Math.round(mid + S * 0.09)], ring = [Math.round(mid + S * 0.29), Math.round(mid)], corner = [8, 8];
+    ok(K.w === 512 && K.h === 512 && K.depth === 8 && K.kind === 2 && K.flat, "a 512px truecolour tile, as the Counter's is");
+    ok(K.at(...stem) === BRASS && P.at(...stem) === OBS,
+      "with a keyhole's stem below the centre where the Counter's has only its dot: " + JSON.stringify([K.at(...stem), P.at(...stem)]));
+    ok(K.at(...ring) === P.at(...ring) && K.at(...ring) !== OBS && K.at(...corner) === OBS && P.at(...corner) === OBS,
+      "on the Counter's own ring and tile: " + JSON.stringify([K.at(...ring), P.at(...ring)]));
+    const mf = await (await site("/all/manifest.webmanifest", acc)).json();
+    ok(mf.name === "Salt Admin" && mf.icons.length === 1 && mf.icons[0].src === "/icon-key.png", "his manifest names it: " + JSON.stringify(mf.icons));
+    const ownHtml = await (await site("/all", acc)).text(), custHtml = await (await site("/")).text();
+    ok(/<link rel="apple-touch-icon" href="[/]icon-key[.]png">/.test(ownHtml) && /<link rel="apple-touch-icon" href="[/]icon[.]png">/.test(custHtml) && !custHtml.includes("icon-key"),
+      "his page's iPhone icon is his, and the customer's page keeps the Counter's and never names his");
+
+    /* ---- an ended Access session ---- */
+    /* what a browser does with Access's redirect to its login: followed, a cross-origin page a fetch cannot read,
+       so it throws; not followed, an opaque redirect */
+    const OPAQUE = (o) => { if (o.redirect !== "manual") throw new TypeError("Failed to fetch");
+      return { type: "opaqueredirect", status: 0, ok: false, json: async () => { throw new Error("opaque"); } }; };
+    const page = (answer) => { const w = new JSDOM(ownHtml, { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      win.fetch = async (q, o) => { o = o || {}; const a = answer(String(q), o); if (a) return a;
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, acc.headers), body: o.body }); };
+    } }).window; wins.push(w); return w; };
+    const shown = (w, id) => w.getComputedStyle(w.document.getElementById(id)).display !== "none" && !w.document.getElementById(id).hidden;
+    const asked = [];
+    const W1 = page((q, o) => { if (q.startsWith("/all/")) { asked.push(o.redirect); return OPAQUE(o); } return null; });
+    ok(await until(() => shown(W1, "aEnded")) && !shown(W1, "roster") && W1.document.body.classList.contains("ended"),
+      "a request Access answers with its login gives way to the sign-in page, and nothing else is left on it");
+    const e1 = W1.document.getElementById("aEnded"), a1 = e1.querySelector("a");
+    ok(/Your admin sign-in has ended/.test(e1.textContent) && a1 && a1.textContent === "Sign in again" && a1.getAttribute("href") === "/all",
+      "which says his sign-in has ended and offers Sign in again, back through Access: " + JSON.stringify(e1.textContent));
+    ok(asked.length > 0 && asked.every((r) => r === "manual") && !/Failed to fetch/.test(W1.document.getElementById("rmsg").textContent + e1.textContent),
+      "every request asks not to follow a redirect, so the lapse is read rather than failing: " + JSON.stringify(asked));
+    const W2 = page((q) => (q === "/all/sheet" ? new Response(JSON.stringify({ ok: false, error: "Access required" }), { status: 401 }) : null));
+    ok(await until(() => shown(W2, "aEnded")), "and so does the Worker's own 401 under /all");
+    const W3 = page((q) => { if (q.startsWith("/all/")) throw new TypeError("Failed to fetch"); return null; });
+    await until(() => /Not sent/.test(W3.document.getElementById("rmsg").textContent));
+    ok(!shown(W3, "aEnded") && /Not sent[.] Check the connection/.test(W3.document.getElementById("rmsg").textContent),
+      "while a request that never went out says so, and leaves the page: " + JSON.stringify(W3.document.getElementById("rmsg").textContent));
+    /* the account he is viewing reads its orders through the same road */
+    const W4 = page((q, o) => (q.startsWith("/all/orders/") ? OPAQUE(o) : null));
+    const D4 = W4.document;
+    D4.querySelector('button[data-m="accounts"]').click();
+    await until(() => D4.querySelector('#rlist [data-u="' + u + '"]'));
+    D4.querySelector('#rlist [data-u="' + u + '"]').click();
+    [...D4.querySelectorAll("#aopen button")].find((b) => b.textContent === "View as them").click();
+    ok(await until(() => shown(W4, "aEnded")), "and an account opened under View as them meets the ended session the same way");
+  } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password

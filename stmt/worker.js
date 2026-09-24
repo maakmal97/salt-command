@@ -46,7 +46,7 @@ import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStandin
 import { SIGNIN_RE, mintSignin, burnSignin } from "./signin.js";
 import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
-import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
+import { ICON_PNG_B64, ICON_SIZE, ADMIN_ICON_PNG_B64 } from "./icons.js";
 import { FONTS } from "./fonts.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
@@ -949,7 +949,7 @@ export default {
         if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
         const own = { name: "Salt Admin", short_name: "Salt Admin", start_url: "/all", scope: "/all",
           display: "standalone", orientation: "portrait", background_color: "#05080a", theme_color: "#05080a",
-          icons: [{ src: "/icon.png", sizes: ICON_SIZE + "x" + ICON_SIZE, type: "image/png", purpose: "any maskable" }] };
+          icons: [{ src: "/icon-key.png", sizes: ICON_SIZE + "x" + ICON_SIZE, type: "image/png", purpose: "any maskable" }] };
         return new Response(JSON.stringify(own), { headers: Object.assign({}, HEADERS, {
           "content-type": "application/manifest+json; charset=utf-8", "cache-control": "no-store" }) });
       }
@@ -1053,9 +1053,11 @@ export default {
       return new Response(bytes, { headers: Object.assign({}, HEADERS, {
         "content-type": "font/woff2", "cache-control": "public, max-age=31536000, immutable" }) });
     }
-    if (p === "/icon.png") {
+    /* S9 9.7: Salt Admin's own icon, the ring with a keyhole (his D13). Outside /all on purpose: a home screen
+       fetches an icon without the Access cookie, and a ring names nothing. */
+    if (p === "/icon.png" || p === "/icon-key.png") {
       if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
-      const bytes = Uint8Array.from(atob(ICON_PNG_B64), (c) => c.charCodeAt(0));
+      const bytes = Uint8Array.from(atob(p === "/icon.png" ? ICON_PNG_B64 : ADMIN_ICON_PNG_B64), (c) => c.charCodeAt(0));
       return new Response(bytes, { headers: Object.assign({}, HEADERS, {
         "content-type": "image/png", "cache-control": "public, max-age=86400" }) });
     }
