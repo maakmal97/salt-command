@@ -17708,6 +17708,19 @@ await (async () => {
     ok(/CZ9-WLK on a spare account, which opens at this run's publish/.test(run.stdout) && /no spare account was free for CZ9-LTR/.test(run.stdout),
       "and says which is which: " + (run.stdout.match(/statement username[^\n]*\n[^\n]*/) || [""])[0]);
 
+    /* ---- A SECOND FOLD against the same pool, its one spare now bound and still marked in its committed file:
+       the next walk-in takes a bare username, never the spare a customer already holds (S14-R1) ---- */
+    writeFileSync(f("staged2.json"), JSON.stringify(stage143([["2099-01-01T00:00:00.003Z", "CZ9-THD", "customer"]])));
+    writeFileSync(f("notes.json"), JSON.stringify({ version: "v9999", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: {} }));
+    const run2 = spawnSync(process.execPath, [join(REPO, "tools", "fold.mjs"), "--apply", "--book", f("book.json"), "--master", f("salt_command.html"),
+      "--staged", f("staged2.json"), "--notes", f("notes.json"), "--folded", f("folded2.json"), "--users", join(root, "_users.json"),
+      "--statements", root, "--today", "2099-01-01"], { encoding: "utf8", env: envCI });
+    const users2 = JSON.parse(readFileSync(join(root, "_users.json"), "utf8")), held2 = Object.values(users2);
+    ok(run2.status === 0 && users2["CZ9-WLK"] === spare && C143.USERNAME_RE.test(users2["CZ9-THD"] || "") && users2["CZ9-THD"] !== spare
+      && new Set(held2).size === held2.length && JSON.parse(readFileSync(join(dir, "_kv", spare + ".json"), "utf8")).spare === true,
+      "a second fold, the spare bound and still marked in its file, gives the next code a bare username, and no two codes share one: "
+      + (run2.status === 0 ? JSON.stringify(users2) : (run2.stdout + run2.stderr).slice(-300)));
+
     /* ---- THE PUBLISH seals it, with the deploy's key only ---- */
     const plan = await pp143(root, K, new Date("2099-01-01T02:00:00Z"), ["u:" + uHave, "u:" + spare], "2026-09-01");
     const put = plan.puts.find((x) => x.key === "u:" + spare), rec = put ? JSON.parse(put.value) : null;
