@@ -33,7 +33,7 @@
    with node:fs, and a Worker has no filesystem. `node tools/stmt-style.mjs --sync` writes
    this file and CI runs --check, so there is still one source. */
 import { STATEMENT_CSS, SITE_RECIPES, FONT_FACE_CSS } from "./statement-css.js";
-import { PAY_SITE, PAY_ACCOUNTS } from "./pay.js";
+import { PAY_SITE, PAY_ACCOUNTS, payHref } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 
 /* v692: THE THREE-MINUTE LOCK IS GONE (his instruction, 18 Sep 2026). It was a privacy lock for a
@@ -189,6 +189,26 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .mfnote{max-width:620px;margin:0 auto 18px;font-size:var(--salt-text-xs);color:var(--salt-text-muted);
   font-family:var(--salt-font-mono);letter-spacing:.04em;line-height:1.6}
 .mfnote:empty{display:none}
+/* S6 6.2: To pay now heads the statement, the reading column's width, its parts on the plain Ledger list */
+.payhead{max-width:620px;margin:0 auto 22px}
+.payhead[hidden]{display:none}
+.payhead .btn{margin-top:12px}
+.salt-ledger--plain .salt-ledger__value{white-space:nowrap}
+/* S6 6.4: the pay sheet. The look is the recipes' (Sheet, KPI tile, Ghost, Option, Field, Ledger, Pill); this lays them out */
+.payseg{display:flex;gap:8px;margin-top:12px}
+.payseg .salt-ghost{flex:1 1 0;min-width:0}
+.payhow,.payinto,.payref{margin-top:18px}
+.payref .salt-ledger__value{display:inline-flex;align-items:center;gap:10px}
+.paycap{margin:0;flex-basis:100%;font-size:var(--salt-text-sm);line-height:1.5;color:var(--salt-prose)}
+#payFoot .salt-pill{flex:1 1 auto}
+/* S6 6.5: the one question on return, centred as the mockup draws it */
+.paycheck{text-align:center;padding-top:6px}
+.paycheck h3{margin:14px 0 4px;font-family:var(--salt-font-display);font-size:var(--salt-text-xl);font-weight:600;letter-spacing:0;color:var(--salt-salt)}
+.payring{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;border:1px solid var(--salt-steel);color:var(--salt-steel)}
+.payring .psym{color:inherit}
+.payagain{width:100%;margin-top:16px}
+.paysaid{flex-basis:100%;margin:0}
+.payhead .msg{margin:10px 0 0}
 /* THE DOCUMENT KEEPS THE GEOMETRY IT WAS PROOFED IN. What is injected is the INSIDE of the
    statement's own .w wrapper, so without this the page rendered the tables full-bleed to the
    window while the lock bar and the issue strip stayed pinned at 620px above them: on a laptop
@@ -404,6 +424,10 @@ const GLYPH = {
   install: "M12 4 V14.6 M8 10.8 L12 14.8 L16 10.8 M5 16.6 V19.6 H19 V16.6",
   menu: "M4.5 7 H19.5 M4.5 12 H19.5 M4.5 17 H19.5",
   paste: "M7.6 4.8 H16.4 A2 2 0 0 1 18.4 6.8 V18.4 A2 2 0 0 1 16.4 20.4 H7.6 A2 2 0 0 1 5.6 18.4 V6.8 A2 2 0 0 1 7.6 4.8 Z M9.2 4.8 V3.4 H14.8 V4.8 M9 10.2 H15 M9 13.6 H15 M9 17 H12.6",
+  bank: "M3.8 9.4 L12 4.6 L20.2 9.4 Z M5.8 10.6 V16.8 M9.9 10.6 V16.8 M14.1 10.6 V16.8 M18.2 10.6 V16.8 M3.8 19.4 H20.2",
+  qr: "M4.2 4.2 H10 V10 H4.2 Z M14 4.2 H19.8 V10 H14 Z M4.2 14 H10 V19.8 H4.2 Z M14 14 H16.4 V16.4 H14 Z M17.6 17.6 H19.8 V19.8 H17.6 Z M14 17.6 V19.8 M17.6 14 H19.8",
+  cash: "M3.6 7 H20.4 V17 H3.6 Z M12 9.6 A2.4 2.4 0 1 1 12 14.4 A2.4 2.4 0 1 1 12 9.6 Z M6.4 12 H7.4 M16.6 12 H17.6",
+  copy: "M10.6 8.6 H17.4 A2 2 0 0 1 19.4 10.6 V17.4 A2 2 0 0 1 17.4 19.4 H10.6 A2 2 0 0 1 8.6 17.4 V10.6 A2 2 0 0 1 10.6 8.6 Z M15.4 8.6 V6.6 A2 2 0 0 0 13.4 4.6 H6.6 A2 2 0 0 0 4.6 6.6 V13.4 A2 2 0 0 0 6.6 15.4 H8.6",
   vdots: "M10.6 6.5 A1.4 1.4 0 1 0 13.4 6.5 A1.4 1.4 0 1 0 10.6 6.5 Z M10.6 12 A1.4 1.4 0 1 0 13.4 12 A1.4 1.4 0 1 0 10.6 12 Z M10.6 17.5 A1.4 1.4 0 1 0 13.4 17.5 A1.4 1.4 0 1 0 10.6 17.5 Z",
 };
 const FILLED = { dots: true, vdots: true };
@@ -471,6 +495,16 @@ function keepSheet() {
     + '<p class="msg" id="keepMsg" role="status" aria-live="polite"></p></div>'
     + '<div class="salt-sheet__foot"><button class="btn salt-pill salt-pill--md" id="keepCopy" type="button">Copy the code</button></div>'
     + "</div>";
+}
+
+/* S6 6.4: THE PAY SHEET (his D8 as amended). One Sheet for every Pay; the script fills its body and its foot. */
+function paySheet() {
+  return '<div id="payScrim" class="salt-sheet-scrim" hidden></div>'
+    + '<div id="paySheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="payT" tabindex="-1" hidden>'
+    + '<div class="salt-sheet__grab"></div>'
+    + '<div class="salt-sheet__head"><h2 class="salt-sheet__title" id="payT">Pay</h2>'
+    + '<button type="button" class="salt-orb salt-sheet__close" id="payX" aria-label="Close">' + glyphSvg("close", 20) + "</button></div>"
+    + '<div class="salt-sheet__body" id="payBody"></div><div class="salt-sheet__foot" id="payFoot"></div></div>';
 }
 
 /* S3 3.11: ONE STEP TO FINISH. The saved app starts at /app with storage of its own: a key carried by Paste, or the
@@ -704,7 +738,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + (owner ? "" : '<button class="btn salt-ghost" id="toCode" type="button">I have a sign-in code</button>')
     + '<p class="salt-insight">Lost your password or your link? Ask us for a <b>new sign-in link</b>. It works straight away.</p>'
     + "</div></div>"
-    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + keepSheet())
+    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + keepSheet() + paySheet())
     + '<div id="barw" hidden><div class="bar">'
     + '<span><b id="whoacct"></b><span id="cd"></span></span>'
     + '<button type="button" id="lock">Log out</button>'
@@ -719,7 +753,8 @@ export function landingPage(user, nonce, owner, bulletin) {
        that opened actually carries one, so the tab can never lead to an empty panel. */
     + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="card" id="tCard" hidden>Card</button>'
     + "</div>"
-    + '<div id="pStmt">' + (owner ? "" : keepCard())
+    /* S6 6.2: what is to pay now heads the statement tab, drawn from the sealed `pay` */
+    + '<div id="pStmt"><div id="payHead" class="payhead" hidden></div>' + (owner ? "" : keepCard())
     + '<div id="mos" class="mos" hidden></div>'
     + '<div id="mfil" class="mos mfil" hidden></div><p class="mfnote" id="mfnote"></p>'
     + '<div id="out"></div></div>'
@@ -734,6 +769,9 @@ export function landingPage(user, nonce, owner, bulletin) {
       /* v695: the product marks, so the page can draw one wherever it would have written a name */
       .replace("__PSYM__", JSON.stringify(Object.assign({ _: RING }, PSYM)))
       .replace("__PSHAPE__", JSON.stringify(PSHAPE)).replace("__MON3__", JSON.stringify(MON3))
+      /* S6 6.4: the pay sheet's three marks, and the one link into the pay page, its source carried as it is */
+      .replace("__GLYPH__", JSON.stringify({ bank: GLYPH.bank, qr: GLYPH.qr, copy: GLYPH.copy, cash: GLYPH.cash }))
+      .replace("/*__PAYHREF__*/", () => payHref.toString())
       /* "<" is escaped because this one carries the master passphrase, and a "</script>" inside a
          string literal ends the block wherever it appears: the browser closes the tag first and
          reads the rest of the passphrase as page text. */
@@ -793,7 +831,9 @@ const CLIENT_JS = `
   window.bullDraw=bullDraw; window.bullRead=bullRead;   /* reachable from outside the closure, which is how the suite drives them */
   bullDraw(BULL);
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
-  var session='', user='', prices=null, orders=[], poll=null, tab='stmt', draft={}, pick={};
+  var session='', user='', prices=null, orders=[], poll=null, tab='stmt', draft={};
+  /* S6 6.5: the account's own claims, money said to be sent on To pay now rather than on an order (GET /orders) */
+  var claims=[];
   /* S3 3.5: the content key the account was opened with, so a return re-reads it without asking for anything */
   var curCk=null;
   /* v706: the associate's own card, opened from their record like the price list */
@@ -836,10 +876,17 @@ const CLIENT_JS = `
      states: please pay the overdue amount before making another order." What they owe is sealed
      inside their own live statement (tools/make_statements.mjs), the same figure its footer reads,
      so nothing about the book is in the store in the clear to decide it with. Over the line, the
-     account opens on Pay, the order form and the price list are not offered, and the statement
-     stays one tap away, because a figure to pay is only fair beside the orders it is made of. It
-     lifts on its own: the next publish after the payment is recorded writes a smaller figure. */
-  var HOLD_RM=100, owedNow=0, hold=false;
+     account opens on Pay, the order form is not offered, and the statement stays one tap away,
+     because a figure to pay is only fair beside the orders it is made of. It lifts on its own: the
+     next publish after the payment is recorded writes a smaller figure.
+     S6 6.7, HIS D9 OF 24 SEP 2026: THE LINE COUNTS ONLY WHAT IS PAST ITS TERM, the sealed pay.overdue, never
+     what is owed (a delivery made yesterday is owed, not overdue). The page shows each part with the day it
+     fell due, Prices stays readable, and a claim waiting on him reopens ordering: his acknowledgement of the
+     next order is still the check. */
+  var HOLD_RM=100, hold=false;
+  /* S6: what the live statement seals beside owed (tools/make_statements.mjs payDue): to pay now, overdue and
+     coming up, each part with its dates. Read, never priced here. */
+  var payDue=null, liveAt='';
   /* THE MESSAGE GOES WHERE THE READER IS LOOKING. #msg lives inside the gate, so on the owner's
      route, where the gate is hidden behind the roster, every "Checking..." and every refusal was
      written into a hidden element. Both are written; only one is on screen. */
@@ -1213,15 +1260,16 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
-    owedNow=0; hold=false; tPrices.hidden=false; tOrder.textContent='Order';
+    bundle=null; session=''; view=false; prices=null; orders=[]; claims=[]; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
+    hold=false; tOrder.textContent='Order';
+    payDue=null; liveAt=''; drawPayHead();
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
     var mfn=document.getElementById('mfnote'); if(mfn) mfn.textContent='';
     pPrices.textContent=''; pOrder.textContent='';
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
-    closeKeep(); keepTok=''; if(keepCardEl) keepCardEl.hidden=true; if(codeBox) codeBox.hidden=true;
+    closeKeep(); closePay(); keepTok=''; if(keepCardEl) keepCardEl.hidden=true; if(codeBox) codeBox.hidden=true;
     /* S3 fix: a key the Keep Sheet wrote into the address leaves it with the account */
     try{ if(location.hash) history.replaceState(null,'',location.pathname); }catch(e){}
     var ask=document.getElementById('askRep'); if(ask&&!ask.hidden){ ask.hidden=true; document.getElementById('askNo').click(); }
@@ -1430,9 +1478,9 @@ const CLIENT_JS = `
     tCard.hidden=!assoc;
     if(!tCard.hidden) drawCard();
     var lv=b.statements.filter(function(s){ return s.live; })[0];
-    owedNow=lv&&isFinite(+lv.owed)?+lv.owed:0;
-    hold=owedNow>HOLD_RM+0.004;
-    tPrices.hidden=hold; tOrder.textContent=hold?'Pay':'Order';
+    payDue=lv&&lv.pay&&lv.pay.now?lv.pay:null; liveAt=lv&&lv.at||'';
+    setHold();
+    drawPayHead();
     pickStmt(0);
     if(hold) showTab('order');
   }
@@ -1714,7 +1762,7 @@ const CLIENT_JS = `
   /* what the tab above the orders is drawn off: the Pay page or the order form. A re-read of the account (a return to
      the page, a lapse reopened, S3 3.5) that changes it draws the tab again; otherwise the orders are patched (S5 5.5) */
   var drawnSig='';
-  function formSig(){ return JSON.stringify([hold,owedNow,view,assoc,prices]); }
+  function formSig(){ return JSON.stringify([hold,odRm(),view,assoc,prices]); }
   function drawOrder(){
     var sc=window.scrollY;
     drawnSig=formSig();
@@ -1726,20 +1774,22 @@ const CLIENT_JS = `
     pOrder.appendChild(el('h2',null,hold?'Payment due':'Order'));
     if(view) pOrder.appendChild(el('p','lead','Read only: their orders as their own page shows them. Nothing here is placed, paid or sent.'));
     if(hold){
-      var dueBox=el('div','pane');
-      dueBox.appendChild(el('div','quote',rm(owedNow)));
-      dueBox.appendChild(el('p','lead','Please pay the overdue amount of '+rm(owedNow)+' before placing another order.'));
-      dueBox.appendChild(el('p','sub2','Ordering opens again here once the payment is recorded on your account. Each order the amount is made of is on your statement.'));
-      var ways=PAY.filter(function(a){ return !a.maintenance&&(a.qr||a.transfer); });
-      if(ways.length){
-        dueBox.appendChild(el('span','lbl','Ways to pay'));
-        ways.forEach(function(a){
-          var l=el('a','btn lnk salt-ghost','Open '+a.name+' in QR Command');
-          l.href=PAY_SITE+'/#'+encodeURIComponent(a.key); l.target='_blank'; l.rel='noopener';
-          dueBox.appendChild(l);
-        });
+      /* S6 6.7: what is past its term, each part with the day it fell due, and one Pay for it */
+      var dueBox=el('div','pane'), od=payDue.overdue;
+      dueBox.appendChild(kpiTile('ember','Overdue',rm(od.rm),odNote(od)));
+      dueBox.appendChild(el('p','lead','Please pay the overdue amount of '+rm(od.rm)+' before placing another order.'));
+      if(od.parts.length>1){
+        var L=el('div','salt-ledger salt-ledger--plain');
+        od.parts.forEach(function(x){ L.appendChild(lrowN(partSpan(x),rm(x.rm),dueWords(x.due),'odue')); });
+        dueBox.appendChild(L);
       }
-      dueBox.appendChild(el('p','sub2','Once it has left your side, say so on any of your orders below, or tell us directly, so it can be recorded.'));
+      /* S6 6.4: one Pay, opening the pay sheet, where there were thirteen links naming the pay page */
+      if(!view){
+        var hp=el('button','btn salt-pill salt-pill--md','Pay '+rm(od.rm)); hp.type='button';
+        hp.addEventListener('click',function(){ openPay({kind:'acct', fig:od.rm, label:'Overdue', note:function(){ return odNote(od); }}); });
+        dueBox.appendChild(hp);
+      }
+      dueBox.appendChild(el('p','sub2','Ordering opens again as soon as you tell us it is sent, and your prices stay open meanwhile. Each order the amount is made of is on your statement.'));
       var sv=el('button','btn quiet salt-ghost','See your statement'); sv.type='button';
       sv.addEventListener('click',function(){ showTab('stmt'); });
       dueBox.appendChild(sv);
@@ -1921,6 +1971,10 @@ const CLIENT_JS = `
   function histLine(x,o){
     var n=String(x.note||''), m, how=x.method?' by '+methodWord(x.method,x.account):'';
     if((m=/^paid ([0-9.]+)$/.exec(n))) return 'You paid '+rm(+m[1])+how;
+    /* S6 6.5 (D7): what they said they sent is a claim until his answer, which is a line of its own */
+    if((m=/^sent ([0-9.]+)$/.exec(n))) return 'You sent '+rm(+m[1])+how+', waiting for us to confirm it';
+    if((m=/^received ([0-9.]+)$/.exec(n))) return 'We received '+rm(+m[1]);
+    if((m=/^not found ([0-9.]+)$/.exec(n))) return 'We have not found '+rm(+m[1])+' yet';
     if((m=/^payment of ([0-9.]+) recorded$/.exec(n))) return 'We recorded a payment of '+rm(+m[1]);
     /* S11 11.8 and 11.9: cash he took at the handover, and a short order closed at what was handed over */
     if((m=/^paid ([0-9.]+) in cash$/.exec(n))) return 'We received '+rm(+m[1])+' in cash';
@@ -1953,6 +2007,8 @@ const CLIENT_JS = `
   /* STAGE 6 PLUGS IN HERE: claimed is what they have said they sent above what he has confirmed, a field the
      order does not carry yet. Until it does it reads nothing, and what is still to pay is what is owed. */
   function oClaimed(o){ var c=+o.claimed; return c>0?c:0; }
+  /* S6 6.5: his Not found, each one a payments[] entry that keeps its answer */
+  function oLost(o){ return (o.payments||[]).filter(function(x){ return x&&x.claim==='notfound'; }); }
   function oToPay(o){ return Math.max(0,+(dueOf(o)-oClaimed(o)).toFixed(2)); }
   function oOwes(o){ return oPayable(o)&&oToPay(o)>0.004; }
   function oDay(iso){ try{ var p=klBits(iso); return p.day+' '+MON3[+p.month-1]; }catch(e){ return ''; } }
@@ -1983,6 +2039,8 @@ const CLIENT_JS = `
   function oWhy(o){
     var b=[];
     if(oOwes(o)) b.push(rm(oToPay(o))+' to pay');
+    if(oClaimed(o)>0) b.push(rm(oClaimed(o))+' sent, waiting for us to confirm');
+    if(oPayable(o)&&oLost(o).length) b.push('a payment we have not found');
     if(replyWaiting(o)) b.push('a reply for you');
     if(!b.length&&o.status==='placed') b.push('waiting to be confirmed');
     var t=b.join(', '); return t&&t.charAt(0).toUpperCase()+t.slice(1);
@@ -2109,28 +2167,27 @@ const CLIENT_JS = `
     L.appendChild(lrow('Goods',rm(o.total),o.closed&&o.closed.qty?unitsOf(o.qty,oUnit(o))+' handed over of the '+o.closed.qty+' ordered':''));
     if(d) L.appendChild(o.status==='placed'?lrow('Delivery','',(where?where+'. ':'')+'Set when we confirm the order'):lrow('Delivery',rm(o.delivery||0),where));
     if(paid>0) L.appendChild(lrow('Paid',rm(paid)));
-    if(claimed>0) L.appendChild(lrow('Sent by you',rm(claimed),'Waiting for us to confirm it arrived'));
+    if(claimed>0) L.appendChild(lrow('Sent by you',rm(claimed),'Waiting for us to confirm'));
+    /* S6 6.5: a payment he could not find, while the order is still to pay */
+    if(oPayable(o)) oLost(o).forEach(function(x){ L.appendChild(lrow('Not found yet',rm(x.amount),'Check it left your bank, then pay it again','odue')); });
     if(oPayable(o)){
       var tp=oToPay(o), mv=+o.moved||0;
       L.appendChild(tp>0.004
-        ?lrow('Still to pay',rm(tp),mv>0?(movedAll(o)?'The goods are with you':'Part of the goods is with you'):(d?'Now, or when it arrives':'Now, or when you collect'),'odue')
-        :lrow('Still to pay',rm(0),'Paid in full'));
+        ?lrow('Still to pay',rm(tp),mv>0?(movedAll(o)?'The goods are with you':'Part of the goods is with you'):o.method==='cod'?(d?'In cash when it arrives':'In cash when you collect'):(d?'Now, or when it arrives':'Now, or when you collect'),'odue')
+        :lrow('Still to pay',rm(0),claimed>0?'Sent, waiting for us to confirm':'Paid in full'));
     }
     return L;
   }
-  /* ONE NEXT ACTION. Pay opens the ways to pay in its place, and theirs is then the one filled control. On a desk the
-     order form's own filled control stands beside the open order until the form moves into a sheet (stage 4), and
-     while one does, Pay is the lit ghost: one filled control a screen. On a phone the open order is the whole tab. */
+  /* ONE NEXT ACTION. Pay opens the pay sheet for this order (S6 6.4). On a desk the order form's own filled control
+     stands beside the open order until the form moves into a sheet (stage 4), and while one does, Pay is the lit
+     ghost: one filled control a screen. On a phone the open order is the whole tab. */
   function oFormPill(){ return oWide()&&[].some.call(pOrder.querySelectorAll('.salt-pill'),function(p){ return !p.closest('.oplace'); }); }
   function oAct(o){
     var a=el('div','oact'), tp=oTap(o);
     if(!view&&oOwes(o)){
-      if((draft.oPay||{})[o.id]) a.appendChild((o.method&&!(pick[o.id]||{}).again)?payBox(o):payChooser(o));
-      else {
-        var pb=el('button',oFormPill()?'salt-ghost salt-ghost--lit':'salt-pill salt-pill--md','Pay '+rm(oToPay(o))); pb.type='button';
-        pb.addEventListener('click',function(){ (draft.oPay=draft.oPay||{})[o.id]=true; oDraw(); });
-        a.appendChild(pb);
-      }
+      var pb=el('button',oFormPill()?'salt-ghost salt-ghost--lit':'salt-pill salt-pill--md','Pay '+rm(oToPay(o))); pb.type='button';
+      pb.addEventListener('click',function(){ openPay(orderCtx(o.id)); });
+      a.appendChild(pb);
     }
     if(tp.k==='pay'&&tp.t) a.appendChild(statusLine(tp.t));
     return a;
@@ -2348,105 +2405,285 @@ const CLIENT_JS = `
     if(!n) return; var bw=document.getElementById('barw');
     try{ n.style.scrollMarginTop=Math.ceil((bw&&!bw.hidden?bw.getBoundingClientRect().bottom:0)+12)+'px'; n.scrollIntoView({block:'start'}); }catch(e){}
   }
+  /* ---- S6 6.2 (his D9 of 24 Sep 2026): TO PAY NOW HEADS THE STATEMENT, with its due date and Pay, and what is
+     overdue and what is coming up beneath it, each part with its own day. The figures are the publish's, sealed with
+     the statement (payDue) and read here, never worked out: the site prices nothing. A part is a mark and a size. */
+  var WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  function ymdAt(s){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?Date.UTC(+m[1],+m[2]-1,+m[3]):null; }
+  function dayName(s){ var t=ymdAt(s); if(t==null) return ''; var d=new Date(t); return WD[d.getUTCDay()]+' '+d.getUTCDate()+' '+MON3[d.getUTCMonth()]; }
+  function todayKL(){ var p=klBits(new Date().toISOString()); return p.year+'-'+('0'+p.month).slice(-2)+'-'+p.day; }
+  function daysTo(s){ var t=ymdAt(s), n=ymdAt(todayKL()); return t==null||n==null?null:Math.round((t-n)/864e5); }
+  /* "Due by Sat 26 Sep, in 2 days.", or of the first of several parts, "The first is due by ..." */
+  function dueWords(due,first){
+    var n=daysTo(due), d=dayName(due);
+    if(n==null) return '';
+    var s=first?'The first ':'', is=first?'is due':'Due';
+    return n<0?s+(first?'was due':'It was due')+' by '+d+'.':n===0?s+is+' today, '+d+'.':s+is+' by '+d+(n===1?', tomorrow.':', in '+n+' days.');
+  }
+  function unitFor(pr){ var P=prices&&prices.products&&prices.products.filter(function(x){ return x.product===pr; })[0]; return P?P.unit:'unit'; }
+  /* "The rest of [cube] 2.5 units you received Wed 16 Sep": the rest where part of the order is paid; a part to come says when it was ordered */
+  function partSpan(p,coming){
+    var s=el('span');
+    if(!coming&&+p.whole>+p.rm+0.004) s.appendChild(document.createTextNode('The rest of '));
+    s.appendChild(psym(p.product,15)); s.appendChild(el('span','sr',pshape(p.product)));
+    s.appendChild(document.createTextNode(' '+unitsOf(p.qty,unitFor(p.product))+(p.resale?' on behalf of a friend':'')
+      +(!coming&&p.gotOn?' you received '+dayName(p.gotOn):(p.date?', ordered '+dayName(p.date):''))));
+    return s;
+  }
+  function lrowN(node,value,flag,cls){ var r=lrow('',value,flag,cls); r.querySelector('.salt-ledger__label').appendChild(node); return r; }
+  function kpiTile(tone,label,value,note){
+    var k=el('div','salt-kpi salt-kpi--'+tone);
+    k.appendChild(el('span','salt-kpi__label',label)); k.appendChild(el('span','salt-kpi__value',value));
+    if(note){ var n=el('span','salt-kpi__note'); n.appendChild(note); k.appendChild(n); }
+    return k;
+  }
+  /* S6 6.7: the overdue figure, the line, and whether a claim waiting on him has lifted it. The owner's view holds too. */
+  function odRm(){ return payDue&&payDue.overdue?+payDue.overdue.rm||0:0; }
+  function setHold(){ hold=odRm()>HOLD_RM+0.004&&!(sentWaiting()>0.004); if(tOrder) tOrder.textContent=hold?'Pay':'Order'; }
+  function odNote(od){
+    var n=el('span'), ps=od.parts||[];
+    if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0].due))); }
+    else n.appendChild(document.createTextNode(ps.length+' orders past the day they were due. '+dueWords(ps.length?ps[0].due:null,true)));
+    return n;
+  }
+  /* what To pay now is for, in one line under its figure */
+  function nowNote(now){
+    var n=el('span'), ps=now.parts||[];
+    if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0].due))); }
+    else n.appendChild(document.createTextNode(ps.length+' orders you have received. '+dueWords(now.due,true)));
+    return n;
+  }
+  /* ---- S6 6.5 (his D7): A CLAIM IS NEVER PAID UNTIL HE SAYS SO. What they said they sent on To pay now (the account's
+     claims) and on an order (claimed) reads "sent, waiting for us to confirm" until his Received or Not found, each
+     shown when it comes. To pay now is the sealed figure; Pay asks only for what no claim waits on, and for nothing he
+     has received since the statement was written, so money already sent is not asked for twice. */
+  function sumOf(list){ return +list.reduce(function(n,c){ return n+(+c.amount||0); },0).toFixed(2); }
+  function acctWaiting(){ return sumOf(claims.filter(function(c){ return c&&c.state==='waiting'; })); }
+  function acctSince(){ return claims.filter(function(c){ return c&&c.state==='received'&&String(c.answered||'')>liveAt; }); }
+  function acctToPay(){ var n=payDue&&payDue.now; return n?Math.max(0,+(n.rm-acctWaiting()-sumOf(acctSince())).toFixed(2)):0; }
+  function sentWaiting(){ return +(acctWaiting()+orders.reduce(function(n,o){ return n+oClaimed(o); },0)).toFixed(2); }
+  /* the lines under To pay now: what waits on him, and his answers since the statement was written, or in the last fortnight */
+  function claimLines(){
+    var out=[], sw=sentWaiting();
+    if(sw>0.004) out.push(rm(sw)+' sent, waiting for us to confirm.');
+    acctSince().forEach(function(c){ out.push(rm(c.amount)+' received on '+oDay(c.answered)+'. Your statement shows it at its next update.'); });
+    claims.filter(function(c){ return c&&c.state==='notfound'&&Date.now()-Date.parse(c.answered||c.at)<14*864e5; })
+      .forEach(function(c){ out.push('We have not found the '+rm(c.amount)+' you sent on '+oDay(c.at)+'. Check it left your bank, then pay it again.'); });
+    return out;
+  }
+  function drawPayHead(){
+    var box=document.getElementById('payHead'); if(!box) return;
+    box.textContent='';
+    var P=payDue||{}, now=P.now||{rm:0,parts:[]}, od=P.overdue||{rm:0,parts:[]}, cm=P.coming||{rm:0,parts:[]}, said=claimLines();
+    box.hidden=!(now.rm>0.004||cm.rm>0.004||said.length);
+    if(box.hidden) return;
+    if(now.rm>0.004){
+      box.appendChild(kpiTile('ember','To pay now',rm(now.rm),nowNote(now)));
+      var left=acctToPay();
+      if(!view&&left>0.004){
+        var pb=el('button','btn salt-pill salt-pill--md','Pay '+rm(left)); pb.type='button'; pb.id='payNow';
+        pb.addEventListener('click',function(){ openPay(acctCtx()); });
+        box.appendChild(pb);
+      }
+    }
+    said.forEach(function(t){ box.appendChild(statusLine(t)); });
+    if(now.rm>0.004){
+      /* each overdue part with the day it fell due; one part says so in the line above */
+      if(od.rm>0.004&&(now.parts||[]).length>1){
+        box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab','Overdue'));
+        var L=el('div','salt-ledger salt-ledger--plain');
+        od.parts.forEach(function(p){ L.appendChild(lrowN(partSpan(p),rm(p.rm),dueWords(p.due),'odue')); });
+        box.appendChild(L);
+      }
+    }
+    if(cm.rm>0.004){
+      box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab','Coming up'));
+      var C=el('div','salt-ledger salt-ledger--plain');
+      cm.parts.forEach(function(p){ C.appendChild(lrowN(partSpan(p,true),rm(p.rm),'Pay now, or when it arrives')); });
+      box.appendChild(C);
+    }
+  }
+
   var METHOD_WORDS={cod:'cash on handover', transfer:'DuitNow Transfer', qr:'DuitNow QR', jompay:'JomPAY', tngbiz:"Touch 'n Go Business"};
   function acct(key){ return PAY.filter(function(a){return a.key===key;})[0]; }
   function methodWord(m,a){ var x=acct(a); return (METHOD_WORDS[m]||m)+(x&&m!=='tngbiz'?' to '+x.name:''); }
-  function accountsFor(m){ return PAY.filter(function(a){ return !a.maintenance&&a[m]; }); }
-
-  /* THE CHOICE, OFFERED FROM THE ACKNOWLEDGEMENT (v694; it was at ready). Five rails; three of them
-     name an account off the list QR Command carries, and the page shows only those that run that
-     rail. CASH ON HANDOVER IS WITHHELD from anyone already holding goods they have not paid for
-     (his instruction, 18 Sep 2026): settling that at the door is how one advance becomes two. */
-  function payChooser(o){
-    var box=el('div','pay');
-    box.appendChild(el('p','sub2','How will you pay '+rm(dueOf(o))+'?'));
-    var cur=pick[o.id]||{}, noCod=heldUnpaid();
-    var opts=[['cod', o.mode==='deliver'?'Cash on delivery':'Cash when I collect'],
-              ['transfer','DuitNow Transfer, to an account number'],
-              ['qr','DuitNow QR, a code I save and scan'],
-              ['jompay','JomPAY'],
-              ['tngbiz',"DuitNow purchase, the Touch 'n Go Business code"]];
-    opts.forEach(function(m){
-      if(m[0]==='cod'&&noCod) return;
-      if(m[0]!=='cod'&&m[0]!=='tngbiz'&&!accountsFor(m[0]).length) return;
-      if(m[0]==='tngbiz'&&!(acct('tngbiz')&&acct('tngbiz').qr&&!acct('tngbiz').maintenance)) return;
-      var lab=el('label'); var r=el('input'); r.type='radio'; r.name='pm-'+o.id; r.value=m[0]; r.checked=(cur.method===m[0]);
-      r.addEventListener('change',function(){ pick[o.id]={method:m[0],account:'',again:cur.again}; drawOrder(); });
-      lab.appendChild(r); lab.appendChild(el('span',null,m[1])); box.appendChild(lab);
-    });
-    if(cur.method==='transfer'||cur.method==='qr'||cur.method==='jompay'){
-      var sel=el('select','fld salt-field__input salt-field__input--mono'); sel.setAttribute('aria-label','Account');
-      var o0=el('option',null,cur.method==='jompay'?'Choose the biller':'Choose the bank or e-wallet'); o0.value=''; sel.appendChild(o0);
-      accountsFor(cur.method).forEach(function(a){ var op=el('option',null,a.name+(a.bank&&a.bank!==a.name?' ('+a.bank+')':'')); op.value=a.key; if(cur.account===a.key)op.selected=true; sel.appendChild(op); });
-      sel.addEventListener('change',function(){ pick[o.id].account=sel.value; drawOrder(); });
-      box.appendChild(sel);
-    }
-    if(noCod) box.appendChild(el('p','sub2','Cash on handover is not offered while goods you already hold are unpaid. Settle those first and it comes back.'));
-    var ok=cur.method&&(cur.method==='cod'||cur.method==='tngbiz'||cur.account);
-    var cb=el('button','btn salt-pill salt-pill--md','Confirm'); cb.type='button'; cb.disabled=!ok;
-    cb.addEventListener('click', async function(){
-      if(!ok) return; var mine=ticket;
-      var r=await api('/orders/'+encodeURIComponent(o.id)+'/method',{method:cur.method,account:cur.account||undefined,rid:ridFor(o.id+':method',cur.method+' '+(cur.account||''))});
-      if(mine!==ticket) return;
-      if(!r.body.ok) tapSaid(o,'pay',r.body.error||'The choice was not recorded.'); else { ridDone(o.id+':method'); tapSaid(o,'pay',''); delete pick[o.id]; }
-      await loadOrders(); if(mine!==ticket) return; drawOrder();
-    });
-    box.appendChild(cb);
-    return box;
+  /* ---- S6 6.4: THE PAY SHEET (his D8 as he amended it, 24 Sep 2026) ------------------------------------------------
+     Every Pay opens it: To pay now's, an order's, the held page's. The figure and what it is for, All or Part of it,
+     then the two ways, Transfer or Scan a code, as the system's Option tiles. NO ACCOUNT IS CHOSEN FOR THEM: they
+     choose which of his accounts to pay into, from the accounts payHref will link, so a suspended one is never
+     offered. Their username is the reference, with Copy. Show the account number, or Show the code, opens the pay page
+     through payHref at that account, rail and figure; the Counter never carries a number and never names that page.
+     The figure is fixed as the sheet opens, so a poll landing while they pay cannot move it. */
+  var paySh=document.getElementById('paySheet'), payScr=document.getElementById('payScrim'), PS=null;
+  var GL=__GLYPH__;
+  function glyph(name,px){ var s=psym('_',px); s.setAttribute('class','psym glyph'); s.firstChild.setAttribute('d',GL[name]); return s; }
+  /*__PAYHREF__*/
+  function payInto(rail,amt){ return PAY.filter(function(a){ return !!payHref(a.key,rail,amt,user); }); }
+  function acctCtx(){ var n=payDue&&payDue.now; return {kind:'acct', fig:acctToPay(), label:'To pay now', note:function(){ return nowNote(n); }}; }
+  function orderCtx(id){
+    var o=oFind(id);
+    return {kind:'order', id:id, fig:o?oToPay(o):0, label:'Still to pay', note:function(){
+      var s=el('span'); s.appendChild(psym(o.product,15)); s.appendChild(el('span','sr',pshape(o.product)));
+      s.appendChild(document.createTextNode(' '+unitsOf(o.qty,oUnit(o))+', ordered '+oDay(o.at)+(movedAll(o)?'. The goods are with you.':'.')));
+      return s; }};
   }
-  /* ONE LINK, FOR THE RAIL CHOSEN, AND THEN WHAT WAS PAID. Everything that pays lives on that page:
-     the account number behind its Copy button, the code to save, the biller and reference. Nothing
-     here repeats it. THE FIGURE IS THEIRS (his instruction, 18 Sep 2026): the site takes no money
-     and no rail tells it anything, so the customer types what they paid and the desk reads it
-     against the fold. It accumulates, so a part payment is a part payment. */
-  function payBox(o){
-    var box=payLink(o), due=dueOf(o), cur=pick[o.id]||{};
-    var row=el('div','payamt');
-    row.appendChild(el('span','cur','RM'));
-    var inp=el('input','fld salt-field__input salt-field__input--mono'); inp.type='number'; inp.min='0'; inp.step='0.01'; inp.inputMode='decimal';
-    inp.value=(cur.amount!==undefined&&cur.amount!==null)?cur.amount:due.toFixed(2);
-    inp.setAttribute('aria-label','What you paid, in ringgit');
-    inp.addEventListener('input',function(){ pick[o.id]=Object.assign({},pick[o.id],{amount:inp.value}); var b=document.getElementById('pd-'+o.id); if(b)b.disabled=!(parseFloat(inp.value)>0); });
-    row.appendChild(inp); box.appendChild(row);
-    var pb=el('button','btn salt-pill salt-pill--md',"I have paid"); pb.type='button'; pb.id='pd-'+o.id;
-    pb.disabled=!(parseFloat(inp.value)>0);
-    pb.addEventListener('click', async function(){
-      var amt=parseFloat(inp.value);
-      if(!(amt>0)) return;
-      /* the id stays with the figure it was minted for: a retry of this payment carries it, a
-         different figure is a different payment, and it is dropped once one is recorded */
-      var fig=amt.toFixed(2), was=pick[o.id]||{};
-      pick[o.id]=Object.assign({},was,{amount:inp.value},was.rid&&was.ridFor===fig?{}:{rid:mintRid(),ridFor:fig});
-      pb.disabled=true; var mine=ticket;
-      var r=await api('/orders/'+encodeURIComponent(o.id)+'/pay',{amount:+fig,rid:pick[o.id].rid});
-      if(mine!==ticket) return;
-      var took=!!(r.body&&r.body.ok);
-      tapSaid(o,'pay',took?'Recorded. It shows on your statement once it is folded into the book.':((r.body&&r.body.error)||'That payment was not recorded.'));
-      if(took) delete pick[o.id];
-      await loadOrders(); if(mine!==ticket) return; drawOrder();
-    });
-    box.appendChild(pb);
-    box.appendChild(el('p','sub2','Tell us once it has left your side. '+rm(due)+' is outstanding; a part payment is fine and the rest stays here.'));
-    var ch=el('button','btn quiet salt-ghost','Pay another way'); ch.type='button';
-    ch.addEventListener('click',function(){ pick[o.id]={again:true}; drawOrder(); });
-    box.appendChild(ch);
-    return box;
+  function openPay(ctx){
+    if(!paySh||view||!(ctx.fig>0.004)) return;
+    PS={ctx:ctx, part:false, amt:'', rail:'', acct:'', said:'', step:'pay', away:null, busy:false};
+    payScr.hidden=false; paySh.hidden=false; drawPay();
+    try{ paySh.focus(); }catch(e){}
   }
-  function payLink(o){
-    var box=el('div','pay');
-    var a=acct(o.account), due=dueOf(o);
-    var word={cod:(o.mode==='deliver'?'Pay '+rm(due)+' in cash on delivery.':'Pay '+rm(due)+' in cash when you collect.'),
-      transfer:'Transfer '+rm(due)+' by DuitNow Transfer to '+(a?a.name:'the account')+'. The page that opens has the account number behind Copy account number; paste it into your banking app.',
-      qr:'Pay '+rm(due)+' by scanning the '+(a?a.name:'')+' code. On the page that opens, tap the code to save it as an image, then scan it from your banking app.',
-      jompay:'Pay '+rm(due)+' by JomPAY. The page that opens has the biller code and the reference behind Copy; enter them in your banking app under JomPAY.',
-      tngbiz:'Pay '+rm(due)+" by scanning the Touch 'n Go Business code on the page that opens, or save it and scan it from the Touch 'n Go app."}[o.method]||'';
-    box.appendChild(el('p','sub2','Paying by '+methodWord(o.method,o.account)+'. '+word));
-    if(o.method!=='cod'&&o.account){
-      var l=el('a','btn lnk salt-ghost','Open '+(a?a.name:'the account')+' in QR Command');
-      l.href=PAY_SITE+'/#'+encodeURIComponent(o.account); l.target='_blank'; l.rel='noopener';
-      box.appendChild(l);
+  function closePay(){ if(!paySh||paySh.hidden) return; paySh.hidden=true; payScr.hidden=true; PS=null; }
+  if(paySh){
+    document.getElementById('payX').addEventListener('click',closePay);
+    payScr.addEventListener('click',closePay);
+    document.addEventListener('keydown',function(ev){ if(ev.key==='Escape') closePay(); });
+  }
+  /* the figure being paid: all of it, or the part typed, never above all of it */
+  function payAmt(){ if(!PS.part) return PS.ctx.fig; var v=parseFloat(PS.amt); return v>0&&v<=PS.ctx.fig+0.004?+v.toFixed(2):0; }
+  function payTitle(){ document.getElementById('payT').textContent='Pay '+rm(payAmt()||PS.ctx.fig); }
+  var HOW=[{v:'transfer', label:'Transfer to an account', g:'bank'}, {v:'qr', label:'Scan a code', g:'qr', detail:'DuitNow QR, any bank or e-wallet'}];
+  /* ---- S6 6.8: CASH WHEN IT ARRIVES, OFFERED ONLY WHERE THE RULE ALLOWS, AND SAYING WHY WHEN NOT. A third way on an
+     order's sheet, never on To pay now's, whose goods they already have. Withheld while goods they hold are unpaid, this
+     order's own included (v694): the tile stays, dashed, with the reason in place of its line. Choosing it tells him how
+     they will pay; the cash itself is his to record when he takes it, so the customer never declares it. */
+  function cashWay(){
+    var o=oFind(PS.ctx.id), d=o&&o.mode==='deliver', no=heldUnpaid();
+    return {v:'cod', label:d?'Cash when it arrives':'Cash when you collect', g:'cash', off:no,
+      detail:no?'Not offered while goods you already have are unpaid. Pay for those first and it comes back.':'Paid to us at the handover. We record it when we take it.'};
+  }
+  function cashWord(){ var o=oFind(PS.ctx.id); return o&&o.mode==='deliver'?'Pay in cash when it arrives':'Pay in cash when I collect'; }
+  async function cashSend(){
+    if(!PS||PS.busy) return;
+    var ps=PS, id=ps.ctx.id, mine=ticket;
+    ps.busy=true; ps.said=''; drawPayFoot();
+    var r=await api('/orders/'+encodeURIComponent(id)+'/method',{method:'cod', rid:ridFor(id+':method','cod')});
+    if(mine!==ticket||PS!==ps) return;
+    ps.busy=false;
+    if(!(r.body&&r.body.ok)){ ps.said=(r.body&&r.body.error)||'The choice was not recorded.'; drawPayFoot(); return; }
+    ridDone(id+':method'); closePay();
+    var o=oFind(id); if(o) tapSaid(o,'pay','You pay in cash '+(o.mode==='deliver'?'when it arrives':'when you collect')+'. We record it when we take it.');
+    await loadOrders(); if(mine!==ticket) return;
+    setHold(); drawOrder(); drawPayHead();
+  }
+  function drawPay(){
+    if(PS.step==='check'){ drawCheck(); return; }
+    var body=document.getElementById('payBody'), c=PS.ctx;
+    body.textContent=''; payTitle();
+    body.appendChild(kpiTile('ember',c.label,rm(c.fig),c.note()));
+    var cash=PS.rail==='cod';
+    var seg=el('div','payseg');
+    [[false,'All, '+rm(c.fig)],[true,'Part of it']].forEach(function(x){
+      var b=el('button','salt-ghost',x[1]); b.type='button'; b.setAttribute('aria-pressed',PS.part===x[0]?'true':'false');
+      b.addEventListener('click',function(){ PS.part=x[0]; drawPay(); var f=document.getElementById('payAmt'); if(f) try{ f.focus(); }catch(e){} });
+      seg.appendChild(b);
+    });
+    if(!cash) body.appendChild(seg);
+    if(PS.part&&!cash){
+      var row=el('div','payamt'); row.appendChild(el('span','cur','RM'));
+      var inp=el('input','fld salt-field__input salt-field__input--mono'); inp.id='payAmt'; inp.type='number'; inp.min='0'; inp.step='0.01'; inp.inputMode='decimal';
+      inp.value=PS.amt; inp.setAttribute('aria-label','How much you are paying, in ringgit');
+      inp.addEventListener('input',function(){ PS.amt=inp.value; payTitle(); drawPayFoot(); });
+      row.appendChild(inp); body.appendChild(row);
+      body.appendChild(el('p','sub2','Up to '+rm(c.fig)+'. The rest stays here to pay.'));
     }
-    return box;
+    var fs=el('fieldset','salt-options payhow'), g=el('div','salt-options__grid');
+    fs.appendChild(el('legend','salt-options__legend','How you pay'));
+    HOW.concat(c.kind==='order'?[cashWay()]:[]).forEach(function(w){
+      var lab=el('label','salt-option'), r=el('input','salt-option__input'), face=el('span','salt-option__face'),
+          ld=el('span','salt-option__lead'), tx=el('span','salt-option__text'), a=w.v==='transfer'&&PS.rail==='transfer'&&acct(PS.acct);
+      r.type='radio'; r.name='payHow'; r.value=w.v; r.checked=PS.rail===w.v; r.disabled=!!w.off;
+      r.addEventListener('change',function(){ PS.rail=w.v; if(!payInto(w.v,payAmt()||c.fig).some(function(x){ return x.key===PS.acct; })) PS.acct=''; drawPay(); });
+      ld.appendChild(glyph(w.g,22)); face.appendChild(ld);
+      tx.appendChild(el('span','salt-option__label',w.label));
+      tx.appendChild(el('span','salt-option__detail',w.detail||('From your banking app, to '+(a?a.name:'one of our accounts'))));
+      face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); g.appendChild(lab);
+    });
+    fs.appendChild(g); body.appendChild(fs);
+    if(PS.rail&&!cash){
+      var fw=el('div','salt-field payinto'), lb=el('label','salt-field__label','Pay into'), sel=el('select','fld salt-field__input');
+      lb.htmlFor='payInto'; sel.id='payInto';
+      var o0=el('option',null,'Choose one of our accounts'); o0.value=''; sel.appendChild(o0);
+      payInto(PS.rail,payAmt()||c.fig).forEach(function(a){ var op=el('option',null,a.name); op.value=a.key; op.selected=PS.acct===a.key; sel.appendChild(op); });
+      sel.addEventListener('change',function(){ PS.acct=sel.value; drawPay(); });
+      fw.appendChild(lb); fw.appendChild(sel); body.appendChild(fw);
+    }
+    var L=el('div','salt-ledger salt-ledger--plain payref'), rr=lrow('Reference',user,'Put this in the reference, so we can match it.'),
+        cp=el('button','salt-ghost'); cp.type='button'; cp.setAttribute('aria-label','Copy the reference'); cp.appendChild(glyph('copy',18));
+    var said=statusLine(PS.said); said.hidden=!PS.said;
+    cp.addEventListener('click',async function(){
+      var t; try{ await navigator.clipboard.writeText(user); t='Copied.'; }catch(e){ t='Copy failed. Press and hold the reference instead.'; }
+      if(!PS) return; PS.said=t; said.textContent=t; said.hidden=false;
+    });
+    rr.querySelector('.salt-ledger__value').appendChild(cp);
+    L.appendChild(rr); if(!cash){ body.appendChild(L); body.appendChild(said); }
+    drawPayFoot();
+  }
+  /* the one filled control, and above it what it opens or what is still to choose */
+  function drawPayFoot(){
+    var foot=document.getElementById('payFoot'), a=payAmt(), qr=PS.rail==='qr', word=qr?'Show the code':'Show the account number',
+        href=PS.rail&&PS.acct&&a?payHref(PS.acct,PS.rail,a,user):'';
+    foot.textContent='';
+    if(PS.rail==='cod'){
+      foot.appendChild(el('p','paycap','We record it when we take it, so there is nothing to tell us afterwards.'));
+      var cb=el('button','salt-pill salt-pill--md',cashWord()); cb.type='button'; cb.id='payGo'; cb.disabled=!!PS.busy;
+      cb.addEventListener('click',cashSend); foot.appendChild(cb);
+      if(PS.said){ var l=statusLine(PS.said); l.className+=' paysaid'; foot.appendChild(l); }
+      return;
+    }
+    foot.appendChild(el('p','paycap',href?'Opens our payment page with the '+(qr?'code':'account number')+'. Come back here after paying.'
+      :!a?'Say how much you are paying, up to '+rm(PS.ctx.fig)+'.':!PS.rail?'Choose how you are paying.':'Choose which of our accounts to pay into.'));
+    var go;
+    if(href){ go=el('a','salt-pill salt-pill--md',word); go.href=href; go.target='_blank'; go.rel='noopener';
+      go.addEventListener('click',function(){ PS.away={amt:a, rail:PS.rail, acct:PS.acct, gone:false}; }); }
+    else { go=el('button','salt-pill salt-pill--md',word); go.type='button'; go.disabled=true; }
+    go.id='payGo'; foot.appendChild(go);
+  }
+  /* ---- S6 6.5 (his D7): ON RETURN THE SHEET ASKS ONCE. Leaving for the pay page (the page hidden, or the window left)
+     and coming back turns the sheet to one question, never a tap beside the account number: Not yet goes back and asks
+     nothing more until the pay page is opened again; Yes records a CLAIM, which stays "sent, waiting" until he answers. */
+  function payGone(){ if(PS&&PS.away) PS.away.gone=true; }
+  function payBack(){ if(PS&&PS.away&&PS.away.gone&&PS.step==='pay'){ PS.step='check'; PS.said=''; drawPay(); } }
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden') payGone(); else payBack(); });
+  window.addEventListener('blur',payGone); window.addEventListener('focus',payBack);
+  function drawCheck(){
+    var body=document.getElementById('payBody'), foot=document.getElementById('payFoot'), w=PS.away, a=acct(w.acct), qr=w.rail==='qr';
+    body.textContent=''; foot.textContent='';
+    document.getElementById('payT').textContent='Pay '+rm(w.amt);
+    var box=el('div','paycheck'), ring=el('span','payring'); ring.appendChild(glyph(qr?'qr':'bank',30)); box.appendChild(ring);
+    box.appendChild(el('h3',null,'Did you send '+rm(w.amt)+'?'));
+    box.appendChild(el('p','sub2',(qr?'By scanning the '+a.name+' code':'By transfer to '+a.name)+', reference '+user+'.'));
+    body.appendChild(box);
+    var ins=el('p','salt-insight');
+    ins.appendChild(document.createTextNode('Tell us only once it has gone from your bank. It shows as ')); ins.appendChild(el('b',null,'sent, waiting'));
+    ins.appendChild(document.createTextNode(' until we confirm it arrived, and we tell you either way.'));
+    body.appendChild(ins);
+    var again=el('a','salt-ghost payagain',qr?'Show the code again':'Show the account number again');
+    again.href=payHref(w.acct,w.rail,w.amt,user); again.target='_blank'; again.rel='noopener';
+    again.addEventListener('click',function(){ if(PS&&PS.away) PS.away.gone=false; });
+    body.appendChild(again);
+    var no=el('button','salt-ghost','Not yet'); no.type='button';
+    no.addEventListener('click',function(){ PS.step='pay'; PS.away=null; PS.said=''; drawPay(); });
+    var yes=el('button','salt-pill salt-pill--md','Yes, I sent '+rm(w.amt)); yes.type='button'; yes.id='paySent'; yes.disabled=!!PS.busy;
+    yes.addEventListener('click',claimSend);
+    foot.appendChild(no); foot.appendChild(yes);
+    if(PS.said){ var l=statusLine(PS.said); l.className+=' paysaid'; foot.appendChild(l); }
+  }
+  /* the claim: on the order, or on the account for To pay now (rows he entered on the desk as well). The id stays with
+     the figure, the way and the account it was minted for, so a retry is recorded once. Its answer is beside Yes. */
+  async function claimSend(){
+    if(!PS||PS.busy) return;
+    var ps=PS, c=ps.ctx, w=ps.away, fig=w.amt.toFixed(2), key=(c.kind==='order'?c.id:'account')+':claim', mine=ticket;
+    var body={amount:+fig, method:w.rail, account:w.acct, rid:ridFor(key,fig+' '+w.rail+' '+w.acct)};
+    ps.busy=true; ps.said=''; drawPay();
+    var r=await api(c.kind==='order'?'/orders/'+encodeURIComponent(c.id)+'/pay':'/account/claim', body);
+    if(mine!==ticket||PS!==ps) return;
+    ps.busy=false;
+    if(!(r.body&&r.body.ok)){ ps.said=(r.body&&r.body.error)||'That was not recorded. Try again.'; drawPay(); return; }
+    ridDone(key); closePay();
+    if(c.kind==='order'){ var o=oFind(c.id); if(o) tapSaid(o,'pay','Sent, waiting for us to confirm. We tell you when it arrives.'); }
+    await loadOrders(); if(mine!==ticket) return;
+    setHold(); drawOrder(); drawPayHead();
   }
 
   async function loadOrders(){
@@ -2455,7 +2692,7 @@ const CLIENT_JS = `
     var r=await api('/orders');
     if(mine!==ticket) return;
     if(r.status===401) return;   /* api() has said so in the bar */
-    if(r.body.ok) orders=r.body.orders||[];
+    if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; }
   }
   /* S5 5.5 (24 Sep 2026): A RE-READ PATCHES WHAT CHANGED AND NOTHING ELSE. It drew the whole tab again, the order
      form and every order with it, so a poll bringing any change to any order took the box being typed in and the
@@ -2463,9 +2700,10 @@ const CLIENT_JS = `
      and only the rows and the parts of the open order that changed are drawn again. A return to the page and a lapse
      reopened (S3 3.5) come this way too; only an account that now draws the form above differently draws the tab. */
   async function oReread(){
-    var before={}, mine=ticket; orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
+    var before={}, mine=ticket, was=JSON.stringify([claims,orders.map(oClaimed)]); orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
     await loadOrders();
     if(mine!==ticket) return;
+    if(JSON.stringify([claims,orders.map(oClaimed)])!==was){ setHold(); drawPayHead(); }
     if(document.getElementById('oPlace')&&formSig()!==drawnSig){ drawOrder(); return; }
     var changed=orders.filter(function(o){ return before[o.id]!==JSON.stringify(o); }).map(function(o){ return o.id; }),
         gone=Object.keys(before).some(function(id){ return !oFind(id); });
@@ -2693,7 +2931,7 @@ const CLIENT_JS = `
     var x={assoc:body.assoc===true, card:null, prices:null};
     if(body.live){
       try{ var l=JSON.parse(await open(ck, body.live));
-        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body, owed:l.owed}); }
+        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body, owed:l.owed, pay:l.pay||null}); }
       catch(e){ /* the issued statements still open; the live one is simply absent */ }
     }
     if(body.card){ try{ x.card=JSON.parse(await open(ck, body.card)); }catch(e){ /* the statement still opens; the card is simply absent */ } }
@@ -2707,7 +2945,7 @@ const CLIENT_JS = `
     var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
     prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
     user=u; session=body.session||'';
-    if(!same){ orders=[]; draft={}; pick={}; }
+    if(!same){ orders=[]; claims=[]; draft={}; closePay(); }
     view=!!(OWNER&&body.byMaster);
     if(linkBox) linkBox.hidden=true;
     if(opening) opening.hidden=true;
@@ -2716,7 +2954,7 @@ const CLIENT_JS = `
     drawPrices();
     drawKeep();
     if(same){
-      if(t!==tab&&!(hold&&t==='prices')&&!(t==='card'&&tCard.hidden)) showTab(t);
+      if(t!==tab&&!(t==='card'&&tCard.hidden)) showTab(t);
       if(mf&&mfil.querySelector('button[data-mf="'+mf+'"]')){ mfPick=mf; applyMonths(); }
       window.scrollTo(0,sy);
     }
@@ -2724,7 +2962,7 @@ const CLIENT_JS = `
   async function follow(stale){
     if(session){ await loadOrders(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
     else if(view){ await loadView(user); if(stale()) return false; }   /* stmt/owner.js: his route alone carries it */
-    drawOrder();
+    setHold(); drawOrder(); drawPayHead();   /* S6 6.5 and 6.7: the claims come with the orders, and may lift the hold */
     return true;
   }
 

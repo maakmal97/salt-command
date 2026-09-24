@@ -337,6 +337,7 @@ export const OWNER_JS = `
     var r=await api('/all/orders/'+encodeURIComponent(u));
     if(mine!==ticket) return;
     orders=(r.body&&r.body.ok&&r.body.orders)||[];
+    claims=(r.body&&r.body.ok&&Array.isArray(r.body.claims))?r.body.claims:[];   /* S6 6.6: their account's claims, as their page reads them */
     myLinks=(r.body&&r.body.ok&&r.body.refs)||[]; myMax=(r.body&&r.body.max)||0;
     if(!r.body||!r.body.ok) say('Their orders could not be read: '+((r.body&&r.body.error)||'try again'),'bad');
     if(!tCard.hidden) drawCard();
