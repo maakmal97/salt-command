@@ -754,7 +754,7 @@ export function partyTotals(party, to) {
    desk's `buyerProfile` reading of late (more than the term since the order date). COMING UP is
    `txPendRM`: an order agreed and not handed over, with money still to pay on it. A gift counts in
    none of them, owing nothing on the statement, and nor does a written-off sale, which the desk's
-   own readings of what is owed leave out.
+   own readings of what is owed leave out, or a row the statement's own window has not reached.
    THE TERM IS THE DESK'S `RULES.creditDays`, READ OUT OF THE MASTER rather than restated, for the
    reason siteBaseUrl reads wrangler.stmt.jsonc: two copies of a due date drift in silence. */
 const MASTER = process.env.SALT_MASTER || resolve(REPO, "master", "salt_command.html");
@@ -770,7 +770,9 @@ const dayPlus = (d, n) => new Date(new Date(d).getTime() + n * 864e5).toISOStrin
 export function payDue(party, day) {
   const term = creditTerm(), E = POSITION_ENGINE, now = [], coming = [];
   const sum = a => +a.reduce((t, x) => t + x.rm, 0).toFixed(2);
-  sales.filter(s => E.ownsCode(party, s.customer) && !s.goodwill && !s.defaulted).forEach(s => {
+  /* the statement's own window (stmtRows): a row not Pending and dated after the day is not on it yet */
+  const onIt = s => txStat(s).order === 'Pending' || !(new Date(s.date) > new Date(day));
+  sales.filter(s => E.ownsCode(party, s.customer) && !s.goodwill && !s.defaulted && onIt(s)).forEach(s => {
     const product = s.product || "salt", resale = s.customer !== party;
     const rm = +E.txAdvance(s).toFixed(2);
     if (rm > 0.009) {

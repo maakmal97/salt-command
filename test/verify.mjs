@@ -5056,7 +5056,9 @@ await (async () => {
     fx("sp11", "2026-09-07", { cash: 100, deliveredQty: 1 }),                                  // paid and collected
     fx("sp12", "2026-09-21", { qty: 2, total: 200, cash: 200 }),                               // paid ahead: nothing to pay
     fx("sp13", null, { total: 40, deliveredQty: 1 }),                                          // undated: never overdue
-    fx("sp14", null, { total: 90, agreedOn: "2026-09-23" })                                    // undated and agreed: dated by agreement
+    fx("sp14", null, { total: 90, agreedOn: "2026-09-23" }),                                   // undated and agreed: dated by agreement
+    fx("sp15", "2026-09-25", { deliveredQty: 1 }),                                             // after the statement's day: not on it yet
+    fx("sp16", "2026-09-26", { total: 30 })                                                    // agreed, dated ahead: open whatever its date
   ];
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   book.sales = rows; book.customerRefunds = [];
@@ -5082,7 +5084,7 @@ await (async () => {
     ok(pay && pay.term === 10 && pay.now.rm === 440 && pay.now.due === "2026-09-11"
       && brief(pay.now.parts) === "2026-09-01:100:2026-09-11 2026-09-05:80:2026-09-15 2026-09-14:50:2026-09-24 2026-09-16:70:2026-09-26 2026-09-20:100:2026-09-30 undated:40:-",
       "to pay now is the goods handed over and not paid for, their bucket's included, soonest due first, and no gift, write-off, "
-      + "cancelled, settled or other party's row: " + JSON.stringify(pay && { term: pay.term, rm: pay.now.rm, due: pay.now.due, parts: brief(pay.now.parts) }));
+      + "cancelled, settled or other party's row, nor one dated after the statement's day: " + JSON.stringify(pay && { term: pay.term, rm: pay.now.rm, due: pay.now.due, parts: brief(pay.now.parts) }));
     const p2 = pay && pay.now.parts.find((x) => x.date === "2026-09-16");
     ok(p2 && p2.rm === 70 && p2.whole === 235 && p2.qty === 2.5 && p2.got === 2.5 && p2.gotOn === "2026-09-16" && p2.product === "salt" && p2.late === false,
       "a part says what it is for: the rest, RM 70 of the RM 235 owed on 2.5 units collected 16 Sep, due by 26 Sep: " + JSON.stringify(p2));
@@ -5092,10 +5094,12 @@ await (async () => {
       "overdue is a part once its due day has passed, each with the day it fell due: not on the due day itself, and never an undated one: "
       + JSON.stringify(pay && { rm: pay.overdue.rm, parts: brief(pay.overdue.parts), today: p3 && p3.late, undated: p13 && p13.late }));
     const cm = pay ? pay.coming.parts.map((x) => x.date + ":" + x.rm + ":" + x.toCome).join(" ") : "";
-    ok(pay && pay.coming.rm === 455 && cm === "2026-09-20:100:1 2026-09-22:265:2.5 2026-09-23:90:1",
-      "coming up is what is agreed and not handed over with money still to pay, delivery included, an undated one by the day it was agreed, and not an order paid ahead: " + cm);
-    /* the three add up to the statement's own owed: the pending orders it leaves out, the write-off it keeps in */
-    ok(doc && doc.owed === 780 && +(pay.now.rm + pay.coming.rm - 355 + 240).toFixed(2) === doc.owed,
+    ok(pay && pay.coming.rm === 485 && cm === "2026-09-20:100:1 2026-09-22:265:2.5 2026-09-23:90:1 2026-09-26:30:1",
+      "coming up is what is agreed and not handed over with money still to pay, delivery included, an undated one by the day it was agreed, "
+      + "one dated ahead because an agreed order is open whatever its date, and not an order paid ahead: " + cm);
+    /* the three add up to the statement's own owed: the pending orders it leaves out, the write-off it keeps in,
+       and nothing from a row dated after the statement's day, which neither owed nor the body carries yet */
+    ok(doc && doc.owed === 780 && +(pay.now.rm + pay.coming.rm - 385 + 240).toFixed(2) === doc.owed,
       "and they reconcile to the statement's owed, less the agreed orders it counts nowhere and plus the write-off it still prints: "
       + JSON.stringify(doc && { owed: doc.owed, now: pay.now.rm, coming: pay.coming.rm }));
     ok(JSON.stringify(M.payDue(P, "2026-09-24")) === JSON.stringify(pay) && JSON.stringify(M.payDue("CX8-QZ", "2026-09-24").now.parts.map((x) => x.rm)) === "[60]",
@@ -5129,7 +5133,8 @@ await (async () => {
     const d = M.liveStatement(p, at);
     if (!d) continue;
     n++;
-    const own = bk.sales.filter((s) => POS.ownsCode(p, s.customer));
+    /* the statement's window: an agreed order whatever its date, anything else up to the day */
+    const own = bk.sales.filter((s) => POS.ownsCode(p, s.customer) && (POS.txStat(s).order === "Pending" || !(new Date(s.date) > new Date("2026-09-24"))));
     const pend = own.filter((s) => !s.goodwill && !s.defaulted && POS.txStat(s).order === "Pending").reduce((a, s) => a + POS.txOwed(s), 0);
     const lost = own.filter((s) => s.defaulted).reduce((a, s) => a + Math.max(0, POS.txOwed(s) - POS.txPaid(s)), 0);
     if (!d.pay || Math.abs(d.pay.now.rm + d.pay.coming.rm - pend + lost - d.owed) > 0.011) off.push(p);
