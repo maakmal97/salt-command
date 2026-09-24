@@ -18212,17 +18212,24 @@ function apWithdraw(at){
   qPost().catch(()=>{});
 }
 async function apDecide(id,action,btn){
-  if(!id||apBusy[id])return;apBusy[id]=1;
+  if(!id||apBusy[id])return;
+  const was=AP_DRAFTS.find(x=>x.id===id)||null;
+  /* 24 Sep 2026: A ROW A CUSTOMER'S ORDER MADE IS ASKED ABOUT FIRST. Rejecting it drops the entry for
+     good while the order stays where it is, so the order is left with no row behind it; to call the
+     order off is Cancel or Decline on Site orders, which tells the customer and books the cancellation. */
+  if(action==='reject'&&was&&was.entry&&was.entry.orderId&&!confirm('This row was made from a customer\'s order on the site. Rejecting it leaves that order standing with no row behind it, and the desk will not queue it again. To call the order off, cancel or decline it on Site orders instead.\n\nReject the row anyway?'))return;
+  apBusy[id]=1;
   const card=btn.closest('.card');if(card)card.querySelectorAll('button').forEach(b=>b.disabled=true);
   const url='drafts/'+encodeURIComponent(id)+'/'+action,body=JSON.stringify({by:'desk'});
-  const was=AP_DRAFTS.find(x=>x.id===id)||null;
   apRejected=null;
   try{ let r=await fetch(url,{method:'POST',headers:qHeaders(),body});
     if(r.status===401&&saltAskWriteKey())r=await fetch(url,{method:'POST',headers:qHeaders(),body});
+    let j={};try{j=await r.json();}catch(e){}
     apMsg=r.status===401?'That write key was refused. The row is still waiting.'
       :r.status===409?'That row was already decided somewhere else.'
       :!r.ok?'The Worker refused the decision (http '+r.status+'). The row is still waiting.'
-      :action==='approve'?'Approved. The fold runs now; the book and this desk update within about a minute.':'Rejected and dropped from the queue. Nothing of it reaches the ledger.';
+      :action==='approve'?'Approved. The fold runs now; the book and this desk update within about a minute.':'Rejected and dropped from the queue. Nothing of it reaches the ledger.'
+        +(j.order===true?' Its order on Site orders now says so.':j.order===false?' Its order on Site orders could not be told.':'');
     if(r.ok&&action==='reject'){qForgetAt(id);apRejected=was;}
   }catch(e){ apMsg='No connection, so the decision was not recorded. The row is still waiting.'; }
   delete apBusy[id];await apLoad();
@@ -18438,7 +18445,10 @@ function ordCard(o){
   /* 20 Sep 2026: what the desk made of its last pass, off the record (sync, written by the reconcile
      when it changes), where this promised the entry was queued within the minute whatever had happened */
   const sy=o.sync||null;
-  const told=!owed?(rowed?', on the row this order made':'')
+  /* 24 Sep 2026: a row he rejected under Approve is said first, whatever the marks say: the mark that
+     the ledger was told is still on the order, and read alone it claimed a row the book never took */
+  const told=(sy&&sy.state==='rejected')?', but '+esc(sy.why)+' ('+when(sy.at)+')'
+    :!owed?(rowed?', on the row this order made':'')
     :(sy&&sy.state==='waiting')?', and '+esc(sy.why)+' (waiting since '+when(sy.at)+')'
     :(sy&&sy.state==='failed')?', but the desk could not tell it: '+esc(sy.why)+' (at '+when(sy.at)+'; it tries again every minute)'
     :', and the entry for that is queued within the minute; approve it under Approve';

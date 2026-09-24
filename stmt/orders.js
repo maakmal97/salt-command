@@ -387,8 +387,8 @@ export async function deskMove(env, u, id, body) {
     /* 20 Sep 2026: and what the desk made of its last pass over this order, so his card can say the
        truth: queued, waiting for its row, or failed, with the reason and when it was last written. The
        desk writes it only when it changes. It never reaches the customer's page, which reads history
-       and figures alone. */
-    if (m.sync && typeof m.sync === "object" && ["queued", "waiting", "failed"].includes(m.sync.state))
+       and figures alone. `rejected` (24 Sep 2026) is his own Reject under Approve on a row this order made. */
+    if (m.sync && typeof m.sync === "object" && ["queued", "waiting", "failed", "rejected"].includes(m.sync.state))
       order.sync = { state: m.sync.state, why: String(m.sync.why || "").slice(0, 200), at: String(m.sync.at || at).slice(0, 40) };
     order.queued = q;
     await env.STMT.put(OKEY(u, id), JSON.stringify(order));

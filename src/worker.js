@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay } from "./orders.js";
+import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay, rejectedOnOrder } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -565,7 +565,14 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
   let dropped = 0;
   if (decision === "rejected") { try { dropped = await dropQueued(env, [id]); } catch (e) { /* the decision stands; the POST filter catches a re-post */ } }
   const row = await env.SALT_LEDGER.prepare(`SELECT ${DRAFT_COLS} FROM draft WHERE id=?1`).bind(id).first();
-  return json({ ok: true, draft: row ? draftOut(row) : null, dropped });
+  const d = row ? draftOut(row) : null;
+  /* 24 Sep 2026: a row a site order made tells that order it was rejected, or its card goes on
+     claiming the row (rejectedOnOrder). The decision stands whether or not the site takes it. */
+  let order;
+  if (decision === "rejected" && d && d.entry && d.entry.orderId) {
+    try { order = await rejectedOnOrder(env, d.entry, new Date().toISOString()); } catch (e) { order = false; }
+  }
+  return json(Object.assign({ ok: true, draft: d, dropped }, order === undefined ? {} : { order }));
 }
 
 /* Marked by the commit run once the row is actually in the master, so an approved row is not

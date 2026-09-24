@@ -343,6 +343,7 @@ export async function reconcileOrders(env) {
         else if (job === "move") e = handoverEntry(order, code, +order.moved || 0, stageAt(order, job, now));
         else if (job === "cancel") e = cancelEntry(order, code, order.status === "declined" ? "desk" : "customer", stageAt(order, job, now));
         if (!e) continue;
+        e.orderId = o.id;   /* which order made it, so a rejection can be told to that order (rejectedOnOrder); never the username */
         while (used.has(e.at)) e.at = new Date(Date.parse(e.at) + 1).toISOString();
         /* counted only when it was actually appended; queueSale may move e.at to a free millisecond, so
            the marks are read off the entry AFTER it */
@@ -373,6 +374,29 @@ export async function reconcileOrders(env) {
   }
   return Object.assign({ ok: true, queued }, unmapped.length ? { unmapped } : {},
     waiting.length ? { waiting } : {}, failed.length ? { failed } : {});
+}
+
+/* ---- A ROW HE REJECTED IS TOLD TO ITS ORDER (24 Sep 2026) -------------------------------------
+ * A rejection drops the entry from every queue and refuses its `at` for good (src/worker.js), while
+ * the order keeps the stage mark saying the ledger was told, so the card went on saying the order was
+ * on its row. The rejection is written onto the order as its `sync`, which the card reads whatever the
+ * marks say. THE MARK STAYS: cleared, the next pass would queue the same stage at the same moment
+ * (stageAt), the drafter would skip it as decided, and the mark would be written again. Offering the
+ * move again is a fold of its own. */
+const REJECTED_WHAT = { Pending: "pending row", Payment: "payment entry", Handover: "handover entry", Cancellation: "cancellation entry" };
+export async function rejectedOnOrder(env, entry, at) {
+  /* the entry names the order and never its account (the ledger's side knows codes), so the account
+     is found among the site's orders, closed ones included */
+  const id = entry && entry.orderId;
+  if (!id) return false;
+  const all = await listOrders(env, true);
+  const o = all.ok && all.orders.find((x) => x.id === id);
+  if (!o) return false;
+  const why = "its " + (REJECTED_WHAT[entry.status] || "entry") + " was rejected under Approve, so the book does not carry it";
+  const r = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mark: { sync: { state: "rejected", why, at } } })
+  });
+  return !!(r && r.ok);
 }
 
 /* ---- THE RETURN LEG (v764, his instruction of 21 Sep 2026) ------------------------------------

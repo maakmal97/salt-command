@@ -18756,6 +18756,103 @@ await (async () => {
   }
 })();
 
+section("S1 1.14: Approve asks before rejecting a row a site order made, and the rejection is told to the order");
+await (async () => {
+  /* 24 Sep 2026 (H14, the fallback he has not yet replaced). A rejection drops the entry from every
+     queue and refuses its moment for good, while the order keeps the mark saying the ledger was told:
+     the card went on saying "on the row this order made" about a row the book never took, and
+     nothing on Approve said a customer's order was behind the row being rejected. */
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, listOrders } = await import("../src/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const deskW = (await import("../src/worker.js")).default;
+  const skv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const drafts = new Map();
+  const D1 = { prepare(sql) {
+    const s = sql.replace(/\s+/g, " ").trim(); let b = [];
+    const api = { bind(...a) { b = a; return api; },
+      async first() {
+        if (/^SELECT status FROM draft WHERE id=/.test(s)) { const r = drafts.get(b[0]); return r ? { status: r.status } : null; }
+        if (/^SELECT .* FROM draft WHERE id=/.test(s)) return drafts.get(b[0]) || null;
+        if (/FROM snapshot/.test(s)) return null;
+        throw new Error("unmocked first(): " + s);
+      },
+      async all() { if (/FROM entry|FROM state/.test(s)) return { results: [] }; throw new Error("unmocked all(): " + s); },
+      async run() {
+        if (/^UPDATE draft SET status=/.test(s)) { const r = drafts.get(b[3]); if (r && r.status === "pending") { r.status = b[0]; return { meta: { changes: 1 } }; } return { meta: { changes: 0 } }; }
+        throw new Error("unmocked run(): " + s);
+      } };
+    return api;
+  } };
+  const dkv = new KV();
+  const u = "abcd-efgh";
+  await dkv.put("stmt-users", JSON.stringify({ [u]: "CC5-OKR" }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0",
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const o1 = (await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  await O.deskMove(senv, u, o1.id, { status: "acknowledged", mode: "collect" });
+  await reconcileOrders(denv);
+  const e1 = JSON.parse(await dkv.get("q:orders")).queue[0];
+  ok(e1 && e1.status === "Pending" && e1.orderId === o1.id && !JSON.stringify(e1).includes(u),
+    "the entry the reconcile queues says which order made it, and still names no username: " + JSON.stringify(e1 && e1.orderId));
+  const draftOf = (e) => ({ id: e.at, status: "pending", collection: "sales", entry: JSON.stringify(e), row: "{}", reasoning: "", flags: "[]",
+    party: "CC5-OKR", product: "salt", date: null, qty: e.qty, total: e.total, cost: null, amends: null, amend_kind: null,
+    drafter: "cloud-drafter", drafted_at: e.at, decided_at: null, decided_by: null, committed_at: null, live_at: null });
+  drafts.set(e1.at, draftOf(e1));
+  const reject = async (id) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example/drafts/" + encodeURIComponent(id) + "/reject", { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify({ by: "desk" }) }), denv);
+    return { status: r.status, j: await r.json() };
+  };
+  const r1 = await reject(e1.at);
+  const after = async () => (await listOrders(denv, true)).orders.find((x) => x.id === o1.id);
+  const got = await after();
+  ok(r1.status === 200 && r1.j.order === true && got.sync && got.sync.state === "rejected"
+    && /pending row was rejected under Approve/.test(got.sync.why) && /^\d{4}-\d\d-\d\dT/.test(got.sync.at),
+    "the rejection is written onto the order it came from, and the answer says it was: " + JSON.stringify({ order: r1.j.order, sync: got.sync }));
+  ok((await reconcileOrders(denv)).queued === 0 && (await after()).sync.state === "rejected",
+    "the stage mark stays, so the next pass neither queues the same moment again nor talks over the rejection");
+
+  /* a row typed on the desk has no order behind it, and its rejection writes nothing anywhere */
+  const eDesk = { at: "2026-09-24T03:00:00.000Z", type: "SELL", party: "CC5-OKR", qty: 1, total: 100, status: "Pending", raw: "SELL CC5-OKR 1 salt RM 100", payload: {} };
+  drafts.set(eDesk.at, draftOf(eDesk));
+  const r2 = await reject(eDesk.at);
+  ok(r2.status === 200 && !("order" in r2.j), "a row with no order behind it is rejected as it always was: " + JSON.stringify(r2.j.order));
+
+  /* ---- THE DESK: the card says so, and Approve asks before the tap ---- */
+  const { openMaster: om114 } = await import("../tools/payload.mjs");
+  const { w: w114 } = await om114();
+  try {
+    const card = String(w114.eval("ordCard(" + JSON.stringify(got) + ")"));
+    ok(/rejected under Approve, so the book does not carry it/.test(card) && !/on the row this order made/.test(card),
+      "the order's card says its row was rejected, where it claimed the row: " + (/The ledger reads[^.]*\./.exec(card) || [""])[0]);
+
+    const asked = [], sent = [];
+    w114.confirm = (t) => { asked.push(String(t)); return false; };
+    w114.fetch = async (path, init) => { sent.push(String(path)); return { ok: true, status: 200, json: async () => ({ ok: true, order: true }) }; };
+    w114.eval("AP_DRAFTS=[{id:'s1',collection:'sales',row:{},entry:{status:'Pending',orderId:'o1'}},{id:'d1',collection:'sales',row:{},entry:{status:'Pending'}}];");
+    const btn = w114.document.createElement("button"), wrap = w114.document.createElement("div");
+    wrap.className = "card"; wrap.appendChild(btn); w114.document.body.appendChild(wrap);
+    w114.__b = btn;
+    await w114.eval("apDecide('s1','reject',window.__b)");
+    ok(asked.length === 1 && /made from a customer's order/.test(asked[0]) && /cancel or decline it on Site orders/.test(asked[0])
+      && !sent.some((p) => /drafts\/s1\/reject/.test(p)),
+      "rejecting a site-made row asks first and names the road that calls the order off; a no sends nothing: " + JSON.stringify({ asked: asked.length, sent }));
+    w114.confirm = (t) => { asked.push(String(t)); return true; };
+    const s0 = sent.length;
+    await w114.eval("apDecide('s1','reject',window.__b)");
+    ok(sent.slice(s0).some((p) => /drafts\/s1\/reject/.test(p)), "a yes rejects it: " + JSON.stringify(sent.slice(s0)));
+    const n = asked.length, s1 = sent.length;
+    await w114.eval("apDecide('d1','reject',window.__b)");
+    ok(asked.length === n && sent.slice(s1).some((p) => /drafts\/d1\/reject/.test(p)),
+      "and a row typed on the desk is rejected on the tap, as before: " + JSON.stringify({ asked: asked.length - n }));
+  } finally {
+    try { w114.eval("if(typeof apTimer!=='undefined'&&apTimer){clearInterval(apTimer);apTimer=null;}"); } catch (e) { /* best effort */ }
+    await new Promise((r) => setTimeout(r, 200));
+    try { w114.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one
