@@ -25054,6 +25054,38 @@ await (async () => {
   }
 })();
 
+section("S11 fix: a card opened from the list lands below the sticky desk bar, its way back and its head in sight");
+await (async () => {
+  /* Found on the rig: opening a card scrolled it to the top of the window, under the sticky desk bar, so on the phone the
+     way back to the list and on the laptop the card's head sat beneath it. The card now lands below the bar's measured
+     bottom edge. (jsdom lays nothing out, so the boxes are given here; the rig measures the real ones.) */
+  const { openMaster: omO4 } = await import("../tools/payload.mjs");
+  const { w } = await omO4();
+  try {
+    w.SALT_CLOUD = true;
+    w.setInterval = () => 93; w.clearInterval = () => {};
+    const D = w.document;
+    D.body.innerHTML = '<div class="salt-deskbar"></div>' + String(w.eval("tabOrders()"));
+    const rect = w.HTMLElement.prototype.getBoundingClientRect;
+    w.HTMLElement.prototype.getBoundingClientRect = function () {
+      if (this.classList.contains("salt-deskbar")) return { top: 14, bottom: 74, left: 0, right: 375, width: 375, height: 60 };
+      if (this.classList.contains("ordpane")) return { top: 261, bottom: 900, left: 0, right: 375, width: 375, height: 639 };
+      return rect.call(this);
+    };
+    Object.defineProperty(w, "scrollY", { configurable: true, get: () => 40 });
+    const to = [];
+    w.scrollTo = (o) => to.push(o);
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    w.eval("ORD_OPEN=" + JSON.stringify([Object.assign({}, base, { id: "a1", status: "acknowledged", at: "2026-09-20T02:00:00.000Z", msgs: [{ at: "2026-09-21T02:00:00.000Z", by: "customer", text: "When?" }] })]) + ";ordDraw();");
+    D.querySelector('button[data-row="a1"]').click();
+    ok(to.length === 1 && to[0].top === 40 + 261 - 74 - 8,
+      "the card is scrolled to below the bar's bottom edge, not to the top of the window: " + JSON.stringify(to));
+  } finally {
+    await new Promise((r) => setTimeout(r, 100));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one

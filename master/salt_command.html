@@ -19429,6 +19429,11 @@ function ordRow(a,cur){const o=a.o,K=ORD_KIND[a.kind]||{w:ORD_WORD[o.status]||o.
     <span class="salt-inbox-row__main"><span class="salt-inbox-row__title">${o.code?codeOf(o.code):'unmapped'} <span class="salt-status salt-status--${K.tone}">${esc(K.w)}</span></span>
       <span class="salt-inbox-row__what">${ordWhat(a)}</span></span>
     <span class="salt-inbox-row__side"><span class="salt-inbox-row__age">${ordWhen(a.at)}</span><span class="salt-inbox-row__action">${K.act}</span></span></button>`;}
+/* S11 fix: the card opened lands BELOW the sticky desk bar, its way back and its head in sight: scrolled to its top
+   less the bar's own bottom edge, measured, since the bar's height is its content's */
+function ordToPane(){const c=document.querySelector('#ordBox .ordpane');if(!c)return;
+  try{const bar=document.querySelector('.salt-deskbar'),under=bar?Math.max(0,bar.getBoundingClientRect().bottom):0;
+    window.scrollTo({top:Math.max(0,Math.round(window.scrollY+c.getBoundingClientRect().top-under-8)),left:0,behavior:'auto'});}catch(e){}}
 function ordDraw(){
   apBadge();
   /* v766: the rail's Today count now includes what is waiting on the site, so it is recounted when
@@ -19474,8 +19479,7 @@ function ordDraw(){
   /* S11 11.2: the open card, if it is a new order, asks for its row, once what he typed is back in place */
   if(selO)ordPreview(selO);
   box.querySelectorAll('button[data-ord]').forEach(b=>{b.onclick=()=>ordAct(b);});
-  box.querySelectorAll('button[data-row]').forEach(b=>{b.onclick=()=>{ORD_SEL=b.dataset.row;ORD_OPENED=true;ordDraw();
-    const c=box.querySelector('.ordpane');if(c&&c.scrollIntoView)try{c.scrollIntoView({block:'start'});}catch(e){}};});
+  box.querySelectorAll('button[data-row]').forEach(b=>{b.onclick=()=>{ORD_SEL=b.dataset.row;ORD_OPENED=true;ordDraw();ordToPane();};});
   box.querySelectorAll('button[data-of]').forEach(b=>{b.onclick=()=>{ORD_FILTER=b.dataset.of;ORD_SEL='';ordDraw();};});
   box.querySelectorAll('button[data-back]').forEach(b=>{b.onclick=()=>{ORD_OPENED=false;ordDraw();};});
   box.querySelectorAll('input[data-fee]').forEach(i=>{i.onchange=()=>{const o=ORD_OPEN.find(x=>x&&x.id===i.dataset.fee);if(o){ordDraw();ordPreview(o);}};});
