@@ -32101,7 +32101,7 @@ await (async () => {
     { ...base, id: "oC", total: 40, paid: 0, claimed: 40, payments: [{ at: iso(-3), amount: 40, method: "transfer", account: "maybank", claim: "waiting" }], history: [] }];
   const claimsB = () => [{ id: "c1", at: iso(-4), amount: 70, method: "transfer", account: "maybank", state: "waiting" },
     { id: "c2", at: iso(-9), amount: 30, method: "transfer", account: "maybank", state: "received", answered: iso(-1) },
-    { id: "c3", at: iso(-20), amount: 20, method: "qr", account: "tng", state: "notfound", answered: iso(-6) }];
+    { id: "c3", at: iso(-2.5), amount: 20, method: "qr", account: "tng", state: "notfound", answered: iso(-0.5) }];   /* S6 fix: the newest word, so its line stands */
   const domB = await page(120, listB, claimsB, (p, j) => { sentB.push([p, j]); return { ok: true }; });
   const wB = domB.window, dB = wB.document;
   try {
@@ -32109,7 +32109,7 @@ await (async () => {
     const said = [...dB.querySelectorAll("#payHead .msg")].map(t), pill = t(dB.getElementById("payNow"));
     const day = (x) => { const k = new Date(new Date(x).getTime() + 8 * 3600e3); return String(k.getUTCDate()).padStart(2, "0") + " " + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][k.getUTCMonth()]; };
     ok(JSON.stringify(said) === JSON.stringify(["RM 110 sent, waiting for us to confirm.", "RM 30 received on " + day(iso(-1)) + ". Your statement shows it at its next update.",
-      "We have not found the RM 20 you sent on " + day(iso(-20)) + ". Check it left your bank, then pay it again."]) && pill === "Pay RM 20",
+      "We have not found the RM 20 you sent on " + day(iso(-2.5)) + ". Check it left your bank, then pay it again."]) && pill === "Pay RM 20",
       "under To pay now: what waits on him (the account's claim and an order's), what he received since the statement was written, and what he has not found; Pay asks only for the rest: "
       + JSON.stringify({ said, pill }));
     dB.querySelector('button[data-t="order"]').click();
@@ -32395,6 +32395,75 @@ await (async () => {
     && some.tab === "Pay" && some.pay === "Pay RM 200" && onOrder.tab === "Pay" && onOrder.pay === "Pay RM 120",
     "RM 300 overdue holds them; received against the account since the statement it no longer does, received in part the held page asks for the rest, and an order's own claim received on an overdue part comes off it too: "
     + JSON.stringify({ control, all, some, onOrder }));
+})();
+
+section("S6 fix: a Not found stops asking them to pay again once they have sent it again or owe nothing");
+await (async () => {
+  /* HIS D7: Not found tells them to check their bank and pay again. It stayed on the order, and under To pay now for a
+     fortnight, beside Paid RM 70 after they paid again and he received it: telling someone paid in full to pay again. It
+     now stands only while it is the newest word on what they sent and something is still owed. Forced state in the
+     store's shapes: payments[] with their answers, and the account's claims. */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const Cr = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const U = "abcd-efgh", pass = "fixture-pass-m6", ck = await Cr.contentKey("test-secret", U);
+  const now = new Date(), iso = (h) => new Date(now.getTime() + h * 3600e3).toISOString();
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const read = async (nowRm, list, claims) => {
+    const pay = { term: 10, now: { rm: nowRm, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+    const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-m6",
+      env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-48), body: "<p>Live</p>", owed: nowRm, pay })) };
+    const dom = new JD(lp(U, "nm6", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {}; win.open = () => null;
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
+        if (p === "/open") return res(200, body);
+        if (p === "/orders" && m === "GET") return res(200, { ok: true, orders: list, claims });
+        return res(404, { ok: false });
+      };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = U; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      await until(() => !d.getElementById("tabs").hidden);
+      await new Promise((r) => setTimeout(r, 60));
+      const out = { head: [...d.querySelectorAll("#payHead .msg")].map(t) };
+      if (list.length) {
+        d.querySelector('button[data-t="order"]').click();
+        await until(() => d.querySelector('#pOrder [data-row="oN"]'));
+        out.row = t(d.querySelector('#pOrder [data-row="oN"]'));
+        d.querySelector('#pOrder [data-row="oN"]').click();
+        await until(() => d.querySelector("#pOrder .oscreen"));
+        out.lines = [...d.querySelectorAll("#pOrder .oscreen .salt-ledger__row")].map(t);
+      }
+      return out;
+    } finally { dom.window.close(); }
+  };
+  const order = (paid, payments, total) => ({ id: "oN", product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: iso(-60), status: "acknowledged", total: total || 70, paid, claimed: 0,
+    payments, msgs: [], history: [{ at: iso(-60), status: "acknowledged", by: "desk" }] });
+  const nf = { at: iso(-30), amount: 70, method: "transfer", account: "maybank", claim: "notfound", answered: iso(-20) };
+  /* each rule on its own: sent again with money still owed, and paid in full with nothing sent since */
+  const again = await read(0, [order(70, [nf, { at: iso(-10), amount: 70, method: "transfer", account: "maybank", claim: "received", answered: iso(-5) }], 140)], []);
+  const byHand = await read(0, [order(70, [nf])], []);
+  const alone = await read(0, [order(0, [nf])], []);
+  const lost = (x) => x.lines.some((l) => /^Not found yet/.test(l)) || /not found/.test(x.row);
+  ok(!lost(again) && again.lines.some((l) => /^Paid ?RM 70/.test(l)) && !lost(byHand) && lost(alone),
+    "on an order, a Not found goes once they sent it again, and once nothing is owed, and stands while it is the newest word and still owed: " + JSON.stringify({ again, byHand, alone }));
+  const acf = { id: "c9", at: iso(-30), amount: 20, method: "qr", account: "tng", state: "notfound", answered: iso(-20) };
+  const sentAgain = await read(40, [], [acf, { id: "c10", at: iso(-10), amount: 20, method: "qr", account: "tng", state: "received", answered: iso(-50) }]);
+  const paidUp = await read(0, [], [acf]);
+  const owing = await read(20, [], [acf]);
+  const nfl = (x) => x.head.some((l) => /^We have not found the RM 20/.test(l));
+  ok(!nfl(sentAgain) && !nfl(paidUp) && nfl(owing),
+    "and under To pay now it goes once they sent it again, and once nothing is owed, and stands while it is still owed: " + JSON.stringify({ sentAgain: sentAgain.head, paidUp: paidUp.head, owing: owing.head }));
 })();
 
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");

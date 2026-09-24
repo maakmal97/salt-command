@@ -2008,7 +2008,10 @@ const CLIENT_JS = `
      order does not carry yet. Until it does it reads nothing, and what is still to pay is what is owed. */
   function oClaimed(o){ var c=+o.claimed; return c>0?c:0; }
   /* S6 6.5: his Not found, each one a payments[] entry that keeps its answer */
-  function oLost(o){ return (o.payments||[]).filter(function(x){ return x&&x.claim==='notfound'; }); }
+  /* S6 fix: only while it is the newest word on what they sent and something is still owed: sent again since, or paid in
+     full, it would tell them to pay again for money that has arrived */
+  function oLost(o){ var ps=(o.payments||[]).filter(function(x){ return x&&x.claim; });
+    return dueOf(o)>0.004?ps.filter(function(x){ return x.claim==='notfound'&&!ps.some(function(y){ return String(y.at)>String(x.answered||x.at); }); }):[]; }
   /* S6 fix: less what they sent against the account that reaches this order's row (nowOf) */
   function oToPay(o){ return Math.max(0,+(dueOf(o)-oClaimed(o)-oAcct(o)).toFixed(2)); }
   function oOwes(o){ return oPayable(o)&&oToPay(o)>0.004; }
@@ -2502,7 +2505,9 @@ const CLIENT_JS = `
     var out=[], sw=sentWaiting();
     if(sw>0.004) out.push(rm(sw)+' sent, waiting for us to confirm.');
     acctSince().forEach(function(c){ out.push(rm(c.amount)+' received on '+oDay(c.answered)+'. Your statement shows it at its next update.'); });
-    claims.filter(function(c){ return c&&c.state==='notfound'&&Date.now()-Date.parse(c.answered||c.at)<14*864e5; })
+    /* S6 fix: likewise only while nothing was sent since and To pay now still asks for something */
+    claims.filter(function(c){ return c&&c.state==='notfound'&&Date.now()-Date.parse(c.answered||c.at)<14*864e5&&acctToPay()>0.004
+      &&!claims.some(function(y){ return y&&String(y.at)>String(c.answered||c.at); }); })
       .forEach(function(c){ out.push('We have not found the '+rm(c.amount)+' you sent on '+oDay(c.at)+'. Check it left your bank, then pay it again.'); });
     return out;
   }
