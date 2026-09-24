@@ -19242,6 +19242,10 @@ function ordQuickKeep(id){
     else{try{localStorage.setItem(ORD_QUICK_KEY,JSON.stringify([t].concat(cur).slice(0,6)));said='Kept as a quick reply on this device.';}catch(e){said='This browser would not keep it.';}}}
   ORD_SAID={id,t:said};ordDraw();
 }
+/* S11 fix: the one button keeps a line or forgets one already kept, and says which, as the box changes */
+function ordKeepSay(id){const b=document.querySelector('button[data-keep="'+id+'"]'),i=document.querySelector('input[data-say="'+id+'"]');if(!b)return;
+  const t=i?String(i.value||'').trim().replace(/\s+/g,' ').slice(0,200):'';
+  b.textContent=t&&ordQuick().includes(t)?'Forget this quick reply':'Keep as a quick reply';}
 /* S11 11.9: which cards have Delivered part open, and the units stepped to, read off the box as a charge is */
 let ORD_PART={};
 function ordPartNow(o){const i=document.querySelector('input[data-hand="'+o.id+'"]');const v=i?parseFloat(i.value):NaN;return v>=0?+v.toFixed(3):((+o.moved||0)>0?+o.moved:+o.qty||0);}
@@ -19493,7 +19497,8 @@ function ordDraw(){
   box.querySelectorAll('button[data-of]').forEach(b=>{b.onclick=()=>{ORD_FILTER=b.dataset.of;ORD_SEL='';ordDraw();};});
   box.querySelectorAll('button[data-back]').forEach(b=>{b.onclick=()=>{ORD_OPENED=false;ordDraw();};});
   box.querySelectorAll('input[data-fee]').forEach(i=>{i.onchange=()=>{const o=ORD_OPEN.find(x=>x&&x.id===i.dataset.fee);if(o){ordDraw();ordPreview(o);}};});
-  box.querySelectorAll('button[data-quick]').forEach(b=>{b.onclick=()=>{const i=box.querySelector('input[data-say="'+b.dataset.quick+'"]');if(i){i.value=b.dataset.text;i.focus();}};});
+  box.querySelectorAll('button[data-quick]').forEach(b=>{b.onclick=()=>{const i=box.querySelector('input[data-say="'+b.dataset.quick+'"]');if(i){i.value=b.dataset.text;i.focus();ordKeepSay(b.dataset.quick);}};});
+  box.querySelectorAll('input[data-say]').forEach(i=>{i.oninput=()=>ordKeepSay(i.dataset.say);ordKeepSay(i.dataset.say);});
   box.querySelectorAll('button[data-partopen]').forEach(b=>{b.onclick=()=>{ORD_PART[b.dataset.partopen]=1;ordDraw();};});
   box.querySelectorAll('button[data-partoff]').forEach(b=>{b.onclick=()=>{delete ORD_PART[b.dataset.partoff];ordDraw();};});
   box.querySelectorAll('button[data-step]').forEach(b=>{b.onclick=()=>{const i=box.querySelector('input[data-hand="'+b.dataset.for+'"]');if(!i)return;

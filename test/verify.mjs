@@ -25179,6 +25179,36 @@ await (async () => {
   }
 })();
 
+section("S11 fix: the quick-reply button says Forget over a line already kept, and Keep over a new one");
+await (async () => {
+  /* Found on the rig: a saved reply tapped into the box and then "Keep as a quick reply" forgot it, the label never saying
+     that a second keep is a forget. The button now names what it will do with the line in the box. */
+  const { openMaster: omO9 } = await import("../tools/payload.mjs");
+  const { w } = await omO9();
+  try {
+    w.SALT_CLOUD = true;
+    w.setInterval = () => 90; w.clearInterval = () => {};
+    w.localStorage.setItem("saltQuickReplies", JSON.stringify(["Goes out tomorrow morning."]));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    w.eval("ORD_OPEN=" + JSON.stringify([Object.assign({}, base, { id: "q1", status: "acknowledged", at: "2026-09-20T02:00:00.000Z" })]) + ";ORD_SEL='q1';ordDraw();");
+    const keep = () => D.querySelector('button[data-keep="q1"]').textContent;
+    const first = keep();
+    D.querySelector('button[data-quick="q1"]').click();
+    const onKept = keep();
+    const box = D.querySelector('input[data-say="q1"]');
+    box.value = "Ready at six.";
+    box.dispatchEvent(new w.Event("input", { bubbles: true }));
+    const onNew = keep();
+    ok(first === "Keep as a quick reply" && onKept === "Forget this quick reply" && onNew === "Keep as a quick reply",
+      "the button names what it will do with the line in the box: " + JSON.stringify({ first, onKept, onNew }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 100));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one
