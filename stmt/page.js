@@ -197,10 +197,6 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .hfill{width:100%;margin-top:14px}
 .hlab{display:flex;justify-content:space-between;gap:12px;margin:0 0 10px}
 .home .salt-inbox-row{margin:0 0 8px}
-/* S7 7.4: Order again, the Option recipe's face a tile, two across */
-.hagain{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.htile{font:inherit;text-align:left;cursor:pointer}
-.htile:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
 /* S7 7.2: FROM 1080PX THE BAR IS THE RAIL, beside the page (the recipe's own switch), and each place takes two columns:
    Home its money and what needs them beside what is coming, Account the statement beside This device (S7 7.3's .acct,
    below), Prices a book a column; Orders keeps stage 5's list beside the open order. A sheet is the recipe's drawer on
@@ -3202,10 +3198,12 @@ const CLIENT_JS = `
     var list=againList(), start=!list.length;
     if(start) sold().forEach(function(P){ P.sizes.slice(0,2).forEach(function(z){ list.push({product:P.product, q:z.q, start:true}); }); });
     box.appendChild(hHead(!start?'Order again':fresh()?'Start your first order':'Start an order'));
-    var g=el('div','hagain');
+    /* S7 7.4: the system's Option grid, two across, and its face as a tap (salt-option__face--tap): the tile opens the
+       check, so nothing here is a radio, and no rule of the page's own restates the recipe (S7-R3 of the review) */
+    var g=el('div','salt-options__grid salt-options__grid--2');
     list.slice(0,4).forEach(function(a){
       var P=sold().filter(function(x){ return x.product===a.product; })[0], z=P.sizes.filter(function(x){ return String(x.q)===String(a.q); })[0];
-      var b=el('button','salt-option__face htile'), t=el('span','salt-option__text'), l=el('span','salt-option__label');
+      var b=el('button','salt-option__face salt-option__face--tap htile'), t=el('span','salt-option__text'), l=el('span','salt-option__label');
       /* nothing of the book in an attribute: the tap reads the tile from its own closure (S7R-2 of the stage 7 review) */
       b.type='button';
       l.appendChild(psym(a.product,18)); l.appendChild(document.createTextNode(unitsOf(a.q,P.unit))); l.appendChild(el('span','sr',pshape(a.product)));

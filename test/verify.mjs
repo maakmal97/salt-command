@@ -33106,6 +33106,45 @@ await (async () => {
   } finally { W.close(); }
 })();
 
+section("S7 fix: Order again's tiles wear the system's Option grid and its face as a tap, with no rule of the page's own");
+await (async () => {
+  /* S7-R3 of the stage 7 review (25 Sep 2026). The tiles were the Option face on a button with the page's own grid, cursor
+     and focus ring restating the recipe (its gap already drifted to 10px, its hover never reached them). The system now has
+     the face as a tap, salt-option__face--tap, in its own grid. Read through the served page's cascade. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s7f-eleven", ck = await C.contentKey("test-secret", u);
+  const list = await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T03:59:00Z", digest: "ds7f11", week: { monday: "2026-09-21", label: "21 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 110 }, { q: 2, price: 200 }] }], soon: [] }));
+  const past = [{ id: "20260921030000-aaaa", product: "salt", status: "done", qty: 2, total: 200, paid: 200, moved: 2, mode: "deliver", place: "Veloria",
+    delivery: 0, at: "2026-09-21T03:00:00Z", history: [], msgs: [] }];
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f11", prices: list,
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+  const dom = new JSDOM(landingPage(u, "ns7f11", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path) => { const p = String(path);
+      const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: past } : { ok: true };
+      return { ok: true, status: 200, json: async () => j }; };
+  } });
+  const W = dom.window, D = W.document, cs = (e) => W.getComputedStyle(e);
+  try {
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !D.querySelector("#hAgain button"); i++) await new Promise((r) => setTimeout(r, 25));
+    const tile = D.querySelector("#hAgain button"), grid = tile && tile.parentNode;
+    ok(!!tile && grid.classList.contains("salt-options__grid") && grid.classList.contains("salt-options__grid--2")
+      && tile.classList.contains("salt-option__face") && tile.classList.contains("salt-option__face--tap"),
+      "a tile is the system's Option face as a tap, in its two-across grid: " + JSON.stringify(tile ? [grid.className, tile.className] : D.getElementById("hAgain").outerHTML.slice(0, 200)));
+    /* jsdom leaves var() unresolved, so the grid's gap reads as the token it was given: the recipe's, never a figure */
+    ok(!!tile && cs(tile).cursor === "pointer" && cs(grid).display === "grid" && cs(grid).gap === "var(--salt-space-2)" && /^repeat[(]2,/.test(cs(grid).gridTemplateColumns),
+      "and the served stylesheet draws it by the recipe, a tap in a grid two across on the system's gap: " + JSON.stringify(tile && [cs(tile).cursor, cs(grid).display, cs(grid).gap, cs(grid).gridTemplateColumns]));
+  } finally { W.close(); }
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read

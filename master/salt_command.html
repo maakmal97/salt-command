@@ -2417,6 +2417,14 @@ label.salt-field__label {
 @media (hover: hover) {
   .salt-option__input:not(:checked):not(:disabled):hover + .salt-option__face { background: var(--salt-glass-hover); }
 }
+/* a face that is itself the tap (25 Sep 2026, the Counter's Order again): a button wearing the face, with no radio, for a
+   tile that opens what it names rather than choosing it. It lies in the same grid, takes the radio's focus ring and its
+   hover, and is never pressed: nothing is chosen until the task it opens is done. */
+.salt-option__face--tap { font: inherit; text-align: left; cursor: pointer; }
+.salt-option__face--tap:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+@media (hover: hover) {
+  .salt-option__face--tap:hover { background: var(--salt-glass-hover); }
+}
 @media (prefers-reduced-motion: reduce) {
   .salt-option__face { transition: none; }
 }
