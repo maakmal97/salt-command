@@ -71,7 +71,14 @@ const RECIPE_HEADS = [
   /* STAGE 2 OF THE COUNTER REDESIGN (24 Sep 2026): the nine recipes the system gained for it, and
      fold 2.11's, the ones the Counter will use from stage 3 on. Carried before the page uses them, so
      a stage 3 fold changes markup and never this list. The Sheet's close control is the Orb, carried
-     from its own section since the review of 24 Sep 2026 (it lived inside the Desk bar's). */
+     from its own section since the review of 24 Sep 2026 (it lived inside the Desk bar's).
+     FOR STAGE 3, WHAT IS CARRIED BUT NEEDS THE PAGE'S SCRIPT: Steps reads --salt-steps-n (4 unless set)
+     and the Meter its fill and marker from --salt-fill and --salt-mark (0 unless set), which the
+     components write in a style attribute. This page's style-src is a nonce and refuses a style
+     attribute, so either one written in markup draws four steps or an empty bar: set them from the
+     nonce'd script through el.style.setProperty, which the policy allows, and leave the Meter off the
+     guest board, where no script runs. And the Code field is held to its width only inside its
+     wrapper, .salt-code, the container it measures. */
   "/* ---- Sheet:", "/* ---- Orb:", "/* ---- App bar:", "/* ---- Inbox row:", "/* ---- Option ---- */",
   "/* ---- Code field ---- */", "/* ---- Statement lines ---- */", "/* ---- Ledger list, plain ---- */",
   "/* ---- Steps:", "/* ---- Bubble and thread:",
