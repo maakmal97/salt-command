@@ -1,5 +1,15 @@
 [
  {
+  "v": "v835",
+  "d": "24 Sep 2026",
+  "t": "THE GROSS MARGIN READS AGAIN",
+  "n": [
+   "<b>TWO SALT ROWS COSTED: s183 AT RM240 AND s196 AT RM96, RM48 A UNIT.</b> Both were booked pending and handed over by a correction raising the delivered quantity. That road moved no units through the fold, so the shelf cost was never written, although each note of the day stated RM48 a unit. One uncosted live row blanks the gross margin across every book; with both costed it reads RM16,504.",
+   "<b>THE FOLD NOW COSTS A SALE WHENEVER GOODS HAVE LEFT.</b> tools/fold.mjs filled the cost only on an amendment moving units; it now also fills it when the row carries a delivered quantity, so a correction handing over a pending order is costed like a fulfilment. The suite drives that correction on a copy of the book, proved red without the change.",
+   "<b>OIL SHELF COST RM7.60 TO RM8.00.</b> v834 received 50 unit of oil at RM8 a unit and left the stated basis at the older lot rate; the book rule is the newest received lot, so the basis follows it."
+  ]
+ },
+ {
   "v": "v834",
   "d": "24 Sep 2026",
   "t": "TWO LOTS IN, BOTH ABOVE THE QUOTED TIER",

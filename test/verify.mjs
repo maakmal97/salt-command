@@ -2467,6 +2467,14 @@ await (async () => {
     const r = A.sales.find((x) => x.rid === "sX40");
     ok(ar.ok && !!r && r.defaulted === true && X.txStat(r).order === "Default" && X.saleProvRate(r, 0) === 1,
       "applied, the row reads Default and provisions in full" + (ar.ok ? "" : ": " + ar.problems.join("; ")));
+    /* 24 Sep 2026: a pending sale handed over by a Correction (deliveredQty raised, no kg) takes the shelf's cost,
+       as a Fulfilment moving units does; s183 and s196 went live uncosted and blanked the gross margin. */
+    const H = JSON.parse(JSON.stringify(DB));
+    const hr = apply(H, dcorr("05:06", "sX41", "sales", "SELL", { deliveredQty: 2, deliveredOn: "2026-09-05", handover: "collected" }),
+      { version: "v999", date: "05 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: { [ID("05:06")]: { note: "handed over in the suite." } }, stockNote: "" }, master);
+    const hRow = H.sales.find((x) => x.rid === "sX41"), hShelf = +(/const STOCK_COST=([\d.]+);/.exec(master) || [])[1];
+    ok(hr.ok && hRow && hRow.deliveredQty === 2 && hRow.cost === +(hShelf * 2).toFixed(2),
+      `a pending sale handed over by a Correction takes the shelf's cost (RM${hRow && hRow.cost} on 2 unit at RM${hShelf})` + (hr.ok ? "" : ": " + hr.problems.join("; ")));
     const { openMaster: omD } = await import("../tools/payload.mjs");
     const { w: wD } = await omD();
     const shown = JSON.parse(wD.eval("JSON.stringify([edFields('SELL').some(function(f){return f.k==='defaulted';}),edFields('BUY').some(function(f){return f.k==='defaulted';})])"));

@@ -840,7 +840,9 @@ export function apply(book, staged, notes, masterText) {
         if (rec) moves.push(`refund payable: ${rec.party} RM ${rec.amount}`);
       }
       /* v496: the shelf's figure is RM per unit; the order's cost is absolute, so it is the shelf times the order's units. */
-      if (it.dir !== "BUY" && it.pay.kg > 0.009 && it.target.cost == null && prodOf(it.target) === "salt" && stockCost != null) it.target.cost = +(stockCost * it.target.qty).toFixed(2);
+      /* 24 Sep 2026: A PENDING ORDER ALSO GOES OUT BY A CORRECTION, which raises deliveredQty and moves no kg,
+         and s183 and s196 went live that way with no cost, blanking the gross margin. Goods out is the test. */
+      if (it.dir !== "BUY" && (it.pay.kg > 0.009 || (+it.target.deliveredQty || 0) > 0.009) && it.target.cost == null && prodOf(it.target) === "salt" && stockCost != null) it.target.cost = +(stockCost * it.target.qty).toFixed(2);
       if (n.cost != null) it.target.cost = +n.cost;
       /* v496: the step was written inside applyAmend before either fill above, so a movement on a row the
          shelf costs, or one the notes recost, takes its cost here, from the order's unit cost as it now stands. */

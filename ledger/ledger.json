@@ -4825,14 +4825,15 @@
     "rid": "s183",
     "deliveredOn": "2026-09-19",
     "handover": "delivered",
-    "mod": "corrected on 2026-09-19: deliveredQty 0 to 5; deliveredOn (unset) to 2026-09-19; handover (unset) to delivered, then corrected on 2026-09-20: paidOn 2026-09-19 to (cleared)",
+    "mod": "corrected on 2026-09-19: deliveredQty 0 to 5; deliveredOn (unset) to 2026-09-19; handover (unset) to delivered, then corrected on 2026-09-20: paidOn 2026-09-19 to (cleared), then corrected on 2026-09-24: cost (unset) to 240",
     "amend": [
      {
       "date": "2026-09-19",
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 5,
-      "note": "as booked"
+      "note": "as booked",
+      "cost": 240
      },
      {
       "date": "2026-09-19",
@@ -4861,10 +4862,18 @@
       "cash": 15,
       "kg": 0,
       "note": "<b>FULFILMENT ON s183 DATED 20 SEP: THE RM15 OF DELIVERY IS PAID AND THE ORDER CLOSES.</b> CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM435 owed, was delivered in full and paid RM420 on the day, and the v738 correction held the carriage open. RM15 cash moves on 20 Sep against RM15 outstanding, leaving RM0 and 0 unit, which answers the drafter's settlement flag. The party has 15 orders, a median of RM96.67 and a range of RM6 to RM120, with RM15 outstanding before this and nothing defaulted. Nothing else on the row moves."
+     },
+     {
+      "date": "2026-09-24",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s183 DATED 24 SEP: COST SET TO RM240, 5 UNIT AT RM48.</b> The order went out by a correction raising the delivered quantity, which moved no units through the fold, so the shelf's cost was never written although the note of the day stated RM48 a unit. Without it the gross margin across every book read blank. Nothing else on the row moves."
      }
     ],
     "rev": "R2",
-    "paidOn": "2026-09-20"
+    "paidOn": "2026-09-20",
+    "cost": 240
    },
    {
     "customer": "CZ5-TM",
@@ -5120,14 +5129,22 @@
       "cash": 30,
       "kg": 0,
       "note": "<b>FULFILMENT DATED 24 SEP ON S196: RM30 CASH, THE ORDER NOW SETTLED IN FULL.</b> Against CS6-PER's order of 2 unit for RM200 dated 23 Sep 2026, RM30 and 0 unit move on 24 Sep 2026 against RM30 and 0 unit outstanding, leaving RM0 and 0 unit open. The order already shows RM70 cash, 2 unit collected and a correction recording RM100 settled in kind by reward, 1 unit. No goods move, so the row carries no cost of its own. Flagged as settling the order in full and the figures answer it. CS6-PER: 8 orders, median rate RM70.4, range RM11 to RM100, nothing outstanding before, none on credit, an associate and on the roster."
+     },
+     {
+      "date": "2026-09-24",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s196 DATED 24 SEP: COST SET TO RM96, 2 UNIT AT RM48.</b> The order went out by a correction raising the delivered quantity, which moved no units through the fold, so the shelf's cost was never written although the note of the day stated RM48 a unit. Without it the gross margin across every book read blank. Nothing else on the row moves."
      }
     ],
     "deliveredOn": "2026-09-24",
     "handover": "collected",
-    "mod": "corrected on 2026-09-24: deliveredQty 0 to 2; deliveredOn (unset) to 2026-09-24; handover (unset) to collected, then corrected on 2026-09-24: settledRM (unset) to 100; rebateKg (unset) to 1; rebate (unset) to true",
+    "mod": "corrected on 2026-09-24: deliveredQty 0 to 2; deliveredOn (unset) to 2026-09-24; handover (unset) to collected, then corrected on 2026-09-24: settledRM (unset) to 100; rebateKg (unset) to 1; rebate (unset) to true, then corrected on 2026-09-24: cost (unset) to 96",
     "settledRM": 100,
     "rebateKg": 1,
-    "rebate": true
+    "rebate": true,
+    "cost": 96
    },
    {
     "customer": "CA6-CYB",
@@ -5928,7 +5945,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-24T15:10:07.576Z",
   "PRICING": {
-   "takenAt": "2026-09-24T15:12:35.424Z",
+   "takenAt": "2026-09-24T15:18:16.272Z",
    "sizes": [
     0.5,
     1,
@@ -8099,7 +8116,7 @@
    "v": "v834"
   },
   "OPEN": {
-   "at": "2026-09-24T15:12:35.577Z",
+   "at": "2026-09-24T15:18:16.427Z",
    "count": 9,
    "byKey": {
     "CM4-TO|2026-09-23|750": {

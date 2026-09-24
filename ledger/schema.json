@@ -1,6 +1,6 @@
 {
   "v": "v834",
-  "derivedFrom": "0803064d636efb73",
+  "derivedFrom": "36af32b78efe5be6",
   "tables": {
     "sales": {
       "rows": 199,
@@ -46,7 +46,7 @@
           ]
         },
         "cost": {
-          "present": 187,
+          "present": 189,
           "of": 199,
           "optional": true,
           "types": [
