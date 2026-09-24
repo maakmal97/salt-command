@@ -19293,8 +19293,8 @@ function ordCard(o){
   const ledger=!rowed?'no row yet':(o.status==='cancelled'||o.status==='declined')?'Cancelled'
     :(due<=0.004&&moved>=o.qty-0.004)?'Completed':(paid<=0.004&&moved<=0.004)?'Pending'
     :(moved/o.qty>paid/(o.total+(+o.delivery||0))+1e-9)?'Open · Advance':'Open · Deferred';
-  const q=o.queued||{}, owed=(!q.ack&&rowed)||paid>(+q.paid||0)+0.004||Math.abs(moved-(+q.moved||0))>0.0004
-    ||(['cancelled','declined'].includes(o.status)&&q.ack&&!q.cancel);
+  const q=o.queued||{}, theirs=(!q.ack&&rowed)||paid>(+q.paid||0)+0.004||(['cancelled','declined'].includes(o.status)&&q.ack&&!q.cancel);
+  const owed=theirs||Math.abs(moved-(+q.moved||0))>0.0004;
   /* 20 Sep 2026: what the desk made of its last pass, off the record (sync, written by the reconcile
      when it changes), where this promised the entry was queued within the minute whatever had happened */
   const sy=o.sync||null;
@@ -19304,7 +19304,8 @@ function ordCard(o){
     :!owed?(rowed?', on the row this order made':'')
     :(sy&&sy.state==='waiting')?', and '+esc(sy.why)+' (waiting since '+when(sy.at)+')'
     :(sy&&sy.state==='failed')?', but the desk could not tell it: '+esc(sy.why)+' (at '+when(sy.at)+'; it tries again every minute)'
-    :', and the entry for that is queued within the minute; approve it under Approve';
+    /* a handover of his own is a yes already (S11 D6): only what they did, or a withdrawal, waits for a tap under Approve */
+    :', and the entry for that is queued within the minute'+(theirs?'; approve it under Approve':', booked as it is drafted if it is the row you saw');
   /* v752: WHAT THE CUSTOMER WROTE ON THIS ORDER, oldest first. Their words are the only free text on
      this desk a stranger typed, so every line goes through esc and none of it is interpolated raw. */
   const msgs=(o.msgs||[]);

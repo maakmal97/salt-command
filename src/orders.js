@@ -831,8 +831,15 @@ export async function reconcileOrders(env) {
           /* A REJECTED ROW STAYS SAID (24 Sep 2026): a row he rejected never reaches the book, so every
              later stage waits here, and "approve it under Approve" would send him to a row he has already
              turned down and that Approve no longer lists */
-          if (!(o.sync && o.sync.state === "rejected"))
-            state = { state: "waiting", why: "the " + (STAGE_WORD[job] || job) + " waits for the pending row to reach the book: approve it under Approve, and the fold lands it" };
+          if (!(o.sync && o.sync.state === "rejected")) {
+            /* S11 (D6): THE ROW WAITED FOR MAY BE APPROVED ALREADY, by his yes on the card, and then Approve no longer lists
+               it and only the fold is left; sending him there sent him to a row he could not find */
+            const what = q.close ? "close" : "pending row", id = q.close || q.ack;
+            let d = null;
+            try { d = id && env.SALT_LEDGER ? await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(id).first() : null; } catch (e) { d = null; }
+            state = { state: "waiting", why: "the " + (STAGE_WORD[job] || job) + " waits for the " + what + " to reach the book: "
+              + (d && d.status === "approved" ? "it is approved, and the next fold lands it" : "approve it under Approve, and the fold lands it") };
+          }
           break;
         }
         /* each entry is stamped with its stage's own moment (stageAt), never the pass's clock */

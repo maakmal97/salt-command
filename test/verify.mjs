@@ -24980,6 +24980,80 @@ await (async () => {
   }
 })();
 
+section("S11 fix: a stage waiting on a row his yes approved says the fold is left, never to approve it under Approve");
+await (async () => {
+  /* Found in review: Collected tapped straight after Accept waited for the pending row with the words "approve it under
+     Approve", but his yes had approved that row already and Approve no longer listed it; the card's own fallback said the
+     same of a handover he had tapped. Now the wait says the row is approved and the next fold lands it, and the card sends
+     him to Approve only for what the customer did. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the wait was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  setState("roster", [C1]); setState("OPEN", { byKey: {}, position: {} });
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const send = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); while (tails.length) await tails.shift(); return { status: r.status, j };
+  };
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+
+  /* his road: Accept approves the row, and Collected before it lands waits on the fold alone */
+  const a = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit: 101, total: 101, week: "" })).order;
+  const pv = await send("/orders/" + a.id + "/preview", {});
+  await send("/orders/" + a.id + "/accept", { hash: pv.j.hash });
+  await send("/orders/" + a.id + "/handed", { qty: 1 });
+  const sa = ((await orderOf(a.id)).sync || {}).why || "";
+  /* the old road: a row nobody has approved still sends him to Approve */
+  const b = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit: 102, total: 102, week: "" })).order;
+  await O.deskMove(senv, U1, b.id, { status: "acknowledged", mode: "collect" });
+  await reconcileOrders(denv); await runDrafter(denv);
+  await O.customerMove(senv, U1, b.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U1, b.id, "pay", { amount: 20 });
+  await reconcileOrders(denv);
+  const sb = ((await orderOf(b.id)).sync || {}).why || "";
+  ok(sa === "the handover waits for the pending row to reach the book: it is approved, and the next fold lands it"
+    && /^the payment waits for the pending row to reach the book: approve it under Approve/.test(sb),
+    "a wait on a row his yes approved says the fold is left, and one on a row nobody approved says Approve: " + JSON.stringify({ sa, sb }));
+
+  const { openMaster: omO3 } = await import("../tools/payload.mjs");
+  const { w } = await omO3();
+  try {
+    w.SALT_CLOUD = true;
+    const card = (o) => { const x = w.document.createElement("div"); x.innerHTML = String(w.eval("ordCard(" + JSON.stringify(o) + ")")); return x.textContent.replace(/\s+/g, " "); };
+    const base = { id: "c1", u: U1, code: C1, product: "salt", qty: 2, total: 200, delivery: 0, mode: "collect", status: "acknowledged", at: "2026-09-24T01:00:00.000Z", history: [], msgs: [], payments: [] };
+    const handed = card(Object.assign({}, base, { moved: 1, paid: 0, queued: { ack: "x", moved: 0 } }));
+    const paidT = card(Object.assign({}, base, { moved: 0, paid: 50, queued: { ack: "x", paid: 0 } }));
+    ok(/queued within the minute, booked as it is drafted if it is the row you saw\./.test(handed) && !/approve it under Approve/.test(handed)
+      && /queued within the minute; approve it under Approve/.test(paidT),
+      "the card sends him to Approve for their payment, and not for a handover he tapped: " + JSON.stringify({ handed: handed.slice(0, 220), paid: paidT.slice(0, 220) }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 100));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one
