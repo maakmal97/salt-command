@@ -101,6 +101,9 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .osheet .salt-sheet__close{margin-left:auto}
 .osheet .salt-sheet__body > * + *{margin-top:18px}
 .osheet .salt-options__grid .salt-ghost,.osheet .ofull{width:100%}
+/* a mark on a pressed ghost takes the ghost's own ink, so the chosen product reads as chosen (v695's rule for a mark on a
+   control, which the segment it replaced carried) */
+.osheet .salt-ghost .psym{color:inherit}
 .ototal{flex:1 1 0;min-width:0}
 .ototal .salt-kpi__value{margin-top:0}
 .ototal .sub2{display:block;margin-top:2px}

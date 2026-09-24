@@ -13899,6 +13899,44 @@ await (async () => {
       "and behind it the page holds no list, as a sign-in would show it, so the same stamp cannot be placed again: " + JSON.stringify({ posted: posted.length }));
   } finally { await new Promise((r) => setTimeout(r, 100)); B.w.close(); }
 })();
+section("S4 fix: in the sheet a product's mark takes its ghost's ink, so the chosen product reads as chosen");
+await (async () => {
+  /* S4R-2 (ux): every mark was brass whatever it sat in, so the pressed cube and the unpressed droplet differed by a fill
+     and a border alone; the rule letting a mark on a control take the control's ink went with the segment it was for.
+     jsdom does not resolve var(), so the colours are read as the cascade leaves them: the mark's own against its ghost's. */
+  const { landingPage: lpF6 } = await import("../stmt/page.js");
+  const CF6 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcF6 } = await import("node:crypto");
+  const { JSDOM: JDF6 } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-sf6", ck = await CF6.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] },
+      { product: "oil", unit: "unit", basis: "board", tier: null, sizes: [{ q: 1, price: 45 }] }] };
+  const body = { ok: true, wrap: await CF6.wrapKey(pass, ck), session: "sess-sf6", prices: await CF6.encryptWith(ck, JSON.stringify(prices)),
+    env: await CF6.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const dom = new JDF6(lpF6(u, "nsf6", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcF6, configurable: true }); } catch (e) { win.crypto = wcF6; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: [] } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click();
+    const ink = (x) => w.getComputedStyle(x).color;
+    const ghosts = [...d.querySelectorAll('#osheet button.salt-ghost[data-k^="prod:"]')].map((b) => ({
+      pressed: b.getAttribute("aria-pressed"), ghost: ink(b), mark: b.querySelector(".psym") ? ink(b.querySelector(".psym")) : null }));
+    const on = ghosts.find((g) => g.pressed === "true"), off = ghosts.find((g) => g.pressed === "false");
+    ok(ghosts.length === 2 && on && off && on.mark === on.ghost && off.mark === off.ghost && on.mark !== off.mark,
+      "the chosen product's mark takes the pressed ghost's ink and the other's its own, so the two differ: " + JSON.stringify(ghosts));
+  } finally { w.close(); }
+})();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {
   /* HIS INSTRUCTION OF 16 SEP 2026: "The label to them is a very subtle tier level, in symbol and colour (for each tier),
