@@ -1068,9 +1068,10 @@ export default {
         const b = await readJson(request);
         const u = normUser(b && b.u);
         if (!u || !(await roster(env)).some((x) => x.username === u)) return json({ ok: false, error: "no account on the roster has that username" }, 400);
-        const made = await mintHandover(env, u, b.token, b.wrap);
+        const made = await mintHandover(env, u, b.token, b.wrap, true);
         if (!made) return json({ ok: false, error: "send the key and the wrap" }, 400);
-        const link = url.origin + "/app#" + made.token;
+        /* S3 fix: the QR's own form, the one key a browser tab spends from its address (stmt/signin.js burnHandover) */
+        const link = url.origin + "/app#qr." + made.token;
         return json(Object.assign({ ok: true, url: link, qr: QR.qrMatrix(link).map((line) => line.join("")) }, made));
       }
       /* 24 SEP 2026 (M22): REVIEW OPENS AN ACCOUNT AS ITS OWN PAGE, READ ONLY. An account opened under

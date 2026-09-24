@@ -1029,7 +1029,6 @@ const CLIENT_JS = `
       var done=null;
       try{ done=navigator.clipboard.writeText(keepTok); }catch(e){ done=Promise.reject(e); }
       try{ history.replaceState(null,'','/app#'+keepTok); }catch(e){}
-      try{ sessionStorage.setItem('salt-keep-wrote', keepTok); }catch(e){}   /* this tab never spends the key it wrote */
       Promise.resolve(done).then(function(){ ksay('Copied. Now tap the marks above, then open the new icon and paste.'); },
         function(){ ksay('Copy failed. Type the code in the new app instead.','bad'); });
     });
@@ -1092,6 +1091,8 @@ const CLIENT_JS = `
   }
   /* a code as the site takes it, xxxx-xxxx, or '' */
   function codeOf(t){ var raw=clean(t); return raw.length===8?raw.slice(0,4)+'-'+raw.slice(4):''; }
+  /* an app's own browser keeps nothing once it closes: a key in its address is not spent there */
+  var INAPP_KEY='This app keeps nothing once you close it. Open this page in Safari or Chrome to sign in.';
   if(codeBox){
     document.getElementById('toCode').addEventListener('click', function(){ showCode(true); try{ codeIn.focus(); }catch(e){} });
     document.getElementById('codeDoor').addEventListener('click', function(){ codeBox.hidden=true; gate.hidden=false; try{ (un.value?pw:un).focus(); }catch(e){} });
@@ -2392,13 +2393,14 @@ const CLIENT_JS = `
       if(inNow||session) return;
       if(opening) opening.hidden=true;
       /* S3 3.11: the saved app. A key in the address is the one Safari's Keep it on your Home Screen wrote there, and
-         the saved app spends it, never the Safari tab that wrote it, reloaded at that address. S3 merge: a browser tab
-         spends a key it did not write, which is the QR his page shows at the counter (3.13), scanned by the
-         customer's camera, and is told about a code, not about Safari */
-      var wrote=''; try{ wrote=sessionStorage.getItem('salt-keep-wrote')||''; }catch(e){}
-      var carried=APP&&TOK_RE.test(hk)&&(STANDALONE||wrote!==hk);
-      if(APP&&(IOS||carried)) showCode(carried&&!STANDALONE); else gate.hidden=false;
-      if(carried) await openHandover({token:hk});
+         only the saved app spends it. S3 FIX, 24 SEP 2026: A BROWSER TAB SPENDS ONLY HIS COUNTER'S QR, /app#qr.<key>,
+         which the customer's camera opens (3.13), and the Worker opens it for a tab only if his /all/handover minted it,
+         so an address one customer sends another never signs the other in; an app's own browser spends nothing */
+      var qm=/^qr[.]([A-Za-z0-9_-]{20,64})$/.exec(hk);
+      var key=!APP?'':STANDALONE?(qm?qm[1]:TOK_RE.test(hk)?hk:''):(qm&&!INAPP?qm[1]:'');
+      if(APP&&(IOS||key||qm)) showCode(!!qm&&!STANDALONE); else gate.hidden=false;
+      if(APP&&qm&&INAPP&&!STANDALONE) csay(INAPP_KEY,'bad');
+      if(key) await openHandover(STANDALONE?{token:key}:{token:key, tab:true});
     })();
   }
 })();

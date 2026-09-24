@@ -16050,6 +16050,10 @@ await (async () => {
       && (await post("/all/handover", { u, token: "k".repeat(32), wrap: wrap0 }, { "cf-access-jwt-assertion": jwt }, noSecret)).status === 503
       && (await post("/all/handover", { u: C.newUsername(), token: "k".repeat(32), wrap: wrap0 }, { "cf-access-jwt-assertion": jwt })).status === 400,
       "his mint needs Access, answers 503 without STMT_HANDOVER_KEY, and refuses a username the roster does not carry");
+    /* S3 fix: what his route mints is marked his, the one kind a browser tab spends from its address */
+    const kQ = "Q".repeat(32), mQ = await post("/all/handover", { u, token: kQ, wrap: await C.wrapKey(kQ, ck) }, { "cf-access-jwt-assertion": jwt });
+    ok(mQ.status === 200 && (await mQ.json()).url === "https://k7m3p2.example/app#qr." + kQ && (await post("/handover/open", { token: kQ, tab: true })).status === 200,
+      "his mint answers the QR's own form, /app#qr.<key>, and the browser tab a camera opens on it spends it");
 
     /* the page: Send statement, the account's card, Show a code */
     const html = await (await site("/all", { headers: { "cf-access-jwt-assertion": jwt } })).text();
@@ -16093,7 +16097,7 @@ await (async () => {
       const y = +r.getAttribute("y") - 4, x = +r.getAttribute("x") - 4 + i;
       if (!drawn[y] || x < 0 || x >= drawn.length) off = true; else drawn[y][x] = 1;
     }
-    ok(/^https:[/][/]k7m3p2[.]example[/]app#[A-Za-z0-9_-]{32}$/.test(seen.handover.url) && rects.length > 20 && !off
+    ok(/^https:[/][/]k7m3p2[.]example[/]app#qr[.][A-Za-z0-9_-]{32}$/.test(seen.handover.url) && rects.length > 20 && !off
       && JSON.stringify(drawn) === JSON.stringify(want),
       "the QR is drawn in rectangles, module for module the matrix of the saved app's page with the key after the #: " + rects.length + " runs");
     ok(seen.copied === 0 && seen.shared === 0, "nothing was copied or shared: the sheet only shows");
@@ -18889,7 +18893,6 @@ await (async () => {
         Object.defineProperty(win, "localStorage", { configurable: true, value: {
           getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
           removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
-        if (opts.wrote) win.sessionStorage.setItem("salt-keep-wrote", opts.wrote);
         win.scrollTo = () => {};
         win.fetch = async (p, init) => {
           const body = init && init.body ? JSON.parse(init.body) : null;
@@ -18922,31 +18925,31 @@ await (async () => {
     await k.until(() => k.D.getElementById("keepCode").value);
     k.D.getElementById("keepCopy").click();
     const ho = k.st.posts.find((x) => x.path === "/handover");
-    ok(!!ho && k.W.location.hash === "#" + ho.body.token && k.W.sessionStorage.getItem("salt-keep-wrote") === ho.body.token,
-      "Copy marks the tab that wrote /app#<key> in its own session storage: " + JSON.stringify(k.W.sessionStorage.getItem("salt-keep-wrote")));
+    ok(!!ho && k.W.location.pathname === "/app" && k.W.location.hash === "#" + ho.body.token,
+      "Copy writes the plain key into the address, the form no browser tab spends: " + JSON.stringify(k.W.location.hash.slice(0, 4)));
   } finally { k.W.close(); }
 
-  /* that tab, reloaded at the address, spends nothing */
-  const mine = await drive("https://site.test/app#" + tokM, { wrote: tokM });
+  /* S3 fix: a plain key in a browser tab's address is spent by no tab at all, the one that wrote it or another */
+  const mine = await drive("https://site.test/app#" + tokM, {});
   try {
     await new Promise((r) => setTimeout(r, 120));
     ok(!mine.st.posts.some((x) => x.path === "/handover/open") && !mine.D.getElementById("codeBox").hidden,
-      "the Safari tab that wrote the key, reloaded at that address, never spends it");
+      "a browser tab at /app#<key>, the form the Keep Sheet writes, never spends it, whichever tab it is");
   } finally { mine.W.close(); }
 
   /* a camera's browser tab at Salt Admin's QR spends the key and is in */
-  const qr = await drive("https://site.test/app#" + tokM, {});
+  const qr = await drive("https://site.test/app#qr." + tokM, {});
   try {
     await qr.until(() => !qr.D.getElementById("barw").hidden);
     const sent = qr.st.posts.find((x) => x.path === "/handover/open");
-    ok(!qr.D.getElementById("barw").hidden && !!sent && sent.body.token === tokM && !sent.body.code && qr.W.location.hash === "",
-      "a browser tab opened on Salt Admin's QR spends the key in the address, opens the account and forgets the address");
+    ok(!qr.D.getElementById("barw").hidden && !!sent && sent.body.token === tokM && sent.body.tab === true && !sent.body.code && qr.W.location.hash === "",
+      "a browser tab opened on Salt Admin's QR (/app#qr.<key>) spends the key as a tab's, opens the account and forgets the address");
     await qr.until(() => qr.store.has("salt-stmt-remember"));
     ok(JSON.parse(qr.store.get("salt-stmt-remember") || "{}").u === uM, "and the phone that scanned it is remembered");
   } finally { qr.W.close(); }
 
   /* a QR already used says so in a code's words, never the saved app's Safari words */
-  const used = await drive("https://site.test/app#" + tokM, { refuse: true });
+  const used = await drive("https://site.test/app#qr." + tokM, { refuse: true });
   try {
     await used.until(() => /did not open/.test(used.D.getElementById("codeMsg").textContent));
     ok(used.st.posts.some((x) => x.path === "/handover/open") && /Sign in with a code/.test(used.D.getElementById("codeH").textContent)
@@ -18988,7 +18991,6 @@ await (async () => {
         Object.defineProperty(win.navigator, "userAgent", { value: opts.ua || IPHONE, configurable: true });
         win.matchMedia = (q) => ({ matches: !!opts.standalone && /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
         Object.defineProperty(win.navigator, "clipboard", { configurable: true, value: { readText: async () => st.clip, writeText: async () => {} } });
-        if (opts.wrote) win.sessionStorage.setItem("salt-keep-wrote", opts.wrote);   /* S3 merge: the tab that wrote the key */
         Object.defineProperty(win, "localStorage", { configurable: true, value: {
           getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
           removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
@@ -19051,11 +19053,11 @@ await (async () => {
   const g3 = await drive("https://site.test/app#" + tok311, { standalone: true });
   try {
     await g3.until(() => !g3.D.getElementById("barw").hidden);
-    ok(!g3.D.getElementById("barw").hidden && g3.W.location.hash === "" && g3.st.posts.some((x) => x.path === "/handover/open" && x.body.token === tok311),
+    ok(!g3.D.getElementById("barw").hidden && g3.W.location.hash === "" && g3.st.posts.some((x) => x.path === "/handover/open" && x.body.token === tok311 && !x.body.tab),
       "a saved app that kept the address signs itself in with the key in it, and forgets the address");
   } finally { g3.W.close(); }
 
-  const g4 = await drive("https://site.test/app#" + tok311, { standalone: false, wrote: tok311 });
+  const g4 = await drive("https://site.test/app#" + tok311, { standalone: false });
   try {
     ok(!g4.st.posts.some((x) => x.path === "/handover/open"), "a Safari tab reloaded at that address never spends the key meant for the saved app");
   } finally { g4.W.close(); }
@@ -19552,6 +19554,76 @@ await (async () => {
     ok(st.clip.length === 2 && st.clip[1] === st.minted[1] && W.location.hash === "#" + st.minted[1],
       "and Copy then copies the fresh key, and the address carries it");
   } finally { await new Promise((r) => setTimeout(r, 60)); W.close(); }
+})();
+section("S3 fix: a browser tab spends only Salt Admin's counter QR from its address, so a key one customer sends another never signs the other in");
+await (async () => {
+  /* S3-SEC-6, S3R-3 (24 Sep 2026). After the merge fix any tab with nothing of its own spent /app#<key> with no tap and
+     remembered it, and any customer can mint a key for their own account (the Keep Sheet even writes it into the
+     address the Share sheet then carries), so an address sent to somebody else signed that browser into the sender's
+     account for thirty days, their orders and delivery places landing on it. */
+  const S = await import("../stmt/signin.js");
+  const WQ = (await import("../stmt/worker.js")).default;
+  const CQ = await import("../tools/stmt-crypto.mjs");
+  const kv = new KV(), env = { STMT: kv, STMT_HANDOVER_KEY: "q".repeat(40) };
+  const uQ = "aaaa-qqqq", ckQ = await CQ.contentKey("1".repeat(64), uQ);
+  await kv.put("u:" + uQ, JSON.stringify({ u: uQ, issued: "2026-09-01", issues: ["2026-09-01"], env: { iv: "x", ct: "y" } }));
+  const open = async (body) => { const r = await WQ.fetch(new Request("https://k7m3p2.example/handover/open", { method: "POST",
+    headers: { "content-type": "application/json", "CF-Connecting-IP": "198.51.100.9" }, body: JSON.stringify(body) }), env); return { status: r.status, j: await r.json() }; };
+  const keyOf = async () => { const t = S.newSignin(); return { t, wrap: await CQ.wrapKey(t, ckQ) }; };
+
+  /* a customer's own key, as the Keep Sheet mints it on a session */
+  const mine = await keyOf();
+  const made = await S.mintHandover(env, uQ, mine.t, mine.wrap);
+  const tab = await open({ token: mine.t, tab: true });
+  ok(tab.status === 401 && tab.j.error === "That username and password were not accepted.",
+    "a customer's key opened as a browser tab found it in its address is the door's one refusal: " + tab.status);
+  const stillCode = await open({ code: made.code });
+  ok(stillCode.status === 200 && stillCode.j.u === uQ,
+    "and it is left unspent: the same hand-over still opens by its code, typed, as the saved app would");
+  const k2 = await keyOf(); await S.mintHandover(env, uQ, k2.t, k2.wrap);
+  ok((await open({ token: k2.t })).status === 200, "a customer's key pasted or kept by the saved app ({token}, no tab) opens as before");
+
+  /* his counter's: minted through /all/handover, marked, and its address the QR's own form */
+  const adm = await keyOf();
+  await S.mintHandover(env, uQ, adm.t, adm.wrap, true);
+  const scanned = await open({ token: adm.t, tab: true });
+  ok(scanned.status === 200 && scanned.j.u === uQ && scanned.j.token === adm.t, "and a browser tab opens one minted as his, the QR the customer's camera opened");
+
+  /* the page: a tab spends only the QR's form, as a tab's, and an app's own browser nothing */
+  const { landingPage: lpQ } = await import("../stmt/page.js");
+  const { JSDOM: JDQ } = await import("jsdom");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const WA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 WhatsApp/2.24.1";
+  const tokQ = "Z".repeat(32);
+  const drive = async (url, ua, standalone) => {
+    const posts = [];
+    const dom = new JDQ(lpQ("", "nQ", null), { url, runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+        Object.defineProperty(win.navigator, "userAgent", { value: ua, configurable: true });
+        win.matchMedia = (q) => ({ matches: !!standalone && /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+        win.scrollTo = () => {};
+        win.fetch = async (p, init) => {
+          posts.push({ path: String(p), body: init && init.body ? JSON.parse(init.body) : null });
+          return { ok: false, status: 401, json: async () => ({ ok: false, error: "That username and password were not accepted." }) };
+        };
+      } });
+    await new Promise((r) => setTimeout(r, 150));
+    const D = dom.window.document, out = { posts: posts.filter((x) => x.path === "/handover/open"), code: !D.getElementById("codeBox").hidden, msg: D.getElementById("codeMsg").textContent };
+    dom.window.close();
+    return out;
+  };
+  const plainTab = await drive("https://site.test/app#" + tokQ, IPHONE, false);
+  ok(plainTab.posts.length === 0, "a browser tab at /app#<key>, the form a customer's own Keep Sheet writes, sends nothing");
+  const qrTab = await drive("https://site.test/app#qr." + tokQ, IPHONE, false);
+  ok(qrTab.posts.length === 1 && qrTab.posts[0].body.token === tokQ && qrTab.posts[0].body.tab === true,
+    "a tab at the QR's form sends its key marked as a tab's, for the Worker to open only if he minted it: " + JSON.stringify(qrTab.posts.map((x) => x.body)));
+  const inApp = await drive("https://site.test/app#qr." + tokQ, WA, false);
+  ok(inApp.posts.length === 0 && inApp.code && /Open this page in Safari or Chrome/.test(inApp.msg),
+    "an app's own browser spends nothing, and says to open the page in Safari or Chrome: " + JSON.stringify(inApp.msg));
+  const saved = await drive("https://site.test/app#" + tokQ, IPHONE, true);
+  ok(saved.posts.length === 1 && saved.posts[0].body.token === tokQ && !saved.posts[0].body.tab,
+    "the saved app still spends the plain key its start address kept, as its own");
 })();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {

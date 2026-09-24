@@ -159,8 +159,9 @@ const mac = async (secret, msg) => hex(await crypto.subtle.sign("HMAC", await ma
 const sealKey = async (secret) => crypto.subtle.importKey("raw",
   await crypto.subtle.sign("HMAC", await macKey(secret), enc("salt-handover-seal")), { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
 
-/** File the hand-over for `u`; returns { code, token, exp }, or null when the secret is unset or the key or wrap is not one. */
-export async function mintHandover(env, u, token, wrap) {
+/** File the hand-over for `u`; returns { code, token, exp }, or null when the secret is unset or the key or wrap is not one.
+ *  `admin` marks one his /all/handover minted: the only kind a browser tab spends from its address (S3 fix, below). */
+export async function mintHandover(env, u, token, wrap, admin) {
   const secret = String(env.STMT_HANDOVER_KEY || "");
   if (!secret || !u || !SIGNIN_RE.test(String(token || ""))) return null;
   if (!wrap || typeof wrap !== "object" || !wrap.salt || !wrap.iv || !wrap.ct) return null;
@@ -169,12 +170,16 @@ export async function mintHandover(env, u, token, wrap) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await sealKey(secret), enc(JSON.stringify({ u, token, wrap })));
   const exp = new Date(Date.now() + HANDOVER_TTL * 1000).toISOString(), s = { iv: b64(iv), ct: b64(ct) };
-  await env.STMT.put(byCode, JSON.stringify({ pair: byKey, exp, s }), { expirationTtl: HANDOVER_TTL });
-  await env.STMT.put(byKey, JSON.stringify({ pair: byCode, exp, s }), { expirationTtl: HANDOVER_TTL });
+  const mark = admin === true ? { admin: true } : {};
+  await env.STMT.put(byCode, JSON.stringify(Object.assign({ pair: byKey, exp, s }, mark)), { expirationTtl: HANDOVER_TTL });
+  await env.STMT.put(byKey, JSON.stringify(Object.assign({ pair: byCode, exp, s }, mark)), { expirationTtl: HANDOVER_TTL });
   return { code, token, exp };
 }
 
-/** Open by { token } or { code }: both records burnt, then { u, token, wrap, by }, or null for anything at all wrong. */
+/** Open by { token } or { code }: both records burnt, then { u, token, wrap, by }, or null for anything at all wrong.
+ *  S3 FIX, 24 SEP 2026: A KEY A BROWSER TAB FOUND IN ITS ADDRESS ({ token, tab: true }) OPENS ONLY ONE HE MINTED, the QR
+ *  at his counter, and anything else is refused unspent. Any customer can mint a key for their own account, and
+ *  /app#<key> sent to somebody else signed that browser into the sender's account with no tap, and kept it. */
 export async function burnHandover(env, b) {
   const secret = String(env.STMT_HANDOVER_KEY || "");
   const token = b && typeof b.token === "string" && SIGNIN_RE.test(b.token) ? b.token : "";
@@ -183,7 +188,7 @@ export async function burnHandover(env, b) {
   const id = "ho:" + (await mac(secret, token ? "key:" + token : "code:" + code));
   let rec = null;
   try { rec = await env.STMT.get(id, "json"); } catch (e) { rec = null; }
-  if (!rec || !rec.s) return null;
+  if (!rec || !rec.s || (b.tab === true && rec.admin !== true)) return null;
   try { await env.STMT.delete(id); if (rec.pair) await env.STMT.delete(rec.pair); } catch (e) { /* each expires on its own */ }
   if (!(Date.parse(rec.exp) > Date.now())) return null;
   try {
