@@ -20905,6 +20905,91 @@ await (async () => {
       "the way back is the list again");
   } finally { w.close(); }
 })();
+section("S5 5.2: an order opens its own screen, the goods on their own steps, the money on its own lines, one next action and Cancel at the foot");
+await (async () => {
+  /* 24 SEP 2026, the Counter redesign's stage 5. A pane said "Ready. Handed over in full. Nothing paid yet." in one
+     line, so Paid could be read as a stage of the goods; the pay controls stood open on every order owing, beside
+     Withdraw, with the history in full under them. Driven through the served page, one order opened at a time. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s52", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s52",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const o = (id, at, x) => Object.assign({ id, at, product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 0, moved: 0,
+    status: "acknowledged", history: [{ at, status: "placed", by: "customer" }, { at, status: "acknowledged", by: "desk" }], msgs: [] }, x);
+  const ADV = "20260924090000-adv", PART = "20260923090000-part", UP = "20260922090000-paidup", CLAIM = "20260921090000-claim", DONE = "20260901090000-done";
+  const orders = [
+    o(ADV, "2026-09-24T01:00:00Z", { status: "ready", mode: "deliver", place: "Taman Contoh", delivery: 10, moved: 1, movedOn: "2026-09-24" }),
+    o(PART, "2026-09-23T01:00:00Z", { qty: 5, total: 390, paid: 200, method: "transfer", account: "maybank" }),
+    o(UP, "2026-09-22T01:00:00Z", { paid: 90 }),
+    o(CLAIM, "2026-09-21T01:00:00Z", { claimed: 50 }),
+    o(DONE, "2026-09-01T01:00:00Z", { status: "done", paid: 90, moved: 1, movedOn: "2026-09-02" })];
+  const dom = new JSDOM(landingPage(u, "n52", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : { ok: true };
+      return { ok: true, status: 200, json: async () => j };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const scr = () => d.querySelector("#pOrder .oscreen");
+  const part = (k) => scr() && scr().querySelector('[data-part="' + k + '"]');
+  const open = (id) => {
+    const back = d.querySelector("#pOrder .oback"); if (back && scr()) back.click();
+    if (!d.querySelector('#pOrder [data-row="' + id + '"]')) { const f = d.querySelector("#pOrder .olater"); if (f) f.click(); }
+    const r = d.querySelector('#pOrder [data-row="' + id + '"]'); if (r) r.click();
+    return scr() && scr().getAttribute("data-order") === id;
+  };
+  const lines = () => [...scr().querySelectorAll(".salt-ledger__row")].map((r) => [r.querySelector(".salt-ledger__label").textContent,
+    r.querySelector(".salt-ledger__value").textContent, (r.querySelector(".salt-ledger__flag") || {}).textContent || ""]);
+  const pills = () => [...scr().querySelectorAll(".salt-pill")].filter((b) => !b.closest("[hidden]")).map((b) => b.textContent);
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.querySelector("#pOrder [data-olist]"); i++) await new Promise((r) => setTimeout(r, 50));
+    d.querySelector('#tabs button[data-t="order"]').click();
+
+    ok(open(ADV), "the delivered, unpaid order opens");
+    const steps = [...scr().querySelectorAll("ol.salt-steps > li")];
+    ok(steps.map((s) => s.textContent).join("|") === "Sent|Confirmed|Ready|Delivered"
+      && steps.slice(0, 3).every((s) => s.classList.contains("salt-steps__step--done")) && steps[3].getAttribute("aria-current") === "step"
+      && !/pa(y|id)/i.test(part("steps").textContent),
+      "the goods are on their own track, at Delivered, with nothing about money on it: " + JSON.stringify(steps.map((s) => s.className)));
+    const L1 = lines();
+    ok(JSON.stringify(L1) === JSON.stringify([["Goods", "RM 90", ""], ["Delivery", "RM 10", "To Taman Contoh"], ["Still to pay", "RM 100", "The goods are with you"]]),
+      "the money has its own lines, what is still to pay among them: " + JSON.stringify(L1));
+    ok(JSON.stringify(pills()) === JSON.stringify(["Pay RM 100"]) && !scr().querySelector(".oact input"),
+      "one next action, the filled Pay for what is still to pay, and no pay controls until it is tapped: " + JSON.stringify(pills()));
+    ok(!scr().querySelector('[data-part="foot"] button') && /can no longer be cancelled/.test(part("foot").textContent),
+      "with the goods already with them, the foot offers no Cancel and says why");
+
+    ok(open(PART), "the part-paid order opens");
+    ok(JSON.stringify(lines()) === JSON.stringify([["Goods", "RM 390", ""], ["Paid", "RM 200", ""], ["Still to pay", "RM 190", "Now, or when you collect"]]),
+      "what is paid is a line of its own and what is left is the rest: " + JSON.stringify(lines()));
+    const foot = part("foot"), cancel = foot && [...foot.querySelectorAll("button")].find((b) => b.textContent === "Cancel this order");
+    ok(!!cancel && scr().lastElementChild === foot, "Cancel this order stands at the foot while nothing has moved");
+    const pay = [...scr().querySelectorAll("button")].find((b) => b.textContent === "Pay RM 190");
+    if (pay) pay.click();
+    ok(!!pay && !!scr().querySelector(".oact .pay") && JSON.stringify(pills()) === JSON.stringify(["I have paid"]),
+      "Pay opens the ways to pay in its place, and theirs is then the one filled control: " + JSON.stringify(pills()));
+    const hist = part("hist").querySelector("details.salt-plan");
+    ok(!!hist && !hist.open && /What happened, step by step/.test(hist.querySelector("summary").textContent),
+      "what happened is folded under its own line");
+
+    ok(open(UP) && pills().length === 0 && JSON.stringify(lines().pop()) === JSON.stringify(["Still to pay", "RM 0", "Paid in full"]),
+      "an order paid up has nothing filled on it: " + JSON.stringify(pills()));
+    ok(open(CLAIM) && JSON.stringify(lines().slice(1)) === JSON.stringify([["Sent by you", "RM 50", "Waiting for us to confirm it arrived"], ["Still to pay", "RM 40", "Now, or when you collect"]])
+      && JSON.stringify(pills()) === JSON.stringify(["Pay RM 40"]),
+      "what they have sent and is waiting is its own line, read from claimed, and not asked for again: " + JSON.stringify(lines()));
+    ok(open(DONE) && pills().length === 0 && !part("foot").childNodes.length
+      && [...scr().querySelectorAll("ol.salt-steps > li")].every((s) => s.classList.contains("salt-steps__step--done")),
+      "a complete order has every step done, nothing filled and nothing to cancel");
+  } finally { w.close(); }
+})();
 section("v753: he answers on the order, and the words are checked on the desk before they leave it");
 await (async () => {
   /* the other half of v751. His answer is a move of his like any other, so it wakes them and changes
