@@ -31,8 +31,9 @@
 
 /** The same shape the remembered-device token has: 24 random bytes, base64url. */
 export const SIGNIN_RE = /^[A-Za-z0-9_-]{20,64}$/;
-/** Seven days. Long enough to be opened at their leisure, short enough to be worth expiring. */
-export const SIGNIN_TTL = 7 * 24 * 3600;
+/** Three days (his D1, 24 Sep 2026; seven until then): the link now keeps a phone signed in, so an unopened
+ *  one forwarded is worth more, and it lives shorter for that. */
+export const SIGNIN_TTL = 3 * 24 * 3600;
 
 const b64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
   .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");

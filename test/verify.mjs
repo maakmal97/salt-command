@@ -15313,9 +15313,10 @@ await (async () => {
   ok(!/It signs you in/.test(door) && /sign in there with Remember me ticked/.test(door),
     "the door's install step no longer promises a sign-in, and says where to make it: in the saved app, with Remember me ticked");
   ok(!/It signs you in/.test(sign) && !/It signs you in/.test(link), "and neither message says it either");
-  ok(!/Remember me/.test(sign) && !/stays signed in/.test(sign) && !/Add to Home Screen|Install app/.test(sign)
-    && /in this phone's browser and does not keep you signed in/.test(sign) && /ask me for a new link/.test(sign),
-    "the link's message promises no remembered phone and no saved app, which would open on a door it gives no way past, "
+  /* S3 3.4 (his D1): the link keeps the phone signed in, and says so; it still promises no saved app */
+  ok(!/Remember me/.test(sign) && !/Add to Home Screen|Install app/.test(sign)
+    && /keeps this phone signed in/.test(sign) && /ask me for a new link/.test(sign),
+    "the link's message says it keeps this phone signed in, promises no saved app, which would open on a door it gives no way past, "
     + "and says to ask for a new link: " + JSON.stringify(sign.slice(-160)));
   ok(/Open it from there and sign in with Remember me ticked/.test(link),
     "and the username road, which reaches the door, says the sign-in is made in the saved app");
@@ -18045,7 +18046,7 @@ await (async () => {
   const plain = await drive("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1");
   try {
     ok(!plain.D.getElementById("link").hidden && plain.D.getElementById("gate").hidden
-      && plain.D.getElementById("linkLead").textContent === "This link opens account " + u33 + " on this phone.",
+      && plain.D.getElementById("linkLead").textContent === "This link opens account " + u33 + " on this phone and keeps it signed in.",
       "a link opens on its own page, naming the account it opens: " + JSON.stringify(plain.D.getElementById("linkLead").textContent));
     ok(/What you owe/.test(plain.D.getElementById("link").textContent) && /Your prices/.test(plain.D.getElementById("link").textContent)
       && /Each order/.test(plain.D.getElementById("link").textContent),
@@ -18087,6 +18088,94 @@ await (async () => {
     ok(!lost.D.getElementById("tabs").hidden && spends.length === 2 && spends[0].nonce && spends[0].nonce === spends[1].nonce,
       "and Continue again opens it, the page asking with the nonce it spent it with");
   } finally { lost.W.close(); }
+})();
+section("S3 3.4: the sign-in link keeps the phone signed in with the door's own split key, lives three days, and its message says so with the username");
+await (async () => {
+  /* HIS D1 OF 24 SEP 2026. The link opened one visit and kept nothing, so a reload, a closed tab or a saved app
+     stranded a customer who had no password in hand. It now remembers the phone exactly as the door's tick does:
+     a device key in the browser, the content key wrapped under it on the site, neither opening anything alone. */
+  const W34 = (await import("../stmt/worker.js")).default;
+  const S34 = await import("../stmt/signin.js");
+  const SEND34 = await import("../stmt/send.js");
+  const C34 = await import("../tools/stmt-crypto.mjs");
+  const kv34 = new KV();
+  const env34 = { STMT: kv34 };
+  const u34 = "k7m2-p9qr", ck34 = await C34.contentKey("s34", u34);
+  const env34doc = await C34.encryptWith(ck34, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] }));
+  await kv34.put("u:" + u34, JSON.stringify({ u: u34, issued: "2026-09-01", issues: ["2026-09-01"], env: env34doc }));
+
+  /* ---- three days, not seven ---- */
+  const t34 = S34.newSignin();
+  await S34.mintSignin(env34, u34, t34, await C34.wrapKey(t34, ck34));
+  ok(S34.SIGNIN_TTL === 3 * 24 * 3600 && (kv34.opts.get("ot:" + (await S34.idOf(t34))) || {}).expirationTtl === 3 * 24 * 3600,
+    "a link lives three days: " + S34.SIGNIN_TTL);
+
+  /* ---- Continue, then a fresh page with no link and no password ---- */
+  const { JSDOM: JD34 } = await import("jsdom");
+  const store = new Map();
+  const posts = [];
+  const page = (url) => {
+    const html = W34.fetch(new Request("https://k7m3p2.example" + new URL(url).pathname), env34).then((r) => r.text());
+    return html.then((h) => new JD34(h, { url, runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      Object.defineProperty(win, "localStorage", { configurable: true, value: {
+        getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+        removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const body = init && init.body ? JSON.parse(init.body) : null;
+        posts.push({ path: String(path), body });
+        const r = await W34.fetch(new Request("https://k7m3p2.example" + String(path), { method: (init && init.method) || "GET",
+          headers: Object.assign({ "content-type": "application/json" }, (init && init.headers) || {}), body: init && init.body }), env34);
+        return { ok: r.ok, status: r.status, json: async () => r.json() };
+      };
+    } }));
+  };
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 30)); };
+  const one = await page("https://site.test/s/" + t34);
+  try {
+    const D = one.window.document;
+    await until(() => !D.getElementById("linkGo").disabled);
+    ok(D.getElementById("linkLead").textContent === "This link opens account " + u34 + " on this phone and keeps it signed in.",
+      "the link page says it keeps the phone signed in: " + JSON.stringify(D.getElementById("linkLead").textContent));
+    D.getElementById("linkGo").dispatchEvent(new one.window.Event("click", { bubbles: true }));
+    await until(() => store.has("salt-stmt-remember"));
+    const kept = JSON.parse(store.get("salt-stmt-remember") || "{}");
+    const rem = posts.find((x) => x.path === "/remember");
+    ok(kept.u === u34 && /^[A-Za-z0-9_-]{20,64}$/.test(kept.t || "") && typeof kept.k === "string" && kept.k.length > 20
+      && !!rem && !!rem.body.wrap && !JSON.stringify(kept).includes(t34) && !JSON.stringify(rem.body).includes(t34),
+      "Continue remembers the phone: a device key kept here, a wrap filed there, and the link's token in neither");
+    const back = await (await W34.fetch(new Request("https://k7m3p2.example/remember/open", { method: "POST",
+      headers: { "content-type": "application/json" }, body: JSON.stringify({ token: kept.t }) }), env34)).json();
+    /* the device key this phone kept opens the wrap the site hands back, and what comes out opens the statement */
+    const b64 = (x) => Uint8Array.from(Buffer.from(x, "base64"));
+    let opened34 = null;
+    try {
+      const base = await crypto.subtle.importKey("raw", b64(kept.k), "PBKDF2", false, ["deriveKey"]);
+      const kek = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: b64(back.wrap.salt), iterations: 150000, hash: "SHA-256" },
+        base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+      const raw = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(back.wrap.iv) }, kek, b64(back.wrap.ct));
+      const ck = await crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, false, ["decrypt"]);
+      opened34 = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(env34doc.iv) }, ck, b64(env34doc.ct))));
+    } catch (e) { opened34 = null; }
+    ok(back.ok && back.u === u34 && !!opened34 && opened34.statements.length === 1,
+      "and the site hands back a wrap that only the key this phone kept opens, to the account's own statement");
+  } finally { one.window.close(); }
+  posts.length = 0;
+  const two = await page("https://site.test/");
+  try {
+    const D = two.window.document;
+    await until(() => !D.getElementById("barw").hidden);
+    ok(!D.getElementById("barw").hidden && D.getElementById("gate").hidden && posts.some((x) => x.path === "/remember/open")
+      && !posts.some((x) => x.path === "/open" || x.path === "/open-link"),
+      "so the next visit opens with no link and no password: the remembered phone, as the door's tick leaves it");
+  } finally { two.window.close(); }
+
+  /* ---- the words ---- */
+  const msg = SEND34.signInMessage({ url: "https://site.test/s/" + t34, user: u34 });
+  ok(/^Your Salt Counter account is ready\. Tap to open it on this phone:/.test(msg) && msg.includes("Your username is " + u34 + ".")
+    && /The link works once and keeps this phone signed in\./.test(msg) && /stops working after three days/.test(msg),
+    "the message says the link works once and keeps this phone signed in, names the username, and says three days: " + JSON.stringify(msg.slice(0, 120)));
 })();
 section("v710: the shared link signs them in once, so no message carries a password");
 await (async () => {
@@ -18196,7 +18285,7 @@ await (async () => {
     const tokA = S10.newSignin();
     const wrapA = await C10.wrapKey(tokA, ck10);
     const okMint = await mintAt(u10, { token: tokA, wrap: wrapA });
-    ok(okMint.ok && okMint.url.endsWith("/s/" + tokA) && /signs you in, once/.test(okMint.msg) && Array.isArray(okMint.qr),
+    ok(okMint.ok && okMint.url.endsWith("/s/" + tokA) && /The link works once/.test(okMint.msg) && Array.isArray(okMint.qr),
       "his route builds the finished link, the words and the code, so the one copy of the message holds");
     ok(!okMint.msg.includes(pw10) && !("token" in okMint && okMint.token !== tokA),
       "and the message it hands back carries no password");
@@ -18235,7 +18324,7 @@ await (async () => {
   const msg10 = SEND10.signInMessage({ url: "https://k7m3p2.example/s/" + tok10, user: u10 }, "September 2026");
   ok(!/password/i.test(msg10.replace(/username and password/i, "")) && !msg10.includes(pw10),
     "the message carries no password at all, which is the whole of why the link exists");
-  ok(/signs you in, once/.test(msg10) && /do not pass it on/.test(msg10) && /stops working after a week/.test(msg10),
+  ok(/The link works once/.test(msg10) && /do not pass it on/.test(msg10) && /stops working after three days/.test(msg10),
     "and it says plainly what the link is: theirs, once, and not for passing on");
   const sendSrc = readFileSync(join(REPO, "stmt", "send.js"), "utf8");
   ok((sendSrc.match(/export function signInMessage/g) || []).length === 1
@@ -21839,7 +21928,7 @@ await (async () => {
     ok(!/statement of account for /.test(msg) && !/\bmonthly\b/.test(msg)
       && !/January|February|March|April|May|June|July|August|September|October|November|December/.test(msg),
       what + "'s message names no month and promises no monthly statement: " + JSON.stringify(msg.slice(0, 60)));
-    ok(/^Your account is ready to use\./.test(msg), what + "'s message opens on the account, not on a document");
+    ok(/^Your (Salt Counter )?account is ready[ .]/.test(msg), what + "'s message opens on the account, not on a document");
     ok(/statement of account, which keeps up with your orders/.test(msg) && /latest prices/.test(msg)
       && /a form to place an order/.test(msg),
       what + "'s message says the three things it is for: " + what);
@@ -21857,7 +21946,7 @@ await (async () => {
   }
 
   /* ---- AND WHAT EACH ONE STILL HAS TO SAY ---- */
-  ok(/This link signs you in, once/.test(sign) && /stops working after a week/.test(sign)
+  ok(/The link works once/.test(sign) && /stops working after three days/.test(sign)
     && /anybody holding it can open your account until you have used it/.test(sign),
     "the link's own message still says it is theirs, once, and not for passing on: it can be forwarded "
     + "and the message does not pretend otherwise");

@@ -380,7 +380,7 @@ function linkScreen() {
   return '<div id="link" class="gate" hidden>'
     + '<span class="appmark">' + glyphSvg("ring", 40) + "</span>"
     + "<h1>Your Salt Counter</h1>"
-    + '<p class="lead" id="linkLead">This link opens your account on this phone.</p>'
+    + '<p class="lead" id="linkLead">This link opens your account on this phone and keeps it signed in.</p>'
     + '<div class="salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm">'
     + '<p class="salt-eyebrow salt-eyebrow--copper">Inside</p>'
     + '<div class="salt-ledger salt-ledger--plain">'
@@ -853,7 +853,9 @@ const CLIENT_JS = `
     var kek=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(w.salt),iterations:150000,hash:'SHA-256'},
       base, {name:'AES-GCM',length:256}, false, ['decrypt']);
     var raw=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(w.iv)}, kek, b64d(w.ct));
-    return crypto.subtle.importKey('raw', raw, {name:'AES-GCM'}, false, ['decrypt']);
+    /* S3 3.4: extractable, as the password's is, because the link and the code remember the phone by wrapping
+       this key under the device's own */
+    return crypto.subtle.importKey('raw', raw, {name:'AES-GCM'}, true, ['decrypt']);
   }
   async function remember(u, ck){
     if(!session) return;
@@ -1904,7 +1906,7 @@ const CLIENT_JS = `
     return true;
   }
 
-  /* ---- THE ONE-TIME LINK (v710; S3 3.3, 24 Sep 2026) -------------------------------------------------
+  /* ---- THE ONE-TIME LINK (v710; S3 3.3 and 3.4, 24 Sep 2026) -------------------------------------------
      "When sharing the link, QR to the user, the site pre-fills their username and password." The password
      never goes in a message, so the LINK signs them in: the token is in this page's own address, and the
      content key comes back wrapped UNDER it.
@@ -1913,7 +1915,9 @@ const CLIENT_JS = `
      this page's own nonce; the Worker burns it and keeps the answer two minutes for that nonce alone, so a
      dropped connection is tried again from here rather than losing the link.
      AN APP'S OWN BROWSER (WhatsApp, Instagram, Facebook, Line, WeChat) keeps nothing once it closes, so it is
-     sent to Safari or Chrome with that phone's menu mark before anything is spent; Continue stays, quieter. */
+     sent to Safari or Chrome with that phone's menu mark before anything is spent; Continue stays, quieter.
+     S3 3.4, HIS D1: THE LINK KEEPS THE PHONE SIGNED IN, with the same split key as Keep me signed in: a device key
+     in this browser and the content key wrapped under it on the site, neither opening anything alone. */
   var linkBox=document.getElementById('link'), linkGo=document.getElementById('linkGo'),
       linkMsg=document.getElementById('linkMsg');
   var UA=navigator.userAgent||'';
@@ -1963,7 +1967,7 @@ const CLIENT_JS = `
     if(r&&r.status===401){ linkSpent(); return false; }
     if(r&&r.ok&&body&&body.ok&&body.u){
       var lead=document.getElementById('linkLead'), who=el('span','mono',body.u);
-      lead.textContent='This link opens account '; lead.appendChild(who); lead.appendChild(document.createTextNode(' on this phone.'));
+      lead.textContent='This link opens account '; lead.appendChild(who); lead.appendChild(document.createTextNode(' on this phone and keeps it signed in.'));
     }
     linkGo.disabled=false; lsay('');
     return true;
@@ -1999,6 +2003,8 @@ const CLIENT_JS = `
       lsay('');
       enter(body.u, body, b, x);
       if(!(await follow(stale))) return;
+      /* S3 3.4 (his D1): the link keeps this phone signed in, with the same split key the door's tick makes */
+      await remember(body.u, ck);
       askPush();
     });
   }

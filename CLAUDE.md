@@ -295,7 +295,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **Send statement hands over the password from his phone** (`pwMaster` under `STMT_MASTER`, in
   `sheet` behind Access, decrypted to the clipboard). The plain password stays laptop-only in
   `_passwords.json`, and no message ever carries it.
-- **The shared link signs them in, once**: the link signs in, the password is never in it. A link
+- **The shared link signs them in, once, and keeps the phone signed in** (his D1: the door's split key,
+  three days to use, the message naming the username): the password is never in it. A link
   inside its window is a bearer credential, and single use is best effort (KV). The `/s/` route is
   gated on the token's SHAPE, so a spent link and an invented one serve the same door. **It is spent
   only on Continue** (asking which account spends nothing), and a spent record answers the page that
