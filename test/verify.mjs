@@ -14812,6 +14812,120 @@ await (async () => {
     } finally { try { W87.close(); } catch (e) { /* best effort */ } }
   } finally { globalThis.fetch = realFetch87; }
 })();
+section("S9 9.1: Salt Admin opens on Needs you, a card a thing with its one action on it");
+await (async () => {
+  /* THE PLAN'S SECTION 5 (his "all recommended" of 24 Sep 2026): his home is what waits on him, each card
+     carrying the action it needs. Driven end to end on his rendered page against the real Worker: an
+     associate's link waiting, a customer locked out by ten misses from one address, a code with no account,
+     and an account nobody has been sent. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const MASTER = "mp-s9-1";
+  const uL = C.newUsername(), uA = C.newUsername(), uF = C.newUsername(), uN = C.newUsername(), pw = C.newPassword();
+  const rec = async (u, extra) => { const ck = await C.contentKey("s9-1", u);
+    return JSON.stringify(Object.assign({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+      wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }, extra || {})); };
+  await kv.put("u:" + uL, await rec(uL)); await kv.put("u:" + uA, await rec(uA, { assoc: true })); await kv.put("u:" + uF, await rec(uF));
+  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+  await kv.put("roster", JSON.stringify([{ code: "CX0-LK", username: uL }, { code: "CX1-AS", username: uA }, { code: "CX2-FR", username: uF }, { code: "CX3-NO", username: uN }]));
+  await kv.put("issue", "2026-09-01");
+  const row = (code, username) => ({ code, username, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" });
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01", accounts: [row("CX0-LK", uL), row("CX1-AS", uA), row("CX2-FR", uF)] }));
+  /* the associate has been sent and has opened; the locked customer got in once, by link; CX2-FR has neither */
+  await kv.put("sent:2026-09-01:" + uA, JSON.stringify({ at: "2026-09-02T01:00:00Z" }));
+  await kv.put("seen:" + uA, JSON.stringify({ first: "2026-09-02T01:00:00Z", last: "2026-09-03T01:00:00Z", opens: 2, how: "password" }));
+  await kv.put("seen:" + uL, JSON.stringify({ first: "2026-09-02T10:02:00Z", last: "2026-09-02T10:02:00Z", opens: 1, how: "link" }));
+  const TEAM = "maakmal", AUD = "aud-s9-1", KID = "kid-s9-1";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const until = async (f) => { for (let i = 0; i < 200 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  const shared = [];
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sess = (await (await site("/open", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ u: uA, password: pw }) })).json()).session;
+    const lid = (await (await site("/my/refs", { method: "POST", headers: { "X-Stmt-Session": sess, "content-type": "application/json" }, body: "{}" })).json()).ref.id;
+    /* ten misses on CX0-LK from one address, as handleOpen counts them */
+    const from = { "content-type": "application/json", "CF-Connecting-IP": "198.51.100.91" };
+    for (let i = 0; i < 10; i++) await site("/open", { method: "POST", headers: from, body: JSON.stringify({ u: uL, password: "zzzz-zzzz-zzzz-zzzz" }) });
+
+    /* ---- the Worker: who is locked out, and never from where ---- */
+    const sj = await (await site("/all/sheet", { headers: { "cf-access-jwt-assertion": tok } })).json();
+    const lk = sj.accounts.find((a) => a.username === uL), fr = sj.accounts.find((a) => a.username === uF);
+    ok(lk && lk.locked && lk.locked.from === 1 && Date.parse(lk.locked.until) > Date.now() && fr && fr.locked === null,
+      "the account list says who is locked out, by how many addresses and until when, and nobody else: " + JSON.stringify({ lk: lk && lk.locked, fr: fr && fr.locked }));
+    ok(!JSON.stringify(sj).includes("198.51.100"), "and the address that locked it never leaves the Worker");
+
+    /* ---- the page ---- */
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      Object.defineProperty(w.navigator, "share", { value: async (d) => { shared.push(d.text); }, configurable: true });
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const cards = () => [...D.querySelectorAll("#nlist [data-need]")];
+    const card = (key) => D.querySelector('#nlist [data-need="' + key + '"]');
+    const btn = (c, t) => c && [...c.querySelectorAll("button")].find((b) => b.textContent === t);
+    ok(D.getElementById("mHome").hidden === false && /Needs you/.test(D.querySelector("#mHome h1").textContent),
+      "his page opens on Needs you");
+    ok(await until(() => /4 things/.test(D.getElementById("nCount").textContent)),
+      "four things wait on him, and the line says so: " + D.getElementById("nCount").textContent);
+    ok(cards().map((x) => x.getAttribute("data-need")).join(",") === ["l:" + lid, "k:" + uL, "n:" + uN, "s"].join(","),
+      "a card each, in the order link, locked out, no account, to send: " + JSON.stringify(cards().map((x) => x.getAttribute("data-need"))));
+    ok(cards().every((x) => x.classList.contains("salt-approve") && x.querySelector(".salt-approve__head .salt-approve__party")),
+      "each drawn with the system's Approve card");
+
+    /* the waiting link: Approve on the card moves it, and the card says so where he tapped */
+    const lc = card("l:" + lid);
+    ok(/CX1-AS/.test(lc.textContent) && lc.querySelector("select") && btn(lc, "Approve") && btn(lc, "Decline"),
+      "the link's card names the associate by code and carries the tier it quotes, Approve and Decline");
+    btn(lc, "Approve").click();
+    ok(await until(async () => JSON.parse(await kv.get("g:" + lid)).approved === true) && await until(() => /Approved[.] It opens now/.test((card("l:" + lid) || {}).textContent || ""))
+      && await until(() => /3 things/.test(D.getElementById("nCount").textContent)),
+      "Approve on the card opens the link, the card says so and the count drops: " + JSON.stringify([(card("l:" + lid) || {}).textContent, D.getElementById("nCount").textContent]));
+
+    /* the locked-out account: why, and a link in two taps, so the share never waits on the making */
+    const kc = card("k:" + uL);
+    ok(/Ten wrong passwords from one address[.] Opens again at \d\d:\d\d[.] Last got in by link, 2 Sep[.]/.test(kc.textContent),
+      "the locked card gives the cause, when it opens and how they last got in: " + kc.textContent);
+    const sl = btn(kc, "Send a sign-in link");
+    sl.click();
+    ok(await until(() => sl.textContent === "Share the link") && shared.length === 0 && (await kv.list({ prefix: "ot:" })).keys.length === 1,
+      "the first tap makes the link and shares nothing: " + JSON.stringify({ label: sl.textContent, shared: shared.length }));
+    sl.click();
+    ok(await until(() => shared.length === 1) && /[/]s[/]/.test(shared[0]) && /Sent/.test(kc.textContent),
+      "the second tap shares it, and the card says it went: " + JSON.stringify(shared));
+
+    /* the code with no account: Send is off, and the stranger's link is there to show */
+    const nc = card("n:" + uN);
+    ok(/Made at the next laptop update[.] Until then, show the Silver link[.]/.test(nc.textContent) && btn(nc, "Send, after the update").disabled,
+      "an ID with no account says when it is made, offers the Silver link and has Send switched off");
+    btn(nc, "Show the Silver link").click();
+    const silver = JSON.parse((await kv.list({ prefix: "g:" })).keys.map((k) => kv.m.get(k.name)).find((v) => /"level":"Silver"/.test(v) && /"standing":true/.test(v)));
+    ok(await until(() => nc.querySelector(".glink .gu") && nc.querySelector(".glink .gu").textContent.endsWith("/g/" + silver.id)),
+      "and Show the Silver link draws the standing Silver link on the card");
+
+    /* the accounts nobody has been sent */
+    const sc = card("s");
+    ok(/^1 to send/.test(sc.textContent) && /CX2-FR has an account and no sign-in yet[.]/.test(sc.textContent) && !/CX1-AS|CX0-LK/.test(sc.textContent),
+      "the to-send card names only the account with no tick and no open: " + sc.textContent);
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password

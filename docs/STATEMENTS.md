@@ -241,7 +241,7 @@ of `tools/make_statements.mjs`) changed to match before the next issue, since th
 guest links, produce exactly 5 links, for the five tier pricing"). The five levels a guest may be
 quoted are Titanium, Platinum, Gold, Silver and Bronze; Ambassador is the floor and never a guest's.
 A standing link carries its `level` and `standing: true`, and `ensureStanding` in `stmt/refs.js`
-makes the missing ones on the first open of the Links panel: **ensured, not minted on a tap**, so
+makes the missing ones on Salt Admin's first read of its links (Needs you or Links): **ensured, not minted on a tap**, so
 the answer to "what are my links" is always exactly five and there is nothing to remember. It is
 idempotent, and a level that already has one keeps the id it was given, because an id handed to a
 stranger must never change what it opens. The level names travel from the book to the Worker as the
@@ -252,7 +252,7 @@ with the level pinned, so there is one definition of what a board is.
 **A STANDING LINK READS ITS LEVEL'S BOARD, NOT ONE WRITTEN UNDER ITS OWN ID** (v699). The publish
 writes `tboard:1` to `tboard:5` on every run, and `handleGuest` resolves a standing link's level
 against the `tiers` names and reads that key. v699 closed a hole v696 left in its own shape: the
-five are minted the first time he opens the Links panel, so any minted since the last publish had no
+five are minted the first time his page reads the links, so any minted since the last publish had no
 board of its own and fell back to `board:2`, which is the LAST level; four of the five would have
 quoted Bronze until the next deploy. A level's board does not depend on which link points at it, so
 nothing is published per standing link and minting one can never be wrong. `tboard:` and not
@@ -641,8 +641,14 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
 
 - **No brand** (his instruction, 10 Sep 2026): nothing a customer holds may point at the
   ledger, and an eyebrow carrying the name undid that.
-- **The master account** (v687, his instruction of 18 Sep 2026) opens on what it can do: Review
-  statement, and the links below it. Review lists every account with where it stands, in one word
+- **Salt Admin opens on Needs you** (S9 9.1, the plan's section 5): one Approve card a thing that waits
+  on him, its action on the card, the tap answered there. An associate's waiting link (Approve, the tier
+  it quotes, Decline); an account locked out, the cause read off the `fail:` brake by `lockedOut` (how
+  many addresses and when it opens, never an address) with Send a sign-in link in two taps, one to make
+  it and one to share it, so the share sheet never waits on the derivation; an ID with no account (the
+  stranger's standing link, Send off until the laptop mints it); and the accounts neither ticked sent
+  nor ever opened. Stage 3's Show a code joins the locked card where `showHandover` is on the page.
+- **The master account** (v687, his instruction of 18 Sep 2026): Review lists every account with where it stands, in one word
   from `reviewFlag`, and when it was last opened, from the `seen:` keys this Worker has written
   since v499 and nothing read until now. The list comes from `GET /all/sheet`, which merges those
   opens into `sheet`, written by `tools/stmt-publish.mjs` from each statement's own rows through

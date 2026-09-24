@@ -228,6 +228,13 @@ h3.pmark{margin:0 0 4px;line-height:1}
 #rlist button .f-pend{color:var(--salt-copper)}
 #rlist button .f-clear,#rlist button .f-none{color:var(--salt-mist)}
 #mHome h1,#oReview h1,#oLinks h1{margin-top:0}
+/* S9 9.1: NEEDS YOU, the system's Approve card a thing; this page decides only the gaps between them and
+   the line a tap is answered on, which sits on the card it answers */
+#mHome .salt-eyebrow{margin:0 0 6px}
+.nlist{display:flex;flex-direction:column;gap:12px;margin:0 0 24px}
+.nlist .glink{margin:0}
+.nnote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.nnote:empty{display:none}
 /* THE ASSOCIATES REPORT CARD (v691): three figures across, then what they have earned in units
    with a bar for the part-unit. The bar is the only chart on this site and it is a rule and a
    fill, because a percentage of a unit is a proportion and nothing more. */
@@ -428,7 +435,11 @@ export function landingPage(user, nonce, owner, bulletin) {
         /* v687: the master account opens on what it can do, not on a list. An item is added here
            only once it works, so nothing on this page is a promise. */
         + '<div id="mHome">'
-        + "<h1>Master account</h1>"
+        /* S9 9.1: his home is Needs you, one card a thing with its action on it (stmt/owner.js) */
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Admin</p>'
+        + "<h1>Needs you</h1>"
+        + '<p class="lead" id="nCount">Reading what needs you.</p>'
+        + '<div id="nlist" class="nlist"></div>'
         + '<p class="lead" id="mCount">' + owner.accounts.filter((a) => !a.test).length + " accounts on the site.</p>"
         + '<div class="rlist" id="mItems">'
         + '<button type="button" data-m="send">Send statement'

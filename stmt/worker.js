@@ -604,6 +604,25 @@ const REM_RE = /^[A-Za-z0-9_-]{20,64}$/;
  * WHAT REVIEW READS is `sheet`, written by tools/stmt-publish.mjs from each statement's own rows,
  * merged here with `seen:<username>`, which this Worker has written on every customer open since
  * v499 and nothing has ever read. Codes, never names. */
+/* S9 9.1: WHO IS LOCKED OUT, read off the brake itself. fail:<address>:<username> counts the misses from
+   one address and lapses fifteen minutes after the last; at MAX_FAILS that address is refused. The address
+   never leaves here: Needs you is told how many places are shut out and when the last one opens again. */
+async function lockedOut(env) {
+  const out = new Map();
+  let cursor;
+  do {
+    const page = await env.STMT.list({ prefix: "fail:", cursor });
+    for (const k of page.keys) {
+      if ((parseInt(await env.STMT.get(k.name) || "0", 10) || 0) < MAX_FAILS) continue;
+      const u = k.name.slice(k.name.lastIndexOf(":") + 1);
+      const until = k.expiration ? new Date(k.expiration * 1000).toISOString() : null;
+      const was = out.get(u) || { from: 0, until: null };
+      out.set(u, { from: was.from + 1, until: String(until || "") > String(was.until || "") ? until : was.until });
+    }
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+  return out;
+}
 async function ownerSheet(env, origin) {
   const sheet = await env.STMT.get("sheet", "json");
   const rows = sheet && Array.isArray(sheet.accounts) ? sheet.accounts : [];
@@ -611,6 +630,7 @@ async function ownerSheet(env, origin) {
   const issue = sheet ? sheet.issue || null : null;
   const month = monthNameOf(issue);
   await keepTicks(env);
+  const locks = await lockedOut(env);
   const out = [];
   for (const a of await roster(env)) {
     const s = byUser.get(a.username) || null;
@@ -635,7 +655,7 @@ async function ownerSheet(env, origin) {
       qr: QR.qrMatrix(url).map((line) => line.join("")),
       pwMaster: s ? s.pwMaster || null : null,
       seen: seen ? { first: seen.first || null, last: seen.last || null, opens: +seen.opens || 0, how: seen.how || null } : null,
-      sent: sent ? sent.at || null : null
+      sent: sent ? sent.at || null : null, locked: locks.get(a.username) || null
     });
   }
   return { ok: true, at: sheet ? sheet.at || null : null, issue, month, accounts: out };

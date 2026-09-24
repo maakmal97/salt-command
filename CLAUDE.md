@@ -328,8 +328,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **The test account** `0000-0000`, password `0000-0000-0000-0000`, counts nowhere.
 - **Guest links `/g/<id>`**: one board, `script-src 'none'`. **The id IS the credential**
   (rejection sampling, never `byte % 30`) and boards are NOT sealed. Unknown, malformed and
-  withdrawn ids answer the same 404. **One standing link per tier**, ensured on the first open of
-  the Links panel and kept for good; Ambassador is never a guest's; Bronze's old link opens the
+  withdrawn ids answer the same 404. **One standing link per tier**, ensured on Salt Admin's first
+  read of its links and kept for good; Ambassador is never a guest's; Bronze's old link opens the
   stranger's board. A standing link reads `tboard:<n>`, never `board:`. **An associate may mint
   their own, shut until he approves: the test is `approved === false`, NEVER `!approved`.** Decline
   is its own state, `declined`: shut like a withdrawn link, and Not approved to the associate. A link

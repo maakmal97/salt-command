@@ -11,8 +11,8 @@
  * (so every backslash is doubled), and it runs inside CLIENT_JS's own function, which is where
  * say(), el(), stamp(), un, pw, whoacct, busy and OWNER live.
  *
- * WHAT IT DRAWS. A master account opens on its items, not on a list: Review statement, then the
- * links. Review reads /all/sheet, which is the publish's account list merged with the opens this
+ * WHAT IT DRAWS. Salt Admin opens on Needs you (S9 9.1): a card for each thing waiting on him, its
+ * action on the card. Its items follow: Review statement, then the links. Review reads /all/sheet, which is the publish's account list merged with the opens this
  * Worker has recorded all along, so each account shows where it stands, in one word, and when it
  * was last opened. A tap still opens the account the customer's own way, through the form. */
 
@@ -28,7 +28,8 @@ export const OWNER_JS = `
     oSend.hidden=(which!=='send');
     oCards.hidden=(which!=='cards');
     say('');
-    if(which==='links'&&!links.length) loadLinks();
+    if(which==='links'){ if(!linksRead) loadLinks(); else drawLinks(); }
+    if(!which) drawNeeds();
     if(which==='review'){ drawRoster(); if(!sheet) loadSheet(); try{ rq.focus(); }catch(e){} }
     if(which==='send'){ if(!sheet) loadSheet(); else drawSend(); }
     if(which==='cards'){ if(!cards) loadCards(); else drawCards(); }
@@ -60,7 +61,7 @@ export const OWNER_JS = `
       var j=await refs('/all/sheet');
       sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null;
       sheetRows.forEach(function(a){ sheet[a.username]=a; });
-      drawRoster(); drawSend(); drawTest();
+      drawRoster(); drawSend(); drawTest(); drawNeeds();
       var n=document.getElementById('mCount');
       /* the count is of accounts on the book: the test account is not one (v689) */
       if(n) n.textContent=sheetRows.filter(function(a){ return !a.test; }).length+' accounts on the site.';
@@ -87,6 +88,20 @@ export const OWNER_JS = `
     if(x){ x.fillStyle='#f2f4f5'; x.fillRect(0,0,size,size); x.fillStyle='#05080a';
       for(var r=0;r<n;r++) for(var k=0;k<n;k++) if(rows[r][k]==='1') x.fillRect((k+pad)*box,(r+pad)*box,box,box); }
     return c;
+  }
+  /* v710's one-time link, minted for one account: the content key is opened HERE under the master and wrapped
+     under a token minted here, and only the token's hash and that wrap reach the Worker, which answers with the
+     finished words. CHARACTER CLASSES, NOT ESCAPES: this file is spliced into a template literal, where a
+     backslash before + or / is eaten and /+/ is not a regular expression at all. */
+  async function mintLink(a){
+    var o=await (await fetch('/open', {method:'POST', headers:{'content-type':'application/json'},
+      body:JSON.stringify({u:a.username, password:OWNER.master, master:OWNER.master})})).json();
+    if(!o.ok||!o.wrapMaster) throw new Error('that account did not open under the master');
+    var ck=await unwrap(OWNER.master, o.wrapMaster);
+    var raw=crypto.getRandomValues(new Uint8Array(24));
+    var tok=btoa(String.fromCharCode.apply(null, raw)).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/[=]+$/,'');
+    var wrap=await wrapUnder(new TextEncoder().encode(tok), ck);
+    return refs('/all/signin/'+encodeURIComponent(a.username), {token:tok, wrap:wrap});
   }
   function sendCard(a){
     var card=el('div','scard'+(a.sent?' done':''));
@@ -150,17 +165,8 @@ export const OWNER_JS = `
       slb.disabled=true; slb.textContent='Making it...';
       var made=false;
       try{
-        var o=await (await fetch('/open', {method:'POST', headers:{'content-type':'application/json'},
-          body:JSON.stringify({u:a.username, password:OWNER.master, master:OWNER.master})})).json();
-        if(!o.ok||!o.wrapMaster) throw new Error('that account did not open under the master');
-        var ck=await unwrap(OWNER.master, o.wrapMaster);
-        var raw=crypto.getRandomValues(new Uint8Array(24));
-        /* CHARACTER CLASSES, NOT ESCAPES: this file is spliced into a template literal, where a
-           backslash before + or / is eaten and /+/ is not a regular expression at all. */
-        var tok=btoa(String.fromCharCode.apply(null, raw)).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/[=]+$/,'');
-        var wrap=await wrapUnder(new TextEncoder().encode(tok), ck);
-        var j=await refs('/all/signin/'+encodeURIComponent(a.username), {token:tok, wrap:wrap});
-        tok=null; ck=null; made=true;
+        var j=await mintLink(a);
+        made=true;
         /* 24 SEP 2026: ONCE IT IS MADE, A FAILURE IS NOT "COULD NOT MAKE ONE". A share sheet he closed
            rejects too, and the link was already minted; it goes to the clipboard instead, and the
            button says which of the three happened. */
@@ -267,6 +273,8 @@ export const OWNER_JS = `
   /* UX8: the answer to the last move, drawn on the card it moved, since the card changes group and the page's
      own line sits at its foot */
   var moved=null;
+  /* waiting means he still has to act on it: not declined (D13), and not withdrawn either */
+  function waitingLink(r){ return !r.standing&&r.approved===false&&r.declined!==true&&!r.revoked; }
   function stampDay(iso){
     /* the page's klBits and MON3, so a day here is written exactly as the customer's page writes one */
     try{ var p=klBits(iso); return p.day+' '+MON3[+p.month-1]+' '+p.year; }catch(e){ return ''; }
@@ -282,8 +290,7 @@ export const OWNER_JS = `
     /* the guest tiers are the list less Ambassador, the floor, which is never a guest's */
     var want=tiers.slice(1);
     var made=want.filter(function(t){ return links.some(function(r){ return r.standing&&r.level===t; }); }).length;
-    /* waiting means he still has to act on it: not declined (D13), and not withdrawn either */
-    var isWaiting=function(r){ return !r.standing&&r.approved===false&&r.declined!==true&&!r.revoked; };
+    var isWaiting=waitingLink;
     /* UX8, 24 Sep 2026: AN ASSOCIATE'S LINK STAYS THEIRS once he has decided on it. Approved or declined, it went
        under "made against a customer" as "Tier 2, (no label)", with nothing to say who minted it */
     var isAssoc=function(r){ return !r.standing&&!!r.by&&r.by!=='standing'; };
@@ -370,14 +377,14 @@ export const OWNER_JS = `
   var tiers=[];
   async function loadLinks(){
     moved=null;
-    try{ var j=await refs('/all/refs'); links=j.refs||[]; tiers=j.tiers||[]; drawLinks(); say(''); }
+    try{ var j=await refs('/all/refs'); links=j.refs||[]; tiers=j.tiers||[]; linksRead=true; drawLinks(); drawNeeds(); say(''); }
     catch(e){ say(e.message,'bad'); }
   }
   async function setLevel(r, level){
     try{
       var j=await refs('/all/refs/'+r.id+'/level', {level: level||null});
       for(var i=0;i<links.length;i++) if(links[i].id===j.ref.id) links[i]=j.ref;
-      drawLinks(); say(level?('That link now quotes '+level+'.'):'That link follows the associate again.');
+      drawLinks(); drawNeeds(); say(level?('That link now quotes '+level+'.'):'That link follows the associate again.');
     }catch(e){ say(e.message,'bad'); }
   }
   async function moveLink(r, how){
@@ -392,10 +399,137 @@ export const OWNER_JS = `
       var opens=!j.ref.revoked&&j.ref.approved!==false;
       moved={id:j.ref.id, t:({approve:'Approved.',decline:'Declined.',revoke:'Withdrawn.',restore:'Restored.'}[how]||'Done.')
         +(opens?' It opens now.':' It stays shut.')};
-      drawLinks(); say('');
+      drawLinks(); drawNeeds(); say('');
       var mc=document.querySelector('[data-link="'+j.ref.id+'"]');
-      if(mc&&mc.scrollIntoView) mc.scrollIntoView({block:'center'});
+      if(mc&&mc.scrollIntoView&&!oLinks.hidden) mc.scrollIntoView({block:'center'});
     }catch(e){ say(e.message,'bad'); }
+  }
+  /* ---- NEEDS YOU (S9 9.1, the plan's section 5) -------------------------------------------------
+     His home: one card a thing that waits on him, each with the one action it needs, in the system's Approve
+     card. A link an associate made (Approve, the tier it quotes, Decline); an account whose customer is locked
+     out (why, and Send a sign-in link); an ID with no account yet (the stranger's link until the laptop makes
+     one, Send switched off); and the accounts nobody has been sent. Read off /all/sheet and /all/refs, the two
+     reads the page makes anyway. A tap is answered on its own card. */
+  var nlist=document.getElementById('nlist'), nCount=document.getElementById('nCount'), linksRead=false;
+  function codeOf(u){ var a=OWNER.accounts.filter(function(x){ return x.username===u; })[0]; return (a&&a.code)||u||'An associate'; }
+  function hm(iso){ try{ var p=klBits(iso); return p.hour+':'+p.minute; }catch(e){ return ''; } }
+  function dayMon(iso){ try{ var p=klBits(iso); return +p.day+' '+MON3[+p.month-1]; }catch(e){ return ''; } }
+  /* a moment today is its time, any other its day */
+  function when(iso){ var t=dayMon(iso); return t===dayMon(new Date().toISOString())?hm(iso):t; }
+  function andList(xs){ return xs.length<2?xs.join(''):xs.slice(0,-1).join(', ')+' and '+xs[xs.length-1]; }
+  var HOW={password:'password', link:'link', remembered:'a remembered phone'};
+  function ghost(t, lit){ var b=el('button','salt-ghost'+(lit?' salt-ghost--lit':''),t); b.type='button'; return b; }
+  function needCard(key, party, entry, reason){
+    var c=el('article','salt-approve need'); c.setAttribute('data-need', key);
+    var h=el('div','salt-approve__head');
+    h.appendChild(el('span','salt-approve__party',party)); h.appendChild(el('span','salt-approve__entry',entry));
+    c.appendChild(h);
+    if(reason) c.appendChild(el('p','salt-approve__reason',reason));
+    return c;
+  }
+  function noteOf(c){ var m=el('p','nnote'); m.setAttribute('role','status'); c.appendChild(m); return m; }
+  /* the stranger's level is the ladder's last, and its standing link is what an ID with no account is shown */
+  function lastLevel(){ return tiers.length>1?tiers[tiers.length-1]:''; }
+  function strangerLink(){
+    var s=lastLevel();
+    return links.filter(function(r){ return r.standing&&r.level===s&&!r.revoked; })[0]||null;
+  }
+  /* A LINK SIGNS THEM IN IN TWO TAPS: the first makes it, the second shares it, so the share sheet never
+     waits on a key derivation and a round trip inside one tap (the plan's must-not-ship list). */
+  function linkButton(a, note){
+    var b=ghost('Send a sign-in link', true), j=null;
+    b.addEventListener('click', async function(){
+      if(!j){
+        b.disabled=true; b.textContent='Making it...';
+        try{ j=await mintLink(a); b.textContent='Share the link'; note.textContent='Made. It signs '+(a.code||a.username)+' in once.'; }
+        catch(e){ b.textContent='Send a sign-in link'; note.textContent='Could not make one: '+e.message; }
+        b.disabled=false; return;
+      }
+      try{
+        if(navigator.share){ await navigator.share({text:j.msg}); note.textContent='Sent.'; }
+        else { await navigator.clipboard.writeText(j.msg); note.textContent='Copied. Paste it into a message to them.'; }
+      }catch(e){ note.textContent='Not shared. Tap Share the link again.'; }
+    });
+    return b;
+  }
+  function linkNeed(r){
+    var who=codeOf(r.by);
+    var c=needCard('l:'+r.id, who, 'guest link, made '+when(r.made), 'A link for a friend. It opens nothing until you approve it.');
+    if(moved&&moved.id===r.id){ noteOf(c).textContent=moved.t; return c; }
+    if(tiers.length){
+      var f=el('div','salt-field'), lab=el('label','salt-field__label','Their friend is quoted'), sel=el('select','fld salt-field__input');
+      sel.id='npin'+r.id; lab.htmlFor=sel.id;
+      var o0=el('option',null,'Follows '+who); o0.value=''; if(!r.level)o0.selected=true; sel.appendChild(o0);
+      /* Ambassador is the floor and never a guest's */
+      tiers.slice(1).forEach(function(t){ var o=el('option',null,t); o.value=t; if(r.level===t)o.selected=true; sel.appendChild(o); });
+      sel.addEventListener('change', function(){ setLevel(r, sel.value); });
+      f.appendChild(lab); f.appendChild(sel); c.appendChild(f);
+    }
+    var row=el('div','salt-approve__actions'), ap=ghost('Approve', true), de=ghost('Decline');
+    ap.addEventListener('click', function(){ moveLink(r,'approve'); });
+    de.addEventListener('click', function(){ moveLink(r,'decline'); });
+    row.appendChild(ap); row.appendChild(de); c.appendChild(row);
+    return c;
+  }
+  function lockNeed(a){
+    var L=a.locked, s=a.seen;
+    var c=needCard('k:'+a.username, a.code||a.username, 'locked out',
+      'Ten wrong passwords from '+(L.from>1?L.from+' addresses':'one address')+'.'
+      +(L.until?' Opens again at '+hm(L.until)+'.':'')
+      +(s&&s.opens?' Last got in by '+(HOW[s.how]||'password')+', '+dayMon(s.last)+'.':' Has never got in.'));
+    var row=el('div','salt-approve__actions');
+    c.appendChild(row);
+    row.appendChild(linkButton(a, noteOf(c)));
+    /* Show a code, in person, is stage 3's (showHandover): the card takes it the moment it is on the page */
+    if(typeof showHandover==='function'){ var sc=ghost('Show a code'); sc.addEventListener('click', function(){ showHandover(a, sc); }); row.appendChild(sc); }
+    return c;
+  }
+  function bareNeed(a){
+    var lv=lastLevel()||"stranger's";
+    var c=needCard('n:'+a.username, a.code||a.username, 'no account yet',
+      'Made at the next laptop update. Until then, show the '+lv+' link.');
+    var row=el('div','salt-approve__actions'), sh=ghost('Show the '+lv+' link', true), off=ghost('Send, after the update');
+    off.disabled=true; off.title='No account behind this username yet';
+    row.appendChild(sh); row.appendChild(off); c.appendChild(row);
+    var note=noteOf(c);
+    sh.addEventListener('click', function(){
+      var r=strangerLink();
+      if(!r){ note.textContent='The '+lv+' link is not made yet. Open Links once, then try again.'; return; }
+      var box=el('div','glink'), img=document.createElement('img'), cp=ghost('Copy link');
+      box.appendChild(el('code','gu',r.url));
+      img.src=r.qr; img.alt='QR to the '+lv+' guest price list'; img.width=180; img.height=180; box.appendChild(img);
+      cp.addEventListener('click', async function(){
+        try{ await navigator.clipboard.writeText(r.url); note.textContent='Copied.'; }catch(e){ note.textContent='Copy failed.'; }
+      });
+      box.appendChild(cp);
+      c.insertBefore(box, row); sh.disabled=true;
+    });
+    return c;
+  }
+  function sendNeed(rows){
+    var codes=rows.map(function(a){ return a.code||a.username; }), first=rows.map(function(a){ return a.issued||''; }).sort()[0];
+    var named=codes.length>6?codes.slice(0,5).concat([(codes.length-5)+' more']):codes;
+    var c=needCard('s', rows.length+' to send', first?'ready since '+dayMon(first):'',
+      andList(named)+(rows.length===1?' has an account':' have accounts')+' and no sign-in yet.');
+    var row=el('div','salt-approve__actions'), go=ghost('Send them', true);
+    go.addEventListener('click', function(){ panel('send'); });
+    row.appendChild(go); c.appendChild(row);
+    return c;
+  }
+  function drawNeeds(){
+    if(!nlist) return;
+    nlist.textContent='';
+    var real=sheetRows.filter(function(a){ return !a.test; }), n=0;
+    var add=function(c, counts){ nlist.appendChild(c); if(counts) n++; };
+    /* a link he has just moved stays where he tapped it, saying what happened, and is no longer counted */
+    links.filter(function(r){ return waitingLink(r)||(moved&&moved.id===r.id&&!r.standing&&r.by); })
+      .forEach(function(r){ add(linkNeed(r), waitingLink(r)&&!(moved&&moved.id===r.id)); });
+    real.filter(function(a){ return a.account&&a.locked; }).forEach(function(a){ add(lockNeed(a), true); });
+    real.filter(function(a){ return a.account===false; }).forEach(function(a){ add(bareNeed(a), true); });
+    var fresh=real.filter(function(a){ return a.account&&!a.sent&&!(a.seen&&a.seen.opens); });
+    if(fresh.length) add(sendNeed(fresh), true);
+    nCount.textContent=(!sheet||!linksRead)?'Reading what needs you.'
+      :(n?n+(n===1?' thing':' things'):'Nothing needs you')+', as at '+hm(new Date().toISOString())+'.';
   }
   document.getElementById('gmake').addEventListener('click', async function(){
     var b=this, intro=document.getElementById('gintro').value,
@@ -501,6 +635,6 @@ export const OWNER_JS = `
   rq.addEventListener('input', drawRoster);
   var sq=document.getElementById('sq'); if(sq) sq.addEventListener('input', drawSend);
   panel(null);
-  /* the home itself needs the account list, for the count and for whether a test account is live */
-  loadSheet();
+  /* the home itself needs the account list and the links: Needs you is read off both (S9 9.1) */
+  loadSheet(); loadLinks();
 `;
