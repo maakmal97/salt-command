@@ -197,7 +197,7 @@ day has passed, the desk's `buyerProfile` reading of late; an undated part is ne
 desk's Credit age breach and its chase flag the same part a day earlier, on the due day itself.
 **Coming up** is `txPendRM`: agreed, not handed over, money still to pay, an undated order dated by
 `agreedOn`. A part carries `date`, `due`, `late`, `rm`, `whole` (goods and delivery), `product` (an
-id, drawn as a mark), `qty`, `got`, `gotOn` and `resale`; a coming part `date`, `rm`, `product`,
+id, drawn as a mark), `qty`, `got`, `gotOn` (the last handover's day, one in stages included) and `resale`; a coming part `date`, `rm`, `product`,
 `qty`, `toCome` and `resale`. A gift, a write-off and a row the statement has not reached (not agreed, and
 dated after the day) count in none of them, so now plus coming is `owed` plus the
 agreed orders it leaves out, less the write-off it still prints. The site draws them and

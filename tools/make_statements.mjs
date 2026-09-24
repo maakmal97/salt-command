@@ -772,13 +772,16 @@ export function payDue(party, day) {
   const sum = a => +a.reduce((t, x) => t + x.rm, 0).toFixed(2);
   /* the statement's own window (stmtRows): a row not Pending and dated after the day is not on it yet */
   const onIt = s => txStat(s).order === 'Pending' || !(new Date(s.date) > new Date(day));
+  /* the day the goods were collected, txDates' own reading taken on the part handed over so far:
+     txDates names no day until the whole order has gone, and a part is often a handover in stages */
+  const gotOn = s => txDates(Object.assign({}, s, { qty: E.txEffDeliv(s) })).dOn || null;
   sales.filter(s => E.ownsCode(party, s.customer) && !s.goodwill && !s.defaulted && onIt(s)).forEach(s => {
     const product = s.product || "salt", resale = s.customer !== party;
     const rm = +E.txAdvance(s).toFixed(2);
     if (rm > 0.009) {
       const due = s.date ? dayPlus(s.date, term) : null;
       now.push({ date: s.date || null, due, late: !!due && day > due, rm, whole: +txOwed(s).toFixed(2),
-        product, qty: s.qty, got: +(s.deliveredQty || 0), gotOn: txDates(s).dOn || null, resale });
+        product, qty: s.qty, got: +(s.deliveredQty || 0), gotOn: gotOn(s), resale });
     }
     const toPay = +E.txPendRM(s).toFixed(2);
     if (toPay > 0.009) coming.push({ date: s.date || s.agreedOn || null, rm: toPay, product, qty: s.qty,

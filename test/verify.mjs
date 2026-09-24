@@ -5047,7 +5047,8 @@ await (async () => {
     fx("sp02", "2026-09-16", { qty: 2.5, total: 225, delivery: 10, cash: 165, deliveredQty: 2.5 }), // the rest, RM 70, due 26 Sep
     fx("sp03", "2026-09-14", { total: 50, deliveredQty: 1 }),                                  // due today: not yet overdue
     fx("sp04", "2026-09-22", { qty: 2.5, total: 250, delivery: 15 }),                          // agreed, nothing moved: coming up
-    fx("sp05", "2026-09-20", { qty: 2, total: 200, deliveredQty: 1 }),                         // half collected: RM 100 each way
+    fx("sp05", "2026-09-20", { qty: 2, total: 200, deliveredQty: 1,                            // half collected, the day after: RM 100 each way
+      amend: [{ kind: "Fulfilment", kg: 1, date: "2026-09-21" }] }),
     fx("sp06", "2026-09-10", { total: 90, cancelled: true, cancelledOn: "2026-09-11" }),       // cancelled: nowhere
     fx("sp07", "2026-09-02", { goodwill: true, rebate: true, deliveredQty: 1 }),               // a gift: nowhere
     fx("sp08", "2026-09-03", { qty: 2, total: 240, deliveredQty: 1, defaulted: true }),       // written off, half handed over: nowhere
@@ -5088,6 +5089,9 @@ await (async () => {
     const p2 = pay && pay.now.parts.find((x) => x.date === "2026-09-16");
     ok(p2 && p2.rm === 70 && p2.whole === 235 && p2.qty === 2.5 && p2.got === 2.5 && p2.gotOn === "2026-09-16" && p2.product === "salt" && p2.late === false,
       "a part says what it is for: the rest, RM 70 of the RM 235 owed on 2.5 units collected 16 Sep, due by 26 Sep: " + JSON.stringify(p2));
+    const p5 = pay && pay.now.parts.find((x) => x.date === "2026-09-20");
+    ok(p5 && p5.got === 1 && p5.qty === 2 && p5.gotOn === "2026-09-21",
+      "a part handed over in stages still says when the goods went, the day of its last handover: " + JSON.stringify(p5));
     const p3 = pay && pay.now.parts.find((x) => x.date === "2026-09-14"), p13 = pay && pay.now.parts.find((x) => !x.date);
     ok(pay && pay.overdue.rm === 180 && brief(pay.overdue.parts) === "2026-09-01:100:2026-09-11 2026-09-05:80:2026-09-15"
       && pay.overdue.parts[1].resale === true && p3 && p3.due === "2026-09-24" && p3.late === false && p13 && p13.due === null && p13.late === false,
