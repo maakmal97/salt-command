@@ -1,6 +1,6 @@
 {
- "v": "v821",
- "stamped": "24 Sep 2026, 12:49 KL",
+ "v": "v822",
+ "stamped": "24 Sep 2026, 12:56 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5579,6 +5579,120 @@
    },
    "CJ2-KUC": {
     "salt": "Silver"
+   },
+   "CJ4-BJ": {
+    "salt": "Titanium"
+   },
+   "CM4-MK": {
+    "salt": "Titanium"
+   },
+   "CS6-PER": {
+    "salt": "Titanium"
+   },
+   "CE4-CHE": {
+    "salt": "Platinum"
+   },
+   "CM4-TO": {
+    "salt": "Titanium"
+   },
+   "CZ4-MK": {
+    "salt": "Titanium"
+   },
+   "CR3-DAM": {
+    "salt": {
+     "small": "Titanium",
+     "mid": "Titanium",
+     "big": "Platinum"
+    }
+   },
+   "CM6-HCM": {
+    "salt": "Silver"
+   },
+   "CA4-DAM": {
+    "salt": {
+     "small": "Titanium",
+     "mid": "Titanium",
+     "big": "Platinum"
+    }
+   },
+   "CE4-AD": {
+    "salt": "Titanium"
+   },
+   "CR4-PJ": {
+    "salt": "Titanium"
+   },
+   "CM4-SK": {
+    "salt": "Titanium"
+   },
+   "CG5-SB": {
+    "salt": "Titanium"
+   },
+   "CY2-NIL": {
+    "salt": "Titanium"
+   },
+   "CI4-OKR": {
+    "salt": "Titanium"
+   },
+   "CA7-AMP": {
+    "salt": "Gold"
+   },
+   "CC5-OKR": {
+    "salt": {
+     "small": "Titanium",
+     "mid": "Titanium",
+     "big": "Platinum"
+    }
+   },
+   "CH4-KS": {
+    "salt": "Titanium"
+   },
+   "CH6-SET": {
+    "salt": "Platinum"
+   },
+   "CA5-BAN": {
+    "salt": "Platinum"
+   },
+   "CM6-PJ": {
+    "salt": "Titanium"
+   },
+   "CF5-WM": {
+    "salt": "Platinum"
+   },
+   "CZ6-WM": {
+    "salt": "Titanium"
+   },
+   "CA5-SEN": {
+    "salt": "Platinum"
+   },
+   "CH4-MAL": {
+    "salt": "Titanium"
+   },
+   "CN5-TAI": {
+    "salt": "Titanium"
+   },
+   "CH5-KLC": {
+    "salt": "Silver"
+   },
+   "CA2-SEN": {
+    "salt": "Titanium"
+   },
+   "CD4-CS": {
+    "salt": "Silver"
+   },
+   "CR3-PUD": {
+    "salt": "Titanium"
+   },
+   "CE5-SA": {
+    "salt": "Titanium"
+   },
+   "CD7-SEG": {
+    "salt": "Titanium"
+   },
+   "CB7-BJ": {
+    "salt": "Titanium"
+   },
+   "CS6-DAM": {
+    "salt": "Platinum"
    }
   },
   "AWARDS": {
@@ -5715,9 +5829,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-24T04:48:51.484Z",
+  "QUEUE_COMMITTED": "2026-09-24T04:52:38.115Z",
   "PRICING": {
-   "takenAt": "2026-09-24T04:49:47.244Z",
+   "takenAt": "2026-09-24T04:56:28.403Z",
    "sizes": [
     0.5,
     1,
@@ -7853,10 +7967,10 @@
      "ladder": []
     }
    },
-   "v": "v821"
+   "v": "v822"
   },
   "OPEN": {
-   "at": "2026-09-24T04:49:47.454Z",
+   "at": "2026-09-24T04:56:28.555Z",
    "count": 8,
    "byKey": {
     "CM4-TO|2026-09-23|750": {
@@ -8054,7 +8168,7 @@
     "rice": null,
     "spare": null
    },
-   "v": "v821"
+   "v": "v822"
   }
  }
 }

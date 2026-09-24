@@ -6362,6 +6362,120 @@ const TIER_OF={
   },
   "CJ2-KUC": {
     "salt": "Silver"
+  },
+  "CJ4-BJ": {
+    "salt": "Titanium"
+  },
+  "CM4-MK": {
+    "salt": "Titanium"
+  },
+  "CS6-PER": {
+    "salt": "Titanium"
+  },
+  "CE4-CHE": {
+    "salt": "Platinum"
+  },
+  "CM4-TO": {
+    "salt": "Titanium"
+  },
+  "CZ4-MK": {
+    "salt": "Titanium"
+  },
+  "CR3-DAM": {
+    "salt": {
+      "small": "Titanium",
+      "mid": "Titanium",
+      "big": "Platinum"
+    }
+  },
+  "CM6-HCM": {
+    "salt": "Silver"
+  },
+  "CA4-DAM": {
+    "salt": {
+      "small": "Titanium",
+      "mid": "Titanium",
+      "big": "Platinum"
+    }
+  },
+  "CE4-AD": {
+    "salt": "Titanium"
+  },
+  "CR4-PJ": {
+    "salt": "Titanium"
+  },
+  "CM4-SK": {
+    "salt": "Titanium"
+  },
+  "CG5-SB": {
+    "salt": "Titanium"
+  },
+  "CY2-NIL": {
+    "salt": "Titanium"
+  },
+  "CI4-OKR": {
+    "salt": "Titanium"
+  },
+  "CA7-AMP": {
+    "salt": "Gold"
+  },
+  "CC5-OKR": {
+    "salt": {
+      "small": "Titanium",
+      "mid": "Titanium",
+      "big": "Platinum"
+    }
+  },
+  "CH4-KS": {
+    "salt": "Titanium"
+  },
+  "CH6-SET": {
+    "salt": "Platinum"
+  },
+  "CA5-BAN": {
+    "salt": "Platinum"
+  },
+  "CM6-PJ": {
+    "salt": "Titanium"
+  },
+  "CF5-WM": {
+    "salt": "Platinum"
+  },
+  "CZ6-WM": {
+    "salt": "Titanium"
+  },
+  "CA5-SEN": {
+    "salt": "Platinum"
+  },
+  "CH4-MAL": {
+    "salt": "Titanium"
+  },
+  "CN5-TAI": {
+    "salt": "Titanium"
+  },
+  "CH5-KLC": {
+    "salt": "Silver"
+  },
+  "CA2-SEN": {
+    "salt": "Titanium"
+  },
+  "CD4-CS": {
+    "salt": "Silver"
+  },
+  "CR3-PUD": {
+    "salt": "Titanium"
+  },
+  "CE5-SA": {
+    "salt": "Titanium"
+  },
+  "CD7-SEG": {
+    "salt": "Titanium"
+  },
+  "CB7-BJ": {
+    "salt": "Titanium"
+  },
+  "CS6-DAM": {
+    "salt": "Platinum"
   }
 };
 const PEOPLE={
@@ -6487,7 +6601,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-09-24T04:48:51.484Z";
+const QUEUE_COMMITTED="2026-09-24T04:52:38.115Z";
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
@@ -7456,7 +7570,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v821","d":"24 Sep 2026","t":"A FULFILMENT CLOSES S196 IN FULL","n":["<b>FOLDED:</b> one amendment only, a fulfilment of RM30 cash dated 24 Sep 2026 against s196, the CS6-PER order of 2 unit for RM200 agreed 23 Sep 2026. RM30 and 0 unit move against RM30 and 0 unit outstanding, leaving RM0 and 0 unit open. The row itself is not recomputed here: ovAmend in the master applies it, so a fulfilment has one definition rather than two.","<b>UNUSUAL:</b> s196 already carries a correction recording RM100 settled in kind by reward, 1 unit, alongside RM70 cash and goods collected, so this last RM30 is what the correction left behind. The drafter flagged the row as settling the order in full and the figures answer that flag. CS6-PER stood at nothing outstanding and none on credit before it. No goods moved and the inventory is untouched at 16.5 unit."]}];
+const evolution=[{"v":"v822","d":"24 Sep 2026","t":"A TIER SET FOR THIRTY FOUR SALT ACCOUNTS","n":["<b>FOLDED:</b> One row, a tier set covering thirty four salt accounts, taken from their proposals and decided by the desk on 24 Sep 2026. Titanium carries the bulk, with Platinum on CE4-CHE, CH6-SET, CA5-BAN, CF5-WM, CA5-SEN and CS6-DAM, Gold on CA7-AMP, Silver on CM6-HCM, CH5-KLC and CD4-CS, and banded sets on CR3-DAM, CA4-DAM and CC5-OKR reading small Titanium, mid Titanium, big Platinum.","<b>INVENTORY:</b> Nothing moved. No cash, no units and no lot, so stock stands at 16.5 unit at a cost of RM48 a unit, with replacement at RM49.43 and the reorder mark at RM34.45. Owed out stays at 9.5 unit and nothing is promised. The drafter raised no flag on this row, and until the quotes switch the set moves no price, so the floors and asks are unchanged."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -7571,7 +7685,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='24 Sep 2026, 12:49 KL';
+const LAST_UPDATED='24 Sep 2026, 12:56 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
