@@ -200,6 +200,35 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .thread .said{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .sayw{display:flex;gap:7px;align-items:center;margin-top:10px}
 .sayw .fld{flex:1 1 auto;margin:0}
+/* S5, 24 SEP 2026: THE ORDERS PLACE. Needs you, then Open, then the earlier orders folded and not drawn. A row
+   is the system's Inbox row and opens the order's own screen: the goods on Steps, the money on the plain Ledger
+   list, one filled Pay, the thread on Bubble and thread, what happened on Plan, folded. The look is the
+   recipes'; this block lays them out and nothing else. On a phone the open order is the whole tab; from 1080px
+   the list stands beside it with its messages in view, wider than the reading column. */
+.oplace{margin-top:18px}
+.olab{margin:18px 0 8px}
+.olist .olab:first-child{margin-top:4px}
+.olist .salt-inbox-row{margin:0 0 8px}
+.olater{width:100%;margin-top:10px}
+.oback{margin:0 0 12px}
+.ohead{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;margin:0 0 16px}
+.ohead h3{margin:0;font-family:var(--salt-font-display);font-size:var(--salt-text-xl);letter-spacing:0}
+.ohead .state{margin-left:auto}
+.ohead .sub2{flex-basis:100%;margin:0}
+.odue{color:var(--salt-ember)}
+.oact .salt-pill{width:100%;margin-top:16px}
+.omsgs{margin-top:22px}
+.omsgs .olab{display:flex;justify-content:space-between;margin:0 0 10px}
+.omsgs .salt-bubble__text{white-space:pre-wrap}
+.ohist,.ofoot{margin-top:18px}
+.ohist ul{margin:0;padding:0;list-style:none}
+.ofoot .salt-ghost{width:100%}
+@media (max-width:1079px){#pOrder.o-open>:not(.oplace){display:none}.oplace.o-open>.olistcol{display:none}.oplace.o-open{margin-top:0}}
+@media (min-width:1080px){
+  .oplace{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px;align-items:start;
+    width:min(1120px,100vw - 64px);margin-left:calc((100% - min(1120px,100vw - 64px))/2)}
+  .oback{display:none}
+}
 
 @media print{.bar,.mos,.tabs{display:none}}
 /* THE OWNER'S ROSTER, in the gate's own geometry so the door looks like the door. One row per
@@ -1432,9 +1461,7 @@ const CLIENT_JS = `
       if(draft.pushNote) np.appendChild(el('p','msg',draft.pushNote));
     }
     if(!view) pOrder.appendChild(np);
-    var h=el('h2',null,'Your orders'); h.style.marginTop='18px'; pOrder.appendChild(h);
-    if(!orders.length) pOrder.appendChild(el('p','lead','None yet.'));
-    orders.forEach(function(o){ pOrder.appendChild(orderPane(o)); });
+    pOrder.appendChild(oPlace());
     if(keep){ var kbox=[].filter.call(pOrder.querySelectorAll('input[data-say]'),function(x){ return x.getAttribute('data-say')===keep; })[0];
       if(kbox){ try{ kbox.focus({preventScroll:true}); kbox.setSelectionRange(sel[0],sel[1]); }catch(e){} } }
     window.scrollTo(0,sc);
@@ -1542,6 +1569,103 @@ const CLIENT_JS = `
     (o.history||[]).forEach(function(h){ var li=el('li',null,stamp(h.at)+'  '+(STATE_WORDS[h.status]||h.status)+(h.method?', paying by '+methodWord(h.method,h.account):'')+(h.note?': '+h.note:'')); hist.appendChild(li); });
     pane.appendChild(hist);
     return pane;
+  }
+  /* ---- S5 5.1 (24 Sep 2026): THE ORDERS, AS ROWS. What needs them first (something to pay, a reply not yet
+     read), then what is open, then the earlier orders under one fold that draws nothing until it is opened: a
+     customer with sixty orders had sixty panes built on every poll. A row is one tap onto that order. ---- */
+  function oFind(id){ return orders.filter(function(o){ return o.id===id; })[0]||null; }
+  function oUnit(o){ var P=prices&&prices.products&&prices.products.filter(function(x){ return x.product===o.product; })[0]; return P?P.unit:'unit'; }
+  function oClosed(o){ return ['done','declined','cancelled'].indexOf(o.status)>=0; }
+  function oPayable(o){ return ['acknowledged','ready'].indexOf(o.status)>=0; }
+  /* STAGE 6 PLUGS IN HERE: claimed is what they have said they sent above what he has confirmed, a field the
+     order does not carry yet. Until it does it reads nothing, and what is still to pay is what is owed. */
+  function oClaimed(o){ var c=+o.claimed; return c>0?c:0; }
+  function oToPay(o){ return Math.max(0,+(dueOf(o)-oClaimed(o)).toFixed(2)); }
+  function oOwes(o){ return oPayable(o)&&oToPay(o)>0.004; }
+  function oDay(iso){ try{ var p=klBits(iso); return p.day+' '+MON3[+p.month-1]; }catch(e){ return ''; } }
+  /* A REPLY WAITS until this device has shown it: the moment of his last line seen, per order, kept here and
+     nowhere else, because there are no read receipts. The store's first moment stands for everything a closed
+     order said before this device ever looked, or the first open after this shipped put every old thank-you
+     under Needs you. Order ids only, never the username; where the browser keeps nothing, it lasts the visit. */
+  var SEEN='salt-stmt-seen', seenMem=null;
+  function seenGet(){
+    var s=null; try{ s=JSON.parse(localStorage.getItem(SEEN)||'null'); }catch(e){ s=null; }
+    if(s&&typeof s.t==='string'&&s.o&&typeof s.o==='object') return s;
+    if(!seenMem){ seenMem={t:new Date().toISOString(),o:{}}; seenPut(seenMem); }
+    return seenMem;
+  }
+  function seenPut(s){ seenMem=s; try{ localStorage.setItem(SEEN,JSON.stringify(s)); }catch(e){ /* kept for this visit only */ } }
+  function hisLast(o){ var m=(o.msgs||[]).filter(function(x){ return x.by==='desk'; }); return m.length?String(m[m.length-1].at||''):''; }
+  function seenMark(o){ var s=seenGet(); return s.o[o.id]||(oClosed(o)?s.t:''); }
+  function replyWaiting(o){ var l=hisLast(o); return !!l&&l>seenMark(o); }
+  /* shown means drawn open on a tab that is showing; his read-only view marks nothing */
+  function seeIt(o){ if(view||!o||pOrder.hidden) return; var l=hisLast(o); if(!l) return; var s=seenGet(); if((s.o[o.id]||'')>=l) return; s.o[o.id]=l; seenPut(s); }
+  function oNeeds(o){ return oOwes(o)||replyWaiting(o); }
+  function oWhy(o){
+    var b=[];
+    if(oOwes(o)) b.push(rm(oToPay(o))+' to pay');
+    if(replyWaiting(o)) b.push('a reply for you');
+    if(!b.length&&o.status==='placed') b.push('waiting to be confirmed');
+    var t=b.join(', '); return t&&t.charAt(0).toUpperCase()+t.slice(1);
+  }
+  /* one line: the mark and the size with the state, why it is here, then the day and the figure */
+  function oRow(o,shown){
+    var b=el('button','salt-inbox-row orow'); b.type='button'; b.setAttribute('data-row',o.id);
+    if(o.id===shown) b.setAttribute('aria-current','true');
+    var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
+    t.appendChild(withMark(o.product,unitsOf(o.qty,oUnit(o)),18));
+    t.appendChild(el('span','salt-status salt-status--'+(STATE_TONE[o.status]||'mist'),STATE_WORDS[o.status]||o.status));
+    main.appendChild(t);
+    var why=oWhy(o); if(why) main.appendChild(el('span','salt-inbox-row__what',why));
+    b.appendChild(main);
+    var side=el('span','salt-inbox-row__side');
+    side.appendChild(el('span','salt-inbox-row__age',oDay(o.at)));
+    side.appendChild(el('span','salt-inbox-row__action',rm(o.total+(+o.delivery||0))));
+    b.appendChild(side);
+    b.addEventListener('click',function(){ oOpen(o.id); });
+    return b;
+  }
+  function oBuckets(){ var n=[],p=[],e=[]; orders.forEach(function(o){ (oNeeds(o)?n:oClosed(o)?e:p).push(o); }); return {needs:n,open:p,past:e}; }
+  function oList(shown){
+    var box=el('div','olist'); box.setAttribute('data-olist','');
+    if(!orders.length){ box.appendChild(el('p','lead','None yet.')); return box; }
+    var B=oBuckets();
+    function sec(t,list){ box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab',t)); list.forEach(function(o){ box.appendChild(oRow(o,shown)); }); }
+    if(B.needs.length) sec('Needs you',B.needs);
+    if(B.open.length) sec('Open',B.open);
+    if(B.past.length){
+      var eb=el('button','salt-ghost olater',B.past.length+' earlier order'+(B.past.length===1?'':'s')); eb.type='button';
+      eb.setAttribute('aria-expanded',draft.oEarlier?'true':'false');
+      eb.addEventListener('click',function(){ draft.oEarlier=!draft.oEarlier; oDraw(); });
+      box.appendChild(eb);
+      if(draft.oEarlier) B.past.forEach(function(o){ box.appendChild(oRow(o,shown)); });
+    }
+    return box;
+  }
+  function oShownId(){ if(draft.oOpen&&!oFind(draft.oOpen)) draft.oOpen=''; return draft.oOpen||''; }
+  function oScreen(o){
+    var s=el('section','oscreen'); s.setAttribute('data-order',o.id);
+    var back=el('button','salt-ghost salt-ghost--tight oback','Your orders'); back.type='button';
+    back.addEventListener('click',function(){ var id=draft.oOpen; draft.oOpen=''; oDraw(); scrollClear(pOrder.querySelector('[data-row="'+id+'"]')); });
+    s.appendChild(back); s.appendChild(orderPane(o));
+    return s;
+  }
+  /* on a phone the open order is the whole tab, with the way back at its head */
+  function oPlace(){
+    var id=oShownId(), o=oFind(id), open=!!(draft.oOpen&&o), place=el('div','oplace'+(open?' o-open':''));
+    place.id='oPlace';
+    pOrder.classList.toggle('o-open',open);
+    var col=el('div','olistcol'); col.appendChild(el('h2',null,'Your orders')); col.appendChild(oList(id));
+    place.appendChild(col);
+    if(o){ place.appendChild(oScreen(o)); seeIt(o); }
+    return place;
+  }
+  function oDraw(){ var was=document.getElementById('oPlace'); if(was) was.replaceWith(oPlace()); }
+  function oOpen(id){ draft.oOpen=id; oDraw(); scrollClear(pOrder.querySelector('.oscreen')); }
+  /* clear of the sticky bar, which would otherwise sit over what was opened */
+  function scrollClear(n){
+    if(!n) return; var bw=document.getElementById('barw');
+    try{ n.style.scrollMarginTop=Math.ceil((bw&&!bw.hidden?bw.getBoundingClientRect().bottom:0)+12)+'px'; n.scrollIntoView({block:'start'}); }catch(e){}
   }
   var METHOD_WORDS={cod:'cash on handover', transfer:'DuitNow Transfer', qr:'DuitNow QR', jompay:'JomPAY', tngbiz:"Touch 'n Go Business"};
   function acct(key){ return PAY.filter(function(a){return a.key===key;})[0]; }
@@ -1669,14 +1793,12 @@ const CLIENT_JS = `
     /* a lapsed session keeps the order for the sign-in after Continue: a banner comes hours after the fifteen
        minutes, and spending it on the list drawn last showed the order stale, then lost it at the door */
     if(!wantOrder||view||!session||!lapse.hidden) return;
-    var id=wantOrder, pane=[].filter.call(pOrder.querySelectorAll('[data-order]'),function(x){ return x.getAttribute('data-order')===id; })[0];
+    var id=wantOrder;
     wantOrder='';
     try{ if(location.hash) history.replaceState(null,'',location.pathname+location.search); }catch(e){}
-    if(!pane) return;
+    if(!oFind(id)) return;
     showTab('order');
-    /* clear of the sticky bar, which would otherwise sit over the order's state */
-    var bw=document.getElementById('barw');
-    try{ pane.style.scrollMarginTop=Math.ceil((bw&&!bw.hidden?bw.getBoundingClientRect().bottom:0)+12)+'px'; pane.scrollIntoView({block:'start'}); }catch(e){}
+    oOpen(id);
   }
   try{
     if(!OWNER&&'serviceWorker' in navigator&&navigator.serviceWorker.addEventListener)

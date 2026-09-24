@@ -20843,6 +20843,68 @@ await (async () => {
   ok(!/On this order/.test(quiet), "and an order nobody wrote on draws no thread at all");
 })();
 
+section("S5 5.1: the orders are rows, what needs them first, and the earlier ones folded and not drawn until opened");
+await (async () => {
+  /* 24 SEP 2026, the Counter redesign's stage 5. Every order was a pane with its whole thread, its pay controls
+     and its history, drawn in the order it was placed and drawn again on every poll: a customer with sixty
+     orders built sixty panes to find the one that needed them. Driven through the served page. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s51", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s51",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const o = (id, at, x) => Object.assign({ id, at, product: "salt", qty: 1, unit: 90, total: 90, delivery: 0, mode: "collect", paid: 0, moved: 0,
+    status: "placed", history: [{ at, status: "placed", by: "customer" }], msgs: [] }, x);
+  const OPEN = "20260924090000-open", OWES = "20260923090000-owes", SAID = "20260922090000-said", DONE = "20260901090000-done", GONE = "20260902090000-gone";
+  const orders = [o(OPEN, "2026-09-24T01:00:00Z"), o(OWES, "2026-09-23T01:00:00Z", { status: "acknowledged" }),
+    o(SAID, "2026-09-22T01:00:00Z", { status: "acknowledged", paid: 90, msgs: [{ at: "2026-09-22T02:00:00Z", by: "desk", text: "Ready on Friday." }] }),
+    o(DONE, "2026-09-01T01:00:00Z", { status: "done", paid: 90, moved: 1 }), o(GONE, "2026-09-02T01:00:00Z", { status: "cancelled" })];
+  const dom = new JSDOM(landingPage(u, "n51", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : { ok: true };
+      return { ok: true, status: 200, json: async () => j };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const list = () => d.querySelector("#pOrder [data-olist]");
+  const seq = () => [...list().children].map((x) => x.getAttribute("data-row") || x.textContent);
+  const row = (id) => d.querySelector('#pOrder [data-row="' + id + '"]');
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !list(); i++) await new Promise((r) => setTimeout(r, 50));
+    d.querySelector('#tabs button[data-t="order"]').click();
+    const s0 = seq();
+    ok(s0[0] === "Needs you" && s0[1] === OWES && s0[2] === SAID && s0[3] === "Open" && s0[4] === OPEN
+      && /RM 90 to pay/.test(row(OWES).textContent) && /A reply for you/.test(row(SAID).textContent),
+      "Needs you comes first, with the order that has money to pay and the one with a reply not yet read, then Open: " + JSON.stringify(s0));
+    const fold = list().querySelector("button.olater");
+    ok(!!fold && fold.textContent === "2 earlier orders" && fold.getAttribute("aria-expanded") === "false"
+      && !row(DONE) && !row(GONE) && s0.length === 6 && s0[5] === "2 earlier orders",
+      "the two closed orders are one fold at the foot, and nothing of them is drawn: " + JSON.stringify(s0));
+    fold.click();
+    const f2 = list().querySelector("button.olater");
+    ok(f2 && f2.getAttribute("aria-expanded") === "true" && !!row(DONE) && !!row(GONE),
+      "opening the fold draws them under it: " + JSON.stringify(seq()));
+    const r = row(OWES);
+    ok(r.tagName === "BUTTON" && r.classList.contains("salt-inbox-row") && !!r.querySelector("svg.psym") && /1 unit/.test(r.textContent)
+      && !!r.querySelector(".salt-status") && /23 Sep/.test((r.querySelector(".salt-inbox-row__age") || {}).textContent)
+      && (r.querySelector(".salt-inbox-row__action") || {}).textContent === "RM 90" && !r.querySelector("input, textarea, select, .salt-thread, .hist"),
+      "a row is one tap: the mark and the size with the state, the day and the figure, and nothing of the order's own screen: " + JSON.stringify(r.textContent));
+    r.click();
+    const scr = d.querySelector("#pOrder .oscreen");
+    ok(!!scr && scr.getAttribute("data-order") === OWES && d.getElementById("oPlace").classList.contains("o-open") && d.getElementById("pOrder").classList.contains("o-open"),
+      "a tap opens that order's own screen, and on a phone the place says it is open, so the list and the form stand aside");
+    const back = d.querySelector("#pOrder .oback"); if (back) back.click();
+    ok(!!back && !d.querySelector("#pOrder .oscreen") && !d.getElementById("oPlace").classList.contains("o-open") && !!row(OWES),
+      "the way back is the list again");
+  } finally { w.close(); }
+})();
 section("v753: he answers on the order, and the words are checked on the desk before they leave it");
 await (async () => {
   /* the other half of v751. His answer is a move of his like any other, so it wakes them and changes
