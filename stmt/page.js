@@ -132,6 +132,16 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .keepsteps{margin:14px 0;padding-left:22px;line-height:2.1}
 .keepsteps .glyph,.keepcard .glyph{vertical-align:-0.3em;margin:0 3px}
 .keepsteps .sub2{display:block;line-height:1.5;margin:0 0 6px}
+/* S9 9.9: THIS DEVICE, at the foot of the statement for now (stage 7 moves it into Account): its notifications, its
+   phones and computers with this one marked, and the two quiet ways, each answered on the line under it */
+.devcard{max-width:620px;margin:24px auto 0}
+.devcard .salt-ledger{margin:6px 0 4px}
+.devcard .dacts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.devcard .dnote{margin:8px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.devcard .dnote:empty{display:none}
+.devcard .dnote.bad{color:var(--salt-ember)}
+#devQr{width:min(240px,100%);margin:4px auto 20px}
+#devQrImg{display:block;width:100%;height:auto}
 /* REMEMBER ME (v692): a checkbox on the door, at the tap size everything else here is */
 .rem{display:flex;align-items:center;gap:10px;margin-top:16px;min-height:var(--salt-tap);
   font-size:var(--salt-text-sm);color:var(--salt-text-muted);cursor:pointer}
@@ -509,6 +519,33 @@ function keepSheet() {
     + "</div>";
 }
 
+/* S9 9.9, HIS D2: THIS DEVICE. A card at the foot of the statement, drawn by the script once signed in; and the Sheet
+   that signs in another device, its code minted as it opens so Copy is a tap of its own, and a QR that opens Salt
+   Counter on the other device's camera, where the code is typed. The QR carries the address alone: a key in an
+   address signs a browser tab in only when his counter minted it (S3), so an address one customer sends another never
+   signs the other in. */
+function deviceCard() {
+  return '<section id="devCard" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
+    + '<h2 class="salt-eyebrow salt-eyebrow--brass" id="devH">This device</h2><div id="devBody"></div></section>';
+}
+function devSheet() {
+  return '<div id="devScrim" class="salt-sheet-scrim" hidden></div>'
+    + '<div id="devSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="devT" tabindex="-1" hidden>'
+    + '<div class="salt-sheet__grab"></div>'
+    + '<div class="salt-sheet__head"><h2 class="salt-sheet__title" id="devT">Sign in another device</h2>'
+    + '<button type="button" class="salt-orb salt-sheet__close" id="devX" aria-label="Close">' + glyphSvg("close", 20) + "</button></div>"
+    + '<div class="salt-sheet__body">'
+    + "<p>On the other device, scan this with its camera to open Salt Counter, then type the code where it asks for one.</p>"
+    + '<div class="salt-qr" id="devQr" hidden><div class="salt-qr__code"><img id="devQrImg" alt="A code that opens Salt Counter" width="180" height="180"></div>'
+    + '<div class="salt-qr__meta"><span class="salt-qr__caption">Opens Salt Counter</span></div></div>'
+    + '<div class="salt-code"><label class="salt-code__label" for="devCode">The code</label>'
+    + '<input class="fld salt-field__input salt-field__input--code" id="devCode" type="text" readonly value="" aria-describedby="devHint">'
+    + '<span class="salt-code__hint" id="devHint">Works once, for 15 minutes.</span></div>'
+    + '<p class="msg" id="devMsg" role="status" aria-live="polite"></p></div>'
+    + '<div class="salt-sheet__foot"><button class="btn salt-pill salt-pill--md" id="devCopy" type="button" disabled>Copy the code</button></div>'
+    + "</div>";
+}
+
 /* S3 3.11: ONE STEP TO FINISH. The saved app starts at /app with storage of its own: a key carried by Paste, or the
    eight symbols typed, brings the sign-in across, and the help says the true way to get one. */
 function codeScreen() {
@@ -773,7 +810,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + (owner ? "" : '<button class="btn salt-ghost" id="toCode" type="button">I have a sign-in code</button>')
     + '<p class="salt-insight">Lost your password or your link? Ask us for a <b>new sign-in link</b>. It works straight away.</p>'
     + "</div></div>"
-    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + keepSheet())
+    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + keepSheet() + devSheet())
     + '<div id="barw" hidden><div class="bar">'
     /* S9 9.5: on his page an account is viewed, never signed into, so the bar says whose it is and that it is
        read only, and its one control takes him back to that account on Accounts */
@@ -793,7 +830,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<div id="pStmt">' + (owner ? "" : keepCard())
     + '<div id="mos" class="mos" hidden></div>'
     + '<div id="mfil" class="mos mfil" hidden></div><p class="mfnote" id="mfnote"></p>'
-    + '<div id="out"></div></div>'
+    + '<div id="out"></div>' + (owner ? "" : deviceCard()) + "</div>"
     + '<div id="pPrices" class="panel" hidden></div>'
     + '<div id="pOrder" class="panel" hidden></div>'
     + '<div id="pCard" class="panel" hidden></div>'
@@ -1066,6 +1103,7 @@ const CLIENT_JS = `
       if(r.ok&&j.ok&&j.token){
         var was=remGet();
         remSet({t:j.token, k:b64e(key), u:u});
+        drawDev();   /* S9 9.9: this device is kept signed in now, and its card says so */
         /* S3 3.8: what this phone remembered before is gone from it, so its wrap goes from the site as well; S3 fix: and,
            for another account, this phone's alerts for it, or a phone handed over kept waking for the account it replaced */
         if(was&&was.t&&was.t!==j.token){
@@ -1161,6 +1199,117 @@ const CLIENT_JS = `
       try{ history.replaceState(null,'','/app#'+keepTok); }catch(e){}
       Promise.resolve(done).then(function(){ ksay('Copied. Now tap the marks above, then open the new icon and paste.'); },
         function(){ ksay('Copy failed. Type the code in the new app instead.','bad'); });
+    });
+  }
+
+  /* ---- THIS DEVICE (S9 9.9, his D2): the card at the foot of the statement --------------------------------------
+     Notifications on or off on this device; its phones and computers (POST /devices on the session, this phone's own
+     remembered token saying which is this one), named in the site's words and never an address; Sign out other
+     devices, on a second tap, sparing this one and its alerts; and Sign in another device, whose Sheet mints the
+     hand-over (POST /handover) as it opens, so Copy the code is a tap of its own. Every answer is on the line under the
+     controls. His read-only view has none of it: those are not his devices. */
+  var devCard=document.getElementById('devCard'), devBody=document.getElementById('devBody'), devN=0, devSaid={t:'',bad:false};
+  var devSheetEl=document.getElementById('devSheet'), devScrim=document.getElementById('devScrim'), devCode=document.getElementById('devCode'),
+      devCopy=document.getElementById('devCopy'), devMsg=document.getElementById('devMsg'), devQr=document.getElementById('devQr'), devHo='', devM=0;
+  function devRow(label, value, flag){
+    var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), v=el('span','salt-ledger__value');
+    l.appendChild(el('span','salt-ledger__label',label));
+    if(value) v.appendChild(value);
+    l.appendChild(v); r.appendChild(l);
+    if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
+    return r;
+  }
+  function devDay(iso){ try{ var p=klBits(iso), q=klBits(new Date().toISOString()); return p.day===q.day&&p.month===q.month?p.hour+':'+p.minute:+p.day+' '+MON3[+p.month-1]; }catch(e){ return ''; } }
+  function devQuiet(t){ var b=el('button','btn salt-ghost',t); b.type='button'; return b; }
+  async function drawDev(){
+    if(!devCard) return;
+    if(!session||view||OWNER){ devCard.hidden=true; return; }
+    var n=++devN, rec=remGet(), tok=rec&&rec.u===user?rec.t||null:null, sub=null;
+    var r=await api('/devices',{token:tok});
+    try{ sub=await phoneSub(); }catch(e){ sub=null; }
+    if(n!==devN||!session) return;
+    devCard.hidden=false; devBody.textContent='';
+    var list=el('div','salt-ledger salt-ledger--plain');
+    var canPush=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window), nb=null;
+    if(canPush){ nb=devQuiet(sub?'Turn off':'Turn on'); nb.addEventListener('click', function(){ devAlerts(sub, nb); }); }
+    list.appendChild(devRow('Notifications', nb, canPush?(sub?'On. This '+DEV+' is told when an order changes.':'Off on this '+DEV+'.')
+      :(IOS?'Keep it on your Home Screen first, then turn them on there.':'This browser cannot receive them.')));
+    var devs=(r.body&&r.body.devices)||[], others=devs.filter(function(d){ return !d.here; }).length;
+    devs.forEach(function(d){
+      list.appendChild(devRow(d.label||'A device', d.here?chipEl('verdigris','This one'):null,
+        d.kept?'Kept signed in since '+devDay(d.at)+', last used '+devDay(d.last)+'.':'Signed in '+devDay(d.at)+', for that visit.'));
+    });
+    if(!r.body.ok) list.appendChild(devRow('Your devices', null, r.body.error||'They could not be read just now.'));
+    devBody.appendChild(list);
+    var acts=el('div','dacts'), note=el('p','dnote'+(devSaid.bad?' bad':''),devSaid.t); note.setAttribute('role','status');
+    var another=devQuiet('Sign in another device'); another.addEventListener('click', function(){ openDevSheet(another); });
+    acts.appendChild(another);
+    if(others){
+      var so=devQuiet('Sign out other devices'), armed=null;
+      so.addEventListener('click', async function(){
+        if(!armed){ so.textContent='Tap again to sign them out'; armed=setTimeout(function(){ armed=null; so.textContent='Sign out other devices'; }, 4000); return; }
+        clearTimeout(armed); armed=null; so.disabled=true; so.textContent='Signing out...';
+        var s2=null; try{ s2=await phoneSub(); }catch(e){}
+        var rr=remGet(), x=await api('/devices/signout',{token:rr&&rr.u===user?rr.t||null:null, endpoint:s2?s2.endpoint:null});
+        devSaid=x.body.ok?{t:x.body.devices?'Signed out '+x.body.devices+(x.body.devices===1?' other device.':' other devices.'):'No other device was signed in.',bad:false}
+          :{t:x.body.error||NOT_SENT,bad:true};
+        drawDev();
+      });
+      acts.appendChild(so);
+    }
+    devBody.appendChild(acts); devBody.appendChild(note);
+    devSaid={t:'',bad:false};
+  }
+  function chipEl(tone, t){ return el('span','salt-status salt-status--'+tone,t); }
+  async function devAlerts(sub, b){
+    b.disabled=true;
+    if(!sub){ await subscribePush(); devSaid=draft.pushNote?{t:draft.pushNote,bad:true}:{t:'',bad:false}; drawDev(); return; }
+    var ep=sub.endpoint, x=null;
+    try{ await sub.unsubscribe(); x=await api('/push/unsubscribe',{endpoint:ep}); }catch(e){ x=null; }
+    devSaid=x&&x.body.ok?{t:'Notifications are off on this '+DEV+'.',bad:false}:{t:'They could not be turned off just now.',bad:true};
+    drawDev();
+  }
+  function dsay(t,cls){ devMsg.textContent=t||''; devMsg.className='msg'+(cls?' '+cls:''); }
+  async function mintDev(){
+    var n=++devM;
+    devCopy.disabled=true; devCode.value=''; devQr.hidden=true; devHo=''; dsay('Making a code...','wait');
+    try{
+      var tok=b64e(crypto.getRandomValues(new Uint8Array(24))).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/=+$/,'');
+      var wrap=await wrapUnder(new TextEncoder().encode(tok), curCk);
+      var r=await api('/handover',{token:tok, wrap:wrap});
+      if(n!==devM||devSheetEl.hidden) return;
+      if(r.status===503){ dsay('Signing in with a code is not switched on here yet. Ask us for a sign-in link instead.','bad'); return; }
+      if(!r.body.ok||!r.body.code){ dsay(r.status===401?r.body.error:'The code could not be made just now. Close this and open it again.','bad'); return; }
+      keepMinted=keepMinted.concat(r.body.token||tok).slice(-10);
+      devHo=String(r.body.code).toUpperCase().replace('-',' ');
+      devCode.value=devHo;
+      if(r.body.qr){ document.getElementById('devQrImg').src=r.body.qr; devQr.hidden=false; }
+      devCopy.disabled=false; dsay('');
+    }catch(e){ if(n===devM) dsay('The code could not be made just now. Close this and open it again.','bad'); }
+  }
+  var devFrom=null;
+  function openDevSheet(from){
+    if(!devSheetEl||!curCk) return;
+    devFrom=from; devScrim.hidden=false; devSheetEl.hidden=false;
+    try{ devSheetEl.focus(); }catch(e){}
+    mintDev();
+  }
+  function closeDevSheet(){
+    if(!devSheetEl||devSheetEl.hidden) return;
+    devSheetEl.hidden=true; devScrim.hidden=true; devM++; devHo=''; devCode.value=''; devCopy.disabled=true; dsay('');
+    try{ if(devFrom&&devFrom.isConnected) devFrom.focus(); }catch(e){}
+  }
+  if(devSheetEl){
+    document.getElementById('devX').addEventListener('click', closeDevSheet);
+    devScrim.addEventListener('click', closeDevSheet);
+    document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') closeDevSheet(); });
+    devCopy.addEventListener('click', function(){
+      if(!devHo) return;
+      /* the tap's first act, before anything that waits: Safari allows a copy only inside the tap itself */
+      var done=null;
+      try{ done=navigator.clipboard.writeText(devHo); }catch(e){ done=Promise.reject(e); }
+      Promise.resolve(done).then(function(){ dsay('Copied. Type it on the other device, where Salt Counter asks for a code.'); },
+        function(){ dsay('Copy failed. Read the code across instead.','bad'); });
     });
   }
 
@@ -1293,6 +1442,7 @@ const CLIENT_JS = `
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
     closeKeep(); keepTok=''; if(keepCardEl) keepCardEl.hidden=true; if(codeBox) codeBox.hidden=true;
+    closeDevSheet(); devN++; if(devCard) devCard.hidden=true;
     /* S3 fix: a key the Keep Sheet wrote into the address leaves it with the account */
     try{ if(location.hash) history.replaceState(null,'',location.pathname); }catch(e){}
     var ask=document.getElementById('askRep'); if(ask&&!ask.hidden){ ask.hidden=true; document.getElementById('askNo').click(); }
@@ -2786,6 +2936,7 @@ const CLIENT_JS = `
     show(b);
     drawPrices();
     drawKeep();
+    drawDev();
     if(same){
       if(t!==tab&&!(hold&&t==='prices')&&!(t==='card'&&tCard.hidden)) showTab(t);
       if(mf&&mfil.querySelector('button[data-mf="'+mf+'"]')){ mfPick=mf; applyMonths(); }

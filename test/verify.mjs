@@ -16405,6 +16405,90 @@ await (async () => {
       "Sign out everywhere says what it ended, the list empties, and Send a sign-in link still has its link: " + JSON.stringify((card().querySelector(".agrid + .anote") || {}).textContent));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S9 9.9: the customer's This device card lists their devices with this one marked, signs the others out, and signs in another device by a code made as its Sheet opens");
+await (async () => {
+  /* HIS D2 AND THE PLAN'S 9.9: This device, at the foot of the statement until stage 7 moves it into Account. Driven on
+     the customer's own page against the real Worker. The QR carries the site's /app alone: a key in an address signs a
+     browser tab in only when his counter minted it (S3), so the code is typed on the other device. */
+  const W = (await import("../stmt/worker.js")).default;
+  const { landingPage } = await import("../stmt/page.js");
+  const QR = (await import("../stmt/qr.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const EDGE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0";
+  const kv = new KV();
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9-9", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] })) }));
+  const env = { STMT: kv, STMT_HANDOVER_KEY: "ho-secret-s9-9" };
+  const ORIGIN = "https://k7m3p2.example";
+  const site = (path, o) => W.fetch(new Request(ORIGIN + path, o), env);
+  const other = (await (await site("/open", { method: "POST", headers: { "content-type": "application/json", "user-agent": IPHONE }, body: JSON.stringify({ u, password: pw }) })).json()).session;
+  const orders = async (s) => (await site("/orders", { headers: { "X-Stmt-Session": s } })).status;
+  /* ---- Turn off, on the Worker: this phone's own push record and no other, on its session ---- */
+  const { endpointId } = await import("../stmt/push.js");
+  const P = (path, b, s) => site(path, { method: "POST", headers: { "content-type": "application/json", "X-Stmt-Session": s }, body: JSON.stringify(b) });
+  const E1 = "https://push.example/s99-a", E2 = "https://push.example/s99-b";
+  await P("/push/subscribe", { endpoint: E1 }, other); await P("/push/subscribe", { endpoint: E2 }, other);
+  const off = await P("/push/unsubscribe", { endpoint: E1 }, other);
+  ok(off.status === 200 && !(await kv.get("push:" + u + ":" + (await endpointId(E1)))) && !!(await kv.get("push:" + u + ":" + (await endpointId(E2))))
+    && (await P("/push/unsubscribe", { endpoint: E2 }, "")).status === 401,
+    "turning notifications off drops that phone's own push record and no other, and only on its session");
+  const posts = [], clip = [];
+  let win = null;
+  try {
+    win = new JSDOM(landingPage(u, "n99", null), { url: ORIGIN + "/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      Object.defineProperty(w.navigator, "userAgent", { value: EDGE, configurable: true });
+      Object.defineProperty(w.navigator, "clipboard", { configurable: true, value: { writeText: (t) => { clip.push(t); return Promise.resolve(); } } });
+      w.scrollTo = () => {};
+      w.fetch = async (q, o) => { o = o || {}; posts.push((o.method || "GET") + " " + String(q));
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({ "user-agent": EDGE }, o.headers), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    D.getElementById("pw").value = pw;
+    D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+    const card = D.getElementById("devCard"), body = () => card.textContent;
+    ok(await until(() => !card.hidden && /iPhone, Safari/.test(body()) && /Kept signed in/.test(body())) && D.getElementById("pStmt").contains(card),
+      "signed in, the statement ends on This device: " + JSON.stringify(body()));
+    const rows = () => [...card.querySelectorAll(".salt-ledger__row")].map((r) => r.textContent);
+    ok(rows().some((t) => /^Notifications/.test(t)) && rows().some((t) => /^Windows computer, EdgeThis oneKept signed in since/.test(t))
+      && rows().some((t) => /^iPhone, SafariSigned in .*, for that visit[.]$/.test(t)) && !body().includes("Mozilla"),
+      "it lists notifications, this computer marked This one and kept signed in, and the iPhone for that visit: " + JSON.stringify(rows()));
+    const btn = (t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
+
+    /* ---- Sign in another device: the code is made as the Sheet opens, and Copy is a tap of its own ---- */
+    btn("Sign in another device").click();
+    const sheet = D.getElementById("devSheet"), code = D.getElementById("devCode"), copy = D.getElementById("devCopy");
+    ok(!sheet.hidden && sheet.getAttribute("aria-modal") === "true" && copy.disabled, "the Sheet opens at once, Copy held until there is a code");
+    ok(await until(() => /^[A-Z2-9]{4} [A-Z2-9]{4}$/.test(code.value) && !copy.disabled) && posts.includes("POST /handover")
+      && (await kv.list({ prefix: "ho:" })).keys.length === 2,
+      "the hand-over is made as the Sheet opens, its eight symbols shown before any tap: " + code.value);
+    const qr = D.getElementById("devQrImg").getAttribute("src");
+    ok(!D.getElementById("devQr").hidden && qr === "data:image/svg+xml," + encodeURIComponent(QR.qrRectSvg(ORIGIN + "/app", { size: 180, dark: "#05080a", light: "#f2f4f5", label: "Salt Counter" })),
+      "and its QR is the site's /app for the other device's camera, the address alone and never the key");
+    const before = posts.length;
+    copy.click();
+    ok(clip.length === 1 && clip[0] === code.value && posts.length === before, "Copy the code copies it as the tap's first act, fetching nothing: " + JSON.stringify(clip));
+    D.getElementById("devX").click();
+    ok(sheet.hidden, "and the Sheet closes");
+
+    /* ---- Sign out other devices, on a second tap: the iPhone goes, this computer stays ---- */
+    btn("Sign out other devices").click();
+    ok(await orders(other) === 200 && !!btn("Tap again to sign them out"), "one tap only asks");
+    btn("Tap again to sign them out").click();
+    ok(await until(() => /Signed out 1 other device[.]/.test(body())) && await orders(other) === 401 && !/iPhone, Safari/.test(body()) && !btn("Sign out other devices"),
+      "the second signs the iPhone out, says so under the controls, and the list keeps this one alone: " + JSON.stringify(rows()));
+
+    /* ---- Log out burns the code the Sheet made, unused ---- */
+    D.getElementById("lock").click();
+    ok(await until(async () => (await kv.list({ prefix: "ho:" })).keys.length === 0) && card.hidden,
+      "logging out burns the code the Sheet made and takes the card away");
+    ok(!landingPage("", "n99o", { master: "x", accounts: [] }).includes('id="devCard"'), "and his own page carries no This device card");
+  } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password

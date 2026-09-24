@@ -370,6 +370,15 @@ async function handleCustomer(request, env, p, m) {
     await env.STMT.put("push:" + u + ":" + id, JSON.stringify(Object.assign({ endpoint: ep, at: new Date().toISOString() }, keys ? { keys } : {})));
     return json({ ok: true, id, keys: !!keys });
   }
+  /* S9 9.9: notifications off on this phone, from its This device card: its own push record and no other */
+  if (p === "/push/unsubscribe") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const b = await readJson(request);
+    const ep = b && b.endpoint;
+    if (typeof ep !== "string" || !/^https:\/\//.test(ep)) return json({ ok: false, error: "send the subscription's endpoint" }, 400);
+    await env.STMT.delete("push:" + u + ":" + await endpointId(ep));
+    return json({ ok: true });
+  }
   /* v692: remember this device, and log out of it */
   if (p === "/remember") {
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -581,7 +590,8 @@ async function handleHandover(request, env, p, m) {
     if (!u) return json({ ok: false, error: "Sign in again to make a code.", session: false }, 401);
     const b = await readJson(request);
     const made = await mintHandover(env, u, b && b.token, b && b.wrap);
-    return made ? json(Object.assign({ ok: true }, made)) : json({ ok: false, error: "send the key and the wrap" }, 400);
+    /* S9 9.9: with a QR of the site's own /app for the other device's camera, the address alone and never the key */
+    return made ? json(Object.assign({ ok: true, qr: appQr(new URL(request.url).origin) }, made)) : json({ ok: false, error: "send the key and the wrap" }, 400);
   }
   const b = await readJson(request);
   if (!b) return json({ ok: false, error: REFUSED }, 401);
@@ -743,6 +753,10 @@ function refQr(origin, id) {
   return "data:image/svg+xml," + encodeURIComponent(svg);
 }
 const refOut = (origin, r) => Object.assign({}, r, { url: refUrl(origin, r.id), qr: refQr(origin, r.id) });
+/* S9 9.9: the site's own /app, for a customer's other device to open; it carries nothing but the address */
+function appQr(origin) {
+  return "data:image/svg+xml," + encodeURIComponent(QR.qrRectSvg(origin + "/app", { size: 180, dark: "#05080a", light: "#f2f4f5", label: "Salt Counter" }));
+}
 
 /* ---- REMEMBER ME, AND LOGGING OUT (v692, his instruction of 18 Sep 2026) ----------------------
  * The page locked itself after three minutes and asked for the password again. He asked for the
@@ -1419,7 +1433,7 @@ export default {
     /* S3 3.9: the hand-over, minted on a session and opened by its key or its code */
     if (p === "/handover" || p === "/handover/open") return handleHandover(request, env, p, m);
     if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account"
-      || p === "/devices" || p === "/devices/signout") return handleCustomer(request, env, p, m);
+      || p === "/devices" || p === "/devices/signout" || p === "/push/unsubscribe") return handleCustomer(request, env, p, m);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
     if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/waiting") return handleDesk(request, env, p, m);

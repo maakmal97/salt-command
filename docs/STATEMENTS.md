@@ -359,7 +359,7 @@ signed in (or Salt Admin, for a customer at his counter) hands the sign-in acros
 
 | Route | Takes | Answers |
 |---|---|---|
-| `POST /handover` | a live session (`X-Stmt-Session`) and JSON `{token, wrap}`: `token` a key the page mints (24 random bytes, base64url, the shape of a sign-in link's), `wrap` its content key wrapped under it exactly as `wrapUnder(new TextEncoder().encode(token), ck)` wraps | `{ok, code, token, exp}`: `code` eight symbols of the username alphabet as `xxxx-xxxx`, `token` the key sent, `exp` ISO, fifteen minutes on. 401 with `session:false` with no session; 400 without a key of that shape and a wrap |
+| `POST /handover` | a live session (`X-Stmt-Session`) and JSON `{token, wrap}`: `token` a key the page mints (24 random bytes, base64url, the shape of a sign-in link's), `wrap` its content key wrapped under it exactly as `wrapUnder(new TextEncoder().encode(token), ck)` wraps | `{ok, code, token, exp, qr}`: `code` eight symbols of the username alphabet as `xxxx-xxxx`, `token` the key sent, `exp` ISO, fifteen minutes on, `qr` a data URI of `<site>/app` alone (S9 9.9). 401 with `session:false` with no session; 400 without a key of that shape and a wrap |
 | `POST /handover/open` | JSON `{token}` or `{code}` (case, spaces and hyphens forgiven; `token` wins where both are sent); `tab: true` beside a token a browser tab found in its address, which opens only a key his `/all/handover` minted and refuses any other unspent | exactly what `POST /open-link` answers (`u`, `wrap`, `session`, `env`, `live`, `prices`, `card`, `assoc`, `issued`, `issues`, `remembered: true`) **plus `token`**: the page unwraps `wrap` under `token`, the one in the answer, whichever it typed. Both names are burnt. Every refusal is the door's one (401); a brake is the door's (429) |
 | `POST /all/handover` | behind Access, JSON `{u, token, wrap}`: his page opens the account under the master and wraps as above | `{ok, code, token, exp, url, qr}`: `url` is `<site>/app#qr.<token>`, the QR's own form, `qr` its rows of `0` and `1`; the record is marked his |
 
@@ -382,6 +382,19 @@ signed in (or Salt Admin, for a customer at his counter) hands the sign-in acros
   records of each unopened, so a key left on a handed-on phone's clipboard or address opens nothing (S3 fix).
 - **A code open is an open**: `seen:` says `code` or `key`, and its session leaves a pointer (`dev:`).
 - The same two limits as the link: a bearer credential inside its fifteen minutes, and one use best effort on KV.
+
+### This device (S9 9.9, his D2)
+
+A card at the foot of the Statements tab (stage 7 moves it into Account), once signed in and never on his read-only
+view: notifications on or off on this device (off unsubscribes and `POST /push/unsubscribe {endpoint}` drops that
+phone's own record); its phones and computers (`POST /devices {token}` on the session, `token` this phone's own
+remembered one, answering each device's name, `at`, `last`, `kept` and `here`, no id and no address), drawn again once
+the phone is kept; **Sign out other devices** on a second tap (`POST /devices/signout {token, endpoint}`, sparing this
+one, its sessions and its alerts); and **Sign in another device**, a Sheet that mints the hand-over as it opens, Copy
+the code a tap of its own, and a QR of `<site>/app` for the other device's camera. **The QR never carries the key**: a
+key in an address signs a browser tab in only when his counter minted it (S3), so an address one customer sends
+another never signs the other in; the other device opens Salt Counter from the QR and the code is typed there. The Keep
+card (S3 3.10) stays at the top of the tab until stage 7.
 
 ## The price list and the order book (06 Sep 2026, his instruction)
 
