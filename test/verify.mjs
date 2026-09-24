@@ -17057,6 +17057,55 @@ await (async () => {
       "the last open and the device from before the list began are said with no date of the build in them: " + JSON.stringify(story()));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
+section("S9 fix S9R-5: turning notifications on from This device after an earlier refusal says On, with no refusal left under it");
+await (async () => {
+  /* A refusal set the note and nothing cleared it on a later success, so a customer who dismissed the question at
+     sign-in, then turned them on from This device, read On with the old refusal in red beneath it. */
+  const W = (await import("../stmt/worker.js")).default;
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const EDGE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0";
+  const kv = new KV();
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r5", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] })) }));
+  const env = { STMT: kv };
+  const ORIGIN = "https://k7m3p2.example";
+  const site = (path, o) => W.fetch(new Request(ORIGIN + path, o), env);
+  const st = { answer: "default", sub: null };
+  let win = null;
+  try {
+    win = new JSDOM(landingPage(u, "n9r5", null), { url: ORIGIN + "/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      Object.defineProperty(w.navigator, "userAgent", { value: EDGE, configurable: true });
+      w.scrollTo = () => {};
+      const reg = { pushManager: { subscribe: async () => (st.sub = { endpoint: "https://push.example/s9r5", toJSON: () => ({ keys: null }), unsubscribe: async () => true }),
+        getSubscription: async () => st.sub } };
+      w.PushManager = function () {};
+      w.Notification = { get permission() { return st.answer === "granted" ? "granted" : "default"; }, requestPermission: async () => st.answer };
+      Object.defineProperty(w.navigator, "serviceWorker", { configurable: true, value: {
+        register: async () => reg, ready: Promise.resolve(reg), getRegistration: async () => reg, addEventListener: () => {} } });
+      w.fetch = async (q, o) => { o = o || {}; const p = String(q);
+        if (p === "/push/key") return new Response(JSON.stringify({ ok: true, key: "BA", configured: true }), { headers: { "content-type": "application/json" } });
+        return site(p, { method: o.method || "GET", headers: Object.assign({ "user-agent": EDGE }, o.headers), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    D.getElementById("pw").value = pw;
+    D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+    const card = D.getElementById("devCard");
+    const btn = (t) => [...card.querySelectorAll("button")].find((b) => b.textContent === t);
+    ok(await until(() => !card.hidden && !!btn("Turn on")), "signed in with the question dismissed, This device offers Turn on");
+    ok(await until(() => /Permission was not given/.test(D.getElementById("pOrder").textContent)), "the question at sign-in was dismissed, and the page said so");
+    st.answer = "granted";
+    btn("Turn on").click();
+    ok(await until(() => /On[.] This computer is told when an order changes[.]/.test(card.textContent) && !!btn("Turn off")),
+      "Turn on, allowed, says On: " + JSON.stringify(card.textContent));
+    ok(!/Permission was not given/.test(card.textContent) && !/Permission was not given/.test(D.getElementById("pOrder").textContent),
+      "and the refusal from sign-in is gone, from the card and the page: " + JSON.stringify((card.querySelector(".dnote") || {}).textContent));
+  } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password

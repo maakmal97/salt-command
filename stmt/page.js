@@ -2738,6 +2738,7 @@ const CLIENT_JS = `
 
   async function subscribePush(){
     var mine=ticket;
+    draft.pushNote='';   /* S9 fix: a refusal from before is not this try's */
     try{
       var k=await (await fetch('/push/key',{cache:'no-store'})).json();
       if(!k.key||!k.configured){ draft.pushNote='Notifications are not switched on for this site yet.'; drawOrder(); return; }
