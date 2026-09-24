@@ -394,8 +394,8 @@ the phone is kept; **Sign out other devices** on a second tap (`POST /devices/si
 one, its sessions and its alerts); and **Sign in another device**, a Sheet that mints the hand-over as it opens, Copy
 the code a tap of its own, and a QR of `<site>/app#code` for the other device's camera, which opens on the code screen in a browser's own words on any device; closing the Sheet reads the list again. **The QR never carries the key**: a
 key in an address signs a browser tab in only when his counter minted it (S3), so an address one customer sends
-another never signs the other in; the other device opens Salt Counter from the QR and the code is typed there. The Keep
-card (S3 3.10) stays at the top of the tab until stage 7.
+another never signs the other in; the other device opens Salt Counter from the QR and the code is typed there. Its first
+row is how to keep it as an app (S3 3.10), a Plain ledger row where it was a card at the head of the tab.
 
 ## The price list and the order book (06 Sep 2026, his instruction)
 

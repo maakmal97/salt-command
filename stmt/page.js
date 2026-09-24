@@ -124,10 +124,9 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .btn{margin-top:18px;width:100%}
 /* a pay link is a .salt-ghost too (24 Sep 2026); a long account name wraps, and its lines centre */
 .btn.lnk{text-align:center;line-height:1.4}
-/* KEEP IT ON YOUR HOME SCREEN (v693; S3 3.10): a card on the account, once signed in, in a browser that is not
-   already the app; its steps sit in a Sheet and draw the phone's own marks */
-.keepcard{max-width:620px;margin:0 auto 18px}
-.keepcard .kline{margin:6px 0 10px;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+/* KEEP IT ON YOUR HOME SCREEN (v693; S3 3.10): This device's first row (S9 fix), once signed in, in a browser that is
+   not already the app; its steps sit in a Sheet and draw the phone's own marks */
+.keepcard .kline{margin:0}
 .keepcard b{color:var(--salt-text);font-weight:600}
 .keepsteps{margin:14px 0;padding-left:22px;line-height:2.1}
 .keepsteps .glyph,.keepcard .glyph{vertical-align:-0.3em;margin:0 3px}
@@ -485,18 +484,21 @@ function replaceAsk() {
 /* S3 3.10: KEEP IT ON YOUR HOME SCREEN. An iPhone's Home Screen app keeps its own storage, so what Safari
    remembers never reaches it: the Sheet says so in one line and carries the sign-in across with a code. The code
    and its key are minted as the Sheet opens, so Copy is a tap of its own (the judges' must-not-ship list), and
-   the steps draw the phone's own marks. Nothing here says a link signs the saved app in. */
+   the steps draw the phone's own marks. Nothing here says a link signs the saved app in.
+   S9 fix: SAVING AS AN APP IS THIS DEVICE'S FIRST ROW (the plan's 9.9), where it was a card of its own at the head of
+   the statement: the Plain ledger's row, its way in the value and its words under it. */
 function keepCard() {
-  return '<div id="keepCard" class="keepcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" hidden>'
-    + '<p class="salt-eyebrow salt-eyebrow--brass" id="keepHead">Keep it on your Home Screen</p>'
-    + '<p class="kline" id="keepLine">One tap to open, and it stays signed in. It is saved as <b>Salt Counter</b>.</p>'
+  return '<div id="keepCard" class="keepcard salt-ledger salt-ledger--plain" hidden><div class="salt-ledger__row">'
+    + '<div class="salt-ledger__line"><span class="salt-ledger__label" id="keepHead">Keep it on your Home Screen</span>'
+    + '<span class="salt-ledger__value">'
+    + '<button class="btn salt-ghost salt-ghost--lit" id="keepGo" type="button">Show me how</button>'
+    + '<button class="btn salt-ghost salt-ghost--lit" id="keepInstall" type="button" hidden>Install Salt Counter</button></span></div>'
+    + '<div class="salt-ledger__flag"><p class="kline" id="keepLine">One tap to open, and it stays signed in. It is saved as <b>Salt Counter</b>.</p>'
     /* S3 3.12: the browser's own Install where it offers one; else that browser's own marks, drawn */
     + '<p class="kline" id="keepSam" hidden>Tap ' + glyphSvg("menu", 22) + " then Add page to, then Home screen.</p>"
     + '<p class="kline" id="keepDesk" hidden>Look for the install mark ' + glyphSvg("install", 22) + " at the end of the address bar.</p>"
     /* S3 fix: an Android browser that offers no install, or whose offer was turned down, is shown its own menu's mark */
-    + '<p class="kline" id="keepDroid" hidden>Tap ' + glyphSvg("vdots", 22) + " then Install app or Add to Home screen.</p>"
-    + '<button class="btn salt-ghost salt-ghost--lit" id="keepGo" type="button">Show me how</button>'
-    + '<button class="btn salt-ghost salt-ghost--lit" id="keepInstall" type="button" hidden>Install Salt Counter</button></div>';
+    + '<p class="kline" id="keepDroid" hidden>Tap ' + glyphSvg("vdots", 22) + " then Install app or Add to Home screen.</p></div></div></div>";
 }
 function keepSheet() {
   return '<div id="keepScrim" class="salt-sheet-scrim" hidden></div>'
@@ -526,7 +528,7 @@ function keepSheet() {
    signs the other in. */
 function deviceCard() {
   return '<section id="devCard" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
-    + '<h2 class="salt-eyebrow salt-eyebrow--brass" id="devH">This device</h2><div id="devBody"></div></section>';
+    + '<h2 class="salt-eyebrow salt-eyebrow--brass" id="devH">This device</h2>' + keepCard() + '<div id="devBody"></div></section>';
 }
 function devSheet() {
   return '<div id="devScrim" class="salt-sheet-scrim" hidden></div>'
@@ -827,7 +829,7 @@ export function landingPage(user, nonce, owner, bulletin) {
        that opened actually carries one, so the tab can never lead to an empty panel. */
     + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="card" id="tCard" hidden>Card</button>'
     + "</div>"
-    + '<div id="pStmt">' + (owner ? "" : keepCard())
+    + '<div id="pStmt">'
     + '<div id="mos" class="mos" hidden></div>'
     + '<div id="mfil" class="mos mfil" hidden></div><p class="mfnote" id="mfnote"></p>'
     + '<div id="out"></div>' + (owner ? "" : deviceCard()) + "</div>"

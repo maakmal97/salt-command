@@ -17177,6 +17177,41 @@ await (async () => {
   ok(Object.values(seen).every((x) => x.code && !x.door && x.head === "Sign in with a code" && !x.help),
     "each opens on Sign in with a code, never the door, and never the saved app's help about Safari: " + JSON.stringify(seen));
 })();
+section("S9 fix S9R-10: saving as an app is This device's first row, where it was a card of its own at the head of the statement");
+await (async () => {
+  /* The plan's 9.9: This device carries notifications, save as an app, the other devices and signing in another. */
+  const W = (await import("../stmt/worker.js")).default;
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const EDGE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0";
+  const kv = new KV();
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r10", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] })) }));
+  const env = { STMT: kv };
+  const ORIGIN = "https://k7m3p2.example";
+  const site = (path, o) => W.fetch(new Request(ORIGIN + path, o), env);
+  let win = null;
+  try {
+    win = new JSDOM(landingPage(u, "n9r10", null), { url: ORIGIN + "/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      Object.defineProperty(w.navigator, "userAgent", { value: EDGE, configurable: true });
+      w.scrollTo = () => {};
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({ "user-agent": EDGE }, o.headers), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    D.getElementById("pw").value = pw;
+    D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+    const dev = D.getElementById("devCard"), keep = D.getElementById("keepCard"), body = D.getElementById("devBody");
+    ok(await until(() => !dev.hidden && !keep.hidden), "signed in on a computer's browser, This device shows, with how to keep it");
+    ok(dev.contains(keep) && !!(keep.compareDocumentPosition(body) & win.Node.DOCUMENT_POSITION_FOLLOWING) && !keep.classList.contains("salt-glass-card")
+      && keep.querySelector(".salt-ledger__label").textContent === "Keep it as an app",
+      "and saving as an app is its first row, a row of the card and not a card of its own: " + JSON.stringify(dev.textContent.slice(0, 160)));
+    ok(D.getElementById("pStmt").firstElementChild !== keep, "nothing about keeping it stands at the head of the statement");
+  } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password

@@ -338,7 +338,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   otherwise a Sheet says so over the page, carrying the door and keeping the draft. The page re-reads on every return (`GET /account` on its session, never a
   wrap), and a remembered phone draws "Opening your account", never the door. Kept as an app:
   manifest and icon served by the Worker, no brand; every login asks about notifications once. How to
-  keep it is a card once signed in, never on the door: an Install button wherever the browser offers one,
+  keep it is This device's first row once signed in, never on the door: an Install button wherever the browser offers one,
   Samsung Internet's steps, a computer's address-bar mark or another Android browser's menu mark drawn elsewhere; on an iPhone its Sheet mints the hand-over as it
   opens and copies the key in a tap of its own, rewriting the address to `/app#<key>` (his D2), and never
   says a link signs the saved app in. **The saved app starts at `/app`** (the manifest's `start_url`): with
