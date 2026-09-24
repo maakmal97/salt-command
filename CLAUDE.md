@@ -1,643 +1,339 @@
 # Salt Command, on the phone
 
-Standing facts only. Root `CLAUDE.md` governs voice, structure, verification and
-precedence; this file adds what a session here would otherwise rediscover, and
-never repeats a root rule. British English, no em-dashes, in files, code and copy.
-Correct stale facts in place; the dated record is `master/changelog.json`, never here.
-Set 6 Sep 2026. **No size ceiling** (his standing order, 10 Sep 2026); held to the root token
-test instead: every fact once, in the section that owns it. Mechanism detail is
-`docs/DESK.md`; reasoning and superseded passages `docs/NOTES.md`; what a product touches, and
-what it does not, `docs/PRODUCTS.md`.
-**THE HARD RULE NUMBERS ARE LOAD BEARING AND MAY NOT BE RENUMBERED.** Rules 1 to 6 are cited by
-number from code, the suite and the `update-names-id` skill. Reorganise WITHIN a rule freely;
-grep `rule [0-9]` before touching the list.
+Standing facts only; root `CLAUDE.md` governs voice, verification and precedence. A line stays
+only if a session goes wrong without it. Mechanism: `docs/DESK.md`; statements site
+`docs/STATEMENTS.md`; products `docs/PRODUCTS.md`; design `docs/DESIGN.md`; the fold
+`docs/CLOUD_FOLD.md`; landing, the suite and instrument traps `docs/WORKING.md`; superseded
+reasoning `docs/NOTES.md`. The dated record is `master/changelog.json`, never here; correct stale
+facts in place. British English, no em dashes, no flourish, and never the word the suite bans
+(write "costly" or the figure), in files, code and copy.
+**THE HARD RULE NUMBERS ARE LOAD BEARING.** Rules 1 to 8 are cited by number from code, the suite
+and the `update-names-id` skill. Reorganise within a rule; grep `rule [0-9]` before touching the list.
 
-The Salt Command desk as a cloud app: the ledger and the pricing engine on the go, a
-transaction addable from the phone. **This repo holds the master** (since 20 Aug 2026),
-deployed as a Cloudflare Worker with static assets at
-`https://salt-command.qyts8mh72kyg.workers.dev`, `/desk` being the one surface. Public by his
-decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; statements
-`docs/STATEMENTS.md`; design `docs/DESIGN.md`.
+The Salt Command desk as a cloud app: the ledger and the pricing engine on the go, a transaction
+addable from the phone. **This repo holds the master**, deployed as a Cloudflare Worker at
+`https://salt-command.qyts8mh72kyg.workers.dev`; `/desk` is the one surface, and "the dashboard"
+means `/desk` at desktop width. Public by his decision, no sign-in.
 
 ## Hard rules
 
-1. **The master is `master/salt_command.html`. Never hand-edit `public/desk.html`**, a
-   build output committed so the data lives in the repo. Inside the master four blocks
-   are GENERATED and CI fails if any differs from its file: `ENGINE` from
-   `engine/pricing.mjs`, `engine/position.mjs` and `engine/qr.mjs` (`node tools/engine.mjs --sync`),
-   `BOOK` from `ledger/book.json` (`tools/booksync.mjs --sync`), geography from
-   `geo/*.json` (`tools/geosync.mjs --sync`), `DESIGN` from `design/salt-ds.css` and
-   `design/desk.css` (`tools/designsync.mjs --sync`). Edit the module, sync, build.
-   `evolution` and `LAST_UPDATED` stay in the master. **`evolution` HOLDS ONE ENTRY, THE CURRENT
-   VERSION, AND A BUMP REPLACES IT** (v803, his word of 23 Sep 2026; it held the Journal's window from v324
-   until the Journal left the desk at v802). `master/changelog.json` carries every entry and is the record:
-   `tools/changelog.mjs` copies `evolution[0]` across at every bump, before the next replaces it, and the gate
-   refuses a master whose version the changelog lacks. **A fold edits
-   `ledger/book.json`, never rows in the master.** Nothing outside the master may price anything: two
-   engines drift.
-2. **Plaintext names never reach the cloud; the encrypted vault may.** `/bio` is
-   answered but dropped; `/vault` syncs only the AES-GCM envelope `{v,salt,iv,ct}`.
-   `10_Data\salt_bio.json`, `salt_vault.json`, `menu_secret.txt` and the queue files stay
-   in the project folder and never move here.
-3. **This repo is private.** It carries the real trading ledger; no real name is ever
-   committed.
-4. **No third-party loads at runtime.** Inline CSS and JS, no CDN, no web fonts; the
-   build fails on an external `src`, `url(` or `@import`. CSP in `public/_headers` is
-   `connect-src 'self'` and otherwise self-only, so Georgia and Consolas stand in for
-   Fraunces and JetBrains Mono.
+1. **The master is `master/salt_command.html`. Never hand-edit `public/desk.html`**, a committed
+   build output. Four blocks in the master are GENERATED and CI fails if one differs from its
+   source: `ENGINE` (`engine/pricing.mjs`, `position.mjs`, `qr.mjs`; `node tools/engine.mjs
+   --sync`), `BOOK` (`ledger/book.json`; `tools/booksync.mjs --sync`), geography (`geo/*.json`;
+   `tools/geosync.mjs --sync`), `DESIGN` (`design/salt-ds.css`, `design/desk.css`, fonts;
+   `tools/designsync.mjs --sync`). Edit the module, sync, build. **`evolution` holds ONE entry,
+   the current version, and a bump replaces it**: `tools/changelog.mjs` copies `evolution[0]` to
+   `master/changelog.json` first, and the gate refuses a master whose version the changelog lacks.
+   **A fold edits `ledger/book.json`, never rows in the master**; write it with `writeBookFile`
+   (one row per line), then `node tools/ledger.mjs`. Nothing outside the master prices anything:
+   two engines drift. A view never changes a pricing rule; report it.
+2. **Plaintext names never reach the cloud; the encrypted vault may.** `/bio` is answered but
+   dropped; `/vault` syncs only the AES-GCM envelope `{v,salt,iv,ct}`. `10_Data\salt_bio.json`,
+   `salt_vault.json`, `menu_secret.txt` and the queue files stay in the project folder. The suite
+   searches the public desk, comments and version notes included, for every directory name and
+   place: illustrate with codes and invented words.
+3. **This repo is private.** It carries the real trading ledger; no real name is ever committed,
+   in any form, hashed included.
+4. **No third-party loads at runtime.** Inline CSS and JS, no CDN; the build fails on an external
+   `src`, `url(` or `@import`. CSP is self-only, so Fraunces and JetBrains Mono are self-hosted
+   files from `Code\salt-ds\fonts`, carried by each surface's own sync.
 5. **Copy and price.** Detail in `docs/DESK.md`.
-   - **RM and unit only.** The goods are **inventory** in copy, never shelf; the rail's
-     destination is **Stock** (his instruction, 11 Sep 2026). The last three headings using the
-     rail's word for the goods read Inventory since v672. What still says Stock is the destination
-     (the tab and its `VIEWS` row), `Stock cover`, the measure's own name, and the `Stock count:`
-     line a queued count carries, which is entry data. **The Journal is exempt and stays so**: a
-     dated record is not corrected in place.
+   - **RM and unit only.** The goods are **inventory** in copy; **Stock** is the rail's
+     destination, `Stock cover` and the `Stock count:` line. New identifiers say `Units`, never
+     kg. Copy is terse: noun-phrase headings, the number first. Dated records (the Journal,
+     sealed issues) are never corrected in place.
    - **COGS, purchase plus freight, is the line no price goes under; the floor is COGS plus
-     leakage**, one floor per size, the goods after the leak, with no delivery and no time in
-     it. A sale carries `delivery` (beside its total since v727) and a lot `freight` (beside it), typed
-     per row; `txGoods` strikes every rate on the goods. **What the customer owes is the goods and the
-     delivery together, the engine's `txOwed`** (v738 and v741, his instruction of 20 Sep 2026): the open-order shape,
-     both paid-in-full stamps, `txStat`, `txDates`, the statement's owed and billed, the row editor, the dossier,
-     the drafter's overpayment flag and the Workbench read it, and nothing reads the total less the cash.
-   - **THE BOARD IS THE LADDER** (v656, his decision of 15 Sep 2026). A stranger is quoted the LAST
-     level, Silver since 23 Sep 2026 (Bronze before it), the one a new customer starts at: `pxPolicy` carries `tierRule`, `priceLadder`
-     takes the ask from it and keeps the old derived figure beside it as `derived`, and every reader
-     downstream follows from that one line. **Row zero of `ladderRow` is still the ask and is still
-     load bearing**: phone, mirror and suite read `[0]`, so the code stays `T2` while the NAME is the
-     level's. **Retired with it:** Tier 1's stated ends (`LADDER.tier1` is null; the mechanism stays
-     in the engine for a book with no ladder), and the typing of prices in Set the board, which is
-     now the hide list alone. `PRICE_SET` prices are cleared and the drafter refuses a new one.
-   - **Ambassador and FOUR tiers** (Titanium, Platinum, Gold, Silver), his `salt-command pricing_v2.xlsx`
-     of 23 Sep 2026 (v793; five with Bronze from 14 Sep until then): `TIER_RULE` and `TIER_NAMES` in the
-     master, `fiveTiers` in the engine. **COGS is the supplier's quote, RM56 a unit**, not the landed cost;
-     Ambassador is COGS times 1.5 up to the ten; the tiers are 2.1 down, 2.1 up, 2.5 down and 2.5 up, each
-     multiple falling 0.045 a half unit, never under Ambassador. **The engine's two guards stay over the
-     sheet** (his answer that day), moving 14 of its 48 tier cells. **A tier is salt's alone**: oil, candy and
-     rice are `fixed` boards, one price for everybody (candy and rice a unit, to the ringgit), and
-     `tieredBooks` keeps the Tiers card, Accept all and Add ID off them. **NRV is Titanium**, the lowest
-     level any customer is quoted, never the ask (v656): reading it off the last level would value the
-     shelf at what a stranger pays and the IAS 2.9 test could never bind.
-   - **Each customer has a PROFILE on each product** (v666, his decisions of 16 Sep 2026): `buyerProfile`
-     reads their own priced orders against `PROFILE_RULE` in the master (frequent 2 a month, small half a
-     unit or one, loyal 6 orders with the last inside 30 days, buying bigger 4 in 10 at 3 units or more,
-     rare under 1 a month or nothing for 60 days, late twice past the credit term). Shown on the Tiers card,
-     carried in the snapshot as `profileOf`. **It prices only through the four rules below**, never directly.
-   - **A tier may differ by the size of the order** (v670, his decisions of 16 Sep 2026): `TIER_OF[code][product]` is one
-     level name, or a BAND SET `{small, mid, big}` cut at 1 and 3 units (`PROFILE_RULE.smallUpTo`, `bigFrom`). **The engine's
-     `levelAt` is the one place a size becomes a level**, read by the desk's `cardQuote`, the customer's price list and the
-     fold; `levelShapeOk` is the one shape check, read by the drafter and the fold. A band left out takes mid. Their NORMAL level
-     is a mid-sized order's, which is also the mark their page draws.
-   - **The proposal moves on four rules** (v671, his rules of 16 Sep 2026), in `ruleProposal` over `tierProposal`:
-     rare and late twice, down a level everywhere; frequent and small, down a level from 3 units, **nothing better below
-     it (their own rate covers that) and no monthly cap** (the five-unit month, dropped on his word); loyal and buying bigger, up a level from 3 units, never past Platinum; sales held under
-     half the typical for three days running (`slowdown`), every band up a level, never past Platinum, until the next lot,
-     which resets the count. **A HELD tier is never moved by a rule**, only offered one; a proposal is what an un-held
-     customer is quoted, so these rules move live prices.
-   - **Each customer holds a tier for each product** (his instruction, 15 Sep 2026): `TIER_OF`
-     on the book, code to product to level name, folded as `tierset`, a null clearing a product.
-     **A customer's price is their tier, never above what they pay** (his decisions of 15 Sep
-     2026), **rounded DOWN to the ten and never up** (v660, his instruction of 16 Sep 2026: the nearest
-     five rounded up as often as down, so 63 of 432 cards sat RM1 to RM2 over the rate). Only the FLOOR
-     can now put a card over a rate, and it lifts to the first ten above. **A product with no tier,
-     held or proposed, is not priced**. One rule, the
-     engine's `cardPrice`: the customer's price list, and on the desk `cardQuote`, which every
-     quote to a named customer reads since v652, the reward cover's gap included.
-6. **The look is the Salt design system applied as a layer.** Material, type and colour
-   are decided in `design/desk.css` over the vendored `design/salt-ds.css`; a colour or
-   type change is an edit there, then `--sync`, then build, never a hex in the master's
-   older layers. Chart series read the identity's hexes directly (`salt-ds/src/tokens.ts`
-   shadows the stylesheet), so a palette change is two places. Product hues are
-   `PRODUCTS.accent` in `ledger/book.json`. **THE RECIPES ARE USED, NOT RESTATED** (his instruction
-   of 22 Sep 2026: the desk, the Counter and QR Command are to use the system). The master's markup
-   carries the system's class beside the desk's own for the aurora (`salt-aurora--fixed`), the KPI
-   tile and its three parts, the finding, the filled pill, the parts strip and the version, and
-   `design/desk.css` holds NO rule for those: the desk's tone letters bind to the tile's one
-   variable and nothing else. A colour the layer needs is a token in `Code\salt-ds` first
-   (`--salt-alarm`, `--salt-panel`, `--salt-mist-bright`, `--salt-line-strong`, `--salt-glass-hover`
-   were lifted that day), pulled by `designsync --pull`; the layer writes no hex and no alpha of its
-   own. The rail, the bar and its orbs and the tags followed the same day (his instruction: one fold at a
-   time), each recipe first synced to the desk's measured values. What stays on the layer for now is
-   measured geometry the recipes do not yet carry: ghosts, fields, tables, tiers, product bands and
-   tags, actions and journal entries, each a fold of its own. The Counter takes the tokens and the five recipes it uses
-   (pill, ghost, field, tab strip, state chip) through `tools/stmt-style.mjs` as `SITE_RECIPES`; QR
-   Command takes the tokens through its own `tools/designsync.mjs`. The suite holds all three.
-7. **Git: never from a mounted sandbox** (Cowork, agents on a mount that denies unlink): it
-   leaves `.git/*.lock` and `tmp_obj_*` behind and silently blocks every later commit, and
-   `git status` alone recreates `index.lock`. **A native Windows Code session may run git.**
-   After committing, verify `git rev-list --count origin/master..HEAD` and that no lock files
-   remain; `node tools/update.mjs` does both. Clean-up after a mounted session:
+     leakage**, one per size, with no delivery and no time in it. A sale carries `delivery` and a
+     lot `freight`, typed per row; `txGoods` strikes every rate on the goods. **What the customer
+     owes is goods plus delivery, the engine's `txOwed`**; nothing reads the total less the cash.
+   - **THE BOARD IS THE LADDER.** A stranger is quoted the LAST level, Silver: `pxPolicy.tierRule`
+     feeds `priceLadder`, which keeps the old figure as `derived`. **Row zero of `ladderRow` is the
+     ask and is load bearing** (phone, mirror and suite read `[0]`; the code stays `T2`, the name is
+     the level's); choose a row by code, never by index. Tier 1's stated ends and typed prices are
+     retired; `PRICE_SET` is cleared and the drafter refuses a new one.
+   - **Salt is Ambassador and four tiers** (Titanium, Platinum, Gold, Silver) from his
+     `salt-command pricing_v2.xlsx` (OneDrive, read-only; copy first): `TIER_RULE` and `TIER_NAMES`
+     in the master, `fiveTiers` in the engine. COGS is the supplier's QUOTE, not the landed cost.
+     **The engine's two guards stay over the sheet.** **A tier is salt's alone**: oil, candy and
+     rice are `fixed` boards, one price for everybody, and `tieredBooks` keeps the Tiers card,
+     Accept all and Add ID off them. **NRV is Titanium**, never the ask. A cheap book put on a
+     derived ladder inverts under the ten-rounding: check the rate law first.
+   - **Each customer holds a tier per product** (`TIER_OF`, folded as `tierset`, a null clearing
+     one), or a band set `{small, mid, big}` cut at 1 and 3 units. **The engine's `levelAt` is the
+     one place a size becomes a level**; `levelShapeOk` is the one shape check; a band left out
+     takes mid.
+   - **The profile prices only through the proposal's four rules** (`buyerProfile` against
+     `PROFILE_RULE`, then `ruleProposal` over `tierProposal`): rare and late twice, down a level;
+     frequent and small, down from 3 units with nothing better below; loyal and buying bigger, up
+     from 3 units, never past Platinum; `slowdown`, every band up, never past Platinum, until the
+     next lot. **A HELD tier is never moved by a rule**, only offered one.
+   - **A customer's price is their tier, never above what they pay, rounded DOWN to the ten.**
+     Only the floor lifts a card over a rate, to the first ten above. **A product with no tier,
+     held or proposed, is not priced.** One rule, the engine's `cardPrice`: the price list, and the
+     desk's `cardQuote`, which every quote to a named customer reads.
+6. **The look is the Salt design system applied as a layer.** Material, type and colour are
+   decided in `design/desk.css` over the vendored `design/salt-ds.css`: edit there, `--sync`,
+   build, never a hex in the master's older layers. Chart series read the identity's hexes
+   directly (`salt-ds/src/tokens.ts`), so a palette change is two places; product hues are
+   `PRODUCTS.accent` in `ledger/book.json`. **THE RECIPES ARE USED, NOT RESTATED**: markup carries
+   the system's class beside the desk's own, `design/desk.css` holds no rule for a migrated
+   recipe, and a colour the layer needs is a token in `Code\salt-ds` first, pulled by
+   `designsync --pull`. The remaining geometry (ghosts, fields, tables, tiers, product bands,
+   actions) migrates one group per version, on his word. The Counter takes the tokens and five
+   recipes through `tools/stmt-style.mjs` (`SITE_RECIPES`); QR Command through its own
+   `tools/designsync.mjs`. **A tap target is 44px in both dimensions**, settled by a hit test.
+7. **Git: never from a mounted sandbox**: it leaves `.git/*.lock` and `tmp_obj_*` behind and
+   silently blocks every later commit. **A native Windows Code session may run git.** After
+   committing, verify `git rev-list --count origin/master..HEAD` and that no lock files remain;
+   `node tools/update.mjs` does both. Clean-up after a mounted session:
    ```
    Get-ChildItem .git -Recurse -Include *.lock,tmp_obj_* -Force | Remove-Item -Force
    ```
 8. **Three deployers, and only the Actions job does the whole job.** `cloud-commit.yml` gates,
-   deploys, proves the phone is serving the build, marks the folded rows committed, re-seeds the
-   D1 mirror, publishes the statements, then runs the suite. **THE STATEMENTS PUBLISH RUNS ON EVERY RUN
-   BUT THE KEY PROBE** (v701, his question of 18 Sep 2026: can the publish be on any trigger?). It
-   can: it needs nothing this job produces, reading `ledger/book.json` and the master out of the
-   checkout and never `public/`, and the checkout, setup-node and `npm ci` are unconditional. So the
-   `plan` step's third output `publish` is 1 unless the run is a `probe_key` dispatch, whose whole
-   purpose is one cheap call and then stop. **The rule states what is EXCLUDED**, because a list of
-   events it is ON for goes stale the moment a trigger is added: it was `deploy` alone until v699,
-   so a quiet day never refreshed a price at all, and naming `schedule` beside it would have left
-   the same shape of bug for the next trigger nobody thought of. **The hourly run passes `--no-retire`**:
-   writing is hourly, retiring an account whose record the newest issue does not carry is a judgement
-   about a deploy he made, not about a clock. `tools/update.mjs` does the laptop
-   half and publishes no statements. **EVERY DESK DEPLOY DEPLOYS THE COUNTER** (v797, his instruction of
-   23 Sep 2026): the job's site deploy runs on every run that deploys, `update.mjs` deploys it once the desk
-   reads live, and `npm run deploy` does both. **Cloudflare Workers Builds deploys the tip of master
-   and stops** (reconnected on his instruction, 10 Sep 2026): it never folds, never marks a
-   draft committed and never writes D1 or KV, and its failure is SILENT. **Its build command is
-   `npm ci && node tools/gate.mjs`, then `npx wrangler deploy`** (10 Sep 2026), gate before
-   build. Actions runs only on a push touching `public/rev.json` or the statements paths, so a
-   push touching `src/` or the master alone is one only Workers Builds ships. **Read the config
-   back through the API rather than trusting this line**, never the dashboard or the MCP builds
-   tool: `docs/DESK.md`.
+   deploys, proves the phone serves the build, marks the folded rows committed, re-seeds the D1
+   mirror, publishes the statements, deploys the Counter, then runs the suite. **The statements
+   publish runs on every run but the `probe_key` dispatch**: the rule names what is excluded,
+   never a list of triggers. The hourly run passes `--no-retire`. `tools/update.mjs` is the laptop
+   half and publishes no statements. **Every desk deploy deploys the Counter.** **Cloudflare
+   Workers Builds deploys the tip of master and stops**: it never folds, marks or writes D1 or KV,
+   and its failure is SILENT. Its build command is `npm ci && node tools/gate.mjs`, then `npx
+   wrangler deploy`. Actions runs only on a push touching `public/rev.json` or the statements
+   paths, so a push touching `src/` or the master alone ships through Workers Builds only. **Read
+   its config back through the Cloudflare API**, never the dashboard or the MCP builds tool
+   (`docs/DESK.md`). Never point anything on the laptop at `salt_sync.ps1`: a fourth deployer.
 
 ## The one surface
 
-**Retired at v387:** the phone app `public/index.html`, `public/data.json` and the
-claude.ai mirror. The built desk is seven destinations over eighteen pages (`VIEWS` in the
-master): Today, Order book, Stock, Pricing, Network, Record, Enter (the ledger destination was The book
-until v747, his instruction of 20 Sep 2026; its id is still `book`, so `/desk#book` lands). **The rail is two
-levels at most** (his instruction, 14 Sep 2026). **One product in view for the whole desk**
-(his rule, 14 Sep 2026): `PROD`, set only through `setProdView`. Old tab ids remain addresses
-(`/desk#network`). In cloud mode the Enter view carries **Add ID**, **Amend ID** and
-**Approve**; the laptop desk keeps Names & IDs and has no drafts table. **Amend ID** (his
-instruction, 14 Sep 2026) re-keys a changed code wherever the book holds it; prose and history
-keep the old code. The fold refuses a code the master's own logic quotes (CJ4-OKR, SA5-BTR,
-SP7-PUD, and CM6-HCM in a comment): those are hand folds. Everything the desk shows, cost and
-margin included, is served at the public URL.
+**Retired:** the phone app `public/index.html`, `public/data.json` and the claude.ai mirror. The
+built desk is seven destinations (`VIEWS`): Today, Order book, Stock, Pricing, Network, Record,
+Enter. Old ids remain addresses (`/desk#book`, `/desk#network`). **The rail is two levels at
+most.** **One product in view for the whole desk**: `PROD`, set only through `setProdView`. A
+feature folded out of sight reads to him as missing: name every part where the eye lands.
+Everything the desk shows, cost and margin included, is served at the public URL.
 
-**Coverage**, the map (his decisions of 14 Sep 2026; named Coverage 17 Sep): districts shaded by a metric over a period, drilled
-to their federal constituencies (MECo, CC0: Kuala Lumpur's 11 at v678, Selangor's 22 and Negeri Sembilan's 8 at
-v681, each filed under the district holding its centre), parties as dots. **Area names show; a party's name never does**,
-even unlocked. A party is counted in its own district's area that holds its point, else in any area
-that does, whichever district that is filed under (a seat can cross a district line). The leak checks exempt a directory place only when it IS an official area
-name (`areaNameSet` in `tools/book.mjs`) or a locality filed in `PLACED` (`publishedLocalities`, v680).
-**Each party's location shows in words, for everyone** (his decision, 17 Sep 2026, v680): `whereOf` reads
-locality, constituency and district, each once, in the Where column of Coverage's party table. **A party's place reaches the map on its own** (his
-decision of 14 Sep 2026) through `geo/gazetteer.json`, built from GeoNames alone and never from
-the directory; an unresolved place is tapped on the map and Record waits for the point.
-**A place is its locality, then where that is** (his instruction, 17 Sep 2026, v679): the code is made
-from the words before the first comma (`placeLocality`), so "Bangsar, KL" keeps BAN; the locality rides
-as the third element of the point (`geoWhere`, checked by the drafter's `geoOf`) and is public by his
-decision, the name never; a comma part naming a district or a state (KL, a lone SG) confines the lookup.
-**The place is chosen from a list at Add ID and Amend ID** (his instruction, 17 Sep 2026, v682): `placePicks` reads his
-KL map's neighbourhoods and Selangor sub-districts (`geo/placelist.json`, placed from GeoNames' MY.txt by
-`tools/placelist.mjs --from`, the file never committed), every filed locality and every constituency, each as `whereOf`
-reads a party; a choice carries its own point, and typing a place not listed still looks it up.
+In cloud mode Enter carries **Add ID**, **Amend ID** and **Approve**. A code is derived from the
+name and place (`deriveCode`), never typed or picked, and changes only when they change; Amend ID
+re-keys it wherever the book holds it, prose and history keeping the old. The fold refuses a code
+the master's own logic quotes (CJ4-OKR, SA5-BTR, SP7-PUD, CM6-HCM): those are hand folds.
 
-**MONEY HE IS HOLDING THAT IS SOMEBODY ELSE'S IS NOW** (v708, his instruction of 18 Sep 2026: "if
-paid, I will need to refund immediately"). An open `customerRefunds` row is severity `now` in
-`actions()` from the day it is raised, not an ageing, because he did not ask for one: it sat at
-`soon` with no age rule, so it could never reach Now however old it got, and the Today badge counts
-only the Now rows. `navCounts` counts it beside the supplier default it already counted, which is
-its mirror; the Order book's table carries an AGE, which was the one open figure on the page without
-one; and the daily nudge wakes him on it (`src/worker.js`, reading `entry` where the COLLECTION
-lives, never `state`, and keying on the row's own `paidOn` because a refund carries `since` and the
-seed leaves `entry.date` null). **NOTHING CLOSES A REFUND FROM THE PHONE**: no drafter branch, no
-fold branch and no Correction reaches a `customerRefunds` row (`findRow` searches sales and
-purchases alone), so it is closed by adding `paidOn` in `ledger/book.json`, then `booksync --sync`
-and a build. A phone tap would need a migration for the `draft` CHECK.
+**Coverage**, the map: districts shaded by a metric over a period, drilled to federal
+constituencies, parties as dots. **Area names show; a party's name never does**, even unlocked.
+Each party's place shows in words (`whereOf`). A place is its locality, then where that is
+(`placeLocality`, `geoWhere`); it is chosen from `placePicks` at Add ID and Amend ID, and an
+unlisted place is looked up in `geo/gazetteer.json`, built from GeoNames alone, never from the
+directory. The leak checks exempt a directory place only when it IS an official area name
+(`areaNameSet`) or a filed locality (`publishedLocalities`). Detail: `docs/DESK.md`.
 
-**A defaulted sale is written off** (his instruction, 14 Sep 2026): `txAdvance` reads nothing
-owed on it, as `poOwed` reads nothing on a defaulted lot, so it leaves every reading of what is
-owed, the credit rules and the chase; `txWrittenOff` carries the figure to every reading of what
-was lost (the P&L impairment line, the month's charge, the bad-debt rate in the price stack, the
-receivables signal, a party's quote), so no loss and no price moves with it. A party with a
-write-off is not approached, offered or messaged (`approachable`). The customer's statement is
-untouched.
+**Money he is holding that is somebody else's is Now**: an open `customerRefunds` row is severity
+`now` in `actions()` from the day it is raised. **Nothing closes a refund from the phone**: add
+`paidOn` in `ledger/book.json`, `booksync --sync`, build.
 
-**THE REORDER POINT IS DERIVED, NEVER UNDER 4 DAYS AND NEVER OVER 14** (v818, his rule of 24 Sep 2026): the
-engine's `restockPlan`, read through `restockFor(prod)`, sizes it and the next lot per book from measured demand
-only (recency-weighted rate, shrunk trend, the Whiteboard's rhythm, named customers due); `reorderFor` returns it,
-and `RULES.reorderUnits` is the fallback for a book with no demand alone. Never type a mark back in.
+**A defaulted sale is written off**: `txAdvance` reads nothing owed on it and `txWrittenOff`
+carries it to every reading of what was lost, so no price moves. A new reader of what is owed uses
+`txAdvance`; a new reader of losses must add `txWrittenOff`. A party with a write-off is not
+approached (`approachable`).
+
+**THE REORDER POINT IS DERIVED, NEVER UNDER 4 DAYS OF COVER AND NEVER OVER 14**: the engine's
+`restockPlan`, read through `restockFor(prod)` and `reorderFor`, from measured demand only;
+`RULES.reorderUnits` is the fallback for a book with no demand. Never type a mark back in.
+
+**Five books** (salt, oil, candy, rice, spare). `node tools/product.mjs` is the one road that
+opens, re-keys, retires or restores one; it refuses to retire a book with rows or to re-key salt,
+a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`.
 
 ## The chain: tap to deploy
 
 | Step | Where | When |
 |---|---|---|
-| Queue an entry | KV `q:<deviceId>`, `POST /queue` from the phone | on tap; held offline, retried every ten seconds |
-| Draft the row | Worker `src/drafter.js` | on arrival via `waitUntil`, plus the quarter-hour of an every-minute cron as the net (the other minutes nudge on a customer order, `docs/STATEMENTS.md`) |
-| Approve or reject | D1 `draft`, `POST /drafts/<id>/approve` | on tap; a decided row returns 409; a rejection drops the entry from every queue and the phone offers it back to re-enter |
-| Stage approved rows | Actions `cloud-commit.yml`, one job `chain` | dispatched by every approval (Worker holds `SALT_GITHUB_TOKEN`), hourly as the net |
-| **Fold, bump, build, test, push** | the `Fold` step: `tools/foldcall.mjs`, one Claude call for the notes (`ANTHROPIC_API_KEY`) over `fold.mjs`, falling to `tools/foldnotes.mjs` where no call can be made; or any agent asked, per `docs/CLOUD_FOLD.md` | same job when rows were staged; or on demand |
-| Gate (`tools/gate.mjs`), deploy, prove, mark committed (with the clock), re-seed the D1 mirror, publish statements, then the full suite | the steps that follow in the same job; a push runs them alone, and skips the deploy when the phone already has the build; a suite failure after the phone is live turns the run red and is written where the phone shows refusals, never rolled back | same job; or on push |
+| Queue an entry | KV `q:<deviceId>`, `POST /queue` | on tap; held offline, retried every ten seconds |
+| Draft the row | Worker `src/drafter.js` | on arrival, plus the quarter-hour cron as the net |
+| Approve or reject | D1 `draft`, `POST /drafts/<id>/approve` | on tap; a decided row returns 409 |
+| Stage approved rows | Actions `cloud-commit.yml`, job `chain` | dispatched by every approval; hourly as the net |
+| **Fold, bump, build, push** | `tools/foldcall.mjs` (one Claude call for the notes) over `fold.mjs`, else `tools/foldnotes.mjs`; or any agent per `docs/CLOUD_FOLD.md` | same job; or on demand |
+| Gate, deploy, prove, mark, re-seed D1, publish, Counter, suite | same job; a suite failure after the phone is live is red and written to the phone's refusals, never rolled back | same job; or on push |
 | Prove repo and live agree | `ship-check.yml` | 11:00 MYT |
-| Deploy the statements site | the same job, on every run that deploys the desk (v797; it waited on a diff of its own paths until then, so a desk push Workers Builds had shipped left the Counter's code behind) | on push |
-| Monthly statements | **RETIRED 21 Sep 2026** (v772, his instruction): the account is ONE LIVE DOCUMENT the publish writes on every run, so `make_statements` refuses to seal a new issue without `--new-issue` and says so. Issues already sent still publish and still open; an `--archive` of a past month is not an issue. The Cowork task `salt-monthly-statements` fires from a registry Code cannot see: removing it is his | never |
 
-- **EVERY WAKE THE DESK MINTS REACHES THE PHONE** (v759 to v761, his instruction of 21 Sep 2026: all
-  three, and the bulletin for the customer side as well). The desk mints three kinds and his three
-  subscriptions named ONE, `orders`, so `sendPush` dropped the row drafted from a customer's order and
-  the morning round for five days: v708's rule that the round chases money he is holding that is
-  somebody else's could not reach a phone at all. The switch asks for all three (`ALERT_TOPICS`) and
-  widens a subscription already on file once a load, the record being keyed by the endpoint's hash.
-  **What orders-only was protecting is kept at the SOURCE**: a row drafted on arrival, which is the tap
-  in his hand, pushes nothing; the reconcile and the quarter-hour net still do. The banner names the
-  refund first and no longer returns on an order before the list is built. **A customer paying or
-  withdrawing wakes him** on `last-theirs`, a mark only THEIR moves write, carrying the moment and then
-  the word, because his own moves write `last-touched` and waking on that would wake him for his own
-  taps; the desk keeps the line for ten minutes so the banner says which. **A bulletin wakes every phone
-  on the site**, under its own collapsing topic, and the customer's service worker reads the notice
-  itself, which is public, showing its words when it was set inside the last two minutes.
-- **A CHANGE TO `cloud-commit.yml` NEVER TESTS ITSELF ON THE WAY IN** (10 Sep 2026): it is not
-  in its own `push.paths`. Dispatch a run by hand, or push it with a file on one of those paths,
-  and then READ THE STEP LIST: most steps are conditional, so a skipped step is green too.
-- **The fold's judgement is a model's; the fold no longer WAITS for one** (v792, his instruction
-  of 22 Sep 2026). The row NOTE, the `evolution` entry and the sentence on the roll come from one
-  Claude call over a dossier the tools compute; what a row DOES, what is refused and what the
-  inventory rolls are `fold.mjs`, never the model. **NO KEY, A CALL THAT WILL NOT GO THROUGH, AND A
-  REPLY TWICE AGAINST THE HOUSE RULES ALL LAND ON `tools/foldnotes.mjs`**, which writes the same
-  notes object off the same dossier, records NO judgement, and says so in every row note and in the
-  version entry; `--no-model` asks for it outright and the Fold step's old exit on a missing key is
-  a warning. A refusal by `fold.mjs` still leaves the batch staged, that being a rule and not an
-  outage. The cost of the old shape was measured on 22 Sep 2026: a credit balance of nothing exited
-  the step twice inside a minute and left two approved rows staged with the deploy, the marks, the
-  mirror, the statements and the suite all behind them. CI holds the API key and the Cloudflare
-  token, nothing else.
-- **No clock** since 24 Aug 2026. `Salt fold (manual backup)` (trig_01UrnjQMWA3f6GXN5R6Dzi4S)
-  is disabled, no cron: fire it by hand if the Fold step fails. The stage stands down while
-  `master/_to_fold.json` is in HEAD, unless `fold.mjs --replays` says the batch is a replay.
-- **Every task starts level with GitHub, never over a push in flight** (his instruction, 14 Sep
-  2026). Changes reach `master` from his laptop edits, GitHub Desktop, Claude Code and the
-  phone's cloud job. Before any task: `git fetch` and fast-forward to `origin/master`; wait out
-  any Actions run in progress or queued (`gh run list`) and any row approved but not yet folded
-  (`node tools/drafts.mjs --approved`), then fetch again. Uncommitted files in the checkout may
-  be his edits: ask before moving past them.
-- **A version asks about the queue first** (02 Sep 2026). Before any bump: `node
-  tools/drain.mjs --status`, `node tools/drafts.mjs --list` and `--approved`, `git fetch` for a
-  staged `_to_fold.json`. Ask him one line per pending item; never approve for him; fold
-  anything approved into that version.
-- **What is approved is the ROW, not the entry.** The phone leads with cost and margin read
-  from the draft and computes nothing; the drafter's flags do the measuring, and a purchase is
-  never measured with a seller's ruler.
-- **What the drafter refuses, the phone does not let you type:** `entryFault` in the master
-  answers both entry forms: roster codes only, no sale of a product with no lot, a date when
-  something moved. **An R2 row books to the associate's `-R` bucket whether or not the end buyer
-  is named** (his ruling of 13 Sep 2026) through the engine's `bookR2`, which the drafter, the
-  fold's correction and the desk's queue branch and preview all call; a named buyer is noted as
-  `downstream` and credited nothing, and the bucket has to be on the roster. A twin of a row on
-  the book is put to him at entry and travels as `second`; a twin already queued on the device
-  is refused as a double tap. A loan either way, in salt or in cash, is a Workbench mode,
-  drafted and folded into `loans`; settling one is still a fold on his word.
-- **The drafter is arithmetic, never a model**, and never prices: it reads the `PRICING` state
-  key `tools/book.mjs pricingSnapshot()` derives from the engine. It refuses and records in
-  `refused` (on the phone, self-cleaning): Linked and Rewarded amendments, `linkTo` or
-  `orderCode`, a movement with no date, a product with no cost, a zero or negative figure, a
-  date not in YYYY-MM-DD. Fulfilment, Cancellation, Modification and Correction go through the
-  gate. **An entry stamped before the watermark that the draft table does not know is drafted,
-  never dropped** (08 Sep 2026): `at` is minted on the phone.
-- **The laptop's own queue takes the same road:** `node tools/drafts.mjs --from-queue`, which
-  reads the book off the D1 mirror through wrangler since 16 Sep 2026, so no shell needs the write
-  key (it took the keyed `/ledger` reads and 401ed from 16 Aug until then). A decided draft keeps
-  its id for good; to re-draft a rejected or
-  refused entry he later calls real, mint a new `at`, run `draftRow` against `readBook()`, then
-  `drafts.mjs --draft`, `--approve --by`, `--approved > master/_to_fold.json`. A ledger row edit
-  (right-click on `/desk`, tap on the phone) queues as a Correction.
-- Endpoints: `GET /drafts?status=…`, `POST /drafts/<id>/approve|reject|committed`,
-  `POST /draft-now?dry=1`, all keyed. Nothing writes to `entry`. **The `draft` table's CHECK
-  lists every collection by name**, so a collection the drafter newly returns needs a migration
-  rebuilding it, applied to the live D1 BEFORE the deploy and as that file alone (`wrangler d1
-  execute salt_ledger --remote --file=...`): re-running an older one copies the rows through its
-  narrower CHECK and INSERT OR IGNORE drops them. The suite checks the newest CHECK against the
-  drafter. Newest: `migrations/0010`, `tierset` and `label`.
-- **Cowork:** Salt left Cowork on 20 Aug 2026; root section 6 still lists
-  `salt-daily-price-brief`. Settle it from Cowork.
+- **Every task starts level with GitHub.** Before any task: `git fetch` and fast-forward to
+  `origin/master`; wait out any Actions run in progress or queued (`gh run list`) and any approved
+  row not yet folded (`node tools/drafts.mjs --approved`); fetch again. Check `list_sessions` for
+  another session on this checkout and work in a worktree (`docs/WORKING.md`). Uncommitted files
+  may be his or a peer's: ask, never sweep them; stage explicit paths, never `git add -A`.
+- **A version asks about the queue first.** Before any bump: `node tools/drain.mjs --status`,
+  `node tools/drafts.mjs --list` and `--approved`, `git fetch` for a staged `_to_fold.json`. Ask
+  him one line per pending item; never approve for him; fold anything approved into that version.
+  **Take the number last**: suite on the unbumped tree, then fetch, bump off origin's tip,
+  changelog, build, gate and push within a minute, because a phone approval folds as the next
+  version. Re-landing after origin moved: `docs/WORKING.md`.
+- **What is approved is the ROW, not the entry.** The phone leads with cost and margin read from
+  the draft and computes nothing; the drafter's flags do the measuring, and a purchase is never
+  measured with a seller's ruler. A card's flags freeze at drafting.
+- **What the drafter refuses, the phone does not let you type**: `entryFault` answers both entry
+  forms. **An R2 row books to the associate's `-R` bucket whether or not the end buyer is named**,
+  through the engine's `bookR2`, which every road calls; a named buyer is `downstream` and credited
+  nothing. A twin of a booked row is put to him at entry; a twin already queued is refused. A loan
+  is a Workbench mode folded into `loans`; settling one is a hand fold.
+- **The drafter is arithmetic, never a model**, and never prices: it reads the `PRICING` state key
+  that `tools/book.mjs pricingSnapshot()` derives. It refuses into `refused`: Linked and Rewarded
+  amendments, `linkTo` or `orderCode`, a movement with no date, a product with no cost, a zero or
+  negative figure, a date not in YYYY-MM-DD. **An entry stamped before the watermark that the draft
+  table does not know is drafted, never dropped.**
+- **The fold's judgement is a model's; the fold never WAITS for one.** What a row does, what is
+  refused and what rolls is `fold.mjs`; the model writes only the notes. No key, a call that will
+  not go through, or a reply twice against the house rules all land on `tools/foldnotes.mjs`,
+  which records no judgement and says so in every note. A refusal by `fold.mjs` leaves the batch
+  staged. CI holds the API key and the Cloudflare token, nothing else. **A count and the lots it
+  follows are two folds**: the fold counts, then rolls.
+- **A change to `cloud-commit.yml` never tests itself**: it is not on its own push paths. Dispatch
+  a run by hand and read the step list, since a skipped step is green too. After any push read the
+  run's annotation: a billing refusal looks like an ordinary red run.
+- **No clock.** `Salt fold (manual backup)` (trig_01UrnjQMWA3f6GXN5R6Dzi4S) is disabled: fire it
+  by hand if the Fold step fails. The stage stands down while `master/_to_fold.json` is in HEAD,
+  unless `fold.mjs --replays` says the batch is a replay.
+- **The laptop's queue takes the same road**: `node tools/drafts.mjs --from-queue`. A decided
+  draft keeps its id for good; re-drafting an entry he later calls real, and folding from the
+  laptop (approve last), are in `docs/CLOUD_FOLD.md`. A ledger row edit queues as a Correction.
+- Endpoints: `GET /drafts?status=…`, `POST /drafts/<id>/approve|reject|committed`, `POST
+  /draft-now?dry=1`, all keyed. Nothing writes to `entry`. **The `draft` table's CHECK lists every
+  collection by name**: a collection the drafter newly returns needs a migration rebuilding it,
+  applied to the live D1 BEFORE the deploy and as that file alone (`wrangler d1 execute salt_ledger
+  --remote --file=...`); re-running an older one drops rows. Newest: `migrations/0010`.
+- **Cowork:** Salt left Cowork on 20 Aug 2026. `salt-daily-price-brief` and
+  `salt-monthly-statements` may still fire from Cowork's registry (`Scheduled\README.md`), which
+  Code cannot see: retiring them is his.
 
 ## Sync and proof
 
-- The phone polls `/rev` every ten seconds against its baked `SALT_BUILD_ID`; a newer build
-  reloads an idle desk or offers a chip. `/rev` is `no-store` and never cached by `sw.js`.
-- **`public/rev.json` id** = sha256 over the patched master, NUL, `sw`, NUL, `public/sw.js`,
-  NUL, `worker`, NUL, every `src/*.js` sorted and NUL-joined. Written by the build only. It
-  omits `public/_headers`, `manifest.webmanifest`, `chart.umd.js` and `wrangler.jsonc`: a change
-  to those does not move the id, so `update.mjs` skips the deploy and reports the phone current.
-  **Deploy `wrangler.jsonc` changes by hand.**
-- A deploy is decided by `rev.json.id` against `.deployed.json.id` (`{id,v,at}` of the last
-  successful deploy), never by hashing output before and after.
+- The phone polls `/rev` every ten seconds against its baked `SALT_BUILD_ID`; `/rev` is `no-store`
+  and never cached by `sw.js`.
+- **`public/rev.json` id** = sha256 over the patched master, `public/sw.js` and every `src/*.js`,
+  NUL-joined; written by the build only. It omits `public/_headers`, `manifest.webmanifest`,
+  `chart.umd.js` and both wrangler configs, so **deploy a `wrangler.jsonc` change by hand**.
+- A deploy is decided by `rev.json.id` against `.deployed.json.id`, never by hashing output.
 - `ci.yml` on push: book in date order, master version in the changelog, tests pass, `public/`
-  matches the master by id. `ship-check.yml` daily: repo id against live `/rev`.
-- **`node tools/update.mjs`** drains (a pull only, `drain.mjs --keep`, so a laptop update never
-  races the cloud drafter), reports both queues, sweeps for an ID with no account (v767), builds,
-  tests, deploys only on an id change,
-  commits, pushes, then proves master, `rev.json`, live `/rev` and origin agree; non-zero on any
-  failure. **A TREE BEHIND ORIGIN STOPS THE RUN DEAD** (v770, 21 Sep 2026): the preflight has asked
-  since 10 Sep and called `fail()`, which records a problem, prints it and RETURNS, so a checkout on
-  the previous morning's v733 built, DEPLOYED over v768 on his phone and committed a version master
-  already carried before stopping at the push. The verdict is `aheadVerdict` in `tools/preflight.mjs`,
-  where the suite can drive it, and the chain exits on it; the line is **touches nothing**, not
-  **does not push**, because `--no-push` still deploys and the deploy is the half that reaches him. `--dry`, `--no-push`, `--no-deploy`, `--no-drain`, `-m`. It never folds. Its mirror
-  check reads the D1 snapshot through wrangler's own login, so no key is needed. The replay
-  check refuses to ship while an entry above `QUEUE_COMMITTED` matches a ledger row by date and
-  total; `--force-ship` after reading the rows.
+  matches the master. `ship-check.yml` daily: repo id against live `/rev`.
+- **"Update" means `node tools/update.mjs`, the whole chain, with no step left for him**: drains (a
+  pull only), reports both queues, mints any missing account, builds, tests, deploys on an id
+  change, commits, pushes, then proves master, `rev.json`, live `/rev` and origin agree. **A tree
+  behind origin stops it dead** (`aheadVerdict` in `tools/preflight.mjs`); `--no-push` still
+  deploys, so only `--dry` touches nothing. Also `--no-deploy`, `--no-drain`, `-m`. It never folds.
+  The replay check refuses to ship while an entry above `QUEUE_COMMITTED` matches a ledger row by
+  date and total; `--force-ship` after reading the rows. It commits whatever is in its checkout
+  and cannot finish from a worktree: run it in the main checkout, quiet and level.
+- Never pipe the gate, the suite or `update.mjs` into `tail` or `grep` inside an `&&` chain: the
+  exit becomes the pager's. Redirect to a file and check `$?`.
 
 ## Names
 
 Codes by default; names only after a password. `tools/seed-vault.mjs` encrypts `salt_bio.json`
-with `$env:SALT_VAULT_PASS` (never a file) into the envelope `vaultDecrypt` expects and pushes
-the ciphertext to KV; the desk auto-locks on `visibilitychange`. **AN ID THAT HAS A USERNAME BUT NO ACCOUNT CANNOT SIGN IN** (v707, his instruction of 18 Sep 2026):
-the fold mints a USERNAME at registration and stops, and the record behind it is made on the laptop
-at an issue, so anybody added between issues had an address and nothing behind it. `node
-tools/stmt-account.mjs --mint` mints the record; it refuses without a master that unwraps an
-existing record, never touches an account that exists, and the publish names who is stuck on every
-run. **AND THE LAPTOP'S OWN CHAIN NOW MINTS IT WITHOUT BEING ASKED** (v767, his instruction of 21 Sep
-2026): `tools/update.mjs` sweeps for the gap before the build, so what it writes is committed by that
-run and uploaded by the next publish, and where `STMT_MASTER` is not in the environment it names who
-cannot sign in and the one command, as a warning, without stopping the run. It cannot run in CI and
-that is the posture, not a gap: the content key and the master would both have to be on the runner.
-**Amend ID needs nothing**, an account being keyed by the username, which follows the code. **A name and ID is committed
-every time, like an approved row** (05 Sep 2026): Add ID on the phone files the name and the
-place into the vault, encrypted on the device, before the ID is queued; the laptop pulls them
-down with `node tools/pull-vault.mjs` before any seed, and the vault's spelling wins where it
-differs, the directory's old one kept as `was`. When a fold finds a roster code the directory
-lacks, ask him for the name and the location before the ID commits, then write both to
+with `$env:SALT_VAULT_PASS` (never a file) and pushes the ciphertext to KV; the desk auto-locks on
+`visibilitychange`. **A name and ID is committed every time, like an approved row**: Add ID on the
+phone files the name and place into the vault, encrypted on the device, before the ID is queued.
+**On the laptop run `node tools/pull-vault.mjs` before any seed**; the vault's spelling wins, and
+after a re-key take out the retired codes it brings back. When a fold finds a roster code the
+directory lacks, ask him for the name and the location before the ID commits, then write both to
 `10_Data\salt_bio.json`, seed the vault, and commit the statement username in
-`statements/_users.json` (minted by the fold at registration, kept for life; an address, not a
-secret). The `-R` buckets, minted with every associate's appointment, are the one exception.
-His own route is the `update-names-id` skill in `.claude/skills`, laptop only.
+`statements/_users.json` (minted at registration, kept for life). The `-R` buckets are the
+exception. **An ID with a username but no account cannot sign in**: `tools/update.mjs` mints it
+(`tools/stmt-account.mjs --mint`, needing `STMT_MASTER`; without it the run names who is stuck and
+carries on). It cannot run in CI, by design. Amend ID needs nothing. His own route is the
+`update-names-id` skill, laptop only.
 
-## Access and the write gate
+## Access, and why it is off; the write gate
 
-- **`REQUIRE_ACCESS` is `"0"` on his instruction of 11 Aug 2026 and the Access application was
-  removed.** Setting it to `"1"` without recreating the application locks him out. To restore:
-  first the Access application (Self-hosted, Workers, `salt-command`, policy Allow for his two
-  addresses), then the var, then deploy by hand. **This is the DESK. It is not the statements
-  site's Access, which is live** and gates only `/all` there (set 10 Sep 2026).
-- **Writes need `X-Salt-Key` = `SALT_WRITE_KEY` (armed 16 Aug 2026), and so do the reads that
-  carry cost or trade: `/queue`, `/ledger`, `/drafts`, `/orders`, `/stmt-users`. The desk, `/rev`
-  and `/queue/ping` stay open.** Unkeyed `POST /queue` or `/vault` returns 401. Change it with
-  `npx wrangler secret put SALT_WRITE_KEY`, then clear `saltWriteKey` from the phone's storage.
-  `drain.mjs` and `seed-vault.mjs` go through wrangler, unaffected.
+- **`REQUIRE_ACCESS` is `"0"` on his instruction and the Access application was removed.** Setting
+  it to `"1"` without recreating the application locks him out. To restore: first the Access
+  application (Self-hosted, Workers, `salt-command`, policy Allow for his two addresses), then the
+  var, then deploy by hand. **This is the DESK; the statements site's Access is live** and gates
+  only `/all` there.
+- **Writes need `X-Salt-Key` = `SALT_WRITE_KEY`, and so do the reads that carry cost or trade:
+  `/queue`, `/ledger`, `/drafts`, `/orders`, `/stmt-users`.** The desk, `/rev`, `/queue/ping` and
+  the vault's ciphertext stay open. Rotate with `npx wrangler secret put SALT_WRITE_KEY` from the
+  repo, then clear `saltWriteKey` from the phone's storage. `drain.mjs` and `seed-vault.mjs` go
+  through wrangler, unaffected. **`wrangler dev` binds the LIVE KV.**
 - Withdraw a queued entry: `node tools/drain.mjs --status`, then `--forget <at>`.
 
 ## Statements site
 
-`stmt/worker.js` and `stmt/page.js`: a second Worker on its own cryptic address, own KV store,
-no access to the desk's; config `wrangler.stmt.jsonc`, and every command takes `-c`. Nothing
-under `stmt/` imports from `src/`, `tools/` or a node builtin; the suite checks.
-`statements/_secrets.json` is laptop only and gitignored; lose its key and every account is
-re-issued. **Behind the password: statements, the price list and the order.** Everything else,
-including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
+`stmt/worker.js` and `stmt/page.js`: a second Worker on its own cryptic address and KV store,
+config `wrangler.stmt.jsonc`, every command taking `-c`. Nothing under `stmt/` imports from `src/`,
+`tools/` or a node builtin; the suite checks. `statements/_secrets.json` is laptop only and
+gitignored; lose its key and every account is re-issued. `stmt/page.js` `CLIENT_JS`, `stmt/owner.js`
+and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lone backslash, use
+`[+]` and `[/]`. Mechanism for everything below: `docs/STATEMENTS.md`.
 
 - **The site address is never in the public desk.** No address, no QR drawn.
-- **AN ORDER REACHES THE BOOK IN STAGES, AND SITE ORDERS WRITES NOTHING** (v694, his instruction of
-  18 Sep 2026). Site orders moves the ORDER, Approve lands the ROW. The desk's every-minute
-  `reconcileOrders` is the ONE road that queues: the acknowledgement makes a **Pending** row with the
-  delivery charge beside its total (v727: the goods are the total and what is owed is the two together), a payment a **Fulfilment** of the increment, a handover a
-  **Correction** stating the running total (and **a correction that restates what moved rolls the shelf by
-  the difference**, v739: the fold's rule that a correction moves nothing predates its writing `deliveredQty`,
-  and s183's 5 unit of 19 Sep left the row and never the stated figure; the baseline is the engine's reading and
-  follows the batch, v742, so a handover in two stages inside one fold rolls once), a withdrawal a **Cancellation**. The row is named by
-  `ledgerKey`, **the engine's `ovKey` to the character**, written onto the order at the
-  acknowledgement, because a `rid` is minted at fold time and there is no route back from desk to
-  site. An amendment WAITS until `OPEN.byKey` carries that key. Money and goods are two tracks, the
-  customer types what they paid, he types what he handed over, and `done` is neither side's tap.
-  **Cash on handover is withheld while that customer holds an unpaid advance**, and either side may
-  cancel until the goods move. A delivery's general location stays on the site and never reaches a
-  ledger note. **AN ENTRY IS STAMPED WITH ITS STAGE'S OWN MOMENT** (v731, 20 Sep 2026): `stageAt` in
-  `src/orders.js` reads the acknowledgement event, the last payment, `movedAt` or the withdrawal, so
-  two stages are two draft ids (one pass's clock collapsed three acks to one draft on 18 Sep), a
-  re-queue after a failed mark lands on the same id, and the pending row is dated the day he agreed
-  it. `queueSale` starts a `q:orders` it cannot parse afresh and logs the head of what it held (a
-  hand-written key with its quotes stripped stalled every site order for a day); `tools/drain.mjs`
-  writes KV through `--path` and names a key it cannot read. **The reconcile writes `sync`
-  `{state, why, at}` onto the order** through the mark road, on change only, and the Site orders
-  card reads it: queued, waiting for its row, or failed and why.
-- **A CUSTOMER WRITES ON AN ORDER, AND HE ANSWERS** (v751 to v753, his instruction of 20 Sep 2026, asked
-  at the start of that day's work: a chat, or a comment). One THREAD on the order, `msgs[]` of
-  `{at, by, text}`; the line typed on the order form is its first message, so there is no comment field
-  beside a conversation. **On any order at any stage**, because a question about a closed order is still
-  about that order. Twenty lines of THEIRS an order at 200 characters, 140 on the form; **his own are
-  uncapped**, the cap counting theirs alone. **IT NEVER RIDES INTO A LEDGER NOTE**, the rule v694 gave the
-  delivery's `place`, and the suite forces a street and a name into an order and proves no entry carries
-  them. The site marks `last-said`, the desk's nudge holds a second mark so a placement and a line cannot
-  bury each other, and **an order whose last line is theirs stays on his card whatever its state** until he
-  answers. His answer goes through `siteWords`, the bulletin's own lock, **on the desk**: the site holds no
-  roster and would not know a code. A refused line never reaches the site. Every line is escaped on both
-  surfaces, being the only free text a stranger typed that either draws.
-- **THE TAP, THE RETURN LEG AND THE WHOLE DESK** (v762 to v766, his instruction of 21 Sep 2026: build
-  queue on tap, site orders to reach the desk comprehensively and vice versa, open a closed order, the
-  return leg, a timer on Approve). **A move of his runs the reconcile in the request's own tail**, so a
-  row is queued and drafted in about a second; only a move, never a mark or a message, and it does not
-  wake him. The cron stays as the net and the marks on the order are what stop a stage being queued
-  twice. **THE RETURN LEG**: what he records on the desk reaches the order. The row is found by the key
-  the acknowledgement wrote, among EVERY sale and not the open ones, because a row settled in full is
-  exactly the one that has left the open list; it only ever RAISES, and it moves `queued.paid`/`moved`
-  with it or the next pass would queue a payment already on the row. It runs once a BOOK, gated on the
-  snapshot's version, and the mark moves only on a clean pass. Without it the site chased a customer
-  hourly for money he had taken in cash, which happened on 20 Sep. **A closed order can be opened** on
-  the card (`?all=1`, which the relay has taken since v694), read and answered; it offers no move.
-  **What is waiting on the site is on Today**, ranked by what was ordered, goods and carriage together,
-  Now for a placement and naming an order waiting on an answer in the same row; an order already agreed
-  says nothing there, being a row. **Approve keeps itself current** at the same pace as Site orders, and
-  neither card polls over a decision in flight or into a pocket.
-- **OVER RM 100 OWED, THE ACCOUNT IS A PAYMENT PAGE** (his instruction of 23 Sep 2026): `liveStatement` seals
-  `owed` (the statement's own figure, pending and cancelled owing nothing) inside the live document, and over
-  `HOLD_RM` the page opens on Pay, hides Prices and the order form, and asks for the overdue amount first; the
-  statement stays one tap away. **It is the page's gate, not the Worker's**: the figure is never in the store in
-  the clear, so a crafted `POST /orders` still lands and his acknowledgement is the check behind it.
-- **THE BULLETIN** (v732, his instruction of 20 Sep 2026): one clear key `bulletin` `{lines, mode, at}`
-  in the site's store, no prefix, so the publish never touches it. Set from the Bulletin card at the
-  top of Site orders through the desk's keyed `/bulletin`, relayed to the site's `/desk/bulletin` on
-  the desk key; public `GET /bulletin` feeds the page's every-sixth poll. The band is the first thing in
-  the body, door and inside; `run` scrolls, `change` rotates every four seconds. **The words are
-  checked on the desk** (`siteWords` in `src/orders.js`, `siteSafe` on the phone): the desk's name, a
-  roster code's shape and a level's name are refused, a product's name warns. An empty set clears it.
-- **THE CUSTOMER'S LABEL IS A MARK, NOT A NAME** (v659, his instruction of 16 Sep 2026): a symbol and
-  a colour for each level beside each product on their price list, and **the level is never named in
-  the page**. They are greeted for the hour off their own device and told the month of their first
-  priced order. **No name is used because none exists here** (rule 2); sealing one into a customer's
-  own ciphertext is his decision, not a drift.
-- **NO BRAND ON THE CUSTOMER'S PAGE, AND NO PRODUCT WORD EITHER** (his instructions of 10 and
-  18 Sep 2026). Nothing under `stmt/` names Salt Command: not the door, not an order line, not the
-  push banner, and since v695 **not the statement's letterhead** (`brand` is null in
-  `tools/make_statements.mjs`; issues already sealed keep the letterhead they were issued with,
-  because a dated record is not corrected in place). The landing lead is two sentences and stays
-  two. **A PRODUCT IS A MARK, NOT A WORD** (v695): a golden cube outline for salt, a golden droplet
-  outline for oil, `PSYM` in `stmt/page.js`, drawn and never loaded; anything else gets the ring, so
-  an omission does not read as a fault. The product select became a segment of marks, because an
-  option carries text and no drawing. A control holding only a mark is named by its **shape**
-  (`PSHAPE`: Cube, Droplet, Ring), never by its product: an aria-label naming it would put the word
-  back for exactly the readers who cannot see it was taken away. **The one name on the site is the
-  app's**: **`Salt Counter`** (v704, his instruction of 18 Sep 2026; it went `Order Salt`, then
-  `The Counter`, then his own name for it), in the manifest, the title, the iPhone app title and the
-  tutorial. It is the app's name, the ONE place on this site where something has to be called
-  something, and **the product word is his to spend there**: inside the page a product is still a
-  mark and never a word. What never appears anywhere is the DESK's name. Twelve characters exactly,
-  which is what iOS gives a home screen.
-- **AN ASSOCIATE TICKS AN ORDER AS ON BEHALF OF A FRIEND** (v703, his instruction of 18 Sep 2026:
-  their own orders and the ones they place for someone else can no longer be told apart by what they
-  buy). A ticked order books to their `<CODE>-R` bucket exactly as a phone-entered downsell does:
-  the entry carries `stream: "R2"` and `assoc`, the shape the drafter already takes, and the
-  **engine's own `bookR2` does the booking** so the book never holds two kinds of downsell. **The
-  `orderKey` is built on the BUCKET**, because that is the party the fold writes; built on the
-  associate's own code, every later amendment would miss its row. Who is an associate is the report
-  card's own list (`assoc.products[].rows[].id`), so the two readings cannot disagree; the publish
-  marks that account's record `assoc: true`, **in the clear beside `issued`**, because the tick must
-  be drawn before a password has opened anything and what it says is that this account MAY order for
-  somebody else. The site checks nothing: it holds no roster, so it records the claim and the desk
-  decides, exactly as with the quoted total.
-- **A BUCKET IS NOT ITS OWN PERSON** (his ruling of 13 Sep 2026). An associate's `<CODE>-R`
-  account is theirs: their statement (live and issued), price list, printed board and the order
-  card's usual rate read the code and the bucket together, bucket lines marked *on behalf of a
-  friend* (v687, his instruction of 18 Sep 2026; it read *for resale* until then),
-  through `ownsCode` in `engine/position.mjs`. A bucket has no statement and no published
-  username; its old `_users.json` line is kept but mapped to nothing, and it is never listed as
-  an account of its own on the master account either.
-- **`/all` IS THE MASTER ACCOUNT** (v687, his instruction of 18 Sep 2026), **behind Cloudflare
-  Access, with two locks, neither trusted alone:** the Access application covers `/all` and
-  everything under it, and `stmt/access.js` verifies the JWT again, RS256 against the team's keys
-  with issuer, audience and expiry, because a header check passes a token signed by any key at
-  all. With `ACCESS_TEAM` or `ACCESS_AUD` empty the route is 401, so deleting the application
-  closes `/all` rather than opening it. **One check at the door of the whole prefix**: `/all`
-  answers in plain words, every `/all/*` the same JSON 401 whatever the path, and an unknown path
-  past it the site's usual 404. It opens on its items, never on a list. **THE OWNER'S SCRIPT IS
-  `stmt/owner.js` AND TRAVELS ONLY THERE**: it lived in the page every customer opened until v687.
-  Review reads `sheet`, the publish's account list, merged with the `seen:` opens.
-- **SEND STATEMENT HANDS OVER THE PASSWORD FROM HIS PHONE** (v688, his decision of 18 Sep 2026).
-  The issue seals each password under `STMT_MASTER` as `pwMaster` beside the record, and
-  `tools/stmt-seal.mjs` did September's from `_passwords.json` on the laptop; the publish strips it
-  from the customer's own record and carries it in `sheet`, behind Access. His page decrypts it in
-  the browser and writes it straight to the clipboard, never into the page. The trade he took: an
-  Access session now also signs in as a customer. **The plain password is still laptop-only**, in
-  `_passwords.json`, and no message ever carries it; a tick lives at `sent:<issue>:<username>`, so
-  both his devices agree on what has gone out.
-- **THE SHARED LINK SIGNS THEM IN, ONCE** (v710, his instruction of 18 Sep 2026: when sharing the
-  link, QR to the user, the site pre-fills their username and password). The username it fills in;
-  the password it never can, two channels being a standing rule and a password in a message being a
-  password in a chat log for good. **So the password is not put in the link, the LINK is made to
-  sign them in.** His page has the content key open already, wraps it under a token it mints, and
-  hands the Worker the wrap and the token's SHA-256: `ot:<hash>` names the record, so a dump of the
-  store opens nothing, and the token is written nowhere. Opening posts it back, the record is read
-  and deleted in that order, and from there it is an ordinary session, `assoc` and `card` included.
-  **Two limits, stated rather than promised away**: a link inside its window IS a bearer credential,
-  as a guest link's id is, and what it buys is that it expires and it burns, not that it cannot be
-  forwarded; and **single use is best effort**, KV being eventually consistent, so the copy says
-  once and `stmt/signin.js` is where the mechanism admits it cannot swear to it. **The `/s/` route
-  is gated on the token's SHAPE, not the token**: a spent link and an invented one serve the same
-  door to the character, so the door is not a probe, while anything that could never have been a
-  link is still the site's 404, the old `/s/<CODE>` address included. The page rewrites its own
-  address the moment the link is spent, and a link is tried before a remembered device.
-- **KEPT AS AN APP** (v693, his instruction of 18 Sep 2026): the Worker serves
-  `/manifest.webmanifest` and `/icon.png` (bytes from `stmt/icons.js`, written by
-  `tools/stmt-icon.mjs --sync`, checked by `--check`), the CSP admits `manifest-src 'self'`, and the
-  door carries a three-step tutorial that hides once the page runs standalone. **The icon and the
-  name carry no brand**: a neutral ring, "Statement of account". **Every login asks about
-  notifications** once, and only where the answer is still open; the ask now comes before the
-  service worker is registered.
-- **THE DOOR: LOG IN, REMEMBER ME, LOG OUT** (v692, his instruction of 18 Sep 2026). The
-  three-minute lock is gone. **Remember me is split in two and neither half opens anything alone**:
-  the browser keeps a random device key, the site keeps the content key wrapped under it at
-  `rem:<token>` for 30 days, and the password is kept nowhere. The token is minted on a session,
-  which only a correct password mints; **Log out drops the session and that wrap**, and a token
-  only ever forgets its own account. An unknown token is refused in the door's one refusal.
-- **THE HOURLY CHASE** (v700, his instruction of 18 Sep 2026: "the customer will be notified every
-  hour to pay if it is an advanced order"). **This site's FIRST clock**: `wrangler.stmt.jsonc`
-  carries `"triggers": {"crons": ["0 * * * *"]}` and `stmt/worker.js` exports `scheduled()`. An
-  advance is the book's own word, goods out with money owed (`isAdvance`), so an order he has not
-  touched is never chased. **One wake an hour per CUSTOMER, not per order**, capped by
-  `chased:<username>` holding the HOUR BUCKET it was last woken in, expiring after two hours so a
-  customer who settles up leaves nothing behind; his test account is skipped. Day and night, until
-  it is paid, and it stops of its own accord. **A CRON HERE SHIPS WITH THE PUSH**
-  (v797): `rev.json`'s id does not cover `wrangler.stmt.jsonc`, but the file is on the job's own push paths
-  and every run that deploys now deploys the Counter; only an unpushed laptop change needs
-  `npx wrangler deploy -c wrangler.stmt.jsonc` by hand.
-- **AN ASSOCIATE SEES THEIR OWN CARD, BY MONTH, FROM THE START** (v706, his instruction of 18 Sep
-  2026). A FOURTH SEALED DOCUMENT on their own record, `rec.card`, beside the statement and the price
-  list and under the same content key, built by `associateCard` in `tools/book.mjs` off the SAME
-  jsdom window as the prices. It is a different document from `/all/assoc`, which is his view of
-  every associate and stays behind Access. **WHAT IS LEFT OFF IS THE POINT**: `share` is a ratio
-  against the whole book's revenue, so an associate holding their own RM and their own share can
-  solve for his total; `stars` are bands of that same share; `rank` is a position among other
-  people. None travels. The reward is UNITS with the distance to the next as a SHARE of one, drawn
-  as a bar, because the unit is a margin figure. **EVERY FIGURE ADDS UP TO THE LIST UNDER IT**: the
-  lines are struck off `pricedSales`, the same basis as the summary, and `onward` counts the lines
-  rather than `dsResell`, which read 14 above a list of 10. The fourth tab appears only where the
-  record that opened actually carries a card.
-- **THE ASSOCIATES REPORT CARD** (v691, his decisions of 18 Sep 2026): one card an associate a
-  book on the master page, from `associateSnapshot` in `tools/book.mjs`, published as KV `assoc`
-  and served only at `/all/assoc`. **What they did** (bought, sold for him, brought in, onward
-  sales, introductions, share, stars) **and the reward in UNITS**, with the part-unit as a bar.
-  **NO MARGIN CROSSES**: `ASSOC_FIELDS` is the whitelist, the distance to the next unit is a
-  margin figure and travels only as a share of one, and a departure is a yes or no, never his note.
-- **NOTHING A CUSTOMER SEES IS BOUND TO A MONTH** (v690, his instruction of 18 Sep 2026): the
-  statement carries every order from the start and the page filters it. Each dated row carries its
-  month, the strip is built from the months that account has, and All is one tap.
-  The account's position does not move with the filter, and the line under the strip says so.
-  **THERE IS NO MONTHLY STATEMENT, JUST ONE LIVE DOCUMENT** (v769, his instruction of 21 Sep 2026,
-  reading the message he was about to send), so **the page OPENS on the whole account**: v690 opened
-  on the newest month, which hid the rest of somebody's own account behind a tap they had no reason
-  to take. A month is still one tap. **The words that hand the account over say the same**
-  (`stmt/send.js`): "Your account is ready to use", the three things it is for (the statement, which
-  keeps up with the orders; the latest prices; a form to place an order), and **a question goes ON AN
-  ORDER**, because that is where the thread lives (v751) and there is no other channel to promise;
-  then the home screen steps for both phones and the door's two switches, in the door's own words.
-  Neither message takes a month any more, so no caller can put one back. **Issues already sealed and
-  sent are untouched** and still open on the page: a dated record is not corrected in place. The
-  monthly ROUTINE still exists (`docs/STATEMENTS.md`); retiring it is his word and has not been given.
-- **THE TEST ACCOUNT** (v689, his instruction of 18 Sep 2026): username `0000-0000`, password
-  `0000-0000-0000-0000`, made and unmade from the master page with one tap. Zeros are not in the
-  username alphabet, so it can collide with nothing; the Worker mints it with its own key, so no
-  statement, price list or laptop secret is behind it. **It counts nowhere**: marked `test` on his
-  list and out of every count, never written or retired by the publish, and no desk code maps to
-  it, so an order it places books nothing. Deleting it takes its orders, opens, ticks and phones.
-- **Guest links `/g/<id>`**: one board and nothing else, `script-src 'none'`. **The id
-  IS the credential** (rejection sampling, never `byte % 30`) and the boards are NOT sealed,
-  both deliberate. Unknown, malformed and withdrawn ids answer the same 404. **A row named
-  "Tier 1" may carry no prices** (the engine gates it on bare `if(P.tier1)`), so take the first
-  row with finite prices; oil is a genuine one-tier book and says so.
-- **THE GUEST LINKS ARE ONE FOR EACH TIER** (v696, his instruction of 18 Sep 2026; four since v793).
-  Titanium, Platinum, Gold, Silver; **Ambassador is the floor and never a guest's**. Bronze's link is
-  kept, because an id handed out must keep opening something, and it opens the stranger's board. They
-  are ENSURED on the first open of the Links panel, not made on a tap, so the answer is always one a tier;
-  minted once and kept for good, because an id handed to a stranger must never change what it opens.
-  The level names reach the Worker through the KV key `tiers`, written by the publish, and with no
-  names it makes none rather than inventing five. **A STANDING LINK READS ITS LEVEL'S BOARD**
-  (v699), `tboard:<1..5>`, written by every publish from `tierBoard(level, ...)`, which is
-  `boardList` with the level pinned. Nothing is written per standing link: v696 wrote one under each
-  link's id, and since the five are minted the first time he opens the panel, any minted since the
-  last publish had no board and fell back to `board:2`, the LAST level, so four of the five would
-  have quoted Bronze until the next deploy. `tboard:` and not `board:`, because `board:2` already
-  means the last level and not the second.
-- **AN ASSOCIATE MAY MINT THEIR OWN, AND HE APPROVES IT** (v709, his instruction of 18 Sep 2026).
-  `POST /my/refs` on a SESSION, never under `/all`, and refused with the site's 404 for anybody whose
-  own record does not carry the associate mark. **PENDING MEANS SHUT FROM THE MOMENT IT EXISTS**,
-  because the id IS the credential: `approved: false` is written at mint and the guest door refuses
-  it exactly as it refuses a withdrawn one. **The test is `approved === false`, NEVER `!approved`**:
-  no link already in the store carries the field, so the loose test would shut every link he has
-  handed out, and shut it silently. He approves, declines or pins a tier from the Links panel; a tier
-  he does not pin leaves it on the v658 rule, which is what "if need be" means. **Ambassador is
-  refused** as a tier, being the floor. `standing` stays FALSE on an associate's link, or
-  `ensureStanding` would adopt it as one of the five; `levelKey` keys on the LEVEL alone. An
-  associate is handed where their link points and nothing of his: no label, no introducer, no level,
-  no minter, and **no label is ever taken from them**, because a note here would be the first
-  plaintext anybody but him has put in this store. Capped at `MAX_PER_ASSOC`, the shape of the
-  open-order cap. Their panel lives in `CLIENT_JS` gated on `assoc`, because `stmt/owner.js` is his
-  alone and the door is served before anybody signs in.
-- **A LINK MAY INSTEAD NAME ITS INTRODUCER AND FOLLOW THEM** (v658, his rule): minting takes a
-  customer's username, and the guest is quoted **two levels above theirs where there is room, else
-  one, capped at the last**, per product. The level is never stored on the link; every publish
-  recomputes it and writes `gboard:<id>`, so moving a customer up moves every link they gave out. A
-  link minted since the last publish falls back to `board:2`. Detail: `docs/STATEMENTS.md`.
+- **No brand on the customer's page, and no product word either.** Nothing under `stmt/` names
+  Salt Command. A product is a mark (`PSYM`), and a control holding only a mark is named by its shape
+  (`PSHAPE`), never its product. **The one name on the site is the app's, `Salt Counter`**, twelve
+  characters, which is what iOS gives a home screen; the desk's name never appears. **A customer's
+  level is a mark, never named**; no name is used because none exists there (rule 2).
+- **AN ORDER REACHES THE BOOK IN STAGES, AND SITE ORDERS WRITES NOTHING.** The desk's every-minute
+  `reconcileOrders` is the one road that queues: the acknowledgement a **Pending** row (delivery
+  beside its total), a payment a **Fulfilment**, a handover a **Correction** stating the running
+  total (rolling the shelf by the difference), a withdrawal a **Cancellation**. The row is named by
+  `ledgerKey`, **the engine's `ovKey` to the character**; an amendment waits until `OPEN.byKey`
+  carries that key. Each entry is stamped with its stage's own moment (`stageAt`). A move of his
+  runs the reconcile at once; the return leg carries what he records on the desk back to the order
+  and only ever raises. Cash on handover is withheld while that customer holds an unpaid advance. A
+  delivery's location never reaches a ledger note.
+- **A customer writes on an order, and he answers**: one `msgs[]` thread per order, on any order at
+  any stage; theirs capped, his uncapped. **It never rides into a ledger note.** His answer is
+  checked by `siteWords` on the desk; every line is escaped on both surfaces.
+- **Over RM 100 owed (`HOLD_RM`) the account opens as a payment page**: the page's gate, not the
+  Worker's. **The bulletin** is KV `bulletin`, set through the desk's keyed `/bulletin` and checked
+  by `siteWords`.
+- **An associate may tick an order as on behalf of a friend**: it books to their `-R` bucket
+  through the engine's `bookR2`, and the `orderKey` is built on the bucket. **A bucket is not its
+  own person**: `ownsCode` reads the code and the bucket together; a bucket has no statement and no
+  published username.
+- **`/all` IS THE MASTER ACCOUNT, behind Access with two locks, neither trusted alone**: the Access
+  application and `stmt/access.js` verifying the JWT again (RS256, issuer, audience, expiry). Empty
+  `ACCESS_TEAM` or `ACCESS_AUD` closes `/all`. **`stmt/owner.js` travels only there.**
+- **Send statement hands over the password from his phone** (`pwMaster` under `STMT_MASTER`, in
+  `sheet` behind Access, decrypted to the clipboard). The plain password stays laptop-only in
+  `_passwords.json`, and no message ever carries it.
+- **The shared link signs them in, once**: the link signs in, the password is never in it. A link
+  inside its window is a bearer credential, and single use is best effort (KV). The `/s/` route is
+  gated on the token's SHAPE, so a spent link and an invented one serve the same door.
+- **The door**: log in, remember me (a device key in the browser, the wrapped content key at
+  `rem:<token>`, neither opening anything alone), log out. Kept as an app: manifest and icon served
+  by the Worker, no brand; every login asks about notifications once.
+- **The hourly chase**: the site's own cron (`wrangler.stmt.jsonc`) wakes a customer holding an
+  advance once an hour, capped by `chased:<username>`; the test account is skipped. The config
+  ships with the job's push paths; an unpushed laptop change needs `npx wrangler deploy -c
+  wrangler.stmt.jsonc`.
+- **An associate's own card** (`rec.card`): `share`, `stars` and `rank` never travel, and every
+  figure adds up to the list under it. **The associates report card** (`/all/assoc`, whitelist
+  `ASSOC_FIELDS`): no margin crosses.
+- **One live document, no monthly statement**: every order from the start, the page filtering by
+  month and opening on the whole account. `make_statements` refuses to seal a new issue without
+  `--new-issue`; sealed issues are untouched. A question goes on an order.
+- **The test account** `0000-0000`, password `0000-0000-0000-0000`, counts nowhere.
+- **Guest links `/g/<id>`**: one board, `script-src 'none'`. **The id IS the credential**
+  (rejection sampling, never `byte % 30`) and boards are NOT sealed. Unknown, malformed and
+  withdrawn ids answer the same 404. **One standing link per tier**, ensured on the first open of
+  the Links panel and kept for good; Ambassador is never a guest's; Bronze's old link opens the
+  stranger's board. A standing link reads `tboard:<n>`, never `board:`. **An associate may mint
+  their own, shut until he approves: the test is `approved === false`, NEVER `!approved`.** A link
+  may instead name its introducer and follow them, recomputed every publish as `gboard:<id>`.
+- **What a customer sees is as fresh as the last publish**: price lists are sealed at publish time.
 
 ## Files that carry a rule
 
 | Path | Rule |
 |---|---|
-| `engine/qr.mjs` | The ONE QR encoder and the only place its facts are stated: byte mode, level M, versions 1 to 10; inlined into the master like the pricing engine; `tools/qr.mjs` re-exports it and never copies it; `qrRectSvg` draws RECTANGLES, a stroked symbol does not scan |
-| `stmt/qr.js` | GENERATED from `engine/qr.mjs` by `tools/qrsync.mjs --sync`; gate and CI fail on drift. Never edit it; `stmt/` may import only a sibling |
-| `stmt/owner.js` | The master account's script, spliced into the page on `/all` alone; never in a customer's |
-| `stmt/send.js` | The one copy of the words a customer is sent; `tools/stmt-send.mjs` imports them |
-| `stmt/signin.js` | The one-time link: the token is hashed at rest and the wrap is opened only by the token; the two limits it cannot promise away are stated in its header |
-| `tools/stmt-seal.mjs` | Laptop only: seals an issue's passwords under the master, proving each against its own verifier; where a code was re-keyed after the issue it pairs by PROOF, trying only passwords whose code has left the roster (v705) |
-| `tools/stmt-account.mjs` | Laptop only: mints a full account for a roster code that has a username and no record, which the fold never did (v707). Refuses without a master that unwraps an existing record, never touches an account that exists, and skips a bucket and a supplier. The publish names who is stuck on every run |
-| `tools/foldnotes.mjs` | The fold's prose with no model and no network (v792): the same notes object off the same dossier, put through the same `checkNotes` a reply is. It states facts and records NO judgement, and the line saying so is in every row note, not only the version entry. `why` is the one untrusted string, quoted from an API error, and `scrub` is the one place it is made safe |
-| `tools/preflight.mjs` | Whether a run may ship at all: `aheadVerdict` says level, warn or STOP, and update.mjs exits on it. It lives outside update.mjs for the reason commitmsg.mjs does, that a file running its chain on import cannot be driven by the suite (v770) |
-| `tools/product.mjs` | The one road that opens, re-keys, retires or restores a book: `--add`, `--rename`, `--retire`, `--unretire`, `--list`, each writing `ledger/book.json` and syncing. A book opens EMPTY. **It refuses to retire a book that has rows**, because `retired` feeds `PROD_IDS` and every consolidated total reads that, so hiding a book with a past would drop its revenue in silence; and it refuses to re-key **salt**, a row that names no product being salt. What it does not do is give a book a hue or a mark: `docs/PRODUCTS.md` |
+| `engine/qr.mjs` | The ONE QR encoder (byte mode, level M, versions 1 to 10), inlined into the master; `tools/qr.mjs` re-exports it; `qrRectSvg` draws RECTANGLES, a stroked symbol does not scan |
+| `stmt/qr.js` | GENERATED from `engine/qr.mjs` by `tools/qrsync.mjs --sync`; never edit it |
+| `stmt/send.js` | The one copy of the words a customer is sent |
+| `stmt/signin.js` | The one-time link; the two limits it cannot promise away are in its header |
+| `tools/stmt-seal.mjs` | Laptop only: seals an issue's passwords under the master, proving each; pairs a re-keyed code by proof |
+| `tools/stmt-account.mjs` | Laptop only: mints the account for a roster code with a username and no record; never touches an existing one |
+| `tools/foldnotes.mjs` | The fold's prose with no model: same notes object, same `checkNotes`, no judgement; `scrub` makes the API error safe |
+| `tools/preflight.mjs` | `aheadVerdict`: level, warn or STOP; outside `update.mjs` so the suite can drive it |
 | `tools/rid.mjs` | Stable `rid` per ledger row; `nextRid` is the one minting place |
 | `tools/changelog.mjs` | Prepends `evolution[0]` to `master/changelog.json`; never rewrites |
-| `test/verify.mjs` | ~3,480 assertions over 247 sections, no network or browser; add one per behavioural change, and **prove it red by mutation before trusting its green**, each on its own |
+| `test/verify.mjs` | No network or browser; one assertion per behavioural change, **proved red by mutation before its green is trusted**, each on its own |
 
 The rest: `docs/DESK.md`.
 
@@ -646,26 +342,25 @@ The rest: `docs/DESK.md`.
 ```
 npm install        # once
 npm run build      # master -> public/desk.html, after any master edit
-npm run dev        # build, then wrangler dev
-npm test           # 2 to 7 minutes, not seconds; runs with a 4 GB heap
+npm run dev        # build, then wrangler dev (live KV)
+npm test           # 2 to 7 minutes; 4 GB heap
 npm run deploy     # build, then wrangler deploy
 node tools/update.mjs
 ```
 
-Each build patch is anchored on one unique line; a moved anchor aborts. First-time Cloudflare
-and local tools: `docs/DESK.md`.
+Each build patch is anchored on one unique line; a moved anchor aborts. First-time Cloudflare and
+local tools: `docs/DESK.md`. Close every task with the seven-line standing-state table (shelf, live
+credit, written off, pending orders, undated rows, queue and drafts and staged, tree), computed
+from the engine in an `openMaster` window, never by hand.
 
-## How a fold is sized (his instruction, 31 Aug 2026)
+## How a fold is sized
 
 - **Smaller folds.** One thing, shipped; a fold that cannot be described in one sentence is two.
 - **Sweep the class before shipping a fix.** Grep the pattern across the whole file first.
-- **A round points at the newest code.** Probe the diff since the last round, attack the fix;
-  older code is regression only.
-- **An instrument is proved red before its green is trusted.** Reading source text, or checking
-  inputs computed by the code under test, does not count. **TWO ASSERTIONS WRITTEN ON 22 SEP 2026
-  WERE VACUOUS AND BOTH PASSED**, which is what this rule is for: one built its pattern through a
-  shell heredoc that ate the backslashes, so it matched a backspace character and two plain
-  letters; the other searched `slice(0, indexOf("const evolution=["))` for code that lives at line
-  17,482, because **the journal sits in the MIDDLE of the master and not at the end**. A vacuous
-  check and a true one are identical in a green run. Prove each new assertion red on its own:
-  mutations run together mask each other, and one of these hid behind its neighbour going red.
+- **A round points at the newest code.** Attack the fix; older code is regression only.
+- **An instrument is proved red before its green is trusted**, each mutation on its own. Reading
+  source text, or checking inputs computed by the code under test, does not count; a vacuous check
+  and a true one are identical in a green run. Before writing an assertion or measuring the desk,
+  read `docs/WORKING.md`.
+- **Run independent steps in parallel**: the suite in the background; master mutations at once on
+  `SALT_MASTER` copies; tool-file mutations one at a time.

@@ -11,8 +11,8 @@
 >
 > Salt left Cowork on 20 Aug 2026. If a `salt-daily-price-brief` task is still in the
 > Cowork registry it fires this text, and **editing this file does not change what
-> fires** - the stored prompt has to be deleted from Cowork. Root `CLAUDE.md` section 6
-> still lists it.
+> fires** - the stored prompt has to be deleted from Cowork. The Cowork manifest,
+> `Scheduled\README.md`, still lists it.
 
 ---
 name: salt-daily-price-brief

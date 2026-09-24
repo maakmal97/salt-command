@@ -5,7 +5,7 @@ Cloudflare Worker with a KV-backed queue so a transaction added on the phone rea
 
 **It is open, by the owner's decision of 11 Aug 2026**, and the Access application was removed to
 match: no sign-in, reads open to anyone holding the URL, writes gated by `X-Salt-Key`. See
-"Access, and why it is off" and "The write gate" in [CLAUDE.md](CLAUDE.md).
+"Access, and why it is off; the write gate" in [CLAUDE.md](CLAUDE.md).
 
 - **Read [CLAUDE.md](CLAUDE.md) before editing anything.** It carries the hard rules, the
   three-surface model, the queue loop and the deploy runbook.
@@ -24,7 +24,7 @@ npm test           # smoke suite, no network
 npm run deploy     # build, then wrangler deploy
 ```
 
-Then create the KV namespace as set out in [CLAUDE.md](CLAUDE.md#deploying). There is no Access
+Then create the KV namespace as set out in [docs/DESK.md](docs/DESK.md), "First-time Cloudflare, and local work". There is no Access
 application to create: setting `REQUIRE_ACCESS` back to `"1"` without first recreating that
 application **with a policy attached** locks the owner out of his own desk.
 

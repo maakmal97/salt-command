@@ -119,6 +119,37 @@
   LAST in its batch as a re-key wherever the book holds the code (`renamePairs`/`renameInBook`
   in the engine), the `-R` account with it, plus the statement key (username kept), a place
   override in `geo/places.json` and the suite's fixtures.
+- **Codes are derived** (`deriveCode`, phone and laptop alike): C or S, the name's first letter,
+  the length of the saved name counting spaces, a dash, then the place's initials when it is
+  several words or its first three letters when it is one; a blank place is TBC. A downstream
+  buyer is `<associate>-<n>-<place>`; an associate's account is `<code>-R`. A clash takes one more
+  letter of the name at a time (`deriveFreeCode`), a number only when the name is used up; on an
+  amendment the party's own code counts as free.
+- **The queue on load** (`qKeepOnLoad`): an entry clears only when the fold has passed it, this
+  device saw it acknowledged (`qSentThrough`, seeded from the watermark), and the last good read
+  of the drafts did not list it refused (`saltRefusedAts`, stored only on `r.ok`). An entry that
+  never reached the cloud is flagged `stuck` and never cleared by itself. `q.at > null` is false,
+  so a missing watermark must never drop an entry.
+- **Loans** are rows `{date, party, direction:'in'|'out', valueKg, valueRM, status, settledOn,
+  product, note}`. Borrowed in counts (`loanInUnits`) only while open; lent out counts
+  (`loanOutUnits`, the Inventory walk) whatever its status, so a repayment road must add that
+  filter. The fold's `loan` road only appends and rolls the stated shelf. A hand settle: set
+  `status:'settled'` and `settledOn`, roll `STATED_STOCK` with the fold's own roll sentence
+  prepended to `NOTES.STATED_STOCK`, write with `writeBookFile`, then `booksync --sync` and `node
+  tools/ledger.mjs`. His rulings: interest paid is a finance cost and interest received other
+  income, both below gross margin, salt paid as interest valued at cost; a loan is repaid in what
+  was lent. A list the overlay pushes into needs a `BASE_*` snapshot and a reset, as `loans` has.
+- **Rewards**: a whole free unit per stated margin brought, over the whole ledger
+  (`REWARD.stated`; at v623 RM 500 for a customer, RM 470 for an associate, introduced customers'
+  margin counted at a 1.2 hurdle). Oil and the other books are absent from it, so they carry no
+  reward. `rewardMargin` counts priced rows that are neither rebate nor defaulted, through
+  `ownerOf` (the code and its `-R`), plus introduced customers' rows for an associate
+  (`introductions()`, from `INTRODUCTIONS` and the rows' `ref` stamps). A departed party cannot
+  redeem (`canRedeem`). A sale to a customer holding reward and under their card price offers a
+  cover at entry (`coverPlan`: the gap, up to the balance, at cost; the row carries `coverUnits`
+  and `coverRM`). A customer holding a whole unit may redeem one; a redemption is a sales row with
+  `rebate` and `goodwill` at cost. Balances move with every fold: compute one in code before
+  quoting it.
 
 ## The map (v630, replacing v293's unnamed heat)
 

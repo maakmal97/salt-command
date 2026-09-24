@@ -5,7 +5,7 @@
 Rewritten 23 Aug 2026 for the book as data (v339) and the fold tool (v340). The routine that
 once ran this four times a day (`Salt daily fold`, trig_01UrnjQMWA3f6GXN5R6Dzi4S) was disabled
 24 Aug 2026: a fold reached on request lands inside a minute, faster than the six-hourly slot
-ever did, so the clock was adding a race (see CLAUDE.md, "Retiring Cowork") without adding
+ever did, so the clock was adding a race (see CLAUDE.md, "The chain: tap to deploy") without adding
 speed. **From 03 Sep 2026 the fold runs inside `cloud-commit.yml`: an approval on the phone
 dispatches it, and the Claude Code action folds in the same run, before the deploy. Since v520
 (08 Sep 2026) stage, fold and deploy are steps of one job, `chain`, and since v521 the Fold step
@@ -14,7 +14,7 @@ notes, a check against the house rules, then `--apply`. **Since v792 (22 Sep 202
 a condition of the fold**: with no key, with a call that will not go through, or with a reply twice
 against the house rules, `tools/foldnotes.mjs` writes the notes from the same dossier and the fold
 lands, recording no judgement and saying so in every row note and in the version entry. This document is what that call is told
-to do, and what any agent asked to fold by hand still does** (CLAUDE.md, "An approval now runs the whole chain"). The routine is kept, disabled,
+to do, and what any agent asked to fold by hand still does** (CLAUDE.md, "The chain: tap to deploy"). The routine is kept, disabled,
 as the manual backup. Whoever folds: if `master/_to_fold.json` is not in master, nothing is
 staged, say so in one line and stop; if `master/_folded.json` is present, the last batch is
 folded and waiting for its deploy to clear it, stop likewise.
@@ -113,6 +113,31 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
 6. **Commit and push.** Say plainly what was folded, what was refused and why, and any figure you
    were unsure of. That push is what triggers the deploy, and the deploy marks the ids committed
    only after the phone is proven to be serving the new build.
+
+## Folding from the laptop
+
+- **Approve LAST.** An approved row is fair game for the next cloud tick, whose timing is
+  irregular, and a tick inside the window folds it in the cloud and refuses the laptop's push. So
+  build the batch from the PENDING drafts first: the same SELECT `drafts.mjs approved()` runs,
+  `status='pending'` in its place, shaped identically, written to the scratchpad (D1 reads by
+  `--command`). Run `fold.mjs --plan --staged <that> --notes <scratch>` and `foldcall.mjs --dry`
+  with the same flags for the dossier; write the notes and check them with the exported
+  `checkNotes` and the prompt's word limits. Only then approve, run `--approved >
+  master/_to_fold.json`, confirm its rows equal the provisional batch bar `decidedAt` and
+  `decidedBy`, `--apply`, `node tools/ledger.mjs`, commit both `_to_fold.json` and `_folded.json`,
+  and ship within minutes. `decided_by` names him, the Code session and its date, then the basis.
+- **Re-drafting an entry he later calls real.** A draft keeps its id (the entry's `at`) once
+  decided, and `INSERT OR IGNORE` never re-drafts it; a pending card's flags are frozen too. Mint a
+  fresh `at` above `QUEUE_COMMITTED`, run `draftRow(entry, book)` from `src/drafter.js` with the book
+  from `readBook()` in `tools/book.mjs` (`{sales, purchases, state, pricing: state.PRICING}`;
+  `file:///` import URLs on Windows), write `{id, collection, entry, row, reasoning, flags, amends,
+  amendKind, drafter}`, stage it with `drafts.mjs --draft`, approve with `--approve <id> --by
+  "..."`, then `--approved > master/_to_fold.json` and the normal fold. Never touch the decided rows.
+- **Withdrawing an approved row** has no tool: an UPDATE on D1 through `wrangler d1 execute --file`
+  with `decided_by` naming the reason, on his word, then `drain.mjs --forget <at>`.
+- **`drain.mjs --status` can fail in a Code shell** when wrangler's KV listing wants a token; the
+  drafter drafts every arrival, so an empty `drafts.mjs --list` is the working proof that the queue
+  is clear. Say the KV read failed.
 
 ## What the agent must never do
 

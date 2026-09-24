@@ -51,15 +51,23 @@ smaller one, once this one has been read for a while.
    border. The one filled control is the brass-to-copper pill, kept for what books or produces
    (`.vbtn`); every navigator and filter is a ghost.
 
-## Fonts, and why the desk shows Georgia
+## Fonts, self-hosted since v785
 
-The CSP is self-only and the build fails on any external load, so the desk cannot ask Google
-for Fraunces or JetBrains Mono. The design system's font import moved out of `styles.css` into
-`fonts.css` so the vendored stylesheet carries none, and the pull refuses one that does. The
-fallbacks (Georgia, Consolas or Cascadia Mono) keep the split between figure and sentence,
-which is the whole point of the type system. Embedding subsetted brand fonts as data URIs is
-possible (about 200 KB on a 1.6 MB page) and is the owner's call: it needs the fonts fetched
-once, which is a network step.
+The CSP is self-only and the build fails on any external load, so the faces arrive as files each
+surface serves itself. They are Google Fonts' own latin subsets, fetched once on his yes of 22 Sep
+2026 and kept in `Code\salt-ds\fonts\` with their OFL licences (`fonts/README.md` holds the
+request): Fraunces, variable over optical size and weight, and JetBrains Mono, variable over
+weight. `src/fonts-local.css` declares them relative to the page. Each surface carries them by its
+own sync: the desk's `designsync --pull` (`design/fonts.css` and `design/fonts/`, a generated block
+before the base, the files copied to `public/fonts/` and precached by `sw.js`); the Counter's
+`tools/stmt-fonts.mjs` (bytes in `stmt/fonts.js`, served at `/fonts/`, `font-src 'self'`); QR
+Command's own `designsync --pull`, whose suite recomputes the build id and must hash any new input
+in the same order. The vendored stylesheet carries no `@import`, and the pull refuses one that
+does. Georgia and Consolas remain the fallbacks.
+
+**Proving a face renders:** on the served page, after `document.fonts.ready`, every entry's
+`status` is `loaded`, `document.fonts.check('16px Fraunces')` is true, and a hidden span measures
+wider in the face than in its fallback.
 
 ## The colour mapping
 
@@ -162,9 +170,46 @@ badge, which decision 5 had always reserved for the one button.
 **QR Command takes the tokens by sync.** Its `app.css` carries the system's `:root` between markers,
 written by its own `tools/designsync.mjs --pull`, and its build refuses to ship on drift.
 
-What was not done: the brand fonts. The CSP is self-only on every surface, so Fraunces and JetBrains
-Mono can only arrive embedded, and embedding needs the files fetched once. That is a network step
-and his call.
+What was not done that day: the brand fonts. They followed as v785, above.
+
+**What the migration taught, for the folds still to come.**
+- A recipe wins only where nothing outranks it. The DESIGN base block and the desk layer both sit
+  at the foot, so a recipe at (0,1,0) loses to any older rule of higher specificity (`.kpi.r::before`,
+  `.kpi .l`, the layer's generic `.chip`). Delete the base rules for a migrated component, and drop a
+  generic class from an element that becomes a recipe.
+- Bind state through what the recipe already reads: the tile's tone letters set `--salt-kpi-tone`;
+  `aria-selected`, `aria-current="page"` and `aria-pressed` carry the open pill, tab and held chip.
+  A generic layer rule on a shared class is scoped with `:not(...)` rather than split.
+- Sync the recipe to the desk, not the desk to the recipe: the desk's measured values are the truth.
+- Markup carries both names, so the suite's old selectors keep working; only literal old strings in
+  the suite need updating.
+- Land one component group per version, report, and wait for his word on the next.
+
+## Traps in the layer
+
+- A last-wins layer beats a media query: a bare selector in `design/desk.css` overrides an earlier
+  `@media` rule of the same specificity. Scope a layer width, position or display on a class the
+  narrow breakpoints also style with its own `@media(min-width:861px)`.
+- The product hues, `PRODUCTS.accent`, sit inside the generated BOOK block: edit `ledger/book.json`,
+  never the master, then `node tools/ledger.mjs`.
+- The recolour regex `#[0-9a-f]{6}\b` misses 8-digit hex: sweep for the 6-digit prefix without the
+  boundary. A regex over the whole master also matches the rendered DESIGN block: edit only above
+  the `DESIGN base` marker.
+- Retirement folds are proved with `tools/renderdiff.mjs` (baseline from the committed build, edit,
+  build, shoot, compare; `--parts a,b` to re-shoot two). The compare ignores deltas of two or less,
+  which is compositing rounding. After any type change probe `document.documentElement.scrollWidth`
+  per part at 375px.
+
+## The brand
+
+The identity (obsidian, slate, brass, copper, salt and mist; Fraunces for display, JetBrains Mono
+for figures; the crystal mark) is the private artifact "Business Identity",
+https://claude.ai/code/artifact/211f8bec-2114-4c51-aaae-48d035119ef2. The finished assets live in
+`Code\salt-ds\brand\` (`node brand/export_brand_assets.cjs`). Their DuitNow QR is the live
+merchant code, whose record now lives in the pay store, `Code\qr-command\data\accounts.json` (the
+old pay site was retired on 08 Sep 2026): regenerate it from the payload if the account changes,
+draw it as rectangles, and decode the final PNG before it ships. Unit
+figures only, never a mass symbol, in every asset.
 
 ## What is proposed, and not in v472
 

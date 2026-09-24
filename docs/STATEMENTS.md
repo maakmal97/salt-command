@@ -578,6 +578,15 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   Access application is "Salt statements owner" (`67280e0b-…`, one-time PIN, his address,
   24h). `stmt/access.js` reads the header or the `CF_Authorization` cookie. `roster` (codes
   beside usernames, never names) is written by the publish.
+- **Access on a `workers.dev` path, and how to prove it.** Zero Trust gates one path of a Worker
+  with no custom domain; the precedent is QR Command's application, and the verifier to copy is
+  `identity()` in `Code\qr-command\src\worker.js`: RS256 against the team's certs with issuer,
+  audience and expiry, reading both the header and the cookie (the page's own fetches carry only
+  the cookie), never throwing, every fault reading as nobody. A header check is not a gate: prove
+  any Access gate with a token whose claims are right and whose signature is another key's.
+  Applications, policies and `aud` tags are readable and writable through the Cloudflare API at
+  `/accounts/{id}/access/apps`. A team rename moves the issuer: `ACCESS_TEAM` in
+  `wrangler.stmt.jsonc` is a config edit plus a hand deploy, and every device signs in again.
 - **SIGN-IN LINK, ON EACH ACCOUNT'S CARD** (v710). It is minted ON A TAP and never on a draw: drawing
   the Send panel would file a record per account on every page load and burn links nobody sent. His
   page opens the account under the master, wraps the content key under a fresh token, and posts the
@@ -598,7 +607,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   `gboard:<id>` (`guestBoard` in `tools/pricelist.mjs`), so moving a customer up moves every link
   they gave out. A link minted since the last publish has no board yet and falls back to `board:2`,
   the board every stranger sees, which is also the cap. `board:1` and `board:2` are still written,
-  as Titanium and Bronze (v656). The level's NAME is not on the guest page, for the same reason it
+  as Titanium and the last level (Silver since v793, Bronze before it). The level's NAME is not on the guest page, for the same reason it
   is not on a customer's.
 - **Print a board** (v564) saves HTML, PDF or JPG: crystal, sizes, username, then a QR to
   `<site>/?u=<username>`. The publish writes KV `stmt-site` and keyed `GET /stmt-users` returns
