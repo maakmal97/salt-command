@@ -277,14 +277,19 @@ export const OWNER_JS = `
     var made=want.filter(function(t){ return links.some(function(r){ return r.standing&&r.level===t; }); }).length;
     /* waiting means he still has to act on it: not declined (D13), and not withdrawn either */
     var isWaiting=function(r){ return !r.standing&&r.approved===false&&r.declined!==true&&!r.revoked; };
+    /* UX8, 24 Sep 2026: AN ASSOCIATE'S LINK STAYS THEIRS once he has decided on it. Approved or declined, it went
+       under "made against a customer" as "Tier 2, (no label)", with nothing to say who minted it */
+    var isAssoc=function(r){ return !r.standing&&!!r.by&&r.by!=='standing'; };
     var standing=links.filter(function(r){return r.standing;}),
         waiting=links.filter(isWaiting),
-        older=links.filter(function(r){return !r.standing&&!isWaiting(r);});
+        assoc=links.filter(function(r){return isAssoc(r)&&!isWaiting(r);}),
+        older=links.filter(function(r){return !r.standing&&!isWaiting(r)&&!isAssoc(r);});
     /* v709: WHAT IS WAITING ON HIM COMES FIRST. An associate's link is shut until he approves it,
        so the one group he has to act on is the one at the top. */
     var seq=[], heads={};
     if(waiting.length){ heads[seq.length]='Waiting on you'; seq=seq.concat(waiting); }
     if(standing.length){ heads[seq.length]=want.length?'One for each of the '+want.length+' tiers':'One for each tier'; seq=seq.concat(standing); }
+    if(assoc.length){ heads[seq.length]='Made by associates'; seq=seq.concat(assoc); }
     if(older.length){ heads[seq.length]='Older links, made against a customer'; seq=seq.concat(older); }
     seq.forEach(function(r,i){
       if(heads[i]) glist.appendChild(el('p','ghead',heads[i]));
@@ -293,11 +298,12 @@ export const OWNER_JS = `
       /* a standing link whose level the book no longer names (Bronze, 23 Sep 2026) is kept because it
          was handed out, and it opens the board a stranger sees, never the level it still carries */
       var retired=r.standing&&want.length&&want.indexOf(r.level)<0;
-      card.appendChild(el('p','gt',(r.standing?r.level:(declined?'Not approved':(r.level?r.level:(pending?'Waiting on you':'Tier '+r.tier))))+(r.revoked?' \\u00b7 withdrawn':'')));
+      card.appendChild(el('p','gt',(r.standing?r.level:(declined?'Not approved':(r.level?r.level:(pending?'Waiting on you':(isAssoc(r)?'Follows the associate':'Tier '+r.tier)))))+(r.revoked?' \\u00b7 withdrawn':'')));
       card.appendChild(el('h4',null,retired?'Kept because it was handed out. It opens the board a stranger sees'
         :r.standing?'Hand this one to a stranger you would quote '+r.level
         :declined?('Minted by '+(r.by||'an associate')+', and not approved, so it stays shut')
         :(pending?('Minted by '+(r.by||'an associate')+', and shut until you approve it')
+        :isAssoc(r)?('Minted by '+r.by)
         :(r.label||'(no label)'))));
       card.appendChild(el('code','gu',r.url));
       card.appendChild(el('p','gs', r.opens
@@ -372,7 +378,10 @@ export const OWNER_JS = `
          came back 405 and nothing moved. */
       var j=await refs('/all/refs/'+r.id+'/'+how, {});
       for(var i=0;i<links.length;i++) if(links[i].id===j.ref.id) links[i]=j.ref;
-      drawLinks(); say('');
+      /* UX8: the tap is answered in one line, read off the link as the site now holds it */
+      var opens=!j.ref.revoked&&j.ref.approved!==false;
+      drawLinks(); say(({approve:'Approved.',decline:'Declined.',revoke:'Withdrawn.',restore:'Restored.'}[how]||'Done.')
+        +(opens?' It opens now.':' It stays shut.'));
     }catch(e){ say(e.message,'bad'); }
   }
   document.getElementById('gmake').addEventListener('click', async function(){

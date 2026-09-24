@@ -13960,9 +13960,19 @@ await (async () => {
     ok(tap("Approve") && await until(async () => (await stored()).approved === true)
       && (await site("/g/" + id)).status === 200,
       "a tap on Approve opens the link, and the guest door answers 200: " + JSON.stringify({ approved: (await stored()).approved, msg: D.getElementById("rmsg").textContent }));
+    /* UX8: the tap is answered, and the link stays the associate's: its own group, who minted it, what it quotes */
+    await until(() => /Approved/.test(D.getElementById("rmsg").textContent));
+    const cardOf = () => [...D.querySelectorAll("#glist .glink")].find((x) => x.textContent.includes(id));
+    const headOf = (c) => { let e = c; while (e && (e = e.previousElementSibling)) if (e.classList.contains("ghead")) return e.textContent; return ""; };
+    const ac = cardOf(), acH = ac && ac.querySelector("h4").textContent, acT = ac && ac.querySelector(".gt").textContent;
+    ok(D.getElementById("rmsg").textContent === "Approved. It opens now." && headOf(ac) === "Made by associates"
+      && acH === "Minted by " + u && acT === "Follows the associate",
+      "an approved link is said to be open, and stays under Made by associates, minted by its associate, never Tier 2 with no label: "
+      + JSON.stringify({ msg: D.getElementById("rmsg").textContent, head: headOf(ac), h4: acH, gt: acT }));
     ok(await until(() => [...D.querySelectorAll("#glist button")].some((b) => b.textContent === "Withdraw")) && tap("Withdraw")
-      && await until(async () => (await stored()).revoked === true) && (await site("/g/" + id)).status === 404,
-      "a tap on Withdraw shuts it: " + JSON.stringify({ revoked: (await stored()).revoked, msg: D.getElementById("rmsg").textContent }));
+      && await until(async () => (await stored()).revoked === true) && (await site("/g/" + id)).status === 404
+      && await until(() => D.getElementById("rmsg").textContent === "Withdrawn. It stays shut."),
+      "a tap on Withdraw shuts it, and says so: " + JSON.stringify({ revoked: (await stored()).revoked, msg: D.getElementById("rmsg").textContent }));
     ok(await until(() => [...D.querySelectorAll("#glist button")].some((b) => b.textContent === "Restore")) && tap("Restore")
       && await until(async () => (await stored()).revoked === false) && (await site("/g/" + id)).status === 200,
       "and a tap on Restore opens it again: " + JSON.stringify({ revoked: (await stored()).revoked, msg: D.getElementById("rmsg").textContent }));
