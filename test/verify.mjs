@@ -16534,14 +16534,18 @@ await (async () => {
   ok(all.every((w) => /[a-z]/.test(w) || w.length >= 2), "and no word in another script is a single character");
 
   /* ---- the Worker's lock ---- */
-  const refused = ["Harga tahap emas minggu ini RM 150", "Ahli perak dapat harga istimewa", "Pelanggan gangsa: RM 170",
+  const refused = ["Harga tahap emas minggu ini RM 150", "Peringkat perak dapat harga istimewa", "Ahli emas dapat harga istimewa",
+    "Pelanggan gangsa: RM 170",
     "HARGA EMAS naik", "Peringkat Platinum dibuka", "Kad titanium untuk anda"];
   const passes = ["Penghantaran ke Ipoh, Perak setiap Selasa.", "Peluang emas: stok baru tiba minggu ini.",
     "Kedai tutup hari Jumaat, buka semula Isnin.", "Pesanan anda sudah sampai di Taiping, Perak.",
     "Garam baru tiba, minyak minggu depan.", "Terima kasih, sila bayar sebelum Jumaat.",
+    /* 25 Sep 2026: Perak the state after a word for customer, price, class or status, Malay putting the place last */
+    "Pelanggan Perak: penghantaran setiap Jumaat.", "Harga Perak sama seperti di KL.", "Ya, harga Perak termasuk penghantaran RM 15.",
+    "Kelas Perak bermula esok.", "Status Perak: dihantar.",
     "\u8BF7\u5728\u94F6\u884C\u8F6C\u8D26\u540E\u544A\u8BC9\u6211\u91D1\u989D\u3002"];
   ok(refused.every((t) => /names a level/.test(siteWords(t))),
-    "a level named in Malay is refused, after a word that says level or price: " + JSON.stringify(refused.filter((t) => !siteWords(t))));
+    "a level named in Malay is refused, after a word that says level, or member, customer or price before emas or gangsa: " + JSON.stringify(refused.filter((t) => !siteWords(t))));
   ok(passes.every((t) => siteWords(t) === ""),
     "and ordinary Malay passes: Perak the state, a golden chance, a product's word, and a Chinese line holding amount and bank: "
     + JSON.stringify(passes.filter((t) => siteWords(t))));

@@ -18961,14 +18961,15 @@ async function ordLoad(quiet){
 let BULL_MODE='run';
 /* S13 13.2 (his decision D12, 24 Sep 2026): the same words in Malay, mirroring siteWords in src/orders.js, whose
    lists the suite pins against the book and TIER_NAMES. Emas, perak and gangsa are ordinary words (Perak is a state,
-   "peluang emas" a golden chance), so they are refused only straight after a word that says level or price, and warn
-   anywhere else. Every book's name warns, and its Malay word with it. */
+   "peluang emas" a golden chance), so they are refused only straight after a word that says level, or member, customer
+   or price before emas or gangsa (pelanggan Perak is Perak's customers), and warn anywhere else. Every book's name warns, and its Malay word with it. */
 function siteSafe(t){
   const s=String(t||'');
   if(/salt\s*command/i.test(s))return {refuse:'That names the desk, which a customer\'s page never does.',warn:''};
   if(/\b[A-Z]{2}\d{1,2}-[A-Z]{2,4}(-R)?\b/.test(s))return {refuse:'That carries a roster code, which a customer\'s page never shows.',warn:''};
   if(/\b(ambassador|titanium|platinum|gold|silver|bronze)\b/i.test(s)
-    ||/\b(tahap|peringkat|kelas|taraf|pangkat|kategori|status|level|tier|ahli|pelanggan|harga|kad)\s+(emas|perak|gangsa)\b/i.test(s))
+    ||/\b(tahap|peringkat|taraf|pangkat|kategori|level|tier)\s+(emas|perak|gangsa)\b/i.test(s)
+    ||/\b(ahli|pelanggan|harga|kad|kelas|status)\s+(emas|gangsa)\b/i.test(s))
     return {refuse:'That names a level, which a customer\'s page never does.',warn:''};
   if(/\b(emas|perak|gangsa)\b/i.test(s))return {refuse:'',warn:'That may name a level in Malay, which a customer\'s page never does; Perak the state is fine.'};
   if(/\b(salt|oil|candy|rice|spare|garam|minyak|gula-gula|gula|beras)\b/i.test(s))return {refuse:'',warn:'That names a product in words; the customer\'s page draws a mark instead.'};
