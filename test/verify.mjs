@@ -24493,11 +24493,13 @@ await (async () => {
     ok(d.contains(form) && d.contains(rowC) && d.contains(rowA) && d.contains(head),
       "and nothing that did not change was drawn again: the order form, a row that did not move and a part that reads the same");
 
-    /* a part that DOES change while its field has the focus: the amount being typed on an order whose payment moved */
+    /* a part that DOES change while a field has the focus: the amount being typed, in the pay sheet since S6 6.4, on
+       an order whose payment moved */
     d.querySelector("#pOrder .oback").click();
     row(D).click();
     const pay = [...scr().querySelectorAll(".oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (pay) pay.click();
-    const amt = scr().querySelector('.oact input[type="number"]');
+    const part = [...d.querySelectorAll("#payBody .payseg button")].find((b) => b.textContent === "Part of it"); if (part) part.click();
+    const amt = d.getElementById("payAmt");
     if (amt) { amt.focus(); amt.value = "40"; amt.dispatchEvent(new w.Event("input", { bubbles: true })); }
     phase = 2;
     await until(() => /Paid/.test((scr().querySelector('[data-part="money"]') || {}).textContent || ""));
@@ -24608,7 +24610,10 @@ await (async () => {
   const env = await CM.encryptWith(ckM, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] }));
   const list = await CM.encryptWith(ckM, JSON.stringify({ at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
     products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] }));
-  const owing = await CM.encryptWith(ckM, JSON.stringify({ at: "2026-09-25T01:00:00Z", body: "<p>Live</p>", owed: 150 }));
+  /* S6 6.7: the hold is what is past its term, sealed as pay.overdue */
+  const late = { date: "2026-09-01", due: "2026-09-11", late: true, rm: 150, whole: 150, product: "salt", qty: 1, got: 1, gotOn: "2026-09-01", resale: false };
+  const owing = await CM.encryptWith(ckM, JSON.stringify({ at: "2026-09-25T01:00:00Z", body: "<p>Live</p>", owed: 150,
+    pay: { term: 10, now: { rm: 150, due: "2026-09-11", parts: [late] }, overdue: { rm: 150, parts: [late] }, coming: { rm: 0, parts: [] } } }));
   const A = "20260924090000-aaaa";
   const st = { dead: new Set(), n: 0, last: "", reopened: 0, remFail: false, accounts: 0, lines: 0, live: null };
   const said = (k) => ({ at: "2026-09-25T0" + k + ":00:00Z", by: "desk", text: "Answer " + k });
