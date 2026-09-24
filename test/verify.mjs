@@ -23013,6 +23013,82 @@ await (async () => {
   }
 })();
 
+section("S11 11.6: his saved quick replies fill the answer box, and No reply needed lets a line stand without a word to them");
+await (async () => {
+  /* 24 Sep 2026 (PLAN 5; the study's F26: a "thanks" had to be answered to leave his card). A line of theirs
+     can now be marked as needing no reply: the site keeps the moment of that line as `quiet`, bookkeeping that
+     moves nothing, sends nothing and never reaches their page, and a later line waits again. Lines he answers
+     often are kept on his device, checked by siteSafe before they are kept. */
+  const O = await import("../stmt/orders.js");
+  const kv = new KV(), env = { STMT: kv };
+  const u = "abcd-efgh";
+  const o = (await O.placeOrder(env, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  await O.deskMove(env, u, o.id, { status: "acknowledged", mode: "collect" });
+  await O.customerMove(env, u, o.id, "say", { text: "thanks, see you then" });
+  const before = JSON.parse(await kv.get("order:" + u + ":" + o.id));
+  const r = await O.deskMove(env, u, o.id, { noReply: true });
+  const after = JSON.parse(await kv.get("order:" + u + ":" + o.id));
+  ok(O.awaitingAnswer(before) === true && O.awaitingAnswer(after) === false && after.msgs.length === before.msgs.length
+    && after.status === before.status && after.history.length === before.history.length && !r.push && after.quiet === before.msgs[before.msgs.length - 1].at,
+    "No reply needed answers their line with no line of his, no state and no wake: " + JSON.stringify({ before: O.awaitingAnswer(before), after: O.awaitingAnswer(after), quiet: after.quiet, push: r.push }));
+  ok(!("quiet" in O.customerView(after)), "and it never reaches their page");
+  await new Promise((r2) => setTimeout(r2, 5));   /* a later line is a later moment */
+  await O.customerMove(env, u, o.id, "say", { text: "one more thing" });
+  const later = JSON.parse(await kv.get("order:" + u + ":" + o.id));
+  ok(O.awaitingAnswer(later) === true, "a later line of theirs waits for him again: " + JSON.stringify({ quiet: later.quiet, msgs: later.msgs.map((m) => m.at) }));
+  const again = await O.deskMove(env, u, o.id, { message: "yes?" });
+  const n = (await O.deskMove(env, u, o.id, { noReply: true })).order;
+  ok(again.order && n.quiet === after.quiet, "with his own line the last there is nothing to mark, and nothing is");
+
+  const { openMaster: om116 } = await import("../tools/payload.mjs");
+  const { w } = await om116();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 94; w.clearInterval = () => {};
+    const base = { u, code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], payments: [] };
+    const orders = [Object.assign({ id: "q1", status: "acknowledged", at: "2026-09-20T02:00:00.000Z", msgs: [{ at: "2026-09-24T01:00:00.000Z", by: "customer", text: "thanks" }] }, base),
+      Object.assign({ id: "q2", status: "acknowledged", at: "2026-09-21T02:00:00.000Z", msgs: [] }, base)];
+    const calls = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      calls.push({ p, body: init && init.body ? JSON.parse(init.body) : null });
+      return { ok: true, status: 200, json: async () => (p === "orders" && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)) } : { ok: true }) };
+    };
+    const settle = () => new Promise((r2) => setTimeout(r2, 30));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const card = (id) => D.querySelector('.ordcard[data-id="' + id + '"]');
+    const nr = card("q1").querySelector('button[data-ord="noreply"]');
+    ok(nr && nr.classList.contains("salt-ghost") && !card("q2").querySelector('button[data-ord="noreply"]'),
+      "No reply needed is offered where their line is the last, and only there");
+    nr.click();
+    await settle();
+    const post = calls.find((c) => c.p === "orders/" + u + "/q1");
+    ok(post && JSON.stringify(post.body) === '{"noReply":true}' && /Marked as needing no reply\. Nothing was sent to them\./.test(card("q1").querySelector('[data-msg="q1"]').textContent),
+      "it posts that and nothing else, and says so on the card: " + JSON.stringify(post));
+
+    const box = card("q1").querySelector('input[data-say="q1"]');
+    box.value = "Ready after 2pm"; card("q1").querySelector('button[data-keep="q1"]').click();
+    ok((JSON.parse(w.localStorage.getItem("saltQuickReplies")) || []).join("|") === "Ready after 2pm",
+      "a line he keeps is kept on this device: " + w.localStorage.getItem("saltQuickReplies"));
+    card("q1").querySelector('input[data-say="q1"]').value = "your Gold price holds";
+    card("q1").querySelector('button[data-keep="q1"]').click();
+    ok((JSON.parse(w.localStorage.getItem("saltQuickReplies")) || []).join("|") === "Ready after 2pm" && /names a level/.test(card("q1").querySelector('[data-msg="q1"]').textContent),
+      "a line siteSafe refuses is not kept, and the card says why");
+    w.eval("ORD_SEL='q2';ordDraw();");
+    const chipq = card("q2").querySelector('button[data-quick="q2"]');
+    chipq.click();
+    ok(chipq.textContent === "Ready after 2pm" && card("q2").querySelector('input[data-say="q2"]').value === "Ready after 2pm"
+      && !calls.some((c) => c.p === "orders/" + u + "/q2"),
+      "on another order the kept line is a quick reply that fills the box and sends nothing on its own");
+  } finally {
+    await new Promise((r2) => setTimeout(r2, 200));
+    try { w.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one

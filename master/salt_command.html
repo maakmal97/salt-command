@@ -4378,6 +4378,10 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 @media (max-width:860px){.ordcard .ordfoot{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px));}}
 .ordfee{margin:0;}
 .ordother{margin-top:10px;}
+/* S11 11.6: the answer box and his quick replies under it */
+.ordreply{margin-top:4px;}
+.ordquick{display:flex;flex-wrap:wrap;gap:6px;}
+.ordquick:empty{display:none;}
 /* ==== END DESIGN desk ==== */
 </style>
 </head>
@@ -19200,6 +19204,20 @@ function ordPvBlock(o){
     <p class="salt-approve__reason" style="margin-top:8px">The pending row, drafted now and stored nowhere. ${flags.length?'The drafter flags '+(flags.length===1?'one thing':flags.length+' things')+':':'The drafter raises no flag.'}</p>
     ${flags.length?`<div class="salt-approve__flags">${flags.map(f=>`<span class="salt-status salt-status--ember">${esc(f)}</span>`).join('')}</div>`:''}</div>`;
 }
+/* S11 11.6 (24 Sep 2026): HIS QUICK REPLIES live on this device, as the plan has it: lines he saves
+   himself, six at most, each put through siteSafe before it is kept and again when it is sent. */
+const ORD_QUICK_KEY='saltQuickReplies';
+function ordQuick(){try{const a=JSON.parse(localStorage.getItem(ORD_QUICK_KEY)||'[]');return Array.isArray(a)?a.filter(x=>typeof x==='string'&&x).slice(0,6):[];}catch(e){return [];}}
+function ordQuickKeep(id){
+  const si=document.querySelector('input[data-say="'+id+'"]'),t=si?String(si.value||'').trim().replace(/\s+/g,' ').slice(0,200):'';
+  const cur=ordQuick();let said;
+  if(!t)said='Type the line first, then keep it.';
+  else if(cur.includes(t)){try{localStorage.setItem(ORD_QUICK_KEY,JSON.stringify(cur.filter(x=>x!==t)));}catch(e){}said='Forgotten: it is no longer a quick reply.';}
+  else{const g=siteSafe(t);
+    if(g.refuse)said=g.refuse+' It was not kept.';
+    else{try{localStorage.setItem(ORD_QUICK_KEY,JSON.stringify([t].concat(cur).slice(0,6)));said='Kept as a quick reply on this device.';}catch(e){said='This browser would not keep it.';}}}
+  ORD_SAID={id,t:said};ordDraw();
+}
 /* S11 11.5 (24 Sep 2026): WHAT THE CUSTOMER WAS TOLD. His card says what their own page says of this order,
    in its own words, so he answers what they are reading. The words are the page's (stmt/page.js, the state
    chip and the first line under it) and the suite holds the two copies together: a word changed on one side
@@ -19247,16 +19265,19 @@ function ordCard(o){
   /* v752: WHAT THE CUSTOMER WROTE ON THIS ORDER, oldest first. Their words are the only free text on
      this desk a stranger typed, so every line goes through esc and none of it is interpolated raw. */
   const msgs=(o.msgs||[]);
-  const waiting=msgs.length&&msgs[msgs.length-1].by==='customer';
+  const waiting=ordAsked(o);   /* S11 11.6: a line he let stand needs no answer */
   const thread=msgs.length?`<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px">
     <div class="l" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)">On this order${waiting?' &middot; waiting for an answer':''}</div>
     ${msgs.map(m=>`<div class="dsc" style="margin-top:6px"><b>${m.by==='desk'?'You':who}</b> <span style="color:var(--dim)">${when(m.at)}</span><br>${esc(m.text||'')}</div>`).join('')}
   </div>`:'';
   /* v753: and a line back. It sits under the thread because that is what it answers. */
-  const reply=`<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
-    <input type="text" maxlength="200" placeholder="Answer them" aria-label="Answer this customer" data-say="${esc(o.id)}"
-      style="flex:1 1 180px;min-width:150px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:8px">
-    ${btn('say','Send')}</div>`;
+  /* S11 11.6: the system's composer, and under it his saved quick replies, which fill the box and send
+     nothing until Send, and No reply needed where their line is the last. Send is a lit ghost: the one
+     filled control on the card is the move it exists for. */
+  const quick=ordQuick();
+  const reply=`<div class="salt-composer ordreply"><input type="text" maxlength="200" placeholder="Answer them" aria-label="Answer this customer" data-say="${esc(o.id)}" class="salt-field__input salt-composer__field">
+    <button class="salt-ghost salt-ghost--lit salt-composer__send" data-ord="say" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Send</button></div>
+    <div class="ordquick">${quick.map(t=>`<button type="button" class="salt-ghost salt-ghost--tight" data-quick="${esc(o.id)}" data-text="${esc(t)}">${esc(t)}</button>`).join('')}${waiting?btn('noreply','No reply needed',false).replace('vbtn salt-pill salt-pill--sm','salt-ghost salt-ghost--tight'):''}<button type="button" class="salt-ghost salt-ghost--tight" data-keep="${esc(o.id)}">Keep as a quick reply</button></div>`;
   let acts='';
   /* S11 11.3: ACCEPT, RM <total>, the goods and the charge together, in a footer that stays in reach. It is
      open only once the row it approves is on the card: a delivery needs its charge chosen, and the preview has
@@ -19373,6 +19394,8 @@ function ordDraw(){
   box.querySelectorAll('button[data-of]').forEach(b=>{b.onclick=()=>{ORD_FILTER=b.dataset.of;ORD_SEL='';ordDraw();};});
   box.querySelectorAll('button[data-back]').forEach(b=>{b.onclick=()=>{ORD_OPENED=false;ordDraw();};});
   box.querySelectorAll('input[data-fee]').forEach(i=>{i.onchange=()=>{const o=ORD_OPEN.find(x=>x&&x.id===i.dataset.fee);if(o){ordDraw();ordPreview(o);}};});
+  box.querySelectorAll('button[data-quick]').forEach(b=>{b.onclick=()=>{const i=box.querySelector('input[data-say="'+b.dataset.quick+'"]');if(i){i.value=b.dataset.text;i.focus();}};});
+  box.querySelectorAll('button[data-keep]').forEach(b=>{b.onclick=()=>ordQuickKeep(b.dataset.keep);});
   box.querySelectorAll('input[data-chip]').forEach(i=>{i.onchange=()=>{ORD_CHIP[i.dataset.chip]=i.value;ordDraw();};});
   const ab=document.getElementById('ordAllBtn');
   /* the switch lives outside the box this redraws, so it is re-enabled here: disabled on the tap
@@ -19402,6 +19425,8 @@ async function ordAct(b){
     const pv=ORD_PV[id];
     body=JSON.stringify({delivery:d,hash:(pv&&pv.st==='ok'&&pv.d===d&&pv.j&&pv.j.hash)||null});
     url='orders/'+encodeURIComponent(id)+'/accept';
+  }else if(st==='noreply'){
+    body=JSON.stringify({noReply:true});
   }else if(st==='say'){
     /* v753: HIS ANSWER, CHECKED HERE AND AGAIN ON THE WORKER. This page can refuse it before it
        leaves, which is the kinder place to be told; the Worker refuses it whatever asks, which is
@@ -19424,6 +19449,7 @@ async function ordAct(b){
       :st==='handover'?'Recorded. The correction is queued within the minute; approve it under Approve. '+told
       :st==='acknowledged'?'Accepted. They see Acknowledged. The row is approved as it is drafted if it is the one you saw; if not, it waits under Approve, marked. '+told
       :st==='say'?'Sent. '+told
+      :st==='noreply'?'Marked as needing no reply. Nothing was sent to them.'
       :st==='declined'?'Declined. The customer sees it.'
       :st==='cancelled'?'Cancelled. Any payment taken is refunded on the row. '+told
       :ORD_WORD[st]+'. '+told;

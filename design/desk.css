@@ -731,3 +731,7 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 @media (max-width:860px){.ordcard .ordfoot{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px));}}
 .ordfee{margin:0;}
 .ordother{margin-top:10px;}
+/* S11 11.6: the answer box and his quick replies under it */
+.ordreply{margin-top:4px;}
+.ordquick{display:flex;flex-wrap:wrap;gap:6px;}
+.ordquick:empty{display:none;}

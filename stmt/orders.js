@@ -263,9 +263,11 @@ export const customerView = (o) => {
    v751 lets a customer write on any order at any stage, so a question asked about one he has closed
    would have reached a record nothing on his desk draws. The test is the thread's LAST line: theirs,
    and it is waiting; his, and it is not. Answering is what takes a closed order off the card again. */
+/* S11 11.6: and a line he marked as needing no reply is answered: `quiet` holds the moment of the last line
+   of theirs he let stand, so a later one of theirs waits again. It is the desk's, never on the customer's page. */
 export const awaitingAnswer = (o) => {
-  const m = (o && o.msgs) || [];
-  return m.length > 0 && m[m.length - 1] && m[m.length - 1].by === "customer";
+  const m = (o && o.msgs) || [], l = m[m.length - 1];
+  return !!(l && l.by === "customer" && !(o.quiet && String(o.quiet) >= String(l.at)));
 };
 export async function allOrders(env, all) {
   const list = await everyOrder(env);
@@ -540,6 +542,14 @@ export function decideDesk(order, body, at) {
     if (isNum(L.moved) && L.moved > (+order.moved || 0) + 0.0004) ev.moved = L.moved;
     return ev.paid === undefined && ev.moved === undefined ? { none: true } : { ev };
   }
+  /* S11 11.6: NO REPLY NEEDED. A "thanks" had to be answered to leave his card. This answers it without a
+     word: the moment of their last line is kept as `quiet`, bookkeeping like a mark, so it moves nothing, sends
+     nothing, wakes nobody and never reaches their page. With no line of theirs waiting there is nothing to mark. */
+  if (body && body.noReply === true) {
+    const m = order.msgs || [], l = m[m.length - 1];
+    if (!l || l.by !== "customer") return { none: true };
+    return { ev: { kind: "mark", at, mark: { quiet: String(l.at).slice(0, 40) } } };
+  }
   /* v753: HIS ANSWER ON THE ORDER. It is a move of his like any other, so it wakes them; it is not
      a state, so nothing about the order changes but the thread. There is no cap on his own lines: the
      cap v751 set counts theirs, and a man answering his own customers is not a thing to ration. */
@@ -606,6 +616,7 @@ export function applyEvent(order, ev) {
        queue the difference a second time. The goods are stated, not added, so their mark is set as read. */
     for (const k of ["ack", "cancel", "paid", "moved"]) if (m[k] !== undefined) q[k] = k === "paid" ? Math.max(+q.paid || 0, m[k]) : m[k];
     if (m.sync) order.sync = m.sync;
+    if (m.quiet) order.quiet = m.quiet;   /* S11 11.6: a line he said needs no reply */
     order.queued = q;
   } else if (ev.kind === "ledger") {
     const q = Object.assign({}, order.queued || {});
